@@ -1,0 +1,23 @@
+stages:
+  - build
+  - test
+  - deploy
+
+build:
+  stage: build
+  script:
+    - echo "Hello build"
+
+test:
+  stage: test
+  script:
+    - echo "Hello build"
+  artifacts:
+    untracked: true
+
+deploy:
+  stage: deploy
+  script:
+    - echo "Hello build"
+  only:
+    - master
