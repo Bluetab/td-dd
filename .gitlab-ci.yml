@@ -6,7 +6,7 @@ stages:
 build:
   stage: build
   script:
-    - echo "Hello build"
+    - docker run --rm -v $(pwd):/code:ro -w /code --entrypoint=/code/ci/build.sh bluetab/amazonlinux-phoenix-postgresql:20180122121634065033384
 
 test:
   stage: test
