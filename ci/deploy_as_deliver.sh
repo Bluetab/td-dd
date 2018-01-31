@@ -24,7 +24,7 @@ mix deps.get
 
 ./create_secrets_configuration.sh || exit 1
 
-mix edeliver build release --revision=$CI_BUILD_REF --auto-version=git-revision || exit 1
+mix edeliver build release || exit 1
 
 ./add_deployment_keys.sh || exit 1
 
