@@ -14,6 +14,7 @@ defmodule DataQualityWeb.ChannelCase do
   """
 
   use ExUnit.CaseTemplate
+  alias Ecto.Adapters.SQL.Sandbox
 
   using do
     quote do
@@ -25,11 +26,10 @@ defmodule DataQualityWeb.ChannelCase do
     end
   end
 
-
   setup tags do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(DataQuality.Repo)
+    :ok = Sandbox.checkout(DataQuality.Repo)
     unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(DataQuality.Repo, {:shared, self()})
+      Sandbox.mode(DataQuality.Repo, {:shared, self()})
     end
     :ok
   end

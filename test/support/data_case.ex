@@ -14,6 +14,9 @@ defmodule DataQuality.DataCase do
 
   use ExUnit.CaseTemplate
 
+  alias Ecto.Changeset
+  alias Ecto.Adapters.SQL.Sandbox
+
   using do
     quote do
       alias DataQuality.Repo
@@ -26,10 +29,10 @@ defmodule DataQuality.DataCase do
   end
 
   setup tags do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(DataQuality.Repo)
+    :ok = Sandbox.checkout(DataQuality.Repo)
 
     unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(DataQuality.Repo, {:shared, self()})
+      Sandbox.mode(DataQuality.Repo, {:shared, self()})
     end
 
     :ok
@@ -44,7 +47,7 @@ defmodule DataQuality.DataCase do
 
   """
   def errors_on(changeset) do
-    Ecto.Changeset.traverse_errors(changeset, fn {message, opts} ->
+    Changeset.traverse_errors(changeset, fn {message, opts} ->
       Enum.reduce(opts, message, fn {key, value}, acc ->
         String.replace(acc, "%{#{key}}", to_string(value))
       end)

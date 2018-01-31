@@ -11,7 +11,7 @@ build:
 test:
   stage: test
   script:
-    - echo "Hello build"
+    - docker run --rm -v $(pwd):/code:ro -w /code --entrypoint=/code/ci/test.sh bluetab/amazonlinux-phoenix-postgresql:20180122121634065033384
   artifacts:
     untracked: true
 
