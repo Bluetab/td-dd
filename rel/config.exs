@@ -46,7 +46,7 @@ end
 # will be used by default
 
 release :dataQuality do
-  set version: current_version(:dataQuality)
+  set version: current_version(:data_quality)
   set applications: [
     :runtime_tools
   ]
