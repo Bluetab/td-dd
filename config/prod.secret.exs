@@ -17,4 +17,5 @@ config :data_quality, DataQuality.Repo,
   username: "postgres",
   password: "postgres",
   database: "data_quality_prod",
+  hostname: "localhost",
   pool_size: 15
