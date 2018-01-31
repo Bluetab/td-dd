@@ -41,6 +41,7 @@ defmodule DataQuality.Mixfile do
       {:cowboy, "~> 1.0"},
       {:credo, "~> 0.9.0-rc1", only: [:dev, :test], runtime: false},
       {:edeliver, "~> 1.4.4"},
+      {:exrm, "~> 1.0.8"},
     ]
   end
 
