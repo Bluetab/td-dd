@@ -1,10 +1,10 @@
 # .deliver/config
 
-APP="DataQuality"
+APP="dataQuality"
 
 BUILD_HOST="127.0.0.1"
 BUILD_USER="$USER"
-BUILD_AT="/tmp/edeliver/DataQuality/builds"
+BUILD_AT="/tmp/edeliver/dataQuality/builds"
 
 PRODUCTION_HOSTS="52.214.3.82"
 PRODUCTION_USER="ec2-user"
