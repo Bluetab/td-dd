@@ -30,14 +30,13 @@ environment :dev do
   # dev mode.
   set dev_mode: true
   set include_erts: false
-  set cookie: :"@<IuGQ1KgB:~>P*/H6hDw}t3.:rcYNP[AQU`_b%6D?L|v|Ij8}=r3C;gz{ci<c4~"
+  set cookie: :"@6]`bT}*oJH~$,);;8}7z:,HNN~U&/ohft/g`xvTL5S1Jsl1)D:y3~K0lS:@lGzZ"
 end
 
 environment :prod do
   set include_erts: true
   set include_src: false
-  set cookie: :"N}D>zr:IpBMIUC2N,.&_))q~8oN|.Za,pvyX0<,r*v>m1=9yxKHZS$^(F^t)TU{l"
-  set output_dir: ".deliver/releases"
+  set cookie: :"uV5.x{.Y8($Qp8!c**|2UJfPeBxh]NPz]r2qC~x_yEZr~Ub&7(?b<%2j(i&Zo!2{"
 end
 
 # You may define one or more releases in this file.
@@ -45,8 +44,8 @@ end
 # when running `mix release`, the first release in the file
 # will be used by default
 
-release :data_quality do
-  set version: current_version(:data_quality)
+release :dataQuality do
+  set version: current_version(:dataQuality)
   set applications: [
     :runtime_tools
   ]
