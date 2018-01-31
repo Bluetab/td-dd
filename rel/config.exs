@@ -37,7 +37,7 @@ environment :prod do
   set include_erts: true
   set include_src: false
   set cookie: :"N}D>zr:IpBMIUC2N,.&_))q~8oN|.Za,pvyX0<,r*v>m1=9yxKHZS$^(F^t)TU{l"
-  set output_dir: ".deliver/releases/"
+  set output_dir: ".deliver/releases"
 end
 
 # You may define one or more releases in this file.
