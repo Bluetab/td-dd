@@ -10,6 +10,7 @@ PRODUCTION_HOSTS="52.214.3.82"
 PRODUCTION_USER="ec2-user"
 DELIVER_TO="/home/ec2-user"
 
+AUTO_VERSION=git-branch+git-revision
 USING_DISTILLERY=true
 
 # For *Phoenix* projects, symlink prod.secret.exs to our tmp source

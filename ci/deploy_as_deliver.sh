@@ -14,6 +14,8 @@ sshpass -p "password" ssh-copy-id -o StrictHostKeyChecking=no deliver@localhost 
 
 echo "Starting deploy"
 
+MIX_ENV=prod
+
 mix local.hex --force
 mix local.rebar --force
 rm -rf ./_build
@@ -22,7 +24,7 @@ mix deps.get
 
 ./create_secrets_configuration.sh || exit 1
 
-mix edeliver build release --revision=$CI_BUILD_REF --auto-version=git-revision || exit 1
+mix release --env=$MIX_ENV || exit 1
 
 ./add_deployment_keys.sh || exit 1
 
