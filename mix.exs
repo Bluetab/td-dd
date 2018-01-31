@@ -40,8 +40,8 @@ defmodule DataQuality.Mixfile do
       {:gettext, "~> 0.11"},
       {:cowboy, "~> 1.0"},
       {:credo, "~> 0.9.0-rc1", only: [:dev, :test], runtime: false},
-      {:edeliver, "~> 1.4.4"},
-      {:exrm, "~> 1.0.8"},
+      {:edeliver, "~> 1.4.5"},
+      {:distillery, ">= 0.8.0", warn_missing: false},
     ]
   end
 
