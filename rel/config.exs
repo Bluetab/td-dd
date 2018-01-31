@@ -37,7 +37,6 @@ environment :prod do
   set include_erts: true
   set include_src: false
   set cookie: :"uV5.x{.Y8($Qp8!c**|2UJfPeBxh]NPz]r2qC~x_yEZr~Ub&7(?b<%2j(i&Zo!2{"
-  set output_dir: "/tmp/edeliver/dataQuality/builds"
 end
 
 # You may define one or more releases in this file.
