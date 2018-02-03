@@ -12,7 +12,10 @@ defmodule DataDictionary.DataCase do
   of the test unless the test case is marked as async.
   """
 
-  use ExUnit.CaseTemplate
+    use ExUnit.CaseTemplate
+
+    alias Ecto.Changeset
+    alias Ecto.Adapters.SQL.Sandbox
 
   using do
     quote do
@@ -26,10 +29,10 @@ defmodule DataDictionary.DataCase do
   end
 
   setup tags do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(DataDictionary.Repo)
+    :ok = Sandbox.checkout(DataDictionary.Repo)
 
     unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(DataDictionary.Repo, {:shared, self()})
+      Sandbox.mode(DataDictionary.Repo, {:shared, self()})
     end
 
     :ok
@@ -44,7 +47,7 @@ defmodule DataDictionary.DataCase do
 
   """
   def errors_on(changeset) do
-    Ecto.Changeset.traverse_errors(changeset, fn {message, opts} ->
+    Changeset.traverse_errors(changeset, fn {message, opts} ->
       Enum.reduce(opts, message, fn {key, value}, acc ->
         String.replace(acc, "%{#{key}}", to_string(value))
       end)

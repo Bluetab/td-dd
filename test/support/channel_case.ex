@@ -15,6 +15,8 @@ defmodule DataDictionaryWeb.ChannelCase do
 
   use ExUnit.CaseTemplate
 
+  alias Ecto.Adapters.SQL.Sandbox
+
   using do
     quote do
       # Import conveniences for testing with channels
@@ -25,11 +27,10 @@ defmodule DataDictionaryWeb.ChannelCase do
     end
   end
 
-
   setup tags do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(DataDictionary.Repo)
+    :ok = Sandbox.checkout(DataDictionary.Repo)
     unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(DataDictionary.Repo, {:shared, self()})
+      Sandbox.mode(DataDictionary.Repo, {:shared, self()})
     end
     :ok
   end
