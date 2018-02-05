@@ -1,7 +1,7 @@
 defmodule DataDictionary.Application do
   @moduledoc false
   use Application
-  alias DataQualityWeb.Endpoint
+  alias DataDictionaryWeb.Endpoint
 
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
