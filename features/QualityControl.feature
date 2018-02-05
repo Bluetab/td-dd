@@ -9,31 +9,31 @@ Feature: Quality Controls
      | defined          | process result    | built            |
 
   Scenario: Create a new Quality Control with only generic fields
-    Given user "app-admin" is logged in the application with password "mypass"
+    Given user "app-admin" is logged in the application
     When "app-admin" tries to create a Quality Control of type "Generic" with following data:
       | Field               | Value                                                                                  |
       | Type                | Generic                                                                                |
       | Business Concept ID | MYID_333                                                                               |
-      | Short Description   | Field's Quality Control                                                                |
-      | Long Description    | In order to measure quality of this field we will check whether its values are correct |
+      | Name                | Field's Quality Control                                                                |
+      | Description         | In order to measure quality of this field we will check whether its values are correct |
       | Weight              | 50                                                                                     |
       | Priority            | Medium                                                                                 |
       | Population          | All clients who are older than 18                                                      |
-      | Goal                | 98 %                                                                                   |
-      | Minimum             | 80 %                                                                                   |
+      | Goal                | 98                                                                                     |
+      | Minimum             | 80                                                                                     |
     Then the system returns a result with code "Created"
-    And "app-admin" is able to view quality control with ID "MYID_333_001" with following data:
+    And "app-admin" is able to view quality control with Business Concept ID "MYID_333" and name "Fields's Quality Control" with following data:
       | Field               | Value                                                                                  |
       | Type                | Generic                                                                                |
       | Business Concept ID | MYID_333                                                                               |
-      | Short Description   | Field's Quality Control                                                                |
-      | Long Description    | In order to measure quality of this field we will check whether its values are correct |
+      | Name                | Field's Quality Control                                                                |
+      | Description         | In order to measure quality of this field we will check whether its values are correct |
       | Status              | defined                                                                                |
       | Weight              | 50                                                                                     |
       | Priority            | Medium                                                                                 |
       | Population          | All clients who are older than 18                                                      |
-      | Goal                | 98 %                                                                                   |
-      | Minimum             | 80 %                                                                                   |
+      | Goal                | 98                                                                                     |
+      | Minimum             | 80                                                                                     |
       | Status              | draft                                                                                  |
       | Last Modification   | Some timestamp                                                                         |
       | Last User           | app-admin                                                                              |

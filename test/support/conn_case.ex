@@ -16,6 +16,7 @@ defmodule DataQualityWeb.ConnCase do
   use ExUnit.CaseTemplate
   alias Phoenix.ConnTest
   alias Ecto.Adapters.SQL.Sandbox
+  import DataQualityWeb.Authentication, only: :functions
 
   using do
     quote do
@@ -33,7 +34,12 @@ defmodule DataQualityWeb.ConnCase do
     unless tags[:async] do
       Sandbox.mode(DataQuality.Repo, {:shared, self()})
     end
-    {:ok, conn: ConnTest.build_conn()}
+    if tags[:authenticated_user] do
+        user_name = tags[:authenticated_user]
+        create_user_auth_conn(user_name)
+    else
+        {:ok, conn: ConnTest.build_conn()}
+    end
   end
 
 end

@@ -17,6 +17,16 @@ config :data_quality, DataQualityWeb.Endpoint,
   pubsub: [name: DataQuality.PubSub,
            adapter: Phoenix.PubSub.PG2]
 
+  # Configures Auth module Guardian
+config :data_quality, DataQuality.Auth.Guardian,
+       allowed_algos: ["HS512"], # optional
+       issuer: "trueBG",
+       ttl: { 1, :hours },
+       secret_key: "SuperSecretTruedat"
+
+# Hashing algorithm
+config :data_quality, hashing_module: Comeonin.Bcrypt
+
 # Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
