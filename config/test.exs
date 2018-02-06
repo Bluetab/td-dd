@@ -4,7 +4,9 @@ use Mix.Config
 # you can enable the server option below.
 config :data_quality, DataQualityWeb.Endpoint,
   http: [port: 4001],
-  server: false
+  server: true
+
+config :data_quality, hashing_module: DataQuality.DummyHashing
 
 # Print only warnings and errors during test
 config :logger, level: :warn

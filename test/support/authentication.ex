@@ -8,6 +8,11 @@ defmodule DataQualityWeb.Authentication do
   import Plug.Conn
   @headers {"Content-type", "application/json"}
 
+  def sign_in(user_name) do
+    user = %{"user_name": user_name}
+    {:ok, jwt, full_claims} = Guardian.encode_and_sign(user)
+  end
+
   def put_auth_headers(conn, jwt) do
     conn
     |> put_req_header("content-type", "application/json")
@@ -22,8 +27,8 @@ defmodule DataQualityWeb.Authentication do
     end
 
   def create_user_auth_conn(user_name) do
-    #{:ok, token, full_claims} = MyApp.Guardian.encode_and_sign(user, %{some: "claim"})
-    {:ok, jwt, full_claims} = Guardian.encode_and_sign(%{user_name: user_name})
+    user = %{"user_name": user_name}
+    {:ok, jwt, full_claims} = Guardian.encode_and_sign(user)
     conn = ConnTest.build_conn()
     conn = put_auth_headers(conn, jwt)
     {:ok, %{conn: conn, jwt: jwt, claims: full_claims}}

@@ -27,6 +27,14 @@ defmodule DataQualityWeb.QualityControlControllerTest do
     end
   end
 
+  describe "verify token is required" do
+    test "renders unauthenticated when no token", %{conn: conn} do
+      conn = put_req_header(conn, "content-type", "application/json")
+      conn = post conn, quality_control_path(conn, :create), quality_control: @create_attrs
+      assert conn.status == 401
+    end
+  end
+
   describe "create quality_control" do
     @tag authenticated_user: @admin_user_name
     test "renders quality_control when data is valid", %{conn: conn} do
