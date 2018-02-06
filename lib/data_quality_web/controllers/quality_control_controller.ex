@@ -12,6 +12,12 @@ defmodule DataQualityWeb.QualityControlController do
   end
 
   def create(conn, %{"quality_control" => quality_control_params}) do
+    quality_control_params =
+      if conn.assigns.current_user do
+        Map.put_new(quality_control_params, "updated_by", conn.assigns.current_user.user_name)
+      else
+        quality_control_params
+      end
     with {:ok, %QualityControl{} = quality_control} <- QualityControls.create_quality_control(quality_control_params) do
       conn
       |> put_status(:created)
@@ -27,6 +33,12 @@ defmodule DataQualityWeb.QualityControlController do
 
   def update(conn, %{"id" => id, "quality_control" => quality_control_params}) do
     quality_control = QualityControls.get_quality_control!(id)
+    quality_control_params =
+      if conn.assigns.current_user do
+        Map.put_new(quality_control_params, "updated_by", conn.assigns.current_user.user_name)
+      else
+        quality_control_params
+      end
 
     with {:ok, %QualityControl{} = quality_control} <- QualityControls.update_quality_control(quality_control, quality_control_params) do
       render(conn, "show.json", quality_control: quality_control)

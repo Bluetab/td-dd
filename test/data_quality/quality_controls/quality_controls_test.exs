@@ -6,9 +6,14 @@ defmodule DataQuality.QualityControlsTest do
   describe "quality_controls" do
     alias DataQuality.QualityControls.QualityControl
 
-    @valid_attrs %{business_concept_id: "some business_concept_id", description: "some description", goal: 42, minimum: 42, name: "some name", population: "some population", priority: "some priority", type: "some type", weight: 42}
-    @update_attrs %{business_concept_id: "some updated business_concept_id", description: "some updated description", goal: 43, minimum: 43, name: "some updated name", population: "some updated population", priority: "some updated priority", type: "some updated type", weight: 43}
-    @invalid_attrs %{business_concept_id: nil, description: nil, goal: nil, minimum: nil, name: nil, population: nil, priority: nil, type: nil, weight: nil}
+    @valid_attrs %{updated_by: "app-admin", business_concept_id: "some business_concept_id",
+      description: "some description", goal: 42, minimum: 42, name: "some name",
+      population: "some population", priority: "some priority", type: "some type", weight: 42}
+    @update_attrs %{business_concept_id: "some updated business_concept_id", description: "some updated description",
+      goal: 43, minimum: 43, name: "some updated name", population: "some updated population",
+      priority: "some updated priority", type: "some updated type", weight: 43}
+    @invalid_attrs %{business_concept_id: nil, description: nil, goal: nil, minimum: nil,
+      name: nil, population: nil, priority: nil, type: nil, weight: nil}
 
     def quality_control_fixture(attrs \\ %{}) do
       {:ok, quality_control} =
@@ -40,6 +45,7 @@ defmodule DataQuality.QualityControlsTest do
       assert quality_control.priority == "some priority"
       assert quality_control.type == "some type"
       assert quality_control.weight == 42
+      assert quality_control.updated_by == @valid_attrs.updated_by
     end
 
     test "create_quality_control/1 with invalid data returns error changeset" do

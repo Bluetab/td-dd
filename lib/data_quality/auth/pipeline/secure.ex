@@ -10,4 +10,5 @@ defmodule DataQuality.Auth.Pipeline.Secure do
   #plug Guardian.Plug.VerifyHeader, claims: %{"typ" => "access"}
   # Load the user if either of the verifications worked
   plug Guardian.Plug.EnsureAuthenticated
+  plug DataQuality.Auth.Plug.CurrentUser
 end

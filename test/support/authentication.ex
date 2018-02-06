@@ -10,7 +10,7 @@ defmodule DataQualityWeb.Authentication do
 
   def sign_in(user_name) do
     user = %{"user_name": user_name}
-    {:ok, jwt, full_claims} = Guardian.encode_and_sign(user)
+    {:ok, _jwt, _full_claims} = Guardian.encode_and_sign(user)
   end
 
   def put_auth_headers(conn, jwt) do
@@ -30,7 +30,8 @@ defmodule DataQualityWeb.Authentication do
     user = %{"user_name": user_name}
     {:ok, jwt, full_claims} = Guardian.encode_and_sign(user)
     conn = ConnTest.build_conn()
-    conn = put_auth_headers(conn, jwt)
+    |> put_auth_headers(jwt)
+    |> assign(:current_user, user)
     {:ok, %{conn: conn, jwt: jwt, claims: full_claims}}
   end
 

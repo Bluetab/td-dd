@@ -20,6 +20,12 @@ defmodule DataQualityWeb.QualityControlView do
       priority: quality_control.priority,
       population: quality_control.population,
       goal: quality_control.goal,
-      minimum: quality_control.minimum}
+      minimum: quality_control.minimum,
+      status: quality_control.status,
+      version: quality_control.version,
+      updated_by: quality_control.updated_by,
+      inserted_at: quality_control.inserted_at,
+      updated_at: quality_control.updated_at
+    }
   end
 end

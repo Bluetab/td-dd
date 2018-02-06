@@ -22,7 +22,7 @@ Feature: Quality Controls
       | Goal                | 98                                                                                     |
       | Minimum             | 80                                                                                     |
     Then the system returns a result with code "Created"
-    And "app-admin" is able to view quality control with Business Concept ID "MYID_333" and name "Fields's Quality Control" with following data:
+    And "app-admin" is able to view quality control with Business Concept ID "MYID_333" and name "Field's Quality Control" with following data:
       | Field               | Value                                                                                  |
       | Type                | Generic                                                                                |
       | Business Concept ID | MYID_333                                                                               |
@@ -34,7 +34,6 @@ Feature: Quality Controls
       | Population          | All clients who are older than 18                                                      |
       | Goal                | 98                                                                                     |
       | Minimum             | 80                                                                                     |
-      | Status              | draft                                                                                  |
       | Last Modification   | Some timestamp                                                                         |
       | Last User           | app-admin                                                                              |
       | Version             | 1                                                                                      |

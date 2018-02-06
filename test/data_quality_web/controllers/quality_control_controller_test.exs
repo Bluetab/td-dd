@@ -5,13 +5,30 @@ defmodule DataQualityWeb.QualityControlControllerTest do
   alias DataQuality.QualityControls.QualityControl
   import DataQualityWeb.Authentication, only: :functions
 
-  @create_attrs %{business_concept_id: "some business_concept_id", description: "some description", goal: 42, minimum: 42, name: "some name", population: "some population", priority: "some priority", type: "some type", weight: 42}
-  @update_attrs %{business_concept_id: "some updated business_concept_id", description: "some updated description", goal: 43, minimum: 43, name: "some updated name", population: "some updated population", priority: "some updated priority", type: "some updated type", weight: 43}
-  @invalid_attrs %{business_concept_id: nil, description: nil, goal: nil, minimum: nil, name: nil, population: nil, priority: nil, type: nil, weight: nil}
+  @create_fixture_attrs %{business_concept_id: "some business_concept_id",
+    description: "some description", goal: 42, minimum: 42, name: "some name",
+    population: "some population", priority: "some priority", type: "some type",
+    weight: 42, updated_by: "app-admin"}
+
+  @create_attrs %{business_concept_id: "some business_concept_id",
+    description: "some description", goal: 42, minimum: 42, name: "some name",
+    population: "some population", priority: "some priority", type: "some type",
+    weight: 42}
+
+  @update_attrs %{business_concept_id: "some updated business_concept_id", description: "some updated description",
+    goal: 43, minimum: 43, name: "some updated name", population: "some updated population",
+    priority: "some updated priority", type: "some updated type", weight: 43}
+
+  @invalid_attrs %{business_concept_id: nil, description: nil, goal: nil, minimum: nil,
+    name: nil, population: nil, priority: nil, type: nil, weight: nil}
+
+  @comparable_fields ["id", "business_concept_id", "description", "goal", "minimum", "name",
+    "population", "priority", "type", "weight", "status", "version", "updated_by"]
+
   @admin_user_name "app-admin"
 
   def fixture(:quality_control) do
-    {:ok, quality_control} = QualityControls.create_quality_control(@create_attrs)
+    {:ok, quality_control} = QualityControls.create_quality_control(@create_fixture_attrs)
     quality_control
   end
 
@@ -38,12 +55,13 @@ defmodule DataQualityWeb.QualityControlControllerTest do
   describe "create quality_control" do
     @tag authenticated_user: @admin_user_name
     test "renders quality_control when data is valid", %{conn: conn} do
-      conn = post conn, quality_control_path(conn, :create), quality_control: @create_attrs
+      conn = post conn, quality_control_path(conn, :create), quality_control: @create_fixture_attrs
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
       conn = recycle_and_put_headers(conn)
       conn = get conn, quality_control_path(conn, :show, id)
-      assert json_response(conn, 200)["data"] == %{
+      comparable_fields = Map.take(json_response(conn, 200)["data"], @comparable_fields)
+      assert comparable_fields == %{
         "id" => id,
         "business_concept_id" => "some business_concept_id",
         "description" => "some description",
@@ -53,7 +71,11 @@ defmodule DataQualityWeb.QualityControlControllerTest do
         "population" => "some population",
         "priority" => "some priority",
         "type" => "some type",
-        "weight" => 42}
+        "weight" => 42,
+        "status" => "defined",
+        "version" => 1,
+        "updated_by" => @create_fixture_attrs.updated_by
+      }
     end
 
     @tag authenticated_user: @admin_user_name
@@ -73,7 +95,8 @@ defmodule DataQualityWeb.QualityControlControllerTest do
 
       conn = recycle_and_put_headers(conn)
       conn = get conn, quality_control_path(conn, :show, id)
-      assert json_response(conn, 200)["data"] == %{
+      comparable_fields = Map.take(json_response(conn, 200)["data"], @comparable_fields)
+      assert comparable_fields == %{
         "id" => id,
         "business_concept_id" => "some updated business_concept_id",
         "description" => "some updated description",
@@ -83,7 +106,10 @@ defmodule DataQualityWeb.QualityControlControllerTest do
         "population" => "some updated population",
         "priority" => "some updated priority",
         "type" => "some updated type",
-        "weight" => 43}
+        "weight" => 43,
+        "status" => "defined",
+        "version" => 1,
+        "updated_by" => @create_fixture_attrs.updated_by}
     end
 
     @tag authenticated_user: @admin_user_name

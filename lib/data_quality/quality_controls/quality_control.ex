@@ -17,6 +17,8 @@ defmodule DataQuality.QualityControls.QualityControl do
     field :type, :string
     field :weight, :integer
     field :status, :string, default: "defined"
+    field :version, :integer, default: 1
+    field :updated_by, :string
 
     timestamps()
   end
@@ -24,8 +26,8 @@ defmodule DataQuality.QualityControls.QualityControl do
   @doc false
   def changeset(%QualityControl{} = quality_control, attrs) do
     quality_control
-    |> cast(attrs, [:type, :business_concept_id, :name, :description, :weight, :priority, :population, :goal, :minimum])
-    |> validate_required([:type, :business_concept_id, :name, :description, :weight, :priority, :population, :goal, :minimum])
+    |> cast(attrs, [:type, :business_concept_id, :name, :description, :weight, :priority, :population, :goal, :minimum, :status, :version, :updated_by])
+    |> validate_required([:type, :business_concept_id, :name, :description, :weight, :priority, :population, :goal, :minimum, :status, :version, :updated_by])
   end
 
   def get_statuses do
