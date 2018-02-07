@@ -77,8 +77,7 @@ defmodule TrueBG.AuthenticationTest do
         Enum.map(fn({k, v}) ->
           {k, String.to_integer(v)} end
         )
-        |> Map.new()
-        |> Map.merge(l2)
+        |> Enum.into(l2)
        end.()
   end
 
