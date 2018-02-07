@@ -69,12 +69,17 @@ defmodule TrueBG.AuthenticationTest do
     )
   end
 
-  def cast_to_int_attrs(attrs, [] = _values_to_cast) do
-    attrs
-  end
-
-  def cast_to_int_attrs(attrs, [h|t]) do
-    %{cast_to_int_attrs(attrs, t) | h => String.to_integer(attrs[h])}
+  def cast_to_int_attrs(m, keys) do
+    m
+    |> Map.split(keys)
+    |> fn({l1, l2}) ->
+        l1 |>
+        Enum.map(fn({k, v}) ->
+          {k, String.to_integer(v)} end
+        )
+        |> Map.new()
+        |> Map.merge(l2)
+       end.()
   end
 
   defp get_quality_control(token, search_params) do
