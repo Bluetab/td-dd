@@ -1,6 +1,6 @@
 #!/bin/bash
 
-service postgresql start
+service postgresql96 start
 
 cp -R /code /working_code
 cd /working_code

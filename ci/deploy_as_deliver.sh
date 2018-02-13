@@ -30,6 +30,8 @@ mix edeliver build release --revision=$CI_BUILD_REF --auto-version=git-revision 
 
 mix edeliver deploy release to production || exit 1
 
+mix edeliver migrate production || exit 1
+
 mix edeliver restart production || exit 1
 
 ./cleanup_build.sh || exit 1
