@@ -52,6 +52,16 @@ defmodule DataQualityWeb.QualityControlControllerTest do
     end
   end
 
+  describe "verify token secret key must be the one in config" do
+    test "renders unauthenticated when passing token signed with invalid secret key", %{conn: conn} do
+      #token with secret key SuperSecretTruedat2"
+      jwt = "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJ0cnVlQkciLCJleHAiOjE1MTg2MDE2ODMsImlhdCI6MTUxODU5ODA4MywiaXNzIjoidHJ1ZUJHIiwianRpIjoiNTAzNmI5MTQtYmViOC00N2QyLWI4NGQtOTA2ZjMyMTQwMDRhIiwibmJmIjoxNTE4NTk4MDgyLCJzdWIiOiJhcHAtYWRtaW4iLCJ0eXAiOiJhY2Nlc3MifQ.0c_ZpzfiwUeRAbHe-34rvFZNjQoU_0NCMZ-T6r6_DUqPiwlp1H65vY-G1Fs1011ngAAVf3Xf8Vkqp-yOQUDTdw"
+      conn = put_auth_headers(conn, jwt)
+      conn = post conn, quality_control_path(conn, :create), quality_control: @create_attrs
+      assert conn.status == 401
+    end
+  end
+
   describe "create quality_control" do
     @tag authenticated_user: @admin_user_name
     test "renders quality_control when data is valid", %{conn: conn} do
