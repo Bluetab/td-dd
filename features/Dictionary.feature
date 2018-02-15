@@ -48,5 +48,6 @@ Feature: Data Dictionary Administration
       | Precision           | 20                                                   |
       | Nullable            | Yes                                                  |
       | Description         | My personal fields can be only used by me and myself |
+      | Business Concept ID |                                                      |
       | Last Modification   | Some timestamp                                       |
       | Last User           | app-admin                                            |
