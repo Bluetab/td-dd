@@ -2,7 +2,6 @@ Feature: Data Dictionary Administration
   Creation of Data Sets (Files, Tables, Reports, ...) and Fields (field, column, ...)
 
   Scenario: Create a new Data Structure
-    Given user "app-admin" is logged in the application
     When "app-admin" tries to create a Data Structure with following data:
       | Field               | Value                                                                |
       | System              | SAS                                                                  |
@@ -20,8 +19,7 @@ Feature: Data Dictionary Administration
       | Last User           | app-admin                                                            |
 
   Scenario: Create a new field related to an existing Data Structure inside Data Dictionary
-    Given user "app-admin" is logged in the application
-    And and existing data structure with following data:
+    Given and existing data structure with following data:
       | Field               | Value                                                                |
       | System              | SAS                                                                  |
       | Group               | Risks                                                                |

@@ -36,6 +36,8 @@ defmodule DataDictionaryWeb.Endpoint do
     key: "_data_dictionary_key",
     signing_salt: "GHD3gj8B"
 
+  plug CORSPlug, origin: ["*"]
+
   plug DataDictionaryWeb.Router
 
   @doc """

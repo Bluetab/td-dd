@@ -1,8 +1,20 @@
 defmodule DataDictionaryWeb.ErrorView do
   use DataDictionaryWeb, :view
 
+  def render("401.json", _assigns) do
+    %{errors: %{detail: "Invalid credentials"}}
+  end
+
+  def render("403.json", _assigns) do
+    %{errors: %{detail: "Invalid authorization"}}
+  end
+
   def render("404.json", _assigns) do
-    %{errors: %{detail: "Page not found"}}
+    %{errors: %{detail: "Not found"}}
+  end
+
+  def render("422.json", _assigns) do
+    %{errors: %{detail: "Unprocessable Entity"}}
   end
 
   def render("500.json", _assigns) do

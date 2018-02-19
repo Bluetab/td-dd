@@ -1,3 +1,4 @@
+
 defmodule DataDictionary.Mixfile do
   use Mix.Project
 
@@ -39,9 +40,16 @@ defmodule DataDictionary.Mixfile do
       {:postgrex, ">= 0.0.0"},
       {:gettext, "~> 0.11"},
       {:cowboy, "~> 1.0"},
-      {:credo, "~> 0.9.0-rc1", only: [:dev, :test], runtime: false},
+      {:cabbage, "~> 0.3.0"},
+      {:httpoison, "~> 1.0"},
       {:edeliver, "~> 1.4.5"},
       {:distillery, ">= 0.8.0", warn_missing: false},
+      {:credo, "~> 0.9.0-rc1", only: [:dev, :test], runtime: false},
+      {:guardian, "~> 1.0"},
+      {:canary, "~> 1.1.1"},
+      {:canada, "~> 1.0.1"},
+      {:ex_machina, "~> 2.1", only: :test},
+      {:cors_plug, "~> 1.2"},
     ]
   end
 

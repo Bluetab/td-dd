@@ -4,7 +4,11 @@ use Mix.Config
 # you can enable the server option below.
 config :data_dictionary, DataDictionaryWeb.Endpoint,
   http: [port: 4001],
-  server: false
+  server: true
+
+
+# Hashing algorithm just for testing porpouses
+config :data_dictionary, hashing_module: TrueBG.DummyHashing
 
 # Print only warnings and errors during test
 config :logger, level: :warn

@@ -22,6 +22,16 @@ config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
 
+config :data_dictionary, DataDictionary.Auth.Guardian,
+  allowed_algos: ["HS512"], # optional
+  issuer: "data_dictionary",
+  ttl: { 1, :hours },
+  secret_key: "SuperSecretTruedat"
+
+config :canary, repo: DataDictionary.Repo,
+  unauthorized_handler: {DataDictionary.Auth.Canary, :handle_unauthorized},
+  not_found_handler: {DataDictionary.Auth.Canary, :handle_not_found}
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env}.exs"
