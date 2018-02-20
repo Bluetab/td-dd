@@ -72,4 +72,78 @@ defmodule DataDictionary.DataStructuresTest do
       assert %Ecto.Changeset{} = DataStructures.change_data_structure(data_structure)
     end
   end
+
+  describe "data_fields" do
+    alias DataDictionary.DataStructures.DataField
+
+    @valid_attrs %{business_concept_id: 42, description: "some description", last_change: "2010-04-17 14:00:00.000000Z", modifier: 42, name: "some name", nullable: true, precission: 42, type: "some type"}
+    @update_attrs %{business_concept_id: 43, description: "some updated description", last_change: "2011-05-18 15:01:01.000000Z", modifier: 43, name: "some updated name", nullable: false, precission: 43, type: "some updated type"}
+    @invalid_attrs %{business_concept_id: nil, description: nil, last_change: nil, modifier: nil, name: nil, nullable: nil, precission: nil, type: nil}
+
+    def data_field_fixture(attrs \\ %{}) do
+      {:ok, data_field} =
+        attrs
+        |> Enum.into(@valid_attrs)
+        |> DataStructures.create_data_field()
+
+      data_field
+    end
+
+    test "list_data_fields/0 returns all data_fields" do
+      data_field = data_field_fixture()
+      assert DataStructures.list_data_fields() == [data_field]
+    end
+
+    test "get_data_field!/1 returns the data_field with given id" do
+      data_field = data_field_fixture()
+      assert DataStructures.get_data_field!(data_field.id) == data_field
+    end
+
+    test "create_data_field/1 with valid data creates a data_field" do
+      assert {:ok, %DataField{} = data_field} = DataStructures.create_data_field(@valid_attrs)
+      assert data_field.business_concept_id == 42
+      assert data_field.description == "some description"
+      assert data_field.last_change == DateTime.from_naive!(~N[2010-04-17 14:00:00.000000Z], "Etc/UTC")
+      assert data_field.modifier == 42
+      assert data_field.name == "some name"
+      assert data_field.nullable == true
+      assert data_field.precission == 42
+      assert data_field.type == "some type"
+    end
+
+    test "create_data_field/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = DataStructures.create_data_field(@invalid_attrs)
+    end
+
+    test "update_data_field/2 with valid data updates the data_field" do
+      data_field = data_field_fixture()
+      assert {:ok, data_field} = DataStructures.update_data_field(data_field, @update_attrs)
+      assert %DataField{} = data_field
+      assert data_field.business_concept_id == 43
+      assert data_field.description == "some updated description"
+      assert data_field.last_change == DateTime.from_naive!(~N[2011-05-18 15:01:01.000000Z], "Etc/UTC")
+      assert data_field.modifier == 43
+      assert data_field.name == "some updated name"
+      assert data_field.nullable == false
+      assert data_field.precission == 43
+      assert data_field.type == "some updated type"
+    end
+
+    test "update_data_field/2 with invalid data returns error changeset" do
+      data_field = data_field_fixture()
+      assert {:error, %Ecto.Changeset{}} = DataStructures.update_data_field(data_field, @invalid_attrs)
+      assert data_field == DataStructures.get_data_field!(data_field.id)
+    end
+
+    test "delete_data_field/1 deletes the data_field" do
+      data_field = data_field_fixture()
+      assert {:ok, %DataField{}} = DataStructures.delete_data_field(data_field)
+      assert_raise Ecto.NoResultsError, fn -> DataStructures.get_data_field!(data_field.id) end
+    end
+
+    test "change_data_field/1 returns a data_field changeset" do
+      data_field = data_field_fixture()
+      assert %Ecto.Changeset{} = DataStructures.change_data_field(data_field)
+    end
+  end
 end

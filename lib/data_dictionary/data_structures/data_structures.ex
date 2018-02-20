@@ -101,4 +101,100 @@ defmodule DataDictionary.DataStructures do
   def change_data_structure(%DataStructure{} = data_structure) do
     DataStructure.changeset(data_structure, %{})
   end
+
+  alias DataDictionary.DataStructures.DataField
+
+  @doc """
+  Returns the list of data_fields.
+
+  ## Examples
+
+      iex> list_data_fields()
+      [%DataField{}, ...]
+
+  """
+  def list_data_fields do
+    Repo.all(DataField)
+  end
+
+  @doc """
+  Gets a single data_field.
+
+  Raises `Ecto.NoResultsError` if the Data field does not exist.
+
+  ## Examples
+
+      iex> get_data_field!(123)
+      %DataField{}
+
+      iex> get_data_field!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_data_field!(id), do: Repo.get!(DataField, id)
+
+  @doc """
+  Creates a data_field.
+
+  ## Examples
+
+      iex> create_data_field(%{field: value})
+      {:ok, %DataField{}}
+
+      iex> create_data_field(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_data_field(attrs \\ %{}) do
+    %DataField{}
+    |> DataField.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a data_field.
+
+  ## Examples
+
+      iex> update_data_field(data_field, %{field: new_value})
+      {:ok, %DataField{}}
+
+      iex> update_data_field(data_field, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_data_field(%DataField{} = data_field, attrs) do
+    data_field
+    |> DataField.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a DataField.
+
+  ## Examples
+
+      iex> delete_data_field(data_field)
+      {:ok, %DataField{}}
+
+      iex> delete_data_field(data_field)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_data_field(%DataField{} = data_field) do
+    Repo.delete(data_field)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking data_field changes.
+
+  ## Examples
+
+      iex> change_data_field(data_field)
+      %Ecto.Changeset{source: %DataField{}}
+
+  """
+  def change_data_field(%DataField{} = data_field) do
+    DataField.changeset(data_field, %{})
+  end
 end

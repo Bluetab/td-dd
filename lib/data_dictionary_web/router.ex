@@ -17,6 +17,7 @@ defmodule DataDictionaryWeb.Router do
   scope "/api", DataDictionaryWeb do
     pipe_through [:api, :api_secure]
     resources "/data_structures", DataStructureController, except: [:new, :edit]
+    resources "/data_fields", DataFieldController, except: [:new, :edit]
   end
 
 end

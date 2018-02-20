@@ -27,9 +27,6 @@ defmodule DataDictionaryWeb.DataStructureController do
         conn
         |> put_status(:unprocessable_entity)
         |> render(ErrorView, :"422.json")
-        # conn
-        # |> put_status(:internal_server_error)
-        # |> render(ErrorView, :"500.json")
     end
   end
 
@@ -47,6 +44,11 @@ defmodule DataDictionaryWeb.DataStructureController do
 
     with {:ok, %DataStructure{} = data_structure} <- DataStructures.update_data_structure(data_structure, update_params) do
       render(conn, "show.json", data_structure: data_structure)
+    else
+      _error ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> render(ErrorView, :"422.json")
     end
   end
 
