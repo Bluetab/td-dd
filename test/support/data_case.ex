@@ -25,6 +25,7 @@ defmodule DataDictionary.DataCase do
       import Ecto.Changeset
       import Ecto.Query
       import DataDictionary.DataCase
+      import DataDictionary.Factory
     end
   end
 

@@ -5,7 +5,7 @@ defmodule DataDictionary.Repo.Migrations.CreateDataFields do
     create table(:data_fields) do
       add :name, :string
       add :type, :string
-      add :precission, :integer, default: 0, null: false
+      add :precision, :integer, default: 0, null: false
       add :nullable, :boolean, default: true, null: false
       add :description, :string, size: 500, null: true
       add :business_concept_id, :integer, null: true

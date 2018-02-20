@@ -2,17 +2,11 @@ defmodule DataDictionaryWeb.DataFieldControllerTest do
   use DataDictionaryWeb.ConnCase
   import DataDictionaryWeb.Authentication, only: :functions
 
-  alias DataDictionary.DataStructures
   alias DataDictionary.DataStructures.DataField
 
-  @create_attrs %{business_concept_id: 42, description: "some description", name: "some name", nullable: true, precission: 42, type: "some type", last_change: "2010-04-17 14:00:00.000000Z", modifier: 42}
-  @update_attrs %{business_concept_id: 43, description: "some updated description", name: "some updated name", nullable: false, precission: 43, type: "some updated type", last_change: "2010-04-17 14:00:00.000000Z", modifier: 42}
-  @invalid_attrs %{business_concept_id: nil, description: nil, name: nil, nullable: nil, precission: nil, type: nil, last_change: nil, modifier: nil}
-
-  def fixture(:data_field) do
-    {:ok, data_field} = DataStructures.create_data_field(@create_attrs)
-    data_field
-  end
+  @create_attrs %{business_concept_id: 42, description: "some description", name: "some name", nullable: true, precision: 42, type: "some type", last_change: "2010-04-17 14:00:00.000000Z", modifier: 42}
+  @update_attrs %{business_concept_id: 43, description: "some updated description", name: "some updated name", nullable: false, precision: 43, type: "some updated type", last_change: "2010-04-17 14:00:00.000000Z", modifier: 42}
+  @invalid_attrs %{business_concept_id: nil, description: nil, name: nil, nullable: nil, precision: nil, type: nil, last_change: nil, modifier: nil}
 
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
@@ -31,7 +25,9 @@ defmodule DataDictionaryWeb.DataFieldControllerTest do
   describe "create data_field" do
     @tag authenticated_user: @admin_user_name
     test "renders data_field when data is valid", %{conn: conn} do
-      conn = post conn, data_field_path(conn, :create), data_field: @create_attrs
+      data_structure = insert(:data_structure)
+      creation_attrs = Map.put(@create_attrs, :data_structure_id, data_structure.id)
+      conn = post conn, data_field_path(conn, :create), data_field: creation_attrs
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
       conn = recycle_and_put_headers(conn)
@@ -41,14 +37,16 @@ defmodule DataDictionaryWeb.DataFieldControllerTest do
       json_response_data = json_response_data
       |> Map.delete("modifier")
       |> Map.delete("last_change")
+      |> Map.delete("last_change")
 
       assert json_response_data == %{
         "id" => id,
+        "data_structure_id" => data_structure.id,
         "business_concept_id" => 42,
         "description" => "some description",
         "name" => "some name",
         "nullable" => true,
-        "precission" => 42,
+        "precision" => 42,
         "type" => "some type"}
     end
 
@@ -74,6 +72,7 @@ defmodule DataDictionaryWeb.DataFieldControllerTest do
       json_response_data = json_response_data
       |> Map.delete("modifier")
       |> Map.delete("last_change")
+      |> Map.delete("data_structure_id")
 
       assert json_response_data == %{
         "id" => id,
@@ -81,7 +80,7 @@ defmodule DataDictionaryWeb.DataFieldControllerTest do
         "description" => "some updated description",
         "name" => "some updated name",
         "nullable" => false,
-        "precission" => 43,
+        "precision" => 43,
         "type" => "some updated type"}
     end
 
@@ -109,7 +108,8 @@ defmodule DataDictionaryWeb.DataFieldControllerTest do
   end
 
   defp create_data_field(_) do
-    data_field = fixture(:data_field)
+    data_structure = insert(:data_structure)
+    data_field = insert(:data_field, data_structure_id: data_structure.id)
     {:ok, data_field: data_field}
   end
 end

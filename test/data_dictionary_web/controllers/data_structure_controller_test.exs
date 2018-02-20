@@ -2,17 +2,11 @@ defmodule DataDictionaryWeb.DataStructureControllerTest do
   use DataDictionaryWeb.ConnCase
   import DataDictionaryWeb.Authentication, only: :functions
 
-  alias DataDictionary.DataStructures
   alias DataDictionary.DataStructures.DataStructure
 
   @create_attrs %{description: "some description", group: "some group", last_change: "2010-04-17 14:00:00.000000Z", modifier: 42, name: "some name", system: "some system"}
   @update_attrs %{description: "some updated description", group: "some updated group", last_change: "2011-05-18 15:01:01.000000Z", modifier: 43, name: "some updated name", system: "some updated system"}
   @invalid_attrs %{description: nil, group: nil, last_change: nil, modifier: nil, name: nil, system: nil}
-
-  def fixture(:data_structure) do
-    {:ok, data_structure} = DataStructures.create_data_structure(@create_attrs)
-    data_structure
-  end
 
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
@@ -105,7 +99,7 @@ defmodule DataDictionaryWeb.DataStructureControllerTest do
   end
 
   defp create_data_structure(_) do
-    data_structure = fixture(:data_structure)
+    data_structure = insert(:data_structure)
     {:ok, data_structure: data_structure}
   end
 end

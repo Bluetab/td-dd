@@ -30,8 +30,6 @@ defmodule DataDictionaryWeb.ConnCase do
       import DataDictionary.Factory
 
       # The default endpoint for testing
-      @endpoint TrueBGWeb.Endpoint
-      # The default endpoint for testing
       @endpoint Endpoint
     end
   end

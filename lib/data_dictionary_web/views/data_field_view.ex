@@ -14,10 +14,11 @@ defmodule DataDictionaryWeb.DataFieldView do
     %{id: data_field.id,
       name: data_field.name,
       type: data_field.type,
-      precission: data_field.precission,
+      precision: data_field.precision,
       nullable: data_field.nullable,
       description: data_field.description,
       business_concept_id: data_field.business_concept_id,
+      data_structure_id: data_field.data_structure_id,
       last_change: data_field.last_change,
       modifier: data_field.modifier}
   end
