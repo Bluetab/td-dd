@@ -9,7 +9,7 @@ Feature: Data Dictionary Administration
       | Name                | TKIDS0001                                                            |
       | Description         | We are describing this table as a table in Risks group in SAS System |
     Then the system returns a result with code "Created"
-    And "app-admin" is able to view data structure with following data:
+    And "app-admin" is able to view data structure system "SAS" group "Risks" and structure "TKIDS0001"  with following data:
       | Field               | Value                                                                |
       | System              | SAS                                                                  |
       | Group               | Risks                                                                |
@@ -25,22 +25,16 @@ Feature: Data Dictionary Administration
       | Group               | Risks                                                                |
       | Name                | TKIDS0001                                                            |
       | Description         | We are describing this table as a table in Risks group in SAS System |
-    When "app-admin" tries to create a Data Field with following data:
+    When "app-admin" tries to create a Data Field from system "SAS" group "Risks" and structure "TKIDS0001" with following data:
       | Field               | Value                                                |
-      | System              | SAS                                                  |
-      | Group               | Risks                                                |
-      | Structure Name      | TKIDS0001                                            |
       | Field Name          | My_Personal_Field                                    |
       | Type                | CHAR                                                 |
       | Precision           | 20                                                   |
       | Nullable            | Yes                                                  |
       | Description         | My personal fields can be only used by me and myself |
     Then the system returns a result with code "Created"
-    And "app-admin" is able to view data field with following data:
+    And "app-admin" is able to view data field "My_Personal_Field" from system "SAS" group "Risks" and structure "TKIDS0001" with following data:
       | Field               | Value                                                |
-      | System              | SAS                                                  |
-      | Group               | Risks                                                |
-      | Structure Name      | TKIDS0001                                            |
       | Field Name          | My_Personal_Field                                    |
       | Type                | CHAR                                                 |
       | Precision           | 20                                                   |

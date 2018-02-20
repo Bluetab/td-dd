@@ -9,7 +9,7 @@ Feature: Data Dictionary Administration
       | Name                | TKIDS0001                                                            |
       | Description         | We are describing this table as a table in Risks group in SAS System |
     Then the system returns a result with code "Created"
-    And "app-admin" is able to view data structure with following data:
+    And "app-admin" is able to view data structure system "SAS" group "Risks" and structure "TKIDS0001"  with following data:
       | Field               | Value                                                                |
       | System              | SAS                                                                  |
       | Group               | Risks                                                                |

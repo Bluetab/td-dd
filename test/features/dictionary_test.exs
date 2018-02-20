@@ -42,12 +42,12 @@ defmodule DataDictionary.DictionaryTest do
     assert status_code == to_response_code(http_status_code)
   end
 
-  defand ~r/^"(?<user_name>[^"]+)" is able to view data structure with following data:$/,
-    %{user_name: user_name, table: fields}, _state do
+  defand ~r/^"(?<user_name>[^"]+)" is able to view data structure system "(?<system>[^"]+)" group "(?<group>[^"]+)" and structure "(?<structure>[^"]+)"  with following data:$/,
+    %{user_name: user_name, system: system, group: group, structure: structure, table: fields},
+    _state do
       token = get_user_token(user_name)
       attrs = field_value_to_api_attrs(fields, @fixed_data_structure_values)
-      data_structure_tmp = data_structure_find(token, attrs["system"],
-                                               attrs["group"], attrs["name"])
+      data_structure_tmp = data_structure_find(token, system, group, structure)
       assert data_structure_tmp
       {:ok, http_status_code, %{"data" => data_structure}} =
         data_structure_show(token, data_structure_tmp["id"])
