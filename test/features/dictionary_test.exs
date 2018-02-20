@@ -95,9 +95,9 @@ defmodule DataDictionary.DictionaryTest do
   defp field_value_to_data_field(field_value) do
     field_value
     |> field_value_to_api_attrs(@fixed_data_field_values)
-    |> Map.update!("nullable", &(&1 == "YES"))
-    |> Map.update!("precision", &String.to_integer(&1))
-    #|> Map.update!("business_concept_id", &(if &1 == "", do: nil, else: String.to_integer(&1)))
+    |> Map.update("nullable", false, &(&1 == "YES"))
+    |> Map.update("precision", 0, &String.to_integer(&1))
+    |> Map.update("business_concept_id", nil, &(if &1 == "", do: nil, else: String.to_integer(&1)))
   end
 
   defp field_value_to_api_attrs(field_value, fixed_values) do
