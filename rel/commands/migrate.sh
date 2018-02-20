@@ -1,3 +1,3 @@
 #!/bin/sh
 
-bin/trueBG command Elixir.DataDictionary.ReleaseTasks seed
+bin/dataDictionary command Elixir.DataDictionary.ReleaseTasks seed
