@@ -17,7 +17,7 @@ defmodule DataDictionary.ReleaseTasks do
     ]
 
     def seed do
-      #IO.puts "Loading dataDictionary.."
+      #IO.puts "Loading data_dictionary.."
       # Load the code for data_dictionary, but don't start it
       :ok = Application.load(:data_dictionary)
 
@@ -25,7 +25,7 @@ defmodule DataDictionary.ReleaseTasks do
       # Start apps necessary for executing migrations
       Enum.each(@start_apps, &Application.ensure_all_started/1)
 
-      # Start the Repo(s) for dataDictionary
+      # Start the Repo(s) for data_dictionary
       #IO.puts "Starting repos.."
       Enum.each(@repos, &(&1.start_link(pool_size: 1)))
 

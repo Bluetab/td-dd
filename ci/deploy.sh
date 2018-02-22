@@ -1,6 +1,6 @@
 #!/bin/bash
 
-service postgresql start
+service postgresql96 start
 
 useradd -m deliver
 echo "deliver:password" | chpasswd

@@ -1,16 +1,14 @@
 # .deliver/config
 
-APP="dataDictionary"
+APP="data_dictionary"
 
 BUILD_HOST="127.0.0.1"
 BUILD_USER="$USER"
-BUILD_AT="/tmp/edeliver/dataDictionary/builds"
+BUILD_AT="/tmp/edeliver/data_dictionary/builds"
 
 PRODUCTION_HOSTS="52.214.3.82"
 PRODUCTION_USER="ec2-user"
 DELIVER_TO="/home/ec2-user"
-
-USING_DISTILLERY=true
 
 # For *Phoenix* projects, symlink prod.secret.exs to our tmp source
 pre_erlang_get_and_update_deps() {

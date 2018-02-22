@@ -45,7 +45,7 @@ end
 # when running `mix release`, the first release in the file
 # will be used by default
 
-release :dataDictionary do
+release :data_dictionary do
   set version: current_version(:data_dictionary)
   set applications: [
     :runtime_tools
