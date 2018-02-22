@@ -17,4 +17,5 @@ config :data_dictionary, DataDictionary.Repo,
   username: "postgres",
   password: "postgres",
   database: "data_dictionary_prod",
+  hostname: "localhost",
   pool_size: 15
