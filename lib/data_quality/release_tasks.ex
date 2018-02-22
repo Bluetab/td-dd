@@ -1,4 +1,4 @@
-defmodule DataQualtity.ReleaseTasks do
+defmodule DataQuality.ReleaseTasks do
   @moduledoc false
   alias Ecto.Migrator
   alias DataQuality.Repo
@@ -9,7 +9,7 @@ defmodule DataQualtity.ReleaseTasks do
     ]
 
     @myapps [
-      :data_dictionary
+      :data_quality
     ]
 
     @repos [
@@ -47,7 +47,6 @@ defmodule DataQualtity.ReleaseTasks do
     def priv_dir(app), do: "#{:code.priv_dir(app)}"
 
     defp run_migrations_for(app) do
-      IO.puts "Running migrations for #{app}"
       Migrator.run(DataQuality.Repo, migrations_path(app), :up, all: true)
     end
 

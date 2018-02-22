@@ -45,7 +45,7 @@ end
 # when running `mix release`, the first release in the file
 # will be used by default
 
-release :dataQuality do
+release :data_quality do
   set version: current_version(:data_quality)
   set applications: [
     :runtime_tools

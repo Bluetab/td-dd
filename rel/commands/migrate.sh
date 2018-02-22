@@ -1,3 +1,3 @@
 #!/bin/sh
 
-bin/trueBG command Elixir.DataQuality.ReleaseTasks seed
+bin/data_quality command Elixir.DataQuality.ReleaseTasks seed
