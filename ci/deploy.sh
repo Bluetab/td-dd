@@ -7,18 +7,12 @@ echo "deliver:password" | chpasswd
 chsh -s /bin/bash deliver
 
 # apt install locales -y
-export LANG=en_US.UTF-8 && echo $LANG UTF-8 > /etc/locale.gen && locale-gen && update-locale LANG=$LANG
+localedef -c -f UTF-8 -i en_US en_US.UTF-8
+export LC_ALL=en_US.UTF-8
 
-cp -R /code /working_code
-
-wget http://download.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
-rpm -ivh epel-release-6-8.noarch.rpm
-yum install git -y
-yum install openssh-server openssh-clients -y
-cat /etc/ssh/sshd_config | sed "s/PasswordAuthentication no/PasswordAuthentication yes/g" > /etc/ssh/sshd_config
-chkconfig sshd on
 service sshd start
 
+cp -R /code /working_code
 chmod -R 777 /working_code
 chgrp -R deliver /working_code
 
