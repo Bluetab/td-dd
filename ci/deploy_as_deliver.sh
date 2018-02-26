@@ -8,8 +8,6 @@ echo "distro requirements"
 mkdir -p ~/.ssh
 ssh-keygen -t rsa -f ~/.ssh/id_rsa -q -N ""
 chmod 600 ~/.ssh/id_rsa*
-cat ~/.ssh/id_rsa >> ~/.ssh/authorized_keys
-chmod og-wx ~/.ssh/authorized_keys
 sshpass -p "password" ssh-copy-id -o StrictHostKeyChecking=no deliver@localhost || exit 1
 
 echo "Starting deploy"
