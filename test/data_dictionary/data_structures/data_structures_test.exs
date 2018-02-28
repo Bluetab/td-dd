@@ -6,9 +6,9 @@ defmodule DataDictionary.DataStructuresTest do
   describe "data_structures" do
     alias DataDictionary.DataStructures.DataStructure
 
-    @valid_attrs %{description: "some description", group: "some group", last_change: "2010-04-17 14:00:00.000000Z", modifier: 42, name: "some name", system: "some system"}
-    @update_attrs %{description: "some updated description", group: "some updated group", last_change: "2011-05-18 15:01:01.000000Z", modifier: 43, name: "some updated name", system: "some updated system"}
-    @invalid_attrs %{description: nil, group: nil, last_change: nil, modifier: nil, name: nil, system: nil}
+    @valid_attrs %{description: "some description", group: "some group", last_change_at: "2010-04-17 14:00:00.000000Z", last_change_by: 42, name: "some name", system: "some system"}
+    @update_attrs %{description: "some updated description", group: "some updated group", last_change_at: "2011-05-18 15:01:01.000000Z", last_change_by: 43, name: "some updated name", system: "some updated system"}
+    @invalid_attrs %{description: nil, group: nil, last_change_at: nil, last_change_by: nil, name: nil, system: nil}
 
     test "list_data_structures/0 returns all data_structures" do
       data_structure = insert(:data_structure)
@@ -24,8 +24,8 @@ defmodule DataDictionary.DataStructuresTest do
       assert {:ok, %DataStructure{} = data_structure} = DataStructures.create_data_structure(@valid_attrs)
       assert data_structure.description == "some description"
       assert data_structure.group == "some group"
-      assert data_structure.last_change == DateTime.from_naive!(~N[2010-04-17 14:00:00.000000Z], "Etc/UTC")
-      assert data_structure.modifier == 42
+      assert data_structure.last_change_at == DateTime.from_naive!(~N[2010-04-17 14:00:00.000000Z], "Etc/UTC")
+      assert data_structure.last_change_by == 42
       assert data_structure.name == "some name"
       assert data_structure.system == "some system"
     end
@@ -40,8 +40,8 @@ defmodule DataDictionary.DataStructuresTest do
       assert %DataStructure{} = data_structure
       assert data_structure.description == "some updated description"
       assert data_structure.group == "some updated group"
-      assert data_structure.last_change == DateTime.from_naive!(~N[2011-05-18 15:01:01.000000Z], "Etc/UTC")
-      assert data_structure.modifier == 43
+      assert data_structure.last_change_at == DateTime.from_naive!(~N[2011-05-18 15:01:01.000000Z], "Etc/UTC")
+      assert data_structure.last_change_by == 43
       assert data_structure.name == "some updated name"
       assert data_structure.system == "some updated system"
     end
@@ -67,9 +67,9 @@ defmodule DataDictionary.DataStructuresTest do
   describe "data_fields" do
     alias DataDictionary.DataStructures.DataField
 
-    @valid_attrs %{business_concept_id: 42, description: "some description", last_change: "2010-04-17 14:00:00.000000Z", modifier: 42, name: "some name", nullable: true, precision: 42, type: "some type"}
-    @update_attrs %{business_concept_id: 43, description: "some updated description", last_change: "2011-05-18 15:01:01.000000Z", modifier: 43, name: "some updated name", nullable: false, precision: 43, type: "some updated type"}
-    @invalid_attrs %{business_concept_id: nil, description: nil, last_change: nil, modifier: nil, name: nil, nullable: nil, precision: nil, type: nil}
+    @valid_attrs %{business_concept_id: 42, description: "some description", last_change_at: "2010-04-17 14:00:00.000000Z", last_change_by: 42, name: "some name", nullable: true, precision: 42, type: "some type"}
+    @update_attrs %{business_concept_id: 43, description: "some updated description", last_change_at: "2011-05-18 15:01:01.000000Z", last_change_by: 43, name: "some updated name", nullable: false, precision: 43, type: "some updated type"}
+    @invalid_attrs %{business_concept_id: nil, description: nil, last_change_at: nil, last_change_by: nil, name: nil, nullable: nil, precision: nil, type: nil}
 
     test "list_data_fields/0 returns all data_fields" do
       data_structure = insert(:data_structure)
@@ -89,8 +89,8 @@ defmodule DataDictionary.DataStructuresTest do
       assert {:ok, %DataField{} = data_field} = DataStructures.create_data_field(creation_attrs)
       assert data_field.business_concept_id == 42
       assert data_field.description == "some description"
-      assert data_field.last_change == DateTime.from_naive!(~N[2010-04-17 14:00:00.000000Z], "Etc/UTC")
-      assert data_field.modifier == 42
+      assert data_field.last_change_at == DateTime.from_naive!(~N[2010-04-17 14:00:00.000000Z], "Etc/UTC")
+      assert data_field.last_change_by == 42
       assert data_field.name == "some name"
       assert data_field.nullable == true
       assert data_field.precision == 42
@@ -108,8 +108,8 @@ defmodule DataDictionary.DataStructuresTest do
       assert %DataField{} = data_field
       assert data_field.business_concept_id == 43
       assert data_field.description == "some updated description"
-      assert data_field.last_change == DateTime.from_naive!(~N[2011-05-18 15:01:01.000000Z], "Etc/UTC")
-      assert data_field.modifier == 43
+      assert data_field.last_change_at == DateTime.from_naive!(~N[2011-05-18 15:01:01.000000Z], "Etc/UTC")
+      assert data_field.last_change_by == 43
       assert data_field.name == "some updated name"
       assert data_field.nullable == false
       assert data_field.precision == 43

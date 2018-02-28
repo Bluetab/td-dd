@@ -16,7 +16,7 @@ defmodule DataDictionaryWeb.DataStructureView do
       group: data_structure.group,
       name: data_structure.name,
       description: data_structure.description,
-      last_change: data_structure.last_change,
-      modifier: data_structure.modifier}
+      last_change_at: data_structure.last_change_at,
+      last_change_by: data_structure.last_change_by}
   end
 end

@@ -15,8 +15,8 @@ defmodule DataDictionaryWeb.DataFieldController do
 
   def create(conn, %{"data_field" => data_field_params}) do
     creation_params = data_field_params
-    |> Map.put("modifier", get_current_user_id(conn))
-    |> Map.put("last_change", DateTime.utc_now())
+    |> Map.put("last_change_by", get_current_user_id(conn))
+    |> Map.put("last_change_at", DateTime.utc_now())
 
     with {:ok, %DataField{} = data_field} <- DataStructures.create_data_field(creation_params) do
       conn
@@ -40,8 +40,8 @@ defmodule DataDictionaryWeb.DataFieldController do
     data_field = DataStructures.get_data_field!(id)
 
     update_params = data_field_params
-    |> Map.put("modifier", get_current_user_id(conn))
-    |> Map.put("last_change", DateTime.utc_now())
+    |> Map.put("last_change_by", get_current_user_id(conn))
+    |> Map.put("last_change_at", DateTime.utc_now())
 
     with {:ok, %DataField{} = data_field} <- DataStructures.update_data_field(data_field, update_params) do
       render(conn, "show.json", data_field: data_field)

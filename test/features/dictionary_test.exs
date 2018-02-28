@@ -14,8 +14,8 @@ defmodule DataDictionary.DictionaryTest do
                                  "Group" => "group",
                                  "Name" => "name",
                                  "Description" => "description",
-                                 "Last Modification" => "last_change",
-                                 "Last User" => "modifier",
+                                 "Last Modification" => "last_change_at",
+                                 "Last User" => "last_change_by",
                                 }
   @fixed_data_field_values %{"Field Name" => "name",
                              "Type" => "type",
@@ -23,8 +23,8 @@ defmodule DataDictionary.DictionaryTest do
                              "Nullable" => "nullable",
                              "Business Concept ID" => "business_concept_id",
                              "Description" => "description",
-                             "Last Modification" => "last_change",
-                             "Last User" => "modifier",
+                             "Last Modification" => "last_change_at",
+                             "Last User" => "last_change_by",
                             }
 
 #   Scenario: Create a new Data Structure
@@ -104,7 +104,7 @@ defmodule DataDictionary.DictionaryTest do
     Enum.reduce(field_value, %{}, fn(x, acc) -> Map.put(acc, Map.get(fixed_values, x."Field", x."Field"), x."Value") end)
   end
 
-  defp assert_attr("last_change" = attr, _value, %{} = target) do
+  defp assert_attr("last_change_at" = attr, _value, %{} = target) do
     assert :ok == elem(DateTime.from_iso8601(target[attr]), 0)
   end
 
@@ -112,7 +112,7 @@ defmodule DataDictionary.DictionaryTest do
     assert target[attr] == (value == "YES")
   end
 
-  defp assert_attr("modifier" = attr, _value, %{} = target) do
+  defp assert_attr("last_change_by" = attr, _value, %{} = target) do
     assert target[attr] != nil
   end
 

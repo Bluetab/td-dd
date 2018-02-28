@@ -7,8 +7,8 @@ defmodule DataDictionary.DataStructures.DataField do
   schema "data_fields" do
     field :business_concept_id, :id
     field :description, :string
-    field :last_change, :utc_datetime
-    field :modifier, :integer
+    field :last_change_at, :utc_datetime
+    field :last_change_by, :integer
     field :name, :string
     field :nullable, :boolean, default: true
     field :precision, :integer, default: 0
@@ -21,8 +21,8 @@ defmodule DataDictionary.DataStructures.DataField do
   @doc false
   def changeset(%DataField{} = data_field, attrs) do
     data_field
-    |> cast(attrs, [:name, :type, :precision, :nullable, :description, :business_concept_id, :data_structure_id, :last_change, :modifier])
-    |> validate_required([:name, :type, :precision, :nullable, :data_structure_id, :last_change, :modifier])
+    |> cast(attrs, [:name, :type, :precision, :nullable, :description, :business_concept_id, :data_structure_id, :last_change_at, :last_change_by])
+    |> validate_required([:name, :type, :precision, :nullable, :data_structure_id, :last_change_at, :last_change_by])
     |> validate_length(:name, max: 255)
     |> validate_length(:description,  max: 500)
     |> foreign_key_constraint(:data_structure_id)

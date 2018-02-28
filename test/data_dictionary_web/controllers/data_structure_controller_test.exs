@@ -4,9 +4,9 @@ defmodule DataDictionaryWeb.DataStructureControllerTest do
 
   alias DataDictionary.DataStructures.DataStructure
 
-  @create_attrs %{description: "some description", group: "some group", last_change: "2010-04-17 14:00:00.000000Z", modifier: 42, name: "some name", system: "some system"}
-  @update_attrs %{description: "some updated description", group: "some updated group", last_change: "2011-05-18 15:01:01.000000Z", modifier: 43, name: "some updated name", system: "some updated system"}
-  @invalid_attrs %{description: nil, group: nil, last_change: nil, modifier: nil, name: nil, system: nil}
+  @create_attrs %{description: "some description", group: "some group", last_change_at: "2010-04-17 14:00:00.000000Z", last_change_by: 42, name: "some name", system: "some system"}
+  @update_attrs %{description: "some updated description", group: "some updated group", last_change_at: "2011-05-18 15:01:01.000000Z", last_change_by: 43, name: "some updated name", system: "some updated system"}
+  @invalid_attrs %{description: nil, group: nil, last_change_at: nil, last_change_by: nil, name: nil, system: nil}
 
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
@@ -34,8 +34,8 @@ defmodule DataDictionaryWeb.DataStructureControllerTest do
       conn = get conn, data_structure_path(conn, :show, id)
       json_response_data = json_response(conn, 200)["data"]
       json_response_data = json_response_data
-      |> Map.delete("modifier")
-      |> Map.delete("last_change")
+      |> Map.delete("last_change_by")
+      |> Map.delete("last_change_at")
       assert  json_response_data == %{
         "id" => id,
         "description" => "some description",
@@ -64,8 +64,8 @@ defmodule DataDictionaryWeb.DataStructureControllerTest do
       conn = get conn, data_structure_path(conn, :show, id)
       json_response_data = json_response(conn, 200)["data"]
       json_response_data = json_response_data
-      |> Map.delete("modifier")
-      |> Map.delete("last_change")
+      |> Map.delete("last_change_by")
+      |> Map.delete("last_change_at")
 
       assert json_response_data == %{
         "id" => id,

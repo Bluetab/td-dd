@@ -7,8 +7,8 @@ defmodule DataDictionary.DataStructures.DataStructure do
   schema "data_structures" do
     field :description, :string
     field :group, :string
-    field :last_change, :utc_datetime
-    field :modifier, :integer
+    field :last_change_at, :utc_datetime
+    field :last_change_by, :integer
     field :name, :string
     field :system, :string
 
@@ -18,8 +18,8 @@ defmodule DataDictionary.DataStructures.DataStructure do
   @doc false
   def changeset(%DataStructure{} = data_structure, attrs) do
     data_structure
-    |> cast(attrs, [:system, :group, :name, :description, :last_change, :modifier])
-    |> validate_required([:system, :group, :name, :last_change, :modifier])
+    |> cast(attrs, [:system, :group, :name, :description, :last_change_at, :last_change_by])
+    |> validate_required([:system, :group, :name, :last_change_at, :last_change_by])
     |> validate_length(:system, max: 255)
     |> validate_length(:group, max: 255)
     |> validate_length(:name, max: 255)

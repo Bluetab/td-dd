@@ -14,8 +14,8 @@ defmodule DataDictionaryWeb.DataStructureController do
 
   def create(conn, %{"data_structure" => data_structure_params}) do
     creation_params = data_structure_params
-    |> Map.put("modifier", get_current_user_id(conn))
-    |> Map.put("last_change", DateTime.utc_now())
+    |> Map.put("last_change_by", get_current_user_id(conn))
+    |> Map.put("last_change_at", DateTime.utc_now())
 
     with {:ok, %DataStructure{} = data_structure} <- DataStructures.create_data_structure(creation_params) do
       conn
@@ -39,8 +39,8 @@ defmodule DataDictionaryWeb.DataStructureController do
     data_structure = DataStructures.get_data_structure!(id)
 
     update_params = data_structure_params
-    |> Map.put("modifier", get_current_user_id(conn))
-    |> Map.put("last_change", DateTime.utc_now())
+    |> Map.put("last_change_by", get_current_user_id(conn))
+    |> Map.put("last_change_at", DateTime.utc_now())
 
     with {:ok, %DataStructure{} = data_structure} <- DataStructures.update_data_structure(data_structure, update_params) do
       render(conn, "show.json", data_structure: data_structure)
