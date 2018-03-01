@@ -12,6 +12,7 @@ defmodule DataDictionaryWeb.Router do
 
   scope "/api", DataDictionaryWeb do
     pipe_through :api
+    post"/metadata", MetadataController, :upload
   end
 
   scope "/api", DataDictionaryWeb do

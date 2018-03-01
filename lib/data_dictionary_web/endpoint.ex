@@ -21,7 +21,9 @@ defmodule DataDictionaryWeb.Endpoint do
   plug Plug.Logger
 
   plug Plug.Parsers,
-    parsers: [:urlencoded, :multipart, :json],
+    parsers: [:urlencoded,
+              {:multipart, length: 50_000_000},
+              :json],
     pass: ["*/*"],
     json_decoder: Poison
 
