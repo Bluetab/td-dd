@@ -9,8 +9,8 @@ defmodule DataDictionary.Repo.Migrations.CreateDataFields do
       add :nullable, :boolean, default: true, null: false
       add :description, :string, size: 500, null: true
       add :business_concept_id, :integer, null: true
-      add :last_change, :utc_datetime
-      add :modifier, :integer
+      add :last_change_at, :utc_datetime
+      add :last_change_by, :integer
       add :data_structure_id, references(:data_structures, on_delete: :nothing)
 
       timestamps()

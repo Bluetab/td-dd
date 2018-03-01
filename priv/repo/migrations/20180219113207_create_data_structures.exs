@@ -7,8 +7,8 @@ defmodule DataDictionary.Repo.Migrations.CreateDataStructures do
       add :group, :string
       add :name, :string
       add :description, :string, null: true, size: 500
-      add :last_change, :utc_datetime
-      add :modifier, :bigint
+      add :last_change_at, :utc_datetime
+      add :last_change_by, :bigint
 
       timestamps()
     end
