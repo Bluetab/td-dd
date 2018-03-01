@@ -27,6 +27,6 @@ deploy:
     - export DB_HOST=$(echo $DB_HOST | sed -e "s/\//\\\\\//g")
     - export PRODUCTION_HOST=$(cat .deliver/config | grep PRODUCTION_HOSTS | cut -f2 -d"=" | sed -e 's/"//g')
     - export PRODUCTION_USER=$(cat .deliver/config | grep PRODUCTION_USER | cut -f2 -d"=" | sed -e 's/"//g')
-    - docker run --rm -e DB_USER=$DB_USER -e DB_PASSWORD=$DB_PASSWORD -e DB_HOST=$DB_HOST -e DB_NAME=$DB_NAME -e PRODUCTION_HOST=$PRODUCTION_HOST -e PRODUCTION_USER=$PRODUCTION_USER -e PRODUCTION_PEM="$PRODUCTION_PEM" -e USER=$USER -e TARGET_MIX_ENV=$TARGET_MIX_ENV -e BUILD_AT=$BUILD_AT -e TERM=$TERM -v $(pwd):/code:ro -w /code --entrypoint=/code/ci/deploy.sh bluetab/amazonlinux-phoenix-postgresql:20180226093919
+    - docker run --rm -e DB_USER=$DB_USER -e DB_PASSWORD=$DB_PASSWORD -e DB_HOST=$DB_HOST -e DB_NAME=$DB_NAME -e PRODUCTION_HOST=$PRODUCTION_HOST -e PRODUCTION_USER=$PRODUCTION_USER -e PRODUCTION_PEM="$PRODUCTION_PEM" -e GUARDIAN_SECRET_KEY="$GUARDIAN_SECRET_KEY" -e USER=$USER -e TARGET_MIX_ENV=$TARGET_MIX_ENV -e BUILD_AT=$BUILD_AT -e TERM=$TERM -v $(pwd):/code:ro -w /code --entrypoint=/code/ci/deploy.sh bluetab/amazonlinux-phoenix-postgresql:20180226093919
   only:
     - master
