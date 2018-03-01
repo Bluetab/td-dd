@@ -46,7 +46,9 @@ defmodule DataQuality.Mixfile do
       {:guardian, "~> 1.0"},
       {:comeonin, "~> 4.0"},
       {:bcrypt_elixir, "~> 1.0"},
-      {:cabbage, "~> 0.3.0"}
+      {:cabbage, "~> 0.3.0"},
+      {:phoenix_swagger, "~> 0.7.0"},
+      {:ex_json_schema, "~> 0.5"}
     ]
   end
 

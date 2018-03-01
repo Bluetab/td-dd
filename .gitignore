@@ -18,3 +18,4 @@ npm-debug.log
 # variables.
 /config/*.secret.exs.deliver/releases/
 .idea/
+data-quality.iml

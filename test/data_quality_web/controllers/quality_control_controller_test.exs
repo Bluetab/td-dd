@@ -1,5 +1,6 @@
 defmodule DataQualityWeb.QualityControlControllerTest do
   use DataQualityWeb.ConnCase
+  use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   alias DataQuality.QualityControls
   alias DataQuality.QualityControls.QualityControl
@@ -38,16 +39,18 @@ defmodule DataQualityWeb.QualityControlControllerTest do
 
   describe "index" do
     @tag authenticated_user: @admin_user_name
-    test "lists all quality_controls", %{conn: conn} do
+    test "lists all quality_controls", %{conn: conn, swagger_schema: schema} do
       conn = get conn, quality_control_path(conn, :index)
+      validate_resp_schema(conn, schema, "QualityControlsResponse")
       assert json_response(conn, 200)["data"] == []
     end
   end
 
   describe "verify token is required" do
-    test "renders unauthenticated when no token", %{conn: conn} do
+    test "renders unauthenticated when no token", %{conn: conn, swagger_schema: schema} do
       conn = put_req_header(conn, "content-type", "application/json")
       conn = post conn, quality_control_path(conn, :create), quality_control: @create_attrs
+      validate_resp_schema(conn, schema, "QualityControlResponse")
       assert conn.status == 401
     end
   end
@@ -64,12 +67,14 @@ defmodule DataQualityWeb.QualityControlControllerTest do
 
   describe "create quality_control" do
     @tag authenticated_user: @admin_user_name
-    test "renders quality_control when data is valid", %{conn: conn} do
+    test "renders quality_control when data is valid", %{conn: conn, swagger_schema: schema} do
       conn = post conn, quality_control_path(conn, :create), quality_control: @create_fixture_attrs
+      validate_resp_schema(conn, schema, "QualityControlResponse")
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
       conn = recycle_and_put_headers(conn)
       conn = get conn, quality_control_path(conn, :show, id)
+      validate_resp_schema(conn, schema, "QualityControlResponse")
       comparable_fields = Map.take(json_response(conn, 200)["data"], @comparable_fields)
       assert comparable_fields == %{
         "id" => id,
@@ -89,8 +94,9 @@ defmodule DataQualityWeb.QualityControlControllerTest do
     end
 
     @tag authenticated_user: @admin_user_name
-    test "renders errors when data is invalid", %{conn: conn} do
+    test "renders errors when data is invalid", %{conn: conn, swagger_schema: schema} do
       conn = post conn, quality_control_path(conn, :create), quality_control: @invalid_attrs
+      validate_resp_schema(conn, schema, "QualityControlResponse")
       assert json_response(conn, 422)["errors"] != %{}
     end
   end
@@ -99,12 +105,14 @@ defmodule DataQualityWeb.QualityControlControllerTest do
     setup [:create_quality_control]
 
     @tag authenticated_user: @admin_user_name
-    test "renders quality_control when data is valid", %{conn: conn, quality_control: %QualityControl{id: id} = quality_control} do
+    test "renders quality_control when data is valid", %{conn: conn, quality_control: %QualityControl{id: id} = quality_control, swagger_schema: schema} do
       conn = put conn, quality_control_path(conn, :update, quality_control), quality_control: @update_attrs
+      validate_resp_schema(conn, schema, "QualityControlResponse")
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
       conn = recycle_and_put_headers(conn)
       conn = get conn, quality_control_path(conn, :show, id)
+      validate_resp_schema(conn, schema, "QualityControlResponse")
       comparable_fields = Map.take(json_response(conn, 200)["data"], @comparable_fields)
       assert comparable_fields == %{
         "id" => id,
@@ -123,8 +131,9 @@ defmodule DataQualityWeb.QualityControlControllerTest do
     end
 
     @tag authenticated_user: @admin_user_name
-    test "renders errors when data is invalid", %{conn: conn, quality_control: quality_control} do
+    test "renders errors when data is invalid", %{conn: conn, quality_control: quality_control, swagger_schema: schema} do
       conn = put conn, quality_control_path(conn, :update, quality_control), quality_control: @invalid_attrs
+      validate_resp_schema(conn, schema, "QualityControlResponse")
       assert json_response(conn, 422)["errors"] != %{}
     end
   end
