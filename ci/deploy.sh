@@ -23,6 +23,7 @@ export TARGET_MIX_ENV=$TARGET_MIX_ENV
 export DB_PASSWORD=$DB_PASSWORD
 export DB_HOST=$DB_HOST
 export TERM=$TERM
+export GUARDIAN_SECRET_KEY=$GUARDIAN_SECRET_KEY
 export PRODUCTION_PEM=\"$PRODUCTION_PEM\"" >> /working_code/env_vars.sh
 
 chmod +x /working_code/env_vars.sh
