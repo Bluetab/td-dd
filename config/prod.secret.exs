@@ -19,3 +19,9 @@ config :data_quality, DataQuality.Repo,
   database: "data_quality_prod",
   hostname: "localhost",
   pool_size: 15
+
+config :data_quality, DataQuality.Auth.Guardian,
+  allowed_algos: ["HS512"], # optional
+  issuer: "tdauth",
+  ttl: { 1, :hours },
+  secret_key: "SuperSecretTruedat"

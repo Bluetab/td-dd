@@ -20,7 +20,7 @@ config :data_quality, DataQualityWeb.Endpoint,
   # Configures Auth module Guardian
 config :data_quality, DataQuality.Auth.Guardian,
        allowed_algos: ["HS512"], # optional
-       issuer: "trueBG",
+       issuer: "tdauth",
        ttl: { 1, :hours },
        secret_key: "SuperSecretTruedat"
 

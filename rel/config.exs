@@ -37,6 +37,7 @@ environment :prod do
   set include_erts: true
   set include_src: false
   set cookie: :"uV5.x{.Y8($Qp8!c**|2UJfPeBxh]NPz]r2qC~x_yEZr~Ub&7(?b<%2j(i&Zo!2{"
+  set pre_start_hook: "rel/hooks/pre-start"
 end
 
 # You may define one or more releases in this file.
@@ -44,9 +45,12 @@ end
 # when running `mix release`, the first release in the file
 # will be used by default
 
-release :dataQuality do
+release :data_quality do
   set version: current_version(:data_quality)
   set applications: [
     :runtime_tools
+  ]
+  set commands: [
+    "migrate": "rel/commands/migrate.sh"
   ]
 end
