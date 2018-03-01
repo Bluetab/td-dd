@@ -1,4 +1,5 @@
 defmodule DataDictionaryWeb.MetadataController do
+  require Logger
   use DataDictionaryWeb, :controller
 
   alias Ecto.Adapters.SQL
@@ -42,6 +43,16 @@ defmodule DataDictionaryWeb.MetadataController do
 
   """
   def upload(conn, params) do
+    do_upload(conn, params)
+    send_resp(conn, :created, "")
+  rescue e in RuntimeError ->
+    Logger.error "While uploading #{e.message}"
+    send_resp(conn, :unprocessable_entity, Poison.encode!(%{error: e.message}))
+  end
+
+  defp do_upload(conn, params) do
+
+    Logger.info "Uploading metadata..."
 
     start_time = DateTime.utc_now()
 
@@ -53,13 +64,14 @@ defmodule DataDictionaryWeb.MetadataController do
     end)
 
     end_time = DateTime.utc_now()
-    IO.puts(DateTime.diff(end_time, start_time))
 
-    conn
-    |> send_resp(:created, "")
+    Logger.info "Metadata uploaded. Elapsed seconds: #{DateTime.diff(end_time, start_time)}"
+
   end
 
   defp upload_in_transaction(conn, data_structures_path, data_fields_path) do
+
+    Logger.info "Uploading data structures..."
 
     data_structures_path
     |> File.stream!
@@ -68,6 +80,8 @@ defmodule DataDictionaryWeb.MetadataController do
       data = add_user_and_date_time(conn, data)
       SQL.query!(Repo, @data_structure_query, data)
     end)
+
+    Logger.info "Uploading data fields..."
 
     data_fields_path
     |> File.stream!
@@ -80,6 +94,7 @@ defmodule DataDictionaryWeb.MetadataController do
       data = add_user_and_date_time(conn, data)
       SQL.query!(Repo, @data_field_query, data)
     end)
+    
   end
 
   defp add_user_and_date_time(conn, data) do
