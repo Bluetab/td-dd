@@ -12,11 +12,11 @@ defmodule DataDictionaryWeb.Router do
 
   scope "/api", DataDictionaryWeb do
     pipe_through :api
-    post"/metadata", MetadataController, :upload
   end
 
   scope "/api", DataDictionaryWeb do
     pipe_through [:api, :api_secure]
+    post "/metadata", MetadataController, :upload
     resources "/data_structures", DataStructureController, except: [:new, :edit]
     resources "/data_fields", DataFieldController, except: [:new, :edit]
   end
