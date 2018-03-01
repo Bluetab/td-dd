@@ -1,0 +1,330 @@
+{
+  "swagger": "2.0",
+  "securityDefinitions": {
+    "bearer": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header"
+    }
+  },
+  "security": [
+    {
+      "bearer": []
+    }
+  ],
+  "schemes": [
+    "http"
+  ],
+  "paths": {
+    "/quality_controls/{id}": {
+      "put": {
+        "tags": [
+          "QualityControl"
+        ],
+        "summary": "",
+        "responses": {
+          "400": {
+            "description": "Client Error"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/QualityControlResponse"
+            },
+            "description": "OK"
+          }
+        },
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/definitions/QualityControlUpdate"
+            },
+            "required": false,
+            "name": "quality_control",
+            "in": "body",
+            "description": "Quality Control update attrs"
+          },
+          {
+            "type": "integer",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Quality Control ID"
+          }
+        ],
+        "operationId": "DataQualityWeb.QualityControlController.update",
+        "description": "Updates Quality Control"
+      },
+      "get": {
+        "tags": [
+          "QualityControl"
+        ],
+        "summary": "",
+        "responses": {
+          "400": {
+            "description": "Client Error"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/QualityControlResponse"
+            },
+            "description": "OK"
+          }
+        },
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "type": "integer",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Quality Control ID"
+          }
+        ],
+        "operationId": "DataQualityWeb.QualityControlController.show",
+        "description": "Show Quality Control"
+      },
+      "delete": {
+        "tags": [
+          "QualityControl"
+        ],
+        "summary": "",
+        "responses": {
+          "400": {
+            "description": "Client Error"
+          },
+          "200": {
+            "description": "OK"
+          }
+        },
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "type": "integer",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Quality Control ID"
+          }
+        ],
+        "operationId": "DataQualityWeb.QualityControlController.delete",
+        "description": "Delete Quality Control"
+      }
+    },
+    "/quality_controls": {
+      "post": {
+        "tags": [
+          "QualityControl"
+        ],
+        "summary": "",
+        "responses": {
+          "400": {
+            "description": "Client Error"
+          },
+          "201": {
+            "schema": {
+              "$ref": "#/definitions/QualityControlResponse"
+            },
+            "description": "Created"
+          }
+        },
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/definitions/QualityControlCreate"
+            },
+            "required": false,
+            "name": "quality_control",
+            "in": "body",
+            "description": "Quality Control create attrs"
+          }
+        ],
+        "operationId": "DataQualityWeb.QualityControlController.create",
+        "description": "Creates a Quality Control"
+      },
+      "get": {
+        "tags": [
+          "QualityControl"
+        ],
+        "summary": "",
+        "responses": {
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/QualityControlsResponse"
+            },
+            "description": "OK"
+          }
+        },
+        "parameters": [],
+        "operationId": "DataQualityWeb.QualityControlController.index",
+        "description": "List Quality Controls"
+      }
+    }
+  },
+  "info": {
+    "version": "1.0",
+    "title": "QualityControl"
+  },
+  "host": "localhost:4000",
+  "definitions": {
+    "QualityControlsResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/QualityControls"
+        }
+      }
+    },
+    "QualityControls": {
+      "type": "array",
+      "title": "Quality Controls",
+      "items": {
+        "$ref": "#/definitions/QualityControl"
+      },
+      "description": "A collection of Quality Controls"
+    },
+    "QualityControlUpdate": {
+      "type": "object",
+      "properties": {
+        "quality_control": {
+          "$ref": "#/definitions/QualityControlCreateProps"
+        }
+      }
+    },
+    "QualityControlResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/QualityControl"
+        }
+      }
+    },
+    "QualityControlCreateProps": {
+      "type": "object",
+      "required": [
+        "description",
+        "business_concept_id"
+      ],
+      "properties": {
+        "weight": {
+          "type": "integer",
+          "description": "weight"
+        },
+        "type": {
+          "type": "string",
+          "description": "type: (Generic, ...)"
+        },
+        "priority": {
+          "type": "string",
+          "description": "Priority (Medium,...)"
+        },
+        "population": {
+          "type": "string",
+          "description": "population target description"
+        },
+        "name": {
+          "type": "string",
+          "description": "quality control name"
+        },
+        "minimum": {
+          "type": "integer",
+          "description": "minimum goal (1-100)"
+        },
+        "goal": {
+          "type": "integer",
+          "description": "goal percentage (1-100)"
+        },
+        "description": {
+          "type": "string",
+          "description": "description"
+        },
+        "business_concept_id": {
+          "type": "string",
+          "description": "business concept id"
+        }
+      }
+    },
+    "QualityControlCreate": {
+      "type": "object",
+      "properties": {
+        "quality_control": {
+          "$ref": "#/definitions/QualityControlCreateProps"
+        }
+      }
+    },
+    "QualityControl": {
+      "type": "object",
+      "title": "Quality Control",
+      "required": [
+        "description",
+        "business_concept_id",
+        "id"
+      ],
+      "properties": {
+        "weight": {
+          "type": "integer",
+          "description": "weight"
+        },
+        "version": {
+          "type": "integer",
+          "description": "version number"
+        },
+        "updated_by": {
+          "type": "string",
+          "description": "updated by user_name"
+        },
+        "type": {
+          "type": "string",
+          "description": "type: (Generic, ...)"
+        },
+        "status": {
+          "type": "string",
+          "description": "status (Default: defined)"
+        },
+        "priority": {
+          "type": "string",
+          "description": "Priority (Medium,...)"
+        },
+        "population": {
+          "type": "string",
+          "description": "population target description"
+        },
+        "name": {
+          "type": "string",
+          "description": "quality control name"
+        },
+        "minimum": {
+          "type": "integer",
+          "description": "minimum goal (1-100)"
+        },
+        "id": {
+          "type": "integer",
+          "description": "unique identifier"
+        },
+        "goal": {
+          "type": "integer",
+          "description": "goal percentage (1-100)"
+        },
+        "description": {
+          "type": "string",
+          "description": "description"
+        },
+        "business_concept_id": {
+          "type": "string",
+          "description": "business concept id"
+        }
+      },
+      "description": "Quality Control entity"
+    }
+  },
+  "basePath": "/api"
+}
