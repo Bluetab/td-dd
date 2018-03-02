@@ -43,4 +43,5 @@ config :data_dictionary, DataDictionary.Repo,
   password: "postgres",
   database: "data_dictionary_dev",
   hostname: "localhost",
-  pool_size: 10
+  pool_size: 10,
+  timeout: 60_000 # Increased for metadata upload. 1000 data structures, 50 data fields

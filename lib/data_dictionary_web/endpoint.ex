@@ -22,7 +22,7 @@ defmodule DataDictionaryWeb.Endpoint do
 
   plug Plug.Parsers,
     parsers: [:urlencoded,
-              {:multipart, length: 50_000_000},
+              {:multipart, length: 20_000_000}, # 20M. # Increased for metadata upload. 1000 data structures, 50 data fields
               :json],
     pass: ["*/*"],
     json_decoder: Poison
