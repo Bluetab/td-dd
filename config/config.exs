@@ -24,7 +24,7 @@ config :logger, :console,
 
 config :data_dictionary, DataDictionary.Auth.Guardian,
   allowed_algos: ["HS512"], # optional
-  issuer: "data_dictionary",
+  issuer: "tdauth",
   ttl: { 1, :hours },
   secret_key: "SuperSecretTruedat"
 

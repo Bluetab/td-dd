@@ -10,7 +10,7 @@ defmodule DataDictionaryWeb.MetadataController do
     INSERT INTO data_structures ("system", "group", "name", description, last_change_at, last_change_by, inserted_at, updated_at)
     VALUES ($1, $2, $3, $4, $6, $5, $6, $6)
     ON CONFLICT ("system", "group", "name")
-    DO UPDATE SET description = $4, last_change_at = $6, last_change_by = $5, inserted_at = $6, updated_at = $6;
+    DO UPDATE SET description = $4, last_change_at = $6, last_change_by = $5, updated_at = $6;
   """
 
   @data_field_query  """
@@ -18,7 +18,7 @@ defmodule DataDictionaryWeb.MetadataController do
     VALUES ((select id from data_structures where "system" = $1 and "group" = $2 and "name" = $3),
     $4, $5, $6, $7, $8, $10, $9, $10, $10)
     ON CONFLICT (data_structure_id, name)
-    DO UPDATE SET name = $4, type = $5, description = $6, nullable = $7, precision = $8, last_change_at = $10, last_change_by = $9, inserted_at = $10, updated_at = $10
+    DO UPDATE SET name = $4, type = $5, description = $6, nullable = $7, precision = $8, last_change_at = $10, last_change_by = $9, updated_at = $10
   """
 
   @data_structures_param "data_structures"
@@ -28,7 +28,7 @@ defmodule DataDictionaryWeb.MetadataController do
   @doc """
     Upload metadata:
       curl -H "Content-Type: application/json" -X POST -d '{"user":{"user_name":"xxx","password":"xxx"}}' http://localhost:4001/api/sessions
-      curl "authorization: Bearer xxx" -F "data_structures=@data_structures.csv" -F "data_fields=@data_fields.csv"  http://localhost:8005/api/metadata
+      curl -H "authorization: Bearer xxx" -F "data_structures=@data_structures.csv" -F "data_fields=@data_fields.csv"  http://localhost:8005/api/metadata
 
       INSERT INTO data_structures ("system", "group", "name", description, last_change_at, last_change_by, inserted_at, updated_at)
       VALUES ($1, $2, $3, $4, $6, $5, $6, $6)
@@ -94,7 +94,7 @@ defmodule DataDictionaryWeb.MetadataController do
       data = add_user_and_date_time(conn, data)
       SQL.query!(Repo, @data_field_query, data)
     end)
-    
+
   end
 
   defp add_user_and_date_time(conn, data) do
