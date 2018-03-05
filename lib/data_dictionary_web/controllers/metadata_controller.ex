@@ -14,11 +14,11 @@ defmodule DataDictionaryWeb.MetadataController do
   """
 
   @data_field_query  """
-    INSERT INTO data_fields (data_structure_id, name, type, description, nullable, precision, last_change_at, last_change_by, inserted_at, updated_at)
+    INSERT INTO data_fields (data_structure_id, name, type, description, nullable, precision, business_concept_id, last_change_at, last_change_by, inserted_at, updated_at)
     VALUES ((select id from data_structures where "system" = $1 and "group" = $2 and "name" = $3),
-    $4, $5, $6, $7, $8, $10, $9, $10, $10)
+    $4, $5, $6, $7, $8, $9, $11, $10, $11, $11)
     ON CONFLICT (data_structure_id, name)
-    DO UPDATE SET name = $4, type = $5, description = $6, nullable = $7, precision = $8, last_change_at = $10, last_change_by = $9, updated_at = $10
+    DO UPDATE SET name = $4, type = $5, description = $6, nullable = $7, precision = $8, business_concept_id = $9, last_change_at = $11, last_change_by = $10, updated_at = $11
   """
 
   @data_structures_param "data_structures"
@@ -27,6 +27,10 @@ defmodule DataDictionaryWeb.MetadataController do
 
   @doc """
     Upload metadata:
+
+      data_structures.csv: system, group, name, description
+      data_fields.csv: system, group, name, field name, type, descripiton, nullable, precision, business_concept_id
+
       curl -H "Content-Type: application/json" -X POST -d '{"user":{"user_name":"xxx","password":"xxx"}}' http://localhost:4001/api/sessions
       curl -H "authorization: Bearer xxx" -F "data_structures=@data_structures.csv" -F "data_fields=@data_fields.csv"  http://localhost:8005/api/metadata
 
@@ -44,7 +48,7 @@ defmodule DataDictionaryWeb.MetadataController do
   """
   def upload(conn, params) do
     do_upload(conn, params)
-    send_resp(conn, :created, "")
+    send_resp(conn, :ok, "")
   rescue e in RuntimeError ->
     Logger.error "While uploading #{e.message}"
     send_resp(conn, :unprocessable_entity, Poison.encode!(%{error: e.message}))
@@ -89,12 +93,19 @@ defmodule DataDictionaryWeb.MetadataController do
     |> Enum.each(fn(data) ->
       data = data
       |> List.update_at(6, &(&1 == "1")) # nullable
-      |> List.update_at(7, &String.to_integer(&1)) # precision
+      |> List.update_at(7, &binary_precision_to_integer(&1)) # precision
 
       data = add_user_and_date_time(conn, data)
       SQL.query!(Repo, @data_field_query, data)
     end)
 
+  end
+
+  defp binary_precision_to_integer(binary_precision) do
+    case Integer.parse(binary_precision) do
+      {:ok, integer_precision} -> integer_precision
+      _ -> nil
+    end
   end
 
   defp add_user_and_date_time(conn, data) do

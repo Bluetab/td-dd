@@ -4,8 +4,8 @@ defmodule DataDictionaryWeb.DataFieldControllerTest do
 
   alias DataDictionary.DataStructures.DataField
 
-  @create_attrs %{business_concept_id: 42, description: "some description", name: "some name", nullable: true, precision: 42, type: "some type", last_change_at: "2010-04-17 14:00:00.000000Z", last_change_by: 42}
-  @update_attrs %{business_concept_id: 43, description: "some updated description", name: "some updated name", nullable: false, precision: 43, type: "some updated type", last_change_at: "2010-04-17 14:00:00.000000Z", last_change_by: 42}
+  @create_attrs %{business_concept_id: "42", description: "some description", name: "some name", nullable: true, precision: 42, type: "some type", last_change_at: "2010-04-17 14:00:00.000000Z", last_change_by: 42}
+  @update_attrs %{business_concept_id: "43", description: "some updated description", name: "some updated name", nullable: false, precision: 43, type: "some updated type", last_change_at: "2010-04-17 14:00:00.000000Z", last_change_by: 42}
   @invalid_attrs %{business_concept_id: nil, description: nil, name: nil, nullable: nil, precision: nil, type: nil, last_change_at: nil, last_change_by: nil}
 
   setup %{conn: conn} do
@@ -42,7 +42,7 @@ defmodule DataDictionaryWeb.DataFieldControllerTest do
       assert json_response_data == %{
         "id" => id,
         "data_structure_id" => data_structure.id,
-        "business_concept_id" => 42,
+        "business_concept_id" => "42",
         "description" => "some description",
         "name" => "some name",
         "nullable" => true,
@@ -76,7 +76,7 @@ defmodule DataDictionaryWeb.DataFieldControllerTest do
 
       assert json_response_data == %{
         "id" => id,
-        "business_concept_id" => 43,
+        "business_concept_id" => "43",
         "description" => "some updated description",
         "name" => "some updated name",
         "nullable" => false,

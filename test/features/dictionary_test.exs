@@ -92,12 +92,26 @@ defmodule DataDictionary.DictionaryTest do
       assert_attrs(attrs, data_field)
   end
 
+  defwhen ~r/^"(?<user_name>[^"]+)" tries to load dictionary data with following information:$/,
+    %{user_name: user_name, table: fields},
+    state do
+
+      metadata = build_metadata({[], []}, fields)
+      data_structures = metadata |> elem(0) |> CSV.encode |> Enum.to_list |> Enum.join
+      data_fields     = metadata |> elem(1) |> CSV.encode |> Enum.to_list |> Enum.join
+
+      token = get_user_token(user_name)
+      {:ok, status_code} = metadata_upload(token, data_structures, data_fields)
+
+      {:ok, Map.merge(state, %{status_code: status_code, token_admin: get_user_token("app-admin")})}
+  end
+
   defp field_value_to_data_field(field_value) do
     field_value
     |> field_value_to_api_attrs(@fixed_data_field_values)
     |> Map.update("nullable", false, &(&1 == "YES"))
-    |> Map.update("precision", 0, &String.to_integer(&1))
-    |> Map.update("business_concept_id", nil, &(if &1 == "", do: nil, else: String.to_integer(&1)))
+    |> Map.update("precision", nil, &(if &1 == "", do: nil, else: String.to_integer(&1)))
+    |> Map.update("business_concept_id", nil, &(if &1 == "", do: nil, else: &1))
   end
 
   defp field_value_to_api_attrs(field_value, fixed_values) do
@@ -123,6 +137,27 @@ defmodule DataDictionary.DictionaryTest do
   defp assert_attrs(%{} = attrs, %{} = target) do
     Enum.each(attrs, fn {attr, value} -> assert_attr(attr, value, target) end)
   end
+
+  defp build_metadata(metadata, %{File: "Data Structure", Description: description, Group: group,
+                                  Structure_Name: name, System: system}) do
+    data_structures = elem(metadata, 0)
+    put_elem(metadata, 0, [[system, group, name, description]|data_structures])
+  end
+  defp build_metadata(metadata, %{File: "Field", Description: description, Group: group,
+                                  Structure_Name: name, System:  system, Field_Name: field_name,
+                                  Type: type, Precision: raw_precision, Nullable: raw_nullable,
+                                  Business_Concept_ID:  business_concept_id}) do
+    data_fields = elem(metadata, 1)
+    nullable = if raw_nullable == "YES", do: "1", else: "0"
+    precision = if raw_precision == "", do: "", else: String.to_integer(raw_precision)
+    put_elem(metadata, 1, [[system, group, name, field_name, type, description, nullable, precision, business_concept_id]|data_fields])
+  end
+  defp build_metadata(metadata, [head|tail]) do
+    metadata
+    |> build_metadata(head)
+    |> build_metadata(tail)
+  end
+  defp build_metadata(metadata, []), do: metadata
 
   defp data_structure_create(token, attrs) do
     headers = [@headers, {"authorization", "Bearer #{token}"}]
@@ -178,6 +213,21 @@ defmodule DataDictionary.DictionaryTest do
     %HTTPoison.Response{status_code: status_code, body: resp} =
       HTTPoison.get!(data_field_url(@endpoint, :index), headers, [])
     {:ok, status_code, resp |> JSON.decode!}
+  end
+
+  defp metadata_upload(token, data_structures, data_fields) do
+    headers = get_header(token)
+    form = {:multipart, [
+          {"file", data_structures, {"form-data", [{"name", "data_structures"}, {"filename", "data_structures.csv"}]},
+            [{"Content-Type", "text/csv"}]
+          },
+          {"file", data_fields, {"form-data", [{"name", "data_fields"}, {"filename", "data_fields.csv"}]},
+            [{"Content-Type", "text/csv"}]
+          },
+        ]}
+    %HTTPoison.Response{status_code: status_code, body: _resp}
+       = HTTPoison.post!(metadata_url(@endpoint, :upload), form, headers)
+    {:ok, status_code}
   end
 
 end

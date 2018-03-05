@@ -67,8 +67,8 @@ defmodule DataDictionary.DataStructuresTest do
   describe "data_fields" do
     alias DataDictionary.DataStructures.DataField
 
-    @valid_attrs %{business_concept_id: 42, description: "some description", last_change_at: "2010-04-17 14:00:00.000000Z", last_change_by: 42, name: "some name", nullable: true, precision: 42, type: "some type"}
-    @update_attrs %{business_concept_id: 43, description: "some updated description", last_change_at: "2011-05-18 15:01:01.000000Z", last_change_by: 43, name: "some updated name", nullable: false, precision: 43, type: "some updated type"}
+    @valid_attrs %{business_concept_id: "42", description: "some description", last_change_at: "2010-04-17 14:00:00.000000Z", last_change_by: 42, name: "some name", nullable: true, precision: 42, type: "some type"}
+    @update_attrs %{business_concept_id: "43", description: "some updated description", last_change_at: "2011-05-18 15:01:01.000000Z", last_change_by: 43, name: "some updated name", nullable: false, precision: 43, type: "some updated type"}
     @invalid_attrs %{business_concept_id: nil, description: nil, last_change_at: nil, last_change_by: nil, name: nil, nullable: nil, precision: nil, type: nil}
 
     test "list_data_fields/0 returns all data_fields" do
@@ -87,7 +87,7 @@ defmodule DataDictionary.DataStructuresTest do
       data_structure = insert(:data_structure)
       creation_attrs = Map.put(@valid_attrs, :data_structure_id, data_structure.id)
       assert {:ok, %DataField{} = data_field} = DataStructures.create_data_field(creation_attrs)
-      assert data_field.business_concept_id == 42
+      assert data_field.business_concept_id == "42"
       assert data_field.description == "some description"
       assert data_field.last_change_at == DateTime.from_naive!(~N[2010-04-17 14:00:00.000000Z], "Etc/UTC")
       assert data_field.last_change_by == 42
@@ -106,7 +106,7 @@ defmodule DataDictionary.DataStructuresTest do
       data_field = insert(:data_field, data_structure_id: data_structure.id)
       assert {:ok, data_field} = DataStructures.update_data_field(data_field, @update_attrs)
       assert %DataField{} = data_field
-      assert data_field.business_concept_id == 43
+      assert data_field.business_concept_id == "43"
       assert data_field.description == "some updated description"
       assert data_field.last_change_at == DateTime.from_naive!(~N[2011-05-18 15:01:01.000000Z], "Etc/UTC")
       assert data_field.last_change_by == 43
