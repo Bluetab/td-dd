@@ -1,15 +1,39 @@
 defmodule DataDictionaryWeb.DataStructureController do
   use DataDictionaryWeb, :controller
+  use PhoenixSwagger
+
   alias DataDictionary.Auth.Guardian.Plug, as: GuardianPlug
   alias DataDictionary.DataStructures
   alias DataDictionary.DataStructures.DataStructure
   alias DataDictionaryWeb.ErrorView
+  alias DataDictionaryWeb.SwaggerDefinitions
 
   action_fallback DataDictionaryWeb.FallbackController
+
+  def swagger_definitions do
+    SwaggerDefinitions.data_structure_swagger_definitions()
+  end
+
+  swagger_path :index do
+    get "/data_structures"
+    description "List Data Structures"
+    response 200, "OK", Schema.ref(:DataStructuresResponse)
+  end
 
   def index(conn, _params) do
     data_structures = DataStructures.list_data_structures()
     render(conn, "index.json", data_structures: data_structures)
+  end
+
+  swagger_path :create do
+    post "/data_structures"
+    description "Creates Data Structure"
+    produces "application/json"
+    parameters do
+      data_structure :body, Schema.ref(:DataStructureCreate), "Data Structure create attrs"
+    end
+    response 201, "OK", Schema.ref(:DataStructureResponse)
+    response 400, "Client Error"
   end
 
   def create(conn, %{"data_structure" => data_structure_params}) do
@@ -28,6 +52,17 @@ defmodule DataDictionaryWeb.DataStructureController do
         |> put_status(:unprocessable_entity)
         |> render(ErrorView, :"422.json")
     end
+  end
+
+  swagger_path :show do
+    get "/data_structures/{id}"
+    description "Show Data Structure"
+    produces "application/json"
+    parameters do
+      id :path, :integer, "Data Structure ID", required: true
+    end
+    response 200, "OK", Schema.ref(:DataStructureResponse)
+    response 400, "Client Error"
   end
 
   def show(conn, %{"id" => id}) do

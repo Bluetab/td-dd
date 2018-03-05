@@ -1,5 +1,6 @@
 defmodule DataDictionaryWeb.DataFieldController do
   use DataDictionaryWeb, :controller
+  use PhoenixSwagger
 
   alias DataDictionary.Auth.Guardian.Plug, as: GuardianPlug
   alias DataDictionary.DataStructures

@@ -1,5 +1,7 @@
 defmodule DataDictionaryWeb.DataStructureControllerTest do
   use DataDictionaryWeb.ConnCase
+  use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
+
   import DataDictionaryWeb.Authentication, only: :functions
 
   alias DataDictionary.DataStructures.DataStructure
@@ -25,17 +27,19 @@ defmodule DataDictionaryWeb.DataStructureControllerTest do
 
   describe "create data_structure" do
     @tag authenticated_user: @admin_user_name
-    test "renders data_structure when data is valid", %{conn: conn} do
+    test "renders data_structure when data is valid", %{conn: conn, swagger_schema: schema} do
       conn = post conn, data_structure_path(conn, :create), data_structure: @create_attrs
       assert %{"id" => id} = json_response(conn, 201)["data"]
+      validate_resp_schema(conn, schema, "DataStructureResponse")
 
-     conn = recycle_and_put_headers(conn)
+      conn = recycle_and_put_headers(conn)
 
       conn = get conn, data_structure_path(conn, :show, id)
       json_response_data = json_response(conn, 200)["data"]
       json_response_data = json_response_data
       |> Map.delete("last_change_by")
       |> Map.delete("last_change_at")
+      validate_resp_schema(conn, schema, "DataStructureResponse")
       assert  json_response_data == %{
         "id" => id,
         "description" => "some description",
@@ -55,7 +59,7 @@ defmodule DataDictionaryWeb.DataStructureControllerTest do
     setup [:create_data_structure]
 
     @tag authenticated_user: @admin_user_name
-    test "renders data_structure when data is valid", %{conn: conn, data_structure: %DataStructure{id: id} = data_structure} do
+    test "renders data_structure when data is valid", %{conn: conn, data_structure: %DataStructure{id: id} = data_structure, swagger_schema: schema} do
       conn = put conn, data_structure_path(conn, :update, data_structure), data_structure: @update_attrs
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
@@ -66,7 +70,7 @@ defmodule DataDictionaryWeb.DataStructureControllerTest do
       json_response_data = json_response_data
       |> Map.delete("last_change_by")
       |> Map.delete("last_change_at")
-
+      validate_resp_schema(conn, schema, "DataStructureResponse")
       assert json_response_data == %{
         "id" => id,
         "description" => "some updated description",
@@ -86,7 +90,7 @@ defmodule DataDictionaryWeb.DataStructureControllerTest do
     setup [:create_data_structure]
 
     @tag authenticated_user: @admin_user_name
-    test "deletes chosen data_structure", %{conn: conn, data_structure: data_structure} do
+    test "deletes chosen data_structure", %{conn: conn, data_structure: data_structure, swagger_schema: schema} do
       conn = delete conn, data_structure_path(conn, :delete, data_structure)
       assert response(conn, 204)
 
@@ -94,6 +98,7 @@ defmodule DataDictionaryWeb.DataStructureControllerTest do
 
       assert_error_sent 404, fn ->
         get conn, data_structure_path(conn, :show, data_structure)
+        validate_resp_schema(conn, schema, "DataStructureResponse")
       end
     end
   end

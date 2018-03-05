@@ -1,0 +1,216 @@
+{
+  "swagger": "2.0",
+  "securityDefinitions": {
+    "bearer": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header"
+    }
+  },
+  "security": [
+    {
+      "bearer": []
+    }
+  ],
+  "schemes": [
+    "http"
+  ],
+  "paths": {
+    "/data_structures/{id}": {
+      "get": {
+        "tags": [
+          "DataStructure"
+        ],
+        "summary": "",
+        "responses": {
+          "400": {
+            "description": "Client Error"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/DataStructureResponse"
+            },
+            "description": "OK"
+          }
+        },
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "type": "integer",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Data Structure ID"
+          }
+        ],
+        "operationId": "DataDictionaryWeb.DataStructureController.show",
+        "description": "Show Data Structure"
+      }
+    },
+    "/data_structures": {
+      "post": {
+        "tags": [
+          "DataStructure"
+        ],
+        "summary": "",
+        "responses": {
+          "400": {
+            "description": "Client Error"
+          },
+          "201": {
+            "schema": {
+              "$ref": "#/definitions/DataStructureResponse"
+            },
+            "description": "OK"
+          }
+        },
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/definitions/DataStructureCreate"
+            },
+            "required": false,
+            "name": "data_structure",
+            "in": "body",
+            "description": "Data Structure create attrs"
+          }
+        ],
+        "operationId": "DataDictionaryWeb.DataStructureController.create",
+        "description": "Creates Data Structure"
+      },
+      "get": {
+        "tags": [
+          "DataStructure"
+        ],
+        "summary": "",
+        "responses": {
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/DataStructuresResponse"
+            },
+            "description": "OK"
+          }
+        },
+        "parameters": [],
+        "operationId": "DataDictionaryWeb.DataStructureController.index",
+        "description": "List Data Structures"
+      }
+    }
+  },
+  "info": {
+    "version": "1.0",
+    "title": "DataDictionary"
+  },
+  "host": "localhost:4000",
+  "definitions": {
+    "DataStructuresResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/DataStructures"
+        }
+      }
+    },
+    "DataStructures": {
+      "type": "array",
+      "title": "Data Structures",
+      "items": {
+        "$ref": "#/definitions/DataStructure"
+      },
+      "description": "A collection of Data Structures"
+    },
+    "DataStructureResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/DataStructure"
+        }
+      }
+    },
+    "DataStructureCreate": {
+      "type": "object",
+      "properties": {
+        "data_structure": {
+          "type": "object",
+          "required": [
+            "name",
+            "group",
+            "system"
+          ],
+          "properties": {
+            "system": {
+              "type": "string",
+              "description": "Data Structure system"
+            },
+            "name": {
+              "type": "string",
+              "description": "Data Structure name"
+            },
+            "group": {
+              "type": "string",
+              "description": "Data Structure group"
+            },
+            "description": {
+              "type": "string",
+              "description": "Data Structure description"
+            }
+          }
+        }
+      }
+    },
+    "DataStructure": {
+      "type": "object",
+      "title": "Data Structure",
+      "required": [
+        "name",
+        "group",
+        "system",
+        "id"
+      ],
+      "properties": {
+        "system": {
+          "type": "string",
+          "description": "Data Structure system"
+        },
+        "name": {
+          "type": "string",
+          "description": "Data Structure name"
+        },
+        "last_change_by": {
+          "type": "integer",
+          "description": "Data Structure last updated by"
+        },
+        "last_change_at": {
+          "type": "string",
+          "description": "Data Structure last updated at"
+        },
+        "id": {
+          "type": "integer",
+          "description": "Data Structure unique identifier"
+        },
+        "group": {
+          "type": "string",
+          "description": "Data Structure group"
+        },
+        "description": {
+          "type": "string",
+          "description": "Data Structure description"
+        }
+      },
+      "example": {
+        "system": "Data Structure system",
+        "name": "Data Structure name",
+        "id": 123,
+        "group": "Data Structure group",
+        "description": "Data Structure description"
+      },
+      "description": "A Data Structure"
+    }
+  },
+  "basePath": "/api"
+}
