@@ -87,6 +87,17 @@ defmodule DataDictionaryWeb.DataStructureController do
     end
   end
 
+  swagger_path :delete do
+    delete "/data_structures/{id}"
+    description "Delete Data Structure"
+    produces "application/json"
+    parameters do
+      id :path, :integer, "Data Structure ID", required: true
+    end
+    response 204, "No Content"
+    response 400, "Client Error"
+  end
+
   def delete(conn, %{"id" => id}) do
     data_structure = DataStructures.get_data_structure!(id)
     with {:ok, %DataStructure{}} <- DataStructures.delete_data_structure(data_structure) do

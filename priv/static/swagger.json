@@ -47,6 +47,34 @@
         ],
         "operationId": "DataDictionaryWeb.DataStructureController.show",
         "description": "Show Data Structure"
+      },
+      "delete": {
+        "tags": [
+          "DataStructure"
+        ],
+        "summary": "",
+        "responses": {
+          "400": {
+            "description": "Client Error"
+          },
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "type": "integer",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Data Structure ID"
+          }
+        ],
+        "operationId": "DataDictionaryWeb.DataStructureController.delete",
+        "description": "Delete Data Structure"
       }
     },
     "/data_structures": {
@@ -132,6 +160,34 @@
         ],
         "operationId": "DataDictionaryWeb.DataFieldController.show",
         "description": "Show Data Field"
+      },
+      "delete": {
+        "tags": [
+          "DataField"
+        ],
+        "summary": "",
+        "responses": {
+          "400": {
+            "description": "Client Error"
+          },
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "type": "integer",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Data Field ID"
+          }
+        ],
+        "operationId": "DataDictionaryWeb.DataFieldController.delete",
+        "description": "Delete Data Field"
       }
     },
     "/data_fields": {

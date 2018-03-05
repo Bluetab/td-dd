@@ -87,6 +87,17 @@ defmodule DataDictionaryWeb.DataFieldController do
     end
   end
 
+  swagger_path :delete do
+    delete "/data_fields/{id}"
+    description "Delete Data Field"
+    produces "application/json"
+    parameters do
+      id :path, :integer, "Data Field ID", required: true
+    end
+    response 204, "No Content"
+    response 400, "Client Error"
+  end
+
   def delete(conn, %{"id" => id}) do
     data_field = DataStructures.get_data_field!(id)
     with {:ok, %DataField{}} <- DataStructures.delete_data_field(data_field) do
