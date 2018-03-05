@@ -1,5 +1,7 @@
 defmodule DataDictionaryWeb.DataFieldControllerTest do
   use DataDictionaryWeb.ConnCase
+  use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
+
   import DataDictionaryWeb.Authentication, only: :functions
 
   alias DataDictionary.DataStructures.DataField
@@ -24,11 +26,12 @@ defmodule DataDictionaryWeb.DataFieldControllerTest do
 
   describe "create data_field" do
     @tag authenticated_user: @admin_user_name
-    test "renders data_field when data is valid", %{conn: conn} do
+    test "renders data_field when data is valid", %{conn: conn, swagger_schema: schema} do
       data_structure = insert(:data_structure)
       creation_attrs = Map.put(@create_attrs, :data_structure_id, data_structure.id)
       conn = post conn, data_field_path(conn, :create), data_field: creation_attrs
       assert %{"id" => id} = json_response(conn, 201)["data"]
+      validate_resp_schema(conn, schema, "DataFieldResponse")
 
       conn = recycle_and_put_headers(conn)
 
@@ -39,6 +42,7 @@ defmodule DataDictionaryWeb.DataFieldControllerTest do
       |> Map.delete("last_change_at")
       |> Map.delete("last_change_at")
 
+      validate_resp_schema(conn, schema, "DataFieldResponse")
       assert json_response_data == %{
         "id" => id,
         "data_structure_id" => data_structure.id,
@@ -61,7 +65,7 @@ defmodule DataDictionaryWeb.DataFieldControllerTest do
     setup [:create_data_field]
 
     @tag authenticated_user: @admin_user_name
-    test "renders data_field when data is valid", %{conn: conn, data_field: %DataField{id: id} = data_field} do
+    test "renders data_field when data is valid", %{conn: conn, data_field: %DataField{id: id} = data_field, swagger_schema: schema} do
       conn = put conn, data_field_path(conn, :update, data_field), data_field: @update_attrs
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
@@ -74,6 +78,7 @@ defmodule DataDictionaryWeb.DataFieldControllerTest do
       |> Map.delete("last_change_at")
       |> Map.delete("data_structure_id")
 
+      validate_resp_schema(conn, schema, "DataFieldResponse")
       assert json_response_data == %{
         "id" => id,
         "business_concept_id" => "43",
@@ -95,7 +100,7 @@ defmodule DataDictionaryWeb.DataFieldControllerTest do
     setup [:create_data_field]
 
     @tag authenticated_user: @admin_user_name
-    test "deletes chosen data_field", %{conn: conn, data_field: data_field} do
+    test "deletes chosen data_field", %{conn: conn, data_field: data_field, swagger_schema: schema} do
       conn = delete conn, data_field_path(conn, :delete, data_field)
       assert response(conn, 204)
 
@@ -103,6 +108,7 @@ defmodule DataDictionaryWeb.DataFieldControllerTest do
 
       assert_error_sent 404, fn ->
         get conn, data_field_path(conn, :show, data_field)
+        validate_resp_schema(conn, schema, "DataFieldResponse")
       end
     end
   end

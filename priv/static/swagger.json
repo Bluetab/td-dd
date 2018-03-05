@@ -100,6 +100,91 @@
         "operationId": "DataDictionaryWeb.DataStructureController.index",
         "description": "List Data Structures"
       }
+    },
+    "/data_fields/{id}": {
+      "get": {
+        "tags": [
+          "DataField"
+        ],
+        "summary": "",
+        "responses": {
+          "400": {
+            "description": "Client Error"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/DataFieldResponse"
+            },
+            "description": "OK"
+          }
+        },
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "type": "integer",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Data Field ID"
+          }
+        ],
+        "operationId": "DataDictionaryWeb.DataFieldController.show",
+        "description": "Show Data Field"
+      }
+    },
+    "/data_fields": {
+      "post": {
+        "tags": [
+          "DataField"
+        ],
+        "summary": "",
+        "responses": {
+          "400": {
+            "description": "Client Error"
+          },
+          "201": {
+            "schema": {
+              "$ref": "#/definitions/DataFieldResponse"
+            },
+            "description": "OK"
+          }
+        },
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/definitions/DataFieldCreate"
+            },
+            "required": false,
+            "name": "data_field",
+            "in": "body",
+            "description": "Data Field create attrs"
+          }
+        ],
+        "operationId": "DataDictionaryWeb.DataFieldController.create",
+        "description": "Creates Data Fields"
+      },
+      "get": {
+        "tags": [
+          "DataField"
+        ],
+        "summary": "",
+        "responses": {
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/DataFieldsResponse"
+            },
+            "description": "OK"
+          }
+        },
+        "parameters": [],
+        "operationId": "DataDictionaryWeb.DataFieldController.index",
+        "description": "List Data Fields"
+      }
     }
   },
   "info": {
@@ -210,6 +295,136 @@
         "description": "Data Structure description"
       },
       "description": "A Data Structure"
+    },
+    "DataFieldsResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/DataFields"
+        }
+      }
+    },
+    "DataFields": {
+      "type": "array",
+      "title": "Data Fields",
+      "items": {
+        "$ref": "#/definitions/DataField"
+      },
+      "description": "A collection of Data Fields"
+    },
+    "DataFieldResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/DataField"
+        }
+      }
+    },
+    "DataFieldCreate": {
+      "type": "object",
+      "properties": {
+        "data_structure": {
+          "type": "object",
+          "required": [
+            "data_structure_id",
+            "name"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "description": "Data Field type"
+            },
+            "precision": {
+              "type": "integer",
+              "description": "Data Field precision"
+            },
+            "nullable": {
+              "type": "boolean",
+              "description": "Data Field... is nullable"
+            },
+            "name": {
+              "type": "string",
+              "description": "Data Field name"
+            },
+            "description": {
+              "type": "string",
+              "description": "Data Field descrition"
+            },
+            "data_structure_id": {
+              "type": "string",
+              "description": "Belongs to Data Structure"
+            },
+            "business_concept_id": {
+              "type": "string",
+              "description": "Asociated Business Concept Id"
+            }
+          }
+        }
+      }
+    },
+    "DataField": {
+      "type": "object",
+      "title": "Data Field",
+      "required": [
+        "data_structure_id",
+        "name",
+        "id"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Data Field type"
+        },
+        "precision": {
+          "type": "integer",
+          "description": "Data Field precision"
+        },
+        "nullable": {
+          "type": "boolean",
+          "description": "Data Field... is nullable"
+        },
+        "name": {
+          "type": "string",
+          "description": "Data Field name"
+        },
+        "last_change_by": {
+          "type": "integer",
+          "description": "Data Structure last updated by"
+        },
+        "last_change_at": {
+          "type": "string",
+          "description": "Data Structure last updated at"
+        },
+        "id": {
+          "type": "integer",
+          "description": "Data Field unique identifier"
+        },
+        "description": {
+          "type": "string",
+          "description": "Data Field descrition"
+        },
+        "data_structure_id": {
+          "type": "integer",
+          "description": "Belongs to Data Structure"
+        },
+        "business_concept_id": {
+          "type": "string",
+          "description": "Asociated Business Concept Id"
+        }
+      },
+      "example": {
+        "type": "Data Field type",
+        "precision": 12,
+        "nullable": true,
+        "name": "Data Field name",
+        "last_change_by": 1,
+        "last_change_at": "2010-04-17 14:00:00",
+        "id": 123,
+        "description": "Data Field descrition",
+        "data_structure_id": 11,
+        "business_concept_id": "123456"
+      },
+      "description": "A Data Structure Data Field"
     }
   },
   "basePath": "/api"

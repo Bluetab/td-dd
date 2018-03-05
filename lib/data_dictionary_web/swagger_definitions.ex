@@ -57,4 +57,68 @@ defmodule DataDictionaryWeb.SwaggerDefinitions do
     }
   end
 
+  def data_field_swagger_definitions do
+    %{
+      DataField: swagger_schema do
+        title "Data Field"
+        description "A Data Structure Data Field"
+        properties do
+          id :integer, "Data Field unique identifier", required: true
+          name :string, "Data Field name", required: true
+          type :string, "Data Field type"
+          precision :integer, "Data Field precision"
+          nullable :boolean, "Data Field... is nullable"
+          description :string, "Data Field descrition"
+          business_concept_id :string, "Asociated Business Concept Id"
+          data_structure_id :integer, "Belongs to Data Structure", required: true
+          last_change_by :integer, "Data Structure last updated by"
+          last_change_at :string, "Data Structure last updated at"
+      end
+        example %{
+          id: 123,
+          name: "Data Field name",
+          type: "Data Field type",
+          precision: 12,
+          nullable: true,
+          description: "Data Field descrition",
+          business_concept_id: "123456",
+          data_structure_id: 11,
+          last_change_by: 1,
+          last_change_at: "2010-04-17 14:00:00"
+        }
+      end,
+      DataFieldCreate: swagger_schema do
+        properties do
+          data_structure (Schema.new do
+            properties do
+              name :string, "Data Field name", required: true
+              type :string, "Data Field type"
+              precision :integer, "Data Field precision"
+              nullable :boolean, "Data Field... is nullable"
+              description :string, "Data Field descrition"
+              business_concept_id :string, "Asociated Business Concept Id"
+              data_structure_id :string, "Belongs to Data Structure", required: true
+            end
+          end)
+        end
+      end,
+      DataFields: swagger_schema do
+        title "Data Fields"
+        description "A collection of Data Fields"
+        type :array
+        items Schema.ref(:DataField)
+      end,
+      DataFieldResponse: swagger_schema do
+        properties do
+          data Schema.ref(:DataField)
+        end
+      end,
+      DataFieldsResponse: swagger_schema do
+        properties do
+          data Schema.ref(:DataFields)
+        end
+      end
+    }
+  end
+
 end
