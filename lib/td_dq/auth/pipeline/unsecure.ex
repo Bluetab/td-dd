@@ -1,9 +1,9 @@
-defmodule DataQuality.Auth.Pipeline.Unsecure do
+defmodule TdDQ.Auth.Pipeline.Unsecure do
   @moduledoc false
   use Guardian.Plug.Pipeline,
-    otp_app: :data_quality,
-    error_handler: DataQuality.Auth.ErrorHandler,
-    module: DataQuality.Auth.Guardian
+    otp_app: :td_dq,
+    error_handler: TdDQ.Auth.ErrorHandler,
+    module: TdDQ.Auth.Guardian
   # If there is a session token, validate it
   #plug Guardian.Plug.VerifySession, claims: %{"typ" => "access"}
   # If there is an authorization header, validate it

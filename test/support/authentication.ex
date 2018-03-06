@@ -1,10 +1,10 @@
-defmodule DataQualityWeb.Authentication do
+defmodule TdDQWeb.Authentication do
   @moduledoc """
   This module defines the functions required to
   add auth headers to requests
   """
   alias Phoenix.ConnTest
-  alias DataQuality.Auth.Guardian
+  alias TdDQ.Auth.Guardian
   import Plug.Conn
   @headers {"Content-type", "application/json"}
 

@@ -1,11 +1,11 @@
-defmodule DataQualityWeb.Gettext do
+defmodule TdDQWeb.Gettext do
   @moduledoc ~S"""
   A module providing Internationalization with a gettext-based API.
 
   By using [Gettext](https://hexdocs.pm/gettext),
   your module gains a set of macros for translations, for example:
 
-      import DataQualityWeb.Gettext
+      import TdDQWeb.Gettext
 
       # Simple translation
       gettext "Here is the string to translate"
@@ -20,5 +20,5 @@ defmodule DataQualityWeb.Gettext do
 
   See the [Gettext Docs](https://hexdocs.pm/gettext) for detailed usage.
   """
-  use Gettext, otp_app: :data_quality
+  use Gettext, otp_app: :td_dq
 end

@@ -1,7 +1,7 @@
-defmodule DataQuality.Application do
+defmodule TdDQ.Application do
   @moduledoc false
   use Application
-  alias DataQualityWeb.Endpoint
+  alias TdDQWeb.Endpoint
 
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
@@ -11,16 +11,16 @@ defmodule DataQuality.Application do
     # Define workers and child supervisors to be supervised
     children = [
       # Start the Ecto repository
-      supervisor(DataQuality.Repo, []),
+      supervisor(TdDQ.Repo, []),
       # Start the endpoint when the application starts
-      supervisor(DataQualityWeb.Endpoint, []),
-      # Start your own worker by calling: DataQuality.Worker.start_link(arg1, arg2, arg3)
-      # worker(DataQuality.Worker, [arg1, arg2, arg3]),
+      supervisor(TdDQWeb.Endpoint, []),
+      # Start your own worker by calling: TdDQ.Worker.start_link(arg1, arg2, arg3)
+      # worker(TdDQ.Worker, [arg1, arg2, arg3]),
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
-    opts = [strategy: :one_for_one, name: DataQuality.Supervisor]
+    opts = [strategy: :one_for_one, name: TdDQ.Supervisor]
     Supervisor.start_link(children, opts)
   end
 

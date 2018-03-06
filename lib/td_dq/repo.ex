@@ -1,5 +1,5 @@
-defmodule DataQuality.Repo do
-  use Ecto.Repo, otp_app: :data_quality
+defmodule TdDQ.Repo do
+  use Ecto.Repo, otp_app: :td_dq
 
   @doc """
   Dynamically loads the repository url from the

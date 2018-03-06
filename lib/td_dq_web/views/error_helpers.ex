@@ -1,4 +1,4 @@
-defmodule DataQualityWeb.ErrorHelpers do
+defmodule TdDQWeb.ErrorHelpers do
   @moduledoc """
   Conveniences for translating and building error messages.
   """
@@ -21,9 +21,9 @@ defmodule DataQualityWeb.ErrorHelpers do
     #     dgettext "errors", "is invalid"
     #
     if count = opts[:count] do
-      Gettext.dngettext(DataQualityWeb.Gettext, "errors", msg, msg, count, opts)
+      Gettext.dngettext(TdDQWeb.Gettext, "errors", msg, msg, count, opts)
     else
-      Gettext.dgettext(DataQualityWeb.Gettext, "errors", msg, opts)
+      Gettext.dgettext(TdDQWeb.Gettext, "errors", msg, opts)
     end
   end
 end

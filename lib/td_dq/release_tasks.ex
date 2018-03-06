@@ -1,7 +1,7 @@
-defmodule DataQuality.ReleaseTasks do
+defmodule TdDQ.ReleaseTasks do
   @moduledoc false
   alias Ecto.Migrator
-  alias DataQuality.Repo
+  alias TdDQ.Repo
 
   @start_apps [
       :postgrex,
@@ -9,7 +9,7 @@ defmodule DataQuality.ReleaseTasks do
     ]
 
     @myapps [
-      :data_quality
+      :td_dq
     ]
 
     @repos [
@@ -18,8 +18,8 @@ defmodule DataQuality.ReleaseTasks do
 
     def seed do
       #IO.puts "Loading trueBG.."
-      # Load the code for data_quality, but don't start it
-      :ok = Application.load(:data_quality)
+      # Load the code for td_dq, but don't start it
+      :ok = Application.load(:td_dq)
 
       #IO.puts "Starting dependencies.."
       # Start apps necessary for executing migrations
@@ -33,7 +33,7 @@ defmodule DataQuality.ReleaseTasks do
       Enum.each(@myapps, &run_migrations_for/1)
 
       # Run the seed script if it exists
-      seed_script = Path.join([priv_dir(:data_quality), "repo", "seeds.exs"])
+      seed_script = Path.join([priv_dir(:td_dq), "repo", "seeds.exs"])
       if File.exists?(seed_script) do
         IO.puts "Running seed script.."
         Code.eval_file(seed_script)
@@ -47,7 +47,7 @@ defmodule DataQuality.ReleaseTasks do
     def priv_dir(app), do: "#{:code.priv_dir(app)}"
 
     defp run_migrations_for(app) do
-      Migrator.run(DataQuality.Repo, migrations_path(app), :up, all: true)
+      Migrator.run(TdDQ.Repo, migrations_path(app), :up, all: true)
     end
 
     defp migrations_path(app), do: Path.join([priv_dir(app), "repo", "migrations"])

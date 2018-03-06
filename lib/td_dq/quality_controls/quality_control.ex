@@ -1,8 +1,8 @@
-defmodule DataQuality.QualityControls.QualityControl do
+defmodule TdDQ.QualityControls.QualityControl do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
-  alias DataQuality.QualityControls.QualityControl
+  alias TdDQ.QualityControls.QualityControl
 
   @statuses ["defined"]
 

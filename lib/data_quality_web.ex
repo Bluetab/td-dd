@@ -1,12 +1,12 @@
-defmodule DataQualityWeb do
+defmodule TdDQWeb do
   @moduledoc """
   The entrypoint for defining your web interface, such
   as controllers, views, channels and so on.
 
   This can be used in your application as:
 
-      use DataQualityWeb, :controller
-      use DataQualityWeb, :view
+      use TdDQWeb, :controller
+      use TdDQWeb, :view
 
   The definitions below will be executed for every view,
   controller, etc, so keep them short and clean, focused
@@ -19,24 +19,24 @@ defmodule DataQualityWeb do
 
   def controller do
     quote do
-      use Phoenix.Controller, namespace: DataQualityWeb
+      use Phoenix.Controller, namespace: TdDQWeb
       import Plug.Conn
-      import DataQualityWeb.Router.Helpers
-      import DataQualityWeb.Gettext
+      import TdDQWeb.Router.Helpers
+      import TdDQWeb.Gettext
     end
   end
 
   def view do
     quote do
-      use Phoenix.View, root: "lib/data_quality_web/templates",
-                        namespace: DataQualityWeb
+      use Phoenix.View, root: "lib/td_dq_web/templates",
+                        namespace: TdDQWeb
 
       # Import convenience functions from controllers
       import Phoenix.Controller, only: [get_flash: 2, view_module: 1]
 
-      import DataQualityWeb.Router.Helpers
-      import DataQualityWeb.ErrorHelpers
-      import DataQualityWeb.Gettext
+      import TdDQWeb.Router.Helpers
+      import TdDQWeb.ErrorHelpers
+      import TdDQWeb.Gettext
     end
   end
 
@@ -51,7 +51,7 @@ defmodule DataQualityWeb do
   def channel do
     quote do
       use Phoenix.Channel
-      import DataQualityWeb.Gettext
+      import TdDQWeb.Gettext
     end
   end
 

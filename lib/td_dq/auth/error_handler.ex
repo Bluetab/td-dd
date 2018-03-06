@@ -1,4 +1,4 @@
-defmodule DataQuality.Auth.ErrorHandler do
+defmodule TdDQ.Auth.ErrorHandler do
   @moduledoc false
   import Plug.Conn
 

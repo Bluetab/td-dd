@@ -6,26 +6,26 @@
 use Mix.Config
 
 # General application configuration
-config :data_quality,
-  ecto_repos: [DataQuality.Repo]
+config :td_dq,
+  ecto_repos: [TdDQ.Repo]
 
 # Configures the endpoint
-config :data_quality, DataQualityWeb.Endpoint,
+config :td_dq, TdDQWeb.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "/vMEDjTjLb9Re9GSKu6LYCE+qq7KuIvk2V65O1x4aMhStPltM87BMjeUw+zebVF3",
-  render_errors: [view: DataQualityWeb.ErrorView, accepts: ~w(json)],
-  pubsub: [name: DataQuality.PubSub,
+  render_errors: [view: TdDQWeb.ErrorView, accepts: ~w(json)],
+  pubsub: [name: TdDQ.PubSub,
            adapter: Phoenix.PubSub.PG2]
 
   # Configures Auth module Guardian
-config :data_quality, DataQuality.Auth.Guardian,
+config :td_dq, TdDQ.Auth.Guardian,
        allowed_algos: ["HS512"], # optional
        issuer: "tdauth",
        ttl: { 1, :hours },
        secret_key: "SuperSecretTruedat"
 
 # Hashing algorithm
-config :data_quality, hashing_module: Comeonin.Bcrypt
+config :td_dq, hashing_module: Comeonin.Bcrypt
 
 # Configures Elixir's Logger
 config :logger, :console,

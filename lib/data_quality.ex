@@ -1,6 +1,6 @@
-defmodule DataQuality do
+defmodule TdDQ do
   @moduledoc """
-  DataQuality keeps the contexts that define your domain
+  TdDQ keeps the contexts that define your domain
   and business logic.
 
   Contexts are also responsible for managing your data, regardless

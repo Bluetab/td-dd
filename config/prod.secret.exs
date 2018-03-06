@@ -8,19 +8,19 @@ use Mix.Config
 # file or create a script for recreating it, since it's
 # kept out of version control and might be hard to recover
 # or recreate for your teammates (or yourself later on).
-config :data_quality, DataQualityWeb.Endpoint,
+config :td_dq, TdDQWeb.Endpoint,
   secret_key_base: "PSTusjy0cud3K8KQ+8nCnGwLa8H5DwnvP2dtCO3TMx3mvKImONOnSGW9AeDDtD8E"
 
 # Configure your database
-config :data_quality, DataQuality.Repo,
+config :td_dq, TdDQ.Repo,
   adapter: Ecto.Adapters.Postgres,
   username: "postgres",
   password: "postgres",
-  database: "data_quality_prod",
+  database: "td_dq_prod",
   hostname: "localhost",
   pool_size: 15
 
-config :data_quality, DataQuality.Auth.Guardian,
+config :td_dq, TdDQ.Auth.Guardian,
   allowed_algos: ["HS512"], # optional
   issuer: "tdauth",
   ttl: { 1, :hours },

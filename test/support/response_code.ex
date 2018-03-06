@@ -1,4 +1,4 @@
-defmodule DataQualityWeb.ResponseCode do
+defmodule TdDQWeb.ResponseCode do
   @moduledoc false
 
   @ok "Ok"

@@ -1,3 +1,3 @@
 #!/bin/sh
 
-bin/data_quality command Elixir.DataQuality.ReleaseTasks seed
+bin/td_dq command Elixir.TdDQ.ReleaseTasks seed

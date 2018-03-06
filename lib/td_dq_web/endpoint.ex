@@ -1,14 +1,14 @@
-defmodule DataQualityWeb.Endpoint do
-  use Phoenix.Endpoint, otp_app: :data_quality
+defmodule TdDQWeb.Endpoint do
+  use Phoenix.Endpoint, otp_app: :td_dq
 
-  socket "/socket", DataQualityWeb.UserSocket
+  socket "/socket", TdDQWeb.UserSocket
 
   # Serve at "/" the static files from "priv/static" directory.
   #
   # You should set gzip to true if you are running phoenix.digest
   # when deploying your static files in production.
   plug Plug.Static,
-    at: "/", from: :data_quality, gzip: false,
+    at: "/", from: :td_dq, gzip: false,
     only: ~w(css fonts images js favicon.ico robots.txt)
 
   # Code reloading can be explicitly enabled under the
@@ -33,10 +33,10 @@ defmodule DataQualityWeb.Endpoint do
   # Set :encryption_salt if you would also like to encrypt it.
   plug Plug.Session,
     store: :cookie,
-    key: "_data_quality_key",
+    key: "_td_dq_key",
     signing_salt: "gZdYZ4N6"
 
-  plug DataQualityWeb.Router
+  plug TdDQWeb.Router
 
   @doc """
   Callback invoked for dynamically configuring the endpoint.

@@ -1,4 +1,4 @@
-defmodule DataQualityWeb.SwaggerDefinitions do
+defmodule TdDQWeb.SwaggerDefinitions do
   @moduledoc """
    Swagger definitions used by controllers
   """

@@ -1,5 +1,5 @@
-defmodule DataQualityWeb.ErrorView do
-  use DataQualityWeb, :view
+defmodule TdDQWeb.ErrorView do
+  use TdDQWeb, :view
 
   def render("401.json", _assigns) do
     %{errors: %{detail: "Invalid credentials"}}

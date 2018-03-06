@@ -1,4 +1,4 @@
-defmodule DataQuality.Auth.Plug.CurrentUser do
+defmodule TdDQ.Auth.Plug.CurrentUser do
   @moduledoc false
 
   alias Guardian.Plug, as: GuardianPlug

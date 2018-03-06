@@ -1,12 +1,12 @@
-defmodule DataQualityWeb.QualityControlController do
-  use DataQualityWeb, :controller
+defmodule TdDQWeb.QualityControlController do
+  use TdDQWeb, :controller
   use PhoenixSwagger
 
-  alias DataQuality.QualityControls
-  alias DataQuality.QualityControls.QualityControl
-  alias DataQualityWeb.SwaggerDefinitions
+  alias TdDQ.QualityControls
+  alias TdDQ.QualityControls.QualityControl
+  alias TdDQWeb.SwaggerDefinitions
 
-  action_fallback DataQualityWeb.FallbackController
+  action_fallback TdDQWeb.FallbackController
 
   def swagger_definitions do
     SwaggerDefinitions.quality_control_definitions()

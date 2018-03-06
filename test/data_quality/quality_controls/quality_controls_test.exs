@@ -1,10 +1,10 @@
-defmodule DataQuality.QualityControlsTest do
-  use DataQuality.DataCase
+defmodule TdDQ.QualityControlsTest do
+  use TdDQ.DataCase
 
-  alias DataQuality.QualityControls
+  alias TdDQ.QualityControls
 
   describe "quality_controls" do
-    alias DataQuality.QualityControls.QualityControl
+    alias TdDQ.QualityControls.QualityControl
 
     @valid_attrs %{updated_by: "app-admin", business_concept_id: "some business_concept_id",
       description: "some description", goal: 42, minimum: 42, name: "some name",

@@ -1,6 +1,6 @@
-defmodule DataQuality.Auth.Guardian do
+defmodule TdDQ.Auth.Guardian do
   @moduledoc false
-  use Guardian, otp_app: :data_quality
+  use Guardian, otp_app: :td_dq
 
   def subject_for_token(resource, _claims) do
     # You can use any value for the subject of your token but

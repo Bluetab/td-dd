@@ -1,2 +1,2 @@
 set -e
-bin/data_quality migrate
+bin/td_dq migrate
