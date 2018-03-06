@@ -1,4 +1,4 @@
-defmodule DataDictionaryWeb.ResponseCode do
+defmodule TdDDWeb.ResponseCode do
   @moduledoc false
 
   @ok "Ok"

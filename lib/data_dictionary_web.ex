@@ -1,12 +1,12 @@
-defmodule DataDictionaryWeb do
+defmodule TdDDWeb do
   @moduledoc """
   The entrypoint for defining your web interface, such
   as controllers, views, channels and so on.
 
   This can be used in your application as:
 
-      use DataDictionaryWeb, :controller
-      use DataDictionaryWeb, :view
+      use TdDDWeb, :controller
+      use TdDDWeb, :view
 
   The definitions below will be executed for every view,
   controller, etc, so keep them short and clean, focused
@@ -19,24 +19,24 @@ defmodule DataDictionaryWeb do
 
   def controller do
     quote do
-      use Phoenix.Controller, namespace: DataDictionaryWeb
+      use Phoenix.Controller, namespace: TdDDWeb
       import Plug.Conn
-      import DataDictionaryWeb.Router.Helpers
-      import DataDictionaryWeb.Gettext
+      import TdDDWeb.Router.Helpers
+      import TdDDWeb.Gettext
     end
   end
 
   def view do
     quote do
-      use Phoenix.View, root: "lib/data_dictionary_web/templates",
-                        namespace: DataDictionaryWeb
+      use Phoenix.View, root: "lib/td_dd_web/templates",
+                        namespace: TdDDWeb
 
       # Import convenience functions from controllers
       import Phoenix.Controller, only: [get_flash: 2, view_module: 1]
 
-      import DataDictionaryWeb.Router.Helpers
-      import DataDictionaryWeb.ErrorHelpers
-      import DataDictionaryWeb.Gettext
+      import TdDDWeb.Router.Helpers
+      import TdDDWeb.ErrorHelpers
+      import TdDDWeb.Gettext
     end
   end
 
@@ -51,7 +51,7 @@ defmodule DataDictionaryWeb do
   def channel do
     quote do
       use Phoenix.Channel
-      import DataDictionaryWeb.Gettext
+      import TdDDWeb.Gettext
     end
   end
 

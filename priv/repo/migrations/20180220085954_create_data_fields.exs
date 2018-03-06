@@ -1,4 +1,4 @@
-defmodule DataDictionary.Repo.Migrations.CreateDataFields do
+defmodule TdDD.Repo.Migrations.CreateDataFields do
   use Ecto.Migration
 
   def change do

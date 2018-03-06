@@ -1,2 +1,2 @@
 set -e
-bin/data_dictionary migrate
+bin/td_dd migrate

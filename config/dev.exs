@@ -6,8 +6,8 @@ use Mix.Config
 # The watchers configuration can be used to run external
 # watchers to your application. For example, we use it
 # with brunch.io to recompile .js and .css sources.
-config :data_dictionary, DataDictionaryWeb.Endpoint,
-  http: [port: 8005],
+config :td_dd, TdDDWeb.Endpoint,
+  http: [port: 4005],
   debug_errors: true,
   code_reloader: true,
   check_origin: false,
@@ -37,11 +37,11 @@ config :logger, :console, format: "[$level] $message\n"
 config :phoenix, :stacktrace_depth, 20
 
 # Configure your database
-config :data_dictionary, DataDictionary.Repo,
+config :td_dd, TdDD.Repo,
   adapter: Ecto.Adapters.Postgres,
   username: "postgres",
   password: "postgres",
-  database: "data_dictionary_dev",
+  database: "td_dd_dev",
   hostname: "localhost",
   pool_size: 10,
   timeout: 60_000 # Increased for metadata upload. 1000 data structures, 50 data fields

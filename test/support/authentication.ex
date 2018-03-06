@@ -1,11 +1,11 @@
-defmodule DataDictionaryWeb.Authentication do
+defmodule TdDDWeb.Authentication do
   @moduledoc """
   This module defines the functions required to
   add auth headers to requests
   """
   alias Phoenix.ConnTest
-  alias DataDictionary.Auth.Guardian
-  alias DataDictionary.Accounts.User
+  alias TdDD.Auth.Guardian
+  alias TdDD.Accounts.User
   import Plug.Conn
   @headers {"Content-type", "application/json"}
 
@@ -36,7 +36,7 @@ defmodule DataDictionaryWeb.Authentication do
   def create_user(user_name, opts \\ []) do
     id = Integer.mod(:binary.decode_unsigned(user_name), 100_000)
     is_admin = Keyword.get(opts, :is_admin, false)
-    %DataDictionary.Accounts.User{id: id, is_admin: is_admin, user_name: user_name}
+    %TdDD.Accounts.User{id: id, is_admin: is_admin, user_name: user_name}
   end
 
   def build_user_token(%User{} = user) do

@@ -1,6 +1,6 @@
-defmodule DataDictionary do
+defmodule TdDD do
   @moduledoc """
-  DataDictionary keeps the contexts that define your domain
+  TdDD keeps the contexts that define your domain
   and business logic.
 
   Contexts are also responsible for managing your data, regardless

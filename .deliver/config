@@ -1,10 +1,10 @@
 # .deliver/config
 
-APP="data_dictionary"
+APP="td_dd"
 
 BUILD_HOST="127.0.0.1"
 BUILD_USER="$USER"
-BUILD_AT="/tmp/edeliver/data_dictionary/builds"
+BUILD_AT="/tmp/edeliver/td_dd/builds"
 
 PRODUCTION_HOSTS="52.214.3.82"
 PRODUCTION_USER="ec2-user"
@@ -12,7 +12,7 @@ DELIVER_TO="/home/ec2-user"
 
 # For *Phoenix* projects, symlink prod.secret.exs to our tmp source
 pre_erlang_get_and_update_deps() {
-  local _prod_secret_path="/home/deliver/datadictionary.prod.secret.exs"
+  local _prod_secret_path="/home/deliver/td_dd.prod.secret.exs"
   if [ "$TARGET_MIX_ENV" = "prod" ]; then
     __sync_remote "
       ln -sfn '$_prod_secret_path' '$BUILD_AT/config/prod.secret.exs'

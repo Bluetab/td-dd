@@ -1,4 +1,4 @@
-defmodule DataDictionaryWeb.ChannelCase do
+defmodule TdDDWeb.ChannelCase do
   @moduledoc """
   This module defines the test case to be used by
   channel tests.
@@ -23,14 +23,14 @@ defmodule DataDictionaryWeb.ChannelCase do
       use Phoenix.ChannelTest
 
       # The default endpoint for testing
-      @endpoint DataDictionaryWeb.Endpoint
+      @endpoint TdDDWeb.Endpoint
     end
   end
 
   setup tags do
-    :ok = Sandbox.checkout(DataDictionary.Repo)
+    :ok = Sandbox.checkout(TdDD.Repo)
     unless tags[:async] do
-      Sandbox.mode(DataDictionary.Repo, {:shared, self()})
+      Sandbox.mode(TdDD.Repo, {:shared, self()})
     end
     :ok
   end

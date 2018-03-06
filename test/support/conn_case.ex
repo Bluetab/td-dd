@@ -1,4 +1,4 @@
-defmodule DataDictionaryWeb.ConnCase do
+defmodule TdDDWeb.ConnCase do
   @moduledoc """
   This module defines the test case to be used by
   tests that require setting up a connection.
@@ -15,11 +15,11 @@ defmodule DataDictionaryWeb.ConnCase do
 
   use ExUnit.CaseTemplate
 
-  alias DataDictionaryWeb.Router.Helpers
+  alias TdDDWeb.Router.Helpers
   alias Phoenix.ConnTest
-  alias DataDictionaryWeb.Endpoint
+  alias TdDDWeb.Endpoint
   alias Ecto.Adapters.SQL.Sandbox
-  import DataDictionaryWeb.Authentication, only: :functions
+  import TdDDWeb.Authentication, only: :functions
 
   using do
     quote do
@@ -27,7 +27,7 @@ defmodule DataDictionaryWeb.ConnCase do
       use ConnTest
       import Helpers
 
-      import DataDictionary.Factory
+      import TdDD.Factory
 
       # The default endpoint for testing
       @endpoint Endpoint
@@ -37,9 +37,9 @@ defmodule DataDictionaryWeb.ConnCase do
   @admin_user_name "app-admin"
 
   setup tags do
-    :ok = Sandbox.checkout(DataDictionary.Repo)
+    :ok = Sandbox.checkout(TdDD.Repo)
     unless tags[:async] do
-      Sandbox.mode(DataDictionary.Repo, {:shared, self()})
+      Sandbox.mode(TdDD.Repo, {:shared, self()})
     end
 
     cond do

@@ -1,4 +1,4 @@
-defmodule DataDictionary.Repo.Migrations.AddDataStructureUniqueIndex do
+defmodule TdDD.Repo.Migrations.AddDataStructureUniqueIndex do
   use Ecto.Migration
 
   def change do

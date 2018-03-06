@@ -45,7 +45,7 @@
             "description": "Data Structure ID"
           }
         ],
-        "operationId": "DataDictionaryWeb.DataStructureController.show",
+        "operationId": "TdDDWeb.DataStructureController.show",
         "description": "Show Data Structure"
       },
       "delete": {
@@ -73,7 +73,7 @@
             "description": "Data Structure ID"
           }
         ],
-        "operationId": "DataDictionaryWeb.DataStructureController.delete",
+        "operationId": "TdDDWeb.DataStructureController.delete",
         "description": "Delete Data Structure"
       }
     },
@@ -108,7 +108,7 @@
             "description": "Data Structure create attrs"
           }
         ],
-        "operationId": "DataDictionaryWeb.DataStructureController.create",
+        "operationId": "TdDDWeb.DataStructureController.create",
         "description": "Creates Data Structure"
       },
       "get": {
@@ -125,7 +125,7 @@
           }
         },
         "parameters": [],
-        "operationId": "DataDictionaryWeb.DataStructureController.index",
+        "operationId": "TdDDWeb.DataStructureController.index",
         "description": "List Data Structures"
       }
     },
@@ -158,7 +158,7 @@
             "description": "Data Field ID"
           }
         ],
-        "operationId": "DataDictionaryWeb.DataFieldController.show",
+        "operationId": "TdDDWeb.DataFieldController.show",
         "description": "Show Data Field"
       },
       "delete": {
@@ -186,7 +186,7 @@
             "description": "Data Field ID"
           }
         ],
-        "operationId": "DataDictionaryWeb.DataFieldController.delete",
+        "operationId": "TdDDWeb.DataFieldController.delete",
         "description": "Delete Data Field"
       }
     },
@@ -221,7 +221,7 @@
             "description": "Data Field create attrs"
           }
         ],
-        "operationId": "DataDictionaryWeb.DataFieldController.create",
+        "operationId": "TdDDWeb.DataFieldController.create",
         "description": "Creates Data Fields"
       },
       "get": {
@@ -238,14 +238,14 @@
           }
         },
         "parameters": [],
-        "operationId": "DataDictionaryWeb.DataFieldController.index",
+        "operationId": "TdDDWeb.DataFieldController.index",
         "description": "List Data Fields"
       }
     }
   },
   "info": {
     "version": "1.0",
-    "title": "DataDictionary"
+    "title": "TdDD"
   },
   "host": "localhost:4000",
   "definitions": {

@@ -1,3 +1,3 @@
 #!/bin/sh
 
-bin/data_dictionary command Elixir.DataDictionary.ReleaseTasks seed
+bin/td_dd command Elixir.TdDD.ReleaseTasks seed

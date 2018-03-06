@@ -1,10 +1,9 @@
-defmodule DataDictionaryWeb.DataStructureControllerTest do
-  use DataDictionaryWeb.ConnCase
+defmodule TdDDWeb.DataStructureControllerTest do
+  use TdDDWeb.ConnCase
+  import TdDDWeb.Authentication, only: :functions
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  import DataDictionaryWeb.Authentication, only: :functions
-
-  alias DataDictionary.DataStructures.DataStructure
+  alias TdDD.DataStructures.DataStructure
 
   @create_attrs %{description: "some description", group: "some group", last_change_at: "2010-04-17 14:00:00.000000Z", last_change_by: 42, name: "some name", system: "some system"}
   @update_attrs %{description: "some updated description", group: "some updated group", last_change_at: "2011-05-18 15:01:01.000000Z", last_change_by: 43, name: "some updated name", system: "some updated system"}

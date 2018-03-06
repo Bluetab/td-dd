@@ -1,10 +1,10 @@
-defmodule DataDictionary.DataStructuresTest do
-  use DataDictionary.DataCase
+defmodule TdDD.DataStructuresTest do
+  use TdDD.DataCase
 
-  alias DataDictionary.DataStructures
+  alias TdDD.DataStructures
 
   describe "data_structures" do
-    alias DataDictionary.DataStructures.DataStructure
+    alias TdDD.DataStructures.DataStructure
 
     @valid_attrs %{description: "some description", group: "some group", last_change_at: "2010-04-17 14:00:00.000000Z", last_change_by: 42, name: "some name", system: "some system"}
     @update_attrs %{description: "some updated description", group: "some updated group", last_change_at: "2011-05-18 15:01:01.000000Z", last_change_by: 43, name: "some updated name", system: "some updated system"}
@@ -65,7 +65,7 @@ defmodule DataDictionary.DataStructuresTest do
   end
 
   describe "data_fields" do
-    alias DataDictionary.DataStructures.DataField
+    alias TdDD.DataStructures.DataField
 
     @valid_attrs %{business_concept_id: "42", description: "some description", last_change_at: "2010-04-17 14:00:00.000000Z", last_change_by: 42, name: "some name", nullable: true, precision: 42, type: "some type"}
     @update_attrs %{business_concept_id: "43", description: "some updated description", last_change_at: "2011-05-18 15:01:01.000000Z", last_change_by: 43, name: "some updated name", nullable: false, precision: 43, type: "some updated type"}
