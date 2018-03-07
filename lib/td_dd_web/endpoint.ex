@@ -1,7 +1,7 @@
-defmodule TdDDWeb.Endpoint do
+defmodule TdDdWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :td_dd
 
-  socket "/socket", TdDDWeb.UserSocket
+  socket "/socket", TdDdWeb.UserSocket
 
   # Serve at "/" the static files from "priv/static" directory.
   #
@@ -40,7 +40,7 @@ defmodule TdDDWeb.Endpoint do
 
   plug CORSPlug, origin: ["*"]
 
-  plug TdDDWeb.Router
+  plug TdDdWeb.Router
 
   @doc """
   Callback invoked for dynamically configuring the endpoint.

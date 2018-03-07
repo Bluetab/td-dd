@@ -1,4 +1,4 @@
-defmodule TdDD.Auth.Canary do
+defmodule TdDd.Auth.Canary do
   @moduledoc false
   import Plug.Conn
 

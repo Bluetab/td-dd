@@ -2,7 +2,7 @@ use Mix.Config
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
-config :td_dd, TdDDWeb.Endpoint,
+config :td_dd, TdDdWeb.Endpoint,
   http: [port: 3005],
   server: true
 
@@ -14,7 +14,7 @@ config :td_dd, hashing_module: TrueBG.DummyHashing
 config :logger, level: :warn
 
 # Configure your database
-config :td_dd, TdDD.Repo,
+config :td_dd, TdDd.Repo,
   adapter: Ecto.Adapters.Postgres,
   username: "postgres",
   password: "postgres",

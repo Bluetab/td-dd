@@ -1,7 +1,7 @@
-defmodule TdDD.Auth.Guardian do
+defmodule TdDd.Auth.Guardian do
   @moduledoc false
   use Guardian, otp_app: :td_dd
-  alias TdDD.Accounts.User
+  alias TdDd.Accounts.User
 
   def subject_for_token(resource, _claims) do
     # You can use any value for the subject of your token but

@@ -1,4 +1,4 @@
-defmodule TdDD.Repo.Migrations.CreateDataStructures do
+defmodule TdDd.Repo.Migrations.CreateDataStructures do
   use Ecto.Migration
 
   def change do

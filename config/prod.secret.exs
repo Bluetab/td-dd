@@ -8,11 +8,11 @@ use Mix.Config
 # file or create a script for recreating it, since it's
 # kept out of version control and might be hard to recover
 # or recreate for your teammates (or yourself later on).
-config :td_dd, TdDDWeb.Endpoint,
+config :td_dd, TdDdWeb.Endpoint,
   secret_key_base: "IY86+jKFXM/Ql/FhGrAgf5HIa2xBPsP1sVKX5Ip2Y4JIS73qMIb+qUBHhczIjxWB"
 
 # Configure your database
-config :td_dd, TdDD.Repo,
+config :td_dd, TdDd.Repo,
   adapter: Ecto.Adapters.Postgres,
   username: "postgres",
   password: "postgres",
@@ -20,7 +20,7 @@ config :td_dd, TdDD.Repo,
   hostname: "localhost",
   pool_size: 10
 
-config :data_quality, TdDD.Auth.Guardian,
+config :data_quality, TdDd.Auth.Guardian,
   allowed_algos: ["HS512"], # optional
   issuer: "tdauth",
   ttl: { 1, :hours },

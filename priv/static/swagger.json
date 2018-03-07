@@ -45,7 +45,7 @@
             "description": "Data Structure ID"
           }
         ],
-        "operationId": "TdDDWeb.DataStructureController.show",
+        "operationId": "TdDdWeb.DataStructureController.show",
         "description": "Show Data Structure"
       },
       "delete": {
@@ -73,7 +73,7 @@
             "description": "Data Structure ID"
           }
         ],
-        "operationId": "TdDDWeb.DataStructureController.delete",
+        "operationId": "TdDdWeb.DataStructureController.delete",
         "description": "Delete Data Structure"
       }
     },
@@ -108,7 +108,7 @@
             "description": "Data Structure create attrs"
           }
         ],
-        "operationId": "TdDDWeb.DataStructureController.create",
+        "operationId": "TdDdWeb.DataStructureController.create",
         "description": "Creates Data Structure"
       },
       "get": {
@@ -125,7 +125,7 @@
           }
         },
         "parameters": [],
-        "operationId": "TdDDWeb.DataStructureController.index",
+        "operationId": "TdDdWeb.DataStructureController.index",
         "description": "List Data Structures"
       }
     },
@@ -158,7 +158,7 @@
             "description": "Data Field ID"
           }
         ],
-        "operationId": "TdDDWeb.DataFieldController.show",
+        "operationId": "TdDdWeb.DataFieldController.show",
         "description": "Show Data Field"
       },
       "delete": {
@@ -186,7 +186,7 @@
             "description": "Data Field ID"
           }
         ],
-        "operationId": "TdDDWeb.DataFieldController.delete",
+        "operationId": "TdDdWeb.DataFieldController.delete",
         "description": "Delete Data Field"
       }
     },
@@ -221,7 +221,7 @@
             "description": "Data Field create attrs"
           }
         ],
-        "operationId": "TdDDWeb.DataFieldController.create",
+        "operationId": "TdDdWeb.DataFieldController.create",
         "description": "Creates Data Fields"
       },
       "get": {
@@ -238,14 +238,14 @@
           }
         },
         "parameters": [],
-        "operationId": "TdDDWeb.DataFieldController.index",
+        "operationId": "TdDdWeb.DataFieldController.index",
         "description": "List Data Fields"
       }
     }
   },
   "info": {
     "version": "1.0",
-    "title": "TdDD"
+    "title": "TdDd"
   },
   "host": "localhost:4000",
   "definitions": {

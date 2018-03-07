@@ -1,9 +1,9 @@
-defmodule TdDDWeb.DataFieldControllerTest do
-  use TdDDWeb.ConnCase
-  import TdDDWeb.Authentication, only: :functions
+defmodule TdDdWeb.DataFieldControllerTest do
+  use TdDdWeb.ConnCase
+  import TdDdWeb.Authentication, only: :functions
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  alias TdDD.DataStructures.DataField
+  alias TdDd.DataStructures.DataField
 
   @create_attrs %{business_concept_id: "42", description: "some description", name: "some name", nullable: true, precision: 42, type: "some type", last_change_at: "2010-04-17 14:00:00.000000Z", last_change_by: 42}
   @update_attrs %{business_concept_id: "43", description: "some updated description", name: "some updated name", nullable: false, precision: 43, type: "some updated type", last_change_at: "2010-04-17 14:00:00.000000Z", last_change_by: 42}

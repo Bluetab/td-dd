@@ -1,8 +1,8 @@
-defmodule TdDD.DataStructures.DataField do
+defmodule TdDd.DataStructures.DataField do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
-  alias TdDD.DataStructures.DataField
+  alias TdDd.DataStructures.DataField
 
   schema "data_fields" do
     field :business_concept_id, :string, default: nil

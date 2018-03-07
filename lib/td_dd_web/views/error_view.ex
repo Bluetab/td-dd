@@ -1,5 +1,5 @@
-defmodule TdDDWeb.ErrorView do
-  use TdDDWeb, :view
+defmodule TdDdWeb.ErrorView do
+  use TdDdWeb, :view
 
   def render("401.json", _assigns) do
     %{errors: %{detail: "Invalid credentials"}}

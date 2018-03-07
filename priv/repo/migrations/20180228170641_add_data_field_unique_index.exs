@@ -1,4 +1,4 @@
-defmodule TdDD.Repo.Migrations.AddDataFieldUniqueIndex do
+defmodule TdDd.Repo.Migrations.AddDataFieldUniqueIndex do
   use Ecto.Migration
 
   def change do

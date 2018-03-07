@@ -1,8 +1,8 @@
-defmodule TdDD.DataStructures.DataStructure do
+defmodule TdDd.DataStructures.DataStructure do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
-  alias TdDD.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructure
 
   schema "data_structures" do
     field :description, :string

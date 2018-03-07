@@ -1,11 +1,11 @@
-defmodule TdDDWeb.DataStructureController do
-  use TdDDWeb, :controller
-  alias TdDD.Auth.Guardian.Plug, as: GuardianPlug
-  alias TdDD.DataStructures
-  alias TdDD.DataStructures.DataStructure
-  alias TdDDWeb.ErrorView
+defmodule TdDdWeb.DataStructureController do
+  use TdDdWeb, :controller
+  alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
+  alias TdDd.DataStructures
+  alias TdDd.DataStructures.DataStructure
+  alias TdDdWeb.ErrorView
 
-  action_fallback TdDDWeb.FallbackController
+  action_fallback TdDdWeb.FallbackController
 
   def index(conn, _params) do
     data_structures = DataStructures.list_data_structures()

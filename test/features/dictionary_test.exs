@@ -1,14 +1,14 @@
-defmodule TdDD.DictionaryTest do
+defmodule TdDd.DictionaryTest do
   use Cabbage.Feature, async: false, file: "dictionary.feature"
-  use TdDDWeb.ConnCase
+  use TdDdWeb.ConnCase
 
-  import TdDDWeb.Router.Helpers
-  import TdDDWeb.ResponseCode
-  import TdDDWeb.Authentication, only: :functions
+  import TdDdWeb.Router.Helpers
+  import TdDdWeb.ResponseCode
+  import TdDdWeb.Authentication, only: :functions
 
   alias Poison, as: JSON
 
-  @endpoint TdDDWeb.Endpoint
+  @endpoint TdDdWeb.Endpoint
   @headers {"Content-type", "application/json"}
   @fixed_data_structure_values %{"System" => "system",
                                  "Group" => "group",

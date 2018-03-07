@@ -1,20 +1,20 @@
-defmodule TdDDWeb.Router do
-  use TdDDWeb, :router
+defmodule TdDdWeb.Router do
+  use TdDdWeb, :router
 
   pipeline :api do
-    plug TdDD.Auth.Pipeline.Unsecure
+    plug TdDd.Auth.Pipeline.Unsecure
     plug :accepts, ["json"]
   end
 
   pipeline :api_secure do
-    plug TdDD.Auth.Pipeline.Secure
+    plug TdDd.Auth.Pipeline.Secure
   end
 
-  scope "/api", TdDDWeb do
+  scope "/api", TdDdWeb do
     pipe_through :api
   end
 
-  scope "/api", TdDDWeb do
+  scope "/api", TdDdWeb do
     pipe_through [:api, :api_secure]
     post "/metadata", MetadataController, :upload
     resources "/data_structures", DataStructureController, except: [:new, :edit]
@@ -26,7 +26,7 @@ defmodule TdDDWeb.Router do
       schemes: ["http"],
       info: %{
         version: "1.0",
-        title: "TdDD"
+        title: "TdDd"
       },
       "basePath": "/api",
       "securityDefinitions":

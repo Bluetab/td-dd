@@ -1,7 +1,7 @@
-defmodule TdDD.Application do
+defmodule TdDd.Application do
   @moduledoc false
   use Application
-  alias TdDDWeb.Endpoint
+  alias TdDdWeb.Endpoint
 
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
@@ -11,17 +11,17 @@ defmodule TdDD.Application do
     # Define workers and child supervisors to be supervised
     children = [
       # Start the Ecto repository
-      supervisor(TdDD.Repo, []),
+      supervisor(TdDd.Repo, []),
       # Start the endpoint when the application starts
-      supervisor(TdDDWeb.Endpoint, []),
-      # Start your own worker by calling: TdDD.Worker.start_link(arg1,
+      supervisor(TdDdWeb.Endpoint, []),
+      # Start your own worker by calling: TdDd.Worker.start_link(arg1,
       #                                                              arg2, arg3)
-      # worker(TdDD.Worker, [arg1, arg2, arg3]),
+      # worker(TdDd.Worker, [arg1, arg2, arg3]),
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
-    opts = [strategy: :one_for_one, name: TdDD.Supervisor]
+    opts = [strategy: :one_for_one, name: TdDd.Supervisor]
     Supervisor.start_link(children, opts)
   end
 

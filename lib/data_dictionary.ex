@@ -1,6 +1,6 @@
-defmodule TdDD do
+defmodule TdDd do
   @moduledoc """
-  TdDD keeps the contexts that define your domain
+  TdDd keeps the contexts that define your domain
   and business logic.
 
   Contexts are also responsible for managing your data, regardless

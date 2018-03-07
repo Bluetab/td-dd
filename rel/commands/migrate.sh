@@ -1,3 +1,3 @@
 #!/bin/sh
 
-bin/td_dd command Elixir.TdDD.ReleaseTasks seed
+bin/td_dd command Elixir.TdDd.ReleaseTasks seed

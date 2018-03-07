@@ -1,6 +1,6 @@
-defmodule TdDDWeb.DataStructureView do
-  use TdDDWeb, :view
-  alias TdDDWeb.DataStructureView
+defmodule TdDdWeb.DataStructureView do
+  use TdDdWeb, :view
+  alias TdDdWeb.DataStructureView
 
   def render("index.json", %{data_structures: data_structures}) do
     %{data: render_many(data_structures, DataStructureView, "data_structure.json")}

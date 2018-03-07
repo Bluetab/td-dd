@@ -1,8 +1,8 @@
-defmodule TdDDWeb.UserSocket do
+defmodule TdDdWeb.UserSocket do
   use Phoenix.Socket
 
   ## Channels
-  # channel "room:*", TdDDWeb.RoomChannel
+  # channel "room:*", TdDdWeb.RoomChannel
 
   ## Transports
   transport :websocket, Phoenix.Transports.WebSocket
@@ -31,7 +31,7 @@ defmodule TdDDWeb.UserSocket do
   # Would allow you to broadcast a "disconnect" event and terminate
   # all active sockets and channels for a given user:
   #
-  #    TdDDWeb.Endpoint.broadcast("user_socket:#{user.id}",
+  #    TdDdWeb.Endpoint.broadcast("user_socket:#{user.id}",
   #                                         "disconnect", %{})
   #
   # Returning `nil` makes this socket anonymous.

@@ -1,12 +1,12 @@
-defmodule TdDD.DataStructures do
+defmodule TdDd.DataStructures do
   @moduledoc """
   The DataStructures context.
   """
 
   import Ecto.Query, warn: false
-  alias TdDD.Repo
+  alias TdDd.Repo
 
-  alias TdDD.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructure
 
   @doc """
   Returns the list of data_structures.
@@ -102,7 +102,7 @@ defmodule TdDD.DataStructures do
     DataStructure.changeset(data_structure, %{})
   end
 
-  alias TdDD.DataStructures.DataField
+  alias TdDd.DataStructures.DataField
 
   @doc """
   Returns the list of data_fields.

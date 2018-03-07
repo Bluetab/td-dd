@@ -1,10 +1,10 @@
-defmodule TdDDWeb.MetadataController do
+defmodule TdDdWeb.MetadataController do
   require Logger
-  use TdDDWeb, :controller
+  use TdDdWeb, :controller
 
   alias Ecto.Adapters.SQL
-  alias TdDD.Repo
-  alias TdDD.Auth.Guardian.Plug, as: GuardianPlug
+  alias TdDd.Repo
+  alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
 
   @data_structure_query  """
     INSERT INTO data_structures ("system", "group", "name", description, last_change_at, last_change_by, inserted_at, updated_at)

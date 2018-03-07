@@ -1,12 +1,12 @@
-defmodule TdDDWeb.DataFieldController do
-  use TdDDWeb, :controller
+defmodule TdDdWeb.DataFieldController do
+  use TdDdWeb, :controller
 
-  alias TdDD.Auth.Guardian.Plug, as: GuardianPlug
-  alias TdDD.DataStructures
-  alias TdDD.DataStructures.DataField
-  alias TdDDWeb.ErrorView
+  alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
+  alias TdDd.DataStructures
+  alias TdDd.DataStructures.DataField
+  alias TdDdWeb.ErrorView
 
-  action_fallback TdDDWeb.FallbackController
+  action_fallback TdDdWeb.FallbackController
 
   def index(conn, _params) do
     data_fields = DataStructures.list_data_fields()

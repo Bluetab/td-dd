@@ -1,6 +1,6 @@
-defmodule TdDD.Canary.Abilities do
+defmodule TdDd.Canary.Abilities do
   @moduledoc false
-  alias TdDD.Accounts.User
+  alias TdDd.Accounts.User
 
   defimpl Canada.Can, for: User do
 

@@ -1,7 +1,7 @@
-defmodule TdDD.ReleaseTasks do
+defmodule TdDd.ReleaseTasks do
   @moduledoc false
   alias Ecto.Migrator
-  alias TdDD.Repo
+  alias TdDd.Repo
 
   @start_apps [
       :postgrex,
@@ -48,7 +48,7 @@ defmodule TdDD.ReleaseTasks do
 
     defp run_migrations_for(app) do
       IO.puts "Running migrations for #{app}"
-      Migrator.run(TdDD.Repo, migrations_path(app), :up, all: true)
+      Migrator.run(TdDd.Repo, migrations_path(app), :up, all: true)
     end
 
     defp migrations_path(app), do: Path.join([priv_dir(app), "repo", "migrations"])

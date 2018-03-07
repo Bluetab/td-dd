@@ -1,4 +1,4 @@
-defmodule TdDD.DataCase do
+defmodule TdDd.DataCase do
   @moduledoc """
   This module defines the setup for tests requiring
   access to the application's data layer.
@@ -19,21 +19,21 @@ defmodule TdDD.DataCase do
 
   using do
     quote do
-      alias TdDD.Repo
+      alias TdDd.Repo
 
       import Ecto
       import Ecto.Changeset
       import Ecto.Query
-      import TdDD.DataCase
-      import TdDD.Factory
+      import TdDd.DataCase
+      import TdDd.Factory
     end
   end
 
   setup tags do
-    :ok = Sandbox.checkout(TdDD.Repo)
+    :ok = Sandbox.checkout(TdDd.Repo)
 
     unless tags[:async] do
-      Sandbox.mode(TdDD.Repo, {:shared, self()})
+      Sandbox.mode(TdDd.Repo, {:shared, self()})
     end
 
     :ok

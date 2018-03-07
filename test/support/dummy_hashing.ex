@@ -1,4 +1,4 @@
-defmodule TdDD.DummyHashing do
+defmodule TdDd.DummyHashing do
   @moduledoc false
 
   def dummy_checkpw, do: false

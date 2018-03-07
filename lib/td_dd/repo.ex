@@ -1,4 +1,4 @@
-defmodule TdDD.Repo do
+defmodule TdDd.Repo do
   use Ecto.Repo, otp_app: :td_dd
 
   @doc """

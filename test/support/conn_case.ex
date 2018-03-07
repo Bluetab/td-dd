@@ -1,4 +1,4 @@
-defmodule TdDDWeb.ConnCase do
+defmodule TdDdWeb.ConnCase do
   @moduledoc """
   This module defines the test case to be used by
   tests that require setting up a connection.
@@ -15,11 +15,11 @@ defmodule TdDDWeb.ConnCase do
 
   use ExUnit.CaseTemplate
 
-  alias TdDDWeb.Router.Helpers
+  alias TdDdWeb.Router.Helpers
   alias Phoenix.ConnTest
-  alias TdDDWeb.Endpoint
+  alias TdDdWeb.Endpoint
   alias Ecto.Adapters.SQL.Sandbox
-  import TdDDWeb.Authentication, only: :functions
+  import TdDdWeb.Authentication, only: :functions
 
   using do
     quote do
@@ -27,7 +27,7 @@ defmodule TdDDWeb.ConnCase do
       use ConnTest
       import Helpers
 
-      import TdDD.Factory
+      import TdDd.Factory
 
       # The default endpoint for testing
       @endpoint Endpoint
@@ -37,9 +37,9 @@ defmodule TdDDWeb.ConnCase do
   @admin_user_name "app-admin"
 
   setup tags do
-    :ok = Sandbox.checkout(TdDD.Repo)
+    :ok = Sandbox.checkout(TdDd.Repo)
     unless tags[:async] do
-      Sandbox.mode(TdDD.Repo, {:shared, self()})
+      Sandbox.mode(TdDd.Repo, {:shared, self()})
     end
 
     cond do

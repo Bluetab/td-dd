@@ -1,9 +1,9 @@
-defmodule TdDD.Factory do
+defmodule TdDd.Factory do
   @moduledoc false
-  use ExMachina.Ecto, repo: TdDD.Repo
-  alias TdDD.Accounts.User
-  alias TdDD.DataStructures.DataStructure
-  alias TdDD.DataStructures.DataField
+  use ExMachina.Ecto, repo: TdDd.Repo
+  alias TdDd.Accounts.User
+  alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataField
 
   def user_factory do
     %User {
