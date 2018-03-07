@@ -18,7 +18,7 @@ config :td_dq, TdDQ.Repo,
   password: "postgres",
   database: "td_dq_prod",
   hostname: "localhost",
-  pool_size: 15
+  pool_size: 10
 
 config :td_dq, TdDQ.Auth.Guardian,
   allowed_algos: ["HS512"], # optional
