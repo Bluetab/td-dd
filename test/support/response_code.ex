@@ -1,4 +1,4 @@
-defmodule TdDQWeb.ResponseCode do
+defmodule TdDqWeb.ResponseCode do
   @moduledoc false
 
   @ok "Ok"

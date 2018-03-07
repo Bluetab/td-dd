@@ -1,12 +1,12 @@
-defmodule TdDQWeb do
+defmodule TdDqWeb do
   @moduledoc """
   The entrypoint for defining your web interface, such
   as controllers, views, channels and so on.
 
   This can be used in your application as:
 
-      use TdDQWeb, :controller
-      use TdDQWeb, :view
+      use TdDqWeb, :controller
+      use TdDqWeb, :view
 
   The definitions below will be executed for every view,
   controller, etc, so keep them short and clean, focused
@@ -19,24 +19,24 @@ defmodule TdDQWeb do
 
   def controller do
     quote do
-      use Phoenix.Controller, namespace: TdDQWeb
+      use Phoenix.Controller, namespace: TdDqWeb
       import Plug.Conn
-      import TdDQWeb.Router.Helpers
-      import TdDQWeb.Gettext
+      import TdDqWeb.Router.Helpers
+      import TdDqWeb.Gettext
     end
   end
 
   def view do
     quote do
       use Phoenix.View, root: "lib/td_dq_web/templates",
-                        namespace: TdDQWeb
+                        namespace: TdDqWeb
 
       # Import convenience functions from controllers
       import Phoenix.Controller, only: [get_flash: 2, view_module: 1]
 
-      import TdDQWeb.Router.Helpers
-      import TdDQWeb.ErrorHelpers
-      import TdDQWeb.Gettext
+      import TdDqWeb.Router.Helpers
+      import TdDqWeb.ErrorHelpers
+      import TdDqWeb.Gettext
     end
   end
 
@@ -51,7 +51,7 @@ defmodule TdDQWeb do
   def channel do
     quote do
       use Phoenix.Channel
-      import TdDQWeb.Gettext
+      import TdDqWeb.Gettext
     end
   end
 

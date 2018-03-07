@@ -1,8 +1,8 @@
-defmodule TdDQWeb.UserSocket do
+defmodule TdDqWeb.UserSocket do
   use Phoenix.Socket
 
   ## Channels
-  # channel "room:*", TdDQWeb.RoomChannel
+  # channel "room:*", TdDqWeb.RoomChannel
 
   ## Transports
   transport :websocket, Phoenix.Transports.WebSocket
@@ -30,7 +30,7 @@ defmodule TdDQWeb.UserSocket do
   # Would allow you to broadcast a "disconnect" event and terminate
   # all active sockets and channels for a given user:
   #
-  #     TdDQWeb.Endpoint.broadcast("user_socket:#{user.id}", "disconnect", %{})
+  #     TdDqWeb.Endpoint.broadcast("user_socket:#{user.id}", "disconnect", %{})
   #
   # Returning `nil` makes this socket anonymous.
   def id(_socket), do: nil

@@ -1,4 +1,4 @@
-defmodule TdDQWeb.ConnCase do
+defmodule TdDqWeb.ConnCase do
   @moduledoc """
   This module defines the test case to be used by
   tests that require setting up a connection.
@@ -16,23 +16,23 @@ defmodule TdDQWeb.ConnCase do
   use ExUnit.CaseTemplate
   alias Phoenix.ConnTest
   alias Ecto.Adapters.SQL.Sandbox
-  import TdDQWeb.Authentication, only: :functions
+  import TdDqWeb.Authentication, only: :functions
 
   using do
     quote do
       # Import conveniences for testing with connections
       use Phoenix.ConnTest
-      import TdDQWeb.Router.Helpers
+      import TdDqWeb.Router.Helpers
 
       # The default endpoint for testing
-      @endpoint TdDQWeb.Endpoint
+      @endpoint TdDqWeb.Endpoint
     end
   end
 
   setup tags do
-    :ok = Sandbox.checkout(TdDQ.Repo)
+    :ok = Sandbox.checkout(TdDq.Repo)
     unless tags[:async] do
-      Sandbox.mode(TdDQ.Repo, {:shared, self()})
+      Sandbox.mode(TdDq.Repo, {:shared, self()})
     end
     if tags[:authenticated_user] do
         user_name = tags[:authenticated_user]

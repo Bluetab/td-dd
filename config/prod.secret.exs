@@ -8,11 +8,11 @@ use Mix.Config
 # file or create a script for recreating it, since it's
 # kept out of version control and might be hard to recover
 # or recreate for your teammates (or yourself later on).
-config :td_dq, TdDQWeb.Endpoint,
+config :td_dq, TdDqWeb.Endpoint,
   secret_key_base: "PSTusjy0cud3K8KQ+8nCnGwLa8H5DwnvP2dtCO3TMx3mvKImONOnSGW9AeDDtD8E"
 
 # Configure your database
-config :td_dq, TdDQ.Repo,
+config :td_dq, TdDq.Repo,
   adapter: Ecto.Adapters.Postgres,
   username: "postgres",
   password: "postgres",
@@ -20,7 +20,7 @@ config :td_dq, TdDQ.Repo,
   hostname: "localhost",
   pool_size: 10
 
-config :td_dq, TdDQ.Auth.Guardian,
+config :td_dq, TdDq.Auth.Guardian,
   allowed_algos: ["HS512"], # optional
   issuer: "tdauth",
   ttl: { 1, :hours },

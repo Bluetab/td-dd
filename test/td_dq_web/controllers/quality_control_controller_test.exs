@@ -1,10 +1,10 @@
-defmodule TdDQWeb.QualityControlControllerTest do
-  use TdDQWeb.ConnCase
+defmodule TdDqWeb.QualityControlControllerTest do
+  use TdDqWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  alias TdDQ.QualityControls
-  alias TdDQ.QualityControls.QualityControl
-  import TdDQWeb.Authentication, only: :functions
+  alias TdDq.QualityControls
+  alias TdDq.QualityControls.QualityControl
+  import TdDqWeb.Authentication, only: :functions
 
   @create_fixture_attrs %{business_concept_id: "some business_concept_id",
     description: "some description", goal: 42, minimum: 42, name: "some name",

@@ -1,11 +1,11 @@
 defmodule TrueBG.AuthenticationTest do
   use Cabbage.Feature, async: false, file: "quality_control.feature"
-  use TdDQWeb.ConnCase
-  import TdDQWeb.Router.Helpers
-  import TdDQWeb.ResponseCode
-  import TdDQWeb.Authentication, only: :functions
+  use TdDqWeb.ConnCase
+  import TdDqWeb.Router.Helpers
+  import TdDqWeb.ResponseCode
+  import TdDqWeb.Authentication, only: :functions
   alias Poison, as: JSON
-  @endpoint TdDQWeb.Endpoint
+  @endpoint TdDqWeb.Endpoint
 
   @test_to_api_create_alias %{"Field" => "field", "Type" => "type", "Business Concept ID" => "business_concept_id",
     "Name" => "name", "Description" => "description", "Weight" => "weight",

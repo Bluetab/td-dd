@@ -1,6 +1,6 @@
-defmodule TdDQWeb.QualityControlView do
-  use TdDQWeb, :view
-  alias TdDQWeb.QualityControlView
+defmodule TdDqWeb.QualityControlView do
+  use TdDqWeb, :view
+  alias TdDqWeb.QualityControlView
 
   def render("index.json", %{quality_controls: quality_controls}) do
     %{data: render_many(quality_controls, QualityControlView, "quality_control.json")}

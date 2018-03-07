@@ -1,4 +1,4 @@
-defmodule TdDQWeb.ChannelCase do
+defmodule TdDqWeb.ChannelCase do
   @moduledoc """
   This module defines the test case to be used by
   channel tests.
@@ -22,14 +22,14 @@ defmodule TdDQWeb.ChannelCase do
       use Phoenix.ChannelTest
 
       # The default endpoint for testing
-      @endpoint TdDQWeb.Endpoint
+      @endpoint TdDqWeb.Endpoint
     end
   end
 
   setup tags do
-    :ok = Sandbox.checkout(TdDQ.Repo)
+    :ok = Sandbox.checkout(TdDq.Repo)
     unless tags[:async] do
-      Sandbox.mode(TdDQ.Repo, {:shared, self()})
+      Sandbox.mode(TdDq.Repo, {:shared, self()})
     end
     :ok
   end

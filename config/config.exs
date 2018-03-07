@@ -7,18 +7,18 @@ use Mix.Config
 
 # General application configuration
 config :td_dq,
-  ecto_repos: [TdDQ.Repo]
+  ecto_repos: [TdDq.Repo]
 
 # Configures the endpoint
-config :td_dq, TdDQWeb.Endpoint,
+config :td_dq, TdDqWeb.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "/vMEDjTjLb9Re9GSKu6LYCE+qq7KuIvk2V65O1x4aMhStPltM87BMjeUw+zebVF3",
-  render_errors: [view: TdDQWeb.ErrorView, accepts: ~w(json)],
-  pubsub: [name: TdDQ.PubSub,
+  render_errors: [view: TdDqWeb.ErrorView, accepts: ~w(json)],
+  pubsub: [name: TdDq.PubSub,
            adapter: Phoenix.PubSub.PG2]
 
   # Configures Auth module Guardian
-config :td_dq, TdDQ.Auth.Guardian,
+config :td_dq, TdDq.Auth.Guardian,
        allowed_algos: ["HS512"], # optional
        issuer: "tdauth",
        ttl: { 1, :hours },

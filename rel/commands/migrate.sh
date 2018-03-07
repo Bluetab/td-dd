@@ -1,3 +1,3 @@
 #!/bin/sh
 
-bin/td_dq command Elixir.TdDQ.ReleaseTasks seed
+bin/td_dq command Elixir.TdDq.ReleaseTasks seed

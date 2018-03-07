@@ -1,4 +1,4 @@
-defmodule TdDQ.Mixfile do
+defmodule TdDq.Mixfile do
   use Mix.Project
 
   def project do
@@ -19,7 +19,7 @@ defmodule TdDQ.Mixfile do
   # Type `mix help compile.app` for more information.
   def application do
     [
-      mod: {TdDQ.Application, []},
+      mod: {TdDq.Application, []},
       extra_applications: [:logger, :runtime_tools]
     ]
   end

@@ -1,10 +1,10 @@
-defmodule TdDQWeb.Authentication do
+defmodule TdDqWeb.Authentication do
   @moduledoc """
   This module defines the functions required to
   add auth headers to requests
   """
   alias Phoenix.ConnTest
-  alias TdDQ.Auth.Guardian
+  alias TdDq.Auth.Guardian
   import Plug.Conn
   @headers {"Content-type", "application/json"}
 

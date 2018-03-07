@@ -1,24 +1,24 @@
-defmodule TdDQWeb.Router do
-  use TdDQWeb, :router
+defmodule TdDqWeb.Router do
+  use TdDqWeb, :router
 
   pipeline :api do
-    plug TdDQ.Auth.Pipeline.Unsecure
+    plug TdDq.Auth.Pipeline.Unsecure
     plug :accepts, ["json"]
   end
 
   pipeline :api_secure do
-    plug TdDQ.Auth.Pipeline.Secure
+    plug TdDq.Auth.Pipeline.Secure
   end
 
-  scope "/api", TdDQWeb do
+  scope "/api", TdDqWeb do
     pipe_through :api
   end
 
-  scope "/api", TdDQWeb do
+  scope "/api", TdDqWeb do
     pipe_through [:api, :api_secure]
   end
 
-  scope "/api", TdDQWeb do
+  scope "/api", TdDqWeb do
     pipe_through [:api, :api_secure]
     resources "/quality_controls", QualityControlController, except: [:new, :edit]
   end

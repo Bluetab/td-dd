@@ -1,4 +1,4 @@
-defmodule TdDQ.Auth.ErrorHandler do
+defmodule TdDq.Auth.ErrorHandler do
   @moduledoc false
   import Plug.Conn
 

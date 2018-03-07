@@ -1,7 +1,7 @@
-defmodule TdDQWeb.Endpoint do
+defmodule TdDqWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :td_dq
 
-  socket "/socket", TdDQWeb.UserSocket
+  socket "/socket", TdDqWeb.UserSocket
 
   # Serve at "/" the static files from "priv/static" directory.
   #
@@ -36,7 +36,7 @@ defmodule TdDQWeb.Endpoint do
     key: "_td_dq_key",
     signing_salt: "gZdYZ4N6"
 
-  plug TdDQWeb.Router
+  plug TdDqWeb.Router
 
   @doc """
   Callback invoked for dynamically configuring the endpoint.

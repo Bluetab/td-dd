@@ -54,7 +54,7 @@
             "description": "Quality Control ID"
           }
         ],
-        "operationId": "TdDQWeb.QualityControlController.update",
+        "operationId": "TdDqWeb.QualityControlController.update",
         "description": "Updates Quality Control"
       },
       "get": {
@@ -85,7 +85,7 @@
             "description": "Quality Control ID"
           }
         ],
-        "operationId": "TdDQWeb.QualityControlController.show",
+        "operationId": "TdDqWeb.QualityControlController.show",
         "description": "Show Quality Control"
       },
       "delete": {
@@ -113,7 +113,7 @@
             "description": "Quality Control ID"
           }
         ],
-        "operationId": "TdDQWeb.QualityControlController.delete",
+        "operationId": "TdDqWeb.QualityControlController.delete",
         "description": "Delete Quality Control"
       }
     },
@@ -148,7 +148,7 @@
             "description": "Quality Control create attrs"
           }
         ],
-        "operationId": "TdDQWeb.QualityControlController.create",
+        "operationId": "TdDqWeb.QualityControlController.create",
         "description": "Creates a Quality Control"
       },
       "get": {
@@ -165,7 +165,7 @@
           }
         },
         "parameters": [],
-        "operationId": "TdDQWeb.QualityControlController.index",
+        "operationId": "TdDqWeb.QualityControlController.index",
         "description": "List Quality Controls"
       }
     }

@@ -1,12 +1,12 @@
-defmodule TdDQ.QualityControls do
+defmodule TdDq.QualityControls do
   @moduledoc """
   The QualityControls context.
   """
 
   import Ecto.Query, warn: false
-  alias TdDQ.Repo
+  alias TdDq.Repo
 
-  alias TdDQ.QualityControls.QualityControl
+  alias TdDq.QualityControls.QualityControl
 
   @doc """
   Returns the list of quality_controls.

@@ -1,12 +1,12 @@
-defmodule TdDQWeb.ChangesetView do
-  use TdDQWeb, :view
+defmodule TdDqWeb.ChangesetView do
+  use TdDqWeb, :view
   alias Ecto.Changeset
 
   @doc """
   Traverses and translates changeset errors.
 
   See `Ecto.Changeset.traverse_errors/2` and
-  `TdDQWeb.ErrorHelpers.translate_error/1` for more details.
+  `TdDqWeb.ErrorHelpers.translate_error/1` for more details.
   """
   def translate_errors(changeset) do
     Changeset.traverse_errors(changeset, &translate_error/1)

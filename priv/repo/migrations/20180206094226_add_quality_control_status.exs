@@ -1,4 +1,4 @@
-defmodule TdDQ.Repo.Migrations.AddQualityControlStatus do
+defmodule TdDq.Repo.Migrations.AddQualityControlStatus do
   use Ecto.Migration
 
   def change do

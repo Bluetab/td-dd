@@ -2,17 +2,17 @@ use Mix.Config
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
-config :td_dq, TdDQWeb.Endpoint,
+config :td_dq, TdDqWeb.Endpoint,
   http: [port: 3004],
   server: true
 
-config :td_dq, hashing_module: TdDQ.DummyHashing
+config :td_dq, hashing_module: TdDq.DummyHashing
 
 # Print only warnings and errors during test
 config :logger, level: :warn
 
 # Configure your database
-config :td_dq, TdDQ.Repo,
+config :td_dq, TdDq.Repo,
   adapter: Ecto.Adapters.Postgres,
   username: "postgres",
   password: "postgres",
