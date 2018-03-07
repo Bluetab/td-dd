@@ -18,7 +18,7 @@ config :td_dd, TdDD.Repo,
   password: "postgres",
   database: "td_dd_prod",
   hostname: "localhost",
-  pool_size: 15
+  pool_size: 10
 
 config :data_quality, TdDD.Auth.Guardian,
   allowed_algos: ["HS512"], # optional
