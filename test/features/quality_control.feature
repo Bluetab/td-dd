@@ -37,3 +37,22 @@ Feature: Quality Controls
       | Last Modification   | Some timestamp                                                                         |
       | Last User           | app-admin                                                                              |
       | Version             | 1                                                                                      |
+
+  Scenario: Receive and store results data for existing Quality Controls in bulk mode
+    Given some quality controls exist in the system with following data:
+      | Type    | Business Concept ID | Name                    | Description   | Weight | Priority | Population  | Goal  | Minimum |
+      | Generic | MYID_333            | Field's Quality Control | Description 1 | 50     | Medium   | All clients | 98    | 80      |
+      | Generic | MYID_333            | Field Not nulls         | Description 2 | 50     | High     | All clients | 100   | 90      |
+      | Generic | MYID_334            | Range of values         | Description 3 | 50     | Low      | All clients | 98    | 60      |
+      | Generic | MYID_335            | Format validation       | Description 4 | 50     | Medium   | All clients | 95    | 80      |
+      | Generic | MYID_336            | Format validation       | Description 5 | 50     | Medium   | All clients | 95    | 80      |
+    When "app-admin" tries to load quality controls resultss with following information:
+      | System  | Group        | Structure_Name | Field_Name          | Business Concept ID    | Quality Control Name     | Date       | Result |
+      | SAS     | Risks        | TKIDS0001      | My_Personal01_Field | MYID_333               | Field's Quality Control  | 2018-03-08 | 40     |
+      | SAS     | Risks        | TKIDS0001      | My_Personal02_Field | MYID_333               | Field Not nulls          | 2018-03-08 | 90     |
+      | SAS     | Risks        | TKIDS0001      | My_Personal03_Field | MYID_334               | Range of values          | 2018-03-08 | 90     |
+      | SAS     | Risks        | TKIDS0001      | My_Personal04_Field | MYID_335               | Format validation        | 2018-03-08 | 90     |
+    Then "app-admin" is able to view quality control results for Business Concept ID "MYID_333" with following data:
+      | System  | Group        | Structure_Name | Field_Name          | Business Concept ID    | Quality Control Name     | Date       | Result |
+      | SAS     | Risks        | TKIDS0001      | My_Personal01_Field | MYID_333               | Field's Quality Control  | 2018-03-08 | 40     |
+      | SAS     | Risks        | TKIDS0001      | My_Personal02_Field | MYID_333               | Field Not nulls          | 2018-03-08 | 90     |
