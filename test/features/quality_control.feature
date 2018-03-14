@@ -10,6 +10,7 @@ Feature: Quality Controls
 
   Scenario: Create a new Quality Control with only generic fields
     Given user "app-admin" is logged in the application
+    #And an existing Quality Control type called "Generic" without any parameters
     When "app-admin" tries to create a Quality Control of type "Generic" with following data:
       | Field               | Value                                                                                  |
       | Type                | Generic                                                                                |
@@ -21,6 +22,8 @@ Feature: Quality Controls
       | Population          | All clients who are older than 18                                                      |
       | Goal                | 98                                                                                     |
       | Minimum             | 80                                                                                     |
+      #| DQ Goal             | 98                                                                                     |
+      #| DQ Minimum          | 80                                                                                     |
     Then the system returns a result with code "Created"
     And "app-admin" is able to view quality control with Business Concept ID "MYID_333" and name "Field's Quality Control" with following data:
       | Field               | Value                                                                                  |
@@ -32,11 +35,51 @@ Feature: Quality Controls
       | Weight              | 50                                                                                     |
       | Priority            | Medium                                                                                 |
       | Population          | All clients who are older than 18                                                      |
+      # | DQ Goal             | 98                                                                                     |
+      # | DQ Minimum          | 80                                                                                     |
       | Goal                | 98                                                                                     |
       | Minimum             | 80                                                                                     |
       | Last Modification   | Some timestamp                                                                         |
       | Last User           | app-admin                                                                              |
       | Version             | 1                                                                                      |
+
+  # Scenario: Create a new Quality Control with a type that has parameters
+  #   Given user "app-admin" is logged in the application
+  #   And an existing Quality Control type called "Integer Values Range" with description "Check Range of values in integer format" and following parameters:
+  #     | Field               | Type         |
+  #     | Min Value           | Integer      |
+  #     | Max Value           | Integer      |
+  #   When "app-admin" tries to create a Quality Control of type "Integer Values Range" with following data:
+  #     | Field               | Value                                                                                    |
+  #     | Type                | Generic                                                                                  |
+  #     | Business Concept ID | MYID_001                                                                                 |
+  #     | Name                | Data for BC MYID_001 must be a value between 0 and 100                                   |
+  #     | Description         | In order to measure quality of this field we will check whether its is between 0 and 100 |
+  #     | Weight              | 30                                                                                       |
+  #     | Priority            | Medium                                                                                   |
+  #     | Population          | All clients who are older than 18                                                        |
+  #     | DQ Goal             | 98                                                                                       |
+  #     | DQ Minimum          | 80                                                                                       |
+  #     | Min Value           | 0                                                                                        |
+  #     | Max Value           | 100                                                                                      |
+  #   Then the system returns a result with code "Created"
+  #   And "app-admin" is able to view quality control with Business Concept ID "MYID_001" and name "Data for BC MYID_001 must be a value between 0 and 100" with following data:
+  #     | Field               | Value                                                                                     |
+  #     | Type                | Integer Values Range                                                                      |
+  #     | Business Concept ID | MYID_001                                                                                  |
+  #     | Name                | Data for BC MYID_001 must be a value between 0 and 100                                    |
+  #     | Description         |  In order to measure quality of this field we will check whether its is between 0 and 100 |
+  #     | Status              | defined                                                                                   |
+  #     | Weight              | 30                                                                                        |
+  #     | Priority            | Medium                                                                                    |
+  #     | Population          | All clients who are older than 18                                                         |
+  #     | Goal                | 95                                                                                        |
+  #     | Minimum             | 70                                                                                        |
+  #     | Min Value           | 0                                                                                         |
+  #     | Max Value           | 100                                                                                       |
+  #     | Last Modification   | Some timestamp                                                                            |
+  #     | Last User           | app-admin                                                                                 |
+  #     | Version             | 1                                                                                         |
   #
   # Scenario: Receive and store results data for existing Quality Controls in bulk mode
   #   Given some quality controls exist in the system with following data:
