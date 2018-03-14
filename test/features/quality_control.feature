@@ -10,7 +10,7 @@ Feature: Quality Controls
 
   Scenario: Create a new Quality Control with only generic fields
     Given user "app-admin" is logged in the application
-    #And an existing Quality Control type called "Generic" without any parameters
+    And an existing Quality Control type called "Generic" without any parameters
     When "app-admin" tries to create a Quality Control of type "Generic" with following data:
       | Field               | Value                                                                                  |
       | Type                | Generic                                                                                |
@@ -46,7 +46,7 @@ Feature: Quality Controls
   # Scenario: Create a new Quality Control with a type that has parameters
   #   Given user "app-admin" is logged in the application
   #   And an existing Quality Control type called "Integer Values Range" with description "Check Range of values in integer format" and following parameters:
-  #     | Field               | Type         |
+  #     | Parameter           | Type         |
   #     | Min Value           | Integer      |
   #     | Max Value           | Integer      |
   #   When "app-admin" tries to create a Quality Control of type "Integer Values Range" with following data:

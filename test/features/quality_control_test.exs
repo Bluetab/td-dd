@@ -23,9 +23,10 @@ defmodule TrueBG.AuthenticationTest do
   end
 
   defwhen ~r/^"(?<user_name>[^"]+)" tries to create a Quality Control of type "(?<type>[^"]+)" with following data:$/,
-    %{user_name: user_name, type: _type, table: table}, state do
+    %{user_name: user_name, type: type, table: table}, state do
 
     assert user_name == state[:user_name]
+    assert type == state[:qc_type]
     attrs = table
     |> field_value_to_api_attrs(@test_to_api_create_alias)
     |> cast_to_int_attrs(@quality_control_integer_fields)
@@ -67,6 +68,13 @@ defmodule TrueBG.AuthenticationTest do
       assert attrs[k] == quality_control_data[k]
     end
     )
+  end
+
+  defand ~r/^an existing Quality Control type called "(?<quality_control_type>[^"]+)" without any parameters$/,
+    %{quality_control_type: quality_control_type},
+    state do
+    assert quality_control_type
+    {:ok,  Map.merge(state, %{qc_type: quality_control_type})}
   end
 
   def cast_to_int_attrs(m, keys) do

@@ -15,6 +15,7 @@ defmodule TdDq.QualityControls.QualityControl do
     field :population, :string
     field :priority, :string
     field :type, :string
+    field :type_params, :map
     field :weight, :integer
     field :status, :string, default: "defined"
     field :version, :integer, default: 1
