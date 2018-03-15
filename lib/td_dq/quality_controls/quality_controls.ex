@@ -7,6 +7,7 @@ defmodule TdDq.QualityControls do
   alias TdDq.Repo
 
   alias TdDq.QualityControls.QualityControl
+  alias TdDq.QualityControls.QualityControlsResults
 
   @doc """
   Returns the list of quality_controls.
@@ -100,5 +101,9 @@ defmodule TdDq.QualityControls do
   """
   def change_quality_control(%QualityControl{} = quality_control) do
     QualityControl.changeset(quality_control, %{})
+  end
+
+  def list_quality_controls_results do
+    Repo.all(QualityControlsResults)
   end
 end

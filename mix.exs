@@ -48,7 +48,9 @@ defmodule TdDq.Mixfile do
       {:bcrypt_elixir, "~> 1.0"},
       {:cabbage, "~> 0.3.0"},
       {:phoenix_swagger, "~> 0.7.0"},
-      {:ex_json_schema, "~> 0.5"}
+      {:ex_json_schema, "~> 0.5"},
+      {:csv, "~> 2.0.0"},
+      {:timex, "~> 3.1"}
     ]
   end
 

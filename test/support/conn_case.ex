@@ -29,17 +29,38 @@ defmodule TdDqWeb.ConnCase do
     end
   end
 
+  @admin_user_name "app-admin"
+
   setup tags do
     :ok = Sandbox.checkout(TdDq.Repo)
     unless tags[:async] do
       Sandbox.mode(TdDq.Repo, {:shared, self()})
     end
-    if tags[:authenticated_user] do
-        user_name = tags[:authenticated_user]
-        create_user_auth_conn(user_name)
-    else
-        {:ok, conn: ConnTest.build_conn()}
+
+    cond do
+      tags[:admin_authenticated] ->
+        user = create_user(@admin_user_name, is_admin: true)
+        create_user_auth_conn(user)
+      tags[:authenticated_user] ->
+        user = create_user(tags[:authenticated_user], is_admin: true)
+        create_user_auth_conn(user)
+       true ->
+         {:ok, conn: ConnTest.build_conn()}
     end
   end
+
+  # OLD
+  # setup tags do
+  #   :ok = Sandbox.checkout(TdDq.Repo)
+  #   unless tags[:async] do
+  #     Sandbox.mode(TdDq.Repo, {:shared, self()})
+  #   end
+  #   if tags[:authenticated_user] do
+  #       user_name = tags[:authenticated_user]
+  #       create_user_auth_conn(user_name)
+  #   else
+  #       {:ok, conn: ConnTest.build_conn()}
+  #   end
+  # end
 
 end

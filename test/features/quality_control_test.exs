@@ -15,10 +15,11 @@ defmodule TrueBG.AuthenticationTest do
   @test_to_api_get_alias %{"Status" => "status", "Last User" => "updated_by", "Version" => "version", "Last Modification" => "inserted_at"}
 
   @quality_control_integer_fields ["weight", "goal", "minimum"]
-  # Scenario
 
+  # Scenario: Create a new Quality Control with only generic fields
   defgiven ~r/^user "(?<user_name>[^"]+)" is logged in the application$/, %{user_name: user_name}, state do
-    {:ok, token, _full_claims} = sign_in(user_name)
+    # {:ok, token, _full_claims} = sign_in(user_name) OLD
+    token = get_user_token(user_name)
     {:ok,  Map.merge(state, %{status_code: 402, token: token, user_name: user_name})}
   end
 
@@ -108,6 +109,87 @@ defmodule TrueBG.AuthenticationTest do
       {:ok, Map.merge(state, %{qc_type: type_name})}
 
   end
+
+  # Scenario: Receive and store results data for existing Quality Controls in bulk mode
+  defgiven ~r/^some quality controls exist in the system with following data:$/,
+    %{table: table}, state do
+      token_admin = get_user_token("app-admin")
+      quality_controls_create(token_admin, table)
+      {:ok, Map.merge(state, %{token_admin: token_admin})}
+  end
+
+  defwhen ~r/^"(?<user_name>[^"]+)" tries to load quality controls results with following information:$/,
+    %{table: table}, %{token_admin: token_admin} = _state do
+      quality_controls_results =
+      []
+      |> parse_table_to_csv(Enum.reverse(table))
+      |> CSV.encode |> Enum.to_list |> Enum.join
+      {:ok, 200, ""} = results_upload(quality_controls_results, token_admin)
+  end
+
+  defthen ~r/^"(?<user_name>[^"]+)" is able to view quality control results for Business Concept ID "(?<business_concept_id>[^"]+)" with following data:$/,
+    %{business_concept_id: business_concept_id, table: table},
+    %{token_admin: token_admin} = _state do
+      results_list = quality_controls_results_list(token_admin, business_concept_id)
+      Enum.each(Enum.zip(results_list, table), fn(tuple_to_compare) ->
+                tuple_to_compare = put_elem(tuple_to_compare, 0, Map.update(elem(tuple_to_compare, 0), "date", nil, &(Enum.at(String.split(&1, "T", parts: 2), 0))))
+                Enum.each(elem(tuple_to_compare, 1), fn({k, v}) ->
+                            assert to_string(elem(tuple_to_compare, 0)[to_string(k)]) == v
+                          end
+                          )
+              end
+              )
+  end
+
+  defp quality_controls_results_list(token, business_concept_id) do
+      {:ok, 200, %{"data" => list_quality_controls}} = quality_controls_results_list(token)
+      Enum.filter(list_quality_controls, fn(x) -> x["business_concept_id"] == business_concept_id end)
+  end
+
+  defp results_upload(quality_controls_results, token) do
+    headers = get_header(token)
+    form = [{
+              "file",
+              quality_controls_results,
+              {"form-data", [{"name", "quality_controls_results"}, {"filename", "quality_controls_results.csv"}]},
+              [{"Content-Type", "text/csv"}]
+          }]
+    %HTTPoison.Response{status_code: status_code, body: _resp}
+       = HTTPoison.post!(quality_controls_results_url(@endpoint, :upload), {:multipart, form}, headers, [])
+    {:ok, status_code, ""}
+  end
+
+  defp quality_controls_results_list(token) do
+    headers = get_header(token)
+    %HTTPoison.Response{status_code: status_code, body: resp} =
+      HTTPoison.get!(quality_controls_results_url(@endpoint, :index), headers, [])
+    {:ok, status_code, resp |> JSON.decode!}
+  end
+
+  defp parse_table_to_csv(table, [head|tail]) do
+    table
+    |> parse_table_to_csv(head)
+    |> parse_table_to_csv(tail)
+  end
+  defp parse_table_to_csv(table, %{business_concept_id: bc_id, date: date, field_name: field,
+                                group: group, quality_control_name: quality_control,
+                                result: result, structure_name: name, system: system}) do
+    [[bc_id, date, field, group, quality_control, result, name, system] | table]
+  end
+  defp parse_table_to_csv(table, []), do: table
+
+  defp quality_controls_create(token, table) do
+    Enum.each(table, fn(quality_control) ->
+      {:ok, 201, json_resp} = quality_control_create(token, quality_control)
+      quality_control_json = json_resp["data"]
+      Enum.each(quality_control, fn({k, _v}) ->
+                assert quality_control[k] == to_string(quality_control_json[to_string(k)])
+                end
+              )
+    end
+    )
+  end
+  ######################################################################################################
 
   def cast_to_int_attrs(m, keys) do
     m

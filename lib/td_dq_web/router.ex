@@ -20,7 +20,10 @@ defmodule TdDqWeb.Router do
 
   scope "/api", TdDqWeb do
     pipe_through [:api, :api_secure]
+
     get "/quality_controls/type_parameters_file", QualityControlController, :type_parameters_file
+    post "/quality_controls_results", QualityControlsResultsController, :upload
+    get "/quality_controls_results", QualityControlsResultsController, :index
     resources "/quality_controls", QualityControlController, except: [:new, :edit]
   end
 
