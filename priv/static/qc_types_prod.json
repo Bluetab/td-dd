@@ -1,0 +1,1 @@
+[{"type_parameters":[{"type":"integer","name":"Min Value"},{"type":"integer","name":"Max Value"}],"type_name":"Integer Values Range","type_description":"Check Range of values in integer format"}]
