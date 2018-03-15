@@ -47,8 +47,8 @@ Feature: Quality Controls
     Given user "app-admin" is logged in the application
     And an existing Quality Control type called "Integer Values Range" with description "Check Range of values in integer format" and following parameters:
       | Parameter           | Type         |
-      | Min Value           | Integer      |
-      | Max Value           | Integer      |
+      | Min Value           | integer      |
+      | Max Value           | integer      |
      When "app-admin" tries to create a Quality Control of type "Integer Values Range" with following data:
       | Field               | Value                                                                                    |
       | Type                | Integer Values Range                                                                                  |
