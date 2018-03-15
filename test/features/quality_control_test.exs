@@ -12,7 +12,7 @@ defmodule TrueBG.AuthenticationTest do
     "Priority" => "priority", "Population" => "population", "Goal" => "goal", "Minimum" => "minimum"
   }
 
-  @test_to_api_get_alias %{"Status" => "status", "Last User" => "updated_by", "Version" => "version"}
+  @test_to_api_get_alias %{"Status" => "status", "Last User" => "updated_by", "Version" => "version", "Last Modification" => "inserted_at"}
 
   @quality_control_integer_fields ["weight", "goal", "minimum"]
   # Scenario
@@ -29,21 +29,36 @@ defmodule TrueBG.AuthenticationTest do
     assert type == state[:qc_type]
     attrs = table
     |> field_value_to_api_attrs(@test_to_api_create_alias)
+
+    attrs = attrs
     |> cast_to_int_attrs(@quality_control_integer_fields)
-    {:ok, status_code, json_resp} = quality_control_create(state[:token], attrs)
-    quality_control_json = json_resp["data"]
-    Enum.each(attrs, fn({k, _v}) ->
-              assert attrs[k] == quality_control_json[k]
-              end
-            )
-    if table[:"Last Modification"] do
-      assert quality_control_json["inserted_at"] != nil
-    end
-   {:ok,  Map.merge(state, %{status_code: status_code})}
+    {:ok, status_code, _json_resp} = quality_control_create(state[:token], attrs)
+    {:ok,  Map.merge(state, %{status_code: status_code})}
   end
 
   defthen ~r/^the system returns a result with code "(?<status_code>[^"]+)"$/, %{status_code: status_code}, state do
     assert status_code == to_response_code(state[:status_code])
+  end
+
+  def assert_attr("type_params" = attr, value, %{} = target) do
+    assert_attrs(value, target[attr])
+  end
+
+  def assert_attr("inserted_at" = attr, _value, %{} = _target) do
+    assert attr != nil
+  end
+
+  def assert_attr(attr, value, %{} = target) do
+    assert value == target[attr]
+  end
+
+  defp assert_attrs(nil, nil) do
+    true
+  end
+
+  defp assert_attrs(%{} = attrs, %{} = target) do
+    Enum.each(attrs, fn {attr, value} ->
+      assert_attr(attr, value, target) end)
   end
 
   defand ~r/^"(?<user_name>[^"]+)" is able to view quality control with Business Concept ID "(?<business_concept_id>[^"]+)" and name "(?<name>[^"]+)" with following data:$/,
@@ -57,17 +72,8 @@ defmodule TrueBG.AuthenticationTest do
     |> field_value_to_api_attrs(Map.merge(@test_to_api_create_alias, @test_to_api_get_alias))
     |> cast_to_int_attrs(@quality_control_integer_fields ++ ["version"])
 
-    attrs =
-      if attrs["Last Modification"] do
-        assert quality_control_data["inserted_at"] != nil
-        Map.drop(attrs, ["Last Modification"])
-      else
-        attrs
-    end
-    Enum.each(attrs, fn({k, _v}) ->
-      assert attrs[k] == quality_control_data[k]
-    end
-    )
+    assert_attrs(attrs, quality_control_data)
+
   end
 
   defand ~r/^an existing Quality Control type called "(?<quality_control_type>[^"]+)" without any parameters$/,
@@ -75,6 +81,24 @@ defmodule TrueBG.AuthenticationTest do
     state do
     assert quality_control_type
     {:ok,  Map.merge(state, %{qc_type: quality_control_type})}
+  end
+
+  defand ~r/^an existing Quality Control type called "(?<type_name>[^"]+)" with description "(?<description>[^"]+)" and following parameters:$/,
+    %{type_name: type_name, description: description, table: table},
+    state do
+
+      parameters = Enum.map(table, fn(row) ->
+        Map.new
+        |> Map.put("name", String.trim(row[:Parameter]))
+        |> Map.put("type", String.trim(row[:Type]))
+      end)
+      json_schema = [%{"type_name": type_name, "type_description": description, "type_parameters": parameters}] |> JSON.encode!
+
+      path = Path.join(:code.priv_dir(:td_dq), "static/qc_types.json")
+      File.write!(path, json_schema, [:write, :utf8])
+
+      {:ok, Map.merge(state, %{qc_type: type_name})}
+
   end
 
   def cast_to_int_attrs(m, keys) do
@@ -102,11 +126,17 @@ defmodule TrueBG.AuthenticationTest do
   end
 
   defp field_value_to_api_attrs(table, key_alias_map) do
-    table
-    |> Enum.reduce(%{}, fn(x, acc) ->
-        Map.put(acc, Map.get(key_alias_map,  x."Field", x."Field"), x."Value")
-        end
-       )
+    attrs_map = table
+    |> Enum.reduce(%{}, fn(x, acc) -> Map.put(acc, Map.get(key_alias_map, x."Field", x."Field"), x."Value") end)
+    |> Map.split(Map.values(key_alias_map))
+    |> fn({f, v}) -> Map.put(f, "type_params", v) end.()
+
+    if attrs_map["type_params"] == %{} do
+      attrs_map = Map.put(attrs_map, "type_params", nil)
+      attrs_map
+    else
+      attrs_map
+    end
   end
 
   defp quality_control_list(token) do

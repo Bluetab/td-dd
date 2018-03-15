@@ -13,6 +13,7 @@ defmodule TdDqWeb.QualityControlView do
   def render("quality_control.json", %{quality_control: quality_control}) do
     %{id: quality_control.id,
       type: quality_control.type,
+      type_params: quality_control.type_params,
       business_concept_id: quality_control.business_concept_id,
       name: quality_control.name,
       description: quality_control.description,

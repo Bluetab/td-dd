@@ -5,6 +5,7 @@ defmodule TdDqWeb.QualityControlController do
   alias TdDq.QualityControls
   alias TdDq.QualityControls.QualityControl
   alias TdDqWeb.SwaggerDefinitions
+  alias Poison, as: JSON
 
   action_fallback TdDqWeb.FallbackController
 
@@ -35,6 +36,9 @@ defmodule TdDqWeb.QualityControlController do
   end
 
   def create(conn, %{"quality_control" => quality_control_params}) do
+
+    _type_parameters = get_type_parameters(quality_control_params["type"])
+
     quality_control_params =
       if conn.assigns.current_user do
         Map.put_new(quality_control_params, "updated_by", conn.assigns.current_user.user_name)
@@ -107,5 +111,15 @@ defmodule TdDqWeb.QualityControlController do
     with {:ok, %QualityControl{}} <- QualityControls.delete_quality_control(quality_control) do
       send_resp(conn, :no_content, "")
     end
+  end
+
+  defp get_type_parameters(type_name) do
+    filename = Path.join(:code.priv_dir(:td_dq), "static/qc_types.json")
+
+    json = filename
+    |> File.read!
+    |> JSON.decode!
+
+    Enum.find(json, &(&1["type_name"] == type_name))["type_parameters"]
   end
 end

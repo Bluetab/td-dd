@@ -27,7 +27,7 @@ defmodule TdDq.QualityControls.QualityControl do
   @doc false
   def changeset(%QualityControl{} = quality_control, attrs) do
     quality_control
-    |> cast(attrs, [:type, :business_concept_id, :name, :description, :weight, :priority, :population, :goal, :minimum, :status, :version, :updated_by])
+    |> cast(attrs, [:type, :type_params, :business_concept_id, :name, :description, :weight, :priority, :population, :goal, :minimum, :status, :version, :updated_by])
     |> validate_required([:type, :business_concept_id, :name, :description, :weight, :priority, :population, :goal, :minimum, :status, :version, :updated_by])
   end
 
