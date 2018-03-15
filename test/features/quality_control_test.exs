@@ -80,6 +80,13 @@ defmodule TrueBG.AuthenticationTest do
     %{quality_control_type: quality_control_type},
     state do
     assert quality_control_type
+
+    json_schema = [%{"type_name": quality_control_type, "type_description": "", "type_parameters": nil}] |> JSON.encode!
+
+    file_name = Application.get_env(:td_dq, :qc_types_file)
+    file_path = Path.join(:code.priv_dir(:td_dq), file_name)
+    File.write!(file_path, json_schema, [:write, :utf8])
+
     {:ok,  Map.merge(state, %{qc_type: quality_control_type})}
   end
 
@@ -94,8 +101,9 @@ defmodule TrueBG.AuthenticationTest do
       end)
       json_schema = [%{"type_name": type_name, "type_description": description, "type_parameters": parameters}] |> JSON.encode!
 
-      path = Path.join(:code.priv_dir(:td_dq), "static/qc_types.json")
-      File.write!(path, json_schema, [:write, :utf8])
+      file_name = Application.get_env(:td_dq, :qc_types_file)
+      file_path = Path.join(:code.priv_dir(:td_dq), file_name)
+      File.write!(file_path, json_schema, [:write, :utf8])
 
       {:ok, Map.merge(state, %{qc_type: type_name})}
 

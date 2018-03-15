@@ -19,3 +19,5 @@ config :td_dq, TdDq.Repo,
   database: "td_dq_test",
   hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox
+
+config :td_dq, qc_types_file: "static/qc_types_test.json"

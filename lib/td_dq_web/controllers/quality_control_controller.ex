@@ -5,6 +5,7 @@ defmodule TdDqWeb.QualityControlController do
   alias TdDq.QualityControls
   alias TdDq.QualityControls.QualityControl
   alias TdDqWeb.SwaggerDefinitions
+  alias TdDqWeb.ErrorView
   alias Poison, as: JSON
 
   action_fallback TdDqWeb.FallbackController
@@ -37,7 +38,6 @@ defmodule TdDqWeb.QualityControlController do
 
   def create(conn, %{"quality_control" => quality_control_params}) do
 
-    _type_parameters = get_type_parameters(quality_control_params["type"])
 
     quality_control_params =
       if conn.assigns.current_user do
@@ -45,11 +45,19 @@ defmodule TdDqWeb.QualityControlController do
       else
         quality_control_params
       end
-    with {:ok, %QualityControl{} = quality_control} <- QualityControls.create_quality_control(quality_control_params) do
+
+    with {:ok, %QualityControl{} = quality_control} <- QualityControls.create_quality_control(quality_control_params),
+         true <- validate_type_parameters(quality_control_params)
+    do
       conn
       |> put_status(:created)
       |> put_resp_header("location", quality_control_path(conn, :show, quality_control))
       |> render("show.json", quality_control: quality_control)
+    else
+      {:error, _changeset} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> render(ErrorView, :"422.json")
     end
   end
 
@@ -114,12 +122,22 @@ defmodule TdDqWeb.QualityControlController do
   end
 
   defp get_type_parameters(type_name) do
-    filename = Path.join(:code.priv_dir(:td_dq), "static/qc_types.json")
+    file_name = Application.get_env(:td_dq, :qc_types_file)
+    file_path = Path.join(:code.priv_dir(:td_dq), file_name)
 
-    json = filename
+    json = file_path
     |> File.read!
     |> JSON.decode!
 
     Enum.find(json, &(&1["type_name"] == type_name))["type_parameters"]
+  end
+
+  defp validate_type_parameters(quality_control_params) do
+    type_parameters = get_type_parameters(quality_control_params["type"])
+    if type_parameters != nil do
+      length(type_parameters) == length(Map.keys(quality_control_params["type_params"]))
+    else
+      true
+    end
   end
 end
