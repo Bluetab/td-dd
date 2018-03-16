@@ -10,6 +10,10 @@ defmodule TdDqWeb.Router do
     plug TdDq.Auth.Pipeline.Secure
   end
 
+  scope "/api/swagger" do
+    forward "/", PhoenixSwagger.Plug.SwaggerUI, otp_app: :td_dq, swagger_file: "swagger.json"
+  end
+
   scope "/api", TdDqWeb do
     pipe_through :api
   end
