@@ -15,7 +15,7 @@ use Mix.Config
 # which you typically run after static files are built.
 config :td_dq, TdDqWeb.Endpoint,
   http: [port: 4004],
-  url: [host: "52.214.3.82", port: 4004],
+  url: [host: "truedat.bluetab.net", port: 4004],
   server: true,
   version: Mix.Project.config[:version],
   cache_static_manifest: "priv/static/cache_manifest.json"
