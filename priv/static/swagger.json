@@ -280,7 +280,7 @@
         },
         "updated_by": {
           "type": "integer",
-          "description": "updated by user_name"
+          "description": "updated by user id"
         },
         "type": {
           "type": "string",
