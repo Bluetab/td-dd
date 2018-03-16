@@ -1,6 +1,7 @@
 defmodule TdDq.Auth.Guardian do
   @moduledoc false
   use Guardian, otp_app: :td_dq
+  alias TdDq.Accounts.User
 
   def subject_for_token(resource, _claims) do
     # You can use any value for the subject of your token but
@@ -8,7 +9,7 @@ defmodule TdDq.Auth.Guardian do
     # how it being used on `resource_from_claims/1` function.
     # A unique `id` is a good subject, a non-unique email address
     # is a poor subject.
-    sub = to_string(resource.user_name)
+    sub = Poison.encode!(resource)
     {:ok, sub}
   end
 
@@ -16,8 +17,8 @@ defmodule TdDq.Auth.Guardian do
     # Here we'll look up our resource from the claims, the subject can be
     # found in the `"sub"` key. In `above subject_for_token/2` we returned
     # the resource id so here we'll rely on that to look it up.
-    user_name = claims["sub"]
-    resource = %{user_name: user_name}
+    sub = Poison.decode!(claims["sub"])
+    resource = %User{id: sub["id"], is_admin: sub["is_admin"], user_name: sub["user_name"]}
     {:ok,  resource}
   end
 

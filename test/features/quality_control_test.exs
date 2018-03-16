@@ -49,6 +49,10 @@ defmodule TrueBG.AuthenticationTest do
     assert attr != nil
   end
 
+  def assert_attr("updated_by" = attr, _value, %{} = target) do
+    assert target[attr] != nil
+  end
+
   def assert_attr(attr, value, %{} = target) do
     assert value == target[attr]
   end

@@ -3,7 +3,7 @@ defmodule TdDq.Repo.Migrations.AddQualityControlUpdatedBy do
 
   def change do
     alter table("quality_controls") do
-      add :updated_by, :string
+      add :updated_by, :integer
     end
   end
 end

@@ -22,7 +22,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
           weight :integer, "weight"
           status :string, "status (Default: defined)" #, default: "defined"
           version :integer, "version number"
-          updated_by :string, "updated by user_name"
+          updated_by :integer, "updated by user_name"
         end
       end,
       QualityControlCreateProps: swagger_schema do

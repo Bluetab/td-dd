@@ -19,7 +19,7 @@ defmodule TdDq.QualityControls.QualityControl do
     field :weight, :integer
     field :status, :string, default: "defined"
     field :version, :integer, default: 1
-    field :updated_by, :string
+    field :updated_by, :integer
 
     timestamps()
   end

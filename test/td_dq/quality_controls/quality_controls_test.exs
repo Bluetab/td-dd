@@ -6,7 +6,7 @@ defmodule TdDq.QualityControlsTest do
   describe "quality_controls" do
     alias TdDq.QualityControls.QualityControl
 
-    @valid_attrs %{updated_by: "app-admin", business_concept_id: "some business_concept_id",
+    @valid_attrs %{updated_by: Integer.mod(:binary.decode_unsigned("app-admin"), 100_000), business_concept_id: "some business_concept_id",
       description: "some description", goal: 42, minimum: 42, name: "some name",
       population: "some population", priority: "some priority", type: "some type", weight: 42}
     @update_attrs %{business_concept_id: "some updated business_concept_id", description: "some updated description",

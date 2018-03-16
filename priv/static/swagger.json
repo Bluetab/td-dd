@@ -279,7 +279,7 @@
           "description": "version number"
         },
         "updated_by": {
-          "type": "string",
+          "type": "integer",
           "description": "updated by user_name"
         },
         "type": {

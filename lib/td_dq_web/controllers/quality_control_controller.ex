@@ -40,7 +40,7 @@ defmodule TdDqWeb.QualityControlController do
 
     quality_control_params =
       if conn.assigns.current_user do
-        Map.put_new(quality_control_params, "updated_by", conn.assigns.current_user.user_name)
+        Map.put_new(quality_control_params, "updated_by", conn.assigns.current_user.id)
       else
         quality_control_params
       end
@@ -92,7 +92,7 @@ defmodule TdDqWeb.QualityControlController do
     quality_control = QualityControls.get_quality_control!(id)
     quality_control_params =
       if conn.assigns.current_user do
-        Map.put_new(quality_control_params, "updated_by", conn.assigns.current_user.user_name)
+        Map.put_new(quality_control_params, "updated_by", conn.assigns.current_user.id)
       else
         quality_control_params
       end

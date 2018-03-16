@@ -6,7 +6,7 @@ defmodule TdDqWeb.QualityControlsResultsController do
   alias TdDq.Repo
   alias TdDq.QualityControls
 
-  @quality_controls_results_query  """
+  @quality_controls_results_query  ~S"""
     INSERT INTO quality_controls_results ("business_concept_id", "quality_control_name", "system", "group", "structure_name", "field_name", "date", "result", inserted_at, updated_at)
     VALUES ($1, $5, $8, $4, $7, $3, $2, $6, $2, $2)
   """

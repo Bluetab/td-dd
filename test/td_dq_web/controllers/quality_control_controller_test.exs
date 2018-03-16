@@ -9,7 +9,7 @@ defmodule TdDqWeb.QualityControlControllerTest do
   @create_fixture_attrs %{business_concept_id: "some business_concept_id",
     description: "some description", goal: 42, minimum: 42, name: "some name",
     population: "some population", priority: "some priority", type: "some type",
-    weight: 42, updated_by: "app-admin"}
+    weight: 42, updated_by: Integer.mod(:binary.decode_unsigned("app-admin"), 100_000)}
 
   @create_attrs %{business_concept_id: "some business_concept_id",
     description: "some description", goal: 42, minimum: 42, name: "some name",
