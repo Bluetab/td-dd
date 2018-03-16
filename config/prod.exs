@@ -15,7 +15,7 @@ use Mix.Config
 # which you typically run after static files are built.
 config :td_dd, TdDdWeb.Endpoint,
   http: [port: 4005],
-  url: [host: "52.214.3.82", port: 4005],
+  url: [host: "truedat.bluetab.net", port: 4005],
   server: true,
   version: Mix.Project.config[:version],
   cache_static_manifest: "priv/static/cache_manifest.json"

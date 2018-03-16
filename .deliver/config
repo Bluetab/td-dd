@@ -6,7 +6,7 @@ BUILD_HOST="127.0.0.1"
 BUILD_USER="$USER"
 BUILD_AT="/tmp/edeliver/td_dd/builds"
 
-PRODUCTION_HOSTS="52.214.3.82"
+PRODUCTION_HOSTS="truedat.bluetab.net"
 PRODUCTION_USER="ec2-user"
 DELIVER_TO="/home/ec2-user"
 
