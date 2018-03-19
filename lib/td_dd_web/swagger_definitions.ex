@@ -38,6 +38,16 @@ defmodule TdDdWeb.SwaggerDefinitions do
           end)
         end
       end,
+      DataStructureUpdate: swagger_schema do
+        properties do
+          data_structure (Schema.new do
+            properties do
+              id :integer, "Data Structure unique identifier", required: true
+              description :string, "Data Structure description"
+            end
+          end)
+        end
+      end,
       DataStructures: swagger_schema do
         title "Data Structures"
         description "A collection of Data Structures"
@@ -98,6 +108,20 @@ defmodule TdDdWeb.SwaggerDefinitions do
               description :string, "Data Field descrition"
               business_concept_id :string, "Asociated Business Concept Id"
               data_structure_id :string, "Belongs to Data Structure", required: true
+            end
+          end)
+        end
+      end,
+      DataFieldUpdate: swagger_schema do
+        properties do
+          data_structure (Schema.new do
+            properties do
+              id :integer, "Data Field unique identifier", required: true
+              type :string, "Data Field type"
+              precision :integer, "Data Field precision"
+              nullable :boolean, "Data Field... is nullable"
+              description :string, "Data Field descrition"
+              business_concept_id :string, "Asociated Business Concept Id"
             end
           end)
         end

@@ -218,11 +218,11 @@
             "required": false,
             "name": "data_field",
             "in": "body",
-            "description": "Data Field create attrs"
+            "description": "Data Field update attrs"
           }
         ],
-        "operationId": "TdDdWeb.DataFieldController.create",
-        "description": "Creates Data Fields"
+        "operationId": "TdDdWeb.DataFieldController.update",
+        "description": "Update Data Fields"
       },
       "get": {
         "tags": [
@@ -264,6 +264,27 @@
         "$ref": "#/definitions/DataStructure"
       },
       "description": "A collection of Data Structures"
+    },
+    "DataStructureUpdate": {
+      "type": "object",
+      "properties": {
+        "data_structure": {
+          "type": "object",
+          "required": [
+            "id"
+          ],
+          "properties": {
+            "id": {
+              "type": "integer",
+              "description": "Data Structure unique identifier"
+            },
+            "description": {
+              "type": "string",
+              "description": "Data Structure description"
+            }
+          }
+        }
+      }
     },
     "DataStructureResponse": {
       "type": "object",
@@ -367,6 +388,43 @@
         "$ref": "#/definitions/DataField"
       },
       "description": "A collection of Data Fields"
+    },
+    "DataFieldUpdate": {
+      "type": "object",
+      "properties": {
+        "data_structure": {
+          "type": "object",
+          "required": [
+            "id"
+          ],
+          "properties": {
+            "type": {
+              "type": "string",
+              "description": "Data Field type"
+            },
+            "precision": {
+              "type": "integer",
+              "description": "Data Field precision"
+            },
+            "nullable": {
+              "type": "boolean",
+              "description": "Data Field... is nullable"
+            },
+            "id": {
+              "type": "integer",
+              "description": "Data Field unique identifier"
+            },
+            "description": {
+              "type": "string",
+              "description": "Data Field descrition"
+            },
+            "business_concept_id": {
+              "type": "string",
+              "description": "Asociated Business Concept Id"
+            }
+          }
+        }
+      }
     },
     "DataFieldResponse": {
       "type": "object",

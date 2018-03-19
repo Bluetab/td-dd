@@ -21,6 +21,10 @@ defmodule TdDdWeb.Router do
     resources "/data_fields", DataFieldController, except: [:new, :edit]
   end
 
+  scope "/api/swagger" do
+    forward "/", PhoenixSwagger.Plug.SwaggerUI, otp_app: :td_dd, swagger_file: "swagger.json"
+  end
+
   def swagger_info do
     %{
       schemes: ["http"],

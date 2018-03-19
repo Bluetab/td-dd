@@ -1,15 +1,38 @@
 defmodule TdDdWeb.DataStructureController do
   use TdDdWeb, :controller
+  use PhoenixSwagger
   alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDdWeb.ErrorView
+  alias TdDdWeb.SwaggerDefinitions
 
   action_fallback TdDdWeb.FallbackController
+
+  def swagger_definitions do
+    SwaggerDefinitions.data_structure_swagger_definitions()
+  end
+
+  swagger_path :index do
+    get "/data_structures"
+    description "List Data Structures"
+    response 200, "OK", Schema.ref(:DataStructuresResponse)
+  end
 
   def index(conn, _params) do
     data_structures = DataStructures.list_data_structures()
     render(conn, "index.json", data_structures: data_structures)
+  end
+
+  swagger_path :create do
+    post "/data_structures"
+    description "Creates Data Structure"
+    produces "application/json"
+    parameters do
+      data_structure :body, Schema.ref(:DataStructureCreate), "Data Structure create attrs"
+    end
+    response 201, "OK", Schema.ref(:DataStructureResponse)
+    response 400, "Client Error"
   end
 
   def create(conn, %{"data_structure" => data_structure_params}) do
@@ -28,6 +51,17 @@ defmodule TdDdWeb.DataStructureController do
         |> put_status(:unprocessable_entity)
         |> render(ErrorView, :"422.json")
     end
+  end
+
+  swagger_path :show do
+    get "/data_structures/{id}"
+    description "Show Data Structure"
+    produces "application/json"
+    parameters do
+      id :path, :integer, "Data Structure ID", required: true
+    end
+    response 200, "OK", Schema.ref(:DataStructureResponse)
+    response 400, "Client Error"
   end
 
   def show(conn, %{"id" => id}) do
@@ -50,6 +84,17 @@ defmodule TdDdWeb.DataStructureController do
         |> put_status(:unprocessable_entity)
         |> render(ErrorView, :"422.json")
     end
+  end
+
+  swagger_path :delete do
+    delete "/data_structures/{id}"
+    description "Delete Data Structure"
+    produces "application/json"
+    parameters do
+      id :path, :integer, "Data Structure ID", required: true
+    end
+    response 204, "No Content"
+    response 400, "Client Error"
   end
 
   def delete(conn, %{"id" => id}) do

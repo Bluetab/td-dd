@@ -1,5 +1,7 @@
 defmodule Mix.Tasks.Bg.CodeAnalysis do
   use Mix.Task
+  alias Mix.Tasks.Release.Clean
+  alias Mix.Tasks.Compile
   alias Mix.Tasks.Credo
 
   @shortdoc "Run code analysis"
@@ -9,6 +11,8 @@ defmodule Mix.Tasks.Bg.CodeAnalysis do
   """
 
   def run(_args) do
+    Clean.run([])
+    Compile.run([])
     Credo.run(["--strict"])
   end
 
