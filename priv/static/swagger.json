@@ -449,7 +449,7 @@
               "description": "Data Field type"
             },
             "precision": {
-              "type": "integer",
+              "type": "string",
               "description": "Data Field precision"
             },
             "nullable": {
@@ -490,7 +490,7 @@
           "description": "Data Field type"
         },
         "precision": {
-          "type": "integer",
+          "type": "string",
           "description": "Data Field precision"
         },
         "nullable": {
@@ -528,7 +528,7 @@
       },
       "example": {
         "type": "Data Field type",
-        "precision": 12,
+        "precision": "Data Field precision",
         "nullable": true,
         "name": "Data Field name",
         "last_change_by": 1,

@@ -76,7 +76,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
           id :integer, "Data Field unique identifier", required: true
           name :string, "Data Field name", required: true
           type :string, "Data Field type"
-          precision :integer, "Data Field precision"
+          precision :string, "Data Field precision"
           nullable :boolean, "Data Field... is nullable"
           description :string, "Data Field descrition"
           business_concept_id :string, "Asociated Business Concept Id"
@@ -88,7 +88,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
           id: 123,
           name: "Data Field name",
           type: "Data Field type",
-          precision: 12,
+          precision: "Data Field precision",
           nullable: true,
           description: "Data Field descrition",
           business_concept_id: "123456",
@@ -103,7 +103,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
             properties do
               name :string, "Data Field name", required: true
               type :string, "Data Field type"
-              precision :integer, "Data Field precision"
+              precision :string, "Data Field precision"
               nullable :boolean, "Data Field... is nullable"
               description :string, "Data Field descrition"
               business_concept_id :string, "Asociated Business Concept Id"

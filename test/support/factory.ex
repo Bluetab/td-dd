@@ -34,7 +34,7 @@ defmodule TdDd.Factory do
       last_change_by: 0,
       name: "some name",
       nullable: "false",
-      precision: 0,
+      precision: "some precision",
       type: "some type",
       data_structure_id: 0
     }

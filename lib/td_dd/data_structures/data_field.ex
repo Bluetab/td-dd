@@ -11,7 +11,7 @@ defmodule TdDd.DataStructures.DataField do
     field :last_change_by, :integer
     field :name, :string
     field :nullable, :boolean, default: nil
-    field :precision, :integer, default: nil
+    field :precision, :string, default: nil
     field :type, :string, default: nil
     field :data_structure_id, :id
 
@@ -24,7 +24,6 @@ defmodule TdDd.DataStructures.DataField do
     |> cast(attrs, [:name, :type, :precision, :nullable, :description, :business_concept_id, :data_structure_id, :last_change_at, :last_change_by])
     |> validate_required([:name, :type, :precision, :nullable, :data_structure_id, :last_change_at, :last_change_by])
     |> validate_length(:name, max: 255)
-    |> validate_length(:description,  max: 500)
     |> validate_length(:business_concept_id, max: 255)
     |> foreign_key_constraint(:data_structure_id)
   end

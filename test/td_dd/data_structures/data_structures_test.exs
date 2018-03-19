@@ -67,8 +67,8 @@ defmodule TdDd.DataStructuresTest do
   describe "data_fields" do
     alias TdDd.DataStructures.DataField
 
-    @valid_attrs %{business_concept_id: "42", description: "some description", last_change_at: "2010-04-17 14:00:00.000000Z", last_change_by: 42, name: "some name", nullable: true, precision: 42, type: "some type"}
-    @update_attrs %{business_concept_id: "43", description: "some updated description", last_change_at: "2011-05-18 15:01:01.000000Z", last_change_by: 43, name: "some updated name", nullable: false, precision: 43, type: "some updated type"}
+    @valid_attrs %{business_concept_id: "42", description: "some description", last_change_at: "2010-04-17 14:00:00.000000Z", last_change_by: 42, name: "some name", nullable: true, precision: "some precision", type: "some type"}
+    @update_attrs %{business_concept_id: "43", description: "some updated description", last_change_at: "2011-05-18 15:01:01.000000Z", last_change_by: 43, name: "some updated name", nullable: false, precision: "some updated precision", type: "some updated type"}
     @invalid_attrs %{business_concept_id: nil, description: nil, last_change_at: nil, last_change_by: nil, name: nil, nullable: nil, precision: nil, type: nil}
 
     test "list_data_fields/0 returns all data_fields" do
@@ -93,7 +93,7 @@ defmodule TdDd.DataStructuresTest do
       assert data_field.last_change_by == 42
       assert data_field.name == "some name"
       assert data_field.nullable == true
-      assert data_field.precision == 42
+      assert data_field.precision == "some precision"
       assert data_field.type == "some type"
     end
 
@@ -112,7 +112,7 @@ defmodule TdDd.DataStructuresTest do
       assert data_field.last_change_by == 43
       assert data_field.name == "some updated name"
       assert data_field.nullable == false
-      assert data_field.precision == 43
+      assert data_field.precision == "some updated precision"
       assert data_field.type == "some updated type"
     end
 

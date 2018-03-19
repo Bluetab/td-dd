@@ -93,19 +93,11 @@ defmodule TdDdWeb.MetadataController do
     |> Enum.each(fn(data) ->
       data = data
       |> List.update_at(6, &(&1 == "1")) # nullable
-      |> List.update_at(7, &binary_precision_to_integer(&1)) # precision
 
       data = add_user_and_date_time(conn, data)
       SQL.query!(Repo, @data_field_query, data)
     end)
 
-  end
-
-  defp binary_precision_to_integer(binary_precision) do
-    case Integer.parse(binary_precision) do
-      {:ok, integer_precision} -> integer_precision
-      _ -> nil
-    end
   end
 
   defp add_user_and_date_time(conn, data) do

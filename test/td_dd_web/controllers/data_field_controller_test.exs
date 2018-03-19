@@ -5,9 +5,9 @@ defmodule TdDdWeb.DataFieldControllerTest do
 
   alias TdDd.DataStructures.DataField
 
-  @create_attrs %{business_concept_id: "42", description: "some description", name: "some name", nullable: true, precision: 42, type: "some type", last_change_at: "2010-04-17 14:00:00.000000Z", last_change_by: 42}
-  @update_attrs %{business_concept_id: "43", description: "some updated description", name: "some updated name", nullable: false, precision: 43, type: "some updated type", last_change_at: "2010-04-17 14:00:00.000000Z", last_change_by: 42}
-  @invalid_attrs %{business_concept_id: nil, description: nil, name: nil, nullable: nil, precision: nil, type: nil, last_change_at: nil, last_change_by: nil}
+  @create_attrs %{business_concept_id: "42", description: "some description", name: "some name", nullable: true, precision: "some precision", type: "some type", last_change_at: "2010-04-17 14:00:00.000000Z", last_change_by: 42}
+  @update_attrs %{business_concept_id: "43", description: "some updated description", name: "some updated name", nullable: false, precision: "some precision", type: "some updated type", last_change_at: "2010-04-17 14:00:00.000000Z", last_change_by: 42}
+  @invalid_attrs %{business_concept_id: nil, description: nil, name: nil, nullable: nil, precision: "some precision", type: nil, last_change_at: nil, last_change_by: nil}
 
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
@@ -49,7 +49,7 @@ defmodule TdDdWeb.DataFieldControllerTest do
         "description" => "some description",
         "name" => "some name",
         "nullable" => true,
-        "precision" => 42,
+        "precision" => "some precision",
         "type" => "some type"}
     end
 
@@ -84,7 +84,7 @@ defmodule TdDdWeb.DataFieldControllerTest do
         "description" => "some updated description",
         "name" => "some updated name",
         "nullable" => false,
-        "precision" => 43,
+        "precision" => "some precision",
         "type" => "some updated type"}
     end
 

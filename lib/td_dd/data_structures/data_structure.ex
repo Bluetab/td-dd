@@ -23,6 +23,5 @@ defmodule TdDd.DataStructures.DataStructure do
     |> validate_length(:system, max: 255)
     |> validate_length(:group, max: 255)
     |> validate_length(:name, max: 255)
-    |> validate_length(:description,  max: 500)
   end
 end

@@ -110,7 +110,6 @@ defmodule TdDd.DictionaryTest do
     field_value
     |> field_value_to_api_attrs(@fixed_data_field_values)
     |> Map.update("nullable", false, &(&1 == "YES"))
-    |> Map.update("precision", nil, &(if &1 == "", do: nil, else: String.to_integer(&1)))
     |> Map.update("business_concept_id", nil, &(if &1 == "", do: nil, else: &1))
   end
 
@@ -145,11 +144,10 @@ defmodule TdDd.DictionaryTest do
   end
   defp build_metadata(metadata, %{File: "Field", Description: description, Group: group,
                                   Structure_Name: name, System:  system, Field_Name: field_name,
-                                  Type: type, Precision: raw_precision, Nullable: raw_nullable,
+                                  Type: type, Precision: precision, Nullable: raw_nullable,
                                   Business_Concept_ID:  business_concept_id}) do
     data_fields = elem(metadata, 1)
     nullable = if raw_nullable == "YES", do: "1", else: "0"
-    precision = if raw_precision == "", do: "", else: String.to_integer(raw_precision)
     put_elem(metadata, 1, [[system, group, name, field_name, type, description, nullable, precision, business_concept_id]|data_fields])
   end
   defp build_metadata(metadata, [head|tail]) do

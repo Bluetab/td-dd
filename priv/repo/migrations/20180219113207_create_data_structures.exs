@@ -6,7 +6,7 @@ defmodule TdDd.Repo.Migrations.CreateDataStructures do
       add :system, :string
       add :group, :string
       add :name, :string
-      add :description, :string, null: true, size: 500
+      add :description, :text, null: true
       add :last_change_at, :utc_datetime
       add :last_change_by, :bigint
 
