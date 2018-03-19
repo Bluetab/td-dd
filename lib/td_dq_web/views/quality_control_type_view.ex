@@ -3,6 +3,7 @@ defmodule TdDqWeb.QualityControlTypeView do
   alias TdDqWeb.QualityControlTypeView
 
   def render("index.json", %{quality_control_types: quality_control_types}) do
-    quality_control_types
+    Enum.reduce(quality_control_types, [], &(&2 ++ [&1["type_name"]]))
   end
+
 end

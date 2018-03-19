@@ -163,7 +163,7 @@ defmodule TrueBG.AuthenticationTest do
   defand ~r/^"(?<user_name>[^"]+)" is able to view quality control types:$/,
     %{user_name: _user_name, table: table},
     %{quality_controls_types: quality_controls_types} = _state do
-      expected_quality_controls_types = get_quality_control_types_from_table(table)
+      expected_quality_controls_types = Enum.reduce(table, [], &(&2 ++ [&1[:Name]]))
       assert quality_controls_types == expected_quality_controls_types
   end
 

@@ -96,11 +96,10 @@ Feature: Quality Controls
        When "app-admin" tries to list quality control types
        Then the system returns a result with code "Ok"
        And "app-admin" is able to view quality control types:
-        | Name                 | Description                             | Parameter           | Type         |
-        | Integer Values Range | Check Range of values in integer format | Min Value           | integer      |
-        |                      |                                         | Max Value           | integer      |
-        | Integer Min Value    | Check Min Value in integer              | Min Value           | integer      |
-        | Integer Max Value    | Check Max Value in integer              | Max Value           | integer      |
+        | Name                 |
+        | Integer Values Range |
+        | Integer Min Value    |
+        | Integer Max Value    |
 
   Scenario: Receive and store results data for existing Quality Controls in bulk mode
     Given some quality controls exist in the system with following data:
