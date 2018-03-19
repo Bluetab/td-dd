@@ -29,6 +29,7 @@ defmodule TdDqWeb.Router do
     post "/quality_controls_results", QualityControlsResultsController, :upload
     get "/quality_controls_results", QualityControlsResultsController, :index
     resources "/quality_controls", QualityControlController, except: [:new, :edit]
+    resources "/quality_control_types", QualityControlTypeController, except: [:new, :edit, :create, :show, :update]
   end
 
   def swagger_info do
