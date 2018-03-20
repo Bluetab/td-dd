@@ -16,6 +16,159 @@
     "http"
   ],
   "paths": {
+    "/quality_rules/{id}": {
+      "put": {
+        "tags": [
+          "QualityRule"
+        ],
+        "summary": "",
+        "responses": {
+          "400": {
+            "description": "Client Error"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/QualityRuleResponse"
+            },
+            "description": "OK"
+          }
+        },
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/definitions/QualityRuleUpdate"
+            },
+            "required": false,
+            "name": "quality_control",
+            "in": "body",
+            "description": "Quality Rule update attrs"
+          },
+          {
+            "type": "integer",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Quality Rule ID"
+          }
+        ],
+        "operationId": "TdDqWeb.QualityRuleController.update",
+        "description": "Updates Quality Rule"
+      },
+      "get": {
+        "tags": [
+          "QualityRule"
+        ],
+        "summary": "",
+        "responses": {
+          "400": {
+            "description": "Client Error"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/QualityRuleResponse"
+            },
+            "description": "OK"
+          }
+        },
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "type": "integer",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Quality Rule ID"
+          }
+        ],
+        "operationId": "TdDqWeb.QualityRuleController.show",
+        "description": "Show Quality Rule"
+      },
+      "delete": {
+        "tags": [
+          "QualityRule"
+        ],
+        "summary": "",
+        "responses": {
+          "400": {
+            "description": "Client Error"
+          },
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "type": "integer",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Quality Rule ID"
+          }
+        ],
+        "operationId": "TdDqWeb.QualityRuleController.delete",
+        "description": "Delete Quality Rule"
+      }
+    },
+    "/quality_rules": {
+      "post": {
+        "tags": [
+          "QualityRule"
+        ],
+        "summary": "",
+        "responses": {
+          "400": {
+            "description": "Client Error"
+          },
+          "201": {
+            "schema": {
+              "$ref": "#/definitions/QualityRuleResponse"
+            },
+            "description": "Created"
+          }
+        },
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/definitions/QualityRuleCreate"
+            },
+            "required": false,
+            "name": "quality_rule",
+            "in": "body",
+            "description": "Quality Rule create attrs"
+          }
+        ],
+        "operationId": "TdDqWeb.QualityRuleController.create",
+        "description": "Creates a Quality Rule"
+      },
+      "get": {
+        "tags": [
+          "QualityRule"
+        ],
+        "summary": "",
+        "responses": {
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/QualityRulesResponse"
+            },
+            "description": "OK"
+          }
+        },
+        "parameters": [],
+        "operationId": "TdDqWeb.QualityRuleController.index",
+        "description": "List Quality Rules"
+      }
+    },
     "/quality_controls/{id}": {
       "put": {
         "tags": [
@@ -195,6 +348,137 @@
   },
   "host": "localhost:4000",
   "definitions": {
+    "QualityRulesResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/QualityRules"
+        }
+      }
+    },
+    "QualityRules": {
+      "type": "array",
+      "title": "Quality Rules",
+      "items": {
+        "$ref": "#/definitions/QualityRule"
+      },
+      "description": "A collection of Quality Rules"
+    },
+    "QualityRuleUpdate": {
+      "type": "object",
+      "required": [
+        "type",
+        "system",
+        "name"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Quality Rule type"
+        },
+        "system": {
+          "type": "string",
+          "description": "Quality Rule system"
+        },
+        "parameters": {
+          "type": "object",
+          "description": "Quality Rule parameters"
+        },
+        "name": {
+          "type": "string",
+          "description": "Quality Rule name"
+        },
+        "description": {
+          "type": "string",
+          "description": "Quality Rule description"
+        }
+      }
+    },
+    "QualityRuleResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/QualityRule"
+        }
+      }
+    },
+    "QualityRuleCreate": {
+      "type": "object",
+      "required": [
+        "type",
+        "system",
+        "name",
+        "quality_control_id"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Quality Rule type"
+        },
+        "system": {
+          "type": "string",
+          "description": "Quality Rule system"
+        },
+        "quality_control_id": {
+          "type": "integer",
+          "description": "belongs to quality control"
+        },
+        "parameters": {
+          "type": "object",
+          "description": "Quality Rule parameters"
+        },
+        "name": {
+          "type": "string",
+          "description": "Quality Rule name"
+        },
+        "description": {
+          "type": "string",
+          "description": "Quality Rule description"
+        }
+      }
+    },
+    "QualityRule": {
+      "type": "object",
+      "title": "Quality Rule",
+      "required": [
+        "type",
+        "system",
+        "name",
+        "quality_control_id",
+        "id"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Quality Rule type"
+        },
+        "system": {
+          "type": "string",
+          "description": "Quality Rule system"
+        },
+        "quality_control_id": {
+          "type": "integer",
+          "description": "Belongs to quality control"
+        },
+        "parameters": {
+          "type": "object",
+          "description": "Quality Rule parameters"
+        },
+        "name": {
+          "type": "string",
+          "description": "Quality Rule name"
+        },
+        "id": {
+          "type": "integer",
+          "description": "Quality Rule unique identifier"
+        },
+        "description": {
+          "type": "string",
+          "description": "Quality Rule description"
+        }
+      },
+      "description": "Quality Rule entity"
+    },
     "QualityControlsResponse": {
       "type": "object",
       "properties": {

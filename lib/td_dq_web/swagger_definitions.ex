@@ -87,4 +87,57 @@ defmodule TdDqWeb.SwaggerDefinitions do
     }
   end
 
+  def quality_rule_definitions do
+    %{
+      QualityRule: swagger_schema do
+        title "Quality Rule"
+        description "Quality Rule entity"
+        properties do
+          id :integer, "Quality Rule unique identifier", required: true
+          quality_control_id :integer, "Belongs to quality control", required: true
+          name :string, "Quality Rule name", required: true
+          description :string, "Quality Rule description"
+          system :string, "Quality Rule system", required: true
+          type :string, "Quality Rule type", required: true
+          parameters :object, "Quality Rule parameters"
+        end
+      end,
+      QualityRuleCreate: swagger_schema do
+        properties do
+          quality_control_id :integer, "belongs to quality control", required: true
+          name :string, "Quality Rule name", required: true
+          description :string, "Quality Rule description"
+          system :string, "Quality Rule system", required: true
+          type :string, "Quality Rule type", required: true
+          parameters :object, "Quality Rule parameters"
+        end
+      end,
+      QualityRuleUpdate: swagger_schema do
+        properties do
+          name :string, "Quality Rule name", required: true
+          description :string, "Quality Rule description"
+          system :string, "Quality Rule system", required: true
+          type :string, "Quality Rule type", required: true
+          parameters :object, "Quality Rule parameters"
+        end
+      end,
+      QualityRules: swagger_schema do
+        title "Quality Rules"
+        description "A collection of Quality Rules"
+        type :array
+        items Schema.ref(:QualityRule)
+      end,
+      QualityRuleResponse: swagger_schema do
+        properties do
+          data Schema.ref(:QualityRule)
+        end
+      end,
+      QualityRulesResponse: swagger_schema do
+        properties do
+          data Schema.ref(:QualityRules)
+        end
+      end
+    }
+  end
+
 end
