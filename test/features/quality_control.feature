@@ -45,10 +45,6 @@ Feature: Quality Controls
 
   Scenario: Create a new Quality Control with a type that has parameters
     Given user "app-admin" is logged in the application
-    And an existing quality control types:
-      | Name                 | Description                             | Parameter           | Type         |
-      | Integer Values Range | Check Range of values in integer format | Min Value           | integer      |
-      |                      |                                         | Max Value           | integer      |
     And an existing Quality Control type called "Integer Values Range" with description "Check Range of values in integer format" and following parameters:
       | Parameter           | Type         |
       | Min Value           | integer      |

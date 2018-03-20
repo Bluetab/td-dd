@@ -21,11 +21,11 @@ Feature: Quality Rules
       | Type                | Quality Rule Type                                                                      |
       | System              | Oracle                                                                                 |
       | Name                | Quality Rule Name                                                                      |
-      | Descrition          | My Generic Quality Control Rule                                                        |
+      | Description         | My Generic Quality Control Rule                                                        |
     Then the system returns a result with code "Created"
     And "app-admin" is able to view Quality Rule of type "Quality Rule Type" and name "Quality Rule Name" associated to Quality Control with Business Concept ID "MYID_333" and name "Quality Control Name" with following data:
       | Field               | Value                                                                                  |
       | Type                | Quality Rule Type                                                                      |
       | System              | Oracle                                                                                 |
       | Name                | Quality Rule Name                                                                      |
-      | Descrition          | My Generic Quality Control Rule                                                        |
+      | Description         | My Generic Quality Control Rule                                                        |

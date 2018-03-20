@@ -1,20 +1,14 @@
-defmodule TrueBG.AuthenticationTest do
+defmodule TdQd.QualtityControlTest do
   use Cabbage.Feature, async: false, file: "quality_control.feature"
   use TdDqWeb.ConnCase
+
+  import TdDqWeb.QualityControl
+
   import TdDqWeb.Router.Helpers
   import TdDqWeb.ResponseCode
   import TdDqWeb.Authentication, only: :functions
   alias Poison, as: JSON
   @endpoint TdDqWeb.Endpoint
-
-  @test_to_api_create_alias %{"Field" => "field", "Type" => "type", "Business Concept ID" => "business_concept_id",
-    "Name" => "name", "Description" => "description", "Weight" => "weight",
-    "Priority" => "priority", "Population" => "population", "Goal" => "goal", "Minimum" => "minimum"
-  }
-
-  @test_to_api_get_alias %{"Status" => "status", "Last User" => "updated_by", "Version" => "version", "Last Modification" => "inserted_at"}
-
-  @quality_control_integer_fields ["weight", "goal", "minimum"]
 
   # Scenario: Create a new Quality Control with only generic fields
   defgiven ~r/^user "(?<user_name>[^"]+)" is logged in the application$/, %{user_name: user_name}, state do
@@ -28,12 +22,9 @@ defmodule TrueBG.AuthenticationTest do
 
     assert user_name == state[:user_name]
     assert type == state[:qc_type]
-    attrs = table
-    |> field_value_to_api_attrs(@test_to_api_create_alias)
 
-    attrs = attrs
-    |> cast_to_int_attrs(@quality_control_integer_fields)
-    {:ok, status_code, _json_resp} = quality_control_create(state[:token], attrs)
+    {:ok, status_code, _resp} = create_new_quality_control(state[:token], table)
+
     {:ok,  Map.merge(state, %{status_code: status_code})}
   end
 
@@ -71,11 +62,11 @@ defmodule TrueBG.AuthenticationTest do
       name: name, table: table}, state do
 
     assert user_name == state[:user_name]
-    quality_control_data = get_quality_control(state[:token], %{business_concept_id: business_concept_id, name: name})
+    quality_control_data = find_quality_control(state[:token], %{business_concept_id: business_concept_id, name: name})
 
     attrs = table
-    |> field_value_to_api_attrs(Map.merge(@test_to_api_create_alias, @test_to_api_get_alias))
-    |> cast_to_int_attrs(@quality_control_integer_fields ++ ["version"])
+    |> quality_control_test_fields_to_api_create_and_get_alias
+    |> cast_quality_control_integer_fields_plus_version
 
     assert_attrs(attrs, quality_control_data)
 
@@ -85,13 +76,7 @@ defmodule TrueBG.AuthenticationTest do
     %{quality_control_type: quality_control_type},
     state do
     assert quality_control_type
-
-    json_schema = [%{"type_name": quality_control_type, "type_description": "", "type_parameters": nil}] |> JSON.encode!
-
-    file_name = Application.get_env(:td_dq, :qc_types_file)
-    file_path = Path.join(:code.priv_dir(:td_dq), file_name)
-    File.write!(file_path, json_schema, [:write, :utf8])
-
+    create_empty_quality_control_type(quality_control_type)
     {:ok,  Map.merge(state, %{qc_type: quality_control_type})}
   end
 
@@ -244,67 +229,6 @@ defmodule TrueBG.AuthenticationTest do
               )
     end
     )
-  end
-  ######################################################################################################
-
-  def cast_to_int_attrs(m, keys) do
-    m
-    |> Map.split(keys)
-    |> fn({l1, l2}) ->
-        l1 |>
-        Enum.map(fn({k, v}) ->
-          {k, String.to_integer(v)} end
-        )
-        |> Enum.into(l2)
-       end.()
-  end
-
-  defp get_quality_control(token, search_params) do
-    {:ok, _status_code, json_resp} = quality_control_list(token)
-    Enum.find(json_resp["data"], fn(quality_control) ->
-      Enum.all?(search_params, fn({k, v}) ->
-        string_key = Atom.to_string(k)
-        quality_control[string_key] == v
-      end
-      )
-    end
-    )
-  end
-
-  defp field_value_to_api_attrs(table, key_alias_map) do
-    attrs_map = table
-    |> Enum.reduce(%{}, fn(x, acc) -> Map.put(acc, Map.get(key_alias_map, x."Field", x."Field"), x."Value") end)
-    |> Map.split(Map.values(key_alias_map))
-    |> fn({f, v}) -> Map.put(f, "type_params", v) end.()
-
-    if attrs_map["type_params"] == %{} do
-      attrs_map = Map.put(attrs_map, "type_params", nil)
-      attrs_map
-    else
-      attrs_map
-    end
-  end
-
-  defp quality_control_list(token) do
-    headers = get_header(token)
-    %HTTPoison.Response{status_code: status_code, body: resp} =
-      HTTPoison.get!(quality_control_url(@endpoint, :index), headers, [])
-    {:ok, status_code, resp |> JSON.decode!}
-  end
-
-  defp quality_control_create(token, quality_control_params) do
-    headers = get_header(token)
-    body = %{quality_control: quality_control_params} |> JSON.encode!
-    %HTTPoison.Response{status_code: status_code, body: resp} =
-      HTTPoison.post!(quality_control_url(@endpoint, :create), body, headers, [])
-    {:ok, status_code, resp |> JSON.decode!}
-  end
-
-  defp quality_control_type_list(token) do
-    headers = get_header(token)
-    %HTTPoison.Response{status_code: status_code, body: resp} =
-      HTTPoison.get!(quality_control_type_url(@endpoint, :index), headers, [])
-      {:ok, status_code, resp |> JSON.decode!}
   end
 
 end
