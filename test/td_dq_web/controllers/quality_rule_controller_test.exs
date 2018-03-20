@@ -1,5 +1,6 @@
 defmodule TdDqWeb.QualityRuleControllerTest do
   use TdDqWeb.ConnCase
+  use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
   import TdDq.Factory
   import TdDqWeb.Authentication, only: :functions
 
@@ -9,24 +10,27 @@ defmodule TdDqWeb.QualityRuleControllerTest do
 
   describe "index" do
     @tag :admin_authenticated
-    test "lists all quality_rules", %{conn: conn} do
+    test "lists all quality_rules", %{conn: conn, swagger_schema: schema} do
       conn = get conn, quality_rule_path(conn, :index)
+      validate_resp_schema(conn, schema, "QualityRulesResponse")
       assert json_response(conn, 200)["data"] == []
     end
   end
 
   describe "create quality_rule" do
     @tag :admin_authenticated
-    test "renders quality_rule when data is valid", %{conn: conn} do
+    test "renders quality_rule when data is valid", %{conn: conn, swagger_schema: schema} do
       quality_control = insert(:quality_control)
       creation_attrs = Map.from_struct(build(:quality_rule, quality_control_id: quality_control.id))
 
       conn = post conn, quality_rule_path(conn, :create), quality_rule: creation_attrs
+      validate_resp_schema(conn, schema, "QualityRuleResponse")
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
       conn = recycle_and_put_headers(conn)
 
       conn = get conn, quality_rule_path(conn, :show, id)
+      validate_resp_schema(conn, schema, "QualityRuleResponse")
       json_response = json_response(conn, 200)["data"]
 
       assert creation_attrs[:quality_control_id] == json_response["quality_control_id"]
@@ -48,7 +52,7 @@ defmodule TdDqWeb.QualityRuleControllerTest do
   describe "update quality_rule" do
 
     @tag :admin_authenticated
-    test "renders quality_rule when data is valid", %{conn: conn} do
+    test "renders quality_rule when data is valid", %{conn: conn, swagger_schema: schema} do
       quality_rule = insert(:quality_rule)
       update_attrs = Map.from_struct(quality_rule)
       update_attrs = update_attrs
@@ -57,11 +61,13 @@ defmodule TdDqWeb.QualityRuleControllerTest do
       |> Map.put(:description, "New description")
 
       conn = put conn, quality_rule_path(conn, :update, quality_rule), quality_rule: update_attrs
+      validate_resp_schema(conn, schema, "QualityRuleResponse")
       assert %{"id" => id} = json_response(conn, 200)["data"]
 
       conn = recycle_and_put_headers(conn)
 
       conn = get conn, quality_rule_path(conn, :show, id)
+      validate_resp_schema(conn, schema, "QualityRuleResponse")
       json_response = json_response(conn, 200)["data"]
 
       assert update_attrs[:quality_control_id] == json_response["quality_control_id"]
