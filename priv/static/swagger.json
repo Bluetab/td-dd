@@ -168,6 +168,25 @@
         "operationId": "TdDqWeb.QualityControlController.index",
         "description": "List Quality Controls"
       }
+    },
+    "/quality_control_types": {
+      "get": {
+        "tags": [
+          "QualityControlType"
+        ],
+        "summary": "",
+        "responses": {
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/QualityControlTypesResponse"
+            },
+            "description": "OK"
+          }
+        },
+        "parameters": [],
+        "operationId": "TdDqWeb.QualityControlTypeController.index",
+        "description": "List Quality Control Types"
+      }
     }
   },
   "info": {
@@ -199,6 +218,31 @@
           "$ref": "#/definitions/QualityControlCreateProps"
         }
       }
+    },
+    "QualityControlTypesResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/QualityControlType"
+        }
+      }
+    },
+    "QualityControlType": {
+      "type": "object",
+      "title": "Quality Control Type",
+      "required": [
+        "type_name"
+      ],
+      "properties": {
+        "type_name": {
+          "type": "string",
+          "description": "Quality Control type name "
+        }
+      },
+      "example": {
+        "type_name": "Quality Control Type name"
+      },
+      "description": "A Quality Control Type"
     },
     "QualityControlResponse": {
       "type": "object",

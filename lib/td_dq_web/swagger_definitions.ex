@@ -64,7 +64,27 @@ defmodule TdDqWeb.SwaggerDefinitions do
           data Schema.ref(:QualityControls)
         end
       end
-
     }
   end
+
+  def quality_control_type_definitions do
+    %{
+      QualityControlType: swagger_schema do
+        title "Quality Control Type"
+        description "A Quality Control Type"
+        properties do
+          type_name :string, "Quality Control type name ", required: true
+        end
+        example %{
+          type_name: "Quality Control Type name",
+        }
+      end,
+      QualityControlTypesResponse: swagger_schema do
+        properties do
+          data Schema.ref(:QualityControlType)
+        end
+      end
+    }
+  end
+
 end

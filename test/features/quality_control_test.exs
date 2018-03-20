@@ -156,15 +156,16 @@ defmodule TrueBG.AuthenticationTest do
     %{user_name: user_name},
     state do
     token = get_user_token(user_name)
-    {:ok, status_code, resp} = quality_control_type_list(token)
+    {:ok, status_code, %{"data" => resp}} = quality_control_type_list(token)
     {:ok, Map.merge(state, %{status_code: status_code, quality_controls_types: resp})}
   end
 
   defand ~r/^"(?<user_name>[^"]+)" is able to view quality control types:$/,
     %{user_name: _user_name, table: table},
     %{quality_controls_types: quality_controls_types} = _state do
-      expected_quality_controls_types = Enum.reduce(table, [], &(&2 ++ [&1[:Name]]))
-      assert quality_controls_types == expected_quality_controls_types
+      expected_quality_control_types = Enum.reduce(table, [], &(&2 ++ [&1[:Name]]))
+      retrieved_quality_control_types = Enum.reduce(quality_controls_types, [], &(&2 ++ [&1["type_name"]]))
+      assert expected_quality_control_types == retrieved_quality_control_types
   end
 
   defp get_quality_control_types_from_table(table) do
