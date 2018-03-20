@@ -50,7 +50,8 @@ defmodule TdDq.Mixfile do
       {:phoenix_swagger, "~> 0.7.0"},
       {:ex_json_schema, "~> 0.5"},
       {:csv, "~> 2.0.0"},
-      {:timex, "~> 3.1"}
+      {:timex, "~> 3.1"},
+      {:ex_machina, "~> 2.1", only: :test},
     ]
   end
 

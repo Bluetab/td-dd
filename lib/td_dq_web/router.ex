@@ -30,6 +30,7 @@ defmodule TdDqWeb.Router do
     get "/quality_controls_results", QualityControlsResultsController, :index
     resources "/quality_controls", QualityControlController, except: [:new, :edit]
     resources "/quality_control_types", QualityControlTypeController, except: [:new, :edit, :create, :show, :update]
+    resources "/quality_rules", QualityRuleController, except: [:new, :edit]
   end
 
   def swagger_info do
