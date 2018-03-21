@@ -2,9 +2,13 @@ defmodule TdDqWeb.QualityRuleController do
   use TdDqWeb, :controller
   use PhoenixSwagger
 
+  import Canada, only: [can?: 2]
+
   alias TdDq.QualityRules
   alias TdDq.QualityRules.QualityRule
   alias TdDqWeb.SwaggerDefinitions
+  alias TdDq.Auth.Guardian.Plug, as: GuardianPlug
+  alias TdDqWeb.ErrorView
 
   action_fallback TdDqWeb.FallbackController
 
@@ -19,8 +23,20 @@ defmodule TdDqWeb.QualityRuleController do
   end
 
   def index(conn, _params) do
-    quality_rules = QualityRules.list_quality_rules()
-    render(conn, "index.json", quality_rules: quality_rules)
+    user = get_current_user(conn)
+    with true <- can?(user, index(QualityRule)) do
+      quality_rules = QualityRules.list_quality_rules()
+      render(conn, "index.json", quality_rules: quality_rules)
+    else
+      false ->
+        conn
+        |> put_status(:forbidden)
+        |> render(ErrorView, :"403.json")
+      _error ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> render(ErrorView, :"422.json")
+    end
   end
 
   swagger_path :create do
@@ -35,11 +51,22 @@ defmodule TdDqWeb.QualityRuleController do
   end
 
   def create(conn, %{"quality_rule" => quality_rule_params}) do
-    with {:ok, %QualityRule{} = quality_rule} <- QualityRules.create_quality_rule(quality_rule_params) do
+    user = get_current_user(conn)
+    with true <- can?(user, create(QualityRule)),
+         {:ok, %QualityRule{} = quality_rule} <- QualityRules.create_quality_rule(quality_rule_params) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", quality_rule_path(conn, :show, quality_rule))
       |> render("show.json", quality_rule: quality_rule)
+    else
+      false ->
+        conn
+        |> put_status(:forbidden)
+        |> render(ErrorView, :"403.json")
+      _error ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> render(ErrorView, :"422.json")
     end
   end
 
@@ -56,7 +83,19 @@ defmodule TdDqWeb.QualityRuleController do
 
   def show(conn, %{"id" => id}) do
     quality_rule = QualityRules.get_quality_rule!(id)
-    render(conn, "show.json", quality_rule: quality_rule)
+    user = get_current_user(conn)
+    with true <- can?(user, show(quality_rule)) do
+      render(conn, "show.json", quality_rule: quality_rule)
+    else
+      false ->
+        conn
+        |> put_status(:forbidden)
+        |> render(ErrorView, :"403.json")
+      _error ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> render(ErrorView, :"422.json")
+    end
   end
 
   swagger_path :update do
@@ -73,9 +112,19 @@ defmodule TdDqWeb.QualityRuleController do
 
   def update(conn, %{"id" => id, "quality_rule" => quality_rule_params}) do
     quality_rule = QualityRules.get_quality_rule!(id)
-
-    with {:ok, %QualityRule{} = quality_rule} <- QualityRules.update_quality_rule(quality_rule, quality_rule_params) do
+    user = get_current_user(conn)
+    with true <- can?(user, update(quality_rule)),
+         {:ok, %QualityRule{} = quality_rule} <- QualityRules.update_quality_rule(quality_rule, quality_rule_params) do
       render(conn, "show.json", quality_rule: quality_rule)
+    else
+      false ->
+        conn
+        |> put_status(:forbidden)
+        |> render(ErrorView, :"403.json")
+      _error ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> render(ErrorView, :"422.json")
     end
   end
 
@@ -92,8 +141,24 @@ defmodule TdDqWeb.QualityRuleController do
 
   def delete(conn, %{"id" => id}) do
     quality_rule = QualityRules.get_quality_rule!(id)
-    with {:ok, %QualityRule{}} <- QualityRules.delete_quality_rule(quality_rule) do
+    user = get_current_user(conn)
+    with true <- can?(user, delete(quality_rule)),
+         {:ok, %QualityRule{}} <- QualityRules.delete_quality_rule(quality_rule) do
       send_resp(conn, :no_content, "")
+    else
+      false ->
+        conn
+        |> put_status(:forbidden)
+        |> render(ErrorView, :"403.json")
+      _error ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> render(ErrorView, :"422.json")
     end
   end
+
+  defp get_current_user(conn) do
+    GuardianPlug.current_resource(conn)
+  end
+
 end

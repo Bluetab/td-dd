@@ -35,7 +35,7 @@ defmodule TdDqWeb.QualityRuleControllerTest do
 
       assert creation_attrs[:quality_control_id] == json_response["quality_control_id"]
       assert creation_attrs[:description] == json_response["description"]
-      assert creation_attrs[:parameters] == json_response["parameters"]
+      assert creation_attrs[:type_params] == json_response["type_params"]
       assert creation_attrs[:system] == json_response["system"]
       assert creation_attrs[:type] == json_response["type"]
     end
@@ -72,7 +72,7 @@ defmodule TdDqWeb.QualityRuleControllerTest do
 
       assert update_attrs[:quality_control_id] == json_response["quality_control_id"]
       assert update_attrs[:description] == json_response["description"]
-      assert update_attrs[:parameters] == json_response["parameters"]
+      assert update_attrs[:type_params] == json_response["type_params"]
       assert update_attrs[:system] == json_response["system"]
       assert update_attrs[:type] == json_response["type"]
     end

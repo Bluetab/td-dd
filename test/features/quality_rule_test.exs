@@ -8,6 +8,8 @@ defmodule TdDq.QualityRuleTest do
   import TdDqWeb.ResponseCode
   import TdDqWeb.Authentication, only: :functions
 
+  # Scenario: Create a new Quality Rule with only generic fields
+
   defgiven ~r/^user "(?<user_name>[^"]+)" is logged in the application$/,
     %{user_name: user_name},
     state do
@@ -73,6 +75,14 @@ defmodule TdDq.QualityRuleTest do
       assert quality_rule["quality_control_id"] == quality_control_id
       attrs = table |> quality_rule_test_fields_to_api
       assert_quality_rule(attrs, quality_rule)
+
+  end
+
+  # Scenario: Create a new Quality Rule with a type that has parameters
+
+  defand ~r/^an existing Quality Rule Type:$/,
+    %{table: table},
+    state do
 
   end
 

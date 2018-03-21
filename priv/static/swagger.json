@@ -372,6 +372,10 @@
         "name"
       ],
       "properties": {
+        "type_params": {
+          "type": "object",
+          "description": "Quality Rule parameters"
+        },
         "type": {
           "type": "string",
           "description": "Quality Rule type"
@@ -379,10 +383,6 @@
         "system": {
           "type": "string",
           "description": "Quality Rule system"
-        },
-        "parameters": {
-          "type": "object",
-          "description": "Quality Rule parameters"
         },
         "name": {
           "type": "string",
@@ -411,6 +411,10 @@
         "quality_control_id"
       ],
       "properties": {
+        "type_params": {
+          "type": "object",
+          "description": "Quality Rule parameters"
+        },
         "type": {
           "type": "string",
           "description": "Quality Rule type"
@@ -422,10 +426,6 @@
         "quality_control_id": {
           "type": "integer",
           "description": "belongs to quality control"
-        },
-        "parameters": {
-          "type": "object",
-          "description": "Quality Rule parameters"
         },
         "name": {
           "type": "string",
@@ -448,6 +448,10 @@
         "id"
       ],
       "properties": {
+        "type_params": {
+          "type": "object",
+          "description": "Quality Rule parameters"
+        },
         "type": {
           "type": "string",
           "description": "Quality Rule type"
@@ -459,10 +463,6 @@
         "quality_control_id": {
           "type": "integer",
           "description": "Belongs to quality control"
-        },
-        "parameters": {
-          "type": "object",
-          "description": "Quality Rule parameters"
         },
         "name": {
           "type": "string",

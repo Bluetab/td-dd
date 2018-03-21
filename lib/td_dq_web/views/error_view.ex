@@ -5,6 +5,10 @@ defmodule TdDqWeb.ErrorView do
     %{errors: %{detail: "Invalid credentials"}}
   end
 
+  def render("403.json", _assigns) do
+    %{errors: %{detail: "Invalid authorization"}}
+  end
+
   def render("404.json", _assigns) do
     %{errors: %{detail: "Page not found"}}
   end

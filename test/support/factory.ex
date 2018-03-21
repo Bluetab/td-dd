@@ -25,7 +25,7 @@ defmodule TdDq.Factory do
       quality_control: build(:quality_control),
       description: "Quality Rule description",
       name: "Quality Rule name",
-      parameters: %{},
+      type_params: %{},
       system: "Quality Rule System",
       type: "Qualtity Rule type",
     }

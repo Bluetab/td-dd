@@ -9,11 +9,11 @@ defmodule TdDqWeb.QualityRule do
 
   @test_fields_to_api %{
     "Type" => "type", "System" => "system", "Name" => "name",
-    "Description" => "description", "Parameters" => "parameters"
+    "Description" => "description", "Parameters" => "type_params"
   }
 
   def create_empty_quality_rule_type(quality_rule_type) do
-    json_schema = [%{"type_name": quality_rule_type, "type_parameters": nil}] |> JSON.encode!
+    json_schema = [%{"type_name": quality_rule_type, "type_params": []}] |> JSON.encode!
     file_name = Application.get_env(:td_dq, :qr_types_file)
     file_path = Path.join(:code.priv_dir(:td_dq), file_name)
     File.write!(file_path, json_schema, [:write, :utf8])
@@ -30,7 +30,7 @@ defmodule TdDqWeb.QualityRule do
     table
     |> Enum.reduce(%{}, fn(x, acc) -> Map.put(acc, Map.get(@test_fields_to_api, x."Field", x."Field"), x."Value") end)
     |> Map.split(Map.values(@test_fields_to_api))
-    |> fn({f, v}) -> Map.put(f, "parameters", v) end.()
+    |> fn({f, v}) -> Map.put(f, "type_params", v) end.()
   end
 
   def quality_rule_create(token, quality_rule_params) do

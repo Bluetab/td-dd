@@ -52,6 +52,7 @@ defmodule TdDq.Mixfile do
       {:csv, "~> 2.0.0"},
       {:timex, "~> 3.1"},
       {:ex_machina, "~> 2.1", only: :test},
+      {:canada, "~> 1.0.1"},
     ]
   end
 
