@@ -7,6 +7,7 @@ defmodule TdDd.DictionaryTest do
   import TdDdWeb.Authentication, only: :functions
 
   alias Poison, as: JSON
+  alias TdDdWeb.ApiServices.MockTdAuthService
 
   @endpoint TdDdWeb.Endpoint
   @headers {"Content-type", "application/json"}
@@ -27,7 +28,12 @@ defmodule TdDd.DictionaryTest do
                              "Last User" => "last_change_by",
                             }
 
-#   Scenario: Create a new Data Structure
+  setup_all do
+    start_supervised MockTdAuthService
+    :ok
+  end
+
+  # Scenario: Create a new Data Structure
 
   defwhen ~r/^"(?<user_name>[^"]+)" tries to create a Data Structure with following data:$/,
     %{user_name: user_name, table: fields}, state do
@@ -123,10 +129,6 @@ defmodule TdDd.DictionaryTest do
 
   defp assert_attr("nullable" = attr, value, %{} = target) do
     assert target[attr] == (value == "YES")
-  end
-
-  defp assert_attr("last_change_by" = attr, _value, %{} = target) do
-    assert target[attr] != nil
   end
 
   defp assert_attr(attr, value, %{} = target) do

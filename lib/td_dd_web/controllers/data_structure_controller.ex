@@ -9,6 +9,8 @@ defmodule TdDdWeb.DataStructureController do
 
   action_fallback TdDdWeb.FallbackController
 
+  @td_auth_api Application.get_env(:td_dd, :auth_service)[:api_service]
+
   def swagger_definitions do
     SwaggerDefinitions.data_structure_swagger_definitions()
   end
@@ -21,7 +23,8 @@ defmodule TdDdWeb.DataStructureController do
 
   def index(conn, _params) do
     data_structures = DataStructures.list_data_structures()
-    render(conn, "index.json", data_structures: data_structures)
+    users = get_data_structure_users(data_structures)
+    render(conn, "index.json", data_structures: data_structures, users: users)
   end
 
   swagger_path :create do
@@ -41,10 +44,11 @@ defmodule TdDdWeb.DataStructureController do
     |> Map.put("last_change_at", DateTime.utc_now())
 
     with {:ok, %DataStructure{} = data_structure} <- DataStructures.create_data_structure(creation_params) do
+      users = get_data_structure_users(data_structure)
       conn
       |> put_status(:created)
       |> put_resp_header("location", data_structure_path(conn, :show, data_structure))
-      |> render("show.json", data_structure: data_structure)
+      |> render("show.json", data_structure: data_structure, users: users)
     else
       _error ->
         conn
@@ -66,7 +70,8 @@ defmodule TdDdWeb.DataStructureController do
 
   def show(conn, %{"id" => id}) do
     data_structure = DataStructures.get_data_structure!(id)
-    render(conn, "show.json", data_structure: data_structure)
+    users = get_data_structure_users(data_structure)
+    render(conn, "show.json", data_structure: data_structure, users: users)
   end
 
   def update(conn, %{"id" => id, "data_structure" => data_structure_params}) do
@@ -77,7 +82,8 @@ defmodule TdDdWeb.DataStructureController do
     |> Map.put("last_change_at", DateTime.utc_now())
 
     with {:ok, %DataStructure{} = data_structure} <- DataStructures.update_data_structure(data_structure, update_params) do
-      render(conn, "show.json", data_structure: data_structure)
+      users = get_data_structure_users(data_structure)
+      render(conn, "show.json", data_structure: data_structure, users: users)
     else
       _error ->
         conn
@@ -106,6 +112,12 @@ defmodule TdDdWeb.DataStructureController do
 
   defp get_current_user_id(conn) do
     GuardianPlug.current_resource(conn).id
+  end
+
+  defp get_data_structure_users(%DataStructure{} = data_structure), do: get_data_structure_users([data_structure])
+  defp get_data_structure_users(data_structures) when is_list(data_structures) do
+    ids = Enum.reduce(data_structures, [], &([&1.last_change_by|&2]))
+    @td_auth_api.search(%{"ids" => ids})
   end
 
 end

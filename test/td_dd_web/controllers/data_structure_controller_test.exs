@@ -4,10 +4,16 @@ defmodule TdDdWeb.DataStructureControllerTest do
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   alias TdDd.DataStructures.DataStructure
+  alias TdDdWeb.ApiServices.MockTdAuthService
 
   @create_attrs %{description: "some description", group: "some group", last_change_at: "2010-04-17 14:00:00.000000Z", last_change_by: 42, name: "some name", system: "some system"}
   @update_attrs %{description: "some updated description", group: "some updated group", last_change_at: "2011-05-18 15:01:01.000000Z", last_change_by: 43, name: "some updated name", system: "some updated system"}
   @invalid_attrs %{description: nil, group: nil, last_change_at: nil, last_change_by: nil, name: nil, system: nil}
+
+  setup_all do
+    start_supervised MockTdAuthService
+    :ok
+  end
 
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}

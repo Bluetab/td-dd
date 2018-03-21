@@ -32,6 +32,11 @@ config :canary, repo: TdDd.Repo,
   unauthorized_handler: {TdDd.Auth.Canary, :handle_unauthorized},
   not_found_handler: {TdDd.Auth.Canary, :handle_not_found}
 
+config :td_dd, :auth_service,
+  protocol: "http",
+  users_path: "/api/users/",
+  sessions_path: "/api/sessions/"
+
 config :td_dd, :phoenix_swagger,
   swagger_files: %{
     "priv/static/swagger.json" => [router: TdDdWeb.Router]

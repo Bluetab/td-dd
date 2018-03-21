@@ -45,3 +45,12 @@ config :td_dd, TdDd.Repo,
   hostname: "localhost",
   pool_size: 10,
   timeout: 60_000 # Increased for metadata upload. 1000 data structures, 50 data fields
+
+config :td_dd, :api_services_login,
+  api_username: "api-admin",
+  api_password: "apipass"
+
+config :td_dd, :auth_service, api_service: TdDdWeb.ApiServices.HttpTdAuthService,
+  auth_host: "localhost",
+  auth_port: "4001",
+  auth_domain: ""

@@ -344,7 +344,7 @@
           "description": "Data Structure name"
         },
         "last_change_by": {
-          "type": "integer",
+          "type": "string",
           "description": "Data Structure last updated by"
         },
         "last_change_at": {
@@ -502,7 +502,7 @@
           "description": "Data Field name"
         },
         "last_change_by": {
-          "type": "integer",
+          "type": "string",
           "description": "Data Structure last updated by"
         },
         "last_change_at": {

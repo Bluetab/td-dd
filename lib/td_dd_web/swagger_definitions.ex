@@ -15,7 +15,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
           group :string, "Data Structure group", required: true
           name :string, "Data Structure name", required: true
           description :string, "Data Structure description"
-          last_change_by :integer, "Data Structure last updated by"
+          last_change_by :string, "Data Structure last updated by"
           last_change_at :string, "Data Structure last updated at"
       end
         example %{
@@ -81,7 +81,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
           description :string, "Data Field descrition"
           business_concept_id :string, "Asociated Business Concept Id"
           data_structure_id :integer, "Belongs to Data Structure", required: true
-          last_change_by :integer, "Data Structure last updated by"
+          last_change_by :string, "Data Structure last updated by"
           last_change_at :string, "Data Structure last updated at"
       end
         example %{

@@ -7,6 +7,9 @@ defmodule TdDdWeb.Authentication do
   alias TdDd.Auth.Guardian
   alias TdDd.Accounts.User
   import Plug.Conn
+
+  @td_auth_api Application.get_env(:td_dd, :auth_service)[:api_service]
+
   @headers {"Content-type", "application/json"}
 
   def put_auth_headers(conn, jwt) do
@@ -20,7 +23,7 @@ defmodule TdDdWeb.Authentication do
     conn
     |> ConnTest.recycle()
     |> put_req_header("authorization", authorization_header)
-    end
+  end
 
   def create_user_auth_conn(user) do
     {:ok, jwt, full_claims} = Guardian.encode_and_sign(user)
@@ -33,10 +36,30 @@ defmodule TdDdWeb.Authentication do
     [@headers, {"authorization", "Bearer #{token}"}]
   end
 
-  def create_user(user_name, opts \\ []) do
-    id = Integer.mod(:binary.decode_unsigned(user_name), 100_000)
-    is_admin = Keyword.get(opts, :is_admin, false)
-    %TdDd.Accounts.User{id: id, is_admin: is_admin, user_name: user_name}
+  # defp create_user(user_name, opts \\ []) do
+  #   is_admin = Keyword.get(opts, :is_admin, false)
+  #   password = Keyword.get(opts, :password, "secret")
+  #   user = @td_auth_api.create_user(%{"user" => %{user_name: user_name, is_admin: is_admin, password: password}})
+  #   user
+  # end
+
+  def find_or_create_user(user_name, opts \\ []) do
+    user = case get_user_by_name(user_name) do
+      nil ->
+        is_admin = Keyword.get(opts, :is_admin, false)
+        password = Keyword.get(opts, :password, "secret")
+        @td_auth_api.create_user(%{"user" => %{user_name: user_name, is_admin: is_admin, password: password}})
+      user -> user
+    end
+    user
+  end
+
+  def get_user_by_name(user_name) do
+    @td_auth_api.get_user_by_name(user_name)
+  end
+
+  def get_users do
+    @td_auth_api.index()
   end
 
   def build_user_token(%User{} = user) do
@@ -47,10 +70,11 @@ defmodule TdDdWeb.Authentication do
   end
 
   def build_user_token(user_name, opts \\ []) when is_binary(user_name) do
-    build_user_token(create_user(user_name, opts))
+    build_user_token(find_or_create_user(user_name, opts))
   end
 
   def get_user_token(user_name) do
     build_user_token(user_name, is_admin: user_name == "app-admin")
   end
+
 end

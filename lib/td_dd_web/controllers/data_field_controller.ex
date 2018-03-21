@@ -10,6 +10,8 @@ defmodule TdDdWeb.DataFieldController do
 
   action_fallback TdDdWeb.FallbackController
 
+  @td_auth_api Application.get_env(:td_dd, :auth_service)[:api_service]
+
   def swagger_definitions do
     SwaggerDefinitions.data_field_swagger_definitions()
   end
@@ -22,7 +24,8 @@ defmodule TdDdWeb.DataFieldController do
 
   def index(conn, _params) do
     data_fields = DataStructures.list_data_fields()
-    render(conn, "index.json", data_fields: data_fields)
+    users = get_data_field_users(data_fields)
+    render(conn, "index.json", data_fields: data_fields, users: users)
   end
 
   swagger_path :create do
@@ -42,10 +45,11 @@ defmodule TdDdWeb.DataFieldController do
     |> Map.put("last_change_at", DateTime.utc_now())
 
     with {:ok, %DataField{} = data_field} <- DataStructures.create_data_field(creation_params) do
+      users = get_data_field_users(data_field)
       conn
       |> put_status(:created)
       |> put_resp_header("location", data_field_path(conn, :show, data_field))
-      |> render("show.json", data_field: data_field)
+      |> render("show.json", data_field: data_field, users: users)
     else
       _error ->
         conn
@@ -67,7 +71,8 @@ defmodule TdDdWeb.DataFieldController do
 
   def show(conn, %{"id" => id}) do
     data_field = DataStructures.get_data_field!(id)
-    render(conn, "show.json", data_field: data_field)
+    users = get_data_field_users(data_field)
+    render(conn, "show.json", data_field: data_field, users: users)
   end
 
   swagger_path :update do
@@ -89,7 +94,8 @@ defmodule TdDdWeb.DataFieldController do
     |> Map.put("last_change_at", DateTime.utc_now())
 
     with {:ok, %DataField{} = data_field} <- DataStructures.update_data_field(data_field, update_params) do
-      render(conn, "show.json", data_field: data_field)
+      users = get_data_field_users(data_field)
+      render(conn, "show.json", data_field: data_field, users: users)
     else
       _error ->
         conn
@@ -118,6 +124,12 @@ defmodule TdDdWeb.DataFieldController do
 
   defp get_current_user_id(conn) do
     GuardianPlug.current_resource(conn).id
+  end
+
+  defp get_data_field_users(%DataField{} = data_field), do: get_data_field_users([data_field])
+  defp get_data_field_users(data_fields) when is_list(data_fields) do
+    ids = Enum.reduce(data_fields, [], &([&1.last_change_by|&2]))
+    @td_auth_api.search(%{"ids" => ids})
   end
 
 end
