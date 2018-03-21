@@ -9,6 +9,7 @@ defmodule TdDqWeb.QualityRuleController do
   alias TdDqWeb.SwaggerDefinitions
   alias TdDq.Auth.Guardian.Plug, as: GuardianPlug
   alias TdDqWeb.ErrorView
+  alias Poison, as: JSON
 
   action_fallback TdDqWeb.FallbackController
 
@@ -53,6 +54,7 @@ defmodule TdDqWeb.QualityRuleController do
   def create(conn, %{"quality_rule" => quality_rule_params}) do
     user = get_current_user(conn)
     with true <- can?(user, create(QualityRule)),
+         {:ok, _} <- validate_type_parameters(quality_rule_params),
          {:ok, %QualityRule{} = quality_rule} <- QualityRules.create_quality_rule(quality_rule_params) do
       conn
       |> put_status(:created)
@@ -114,6 +116,7 @@ defmodule TdDqWeb.QualityRuleController do
     quality_rule = QualityRules.get_quality_rule!(id)
     user = get_current_user(conn)
     with true <- can?(user, update(quality_rule)),
+         {:ok, _} <- validate_type_parameters(quality_rule_params),
          {:ok, %QualityRule{} = quality_rule} <- QualityRules.update_quality_rule(quality_rule, quality_rule_params) do
       render(conn, "show.json", quality_rule: quality_rule)
     else
@@ -159,6 +162,25 @@ defmodule TdDqWeb.QualityRuleController do
 
   defp get_current_user(conn) do
     GuardianPlug.current_resource(conn)
+  end
+
+  defp validate_type_parameters(quality_control_params) do
+    type_parameters = get_type_parameters(quality_control_params["type"])
+    if length(type_parameters) == length(Map.keys(quality_control_params["type_params"])) do
+      {:ok, :valid_type_params}
+    else
+      {:error, :invalid_type_params}
+    end
+  end
+
+  defp get_type_parameters(type_name) do
+    file_name = Application.get_env(:td_dq, :qr_types_file)
+    file_path = Path.join(:code.priv_dir(:td_dq), file_name)
+    file_path
+    |> File.read!
+    |> JSON.decode!
+    |> Enum.find(&(&1["type_name"] == type_name))
+    |> Map.get("type_parameters")
   end
 
 end

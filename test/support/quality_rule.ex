@@ -12,8 +12,45 @@ defmodule TdDqWeb.QualityRule do
     "Description" => "description", "Parameters" => "type_params"
   }
 
-  def create_empty_quality_rule_type(quality_rule_type) do
-    json_schema = [%{"type_name": quality_rule_type, "type_params": []}] |> JSON.encode!
+  def create_empty_quality_rule_types(quality_rule_type) do
+    write_quality_rule_types([%{"type_name": quality_rule_type, "type_parameters": []}])
+  end
+
+  def create_quality_rule_types_from_table(table) do
+    quality_rule_types = get_quality_control_types_from_table(table)
+    write_quality_rule_types(quality_rule_types)
+  end
+
+  def get_quality_control_types_from_table(table) do
+    Enum.reduce(table, [], fn(row, acc) ->
+      type_name = Map.get(row, :Name)
+      if type_name == "" do
+        {last_map, acc} = List.pop_at(acc, -1)
+        parameter_ary = last_map |> Map.get("type_parameters")
+
+        parameter_map = Map.new
+        |> Map.put("name", String.trim(row[:Parameter]))
+        |> Map.put("type", String.trim(row[:Type]))
+
+        type_map = Map.put(last_map, "type_parameters", parameter_ary ++ [parameter_map])
+
+        acc ++ [type_map]
+      else
+        parameter_map = Map.new
+        |> Map.put("name", String.trim(row[:Parameter]))
+        |> Map.put("type", String.trim(row[:Type]))
+
+        type_map = Map.new
+        |> Map.put("type_name", String.trim(row[:Name]))
+        |> Map.put("type_parameters",  [parameter_map])
+
+        acc ++ [type_map]
+      end
+    end)
+  end
+
+  defp write_quality_rule_types(quality_rule_types) do
+    json_schema = quality_rule_types |> JSON.encode!
     file_name = Application.get_env(:td_dq, :qr_types_file)
     file_path = Path.join(:code.priv_dir(:td_dq), file_name)
     File.write!(file_path, json_schema, [:write, :utf8])

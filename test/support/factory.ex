@@ -27,7 +27,7 @@ defmodule TdDq.Factory do
       name: "Quality Rule name",
       type_params: %{},
       system: "Quality Rule System",
-      type: "Qualtity Rule type",
+      type: "Quality Rule type",
     }
   end
 end

@@ -33,7 +33,7 @@ defmodule TdDq.QualityRuleTest do
   defand ~r/^an existing Quality Rule Type called "(?<rule_type>[^"]+)" without any parameters$/,
     %{rule_type: rule_type},
     _state do
-       create_empty_quality_rule_type(rule_type)
+       create_empty_quality_rule_types(rule_type)
   end
 
   defwhen ~r/^"(?<user_name>[^"]+)" tries to create a Quality Rule of type "(?<quality_rule_type>[^"]+)" associated to Quality Control with Business Concept ID "(?<business_concept_id>[^"]+)" and name "(?<quality_control_name>[^"]+)" with following data:$/,
@@ -82,10 +82,11 @@ defmodule TdDq.QualityRuleTest do
 
   defand ~r/^an existing Quality Rule Type:$/,
     %{table: table},
-    state do
-
+    _state do
+      create_quality_rule_types_from_table(table)
   end
 
+  defp assert_quality_rule("type_params" = attr, value, %{} = target), do: assert_quality_rule(value, target[attr])
   defp assert_quality_rule(attr, value, %{} = quality_rule), do: assert value == quality_rule[attr]
   defp assert_quality_rule(%{} = attrs, %{} = quality_rule) do
     Enum.each(attrs, fn {attr, value} ->
