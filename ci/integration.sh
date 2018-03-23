@@ -7,8 +7,12 @@ function wait_for {
   done
 }
 
+mkdir -p /root/.ssh/
+ssh-keyscan gitlab.bluetab.net >> /root/.ssh/known_hosts
+cp /data/ssh/* /root/.ssh/
+
 service postgresql96 start
-  
+
 git clone git@gitlab.bluetab.net:dgs-core/true-dat/back-end/td-auth.git /td_auth
 #git clone git@gitlab.bluetab.net:dgs-core/true-dat/back-end/td-bg.git /td_bg
 #git clone git@gitlab.bluetab.net:dgs-core/true-dat/back-end/td-dl.git /td_dl
@@ -28,7 +32,7 @@ if [ -d "assets" ]; then
 fi
 
 mix ecto.create && mix ecto.migrate
-nohup mix phx.server & 
+nohup mix phx.server &
 
 cd /td_bg
 mix local.rebar --force
@@ -42,7 +46,7 @@ if [ -d "assets" ]; then
 fi
 
 mix ecto.create && mix ecto.migrate
-nohup mix phx.server & 
+nohup mix phx.server &
 
 cd /td_dd
 mix local.rebar --force
@@ -56,7 +60,7 @@ if [ -d "assets" ]; then
 fi
 
 mix ecto.create && mix ecto.migrate
-nohup mix phx.server & 
+nohup mix phx.server &
 
 yum install nc -y
 yum install python36-virtualenv -y
@@ -72,5 +76,3 @@ wait_for localhost 4001
 wait_for localhost 4005
 
 cd /td_int/tests && chmod +x run_tests.sh && ./run_tests.sh
-
-
