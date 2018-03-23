@@ -21,6 +21,7 @@ integration:
   stage: test
   script:
     #- "curl -X POST -F token=$CI_JOB_TOKEN -F ref=master https://gitlab.bluetab.net/api/v4/projects/355/trigger/pipeline"
+    - git clone git@gitlab.bluetab.net:dgs-core/true-dat/back-end/td-auth.git td_auth 
     - docker run --rm -v $(pwd):/code:ro -w /code --entrypoint=/code/ci/integration.sh bluetab/amazonlinux-phoenix-postgresql:20180226093919
   artifacts:
     untracked: true
