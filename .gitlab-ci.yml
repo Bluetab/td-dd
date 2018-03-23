@@ -1,5 +1,5 @@
 stages:
-  #- build
+  # - build
   - test
   # - deploy
 
@@ -20,10 +20,10 @@ stages:
 integration:
   stage: test
   script:
-    - "curl -X POST -F token=$CI_JOB_TOKEN -F ref=master https://gitlab.bluetab.net/api/v4/projects/355/trigger/pipeline"
-    # - "curl -X POST -F token=dda5107bc3a0fd9fb01af9e572d5e1 -F ref=master https://gitlab.bluetab.net/api/v4/projects/355/trigger/pipeline"
+    #- "curl -X POST -F token=$CI_JOB_TOKEN -F ref=master https://gitlab.bluetab.net/api/v4/projects/355/trigger/pipeline"
+    - docker run --rm -v $(pwd):/code:ro -w /code --entrypoint=/code/ci/integration.sh bluetab/amazonlinux-phoenix-postgresql:20180226093919
   artifacts:
-    untracked: false
+    untracked: true
 
 # deploy:
 #   stage: deploy
