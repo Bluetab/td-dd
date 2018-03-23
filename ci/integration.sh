@@ -6,19 +6,19 @@ function wait_for {
     sleep 1
   done
 }
-
-mkdir -p /root/.ssh/
-ssh-keyscan gitlab.bluetab.net >> /root/.ssh/known_hosts
-cp /data/ssh/* /root/.ssh/
+#
+# mkdir -p /root/.ssh/
+# ssh-keyscan gitlab.bluetab.net >> /root/.ssh/known_hosts
+# cp /data/ssh/* /root/.ssh/
 
 service postgresql96 start
 
-git clone git@gitlab.bluetab.net:dgs-core/true-dat/back-end/td-auth.git /td_auth
-#git clone git@gitlab.bluetab.net:dgs-core/true-dat/back-end/td-bg.git /td_bg
-#git clone git@gitlab.bluetab.net:dgs-core/true-dat/back-end/td-dl.git /td_dl
-#git clone git@gitlab.bluetab.net:dgs-core/true-dat/back-end/td-dq.git /td_dq
-git clone git@gitlab.bluetab.net:dgs-core/true-dat/back-end/td-dd.git /td_dd
-git clone git@gitlab.bluetab.net:dgs-core/true-dat/td-int.git /td_int
+# git clone git@gitlab.bluetab.net:dgs-core/true-dat/back-end/td-auth.git /td_auth
+# #git clone git@gitlab.bluetab.net:dgs-core/true-dat/back-end/td-bg.git /td_bg
+# #git clone git@gitlab.bluetab.net:dgs-core/true-dat/back-end/td-dl.git /td_dl
+# #git clone git@gitlab.bluetab.net:dgs-core/true-dat/back-end/td-dq.git /td_dq
+# git clone git@gitlab.bluetab.net:dgs-core/true-dat/back-end/td-dd.git /td_dd
+# git clone git@gitlab.bluetab.net:dgs-core/true-dat/td-int.git /td_int
 
 cd /td_auth
 mix local.rebar --force
