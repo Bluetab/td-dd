@@ -1,6 +1,7 @@
 stages:
   - build
   - test
+  - integration
   - deploy
 
 build:
@@ -17,10 +18,10 @@ test:
   artifacts:
     untracked: true
 
-integrate:
+integration:
   stage: test
   script:
-    - docker run --rm -v $(pwd):/code:ro -w /code --entrypoint=/code/ci/test.sh bluetab/amazonlinux-phoenix-postgresql:20180226093919
+    - docker run --rm -v $(pwd):/code:ro -w /code --entrypoint=/code/ci/integration.sh bluetab/amazonlinux-phoenix-postgresql:20180226093919
   artifacts:
     untracked: true
 
