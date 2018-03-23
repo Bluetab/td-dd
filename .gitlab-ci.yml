@@ -1,40 +1,40 @@
 stages:
-  - build
+  #- build
   - test
-  - deploy
+  # - deploy
 
-build:
-  stage: build
-  script:
-    - docker run --rm -v $(pwd):/code:ro -w /code --entrypoint=/code/ci/build.sh bluetab/amazonlinux-phoenix-postgresql:20180226093919
-  artifacts:
-    untracked: true
-
-test:
-  stage: test
-  script:
-    - docker run --rm -v $(pwd):/code:ro -w /code --entrypoint=/code/ci/test.sh bluetab/amazonlinux-phoenix-postgresql:20180226093919
-  artifacts:
-    untracked: true
+# build:
+#   stage: build
+#   script:
+#     - docker run --rm -v $(pwd):/code:ro -w /code --entrypoint=/code/ci/build.sh bluetab/amazonlinux-phoenix-postgresql:20180226093919
+#   artifacts:
+#     untracked: true
+#
+# test:
+#   stage: test
+#   script:
+#     - docker run --rm -v $(pwd):/code:ro -w /code --entrypoint=/code/ci/test.sh bluetab/amazonlinux-phoenix-postgresql:20180226093919
+#   artifacts:
+#     untracked: true
 
 integration:
   stage: test
   script:
-    - docker-compose run --rm 
+    - curl --request POST --form "token=$CI_JOB_TOKEN" --form ref=master https://gitlab.example.com/api/v4/projects/9/trigger/pipeline
   artifacts:
     untracked: true
 
-deploy:
-  stage: deploy
-  script:
-    - git branch -f master HEAD
-    - export DB_USER=$(echo $DB_USER | sed -e "s/\//\\\\\//g")
-    - export DB_PASSWORD=$(echo $DB_PASSWORD | sed -e "s/\//\\\\\//g")
-    - export DB_NAME=$(echo $DB_NAME | sed -e "s/\//\\\\\//g")
-    - export DB_HOST=$(echo $DB_HOST | sed -e "s/\//\\\\\//g")
-    - export GUARDIAN_SECRET_KEY=$(echo $GUARDIAN_SECRET_KEY | sed -e "s/\//\\\\\//g")
-    - export PRODUCTION_HOST=$(cat .deliver/config | grep PRODUCTION_HOSTS | cut -f2 -d"=" | sed -e 's/"//g')
-    - export PRODUCTION_USER=$(cat .deliver/config | grep PRODUCTION_USER | cut -f2 -d"=" | sed -e 's/"//g')
-    - docker run --rm -e DB_USER=$DB_USER -e DB_PASSWORD=$DB_PASSWORD -e DB_HOST=$DB_HOST -e DB_NAME=$DB_NAME -e PRODUCTION_HOST=$PRODUCTION_HOST -e PRODUCTION_USER=$PRODUCTION_USER -e PRODUCTION_PEM="$PRODUCTION_PEM" -e GUARDIAN_SECRET_KEY="$GUARDIAN_SECRET_KEY" -e USER=$USER -e TARGET_MIX_ENV=$TARGET_MIX_ENV -e BUILD_AT=$BUILD_AT -e TERM=$TERM -v $(pwd):/code:ro -w /code --entrypoint=/code/ci/deploy.sh bluetab/amazonlinux-phoenix-postgresql:20180226093919
-  only:
-    - master
+# deploy:
+#   stage: deploy
+#   script:
+#     - git branch -f master HEAD
+#     - export DB_USER=$(echo $DB_USER | sed -e "s/\//\\\\\//g")
+#     - export DB_PASSWORD=$(echo $DB_PASSWORD | sed -e "s/\//\\\\\//g")
+#     - export DB_NAME=$(echo $DB_NAME | sed -e "s/\//\\\\\//g")
+#     - export DB_HOST=$(echo $DB_HOST | sed -e "s/\//\\\\\//g")
+#     - export GUARDIAN_SECRET_KEY=$(echo $GUARDIAN_SECRET_KEY | sed -e "s/\//\\\\\//g")
+#     - export PRODUCTION_HOST=$(cat .deliver/config | grep PRODUCTION_HOSTS | cut -f2 -d"=" | sed -e 's/"//g')
+#     - export PRODUCTION_USER=$(cat .deliver/config | grep PRODUCTION_USER | cut -f2 -d"=" | sed -e 's/"//g')
+#     - docker run --rm -e DB_USER=$DB_USER -e DB_PASSWORD=$DB_PASSWORD -e DB_HOST=$DB_HOST -e DB_NAME=$DB_NAME -e PRODUCTION_HOST=$PRODUCTION_HOST -e PRODUCTION_USER=$PRODUCTION_USER -e PRODUCTION_PEM="$PRODUCTION_PEM" -e GUARDIAN_SECRET_KEY="$GUARDIAN_SECRET_KEY" -e USER=$USER -e TARGET_MIX_ENV=$TARGET_MIX_ENV -e BUILD_AT=$BUILD_AT -e TERM=$TERM -v $(pwd):/code:ro -w /code --entrypoint=/code/ci/deploy.sh bluetab/amazonlinux-phoenix-postgresql:20180226093919
+#   only:
+#     - master
