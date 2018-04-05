@@ -139,8 +139,5 @@ defmodule TdDqWeb.QualityControlController do
       true
     end
   end
-
-  def type_parameters_file(conn, _params) do
-    json conn, get_type_parameters("Integer Values Range")
-  end
+  
 end

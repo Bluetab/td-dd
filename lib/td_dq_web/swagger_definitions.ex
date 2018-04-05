@@ -140,4 +140,20 @@ defmodule TdDqWeb.SwaggerDefinitions do
     }
   end
 
+  def quality_control_type_parameters_definitions do
+    %{
+      QualityControlTypeParam: swagger_schema do
+        properties do
+          name :string, "Quality control type parameter name"
+          type :string, "Quality control type parameter type"
+        end
+      end,
+      QualityControlTypeParamsResponse: swagger_schema do
+        properties do
+          data Schema.ref(:QualityControlTypeParam)
+        end
+      end
+    }
+  end
+
 end

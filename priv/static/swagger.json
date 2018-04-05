@@ -340,13 +340,46 @@
         "operationId": "TdDqWeb.QualityControlTypeController.index",
         "description": "List Quality Control Types"
       }
+    },
+    "/quality_control_type_parameters?quality_control_type_name={type_name}": {
+      "get": {
+        "tags": [
+          "QualityControlTypeParameter"
+        ],
+        "summary": "",
+        "responses": {
+          "400": {
+            "description": "Client Error"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/QualityControlTypeParamsResponse"
+            },
+            "description": "Ok"
+          }
+        },
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "type_name",
+            "in": "path",
+            "description": "Quality Control Type name"
+          }
+        ],
+        "operationId": "TdDqWeb.QualityControlTypeParameterController.index",
+        "description": "Lists quality control type paramaters"
+      }
     }
   },
   "info": {
     "version": "1.0",
     "title": "QualityControl"
   },
-  "host": "localhost:4000",
+  "host": "localhost:4004",
   "definitions": {
     "QualityRulesResponse": {
       "type": "object",
@@ -508,6 +541,27 @@
       "properties": {
         "data": {
           "$ref": "#/definitions/QualityControlType"
+        }
+      }
+    },
+    "QualityControlTypeParamsResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/QualityControlTypeParam"
+        }
+      }
+    },
+    "QualityControlTypeParam": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Quality control type parameter type"
+        },
+        "name": {
+          "type": "string",
+          "description": "Quality control type parameter name"
         }
       }
     },

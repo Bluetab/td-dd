@@ -38,6 +38,14 @@ defmodule TdDqWeb.QualityControl do
       {:ok, status_code, resp |> JSON.decode!}
   end
 
+  def quality_control_type_parameters(token, qc_type_name) do
+    headers = get_header(token)
+    path = quality_control_type_parameter_url(@endpoint, :index, quality_control_type_name: qc_type_name)
+    %HTTPoison.Response{status_code: status_code, body: resp} =
+      HTTPoison.get!(path, headers, [])
+    {:ok, status_code, resp |> JSON.decode!}
+  end
+
   def find_quality_control(token, search_params) do
     {:ok, _status_code, json_resp} = quality_control_list(token)
     Enum.find(json_resp["data"], fn(quality_control) ->

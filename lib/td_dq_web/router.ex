@@ -1,6 +1,8 @@
 defmodule TdDqWeb.Router do
   use TdDqWeb, :router
 
+  @endpoint_url "#{Application.get_env(:td_dq, TdDqWeb.Endpoint)[:url][:host]}:#{Application.get_env(:td_dq, TdDqWeb.Endpoint)[:url][:port]}"
+
   pipeline :api do
     plug TdDq.Auth.Pipeline.Unsecure
     plug :accepts, ["json"]
@@ -20,15 +22,12 @@ defmodule TdDqWeb.Router do
 
   scope "/api", TdDqWeb do
     pipe_through [:api, :api_secure]
-  end
 
-  scope "/api", TdDqWeb do
-    pipe_through [:api, :api_secure]
-
-    get "/quality_controls/type_parameters_file", QualityControlController, :type_parameters_file
     post "/quality_controls_results", QualityControlsResultsController, :upload
     get "/quality_controls_results", QualityControlsResultsController, :index
     resources "/quality_controls", QualityControlController, except: [:new, :edit]
+
+    get "/quality_control_type_parameters", QualityControlTypeParameterController, :index
     resources "/quality_control_types", QualityControlTypeController, except: [:new, :edit, :create, :show, :update]
     resources "/quality_rules", QualityRuleController, except: [:new, :edit]
   end
@@ -40,6 +39,7 @@ defmodule TdDqWeb.Router do
         version: "1.0",
         title: "QualityControl"
       },
+      "host": @endpoint_url,
       "basePath": "/api",
       "securityDefinitions":
       %{

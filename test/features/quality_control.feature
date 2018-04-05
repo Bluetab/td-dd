@@ -81,21 +81,34 @@ Feature: Quality Controls
        | Last User           | app-admin                                                                                 |
        | Version             | 1                                                                                         |
 
-     Scenario: List quality control types
-       Given user "app-admin" is logged in the application
-       And an existing quality control types:
-         | Name                 | Description                             | Parameter           | Type         |
-         | Integer Values Range | Check Range of values in integer format | Min Value           | integer      |
-         |                      |                                         | Max Value           | integer      |
-         | Integer Min Value    | Check Min Value in integer              | Min Value           | integer      |
-         | Integer Max Value    | Check Max Value in integer              | Max Value           | integer      |
-       When "app-admin" tries to list quality control types
-       Then the system returns a result with code "Ok"
-       And "app-admin" is able to view quality control types:
-        | Name                 |
-        | Integer Values Range |
-        | Integer Min Value    |
-        | Integer Max Value    |
+  Scenario: List quality control types
+   Given user "app-admin" is logged in the application
+   And an existing quality control type:
+     | Name                 | Description                             | Parameter           | Type         |
+     | Integer Values Range | Check Range of values in integer format | Min Value           | integer      |
+     |                      |                                         | Max Value           | integer      |
+     | Integer Min Value    | Check Min Value in integer              | Min Value           | integer      |
+     | Integer Max Value    | Check Max Value in integer              | Max Value           | integer      |
+   When "app-admin" tries to list quality control types
+   Then the system returns a result with code "Ok"
+   And "app-admin" is able to view quality control types:
+    | Name                 |
+    | Integer Values Range |
+    | Integer Min Value    |
+    | Integer Max Value    |
+
+  Scenario: List quality control type parameters
+    Given user "app-admin" is logged in the application
+    And an existing quality control type:
+      | Name                 | Description                             | Parameter           | Type         |
+      | Integer Values Range | Check Range of values in integer format | Min Value           | integer      |
+      |                      |                                         | Max Value           | integer      |
+    When "app-admin" tries to list parameters of quality control type "Integer Values Range"
+    Then the system returns a result with code "Ok"
+    And "app-admin" is able to view quality control type parameters:
+      | name         | type    |
+      | Min Value    | integer |
+      | Max Value    | integer |
 
   Scenario: Receive and store results data for existing Quality Controls in bulk mode
     Given some quality controls exist in the system with following data:

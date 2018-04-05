@@ -4,6 +4,7 @@ use Mix.Config
 # you can enable the server option below.
 config :td_dq, TdDqWeb.Endpoint,
   http: [port: 3004],
+  url: [host: "localhost", port: 3004],
   server: true
 
 config :td_dq, hashing_module: TdDq.DummyHashing

@@ -129,7 +129,7 @@ defmodule TdQd.QualtityControlTest do
               )
   end
 
-  defand ~r/^an existing quality control types:$/, %{table: table}, _state do
+  defand ~r/^an existing quality control type:$/, %{table: table}, _state do
     quality_control_types = get_quality_control_types_from_table(table)
     json_schema = quality_control_types |> JSON.encode!
     file_name = Application.get_env(:td_dq, :qc_types_file)
@@ -151,6 +151,22 @@ defmodule TdQd.QualtityControlTest do
       expected_quality_control_types = Enum.reduce(table, [], &(&2 ++ [&1[:Name]]))
       retrieved_quality_control_types = Enum.reduce(quality_controls_types, [], &(&2 ++ [&1["type_name"]]))
       assert expected_quality_control_types == retrieved_quality_control_types
+  end
+
+  defwhen ~r/^"(?<user_name>[^"]+)" tries to list parameters of quality control type "(?<type_name>[^"]+)"$/,
+    %{user_name: user_name, type_name: type_name}, state do
+
+    token = get_user_token(user_name)
+    {:ok, status_code, %{"data" => resp}} = quality_control_type_parameters(token, type_name)
+    {:ok, Map.merge(state, %{status_code: status_code, quality_controls_type_params: resp})}
+  end
+
+  defand ~r/^"(?<user_name>[^"]+)" is able to view quality control type parameters:$/,
+         %{user_name: _user_name, table: expected_params}, state do
+    # Your implementation here
+    actual_params = state[:quality_controls_type_params]
+    expected_params = Enum.map(expected_params, &(%{"name" => &1.name, "type" => &1.type}))
+    assert actual_params == expected_params
   end
 
   defp get_quality_control_types_from_table(table) do
