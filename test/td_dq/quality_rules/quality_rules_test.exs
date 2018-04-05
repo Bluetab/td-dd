@@ -26,6 +26,7 @@ defmodule TdDq.QualityRulesTest do
       assert quality_rule.type_params == creation_attrs[:type_params]
       assert quality_rule.system == creation_attrs[:system]
       assert quality_rule.type == creation_attrs[:type]
+      assert quality_rule.tag == creation_attrs[:tag]
     end
 
     test "create_quality_rule/1 with invalid data returns error changeset" do
@@ -49,6 +50,7 @@ defmodule TdDq.QualityRulesTest do
       assert quality_rule.type_params == update_attrs[:type_params]
       assert quality_rule.system == update_attrs[:system]
       assert quality_rule.type == update_attrs[:type]
+      assert quality_rule.tag == update_attrs[:tag]
     end
 
     test "update_quality_rule/2 with invalid data returns error changeset" do

@@ -28,6 +28,7 @@ defmodule TdDq.Factory do
       type_params: %{},
       system: "Quality Rule System",
       type: "Quality Rule type",
+      tag: %{}
     }
   end
 end

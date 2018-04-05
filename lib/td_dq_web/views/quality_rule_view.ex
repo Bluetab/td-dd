@@ -17,6 +17,7 @@ defmodule TdDqWeb.QualityRuleView do
       description: quality_rule.description,
       system: quality_rule.system,
       type_params: quality_rule.type_params,
-      type: quality_rule.type}
+      type: quality_rule.type,
+      tag: quality_rule.tag}
   end
 end

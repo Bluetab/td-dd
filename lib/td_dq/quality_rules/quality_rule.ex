@@ -11,6 +11,7 @@ defmodule TdDq.QualityRules.QualityRule do
     field :type_params, :map
     field :system, :string
     field :type, :string
+    field :tag, :map
     belongs_to :quality_control, QualityControl
 
     timestamps()
@@ -19,8 +20,8 @@ defmodule TdDq.QualityRules.QualityRule do
   @doc false
   def changeset(%QualityRule{} = quality_rule, attrs) do
     quality_rule
-    |> cast(attrs, [:name, :description, :system, :type_params, :type, :quality_control_id])
-    |> validate_required([:name, :description, :system, :type_params, :type, :quality_control_id])
+    |> cast(attrs, [:name, :description, :system, :type_params, :type, :tag, :quality_control_id])
+    |> validate_required([:name, :description, :system, :type_params, :type, :tag, :quality_control_id])
     |> validate_length(:name, max: 255)
     |> validate_length(:description, max: 500)
   end

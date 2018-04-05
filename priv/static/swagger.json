@@ -424,6 +424,10 @@
         "description": {
           "type": "string",
           "description": "Quality Rule description"
+        },
+        "tag": {
+          "type": "object",
+          "description": "Quality Rule tag"
         }
       }
     },
@@ -467,6 +471,10 @@
         "description": {
           "type": "string",
           "description": "Quality Rule description"
+        },
+        "tag": {
+          "type": "object",
+          "description": "Quality Rule tag"
         }
       }
     },
@@ -508,6 +516,10 @@
         "description": {
           "type": "string",
           "description": "Quality Rule description"
+        },
+        "tag": {
+          "type": "object",
+          "description": "Quality Rule tag"
         }
       },
       "description": "Quality Rule entity"

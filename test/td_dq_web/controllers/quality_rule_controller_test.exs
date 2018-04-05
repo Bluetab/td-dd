@@ -41,6 +41,7 @@ defmodule TdDqWeb.QualityRuleControllerTest do
       assert creation_attrs[:type_params] == json_response["type_params"]
       assert creation_attrs[:system] == json_response["system"]
       assert creation_attrs[:type] == json_response["type"]
+      assert creation_attrs[:tag] == json_response["tag"]
     end
 
     @tag :admin_authenticated
@@ -81,6 +82,7 @@ defmodule TdDqWeb.QualityRuleControllerTest do
       assert update_attrs[:type_params] == json_response["type_params"]
       assert update_attrs[:system] == json_response["system"]
       assert update_attrs[:type] == json_response["type"]
+      assert update_attrs[:tag] == json_response["tag"]
     end
 
     @tag :admin_authenticated

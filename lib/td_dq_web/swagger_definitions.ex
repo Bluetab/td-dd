@@ -100,6 +100,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
           system :string, "Quality Rule system", required: true
           type :string, "Quality Rule type", required: true
           type_params :object, "Quality Rule parameters"
+          tag :object, "Quality Rule tag"
         end
       end,
       QualityRuleCreate: swagger_schema do
@@ -110,6 +111,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
           system :string, "Quality Rule system", required: true
           type :string, "Quality Rule type", required: true
           type_params :object, "Quality Rule parameters"
+          tag :object, "Quality Rule tag"
         end
       end,
       QualityRuleUpdate: swagger_schema do
@@ -119,6 +121,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
           system :string, "Quality Rule system", required: true
           type :string, "Quality Rule type", required: true
           type_params :object, "Quality Rule parameters"
+          tag :object, "Quality Rule tag"
         end
       end,
       QualityRules: swagger_schema do

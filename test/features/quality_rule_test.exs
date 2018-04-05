@@ -87,6 +87,7 @@ defmodule TdDq.QualityRuleTest do
   end
 
   defp assert_quality_rule("type_params" = attr, value, %{} = target), do: assert_quality_rule(value, target[attr])
+  defp assert_quality_rule("tag" = attr, value, %{} = target), do: assert_quality_rule(value, target[attr])
   defp assert_quality_rule(attr, value, %{} = quality_rule), do: assert value == quality_rule[attr]
   defp assert_quality_rule(%{} = attrs, %{} = quality_rule) do
     Enum.each(attrs, fn {attr, value} ->

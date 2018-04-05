@@ -9,11 +9,11 @@ defmodule TdDqWeb.QualityRule do
 
   @test_fields_to_api %{
     "Type" => "type", "System" => "system", "Name" => "name",
-    "Description" => "description", "Parameters" => "type_params"
+    "Description" => "description", "Parameters" => "type_params", "Tag" => "tag"
   }
 
   def create_empty_quality_rule_types(quality_rule_type) do
-    write_quality_rule_types([%{"type_name": quality_rule_type, "type_parameters": []}])
+    write_quality_rule_types([%{"type_name": quality_rule_type, "type_parameters": [], "tag": []}])
   end
 
   def create_quality_rule_types_from_table(table) do
@@ -64,10 +64,15 @@ defmodule TdDqWeb.QualityRule do
   end
 
   def quality_rule_test_fields_to_api(table) do
-    table
+    table = table
     |> Enum.reduce(%{}, fn(x, acc) -> Map.put(acc, Map.get(@test_fields_to_api, x."Field", x."Field"), x."Value") end)
     |> Map.split(Map.values(@test_fields_to_api))
     |> fn({f, v}) -> Map.put(f, "type_params", v) end.()
+    |> Map.split(Map.values(@test_fields_to_api))
+    |> fn({f, v}) -> Map.put_new(f, "tag", v) end.()
+
+    tag = Map.get(table, "tag")
+    table = if is_map(tag), do: table, else: Map.put(table, "tag", tag |> JSON.decode!)
   end
 
   def quality_rule_create(token, quality_rule_params) do
