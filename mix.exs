@@ -1,5 +1,6 @@
 defmodule TdDq.Mixfile do
   use Mix.Project
+  alias Mix.Tasks.Phx.Swagger.Generate, as: PhxSwaggerGenerate
 
   def project do
     [
@@ -66,7 +67,14 @@ defmodule TdDq.Mixfile do
     [
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      "test": ["ecto.create --quiet", "ecto.migrate", "test"]
+      "test": ["ecto.create --quiet", "ecto.migrate", "test"],
+      "compile": ["compile", &pxh_swagger_generate/1]
     ]
+  end
+
+  defp pxh_swagger_generate(_) do
+      if Mix.env in [:dev, :prod] do
+        PhxSwaggerGenerate.run(["priv/static/swagger.json"])
+      end
   end
 end

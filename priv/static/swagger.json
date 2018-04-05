@@ -413,6 +413,10 @@
           "type": "string",
           "description": "Quality Rule type"
         },
+        "tag": {
+          "type": "object",
+          "description": "Quality Rule tag"
+        },
         "system": {
           "type": "string",
           "description": "Quality Rule system"
@@ -424,10 +428,6 @@
         "description": {
           "type": "string",
           "description": "Quality Rule description"
-        },
-        "tag": {
-          "type": "object",
-          "description": "Quality Rule tag"
         }
       }
     },
@@ -456,6 +456,10 @@
           "type": "string",
           "description": "Quality Rule type"
         },
+        "tag": {
+          "type": "object",
+          "description": "Quality Rule tag"
+        },
         "system": {
           "type": "string",
           "description": "Quality Rule system"
@@ -471,10 +475,6 @@
         "description": {
           "type": "string",
           "description": "Quality Rule description"
-        },
-        "tag": {
-          "type": "object",
-          "description": "Quality Rule tag"
         }
       }
     },
@@ -497,6 +497,10 @@
           "type": "string",
           "description": "Quality Rule type"
         },
+        "tag": {
+          "type": "object",
+          "description": "Quality Rule tag"
+        },
         "system": {
           "type": "string",
           "description": "Quality Rule system"
@@ -516,10 +520,6 @@
         "description": {
           "type": "string",
           "description": "Quality Rule description"
-        },
-        "tag": {
-          "type": "object",
-          "description": "Quality Rule tag"
         }
       },
       "description": "Quality Rule entity"
