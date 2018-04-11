@@ -48,7 +48,7 @@ defmodule TdDdWeb.MetadataController do
   """
   def upload(conn, params) do
     do_upload(conn, params)
-    send_resp(conn, :ok, "")
+    send_resp(conn, :no_content, "")
   rescue e in RuntimeError ->
     Logger.error "While uploading #{e.message}"
     send_resp(conn, :unprocessable_entity, Poison.encode!(%{error: e.message}))

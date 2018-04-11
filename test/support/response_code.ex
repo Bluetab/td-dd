@@ -3,6 +3,7 @@ defmodule TdDdWeb.ResponseCode do
 
   @ok "Ok"
   @created "Created"
+  @no_content "No Content"
   @forbidden "Forbidden"
   @unauthorized "Unauthorized"
   @not_found "NotFound"
@@ -19,6 +20,7 @@ defmodule TdDdWeb.ResponseCode do
     case http_status_code do
       200 -> @ok
       201 -> @created
+      204 -> @no_content
       401 -> @forbidden
       403 -> @unauthorized
       404 -> @not_found
