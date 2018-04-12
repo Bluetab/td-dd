@@ -80,7 +80,7 @@ defmodule TdDdWeb.MetadataController do
     data_structures_path
     |> File.stream!
     |> Stream.drop(1)  # remove header
-    |> CSV.decode!(separator: ?¬)
+    |> CSV.decode!(separator: ?;)
     |> Enum.each(fn(data) ->
       data = add_user_and_date_time(conn, data)
       SQL.query!(Repo, @data_structure_query, data)
@@ -91,7 +91,7 @@ defmodule TdDdWeb.MetadataController do
     data_fields_path
     |> File.stream!
     |> Stream.drop(1)  # remove header
-    |> CSV.decode!(separator: ?¬)
+    |> CSV.decode!(separator: ?;)
     |> Enum.each(fn(data) ->
       data = data
       |> List.update_at(6, &(&1 == "1")) # nullable
