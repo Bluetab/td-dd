@@ -1,4 +1,4 @@
-defmodule Mix.Tasks.Bg.CodeAnalysis do
+defmodule Mix.Tasks.Td.CodeAnalysis do
   use Mix.Task
   alias Mix.Tasks.Release.Clean
   alias Mix.Tasks.Compile
