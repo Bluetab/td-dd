@@ -1,4 +1,4 @@
-defmodule Mix.Tasks.Bg.StopDb do
+defmodule Mix.Tasks.Td.StopDb do
   use Mix.Task
 
   @shortdoc "Stop postgres container"

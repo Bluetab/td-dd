@@ -1,4 +1,4 @@
-defmodule Mix.Tasks.Bg.StartDb do
+defmodule Mix.Tasks.Td.StartDb do
   use Mix.Task
 
   @shortdoc "Start postgres container"
