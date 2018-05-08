@@ -19,6 +19,7 @@ defmodule TdDdWeb.Router do
     post "/metadata", MetadataController, :upload
     resources "/data_structures", DataStructureController, except: [:new, :edit]
     resources "/data_fields", DataFieldController, except: [:new, :edit]
+    resources "/comments", CommentController, except: [:new, :edit]
   end
 
   scope "/api/swagger" do
