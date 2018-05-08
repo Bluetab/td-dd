@@ -6,9 +6,9 @@ defmodule TdDdWeb.DataStructureControllerTest do
   alias TdDd.DataStructures.DataStructure
   alias TdDdWeb.ApiServices.MockTdAuthService
 
-  @create_attrs %{description: "some description", group: "some group", last_change_at: "2010-04-17 14:00:00.000000Z", last_change_by: 42, name: "some name", system: "some system"}
-  @update_attrs %{description: "some updated description", group: "some updated group", last_change_at: "2011-05-18 15:01:01.000000Z", last_change_by: 43, name: "some updated name", system: "some updated system"}
-  @invalid_attrs %{description: nil, group: nil, last_change_at: nil, last_change_by: nil, name: nil, system: nil}
+  @create_attrs %{description: "some description", group: "some group", last_change_at: "2010-04-17 14:00:00.000000Z", last_change_by: 42, name: "some name", system: "some system", type: "csv", ou: "GM", lopd: "1"}
+  @update_attrs %{description: "some updated description", group: "some updated group", last_change_at: "2011-05-18 15:01:01.000000Z", last_change_by: 43, name: "some updated name", system: "some updated system",  type: "table", ou: "EM", lopd: "2"}
+  @invalid_attrs %{description: nil, group: nil, last_change_at: nil, last_change_by: nil, name: nil, system: nil,  type: nil, ou: nil, lopd: nil}
 
   setup_all do
     start_supervised MockTdAuthService
@@ -45,12 +45,16 @@ defmodule TdDdWeb.DataStructureControllerTest do
       |> Map.delete("last_change_by")
       |> Map.delete("last_change_at")
       validate_resp_schema(conn, schema, "DataStructureResponse")
-      assert  json_response_data == %{
-        "id" => id,
-        "description" => "some description",
-        "group" => "some group",
-        "name" => "some name",
-        "system" => "some system"}
+      assert json_response_data["id"] == id
+      assert json_response_data["description"] == "some description"
+      assert json_response_data["type"] == "csv"
+      assert json_response_data["ou"] == "GM"
+      assert json_response_data["lopd"] == "1"
+      assert json_response_data["group"] == "some group"
+      assert json_response_data["name"] == "some name"
+      assert json_response_data["system"] == "some system"
+      assert json_response_data["inserted_at"]
+
     end
 
     @tag authenticated_user: @admin_user_name
@@ -76,12 +80,16 @@ defmodule TdDdWeb.DataStructureControllerTest do
       |> Map.delete("last_change_by")
       |> Map.delete("last_change_at")
       validate_resp_schema(conn, schema, "DataStructureResponse")
-      assert json_response_data == %{
-        "id" => id,
-        "description" => "some updated description",
-        "group" => "some updated group",
-        "name" => "some updated name",
-        "system" => "some updated system"}
+      assert json_response_data["id"] == id
+      assert json_response_data["description"] == "some updated description"
+      assert json_response_data["type"] == "table"
+      assert json_response_data["ou"] == "EM"
+      assert json_response_data["lopd"] == "2"
+      assert json_response_data["group"] == "some updated group"
+      assert json_response_data["name"] == "some updated name"
+      assert json_response_data["system"] == "some updated system"
+      assert json_response_data["inserted_at"]
+
     end
 
     @tag authenticated_user: @admin_user_name

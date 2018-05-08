@@ -387,6 +387,18 @@
             "id"
           ],
           "properties": {
+            "type": {
+              "type": "string",
+              "description": "Data Structure type (csv, table...)"
+            },
+            "ou": {
+              "type": "string",
+              "description": "Data Structure organizational unit"
+            },
+            "lopd": {
+              "type": "string",
+              "description": "Data Structure lopd level"
+            },
             "id": {
               "type": "integer",
               "description": "Data Structure unique identifier"
@@ -418,13 +430,25 @@
             "system"
           ],
           "properties": {
+            "type": {
+              "type": "string",
+              "description": "Data Structure type (csv, table...)"
+            },
             "system": {
               "type": "string",
               "description": "Data Structure system"
             },
+            "ou": {
+              "type": "string",
+              "description": "Data Structure organizational unit"
+            },
             "name": {
               "type": "string",
               "description": "Data Structure name"
+            },
+            "lopd": {
+              "type": "string",
+              "description": "Data Structure lopd level"
             },
             "group": {
               "type": "string",
@@ -448,13 +472,25 @@
         "id"
       ],
       "properties": {
+        "type": {
+          "type": "string",
+          "description": "Data Structure type (csv, table...)"
+        },
         "system": {
           "type": "string",
           "description": "Data Structure system"
         },
+        "ou": {
+          "type": "string",
+          "description": "Data Structure organizational unit"
+        },
         "name": {
           "type": "string",
           "description": "Data Structure name"
+        },
+        "lopd": {
+          "type": "string",
+          "description": "Data Structure lopd level"
         },
         "last_change_by": {
           "type": "string",
@@ -463,6 +499,10 @@
         "last_change_at": {
           "type": "string",
           "description": "Data Structure last updated at"
+        },
+        "inserted_at": {
+          "type": "string",
+          "description": "Data Structure creation date"
         },
         "id": {
           "type": "integer",
@@ -478,8 +518,12 @@
         }
       },
       "example": {
+        "type": "Csv",
         "system": "Data Structure system",
+        "ou": "General Management",
         "name": "Data Structure name",
+        "lopd": "1",
+        "inserted_at": "2018-05-08T17:17:59.691460",
         "id": 123,
         "group": "Data Structure group",
         "description": "Data Structure description"
@@ -616,11 +660,15 @@
         },
         "last_change_by": {
           "type": "string",
-          "description": "Data Structure last updated by"
+          "description": "Data Field last updated by"
         },
         "last_change_at": {
           "type": "string",
-          "description": "Data Structure last updated at"
+          "description": "Data Field last updated at"
+        },
+        "inserted_at": {
+          "type": "string",
+          "description": "Data Field creation date"
         },
         "id": {
           "type": "integer",
@@ -646,6 +694,7 @@
         "name": "Data Field name",
         "last_change_by": 1,
         "last_change_at": "2010-04-17 14:00:00",
+        "inserted_at": "2018-05-08T17:17:59.691460",
         "id": 123,
         "description": "Data Field descrition",
         "data_structure_id": 11,
