@@ -21,7 +21,6 @@ defmodule TdDdWeb.MetadataController do
                     "precision",
                     "business_concept_id"]
 
-
   @data_structure_query  """
     INSERT INTO data_structures ("system", "group", "name", description, last_change_at, last_change_by, inserted_at, updated_at)
     VALUES ($1, $2, $3, $4, $6, $5, $6, $6)
