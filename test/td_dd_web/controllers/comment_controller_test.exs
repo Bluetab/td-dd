@@ -1,6 +1,7 @@
 defmodule TdDdWeb.CommentControllerTest do
   use TdDdWeb.ConnCase
   import TdDdWeb.Authentication, only: :functions
+  use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   alias TdDd.Comments
   alias TdDd.Comments.Comment

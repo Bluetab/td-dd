@@ -241,6 +241,119 @@
         "operationId": "TdDdWeb.DataFieldController.index",
         "description": "List Data Fields"
       }
+    },
+    "/comments/{id}": {
+      "get": {
+        "tags": [
+          "Comment"
+        ],
+        "summary": "",
+        "responses": {
+          "400": {
+            "description": "Client Error"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/CommentResponse"
+            },
+            "description": "OK"
+          }
+        },
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "type": "integer",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Comment ID"
+          }
+        ],
+        "operationId": "TdDdWeb.CommentController.show",
+        "description": "Show Comment"
+      },
+      "delete": {
+        "tags": [
+          "Comment"
+        ],
+        "summary": "",
+        "responses": {
+          "400": {
+            "description": "Client Error"
+          },
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "type": "integer",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Comment ID"
+          }
+        ],
+        "operationId": "TdDdWeb.CommentController.delete",
+        "description": "Delete Comment"
+      }
+    },
+    "/comments": {
+      "post": {
+        "tags": [
+          "Comment"
+        ],
+        "summary": "",
+        "responses": {
+          "400": {
+            "description": "Client Error"
+          },
+          "201": {
+            "schema": {
+              "$ref": "#/definitions/CommentResponse"
+            },
+            "description": "OK"
+          }
+        },
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/definitions/CommentCreate"
+            },
+            "required": false,
+            "name": "comment",
+            "in": "body",
+            "description": "Comment update attrs"
+          }
+        ],
+        "operationId": "TdDdWeb.CommentController.update",
+        "description": "Update Comments"
+      },
+      "get": {
+        "tags": [
+          "Comment"
+        ],
+        "summary": "",
+        "responses": {
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/CommentsResponse"
+            },
+            "description": "OK"
+          }
+        },
+        "parameters": [],
+        "operationId": "TdDdWeb.CommentController.index",
+        "description": "List Comments"
+      }
     }
   },
   "info": {
@@ -539,6 +652,135 @@
         "business_concept_id": "123456"
       },
       "description": "A Data Structure Data Field"
+    },
+    "CommentsResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/Comments"
+        }
+      }
+    },
+    "Comments": {
+      "type": "array",
+      "title": "Comments",
+      "items": {
+        "$ref": "#/definitions/Comment"
+      },
+      "description": "A collection of Comments"
+    },
+    "CommentUpdate": {
+      "type": "object",
+      "properties": {
+        "data_structure": {
+          "type": "object",
+          "required": [
+            "id"
+          ],
+          "properties": {
+            "user_id": {
+              "type": "integer",
+              "description": "User identifier"
+            },
+            "resource_type": {
+              "type": "string",
+              "description": "Resource type"
+            },
+            "resource_id": {
+              "type": "integer",
+              "description": "Resource identifier"
+            },
+            "id": {
+              "type": "integer",
+              "description": "Comment unique identifier"
+            },
+            "content": {
+              "type": "string",
+              "description": "Comment content"
+            }
+          }
+        }
+      }
+    },
+    "CommentResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/Comment"
+        }
+      }
+    },
+    "CommentCreate": {
+      "type": "object",
+      "properties": {
+        "data_structure": {
+          "type": "object",
+          "required": [
+            "content",
+            "user_id",
+            "resource_type",
+            "resource_id"
+          ],
+          "properties": {
+            "user_id": {
+              "type": "integer",
+              "description": "User identifier"
+            },
+            "resource_type": {
+              "type": "string",
+              "description": "Resource type"
+            },
+            "resource_id": {
+              "type": "integer",
+              "description": "Resource identifier"
+            },
+            "content": {
+              "type": "string",
+              "description": "Comment content"
+            }
+          }
+        }
+      }
+    },
+    "Comment": {
+      "type": "object",
+      "title": "Comment",
+      "required": [
+        "content",
+        "user_id",
+        "resource_type",
+        "resource_id",
+        "id"
+      ],
+      "properties": {
+        "user_id": {
+          "type": "integer",
+          "description": "User identifier"
+        },
+        "resource_type": {
+          "type": "string",
+          "description": "Resource type"
+        },
+        "resource_id": {
+          "type": "integer",
+          "description": "Resource identifier"
+        },
+        "id": {
+          "type": "integer",
+          "description": "Comment unique identifier"
+        },
+        "content": {
+          "type": "string",
+          "description": "Comment content"
+        }
+      },
+      "example": {
+        "user_id": 1,
+        "resource_type": "Field",
+        "resource_id": 123,
+        "content": "This is a comment"
+      },
+      "description": "A Data Structure/Field Comment"
     }
   },
   "basePath": "/api"

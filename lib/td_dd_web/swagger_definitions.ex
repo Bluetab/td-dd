@@ -145,4 +145,67 @@ defmodule TdDdWeb.SwaggerDefinitions do
     }
   end
 
+  def comment_swagger_definitions do
+    %{
+      Comment: swagger_schema do
+        title "Comment"
+        description "A Data Structure/Field Comment"
+        properties do
+          id :integer, "Comment unique identifier", required: true
+          resource_id :integer, "Resource identifier", required: true
+          resource_type :string, "Resource type", required: true
+          user_id :integer, "User identifier", required: true
+          content :string, "Comment content", required: true
+      end
+        example %{
+          resource_id: 123,
+          resource_type: "Field",
+          user_id: 1,
+          content: "This is a comment"
+        }
+      end,
+      CommentCreate: swagger_schema do
+        properties do
+          data_structure (Schema.new do
+            properties do
+              resource_id :integer, "Resource identifier", required: true
+              resource_type :string, "Resource type", required: true
+              user_id :integer, "User identifier", required: true
+              content :string, "Comment content", required: true
+            end
+          end)
+        end
+      end,
+      CommentUpdate: swagger_schema do
+        properties do
+          data_structure (Schema.new do
+            properties do
+              id :integer, "Comment unique identifier", required: true
+              resource_id :integer, "Resource identifier"
+              resource_type :string, "Resource type"
+              user_id :integer, "User identifier"
+              content :string, "Comment content"
+            end
+          end)
+        end
+      end,
+      Comments: swagger_schema do
+        title "Comments"
+        description "A collection of Comments"
+        type :array
+        items Schema.ref(:Comment)
+      end,
+      CommentResponse: swagger_schema do
+        properties do
+          data Schema.ref(:Comment)
+        end
+      end,
+      CommentsResponse: swagger_schema do
+        properties do
+          data Schema.ref(:Comments)
+        end
+      end
+    }
+  end
+
 end
