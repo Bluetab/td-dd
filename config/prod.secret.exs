@@ -20,7 +20,7 @@ config :td_dd, TdDd.Repo,
   hostname: "localhost",
   pool_size: 10
 
-config :data_quality, TdDd.Auth.Guardian,
+config :td_dd, TdDd.Auth.Guardian,
   allowed_algos: ["HS512"], # optional
   issuer: "tdauth",
   ttl: { 1, :hours },
