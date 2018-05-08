@@ -26,6 +26,10 @@ config :td_dd, TdDd.Auth.Guardian,
   ttl: { 1, :hours },
   secret_key: "SuperSecretTruedat"
 
+config :td_dd, :api_services_login,
+  api_username: "api-admin",
+  api_password: "xxxxx"
+
 config :td_dd, :auth_service, api_service: TdDdWeb.ApiServices.HttpTdAuthService,
   auth_host: "localhost",
   auth_port: "4001",
