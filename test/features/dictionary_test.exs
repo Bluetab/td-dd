@@ -15,6 +15,9 @@ defmodule TdDd.DictionaryTest do
                                  "Group" => "group",
                                  "Name" => "name",
                                  "Description" => "description",
+                                 "Type" => "type",
+                                 "Organizational Unit" => "ou",
+                                 "LOPD" => "lopd",
                                  "Last Modification" => "last_change_at",
                                  "Last User" => "last_change_by",
                                 }

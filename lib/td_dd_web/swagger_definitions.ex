@@ -15,8 +15,12 @@ defmodule TdDdWeb.SwaggerDefinitions do
           group :string, "Data Structure group", required: true
           name :string, "Data Structure name", required: true
           description :string, "Data Structure description"
+          type :string, "Data Structure type (csv, table...)"
+          ou :string, "Data Structure organizational unit"
+          lopd :string, "Data Structure lopd level"
           last_change_by :string, "Data Structure last updated by"
           last_change_at :string, "Data Structure last updated at"
+          inserted_at :string, "Data Structure creation date"
       end
         example %{
         id: 123,
@@ -24,6 +28,10 @@ defmodule TdDdWeb.SwaggerDefinitions do
         group: "Data Structure group",
         name: "Data Structure name",
         description: "Data Structure description",
+        type: "Csv",
+        ou: "General Management",
+        lopd: "1",
+        inserted_at: "2018-05-08T17:17:59.691460"
         }
       end,
       DataStructureCreate: swagger_schema do
@@ -34,6 +42,9 @@ defmodule TdDdWeb.SwaggerDefinitions do
               group :string, "Data Structure group", required: true
               name :string, "Data Structure name", required: true
               description :string, "Data Structure description"
+              type :string, "Data Structure type (csv, table...)"
+              ou :string, "Data Structure organizational unit"
+              lopd :string, "Data Structure lopd level"
             end
           end)
         end
@@ -44,6 +55,9 @@ defmodule TdDdWeb.SwaggerDefinitions do
             properties do
               id :integer, "Data Structure unique identifier", required: true
               description :string, "Data Structure description"
+              type :string, "Data Structure type (csv, table...)"
+              ou :string, "Data Structure organizational unit"
+              lopd :string, "Data Structure lopd level"
             end
           end)
         end
@@ -81,8 +95,9 @@ defmodule TdDdWeb.SwaggerDefinitions do
           description :string, "Data Field descrition"
           business_concept_id :string, "Asociated Business Concept Id"
           data_structure_id :integer, "Belongs to Data Structure", required: true
-          last_change_by :string, "Data Structure last updated by"
-          last_change_at :string, "Data Structure last updated at"
+          last_change_by :string, "Data Field last updated by"
+          last_change_at :string, "Data Field last updated at"
+          inserted_at :string, "Data Field creation date"
       end
         example %{
           id: 123,
@@ -94,8 +109,9 @@ defmodule TdDdWeb.SwaggerDefinitions do
           business_concept_id: "123456",
           data_structure_id: 11,
           last_change_by: 1,
-          last_change_at: "2010-04-17 14:00:00"
-        }
+          last_change_at: "2010-04-17 14:00:00",
+          inserted_at: "2018-05-08T17:17:59.691460"
+      }
       end,
       DataFieldCreate: swagger_schema do
         properties do
