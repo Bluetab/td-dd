@@ -166,7 +166,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
       end,
       CommentCreate: swagger_schema do
         properties do
-          data_structure (Schema.new do
+          comment (Schema.new do
             properties do
               resource_id :integer, "Resource identifier", required: true
               resource_type :string, "Resource type", required: true
@@ -178,7 +178,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
       end,
       CommentUpdate: swagger_schema do
         properties do
-          data_structure (Schema.new do
+          comment (Schema.new do
             properties do
               id :integer, "Comment unique identifier", required: true
               resource_id :integer, "Resource identifier"

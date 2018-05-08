@@ -360,7 +360,7 @@
     "version": "1.0",
     "title": "TdDd"
   },
-  "host": "localhost:4000",
+  "host": "localhost:4005",
   "definitions": {
     "DataStructuresResponse": {
       "type": "object",
@@ -672,7 +672,7 @@
     "CommentUpdate": {
       "type": "object",
       "properties": {
-        "data_structure": {
+        "comment": {
           "type": "object",
           "required": [
             "id"
@@ -713,7 +713,7 @@
     "CommentCreate": {
       "type": "object",
       "properties": {
-        "data_structure": {
+        "comment": {
           "type": "object",
           "required": [
             "content",
