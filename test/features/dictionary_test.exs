@@ -103,8 +103,23 @@ defmodule TdDd.DictionaryTest do
     state do
 
       metadata = build_metadata({[], []}, fields)
-      data_structures = metadata |> elem(0) |> CSV.encode(separator: ?;) |> Enum.to_list |> Enum.join
-      data_fields     = metadata |> elem(1) |> CSV.encode(separator: ?;) |> Enum.to_list |> Enum.join
+
+      data_structures_headers = ["system", "group", "name", "description"]
+      data_fields_headers = ["system", "group", "name", "field_name", "type", "description", "nullable", "precision", "business_concept_id"]
+
+      data_structures = metadata
+      |> elem(0)
+      |> List.insert_at(0, data_structures_headers)
+      |> CSV.encode(separator: ?;)
+      |> Enum.to_list
+      |> Enum.join
+
+      data_fields = metadata
+      |> elem(1)
+      |> List.insert_at(0, data_fields_headers)
+      |> CSV.encode(separator: ?;)
+      |> Enum.to_list
+      |> Enum.join
 
       token = get_user_token(user_name)
       {:ok, status_code} = metadata_upload(token, data_structures, data_fields)

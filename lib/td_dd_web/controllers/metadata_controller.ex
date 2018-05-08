@@ -6,6 +6,22 @@ defmodule TdDdWeb.MetadataController do
   alias TdDd.Repo
   alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
 
+  @data_structure_keys ["system",
+                        "group",
+                        "name",
+                        "description"]
+
+  @data_field_keys ["system",
+                    "group",
+                    "name",
+                    "field_name",
+                    "type",
+                    "description",
+                    "nullable",
+                    "precision",
+                    "business_concept_id"]
+
+
   @data_structure_query  """
     INSERT INTO data_structures ("system", "group", "name", description, last_change_at, last_change_by, inserted_at, updated_at)
     VALUES ($1, $2, $3, $4, $6, $5, $6, $6)
@@ -77,32 +93,48 @@ defmodule TdDdWeb.MetadataController do
 
     Logger.info "Uploading data structures..."
 
+    data_structure_keys = Enum.reverse(@data_structure_keys)
+
     data_structures_path
     |> File.stream!
-    |> Stream.drop(1)  # remove header
-    |> CSV.decode!(separator: ?;)
+    |> CSV.decode!(separator: ?;, headers: true)
     |> Enum.each(fn(data) ->
-      data = add_user_and_date_time(conn, data)
-      SQL.query!(Repo, @data_structure_query, data)
+      input = data
+      |> to_array(data_structure_keys)
+      |> add_user_and_date_time(conn)
+      SQL.query!(Repo, @data_structure_query, input)
     end)
 
     Logger.info "Uploading data fields..."
 
+    data_field_keys = Enum.reverse(@data_field_keys)
+
     data_fields_path
     |> File.stream!
-    |> Stream.drop(1)  # remove header
-    |> CSV.decode!(separator: ?;)
+    |> CSV.decode!(separator: ?;, headers: true)
     |> Enum.each(fn(data) ->
-      data = data
-      |> List.update_at(6, &(&1 == "1")) # nullable
-
-      data = add_user_and_date_time(conn, data)
-      SQL.query!(Repo, @data_field_query, data)
+      input = data
+      |> to_array(data_field_keys)
+      |> add_user_and_date_time(conn)
+      SQL.query!(Repo, @data_field_query, input)
     end)
 
   end
 
-  defp add_user_and_date_time(conn, data) do
+  defp to_array(data, data_keys) do
+    data_keys
+    |> Enum.reduce([], &([get_value(data, &1)| &2]))
+  end
+
+  defp get_value(data, "nullable" = name) do
+    case Map.get(data, name) do
+      nil -> nil
+      value -> value == "1"
+    end
+  end
+  defp get_value(data, name), do: Map.get(data, name)
+
+  defp add_user_and_date_time(data, conn) do
     data ++ [GuardianPlug.current_resource(conn).id, DateTime.utc_now()]
   end
 
