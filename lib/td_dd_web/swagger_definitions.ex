@@ -115,7 +115,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
       end,
       DataFieldCreate: swagger_schema do
         properties do
-          data_structure (Schema.new do
+          data_field (Schema.new do
             properties do
               name :string, "Data Field name", required: true
               type :string, "Data Field type"
@@ -130,7 +130,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
       end,
       DataFieldUpdate: swagger_schema do
         properties do
-          data_structure (Schema.new do
+          data_field (Schema.new do
             properties do
               id :integer, "Data Field unique identifier", required: true
               type :string, "Data Field type"
