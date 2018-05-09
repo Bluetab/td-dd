@@ -186,7 +186,6 @@ defmodule TdDdWeb.SwaggerDefinitions do
             properties do
               resource_id :integer, "Resource identifier", required: true
               resource_type :string, "Resource type", required: true
-              user_id :integer, "User identifier", required: true
               content :string, "Comment content", required: true
             end
           end)
@@ -199,7 +198,6 @@ defmodule TdDdWeb.SwaggerDefinitions do
               id :integer, "Comment unique identifier", required: true
               resource_id :integer, "Resource identifier"
               resource_type :string, "Resource type"
-              user_id :integer, "User identifier"
               content :string, "Comment content"
             end
           end)

@@ -5,6 +5,7 @@ defmodule TdDdWeb.CommentController do
   alias TdDd.Comments
   alias TdDd.Comments.Comment
   alias TdDdWeb.SwaggerDefinitions
+  alias Guardian.Plug, as: GuardianPlug
 
   action_fallback TdDdWeb.FallbackController
 
@@ -33,7 +34,10 @@ defmodule TdDdWeb.CommentController do
     response 400, "Client Error"
   end
   def create(conn, %{"comment" => comment_params}) do
-    with {:ok, %Comment{} = comment} <- Comments.create_comment(comment_params) do
+    current_user = GuardianPlug.current_resource(conn)
+    creation_attrs = comment_params
+      |> Map.put("user_id", current_user.id)
+    with {:ok, %Comment{} = comment} <- Comments.create_comment(creation_attrs) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", comment_path(conn, :show, comment))
@@ -89,5 +93,37 @@ defmodule TdDdWeb.CommentController do
     with {:ok, %Comment{}} <- Comments.delete_comment(comment) do
       send_resp(conn, :no_content, "")
     end
+  end
+
+  swagger_path :get_comment_data_field do
+    get "/data_fields/{data_field_id}/comment"
+    description "Show Data Field Comment"
+    produces "application/json"
+    parameters do
+      data_field_id :path, :integer, "Data Field ID", required: true
+    end
+    response 200, "OK", Schema.ref(:CommentResponse)
+    response 400, "Client Error"
+  end
+  def get_comment_data_field(conn, %{"data_field_id" => resource_id}) do
+    comment = Comments.get_comment_by_resource("Field", resource_id)
+    comment = Map.replace!(comment, :user_id, GuardianPlug.current_resource(conn).user_name)
+    render(conn, "show.json", comment: comment)
+  end
+
+  swagger_path :get_comment_data_structure do
+    get "/data_structures/{data_structure_id}/comment"
+    description "Show Data Structure Comment"
+    produces "application/json"
+    parameters do
+      data_structure_id :path, :integer, "Data Structure ID", required: true
+    end
+    response 200, "OK", Schema.ref(:CommentResponse)
+    response 400, "Client Error"
+  end
+  def get_comment_data_structure(conn, %{"data_structure_id" => resource_id}) do
+    comment = Comments.get_comment_by_resource("Structure", resource_id)
+    comment = Map.replace!(comment, :user_id, GuardianPlug.current_resource(conn).user_name)
+    render(conn, "show.json", comment: comment)
   end
 end
