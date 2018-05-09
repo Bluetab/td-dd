@@ -2,6 +2,7 @@ defmodule TdDdWeb.DataStructureView do
   use TdDdWeb, :view
   alias TdDdWeb.DataStructureView
   alias TdDd.Accounts.User
+  alias Ecto
 
   def render("index.json", %{data_structures: data_structures, users: users}) do
     %{data: render_many(data_structures, DataStructureView, "data_structure.json", %{users: users})}
@@ -21,14 +22,35 @@ defmodule TdDdWeb.DataStructureView do
       ou: data_structure.ou,
       lopd: data_structure.lopd,
       last_change_at: data_structure.last_change_at,
-      last_change_by: get_last_change_by(data_structure, users),
+      last_change_by: get_last_change_by_user_name(data_structure.last_change_by, users),
       inserted_at: data_structure.inserted_at}
+      |> add_data_fields(data_structure, users)
   end
 
-  defp get_last_change_by(data_structure, users) do
-    default_username = Integer.to_string(data_structure.last_change_by)
+  defp add_data_fields(data_structure_json, data_stucture, users) do
+    case Ecto.assoc_loaded?(data_stucture.data_fields) do
+      true ->
+        data_fields = Enum.reduce(data_stucture.data_fields, [], fn(data_field, acc) ->
+          [%{id: data_field.id,
+            name: data_field.name,
+            type: data_field.type,
+            precision: data_field.precision,
+            nullable: data_field.nullable,
+            description: data_field.description,
+            business_concept_id: data_field.business_concept_id,
+            last_change_at: data_field.last_change_at,
+            last_change_by: get_last_change_by_user_name(data_field.last_change_by, users),
+            inserted_at: data_field.inserted_at
+          } | acc]
+        end)
+        Map.put(data_structure_json, :data_fields, data_fields)
+      _ -> data_structure_json
+    end
+  end
+
+  defp get_last_change_by_user_name(last_change_by_id, users) do
+    default_username = Integer.to_string(last_change_by_id)
     default_user = %User{user_name: default_username}
-    last_change_by_id = data_structure.last_change_by
     Enum.find(users, default_user, &(&1.id == last_change_by_id)).user_name
   end
 

@@ -6,6 +6,7 @@ defmodule TdDdWeb.DataStructureController do
   alias TdDd.DataStructures.DataStructure
   alias TdDdWeb.ErrorView
   alias TdDdWeb.SwaggerDefinitions
+  alias Ecto
 
   action_fallback TdDdWeb.FallbackController
 
@@ -69,7 +70,7 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   def show(conn, %{"id" => id}) do
-    data_structure = DataStructures.get_data_structure!(id)
+    data_structure = DataStructures.get_data_structure!(id, data_fields: true)
     users = get_data_structure_users(data_structure)
     render(conn, "show.json", data_structure: data_structure, users: users)
   end
@@ -116,8 +117,14 @@ defmodule TdDdWeb.DataStructureController do
 
   defp get_data_structure_users(%DataStructure{} = data_structure), do: get_data_structure_users([data_structure])
   defp get_data_structure_users(data_structures) when is_list(data_structures) do
-    ids = Enum.reduce(data_structures, [], &([&1.last_change_by|&2]))
-    @td_auth_api.search(%{"ids" => ids})
+    ids = Enum.reduce(data_structures, [], fn(data_structure, acc) ->
+      data_field_ids = case Ecto.assoc_loaded?(data_structure.data_fields) do
+        true -> Enum.reduce(data_structures, [], &([&1.last_change_by|&2]))
+        false -> []
+      end
+      [data_structure.last_change_by | data_field_ids ++ acc]
+    end)
+    @td_auth_api.search(%{"ids" => Enum.uniq(ids)})
   end
 
 end

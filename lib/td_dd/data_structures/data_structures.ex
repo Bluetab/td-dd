@@ -35,7 +35,13 @@ defmodule TdDd.DataStructures do
       ** (Ecto.NoResultsError)
 
   """
-  def get_data_structure!(id), do: Repo.get!(DataStructure, id)
+  def get_data_structure!(id, opts \\ []) do
+    case Keyword.get(opts, :data_fields, false) do
+      true -> Repo.one! from ds in DataStructure, preload: [:data_fields]
+      false -> Repo.get!(DataStructure, id)
+    end
+
+  end
 
   @doc """
   Creates a data_structure.

@@ -2,6 +2,7 @@ defmodule TdDd.DataStructures.DataStructure do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
+  alias TdDd.DataStructures.DataField
   alias TdDd.DataStructures.DataStructure
 
   schema "data_structures" do
@@ -14,6 +15,7 @@ defmodule TdDd.DataStructures.DataStructure do
     field :type, :string
     field :ou,   :string
     field :lopd, :string
+    has_many :data_fields, DataField
 
     timestamps()
   end

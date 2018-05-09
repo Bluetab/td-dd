@@ -15,9 +15,18 @@ defmodule TdDd.DataStructuresTest do
       assert DataStructures.list_data_structures() == [data_structure]
     end
 
-    test "get_data_structure!/1 returns the data_structure with given id" do
+    test "get_data_structure!/2 returns the data_structure with given id" do
       data_structure = insert(:data_structure)
       assert DataStructures.get_data_structure!(data_structure.id) == data_structure
+    end
+
+    test "get_data_structure!/2 returns the data_structure with given id and fields preloaded" do
+      data_structure = insert(:data_structure)
+      insert(:data_field, name: "first", data_structure_id: data_structure.id)
+      data_structure_with_fields = DataStructures.get_data_structure!(data_structure.id, data_fields: true)
+      assert data_structure_with_fields.id == data_structure.id
+      assert Ecto.assoc_loaded?(data_structure_with_fields.data_fields)
+      assert length(data_structure_with_fields.data_fields) == 1
     end
 
     test "create_data_structure/1 with valid data creates a data_structure" do
