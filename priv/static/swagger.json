@@ -77,6 +77,39 @@
         "description": "Delete Data Structure"
       }
     },
+    "/data_structures/{data_structure_id}/comment": {
+      "get": {
+        "tags": [
+          "Comment"
+        ],
+        "summary": "",
+        "responses": {
+          "400": {
+            "description": "Client Error"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/CommentResponse"
+            },
+            "description": "OK"
+          }
+        },
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "type": "integer",
+            "required": true,
+            "name": "data_structure_id",
+            "in": "path",
+            "description": "Data Structure ID"
+          }
+        ],
+        "operationId": "TdDdWeb.CommentController.get_comment_data_structure",
+        "description": "Show Data Structure Comment"
+      }
+    },
     "/data_structures": {
       "post": {
         "tags": [
@@ -188,6 +221,39 @@
         ],
         "operationId": "TdDdWeb.DataFieldController.delete",
         "description": "Delete Data Field"
+      }
+    },
+    "/data_fields/{data_field_id}/comment": {
+      "get": {
+        "tags": [
+          "Comment"
+        ],
+        "summary": "",
+        "responses": {
+          "400": {
+            "description": "Client Error"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/CommentResponse"
+            },
+            "description": "OK"
+          }
+        },
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "type": "integer",
+            "required": true,
+            "name": "data_field_id",
+            "in": "path",
+            "description": "Data Field ID"
+          }
+        ],
+        "operationId": "TdDdWeb.CommentController.get_comment_data_field",
+        "description": "Show Data Field Comment"
       }
     },
     "/data_fields": {
@@ -727,10 +793,6 @@
             "id"
           ],
           "properties": {
-            "user_id": {
-              "type": "integer",
-              "description": "User identifier"
-            },
             "resource_type": {
               "type": "string",
               "description": "Resource type"
@@ -766,15 +828,10 @@
           "type": "object",
           "required": [
             "content",
-            "user_id",
             "resource_type",
             "resource_id"
           ],
           "properties": {
-            "user_id": {
-              "type": "integer",
-              "description": "User identifier"
-            },
             "resource_type": {
               "type": "string",
               "description": "Resource type"

@@ -101,4 +101,8 @@ defmodule TdDd.Comments do
   def change_comment(%Comment{} = comment) do
     Comment.changeset(comment, %{})
   end
+
+  def get_comment_by_resource(resource_type, resource_id) do
+    Repo.one(from comments in Comment, where: comments.resource_type == ^resource_type and comments.resource_id == ^resource_id)
+  end
 end

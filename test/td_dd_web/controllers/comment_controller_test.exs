@@ -6,8 +6,13 @@ defmodule TdDdWeb.CommentControllerTest do
   alias TdDd.Comments
   alias TdDd.Comments.Comment
   alias TdDdWeb.ApiServices.MockTdAuthService
+  alias Guardian.Plug, as: GuardianPlug
 
   @create_attrs %{content: "some content", resource_id: 42, resource_type: "some resource_type", user_id: 42}
+  @others_create_attrs %{content: "some content", resource_type: "Field", user_id: 42}
+  @others_create_attrs2 %{content: "some content", resource_type: "Structure", user_id: 42}
+  @data_field_attrs %{business_concept_id: "42", description: "some description", name: "some name", nullable: true, precision: "some precision", type: "some type", last_change_at: "2010-04-17 14:00:00.000000Z", last_change_by: 42}
+  @data_structure_attrs %{description: "some description", group: "some group", last_change_at: "2010-04-17 14:00:00.000000Z", last_change_by: 42, name: "some name", system: "some system"}
   @update_attrs %{content: "some updated content", resource_id: 43, resource_type: "some updated resource_type", user_id: 43}
   @invalid_attrs %{content: nil, resource_id: nil, resource_type: nil, user_id: nil}
 
@@ -49,7 +54,7 @@ defmodule TdDdWeb.CommentControllerTest do
         "content" => "some content",
         "resource_id" => 42,
         "resource_type" => "some resource_type",
-        "user_id" => 42}
+        "user_id" => GuardianPlug.current_resource(conn).id}
     end
 
     @tag authenticated_user: @admin_user_name
@@ -57,6 +62,51 @@ defmodule TdDdWeb.CommentControllerTest do
       conn = post conn, comment_path(conn, :create), comment: @invalid_attrs
       assert json_response(conn, 422)["errors"] != %{}
     end
+
+    @tag authenticated_user: @admin_user_name
+    test "renders comment related to a Data Field", %{conn: conn} do
+      data_structure = insert(:data_structure)
+      creation_attrs = Map.put(@data_field_attrs, :data_structure_id, data_structure.id)
+      conn = post conn, data_field_path(conn, :create), data_field: creation_attrs
+      assert %{"id" => data_field_id} = json_response(conn, 201)["data"]
+
+      conn = recycle_and_put_headers(conn)
+      conn = get conn, data_field_path(conn, :show, data_field_id)
+
+      comment_create_attrs = Map.put(@others_create_attrs, :resource_id, data_field_id)
+      conn = recycle_and_put_headers(conn)
+      conn = post conn, comment_path(conn, :create), comment: comment_create_attrs
+      assert %{"id" => id} = json_response(conn, 201)["data"]
+
+      conn = recycle_and_put_headers(conn)
+      conn = get conn, data_field_comment_path(conn, :get_comment_data_field, comment_create_attrs.resource_id)
+      assert json_response(conn, 200)["data"] == %{
+        "id" => id,
+        "content" => "some content",
+        "resource_id" => data_field_id,
+        "resource_type" => "Field",
+        "user_id" => GuardianPlug.current_resource(conn).user_name}
+      end
+
+    @tag authenticated_user: @admin_user_name
+    test "renders comment related to a Data Structure", %{conn: conn} do
+      conn = post conn, data_structure_path(conn, :create), data_structure: @data_structure_attrs
+      assert %{"id" => data_structure_id} = json_response(conn, 201)["data"]
+
+      comment_create_attrs = Map.put(@others_create_attrs2, :resource_id, data_structure_id)
+      conn = recycle_and_put_headers(conn)
+      conn = post conn, comment_path(conn, :create), comment: comment_create_attrs
+      assert %{"id" => id} = json_response(conn, 201)["data"]
+
+      conn = recycle_and_put_headers(conn)
+      conn = get conn, data_structure_comment_path(conn, :get_comment_data_structure, comment_create_attrs.resource_id)
+      assert json_response(conn, 200)["data"] == %{
+        "id" => id,
+        "content" => "some content",
+        "resource_id" => data_structure_id,
+        "resource_type" => "Structure",
+        "user_id" => GuardianPlug.current_resource(conn).user_name}
+      end
   end
 
   describe "update comment" do
