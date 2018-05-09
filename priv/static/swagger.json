@@ -549,7 +549,7 @@
     "DataFieldUpdate": {
       "type": "object",
       "properties": {
-        "data_structure": {
+        "data_field": {
           "type": "object",
           "required": [
             "id"
@@ -594,7 +594,7 @@
     "DataFieldCreate": {
       "type": "object",
       "properties": {
-        "data_structure": {
+        "data_field": {
           "type": "object",
           "required": [
             "data_structure_id",
