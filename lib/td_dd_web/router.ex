@@ -19,10 +19,12 @@ defmodule TdDdWeb.Router do
     post "/metadata", MetadataController, :upload
     resources "/data_structures", DataStructureController, except: [:new, :edit] do
       get "/comment", CommentController, :get_comment_data_structure
+      get "/data_fields", DataFieldController, :data_structure_fields
     end
     resources "/data_fields", DataFieldController, except: [:new, :edit] do
       get "/comment", CommentController, :get_comment_data_field
     end
+    resources "/data_fields", DataFieldController, except: [:new, :edit]
     resources "/comments", CommentController, except: [:new, :edit]
   end
 

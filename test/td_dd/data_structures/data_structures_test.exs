@@ -136,4 +136,16 @@ defmodule TdDd.DataStructuresTest do
       assert %Ecto.Changeset{} = DataStructures.change_data_field(data_field)
     end
   end
+
+  describe "data structure fields" do
+    test "list_data_structure_fields/2 returns data structure fields" do
+      data_structure = insert(:data_structure)
+      data_field = insert(:data_field, data_structure_id: data_structure.id)
+
+      data_fields = DataStructures.list_data_structure_fields(data_structure.id)
+      assert length(data_fields) == 1
+      assert data_fields |> Enum.at(0) |> Map.get(:id) == data_field.id
+    end
+  end
+
 end

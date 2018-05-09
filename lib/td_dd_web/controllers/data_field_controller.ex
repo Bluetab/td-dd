@@ -28,6 +28,21 @@ defmodule TdDdWeb.DataFieldController do
     render(conn, "index.json", data_fields: data_fields, users: users)
   end
 
+  swagger_path :data_fields do
+    get "/data_structures/{data_structure_id}/data_fields"
+    description "List data structure data fields"
+    parameters do
+      data_structure_id :path, :integer, "Data Structure ID", required: true
+    end
+    response 200, "OK", Schema.ref(:DataFieldsResponse)
+  end
+
+  def data_structure_fields(conn, %{"data_structure_id" => data_structure_id}) do
+    data_fields = DataStructures.list_data_structure_fields(data_structure_id)
+    users = get_data_field_users(data_fields)
+    render(conn, "index.json", data_fields: data_fields, users: users)
+  end
+
   swagger_path :create do
     post "/data_fields"
     description "Creates Data Fields"

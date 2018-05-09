@@ -48,15 +48,15 @@ defmodule TdDdWeb.DataFieldControllerTest do
       |> Map.delete("last_change_at")
 
       validate_resp_schema(conn, schema, "DataFieldResponse")
-      assert json_response_data == %{
-        "id" => id,
-        "data_structure_id" => data_structure.id,
-        "business_concept_id" => "42",
-        "description" => "some description",
-        "name" => "some name",
-        "nullable" => true,
-        "precision" => "some precision",
-        "type" => "some type"}
+      assert json_response_data["id"] == id
+      assert json_response_data["data_structure_id"] == data_structure.id
+      assert json_response_data["business_concept_id"] == "42"
+      assert json_response_data["description"] == "some description"
+      assert json_response_data["name"] == "some name"
+      assert json_response_data["nullable"] ==  true
+      assert json_response_data["precision"] == "some precision"
+      assert json_response_data["type"] == "some type"
+
     end
 
     @tag authenticated_user: @admin_user_name
@@ -84,14 +84,13 @@ defmodule TdDdWeb.DataFieldControllerTest do
       |> Map.delete("data_structure_id")
 
       validate_resp_schema(conn, schema, "DataFieldResponse")
-      assert json_response_data == %{
-        "id" => id,
-        "business_concept_id" => "43",
-        "description" => "some updated description",
-        "name" => "some updated name",
-        "nullable" => false,
-        "precision" => "some precision",
-        "type" => "some updated type"}
+      assert json_response_data["id"] == id
+      assert json_response_data["business_concept_id"] == "43"
+      assert json_response_data["description"] == "some updated description"
+      assert json_response_data["name"] == "some updated name"
+      assert json_response_data["nullable"] ==  false
+      assert json_response_data["precision"] == "some precision"
+      assert json_response_data["type"] == "some updated type"
     end
 
     @tag authenticated_user: @admin_user_name
@@ -115,6 +114,19 @@ defmodule TdDdWeb.DataFieldControllerTest do
         get conn, data_field_path(conn, :show, data_field)
         validate_resp_schema(conn, schema, "DataFieldResponse")
       end
+    end
+  end
+
+  describe "data structure fields" do
+    setup [:create_data_field]
+
+    @tag authenticated_user: @admin_user_name
+    test "lists data structure fields ", %{conn: conn, data_field: data_field, swagger_schema: schema} do
+      conn = get conn, data_structure_data_field_path(conn, :data_structure_fields, data_field.data_structure_id)
+      validate_resp_schema(conn, schema, "DataFieldsResponse")
+      data_fields = json_response(conn, 200)["data"]
+      assert length(data_fields) == 1
+      assert data_fields |> Enum.at(0) |> Map.get("id") == data_field.id
     end
   end
 

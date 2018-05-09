@@ -615,7 +615,7 @@
     "DataFieldUpdate": {
       "type": "object",
       "properties": {
-        "data_structure": {
+        "data_field": {
           "type": "object",
           "required": [
             "id"
@@ -660,7 +660,7 @@
     "DataFieldCreate": {
       "type": "object",
       "properties": {
-        "data_structure": {
+        "data_field": {
           "type": "object",
           "required": [
             "data_structure_id",
@@ -749,7 +749,10 @@
           "description": "Belongs to Data Structure"
         },
         "business_concept_id": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "Asociated Business Concept Id"
         }
       },

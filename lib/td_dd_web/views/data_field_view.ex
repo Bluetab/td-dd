@@ -21,7 +21,8 @@ defmodule TdDdWeb.DataFieldView do
       business_concept_id: data_field.business_concept_id,
       data_structure_id: data_field.data_structure_id,
       last_change_at: data_field.last_change_at,
-      last_change_by: get_last_change_by(data_field, users)
+      last_change_by: get_last_change_by(data_field, users),
+      inserted_at: data_field.inserted_at
     }
   end
 

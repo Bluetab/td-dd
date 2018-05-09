@@ -118,6 +118,19 @@ defmodule TdDd.DataStructures do
   end
 
   @doc """
+  Returns the list of data_structure fields .
+
+  ## Examples
+
+      iex> list_data_structure_fields()
+      [%DataField{}, ...]
+
+  """
+  def list_data_structure_fields(data_structure_id) do
+    Repo.all from f in DataField, where: f.data_structure_id == ^data_structure_id
+  end
+
+  @doc """
   Gets a single data_field.
 
   Raises `Ecto.NoResultsError` if the Data field does not exist.
