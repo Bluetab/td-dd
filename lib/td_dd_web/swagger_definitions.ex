@@ -123,7 +123,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
               nullable :boolean, "Data Field... is nullable"
               description :string, "Data Field descrition"
               business_concept_id :string, "Asociated Business Concept Id"
-              data_structure_id :string, "Belongs to Data Structure", required: true
+              data_structure_id :integer, "Belongs to Data Structure", required: true
             end
           end)
         end

@@ -77,6 +77,33 @@
         "description": "Delete Data Structure"
       }
     },
+    "/data_structures/{data_structure_id}/data_fields": {
+      "get": {
+        "tags": [
+          "DataField"
+        ],
+        "summary": "",
+        "responses": {
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/DataFieldsResponse"
+            },
+            "description": "OK"
+          }
+        },
+        "parameters": [
+          {
+            "type": "integer",
+            "required": true,
+            "name": "data_structure_id",
+            "in": "path",
+            "description": "Data Structure ID"
+          }
+        ],
+        "operationId": "TdDdWeb.DataFieldController.data_structure_fields",
+        "description": "List data structure data fields"
+      }
+    },
     "/data_structures/{data_structure_id}/comment": {
       "get": {
         "tags": [
@@ -688,7 +715,7 @@
               "description": "Data Field descrition"
             },
             "data_structure_id": {
-              "type": "string",
+              "type": "integer",
               "description": "Belongs to Data Structure"
             },
             "business_concept_id": {

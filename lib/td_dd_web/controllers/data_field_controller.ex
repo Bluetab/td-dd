@@ -28,7 +28,7 @@ defmodule TdDdWeb.DataFieldController do
     render(conn, "index.json", data_fields: data_fields, users: users)
   end
 
-  swagger_path :data_fields do
+  swagger_path :data_structure_fields do
     get "/data_structures/{data_structure_id}/data_fields"
     description "List data structure data fields"
     parameters do
