@@ -75,6 +75,17 @@ defmodule TdDdWeb.DataStructureController do
     render(conn, "show.json", data_structure: data_structure, users: users)
   end
 
+  swagger_path :update do
+    post "/data_structures"
+    description "Update Data Structures"
+    produces "application/json"
+    parameters do
+      data_field :body, Schema.ref(:DataStructureCreate), "Data Structure update attrs"
+    end
+    response 201, "OK", Schema.ref(:DataStructureResponse)
+    response 400, "Client Error"
+  end
+
   def update(conn, %{"id" => id, "data_structure" => data_structure_params}) do
     data_structure = DataStructures.get_data_structure!(id)
 

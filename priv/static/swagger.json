@@ -163,13 +163,13 @@
               "$ref": "#/definitions/DataStructureCreate"
             },
             "required": false,
-            "name": "data_structure",
+            "name": "data_field",
             "in": "body",
-            "description": "Data Structure create attrs"
+            "description": "Data Structure update attrs"
           }
         ],
-        "operationId": "TdDdWeb.DataStructureController.create",
-        "description": "Creates Data Structure"
+        "operationId": "TdDdWeb.DataStructureController.update",
+        "description": "Update Data Structures"
       },
       "get": {
         "tags": [

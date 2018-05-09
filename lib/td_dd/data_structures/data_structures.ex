@@ -37,7 +37,9 @@ defmodule TdDd.DataStructures do
   """
   def get_data_structure!(id, opts \\ []) do
     case Keyword.get(opts, :data_fields, false) do
-      true -> Repo.one! from ds in DataStructure, preload: [:data_fields]
+      true ->
+        ds = Repo.get!(DataStructure, id)
+        Repo.preload(ds, :data_fields)
       false -> Repo.get!(DataStructure, id)
     end
 
