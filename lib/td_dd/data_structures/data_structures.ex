@@ -77,7 +77,7 @@ defmodule TdDd.DataStructures do
   """
   def update_data_structure(%DataStructure{} = data_structure, attrs) do
     data_structure
-    |> DataStructure.changeset(attrs)
+    |> DataStructure.update_changeset(attrs)
     |> Repo.update()
   end
 
@@ -186,7 +186,7 @@ defmodule TdDd.DataStructures do
   """
   def update_data_field(%DataField{} = data_field, attrs) do
     data_field
-    |> DataField.changeset(attrs)
+    |> DataField.update_changeset(attrs)
     |> Repo.update()
   end
 

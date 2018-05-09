@@ -85,19 +85,9 @@ defmodule TdDdWeb.DataFieldControllerTest do
 
       validate_resp_schema(conn, schema, "DataFieldResponse")
       assert json_response_data["id"] == id
-      assert json_response_data["business_concept_id"] == "43"
       assert json_response_data["description"] == "some updated description"
-      assert json_response_data["name"] == "some updated name"
-      assert json_response_data["nullable"] ==  false
-      assert json_response_data["precision"] == "some precision"
-      assert json_response_data["type"] == "some updated type"
     end
 
-    @tag authenticated_user: @admin_user_name
-    test "renders errors when data is invalid", %{conn: conn, data_field: data_field} do
-      conn = put conn, data_field_path(conn, :update, data_field), data_field: @invalid_attrs
-      assert json_response(conn, 422)["errors"] != %{}
-    end
   end
 
   describe "delete data_field" do

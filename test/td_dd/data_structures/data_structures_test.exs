@@ -7,7 +7,7 @@ defmodule TdDd.DataStructuresTest do
     alias TdDd.DataStructures.DataStructure
 
     @valid_attrs %{description: "some description", group: "some group", last_change_at: "2010-04-17 14:00:00.000000Z", last_change_by: 42, name: "some name", system: "some system"}
-    @update_attrs %{description: "some updated description", group: "some updated group", last_change_at: "2011-05-18 15:01:01.000000Z", last_change_by: 43, name: "some updated name", system: "some updated system"}
+    @update_attrs %{description: "some updated description"}
     @invalid_attrs %{description: nil, group: nil, last_change_at: nil, last_change_by: nil, name: nil, system: nil}
 
     test "list_data_structures/0 returns all data_structures" do
@@ -48,17 +48,6 @@ defmodule TdDd.DataStructuresTest do
       assert {:ok, data_structure} = DataStructures.update_data_structure(data_structure, @update_attrs)
       assert %DataStructure{} = data_structure
       assert data_structure.description == "some updated description"
-      assert data_structure.group == "some updated group"
-      assert data_structure.last_change_at == DateTime.from_naive!(~N[2011-05-18 15:01:01.000000Z], "Etc/UTC")
-      assert data_structure.last_change_by == 43
-      assert data_structure.name == "some updated name"
-      assert data_structure.system == "some updated system"
-    end
-
-    test "update_data_structure/2 with invalid data returns error changeset" do
-      data_structure = insert(:data_structure)
-      assert {:error, %Ecto.Changeset{}} = DataStructures.update_data_structure(data_structure, @invalid_attrs)
-      assert data_structure == DataStructures.get_data_structure!(data_structure.id)
     end
 
     test "delete_data_structure/1 deletes the data_structure" do
@@ -115,21 +104,7 @@ defmodule TdDd.DataStructuresTest do
       data_field = insert(:data_field, data_structure_id: data_structure.id)
       assert {:ok, data_field} = DataStructures.update_data_field(data_field, @update_attrs)
       assert %DataField{} = data_field
-      assert data_field.business_concept_id == "43"
       assert data_field.description == "some updated description"
-      assert data_field.last_change_at == DateTime.from_naive!(~N[2011-05-18 15:01:01.000000Z], "Etc/UTC")
-      assert data_field.last_change_by == 43
-      assert data_field.name == "some updated name"
-      assert data_field.nullable == false
-      assert data_field.precision == "some updated precision"
-      assert data_field.type == "some updated type"
-    end
-
-    test "update_data_field/2 with invalid data returns error changeset" do
-      data_structure = insert(:data_structure)
-      data_field = insert(:data_field, data_structure_id: data_structure.id)
-      assert {:error, %Ecto.Changeset{}} = DataStructures.update_data_field(data_field, @invalid_attrs)
-      assert data_field == DataStructures.get_data_field!(data_field.id)
     end
 
     test "delete_data_field/1 deletes the data_field" do

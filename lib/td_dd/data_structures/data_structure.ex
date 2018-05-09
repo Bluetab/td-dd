@@ -21,6 +21,14 @@ defmodule TdDd.DataStructures.DataStructure do
   end
 
   @doc false
+  def update_changeset(%DataStructure{} = data_structure, attrs) do
+    data_structure
+    |> cast(attrs, [:description, :ou, :lopd])
+    |> validate_length(:ou,     max: 255)
+    |> validate_length(:lopd,   max: 255)
+  end
+
+  @doc false
   def changeset(%DataStructure{} = data_structure, attrs) do
     data_structure
     |> cast(attrs, [:system, :group, :name, :description, :last_change_at, :last_change_by, :type, :ou, :lopd])

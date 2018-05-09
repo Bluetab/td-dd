@@ -17,6 +17,46 @@
   ],
   "paths": {
     "/data_structures/{id}": {
+      "patch": {
+        "tags": [
+          "DataStructure"
+        ],
+        "summary": "",
+        "responses": {
+          "400": {
+            "description": "Client Error"
+          },
+          "201": {
+            "schema": {
+              "$ref": "#/definitions/DataStructureResponse"
+            },
+            "description": "OK"
+          }
+        },
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "type": "integer",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Data Structure ID"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/DataStructureUpdate"
+            },
+            "required": false,
+            "name": "data_field",
+            "in": "body",
+            "description": "Data Structure update attrs"
+          }
+        ],
+        "operationId": "TdDdWeb.DataStructureController.update",
+        "description": "Update Data Structures"
+      },
       "get": {
         "tags": [
           "DataStructure"
@@ -163,13 +203,13 @@
               "$ref": "#/definitions/DataStructureCreate"
             },
             "required": false,
-            "name": "data_field",
+            "name": "data_structure",
             "in": "body",
-            "description": "Data Structure update attrs"
+            "description": "Data Structure create attrs"
           }
         ],
-        "operationId": "TdDdWeb.DataStructureController.update",
-        "description": "Update Data Structures"
+        "operationId": "TdDdWeb.DataStructureController.create",
+        "description": "Creates Data Structure"
       },
       "get": {
         "tags": [
@@ -190,6 +230,46 @@
       }
     },
     "/data_fields/{id}": {
+      "patch": {
+        "tags": [
+          "DataField"
+        ],
+        "summary": "",
+        "responses": {
+          "400": {
+            "description": "Client Error"
+          },
+          "201": {
+            "schema": {
+              "$ref": "#/definitions/DataFieldResponse"
+            },
+            "description": "OK"
+          }
+        },
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "type": "integer",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Data Field ID"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/DataFieldUpdate"
+            },
+            "required": false,
+            "name": "data_field",
+            "in": "body",
+            "description": "Data Field update attrs"
+          }
+        ],
+        "operationId": "TdDdWeb.DataFieldController.update",
+        "description": "Update Data Fields"
+      },
       "get": {
         "tags": [
           "DataField"
@@ -311,11 +391,11 @@
             "required": false,
             "name": "data_field",
             "in": "body",
-            "description": "Data Field update attrs"
+            "description": "Data Field create attrs"
           }
         ],
-        "operationId": "TdDdWeb.DataFieldController.update",
-        "description": "Update Data Fields"
+        "operationId": "TdDdWeb.DataFieldController.create",
+        "description": "Creates Data Fields"
       },
       "get": {
         "tags": [
@@ -476,14 +556,7 @@
       "properties": {
         "data_structure": {
           "type": "object",
-          "required": [
-            "id"
-          ],
           "properties": {
-            "type": {
-              "type": "string",
-              "description": "Data Structure type (csv, table...)"
-            },
             "ou": {
               "type": "string",
               "description": "Data Structure organizational unit"
@@ -491,10 +564,6 @@
             "lopd": {
               "type": "string",
               "description": "Data Structure lopd level"
-            },
-            "id": {
-              "type": "integer",
-              "description": "Data Structure unique identifier"
             },
             "description": {
               "type": "string",
@@ -566,7 +635,10 @@
       ],
       "properties": {
         "type": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "Data Structure type (csv, table...)"
         },
         "system": {
@@ -574,7 +646,10 @@
           "description": "Data Structure system"
         },
         "ou": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "Data Structure organizational unit"
         },
         "name": {
@@ -582,7 +657,10 @@
           "description": "Data Structure name"
         },
         "lopd": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "Data Structure lopd level"
         },
         "last_change_by": {
@@ -606,7 +684,10 @@
           "description": "Data Structure group"
         },
         "description": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "Data Structure description"
         }
       },
@@ -644,33 +725,10 @@
       "properties": {
         "data_field": {
           "type": "object",
-          "required": [
-            "id"
-          ],
           "properties": {
-            "type": {
-              "type": "string",
-              "description": "Data Field type"
-            },
-            "precision": {
-              "type": "integer",
-              "description": "Data Field precision"
-            },
-            "nullable": {
-              "type": "boolean",
-              "description": "Data Field... is nullable"
-            },
-            "id": {
-              "type": "integer",
-              "description": "Data Field unique identifier"
-            },
             "description": {
               "type": "string",
               "description": "Data Field descrition"
-            },
-            "business_concept_id": {
-              "type": "string",
-              "description": "Asociated Business Concept Id"
             }
           }
         }
@@ -736,15 +794,24 @@
       ],
       "properties": {
         "type": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "Data Field type"
         },
         "precision": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "Data Field precision"
         },
         "nullable": {
-          "type": "boolean",
+          "type": [
+            "boolean",
+            "null"
+          ],
           "description": "Data Field... is nullable"
         },
         "name": {
@@ -768,7 +835,10 @@
           "description": "Data Field unique identifier"
         },
         "description": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "Data Field descrition"
         },
         "data_structure_id": {

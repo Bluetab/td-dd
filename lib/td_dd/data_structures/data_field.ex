@@ -20,6 +20,12 @@ defmodule TdDd.DataStructures.DataField do
   end
 
   @doc false
+  def update_changeset(%DataField{} = data_field, attrs) do
+    data_field
+    |> cast(attrs, [:description])
+  end
+
+  @doc false
   def changeset(%DataField{} = data_field, attrs) do
     data_field
     |> cast(attrs, [:name, :type, :precision, :nullable, :description, :business_concept_id, :data_structure_id, :last_change_at, :last_change_by])

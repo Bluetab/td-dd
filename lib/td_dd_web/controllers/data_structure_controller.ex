@@ -76,11 +76,12 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   swagger_path :update do
-    post "/data_structures"
+    patch "/data_structures/{id}"
     description "Update Data Structures"
     produces "application/json"
     parameters do
-      data_field :body, Schema.ref(:DataStructureCreate), "Data Structure update attrs"
+      id :path, :integer, "Data Structure ID", required: true
+      data_field :body, Schema.ref(:DataStructureUpdate), "Data Structure update attrs"
     end
     response 201, "OK", Schema.ref(:DataStructureResponse)
     response 400, "Client Error"

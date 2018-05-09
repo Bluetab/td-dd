@@ -82,21 +82,12 @@ defmodule TdDdWeb.DataStructureControllerTest do
       validate_resp_schema(conn, schema, "DataStructureResponse")
       assert json_response_data["id"] == id
       assert json_response_data["description"] == "some updated description"
-      assert json_response_data["type"] == "table"
       assert json_response_data["ou"] == "EM"
       assert json_response_data["lopd"] == "2"
-      assert json_response_data["group"] == "some updated group"
-      assert json_response_data["name"] == "some updated name"
-      assert json_response_data["system"] == "some updated system"
       assert json_response_data["inserted_at"]
 
     end
 
-    @tag authenticated_user: @admin_user_name
-    test "renders errors when data is invalid", %{conn: conn, data_structure: data_structure} do
-      conn = put conn, data_structure_path(conn, :update, data_structure), data_structure: @invalid_attrs
-      assert json_response(conn, 422)["errors"] != %{}
-    end
   end
 
   describe "delete data_structure" do

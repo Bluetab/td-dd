@@ -14,10 +14,10 @@ defmodule TdDdWeb.SwaggerDefinitions do
           system :string, "Data Structure system", required: true
           group :string, "Data Structure group", required: true
           name :string, "Data Structure name", required: true
-          description :string, "Data Structure description"
-          type :string, "Data Structure type (csv, table...)"
-          ou :string, "Data Structure organizational unit"
-          lopd :string, "Data Structure lopd level"
+          description [:string, :null], "Data Structure description"
+          type [:string, :null], "Data Structure type (csv, table...)"
+          ou [:string, :null], "Data Structure organizational unit"
+          lopd [:string, :null], "Data Structure lopd level"
           last_change_by :string, "Data Structure last updated by"
           last_change_at :string, "Data Structure last updated at"
           inserted_at :string, "Data Structure creation date"
@@ -53,9 +53,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
         properties do
           data_structure (Schema.new do
             properties do
-              id :integer, "Data Structure unique identifier", required: true
               description :string, "Data Structure description"
-              type :string, "Data Structure type (csv, table...)"
               ou :string, "Data Structure organizational unit"
               lopd :string, "Data Structure lopd level"
             end
@@ -89,10 +87,10 @@ defmodule TdDdWeb.SwaggerDefinitions do
         properties do
           id :integer, "Data Field unique identifier", required: true
           name :string, "Data Field name", required: true
-          type :string, "Data Field type"
-          precision :string, "Data Field precision"
-          nullable :boolean, "Data Field... is nullable"
-          description :string, "Data Field descrition"
+          type [:string, :null], "Data Field type"
+          precision [:string, :null], "Data Field precision"
+          nullable [:boolean, :null], "Data Field... is nullable"
+          description [:string, :null], "Data Field descrition"
           business_concept_id [:string, :null], "Asociated Business Concept Id"
           data_structure_id :integer, "Belongs to Data Structure", required: true
           last_change_by :string, "Data Field last updated by"
@@ -132,12 +130,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
         properties do
           data_field (Schema.new do
             properties do
-              id :integer, "Data Field unique identifier", required: true
-              type :string, "Data Field type"
-              precision :integer, "Data Field precision"
-              nullable :boolean, "Data Field... is nullable"
               description :string, "Data Field descrition"
-              business_concept_id :string, "Asociated Business Concept Id"
             end
           end)
         end

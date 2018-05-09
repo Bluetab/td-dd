@@ -91,11 +91,12 @@ defmodule TdDdWeb.DataFieldController do
   end
 
   swagger_path :update do
-    post "/data_fields"
+    patch "/data_fields/{id}"
     description "Update Data Fields"
     produces "application/json"
     parameters do
-      data_field :body, Schema.ref(:DataFieldCreate), "Data Field update attrs"
+      id :path, :integer, "Data Field ID", required: true
+      data_field :body, Schema.ref(:DataFieldUpdate), "Data Field update attrs"
     end
     response 201, "OK", Schema.ref(:DataFieldResponse)
     response 400, "Client Error"
