@@ -88,7 +88,7 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   def update(conn, %{"id" => id, "data_structure" => data_structure_params}) do
-    data_structure = DataStructures.get_data_structure!(id)
+    data_structure = DataStructures.get_data_structure!(id, data_fields: true)
 
     update_params = data_structure_params
     |> Map.put("last_change_by", get_current_user_id(conn))
