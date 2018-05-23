@@ -28,10 +28,6 @@ config :td_dd, TdDd.Auth.Guardian,
   ttl: { 1, :hours },
   secret_key: "SuperSecretTruedat"
 
-config :canary, repo: TdDd.Repo,
-  unauthorized_handler: {TdDd.Auth.Canary, :handle_unauthorized},
-  not_found_handler: {TdDd.Auth.Canary, :handle_not_found}
-
 config :td_dd, :auth_service,
   protocol: "http",
   users_path: "/api/users/",
