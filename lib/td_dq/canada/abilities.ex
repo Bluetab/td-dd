@@ -1,8 +1,9 @@
-defmodule TdDq.Canary.Abilities do
+defmodule TdDq.Canada.Abilities do
   @moduledoc false
   alias TdDq.Accounts.User
   alias TdDq.QualityRules.QualityRule
-  alias TdDq.Canary.QualityRuleAbilities
+  alias TdDq.Canada.QualityRuleAbilities
+
   defimpl Canada.Can, for: User do
 
     def can?(%User{is_admin: true}, _action, _domain), do: true

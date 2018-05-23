@@ -1,4 +1,4 @@
-defmodule TdDq.Canary.QualityRuleAbilities do
+defmodule TdDq.Canada.QualityRuleAbilities do
   @moduledoc false
   alias TdDq.Accounts.User
   alias TdDq.QualityRules.QualityRule

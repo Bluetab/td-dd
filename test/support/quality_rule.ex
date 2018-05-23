@@ -72,7 +72,7 @@ defmodule TdDqWeb.QualityRule do
     |> fn({f, v}) -> Map.put_new(f, "tag", v) end.()
 
     tag = Map.get(table, "tag")
-    table = if is_map(tag), do: table, else: Map.put(table, "tag", tag |> JSON.decode!)
+    if is_map(tag), do: table, else: Map.put(table, "tag", tag |> JSON.decode!)
   end
 
   def quality_rule_create(token, quality_rule_params) do
