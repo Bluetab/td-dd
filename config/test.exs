@@ -30,3 +30,8 @@ config :td_dd, :auth_service, api_service: TdDdWeb.ApiServices.MockTdAuthService
   auth_host: "localhost",
   auth_port: "4001",
   auth_domain: ""
+
+config :td_dd, :audit_service, api_service: TdDdWeb.ApiServices.MockTdAuditService,
+  audit_host: "localhost",
+  audit_port: "4007",
+  audit_domain: ""
