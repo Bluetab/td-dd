@@ -12,6 +12,7 @@ defmodule TdDdWeb.DataFieldController do
   action_fallback TdDdWeb.FallbackController
 
   @td_auth_api Application.get_env(:td_dd, :auth_service)[:api_service]
+  @events %{update_data_field: "update_data_field"}
 
   def swagger_definitions do
     SwaggerDefinitions.data_field_swagger_definitions()
@@ -112,7 +113,7 @@ defmodule TdDdWeb.DataFieldController do
 
     with {:ok, %DataField{} = data_field} <- DataStructures.update_data_field(data_field, update_params) do
       audit = %{"audit" => %{"resource_id" => id, "resource_type" => "data_field", "payload" => update_params |> Map.drop(["last_change_at", "last_change_by"])}}
-      Audit.create_event(conn, audit, :update_data_field)
+      Audit.create_event(conn, audit, @events.update_data_field)
       users = get_data_field_users(data_field)
       render(conn, "show.json", data_field: data_field, users: users)
     else

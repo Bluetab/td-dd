@@ -7,12 +7,11 @@ defmodule TdDd.Audit do
 
   @td_audit_api Application.get_env(:td_dd, :audit_service)[:api_service]
   @service "td_dd"
-  @events %{update_data_field: "update_data_field"}
 
   def create_event(conn, %{"audit" => event_params}, event) do
     event_params =
       event_params
-      |> Map.put("event", @events[event])
+      |> Map.put("event", event)
       |> Map.put("ts", DateTime.to_string(DateTime.utc_now()))
       |> Map.put("service", @service)
     create_event(conn, %{"audit" => event_params})
