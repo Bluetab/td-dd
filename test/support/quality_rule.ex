@@ -12,13 +12,13 @@ defmodule TdDqWeb.QualityRule do
     "Description" => "description", "Parameters" => "type_params", "Tag" => "tag"
   }
 
-  def create_empty_quality_rule_types(quality_rule_type) do
-    write_quality_rule_types([%{"type_name": quality_rule_type, "type_parameters": [], "tag": []}])
+  def create_empty_quality_rule_type(quality_rule_type) do
+    write_quality_rule_type([%{"type_name": quality_rule_type, "type_parameters": [], "tag": []}])
   end
 
-  def create_quality_rule_types_from_table(table) do
-    quality_rule_types = get_quality_control_types_from_table(table)
-    write_quality_rule_types(quality_rule_types)
+  def create_quality_rule_type_from_table(table) do
+    quality_rule_type = get_quality_control_types_from_table(table)
+    write_quality_rule_type(quality_rule_type)
   end
 
   def get_quality_control_types_from_table(table) do
@@ -49,8 +49,8 @@ defmodule TdDqWeb.QualityRule do
     end)
   end
 
-  defp write_quality_rule_types(quality_rule_types) do
-    json_schema = quality_rule_types |> JSON.encode!
+  defp write_quality_rule_type(quality_rule_type) do
+    json_schema = quality_rule_type |> JSON.encode!
     file_name = Application.get_env(:td_dq, :qr_types_file)
     file_path = Path.join(:code.priv_dir(:td_dq), file_name)
     File.write!(file_path, json_schema, [:write, :utf8])

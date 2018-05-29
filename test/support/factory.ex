@@ -11,8 +11,6 @@ defmodule TdDq.Factory do
       name: "Quality Control Name",
       population: "Quality Control Population",
       priority: "Quality Control Priority",
-      type: "Quality Control Type",
-      type_params: %{},
       weight: 12,
       status: "defined",
       version: 1,
@@ -20,9 +18,17 @@ defmodule TdDq.Factory do
     }
   end
 
+  def quality_rule_type_factory do
+    %TdDq.QualityRules.QualityRuleType {
+      name: "Quality Control Type",
+      params: %{},
+    }
+  end
+
   def quality_rule_factory do
     %TdDq.QualityRules.QualityRule {
       quality_control: build(:quality_control),
+      quality_rule_type: build(:quality_rule_type),
       description: "Quality Rule description",
       name: "Quality Rule name",
       type_params: %{},
