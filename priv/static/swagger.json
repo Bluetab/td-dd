@@ -321,58 +321,6 @@
         "operationId": "TdDqWeb.QualityControlController.index",
         "description": "List Quality Controls"
       }
-    },
-    "/quality_control_types": {
-      "get": {
-        "tags": [
-          "QualityControlType"
-        ],
-        "summary": "",
-        "responses": {
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/QualityControlTypesResponse"
-            },
-            "description": "OK"
-          }
-        },
-        "parameters": [],
-        "operationId": "TdDqWeb.QualityControlTypeController.index",
-        "description": "List Quality Control Types"
-      }
-    },
-    "/quality_control_type_parameters?quality_control_type_name={type_name}": {
-      "get": {
-        "tags": [
-          "QualityControlTypeParameter"
-        ],
-        "summary": "",
-        "responses": {
-          "400": {
-            "description": "Client Error"
-          },
-          "200": {
-            "schema": {
-              "$ref": "#/definitions/QualityControlTypeParamsResponse"
-            },
-            "description": "Ok"
-          }
-        },
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "type": "string",
-            "required": true,
-            "name": "type_name",
-            "in": "path",
-            "description": "Quality Control Type name"
-          }
-        ],
-        "operationId": "TdDqWeb.QualityControlTypeParameterController.index",
-        "description": "Lists quality control type paramaters"
-      }
     }
   },
   "info": {
@@ -547,52 +495,6 @@
           "$ref": "#/definitions/QualityControlCreateProps"
         }
       }
-    },
-    "QualityControlTypesResponse": {
-      "type": "object",
-      "properties": {
-        "data": {
-          "$ref": "#/definitions/QualityControlType"
-        }
-      }
-    },
-    "QualityControlTypeParamsResponse": {
-      "type": "object",
-      "properties": {
-        "data": {
-          "$ref": "#/definitions/QualityControlTypeParam"
-        }
-      }
-    },
-    "QualityControlTypeParam": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "type": "string",
-          "description": "Quality control type parameter type"
-        },
-        "name": {
-          "type": "string",
-          "description": "Quality control type parameter name"
-        }
-      }
-    },
-    "QualityControlType": {
-      "type": "object",
-      "title": "Quality Control Type",
-      "required": [
-        "type_name"
-      ],
-      "properties": {
-        "type_name": {
-          "type": "string",
-          "description": "Quality Control type name "
-        }
-      },
-      "example": {
-        "type_name": "Quality Control Type name"
-      },
-      "description": "A Quality Control Type"
     },
     "QualityControlResponse": {
       "type": "object",

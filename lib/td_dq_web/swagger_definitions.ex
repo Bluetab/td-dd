@@ -67,26 +67,6 @@ defmodule TdDqWeb.SwaggerDefinitions do
     }
   end
 
-  def quality_control_type_definitions do
-    %{
-      QualityControlType: swagger_schema do
-        title "Quality Control Type"
-        description "A Quality Control Type"
-        properties do
-          type_name :string, "Quality Control type name ", required: true
-        end
-        example %{
-          type_name: "Quality Control Type name",
-        }
-      end,
-      QualityControlTypesResponse: swagger_schema do
-        properties do
-          data Schema.ref(:QualityControlType)
-        end
-      end
-    }
-  end
-
   def quality_rule_definitions do
     %{
       QualityRule: swagger_schema do
@@ -142,21 +122,4 @@ defmodule TdDqWeb.SwaggerDefinitions do
       end
     }
   end
-
-  def quality_control_type_parameters_definitions do
-    %{
-      QualityControlTypeParam: swagger_schema do
-        properties do
-          name :string, "Quality control type parameter name"
-          type :string, "Quality control type parameter type"
-        end
-      end,
-      QualityControlTypeParamsResponse: swagger_schema do
-        properties do
-          data Schema.ref(:QualityControlTypeParam)
-        end
-      end
-    }
-  end
-
 end

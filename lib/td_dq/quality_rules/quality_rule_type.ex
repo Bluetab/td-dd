@@ -4,7 +4,6 @@ defmodule TdDq.QualityRules.QualityRuleType do
   use Ecto.Schema
   import Ecto.Changeset
   alias TdDq.QualityRules.QualityRuleType
-  alias TdDq.QualityRules.QualityRule
 
   schema "quality_rule_type" do
     field :name, :string
