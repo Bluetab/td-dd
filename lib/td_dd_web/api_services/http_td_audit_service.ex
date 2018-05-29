@@ -1,12 +1,20 @@
 defmodule TdDdWeb.ApiServices.HttpTdAuditService do
   @moduledoc false
 
+  require Logger
   alias Poison, as: JSON
 
   def post_audits(%{"audit" => _audit_params} = req) do
     headers = [{"Content-Type", "application/json"}]
     body = req |> JSON.encode!
-    HTTPoison.post!(get_audits_path(), body, headers, [])
+    case HTTPoison.post(get_audits_path(), body, headers, []) do
+      {:ok, response = %HTTPoison.Response{status_code: 201}} ->
+        response
+      {:ok, response = %HTTPoison.Response{status_code: 422}} ->
+        Logger.error "Error 422 in audit service (maybe Redis service is down): post_audits function"
+      {:error, _error} ->
+        Logger.error "Unknown error in audit service (maybe is down): post_audits function"
+    end
   end
 
   defp get_config do
