@@ -28,6 +28,17 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn = get conn, data_structure_path(conn, :index)
       assert json_response(conn, 200)["data"] == []
     end
+
+    @tag authenticated_user: @admin_user_name
+    test "search all data_structures", %{conn: conn} do
+      data_structure = insert(:data_structure)
+      search_params = %{ou: " one, tow ,  #{data_structure.ou}"}
+      conn = get conn, data_structure_path(conn, :index, search_params)
+      json_response =  json_response(conn, 200)["data"]
+      assert length(json_response) == 1
+      json_response = Enum.at(json_response, 0)
+      assert json_response["name"] == data_structure.name
+    end
   end
 
   describe "create data_structure" do

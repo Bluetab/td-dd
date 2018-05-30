@@ -19,13 +19,26 @@ defmodule TdDdWeb.DataStructureController do
   swagger_path :index do
     get "/data_structures"
     description "List Data Structures"
+    parameters do
+      ou :query, :string, "List of organizational units", required: false
+    end
     response 200, "OK", Schema.ref(:DataStructuresResponse)
   end
 
-  def index(conn, _params) do
-    data_structures = DataStructures.list_data_structures()
+  def index(conn, params) do
+    search_params = %{ou: getOUs(params)}
+    data_structures = DataStructures.list_data_structures(search_params)
     users = get_data_structure_users(data_structures)
     render(conn, "index.json", data_structures: data_structures, users: users)
+  end
+
+  defp getOUs(params) do
+    case Map.get(params, "ou", nil) do
+      nil -> []
+      value -> value
+               |> String.split(",")
+               |> Enum.map(&(String.trim(&1)))
+    end
   end
 
   swagger_path :create do

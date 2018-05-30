@@ -7,6 +7,7 @@ defmodule TdDd.DataStructures do
   alias TdDd.Repo
 
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.Utils.CollectionUtils
 
   @doc """
   Returns the list of data_structures.
@@ -17,9 +18,32 @@ defmodule TdDd.DataStructures do
       [%DataStructure{}, ...]
 
   """
-  def list_data_structures do
-    Repo.all(DataStructure)
+  def list_data_structures(params \\ %{}) do
+    filter = build_filter(DataStructure, params)
+    Repo.all(from ds in DataStructure, where: ^filter)
   end
+
+  defp build_filter(schema, params) do
+    params = CollectionUtils.atomize_keys(params)
+    fields = schema.__schema__(:fields)
+    dynamic = true
+    Enum.reduce(Map.keys(params), dynamic, fn (key, acc) ->
+        case Enum.member?(fields, key) do
+          true -> add_filter(key, params[key], acc)
+          false -> acc
+        end
+     end)
+   end
+
+   defp add_filter(key, value, acc) do
+     cond do
+       is_list(value) and value == [] -> acc
+       is_list(value) ->
+         dynamic([ds], field(ds, ^key) in ^value and ^acc)
+       value ->
+         dynamic([ds], field(ds, ^key) == ^value and ^acc)
+       end
+   end
 
   @doc """
   Gets a single data_structure.

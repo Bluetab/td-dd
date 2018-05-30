@@ -22,6 +22,7 @@ defmodule TdDd.Factory do
       last_change_by: 0,
       name: "some name",
       system: "some system",
+      ou: "My organization"
     }
   end
 

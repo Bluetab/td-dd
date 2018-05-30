@@ -10,9 +10,15 @@ defmodule TdDd.DataStructuresTest do
     @update_attrs %{description: "some updated description"}
     @invalid_attrs %{description: nil, group: nil, last_change_at: nil, last_change_by: nil, name: nil, system: nil}
 
-    test "list_data_structures/0 returns all data_structures" do
+    test "list_data_structures/1 returns all data_structures" do
       data_structure = insert(:data_structure)
       assert DataStructures.list_data_structures() == [data_structure]
+    end
+
+    test "list_data_structures/1 returns all data_structures form a search" do
+      data_structure = insert(:data_structure)
+      search_params = %{ou: [data_structure.ou]}
+      assert DataStructures.list_data_structures(search_params) == [data_structure]
     end
 
     test "get_data_structure!/2 returns the data_structure with given id" do

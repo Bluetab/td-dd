@@ -224,7 +224,15 @@
             "description": "OK"
           }
         },
-        "parameters": [],
+        "parameters": [
+          {
+            "type": "string",
+            "required": false,
+            "name": "ou",
+            "in": "query",
+            "description": "List of organizational units"
+          }
+        ],
         "operationId": "TdDdWeb.DataStructureController.index",
         "description": "List Data Structures"
       }
