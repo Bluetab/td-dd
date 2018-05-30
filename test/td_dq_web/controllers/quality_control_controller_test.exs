@@ -4,7 +4,13 @@ defmodule TdDqWeb.QualityControlControllerTest do
 
   alias TdDq.QualityControls
   alias TdDq.QualityControls.QualityControl
+  alias TdDqWeb.ApiServices.MockTdAuditService
   import TdDqWeb.Authentication, only: :functions
+
+  setup_all do
+    start_supervised MockTdAuditService
+    :ok
+  end
 
   @create_fixture_attrs %{business_concept_id: "some business_concept_id",
     description: "some description", goal: 42, minimum: 42, name: "some name",

@@ -25,3 +25,8 @@ config :td_dq, TdDq.Auth.Guardian,
   issuer: "tdauth",
   ttl: { 1, :hours },
   secret_key: "SuperSecretTruedat"
+
+config :td_dq, :audit_service, api_service: TdDqWeb.ApiServices.HttpTdAuditService,
+  audit_host: "localhost",
+  audit_port: "4007",
+  audit_domain: ""

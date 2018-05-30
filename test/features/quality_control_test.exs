@@ -8,7 +8,13 @@ defmodule TdQd.QualtityControlTest do
   import TdDqWeb.ResponseCode
   import TdDqWeb.Authentication, only: :functions
   alias Poison, as: JSON
+  alias TdDqWeb.ApiServices.MockTdAuditService
   @endpoint TdDqWeb.Endpoint
+
+  setup_all do
+    start_supervised MockTdAuditService
+    :ok
+  end
 
   # Scenario: Create a new Quality Control with only generic fields
   defgiven ~r/^user "(?<user_name>[^"]+)" is logged in the application$/, %{user_name: user_name}, state do

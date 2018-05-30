@@ -8,6 +8,13 @@ defmodule TdDq.QualityRuleTest do
   import TdDqWeb.ResponseCode
   import TdDqWeb.Authentication, only: :functions
 
+  alias TdDqWeb.ApiServices.MockTdAuditService
+
+  setup_all do
+    start_supervised MockTdAuditService
+    :ok
+  end
+
   # Scenario: Create a new Quality Rule with only generic fields
 
   defgiven ~r/^user "(?<user_name>[^"]+)" is logged in the application$/,
