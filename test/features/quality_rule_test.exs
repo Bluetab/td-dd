@@ -1,4 +1,4 @@
-defmodule TdQd.QualtityControlTest do
+defmodule TdQd.QualtityRuleTypeTest do
   use Cabbage.Feature, async: false, file: "quality_rule.feature"
   use TdDqWeb.ConnCase
   import TdDqWeb.Authentication, only: :functions
