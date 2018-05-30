@@ -27,10 +27,10 @@ defmodule TdDdWeb.DataStructureView do
       |> add_data_fields(data_structure, users)
   end
 
-  defp add_data_fields(data_structure_json, data_stucture, users) do
-    case Ecto.assoc_loaded?(data_stucture.data_fields) do
+  defp add_data_fields(data_structure_json, data_structure, users) do
+    case Ecto.assoc_loaded?(data_structure.data_fields) do
       true ->
-        data_fields = Enum.reduce(data_stucture.data_fields, [], fn(data_field, acc) ->
+        data_fields = Enum.reduce(data_structure.data_fields, [], fn(data_field, acc) ->
           [%{id: data_field.id,
             name: data_field.name,
             type: data_field.type,
