@@ -98,9 +98,9 @@ defmodule TdDq.QualityRulesTest do
       quality_rule_type
     end
 
-    test "list_quality_rule_type/0 returns all quality_rule_type" do
+    test "list_quality_rule_types/0 returns all quality_rule_type" do
       quality_rule_type = quality_rule_type_fixture()
-      assert QualityRules.list_quality_rule_type() == [quality_rule_type]
+      assert QualityRules.list_quality_rule_types() == [quality_rule_type]
     end
 
     test "get_quality_rule_type!/1 returns the quality_rule_type with given id" do

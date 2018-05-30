@@ -6,8 +6,11 @@ defmodule TdDqWeb.QualityControlController do
   alias TdDq.QualityControls.QualityControl
   alias TdDqWeb.SwaggerDefinitions
   alias TdDqWeb.ErrorView
+  alias TdDq.Audit
 
   action_fallback TdDqWeb.FallbackController
+
+  @events %{create_quality_control: "create_quality_control"}
 
   def swagger_definitions do
     SwaggerDefinitions.quality_control_definitions()
@@ -46,6 +49,9 @@ defmodule TdDqWeb.QualityControlController do
 
     with {:ok, %QualityControl{} = quality_control} <- QualityControls.create_quality_control(quality_control_params)
     do
+      audit = %{"audit" => %{"resource_id" => quality_control.id, "resource_type" => "quality_control", "payload" => quality_control_params}}
+      Audit.create_event(conn, audit, @events.create_quality_control)
+
       conn
       |> put_status(:created)
       |> put_resp_header("location", quality_control_path(conn, :show, quality_control))

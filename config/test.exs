@@ -20,3 +20,8 @@ config :td_dq, TdDq.Repo,
   database: "td_dq_test",
   hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox
+
+config :td_dq, :audit_service, api_service: TdDqWeb.ApiServices.MockTdAuditService,
+  audit_host: "localhost",
+  audit_port: "4007",
+  audit_domain: ""
