@@ -5,7 +5,7 @@ defmodule TdDq.QualityRules.QualityRuleType do
   import Ecto.Changeset
   alias TdDq.QualityRules.QualityRuleType
 
-  schema "quality_rule_type" do
+  schema "quality_rule_types" do
     field :name, :string
     field :params, :map
 

@@ -109,11 +109,11 @@ defmodule TdDq.QualityRules do
 
   ## Examples
 
-      iex> list_quality_rule_type()
+      iex> list_quality_rule_types()
       [%QualityRuleType{}, ...]
 
   """
-  def list_quality_rule_type do
+  def list_quality_rule_types do
     Repo.all(QualityRuleType)
   end
 
