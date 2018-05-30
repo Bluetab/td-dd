@@ -24,12 +24,11 @@ defmodule TdDqWeb.QualityRuleType do
   end
 
   defp field_value_to_entity_attrs(table, key_alias_map, br_name) do
-    attrs = table
-    |> Enum.map(fn(x) ->
-      %{key_alias_map["Name"] => x."Name", key_alias_map["Type"] => x."Type"}
-    end)
+    type_params =
+      table |> Enum.map(&(for {k, v} <- &1 do {key_alias_map["#{k}"], v} end |> Map.new))
+
     %{}
     |> Map.put("name", br_name)
-    |> Map.put("params", %{} |> Map.put("type_params", attrs))
+    |> Map.put("params", %{} |> Map.put("type_params", type_params))
   end
 end

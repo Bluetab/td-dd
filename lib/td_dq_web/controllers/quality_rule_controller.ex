@@ -167,6 +167,7 @@ defmodule TdDqWeb.QualityRuleController do
         quality_rule_params |> Map.put("quality_rule_type_id", qrt.id)
     end
   end
+  defp add_quality_rule_type_id(quality_rule_params), do: quality_rule_params
 
   defp get_current_user(conn) do
     GuardianPlug.current_resource(conn)
