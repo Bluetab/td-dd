@@ -73,7 +73,7 @@ defmodule TdDqWeb.QualityControl do
   end
 
   defp field_value_to_api_attrs(table, key_alias_map) do
-    attrs_map = table
+    table
     |> Enum.reduce(%{}, fn(x, acc) -> Map.put(acc, Map.get(key_alias_map, x."Field", x."Field"), x."Value") end)
   end
 end

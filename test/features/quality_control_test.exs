@@ -4,6 +4,12 @@ defmodule TdQd.QualtityControlTest do
   import TdDqWeb.Authentication, only: :functions
   import TdDqWeb.QualityControl
   import TdDqWeb.ResponseCode
+  alias TdDqWeb.ApiServices.MockTdAuditService
+
+  setup_all do
+    start_supervised MockTdAuditService
+    :ok
+  end
 
   defgiven ~r/^user "(?<user_name>[^"]+)" is logged in the application$/, %{user_name: user_name}, state do
     token = get_user_token(user_name)

@@ -23,7 +23,7 @@ Feature: Quality Controls
    And "my-user" is able to view quality control named "Field's Quality Control" with with following data:
      | Field               | Value                                                                                     |
      | Business Concept ID | MYID_333                                                                                  |
-     | Name                | Field's Quality Control                                    |
+     | Name                | Field's Quality Control                                                                   |
      | Description         | In order to measure quality of this field we will check whether its values are correct    |
      | Status              | defined                                                                                   |
      | Weight              | 50                                                                                        |
