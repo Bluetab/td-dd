@@ -7,9 +7,9 @@ defmodule TdDqWeb.QualityRuleType do
 
   @endpoint TdDqWeb.Endpoint
 
-  @test_quality_rule_type_create_alias %{ "Name" => "name", "Type" => "type" }
+  @test_quality_rule_type_create_alias %{"Name" => "name", "Type" => "type"}
 
-  def create_new_quality_rule_type(token, %{ "name" => name, "params" => params }) do
+  def create_new_quality_rule_type(token, %{"name" => name, "params" => params}) do
     params
      |> field_value_to_entity_attrs(@test_quality_rule_type_create_alias, name)
      |> (&quality_rule_type_create(token, &1)).()
