@@ -23,6 +23,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
           status :string, "status (Default: defined)" #, default: "defined"
           version :integer, "version number"
           updated_by :integer, "updated by user id"
+          principle :object, "quality control principle"
         end
       end,
       QualityControlCreateProps: swagger_schema do
@@ -36,6 +37,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
           population :string, "population target description"
           goal :integer, "goal percentage (1-100)"
           minimum :integer, "minimum goal (1-100)"
+          principle :object, "quality control principle"
         end
       end,
       QualityControlCreate: swagger_schema do

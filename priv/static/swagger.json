@@ -790,6 +790,10 @@
           "type": "string",
           "description": "Priority (Medium,...)"
         },
+        "principle": {
+          "type": "object",
+          "description": "quality control principle"
+        },
         "population": {
           "type": "string",
           "description": "population target description"
@@ -856,6 +860,10 @@
         "priority": {
           "type": "string",
           "description": "Priority (Medium,...)"
+        },
+        "principle": {
+          "type": "object",
+          "description": "quality control principle"
         },
         "population": {
           "type": "string",

@@ -24,7 +24,8 @@ defmodule TdDqWeb.QualityControlView do
       version: quality_control.version,
       updated_by: quality_control.updated_by,
       inserted_at: quality_control.inserted_at,
-      updated_at: quality_control.updated_at
+      updated_at: quality_control.updated_at,
+      principle: quality_control.principle
     }
   end
 end
