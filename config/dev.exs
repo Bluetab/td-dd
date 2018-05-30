@@ -45,3 +45,11 @@ config :td_dq, TdDq.Repo,
   database: "td_dq_dev",
   hostname: "localhost",
   pool_size: 10
+
+config :td_dq, :audit_service, api_service: TdDqWeb.ApiServices.HttpTdAuditService,
+  audit_host: "localhost",
+  audit_port: "4007",
+  audit_domain: ""
+
+config :td_dq, qc_types_file: "static/qc_types_dev.json"
+config :td_dq, qr_types_file: "static/qr_types_dev.json"

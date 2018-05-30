@@ -37,6 +37,10 @@ config :td_dq, :phoenix_swagger,
     "priv/static/swagger.json" => [router: TdDqWeb.Router]
   }
 
+config :td_dq, :audit_service,
+  protocol: "http",
+  audits_path: "/api/audits/"
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env}.exs"
