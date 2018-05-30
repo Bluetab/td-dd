@@ -25,8 +25,7 @@ defmodule TdQd.QualtityControlTest do
 
   defand ~r/^a existing Quality Rule Type with name "(?<qr_name>[^"]+)" and the following parameters:$/,
     %{qr_name: qr_name, table: table}, %{token: token} = _state do
-     {:ok, status_code, resp} = create_new_quality_rule_type(token, %{"name" => qr_name, "params" => table})
-     IO.inspect ["resp", resp]
+     {:ok, _status_code, _resp} = create_new_quality_rule_type(token, %{"name" => qr_name, "params" => table})
   end
 
 end

@@ -10,8 +10,8 @@ defmodule TdDqWeb.QualityRuleType do
   @test_quality_rule_type_create_alias %{ "Name" => "name", "Type" => "type" }
 
   def create_new_quality_rule_type(token, %{ "name" => name, "params" => params }) do
-    br_to_create = params
-     |> field_value_to_entity_attrs(@test_quality_rule_create_alias, name)
+    params
+     |> field_value_to_entity_attrs(@test_quality_rule_type_create_alias, name)
      |> (&quality_rule_type_create(token, &1)).()
   end
 
@@ -25,8 +25,8 @@ defmodule TdDqWeb.QualityRuleType do
 
   defp field_value_to_entity_attrs(table, key_alias_map, br_name) do
     attrs = table
-    |> Enum.reduce([], fn(x, acc) ->
-      acc ++ [%{key_alias_map["Name"] => x."Name", key_alias_map["Type"] => x."Type"}]
+    |> Enum.map(fn(x) ->
+      %{key_alias_map["Name"] => x."Name", key_alias_map["Type"] => x."Type"}
     end)
     %{}
     |> Map.put("name", br_name)
