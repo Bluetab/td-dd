@@ -23,7 +23,7 @@ defmodule TdDq.QualityRules.QualityRule do
   def changeset(%QualityRule{} = quality_rule, attrs) do
     quality_rule
     |> cast(attrs, [:name, :description, :system, :type_params, :type, :tag, :quality_control_id, :quality_rule_type_id])
-    |> validate_required([:name, :description, :system, :type_params, :type, :tag, :quality_control_id, :quality_rule_type_id])
+    |> validate_required([:name, :type, :type_params, :quality_control_id, :quality_rule_type_id])
     |> validate_length(:name, max: 255)
     |> validate_length(:description, max: 500)
   end

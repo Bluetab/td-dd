@@ -36,7 +36,7 @@ defmodule TdDq.QualityControls do
       ** (Ecto.NoResultsError)
 
   """
-  def get_quality_control!(id), do: Repo.get!(QualityControl, id)
+  def get_quality_control!(id), do: Repo.preload(Repo.get!(QualityControl, id), :quality_rules)
 
   @doc """
   Creates a quality_control.

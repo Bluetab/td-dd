@@ -35,7 +35,7 @@ defmodule TdDq.QualityRules do
       ** (Ecto.NoResultsError)
 
   """
-  def get_quality_rule!(id), do: Repo.get!(QualityRule, id)
+  def get_quality_rule!(id), do: Repo.preload(Repo.get!(QualityRule, id), [:quality_rule_type, :quality_control])
 
   @doc """
   Creates a quality_rule.
@@ -132,6 +132,10 @@ defmodule TdDq.QualityRules do
 
   """
   def get_quality_rule_type!(id), do: Repo.get!(QualityRuleType, id)
+
+  def get_quality_rule_type_by_name(name) do
+    Repo.get_by(QualityRuleType, name: name)
+  end
 
   @doc """
   Creates a quality_rule_type.
