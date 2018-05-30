@@ -27,5 +27,16 @@ defmodule TdDqWeb.QualityControlView do
       updated_at: quality_control.updated_at,
       principle: quality_control.principle
     }
+    |> add_quality_rules(quality_control)
+  end
+
+  defp add_quality_rules(quality_control, qc) do
+    case Ecto.assoc_loaded?(qc.quality_rules) do
+      true ->
+        quality_rules_array = Enum.map(qc.quality_rules, &(%{id: &1.id, name: &1.name, type: &1.type}))
+        Map.put(quality_control, :quality_rules, quality_rules_array)
+      _ ->
+        quality_control
+    end
   end
 end

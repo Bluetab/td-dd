@@ -52,6 +52,7 @@ defmodule TdDqWeb.QualityRuleController do
 
   def create(conn, %{"quality_rule" => quality_rule_params}) do
     user = get_current_user(conn)
+    quality_rule_params = add_quality_rule_type_id(quality_rule_params)
     with true <- can?(user, create(QualityRule)),
          {:ok, %QualityRule{} = quality_rule} <- QualityRules.create_quality_rule(quality_rule_params) do
       conn
@@ -154,6 +155,16 @@ defmodule TdDqWeb.QualityRuleController do
         conn
         |> put_status(:unprocessable_entity)
         |> render(ErrorView, :"422.json")
+    end
+  end
+
+  defp add_quality_rule_type_id(%{"type" => qrt_name} = quality_rule_params) do
+    qrt = QualityRules.get_quality_rule_type_by_name(qrt_name)
+    case qrt do
+      nil ->
+        quality_rule_params
+      qrt ->
+        quality_rule_params |> Map.put("quality_rule_type_id", qrt.id)
     end
   end
 

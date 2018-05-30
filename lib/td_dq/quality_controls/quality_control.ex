@@ -3,6 +3,7 @@ defmodule TdDq.QualityControls.QualityControl do
   use Ecto.Schema
   import Ecto.Changeset
   alias TdDq.QualityControls.QualityControl
+  alias TdDq.QualityRules.QualityRule
 
   @statuses ["defined"]
 
@@ -19,6 +20,7 @@ defmodule TdDq.QualityControls.QualityControl do
     field :version, :integer, default: 1
     field :updated_by, :integer
     field :principle, :map
+    has_many :quality_rules, QualityRule
 
     timestamps()
   end

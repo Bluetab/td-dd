@@ -782,10 +782,6 @@
           "type": "integer",
           "description": "weight"
         },
-        "type": {
-          "type": "string",
-          "description": "type: (Generic, ...)"
-        },
         "priority": {
           "type": "string",
           "description": "Priority (Medium,...)"
@@ -849,13 +845,12 @@
           "type": "integer",
           "description": "updated by user id"
         },
-        "type": {
-          "type": "string",
-          "description": "type: (Generic, ...)"
-        },
         "status": {
           "type": "string",
           "description": "status (Default: defined)"
+        },
+        "quality_rules": {
+          "$ref": "#/definitions/QualityRules"
         },
         "priority": {
           "type": "string",
