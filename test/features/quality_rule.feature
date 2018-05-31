@@ -14,7 +14,11 @@ Feature: Quality Rules
       | Population          | All clients who are older than 18                                                      |
       | Goal                | 98                                                                                     |
       | Minimum             | 80                                                                                     |
+      | Type                | Integer Values Range                                                                   |
+      | Type Params         | %-Min Value: 0, Max Value: 120                                                         |
     And a existing Quality Rule Type with name "Integer Values Range" and the following parameters:
-      | Name                | Type |
-      | Minimum Value       | int  |
-      | Maximum Value       | int  |
+      | Params        | Name                | Type   |
+      | Type Params   | Minimum Value       | int    |
+      | Type Params   | Maximum Value       | int    |
+      | System Params | Table               | string |
+      | System Params | Field               | string |

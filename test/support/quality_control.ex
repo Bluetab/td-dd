@@ -9,7 +9,8 @@ defmodule TdDqWeb.QualityControl do
 
   @test_to_api_create_alias %{"Field" => "field", "Business Concept ID" => "business_concept_id",
     "Name" => "name", "Description" => "description", "Weight" => "weight",
-    "Priority" => "priority", "Population" => "population", "Goal" => "goal", "Minimum" => "minimum"
+    "Priority" => "priority", "Population" => "population", "Goal" => "goal", "Minimum" => "minimum",
+    "Type" => "type", "Type Params" => "type_params"
   }
 
   @test_to_api_get_alias %{"Status" => "status", "Last User" => "updated_by", "Version" => "version", "Last Modification" => "inserted_at"}
@@ -34,9 +35,9 @@ defmodule TdDqWeb.QualityControl do
   def create_new_quality_control(token, table) do
     attrs = table
     |> field_value_to_api_attrs(@test_to_api_create_alias)
-
     attrs = attrs
     |> cast_to_int_attrs(@quality_control_integer_fields)
+    |> cast_to_map_attrs
     quality_control_create(token, attrs)
   end
 
@@ -58,6 +59,30 @@ defmodule TdDqWeb.QualityControl do
 
   def cast_quality_control_integer_fields_plus_version(table) do
     table |> cast_to_int_attrs(@quality_control_integer_fields ++ ["version"])
+  end
+
+  def cast_to_map_attrs(m) do
+    m
+    |> Enum.map(fn({k, v}) ->
+      if is_binary(v) do
+        to_map = case String.split(v, "%-") do
+          [_, params] -> {:ok, String.split(params, ", ")}
+          _ -> nil
+        end
+        case to_map do
+          {:ok, param_list} ->
+            {k, Enum.reduce(param_list, %{}, fn(x, acc) ->
+                  [key, value] = String.split(x, ": ")
+                  Map.put(acc, key, value)
+                end)}
+          nil ->
+            {k, v}
+        end
+      else
+        {k, v}
+      end
+      end)
+    |> Enum.into(%{})
   end
 
   defp cast_to_int_attrs(m, keys) do

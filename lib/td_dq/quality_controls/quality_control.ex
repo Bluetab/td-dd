@@ -44,7 +44,7 @@ defmodule TdDq.QualityControls.QualityControl do
                     :principle,
                     :type,
                     :type_params])
-    |> validate_required([:business_concept_id, :name, :type, :type_params])
+    |> validate_required([:business_concept_id, :name, :type])
   end
 
   def get_statuses do
