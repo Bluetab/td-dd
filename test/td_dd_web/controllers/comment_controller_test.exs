@@ -6,6 +6,7 @@ defmodule TdDdWeb.CommentControllerTest do
   alias TdDd.Comments
   alias TdDd.Comments.Comment
   alias TdDdWeb.ApiServices.MockTdAuthService
+  alias TdDdWeb.ApiServices.MockTdAuditService
   alias Guardian.Plug, as: GuardianPlug
 
   @create_attrs %{content: "some content", resource_id: 42, resource_type: "some resource_type", user_id: 42}
@@ -23,6 +24,7 @@ defmodule TdDdWeb.CommentControllerTest do
 
   setup_all do
     start_supervised MockTdAuthService
+    start_supervised MockTdAuditService
     :ok
   end
 

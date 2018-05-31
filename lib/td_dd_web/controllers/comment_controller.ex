@@ -5,9 +5,14 @@ defmodule TdDdWeb.CommentController do
   alias TdDd.Comments
   alias TdDd.Comments.Comment
   alias TdDdWeb.SwaggerDefinitions
+  alias TdDd.Audit
   alias Guardian.Plug, as: GuardianPlug
 
   action_fallback TdDdWeb.FallbackController
+
+  @events %{update_comment: "update_comment",
+            create_comment: "create_comment",
+            delete_comment: "delete_comment"}
 
   def swagger_definitions do
     SwaggerDefinitions.comment_swagger_definitions()
@@ -38,6 +43,8 @@ defmodule TdDdWeb.CommentController do
     creation_attrs = comment_params
       |> Map.put("user_id", current_user.id)
     with {:ok, %Comment{} = comment} <- Comments.create_comment(creation_attrs) do
+      audit = %{"audit" => %{"resource_id" => comment.id, "resource_type" => "comment", "payload" => comment_params}}
+      Audit.create_event(conn, audit, @events.create_comment)
       conn
       |> put_status(:created)
       |> put_resp_header("location", comment_path(conn, :show, comment))
@@ -61,11 +68,12 @@ defmodule TdDdWeb.CommentController do
   end
 
   swagger_path :update do
-    post "/comments"
+    patch "/comments/{id}"
     description "Update Comments"
     produces "application/json"
     parameters do
-      comment :body, Schema.ref(:CommentCreate), "Comment update attrs"
+      id :path, :integer, "Comment ID", required: true
+      comment :body, Schema.ref(:CommentUpdate), "Comment update attrs"
     end
     response 201, "OK", Schema.ref(:CommentResponse)
     response 400, "Client Error"
@@ -74,6 +82,8 @@ defmodule TdDdWeb.CommentController do
     comment = Comments.get_comment!(id)
 
     with {:ok, %Comment{} = comment} <- Comments.update_comment(comment, comment_params) do
+      audit = %{"audit" => %{"resource_id" => id, "resource_type" => "comment", "payload" => comment_params}}
+      Audit.create_event(conn, audit, @events.update_comment)
       render(conn, "show.json", comment: comment)
     end
   end
@@ -91,6 +101,8 @@ defmodule TdDdWeb.CommentController do
   def delete(conn, %{"id" => id}) do
     comment = Comments.get_comment!(id)
     with {:ok, %Comment{}} <- Comments.delete_comment(comment) do
+      audit = %{"audit" => %{"resource_id" => id, "resource_type" => "comment", "payload" => %{}}}
+      Audit.create_event(conn, audit, @events.delete_comment)
       send_resp(conn, :no_content, "")
     end
   end

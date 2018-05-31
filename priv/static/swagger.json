@@ -416,6 +416,46 @@
       }
     },
     "/comments/{id}": {
+      "patch": {
+        "tags": [
+          "Comment"
+        ],
+        "summary": "",
+        "responses": {
+          "400": {
+            "description": "Client Error"
+          },
+          "201": {
+            "schema": {
+              "$ref": "#/definitions/CommentResponse"
+            },
+            "description": "OK"
+          }
+        },
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "type": "integer",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Comment ID"
+          },
+          {
+            "schema": {
+              "$ref": "#/definitions/CommentUpdate"
+            },
+            "required": false,
+            "name": "comment",
+            "in": "body",
+            "description": "Comment update attrs"
+          }
+        ],
+        "operationId": "TdDdWeb.CommentController.update",
+        "description": "Update Comments"
+      },
       "get": {
         "tags": [
           "Comment"
@@ -502,13 +542,13 @@
               "$ref": "#/definitions/CommentCreate"
             },
             "required": false,
-            "name": "comment",
+            "name": "data_field",
             "in": "body",
-            "description": "Comment update attrs"
+            "description": "Comment create attrs"
           }
         ],
-        "operationId": "TdDdWeb.CommentController.update",
-        "description": "Update Comments"
+        "operationId": "TdDdWeb.CommentController.create",
+        "description": "Creates Comments"
       },
       "get": {
         "tags": [
@@ -889,22 +929,7 @@
       "properties": {
         "comment": {
           "type": "object",
-          "required": [
-            "id"
-          ],
           "properties": {
-            "resource_type": {
-              "type": "string",
-              "description": "Resource type"
-            },
-            "resource_id": {
-              "type": "integer",
-              "description": "Resource identifier"
-            },
-            "id": {
-              "type": "integer",
-              "description": "Comment unique identifier"
-            },
             "content": {
               "type": "string",
               "description": "Comment content"

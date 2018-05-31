@@ -8,6 +8,7 @@ defmodule TdDd.DictionaryTest do
 
   alias Poison, as: JSON
   alias TdDdWeb.ApiServices.MockTdAuthService
+  alias TdDdWeb.ApiServices.MockTdAuditService
 
   @endpoint TdDdWeb.Endpoint
   @headers {"Content-type", "application/json"}
@@ -33,6 +34,7 @@ defmodule TdDd.DictionaryTest do
 
   setup_all do
     start_supervised MockTdAuthService
+    start_supervised MockTdAuditService
     :ok
   end
 

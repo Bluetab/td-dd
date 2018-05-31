@@ -188,9 +188,6 @@ defmodule TdDdWeb.SwaggerDefinitions do
         properties do
           comment (Schema.new do
             properties do
-              id :integer, "Comment unique identifier", required: true
-              resource_id :integer, "Resource identifier"
-              resource_type :string, "Resource type"
               content :string, "Comment content"
             end
           end)

@@ -12,7 +12,9 @@ defmodule TdDdWeb.DataFieldController do
   action_fallback TdDdWeb.FallbackController
 
   @td_auth_api Application.get_env(:td_dd, :auth_service)[:api_service]
-  @events %{update_data_field: "update_data_field"}
+  @events %{update_data_field: "update_data_field",
+            create_data_field: "create_data_field",
+            delete_data_field: "delete_data_field"}
 
   def swagger_definitions do
     SwaggerDefinitions.data_field_swagger_definitions()
@@ -62,6 +64,8 @@ defmodule TdDdWeb.DataFieldController do
     |> Map.put("last_change_at", DateTime.utc_now())
 
     with {:ok, %DataField{} = data_field} <- DataStructures.create_data_field(creation_params) do
+      audit = %{"audit" => %{"resource_id" => data_field.id, "resource_type" => "data_field", "payload" => data_field_params}}
+      Audit.create_event(conn, audit, @events.create_data_field)
       users = get_data_field_users(data_field)
       conn
       |> put_status(:created)
@@ -138,6 +142,8 @@ defmodule TdDdWeb.DataFieldController do
   def delete(conn, %{"id" => id}) do
     data_field = DataStructures.get_data_field!(id)
     with {:ok, %DataField{}} <- DataStructures.delete_data_field(data_field) do
+      audit = %{"audit" => %{"resource_id" => id, "resource_type" => "data_field", "payload" => %{}}}
+      Audit.create_event(conn, audit, @events.delete_data_field)
       send_resp(conn, :no_content, "")
     end
   end

@@ -5,6 +5,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
   alias TdDd.DataStructures.DataStructure
   alias TdDdWeb.ApiServices.MockTdAuthService
+  alias TdDdWeb.ApiServices.MockTdAuditService
 
   @create_attrs %{description: "some description", group: "some group", last_change_at: "2010-04-17 14:00:00.000000Z", last_change_by: 42, name: "some name", system: "some system", type: "csv", ou: "GM", lopd: "1"}
   @update_attrs %{description: "some updated description", group: "some updated group", last_change_at: "2011-05-18 15:01:01.000000Z", last_change_by: 43, name: "some updated name", system: "some updated system",  type: "table", ou: "EM", lopd: "2"}
@@ -12,6 +13,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
   setup_all do
     start_supervised MockTdAuthService
+    start_supervised MockTdAuditService
     :ok
   end
 

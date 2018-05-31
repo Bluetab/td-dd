@@ -6,11 +6,15 @@ defmodule TdDdWeb.DataStructureController do
   alias TdDd.DataStructures.DataStructure
   alias TdDdWeb.ErrorView
   alias TdDdWeb.SwaggerDefinitions
+  alias TdDd.Audit
   alias Ecto
 
   action_fallback TdDdWeb.FallbackController
 
   @td_auth_api Application.get_env(:td_dd, :auth_service)[:api_service]
+  @events %{update_data_structure: "update_data_structure",
+            create_data_structure: "create_data_structure",
+            delete_data_structure: "delete_data_structure"}
 
   def swagger_definitions do
     SwaggerDefinitions.data_structure_swagger_definitions()
@@ -45,6 +49,8 @@ defmodule TdDdWeb.DataStructureController do
     |> Map.put("last_change_at", DateTime.utc_now())
 
     with {:ok, %DataStructure{} = data_structure} <- DataStructures.create_data_structure(creation_params) do
+      audit = %{"audit" => %{"resource_id" => data_structure.id, "resource_type" => "data_structure", "payload" => data_structure_params}}
+      Audit.create_event(conn, audit, @events.create_data_structure)
       users = get_data_structure_users(data_structure)
       conn
       |> put_status(:created)
@@ -95,6 +101,8 @@ defmodule TdDdWeb.DataStructureController do
     |> Map.put("last_change_at", DateTime.utc_now())
 
     with {:ok, %DataStructure{} = data_structure} <- DataStructures.update_data_structure(data_structure, update_params) do
+      audit = %{"audit" => %{"resource_id" => data_structure.id, "resource_type" => "data_structure", "payload" => data_structure_params}}
+      Audit.create_event(conn, audit, @events.update_data_structure)
       users = get_data_structure_users(data_structure)
       render(conn, "show.json", data_structure: data_structure, users: users)
     else
@@ -119,6 +127,8 @@ defmodule TdDdWeb.DataStructureController do
   def delete(conn, %{"id" => id}) do
     data_structure = DataStructures.get_data_structure!(id)
     with {:ok, %DataStructure{}} <- DataStructures.delete_data_structure(data_structure) do
+      audit = %{"audit" => %{"resource_id" => id, "resource_type" => "data_structure", "payload" => %{}}}
+      Audit.create_event(conn, audit, @events.delete_data_structure)
       send_resp(conn, :no_content, "")
     end
   end
