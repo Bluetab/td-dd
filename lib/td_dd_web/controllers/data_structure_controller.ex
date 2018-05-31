@@ -7,7 +7,6 @@ defmodule TdDdWeb.DataStructureController do
   alias TdDdWeb.ErrorView
   alias TdDdWeb.SwaggerDefinitions
   alias Ecto
-  alias TdDd.Repo
 
   action_fallback TdDdWeb.FallbackController
 
@@ -29,7 +28,6 @@ defmodule TdDdWeb.DataStructureController do
   def index(conn, params) do
     search_params = %{ou: getOUs(params)}
     data_structures = DataStructures.list_data_structures(search_params)
-    data_structures = Enum.map(data_structures, &Repo.preload(&1, :data_fields))
     users = get_data_structure_users(data_structures)
     render(conn, "index.json", data_structures: data_structures, users: users)
   end
