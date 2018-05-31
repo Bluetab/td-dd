@@ -6,7 +6,7 @@ defmodule TdDd.DataStructuresTest do
   describe "data_structures" do
     alias TdDd.DataStructures.DataStructure
 
-    @valid_attrs %{description: "some description", group: "some group", last_change_at: "2010-04-17 14:00:00.000000Z", last_change_by: 42, name: "some name", system: "some system"}
+    @valid_attrs %{description: "some description", group: "some group", last_change_at: "2010-04-17 14:00:00.000000Z", last_change_by: 42, name: "some name", system: "some system", metadata: %{}}
     @update_attrs %{description: "some updated description"}
     @invalid_attrs %{description: nil, group: nil, last_change_at: nil, last_change_by: nil, name: nil, system: nil}
 
@@ -65,7 +65,7 @@ defmodule TdDd.DataStructuresTest do
   describe "data_fields" do
     alias TdDd.DataStructures.DataField
 
-    @valid_attrs %{business_concept_id: "42", description: "some description", last_change_at: "2010-04-17 14:00:00.000000Z", last_change_by: 42, name: "some name", nullable: true, precision: "some precision", type: "some type"}
+    @valid_attrs %{business_concept_id: "42", description: "some description", last_change_at: "2010-04-17 14:00:00.000000Z", last_change_by: 42, name: "some name", nullable: true, precision: "some precision", type: "some type", metadata: %{}}
     @update_attrs %{business_concept_id: "43", description: "some updated description", last_change_at: "2011-05-18 15:01:01.000000Z", last_change_by: 43, name: "some updated name", nullable: false, precision: "some updated precision", type: "some updated type"}
     @invalid_attrs %{business_concept_id: nil, description: nil, last_change_at: nil, last_change_by: nil, name: nil, nullable: nil, precision: nil, type: nil}
 

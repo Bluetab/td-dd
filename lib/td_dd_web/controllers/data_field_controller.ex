@@ -60,6 +60,7 @@ defmodule TdDdWeb.DataFieldController do
     creation_params = data_field_params
     |> Map.put("last_change_by", get_current_user_id(conn))
     |> Map.put("last_change_at", DateTime.utc_now())
+    |> Map.put("metadata", %{})
 
     with {:ok, %DataField{} = data_field} <- DataStructures.create_data_field(creation_params) do
       users = get_data_field_users(data_field)

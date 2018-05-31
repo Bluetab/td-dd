@@ -12,7 +12,8 @@ defmodule TdDdWeb.MetadataController do
                         "description",
                         "type",
                         "ou",
-                        "lopd"]
+                        "lopd",
+                        "modifications"]
 
   @data_field_keys ["system",
                     "group",
@@ -22,21 +23,22 @@ defmodule TdDdWeb.MetadataController do
                     "description",
                     "nullable",
                     "precision",
-                    "business_concept_id"]
+                    "business_concept_id",
+                    "modifications"]
 
   @data_structure_query  """
-    INSERT INTO data_structures ("system", "group", "name", description, type, ou, lopd, last_change_at, last_change_by, inserted_at, updated_at)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $9, $8, $9, $9)
+    INSERT INTO data_structures ("system", "group", "name", description, type, ou, lopd, metadata, last_change_at, last_change_by, inserted_at, updated_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $10, $9, $10, $10)
     ON CONFLICT ("system", "group", "name")
-    DO UPDATE SET description = $4, type = $5, ou = $6, lopd = $7, last_change_at = $9, last_change_by = $8, updated_at = $9;
+    DO UPDATE SET type = $5, last_change_at = $10, last_change_by = $9, updated_at = $10;
   """
 
   @data_field_query  """
-    INSERT INTO data_fields (data_structure_id, name, type, description, nullable, precision, business_concept_id, last_change_at, last_change_by, inserted_at, updated_at)
+    INSERT INTO data_fields (data_structure_id, name, type, description, nullable, precision, business_concept_id, metadata, last_change_at, last_change_by, inserted_at, updated_at)
     VALUES ((select id from data_structures where "system" = $1 and "group" = $2 and "name" = $3),
-    $4, $5, $6, $7, $8, $9, $11, $10, $11, $11)
+    $4, $5, $6, $7, $8, $9, $10, $12, $11, $12, $12)
     ON CONFLICT (data_structure_id, name)
-    DO UPDATE SET name = $4, type = $5, description = $6, nullable = $7, precision = $8, business_concept_id = $9, last_change_at = $11, last_change_by = $10, updated_at = $11
+    DO UPDATE SET name = $4, type = $5, nullable = $7, precision = $8, business_concept_id = $9, last_change_at = $12, last_change_by = $11, updated_at = $12
   """
 
   @data_structures_param "data_structures"
@@ -51,7 +53,7 @@ defmodule TdDdWeb.MetadataController do
 
       curl -H "Content-Type: application/json" -X POST -d '{"user":{"user_name":"xxx","password":"xxx"}}' http://localhost:4001/api/sessions
       curl -H "authorization: Bearer xxx" -F "data_structures=@data_structures.csv" -F "data_fields=@data_fields.csv"  http://localhost:8005/api/metadata
-      
+
   """
   def upload(conn, params) do
     do_upload(conn, params)
@@ -91,6 +93,7 @@ defmodule TdDdWeb.MetadataController do
     |> CSV.decode!(separator: ?;, headers: true)
     |> Enum.each(fn(data) ->
       input = data
+      |> add_metadata(["description"])
       |> to_array(data_structure_keys)
       |> add_user_and_date_time(conn)
       SQL.query!(Repo, @data_structure_query, input)
@@ -105,6 +108,7 @@ defmodule TdDdWeb.MetadataController do
     |> CSV.decode!(separator: ?;, headers: true)
     |> Enum.each(fn(data) ->
       input = data
+      |> add_metadata(["description", "ou", "lopd", "last_change_at"])
       |> to_array(data_field_keys)
       |> add_user_and_date_time(conn)
       SQL.query!(Repo, @data_field_query, input)
@@ -128,5 +132,11 @@ defmodule TdDdWeb.MetadataController do
   defp add_user_and_date_time(data, conn) do
     data ++ [GuardianPlug.current_resource(conn).id, DateTime.utc_now()]
   end
+
+ defp add_metadata(data, fields) do
+   metadata = fields
+   |> Enum.reduce(%{}, &Map.put(&2, &1, Map.get(data, &1)))
+   Map.put(data, "metadata", metadata)
+ end
 
 end

@@ -15,6 +15,7 @@ defmodule TdDd.DataStructures.DataField do
     field :precision, :string, default: nil
     field :type, :string, default: nil
     belongs_to :data_structure, DataStructure
+    field :metadata, :map
 
     timestamps()
   end
@@ -22,7 +23,7 @@ defmodule TdDd.DataStructures.DataField do
   @doc false
   def update_changeset(%DataField{} = data_field, attrs) do
     data_field
-    |> cast(attrs, [:description])
+    |> cast(attrs, [:description, :last_change_at, :last_change_by])
   end
 
   @doc false
