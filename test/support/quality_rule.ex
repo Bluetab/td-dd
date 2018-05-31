@@ -27,4 +27,23 @@ defmodule TdDqWeb.QualityRule do
       HTTPoison.post!(quality_rule_url(@endpoint, :create), body, headers, [])
     {:ok, status_code, resp |> JSON.decode!}
   end
+
+  def find_quality_rule(token, search_params) do
+    {:ok, _status_code, json_resp} = quality_rule_list(token)
+    Enum.find(json_resp["data"], fn(quality_rule) ->
+      Enum.all?(search_params, fn({k, v}) ->
+        string_key = Atom.to_string(k)
+        quality_rule[string_key] == v
+      end
+      )
+    end
+    )
+  end
+
+  defp quality_rule_list(token) do
+    headers = get_header(token)
+    %HTTPoison.Response{status_code: status_code, body: resp} =
+      HTTPoison.get!(quality_rule_url(@endpoint, :index), headers, [])
+    {:ok, status_code, resp |> JSON.decode!}
+  end
 end

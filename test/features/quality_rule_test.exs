@@ -39,4 +39,11 @@ defmodule TdQd.QualtityRuleTypeTest do
       "type" => qr_name, "params" => table})
   end
 
+  defand ~r/^"(?<user_name>[^"]+)" is able to view a Quality Rule named "(?<qr_name>[^"]+)" with with following data:$/, %{user_name: user_name, qr_name: qr_name, table: _table}, state do
+    assert user_name == state[:user_name]
+    quality_rule_data = find_quality_rule(state[:token], %{name: qr_name})
+    # TODO: check all params
+    assert quality_rule_data && quality_rule_data["name"] == qr_name
+  end
+
 end

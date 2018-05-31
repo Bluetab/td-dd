@@ -15,7 +15,7 @@ Feature: Quality Rules
       | Goal                | 98                                                                                     |
       | Minimum             | 80                                                                                     |
       | Type                | Integer Values Range                                                                   |
-      | Type Params         | %-{ "Minimum Value": 18, "Maximum Value": 18 }                                         |
+      | Type Params         | %-{ "Minimum Value": 18, "Maximum Value": 50 }                                         |
     And a existing Quality Rule Type with name "Integer Values Range" and the following parameters:
       | Params        | Name                | Type   |
       | Type Params   | Minimum Value       | int    |
@@ -23,6 +23,13 @@ Feature: Quality Rules
       | System Params | Table               | string |
       | System Params | Field               | string |
     When "my-user" tries to create a Quality Rule associated to Quality Control "Field's Quality Control" and a Quality Rule "Integer Values Range" with following data:
+      | Field               | Value                                                                                  |
+      | Type                | Integer Values Range                                                                   |
+      | System              | Oracle                                                                                 |
+      | Name                | Age between 18 and 50                                                                  |
+      | Description         | My Generic Quality Control Rule                                                        |
+      | System Params       | %-{ "Table": "Clients", "Field": "Age" }                                               |
+    And "my-user" is able to view a Quality Rule named "Age between 18 and 50" with with following data:
       | Field               | Value                                                                                  |
       | Type                | Integer Values Range                                                                   |
       | System              | Oracle                                                                                 |
