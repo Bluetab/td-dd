@@ -22,6 +22,7 @@ defmodule TdDd.Factory do
       last_change_by: 0,
       name: "some name",
       system: "some system",
+      metadata: %{"description" => "some description"}
     }
   end
 
@@ -36,7 +37,8 @@ defmodule TdDd.Factory do
       nullable: "false",
       precision: "some precision",
       type: "some type",
-      data_structure_id: 0
+      data_structure_id: 0,
+      metadata: %{"description" => "some description"}
     }
   end
 

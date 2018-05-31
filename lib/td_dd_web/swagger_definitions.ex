@@ -21,6 +21,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
           last_change_by :string, "Data Structure last updated by"
           last_change_at :string, "Data Structure last updated at"
           inserted_at :string, "Data Structure creation date"
+          metadata :object, "Data Structure data. Uploaded by background processes"
       end
         example %{
         id: 123,
@@ -31,7 +32,11 @@ defmodule TdDdWeb.SwaggerDefinitions do
         type: "Csv",
         ou: "General Management",
         lopd: "1",
-        inserted_at: "2018-05-08T17:17:59.691460"
+        inserted_at: "2018-05-08T17:17:59.691460",
+        metadata: %{"description" => "last description",
+                    "ou" => "Super Management",
+                    "lopd" => "EM",
+                    "last_change_at" => "2018-05-08T17:17:59.691460"}
         }
       end,
       DataStructureCreate: swagger_schema do
@@ -96,6 +101,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
           last_change_by :string, "Data Field last updated by"
           last_change_at :string, "Data Field last updated at"
           inserted_at :string, "Data Field creation date"
+          metadata :object, "Data Field data. Uploaded by background processes"
       end
         example %{
           id: 123,
@@ -108,7 +114,9 @@ defmodule TdDdWeb.SwaggerDefinitions do
           data_structure_id: 11,
           last_change_by: 1,
           last_change_at: "2010-04-17 14:00:00",
-          inserted_at: "2018-05-08T17:17:59.691460"
+          inserted_at: "2018-05-08T17:17:59.691460",
+          metadata: %{"description" => "last description",
+                      "last_change_at" => "2018-05-08T17:17:59.691460"}
       }
       end,
       DataFieldCreate: swagger_schema do

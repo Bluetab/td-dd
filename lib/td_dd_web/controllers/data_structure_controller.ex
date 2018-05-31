@@ -44,9 +44,11 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   def create(conn, %{"data_structure" => data_structure_params}) do
+
     creation_params = data_structure_params
     |> Map.put("last_change_by", get_current_user_id(conn))
     |> Map.put("last_change_at", DateTime.utc_now())
+    |> Map.put("metadata", %{})
 
     with {:ok, %DataStructure{} = data_structure} <- DataStructures.create_data_structure(creation_params) do
       audit = %{"audit" => %{"resource_id" => data_structure.id, "resource_type" => "data_structure", "payload" => data_structure_params}}

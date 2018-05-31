@@ -16,6 +16,7 @@ defmodule TdDd.DataStructures.DataStructure do
     field :ou,   :string
     field :lopd, :string
     has_many :data_fields, DataField
+    field :metadata, :map
 
     timestamps()
   end
@@ -23,16 +24,14 @@ defmodule TdDd.DataStructures.DataStructure do
   @doc false
   def update_changeset(%DataStructure{} = data_structure, attrs) do
     data_structure
-    |> cast(attrs, [:description, :ou, :lopd])
-    |> validate_length(:ou,     max: 255)
-    |> validate_length(:lopd,   max: 255)
+    |> cast(attrs, [:description, :ou, :lopd, :last_change_at, :last_change_by])
   end
 
   @doc false
   def changeset(%DataStructure{} = data_structure, attrs) do
     data_structure
-    |> cast(attrs, [:system, :group, :name, :description, :last_change_at, :last_change_by, :type, :ou, :lopd])
-    |> validate_required([:system, :group, :name, :last_change_at, :last_change_by])
+    |> cast(attrs, [:system, :group, :name, :description, :last_change_at, :last_change_by, :type, :ou, :lopd, :metadata])
+    |> validate_required([:system, :group, :name, :last_change_at, :last_change_by, :metadata])
     |> validate_length(:system, max: 255)
     |> validate_length(:group,  max: 255)
     |> validate_length(:name,   max: 255)

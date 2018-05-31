@@ -42,6 +42,8 @@ config :td_dd, :audit_service,
   protocol: "http",
   audits_path: "/api/audits/"
 
+import_config "metadata.exs"
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env}.exs"

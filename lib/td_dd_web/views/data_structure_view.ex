@@ -2,6 +2,7 @@ defmodule TdDdWeb.DataStructureView do
   use TdDdWeb, :view
   alias TdDdWeb.DataStructureView
   alias TdDd.Accounts.User
+  alias TdDd.Utils.CollectionUtils
   alias Ecto
 
   def render("index.json", %{data_structures: data_structures, users: users}) do
@@ -23,29 +24,31 @@ defmodule TdDdWeb.DataStructureView do
       lopd: data_structure.lopd,
       last_change_at: data_structure.last_change_at,
       last_change_by: get_last_change_by_user_name(data_structure.last_change_by, users),
-      inserted_at: data_structure.inserted_at}
+      inserted_at: data_structure.inserted_at,
+      metadata: data_structure.metadata}
       |> add_data_fields(data_structure, users)
   end
 
   defp add_data_fields(data_structure_json, data_stucture, users) do
-    case Ecto.assoc_loaded?(data_stucture.data_fields) do
+    data_fields = case Ecto.assoc_loaded?(data_stucture.data_fields) do
       true ->
-        data_fields = Enum.reduce(data_stucture.data_fields, [], fn(data_field, acc) ->
-          [%{id: data_field.id,
-            name: data_field.name,
-            type: data_field.type,
-            precision: data_field.precision,
-            nullable: data_field.nullable,
-            description: data_field.description,
-            business_concept_id: data_field.business_concept_id,
-            last_change_at: data_field.last_change_at,
-            last_change_by: get_last_change_by_user_name(data_field.last_change_by, users),
-            inserted_at: data_field.inserted_at
-          } | acc]
+        Enum.reduce(data_stucture.data_fields, [], fn(data_field, acc) ->
+          json = %{id: data_field.id,
+                   name: data_field.name,
+                   type: data_field.type,
+                   precision: data_field.precision,
+                   nullable: data_field.nullable,
+                   description: data_field.description,
+                   business_concept_id: data_field.business_concept_id,
+                   last_change_at: data_field.last_change_at,
+                   last_change_by: get_last_change_by_user_name(data_field.last_change_by, users),
+                   inserted_at: data_field.inserted_at,
+                   metadata: data_field.metadata}
+          [json|acc]
         end)
-        Map.put(data_structure_json, :data_fields, data_fields)
-      _ -> data_structure_json
+      _ -> []
     end
+    Map.put(data_structure_json, :data_fields, data_fields)
   end
 
   defp get_last_change_by_user_name(last_change_by_id, users) do
