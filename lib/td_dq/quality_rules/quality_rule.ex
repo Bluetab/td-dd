@@ -9,9 +9,9 @@ defmodule TdDq.QualityRules.QualityRule do
   schema "quality_rules" do
     field :description, :string, default: nil
     field :name, :string
-    field :type_params, :map
-    field :system, :string
     field :type, :string
+    field :system, :string
+    field :system_params, :map
     field :tag, :map
     belongs_to :quality_control, QualityControl
     belongs_to :quality_rule_type, QualityRuleType
@@ -22,8 +22,8 @@ defmodule TdDq.QualityRules.QualityRule do
   @doc false
   def changeset(%QualityRule{} = quality_rule, attrs) do
     quality_rule
-    |> cast(attrs, [:name, :description, :system, :type_params, :type, :tag, :quality_control_id, :quality_rule_type_id])
-    |> validate_required([:name, :type, :type_params, :quality_control_id, :quality_rule_type_id])
+    |> cast(attrs, [:name, :description, :system, :system_params, :type, :tag, :quality_control_id, :quality_rule_type_id])
+    |> validate_required([:name, :type, :system_params, :quality_control_id, :quality_rule_type_id])
     |> validate_length(:name, max: 255)
     |> validate_length(:description, max: 500)
   end
