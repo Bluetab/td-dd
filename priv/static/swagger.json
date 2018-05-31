@@ -656,6 +656,10 @@
           "type": "string",
           "description": "Data Structure name"
         },
+        "metadata": {
+          "type": "object",
+          "description": "Data Structure data. Uploaded by background processes"
+        },
         "lopd": {
           "type": [
             "string",
@@ -696,6 +700,12 @@
         "system": "Data Structure system",
         "ou": "General Management",
         "name": "Data Structure name",
+        "metadata": {
+          "ou": "Super Management",
+          "lopd": "EM",
+          "last_change_at": "2018-05-08T17:17:59.691460",
+          "description": "last description"
+        },
         "lopd": "1",
         "inserted_at": "2018-05-08T17:17:59.691460",
         "id": 123,
@@ -818,6 +828,10 @@
           "type": "string",
           "description": "Data Field name"
         },
+        "metadata": {
+          "type": "object",
+          "description": "Data Field data. Uploaded by background processes"
+        },
         "last_change_by": {
           "type": "string",
           "description": "Data Field last updated by"
@@ -858,6 +872,10 @@
         "precision": "Data Field precision",
         "nullable": true,
         "name": "Data Field name",
+        "metadata": {
+          "last_change_at": "2018-05-08T17:17:59.691460",
+          "description": "last description"
+        },
         "last_change_by": 1,
         "last_change_at": "2010-04-17 14:00:00",
         "inserted_at": "2018-05-08T17:17:59.691460",
