@@ -89,6 +89,26 @@ defmodule TdDqWeb.QualityRuleTypeControllerTest do
     end
   end
 
+  describe "create duplicated quality_rule_type" do
+    @tag :admin_authenticated
+    test "renders quality_rule_type when data is valid", %{conn: conn} do
+      conn = post conn, quality_rule_type_path(conn, :create), quality_rule_type: @create_attrs
+      assert %{"id" => id} = json_response(conn, 201)["data"]
+
+      conn = recycle_and_put_headers(conn)
+
+      conn = get conn, quality_rule_type_path(conn, :show, id)
+      assert json_response(conn, 200)["data"] == %{
+        "id" => id,
+        "name" => "some name",
+        "params" => %{}}
+
+      conn = recycle_and_put_headers(conn)
+      conn = post conn, quality_rule_type_path(conn, :create), quality_rule_type: @create_attrs
+      assert %{"errors" => %{"name" => ["has already been taken"]}} = json_response(conn, 422)
+    end
+  end
+
   defp create_quality_rule_type(_) do
     quality_rule_type = fixture(:quality_rule_type)
     {:ok, quality_rule_type: quality_rule_type}

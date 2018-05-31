@@ -142,5 +142,14 @@ defmodule TdDq.QualityRulesTest do
       quality_rule_type = quality_rule_type_fixture()
       assert %Ecto.Changeset{} = QualityRules.change_quality_rule_type(quality_rule_type)
     end
+
+    test "create_duplicated_quality_rule_type/1 with valid data creates a quality_rule_type" do
+      assert {:ok, %QualityRuleType{} = quality_rule_type} = QualityRules.create_quality_rule_type(@valid_attrs)
+      assert quality_rule_type.name == "some name"
+      assert quality_rule_type.params == %{}
+      assert {:error, %Ecto.Changeset{} = changeset} = QualityRules.create_quality_rule_type(@valid_attrs)
+      assert changeset.valid? == false
+      assert changeset.errors == [name: {"has already been taken", []}]
+    end
   end
 end

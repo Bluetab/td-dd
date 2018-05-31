@@ -17,5 +17,6 @@ defmodule TdDq.QualityRules.QualityRuleType do
     quality_rule_type
     |> cast(attrs, [:name, :params])
     |> validate_required([:name, :params])
+    |> unique_constraint(:name)
   end
 end
