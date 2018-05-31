@@ -52,6 +52,15 @@ defmodule TdDqWeb.QualityControlControllerTest do
     end
   end
 
+  describe "get_quality_controls_by_concept" do
+    @tag authenticated_user: @admin_user_name
+    test "lists all quality_controls of a concept", %{conn: conn, swagger_schema: schema} do
+      conn = get conn, quality_control_path(conn, :get_quality_controls_by_concept, "id")
+      validate_resp_schema(conn, schema, "QualityControlsResponse")
+      assert json_response(conn, 200)["data"] == []
+    end
+  end
+
   describe "verify token is required" do
     test "renders unauthenticated when no token", %{conn: conn, swagger_schema: schema} do
       conn = put_req_header(conn, "content-type", "application/json")

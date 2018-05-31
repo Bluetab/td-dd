@@ -423,6 +423,33 @@
         "description": "Delete Quality Control"
       }
     },
+    "/quality_controls/concept/{id}": {
+      "get": {
+        "tags": [
+          "QualityControl"
+        ],
+        "summary": "",
+        "responses": {
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/QualityControlsResponse"
+            },
+            "description": "OK"
+          }
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Business Concept ID"
+          }
+        ],
+        "operationId": "TdDqWeb.QualityControlController.get_quality_controls_by_concept",
+        "description": "List Quality Controls of a Business Concept"
+      }
+    },
     "/quality_controls": {
       "post": {
         "tags": [

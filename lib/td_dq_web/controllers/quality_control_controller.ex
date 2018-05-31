@@ -27,6 +27,20 @@ defmodule TdDqWeb.QualityControlController do
     render(conn, "index.json", quality_controls: quality_controls)
   end
 
+  swagger_path :get_quality_controls_by_concept do
+    get "/quality_controls/concept/{id}"
+    description "List Quality Controls of a Business Concept"
+    parameters do
+      id :path, :string, "Business Concept ID", required: true
+    end
+    response 200, "OK", Schema.ref(:QualityControlsResponse)
+  end
+
+  def get_quality_controls_by_concept(conn, %{"id" => id}) do
+    quality_controls = QualityControls.list_concept_quality_controls(id)
+    render(conn, "index.json", quality_controls: quality_controls)
+  end
+
   swagger_path :create do
     post "/quality_controls"
     description "Creates a Quality Control"
