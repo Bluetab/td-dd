@@ -4,6 +4,7 @@ defmodule TdDqWeb.QualityControl do
   alias Poison, as: JSON
   import TdDqWeb.Router.Helpers
   import TdDqWeb.Authentication, only: :functions
+  import TdDqWeb.SupportCommon, only: :functions
 
   @endpoint TdDqWeb.Endpoint
 
@@ -37,7 +38,6 @@ defmodule TdDqWeb.QualityControl do
     |> field_value_to_api_attrs(@test_to_api_create_alias)
     attrs = attrs
     |> cast_to_int_attrs(@quality_control_integer_fields)
-    |> cast_to_map_attrs
     quality_control_create(token, attrs)
   end
 
@@ -61,30 +61,6 @@ defmodule TdDqWeb.QualityControl do
     table |> cast_to_int_attrs(@quality_control_integer_fields ++ ["version"])
   end
 
-  def cast_to_map_attrs(m) do
-    m
-    |> Enum.map(fn({k, v}) ->
-      if is_binary(v) do
-        to_map = case String.split(v, "%-") do
-          [_, params] -> {:ok, String.split(params, ", ")}
-          _ -> nil
-        end
-        case to_map do
-          {:ok, param_list} ->
-            {k, Enum.reduce(param_list, %{}, fn(x, acc) ->
-                  [key, value] = String.split(x, ": ")
-                  Map.put(acc, key, value)
-                end)}
-          nil ->
-            {k, v}
-        end
-      else
-        {k, v}
-      end
-      end)
-    |> Enum.into(%{})
-  end
-
   defp cast_to_int_attrs(m, keys) do
     m
     |> Map.split(keys)
@@ -95,10 +71,5 @@ defmodule TdDqWeb.QualityControl do
         )
         |> Enum.into(l2)
        end.()
-  end
-
-  defp field_value_to_api_attrs(table, key_alias_map) do
-    table
-    |> Enum.reduce(%{}, fn(x, acc) -> Map.put(acc, Map.get(key_alias_map, x."Field", x."Field"), x."Value") end)
   end
 end

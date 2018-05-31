@@ -32,7 +32,6 @@ defmodule TdQd.QualtityControlTest do
     attrs = table
     |> quality_control_test_fields_to_api_create_and_get_alias
     |> cast_quality_control_integer_fields_plus_version
-    |> cast_to_map_attrs
 
     assert_attrs(attrs, quality_control_data)
   end

@@ -20,7 +20,7 @@ Feature: Quality Controls
       | Goal                | 98                                                                                     |
       | Minimum             | 80                                                                                     |
       | Type                | Integer Values Range                                                                   |
-      | Type Params         | %-Min Value: 0, Max Value: 120                                                         |
+      | Type Params         | %-{ "Minimum Value": 18, "Maximum Value": 18 }                                         |
    Then the system returns a result with code "Created"
    And "my-user" is able to view quality control named "Field's Quality Control" with with following data:
      | Field               | Value                                                                                     |
@@ -35,4 +35,4 @@ Feature: Quality Controls
      | Minimum             | 80                                                                                        |
      | Version             | 1                                                                                         |
      | Type                | Integer Values Range                                                                      |
-     | Type Params         | %-Min Value: 0, Max Value: 120                                                            |
+     | Type Params         | %-{ "Minimum Value": 18, "Maximum Value": 18 }                                            |

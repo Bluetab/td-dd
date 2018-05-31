@@ -3,6 +3,7 @@ defmodule TdQd.QualtityRuleTypeTest do
   use TdDqWeb.ConnCase
   import TdDqWeb.Authentication, only: :functions
   import TdDqWeb.QualityControl
+  import TdDqWeb.QualityRule
   import TdDqWeb.QualityRuleType
   import TdDqWeb.ResponseCode
   alias TdDqWeb.ApiServices.MockTdAuditService
@@ -26,6 +27,16 @@ defmodule TdQd.QualtityRuleTypeTest do
   defand ~r/^a existing Quality Rule Type with name "(?<qr_name>[^"]+)" and the following parameters:$/,
     %{qr_name: qr_name, table: table}, %{token: token} = _state do
      {:ok, _status_code, _resp} = create_new_quality_rule_type(token, %{"name" => qr_name, "params" => table})
+  end
+
+  defwhen ~r/^"(?<user_name>[^"]+)" tries to create a Quality Rule associated to Quality Control "(?<qc_name>[^"]+)" and a Quality Rule "(?<qr_name>[^"]+)" with following data:$/, %{user_name: user_name, qc_name: qc_name, qr_name: qr_name, table: table}, state do
+    token = state[:token]
+    assert user_name == state[:user_name]
+    quality_control = find_quality_control(token, %{name: qc_name})
+    assert quality_control
+    quality_control_id = quality_control["id"]
+    {:ok, _status_code, _resp} = create_new_quality_rule(token, %{"quality_control_id" => quality_control_id,
+      "type" => qr_name, "params" => table})
   end
 
 end

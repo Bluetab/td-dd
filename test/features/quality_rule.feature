@@ -15,10 +15,17 @@ Feature: Quality Rules
       | Goal                | 98                                                                                     |
       | Minimum             | 80                                                                                     |
       | Type                | Integer Values Range                                                                   |
-      | Type Params         | %-Min Value: 0, Max Value: 120                                                         |
+      | Type Params         | %-{ "Minimum Value": 18, "Maximum Value": 18 }                                         |
     And a existing Quality Rule Type with name "Integer Values Range" and the following parameters:
       | Params        | Name                | Type   |
       | Type Params   | Minimum Value       | int    |
       | Type Params   | Maximum Value       | int    |
       | System Params | Table               | string |
       | System Params | Field               | string |
+    When "my-user" tries to create a Quality Rule associated to Quality Control "Field's Quality Control" and a Quality Rule "Integer Values Range" with following data:
+      | Field               | Value                                                                                  |
+      | Type                | Integer Values Range                                                                   |
+      | System              | Oracle                                                                                 |
+      | Name                | Age between 18 and 50                                                                  |
+      | Description         | My Generic Quality Control Rule                                                        |
+      | System Params       | %-{ "Table": "Clients", "Field": "Age" }                                               |

@@ -23,6 +23,25 @@ defmodule TdDqWeb.QualityRuleType do
     {:ok, status_code, resp |> JSON.decode!}
   end
 
+  def find_quality_rule_type(token, search_params) do
+    {:ok, _status_code, json_resp} = quality_rule_type_list(token)
+    Enum.find(json_resp["data"], fn(quality_rule_type) ->
+      Enum.all?(search_params, fn({k, v}) ->
+        string_key = Atom.to_string(k)
+        quality_rule_type[string_key] == v
+      end
+      )
+    end
+    )
+  end
+
+  defp quality_rule_type_list(token) do
+    headers = get_header(token)
+    %HTTPoison.Response{status_code: status_code, body: resp} =
+      HTTPoison.get!(quality_rule_type_url(@endpoint, :index), headers, [])
+    {:ok, status_code, resp |> JSON.decode!}
+  end
+
   defp field_value_to_entity_attrs(table, key_alias_map, br_name) do
     params = Enum.group_by(table, &(&1."Params"))
 
