@@ -30,7 +30,7 @@ defmodule TdDqWeb.QualityControlControllerTest do
     name: nil, population: nil, priority: nil, weight: nil, principle: nil}
 
   @comparable_fields ["id", "business_concept_id", "description", "goal", "minimum", "name",
-    "population", "priority", "weight", "status", "version", "updated_by", "principle"]
+    "population", "priority", "type", "weight", "status", "version", "updated_by", "principle"]
 
   @admin_user_name "app-admin"
 
