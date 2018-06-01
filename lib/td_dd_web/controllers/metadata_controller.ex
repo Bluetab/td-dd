@@ -96,9 +96,9 @@ defmodule TdDdWeb.MetadataController do
   end
 
   defp get_value(data, "nullable" = name) do
-    case Map.get(data, name) do
-      nil -> nil
-      value -> value == "1"
+    case String.downcase(Map.get(data, name))  do
+      "" -> nil
+      value -> Enum.member?(["t", "true", "y", "yes", "on", "1"], value)
     end
   end
   defp get_value(data, name), do: Map.get(data, name)
