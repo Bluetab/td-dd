@@ -52,8 +52,12 @@ defmodule TdDqWeb.QualityRuleController do
 
   def create(conn, %{"quality_rule" => quality_rule_params}) do
     user = get_current_user(conn)
-    quality_rule_params = add_quality_rule_type_id(quality_rule_params)
+    {quality_rule_params, quality_rule_type} =
+      add_quality_rule_type_id(quality_rule_params)
     with true <- can?(user, create(QualityRule)),
+         {:valid_quality_rule_type} <- verify_quality_rule_existence(quality_rule_type),
+         {:ok_size_verification} <- verify_equals_sizes(quality_rule_params, quality_rule_type.params),
+         {:ok_existence_verification} <- verify_types_and_existence(quality_rule_params, quality_rule_type.params),
          {:ok, %QualityRule{} = quality_rule} <- QualityRules.create_quality_rule(quality_rule_params) do
       conn
       |> put_status(:created)
@@ -70,6 +74,47 @@ defmodule TdDqWeb.QualityRuleController do
         |> render(ErrorView, :"422.json")
     end
   end
+
+  defp verify_quality_rule_existence(quality_rule_type) do
+    if quality_rule_type, do: {:valid_quality_rule_type},
+    else: {:not_found_quality_rule_type}
+  end
+
+  defp verify_equals_sizes(%{"system_params" => quality_rule_params}, %{"system_params" => qrt_params}) do
+    case length(Map.keys(quality_rule_params)) == length(qrt_params) do
+      true -> {:ok_size_verification}
+      false -> {:ko_size_verification}
+    end
+  end
+  defp verify_equals_sizes(%{"system_params" => system_params}, _map_quality_rule_type) when system_params == %{}, do: {:ok_size_verification}
+  defp verify_equals_sizes(_map_quality_rule, _map_quality_rule_type), do: {:no_system_params}
+
+  defp verify_types_and_existence(map_quality_rule_params,
+    map_quality_rule_type_params) do
+      qr_tuple_list = Enum.map(map_quality_rule_params["system_params"], fn({k, v}) ->
+        {k, get_type(v)}
+      end)
+      verify_key_type(qr_tuple_list, map_quality_rule_type_params["system_params"])
+  end
+
+  defp verify_key_type(_, _, {:error, error}), do: error
+  defp verify_key_type([], _), do: {:ok_existence_verification}
+  defp verify_key_type([{k, v}|tail], system_params) do
+    system_param = Enum.find(system_params, fn(param) ->
+      param["name"] == k
+    end)
+    cond do
+      system_param == nil -> verify_key_type(nil, nil, {:error, "Element not found"})
+      system_param["type"] != v -> verify_key_type(nil, nil, {:error, "Type does not match"})
+      true ->   verify_key_type(tail, system_params)
+    end
+  end
+
+  defp get_type(value) when is_integer(value), do: "integer"
+  defp get_type(value) when is_float(value), do: "float"
+  defp get_type(value) when is_list(value), do: "list"
+  defp get_type(value) when is_boolean(value), do: "boolean"
+  defp get_type(_), do: "string"
 
   swagger_path :show do
     get "/quality_rules/{id}"
@@ -162,12 +207,15 @@ defmodule TdDqWeb.QualityRuleController do
     qrt = QualityRules.get_quality_rule_type_by_name(qrt_name)
     case qrt do
       nil ->
-        quality_rule_params
+        {quality_rule_params, nil}
       qrt ->
-        quality_rule_params |> Map.put("quality_rule_type_id", qrt.id)
+        {quality_rule_params
+        |> Map.put("quality_rule_type_id", qrt.id), qrt}
     end
   end
-  defp add_quality_rule_type_id(quality_rule_params), do: quality_rule_params
+  defp add_quality_rule_type_id(%{"quality_rule_type_id" => quality_rule_type_id} = quality_rule_params),
+    do: {quality_rule_params, QualityRules.get_quality_rule_type!(quality_rule_type_id)}
+  defp add_quality_rule_type_id(quality_rule_params), do: {quality_rule_params, nil}
 
   defp get_current_user(conn) do
     GuardianPlug.current_resource(conn)

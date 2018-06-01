@@ -20,6 +20,8 @@ defmodule TdDq.QualityControls.QualityControl do
     field :version, :integer, default: 1
     field :updated_by, :integer
     field :principle, :map
+    field :type, :string
+    field :type_params, :map
     has_many :quality_rules, QualityRule
 
     timestamps()
@@ -28,8 +30,21 @@ defmodule TdDq.QualityControls.QualityControl do
   @doc false
   def changeset(%QualityControl{} = quality_control, attrs) do
     quality_control
-    |> cast(attrs, [:business_concept_id, :name, :description, :weight, :priority, :population, :goal, :minimum, :status, :version, :updated_by, :principle])
-    |> validate_required([:business_concept_id, :name])
+    |> cast(attrs, [:business_concept_id,
+                    :name,
+                    :description,
+                    :weight,
+                    :priority,
+                    :population,
+                    :goal,
+                    :minimum,
+                    :status,
+                    :version,
+                    :updated_by,
+                    :principle,
+                    :type,
+                    :type_params])
+    |> validate_required([:business_concept_id, :name, :type])
   end
 
   def get_statuses do

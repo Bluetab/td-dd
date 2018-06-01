@@ -24,7 +24,7 @@ defmodule TdDq.QualityRulesTest do
       assert {:ok, %QualityRule{} = quality_rule} = QualityRules.create_quality_rule(creation_attrs)
       assert quality_rule.quality_control_id == creation_attrs[:quality_control_id]
       assert quality_rule.description == creation_attrs[:description]
-      assert quality_rule.type_params == creation_attrs[:type_params]
+      assert quality_rule.system_params == creation_attrs[:system_params]
       assert quality_rule.system == creation_attrs[:system]
       assert quality_rule.type == creation_attrs[:type]
       assert quality_rule.tag == creation_attrs[:tag]
@@ -48,7 +48,7 @@ defmodule TdDq.QualityRulesTest do
       assert %QualityRule{} = quality_rule
       assert quality_rule.quality_control_id == update_attrs[:quality_control_id]
       assert quality_rule.description == update_attrs[:description]
-      assert quality_rule.type_params == update_attrs[:type_params]
+      assert quality_rule.system_params == update_attrs[:system_params]
       assert quality_rule.system == update_attrs[:system]
       assert quality_rule.type == update_attrs[:type]
       assert quality_rule.tag == update_attrs[:tag]

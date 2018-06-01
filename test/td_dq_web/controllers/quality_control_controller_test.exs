@@ -15,22 +15,24 @@ defmodule TdDqWeb.QualityControlControllerTest do
   @create_fixture_attrs %{business_concept_id: "some business_concept_id",
     description: "some description", goal: 42, minimum: 42, name: "some name",
     population: "some population", priority: "some priority",
-    weight: 42, updated_by: Integer.mod(:binary.decode_unsigned("app-admin"), 100_000), principle: %{}}
+    weight: 42, updated_by: Integer.mod(:binary.decode_unsigned("app-admin"), 100_000), principle: %{},
+    type: "some type", type_params: %{}}
 
   @create_attrs %{business_concept_id: "some business_concept_id",
     description: "some description", goal: 42, minimum: 42, name: "some name",
-    population: "some population", priority: "some priority",
-    weight: 42, principle: %{}}
+    population: "some population", priority: "some priority", weight: 42, principle: %{},
+    type: "some type", type_params: %{}}
 
   @update_attrs %{business_concept_id: "some updated business_concept_id", description: "some updated description",
     goal: 43, minimum: 43, name: "some updated name", population: "some updated population",
     priority: "some updated priority", weight: 43, principle: %{}}
 
   @invalid_attrs %{business_concept_id: nil, description: nil, goal: nil, minimum: nil,
-    name: nil, population: nil, priority: nil, weight: nil, principle: nil}
+    name: nil, population: nil, priority: nil, weight: nil, principle: nil,
+    type: nil, type_params: nil}
 
   @comparable_fields ["id", "business_concept_id", "description", "goal", "minimum", "name",
-    "population", "priority", "type", "weight", "status", "version", "updated_by", "principle"]
+    "population", "priority", "weight", "status", "version", "updated_by", "principle", "type", "type_params"]
 
   @admin_user_name "app-admin"
 
@@ -104,7 +106,9 @@ defmodule TdDqWeb.QualityControlControllerTest do
         "status" => "defined",
         "version" => 1,
         "updated_by" => @create_fixture_attrs.updated_by,
-        "principle" => %{}
+        "principle" => %{},
+        "type" => "some type",
+        "type_params" => %{}
       }
     end
 
@@ -142,7 +146,9 @@ defmodule TdDqWeb.QualityControlControllerTest do
         "status" => "defined",
         "version" => 1,
         "updated_by" => @create_fixture_attrs.updated_by,
-        "principle" => %{}
+        "principle" => %{},
+        "type" => "some type",
+        "type_params" => %{}
       }
     end
 

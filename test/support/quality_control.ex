@@ -4,12 +4,14 @@ defmodule TdDqWeb.QualityControl do
   alias Poison, as: JSON
   import TdDqWeb.Router.Helpers
   import TdDqWeb.Authentication, only: :functions
+  import TdDqWeb.SupportCommon, only: :functions
 
   @endpoint TdDqWeb.Endpoint
 
   @test_to_api_create_alias %{"Field" => "field", "Business Concept ID" => "business_concept_id",
     "Name" => "name", "Description" => "description", "Weight" => "weight",
-    "Priority" => "priority", "Population" => "population", "Goal" => "goal", "Minimum" => "minimum"
+    "Priority" => "priority", "Population" => "population", "Goal" => "goal", "Minimum" => "minimum",
+    "Type" => "type", "Type Params" => "type_params"
   }
 
   @test_to_api_get_alias %{"Status" => "status", "Last User" => "updated_by", "Version" => "version", "Last Modification" => "inserted_at"}
@@ -34,7 +36,6 @@ defmodule TdDqWeb.QualityControl do
   def create_new_quality_control(token, table) do
     attrs = table
     |> field_value_to_api_attrs(@test_to_api_create_alias)
-
     attrs = attrs
     |> cast_to_int_attrs(@quality_control_integer_fields)
     quality_control_create(token, attrs)
@@ -70,10 +71,5 @@ defmodule TdDqWeb.QualityControl do
         )
         |> Enum.into(l2)
        end.()
-  end
-
-  defp field_value_to_api_attrs(table, key_alias_map) do
-    table
-    |> Enum.reduce(%{}, fn(x, acc) -> Map.put(acc, Map.get(key_alias_map, x."Field", x."Field"), x."Value") end)
   end
 end

@@ -19,6 +19,8 @@ Feature: Quality Controls
       | Population          | All clients who are older than 18                                                      |
       | Goal                | 98                                                                                     |
       | Minimum             | 80                                                                                     |
+      | Type                | Integer Values Range                                                                   |
+      | Type Params         | %-{ "Minimum Value": 18, "Maximum Value": 18 }                                         |
    Then the system returns a result with code "Created"
    And "my-user" is able to view quality control named "Field's Quality Control" with with following data:
      | Field               | Value                                                                                     |
@@ -32,3 +34,5 @@ Feature: Quality Controls
      | Goal                | 98                                                                                        |
      | Minimum             | 80                                                                                        |
      | Version             | 1                                                                                         |
+     | Type                | Integer Values Range                                                                      |
+     | Type Params         | %-{ "Minimum Value": 18, "Maximum Value": 18 }                                            |
