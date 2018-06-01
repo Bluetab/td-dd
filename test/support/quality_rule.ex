@@ -12,12 +12,11 @@ defmodule TdDqWeb.QualityRule do
     "Type Params" => "type_params", "System Params" => "system_params", "Name" => "name"}
 
   def create_new_quality_rule(token, %{"quality_control_id" => quality_control_id,
-    "type" => type, "params" => params}) do
-     params
-     |> field_value_to_api_attrs(@test_quality_rule_table_format)
-     |> Map.merge(%{"quality_control_id" => quality_control_id,
-        "type" => type})
-     |> (&create_quality_rule(token, &1)).()
+    "params" => params}) do
+       params
+       |> field_value_to_api_attrs(@test_quality_rule_table_format)
+       |> Map.merge(%{"quality_control_id" => quality_control_id})
+       |> (&create_quality_rule(token, &1)).()
   end
 
   defp create_quality_rule(token, params) do
