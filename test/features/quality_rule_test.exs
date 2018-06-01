@@ -1,4 +1,4 @@
-defmodule TdQd.QualtityRuleTypeTest do
+defmodule TdQd.QualtityRuleTest do
   use Cabbage.Feature, async: false, file: "quality_rule.feature"
   use TdDqWeb.ConnCase
   import TdDqWeb.Authentication, only: :functions
@@ -39,7 +39,7 @@ defmodule TdQd.QualtityRuleTypeTest do
     {:ok,  Map.merge(state, %{status_code: status_code})}
   end
 
-  defand ~r/^"(?<user_name>[^"]+)" is able to view a Quality Rule named "(?<qr_name>[^"]+)" with with following data:$/, %{user_name: user_name, qr_name: qr_name, table: _table}, state do
+  defand ~r/^"(?<user_name>[^"]+)" is able to view a Quality Rule named "(?<qr_name>[^"]+)" with following data:$/, %{user_name: user_name, qr_name: qr_name, table: _table}, state do
     assert user_name == state[:user_name]
     quality_rule_data = find_quality_rule(state[:token], %{name: qr_name})
     # TODO: check all params

@@ -8,7 +8,7 @@ Feature: Quality Controls
     | defined          | immplement        | implemented      |
 
   Scenario: Create a new Quality Control with only generic fields
-    Given user "my-user" is logged in the application
+    Given user "my-user" logged in the application
     When "my-user" tries to create a Quality Control with following data:
       | Field               | Value                                                                                  |
       | Business Concept ID | MYID_333                                                                               |

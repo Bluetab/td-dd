@@ -11,7 +11,7 @@ defmodule TdQd.QualtityControlTest do
     :ok
   end
 
-  defgiven ~r/^user "(?<user_name>[^"]+)" is logged in the application$/, %{user_name: user_name}, state do
+  defgiven ~r/^user "(?<user_name>[^"]+)" logged in the application$/, %{user_name: user_name}, state do
     token = get_user_token(user_name)
     {:ok,  Map.merge(state, %{status_code: 402, token: token, user_name: user_name})}
   end
