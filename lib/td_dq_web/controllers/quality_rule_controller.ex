@@ -55,9 +55,9 @@ defmodule TdDqWeb.QualityRuleController do
     {quality_rule_params, quality_rule_type} =
       add_quality_rule_type_id(quality_rule_params)
     with true <- can?(user, create(QualityRule)),
-         {:valid_quality_rule_type} <- verify_quality_rule_existance(quality_rule_type),
+         {:valid_quality_rule_type} <- verify_quality_rule_existence(quality_rule_type),
          {:ok_size_verification} <- verify_equals_sizes(quality_rule_params, quality_rule_type.params),
-         {:ok_existance_verification} <- verify_types_and_existance(quality_rule_params, quality_rule_type.params),
+         {:ok_existence_verification} <- verify_types_and_existence(quality_rule_params, quality_rule_type.params),
          {:ok, %QualityRule{} = quality_rule} <- QualityRules.create_quality_rule(quality_rule_params) do
       conn
       |> put_status(:created)
@@ -75,7 +75,7 @@ defmodule TdDqWeb.QualityRuleController do
     end
   end
 
-  defp verify_quality_rule_existance(quality_rule_type) do
+  defp verify_quality_rule_existence(quality_rule_type) do
     if quality_rule_type, do: {:valid_quality_rule_type},
     else: {:not_found_quality_rule_type}
   end
@@ -89,7 +89,7 @@ defmodule TdDqWeb.QualityRuleController do
   defp verify_equals_sizes(%{"system_params" => system_params}, _map_quality_rule_type) when system_params == %{}, do: {:ok_size_verification}
   defp verify_equals_sizes(_map_quality_rule, _map_quality_rule_type), do: {:no_system_params}
 
-  defp verify_types_and_existance(map_quality_rule_params,
+  defp verify_types_and_existence(map_quality_rule_params,
     map_quality_rule_type_params) do
       qr_tuple_list = Enum.map(map_quality_rule_params["system_params"], fn({k, v}) ->
         {k, get_type(v)}
@@ -98,7 +98,7 @@ defmodule TdDqWeb.QualityRuleController do
   end
 
   defp verify_key_type(_, _, {:error, error}), do: error
-  defp verify_key_type([], _), do: {:ok_existance_verification}
+  defp verify_key_type([], _), do: {:ok_existence_verification}
   defp verify_key_type([{k, v}|tail], system_params) do
     system_param = Enum.find(system_params, fn(param) ->
       param["name"] == k
