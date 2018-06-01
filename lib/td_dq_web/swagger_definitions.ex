@@ -23,6 +23,8 @@ defmodule TdDqWeb.SwaggerDefinitions do
           version :integer, "version number"
           updated_by :integer, "updated by user id"
           principle :object, "quality control principle"
+          type :string, "quality rule type"
+          type_params :object, "quality rule type_params"
           quality_rules Schema.ref(:QualityRules)
         end
       end,
@@ -31,13 +33,14 @@ defmodule TdDqWeb.SwaggerDefinitions do
         description "Quality Rule entity"
         properties do
           id :integer, "Quality Rule unique identifier", required: true
-          quality_control_id :integer, "Belongs to quality control", required: true
-          name :string, "Quality Rule name", required: true
           description :string, "Quality Rule description"
-          system :string, "Quality Rule system", required: true
+          name :string, "Quality Rule name", required: true
           type :string, "Quality Rule type", required: true
-          type_params :object, "Quality Rule parameters"
+          system :string, "Quality Rule system", required: true
+          system_params :object, "Quality Rule parameters", required: true
           tag :object, "Quality Rule tag"
+          quality_control_id :integer, "Belongs to quality control", required: true
+          quality_rule_type_id :integer, "Belongs to quality rule type", required: true
         end
       end,
       QualityRules: swagger_schema do
@@ -49,14 +52,19 @@ defmodule TdDqWeb.SwaggerDefinitions do
       QualityControlCreateProps: swagger_schema do
         properties do
           business_concept_id :string, "business concept id", required: true
-          name :string, "quality control name"
-          description :string, "description", required: true
-          weight :integer, "weight"
-          priority :string, "Priority (Medium,...)"
-          population :string, "population target description"
+          description :string, "description"
           goal :integer, "goal percentage (1-100)"
           minimum :integer, "minimum goal (1-100)"
+          name :string, "quality control name", required: true
+          population :string, "population target description"
+          priority :string, "Priority (Medium,...)"
+          weight :integer, "weight"
+          status :string, "weight"
+          version :integer, "weight"
+          updated_by :integer, "weight"
           principle :object, "quality control principle"
+          type :string, "weight"
+          type_params :object, "weight"
         end
       end,
       QualityControlCreate: swagger_schema do
@@ -95,24 +103,25 @@ defmodule TdDqWeb.SwaggerDefinitions do
         description "Quality Rule entity"
         properties do
           id :integer, "Quality Rule unique identifier", required: true
-          quality_control_id :integer, "Belongs to quality control", required: true
-          name :string, "Quality Rule name", required: true
           description :string, "Quality Rule description"
-          system :string, "Quality Rule system", required: true
+          name :string, "Quality Rule name", required: true
           type :string, "Quality Rule type", required: true
-          type_params :object, "Quality Rule parameters"
+          system :string, "Quality Rule system", required: true
+          system_params :object, "Quality Rule parameters", required: true
           tag :object, "Quality Rule tag"
+          quality_control_id :integer, "Belongs to quality control", required: true
+          quality_rule_type_id :integer, "Belongs to quality rule type", required: true
         end
       end,
       QualityRuleCreateProps: swagger_schema do
         properties do
-          quality_control_id :integer, "belongs to quality control", required: true
-          name :string, "Quality Rule name", required: true
           description :string, "Quality Rule description"
+          name :string, "Quality Rule name", required: true
+          type :string, "Quality Rule type name", required: true
           system :string, "Quality Rule system", required: true
-          type :string, "Quality Rule type", required: true
-          type_params :object, "Quality Rule parameters"
+          system_params :object, "Quality Rule parameters", required: true
           tag :object, "Quality Rule tag"
+          quality_control_id :integer, "belongs to quality control", required: true
         end
       end,
       QualityRuleCreate: swagger_schema do
@@ -122,11 +131,11 @@ defmodule TdDqWeb.SwaggerDefinitions do
       end,
       QualityRuleUpdateProps: swagger_schema do
         properties do
-          name :string, "Quality Rule name", required: true
           description :string, "Quality Rule description"
+          name :string, "Quality Rule name", required: true
+          type :string, "Quality Rule type name", required: true
           system :string, "Quality Rule system", required: true
-          type :string, "Quality Rule type", required: true
-          type_params :object, "Quality Rule parameters"
+          system_params :object, "Quality Rule parameters", required: true
           tag :object, "Quality Rule tag"
         end
       end,

@@ -528,22 +528,23 @@
     "QualityRuleUpdateProps": {
       "type": "object",
       "required": [
-        "type",
+        "system_params",
         "system",
+        "type",
         "name"
       ],
       "properties": {
-        "type_params": {
-          "type": "object",
-          "description": "Quality Rule parameters"
-        },
         "type": {
           "type": "string",
-          "description": "Quality Rule type"
+          "description": "Quality Rule type name"
         },
         "tag": {
           "type": "object",
           "description": "Quality Rule tag"
+        },
+        "system_params": {
+          "type": "object",
+          "description": "Quality Rule parameters"
         },
         "system": {
           "type": "string",
@@ -676,23 +677,24 @@
     "QualityRuleCreateProps": {
       "type": "object",
       "required": [
-        "type",
+        "quality_control_id",
+        "system_params",
         "system",
-        "name",
-        "quality_control_id"
+        "type",
+        "name"
       ],
       "properties": {
-        "type_params": {
-          "type": "object",
-          "description": "Quality Rule parameters"
-        },
         "type": {
           "type": "string",
-          "description": "Quality Rule type"
+          "description": "Quality Rule type name"
         },
         "tag": {
           "type": "object",
           "description": "Quality Rule tag"
+        },
+        "system_params": {
+          "type": "object",
+          "description": "Quality Rule parameters"
         },
         "system": {
           "type": "string",
@@ -724,17 +726,15 @@
       "type": "object",
       "title": "Quality Rule",
       "required": [
-        "type",
-        "system",
-        "name",
+        "quality_rule_type_id",
         "quality_control_id",
+        "system_params",
+        "system",
+        "type",
+        "name",
         "id"
       ],
       "properties": {
-        "type_params": {
-          "type": "object",
-          "description": "Quality Rule parameters"
-        },
         "type": {
           "type": "string",
           "description": "Quality Rule type"
@@ -743,9 +743,17 @@
           "type": "object",
           "description": "Quality Rule tag"
         },
+        "system_params": {
+          "type": "object",
+          "description": "Quality Rule parameters"
+        },
         "system": {
           "type": "string",
           "description": "Quality Rule system"
+        },
+        "quality_rule_type_id": {
+          "type": "integer",
+          "description": "Belongs to quality rule type"
         },
         "quality_control_id": {
           "type": "integer",
@@ -801,12 +809,32 @@
     "QualityControlCreateProps": {
       "type": "object",
       "required": [
-        "description",
+        "name",
         "business_concept_id"
       ],
       "properties": {
         "weight": {
           "type": "integer",
+          "description": "weight"
+        },
+        "version": {
+          "type": "integer",
+          "description": "weight"
+        },
+        "updated_by": {
+          "type": "integer",
+          "description": "weight"
+        },
+        "type_params": {
+          "type": "object",
+          "description": "weight"
+        },
+        "type": {
+          "type": "string",
+          "description": "weight"
+        },
+        "status": {
+          "type": "string",
           "description": "weight"
         },
         "priority": {
@@ -871,6 +899,14 @@
         "updated_by": {
           "type": "integer",
           "description": "updated by user id"
+        },
+        "type_params": {
+          "type": "object",
+          "description": "quality rule type_params"
+        },
+        "type": {
+          "type": "string",
+          "description": "quality rule type"
         },
         "status": {
           "type": "string",
