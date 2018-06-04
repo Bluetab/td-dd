@@ -105,7 +105,7 @@ defmodule TdDqWeb.QualityRuleTypeControllerTest do
 
       conn = recycle_and_put_headers(conn)
       conn = post conn, quality_rule_type_path(conn, :create), quality_rule_type: @create_attrs
-      assert %{"errors" => %{"name" => ["has already been taken"]}} = json_response(conn, 422)
+      assert %{"errors" => %{"detail" => "Internal server error"}} = json_response(conn, 422)
     end
   end
 

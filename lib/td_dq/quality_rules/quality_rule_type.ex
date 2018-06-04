@@ -24,7 +24,8 @@ defmodule TdDq.QualityRules.QualityRuleType do
   end
 
   defp validate_params(changeset) do
-    if get_change(changeset, :params) == %{} do
+    params = get_change(changeset, :params)
+    if params == %{} or params == nil do
       changeset
     else
       params = Map.take(get_change(changeset, :params), @available_params_keys)

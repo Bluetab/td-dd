@@ -7,8 +7,12 @@ Feature: Quality Controls
     |                  | create            | defined          |
     | defined          | immplement        | implemented      |
 
-  Scenario: Create a new Quality Control with only generic fields
+  Scenario: Create a new Quality Control with only generic fields when quality rule type exists
     Given user "my-user" logged in the application
+    And a existing Quality Rule Type with name "Integer Values Range" and the following parameters:
+      | Params                                                                                                        |
+      | {"type_params": [{"name": "Minimum Value", "type": "integer"}, {"name": "Maximum Value", "type": "integer"}]} |
+      | {"system_params": [{"name": "Table", "type": "string"}, {"name": "Field", "type": "string"}]}                 |
     When "my-user" tries to create a Quality Control with following data:
       | Field               | Value                                                                                  |
       | Business Concept ID | MYID_333                                                                               |
@@ -36,3 +40,19 @@ Feature: Quality Controls
      | Version             | 1                                                                                         |
      | Type                | Integer Values Range                                                                      |
      | Type Params         | %-{ "Minimum Value": 18, "Maximum Value": 18 }                                            |
+
+  Scenario: Create a new Quality Control with only generic fields when quality rule type does not exist
+    Given user "my-user" logged in the application
+    When "my-user" tries to create a Quality Control with following data:
+      | Field               | Value                                                                                  |
+      | Business Concept ID | MYID_333                                                                               |
+      | Name                | Field's Quality Control                                                                |
+      | Description         | In order to measure quality of this field we will check whether its values are correct |
+      | Weight              | 50                                                                                     |
+      | Priority            | Medium                                                                                 |
+      | Population          | All clients who are older than 18                                                      |
+      | Goal                | 98                                                                                     |
+      | Minimum             | 80                                                                                     |
+      | Type                | Integer Values Range                                                                   |
+      | Type Params         | %-{ "Minimum Value": 18, "Maximum Value": 18 }                                         |
+   Then the system returns a result with code "Unprocessable Entity"

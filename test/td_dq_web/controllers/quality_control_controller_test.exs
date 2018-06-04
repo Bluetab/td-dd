@@ -6,6 +6,7 @@ defmodule TdDqWeb.QualityControlControllerTest do
   alias TdDq.QualityControls.QualityControl
   alias TdDqWeb.ApiServices.MockTdAuditService
   import TdDqWeb.Authentication, only: :functions
+  import TdDq.Factory
 
   setup_all do
     start_supervised MockTdAuditService
@@ -16,7 +17,7 @@ defmodule TdDqWeb.QualityControlControllerTest do
     description: "some description", goal: 42, minimum: 42, name: "some name",
     population: "some population", priority: "some priority",
     weight: 42, updated_by: Integer.mod(:binary.decode_unsigned("app-admin"), 100_000), principle: %{},
-    type: "some type", type_params: %{}}
+    type: "Quality Control Type", type_params: %{}}
 
   @create_attrs %{business_concept_id: "some business_concept_id",
     description: "some description", goal: 42, minimum: 42, name: "some name",
@@ -37,6 +38,7 @@ defmodule TdDqWeb.QualityControlControllerTest do
   @admin_user_name "app-admin"
 
   def fixture(:quality_control) do
+    insert(:quality_rule_type)
     {:ok, quality_control} = QualityControls.create_quality_control(@create_fixture_attrs)
     quality_control
   end
@@ -85,6 +87,7 @@ defmodule TdDqWeb.QualityControlControllerTest do
   describe "create quality_control" do
     @tag authenticated_user: @admin_user_name
     test "renders quality_control when data is valid", %{conn: conn, swagger_schema: schema} do
+      insert(:quality_rule_type)
       conn = post conn, quality_control_path(conn, :create), quality_control: @create_fixture_attrs
       validate_resp_schema(conn, schema, "QualityControlResponse")
       assert %{"id" => id} = json_response(conn, 201)["data"]
@@ -107,7 +110,7 @@ defmodule TdDqWeb.QualityControlControllerTest do
         "version" => 1,
         "updated_by" => @create_fixture_attrs.updated_by,
         "principle" => %{},
-        "type" => "some type",
+        "type" => "Quality Control Type",
         "type_params" => %{}
       }
     end
@@ -147,7 +150,7 @@ defmodule TdDqWeb.QualityControlControllerTest do
         "version" => 1,
         "updated_by" => @create_fixture_attrs.updated_by,
         "principle" => %{},
-        "type" => "some type",
+        "type" => "Quality Control Type",
         "type_params" => %{}
       }
     end

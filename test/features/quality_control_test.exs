@@ -4,6 +4,7 @@ defmodule TdQd.QualtityControlTest do
   import TdDqWeb.Authentication, only: :functions
   import TdDqWeb.QualityControl, only: :functions
   import TdDqWeb.ResponseCode, only: :functions
+  import TdDqWeb.QualityRuleType, only: :functions
   alias TdDqWeb.ApiServices.MockTdAuditService
 
   setup_all do
@@ -34,6 +35,11 @@ defmodule TdQd.QualtityControlTest do
     |> cast_quality_control_integer_fields_plus_version
 
     assert_attrs(attrs, quality_control_data)
+  end
+
+  defand ~r/^a existing Quality Rule Type with name "(?<qr_name>[^"]+)" and the following parameters:$/,
+    %{qr_name: qr_name, table: table}, %{token: token} = _state do
+    {:ok, _status_code, _resp} = create_new_quality_rule_type(token, %{"name" => qr_name, "params" => table})
   end
 
   def assert_attr(attr, value, %{} = target) do

@@ -4,6 +4,10 @@ Feature: Quality Rules
 
   Scenario: Create a new Quality rule
     Given user "my-user" logged in the application
+    And a existing Quality Rule Type with name "Integer Values Range" and the following parameters:
+      | Params                                                                                                        |
+      | {"type_params": [{"name": "Minimum Value", "type": "integer"}, {"name": "Maximum Value", "type": "integer"}]} |
+      | {"system_params": [{"name": "Table", "type": "string"}, {"name": "Field", "type": "string"}]}                 |
     And a existing Quality Control with following data:
       | Field               | Value                                                                                  |
       | Business Concept ID | MYID_333                                                                               |
@@ -16,12 +20,6 @@ Feature: Quality Rules
       | Minimum             | 80                                                                                     |
       | Type                | Integer Values Range                                                                   |
       | Type Params         | %-{ "Minimum Value": 18, "Maximum Value": 50 }                                         |
-    And a existing Quality Rule Type with name "Integer Values Range" and the following parameters:
-      | Params        | Name                | Type       |
-      | Type Params   | Minimum Value       | integer    |
-      | Type Params   | Maximum Value       | integer    |
-      | System Params | Table               | string     |
-      | System Params | Field               | string     |
     When "my-user" tries to create a Quality Rule associated to Quality Control "Field's Quality Control" with following data:
       | Field               | Value                                                                                  |
       | Type                | Integer Values Range                                                                   |
@@ -40,6 +38,10 @@ Feature: Quality Rules
 
   Scenario: Create a new Quality rule whithout an associated Quality Rule Type
     Given user "my-user" logged in the application
+    And a existing Quality Rule Type with name "Integer Values Range" and the following parameters:
+      | Params                                                                                                        |
+      | {"type_params": [{"name": "Minimum Value", "type": "integer"}, {"name": "Maximum Value", "type": "integer"}]} |
+      | {"system_params": [{"name": "Table", "type": "string"}, {"name": "Field", "type": "string"}]}                 |
     And a existing Quality Control with following data:
       | Field               | Value                                                                                  |
       | Business Concept ID | MYID_333                                                                               |
@@ -62,6 +64,10 @@ Feature: Quality Rules
 
   Scenario: Create a new Quality rule which does not ths same numer of params as its Quality Rule Type
     Given user "my-user" logged in the application
+    And a existing Quality Rule Type with name "Integer Values Range" and the following parameters:
+      | Params                                                                                                        |
+      | {"type_params": [{"name": "Minimum Value", "type": "integer"}, {"name": "Maximum Value", "type": "integer"}]} |
+      | {"system_params": [{"name": "Table", "type": "string"}, {"name": "Field", "type": "string"}]}                 |
     And a existing Quality Control with following data:
       | Field               | Value                                                                                  |
       | Business Concept ID | MYID_333                                                                               |
@@ -74,12 +80,6 @@ Feature: Quality Rules
       | Minimum             | 80                                                                                     |
       | Type                | Integer Values Range                                                                   |
       | Type Params         | %-{ "Minimum Value": 18, "Maximum Value": 50 }                                         |
-    And a existing Quality Rule Type with name "Integer Values Range" and the following parameters:
-      | Params        | Name                | Type       |
-      | Type Params   | Minimum Value       | integer    |
-      | Type Params   | Maximum Value       | integer    |
-      | System Params | Table               | string     |
-      | System Params | Field               | string     |
     When "my-user" tries to create a Quality Rule associated to Quality Control "Field's Quality Control" with following data:
       | Field               | Value                                                                                  |
       | Type                | Integer Values Range                                                                   |
@@ -91,6 +91,10 @@ Feature: Quality Rules
 
   Scenario: Create a new Quality rule with a different System Param type to its Quality Rule Type
     Given user "my-user" logged in the application
+    And a existing Quality Rule Type with name "Integer Values Range" and the following parameters:
+      | Params                                                                                                        |
+      | {"type_params": [{"name": "Minimum Value", "type": "integer"}, {"name": "Maximum Value", "type": "integer"}]} |
+      | {"system_params": [{"name": "Table", "type": "string"}, {"name": "Field", "type": "string"}]}                 |
     And a existing Quality Control with following data:
       | Field               | Value                                                                                  |
       | Business Concept ID | MYID_333                                                                               |
@@ -103,12 +107,6 @@ Feature: Quality Rules
       | Minimum             | 80                                                                                     |
       | Type                | Integer Values Range                                                                   |
       | Type Params         | %-{ "Minimum Value": 18, "Maximum Value": 50 }                                         |
-    And a existing Quality Rule Type with name "Integer Values Range" and the following parameters:
-      | Params        | Name                | Type       |
-      | Type Params   | Minimum Value       | integer    |
-      | Type Params   | Maximum Value       | integer    |
-      | System Params | Table               | string     |
-      | System Params | Field               | string     |
     When "my-user" tries to create a Quality Rule associated to Quality Control "Field's Quality Control" with following data:
       | Field               | Value                                                                                  |
       | Type                | Integer Values Range                                                                   |
@@ -120,6 +118,10 @@ Feature: Quality Rules
 
   Scenario: Create a new Quality rule which params do not match with its Quality Rule Type params
     Given user "my-user" logged in the application
+    And a existing Quality Rule Type with name "Integer Values Range" and the following parameters:
+      | Params                                                                                                        |
+      | {"type_params": [{"name": "Minimum Value", "type": "integer"}, {"name": "Maximum Value", "type": "integer"}]} |
+      | {"system_params": [{"name": "Table", "type": "string"}, {"name": "Field", "type": "string"}]}                 |
     And a existing Quality Control with following data:
       | Field               | Value                                                                                  |
       | Business Concept ID | MYID_333                                                                               |
@@ -132,12 +134,6 @@ Feature: Quality Rules
       | Minimum             | 80                                                                                     |
       | Type                | Integer Values Range                                                                   |
       | Type Params         | %-{ "Minimum Value": 18, "Maximum Value": 50 }                                         |
-    And a existing Quality Rule Type with name "Integer Values Range" and the following parameters:
-      | Params        | Name                | Type       |
-      | Type Params   | Minimum Value       | integer    |
-      | Type Params   | Maximum Value       | integer    |
-      | System Params | Table               | string     |
-      | System Params | Field               | string     |
     When "my-user" tries to create a Quality Rule associated to Quality Control "Field's Quality Control" with following data:
       | Field               | Value                                                                                  |
       | Type                | Integer Values Range                                                                   |
