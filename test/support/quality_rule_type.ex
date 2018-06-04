@@ -7,11 +7,9 @@ defmodule TdDqWeb.QualityRuleType do
 
   @endpoint TdDqWeb.Endpoint
 
-  @test_quality_rule_type_create_alias %{"Name" => "name", "Type" => "type"}
-
   def create_new_quality_rule_type(token, %{"name" => name, "params" => params}) do
     params
-     |> field_value_to_entity_attrs(@test_quality_rule_type_create_alias, name)
+     |> table_to_entity_attrs(name)
      |> (&quality_rule_type_create(token, &1)).()
   end
 
@@ -42,18 +40,16 @@ defmodule TdDqWeb.QualityRuleType do
     {:ok, status_code, resp |> JSON.decode!}
   end
 
-  defp field_value_to_entity_attrs(table, key_alias_map, br_name) do
-    params = Enum.group_by(table, &(&1."Params"))
-    type_params =
-      params["Type Params"]
-      |> Enum.map(&(Map.delete(&1, :Params)))
-      |> Enum.map(&(for {k, v} <- &1 do {key_alias_map["#{k}"], v} end |> Map.new))
-    system_params =
-      params["System Params"]
-      |> Enum.map(&(Map.delete(&1, :Params)))
-      |> Enum.map(&(for {k, v} <- &1 do {key_alias_map["#{k}"], v} end |> Map.new))
+  defp table_to_entity_attrs(table, br_name) do
+    params =
+    table
+    |> Enum.reduce(%{}, fn(x, acc) ->
+        new = JSON.decode!(x."Params")
+        Map.merge(acc, new)
+    end)
+
     %{}
+    |> Map.put("params", params)
     |> Map.put("name", br_name)
-    |> Map.put("params", %{} |> Map.put("type_params", type_params) |> Map.put("system_params", system_params))
   end
 end

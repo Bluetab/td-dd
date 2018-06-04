@@ -5,6 +5,7 @@ defmodule TdDqWeb.QualityRuleTypeController do
   alias TdDq.QualityRules
   alias TdDq.QualityRules.QualityRuleType
   alias TdDqWeb.SwaggerDefinitions
+  alias TdDqWeb.ErrorView
 
   action_fallback TdDqWeb.FallbackController
 
@@ -40,6 +41,11 @@ defmodule TdDqWeb.QualityRuleTypeController do
       |> put_status(:created)
       |> put_resp_header("location", quality_rule_type_path(conn, :show, quality_rule_type))
       |> render("show.json", quality_rule_type: quality_rule_type)
+    else
+      _error ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> render(ErrorView, :"422.json")
     end
   end
 
