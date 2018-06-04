@@ -4,24 +4,19 @@ defmodule TdDqWeb.QualityControl do
   alias Poison, as: JSON
   import TdDqWeb.Router.Helpers
   import TdDqWeb.Authentication, only: :functions
+  import TdDqWeb.SupportCommon, only: :functions
 
   @endpoint TdDqWeb.Endpoint
 
-  @test_to_api_create_alias %{"Field" => "field", "Type" => "type", "Business Concept ID" => "business_concept_id",
+  @test_to_api_create_alias %{"Field" => "field", "Business Concept ID" => "business_concept_id",
     "Name" => "name", "Description" => "description", "Weight" => "weight",
-    "Priority" => "priority", "Population" => "population", "Goal" => "goal", "Minimum" => "minimum"
+    "Priority" => "priority", "Population" => "population", "Goal" => "goal", "Minimum" => "minimum",
+    "Type" => "type", "Type Params" => "type_params"
   }
 
   @test_to_api_get_alias %{"Status" => "status", "Last User" => "updated_by", "Version" => "version", "Last Modification" => "inserted_at"}
 
   @quality_control_integer_fields ["weight", "goal", "minimum"]
-
-  def quality_control_list(token) do
-    headers = get_header(token)
-    %HTTPoison.Response{status_code: status_code, body: resp} =
-      HTTPoison.get!(quality_control_url(@endpoint, :index), headers, [])
-    {:ok, status_code, resp |> JSON.decode!}
-  end
 
   def quality_control_create(token, quality_control_params) do
     headers = get_header(token)
@@ -31,19 +26,19 @@ defmodule TdDqWeb.QualityControl do
     {:ok, status_code, resp |> JSON.decode!}
   end
 
-  def quality_control_type_list(token) do
+  def quality_control_list(token) do
     headers = get_header(token)
     %HTTPoison.Response{status_code: status_code, body: resp} =
-      HTTPoison.get!(quality_control_type_url(@endpoint, :index), headers, [])
-      {:ok, status_code, resp |> JSON.decode!}
+      HTTPoison.get!(quality_control_url(@endpoint, :index), headers, [])
+    {:ok, status_code, resp |> JSON.decode!}
   end
 
-  def quality_control_type_parameters(token, qc_type_name) do
-    headers = get_header(token)
-    path = quality_control_type_parameter_url(@endpoint, :index, quality_control_type_name: qc_type_name)
-    %HTTPoison.Response{status_code: status_code, body: resp} =
-      HTTPoison.get!(path, headers, [])
-    {:ok, status_code, resp |> JSON.decode!}
+  def create_new_quality_control(token, table) do
+    attrs = table
+    |> field_value_to_api_attrs(@test_to_api_create_alias)
+    attrs = attrs
+    |> cast_to_int_attrs(@quality_control_integer_fields)
+    quality_control_create(token, attrs)
   end
 
   def find_quality_control(token, search_params) do
@@ -58,42 +53,12 @@ defmodule TdDqWeb.QualityControl do
     )
   end
 
-  def create_empty_quality_control_type(quality_control_type) do
-    json_schema = [%{"type_name": quality_control_type, "type_description": "", "type_parameters": nil}] |> JSON.encode!
-    file_name = Application.get_env(:td_dq, :qc_types_file)
-    file_path = Path.join(:code.priv_dir(:td_dq), file_name)
-    File.write!(file_path, json_schema, [:write, :utf8])
-  end
-
-  def create_new_quality_control(token, table) do
-    attrs = table
-    |> field_value_to_api_attrs(@test_to_api_create_alias)
-
-    attrs = attrs
-    |> cast_to_int_attrs(@quality_control_integer_fields)
-    quality_control_create(token, attrs)
-  end
-
   def quality_control_test_fields_to_api_create_and_get_alias(table) do
     table |> field_value_to_api_attrs(Map.merge(@test_to_api_create_alias, @test_to_api_get_alias))
   end
 
   def cast_quality_control_integer_fields_plus_version(table) do
     table |> cast_to_int_attrs(@quality_control_integer_fields ++ ["version"])
-  end
-
-  defp field_value_to_api_attrs(table, key_alias_map) do
-    attrs_map = table
-    |> Enum.reduce(%{}, fn(x, acc) -> Map.put(acc, Map.get(key_alias_map, x."Field", x."Field"), x."Value") end)
-    |> Map.split(Map.values(key_alias_map))
-    |> fn({f, v}) -> Map.put(f, "type_params", v) end.()
-
-    if attrs_map["type_params"] == %{} do
-      attrs_map = Map.put(attrs_map, "type_params", nil)
-      attrs_map
-    else
-      attrs_map
-    end
   end
 
   defp cast_to_int_attrs(m, keys) do
@@ -107,5 +72,4 @@ defmodule TdDqWeb.QualityControl do
         |> Enum.into(l2)
        end.()
   end
-
 end

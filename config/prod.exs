@@ -64,6 +64,3 @@ config :logger, :console, format: "[$level] $message\n"
 # Finally import the config/prod.secret.exs
 # which should be versioned separately.
 import_config "prod.secret.exs"
-
-config :td_dq, qc_types_file: "static/qc_types_prod.json"
-config :td_dq, qr_types_file: "static/qr_types_prod.json"

@@ -3,7 +3,7 @@ defmodule TdDq.QualityControls.QualityControl do
   use Ecto.Schema
   import Ecto.Changeset
   alias TdDq.QualityControls.QualityControl
-  alias Poison, as: JSON
+  alias TdDq.QualityRules.QualityRule
 
   @statuses ["defined"]
 
@@ -15,12 +15,14 @@ defmodule TdDq.QualityControls.QualityControl do
     field :name, :string
     field :population, :string
     field :priority, :string
-    field :type, :string
-    field :type_params, :map
     field :weight, :integer
     field :status, :string, default: "defined"
     field :version, :integer, default: 1
     field :updated_by, :integer
+    field :principle, :map
+    field :type, :string
+    field :type_params, :map
+    has_many :quality_rules, QualityRule
 
     timestamps()
   end
@@ -28,8 +30,21 @@ defmodule TdDq.QualityControls.QualityControl do
   @doc false
   def changeset(%QualityControl{} = quality_control, attrs) do
     quality_control
-    |> cast(attrs, [:type, :type_params, :business_concept_id, :name, :description, :weight, :priority, :population, :goal, :minimum, :status, :version, :updated_by])
-    |> validate_required([:type, :business_concept_id, :name, :description, :weight, :priority, :population, :goal, :minimum, :status, :version, :updated_by])
+    |> cast(attrs, [:business_concept_id,
+                    :name,
+                    :description,
+                    :weight,
+                    :priority,
+                    :population,
+                    :goal,
+                    :minimum,
+                    :status,
+                    :version,
+                    :updated_by,
+                    :principle,
+                    :type,
+                    :type_params])
+    |> validate_required([:business_concept_id, :name, :type])
   end
 
   def get_statuses do
@@ -39,13 +54,4 @@ defmodule TdDq.QualityControls.QualityControl do
   def defined_status do
     "defined"
   end
-
-  def get_quality_control_types do
-    file_name = Application.get_env(:td_dq, :qc_types_file)
-    file_path = Path.join(:code.priv_dir(:td_dq), file_name)
-    file_path
-    |> File.read!
-    |> JSON.decode!
-  end
-
 end

@@ -4,8 +4,6 @@ defmodule TdDqWeb.QualityRuleControllerTest do
   import TdDq.Factory
   import TdDqWeb.Authentication, only: :functions
 
-  alias Poison, as: JSON
-
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
@@ -23,8 +21,8 @@ defmodule TdDqWeb.QualityRuleControllerTest do
     @tag :admin_authenticated
     test "renders quality_rule when data is valid", %{conn: conn, swagger_schema: schema} do
       quality_control = insert(:quality_control)
-      creation_attrs = Map.from_struct(build(:quality_rule, quality_control_id: quality_control.id))
-      create_empty_quality_rule_types(creation_attrs[:type])
+      quality_rule_type = insert(:quality_rule_type)
+      creation_attrs = Map.from_struct(build(:quality_rule, quality_control_id: quality_control.id, quality_rule_type_id: quality_rule_type.id))
 
       conn = post conn, quality_rule_path(conn, :create), quality_rule: creation_attrs
       validate_resp_schema(conn, schema, "QualityRuleResponse")
@@ -38,7 +36,7 @@ defmodule TdDqWeb.QualityRuleControllerTest do
 
       assert creation_attrs[:quality_control_id] == json_response["quality_control_id"]
       assert creation_attrs[:description] == json_response["description"]
-      assert creation_attrs[:type_params] == json_response["type_params"]
+      assert creation_attrs[:system_params] == json_response["system_params"]
       assert creation_attrs[:system] == json_response["system"]
       assert creation_attrs[:type] == json_response["type"]
       assert creation_attrs[:tag] == json_response["tag"]
@@ -48,7 +46,6 @@ defmodule TdDqWeb.QualityRuleControllerTest do
     test "renders errors when data is invalid", %{conn: conn} do
       quality_control = insert(:quality_control)
       creation_attrs = Map.from_struct(build(:quality_rule, quality_control_id: quality_control.id, name: nil, system: nil))
-      create_empty_quality_rule_types(creation_attrs[:type])
       conn = post conn, quality_rule_path(conn, :create), quality_rule: creation_attrs
       assert json_response(conn, 422)["errors"] != %{}
     end
@@ -65,8 +62,6 @@ defmodule TdDqWeb.QualityRuleControllerTest do
       |> Map.put(:system, "New system")
       |> Map.put(:description, "New description")
 
-      create_empty_quality_rule_types(update_attrs[:type])
-
       conn = put conn, quality_rule_path(conn, :update, quality_rule), quality_rule: update_attrs
       validate_resp_schema(conn, schema, "QualityRuleResponse")
       assert %{"id" => id} = json_response(conn, 200)["data"]
@@ -79,9 +74,8 @@ defmodule TdDqWeb.QualityRuleControllerTest do
 
       assert update_attrs[:quality_control_id] == json_response["quality_control_id"]
       assert update_attrs[:description] == json_response["description"]
-      assert update_attrs[:type_params] == json_response["type_params"]
+      assert update_attrs[:system_params] == json_response["system_params"]
       assert update_attrs[:system] == json_response["system"]
-      assert update_attrs[:type] == json_response["type"]
       assert update_attrs[:tag] == json_response["tag"]
     end
 
@@ -92,7 +86,6 @@ defmodule TdDqWeb.QualityRuleControllerTest do
       update_attrs = update_attrs
       |> Map.put(:name, nil)
       |> Map.put(:system, nil)
-      create_empty_quality_rule_types(update_attrs[:type])
       conn = put conn, quality_rule_path(conn, :update, quality_rule), quality_rule: update_attrs
       assert json_response(conn, 422)["errors"] != %{}
     end
@@ -113,12 +106,4 @@ defmodule TdDqWeb.QualityRuleControllerTest do
       end
     end
   end
-
-  def create_empty_quality_rule_types(quality_rule_type) do
-    json_schema = [%{"type_name": quality_rule_type, "type_parameters": []}] |> JSON.encode!
-    file_name = Application.get_env(:td_dq, :qr_types_file)
-    file_path = Path.join(:code.priv_dir(:td_dq), file_name)
-    File.write!(file_path, json_schema, [:write, :utf8])
-  end
-
 end

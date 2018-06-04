@@ -12,8 +12,6 @@ defmodule TdDqWeb.QualityControlView do
 
   def render("quality_control.json", %{quality_control: quality_control}) do
     %{id: quality_control.id,
-      type: quality_control.type,
-      type_params: quality_control.type_params,
       business_concept_id: quality_control.business_concept_id,
       name: quality_control.name,
       description: quality_control.description,
@@ -26,7 +24,21 @@ defmodule TdDqWeb.QualityControlView do
       version: quality_control.version,
       updated_by: quality_control.updated_by,
       inserted_at: quality_control.inserted_at,
-      updated_at: quality_control.updated_at
+      updated_at: quality_control.updated_at,
+      principle: quality_control.principle,
+      type: quality_control.type,
+      type_params: quality_control.type_params
     }
+    |> add_quality_rules(quality_control)
+  end
+
+  defp add_quality_rules(quality_control, qc) do
+    case Ecto.assoc_loaded?(qc.quality_rules) do
+      true ->
+        quality_rules_array = Enum.map(qc.quality_rules, &(%{id: &1.id, name: &1.name, type: &1.type, system_params: &1.system_params}))
+        Map.put(quality_control, :quality_rules, quality_rules_array)
+      _ ->
+        quality_control
+    end
   end
 end

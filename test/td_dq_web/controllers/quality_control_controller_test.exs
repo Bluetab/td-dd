@@ -4,27 +4,35 @@ defmodule TdDqWeb.QualityControlControllerTest do
 
   alias TdDq.QualityControls
   alias TdDq.QualityControls.QualityControl
+  alias TdDqWeb.ApiServices.MockTdAuditService
   import TdDqWeb.Authentication, only: :functions
+
+  setup_all do
+    start_supervised MockTdAuditService
+    :ok
+  end
 
   @create_fixture_attrs %{business_concept_id: "some business_concept_id",
     description: "some description", goal: 42, minimum: 42, name: "some name",
-    population: "some population", priority: "some priority", type: "some type",
-    weight: 42, updated_by: Integer.mod(:binary.decode_unsigned("app-admin"), 100_000)}
+    population: "some population", priority: "some priority",
+    weight: 42, updated_by: Integer.mod(:binary.decode_unsigned("app-admin"), 100_000), principle: %{},
+    type: "some type", type_params: %{}}
 
   @create_attrs %{business_concept_id: "some business_concept_id",
     description: "some description", goal: 42, minimum: 42, name: "some name",
-    population: "some population", priority: "some priority", type: "some type",
-    weight: 42}
+    population: "some population", priority: "some priority", weight: 42, principle: %{},
+    type: "some type", type_params: %{}}
 
   @update_attrs %{business_concept_id: "some updated business_concept_id", description: "some updated description",
     goal: 43, minimum: 43, name: "some updated name", population: "some updated population",
-    priority: "some updated priority", type: "some updated type", weight: 43}
+    priority: "some updated priority", weight: 43, principle: %{}}
 
   @invalid_attrs %{business_concept_id: nil, description: nil, goal: nil, minimum: nil,
-    name: nil, population: nil, priority: nil, type: nil, weight: nil}
+    name: nil, population: nil, priority: nil, weight: nil, principle: nil,
+    type: nil, type_params: nil}
 
   @comparable_fields ["id", "business_concept_id", "description", "goal", "minimum", "name",
-    "population", "priority", "type", "weight", "status", "version", "updated_by"]
+    "population", "priority", "weight", "status", "version", "updated_by", "principle", "type", "type_params"]
 
   @admin_user_name "app-admin"
 
@@ -41,6 +49,15 @@ defmodule TdDqWeb.QualityControlControllerTest do
     @tag authenticated_user: @admin_user_name
     test "lists all quality_controls", %{conn: conn, swagger_schema: schema} do
       conn = get conn, quality_control_path(conn, :index)
+      validate_resp_schema(conn, schema, "QualityControlsResponse")
+      assert json_response(conn, 200)["data"] == []
+    end
+  end
+
+  describe "get_quality_controls_by_concept" do
+    @tag authenticated_user: @admin_user_name
+    test "lists all quality_controls of a concept", %{conn: conn, swagger_schema: schema} do
+      conn = get conn, quality_control_path(conn, :get_quality_controls_by_concept, "id")
       validate_resp_schema(conn, schema, "QualityControlsResponse")
       assert json_response(conn, 200)["data"] == []
     end
@@ -85,11 +102,13 @@ defmodule TdDqWeb.QualityControlControllerTest do
         "name" => "some name",
         "population" => "some population",
         "priority" => "some priority",
-        "type" => "some type",
         "weight" => 42,
         "status" => "defined",
         "version" => 1,
-        "updated_by" => @create_fixture_attrs.updated_by
+        "updated_by" => @create_fixture_attrs.updated_by,
+        "principle" => %{},
+        "type" => "some type",
+        "type_params" => %{}
       }
     end
 
@@ -123,11 +142,14 @@ defmodule TdDqWeb.QualityControlControllerTest do
         "name" => "some updated name",
         "population" => "some updated population",
         "priority" => "some updated priority",
-        "type" => "some updated type",
         "weight" => 43,
         "status" => "defined",
         "version" => 1,
-        "updated_by" => @create_fixture_attrs.updated_by}
+        "updated_by" => @create_fixture_attrs.updated_by,
+        "principle" => %{},
+        "type" => "some type",
+        "type_params" => %{}
+      }
     end
 
     @tag authenticated_user: @admin_user_name

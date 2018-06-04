@@ -6,9 +6,11 @@ defmodule TdDqWeb.QualityControlController do
   alias TdDq.QualityControls.QualityControl
   alias TdDqWeb.SwaggerDefinitions
   alias TdDqWeb.ErrorView
-  alias Poison, as: JSON
+  alias TdDq.Audit
 
   action_fallback TdDqWeb.FallbackController
+
+  @events %{create_quality_control: "create_quality_control"}
 
   def swagger_definitions do
     SwaggerDefinitions.quality_control_definitions()
@@ -25,6 +27,20 @@ defmodule TdDqWeb.QualityControlController do
     render(conn, "index.json", quality_controls: quality_controls)
   end
 
+  swagger_path :get_quality_controls_by_concept do
+    get "/quality_controls/concept/{id}"
+    description "List Quality Controls of a Business Concept"
+    parameters do
+      id :path, :string, "Business Concept ID", required: true
+    end
+    response 200, "OK", Schema.ref(:QualityControlsResponse)
+  end
+
+  def get_quality_controls_by_concept(conn, %{"id" => id}) do
+    quality_controls = QualityControls.list_concept_quality_controls(id)
+    render(conn, "index.json", quality_controls: quality_controls)
+  end
+
   swagger_path :create do
     post "/quality_controls"
     description "Creates a Quality Control"
@@ -37,7 +53,6 @@ defmodule TdDqWeb.QualityControlController do
   end
 
   def create(conn, %{"quality_control" => quality_control_params}) do
-
     quality_control_params =
       if conn.assigns.current_user do
         Map.put_new(quality_control_params, "updated_by", conn.assigns.current_user.id)
@@ -45,9 +60,11 @@ defmodule TdDqWeb.QualityControlController do
         quality_control_params
       end
 
-    with {:ok, %QualityControl{} = quality_control} <- QualityControls.create_quality_control(quality_control_params),
-         true <- validate_type_parameters(quality_control_params)
+    with {:ok, %QualityControl{} = quality_control} <- QualityControls.create_quality_control(quality_control_params)
     do
+      audit = %{"audit" => %{"resource_id" => quality_control.id, "resource_type" => "quality_control", "payload" => quality_control_params}}
+      Audit.create_event(conn, audit, @events.create_quality_control)
+
       conn
       |> put_status(:created)
       |> put_resp_header("location", quality_control_path(conn, :show, quality_control))
@@ -119,25 +136,4 @@ defmodule TdDqWeb.QualityControlController do
       send_resp(conn, :no_content, "")
     end
   end
-
-  defp get_type_parameters(type_name) do
-    file_name = Application.get_env(:td_dq, :qc_types_file)
-    file_path = Path.join(:code.priv_dir(:td_dq), file_name)
-
-    json = file_path
-    |> File.read!
-    |> JSON.decode!
-
-    Enum.find(json, &(&1["type_name"] == type_name))["type_parameters"]
-  end
-
-  defp validate_type_parameters(quality_control_params) do
-    type_parameters = get_type_parameters(quality_control_params["type"])
-    if type_parameters != nil do
-      length(type_parameters) == length(Map.keys(quality_control_params["type_params"]))
-    else
-      true
-    end
-  end
-  
 end
