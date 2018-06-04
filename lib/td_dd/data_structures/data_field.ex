@@ -5,6 +5,8 @@ defmodule TdDd.DataStructures.DataField do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataField
 
+  @data_field_modifiable_fields Application.get_env(:td_dd, :metadata)[:data_field_modifiable_fields]
+
   schema "data_fields" do
     field :business_concept_id, :string, default: nil
     field :description, :string, default: nil
@@ -23,7 +25,7 @@ defmodule TdDd.DataStructures.DataField do
   @doc false
   def update_changeset(%DataField{} = data_field, attrs) do
     data_field
-    |> cast(attrs, [:description, :last_change_at, :last_change_by])
+    |> cast(attrs, [:last_change_at, :last_change_by] ++ @data_field_modifiable_fields)
   end
 
   @doc false
