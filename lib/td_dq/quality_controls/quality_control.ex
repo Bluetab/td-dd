@@ -85,6 +85,10 @@ defmodule TdDq.QualityControls.QualityControl do
   end
 
   defp validata_params_length(changeset, qctp, tp) do
+    tp = case tp do
+      nil -> []
+      tp -> tp
+    end
     case length(Map.keys(qctp)) == length(tp) do
       true -> {:ok, changeset}
       false -> {:error, changeset |> add_error(:type_params, "Length of type params do not match: #{inspect(qctp)} - #{inspect(tp)}")}
