@@ -322,6 +322,33 @@
         "description": "List Quality Rule Types"
       }
     },
+    "/quality_controls/{id}/quality_rules": {
+      "get": {
+        "tags": [
+          "QualityRule"
+        ],
+        "summary": "",
+        "responses": {
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/QualityRulesResponse"
+            },
+            "description": "OK"
+          }
+        },
+        "parameters": [
+          {
+            "type": "integer",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Quality Control ID"
+          }
+        ],
+        "operationId": "TdDqWeb.QualityRuleController.get_quality_rules",
+        "description": "List Quality Rules"
+      }
+    },
     "/quality_controls/{id}": {
       "put": {
         "tags": [

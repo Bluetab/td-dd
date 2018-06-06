@@ -4,6 +4,8 @@ defmodule TdDqWeb.QualityRuleControllerTest do
   import TdDq.Factory
   import TdDqWeb.Authentication, only: :functions
 
+  @invalid_quality_control_id -1
+
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
@@ -104,6 +106,38 @@ defmodule TdDqWeb.QualityRuleControllerTest do
       assert_error_sent 404, fn ->
         get conn, quality_rule_path(conn, :show, quality_rule)
       end
+    end
+  end
+
+  describe "get_quality_rules" do
+    @tag :admin_authenticated
+    test "lists all quality_rules from a quality control", %{conn: conn, swagger_schema: schema} do
+      quality_control = insert(:quality_control)
+      quality_rule_type = insert(:quality_rule_type)
+      creation_attrs = Map.from_struct(build(:quality_rule, quality_control_id: quality_control.id, quality_rule_type_id: quality_rule_type.id))
+
+      conn = post conn, quality_rule_path(conn, :create), quality_rule: creation_attrs
+      validate_resp_schema(conn, schema, "QualityRuleResponse")
+      assert response(conn, 201)
+
+      conn = recycle_and_put_headers(conn)
+
+      conn = get conn, quality_control_quality_rule_path(conn, :get_quality_rules, quality_control.id)
+      validate_resp_schema(conn, schema, "QualityRulesResponse")
+      json_response = List.first(json_response(conn, 200)["data"])
+
+      assert creation_attrs[:quality_control_id] == json_response["quality_control_id"]
+      assert creation_attrs[:description] == json_response["description"]
+      assert creation_attrs[:system_params] == json_response["system_params"]
+      assert creation_attrs[:system] == json_response["system"]
+      assert creation_attrs[:type] == json_response["type"]
+      assert creation_attrs[:tag] == json_response["tag"]
+
+      conn = recycle_and_put_headers(conn)
+
+      conn = get conn, quality_control_quality_rule_path(conn, :get_quality_rules, @invalid_quality_control_id)
+      validate_resp_schema(conn, schema, "QualityRulesResponse")
+      assert json_response(conn, 200)["data"] == []
     end
   end
 end

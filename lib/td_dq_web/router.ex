@@ -26,7 +26,9 @@ defmodule TdDqWeb.Router do
     post "/quality_controls_results", QualityControlsResultsController, :upload
     get "/quality_controls_results", QualityControlsResultsController, :index
     get "/quality_controls/concept/:id", QualityControlController, :get_quality_controls_by_concept
-    resources "/quality_controls", QualityControlController, except: [:new, :edit]
+    resources "/quality_controls", QualityControlController, except: [:new, :edit] do
+      get "/quality_rules",  QualityRuleController, :get_quality_rules
+    end
     resources "/quality_rules", QualityRuleController, except: [:new, :edit]
     resources "/quality_rule_types", QualityRuleTypeController, except: [:new, :edit]
   end

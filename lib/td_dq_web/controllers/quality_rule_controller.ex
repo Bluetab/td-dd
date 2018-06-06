@@ -203,6 +203,33 @@ defmodule TdDqWeb.QualityRuleController do
     end
   end
 
+  swagger_path :get_quality_rules do
+    get "/quality_controls/{id}/quality_rules"
+    description "List Quality Rules"
+    parameters do
+      id :path, :integer, "Quality Control ID", required: true
+    end
+    response 200, "OK", Schema.ref(:QualityRulesResponse)
+  end
+
+  def get_quality_rules(conn, %{"quality_control_id" => id}) do
+    user = get_current_user(conn)
+    {quality_control_id, _} = Integer.parse(id)
+    with true <- can?(user, index(QualityRule)) do
+      quality_rules = QualityRules.list_quality_rules()
+      render(conn, "index.json", quality_rules: quality_rules |> Enum.filter(&(&1.quality_control_id == quality_control_id)))
+    else
+      false ->
+        conn
+        |> put_status(:forbidden)
+        |> render(ErrorView, :"403.json")
+      _error ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> render(ErrorView, :"422.json")
+    end
+  end
+
   defp add_quality_rule_type_id(%{"type" => qrt_name} = quality_rule_params) do
     qrt = QualityRules.get_quality_rule_type_by_name(qrt_name)
     case qrt do
