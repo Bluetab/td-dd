@@ -28,6 +28,20 @@ create_data_structure = fn(ou, system, group, name) ->
   })
 end
 
+create_data_field = fn(id, name) ->
+  Repo.insert!(%DataField{
+    business_concept_id: "concept",
+    description: "data field descripton",
+    last_change_at: DateTime.utc_now(),
+    last_change_by: 1234,
+    name: name,
+    nullable: true,
+    precision: "varchar",
+    type: "data field name",
+    data_structure_id: id
+  })
+end
+
 domains = ["Dominio1", "Dominio2", "Dominio3"]
 systems = ["s1", "s2", "s3"]
 groups = ["g1", "g2", "g3"]
@@ -37,25 +51,13 @@ Enum.each(domains, fn(domain) ->
   Enum.each(systems, fn(system) ->
     Enum.each(groups, fn(group) ->
       Enum.each(names, fn(name) ->
-        create_data_structure.(domain, "#{domain} #{system}",
+        structure = create_data_structure.(domain, "#{domain} #{system}",
                                        "#{domain} #{system} #{group}",
                                        "#{domain} #{system} #{group} #{name}")
+        Enum.each([1, 2, 3, 4 ,5, 6], fn(i) ->
+          create_data_field.(structure.id, "field #{Integer.to_string(i)} -- #{structure.id}")
+        end)
       end)
     end)
   end)
 end)
-
-#
-#
-#
-# Repo.insert!(%DataField{
-#   business_concept_id: "concept",
-#   description: "data field descripton",
-#   last_change_at: DateTime.utc_now(),
-#   last_change_by: 1234,
-#   name: "data field name",
-#   nullable: true,
-#   precision: "varchar",
-#   type: "data field name",
-#   data_structure_id: data_structure_1.id
-# })
