@@ -14,38 +14,48 @@ alias TdDd.DataStructures.DataField
 alias TdDd.Repo
 alias Ecto.Changeset
 
-data_structure_1 = Repo.insert!(%DataStructure{
-  description: "description 1",
-  group: "group 1",
-  last_change_at: DateTime.utc_now(),
-  last_change_by: 1234,
-  name: "name 1",
-  system: "system 1",
-  type: "type 1",
-  ou:   "Nombre del dominio",
-  lopd: "lopd 1"
-})
+create_data_structure = fn(ou, system, group, name) ->
+  Repo.insert!(%DataStructure{
+    description: "#{ou} #{system} #{group} #{name}",
+    group: group,
+    last_change_at: DateTime.utc_now(),
+    last_change_by: 1234,
+    name: name,
+    system: system,
+    type: "one",
+    ou:   ou,
+    lopd: "EM"
+  })
+end
 
-Repo.insert!(%DataField{
-  business_concept_id: "concept",
-  description: "data field descripton",
-  last_change_at: DateTime.utc_now(),
-  last_change_by: 1234,
-  name: "data field name",
-  nullable: true,
-  precision: "varchar",
-  type: "data field name",
-  data_structure_id: data_structure_1.id
-})
+domains = ["Dominio1", "Dominio2", "Dominio3"]
+systems = ["s1", "s2", "s3"]
+groups = ["g1", "g2", "g3"]
+names  = ["n1", "n2", "n3"]
 
-Repo.insert!(%DataStructure{
-  description: "description 2",
-  group: "group 2",
-  last_change_at: DateTime.utc_now(),
-  last_change_by: 1234,
-  name: "name 2",
-  system: "system 2",
-  type: "type 2",
-  ou:   "Nombre del dominio",
-  lopd: "lopd 2"
-})
+Enum.each(domains, fn(domain) ->
+  Enum.each(systems, fn(system) ->
+    Enum.each(groups, fn(group) ->
+      Enum.each(names, fn(name) ->
+        create_data_structure.(domain, "#{domain} #{system}",
+                                       "#{domain} #{system} #{group}",
+                                       "#{domain} #{system} #{group} #{name}")
+      end)
+    end)
+  end)
+end)
+
+#
+#
+#
+# Repo.insert!(%DataField{
+#   business_concept_id: "concept",
+#   description: "data field descripton",
+#   last_change_at: DateTime.utc_now(),
+#   last_change_by: 1234,
+#   name: "data field name",
+#   nullable: true,
+#   precision: "varchar",
+#   type: "data field name",
+#   data_structure_id: data_structure_1.id
+# })
