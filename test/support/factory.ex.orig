@@ -22,8 +22,11 @@ defmodule TdDd.Factory do
       last_change_by: 0,
       name: "some name",
       system: "some system",
-      metadata: %{"description" => "some description"},
+<<<<<<< HEAD
+      metadata: %{"description" => "some description"}
+=======
       ou: "My organization"
+>>>>>>> mx-business-concept-data-fields
     }
   end
 
