@@ -40,7 +40,7 @@ defmodule TdDdWeb.DataStructureController do
     case Map.get(params, "ou", nil) do
       nil -> []
       value -> value
-               |> String.split(",")
+               |> String.split("§")
                |> Enum.map(&(String.trim(&1)))
     end
   end
