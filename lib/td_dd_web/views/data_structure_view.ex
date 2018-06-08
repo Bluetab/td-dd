@@ -30,23 +30,24 @@ defmodule TdDdWeb.DataStructureView do
   end
 
   defp add_data_fields(data_structure_json, data_structure, users) do
-    case Ecto.assoc_loaded?(data_structure.data_fields) do
-      true ->
-        data_fields = Enum.reduce(data_structure.data_fields, [], fn(data_field, acc) ->
-          json = %{id: data_field.id,
-                   name: data_field.name,
-                   type: data_field.type,
-                   precision: data_field.precision,
-                   nullable: data_field.nullable,
-                   description: data_field.description,
-                   business_concept_id: data_field.business_concept_id,
-                   last_change_at: data_field.last_change_at,
-                   last_change_by: get_last_change_by_user_name(data_field.last_change_by, users),
-                   inserted_at: data_field.inserted_at,
-                   metadata: data_field.metadata}
-          [json|acc]
-        end)
-      _ -> []
+    data_fields =
+      case Ecto.assoc_loaded?(data_structure.data_fields) do
+        true ->
+          Enum.reduce(data_structure.data_fields, [], fn(data_field, acc) ->
+            json = %{id: data_field.id,
+                     name: data_field.name,
+                     type: data_field.type,
+                     precision: data_field.precision,
+                     nullable: data_field.nullable,
+                     description: data_field.description,
+                     business_concept_id: data_field.business_concept_id,
+                     last_change_at: data_field.last_change_at,
+                     last_change_by: get_last_change_by_user_name(data_field.last_change_by, users),
+                     inserted_at: data_field.inserted_at,
+                     metadata: data_field.metadata}
+            [json|acc]
+          end)
+        _ -> []
     end
     Map.put(data_structure_json, :data_fields, data_fields)
   end
