@@ -7,6 +7,8 @@ defmodule TdDq.QualityControls.QualityControl do
   alias TdDq.QualityRules
 
   @statuses ["defined"]
+  @datetime_format "%Y-%m-%d %H:%M:%S"
+  @date_format "%Y-%m-%d"
 
   schema "quality_controls" do
     field :business_concept_id, :string
@@ -116,9 +118,36 @@ defmodule TdDq.QualityControls.QualityControl do
   end
 
   defp get_type(value) when is_integer(value), do: "integer"
+  defp get_type(value) when is_number(value), do: "numeric"
   defp get_type(value) when is_float(value), do: "float"
   defp get_type(value) when is_list(value), do: "list"
   defp get_type(value) when is_boolean(value), do: "boolean"
-  defp get_type(_), do: "string"
+  defp get_type(value) do
+    case validate_date(value) do
+      {:ok, format} -> format
+      _ -> "string"
+    end
+  end
+
+  defp validate_date(value) do
+    case is_date?(value) do
+      {:ok, format} -> {:ok, format}
+      _ -> is_datetime?(value)
+    end
+  end
+
+  defp is_date?(value) do
+    case Timex.parse(value, @date_format, :strftime) do
+      {:ok, _} -> {:ok, "date"}
+      _ -> {:error, value}
+    end
+  end
+
+  defp is_datetime?(value) do
+    case Timex.parse(value, @datetime_format, :strftime) do
+      {:ok, _} -> {:ok, "datetime"}
+      _ -> {:error, value}
+    end
+  end
 
 end

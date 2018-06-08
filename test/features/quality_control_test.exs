@@ -4,7 +4,6 @@ defmodule TdQd.QualtityControlTest do
   import TdDqWeb.Authentication, only: :functions
   import TdDqWeb.QualityControl, only: :functions
   import TdDqWeb.ResponseCode, only: :functions
-  import TdDqWeb.QualityRuleType, only: :functions
   alias TdDqWeb.ApiServices.MockTdAuditService
 
   setup_all do
@@ -19,6 +18,17 @@ defmodule TdQd.QualtityControlTest do
 
   defwhen ~r/^"(?<user_name>[^"]+)" tries to create a Quality Control with following data:$/, %{user_name: user_name, table: table}, state do
     assert user_name == state[:user_name]
+    {:ok, status_code, _resp} = create_new_quality_control(state[:token], table)
+    {:ok,  Map.merge(state, %{status_code: status_code})}
+  end
+
+  defwhen ~r/^"(?<user_name>[^"]+)" tries to create a Quality Control of type (?<type>[^"]+) with following data and type_params (?<type_params>%-{.*}):$/, %{user_name: user_name, type: type, type_params: type_params, table: table}, state do
+    assert user_name == state[:user_name]
+    table =
+      table
+      ++ [%{Field: "Type", Value: type}]
+      ++ [%{Field: "Type Params", Value: type_params}]
+
     {:ok, status_code, _resp} = create_new_quality_control(state[:token], table)
     {:ok,  Map.merge(state, %{status_code: status_code})}
   end

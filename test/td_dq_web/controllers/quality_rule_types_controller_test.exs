@@ -23,7 +23,7 @@ defmodule TdDqWeb.QualityRuleTypeControllerTest do
     @tag :admin_authenticated
     test "lists all quality_rule_type", %{conn: conn} do
       conn = get conn, quality_rule_type_path(conn, :index)
-      assert json_response(conn, 200)["data"] == []
+      assert response(conn, 200)
     end
   end
 
