@@ -112,5 +112,7 @@ defmodule TdDq.QualityControls do
     |> where([v], v.business_concept_id == ^business_concept_id)
     |> order_by(desc: :business_concept_id)
     |> Repo.all()
+    |> Repo.preload(:quality_rules)
   end
+
 end
