@@ -2,6 +2,7 @@ stages:
   - build
   - test
   - deploy
+  - pushToECR
 
 build:
   stage: build
@@ -53,13 +54,7 @@ pushToECR:
     - export AWS_SECRET_ACCESS_KEY=$(echo $AWS_SECRET_ACCESS_KEY | sed -e "s/\//\\\\\//g")
     - export AWS_DEFAULT_REGION=$(echo $AWS_DEFAULT_REGION | sed -e "s/\//\\\\\//g")
     - docker build -t bluetab-truedat/$PROJECT_NAME:latest .
-    - docker run --rm \
-      -t $(tty &>/dev/null && echo "-i") \
-      -e "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}" \
-      -e "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}" \
-      -e "AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}" \
-      mesosphere/aws-cli \
-      ecr get-login --no-include-email --region $AWS_DEFAULT_REGION | awk '{ sub("\r$", ""); print }' > output
+    - docker run --rm -t $(tty &>/dev/null && echo "-i") -e "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}" -e "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}" -e "AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}" mesosphere/aws-cli ecr get-login --no-include-email --region $AWS_DEFAULT_REGION | awk '{ sub("\r$", ""); print }' > output
     - bash -f output
     - export ECR=$(cat output | egrep -o 'https?://[^ ]+' | awk -F/ '{print $3}')
     - docker tag bluetab-truedat/$PROJECT_NAME:latest $ECR/bluetab-truedat/$PROJECT_NAME:latest
