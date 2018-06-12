@@ -24,7 +24,7 @@ defmodule TdDdWeb.MetadataController do
       data_fields.csv: system, group, name, field name, type, descripiton, nullable, precision, business_concept_id
 
       curl -H "Content-Type: application/json" -X POST -d '{"user":{"user_name":"xxx","password":"xxx"}}' http://localhost:4001/api/sessions
-      curl -H "authorization: Bearer xxx" -F "data_structures=@data_structures.csv" -F "data_fields=@data_fields.csv"  http://localhost:8005/api/metadata
+      curl -H "authorization: Bearer xxx" -F "data_structures=@data_structures.csv" -F "data_fields=@data_fields.csv"  http://localhost:4005/api/td_dd/metadata
 
   """
   def upload(conn, params) do
