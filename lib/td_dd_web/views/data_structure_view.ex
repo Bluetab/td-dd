@@ -44,6 +44,7 @@ defmodule TdDdWeb.DataStructureView do
                      last_change_at: data_field.last_change_at,
                      last_change_by: get_last_change_by_user_name(data_field.last_change_by, users),
                      inserted_at: data_field.inserted_at,
+                     external_id: data_field.external_id,
                      metadata: data_field.metadata}
             [json|acc]
           end)

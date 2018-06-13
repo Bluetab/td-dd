@@ -784,6 +784,10 @@
         "data_field": {
           "type": "object",
           "properties": {
+            "external_id": {
+              "type": "string",
+              "description": "External ID"
+            },
             "description": {
               "type": "string",
               "description": "Data Field descrition"
@@ -825,6 +829,10 @@
             "name": {
               "type": "string",
               "description": "Data Field name"
+            },
+            "external_id": {
+              "type": "string",
+              "description": "External ID"
             },
             "description": {
               "type": "string",
@@ -896,6 +904,13 @@
           "type": "integer",
           "description": "Data Field unique identifier"
         },
+        "external_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Data Field External ID"
+        },
         "description": {
           "type": [
             "string",
@@ -928,6 +943,7 @@
         "last_change_at": "2010-04-17 14:00:00",
         "inserted_at": "2018-05-08T17:17:59.691460",
         "id": 123,
+        "external_id": "External ID",
         "description": "Data Field descrition",
         "data_structure_id": 11,
         "business_concept_id": "123456"

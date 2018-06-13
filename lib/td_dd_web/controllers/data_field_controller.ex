@@ -111,7 +111,6 @@ defmodule TdDdWeb.DataFieldController do
 
   def update(conn, %{"id" => id, "data_field" => data_field_params}) do
     data_field = DataStructures.get_data_field!(id)
-
     update_params = data_field_params
     |> Map.put("last_change_by", get_current_user_id(conn))
     |> Map.put("last_change_at", DateTime.utc_now())

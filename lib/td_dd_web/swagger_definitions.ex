@@ -102,6 +102,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
           last_change_at :string, "Data Field last updated at"
           inserted_at :string, "Data Field creation date"
           metadata :object, "Data Field data. Uploaded by background processes"
+          external_id [:string, :null], "Data Field External ID"
       end
         example %{
           id: 123,
@@ -116,7 +117,8 @@ defmodule TdDdWeb.SwaggerDefinitions do
           last_change_at: "2010-04-17 14:00:00",
           inserted_at: "2018-05-08T17:17:59.691460",
           metadata: %{"description" => "last description",
-                      "last_change_at" => "2018-05-08T17:17:59.691460"}
+                      "last_change_at" => "2018-05-08T17:17:59.691460"},
+          external_id: "External ID"
       }
       end,
       DataFieldCreate: swagger_schema do
@@ -130,6 +132,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
               description :string, "Data Field descrition"
               business_concept_id :string, "Asociated Business Concept Id"
               data_structure_id :integer, "Belongs to Data Structure", required: true
+              external_id :string, "External ID"
             end
           end)
         end
@@ -139,6 +142,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
           data_field (Schema.new do
             properties do
               description :string, "Data Field descrition"
+              external_id :string, "External ID"
             end
           end)
         end
