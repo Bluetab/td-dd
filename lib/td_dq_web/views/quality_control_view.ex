@@ -1,6 +1,7 @@
 defmodule TdDqWeb.QualityControlView do
   use TdDqWeb, :view
   alias TdDqWeb.QualityControlView
+  alias TdDqWeb.QualityRuleView
 
   def render("index.json", %{quality_controls: quality_controls}) do
     %{data: render_many(quality_controls, QualityControlView, "quality_control.json")}
@@ -35,7 +36,9 @@ defmodule TdDqWeb.QualityControlView do
   defp add_quality_rules(quality_control, qc) do
     case Ecto.assoc_loaded?(qc.quality_rules) do
       true ->
-        quality_rules_array = Enum.map(qc.quality_rules, &(%{id: &1.id, name: &1.name, type: &1.type, system_params: &1.system_params}))
+        quality_rules_array = Enum.map(qc.quality_rules, fn(q_r) ->
+          QualityRuleView.render("quality_rule.json", %{quality_rule: q_r})
+        end)
         Map.put(quality_control, :quality_rules, quality_rules_array)
       _ ->
         quality_control
