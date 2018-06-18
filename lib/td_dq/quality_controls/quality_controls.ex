@@ -20,6 +20,7 @@ defmodule TdDq.QualityControls do
   """
   def list_quality_controls do
     Repo.all(QualityControl)
+    |> Repo.preload(:quality_rules)
   end
 
   @doc """

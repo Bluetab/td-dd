@@ -8,7 +8,7 @@ defmodule TdDqWeb.QualityControlsResultsController do
 
   @quality_controls_results_query  ~S"""
     INSERT INTO quality_controls_results ("business_concept_id", "quality_control_name", "system", "group", "structure_name", "field_name", "date", "result", inserted_at, updated_at)
-    VALUES ($1, $5, $8, $4, $7, $3, $2, $6, $2, $2)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $7, $7)
   """
   @quality_controls_results_param "quality_controls_results"
 
@@ -42,10 +42,12 @@ defmodule TdDqWeb.QualityControlsResultsController do
 
     quality_controls_results_upload_path
     |> File.stream!
-    |> CSV.decode!
+    |> Stream.drop(1)
+    |> CSV.decode!(separator: ?;)
     |> Enum.each(fn(data) ->
-      data = List.update_at(data, 1, fn(x) -> Timex.to_datetime(Timex.parse!(x, "{YYYY}-{0M}-{D}")) end)
-      data = List.update_at(data, 5, fn(x) -> String.to_integer(x) end)
+      IO.inspect(data)
+      data = List.update_at(data, 6, fn(x) -> Timex.to_datetime(Timex.parse!(x, "{YYYY}-{0M}-{D}")) end)
+      data = List.update_at(data, 7, fn(x) -> String.to_integer(x) end)
       SQL.query!(Repo, @quality_controls_results_query, data)
     end)
   end
