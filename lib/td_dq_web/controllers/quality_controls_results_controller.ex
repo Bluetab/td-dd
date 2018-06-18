@@ -45,7 +45,6 @@ defmodule TdDqWeb.QualityControlsResultsController do
     |> Stream.drop(1)
     |> CSV.decode!(separator: ?;)
     |> Enum.each(fn(data) ->
-      IO.inspect(data)
       data = List.update_at(data, 6, fn(x) -> Timex.to_datetime(Timex.parse!(x, "{YYYY}-{0M}-{D}")) end)
       data = List.update_at(data, 7, fn(x) -> String.to_integer(x) end)
       SQL.query!(Repo, @quality_controls_results_query, data)
