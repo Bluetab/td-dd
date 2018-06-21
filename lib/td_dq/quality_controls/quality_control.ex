@@ -3,8 +3,8 @@ defmodule TdDq.QualityControls.QualityControl do
   use Ecto.Schema
   import Ecto.Changeset
   alias TdDq.QualityControls.QualityControl
-  alias TdDq.QualityRules.QualityRule
   alias TdDq.QualityRules
+  alias TdDq.QualityRules.QualityRule
 
   @statuses ["defined"]
   @datetime_format "%Y-%m-%d %H:%M:%S"

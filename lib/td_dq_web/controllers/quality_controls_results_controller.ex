@@ -3,8 +3,8 @@ defmodule TdDqWeb.QualityControlsResultsController do
   use TdDqWeb, :controller
 
   alias Ecto.Adapters.SQL
-  alias TdDq.Repo
   alias TdDq.QualityControls
+  alias TdDq.Repo
 
   @quality_controls_results_query  ~S"""
     INSERT INTO quality_controls_results ("business_concept_id", "quality_control_name", "system", "group", "structure_name", "field_name", "date", "result", inserted_at, updated_at)

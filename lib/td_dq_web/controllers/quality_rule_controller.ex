@@ -17,7 +17,6 @@ defmodule TdDqWeb.QualityRuleController do
   end
 
   swagger_path :index do
-    get "/quality_rules"
     description "List Quality Rules"
     response 200, "OK", Schema.ref(:QualityRulesResponse)
   end
@@ -40,7 +39,6 @@ defmodule TdDqWeb.QualityRuleController do
   end
 
   swagger_path :create do
-    post "/quality_rules"
     description "Creates a Quality Rule"
     produces "application/json"
     parameters do
@@ -117,7 +115,6 @@ defmodule TdDqWeb.QualityRuleController do
   defp get_type(_), do: "string"
 
   swagger_path :show do
-    get "/quality_rules/{id}"
     description "Show Quality Rule"
     produces "application/json"
     parameters do
@@ -145,7 +142,6 @@ defmodule TdDqWeb.QualityRuleController do
   end
 
   swagger_path :update do
-    put "/quality_rules/{id}"
     description "Updates Quality Rule"
     produces "application/json"
     parameters do
@@ -175,7 +171,6 @@ defmodule TdDqWeb.QualityRuleController do
   end
 
   swagger_path :delete do
-    delete "/quality_rules/{id}"
     description "Delete Quality Rule"
     produces "application/json"
     parameters do
@@ -204,7 +199,6 @@ defmodule TdDqWeb.QualityRuleController do
   end
 
   swagger_path :get_quality_rules do
-    get "/quality_controls/{id}/quality_rules"
     description "List Quality Rules"
     parameters do
       id :path, :integer, "Quality Control ID", required: true

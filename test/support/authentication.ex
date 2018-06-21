@@ -4,8 +4,8 @@ defmodule TdDqWeb.Authentication do
   add auth headers to requests
   """
   alias Phoenix.ConnTest
-  alias TdDq.Auth.Guardian
   alias TdDq.Accounts.User
+  alias TdDq.Auth.Guardian
   import Plug.Conn
   @headers {"Content-type", "application/json"}
 

@@ -14,8 +14,8 @@ defmodule TdDqWeb.ConnCase do
   """
 
   use ExUnit.CaseTemplate
-  alias Phoenix.ConnTest
   alias Ecto.Adapters.SQL.Sandbox
+  alias Phoenix.ConnTest
   import TdDqWeb.Authentication, only: :functions
 
   using do

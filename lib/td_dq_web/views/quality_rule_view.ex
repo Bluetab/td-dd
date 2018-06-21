@@ -11,7 +11,8 @@ defmodule TdDqWeb.QualityRuleView do
   end
 
   def render("quality_rule.json", %{quality_rule: quality_rule}) do
-    %{id: quality_rule.id,
+    %{
+      id: quality_rule.id,
       quality_control_id: quality_rule.quality_control_id,
       quality_rule_type_id: quality_rule.quality_rule_type_id,
       name: quality_rule.name,
@@ -28,9 +29,16 @@ defmodule TdDqWeb.QualityRuleView do
   defp add_quality_rule_type(quality_rule, qr) do
     case Ecto.assoc_loaded?(qr.quality_rule_type) do
       true ->
-        quality_rule_type = %{id: qr.quality_rule_type.id, name: qr.quality_rule_type.name, params: qr.quality_rule_type.params}
+        quality_rule_type = %{
+          id: qr.quality_rule_type.id,
+          name: qr.quality_rule_type.name,
+          params: qr.quality_rule_type.params
+        }
+
         Map.put(quality_rule, :quality_rule_type, quality_rule_type)
-      _ -> quality_rule
+
+      _ ->
+        quality_rule
     end
   end
 
@@ -39,7 +47,9 @@ defmodule TdDqWeb.QualityRuleView do
       true ->
         quality_control = %{id: qr.quality_control.id, name: qr.quality_control.name}
         Map.put(quality_rule, :quality_control, quality_control)
-      _ -> quality_rule
+
+      _ ->
+        quality_rule
     end
   end
 end

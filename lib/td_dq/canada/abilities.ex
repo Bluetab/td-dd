@@ -1,8 +1,8 @@
 defmodule TdDq.Canada.Abilities do
   @moduledoc false
   alias TdDq.Accounts.User
-  alias TdDq.QualityRules.QualityRule
   alias TdDq.Canada.QualityRuleAbilities
+  alias TdDq.QualityRules.QualityRule
 
   defimpl Canada.Can, for: User do
 
