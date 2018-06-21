@@ -15,10 +15,10 @@ defmodule TdDdWeb.ConnCase do
 
   use ExUnit.CaseTemplate
 
-  alias TdDdWeb.Router.Helpers
+  alias Ecto.Adapters.SQL.Sandbox
   alias Phoenix.ConnTest
   alias TdDdWeb.Endpoint
-  alias Ecto.Adapters.SQL.Sandbox
+  alias TdDdWeb.Router.Helpers
   import TdDdWeb.Authentication, only: :functions
 
   using do

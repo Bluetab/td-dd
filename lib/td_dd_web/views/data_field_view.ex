@@ -1,8 +1,8 @@
 defmodule TdDdWeb.DataFieldView do
   use TdDdWeb, :view
-  alias TdDdWeb.DataFieldView
-  alias TdDd.Utils.CollectionUtils
   alias TdDd.Accounts.User
+  alias TdDd.Utils.CollectionUtils
+  alias TdDdWeb.DataFieldView
 
   def render("index.json", %{data_fields: data_fields, users: users}) do
     %{data: render_many(data_fields, DataFieldView, "data_field.json", %{users: users})}

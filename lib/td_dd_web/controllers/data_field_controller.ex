@@ -2,12 +2,12 @@ defmodule TdDdWeb.DataFieldController do
   use TdDdWeb, :controller
   use PhoenixSwagger
 
+  alias TdDd.Audit
   alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataField
   alias TdDdWeb.ErrorView
   alias TdDdWeb.SwaggerDefinitions
-  alias TdDd.Audit
 
   action_fallback TdDdWeb.FallbackController
 

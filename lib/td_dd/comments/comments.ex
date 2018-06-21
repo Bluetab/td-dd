@@ -103,6 +103,11 @@ defmodule TdDd.Comments do
   end
 
   def get_comment_by_resource(resource_type, resource_id) do
-    Repo.one(from comments in Comment, where: comments.resource_type == ^resource_type and comments.resource_id == ^resource_id)
+    Repo.one(
+      from(
+        comments in Comment,
+        where: comments.resource_type == ^resource_type and comments.resource_id == ^resource_id
+      )
+    )
   end
 end

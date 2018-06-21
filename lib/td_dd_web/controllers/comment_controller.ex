@@ -2,11 +2,11 @@ defmodule TdDdWeb.CommentController do
   use TdDdWeb, :controller
   use PhoenixSwagger
 
+  alias Guardian.Plug, as: GuardianPlug
+  alias TdDd.Audit
   alias TdDd.Comments
   alias TdDd.Comments.Comment
   alias TdDdWeb.SwaggerDefinitions
-  alias TdDd.Audit
-  alias Guardian.Plug, as: GuardianPlug
 
   action_fallback TdDdWeb.FallbackController
 

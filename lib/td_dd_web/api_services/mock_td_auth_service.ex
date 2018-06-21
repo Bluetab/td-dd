@@ -10,11 +10,17 @@ defmodule TdDdWeb.ApiServices.MockTdAuthService do
   end
 
   def set_users(user_list) do
-    Agent.update(MockTdAuthService, fn(_) -> user_list end)
+    Agent.update(MockTdAuthService, fn _ -> user_list end)
   end
 
   def create_user(%{"user" => %{user_name: user_name, is_admin: is_admin, password: password}}) do
-    new_user = %User{id: User.gen_id_from_user_name(user_name), user_name: user_name, password: password, is_admin: is_admin}
+    new_user = %User{
+      id: User.gen_id_from_user_name(user_name),
+      user_name: user_name,
+      password: password,
+      is_admin: is_admin
+    }
+
     Agent.update(MockTdAuthService, &(&1 ++ [new_user]))
     new_user
   end
@@ -24,10 +30,10 @@ defmodule TdDdWeb.ApiServices.MockTdAuthService do
   end
 
   def search(%{"ids" => ids}) do
-    Enum.filter(index(), fn(user) -> Enum.find(ids, &(&1 == user.id)) != nil end)
+    Enum.filter(index(), fn user -> Enum.find(ids, &(&1 == user.id)) != nil end)
   end
 
   def index do
-    Agent.get(MockTdAuthService, &(&1)) || []
+    Agent.get(MockTdAuthService, & &1) || []
   end
 end
