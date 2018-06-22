@@ -20,6 +20,7 @@ RUN mix local.hex --force
 RUN mix local.rebar --force
 
 RUN mix deps.get
+RUN mix compile
 RUN MIX_ENV=${MIX_ENV} mix phx.swagger.generate priv/static/swagger.json
 
 RUN mix release --env=${MIX_ENV}
