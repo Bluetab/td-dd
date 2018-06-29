@@ -7,10 +7,11 @@ defmodule TdDqWeb.QualityControlController do
   alias TdDq.QualityControls.QualityControl
   alias TdDqWeb.ErrorView
   alias TdDqWeb.SwaggerDefinitions
+  alias Poison, as: JSON
 
   action_fallback(TdDqWeb.FallbackController)
 
-  @events %{create_quality_control: "create_quality_control"}
+  @events %{create_quality_control: "create_quality_control", delete_quality_control: "delete_quality_control"}
 
   def swagger_definitions do
     SwaggerDefinitions.quality_control_definitions()
@@ -147,6 +148,21 @@ defmodule TdDqWeb.QualityControlController do
     quality_control = QualityControls.get_quality_control!(id)
 
     with {:ok, %QualityControl{}} <- QualityControls.delete_quality_control(quality_control) do
+
+      quality_control_params = quality_control
+          |> Map.from_struct
+          |> Map.delete(:__meta__)
+          |> JSON.encode!
+
+      audit = %{
+        "audit" => %{
+          "resource_id" => quality_control.id,
+          "resource_type" => "quality_control",
+          "payload" => quality_control_params
+        }
+      }
+
+      Audit.create_event(conn, audit, @events.delete_quality_control)
       send_resp(conn, :no_content, "")
     end
   end
