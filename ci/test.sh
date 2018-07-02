@@ -17,6 +17,7 @@ mix deps.clean --all
 echo "local rebar executed"
 echo "Downloading deps"
 mix deps.get
+mix phx.swagger.generate priv/static/swagger.json
 echo "Executing credo"
 mix credo --strict || exit 1
 echo "Starting tests"
