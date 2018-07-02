@@ -7,7 +7,6 @@ defmodule TdDqWeb.QualityControlController do
   alias TdDq.QualityControls.QualityControl
   alias TdDqWeb.ErrorView
   alias TdDqWeb.SwaggerDefinitions
-  alias Poison, as: JSON
 
   action_fallback(TdDqWeb.FallbackController)
 
@@ -152,7 +151,6 @@ defmodule TdDqWeb.QualityControlController do
       quality_control_params = quality_control
           |> Map.from_struct
           |> Map.delete(:__meta__)
-          |> JSON.encode!
 
       audit = %{
         "audit" => %{
