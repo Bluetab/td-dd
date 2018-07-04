@@ -12,6 +12,8 @@ defmodule TdDdWeb.Router do
 
   scope "/api", TdDdWeb do
     pipe_through :api
+    get  "/ping", PingController, :ping
+    post "/echo", EchoController, :echo
   end
 
   scope "/api", TdDdWeb do
