@@ -18,6 +18,8 @@ defmodule TdDqWeb.Router do
 
   scope "/api", TdDqWeb do
     pipe_through :api
+    get  "/ping", PingController, :ping
+    post "/echo", EchoController, :echo
   end
 
   scope "/api", TdDqWeb do
