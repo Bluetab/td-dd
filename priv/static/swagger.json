@@ -16,6 +16,28 @@
     "http"
   ],
   "paths": {
+    "/search/reindex_all": {
+      "get": {
+        "tags": [
+          "Search"
+        ],
+        "summary": "",
+        "responses": {
+          "500": {
+            "description": "Client Error"
+          },
+          "200": {
+            "description": "OK"
+          }
+        },
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [],
+        "operationId": "TdDdWeb.SearchController.reindex_all",
+        "description": "Reindex all ES indexes with DB content"
+      }
+    },
     "/data_structures/{id}": {
       "patch": {
         "tags": [

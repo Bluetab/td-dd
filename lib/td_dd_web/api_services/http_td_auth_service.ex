@@ -75,4 +75,18 @@ defmodule TdDdWeb.ApiServices.HttpTdAuthService do
 
     users
   end
+
+  def get_user(id) do
+    token = get_api_user_token()
+
+    headers = ["Authorization": "Bearer #{token}", "Content-Type": "application/json", "Accept": "Application/json; Charset=utf-8"]
+    %HTTPoison.Response{status_code: status_code, body: resp} = HTTPoison.get!("#{get_users_path()}/#{id}", headers, [])
+    case status_code do
+      200 ->
+        json_user = resp |> JSON.decode!
+        json_user = json_user["data"]
+        %User{} |> Map.merge(CollectionUtils.to_struct(User, json_user))
+      _ -> nil
+    end
+  end
 end

@@ -56,6 +56,12 @@ config :td_dd, :auth_service, api_service: TdDdWeb.ApiServices.HttpTdAuthService
   auth_port: "4001",
   auth_domain: ""
 
+config :td_dd, :elasticsearch,
+  search_service: TdDd.Search,
+  es_host: "localhost",
+  es_port: 9200,
+  type_name: "doc"
+
 config :td_dd, :audit_service, api_service: TdDdWeb.ApiServices.HttpTdAuditService,
   audit_host: "localhost",
   audit_port: "4007",

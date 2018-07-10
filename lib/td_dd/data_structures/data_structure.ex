@@ -4,7 +4,11 @@ defmodule TdDd.DataStructures.DataStructure do
   import Ecto.Changeset
   alias TdDd.DataStructures.DataField
   alias TdDd.DataStructures.DataStructure
+  alias TdBg.Searchable
 
+  @behaviour Searchable
+
+  @td_auth_api Application.get_env(:td_dd, :auth_service)[:api_service]
   @data_structure_modifiable_fields Application.get_env(:td_dd, :metadata)[
                                       :data_structure_modifiable_fields
                                     ]
@@ -53,5 +57,30 @@ defmodule TdDd.DataStructures.DataStructure do
     |> validate_length(:type, max: 255)
     |> validate_length(:ou, max: 255)
     |> validate_length(:lopd, max: 255)
+  end
+
+  def search_fields(%DataStructure{last_change_by: last_change_by_id} = structure) do
+    # TODO: Cache user list for indexing instead of querying for every document
+    last_change_by = case @td_auth_api.get_user(last_change_by_id) do
+      nil -> %{}
+      user -> user |> Map.take([:id, :user_name, :full_name])
+    end
+
+    %{
+      id: structure.id,
+      description: structure.description,
+      group: structure.group,
+      last_change_at: structure.last_change_at,
+      last_change_by: last_change_by,
+      lopd: structure.lopd,
+      name: structure.name,
+      ou: structure.ou,
+      system: structure.system,
+      type: structure.type,
+    }
+  end
+
+  def index_name do
+    "data_structure"
   end
 end

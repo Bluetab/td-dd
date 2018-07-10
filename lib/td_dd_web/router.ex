@@ -28,6 +28,8 @@ defmodule TdDdWeb.Router do
     end
     resources "/data_fields", DataFieldController, except: [:new, :edit]
     resources "/comments", CommentController, except: [:new, :edit]
+
+    get "/search/reindex_all", SearchController, :reindex_all
   end
 
   scope "/api/swagger" do
