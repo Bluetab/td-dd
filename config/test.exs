@@ -31,6 +31,12 @@ config :td_dd, :auth_service, api_service: TdDdWeb.ApiServices.MockTdAuthService
   auth_port: "4001",
   auth_domain: ""
 
+config :td_dd, :elasticsearch,
+  search_service: TdDd.Search.MockSearch,
+  es_host: "localhost",
+  es_port: 9200,
+  type_name: "doc"
+
 config :td_dd, :audit_service, api_service: TdDdWeb.ApiServices.MockTdAuditService,
   audit_host: "localhost",
   audit_port: "4007",

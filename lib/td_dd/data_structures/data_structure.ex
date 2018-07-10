@@ -4,7 +4,7 @@ defmodule TdDd.DataStructures.DataStructure do
   import Ecto.Changeset
   alias TdDd.DataStructures.DataField
   alias TdDd.DataStructures.DataStructure
-  alias TdBg.Searchable
+  alias TdDd.Searchable
 
   @behaviour Searchable
 

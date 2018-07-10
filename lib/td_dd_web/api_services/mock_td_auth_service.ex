@@ -36,4 +36,13 @@ defmodule TdDdWeb.ApiServices.MockTdAuthService do
   def index do
     Agent.get(MockTdAuthService, & &1) || []
   end
+
+  def get_user(id) when is_binary(id) do
+    {id, _} = Integer.parse(id)
+    List.first(Enum.filter(index(), &(&1.id == id)))
+  end
+
+  def get_user(id) do
+    List.first(Enum.filter(index(), &(&1.id == id)))
+  end
 end
