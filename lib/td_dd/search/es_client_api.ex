@@ -41,10 +41,10 @@ defmodule TdDd.ESClientApi do
     ~s({"index": {"_id": #{item.id}, "_type": "#{get_type_name()}", "_index": "#{index_name}"}})
   end
 
-  # def index_content(index_name, id, body) do
-  #   put(get_search_path(index_name, id), body)
-  # end
-  #
+  def index_content(index_name, id, body) do
+    put(get_search_path(index_name, id), body)
+  end
+
   # def delete_content(index_name, id) do
   #   delete(get_search_path(index_name, id))
   # end
@@ -52,15 +52,15 @@ defmodule TdDd.ESClientApi do
   # def search_es(index_name, query) do
   #   post("#{index_name}/" <> "_search/", query |> JSON.encode!())
   # end
-  #
+
   defp get_type_name do
     Application.get_env(:td_dd, :elasticsearch)[:type_name]
   end
 
-  # defp get_search_path(index_name, id) do
-  #   type_name = get_type_name()
-  #   "#{index_name}/" <> "#{type_name}/" <> "#{id}"
-  # end
+  defp get_search_path(index_name, id) do
+    type_name = get_type_name()
+    "#{index_name}/" <> "#{type_name}/" <> "#{id}"
+  end
 
   @doc """
   Deletes all indexes in elasticsearch

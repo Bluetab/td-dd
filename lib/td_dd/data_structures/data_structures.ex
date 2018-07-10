@@ -9,6 +9,8 @@ defmodule TdDd.DataStructures do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Utils.CollectionUtils
 
+  @search_service Application.get_env(:td_dd, :elasticsearch)[:search_service]
+
   @doc """
   Returns the list of data_structures.
 
@@ -82,9 +84,17 @@ defmodule TdDd.DataStructures do
 
   """
   def create_data_structure(attrs \\ %{}) do
-    %DataStructure{}
+    result = %DataStructure{}
     |> DataStructure.changeset(attrs)
     |> Repo.insert()
+
+    case result do
+      {:ok, data_structure} ->
+        @search_service.put_search(data_structure)
+        result
+      _ ->
+        result
+    end
   end
 
   @doc """
