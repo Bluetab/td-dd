@@ -60,7 +60,6 @@ defmodule TdDd.DataStructures.DataStructure do
   end
 
   def search_fields(%DataStructure{last_change_by: last_change_by_id} = structure) do
-    # TODO: Cache user list for indexing instead of querying for every document
     last_change_by = case @td_auth_api.get_user(last_change_by_id) do
       nil -> %{}
       user -> user |> Map.take([:id, :user_name, :full_name])
