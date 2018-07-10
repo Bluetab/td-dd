@@ -28,7 +28,6 @@ defmodule TdDd.ESClientApi do
       end)
       |> List.flatten()
       |> Enum.join("\n")
-      |> IO.inspect()
     post("_bulk", json_bulk_data <> "\n")
   end
 

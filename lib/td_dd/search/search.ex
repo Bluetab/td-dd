@@ -1,9 +1,9 @@
 defmodule TdDd.Search do
 
   require Logger
-  alias TdDd.ESClientApi
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.ESClientApi
 
   @moduledoc """
     Search Engine calls
@@ -30,7 +30,9 @@ defmodule TdDd.Search do
   # CREATE AND UPDATE
   def put_search(%DataStructure{} = data_structure) do
     search_fields = data_structure.__struct__.search_fields(data_structure)
-    response = ESClientApi.index_content(data_structure.__struct__.index_name(), data_structure.id, search_fields |> Poison.encode!)
+    response = ESClientApi.index_content(data_structure.__struct__.index_name(),
+                                         data_structure.id,
+                                         search_fields |> Poison.encode!)
     case response do
       {:ok, %HTTPoison.Response{status_code: status}} ->
         Logger.info "Business data_structure #{data_structure.name} created/updated status #{status}"
