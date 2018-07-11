@@ -110,9 +110,17 @@ defmodule TdDd.DataStructures do
 
   """
   def update_data_structure(%DataStructure{} = data_structure, attrs) do
-    data_structure
+    result = data_structure
     |> DataStructure.update_changeset(attrs)
     |> Repo.update()
+
+    case result do
+      {:ok, data_structure} ->
+        @search_service.put_search(data_structure)
+        result
+      _ ->
+        result
+    end
   end
 
   @doc """
@@ -128,7 +136,14 @@ defmodule TdDd.DataStructures do
 
   """
   def delete_data_structure(%DataStructure{} = data_structure) do
-    Repo.delete(data_structure)
+    result = Repo.delete(data_structure)
+    case result do
+      {:ok, data_structure} ->
+        @search_service.delete_search(data_structure)
+        result
+      _ ->
+        result
+    end
   end
 
   @doc """
@@ -201,9 +216,17 @@ defmodule TdDd.DataStructures do
 
   """
   def create_data_field(attrs \\ %{}) do
-    %DataField{}
+    result = %DataField{}
     |> DataField.changeset(attrs)
     |> Repo.insert()
+
+    case result do
+      {:ok, data_field} ->
+        @search_service.put_search(get_data_structure!(data_field.data_structure_id, data_fields: true))
+        result
+      _ ->
+        result
+    end
   end
 
   @doc """
@@ -219,9 +242,17 @@ defmodule TdDd.DataStructures do
 
   """
   def update_data_field(%DataField{} = data_field, attrs) do
-    data_field
+    result = data_field
     |> DataField.update_changeset(attrs)
     |> Repo.update()
+
+    case result do
+      {:ok, data_field} ->
+        @search_service.put_search(get_data_structure!(data_field.data_structure_id, data_fields: true))
+        result
+      _ ->
+        result
+    end
   end
 
   @doc """
@@ -237,7 +268,16 @@ defmodule TdDd.DataStructures do
 
   """
   def delete_data_field(%DataField{} = data_field) do
-    Repo.delete(data_field)
+    data_structure_id = data_field.data_structure_id
+    result = Repo.delete(data_field)
+
+    case result do
+      {:ok, data_field} ->
+        @search_service.put_search(get_data_structure!(data_structure_id, data_fields: true))
+        result
+      _ ->
+        result
+    end
   end
 
   @doc """

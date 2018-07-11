@@ -23,6 +23,8 @@ defmodule TdDdWeb.Router do
       get "/comment", CommentController, :get_comment_data_structure
       get "/data_fields", DataFieldController, :data_structure_fields
     end
+    post "/data_structures/search", DataStructureController, :search
+
     resources "/data_fields", DataFieldController, except: [:new, :edit] do
       get "/comment", CommentController, :get_comment_data_field
     end

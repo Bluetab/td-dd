@@ -80,6 +80,16 @@ defmodule TdDdWeb.SwaggerDefinitions do
         properties do
           data Schema.ref(:DataStructures)
         end
+      end,
+      DataStructureSearchRequest:
+      swagger_schema do
+        properties do
+          query(:string, "Query string", required: false)
+        end
+
+        example(%{
+          query: "searchterm"
+        })
       end
     }
   end

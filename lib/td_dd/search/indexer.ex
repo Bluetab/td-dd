@@ -23,13 +23,10 @@ defmodule TdDd.Search.Indexer do
       lopd: %{type: "text"},
       description: %{type: "text"},
       last_change_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-      last_change_by: %{
-        properties: %{
-          id: %{type: "long"},
-          user_name: %{type: "text", fields: %{raw: %{type: "keyword"}}},
-          full_name: %{type: "text", fields: %{raw: %{type: "keyword"}}}
-        }
-      }
+      last_change_by: %{type: "long"},
+      inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
+      metadata: %{type: "map"},
+      data_fields: %{type: "nested"}
     }
     %{mappings: %{doc: %{properties: mapping_type}}}
   end

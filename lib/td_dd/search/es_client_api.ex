@@ -44,13 +44,13 @@ defmodule TdDd.ESClientApi do
     put(get_search_path(index_name, id), body)
   end
 
-  # def delete_content(index_name, id) do
-  #   delete(get_search_path(index_name, id))
-  # end
-  #
-  # def search_es(index_name, query) do
-  #   post("#{index_name}/" <> "_search/", query |> JSON.encode!())
-  # end
+  def delete_content(index_name, id) do
+    delete(get_search_path(index_name, id))
+  end
+
+  def search_es(index_name, query) do
+    post("#{index_name}/" <> "_search/", query |> JSON.encode!())
+  end
 
   defp get_type_name do
     Application.get_env(:td_dd, :elasticsearch)[:type_name]

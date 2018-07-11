@@ -199,6 +199,35 @@
         "description": "Show Data Structure Comment"
       }
     },
+    "/data_structures/search": {
+      "post": {
+        "tags": [
+          "DataStructure"
+        ],
+        "summary": "",
+        "responses": {
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/DataStructuresResponse"
+            },
+            "description": "OK"
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "$ref": "#/definitions/DataStructureSearchRequest"
+            },
+            "required": false,
+            "name": "search",
+            "in": "body",
+            "description": "Search query parameter"
+          }
+        ],
+        "operationId": "TdDdWeb.DataStructureController.search",
+        "description": "Data Structures"
+      }
+    },
     "/data_structures": {
       "post": {
         "tags": [
@@ -641,6 +670,18 @@
             }
           }
         }
+      }
+    },
+    "DataStructureSearchRequest": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "Query string"
+        }
+      },
+      "example": {
+        "query": "searchterm"
       }
     },
     "DataStructureResponse": {

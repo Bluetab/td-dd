@@ -4,6 +4,7 @@ defmodule TdDdWeb.DataStructureController do
   alias Ecto
   alias TdDd.Audit
   alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
+  alias TdDd.DataStructure.Search
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDdWeb.ErrorView
@@ -34,10 +35,16 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   def index(conn, params) do
-    search_params = %{ou: getOUs(params)}
-    data_structures = DataStructures.list_data_structures(search_params)
-    users = get_data_structure_users(data_structures)
-    render(conn, "index.json", data_structures: data_structures, users: users)
+    in_params = getOUs(params)
+
+    search_params =
+      case in_params do
+        [] -> nil
+        _ -> %{"filters" => %{"ou" => in_params}}
+      end
+
+    data_structures = Search.search_data_structures(search_params)
+    render(conn, "index.json", data_structures: data_structures)
   end
 
   defp getOUs(params) do
@@ -206,4 +213,23 @@ defmodule TdDdWeb.DataStructureController do
 
     @td_auth_api.search(%{"ids" => Enum.uniq(ids)})
   end
+
+  swagger_path :search do
+    post("/data_structures/search")
+    description("Data Structures")
+
+    parameters do
+      search(
+        :body, Schema.ref(:DataStructureSearchRequest), "Search query parameter"
+      )
+    end
+
+    response(200, "OK", Schema.ref(:DataStructuresResponse))
+  end
+  def search(conn, params) do
+    data_structures = Search.search_data_structures(params)
+
+    render(conn, "index.json", data_structures: data_structures)
+  end
+
 end

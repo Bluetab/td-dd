@@ -4,6 +4,7 @@ defmodule TdDd.DataStructures.DataStructure do
   import Ecto.Changeset
   alias TdDd.DataStructures.DataField
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.Repo
   alias TdDd.Searchable
 
   @behaviour Searchable
@@ -59,11 +60,13 @@ defmodule TdDd.DataStructures.DataStructure do
     |> validate_length(:lopd, max: 255)
   end
 
-  def search_fields(%DataStructure{last_change_by: last_change_by_id} = structure) do
+  def search_fields(%DataStructure{last_change_by: last_change_by_id, metadata: metadata} = structure) do
     last_change_by = case @td_auth_api.get_user(last_change_by_id) do
       nil -> %{}
       user -> user |> Map.take([:id, :user_name, :full_name])
     end
+
+    metadata = %{}
 
     %{
       id: structure.id,
@@ -76,6 +79,34 @@ defmodule TdDd.DataStructures.DataStructure do
       ou: structure.ou,
       system: structure.system,
       type: structure.type,
+      inserted_at: structure.inserted_at,
+      data_fields: Enum.map(Repo.preload(structure, :data_fields).data_fields, &search_fields(&1)),
+      metadata: metadata
+    }
+  end
+
+  def search_fields(%DataField{last_change_by: last_change_by_id, metadata: metadata} = field) do
+    last_change_by = case @td_auth_api.get_user(last_change_by_id) do
+      nil -> %{}
+      user -> user |> Map.take([:id, :user_name, :full_name])
+    end
+
+    metadata = %{}
+    %{
+      id: field.id,
+      business_concept_id: field.business_concept_id,
+      data_structure_id: field.data_structure_id,
+      description: field.description,
+      external_id: field.external_id,
+      inserted_at: field.inserted_at,
+      last_change_at: field.last_change_at,
+      last_change_by: last_change_by,
+      metadata: metadata,
+      name: field.name,
+      nullable: field.nullable,
+      precision: field.precision,
+      type: field.type,
+      updated_at: field.updated_at
     }
   end
 

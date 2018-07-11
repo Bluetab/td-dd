@@ -62,8 +62,12 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
     @tag authenticated_user: @admin_user_name
     test "search all data_structures", %{conn: conn} do
-      data_structure = insert(:data_structure)
+      conn = post(conn, data_structure_path(conn, :create), data_structure: @create_attrs)
+      data_structure = conn.assigns.data_structure
       search_params = %{ou: " one§ tow §  #{data_structure.ou}"}
+
+      conn = recycle_and_put_headers(conn)
+
       conn = get(conn, data_structure_path(conn, :index, search_params))
       json_response = json_response(conn, 200)["data"]
       assert length(json_response) == 1

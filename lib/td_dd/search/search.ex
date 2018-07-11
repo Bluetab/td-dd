@@ -35,24 +35,24 @@ defmodule TdDd.Search do
                                          search_fields |> Poison.encode!)
     case response do
       {:ok, %HTTPoison.Response{status_code: status}} ->
-        Logger.info "Business data_structure #{data_structure.name} created/updated status #{status}"
+        Logger.info "Data Structure #{data_structure.name} created/updated status #{status}"
       {:error, _error} ->
-        Logger.error "ES: Error creating/updating business data_structure #{data_structure.name}"
+        Logger.error "ES: Error creating/updating Data Structure #{data_structure.name}"
     end
   end
 
   # DELETE
-  # def delete_search(%Domain{} = domain) do
-  #   response = ESClientApi.delete_content("domain", domain.id)
-  #   case response do
-  #     {_, %HTTPoison.Response{status_code: 200}} ->
-  #       Logger.info "Domain #{domain.name} deleted status 200"
-  #     {_, %HTTPoison.Response{status_code: status_code}} ->
-  #       Logger.error "ES: Error deleting domain #{domain.name} status #{status_code}"
-  #     {:error, %HTTPoison.Error{reason: :econnrefused}} ->
-  #       Logger.error "Error connecting to ES"
-  #   end
-  # end
+  def delete_search(%DataStructure{} = data_structure) do
+    response = ESClientApi.delete_content("data_structure", data_structure.id)
+    case response do
+      {_, %HTTPoison.Response{status_code: 200}} ->
+        Logger.info "DataStructure #{data_structure.name} deleted status 200"
+      {_, %HTTPoison.Response{status_code: status_code}} ->
+        Logger.error "ES: Error deleting data_structure #{data_structure.name} status #{status_code}"
+      {:error, %HTTPoison.Error{reason: :econnrefused}} ->
+        Logger.error "Error connecting to ES"
+    end
+  end
   #
   # def delete_search(%BusinessConceptVersion{} = concept) do
   #   response = ESClientApi.delete_content("business_concept", concept.id)
@@ -66,15 +66,15 @@ defmodule TdDd.Search do
   #   end
   # end
   #
-  # def search(index_name, query) do
-  #   response = ESClientApi.search_es(index_name, query)
-  #   case response do
-  #     {:ok, %HTTPoison.Response{body: %{"hits" => %{"hits" => results}}}} ->
-  #       results
-  #     {:ok, %HTTPoison.Response{body: error}} ->
-  #       error
-  #   end
-  # end
+  def search(index_name, query) do
+    response = ESClientApi.search_es(index_name, query)
+    case response do
+      {:ok, %HTTPoison.Response{body: %{"hits" => %{"hits" => results}}}} ->
+        results
+      {:ok, %HTTPoison.Response{body: error}} ->
+        error
+    end
+  end
   #
   # def get_filters(query) do
   #   response = ESClientApi.search_es("business_concept", query)

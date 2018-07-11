@@ -8,17 +8,17 @@ defmodule TdDd.Search.MockSearch do
   def put_search(_something) do
   end
 
-  # def delete_search(_something) do
-  # end
-  #
-  # def search("business_concept", %{query: %{bool: %{must: %{match_all: %{}}}}}) do
-  #   DataStructures.list_all_business_concept_versions()
-  #   |> Enum.map(&DataStructure.search_fields(&1))
-  #   |> Enum.map(&%{_source: &1})
-  #   |> Poison.encode!()
-  #   |> Poison.decode!()
-  # end
-  #
+  def delete_search(_something) do
+  end
+
+  def search("data_structure", %{query: %{bool: %{must: %{match_all: %{}}}}}) do
+    DataStructures.list_data_structures()
+    |> Enum.map(&DataStructure.search_fields(&1))
+    |> Enum.map(&%{_source: &1})
+    |> Poison.encode!()
+    |> Poison.decode!()
+  end
+
   # def search("business_concept", %{query: %{term: %{business_concept_id: business_concept_id}}}) do
   #   DataStructures.list_all_business_concept_versions()
   #   |> Enum.filter(&(&1.business_concept_id == business_concept_id))
