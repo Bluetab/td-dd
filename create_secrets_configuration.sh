@@ -8,4 +8,6 @@ sed -i -e "s/auth_host:.*,/auth_host: \"$API_AUTH_HOST\",/g" ./config/prod.secre
 sed -i -e "s/auth_port:.*,/auth_port: \"$API_AUTH_PORT\",/g" ./config/prod.secret.exs
 sed -i -e "s/api_username:.*,/api_username: \"$API_USER\",/g" ./config/prod.secret.exs
 sed -i -e "s/api_password:.*/api_password: \"$API_PASSWORD\"/g" ./config/prod.secret.exs
+sed -i -e "s/es_host:.*,/es_host: \"$ES_HOST\",/g" ./config/prod.secret.exs
+sed -i -e "s/es_port:.*/es_port: 443/g" ./config/prod.secret.exs 
 cp ./config/prod.secret.exs ~/td_dd.prod.secret.exs
