@@ -5,21 +5,6 @@ defmodule TdDd.ESClientApi do
 
   @moduledoc false
 
-  @doc """
-  Loads all index configuration into elasticsearch
-  """
-  # def create_indexes do
-  #   json = File.read!(Path.join(:code.priv_dir(:td_dd), "static/indexes.json"))
-  #   json_decode = json |> Poison.decode!()
-  #
-  #   Enum.map(json_decode, fn x ->
-  #     index_name = x |> Map.keys() |> List.first()
-  #     mapping = x[index_name] |> Poison.encode!()
-  #     %HTTPoison.Response{body: _response, status_code: status} = put!(index_name, mapping)
-  #     Logger.info("Create index #{index_name} status #{status}")
-  #   end)
-  # end
-
   def bulk_index_content(items) do
     json_bulk_data =
       items
@@ -60,20 +45,6 @@ defmodule TdDd.ESClientApi do
     type_name = get_type_name()
     "#{index_name}/" <> "#{type_name}/" <> "#{id}"
   end
-
-  @doc """
-  Deletes all indexes in elasticsearch
-  """
-  # def delete_indexes(options \\ []) do
-  #   json = File.read!(Path.join(:code.priv_dir(:td_dd), "static/indexes.json"))
-  #   json_decode = json |> Poison.decode!()
-  #
-  #   Enum.map(json_decode, fn x ->
-  #     index_name = x |> Map.keys() |> List.first()
-  #     %HTTPoison.Response{body: _response, status_code: status} = delete!(index_name, options)
-  #     Logger.info("Delete index #{index_name} status #{status}")
-  #   end)
-  # end
 
   @doc """
     Concatenates elasticsearch path at the beggining of HTTPoison requests

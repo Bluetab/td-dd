@@ -60,13 +60,11 @@ defmodule TdDd.DataStructures.DataStructure do
     |> validate_length(:lopd, max: 255)
   end
 
-  def search_fields(%DataStructure{last_change_by: last_change_by_id, metadata: metadata} = structure) do
+  def search_fields(%DataStructure{last_change_by: last_change_by_id} = structure) do
     last_change_by = case @td_auth_api.get_user(last_change_by_id) do
       nil -> %{}
       user -> user |> Map.take([:id, :user_name, :full_name])
     end
-
-    metadata = %{}
 
     %{
       id: structure.id,
@@ -81,11 +79,11 @@ defmodule TdDd.DataStructures.DataStructure do
       type: structure.type,
       inserted_at: structure.inserted_at,
       data_fields: Enum.map(Repo.preload(structure, :data_fields).data_fields, &search_fields(&1)),
-      metadata: metadata
+      metadata: structure.metadata
     }
   end
 
-  def search_fields(%DataField{last_change_by: last_change_by_id, metadata: metadata} = field) do
+  def search_fields(%DataField{last_change_by: last_change_by_id} = field) do
     last_change_by = case @td_auth_api.get_user(last_change_by_id) do
       nil -> %{}
       user -> user |> Map.take([:id, :user_name, :full_name])

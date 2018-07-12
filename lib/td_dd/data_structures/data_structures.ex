@@ -272,7 +272,7 @@ defmodule TdDd.DataStructures do
     result = Repo.delete(data_field)
 
     case result do
-      {:ok, data_field} ->
+      {:ok, _data_field} ->
         @search_service.put_search(get_data_structure!(data_structure_id, data_fields: true))
         result
       _ ->
