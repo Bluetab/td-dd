@@ -1,4 +1,5 @@
 defmodule TdDdWeb.DataStructureController do
+  require Logger
   use TdDdWeb, :controller
   use PhoenixSwagger
   alias Ecto
@@ -35,15 +36,18 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   def index(conn, params) do
+    Logger.info("My params #{inspect(params)}")
     in_params = getOUs(params)
-
+    Logger.info("Getting params for #{inspect(in_params)}")
     search_params =
       case in_params do
         [] -> nil
         _ -> %{"filters" => %{"ou" => in_params}}
       end
 
+    Logger.info("Retrieved Search params... #{inspect(search_params)}")
     data_structures = Search.search_data_structures(search_params)
+    Logger.info("Retrieved Data structures... #{inspect(data_structures)}")
     render(conn, "index.json", data_structures: data_structures)
   end
 
