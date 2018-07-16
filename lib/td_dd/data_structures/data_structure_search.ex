@@ -1,4 +1,5 @@
 defmodule TdDd.DataStructure.Search do
+  require Logger
   @moduledoc """
     Helper module to construct business concept search queries.
   """
@@ -22,6 +23,8 @@ defmodule TdDd.DataStructure.Search do
       size: size,
       query: query
     }
+
+    Logger.info("My built query... #{inspect(search)}")
 
     @search_service.search("data_structure", search)
     |> Enum.map(&Map.get(&1, "_source"))
