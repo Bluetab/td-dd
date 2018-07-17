@@ -23,7 +23,8 @@ defmodule TdDd.Factory do
       name: "some name",
       system: "some system",
       metadata: %{"description" => "some description"},
-      ou: "My organization"
+      ou: "My organization",
+      data_fields: []
     }
   end
 

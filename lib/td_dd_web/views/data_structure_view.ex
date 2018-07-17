@@ -20,8 +20,7 @@ defmodule TdDdWeb.DataStructureView do
         lopd: data_structure.lopd,
         last_change_at: data_structure.last_change_at,
         last_change_by: get_last_change_by_user_name(data_structure.last_change_by, users),
-        inserted_at: data_structure.inserted_at,
-        metadata: data_structure.metadata}
+        inserted_at: data_structure.inserted_at}
         |> add_data_fields(data_structure, users)
     }
   end
@@ -37,8 +36,7 @@ defmodule TdDdWeb.DataStructureView do
       lopd: data_structure.lopd,
       last_change_at: data_structure.last_change_at,
       last_change_by: data_structure.last_change_by.user_name,
-      inserted_at: data_structure.inserted_at,
-      metadata: data_structure.metadata}
+      inserted_at: data_structure.inserted_at}
       |> add_data_fields(data_structure)
   end
 
@@ -55,10 +53,8 @@ defmodule TdDdWeb.DataStructureView do
                      description: data_field.description,
                      business_concept_id: data_field.business_concept_id,
                      last_change_at: data_field.last_change_at,
-                     last_change_by: data_field.last_change_by.user_name,
                      inserted_at: data_field.inserted_at,
-                     external_id: data_field.external_id,
-                     metadata: data_field.metadata}
+                     external_id: data_field.external_id}
             [json|acc]
           end)
         _ -> []
@@ -81,8 +77,7 @@ defmodule TdDdWeb.DataStructureView do
                      last_change_at: data_field.last_change_at,
                      last_change_by: get_last_change_by_user_name(data_field.last_change_by, users),
                      inserted_at: data_field.inserted_at,
-                     external_id: data_field.external_id,
-                     metadata: data_field.metadata}
+                     external_id: data_field.external_id}
             [json|acc]
           end)
         _ -> []

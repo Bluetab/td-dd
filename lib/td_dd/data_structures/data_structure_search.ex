@@ -33,7 +33,7 @@ defmodule TdDd.DataStructure.Search do
       end)
     |> Enum.map(fn(ds) ->
         CollectionUtils.atomize_keys(Map.put(ds, "data_fields", Enum.map(ds.data_fields, fn(df) ->
-          CollectionUtils.atomize_keys(Map.put(df, "last_change_by", CollectionUtils.atomize_keys(Map.get(df, "last_change_by"))))
+          CollectionUtils.atomize_keys(df)
         end)))
       end)
 

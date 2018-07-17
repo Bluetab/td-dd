@@ -4,7 +4,6 @@ defmodule TdDd.DataStructures.DataStructure do
   import Ecto.Changeset
   alias TdDd.DataStructures.DataField
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.Repo
   alias TdDd.Searchable
 
   @behaviour Searchable
@@ -78,18 +77,11 @@ defmodule TdDd.DataStructures.DataStructure do
       system: structure.system,
       type: structure.type,
       inserted_at: structure.inserted_at,
-      data_fields: Enum.map(Repo.preload(structure, :data_fields).data_fields, &search_fields(&1)),
-      metadata: structure.metadata
+      data_fields: Enum.map(structure.data_fields, &search_fields(&1))
     }
   end
 
-  def search_fields(%DataField{last_change_by: last_change_by_id} = field) do
-    last_change_by = case @td_auth_api.get_user(last_change_by_id) do
-      nil -> %{}
-      user -> user |> Map.take([:id, :user_name, :full_name])
-    end
-
-    metadata = %{}
+  def search_fields(field) do
     %{
       id: field.id,
       business_concept_id: field.business_concept_id,
@@ -98,8 +90,6 @@ defmodule TdDd.DataStructures.DataStructure do
       external_id: field.external_id,
       inserted_at: field.inserted_at,
       last_change_at: field.last_change_at,
-      last_change_by: last_change_by,
-      metadata: metadata,
       name: field.name,
       nullable: field.nullable,
       precision: field.precision,

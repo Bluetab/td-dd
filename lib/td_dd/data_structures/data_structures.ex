@@ -22,7 +22,8 @@ defmodule TdDd.DataStructures do
   """
   def list_data_structures(params \\ %{}) do
     filter = build_filter(DataStructure, params)
-    Repo.all(from ds in DataStructure, where: ^filter)
+    query = Repo.all(from ds in DataStructure, where: ^filter)
+    Repo.preload(query, :data_fields)
   end
 
   defp build_filter(schema, params) do

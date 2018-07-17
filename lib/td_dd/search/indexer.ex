@@ -8,7 +8,7 @@ defmodule TdDd.Search.Indexer do
   def reindex(:data_structure) do
     ESClientApi.delete!("data_structure")
     mapping = get_mappings() |> Poison.encode!()
-    ESClientApi.put!("data_structure", mapping)
+    %{status_code: 200} = ESClientApi.put!("data_structure", mapping)
     Search.put_bulk_search(:data_structure)
   end
 
@@ -18,17 +18,33 @@ defmodule TdDd.Search.Indexer do
       name: %{type: "text"},
       system: %{type: "text"},
       group: %{type: "text"},
+      ou: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
       type: %{type: "text"},
-      ou: %{type: "text"},
       lopd: %{type: "text"},
       description: %{type: "text"},
       last_change_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-      last_change_by: %{type: "long"},
+      last_change_by: %{
+        properties: %{
+          id: %{type: "long"},
+          user_name: %{type: "text", fields: %{raw: %{type: "keyword"}}},
+          full_name: %{type: "text", fields: %{raw: %{type: "keyword"}}}
+        }
+      },
       inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-      metadata: %{type: "map"},
-      data_fields: %{type: "nested"}
+      data_fields: %{
+        type: "nested",
+        properties: %{
+          name: %{type: "text"},
+          business_concept_id: %{type: "text"},
+          data_structure_id: %{type: "long"},
+          description: %{type: "text"},
+          external_id: %{type: "text"},
+          id: %{type: "long"}
+        }
+      }
     }
-    %{mappings: %{doc: %{properties: mapping_type}}}
+    settings = %{analysis: %{normalizer: %{sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}}}}
+    %{mappings: %{doc: %{properties: mapping_type}}, settings: settings}
   end
 
 end

@@ -38,7 +38,7 @@ defmodule TdDd.DataStructuresTest do
 
     test "get_data_structure!/2 returns the data_structure with given id" do
       data_structure = insert(:data_structure)
-      assert DataStructures.get_data_structure!(data_structure.id) == data_structure
+      assert DataStructures.get_data_structure!(data_structure.id, data_fields: true) == data_structure
     end
 
     test "get_data_structure!/2 returns the data_structure with given id and fields preloaded" do
