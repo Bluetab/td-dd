@@ -5,7 +5,7 @@ defmodule TdDd.Search.Aggregations do
 
   def aggregation_terms do
     static_keywords = [
-      {"ou", %{terms: %{field: "ou"}}}
+      {"ou.raw", %{terms: %{field: "ou.raw"}}}
     ]
 
     static_keywords

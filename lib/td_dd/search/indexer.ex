@@ -43,7 +43,7 @@ defmodule TdDd.Search.Indexer do
         }
       }
     }
-    settings = %{analysis: %{normalizer: %{sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}}}}
+    settings = %{analysis: %{normalizer: %{sortable: %{type: "custom", char_filter: [], filter: ["asciifolding"]}}}}
     %{mappings: %{doc: %{properties: mapping_type}}, settings: settings}
   end
 

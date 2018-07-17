@@ -42,8 +42,6 @@ defmodule TdDd.Search do
   end
 
   def search(index_name, query) do
-    query = query
-    |> Map.put(:sort, ["ou.raw"])
     response = ESClientApi.search_es(index_name, query)
     case response do
       {:ok, %HTTPoison.Response{body: %{"hits" => %{"hits" => results}}}} ->

@@ -24,8 +24,6 @@ defmodule TdDd.DataStructure.Search do
       query: query
     }
 
-    Logger.info("My built query... #{inspect(search)}")
-
     @search_service.search("data_structure", search)
     |> Enum.map(&Map.get(&1, "_source"))
     |> Enum.map(fn(ds) ->
