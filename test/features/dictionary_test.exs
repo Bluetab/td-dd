@@ -31,7 +31,8 @@ defmodule TdDd.DictionaryTest do
     "Business Concept ID" => "business_concept_id",
     "Description" => "description",
     "Last Modification" => "last_change_at",
-    "Last User" => "last_change_by"
+    "Last User" => "last_change_by",
+    "Bc_related" => "bc_related"
   }
 
   setup_all do

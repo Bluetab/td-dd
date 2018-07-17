@@ -10,6 +10,7 @@ defmodule TdDdWeb.DataStructureController do
   alias TdDd.DataStructures.DataStructure
   alias TdDdWeb.ErrorView
   alias TdDdWeb.SwaggerDefinitions
+  alias TdPerms.FieldLinkCache
 
   action_fallback(TdDdWeb.FallbackController)
 
@@ -43,6 +44,7 @@ defmodule TdDdWeb.DataStructureController do
         _ -> %{"filters" => %{"ou.raw" => in_params}}
       end
     data_structures = Search.search_data_structures(search_params)
+    data_structures = Enum.map(data_structures, fn(ds) -> get_concepts_linked_to_fields(ds) end)
     render(conn, "index.json", data_structures: data_structures)
   end
 
@@ -118,8 +120,16 @@ defmodule TdDdWeb.DataStructureController do
 
   def show(conn, %{"id" => id}) do
     data_structure = DataStructures.get_data_structure!(id, data_fields: true)
+    data_structure = get_concepts_linked_to_fields(data_structure)
     users = get_data_structure_users(data_structure)
     render(conn, "show.json", data_structure: data_structure, users: users)
+  end
+
+  defp get_concepts_linked_to_fields(data_structure) do
+    data_structure
+    |> Map.put(:data_fields, Enum.map(data_structure.data_fields, fn(field) ->
+        Map.put(field, :bc_related, FieldLinkCache.get_concepts(field.id))
+      end))
   end
 
   swagger_path :update do
@@ -227,6 +237,7 @@ defmodule TdDdWeb.DataStructureController do
   end
   def search(conn, params) do
     data_structures = Search.search_data_structures(params)
+    data_structures = Enum.map(data_structures, fn(ds) -> get_concepts_linked_to_fields(ds) end)
 
     render(conn, "index.json", data_structures: data_structures)
   end

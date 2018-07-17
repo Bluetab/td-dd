@@ -54,7 +54,8 @@ defmodule TdDdWeb.DataStructureView do
                      business_concept_id: data_field.business_concept_id,
                      last_change_at: data_field.last_change_at,
                      inserted_at: data_field.inserted_at,
-                     external_id: data_field.external_id}
+                     external_id: data_field.external_id,
+                     bc_related: data_field.bc_related}
             [json|acc]
           end)
         _ -> []
@@ -77,7 +78,8 @@ defmodule TdDdWeb.DataStructureView do
                      last_change_at: data_field.last_change_at,
                      last_change_by: get_last_change_by_user_name(data_field.last_change_by, users),
                      inserted_at: data_field.inserted_at,
-                     external_id: data_field.external_id}
+                     external_id: data_field.external_id,
+                     bc_related: data_field.bc_related}
             [json|acc]
           end)
         _ -> []
