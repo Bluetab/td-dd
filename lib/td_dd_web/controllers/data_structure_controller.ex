@@ -128,7 +128,7 @@ defmodule TdDdWeb.DataStructureController do
   defp get_concepts_linked_to_fields(data_structure) do
     data_structure
     |> Map.put(:data_fields, Enum.map(data_structure.data_fields, fn(field) ->
-        Map.put(field, :bc_related, FieldLinkCache.get_resources(field.id))
+        Map.put(field, :bc_related, FieldLinkCache.get_resources(field.id, "field"))
       end))
   end
 
