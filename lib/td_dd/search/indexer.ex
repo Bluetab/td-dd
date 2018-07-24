@@ -32,7 +32,6 @@ defmodule TdDd.Search.Indexer do
       },
       inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       data_fields: %{
-        type: "nested",
         properties: %{
           name: %{type: "text"},
           business_concept_id: %{type: "text"},
