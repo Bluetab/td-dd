@@ -156,6 +156,11 @@ defmodule TdDdWeb.DataStructureController do
 
     with {:ok, %DataStructure{} = data_structure} <-
            DataStructures.update_data_structure(data_structure, update_params) do
+
+      data_structure =
+        data_structure
+        |> get_concepts_linked_to_fields()
+
       audit = %{
         "audit" => %{
           "resource_id" => data_structure.id,
