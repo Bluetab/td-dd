@@ -91,6 +91,7 @@ defmodule TdDd.DataStructures do
 
     case result do
       {:ok, data_structure} ->
+        data_structure = Repo.preload(data_structure, :data_fields)
         @search_service.put_search(data_structure)
         result
       _ ->
