@@ -43,6 +43,7 @@ defmodule TdDd.DataStructures.DataStructure do
       :system,
       :group,
       :name,
+      :domain_id,
       :description,
       :last_change_at,
       :last_change_by,
