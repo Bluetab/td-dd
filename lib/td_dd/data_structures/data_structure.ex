@@ -15,6 +15,7 @@ defmodule TdDd.DataStructures.DataStructure do
 
   schema "data_structures" do
     field(:description, :string)
+    field(:domain_id, :integer)
     field(:group, :string)
     field(:last_change_at, :utc_datetime)
     field(:last_change_by, :integer)
