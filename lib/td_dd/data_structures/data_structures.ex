@@ -22,7 +22,7 @@ defmodule TdDd.DataStructures do
   """
   def list_data_structures(params \\ %{}) do
     filter = build_filter(DataStructure, params)
-    query = Repo.all(from ds in DataStructure, where: ^filter)
+    query = Repo.all(from(ds in DataStructure, where: ^filter))
     Repo.preload(query, :data_fields)
   end
 
@@ -30,23 +30,27 @@ defmodule TdDd.DataStructures do
     params = CollectionUtils.atomize_keys(params)
     fields = schema.__schema__(:fields)
     dynamic = true
-    Enum.reduce(Map.keys(params), dynamic, fn (key, acc) ->
-        case Enum.member?(fields, key) do
-          true -> add_filter(key, params[key], acc)
-          false -> acc
-        end
-     end)
-   end
 
-   defp add_filter(key, value, acc) do
-     cond do
-       is_list(value) and value == [] -> acc
-       is_list(value) ->
-         dynamic([ds], field(ds, ^key) in ^value and ^acc)
-       value ->
-         dynamic([ds], field(ds, ^key) == ^value and ^acc)
-       end
-   end
+    Enum.reduce(Map.keys(params), dynamic, fn key, acc ->
+      case Enum.member?(fields, key) do
+        true -> add_filter(key, params[key], acc)
+        false -> acc
+      end
+    end)
+  end
+
+  defp add_filter(key, value, acc) do
+    cond do
+      is_list(value) and value == [] ->
+        acc
+
+      is_list(value) ->
+        dynamic([ds], field(ds, ^key) in ^value and ^acc)
+
+      value ->
+        dynamic([ds], field(ds, ^key) == ^value and ^acc)
+    end
+  end
 
   @doc """
   Gets a single data_structure.
@@ -67,9 +71,10 @@ defmodule TdDd.DataStructures do
       true ->
         ds = Repo.get!(DataStructure, id)
         Repo.preload(ds, :data_fields)
-      false -> Repo.get!(DataStructure, id)
-    end
 
+      false ->
+        Repo.get!(DataStructure, id)
+    end
   end
 
   @doc """
@@ -85,15 +90,17 @@ defmodule TdDd.DataStructures do
 
   """
   def create_data_structure(attrs \\ %{}) do
-    result = %DataStructure{}
-    |> DataStructure.changeset(attrs)
-    |> Repo.insert()
+    result =
+      %DataStructure{}
+      |> DataStructure.changeset(attrs)
+      |> Repo.insert()
 
     case result do
       {:ok, data_structure} ->
         data_structure = Repo.preload(data_structure, :data_fields)
         @search_service.put_search(data_structure)
         result
+
       _ ->
         result
     end
@@ -112,14 +119,16 @@ defmodule TdDd.DataStructures do
 
   """
   def update_data_structure(%DataStructure{} = data_structure, attrs) do
-    result = data_structure
-    |> DataStructure.update_changeset(attrs)
-    |> Repo.update()
+    result =
+      data_structure
+      |> DataStructure.update_changeset(attrs)
+      |> Repo.update()
 
     case result do
       {:ok, data_structure} ->
         @search_service.put_search(data_structure)
         result
+
       _ ->
         result
     end
@@ -139,10 +148,12 @@ defmodule TdDd.DataStructures do
   """
   def delete_data_structure(%DataStructure{} = data_structure) do
     result = Repo.delete(data_structure)
+
     case result do
       {:ok, data_structure} ->
         @search_service.delete_search(data_structure)
         result
+
       _ ->
         result
     end
@@ -186,7 +197,7 @@ defmodule TdDd.DataStructures do
 
   """
   def list_data_structure_fields(data_structure_id) do
-    Repo.all from f in DataField, where: f.data_structure_id == ^data_structure_id
+    Repo.all(from(f in DataField, where: f.data_structure_id == ^data_structure_id))
   end
 
   @doc """
@@ -218,14 +229,19 @@ defmodule TdDd.DataStructures do
 
   """
   def create_data_field(attrs \\ %{}) do
-    result = %DataField{}
-    |> DataField.changeset(attrs)
-    |> Repo.insert()
+    result =
+      %DataField{}
+      |> DataField.changeset(attrs)
+      |> Repo.insert()
 
     case result do
       {:ok, data_field} ->
-        @search_service.put_search(get_data_structure!(data_field.data_structure_id, data_fields: true))
+        @search_service.put_search(
+          get_data_structure!(data_field.data_structure_id, data_fields: true)
+        )
+
         result
+
       _ ->
         result
     end
@@ -244,14 +260,19 @@ defmodule TdDd.DataStructures do
 
   """
   def update_data_field(%DataField{} = data_field, attrs) do
-    result = data_field
-    |> DataField.update_changeset(attrs)
-    |> Repo.update()
+    result =
+      data_field
+      |> DataField.update_changeset(attrs)
+      |> Repo.update()
 
     case result do
       {:ok, data_field} ->
-        @search_service.put_search(get_data_structure!(data_field.data_structure_id, data_fields: true))
+        @search_service.put_search(
+          get_data_structure!(data_field.data_structure_id, data_fields: true)
+        )
+
         result
+
       _ ->
         result
     end
@@ -277,6 +298,7 @@ defmodule TdDd.DataStructures do
       {:ok, _data_field} ->
         @search_service.put_search(get_data_structure!(data_structure_id, data_fields: true))
         result
+
       _ ->
         result
     end
@@ -293,5 +315,29 @@ defmodule TdDd.DataStructures do
   """
   def change_data_field(%DataField{} = data_field) do
     DataField.changeset(data_field, %{})
+  end
+
+  def add_domain_id(%{"ou" => _, "domain_id" => nil} = data, list_domains)
+       when length(list_domains) > 0 do
+    find_domain_for_data_attrs(data, list_domains)
+  end
+
+  def add_domain_id(%{"ou" => _, "domain_id" => _} = data, _list_domains), do: data
+
+  def add_domain_id(%{"ou" => _} = data, list_domains) when length(list_domains) > 0 do
+    find_domain_for_data_attrs(data, list_domains)
+  end
+
+  def add_domain_id(data, _list_domains), do: data
+
+  defp find_domain_for_data_attrs(data, list_domains) do
+    domain =
+      list_domains
+      |> Enum.find(&(&1.name == data["ou"]))
+
+    case domain do
+      nil -> data
+      domain -> domain |> Map.fetch!(:domain_id) |> (&Map.put(data, "domain_id", &1)).()
+    end
   end
 end

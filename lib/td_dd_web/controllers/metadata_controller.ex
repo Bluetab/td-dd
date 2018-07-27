@@ -3,8 +3,10 @@ defmodule TdDdWeb.MetadataController do
   use TdDdWeb, :controller
 
   alias Ecto.Adapters.SQL
+  alias TdDd.DataStructures
   alias TdDd.Repo
   alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
+  alias TdPerms.TaxonomyCache
 
   @data_structure_keys Application.get_env(:td_dd, :metadata)[:data_structure_keys]
   @data_field_keys Application.get_env(:td_dd, :metadata)[:data_field_keys]
@@ -67,8 +69,10 @@ defmodule TdDdWeb.MetadataController do
       last_change_at = DateTime.utc_now()
       input = data
       |> add_metadata(@data_structure_modifiable_fields, last_change_at)
+      |> DataStructures.add_domain_id(TaxonomyCache.get_all_domains())
       |> to_array(data_structure_keys)
       |> add_user_and_date_time(conn, last_change_at)
+
       SQL.query!(Repo, @data_structure_query, input)
     end)
 

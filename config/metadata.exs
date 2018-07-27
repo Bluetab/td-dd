@@ -2,15 +2,15 @@ use Mix.Config
 
 config :td_dd, :metadata,
   data_structure_keys: ["system", "group", "name", "description", "type", "ou",
-                        "lopd", "metadata"],
+                        "lopd", "metadata", "domain_id"],
   data_field_keys: ["system", "group", "name", "field_name", "type", "description",
                     "nullable", "precision", "business_concept_id", "metadata"],
   data_structure_query:
   """
-    INSERT INTO data_structures ("system", "group", "name", description, type, ou, lopd, metadata, last_change_at, last_change_by, inserted_at, updated_at)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $10, $9, $10, $10)
+    INSERT INTO data_structures ("system", "group", "name", description, type, ou, lopd, metadata, last_change_at, last_change_by, inserted_at, updated_at, domain_id)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $11, $10, $11, $11, $9)
     ON CONFLICT ("system", "group", "name")
-    DO UPDATE SET type = $5, metadata = $8, last_change_at = $10, last_change_by = $9, updated_at = $10;
+    DO UPDATE SET type = $5, metadata = $8, last_change_at = $11, last_change_by = $10, updated_at = $11;
   """,
   data_field_query:
   """

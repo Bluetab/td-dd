@@ -11,6 +11,7 @@ defmodule TdDdWeb.DataStructureController do
   alias TdDdWeb.ErrorView
   alias TdDdWeb.SwaggerDefinitions
   alias TdPerms.FieldLinkCache
+  alias TdPerms.TaxonomyCache
 
   action_fallback(TdDdWeb.FallbackController)
 
@@ -38,13 +39,15 @@ defmodule TdDdWeb.DataStructureController do
 
   def index(conn, params) do
     in_params = getOUs(params)
+
     search_params =
       case in_params do
         [] -> nil
         _ -> %{"filters" => %{"ou.raw" => in_params}}
       end
+
     data_structures = Search.search_data_structures(search_params)
-    data_structures = Enum.map(data_structures, fn(ds) -> get_concepts_linked_to_fields(ds) end)
+    data_structures = Enum.map(data_structures, fn ds -> get_concepts_linked_to_fields(ds) end)
     render(conn, "index.json", data_structures: data_structures)
   end
 
@@ -79,6 +82,7 @@ defmodule TdDdWeb.DataStructureController do
       |> Map.put("last_change_by", get_current_user_id(conn))
       |> Map.put("last_change_at", DateTime.utc_now())
       |> Map.put("metadata", %{})
+      |> DataStructures.add_domain_id(TaxonomyCache.get_all_domains())
 
     with {:ok, %DataStructure{} = data_structure} <-
            DataStructures.create_data_structure(creation_params) do
@@ -127,9 +131,12 @@ defmodule TdDdWeb.DataStructureController do
 
   defp get_concepts_linked_to_fields(data_structure) do
     data_structure
-    |> Map.put(:data_fields, Enum.map(data_structure.data_fields, fn(field) ->
+    |> Map.put(
+      :data_fields,
+      Enum.map(data_structure.data_fields, fn field ->
         Map.put(field, :bc_related, FieldLinkCache.get_resources(field.id, "field"))
-      end))
+      end)
+    )
   end
 
   swagger_path :update do
@@ -153,10 +160,10 @@ defmodule TdDdWeb.DataStructureController do
       data_structure_params
       |> Map.put("last_change_by", get_current_user_id(conn))
       |> Map.put("last_change_at", DateTime.utc_now())
+      |> DataStructures.add_domain_id(TaxonomyCache.get_all_domains())
 
     with {:ok, %DataStructure{} = data_structure} <-
            DataStructures.update_data_structure(data_structure, update_params) do
-
       data_structure =
         data_structure
         |> get_concepts_linked_to_fields()
@@ -234,17 +241,19 @@ defmodule TdDdWeb.DataStructureController do
 
     parameters do
       search(
-        :body, Schema.ref(:DataStructureSearchRequest), "Search query parameter"
+        :body,
+        Schema.ref(:DataStructureSearchRequest),
+        "Search query parameter"
       )
     end
 
     response(200, "OK", Schema.ref(:DataStructuresResponse))
   end
+
   def search(conn, params) do
     data_structures = Search.search_data_structures(params)
-    data_structures = Enum.map(data_structures, fn(ds) -> get_concepts_linked_to_fields(ds) end)
+    data_structures = Enum.map(data_structures, fn ds -> get_concepts_linked_to_fields(ds) end)
 
     render(conn, "index.json", data_structures: data_structures)
   end
-
 end
