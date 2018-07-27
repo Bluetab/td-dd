@@ -71,6 +71,8 @@ config :td_perms, permissions: [
   :view_deprecated_business_concepts
 ]
 
+config :td_dd, permission_resolver: TdPerms.Permissions
+
 import_config "metadata.exs"
 
 # Import environment specific config. This must remain at the bottom
