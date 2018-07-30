@@ -1,5 +1,6 @@
 defmodule TdDdWeb.DataStructureController do
   require Logger
+  import Canada, only: [can?: 2]
   use TdDdWeb, :controller
   use PhoenixSwagger
   alias Ecto
@@ -39,15 +40,23 @@ defmodule TdDdWeb.DataStructureController do
 
   def index(conn, params) do
     in_params = getOUs(params)
-
     search_params =
       case in_params do
         [] -> nil
         _ -> %{"filters" => %{"ou.raw" => in_params}}
       end
+    do_index(conn, search_params)
+  end
 
-    data_structures = Search.search_data_structures(search_params)
-    data_structures = Enum.map(data_structures, fn ds -> get_concepts_linked_to_fields(ds) end)
+  defp do_index(conn, search_params) do
+    user = conn.assigns[:current_user]
+
+    data_structures =
+      search_params
+        |> Search.search_data_structures()
+        |> Enum.map(fn ds -> get_concepts_linked_to_fields(ds) end)
+        |> Enum.filter(&can?(user, view_data_structure(Map.fetch!(&1, :domain_id))))
+
     render(conn, "index.json", data_structures: data_structures)
   end
 
@@ -251,9 +260,6 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   def search(conn, params) do
-    data_structures = Search.search_data_structures(params)
-    data_structures = Enum.map(data_structures, fn ds -> get_concepts_linked_to_fields(ds) end)
-
-    render(conn, "index.json", data_structures: data_structures)
+    do_index(conn, params)
   end
 end

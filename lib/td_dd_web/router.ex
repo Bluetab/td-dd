@@ -10,6 +10,11 @@ defmodule TdDdWeb.Router do
     plug TdDd.Auth.Pipeline.Secure
   end
 
+  pipeline :api_authorized do
+    plug(TdDd.Auth.CurrentUser)
+    plug(Guardian.Plug.LoadResource)
+  end
+
   scope "/api", TdDdWeb do
     pipe_through :api
     get  "/ping", PingController, :ping
@@ -17,7 +22,7 @@ defmodule TdDdWeb.Router do
   end
 
   scope "/api", TdDdWeb do
-    pipe_through [:api, :api_secure]
+    pipe_through [:api, :api_secure, :api_authorized]
     post "/td_dd/metadata", MetadataController, :upload
     resources "/data_structures", DataStructureController, except: [:new, :edit] do
       get "/comment", CommentController, :get_comment_data_structure

@@ -76,6 +76,7 @@ defmodule TdDd.DataStructures.DataStructure do
       lopd: structure.lopd,
       name: structure.name,
       ou: structure.ou,
+      domain_id: structure.domain_id,
       system: structure.system,
       type: structure.type,
       inserted_at: structure.inserted_at,
