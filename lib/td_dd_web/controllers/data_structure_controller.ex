@@ -132,10 +132,27 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   def show(conn, %{"id" => id}) do
-    data_structure = DataStructures.get_data_structure!(id, data_fields: true)
-    data_structure = get_concepts_linked_to_fields(data_structure)
+    user = conn.assigns[:current_user]
+
+    data_structure =
+      id
+      |> DataStructures.get_data_structure!(data_fields: true)
+      |> get_concepts_linked_to_fields()
+
     users = get_data_structure_users(data_structure)
-    render(conn, "show.json", data_structure: data_structure, users: users)
+
+    with true <- can?(user, view_data_structure(data_structure)) do
+      render(conn, "show.json", data_structure: data_structure, users: users)
+    else
+      false ->
+        conn
+        |> put_status(:forbidden)
+        |> render(ErrorView, :"403.json")
+      _error ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> render(ErrorView, :"422.json")
+    end
   end
 
   defp get_concepts_linked_to_fields(data_structure) do
