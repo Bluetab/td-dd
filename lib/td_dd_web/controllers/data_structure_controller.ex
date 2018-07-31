@@ -86,6 +86,8 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   def create(conn, %{"data_structure" => data_structure_params}) do
+    user = conn.assigns[:current_user]
+
     creation_params =
       data_structure_params
       |> Map.put("last_change_by", get_current_user_id(conn))
@@ -93,7 +95,8 @@ defmodule TdDdWeb.DataStructureController do
       |> Map.put("metadata", %{})
       |> DataStructures.add_domain_id(TaxonomyCache.get_all_domains())
 
-    with {:ok, %DataStructure{} = data_structure} <-
+    with true <- can?(user, create_data_structure(Map.fetch!(creation_params, "domain_id"))),
+      {:ok, %DataStructure{} = data_structure} <-
            DataStructures.create_data_structure(creation_params) do
       audit = %{
         "audit" => %{
@@ -111,6 +114,11 @@ defmodule TdDdWeb.DataStructureController do
       |> put_resp_header("location", data_structure_path(conn, :show, data_structure))
       |> render("show.json", data_structure: data_structure, users: users)
     else
+      false ->
+        conn
+        |> put_status(:forbidden)
+        |> render(ErrorView, :"403.json")
+
       _error ->
         conn
         |> put_status(:unprocessable_entity)
@@ -148,6 +156,7 @@ defmodule TdDdWeb.DataStructureController do
         conn
         |> put_status(:forbidden)
         |> render(ErrorView, :"403.json")
+
       _error ->
         conn
         |> put_status(:unprocessable_entity)
@@ -180,6 +189,8 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   def update(conn, %{"id" => id, "data_structure" => data_structure_params}) do
+    user = conn.assigns[:current_user]
+
     data_structure = DataStructures.get_data_structure!(id, data_fields: true)
 
     update_params =
@@ -188,7 +199,8 @@ defmodule TdDdWeb.DataStructureController do
       |> Map.put("last_change_at", DateTime.utc_now())
       |> DataStructures.add_domain_id(TaxonomyCache.get_all_domains())
 
-    with {:ok, %DataStructure{} = data_structure} <-
+    with true <- can?(user, update_data_structure(data_structure)),
+        {:ok, %DataStructure{} = data_structure} <-
            DataStructures.update_data_structure(data_structure, update_params) do
       data_structure =
         data_structure
@@ -206,6 +218,11 @@ defmodule TdDdWeb.DataStructureController do
       users = get_data_structure_users(data_structure)
       render(conn, "show.json", data_structure: data_structure, users: users)
     else
+      false ->
+        conn
+        |> put_status(:forbidden)
+        |> render(ErrorView, :"403.json")
+
       _error ->
         conn
         |> put_status(:unprocessable_entity)

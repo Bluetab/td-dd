@@ -328,7 +328,7 @@ defmodule TdDd.DataStructures do
     find_domain_for_data_attrs(data, list_domains)
   end
 
-  def add_domain_id(data, _list_domains), do: data
+  def add_domain_id(data, _list_domains), do: data |> Map.put("domain_id", nil)
 
   defp find_domain_for_data_attrs(data, list_domains) do
     domain =
@@ -336,7 +336,7 @@ defmodule TdDd.DataStructures do
       |> Enum.find(&(&1.name == data["ou"]))
 
     case domain do
-      nil -> data
+      nil -> data |> Map.put("domain_id", nil)
       domain -> domain |> Map.fetch!(:domain_id) |> (&Map.put(data, "domain_id", &1)).()
     end
   end
