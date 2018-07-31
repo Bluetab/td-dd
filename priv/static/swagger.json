@@ -45,6 +45,12 @@
         ],
         "summary": "",
         "responses": {
+          "422": {
+            "description": "Unprocessable Entity"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
           "400": {
             "description": "Client Error"
           },
@@ -85,6 +91,12 @@
         ],
         "summary": "",
         "responses": {
+          "422": {
+            "description": "Unprocessable Entity"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
           "400": {
             "description": "Client Error"
           },
@@ -116,6 +128,12 @@
         ],
         "summary": "",
         "responses": {
+          "422": {
+            "description": "Unprocessable Entity"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
           "400": {
             "description": "Client Error"
           },
@@ -146,6 +164,9 @@
         ],
         "summary": "",
         "responses": {
+          "403": {
+            "description": "Unauthorized"
+          },
           "200": {
             "schema": {
               "$ref": "#/definitions/DataFieldsResponse"
@@ -235,6 +256,12 @@
         ],
         "summary": "",
         "responses": {
+          "422": {
+            "description": "Unprocessable Entity"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
           "400": {
             "description": "Client Error"
           },

@@ -1,7 +1,7 @@
 defmodule TdDdWeb.DataFieldController do
   use TdDdWeb, :controller
   use PhoenixSwagger
-
+  import Canada, only: [can?: 2]
   alias TdDd.Audit
   alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
   alias TdDd.DataStructures
@@ -39,12 +39,22 @@ defmodule TdDdWeb.DataFieldController do
       data_structure_id :path, :integer, "Data Structure ID", required: true
     end
     response 200, "OK", Schema.ref(:DataFieldsResponse)
+    response(403, "Unauthorized")
   end
 
   def data_structure_fields(conn, %{"data_structure_id" => data_structure_id}) do
-    data_fields = DataStructures.list_data_structure_fields(data_structure_id)
-    users = get_data_field_users(data_fields)
-    render(conn, "index.json", data_fields: data_fields, users: users)
+    user = conn.assigns[:current_user]
+    data_structure = DataStructures.get_data_structure!(data_structure_id)
+    with true <- can?(user, view_data_structure(data_structure)) do
+      data_fields = DataStructures.list_data_structure_fields(data_structure_id)
+      users = get_data_field_users(data_fields)
+      render(conn, "index.json", data_fields: data_fields, users: users)
+    else
+      false ->
+        conn
+        |> put_status(:forbidden)
+        |> render(ErrorView, :"403")
+    end
   end
 
   swagger_path :create do

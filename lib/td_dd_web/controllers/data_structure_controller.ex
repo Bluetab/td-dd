@@ -83,6 +83,8 @@ defmodule TdDdWeb.DataStructureController do
 
     response(201, "OK", Schema.ref(:DataStructureResponse))
     response(400, "Client Error")
+    response(403, "Unauthorized")
+    response(422, "Unprocessable Entity")
   end
 
   def create(conn, %{"data_structure" => data_structure_params}) do
@@ -137,6 +139,8 @@ defmodule TdDdWeb.DataStructureController do
 
     response(200, "OK", Schema.ref(:DataStructureResponse))
     response(400, "Client Error")
+    response(403, "Unauthorized")
+    response(422, "Unprocessable Entity")
   end
 
   def show(conn, %{"id" => id}) do
@@ -186,6 +190,8 @@ defmodule TdDdWeb.DataStructureController do
 
     response(201, "OK", Schema.ref(:DataStructureResponse))
     response(400, "Client Error")
+    response(403, "Unauthorized")
+    response(422, "Unprocessable Entity")
   end
 
   def update(conn, %{"id" => id, "data_structure" => data_structure_params}) do
@@ -241,6 +247,8 @@ defmodule TdDdWeb.DataStructureController do
 
     response(204, "No Content")
     response(400, "Client Error")
+    response(403, "Unauthorized")
+    response(422, "Unprocessable Entity")
   end
 
   def delete(conn, %{"id" => id}) do
