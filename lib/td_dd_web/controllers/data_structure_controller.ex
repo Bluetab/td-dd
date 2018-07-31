@@ -244,15 +244,28 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   def delete(conn, %{"id" => id}) do
+    user = conn.assigns[:current_user]
     data_structure = DataStructures.get_data_structure!(id)
 
-    with {:ok, %DataStructure{}} <- DataStructures.delete_data_structure(data_structure) do
-      audit = %{
-        "audit" => %{"resource_id" => id, "resource_type" => "data_structure", "payload" => %{}}
-      }
+    with true <- can?(user, delete_data_structure(data_structure)),
+      {:ok, %DataStructure{}} <- DataStructures.delete_data_structure(data_structure) do
 
-      Audit.create_event(conn, audit, @events.delete_data_structure)
-      send_resp(conn, :no_content, "")
+        audit = %{
+          "audit" => %{"resource_id" => id, "resource_type" => "data_structure", "payload" => %{}}
+        }
+
+        Audit.create_event(conn, audit, @events.delete_data_structure)
+        send_resp(conn, :no_content, "")
+    else
+      false ->
+        conn
+        |> put_status(:forbidden)
+        |> render(ErrorView, :"403.json")
+
+      _error ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> render(ErrorView, :"422.json")
     end
   end
 
