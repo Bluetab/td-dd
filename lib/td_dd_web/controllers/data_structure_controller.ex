@@ -117,12 +117,12 @@ defmodule TdDdWeb.DataStructureController do
       false ->
         conn
         |> put_status(:forbidden)
-        |> render(ErrorView, :"403.json")
+        |> render(ErrorView, :"403")
 
       _error ->
         conn
         |> put_status(:unprocessable_entity)
-        |> render(ErrorView, :"422.json")
+        |> render(ErrorView, :"422")
     end
   end
 
@@ -155,12 +155,12 @@ defmodule TdDdWeb.DataStructureController do
       false ->
         conn
         |> put_status(:forbidden)
-        |> render(ErrorView, :"403.json")
+        |> render(ErrorView, :"403")
 
       _error ->
         conn
         |> put_status(:unprocessable_entity)
-        |> render(ErrorView, :"422.json")
+        |> render(ErrorView, :"422")
     end
   end
 
@@ -221,12 +221,12 @@ defmodule TdDdWeb.DataStructureController do
       false ->
         conn
         |> put_status(:forbidden)
-        |> render(ErrorView, :"403.json")
+        |> render(ErrorView, :"403")
 
       _error ->
         conn
         |> put_status(:unprocessable_entity)
-        |> render(ErrorView, :"422.json")
+        |> render(ErrorView, :"422")
     end
   end
 
@@ -260,12 +260,12 @@ defmodule TdDdWeb.DataStructureController do
       false ->
         conn
         |> put_status(:forbidden)
-        |> render(ErrorView, :"403.json")
+        |> render(ErrorView, :"403")
 
       _error ->
         conn
         |> put_status(:unprocessable_entity)
-        |> render(ErrorView, :"422.json")
+        |> render(ErrorView, :"422")
     end
   end
 
