@@ -17,6 +17,10 @@ defmodule TdDd.Search.MockSearch do
     |> Enum.map(&%{_source: &1})
     |> Poison.encode!()
     |> Poison.decode!()
+    |> search_results()
   end
 
+  defp search_results(results) do
+    %{results: results, total: Enum.count(results)}
+  end
 end

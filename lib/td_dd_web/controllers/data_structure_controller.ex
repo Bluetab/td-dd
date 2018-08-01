@@ -39,25 +39,29 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   def index(conn, params) do
-    in_params = getOUs(params)
-    search_params =
-      case in_params do
-        [] -> nil
-        _ -> %{"filters" => %{"ou.raw" => in_params}}
-      end
-    do_index(conn, search_params)
-  end
-
-  defp do_index(conn, search_params) do
     user = conn.assigns[:current_user]
 
+    %{results: data_structures} =
+      case getOUs(params) do
+          [] -> do_index()
+          in_params -> do_index(%{"filters" => %{"ou.raw" => in_params}})
+      end
+
     data_structures =
-      search_params
-        |> Search.search_data_structures()
-        |> Enum.map(fn ds -> get_concepts_linked_to_fields(ds) end)
-        |> Enum.filter(&can?(user, view_data_structure(Map.fetch!(&1, :domain_id))))
+      data_structures
+      |> add_attrs_to_list_data_structures()
+      |> Enum.filter(&can?(user, view_data_structure(Map.fetch!(&1, :domain_id))))
 
     render(conn, "index.json", data_structures: data_structures)
+  end
+
+  defp do_index(search_params \\ %{}) do
+    page = search_params |> Map.get("page", 0)
+    size = search_params |> Map.get("size", 50)
+
+    search_params
+      |> Map.drop(["page", "size"])
+      |> Search.search_data_structures(page, size)
   end
 
   defp getOUs(params) do
@@ -315,6 +319,22 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   def search(conn, params) do
-    do_index(conn, params)
+    user = conn.assigns[:current_user]
+
+    %{results: data_structures, total: total} = do_index(params)
+
+    data_structures =
+      data_structures
+      |> add_attrs_to_list_data_structures()
+      |> Enum.filter(&can?(user, view_data_structure(Map.fetch!(&1, :domain_id))))
+
+    conn
+      |> put_resp_header("x-total-count", "#{total}")
+      |> render("index.json", data_structures: data_structures)
+  end
+
+  defp add_attrs_to_list_data_structures(data_structures) do
+    data_structures
+        |> Enum.map(fn ds -> get_concepts_linked_to_fields(ds) end)
   end
 end

@@ -18,23 +18,28 @@ defmodule TdDd.DataStructure.Search do
         [] -> create_query(params)
         _ -> create_query(params, filter_clause)
       end
-     search = %{
+
+    search = %{
       from: page * size,
       size: size,
       query: query
     }
 
-    @search_service.search("data_structure", search)
-    |> Enum.map(&Map.get(&1, "_source"))
-    |> Enum.map(fn(ds) ->
-        CollectionUtils.atomize_keys(Map.put(ds, "last_change_by", CollectionUtils.atomize_keys(Map.get(ds, "last_change_by"))))
-      end)
-    |> Enum.map(fn(ds) ->
-        CollectionUtils.atomize_keys(Map.put(ds, "data_fields", Enum.map(ds.data_fields, fn(df) ->
-          CollectionUtils.atomize_keys(df)
-        end)))
-      end)
+    %{results: results, total: total} = @search_service.search("data_structure", search)
 
+    results =
+      results
+        |> Enum.map(&Map.get(&1, "_source"))
+        |> Enum.map(fn(ds) ->
+            CollectionUtils.atomize_keys(Map.put(ds, "last_change_by", CollectionUtils.atomize_keys(Map.get(ds, "last_change_by"))))
+          end)
+        |> Enum.map(fn(ds) ->
+            CollectionUtils.atomize_keys(Map.put(ds, "data_fields", Enum.map(ds.data_fields, fn(df) ->
+              CollectionUtils.atomize_keys(df)
+            end)))
+          end)
+
+    %{results: results, total: total}
   end
 
   def create_filters(%{"filters" => filters}) do
