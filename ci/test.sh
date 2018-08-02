@@ -1,6 +1,7 @@
 #!/bin/bash
 
 service postgresql96 start
+redis-server --daemonize yes --protected-mode no
 
 cp -R /code /working_code
 cd /working_code
