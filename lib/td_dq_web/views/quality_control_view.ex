@@ -4,7 +4,6 @@ defmodule TdDqWeb.QualityControlView do
   alias TdDqWeb.QualityRuleView
   alias TdPerms.TaxonomyCache
 
-
   def render("index.json", %{quality_controls: quality_controls}) do
     %{data: render_many(quality_controls, QualityControlView, "quality_control.json")}
   end
