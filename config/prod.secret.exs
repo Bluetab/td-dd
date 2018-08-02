@@ -21,12 +21,16 @@ config :td_dq, TdDq.Repo,
   pool_size: 10
 
 config :td_dq, TdDq.Auth.Guardian,
-  allowed_algos: ["HS512"], # optional
+  # optional
+  allowed_algos: ["HS512"],
   issuer: "tdauth",
-  ttl: { 1, :hours },
+  ttl: {1, :hours},
   secret_key: "SuperSecretTruedat"
 
-config :td_dq, :audit_service, api_service: TdDqWeb.ApiServices.HttpTdAuditService,
+config :td_dq, :audit_service,
+  api_service: TdDqWeb.ApiServices.HttpTdAuditService,
   audit_host: "localhost",
   audit_port: "4007",
   audit_domain: ""
+
+config :td_perms, redis_uri: "redis://localhost"

@@ -51,5 +51,7 @@ config :td_dq, :audit_service, api_service: TdDqWeb.ApiServices.HttpTdAuditServi
   audit_port: "4007",
   audit_domain: ""
 
+config :td_perms, redis_uri: "redis://localhost"
+
 config :td_dq, qc_types_file: "static/qc_types_dev.json"
 config :td_dq, qr_types_file: "static/qr_types_dev.json"
