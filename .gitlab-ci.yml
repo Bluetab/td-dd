@@ -13,7 +13,7 @@ build:
 test:
   stage: test
   script:
-    - docker run --rm -v $(pwd):/code:ro -w /code --entrypoint=/code/ci/test.sh bluetab/amazonlinux-phoenix-postgresql:20180226093919
+    - docker run --rm -v $(pwd):/code:ro -w /code --entrypoint=/code/ci/test.sh bluetab/amazonlinux-phoenix-postgresql-redis:20180709225133
   artifacts:
     untracked: true
 
