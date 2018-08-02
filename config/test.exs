@@ -25,3 +25,5 @@ config :td_dq, :audit_service, api_service: TdDqWeb.ApiServices.MockTdAuditServi
   audit_host: "localhost",
   audit_port: "4007",
   audit_domain: ""
+
+config :td_perms, redis_uri: "redis://localhost"
