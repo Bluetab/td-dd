@@ -43,7 +43,7 @@ defmodule TdDqWeb.Router do
         title: "QualityControl"
       },
       "host": @endpoint_url,
-      "basePath": "/api",
+      "basePath": "/",
       "securityDefinitions":
       %{
         bearer:
