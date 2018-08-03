@@ -54,7 +54,7 @@ defmodule TdDq.Mixfile do
       {:timex, "~> 3.1"},
       {:ex_machina, "~> 2.1", only: :test},
       {:canada, "~> 1.0.1"},
-      {:td_perms, git: "https://github.com/Bluetab/td-perms.git", tag: "v0.2.9"}
+      {:td_perms, git: "https://github.com/Bluetab/td-perms.git", tag: "v0.3.1"}
     ]
   end
 
