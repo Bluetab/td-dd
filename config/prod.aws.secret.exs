@@ -36,7 +36,7 @@ config :td_dd, :auth_service, api_service: TdBgWeb.ApiServices.HttpTdAuthService
   auth_domain: ""
 
 config :td_dd, :elasticsearch,
-  search_service: TdBg.Search,
+  search_service: TdDd.Search,
   es_host: "${ES_HOST}",
   es_port: "${ES_PORT}",
   type_name: "doc"
