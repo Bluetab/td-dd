@@ -30,7 +30,7 @@ config :td_dd, :api_services_login,
   api_username: "${API_USER}",
   api_password: "${API_PASSWORD}"
 
-config :td_dd, :auth_service, api_service: TdBgWeb.ApiServices.HttpTdAuthService,
+config :td_dd, :auth_service, api_service: TdDdWeb.ApiServices.HttpTdAuthService,
   auth_host: "${API_AUTH_HOST}",
   auth_port: "${API_AUTH_PORT}",
   auth_domain: ""
@@ -43,7 +43,7 @@ config :td_dd, :elasticsearch,
 
 config :td_perms, redis_uri: "${REDIS_URI}"
 
-config :td_dd, :audit_service, api_service: TdBgWeb.ApiServices.HttpTdAuditService,
+config :td_dd, :audit_service, api_service: TdDdWeb.ApiServices.HttpTdAuditService,
   audit_host: "${API_AUDIT_HOST}",
   audit_port: "${API_AUDIT_PORT}",
   audit_domain: ""
