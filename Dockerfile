@@ -16,6 +16,8 @@ ARG MIX_ENV
 ARG APP_VERSION
 ARG APP_NAME
 
+RUN sed -i -e 's/prod.secret.exs/prod.aws.secret.exs/g' config/prod.exs
+
 RUN mix local.hex --force
 RUN mix local.rebar --force
 
