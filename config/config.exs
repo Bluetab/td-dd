@@ -33,7 +33,8 @@ config :td_perms, permissions: [
   :view_rejected_business_concepts,
   :view_deprecated_business_concepts,
   :create_business_concept_link,
-  :delete_business_concept_link
+  :delete_business_concept_link,
+  :create_quality_rule
 ]
 
 # General application configuration
