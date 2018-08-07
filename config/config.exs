@@ -37,6 +37,8 @@ config :td_perms, permissions: [
   :create_quality_rule
 ]
 
+config :td_dq, permission_resolver: TdPerms.Permissions
+
 # General application configuration
 config :td_dq,
   ecto_repos: [TdDq.Repo]

@@ -1,11 +1,12 @@
 defmodule TdDqWeb.QualityControlController do
   use TdDqWeb, :controller
   use PhoenixSwagger
-
+  import Canada, only: [can?: 2]
   alias TdDq.Audit
   alias TdDq.QualityControls
   alias TdDq.QualityControls.QualityControl
   alias TdDqWeb.ErrorView
+  alias TdDq.Auth.Guardian.Plug, as: GuardianPlug
   alias TdDqWeb.SwaggerDefinitions
 
   action_fallback(TdDqWeb.FallbackController)
@@ -54,6 +55,7 @@ defmodule TdDqWeb.QualityControlController do
   end
 
   def create(conn, %{"quality_control" => quality_control_params}) do
+    user = get_current_user(conn)
     quality_control_params =
       if conn.assigns.current_user do
         Map.put_new(quality_control_params, "updated_by", conn.assigns.current_user.id)
@@ -61,7 +63,8 @@ defmodule TdDqWeb.QualityControlController do
         quality_control_params
       end
 
-    with {:ok, %QualityControl{} = quality_control} <-
+    with true <- can?(user, create_quality_control(Map.fetch!(quality_control_params, "business_concept_id"))),
+      {:ok, %QualityControl{} = quality_control} <-
            QualityControls.create_quality_control(quality_control_params) do
       audit = %{
         "audit" => %{
@@ -74,10 +77,15 @@ defmodule TdDqWeb.QualityControlController do
       Audit.create_event(conn, audit, @events.create_quality_control)
 
       conn
-      |> put_status(:created)
-      |> put_resp_header("location", quality_control_path(conn, :show, quality_control))
-      |> render("show.json", quality_control: quality_control)
+        |> put_status(:created)
+        |> put_resp_header("location", quality_control_path(conn, :show, quality_control))
+        |> render("show.json", quality_control: quality_control)
     else
+      false ->
+        conn
+        |> put_status(:forbidden)
+        |> render(ErrorView, :"403.json")
+
       {:error, _changeset} ->
         conn
         |> put_status(:unprocessable_entity)
@@ -163,5 +171,9 @@ defmodule TdDqWeb.QualityControlController do
       Audit.create_event(conn, audit, @events.delete_quality_control)
       send_resp(conn, :no_content, "")
     end
+  end
+
+  defp get_current_user(conn) do
+    GuardianPlug.current_resource(conn)
   end
 end

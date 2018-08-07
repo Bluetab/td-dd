@@ -4,6 +4,7 @@ defmodule TdDqWeb.QualityRuleController do
 
   import Canada, only: [can?: 2]
 
+  alias TdDq.QualityControls
   alias TdDq.QualityRules
   alias TdDq.QualityRules.QualityRule
   alias TdDqWeb.SwaggerDefinitions
@@ -50,9 +51,12 @@ defmodule TdDqWeb.QualityRuleController do
 
   def create(conn, %{"quality_rule" => quality_rule_params}) do
     user = get_current_user(conn)
+    quality_control_id = Map.fetch!(quality_rule_params, "quality_control_id")
+    quality_control = QualityControls.get_quality_control!(quality_control_id)
+
     {quality_rule_params, quality_rule_type} =
       add_quality_rule_type_id(quality_rule_params)
-    with true <- can?(user, create(QualityRule)),
+    with true <- can?(user, create_quality_rule(quality_control.business_concept_id)),
          {:valid_quality_rule_type} <- verify_quality_rule_existence(quality_rule_type),
          {:ok_size_verification} <- verify_equals_sizes(quality_rule_params, quality_rule_type.params),
          {:ok_existence_verification} <- verify_types_and_existence(quality_rule_params, quality_rule_type.params),
