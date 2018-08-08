@@ -9,9 +9,9 @@ defmodule TdDd.DataStructure.Search do
 
   @search_service Application.get_env(:td_dd, :elasticsearch)[:search_service]
 
-  def search_data_structures(params, all \\ false, page \\ 0, size \\ 50)
+  def search_data_structures(params, page \\ 0, size \\ 50)
 
-  def search_data_structures(params, all, page, size) do
+  def search_data_structures(params, page, size) do
     filter_clause = create_filters(params)
 
     query =
@@ -20,7 +20,7 @@ defmodule TdDd.DataStructure.Search do
         _ -> create_query(params, filter_clause)
       end
 
-    search = buid_search_map(query, page, size, all)
+    search = %{from: page * size, size: size, query: query}
 
     %{results: results, total: total} = @search_service.search("data_structure", search)
 
@@ -50,11 +50,6 @@ defmodule TdDd.DataStructure.Search do
 
     %{results: results, total: total}
   end
-
-  defp buid_search_map(query, _page, _size, true = _all), do: %{query: query}
-
-  defp buid_search_map(query, page, size, false = _all),
-    do: %{from: page * size, size: size, query: query}
 
   def create_filters(%{"filters" => filters}) do
     filters

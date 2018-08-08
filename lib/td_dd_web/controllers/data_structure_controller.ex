@@ -44,7 +44,7 @@ defmodule TdDdWeb.DataStructureController do
     %{results: data_structures} =
       case getOUs(params) do
           [] -> do_index()
-          in_params -> do_index(%{"filters" => %{"ou.raw" => in_params}}, true)
+          in_params -> do_index(%{"filters" => %{"ou.raw" => in_params}}, 0, 10_000)
       end
 
     data_structures =
@@ -55,20 +55,13 @@ defmodule TdDdWeb.DataStructureController do
     render(conn, "index.json", data_structures: data_structures)
   end
 
-  defp do_index(search_params \\ %{}, all \\ false)
-
-  defp do_index(search_params, false = all) do
-    page = search_params |> Map.get("page", 0)
-    size = search_params |> Map.get("size", 50)
+  defp do_index(search_params \\ %{}, page \\ 0, size \\ 50) do
+    page = search_params |> Map.get("page", page)
+    size = search_params |> Map.get("size", size)
 
     search_params
       |> Map.drop(["page", "size"])
-      |> Search.search_data_structures(all, page, size)
-  end
-
-  defp do_index(search_params, all) do
-    search_params
-      |> Search.search_data_structures(all)
+      |> Search.search_data_structures(page, size)
   end
 
   defp getOUs(params) do
