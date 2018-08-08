@@ -1,5 +1,6 @@
 defmodule TdDd.DataStructure.Search do
   require Logger
+
   @moduledoc """
     Helper module to construct business concept search queries.
   """
@@ -8,9 +9,9 @@ defmodule TdDd.DataStructure.Search do
 
   @search_service Application.get_env(:td_dd, :elasticsearch)[:search_service]
 
-  def search_data_structures(params, page \\ 0, size \\ 50)
+  def search_data_structures(params, all \\ false, page \\ 0, size \\ 50)
 
-  def search_data_structures(params, page, size) do
+  def search_data_structures(params, all, page, size) do
     filter_clause = create_filters(params)
 
     query =
@@ -19,28 +20,41 @@ defmodule TdDd.DataStructure.Search do
         _ -> create_query(params, filter_clause)
       end
 
-    search = %{
-      from: page * size,
-      size: size,
-      query: query
-    }
+    search = buid_search_map(query, page, size, all)
 
     %{results: results, total: total} = @search_service.search("data_structure", search)
 
     results =
       results
-        |> Enum.map(&Map.get(&1, "_source"))
-        |> Enum.map(fn(ds) ->
-            CollectionUtils.atomize_keys(Map.put(ds, "last_change_by", CollectionUtils.atomize_keys(Map.get(ds, "last_change_by"))))
-          end)
-        |> Enum.map(fn(ds) ->
-            CollectionUtils.atomize_keys(Map.put(ds, "data_fields", Enum.map(ds.data_fields, fn(df) ->
+      |> Enum.map(&Map.get(&1, "_source"))
+      |> Enum.map(fn ds ->
+        CollectionUtils.atomize_keys(
+          Map.put(
+            ds,
+            "last_change_by",
+            CollectionUtils.atomize_keys(Map.get(ds, "last_change_by"))
+          )
+        )
+      end)
+      |> Enum.map(fn ds ->
+        CollectionUtils.atomize_keys(
+          Map.put(
+            ds,
+            "data_fields",
+            Enum.map(ds.data_fields, fn df ->
               CollectionUtils.atomize_keys(df)
-            end)))
-          end)
+            end)
+          )
+        )
+      end)
 
     %{results: results, total: total}
   end
+
+  defp buid_search_map(query, _page, _size, true = _all), do: %{query: query}
+
+  defp buid_search_map(query, page, size, false = _all),
+    do: %{from: page * size, size: size, query: query}
 
   def create_filters(%{"filters" => filters}) do
     filters
@@ -52,8 +66,8 @@ defmodule TdDd.DataStructure.Search do
 
   defp to_terms_query({filter, values}) do
     Aggregations.aggregation_terms()
-      |> Map.get(filter)
-      |> get_filter(values, filter)
+    |> Map.get(filter)
+    |> get_filter(values, filter)
   end
 
   defp get_filter(%{terms: %{field: field}}, values, _) do
@@ -82,5 +96,4 @@ defmodule TdDd.DataStructure.Search do
   defp bool_query(query) do
     %{bool: %{must: query}}
   end
-
 end
