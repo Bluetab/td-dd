@@ -42,7 +42,9 @@ config :td_dd, :audit_service,
   protocol: "http",
   audits_path: "/api/audits/"
 
-  config :td_perms, permissions: [
+config :td_dd, permission_resolver: TdPerms.Permissions
+
+config :td_perms, permissions: [
     :is_admin,
     :create_acl_entry,
     :update_acl_entry,
@@ -73,8 +75,6 @@ config :td_dd, :audit_service,
     :delete_business_concept_link,
     :create_quality_rule
   ]
-
-config :td_dd, permission_resolver: TdPerms.Permissions
 
 import_config "metadata.exs"
 
