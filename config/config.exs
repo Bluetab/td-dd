@@ -5,6 +5,8 @@
 # is restricted to this project.
 use Mix.Config
 
+config :td_dq, permission_resolver: TdPerms.Permissions
+
 config :td_perms, permissions: [
   :is_admin,
   :create_acl_entry,
@@ -37,7 +39,7 @@ config :td_perms, permissions: [
   :create_quality_rule
 ]
 
-config :td_dq, permission_resolver: TdPerms.Permissions
+config :td_dq, cache_quality_controls_on_startup: true
 
 # General application configuration
 config :td_dq,
