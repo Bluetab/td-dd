@@ -142,7 +142,6 @@ defmodule TdDdWeb.SwaggerDefinitions do
               description :string, "Data Field descrition"
               business_concept_id :string, "Asociated Business Concept Id"
               data_structure_id :integer, "Belongs to Data Structure", required: true
-              external_id :string, "External ID"
             end
           end)
         end
@@ -151,8 +150,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
         properties do
           data_field (Schema.new do
             properties do
-              description :string, "Data Field descrition"
-              external_id :string, "External ID"
+              description :string, "Data Field description"
             end
           end)
         end

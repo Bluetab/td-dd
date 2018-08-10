@@ -12,7 +12,6 @@
 alias TdDd.DataStructures.DataStructure
 alias TdDd.DataStructures.DataField
 alias TdDd.Repo
-alias Ecto.Changeset
 
 create_data_structure = fn(ou, system, group, name) ->
   Repo.insert!(%DataStructure{

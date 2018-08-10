@@ -37,7 +37,6 @@ defmodule TdDd.Search.Indexer do
           business_concept_id: %{type: "text"},
           data_structure_id: %{type: "long"},
           description: %{type: "text"},
-          external_id: %{type: "text"},
           id: %{type: "long"}
         }
       }

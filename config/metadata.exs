@@ -21,4 +21,4 @@ config :td_dd, :metadata,
     DO UPDATE SET name = $4, type = $5, nullable = $7, precision = $8, business_concept_id = $9, metadata = $10, last_change_at = $12, last_change_by = $11, updated_at = $12
   """,
   data_structure_modifiable_fields: ["description", "ou", "lopd"],
-  data_field_modifiable_fields: ["description", "external_id"]
+  data_field_modifiable_fields: ["description"]

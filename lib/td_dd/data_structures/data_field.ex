@@ -20,7 +20,6 @@ defmodule TdDd.DataStructures.DataField do
     field(:type, :string, default: nil)
     belongs_to(:data_structure, DataStructure)
     field(:metadata, :map)
-    field(:external_id, :string, default: nil)
 
     timestamps()
   end
@@ -44,8 +43,7 @@ defmodule TdDd.DataStructures.DataField do
       :data_structure_id,
       :last_change_at,
       :last_change_by,
-      :metadata,
-      :external_id
+      :metadata
     ])
     |> validate_required([:name, :data_structure_id, :last_change_at, :last_change_by, :metadata])
     |> validate_length(:name, max: 255)

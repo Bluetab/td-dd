@@ -874,13 +874,9 @@
         "data_field": {
           "type": "object",
           "properties": {
-            "external_id": {
-              "type": "string",
-              "description": "External ID"
-            },
             "description": {
               "type": "string",
-              "description": "Data Field descrition"
+              "description": "Data Field description"
             }
           }
         }
@@ -919,10 +915,6 @@
             "name": {
               "type": "string",
               "description": "Data Field name"
-            },
-            "external_id": {
-              "type": "string",
-              "description": "External ID"
             },
             "description": {
               "type": "string",

@@ -90,7 +90,6 @@ defmodule TdDd.DataStructures.DataStructure do
       business_concept_id: field.business_concept_id,
       data_structure_id: field.data_structure_id,
       description: field.description,
-      external_id: field.external_id,
       inserted_at: field.inserted_at,
       last_change_at: field.last_change_at,
       name: field.name,

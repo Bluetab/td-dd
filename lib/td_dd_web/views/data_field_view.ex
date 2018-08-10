@@ -23,8 +23,7 @@ defmodule TdDdWeb.DataFieldView do
       last_change_at: data_field.last_change_at,
       last_change_by: get_last_change_by(data_field, users),
       inserted_at: data_field.inserted_at,
-      metadata: data_field.metadata,
-      external_id: data_field.external_id
+      metadata: data_field.metadata
     }
   end
 

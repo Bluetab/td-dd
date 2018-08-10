@@ -11,6 +11,7 @@ defmodule TdDdWeb.DataStructureController do
   alias TdDd.DataStructures.DataStructure
   alias TdDdWeb.ErrorView
   alias TdDdWeb.SwaggerDefinitions
+  alias TdPerms.DataFieldCache
   alias TdPerms.FieldLinkCache
   alias TdPerms.TaxonomyCache
 
@@ -153,6 +154,7 @@ defmodule TdDdWeb.DataStructureController do
     data_structure =
       id
       |> DataStructures.get_data_structure!(data_fields: true)
+      |> add_fields_external_ids
       |> get_concepts_linked_to_fields()
 
     users = get_data_structure_users(data_structure)
@@ -170,6 +172,20 @@ defmodule TdDdWeb.DataStructureController do
         |> put_status(:unprocessable_entity)
         |> render(ErrorView, :"422")
     end
+  end
+
+  defp add_fields_external_ids(data_structure) do
+    data_structure
+    |> Map.put(
+      :data_fields,
+      Enum.map(data_structure.data_fields, fn field ->
+        external_id =
+          DataFieldCache.get_external_id(data_structure.system,
+                                         data_structure.group,
+                                         data_structure.name, field.name)
+        Map.put(field, :external_id, external_id)
+      end)
+    )
   end
 
   defp get_concepts_linked_to_fields(data_structure) do
