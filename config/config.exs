@@ -71,8 +71,7 @@ config :td_perms, permissions: [
     :view_versioned_business_concepts,
     :view_rejected_business_concepts,
     :view_deprecated_business_concepts,
-    :create_business_concept_link,
-    :delete_business_concept_link,
+    :manage_business_concept_links,
     :create_quality_rule
   ]
 
