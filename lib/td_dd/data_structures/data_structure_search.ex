@@ -4,6 +4,7 @@ defmodule TdDd.DataStructure.Search do
   @moduledoc """
     Helper module to construct business concept search queries.
   """
+  alias TdDd.DataStructure.Query
   alias TdDd.Search.Aggregations
   alias TdDd.Utils.CollectionUtils
 
@@ -70,7 +71,8 @@ defmodule TdDd.DataStructure.Search do
   end
 
   defp create_query(%{"query" => query}) do
-    %{simple_query_string: %{query: query}}
+    equery = Query.add_query_wildcard(query)
+    %{simple_query_string: %{query: equery}}
     |> bool_query
   end
 
