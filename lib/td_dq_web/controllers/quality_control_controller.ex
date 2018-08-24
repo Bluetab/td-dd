@@ -6,7 +6,6 @@ defmodule TdDqWeb.QualityControlController do
   alias TdDq.QualityControls
   alias TdDq.QualityControls.QualityControl
   alias TdDqWeb.ErrorView
-  alias TdDq.Auth.Guardian.Plug, as: GuardianPlug
   alias TdDqWeb.SwaggerDefinitions
 
   action_fallback(TdDqWeb.FallbackController)
@@ -55,10 +54,10 @@ defmodule TdDqWeb.QualityControlController do
   end
 
   def create(conn, %{"quality_control" => quality_control_params}) do
-    user = get_current_user(conn)
+    user = conn.assigns[:current_resource]
     quality_control_params =
-      if conn.assigns.current_user do
-        Map.put_new(quality_control_params, "updated_by", conn.assigns.current_user.id)
+      if user do
+        Map.put_new(quality_control_params, "updated_by", user.id)
       else
         quality_control_params
       end
@@ -124,11 +123,12 @@ defmodule TdDqWeb.QualityControlController do
   end
 
   def update(conn, %{"id" => id, "quality_control" => quality_control_params}) do
+    user = conn.assigns[:current_resource]
     quality_control = QualityControls.get_quality_control!(id)
 
     quality_control_params =
-      if conn.assigns.current_user do
-        Map.put_new(quality_control_params, "updated_by", conn.assigns.current_user.id)
+      if user do
+        Map.put_new(quality_control_params, "updated_by", user.id)
       else
         quality_control_params
       end
@@ -171,9 +171,5 @@ defmodule TdDqWeb.QualityControlController do
       Audit.create_event(conn, audit, @events.delete_quality_control)
       send_resp(conn, :no_content, "")
     end
-  end
-
-  defp get_current_user(conn) do
-    GuardianPlug.current_resource(conn)
   end
 end

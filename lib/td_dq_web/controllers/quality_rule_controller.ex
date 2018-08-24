@@ -7,9 +7,8 @@ defmodule TdDqWeb.QualityRuleController do
   alias TdDq.QualityControls
   alias TdDq.QualityRules
   alias TdDq.QualityRules.QualityRule
-  alias TdDqWeb.SwaggerDefinitions
-  alias TdDq.Auth.Guardian.Plug, as: GuardianPlug
   alias TdDqWeb.ErrorView
+  alias TdDqWeb.SwaggerDefinitions
 
   action_fallback TdDqWeb.FallbackController
 
@@ -23,7 +22,7 @@ defmodule TdDqWeb.QualityRuleController do
   end
 
   def index(conn, _params) do
-    user = get_current_user(conn)
+    user = conn.assigns[:current_resource]
     with true <- can?(user, index(QualityRule)) do
       quality_rules = QualityRules.list_quality_rules()
       render(conn, "index.json", quality_rules: quality_rules)
@@ -50,7 +49,7 @@ defmodule TdDqWeb.QualityRuleController do
   end
 
   def create(conn, %{"quality_rule" => quality_rule_params}) do
-    user = get_current_user(conn)
+    user = conn.assigns[:current_resource]
     quality_control_id = Map.fetch!(quality_rule_params, "quality_control_id")
     quality_control = QualityControls.get_quality_control!(quality_control_id)
 
@@ -130,7 +129,7 @@ defmodule TdDqWeb.QualityRuleController do
 
   def show(conn, %{"id" => id}) do
     quality_rule = QualityRules.get_quality_rule!(id)
-    user = get_current_user(conn)
+    user = conn.assigns[:current_resource]
     with true <- can?(user, show(quality_rule)) do
       render(conn, "show.json", quality_rule: quality_rule)
     else
@@ -158,7 +157,7 @@ defmodule TdDqWeb.QualityRuleController do
 
   def update(conn, %{"id" => id, "quality_rule" => quality_rule_params}) do
     quality_rule = QualityRules.get_quality_rule!(id)
-    user = get_current_user(conn)
+    user = conn.assigns[:current_resource]
     with true <- can?(user, update(quality_rule)),
          {:ok, %QualityRule{} = quality_rule} <- QualityRules.update_quality_rule(quality_rule, quality_rule_params) do
       render(conn, "show.json", quality_rule: quality_rule)
@@ -186,7 +185,7 @@ defmodule TdDqWeb.QualityRuleController do
 
   def delete(conn, %{"id" => id}) do
     quality_rule = QualityRules.get_quality_rule!(id)
-    user = get_current_user(conn)
+    user = conn.assigns[:current_resource]
     with true <- can?(user, delete(quality_rule)),
          {:ok, %QualityRule{}} <- QualityRules.delete_quality_rule(quality_rule) do
       send_resp(conn, :no_content, "")
@@ -211,7 +210,7 @@ defmodule TdDqWeb.QualityRuleController do
   end
 
   def get_quality_rules(conn, %{"quality_control_id" => id}) do
-    user = get_current_user(conn)
+    user = conn.assigns[:current_resource]
     {quality_control_id, _} = Integer.parse(id)
     with true <- can?(user, index(QualityRule)) do
       quality_rules = QualityRules.list_quality_rules()
@@ -241,8 +240,4 @@ defmodule TdDqWeb.QualityRuleController do
   defp add_quality_rule_type_id(%{"quality_rule_type_id" => quality_rule_type_id} = quality_rule_params),
     do: {quality_rule_params, QualityRules.get_quality_rule_type!(quality_rule_type_id)}
   defp add_quality_rule_type_id(quality_rule_params), do: {quality_rule_params, nil}
-
-  defp get_current_user(conn) do
-    GuardianPlug.current_resource(conn)
-  end
 end

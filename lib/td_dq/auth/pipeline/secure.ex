@@ -10,5 +10,5 @@ defmodule TdDq.Auth.Pipeline.Secure do
   #plug Guardian.Plug.VerifyHeader, claims: %{"typ" => "access"}
   # Load the user if either of the verifications worked
   plug Guardian.Plug.EnsureAuthenticated
-  plug TdDq.Auth.Plug.CurrentUser
+  plug TdDq.Auth.Plug.CurrentResource
 end

@@ -2,9 +2,6 @@ defmodule TdDq.Audit do
   @moduledoc """
     Manage TdAudit api service
   """
-
-  alias TdDq.Auth.Guardian.Plug, as: GuardianPlug
-
   @td_audit_api Application.get_env(:td_dq, :audit_service)[:api_service]
   @service "td_dq"
 
@@ -22,7 +19,7 @@ defmodule TdDq.Audit do
   end
 
   def add_user_info(conn, %{"audit" => event_params}) do
-    current_user = GuardianPlug.current_resource(conn)
+    current_user = conn.assigns[:current_resource]
     event_params =
       event_params
       |> Map.put("user_id", current_user.id)
