@@ -22,9 +22,9 @@ defmodule TdDqWeb.QualityControlController do
   end
 
   def index(conn, _params) do
-    quality_controls = QualityControls.list_quality_controls()
-    render(conn, "index.json", quality_controls: quality_controls)
-  end
+      quality_controls = QualityControls.list_quality_controls()
+      render(conn, "index.json", quality_controls: quality_controls)
+    end
 
   swagger_path :get_quality_controls_by_concept do
     description("List Quality Controls of a Business Concept")
@@ -37,8 +37,23 @@ defmodule TdDqWeb.QualityControlController do
   end
 
   def get_quality_controls_by_concept(conn, %{"id" => id}) do
-    quality_controls = QualityControls.list_concept_quality_controls(id)
-    render(conn, "index.json", quality_controls: quality_controls)
+    user = conn.assigns[:current_resource]
+    resource_type = %{"business_concept_id" => id}
+
+    with true <- can?(user, index_quality_control(resource_type)) do
+      quality_controls = QualityControls.list_concept_quality_controls(id)
+      render(conn, "index.json", quality_controls: quality_controls)
+    else
+      false ->
+        conn
+        |> put_status(:forbidden)
+        |> render(ErrorView, :"403.json")
+
+      {:error, _changeset} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> render(ErrorView, :"422.json")
+    end
   end
 
   swagger_path :create do
@@ -62,9 +77,12 @@ defmodule TdDqWeb.QualityControlController do
         quality_control_params
       end
 
-    with true <- can?(user, create_quality_control(Map.fetch!(quality_control_params, "business_concept_id"))),
+    resource_type = Map.take(quality_control_params, ["business_concept_id"])
+
+    with true <- can?(user, create_quality_control(resource_type)),
       {:ok, %QualityControl{} = quality_control} <-
            QualityControls.create_quality_control(quality_control_params) do
+
       audit = %{
         "audit" => %{
           "resource_id" => quality_control.id,

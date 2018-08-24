@@ -19,12 +19,16 @@ defmodule TdDq.Canada.Abilities do
       QualityRuleAbilities.can?(user, action, quality_rule)
     end
 
-    def can?(%User{} = user, :create_quality_rule, param) do
-      QualityRuleAbilities.can?(user, :create_quality_rule, param)
+    def can?(%User{} = user, :create_quality_rule, resource_type) do
+      QualityRuleAbilities.can?(user, :create_quality_rule, resource_type)
     end
 
-    def can?(%User{} = user, :create_quality_control, param) do
-      QualityControlAbilities.can?(user, :create_quality_control, param)
+    def can?(%User{} = user, :create_quality_control, resource_type) do
+      QualityControlAbilities.can?(user, :create_quality_control, resource_type)
+    end
+
+    def can?(%User{} = user, :index_quality_control, resource_type) do
+      QualityControlAbilities.can?(user, :index_quality_control, resource_type)
     end
 
     def can?(%User{}, _action, _entity),  do: false
