@@ -19,7 +19,6 @@ defmodule TdDqWeb.QualityControlView do
 
   def render("quality_control.json", %{quality_control: quality_control}) do
     %{id: quality_control.id,
-      business_concept_name: BusinessConceptCache.get_name(quality_control.business_concept_id),
       business_concept_id: quality_control.business_concept_id,
       name: quality_control.name,
       description: quality_control.description,
@@ -35,7 +34,11 @@ defmodule TdDqWeb.QualityControlView do
       updated_at: quality_control.updated_at,
       principle: quality_control.principle,
       type: quality_control.type,
-      type_params: quality_control.type_params
+      type_params: quality_control.type_params,
+      current_business_concept_version: %{
+        name: BusinessConceptCache.get_name(quality_control.business_concept_id),
+        id: BusinessConceptCache.get_business_concept_version_id(quality_control.business_concept_id)
+      }
     }
     |> add_quality_rules(quality_control)
   end
