@@ -158,8 +158,9 @@ defmodule TdDqWeb.QualityRuleController do
 
   def update(conn, %{"id" => id, "quality_rule" => quality_rule_params}) do
     quality_rule = QualityRules.get_quality_rule!(id)
+    quality_control = quality_rule.quality_control
     user = conn.assigns[:current_resource]
-    with true <- can?(user, update(quality_rule)),
+    with true <- can?(user, update_quality_rule(%{"business_concept_id" => quality_control.business_concept_id})),
          {:ok, %QualityRule{} = quality_rule} <- QualityRules.update_quality_rule(quality_rule, quality_rule_params) do
       render(conn, "show.json", quality_rule: quality_rule)
     else
@@ -187,7 +188,9 @@ defmodule TdDqWeb.QualityRuleController do
   def delete(conn, %{"id" => id}) do
     quality_rule = QualityRules.get_quality_rule!(id)
     user = conn.assigns[:current_resource]
-    with true <- can?(user, delete(quality_rule)),
+    quality_control = quality_rule.quality_control
+
+    with true <- can?(user, delete_quality_rule(%{"business_concept_id" => quality_control.business_concept_id})),
          {:ok, %QualityRule{}} <- QualityRules.delete_quality_rule(quality_rule) do
       send_resp(conn, :no_content, "")
     else

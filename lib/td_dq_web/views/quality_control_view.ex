@@ -1,8 +1,13 @@
 defmodule TdDqWeb.QualityControlView do
   use TdDqWeb, :view
+  use TdHypermedia, :view
   alias TdDqWeb.QualityControlView
   alias TdDqWeb.QualityRuleView
   alias TdPerms.BusinessConceptCache
+
+  def render("index.json", %{hypermedia: hypermedia, quality_controls: quality_controls}) do
+    render_many_hypermedia(quality_controls, hypermedia, QualityControlView, "quality_control.json")
+  end
 
   def render("index.json", %{quality_controls: quality_controls}) do
     %{data: render_many(quality_controls, QualityControlView, "quality_control.json")}

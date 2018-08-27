@@ -8,7 +8,7 @@ defmodule TdDq.Canada.QualityRuleAbilities do
 
   def can?(%User{}, action, %QualityRule{}) when action in [:update, :delete, :show], do: true
 
-  def can?(%User{} = user, :create_quality_rule, %{"business_concept_id" => business_concept_id}) do
-    Permissions.authorized?(user, :create_quality_rule, business_concept_id)
+  def can?(%User{} = user, :manage_quality_rule, %{"business_concept_id" => business_concept_id}) do
+    Permissions.authorized?(user, :manage_quality_rule, business_concept_id)
   end
 end
