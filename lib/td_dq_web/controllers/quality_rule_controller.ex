@@ -56,7 +56,10 @@ defmodule TdDqWeb.QualityRuleController do
 
     {quality_rule_params, quality_rule_type} =
       add_quality_rule_type_id(quality_rule_params)
-    with true <- can?(user, create_quality_rule(%{"business_concept_id" => quality_control.business_concept_id})),
+    with true <- can?(user, create(%{
+          "business_concept_id" => quality_control.business_concept_id,
+          "resource_type" => "quality_rule"
+          })),
          {:valid_quality_rule_type} <- verify_quality_rule_existence(quality_rule_type),
          {:ok_size_verification} <- verify_equals_sizes(quality_rule_params, quality_rule_type.params),
          {:ok_existence_verification} <- verify_types_and_existence(quality_rule_params, quality_rule_type.params),
@@ -160,7 +163,10 @@ defmodule TdDqWeb.QualityRuleController do
     quality_rule = QualityRules.get_quality_rule!(id)
     quality_control = quality_rule.quality_control
     user = conn.assigns[:current_resource]
-    with true <- can?(user, update_quality_rule(%{"business_concept_id" => quality_control.business_concept_id})),
+    with true <- can?(user, update(%{
+        "business_concept_id" => quality_control.business_concept_id,
+        "resource_type" => "quality_rule"
+        })),
          {:ok, %QualityRule{} = quality_rule} <- QualityRules.update_quality_rule(quality_rule, quality_rule_params) do
       render(conn, "show.json", quality_rule: quality_rule)
     else
@@ -190,7 +196,10 @@ defmodule TdDqWeb.QualityRuleController do
     user = conn.assigns[:current_resource]
     quality_control = quality_rule.quality_control
 
-    with true <- can?(user, delete_quality_rule(%{"business_concept_id" => quality_control.business_concept_id})),
+    with true <- can?(user, delete(%{
+      "business_concept_id" => quality_control.business_concept_id,
+      "resource_type" => "quality_rule"
+      })),
          {:ok, %QualityRule{}} <- QualityRules.delete_quality_rule(quality_rule) do
       send_resp(conn, :no_content, "")
     else

@@ -40,9 +40,12 @@ defmodule TdDqWeb.QualityControlController do
 
   def get_quality_controls_by_concept(conn, %{"id" => id}) do
     user = conn.assigns[:current_resource]
-    resource_type = %{"business_concept_id" => id}
+    resource_type = %{
+      "business_concept_id" => id,
+      "resource_type" => "quality_control"
+    }
 
-    with true <- can?(user, index_quality_control(resource_type)) do
+    with true <- can?(user, get_quality_controls_by_concept(resource_type)) do
       quality_controls = QualityControls.list_concept_quality_controls(id)
 
       render(
@@ -86,9 +89,11 @@ defmodule TdDqWeb.QualityControlController do
         quality_control_params
       end
 
-    resource_type = Map.take(quality_control_params, ["business_concept_id"])
+    resource_type = quality_control_params
+      |> Map.take(["business_concept_id"])
+      |> Map.put("resource_type", "quality_control")
 
-    with true <- can?(user, create_quality_control(resource_type)),
+    with true <- can?(user, create(resource_type)),
       {:ok, %QualityControl{} = quality_control} <-
            QualityControls.create_quality_control(quality_control_params) do
 
@@ -152,7 +157,10 @@ defmodule TdDqWeb.QualityControlController do
   def update(conn, %{"id" => id, "quality_control" => quality_control_params}) do
     user = conn.assigns[:current_resource]
     quality_control = QualityControls.get_quality_control!(id)
-    resource_type = %{"business_concept_id" => quality_control.business_concept_id}
+    resource_type = %{
+      "business_concept_id" => quality_control.business_concept_id,
+      "resource_type" => "quality_control"
+    }
 
     quality_control_params =
       if user do
@@ -161,7 +169,7 @@ defmodule TdDqWeb.QualityControlController do
         quality_control_params
       end
 
-    with true <- can?(user, update_quality_control(resource_type)),
+    with true <- can?(user, update(resource_type)),
             {:ok, %QualityControl{} = quality_control} <-
               QualityControls.update_quality_control(quality_control, quality_control_params) do
       render(conn, "show.json", quality_control: quality_control)
@@ -193,9 +201,12 @@ defmodule TdDqWeb.QualityControlController do
   def delete(conn, %{"id" => id}) do
     user = conn.assigns[:current_resource]
     quality_control = QualityControls.get_quality_control!(id)
-    resource_type = %{"business_concept_id" => quality_control.business_concept_id}
+    resource_type = %{
+      "business_concept_id" => quality_control.business_concept_id,
+      "resource_type" => "quality_control"
+    }
 
-    with true <- can?(user, delete_quality_control(resource_type)),
+    with true <- can?(user, delete(resource_type)),
       {:ok, %QualityControl{}} <- QualityControls.delete_quality_control(quality_control) do
 
       quality_control_params = quality_control
