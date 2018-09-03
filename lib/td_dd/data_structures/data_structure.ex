@@ -5,6 +5,7 @@ defmodule TdDd.DataStructures.DataStructure do
   alias TdDd.DataStructures.DataField
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Searchable
+  alias TdPerms.TaxonomyCache
 
   @behaviour Searchable
 
@@ -67,6 +68,10 @@ defmodule TdDd.DataStructures.DataStructure do
       user -> user |> Map.take([:id, :user_name, :full_name])
     end
 
+    domain_id = structure.domain_id
+    domain_ids = domain_id
+      |> TaxonomyCache.get_parent_ids()
+
     %{
       id: structure.id,
       description: structure.description,
@@ -76,7 +81,8 @@ defmodule TdDd.DataStructures.DataStructure do
       lopd: structure.lopd,
       name: structure.name,
       ou: structure.ou,
-      domain_id: structure.domain_id,
+      domain_id: domain_id,
+      domain_ids: domain_ids,
       system: structure.system,
       type: structure.type,
       inserted_at: structure.inserted_at,
