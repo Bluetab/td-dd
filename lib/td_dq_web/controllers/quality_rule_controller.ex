@@ -1,4 +1,5 @@
 defmodule TdDqWeb.QualityRuleController do
+  require Logger
   use TdDqWeb, :controller
   use TdHypermedia, :controller
   use PhoenixSwagger
@@ -32,7 +33,8 @@ defmodule TdDqWeb.QualityRuleController do
         conn
         |> put_status(:forbidden)
         |> render(ErrorView, :"403.json")
-      _error ->
+      error ->
+        Logger.error("While getting quality rules... #{inspect(error)}")
         conn
         |> put_status(:unprocessable_entity)
         |> render(ErrorView, :"422.json")
@@ -224,16 +226,23 @@ defmodule TdDqWeb.QualityRuleController do
 
   def get_quality_rules(conn, %{"quality_control_id" => id}) do
     user = conn.assigns[:current_resource]
-    {quality_control_id, _} = Integer.parse(id)
+    quality_control_id = String.to_integer(id)
+
     with true <- can?(user, index(QualityRule)) do
       quality_rules = QualityRules.list_quality_rules()
-      render(conn, "index.json", quality_rules: quality_rules |> Enum.filter(&(&1.quality_control_id == quality_control_id)))
+
+      # TODO: Search quality rules by quality control
+      quality_rules = quality_rules
+      |> Enum.filter(&(&1.quality_control_id == quality_control_id))
+
+      render(conn, "index.json", quality_rules: quality_rules)
     else
       false ->
         conn
         |> put_status(:forbidden)
         |> render(ErrorView, :"403.json")
-      _error ->
+      error ->
+        Logger.error("While getting quality rules... #{inspect(error)}")
         conn
         |> put_status(:unprocessable_entity)
         |> render(ErrorView, :"422.json")
