@@ -44,25 +44,24 @@ defmodule TdDdWeb.DataStructureController do
 
     %{results: data_structures} =
       case getOUs(params) do
-          [] -> do_index()
-          in_params -> do_index(%{"filters" => %{"ou.raw" => in_params}}, 0, 10_000)
+          [] -> do_index(user)
+          in_params -> do_index(user, %{"filters" => %{"ou.raw" => in_params}}, 0, 10_000)
       end
 
     data_structures =
       data_structures
       |> add_attrs_to_list_data_structures()
-      |> Enum.filter(&can?(user, view_data_structure(Map.fetch!(&1, :domain_id))))
 
     render(conn, "index.json", data_structures: data_structures)
   end
 
-  defp do_index(search_params \\ %{}, page \\ 0, size \\ 50) do
+  defp do_index(user, search_params \\ %{}, page \\ 0, size \\ 50) do
     page = search_params |> Map.get("page", page)
     size = search_params |> Map.get("size", size)
 
     search_params
       |> Map.drop(["page", "size"])
-      |> Search.search_data_structures(page, size)
+      |> Search.search_data_structures(user, page, size)
   end
 
   defp getOUs(params) do
@@ -337,12 +336,11 @@ defmodule TdDdWeb.DataStructureController do
   def search(conn, params) do
     user = conn.assigns[:current_user]
 
-    %{results: data_structures, total: total} = do_index(params)
+    %{results: data_structures, total: total} = do_index(user, params)
 
     data_structures =
       data_structures
       |> add_attrs_to_list_data_structures()
-      |> Enum.filter(&can?(user, view_data_structure(Map.fetch!(&1, :domain_id))))
 
     conn
       |> put_resp_header("x-total-count", "#{total}")
