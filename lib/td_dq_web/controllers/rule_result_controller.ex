@@ -1,9 +1,9 @@
-defmodule TdDqWeb.QualityControlsResultsController do
+defmodule TdDqWeb.RuleResultController do
   require Logger
   use TdDqWeb, :controller
 
   alias Ecto.Adapters.SQL
-  alias TdDq.QualityControls
+  alias TdDq.Rules
   alias TdDq.Repo
 
   @quality_controls_results_query  ~S"""
@@ -53,7 +53,7 @@ defmodule TdDqWeb.QualityControlsResultsController do
   end
 
   def index(conn, _params) do
-    quality_controls_results = QualityControls.list_quality_controls_results()
+    quality_controls_results = Rules.list_quality_controls_results()
     render(conn, "index.json", quality_controls_results: quality_controls_results)
   end
 

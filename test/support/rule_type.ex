@@ -1,4 +1,4 @@
-defmodule TdDqWeb.QualityRuleType do
+defmodule TdDqWeb.RuleType do
   @moduledoc false
 
   alias Poison, as: JSON
@@ -17,7 +17,7 @@ defmodule TdDqWeb.QualityRuleType do
     headers = get_header(token)
     body = %{quality_rule_type: qrt_params} |> JSON.encode!
     %HTTPoison.Response{status_code: status_code, body: resp} =
-      HTTPoison.post!(quality_rule_type_url(@endpoint, :create), body, headers, [])
+      HTTPoison.post!(rule_type_url(@endpoint, :create), body, headers, [])
     {:ok, status_code, resp |> JSON.decode!}
   end
 
@@ -36,7 +36,7 @@ defmodule TdDqWeb.QualityRuleType do
   defp quality_rule_type_list(token) do
     headers = get_header(token)
     %HTTPoison.Response{status_code: status_code, body: resp} =
-      HTTPoison.get!(quality_rule_type_url(@endpoint, :index), headers, [])
+      HTTPoison.get!(rule_type_url(@endpoint, :index), headers, [])
     {:ok, status_code, resp |> JSON.decode!}
   end
 

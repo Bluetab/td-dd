@@ -1,13 +1,13 @@
-defmodule TdDq.QualityRules.QualityRuleType do
+defmodule TdDq.Rules.RuleType do
   @moduledoc false
 
   use Ecto.Schema
   import Ecto.Changeset
-  alias TdDq.QualityRules.QualityRuleType
+  alias TdDq.Rules.RuleType
 
   @available_params_keys ["system_params", "type_params"]
 
-  schema "quality_rule_types" do
+  schema "rule_types" do
     field :name, :string
     field :params, :map
 
@@ -15,8 +15,8 @@ defmodule TdDq.QualityRules.QualityRuleType do
   end
 
   @doc false
-  def changeset(%QualityRuleType{} = quality_rule_type, attrs) do
-    quality_rule_type
+  def changeset(%RuleType{} = rule_type, attrs) do
+    rule_type
     |> cast(attrs, [:name, :params])
     |> validate_required([:name, :params])
     |> validate_params

@@ -1,8 +1,8 @@
-defmodule TdQd.QualtityRuleTypeTest do
-  use Cabbage.Feature, async: false, file: "quality_rule_type.feature"
+defmodule TdQd.RuleTypeTest do
+  use Cabbage.Feature, async: false, file: "rule_type.feature"
   use TdDqWeb.ConnCase
   import TdDqWeb.Authentication, only: :functions
-  import TdDqWeb.QualityRuleType, only: :functions
+  import TdDqWeb.RuleType, only: :functions
   import TdDqWeb.ResponseCode, only: :functions
 
   defgiven ~r/^user "(?<user_name>[^"]+)" logged in the application$/, %{user_name: user_name}, state do

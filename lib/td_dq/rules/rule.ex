@@ -1,16 +1,16 @@
-defmodule TdDq.QualityControls.QualityControl do
+defmodule TdDq.Rules.Rule do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
-  alias TdDq.QualityControls.QualityControl
-  alias TdDq.QualityRules
-  alias TdDq.QualityRules.QualityRule
+  alias TdDq.Rules.Rule
+  alias TdDq.Rules
+  alias TdDq.Rules.RuleImplementation
 
   @statuses ["defined"]
   @datetime_format "%Y-%m-%d %H:%M:%S"
   @date_format "%Y-%m-%d"
 
-  schema "quality_controls" do
+  schema "rules" do
     field :business_concept_id, :string
     field :description, :string
     field :goal, :integer
@@ -25,14 +25,14 @@ defmodule TdDq.QualityControls.QualityControl do
     field :principle, :map
     field :type, :string
     field :type_params, :map
-    has_many :quality_rules, QualityRule
+    has_many :rule_implementations, RuleImplementation
 
     timestamps()
   end
 
   @doc false
-  def changeset(%QualityControl{} = quality_control, attrs) do
-    quality_control
+  def changeset(%Rule{} = rule, attrs) do
+    rule
     |> cast(attrs, [:business_concept_id,
                     :name,
                     :description,
@@ -64,7 +64,7 @@ defmodule TdDq.QualityControls.QualityControl do
     if type_name == nil do
       changeset
     else
-      type = QualityRules.get_quality_rule_type_by_name(type_name)
+      type = Rules.get_quality_rule_type_by_name(type_name)
       case type do
         nil ->
           changeset

@@ -1,6 +1,5 @@
-defmodule TdDqWeb.QualityControlsResultsView do
+defmodule TdDqWeb.RuleResultView do
   use TdDqWeb, :view
-  alias TdDqWeb.QualityControlsResultsView
 
   def render("index.json", %{quality_controls_results: quality_controls_results}) do
     %{data: render_many(quality_controls_results, QualityControlsResultsView, "quality_controls_results.json")}

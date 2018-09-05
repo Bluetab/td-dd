@@ -25,14 +25,14 @@ defmodule TdDqWeb.Router do
   scope "/api", TdDqWeb do
     pipe_through [:api, :api_secure]
 
-    post "/rule_results", QualityControlsResultsController, :upload
-    get "/rule_results", QualityControlsResultsController, :index
-    get "/rules/concept/:id", QualityControlController, :get_quality_controls_by_concept
-    resources "/rules", QualityControlController, except: [:new, :edit] do
-      get "/rule_implementations",  QualityRuleController, :get_quality_rules
+    post "/rule_results", RuleResultController, :upload
+    get "/rule_results", RuleResultController, :index
+    get "/rules/concept/:id", RuleController, :get_quality_controls_by_concept
+    resources "/rules", RuleController, except: [:new, :edit] do
+      get "/rule_implementations",  RuleImplementationController, :get_quality_rules
     end
-    resources "/rule_implementations", QualityRuleController, except: [:new, :edit]
-    resources "/rule_types", QualityRuleTypeController, except: [:new, :edit]
+    resources "/rule_implementations", RuleImplementationController, except: [:new, :edit]
+    resources "/rule_types", RuleTypeController, except: [:new, :edit]
   end
 
   def swagger_info do

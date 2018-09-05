@@ -3,7 +3,7 @@ defmodule TdDq.Factory do
   use ExMachina.Ecto, repo: TdDq.Repo
 
   def quality_control_factory do
-    %TdDq.QualityControls.QualityControl {
+    %TdDq.Rules.Rule {
       business_concept_id: "Quality Control Business Concept Id",
       description: "Quality Control Description",
       goal: 30,
@@ -21,7 +21,7 @@ defmodule TdDq.Factory do
   end
 
   def quality_rule_type_factory do
-    %TdDq.QualityRules.QualityRuleType {
+    %TdDq.Rules.RuleType {
       name: "Quality Control Type",
       params: %{
         "type_params" => [],
@@ -31,9 +31,9 @@ defmodule TdDq.Factory do
   end
 
   def quality_rule_factory do
-    %TdDq.QualityRules.QualityRule {
-      quality_control: build(:quality_control),
-      quality_rule_type: build(:quality_rule_type),
+    %TdDq.Rules.RuleImplementation {
+      rule: build(:quality_control),
+      rule_type: build(:quality_rule_type),
       description: "Quality Rule description",
       name: "Quality Rule name",
       type: "Quality Control Type",

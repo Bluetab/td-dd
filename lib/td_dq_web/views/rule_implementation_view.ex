@@ -1,18 +1,18 @@
-defmodule TdDqWeb.QualityRuleView do
+defmodule TdDqWeb.RuleImplementationView do
   use TdDqWeb, :view
-  alias TdDqWeb.QualityRuleView
+  alias TdDqWeb.RuleImplementationView
 
   def render("index.json", %{quality_rules: quality_rules} = assigns) do
 
     %{data: render_many(quality_rules,
-      QualityRuleView, "quality_rule.json",
+      RuleImplementationView, "quality_rule.json",
       Map.drop(assigns, [:quality_rules]))
     }
   end
 
   def render("show.json", %{quality_rule: quality_rule} = assigns) do
     %{data: render_one(quality_rule,
-      QualityRuleView, "quality_rule.json",
+      RuleImplementationView, "quality_rule.json",
       Map.drop(assigns, [:quality_rule]))
     }
   end

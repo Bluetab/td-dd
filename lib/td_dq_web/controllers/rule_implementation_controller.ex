@@ -1,4 +1,4 @@
-defmodule TdDqWeb.QualityRuleController do
+defmodule TdDqWeb.RuleImplementationController do
   require Logger
   use TdDqWeb, :controller
   use TdHypermedia, :controller
@@ -6,9 +6,9 @@ defmodule TdDqWeb.QualityRuleController do
 
   import Canada, only: [can?: 2]
 
-  alias TdDq.QualityControls
-  alias TdDq.QualityRules
-  alias TdDq.QualityRules.QualityRule
+  alias TdDq.Rules
+  alias TdDq.Rules
+  alias TdDq.Rules.RuleImplementation
   alias TdDq.Repo
   alias TdDqWeb.ErrorView
   alias TdDqWeb.SwaggerDefinitions
@@ -16,18 +16,18 @@ defmodule TdDqWeb.QualityRuleController do
   action_fallback TdDqWeb.FallbackController
 
   def swagger_definitions do
-    SwaggerDefinitions.quality_rule_definitions()
+    SwaggerDefinitions.rule_implementation_definitions()
   end
 
   swagger_path :index do
     description "List Quality Rules"
-    response 200, "OK", Schema.ref(:QualityRulesResponse)
+    response 200, "OK", Schema.ref(:RuleImplementationsResponse)
   end
 
   def index(conn, _params) do
     user = conn.assigns[:current_resource]
-    with true <- can?(user, index(QualityRule)) do
-      quality_rules = QualityRules.list_quality_rules()
+    with true <- can?(user, index(RuleImplementation)) do
+      quality_rules = Rules.list_quality_rules()
       render(conn, "index.json", quality_rules: quality_rules)
     else
       false ->
@@ -46,16 +46,16 @@ defmodule TdDqWeb.QualityRuleController do
     description "Creates a Quality Rule"
     produces "application/json"
     parameters do
-      quality_rule :body, Schema.ref(:QualityRuleCreate), "Quality Rule create attrs"
+      quality_rule :body, Schema.ref(:RuleImplementationCreate), "Quality Rule create attrs"
     end
-    response 201, "Created", Schema.ref(:QualityRuleResponse)
+    response 201, "Created", Schema.ref(:RuleImplementationResponse)
     response 400, "Client Error"
   end
 
   def create(conn, %{"quality_rule" => quality_rule_params}) do
     user = conn.assigns[:current_resource]
     quality_control_id = Map.fetch!(quality_rule_params, "quality_control_id")
-    quality_control = QualityControls.get_quality_control!(quality_control_id)
+    quality_control = Rules.get_quality_control!(quality_control_id)
 
     {quality_rule_params, quality_rule_type} =
       add_quality_rule_type_id(quality_rule_params)
@@ -66,10 +66,10 @@ defmodule TdDqWeb.QualityRuleController do
          {:valid_quality_rule_type} <- verify_quality_rule_existence(quality_rule_type),
          {:ok_size_verification} <- verify_equals_sizes(quality_rule_params, quality_rule_type.params),
          {:ok_existence_verification} <- verify_types_and_existence(quality_rule_params, quality_rule_type.params),
-         {:ok, %QualityRule{} = quality_rule} <- QualityRules.create_quality_rule(quality_rule_params) do
+         {:ok, %RuleImplementation{} = quality_rule} <- Rules.create_quality_rule(quality_rule_params) do
       conn
       |> put_status(:created)
-      |> put_resp_header("location", quality_rule_path(conn, :show, quality_rule))
+      |> put_resp_header("location", rule_implementation_path(conn, :show, quality_rule))
       |> render("show.json", quality_rule: quality_rule)
     else
       false ->
@@ -130,12 +130,12 @@ defmodule TdDqWeb.QualityRuleController do
     parameters do
       id :path, :integer, "Quality Rule ID", required: true
     end
-    response 200, "OK", Schema.ref(:QualityRuleResponse)
+    response 200, "OK", Schema.ref(:RuleImplementationResponse)
     response 400, "Client Error"
   end
 
   def show(conn, %{"id" => id}) do
-    quality_rule = QualityRules.get_quality_rule!(id)
+    quality_rule = Rules.get_quality_rule!(id)
     user = conn.assigns[:current_resource]
     with true <- can?(user, show(quality_rule)) do
       render(conn, "show.json", quality_rule: quality_rule)
@@ -155,22 +155,22 @@ defmodule TdDqWeb.QualityRuleController do
     description "Updates Quality Rule"
     produces "application/json"
     parameters do
-      quality_control :body, Schema.ref(:QualityRuleUpdate), "Quality Rule update attrs"
+      quality_control :body, Schema.ref(:RuleImplementationUpdate), "Quality Rule update attrs"
       id :path, :integer, "Quality Rule ID", required: true
     end
-    response 200, "OK", Schema.ref(:QualityRuleResponse)
+    response 200, "OK", Schema.ref(:RuleImplementationResponse)
     response 400, "Client Error"
   end
 
   def update(conn, %{"id" => id, "quality_rule" => quality_rule_params}) do
-    quality_rule = QualityRules.get_quality_rule!(id)
+    quality_rule = Rules.get_quality_rule!(id)
     quality_control = quality_rule.quality_control
     user = conn.assigns[:current_resource]
     with true <- can?(user, update(%{
         "business_concept_id" => quality_control.business_concept_id,
         "resource_type" => "quality_rule"
         })),
-         {:ok, %QualityRule{} = quality_rule} <- QualityRules.update_quality_rule(quality_rule, quality_rule_params) do
+         {:ok, %RuleImplementation{} = quality_rule} <- Rules.update_quality_rule(quality_rule, quality_rule_params) do
       render(conn, "show.json", quality_rule: quality_rule)
     else
       false ->
@@ -195,7 +195,7 @@ defmodule TdDqWeb.QualityRuleController do
   end
 
   def delete(conn, %{"id" => id}) do
-    quality_rule = QualityRules.get_quality_rule!(id)
+    quality_rule = Rules.get_quality_rule!(id)
     user = conn.assigns[:current_resource]
     quality_control = quality_rule.quality_control
 
@@ -203,7 +203,7 @@ defmodule TdDqWeb.QualityRuleController do
       "business_concept_id" => quality_control.business_concept_id,
       "resource_type" => "quality_rule"
       })),
-         {:ok, %QualityRule{}} <- QualityRules.delete_quality_rule(quality_rule) do
+         {:ok, %RuleImplementation{}} <- Rules.delete_quality_rule(quality_rule) do
       send_resp(conn, :no_content, "")
     else
       false ->
@@ -222,15 +222,15 @@ defmodule TdDqWeb.QualityRuleController do
     parameters do
       id :path, :integer, "Quality Control ID", required: true
     end
-    response 200, "OK", Schema.ref(:QualityRulesResponse)
+    response 200, "OK", Schema.ref(:RuleImplementationsResponse)
   end
 
   def get_quality_rules(conn, %{"quality_control_id" => id}) do
     user = conn.assigns[:current_resource]
     quality_control_id = String.to_integer(id)
 
-    with true <- can?(user, index(QualityRule)) do
-      quality_rules = QualityRules.list_quality_rules()
+    with true <- can?(user, index(RuleImplementation)) do
+      quality_rules = Rules.list_quality_rules()
 
       # TODO: Search quality rules by quality control
       # TODO: Preload quality_control in search
@@ -267,7 +267,7 @@ defmodule TdDqWeb.QualityRuleController do
     case  table == nil or column == nil do
       true -> nil
       false -> nil
-        QualityControls.get_last_quality_controls_result(
+        Rules.get_last_quality_controls_result(
             quality_rule.quality_control.business_concept_id,
             quality_rule.quality_control.name,
             quality_rule.system,
@@ -277,7 +277,7 @@ defmodule TdDqWeb.QualityRuleController do
   end
 
   defp add_quality_rule_type_id(%{"type" => qrt_name} = quality_rule_params) do
-    qrt = QualityRules.get_quality_rule_type_by_name(qrt_name)
+    qrt = Rules.get_quality_rule_type_by_name(qrt_name)
     case qrt do
       nil ->
         {quality_rule_params, nil}
@@ -287,6 +287,6 @@ defmodule TdDqWeb.QualityRuleController do
     end
   end
   defp add_quality_rule_type_id(%{"quality_rule_type_id" => quality_rule_type_id} = quality_rule_params),
-    do: {quality_rule_params, QualityRules.get_quality_rule_type!(quality_rule_type_id)}
+    do: {quality_rule_params, Rules.get_quality_rule_type!(quality_rule_type_id)}
   defp add_quality_rule_type_id(quality_rule_params), do: {quality_rule_params, nil}
 end

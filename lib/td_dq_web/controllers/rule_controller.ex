@@ -1,13 +1,13 @@
-defmodule TdDqWeb.QualityControlController do
+defmodule TdDqWeb.RuleController do
   use TdHypermedia, :controller
   use TdDqWeb, :controller
   use PhoenixSwagger
   import Canada, only: [can?: 2]
   alias TdDq.Audit
-  alias TdDq.QualityControls
-  alias TdDq.QualityControls.QualityControl
+  alias TdDq.Rules
+  alias TdDq.Rules.Rule
   alias TdDqWeb.ErrorView
-  alias TdDqWeb.QualityControlView
+  alias TdDqWeb.RuleView
   alias TdDqWeb.SwaggerDefinitions
 
   action_fallback(TdDqWeb.FallbackController)
@@ -15,16 +15,16 @@ defmodule TdDqWeb.QualityControlController do
   @events %{create_quality_control: "create_quality_control", delete_quality_control: "delete_quality_control"}
 
   def swagger_definitions do
-    SwaggerDefinitions.quality_control_definitions()
+    SwaggerDefinitions.rule_definitions()
   end
 
   swagger_path :index do
     description("List Quality Controls")
-    response(200, "OK", Schema.ref(:QualityControlsResponse))
+    response(200, "OK", Schema.ref(:RulesResponse))
   end
 
   def index(conn, _params) do
-      quality_controls = QualityControls.list_quality_controls()
+      quality_controls = Rules.list_quality_controls()
       render(conn, "index.json", quality_controls: quality_controls)
   end
 
@@ -35,7 +35,7 @@ defmodule TdDqWeb.QualityControlController do
       id(:path, :string, "Business Concept ID", required: true)
     end
 
-    response(200, "OK", Schema.ref(:QualityControlsResponse))
+    response(200, "OK", Schema.ref(:RulesResponse))
   end
 
   def get_quality_controls_by_concept(conn, %{"id" => id}) do
@@ -46,11 +46,11 @@ defmodule TdDqWeb.QualityControlController do
     }
 
     with true <- can?(user, get_quality_controls_by_concept(resource_type)) do
-      quality_controls = QualityControls.list_concept_quality_controls(id)
+      quality_controls = Rules.list_concept_quality_controls(id)
 
       render(
         conn,
-        QualityControlView,
+        RuleView,
         "index.json",
         hypermedia: collection_hypermedia("quality_control", conn, quality_controls, resource_type),
         quality_controls: quality_controls
@@ -76,7 +76,7 @@ defmodule TdDqWeb.QualityControlController do
       quality_control(:body, Schema.ref(:QualityControlCreate), "Quality Control create attrs")
     end
 
-    response(201, "Created", Schema.ref(:QualityControlResponse))
+    response(201, "Created", Schema.ref(:RuleResponse))
     response(400, "Client Error")
   end
 
@@ -94,8 +94,8 @@ defmodule TdDqWeb.QualityControlController do
       |> Map.put("resource_type", "quality_control")
 
     with true <- can?(user, create(resource_type)),
-      {:ok, %QualityControl{} = quality_control} <-
-           QualityControls.create_quality_control(quality_control_params) do
+      {:ok, %Rule{} = quality_control} <-
+           Rules.create_quality_control(quality_control_params) do
 
       audit = %{
         "audit" => %{
@@ -109,7 +109,7 @@ defmodule TdDqWeb.QualityControlController do
 
       conn
         |> put_status(:created)
-        |> put_resp_header("location", quality_control_path(conn, :show, quality_control))
+        |> put_resp_header("location", rule_path(conn, :show, quality_control))
         |> render("show.json", quality_control: quality_control)
     else
       false ->
@@ -132,12 +132,12 @@ defmodule TdDqWeb.QualityControlController do
       id(:path, :integer, "Quality Control ID", required: true)
     end
 
-    response(200, "OK", Schema.ref(:QualityControlResponse))
+    response(200, "OK", Schema.ref(:RuleResponse))
     response(400, "Client Error")
   end
 
   def show(conn, %{"id" => id}) do
-    quality_control = QualityControls.get_quality_control!(id)
+    quality_control = Rules.get_quality_control!(id)
     render(conn, "show.json", quality_control: quality_control)
   end
 
@@ -146,17 +146,17 @@ defmodule TdDqWeb.QualityControlController do
     produces("application/json")
 
     parameters do
-      quality_control(:body, Schema.ref(:QualityControlUpdate), "Quality Control update attrs")
+      quality_control(:body, Schema.ref(:RuleUpdate), "Quality Control update attrs")
       id(:path, :integer, "Quality Control ID", required: true)
     end
 
-    response(200, "OK", Schema.ref(:QualityControlResponse))
+    response(200, "OK", Schema.ref(:RuleResponse))
     response(400, "Client Error")
   end
 
   def update(conn, %{"id" => id, "quality_control" => quality_control_params}) do
     user = conn.assigns[:current_resource]
-    quality_control = QualityControls.get_quality_control!(id)
+    quality_control = Rules.get_quality_control!(id)
     resource_type = %{
       "business_concept_id" => quality_control.business_concept_id,
       "resource_type" => "quality_control"
@@ -170,8 +170,8 @@ defmodule TdDqWeb.QualityControlController do
       end
 
     with true <- can?(user, update(resource_type)),
-            {:ok, %QualityControl{} = quality_control} <-
-              QualityControls.update_quality_control(quality_control, quality_control_params) do
+            {:ok, %Rule{} = quality_control} <-
+              Rules.update_quality_control(quality_control, quality_control_params) do
       render(conn, "show.json", quality_control: quality_control)
     else
       false ->
@@ -200,14 +200,14 @@ defmodule TdDqWeb.QualityControlController do
 
   def delete(conn, %{"id" => id}) do
     user = conn.assigns[:current_resource]
-    quality_control = QualityControls.get_quality_control!(id)
+    quality_control = Rules.get_quality_control!(id)
     resource_type = %{
       "business_concept_id" => quality_control.business_concept_id,
       "resource_type" => "quality_control"
     }
 
     with true <- can?(user, delete(resource_type)),
-      {:ok, %QualityControl{}} <- QualityControls.delete_quality_control(quality_control) do
+      {:ok, %Rule{}} <- Rules.delete_quality_control(quality_control) do
 
       quality_control_params = quality_control
           |> Map.from_struct

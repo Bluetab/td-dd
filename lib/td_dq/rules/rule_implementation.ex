@@ -1,26 +1,26 @@
-defmodule TdDq.QualityRules.QualityRule do
+defmodule TdDq.Rules.RuleImplementation do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
-  alias TdDq.QualityControls.QualityControl
-  alias TdDq.QualityRules.QualityRule
-  alias TdDq.QualityRules.QualityRuleType
+  alias TdDq.Rules.Rule
+  alias TdDq.Rules.RuleImplementation
+  alias TdDq.Rules.RuleType
 
-  schema "quality_rules" do
+  schema "rule_implementations" do
     field(:description, :string, default: nil)
     field(:name, :string)
     field(:type, :string)
     field(:system, :string)
     field(:system_params, :map)
     field(:tag, :map)
-    belongs_to(:quality_control, QualityControl)
-    belongs_to(:quality_rule_type, QualityRuleType)
+    belongs_to(:rule, Rule)
+    belongs_to(:rule_type, RuleType)
 
     timestamps()
   end
 
   @doc false
-  def changeset(%QualityRule{} = quality_rule, attrs) do
+  def changeset(%RuleImplementation{} = quality_rule, attrs) do
     quality_rule
     |> cast(attrs, [
       :name,
@@ -29,16 +29,16 @@ defmodule TdDq.QualityRules.QualityRule do
       :system_params,
       :type,
       :tag,
-      :quality_control_id,
-      :quality_rule_type_id
+      :rule_id,
+      :rule_type_id
     ])
     |> validate_required([
       :name,
       :type,
       :system,
       :system_params,
-      :quality_control_id,
-      :quality_rule_type_id
+      :rule_id,
+      :rule_type_id
     ])
     |> validate_length(:name, max: 255)
     |> validate_length(:description, max: 500)

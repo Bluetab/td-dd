@@ -1,4 +1,4 @@
-defmodule TdDq.QualityControlLoader do
+defmodule TdDq.RuleLoader do
   @moduledoc """
   GenServer to load quality control counts into Redis
   """
@@ -11,11 +11,11 @@ defmodule TdDq.QualityControlLoader do
 
   require Logger
 
-  @cache_quality_controls_on_startup Application.get_env(:td_dq, :cache_quality_controls_on_startup)
+  @cache_rules_on_startup Application.get_env(:td_dq, :cache_rules_on_startup)
 
   @count_query """
     select business_concept_id as concept_id, count(*) as count
-    from quality_controls group by business_concept_id
+    from rules group by business_concept_id
   """
 
   def start_link(name \\ nil) do
@@ -24,7 +24,7 @@ defmodule TdDq.QualityControlLoader do
 
   @impl true
   def init(state) do
-    if @cache_quality_controls_on_startup, do: schedule_work(:load_cache, 0)
+    if @cache_rules_on_startup, do: schedule_work(:load_cache, 0)
     {:ok, state}
   end
 
@@ -58,7 +58,7 @@ defmodule TdDq.QualityControlLoader do
     if Enum.any?(results, &(&1 != :ok)) do
       Logger.warn("Cache loading failed")
     else
-      Logger.info("Cached #{length(results)} concept quality control counts")
+      Logger.info("Cached #{length(results)} concept rules counts")
     end
   end
 

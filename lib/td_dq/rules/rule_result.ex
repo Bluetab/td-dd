@@ -1,8 +1,8 @@
-defmodule TdDq.QualityControls.QualityControlsResults do
+defmodule TdDq.Rules.RuleResult do
   @moduledoc false
   use Ecto.Schema
 
-  schema "quality_controls_results" do
+  schema "rule_results" do
     field :business_concept_id, :string
     field :quality_control_name, :string
     field :system, :string

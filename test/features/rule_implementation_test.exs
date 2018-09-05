@@ -1,10 +1,10 @@
-defmodule TdQd.QualtityRuleTest do
-  use Cabbage.Feature, async: false, file: "quality_rule.feature"
+defmodule TdQd.RuleImplementationTest do
+  use Cabbage.Feature, async: false, file: "rule_implementation.feature"
   use TdDqWeb.ConnCase
   import TdDqWeb.Authentication, only: :functions
-  import TdDqWeb.QualityControl
-  import TdDqWeb.QualityRule
-  import TdDqWeb.QualityRuleType
+  import TdDqWeb.Rule
+  import TdDqWeb.RuleImplementation
+  import TdDqWeb.RuleType
   import TdDqWeb.ResponseCode
   alias TdDqWeb.ApiServices.MockTdAuditService
 

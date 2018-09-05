@@ -1,20 +1,20 @@
-defmodule TdDqWeb.QualityControlView do
+defmodule TdDqWeb.RuleView do
   use TdDqWeb, :view
   use TdHypermedia, :view
-  alias TdDqWeb.QualityControlView
-  alias TdDqWeb.QualityRuleView
+  alias TdDqWeb.RuleView
+  alias TdDqWeb.RuleImplementationView
   alias TdPerms.BusinessConceptCache
 
   def render("index.json", %{hypermedia: hypermedia, quality_controls: quality_controls}) do
-    render_many_hypermedia(quality_controls, hypermedia, QualityControlView, "quality_control.json")
+    render_many_hypermedia(quality_controls, hypermedia, RuleView, "quality_control.json")
   end
 
   def render("index.json", %{quality_controls: quality_controls}) do
-    %{data: render_many(quality_controls, QualityControlView, "quality_control.json")}
+    %{data: render_many(quality_controls, RuleView, "quality_control.json")}
   end
 
   def render("show.json", %{quality_control: quality_control}) do
-    %{data: render_one(quality_control, QualityControlView, "quality_control.json")}
+    %{data: render_one(quality_control, RuleView, "quality_control.json")}
   end
 
   def render("quality_control.json", %{quality_control: quality_control}) do
@@ -47,7 +47,7 @@ defmodule TdDqWeb.QualityControlView do
     case Ecto.assoc_loaded?(qc.quality_rules) do
       true ->
         quality_rules_array = Enum.map(qc.quality_rules, fn(q_r) ->
-          QualityRuleView.render("quality_rule.json", %{quality_rule: q_r})
+          RuleImplementationView.render("quality_rule.json", %{quality_rule: q_r})
         end)
         Map.put(quality_control, :quality_rules, quality_rules_array)
       _ ->

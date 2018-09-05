@@ -4,11 +4,11 @@ defmodule TdDqWeb.SwaggerDefinitions do
   """
   import PhoenixSwagger
 
-  def quality_control_definitions do
+  def rule_definitions do
     %{
-      QualityControl: swagger_schema do
-        title "Quality Control"
-        description "Quality Control entity"
+      Rule: swagger_schema do
+        title "Rule"
+        description "Rule entity"
         properties do
           id :integer, "unique identifier", required: true
           business_concept_id :string, "business concept id", required: true
@@ -25,31 +25,31 @@ defmodule TdDqWeb.SwaggerDefinitions do
           principle :object, "quality control principle"
           type :string, "quality rule type"
           type_params :object, "quality rule type_params"
-          quality_rules Schema.ref(:QualityRules)
+          quality_rules Schema.ref(:RuleImplementations)
         end
       end,
-      QualityRule: swagger_schema do
-        title "Quality Rule"
-        description "Quality Rule entity"
+      RuleImplementation: swagger_schema do
+        title "Rule Implementation"
+        description "Rule Implementation entity"
         properties do
-          id :integer, "Quality Rule unique identifier", required: true
-          description :string, "Quality Rule description"
-          name :string, "Quality Rule name", required: true
-          type :string, "Quality Rule type", required: true
-          system :string, "Quality Rule system", required: true
-          system_params :object, "Quality Rule parameters", required: true
-          tag :object, "Quality Rule tag"
+          id :integer, "Rule Implementation unique identifier", required: true
+          description :string, "Rule Implementation description"
+          name :string, "Rule Implementation name", required: true
+          type :string, "Rule Implementation type", required: true
+          system :string, "Rule Implementation system", required: true
+          system_params :object, "Rule Implementation parameters", required: true
+          tag :object, "Rule Implementation tag"
           quality_control_id :integer, "Belongs to quality control", required: true
           quality_rule_type_id :integer, "Belongs to quality rule type", required: true
         end
       end,
-      QualityRules: swagger_schema do
-        title "Quality Rules"
-        description "A collection of Quality Rules"
+      RuleImplementations: swagger_schema do
+        title "Rule Implementations"
+        description "A collection of Rule Implementations"
         type :array
-        items Schema.ref(:QualityRule)
+        items Schema.ref(:RuleImplementation)
       end,
-      QualityControlCreateProps: swagger_schema do
+      RuleCreateProps: swagger_schema do
         properties do
           business_concept_id :string, "business concept id", required: true
           description :string, "description"
@@ -67,149 +67,149 @@ defmodule TdDqWeb.SwaggerDefinitions do
           type_params :object, "weight"
         end
       end,
-      QualityControlCreate: swagger_schema do
+      RuleCreate: swagger_schema do
         properties do
-          quality_control Schema.ref(:QualityControlCreateProps)
+          quality_control Schema.ref(:RuleCreateProps)
         end
       end,
-      QualityControlUpdate: swagger_schema do
+      RuleUpdate: swagger_schema do
         properties do
-          quality_control Schema.ref(:QualityControlCreateProps)
+          quality_control Schema.ref(:RuleCreateProps)
         end
       end,
-      QualityControls: swagger_schema do
-        title "Quality Controls"
-        description "A collection of Quality Controls"
+      Rules: swagger_schema do
+        title "Rules"
+        description "A collection of Rules"
         type :array
-        items Schema.ref(:QualityControl)
+        items Schema.ref(:Rule)
       end,
-      QualityControlResponse: swagger_schema do
+      RuleResponse: swagger_schema do
         properties do
-          data Schema.ref(:QualityControl)
+          data Schema.ref(:Rule)
         end
       end,
-      QualityControlsResponse: swagger_schema do
+      RulesResponse: swagger_schema do
         properties do
-          data Schema.ref(:QualityControls)
+          data Schema.ref(:Rules)
         end
       end
     }
   end
 
-  def quality_rule_definitions do
+  def rule_implementation_definitions do
     %{
-      QualityRule: swagger_schema do
-        title "Quality Rule"
-        description "Quality Rule entity"
+      RuleImplementation: swagger_schema do
+        title "Rule Implementation"
+        description "Rule Implementation entity"
         properties do
-          id :integer, "Quality Rule unique identifier", required: true
-          description :string, "Quality Rule description"
-          name :string, "Quality Rule name", required: true
-          type :string, "Quality Rule type", required: true
-          system :string, "Quality Rule system", required: true
-          system_params :object, "Quality Rule parameters", required: true
-          tag :object, "Quality Rule tag"
+          id :integer, "Rule Implementation unique identifier", required: true
+          description :string, "Rule Implementation description"
+          name :string, "Rule Implementation name", required: true
+          type :string, "Rule Implementation type", required: true
+          system :string, "Rule Implementation system", required: true
+          system_params :object, "Rule Implementation parameters", required: true
+          tag :object, "Rule Implementation tag"
           quality_control_id :integer, "Belongs to quality control", required: true
           quality_rule_type_id :integer, "Belongs to quality rule type", required: true
         end
       end,
-      QualityRuleCreateProps: swagger_schema do
+      RuleImplementationCreateProps: swagger_schema do
         properties do
-          description :string, "Quality Rule description"
-          name :string, "Quality Rule name", required: true
-          type :string, "Quality Rule type name", required: true
-          system :string, "Quality Rule system", required: true
-          system_params :object, "Quality Rule parameters", required: true
-          tag :object, "Quality Rule tag"
+          description :string, "Rule Implementation description"
+          name :string, "Rule Implementation name", required: true
+          type :string, "Rule Implementation type name", required: true
+          system :string, "Rule Implementation system", required: true
+          system_params :object, "Rule Implementation parameters", required: true
+          tag :object, "Rule Implementation tag"
           quality_control_id :integer, "belongs to quality control", required: true
         end
       end,
-      QualityRuleCreate: swagger_schema do
+      RuleImplementationCreate: swagger_schema do
         properties do
-          quality_rule Schema.ref(:QualityRuleCreateProps)
+          quality_rule Schema.ref(:RuleImplementationCreateProps)
         end
       end,
-      QualityRuleUpdateProps: swagger_schema do
+      RuleImplementationUpdateProps: swagger_schema do
         properties do
-          description :string, "Quality Rule description"
-          name :string, "Quality Rule name", required: true
-          type :string, "Quality Rule type name", required: true
-          system :string, "Quality Rule system", required: true
-          system_params :object, "Quality Rule parameters", required: true
-          tag :object, "Quality Rule tag"
+          description :string, "Rule Implementation description"
+          name :string, "Rule Implementation name", required: true
+          type :string, "Rule Implementation type name", required: true
+          system :string, "Rule Implementation system", required: true
+          system_params :object, "Rule Implementation parameters", required: true
+          tag :object, "Rule Implementation tag"
         end
       end,
-      QualityRuleUpdate: swagger_schema do
+      RuleImplementationUpdate: swagger_schema do
         properties do
-          quality_rule Schema.ref(:QualityRuleUpdateProps)
+          quality_rule Schema.ref(:RuleImplementationUpdateProps)
         end
       end,
-      QualityRules: swagger_schema do
-        title "Quality Rules"
-        description "A collection of Quality Rules"
+      RuleImplementations: swagger_schema do
+        title "Rule Implementations"
+        description "A collection of Rule Implementations"
         type :array
-        items Schema.ref(:QualityRule)
+        items Schema.ref(:RuleImplementation)
       end,
-      QualityRuleResponse: swagger_schema do
+      RuleImplementationResponse: swagger_schema do
         properties do
-          data Schema.ref(:QualityRule)
+          data Schema.ref(:RuleImplementation)
         end
       end,
-      QualityRulesResponse: swagger_schema do
+      RuleImplementationsResponse: swagger_schema do
         properties do
-          data Schema.ref(:QualityRules)
+          data Schema.ref(:RuleImplementations)
         end
       end
     }
   end
 
-  def quality_rule_type_definitions do
+  def rule_type_definitions do
     %{
-      QualityRuleType: swagger_schema do
-        title "Quality Rule Type"
-        description "Quality Rule Type entity"
+      RuleType: swagger_schema do
+        title "Rule Type"
+        description "Rule Type entity"
         properties do
-          id :integer, "Quality Rule Type unique identifier", required: true
-          name :string, "Quality Rule Type name", required: true
-          params :object, "Quality Rule Type parameters", required: true
+          id :integer, "Rule Type unique identifier", required: true
+          name :string, "Rule Type name", required: true
+          params :object, "Rule Type parameters", required: true
         end
       end,
-      QualityRuleTypeCreateProps: swagger_schema do
+      RuleTypeCreateProps: swagger_schema do
         properties do
-          name :string, "Quality Rule Type name", required: true
-          params :object, "Quality Rule Type parameters", required: true
+          name :string, "Rule Type name", required: true
+          params :object, "Rule Type parameters", required: true
         end
       end,
-      QualityRuleTypeCreate: swagger_schema do
+      RuleTypeCreate: swagger_schema do
         properties do
-          quality_rule_type Schema.ref(:QualityRuleTypeCreateProps)
+          quality_rule_type Schema.ref(:RuleTypeCreateProps)
         end
       end,
-      QualityRuleTypeUpdateProps: swagger_schema do
+      RuleTypeUpdateProps: swagger_schema do
         properties do
-          name :string, "Quality Rule Type name", required: true
-          params :object, "Quality Rule Type parameters", required: true
+          name :string, "Rule Type name", required: true
+          params :object, "Rule Type parameters", required: true
         end
       end,
-      QualityRuleTypeUpdate: swagger_schema do
+      RuleTypeUpdate: swagger_schema do
         properties do
-          quality_rule_type Schema.ref(:QualityRuleTypeUpdateProps)
+          quality_rule_type Schema.ref(:RuleTypeUpdateProps)
         end
       end,
-      QualityRuleTypes: swagger_schema do
-        title "Quality Rule Types"
-        description "A collection of Quality Rule Types"
+      RuleTypes: swagger_schema do
+        title "Rule Types"
+        description "A collection of Rule Types"
         type :array
-        items Schema.ref(:QualityRuleType)
+        items Schema.ref(:RuleType)
       end,
-      QualityRuleTypeResponse: swagger_schema do
+      RuleTypeResponse: swagger_schema do
         properties do
-          data Schema.ref(:QualityRuleType)
+          data Schema.ref(:RuleType)
         end
       end,
-      QualityRuleTypesResponse: swagger_schema do
+      RuleTypesResponse: swagger_schema do
         properties do
-          data Schema.ref(:QualityRuleTypes)
+          data Schema.ref(:RuleTypes)
         end
       end
     }
