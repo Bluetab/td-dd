@@ -2,15 +2,22 @@ defmodule TdDqWeb.QualityRuleView do
   use TdDqWeb, :view
   alias TdDqWeb.QualityRuleView
 
-  def render("index.json", %{quality_rules: quality_rules}) do
-    %{data: render_many(quality_rules, QualityRuleView, "quality_rule.json")}
+  def render("index.json", %{quality_rules: quality_rules} = assigns) do
+
+    %{data: render_many(quality_rules,
+      QualityRuleView, "quality_rule.json",
+      Map.drop(assigns, [:quality_rules]))
+    }
   end
 
-  def render("show.json", %{quality_rule: quality_rule}) do
-    %{data: render_one(quality_rule, QualityRuleView, "quality_rule.json")}
+  def render("show.json", %{quality_rule: quality_rule} = assigns) do
+    %{data: render_one(quality_rule,
+      QualityRuleView, "quality_rule.json",
+      Map.drop(assigns, [:quality_rule]))
+    }
   end
 
-  def render("quality_rule.json", %{quality_rule: quality_rule}) do
+  def render("quality_rule.json", %{quality_rule: quality_rule} = assigns) do
     %{
       id: quality_rule.id,
       quality_control_id: quality_rule.quality_control_id,
@@ -24,6 +31,7 @@ defmodule TdDqWeb.QualityRuleView do
     }
     |> add_quality_rule_type(quality_rule)
     |> add_quality_control(quality_rule)
+    |> add_quality_control_result(assigns)
   end
 
   defp add_quality_rule_type(quality_rule, qr) do
@@ -52,4 +60,22 @@ defmodule TdDqWeb.QualityRuleView do
         quality_rule
     end
   end
+
+  defp add_quality_control_result(quality_rule, assigns) do
+    case Map.get(assigns, :quality_controls_results) do
+      nil -> quality_rule
+      quality_controls_results ->
+        case Map.get(quality_controls_results, quality_rule.id) do
+          nil ->
+            quality_rule
+            |> Map.put(:results, [])
+          quality_controls_result ->
+            quality_rule
+            |> Map.put(:results,
+                  [%{result: quality_controls_result.result,
+                     date: quality_controls_result.date}])
+        end
+    end
+  end
+
 end

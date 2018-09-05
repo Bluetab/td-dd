@@ -117,4 +117,21 @@ defmodule TdDq.QualityControls do
     |> Repo.preload(:quality_rules)
   end
 
+  # TODO: Search by implemnetation id
+  def get_last_quality_controls_result(business_concept_id,
+                                       quality_control_name,
+                                       system,
+                                       structure_name,
+                                       field_name) do
+    QualityControlsResults
+    |> where([r], r.business_concept_id == ^business_concept_id and
+                  r.quality_control_name == ^quality_control_name and
+                  r.system == ^system and
+                  r.structure_name == ^structure_name and
+                  r.field_name == ^field_name)
+    |> order_by(desc: :date)
+    |> limit(1)
+    |> Repo.one()
+  end
+
 end
