@@ -25,14 +25,14 @@ defmodule TdDqWeb.Router do
   scope "/api", TdDqWeb do
     pipe_through [:api, :api_secure]
 
-    post "/quality_controls_results", QualityControlsResultsController, :upload
-    get "/quality_controls_results", QualityControlsResultsController, :index
-    get "/quality_controls/concept/:id", QualityControlController, :get_quality_controls_by_concept
-    resources "/quality_controls", QualityControlController, except: [:new, :edit] do
-      get "/quality_rules",  QualityRuleController, :get_quality_rules
+    post "/rule_results", QualityControlsResultsController, :upload
+    get "/rule_results", QualityControlsResultsController, :index
+    get "/rules/concept/:id", QualityControlController, :get_quality_controls_by_concept
+    resources "/rules", QualityControlController, except: [:new, :edit] do
+      get "/rule_implementations",  QualityRuleController, :get_quality_rules
     end
-    resources "/quality_rules", QualityRuleController, except: [:new, :edit]
-    resources "/quality_rule_types", QualityRuleTypeController, except: [:new, :edit]
+    resources "/rule_implementations", QualityRuleController, except: [:new, :edit]
+    resources "/rule_types", QualityRuleTypeController, except: [:new, :edit]
   end
 
   def swagger_info do
@@ -40,7 +40,7 @@ defmodule TdDqWeb.Router do
       schemes: ["http"],
       info: %{
         version: "1.0",
-        title: "QualityControl"
+        title: "Rules"
       },
       "host": @endpoint_url,
       "basePath": "/",
