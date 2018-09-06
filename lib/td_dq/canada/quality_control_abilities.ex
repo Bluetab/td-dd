@@ -11,5 +11,5 @@ defmodule TdDq.Canada.QualityControlAbilities do
     Permissions.authorized?(user, :manage_quality_rule, business_concept_id)
   end
 
-  def can?(:show, resource_type), do: resource_type == @show_valid_resource_type
+  def can?(:show, quality_control_type), do: quality_control_type == @show_valid_resource_type
 end
