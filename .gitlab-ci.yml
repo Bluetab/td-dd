@@ -19,38 +19,22 @@ test:
 
 deploy:
   stage: deploy
-  script:
-    - git branch -f master HEAD
-    - export DB_USER=$(echo $DB_USER | sed -e "s/\//\\\\\//g")
-    - export DB_PASSWORD=$(echo $DB_PASSWORD | sed -e "s/\//\\\\\//g")
-    - export DB_NAME=$(echo $DB_NAME | sed -e "s/\//\\\\\//g")
-    - export DB_HOST=$(echo $DB_HOST | sed -e "s/\//\\\\\//g")
-    - export REDIS_URI=$(echo $REDIS_URI | sed -e "s/\//\\\\\//g")
-    - export GUARDIAN_SECRET_KEY=$(echo $GUARDIAN_SECRET_KEY | sed -e "s/\//\\\\\//g")
-    - export PRODUCTION_HOST=$(cat .deliver/config | grep PRODUCTION_HOSTS | cut -f2 -d"=" | sed -e 's/"//g')
-    - export PRODUCTION_USER=$(cat .deliver/config | grep PRODUCTION_USER | cut -f2 -d"=" | sed -e 's/"//g')
-    - docker run --rm -e REDIS_URI=$REDIS_URI -e DB_USER=$DB_USER -e DB_PASSWORD=$DB_PASSWORD -e DB_HOST=$DB_HOST -e DB_NAME=$DB_NAME -e PRODUCTION_HOST=$PRODUCTION_HOST -e PRODUCTION_USER=$PRODUCTION_USER -e PRODUCTION_PEM="$PRODUCTION_PEM" -e GUARDIAN_SECRET_KEY="$GUARDIAN_SECRET_KEY" -e USER=$USER -e TARGET_MIX_ENV=$TARGET_MIX_ENV -e BUILD_AT=$BUILD_AT -e TERM=$TERM -v $(pwd):/code:ro -w /code --entrypoint=/code/ci/deploy.sh bluetab/amazonlinux-phoenix-postgresql-redis:20180709225133
+  environment:
+    name: prod
   only:
     - master
-
-publish:
-  stage: deploy
   script:
     - git branch -f master HEAD
     - export VERSION=$(grep -e '\bversion:' mix.exs | cut -d\" -f2)
-    - export PROJECT_NAME=${PWD##*/}
-    - export AWS_ACCESS_KEY_ID=$(echo $AWS_ACCESS_KEY_ID | sed -e "s/\//\\\\\//g")
-    - export AWS_SECRET_ACCESS_KEY=$(echo $AWS_SECRET_ACCESS_KEY | sed -e "s/\//\\\\\//g")
-    - export AWS_DEFAULT_REGION=$(echo $AWS_DEFAULT_REGION | sed -e "s/\//\\\\\//g")
     - export REDIS_URI=$(echo $REDIS_URI | sed -e "s/\//\\\\\//g")
-    - docker build --build-arg APP_VERSION=${VERSION} --build-arg APP_NAME=td_dq --build-arg MIX_ENV=prod -t bluetab-truedat/$PROJECT_NAME:latest .
-    - docker run --rm -t $(tty &>/dev/null && echo "-i") -e "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}" -e "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}" -e REDIS_URI=$REDIS_URI -e "AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}" mesosphere/aws-cli ecr get-login --no-include-email --region $AWS_DEFAULT_REGION | awk '{ sub("\r$", ""); print }' > output
+    - docker build --build-arg APP_VERSION=${VERSION} --build-arg APP_NAME=td_dq --build-arg MIX_ENV=prod -t bluetab-truedat/$CI_PROJECT_NAME:latest .
+    - docker run --rm -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION mesosphere/aws-cli ecr get-login --no-include-email --region $AWS_DEFAULT_REGION | awk '{ sub("\r$", ""); print }' > output
     - bash -f output
     - export ECR=$(cat output | egrep -o 'https?://[^ ]+' | awk -F/ '{print $3}')
-    - docker tag bluetab-truedat/$PROJECT_NAME:latest $ECR/bluetab-truedat/$PROJECT_NAME:latest
-    - docker tag bluetab-truedat/$PROJECT_NAME:latest $ECR/bluetab-truedat/$PROJECT_NAME:${VERSION}
-    - docker push $ECR/bluetab-truedat/$PROJECT_NAME:latest
-    - docker push $ECR/bluetab-truedat/$PROJECT_NAME:${VERSION}
     - rm output
-  only:
-    - master
+    - docker tag bluetab-truedat/$CI_PROJECT_NAME:latest $ECR/bluetab-truedat/$CI_PROJECT_NAME:latest
+    - docker tag bluetab-truedat/$CI_PROJECT_NAME:latest $ECR/bluetab-truedat/$CI_PROJECT_NAME:${VERSION}
+    - docker push $ECR/bluetab-truedat/$CI_PROJECT_NAME:latest
+    - docker push $ECR/bluetab-truedat/$CI_PROJECT_NAME:${VERSION}
+    - docker run --rm -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION -e ECS_CLUSTER -e ECS_SERVICE mesosphere/aws-cli ecs update-service --force-new-deployment --cluster $ECS_CLUSTER --service $ECS_SERVICE
+    # - docker run --rm -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION -e ECS_CLUSTER -e ECS_SERVICE mesosphere/aws-cli ecs wait services-stable --cluster $ECS_CLUSTER --services $ECS_SERVICE

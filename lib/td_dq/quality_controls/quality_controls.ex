@@ -18,8 +18,15 @@ defmodule TdDq.QualityControls do
       [%QualityControl{}, ...]
 
   """
-  def list_quality_controls do
-    QualityControl
+  def list_quality_controls(params) do
+    fields = QualityControl.__schema__(:fields)
+    dynamic = filter(params, fields)
+    query = from(
+      p in QualityControl,
+      where: ^dynamic
+    )
+
+    query
       |> Repo.all()
       |> Repo.preload(:quality_rules)
   end
@@ -109,12 +116,48 @@ defmodule TdDq.QualityControls do
     Repo.all(QualityControlsResults)
   end
 
-  def list_concept_quality_controls(business_concept_id) do
-    QualityControl
-    |> where([v], v.business_concept_id == ^business_concept_id)
-    |> order_by(desc: :business_concept_id)
+  def list_concept_quality_controls(params) do
+    fields = QualityControl.__schema__(:fields)
+    dynamic = filter(params, fields)
+
+    query = from(
+      p in QualityControl,
+      where: ^dynamic,
+      order_by: [desc: :business_concept_id]
+    )
+
+    query
     |> Repo.all()
     |> Repo.preload(:quality_rules)
   end
 
+  # TODO: Search by implemnetation id
+  def get_last_quality_controls_result(business_concept_id,
+                                       quality_control_name,
+                                       system,
+                                       structure_name,
+                                       field_name) do
+    QualityControlsResults
+    |> where([r], r.business_concept_id == ^business_concept_id and
+                  r.quality_control_name == ^quality_control_name and
+                  r.system == ^system and
+                  r.structure_name == ^structure_name and
+                  r.field_name == ^field_name)
+    |> order_by(desc: :date)
+    |> limit(1)
+    |> Repo.one()
+  end
+
+  defp filter(params, fields) do
+    dynamic = true
+
+    Enum.reduce(Map.keys(params), dynamic, fn x, acc ->
+      key_as_atom = String.to_atom(x)
+
+      case Enum.member?(fields, key_as_atom) do
+        true -> dynamic([p], field(p, ^key_as_atom) == ^params[x] and ^acc)
+        false -> acc
+      end
+    end)
+  end
 end

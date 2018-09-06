@@ -1,4 +1,5 @@
 defmodule TdDqWeb.QualityRuleController do
+  require Logger
   use TdDqWeb, :controller
   use TdHypermedia, :controller
   use PhoenixSwagger
@@ -8,6 +9,7 @@ defmodule TdDqWeb.QualityRuleController do
   alias TdDq.QualityControls
   alias TdDq.QualityRules
   alias TdDq.QualityRules.QualityRule
+  alias TdDq.Repo
   alias TdDqWeb.ErrorView
   alias TdDqWeb.SwaggerDefinitions
 
@@ -32,7 +34,8 @@ defmodule TdDqWeb.QualityRuleController do
         conn
         |> put_status(:forbidden)
         |> render(ErrorView, :"403.json")
-      _error ->
+      error ->
+        Logger.error("While getting quality rules... #{inspect(error)}")
         conn
         |> put_status(:unprocessable_entity)
         |> render(ErrorView, :"422.json")
@@ -224,19 +227,52 @@ defmodule TdDqWeb.QualityRuleController do
 
   def get_quality_rules(conn, %{"quality_control_id" => id}) do
     user = conn.assigns[:current_resource]
-    {quality_control_id, _} = Integer.parse(id)
+    quality_control_id = String.to_integer(id)
+
     with true <- can?(user, index(QualityRule)) do
       quality_rules = QualityRules.list_quality_rules()
-      render(conn, "index.json", quality_rules: quality_rules |> Enum.filter(&(&1.quality_control_id == quality_control_id)))
+
+      # TODO: Search quality rules by quality control
+      # TODO: Preload quality_control in search
+      quality_rules = quality_rules
+      |> Enum.map(&Repo.preload(&1, :quality_control))
+      |> Enum.filter(&(&1.quality_control_id == quality_control_id))
+
+      quality_controls_results = quality_rules
+      |> Enum.reduce(%{}, fn(quality_rule, acc) ->
+          Map.put(acc, quality_rule.id,
+            get_last_quality_controls_result(quality_rule))
+      end)
+
+      render(conn, "index.json", quality_rules: quality_rules,
+                            quality_controls_results: quality_controls_results)
     else
       false ->
         conn
         |> put_status(:forbidden)
         |> render(ErrorView, :"403.json")
-      _error ->
+      error ->
+        Logger.error("While getting quality rules... #{inspect(error)}")
         conn
         |> put_status(:unprocessable_entity)
         |> render(ErrorView, :"422.json")
+    end
+  end
+
+  # TODO: Search by implemnetation id
+  defp get_last_quality_controls_result(quality_rule) do
+    system_params = quality_rule.system_params
+    table = Map.get(system_params, "table", nil)
+    column = Map.get(system_params, "column", nil)
+    case  table == nil or column == nil do
+      true -> nil
+      false -> nil
+        QualityControls.get_last_quality_controls_result(
+            quality_rule.quality_control.business_concept_id,
+            quality_rule.quality_control.name,
+            quality_rule.system,
+            table,
+            column)
     end
   end
 

@@ -23,9 +23,9 @@ defmodule TdDqWeb.QualityControlController do
     response(200, "OK", Schema.ref(:QualityControlsResponse))
   end
 
-  def index(conn, _params) do
-      quality_controls = QualityControls.list_quality_controls()
-      render(conn, "index.json", quality_controls: quality_controls)
+  def index(conn, params) do
+    quality_controls = QualityControls.list_quality_controls(params)
+    render(conn, "index.json", quality_controls: quality_controls)
   end
 
   swagger_path :get_quality_controls_by_concept do
@@ -38,7 +38,7 @@ defmodule TdDqWeb.QualityControlController do
     response(200, "OK", Schema.ref(:QualityControlsResponse))
   end
 
-  def get_quality_controls_by_concept(conn, %{"id" => id}) do
+  def get_quality_controls_by_concept(conn, %{"id" => id} = params) do
     user = conn.assigns[:current_resource]
     resource_type = %{
       "business_concept_id" => id,
@@ -46,7 +46,13 @@ defmodule TdDqWeb.QualityControlController do
     }
 
     with true <- can?(user, get_quality_controls_by_concept(resource_type)) do
-      quality_controls = QualityControls.list_concept_quality_controls(id)
+
+      params =
+        params
+        |> Map.put("business_concept_id", id)
+        |> Map.delete("id")
+
+      quality_controls = QualityControls.list_concept_quality_controls(params)
 
       render(
         conn,
