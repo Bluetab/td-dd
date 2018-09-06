@@ -18,8 +18,15 @@ defmodule TdDq.QualityControls do
       [%QualityControl{}, ...]
 
   """
-  def list_quality_controls do
-    QualityControl
+  def list_quality_controls(params) do
+    fields = QualityControl.__schema__(:fields)
+    dynamic = filter(params, fields)
+    query = from(
+      p in QualityControl,
+      where: ^dynamic
+    )
+
+    query
       |> Repo.all()
       |> Repo.preload(:quality_rules)
   end
@@ -134,4 +141,16 @@ defmodule TdDq.QualityControls do
     |> Repo.one()
   end
 
+  defp filter(params, fields) do
+    dynamic = true
+
+    Enum.reduce(Map.keys(params), dynamic, fn x, acc ->
+      key_as_atom = String.to_atom(x)
+
+      case Enum.member?(fields, key_as_atom) do
+        true -> dynamic([p], field(p, ^key_as_atom) == ^params[x] and ^acc)
+        false -> acc
+      end
+    end)
+  end
 end
