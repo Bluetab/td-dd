@@ -7,7 +7,7 @@ defmodule TdDqWeb.RuleType do
 
   @endpoint TdDqWeb.Endpoint
 
-  def create_new_quality_rule_type(token, %{"name" => name, "params" => params}) do
+  def create_new_rule_implementation_type(token, %{"name" => name, "params" => params}) do
     params
      |> table_to_entity_attrs(name)
      |> (&quality_rule_type_create(token, &1)).()

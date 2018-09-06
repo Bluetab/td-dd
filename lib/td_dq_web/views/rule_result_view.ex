@@ -1,22 +1,22 @@
 defmodule TdDqWeb.RuleResultView do
   use TdDqWeb, :view
 
-  def render("index.json", %{quality_controls_results: quality_controls_results}) do
-    %{data: render_many(quality_controls_results, QualityControlsResultsView, "quality_controls_results.json")}
+  def render("index.json", %{rule_results: rule_results}) do
+    %{data: render_many(rule_results, QualityControlsResultsView, "rule_result.json")}
   end
 
-  def render("quality_controls_results.json", %{quality_controls_results: quality_controls_results}) do
+  def render("rule_result.json", %{rule_result: rule_result}) do
     %{
-      business_concept_id: quality_controls_results.business_concept_id,
-      quality_control_name: quality_controls_results.quality_control_name,
-      system: quality_controls_results.system,
-      group: quality_controls_results.group,
-      structure_name: quality_controls_results.structure_name,
-      field_name: quality_controls_results.field_name,
-      date: quality_controls_results.date,
-      result: quality_controls_results.result,
-      inserted_at: quality_controls_results.inserted_at,
-      updated_at: quality_controls_results.updated_at
+      business_concept_id: rule_result.business_concept_id,
+      quality_control_name: rule_result.quality_control_name,
+      system: rule_result.system,
+      group: rule_result.group,
+      structure_name: rule_result.structure_name,
+      field_name: rule_result.field_name,
+      date: rule_result.date,
+      result: rule_result.result,
+      inserted_at: rule_result.inserted_at,
+      updated_at: rule_result.updated_at
     }
   end
 end

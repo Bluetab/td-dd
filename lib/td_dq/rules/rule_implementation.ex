@@ -20,8 +20,8 @@ defmodule TdDq.Rules.RuleImplementation do
   end
 
   @doc false
-  def changeset(%RuleImplementation{} = quality_rule, attrs) do
-    quality_rule
+  def changeset(%RuleImplementation{} = rule_implementation, attrs) do
+    rule_implementation
     |> cast(attrs, [
       :name,
       :description,

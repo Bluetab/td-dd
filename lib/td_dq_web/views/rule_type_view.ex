@@ -2,17 +2,17 @@ defmodule TdDqWeb.RuleTypeView do
   use TdDqWeb, :view
   alias TdDqWeb.RuleTypeView
 
-  def render("index.json", %{quality_rule_type: quality_rule_type}) do
-    %{data: render_many(quality_rule_type, RuleTypeView, "quality_rule_type.json")}
+  def render("index.json", %{rule_types: rule_types}) do
+    %{data: render_many(rule_types, RuleTypeView, "rule_type.json")}
   end
 
-  def render("show.json", %{quality_rule_type: quality_rule_type}) do
-    %{data: render_one(quality_rule_type, RuleTypeView, "quality_rule_type.json")}
+  def render("show.json", %{rule_type: rule_type}) do
+    %{data: render_one(rule_type, RuleTypeView, "rule_type.json")}
   end
 
-  def render("quality_rule_type.json", %{quality_rule_type: quality_rule_type}) do
-    %{id: quality_rule_type.id,
-      name: quality_rule_type.name,
-      params: quality_rule_type.params}
+  def render("rule_type.json", %{rule_type: rule_type}) do
+    %{id: rule_type.id,
+      name: rule_type.name,
+      params: rule_type.params}
   end
 end

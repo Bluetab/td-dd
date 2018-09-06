@@ -53,8 +53,8 @@ defmodule TdDqWeb.RuleResultController do
   end
 
   def index(conn, _params) do
-    quality_controls_results = Rules.list_quality_controls_results()
-    render(conn, "index.json", quality_controls_results: quality_controls_results)
+    quality_controls_results = Rules.list_rule_results()
+    render(conn, "index.json", rule_results: quality_controls_results)
   end
 
 end

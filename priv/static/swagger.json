@@ -36,10 +36,10 @@
             "required": true,
             "name": "id",
             "in": "path",
-            "description": "Quality Control ID"
+            "description": "Rule ID"
           }
         ],
-        "operationId": "TdDqWeb.RuleImplementationController.get_quality_rules",
+        "operationId": "TdDqWeb.RuleImplementationController.get_rule_implementations",
         "description": "List Quality Rules"
       }
     },
@@ -71,18 +71,18 @@
             "required": false,
             "name": "quality_control",
             "in": "body",
-            "description": "Quality Control update attrs"
+            "description": "Rule update attrs"
           },
           {
             "type": "integer",
             "required": true,
             "name": "id",
             "in": "path",
-            "description": "Quality Control ID"
+            "description": "Rule ID"
           }
         ],
         "operationId": "TdDqWeb.RuleController.update",
-        "description": "Updates Quality Control"
+        "description": "Updates Rule"
       },
       "patch": {
         "tags": [
@@ -111,18 +111,18 @@
             "required": false,
             "name": "quality_control",
             "in": "body",
-            "description": "Quality Control update attrs"
+            "description": "Rule update attrs"
           },
           {
             "type": "integer",
             "required": true,
             "name": "id",
             "in": "path",
-            "description": "Quality Control ID"
+            "description": "Rule ID"
           }
         ],
         "operationId": "TdDqWeb.RuleController.update",
-        "description": "Updates Quality Control"
+        "description": "Updates Rule"
       },
       "get": {
         "tags": [
@@ -149,11 +149,11 @@
             "required": true,
             "name": "id",
             "in": "path",
-            "description": "Quality Control ID"
+            "description": "Rule ID"
           }
         ],
         "operationId": "TdDqWeb.RuleController.show",
-        "description": "Show Quality Control"
+        "description": "Show Rule"
       },
       "delete": {
         "tags": [
@@ -177,11 +177,11 @@
             "required": true,
             "name": "id",
             "in": "path",
-            "description": "Quality Control ID"
+            "description": "Rule ID"
           }
         ],
         "operationId": "TdDqWeb.RuleController.delete",
-        "description": "Delete Quality Control"
+        "description": "Delete Rule"
       }
     },
     "/api/rules/concept/{id}": {
@@ -207,8 +207,8 @@
             "description": "Business Concept ID"
           }
         ],
-        "operationId": "TdDqWeb.RuleController.get_quality_controls_by_concept",
-        "description": "List Quality Controls of a Business Concept"
+        "operationId": "TdDqWeb.RuleController.get_rules_by_concept",
+        "description": "List Rules of a Business Concept"
       }
     },
     "/api/rules": {
@@ -234,16 +234,16 @@
         "parameters": [
           {
             "schema": {
-              "$ref": "#/definitions/QualityControlCreate"
+              "$ref": "#/definitions/RuleCreate"
             },
             "required": false,
             "name": "quality_control",
             "in": "body",
-            "description": "Quality Control create attrs"
+            "description": "Rule create attrs"
           }
         ],
         "operationId": "TdDqWeb.RuleController.create",
-        "description": "Creates a Quality Control"
+        "description": "Creates a Rule"
       },
       "get": {
         "tags": [
@@ -260,7 +260,7 @@
         },
         "parameters": [],
         "operationId": "TdDqWeb.RuleController.index",
-        "description": "List Quality Controls"
+        "description": "List Rules"
       }
     },
     "/api/rule_types/{id}": {

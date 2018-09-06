@@ -1,22 +1,22 @@
-Feature: Quality Controls
+Feature: Rules
   A Quality control depends always from a Business Concept, and will store some unique indetification
   for the Business Concept in order to have it linked. This Business Concept ID could be from true-dat
   Business Glossary service or a third-party Business Glossary
-  A Quality Control has a workflow with following status depending on the executed action:
+  A Rule has a workflow with following status depending on the executed action:
     | initial status   | action            | new status       |
     |                  | create            | defined          |
     | defined          | immplement        | implemented      |
 
-  # Scenario: Create a new Quality Control with only generic fields when quality rule type exists
+  # Scenario: Create a new Rule with only generic fields when quality rule type exists
   #   Given user "my-user" logged in the application
   #   And a existing Quality Rule Type with name "Integer Values Range" and the following parameters:
   #     | Params                                                                                                        |
   #     | {"type_params": [{"name": "Minimum Value", "type": "integer"}, {"name": "Maximum Value", "type": "integer"}]} |
   #     | {"system_params": [{"name": "Table", "type": "string"}, {"name": "Field", "type": "string"}]}                 |
-  #   When "my-user" tries to create a Quality Control with following data:
+  #   When "my-user" tries to create a Rule with following data:
   #     | Field               | Value                                                                                  |
   #     | Business Concept ID | MYID_333                                                                               |
-  #     | Name                | Field's Quality Control                                                                |
+  #     | Name                | Field's Rule                                                                |
   #     | Description         | In order to measure quality of this field we will check whether its values are correct |
   #     | Weight              | 50                                                                                     |
   #     | Priority            | Medium                                                                                 |
@@ -26,10 +26,10 @@ Feature: Quality Controls
   #     | Type                | Integer Values Range                                                                   |
   #     | Type Params         | %-{ "Minimum Value": 18, "Maximum Value": 18 }                                         |
   #  Then the system returns a result with code "Created"
-  #  And "my-user" is able to view quality control named "Field's Quality Control" with with following data:
+  #  And "my-user" is able to view quality control named "Field's Rule" with with following data:
   #    | Field               | Value                                                                                     |
   #    | Business Concept ID | MYID_333                                                                                  |
-  #    | Name                | Field's Quality Control                                                                   |
+  #    | Name                | Field's Rule                                                                   |
   #    | Description         | In order to measure quality of this field we will check whether its values are correct    |
   #    | Status              | defined                                                                                   |
   #    | Weight              | 50                                                                                        |
@@ -41,12 +41,12 @@ Feature: Quality Controls
   #    | Type                | Integer Values Range                                                                      |
   #    | Type Params         | %-{ "Minimum Value": 18, "Maximum Value": 18 }                                            |
 
-  # Scenario: Create a new Quality Control with only generic fields when quality rule type does not exist
+  # Scenario: Create a new Rule with only generic fields when quality rule type does not exist
   #   Given user "my-user" logged in the application
-  #   When "my-user" tries to create a Quality Control with following data:
+  #   When "my-user" tries to create a Rule with following data:
   #     | Field               | Value                                                                                  |
   #     | Business Concept ID | MYID_333                                                                               |
-  #     | Name                | Field's Quality Control                                                                |
+  #     | Name                | Field's Rule                                                                |
   #     | Description         | In order to measure quality of this field we will check whether its values are correct |
   #     | Weight              | 50                                                                                     |
   #     | Priority            | Medium                                                                                 |
@@ -57,12 +57,12 @@ Feature: Quality Controls
   #     | Type Params         | %-{ "Minimum Value": 18, "Maximum Value": 18 }                                         |
   #  Then the system returns a result with code "Unprocessable Entity"
   
-  Scenario Outline: Create new Quality Control, validate types
+  Scenario Outline: Create new Rule, validate types
     Given user "my-user" logged in the application
-    When "my-user" tries to create a Quality Control of type <type> with following data and type_params <type_params>:
+    When "my-user" tries to create a Rule of type <type> with following data and type_params <type_params>:
       | Field               | Value                                                                                  |
       | Business Concept ID | MYID_333                                                                               |
-      | Name                | Field's Quality Control                                                                |
+      | Name                | Field's Rule                                                                |
       | Description         | In order to measure quality of this field we will check whether its values are correct |
       | Weight              | 50                                                                                     |
       | Priority            | Medium                                                                                 |
@@ -70,10 +70,10 @@ Feature: Quality Controls
       | Goal                | 98                                                                                     |
       | Minimum             | 80                                                                                     |
     Then the system returns a result with code "Created"
-    And "my-user" is able to view quality control named "Field's Quality Control" with with following data:
+    And "my-user" is able to view quality control named "Field's Rule" with with following data:
       | Field               | Value                                                                                     |
       | Business Concept ID | MYID_333                                                                                  |
-      | Name                | Field's Quality Control                                                                   |
+      | Name                | Field's Rule                                                                   |
       | Description         | In order to measure quality of this field we will check whether its values are correct    |
       | Status              | defined                                                                                   |
       | Weight              | 50                                                                                        |

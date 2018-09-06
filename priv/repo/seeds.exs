@@ -34,7 +34,7 @@ qrts = [
 ]
 
 for qrt <- qrts do
-  case Rules.get_quality_rule_type_by_name(qrt.name) do
+  case Rules.get_rule_type_by_name(qrt.name) do
     nil -> qrt |> Repo.insert!
     qrt -> qrt
   end

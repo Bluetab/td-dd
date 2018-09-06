@@ -13,7 +13,7 @@ defmodule TdQd.RuleTypeTest do
   defwhen ~r/^"(?<user_name>[^"]+)" tries to create a Rule named "(?<qrt_name>[^"]+)" with following data:$/, %{user_name: user_name, qrt_name: qrt_name, table: table}, state do
     token = state[:token]
     assert user_name == state[:user_name]
-    {:ok, status_code, _resp} = create_new_quality_rule_type(token, %{"name" => qrt_name, "params" => table})
+    {:ok, status_code, _resp} = create_new_rule_implementation_type(token, %{"name" => qrt_name, "params" => table})
     {:ok,  Map.merge(state, %{status_code: status_code})}
   end
 

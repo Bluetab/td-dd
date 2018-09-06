@@ -18,7 +18,7 @@ defmodule TdQd.RuleTest do
     {:ok, Map.merge(state, %{status_code: 402, token: token, user_name: user_name})}
   end
 
-  defwhen ~r/^"(?<user_name>[^"]+)" tries to create a Quality Control with following data:$/,
+  defwhen ~r/^"(?<user_name>[^"]+)" tries to create a Rule with following data:$/,
           %{user_name: user_name, table: table},
           state do
     assert user_name == state[:user_name]
@@ -26,7 +26,7 @@ defmodule TdQd.RuleTest do
     {:ok, Map.merge(state, %{status_code: status_code})}
   end
 
-  defwhen ~r/^"(?<user_name>[^"]+)" tries to create a Quality Control of type (?<type>[^"]+) with following data and type_params (?<type_params>%-{.*}):$/,
+  defwhen ~r/^"(?<user_name>[^"]+)" tries to create a Rule of type (?<type>[^"]+) with following data and type_params (?<type_params>%-{.*}):$/,
           %{user_name: user_name, type: type, type_params: type_params, table: table},
           state do
     assert user_name == state[:user_name]
@@ -62,7 +62,7 @@ defmodule TdQd.RuleTest do
          %{qr_name: qr_name, table: table},
          %{token: token} = _state do
     {:ok, _status_code, _resp} =
-      create_new_quality_rule_type(token, %{"name" => qr_name, "params" => table})
+      create_new_rule_implementation_type(token, %{"name" => qr_name, "params" => table})
   end
 
   def assert_attr(attr, value, %{} = target) do

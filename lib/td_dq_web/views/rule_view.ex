@@ -5,53 +5,53 @@ defmodule TdDqWeb.RuleView do
   alias TdDqWeb.RuleImplementationView
   alias TdPerms.BusinessConceptCache
 
-  def render("index.json", %{hypermedia: hypermedia, quality_controls: quality_controls}) do
-    render_many_hypermedia(quality_controls, hypermedia, RuleView, "quality_control.json")
+  def render("index.json", %{hypermedia: hypermedia, rules: rules}) do
+    render_many_hypermedia(rules, hypermedia, RuleView, "rule.json")
   end
 
-  def render("index.json", %{quality_controls: quality_controls}) do
-    %{data: render_many(quality_controls, RuleView, "quality_control.json")}
+  def render("index.json", %{rules: rules}) do
+    %{data: render_many(rules, RuleView, "rule.json")}
   end
 
-  def render("show.json", %{quality_control: quality_control}) do
-    %{data: render_one(quality_control, RuleView, "quality_control.json")}
+  def render("show.json", %{rule: rule}) do
+    %{data: render_one(rule, RuleView, "rule.json")}
   end
 
-  def render("quality_control.json", %{quality_control: quality_control}) do
-    %{id: quality_control.id,
-      business_concept_id: quality_control.business_concept_id,
-      name: quality_control.name,
-      description: quality_control.description,
-      weight: quality_control.weight,
-      priority: quality_control.priority,
-      population: quality_control.population,
-      goal: quality_control.goal,
-      minimum: quality_control.minimum,
-      status: quality_control.status,
-      version: quality_control.version,
-      updated_by: quality_control.updated_by,
-      inserted_at: quality_control.inserted_at,
-      updated_at: quality_control.updated_at,
-      principle: quality_control.principle,
-      type: quality_control.type,
-      type_params: quality_control.type_params,
+  def render("rule.json", %{rule: rule}) do
+    %{id: rule.id,
+      business_concept_id: rule.business_concept_id,
+      name: rule.name,
+      description: rule.description,
+      weight: rule.weight,
+      priority: rule.priority,
+      population: rule.population,
+      goal: rule.goal,
+      minimum: rule.minimum,
+      status: rule.status,
+      version: rule.version,
+      updated_by: rule.updated_by,
+      inserted_at: rule.inserted_at,
+      updated_at: rule.updated_at,
+      principle: rule.principle,
+      type: rule.type,
+      type_params: rule.type_params,
       current_business_concept_version: %{
-        name: BusinessConceptCache.get_name(quality_control.business_concept_id),
-        id: BusinessConceptCache.get_business_concept_version_id(quality_control.business_concept_id)
+        name: BusinessConceptCache.get_name(rule.business_concept_id),
+        id: BusinessConceptCache.get_business_concept_version_id(rule.business_concept_id)
       }
     }
-    |> add_quality_rules(quality_control)
+    |> add_rule_implementations(rule)
   end
 
-  defp add_quality_rules(quality_control, qc) do
-    case Ecto.assoc_loaded?(qc.quality_rules) do
+  defp add_rule_implementations(rule, qc) do
+    case Ecto.assoc_loaded?(qc.rule_implementations) do
       true ->
-        quality_rules_array = Enum.map(qc.quality_rules, fn(q_r) ->
-          RuleImplementationView.render("quality_rule.json", %{quality_rule: q_r})
+        quality_rules_array = Enum.map(qc.rule_implementations, fn(rule_implemenetation) ->
+          RuleImplementationView.render("rule_implementation.json", %{rule_implemenetation: rule_implemenetation})
         end)
-        Map.put(quality_control, :quality_rules, quality_rules_array)
+        Map.put(rule, :quality_rules, quality_rules_array)
       _ ->
-        quality_control
+        rule
     end
   end
 end

@@ -64,7 +64,7 @@ defmodule TdDq.Rules.Rule do
     if type_name == nil do
       changeset
     else
-      type = Rules.get_quality_rule_type_by_name(type_name)
+      type = Rules.get_rule_type_by_name(type_name)
       case type do
         nil ->
           changeset

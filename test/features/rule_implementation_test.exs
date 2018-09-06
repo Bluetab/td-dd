@@ -20,7 +20,7 @@ defmodule TdQd.RuleImplementationTest do
     {:ok, Map.merge(state, %{status_code: 402, token: token, user_name: user_name})}
   end
 
-  defand ~r/^a existing Quality Control with following data:$/,
+  defand ~r/^a existing Rule with following data:$/,
          %{table: table},
          %{token: token} = _state do
     {:ok, status_code, _resp} = create_new_quality_control(token, table)
@@ -31,10 +31,10 @@ defmodule TdQd.RuleImplementationTest do
          %{qr_name: qr_name, table: table},
          %{token: token} = _state do
     {:ok, _status_code, _resp} =
-      create_new_quality_rule_type(token, %{"name" => qr_name, "params" => table})
+      create_new_rule_implementation_type(token, %{"name" => qr_name, "params" => table})
   end
 
-  defwhen ~r/^"(?<user_name>[^"]+)" tries to create a Quality Rule associated to Quality Control "(?<qc_name>[^"]+)" with following data:$/,
+  defwhen ~r/^"(?<user_name>[^"]+)" tries to create a Quality Rule associated to Rule "(?<qc_name>[^"]+)" with following data:$/,
           %{user_name: user_name, qc_name: qc_name, table: table},
           state do
     token = state[:token]
@@ -44,7 +44,7 @@ defmodule TdQd.RuleImplementationTest do
     quality_control_id = quality_control["id"]
 
     {:ok, status_code, _resp} =
-      create_new_quality_rule(token, %{
+      create_new_rule_implementation(token, %{
         "quality_control_id" => quality_control_id,
         "params" => table
       })
@@ -61,7 +61,7 @@ defmodule TdQd.RuleImplementationTest do
     assert quality_rule_data && quality_rule_data["name"] == qr_name
   end
 
-  defwhen ~r/^"(?<user_name>[^"]+)" tries to create a Quality Rule associated to Quality Control "(?<qc_name>[^"]+)" without an existing Quality Rule type and the following data:$/,
+  defwhen ~r/^"(?<user_name>[^"]+)" tries to create a Quality Rule associated to Rule "(?<qc_name>[^"]+)" without an existing Quality Rule type and the following data:$/,
           %{user_name: user_name, qc_name: qc_name, table: table},
           state do
     token = state[:token]
@@ -71,7 +71,7 @@ defmodule TdQd.RuleImplementationTest do
     quality_control_id = quality_control["id"]
 
     {:ok, status_code, _resp} =
-      create_new_quality_rule(token, %{
+      create_new_rule_implementation(token, %{
         "quality_control_id" => quality_control_id,
         "params" => table
       })

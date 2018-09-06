@@ -11,7 +11,7 @@ defmodule TdDqWeb.RuleTypeControllerTest do
   @invalid_attrs %{name: nil, params: nil}
 
   def fixture(:quality_rule_type) do
-    {:ok, quality_rule_type} = Rules.create_quality_rule_type(@create_attrs)
+    {:ok, quality_rule_type} = Rules.create_rule_type(@create_attrs)
     quality_rule_type
   end
 
@@ -50,7 +50,7 @@ defmodule TdDqWeb.RuleTypeControllerTest do
   end
 
   describe "update quality_rule_type" do
-    setup [:create_quality_rule_type]
+    setup [:create_rule_type]
 
     @tag :admin_authenticated
     test "renders quality_rule_type when data is valid", %{conn: conn, quality_rule_type: %RuleType{id: id} = quality_rule_type} do
@@ -74,7 +74,7 @@ defmodule TdDqWeb.RuleTypeControllerTest do
   end
 
   describe "delete quality_rule_type" do
-    setup [:create_quality_rule_type]
+    setup [:create_rule_type]
 
     @tag :admin_authenticated
     test "deletes chosen quality_rule_type", %{conn: conn, quality_rule_type: quality_rule_type} do
@@ -109,7 +109,7 @@ defmodule TdDqWeb.RuleTypeControllerTest do
     end
   end
 
-  defp create_quality_rule_type(_) do
+  defp create_rule_type(_) do
     quality_rule_type = fixture(:quality_rule_type)
     {:ok, quality_rule_type: quality_rule_type}
   end
