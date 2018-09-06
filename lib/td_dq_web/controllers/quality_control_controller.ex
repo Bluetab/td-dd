@@ -23,9 +23,9 @@ defmodule TdDqWeb.QualityControlController do
     response(200, "OK", Schema.ref(:QualityControlsResponse))
   end
 
-  def index(conn, _params) do
-      quality_controls = QualityControls.list_quality_controls()
-      render(conn, "index.json", quality_controls: quality_controls)
+  def index(conn, params) do
+    quality_controls = QualityControls.list_quality_controls(params)
+    render(conn, "index.json", quality_controls: quality_controls)
   end
 
   swagger_path :get_quality_controls_by_concept do
