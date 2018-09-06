@@ -143,8 +143,25 @@ defmodule TdDqWeb.QualityControlController do
   end
 
   def show(conn, %{"id" => id}) do
+    user = conn.assigns[:current_resource]
     quality_control = QualityControls.get_quality_control!(id)
-    render(conn, "show.json", quality_control: quality_control)
+    resource_type = %{}
+      quality_control
+      |> Map.fetch!(:type)
+      |> (&Map.put(%{}, "resource_type", &1)).()
+
+    with true <- can?(user, show(resource_type)) do
+      render(conn, "show.json", hypermedia: hypermedia("quality_control", conn, quality_control), quality_control: quality_control)
+    else
+      false ->
+        conn
+        |> put_status(:forbidden)
+        |> render(ErrorView, :"403.json")
+      {:error, _changeset} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> render(ErrorView, :"422.json")
+    end
   end
 
   swagger_path :update do

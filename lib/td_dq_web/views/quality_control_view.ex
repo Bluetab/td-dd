@@ -13,6 +13,10 @@ defmodule TdDqWeb.QualityControlView do
     %{data: render_many(quality_controls, QualityControlView, "quality_control.json")}
   end
 
+  def render("show.json", %{hypermedia: hypermedia, quality_control: quality_control}) do
+    render_one_hypermedia(quality_control, hypermedia, QualityControlView, "quality_control.json")
+  end
+
   def render("show.json", %{quality_control: quality_control}) do
     %{data: render_one(quality_control, QualityControlView, "quality_control.json")}
   end

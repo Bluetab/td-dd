@@ -3,6 +3,7 @@ defmodule TdDq.Canada.Abilities do
   alias TdDq.Accounts.User
   alias TdDq.Canada.QualityControlAbilities
   alias TdDq.Canada.QualityRuleAbilities
+  alias TdDq.QualityControls.QualityControl
   alias TdDq.QualityRules.QualityRule
 
   defimpl Canada.Can, for: User do
@@ -18,6 +19,11 @@ defmodule TdDq.Canada.Abilities do
     def can?(%User{} = user, action, %QualityRule{} = quality_rule)
         when action in [:update, :delete, :show] do
       QualityRuleAbilities.can?(user, action, quality_rule)
+    end
+
+    def can?(%User{} = _user, action, %{"resource_type" => resource_type})
+      when action in [:show] do
+      QualityControlAbilities.can?(action, resource_type)
     end
 
     def can?(%User{} = user, :create, %{
