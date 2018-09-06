@@ -8,6 +8,7 @@ defmodule TdDq.Rules do
 
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleImplementation
+  alias TdDq.Rules.RuleResult
 
   @doc """
   Returns the list of rule_implementations.
@@ -106,7 +107,7 @@ defmodule TdDq.Rules do
   end
 
   def list_rule_results do
-    Repo.all(RulesResults)
+    Repo.all(RuleResult)
   end
 
   def list_concept_rules(business_concept_id) do
@@ -123,7 +124,7 @@ defmodule TdDq.Rules do
                                        system,
                                        structure_name,
                                        field_name) do
-    RulesResults
+    RuleResult
     |> where([r], r.business_concept_id == ^business_concept_id and
                   r.rule == ^rule and
                   r.system == ^system and

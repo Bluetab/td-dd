@@ -46,8 +46,8 @@ defmodule TdDqWeb.RuleView do
   defp add_rule_implementations(rule, qc) do
     case Ecto.assoc_loaded?(qc.rule_implementations) do
       true ->
-        rule_implementations_array = Enum.map(qc.rule_implementations, fn(rule_implemenetation) ->
-          RuleImplementationView.render("rule_implementation.json", %{rule_implemenetation: rule_implemenetation})
+        rule_implementations_array = Enum.map(qc.rule_implementations, fn(rule_implementation) ->
+          RuleImplementationView.render("rule_implementation.json", %{rule_implementation: rule_implementation})
         end)
         Map.put(rule, :rule_implementations, rule_implementations_array)
       _ ->
