@@ -30,7 +30,8 @@ qrts = [
   %QualityRuleType{name: "integrity", params: %{"system_params": [%{"name": "table", "type": "string"}, %{"name": "column", "type": "string"}]}},
   %QualityRuleType{name: "max_date", params: %{"type_params": [%{"name": "max_date", "type": "date"}], "system_params": [%{"name": "table", "type": "string"}, %{"name": "column", "type": "string"}]}},
   %QualityRuleType{name: "min_date", params: %{"type_params": [%{"name": "min_date", "type": "date"}], "system_params": [%{"name": "table", "type": "string"}, %{"name": "column", "type": "string"}]}},
-  %QualityRuleType{name: "dates_range", params: %{"type_params": [%{"name": "min_date", "type": "date"}, %{"name": "max_date", "type": "date"}], "system_params": [%{"name": "table", "type": "string"}, %{"name": "column", "type": "string"}]}}
+  %QualityRuleType{name: "dates_range", params: %{"type_params": [%{"name": "min_date", "type": "date"}, %{"name": "max_date", "type": "date"}], "system_params": [%{"name": "table", "type": "string"}, %{"name": "column", "type": "string"}]}},
+  %QualityRuleType{name: "custom_validation"}
 ]
 
 for qrt <- qrts do
