@@ -20,16 +20,13 @@ defmodule TdDq.Canada.Abilities do
       QualityRuleAbilities.can?(user, action, quality_rule)
     end
 
-    def can?(%User{} = _user, action, %{"quality_control_type" => quality_control_type})
-        when action in [:show] do
-      QualityControlAbilities.can?(action, quality_control_type)
-    end
-
     def can?(%User{} = user, :create, %{
           "business_concept_id" => business_concept_id,
+          "quality_control_type" => quality_control_type,
           "resource_type" => "quality_rule"
         }) do
-      QualityRuleAbilities.can?(user, :manage_quality_rule, business_concept_id)
+      quality_control_type !== "custom_validation" &&
+        QualityRuleAbilities.can?(user, :manage_quality_rule, business_concept_id)
     end
 
     def can?(%User{} = user, :update, %{

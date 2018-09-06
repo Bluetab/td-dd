@@ -61,6 +61,7 @@ defmodule TdDqWeb.QualityRuleController do
       add_quality_rule_type_id(quality_rule_params)
     with true <- can?(user, create(%{
           "business_concept_id" => quality_control.business_concept_id,
+          "quality_control_type" => quality_control.type,
           "resource_type" => "quality_rule"
           })),
          {:valid_quality_rule_type} <- verify_quality_rule_existence(quality_rule_type),
