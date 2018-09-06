@@ -116,10 +116,17 @@ defmodule TdDq.QualityControls do
     Repo.all(QualityControlsResults)
   end
 
-  def list_concept_quality_controls(business_concept_id) do
-    QualityControl
-    |> where([v], v.business_concept_id == ^business_concept_id)
-    |> order_by(desc: :business_concept_id)
+  def list_concept_quality_controls(params) do
+    fields = QualityControl.__schema__(:fields)
+    dynamic = filter(params, fields)
+
+    query = from(
+      p in QualityControl,
+      where: ^dynamic,
+      order_by: [desc: :business_concept_id]
+    )
+
+    query
     |> Repo.all()
     |> Repo.preload(:quality_rules)
   end
