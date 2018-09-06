@@ -4,7 +4,7 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
   import TdDq.Factory
   import TdDqWeb.Authentication, only: :functions
 
-  @invalid_quality_control_id -1
+  @invalid_rule_id -1
 
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
@@ -12,32 +12,32 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
 
   describe "index" do
     @tag :admin_authenticated
-    test "lists all quality_rules", %{conn: conn, swagger_schema: schema} do
+    test "lists all rule_implementations", %{conn: conn, swagger_schema: schema} do
       conn = get(conn, rule_implementation_path(conn, :index))
-      #validate_resp_schema(conn, schema, "RuleImplementationsResponse")
+      validate_resp_schema(conn, schema, "RuleImplementationsResponse")
       assert json_response(conn, 200)["data"] == []
     end
   end
 
-  describe "create quality_rule" do
+  describe "create rule_implementation" do
     @tag :admin_authenticated
-    test "renders quality_rule when data is valid", %{conn: conn, swagger_schema: schema} do
-      quality_control = insert(:rule)
-      quality_rule_type = insert(:rule_type)
+    test "renders rule_implementation when data is valid", %{conn: conn, swagger_schema: schema} do
+      rule = insert(:rule)
+      rule_type = insert(:rule_type)
 
       creation_attrs =
         Map.from_struct(
-          build(:rule_implementation, rule_id: quality_control.id, rule_type_id: quality_rule_type.id)
+          build(:rule_implementation, rule_id: rule.id, rule_type_id: rule_type.id)
         )
 
-      conn = post(conn, rule_implementation_path(conn, :create), quality_rule: creation_attrs)
-      #validate_resp_schema(conn, schema, "RuleImplementationResponse")
+      conn = post(conn, rule_implementation_path(conn, :create), rule_implementation: creation_attrs)
+      validate_resp_schema(conn, schema, "RuleImplementationResponse")
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
       conn = recycle_and_put_headers(conn)
 
       conn = get(conn, rule_implementation_path(conn, :show, id))
-      #validate_resp_schema(conn, schema, "RuleImplementationResponse")
+      validate_resp_schema(conn, schema, "RuleImplementationResponse")
       json_response = json_response(conn, 200)["data"]
 
       assert creation_attrs[:rule_id] == json_response["rule_id"]
@@ -50,23 +50,23 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
 
     @tag :admin_authenticated
     test "renders errors when data is invalid", %{conn: conn} do
-      quality_control = insert(:rule)
+      rule = insert(:rule)
 
       creation_attrs =
         Map.from_struct(
-          build(:rule_implementation, rule_id: quality_control.id, name: nil, system: nil)
+          build(:rule_implementation, rule_id: rule.id, name: nil, system: nil)
         )
 
-      conn = post(conn, rule_implementation_path(conn, :create), quality_rule: creation_attrs)
+      conn = post(conn, rule_implementation_path(conn, :create), rule_implementation: creation_attrs)
       assert json_response(conn, 422)["errors"] != %{}
     end
   end
 
-  describe "update quality_rule" do
+  describe "update rule_implementation" do
     @tag :admin_authenticated
-    test "renders quality_rule when data is valid", %{conn: conn, swagger_schema: schema} do
-      quality_rule = insert(:rule_implementation)
-      update_attrs = Map.from_struct(quality_rule)
+    test "renders rule_implementation when data is valid", %{conn: conn, swagger_schema: schema} do
+      rule_implementation = insert(:rule_implementation)
+      update_attrs = Map.from_struct(rule_implementation)
 
       update_attrs =
         update_attrs
@@ -74,14 +74,14 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
         |> Map.put(:system, "New system")
         |> Map.put(:description, "New description")
 
-      conn = put(conn, rule_implementation_path(conn, :update, quality_rule), quality_rule: update_attrs)
-      #validate_resp_schema(conn, schema, "RuleImplementationResponse")
+      conn = put(conn, rule_implementation_path(conn, :update, rule_implementation), rule_implementation: update_attrs)
+      validate_resp_schema(conn, schema, "RuleImplementationResponse")
       assert %{"id" => id} = json_response(conn, 200)["data"]
 
       conn = recycle_and_put_headers(conn)
 
       conn = get(conn, rule_implementation_path(conn, :show, id))
-      #validate_resp_schema(conn, schema, "RuleImplementationResponse")
+      validate_resp_schema(conn, schema, "RuleImplementationResponse")
       json_response = json_response(conn, 200)["data"]
 
       assert update_attrs[:rule_id] == json_response["rule_id"]
@@ -93,59 +93,59 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
 
     @tag :admin_authenticated
     test "renders errors when data is invalid", %{conn: conn} do
-      quality_rule = insert(:rule_implementation)
-      update_attrs = Map.from_struct(quality_rule)
+      rule_implementation = insert(:rule_implementation)
+      update_attrs = Map.from_struct(rule_implementation)
 
       update_attrs =
         update_attrs
         |> Map.put(:name, nil)
         |> Map.put(:system, nil)
 
-      conn = put(conn, rule_implementation_path(conn, :update, quality_rule), quality_rule: update_attrs)
+      conn = put(conn, rule_implementation_path(conn, :update, rule_implementation), rule_implementation: update_attrs)
       assert json_response(conn, 422)["errors"] != %{}
     end
   end
 
-  describe "delete quality_rule" do
+  describe "delete rule_implementation" do
     @tag :admin_authenticated
-    test "deletes chosen quality_rule", %{conn: conn} do
-      quality_rule = insert(:rule_implementation)
-      conn = delete(conn, rule_implementation_path(conn, :delete, quality_rule))
+    test "deletes chosen rule_implementation", %{conn: conn} do
+      rule_implementation = insert(:rule_implementation)
+      conn = delete(conn, rule_implementation_path(conn, :delete, rule_implementation))
       assert response(conn, 204)
 
       conn = recycle_and_put_headers(conn)
 
       assert_error_sent(404, fn ->
-        get(conn, rule_implementation_path(conn, :show, quality_rule))
+        get(conn, rule_implementation_path(conn, :show, rule_implementation))
       end)
     end
   end
 
   describe "get_rule_implementations" do
     @tag :admin_authenticated
-    test "lists all quality_rules from a quality control", %{conn: conn, swagger_schema: schema} do
-      quality_control = insert(:rule)
-      quality_rule_type = insert(:rule_type)
+    test "lists all rule_implementations from a quality control", %{conn: conn, swagger_schema: schema} do
+      rule = insert(:rule)
+      rule_type = insert(:rule_type)
 
       creation_attrs =
         Map.from_struct(
           build(
             :rule_implementation,
-            rule_id: quality_control.id,
-            rule_type_id: quality_rule_type.id
+            rule_id: rule.id,
+            rule_type_id: rule_type.id
           )
         )
 
-      conn = post(conn, rule_implementation_path(conn, :create), quality_rule: creation_attrs)
-      #validate_resp_schema(conn, schema, "RuleImplementationResponse")
+      conn = post(conn, rule_implementation_path(conn, :create), rule_implementation: creation_attrs)
+      validate_resp_schema(conn, schema, "RuleImplementationResponse")
       assert response(conn, 201)
 
       conn = recycle_and_put_headers(conn)
 
       conn =
-        get(conn, rule_rule_implementation_path(conn, :get_rule_implementations, quality_control.id))
+        get(conn, rule_rule_implementation_path(conn, :get_rule_implementations, rule.id))
 
-      #validate_resp_schema(conn, schema, "RuleImplementationsResponse")
+      validate_resp_schema(conn, schema, "RuleImplementationsResponse")
       json_response = List.first(json_response(conn, 200)["data"])
 
       assert creation_attrs[:rule_id] == json_response["rule_id"]
@@ -160,10 +160,10 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
       conn =
         get(
           conn,
-          rule_rule_implementation_path(conn, :get_rule_implementations, @invalid_quality_control_id)
+          rule_rule_implementation_path(conn, :get_rule_implementations, @invalid_rule_id)
         )
 
-      #validate_resp_schema(conn, schema, "RuleImplementationsResponse")
+      validate_resp_schema(conn, schema, "RuleImplementationsResponse")
       assert json_response(conn, 200)["data"] == []
     end
   end

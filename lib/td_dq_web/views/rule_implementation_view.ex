@@ -20,8 +20,8 @@ defmodule TdDqWeb.RuleImplementationView do
   def render("rule_implementation.json", %{rule_implementation: rule_implementation} = assigns) do
     %{
       id: rule_implementation.id,
-      quality_control_id: rule_implementation.rule_id,
-      quality_rule_type_id: rule_implementation.rule_type_id,
+      rule_id: rule_implementation.rule_id,
+      rule_type_id: rule_implementation.rule_type_id,
       name: rule_implementation.name,
       description: rule_implementation.description,
       system: rule_implementation.system,
@@ -34,46 +34,46 @@ defmodule TdDqWeb.RuleImplementationView do
     |> add_rule_result(assigns)
   end
 
-  defp add_rule_type(quality_rule, qr) do
+  defp add_rule_type(rule_implementation, qr) do
     case Ecto.assoc_loaded?(qr.rule_type) do
       true ->
-        quality_rule_type = %{
+        rule_type = %{
           id: qr.rule_type.id,
           name: qr.rule_type.name,
           params: qr.rule_type.params
         }
 
-        Map.put(quality_rule, :quality_rule_type, quality_rule_type)
+        Map.put(rule_implementation, :rule_type, rule_type)
 
       _ ->
-        quality_rule
+        rule_implementation
     end
   end
 
-  defp add_rule(quality_rule, qr) do
+  defp add_rule(rule_implementation, qr) do
     case Ecto.assoc_loaded?(qr.rule) do
       true ->
-        quality_control = %{id: qr.rule.id, name: qr.rule.name}
-        Map.put(quality_rule, :rule, quality_control)
+        rule = %{id: qr.rule.id, name: qr.rule.name}
+        Map.put(rule_implementation, :rule, rule)
 
       _ ->
-        quality_rule
+        rule_implementation
     end
   end
 
-  defp add_rule_result(quality_rule, assigns) do
-    case Map.get(assigns, :quality_controls_results) do
-      nil -> quality_rule
-      quality_controls_results ->
-        case Map.get(quality_controls_results, quality_rule.id) do
+  defp add_rule_result(rule_implementation, assigns) do
+    case Map.get(assigns, :rules_results) do
+      nil -> rule_implementation
+      rules_results ->
+        case Map.get(rules_results, rule_implementation.id) do
           nil ->
-            quality_rule
+            rule_implementation
             |> Map.put(:results, [])
-          quality_controls_result ->
-            quality_rule
+          rules_result ->
+            rule_implementation
             |> Map.put(:results,
-                  [%{result: quality_controls_result.result,
-                     date: quality_controls_result.date}])
+                  [%{result: rules_result.result,
+                     date: rules_result.date}])
         end
     end
   end

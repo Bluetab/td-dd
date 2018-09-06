@@ -39,8 +39,8 @@ defmodule TdDqWeb.RuleControllerTest do
 
   def fixture(:rule) do
     insert(:rule_type)
-    {:ok, quality_control} = Rules.create_rule(@create_fixture_attrs)
-    quality_control
+    {:ok, rule} = Rules.create_rule(@create_fixture_attrs)
+    rule
   end
 
   setup %{conn: conn} do
@@ -49,18 +49,18 @@ defmodule TdDqWeb.RuleControllerTest do
 
   describe "index" do
     @tag authenticated_user: @admin_user_name
-    test "lists all quality_controls", %{conn: conn, swagger_schema: schema} do
+    test "lists all rules", %{conn: conn, swagger_schema: schema} do
       conn = get conn, rule_path(conn, :index)
-      #validate_resp_schema(conn, schema, "RulesResponse")
+      validate_resp_schema(conn, schema, "RulesResponse")
       assert json_response(conn, 200)["data"] == []
     end
   end
 
   describe "get_rules_by_concept" do
     @tag authenticated_user: @admin_user_name
-    test "lists all quality_controls of a concept", %{conn: conn, swagger_schema: schema} do
+    test "lists all rules of a concept", %{conn: conn, swagger_schema: schema} do
       conn = get conn, rule_path(conn, :get_rules_by_concept, "id")
-      #validate_resp_schema(conn, schema, "RulesResponse")
+      validate_resp_schema(conn, schema, "RulesResponse")
       assert json_response(conn, 200)["data"] == []
     end
   end
@@ -68,8 +68,8 @@ defmodule TdDqWeb.RuleControllerTest do
   describe "verify token is required" do
     test "renders unauthenticated when no token", %{conn: conn, swagger_schema: schema} do
       conn = put_req_header(conn, "content-type", "application/json")
-      conn = post conn, rule_path(conn, :create), quality_control: @create_attrs
-      #validate_resp_schema(conn, schema, "RuleResponse")
+      conn = post conn, rule_path(conn, :create), rule: @create_attrs
+      validate_resp_schema(conn, schema, "RuleResponse")
       assert conn.status == 401
     end
   end
@@ -79,22 +79,22 @@ defmodule TdDqWeb.RuleControllerTest do
       #token with secret key SuperSecretTruedat2"
       jwt = "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJ0cnVlQkciLCJleHAiOjE1MTg2MDE2ODMsImlhdCI6MTUxODU5ODA4MywiaXNzIjoidHJ1ZUJHIiwianRpIjoiNTAzNmI5MTQtYmViOC00N2QyLWI4NGQtOTA2ZjMyMTQwMDRhIiwibmJmIjoxNTE4NTk4MDgyLCJzdWIiOiJhcHAtYWRtaW4iLCJ0eXAiOiJhY2Nlc3MifQ.0c_ZpzfiwUeRAbHe-34rvFZNjQoU_0NCMZ-T6r6_DUqPiwlp1H65vY-G1Fs1011ngAAVf3Xf8Vkqp-yOQUDTdw"
       conn = put_auth_headers(conn, jwt)
-      conn = post conn, rule_path(conn, :create), quality_control: @create_attrs
+      conn = post conn, rule_path(conn, :create), rule: @create_attrs
       assert conn.status == 401
     end
   end
 
-  describe "create quality_control" do
+  describe "create rule" do
     @tag authenticated_user: @admin_user_name
-    test "renders quality_control when data is valid", %{conn: conn, swagger_schema: schema} do
+    test "renders rule when data is valid", %{conn: conn, swagger_schema: schema} do
       insert(:rule_type)
-      conn = post conn, rule_path(conn, :create), quality_control: @create_fixture_attrs
-      #validate_resp_schema(conn, schema, "RuleResponse")
+      conn = post conn, rule_path(conn, :create), rule: @create_fixture_attrs
+      validate_resp_schema(conn, schema, "RuleResponse")
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
       conn = recycle_and_put_headers(conn)
       conn = get conn, rule_path(conn, :show, id)
-      #validate_resp_schema(conn, schema, "RuleResponse")
+      validate_resp_schema(conn, schema, "RuleResponse")
       comparable_fields = Map.take(json_response(conn, 200)["data"], @comparable_fields)
       assert comparable_fields == %{
         "id" => id,
@@ -117,24 +117,24 @@ defmodule TdDqWeb.RuleControllerTest do
 
     @tag authenticated_user: @admin_user_name
     test "renders errors when data is invalid", %{conn: conn, swagger_schema: schema} do
-      conn = post conn, rule_path(conn, :create), quality_control: @invalid_attrs
-      #validate_resp_schema(conn, schema, "RuleResponse")
+      conn = post conn, rule_path(conn, :create), rule: @invalid_attrs
+      validate_resp_schema(conn, schema, "RuleResponse")
       assert json_response(conn, 422)["errors"] != %{}
     end
   end
 
-  describe "update quality_control" do
+  describe "update rule" do
     setup [:create_rule]
 
     @tag authenticated_user: @admin_user_name
-    test "renders quality_control when data is valid", %{conn: conn, quality_control: %Rule{id: id} = quality_control, swagger_schema: schema} do
-      conn = put conn, rule_path(conn, :update, quality_control), quality_control: @update_attrs
-      #validate_resp_schema(conn, schema, "RuleResponse")
+    test "renders rule when data is valid", %{conn: conn, rule: %Rule{id: id} = rule, swagger_schema: schema} do
+      conn = put conn, rule_path(conn, :update, rule), rule: @update_attrs
+      validate_resp_schema(conn, schema, "RuleResponse")
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
       conn = recycle_and_put_headers(conn)
       conn = get conn, rule_path(conn, :show, id)
-      #validate_resp_schema(conn, schema, "RuleResponse")
+      validate_resp_schema(conn, schema, "RuleResponse")
       comparable_fields = Map.take(json_response(conn, 200)["data"], @comparable_fields)
       assert comparable_fields == %{
         "id" => id,
@@ -156,29 +156,29 @@ defmodule TdDqWeb.RuleControllerTest do
     end
 
     @tag authenticated_user: @admin_user_name
-    test "renders errors when data is invalid", %{conn: conn, quality_control: quality_control, swagger_schema: schema} do
-      conn = put conn, rule_path(conn, :update, quality_control), quality_control: @invalid_attrs
-      #validate_resp_schema(conn, schema, "RuleResponse")
+    test "renders errors when data is invalid", %{conn: conn, rule: rule, swagger_schema: schema} do
+      conn = put conn, rule_path(conn, :update, rule), rule: @invalid_attrs
+      validate_resp_schema(conn, schema, "RuleResponse")
       assert json_response(conn, 422)["errors"] != %{}
     end
   end
 
-  describe "delete quality_control" do
+  describe "delete rule" do
     setup [:create_rule]
 
     @tag authenticated_user: @admin_user_name
-    test "deletes chosen quality_control", %{conn: conn, quality_control: quality_control} do
-      conn = delete conn, rule_path(conn, :delete, quality_control)
+    test "deletes chosen rule", %{conn: conn, rule: rule} do
+      conn = delete conn, rule_path(conn, :delete, rule)
       assert response(conn, 204)
       conn = recycle_and_put_headers(conn)
       assert_error_sent 404, fn ->
-        get conn, rule_path(conn, :show, quality_control)
+        get conn, rule_path(conn, :show, rule)
       end
     end
   end
 
   defp create_rule(_) do
-    quality_control = fixture(:rule)
-    {:ok, quality_control: quality_control}
+    rule = fixture(:rule)
+    {:ok, rule: rule}
   end
 end

@@ -69,7 +69,7 @@
               "$ref": "#/definitions/RuleUpdate"
             },
             "required": false,
-            "name": "quality_control",
+            "name": "rule",
             "in": "body",
             "description": "Rule update attrs"
           },
@@ -109,7 +109,7 @@
               "$ref": "#/definitions/RuleUpdate"
             },
             "required": false,
-            "name": "quality_control",
+            "name": "rule",
             "in": "body",
             "description": "Rule update attrs"
           },
@@ -237,7 +237,7 @@
               "$ref": "#/definitions/RuleCreate"
             },
             "required": false,
-            "name": "quality_control",
+            "name": "rule",
             "in": "body",
             "description": "Rule create attrs"
           }
@@ -289,7 +289,7 @@
               "$ref": "#/definitions/RuleTypeUpdate"
             },
             "required": false,
-            "name": "quality_rule_type",
+            "name": "rule_type",
             "in": "body",
             "description": "Quality Rule Type update attrs"
           },
@@ -329,7 +329,7 @@
               "$ref": "#/definitions/RuleTypeUpdate"
             },
             "required": false,
-            "name": "quality_rule_type",
+            "name": "rule_type",
             "in": "body",
             "description": "Quality Rule Type update attrs"
           },
@@ -430,7 +430,7 @@
               "$ref": "#/definitions/RuleTypeCreate"
             },
             "required": false,
-            "name": "quality_rule_type",
+            "name": "rule_type",
             "in": "body",
             "description": "Quality Rule Type create attrs"
           }
@@ -482,7 +482,7 @@
               "$ref": "#/definitions/RuleImplementationUpdate"
             },
             "required": false,
-            "name": "quality_control",
+            "name": "rule",
             "in": "body",
             "description": "Quality Rule update attrs"
           },
@@ -522,7 +522,7 @@
               "$ref": "#/definitions/RuleImplementationUpdate"
             },
             "required": false,
-            "name": "quality_control",
+            "name": "rule",
             "in": "body",
             "description": "Quality Rule update attrs"
           },
@@ -623,7 +623,7 @@
               "$ref": "#/definitions/RuleImplementationCreate"
             },
             "required": false,
-            "name": "quality_rule",
+            "name": "rule_implementation",
             "in": "body",
             "description": "Quality Rule create attrs"
           }
@@ -675,7 +675,7 @@
     "RuleUpdate": {
       "type": "object",
       "properties": {
-        "quality_control": {
+        "rule": {
           "$ref": "#/definitions/RuleCreateProps"
         }
       }
@@ -716,7 +716,7 @@
     "RuleTypeUpdate": {
       "type": "object",
       "properties": {
-        "quality_rule_type": {
+        "rule_type": {
           "$ref": "#/definitions/RuleTypeUpdateProps"
         }
       }
@@ -749,7 +749,7 @@
     "RuleTypeCreate": {
       "type": "object",
       "properties": {
-        "quality_rule_type": {
+        "rule_type": {
           "$ref": "#/definitions/RuleTypeCreateProps"
         }
       }
@@ -840,7 +840,7 @@
     "RuleImplementationUpdate": {
       "type": "object",
       "properties": {
-        "quality_rule": {
+        "rule_implementation": {
           "$ref": "#/definitions/RuleImplementationUpdateProps"
         }
       }
@@ -856,7 +856,7 @@
     "RuleImplementationCreateProps": {
       "type": "object",
       "required": [
-        "quality_control_id",
+        "rule_id",
         "system_params",
         "system",
         "type",
@@ -879,9 +879,9 @@
           "type": "string",
           "description": "Rule Implementation system"
         },
-        "quality_control_id": {
+        "rule_id": {
           "type": "integer",
-          "description": "belongs to quality control"
+          "description": "belongs to rule"
         },
         "name": {
           "type": "string",
@@ -896,7 +896,7 @@
     "RuleImplementationCreate": {
       "type": "object",
       "properties": {
-        "quality_rule": {
+        "rule_implementation": {
           "$ref": "#/definitions/RuleImplementationCreateProps"
         }
       }
@@ -905,8 +905,8 @@
       "type": "object",
       "title": "Rule Implementation",
       "required": [
-        "quality_rule_type_id",
-        "quality_control_id",
+        "rule_type_id",
+        "rule_id",
         "system_params",
         "system",
         "type",
@@ -930,13 +930,13 @@
           "type": "string",
           "description": "Rule Implementation system"
         },
-        "quality_rule_type_id": {
+        "rule_type_id": {
           "type": "integer",
-          "description": "Belongs to quality rule type"
+          "description": "Belongs to rule type"
         },
-        "quality_control_id": {
+        "rule_id": {
           "type": "integer",
-          "description": "Belongs to quality control"
+          "description": "Belongs to rule"
         },
         "name": {
           "type": "string",
@@ -990,7 +990,7 @@
         },
         "principle": {
           "type": "object",
-          "description": "quality control principle"
+          "description": "rule principle"
         },
         "population": {
           "type": "string",
@@ -998,7 +998,7 @@
         },
         "name": {
           "type": "string",
-          "description": "quality control name"
+          "description": "rule name"
         },
         "minimum": {
           "type": "integer",
@@ -1021,7 +1021,7 @@
     "RuleCreate": {
       "type": "object",
       "properties": {
-        "quality_control": {
+        "rule": {
           "$ref": "#/definitions/RuleCreateProps"
         }
       }
@@ -1049,17 +1049,17 @@
         },
         "type_params": {
           "type": "object",
-          "description": "quality rule type_params"
+          "description": "rule type_params"
         },
         "type": {
           "type": "string",
-          "description": "quality rule type"
+          "description": "rule type"
         },
         "status": {
           "type": "string",
           "description": "status (Default: defined)"
         },
-        "quality_rules": {
+        "rule_implementations": {
           "$ref": "#/definitions/RuleImplementations"
         },
         "priority": {
@@ -1068,7 +1068,7 @@
         },
         "principle": {
           "type": "object",
-          "description": "quality control principle"
+          "description": "rule principle"
         },
         "population": {
           "type": "string",
@@ -1076,7 +1076,7 @@
         },
         "name": {
           "type": "string",
-          "description": "quality control name"
+          "description": "rule name"
         },
         "minimum": {
           "type": "integer",

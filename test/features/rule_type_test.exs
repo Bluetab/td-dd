@@ -23,9 +23,9 @@ defmodule TdQd.RuleTypeTest do
 
   defand ~r/^"(?<user_name>[^"]+)" is able to view rule type named "(?<qrt_name>[^"]+)" with following data:$/, %{user_name: user_name, qrt_name: qrt_name}, state do
     assert user_name == state[:user_name]
-    quality_rule_type_data = find_quality_rule_type(state[:token], %{name: qrt_name})
+    rule_type_data = find_rule_type(state[:token], %{name: qrt_name})
     # TODO: check all params
-    assert quality_rule_type_data && quality_rule_type_data["name"] == qrt_name
+    assert rule_type_data && rule_type_data["name"] == qrt_name
   end
 
 end

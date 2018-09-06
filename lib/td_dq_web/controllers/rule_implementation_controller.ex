@@ -27,15 +27,15 @@ defmodule TdDqWeb.RuleImplementationController do
   def index(conn, _params) do
     user = conn.assigns[:current_resource]
     with true <- can?(user, index(RuleImplementation)) do
-      quality_rules = Rules.list_rule_implementations()
-      render(conn, "index.json", rule_implementations: quality_rules)
+      rule_implementations = Rules.list_rule_implementations()
+      render(conn, "index.json", rule_implementations: rule_implementations)
     else
       false ->
         conn
         |> put_status(:forbidden)
         |> render(ErrorView, :"403.json")
       error ->
-        Logger.error("While getting quality rules... #{inspect(error)}")
+        Logger.error("While getting rule implementations... #{inspect(error)}")
         conn
         |> put_status(:unprocessable_entity)
         |> render(ErrorView, :"422.json")
@@ -46,36 +46,36 @@ defmodule TdDqWeb.RuleImplementationController do
     description "Creates a Quality Rule"
     produces "application/json"
     parameters do
-      quality_rule :body, Schema.ref(:RuleImplementationCreate), "Quality Rule create attrs"
+      rule_implementation :body, Schema.ref(:RuleImplementationCreate), "Quality Rule create attrs"
     end
     response 201, "Created", Schema.ref(:RuleImplementationResponse)
     response 400, "Client Error"
   end
 
-  def create(conn, %{"quality_rule" => quality_rule_params}) do
+  def create(conn, %{"rule_implementation" => rule_implementation_params}) do
     user = conn.assigns[:current_resource]
-    quality_control_id = Map.fetch!(quality_rule_params, "quality_control_id")
-    quality_control = Rules.get_rule!(quality_control_id)
+    rule_id = Map.fetch!(rule_implementation_params, "rule_id")
+    rule = Rules.get_rule!(rule_id)
 
     # TODO: remove this!!!
-    quality_rule_params = quality_rule_params
-    |> Map.put("rule_id", quality_control.id)
+    rule_implementation_params = rule_implementation_params
+    |> Map.put("rule_id", rule.id)
 
-    {quality_rule_params, quality_rule_type} =
-      add_quality_rule_type_id(quality_rule_params)
+    {rule_implementation_params, rule_type} =
+      add_rule_type_id(rule_implementation_params)
 
     with true <- can?(user, create(%{
-          "business_concept_id" => quality_control.business_concept_id,
-          "resource_type" => "quality_rule"
+          "business_concept_id" => rule.business_concept_id,
+          "resource_type" => "rule_implementation"
           })),
-         {:valid_quality_rule_type} <- verify_quality_rule_existence(quality_rule_type),
-         {:ok_size_verification} <- verify_equals_sizes(quality_rule_params, quality_rule_type.params),
-         {:ok_existence_verification} <- verify_types_and_existence(quality_rule_params, quality_rule_type.params),
-         {:ok, %RuleImplementation{} = quality_rule} <- Rules.create_rule_implementation(quality_rule_params) do
+         {:valid_rule_type} <- verify_rule_implementation_existence(rule_type),
+         {:ok_size_verification} <- verify_equals_sizes(rule_implementation_params, rule_type.params),
+         {:ok_existence_verification} <- verify_types_and_existence(rule_implementation_params, rule_type.params),
+         {:ok, %RuleImplementation{} = rule_implementation} <- Rules.create_rule_implementation(rule_implementation_params) do
       conn
       |> put_status(:created)
-      |> put_resp_header("location", rule_implementation_path(conn, :show, quality_rule))
-      |> render("show.json", rule_implementation: quality_rule)
+      |> put_resp_header("location", rule_implementation_path(conn, :show, rule_implementation))
+      |> render("show.json", rule_implementation: rule_implementation)
     else
       false ->
         conn
@@ -88,26 +88,26 @@ defmodule TdDqWeb.RuleImplementationController do
     end
   end
 
-  defp verify_quality_rule_existence(quality_rule_type) do
-    if quality_rule_type, do: {:valid_quality_rule_type},
-    else: {:not_found_quality_rule_type}
+  defp verify_rule_implementation_existence(rule_type) do
+    if rule_type, do: {:valid_rule_type},
+    else: {:not_found_rule_type}
   end
 
-  defp verify_equals_sizes(%{"system_params" => quality_rule_params}, %{"system_params" => qrt_params}) do
-    case length(Map.keys(quality_rule_params)) == length(qrt_params) do
+  defp verify_equals_sizes(%{"system_params" => rule_implementation_params}, %{"system_params" => qrt_params}) do
+    case length(Map.keys(rule_implementation_params)) == length(qrt_params) do
       true -> {:ok_size_verification}
       false -> {:ko_size_verification}
     end
   end
-  defp verify_equals_sizes(%{"system_params" => system_params}, _map_quality_rule_type) when system_params == %{}, do: {:ok_size_verification}
-  defp verify_equals_sizes(_map_quality_rule, _map_quality_rule_type), do: {:no_system_params}
+  defp verify_equals_sizes(%{"system_params" => system_params}, _map_rule_type) when system_params == %{}, do: {:ok_size_verification}
+  defp verify_equals_sizes(_map_rule_implementation, _map_rule_type), do: {:no_system_params}
 
-  defp verify_types_and_existence(map_quality_rule_params,
-    map_quality_rule_type_params) do
-      qr_tuple_list = Enum.map(map_quality_rule_params["system_params"], fn({k, v}) ->
+  defp verify_types_and_existence(map_rule_implementation_params,
+    map_rule_type_params) do
+      qr_tuple_list = Enum.map(map_rule_implementation_params["system_params"], fn({k, v}) ->
         {k, get_type(v)}
       end)
-      verify_key_type(qr_tuple_list, map_quality_rule_type_params["system_params"])
+      verify_key_type(qr_tuple_list, map_rule_type_params["system_params"])
   end
 
   defp verify_key_type(_, _, {:error, error}), do: error
@@ -140,10 +140,10 @@ defmodule TdDqWeb.RuleImplementationController do
   end
 
   def show(conn, %{"id" => id}) do
-    quality_rule = Rules.get_rule_implementation!(id)
+    rule_implementation = Rules.get_rule_implementation!(id)
     user = conn.assigns[:current_resource]
-    with true <- can?(user, show(quality_rule)) do
-      render(conn, "show.json", rule_implementation: quality_rule)
+    with true <- can?(user, show(rule_implementation)) do
+      render(conn, "show.json", rule_implementation: rule_implementation)
     else
       false ->
         conn
@@ -160,24 +160,24 @@ defmodule TdDqWeb.RuleImplementationController do
     description "Updates Quality Rule"
     produces "application/json"
     parameters do
-      quality_control :body, Schema.ref(:RuleImplementationUpdate), "Quality Rule update attrs"
+      rule :body, Schema.ref(:RuleImplementationUpdate), "Quality Rule update attrs"
       id :path, :integer, "Quality Rule ID", required: true
     end
     response 200, "OK", Schema.ref(:RuleImplementationResponse)
     response 400, "Client Error"
   end
 
-  def update(conn, %{"id" => id, "quality_rule" => quality_rule_params}) do
-    quality_rule = Rules.get_rule_implementation!(id)
-    quality_control = quality_rule.rule
+  def update(conn, %{"id" => id, "rule_implementation" => rule_implementation_params}) do
+    rule_implementation = Rules.get_rule_implementation!(id)
+    rule = rule_implementation.rule
 
     user = conn.assigns[:current_resource]
     with true <- can?(user, update(%{
-        "business_concept_id" => quality_control.business_concept_id,
-        "resource_type" => "quality_rule"
+        "business_concept_id" => rule.business_concept_id,
+        "resource_type" => "rule_implementation"
         })),
-         {:ok, %RuleImplementation{} = quality_rule} <- Rules.update_rule_implementation(quality_rule, quality_rule_params) do
-      render(conn, "show.json", rule_implementation: quality_rule)
+         {:ok, %RuleImplementation{} = rule_implementation} <- Rules.update_rule_implementation(rule_implementation, rule_implementation_params) do
+      render(conn, "show.json", rule_implementation: rule_implementation)
     else
       false ->
         conn
@@ -201,15 +201,15 @@ defmodule TdDqWeb.RuleImplementationController do
   end
 
   def delete(conn, %{"id" => id}) do
-    quality_rule = Rules.get_rule_implementation!(id)
+    rule_implementation = Rules.get_rule_implementation!(id)
     user = conn.assigns[:current_resource]
-    quality_control = quality_rule.rule
+    rule = rule_implementation.rule
 
     with true <- can?(user, delete(%{
-      "business_concept_id" => quality_control.business_concept_id,
-      "resource_type" => "quality_rule"
+      "business_concept_id" => rule.business_concept_id,
+      "resource_type" => "rule_implementation"
       })),
-         {:ok, %RuleImplementation{}} <- Rules.delete_rule_implementation(quality_rule) do
+         {:ok, %RuleImplementation{}} <- Rules.delete_rule_implementation(rule_implementation) do
       send_resp(conn, :no_content, "")
     else
       false ->
@@ -231,34 +231,34 @@ defmodule TdDqWeb.RuleImplementationController do
     response 200, "OK", Schema.ref(:RuleImplementationsResponse)
   end
 
-  def get_rule_implementations(conn, %{"quality_control_id" => id}) do
+  def get_rule_implementations(conn, %{"rule_id" => id}) do
     user = conn.assigns[:current_resource]
-    quality_control_id = String.to_integer(id)
+    rule_id = String.to_integer(id)
 
     with true <- can?(user, index(RuleImplementation)) do
-      quality_rules = Rules.list_rule_implementations()
+      rule_implementations = Rules.list_rule_implementations()
 
-      # TODO: Search quality rules by quality control
-      # TODO: Preload quality_control in search
-      quality_rules = quality_rules
+      # TODO: Search rule implementations by rule
+      # TODO: Preload rule in search
+      rule_implementations = rule_implementations
       |> Enum.map(&Repo.preload(&1, :rule))
-      |> Enum.filter(&(&1.rule_id == quality_control_id))
+      |> Enum.filter(&(&1.rule_id == rule_id))
 
-      quality_controls_results = quality_rules
-      |> Enum.reduce(%{}, fn(quality_rule, acc) ->
-          Map.put(acc, quality_rule.id,
-            get_concept_last_rule_result(quality_rule))
+      rules_results = rule_implementations
+      |> Enum.reduce(%{}, fn(rule_implementation, acc) ->
+          Map.put(acc, rule_implementation.id,
+            get_concept_last_rule_result(rule_implementation))
       end)
 
-      render(conn, "index.json", rule_implementations: quality_rules,
-                            quality_controls_results: quality_controls_results)
+      render(conn, "index.json", rule_implementations: rule_implementations,
+                            rules_results: rules_results)
     else
       false ->
         conn
         |> put_status(:forbidden)
         |> render(ErrorView, :"403.json")
       error ->
-        Logger.error("While getting quality rules... #{inspect(error)}")
+        Logger.error("While getting rule implementations... #{inspect(error)}")
         conn
         |> put_status(:unprocessable_entity)
         |> render(ErrorView, :"422.json")
@@ -266,33 +266,33 @@ defmodule TdDqWeb.RuleImplementationController do
   end
 
   # TODO: Search by implemnetation id
-  defp get_concept_last_rule_result(quality_rule) do
-    system_params = quality_rule.system_params
+  defp get_concept_last_rule_result(rule_implementation) do
+    system_params = rule_implementation.system_params
     table = Map.get(system_params, "table", nil)
     column = Map.get(system_params, "column", nil)
     case  table == nil or column == nil do
       true -> nil
       false -> nil
         Rules.get_concept_last_rule_result(
-            quality_rule.rule.business_concept_id,
-            quality_rule.rule.name,
-            quality_rule.system,
+            rule_implementation.rule.business_concept_id,
+            rule_implementation.rule.name,
+            rule_implementation.system,
             table,
             column)
     end
   end
 
-  defp add_quality_rule_type_id(%{"type" => qrt_name} = quality_rule_params) do
+  defp add_rule_type_id(%{"type" => qrt_name} = rule_implementation_params) do
     qrt = Rules.get_rule_type_by_name(qrt_name)
     case qrt do
       nil ->
-        {quality_rule_params, nil}
+        {rule_implementation_params, nil}
       qrt ->
-        {quality_rule_params
+        {rule_implementation_params
         |> Map.put("rule_type_id", qrt.id), qrt}
     end
   end
-  defp add_quality_rule_type_id(%{"quality_rule_type_id" => quality_rule_type_id} = quality_rule_params),
-    do: {quality_rule_params, Rules.get_rule_type!(quality_rule_type_id)}
-  defp add_quality_rule_type_id(quality_rule_params), do: {quality_rule_params, nil}
+  defp add_rule_type_id(%{"rule_type_id" => rule_type_id} = rule_implementation_params),
+    do: {rule_implementation_params, Rules.get_rule_type!(rule_type_id)}
+  defp add_rule_type_id(rule_implementation_params), do: {rule_implementation_params, nil}
 end

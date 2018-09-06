@@ -1,5 +1,5 @@
 Feature: Rules
-  A Quality control depends always from a Business Concept, and will store some unique indetification
+  A Rule depends always from a Business Concept, and will store some unique indetification
   for the Business Concept in order to have it linked. This Business Concept ID could be from true-dat
   Business Glossary service or a third-party Business Glossary
   A Rule has a workflow with following status depending on the executed action:
@@ -7,9 +7,9 @@ Feature: Rules
     |                  | create            | defined          |
     | defined          | immplement        | implemented      |
 
-  # Scenario: Create a new Rule with only generic fields when quality rule type exists
+  # Scenario: Create a new Rule with only generic fields when rule type exists
   #   Given user "my-user" logged in the application
-  #   And a existing Quality Rule Type with name "Integer Values Range" and the following parameters:
+  #   And a existing Rule Type with name "Integer Values Range" and the following parameters:
   #     | Params                                                                                                        |
   #     | {"type_params": [{"name": "Minimum Value", "type": "integer"}, {"name": "Maximum Value", "type": "integer"}]} |
   #     | {"system_params": [{"name": "Table", "type": "string"}, {"name": "Field", "type": "string"}]}                 |
@@ -26,7 +26,7 @@ Feature: Rules
   #     | Type                | Integer Values Range                                                                   |
   #     | Type Params         | %-{ "Minimum Value": 18, "Maximum Value": 18 }                                         |
   #  Then the system returns a result with code "Created"
-  #  And "my-user" is able to view quality control named "Field's Rule" with with following data:
+  #  And "my-user" is able to view rule named "Field's Rule" with with following data:
   #    | Field               | Value                                                                                     |
   #    | Business Concept ID | MYID_333                                                                                  |
   #    | Name                | Field's Rule                                                                   |
@@ -41,7 +41,7 @@ Feature: Rules
   #    | Type                | Integer Values Range                                                                      |
   #    | Type Params         | %-{ "Minimum Value": 18, "Maximum Value": 18 }                                            |
 
-  # Scenario: Create a new Rule with only generic fields when quality rule type does not exist
+  # Scenario: Create a new Rule with only generic fields when rule type does not exist
   #   Given user "my-user" logged in the application
   #   When "my-user" tries to create a Rule with following data:
   #     | Field               | Value                                                                                  |
@@ -70,7 +70,7 @@ Feature: Rules
       | Goal                | 98                                                                                     |
       | Minimum             | 80                                                                                     |
     Then the system returns a result with code "Created"
-    And "my-user" is able to view quality control named "Field's Rule" with with following data:
+    And "my-user" is able to view rule named "Field's Rule" with with following data:
       | Field               | Value                                                                                     |
       | Business Concept ID | MYID_333                                                                                  |
       | Name                | Field's Rule                                                                   |

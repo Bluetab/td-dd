@@ -4,7 +4,7 @@ defmodule TdDq.Rules.RuleResult do
 
   schema "rule_results" do
     field :business_concept_id, :string
-    field :quality_control_name, :string
+    field :rule, :string
     field :system, :string
     field :group, :string
     field :structure_name, :string

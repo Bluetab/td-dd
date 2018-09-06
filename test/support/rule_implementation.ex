@@ -7,39 +7,39 @@ defmodule TdDqWeb.RuleImplementation do
   import TdDqWeb.SupportCommon, only: :functions
   @endpoint TdDqWeb.Endpoint
 
-  @test_quality_rule_table_format %{"Field" => "field", "Type" => "type",
+  @test_rule_implementation_table_format %{"Field" => "field", "Type" => "type",
     "Description" => "description", "System" => "system", "Tag" => "tag",
     "Type Params" => "type_params", "System Params" => "system_params", "Name" => "name"}
 
-  def create_new_rule_implementation(token, %{"quality_control_id" => quality_control_id,
+  def create_new_rule_implementation(token, %{"rule_id" => rule_id,
     "params" => params}) do
        params
-       |> field_value_to_api_attrs(@test_quality_rule_table_format)
-       |> Map.merge(%{"quality_control_id" => quality_control_id})
+       |> field_value_to_api_attrs(@test_rule_implementation_table_format)
+       |> Map.merge(%{"rule_id" => rule_id})
        |> (&create_rule_implementation(token, &1)).()
   end
 
   defp create_rule_implementation(token, params) do
     headers = get_header(token)
-    body = %{quality_rule: params} |> JSON.encode!
+    body = %{rule_implementation: params} |> JSON.encode!
     %HTTPoison.Response{status_code: status_code, body: resp} =
       HTTPoison.post!(rule_implementation_url(@endpoint, :create), body, headers, [])
     {:ok, status_code, resp |> JSON.decode!}
   end
 
-  def find_quality_rule(token, search_params) do
-    {:ok, _status_code, json_resp} = quality_rule_list(token)
-    Enum.find(json_resp["data"], fn(quality_rule) ->
+  def find_rule_implementation(token, search_params) do
+    {:ok, _status_code, json_resp} = rule_implementation_list(token)
+    Enum.find(json_resp["data"], fn(rule_implementation) ->
       Enum.all?(search_params, fn({k, v}) ->
         string_key = Atom.to_string(k)
-        quality_rule[string_key] == v
+        rule_implementation[string_key] == v
       end
       )
     end
     )
   end
 
-  defp quality_rule_list(token) do
+  defp rule_implementation_list(token) do
     headers = get_header(token)
     %HTTPoison.Response{status_code: status_code, body: resp} =
       HTTPoison.get!(rule_implementation_url(@endpoint, :index), headers, [])

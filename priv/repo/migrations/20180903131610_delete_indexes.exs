@@ -6,4 +6,7 @@ defmodule TdDq.Repo.Migrations.DeleteIndexes do
     drop unique_index(:quality_rule_types, [:name])
   end
 
+  def down do
+  end
+
 end

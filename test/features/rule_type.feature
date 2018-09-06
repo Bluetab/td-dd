@@ -1,7 +1,7 @@
-Feature: Quality Rule Type
-  A quality rule type will be used by a quality control and a quality rule
+Feature: Rule Type
+  A rule type will be used by a rule and a rule implementation
   
-  Scenario: Create a new quality rule type
+  Scenario: Create a new rule type
     Given user "my-user" logged in the application
     When "my-user" tries to create a Rule named "Integer Values Range" with following data:
       | Params                                                                                                        |
@@ -13,14 +13,14 @@ Feature: Quality Rule Type
       | {"type_params": [{"name": "Minimum Value", "type": "integer"}, {"name": "Maximum Value", "type": "integer"}]} |
       | {"system_params": [{"name": "Table", "type": "string"}, {"name": "Field", "type": "string"}]}                 |
   
-  Scenario: Create a new quality rule type whith invalid params
+  Scenario: Create a new rule type whith invalid params
     Given user "my-user" logged in the application
     When "my-user" tries to create a Rule named "Integer Values Range" with following data:
       | Params                                                   |
       | {"Invalid Params": [{"name": "Value", "type": "integer"}]} |
    Then the system returns a result with code "Unprocessable Entity"
 
-  Scenario: Create a new quality rule type whith invalid number of params
+  Scenario: Create a new rule type whith invalid number of params
     Given user "my-user" logged in the application
     When "my-user" tries to create a Rule named "Integer Values Range" with following data:
       | Params                                                                                                        |
@@ -29,7 +29,7 @@ Feature: Quality Rule Type
       | {"Invalid Params": [{"name": "Value", "type": "integer"}]}                                                    |
    Then the system returns a result with code "Unprocessable Entity"
   
-  Scenario: Create a new quality rule without params
+  Scenario: Create a new rule implementation without params
     Given user "my-user" logged in the application
     When "my-user" tries to create a Rule named "Integer Values Range" with following data:
       | Params |

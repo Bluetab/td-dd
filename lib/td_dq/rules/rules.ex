@@ -10,7 +10,7 @@ defmodule TdDq.Rules do
   alias TdDq.Rules.RuleImplementation
 
   @doc """
-  Returns the list of quality_controls.
+  Returns the list of rule_implementations.
 
   ## Examples
 
@@ -25,7 +25,7 @@ defmodule TdDq.Rules do
   end
 
   @doc """
-  Gets a single quality_control.
+  Gets a single rule.
 
   Raises `Ecto.NoResultsError` if the Quality control does not exist.
 
@@ -41,7 +41,7 @@ defmodule TdDq.Rules do
   def get_rule!(id), do: Repo.preload(Repo.get!(Rule, id), :rule_implementations)
 
   @doc """
-  Creates a quality_control.
+  Creates a rule.
 
   ## Examples
 
@@ -59,19 +59,19 @@ defmodule TdDq.Rules do
   end
 
   @doc """
-  Updates a quality_control.
+  Updates a rule.
 
   ## Examples
 
-      iex> update_rule(quality_control, %{field: new_value})
+      iex> update_rule(rule, %{field: new_value})
       {:ok, %Rule{}}
 
-      iex> update_rule(quality_control, %{field: bad_value})
+      iex> update_rule(rule, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_rule(%Rule{} = quality_control, attrs) do
-    quality_control
+  def update_rule(%Rule{} = rule, attrs) do
+    rule
     |> Rule.changeset(attrs)
     |> Repo.update()
   end
@@ -81,28 +81,28 @@ defmodule TdDq.Rules do
 
   ## Examples
 
-      iex> delete_rule(quality_control)
+      iex> delete_rule(rule)
       {:ok, %Rule{}}
 
-      iex> delete_rule(quality_control)
+      iex> delete_rule(rule)
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_rule(%Rule{} = quality_control) do
-    Repo.delete(quality_control)
+  def delete_rule(%Rule{} = rule) do
+    Repo.delete(rule)
   end
 
   @doc """
-  Returns an `%Ecto.Changeset{}` for tracking quality_control changes.
+  Returns an `%Ecto.Changeset{}` for tracking rule changes.
 
   ## Examples
 
-      iex> change_rule(quality_control)
+      iex> change_rule(rule)
       %Ecto.Changeset{source: %Rule{}}
 
   """
-  def change_rule(%Rule{} = quality_control) do
-    Rule.changeset(quality_control, %{})
+  def change_rule(%Rule{} = rule) do
+    Rule.changeset(rule, %{})
   end
 
   def list_rule_results do
@@ -119,13 +119,13 @@ defmodule TdDq.Rules do
 
   # TODO: Search by implemnetation id
   def get_concept_last_rule_result(business_concept_id,
-                                       quality_control_name,
+                                       rule,
                                        system,
                                        structure_name,
                                        field_name) do
     RulesResults
     |> where([r], r.business_concept_id == ^business_concept_id and
-                  r.quality_control_name == ^quality_control_name and
+                  r.rule == ^rule and
                   r.system == ^system and
                   r.structure_name == ^structure_name and
                   r.field_name == ^field_name)
@@ -136,7 +136,7 @@ defmodule TdDq.Rules do
 
 
   @doc """
-  Returns the list of quality_rules.
+  Returns the list of rule_implementations.
 
   ## Examples
 
@@ -149,7 +149,7 @@ defmodule TdDq.Rules do
   end
 
   @doc """
-  Gets a single quality_rule.
+  Gets a single rule_implementation.
 
   Raises `Ecto.NoResultsError` if the Rule does not exist.
 
@@ -165,7 +165,7 @@ defmodule TdDq.Rules do
   def get_rule_implementation!(id), do: Repo.preload(Repo.get!(RuleImplementation, id), [:rule_type, :rule])
 
   @doc """
-  Creates a quality_rule.
+  Creates a rule_implementation.
 
   ## Examples
 
@@ -183,19 +183,19 @@ defmodule TdDq.Rules do
   end
 
   @doc """
-  Updates a quality_rule.
+  Updates a rule_implementation.
 
   ## Examples
 
-      iex> update_rule_implementation(quality_rule, %{field: new_value})
+      iex> update_rule_implementation(rule_implementation, %{field: new_value})
       {:ok, %RuleImplementation{}}
 
-      iex> update_rule_implementation(quality_rule, %{field: bad_value})
+      iex> update_rule_implementation(rule_implementation, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_rule_implementation(%RuleImplementation{} = quality_rule, attrs) do
-    quality_rule
+  def update_rule_implementation(%RuleImplementation{} = rule_implementation, attrs) do
+    rule_implementation
     |> RuleImplementation.changeset(attrs)
     |> Repo.update()
   end
@@ -205,34 +205,34 @@ defmodule TdDq.Rules do
 
   ## Examples
 
-      iex> delete_rule_implementation(quality_rule)
+      iex> delete_rule_implementation(rule_implementation)
       {:ok, %RuleImplementation{}}
 
-      iex> delete_rule_implementation(quality_rule)
+      iex> delete_rule_implementation(rule_implementation)
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_rule_implementation(%RuleImplementation{} = quality_rule) do
-    Repo.delete(quality_rule)
+  def delete_rule_implementation(%RuleImplementation{} = rule_implementation) do
+    Repo.delete(rule_implementation)
   end
 
   @doc """
-  Returns an `%Ecto.Changeset{}` for tracking quality_rule changes.
+  Returns an `%Ecto.Changeset{}` for tracking rule_implementation changes.
 
   ## Examples
 
-      iex> change_rule_implementation(quality_rule)
+      iex> change_rule_implementation(rule_implementation)
       %Ecto.Changeset{source: %RuleImplementation{}}
 
   """
-  def change_rule_implementation(%RuleImplementation{} = quality_rule) do
-    RuleImplementation.changeset(quality_rule, %{})
+  def change_rule_implementation(%RuleImplementation{} = rule_implementation) do
+    RuleImplementation.changeset(rule_implementation, %{})
   end
 
   alias TdDq.Rules.RuleType
 
   @doc """
-  Returns the list of quality_rule_type.
+  Returns the list of rule_type.
 
   ## Examples
 
@@ -245,7 +245,7 @@ defmodule TdDq.Rules do
   end
 
   @doc """
-  Gets a single quality_rule_type.
+  Gets a single rule_type.
 
   Raises `Ecto.NoResultsError` if the Rule types does not exist.
 
@@ -265,7 +265,7 @@ defmodule TdDq.Rules do
   end
 
   @doc """
-  Creates a quality_rule_type.
+  Creates a rule_type.
 
   ## Examples
 
@@ -283,19 +283,19 @@ defmodule TdDq.Rules do
   end
 
   @doc """
-  Updates a quality_rule_type.
+  Updates a rule_type.
 
   ## Examples
 
-      iex> update_rule_type(quality_rule_type, %{field: new_value})
+      iex> update_rule_type(rule_type, %{field: new_value})
       {:ok, %RuleType{}}
 
-      iex> update_rule_type(quality_rule_type, %{field: bad_value})
+      iex> update_rule_type(rule_type, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_rule_type(%RuleType{} = quality_rule_type, attrs) do
-    quality_rule_type
+  def update_rule_type(%RuleType{} = rule_type, attrs) do
+    rule_type
     |> RuleType.changeset(attrs)
     |> Repo.update()
   end
@@ -305,28 +305,28 @@ defmodule TdDq.Rules do
 
   ## Examples
 
-      iex> delete_rule_type(quality_rule_type)
+      iex> delete_rule_type(rule_type)
       {:ok, %RuleType{}}
 
-      iex> delete_rule_type(quality_rule_type)
+      iex> delete_rule_type(rule_type)
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_rule_type(%RuleType{} = quality_rule_type) do
-    Repo.delete(quality_rule_type)
+  def delete_rule_type(%RuleType{} = rule_type) do
+    Repo.delete(rule_type)
   end
 
   @doc """
-  Returns an `%Ecto.Changeset{}` for tracking quality_rule_type changes.
+  Returns an `%Ecto.Changeset{}` for tracking rule_type changes.
 
   ## Examples
 
-      iex> change_rule_type(quality_rule_type)
+      iex> change_rule_type(rule_type)
       %Ecto.Changeset{source: %RuleType{}}
 
   """
-  def change_rule_type(%RuleType{} = quality_rule_type) do
-    RuleType.changeset(quality_rule_type, %{})
+  def change_rule_type(%RuleType{} = rule_type) do
+    RuleType.changeset(rule_type, %{})
   end
 
 end

@@ -5,4 +5,8 @@ defmodule TdDq.Repo.Migrations.CreateIndexes do
     create unique_index(:rule_types, [:name])
   end
 
+  def down do
+    drop unique_index(:rule_types, [:name])    
+  end
+
 end

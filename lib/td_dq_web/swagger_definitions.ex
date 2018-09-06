@@ -15,17 +15,17 @@ defmodule TdDqWeb.SwaggerDefinitions do
           description :string, "description", required: true
           goal :integer, "goal percentage (1-100)"
           minimum :integer, "minimum goal (1-100)"
-          name :string, "quality control name"
+          name :string, "rule name"
           population :string, "population target description"
           priority :string, "Priority (Medium,...)"
           weight :integer, "weight"
           status :string, "status (Default: defined)" #, default: "defined"
           version :integer, "version number"
           updated_by :integer, "updated by user id"
-          principle :object, "quality control principle"
-          type :string, "quality rule type"
-          type_params :object, "quality rule type_params"
-          quality_rules Schema.ref(:RuleImplementations)
+          principle :object, "rule principle"
+          type :string, "rule type"
+          type_params :object, "rule type_params"
+          rule_implementations Schema.ref(:RuleImplementations)
         end
       end,
       RuleImplementation: swagger_schema do
@@ -39,8 +39,8 @@ defmodule TdDqWeb.SwaggerDefinitions do
           system :string, "Rule Implementation system", required: true
           system_params :object, "Rule Implementation parameters", required: true
           tag :object, "Rule Implementation tag"
-          quality_control_id :integer, "Belongs to quality control", required: true
-          quality_rule_type_id :integer, "Belongs to quality rule type", required: true
+          rule_id :integer, "Belongs to rule", required: true
+          rule_type_id :integer, "Belongs to rule type", required: true
         end
       end,
       RuleImplementations: swagger_schema do
@@ -55,26 +55,26 @@ defmodule TdDqWeb.SwaggerDefinitions do
           description :string, "description"
           goal :integer, "goal percentage (1-100)"
           minimum :integer, "minimum goal (1-100)"
-          name :string, "quality control name", required: true
+          name :string, "rule name", required: true
           population :string, "population target description"
           priority :string, "Priority (Medium,...)"
           weight :integer, "weight"
           status :string, "weight"
           version :integer, "weight"
           updated_by :integer, "weight"
-          principle :object, "quality control principle"
+          principle :object, "rule principle"
           type :string, "weight"
           type_params :object, "weight"
         end
       end,
       RuleCreate: swagger_schema do
         properties do
-          quality_control Schema.ref(:RuleCreateProps)
+          rule Schema.ref(:RuleCreateProps)
         end
       end,
       RuleUpdate: swagger_schema do
         properties do
-          quality_control Schema.ref(:RuleCreateProps)
+          rule Schema.ref(:RuleCreateProps)
         end
       end,
       Rules: swagger_schema do
@@ -109,8 +109,8 @@ defmodule TdDqWeb.SwaggerDefinitions do
           system :string, "Rule Implementation system", required: true
           system_params :object, "Rule Implementation parameters", required: true
           tag :object, "Rule Implementation tag"
-          quality_control_id :integer, "Belongs to quality control", required: true
-          quality_rule_type_id :integer, "Belongs to quality rule type", required: true
+          rule_id :integer, "Belongs to rule", required: true
+          rule_type_id :integer, "Belongs to rule type", required: true
         end
       end,
       RuleImplementationCreateProps: swagger_schema do
@@ -121,12 +121,12 @@ defmodule TdDqWeb.SwaggerDefinitions do
           system :string, "Rule Implementation system", required: true
           system_params :object, "Rule Implementation parameters", required: true
           tag :object, "Rule Implementation tag"
-          quality_control_id :integer, "belongs to quality control", required: true
+          rule_id :integer, "belongs to rule", required: true
         end
       end,
       RuleImplementationCreate: swagger_schema do
         properties do
-          quality_rule Schema.ref(:RuleImplementationCreateProps)
+          rule_implementation Schema.ref(:RuleImplementationCreateProps)
         end
       end,
       RuleImplementationUpdateProps: swagger_schema do
@@ -141,7 +141,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
       end,
       RuleImplementationUpdate: swagger_schema do
         properties do
-          quality_rule Schema.ref(:RuleImplementationUpdateProps)
+          rule_implementation Schema.ref(:RuleImplementationUpdateProps)
         end
       end,
       RuleImplementations: swagger_schema do
@@ -182,7 +182,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
       end,
       RuleTypeCreate: swagger_schema do
         properties do
-          quality_rule_type Schema.ref(:RuleTypeCreateProps)
+          rule_type Schema.ref(:RuleTypeCreateProps)
         end
       end,
       RuleTypeUpdateProps: swagger_schema do
@@ -193,7 +193,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
       end,
       RuleTypeUpdate: swagger_schema do
         properties do
-          quality_rule_type Schema.ref(:RuleTypeUpdateProps)
+          rule_type Schema.ref(:RuleTypeUpdateProps)
         end
       end,
       RuleTypes: swagger_schema do

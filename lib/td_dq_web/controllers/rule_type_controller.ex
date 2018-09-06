@@ -28,7 +28,7 @@ defmodule TdDqWeb.RuleTypeController do
     produces("application/json")
 
     parameters do
-      quality_rule_type(
+      rule_type(
         :body,
         Schema.ref(:RuleTypeCreate),
         "Quality Rule Type create attrs"
@@ -39,13 +39,13 @@ defmodule TdDqWeb.RuleTypeController do
     response(400, "Client Error")
   end
 
-  def create(conn, %{"quality_rule_type" => quality_rule_type_params}) do
-    with {:ok, %RuleType{} = quality_rule_type} <-
-           Rules.create_rule_type(quality_rule_type_params) do
+  def create(conn, %{"rule_type" => rule_type_params}) do
+    with {:ok, %RuleType{} = rule_type} <-
+           Rules.create_rule_type(rule_type_params) do
       conn
       |> put_status(:created)
-      |> put_resp_header("location", rule_type_path(conn, :show, quality_rule_type))
-      |> render("show.json", rule_type: quality_rule_type)
+      |> put_resp_header("location", rule_type_path(conn, :show, rule_type))
+      |> render("show.json", rule_type: rule_type)
     else
       _error ->
         conn
@@ -67,8 +67,8 @@ defmodule TdDqWeb.RuleTypeController do
   end
 
   def show(conn, %{"id" => id}) do
-    quality_rule_type = Rules.get_rule_type!(id)
-    render(conn, "show.json", rule_type: quality_rule_type)
+    rule_type = Rules.get_rule_type!(id)
+    render(conn, "show.json", rule_type: rule_type)
   end
 
   swagger_path :update do
@@ -76,7 +76,7 @@ defmodule TdDqWeb.RuleTypeController do
     produces("application/json")
 
     parameters do
-      quality_rule_type(
+      rule_type(
         :body,
         Schema.ref(:RuleTypeUpdate),
         "Quality Rule Type update attrs"
@@ -89,12 +89,12 @@ defmodule TdDqWeb.RuleTypeController do
     response(400, "Client Error")
   end
 
-  def update(conn, %{"id" => id, "quality_rule_type" => quality_rule_type_params}) do
-    quality_rule_type = Rules.get_rule_type!(id)
+  def update(conn, %{"id" => id, "rule_type" => rule_type_params}) do
+    rule_type = Rules.get_rule_type!(id)
 
-    with {:ok, %RuleType{} = quality_rule_type} <-
-           Rules.update_rule_type(quality_rule_type, quality_rule_type_params) do
-      render(conn, "show.json", rule_type: quality_rule_type)
+    with {:ok, %RuleType{} = rule_type} <-
+           Rules.update_rule_type(rule_type, rule_type_params) do
+      render(conn, "show.json", rule_type: rule_type)
     end
   end
 
@@ -111,9 +111,9 @@ defmodule TdDqWeb.RuleTypeController do
   end
 
   def delete(conn, %{"id" => id}) do
-    quality_rule_type = Rules.get_rule_type!(id)
+    rule_type = Rules.get_rule_type!(id)
 
-    with {:ok, %RuleType{}} <- Rules.delete_rule_type(quality_rule_type) do
+    with {:ok, %RuleType{}} <- Rules.delete_rule_type(rule_type) do
       send_resp(conn, :no_content, "")
     end
   end

@@ -1,10 +1,10 @@
-Feature: Quality Rules
-  A Rule depends always on the existance of a quality control and will
-  be related with a quality rule type
+Feature: Rule Implementations
+  A rule implementation depends always on the existance of a rule and will
+  be related with a rule type
 
   Scenario: Create a new Rule
     Given user "my-user" logged in the application
-    And a existing Quality Rule Type with name "Integer Values Range" and the following parameters:
+    And a existing Rule Type with name "Integer Values Range" and the following parameters:
       | Params                                                                                                        |
       | {"type_params": [{"name": "Minimum Value", "type": "integer"}, {"name": "Maximum Value", "type": "integer"}]} |
       | {"system_params": [{"name": "Table", "type": "string"}, {"name": "Field", "type": "string"}]}                 |
@@ -20,7 +20,7 @@ Feature: Quality Rules
       | Minimum             | 80                                                                                     |
       | Type                | Integer Values Range                                                                   |
       | Type Params         | %-{ "Minimum Value": 18, "Maximum Value": 50 }                                         |
-    When "my-user" tries to create a Quality Rule associated to Rule "Field's Rule" with following data:
+    When "my-user" tries to create a Rule Implementation associated to Rule "Field's Rule" with following data:
       | Field               | Value                                                                                  |
       | Type                | Integer Values Range                                                                   |
       | System              | Oracle                                                                                 |
@@ -28,7 +28,7 @@ Feature: Quality Rules
       | Description         | My Generic Rule Rule                                                        |
       | System Params       | %-{ "Table": "Clients", "Field": "Age" }                                               |
     Then the system returns a result with code "Created"
-    And "my-user" is able to view a Quality Rule named "Age between 18 and 50" with following data:
+    And "my-user" is able to view a Rule Implementation named "Age between 18 and 50" with following data:
       | Field               | Value                                                                                  |
       | Type                | Integer Values Range                                                                   |
       | System              | Oracle                                                                                 |
@@ -36,9 +36,9 @@ Feature: Quality Rules
       | Description         | My Generic Rule Rule                                                        |
       | System Params       | %-{ "Table": "Clients", "Field": "Age" }                                               |
 
-  Scenario: Create a new Rule whithout an associated Quality Rule Type
+  Scenario: Create a new Rule whithout an associated Rule Type
     Given user "my-user" logged in the application
-    And a existing Quality Rule Type with name "Integer Values Range" and the following parameters:
+    And a existing Rule Type with name "Integer Values Range" and the following parameters:
       | Params                                                                                                        |
       | {"type_params": [{"name": "Minimum Value", "type": "integer"}, {"name": "Maximum Value", "type": "integer"}]} |
       | {"system_params": [{"name": "Table", "type": "string"}, {"name": "Field", "type": "string"}]}                 |
@@ -54,7 +54,7 @@ Feature: Quality Rules
       | Minimum             | 80                                                                                     |
       | Type                | Integer Values Range                                                                   |
       | Type Params         | %-{ "Minimum Value": 18, "Maximum Value": 50 }                                         |
-    When "my-user" tries to create a Quality Rule associated to Rule "Field's Rule" without an existing Quality Rule type and the following data:
+    When "my-user" tries to create a Rule Implementation associated to Rule "Field's Rule" without an existing Rule Implementation type and the following data:
       | Field               | Value                                                                                  |
       | System              | Oracle                                                                                 |
       | Name                | Age between 18 and 50                                                                  |
@@ -62,9 +62,9 @@ Feature: Quality Rules
       | System Params       | %-{ "Table": "Clients", "Field": "Age" }                                               |
     Then the system returns a result with code "Unprocessable Entity"
 
-  Scenario: Create a new Rule which does not ths same numer of params as its Quality Rule Type
+  Scenario: Create a new Rule which does not ths same numer of params as its Rule Type
     Given user "my-user" logged in the application
-    And a existing Quality Rule Type with name "Integer Values Range" and the following parameters:
+    And a existing Rule Type with name "Integer Values Range" and the following parameters:
       | Params                                                                                                        |
       | {"type_params": [{"name": "Minimum Value", "type": "integer"}, {"name": "Maximum Value", "type": "integer"}]} |
       | {"system_params": [{"name": "Table", "type": "string"}, {"name": "Field", "type": "string"}]}                 |
@@ -80,7 +80,7 @@ Feature: Quality Rules
       | Minimum             | 80                                                                                     |
       | Type                | Integer Values Range                                                                   |
       | Type Params         | %-{ "Minimum Value": 18, "Maximum Value": 50 }                                         |
-    When "my-user" tries to create a Quality Rule associated to Rule "Field's Rule" with following data:
+    When "my-user" tries to create a Rule Implementation associated to Rule "Field's Rule" with following data:
       | Field               | Value                                                                                  |
       | Type                | Integer Values Range                                                                   |
       | System              | Oracle                                                                                 |
@@ -89,9 +89,9 @@ Feature: Quality Rules
       | System Params       | %-{ "Table": "Clients", "Field": "Age", "Type": "I made it up" }                       |
     Then the system returns a result with code "Unprocessable Entity"
 
-  Scenario: Create a new Rule with a different System Param type to its Quality Rule Type
+  Scenario: Create a new Rule with a different System Param type to its Rule Type
     Given user "my-user" logged in the application
-    And a existing Quality Rule Type with name "Integer Values Range" and the following parameters:
+    And a existing Rule Type with name "Integer Values Range" and the following parameters:
       | Params                                                                                                        |
       | {"type_params": [{"name": "Minimum Value", "type": "integer"}, {"name": "Maximum Value", "type": "integer"}]} |
       | {"system_params": [{"name": "Table", "type": "string"}, {"name": "Field", "type": "string"}]}                 |
@@ -107,7 +107,7 @@ Feature: Quality Rules
       | Minimum             | 80                                                                                     |
       | Type                | Integer Values Range                                                                   |
       | Type Params         | %-{ "Minimum Value": 18, "Maximum Value": 50 }                                         |
-    When "my-user" tries to create a Quality Rule associated to Rule "Field's Rule" with following data:
+    When "my-user" tries to create a Rule Implementation associated to Rule "Field's Rule" with following data:
       | Field               | Value                                                                                  |
       | Type                | Integer Values Range                                                                   |
       | System              | Oracle                                                                                 |
@@ -116,9 +116,9 @@ Feature: Quality Rules
       | System Params       | %-{ "Table": "Clients", "Field": 0 }                                                   |
     Then the system returns a result with code "Unprocessable Entity"
 
-  Scenario: Create a new Rule which params do not match with its Quality Rule Type params
+  Scenario: Create a new Rule which params do not match with its Rule Type params
     Given user "my-user" logged in the application
-    And a existing Quality Rule Type with name "Integer Values Range" and the following parameters:
+    And a existing Rule Type with name "Integer Values Range" and the following parameters:
       | Params                                                                                                        |
       | {"type_params": [{"name": "Minimum Value", "type": "integer"}, {"name": "Maximum Value", "type": "integer"}]} |
       | {"system_params": [{"name": "Table", "type": "string"}, {"name": "Field", "type": "string"}]}                 |
@@ -134,7 +134,7 @@ Feature: Quality Rules
       | Minimum             | 80                                                                                     |
       | Type                | Integer Values Range                                                                   |
       | Type Params         | %-{ "Minimum Value": 18, "Maximum Value": 50 }                                         |
-    When "my-user" tries to create a Quality Rule associated to Rule "Field's Rule" with following data:
+    When "my-user" tries to create a Rule Implementation associated to Rule "Field's Rule" with following data:
       | Field               | Value                                                                                  |
       | Type                | Integer Values Range                                                                   |
       | System              | Oracle                                                                                 |

@@ -1,6 +1,6 @@
 defmodule TdDq.RuleLoader do
   @moduledoc """
-  GenServer to load quality control counts into Redis
+  GenServer to load rules counts into Redis
   """
 
   use GenServer

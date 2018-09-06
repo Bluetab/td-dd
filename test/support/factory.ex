@@ -34,11 +34,11 @@ defmodule TdDq.Factory do
     %TdDq.Rules.RuleImplementation {
       rule: build(:rule),
       rule_type: build(:rule_type),
-      description: "Quality Rule description",
-      name: "Quality Rule name",
+      description: "Rule Implementation description",
+      name: "Rule Implementation name",
       type: "Rule Type",
       system_params: %{},
-      system: "Quality Rule System",
+      system: "Rule Implementation System",
       tag: %{}
     }
   end

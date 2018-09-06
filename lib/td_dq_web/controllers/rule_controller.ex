@@ -42,7 +42,7 @@ defmodule TdDqWeb.RuleController do
     user = conn.assigns[:current_resource]
     resource_type = %{
       "business_concept_id" => id,
-      "resource_type" => "quality_control"
+      "resource_type" => "rule"
     }
 
     with true <- can?(user, get_rules_by_concept(resource_type)) do
@@ -52,7 +52,7 @@ defmodule TdDqWeb.RuleController do
         conn,
         RuleView,
         "index.json",
-        hypermedia: collection_hypermedia("quality_control", conn, rules, resource_type),
+        hypermedia: collection_hypermedia("rule", conn, rules, resource_type),
         rules: rules
       )
     else
@@ -73,35 +73,35 @@ defmodule TdDqWeb.RuleController do
     produces("application/json")
 
     parameters do
-      quality_control(:body, Schema.ref(:RuleCreate), "Rule create attrs")
+      rule(:body, Schema.ref(:RuleCreate), "Rule create attrs")
     end
 
     response(201, "Created", Schema.ref(:RuleResponse))
     response(400, "Client Error")
   end
 
-  def create(conn, %{"quality_control" => quality_control_params}) do
+  def create(conn, %{"rule" => rule_params}) do
     user = conn.assigns[:current_resource]
-    quality_control_params =
+    rule_params =
       if user do
-        Map.put_new(quality_control_params, "updated_by", user.id)
+        Map.put_new(rule_params, "updated_by", user.id)
       else
-        quality_control_params
+        rule_params
       end
 
-    resource_type = quality_control_params
+    resource_type = rule_params
       |> Map.take(["business_concept_id"])
-      |> Map.put("resource_type", "quality_control")
+      |> Map.put("resource_type", "rule")
 
     with true <- can?(user, create(resource_type)),
-      {:ok, %Rule{} = quality_control} <-
-           Rules.create_rule(quality_control_params) do
+      {:ok, %Rule{} = rule} <-
+           Rules.create_rule(rule_params) do
 
       audit = %{
         "audit" => %{
-          "resource_id" => quality_control.id,
-          "resource_type" => "quality_control",
-          "payload" => quality_control_params
+          "resource_id" => rule.id,
+          "resource_type" => "rule",
+          "payload" => rule_params
         }
       }
 
@@ -109,8 +109,8 @@ defmodule TdDqWeb.RuleController do
 
       conn
         |> put_status(:created)
-        |> put_resp_header("location", rule_path(conn, :show, quality_control))
-        |> render("show.json", rule: quality_control)
+        |> put_resp_header("location", rule_path(conn, :show, rule))
+        |> render("show.json", rule: rule)
     else
       false ->
         conn
@@ -137,8 +137,8 @@ defmodule TdDqWeb.RuleController do
   end
 
   def show(conn, %{"id" => id}) do
-    quality_control = Rules.get_rule!(id)
-    render(conn, "show.json", rule: quality_control)
+    rule = Rules.get_rule!(id)
+    render(conn, "show.json", rule: rule)
   end
 
   swagger_path :update do
@@ -146,7 +146,7 @@ defmodule TdDqWeb.RuleController do
     produces("application/json")
 
     parameters do
-      quality_control(:body, Schema.ref(:RuleUpdate), "Rule update attrs")
+      rule(:body, Schema.ref(:RuleUpdate), "Rule update attrs")
       id(:path, :integer, "Rule ID", required: true)
     end
 
@@ -154,26 +154,26 @@ defmodule TdDqWeb.RuleController do
     response(400, "Client Error")
   end
 
-  def update(conn, %{"id" => id, "quality_control" => quality_control_params}) do
+  def update(conn, %{"id" => id, "rule" => rule_params}) do
     user = conn.assigns[:current_resource]
-    quality_control = Rules.get_rule!(id)
+    rule = Rules.get_rule!(id)
     resource_type = %{
-      "business_concept_id" => quality_control.business_concept_id,
-      "resource_type" => "quality_control"
+      "business_concept_id" => rule.business_concept_id,
+      "resource_type" => "rule"
     }
 
-    quality_control_params =
+    rule_params =
       if user do
-        Map.put_new(quality_control_params, "updated_by", user.id)
+        Map.put_new(rule_params, "updated_by", user.id)
       else
-        quality_control_params
+        rule_params
       end
 
     with true <- can?(user, update(resource_type)),
-            {:ok, %Rule{} = quality_control} <-
-              Rules.update_rule(quality_control, quality_control_params) do
+            {:ok, %Rule{} = rule} <-
+              Rules.update_rule(rule, rule_params) do
 
-      render(conn, "show.json", rule: quality_control)
+      render(conn, "show.json", rule: rule)
     else
       false ->
         conn
@@ -201,24 +201,24 @@ defmodule TdDqWeb.RuleController do
 
   def delete(conn, %{"id" => id}) do
     user = conn.assigns[:current_resource]
-    quality_control = Rules.get_rule!(id)
+    rule = Rules.get_rule!(id)
     resource_type = %{
-      "business_concept_id" => quality_control.business_concept_id,
-      "resource_type" => "quality_control"
+      "business_concept_id" => rule.business_concept_id,
+      "resource_type" => "rule"
     }
 
     with true <- can?(user, delete(resource_type)),
-      {:ok, %Rule{}} <- Rules.delete_rule(quality_control) do
+      {:ok, %Rule{}} <- Rules.delete_rule(rule) do
 
-      quality_control_params = quality_control
+      rule_params = rule
           |> Map.from_struct
           |> Map.delete(:__meta__)
 
       audit = %{
         "audit" => %{
-          "resource_id" => quality_control.id,
-          "resource_type" => "quality_control",
-          "payload" => quality_control_params
+          "resource_id" => rule.id,
+          "resource_type" => "rule",
+          "payload" => rule_params
         }
       }
 
