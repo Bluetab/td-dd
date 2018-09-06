@@ -86,6 +86,7 @@ defmodule TdDq.QualityControls.QualityControl do
     end
   end
 
+  defp validata_params_length(changeset, nil, nil), do: {:ok, changeset}
   defp validata_params_length(changeset, qctp, tp) do
     tp = case tp do
       nil -> []
@@ -97,6 +98,7 @@ defmodule TdDq.QualityControls.QualityControl do
     end
   end
 
+  defp do_validate_params_keys(changeset, nil, nil), do: {:ok, changeset}
   defp do_validate_params_keys(changeset, qctp, tp) do
     qctp_tuple_list = Enum.map(qctp, fn({k, v}) ->
       {k, get_type(v)}
