@@ -38,7 +38,7 @@ config :td_perms, permissions: [
   :manage_quality_rule
 ]
 
-config :td_dq, cache_quality_controls_on_startup: true
+config :td_dq, cache_rules_on_startup: true
 
 # General application configuration
 config :td_dq,

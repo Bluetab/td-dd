@@ -1,74 +1,74 @@
 defmodule TdDq.Canada.Abilities do
   @moduledoc false
   alias TdDq.Accounts.User
-  alias TdDq.Canada.QualityControlAbilities
-  alias TdDq.Canada.QualityRuleAbilities
-  alias TdDq.QualityRules.QualityRule
+  alias TdDq.Canada.RuleAbilities
+  alias TdDq.Canada.RuleImplementationAbilities
+  alias TdDq.Rules.RuleImplementation
 
   defimpl Canada.Can, for: User do
     def can?(%User{is_admin: true}, _action, _domain) do
       true
     end
 
-    def can?(%User{} = user, action, QualityRule)
+    def can?(%User{} = user, action, RuleImplementation)
         when action in [:index] do
-      QualityRuleAbilities.can?(user, action, QualityRule)
+      RuleImplementationAbilities.can?(user, action, RuleImplementation)
     end
 
-    def can?(%User{} = user, action, %QualityRule{} = quality_rule)
+    def can?(%User{} = user, action, %RuleImplementation{} = rule_implementation)
         when action in [:update, :delete, :show] do
-      QualityRuleAbilities.can?(user, action, quality_rule)
+      RuleImplementationAbilities.can?(user, action, rule_implementation)
     end
 
     def can?(%User{} = user, :create, %{
           "business_concept_id" => business_concept_id,
-          "quality_control_type" => quality_control_type,
-          "resource_type" => "quality_rule"
+          "rule_type" => rule_type,
+          "resource_type" => "rule_implementation"
         }) do
-      quality_control_type !== "custom_validation" &&
-        QualityRuleAbilities.can?(user, :manage_quality_rule, business_concept_id)
+          rule_type !== "custom_validation" &&
+          RuleImplementationAbilities.can?(user, :manage_rules, business_concept_id)
     end
 
     def can?(%User{} = user, :update, %{
           "business_concept_id" => business_concept_id,
-          "resource_type" => "quality_rule"
+          "resource_type" => "rule_implementation"
         }) do
-      QualityRuleAbilities.can?(user, :manage_quality_rule, business_concept_id)
+      RuleImplementationAbilities.can?(user, :manage_rules, business_concept_id)
     end
 
     def can?(%User{} = user, :delete, %{
           "business_concept_id" => business_concept_id,
-          "resource_type" => "quality_rule"
+          "resource_type" => "rule_implementation"
         }) do
-      QualityRuleAbilities.can?(user, :manage_quality_rule, business_concept_id)
+      RuleImplementationAbilities.can?(user, :manage_rules, business_concept_id)
     end
 
-    def can?(%User{} = user, :get_quality_controls_by_concept, %{
+    def can?(%User{} = user, :get_rules_by_concept, %{
           "business_concept_id" => business_concept_id,
-          "resource_type" => "quality_control"
+          "resource_type" => "rule"
         }) do
-      QualityControlAbilities.can?(user, :index_quality_control, business_concept_id)
+      RuleAbilities.can?(user, :index_rule, business_concept_id)
     end
 
     def can?(%User{} = user, :create, %{
           "business_concept_id" => business_concept_id,
-          "resource_type" => "quality_control"
+          "resource_type" => "rule"
         }) do
-      QualityControlAbilities.can?(user, :manage_quality_control, business_concept_id)
+      RuleAbilities.can?(user, :manage_rules, business_concept_id)
     end
 
     def can?(%User{} = user, :update, %{
           "business_concept_id" => business_concept_id,
-          "resource_type" => "quality_control"
+          "resource_type" => "rule"
         }) do
-      QualityControlAbilities.can?(user, :manage_quality_control, business_concept_id)
+      RuleAbilities.can?(user, :manage_rules, business_concept_id)
     end
 
     def can?(%User{} = user, :delete, %{
           "business_concept_id" => business_concept_id,
-          "resource_type" => "quality_control"
+          "resource_type" => "rule"
         }) do
-      QualityControlAbilities.can?(user, :manage_quality_control, business_concept_id)
+      RuleAbilities.can?(user, :manage_rules, business_concept_id)
     end
 
     def can?(%User{}, _action, _entity), do: false
