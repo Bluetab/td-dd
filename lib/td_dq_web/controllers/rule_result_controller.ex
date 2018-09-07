@@ -7,10 +7,10 @@ defmodule TdDqWeb.RuleResultController do
   alias TdDq.Repo
 
   @rules_results_query  ~S"""
-    INSERT INTO rules_results ("business_concept_id", "rule_name", "system", "group", "structure_name", "field_name", "date", "result", inserted_at, updated_at)
+    INSERT INTO rule_results ("business_concept_id", "rule", "system", "group", "structure_name", "field_name", "date", "result", inserted_at, updated_at)
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $7, $7)
   """
-  @rules_results_param "rules_results"
+  @rule_results_param "rule_results"
 
   # TODO: tets this
   def upload(conn, params) do
@@ -27,7 +27,7 @@ defmodule TdDqWeb.RuleResultController do
     Logger.info "Uploading rule results..."
 
     start_time = DateTime.utc_now()
-    rules_results_upload = Map.get(params, @rules_results_param)
+    rules_results_upload = Map.get(params, @rule_results_param)
     Repo.transaction(fn ->
       upload_in_transaction(conn, rules_results_upload.path)
     end)
