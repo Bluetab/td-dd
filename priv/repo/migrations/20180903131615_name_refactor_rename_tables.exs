@@ -1,4 +1,4 @@
-defmodule TdDq.Repo.Migrations.RenameTables do
+defmodule TdDq.Repo.Migrations.NameRefactorRenameTables do
   use Ecto.Migration
 
   def up do

@@ -1,4 +1,4 @@
-defmodule TdDq.Repo.Migrations.CreateIndexes do
+defmodule TdDq.Repo.Migrations.NameRefactorCreateIndexes do
   use Ecto.Migration
 
   def up do
@@ -6,7 +6,7 @@ defmodule TdDq.Repo.Migrations.CreateIndexes do
   end
 
   def down do
-    drop unique_index(:rule_types, [:name])    
+    drop unique_index(:rule_types, [:name])
   end
 
 end
