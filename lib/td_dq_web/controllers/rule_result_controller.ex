@@ -3,8 +3,8 @@ defmodule TdDqWeb.RuleResultController do
   use TdDqWeb, :controller
 
   alias Ecto.Adapters.SQL
-  alias TdDq.Rules
   alias TdDq.Repo
+  alias TdDq.Rules
 
   @rules_results_query  ~S"""
     INSERT INTO rule_results ("business_concept_id", "rule", "system", "group", "structure_name", "field_name", "date", "result", inserted_at, updated_at)

@@ -6,10 +6,10 @@ defmodule TdDqWeb.RuleImplementationController do
 
   import Canada, only: [can?: 2]
 
+  alias TdDq.Repo
   alias TdDq.Rules
   alias TdDq.Rules
   alias TdDq.Rules.RuleImplementation
-  alias TdDq.Repo
   alias TdDqWeb.ErrorView
   alias TdDqWeb.SwaggerDefinitions
 
@@ -71,7 +71,8 @@ defmodule TdDqWeb.RuleImplementationController do
          {:valid_rule_type} <- verify_rule_implementation_existence(rule_type),
          {:ok_size_verification} <- verify_equals_sizes(rule_implementation_params, rule_type.params),
          {:ok_existence_verification} <- verify_types_and_existence(rule_implementation_params, rule_type.params),
-         {:ok, %RuleImplementation{} = rule_implementation} <- Rules.create_rule_implementation(rule_implementation_params) do
+         {:ok, %RuleImplementation{} = rule_implementation} <-
+           Rules.create_rule_implementation(rule_implementation_params) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", rule_implementation_path(conn, :show, rule_implementation))
@@ -117,8 +118,10 @@ defmodule TdDqWeb.RuleImplementationController do
       param["name"] == k
     end)
     cond do
-      system_param == nil -> verify_key_type(nil, nil, {:error, "Element not found"})
-      system_param["type"] != v -> verify_key_type(nil, nil, {:error, "Type does not match"})
+      system_param == nil ->
+        verify_key_type(nil, nil, {:error, "Element not found"})
+      system_param["type"] != v ->
+        verify_key_type(nil, nil, {:error, "Type does not match"})
       true ->   verify_key_type(tail, system_params)
     end
   end
@@ -176,7 +179,8 @@ defmodule TdDqWeb.RuleImplementationController do
         "business_concept_id" => rule.business_concept_id,
         "resource_type" => "rule_implementation"
         })),
-         {:ok, %RuleImplementation{} = rule_implementation} <- Rules.update_rule_implementation(rule_implementation, rule_implementation_params) do
+         {:ok, %RuleImplementation{} = rule_implementation} <-
+           Rules.update_rule_implementation(rule_implementation, rule_implementation_params) do
       render(conn, "show.json", rule_implementation: rule_implementation)
     else
       false ->

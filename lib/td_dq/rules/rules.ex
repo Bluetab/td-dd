@@ -135,7 +135,6 @@ defmodule TdDq.Rules do
     |> Repo.one()
   end
 
-
   @doc """
   Returns the list of rule_implementations.
 

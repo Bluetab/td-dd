@@ -1,8 +1,8 @@
 defmodule TdDqWeb.RuleView do
   use TdDqWeb, :view
   use TdHypermedia, :view
-  alias TdDqWeb.RuleView
   alias TdDqWeb.RuleImplementationView
+  alias TdDqWeb.RuleView
   alias TdPerms.BusinessConceptCache
 
   def render("index.json", %{hypermedia: hypermedia, rules: rules}) do

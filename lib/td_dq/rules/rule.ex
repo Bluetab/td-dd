@@ -2,8 +2,8 @@ defmodule TdDq.Rules.Rule do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
-  alias TdDq.Rules.Rule
   alias TdDq.Rules
+  alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleImplementation
 
   @statuses ["defined"]
