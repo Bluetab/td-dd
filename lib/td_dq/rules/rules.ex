@@ -32,7 +32,6 @@ defmodule TdDq.Rules do
       |> Repo.preload(:rule_implementations)
   end
 
-
   @doc """
   Gets a single rule.
 
