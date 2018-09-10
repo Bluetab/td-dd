@@ -6,14 +6,6 @@ defmodule TdDq.Canada.Abilities do
   alias TdDq.Rules.RuleImplementation
 
   defimpl Canada.Can, for: User do
-    def can?(%User{is_admin: true}, :create, %{
-          "business_concept_id" => _business_concept_id,
-          "rule_type" => rule_type,
-          "resource_type" => "rule_implementation"
-        }) do
-      rule_type !== "custom_validation"
-    end
-
     def can?(%User{is_admin: true}, _action, _domain) do
       true
     end
@@ -30,10 +22,8 @@ defmodule TdDq.Canada.Abilities do
 
     def can?(%User{} = user, :create, %{
           "business_concept_id" => business_concept_id,
-          "rule_type" => rule_type,
           "resource_type" => "rule_implementation"
         }) do
-      rule_type !== "custom_validation" &&
         RuleImplementationAbilities.can?(user, :manage_rules, business_concept_id)
     end
 

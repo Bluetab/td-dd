@@ -62,7 +62,6 @@ defmodule TdDqWeb.RuleImplementationController do
 
     with true <- can?(user, create(%{
           "business_concept_id" => rule.business_concept_id,
-          "rule_type" => rule.type,
           "resource_type" => "rule_implementation"
           })),
          {:valid_rule_type} <- verify_rule_implementation_existence(rule_type),
