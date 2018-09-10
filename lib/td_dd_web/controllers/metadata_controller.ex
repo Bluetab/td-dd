@@ -62,6 +62,8 @@ defmodule TdDdWeb.MetadataController do
 
     data_structure_keys = Enum.reverse(@data_structure_keys)
 
+    list_all_domains = TaxonomyCache.get_all_domains()
+
     data_structures_path
     |> File.stream!
     |> CSV.decode!(separator: ?;, headers: true)
@@ -69,7 +71,7 @@ defmodule TdDdWeb.MetadataController do
       last_change_at = DateTime.utc_now()
       input = data
       |> add_metadata(@data_structure_modifiable_fields, last_change_at)
-      |> DataStructures.add_domain_id(TaxonomyCache.get_all_domains())
+      |> DataStructures.add_domain_id(list_all_domains)
       |> to_array(data_structure_keys)
       |> add_user_and_date_time(conn, last_change_at)
 
