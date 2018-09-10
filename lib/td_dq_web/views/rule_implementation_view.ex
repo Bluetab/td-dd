@@ -44,7 +44,7 @@ defmodule TdDqWeb.RuleImplementationView do
     end
   end
 
-  defp add_rule_type(rule_implementation, qr) do
+  defp add_rule_type(rule, qr) do
     case Ecto.assoc_loaded?(qr.rule_type) do
       true ->
         rule_type = %{
@@ -53,10 +53,10 @@ defmodule TdDqWeb.RuleImplementationView do
           params: qr.rule_type.params
         }
 
-        Map.put(rule_implementation, :rule_type, rule_type)
+        Map.put(rule, :rule_type, rule_type)
 
       _ ->
-        rule_implementation
+        rule
     end
   end
 
