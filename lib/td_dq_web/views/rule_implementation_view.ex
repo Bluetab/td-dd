@@ -31,32 +31,26 @@ defmodule TdDqWeb.RuleImplementationView do
     |> add_rule_result(assigns)
   end
 
-  defp add_rule(rule_implementation, qr) do
-    case Ecto.assoc_loaded?(qr.rule) do
+  defp add_rule(rule_implementation_mapping, rule_implementation) do
+    case Ecto.assoc_loaded?(rule_implementation.rule) do
       true ->
-        rule = qr.rule
-        rule_map = %{id: rule.id, name: rule.name}
+        rule = rule_implementation.rule
+        rule_mapping = %{name: rule.name}
         |> add_rule_type(rule)
-        Map.put(rule_implementation, :rule, rule_map)
+        Map.put(rule_implementation_mapping, :rule, rule_mapping)
 
       _ ->
-        rule_implementation
+        rule_implementation_mapping
     end
   end
 
-  defp add_rule_type(rule, qr) do
-    case Ecto.assoc_loaded?(qr.rule_type) do
+  defp add_rule_type(rule_mapping, rule) do
+    case Ecto.assoc_loaded?(rule.rule_type) do
       true ->
-        rule_type = %{
-          id: qr.rule_type.id,
-          name: qr.rule_type.name,
-          params: qr.rule_type.params
-        }
-
-        Map.put(rule, :rule_type, rule_type)
+        Map.put(rule_mapping, :rule_type, %{name: rule.rule_type.name})
 
       _ ->
-        rule
+        rule_mapping
     end
   end
 

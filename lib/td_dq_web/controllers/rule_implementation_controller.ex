@@ -245,6 +245,7 @@ defmodule TdDqWeb.RuleImplementationController do
       rule_implementations = rule_implementations
       |> Enum.map(&Repo.preload(&1, :rule))
       |> Enum.filter(&(&1.rule_id == rule_id))
+      |> Enum.map(&Repo.preload(&1, [rule: :rule_type]))
 
       rules_results = rule_implementations
       |> Enum.reduce(%{}, fn(rule_implementation, acc) ->
