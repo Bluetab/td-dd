@@ -22,14 +22,12 @@ defmodule TdDq.RulesTest do
 
     test "create_rule_implementation/1 with valid data creates a rule_implementation" do
       rule = insert(:rule)
-      rule_type = insert(:rule_type)
 
       creation_attrs =
         Map.from_struct(
           build(
             :rule_implementation,
-            rule_id: rule.id,
-            rule_type_id: rule_type.id
+            rule_id: rule.id
           )
         )
 
@@ -40,7 +38,6 @@ defmodule TdDq.RulesTest do
       assert rule_implementation.description == creation_attrs[:description]
       assert rule_implementation.system_params == creation_attrs[:system_params]
       assert rule_implementation.system == creation_attrs[:system]
-      assert rule_implementation.type == creation_attrs[:type]
       assert rule_implementation.tag == creation_attrs[:tag]
     end
 
@@ -71,7 +68,6 @@ defmodule TdDq.RulesTest do
       assert rule_implementation.description == update_attrs[:description]
       assert rule_implementation.system_params == update_attrs[:system_params]
       assert rule_implementation.system == update_attrs[:system]
-      assert rule_implementation.type == update_attrs[:type]
       assert rule_implementation.tag == update_attrs[:tag]
     end
 
@@ -103,8 +99,7 @@ defmodule TdDq.RulesTest do
 
     defp rule_implementation_preload(rule_implementation) do
       rule_implementation
-      |> Repo.preload(:rule)
-      |> Repo.preload(:rule_type)
+      |> Repo.preload([:rule, rule: :rule_type])
     end
   end
 

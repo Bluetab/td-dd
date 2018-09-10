@@ -54,20 +54,20 @@ defmodule TdDqWeb.RuleImplementationController do
 
   def create(conn, %{"rule_implementation" => rule_implementation_params}) do
     user = conn.assigns[:current_resource]
-    rule_id = Map.fetch!(rule_implementation_params, "rule_id")
-    rule = Rules.get_rule!(rule_id)
+    rule = rule_implementation_params
+    |> Map.fetch!("rule_id")
+    |> Rules.get_rule!()
+    |> Repo.preload(:rule_type)
 
-    {rule_implementation_params, rule_type} =
-      add_rule_type_id(rule_implementation_params)
-
+    #TODO : Why is this resource_type neccesary
     with true <- can?(user, create(%{
           "business_concept_id" => rule.business_concept_id,
-          "rule_type" => rule.type,
+          "rule_type" => rule.rule_type.name,
           "resource_type" => "rule_implementation"
           })),
-         {:valid_rule_type} <- verify_rule_implementation_existence(rule_type),
-         {:ok_size_verification} <- verify_equals_sizes(rule_implementation_params, rule_type.params),
-         {:ok_existence_verification} <- verify_types_and_existence(rule_implementation_params, rule_type.params),
+         #{:valid_rule_type} <- verify_rule_implementation_existence(rule_type),
+         # {:ok_size_verification} <- verify_equals_sizes(rule_implementation_params, rule_type.params),
+         # {:ok_existence_verification} <- verify_types_and_existence(rule_implementation_params, rule_type.params),
          {:ok, %RuleImplementation{} = rule_implementation} <-
            Rules.create_rule_implementation(rule_implementation_params) do
       conn
@@ -86,48 +86,49 @@ defmodule TdDqWeb.RuleImplementationController do
     end
   end
 
-  defp verify_rule_implementation_existence(rule_type) do
-    if rule_type, do: {:valid_rule_type},
-    else: {:not_found_rule_type}
-  end
+  # defp verify_rule_implementation_existence(rule_type) do
+  #   if rule_type, do: {:valid_rule_type},
+  #   else: {:not_found_rule_type}
+  # end
 
-  defp verify_equals_sizes(%{"system_params" => rule_implementation_params}, %{"system_params" => qrt_params}) do
-    case length(Map.keys(rule_implementation_params)) == length(qrt_params) do
-      true -> {:ok_size_verification}
-      false -> {:ko_size_verification}
-    end
-  end
-  defp verify_equals_sizes(%{"system_params" => system_params}, _map_rule_type) when system_params == %{}, do: {:ok_size_verification}
-  defp verify_equals_sizes(_map_rule_implementation, _map_rule_type), do: {:no_system_params}
+  # defp verify_equals_sizes(%{"system_params" => rule_implementation_params}, %{"system_params" => qrt_params}) do
+  #   case length(Map.keys(rule_implementation_params)) == length(qrt_params) do
+  #     true -> {:ok_size_verification}
+  #     false -> {:ko_size_verification}
+  #   end
+  # end
+  # defp verify_equals_sizes(%{"system_params" => system_params},
+  # _map_rule_type) when system_params == %{}, do: {:ok_size_verification}
+  # defp verify_equals_sizes(_map_rule_implementation, _map_rule_type), do: {:no_system_params}
 
-  defp verify_types_and_existence(map_rule_implementation_params,
-    map_rule_type_params) do
-      qr_tuple_list = Enum.map(map_rule_implementation_params["system_params"], fn({k, v}) ->
-        {k, get_type(v)}
-      end)
-      verify_key_type(qr_tuple_list, map_rule_type_params["system_params"])
-  end
+  # defp verify_types_and_existence(map_rule_implementation_params,
+  #   map_rule_type_params) do
+  #     qr_tuple_list = Enum.map(map_rule_implementation_params["system_params"], fn({k, v}) ->
+  #       {k, get_type(v)}
+  #     end)
+  #     verify_key_type(qr_tuple_list, map_rule_type_params["system_params"])
+  # end
 
-  defp verify_key_type(_, _, {:error, error}), do: error
-  defp verify_key_type([], _), do: {:ok_existence_verification}
-  defp verify_key_type([{k, v}|tail], system_params) do
-    system_param = Enum.find(system_params, fn(param) ->
-      param["name"] == k
-    end)
-    cond do
-      system_param == nil ->
-        verify_key_type(nil, nil, {:error, "Element not found"})
-      system_param["type"] != v ->
-        verify_key_type(nil, nil, {:error, "Type does not match"})
-      true ->   verify_key_type(tail, system_params)
-    end
-  end
+  # defp verify_key_type(_, _, {:error, error}), do: error
+  # defp verify_key_type([], _), do: {:ok_existence_verification}
+  # defp verify_key_type([{k, v}|tail], system_params) do
+  #   system_param = Enum.find(system_params, fn(param) ->
+  #     param["name"] == k
+  #   end)
+  #   cond do
+  #     system_param == nil ->
+  #       verify_key_type(nil, nil, {:error, "Element not found"})
+  #     system_param["type"] != v ->
+  #       verify_key_type(nil, nil, {:error, "Type does not match"})
+  #     true ->   verify_key_type(tail, system_params)
+  #   end
+  # end
 
-  defp get_type(value) when is_integer(value), do: "integer"
-  defp get_type(value) when is_float(value), do: "float"
-  defp get_type(value) when is_list(value), do: "list"
-  defp get_type(value) when is_boolean(value), do: "boolean"
-  defp get_type(_), do: "string"
+  # defp get_type(value) when is_integer(value), do: "integer"
+  # defp get_type(value) when is_float(value), do: "float"
+  # defp get_type(value) when is_list(value), do: "list"
+  # defp get_type(value) when is_boolean(value), do: "boolean"
+  # defp get_type(_), do: "string"
 
   swagger_path :show do
     description "Show Quality Rule"
@@ -283,17 +284,18 @@ defmodule TdDqWeb.RuleImplementationController do
     end
   end
 
-  defp add_rule_type_id(%{"type" => qrt_name} = rule_implementation_params) do
-    qrt = Rules.get_rule_type_by_name(qrt_name)
-    case qrt do
-      nil ->
-        {rule_implementation_params, nil}
-      qrt ->
-        {rule_implementation_params
-        |> Map.put("rule_type_id", qrt.id), qrt}
-    end
-  end
-  defp add_rule_type_id(%{"rule_type_id" => rule_type_id} = rule_implementation_params),
-    do: {rule_implementation_params, Rules.get_rule_type!(rule_type_id)}
-  defp add_rule_type_id(rule_implementation_params), do: {rule_implementation_params, nil}
+  # defp add_rule_type_id(%{"type" => qrt_name} = rule_implementation_params) do
+  #   qrt = Rules.get_rule_type_by_name(qrt_name)
+  #   case qrt do
+  #     nil ->
+  #       {rule_implementation_params, nil}
+  #     qrt ->
+  #       {rule_implementation_params
+  #       |> Map.put("rule_type_id", qrt.id), qrt}
+  #   end
+  # end
+  # defp add_rule_type_id(%{"rule_type_id" => rule_type_id} = rule_implementation_params),
+  #   do: {rule_implementation_params, Rules.get_rule_type!(rule_type_id)}
+  # defp add_rule_type_id(rule_implementation_params), do: {rule_implementation_params, nil}
+
 end

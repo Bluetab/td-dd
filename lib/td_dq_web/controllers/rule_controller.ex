@@ -1,4 +1,5 @@
 defmodule TdDqWeb.RuleController do
+  require Logger
   use TdHypermedia, :controller
   use TdDqWeb, :controller
   use PhoenixSwagger
@@ -123,6 +124,11 @@ defmodule TdDqWeb.RuleController do
         |> render(ErrorView, :"403.json")
 
       {:error, _changeset} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> render(ErrorView, :"422.json")
+      error ->
+        Logger.error("While creating rule... #{inspect(error)}")
         conn
         |> put_status(:unprocessable_entity)
         |> render(ErrorView, :"422.json")

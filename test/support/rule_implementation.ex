@@ -11,15 +11,15 @@ defmodule TdDqWeb.RuleImplementation do
     "Description" => "description", "System" => "system", "Tag" => "tag",
     "Type Params" => "type_params", "System Params" => "system_params", "Name" => "name"}
 
-  def create_new_rule_implementation(token, %{"rule_id" => rule_id,
+  def rule_implementation_create(token, %{"rule_id" => rule_id,
     "params" => params}) do
        params
        |> field_value_to_api_attrs(@test_rule_implementation_table_format)
        |> Map.merge(%{"rule_id" => rule_id})
-       |> (&create_rule_implementation(token, &1)).()
+       |> (&do_rule_implementation_create(token, &1)).()
   end
 
-  defp create_rule_implementation(token, params) do
+  defp do_rule_implementation_create(token, params) do
     headers = get_header(token)
     body = %{rule_implementation: params} |> JSON.encode!
     %HTTPoison.Response{status_code: status_code, body: resp} =

@@ -807,14 +807,9 @@
       "required": [
         "system_params",
         "system",
-        "type",
         "name"
       ],
       "properties": {
-        "type": {
-          "type": "string",
-          "description": "Rule Implementation type name"
-        },
         "tag": {
           "type": "object",
           "description": "Rule Implementation tag"
@@ -859,14 +854,9 @@
         "rule_id",
         "system_params",
         "system",
-        "type",
         "name"
       ],
       "properties": {
-        "type": {
-          "type": "string",
-          "description": "Rule Implementation type name"
-        },
         "tag": {
           "type": "object",
           "description": "Rule Implementation tag"
@@ -905,19 +895,13 @@
       "type": "object",
       "title": "Rule Implementation",
       "required": [
-        "rule_type_id",
         "rule_id",
         "system_params",
         "system",
-        "type",
         "name",
         "id"
       ],
       "properties": {
-        "type": {
-          "type": "string",
-          "description": "Rule Implementation type"
-        },
         "tag": {
           "type": "object",
           "description": "Rule Implementation tag"
@@ -929,10 +913,6 @@
         "system": {
           "type": "string",
           "description": "Rule Implementation system"
-        },
-        "rule_type_id": {
-          "type": "integer",
-          "description": "Belongs to rule type"
         },
         "rule_id": {
           "type": "integer",
@@ -1030,6 +1010,7 @@
       "type": "object",
       "title": "Rule",
       "required": [
+        "rule_type_id",
         "description",
         "business_concept_id",
         "id"
@@ -1051,13 +1032,13 @@
           "type": "object",
           "description": "rule type_params"
         },
-        "type": {
-          "type": "string",
-          "description": "rule type"
-        },
         "status": {
           "type": "string",
           "description": "status (Default: defined)"
+        },
+        "rule_type_id": {
+          "type": "integer",
+          "description": "Belongs to rule type"
         },
         "rule_implementations": {
           "$ref": "#/definitions/RuleImplementations"

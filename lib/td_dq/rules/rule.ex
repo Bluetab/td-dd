@@ -5,6 +5,7 @@ defmodule TdDq.Rules.Rule do
   alias TdDq.Rules
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleImplementation
+  alias TdDq.Rules.RuleType
 
   @statuses ["defined"]
   @datetime_format "%Y-%m-%d %H:%M:%S"
@@ -23,8 +24,8 @@ defmodule TdDq.Rules.Rule do
     field :version, :integer, default: 1
     field :updated_by, :integer
     field :principle, :map
-    field :type, :string
     field :type_params, :map
+    belongs_to(:rule_type, RuleType)
     has_many :rule_implementations, RuleImplementation
 
     timestamps()
@@ -45,10 +46,11 @@ defmodule TdDq.Rules.Rule do
                     :version,
                     :updated_by,
                     :principle,
-                    :type,
+                    :rule_type_id,
                     :type_params])
-    |> validate_required([:business_concept_id, :name, :type])
+    |> validate_required([:business_concept_id, :name, :rule_type_id])
     |> validate_type
+    |> unique_constraint(:rule_type)
   end
 
   def get_statuses do

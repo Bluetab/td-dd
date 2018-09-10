@@ -37,7 +37,7 @@ defmodule TdDqWeb.RuleView do
       inserted_at: rule.inserted_at,
       updated_at: rule.updated_at,
       principle: rule.principle,
-      type: rule.type,
+      rule_type_id: rule.rule_type_id,
       type_params: rule.type_params,
       current_business_concept_version: %{
         name: BusinessConceptCache.get_name(rule.business_concept_id),

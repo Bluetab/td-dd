@@ -176,7 +176,7 @@ defmodule TdDq.Rules do
       ** (Ecto.NoResultsError)
 
   """
-  def get_rule_implementation!(id), do: Repo.preload(Repo.get!(RuleImplementation, id), [:rule_type, :rule])
+  def get_rule_implementation!(id), do: Repo.preload(Repo.get!(RuleImplementation, id), [:rule])
 
   @doc """
   Creates a rule_implementation.

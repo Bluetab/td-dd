@@ -13,7 +13,7 @@ defmodule TdQd.RuleTypeTest do
   defwhen ~r/^"(?<user_name>[^"]+)" tries to create a Rule named "(?<qrt_name>[^"]+)" with following data:$/, %{user_name: user_name, qrt_name: qrt_name, table: table}, state do
     token = state[:token]
     assert user_name == state[:user_name]
-    {:ok, status_code, _resp} = create_new_rule_implementation_type(token, %{"name" => qrt_name, "params" => table})
+    {:ok, status_code, _resp} = rule_type_create(token, %{"name" => qrt_name, "params" => table})
     {:ok,  Map.merge(state, %{status_code: status_code})}
   end
 
@@ -23,7 +23,7 @@ defmodule TdQd.RuleTypeTest do
 
   defand ~r/^"(?<user_name>[^"]+)" is able to view rule type named "(?<qrt_name>[^"]+)" with following data:$/, %{user_name: user_name, qrt_name: qrt_name}, state do
     assert user_name == state[:user_name]
-    rule_type_data = find_rule_type(state[:token], %{name: qrt_name})
+    rule_type_data = rule_type_find(state[:token], %{name: qrt_name})
     # TODO: check all params
     assert rule_type_data && rule_type_data["name"] == qrt_name
   end

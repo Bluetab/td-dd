@@ -3,6 +3,7 @@ defmodule TdQd.RuleTest do
   use TdDqWeb.ConnCase
   import TdDqWeb.Authentication, only: :functions
   import TdDqWeb.Rule, only: :functions
+  import TdDqWeb.RuleType, only: :functions
   import TdDqWeb.ResponseCode, only: :functions
   alias TdDqWeb.ApiServices.MockTdAuditService
 
@@ -18,23 +19,22 @@ defmodule TdQd.RuleTest do
     {:ok, Map.merge(state, %{status_code: 402, token: token, user_name: user_name})}
   end
 
-  defwhen ~r/^"(?<user_name>[^"]+)" tries to create a Rule with following data:$/,
-          %{user_name: user_name, table: table},
-          state do
-    assert user_name == state[:user_name]
-    {:ok, status_code, _resp} = create_new_rule(state[:token], table)
-    {:ok, Map.merge(state, %{status_code: status_code})}
-  end
-
   defwhen ~r/^"(?<user_name>[^"]+)" tries to create a Rule of type (?<type>[^"]+) with following data and type_params (?<type_params>%-{.*}):$/,
-          %{user_name: user_name, type: type, type_params: type_params, table: table},
-          state do
+          %{user_name: user_name, type: rule_type_name, type_params: type_params, table: table},
+          %{token: token} = state do
     assert user_name == state[:user_name]
 
+    rule_type = rule_type_find(token, %{name: rule_type_name})
+    rule_type_id = rule_type
+    |> Map.get("id")
+    |> to_string
+    
     table =
-      table ++ [%{Field: "Type", Value: type}] ++ [%{Field: "Type Params", Value: type_params}]
+      table ++
+        [%{Field: "Type", Value: rule_type_id}] ++
+        [%{Field: "Type Params", Value: type_params}]
 
-    {:ok, status_code, _resp} = create_new_rule(state[:token], table)
+    {:ok, status_code, _resp} = rule_create(token, table)
     {:ok, Map.merge(state, %{status_code: status_code})}
   end
 
@@ -62,7 +62,7 @@ defmodule TdQd.RuleTest do
          %{qr_name: qr_name, table: table},
          %{token: token} = _state do
     {:ok, _status_code, _resp} =
-      create_new_rule_implementation_type(token, %{"name" => qr_name, "params" => table})
+      rule_type_create(token, %{"name" => qr_name, "params" => table})
   end
 
   def assert_attr(attr, value, %{} = target) do

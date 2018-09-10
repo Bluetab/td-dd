@@ -7,13 +7,13 @@ defmodule TdDqWeb.RuleType do
 
   @endpoint TdDqWeb.Endpoint
 
-  def create_new_rule_implementation_type(token, %{"name" => name, "params" => params}) do
+  def rule_type_create(token, %{"name" => name, "params" => params}) do
     params
      |> table_to_entity_attrs(name)
-     |> (&rule_type_create(token, &1)).()
+     |> (&do_rule_type_create(token, &1)).()
   end
 
-  def rule_type_create(token, qrt_params) do
+  defp do_rule_type_create(token, qrt_params) do
     headers = get_header(token)
     body = %{rule_type: qrt_params} |> JSON.encode!
     %HTTPoison.Response{status_code: status_code, body: resp} =
@@ -21,7 +21,7 @@ defmodule TdDqWeb.RuleType do
     {:ok, status_code, resp |> JSON.decode!}
   end
 
-  def find_rule_type(token, search_params) do
+  def rule_type_find(token, search_params) do
     {:ok, _status_code, json_resp} = rule_type_list(token)
     Enum.find(json_resp["data"], fn(rule_type) ->
       Enum.all?(search_params, fn({k, v}) ->

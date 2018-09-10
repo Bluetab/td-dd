@@ -20,10 +20,20 @@ defmodule TdQd.RuleImplementationTest do
     {:ok, Map.merge(state, %{status_code: 402, token: token, user_name: user_name})}
   end
 
-  defand ~r/^a existing Rule with following data:$/,
-         %{table: table},
+  defand ~r/^a existing Rule of type "(?<rule_type_name>[^"]+)" with following data:$/,
+         %{rule_type_name: rule_type_name, table: table},
          %{token: token} = _state do
-    {:ok, status_code, _resp} = create_new_rule(token, table)
+
+     rule_type = rule_type_find(token, %{name: rule_type_name})
+     rule_type_id = rule_type
+     |> Map.get("id")
+     |> to_string
+
+     table =
+       table ++
+         [%{Field: "Type", Value: rule_type_id}]
+
+    {:ok, status_code, _resp} = rule_create(token, table)
     assert rc_created() == to_response_code(status_code)
   end
 
@@ -31,7 +41,7 @@ defmodule TdQd.RuleImplementationTest do
          %{qr_name: qr_name, table: table},
          %{token: token} = _state do
     {:ok, _status_code, _resp} =
-      create_new_rule_implementation_type(token, %{"name" => qr_name, "params" => table})
+      rule_type_create(token, %{"name" => qr_name, "params" => table})
   end
 
   defwhen ~r/^"(?<user_name>[^"]+)" tries to create a Rule Implementation associated to Rule "(?<qc_name>[^"]+)" with following data:$/,
@@ -44,7 +54,7 @@ defmodule TdQd.RuleImplementationTest do
     rule_id = rule["id"]
 
     {:ok, status_code, _resp} =
-      create_new_rule_implementation(token, %{
+      rule_implementation_create(token, %{
         "rule_id" => rule_id,
         "params" => table
       })
@@ -71,7 +81,7 @@ defmodule TdQd.RuleImplementationTest do
     rule_id = rule["id"]
 
     {:ok, status_code, _resp} =
-      create_new_rule_implementation(token, %{
+      rule_implementation_create(token, %{
         "rule_id" => rule_id,
         "params" => table
       })
