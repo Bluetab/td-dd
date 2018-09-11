@@ -259,7 +259,7 @@ defmodule TdDqWeb.RuleImplementationController do
 
   defp add_last_rule_result(rule_implementation) do
     rule_implementation
-    |> Map.put(:_last_rule_result, Rules.get_last_rule_result(rule_implementation.id))
+    |> Map.put(:_last_rule_result_, Rules.get_last_rule_result(rule_implementation.id))
   end
 
   # defp add_rule_type_id(%{"type" => qrt_name} = rule_implementation_params) do

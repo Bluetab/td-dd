@@ -180,6 +180,22 @@ defmodule TdDq.Rules do
   def get_rule_implementation!(id), do: Repo.preload(Repo.get!(RuleImplementation, id), [:rule])
 
   @doc """
+  Gets a single rule_implementation.
+
+  Returns nil if the Rule does not exist.
+
+  ## Examples
+
+      iex> get_rule_implementation!(123)
+      %RuleImplementation{}
+
+      iex> get_rule_implementation!(456)
+      nil
+
+  """
+  def get_rule_implementation(id), do: Repo.get(RuleImplementation, id)
+
+  @doc """
   Creates a rule_implementation.
 
   ## Examples

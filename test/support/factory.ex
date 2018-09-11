@@ -45,7 +45,8 @@ defmodule TdDq.Factory do
     %TdDq.Rules.RuleResult {
       rule_implementation: build(:rule_implementation),
       result: 50,
-      date: Date.utc_today()
+      date: Date.utc_today(),
+      parent_domains: ""
     }
   end
 end

@@ -22,17 +22,19 @@ defmodule TdDq.RulesTest do
       insert(:rule_implementation, rule: rule1)
       insert(:rule_implementation, rule: rule1)
       insert(:rule_implementation, rule: rule1)
-
       insert(:rule_implementation, rule: rule2)
 
       assert length(Rules.list_rule_implementations(%{rule_id: rule1.id})) == 3
-
     end
-
 
     test "get_rule_implementation!/1 returns the rule_implementation with given id" do
       rule_implementation = insert(:rule_implementation)
       assert rule_implementation_preload(Rules.get_rule_implementation!(rule_implementation.id)) == rule_implementation
+    end
+
+    test "get_rule_implementation/1 returns the rule_implementation with given id" do
+      rule_implementation = insert(:rule_implementation)
+      assert rule_implementation_preload(Rules.get_rule_implementation(rule_implementation.id)) == rule_implementation
     end
 
     test "create_rule_implementation/1 with valid data creates a rule_implementation" do
