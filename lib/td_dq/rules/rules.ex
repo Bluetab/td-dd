@@ -132,18 +132,9 @@ defmodule TdDq.Rules do
     |> Repo.preload(:rule_implementations)
   end
 
-  # TODO: Search by implemnetation id
-  def get_concept_last_rule_result(business_concept_id,
-                                       rule,
-                                       system,
-                                       structure_name,
-                                       field_name) do
+  def get_last_rule_result(rule_implementation_id) do
     RuleResult
-    |> where([r], r.business_concept_id == ^business_concept_id and
-                  r.rule == ^rule and
-                  r.system == ^system and
-                  r.structure_name == ^structure_name and
-                  r.field_name == ^field_name)
+    |> where([r], r.rule_implementation_id == ^rule_implementation_id)
     |> order_by(desc: :date)
     |> limit(1)
     |> Repo.one()

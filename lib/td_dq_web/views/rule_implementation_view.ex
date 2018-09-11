@@ -2,22 +2,18 @@ defmodule TdDqWeb.RuleImplementationView do
   use TdDqWeb, :view
   alias TdDqWeb.RuleImplementationView
 
-  def render("index.json", %{rule_implementations: rule_implementations} = assigns) do
+  def render("index.json", %{rule_implementations: rule_implementations}) do
 
     %{data: render_many(rule_implementations,
-      RuleImplementationView, "rule_implementation.json",
-      Map.drop(assigns, [:rule_implementations]))
-    }
+      RuleImplementationView, "rule_implementation.json")}
   end
 
-  def render("show.json", %{rule_implementation: rule_implementation} = assigns) do
+  def render("show.json", %{rule_implementation: rule_implementation}) do
     %{data: render_one(rule_implementation,
-      RuleImplementationView, "rule_implementation.json",
-      Map.drop(assigns, [:rule_implementation]))
-    }
+      RuleImplementationView, "rule_implementation.json")}
   end
 
-  def render("rule_implementation.json", %{rule_implementation: rule_implementation} = assigns) do
+  def render("rule_implementation.json", %{rule_implementation: rule_implementation}) do
     %{
       id: rule_implementation.id,
       rule_id: rule_implementation.rule_id,
@@ -28,7 +24,7 @@ defmodule TdDqWeb.RuleImplementationView do
       tag: rule_implementation.tag
     }
     |> add_rule(rule_implementation)
-    |> add_rule_result(assigns)
+    |> add_rule_results(rule_implementation)
   end
 
   defp add_rule(rule_implementation_mapping, rule_implementation) do
@@ -54,21 +50,14 @@ defmodule TdDqWeb.RuleImplementationView do
     end
   end
 
-  defp add_rule_result(rule_implementation, assigns) do
-    case Map.get(assigns, :rules_results) do
-      nil -> rule_implementation
-      rules_results ->
-        case Map.get(rules_results, rule_implementation.id) do
-          nil ->
-            rule_implementation
-            |> Map.put(:results, [])
-          rules_result ->
-            rule_implementation
-            |> Map.put(:results,
-                  [%{result: rules_result.result,
-                     date: rules_result.date}])
-        end
+  defp add_rule_results(rule_implementation_mapping, rule_implementation) do
+    rule_results_mappings = case Map.get(rule_implementation, :_last_rule_result_, nil) do
+      nil -> []
+      last_rule_results ->
+        [%{result: last_rule_results.result, date: last_rule_results.date}]
     end
+    rule_implementation_mapping
+    |> Map.put(:rule_results, rule_results_mappings)
   end
 
 end

@@ -242,19 +242,14 @@ defmodule TdDqWeb.RuleImplementationController do
 
       # TODO: Search rule implementations by rule
       # TODO: Preload rule in search
+      # TODO: Preload rule_type in search
       rule_implementations = rule_implementations
       |> Enum.map(&Repo.preload(&1, :rule))
       |> Enum.filter(&(&1.rule_id == rule_id))
       |> Enum.map(&Repo.preload(&1, [rule: :rule_type]))
+      |> Enum.map(&add_last_rule_result(&1))
 
-      rules_results = rule_implementations
-      |> Enum.reduce(%{}, fn(rule_implementation, acc) ->
-          Map.put(acc, rule_implementation.id,
-            get_concept_last_rule_result(rule_implementation))
-      end)
-
-      render(conn, "index.json", rule_implementations: rule_implementations,
-                            rules_results: rules_results)
+      render(conn, "index.json", rule_implementations: rule_implementations)
     else
       false ->
         conn
@@ -268,21 +263,9 @@ defmodule TdDqWeb.RuleImplementationController do
     end
   end
 
-  # TODO: Search by implemnetation id
-  defp get_concept_last_rule_result(rule_implementation) do
-    system_params = rule_implementation.system_params
-    table = Map.get(system_params, "table", nil)
-    column = Map.get(system_params, "column", nil)
-    case  table == nil or column == nil do
-      true -> nil
-      false -> nil
-        Rules.get_concept_last_rule_result(
-            rule_implementation.rule.business_concept_id,
-            rule_implementation.rule.name,
-            rule_implementation.system,
-            table,
-            column)
-    end
+  defp add_last_rule_result(rule_implementation) do
+    rule_implementation
+    |> Map.put(:_last_rule_result, &Rules.get_last_rule_result(&1.id))
   end
 
   # defp add_rule_type_id(%{"type" => qrt_name} = rule_implementation_params) do

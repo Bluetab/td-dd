@@ -40,4 +40,12 @@ defmodule TdDq.Factory do
       tag: %{}
     }
   end
+
+  def rule_result_factory do
+    %TdDq.Rules.RuleResult {
+      rule_implementation: build(:rule_implementation),
+      result: 50,
+      date: Date.utc_today()
+    }
+  end
 end
