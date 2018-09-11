@@ -29,6 +29,7 @@ defmodule TdDq.Rules do
 
     query
       |> Repo.all()
+      |> Repo.preload(:rule_type)
       |> Repo.preload(:rule_implementations)
   end
 

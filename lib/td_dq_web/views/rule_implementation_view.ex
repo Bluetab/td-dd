@@ -53,9 +53,12 @@ defmodule TdDqWeb.RuleImplementationView do
   defp add_rule_results(rule_implementation_mapping, rule_implementation) do
     rule_results_mappings = case Map.get(rule_implementation, :_last_rule_result_, nil) do
       nil -> []
-      last_rule_results ->
-        [%{result: last_rule_results.result, date: last_rule_results.date}]
+
+      last_rule_result ->
+        [%{result: last_rule_result.result, date: last_rule_result.date}]
+
     end
+
     rule_implementation_mapping
     |> Map.put(:rule_results, rule_results_mappings)
   end
