@@ -150,8 +150,17 @@ defmodule TdDq.Rules do
       [%RuleImplementation{}, ...]
 
   """
-  def list_rule_implementations do
-    Repo.all(RuleImplementation)
+  def list_rule_implementations(params \\ %{})
+  def list_rule_implementations(params) do
+    fields = RuleImplementation.__schema__(:fields)
+    dynamic = filter(params, fields)
+    query = from(
+      p in RuleImplementation,
+      where: ^dynamic
+    )
+
+    query
+      |> Repo.all()
   end
 
   @doc """
@@ -337,12 +346,10 @@ defmodule TdDq.Rules do
 
   defp filter(params, fields) do
     dynamic = true
-
-    Enum.reduce(Map.keys(params), dynamic, fn x, acc ->
-      key_as_atom = String.to_atom(x)
-
+    Enum.reduce(Map.keys(params), dynamic, fn key, acc ->
+      key_as_atom = if is_binary(key), do: String.to_atom(key), else: key
       case Enum.member?(fields, key_as_atom) do
-        true -> dynamic([p], field(p, ^key_as_atom) == ^params[x] and ^acc)
+        true -> dynamic([p], field(p, ^key_as_atom) == ^params[key] and ^acc)
         false -> acc
       end
     end)

@@ -15,6 +15,21 @@ defmodule TdDq.RulesTest do
              ]
     end
 
+    test "list_rule_implementations/1 returns all rule_implementations by rule" do
+      rule_type = insert(:rule_type)
+      rule1 = insert(:rule, rule_type: rule_type)
+      rule2 = insert(:rule, rule_type: rule_type)
+      insert(:rule_implementation, rule: rule1)
+      insert(:rule_implementation, rule: rule1)
+      insert(:rule_implementation, rule: rule1)
+
+      insert(:rule_implementation, rule: rule2)
+
+      assert length(Rules.list_rule_implementations(%{rule_id: rule1.id})) == 3
+
+    end
+
+
     test "get_rule_implementation!/1 returns the rule_implementation with given id" do
       rule_implementation = insert(:rule_implementation)
       assert rule_implementation_preload(Rules.get_rule_implementation!(rule_implementation.id)) == rule_implementation

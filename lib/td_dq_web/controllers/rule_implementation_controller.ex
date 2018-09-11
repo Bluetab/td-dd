@@ -238,15 +238,9 @@ defmodule TdDqWeb.RuleImplementationController do
     rule_id = String.to_integer(id)
 
     with true <- can?(user, index(RuleImplementation)) do
-      rule_implementations = Rules.list_rule_implementations()
-
-      # TODO: Search rule implementations by rule
-      # TODO: Preload rule in search
-      # TODO: Preload rule_type in search
-      rule_implementations = rule_implementations
-      |> Enum.map(&Repo.preload(&1, :rule))
-      |> Enum.filter(&(&1.rule_id == rule_id))
-      |> Enum.map(&Repo.preload(&1, [rule: :rule_type]))
+      rule_implementations = %{"rule_id" => rule_id}
+      |> Rules.list_rule_implementations
+      |> Enum.map(&Repo.preload(&1, [:rule, [rule: :rule_type]]))
       |> Enum.map(&add_last_rule_result(&1))
 
       render(conn, "index.json", rule_implementations: rule_implementations)
