@@ -139,7 +139,7 @@ defmodule TdDd.DictionaryTest do
           state do
     metadata = build_metadata({[], []}, fields)
 
-    data_structures_headers = ["system", "group", "name", "description"]
+    data_structures_headers = ["system", "group", "name", "description", "type", "ou"]
 
     data_fields_headers = [
       "system",
@@ -209,10 +209,12 @@ defmodule TdDd.DictionaryTest do
          Description: description,
          Group: group,
          Structure_Name: name,
-         System: system
+         System: system,
+         Type: type,
+         Domain_Name: ou
        }) do
     data_structures = elem(metadata, 0)
-    put_elem(metadata, 0, [[system, group, name, description] | data_structures])
+    put_elem(metadata, 0, [[system, group, name, description, type, ou] | data_structures])
   end
 
   defp build_metadata(metadata, %{

@@ -19,6 +19,8 @@ defmodule TdDdWeb.MetadataController do
 
   @data_fields_param "data_fields"
 
+  @data_fields_not_blank ["ou", "description"]
+
   @doc """
     Upload metadata:
 
@@ -70,6 +72,7 @@ defmodule TdDdWeb.MetadataController do
     |> Enum.each(fn(data) ->
       last_change_at = DateTime.utc_now()
       input = data
+      |> blank_to_nil(@data_fields_not_blank)
       |> add_metadata(@data_structure_modifiable_fields, last_change_at)
       |> DataStructures.add_domain_id(list_all_domains)
       |> to_array(data_structure_keys)
@@ -99,6 +102,20 @@ defmodule TdDdWeb.MetadataController do
   defp to_array(data, data_keys) do
     data_keys
     |> Enum.reduce([], &([get_value(data, &1)| &2]))
+  end
+
+  defp blank_to_nil(data, [head|tail]) do
+    data
+    |> blank_to_nil(head)
+    |> blank_to_nil(tail)
+  end
+  defp blank_to_nil(data, []), do: data
+  defp blank_to_nil(data, field_name) do
+    value = Map.fetch!(data, field_name)
+    case value do
+      "" -> Map.put(data, field_name, nil)
+      _  -> data
+    end
   end
 
   defp get_value(data, "nullable" = name) do

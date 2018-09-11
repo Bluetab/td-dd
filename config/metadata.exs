@@ -10,7 +10,7 @@ config :td_dd, :metadata,
     INSERT INTO data_structures ("system", "group", "name", description, type, ou, lopd, metadata, last_change_at, last_change_by, inserted_at, updated_at, domain_id)
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $11, $10, $11, $11, $9)
     ON CONFLICT ("system", "group", "name")
-    DO UPDATE SET type = $5, metadata = $8, last_change_at = $11, last_change_by = $10, updated_at = $11;
+    DO UPDATE SET type = $5, ou = $6, metadata = $8, last_change_at = $11, last_change_by = $10, updated_at = $11;
   """,
   data_field_query:
   """
