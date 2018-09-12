@@ -23,11 +23,10 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
     @tag :admin_authenticated
     test "renders rule_implementation when data is valid", %{conn: conn, swagger_schema: schema} do
       rule = insert(:rule)
-      rule_type = insert(:rule_type)
 
       creation_attrs =
         Map.from_struct(
-          build(:rule_implementation, rule_id: rule.id, rule_type_id: rule_type.id)
+          build(:rule_implementation, rule_id: rule.id)
         )
 
       conn = post(conn, rule_implementation_path(conn, :create), rule_implementation: creation_attrs)
@@ -44,7 +43,6 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
       assert creation_attrs[:description] == json_response["description"]
       assert creation_attrs[:system_params] == json_response["system_params"]
       assert creation_attrs[:system] == json_response["system"]
-      assert creation_attrs[:type] == json_response["type"]
       assert creation_attrs[:tag] == json_response["tag"]
     end
 
@@ -125,14 +123,12 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
     @tag :admin_authenticated
     test "lists all rule_implementations from a quality control", %{conn: conn, swagger_schema: schema} do
       rule = insert(:rule)
-      rule_type = insert(:rule_type)
 
       creation_attrs =
         Map.from_struct(
           build(
             :rule_implementation,
-            rule_id: rule.id,
-            rule_type_id: rule_type.id
+            rule_id: rule.id
           )
         )
 
@@ -152,7 +148,6 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
       assert creation_attrs[:description] == json_response["description"]
       assert creation_attrs[:system_params] == json_response["system_params"]
       assert creation_attrs[:system] == json_response["system"]
-      assert creation_attrs[:type] == json_response["type"]
       assert creation_attrs[:tag] == json_response["tag"]
 
       conn = recycle_and_put_headers(conn)

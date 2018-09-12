@@ -1,22 +1,16 @@
 defmodule TdDqWeb.RuleResultView do
   use TdDqWeb, :view
+  alias TdDqWeb.RuleResultView
 
   def render("index.json", %{rule_results: rule_results}) do
-    %{data: render_many(rule_results, QualityControlsResultsView, "rule_result.json")}
+    %{data: render_many(rule_results, RuleResultView, "rule_result.json")}
   end
 
   def render("rule_result.json", %{rule_result: rule_result}) do
     %{
-      business_concept_id: rule_result.business_concept_id,
-      rule_name: rule_result.rule_name,
-      system: rule_result.system,
-      group: rule_result.group,
-      structure_name: rule_result.structure_name,
-      field_name: rule_result.field_name,
+      rule_implementation_id: rule_result.rule_implementation_id,
       date: rule_result.date,
-      result: rule_result.result,
-      inserted_at: rule_result.inserted_at,
-      updated_at: rule_result.updated_at
+      result: rule_result.result
     }
   end
 end

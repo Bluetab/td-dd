@@ -1,9 +1,11 @@
 defmodule TdDqWeb.RuleController do
+  require Logger
   use TdHypermedia, :controller
   use TdDqWeb, :controller
   use PhoenixSwagger
   import Canada, only: [can?: 2]
   alias TdDq.Audit
+  alias TdDq.Repo
   alias TdDq.Rules
   alias TdDq.Rules.Rule
   alias TdDqWeb.ErrorView
@@ -126,6 +128,11 @@ defmodule TdDqWeb.RuleController do
         conn
         |> put_status(:unprocessable_entity)
         |> render(ErrorView, :"422.json")
+      error ->
+        Logger.error("While creating rule... #{inspect(error)}")
+        conn
+        |> put_status(:unprocessable_entity)
+        |> render(ErrorView, :"422.json")
     end
   end
 
@@ -142,7 +149,10 @@ defmodule TdDqWeb.RuleController do
   end
 
   def show(conn, %{"id" => id}) do
-    rule = Rules.get_rule!(id)
+    rule = id
+    |> Rules.get_rule!
+    |> Repo.preload(:rule_type)
+
     render(
       conn,
       "show.json",

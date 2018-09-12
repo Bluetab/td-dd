@@ -23,8 +23,8 @@ defmodule TdDqWeb.SwaggerDefinitions do
           version :integer, "version number"
           updated_by :integer, "updated by user id"
           principle :object, "rule principle"
-          type :string, "rule type"
           type_params :object, "rule type_params"
+          rule_type_id :integer, "Belongs to rule type", required: true
           rule_implementations Schema.ref(:RuleImplementations)
         end
       end,
@@ -35,12 +35,10 @@ defmodule TdDqWeb.SwaggerDefinitions do
           id :integer, "Rule Implementation unique identifier", required: true
           description :string, "Rule Implementation description"
           name :string, "Rule Implementation name", required: true
-          type :string, "Rule Implementation type", required: true
           system :string, "Rule Implementation system", required: true
           system_params :object, "Rule Implementation parameters", required: true
           tag :object, "Rule Implementation tag"
           rule_id :integer, "Belongs to rule", required: true
-          rule_type_id :integer, "Belongs to rule type", required: true
         end
       end,
       RuleImplementations: swagger_schema do
@@ -105,19 +103,16 @@ defmodule TdDqWeb.SwaggerDefinitions do
           id :integer, "Rule Implementation unique identifier", required: true
           description :string, "Rule Implementation description"
           name :string, "Rule Implementation name", required: true
-          type :string, "Rule Implementation type", required: true
           system :string, "Rule Implementation system", required: true
           system_params :object, "Rule Implementation parameters", required: true
           tag :object, "Rule Implementation tag"
           rule_id :integer, "Belongs to rule", required: true
-          rule_type_id :integer, "Belongs to rule type", required: true
         end
       end,
       RuleImplementationCreateProps: swagger_schema do
         properties do
           description :string, "Rule Implementation description"
           name :string, "Rule Implementation name", required: true
-          type :string, "Rule Implementation type name", required: true
           system :string, "Rule Implementation system", required: true
           system_params :object, "Rule Implementation parameters", required: true
           tag :object, "Rule Implementation tag"
@@ -133,7 +128,6 @@ defmodule TdDqWeb.SwaggerDefinitions do
         properties do
           description :string, "Rule Implementation description"
           name :string, "Rule Implementation name", required: true
-          type :string, "Rule Implementation type name", required: true
           system :string, "Rule Implementation system", required: true
           system_params :object, "Rule Implementation parameters", required: true
           tag :object, "Rule Implementation tag"

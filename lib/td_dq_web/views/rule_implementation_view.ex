@@ -2,80 +2,65 @@ defmodule TdDqWeb.RuleImplementationView do
   use TdDqWeb, :view
   alias TdDqWeb.RuleImplementationView
 
-  def render("index.json", %{rule_implementations: rule_implementations} = assigns) do
+  def render("index.json", %{rule_implementations: rule_implementations}) do
 
     %{data: render_many(rule_implementations,
-      RuleImplementationView, "rule_implementation.json",
-      Map.drop(assigns, [:rule_implementations]))
-    }
+      RuleImplementationView, "rule_implementation.json")}
   end
 
-  def render("show.json", %{rule_implementation: rule_implementation} = assigns) do
+  def render("show.json", %{rule_implementation: rule_implementation}) do
     %{data: render_one(rule_implementation,
-      RuleImplementationView, "rule_implementation.json",
-      Map.drop(assigns, [:rule_implementation]))
-    }
+      RuleImplementationView, "rule_implementation.json")}
   end
 
-  def render("rule_implementation.json", %{rule_implementation: rule_implementation} = assigns) do
+  def render("rule_implementation.json", %{rule_implementation: rule_implementation}) do
     %{
       id: rule_implementation.id,
       rule_id: rule_implementation.rule_id,
-      rule_type_id: rule_implementation.rule_type_id,
       name: rule_implementation.name,
       description: rule_implementation.description,
       system: rule_implementation.system,
       system_params: rule_implementation.system_params,
-      type: rule_implementation.type,
       tag: rule_implementation.tag
     }
-    |> add_rule_type(rule_implementation)
     |> add_rule(rule_implementation)
-    |> add_rule_result(assigns)
+    |> add_rule_results(rule_implementation)
   end
 
-  defp add_rule_type(rule_implementation, qr) do
-    case Ecto.assoc_loaded?(qr.rule_type) do
+  defp add_rule(rule_implementation_mapping, rule_implementation) do
+    case Ecto.assoc_loaded?(rule_implementation.rule) do
       true ->
-        rule_type = %{
-          id: qr.rule_type.id,
-          name: qr.rule_type.name,
-          params: qr.rule_type.params
-        }
-
-        Map.put(rule_implementation, :rule_type, rule_type)
+        rule = rule_implementation.rule
+        rule_mapping = %{name: rule.name}
+        |> add_rule_type(rule)
+        Map.put(rule_implementation_mapping, :rule, rule_mapping)
 
       _ ->
-        rule_implementation
+        rule_implementation_mapping
     end
   end
 
-  defp add_rule(rule_implementation, qr) do
-    case Ecto.assoc_loaded?(qr.rule) do
+  defp add_rule_type(rule_mapping, rule) do
+    case Ecto.assoc_loaded?(rule.rule_type) do
       true ->
-        rule = %{id: qr.rule.id, name: qr.rule.name}
-        Map.put(rule_implementation, :rule, rule)
+        Map.put(rule_mapping, :rule_type, %{name: rule.rule_type.name})
 
       _ ->
-        rule_implementation
+        rule_mapping
     end
   end
 
-  defp add_rule_result(rule_implementation, assigns) do
-    case Map.get(assigns, :rules_results) do
-      nil -> rule_implementation
-      rules_results ->
-        case Map.get(rules_results, rule_implementation.id) do
-          nil ->
-            rule_implementation
-            |> Map.put(:results, [])
-          rules_result ->
-            rule_implementation
-            |> Map.put(:results,
-                  [%{result: rules_result.result,
-                     date: rules_result.date}])
-        end
+  defp add_rule_results(rule_implementation_mapping, rule_implementation) do
+    rule_results_mappings = case Map.get(rule_implementation, :_last_rule_result_, nil) do
+      nil -> []
+
+      last_rule_result ->
+        [%{result: last_rule_result.result, date: last_rule_result.date}]
+
     end
+
+    rule_implementation_mapping
+    |> Map.put(:rule_results, rule_results_mappings)
   end
 
 end

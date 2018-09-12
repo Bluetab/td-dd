@@ -29,6 +29,7 @@ defmodule TdDq.Rules do
 
     query
       |> Repo.all()
+      |> Repo.preload(:rule_type)
       |> Repo.preload(:rule_implementations)
   end
 
@@ -132,18 +133,9 @@ defmodule TdDq.Rules do
     |> Repo.preload(:rule_implementations)
   end
 
-  # TODO: Search by implemnetation id
-  def get_concept_last_rule_result(business_concept_id,
-                                       rule,
-                                       system,
-                                       structure_name,
-                                       field_name) do
+  def get_last_rule_result(rule_implementation_id) do
     RuleResult
-    |> where([r], r.business_concept_id == ^business_concept_id and
-                  r.rule == ^rule and
-                  r.system == ^system and
-                  r.structure_name == ^structure_name and
-                  r.field_name == ^field_name)
+    |> where([r], r.rule_implementation_id == ^rule_implementation_id)
     |> order_by(desc: :date)
     |> limit(1)
     |> Repo.one()
@@ -158,8 +150,17 @@ defmodule TdDq.Rules do
       [%RuleImplementation{}, ...]
 
   """
-  def list_rule_implementations do
-    Repo.all(RuleImplementation)
+  def list_rule_implementations(params \\ %{})
+  def list_rule_implementations(params) do
+    fields = RuleImplementation.__schema__(:fields)
+    dynamic = filter(params, fields)
+    query = from(
+      p in RuleImplementation,
+      where: ^dynamic
+    )
+
+    query
+      |> Repo.all()
   end
 
   @doc """
@@ -176,7 +177,23 @@ defmodule TdDq.Rules do
       ** (Ecto.NoResultsError)
 
   """
-  def get_rule_implementation!(id), do: Repo.preload(Repo.get!(RuleImplementation, id), [:rule_type, :rule])
+  def get_rule_implementation!(id), do: Repo.preload(Repo.get!(RuleImplementation, id), [:rule])
+
+  @doc """
+  Gets a single rule_implementation.
+
+  Returns nil if the Rule does not exist.
+
+  ## Examples
+
+      iex> get_rule_implementation!(123)
+      %RuleImplementation{}
+
+      iex> get_rule_implementation!(456)
+      nil
+
+  """
+  def get_rule_implementation(id), do: Repo.get(RuleImplementation, id)
 
   @doc """
   Creates a rule_implementation.
@@ -345,12 +362,10 @@ defmodule TdDq.Rules do
 
   defp filter(params, fields) do
     dynamic = true
-
-    Enum.reduce(Map.keys(params), dynamic, fn x, acc ->
-      key_as_atom = String.to_atom(x)
-
+    Enum.reduce(Map.keys(params), dynamic, fn key, acc ->
+      key_as_atom = if is_binary(key), do: String.to_atom(key), else: key
       case Enum.member?(fields, key_as_atom) do
-        true -> dynamic([p], field(p, ^key_as_atom) == ^params[x] and ^acc)
+        true -> dynamic([p], field(p, ^key_as_atom) == ^params[key] and ^acc)
         false -> acc
       end
     end)

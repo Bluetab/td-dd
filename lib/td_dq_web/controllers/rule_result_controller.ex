@@ -5,10 +5,12 @@ defmodule TdDqWeb.RuleResultController do
   alias Ecto.Adapters.SQL
   alias TdDq.Repo
   alias TdDq.Rules
+  alias TdPerms.BusinessConceptCache
+  alias TdPerms.TaxonomyCache
 
   @rules_results_query  ~S"""
-    INSERT INTO rule_results ("business_concept_id", "rule", "system", "group", "structure_name", "field_name", "date", "result", inserted_at, updated_at)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $7, $7)
+    INSERT INTO rule_results ("rule_implementation_id", "date", "result", parent_domains, inserted_at, updated_at)
+    VALUES ($1, $2, $3, $4, $5, $5)
   """
   @rule_results_param "rule_results"
 
@@ -46,15 +48,35 @@ defmodule TdDqWeb.RuleResultController do
     |> Stream.drop(1)
     |> CSV.decode!(separator: ?;)
     |> Enum.each(fn(data) ->
-      data = List.update_at(data, 6, fn(x) -> Timex.to_datetime(Timex.parse!(x, "{YYYY}-{0M}-{D}")) end)
-      data = List.update_at(data, 7, fn(x) -> String.to_integer(x) end)
+      data = List.update_at(data, 0, fn(x) -> String.to_integer(x) end)
+      data = List.update_at(data, 1, fn(x) -> Timex.to_datetime(Timex.parse!(x, "{YYYY}-{0M}-{D}")) end)
+      data = List.update_at(data, 2, fn(x) -> String.to_integer(x) end)
+      data = data ++ [get_parent_domains(data), DateTime.utc_now]
       SQL.query!(Repo, @rules_results_query, data)
     end)
+  end
+
+  #TODO: Remove this form here. Remove parent domains from rule_result table
+  defp get_parent_domains(data) do
+    data
+    |> Enum.at(0)
+    |> Rules.get_rule_implementation
+    |> case do
+      nil -> ""
+      rule_implementation ->
+        rule_implementation
+        |> Repo.preload(:rule)
+        |> Map.get(:rule)
+        |> Map.get(:business_concept_id)
+        |> BusinessConceptCache.get_parent_id
+        |> TaxonomyCache.get_parent_ids
+        |> Enum.map(&TaxonomyCache.get_name(&1))
+        |> Enum.join(";")
+    end
   end
 
   def index(conn, _params) do
     rules_results = Rules.list_rule_results()
     render(conn, "index.json", rule_results: rules_results)
   end
-
 end

@@ -37,25 +37,42 @@ defmodule TdDqWeb.RuleView do
       inserted_at: rule.inserted_at,
       updated_at: rule.updated_at,
       principle: rule.principle,
-      type: rule.type,
+      rule_type_id: rule.rule_type_id,
       type_params: rule.type_params,
       current_business_concept_version: %{
         name: BusinessConceptCache.get_name(rule.business_concept_id),
         id: BusinessConceptCache.get_business_concept_version_id(rule.business_concept_id)
       }
     }
+    |> add_rule_type(rule)
     |> add_rule_implementations(rule)
   end
 
-  defp add_rule_implementations(rule, qc) do
-    case Ecto.assoc_loaded?(qc.rule_implementations) do
+  defp add_rule_type(rule_mapping, rule) do
+    case Ecto.assoc_loaded?(rule.rule_type) do
       true ->
-        rule_implementations_array = Enum.map(qc.rule_implementations, fn(rule_implementation) ->
+        rule_type_mapping = %{
+          id: rule.rule_type.id,
+          name: rule.rule_type.name,
+          params: rule.rule_type.params
+        }
+        Map.put(rule_mapping, :rule_type, rule_type_mapping)
+
+      _ ->
+        rule_mapping
+    end
+  end
+
+  # TODO: is this required? Wath out!!!
+  defp add_rule_implementations(rule_mapping, rule) do
+    case Ecto.assoc_loaded?(rule.rule_implementations) do
+      true ->
+        rule_implementations_mappings = Enum.map(rule.rule_implementations, fn(rule_implementation) ->
           RuleImplementationView.render("rule_implementation.json", %{rule_implementation: rule_implementation})
         end)
-        Map.put(rule, :rule_implementations, rule_implementations_array)
+        Map.put(rule_mapping, :rule_implementations, rule_implementations_mappings)
       _ ->
-        rule
+        rule_mapping
     end
   end
 end

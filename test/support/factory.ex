@@ -15,7 +15,7 @@ defmodule TdDq.Factory do
       status: "defined",
       version: 1,
       updated_by: 1,
-      type: "Rule Type",
+      rule_type: build(:rule_type),
       type_params: %{}
     }
   end
@@ -33,13 +33,20 @@ defmodule TdDq.Factory do
   def rule_implementation_factory do
     %TdDq.Rules.RuleImplementation {
       rule: build(:rule),
-      rule_type: build(:rule_type),
       description: "Rule Implementation description",
       name: "Rule Implementation name",
-      type: "Rule Type",
       system_params: %{},
       system: "Rule Implementation System",
       tag: %{}
+    }
+  end
+
+  def rule_result_factory do
+    %TdDq.Rules.RuleResult {
+      rule_implementation: build(:rule_implementation),
+      result: 50,
+      date: Date.utc_today(),
+      parent_domains: ""
     }
   end
 end

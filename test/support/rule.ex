@@ -8,23 +8,27 @@ defmodule TdDqWeb.Rule do
 
   @endpoint TdDqWeb.Endpoint
 
-  @test_to_api_create_alias %{"Field" => "field", "Business Concept ID" => "business_concept_id",
-    "Name" => "name", "Description" => "description", "Weight" => "weight",
-    "Priority" => "priority", "Population" => "population", "Goal" => "goal", "Minimum" => "minimum",
-    "Type" => "type", "Type Params" => "type_params"
-  }
+  @test_to_api_create_alias %{"Field" => "field",
+                              "Business Concept ID" => "business_concept_id",
+                              "Name" => "name",
+                              "Description" => "description",
+                              "Weight" => "weight",
+                              "Priority" => "priority",
+                              "Population" => "population",
+                              "Goal" => "goal",
+                              "Minimum" => "minimum",
+                              "Type" => "rule_type_id",
+                              "Type Params" => "type_params"}
 
-  @test_to_api_get_alias %{"Status" => "status", "Last User" => "updated_by", "Version" => "version", "Last Modification" => "inserted_at"}
+  @test_to_api_get_alias %{"Status" => "status",
+                           "Last User" => "updated_by",
+                           "Version" => "version",
+                           "Last Modification" => "inserted_at"}
 
-  @rule_integer_fields ["weight", "goal", "minimum"]
-
-  def rule_create(token, rule_params) do
-    headers = get_header(token)
-    body = %{rule: rule_params} |> JSON.encode!
-    %HTTPoison.Response{status_code: status_code, body: resp} =
-      HTTPoison.post!(rule_url(@endpoint, :create), body, headers, [])
-    {:ok, status_code, resp |> JSON.decode!}
-  end
+  @rule_integer_fields ["rule_type_id",
+                        "weight",
+                        "goal",
+                        "minimum"]
 
   def rule_list(token) do
     headers = get_header(token)
@@ -33,12 +37,20 @@ defmodule TdDqWeb.Rule do
     {:ok, status_code, resp |> JSON.decode!}
   end
 
-  def create_new_rule(token, table) do
+  def rule_create(token, table) do
     attrs = table
     |> field_value_to_api_attrs(@test_to_api_create_alias)
     attrs = attrs
     |> cast_to_int_attrs(@rule_integer_fields)
-    rule_create(token, attrs)
+    do_rule_create(token, attrs)
+  end
+
+  def do_rule_create(token, rule_params) do
+    headers = get_header(token)
+    body = %{rule: rule_params} |> JSON.encode!
+    %HTTPoison.Response{status_code: status_code, body: resp} =
+      HTTPoison.post!(rule_url(@endpoint, :create), body, headers, [])
+    {:ok, status_code, resp |> JSON.decode!}
   end
 
   def find_rule(token, search_params) do

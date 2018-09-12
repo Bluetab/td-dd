@@ -17,12 +17,12 @@ defmodule TdDqWeb.RuleControllerTest do
     description: "some description", goal: 42, minimum: 42, name: "some name",
     population: "some population", priority: "some priority",
     weight: 42, updated_by: Integer.mod(:binary.decode_unsigned("app-admin"), 100_000), principle: %{},
-    type: "Rule Type", type_params: %{}}
+    type_params: %{}}
 
   @create_attrs %{business_concept_id: "some business_concept_id",
     description: "some description", goal: 42, minimum: 42, name: "some name",
     population: "some population", priority: "some priority", weight: 42, principle: %{},
-    type: "some type", type_params: %{}}
+    type_params: %{}}
 
   @update_attrs %{business_concept_id: "some updated business_concept_id", description: "some updated description",
     goal: 43, minimum: 43, name: "some updated name", population: "some updated population",
@@ -30,16 +30,31 @@ defmodule TdDqWeb.RuleControllerTest do
 
   @invalid_attrs %{business_concept_id: nil, description: nil, goal: nil, minimum: nil,
     name: nil, population: nil, priority: nil, weight: nil, principle: nil,
-    type: nil, type_params: nil}
+    type_params: nil}
 
-  @comparable_fields ["id", "business_concept_id", "description", "goal", "minimum", "name",
-    "population", "priority", "weight", "status", "version", "updated_by", "principle", "type", "type_params"]
+  @comparable_fields ["id",
+                      "business_concept_id",
+                      "description",
+                      "goal",
+                      "minimum",
+                      "name",
+                      "population",
+                      "priority",
+                      "weight",
+                      "status",
+                      "version",
+                      "updated_by",
+                      "principle",
+                      "rule_type_id",
+                      "type_params"]
 
   @admin_user_name "app-admin"
 
   def fixture(:rule) do
-    insert(:rule_type)
-    {:ok, rule} = Rules.create_rule(@create_fixture_attrs)
+    rule_type = insert(:rule_type)
+    creation_attrs = @create_fixture_attrs
+    |> Map.put(:rule_type_id, rule_type.id)
+    {:ok, rule} = Rules.create_rule(creation_attrs)
     rule
   end
 
@@ -87,8 +102,11 @@ defmodule TdDqWeb.RuleControllerTest do
   describe "create rule" do
     @tag authenticated_user: @admin_user_name
     test "renders rule when data is valid", %{conn: conn, swagger_schema: schema} do
-      insert(:rule_type)
-      conn = post conn, rule_path(conn, :create), rule: @create_fixture_attrs
+      rule_type = insert(:rule_type)
+      creation_attrs = @create_fixture_attrs
+      |> Map.put("rule_type_id", rule_type.id)
+
+      conn = post conn, rule_path(conn, :create), rule: creation_attrs
       validate_resp_schema(conn, schema, "RuleResponse")
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
@@ -110,7 +128,7 @@ defmodule TdDqWeb.RuleControllerTest do
         "version" => 1,
         "updated_by" => @create_fixture_attrs.updated_by,
         "principle" => %{},
-        "type" => "Rule Type",
+        "rule_type_id" => rule_type.id,
         "type_params" => %{}
       }
     end
@@ -150,7 +168,7 @@ defmodule TdDqWeb.RuleControllerTest do
         "version" => 1,
         "updated_by" => @create_fixture_attrs.updated_by,
         "principle" => %{},
-        "type" => "Rule Type",
+        "rule_type_id" => rule.rule_type_id,
         "type_params" => %{}
       }
     end
