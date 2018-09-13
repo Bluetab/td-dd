@@ -24,10 +24,18 @@ defmodule TdDqWeb.RuleImplementationController do
     response 200, "OK", Schema.ref(:RuleImplementationsResponse)
   end
 
-  def index(conn, _params) do
+  def index(conn, params) do
     user = conn.assigns[:current_resource]
+
+    filters = %{}
+    |> add_rule_filter(params, "rule_business_concept_id", "business_concept_id")
+    |> add_rule_filter(params, "rule_status", "status")
+
     with true <- can?(user, index(RuleImplementation)) do
-      rule_implementations = Rules.list_rule_implementations()
+      rule_implementations = filters
+      |> Rules.list_rule_implementations
+      |> Enum.map(&Repo.preload(&1, [:rule, rule: :rule_type]))
+
       render(conn, "index.json", rule_implementations: rule_implementations)
     else
       false ->
@@ -39,6 +47,17 @@ defmodule TdDqWeb.RuleImplementationController do
         conn
         |> put_status(:unprocessable_entity)
         |> render(ErrorView, :"422.json")
+    end
+  end
+
+  defp add_rule_filter(filters, params, param_name, filter_name) do
+    case Map.get(params, param_name) do
+      nil -> filters
+      value ->
+        rule_filters = filters
+        |> Map.get("rule", %{})
+        |> Map.put(filter_name, value)
+        Map.put(filters, "rule", rule_filters)
     end
   end
 
@@ -170,7 +189,7 @@ defmodule TdDqWeb.RuleImplementationController do
 
   def update(conn, %{"id" => id, "rule_implementation" => rule_implementation_params}) do
     rule_implementation = Rules.get_rule_implementation!(id)
-    rule = rule_implementation.rule
+    rule = Repo.preload(rule_implementation, :rule).rule
 
     user = conn.assigns[:current_resource]
     with true <- can?(user, update(%{
@@ -205,7 +224,7 @@ defmodule TdDqWeb.RuleImplementationController do
   def delete(conn, %{"id" => id}) do
     rule_implementation = Rules.get_rule_implementation!(id)
     user = conn.assigns[:current_resource]
-    rule = rule_implementation.rule
+    rule = Repo.preload(rule_implementation, :rule).rule
 
     with true <- can?(user, delete(%{
       "business_concept_id" => rule.business_concept_id,

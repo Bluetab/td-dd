@@ -41,6 +41,7 @@ defmodule TdDqWeb.RuleController do
   end
 
   def get_rules_by_concept(conn, %{"id" => id} = params) do
+
     user = conn.assigns[:current_resource]
     resource_type = %{
       "business_concept_id" => id,

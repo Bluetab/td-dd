@@ -31,7 +31,7 @@ defmodule TdDqWeb.RuleImplementationView do
     case Ecto.assoc_loaded?(rule_implementation.rule) do
       true ->
         rule = rule_implementation.rule
-        rule_mapping = %{name: rule.name}
+        rule_mapping = %{name: rule.name, type_params: rule.type_params}
         |> add_rule_type(rule)
         Map.put(rule_implementation_mapping, :rule, rule_mapping)
 

@@ -11,7 +11,7 @@ defmodule TdDq.Rules do
   alias TdDq.Rules.RuleResult
 
   @doc """
-  Returns the list of rule_implementations.
+  Returns the list of rules.
 
   ## Examples
 
@@ -30,7 +30,6 @@ defmodule TdDq.Rules do
     query
       |> Repo.all()
       |> Repo.preload(:rule_type)
-      |> Repo.preload(:rule_implementations)
   end
 
   @doc """
@@ -47,7 +46,7 @@ defmodule TdDq.Rules do
       ** (Ecto.NoResultsError)
 
   """
-  def get_rule!(id), do: Repo.preload(Repo.get!(Rule, id), :rule_implementations)
+  def get_rule!(id), do: Repo.get!(Rule, id)
 
   @doc """
   Creates a rule.
@@ -128,9 +127,7 @@ defmodule TdDq.Rules do
       order_by: [desc: :business_concept_id]
     )
 
-    query
-    |> Repo.all()
-    |> Repo.preload(:rule_implementations)
+    query |> Repo.all()
   end
 
   def get_last_rule_result(rule_implementation_id) do
@@ -152,15 +149,26 @@ defmodule TdDq.Rules do
   """
   def list_rule_implementations(params \\ %{})
   def list_rule_implementations(params) do
-    fields = RuleImplementation.__schema__(:fields)
-    dynamic = filter(params, fields)
+    dynamic = filter(params, RuleImplementation.__schema__(:fields))
+
+    rule_params = Map.get(params, :rule) || Map.get(params, "rule", %{})
+    rule_fields = Rule.__schema__(:fields)
+    dynamic = Enum.reduce(Map.keys(rule_params), dynamic, fn key, acc ->
+      key_as_atom = if is_binary(key), do: String.to_atom(key), else: key
+      case Enum.member?(rule_fields, key_as_atom) do
+        true -> dynamic([_, p], field(p, ^key_as_atom) == ^rule_params[key] and ^acc)
+        false -> acc
+      end
+    end)
+
     query = from(
-      p in RuleImplementation,
+      ri in RuleImplementation,
+      inner_join: r in Rule,
+      on: ri.rule_id == r.id,
       where: ^dynamic
     )
 
-    query
-      |> Repo.all()
+    query |> Repo.all()
   end
 
   @doc """
@@ -177,7 +185,7 @@ defmodule TdDq.Rules do
       ** (Ecto.NoResultsError)
 
   """
-  def get_rule_implementation!(id), do: Repo.preload(Repo.get!(RuleImplementation, id), [:rule])
+  def get_rule_implementation!(id), do: Repo.get!(RuleImplementation, id)
 
   @doc """
   Gets a single rule_implementation.
