@@ -49,7 +49,7 @@ defmodule TdDqWeb.RuleResultController do
     |> CSV.decode!(separator: ?;)
     |> Enum.each(fn(data) ->
       data = List.update_at(data, 0, fn(x) -> String.to_integer(x) end)
-      data = List.update_at(data, 1, fn(x) -> Timex.to_datetime(Timex.parse!(x, "{YYYY}-{0M}-{D}")) end)
+      data = List.update_at(data, 1, fn(x) -> Timex.to_datetime(Timex.parse!(x, "{YYYY}-{0M}-{D}-{h24}-{m}-{s}")) end)
       data = List.update_at(data, 2, fn(x) -> String.to_integer(x) end)
       data = data ++ [get_parent_domains(data), DateTime.utc_now]
       SQL.query!(Repo, @rules_results_query, data)

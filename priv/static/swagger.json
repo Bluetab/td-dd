@@ -1040,9 +1040,6 @@
           "type": "integer",
           "description": "Belongs to rule type"
         },
-        "rule_implementations": {
-          "$ref": "#/definitions/RuleImplementations"
-        },
         "priority": {
           "type": "string",
           "description": "Priority (Medium,...)"

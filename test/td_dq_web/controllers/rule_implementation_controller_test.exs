@@ -17,6 +17,22 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
       validate_resp_schema(conn, schema, "RuleImplementationsResponse")
       assert json_response(conn, 200)["data"] == []
     end
+
+    @tag :admin_authenticated
+    test "lists all rule_implementations filtered by rule business_concept_id and state", %{conn: conn, swagger_schema: schema} do
+      rule_type = insert(:rule_type)
+      rule1 = insert(:rule, rule_type: rule_type, business_concept_id: "xyz", status: "selectedToExecute")
+      rule2 = insert(:rule, rule_type: rule_type)
+      insert(:rule_implementation, rule: rule1)
+      insert(:rule_implementation, rule: rule1)
+      insert(:rule_implementation, rule: rule1)
+      insert(:rule_implementation, rule: rule2)
+
+      conn = get(conn, rule_implementation_path(conn, :index), %{"rule_status": "selectedToExecute", "rule_business_concept_id": "xyz"})
+      validate_resp_schema(conn, schema, "RuleImplementationsResponse")
+      assert length(json_response(conn, 200)["data"]) == 3
+    end
+
   end
 
   describe "create rule_implementation" do
@@ -121,7 +137,7 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
 
   describe "get_rule_implementations" do
     @tag :admin_authenticated
-    test "lists all rule_implementations from a quality control", %{conn: conn, swagger_schema: schema} do
+    test "lists all rule_implementations from a rule", %{conn: conn, swagger_schema: schema} do
       rule = insert(:rule)
 
       creation_attrs =

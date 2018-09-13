@@ -25,7 +25,6 @@ defmodule TdDqWeb.SwaggerDefinitions do
           principle :object, "rule principle"
           type_params :object, "rule type_params"
           rule_type_id :integer, "Belongs to rule type", required: true
-          rule_implementations Schema.ref(:RuleImplementations)
         end
       end,
       RuleImplementation: swagger_schema do

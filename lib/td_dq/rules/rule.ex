@@ -4,7 +4,6 @@ defmodule TdDq.Rules.Rule do
   import Ecto.Changeset
   alias TdDq.Rules
   alias TdDq.Rules.Rule
-  alias TdDq.Rules.RuleImplementation
   alias TdDq.Rules.RuleType
 
   @statuses ["defined"]
@@ -26,7 +25,6 @@ defmodule TdDq.Rules.Rule do
     field :principle, :map
     field :type_params, :map
     belongs_to(:rule_type, RuleType)
-    has_many :rule_implementations, RuleImplementation
 
     timestamps()
   end

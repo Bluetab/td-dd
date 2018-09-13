@@ -1,7 +1,6 @@
 defmodule TdDqWeb.RuleView do
   use TdDqWeb, :view
   use TdHypermedia, :view
-  alias TdDqWeb.RuleImplementationView
   alias TdDqWeb.RuleView
   alias TdPerms.BusinessConceptCache
 
@@ -45,7 +44,6 @@ defmodule TdDqWeb.RuleView do
       }
     }
     |> add_rule_type(rule)
-    |> add_rule_implementations(rule)
   end
 
   defp add_rule_type(rule_mapping, rule) do
@@ -63,16 +61,4 @@ defmodule TdDqWeb.RuleView do
     end
   end
 
-  # TODO: is this required? Wath out!!!
-  defp add_rule_implementations(rule_mapping, rule) do
-    case Ecto.assoc_loaded?(rule.rule_implementations) do
-      true ->
-        rule_implementations_mappings = Enum.map(rule.rule_implementations, fn(rule_implementation) ->
-          RuleImplementationView.render("rule_implementation.json", %{rule_implementation: rule_implementation})
-        end)
-        Map.put(rule_mapping, :rule_implementations, rule_implementations_mappings)
-      _ ->
-        rule_mapping
-    end
-  end
 end
