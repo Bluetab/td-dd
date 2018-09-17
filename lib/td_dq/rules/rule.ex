@@ -57,12 +57,11 @@ defmodule TdDq.Rules.Rule do
   end
 
   defp validate_goal(changeset) do
-    IO.inspect("validate_minimum_and_goal")
     case changeset.valid? do
       true ->
         minimum = get_field(changeset, :minimum)
         goal = get_field(changeset, :goal)
-        case goal <= minimum do
+        case minimum <= goal do
           true -> changeset
           false -> add_error(changeset, :goal, "must.be.greater.than.or.equal.to.minimum")
         end

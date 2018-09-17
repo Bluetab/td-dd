@@ -79,7 +79,7 @@ defmodule TdDqWeb.ChangesetSupport do
     [Atom.to_string(validation), "must", "be", "greater", "than"]
   end
   defp translate_msgid({"must be less than or equal to %{number}", [validation: validation, number: _number]}) do
-    [Atom.to_string(validation), "must", "be", "less", "than", "or", "equal", "to" ]
+    [Atom.to_string(validation), "must", "be", "less", "than", "or", "equal", "to"]
   end
   defp translate_msgid({"must be greater than or equal to %{number}", [validation: validation, number: _number]}) do
     [Atom.to_string(validation), "must", "be", "greater", "than", "or", "equal", "to"]
