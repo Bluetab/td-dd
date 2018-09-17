@@ -393,15 +393,15 @@ defmodule TdDq.RulesTest do
     test "parse_rule_params/2 parse integer" do
       rule_type = Rules.get_rule_type_by_name("min_text")
       params = %{"num_characters" => "123"}
-      new_params = Rules.parse_rule_params(params, rule_type)
-      assert new_params["num_characters"] == 123
+      new_params = Rules.parse_rule_params(%{"type_params" => params}, rule_type)
+      assert new_params["type_params"]["num_characters"] == 123
     end
 
     test "parse_rule_params/2 parse list" do
       rule_type = Rules.get_rule_type_by_name("in_list")
       params = %{"values_list" => "uno,dos,tres"}
-      new_params = Rules.parse_rule_params(params, rule_type)
-      assert new_params["values_list"] == ["uno", "dos", "tres"]
+      new_params = Rules.parse_rule_params(%{"type_params" => params}, rule_type)
+      assert new_params["type_params"]["values_list"] == ["uno", "dos", "tres"]
     end
 
     test "parse_rule_params/2 parse date" do
@@ -410,16 +410,16 @@ defmodule TdDq.RulesTest do
 
       rule_type = Rules.get_rule_type_by_name("dates_range")
       params = %{"min_date" => str_mix_date, "max_date" => str_max_date}
-      new_params = Rules.parse_rule_params(params, rule_type)
-      assert new_params["min_date"] == ~N[2014-12-01 00:00:00]
-      assert new_params["max_date"] == ~N[2014-12-15 12:13:14]
+      new_params = Rules.parse_rule_params(%{"type_params" => params}, rule_type)
+      assert new_params["type_params"]["min_date"] == str_mix_date
+      assert new_params["type_params"]["max_date"] == str_max_date
     end
 
     test "parse_rule_implementation_params/2 parse string" do
       rule_type = Rules.get_rule_type_by_name("unique_values")
       params = %{"table" => :my_table}
-      new_params = Rules.parse_rule_implementation_params(params, rule_type)
-      assert new_params["table"] == "my_table"
+      new_params = Rules.parse_rule_implementation_params(%{"system_params" => params}, rule_type)
+      assert new_params["system_params"]["table"] == "my_table"
     end
   end
 end

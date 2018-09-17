@@ -71,7 +71,8 @@ defmodule TdDq.Rules do
   def parse_rule_params(params, nil), do: params
   def parse_rule_params(params, %RuleType{} = rule_type) do
     types = get_type_params_or_nil(rule_type)
-    parse_params(params, types)
+    type_params = Map.get(params, "type_params", %{})
+    Map.put(params, "type_params", parse_params(type_params, types))
   end
 
   @doc """
@@ -92,7 +93,9 @@ defmodule TdDq.Rules do
       true ->
         input = Changeset.get_change(changeset, :type_params)
         types = get_type_params_or_nil(rule_type)
-        type_changeset = rule_type_changeset(types, input)
+        type_changeset = types
+        |> rule_type_changeset(input)
+        |> add_rule_type_params_validations(rule_type, types)
         case type_changeset.valid? do
           true ->  changeset |> Repo.insert()
           false -> {:error, type_changeset}
@@ -117,10 +120,12 @@ defmodule TdDq.Rules do
     changeset = Rule.changeset(rule, attrs)
     case changeset.valid? do
       true ->
-        input     = rule.type_params
+        input     = Map.get(attrs, :type_params) || Map.get(attrs, "type_params", %{})
         rule_type = Repo.preload(rule, :rule_type).rule_type
         types     = get_type_params_or_nil(rule_type)
-        type_changeset = rule_type_changeset(types, input)
+        type_changeset = types
+        |> rule_type_changeset(input)
+        |> add_rule_type_params_validations(rule_type, types)
         case type_changeset.valid? do
           true ->  changeset |> Repo.update()
           false -> {:error, type_changeset}
@@ -251,7 +256,8 @@ defmodule TdDq.Rules do
   def parse_rule_implementation_params(params, nil), do: params
   def parse_rule_implementation_params(params, %RuleType{} = rule_type) do
     types = get_system_params_or_nil(rule_type)
-    parse_params(params, types)
+    system_params = Map.get(params, "system_params", %{})
+    Map.put(params, "system_params", parse_params(system_params, types))
   end
 
   @doc """
@@ -298,7 +304,7 @@ defmodule TdDq.Rules do
     changeset = RuleImplementation.changeset(rule_implementation, attrs)
     case changeset.valid? do
       true ->
-        input = rule_implementation.system_params
+        input = Map.get(attrs, :system_params) || Map.get(attrs, "system_params", %{})
         rule_type =
           Repo.preload(rule_implementation, [:rule, rule: :rule_type]).rule.rule_type
         types = get_system_params_or_nil(rule_type)
@@ -493,27 +499,34 @@ defmodule TdDq.Rules do
   defp parse_param(params, %{"name" => name, "type" => "date"}) do
     case Map.get(params, name) do
       value when is_binary(value) ->
-        parsed_value = parse_date_(value) || value
-        Map.put(params, name, parsed_value)
+        parsed_value = parse_date(value)
+        case parsed_value do
+          nil ->
+            #params
+            Map.put(params, name, nil) # trigger required
+          _datetime ->
+            #Map.put(params, name, DateTime.to_iso8601(datetime))
+            params
+        end
       _ -> params
     end
   end
   defp parse_param(params, _), do: params
 
-  defp parse_date_(value) do
+  defp parse_date(value) do
     binary_to_date(value) || binary_to_datetime(value)
   end
 
   defp binary_to_date(value) do
     case Timex.parse(value, @date_format, :strftime) do
-      {:ok, date} -> date
+      {:ok, date} -> Timex.to_datetime(date)
       _ -> nil
     end
   end
 
   defp binary_to_datetime(value) do
     case Timex.parse(value, @datetime_format, :strftime) do
-      {:ok, date} -> date
+      {:ok, date} -> Timex.to_datetime(date)
       _ -> nil
     end
   end
@@ -550,9 +563,42 @@ defmodule TdDq.Rules do
     |> Changeset.validate_required(Map.keys(fields))
   end
 
+  defp add_rule_type_params_validations(changeset, _, nil), do: changeset
+  defp add_rule_type_params_validations(changeset, %{name: "integer_values_range"}, _) do
+    case changeset.valid? do
+      true ->
+        min_value = Changeset.get_field(changeset, :min_value)
+        max_value = Changeset.get_field(changeset, :max_value)
+        case min_value <= max_value do
+          true -> changeset
+          false -> Changeset.add_error(changeset, :max_value, "must.be.greater.than.or.equal.to.minimum")
+        end
+      false -> changeset
+    end
+  end
+  defp add_rule_type_params_validations(changeset, %{name: "dates_range"}, _) do
+    # case changeset.valid? do
+    #   true ->
+    #     min_date = binary_to_date(Changeset.get_field(changeset, :min_date))
+    #     max_date = Changeset.get_field(changeset, :max_date)
+    #
+    #     # DateTime.from_iso8601(mix_date, calendar)
+    #     # DateTime.from_iso8601(max_date, calendar)
+    #
+    #     case DateTime.compare(min_date, max_date) do
+    #       :lt -> changeset
+    #       :eq -> changeset
+    #       :gt -> Changeset.add_error(changeset, :max_date, "must.be.greater.than.or.equal.to.minimum")
+    #     end
+    #   false -> changeset
+    # end
+    changeset
+  end
+  defp add_rule_type_params_validations(changeset, _, _), do: changeset
+
   defp to_schema_type("integer"), do: :integer
   defp to_schema_type("string"),  do: :string
   defp to_schema_type("list"),    do: {:array, :string}
-  defp to_schema_type("date"),    do: :date
+  defp to_schema_type("date"),    do: :string
 
 end

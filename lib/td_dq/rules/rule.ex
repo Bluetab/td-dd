@@ -68,7 +68,7 @@ defmodule TdDq.Rules.Rule do
       _ ->
         changeset
     end
-end
+  end
 
   def get_statuses do
     @statuses
