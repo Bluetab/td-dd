@@ -50,8 +50,26 @@ defmodule TdDq.Rules.Rule do
                           :principle,
                           :rule_type_id,
                           :type_params])
+    |> validate_number(:goal, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
+    |> validate_number(:minimum, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
+    |> validate_goal
     |> foreign_key_constraint(:rule_type_id)
   end
+
+  defp validate_goal(changeset) do
+    IO.inspect("validate_minimum_and_goal")
+    case changeset.valid? do
+      true ->
+        minimum = get_field(changeset, :minimum)
+        goal = get_field(changeset, :goal)
+        case goal <= minimum do
+          true -> changeset
+          false -> add_error(changeset, :goal, "must.be.greater.than.or.equal.to.minimum")
+        end
+      _ ->
+        changeset
+    end
+end
 
   def get_statuses do
     @statuses

@@ -72,6 +72,19 @@ defmodule TdDqWeb.ChangesetSupport do
   defp translate_msgid({"is invalid", [type: type, validation: validation]}) do
     [Atom.to_string(validation), Atom.to_string(type)]
   end
+  defp translate_msgid({"must be less than %{number}", [validation: validation, number: _number]}) do
+    [Atom.to_string(validation), "must", "be", "less", "than"]
+  end
+  defp translate_msgid({"must be greater than %{number}", [validation: validation, number: _number]}) do
+    [Atom.to_string(validation), "must", "be", "greater", "than"]
+  end
+  defp translate_msgid({"must be less than or equal to %{number}", [validation: validation, number: _number]}) do
+    [Atom.to_string(validation), "must", "be", "less", "than", "or", "equal", "to" ]
+  end
+  defp translate_msgid({"must be greater than or equal to %{number}", [validation: validation, number: _number]}) do
+    [Atom.to_string(validation), "must", "be", "greater", "than", "or", "equal", "to"]
+  end
+
   defp translate_msgid({msgid , [validation: validation]}) when msgid in @msgids do
     [Atom.to_string(validation)]
   end
