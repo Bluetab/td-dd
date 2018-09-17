@@ -54,7 +54,7 @@ defmodule TdDqWeb.RuleControllerTest do
     rule_type = insert(:rule_type)
     creation_attrs = @create_fixture_attrs
     |> Map.put(:rule_type_id, rule_type.id)
-    {:ok, rule} = Rules.create_rule(creation_attrs)
+    {:ok, rule} = Rules.create_rule(rule_type, creation_attrs)
     rule
   end
 

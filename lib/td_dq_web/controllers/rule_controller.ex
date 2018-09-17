@@ -4,10 +4,12 @@ defmodule TdDqWeb.RuleController do
   use TdDqWeb, :controller
   use PhoenixSwagger
   import Canada, only: [can?: 2]
+  alias Ecto.Changeset
   alias TdDq.Audit
   alias TdDq.Repo
   alias TdDq.Rules
   alias TdDq.Rules.Rule
+  alias TdDqWeb.ChangesetView
   alias TdDqWeb.ErrorView
   alias TdDqWeb.RuleView
   alias TdDqWeb.SwaggerDefinitions
@@ -90,20 +92,20 @@ defmodule TdDqWeb.RuleController do
 
   def create(conn, %{"rule" => rule_params}) do
     user = conn.assigns[:current_resource]
-    rule_params =
-      if user do
-        Map.put_new(rule_params, "updated_by", user.id)
-      else
-        rule_params
-      end
+    rule_type_id = rule_params["rule_type_id"]
+    rule_type = Rules.get_rule_type_or_nil(rule_type_id)
+
+    creation_attrs = rule_params
+    |> Map.put_new("updated_by", user.id)
+    |> Rules.parse_rule_params(rule_type)
 
     resource_type = rule_params
-      |> Map.take(["business_concept_id"])
-      |> Map.put("resource_type", "rule")
+    |> Map.take(["business_concept_id"])
+    |> Map.put("resource_type", "rule")
 
     with true <- can?(user, create(resource_type)),
       {:ok, %Rule{} = rule} <-
-           Rules.create_rule(rule_params) do
+           Rules.create_rule(rule_type, creation_attrs) do
 
       audit = %{
         "audit" => %{
@@ -124,11 +126,18 @@ defmodule TdDqWeb.RuleController do
         conn
         |> put_status(:forbidden)
         |> render(ErrorView, :"403.json")
-
-      {:error, _changeset} ->
+      {:error, %Changeset{data: %{__struct__: _}} = changeset} ->
         conn
         |> put_status(:unprocessable_entity)
-        |> render(ErrorView, :"422.json")
+        |> render(ChangesetView, "error.json",
+                  changeset: changeset,
+                  prefix: "rule.error")
+      {:error, %Changeset{} = changeset} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> render(ChangesetView, "error.json",
+                  changeset: changeset,
+                  prefix: "rule.type_params.error")
       error ->
         Logger.error("While creating rule... #{inspect(error)}")
         conn
@@ -178,21 +187,20 @@ defmodule TdDqWeb.RuleController do
   def update(conn, %{"id" => id, "rule" => rule_params}) do
     user = conn.assigns[:current_resource]
     rule = Rules.get_rule!(id)
+    rule_type = Repo.preload(rule, :rule_type).rule_type
+
     resource_type = %{
       "business_concept_id" => rule.business_concept_id,
       "resource_type" => "rule"
     }
 
-    rule_params =
-      if user do
-        Map.put_new(rule_params, "updated_by", user.id)
-      else
-        rule_params
-      end
+    update_attrs = rule_params
+    |> Map.put_new("updated_by", user.id)
+    |> Rules.parse_rule_params(rule_type)
 
     with true <- can?(user, update(resource_type)),
             {:ok, %Rule{} = rule} <-
-              Rules.update_rule(rule, rule_params) do
+              Rules.update_rule(rule, update_attrs) do
 
       render(conn, "show.json", rule: rule)
     else
@@ -200,8 +208,20 @@ defmodule TdDqWeb.RuleController do
         conn
         |> put_status(:forbidden)
         |> render(ErrorView, :"403.json")
-
-      {:error, _changeset} ->
+      {:error, %Changeset{data: %{__struct__: _}} = changeset} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> render(ChangesetView, "error.json",
+                  changeset: changeset,
+                  prefix: "rule.error")
+      {:error, %Changeset{} = changeset} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> render(ChangesetView, "error.json",
+                  changeset: changeset,
+                  prefix: "rule.type_params.error")
+      error ->
+        Logger.error("While updating rule... #{inspect(error)}")
         conn
         |> put_status(:unprocessable_entity)
         |> render(ErrorView, :"422.json")

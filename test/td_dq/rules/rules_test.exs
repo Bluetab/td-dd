@@ -2,7 +2,113 @@ defmodule TdDq.RulesTest do
   use TdDq.DataCase
   import TdDq.Factory
 
+  alias Ecto.Changeset
   alias TdDq.Rules
+
+  describe "rule" do
+    alias TdDq.Rules.Rule
+
+    test "list_rule/0 returns all rules" do
+      rule = insert(:rule)
+      assert Enum.map(Rules.list_rules(), &rule_preload(&1)) == [rule]
+    end
+
+    test "get_rule!/1 returns the rule with given id" do
+      rule = insert(:rule)
+      assert rule_preload(Rules.get_rule!(rule.id)) == rule
+    end
+
+    test "get_rule/1 returns the rule with given id" do
+      rule = insert(:rule)
+      assert rule_preload(Rules.get_rule!(rule.id)) == rule
+    end
+
+    test "create_rule/1 with valid data creates a rule" do
+      rule_type = insert(:rule_type)
+
+      creation_attrs =
+        Map.from_struct(
+          build(
+            :rule,
+            rule_type_id: rule_type.id
+          )
+        )
+
+      assert {:ok, %Rule{} = rule} =
+               Rules.create_rule(rule_type, creation_attrs)
+
+      assert rule.rule_type_id == creation_attrs[:rule_type_id]
+      assert rule.business_concept_id == creation_attrs[:business_concept_id]
+      assert rule.description == creation_attrs[:description]
+      assert rule.goal == creation_attrs[:goal]
+      assert rule.minimum == creation_attrs[:minimum]
+      assert rule.name == creation_attrs[:name]
+      assert rule.population == creation_attrs[:population]
+      assert rule.priority == creation_attrs[:priority]
+      assert rule.weight == creation_attrs[:weight]
+      assert rule.status == creation_attrs[:status]
+      assert rule.version == creation_attrs[:version]
+      assert rule.updated_by == creation_attrs[:updated_by]
+      assert rule.type_params == creation_attrs[:type_params]
+    end
+
+    test "create_rule/1 with invalid data returns error changeset" do
+      rule_type = insert(:rule_type)
+
+      creation_attrs =
+        Map.from_struct(
+          build(:rule, rule_type_id: rule_type.id, name: nil)
+        )
+
+      assert {:error, %Ecto.Changeset{}} = Rules.create_rule(rule_type, creation_attrs)
+    end
+
+    test "update_rule/2 with valid data updates the rule" do
+      rule = insert(:rule)
+      update_attrs = Map.from_struct(rule)
+
+      update_attrs =
+        update_attrs
+        |> Map.put(:name, "New name")
+        |> Map.put(:description, "New description")
+
+      assert {:ok, rule} = Rules.update_rule(rule, update_attrs)
+      assert %Rule{} = rule
+      assert rule.rule_type_id == update_attrs[:rule_type_id]
+      assert rule.description == update_attrs[:description]
+    end
+
+    test "update_rule/2 with invalid data returns error changeset" do
+      rule = insert(:rule)
+      update_attrs = Map.from_struct(rule)
+
+      udpate_attrs =
+        update_attrs
+        |> Map.put(:name, nil)
+        |> Map.put(:system, nil)
+
+      assert {:error, %Ecto.Changeset{}} =
+               Rules.update_rule(rule, udpate_attrs)
+
+      assert rule == rule_preload(Rules.get_rule!(rule.id))
+    end
+
+    test "delete_rule/1 deletes the rule" do
+      rule = insert(:rule)
+      assert {:ok, %Rule{}} = Rules.delete_rule(rule)
+      assert_raise Ecto.NoResultsError, fn -> Rules.get_rule!(rule.id) end
+    end
+
+    test "change_rule/1 returns a rule changeset" do
+      rule = insert(:rule)
+      assert %Ecto.Changeset{} = Rules.change_rule(rule)
+    end
+
+    defp rule_preload(rule) do
+      rule
+      |> Repo.preload(:rule_type)
+    end
+  end
 
   describe "rule_implementations" do
     alias TdDq.Rules.RuleImplementation
@@ -73,13 +179,47 @@ defmodule TdDq.RulesTest do
         )
 
       assert {:ok, %RuleImplementation{} = rule_implementation} =
-               Rules.create_rule_implementation(creation_attrs)
+               Rules.create_rule_implementation(rule, creation_attrs)
 
       assert rule_implementation.rule_id == creation_attrs[:rule_id]
       assert rule_implementation.description == creation_attrs[:description]
       assert rule_implementation.system_params == creation_attrs[:system_params]
       assert rule_implementation.system == creation_attrs[:system]
       assert rule_implementation.tag == creation_attrs[:tag]
+    end
+
+    test "create_rule_implementation/1 with valid system fields" do
+      rule_type = Rules.get_rule_type_by_name("mandatory_field")
+      rule = insert(:rule, rule_type: rule_type, type_params: %{})
+
+      creation_attrs =
+        Map.from_struct(
+          build(
+            :rule_implementation,
+            rule_id: rule.id,
+            system_params: %{"table" => "ttt", "column" => "ccc"}
+          )
+        )
+
+      assert {:ok, %RuleImplementation{}} =
+        Rules.create_rule_implementation(rule, creation_attrs)
+    end
+
+    test "create_rule_implementation/1 with invalid system fields" do
+      rule_type = Rules.get_rule_type_by_name("mandatory_field")
+      rule = insert(:rule, rule_type: rule_type, type_params: %{})
+
+      creation_attrs =
+        Map.from_struct(
+          build(
+            :rule_implementation,
+            rule_id: rule.id,
+            system_params: %{"Table" => "ttt", "Column" => "ccc"}
+          )
+        )
+
+      assert {:error, %Changeset{}} =
+        Rules.create_rule_implementation(rule, creation_attrs)
     end
 
     test "create_rule_implementation/1 with invalid data returns error changeset" do
@@ -90,7 +230,7 @@ defmodule TdDq.RulesTest do
           build(:rule_implementation, rule_id: rule.id, name: nil, system: nil)
         )
 
-      assert {:error, %Ecto.Changeset{}} = Rules.create_rule_implementation(creation_attrs)
+      assert {:error, %Ecto.Changeset{}} = Rules.create_rule_implementation(rule, creation_attrs)
     end
 
     test "update_rule_implementation/2 with valid data updates the rule_implementation" do
@@ -247,5 +387,39 @@ defmodule TdDq.RulesTest do
       assert rule_result.result == Rules.get_last_rule_result(rule_implementation.id).result
     end
 
+  end
+
+  describe "parse params" do
+    test "parse_rule_params/2 parse integer" do
+      rule_type = Rules.get_rule_type_by_name("min_text")
+      params = %{"num_characters" => "123"}
+      new_params = Rules.parse_rule_params(params, rule_type)
+      assert new_params["num_characters"] == 123
+    end
+
+    test "parse_rule_params/2 parse list" do
+      rule_type = Rules.get_rule_type_by_name("in_list")
+      params = %{"values_list" => "uno,dos,tres"}
+      new_params = Rules.parse_rule_params(params, rule_type)
+      assert new_params["values_list"] == ["uno", "dos", "tres"]
+    end
+
+    test "parse_rule_params/2 parse date" do
+      str_mix_date = Timex.format!({2014, 12, 01}, "%Y-%m-%d", :strftime)
+      str_max_date = Timex.format!({{2014, 12, 15}, {12, 13 , 14}}, "%Y-%m-%d %H:%M:%S", :strftime)
+
+      rule_type = Rules.get_rule_type_by_name("dates_range")
+      params = %{"min_date" => str_mix_date, "max_date" => str_max_date}
+      new_params = Rules.parse_rule_params(params, rule_type)
+      assert new_params["min_date"] == ~N[2014-12-01 00:00:00]
+      assert new_params["max_date"] == ~N[2014-12-15 12:13:14]
+    end
+
+    test "parse_rule_implementation_params/2 parse string" do
+      rule_type = Rules.get_rule_type_by_name("unique_values")
+      params = %{"table" => :my_table}
+      new_params = Rules.parse_rule_implementation_params(params, rule_type)
+      assert new_params["table"] == "my_table"
+    end
   end
 end

@@ -11,6 +11,7 @@ defmodule TdDq.Factory do
       name: "Rule Name",
       population: "Rule Population",
       priority: "Rule Priority",
+      principle: %{"name" => "quality"},
       weight: 12,
       status: "defined",
       version: 1,

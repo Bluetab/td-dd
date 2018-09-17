@@ -28,7 +28,7 @@ defmodule TdQd.RuleTest do
     rule_type_id = rule_type
     |> Map.get("id")
     |> to_string
-    
+
     table =
       table ++
         [%{Field: "Type", Value: rule_type_id}] ++
@@ -63,6 +63,10 @@ defmodule TdQd.RuleTest do
          %{token: token} = _state do
     {:ok, _status_code, _resp} =
       rule_type_create(token, %{"name" => qr_name, "params" => table})
+  end
+
+  def assert_attr("principle" = attr, value, %{} = target) do
+    assert value == target[attr]["name"]
   end
 
   def assert_attr(attr, value, %{} = target) do
