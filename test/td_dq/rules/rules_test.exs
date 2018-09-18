@@ -227,7 +227,7 @@ defmodule TdDq.RulesTest do
 
       creation_attrs =
         Map.from_struct(
-          build(:rule_implementation, rule_id: rule.id, name: nil, system: nil)
+          build(:rule_implementation, rule_id: rule.id, implementation_key: nil, system: nil)
         )
 
       assert {:error, %Ecto.Changeset{}} = Rules.create_rule_implementation(rule, creation_attrs)
@@ -239,7 +239,7 @@ defmodule TdDq.RulesTest do
 
       update_attrs =
         update_attrs
-        |> Map.put(:name, "New name")
+        |> Map.put(:implementation_key, "New implementation_key")
         |> Map.put(:system, "New system")
         |> Map.put(:description, "New description")
 

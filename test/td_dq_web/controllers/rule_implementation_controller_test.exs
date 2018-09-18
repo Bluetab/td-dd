@@ -68,7 +68,7 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
 
       creation_attrs =
         Map.from_struct(
-          build(:rule_implementation, rule_id: rule.id, name: nil, system: nil)
+          build(:rule_implementation, rule_id: rule.id, implementation_key: nil, system: nil)
         )
 
       conn = post(conn, rule_implementation_path(conn, :create), rule_implementation: creation_attrs)
@@ -84,7 +84,7 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
 
       update_attrs =
         update_attrs
-        |> Map.put(:name, "New name")
+        |> Map.put(:implementation_key, "New implementation key")
         |> Map.put(:system, "New system")
         |> Map.put(:description, "New description")
 
@@ -112,7 +112,7 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
 
       update_attrs =
         update_attrs
-        |> Map.put(:name, nil)
+        |> Map.put(:implementation_key, nil)
         |> Map.put(:system, nil)
 
       conn = put(conn, rule_implementation_path(conn, :update, rule_implementation), rule_implementation: update_attrs)

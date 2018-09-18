@@ -83,6 +83,7 @@ defmodule TdDqWeb.RuleImplementationController do
     }
 
     with true <- can?(user, create(resource_type)),
+         # {:valid_implementation_key} <- check_valid_implementation_key(rule_implementation_params),
          {:ok, %RuleImplementation{} = rule_implementation} <-
            Rules.create_rule_implementation(rule, rule_implementation_params) do
       conn
@@ -113,6 +114,11 @@ defmodule TdDqWeb.RuleImplementationController do
         |> render(ErrorView, :"422.json")
     end
   end
+
+  # defp check_valid_implementation_key(%{"implementation_key" => ""}), do: {:valid_implementation_key}
+  # defp check_valid_implementation_key(%{"implementation_key" => implementation_key}) do
+  #   {:valid_implementation_key}
+  # end
 
   swagger_path :show do
     description "Show Quality Rule"

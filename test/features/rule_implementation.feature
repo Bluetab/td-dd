@@ -11,7 +11,7 @@ Feature: Rule Implementations
     And a existing Rule of type "Integer Values Range" with following data:
       | Field               | Value                                                                                  |
       | Business Concept ID | MYID_333                                                                               |
-      | Name                | Field's Rule                                                                |
+      | Name                | Field's Rule                                                                           |
       | Description         | In order to measure quality of this field we will check whether its values are correct |
       | Weight              | 50                                                                                     |
       | Priority            | Medium                                                                                 |
@@ -22,13 +22,13 @@ Feature: Rule Implementations
     When "my-user" tries to create a Rule Implementation associated to Rule "Field's Rule" with following data:
       | Field               | Value                                                                                  |
       | System              | Oracle                                                                                 |
-      | Name                | Age between 18 and 50                                                                  |
+      | implementation_key   | Age between 18 and 50                                                                  |
       | Description         | My Generic Rule Rule                                                                   |
       | System Params       | %-{ "Table": "Clients", "Field": "Age" }                                               |
     Then the system returns a result with code "Created"
     And "my-user" is able to view a Rule Implementation named "Age between 18 and 50" with following data:
       | Field               | Value                                                                                  |
       | System              | Oracle                                                                                 |
-      | Name                | Age between 18 and 50                                                                  |
+      | implementation_key   | Age between 18 and 50                                                                  |
       | Description         | My Generic Rule Rule                                                                   |
       | System Params       | %-{ "Table": "Clients", "Field": "Age" }                                               |

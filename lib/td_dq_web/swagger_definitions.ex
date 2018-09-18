@@ -33,7 +33,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
         properties do
           id :integer, "Rule Implementation unique identifier", required: true
           description :string, "Rule Implementation description"
-          name :string, "Rule Implementation name", required: true
+          implementation_key :string, "Rule Implementation implementation_key", required: true
           system :string, "Rule Implementation system", required: true
           system_params :object, "Rule Implementation parameters", required: true
           tag :object, "Rule Implementation tag"
@@ -101,7 +101,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
         properties do
           id :integer, "Rule Implementation unique identifier", required: true
           description :string, "Rule Implementation description"
-          name :string, "Rule Implementation name", required: true
+          implementation_key :string, "Rule Implementation implementation_key", required: true
           system :string, "Rule Implementation system", required: true
           system_params :object, "Rule Implementation parameters", required: true
           tag :object, "Rule Implementation tag"
@@ -111,7 +111,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
       RuleImplementationCreateProps: swagger_schema do
         properties do
           description :string, "Rule Implementation description"
-          name :string, "Rule Implementation name", required: true
+          implementation_key :string, "Rule Implementation implementation_key", required: true
           system :string, "Rule Implementation system", required: true
           system_params :object, "Rule Implementation parameters", required: true
           tag :object, "Rule Implementation tag"
@@ -126,7 +126,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
       RuleImplementationUpdateProps: swagger_schema do
         properties do
           description :string, "Rule Implementation description"
-          name :string, "Rule Implementation name", required: true
+          implementation_key :string, "Rule Implementation implementation_key", required: true
           system :string, "Rule Implementation system", required: true
           system_params :object, "Rule Implementation parameters", required: true
           tag :object, "Rule Implementation tag"

@@ -807,7 +807,7 @@
       "required": [
         "system_params",
         "system",
-        "name"
+        "implementation_key"
       ],
       "properties": {
         "tag": {
@@ -822,9 +822,9 @@
           "type": "string",
           "description": "Rule Implementation system"
         },
-        "name": {
+        "implementation_key": {
           "type": "string",
-          "description": "Rule Implementation name"
+          "description": "Rule Implementation implementation_key"
         },
         "description": {
           "type": "string",
@@ -854,7 +854,7 @@
         "rule_id",
         "system_params",
         "system",
-        "name"
+        "implementation_key"
       ],
       "properties": {
         "tag": {
@@ -873,9 +873,9 @@
           "type": "integer",
           "description": "belongs to rule"
         },
-        "name": {
+        "implementation_key": {
           "type": "string",
-          "description": "Rule Implementation name"
+          "description": "Rule Implementation implementation_key"
         },
         "description": {
           "type": "string",
@@ -898,7 +898,7 @@
         "rule_id",
         "system_params",
         "system",
-        "name",
+        "implementation_key",
         "id"
       ],
       "properties": {
@@ -918,9 +918,9 @@
           "type": "integer",
           "description": "Belongs to rule"
         },
-        "name": {
+        "implementation_key": {
           "type": "string",
-          "description": "Rule Implementation name"
+          "description": "Rule Implementation implementation_key"
         },
         "id": {
           "type": "integer",

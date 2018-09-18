@@ -7,7 +7,7 @@ defmodule TdDq.Rules.RuleImplementation do
 
   schema "rule_implementations" do
     field(:description, :string, default: nil)
-    field(:name, :string)
+    field(:implementation_key, :string)
     field(:system, :string)
     field(:system_params, :map)
     field(:tag, :map)
@@ -20,7 +20,7 @@ defmodule TdDq.Rules.RuleImplementation do
   def changeset(%RuleImplementation{} = rule_implementation, attrs) do
     rule_implementation
     |> cast(attrs, [
-      :name,
+      :implementation_key,
       :description,
       :system,
       :system_params,
@@ -28,12 +28,12 @@ defmodule TdDq.Rules.RuleImplementation do
       :rule_id
     ])
     |> validate_required([
-      :name,
+      :implementation_key,
       :system,
       :system_params,
       :rule_id
     ])
-    |> validate_length(:name, max: 255)
+    |> validate_length(:implementation_key, max: 255)
     |> validate_length(:description, max: 500)
   end
 end

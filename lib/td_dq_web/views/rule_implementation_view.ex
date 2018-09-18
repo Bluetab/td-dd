@@ -17,7 +17,7 @@ defmodule TdDqWeb.RuleImplementationView do
     %{
       id: rule_implementation.id,
       rule_id: rule_implementation.rule_id,
-      name: rule_implementation.name,
+      implementation_key: rule_implementation.implementation_key,
       description: rule_implementation.description,
       system: rule_implementation.system,
       system_params: rule_implementation.system_params,

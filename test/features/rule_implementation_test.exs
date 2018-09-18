@@ -66,9 +66,9 @@ defmodule TdQd.RuleImplementationTest do
          %{user_name: user_name, qr_name: qr_name, table: _table},
          state do
     assert user_name == state[:user_name]
-    rule_implementation_data = find_rule_implementation(state[:token], %{name: qr_name})
+    rule_implementation_data = find_rule_implementation(state[:token], %{implementation_key: qr_name})
     # TODO: check all params
-    assert rule_implementation_data && rule_implementation_data["name"] == qr_name
+    assert rule_implementation_data && rule_implementation_data["implementation_key"] == qr_name
   end
 
   defwhen ~r/^"(?<user_name>[^"]+)" tries to create a Rule Implementation associated to Rule "(?<qc_name>[^"]+)" without an existing Rule Implementation type and the following data:$/,
