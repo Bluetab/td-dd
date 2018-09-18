@@ -522,7 +522,24 @@ defmodule TdDq.Rules do
       false -> changeset
     end
   end
-  defp add_rule_type_params_validations(changeset, _, _), do: changeset
+  defp add_rule_type_params_validations(changeset, _, types) do
+    add_type_params_validations(changeset, types)
+  end
+
+  defp add_type_params_validations(changeset, [head|tail]) do
+    changeset
+    |> add_type_params_validations(head)
+    |> add_type_params_validations(tail)
+  end
+  defp add_type_params_validations(changeset, []), do: changeset
+  defp add_type_params_validations(changeset, %{"name" => name, "type" => "date"}) do
+    field = String.to_atom(name)
+    case parse_date(Changeset.get_field(changeset, field), :error) do
+      {:ok, _} -> changeset
+      _ -> Changeset.add_error(changeset, field, "cast.date")
+    end
+  end
+  defp add_type_params_validations(changeset, _), do: changeset
 
   defp parse_date(value, error_code) do
     case binary_to_date(value) do
