@@ -97,7 +97,6 @@ defmodule TdDqWeb.RuleController do
 
     creation_attrs = rule_params
     |> Map.put_new("updated_by", user.id)
-    |> Rules.parse_rule_params(rule_type)
 
     resource_type = rule_params
     |> Map.take(["business_concept_id"])
@@ -187,7 +186,6 @@ defmodule TdDqWeb.RuleController do
   def update(conn, %{"id" => id, "rule" => rule_params}) do
     user = conn.assigns[:current_resource]
     rule = Rules.get_rule!(id)
-    rule_type = Repo.preload(rule, :rule_type).rule_type
 
     resource_type = %{
       "business_concept_id" => rule.business_concept_id,
@@ -196,7 +194,6 @@ defmodule TdDqWeb.RuleController do
 
     update_attrs = rule_params
     |> Map.put_new("updated_by", user.id)
-    |> Rules.parse_rule_params(rule_type)
 
     with true <- can?(user, update(resource_type)),
             {:ok, %Rule{} = rule} <-

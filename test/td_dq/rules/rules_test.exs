@@ -386,40 +386,5 @@ defmodule TdDq.RulesTest do
 
       assert rule_result.result == Rules.get_last_rule_result(rule_implementation.id).result
     end
-
-  end
-
-  describe "parse params" do
-    test "parse_rule_params/2 parse integer" do
-      rule_type = Rules.get_rule_type_by_name("min_text")
-      params = %{"num_characters" => "123"}
-      new_params = Rules.parse_rule_params(%{"type_params" => params}, rule_type)
-      assert new_params["type_params"]["num_characters"] == 123
-    end
-
-    test "parse_rule_params/2 parse list" do
-      rule_type = Rules.get_rule_type_by_name("in_list")
-      params = %{"values_list" => "uno,dos,tres"}
-      new_params = Rules.parse_rule_params(%{"type_params" => params}, rule_type)
-      assert new_params["type_params"]["values_list"] == ["uno", "dos", "tres"]
-    end
-
-    test "parse_rule_params/2 parse date" do
-      str_mix_date = Timex.format!({2014, 12, 01}, "%Y-%m-%d", :strftime)
-      str_max_date = Timex.format!({{2014, 12, 15}, {12, 13 , 14}}, "%Y-%m-%d %H:%M:%S", :strftime)
-
-      rule_type = Rules.get_rule_type_by_name("dates_range")
-      params = %{"min_date" => str_mix_date, "max_date" => str_max_date}
-      new_params = Rules.parse_rule_params(%{"type_params" => params}, rule_type)
-      assert new_params["type_params"]["min_date"] == str_mix_date
-      assert new_params["type_params"]["max_date"] == str_max_date
-    end
-
-    test "parse_rule_implementation_params/2 parse string" do
-      rule_type = Rules.get_rule_type_by_name("unique_values")
-      params = %{"table" => :my_table}
-      new_params = Rules.parse_rule_implementation_params(%{"system_params" => params}, rule_type)
-      assert new_params["system_params"]["table"] == "my_table"
-    end
   end
 end

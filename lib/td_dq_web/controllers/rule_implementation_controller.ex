@@ -76,10 +76,6 @@ defmodule TdDqWeb.RuleImplementationController do
     user = conn.assigns[:current_resource]
     rule_id = rule_implementation_params["rule_id"]
     rule = Rules.get_rule_or_nil(rule_id)
-    rule_type = Rules.get_rule_type_or_nil(rule)
-
-    creation_attrs = rule_implementation_params
-    |> Rules.parse_rule_implementation_params(rule_type)
 
     resource_type = %{
       "business_concept_id" => rule.business_concept_id,
@@ -88,7 +84,7 @@ defmodule TdDqWeb.RuleImplementationController do
 
     with true <- can?(user, create(resource_type)),
          {:ok, %RuleImplementation{} = rule_implementation} <-
-           Rules.create_rule_implementation(rule, creation_attrs) do
+           Rules.create_rule_implementation(rule, rule_implementation_params) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", rule_implementation_path(conn, :show, rule_implementation))
@@ -164,10 +160,6 @@ defmodule TdDqWeb.RuleImplementationController do
     |> Repo.preload([:rule, rule: :rule_type])
 
     rule = rule_implementation.rule
-    rule_type = rule.rule_type
-
-    update_attrs = rule_implementation_params
-    |> Rules.parse_rule_implementation_params(rule_type)
 
     resource_type = %{
       "business_concept_id" => rule.business_concept_id,
@@ -176,7 +168,7 @@ defmodule TdDqWeb.RuleImplementationController do
 
     with true <- can?(user, update(resource_type)),
          {:ok, %RuleImplementation{} = rule_implementation} <-
-           Rules.update_rule_implementation(rule_implementation, update_attrs) do
+           Rules.update_rule_implementation(rule_implementation, rule_implementation_params) do
 
       render(conn, "show.json", rule_implementation: rule_implementation)
     else
