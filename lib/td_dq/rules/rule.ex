@@ -95,7 +95,8 @@ defmodule TdDq.Rules.Rule do
     with true <-
            Enum.all?(list_tags, fn tag ->
              is_map(tag) &&
-               Map.keys(tag)
+                tag
+               |> Map.keys()
                |> Enum.all?(fn key ->
                  Enum.member?(@tag_valid_keys, key) && is_binary(Map.fetch!(tag, key))
                end)
