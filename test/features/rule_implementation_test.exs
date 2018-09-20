@@ -53,6 +53,31 @@ defmodule TdQd.RuleImplementationTest do
     assert rule
     rule_id = rule["id"]
 
+    {:ok, status_code, resp} =
+      rule_implementation_create(token, %{
+        "rule_id" => rule_id,
+        "params" => table
+      })
+    returned_errors = List.first(Map.get(resp, "errors", []))
+    error_name =
+      case returned_errors do
+        nil ->
+          ""
+        _ ->
+          %{"name" => error_name} = returned_errors
+          error_name
+      end
+
+    {:ok, Map.merge(state, %{status_code: status_code, error_name: error_name})}
+  end
+
+  defand ~r/^a existing Rule Implementation associated to Rule "(?<rule_name>[^"]+)" with following data:$/,
+          %{rule_name: rule_name, table: table},
+          %{token: token} = state do
+    rule = find_rule(token, %{name: rule_name})
+    assert rule
+    rule_id = rule["id"]
+
     {:ok, status_code, _resp} =
       rule_implementation_create(token, %{
         "rule_id" => rule_id,
@@ -93,5 +118,10 @@ defmodule TdQd.RuleImplementationTest do
           %{status_code: status_code},
           state do
     assert status_code == to_response_code(state[:status_code])
+  end
+  defand ~r/^the system returns an error with name "(?<error_name>[^"]+)"$/,
+          %{error_name: error_name},
+          state do
+    assert error_name == state[:error_name]
   end
 end
