@@ -21,6 +21,7 @@ defmodule TdDq.Rules.Rule do
     field :updated_by, :integer
     field :principle, :map
     field :type_params, :map
+    field :tag, :map
     belongs_to(:rule_type, RuleType)
 
     timestamps()
