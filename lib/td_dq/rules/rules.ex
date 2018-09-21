@@ -225,7 +225,7 @@ defmodule TdDq.Rules do
                 fragment("(?) @> ?::jsonb", field(p, ^key_as_atom), ^json_query) and ^acc
               )
             {true, false} -> dynamic([_, p], field(p, ^key_as_atom) == ^rule_params[key] and ^acc)
-          {false, false} -> acc
+          {false, _} -> acc
         end
       end)
 
