@@ -25,17 +25,20 @@ defmodule TdDq.Rules do
 
   """
   def list_rules(params \\ %{})
+
   def list_rules(params) do
     fields = Rule.__schema__(:fields)
     dynamic = filter(params, fields)
-    query = from(
-      p in Rule,
-      where: ^dynamic
-    )
+
+    query =
+      from(
+        p in Rule,
+        where: ^dynamic
+      )
 
     query
-      |> Repo.all()
-      |> Repo.preload(:rule_type)
+    |> Repo.all()
+    |> Repo.preload(:rule_type)
   end
 
   @doc """
@@ -82,18 +85,24 @@ defmodule TdDq.Rules do
   """
   def create_rule(rule_type, attrs \\ %{}) do
     changeset = Rule.changeset(%Rule{}, attrs)
+
     case changeset.valid? do
       true ->
         input = Changeset.get_change(changeset, :type_params)
         types = get_type_params_or_nil(rule_type)
-        type_changeset = types
-        |> rule_type_changeset(input)
-        |> add_rule_type_params_validations(rule_type, types)
+
+        type_changeset =
+          types
+          |> rule_type_changeset(input)
+          |> add_rule_type_params_validations(rule_type, types)
+
         case type_changeset.valid? do
-          true ->  changeset |> Repo.insert()
+          true -> changeset |> Repo.insert()
           false -> {:error, type_changeset}
         end
-      false -> {:error, changeset}
+
+      false ->
+        {:error, changeset}
     end
   end
 
@@ -111,19 +120,25 @@ defmodule TdDq.Rules do
   """
   def update_rule(%Rule{} = rule, attrs) do
     changeset = Rule.changeset(rule, attrs)
+
     case changeset.valid? do
       true ->
-        input     = Map.get(attrs, :type_params) || Map.get(attrs, "type_params", %{})
+        input = Map.get(attrs, :type_params) || Map.get(attrs, "type_params", %{})
         rule_type = Repo.preload(rule, :rule_type).rule_type
-        types     = get_type_params_or_nil(rule_type)
-        type_changeset = types
-        |> rule_type_changeset(input)
-        |> add_rule_type_params_validations(rule_type, types)
+        types = get_type_params_or_nil(rule_type)
+
+        type_changeset =
+          types
+          |> rule_type_changeset(input)
+          |> add_rule_type_params_validations(rule_type, types)
+
         case type_changeset.valid? do
-          true ->  changeset |> Repo.update()
+          true -> changeset |> Repo.update()
           false -> {:error, type_changeset}
         end
-      false -> {:error, changeset}
+
+      false ->
+        {:error, changeset}
     end
   end
 
@@ -164,11 +179,12 @@ defmodule TdDq.Rules do
     fields = Rule.__schema__(:fields)
     dynamic = filter(params, fields)
 
-    query = from(
-      p in Rule,
-      where: ^dynamic,
-      order_by: [desc: :business_concept_id]
-    )
+    query =
+      from(
+        p in Rule,
+        where: ^dynamic,
+        order_by: [desc: :business_concept_id]
+      )
 
     query |> Repo.all()
   end
@@ -191,25 +207,35 @@ defmodule TdDq.Rules do
 
   """
   def list_rule_implementations(params \\ %{})
+
   def list_rule_implementations(params) do
     dynamic = filter(params, RuleImplementation.__schema__(:fields))
-
     rule_params = Map.get(params, :rule) || Map.get(params, "rule", %{})
     rule_fields = Rule.__schema__(:fields)
-    dynamic = Enum.reduce(Map.keys(rule_params), dynamic, fn key, acc ->
-      key_as_atom = if is_binary(key), do: String.to_atom(key), else: key
-      case Enum.member?(rule_fields, key_as_atom) do
-        true -> dynamic([_, p], field(p, ^key_as_atom) == ^rule_params[key] and ^acc)
-        false -> acc
-      end
-    end)
 
-    query = from(
-      ri in RuleImplementation,
-      inner_join: r in Rule,
-      on: ri.rule_id == r.id,
-      where: ^dynamic
-    )
+    dynamic =
+      Enum.reduce(Map.keys(rule_params), dynamic, fn key, acc ->
+        key_as_atom = if is_binary(key), do: String.to_atom(key), else: key
+
+        case {Enum.member?(rule_fields, key_as_atom), is_map(Map.get(rule_params, key))} do
+          {true, true} ->
+              json_query = Map.get(rule_params, key)
+              dynamic(
+                [_, p],
+                fragment("(?) @> ?::jsonb", field(p, ^key_as_atom), ^json_query) and ^acc
+              )
+            {true, false} -> dynamic([_, p], field(p, ^key_as_atom) == ^rule_params[key] and ^acc)
+          {false, false} -> acc
+        end
+      end)
+
+    query =
+      from(
+        ri in RuleImplementation,
+        inner_join: r in Rule,
+        on: ri.rule_id == r.id,
+        where: ^dynamic
+      )
 
     query |> Repo.all()
   end
@@ -260,17 +286,21 @@ defmodule TdDq.Rules do
   """
   def create_rule_implementation(rule, attrs \\ %{}) do
     changeset = RuleImplementation.changeset(%RuleImplementation{}, attrs)
+
     case changeset.valid? do
       true ->
         input = Changeset.get_change(changeset, :system_params)
         rule_type = get_rule_type_or_nil(rule)
         types = get_system_params_or_nil(rule_type)
         types_changeset = rule_type_changeset(types, input)
+
         case types_changeset.valid? do
-          true ->  changeset |> Repo.insert()
+          true -> changeset |> Repo.insert()
           false -> {:error, types_changeset}
         end
-      false -> {:error, changeset}
+
+      false ->
+        {:error, changeset}
     end
   end
 
@@ -288,18 +318,21 @@ defmodule TdDq.Rules do
   """
   def update_rule_implementation(%RuleImplementation{} = rule_implementation, attrs) do
     changeset = RuleImplementation.changeset(rule_implementation, attrs)
+
     case changeset.valid? do
       true ->
         input = Map.get(attrs, :system_params) || Map.get(attrs, "system_params", %{})
-        rule_type =
-          Repo.preload(rule_implementation, [:rule, rule: :rule_type]).rule.rule_type
+        rule_type = Repo.preload(rule_implementation, [:rule, rule: :rule_type]).rule.rule_type
         types = get_system_params_or_nil(rule_type)
         type_changeset = rule_type_changeset(types, input)
+
         case type_changeset.valid? do
-          true ->  changeset |> Repo.update()
+          true -> changeset |> Repo.update()
           false -> {:error, type_changeset}
         end
-      false -> {:error, changeset}
+
+      false ->
+        {:error, changeset}
     end
   end
 
@@ -450,24 +483,28 @@ defmodule TdDq.Rules do
   def get_rule_or_nil(id), do: get_rule(id)
 
   def get_rule_type_or_nil(id) when is_nil(id) or is_binary(id), do: nil
-  def get_rule_type_or_nil(id) when is_integer(id) , do: get_rule_type(id)
+  def get_rule_type_or_nil(id) when is_integer(id), do: get_rule_type(id)
   def get_rule_type_or_nil(%Rule{} = rule), do: Repo.preload(rule, :rule_type).rule_type
 
   defp get_system_params_or_nil(nil), do: nil
+
   defp get_system_params_or_nil(%RuleType{} = rule_type) do
     rule_type.params["system_params"]
   end
 
   defp get_type_params_or_nil(nil), do: nil
+
   defp get_type_params_or_nil(%RuleType{} = rule_type) do
     rule_type.params["type_params"]
   end
 
   defp filter(params, fields) do
     dynamic = true
+
     Enum.reduce(Map.keys(params), dynamic, fn key, acc ->
       key_as_atom = if is_binary(key), do: String.to_atom(key), else: key
-      case Enum.member?(fields, key_as_atom) do
+
+      case Enum.member?(fields, key_as_atom) and !is_map(Map.get(params, key)) do
         true -> dynamic([p], field(p, ^key_as_atom) == ^params[key] and ^acc)
         false -> acc
       end
@@ -475,10 +512,12 @@ defmodule TdDq.Rules do
   end
 
   defp rule_type_changeset(nil, _input), do: Changeset.cast({%{}, %{}}, %{}, [])
+
   defp rule_type_changeset(types, input) do
-    fields = types
-    |> Enum.map(&({String.to_atom(&1["name"]), to_schema_type(&1["type"])}))
-    |> Map.new
+    fields =
+      types
+      |> Enum.map(&{String.to_atom(&1["name"]), to_schema_type(&1["type"])})
+      |> Map.new()
 
     {input, fields}
     |> Changeset.cast(input, Map.keys(fields))
@@ -486,64 +525,79 @@ defmodule TdDq.Rules do
   end
 
   defp add_rule_type_params_validations(changeset, _, nil), do: changeset
+
   defp add_rule_type_params_validations(changeset, %{name: "integer_values_range"}, _) do
     case changeset.valid? do
       true ->
         min_value = Changeset.get_field(changeset, :min_value)
         max_value = Changeset.get_field(changeset, :max_value)
+
         case min_value <= max_value do
-          true -> changeset
-          false -> Changeset.add_error(changeset, :max_value, "must.be.greater.than.or.equal.to.minimum")
+          true ->
+            changeset
+
+          false ->
+            Changeset.add_error(changeset, :max_value, "must.be.greater.than.or.equal.to.minimum")
         end
-      false -> changeset
+
+      false ->
+        changeset
     end
   end
+
   defp add_rule_type_params_validations(changeset, %{name: "dates_range"}, _) do
     case changeset.valid? do
       true ->
         with {:ok, min_date} <-
-                parse_date(Changeset.get_field(changeset, :min_date), :error_min_date),
+               parse_date(Changeset.get_field(changeset, :min_date), :error_min_date),
              {:ok, max_date} <-
-                parse_date(Changeset.get_field(changeset, :max_date), :error_max_date),
-             {:ok} <-
-                validate_date_range(min_date, max_date)
-         do
+               parse_date(Changeset.get_field(changeset, :max_date), :error_max_date),
+             {:ok} <- validate_date_range(min_date, max_date) do
           changeset
-
         else
           {:error, :error_min_date} ->
             Changeset.add_error(changeset, :min_date, "cast.date")
+
           {:error, :error_max_date} ->
             Changeset.add_error(changeset, :max_date, "cast.date")
+
           {:error, :invalid_range} ->
             Changeset.add_error(changeset, :max_date, "must.be.greater.than.or.equal.to.min_date")
         end
 
-      false -> changeset
+      false ->
+        changeset
     end
   end
+
   defp add_rule_type_params_validations(changeset, _, types) do
     add_type_params_validations(changeset, types)
   end
 
-  defp add_type_params_validations(changeset, [head|tail]) do
+  defp add_type_params_validations(changeset, [head | tail]) do
     changeset
     |> add_type_params_validations(head)
     |> add_type_params_validations(tail)
   end
+
   defp add_type_params_validations(changeset, []), do: changeset
+
   defp add_type_params_validations(changeset, %{"name" => name, "type" => "date"}) do
     field = String.to_atom(name)
+
     case parse_date(Changeset.get_field(changeset, field), :error) do
       {:ok, _} -> changeset
       _ -> Changeset.add_error(changeset, field, "cast.date")
     end
   end
+
   defp add_type_params_validations(changeset, _), do: changeset
 
   defp parse_date(value, error_code) do
     case binary_to_date(value) do
-      {:ok, date} -> {:ok, date}
+      {:ok, date} ->
+        {:ok, date}
+
       _ ->
         case binary_to_datetime(value) do
           {:ok, datetime} -> {:ok, datetime}
@@ -553,11 +607,11 @@ defmodule TdDq.Rules do
   end
 
   defp validate_date_range(from, to) do
-      case DateTime.compare(from, to) do
-        :lt -> {:ok}
-        :eq -> {:ok}
-        :gt -> {:error, :invalid_range}
-      end
+    case DateTime.compare(from, to) do
+      :lt -> {:ok}
+      :eq -> {:ok}
+      :gt -> {:error, :invalid_range}
+    end
   end
 
   defp binary_to_date(value) do
@@ -575,8 +629,7 @@ defmodule TdDq.Rules do
   end
 
   defp to_schema_type("integer"), do: :integer
-  defp to_schema_type("string"),  do: :string
-  defp to_schema_type("list"),    do: {:array, :string}
-  defp to_schema_type("date"),    do: :string
-
+  defp to_schema_type("string"), do: :string
+  defp to_schema_type("list"), do: {:array, :string}
+  defp to_schema_type("date"), do: :string
 end
