@@ -17,7 +17,8 @@ defmodule TdDq.Factory do
       version: 1,
       updated_by: 1,
       rule_type: build(:rule_type),
-      type_params: %{}
+      type_params: %{},
+      tag: %{"tags" => [%{"name" => "Daily"}, %{"name" => "Monthly"}]}
     }
   end
 

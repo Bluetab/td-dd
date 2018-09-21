@@ -157,6 +157,19 @@ defmodule TdDq.RulesTest do
       assert length(Rules.list_rule_implementations(%{rule: %{status: "selectedToExecute"}})) == 3
     end
 
+    test "list_rule_implementations/1 returns all rule_implementations by its tags" do
+      tag_filter = %{rule: %{tag: %{"tags" => [%{"name" => "Tag Name"}, %{"name" => "New Tag Name"}]}}}
+      rule_type = insert(:rule_type)
+      rule1 = insert(:rule, rule_type: rule_type, tag: %{"tags" => [%{"name" => "Tag Name"}, %{"name" => "New Tag Name"}]})
+      rule2 = insert(:rule, rule_type: rule_type, tag: %{"tags" => [%{"name" => "Tag Name"}]})
+      insert(:rule_implementation, rule: rule1)
+      insert(:rule_implementation, rule: rule1)
+      insert(:rule_implementation, rule: rule1)
+      insert(:rule_implementation, rule: rule2)
+
+      assert length(Rules.list_rule_implementations(tag_filter)) == 3
+    end
+
     test "get_rule_implementation!/1 returns the rule_implementation with given id" do
       rule_implementation = insert(:rule_implementation)
       assert rule_implementation_preload(Rules.get_rule_implementation!(rule_implementation.id)) == rule_implementation
