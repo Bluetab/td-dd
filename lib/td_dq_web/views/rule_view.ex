@@ -38,6 +38,7 @@ defmodule TdDqWeb.RuleView do
       principle: rule.principle,
       rule_type_id: rule.rule_type_id,
       type_params: rule.type_params,
+      tag: Map.get(rule, :tag),
       current_business_concept_version: %{
         name: BusinessConceptCache.get_name(rule.business_concept_id),
         id: BusinessConceptCache.get_business_concept_version_id(rule.business_concept_id)

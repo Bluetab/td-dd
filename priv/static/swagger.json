@@ -960,6 +960,10 @@
           "type": "string",
           "description": "weight"
         },
+        "tag": {
+          "type": "object",
+          "description": "weight"
+        },
         "status": {
           "type": "string",
           "description": "weight"
@@ -1031,6 +1035,9 @@
         "type_params": {
           "type": "object",
           "description": "rule type_params"
+        },
+        "tag": {
+          "type": "object"
         },
         "status": {
           "type": "string",

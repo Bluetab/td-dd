@@ -25,6 +25,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
           principle :object, "rule principle"
           type_params :object, "rule type_params"
           rule_type_id :integer, "Belongs to rule type", required: true
+          tag :object
         end
       end,
       RuleImplementation: swagger_schema do
@@ -62,6 +63,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
           principle :object, "rule principle"
           type :string, "weight"
           type_params :object, "weight"
+          tag :object, "weight"
         end
       end,
       RuleCreate: swagger_schema do
