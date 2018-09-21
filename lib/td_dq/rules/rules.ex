@@ -629,7 +629,16 @@ defmodule TdDq.Rules do
   end
 
   defp to_schema_type("integer"), do: :integer
-  defp to_schema_type("string"), do: :string
-  defp to_schema_type("list"), do: {:array, :string}
-  defp to_schema_type("date"), do: :string
+  defp to_schema_type("string"),  do: :string
+  defp to_schema_type("list"),    do: {:array, :string}
+  defp to_schema_type("date"),    do: :string
+
+  def check_available_implementation_key(%{"implementation_key" => ""}), do: {:implementation_key_available}
+  def check_available_implementation_key(%{"implementation_key" => implementation_key}) do
+      count =
+        RuleImplementation
+        |> where([r], r.implementation_key == ^implementation_key)
+        |> Repo.all()
+    if Enum.empty?(count), do: {:implementation_key_available}, else: {:implementation_key_not_available}
+  end
 end

@@ -8,7 +8,6 @@ defmodule TdDqWeb.RuleImplementationController do
   alias Ecto.Changeset
   alias TdDq.Repo
   alias TdDq.Rules
-  alias TdDq.Rules
   alias TdDq.Rules.RuleImplementation
   alias TdDqWeb.ChangesetView
   alias TdDqWeb.ErrorView
@@ -95,9 +94,12 @@ defmodule TdDqWeb.RuleImplementationController do
     }
 
     with true <- can?(user, create(resource_type)),
-         # {:valid_implementation_key} <- check_valid_implementation_key(rule_implementation_params),
+         {:valid_implementation_key} <- check_valid_implementation_key(rule_implementation_params),
+         {:implementation_key_available} <- Rules.check_available_implementation_key(rule_implementation_params),
          {:ok, %RuleImplementation{} = rule_implementation} <-
-           Rules.create_rule_implementation(rule, rule_implementation_params) do
+           Rules.create_rule_implementation(rule, rule_implementation_params),
+         {:ok, %RuleImplementation{} = rule_implementation} <-
+           generate_implementation_key(rule_implementation) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", rule_implementation_path(conn, :show, rule_implementation))
@@ -107,6 +109,14 @@ defmodule TdDqWeb.RuleImplementationController do
         conn
         |> put_status(:forbidden)
         |> render(ErrorView, :"403.json")
+      {:invalid_implementation_key} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{"errors": [%{code: "EDQ001", name: "rule.implementation.error.implementation_key.invalid"}]})
+      {:implementation_key_not_available} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{"errors": [%{code: "EDQ002", name: "rule.implementation.error.implementation_key.not_available"}]})
       {:error, %Changeset{data: %{__struct__: _}} = changeset} ->
         conn
         |> put_status(:unprocessable_entity)
@@ -127,10 +137,27 @@ defmodule TdDqWeb.RuleImplementationController do
     end
   end
 
-  # defp check_valid_implementation_key(%{"implementation_key" => ""}), do: {:valid_implementation_key}
-  # defp check_valid_implementation_key(%{"implementation_key" => implementation_key}) do
-  #   {:valid_implementation_key}
-  # end
+  defp check_valid_implementation_key(%{"implementation_key" => ""}), do: {:valid_implementation_key}
+  defp check_valid_implementation_key(%{"implementation_key" => nil}), do: {:invalid_implementation_key}
+  defp check_valid_implementation_key(%{"implementation_key" => implementation_key}) do
+    case valid_format?(implementation_key) do
+      true -> {:valid_implementation_key}
+      false -> {:invalid_implementation_key}
+    end
+  end
+  defp valid_format?(implementation_key), do: Regex.match?(~r/^[A-z0-9]*$/, implementation_key)
+
+  defp generate_implementation_key(%RuleImplementation{implementation_key: implementation_key, id: id} = rule_implementation) do
+    case implementation_key do
+      nil ->
+        new_rule_implementation = rule_implementation
+          |> Map.put(:implementation_key, "ri" <> Integer.to_string(id))
+        rule_implementation
+          |> Rules.update_rule_implementation(Map.from_struct(new_rule_implementation))
+      _ ->
+        {:ok, rule_implementation}
+    end
+  end
 
   swagger_path :show do
     description "Show Quality Rule"

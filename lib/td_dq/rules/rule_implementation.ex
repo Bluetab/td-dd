@@ -28,7 +28,6 @@ defmodule TdDq.Rules.RuleImplementation do
       :rule_id
     ])
     |> validate_required([
-      :implementation_key,
       :system,
       :system_params,
       :rule_id
