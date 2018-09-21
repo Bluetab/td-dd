@@ -46,7 +46,8 @@ defmodule TdDqWeb.RuleControllerTest do
                       "updated_by",
                       "principle",
                       "rule_type_id",
-                      "type_params"]
+                      "type_params",
+                      "tag"]
 
   @admin_user_name "app-admin"
 
@@ -105,11 +106,9 @@ defmodule TdDqWeb.RuleControllerTest do
       rule_type = insert(:rule_type)
       creation_attrs = @create_fixture_attrs
       |> Map.put("rule_type_id", rule_type.id)
-
       conn = post conn, rule_path(conn, :create), rule: creation_attrs
       validate_resp_schema(conn, schema, "RuleResponse")
       assert %{"id" => id} = json_response(conn, 201)["data"]
-
       conn = recycle_and_put_headers(conn)
       conn = get conn, rule_path(conn, :show, id)
       validate_resp_schema(conn, schema, "RuleResponse")
@@ -129,7 +128,8 @@ defmodule TdDqWeb.RuleControllerTest do
         "updated_by" => @create_fixture_attrs.updated_by,
         "principle" => %{},
         "rule_type_id" => rule_type.id,
-        "type_params" => %{}
+        "type_params" => %{},
+        "tag" => %{}
       }
     end
 
@@ -154,6 +154,7 @@ defmodule TdDqWeb.RuleControllerTest do
       conn = get conn, rule_path(conn, :show, id)
       validate_resp_schema(conn, schema, "RuleResponse")
       comparable_fields = Map.take(json_response(conn, 200)["data"], @comparable_fields)
+
       assert comparable_fields == %{
         "id" => id,
         "business_concept_id" => "some updated business_concept_id",
@@ -169,7 +170,8 @@ defmodule TdDqWeb.RuleControllerTest do
         "updated_by" => @create_fixture_attrs.updated_by,
         "principle" => %{},
         "rule_type_id" => rule.rule_type_id,
-        "type_params" => %{}
+        "type_params" => %{},
+        "tag" => %{}
       }
     end
 
