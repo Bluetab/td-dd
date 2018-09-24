@@ -1,4 +1,4 @@
-# Truedat Business Glossary
+# Truedat Data Quality
 
 TdDQ is a back-end service developed as part of True Dat project that supports the genearation of Data Quality rules linked to Business Glossary Terms
 
