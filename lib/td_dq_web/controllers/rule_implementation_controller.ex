@@ -308,6 +308,6 @@ defmodule TdDqWeb.RuleImplementationController do
 
   defp add_last_rule_result(rule_implementation) do
     rule_implementation
-    |> Map.put(:_last_rule_result_, Rules.get_last_rule_result(rule_implementation.id))
+    |> Map.put(:_last_rule_result_, Rules.get_last_rule_result(rule_implementation.implementation_key))
   end
 end

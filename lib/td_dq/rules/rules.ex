@@ -189,9 +189,9 @@ defmodule TdDq.Rules do
     query |> Repo.all()
   end
 
-  def get_last_rule_result(rule_implementation_id) do
+  def get_last_rule_result(implementation_key) do
     RuleResult
-    |> where([r], r.rule_implementation_id == ^rule_implementation_id)
+    |> where([r], r.implementation_key == ^implementation_key)
     |> order_by(desc: :date)
     |> limit(1)
     |> Repo.one()
@@ -256,6 +256,8 @@ defmodule TdDq.Rules do
   """
   def get_rule_implementation!(id), do: Repo.get!(RuleImplementation, id)
 
+  def get_rule_implementation_by_key!(implementation_key), do: Repo.get_by!(RuleImplementation, implementation_key: implementation_key)
+
   @doc """
   Gets a single rule_implementation.
 
@@ -271,6 +273,8 @@ defmodule TdDq.Rules do
 
   """
   def get_rule_implementation(id), do: Repo.get(RuleImplementation, id)
+
+  def get_rule_implementation_by_key(implementation_key), do: Repo.get_by(RuleImplementation, implementation_key: implementation_key)
 
   @doc """
   Creates a rule_implementation.

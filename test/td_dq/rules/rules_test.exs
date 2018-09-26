@@ -125,10 +125,10 @@ defmodule TdDq.RulesTest do
       rule_type = insert(:rule_type)
       rule1 = insert(:rule, rule_type: rule_type)
       rule2 = insert(:rule, rule_type: rule_type)
-      insert(:rule_implementation, rule: rule1)
-      insert(:rule_implementation, rule: rule1)
-      insert(:rule_implementation, rule: rule1)
-      insert(:rule_implementation, rule: rule2)
+      insert(:rule_implementation, implementation_key: "ri1", rule: rule1)
+      insert(:rule_implementation, implementation_key: "ri2", rule: rule1)
+      insert(:rule_implementation, implementation_key: "ri3", rule: rule1)
+      insert(:rule_implementation, implementation_key: "ri4", rule: rule2)
 
       assert length(Rules.list_rule_implementations(%{rule_id: rule1.id})) == 3
     end
@@ -137,10 +137,10 @@ defmodule TdDq.RulesTest do
       rule_type = insert(:rule_type)
       rule1 = insert(:rule, rule_type: rule_type, business_concept_id: "xyz")
       rule2 = insert(:rule, rule_type: rule_type)
-      insert(:rule_implementation, rule: rule1)
-      insert(:rule_implementation, rule: rule1)
-      insert(:rule_implementation, rule: rule1)
-      insert(:rule_implementation, rule: rule2)
+      insert(:rule_implementation, implementation_key: "ri1", rule: rule1)
+      insert(:rule_implementation, implementation_key: "ri2", rule: rule1)
+      insert(:rule_implementation, implementation_key: "ri3", rule: rule1)
+      insert(:rule_implementation, implementation_key: "ri4", rule: rule2)
 
       assert length(Rules.list_rule_implementations(%{rule: %{business_concept_id: "xyz"}})) == 3
     end
@@ -149,10 +149,10 @@ defmodule TdDq.RulesTest do
       rule_type = insert(:rule_type)
       rule1 = insert(:rule, rule_type: rule_type, status: "selectedToExecute")
       rule2 = insert(:rule, rule_type: rule_type)
-      insert(:rule_implementation, rule: rule1)
-      insert(:rule_implementation, rule: rule1)
-      insert(:rule_implementation, rule: rule1)
-      insert(:rule_implementation, rule: rule2)
+      insert(:rule_implementation, implementation_key: "ri1", rule: rule1)
+      insert(:rule_implementation, implementation_key: "ri2", rule: rule1)
+      insert(:rule_implementation, implementation_key: "ri3", rule: rule1)
+      insert(:rule_implementation, implementation_key: "ri4", rule: rule2)
 
       assert length(Rules.list_rule_implementations(%{rule: %{status: "selectedToExecute"}})) == 3
     end
@@ -162,10 +162,10 @@ defmodule TdDq.RulesTest do
       rule_type = insert(:rule_type)
       rule1 = insert(:rule, rule_type: rule_type, tag: %{"tags" => [%{"name" => "Tag Name"}, %{"name" => "New Tag Name"}]})
       rule2 = insert(:rule, rule_type: rule_type, tag: %{"tags" => [%{"name" => "Tag Name"}]})
-      insert(:rule_implementation, rule: rule1)
-      insert(:rule_implementation, rule: rule1)
-      insert(:rule_implementation, rule: rule1)
-      insert(:rule_implementation, rule: rule2)
+      insert(:rule_implementation, implementation_key: "ri1", rule: rule1)
+      insert(:rule_implementation, implementation_key: "ri2", rule: rule1)
+      insert(:rule_implementation, implementation_key: "ri3", rule: rule1)
+      insert(:rule_implementation, implementation_key: "ri4", rule: rule2)
 
       assert length(Rules.list_rule_implementations(tag_filter)) == 3
     end
@@ -393,11 +393,11 @@ defmodule TdDq.RulesTest do
     test "get_last_rule_result/1 returns last rule_implementation rule result" do
       rule_implementation = insert(:rule_implementation)
       now = DateTime.utc_now()
-      insert(:rule_result, rule_implementation: rule_implementation, result: 10, date: add_to_date_time(now, -1000))
-      rule_result = insert(:rule_result, rule_implementation: rule_implementation, result: 60, date: now)
-      insert(:rule_result, rule_implementation: rule_implementation, result: 80, date: add_to_date_time(now, -2000))
+      insert(:rule_result, implementation_key: rule_implementation.implementation_key, result: 10, date: add_to_date_time(now, -1000))
+      rule_result = insert(:rule_result, implementation_key: rule_implementation.implementation_key, result: 60, date: now)
+      insert(:rule_result, implementation_key: rule_implementation.implementation_key, result: 80, date: add_to_date_time(now, -2000))
 
-      assert rule_result.result == Rules.get_last_rule_result(rule_implementation.id).result
+      assert rule_result.result == Rules.get_last_rule_result(rule_implementation.implementation_key).result
     end
   end
 end

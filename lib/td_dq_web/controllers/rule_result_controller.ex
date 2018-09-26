@@ -9,7 +9,7 @@ defmodule TdDqWeb.RuleResultController do
   alias TdPerms.TaxonomyCache
 
   @rules_results_query  ~S"""
-    INSERT INTO rule_results ("rule_implementation_id", "date", "result", parent_domains, inserted_at, updated_at)
+    INSERT INTO rule_results ("implementation_key", "date", "result", parent_domains, inserted_at, updated_at)
     VALUES ($1, $2, $3, $4, $5, $5)
   """
   @rule_results_param "rule_results"
@@ -48,7 +48,6 @@ defmodule TdDqWeb.RuleResultController do
     |> Stream.drop(1)
     |> CSV.decode!(separator: ?;)
     |> Enum.each(fn(data) ->
-      data = List.update_at(data, 0, fn(x) -> String.to_integer(x) end)
       data = List.update_at(data, 1, fn(x) -> Timex.to_datetime(Timex.parse!(x, "{YYYY}-{0M}-{D}-{h24}-{m}-{s}")) end)
       data = List.update_at(data, 2, fn(x) -> String.to_integer(x) end)
       data = data ++ [get_parent_domains(data), DateTime.utc_now]
@@ -60,7 +59,7 @@ defmodule TdDqWeb.RuleResultController do
   defp get_parent_domains(data) do
     data
     |> Enum.at(0)
-    |> Rules.get_rule_implementation
+    |> Rules.get_rule_implementation_by_key
     |> case do
       nil -> ""
       rule_implementation ->
