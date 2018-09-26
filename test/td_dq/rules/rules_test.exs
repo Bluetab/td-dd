@@ -393,9 +393,12 @@ defmodule TdDq.RulesTest do
     test "get_last_rule_result/1 returns last rule_implementation rule result" do
       rule_implementation = insert(:rule_implementation)
       now = DateTime.utc_now()
-      insert(:rule_result, implementation_key: rule_implementation.implementation_key, result: 10, date: add_to_date_time(now, -1000))
-      rule_result = insert(:rule_result, implementation_key: rule_implementation.implementation_key, result: 60, date: now)
-      insert(:rule_result, implementation_key: rule_implementation.implementation_key, result: 80, date: add_to_date_time(now, -2000))
+      insert(:rule_result, implementation_key: rule_implementation.implementation_key,
+        result: 10, date: add_to_date_time(now, -1000))
+      rule_result = insert(:rule_result, implementation_key: rule_implementation.implementation_key,
+        result: 60, date: now)
+      insert(:rule_result, implementation_key: rule_implementation.implementation_key,
+        result: 80, date: add_to_date_time(now, -2000))
 
       assert rule_result.result == Rules.get_last_rule_result(rule_implementation.implementation_key).result
     end
