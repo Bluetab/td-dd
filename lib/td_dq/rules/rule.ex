@@ -5,7 +5,6 @@ defmodule TdDq.Rules.Rule do
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleType
 
-  @statuses ["defined"]
   @tag_valid_keys ["name"]
 
   schema "rules" do
@@ -17,7 +16,7 @@ defmodule TdDq.Rules.Rule do
     field(:population, :string)
     field(:priority, :string)
     field(:weight, :integer)
-    field(:status, :string, default: "defined")
+    field(:status, :boolean, default: false)
     field(:version, :integer, default: 1)
     field(:updated_by, :integer)
     field(:principle, :map)
@@ -111,11 +110,4 @@ defmodule TdDq.Rules.Rule do
     changeset |> add_error(:tag, "invalid.not.list.tag.format")
   end
 
-  def get_statuses do
-    @statuses
-  end
-
-  def defined_status do
-    "defined"
-  end
 end

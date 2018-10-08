@@ -57,7 +57,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
           population :string, "population target description"
           priority :string, "Priority (Medium,...)"
           weight :integer, "weight"
-          status :string, "weight"
+          status :boolean, "Active/Inactive"
           version :integer, "weight"
           updated_by :integer, "weight"
           principle :object, "rule principle"
