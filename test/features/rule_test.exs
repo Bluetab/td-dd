@@ -1,4 +1,5 @@
 defmodule TdQd.RuleTest do
+  @moduledoc false
   use Cabbage.Feature, async: false, file: "rule.feature"
   use TdDqWeb.ConnCase
   import TdDqWeb.Authentication, only: :functions
@@ -67,6 +68,10 @@ defmodule TdQd.RuleTest do
 
   def assert_attr("principle" = attr, value, %{} = target) do
     assert value == target[attr]["name"]
+  end
+
+  def assert_attr("active" = attr, value, %{} = target) do
+    assert active_to_boolean(value) == target[attr]
   end
 
   def assert_attr(attr, value, %{} = target) do

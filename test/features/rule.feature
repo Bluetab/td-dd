@@ -3,9 +3,8 @@ Feature: Rules
   for the Business Concept in order to have it linked. This Business Concept ID could be from true-dat
   Business Glossary service or a third-party Business Glossary
   A Rule has a workflow with following status depending on the executed action:
-    | initial status   | action            | new status       |
-    |                  | create            | defined          |
-    | defined          | immplement        | implemented      |
+    | initial status     | action              | new status       |
+    | innactive          | activate            | active           |
 
   Scenario Outline: Create new Rule, validate types
     Given user "my-user" logged in the application
@@ -24,12 +23,12 @@ Feature: Rules
     And "my-user" is able to view rule named "Field's Rule" with with following data:
       | Field               | Value                                                                                     |
       | Business Concept ID | MYID_333                                                                                  |
-      | Name                | Field's Rule                                                                   |
+      | Name                | Field's Rule                                                                              |
       | Description         | In order to measure quality of this field we will check whether its values are correct    |
-      | Status              | defined                                                                                   |
+      | Active              | false                                                                                     |
       | Weight              | 50                                                                                        |
       | Priority            | Medium                                                                                    |
-      | Principle           | Medium                                                                                 |
+      | Principle           | Medium                                                                                    |
       | Population          | All clients who are older than 18                                                         |
       | Goal                | 98                                                                                        |
       | Minimum             | 80                                                                                        |

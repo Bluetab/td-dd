@@ -21,14 +21,14 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
     @tag :admin_authenticated
     test "lists all rule_implementations filtered by rule business_concept_id and state", %{conn: conn, swagger_schema: schema} do
       rule_type = insert(:rule_type)
-      rule1 = insert(:rule, rule_type: rule_type, business_concept_id: "xyz", status: "selectedToExecute")
+      rule1 = insert(:rule, rule_type: rule_type, business_concept_id: "xyz", active: true)
       rule2 = insert(:rule, rule_type: rule_type)
       insert(:rule_implementation, implementation_key: "ri1", rule: rule1)
       insert(:rule_implementation, implementation_key: "ri2", rule: rule1)
       insert(:rule_implementation, implementation_key: "ri3", rule: rule1)
       insert(:rule_implementation, implementation_key: "ri4", rule: rule2)
 
-      conn = get(conn, rule_implementation_path(conn, :index), %{"rule_status": "selectedToExecute", "rule_business_concept_id": "xyz"})
+      conn = get(conn, rule_implementation_path(conn, :index), %{"is_rule_active": true, "rule_business_concept_id": "xyz"})
       validate_resp_schema(conn, schema, "RuleImplementationsResponse")
       assert length(json_response(conn, 200)["data"]) == 3
     end

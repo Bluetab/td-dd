@@ -46,7 +46,7 @@ defmodule TdDq.RulesTest do
       assert rule.population == creation_attrs[:population]
       assert rule.priority == creation_attrs[:priority]
       assert rule.weight == creation_attrs[:weight]
-      assert rule.status == creation_attrs[:status]
+      assert rule.active == creation_attrs[:active]
       assert rule.version == creation_attrs[:version]
       assert rule.updated_by == creation_attrs[:updated_by]
       assert rule.type_params == creation_attrs[:type_params]
@@ -147,14 +147,14 @@ defmodule TdDq.RulesTest do
 
     test "list_rule_implementations/1 returns all rule_implementations by status" do
       rule_type = insert(:rule_type)
-      rule1 = insert(:rule, rule_type: rule_type, status: "selectedToExecute")
+      rule1 = insert(:rule, rule_type: rule_type, active: true)
       rule2 = insert(:rule, rule_type: rule_type)
       insert(:rule_implementation, implementation_key: "ri1", rule: rule1)
       insert(:rule_implementation, implementation_key: "ri2", rule: rule1)
       insert(:rule_implementation, implementation_key: "ri3", rule: rule1)
       insert(:rule_implementation, implementation_key: "ri4", rule: rule2)
 
-      assert length(Rules.list_rule_implementations(%{rule: %{status: "selectedToExecute"}})) == 3
+      assert length(Rules.list_rule_implementations(%{rule: %{active: true}})) == 3
     end
 
     test "list_rule_implementations/1 returns all rule_implementations by its tags" do

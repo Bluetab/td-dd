@@ -13,7 +13,7 @@ defmodule TdDq.Factory do
       priority: "Rule Priority",
       principle: %{"name" => "quality"},
       weight: 12,
-      status: "defined",
+      active: false,
       version: 1,
       updated_by: 1,
       rule_type: build(:rule_type),

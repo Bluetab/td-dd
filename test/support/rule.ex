@@ -21,7 +21,7 @@ defmodule TdDqWeb.Rule do
                               "Type" => "rule_type_id",
                               "Type Params" => "type_params"}
 
-  @test_to_api_get_alias %{"Status" => "status",
+  @test_to_api_get_alias %{"Active" => "active",
                            "Last User" => "updated_by",
                            "Version" => "version",
                            "Last Modification" => "inserted_at"}
@@ -30,6 +30,10 @@ defmodule TdDqWeb.Rule do
                         "weight",
                         "goal",
                         "minimum"]
+
+  def active_to_boolean("true"), do: true
+  def active_to_boolean("false"), do: false
+  def active_to_boolean(_), do: false
 
   def rule_list(token) do
     headers = get_header(token)
