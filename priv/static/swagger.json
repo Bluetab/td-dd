@@ -964,10 +964,6 @@
           "type": "object",
           "description": "weight"
         },
-        "status": {
-          "type": "string",
-          "description": "weight"
-        },
         "priority": {
           "type": "string",
           "description": "Priority (Medium,...)"
@@ -999,6 +995,10 @@
         "business_concept_id": {
           "type": "string",
           "description": "business concept id"
+        },
+        "active": {
+          "type": "boolean",
+          "description": "Active/Inactive"
         }
       }
     },
@@ -1039,10 +1039,6 @@
         "tag": {
           "type": "object"
         },
-        "status": {
-          "type": "string",
-          "description": "status (Default: defined)"
-        },
         "rule_type_id": {
           "type": "integer",
           "description": "Belongs to rule type"
@@ -1082,6 +1078,10 @@
         "business_concept_id": {
           "type": "string",
           "description": "business concept id"
+        },
+        "active": {
+          "type": "boolean",
+          "description": "active (Default: false)"
         }
       },
       "description": "Rule entity"

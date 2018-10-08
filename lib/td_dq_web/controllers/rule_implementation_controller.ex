@@ -29,7 +29,7 @@ defmodule TdDqWeb.RuleImplementationController do
 
     filters = %{}
     |> add_rule_filter(params, "rule_business_concept_id", "business_concept_id")
-    |> add_rule_filter(params, "rule_status", "status")
+    |> add_rule_filter(params, "is_rule_active", "active")
     |> add_rule_filter(params, "rule_tags", "tag")
 
     with true <- can?(user, index(RuleImplementation)) do

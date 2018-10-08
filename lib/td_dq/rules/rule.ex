@@ -9,6 +9,7 @@ defmodule TdDq.Rules.Rule do
 
   schema "rules" do
     field(:business_concept_id, :string)
+    field(:active, :boolean, default: false)
     field(:description, :string)
     field(:goal, :integer)
     field(:minimum, :integer)
@@ -16,7 +17,6 @@ defmodule TdDq.Rules.Rule do
     field(:population, :string)
     field(:priority, :string)
     field(:weight, :integer)
-    field(:status, :boolean, default: false)
     field(:version, :integer, default: 1)
     field(:updated_by, :integer)
     field(:principle, :map)
@@ -32,6 +32,7 @@ defmodule TdDq.Rules.Rule do
     rule
     |> cast(attrs, [
       :business_concept_id,
+      :active,
       :name,
       :description,
       :weight,
@@ -39,7 +40,6 @@ defmodule TdDq.Rules.Rule do
       :population,
       :goal,
       :minimum,
-      :status,
       :version,
       :updated_by,
       :principle,

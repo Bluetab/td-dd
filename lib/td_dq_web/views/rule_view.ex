@@ -30,7 +30,7 @@ defmodule TdDqWeb.RuleView do
       population: rule.population,
       goal: rule.goal,
       minimum: rule.minimum,
-      status: rule.status,
+      active: rule.active,
       version: rule.version,
       updated_by: rule.updated_by,
       inserted_at: rule.inserted_at,

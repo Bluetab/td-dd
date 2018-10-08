@@ -20,10 +20,10 @@ defmodule TdDq.Repo.Migrations.ModifyStatusFieldInRulesTable do
 
   defp update_rule_record(%{id: id, status: status, last_update: last_update}) do
     last_update = status |> retrieve_deleted_at(last_update)
-    status = status |> parse_status()
+    active = status |> parse_status()
 
     from(r in "rules",
-      update: [set: [status: ^status, deleted_at: ^last_update]],
+      update: [set: [active: ^active, deleted_at: ^last_update]],
       where: r.id == ^id
     )
     |> Repo.update_all([])
@@ -31,7 +31,7 @@ defmodule TdDq.Repo.Migrations.ModifyStatusFieldInRulesTable do
 
   def up do
     rename table(:rules), :status, to: :status_backup
-    alter table(:rules), do: add :status, :boolean
+    alter table(:rules), do: add :active, :boolean
     alter table(:rules), do: add :deleted_at, :utc_datetime
     flush()
 
@@ -45,7 +45,7 @@ defmodule TdDq.Repo.Migrations.ModifyStatusFieldInRulesTable do
   end
 
   def down do
-    alter table(:rules), do: remove :status
+    alter table(:rules), do: remove :active
     alter table(:rules), do: remove :deleted_at
     rename table(:rules), :status_backup, to: :status
   end
