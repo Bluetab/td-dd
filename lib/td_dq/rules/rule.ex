@@ -10,6 +10,7 @@ defmodule TdDq.Rules.Rule do
   schema "rules" do
     field(:business_concept_id, :string)
     field(:active, :boolean, default: false)
+    field(:deleted_at, :utc_datetime)
     field(:description, :string)
     field(:goal, :integer)
     field(:minimum, :integer)
@@ -34,6 +35,7 @@ defmodule TdDq.Rules.Rule do
       :business_concept_id,
       :active,
       :name,
+      :deleted_at,
       :description,
       :weight,
       :priority,

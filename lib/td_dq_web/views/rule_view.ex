@@ -24,6 +24,7 @@ defmodule TdDqWeb.RuleView do
     %{id: rule.id,
       business_concept_id: rule.business_concept_id,
       name: rule.name,
+      deleted_at: rule.deleted_at,
       description: rule.description,
       weight: rule.weight,
       priority: rule.priority,
