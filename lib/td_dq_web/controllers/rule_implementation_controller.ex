@@ -71,7 +71,15 @@ defmodule TdDqWeb.RuleImplementationController do
     Map.put(filters, filter_name, %{"tags" => map_list})
   end
 
+  defp put_param_into_rule_filter(filters, "active" = filter_name, value) when not is_boolean(value) do
+    Map.put(filters, filter_name, value |> String.downcase() |> retrieve_boolean_value)
+  end
+
   defp put_param_into_rule_filter(filters, filter_name, value), do: Map.put(filters, filter_name, value)
+
+  defp retrieve_boolean_value("true"), do: true
+  defp retrieve_boolean_value("false"), do: false
+  defp retrieve_boolean_value(_), do: false
 
   swagger_path :create do
     description "Creates a Quality Rule"
