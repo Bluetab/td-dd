@@ -165,7 +165,10 @@ defmodule TdDqWeb.RuleController do
     render(
       conn,
       "show.json",
-      hypermedia: hypermedia("rule", conn, rule),
+      hypermedia: hypermedia("rule", conn, %{
+        "business_concept_id" => rule.business_concept_id,
+        "resource_type" => "rule"
+      }),
       rule: rule
     )
   end
