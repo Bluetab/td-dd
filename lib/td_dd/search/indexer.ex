@@ -15,9 +15,9 @@ defmodule TdDd.Search.Indexer do
   defp get_mappings do
     mapping_type = %{
       id: %{type: "long"},
-      name: %{type: "text"},
-      system: %{type: "text"},
-      group: %{type: "text"},
+      name: %{type: "text", fields: %{raw: %{type: "keyword"}}},
+      system: %{type: "text", fields: %{raw: %{type: "keyword"}}},
+      group: %{type: "text", fields: %{raw: %{type: "keyword"}}},
       ou: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
       type: %{type: "text"},
       lopd: %{type: "text"},

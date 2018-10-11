@@ -49,6 +49,9 @@ defmodule TdDdWeb.ConnCase do
       tags[:authenticated_user] ->
         user = find_or_create_user(tags[:authenticated_user], is_admin: true)
         create_user_auth_conn(user)
+      tags[:authenticated_no_admin_user] ->
+        user = find_or_create_user(tags[:authenticated_no_admin_user], is_admin: false)
+        create_user_auth_conn(user)
        true ->
          {:ok, conn: ConnTest.build_conn()}
     end

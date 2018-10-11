@@ -37,6 +37,8 @@ defmodule TdDdWeb.Router do
     resources "/comments", CommentController, except: [:new, :edit]
 
     get "/search/reindex_all", SearchController, :reindex_all
+
+    get "/data_structure_filters", DataStructureFilterController, :index
   end
 
   scope "/api/swagger" do

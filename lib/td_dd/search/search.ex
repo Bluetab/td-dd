@@ -51,4 +51,21 @@ defmodule TdDd.Search do
     end
   end
 
+  def get_filters(query) do
+    response = ESClientApi.search_es("data_structure", query)
+    case response do
+      {:ok, %HTTPoison.Response{body: %{"aggregations" => aggregations}}} ->
+        aggregations
+          |> Map.to_list
+          |> Enum.map(&filter_values/1)
+          |> Enum.into(%{})
+      {:ok, %HTTPoison.Response{body: error}} ->
+        error
+    end
+  end
+
+  defp filter_values({name, %{"buckets" => buckets}}) do
+    {name, buckets |> Enum.map(&(&1["key"]))}
+  end
+
 end

@@ -12,6 +12,29 @@ defmodule TdDd.DataStructure.Search do
 
   @search_service Application.get_env(:td_dd, :elasticsearch)[:search_service]
 
+  def get_filter_values(%User{is_admin: true}) do
+    query = %{} |> create_query
+    search = %{query: query, aggs: Aggregations.aggregation_terms()}
+    @search_service.get_filters(search)
+  end
+
+  def get_filter_values(%User{} = user) do
+    permissions =
+      user
+      |> Permissions.get_domain_permissions()
+      |> Enum.filter(&Enum.member?(&1.permissions, :view_data_structure))
+    get_filter_values(permissions)
+  end
+
+  def get_filter_values([]), do: %{}
+
+  def get_filter_values(permissions) do
+    filter = permissions |> create_filter_clause
+    query = %{} |> create_query(filter)
+    search = %{query: query, aggs: Aggregations.aggregation_terms()}
+    @search_service.get_filters(search)
+  end
+
   def search_data_structures(params, user, page \\ 0, size \\ 50)
 
   def search_data_structures(params, %User{is_admin: true}, page, size) do
@@ -49,7 +72,7 @@ defmodule TdDd.DataStructure.Search do
       |> do_search
   end
 
-  defp create_filter_clause(permissions, user_defined_filters) do
+  defp create_filter_clause(permissions, user_defined_filters \\ []) do
     should_clause =
       permissions
       |> Enum.map(&entry_to_filter_clause(&1, user_defined_filters))
@@ -91,6 +114,12 @@ defmodule TdDd.DataStructure.Search do
     equery = Query.add_query_wildcard(query)
     %{simple_query_string: %{query: equery}}
     |> bool_query
+  end
+
+  defp create_query(%{"query" => query}, filter) do
+    equery = Query.add_query_wildcard(query)
+    %{simple_query_string: %{query: equery}}
+    |> bool_query(filter)
   end
 
   defp create_query(_params) do

@@ -23,4 +23,11 @@ defmodule TdDd.Search.MockSearch do
   defp search_results(results) do
     %{results: results, total: Enum.count(results)}
   end
+
+  def get_filters(_query) do
+    %{
+      "system" => ["SAP", "SAS"],
+      "name" => ["KNA1", "KNB1"]
+    }
+  end
 end

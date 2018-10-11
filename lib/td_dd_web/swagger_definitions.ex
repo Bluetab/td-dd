@@ -85,10 +85,15 @@ defmodule TdDdWeb.SwaggerDefinitions do
       swagger_schema do
         properties do
           query(:string, "Query string", required: false)
+          filters(:object, "Filters", required: false)
         end
 
         example(%{
-          query: "searchterm"
+          query: "searchterm",
+          filters: %{
+            name: ["KNA1", "KNB1"],
+            system: ["Oracle"]
+          }
         })
       end
     }
@@ -231,5 +236,29 @@ defmodule TdDdWeb.SwaggerDefinitions do
       end
     }
   end
+
+  def filter_swagger_definitions do
+    %{
+      FilterResponse:
+        swagger_schema do
+          title("Filters")
+
+          description(
+            "An object whose keys are filter names and values are arrays of filterable values"
+          )
+
+          properties do
+            data(:object, "Filter values", required: true)
+          end
+
+          example(%{
+            data: %{
+              system: ["SAP", "SAS"],
+              name: ["KNA1", "KNB1"]
+            }
+          })
+        end
+      }
+    end
 
 end

@@ -315,6 +315,25 @@
         "description": "List Data Structures"
       }
     },
+    "/data_structure_filters": {
+      "get": {
+        "tags": [
+          "DataStructureFilter"
+        ],
+        "summary": "",
+        "responses": {
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/FilterResponse"
+            },
+            "description": "OK"
+          }
+        },
+        "parameters": [],
+        "operationId": "TdDdWeb.DataStructureFilterController.index",
+        "description": "List Data Structure Filters"
+      }
+    },
     "/data_fields/{id}": {
       "patch": {
         "tags": [
@@ -661,6 +680,32 @@
   },
   "host": "localhost:4005",
   "definitions": {
+    "FilterResponse": {
+      "type": "object",
+      "title": "Filters",
+      "required": [
+        "data"
+      ],
+      "properties": {
+        "data": {
+          "type": "object",
+          "description": "Filter values"
+        }
+      },
+      "example": {
+        "data": {
+          "system": [
+            "SAP",
+            "SAS"
+          ],
+          "name": [
+            "KNA1",
+            "KNB1"
+          ]
+        }
+      },
+      "description": "An object whose keys are filter names and values are arrays of filterable values"
+    },
     "DataStructuresResponse": {
       "type": "object",
       "properties": {
@@ -705,10 +750,23 @@
         "query": {
           "type": "string",
           "description": "Query string"
+        },
+        "filters": {
+          "type": "object",
+          "description": "Filters"
         }
       },
       "example": {
-        "query": "searchterm"
+        "query": "searchterm",
+        "filters": {
+          "system": [
+            "Oracle"
+          ],
+          "name": [
+            "KNA1",
+            "KNB1"
+          ]
+        }
       }
     },
     "DataStructureResponse": {
