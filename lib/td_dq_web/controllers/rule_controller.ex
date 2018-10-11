@@ -251,6 +251,7 @@ defmodule TdDqWeb.RuleController do
       rule_params = rule
           |> Map.from_struct
           |> Map.delete(:__meta__)
+          |> Map.delete(:rule_type)
 
       audit = %{
         "audit" => %{
