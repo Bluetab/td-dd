@@ -255,6 +255,7 @@ defmodule TdDqWeb.RuleController do
           |> Map.from_struct
           |> Map.delete(:__meta__)
           |> Map.delete(:rule_type)
+          |> Map.delete(:rule_implementations)
 
       audit = %{
         "audit" => %{
@@ -272,6 +273,12 @@ defmodule TdDqWeb.RuleController do
         conn
         |> put_status(:forbidden)
         |> render(ErrorView, :"403.json")
+      {:error, %Changeset{data: %{__struct__: _}} = changeset} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> render(ChangesetView, "error.json",
+                  changeset: changeset,
+                  prefix: "rule.error")
     end
   end
 end

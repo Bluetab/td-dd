@@ -155,7 +155,9 @@ defmodule TdDq.Rules do
 
   """
   def delete_rule(%Rule{} = rule) do
-    Repo.delete(rule)
+    rule
+      |> Rule.delete_changeset()
+      |> Repo.delete()
   end
 
   @doc """

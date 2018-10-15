@@ -3,6 +3,7 @@ defmodule TdDq.Rules.Rule do
   use Ecto.Schema
   import Ecto.Changeset
   alias TdDq.Rules.Rule
+  alias TdDq.Rules.RuleImplementation
   alias TdDq.Rules.RuleType
 
   @tag_valid_keys ["name"]
@@ -24,6 +25,8 @@ defmodule TdDq.Rules.Rule do
     field(:type_params, :map)
     field(:tag, :map)
     belongs_to(:rule_type, RuleType)
+
+    has_many(:rule_implementations, RuleImplementation)
 
     timestamps()
   end
@@ -63,6 +66,12 @@ defmodule TdDq.Rules.Rule do
     |> validate_number(:minimum, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
     |> validate_goal
     |> foreign_key_constraint(:rule_type_id)
+  end
+
+  def delete_changeset(%Rule{} = rule) do
+    rule
+    |> change()
+    |> no_assoc_constraint(:rule_implementations, message: "rule.delete.existing.implementations")
   end
 
   defp validate_goal(changeset) do
