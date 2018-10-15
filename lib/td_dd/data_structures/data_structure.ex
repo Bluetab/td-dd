@@ -72,6 +72,8 @@ defmodule TdDd.DataStructures.DataStructure do
     domain_ids = domain_id
       |> TaxonomyCache.get_parent_ids()
 
+    structure = fill_items(structure)
+
     %{
       id: structure.id,
       description: structure.description,
@@ -104,6 +106,17 @@ defmodule TdDd.DataStructures.DataStructure do
       type: field.type,
       updated_at: field.updated_at
     }
+  end
+
+  defp fill_items(structure) do
+    keys_to_fill = [:name, :group, :ou, :system]
+
+    Enum.reduce(keys_to_fill, structure, fn(key, acc) ->
+      case Map.get(acc, key) do
+        nil -> Map.put(acc, key, "")
+        _ -> acc
+      end
+    end)
   end
 
   def index_name do
