@@ -132,9 +132,13 @@ defmodule TdDq.Rules do
           |> rule_type_changeset(input)
           |> add_rule_type_params_validations(rule_type, types)
 
-        case type_changeset.valid? do
+        non_modifiable_changeset =
+          type_changeset
+          |> validate_non_modifiable_fields(attrs)
+
+        case non_modifiable_changeset.valid? do
           true -> changeset |> Repo.update()
-          false -> {:error, type_changeset}
+          false -> {:error, non_modifiable_changeset}
         end
 
       false ->
@@ -550,6 +554,18 @@ defmodule TdDq.Rules do
         changeset
     end
   end
+
+  defp validate_non_modifiable_fields(changeset, %{rule_type_id: _}),
+    do: add_non_modifiable_error(changeset, :rule_type_id, "non.modifiable.field")
+
+  defp validate_non_modifiable_fields(changeset, %{"rule_type_id" => _}),
+    do: add_non_modifiable_error(changeset, :rule_type_id, "non.modifiable.field")
+
+  defp validate_non_modifiable_fields(changeset, _attrs),
+    do: changeset
+
+  defp add_non_modifiable_error(changeset, field, message),
+    do: Changeset.add_error(changeset, field, message)
 
   defp add_rule_type_params_validations(changeset, %{name: "dates_range"}, _) do
     case changeset.valid? do

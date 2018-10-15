@@ -71,10 +71,10 @@ defmodule TdDq.RulesTest do
         update_attrs
         |> Map.put(:name, "New name")
         |> Map.put(:description, "New description")
+        |> Map.drop([:rule_type_id])
 
       assert {:ok, rule} = Rules.update_rule(rule, update_attrs)
       assert %Rule{} = rule
-      assert rule.rule_type_id == update_attrs[:rule_type_id]
       assert rule.description == update_attrs[:description]
     end
 
@@ -86,6 +86,21 @@ defmodule TdDq.RulesTest do
         update_attrs
         |> Map.put(:name, nil)
         |> Map.put(:system, nil)
+
+      assert {:error, %Ecto.Changeset{}} =
+               Rules.update_rule(rule, udpate_attrs)
+
+      assert rule == rule_preload(Rules.get_rule!(rule.id))
+    end
+
+    test "update_rule/2 containing a rule_type_id invalid data returns error changeset" do
+      rule = insert(:rule)
+      update_attrs = Map.from_struct(rule)
+
+      udpate_attrs =
+        update_attrs
+        |> Map.put(:name, "New name")
+        |> Map.put(:description, "New description")
 
       assert {:error, %Ecto.Changeset{}} =
                Rules.update_rule(rule, udpate_attrs)
