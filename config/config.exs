@@ -36,7 +36,7 @@ config :td_perms, permissions: [
   :view_deprecated_business_concepts,
   :manage_business_concept_links,
   :manage_quality_rule,
-  :view_confidential_business_concepts
+  :manage_confidential_business_concepts
 ]
 
 config :td_dq, cache_rules_on_startup: true
