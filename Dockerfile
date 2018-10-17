@@ -27,7 +27,7 @@ RUN mix release --env=${MIX_ENV}
 
 # --- Release with Alpine ----
 ### Minimal run-time image
-FROM alpine:latest
+FROM alpine:3.8
 
 RUN apk --no-cache update && apk --no-cache upgrade && apk --no-cache add ncurses-libs openssl bash ca-certificates
 
@@ -41,7 +41,6 @@ WORKDIR /app
 
 COPY --from=build /build/_build/${MIX_ENV}/rel/${APP_NAME}/releases/${APP_VERSION}/*.tar.gz ./
 
-RUN tar -xzvf ${APP_NAME}.tar.gz
+RUN tar -xzf ${APP_NAME}.tar.gz
 
 ENTRYPOINT ["/bin/bash", "-c", "bin/${APP_NAME} foreground"]
-
