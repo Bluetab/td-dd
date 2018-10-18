@@ -40,7 +40,7 @@ defmodule TdDq.RuleLoader do
   end
 
   defp put_count(business_concept_id, count) do
-    BusinessConceptCache.put_field_values(business_concept_id, q_rule_count: count)
+    BusinessConceptCache.put_field_values(business_concept_id, rule_count: count)
   end
 
   defp load_counts do

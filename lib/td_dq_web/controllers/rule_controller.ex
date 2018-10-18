@@ -16,7 +16,7 @@ defmodule TdDqWeb.RuleController do
 
   action_fallback(TdDqWeb.FallbackController)
 
-  @events %{create_rule: "create_quality_control", delete_rule: "delete_quality_control"}
+  @events %{create_rule: "create_rule", delete_rule: "delete_rule"}
 
   def swagger_definitions do
     SwaggerDefinitions.rule_definitions()
