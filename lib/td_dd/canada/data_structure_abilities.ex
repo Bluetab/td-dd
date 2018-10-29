@@ -25,4 +25,8 @@ defmodule TdDd.Canada.DataStructureAbilities do
   def can?(%User{} = user, :view_data_structure, domain_id) do
     Permissions.authorized?(user, :view_data_structure, domain_id)
   end
+
+  def can?(%User{}, _action, %DataStructure{}), do: false
+
+  def can?(%User{}, _action, DataStructure), do: false
 end
