@@ -68,7 +68,7 @@ defmodule TdDd.DictionaryTest do
     token = get_user_token(user_name)
     attrs = field_value_to_api_attrs(fields, @fixed_data_structure_values)
     data_structure_tmp = data_structure_find(token, system, group, structure)
-    assert data_structure_tmp    
+    assert data_structure_tmp
 
     {:ok, http_status_code, %{"data" => data_structure}} =
       data_structure_show(token, data_structure_tmp["id"])

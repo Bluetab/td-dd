@@ -86,7 +86,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn = recycle_and_put_headers(conn)
 
       conn = get(conn, data_structure_path(conn, :show, id))
-      json_response_data = json_response(conn, 200) |> Map.get("data")
+      json_response_data = conn |> json_response(200) |> Map.get("data")
 
       json_response_data =
         json_response_data
