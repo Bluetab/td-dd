@@ -885,6 +885,9 @@
             "null"
           ],
           "description": "Data Structure description"
+        },
+        "data_fields": {
+          "$ref": "#/definitions/DataFields"
         }
       },
       "example": {
@@ -902,7 +905,8 @@
         "inserted_at": "2018-05-08T17:17:59.691460",
         "id": 123,
         "group": "Data Structure group",
-        "description": "Data Structure description"
+        "description": "Data Structure description",
+        "data_fields": []
       },
       "description": "A Data Structure"
     },

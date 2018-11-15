@@ -45,7 +45,7 @@ defmodule TdDd.Mixfile do
       {:httpoison, "~> 1.0"},
       {:edeliver, "~> 1.4.5"},
       {:distillery, ">= 0.8.0", warn_missing: false},
-      {:credo, "~> 0.9.0-rc1", only: [:dev, :test], runtime: false},
+      {:credo, "~> 0.10.2", only: [:dev, :test], runtime: false},
       {:guardian, "~> 1.0"},
       {:canada, "~> 1.0.1"},
       {:ex_machina, "~> 2.1", only: [:test]},
@@ -53,7 +53,7 @@ defmodule TdDd.Mixfile do
       {:csv, "~> 2.0.0"},
       {:phoenix_swagger, "~> 0.7.0"},
       {:ex_json_schema, "~> 0.5"},
-      {:td_perms, git: "https://github.com/Bluetab/td-perms.git", tag: "2.8.0"}
+      {:td_perms, git: "https://github.com/Bluetab/td-perms.git", tag: "2.8.1"}
     ]
   end
 

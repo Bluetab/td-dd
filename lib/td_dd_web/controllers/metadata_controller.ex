@@ -2,9 +2,9 @@ defmodule TdDdWeb.MetadataController do
   require Logger
   use TdDdWeb, :controller
 
+  alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
   alias TdDd.DataStructures
   alias TdDd.Loader
-  alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
   alias TdPerms.TaxonomyCache
 
   @data_structure_keys Application.get_env(:td_dd, :metadata)[:data_structure_keys]

@@ -67,8 +67,8 @@ defmodule TdDd.DictionaryTest do
          _state do
     token = get_user_token(user_name)
     attrs = field_value_to_api_attrs(fields, @fixed_data_structure_values)
-    data_structure_tmp = data_structure_find(token, system, group, structure) |> IO.inspect
-    assert data_structure_tmp
+    data_structure_tmp = data_structure_find(token, system, group, structure)
+    assert data_structure_tmp    
 
     {:ok, http_status_code, %{"data" => data_structure}} =
       data_structure_show(token, data_structure_tmp["id"])
@@ -118,9 +118,8 @@ defmodule TdDd.DictionaryTest do
            table: fields
          },
          %{token_admin: token_admin} = _state do
-    IO.inspect([system, group, structure, field_name])
-    data_structure = data_structure_find(token_admin, system, group, structure) |> IO.inspect
-    data_field_tmp = data_field_find(token_admin, field_name)
+    data_structure = data_structure_find(token_admin, system, group, structure)
+    data_field_tmp = data_field_find(data_structure, field_name)
     assert data_field_tmp
     token = get_user_token(user_name)
 
@@ -192,6 +191,10 @@ defmodule TdDd.DictionaryTest do
 
   defp assert_attr("nullable" = attr, value, %{} = target) do
     assert target[attr] == (value == "YES")
+  end
+
+  defp assert_attr(attr, "", %{} = target) do
+    assert target[attr] == nil
   end
 
   defp assert_attr(attr, value, %{} = target) do
@@ -274,12 +277,17 @@ defmodule TdDd.DictionaryTest do
   end
 
   defp data_structure_find(token, system, group, name) do
-    {:ok, _, %{"data" => data_structure}} = data_structure_index(token)
+    {:ok, _, %{"data" => data_structures}} = data_structure_index(token)
 
-    Enum.find(
-      data_structure,
-      &(&1["system"] == system && &1["group"] == group && &1["name"] == name)
-    )
+    data_structures
+    |> Enum.find(&(&1["system"] == system && &1["group"] == group && &1["name"] == name))
+    |> Map.get("id")
+    |> data_structure_get(token)
+  end
+
+  defp data_structure_get(id, token) do
+    {:ok, _status_code, %{"data" => data_structure}} = data_structure_show(token, id)
+    data_structure
   end
 
   defp data_structure_index(token) do
@@ -310,18 +318,8 @@ defmodule TdDd.DictionaryTest do
     {:ok, status_code, resp |> JSON.decode!()}
   end
 
-  defp data_field_find(token, name) do
-    {:ok, _, %{"data" => data_structure}} = data_field_index(token)
-    Enum.find(data_structure, &(&1["name"] == name))
-  end
-
-  defp data_field_index(token) do
-    headers = get_header(token)
-
-    %HTTPoison.Response{status_code: status_code, body: resp} =
-      HTTPoison.get!(data_field_url(@endpoint, :index), headers, [])
-
-    {:ok, status_code, resp |> JSON.decode!()}
+  defp data_field_find(%{"data_fields" => fields}, field_name) do
+    Enum.find(fields, &(&1["name"] == field_name))
   end
 
   defp metadata_upload(token, data_structures, data_fields) do

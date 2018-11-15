@@ -11,9 +11,8 @@ defmodule TdDd.TestOperators do
     approximately_equal(h, h2) && approximately_equal(t, t2)
   end
 
-  @doc """
-  Equality test for data structures without comparing Ecto associations.
-  """
+  
+  ## Equality test for data structures without comparing Ecto associations.
   defp approximately_equal(%DataStructure{} = a, %DataStructure{} = b) do
     Map.drop(a, [:versions, :data_fields]) == Map.drop(b, [:versions, :data_fields])
   end

@@ -42,7 +42,7 @@ config :td_dd, :elasticsearch,
   es_port: "${ES_PORT}",
   type_name: "doc"
 
-config :td_perms, redis_uri: "${REDIS_URI}"
+config :td_perms, redis_host: "${REDIS_HOST}"
 
 config :td_dd, :audit_service, api_service: TdDdWeb.ApiServices.HttpTdAuditService,
   audit_host: "${API_AUDIT_HOST}",

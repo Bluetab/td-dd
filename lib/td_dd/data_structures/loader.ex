@@ -12,7 +12,7 @@ defmodule TdDd.Loader do
   alias TdDd.Repo
 
   def load(structure_records, field_records, audit_fields) do
-    Logger.warn(
+    Logger.info(
       "Starting bulk load process (#{Enum.count(structure_records)}SR+#{Enum.count(field_records)}FR)"
     )
 
@@ -32,7 +32,7 @@ defmodule TdDd.Loader do
     case multi do
       {:ok, context} ->
         %{added: added, removed: removed, modified: modified} = context
-        Logger.warn("Bulk load process completed (-#{removed}F +#{added}F ~#{modified}F)")
+        Logger.info("Bulk load process completed (-#{removed}F +#{added}F ~#{modified}F)")
         {:ok, context}
 
       {:error, failed_operation, failed_value, changes_so_far} ->
@@ -50,9 +50,9 @@ defmodule TdDd.Loader do
     |> errors_or_count
   end
 
-  defp update_field({field, attrs}, audit) do
+  defp update_field({field, %{field_name: name} = attrs}, audit) do
     attrs = attrs |> Map.merge(audit)
-    field |> DataField.update_changeset(attrs) |> Repo.update()
+    field |> DataField.update_changeset(attrs |> Map.merge(%{name: name})) |> Repo.update()
   end
 
   defp insert_fields(%{diffs: diffs, audit: audit}) do

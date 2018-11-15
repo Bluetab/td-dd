@@ -39,7 +39,7 @@ config :td_dd, :elasticsearch,
 
 config :td_dd, permission_resolver: TdDd.Permissions.MockPermissionResolver
 
-config :td_perms, redis_uri: "redis://localhost"
+config :td_perms, redis_host: "localhost"
 
 config :td_dd, :audit_service, api_service: TdDdWeb.ApiServices.MockTdAuditService,
   audit_host: "localhost",

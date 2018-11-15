@@ -19,6 +19,7 @@ defmodule TdDdWeb.DataStructureView do
         lopd: data_structure.lopd,
         last_change_at: data_structure.last_change_at,
         inserted_at: data_structure.inserted_at}
+        |> add_data_fields(data_structure)
     }
   end
 
@@ -38,9 +39,10 @@ defmodule TdDdWeb.DataStructureView do
 
   defp add_data_fields(data_structure_json, data_structure) do
     data_fields =
-      case Ecto.assoc_loaded?(data_structure.data_fields) do
-        true ->
-          Enum.reduce(data_structure.data_fields, [], fn(data_field, acc) ->
+      case Map.get(data_structure, :data_fields) do
+        nil -> []
+        fields ->
+          Enum.reduce(fields, [], fn(data_field, acc) ->
             json = %{id: data_field.id,
                      name: data_field.name,
                      type: data_field.type,
@@ -54,7 +56,6 @@ defmodule TdDdWeb.DataStructureView do
                      bc_related: data_field.bc_related}
             [json|acc]
           end)
-        _ -> []
     end
     Map.put(data_structure_json, :data_fields, data_fields)
   end

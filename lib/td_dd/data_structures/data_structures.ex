@@ -205,7 +205,8 @@ defmodule TdDd.DataStructures do
 
   """
   def list_data_fields do
-    Repo.all(DataField)
+    import Ecto.Query, only: [from: 2]
+    Repo.all(from(f in DataField, order_by: [desc: f.id]))
   end
 
   @doc """
@@ -231,9 +232,10 @@ defmodule TdDd.DataStructures do
 
   """
   def get_latest_version(data_structure_id) do
-    data_structure_id
-    |> list_data_structure_versions
-    |> Enum.max_by(& &1.version)
+    case list_data_structure_versions(data_structure_id) do
+      [] -> nil
+      vs -> vs |> Enum.max_by(& &1.version)
+    end
   end
 
   @doc """
@@ -284,13 +286,47 @@ defmodule TdDd.DataStructures do
       |> Repo.insert()
 
     case result do
-      {:ok, _data_field} ->
+      {:ok, data_field} ->
+        case Map.get(attrs, "data_structure_id") do
+          nil ->
+            result
+
+          data_structure_id ->
+            add_data_field(data_structure_id, data_field)
+            result
+        end
+
         # TODO: Reindex versions
         # @search_service.put_search(get_data_structure_with_fields!(data_field.data_structure_id))
         result
 
       _ ->
         result
+    end
+  end
+
+  defp add_data_field(data_structure_id, %{id: field_id}) do
+    version_id =
+      data_structure_id
+      |> get_or_create_version
+      |> Map.get(:id)
+
+    entries = [%{data_structure_version_id: version_id, data_field_id: field_id}]
+    Repo.insert_all("versions_fields", entries)
+  end
+
+  defp get_or_create_version(data_structure_id) do
+    case get_latest_version(data_structure_id) do
+      nil ->
+        {:ok, v} =
+          %DataStructureVersion{}
+          |> DataStructureVersion.changeset(%{data_structure_id: data_structure_id})
+          |> Repo.insert()
+
+        v
+
+      v ->
+        v
     end
   end
 

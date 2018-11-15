@@ -86,12 +86,11 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn = recycle_and_put_headers(conn)
 
       conn = get(conn, data_structure_path(conn, :show, id))
-      json_response_data = json_response(conn, 200)["data"]
+      json_response_data = json_response(conn, 200) |> Map.get("data")
 
       json_response_data =
         json_response_data
-        |> Map.delete("last_change_by")
-        |> Map.delete("last_change_at")
+        |> Map.drop(["last_change_by", "last_change_at"])
 
       validate_resp_schema(conn, schema, "DataStructureResponse")
       assert json_response_data["id"] == id

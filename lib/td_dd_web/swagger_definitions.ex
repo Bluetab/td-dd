@@ -20,6 +20,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
           lopd [:string, :null], "Data Structure lopd level"
           last_change_at :string, "Data Structure last updated at"
           inserted_at :string, "Data Structure creation date"
+          data_fields Schema.ref(:DataFields)
           metadata :object, "Data Structure data. Uploaded by background processes"
       end
         example %{
@@ -32,6 +33,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
         ou: "General Management",
         lopd: "1",
         inserted_at: "2018-05-08T17:17:59.691460",
+        data_fields: [],
         metadata: %{"description" => "last description",
                     "ou" => "Super Management",
                     "lopd" => "EM",

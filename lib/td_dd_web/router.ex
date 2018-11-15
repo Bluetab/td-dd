@@ -33,7 +33,6 @@ defmodule TdDdWeb.Router do
     resources "/data_fields", DataFieldController, except: [:new, :edit] do
       get "/comment", CommentController, :get_comment_data_field
     end
-    resources "/data_fields", DataFieldController, except: [:new, :edit]
     resources "/comments", CommentController, except: [:new, :edit]
 
     get "/data_structures/search/reindex_all", SearchController, :reindex_all
