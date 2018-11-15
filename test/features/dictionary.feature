@@ -22,7 +22,6 @@ Feature: Data Dictionary Administration
       | Organizational Unit | General Management                                                   |
       | LOPD                | 1                                                                    |
       | Last Modification   | Some timestamp                                                       |
-      | Last User           | app-admin                                                            |
 
   Scenario: Create a new field related to an existing Data Structure inside Data Dictionary
     Given and existing data structure with following data:
@@ -51,7 +50,6 @@ Feature: Data Dictionary Administration
       | Description         | My personal fields can be only used by me and myself |
       | Business Concept ID |                                                      |
       | Last Modification   | Some timestamp                                       |
-      | Last User           | app-admin                                            |
 
   Scenario: Load metadata (structures and fields) into the system in bulk mode
     When "app-admin" tries to load dictionary data with following information:
@@ -74,4 +72,3 @@ Feature: Data Dictionary Administration
       | Description         | My_Personal01bis_Field Description |
       | Business Concept ID | BCID001                            |
       | Last Modification   | Some timestamp                     |
-      | Last User           | app-admin                          |

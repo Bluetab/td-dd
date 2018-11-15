@@ -2,14 +2,16 @@ defmodule TdDd.DataStructures.DataStructure do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
+  alias TdDd.DataStructures
   alias TdDd.DataStructures.DataField
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Searchable
   alias TdPerms.TaxonomyCache
+  alias TdPerms.UserCache
 
   @behaviour Searchable
 
-  @td_auth_api Application.get_env(:td_dd, :auth_service)[:api_service]
   @data_structure_modifiable_fields Application.get_env(:td_dd, :metadata)[
                                       :data_structure_modifiable_fields
                                     ]
@@ -25,8 +27,8 @@ defmodule TdDd.DataStructures.DataStructure do
     field(:type, :string)
     field(:ou, :string)
     field(:lopd, :string)
-    has_many(:data_fields, DataField)
-    field(:metadata, :map)
+    has_many(:versions, DataStructureVersion, on_delete: :delete_all)
+    field(:metadata, :map, default: %{})
 
     timestamps()
   end
@@ -63,16 +65,21 @@ defmodule TdDd.DataStructures.DataStructure do
   end
 
   def search_fields(%DataStructure{last_change_by: last_change_by_id} = structure) do
-    last_change_by = case @td_auth_api.get_user(last_change_by_id) do
-      nil -> %{}
-      user -> user |> Map.take([:id, :user_name, :full_name])
-    end
+    last_change_by =
+      case UserCache.get_user(last_change_by_id) do
+        nil -> %{}
+        user -> user
+      end
 
     domain_id = structure.domain_id
-    domain_ids = domain_id
+
+    domain_ids =
+      domain_id
       |> TaxonomyCache.get_parent_ids()
 
-    structure = fill_items(structure)
+    structure = structure
+    |> DataStructures.with_latest_fields
+    |> fill_items
 
     %{
       id: structure.id,
@@ -88,30 +95,14 @@ defmodule TdDd.DataStructures.DataStructure do
       system: structure.system,
       type: structure.type,
       inserted_at: structure.inserted_at,
-      data_fields: Enum.map(structure.data_fields, &search_fields(&1))
-    }
-  end
-
-  def search_fields(field) do
-    %{
-      id: field.id,
-      business_concept_id: field.business_concept_id,
-      data_structure_id: field.data_structure_id,
-      description: field.description,
-      inserted_at: field.inserted_at,
-      last_change_at: field.last_change_at,
-      name: field.name,
-      nullable: field.nullable,
-      precision: field.precision,
-      type: field.type,
-      updated_at: field.updated_at
+      data_fields: Enum.map(structure.data_fields, &DataField.search_fields/1)
     }
   end
 
   defp fill_items(structure) do
     keys_to_fill = [:name, :group, :ou, :system]
 
-    Enum.reduce(keys_to_fill, structure, fn(key, acc) ->
+    Enum.reduce(keys_to_fill, structure, fn key, acc ->
       case Map.get(acc, key) do
         nil -> Map.put(acc, key, "")
         _ -> acc
@@ -119,7 +110,7 @@ defmodule TdDd.DataStructures.DataStructure do
     end)
   end
 
-  def index_name do
+  def index_name(_) do
     "data_structure"
   end
 end

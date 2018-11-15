@@ -81,7 +81,6 @@ defmodule TdDdWeb.DataFieldControllerTest do
 
       validate_resp_schema(conn, schema, "DataFieldResponse")
       assert json_response_data["id"] == id
-      assert json_response_data["data_structure_id"] == data_structure.id
       assert json_response_data["business_concept_id"] == "42"
       assert json_response_data["description"] == "some description"
       assert json_response_data["name"] == "some name"
@@ -154,6 +153,7 @@ defmodule TdDdWeb.DataFieldControllerTest do
     test "lists data structure fields ", %{
       conn: conn,
       data_field: data_field,
+      data_structure: data_structure,
       swagger_schema: schema
     } do
       conn =
@@ -162,7 +162,7 @@ defmodule TdDdWeb.DataFieldControllerTest do
           data_structure_data_field_path(
             conn,
             :data_structure_fields,
-            data_field.data_structure_id
+            data_structure.id
           )
         )
 
@@ -175,7 +175,8 @@ defmodule TdDdWeb.DataFieldControllerTest do
 
   defp create_data_field(_) do
     data_structure = insert(:data_structure)
-    data_field = insert(:data_field, data_structure_id: data_structure.id)
-    {:ok, data_field: data_field}
+    data_structure_version = insert(:data_structure_version)
+    data_field = insert(:data_field, data_structure_versions: [data_structure_version])
+    {:ok, data_field: data_field, data_structure: data_structure}
   end
 end

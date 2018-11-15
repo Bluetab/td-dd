@@ -4,9 +4,11 @@ defmodule TdDd.DataStructures do
   """
 
   import Ecto.Query, warn: false
+
   alias TdDd.Repo
 
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Utils.CollectionUtils
 
   @search_service Application.get_env(:td_dd, :elasticsearch)[:search_service]
@@ -22,8 +24,7 @@ defmodule TdDd.DataStructures do
   """
   def list_data_structures(params \\ %{}) do
     filter = build_filter(DataStructure, params)
-    query = Repo.all(from(ds in DataStructure, where: ^filter))
-    Repo.preload(query, :data_fields)
+    Repo.all(from(ds in DataStructure, where: ^filter))
   end
 
   defp build_filter(schema, params) do
@@ -66,15 +67,26 @@ defmodule TdDd.DataStructures do
       ** (Ecto.NoResultsError)
 
   """
-  def get_data_structure!(id, opts \\ []) do
-    case Keyword.get(opts, :data_fields, false) do
-      true ->
-        ds = Repo.get!(DataStructure, id)
-        Repo.preload(ds, :data_fields)
+  def get_data_structure!(id), do: Repo.get!(DataStructure, id)
 
-      false ->
-        Repo.get!(DataStructure, id)
-    end
+  def get_data_structure_with_fields!(data_structure_id) do
+    data_structure_id
+    |> get_data_structure!
+    |> with_latest_fields
+  end
+
+  def get_latest_fields(data_structure_id) do
+    data_structure_id
+    |> get_latest_version
+    |> Ecto.assoc(:data_fields)
+    |> Repo.all()
+  end
+
+  def with_latest_fields(%{id: id} = data_structure) do
+    fields = get_latest_fields(id)
+
+    data_structure
+    |> Map.put(:data_fields, fields)
   end
 
   @doc """
@@ -97,8 +109,14 @@ defmodule TdDd.DataStructures do
 
     case result do
       {:ok, data_structure} ->
-        data_structure = Repo.preload(data_structure, :data_fields)
-        @search_service.put_search(data_structure)
+        %DataStructureVersion{data_structure_id: data_structure.id, version: 0}
+        |> Repo.insert()
+
+        # TODO: Should index data_structure_versions
+        data_structure
+        |> with_latest_fields
+        |> @search_service.put_search
+
         result
 
       _ ->
@@ -126,7 +144,10 @@ defmodule TdDd.DataStructures do
 
     case result do
       {:ok, data_structure} ->
-        @search_service.put_search(data_structure)
+        data_structure
+        |> with_latest_fields
+        |> @search_service.put_search
+
         result
 
       _ ->
@@ -188,16 +209,44 @@ defmodule TdDd.DataStructures do
   end
 
   @doc """
+  Returns the list of data_structure versions for a given data structure id;
+
+  ## Examples
+
+      iex> list_data_structure_versions(1)
+      [%DataStructureVersion{}, ...]
+
+  """
+  def list_data_structure_versions(data_structure_id) do
+    Repo.all(from(v in DataStructureVersion, where: v.data_structure_id == ^data_structure_id))
+  end
+
+  @doc """
+  Returns the latest data_structure version for a given data structure id;
+
+  ## Examples
+
+      iex> get_latest_version(1)
+      %DataStructureVersion{}
+
+  """
+  def get_latest_version(data_structure_id) do
+    data_structure_id
+    |> list_data_structure_versions
+    |> Enum.max_by(& &1.version)
+  end
+
+  @doc """
   Returns the list of data_structure fields .
 
   ## Examples
 
-      iex> list_data_structure_fields()
+      iex> list_data_structure_fields(%DataStructureVersion{})
       [%DataField{}, ...]
 
   """
-  def list_data_structure_fields(data_structure_id) do
-    Repo.all(from(f in DataField, where: f.data_structure_id == ^data_structure_id))
+  def list_data_structure_fields(data_structure_version) do
+    Repo.all(Ecto.assoc(data_structure_version, :data_fields))
   end
 
   @doc """
@@ -235,11 +284,9 @@ defmodule TdDd.DataStructures do
       |> Repo.insert()
 
     case result do
-      {:ok, data_field} ->
-        @search_service.put_search(
-          get_data_structure!(data_field.data_structure_id, data_fields: true)
-        )
-
+      {:ok, _data_field} ->
+        # TODO: Reindex versions
+        # @search_service.put_search(get_data_structure_with_fields!(data_field.data_structure_id))
         result
 
       _ ->
@@ -266,11 +313,8 @@ defmodule TdDd.DataStructures do
       |> Repo.update()
 
     case result do
-      {:ok, data_field} ->
-        @search_service.put_search(
-          get_data_structure!(data_field.data_structure_id, data_fields: true)
-        )
-
+      {:ok, _data_field} ->
+        # TODO: Reindex affected data structure versions
         result
 
       _ ->
@@ -291,12 +335,12 @@ defmodule TdDd.DataStructures do
 
   """
   def delete_data_field(%DataField{} = data_field) do
-    data_structure_id = data_field.data_structure_id
     result = Repo.delete(data_field)
 
     case result do
       {:ok, _data_field} ->
-        @search_service.put_search(get_data_structure!(data_structure_id, data_fields: true))
+        # TODO: Reindex affected data structure versions
+        # @search_service.put_search(get_data_structure_with_fields!(data_structure_id, data_fields: true))
         result
 
       _ ->
@@ -317,27 +361,19 @@ defmodule TdDd.DataStructures do
     DataField.changeset(data_field, %{})
   end
 
-  def add_domain_id(%{"ou" => _, "domain_id" => nil} = data, list_domains)
-       when length(list_domains) > 0 do
-    find_domain_for_data_attrs(data, list_domains)
+  def add_domain_id(%{"ou" => domain_name, "domain_id" => nil} = data, domain_map) do
+    data |> Map.put("domain_id", Map.get(domain_map, domain_name))
   end
 
-  def add_domain_id(%{"ou" => _, "domain_id" => _} = data, _list_domains), do: data
+  def add_domain_id(%{"ou" => _, "domain_id" => _} = data, _domain_map), do: data
 
-  def add_domain_id(%{"ou" => _} = data, list_domains) when length(list_domains) > 0 do
-    find_domain_for_data_attrs(data, list_domains)
+  def add_domain_id(%{"ou" => domain_name} = data, domain_map) do
+    data |> Map.put("domain_id", Map.get(domain_map, domain_name))
   end
 
-  def add_domain_id(data, _list_domains), do: data |> Map.put("domain_id", nil)
+  def add_domain_id(data, _domain_map), do: data |> Map.put("domain_id", nil)
 
-  defp find_domain_for_data_attrs(data, list_domains) do
-    domain =
-      list_domains
-      |> Enum.find(&(&1.name == data["ou"]))
-
-    case domain do
-      nil -> data |> Map.put("domain_id", nil)
-      domain -> domain |> Map.fetch!(:domain_id) |> (&Map.put(data, "domain_id", &1)).()
-    end
+  def find_data_structure(%{} = clauses) do
+    Repo.get_by(DataStructure, clauses)
   end
 end

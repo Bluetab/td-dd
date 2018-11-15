@@ -4,6 +4,7 @@ defmodule TdDd.Factory do
   alias TdDd.Accounts.User
   alias TdDd.DataStructures.DataField
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureVersion
 
   def user_factory do
     %User {
@@ -24,7 +25,14 @@ defmodule TdDd.Factory do
       system: "some system",
       metadata: %{"description" => "some description"},
       ou: "My organization",
-      data_fields: []
+      versions: []
+    }
+  end
+
+  def data_structure_version_factory do
+    %DataStructureVersion {
+      version: 0,
+      data_structure_id: 0
     }
   end
 
@@ -39,7 +47,6 @@ defmodule TdDd.Factory do
       nullable: "false",
       precision: "some precision",
       type: "some type",
-      data_structure_id: 0,
       metadata: %{"description" => "some description"}
     }
   end

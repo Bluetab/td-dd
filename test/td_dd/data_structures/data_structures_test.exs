@@ -2,6 +2,7 @@ defmodule TdDd.DataStructuresTest do
   use TdDd.DataCase
 
   alias TdDd.DataStructures
+  import TdDd.TestOperators
 
   describe "data_structures" do
     alias TdDd.DataStructures.DataStructure
@@ -27,30 +28,28 @@ defmodule TdDd.DataStructuresTest do
 
     test "list_data_structures/1 returns all data_structures" do
       data_structure = insert(:data_structure)
-      assert DataStructures.list_data_structures() == [data_structure]
+      assert DataStructures.list_data_structures() <~> [data_structure]
     end
 
     test "list_data_structures/1 returns all data_structures form a search" do
       data_structure = insert(:data_structure)
       search_params = %{ou: [data_structure.ou]}
-      assert DataStructures.list_data_structures(search_params) == [data_structure]
+
+      assert DataStructures.list_data_structures(search_params), [data_structure]
     end
 
-    test "get_data_structure!/2 returns the data_structure with given id" do
+    test "get_data_structure!/1 returns the data_structure with given id" do
       data_structure = insert(:data_structure)
-      assert DataStructures.get_data_structure!(data_structure.id, data_fields: true) == data_structure
+
+      assert DataStructures.get_data_structure!(data_structure.id) <~> data_structure
     end
 
-    test "get_data_structure!/2 returns the data_structure with given id and fields preloaded" do
+    test "get_data_structure_with_fields!/1 returns the data_structure with given id and fields" do
       data_structure = insert(:data_structure)
-      insert(:data_field, name: "first", data_structure_id: data_structure.id)
+      insert(:data_structure_version)
 
-      data_structure_with_fields =
-        DataStructures.get_data_structure!(data_structure.id, data_fields: true)
-
-      assert data_structure_with_fields.id == data_structure.id
-      assert Ecto.assoc_loaded?(data_structure_with_fields.data_fields)
-      assert length(data_structure_with_fields.data_fields) == 1
+      assert DataStructures.get_data_structure_with_fields!(data_structure.id) <~> data_structure
+      # TODO: Need to check fields...
     end
 
     test "create_data_structure/1 with valid data creates a data_structure" do
@@ -74,6 +73,7 @@ defmodule TdDd.DataStructuresTest do
 
     test "update_data_structure/2 with valid data updates the data_structure" do
       data_structure = insert(:data_structure)
+      insert(:data_structure_version)
 
       assert {:ok, data_structure} =
                DataStructures.update_data_structure(data_structure, @update_attrs)
@@ -133,20 +133,22 @@ defmodule TdDd.DataStructuresTest do
     }
 
     test "list_data_fields/0 returns all data_fields" do
-      data_structure = insert(:data_structure)
-      data_field = insert(:data_field, data_structure_id: data_structure.id)
+      data_field = insert(:data_field)
       assert DataStructures.list_data_fields() == [data_field]
     end
 
     test "get_data_field!/1 returns the data_field with given id" do
-      data_structure = insert(:data_structure)
-      data_field = insert(:data_field, data_structure_id: data_structure.id)
+      data_field = insert(:data_field)
       assert DataStructures.get_data_field!(data_field.id) == data_field
     end
 
     test "create_data_field/1 with valid data creates a data_field" do
-      data_structure = insert(:data_structure)
-      creation_attrs = Map.put(@valid_attrs, :data_structure_id, data_structure.id)
+      insert(:data_structure)
+      data_structure_version = insert(:data_structure_version)
+
+      creation_attrs =
+        Map.put(@valid_attrs, :data_structure_version_id, data_structure_version.id)
+
       assert {:ok, %DataField{} = data_field} = DataStructures.create_data_field(creation_attrs)
       assert data_field.business_concept_id == "42"
       assert data_field.description == "some description"
@@ -166,35 +168,34 @@ defmodule TdDd.DataStructuresTest do
     end
 
     test "update_data_field/2 with valid data updates the data_field" do
-      data_structure = insert(:data_structure)
-      data_field = insert(:data_field, data_structure_id: data_structure.id)
+      data_field = insert(:data_field)
       assert {:ok, data_field} = DataStructures.update_data_field(data_field, @update_attrs)
       assert %DataField{} = data_field
       assert data_field.description == "some updated description"
     end
 
     test "delete_data_field/1 deletes the data_field" do
-      data_structure = insert(:data_structure)
-      data_field = insert(:data_field, data_structure_id: data_structure.id)
+      data_field = insert(:data_field)
       assert {:ok, %DataField{}} = DataStructures.delete_data_field(data_field)
       assert_raise Ecto.NoResultsError, fn -> DataStructures.get_data_field!(data_field.id) end
     end
 
     test "change_data_field/1 returns a data_field changeset" do
-      data_structure = insert(:data_structure)
-      data_field = insert(:data_field, data_structure_id: data_structure.id)
+      data_field = insert(:data_field)
       assert %Ecto.Changeset{} = DataStructures.change_data_field(data_field)
     end
   end
 
-  describe "data structure fields" do
-    test "list_data_structure_fields/2 returns data structure fields" do
+  describe "data structure versions" do
+    test "list_data_structure_versions/1 returns data structure versions" do
       data_structure = insert(:data_structure)
-      data_field = insert(:data_field, data_structure_id: data_structure.id)
 
-      data_fields = DataStructures.list_data_structure_fields(data_structure.id)
-      assert length(data_fields) == 1
-      assert data_fields |> Enum.at(0) |> Map.get(:id) == data_field.id
+      data_structure_version =
+        insert(:data_structure_version, data_structure_id: data_structure.id)
+
+      data_structure_versions = DataStructures.list_data_structure_versions(data_structure.id)
+      assert length(data_structure_versions) == 1
+      assert data_structure_versions |> Enum.at(0) |> Map.get(:id) == data_structure_version.id
     end
   end
 end

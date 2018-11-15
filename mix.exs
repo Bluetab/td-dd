@@ -6,8 +6,8 @@ defmodule TdDd.Mixfile do
   def project do
     [
       app: :td_dd,
-      version: case System.get_env("APP_VERSION") do nil -> "2.6.0-local"; v -> v end,
-      elixir: "~> 1.4",
+      version: case System.get_env("APP_VERSION") do nil -> "2.8.0-local"; v -> v end,
+      elixir: "~> 1.6",
       elixirc_paths: elixirc_paths(Mix.env),
       compilers: [:phoenix, :gettext] ++ Mix.compilers,
       start_permanent: Mix.env == :prod,
@@ -41,19 +41,19 @@ defmodule TdDd.Mixfile do
       {:postgrex, ">= 0.0.0"},
       {:gettext, "~> 0.11"},
       {:cowboy, "~> 1.0"},
-      {:cabbage, "~> 0.3.0"},
+      {:cabbage, git: "https://github.com/Bluetab/cabbage", tag: "v0.3.7-alpha"},
       {:httpoison, "~> 1.0"},
       {:edeliver, "~> 1.4.5"},
       {:distillery, ">= 0.8.0", warn_missing: false},
       {:credo, "~> 0.9.0-rc1", only: [:dev, :test], runtime: false},
       {:guardian, "~> 1.0"},
       {:canada, "~> 1.0.1"},
-      {:ex_machina, "~> 2.1", only: :test},
+      {:ex_machina, "~> 2.1", only: [:test]},
       {:cors_plug, "~> 1.2"},
       {:csv, "~> 2.0.0"},
       {:phoenix_swagger, "~> 0.7.0"},
       {:ex_json_schema, "~> 0.5"},
-      {:td_perms, git: "https://github.com/Bluetab/td-perms.git", tag: "v0.3.10"}
+      {:td_perms, git: "https://github.com/Bluetab/td-perms.git", tag: "2.8.0"}
     ]
   end
 
@@ -67,8 +67,8 @@ defmodule TdDd.Mixfile do
     [
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      "test": ["ecto.create --quiet", "ecto.migrate", "test"],
-      "compile": ["compile", &pxh_swagger_generate/1]
+      test: ["ecto.create --quiet", "ecto.migrate", "test"],
+      compile: ["compile", &pxh_swagger_generate/1]
     ]
   end
 

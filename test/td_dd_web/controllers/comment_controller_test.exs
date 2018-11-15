@@ -95,9 +95,7 @@ defmodule TdDdWeb.CommentControllerTest do
 
     @tag authenticated_user: @admin_user_name
     test "renders comment related to a Data Field", %{conn: conn} do
-      data_structure = insert(:data_structure)
-      creation_attrs = Map.put(@data_field_attrs, :data_structure_id, data_structure.id)
-      conn = post(conn, data_field_path(conn, :create), data_field: creation_attrs)
+      conn = post(conn, data_field_path(conn, :create), data_field: @data_field_attrs)
       assert %{"id" => data_field_id} = json_response(conn, 201)["data"]
 
       conn = recycle_and_put_headers(conn)

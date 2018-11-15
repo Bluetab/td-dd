@@ -23,6 +23,7 @@ defmodule TdDd.DataStructure.Search do
       user
       |> Permissions.get_domain_permissions()
       |> Enum.filter(&Enum.member?(&1.permissions, :view_data_structure))
+
     get_filter_values(permissions)
   end
 
@@ -50,7 +51,7 @@ defmodule TdDd.DataStructure.Search do
     |> do_search
   end
 
-  #Non-admin search
+  # Non-admin search
   def search_data_structures(params, %User{} = user, page, size) do
     permissions =
       user
@@ -68,8 +69,9 @@ defmodule TdDd.DataStructure.Search do
     filter = permissions |> create_filter_clause(user_defined_filters)
 
     query = create_query(params, filter)
+
     %{from: page * size, size: size, query: query}
-      |> do_search
+    |> do_search
   end
 
   defp create_filter_clause(permissions, user_defined_filters \\ []) do
@@ -84,7 +86,6 @@ defmodule TdDd.DataStructure.Search do
          %{resource_id: resource_id, permissions: _},
          user_defined_filters
        ) do
-
     domain_clause = %{term: %{domain_ids: resource_id}}
 
     %{
@@ -112,19 +113,21 @@ defmodule TdDd.DataStructure.Search do
 
   defp create_query(%{"query" => query}) do
     equery = Query.add_query_wildcard(query)
+
     %{simple_query_string: %{query: equery}}
     |> bool_query
-  end
-
-  defp create_query(%{"query" => query}, filter) do
-    equery = Query.add_query_wildcard(query)
-    %{simple_query_string: %{query: equery}}
-    |> bool_query(filter)
   end
 
   defp create_query(_params) do
     %{match_all: %{}}
     |> bool_query
+  end
+
+  defp create_query(%{"query" => query}, filter) do
+    equery = Query.add_query_wildcard(query)
+
+    %{simple_query_string: %{query: equery}}
+    |> bool_query(filter)
   end
 
   defp create_query(_params, filter) do

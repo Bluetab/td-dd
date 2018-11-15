@@ -3,7 +3,7 @@ defmodule TdDd.DataStructures.DataField do
   use Ecto.Schema
   import Ecto.Changeset
   alias TdDd.DataStructures.DataField
-  alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureVersion
 
   @data_field_modifiable_fields Application.get_env(:td_dd, :metadata)[
                                   :data_field_modifiable_fields
@@ -18,8 +18,8 @@ defmodule TdDd.DataStructures.DataField do
     field(:nullable, :boolean, default: nil)
     field(:precision, :string, default: nil)
     field(:type, :string, default: nil)
-    belongs_to(:data_structure, DataStructure)
-    field(:metadata, :map)
+    field(:metadata, :map, default: %{})
+    many_to_many(:data_structure_versions, DataStructureVersion, join_through: "versions_fields", on_delete: :delete_all)
 
     timestamps()
   end
@@ -40,14 +40,27 @@ defmodule TdDd.DataStructures.DataField do
       :nullable,
       :description,
       :business_concept_id,
-      :data_structure_id,
       :last_change_at,
       :last_change_by,
       :metadata
     ])
-    |> validate_required([:name, :data_structure_id, :last_change_at, :last_change_by, :metadata])
+    |> validate_required([:name, :last_change_at, :last_change_by, :metadata])
     |> validate_length(:name, max: 255)
     |> validate_length(:business_concept_id, max: 255)
-    |> foreign_key_constraint(:data_structure_id)
+  end
+
+  def search_fields(field) do
+    %{
+      id: field.id,
+      business_concept_id: field.business_concept_id,
+      description: field.description,
+      inserted_at: field.inserted_at,
+      last_change_at: field.last_change_at,
+      name: field.name,
+      nullable: field.nullable,
+      precision: field.precision,
+      type: field.type,
+      updated_at: field.updated_at
+    }
   end
 end

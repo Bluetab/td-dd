@@ -52,17 +52,17 @@ defmodule TdDdWeb.Router do
         version: "1.0",
         title: "TdDd"
       },
-      "basePath": "/api",
-      "securityDefinitions":
+      basePath: "/api",
+      securityDefinitions:
         %{
           bearer:
           %{
-            "type": "apiKey",
-            "name": "Authorization",
-            "in": "header",
+            type: "apiKey",
+            name: "Authorization",
+            in: "header",
           }
       },
-      "security": [
+      security: [
         %{
          bearer: []
         }

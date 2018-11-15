@@ -2,18 +2,19 @@ defmodule TdDdWeb.MetadataController do
   require Logger
   use TdDdWeb, :controller
 
-  alias Ecto.Adapters.SQL
   alias TdDd.DataStructures
-  alias TdDd.Repo
+  alias TdDd.Loader
   alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
   alias TdPerms.TaxonomyCache
 
   @data_structure_keys Application.get_env(:td_dd, :metadata)[:data_structure_keys]
   @data_field_keys Application.get_env(:td_dd, :metadata)[:data_field_keys]
-  @data_structure_query Application.get_env(:td_dd, :metadata)[:data_structure_query]
-  @data_field_query Application.get_env(:td_dd, :metadata)[:data_field_query]
-  @data_structure_modifiable_fields Application.get_env(:td_dd, :metadata)[:data_structure_modifiable_fields]
-  @data_field_modifiable_fields Application.get_env(:td_dd, :metadata)[:data_field_modifiable_fields]
+  @data_structure_modifiable_fields Application.get_env(:td_dd, :metadata)[
+                                      :data_structure_modifiable_fields
+                                    ]
+  @data_field_modifiable_fields Application.get_env(:td_dd, :metadata)[
+                                  :data_field_modifiable_fields
+                                ]
 
   @data_structures_param "data_structures"
 
@@ -40,101 +41,91 @@ defmodule TdDdWeb.MetadataController do
   end
 
   defp do_upload(conn, params) do
-
-    Logger.info "Uploading metadata..."
+    Logger.info("Uploading metadata...")
 
     start_time = DateTime.utc_now()
 
     data_structures_upload = Map.get(params, @data_structures_param)
     data_fields_upload = Map.get(params, @data_fields_param)
 
-    Repo.transaction(fn ->
-      upload_in_transaction(conn, data_structures_upload.path, data_fields_upload.path)
-    end)
+    parse_and_load(conn, data_structures_upload.path, data_fields_upload.path)
 
     end_time = DateTime.utc_now()
 
-    Logger.info "Metadata uploaded. Elapsed seconds: #{DateTime.diff(end_time, start_time)}"
-
+    Logger.info("Metadata uploaded. Elapsed seconds: #{DateTime.diff(end_time, start_time)}")
   end
 
-  defp upload_in_transaction(conn, data_structures_path, data_fields_path) do
+  defp parse_and_load(conn, data_structures_path, data_fields_path) do
+    user_id = GuardianPlug.current_resource(conn).id
+    audit_fields = %{last_change_at: DateTime.utc_now(), last_change_by: user_id}
+    domain_map = TaxonomyCache.get_domain_name_to_id_map()
 
-    Logger.info "Uploading data structures..."
+    structure_records =
+      data_structures_path
+      |> File.stream!()
+      |> CSV.decode!(separator: ?;, headers: true)
+      |> Enum.map(&(csv_to_structure(&1, domain_map)))
 
-    data_structure_keys = Enum.reverse(@data_structure_keys)
+    field_records =
+      data_fields_path
+      |> File.stream!()
+      |> CSV.decode!(separator: ?;, headers: true)
+      |> Enum.map(&csv_to_field/1)
 
-    list_all_domains = TaxonomyCache.get_all_domains()
-
-    data_structures_path
-    |> File.stream!
-    |> CSV.decode!(separator: ?;, headers: true)
-    |> Enum.each(fn(data) ->
-      last_change_at = DateTime.utc_now()
-      input = data
-      |> blank_to_nil(@data_fields_not_blank)
-      |> add_metadata(@data_structure_modifiable_fields, last_change_at)
-      |> DataStructures.add_domain_id(list_all_domains)
-      |> to_array(data_structure_keys)
-      |> add_user_and_date_time(conn, last_change_at)
-
-      SQL.query!(Repo, @data_structure_query, input)
-    end)
-
-    Logger.info "Uploading data fields..."
-
-    data_field_keys = Enum.reverse(@data_field_keys)
-
-    data_fields_path
-    |> File.stream!
-    |> CSV.decode!(separator: ?;, headers: true)
-    |> Enum.each(fn(data) ->
-      last_change_at = DateTime.utc_now()
-      input = data
-      |> add_metadata(@data_field_modifiable_fields, last_change_at)
-      |> to_array(data_field_keys)
-      |> add_user_and_date_time(conn, last_change_at)
-      SQL.query!(Repo, @data_field_query, input)
-    end)
-
+    Loader.load(structure_records, field_records, audit_fields)
   end
 
-  defp to_array(data, data_keys) do
-    data_keys
-    |> Enum.reduce([], &([get_value(data, &1)| &2]))
+  defp csv_to_structure(record, domain_map) do
+    record
+    |> blank_to_nil(@data_fields_not_blank)
+    |> add_metadata(@data_structure_modifiable_fields)
+    |> DataStructures.add_domain_id(domain_map)
+    |> to_map(@data_structure_keys)
   end
 
-  defp blank_to_nil(data, [head|tail]) do
+  defp csv_to_field(record) do
+    record
+    |> add_metadata(@data_field_modifiable_fields)
+    |> to_map(@data_field_keys)
+  end
+
+  defp to_map(data, keys) do
+    keys
+    |> Enum.map(fn key -> {key, get_value(data, key)} end)
+    |> Map.new(fn {k, v} -> {String.to_atom(k), v} end)
+  end
+
+  defp blank_to_nil(data, [head | tail]) do
     data
     |> blank_to_nil(head)
     |> blank_to_nil(tail)
   end
+
   defp blank_to_nil(data, []), do: data
+
   defp blank_to_nil(data, field_name) do
     value = Map.fetch!(data, field_name)
+
     case value do
       "" -> Map.put(data, field_name, nil)
-      _  -> data
+      _ -> data
     end
   end
 
   defp get_value(data, "nullable" = name) do
-    case String.downcase(Map.get(data, name))  do
+    case String.downcase(Map.get(data, name)) do
       "" -> nil
       value -> Enum.member?(["t", "true", "y", "yes", "on", "1"], value)
     end
   end
+
   defp get_value(data, name), do: Map.get(data, name)
 
-  defp add_user_and_date_time(data, conn, last_change_at) do
-    data ++ [GuardianPlug.current_resource(conn).id, last_change_at]
+  defp add_metadata(data, fields) do
+    metadata =
+      fields
+      |> Enum.reduce(%{}, &Map.put(&2, &1, Map.get(data, &1)))
+
+    Map.put(data, "metadata", metadata)
   end
-
- defp add_metadata(data, fields, last_change_at) do
-   metadata = fields
-   |> Enum.reduce(%{}, &Map.put(&2, &1, Map.get(data, &1)))
-   |> Map.put("last_change_at", last_change_at)
-   Map.put(data, "metadata", metadata)
- end
-
 end

@@ -20,8 +20,7 @@ defmodule TdDd.DictionaryTest do
     "Type" => "type",
     "Organizational Unit" => "ou",
     "LOPD" => "lopd",
-    "Last Modification" => "last_change_at",
-    "Last User" => "last_change_by"
+    "Last Modification" => "last_change_at"
   }
   @fixed_data_field_values %{
     "Field Name" => "name",
@@ -31,7 +30,6 @@ defmodule TdDd.DictionaryTest do
     "Business Concept ID" => "business_concept_id",
     "Description" => "description",
     "Last Modification" => "last_change_at",
-    "Last User" => "last_change_by",
     "Bc_related" => "bc_related"
   }
 
@@ -69,7 +67,7 @@ defmodule TdDd.DictionaryTest do
          _state do
     token = get_user_token(user_name)
     attrs = field_value_to_api_attrs(fields, @fixed_data_structure_values)
-    data_structure_tmp = data_structure_find(token, system, group, structure)
+    data_structure_tmp = data_structure_find(token, system, group, structure) |> IO.inspect
     assert data_structure_tmp
 
     {:ok, http_status_code, %{"data" => data_structure}} =
@@ -120,7 +118,8 @@ defmodule TdDd.DictionaryTest do
            table: fields
          },
          %{token_admin: token_admin} = _state do
-    data_structure = data_structure_find(token_admin, system, group, structure)
+    IO.inspect([system, group, structure, field_name])
+    data_structure = data_structure_find(token_admin, system, group, structure) |> IO.inspect
     data_field_tmp = data_field_find(token_admin, field_name)
     assert data_field_tmp
     token = get_user_token(user_name)
@@ -129,7 +128,6 @@ defmodule TdDd.DictionaryTest do
       data_field_show(token, data_field_tmp["id"])
 
     assert rc_ok() == to_response_code(http_status_code)
-    assert data_field["data_structure_id"] == data_structure["id"]
     attrs = field_value_to_data_field(fields)
     assert_attrs(attrs, data_field)
   end

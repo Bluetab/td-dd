@@ -11,7 +11,6 @@ defmodule TdDdWeb.DataFieldController do
 
   action_fallback TdDdWeb.FallbackController
 
-  @td_auth_api Application.get_env(:td_dd, :auth_service)[:api_service]
   @events %{update_data_field: "update_data_field",
             create_data_field: "create_data_field",
             delete_data_field: "delete_data_field"}
@@ -28,8 +27,7 @@ defmodule TdDdWeb.DataFieldController do
 
   def index(conn, _params) do
     data_fields = DataStructures.list_data_fields()
-    users = get_data_field_users(data_fields)
-    render(conn, "index.json", data_fields: data_fields, users: users)
+    render(conn, "index.json", data_fields: data_fields)
   end
 
   swagger_path :data_structure_fields do
@@ -46,9 +44,8 @@ defmodule TdDdWeb.DataFieldController do
     user = conn.assigns[:current_user]
     data_structure = DataStructures.get_data_structure!(data_structure_id)
     with true <- can?(user, view_data_structure(data_structure)) do
-      data_fields = DataStructures.list_data_structure_fields(data_structure_id)
-      users = get_data_field_users(data_fields)
-      render(conn, "index.json", data_fields: data_fields, users: users)
+      data_fields = DataStructures.get_latest_fields(data_structure_id)
+      render(conn, "index.json", data_fields: data_fields)
     else
       false ->
         conn
@@ -77,11 +74,10 @@ defmodule TdDdWeb.DataFieldController do
     with {:ok, %DataField{} = data_field} <- DataStructures.create_data_field(creation_params) do
       audit = %{"audit" => %{"resource_id" => data_field.id, "resource_type" => "data_field", "payload" => data_field_params}}
       Audit.create_event(conn, audit, @events.create_data_field)
-      users = get_data_field_users(data_field)
       conn
       |> put_status(:created)
       |> put_resp_header("location", data_field_path(conn, :show, data_field))
-      |> render("show.json", data_field: data_field, users: users)
+      |> render("show.json", data_field: data_field)
     else
       _error ->
         conn
@@ -103,8 +99,7 @@ defmodule TdDdWeb.DataFieldController do
 
   def show(conn, %{"id" => id}) do
     data_field = DataStructures.get_data_field!(id)
-    users = get_data_field_users(data_field)
-    render(conn, "show.json", data_field: data_field, users: users)
+    render(conn, "show.json", data_field: data_field)
   end
 
   swagger_path :update do
@@ -128,8 +123,7 @@ defmodule TdDdWeb.DataFieldController do
     with {:ok, %DataField{} = data_field} <- DataStructures.update_data_field(data_field, update_params) do
       audit = %{"audit" => %{"resource_id" => id, "resource_type" => "data_field", "payload" => update_params |> Map.drop(["last_change_at", "last_change_by"])}}
       Audit.create_event(conn, audit, @events.update_data_field)
-      users = get_data_field_users(data_field)
-      render(conn, "show.json", data_field: data_field, users: users)
+      render(conn, "show.json", data_field: data_field)
     else
       _error ->
         conn
@@ -161,11 +155,4 @@ defmodule TdDdWeb.DataFieldController do
   defp get_current_user_id(conn) do
     GuardianPlug.current_resource(conn).id
   end
-
-  defp get_data_field_users(%DataField{} = data_field), do: get_data_field_users([data_field])
-  defp get_data_field_users(data_fields) when is_list(data_fields) do
-    ids = Enum.reduce(data_fields, [], &([&1.last_change_by|&2]))
-    @td_auth_api.search(%{"ids" => ids})
-  end
-
 end

@@ -18,7 +18,6 @@ defmodule TdDdWeb.SwaggerDefinitions do
           type [:string, :null], "Data Structure type (csv, table...)"
           ou [:string, :null], "Data Structure organizational unit"
           lopd [:string, :null], "Data Structure lopd level"
-          last_change_by :string, "Data Structure last updated by"
           last_change_at :string, "Data Structure last updated at"
           inserted_at :string, "Data Structure creation date"
           metadata :object, "Data Structure data. Uploaded by background processes"
@@ -112,8 +111,6 @@ defmodule TdDdWeb.SwaggerDefinitions do
           nullable [:boolean, :null], "Data Field... is nullable"
           description [:string, :null], "Data Field descrition"
           business_concept_id [:string, :null], "Asociated Business Concept Id"
-          data_structure_id :integer, "Belongs to Data Structure", required: true
-          last_change_by :string, "Data Field last updated by"
           last_change_at :string, "Data Field last updated at"
           inserted_at :string, "Data Field creation date"
           metadata :object, "Data Field data. Uploaded by background processes"
@@ -127,8 +124,6 @@ defmodule TdDdWeb.SwaggerDefinitions do
           nullable: true,
           description: "Data Field descrition",
           business_concept_id: "123456",
-          data_structure_id: 11,
-          last_change_by: 1,
           last_change_at: "2010-04-17 14:00:00",
           inserted_at: "2018-05-08T17:17:59.691460",
           metadata: %{"description" => "last description",
@@ -146,7 +141,6 @@ defmodule TdDdWeb.SwaggerDefinitions do
               nullable :boolean, "Data Field... is nullable"
               description :string, "Data Field descrition"
               business_concept_id :string, "Asociated Business Concept Id"
-              data_structure_id :integer, "Belongs to Data Structure", required: true
             end
           end)
         end

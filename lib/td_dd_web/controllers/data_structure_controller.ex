@@ -17,7 +17,6 @@ defmodule TdDdWeb.DataStructureController do
 
   action_fallback(TdDdWeb.FallbackController)
 
-  @td_auth_api Application.get_env(:td_dd, :auth_service)[:api_service]
   @events %{
     update_data_structure: "update_data_structure",
     create_data_structure: "create_data_structure",
@@ -99,7 +98,7 @@ defmodule TdDdWeb.DataStructureController do
       |> Map.put("last_change_by", get_current_user_id(conn))
       |> Map.put("last_change_at", DateTime.utc_now())
       |> Map.put("metadata", %{})
-      |> DataStructures.add_domain_id(TaxonomyCache.get_all_domains())
+      |> DataStructures.add_domain_id(TaxonomyCache.get_domain_name_to_id_map())
 
     with true <- can?(user, create_data_structure(Map.fetch!(creation_params, "domain_id"))),
       {:ok, %DataStructure{} = data_structure} <-
@@ -113,12 +112,11 @@ defmodule TdDdWeb.DataStructureController do
       }
 
       Audit.create_event(conn, audit, @events.create_data_structure)
-      users = get_data_structure_users(data_structure)
 
       conn
       |> put_status(:created)
       |> put_resp_header("location", data_structure_path(conn, :show, data_structure))
-      |> render("show.json", data_structure: data_structure, users: users)
+      |> render("show.json", data_structure: data_structure)
     else
       false ->
         conn
@@ -152,14 +150,12 @@ defmodule TdDdWeb.DataStructureController do
 
     data_structure =
       id
-      |> DataStructures.get_data_structure!(data_fields: true)
+      |> DataStructures.get_data_structure_with_fields!
       |> add_fields_external_ids
       |> get_concepts_linked_to_fields()
 
-    users = get_data_structure_users(data_structure)
-
     with true <- can?(user, view_data_structure(data_structure)) do
-      render(conn, "show.json", data_structure: data_structure, users: users)
+      render(conn, "show.json", data_structure: data_structure)
     else
       false ->
         conn
@@ -216,13 +212,13 @@ defmodule TdDdWeb.DataStructureController do
   def update(conn, %{"id" => id, "data_structure" => data_structure_params}) do
     user = conn.assigns[:current_user]
 
-    data_structure = DataStructures.get_data_structure!(id, data_fields: true)
+    data_structure = DataStructures.get_data_structure_with_fields!(id)
 
     update_params =
       data_structure_params
       |> Map.put("last_change_by", get_current_user_id(conn))
       |> Map.put("last_change_at", DateTime.utc_now())
-      |> DataStructures.add_domain_id(TaxonomyCache.get_all_domains())
+      |> DataStructures.add_domain_id(TaxonomyCache.get_domain_name_to_id_map())
 
     with true <- can?(user, update_data_structure(data_structure)),
         {:ok, %DataStructure{} = data_structure} <-
@@ -240,8 +236,7 @@ defmodule TdDdWeb.DataStructureController do
       }
 
       Audit.create_event(conn, audit, @events.update_data_structure)
-      users = get_data_structure_users(data_structure)
-      render(conn, "show.json", data_structure: data_structure, users: users)
+      render(conn, "show.json", data_structure: data_structure)
     else
       false ->
         conn
@@ -298,24 +293,6 @@ defmodule TdDdWeb.DataStructureController do
 
   defp get_current_user_id(conn) do
     GuardianPlug.current_resource(conn).id
-  end
-
-  defp get_data_structure_users(%DataStructure{} = data_structure),
-    do: get_data_structure_users([data_structure])
-
-  defp get_data_structure_users(data_structures) when is_list(data_structures) do
-    ids =
-      Enum.reduce(data_structures, [], fn data_structure, acc ->
-        data_field_ids =
-          case Ecto.assoc_loaded?(data_structure.data_fields) do
-            true -> Enum.reduce(data_structures, [], &[&1.last_change_by | &2])
-            false -> []
-          end
-
-        [data_structure.last_change_by | data_field_ids ++ acc]
-      end)
-
-    @td_auth_api.search(%{"ids" => Enum.uniq(ids)})
   end
 
   swagger_path :search do

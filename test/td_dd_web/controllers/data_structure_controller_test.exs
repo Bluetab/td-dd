@@ -172,6 +172,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
   defp create_data_structure(_) do
     data_structure = insert(:data_structure)
-    {:ok, data_structure: data_structure}
+    data_structure_version = insert(:data_structure_version)
+    {:ok, data_structure: data_structure, data_structure_version: data_structure_version}
   end
 end

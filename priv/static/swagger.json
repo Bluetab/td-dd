@@ -863,10 +863,6 @@
           ],
           "description": "Data Structure lopd level"
         },
-        "last_change_by": {
-          "type": "string",
-          "description": "Data Structure last updated by"
-        },
         "last_change_at": {
           "type": "string",
           "description": "Data Structure last updated at"
@@ -954,7 +950,6 @@
         "data_field": {
           "type": "object",
           "required": [
-            "data_structure_id",
             "name"
           ],
           "properties": {
@@ -978,10 +973,6 @@
               "type": "string",
               "description": "Data Field descrition"
             },
-            "data_structure_id": {
-              "type": "integer",
-              "description": "Belongs to Data Structure"
-            },
             "business_concept_id": {
               "type": "string",
               "description": "Asociated Business Concept Id"
@@ -994,7 +985,6 @@
       "type": "object",
       "title": "Data Field",
       "required": [
-        "data_structure_id",
         "name",
         "id"
       ],
@@ -1028,10 +1018,6 @@
           "type": "object",
           "description": "Data Field data. Uploaded by background processes"
         },
-        "last_change_by": {
-          "type": "string",
-          "description": "Data Field last updated by"
-        },
         "last_change_at": {
           "type": "string",
           "description": "Data Field last updated at"
@@ -1058,10 +1044,6 @@
           ],
           "description": "Data Field descrition"
         },
-        "data_structure_id": {
-          "type": "integer",
-          "description": "Belongs to Data Structure"
-        },
         "business_concept_id": {
           "type": [
             "string",
@@ -1079,13 +1061,11 @@
           "last_change_at": "2018-05-08T17:17:59.691460",
           "description": "last description"
         },
-        "last_change_by": 1,
         "last_change_at": "2010-04-17 14:00:00",
         "inserted_at": "2018-05-08T17:17:59.691460",
         "id": 123,
         "external_id": "External ID",
         "description": "Data Field descrition",
-        "data_structure_id": 11,
         "business_concept_id": "123456"
       },
       "description": "A Data Structure Data Field"
