@@ -22,8 +22,7 @@ create_data_structure = fn(ou, system, group, name) ->
     name: name,
     system: system,
     type: "one",
-    ou:   ou,
-    lopd: "EM"
+    ou:   ou
   })
 end
 

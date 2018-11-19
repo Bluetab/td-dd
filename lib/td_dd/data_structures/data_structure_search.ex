@@ -117,7 +117,6 @@ defmodule TdDd.DataStructure.Search do
     %{simple_query_string: %{query: equery}}
     |> bool_query
   end
-
   defp create_query(_params) do
     %{match_all: %{}}
     |> bool_query
@@ -129,7 +128,6 @@ defmodule TdDd.DataStructure.Search do
     %{simple_query_string: %{query: equery}}
     |> bool_query(filter)
   end
-
   defp create_query(_params, filter) do
     %{match_all: %{}}
     |> bool_query(filter)

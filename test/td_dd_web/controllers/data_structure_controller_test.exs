@@ -7,6 +7,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
   alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
 
+  @df_cache Application.get_env(:td_dd, :df_cache)
+
   @create_attrs %{
     description: "some description",
     group: "some group",
@@ -15,8 +17,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     name: "some name",
     system: "some system",
     type: "csv",
-    ou: "GM",
-    lopd: "1"
+    ou: "GM"
   }
   @update_attrs %{
     description: "some updated description",
@@ -26,8 +27,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     name: "some updated name",
     system: "some updated system",
     type: "table",
-    ou: "EM",
-    lopd: "2"
+    ou: "EM"
   }
   @invalid_attrs %{
     description: nil,
@@ -37,13 +37,13 @@ defmodule TdDdWeb.DataStructureControllerTest do
     name: nil,
     system: nil,
     type: nil,
-    ou: nil,
-    lopd: nil
+    ou: nil
   }
 
   setup_all do
     start_supervised(MockTdAuthService)
     start_supervised(MockTdAuditService)
+    start_supervised(@df_cache)
     :ok
   end
 
@@ -97,7 +97,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert json_response_data["description"] == "some description"
       assert json_response_data["type"] == "csv"
       assert json_response_data["ou"] == "GM"
-      assert json_response_data["lopd"] == "1"
       assert json_response_data["group"] == "some group"
       assert json_response_data["name"] == "some name"
       assert json_response_data["system"] == "some system"
@@ -142,9 +141,75 @@ defmodule TdDdWeb.DataStructureControllerTest do
       validate_resp_schema(conn, schema, "DataStructureResponse")
       assert json_response_data["id"] == id
       assert json_response_data["description"] == "some updated description"
-      assert json_response_data["ou"] == "EM"
-      assert json_response_data["lopd"] == "2"
       assert json_response_data["inserted_at"]
+    end
+
+    @tag authenticated_user: @admin_user_name
+    test "renders error when df_content is invalid", %{
+      conn: conn,
+      data_structure: data_structure
+    } do
+      template_name = "template_name"
+      @df_cache.clean_cache()
+      @df_cache.put_template(%{
+          id: 0,
+          label: "some label",
+          name: template_name,
+          is_default: false,
+          content: [
+            %{
+              "name" => "field",
+              "type" => "string",
+              "required" => true
+            }
+          ]
+      })
+      conn = put(conn,
+          data_structure_path(conn, :update, data_structure),
+          data_structure: %{
+            df_name: template_name,
+            df_content: %{}
+          }
+      )
+      assert response(conn, 422)
+    end
+
+    @tag authenticated_user: @admin_user_name
+    test "renders data_structure when df_content is valid", %{
+      conn: conn,
+      data_structure: %{id: id} = data_structure
+    } do
+      template_name = "template_name"
+      @df_cache.clean_cache()
+      @df_cache.put_template(%{
+          id: 0,
+          label: "some label",
+          name: template_name,
+          is_default: false,
+          content: [
+            %{
+              "name" => "field",
+              "type" => "string",
+              "required" => true
+            }
+          ]
+      })
+      df_content = %{"field" => "value"}
+      conn = put(conn,
+          data_structure_path(conn, :update, data_structure),
+          data_structure: %{
+            df_name: template_name,
+            df_content: df_content
+          }
+      )
+
+      assert %{"id" => ^id} = json_response(conn, 200)["data"]
+
+      conn = recycle_and_put_headers(conn)
+      conn = get(conn, data_structure_path(conn, :show, id))
+      json_response_data = json_response(conn, 200)["data"]
+
+      assert json_response_data["df_content"] == df_content
     end
   end
 

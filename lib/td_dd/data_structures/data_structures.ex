@@ -10,7 +10,9 @@ defmodule TdDd.DataStructures do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Utils.CollectionUtils
+  alias TdDfLib.Validation
 
+  @df_cache Application.get_env(:td_dd, :df_cache)
   @search_service Application.get_env(:td_dd, :elasticsearch)[:search_service]
 
   @doc """
@@ -136,7 +138,23 @@ defmodule TdDd.DataStructures do
       {:error, %Ecto.Changeset{}}
 
   """
+  def update_data_structure(
+    %DataStructure{} = data_structure,
+    %{"df_name" => df_name} = attrs
+  ) when not is_nil(df_name) do
+    content = Map.get(attrs, "df_content", %{})
+    %{:content => content_schema} = @df_cache.get_template_by_name(df_name)
+    content_changeset = Validation.build_changeset(content, content_schema)
+    case content_changeset.valid? do
+      false -> {:error, content_changeset}
+      _ -> do_update_data_structure(data_structure, attrs)
+    end
+  end
   def update_data_structure(%DataStructure{} = data_structure, attrs) do
+    do_update_data_structure(data_structure, attrs)
+  end
+
+  defp do_update_data_structure(%DataStructure{} = data_structure, attrs) do
     result =
       data_structure
       |> DataStructure.update_changeset(attrs)

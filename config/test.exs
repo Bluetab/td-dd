@@ -37,6 +37,7 @@ config :td_dd, :elasticsearch,
   es_port: 9200,
   type_name: "doc"
 
+config :td_dd, df_cache: TdPerms.MockDynamicFormCache
 config :td_dd, permission_resolver: TdDd.Permissions.MockPermissionResolver
 
 config :td_perms, redis_host: "localhost"

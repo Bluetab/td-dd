@@ -10,7 +10,6 @@ Feature: Data Dictionary Administration
       | Description         | We are describing this table as a table in Risks group in SAS System |
       | Type                | Table                                                                |
       | Organizational Unit | General Management                                                   |
-      | LOPD                | 1                                                                    |
     Then the system returns a result with code "Created"
     And "app-admin" is able to view data structure system "SAS" group "Risks" and structure "TKIDS0001"  with following data:
       | Field               | Value                                                                |
@@ -20,7 +19,6 @@ Feature: Data Dictionary Administration
       | Description         | We are describing this table as a table in Risks group in SAS System |
       | Type                | Table                                                                |
       | Organizational Unit | General Management                                                   |
-      | LOPD                | 1                                                                    |
       | Last Modification   | Some timestamp                                                       |
 
   Scenario: Create a new field related to an existing Data Structure inside Data Dictionary
@@ -32,7 +30,6 @@ Feature: Data Dictionary Administration
       | Description         | We are describing this table as a table in Risks group in SAS System |
       | Type                | Table                                                                |
       | Organizational Unit | General Management                                                   |
-      | LOPD                | 1                                                                    |
     When "app-admin" tries to create a Data Field from system "SAS" group "Risks" and structure "TKIDS0001" with following data:
       | Field               | Value                                                |
       | Field Name          | My_Personal_Field                                    |

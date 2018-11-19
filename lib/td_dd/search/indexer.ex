@@ -5,6 +5,8 @@ defmodule TdDd.Search.Indexer do
   alias TdDd.ESClientApi
   alias TdDd.Search
 
+  @df_cache Application.get_env(:td_dd, :df_cache)
+
   def reindex(:data_structure) do
     ESClientApi.delete!("data_structure")
     mapping = get_mappings() |> Poison.encode!()
@@ -13,6 +15,8 @@ defmodule TdDd.Search.Indexer do
   end
 
   defp get_mappings do
+    content_mappings = %{properties: get_dynamic_mappings()}
+
     mapping_type = %{
       id: %{type: "long"},
       name: %{type: "text", fields: %{raw: %{type: "keyword"}}},
@@ -20,7 +24,6 @@ defmodule TdDd.Search.Indexer do
       group: %{type: "text", fields: %{raw: %{type: "keyword"}}},
       ou: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
       type: %{type: "text"},
-      lopd: %{type: "text"},
       description: %{type: "text"},
       domain_ids: %{type: "long"},
       last_change_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
@@ -40,10 +43,36 @@ defmodule TdDd.Search.Indexer do
           description: %{type: "text"},
           id: %{type: "long"}
         }
-      }
+      },
+      df_content: content_mappings
     }
     settings = %{analysis: %{normalizer: %{sortable: %{type: "custom", char_filter: [], filter: ["asciifolding"]}}}}
     %{mappings: %{doc: %{properties: mapping_type}}, settings: settings}
   end
 
+  def get_dynamic_mappings do
+    @df_cache.list_templates()
+    |> Enum.flat_map(&get_mappings/1)
+    |> Enum.into(%{})
+    |> Map.put("_confidential", %{type: "text", fields: %{raw: %{type: "keyword"}}})
+  end
+
+  defp get_mappings(%{content: content}) do
+    content
+    |> Enum.map(&field_mapping/1)
+  end
+
+  defp field_mapping(%{"name" => name, "type" => type}) do
+    {name, mapping_type(type)}
+  end
+
+  defp field_mapping(%{"name" => name}) do
+    {name, mapping_type("string")}
+  end
+
+  defp mapping_type("list") do
+    %{type: "text", fields: %{raw: %{type: "keyword"}}}
+  end
+
+  defp mapping_type(_default), do: %{type: "text"}
 end

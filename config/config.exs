@@ -42,6 +42,7 @@ config :td_dd, :audit_service,
   protocol: "http",
   audits_path: "/api/audits/"
 
+config :td_dd, df_cache: TdPerms.DynamicFormCache
 config :td_dd, permission_resolver: TdPerms.Permissions
 
 config :td_perms, permissions: [

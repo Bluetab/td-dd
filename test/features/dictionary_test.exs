@@ -19,7 +19,6 @@ defmodule TdDd.DictionaryTest do
     "Description" => "description",
     "Type" => "type",
     "Organizational Unit" => "ou",
-    "LOPD" => "lopd",
     "Last Modification" => "last_change_at"
   }
   @fixed_data_field_values %{

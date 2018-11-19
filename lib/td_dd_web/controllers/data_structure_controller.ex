@@ -4,7 +4,7 @@ defmodule TdDdWeb.DataStructureController do
   use TdDdWeb, :controller
   use PhoenixSwagger
   alias Ecto
-  alias TdDd.Audit
+  alias TdDd.Audit.AuditSupport
   alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
   alias TdDd.DataStructure.Search
   alias TdDd.DataStructures
@@ -17,11 +17,7 @@ defmodule TdDdWeb.DataStructureController do
 
   action_fallback(TdDdWeb.FallbackController)
 
-  @events %{
-    update_data_structure: "update_data_structure",
-    create_data_structure: "create_data_structure",
-    delete_data_structure: "delete_data_structure"
-  }
+  @td_auth_api Application.get_env(:td_dd, :auth_service)[:api_service]
 
   def swagger_definitions do
     SwaggerDefinitions.data_structure_swagger_definitions()
@@ -103,15 +99,8 @@ defmodule TdDdWeb.DataStructureController do
     with true <- can?(user, create_data_structure(Map.fetch!(creation_params, "domain_id"))),
       {:ok, %DataStructure{} = data_structure} <-
            DataStructures.create_data_structure(creation_params) do
-      audit = %{
-        "audit" => %{
-          "resource_id" => data_structure.id,
-          "resource_type" => "data_structure",
-          "payload" => data_structure_params
-        }
-      }
 
-      Audit.create_event(conn, audit, @events.create_data_structure)
+      AuditSupport.create_data_structure(conn, data_structure.id, data_structure_params)
 
       conn
       |> put_status(:created)
@@ -155,7 +144,14 @@ defmodule TdDdWeb.DataStructureController do
       |> get_concepts_linked_to_fields()
 
     with true <- can?(user, view_data_structure(data_structure)) do
-      render(conn, "show.json", data_structure: data_structure)
+      user_permissions = %{
+        update: can?(user, update_data_structure(data_structure))
+      }
+
+      render(conn, "show.json",
+        data_structure: data_structure,
+        user_permissions: user_permissions
+      )
     else
       false ->
         conn
@@ -212,7 +208,7 @@ defmodule TdDdWeb.DataStructureController do
   def update(conn, %{"id" => id, "data_structure" => data_structure_params}) do
     user = conn.assigns[:current_user]
 
-    data_structure = DataStructures.get_data_structure_with_fields!(id)
+    data_structure_old = DataStructures.get_data_structure_with_fields!(id)
 
     update_params =
       data_structure_params
@@ -220,22 +216,14 @@ defmodule TdDdWeb.DataStructureController do
       |> Map.put("last_change_at", DateTime.utc_now())
       |> DataStructures.add_domain_id(TaxonomyCache.get_domain_name_to_id_map())
 
-    with true <- can?(user, update_data_structure(data_structure)),
+    with true <- can?(user, update_data_structure(data_structure_old)),
         {:ok, %DataStructure{} = data_structure} <-
-           DataStructures.update_data_structure(data_structure, update_params) do
-      data_structure =
-        data_structure
-        |> get_concepts_linked_to_fields()
+           DataStructures.update_data_structure(data_structure_old, update_params) do
 
-      audit = %{
-        "audit" => %{
-          "resource_id" => data_structure.id,
-          "resource_type" => "data_structure",
-          "payload" => data_structure_params
-        }
-      }
+      AuditSupport.update_data_structure(conn, data_structure_old, data_structure_params)
 
-      Audit.create_event(conn, audit, @events.update_data_structure)
+      data_structure = get_concepts_linked_to_fields(data_structure)
+
       render(conn, "show.json", data_structure: data_structure)
     else
       false ->
@@ -272,11 +260,7 @@ defmodule TdDdWeb.DataStructureController do
     with true <- can?(user, delete_data_structure(data_structure)),
       {:ok, %DataStructure{}} <- DataStructures.delete_data_structure(data_structure) do
 
-        audit = %{
-          "audit" => %{"resource_id" => id, "resource_type" => "data_structure", "payload" => %{}}
-        }
-
-        Audit.create_event(conn, audit, @events.delete_data_structure)
+        AuditSupport.delete_data_structure(conn, id)
         send_resp(conn, :no_content, "")
     else
       false ->

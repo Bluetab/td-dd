@@ -732,10 +732,6 @@
               "type": "string",
               "description": "Data Structure organizational unit"
             },
-            "lopd": {
-              "type": "string",
-              "description": "Data Structure lopd level"
-            },
             "description": {
               "type": "string",
               "description": "Data Structure description"
@@ -804,10 +800,6 @@
               "type": "string",
               "description": "Data Structure name"
             },
-            "lopd": {
-              "type": "string",
-              "description": "Data Structure lopd level"
-            },
             "group": {
               "type": "string",
               "description": "Data Structure group"
@@ -856,13 +848,6 @@
           "type": "object",
           "description": "Data Structure data. Uploaded by background processes"
         },
-        "lopd": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "description": "Data Structure lopd level"
-        },
         "last_change_at": {
           "type": "string",
           "description": "Data Structure last updated at"
@@ -897,11 +882,9 @@
         "name": "Data Structure name",
         "metadata": {
           "ou": "Super Management",
-          "lopd": "EM",
           "last_change_at": "2018-05-08T17:17:59.691460",
           "description": "last description"
         },
-        "lopd": "1",
         "inserted_at": "2018-05-08T17:17:59.691460",
         "id": 123,
         "group": "Data Structure group",

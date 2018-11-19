@@ -7,34 +7,64 @@ defmodule TdDdWeb.DataStructureView do
     %{data: render_many(data_structures, DataStructureView, "data_structure.json")}
   end
 
-  def render("show.json", %{data_structure: data_structure}) do
-    %{data:
-      %{id: data_structure.id,
+  def render("show.json", %{
+    data_structure: data_structure,
+    user_permissions: user_permissions
+  }) do
+    %{
+      user_permissions: user_permissions,
+      data:
+      %{
+        id: data_structure.id,
         system: data_structure.system,
         group: data_structure.group,
         name: data_structure.name,
         description: data_structure.description,
         type: data_structure.type,
         ou: data_structure.ou,
-        lopd: data_structure.lopd,
         last_change_at: data_structure.last_change_at,
-        inserted_at: data_structure.inserted_at}
-        |> add_data_fields(data_structure)
+        inserted_at: data_structure.inserted_at,
+        df_name: data_structure.df_name,
+        df_content: data_structure.df_content
+      }
+      |> add_data_fields(data_structure)
+    }
+  end
+
+  def render("show.json", %{data_structure: data_structure}) do
+    %{data:
+      %{
+        id: data_structure.id,
+        system: data_structure.system,
+        group: data_structure.group,
+        name: data_structure.name,
+        description: data_structure.description,
+        type: data_structure.type,
+        ou: data_structure.ou,
+        last_change_at: data_structure.last_change_at,
+        inserted_at: data_structure.inserted_at,
+        df_name: data_structure.df_name,
+        df_content: data_structure.df_content
+      }
+      |> add_data_fields(data_structure)
     }
   end
 
   def render("data_structure.json", %{data_structure: data_structure}) do
-    %{id: data_structure.id,
+    %{
+      id: data_structure.id,
       system: data_structure.system,
       group: data_structure.group,
       name: data_structure.name,
       description: data_structure.description,
       type: data_structure.type,
       ou: data_structure.ou,
-      lopd: data_structure.lopd,
       last_change_at: data_structure.last_change_at,
-      inserted_at: data_structure.inserted_at}
-      |> add_data_fields(data_structure)
+      inserted_at: data_structure.inserted_at,
+      df_name: data_structure.df_name,
+      df_content: data_structure.df_content
+    }
+    |> add_data_fields(data_structure)
   end
 
   defp add_data_fields(data_structure_json, data_structure) do

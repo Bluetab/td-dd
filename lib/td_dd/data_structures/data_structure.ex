@@ -26,9 +26,10 @@ defmodule TdDd.DataStructures.DataStructure do
     field(:system, :string)
     field(:type, :string)
     field(:ou, :string)
-    field(:lopd, :string)
     has_many(:versions, DataStructureVersion, on_delete: :delete_all)
     field(:metadata, :map, default: %{})
+    field(:df_name, :string)
+    field(:df_content, :map)
 
     timestamps()
   end
@@ -52,8 +53,9 @@ defmodule TdDd.DataStructures.DataStructure do
       :last_change_by,
       :type,
       :ou,
-      :lopd,
-      :metadata
+      :metadata,
+      :df_name,
+      :df_content
     ])
     |> validate_required([:system, :group, :name, :last_change_at, :last_change_by, :metadata])
     |> validate_length(:system, max: 255)
@@ -61,7 +63,6 @@ defmodule TdDd.DataStructures.DataStructure do
     |> validate_length(:name, max: 255)
     |> validate_length(:type, max: 255)
     |> validate_length(:ou, max: 255)
-    |> validate_length(:lopd, max: 255)
   end
 
   def search_fields(%DataStructure{last_change_by: last_change_by_id} = structure) do
@@ -87,7 +88,6 @@ defmodule TdDd.DataStructures.DataStructure do
       group: structure.group,
       last_change_at: structure.last_change_at,
       last_change_by: last_change_by,
-      lopd: structure.lopd,
       name: structure.name,
       ou: structure.ou,
       domain_id: domain_id,
@@ -95,6 +95,8 @@ defmodule TdDd.DataStructures.DataStructure do
       system: structure.system,
       type: structure.type,
       inserted_at: structure.inserted_at,
+      df_name: structure.df_name,
+      df_content: structure.df_content,
       data_fields: Enum.map(structure.data_fields, &DataField.search_fields/1)
     }
   end
