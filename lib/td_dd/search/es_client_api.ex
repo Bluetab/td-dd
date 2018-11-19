@@ -9,7 +9,7 @@ defmodule TdDd.ESClientApi do
     json_bulk_data =
       items
       |> Enum.map(fn item ->
-        [build_bulk_metadata(item.__struct__.index_name, item), build_bulk_doc(item)]
+        [build_bulk_metadata(item.__struct__.index_name(item), item), build_bulk_doc(item)]
       end)
       |> List.flatten()
       |> Enum.join("\n")
