@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.8.2] 2018-11-20
+
+### Added
+
+- Data structure view return domain_id
+
 ## [2.8.1] 2018-11-19
 
 ### Added
