@@ -19,7 +19,7 @@ config :td_dd, TdDd.Repo,
   database: "${DB_NAME}",
   hostname: "${DB_HOST}",
   pool_size: 10,
-  timeout: 15000
+  timeout: 600_000
 
 config :td_dd, TdDd.Auth.Guardian,
   allowed_algos: ["HS512"], # optional

@@ -45,7 +45,7 @@ config :td_dd, TdDd.Repo,
   database: "td_dd_dev",
   hostname: "localhost",
   pool_size: 10,
-  timeout: 60_000 # Increased for metadata upload. 1000 data structures, 50 data fields
+  timeout: 600_000 # Increased for metadata upload. 1000 data structures, 50 data fields
 
 config :td_dd, :api_services_login,
   api_username: "api-admin",
