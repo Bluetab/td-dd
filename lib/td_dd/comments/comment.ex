@@ -10,7 +10,7 @@ defmodule TdDd.Comments.Comment do
     field :resource_type, :string
     field :user_id, :integer
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @doc false

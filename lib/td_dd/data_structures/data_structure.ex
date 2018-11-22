@@ -31,7 +31,7 @@ defmodule TdDd.DataStructures.DataStructure do
     field(:df_name, :string)
     field(:df_content, :map)
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @doc false

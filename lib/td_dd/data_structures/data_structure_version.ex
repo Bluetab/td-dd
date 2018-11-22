@@ -14,7 +14,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     belongs_to(:data_structure, DataStructure)
     many_to_many(:data_fields, DataField, join_through: "versions_fields", on_delete: :delete_all)
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @doc false

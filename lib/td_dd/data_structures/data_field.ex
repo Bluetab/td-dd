@@ -21,7 +21,7 @@ defmodule TdDd.DataStructures.DataField do
     field(:metadata, :map, default: %{})
     many_to_many(:data_structure_versions, DataStructureVersion, join_through: "versions_fields", on_delete: :delete_all)
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   @doc false

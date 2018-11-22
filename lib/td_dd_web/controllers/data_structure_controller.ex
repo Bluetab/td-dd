@@ -17,8 +17,6 @@ defmodule TdDdWeb.DataStructureController do
 
   action_fallback(TdDdWeb.FallbackController)
 
-  @td_auth_api Application.get_env(:td_dd, :auth_service)[:api_service]
-
   def swagger_definitions do
     SwaggerDefinitions.data_structure_swagger_definitions()
   end
