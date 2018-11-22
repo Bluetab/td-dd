@@ -52,6 +52,9 @@ defmodule TdDd.Search do
   end
 
   def search(index_name, query) do
+    query = query
+    |> Map.put(:sort, ["name.raw"])
+    Logger.debug(fn -> "Query: #{inspect(query)}" end)
     response = ESClientApi.search_es(index_name, query)
 
     case response do

@@ -1,5 +1,5 @@
 variables:
-  VERSION: "2.8.5"
+  VERSION: "2.8.6"
   APP_NAME: "td_dd"
   ECR_NAMESPACE: "truedat"
 

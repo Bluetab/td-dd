@@ -1,6 +1,12 @@
 # Changelog
 
-## [2.8.4] 2018-11-20
+## [2.8.5] 2018-11-22
+
+### Changed
+
+- Order search results by name.raw
+
+## [2.8.4] 2018-11-22
 
 ### Changed
 
