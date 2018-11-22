@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.8.3] 2018-11-20
+
+### Added
+
+- New endpoint to upload metadata `POST /api/data_structures/metadata`
+
 ## [2.8.2] 2018-11-20
 
 ### Added
