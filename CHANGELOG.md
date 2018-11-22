@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [2.8.4] 2018-11-20
 
 ### Changed
 
