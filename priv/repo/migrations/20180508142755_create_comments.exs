@@ -8,7 +8,7 @@ defmodule TdDd.Repo.Migrations.CreateComments do
       add :user_id, :integer
       add :content, :string
 
-      timestamps()
+      timestamps(type: :utc_datetime)
     end
 
   end

@@ -10,7 +10,7 @@ defmodule TdDd.Repo.Migrations.CreateDataStructures do
       add :last_change_at, :utc_datetime
       add :last_change_by, :bigint
 
-      timestamps()
+      timestamps(type: :utc_datetime)
     end
 
   end

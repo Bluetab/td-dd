@@ -13,7 +13,7 @@ defmodule TdDd.Repo.Migrations.CreateDataFields do
       add :last_change_by, :integer
       add :data_structure_id, references(:data_structures, on_delete: :nothing)
 
-      timestamps()
+      timestamps(type: :utc_datetime)
     end
 
     create index(:data_fields, [:data_structure_id])

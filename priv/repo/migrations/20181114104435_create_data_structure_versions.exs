@@ -6,7 +6,7 @@ defmodule TdDd.Repo.Migrations.CreateDataStructureVersions do
       add(:version, :integer, null: false, default: 0)
       add(:data_structure_id, references(:data_structures, on_delete: :nothing))
 
-      timestamps()
+      timestamps(type: :utc_datetime)
     end
 
     execute("""
