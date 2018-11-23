@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.8.6] 2018-11-22
+
+### Added
+
+- [TD-1186] Adds dynamic form fields to structure filters
+
 ## [2.8.5] 2018-11-22
 
 ### Changed

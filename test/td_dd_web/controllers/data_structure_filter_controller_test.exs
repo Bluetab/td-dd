@@ -7,10 +7,13 @@ defmodule TdDdWeb.DataStructureFilterControllerTest do
   alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
 
+  @df_cache Application.get_env(:td_dd, :df_cache)
+
   setup_all do
     start_supervised MockTdAuthService
     start_supervised MockTdAuditService
     start_supervised MockPermissionResolver
+    start_supervised(@df_cache)
     :ok
   end
 
