@@ -2,11 +2,12 @@ variables:
   VERSION: "2.8.7"
   APP_NAME: "td_dd"
   ECR_NAMESPACE: "truedat"
+  K8S_DEPLOYMENT: "dd"
+  K8S_CONTAINER: "dd"
 
 stages:
   - build
   - test
-  - publish
   - deploy
 
 build:
@@ -23,8 +24,10 @@ test:
   artifacts:
     untracked: true
 
-publish:
-  stage: publish
+deploy:
+  stage: deploy
+  tags:
+    - kubectl
   only:
     - master
     - tags
@@ -38,22 +41,4 @@ publish:
     - rm output
     - docker tag ${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${CI_COMMIT_SHA} ${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${VERSION}
     - docker push ${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${VERSION}
-
-deploy:
-  stage: deploy
-  environment:
-    name: prod
-  only:
-    - master
-    - tags
-  script:
-    - git branch -f master HEAD
-    - export VERSION=${CI_COMMIT_TAG:-${VERSION}-alpha.${CI_PIPELINE_ID}}
-    - docker run --rm -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION mesosphere/aws-cli ecr get-login --no-include-email --region ${AWS_DEFAULT_REGION} > output
-    - bash -f output
-    - export ECR=$(cat output | egrep -o 'https?://[^ ]+' | awk -F/ '{print $3}')
-    - rm output
-    - docker tag ${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${CI_COMMIT_SHA} ${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:latest
-    - docker push ${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:latest
-    - docker run --rm -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION -e ECS_CLUSTER -e ECS_SERVICE mesosphere/aws-cli ecs update-service --force-new-deployment --cluster ${ECS_CLUSTER} --service ${ECS_SERVICE}
-    # - docker run --rm -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION -e ECS_CLUSTER -e ECS_SERVICE mesosphere/aws-cli ecs wait services-stable --cluster ${ECS_CLUSTER} --services ${ECS_SERVICE}
+    - kubectl set image deployment.v1.apps/${K8S_DEPLOYMENT} ${K8S_CONTAINER}=${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${VERSION} --record
