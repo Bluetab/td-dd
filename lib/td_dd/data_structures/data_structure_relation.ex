@@ -2,8 +2,8 @@ defmodule TdDd.DataStructures.DataStructureRelation do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
-  alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.DataStructureRelation
+  alias TdDd.DataStructures.DataStructureVersion
 
   schema "data_structure_relations" do
     belongs_to(:parent, DataStructureVersion)

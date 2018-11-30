@@ -21,6 +21,6 @@ defmodule TdDd.TestOperators do
   defp approximately_equal(%DataStructureVersion{} = a, %DataStructureVersion{} = b) do
     Map.drop(a, [:children, :parents, :data_fields]) == Map.drop(b, [:children, :parents, :data_fields])
   end
-  
+
   defp approximately_equal(a, b), do: a == b
 end

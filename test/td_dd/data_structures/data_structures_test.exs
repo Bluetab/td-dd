@@ -208,11 +208,8 @@ defmodule TdDd.DataStructuresTest do
 
       insert(:data_structure_relation, parent_id: dsv1.id, child_id: dsv2.id)
       insert(:data_structure_relation, parent_id: dsv1.id, child_id: dsv3.id)
-      children = DataStructures.get_children(dsv1.id)
+      children = DataStructures.get_version_children(dsv1.id)
       assert children <~> [dsv2, dsv3]
-
-      parents = DataStructures.get_parents(dsv3.id)
-      assert parents <~> [dsv1]
     end
 
     test "get_version_parents/1 returns parent versions" do
@@ -226,7 +223,7 @@ defmodule TdDd.DataStructuresTest do
       insert(:data_structure_relation, child_id: dsv1.id, parent_id: dsv2.id)
       insert(:data_structure_relation, child_id: dsv1.id, parent_id: dsv3.id)
 
-      parents = DataStructures.get_parents(dsv1.id)
+      parents = DataStructures.get_version_parents(dsv1.id)
       assert parents <~> [dsv2, dsv3]
     end
 

@@ -8,7 +8,6 @@ defmodule TdDd.DataStructures do
   alias TdDd.Repo
 
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Utils.CollectionUtils
   alias TdDfLib.Validation
@@ -435,16 +434,17 @@ defmodule TdDd.DataStructures do
     Repo.get_by(DataStructure, clauses)
   end
 
-  def get_children(data_structure_version_id) do
-    Repo.get!(DataStructureVersion, data_structure_version_id)
+  def get_version_children(data_structure_version_id) do
+    DataStructureVersion
+    |> Repo.get!(data_structure_version_id)
     |> Repo.preload(:children)
     |> Map.get(:children)
   end
 
-  def get_parents(data_structure_version_id) do
-    Repo.get!(DataStructureVersion, data_structure_version_id)
+  def get_version_parents(data_structure_version_id) do
+    DataStructureVersion
+    |> Repo.get!(data_structure_version_id)
     |> Repo.preload(:parents)
     |> Map.get(:parents)
   end
-
 end
