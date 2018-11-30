@@ -4,6 +4,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
   import Ecto.Changeset
   alias TdDd.DataStructures.DataField
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Searchable
 
@@ -13,7 +14,8 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     field(:version, :integer, default: 0)
     belongs_to(:data_structure, DataStructure)
     many_to_many(:data_fields, DataField, join_through: "versions_fields", on_delete: :delete_all)
-
+    many_to_many(:children, DataStructureVersion, join_through: DataStructureRelation, join_keys: [parent_id: :id, child_id: :id], on_delete: :delete_all)
+    many_to_many(:parents, DataStructureVersion, join_through: DataStructureRelation, join_keys: [child_id: :id, parent_id: :id], on_delete: :delete_all)
     timestamps(type: :utc_datetime)
   end
 

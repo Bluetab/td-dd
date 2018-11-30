@@ -8,6 +8,7 @@ defmodule TdDd.DataStructures do
   alias TdDd.Repo
 
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Utils.CollectionUtils
   alias TdDfLib.Validation
@@ -139,17 +140,20 @@ defmodule TdDd.DataStructures do
 
   """
   def update_data_structure(
-    %DataStructure{} = data_structure,
-    %{"df_name" => df_name} = attrs
-  ) when not is_nil(df_name) do
+        %DataStructure{} = data_structure,
+        %{"df_name" => df_name} = attrs
+      )
+      when not is_nil(df_name) do
     content = Map.get(attrs, "df_content", %{})
     %{:content => content_schema} = @df_cache.get_template_by_name(df_name)
     content_changeset = Validation.build_changeset(content, content_schema)
+
     case content_changeset.valid? do
       false -> {:error, content_changeset}
       _ -> do_update_data_structure(data_structure, attrs)
     end
   end
+
   def update_data_structure(%DataStructure{} = data_structure, attrs) do
     do_update_data_structure(data_structure, attrs)
   end
@@ -430,4 +434,17 @@ defmodule TdDd.DataStructures do
   def find_data_structure(%{} = clauses) do
     Repo.get_by(DataStructure, clauses)
   end
+
+  def get_children(data_structure_version_id) do
+    Repo.get!(DataStructureVersion, data_structure_version_id)
+    |> Repo.preload(:children)
+    |> Map.get(:children)
+  end
+
+  def get_parents(data_structure_version_id) do
+    Repo.get!(DataStructureVersion, data_structure_version_id)
+    |> Repo.preload(:parents)
+    |> Map.get(:parents)
+  end
+
 end

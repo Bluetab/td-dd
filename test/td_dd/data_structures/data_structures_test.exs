@@ -197,5 +197,38 @@ defmodule TdDd.DataStructuresTest do
       assert length(data_structure_versions) == 1
       assert data_structure_versions |> Enum.at(0) |> Map.get(:id) == data_structure_version.id
     end
+
+    test "get_version_children/1 returns child versions" do
+      ds1 = insert(:data_structure, id: 1, name: "DS1")
+      ds2 = insert(:data_structure, id: 2, name: "DS2")
+      ds3 = insert(:data_structure, id: 3, name: "DS3")
+      dsv1 = insert(:data_structure_version, data_structure_id: ds1.id)
+      dsv2 = insert(:data_structure_version, data_structure_id: ds2.id)
+      dsv3 = insert(:data_structure_version, data_structure_id: ds3.id)
+
+      insert(:data_structure_relation, parent_id: dsv1.id, child_id: dsv2.id)
+      insert(:data_structure_relation, parent_id: dsv1.id, child_id: dsv3.id)
+      children = DataStructures.get_children(dsv1.id)
+      assert children <~> [dsv2, dsv3]
+
+      parents = DataStructures.get_parents(dsv3.id)
+      assert parents <~> [dsv1]
+    end
+
+    test "get_version_parents/1 returns parent versions" do
+      ds1 = insert(:data_structure, id: 4, name: "DS4")
+      ds2 = insert(:data_structure, id: 5, name: "DS5")
+      ds3 = insert(:data_structure, id: 6, name: "DS6")
+      dsv1 = insert(:data_structure_version, data_structure_id: ds1.id)
+      dsv2 = insert(:data_structure_version, data_structure_id: ds2.id)
+      dsv3 = insert(:data_structure_version, data_structure_id: ds3.id)
+
+      insert(:data_structure_relation, child_id: dsv1.id, parent_id: dsv2.id)
+      insert(:data_structure_relation, child_id: dsv1.id, parent_id: dsv3.id)
+
+      parents = DataStructures.get_parents(dsv1.id)
+      assert parents <~> [dsv2, dsv3]
+    end
+
   end
 end

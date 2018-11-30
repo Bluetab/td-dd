@@ -4,6 +4,7 @@ defmodule TdDd.Factory do
   alias TdDd.Accounts.User
   alias TdDd.DataStructures.DataField
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
 
   def user_factory do
@@ -34,6 +35,10 @@ defmodule TdDd.Factory do
       version: 0,
       data_structure_id: 0
     }
+  end
+
+  def data_structure_relation_factory do
+    %DataStructureRelation {}
   end
 
   def data_field_factory do
