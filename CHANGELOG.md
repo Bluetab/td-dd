@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.9.0] 2018-12-01
+
+### Added
+
+- [TD-1207] Parent/child relationships between data structure versions
+
 ## [2.8.6] 2018-11-22
 
 ### Added
