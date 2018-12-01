@@ -2,6 +2,7 @@ defmodule TdDdWeb.MetadataController do
   require Logger
   use TdDdWeb, :controller
 
+  alias Plug.Upload
   alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
   alias TdDd.DataStructures
   alias TdDd.Loader
@@ -9,16 +10,15 @@ defmodule TdDdWeb.MetadataController do
 
   @data_structure_keys Application.get_env(:td_dd, :metadata)[:data_structure_keys]
   @data_field_keys Application.get_env(:td_dd, :metadata)[:data_field_keys]
+  @data_structure_relation_keys Application.get_env(:td_dd, :metadata)[
+                                  :data_structure_relation_keys
+                                ]
   @data_structure_modifiable_fields Application.get_env(:td_dd, :metadata)[
                                       :data_structure_modifiable_fields
                                     ]
   @data_field_modifiable_fields Application.get_env(:td_dd, :metadata)[
                                   :data_field_modifiable_fields
                                 ]
-
-  @data_structures_param "data_structures"
-
-  @data_fields_param "data_fields"
 
   @data_fields_not_blank ["ou", "description"]
 
@@ -35,9 +35,10 @@ defmodule TdDdWeb.MetadataController do
   def upload(conn, params) do
     do_upload(conn, params)
     send_resp(conn, :no_content, "")
-  rescue e in RuntimeError ->
-    Logger.error "While uploading #{e.message}"
-    send_resp(conn, :unprocessable_entity, Poison.encode!(%{error: e.message}))
+  rescue
+    e in RuntimeError ->
+      Logger.error("While uploading #{e.message}")
+      send_resp(conn, :unprocessable_entity, Poison.encode!(%{error: e.message}))
   end
 
   defp do_upload(conn, params) do
@@ -45,34 +46,50 @@ defmodule TdDdWeb.MetadataController do
 
     start_time = DateTime.utc_now()
 
-    data_structures_upload = Map.get(params, @data_structures_param)
-    data_fields_upload = Map.get(params, @data_fields_param)
+    structure_recs = params |> Map.get("data_structures") |> parse_data_structures
+    field_recs = params |> Map.get("data_fields") |> parse_data_fields
 
-    parse_and_load(conn, data_structures_upload.path, data_fields_upload.path)
+    relation_recs =
+      params |> Map.get("data_structure_relations") |> parse_data_structure_relations
+
+    load(conn, structure_recs, field_recs, relation_recs)
 
     end_time = DateTime.utc_now()
 
     Logger.info("Metadata uploaded. Elapsed seconds: #{DateTime.diff(end_time, start_time)}")
   end
 
-  defp parse_and_load(conn, data_structures_path, data_fields_path) do
-    user_id = GuardianPlug.current_resource(conn).id
-    audit_fields = %{last_change_at: DateTime.utc_now(), last_change_by: user_id}
+  defp parse_data_structures(%Upload{path: path}) do
     domain_map = TaxonomyCache.get_domain_name_to_id_map()
 
-    structure_records =
-      data_structures_path
-      |> File.stream!()
-      |> CSV.decode!(separator: ?;, headers: true)
-      |> Enum.map(&(csv_to_structure(&1, domain_map)))
+    path
+    |> File.stream!()
+    |> CSV.decode!(separator: ?;, headers: true)
+    |> Enum.map(&csv_to_structure(&1, domain_map))
+  end
 
-    field_records =
-      data_fields_path
-      |> File.stream!()
-      |> CSV.decode!(separator: ?;, headers: true)
-      |> Enum.map(&csv_to_field/1)
+  defp parse_data_fields(%Upload{path: path}) do
+    path
+    |> File.stream!()
+    |> CSV.decode!(separator: ?;, headers: true)
+    |> Enum.map(&csv_to_field/1)
+  end
 
-    Loader.load(structure_records, field_records, audit_fields)
+  defp parse_data_fields(nil), do: []
+
+  defp parse_data_structure_relations(%Upload{path: path}) do
+    path
+    |> File.stream!()
+    |> CSV.decode!(separator: ?;, headers: true)
+    |> Enum.map(&csv_to_relation/1)
+  end
+
+  defp parse_data_structure_relations(nil), do: []
+
+  defp load(conn, structure_records, field_records, relation_records) do
+    user_id = GuardianPlug.current_resource(conn).id
+    audit_fields = %{last_change_at: DateTime.utc_now(), last_change_by: user_id}
+    Loader.load(structure_records, field_records, relation_records, audit_fields)
   end
 
   defp csv_to_structure(record, domain_map) do
@@ -87,6 +104,11 @@ defmodule TdDdWeb.MetadataController do
     record
     |> add_metadata(@data_field_modifiable_fields)
     |> to_map(@data_field_keys)
+  end
+
+  defp csv_to_relation(record) do
+    record
+    |> to_map(@data_structure_relation_keys)
   end
 
   defp to_map(data, keys) do

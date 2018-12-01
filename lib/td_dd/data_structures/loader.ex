@@ -8,10 +8,11 @@ defmodule TdDd.Loader do
   alias Ecto.Multi
   alias TdDd.DataStructures.DataField
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Repo
 
-  def load(structure_records, field_records, audit_fields) do
+  def load(structure_records, field_records, relation_records, audit_fields) do
     Logger.info(
       "Starting bulk load process (#{Enum.count(structure_records)}SR+#{Enum.count(field_records)}FR)"
     )
@@ -21,8 +22,11 @@ defmodule TdDd.Loader do
       |> Multi.run(:audit, fn _ -> {:ok, audit_fields} end)
       |> Multi.run(:structure_records, fn _ -> {:ok, structure_records} end)
       |> Multi.run(:field_records, fn _ -> {:ok, field_records} end)
+      |> Multi.run(:relation_records, fn _ -> {:ok, relation_records} end)
       |> Multi.run(:structures, &upsert_structures/1)
       |> Multi.run(:versions, &upsert_structure_versions/1)
+      |> Multi.run(:versions_by_key, &versions_by_key/1)
+      |> Multi.run(:relations, &upsert_relations/1)
       |> Multi.run(:diffs, &diff_structures/1)
       |> Multi.run(:removed, &remove_fields/1)
       |> Multi.run(:added, &insert_fields/1)
@@ -152,22 +156,74 @@ defmodule TdDd.Loader do
     end
   end
 
-  defp diff_structures(%{versions: versions, field_records: records, audit: audit_fields}) do
-    Logger.info(
-      "Calculating differences (#{Enum.count(versions)} versions, #{Enum.count(records)} records)"
-    )
+  defp get_or_create_relation(%DataStructureVersion{id: parent_id}, %DataStructureVersion{
+         id: child_id
+       }) do
+    attrs = %{parent_id: parent_id, child_id: child_id}
 
-    versions =
+    case Repo.get_by(DataStructureRelation, attrs) do
+      nil ->
+        %DataStructureRelation{}
+        |> DataStructureRelation.changeset(attrs)
+        |> Repo.insert()
+
+      r ->
+        r
+    end
+  end
+
+  defp versions_by_key(%{versions: versions}) do
+    versions_by_key =
       versions
       |> Repo.preload(:data_structure)
+      |> Enum.group_by(
+        &{&1.data_structure.system, &1.data_structure.group, &1.data_structure.name}
+      )
+      |> Enum.into(%{}, fn {k, [v | _t]} -> {k, v} end)
+
+    {:ok, versions_by_key}
+  end
+
+  defp upsert_relations(%{relation_records: []}) do
+    {:ok, []}
+  end
+
+  defp upsert_relations(%{versions_by_key: versions_by_key, relation_records: relation_records}) do
+    relation_records
+    |> Enum.map(&find_parent_child(versions_by_key, &1))
+    |> Enum.filter(fn {parent, child} -> !is_nil(parent) && !is_nil(child) end)
+    |> Enum.map(fn {parent, child} -> get_or_create_relation(parent, child) end)
+    |> errors_or_structs
+  end
+
+  defp find_parent_child(versions_by_key, %{
+         system: system,
+         parent_group: parent_group,
+         parent_name: parent_name,
+         child_group: child_group,
+         child_name: child_name
+       }) do
+    parent = Map.get(versions_by_key, {system, parent_group, parent_name})
+    child = Map.get(versions_by_key, {system, child_group, child_name})
+    {parent, child}
+  end
+
+  defp diff_structures(%{
+         versions_by_key: versions_by_key,
+         field_records: records,
+         audit: audit_fields
+       }) do
+    Logger.info(
+      "Calculating differences (#{Enum.count(versions_by_key)} versions, #{Enum.count(records)} records)"
+    )
 
     diffs =
       records
       |> Enum.map(&(&1 |> Map.merge(audit_fields)))
-      |> Enum.group_by(&Map.take(&1, [:system, :group, :name]))
+      |> Enum.group_by(&{&1.system, &1.group, &1.name})
       |> Map.to_list()
       |> Enum.map(fn {sysgroupname, records} ->
-        {find_version(versions, sysgroupname), records}
+        {Map.get(versions_by_key, sysgroupname), records}
       end)
       |> Enum.map(fn {version, records} -> structure_diff(version, records) end)
 
@@ -224,19 +280,6 @@ defmodule TdDd.Loader do
   defp find_field(data_fields, %{field_name: field_name}) do
     data_fields
     |> Enum.find(fn %{name: name} -> name == field_name end)
-  end
-
-  defp find_version(versions, attrs) do
-    versions
-    |> Enum.find(fn v -> matches_structure(v, attrs) end)
-  end
-
-  defp matches_structure(%{data_structure: structure}, attrs) do
-    get_key(structure) == get_key(attrs)
-  end
-
-  defp get_key(%{system: system, group: group, name: name}) do
-    [system, group, name]
   end
 
   defp errors_or_structs(results) do
