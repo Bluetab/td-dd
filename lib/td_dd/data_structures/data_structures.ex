@@ -84,11 +84,27 @@ defmodule TdDd.DataStructures do
     |> Repo.all()
   end
 
+  def get_latest_children(data_structure_id) do
+    data_structure_id
+    |> get_latest_version
+    |> Ecto.assoc(:children)
+    |> Repo.all()
+    |> Repo.preload(:data_structure)
+    |> Enum.map(&(&1.data_structure))
+  end
+
   def with_latest_fields(%{id: id} = data_structure) do
     fields = get_latest_fields(id)
 
     data_structure
     |> Map.put(:data_fields, fields)
+  end
+
+  def with_latest_children(%{id: id} = data_structure) do
+    children = get_latest_children(id)
+
+    data_structure
+    |> Map.put(:children, children)
   end
 
   @doc """

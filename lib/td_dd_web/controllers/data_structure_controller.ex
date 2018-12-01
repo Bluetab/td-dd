@@ -138,6 +138,7 @@ defmodule TdDdWeb.DataStructureController do
     data_structure =
       id
       |> DataStructures.get_data_structure_with_fields!
+      |> DataStructures.with_latest_children
       |> add_fields_external_ids
       |> get_concepts_linked_to_fields()
 
