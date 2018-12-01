@@ -168,7 +168,7 @@ defmodule TdDd.Loader do
         |> Repo.insert()
 
       r ->
-        r
+        r |> {:ok, r}
     end
   end
 
