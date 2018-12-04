@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.9.3] 2018-12-04
+
+### Added
+
+- [TD-1104] API endpoint `/api/data_structures/{id}/version/{version}` to read specific version of a data structure
+
 ## [2.9.2] 2018-12-04
 
 ### Changed
