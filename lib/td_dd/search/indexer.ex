@@ -23,8 +23,8 @@ defmodule TdDd.Search.Indexer do
       system: %{type: "text", fields: %{raw: %{type: "keyword"}}},
       group: %{type: "text", fields: %{raw: %{type: "keyword"}}},
       ou: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
-      type: %{type: "text"},
-      description: %{type: "text"},
+      type: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
+      description: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
       domain_ids: %{type: "long"},
       last_change_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       last_change_by: %{
