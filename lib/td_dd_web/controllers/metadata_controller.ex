@@ -141,6 +141,13 @@ defmodule TdDdWeb.MetadataController do
     end
   end
 
+  defp get_value(data, "version" = name) do
+    case Map.get(data, name) do
+      "" -> nil
+      value -> value
+    end
+  end
+
   defp get_value(data, name), do: Map.get(data, name)
 
   defp add_metadata(data, fields) do

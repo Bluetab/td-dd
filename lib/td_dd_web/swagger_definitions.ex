@@ -4,6 +4,27 @@ defmodule TdDdWeb.SwaggerDefinitions do
   """
   import PhoenixSwagger
 
+  def data_structure_version_swagger_definitions do
+    %{
+      DataStructureVersionResponse: swagger_schema do
+        properties do
+          data Schema.ref(:DataStructureVersion)
+        end
+      end,
+      DataStructureVersion: swagger_schema do
+        title "Data Structure Version"
+        description "A Data Structure Version"
+        properties do
+          id :integer, "Data Structure version unique identifier", required: true
+          version :integer, "Version number", required: true
+          children Schema.ref(:DataStructures)
+          data_structure Schema.ref(:DataStructure)
+          data_fields Schema.ref(:DataFields)
+        end
+      end
+    }
+  end
+
   def data_structure_swagger_definitions do
     %{
       DataStructure: swagger_schema do

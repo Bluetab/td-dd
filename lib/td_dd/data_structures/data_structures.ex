@@ -11,6 +11,8 @@ defmodule TdDd.DataStructures do
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Utils.CollectionUtils
   alias TdDfLib.Validation
+  alias TdPerms.DataFieldCache
+  alias TdPerms.FieldLinkCache
 
   @df_cache Application.get_env(:td_dd, :df_cache)
   @search_service Application.get_env(:td_dd, :elasticsearch)[:search_service]
@@ -71,6 +73,13 @@ defmodule TdDd.DataStructures do
   """
   def get_data_structure!(id), do: Repo.get!(DataStructure, id)
 
+  def get_data_structure_version!(data_structure_id, version) do
+    attrs = %{data_structure_id: data_structure_id, version: version}
+    DataStructureVersion
+    |> Repo.get_by!(attrs)
+    |> Repo.preload(:data_structure)
+  end
+
   def get_data_structure_with_fields!(data_structure_id) do
     data_structure_id
     |> get_data_structure!
@@ -80,6 +89,11 @@ defmodule TdDd.DataStructures do
   def get_latest_fields(data_structure_id) do
     data_structure_id
     |> get_latest_version
+    |> get_fields
+  end
+
+  def get_fields(data_structure_version) do
+    data_structure_version
     |> Ecto.assoc(:data_fields)
     |> Repo.all()
   end
@@ -87,10 +101,20 @@ defmodule TdDd.DataStructures do
   def get_latest_children(data_structure_id) do
     data_structure_id
     |> get_latest_version
+    |> get_children
+  end
+
+  def get_children(data_structure_version) do
+    data_structure_version
     |> Ecto.assoc(:children)
     |> Repo.all()
     |> Repo.preload(:data_structure)
-    |> Enum.map(&(&1.data_structure))
+    |> Enum.map(& &1.data_structure)
+  end
+
+  def with_versions(%DataStructure{} = data_structure) do
+    data_structure
+    |> Repo.preload(:versions)
   end
 
   def with_latest_fields(%{id: id} = data_structure) do
@@ -462,5 +486,33 @@ defmodule TdDd.DataStructures do
     |> Repo.get!(data_structure_version_id)
     |> Repo.preload(:parents)
     |> Map.get(:parents)
+  end
+
+  def with_field_external_ids(%{data_fields: data_fields} = data_structure) do
+    data_structure
+    |> Map.put(
+      :data_fields,
+      Enum.map(data_fields, fn field ->
+        external_id =
+          DataFieldCache.get_external_id(
+            data_structure.system,
+            data_structure.group,
+            data_structure.name,
+            field.name
+          )
+
+        Map.put(field, :external_id, external_id)
+      end)
+    )
+  end
+
+  def with_field_links(%{data_fields: data_fields} = data_structure) do
+    data_structure
+    |> Map.put(
+      :data_fields,
+      Enum.map(data_fields, fn field ->
+        Map.put(field, :bc_related, FieldLinkCache.get_resources(field.id, "field"))
+      end)
+    )
   end
 end

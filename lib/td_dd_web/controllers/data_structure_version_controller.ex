@@ -1,0 +1,62 @@
+defmodule TdDdWeb.DataStructureVersionController do
+  require Logger
+  import Canada, only: [can?: 2]
+  use TdDdWeb, :controller
+  use PhoenixSwagger
+  alias Ecto
+  alias TdDd.DataStructures
+  alias TdDdWeb.ErrorView
+  alias TdDdWeb.SwaggerDefinitions
+  
+  action_fallback(TdDdWeb.FallbackController)
+
+  def swagger_definitions do
+    SwaggerDefinitions.data_structure_version_swagger_definitions()
+  end
+
+  swagger_path :show do
+    get("/data_structures/{id}/versions/{version}")
+    description("Show Data Structure")
+    produces("application/json")
+
+    parameters do
+      id(:path, :integer, "Data Structure ID", required: true)
+      version(:path, :integer, "Version number", required: true)
+    end
+
+    response(200, "OK", Schema.ref(:DataStructureVersionResponse))
+    response(400, "Client Error")
+    response(403, "Unauthorized")
+    response(422, "Unprocessable Entity")
+  end
+
+  def show(conn, %{"data_structure_id" => data_structure_id, "id" => version}) do
+    user = conn.assigns[:current_user]
+
+    dsv = get_data_structure_version(data_structure_id, version)
+
+    with true <- can?(user, view_data_structure(dsv.data_structure)) do
+      render(conn, "show.json", data_structure_version: dsv)
+    else
+      false ->
+        conn
+        |> put_status(:forbidden)
+        |> render(ErrorView, :"403")
+
+      _error ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> render(ErrorView, :"422")
+    end
+  end
+
+  defp get_data_structure_version(data_structure_id, version) do
+    dsv = DataStructures.get_data_structure_version!(data_structure_id, version)
+    children = DataStructures.get_children(dsv)
+    fields = DataStructures.get_fields(dsv)
+    dsv
+    |> Map.put(:children, children)
+    |> Map.put(:data_fields, fields)
+  end
+
+end

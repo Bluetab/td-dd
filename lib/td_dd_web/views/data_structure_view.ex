@@ -19,6 +19,7 @@ defmodule TdDdWeb.DataStructureView do
         |> add_dynamic_content(data_structure)
         |> add_data_fields(data_structure)
         |> add_children(data_structure)
+        |> add_versions(data_structure)
     }
   end
 
@@ -30,6 +31,7 @@ defmodule TdDdWeb.DataStructureView do
         |> add_dynamic_content(data_structure)
         |> add_data_fields(data_structure)
         |> add_children(data_structure)
+        |> add_versions(data_structure)
     }
   end
 
@@ -37,7 +39,6 @@ defmodule TdDdWeb.DataStructureView do
     data_structure
     |> data_structure_json
     |> add_dynamic_content(data_structure)
-    |> add_data_fields(data_structure)
   end
 
   defp data_structure_json(data_structure) do
@@ -71,6 +72,20 @@ defmodule TdDdWeb.DataStructureView do
       end
 
     Map.put(data_structure_json, :children, children)
+  end
+
+  defp add_versions(data_structure_json, data_structure) do
+    versions = case Map.get(data_structure, :versions) do
+      nil -> []
+      vs -> Enum.map(vs, &data_structure_version_json/1)
+    end
+
+    Map.put(data_structure_json, :versions, versions)
+  end
+
+  defp data_structure_version_json(data_structure_version) do
+    data_structure_version
+    |> Map.take([:version, :inserted_at, :updated_at])
   end
 
   defp add_data_fields(data_structure_json, data_structure) do

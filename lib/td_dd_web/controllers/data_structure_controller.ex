@@ -11,8 +11,6 @@ defmodule TdDdWeb.DataStructureController do
   alias TdDd.DataStructures.DataStructure
   alias TdDdWeb.ErrorView
   alias TdDdWeb.SwaggerDefinitions
-  alias TdPerms.DataFieldCache
-  alias TdPerms.FieldLinkCache
   alias TdPerms.TaxonomyCache
 
   action_fallback(TdDdWeb.FallbackController)
@@ -37,13 +35,9 @@ defmodule TdDdWeb.DataStructureController do
 
     %{results: data_structures} =
       case getOUs(params) do
-          [] -> do_index(user)
-          in_params -> do_index(user, %{"filters" => %{"ou.raw" => in_params}}, 0, 10_000)
+        [] -> do_index(user)
+        in_params -> do_index(user, %{"filters" => %{"ou.raw" => in_params}}, 0, 10_000)
       end
-
-    data_structures =
-      data_structures
-      |> add_attrs_to_list_data_structures()
 
     render(conn, "index.json", data_structures: data_structures)
   end
@@ -53,8 +47,8 @@ defmodule TdDdWeb.DataStructureController do
     size = search_params |> Map.get("size", size)
 
     search_params
-      |> Map.drop(["page", "size"])
-      |> Search.search_data_structures(user, page, size)
+    |> Map.drop(["page", "size"])
+    |> Search.search_data_structures(user, page, size)
   end
 
   defp getOUs(params) do
@@ -95,10 +89,13 @@ defmodule TdDdWeb.DataStructureController do
       |> DataStructures.add_domain_id(TaxonomyCache.get_domain_name_to_id_map())
 
     with true <- can?(user, create_data_structure(Map.fetch!(creation_params, "domain_id"))),
-      {:ok, %DataStructure{} = data_structure} <-
+         {:ok, %DataStructure{id: id}} <-
            DataStructures.create_data_structure(creation_params) do
+      AuditSupport.create_data_structure(conn, id, data_structure_params)
 
-      AuditSupport.create_data_structure(conn, data_structure.id, data_structure_params)
+      data_structure =
+        id
+        |> get_data_structure
 
       conn
       |> put_status(:created)
@@ -135,12 +132,7 @@ defmodule TdDdWeb.DataStructureController do
   def show(conn, %{"id" => id}) do
     user = conn.assigns[:current_user]
 
-    data_structure =
-      id
-      |> DataStructures.get_data_structure_with_fields!
-      |> DataStructures.with_latest_children
-      |> add_fields_external_ids
-      |> get_concepts_linked_to_fields()
+    data_structure = id |> get_data_structure()
 
     with true <- can?(user, view_data_structure(data_structure)) do
       user_permissions = %{
@@ -164,28 +156,13 @@ defmodule TdDdWeb.DataStructureController do
     end
   end
 
-  defp add_fields_external_ids(data_structure) do
-    data_structure
-    |> Map.put(
-      :data_fields,
-      Enum.map(data_structure.data_fields, fn field ->
-        external_id =
-          DataFieldCache.get_external_id(data_structure.system,
-                                         data_structure.group,
-                                         data_structure.name, field.name)
-        Map.put(field, :external_id, external_id)
-      end)
-    )
-  end
-
-  defp get_concepts_linked_to_fields(data_structure) do
-    data_structure
-    |> Map.put(
-      :data_fields,
-      Enum.map(data_structure.data_fields, fn field ->
-        Map.put(field, :bc_related, FieldLinkCache.get_resources(field.id, "field"))
-      end)
-    )
+  defp get_data_structure(id) do
+    id
+    |> DataStructures.get_data_structure_with_fields!()
+    |> DataStructures.with_versions()
+    |> DataStructures.with_latest_children()
+    |> DataStructures.with_field_external_ids()
+    |> DataStructures.with_field_links()
   end
 
   swagger_path :update do
@@ -216,12 +193,11 @@ defmodule TdDdWeb.DataStructureController do
       |> DataStructures.add_domain_id(TaxonomyCache.get_domain_name_to_id_map())
 
     with true <- can?(user, update_data_structure(data_structure_old)),
-        {:ok, %DataStructure{} = data_structure} <-
+         {:ok, %DataStructure{} = data_structure} <-
            DataStructures.update_data_structure(data_structure_old, update_params) do
-
       AuditSupport.update_data_structure(conn, data_structure_old, data_structure_params)
 
-      data_structure = get_concepts_linked_to_fields(data_structure)
+      data_structure = get_data_structure(data_structure.id)
 
       render(conn, "show.json", data_structure: data_structure)
     else
@@ -257,10 +233,9 @@ defmodule TdDdWeb.DataStructureController do
     data_structure = DataStructures.get_data_structure!(id)
 
     with true <- can?(user, delete_data_structure(data_structure)),
-      {:ok, %DataStructure{}} <- DataStructures.delete_data_structure(data_structure) do
-
-        AuditSupport.delete_data_structure(conn, id)
-        send_resp(conn, :no_content, "")
+         {:ok, %DataStructure{}} <- DataStructures.delete_data_structure(data_structure) do
+      AuditSupport.delete_data_structure(conn, id)
+      send_resp(conn, :no_content, "")
     else
       false ->
         conn
@@ -298,17 +273,8 @@ defmodule TdDdWeb.DataStructureController do
 
     %{results: data_structures, total: total} = do_index(user, params)
 
-    data_structures =
-      data_structures
-      |> add_attrs_to_list_data_structures()
-
     conn
-      |> put_resp_header("x-total-count", "#{total}")
-      |> render("index.json", data_structures: data_structures)
-  end
-
-  defp add_attrs_to_list_data_structures(data_structures) do
-    data_structures
-        |> Enum.map(fn ds -> get_concepts_linked_to_fields(ds) end)
+    |> put_resp_header("x-total-count", "#{total}")
+    |> render("index.json", data_structures: data_structures)
   end
 end

@@ -16,6 +16,52 @@
     "http"
   ],
   "paths": {
+    "/data_structures/{id}/versions/{version}": {
+      "get": {
+        "tags": [
+          "DataStructureVersion"
+        ],
+        "summary": "",
+        "responses": {
+          "422": {
+            "description": "Unprocessable Entity"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "400": {
+            "description": "Client Error"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/DataStructureVersionResponse"
+            },
+            "description": "OK"
+          }
+        },
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "type": "integer",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Data Structure ID"
+          },
+          {
+            "type": "integer",
+            "required": true,
+            "name": "version",
+            "in": "path",
+            "description": "Version number"
+          }
+        ],
+        "operationId": "TdDdWeb.DataStructureVersionController.show",
+        "description": "Show Data Structure"
+      }
+    },
     "/data_structures/{id}": {
       "patch": {
         "tags": [
@@ -721,6 +767,42 @@
         "$ref": "#/definitions/DataStructure"
       },
       "description": "A collection of Data Structures"
+    },
+    "DataStructureVersionResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/DataStructureVersion"
+        }
+      }
+    },
+    "DataStructureVersion": {
+      "type": "object",
+      "title": "Data Structure Version",
+      "required": [
+        "version",
+        "id"
+      ],
+      "properties": {
+        "version": {
+          "type": "integer",
+          "description": "Version number"
+        },
+        "id": {
+          "type": "integer",
+          "description": "Data Structure version unique identifier"
+        },
+        "data_structure": {
+          "$ref": "#/definitions/DataStructure"
+        },
+        "data_fields": {
+          "$ref": "#/definitions/DataFields"
+        },
+        "children": {
+          "$ref": "#/definitions/DataStructures"
+        }
+      },
+      "description": "A Data Structure Version"
     },
     "DataStructureUpdate": {
       "type": "object",
