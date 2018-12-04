@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.9.1] 2018-12-04
+
+### Added
+
+- [TD-1104] Support explicit version in data_structures metadata upload
+
 ## [2.9.0] 2018-12-01
 
 ### Added
