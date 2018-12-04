@@ -7,7 +7,7 @@ defmodule TdDdWeb.DataStructureVersionController do
   alias TdDd.DataStructures
   alias TdDdWeb.ErrorView
   alias TdDdWeb.SwaggerDefinitions
-  
+
   action_fallback(TdDdWeb.FallbackController)
 
   def swagger_definitions do
@@ -54,9 +54,9 @@ defmodule TdDdWeb.DataStructureVersionController do
     dsv = DataStructures.get_data_structure_version!(data_structure_id, version)
     children = DataStructures.get_children(dsv)
     fields = DataStructures.get_fields(dsv)
+
     dsv
     |> Map.put(:children, children)
     |> Map.put(:data_fields, fields)
   end
-
 end
