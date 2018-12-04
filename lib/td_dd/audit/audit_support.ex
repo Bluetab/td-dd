@@ -4,14 +4,13 @@ defmodule TdDd.Audit.AuditSupport do
   alias TdDd.Audit
 
   @df_cache Application.get_env(:td_dd, :df_cache)
-  @data_structure "data_structure"
 
   def create_data_structure(conn, id, params) do
     create_data_structure_event(conn, id, params, "update_data_structure")
   end
 
   defp get_not_nil(nil, default), do: default
-  defp get_not_nil(value, default), do: value
+  defp get_not_nil(value, _), do: value
 
   def update_data_structure(conn, old_data, %{"df_name" => df_name} = new_data) do
     fields_to_compare = ["description", "df_name"]

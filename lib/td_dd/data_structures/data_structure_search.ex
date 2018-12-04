@@ -47,7 +47,8 @@ defmodule TdDd.DataStructure.Search do
         _ -> create_query(params, filter_clause)
       end
 
-    %{from: page * size, size: size, query: query}
+    sort = Map.get(params, "sort", ["name.raw"])
+    %{from: page * size, size: size, query: query, sort: sort}
     |> do_search
   end
 
@@ -70,7 +71,8 @@ defmodule TdDd.DataStructure.Search do
 
     query = create_query(params, filter)
 
-    %{from: page * size, size: size, query: query}
+    sort = Map.get(params, "sort", ["name.raw"])
+    %{from: page * size, size: size, query: query, sort: sort}
     |> do_search
   end
 

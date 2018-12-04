@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.9.2] 2018-12-04
+
+### Changed
+
+- [TD-1153] Data Structure :index now looks for sort query from client to pass to elasticsearch
+
 ## [2.9.1] 2018-12-04
 
 ### Added
