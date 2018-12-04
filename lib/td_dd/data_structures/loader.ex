@@ -133,16 +133,22 @@ defmodule TdDd.Loader do
     end
   end
 
-  defp upsert_structure_versions(%{structures: structures}) do
+  defp upsert_structure_versions(%{structures: structures, structure_records: records}) do
     Logger.info("Upserting data structure versions (#{Enum.count(structures)} records)")
 
-    structures
+    records
+    |> Enum.map(&(Map.get(&1, :version)))
+    |> Enum.zip(structures)
     |> Enum.map(&get_or_create_version/1)
     |> errors_or_structs
   end
 
-  defp get_or_create_version(%DataStructure{id: id}) do
-    attrs = %{data_structure_id: id, version: 0}
+  defp get_or_create_version({nil, data_structure}) do
+    get_or_create_version({0, data_structure})
+  end
+
+  defp get_or_create_version({version, %DataStructure{id: id}}) do
+    attrs = %{data_structure_id: id, version: version}
 
     case Repo.get_by(DataStructureVersion, attrs) do
       nil ->

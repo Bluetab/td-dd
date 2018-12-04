@@ -33,7 +33,7 @@ defmodule TdDd.LoaderTest do
       s1 = %{system: "SYS1", group: "GROUP1", name: "NAME1", description: "D1"}
       s2 = %{system: "SYS1", group: "GROUP2", name: "NAME2", description: "D2"}
       s3 = %{system: "SYS2", group: "GROUP3", name: "NAME3", description: "D3"}
-      s4 = %{system: "SYS2", group: "GROUP3", name: "NAME4", description: "D4"}
+      s4 = %{system: "SYS2", group: "GROUP3", name: "NAME4", description: "D4", version: "22"}
 
       r1 = %{
         system: "SYS1",

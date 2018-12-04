@@ -9,7 +9,8 @@ config :td_dd, :metadata,
     "type",
     "ou",
     "metadata",
-    "domain_id"
+    "domain_id",
+    "version"
   ],
   data_field_keys: [
     "system",
