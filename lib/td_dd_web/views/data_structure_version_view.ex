@@ -9,7 +9,7 @@ defmodule TdDdWeb.DataStructureVersionView do
         |> add_children
         |> add_data_fields
         |> add_versions
-        |> Map.take([:data_structure, :children, :data_fields, :version, :id])
+        |> Map.take([:data_structure, :children, :data_fields, :version, :versions, :id])
     }
   end
 
