@@ -54,9 +54,11 @@ defmodule TdDdWeb.DataStructureVersionController do
     dsv = DataStructures.get_data_structure_version!(data_structure_id, version)
     children = DataStructures.get_children(dsv)
     fields = DataStructures.get_fields(dsv)
+    versions = DataStructures.get_versions(dsv)
 
     dsv
     |> Map.put(:children, children)
     |> Map.put(:data_fields, fields)
+    |> Map.put(:versions, versions)
   end
 end

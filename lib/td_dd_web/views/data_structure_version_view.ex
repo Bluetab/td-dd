@@ -8,6 +8,7 @@ defmodule TdDdWeb.DataStructureVersionView do
         |> add_data_structure
         |> add_children
         |> add_data_fields
+        |> add_versions
         |> Map.take([:data_structure, :children, :data_fields, :version, :id])
     }
   end
@@ -19,7 +20,18 @@ defmodule TdDdWeb.DataStructureVersionView do
 
   defp data_structure_json(data_structure) do
     data_structure
-    |> Map.take([:id, :system, :group, :name, :description, :type, :ou, :domain_id, :last_change_at, :inserted_at])
+    |> Map.take([
+      :id,
+      :system,
+      :group,
+      :name,
+      :description,
+      :type,
+      :ou,
+      :domain_id,
+      :last_change_at,
+      :inserted_at
+    ])
   end
 
   defp add_children(data_structure_version) do
@@ -33,12 +45,40 @@ defmodule TdDdWeb.DataStructureVersionView do
   end
 
   defp add_data_fields(%{data_fields: fields} = dsv) do
-    data_fields = fields
-    |> Enum.map(&(Map.take(&1, [:id, :name, :type, :precision, :nullable, :description, :last_change_at, :inserted_at])))
+    data_fields =
+      fields
+      |> Enum.map(
+        &Map.take(&1, [
+          :id,
+          :name,
+          :type,
+          :precision,
+          :nullable,
+          :description,
+          :last_change_at,
+          :inserted_at
+        ])
+      )
+
     Map.put(dsv, :data_fields, data_fields)
   end
 
   defp add_data_fields(dsv) do
     Map.put(dsv, :data_fields, [])
+  end
+
+  defp add_versions(dsv) do
+    versions =
+      case Map.get(dsv, :versions) do
+        nil -> []
+        vs -> Enum.map(vs, &version_json/1)
+      end
+
+    Map.put(dsv, :versions, versions)
+  end
+
+  defp version_json(version) do
+    version
+    |> Map.take([:version, :inserted_at, :updated_at])
   end
 end

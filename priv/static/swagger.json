@@ -726,6 +726,28 @@
   },
   "host": "localhost:4005",
   "definitions": {
+    "Version": {
+      "type": "object",
+      "title": "Version",
+      "required": [
+        "version"
+      ],
+      "properties": {
+        "version": {
+          "type": "integer",
+          "description": "Version number"
+        },
+        "updated_at": {
+          "type": "string",
+          "description": "Modification date"
+        },
+        "inserted_at": {
+          "type": "string",
+          "description": "Insertion date"
+        }
+      },
+      "description": "A version"
+    },
     "FilterResponse": {
       "type": "object",
       "title": "Filters",
@@ -784,6 +806,13 @@
         "id"
       ],
       "properties": {
+        "versions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Version"
+          },
+          "description": "Versions"
+        },
         "version": {
           "type": "integer",
           "description": "Version number"
@@ -802,7 +831,7 @@
           "$ref": "#/definitions/DataStructures"
         }
       },
-      "description": "A Data Structure Version"
+      "description": "A specific version of a Data Structure"
     },
     "DataStructureUpdate": {
       "type": "object",
@@ -904,6 +933,13 @@
         "id"
       ],
       "properties": {
+        "versions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Version"
+          },
+          "description": "Versions"
+        },
         "type": {
           "type": [
             "string",

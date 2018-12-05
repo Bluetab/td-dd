@@ -75,6 +75,7 @@ defmodule TdDd.DataStructures do
 
   def get_data_structure_version!(data_structure_id, version) do
     attrs = %{data_structure_id: data_structure_id, version: version}
+
     DataStructureVersion
     |> Repo.get_by!(attrs)
     |> Repo.preload(:data_structure)
@@ -110,6 +111,12 @@ defmodule TdDd.DataStructures do
     |> Repo.all()
     |> Repo.preload(:data_structure)
     |> Enum.map(& &1.data_structure)
+  end
+
+  def get_versions(%DataStructureVersion{} = dsv) do
+    dsv
+    |> Ecto.assoc([:data_structure, :versions])
+    |> Repo.all()
   end
 
   def with_versions(%DataStructure{} = data_structure) do
