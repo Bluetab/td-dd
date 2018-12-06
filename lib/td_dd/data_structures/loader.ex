@@ -122,7 +122,13 @@ defmodule TdDd.Loader do
     |> errors_or_structs
   end
 
-  defp create_or_update_data_structure(attrs) do
+  defp create_or_update_data_structure(%{description: description} = attrs) do
+    attrs =
+      case description do
+        nil -> attrs |> Map.drop([:description])
+        _ -> attrs
+      end
+
     case Repo.get_by(DataStructure, Map.take(attrs, [:system, :name, :group])) do
       nil ->
         %DataStructure{}
@@ -190,7 +196,7 @@ defmodule TdDd.Loader do
 
   defp key_value(%DataStructureVersion{data_structure: data_structure, version: version} = dsv) do
     map = data_structure |> Map.take([:system, :group, :name]) |> Map.put(:version, version)
-    key = [:system, :group, :name, :version] |> Enum.map(&Map.get(map, &1)) |> List.to_tuple
+    key = [:system, :group, :name, :version] |> Enum.map(&Map.get(map, &1)) |> List.to_tuple()
     {key, dsv}
   end
 
@@ -281,8 +287,12 @@ defmodule TdDd.Loader do
     %{add: to_insert, modify: to_modify, remove: to_remove}
   end
 
-  defp has_changes(field, record) do
-    check_props = [:business_concept_id, :description, :metadata]
+  defp has_changes(field, %{description: description} = record) do
+    check_props =
+      case description do
+        nil -> [:business_concept_id, :metadata]
+        _ -> [:business_concept_id, :description, :metadata]
+      end
 
     defaults =
       check_props
