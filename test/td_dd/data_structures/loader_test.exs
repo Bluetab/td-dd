@@ -89,7 +89,6 @@ defmodule TdDd.LoaderTest do
         description: "Nueva descripción"
       }
 
-
       f11 = s1 |> Map.merge(f1)
       f12 = s1 |> Map.merge(f2)
       f13 = s1 |> Map.merge(f3)
