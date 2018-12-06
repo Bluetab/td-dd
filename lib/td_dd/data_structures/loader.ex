@@ -25,7 +25,7 @@ defmodule TdDd.Loader do
       |> Multi.run(:relation_records, fn _ -> {:ok, relation_records} end)
       |> Multi.run(:structures, &upsert_structures/1)
       |> Multi.run(:versions, &upsert_structure_versions/1)
-      |> Multi.run(:versions_by_key, &versions_by_key/1)
+      |> Multi.run(:versions_by_sys_group_name_version, &versions_by_sys_group_name_version/1)
       |> Multi.run(:relations, &upsert_relations/1)
       |> Multi.run(:diffs, &diff_structures/1)
       |> Multi.run(:removed, &remove_fields/1)
@@ -54,9 +54,10 @@ defmodule TdDd.Loader do
     |> errors_or_count
   end
 
-  defp update_field({field, %{field_name: name} = attrs}, audit) do
-    attrs = attrs |> Map.merge(audit)
-    field |> DataField.update_changeset(attrs |> Map.merge(%{name: name})) |> Repo.update()
+  defp update_field({field, attrs}, audit) do
+    modifiable_fields = [:description]
+    attrs = attrs |> Map.take(modifiable_fields) |> Map.merge(audit)
+    field |> DataField.update_changeset(attrs) |> Repo.update()
   end
 
   defp insert_fields(%{diffs: diffs, audit: audit}) do
@@ -67,7 +68,7 @@ defmodule TdDd.Loader do
       to_insert
       |> Enum.map(fn {version, attrs} -> {version, insert_field(attrs, audit)} end)
 
-    Logger.info("Inserting new field associationss (#{Enum.count(version_fields)} fields)")
+    Logger.info("Inserting new field associations (#{Enum.count(version_fields)} fields)")
 
     entries =
       version_fields
@@ -137,7 +138,7 @@ defmodule TdDd.Loader do
     Logger.info("Upserting data structure versions (#{Enum.count(structures)} records)")
 
     records
-    |> Enum.map(&(Map.get(&1, :version)))
+    |> Enum.map(&Map.get(&1, :version))
     |> Enum.zip(structures)
     |> Enum.map(&get_or_create_version/1)
     |> errors_or_structs
@@ -145,6 +146,7 @@ defmodule TdDd.Loader do
 
   defp get_or_create_version({nil, data_structure}) do
     get_or_create_version({0, data_structure})
+    # TODO: Should create new version if structure has changed
   end
 
   defp get_or_create_version({version, %DataStructure{id: id}}) do
@@ -157,7 +159,6 @@ defmodule TdDd.Loader do
         |> Repo.insert()
 
       s ->
-        # TODO: Get latest version
         s |> DataStructureVersion.update_changeset(attrs) |> Repo.update()
     end
   end
@@ -178,58 +179,67 @@ defmodule TdDd.Loader do
     end
   end
 
-  defp versions_by_key(%{versions: versions}) do
-    versions_by_key =
+  defp versions_by_sys_group_name_version(%{versions: versions}) do
+    versions_by_sys_group_name_version =
       versions
       |> Repo.preload(:data_structure)
-      |> Enum.group_by(
-        &{&1.data_structure.system, &1.data_structure.group, &1.data_structure.name}
-      )
-      |> Enum.into(%{}, fn {k, [v | _t]} -> {k, v} end)
+      |> Map.new(&key_value/1)
 
-    {:ok, versions_by_key}
+    {:ok, versions_by_sys_group_name_version}
+  end
+
+  defp key_value(%DataStructureVersion{data_structure: data_structure, version: version} = dsv) do
+    map = data_structure |> Map.take([:system, :group, :name]) |> Map.put(:version, version)
+    key = [:system, :group, :name, :version] |> Enum.map(&Map.get(map, &1)) |> List.to_tuple
+    {key, dsv}
   end
 
   defp upsert_relations(%{relation_records: []}) do
     {:ok, []}
   end
 
-  defp upsert_relations(%{versions_by_key: versions_by_key, relation_records: relation_records}) do
+  defp upsert_relations(%{
+         versions_by_sys_group_name_version: versions_by_sys_group_name_version,
+         relation_records: relation_records
+       }) do
     relation_records
-    |> Enum.map(&find_parent_child(versions_by_key, &1))
+    |> Enum.map(&find_parent_child(versions_by_sys_group_name_version, &1))
     |> Enum.filter(fn {parent, child} -> !is_nil(parent) && !is_nil(child) end)
     |> Enum.map(fn {parent, child} -> get_or_create_relation(parent, child) end)
     |> errors_or_structs
   end
 
-  defp find_parent_child(versions_by_key, %{
+  defp find_parent_child(versions_by_sys_group_name_version, %{
          system: system,
          parent_group: parent_group,
          parent_name: parent_name,
          child_group: child_group,
          child_name: child_name
        }) do
-    parent = Map.get(versions_by_key, {system, parent_group, parent_name})
-    child = Map.get(versions_by_key, {system, child_group, child_name})
+    # TODO: Support versions other than 0 for parent/child relationships
+    parent = Map.get(versions_by_sys_group_name_version, {system, parent_group, parent_name, 0})
+    child = Map.get(versions_by_sys_group_name_version, {system, child_group, child_name, 0})
     {parent, child}
   end
 
   defp diff_structures(%{
-         versions_by_key: versions_by_key,
+         versions_by_sys_group_name_version: versions_by_sys_group_name_version,
          field_records: records,
          audit: audit_fields
        }) do
     Logger.info(
-      "Calculating differences (#{Enum.count(versions_by_key)} versions, #{Enum.count(records)} records)"
+      "Calculating differences (#{Enum.count(versions_by_sys_group_name_version)} versions, #{
+        Enum.count(records)
+      } records)"
     )
 
     diffs =
       records
       |> Enum.map(&(&1 |> Map.merge(audit_fields)))
-      |> Enum.group_by(&{&1.system, &1.group, &1.name})
+      |> Enum.group_by(&{&1.system, &1.group, &1.name, &1.version})
       |> Map.to_list()
-      |> Enum.map(fn {sysgroupname, records} ->
-        {Map.get(versions_by_key, sysgroupname), records}
+      |> Enum.map(fn {sys_group_name_version, records} ->
+        {Map.get(versions_by_sys_group_name_version, sys_group_name_version), records}
       end)
       |> Enum.map(fn {version, records} -> structure_diff(version, records) end)
 
@@ -243,8 +253,8 @@ defmodule TdDd.Loader do
 
     data_fields =
       version
-      |> Repo.preload(:data_fields)
-      |> Map.get(:data_fields)
+      |> Ecto.assoc([:data_structure, :versions, :data_fields])
+      |> Repo.all()
 
     to_upsert =
       records
@@ -272,7 +282,7 @@ defmodule TdDd.Loader do
   end
 
   defp has_changes(field, record) do
-    check_props = [:business_concept_id, :description, :nullable, :precision, :type, :metadata]
+    check_props = [:business_concept_id, :description, :metadata]
 
     defaults =
       check_props
@@ -283,10 +293,19 @@ defmodule TdDd.Loader do
     field |> Map.take(check_props) != defaults |> Map.merge(record) |> Map.take(check_props)
   end
 
-  defp find_field(data_fields, %{field_name: field_name}) do
+  defp find_field(data_fields, %{
+         field_name: name,
+         type: type,
+         nullable: nullable,
+         precision: precision
+       }) do
+    match = %{name: name, type: type, nullable: nullable, precision: precision}
+
     data_fields
-    |> Enum.find(fn %{name: name} -> name == field_name end)
+    |> Enum.find(&Map.equal?(match, Map.take(&1, [:name, :type, :nullable, :precision])))
   end
+
+  defp find_field(_data_fields, _), do: nil
 
   defp errors_or_structs(results) do
     errors = changeset_errors(results)

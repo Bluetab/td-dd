@@ -141,10 +141,14 @@ defmodule TdDdWeb.MetadataController do
     end
   end
 
-  defp get_value(data, "version" = name) do
+  defp get_value(data, "version" = name), do: get_version(data, name)
+
+  defp get_version(data, name) do
     case Map.get(data, name) do
-      "" -> nil
-      value -> value
+      # TODO: Use nil instead of 0, automatically version in loader.ex
+      nil -> 0
+      "" -> 0
+      value -> String.to_integer(value)
     end
   end
 

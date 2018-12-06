@@ -1,10 +1,10 @@
 # Changelog
 
-## [Unreleased]
+## [2.9.4]
 
 ### Changed
 
-- [TD-1104] Changed `/api/data_structures/{id}/versions/{version}` to also return versions
+- [TD-1104] Improved support for data structure versions
 
 ## [2.9.3] 2018-12-04
 

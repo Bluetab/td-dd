@@ -10,10 +10,10 @@ defmodule TdDd.LoaderTest do
 
       dsv = insert(:data_structure_version, data_structure_id: data_structure.id, version: 0)
 
-      field1 = insert(:data_field, name: "F1", type: "T1", description: "D1", precision: "P1")
+      field1 = insert(:data_field, name: "F1", type: "T1", description: "D1", precision: "P1", nullable: false)
 
       field2 =
-        insert(:data_field, id: 99, name: "F2", type: "T2", description: "D2", precision: "P2")
+        insert(:data_field, id: 99, name: "F2", type: "T2", description: "D2", precision: "P2", nullable: true)
 
       field3 =
         insert(:data_field,
@@ -21,7 +21,8 @@ defmodule TdDd.LoaderTest do
           name: "F123123",
           type: "T2",
           description: "Will be deleted",
-          precision: "P2"
+          precision: "P2",
+          nullable: false
         )
 
       entries =
@@ -30,10 +31,11 @@ defmodule TdDd.LoaderTest do
 
       Repo.insert_all("versions_fields", entries)
 
-      s1 = %{system: "SYS1", group: "GROUP1", name: "NAME1", description: "D1"}
-      s2 = %{system: "SYS1", group: "GROUP2", name: "NAME2", description: "D2"}
-      s3 = %{system: "SYS2", group: "GROUP3", name: "NAME3", description: "D3"}
-      s4 = %{system: "SYS2", group: "GROUP3", name: "NAME4", description: "D4", version: "22"}
+      s1 = %{system: "SYS1", group: "GROUP1", name: "NAME1", description: "D1", version: 0}
+      s2 = %{system: "SYS1", group: "GROUP2", name: "NAME2", description: "D2", version: 0}
+      s3 = %{system: "SYS2", group: "GROUP3", name: "NAME3", description: "D3", version: 0}
+      s4 = %{system: "SYS2", group: "GROUP3", name: "NAME4", description: "D4", version: 22}
+      s5 = %{system: "SYS2", group: "GROUP3", name: "NAME4", description: "D4", version: 23}
 
       r1 = %{
         system: "SYS1",
@@ -54,16 +56,19 @@ defmodule TdDd.LoaderTest do
       f1 = %{
         field_name: "F1",
         type: "T1",
-        nullable: "false",
+        nullable: false,
         precision: "P1",
-        description: "D1"
+        description: "D1NEW",
+        version: 0
       }
 
       f2 = %{
         field_name: "F2",
         type: "NEWTYPE2",
-        nullable: "true",
+        nullable: true,
+        precision: "P2",
         description: "NEWDES2",
+        version: 0,
         metadata: %{foo: "bar"}
       }
 
@@ -72,27 +77,39 @@ defmodule TdDd.LoaderTest do
         type: "CHAR",
         nullable: true,
         precision: "1,0",
+        description: "Nueva descripción",
+        version: 0
+      }
+
+      f4 = %{
+        field_name: "Field x",
+        type: "CHAR",
+        nullable: true,
+        precision: "1,0",
         description: "Nueva descripción"
       }
+
 
       f11 = s1 |> Map.merge(f1)
       f12 = s1 |> Map.merge(f2)
       f13 = s1 |> Map.merge(f3)
       f21 = s2 |> Map.merge(f1)
       f32 = s3 |> Map.merge(f2)
+      f41 = s4 |> Map.merge(f4)
+      f51 = s5 |> Map.merge(f4)
 
       audit_fields = %{last_change_at: DateTime.utc_now(), last_change_by: 0}
-      structure_records = [s1, s2, s3, s4]
-      field_records = [f11, f12, f13, f21, f32]
+      structure_records = [s1, s2, s3, s4, s5]
+      field_records = [f11, f12, f13, f21, f32, f41, f51]
       relation_records = [r1, r2]
 
       assert {:ok, context} =
                Loader.load(structure_records, field_records, relation_records, audit_fields)
 
       assert %{added: added, removed: removed, modified: modified} = context
-      assert added == 3
+      assert added == 6
       assert removed == 1
-      assert modified == 2
+      assert modified == 1
     end
   end
 end

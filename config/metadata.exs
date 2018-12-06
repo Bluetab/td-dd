@@ -22,7 +22,8 @@ config :td_dd, :metadata,
     "nullable",
     "precision",
     "business_concept_id",
-    "metadata"
+    "metadata",
+    "version"
   ],
   data_structure_relation_keys: [
     "system",
