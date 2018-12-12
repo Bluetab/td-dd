@@ -9,7 +9,8 @@ defmodule TdDd.Search.Aggregations do
       {"ou.raw", %{terms: %{field: "ou.raw"}}},
       {"system.raw", %{terms: %{field: "system.raw"}}},
       {"name.raw", %{terms: %{field: "name.raw"}}},
-      {"group.raw", %{terms: %{field: "group.raw"}}}
+      {"group.raw", %{terms: %{field: "group.raw"}}},
+      {"type.raw", %{terms: %{field: "type.raw"}}}
     ]
     dynamic_keywords =
       @df_cache.list_templates()

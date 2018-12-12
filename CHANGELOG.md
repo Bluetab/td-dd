@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.10.0]
+
+### Changed
+
+- [TD-1313] Adds type to structure filters
+
 ## [2.9.4]
 
 ### Changed
