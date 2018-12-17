@@ -13,6 +13,7 @@ defmodule TdDd.ESClientApi do
       end)
       |> List.flatten()
       |> Enum.join("\n")
+
     post("_bulk", json_bulk_data <> "\n")
   end
 
@@ -47,7 +48,7 @@ defmodule TdDd.ESClientApi do
   end
 
   @doc """
-    Concatenates elasticsearch path at the beggining of HTTPoison requests
+  Concatenates elasticsearch path at the beggining of HTTPoison requests
   """
   def process_url(path) do
     es_config = Application.get_env(:td_dd, :elasticsearch)
@@ -55,7 +56,15 @@ defmodule TdDd.ESClientApi do
   end
 
   @doc """
-    Decodes response body
+  Set default request options (increase timeout for receiving HTTP response)
+  """
+  def process_request_options(options) do
+    [recv_timeout: 20_000]
+    |> Keyword.merge(options)
+  end
+
+  @doc """
+  Decodes response body
   """
   def process_response_body(body) do
     body
@@ -63,7 +72,7 @@ defmodule TdDd.ESClientApi do
   end
 
   @doc """
-    Adds requests headers
+  Adds requests headers
   """
   def process_request_headers(_headers) do
     headers = [{"Content-Type", "application/json"}]

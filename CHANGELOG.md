@@ -1,19 +1,21 @@
 # Changelog
 
-## [2.10.1]
+## [2.10.1] 2018-12-17
 
 ### Changed
 
+- Update HTTPoison to 1.5.0
+- Increase elasticsearch client default `recv_timeout` to 20 seconds
 - Increase filter aggregation size to 50
 - Remove "name" filter
 
-## [2.10.0]
+## [2.10.0] 2018-12-12
 
 ### Changed
 
 - [TD-1313] Adds type to structure filters
 
-## [2.9.4]
+## [2.9.4] 2018-12-06
 
 ### Changed
 
