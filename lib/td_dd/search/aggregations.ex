@@ -6,12 +6,12 @@ defmodule TdDd.Search.Aggregations do
 
   def aggregation_terms do
     static_keywords = [
-      {"ou.raw", %{terms: %{field: "ou.raw"}}},
-      {"system.raw", %{terms: %{field: "system.raw"}}},
-      {"name.raw", %{terms: %{field: "name.raw"}}},
-      {"group.raw", %{terms: %{field: "group.raw"}}},
-      {"type.raw", %{terms: %{field: "type.raw"}}}
+      {"ou.raw", %{terms: %{field: "ou.raw", size: 50}}},
+      {"system.raw", %{terms: %{field: "system.raw", size: 50}}},
+      {"group.raw", %{terms: %{field: "group.raw", size: 50}}},
+      {"type.raw", %{terms: %{field: "type.raw", size: 50}}}
     ]
+
     dynamic_keywords =
       @df_cache.list_templates()
       |> Enum.flat_map(&template_terms/1)
@@ -34,5 +34,4 @@ defmodule TdDd.Search.Aggregations do
   defp content_term(field) do
     {field, %{terms: %{field: "df_content.#{field}.raw"}}}
   end
-
 end

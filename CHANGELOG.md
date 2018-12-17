@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.10.1]
+
+### Changed
+
+- Increase filter aggregation size to 50
+- Remove "name" filter
+
 ## [2.10.0]
 
 ### Changed

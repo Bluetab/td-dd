@@ -143,6 +143,8 @@ defmodule TdDdWeb.MetadataController do
 
   defp get_value(data, "version" = name), do: get_version(data, name)
 
+  defp get_value(data, name), do: Map.get(data, name)
+
   defp get_version(data, name) do
     case Map.get(data, name) do
       # TODO: Use nil instead of 0, automatically version in loader.ex
@@ -151,8 +153,6 @@ defmodule TdDdWeb.MetadataController do
       value -> String.to_integer(value)
     end
   end
-
-  defp get_value(data, name), do: Map.get(data, name)
 
   defp add_metadata(data, fields) do
     metadata =
