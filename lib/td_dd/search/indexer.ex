@@ -23,7 +23,7 @@ defmodule TdDd.Search.Indexer do
       system: %{type: "text", fields: %{raw: %{type: "keyword"}}},
       group: %{type: "text", fields: %{raw: %{type: "keyword"}}},
       ou: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
-      type: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
+      confidential: %{type: "boolean", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
       description: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
       domain_ids: %{type: "long"},
       last_change_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
@@ -54,7 +54,6 @@ defmodule TdDd.Search.Indexer do
     @df_cache.list_templates()
     |> Enum.flat_map(&get_mappings/1)
     |> Enum.into(%{})
-    |> Map.put("_confidential", %{type: "text", fields: %{raw: %{type: "keyword"}}})
   end
 
   defp get_mappings(%{content: content}) do

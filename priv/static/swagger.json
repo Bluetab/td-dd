@@ -918,6 +918,10 @@
             "description": {
               "type": "string",
               "description": "Data Structure description"
+            },
+            "confidential": {
+              "type": "boolean",
+              "description": "Data Structure confidentiality"
             }
           }
         }
@@ -991,6 +995,10 @@
         },
         "data_fields": {
           "$ref": "#/definitions/DataFields"
+        },
+        "confidential": {
+          "type": "boolean",
+          "description": "Data Structure confidentiality"
         }
       },
       "example": {
@@ -1007,7 +1015,8 @@
         "id": 123,
         "group": "Data Structure group",
         "description": "Data Structure description",
-        "data_fields": []
+        "data_fields": [],
+        "confidential": "Data Structure confidentiality"
       },
       "description": "A Data Structure"
     },

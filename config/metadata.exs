@@ -34,6 +34,7 @@ config :td_dd, :metadata,
   ],
   data_structure_modifiable_fields: [
     "description",
+    "confidential",
     "df_name",
     "df_content"
   ],

@@ -85,13 +85,19 @@ defmodule TdDd.DataStructure.Search do
   end
 
   defp entry_to_filter_clause(
-         %{resource_id: resource_id, permissions: _},
+         %{resource_id: resource_id, permissions: permissions},
          user_defined_filters
        ) do
     domain_clause = %{term: %{domain_ids: resource_id}}
 
+    confidential_clause =
+      case Enum.member?(permissions, :manage_confidential_structures) do
+        true -> %{terms: %{confidential: [true, false]}}
+        false -> %{terms: %{confidential: [false]}}
+      end
+
     %{
-      bool: %{filter: user_defined_filters ++ [domain_clause]}
+      bool: %{filter: user_defined_filters ++ [domain_clause, confidential_clause]}
     }
   end
 

@@ -28,6 +28,7 @@ defmodule TdDdWeb.DataStructureVersionView do
       :description,
       :type,
       :ou,
+      :confidential,
       :domain_id,
       :last_change_at,
       :inserted_at

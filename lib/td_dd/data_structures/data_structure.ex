@@ -7,10 +7,11 @@ defmodule TdDd.DataStructures.DataStructure do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Searchable
-  alias TdPerms.TaxonomyCache
   alias TdPerms.UserCache
 
   @behaviour Searchable
+
+  @taxonomy_cache Application.get_env(:td_dd, :taxonomy_cache)
 
   @data_structure_modifiable_fields Application.get_env(:td_dd, :metadata)[
                                       :data_structure_modifiable_fields
@@ -30,6 +31,7 @@ defmodule TdDd.DataStructures.DataStructure do
     field(:metadata, :map, default: %{})
     field(:df_name, :string)
     field(:df_content, :map)
+    field(:confidential, :boolean)
 
     timestamps(type: :utc_datetime)
   end
@@ -54,6 +56,7 @@ defmodule TdDd.DataStructures.DataStructure do
       :type,
       :ou,
       :metadata,
+      :confidential,
       :df_name,
       :df_content
     ])
@@ -76,7 +79,7 @@ defmodule TdDd.DataStructures.DataStructure do
 
     domain_ids =
       domain_id
-      |> TaxonomyCache.get_parent_ids()
+      |> @taxonomy_cache.get_parent_ids()
 
     structure = structure
     |> DataStructures.with_latest_fields
@@ -95,6 +98,7 @@ defmodule TdDd.DataStructures.DataStructure do
       system: structure.system,
       type: structure.type,
       inserted_at: structure.inserted_at,
+      confidential: structure.confidential,
       df_name: structure.df_name,
       df_content: structure.df_content,
       data_fields: Enum.map(structure.data_fields, &DataField.search_fields/1)

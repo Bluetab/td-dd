@@ -17,7 +17,6 @@ defmodule TdDd.Factory do
 
   def data_structure_factory do
     %DataStructure {
-      id: 0,
       description: "some description",
       group: "some group",
       last_change_at: DateTime.utc_now(),
@@ -26,14 +25,14 @@ defmodule TdDd.Factory do
       system: "some system",
       metadata: %{"description" => "some description"},
       ou: "My organization",
-      versions: []
+      versions: [],
+      confidential: false
     }
   end
 
   def data_structure_version_factory do
     %DataStructureVersion {
       version: 0,
-      data_structure_id: 0
     }
   end
 
@@ -43,7 +42,6 @@ defmodule TdDd.Factory do
 
   def data_field_factory do
     %DataField {
-      id: 0,
       business_concept_id: nil,
       description: "some description",
       last_change_at: DateTime.utc_now(),

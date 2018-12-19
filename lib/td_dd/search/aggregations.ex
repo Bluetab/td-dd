@@ -9,7 +9,8 @@ defmodule TdDd.Search.Aggregations do
       {"ou.raw", %{terms: %{field: "ou.raw", size: 50}}},
       {"system.raw", %{terms: %{field: "system.raw", size: 50}}},
       {"group.raw", %{terms: %{field: "group.raw", size: 50}}},
-      {"type.raw", %{terms: %{field: "type.raw", size: 50}}}
+      {"type.raw", %{terms: %{field: "type.raw", size: 50}}},
+      {"confidential.raw", %{terms: %{field: "confidential.raw"}}}
     ]
 
     dynamic_keywords =
@@ -27,7 +28,6 @@ defmodule TdDd.Search.Aggregations do
     |> Enum.map(&content_term/1)
   end
 
-  def filter_content_term(%{"name" => "_confidential"}), do: true
   def filter_content_term(%{"type" => "list"}), do: true
   def filter_content_term(_), do: false
 

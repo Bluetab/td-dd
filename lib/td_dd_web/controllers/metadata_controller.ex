@@ -6,7 +6,8 @@ defmodule TdDdWeb.MetadataController do
   alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
   alias TdDd.DataStructures
   alias TdDd.Loader
-  alias TdPerms.TaxonomyCache
+
+  @taxonomy_cache Application.get_env(:td_dd, :taxonomy_cache)
 
   @data_structure_keys Application.get_env(:td_dd, :metadata)[:data_structure_keys]
   @data_field_keys Application.get_env(:td_dd, :metadata)[:data_field_keys]
@@ -60,7 +61,7 @@ defmodule TdDdWeb.MetadataController do
   end
 
   defp parse_data_structures(%Upload{path: path}) do
-    domain_map = TaxonomyCache.get_domain_name_to_id_map()
+    domain_map = @taxonomy_cache.get_domain_name_to_id_map()
 
     path
     |> File.stream!()

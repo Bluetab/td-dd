@@ -6,6 +6,8 @@ defmodule TdDdWeb.CommentControllerTest do
   alias Guardian.Plug, as: GuardianPlug
   alias TdDd.Comments
   alias TdDd.Comments.Comment
+  alias TdDd.MockTaxonomyCache
+  alias TdDd.Permissions.MockPermissionResolver
   alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
 
@@ -51,6 +53,8 @@ defmodule TdDdWeb.CommentControllerTest do
   setup_all do
     start_supervised(MockTdAuthService)
     start_supervised(MockTdAuditService)
+    start_supervised(MockPermissionResolver)
+    start_supervised(MockTaxonomyCache)
     :ok
   end
 

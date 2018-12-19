@@ -4,6 +4,7 @@ defmodule TdDdWeb.DataFieldControllerTest do
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   alias TdDd.DataStructures.DataField
+  alias TdDd.Permissions.MockPermissionResolver
   alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
 
@@ -42,6 +43,7 @@ defmodule TdDdWeb.DataFieldControllerTest do
   setup_all do
     start_supervised(MockTdAuthService)
     start_supervised(MockTdAuditService)
+    start_supervised(MockPermissionResolver)
     :ok
   end
 
@@ -175,7 +177,7 @@ defmodule TdDdWeb.DataFieldControllerTest do
 
   defp create_data_field(_) do
     data_structure = insert(:data_structure)
-    data_structure_version = insert(:data_structure_version)
+    data_structure_version = insert(:data_structure_version, data_structure_id: data_structure.id)
     data_field = insert(:data_field, data_structure_versions: [data_structure_version])
     {:ok, data_field: data_field, data_structure: data_structure}
   end

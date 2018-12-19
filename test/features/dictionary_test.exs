@@ -7,6 +7,8 @@ defmodule TdDd.DictionaryTest do
   import TdDdWeb.Authentication, only: :functions
 
   alias Poison, as: JSON
+  alias TdDd.MockTaxonomyCache
+  alias TdDd.Permissions.MockPermissionResolver
   alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
 
@@ -35,6 +37,8 @@ defmodule TdDd.DictionaryTest do
   setup_all do
     start_supervised(MockTdAuthService)
     start_supervised(MockTdAuditService)
+    start_supervised(MockPermissionResolver)
+    start_supervised(MockTaxonomyCache)
     :ok
   end
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.10.2] 2018-12-19
+
+### Changed
+
+- Update td-perms to 2.10.0
+- Update td-df-lib to 2.10.0
+- Improvements on authentication for testing. Creating a user, creates a session in the Auth Mock
+- Created TaxonomyMockCache for domain related testing
+- [TD-1198] add functionality for confidential data structure
+  - added field confidential to data_structure
+  - check for manage_confidential_structures on listing and updating data_structures
+  - added elastic_search filter regarding confidential permissions
+
 ## [2.10.1] 2018-12-17
 
 ### Changed

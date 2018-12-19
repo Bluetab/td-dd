@@ -55,6 +55,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
             description([:string, :null], "Data Structure description")
             type([:string, :null], "Data Structure type (csv, table...)")
             ou([:string, :null], "Data Structure organizational unit")
+            confidential(:boolean, "Data Structure confidentiality")
             last_change_at(:string, "Data Structure last updated at")
             inserted_at(:string, "Data Structure creation date")
             data_fields(Schema.ref(:DataFields))
@@ -70,6 +71,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
             description: "Data Structure description",
             type: "Csv",
             ou: "General Management",
+            confidential: "Data Structure confidentiality",
             inserted_at: "2018-05-08T17:17:59.691460",
             data_fields: [],
             metadata: %{
@@ -91,6 +93,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
                   description(:string, "Data Structure description")
                   type(:string, "Data Structure type (csv, table...)")
                   ou(:string, "Data Structure organizational unit")
+                  confidential(:boolean, "Data Structure confidentiality")
                 end
               end
             )

@@ -7,9 +7,7 @@ defmodule TdDd.Canada.Abilities do
   defimpl Canada.Can, for: User do
 
     # administrator is superpowerful
-    def can?(%User{is_admin: true}, _action, _data_structure)  do
-      true
-    end
+    def can?(%User{is_admin: true}, _action, _data_structure),  do: true
 
     def can?(%User{}, _action, nil),  do: false
 

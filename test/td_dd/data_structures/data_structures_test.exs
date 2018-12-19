@@ -46,7 +46,7 @@ defmodule TdDd.DataStructuresTest do
 
     test "get_data_structure_with_fields!/1 returns the data_structure with given id and fields" do
       data_structure = insert(:data_structure)
-      insert(:data_structure_version)
+      insert(:data_structure_version, data_structure_id: data_structure.id)
 
       assert DataStructures.get_data_structure_with_fields!(data_structure.id) <~> data_structure
       # TODO: Need to check fields...
@@ -73,7 +73,7 @@ defmodule TdDd.DataStructuresTest do
 
     test "update_data_structure/2 with valid data updates the data_structure" do
       data_structure = insert(:data_structure)
-      insert(:data_structure_version)
+      insert(:data_structure_version, data_structure_id: data_structure.id)
 
       assert {:ok, data_structure} =
                DataStructures.update_data_structure(data_structure, @update_attrs)
@@ -143,8 +143,8 @@ defmodule TdDd.DataStructuresTest do
     end
 
     test "create_data_field/1 with valid data creates a data_field" do
-      insert(:data_structure)
-      data_structure_version = insert(:data_structure_version)
+      data_structure = insert(:data_structure)
+      data_structure_version = insert(:data_structure_version, data_structure_id: data_structure.id)
 
       creation_attrs =
         Map.put(@valid_attrs, :data_structure_version_id, data_structure_version.id)

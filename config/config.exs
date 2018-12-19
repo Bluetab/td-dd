@@ -44,6 +44,7 @@ config :td_dd, :audit_service,
 
 config :td_dd, df_cache: TdPerms.DynamicFormCache
 config :td_dd, permission_resolver: TdPerms.Permissions
+config :td_dd, taxonomy_cache: TdPerms.TaxonomyCache
 
 config :td_perms, permissions: [
   :is_admin,
@@ -74,7 +75,21 @@ config :td_perms, permissions: [
   :view_deprecated_business_concepts,
   :manage_business_concept_links,
   :manage_quality_rule,
-  :manage_confidential_business_concepts
+  :manage_confidential_business_concepts,
+  :create_ingest,
+  :update_ingest,
+  :send_ingest_for_approval,
+  :delete_ingest,
+  :publish_ingest,
+  :reject_ingest,
+  :deprecate_ingest,
+  :view_draft_ingests,
+  :view_approval_pending_ingests,
+  :view_published_ingests,
+  :view_versioned_ingests,
+  :view_rejected_ingests,
+  :view_deprecated_ingests,
+  :manage_confidential_structures
 ]
 
 import_config "metadata.exs"

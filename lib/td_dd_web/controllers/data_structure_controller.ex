@@ -11,7 +11,8 @@ defmodule TdDdWeb.DataStructureController do
   alias TdDd.DataStructures.DataStructure
   alias TdDdWeb.ErrorView
   alias TdDdWeb.SwaggerDefinitions
-  alias TdPerms.TaxonomyCache
+
+  @taxonomy_cache Application.get_env(:td_dd, :taxonomy_cache)
 
   action_fallback(TdDdWeb.FallbackController)
 
@@ -86,7 +87,7 @@ defmodule TdDdWeb.DataStructureController do
       |> Map.put("last_change_by", get_current_user_id(conn))
       |> Map.put("last_change_at", DateTime.utc_now())
       |> Map.put("metadata", %{})
-      |> DataStructures.add_domain_id(TaxonomyCache.get_domain_name_to_id_map())
+      |> DataStructures.add_domain_id(@taxonomy_cache.get_domain_name_to_id_map())
 
     with true <- can?(user, create_data_structure(Map.fetch!(creation_params, "domain_id"))),
          {:ok, %DataStructure{id: id}} <-
@@ -136,7 +137,8 @@ defmodule TdDdWeb.DataStructureController do
 
     with true <- can?(user, view_data_structure(data_structure)) do
       user_permissions = %{
-        update: can?(user, update_data_structure(data_structure))
+        update: can?(user, update_data_structure(data_structure)),
+        confidential: can?(user, manage_confidential_structures(data_structure))
       }
 
       render(conn, "show.json",
@@ -186,11 +188,14 @@ defmodule TdDdWeb.DataStructureController do
 
     data_structure_old = DataStructures.get_data_structure_with_fields!(id)
 
+    manage_confidential_structures = can?(user, manage_confidential_structures(data_structure_old))
+
     update_params =
       data_structure_params
+      |> check_confidential_field(manage_confidential_structures)
       |> Map.put("last_change_by", get_current_user_id(conn))
       |> Map.put("last_change_at", DateTime.utc_now())
-      |> DataStructures.add_domain_id(TaxonomyCache.get_domain_name_to_id_map())
+      |> DataStructures.add_domain_id(@taxonomy_cache.get_domain_name_to_id_map())
 
     with true <- can?(user, update_data_structure(data_structure_old)),
          {:ok, %DataStructure{} = data_structure} <-
@@ -212,6 +217,9 @@ defmodule TdDdWeb.DataStructureController do
         |> render(ErrorView, :"422")
     end
   end
+
+  defp check_confidential_field(params, true), do: params
+  defp check_confidential_field(params, false), do: Map.drop(params, ["confidential"])
 
   swagger_path :delete do
     delete("/data_structures/{id}")

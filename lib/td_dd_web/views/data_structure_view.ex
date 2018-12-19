@@ -50,6 +50,7 @@ defmodule TdDdWeb.DataStructureView do
       description: data_structure.description,
       type: data_structure.type,
       ou: data_structure.ou,
+      confidential: data_structure.confidential,
       domain_id: data_structure.domain_id,
       last_change_at: data_structure.last_change_at,
       inserted_at: data_structure.inserted_at
