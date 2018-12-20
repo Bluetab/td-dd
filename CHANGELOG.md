@@ -1,6 +1,11 @@
 # Changelog
 
-## [2.10.5] 2018-12-20
+## [2.10.6] 2018-12-20
+
+### Changed
+
+- Reindex data structures in background
+- Reindex data structures after metadata is loaded
 
 ### Fixed
 

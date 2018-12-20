@@ -6,6 +6,7 @@ defmodule TdDdWeb.MetadataController do
   alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
   alias TdDd.DataStructures
   alias TdDd.Loader
+  alias TdDd.Search.IndexWorker
 
   @taxonomy_cache Application.get_env(:td_dd, :taxonomy_cache)
 
@@ -47,7 +48,7 @@ defmodule TdDdWeb.MetadataController do
 
     start_time = DateTime.utc_now()
 
-    field_recs = params |> Map.get("data_fields")  |> parse_data_fields
+    field_recs = params |> Map.get("data_fields") |> parse_data_fields
     structure_recs = params |> Map.get("data_structures") |> parse_data_structures
 
     relation_recs =
@@ -58,6 +59,8 @@ defmodule TdDdWeb.MetadataController do
     end_time = DateTime.utc_now()
 
     Logger.info("Metadata uploaded. Elapsed seconds: #{DateTime.diff(end_time, start_time)}")
+
+    IndexWorker.reindex()
   end
 
   defp parse_data_structures(%Upload{path: path}) do
@@ -111,7 +114,7 @@ defmodule TdDdWeb.MetadataController do
   defp blanks_to_nils(map) do
     map
     |> Enum.map(&blank_to_nil/1)
-    |> Map.new
+    |> Map.new()
   end
 
   defp blank_to_nil({:metadata, v}), do: {:metadata, blanks_to_nils(v)}

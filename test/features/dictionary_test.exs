@@ -11,6 +11,7 @@ defmodule TdDd.DictionaryTest do
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
+  alias TdPerms.MockDynamicFormCache
 
   @endpoint TdDdWeb.Endpoint
   @headers {"Content-type", "application/json"}
@@ -39,6 +40,7 @@ defmodule TdDd.DictionaryTest do
     start_supervised(MockTdAuditService)
     start_supervised(MockPermissionResolver)
     start_supervised(MockTaxonomyCache)
+    start_supervised(MockDynamicFormCache)
     :ok
   end
 
