@@ -10,10 +10,10 @@ defmodule TdDd.LoaderTest do
 
       dsv = insert(:data_structure_version, data_structure_id: data_structure.id, version: 0)
 
-      field1 = insert(:data_field, name: "F1", type: "T1", description: "D1", precision: "P1", nullable: false)
+      field1 = insert(:data_field, name: "F1", type: "T1", description: "Field1", precision: "P1", nullable: false)
 
       field2 =
-        insert(:data_field, id: 99, name: "F2", type: "T2", description: "D2", precision: "P2", nullable: true)
+        insert(:data_field, id: 99, name: "F2", type: "T2", description: "Field2", precision: "P2", nullable: true)
 
       field3 =
         insert(:data_field,
@@ -107,7 +107,7 @@ defmodule TdDd.LoaderTest do
 
       assert %{added: added, removed: removed, modified: modified} = context
       assert added == 6
-      assert removed == 1
+      assert removed == 2
       assert modified == 1
     end
   end

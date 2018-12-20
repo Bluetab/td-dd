@@ -100,7 +100,15 @@ defmodule TdDd.Loader do
     {:ok, rows}
   end
 
+  defp remove_field({%DataStructureVersion{id: version_id}, %DataField{id: field_id}}) do
+    remove_field(version_id, field_id)
+  end
+
   defp remove_field(%{data_field_id: field_id, data_structure_version_id: version_id}) do
+    remove_field(version_id, field_id)
+  end
+
+  defp remove_field(version_id, field_id) do
     q = "DELETE FROM versions_fields WHERE data_field_id = $1 and data_structure_version_id = $2"
 
     {:ok, %{num_rows: num_rows}} =
@@ -253,10 +261,6 @@ defmodule TdDd.Loader do
   end
 
   defp structure_diff(version, records) do
-    field_names =
-      records
-      |> Enum.map(& &1.field_name)
-
     data_fields =
       version
       |> Ecto.assoc([:data_structure, :versions, :data_fields])
@@ -281,8 +285,13 @@ defmodule TdDd.Loader do
 
     to_remove =
       data_fields
-      |> Enum.filter(fn %{name: name} -> !Enum.any?(field_names, &(&1 == name)) end)
-      |> Enum.map(fn %{id: id} -> %{data_structure_version_id: version.id, data_field_id: id} end)
+      |> MapSet.new()
+      |> MapSet.difference(
+        to_modify
+        |> Enum.map(fn {field, _} -> field end)
+        |> MapSet.new()
+      )
+      |> Enum.map(fn field -> {version, field} end)
 
     %{add: to_insert, modify: to_modify, remove: to_remove}
   end

@@ -1,5 +1,12 @@
 # Changelog
 
+
+## [2.10.3] 2018-12-20
+
+### Fixed
+
+- Metadata loader structure diff was not calculating correctly the fields to be removed
+
 ## [2.10.2] 2018-12-19
 
 ### Changed
