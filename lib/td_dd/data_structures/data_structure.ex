@@ -43,6 +43,16 @@ defmodule TdDd.DataStructures.DataStructure do
   end
 
   @doc false
+  def loader_changeset(%DataStructure{} = data_structure, attrs) do
+    changeset = data_structure |> cast(attrs, @data_structure_modifiable_fields)
+
+    case changeset.changes do
+      %{} -> changeset
+      _ -> update_changeset(data_structure, attrs)
+    end
+  end
+
+  @doc false
   def changeset(%DataStructure{} = data_structure, attrs) do
     data_structure
     |> cast(attrs, [
@@ -81,9 +91,10 @@ defmodule TdDd.DataStructures.DataStructure do
       domain_id
       |> @taxonomy_cache.get_parent_ids()
 
-    structure = structure
-    |> DataStructures.with_latest_fields
-    |> fill_items
+    structure =
+      structure
+      |> DataStructures.with_latest_fields()
+      |> fill_items
 
     %{
       id: structure.id,

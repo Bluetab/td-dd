@@ -7,7 +7,7 @@ defmodule TdDd.Mixfile do
       app: :td_dd,
       version:
         case System.get_env("APP_VERSION") do
-          nil -> "2.10.3-local"
+          nil -> "2.10.4-local"
           v -> v
         end,
       elixir: "~> 1.6",
@@ -53,7 +53,7 @@ defmodule TdDd.Mixfile do
       {:canada, "~> 1.0.1"},
       {:ex_machina, "~> 2.1", only: [:test]},
       {:cors_plug, "~> 1.2"},
-      {:csv, "~> 2.0.0"},
+      {:csv, "~> 2.1.1"},
       {:phoenix_swagger, "~> 0.7.0"},
       {:ex_json_schema, "~> 0.5"},
       {:td_perms, git: "https://github.com/Bluetab/td-perms.git", tag: "2.10.0"},

@@ -47,8 +47,8 @@ defmodule TdDdWeb.MetadataController do
 
     start_time = DateTime.utc_now()
 
+    field_recs = params |> Map.get("data_fields")  |> parse_data_fields
     structure_recs = params |> Map.get("data_structures") |> parse_data_structures
-    field_recs = params |> Map.get("data_fields") |> parse_data_fields
 
     relation_recs =
       params |> Map.get("data_structure_relations") |> parse_data_structure_relations
@@ -105,7 +105,19 @@ defmodule TdDdWeb.MetadataController do
     record
     |> add_metadata(@data_field_modifiable_fields)
     |> to_map(@data_field_keys)
+    |> blanks_to_nils
   end
+
+  defp blanks_to_nils(map) do
+    map
+    |> Enum.map(&blank_to_nil/1)
+    |> Map.new
+  end
+
+  defp blank_to_nil({:metadata, v}), do: {:metadata, blanks_to_nils(v)}
+  defp blank_to_nil({k, v}), do: {k, blank_to_nil(v)}
+  defp blank_to_nil(""), do: nil
+  defp blank_to_nil(v), do: v
 
   defp csv_to_relation(record) do
     record
