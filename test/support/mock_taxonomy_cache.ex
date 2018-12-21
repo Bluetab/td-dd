@@ -2,8 +2,6 @@ defmodule TdDd.MockTaxonomyCache do
   @moduledoc false
   use Agent
 
-  alias TdDd.Audit.Event
-
   def start_link(_) do
     Agent.start_link(fn -> %{} end, name: MockTaxonomyCache)
   end

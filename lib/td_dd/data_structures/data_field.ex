@@ -19,7 +19,11 @@ defmodule TdDd.DataStructures.DataField do
     field(:precision, :string, default: nil)
     field(:type, :string, default: nil)
     field(:metadata, :map, default: %{})
-    many_to_many(:data_structure_versions, DataStructureVersion, join_through: "versions_fields", on_delete: :delete_all)
+
+    many_to_many(:data_structure_versions, DataStructureVersion,
+      join_through: "versions_fields",
+      on_delete: :delete_all
+    )
 
     timestamps(type: :utc_datetime)
   end
@@ -28,6 +32,16 @@ defmodule TdDd.DataStructures.DataField do
   def update_changeset(%DataField{} = data_field, attrs) do
     data_field
     |> cast(attrs, [:last_change_at, :last_change_by] ++ @data_field_modifiable_fields)
+  end
+
+  @doc false
+  def loader_changeset(%DataField{} = data_field, attrs) do
+    changeset = data_field |> cast(attrs, @data_field_modifiable_fields)
+
+    case changeset.changes do
+      %{} -> changeset
+      _ -> update_changeset(data_field, attrs)
+    end
   end
 
   @doc false

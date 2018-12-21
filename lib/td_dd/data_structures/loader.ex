@@ -57,7 +57,7 @@ defmodule TdDd.Loader do
   defp update_field({field, attrs}, audit) do
     modifiable_fields = [:description]
     attrs = attrs |> Map.take(modifiable_fields) |> Map.merge(audit)
-    field |> DataField.update_changeset(attrs) |> Repo.update()
+    field |> DataField.loader_changeset(attrs) |> Repo.update()
   end
 
   defp insert_fields(%{diffs: diffs, audit: audit}) do
@@ -145,7 +145,7 @@ defmodule TdDd.Loader do
         |> Repo.insert()
 
       s ->
-        s |> DataStructure.update_changeset(attrs) |> Repo.update()
+        s |> DataStructure.loader_changeset(attrs) |> Repo.update()
     end
   end
 
@@ -329,10 +329,6 @@ defmodule TdDd.Loader do
       to_insert
       |> Enum.map(fn {_, record} -> {version, record} end)
 
-    to_modify =
-      to_modify
-      |> Enum.filter(fn {field, record} -> has_changes(field, record) end)
-
     to_remove =
       data_fields
       |> MapSet.new()
@@ -342,6 +338,10 @@ defmodule TdDd.Loader do
         |> MapSet.new()
       )
       |> Enum.map(fn field -> {version, field} end)
+
+    to_modify =
+      to_modify
+      |> Enum.filter(fn {field, record} -> has_changes(field, record) end)
 
     %{add: to_insert, modify: to_modify, remove: to_remove}
   end

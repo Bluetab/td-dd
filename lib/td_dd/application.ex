@@ -14,9 +14,8 @@ defmodule TdDd.Application do
       supervisor(TdDd.Repo, []),
       # Start the endpoint when the application starts
       supervisor(TdDdWeb.Endpoint, []),
-      # Start your own worker by calling: TdDd.Worker.start_link(arg1,
-      #                                                              arg2, arg3)
-      # worker(TdDd.Worker, [arg1, arg2, arg3]),
+      # Worker for background indexing
+      worker(TdDd.Search.IndexWorker, [TdDd.Search.IndexWorker])
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
