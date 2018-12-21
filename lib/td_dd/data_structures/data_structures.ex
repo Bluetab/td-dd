@@ -31,7 +31,7 @@ defmodule TdDd.DataStructures do
     Repo.all(from(ds in DataStructure, where: ^filter))
   end
 
-  defp build_filter(schema, params) do
+  def build_filter(schema, params) do
     params = CollectionUtils.atomize_keys(params)
     fields = schema.__schema__(:fields)
     dynamic = true
@@ -51,6 +51,9 @@ defmodule TdDd.DataStructures do
 
       is_list(value) ->
         dynamic([ds], field(ds, ^key) in ^value and ^acc)
+
+      is_nil(value) ->
+        dynamic([ds], is_nil(field(ds, ^key)) and ^acc)
 
       value ->
         dynamic([ds], field(ds, ^key) == ^value and ^acc)

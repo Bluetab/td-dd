@@ -4,8 +4,11 @@ defmodule TdDd.Loader do
   """
   require Logger
 
+  import Ecto.Query, warn: false
+
   alias Ecto.Adapters.SQL
   alias Ecto.Multi
+  alias TdDd.DataStructures
   alias TdDd.DataStructures.DataField
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
@@ -132,13 +135,7 @@ defmodule TdDd.Loader do
         _ -> attrs
       end
 
-    attrs =
-      case Map.get(attrs, :external_id) do
-        nil -> attrs |> Map.drop([:external_id])
-        _ -> attrs
-      end
-
-    case Repo.get_by(DataStructure, Map.take(attrs, [:system, :name, :group, :external_id])) do
+    case fetch_data_structure(Map.take(attrs, [:system, :name, :group, :external_id])) do
       nil ->
         %DataStructure{}
         |> DataStructure.changeset(attrs)
@@ -147,6 +144,11 @@ defmodule TdDd.Loader do
       s ->
         s |> DataStructure.loader_changeset(attrs) |> Repo.update()
     end
+  end
+
+  defp fetch_data_structure(attrs) do
+    filter = DataStructures.build_filter(DataStructure, attrs)
+    Repo.one(from(ds in DataStructure, where: ^filter))
   end
 
   defp upsert_structure_versions(%{structures: structures, structure_records: records}) do
@@ -199,33 +201,13 @@ defmodule TdDd.Loader do
       versions
       |> Repo.preload(:data_structure)
       |> Map.new(&key_value/1)
-
-    {:ok, versions_by_sys_group_name_version}
+      {:ok, versions_by_sys_group_name_version}
   end
 
   defp key_value(%DataStructureVersion{data_structure: data_structure, version: version} = dsv) do
-    {key_values, map} = data_structure |> key_value_params_for_data_structure(version)
-    key = key_values |> Enum.map(&Map.get(map, &1)) |> List.to_tuple()
+    map = data_structure |> Map.take([:system, :group, :name, :external_id]) |> Map.put(:version, version)
+    key = [:system, :group, :name, :external_id, :version] |> Enum.map(&Map.get(map, &1)) |> List.to_tuple()
     {key, dsv}
-  end
-
-  defp key_value_params_for_data_structure(
-         %DataStructure{external_id: external_id} = data_structure,
-         version
-       )
-       when is_nil(external_id) or external_id == "" do
-    [:system, :group, :name] |> fetch_values_for_keys_in_data_structure(data_structure, version)
-  end
-
-  defp key_value_params_for_data_structure(data_structure, version) do
-    [:system, :group, :name, :external_id]
-    |> fetch_values_for_keys_in_data_structure(data_structure, version)
-  end
-
-  defp fetch_values_for_keys_in_data_structure(ds_keys, data_structure, version) do
-    keys = ds_keys ++ [:version]
-    map = data_structure |> Map.take(ds_keys) |> Map.put(:version, version)
-    {keys, map}
   end
 
   defp upsert_relations(%{relation_records: []}) do
@@ -243,31 +225,18 @@ defmodule TdDd.Loader do
     |> errors_or_structs
   end
 
-  defp find_parent_child(
-         versions_by_sys_group_name_version,
-         %{
-           system: system,
-           parent_group: parent_group,
-           parent_name: parent_name,
-           child_group: child_group,
-           child_name: child_name
-         } = relation_record
-       ) do
+  defp find_parent_child(versions_by_sys_group_name_version, %{
+    system: system,
+    parent_group: parent_group,
+    parent_name: parent_name,
+    parent_external_id: parent_external_id,
+    child_group: child_group,
+    child_name: child_name,
+    child_external_id: child_external_id
+  }) do
     # TODO: Support versions other than 0 for parent/child relationships
-    parent_keys =
-      case Map.get(relation_record, :parent_external_id, "") do
-        "" -> {system, parent_group, parent_name, 0}
-        parent_external_id -> {system, parent_group, parent_name, parent_external_id, 0}
-      end
-
-    child_keys =
-      case Map.get(relation_record, :child_external_id, "") do
-        "" -> {system, child_group, child_name, 0}
-        child_external_id -> {system, child_group, child_name, child_external_id, 0}
-      end
-
-    parent = Map.get(versions_by_sys_group_name_version, parent_keys)
-    child = Map.get(versions_by_sys_group_name_version, child_keys)
+    parent = Map.get(versions_by_sys_group_name_version, {system, parent_group, parent_name, parent_external_id, 0})
+    child = Map.get(versions_by_sys_group_name_version, {system, child_group, child_name, child_external_id, 0})
     {parent, child}
   end
 
@@ -285,7 +254,7 @@ defmodule TdDd.Loader do
     diffs =
       records
       |> Enum.map(&(&1 |> Map.merge(audit_fields)))
-      |> Enum.group_by(&fetch_group_keys(&1))
+      |> Enum.group_by(&{&1.system, &1.group, &1.name, &1.external_id, &1.version})
       |> Map.to_list()
       |> Enum.map(fn {sys_group_name_version, records} ->
         {Map.get(versions_by_sys_group_name_version, sys_group_name_version), records}
@@ -293,21 +262,6 @@ defmodule TdDd.Loader do
       |> Enum.map(fn {version, records} -> structure_diff(version, records) end)
 
     {:ok, diffs}
-  end
-
-  defp fetch_group_keys(%{
-         system: system,
-         group: group,
-         name: name,
-         version: version,
-         external_id: external_id
-       })
-       when not is_nil(external_id) or external_id != "" do
-    {system, group, name, external_id, version}
-  end
-
-  defp fetch_group_keys(%{system: system, group: group, name: name, version: version}) do
-    {system, group, name, version}
   end
 
   defp structure_diff(version, records) do

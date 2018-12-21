@@ -254,8 +254,8 @@
           "500": {
             "description": "Client Error"
           },
-          "200": {
-            "description": "OK"
+          "202": {
+            "description": "Accepted"
           }
         },
         "produces": [
