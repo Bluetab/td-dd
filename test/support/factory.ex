@@ -26,7 +26,8 @@ defmodule TdDd.Factory do
       metadata: %{"description" => "some description"},
       ou: "My organization",
       versions: [],
-      confidential: false
+      confidential: false,
+      external_id: nil
     }
   end
 

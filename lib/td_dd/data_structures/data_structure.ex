@@ -32,6 +32,7 @@ defmodule TdDd.DataStructures.DataStructure do
     field(:df_name, :string)
     field(:df_content, :map)
     field(:confidential, :boolean)
+    field(:external_id, :string)
 
     timestamps(type: :utc_datetime)
   end
@@ -47,6 +48,7 @@ defmodule TdDd.DataStructures.DataStructure do
     data_structure
     |> cast(attrs, [
       :system,
+      :external_id,
       :group,
       :name,
       :domain_id,
