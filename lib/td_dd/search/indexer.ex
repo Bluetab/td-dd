@@ -25,6 +25,7 @@ defmodule TdDd.Search.Indexer do
       ou: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
       confidential: %{type: "boolean", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
       description: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
+      external_id: %{type: "text", fields: %{raw: %{type: "keyword"}}},
       domain_ids: %{type: "long"},
       last_change_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       last_change_by: %{

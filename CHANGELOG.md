@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.10.7] 2018-12-20
+
+### Added
+
+- [TD-1306] Add new field external_id to link data_structures with parents, children and fields.
+
 ## [2.10.6] 2018-12-20
 
 ### Changed

@@ -106,6 +106,7 @@ defmodule TdDd.DataStructures.DataStructure do
       last_change_by: last_change_by,
       name: structure.name,
       ou: structure.ou,
+      external_id: structure.external_id,
       domain_id: domain_id,
       domain_ids: domain_ids,
       system: structure.system,
