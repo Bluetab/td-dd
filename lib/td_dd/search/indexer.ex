@@ -23,6 +23,7 @@ defmodule TdDd.Search.Indexer do
       system: %{type: "text", fields: %{raw: %{type: "keyword"}}},
       group: %{type: "text", fields: %{raw: %{type: "keyword"}}},
       ou: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
+      type: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
       confidential: %{type: "boolean", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
       description: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
       external_id: %{type: "text", fields: %{raw: %{type: "keyword"}}},

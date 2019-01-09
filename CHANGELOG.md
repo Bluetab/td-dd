@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.10.8] 2019-01-08
+
+### Fixed
+
+- Added type field to structure index that was wrongly removed
+
 ## [2.10.7] 2018-12-20
 
 ### Added
