@@ -936,8 +936,7 @@
     "RuleCreateProps": {
       "type": "object",
       "required": [
-        "name",
-        "business_concept_id"
+        "name"
       ],
       "properties": {
         "weight": {
@@ -993,7 +992,10 @@
           "description": "description"
         },
         "business_concept_id": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "business concept id"
         },
         "active": {
@@ -1016,7 +1018,6 @@
       "required": [
         "rule_type_id",
         "description",
-        "business_concept_id",
         "id"
       ],
       "properties": {
@@ -1076,7 +1077,10 @@
           "description": "description"
         },
         "business_concept_id": {
-          "type": "string",
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "business concept id"
         },
         "active": {

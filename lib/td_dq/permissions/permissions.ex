@@ -22,4 +22,8 @@ defmodule TdDq.Permissions do
     @permission_resolver.has_permission?(jti, permission, "business_concept", business_concept_id)
   end
 
+  def authorized?(%User{jti: jti}, permission) do
+    @permission_resolver.has_permission?(jti, permission)
+  end
+
 end

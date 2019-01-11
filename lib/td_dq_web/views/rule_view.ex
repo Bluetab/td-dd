@@ -8,8 +8,11 @@ defmodule TdDqWeb.RuleView do
     render_many_hypermedia(rules, hypermedia, RuleView, "rule.json")
   end
 
-  def render("index.json", %{rules: rules}) do
-    %{data: render_many(rules, RuleView, "rule.json")}
+  def render("index.json", %{rules: rules, user_permissions: user_permissions}) do
+    %{
+      user_permissions: user_permissions,
+      data: render_many(rules, RuleView, "rule.json")
+    }
   end
 
   def render("show.json", %{hypermedia: hypermedia, rule: rule}) do

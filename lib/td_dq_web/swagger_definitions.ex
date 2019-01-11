@@ -11,7 +11,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
         description "Rule entity"
         properties do
           id :integer, "unique identifier", required: true
-          business_concept_id :string, "business concept id", required: true
+          business_concept_id [:string, nil], "business concept id"
           description :string, "description", required: true
           goal :integer, "goal percentage (1-100)"
           minimum :integer, "minimum goal (1-100)"
@@ -49,7 +49,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
       end,
       RuleCreateProps: swagger_schema do
         properties do
-          business_concept_id :string, "business concept id", required: true
+          business_concept_id [:string, nil], "business concept id"
           description :string, "description"
           goal :integer, "goal percentage (1-100)"
           minimum :integer, "minimum goal (1-100)"

@@ -41,6 +41,10 @@ defmodule TdDq.Canada.Abilities do
       RuleImplementationAbilities.can?(user, :manage_rules, business_concept_id)
     end
 
+    def can?(%User{} = user, :manage, %{"resource_type" => "rule"}) do
+      RuleAbilities.can?(user, :manage_rules, "")
+    end
+
     def can?(%User{} = user, :get_rules_by_concept, %{
           "business_concept_id" => business_concept_id,
           "resource_type" => "rule"

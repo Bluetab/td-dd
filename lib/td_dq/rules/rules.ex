@@ -534,6 +534,18 @@ defmodule TdDq.Rules do
     |> Changeset.validate_required(Map.keys(fields))
   end
 
+  defp validate_non_modifiable_fields(changeset, %{rule_type_id: _}),
+    do: add_non_modifiable_error(changeset, :rule_type_id, "non.modifiable.field")
+
+  defp validate_non_modifiable_fields(changeset, %{"rule_type_id" => _}),
+    do: add_non_modifiable_error(changeset, :rule_type_id, "non.modifiable.field")
+
+  defp validate_non_modifiable_fields(changeset, _attrs),
+    do: changeset
+
+  defp add_non_modifiable_error(changeset, field, message),
+    do: Changeset.add_error(changeset, field, message)
+
   defp add_rule_type_params_validations(changeset, _, nil), do: changeset
 
   defp add_rule_type_params_validations(changeset, %{name: "integer_values_range"}, _) do
@@ -554,18 +566,6 @@ defmodule TdDq.Rules do
         changeset
     end
   end
-
-  defp validate_non_modifiable_fields(changeset, %{rule_type_id: _}),
-    do: add_non_modifiable_error(changeset, :rule_type_id, "non.modifiable.field")
-
-  defp validate_non_modifiable_fields(changeset, %{"rule_type_id" => _}),
-    do: add_non_modifiable_error(changeset, :rule_type_id, "non.modifiable.field")
-
-  defp validate_non_modifiable_fields(changeset, _attrs),
-    do: changeset
-
-  defp add_non_modifiable_error(changeset, field, message),
-    do: Changeset.add_error(changeset, field, message)
 
   defp add_rule_type_params_validations(changeset, %{name: "dates_range"}, _) do
     case changeset.valid? do
@@ -591,7 +591,6 @@ defmodule TdDq.Rules do
         changeset
     end
   end
-
   defp add_rule_type_params_validations(changeset, _, types) do
     add_type_params_validations(changeset, types)
   end

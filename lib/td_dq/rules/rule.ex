@@ -53,7 +53,6 @@ defmodule TdDq.Rules.Rule do
       :tag
     ])
     |> validate_required([
-      :business_concept_id,
       :name,
       :goal,
       :minimum,
