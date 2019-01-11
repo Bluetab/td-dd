@@ -27,4 +27,4 @@ config :td_dq, :audit_service, api_service: TdDqWeb.ApiServices.MockTdAuditServi
   audit_domain: ""
 
 config :td_dq, permission_resolver: TdDq.Permissions.MockPermissionResolver
-
+config :td_perms, redis_host: "localhost"

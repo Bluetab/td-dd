@@ -53,8 +53,6 @@ config :td_perms, permissions: [
   :manage_confidential_structures
 ]
 
-config :td_perms, redis_host: "localhost"
-
 config :td_dq, cache_rules_on_startup: true
 
 # General application configuration
