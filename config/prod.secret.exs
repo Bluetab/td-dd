@@ -33,4 +33,4 @@ config :td_dq, :audit_service,
   audit_port: "${API_AUDIT_PORT}",
   audit_domain: ""
 
-config :td_perms, redis_uri: "${REDIS_URI}"
+config :td_perms, redis_host: "${REDIS_HOST}"
