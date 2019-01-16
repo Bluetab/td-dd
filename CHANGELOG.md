@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.11.0] 2019-01-16
+
+### Fixed
+
+- Bulk index data structures in batches of 100 to avoid reaching HTTP request size limit
+
 ## [2.10.8] 2019-01-08
 
 ### Fixed

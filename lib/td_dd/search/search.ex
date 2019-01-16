@@ -9,8 +9,9 @@ defmodule TdDd.Search do
   """
 
   def put_bulk_search(:data_structure) do
-    data_structures = DataStructures.list_data_structures()
-    ESClientApi.bulk_index_content(data_structures)
+    DataStructures.list_data_structures()
+    |> Enum.chunk_every(100)
+    |> Enum.map(&ESClientApi.bulk_index_content/1)
   end
 
   # CREATE AND UPDATE
