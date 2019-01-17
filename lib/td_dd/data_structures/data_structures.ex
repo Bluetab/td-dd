@@ -12,7 +12,7 @@ defmodule TdDd.DataStructures do
   alias TdDd.Utils.CollectionUtils
   alias TdDfLib.Validation
   alias TdPerms.DataFieldCache
-  alias TdPerms.FieldLinkCache
+  alias TdPerms.RelationCache
 
   @df_cache Application.get_env(:td_dd, :df_cache)
   @search_service Application.get_env(:td_dd, :elasticsearch)[:search_service]
@@ -521,7 +521,7 @@ defmodule TdDd.DataStructures do
     |> Map.put(
       :data_fields,
       Enum.map(data_fields, fn field ->
-        Map.put(field, :bc_related, FieldLinkCache.get_resources(field.id, "field"))
+        Map.put(field, :bc_related, RelationCache.get_resources(field.id, "data_field"))
       end)
     )
   end
