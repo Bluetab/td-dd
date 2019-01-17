@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.11.1] 2019-01-17
+
+### Changed
+
+- New cache to access linked business concepts of a field (TdPerms.RelationCache)
+- Bump versions of the libraries td-perms and td-df-lib
+
 ## [2.11.0] 2019-01-16
 
 ### Fixed
