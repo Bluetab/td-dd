@@ -57,8 +57,11 @@ defmodule TdDd.Search do
     response = ESClientApi.search_es(index_name, query)
 
     case response do
-      {:ok, %HTTPoison.Response{body: %{"hits" => %{"hits" => results, "total" => total}}}} ->
-        %{results: results, total: total}
+      {:ok,
+       %HTTPoison.Response{
+         body: %{"hits" => %{"hits" => results, "total" => total}, "aggregations" => aggregations}
+       }} ->
+        %{results: results, aggregations: format_search_aggegations(aggregations), total: total}
 
       {:ok, %HTTPoison.Response{body: error}} ->
         error
@@ -71,12 +74,17 @@ defmodule TdDd.Search do
     case response do
       {:ok, %HTTPoison.Response{body: %{"aggregations" => aggregations}}} ->
         aggregations
-        |> Map.to_list()
-        |> Enum.into(%{}, &filter_values/1)
+        |> format_search_aggegations()
 
       {:ok, %HTTPoison.Response{body: error}} ->
         error
     end
+  end
+
+  defp format_search_aggegations(aggregations) do
+    aggregations
+    |> Map.to_list()
+    |> Enum.into(%{}, &filter_values/1)
   end
 
   defp filter_values({name, %{"buckets" => buckets}}) do

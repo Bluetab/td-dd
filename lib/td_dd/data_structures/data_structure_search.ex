@@ -48,7 +48,14 @@ defmodule TdDd.DataStructure.Search do
       end
 
     sort = Map.get(params, "sort", ["name.raw"])
-    %{from: page * size, size: size, query: query, sort: sort}
+
+    %{
+      from: page * size,
+      size: size,
+      query: query,
+      sort: sort,
+      aggs: Aggregations.aggregation_terms()
+    }
     |> do_search
   end
 
@@ -72,7 +79,14 @@ defmodule TdDd.DataStructure.Search do
     query = create_query(params, filter)
 
     sort = Map.get(params, "sort", ["name.raw"])
-    %{from: page * size, size: size, query: query, sort: sort}
+
+    %{
+      from: page * size,
+      size: size,
+      query: query,
+      sort: sort,
+      aggs: Aggregations.aggregation_terms()
+    }
     |> do_search
   end
 
@@ -125,6 +139,7 @@ defmodule TdDd.DataStructure.Search do
     %{simple_query_string: %{query: equery}}
     |> bool_query
   end
+
   defp create_query(_params) do
     %{match_all: %{}}
     |> bool_query
@@ -136,6 +151,7 @@ defmodule TdDd.DataStructure.Search do
     %{simple_query_string: %{query: equery}}
     |> bool_query(filter)
   end
+
   defp create_query(_params, filter) do
     %{match_all: %{}}
     |> bool_query(filter)
@@ -150,7 +166,8 @@ defmodule TdDd.DataStructure.Search do
   end
 
   defp do_search(search) do
-    %{results: results, total: total} = @search_service.search("data_structure", search)
+    %{results: results, aggregations: aggregations, total: total} =
+      @search_service.search("data_structure", search)
 
     results =
       results
@@ -176,6 +193,6 @@ defmodule TdDd.DataStructure.Search do
         )
       end)
 
-    %{results: results, total: total}
+    %{results: results, aggregations: aggregations, total: total}
   end
 end
