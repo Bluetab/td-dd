@@ -129,6 +129,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
         swagger_schema do
           properties do
             data(Schema.ref(:DataStructures))
+            filters(:object, "Filters", required: false)
           end
         end,
       DataStructureSearchRequest:
