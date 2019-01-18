@@ -21,7 +21,7 @@ defmodule TdDd.Search.MockSearch do
   end
 
   defp search_results(results) do
-    %{results: results, total: Enum.count(results)}
+    %{results: results, aggregations: %{}, total: Enum.count(results)}
   end
 
   def get_filters(_query) do
