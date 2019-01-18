@@ -4,9 +4,12 @@ defmodule TdDdWeb.DataStructureView do
   alias TdDdWeb.DataStructureView
 
   def render("index.json", %{data_structures: data_structures, filters: filters}) do
-    %{data: render_many(data_structures, DataStructureView, "data_structure.json"), filters: filters}
+    %{
+      data: render_many(data_structures, DataStructureView, "data_structure.json"),
+      filters: filters
+    }
   end
-  
+
   def render("index.json", %{data_structures: data_structures}) do
     %{data: render_many(data_structures, DataStructureView, "data_structure.json")}
   end
@@ -80,10 +83,11 @@ defmodule TdDdWeb.DataStructureView do
   end
 
   defp add_versions(data_structure_json, data_structure) do
-    versions = case Map.get(data_structure, :versions) do
-      nil -> []
-      vs -> Enum.map(vs, &data_structure_version_json/1)
-    end
+    versions =
+      case Map.get(data_structure, :versions) do
+        nil -> []
+        vs -> Enum.map(vs, &data_structure_version_json/1)
+      end
 
     Map.put(data_structure_json, :versions, versions)
   end
