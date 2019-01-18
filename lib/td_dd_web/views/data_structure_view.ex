@@ -3,6 +3,10 @@ defmodule TdDdWeb.DataStructureView do
   alias Ecto
   alias TdDdWeb.DataStructureView
 
+  def render("index.json", %{data_structures: data_structures, filters: filters}) do
+    %{data: render_many(data_structures, DataStructureView, "data_structure.json"), filters: filters}
+  end
+  
   def render("index.json", %{data_structures: data_structures}) do
     %{data: render_many(data_structures, DataStructureView, "data_structure.json")}
   end

@@ -279,10 +279,10 @@ defmodule TdDdWeb.DataStructureController do
   def search(conn, params) do
     user = conn.assigns[:current_user]
 
-    %{results: data_structures, total: total} = do_index(user, params)
+    %{results: data_structures, aggregations: aggregations, total: total} = do_index(user, params)
 
     conn
     |> put_resp_header("x-total-count", "#{total}")
-    |> render("index.json", data_structures: data_structures)
+    |> render("index.json", data_structures: data_structures, filters: aggregations)
   end
 end
