@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.12.0] 2019-01-24
+
+### Changed
+
+- [TD-1320] Aggregations are returned on data structures search
+
 ## [2.11.1] 2019-01-17
 
 ### Changed
