@@ -57,7 +57,7 @@ defmodule TdDd.Mixfile do
       {:phoenix_swagger, "~> 0.7.0"},
       {:ex_json_schema, "~> 0.5"},
       {:td_perms, git: "https://github.com/Bluetab/td-perms.git", tag: "2.11.2"},
-      {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "2.11.0"}
+      {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "2.12.0"},
     ]
   end
 

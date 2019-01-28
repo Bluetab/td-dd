@@ -165,7 +165,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
             %{
               "name" => "field",
               "type" => "string",
-              "required" => true
+              "cardinality" => "1"
             }
           ]
       })
@@ -195,7 +195,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
             %{
               "name" => "field",
               "type" => "string",
-              "required" => true
+              "cardinality" => "1"
             }
           ]
       })

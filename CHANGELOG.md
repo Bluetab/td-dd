@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.12.1] 2019-01-28
+
+### Changed
+
+- Update td-df-lib version
+
 ## [2.12.0] 2019-01-24
 
 ### Changed
