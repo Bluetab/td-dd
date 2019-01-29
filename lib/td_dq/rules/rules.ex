@@ -177,7 +177,11 @@ defmodule TdDq.Rules do
     Rule
     |> where([r], not is_nil(r.business_concept_id))
     |> where([r], is_nil(r.deleted_at))
-    |> where([r], r.business_concept_id in ^bcs_ids_to_delete or r.business_concept_id not in ^bcs_ids_to_avoid_deletion)
+    |> where(
+      [r],
+      r.business_concept_id in ^bcs_ids_to_delete or
+        r.business_concept_id not in ^bcs_ids_to_avoid_deletion
+    )
     |> update(set: [deleted_at: ^DateTime.utc_now()])
     |> Repo.update_all([])
   end

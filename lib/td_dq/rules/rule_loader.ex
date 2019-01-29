@@ -19,7 +19,7 @@ defmodule TdDq.RuleLoader do
   """
 
   def start_link(name \\ nil) do
-    GenServer.start_link(__MODULE__, nil, [name: name])
+    GenServer.start_link(__MODULE__, nil, name: name)
   end
 
   @impl true
@@ -47,16 +47,17 @@ defmodule TdDq.RuleLoader do
     Repo
     |> SQL.query!(@count_query)
     |> Map.get(:rows)
-    |> Enum.filter(fn [bc_id, _] -> 
+    |> Enum.filter(fn [bc_id, _] ->
       not is_nil(bc_id) && BusinessConceptCache.exists_bc_in_cache?(bc_id)
     end)
     |> load_counts
   end
 
   def load_counts(counts) do
-    results = counts
-    |> Enum.map(&put_count(Enum.at(&1, 0), Enum.at(&1, 1)))
-    |> Enum.map(fn {res, _} -> res end)
+    results =
+      counts
+      |> Enum.map(&put_count(Enum.at(&1, 0), Enum.at(&1, 1)))
+      |> Enum.map(fn {res, _} -> res end)
 
     if Enum.any?(results, &(&1 != :ok)) do
       Logger.warn("Cache loading failed")
@@ -64,5 +65,4 @@ defmodule TdDq.RuleLoader do
       Logger.info("Cached #{length(results)} concept rules counts")
     end
   end
-
 end
