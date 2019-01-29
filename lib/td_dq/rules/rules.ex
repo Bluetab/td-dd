@@ -33,7 +33,8 @@ defmodule TdDq.Rules do
     query =
       from(
         p in Rule,
-        where: ^dynamic
+        where: ^dynamic,
+        where: is_nil(p.deleted_at)
       )
 
     query
@@ -55,7 +56,11 @@ defmodule TdDq.Rules do
       ** (Ecto.NoResultsError)
 
   """
-  def get_rule!(id), do: Repo.get!(Rule, id)
+  def get_rule!(id) do
+    Rule
+    |> where([r], is_nil(r.deleted_at))
+    |> Repo.get!(id)
+  end
 
   @doc """
   Gets a single rule.
@@ -69,7 +74,11 @@ defmodule TdDq.Rules do
       ** nil
 
   """
-  def get_rule(id), do: Repo.get(Rule, id)
+  def get_rule(id) do
+    Rule
+    |> where([r], is_nil(r.deleted_at))
+    |> Repo.get(id)
+  end
 
   @doc """
   Creates a rule.
@@ -160,8 +169,17 @@ defmodule TdDq.Rules do
   """
   def delete_rule(%Rule{} = rule) do
     rule
-      |> Rule.delete_changeset()
-      |> Repo.delete()
+    |> Rule.delete_changeset()
+    |> Repo.delete()
+  end
+
+  def soft_deletion(bcs_ids_to_delete, bcs_ids_to_avoid_deletion) do
+    Rule
+    |> where([r], not is_nil(r.business_concept_id))
+    |> where([r], is_nil(r.deleted_at))
+    |> where([r], r.business_concept_id in ^bcs_ids_to_delete or r.business_concept_id not in ^bcs_ids_to_avoid_deletion)
+    |> update(set: [deleted_at: ^DateTime.utc_now()])
+    |> Repo.update_all([])
   end
 
   @doc """
@@ -189,6 +207,7 @@ defmodule TdDq.Rules do
       from(
         p in Rule,
         where: ^dynamic,
+        where: is_nil(p.deleted_at),
         order_by: [desc: :business_concept_id]
       )
 
@@ -225,13 +244,18 @@ defmodule TdDq.Rules do
 
         case {Enum.member?(rule_fields, key_as_atom), is_map(Map.get(rule_params, key))} do
           {true, true} ->
-              json_query = Map.get(rule_params, key)
-              dynamic(
-                [_, p],
-                fragment("(?) @> ?::jsonb", field(p, ^key_as_atom), ^json_query) and ^acc
-              )
-            {true, false} -> dynamic([_, p], field(p, ^key_as_atom) == ^rule_params[key] and ^acc)
-          {false, _} -> acc
+            json_query = Map.get(rule_params, key)
+
+            dynamic(
+              [_, p],
+              fragment("(?) @> ?::jsonb", field(p, ^key_as_atom), ^json_query) and ^acc
+            )
+
+          {true, false} ->
+            dynamic([_, p], field(p, ^key_as_atom) == ^rule_params[key] and ^acc)
+
+          {false, _} ->
+            acc
         end
       end)
 
@@ -240,7 +264,8 @@ defmodule TdDq.Rules do
         ri in RuleImplementation,
         inner_join: r in Rule,
         on: ri.rule_id == r.id,
-        where: ^dynamic
+        where: ^dynamic,
+        where: is_nil(r.deleted_at)
       )
 
     query |> Repo.all()
@@ -260,9 +285,19 @@ defmodule TdDq.Rules do
       ** (Ecto.NoResultsError)
 
   """
-  def get_rule_implementation!(id), do: Repo.get!(RuleImplementation, id)
+  def get_rule_implementation!(id) do
+    RuleImplementation
+    |> join(:inner, [ri], r in assoc(ri, :rule))
+    |> where([_, r], is_nil(r.deleted_at))
+    |> Repo.get!(id)
+  end
 
-  def get_rule_implementation_by_key!(implementation_key), do: Repo.get_by!(RuleImplementation, implementation_key: implementation_key)
+  def get_rule_implementation_by_key!(implementation_key) do
+    RuleImplementation
+    |> join(:inner, [ri], r in assoc(ri, :rule))
+    |> where([_, r], is_nil(r.deleted_at))
+    |> Repo.get_by!(implementation_key: implementation_key)
+  end
 
   @doc """
   Gets a single rule_implementation.
@@ -278,9 +313,19 @@ defmodule TdDq.Rules do
       nil
 
   """
-  def get_rule_implementation(id), do: Repo.get(RuleImplementation, id)
+  def get_rule_implementation(id) do
+    RuleImplementation
+    |> join(:inner, [ri], r in assoc(ri, :rule))
+    |> where([_, r], is_nil(r.deleted_at))
+    |> Repo.get(id)
+  end
 
-  def get_rule_implementation_by_key(implementation_key), do: Repo.get_by(RuleImplementation, implementation_key: implementation_key)
+  def get_rule_implementation_by_key(implementation_key) do
+    RuleImplementation
+    |> join(:inner, [ri], r in assoc(ri, :rule))
+    |> where([_, r], is_nil(r.deleted_at))
+    |> Repo.get_by(implementation_key: implementation_key)
+  end
 
   @doc """
   Creates a rule_implementation.
@@ -591,6 +636,7 @@ defmodule TdDq.Rules do
         changeset
     end
   end
+
   defp add_rule_type_params_validations(changeset, _, types) do
     add_type_params_validations(changeset, types)
   end
@@ -650,16 +696,21 @@ defmodule TdDq.Rules do
   end
 
   defp to_schema_type("integer"), do: :integer
-  defp to_schema_type("string"),  do: :string
-  defp to_schema_type("list"),    do: {:array, :string}
-  defp to_schema_type("date"),    do: :string
+  defp to_schema_type("string"), do: :string
+  defp to_schema_type("list"), do: {:array, :string}
+  defp to_schema_type("date"), do: :string
 
-  def check_available_implementation_key(%{"implementation_key" => ""}), do: {:implementation_key_available}
+  def check_available_implementation_key(%{"implementation_key" => ""}),
+    do: {:implementation_key_available}
+
   def check_available_implementation_key(%{"implementation_key" => implementation_key}) do
-      count =
-        RuleImplementation
-        |> where([r], r.implementation_key == ^implementation_key)
-        |> Repo.all()
-    if Enum.empty?(count), do: {:implementation_key_available}, else: {:implementation_key_not_available}
+    count =
+      RuleImplementation
+      |> where([r], r.implementation_key == ^implementation_key)
+      |> Repo.all()
+
+    if Enum.empty?(count),
+      do: {:implementation_key_available},
+      else: {:implementation_key_not_available}
   end
 end
