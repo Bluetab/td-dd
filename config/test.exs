@@ -9,6 +9,8 @@ config :td_dq, TdDqWeb.Endpoint,
 
 config :td_dq, hashing_module: TdDq.DummyHashing
 
+config :td_dq, rule_removement: false
+
 # Print only warnings and errors during test
 config :logger, level: :warn
 

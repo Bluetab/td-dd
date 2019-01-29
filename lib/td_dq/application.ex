@@ -8,6 +8,10 @@ defmodule TdDq.Application do
   def start(_type, _args) do
     import Supervisor.Spec
 
+    rule_remover_worker = %{
+      id: TdDq.Rules.RuleRemover,
+      start: {TdDq.Rules.RuleRemover, :start_link, []}
+    }
     # Define workers and child supervisors to be supervised
     children = [
       # Start the Ecto repository
@@ -17,6 +21,13 @@ defmodule TdDq.Application do
       # Start your own worker by calling: TdDq.Worker.start_link(arg1, arg2, arg3)
       # worker(TdDq.Worker, [arg1, arg2, arg3]),
       worker(TdDq.RuleLoader, [TdDq.RuleLoader]),
+      %{
+        id: TdDq.CustomSupervisor,
+        start:
+          {TdDq.CustomSupervisor, :start_link,
+           [%{children: [rule_remover_worker], strategy: :one_for_one}]},
+        type: :supervisor
+      }
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

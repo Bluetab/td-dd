@@ -47,6 +47,9 @@ defmodule TdDq.RuleLoader do
     Repo
     |> SQL.query!(@count_query)
     |> Map.get(:rows)
+    |> Enum.filter(fn [bc_id, _] -> 
+      not is_nil(bc_id) && BusinessConceptCache.exists_bc_in_cache?(bc_id)
+    end)
     |> load_counts
   end
 

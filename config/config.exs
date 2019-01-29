@@ -55,6 +55,9 @@ config :td_perms, permissions: [
 
 config :td_dq, cache_rules_on_startup: true
 
+config :td_dq, rule_removement: true
+config :td_dq, rule_removement_frequency: 36_00_000
+
 # General application configuration
 config :td_dq,
   ecto_repos: [TdDq.Repo]
