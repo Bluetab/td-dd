@@ -1,6 +1,6 @@
 # /truedat Data Dictionary
 
-TdDD is a back-end service developed as part of True Dat project that supports the genearation of a Data Dictionary
+TdDD is a back-end service developed as part of Truedat project that supports the genearation of a Data Dictionary
 
 ## Getting Started
 
