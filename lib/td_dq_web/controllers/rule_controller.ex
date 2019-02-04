@@ -179,6 +179,33 @@ defmodule TdDqWeb.RuleController do
     )
   end
 
+  swagger_path :get_rule_detail do
+    description("Show Rule with details over the data of its relations")
+    produces("application/json")
+
+    parameters do
+      id(:path, :integer, "Rule ID", required: true)
+    end
+
+    response(200, "OK", Schema.ref(:RuleDetailResponse))
+    response(400, "Client Error")
+  end
+
+  def get_rule_detail(conn, %{"rule_id" => id}) do
+    rule = id
+    |> Rules.get_rule_detail!()
+
+    render(
+      conn,
+      "show.json",
+      hypermedia: hypermedia("rule", conn, %{
+        "business_concept_id" => rule.business_concept_id,
+        "resource_type" => "rule"
+      }),
+      rule: rule
+    )
+  end
+
   swagger_path :update do
     description("Updates Rule")
     produces("application/json")
