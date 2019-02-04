@@ -43,6 +43,39 @@
         "description": "List Quality Rules"
       }
     },
+    "/api/rules/{rule_id}/detail": {
+      "get": {
+        "tags": [
+          "Rule"
+        ],
+        "summary": "",
+        "responses": {
+          "400": {
+            "description": "Client Error"
+          },
+          "200": {
+            "schema": {
+              "$ref": "#/definitions/RuleDetailResponse"
+            },
+            "description": "OK"
+          }
+        },
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "type": "integer",
+            "required": true,
+            "name": "id",
+            "in": "path",
+            "description": "Rule ID"
+          }
+        ],
+        "operationId": "TdDqWeb.RuleController.get_rule_detail",
+        "description": "Show Rule with details over the data of its relations"
+      }
+    },
     "/api/rules/{id}": {
       "put": {
         "tags": [
@@ -932,6 +965,96 @@
         }
       },
       "description": "Rule Implementation entity"
+    },
+    "RuleDetailResponse": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/RuleDetail"
+        }
+      }
+    },
+    "RuleDetail": {
+      "type": "object",
+      "title": "Rule Detail",
+      "required": [
+        "rule_type_id",
+        "description",
+        "id"
+      ],
+      "properties": {
+        "weight": {
+          "type": "integer",
+          "description": "weight"
+        },
+        "version": {
+          "type": "integer",
+          "description": "version number"
+        },
+        "updated_by": {
+          "type": "integer",
+          "description": "updated by user id"
+        },
+        "type_params": {
+          "type": "object",
+          "description": "rule type_params"
+        },
+        "tag": {
+          "type": "object"
+        },
+        "system_values": {
+          "type": "object",
+          "description": "Possible system values retrieved to create an implementation"
+        },
+        "rule_type_id": {
+          "type": "integer",
+          "description": "Belongs to rule type"
+        },
+        "priority": {
+          "type": "string",
+          "description": "Priority (Medium,...)"
+        },
+        "principle": {
+          "type": "object",
+          "description": "rule principle"
+        },
+        "population": {
+          "type": "string",
+          "description": "population target description"
+        },
+        "name": {
+          "type": "string",
+          "description": "rule name"
+        },
+        "minimum": {
+          "type": "integer",
+          "description": "minimum goal (1-100)"
+        },
+        "id": {
+          "type": "integer",
+          "description": "unique identifier"
+        },
+        "goal": {
+          "type": "integer",
+          "description": "goal percentage (1-100)"
+        },
+        "description": {
+          "type": "string",
+          "description": "description"
+        },
+        "business_concept_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "business concept id"
+        },
+        "active": {
+          "type": "boolean",
+          "description": "active (Default: false)"
+        }
+      },
+      "description": "Rule entity with possible system values to create an implementation"
     },
     "RuleCreateProps": {
       "type": "object",
