@@ -28,6 +28,29 @@ defmodule TdDqWeb.SwaggerDefinitions do
           tag :object
         end
       end,
+      RuleDetail: swagger_schema do
+        title "Rule Detail"
+        description "Rule entity with possible system values to create an implementation"
+        properties do
+          id :integer, "unique identifier", required: true
+          business_concept_id [:string, nil], "business concept id"
+          description :string, "description", required: true
+          goal :integer, "goal percentage (1-100)"
+          minimum :integer, "minimum goal (1-100)"
+          name :string, "rule name"
+          population :string, "population target description"
+          priority :string, "Priority (Medium,...)"
+          weight :integer, "weight"
+          active :boolean, "active (Default: false)" #, default: "false"
+          version :integer, "version number"
+          updated_by :integer, "updated by user id"
+          principle :object, "rule principle"
+          type_params :object, "rule type_params"
+          rule_type_id :integer, "Belongs to rule type", required: true
+          tag :object
+          system_values :object, "Possible system values retrieved to create an implementation"
+        end
+      end,
       RuleImplementation: swagger_schema do
         title "Rule Implementation"
         description "Rule Implementation entity"
@@ -85,6 +108,11 @@ defmodule TdDqWeb.SwaggerDefinitions do
       RuleResponse: swagger_schema do
         properties do
           data Schema.ref(:Rule)
+        end
+      end,
+      RuleDetailResponse: swagger_schema do
+        properties do
+          data Schema.ref(:RuleDetail)
         end
       end,
       RulesResponse: swagger_schema do

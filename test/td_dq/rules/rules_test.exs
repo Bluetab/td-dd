@@ -4,7 +4,52 @@ defmodule TdDq.RulesTest do
   import TdDq.Factory
 
   alias Ecto.Changeset
+  alias TdDq.MockRelationCache
   alias TdDq.Rules
+
+  setup_all do
+    start_supervised(MockRelationCache)
+    :ok
+  end
+
+  @list_cache [
+    %{
+      resource_id: 1,
+      relation_type: "business_concept_to_field",
+      context: %{
+        "system" => "system_1",
+        "structure" => "structure_1",
+        "structure_id" => "1",
+        "group" => "group_1",
+        "field" => "field_1"
+      },
+      resource_type: "data_field"
+    },
+    %{
+      resource_id: 2,
+      relation_type: "business_concept_to_field",
+      context: %{
+        "system" => "system_2",
+        "structure" => "structure_2",
+        "structure_id" => "2",
+        "group" => "group_2",
+        "field" => "field_2"
+      },
+      resource_type: "data_field"
+    },
+    %{
+      resource_id: 3,
+      relation_type: "business_concept_to_field",
+      context: %{
+        "system" => "system_3",
+        "structure" => "structure_3",
+        "structure_id" => "3",
+        "group" => "group_3",
+        "field" => "field_3"
+      },
+      resource_type: "data_field"
+    }
+  ]
 
   describe "rule" do
     alias TdDq.Rules.Rule
@@ -22,6 +67,50 @@ defmodule TdDq.RulesTest do
     test "get_rule/1 returns the rule with given id" do
       rule = insert(:rule)
       assert rule_preload(Rules.get_rule!(rule.id)) == rule
+    end
+
+    test "get_rule_detail!/2 returns a rule with the possible values for the system params given a group of filters" do
+      cache_fixture(@list_cache)
+
+      rule_type =
+        insert(
+          :rule_type,
+          params: %{"system_params" => [%{"name" => "table", "type" => "string"}]}
+        )
+
+      rule = insert(:rule, rule_type: rule_type)
+
+      %{system_values: system_values} = Rules.get_rule_detail!(rule.id)
+
+      assert Enum.all?(Map.keys(system_values), &Enum.member?(["system", "table", "group"], &1))
+
+      system_params_in_response = system_values |> Map.get("system", [])
+      table_params_in_response = system_values |> Map.get("table", [])
+      group_params_in_response = system_values |> Map.get("group", [])
+
+      system_params_in_resource_list =
+        @list_cache |> Enum.map(&(&1 |> Map.get(:context) |> Map.get("system")))
+
+      table_params_in_resource_list =
+        @list_cache |> Enum.map(&(&1 |> Map.get(:context) |> Map.get("structure")))
+
+      group_params_in_resource_list =
+        @list_cache |> Enum.map(&(&1 |> Map.get(:context) |> Map.get("group")))
+
+      assert system_params_in_response
+             |> Enum.all?(fn %{"name" => name} ->
+               Enum.member?(system_params_in_resource_list, name)
+             end)
+
+      assert table_params_in_response
+             |> Enum.all?(fn %{"name" => name} ->
+               Enum.member?(table_params_in_resource_list, name)
+             end)
+
+      assert group_params_in_response
+             |> Enum.all?(fn %{"name" => name} ->
+               Enum.member?(group_params_in_resource_list, name)
+             end)
     end
 
     test "create_rule/1 with valid data creates a rule" do
@@ -189,6 +278,10 @@ defmodule TdDq.RulesTest do
     defp rule_preload(rule) do
       rule
       |> Repo.preload(:rule_type)
+    end
+
+    defp cache_fixture(resources_list) do
+      resources_list |> Enum.map(&MockRelationCache.put_relation(&1))
     end
   end
 

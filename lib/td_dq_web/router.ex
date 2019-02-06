@@ -30,6 +30,7 @@ defmodule TdDqWeb.Router do
     get "/rules/concept/:id", RuleController, :get_rules_by_concept
     resources "/rules", RuleController, except: [:new, :edit] do
       get "/rule_implementations",  RuleImplementationController, :get_rule_implementations
+      get "/detail",  RuleController, :get_rule_detail
     end
     resources "/rule_implementations", RuleImplementationController, except: [:new, :edit]
     resources "/rule_types", RuleTypeController, except: [:new, :edit]

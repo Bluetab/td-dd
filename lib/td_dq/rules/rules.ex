@@ -14,6 +14,14 @@ defmodule TdDq.Rules do
 
   @datetime_format "%Y-%m-%d %H:%M:%S"
   @date_format "%Y-%m-%d"
+  @params_conversion %{
+    "system" => {"system", 0},
+    "group" => {"group", 1},
+    "table" => {"structure", 2},
+    "column" => {"field", 3}
+  }
+  @relation_field_types ["business_concept_to_field", "business_concept_to_field_master"]
+  @relation_cache Application.get_env(:td_dq, :relation_cache)
 
   @doc """
   Returns the list of rules.
@@ -184,6 +192,131 @@ defmodule TdDq.Rules do
     )
     |> update(set: [deleted_at: ^DateTime.utc_now()])
     |> Repo.update_all([])
+  end
+
+  def get_rule_detail!(id) do
+    id
+    |> get_rule!()
+    |> Repo.preload(:rule_type)
+    |> load_relation_detail_from_cache()
+  end
+
+  defp load_relation_detail_from_cache(%Rule{business_concept_id: nil} = rule), do: rule
+
+  defp load_relation_detail_from_cache(%Rule{rule_type: rule_type} = rule) do
+    list_filters =
+      rule_type
+      |> Map.get(:params, %{})
+      |> Map.get("system_params", [])
+      |> retrieve_params_to_filter()
+
+    case list_filters do
+      [] -> rule
+      list_filters -> rule |> retrieve_cache_information(list_filters)
+    end
+  end
+
+  defp retrieve_params_to_filter([]), do: []
+
+  defp retrieve_params_to_filter(system_params) do
+    filters_in_system_params =
+      system_params
+      |> Enum.map(&Map.get(&1, "name"))
+
+    ["system" | filters_in_system_params]
+  end
+
+  defp retrieve_cache_information(%Rule{business_concept_id: bc_id} = rule, list_filters) do
+    list_resources =
+      bc_id
+      |> @relation_cache.get_resources("business_concept", %{relation_type: @relation_field_types})
+      |> Enum.filter(fn %{resource_type: resource_type} -> resource_type == "data_field" end)
+      |> Enum.uniq_by(fn %{resource_id: resource_id} -> resource_id end)
+
+    system_values =
+      list_filters
+      |> Enum.map(&append_values(&1, list_resources))
+      |> Enum.into(%{})
+
+    rule |> Map.put(:system_values, system_values)
+  end
+
+  defp append_values("system" = key, list_resources) do
+    {transformed_key, _} = Map.get(@params_conversion, key)
+
+    values =
+      list_resources
+      |> Enum.map(fn %{context: context} ->
+        name = context |> Map.get(transformed_key)
+        resource_id = name
+        build_resource_map(name, key, resource_id)
+      end)
+      |> Enum.uniq_by(fn %{"name" => name} -> name end)
+
+    {key, values}
+  end
+
+  defp append_values("group" = key, list_resources) do
+    {transformed_key, _} = Map.get(@params_conversion, key)
+
+    values =
+      list_resources
+      |> Enum.map(fn %{context: context} ->
+        parent_key = Map.get(context, "system")
+        name = context |> Map.get(transformed_key)
+        resource_id = context |> Map.get("group")
+
+        build_resource_map(name, key, resource_id, parent_key)
+      end)
+      |> Enum.uniq_by(fn %{"resource_id" => resource_id} -> resource_id end)
+
+    {key, values}
+  end
+
+  defp append_values("table" = key, list_resources) do
+    {transformed_key, _} = Map.get(@params_conversion, key)
+
+    values =
+      list_resources
+      |> Enum.map(fn %{context: context} ->
+        parent_key = Map.get(context, "group")
+        name = context |> Map.get(transformed_key)
+        resource_id = context |> Map.get("structure_id")
+
+        build_resource_map(name, key, resource_id, parent_key)
+      end)
+      |> Enum.uniq_by(fn %{"resource_id" => resource_id} -> resource_id end)
+
+    {key, values}
+  end
+
+  defp append_values("column" = key, list_resources) do
+    {transformed_key, _} = Map.get(@params_conversion, key)
+
+    values =
+      list_resources
+      |> Enum.map(fn %{resource_id: resource_id, context: context} ->
+        parent_key = Map.get(context, "structure_id")
+        name = context |> Map.get(transformed_key)
+
+        build_resource_map(name, key, resource_id, parent_key)
+      end)
+      |> Enum.uniq_by(fn %{"resource_id" => resource_id} -> resource_id end)
+
+    {key, values}
+  end
+
+  defp build_resource_map(name, resource_type, resource_id) do
+    Map.new()
+    |> Map.put("name", name)
+    |> Map.put("resource_type", resource_type)
+    |> Map.put("resource_id", resource_id)
+  end
+
+  defp build_resource_map(name, resource_type, resource_id, parent_key) do
+    name
+    |> build_resource_map(resource_type, resource_id)
+    |> Map.put("parent_key", parent_key)
   end
 
   @doc """

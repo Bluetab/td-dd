@@ -49,10 +49,18 @@ defmodule TdDqWeb.RuleView do
       }
     }
     |> add_rule_type(rule)
+    |> add_system_values(rule)
+  end
+
+  defp add_system_values(rule_mapping, rule) do
+    case Map.get(rule, :system_values) do
+      nil -> rule_mapping
+      value -> rule_mapping |> Map.put(:system_values, value)
+    end
   end
 
   defp retrieve_tag(rule) do
-    case Map.get(rule, :tag, %{}) do
+    case Map.get(rule, :tag) do
       nil -> %{}
       value -> value
     end
