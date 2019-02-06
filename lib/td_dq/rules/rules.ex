@@ -230,6 +230,7 @@ defmodule TdDq.Rules do
     list_resources =
       bc_id
       |> @relation_cache.get_resources("business_concept", %{relation_type: @relation_field_types})
+      |> Enum.filter(fn %{resource_type: resource_type} -> resource_type == "data_field" end)
       |> Enum.uniq_by(fn %{resource_id: resource_id} -> resource_id end)
 
     system_values =
