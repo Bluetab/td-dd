@@ -22,8 +22,8 @@ defmodule TdDdWeb.Endpoint do
     Plug.Parsers,
     parsers: [
       :urlencoded,
-      # 20M. # Increased for metadata upload. 1000 data structures, 50 data fields
-      {:multipart, length: 20_000_000},
+      # 100M. # Increased for metadata upload. 1000 data structures, 50 data fields
+      {:multipart, length: 100_000_000},
       :json
     ],
     pass: ["*/*"],
