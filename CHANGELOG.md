@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] 2019-02-XX
+
+### Changed
+
+- Increase metadata upload file limit from 20M to 100M
+
 ## [2.12.1] 2019-01-28
 
 ### Changed
