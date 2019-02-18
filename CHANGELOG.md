@@ -1,16 +1,16 @@
 # Changelog
 
-## Unreleased
+## [2.13.0] 2019-02-12
 
 ### Add
 
 - [TD-1126] Migrations to clean unused tables and fields in model
 
-## Unreleased
+## [2.13.0] 2019-02-06
 
 ### Modified
 
-- [TD-967] New endpoint created to retrieve the rule detail with the possible system params used to create an implementation 
+- [TD-967] New endpoint created to retrieve the rule detail with the possible system params used to create an implementation
 
 ## [2.12.0] 2019-01-29
 
