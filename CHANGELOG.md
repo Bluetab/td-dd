@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Add
+
+- [TD-1126] Migrations to clean unused tables and fields in model
+
+## Unreleased
+
 ### Modified
 
 - [TD-967] New endpoint created to retrieve the rule detail with the possible system params used to create an implementation 
