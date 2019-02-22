@@ -66,10 +66,6 @@ defmodule TdQd.RuleTest do
       rule_type_create(token, %{"name" => qr_name, "params" => table})
   end
 
-  def assert_attr("principle" = attr, value, %{} = target) do
-    assert value == target[attr]["name"]
-  end
-
   def assert_attr("active" = attr, value, %{} = target) do
     assert active_to_boolean(value) == target[attr]
   end

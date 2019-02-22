@@ -22,10 +22,8 @@ defmodule TdDqWeb.SwaggerDefinitions do
           active :boolean, "active (Default: false)" #, default: "false"
           version :integer, "version number"
           updated_by :integer, "updated by user id"
-          principle :object, "rule principle"
           type_params :object, "rule type_params"
           rule_type_id :integer, "Belongs to rule type", required: true
-          tag :object
         end
       end,
       RuleDetail: swagger_schema do
@@ -44,10 +42,8 @@ defmodule TdDqWeb.SwaggerDefinitions do
           active :boolean, "active (Default: false)" #, default: "false"
           version :integer, "version number"
           updated_by :integer, "updated by user id"
-          principle :object, "rule principle"
           type_params :object, "rule type_params"
           rule_type_id :integer, "Belongs to rule type", required: true
-          tag :object
           system_values :object, "Possible system values retrieved to create an implementation"
         end
       end,
@@ -60,7 +56,6 @@ defmodule TdDqWeb.SwaggerDefinitions do
           implementation_key :string, "Rule Implementation implementation_key", required: true
           system :string, "Rule Implementation system", required: true
           system_params :object, "Rule Implementation parameters", required: true
-          tag :object, "Rule Implementation tag"
           rule_id :integer, "Belongs to rule", required: true
         end
       end,
@@ -83,10 +78,8 @@ defmodule TdDqWeb.SwaggerDefinitions do
           active :boolean, "Active/Inactive"
           version :integer, "weight"
           updated_by :integer, "weight"
-          principle :object, "rule principle"
           type :string, "weight"
           type_params :object, "weight"
-          tag :object, "weight"
         end
       end,
       RuleCreate: swagger_schema do
@@ -134,7 +127,6 @@ defmodule TdDqWeb.SwaggerDefinitions do
           implementation_key :string, "Rule Implementation implementation_key", required: true
           system :string, "Rule Implementation system", required: true
           system_params :object, "Rule Implementation parameters", required: true
-          tag :object, "Rule Implementation tag"
           rule_id :integer, "Belongs to rule", required: true
         end
       end,
@@ -144,7 +136,6 @@ defmodule TdDqWeb.SwaggerDefinitions do
           implementation_key :string, "Rule Implementation implementation_key", required: true
           system :string, "Rule Implementation system", required: true
           system_params :object, "Rule Implementation parameters", required: true
-          tag :object, "Rule Implementation tag"
           rule_id :integer, "belongs to rule", required: true
         end
       end,
@@ -159,7 +150,6 @@ defmodule TdDqWeb.SwaggerDefinitions do
           implementation_key :string, "Rule Implementation implementation_key", required: true
           system :string, "Rule Implementation system", required: true
           system_params :object, "Rule Implementation parameters", required: true
-          tag :object, "Rule Implementation tag"
         end
       end,
       RuleImplementationUpdate: swagger_schema do

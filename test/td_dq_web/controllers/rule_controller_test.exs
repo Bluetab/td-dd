@@ -25,7 +25,6 @@ defmodule TdDqWeb.RuleControllerTest do
     priority: "some priority",
     weight: 42,
     updated_by: Integer.mod(:binary.decode_unsigned("app-admin"), 100_000),
-    principle: %{},
     type_params: %{}
   }
 
@@ -38,7 +37,6 @@ defmodule TdDqWeb.RuleControllerTest do
     priority: "some priority",
     weight: 42,
     updated_by: Integer.mod(:binary.decode_unsigned("app-admin"), 100_000),
-    principle: %{},
     type_params: %{}
   }
 
@@ -51,7 +49,6 @@ defmodule TdDqWeb.RuleControllerTest do
     population: "some population",
     priority: "some priority",
     weight: 42,
-    principle: %{},
     type_params: %{}
   }
 
@@ -64,7 +61,6 @@ defmodule TdDqWeb.RuleControllerTest do
     population: "some updated population",
     priority: "some updated priority",
     weight: 43,
-    principle: %{}
   }
 
   @invalid_attrs %{
@@ -76,7 +72,6 @@ defmodule TdDqWeb.RuleControllerTest do
     population: nil,
     priority: nil,
     weight: nil,
-    principle: nil,
     type_params: nil
   }
 
@@ -93,10 +88,8 @@ defmodule TdDqWeb.RuleControllerTest do
     "active",
     "version",
     "updated_by",
-    "principle",
     "rule_type_id",
     "type_params",
-    "tag"
   ]
 
   @admin_user_name "app-admin"
@@ -230,10 +223,8 @@ defmodule TdDqWeb.RuleControllerTest do
                "active" => false,
                "version" => 1,
                "updated_by" => @create_fixture_attrs.updated_by,
-               "principle" => %{},
                "rule_type_id" => rule_type.id,
-               "type_params" => %{},
-               "tag" => %{}
+               "type_params" => %{}
              }
     end
 
@@ -269,10 +260,8 @@ defmodule TdDqWeb.RuleControllerTest do
                "active" => false,
                "version" => 1,
                "updated_by" => @create_fixture_attrs.updated_by,
-               "principle" => %{},
                "rule_type_id" => rule_type.id,
-               "type_params" => %{},
-               "tag" => %{}
+               "type_params" => %{}
              }
     end
 
@@ -354,10 +343,8 @@ defmodule TdDqWeb.RuleControllerTest do
                "active" => false,
                "version" => 1,
                "updated_by" => @create_fixture_attrs.updated_by,
-               "principle" => %{},
                "rule_type_id" => rule.rule_type_id,
-               "type_params" => %{},
-               "tag" => %{}
+               "type_params" => %{}
              }
     end
 

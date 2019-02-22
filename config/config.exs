@@ -54,6 +54,7 @@ config :td_perms, permissions: [
   :manage_confidential_structures
 ]
 
+config :td_dq, df_cache: TdPerms.DynamicFormCache
 config :td_dq, cache_rules_on_startup: true
 
 config :td_dq, rule_removement: true

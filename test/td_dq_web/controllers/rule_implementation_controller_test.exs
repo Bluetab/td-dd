@@ -32,21 +32,6 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
       validate_resp_schema(conn, schema, "RuleImplementationsResponse")
       assert length(json_response(conn, 200)["data"]) == 3
     end
-
-    @tag :admin_authenticated
-    test "lists all rule_implementations filtered by its tags", %{conn: conn, swagger_schema: schema} do
-      rule_type = insert(:rule_type)
-      rule1 = insert(:rule, rule_type: rule_type, tag: %{"tags" => [%{"name" => "Tag Name"}, %{"name" => "New Tag Name"}]})
-      rule2 = insert(:rule, rule_type: rule_type, tag: %{"tags" => [%{"name" => "Tag Name"}]})
-      insert(:rule_implementation, implementation_key: "ri1", rule: rule1)
-      insert(:rule_implementation, implementation_key: "ri2", rule: rule1)
-      insert(:rule_implementation, implementation_key: "ri3", rule: rule1)
-      insert(:rule_implementation, implementation_key: "ri4", rule: rule2)
-      conn = get(conn, rule_implementation_path(conn, :index), %{"rule_tags": "Tag Name,New Tag Name"})
-      validate_resp_schema(conn, schema, "RuleImplementationsResponse")
-      assert length(json_response(conn, 200)["data"]) == 3
-    end
-
   end
 
   describe "create rule_implementation" do
@@ -73,7 +58,6 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
       assert creation_attrs[:description] == json_response["description"]
       assert creation_attrs[:system_params] == json_response["system_params"]
       assert creation_attrs[:system] == json_response["system"]
-      assert creation_attrs[:tag] == json_response["tag"]
     end
 
     @tag :admin_authenticated
@@ -116,7 +100,6 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
       assert update_attrs[:description] == json_response["description"]
       assert update_attrs[:system_params] == json_response["system_params"]
       assert update_attrs[:system] == json_response["system"]
-      assert update_attrs[:tag] == json_response["tag"]
     end
 
     @tag :admin_authenticated
@@ -178,7 +161,6 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
       assert creation_attrs[:description] == json_response["description"]
       assert creation_attrs[:system_params] == json_response["system_params"]
       assert creation_attrs[:system] == json_response["system"]
-      assert creation_attrs[:tag] == json_response["tag"]
 
       conn = recycle_and_put_headers(conn)
 

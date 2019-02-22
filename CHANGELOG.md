@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-1179] Added sopport for Dynamix Fields in DQ
+ - added fields df_content and df_name to rules
+ - migration moves value o principle and tag to df_content
+ - removed principle and tag fields and all its handling
+ - added DF content validation on create/update rule
+
 ## [2.13.0] 2019-02-12
 
 ### Add

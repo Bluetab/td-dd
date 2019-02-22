@@ -332,29 +332,6 @@ defmodule TdDq.RulesTest do
       assert length(Rules.list_rule_implementations(%{rule: %{active: true}})) == 3
     end
 
-    test "list_rule_implementations/1 returns all rule_implementations by its tags" do
-      tag_filter = %{
-        rule: %{tag: %{"tags" => [%{"name" => "Tag Name"}, %{"name" => "New Tag Name"}]}}
-      }
-
-      rule_type = insert(:rule_type)
-
-      rule1 =
-        insert(
-          :rule,
-          rule_type: rule_type,
-          tag: %{"tags" => [%{"name" => "Tag Name"}, %{"name" => "New Tag Name"}]}
-        )
-
-      rule2 = insert(:rule, rule_type: rule_type, tag: %{"tags" => [%{"name" => "Tag Name"}]})
-      insert(:rule_implementation, implementation_key: "ri1", rule: rule1)
-      insert(:rule_implementation, implementation_key: "ri2", rule: rule1)
-      insert(:rule_implementation, implementation_key: "ri3", rule: rule1)
-      insert(:rule_implementation, implementation_key: "ri4", rule: rule2)
-
-      assert length(Rules.list_rule_implementations(tag_filter)) == 3
-    end
-
     test "get_rule_implementation!/1 returns the rule_implementation with given id" do
       rule_implementation = insert(:rule_implementation)
 
@@ -405,7 +382,6 @@ defmodule TdDq.RulesTest do
       assert rule_implementation.description == creation_attrs[:description]
       assert rule_implementation.system_params == creation_attrs[:system_params]
       assert rule_implementation.system == creation_attrs[:system]
-      assert rule_implementation.tag == creation_attrs[:tag]
     end
 
     test "create_rule_implementation/1 with valid system fields" do
@@ -469,7 +445,6 @@ defmodule TdDq.RulesTest do
       assert rule_implementation.description == update_attrs[:description]
       assert rule_implementation.system_params == update_attrs[:system_params]
       assert rule_implementation.system == update_attrs[:system]
-      assert rule_implementation.tag == update_attrs[:tag]
     end
 
     test "update_rule_implementation/2 with invalid data returns error changeset" do

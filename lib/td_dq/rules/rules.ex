@@ -5,8 +5,8 @@ defmodule TdDq.Rules do
 
   import Ecto.Query, warn: false
   alias Ecto.Changeset
+  alias TdDfLib.Validation
   alias TdDq.Repo
-
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleImplementation
   alias TdDq.Rules.RuleResult
@@ -22,6 +22,8 @@ defmodule TdDq.Rules do
   }
   @relation_field_types ["business_concept_to_field", "business_concept_to_field_master"]
   @relation_cache Application.get_env(:td_dq, :relation_cache)
+
+  @df_cache Application.get_env(:td_dq, :df_cache)
 
   @doc """
   Returns the list of rules.
@@ -101,25 +103,45 @@ defmodule TdDq.Rules do
 
   """
   def create_rule(rule_type, attrs \\ %{}) do
-    changeset = Rule.changeset(%Rule{}, attrs)
+    with {:ok, changeset} <- check_base_changeset(attrs),
+         {:ok} <- check_dynamic_form_changeset(attrs),
+         {:ok} <-  check_rule_type_changeset(changeset, rule_type) do
+         Repo.insert(changeset)
+    else
+      error -> error
+    end
+  end
 
+  defp check_base_changeset(attrs, rule \\ %Rule{}) do
+    changeset = Rule.changeset(rule, attrs)
     case changeset.valid? do
-      true ->
-        input = Changeset.get_change(changeset, :type_params)
-        types = get_type_params_or_nil(rule_type)
+      true -> {:ok, changeset}
+      false -> {:error, changeset}
+    end
+  end
 
-        type_changeset =
-          types
-          |> rule_type_changeset(input)
-          |> add_rule_type_params_validations(rule_type, types)
+  defp check_dynamic_form_changeset(%{"df_name" => df_name} = attrs) when not is_nil(df_name) do
+    content = Map.get(attrs, "df_content", %{})
+    %{:content => content_schema} = @df_cache.get_template_by_name(df_name)
+    content_changeset = Validation.build_changeset(content, content_schema)
 
-        case type_changeset.valid? do
-          true -> changeset |> Repo.insert()
-          false -> {:error, type_changeset}
-        end
+    case content_changeset.valid? do
+      true -> {:ok}
+      false -> {:error, content_changeset}
+    end
+  end
+  defp check_dynamic_form_changeset(_), do: {:ok}
 
-      false ->
-        {:error, changeset}
+  defp check_rule_type_changeset(changeset, rule_type) do
+    input = Changeset.get_change(changeset, :type_params)
+    types = get_type_params_or_nil(rule_type)
+
+    type_changeset = types
+    |> rule_type_changeset(input)
+    |> add_rule_type_params_validations(rule_type, types)
+    case type_changeset.valid? do
+      true -> {:ok}
+      false -> {:error, type_changeset}
     end
   end
 
@@ -136,30 +158,28 @@ defmodule TdDq.Rules do
 
   """
   def update_rule(%Rule{} = rule, attrs) do
-    changeset = Rule.changeset(rule, attrs)
+    with {:ok, changeset} <- check_base_changeset(attrs, rule),
+         {:ok} <- check_dynamic_form_changeset(attrs) do
 
-    case changeset.valid? do
-      true ->
-        input = Map.get(attrs, :type_params) || Map.get(attrs, "type_params", %{})
-        rule_type = Repo.preload(rule, :rule_type).rule_type
-        types = get_type_params_or_nil(rule_type)
+      input = Map.get(attrs, :type_params) || Map.get(attrs, "type_params", %{})
+      rule_type = Repo.preload(rule, :rule_type).rule_type
+      types = get_type_params_or_nil(rule_type)
 
-        type_changeset =
-          types
-          |> rule_type_changeset(input)
-          |> add_rule_type_params_validations(rule_type, types)
+      type_changeset =
+        types
+        |> rule_type_changeset(input)
+        |> add_rule_type_params_validations(rule_type, types)
 
-        non_modifiable_changeset =
-          type_changeset
-          |> validate_non_modifiable_fields(attrs)
+      non_modifiable_changeset =
+        type_changeset
+        |> validate_non_modifiable_fields(attrs)
 
-        case non_modifiable_changeset.valid? do
-          true -> changeset |> Repo.update()
-          false -> {:error, non_modifiable_changeset}
-        end
-
-      false ->
-        {:error, changeset}
+      case non_modifiable_changeset.valid? do
+        true -> changeset |> Repo.update()
+        false -> {:error, non_modifiable_changeset}
+      end
+    else
+      error -> error
     end
   end
 

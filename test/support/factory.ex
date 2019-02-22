@@ -11,14 +11,12 @@ defmodule TdDq.Factory do
       name: "Rule Name",
       population: "Rule Population",
       priority: "Rule Priority",
-      principle: %{"name" => "quality"},
       weight: 12,
       active: false,
       version: 1,
       updated_by: 1,
       rule_type: build(:rule_type),
       type_params: %{},
-      tag: %{"tags" => [%{"name" => "Daily"}, %{"name" => "Monthly"}]}
     }
   end
 
@@ -39,7 +37,6 @@ defmodule TdDq.Factory do
       implementation_key: "implementation_key001",
       system_params: %{},
       system: "Rule Implementation System",
-      tag: %{}
     }
   end
 
