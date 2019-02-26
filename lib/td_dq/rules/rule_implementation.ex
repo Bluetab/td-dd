@@ -10,7 +10,6 @@ defmodule TdDq.Rules.RuleImplementation do
     field(:implementation_key, :string)
     field(:system, :string)
     field(:system_params, :map)
-    field(:tag, :map)
     belongs_to(:rule, Rule)
 
     timestamps()
@@ -24,7 +23,6 @@ defmodule TdDq.Rules.RuleImplementation do
       :description,
       :system,
       :system_params,
-      :tag,
       :rule_id
     ])
     |> validate_required([

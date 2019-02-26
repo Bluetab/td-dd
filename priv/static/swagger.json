@@ -843,10 +843,6 @@
         "implementation_key"
       ],
       "properties": {
-        "tag": {
-          "type": "object",
-          "description": "Rule Implementation tag"
-        },
         "system_params": {
           "type": "object",
           "description": "Rule Implementation parameters"
@@ -890,10 +886,6 @@
         "implementation_key"
       ],
       "properties": {
-        "tag": {
-          "type": "object",
-          "description": "Rule Implementation tag"
-        },
         "system_params": {
           "type": "object",
           "description": "Rule Implementation parameters"
@@ -935,10 +927,6 @@
         "id"
       ],
       "properties": {
-        "tag": {
-          "type": "object",
-          "description": "Rule Implementation tag"
-        },
         "system_params": {
           "type": "object",
           "description": "Rule Implementation parameters"
@@ -999,9 +987,6 @@
           "type": "object",
           "description": "rule type_params"
         },
-        "tag": {
-          "type": "object"
-        },
         "system_values": {
           "type": "object",
           "description": "Possible system values retrieved to create an implementation"
@@ -1013,10 +998,6 @@
         "priority": {
           "type": "string",
           "description": "Priority (Medium,...)"
-        },
-        "principle": {
-          "type": "object",
-          "description": "rule principle"
         },
         "population": {
           "type": "string",
@@ -1082,17 +1063,9 @@
           "type": "string",
           "description": "weight"
         },
-        "tag": {
-          "type": "object",
-          "description": "weight"
-        },
         "priority": {
           "type": "string",
           "description": "Priority (Medium,...)"
-        },
-        "principle": {
-          "type": "object",
-          "description": "rule principle"
         },
         "population": {
           "type": "string",
@@ -1160,9 +1133,6 @@
           "type": "object",
           "description": "rule type_params"
         },
-        "tag": {
-          "type": "object"
-        },
         "rule_type_id": {
           "type": "integer",
           "description": "Belongs to rule type"
@@ -1170,10 +1140,6 @@
         "priority": {
           "type": "string",
           "description": "Priority (Medium,...)"
-        },
-        "principle": {
-          "type": "object",
-          "description": "rule principle"
         },
         "population": {
           "type": "string",

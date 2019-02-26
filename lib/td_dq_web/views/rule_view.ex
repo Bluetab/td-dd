@@ -39,10 +39,8 @@ defmodule TdDqWeb.RuleView do
       updated_by: rule.updated_by,
       inserted_at: rule.inserted_at,
       updated_at: rule.updated_at,
-      principle: rule.principle,
       rule_type_id: rule.rule_type_id,
       type_params: rule.type_params,
-      tag: retrieve_tag(rule),
       current_business_concept_version: %{
         name: BusinessConceptCache.get_name(rule.business_concept_id),
         id: BusinessConceptCache.get_business_concept_version_id(rule.business_concept_id)
@@ -50,19 +48,13 @@ defmodule TdDqWeb.RuleView do
     }
     |> add_rule_type(rule)
     |> add_system_values(rule)
+    |> add_dynamic_content(rule)
   end
 
   defp add_system_values(rule_mapping, rule) do
     case Map.get(rule, :system_values) do
       nil -> rule_mapping
       value -> rule_mapping |> Map.put(:system_values, value)
-    end
-  end
-
-  defp retrieve_tag(rule) do
-    case Map.get(rule, :tag) do
-      nil -> %{}
-      value -> value
     end
   end
 
@@ -81,4 +73,11 @@ defmodule TdDqWeb.RuleView do
     end
   end
 
+  defp add_dynamic_content(json, rule) do
+    %{
+      df_name: rule.df_name,
+      df_content: rule.df_content
+    }
+    |> Map.merge(json)
+  end
 end

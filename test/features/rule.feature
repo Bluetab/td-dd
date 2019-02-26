@@ -15,7 +15,6 @@ Feature: Rules
       | Description         | In order to measure quality of this field we will check whether its values are correct |
       | Weight              | 50                                                                                     |
       | Priority            | Medium                                                                                 |
-      | Principle           | Medium                                                                                 |
       | Population          | All clients who are older than 18                                                      |
       | Goal                | 98                                                                                     |
       | Minimum             | 80                                                                                     |
@@ -28,7 +27,6 @@ Feature: Rules
       | Active              | false                                                                                     |
       | Weight              | 50                                                                                        |
       | Priority            | Medium                                                                                    |
-      | Principle           | Medium                                                                                    |
       | Population          | All clients who are older than 18                                                         |
       | Goal                | 98                                                                                        |
       | Minimum             | 80                                                                                        |

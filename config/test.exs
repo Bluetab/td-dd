@@ -28,6 +28,7 @@ config :td_dq, :audit_service, api_service: TdDqWeb.ApiServices.MockTdAuditServi
   audit_port: "4007",
   audit_domain: ""
 
+config :td_dq, df_cache: TdPerms.MockDynamicFormCache
 config :td_dq, permission_resolver: TdDq.Permissions.MockPermissionResolver
 config :td_dq, relation_cache: TdDq.MockRelationCache
 

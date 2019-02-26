@@ -30,7 +30,6 @@ defmodule TdDqWeb.RuleImplementationController do
     filters = %{}
     |> add_rule_filter(params, "rule_business_concept_id", "business_concept_id")
     |> add_rule_filter(params, "is_rule_active", "active")
-    |> add_rule_filter(params, "rule_tags", "tag")
 
     with true <- can?(user, index(RuleImplementation)) do
       rule_implementations = filters
@@ -60,15 +59,6 @@ defmodule TdDqWeb.RuleImplementationController do
         |> put_param_into_rule_filter(filter_name, value)
         Map.put(filters, "rule", rule_filters)
     end
-  end
-
-  defp put_param_into_rule_filter(filters, "tag" = filter_name, value) do
-    map_list =
-      value
-        |> String.split(",")
-        |> Enum.map(&Map.put(%{}, "name", &1))
-
-    Map.put(filters, filter_name, %{"tags" => map_list})
   end
 
   defp put_param_into_rule_filter(filters, "active" = filter_name, value) when not is_boolean(value) do

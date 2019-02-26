@@ -15,7 +15,6 @@ defmodule TdDqWeb.Rule do
                               "Weight" => "weight",
                               "Priority" => "priority",
                               "Population" => "population",
-                              "Principle" => "principle",
                               "Goal" => "goal",
                               "Minimum" => "minimum",
                               "Type" => "rule_type_id",
@@ -47,7 +46,6 @@ defmodule TdDqWeb.Rule do
     |> field_value_to_api_attrs(@test_to_api_create_alias)
     attrs = attrs
     |> cast_to_int_attrs(@rule_integer_fields)
-    |> principle_to_map()
     do_rule_create(token, attrs)
   end
 
@@ -89,10 +87,5 @@ defmodule TdDqWeb.Rule do
         )
         |> Enum.into(l2)
        end.()
-  end
-
-  defp principle_to_map(m) do
-    principle = Map.get(m, "principle")
-    Map.put(m, "principle", %{"name": principle})
   end
 end

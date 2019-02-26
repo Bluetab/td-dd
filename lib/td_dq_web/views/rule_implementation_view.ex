@@ -21,7 +21,6 @@ defmodule TdDqWeb.RuleImplementationView do
       description: rule_implementation.description,
       system: rule_implementation.system,
       system_params: rule_implementation.system_params,
-      tag: rule_implementation.tag
     }
     |> add_rule(rule_implementation)
     |> add_rule_results(rule_implementation)
