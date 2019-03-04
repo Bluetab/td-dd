@@ -1,5 +1,5 @@
 variables:
-  VERSION: "2.14.0"
+  VERSION: "2.15.0"
   APP_NAME: "td_dq"
   ECR_NAMESPACE: "truedat"
   K8S_DEPLOYMENT: "dq"
