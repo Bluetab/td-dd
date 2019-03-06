@@ -122,14 +122,25 @@ defmodule TdDd.DataStructures do
     |> get_parents
   end
 
-  def get_parents(data_structure_version), do: get_family(data_structure_version, :parents)
-
-  def get_family(data_structure_version, relation) do
+  def get_parents(data_structure_version) do
     data_structure_version
-    |> Ecto.assoc(relation)
+    |> Ecto.assoc(:parents)
     |> Repo.all()
     |> Repo.preload(:data_structure)
     |> Enum.map(& &1.data_structure)
+  end
+
+  def get_latest_siblings(data_structure_id) do
+    data_structure_id
+    |> get_latest_version
+    |> get_siblings
+  end
+
+  def get_siblings(data_structure_version) do
+    data_structure_version
+    |> Ecto.assoc(:parents)
+    |> Repo.all()
+    |> Enum.flat_map(&get_children/1)
   end
 
   def get_versions(%DataStructureVersion{} = dsv) do
@@ -162,6 +173,13 @@ defmodule TdDd.DataStructures do
 
     data_structure
     |> Map.put(:parents, parents)
+  end
+
+  def with_latest_siblings(%{id: id} = data_structure) do
+    siblings = get_latest_siblings(id)
+
+    data_structure
+    |> Map.put(:siblings, siblings)
   end
 
   @doc """
