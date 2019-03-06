@@ -21,7 +21,6 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   swagger_path :index do
-    get("/data_structures")
     description("List Data Structures")
 
     parameters do
@@ -65,7 +64,6 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   swagger_path :create do
-    post("/data_structures")
     description("Creates Data Structure")
     produces("application/json")
 
@@ -116,7 +114,6 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   swagger_path :show do
-    get("/data_structures/{id}")
     description("Show Data Structure")
     produces("application/json")
 
@@ -168,7 +165,6 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   swagger_path :update do
-    patch("/data_structures/{id}")
     description("Update Data Structures")
     produces("application/json")
 
@@ -222,7 +218,6 @@ defmodule TdDdWeb.DataStructureController do
   defp check_confidential_field(params, false), do: Map.drop(params, ["confidential"])
 
   swagger_path :delete do
-    delete("/data_structures/{id}")
     description("Delete Data Structure")
     produces("application/json")
 
@@ -262,7 +257,6 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   swagger_path :search do
-    post("/data_structures/search")
     description("Data Structures")
 
     parameters do

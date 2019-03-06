@@ -13,7 +13,6 @@ defmodule TdDdWeb.DataStructureFilterController do
   end
 
   swagger_path :index do
-    get "/data_structure_filters"
     description "List Data Structure Filters"
     response(200, "OK", Schema.ref(:FilterResponse))
   end

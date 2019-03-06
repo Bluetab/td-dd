@@ -7,7 +7,6 @@ defmodule TdDdWeb.SearchController do
   alias TdDdWeb.ErrorView
 
   swagger_path :reindex_all do
-    get("/data_structures/search/reindex_all")
     description("Reindex all ES indexes with DB content")
     produces("application/json")
     response(202, "Accepted")

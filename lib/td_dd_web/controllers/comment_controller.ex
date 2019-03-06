@@ -19,7 +19,6 @@ defmodule TdDdWeb.CommentController do
   end
 
   swagger_path :index do
-    get "/comments"
     description "List Comments"
     response 200, "OK", Schema.ref(:CommentsResponse)
   end
@@ -29,7 +28,6 @@ defmodule TdDdWeb.CommentController do
   end
 
   swagger_path :create do
-    post "/comments"
     description "Creates Comments"
     produces "application/json"
     parameters do
@@ -53,7 +51,6 @@ defmodule TdDdWeb.CommentController do
   end
 
   swagger_path :show do
-    get "/comments/{id}"
     description "Show Comment"
     produces "application/json"
     parameters do
@@ -68,7 +65,6 @@ defmodule TdDdWeb.CommentController do
   end
 
   swagger_path :update do
-    patch "/comments/{id}"
     description "Update Comments"
     produces "application/json"
     parameters do
@@ -89,7 +85,6 @@ defmodule TdDdWeb.CommentController do
   end
 
   swagger_path :delete do
-    delete "/comments/{id}"
     description "Delete Comment"
     produces "application/json"
     parameters do
@@ -108,7 +103,6 @@ defmodule TdDdWeb.CommentController do
   end
 
   swagger_path :get_comment_data_field do
-    get "/data_fields/{data_field_id}/comment"
     description "Show Data Field Comment"
     produces "application/json"
     parameters do
@@ -124,7 +118,6 @@ defmodule TdDdWeb.CommentController do
   end
 
   swagger_path :get_comment_data_structure do
-    get "/data_structures/{data_structure_id}/comment"
     description "Show Data Structure Comment"
     produces "application/json"
     parameters do

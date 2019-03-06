@@ -20,7 +20,6 @@ defmodule TdDdWeb.DataFieldController do
   end
 
   swagger_path :index do
-    get "/data_fields"
     description "List Data Fields"
     response 200, "OK", Schema.ref(:DataFieldsResponse)
   end
@@ -31,7 +30,6 @@ defmodule TdDdWeb.DataFieldController do
   end
 
   swagger_path :data_structure_fields do
-    get "/data_structures/{data_structure_id}/data_fields"
     description "List data structure data fields"
     parameters do
       data_structure_id :path, :integer, "Data Structure ID", required: true
@@ -55,7 +53,6 @@ defmodule TdDdWeb.DataFieldController do
   end
 
   swagger_path :create do
-    post "/data_fields"
     description "Creates Data Fields"
     produces "application/json"
     parameters do
@@ -87,7 +84,6 @@ defmodule TdDdWeb.DataFieldController do
   end
 
   swagger_path :show do
-    get "/data_fields/{id}"
     description "Show Data Field"
     produces "application/json"
     parameters do
@@ -103,7 +99,6 @@ defmodule TdDdWeb.DataFieldController do
   end
 
   swagger_path :update do
-    patch "/data_fields/{id}"
     description "Update Data Fields"
     produces "application/json"
     parameters do
@@ -133,7 +128,6 @@ defmodule TdDdWeb.DataFieldController do
   end
 
   swagger_path :delete do
-    delete "/data_fields/{id}"
     description "Delete Data Field"
     produces "application/json"
     parameters do

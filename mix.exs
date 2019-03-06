@@ -1,6 +1,5 @@
 defmodule TdDd.Mixfile do
   use Mix.Project
-  alias Mix.Tasks.Phx.Swagger.Generate, as: PhxSwaggerGenerate
 
   def project do
     [
@@ -12,7 +11,7 @@ defmodule TdDd.Mixfile do
         end,
       elixir: "~> 1.6",
       elixirc_paths: elixirc_paths(Mix.env()),
-      compilers: [:phoenix, :gettext] ++ Mix.compilers(),
+      compilers: [:phoenix, :gettext] ++ Mix.compilers() ++ [:phoenix_swagger],
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps()
@@ -54,7 +53,7 @@ defmodule TdDd.Mixfile do
       {:ex_machina, "~> 2.1", only: [:test]},
       {:cors_plug, "~> 1.2"},
       {:csv, "~> 2.1.1"},
-      {:phoenix_swagger, "~> 0.7.0"},
+      {:phoenix_swagger, "~> 0.8.0"},
       {:ex_json_schema, "~> 0.5"},
       {:td_perms, git: "https://github.com/Bluetab/td-perms.git", tag: "2.11.2"},
       {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "2.12.0"}
@@ -71,14 +70,8 @@ defmodule TdDd.Mixfile do
     [
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      test: ["ecto.create --quiet", "ecto.migrate", "test"],
-      compile: ["compile", &pxh_swagger_generate/1]
+      test: ["ecto.create --quiet", "ecto.migrate", "test"]
     ]
   end
 
-  defp pxh_swagger_generate(_) do
-    if Mix.env() in [:dev, :prod] do
-      PhxSwaggerGenerate.run(["priv/static/swagger.json"])
-    end
-  end
 end

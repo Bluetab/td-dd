@@ -15,7 +15,6 @@ defmodule TdDdWeb.DataStructureVersionController do
   end
 
   swagger_path :show do
-    get("/data_structures/{id}/versions/{version}")
     description("Show Data Structure")
     produces("application/json")
 
