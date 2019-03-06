@@ -18,17 +18,9 @@ defmodule TdDdWeb.DataStructureView do
         data_structure: data_structure,
         user_permissions: user_permissions
       }) do
-    %{
-      user_permissions: user_permissions,
-      data:
-        data_structure
-        |> data_structure_json
-        |> add_dynamic_content(data_structure)
-        |> add_data_fields(data_structure)
-        |> add_children(data_structure)
-        |> add_parents(data_structure)
-        |> add_versions(data_structure)
-    }
+    "show.json"
+    |> render(%{data_structure: data_structure})
+    |> Map.put(:user_permissions, user_permissions)
   end
 
   def render("show.json", %{data_structure: data_structure}) do
@@ -39,6 +31,8 @@ defmodule TdDdWeb.DataStructureView do
         |> add_dynamic_content(data_structure)
         |> add_data_fields(data_structure)
         |> add_children(data_structure)
+        |> add_parents(data_structure)
+        |> add_siblings(data_structure)
         |> add_versions(data_structure)
     }
   end
@@ -85,6 +79,9 @@ defmodule TdDdWeb.DataStructureView do
 
   defp add_parents(data_structure_json, data_structure),
     do: add_family(data_structure_json, data_structure, :parents)
+
+  defp add_siblings(data_structure_json, data_structure),
+    do: add_family(data_structure_json, data_structure, :siblings)
 
   defp add_family(data_structure_json, data_structure, relation) do
     members =
