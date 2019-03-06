@@ -112,6 +112,22 @@ defmodule TdDd.DataStructures do
     data_structure_version
     |> Ecto.assoc(:children)
     |> Repo.all()
+    |> Repo.preload([:data_structure, :children])
+    |> Enum.map(&(&1.data_structure |> Map.put(:has_children, not Enum.empty?(&1.children))))
+  end
+
+  def get_latest_parents(data_structure_id) do
+    data_structure_id
+    |> get_latest_version
+    |> get_parents
+  end
+
+  def get_parents(data_structure_version), do: get_family(data_structure_version, :parents)
+
+  def get_family(data_structure_version, relation) do
+    data_structure_version
+    |> Ecto.assoc(relation)
+    |> Repo.all()
     |> Repo.preload(:data_structure)
     |> Enum.map(& &1.data_structure)
   end
@@ -139,6 +155,13 @@ defmodule TdDd.DataStructures do
 
     data_structure
     |> Map.put(:children, children)
+  end
+
+  def with_latest_parents(%{id: id} = data_structure) do
+    parents = get_latest_parents(id)
+
+    data_structure
+    |> Map.put(:parents, parents)
   end
 
   @doc """

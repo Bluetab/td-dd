@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-1526] Include parents and has_children in show data_structure response
+
 ## [2.14.0] 2019-03-04
 
 ### Changed
