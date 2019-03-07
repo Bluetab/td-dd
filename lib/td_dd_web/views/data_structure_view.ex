@@ -30,10 +30,10 @@ defmodule TdDdWeb.DataStructureView do
         |> data_structure_json
         |> add_dynamic_content(data_structure)
         |> add_data_fields(data_structure)
-        |> add_children(data_structure)
+        |> add_versions(data_structure)
         |> add_parents(data_structure)
         |> add_siblings(data_structure)
-        |> add_versions(data_structure)
+        |> add_children(data_structure)
     }
   end
 
@@ -41,13 +41,6 @@ defmodule TdDdWeb.DataStructureView do
     data_structure
     |> data_structure_json
     |> add_dynamic_content(data_structure)
-  end
-
-  defp data_structure_json(%{has_children: has_children} = data_structure) do
-    data_structure
-    |> Map.drop([:has_children])
-    |> data_structure_json
-    |> Map.put(:has_children, has_children)
   end
 
   defp data_structure_json(data_structure) do
@@ -66,6 +59,11 @@ defmodule TdDdWeb.DataStructureView do
     }
   end
 
+  defp data_structure_embedded(data_structure) do
+    data_structure
+    |> Map.take([:id, :name, :type])
+  end
+
   defp add_dynamic_content(json, data_structure) do
     %{
       df_name: data_structure.df_name,
@@ -75,22 +73,23 @@ defmodule TdDdWeb.DataStructureView do
   end
 
   defp add_children(data_structure_json, data_structure),
-    do: add_family(data_structure_json, data_structure, :children)
+    do: add_relations(data_structure_json, data_structure, :children)
 
   defp add_parents(data_structure_json, data_structure),
-    do: add_family(data_structure_json, data_structure, :parents)
+    do: add_relations(data_structure_json, data_structure, :parents)
 
   defp add_siblings(data_structure_json, data_structure),
-    do: add_family(data_structure_json, data_structure, :siblings)
+    do: add_relations(data_structure_json, data_structure, :siblings)
 
-  defp add_family(data_structure_json, data_structure, relation) do
-    members =
-      case Map.get(data_structure, relation) do
-        nil -> []
-        cs -> Enum.map(cs, &data_structure_json/1)
-      end
+  defp add_relations(data_structure_json, data_structure, type) do
+    case Map.get(data_structure, type) do
+      nil ->
+        data_structure_json
 
-    Map.put(data_structure_json, relation, members)
+      rs ->
+        relations = Enum.map(rs, &data_structure_embedded/1)
+        Map.put(data_structure_json, type, relations)
+    end
   end
 
   defp add_versions(data_structure_json, data_structure) do

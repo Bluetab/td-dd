@@ -4,7 +4,7 @@
 
 ### Changed
 
-- [TD-1526] Include parents, siblings and has_children in show data_structure response
+- [TD-1526] Include parents and siblings in show data_structure response
 
 ## [2.14.0] 2019-03-04
 

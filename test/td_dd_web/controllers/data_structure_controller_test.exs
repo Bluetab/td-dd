@@ -59,28 +59,16 @@ defmodule TdDdWeb.DataStructureControllerTest do
   @admin_user_name "app-admin"
 
   describe "show" do
-    setup [:create_parent_with_child]
+    setup [:create_structure_hierarchy]
 
     @tag authenticated_user: @admin_user_name
-    test "renders a data structure with children (with grandchildren)", %{
-      conn: conn,
-      parent_structure: %DataStructure{id: parent_id}
-    } do
-      conn = get(conn, data_structure_path(conn, :show, parent_id))
-      %{"children" => children} = json_response(conn, 200)["data"]
-      assert Enum.count(children) == 1
-      assert Enum.count(children, &(&1["has_children"] == true)) == 1
-    end
-
-    @tag authenticated_user: @admin_user_name
-    test "renders a data structure with children (without grandchildren)", %{
+    test "renders a data structure with children", %{
       conn: conn,
       structure: %DataStructure{id: child_id}
     } do
       conn = get(conn, data_structure_path(conn, :show, child_id))
       %{"children" => children} = json_response(conn, 200)["data"]
       assert Enum.count(children) == 2
-      assert Enum.count(children, &(&1["has_children"] == false)) == 2
     end
 
     @tag authenticated_user: @admin_user_name
@@ -398,7 +386,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     {:ok, data_structure: data_structure, data_structure_version: data_structure_version}
   end
 
-  defp create_parent_with_child(_) do
+  defp create_structure_hierarchy(_) do
     parent_structure = insert(:data_structure)
     structure = insert(:data_structure)
     child_structures = [insert(:data_structure), insert(:data_structure)]

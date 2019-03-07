@@ -777,10 +777,22 @@
     "DataStructuresResponse": {
       "type": "object",
       "properties": {
+        "filters": {
+          "type": "object",
+          "description": "Filters"
+        },
         "data": {
           "$ref": "#/definitions/DataStructures"
         }
       }
+    },
+    "DataStructuresEmbedded": {
+      "type": "array",
+      "title": "Embedded Data Structures",
+      "items": {
+        "$ref": "#/definitions/DataStructureEmbedded"
+      },
+      "description": "A collection of embedded Data Structures"
     },
     "DataStructures": {
       "type": "array",
@@ -817,6 +829,12 @@
           "type": "integer",
           "description": "Version number"
         },
+        "siblings": {
+          "$ref": "#/definitions/DataStructuresEmbedded"
+        },
+        "parent": {
+          "$ref": "#/definitions/DataStructuresEmbedded"
+        },
         "id": {
           "type": "integer",
           "description": "Data Structure version unique identifier"
@@ -828,7 +846,7 @@
           "$ref": "#/definitions/DataFields"
         },
         "children": {
-          "$ref": "#/definitions/DataStructures"
+          "$ref": "#/definitions/DataStructuresEmbedded"
         }
       },
       "description": "A specific version of a Data Structure"
@@ -883,6 +901,37 @@
           "$ref": "#/definitions/DataStructure"
         }
       }
+    },
+    "DataStructureEmbedded": {
+      "type": "object",
+      "title": "Embedded Data Structure",
+      "required": [
+        "name",
+        "id"
+      ],
+      "properties": {
+        "type": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Data Structure type (csv, table...)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Data Structure name"
+        },
+        "id": {
+          "type": "integer",
+          "description": "Data Structure unique identifier"
+        }
+      },
+      "example": {
+        "type": "Csv",
+        "name": "Data Structure name",
+        "id": 123
+      },
+      "description": "An embedded Data Structure"
     },
     "DataStructureCreate": {
       "type": "object",
@@ -955,6 +1004,12 @@
           "type": "string",
           "description": "Data Structure system"
         },
+        "siblings": {
+          "$ref": "#/definitions/DataStructuresEmbedded"
+        },
+        "parent": {
+          "$ref": "#/definitions/DataStructuresEmbedded"
+        },
         "ou": {
           "type": [
             "string",
@@ -999,6 +1054,9 @@
         "confidential": {
           "type": "boolean",
           "description": "Data Structure confidentiality"
+        },
+        "children": {
+          "$ref": "#/definitions/DataStructuresEmbedded"
         }
       },
       "example": {

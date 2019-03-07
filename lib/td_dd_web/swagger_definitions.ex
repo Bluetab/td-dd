@@ -20,9 +20,11 @@ defmodule TdDdWeb.SwaggerDefinitions do
           properties do
             id(:integer, "Data Structure version unique identifier", required: true)
             version(:integer, "Version number", required: true)
-            children(Schema.ref(:DataStructures))
             data_structure(Schema.ref(:DataStructure))
             data_fields(Schema.ref(:DataFields))
+            parent(Schema.ref(:DataStructuresEmbedded))
+            children(Schema.ref(:DataStructuresEmbedded))
+            siblings(Schema.ref(:DataStructuresEmbedded))
             versions(:array, "Versions", items: Schema.ref(:Version))
           end
         end,
@@ -60,6 +62,9 @@ defmodule TdDdWeb.SwaggerDefinitions do
             inserted_at(:string, "Data Structure creation date")
             data_fields(Schema.ref(:DataFields))
             metadata(:object, "Data Structure data. Uploaded by background processes")
+            parent(Schema.ref(:DataStructuresEmbedded))
+            children(Schema.ref(:DataStructuresEmbedded))
+            siblings(Schema.ref(:DataStructuresEmbedded))
             versions(:array, "Versions", items: Schema.ref(:Version))
           end
 
@@ -79,6 +84,23 @@ defmodule TdDdWeb.SwaggerDefinitions do
               "ou" => "Super Management",
               "last_change_at" => "2018-05-08T17:17:59.691460"
             }
+          })
+        end,
+      DataStructureEmbedded:
+        swagger_schema do
+          title("Embedded Data Structure")
+          description("An embedded Data Structure")
+
+          properties do
+            id(:integer, "Data Structure unique identifier", required: true)
+            name(:string, "Data Structure name", required: true)
+            type([:string, :null], "Data Structure type (csv, table...)")
+          end
+
+          example(%{
+            id: 123,
+            name: "Data Structure name",
+            type: "Csv"
           })
         end,
       DataStructureCreate:
@@ -118,6 +140,13 @@ defmodule TdDdWeb.SwaggerDefinitions do
           description("A collection of Data Structures")
           type(:array)
           items(Schema.ref(:DataStructure))
+        end,
+      DataStructuresEmbedded:
+        swagger_schema do
+          title("Embedded Data Structures")
+          description("A collection of embedded Data Structures")
+          type(:array)
+          items(Schema.ref(:DataStructureEmbedded))
         end,
       DataStructureResponse:
         swagger_schema do
