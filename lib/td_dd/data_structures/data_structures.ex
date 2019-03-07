@@ -112,8 +112,8 @@ defmodule TdDd.DataStructures do
     data_structure_version
     |> Ecto.assoc(:children)
     |> Repo.all()
-    |> Repo.preload([:data_structure, :children])
-    |> Enum.map(&(&1.data_structure |> Map.put(:has_children, not Enum.empty?(&1.children))))
+    |> Repo.preload([:data_structure])
+    |> Enum.map(&(&1.data_structure))
   end
 
   def get_latest_parents(data_structure_id) do
@@ -141,6 +141,7 @@ defmodule TdDd.DataStructures do
     |> Ecto.assoc(:parents)
     |> Repo.all()
     |> Enum.flat_map(&get_children/1)
+    |> Enum.uniq
   end
 
   def get_versions(%DataStructureVersion{} = dsv) do
