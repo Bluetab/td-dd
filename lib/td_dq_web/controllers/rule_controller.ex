@@ -29,13 +29,13 @@ defmodule TdDqWeb.RuleController do
 
   def index(conn, params) do
     user = conn.assigns[:current_resource]
-      manage_permission = can?(user, manage(%{"resource_type" => "rule"}))
-      user_permissions = %{manage_quality_rules: manage_permission}
-      rules = Rules.list_rules(params)
-      render(conn, "index.json",
-        rules: rules,
-        user_permissions: user_permissions
-      )
+    manage_permission = can?(user, manage(%{"resource_type" => "rule"}))
+    user_permissions = %{manage_quality_rules: manage_permission}
+    rules = Rules.list_rules(params)
+    render(conn, "index.json",
+      rules: rules,
+      user_permissions: user_permissions
+    )
   end
 
   swagger_path :get_rules_by_concept do

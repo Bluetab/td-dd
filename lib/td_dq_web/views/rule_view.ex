@@ -15,6 +15,18 @@ defmodule TdDqWeb.RuleView do
     }
   end
 
+  def render("search.json", %{
+    rules: rules,
+    filters: filters,
+    user_permissions: user_permissions
+  }) do
+    %{
+      user_permissions: user_permissions,
+      filters: filters,
+      data: render_many(rules, RuleView, "rule.json")
+    }
+  end
+
   def render("show.json", %{hypermedia: hypermedia, rule: rule}) do
     render_one_hypermedia(rule, hypermedia, RuleView, "rule.json")
   end
@@ -40,7 +52,7 @@ defmodule TdDqWeb.RuleView do
       inserted_at: rule.inserted_at,
       updated_at: rule.updated_at,
       rule_type_id: rule.rule_type_id,
-      type_params: rule.type_params,
+      type_params: Map.get(rule, :type_params),
       current_business_concept_version: %{
         name: BusinessConceptCache.get_name(rule.business_concept_id),
         id: BusinessConceptCache.get_business_concept_version_id(rule.business_concept_id)
@@ -58,20 +70,16 @@ defmodule TdDqWeb.RuleView do
     end
   end
 
-  defp add_rule_type(rule_mapping, rule) do
-    case Ecto.assoc_loaded?(rule.rule_type) do
+  defp add_rule_type(rule_mapping, %{rule_type: rule_type}) do
+    case Ecto.assoc_loaded?(rule_type) do
       true ->
-        rule_type_mapping = %{
-          id: rule.rule_type.id,
-          name: rule.rule_type.name,
-          params: rule.rule_type.params
-        }
+        rule_type_mapping = Map.take(rule_type, [:id, :name, :params])
         Map.put(rule_mapping, :rule_type, rule_type_mapping)
-
       _ ->
         rule_mapping
     end
   end
+  defp add_rule_type(rule_mapping, _), do: rule_mapping
 
   defp add_dynamic_content(json, rule) do
     %{

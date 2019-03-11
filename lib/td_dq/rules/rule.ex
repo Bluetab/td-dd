@@ -2,9 +2,15 @@ defmodule TdDq.Rules.Rule do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
+  alias TdDfLib.Format
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleImplementation
   alias TdDq.Rules.RuleType
+  alias TdDq.Searchable
+  alias TdPerms.UserCache
+
+  @df_cache Application.get_env(:td_dq, :df_cache)
+  @behaviour Searchable
 
   schema "rules" do
     field(:business_concept_id, :string)
@@ -84,5 +90,54 @@ defmodule TdDq.Rules.Rule do
       _ ->
         changeset
     end
+  end
+
+  def search_fields(%Rule{} = rule) do
+    template =
+      case @df_cache.get_template_by_name(rule.df_name) do
+        nil -> %{content: []}
+        template -> template
+      end
+
+    updated_by =
+      case UserCache.get_user(rule.updated_by) do
+        nil -> %{}
+        user -> user
+      end
+
+    df_content =
+      rule
+      |> Map.get(:df_content)
+      |> Format.apply_template(Map.get(template, :content))
+
+    rule_type = Map.take(rule.rule_type, [:id, :name, :params])
+    current_business_concept_version = Map.get(rule, :current_business_concept_version, %{name: ""})
+
+    %{
+      id: rule.id,
+      business_concept_id: rule.business_concept_id,
+      current_business_concept_version: current_business_concept_version,
+      rule_type_id: rule.rule_type_id,
+      rule_type: rule_type,
+      version: rule.version,
+      name: rule.name,
+      active: rule.active,
+      description: rule.description,
+      deleted_at: rule.deleted_at,
+      updated_by: updated_by,
+      updated_at: rule.updated_at,
+      inserted_at: rule.inserted_at,
+      goal: rule.goal,
+      minimum: rule.minimum,
+      weight: rule.weight,
+      population: rule.population,
+      priority: rule.priority,
+      df_name: rule.df_name,
+      df_content: df_content
+    }
+  end
+
+  def index_name do
+    "quality_rule"
   end
 end

@@ -21,6 +21,7 @@ defmodule TdDq.Application do
       # Start your own worker by calling: TdDq.Worker.start_link(arg1, arg2, arg3)
       # worker(TdDq.Worker, [arg1, arg2, arg3]),
       worker(TdDq.RuleLoader, [TdDq.RuleLoader]),
+      worker(TdDq.Search.IndexWorker, [TdDq.Search.IndexWorker]),
       %{
         id: TdDq.CustomSupervisor,
         start:
