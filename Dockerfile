@@ -1,7 +1,6 @@
 # ---- Copy Files/Build ----
-FROM elixir:1.6.6-alpine AS build
-
-MAINTAINER True-Dat Dev Team
+FROM elixir:1.7.4-alpine AS build
+LABEL maintainer="Bluetab Solutions"
 
 RUN apk --no-cache update \
     && apk --no-cache add git make g++ \

@@ -10,7 +10,7 @@ defmodule TdDd.DataStructuresTest do
     @valid_attrs %{
       description: "some description",
       group: "some group",
-      last_change_at: "2010-04-17 14:00:00.000000Z",
+      last_change_at: "2010-04-17 14:00:00Z",
       last_change_by: 42,
       name: "some name",
       system: "some system",
@@ -60,7 +60,7 @@ defmodule TdDd.DataStructuresTest do
       assert data_structure.group == "some group"
 
       assert data_structure.last_change_at ==
-               DateTime.from_naive!(~N[2010-04-17 14:00:00.000000Z], "Etc/UTC")
+               DateTime.from_naive!(~N[2010-04-17 14:00:00Z], "Etc/UTC")
 
       assert data_structure.last_change_by == 42
       assert data_structure.name == "some name"
@@ -103,7 +103,7 @@ defmodule TdDd.DataStructuresTest do
     @valid_attrs %{
       business_concept_id: "42",
       description: "some description",
-      last_change_at: "2010-04-17 14:00:00.000000Z",
+      last_change_at: "2010-04-17 14:00:00Z",
       last_change_by: 42,
       name: "some name",
       nullable: true,
@@ -114,7 +114,7 @@ defmodule TdDd.DataStructuresTest do
     @update_attrs %{
       business_concept_id: "43",
       description: "some updated description",
-      last_change_at: "2011-05-18 15:01:01.000000Z",
+      last_change_at: "2011-05-18 15:01:01Z",
       last_change_by: 43,
       name: "some updated name",
       nullable: false,
@@ -156,7 +156,7 @@ defmodule TdDd.DataStructuresTest do
       assert data_field.description == "some description"
 
       assert data_field.last_change_at ==
-               DateTime.from_naive!(~N[2010-04-17 14:00:00.000000Z], "Etc/UTC")
+               DateTime.from_naive!(~N[2010-04-17 14:00:00Z], "Etc/UTC")
 
       assert data_field.last_change_by == 42
       assert data_field.name == "some name"

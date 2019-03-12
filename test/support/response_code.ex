@@ -21,12 +21,11 @@ defmodule TdDdWeb.ResponseCode do
       200 -> @ok
       201 -> @created
       204 -> @no_content
-      401 -> @forbidden
-      403 -> @unauthorized
+      401 -> @unauthorized
+      403 -> @forbidden
       404 -> @not_found
       422 -> @unprocessable_entity
       _ -> "Unknown: #{http_status_code}"
     end
   end
-
 end

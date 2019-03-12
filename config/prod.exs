@@ -12,12 +12,13 @@ use Mix.Config
 # This is an API, so we don't cache a static manifest.
 config :td_dd, TdDdWeb.Endpoint,
   http: [port: 4005],
-  url: [host: "api.truedat.io", port: 8004],
   server: true,
-  version: Mix.Project.config[:version]
+  version: Mix.Project.config()[:version]
 
 # Do not print debug messages in production
-config :logger, :console, format: "[$level] $message\n"
+config :logger, :console,
+  format: "[$level] $message\n",
+  level: :info
 
 # ## SSL Support
 #

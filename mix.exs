@@ -37,26 +37,27 @@ defmodule TdDd.Mixfile do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:phoenix, "~> 1.3.0"},
-      {:phoenix_pubsub, "~> 1.0"},
-      {:phoenix_ecto, "~> 3.2"},
+      {:phoenix, "~> 1.4.0"},
+      {:plug_cowboy, "~> 2.0"},
+      {:plug, "~> 1.7"},
+      {:phoenix_ecto, "~> 4.0", override: true},
+      {:ecto_sql, "~> 3.0"},
+      {:jason, "~> 1.0"},
       {:postgrex, ">= 0.0.0"},
       {:gettext, "~> 0.11"},
-      {:cowboy, "~> 1.0"},
       {:cabbage, git: "https://github.com/Bluetab/cabbage", tag: "v0.3.7-alpha"},
       {:httpoison, "~> 1.0"},
-      {:edeliver, "~> 1.4.5"},
-      {:distillery, ">= 0.8.0", warn_missing: false},
-      {:credo, "~> 0.10.2", only: [:dev, :test], runtime: false},
+      {:distillery, "~> 2.0", runtime: false},
+      {:credo, "~> 1.0.0", only: [:dev, :test], runtime: false},
       {:guardian, "~> 1.0"},
       {:canada, "~> 1.0.1"},
-      {:ex_machina, "~> 2.1", only: [:test]},
+      {:ex_machina, "~> 2.2.2", only: [:test]},
       {:cors_plug, "~> 1.2"},
-      {:csv, "~> 2.1.1"},
+      {:csv, "~> 2.2.0"},
       {:phoenix_swagger, "~> 0.8.0"},
       {:ex_json_schema, "~> 0.5"},
-      {:td_perms, git: "https://github.com/Bluetab/td-perms.git", tag: "2.11.2"},
-      {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "2.12.0"}
+      {:td_perms, git: "https://github.com/Bluetab/td-perms.git", tag: "2.15.0"},
+      {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "2.15.0"}
     ]
   end
 
@@ -73,5 +74,4 @@ defmodule TdDd.Mixfile do
       test: ["ecto.create --quiet", "ecto.migrate", "test"]
     ]
   end
-
 end

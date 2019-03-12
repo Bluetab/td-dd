@@ -15,7 +15,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   @create_attrs %{
     description: "some description",
     group: "some group",
-    last_change_at: "2010-04-17 14:00:00.000000Z",
+    last_change_at: "2010-04-17 14:00:00Z",
     last_change_by: 42,
     name: "some name",
     system: "some system",
@@ -25,7 +25,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   @update_attrs %{
     description: "some updated description",
     group: "some updated group",
-    last_change_at: "2011-05-18 15:01:01.000000Z",
+    last_change_at: "2011-05-18 15:01:01Z",
     last_change_by: 43,
     name: "some updated name",
     system: "some updated system",
@@ -66,7 +66,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn: conn,
       structure: %DataStructure{id: child_id}
     } do
-      conn = get(conn, data_structure_path(conn, :show, child_id))
+      conn = get(conn, Routes.data_structure_path(conn, :show, child_id))
       %{"children" => children} = json_response(conn, 200)["data"]
       assert Enum.count(children) == 2
     end
@@ -76,7 +76,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn: conn,
       structure: %DataStructure{id: child_id}
     } do
-      conn = get(conn, data_structure_path(conn, :show, child_id))
+      conn = get(conn, Routes.data_structure_path(conn, :show, child_id))
       %{"parents" => parents} = json_response(conn, 200)["data"]
       assert Enum.count(parents) == 1
     end
@@ -86,7 +86,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn: conn,
       child_structures: [%DataStructure{id: id} | _]
     } do
-      conn = get(conn, data_structure_path(conn, :show, id))
+      conn = get(conn, Routes.data_structure_path(conn, :show, id))
       %{"siblings" => siblings} = json_response(conn, 200)["data"]
       assert Enum.count(siblings) == 2
     end
@@ -95,19 +95,19 @@ defmodule TdDdWeb.DataStructureControllerTest do
   describe "index" do
     @tag authenticated_user: @admin_user_name
     test "lists all data_structures", %{conn: conn} do
-      conn = get(conn, data_structure_path(conn, :index))
+      conn = get(conn, Routes.data_structure_path(conn, :index))
       assert json_response(conn, 200)["data"] == []
     end
 
     @tag authenticated_user: @admin_user_name
     test "search all data_structures", %{conn: conn} do
-      conn = post(conn, data_structure_path(conn, :create), data_structure: @create_attrs)
+      conn = post(conn, Routes.data_structure_path(conn, :create), data_structure: @create_attrs)
       data_structure = conn.assigns.data_structure
       search_params = %{ou: " one§ tow §  #{data_structure.ou}"}
 
       conn = recycle_and_put_headers(conn)
 
-      conn = get(conn, data_structure_path(conn, :index, search_params))
+      conn = get(conn, Routes.data_structure_path(conn, :index, search_params))
       json_response = json_response(conn, 200)["data"]
       assert length(json_response) == 1
       json_response = Enum.at(json_response, 0)
@@ -118,13 +118,13 @@ defmodule TdDdWeb.DataStructureControllerTest do
   describe "create data_structure" do
     @tag authenticated_user: @admin_user_name
     test "renders data_structure when data is valid", %{conn: conn, swagger_schema: schema} do
-      conn = post(conn, data_structure_path(conn, :create), data_structure: @create_attrs)
+      conn = post(conn, Routes.data_structure_path(conn, :create), data_structure: @create_attrs)
       assert %{"id" => id} = json_response(conn, 201)["data"]
       validate_resp_schema(conn, schema, "DataStructureResponse")
 
       conn = recycle_and_put_headers(conn)
 
-      conn = get(conn, data_structure_path(conn, :show, id))
+      conn = get(conn, Routes.data_structure_path(conn, :show, id))
       json_response_data = conn |> json_response(200) |> Map.get("data")
 
       json_response_data =
@@ -144,7 +144,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
     @tag authenticated_user: @admin_user_name
     test "renders errors when data is invalid", %{conn: conn} do
-      conn = post(conn, data_structure_path(conn, :create), data_structure: @invalid_attrs)
+      conn = post(conn, Routes.data_structure_path(conn, :create), data_structure: @invalid_attrs)
       assert json_response(conn, 422)["errors"] != %{}
     end
   end
@@ -161,7 +161,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn =
         put(
           conn,
-          data_structure_path(conn, :update, data_structure),
+          Routes.data_structure_path(conn, :update, data_structure),
           data_structure: @update_attrs
         )
 
@@ -169,7 +169,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn = recycle_and_put_headers(conn)
 
-      conn = get(conn, data_structure_path(conn, :show, id))
+      conn = get(conn, Routes.data_structure_path(conn, :show, id))
       json_response_data = json_response(conn, 200)["data"]
 
       json_response_data =
@@ -195,7 +195,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
         id: 0,
         label: "some label",
         name: template_name,
-        is_default: false,
+        scope: "dd",
         content: [
           %{
             "name" => "field",
@@ -208,7 +208,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn =
         put(
           conn,
-          data_structure_path(conn, :update, data_structure),
+          Routes.data_structure_path(conn, :update, data_structure),
           data_structure: %{
             df_name: template_name,
             df_content: %{}
@@ -230,7 +230,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
         id: 0,
         label: "some label",
         name: template_name,
-        is_default: false,
+        scope: "dd",
         content: [
           %{
             "name" => "field",
@@ -245,7 +245,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn =
         put(
           conn,
-          data_structure_path(conn, :update, data_structure),
+          Routes.data_structure_path(conn, :update, data_structure),
           data_structure: %{
             df_name: template_name,
             df_content: df_content
@@ -255,7 +255,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
       conn = recycle_and_put_headers(conn)
-      conn = get(conn, data_structure_path(conn, :show, id))
+      conn = get(conn, Routes.data_structure_path(conn, :show, id))
       json_response_data = json_response(conn, 200)["data"]
 
       assert json_response_data["df_content"] == df_content
@@ -271,13 +271,13 @@ defmodule TdDdWeb.DataStructureControllerTest do
       data_structure: data_structure,
       swagger_schema: schema
     } do
-      conn = delete(conn, data_structure_path(conn, :delete, data_structure))
+      conn = delete(conn, Routes.data_structure_path(conn, :delete, data_structure))
       assert response(conn, 204)
 
       conn = recycle_and_put_headers(conn)
 
       assert_error_sent(404, fn ->
-        get(conn, data_structure_path(conn, :show, data_structure))
+        get(conn, Routes.data_structure_path(conn, :show, data_structure))
         validate_resp_schema(conn, schema, "DataStructureResponse")
       end)
     end
@@ -296,14 +296,14 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn =
         put(
           conn,
-          data_structure_path(conn, :update, data_structure),
+          Routes.data_structure_path(conn, :update, data_structure),
           data_structure: %{confidential: true}
         )
 
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
       conn = recycle_and_put_headers(conn)
 
-      conn = get(conn, data_structure_path(conn, :show, id))
+      conn = get(conn, Routes.data_structure_path(conn, :show, id))
       json_response_data = json_response(conn, 200)["data"]
 
       assert json_response_data["id"] == id
@@ -323,14 +323,14 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn =
         put(
           conn,
-          data_structure_path(conn, :update, data_structure),
+          Routes.data_structure_path(conn, :update, data_structure),
           data_structure: %{description: "edited desc"}
         )
 
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
       conn = recycle_and_put_headers(conn)
 
-      conn = get(conn, data_structure_path(conn, :show, id))
+      conn = get(conn, Routes.data_structure_path(conn, :show, id))
       json_response_data = json_response(conn, 200)["data"]
 
       assert json_response_data["id"] == id
@@ -350,7 +350,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn =
         put(
           conn,
-          data_structure_path(conn, :update, data_structure),
+          Routes.data_structure_path(conn, :update, data_structure),
           data_structure: %{description: "edited desc"}
         )
 
@@ -370,7 +370,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn =
         put(
           conn,
-          data_structure_path(conn, :update, data_structure),
+          Routes.data_structure_path(conn, :update, data_structure),
           data_structure: %{confidential: true}
         )
 

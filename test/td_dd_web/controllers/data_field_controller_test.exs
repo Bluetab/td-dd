@@ -15,7 +15,7 @@ defmodule TdDdWeb.DataFieldControllerTest do
     nullable: true,
     precision: "some precision",
     type: "some type",
-    last_change_at: "2010-04-17 14:00:00.000000Z",
+    last_change_at: "2010-04-17 14:00:00Z",
     last_change_by: 42,
     metadata: %{}
   }
@@ -26,7 +26,7 @@ defmodule TdDdWeb.DataFieldControllerTest do
     nullable: false,
     precision: "some precision",
     type: "some updated type",
-    last_change_at: "2010-04-17 14:00:00.000000Z",
+    last_change_at: "2010-04-17 14:00:00Z",
     last_change_by: 42
   }
   @invalid_attrs %{
@@ -56,7 +56,7 @@ defmodule TdDdWeb.DataFieldControllerTest do
   describe "index" do
     @tag authenticated_user: @admin_user_name
     test "lists all data_fields", %{conn: conn} do
-      conn = get(conn, data_field_path(conn, :index))
+      conn = get(conn, Routes.data_field_path(conn, :index))
       assert json_response(conn, 200)["data"] == []
     end
   end
@@ -66,13 +66,13 @@ defmodule TdDdWeb.DataFieldControllerTest do
     test "renders data_field when data is valid", %{conn: conn, swagger_schema: schema} do
       data_structure = insert(:data_structure)
       creation_attrs = Map.put(@create_attrs, :data_structure_id, data_structure.id)
-      conn = post(conn, data_field_path(conn, :create), data_field: creation_attrs)
+      conn = post(conn, Routes.data_field_path(conn, :create), data_field: creation_attrs)
       assert %{"id" => id} = json_response(conn, 201)["data"]
       validate_resp_schema(conn, schema, "DataFieldResponse")
 
       conn = recycle_and_put_headers(conn)
 
-      conn = get(conn, data_field_path(conn, :show, id))
+      conn = get(conn, Routes.data_field_path(conn, :show, id))
       json_response_data = json_response(conn, 200)["data"]
 
       json_response_data =
@@ -93,7 +93,7 @@ defmodule TdDdWeb.DataFieldControllerTest do
 
     @tag authenticated_user: @admin_user_name
     test "renders errors when data is invalid", %{conn: conn} do
-      conn = post(conn, data_field_path(conn, :create), data_field: @invalid_attrs)
+      conn = post(conn, Routes.data_field_path(conn, :create), data_field: @invalid_attrs)
       assert json_response(conn, 422)["errors"] != %{}
     end
   end
@@ -107,12 +107,14 @@ defmodule TdDdWeb.DataFieldControllerTest do
       data_field: %DataField{id: id} = data_field,
       swagger_schema: schema
     } do
-      conn = put(conn, data_field_path(conn, :update, data_field), data_field: @update_attrs)
+      conn =
+        put(conn, Routes.data_field_path(conn, :update, data_field), data_field: @update_attrs)
+
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
       conn = recycle_and_put_headers(conn)
 
-      conn = get(conn, data_field_path(conn, :show, id))
+      conn = get(conn, Routes.data_field_path(conn, :show, id))
       json_response_data = json_response(conn, 200)["data"]
 
       json_response_data =
@@ -136,13 +138,13 @@ defmodule TdDdWeb.DataFieldControllerTest do
       data_field: data_field,
       swagger_schema: schema
     } do
-      conn = delete(conn, data_field_path(conn, :delete, data_field))
+      conn = delete(conn, Routes.data_field_path(conn, :delete, data_field))
       assert response(conn, 204)
 
       conn = recycle_and_put_headers(conn)
 
       assert_error_sent(404, fn ->
-        get(conn, data_field_path(conn, :show, data_field))
+        get(conn, Routes.data_field_path(conn, :show, data_field))
         validate_resp_schema(conn, schema, "DataFieldResponse")
       end)
     end
@@ -161,7 +163,7 @@ defmodule TdDdWeb.DataFieldControllerTest do
       conn =
         get(
           conn,
-          data_structure_data_field_path(
+          Routes.data_structure_data_field_path(
             conn,
             :data_structure_fields,
             data_structure.id

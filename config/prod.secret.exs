@@ -13,7 +13,6 @@ config :td_dd, TdDdWeb.Endpoint,
 
 # Configure your database
 config :td_dd, TdDd.Repo,
-  adapter: Ecto.Adapters.Postgres,
   username: "${DB_USER}",
   password: "${DB_PASSWORD}",
   database: "${DB_NAME}",
@@ -22,16 +21,18 @@ config :td_dd, TdDd.Repo,
   timeout: 600_000
 
 config :td_dd, TdDd.Auth.Guardian,
-  allowed_algos: ["HS512"], # optional
+  # optional
+  allowed_algos: ["HS512"],
   issuer: "tdauth",
-  ttl: { 1, :hours },
+  ttl: {1, :hours},
   secret_key: "${GUARDIAN_SECRET_KEY}"
 
 config :td_dd, :api_services_login,
   api_username: "${API_USER}",
   api_password: "${API_PASSWORD}"
 
-config :td_dd, :auth_service, api_service: TdDdWeb.ApiServices.HttpTdAuthService,
+config :td_dd, :auth_service,
+  api_service: TdDdWeb.ApiServices.HttpTdAuthService,
   auth_host: "${API_AUTH_HOST}",
   auth_port: "${API_AUTH_PORT}",
   auth_domain: ""
@@ -44,7 +45,8 @@ config :td_dd, :elasticsearch,
 
 config :td_perms, redis_host: "${REDIS_HOST}"
 
-config :td_dd, :audit_service, api_service: TdDdWeb.ApiServices.HttpTdAuditService,
+config :td_dd, :audit_service,
+  api_service: TdDdWeb.ApiServices.HttpTdAuditService,
   audit_host: "${API_AUDIT_HOST}",
   audit_port: "${API_AUDIT_PORT}",
   audit_domain: ""

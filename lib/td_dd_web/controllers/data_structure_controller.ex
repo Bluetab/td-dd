@@ -97,18 +97,20 @@ defmodule TdDdWeb.DataStructureController do
 
       conn
       |> put_status(:created)
-      |> put_resp_header("location", data_structure_path(conn, :show, data_structure))
+      |> put_resp_header("location", Routes.data_structure_path(conn, :show, data_structure))
       |> render("show.json", data_structure: data_structure)
     else
       false ->
         conn
         |> put_status(:forbidden)
-        |> render(ErrorView, :"403")
+        |> put_view(ErrorView)
+        |> render("403.json")
 
       _error ->
         conn
         |> put_status(:unprocessable_entity)
-        |> render(ErrorView, :"422")
+        |> put_view(ErrorView)
+        |> render("422.json")
     end
   end
 
@@ -147,12 +149,14 @@ defmodule TdDdWeb.DataStructureController do
       false ->
         conn
         |> put_status(:forbidden)
-        |> render(ErrorView, :"403")
+        |> put_view(ErrorView)
+        |> render("403.json")
 
       _error ->
         conn
         |> put_status(:unprocessable_entity)
-        |> render(ErrorView, :"422")
+        |> put_view(ErrorView)
+        |> render("422.json")
     end
   end
 
@@ -209,12 +213,14 @@ defmodule TdDdWeb.DataStructureController do
       false ->
         conn
         |> put_status(:forbidden)
-        |> render(ErrorView, :"403")
+        |> put_view(ErrorView)
+        |> render("403.json")
 
       _error ->
         conn
         |> put_status(:unprocessable_entity)
-        |> render(ErrorView, :"422")
+        |> put_view(ErrorView)
+        |> render("422.json")
     end
   end
 
@@ -247,12 +253,14 @@ defmodule TdDdWeb.DataStructureController do
       false ->
         conn
         |> put_status(:forbidden)
-        |> render(ErrorView, :"403")
+        |> put_view(ErrorView)
+        |> render("403.json")
 
       _error ->
         conn
         |> put_status(:unprocessable_entity)
-        |> render(ErrorView, :"422")
+        |> put_view(ErrorView)
+        |> render("422.json")
     end
   end
 

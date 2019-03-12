@@ -26,13 +26,13 @@ defmodule TdDdWeb.CommentControllerTest do
     nullable: true,
     precision: "some precision",
     type: "some type",
-    last_change_at: "2010-04-17 14:00:00.000000Z",
+    last_change_at: "2010-04-17 14:00:00Z",
     last_change_by: 42
   }
   @data_structure_attrs %{
     description: "some description",
     group: "some group",
-    last_change_at: "2010-04-17 14:00:00.000000Z",
+    last_change_at: "2010-04-17 14:00:00Z",
     last_change_by: 42,
     name: "some name",
     system: "some system"
@@ -67,7 +67,7 @@ defmodule TdDdWeb.CommentControllerTest do
   describe "index" do
     @tag authenticated_user: @admin_user_name
     test "lists all comments", %{conn: conn} do
-      conn = get(conn, comment_path(conn, :index))
+      conn = get(conn, Routes.comment_path(conn, :index))
       assert json_response(conn, 200)["data"] == []
     end
   end
@@ -75,12 +75,12 @@ defmodule TdDdWeb.CommentControllerTest do
   describe "create comment" do
     @tag authenticated_user: @admin_user_name
     test "renders comment when data is valid", %{conn: conn} do
-      conn = post(conn, comment_path(conn, :create), comment: @create_attrs)
+      conn = post(conn, Routes.comment_path(conn, :create), comment: @create_attrs)
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
       conn = recycle_and_put_headers(conn)
 
-      conn = get(conn, comment_path(conn, :show, id))
+      conn = get(conn, Routes.comment_path(conn, :show, id))
 
       assert json_response(conn, 200)["data"] == %{
                "id" => id,
@@ -93,21 +93,21 @@ defmodule TdDdWeb.CommentControllerTest do
 
     @tag authenticated_user: @admin_user_name
     test "renders errors when data is invalid", %{conn: conn} do
-      conn = post(conn, comment_path(conn, :create), comment: @invalid_attrs)
+      conn = post(conn, Routes.comment_path(conn, :create), comment: @invalid_attrs)
       assert json_response(conn, 422)["errors"] != %{}
     end
 
     @tag authenticated_user: @admin_user_name
     test "renders comment related to a Data Field", %{conn: conn} do
-      conn = post(conn, data_field_path(conn, :create), data_field: @data_field_attrs)
+      conn = post(conn, Routes.data_field_path(conn, :create), data_field: @data_field_attrs)
       assert %{"id" => data_field_id} = json_response(conn, 201)["data"]
 
       conn = recycle_and_put_headers(conn)
-      conn = get(conn, data_field_path(conn, :show, data_field_id))
+      conn = get(conn, Routes.data_field_path(conn, :show, data_field_id))
 
       comment_create_attrs = Map.put(@others_create_attrs, :resource_id, data_field_id)
       conn = recycle_and_put_headers(conn)
-      conn = post(conn, comment_path(conn, :create), comment: comment_create_attrs)
+      conn = post(conn, Routes.comment_path(conn, :create), comment: comment_create_attrs)
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
       conn = recycle_and_put_headers(conn)
@@ -115,7 +115,11 @@ defmodule TdDdWeb.CommentControllerTest do
       conn =
         get(
           conn,
-          data_field_comment_path(conn, :get_comment_data_field, comment_create_attrs.resource_id)
+          Routes.data_field_comment_path(
+            conn,
+            :get_comment_data_field,
+            comment_create_attrs.resource_id
+          )
         )
 
       assert json_response(conn, 200)["data"] == %{
@@ -129,12 +133,16 @@ defmodule TdDdWeb.CommentControllerTest do
 
     @tag authenticated_user: @admin_user_name
     test "renders comment related to a Data Structure", %{conn: conn} do
-      conn = post(conn, data_structure_path(conn, :create), data_structure: @data_structure_attrs)
+      conn =
+        post(conn, Routes.data_structure_path(conn, :create),
+          data_structure: @data_structure_attrs
+        )
+
       assert %{"id" => data_structure_id} = json_response(conn, 201)["data"]
 
       comment_create_attrs = Map.put(@others_create_attrs2, :resource_id, data_structure_id)
       conn = recycle_and_put_headers(conn)
-      conn = post(conn, comment_path(conn, :create), comment: comment_create_attrs)
+      conn = post(conn, Routes.comment_path(conn, :create), comment: comment_create_attrs)
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
       conn = recycle_and_put_headers(conn)
@@ -142,7 +150,7 @@ defmodule TdDdWeb.CommentControllerTest do
       conn =
         get(
           conn,
-          data_structure_comment_path(
+          Routes.data_structure_comment_path(
             conn,
             :get_comment_data_structure,
             comment_create_attrs.resource_id
@@ -164,12 +172,12 @@ defmodule TdDdWeb.CommentControllerTest do
 
     @tag authenticated_user: @admin_user_name
     test "renders comment when data is valid", %{conn: conn, comment: %Comment{id: id} = comment} do
-      conn = put(conn, comment_path(conn, :update, comment), comment: @update_attrs)
+      conn = put(conn, Routes.comment_path(conn, :update, comment), comment: @update_attrs)
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
       conn = recycle_and_put_headers(conn)
 
-      conn = get(conn, comment_path(conn, :show, id))
+      conn = get(conn, Routes.comment_path(conn, :show, id))
 
       assert json_response(conn, 200)["data"] == %{
                "id" => id,
@@ -182,7 +190,7 @@ defmodule TdDdWeb.CommentControllerTest do
 
     @tag authenticated_user: @admin_user_name
     test "renders errors when data is invalid", %{conn: conn, comment: comment} do
-      conn = put(conn, comment_path(conn, :update, comment), comment: @invalid_attrs)
+      conn = put(conn, Routes.comment_path(conn, :update, comment), comment: @invalid_attrs)
       assert json_response(conn, 422)["errors"] != %{}
     end
   end
@@ -192,13 +200,13 @@ defmodule TdDdWeb.CommentControllerTest do
 
     @tag authenticated_user: @admin_user_name
     test "deletes chosen comment", %{conn: conn, comment: comment} do
-      conn = delete(conn, comment_path(conn, :delete, comment))
+      conn = delete(conn, Routes.comment_path(conn, :delete, comment))
       assert response(conn, 204)
 
       conn = recycle_and_put_headers(conn)
 
       assert_error_sent(404, fn ->
-        get(conn, comment_path(conn, :show, comment))
+        get(conn, Routes.comment_path(conn, :show, comment))
       end)
     end
   end

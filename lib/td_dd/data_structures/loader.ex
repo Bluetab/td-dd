@@ -22,18 +22,18 @@ defmodule TdDd.Loader do
 
     multi =
       Multi.new()
-      |> Multi.run(:audit, fn _ -> {:ok, audit_fields} end)
-      |> Multi.run(:structure_records, fn _ -> {:ok, structure_records} end)
-      |> Multi.run(:field_records, fn _ -> {:ok, field_records} end)
-      |> Multi.run(:relation_records, fn _ -> {:ok, relation_records} end)
-      |> Multi.run(:structures, &upsert_structures/1)
-      |> Multi.run(:versions, &upsert_structure_versions/1)
-      |> Multi.run(:versions_by_sys_group_name_version, &versions_by_sys_group_name_version/1)
-      |> Multi.run(:relations, &upsert_relations/1)
-      |> Multi.run(:diffs, &diff_structures/1)
-      |> Multi.run(:removed, &remove_fields/1)
-      |> Multi.run(:added, &insert_fields/1)
-      |> Multi.run(:modified, &update_fields/1)
+      |> Multi.run(:audit, fn _, _ -> {:ok, audit_fields} end)
+      |> Multi.run(:structure_records, fn _, _ -> {:ok, structure_records} end)
+      |> Multi.run(:field_records, fn _, _ -> {:ok, field_records} end)
+      |> Multi.run(:relation_records, fn _, _ -> {:ok, relation_records} end)
+      |> Multi.run(:structures, &upsert_structures/2)
+      |> Multi.run(:versions, &upsert_structure_versions/2)
+      |> Multi.run(:versions_by_sys_group_name_version, &versions_by_sys_group_name_version/2)
+      |> Multi.run(:relations, &upsert_relations/2)
+      |> Multi.run(:diffs, &diff_structures/2)
+      |> Multi.run(:removed, &remove_fields/2)
+      |> Multi.run(:added, &insert_fields/2)
+      |> Multi.run(:modified, &update_fields/2)
       |> Repo.transaction()
 
     case multi do
@@ -48,7 +48,7 @@ defmodule TdDd.Loader do
     end
   end
 
-  defp update_fields(%{diffs: diffs, audit: audit}) do
+  defp update_fields(_repo, %{diffs: diffs, audit: audit}) do
     to_update = Enum.flat_map(diffs, &Map.get(&1, :modify))
     Logger.info("Updating existing fields (#{Enum.count(to_update)} fields)")
 
@@ -63,7 +63,7 @@ defmodule TdDd.Loader do
     field |> DataField.loader_changeset(attrs) |> Repo.update()
   end
 
-  defp insert_fields(%{diffs: diffs, audit: audit}) do
+  defp insert_fields(_repo, %{diffs: diffs, audit: audit}) do
     to_insert = Enum.flat_map(diffs, &Map.get(&1, :add))
     Logger.info("Inserting new fields (#{Enum.count(to_insert)} fields)")
 
@@ -90,7 +90,7 @@ defmodule TdDd.Loader do
     |> Repo.insert!()
   end
 
-  defp remove_fields(%{diffs: diffs}) do
+  defp remove_fields(_repo, %{diffs: diffs}) do
     to_remove = Enum.flat_map(diffs, &Map.get(&1, :remove))
 
     Logger.info("Removing field associations (#{Enum.count(to_remove)} fields)")
@@ -119,7 +119,7 @@ defmodule TdDd.Loader do
     num_rows
   end
 
-  defp upsert_structures(%{audit: audit_fields, structure_records: records}) do
+  defp upsert_structures(_repo, %{audit: audit_fields, structure_records: records}) do
     Logger.info("Upserting data structures (#{Enum.count(records)} records)")
 
     records
@@ -151,7 +151,7 @@ defmodule TdDd.Loader do
     Repo.one(from(ds in DataStructure, where: ^filter))
   end
 
-  defp upsert_structure_versions(%{structures: structures, structure_records: records}) do
+  defp upsert_structure_versions(_repo, %{structures: structures, structure_records: records}) do
     Logger.info("Upserting data structure versions (#{Enum.count(structures)} records)")
 
     records
@@ -196,25 +196,34 @@ defmodule TdDd.Loader do
     end
   end
 
-  defp versions_by_sys_group_name_version(%{versions: versions}) do
+  defp versions_by_sys_group_name_version(_repo, %{versions: versions}) do
     versions_by_sys_group_name_version =
       versions
       |> Repo.preload(:data_structure)
       |> Map.new(&key_value/1)
-      {:ok, versions_by_sys_group_name_version}
+
+    {:ok, versions_by_sys_group_name_version}
   end
 
   defp key_value(%DataStructureVersion{data_structure: data_structure, version: version} = dsv) do
-    map = data_structure |> Map.take([:system, :group, :name, :external_id]) |> Map.put(:version, version)
-    key = [:system, :group, :name, :external_id, :version] |> Enum.map(&Map.get(map, &1)) |> List.to_tuple()
+    map =
+      data_structure
+      |> Map.take([:system, :group, :name, :external_id])
+      |> Map.put(:version, version)
+
+    key =
+      [:system, :group, :name, :external_id, :version]
+      |> Enum.map(&Map.get(map, &1))
+      |> List.to_tuple()
+
     {key, dsv}
   end
 
-  defp upsert_relations(%{relation_records: []}) do
+  defp upsert_relations(_repo, %{relation_records: []}) do
     {:ok, []}
   end
 
-  defp upsert_relations(%{
+  defp upsert_relations(_repo, %{
          versions_by_sys_group_name_version: versions_by_sys_group_name_version,
          relation_records: relation_records
        }) do
@@ -226,21 +235,31 @@ defmodule TdDd.Loader do
   end
 
   defp find_parent_child(versions_by_sys_group_name_version, %{
-    system: system,
-    parent_group: parent_group,
-    parent_name: parent_name,
-    parent_external_id: parent_external_id,
-    child_group: child_group,
-    child_name: child_name,
-    child_external_id: child_external_id
-  }) do
+         system: system,
+         parent_group: parent_group,
+         parent_name: parent_name,
+         parent_external_id: parent_external_id,
+         child_group: child_group,
+         child_name: child_name,
+         child_external_id: child_external_id
+       }) do
     # TODO: Support versions other than 0 for parent/child relationships
-    parent = Map.get(versions_by_sys_group_name_version, {system, parent_group, parent_name, parent_external_id, 0})
-    child = Map.get(versions_by_sys_group_name_version, {system, child_group, child_name, child_external_id, 0})
+    parent =
+      Map.get(
+        versions_by_sys_group_name_version,
+        {system, parent_group, parent_name, parent_external_id, 0}
+      )
+
+    child =
+      Map.get(
+        versions_by_sys_group_name_version,
+        {system, child_group, child_name, child_external_id, 0}
+      )
+
     {parent, child}
   end
 
-  defp diff_structures(%{
+  defp diff_structures(_repo, %{
          versions_by_sys_group_name_version: versions_by_sys_group_name_version,
          field_records: records,
          audit: audit_fields

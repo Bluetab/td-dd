@@ -16,6 +16,7 @@ defmodule TdDd.DataStructures.DataStructure do
   @data_structure_modifiable_fields Application.get_env(:td_dd, :metadata)[
                                       :data_structure_modifiable_fields
                                     ]
+                                    |> Enum.map(&String.to_atom/1)
 
   schema "data_structures" do
     field(:description, :string)

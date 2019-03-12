@@ -33,7 +33,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       conn: conn,
       structure: %DataStructure{id: child_id}
     } do
-      conn = get(conn, data_structure_data_structure_version_path(conn, :show, child_id, 0))
+      conn = get(conn, Routes.data_structure_data_structure_version_path(conn, :show, child_id, 0))
       %{"children" => children} = json_response(conn, 200)["data"]
       assert Enum.count(children) == 2
     end
@@ -43,7 +43,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       conn: conn,
       structure: %DataStructure{id: child_id}
     } do
-      conn = get(conn, data_structure_data_structure_version_path(conn, :show, child_id, 0))
+      conn = get(conn, Routes.data_structure_data_structure_version_path(conn, :show, child_id, 0))
       %{"parents" => parents} = json_response(conn, 200)["data"]
       assert Enum.count(parents) == 1
     end
@@ -53,7 +53,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       conn: conn,
       child_structures: [%DataStructure{id: id} | _]
     } do
-      conn = get(conn, data_structure_data_structure_version_path(conn, :show, id, 0))
+      conn = get(conn, Routes.data_structure_data_structure_version_path(conn, :show, id, 0))
       %{"siblings" => siblings} = json_response(conn, 200)["data"]
       assert Enum.count(siblings) == 2
     end
