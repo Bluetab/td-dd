@@ -144,7 +144,9 @@ defmodule TdDd.DataStructuresTest do
 
     test "create_data_field/1 with valid data creates a data_field" do
       data_structure = insert(:data_structure)
-      data_structure_version = insert(:data_structure_version, data_structure_id: data_structure.id)
+
+      data_structure_version =
+        insert(:data_structure_version, data_structure_id: data_structure.id)
 
       creation_attrs =
         Map.put(@valid_attrs, :data_structure_version_id, data_structure_version.id)
@@ -227,5 +229,28 @@ defmodule TdDd.DataStructuresTest do
       assert parents <~> [dsv2, dsv3]
     end
 
+    test "get_siblings/1 returns sibling structures" do
+      [ds1, ds2, ds3, ds4] =
+        [7, 8, 9, 10]
+        |> Enum.map(&insert(:data_structure, id: &1, name: "DS#{&1}"))
+
+      [dsv1, dsv2, dsv3, dsv4] =
+        [ds1, ds2, ds3, ds4]
+        |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id))
+
+      [{dsv1, dsv2}, {dsv1, dsv3}, {dsv2, dsv4}, {dsv3, dsv4}]
+      |> Enum.map(fn {parent, child} ->
+        insert(:data_structure_relation, parent_id: parent.id, child_id: child.id)
+      end)
+
+      [s1, s2, s3, s4] =
+        [dsv1, dsv2, dsv3, dsv4]
+        |> Enum.map(&DataStructures.get_siblings/1)
+
+      assert s1 == []
+      assert s2 <~> [ds2, ds3]
+      assert s3 <~> [ds2, ds3]
+      assert s4 <~> [ds4]
+    end
   end
 end
