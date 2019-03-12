@@ -58,6 +58,52 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
   @admin_user_name "app-admin"
 
+  describe "show" do
+    setup [:create_parent_with_child]
+
+    @tag authenticated_user: @admin_user_name
+    test "renders a data structure with children (with grandchildren)", %{
+      conn: conn,
+      parent_structure: %DataStructure{id: parent_id}
+    } do
+      conn = get(conn, data_structure_path(conn, :show, parent_id))
+      %{"children" => children} = json_response(conn, 200)["data"]
+      assert Enum.count(children) == 1
+      assert Enum.count(children, &(&1["has_children"] == true)) == 1
+    end
+
+    @tag authenticated_user: @admin_user_name
+    test "renders a data structure with children (without grandchildren)", %{
+      conn: conn,
+      structure: %DataStructure{id: child_id}
+    } do
+      conn = get(conn, data_structure_path(conn, :show, child_id))
+      %{"children" => children} = json_response(conn, 200)["data"]
+      assert Enum.count(children) == 2
+      assert Enum.count(children, &(&1["has_children"] == false)) == 2
+    end
+
+    @tag authenticated_user: @admin_user_name
+    test "renders a data structure with parents", %{
+      conn: conn,
+      structure: %DataStructure{id: child_id}
+    } do
+      conn = get(conn, data_structure_path(conn, :show, child_id))
+      %{"parents" => parents} = json_response(conn, 200)["data"]
+      assert Enum.count(parents) == 1
+    end
+
+    @tag authenticated_user: @admin_user_name
+    test "renders a data structure with siblings", %{
+      conn: conn,
+      child_structures: [%DataStructure{id: id} | _]
+    } do
+      conn = get(conn, data_structure_path(conn, :show, id))
+      %{"siblings" => siblings} = json_response(conn, 200)["data"]
+      assert Enum.count(siblings) == 2
+    end
+  end
+
   describe "index" do
     @tag authenticated_user: @admin_user_name
     test "lists all data_structures", %{conn: conn} do
@@ -156,26 +202,31 @@ defmodule TdDdWeb.DataStructureControllerTest do
     } do
       template_name = "template_name"
       @df_cache.clean_cache()
+
       @df_cache.put_template(%{
-          id: 0,
-          label: "some label",
-          name: template_name,
-          is_default: false,
-          content: [
-            %{
-              "name" => "field",
-              "type" => "string",
-              "cardinality" => "1"
-            }
-          ]
+        id: 0,
+        label: "some label",
+        name: template_name,
+        is_default: false,
+        content: [
+          %{
+            "name" => "field",
+            "type" => "string",
+            "cardinality" => "1"
+          }
+        ]
       })
-      conn = put(conn,
+
+      conn =
+        put(
+          conn,
           data_structure_path(conn, :update, data_structure),
           data_structure: %{
             df_name: template_name,
             df_content: %{}
           }
-      )
+        )
+
       assert response(conn, 422)
     end
 
@@ -186,27 +237,32 @@ defmodule TdDdWeb.DataStructureControllerTest do
     } do
       template_name = "template_name"
       @df_cache.clean_cache()
+
       @df_cache.put_template(%{
-          id: 0,
-          label: "some label",
-          name: template_name,
-          is_default: false,
-          content: [
-            %{
-              "name" => "field",
-              "type" => "string",
-              "cardinality" => "1"
-            }
-          ]
+        id: 0,
+        label: "some label",
+        name: template_name,
+        is_default: false,
+        content: [
+          %{
+            "name" => "field",
+            "type" => "string",
+            "cardinality" => "1"
+          }
+        ]
       })
+
       df_content = %{"field" => "value"}
-      conn = put(conn,
+
+      conn =
+        put(
+          conn,
           data_structure_path(conn, :update, data_structure),
           data_structure: %{
             df_name: template_name,
             df_content: df_content
           }
-      )
+        )
 
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
@@ -248,6 +304,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       data_structure: %DataStructure{id: id} = data_structure
     } do
       assert Map.get(data_structure, :confidential) == false
+
       conn =
         put(
           conn,
@@ -266,7 +323,10 @@ defmodule TdDdWeb.DataStructureControllerTest do
     end
 
     @tag authenticated_no_admin_user: "user"
-    test "user with permission can update confidential data_structure", %{conn: conn, user: %{id: user_id}} do
+    test "user with permission can update confidential data_structure", %{
+      conn: conn,
+      user: %{id: user_id}
+    } do
       role_name = "confidential_editor"
       confidential = true
       data_structure = create_data_structure_and_permissions(user_id, role_name, confidential)
@@ -290,7 +350,10 @@ defmodule TdDdWeb.DataStructureControllerTest do
     end
 
     @tag authenticated_no_admin_user: "user_without_permission"
-    test "user without confidential permission cannot update confidential data_structure", %{conn: conn, user: %{id: user_id}} do
+    test "user without confidential permission cannot update confidential data_structure", %{
+      conn: conn,
+      user: %{id: user_id}
+    } do
       role_name = "editor"
       confidential = true
       data_structure = create_data_structure_and_permissions(user_id, role_name, confidential)
@@ -309,7 +372,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
     end
 
     @tag authenticated_no_admin_user: "user_without_confidential"
-    test "user without confidential permission cannot update confidentiality of data_structure", %{conn: conn, user: %{id: user_id}} do
+    test "user without confidential permission cannot update confidentiality of data_structure",
+         %{conn: conn, user: %{id: user_id}} do
       role_name = "editor"
       confidential = false
       data_structure = create_data_structure_and_permissions(user_id, role_name, confidential)
@@ -334,10 +398,33 @@ defmodule TdDdWeb.DataStructureControllerTest do
     {:ok, data_structure: data_structure, data_structure_version: data_structure_version}
   end
 
+  defp create_parent_with_child(_) do
+    parent_structure = insert(:data_structure)
+    structure = insert(:data_structure)
+    child_structures = [insert(:data_structure), insert(:data_structure)]
+    parent_version = insert(:data_structure_version, data_structure_id: parent_structure.id)
+    structure_version = insert(:data_structure_version, data_structure_id: structure.id)
+
+    child_versions =
+      child_structures
+      |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id))
+
+    insert(:data_structure_relation, parent_id: parent_version.id, child_id: structure_version.id)
+
+    child_versions
+    |> Enum.each(
+      &insert(:data_structure_relation, parent_id: structure_version.id, child_id: &1.id)
+    )
+
+    {:ok,
+     parent_structure: parent_structure, structure: structure, child_structures: child_structures}
+  end
+
   defp create_data_structure_and_permissions(user_id, role_name, confidential) do
     domain_name = "domain_name"
     domain_id = 1
     MockTaxonomyCache.create_domain(%{name: domain_name, id: domain_id})
+
     MockPermissionResolver.create_acl_entry(%{
       principal_id: user_id,
       principal_type: "user",
@@ -346,11 +433,15 @@ defmodule TdDdWeb.DataStructureControllerTest do
       role_name: role_name
     })
 
-    data_structure = insert(:data_structure,
-      confidential: confidential,
-      name: "confidential",
-      ou: domain_name,
-      domain_id: domain_id)
+    data_structure =
+      insert(
+        :data_structure,
+        confidential: confidential,
+        name: "confidential",
+        ou: domain_name,
+        domain_id: domain_id
+      )
+
     insert(:data_structure_version, data_structure_id: data_structure.id)
     data_structure
   end

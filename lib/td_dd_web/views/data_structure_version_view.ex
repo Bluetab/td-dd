@@ -7,9 +7,10 @@ defmodule TdDdWeb.DataStructureVersionView do
         dsv
         |> add_data_structure
         |> add_children
+        |> add_parents
         |> add_data_fields
         |> add_versions
-        |> Map.take([:data_structure, :children, :data_fields, :version, :versions, :id])
+        |> Map.take([:data_structure, :children, :parents, :data_fields, :version, :versions, :id])
     }
   end
 
@@ -35,14 +36,18 @@ defmodule TdDdWeb.DataStructureVersionView do
     ])
   end
 
-  defp add_children(data_structure_version) do
-    children =
-      case Map.get(data_structure_version, :children) do
+  defp add_children(data_structure_version), do: add_family(data_structure_version, :children)
+
+  defp add_parents(data_structure_version), do: add_family(data_structure_version, :parents)
+
+  defp add_family(data_structure_version, relation) do
+    members =
+      case Map.get(data_structure_version, relation) do
         nil -> []
         cs -> Enum.map(cs, &data_structure_json/1)
       end
 
-    Map.put(data_structure_version, :children, children)
+    Map.put(data_structure_version, relation, members)
   end
 
   defp add_data_fields(%{data_fields: fields} = dsv) do

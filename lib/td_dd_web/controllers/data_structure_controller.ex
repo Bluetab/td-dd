@@ -88,8 +88,7 @@ defmodule TdDdWeb.DataStructureController do
       |> DataStructures.add_domain_id(@taxonomy_cache.get_domain_name_to_id_map())
 
     with true <- can?(user, create_data_structure(Map.fetch!(creation_params, "domain_id"))),
-         {:ok, %DataStructure{id: id}} <-
-           DataStructures.create_data_structure(creation_params) do
+         {:ok, %DataStructure{id: id}} <- DataStructures.create_data_structure(creation_params) do
       AuditSupport.create_data_structure(conn, id, data_structure_params)
 
       data_structure =
@@ -138,7 +137,9 @@ defmodule TdDdWeb.DataStructureController do
         confidential: can?(user, manage_confidential_structures(data_structure))
       }
 
-      render(conn, "show.json",
+      render(
+        conn,
+        "show.json",
         data_structure: data_structure,
         user_permissions: user_permissions
       )
@@ -160,6 +161,8 @@ defmodule TdDdWeb.DataStructureController do
     |> DataStructures.get_data_structure_with_fields!()
     |> DataStructures.with_versions()
     |> DataStructures.with_latest_children()
+    |> DataStructures.with_latest_parents()
+    |> DataStructures.with_latest_siblings()
     |> DataStructures.with_field_external_ids()
     |> DataStructures.with_field_links()
   end
@@ -184,7 +187,8 @@ defmodule TdDdWeb.DataStructureController do
 
     data_structure_old = DataStructures.get_data_structure_with_fields!(id)
 
-    manage_confidential_structures = can?(user, manage_confidential_structures(data_structure_old))
+    manage_confidential_structures =
+      can?(user, manage_confidential_structures(data_structure_old))
 
     update_params =
       data_structure_params
