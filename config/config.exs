@@ -47,6 +47,7 @@ config :td_dd, :audit_service,
 config :td_dd, df_cache: TdPerms.DynamicFormCache
 config :td_dd, permission_resolver: TdPerms.Permissions
 config :td_dd, taxonomy_cache: TdPerms.TaxonomyCache
+config :td_dd, index_worker: TdDd.Search.IndexWorker
 
 config :td_perms,
   permissions: [

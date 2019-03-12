@@ -39,6 +39,7 @@ config :td_dd, :elasticsearch,
 config :td_dd, df_cache: TdPerms.MockDynamicFormCache
 config :td_dd, permission_resolver: TdDd.Permissions.MockPermissionResolver
 config :td_dd, taxonomy_cache: TdDd.MockTaxonomyCache
+config :td_dd, index_worker: TdDd.Search.MockIndexWorker
 
 config :td_perms, redis_host: "localhost"
 

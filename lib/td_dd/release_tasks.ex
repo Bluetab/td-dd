@@ -4,7 +4,6 @@ defmodule TdDd.ReleaseTasks do
   """
 
   alias Ecto.Migrator
-  alias TdDd.Repo
 
   @start_apps [
     :postgrex,
@@ -13,7 +12,6 @@ defmodule TdDd.ReleaseTasks do
     :ecto_sql
   ]
 
-  @app :td_dd
   @repos Application.get_env(:td_auth, :ecto_repos, [])
 
   def migrate do

@@ -9,8 +9,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
-
-  @df_cache Application.get_env(:td_dd, :df_cache)
+  alias TdPerms.MockDynamicFormCache
 
   @create_attrs %{
     description: "some description",
@@ -48,7 +47,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     start_supervised(MockTdAuditService)
     start_supervised(MockPermissionResolver)
     start_supervised(MockTaxonomyCache)
-    start_supervised(@df_cache)
+    start_supervised(MockDynamicFormCache)
     :ok
   end
 
@@ -189,9 +188,9 @@ defmodule TdDdWeb.DataStructureControllerTest do
       data_structure: data_structure
     } do
       template_name = "template_name"
-      @df_cache.clean_cache()
+      MockDynamicFormCache.clean_cache()
 
-      @df_cache.put_template(%{
+      MockDynamicFormCache.put_template(%{
         id: 0,
         label: "some label",
         name: template_name,
@@ -224,9 +223,9 @@ defmodule TdDdWeb.DataStructureControllerTest do
       data_structure: %{id: id} = data_structure
     } do
       template_name = "template_name"
-      @df_cache.clean_cache()
+      MockDynamicFormCache.clean_cache()
 
-      @df_cache.put_template(%{
+      MockDynamicFormCache.put_template(%{
         id: 0,
         label: "some label",
         name: template_name,

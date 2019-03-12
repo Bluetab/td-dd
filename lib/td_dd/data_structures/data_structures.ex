@@ -206,7 +206,6 @@ defmodule TdDd.DataStructures do
         %DataStructureVersion{data_structure_id: data_structure.id, version: 0}
         |> Repo.insert()
 
-        # TODO: Should index data_structure_versions
         data_structure
         |> with_latest_fields
         |> @search_service.put_search

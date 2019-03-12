@@ -7,15 +7,14 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
-
-  @df_cache Application.get_env(:td_dd, :df_cache)
+  alias TdPerms.MockDynamicFormCache
 
   setup_all do
     start_supervised(MockTdAuthService)
     start_supervised(MockTdAuditService)
     start_supervised(MockPermissionResolver)
     start_supervised(MockTaxonomyCache)
-    start_supervised(@df_cache)
+    start_supervised(MockDynamicFormCache)
     :ok
   end
 
@@ -33,7 +32,9 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       conn: conn,
       structure: %DataStructure{id: child_id}
     } do
-      conn = get(conn, Routes.data_structure_data_structure_version_path(conn, :show, child_id, 0))
+      conn =
+        get(conn, Routes.data_structure_data_structure_version_path(conn, :show, child_id, 0))
+
       %{"children" => children} = json_response(conn, 200)["data"]
       assert Enum.count(children) == 2
     end
@@ -43,7 +44,9 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       conn: conn,
       structure: %DataStructure{id: child_id}
     } do
-      conn = get(conn, Routes.data_structure_data_structure_version_path(conn, :show, child_id, 0))
+      conn =
+        get(conn, Routes.data_structure_data_structure_version_path(conn, :show, child_id, 0))
+
       %{"parents" => parents} = json_response(conn, 200)["data"]
       assert Enum.count(parents) == 1
     end

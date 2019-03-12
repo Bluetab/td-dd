@@ -3,17 +3,39 @@ defmodule TdDd.LoaderTest do
 
   alias TdDd.Loader
   alias TdDd.Repo
+  alias TdDd.Search.MockIndexWorker
+  alias TdPerms.MockDynamicFormCache
+
+  setup_all do
+    start_supervised(MockIndexWorker)
+    start_supervised(MockDynamicFormCache)
+    :ok
+  end
 
   describe "loader" do
-    test "load/1 does something" do
+    test "load/1 loads changes in data structures, fields and relations" do
       data_structure = insert(:data_structure, system: "SYS1", group: "GROUP1", name: "NAME1")
 
       dsv = insert(:data_structure_version, data_structure_id: data_structure.id, version: 0)
 
-      field1 = insert(:data_field, name: "F1", type: "T1", description: "Field1", precision: "P1", nullable: false)
+      field1 =
+        insert(:data_field,
+          name: "F1",
+          type: "T1",
+          description: "Field1",
+          precision: "P1",
+          nullable: false
+        )
 
       field2 =
-        insert(:data_field, id: 99, name: "F2", type: "T2", description: "Field2", precision: "P2", nullable: true)
+        insert(:data_field,
+          id: 99,
+          name: "F2",
+          type: "T2",
+          description: "Field2",
+          precision: "P2",
+          nullable: true
+        )
 
       field3 =
         insert(:data_field,
@@ -31,11 +53,50 @@ defmodule TdDd.LoaderTest do
 
       Repo.insert_all("versions_fields", entries)
 
-      s1 = %{system: "SYS1", group: "GROUP1", name: "NAME1", description: "D1", version: 0, external_id: nil}
-      s2 = %{system: "SYS1", group: "GROUP2", name: "NAME2", description: "D2", version: 0, external_id: nil}
-      s3 = %{system: "SYS2", group: "GROUP3", name: "NAME3", description: "D3", version: 0, external_id: nil}
-      s4 = %{system: "SYS2", group: "GROUP3", name: "NAME4", description: "D4", version: 22, external_id: nil}
-      s5 = %{system: "SYS2", group: "GROUP3", name: "NAME4", description: "D4", version: 23, external_id: nil}
+      s1 = %{
+        system: "SYS1",
+        group: "GROUP1",
+        name: "NAME1",
+        description: "D1",
+        version: 0,
+        external_id: nil
+      }
+
+      s2 = %{
+        system: "SYS1",
+        group: "GROUP2",
+        name: "NAME2",
+        description: "D2",
+        version: 0,
+        external_id: nil
+      }
+
+      s3 = %{
+        system: "SYS2",
+        group: "GROUP3",
+        name: "NAME3",
+        description: "D3",
+        version: 0,
+        external_id: nil
+      }
+
+      s4 = %{
+        system: "SYS2",
+        group: "GROUP3",
+        name: "NAME4",
+        description: "D4",
+        version: 22,
+        external_id: nil
+      }
+
+      s5 = %{
+        system: "SYS2",
+        group: "GROUP3",
+        name: "NAME4",
+        description: "D4",
+        version: 23,
+        external_id: nil
+      }
 
       r1 = %{
         system: "SYS1",
@@ -116,14 +177,34 @@ defmodule TdDd.LoaderTest do
     end
 
     test "load/1 with structures containing and external_id" do
-      data_structure = insert(:data_structure, system: "SYS1", group: "GROUP1", name: "NAME1", external_id: "EXT1")
+      data_structure =
+        insert(:data_structure,
+          system: "SYS1",
+          group: "GROUP1",
+          name: "NAME1",
+          external_id: "EXT1"
+        )
 
       dsv = insert(:data_structure_version, data_structure_id: data_structure.id, version: 0)
 
-      field1 = insert(:data_field, name: "F1", type: "T1", description: "Field1", precision: "P1", nullable: false)
+      field1 =
+        insert(:data_field,
+          name: "F1",
+          type: "T1",
+          description: "Field1",
+          precision: "P1",
+          nullable: false
+        )
 
       field2 =
-        insert(:data_field, id: 99, name: "F2", type: "T2", description: "Will be deleted", precision: "P2", nullable: true)
+        insert(:data_field,
+          id: 99,
+          name: "F2",
+          type: "T2",
+          description: "Will be deleted",
+          precision: "P2",
+          nullable: true
+        )
 
       field3 =
         insert(:data_field,
@@ -141,9 +222,32 @@ defmodule TdDd.LoaderTest do
 
       Repo.insert_all("versions_fields", entries)
 
-      s1 = %{system: "SYS1", group: "GROUP1", name: "NAME1", description: "D1", version: 0, external_id: "EXT1"}
-      s2 = %{system: "SYS1", group: "GROUP1", name: "NAME1", description: "D1", version: 0, external_id: nil}
-      s3 = %{system: "SYS1", group: "GROUP2", name: "NAME2", description: "D2", version: 0, external_id: nil}
+      s1 = %{
+        system: "SYS1",
+        group: "GROUP1",
+        name: "NAME1",
+        description: "D1",
+        version: 0,
+        external_id: "EXT1"
+      }
+
+      s2 = %{
+        system: "SYS1",
+        group: "GROUP1",
+        name: "NAME1",
+        description: "D1",
+        version: 0,
+        external_id: nil
+      }
+
+      s3 = %{
+        system: "SYS1",
+        group: "GROUP2",
+        name: "NAME2",
+        description: "D2",
+        version: 0,
+        external_id: nil
+      }
 
       r1 = %{
         system: "SYS1",

@@ -40,6 +40,12 @@ defmodule TdDdWeb.ConnCase do
 
     unless tags[:async] do
       Sandbox.mode(TdDd.Repo, {:shared, self()})
+      parent = self()
+
+      case Process.whereis(TdDd.Search.IndexWorker) do
+        nil -> nil
+        pid -> Sandbox.allow(TdDd.Repo, parent, pid)
+      end
     end
 
     cond do

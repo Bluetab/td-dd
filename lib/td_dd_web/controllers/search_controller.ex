@@ -3,8 +3,9 @@ defmodule TdDdWeb.SearchController do
   import Canada, only: [can?: 2]
   use PhoenixSwagger
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.Search.IndexWorker
   alias TdDdWeb.ErrorView
+
+  @index_worker Application.get_env(:td_dd, :index_worker)
 
   swagger_path :reindex_all do
     description("Reindex all ES indexes with DB content")
@@ -17,7 +18,7 @@ defmodule TdDdWeb.SearchController do
     user = conn.assigns[:current_user]
 
     with true <- can?(user, reindex_all(DataStructure)) do
-      IndexWorker.reindex()
+      @index_worker.reindex()
       send_resp(conn, :accepted, "")
     else
       false ->
