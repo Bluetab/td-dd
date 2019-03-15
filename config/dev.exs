@@ -8,7 +8,6 @@ use Mix.Config
 # with brunch.io to recompile .js and .css sources.
 config :td_dd, TdDdWeb.Endpoint,
   http: [port: 4005],
-  url: [host: "localhost", port: 4005],
   debug_errors: true,
   code_reloader: true,
   check_origin: false,
@@ -39,19 +38,20 @@ config :phoenix, :stacktrace_depth, 20
 
 # Configure your database
 config :td_dd, TdDd.Repo,
-  adapter: Ecto.Adapters.Postgres,
   username: "postgres",
   password: "postgres",
   database: "td_dd_dev",
   hostname: "localhost",
   pool_size: 10,
-  timeout: 600_000 # Increased for metadata upload. 1000 data structures, 50 data fields
+  # Increased for metadata upload. 1000 data structures, 50 data fields
+  timeout: 600_000
 
 config :td_dd, :api_services_login,
   api_username: "api-admin",
   api_password: "apipass"
 
-config :td_dd, :auth_service, api_service: TdDdWeb.ApiServices.HttpTdAuthService,
+config :td_dd, :auth_service,
+  api_service: TdDdWeb.ApiServices.HttpTdAuthService,
   auth_host: "localhost",
   auth_port: "4001",
   auth_domain: ""
@@ -64,7 +64,8 @@ config :td_dd, :elasticsearch,
 
 config :td_perms, redis_host: "localhost"
 
-config :td_dd, :audit_service, api_service: TdDdWeb.ApiServices.HttpTdAuditService,
+config :td_dd, :audit_service,
+  api_service: TdDdWeb.ApiServices.HttpTdAuditService,
   audit_host: "localhost",
   audit_port: "4007",
   audit_domain: ""

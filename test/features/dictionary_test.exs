@@ -9,6 +9,7 @@ defmodule TdDd.DictionaryTest do
   alias Poison, as: JSON
   alias TdDd.MockTaxonomyCache
   alias TdDd.Permissions.MockPermissionResolver
+  alias TdDd.Search.MockIndexWorker
   alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
   alias TdPerms.MockDynamicFormCache
@@ -41,6 +42,7 @@ defmodule TdDd.DictionaryTest do
     start_supervised(MockPermissionResolver)
     start_supervised(MockTaxonomyCache)
     start_supervised(MockDynamicFormCache)
+    start_supervised(MockIndexWorker)
     :ok
   end
 

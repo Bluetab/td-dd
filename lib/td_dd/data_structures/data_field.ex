@@ -8,6 +8,7 @@ defmodule TdDd.DataStructures.DataField do
   @data_field_modifiable_fields Application.get_env(:td_dd, :metadata)[
                                   :data_field_modifiable_fields
                                 ]
+                                |> Enum.map(&String.to_atom/1)
 
   schema "data_fields" do
     field(:business_concept_id, :string, default: nil)

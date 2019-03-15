@@ -21,7 +21,6 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   swagger_path :index do
-    get("/data_structures")
     description("List Data Structures")
 
     parameters do
@@ -65,7 +64,6 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   swagger_path :create do
-    post("/data_structures")
     description("Creates Data Structure")
     produces("application/json")
 
@@ -99,23 +97,24 @@ defmodule TdDdWeb.DataStructureController do
 
       conn
       |> put_status(:created)
-      |> put_resp_header("location", data_structure_path(conn, :show, data_structure))
+      |> put_resp_header("location", Routes.data_structure_path(conn, :show, data_structure))
       |> render("show.json", data_structure: data_structure)
     else
       false ->
         conn
         |> put_status(:forbidden)
-        |> render(ErrorView, :"403")
+        |> put_view(ErrorView)
+        |> render("403.json")
 
       _error ->
         conn
         |> put_status(:unprocessable_entity)
-        |> render(ErrorView, :"422")
+        |> put_view(ErrorView)
+        |> render("422.json")
     end
   end
 
   swagger_path :show do
-    get("/data_structures/{id}")
     description("Show Data Structure")
     produces("application/json")
 
@@ -150,12 +149,14 @@ defmodule TdDdWeb.DataStructureController do
       false ->
         conn
         |> put_status(:forbidden)
-        |> render(ErrorView, :"403")
+        |> put_view(ErrorView)
+        |> render("403.json")
 
       _error ->
         conn
         |> put_status(:unprocessable_entity)
-        |> render(ErrorView, :"422")
+        |> put_view(ErrorView)
+        |> render("422.json")
     end
   end
 
@@ -171,7 +172,6 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   swagger_path :update do
-    patch("/data_structures/{id}")
     description("Update Data Structures")
     produces("application/json")
 
@@ -213,12 +213,14 @@ defmodule TdDdWeb.DataStructureController do
       false ->
         conn
         |> put_status(:forbidden)
-        |> render(ErrorView, :"403")
+        |> put_view(ErrorView)
+        |> render("403.json")
 
       _error ->
         conn
         |> put_status(:unprocessable_entity)
-        |> render(ErrorView, :"422")
+        |> put_view(ErrorView)
+        |> render("422.json")
     end
   end
 
@@ -226,7 +228,6 @@ defmodule TdDdWeb.DataStructureController do
   defp check_confidential_field(params, false), do: Map.drop(params, ["confidential"])
 
   swagger_path :delete do
-    delete("/data_structures/{id}")
     description("Delete Data Structure")
     produces("application/json")
 
@@ -252,12 +253,14 @@ defmodule TdDdWeb.DataStructureController do
       false ->
         conn
         |> put_status(:forbidden)
-        |> render(ErrorView, :"403")
+        |> put_view(ErrorView)
+        |> render("403.json")
 
       _error ->
         conn
         |> put_status(:unprocessable_entity)
-        |> render(ErrorView, :"422")
+        |> put_view(ErrorView)
+        |> render("422.json")
     end
   end
 
@@ -266,7 +269,6 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   swagger_path :search do
-    post("/data_structures/search")
     description("Data Structures")
 
     parameters do

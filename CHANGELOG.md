@@ -4,6 +4,7 @@
 
 ### Changed
 
+- [TD-1543] Updated to Phoenix 1.4, Ecto 3.0, Cowboy 2.0
 - [TD-1526] Include parents and siblings in show data_structure response
 
 ## [2.14.0] 2019-03-04

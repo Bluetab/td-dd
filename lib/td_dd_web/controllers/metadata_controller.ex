@@ -6,8 +6,8 @@ defmodule TdDdWeb.MetadataController do
   alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
   alias TdDd.DataStructures
   alias TdDd.Loader
-  alias TdDd.Search.IndexWorker
 
+  @index_worker Application.get_env(:td_dd, :index_worker)
   @taxonomy_cache Application.get_env(:td_dd, :taxonomy_cache)
 
   @data_structure_keys Application.get_env(:td_dd, :metadata)[:data_structure_keys]
@@ -60,7 +60,7 @@ defmodule TdDdWeb.MetadataController do
 
     Logger.info("Metadata uploaded. Elapsed seconds: #{DateTime.diff(end_time, start_time)}")
 
-    IndexWorker.reindex()
+    @index_worker.reindex()
   end
 
   defp parse_data_structures(%Upload{path: path}) do
