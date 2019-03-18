@@ -217,6 +217,50 @@
         "description": "Delete Rule"
       }
     },
+    "/api/rules/search/reindex_all": {
+      "get": {
+        "tags": [
+          "Search"
+        ],
+        "summary": "",
+        "responses": {
+          "500": {
+            "description": "Client Error"
+          },
+          "202": {
+            "description": "Accepted"
+          }
+        },
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [],
+        "operationId": "TdDqWeb.SearchController.reindex_all",
+        "description": "Reindex all ES indexes with DB content"
+      }
+    },
+    "/api/rules/search": {
+      "post": {
+        "tags": [
+          "Search"
+        ],
+        "summary": "",
+        "responses": {
+          "500": {
+            "description": "Client Error"
+          },
+          "200": {
+            "description": "Accepted"
+          }
+        },
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [],
+        "operationId": "TdDqWeb.SearchController.search",
+        "description": "Search for rules"
+      }
+    },
     "/api/rules/concept/{id}": {
       "get": {
         "tags": [

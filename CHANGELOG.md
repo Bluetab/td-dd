@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] 2019-03-11
+
+### Added
+
+- [TD-1468] Added search and filter functionality
+
 ## [2.14.0] 2019-03-04
 
 ### Added

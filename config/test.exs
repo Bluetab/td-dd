@@ -23,6 +23,12 @@ config :td_dq, TdDq.Repo,
   hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox
 
+config :td_dq, :elasticsearch,
+  search_service: TdDq.Search.MockSearch,
+  es_host: "localhost",
+  es_port: 9200,
+  type_name: "doc"
+
 config :td_dq, :audit_service, api_service: TdDqWeb.ApiServices.MockTdAuditService,
   audit_host: "localhost",
   audit_port: "4007",
