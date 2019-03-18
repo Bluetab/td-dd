@@ -8,7 +8,7 @@ defmodule TdDq.Search.MockSearch do
   def put_searchable(_something) do
   end
 
-  def delete_search(_something) do
+  def delete_searchable(_something) do
   end
 
   def search("quality_rule", %{query: %{bool: %{must: %{match_all: %{}}}}}) do

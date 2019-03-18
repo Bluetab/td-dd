@@ -225,13 +225,14 @@ defmodule TdDq.Rules do
 
   """
   def delete_rule(%Rule{} = rule) do
+    @search_service.delete_searchable(rule)
     rule
     |> Rule.delete_changeset()
     |> Repo.delete()
   end
 
   def soft_deletion(bcs_ids_to_delete, bcs_ids_to_avoid_deletion) do
-    Rule
+    rules = Rule
     |> where([r], not is_nil(r.business_concept_id))
     |> where([r], is_nil(r.deleted_at))
     |> where(
@@ -239,6 +240,12 @@ defmodule TdDq.Rules do
       r.business_concept_id in ^bcs_ids_to_delete or
         r.business_concept_id not in ^bcs_ids_to_avoid_deletion
     )
+
+    rules
+    |> Repo.all()
+    |> Enum.each(&(@search_service.delete_searchable(&1)))
+
+    rules
     |> update(set: [deleted_at: ^DateTime.utc_now()])
     |> Repo.update_all([])
   end

@@ -34,23 +34,24 @@ defmodule TdDq.Search do
     end
   end
 
-  # # DELETE
-  # def delete_search(%DataStructure{} = data_structure) do
-  #   response = ESClientApi.delete_content("data_structure", data_structure.id)
+  # DELETE
+  def delete_searchable(searchable) do
+    index_name = searchable.__struct__.index_name()
+    response = ESClientApi.delete_content(index_name, searchable.id)
 
-  #   case response do
-  #     {_, %HTTPoison.Response{status_code: 200}} ->
-  #       Logger.info("DataStructure #{data_structure.name} deleted status 200")
+    case response do
+      {_, %HTTPoison.Response{status_code: 200}} ->
+        Logger.info("Item on #{index_name} deleted status 200")
 
-  #     {_, %HTTPoison.Response{status_code: status_code}} ->
-  #       Logger.error(
-  #         "ES: Error deleting data_structure #{data_structure.name} status #{status_code}"
-  #       )
+      {_, %HTTPoison.Response{status_code: status_code}} ->
+        Logger.error(
+          "ES: Error deleting item on #{index_name} status #{status_code}"
+        )
 
-  #     {:error, %HTTPoison.Error{reason: :econnrefused}} ->
-  #       Logger.error("Error connecting to ES")
-  #   end
-  # end
+      {:error, %HTTPoison.Error{reason: :econnrefused}} ->
+        Logger.error("Error connecting to ES")
+    end
+  end
 
   def search(index_name, query) do
     Logger.debug(fn -> "Query: #{inspect(query)}" end)
