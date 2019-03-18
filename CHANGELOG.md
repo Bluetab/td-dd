@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [2.15.0] 2019-03-18
 
 ### Changed
 
