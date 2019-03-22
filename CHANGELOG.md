@@ -1,5 +1,11 @@
 # Changelog
 
+## [XXX] 
+
+### Fixed
+
+- [TD-1587] Avoid rules indexing when they are soft deleted
+
 ## [2.15.0] 2019-03-18
 
 ### Added
