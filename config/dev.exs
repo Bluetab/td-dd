@@ -30,7 +30,8 @@ config :td_dd, TdDdWeb.Endpoint,
 # different ports.
 
 # Do not include metadata nor timestamps in development logs
-config :logger, :console, format: "[$level] $message\n"
+config :logger, :console,
+  format: (System.get_env("EX_LOGGER_FORMAT") || "[$level] $message") <> "\n"
 
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.
