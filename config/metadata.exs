@@ -35,11 +35,4 @@ config :td_dd, :metadata,
     "child_group",
     "child_external_id",
     "child_name"
-  ],
-  data_structure_modifiable_fields: [
-    "description",
-    "confidential",
-    "df_name",
-    "df_content"
-  ],
-  data_field_modifiable_fields: ["description"]
+  ]

@@ -15,14 +15,8 @@ defmodule TdDdWeb.MetadataController do
   @data_structure_relation_keys Application.get_env(:td_dd, :metadata)[
                                   :data_structure_relation_keys
                                 ]
-  @data_structure_modifiable_fields Application.get_env(:td_dd, :metadata)[
-                                      :data_structure_modifiable_fields
-                                    ]
-  @data_field_modifiable_fields Application.get_env(:td_dd, :metadata)[
-                                  :data_field_modifiable_fields
-                                ]
 
-  @data_fields_not_blank ["ou", "description"]
+  @data_fields_not_blank ["ou", "description", "external_id"]
 
   @doc """
     Upload metadata:
@@ -99,14 +93,14 @@ defmodule TdDdWeb.MetadataController do
   defp csv_to_structure(record, domain_map) do
     record
     |> blank_to_nil(@data_fields_not_blank)
-    |> add_metadata(@data_structure_modifiable_fields)
+    |> add_metadata(@data_structure_keys)
     |> DataStructures.add_domain_id(domain_map)
     |> to_map(@data_structure_keys)
   end
 
   defp csv_to_field(record) do
     record
-    |> add_metadata(@data_field_modifiable_fields)
+    |> add_metadata(@data_field_keys)
     |> to_map(@data_field_keys)
     |> blanks_to_nils
   end
@@ -142,7 +136,7 @@ defmodule TdDdWeb.MetadataController do
   defp blank_to_nil(data, []), do: data
 
   defp blank_to_nil(data, field_name) do
-    value = Map.fetch!(data, field_name)
+    value = Map.get(data, field_name)
 
     case value do
       "" -> Map.put(data, field_name, nil)
@@ -170,11 +164,27 @@ defmodule TdDdWeb.MetadataController do
     end
   end
 
-  defp add_metadata(data, fields) do
-    metadata =
-      fields
-      |> Enum.reduce(%{}, &Map.put(&2, &1, Map.get(data, &1)))
+  defp add_metadata(data, fixed_fields) do
+    metadata = data
+    |> Map.keys
+    |> Kernel.--(fixed_fields)
+    |> Enum.map(&(&1
+      |> get_metadata_value(data)
+      |> split_metadata_group
+      |> verify_default_metadata_group
+    ))
+    |> Enum.group_by(&(Enum.at(&1, 0)), &(Enum.at(&1, 1)))
+    |> Enum.map(fn {key, value} -> {key, Map.new(value)} end)
+    |> Map.new
 
     Map.put(data, "metadata", metadata)
   end
+
+  defp get_metadata_value(key, data), do: {key, Map.get(data, key)}
+
+  defp split_metadata_group({key, value}), do: {String.split(key, ":"), value}
+
+  defp verify_default_metadata_group({[key], value}), do: ["default", {key, value}]
+  defp verify_default_metadata_group({[key | [group | _]], value}), do: [group, {key, value}]
+
 end

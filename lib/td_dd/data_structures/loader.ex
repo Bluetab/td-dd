@@ -128,19 +128,12 @@ defmodule TdDd.Loader do
     |> errors_or_structs
   end
 
-  defp create_or_update_data_structure(%{description: description} = attrs) do
-    attrs =
-      case description do
-        nil -> attrs |> Map.drop([:description])
-        _ -> attrs
-      end
-
+  defp create_or_update_data_structure(attrs) do
     case fetch_data_structure(Map.take(attrs, [:system, :name, :group, :external_id])) do
       nil ->
         %DataStructure{}
         |> DataStructure.changeset(attrs)
         |> Repo.insert()
-
       s ->
         s |> DataStructure.loader_changeset(attrs) |> Repo.update()
     end

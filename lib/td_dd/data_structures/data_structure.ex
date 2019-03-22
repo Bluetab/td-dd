@@ -13,11 +13,6 @@ defmodule TdDd.DataStructures.DataStructure do
 
   @taxonomy_cache Application.get_env(:td_dd, :taxonomy_cache)
 
-  @data_structure_modifiable_fields Application.get_env(:td_dd, :metadata)[
-                                      :data_structure_modifiable_fields
-                                    ]
-                                    |> Enum.map(&String.to_atom/1)
-
   schema "data_structures" do
     field(:description, :string)
     field(:domain_id, :integer)
@@ -41,12 +36,23 @@ defmodule TdDd.DataStructures.DataStructure do
   @doc false
   def update_changeset(%DataStructure{} = data_structure, attrs) do
     data_structure
-    |> cast(attrs, [:last_change_at, :last_change_by] ++ @data_structure_modifiable_fields)
+    |> cast(attrs, [
+      :last_change_at,
+      :last_change_by,
+      :confidential,
+      :df_name,
+      :df_content
+    ])
   end
 
   @doc false
   def loader_changeset(%DataStructure{} = data_structure, attrs) do
-    changeset = data_structure |> cast(attrs, @data_structure_modifiable_fields)
+    changeset = data_structure
+    |> cast(attrs, [
+      :last_change_at,
+      :last_change_by,
+      :metadata
+    ])
 
     case changeset.changes do
       %{} -> changeset

@@ -55,7 +55,8 @@ defmodule TdDdWeb.DataStructureView do
       confidential: data_structure.confidential,
       domain_id: data_structure.domain_id,
       last_change_at: data_structure.last_change_at,
-      inserted_at: data_structure.inserted_at
+      inserted_at: data_structure.inserted_at,
+      metadata: Map.get(data_structure, :metadata, %{})
     }
   end
 

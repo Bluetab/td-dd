@@ -16,7 +16,7 @@ defmodule TdDd.DataStructuresTest do
       system: "some system",
       metadata: %{}
     }
-    @update_attrs %{description: "some updated description"}
+    @update_attrs %{description: "some updated description", df_content: %{updated: "content"}}
     @invalid_attrs %{
       description: nil,
       group: nil,
@@ -79,7 +79,8 @@ defmodule TdDd.DataStructuresTest do
                DataStructures.update_data_structure(data_structure, @update_attrs)
 
       assert %DataStructure{} = data_structure
-      assert data_structure.description == "some updated description"
+      assert data_structure.description == "some description"
+      assert data_structure.df_content == %{updated: "content"}
     end
 
     test "delete_data_structure/1 deletes the data_structure" do
