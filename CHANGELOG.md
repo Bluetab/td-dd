@@ -1,6 +1,10 @@
 # Changelog
 
-## [XXX] 
+## [Unreleased]
+
+### Added
+
+- [TD-1571] Elixir's Logger config will check for EX_LOGGER_FORMAT variable to override format
 
 ### Fixed
 
