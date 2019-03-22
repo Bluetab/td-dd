@@ -6,6 +6,10 @@
 
 - [TD-1571] Elixir's Logger config will check for EX_LOGGER_FORMAT variable to override format
 
+### Fixed
+
+- [TD-1587] Avoid rules indexing when they are soft deleted
+
 ## [2.15.0] 2019-03-18
 
 ### Added

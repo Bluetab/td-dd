@@ -275,6 +275,15 @@ defmodule TdDq.RulesTest do
              ) == 2
     end
 
+    test "list_all_rules retrieves rules which are not deleted" do
+      rule_type = insert(:rule_type)
+      insert(:rule, deleted_at: DateTime.utc_now(), name: "Deleted Rule", rule_type: rule_type)
+      not_deleted_rule = insert(:rule, name: "Not Deleted Rule", rule_type: rule_type)
+
+      assert Rules.list_all_rules()
+             |> Enum.map(&Map.get(&1, :id)) == [not_deleted_rule.id]
+    end
+
     defp rule_preload(rule) do
       rule
       |> Repo.preload(:rule_type)
