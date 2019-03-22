@@ -56,6 +56,7 @@ defmodule TdDq.Rules do
 
   def list_all_rules do
     Rule
+    |> where([r], is_nil(r.deleted_at))
     |> Repo.all()
     |> Repo.preload(:rule_type)
     |> Enum.map(&preload_bc_version/1)

@@ -5,6 +5,7 @@ defmodule TdDq.Factory do
   def rule_factory do
     %TdDq.Rules.Rule {
       business_concept_id: "Rule Business Concept Id",
+      deleted_at: nil,
       description: "Rule Description",
       goal: 30,
       minimum: 12,
