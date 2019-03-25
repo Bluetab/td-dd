@@ -28,7 +28,11 @@ defmodule TdDd.DataStructures do
   """
   def list_data_structures(params \\ %{}) do
     filter = build_filter(DataStructure, params)
-    Repo.all(from(ds in DataStructure, where: ^filter))
+
+    DataStructure
+    |> where([ds], ^filter)
+    |> Repo.all()
+    |> Repo.preload(:system)
   end
 
   def build_filter(schema, params) do
@@ -74,7 +78,11 @@ defmodule TdDd.DataStructures do
       ** (Ecto.NoResultsError)
 
   """
-  def get_data_structure!(id), do: Repo.get!(DataStructure, id)
+  def get_data_structure!(id) do 
+    DataStructure 
+    |> Repo.get!(id) 
+    |> Repo.preload(:system)
+  end
 
   def get_data_structure_version!(data_structure_id, version) do
     attrs = %{data_structure_id: data_structure_id, version: version}
@@ -114,6 +122,7 @@ defmodule TdDd.DataStructures do
     |> Repo.all()
     |> Repo.preload([:data_structure])
     |> Enum.map(&(&1.data_structure))
+    |> Enum.map(&(&1 |> Repo.preload(:system)))
   end
 
   def get_latest_parents(data_structure_id) do
@@ -210,7 +219,7 @@ defmodule TdDd.DataStructures do
         |> with_latest_fields
         |> @search_service.put_search
 
-        result
+        {:ok, data_structure |> Repo.preload(:system)}
 
       _ ->
         result
@@ -566,4 +575,101 @@ defmodule TdDd.DataStructures do
       end)
     )
   end
+
+alias TdDd.DataStructures.System
+
+@doc """
+  Returns the list of systems.
+
+  ## Examples
+
+      iex> list_systems()
+      [%System{}, ...]
+
+  """
+  def list_systems do
+    Repo.all(System)
+  end
+
+  @doc """
+  Gets a single system.
+
+  Raises `Ecto.NoResultsError` if the System does not exist.
+
+  ## Examples
+
+      iex> get_system!(123)
+      %System{}
+
+      iex> get_system!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_system!(id), do: Repo.get!(System, id)
+
+  @doc """
+  Creates a system.
+
+  ## Examples
+
+      iex> create_system(%{field: value})
+      {:ok, %System{}}
+
+      iex> create_system(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_system(attrs \\ %{}) do
+    %System{}
+    |> System.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a system.
+
+  ## Examples
+
+      iex> update_system(system, %{field: new_value})
+      {:ok, %System{}}
+
+      iex> update_system(system, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_system(%System{} = system, attrs) do
+    system
+    |> System.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a System.
+
+  ## Examples
+
+      iex> delete_system(system)
+      {:ok, %System{}}
+
+      iex> delete_system(system)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_system(%System{} = system) do
+    Repo.delete(system)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking system changes.
+
+  ## Examples
+
+      iex> change_system(system)
+      %Ecto.Changeset{source: %System{}}
+
+  """
+  def change_system(%System{} = system) do
+    System.changeset(system, %{})
+  end
 end
+
