@@ -6,6 +6,7 @@ defmodule TdDd.Factory do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.System
 
   def user_factory do
     %User {
@@ -22,7 +23,7 @@ defmodule TdDd.Factory do
       last_change_at: DateTime.utc_now(),
       last_change_by: 0,
       name: "some name",
-      system: "some system",
+      system: build(:system),
       metadata: %{"description" => "some description"},
       ou: "My organization",
       versions: [],
@@ -55,4 +56,10 @@ defmodule TdDd.Factory do
     }
   end
 
+  def system_factory do
+    %System {
+      name: "My system",
+      external_ref: "System_ref"
+    }
+  end
 end
