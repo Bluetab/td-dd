@@ -2,14 +2,14 @@ defmodule TdDd.DataStructures.System do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias TdDd.DataStructures.System
+  alias TdDd.DataStructures.DataStructure
 
 
   schema "systems" do
     field :external_ref, :string
     field :name, :string
 
-    has_many :systems, System
+    has_many :data_structures, DataStructure
     timestamps()
   end
 
