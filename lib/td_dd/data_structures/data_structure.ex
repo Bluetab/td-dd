@@ -6,6 +6,7 @@ defmodule TdDd.DataStructures.DataStructure do
   alias TdDd.DataStructures.DataField
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.System
   alias TdDd.Searchable
   alias TdPerms.UserCache
 
@@ -25,7 +26,6 @@ defmodule TdDd.DataStructures.DataStructure do
     field(:last_change_at, :utc_datetime)
     field(:last_change_by, :integer)
     field(:name, :string)
-    field(:system, :string)
     field(:type, :string)
     field(:ou, :string)
     has_many(:versions, DataStructureVersion, on_delete: :delete_all)
@@ -34,6 +34,7 @@ defmodule TdDd.DataStructures.DataStructure do
     field(:df_content, :map)
     field(:confidential, :boolean)
     field(:external_id, :string)
+    belongs_to(:system, System, on_replace: :update)
 
     timestamps(type: :utc_datetime)
   end
@@ -58,7 +59,6 @@ defmodule TdDd.DataStructures.DataStructure do
   def changeset(%DataStructure{} = data_structure, attrs) do
     data_structure
     |> cast(attrs, [
-      :system,
       :external_id,
       :group,
       :name,
@@ -71,10 +71,10 @@ defmodule TdDd.DataStructures.DataStructure do
       :metadata,
       :confidential,
       :df_name,
-      :df_content
+      :df_content,
+      :system_id
     ])
-    |> validate_required([:system, :group, :name, :last_change_at, :last_change_by, :metadata])
-    |> validate_length(:system, max: 255)
+    |> validate_required([:group, :name, :last_change_at, :last_change_by, :metadata])
     |> validate_length(:group, max: 255)
     |> validate_length(:name, max: 255)
     |> validate_length(:type, max: 255)
@@ -99,6 +99,11 @@ defmodule TdDd.DataStructures.DataStructure do
       |> DataStructures.with_latest_fields()
       |> fill_items
 
+    system =
+      structure
+      |> Map.get(:system)
+      |> get_system_search_value()
+
     %{
       id: structure.id,
       description: structure.description,
@@ -110,7 +115,7 @@ defmodule TdDd.DataStructures.DataStructure do
       external_id: structure.external_id,
       domain_id: domain_id,
       domain_ids: domain_ids,
-      system: structure.system,
+      system: system,
       type: structure.type,
       inserted_at: structure.inserted_at,
       confidential: structure.confidential,
@@ -130,6 +135,12 @@ defmodule TdDd.DataStructures.DataStructure do
       end
     end)
   end
+
+  defp get_system_search_value(system) when is_map(system) do
+    Map.get(system, :name)
+  end
+
+  defp get_system_search_value(system), do: system
 
   def index_name(_) do
     "data_structure"

@@ -28,6 +28,7 @@ defmodule TdDdWeb.DataStructureView do
       data:
         data_structure
         |> data_structure_json
+        |> add_system(data_structure)
         |> add_dynamic_content(data_structure)
         |> add_data_fields(data_structure)
         |> add_versions(data_structure)
@@ -40,13 +41,13 @@ defmodule TdDdWeb.DataStructureView do
   def render("data_structure.json", %{data_structure: data_structure}) do
     data_structure
     |> data_structure_json
+    |> add_system(data_structure)
     |> add_dynamic_content(data_structure)
   end
 
   defp data_structure_json(data_structure) do
     %{
       id: data_structure.id,
-      system: data_structure.system,
       group: data_structure.group,
       name: data_structure.name,
       description: data_structure.description,
@@ -57,6 +58,27 @@ defmodule TdDdWeb.DataStructureView do
       last_change_at: data_structure.last_change_at,
       inserted_at: data_structure.inserted_at
     }
+  end
+
+  defp add_system(json, data_structure) do
+    system = Map.get(data_structure, :system)
+
+    case system do
+      nil ->
+        json
+
+      system ->
+        append_system(json, system)
+    end
+  end
+
+  defp append_system(json, system) when is_map(system) do
+    system_params = Map.take(system, [:external_ref, :id, :name])
+    Map.put(json, :system, system_params)
+  end
+
+  defp append_system(json, system) do
+    Map.put(json, :system, system)
   end
 
   defp data_structure_embedded(data_structure) do

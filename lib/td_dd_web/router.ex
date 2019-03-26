@@ -40,6 +40,8 @@ defmodule TdDdWeb.Router do
 
     resources("/comments", CommentController, except: [:new, :edit])
 
+    resources("/systems", SystemController, except: [:new, :edit])
+
     get("/data_structures/search/reindex_all", SearchController, :reindex_all)
 
     get("/data_structure_filters", DataStructureFilterController, :index)

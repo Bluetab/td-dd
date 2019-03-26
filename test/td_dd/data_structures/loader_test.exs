@@ -14,7 +14,10 @@ defmodule TdDd.LoaderTest do
 
   describe "loader" do
     test "load/1 loads changes in data structures, fields and relations" do
-      data_structure = insert(:data_structure, system: "SYS1", group: "GROUP1", name: "NAME1")
+      system = insert(:system, external_ref: "SYS1")
+      insert(:system, external_ref: "SYS2")
+
+      data_structure = insert(:data_structure, system: system, group: "GROUP1", name: "NAME1")
 
       dsv = insert(:data_structure_version, data_structure_id: data_structure.id, version: 0)
 
@@ -177,9 +180,11 @@ defmodule TdDd.LoaderTest do
     end
 
     test "load/1 with structures containing and external_id" do
+      system = insert(:system, external_ref: "SYS1")
+      insert(:system, external_ref: "SYS2")
       data_structure =
         insert(:data_structure,
-          system: "SYS1",
+          system: system,
           group: "GROUP1",
           name: "NAME1",
           external_id: "EXT1"

@@ -50,8 +50,11 @@ defmodule TdDd.DataStructuresTest do
     end
 
     test "create_data_structure/1 with valid data creates a data_structure" do
+      system = insert(:system)
+      valid_attrs = Map.merge(@valid_attrs, %{system_id: system.id})
+
       assert {:ok, %DataStructure{} = data_structure} =
-               DataStructures.create_data_structure(@valid_attrs)
+               DataStructures.create_data_structure(valid_attrs)
 
       assert data_structure.description == "some description"
       assert data_structure.group == "some group"
@@ -236,14 +239,14 @@ defmodule TdDd.DataStructuresTest do
       systems =
         [7, 8, 9, 10]
         |> Enum.map(&insert(:system, id: &1, external_ref: "SYS#{&1}"))
-      
+
       [ds1, ds2, ds3, ds4] =
         [7, 8, 9, 10]
         |> Enum.map(
           &insert(
-            :data_structure, 
-            id: &1, 
-            name: "DS#{&1}", 
+            :data_structure,
+            id: &1,
+            name: "DS#{&1}",
             system: Enum.find(systems, fn sys -> &1 == sys end)
           )
         )

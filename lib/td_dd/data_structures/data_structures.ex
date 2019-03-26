@@ -78,9 +78,9 @@ defmodule TdDd.DataStructures do
       ** (Ecto.NoResultsError)
 
   """
-  def get_data_structure!(id) do 
-    DataStructure 
-    |> Repo.get!(id) 
+  def get_data_structure!(id) do
+    DataStructure
+    |> Repo.get!(id)
     |> Repo.preload(:system)
   end
 
@@ -121,7 +121,7 @@ defmodule TdDd.DataStructures do
     |> Ecto.assoc(:children)
     |> Repo.all()
     |> Repo.preload([:data_structure])
-    |> Enum.map(&(&1.data_structure))
+    |> Enum.map(& &1.data_structure)
     |> Enum.map(&(&1 |> Repo.preload(:system)))
   end
 
@@ -150,7 +150,7 @@ defmodule TdDd.DataStructures do
     |> Ecto.assoc(:parents)
     |> Repo.all()
     |> Enum.flat_map(&get_children/1)
-    |> Enum.uniq
+    |> Enum.uniq()
   end
 
   def get_versions(%DataStructureVersion{} = dsv) do
@@ -555,7 +555,7 @@ defmodule TdDd.DataStructures do
       Enum.map(data_fields, fn field ->
         external_id =
           DataFieldCache.get_external_id(
-            data_structure.system,
+            data_structure.system.name,
             data_structure.group,
             data_structure.name,
             field.name
@@ -576,9 +576,9 @@ defmodule TdDd.DataStructures do
     )
   end
 
-alias TdDd.DataStructures.System
+  alias TdDd.DataStructures.System
 
-@doc """
+  @doc """
   Returns the list of systems.
 
   ## Examples
@@ -606,6 +606,24 @@ alias TdDd.DataStructures.System
 
   """
   def get_system!(id), do: Repo.get!(System, id)
+
+  @doc """
+  Gets a single system by external_ref.
+
+  ## Examples
+
+      iex> get_system_by_external_ref(ref)
+      %System{}
+
+      iex> get_system_by_external_ref(ref)
+      nil
+
+  """
+  def get_system_by_external_ref(external_ref) do
+    System
+    |> where([sys], sys.external_ref == ^external_ref)
+    |> Repo.one()
+  end
 
   @doc """
   Creates a system.
@@ -672,4 +690,3 @@ alias TdDd.DataStructures.System
     System.changeset(system, %{})
   end
 end
-

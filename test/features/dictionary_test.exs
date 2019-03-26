@@ -47,12 +47,32 @@ defmodule TdDd.DictionaryTest do
   end
 
   # Scenario: Create a new Data Structure
+  defgiven ~r/^an existing system with external reference "(?<external_ref>[^"]+)" and name "(?<name>[^"]+)"$/,
+           %{external_ref: external_ref, name: name},
+           _state do
+    token = get_user_token("app-admin")
 
-  defwhen ~r/^"(?<user_name>[^"]+)" tries to create a Data Structure with following data:$/,
-          %{user_name: user_name, table: fields},
+    system_attrs =
+      Map.new()
+      |> Map.put("external_ref", external_ref)
+      |> Map.put("name", name)
+
+    {:ok, status_code, _} = system_create(token, system_attrs)
+    assert status_code == 201
+  end
+
+  defwhen ~r/^"(?<user_name>[^"]+)" tries to create a Data Structure in the System "(?<external_ref>[^"]+)" with following data:$/,
+          %{user_name: user_name, external_ref: external_ref, table: fields},
           state do
     token = get_user_token(user_name)
-    attrs = field_value_to_api_attrs(fields, @fixed_data_structure_values)
+    system = get_system(token, external_ref)
+    system_id = Map.get(system, "id")
+
+    attrs =
+      fields
+      |> field_value_to_api_attrs(@fixed_data_structure_values)
+      |> Map.merge(%{system_id: system_id})
+
     {:ok, status_code, _} = data_structure_create(token, attrs)
     {:ok, Map.merge(state, %{status_code: status_code})}
   end
@@ -63,7 +83,7 @@ defmodule TdDd.DictionaryTest do
     assert status_code == to_response_code(http_status_code)
   end
 
-  defand ~r/^"(?<user_name>[^"]+)" is able to view data structure system "(?<system>[^"]+)" group "(?<group>[^"]+)" and structure "(?<structure>[^"]+)"  with following data:$/,
+  defand ~r/^"(?<user_name>[^"]+)" is able to view data structure in system "(?<system>[^"]+)" group "(?<group>[^"]+)" and structure "(?<structure>[^"]+)"  with following data:$/,
          %{
            user_name: user_name,
            system: system,
@@ -85,6 +105,23 @@ defmodule TdDd.DictionaryTest do
   end
 
   # Scenario: Create a new field related to an existing Data Structure inside Data Dictionary
+
+  defand ~r/^existing data structure in system "(?<external_ref>[^"]+)" with following data:$/,
+         %{external_ref: external_ref, table: fields},
+         state do
+    token_admin = get_user_token("app-admin")
+    system = get_system(token_admin, external_ref)
+    system_id = Map.get(system, "id")
+
+    attrs =
+      fields
+      |> field_value_to_api_attrs(@fixed_data_structure_values)
+      |> Map.merge(%{system_id: system_id})
+
+    {:ok, http_status_code, _} = data_structure_create(token_admin, attrs)
+    assert rc_created() == to_response_code(http_status_code)
+    {:ok, Map.merge(state, %{token_admin: token_admin})}
+  end
 
   defgiven ~r/^and existing data structure with following data:$/, %{table: fields}, state do
     token_admin = get_user_token("app-admin")
@@ -136,6 +173,20 @@ defmodule TdDd.DictionaryTest do
     assert rc_ok() == to_response_code(http_status_code)
     attrs = field_value_to_data_field(fields)
     assert_attrs(attrs, data_field)
+  end
+
+  defgiven ~r/^the existing systems:$/, %{table: fields}, _state do
+    token_admin = get_user_token("app-admin")
+
+    reponses =
+      fields
+      |> system_values_format()
+      |> Enum.map(&system_create(token_admin, &1))
+
+    assert Enum.all?(
+             reponses,
+             fn {:ok, status_code, _} -> status_code == 201 end
+           )
   end
 
   defwhen ~r/^"(?<user_name>[^"]+)" tries to load dictionary data with following information:$/,
@@ -264,6 +315,30 @@ defmodule TdDd.DictionaryTest do
 
   defp build_metadata(metadata, []), do: metadata
 
+  defp system_create(token, attrs) do
+    headers = [@headers, {"authorization", "Bearer #{token}"}]
+    body = %{"system" => attrs} |> JSON.encode!()
+
+    %HTTPoison.Response{status_code: status_code, body: resp} =
+      HTTPoison.post!(system_url(@endpoint, :create), body, headers, [])
+
+    {:ok, status_code, resp |> JSON.decode!()}
+  end
+
+  defp get_system(token, external_ref) do
+    {:ok, _, %{"data" => systems}} = system_index(token)
+    systems |> Enum.find(&(Map.get(&1, "external_ref") == external_ref))
+  end
+
+  defp system_values_format(fields) do
+    Enum.map(fields, fn f ->
+      name = Map.get(f, :Name)
+      external_ref = Map.get(f, :Reference)
+
+      %{"name" => name, "external_ref" => external_ref}
+    end)
+  end
+
   defp data_structure_create(token, attrs) do
     headers = [@headers, {"authorization", "Bearer #{token}"}]
     body = %{"data_structure" => attrs} |> JSON.encode!()
@@ -302,6 +377,15 @@ defmodule TdDd.DictionaryTest do
 
     %HTTPoison.Response{status_code: status_code, body: resp} =
       HTTPoison.get!(data_structure_url(@endpoint, :index), headers, [])
+
+    {:ok, status_code, resp |> JSON.decode!()}
+  end
+
+  defp system_index(token) do
+    headers = get_header(token)
+
+    %HTTPoison.Response{status_code: status_code, body: resp} =
+      HTTPoison.get!(system_url(@endpoint, :index), headers, [])
 
     {:ok, status_code, resp |> JSON.decode!()}
   end

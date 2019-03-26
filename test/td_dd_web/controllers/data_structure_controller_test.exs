@@ -117,7 +117,10 @@ defmodule TdDdWeb.DataStructureControllerTest do
   describe "create data_structure" do
     @tag authenticated_user: @admin_user_name
     test "renders data_structure when data is valid", %{conn: conn, swagger_schema: schema} do
-      conn = post(conn, Routes.data_structure_path(conn, :create), data_structure: @create_attrs)
+      system = insert(:system)
+      system_id = system |> Map.get(:id)
+      create_attrs = Map.merge(@create_attrs, %{system_id: system_id})
+      conn = post(conn, Routes.data_structure_path(conn, :create), data_structure: create_attrs)
       assert %{"id" => id} = json_response(conn, 201)["data"]
       validate_resp_schema(conn, schema, "DataStructureResponse")
 
@@ -137,7 +140,9 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert json_response_data["ou"] == "GM"
       assert json_response_data["group"] == "some group"
       assert json_response_data["name"] == "some name"
-      assert json_response_data["system"] == "some system"
+      assert json_response_data["system"]["id"] == system_id
+      assert json_response_data["system"]["external_ref"] == Map.get(system, :external_ref)
+      assert json_response_data["system"]["name"] == Map.get(system, :name)
       assert json_response_data["inserted_at"]
     end
 
@@ -386,9 +391,10 @@ defmodule TdDdWeb.DataStructureControllerTest do
   end
 
   defp create_structure_hierarchy(_) do
-    parent_structure = insert(:data_structure)
-    structure = insert(:data_structure)
-    child_structures = [insert(:data_structure), insert(:data_structure)]
+    system = insert(:system)
+    parent_structure = insert(:data_structure, system: system)
+    structure = insert(:data_structure, system: system)
+    child_structures = [insert(:data_structure, system: system), insert(:data_structure, system: system)]
     parent_version = insert(:data_structure_version, data_structure_id: parent_structure.id)
     structure_version = insert(:data_structure_version, data_structure_id: structure.id)
 
@@ -410,6 +416,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   defp create_data_structure_and_permissions(user_id, role_name, confidential) do
     domain_name = "domain_name"
     domain_id = 1
+    system = insert(:system, external_ref: "NewRef")
     MockTaxonomyCache.create_domain(%{name: domain_name, id: domain_id})
 
     MockPermissionResolver.create_acl_entry(%{
@@ -426,7 +433,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
         confidential: confidential,
         name: "confidential",
         ou: domain_name,
-        domain_id: domain_id
+        domain_id: domain_id,
+        system: system
       )
 
     insert(:data_structure_version, data_structure_id: data_structure.id)

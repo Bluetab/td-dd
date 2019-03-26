@@ -33,7 +33,6 @@ defmodule TdDdWeb.DataStructureVersionView do
     data_structure
     |> Map.take([
       :id,
-      :system,
       :group,
       :name,
       :description,
@@ -44,6 +43,28 @@ defmodule TdDdWeb.DataStructureVersionView do
       :last_change_at,
       :inserted_at
     ])
+    |> add_system(data_structure)
+  end
+
+  defp add_system(json, data_structure) do
+    system = Map.get(data_structure, :system)
+
+    case system do
+      nil ->
+        json
+
+      system ->
+        append_system(json, system)
+    end
+  end
+
+  defp append_system(json, system) when is_map(system) do
+    system_params = Map.take(system, [:external_ref, :id, :name])
+    Map.put(json, :system, system_params)
+  end
+
+  defp append_system(json, system) do
+    Map.put(json, :system, system)
   end
 
   defp data_structure_embedded(data_structure) do

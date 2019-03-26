@@ -51,7 +51,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
 
           properties do
             id(:integer, "Data Structure unique identifier", required: true)
-            system(:string, "Data Structure system", required: true)
+            system([:string, :object], "Data Structure system", required: true)
             group(:string, "Data Structure group", required: true)
             name(:string, "Data Structure name", required: true)
             description([:string, :null], "Data Structure description")
