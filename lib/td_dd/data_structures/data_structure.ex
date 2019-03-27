@@ -99,8 +99,8 @@ defmodule TdDd.DataStructures.DataStructure do
       |> DataStructures.with_latest_fields()
       |> fill_items
 
-    system =
-      structure
+    system = 
+      structure 
       |> Map.get(:system)
       |> get_system_search_value()
 
@@ -116,6 +116,7 @@ defmodule TdDd.DataStructures.DataStructure do
       domain_id: domain_id,
       domain_ids: domain_ids,
       system: system,
+      system_id: structure.system_id,
       type: structure.type,
       inserted_at: structure.inserted_at,
       confidential: structure.confidential,
@@ -136,11 +137,11 @@ defmodule TdDd.DataStructures.DataStructure do
     end)
   end
 
-  defp get_system_search_value(system) when is_map(system) do
-    Map.get(system, :name)
-  end
+  defp get_system_search_value(system) when is_binary(system), do: system
 
-  defp get_system_search_value(system), do: system
+  defp get_system_search_value(system) do
+    Map.take(system, [:id, :name, :external_ref])
+  end
 
   def index_name(_) do
     "data_structure"

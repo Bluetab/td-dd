@@ -51,7 +51,8 @@ defmodule TdDdWeb.SwaggerDefinitions do
 
           properties do
             id(:integer, "Data Structure unique identifier", required: true)
-            system([:string, :object], "Data Structure system", required: true)
+            system(:object, "Data Structure system", required: true)
+            system_id(:integer, "System Id", required: true)
             group(:string, "Data Structure group", required: true)
             name(:string, "Data Structure name", required: true)
             description([:string, :null], "Data Structure description")
@@ -70,7 +71,11 @@ defmodule TdDdWeb.SwaggerDefinitions do
 
           example(%{
             id: 123,
-            system: "Data Structure system",
+            system: %{
+              id: 1,
+              external_ref: "ExId",
+              name: "My Name"
+            },
             group: "Data Structure group",
             name: "Data Structure name",
             description: "Data Structure description",
@@ -78,6 +83,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
             ou: "General Management",
             confidential: "Data Structure confidentiality",
             inserted_at: "2018-05-08T17:17:59.691460",
+            system_id: 1,
             data_fields: [],
             metadata: %{
               "description" => "last description",
@@ -109,7 +115,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
             data_structure(
               Schema.new do
                 properties do
-                  system(:string, "Data Structure system", required: true)
+                  system_id(:integer, "System id", required: true)
                   group(:string, "Data Structure group", required: true)
                   name(:string, "Data Structure name", required: true)
                   description(:string, "Data Structure description")

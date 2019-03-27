@@ -20,7 +20,13 @@ defmodule TdDd.Search.Indexer do
     mapping_type = %{
       id: %{type: "long"},
       name: %{type: "text", fields: %{raw: %{type: "keyword"}}},
-      system: %{type: "text", fields: %{raw: %{type: "keyword"}}},
+      system: %{
+        properties: %{
+          id: %{type: "long"},
+          external_ref: %{type: "text", fields: %{raw: %{type: "keyword"}}},
+          name: %{type: "text", fields: %{raw: %{type: "keyword"}}} 
+        }
+      },
       group: %{type: "text", fields: %{raw: %{type: "keyword"}}},
       ou: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
       type: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
