@@ -344,6 +344,73 @@ defmodule TdDdWeb.SwaggerDefinitions do
     }
   end
 
+  def system_swagger_definitions do
+    %{
+      System:
+        swagger_schema do
+          title("System")
+          description("A System")
+
+          properties do
+            id(:integer, "System unique identifier", required: true)
+            external_id(:string, "Id representing a system externally", required: true)
+            name(:string, "System's name", required: true)
+          end
+
+          example(%{
+            name: "MicroStrategy",
+            external_id: "MS01",
+            id: 1
+          })
+        end,
+      SystemCreate:
+        swagger_schema do
+          properties do
+            system(
+              Schema.new do
+                properties do
+                  external_id(:string, "Id representing a system externally", required: true)
+                  name(:string, "System's name", required: true)
+                end
+              end
+            )
+          end
+        end,
+      SystemUpdate:
+        swagger_schema do
+          properties do
+            system(
+              Schema.new do
+                properties do
+                  external_id(:string, "Id representing a system externally")
+                  name(:string, "System's name")
+                end
+              end
+            )
+          end
+        end,
+      Systems:
+        swagger_schema do
+          title("Systems")
+          description("A collection of Systems")
+          type(:array)
+          items(Schema.ref(:System))
+        end,
+      SystemResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:System))
+          end
+        end,
+      SystemsResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:Systems))
+          end
+        end
+    }
+  end
+
   def filter_swagger_definitions do
     %{
       FilterResponse:
