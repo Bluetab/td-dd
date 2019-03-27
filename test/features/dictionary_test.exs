@@ -71,7 +71,7 @@ defmodule TdDd.DictionaryTest do
     attrs =
       fields
       |> field_value_to_api_attrs(@fixed_data_structure_values)
-      |> Map.merge(%{system_id: system_id})
+      |> Map.merge(%{"system_id" => system_id})
 
     {:ok, status_code, _} = data_structure_create(token, attrs)
     {:ok, Map.merge(state, %{status_code: status_code})}
@@ -362,7 +362,7 @@ defmodule TdDd.DictionaryTest do
     {:ok, _, %{"data" => data_structures}} = data_structure_index(token)
 
     data_structures
-    |> Enum.find(&(&1["system"] == system && &1["group"] == group && &1["name"] == name))
+    |> Enum.find(&(&1["system"]["external_ref"] == system && &1["group"] == group && &1["name"] == name))
     |> Map.get("id")
     |> data_structure_get(token)
   end
