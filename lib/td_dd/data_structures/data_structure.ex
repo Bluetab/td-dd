@@ -99,8 +99,8 @@ defmodule TdDd.DataStructures.DataStructure do
       |> DataStructures.with_latest_fields()
       |> fill_items
 
-    system = 
-      structure 
+    system =
+      structure
       |> Map.get(:system)
       |> get_system_search_value()
 

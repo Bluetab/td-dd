@@ -62,9 +62,9 @@ defmodule TdDdWeb.DataStructureView do
   end
 
   defp add_system_with_keys(json, data_structure, keys) do
-    system_params = 
-      data_structure 
-      |> Map.get(:system) 
+    system_params =
+      data_structure
+      |> Map.get(:system)
       |> Map.take(keys)
 
     Map.put(json, :system, system_params)

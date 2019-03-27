@@ -120,7 +120,11 @@ defmodule TdDd.Loader do
     num_rows
   end
 
-  defp upsert_structures(_repo, %{audit: audit_fields, external_ref: external_ref, structure_records: records}) do
+  defp upsert_structures(_repo, %{
+         audit: audit_fields,
+         external_ref: external_ref,
+         structure_records: records
+       }) do
     Logger.info("Upserting data structures (#{Enum.count(records)} records)")
 
     records
@@ -129,13 +133,15 @@ defmodule TdDd.Loader do
     |> errors_or_structs
   end
 
-  defp create_or_update_data_structure(%{description: description, external_ref: external_ref, system: system} = attrs) do
+  defp create_or_update_data_structure(
+         %{description: description, external_ref: external_ref, system: system} = attrs
+       ) do
     attrs =
       case description do
         nil -> attrs |> Map.drop([:description])
         _ -> attrs
       end
-  
+
     system_id = fetch_system_id(system, external_ref)
     attrs = Map.put(attrs, :system_id, system_id)
 
@@ -382,14 +388,14 @@ defmodule TdDd.Loader do
 
   defp fetch_system_id(system, nil) do
     system
-      |> DataStructures.get_system_by_name()
-      |> Map.get(:id)
+    |> DataStructures.get_system_by_name()
+    |> Map.get(:id)
   end
 
   defp fetch_system_id(_, external_ref) do
     external_ref
-      |> DataStructures.get_system_by_external_ref()
-      |> Map.get(:id)
+    |> DataStructures.get_system_by_external_ref()
+    |> Map.get(:id)
   end
 
   defp changeset_errors(results) do

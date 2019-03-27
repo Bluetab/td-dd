@@ -24,7 +24,7 @@ defmodule TdDd.Search.Indexer do
         properties: %{
           id: %{type: "long"},
           external_ref: %{type: "text", fields: %{raw: %{type: "keyword"}}},
-          name: %{type: "text", fields: %{raw: %{type: "keyword"}}} 
+          name: %{type: "text", fields: %{raw: %{type: "keyword"}}}
         }
       },
       group: %{type: "text", fields: %{raw: %{type: "keyword"}}},
@@ -54,7 +54,13 @@ defmodule TdDd.Search.Indexer do
       },
       df_content: content_mappings
     }
-    settings = %{analysis: %{normalizer: %{sortable: %{type: "custom", char_filter: [], filter: ["asciifolding"]}}}}
+
+    settings = %{
+      analysis: %{
+        normalizer: %{sortable: %{type: "custom", char_filter: [], filter: ["asciifolding"]}}
+      }
+    }
+
     %{mappings: %{doc: %{properties: mapping_type}}, settings: settings}
   end
 

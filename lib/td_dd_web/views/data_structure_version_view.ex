@@ -47,11 +47,11 @@ defmodule TdDdWeb.DataStructureVersionView do
   end
 
   defp add_system(json, data_structure) do
-    system_params = 
-      data_structure 
-      |> Map.get(:system) 
+    system_params =
+      data_structure
+      |> Map.get(:system)
       |> Map.take([:external_ref, :id, :name])
-      
+
     Map.put(json, :system, system_params)
   end
 
