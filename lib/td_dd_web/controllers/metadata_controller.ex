@@ -29,7 +29,7 @@ defmodule TdDdWeb.MetadataController do
     with %System{} <- DataStructures.get_system_by_external_id(system_reference) do
       do_upload(conn, params, system_reference)
       send_resp(conn, :no_content, "")
-    else 
+    else
       _ -> send_resp(conn, :not_found, Poison.encode!(%{error: "system.not_found"}))
     end
   rescue
@@ -37,7 +37,7 @@ defmodule TdDdWeb.MetadataController do
       Logger.error("While uploading #{e.message}")
       send_resp(conn, :unprocessable_entity, Poison.encode!(%{error: e.message}))
   end
-  
+
   @doc """
     Upload metadata:
 
@@ -107,7 +107,14 @@ defmodule TdDdWeb.MetadataController do
   defp load(conn, structure_records, field_records, relation_records, system_reference) do
     user_id = GuardianPlug.current_resource(conn).id
     audit_fields = %{last_change_at: DateTime.utc_now(), last_change_by: user_id}
-    Loader.load(structure_records, field_records, relation_records, audit_fields, system_reference)
+
+    Loader.load(
+      structure_records,
+      field_records,
+      relation_records,
+      audit_fields,
+      system_reference
+    )
   end
 
   defp csv_to_structure(record, domain_map) do
@@ -178,9 +185,14 @@ defmodule TdDdWeb.MetadataController do
   defp get_version(data, name) do
     case Map.get(data, name) do
       # TODO: Use nil instead of 0, automatically version in loader.ex
-      nil -> 0
-      "" -> 0
-      value -> String.to_integer(value)
+      nil ->
+        0
+
+      "" ->
+        0
+
+      value ->
+        String.to_integer(value)
     end
   end
 
