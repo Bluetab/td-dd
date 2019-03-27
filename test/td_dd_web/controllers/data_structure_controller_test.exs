@@ -100,7 +100,10 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
     @tag authenticated_user: @admin_user_name
     test "search all data_structures", %{conn: conn} do
-      conn = post(conn, Routes.data_structure_path(conn, :create), data_structure: @create_attrs)
+      system = insert(:system)
+      system_id = system |> Map.get(:id)
+      create_attrs = Map.merge(@create_attrs, %{system_id: system_id})
+      conn = post(conn, Routes.data_structure_path(conn, :create), data_structure: create_attrs)
       data_structure = conn.assigns.data_structure
       search_params = %{ou: " one§ tow §  #{data_structure.ou}"}
 

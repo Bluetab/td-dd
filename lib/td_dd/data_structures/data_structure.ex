@@ -74,7 +74,7 @@ defmodule TdDd.DataStructures.DataStructure do
       :df_content,
       :system_id
     ])
-    |> validate_required([:group, :name, :last_change_at, :last_change_by, :metadata])
+    |> validate_required([:group, :name, :last_change_at, :last_change_by, :metadata, :system_id])
     |> validate_length(:group, max: 255)
     |> validate_length(:name, max: 255)
     |> validate_length(:type, max: 255)

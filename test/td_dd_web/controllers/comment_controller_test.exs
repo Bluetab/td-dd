@@ -132,9 +132,12 @@ defmodule TdDdWeb.CommentControllerTest do
 
     @tag authenticated_user: @admin_user_name
     test "renders comment related to a Data Structure", %{conn: conn} do
+      system = insert(:system)
+      system_id = system |> Map.get(:id)
+      data_structure_attrs = Map.merge(@data_structure_attrs, %{system_id: system_id})
       conn =
         post(conn, Routes.data_structure_path(conn, :create),
-          data_structure: @data_structure_attrs
+          data_structure: data_structure_attrs
         )
 
       assert %{"id" => data_structure_id} = json_response(conn, 201)["data"]
