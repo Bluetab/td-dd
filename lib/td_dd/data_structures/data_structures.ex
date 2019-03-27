@@ -626,6 +626,24 @@ defmodule TdDd.DataStructures do
   end
 
   @doc """
+  Gets a single system by name.
+
+  ## Examples
+
+      iex> get_system_by_name(name)
+      %System{}
+
+      iex> get_system_by_name(name)
+      nil
+
+  """
+  def get_system_by_name(name) do
+    System
+    |> where([sys], sys.name == ^name)
+    |> Repo.one()
+  end
+
+  @doc """
   Creates a system.
 
   ## Examples
