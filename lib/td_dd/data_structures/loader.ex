@@ -290,11 +290,7 @@ defmodule TdDd.Loader do
       |> Enum.group_by(&{&1.system, &1.group, &1.name, &1.external_id, &1.version})
       |> Map.to_list()
       |> Enum.map(fn {sys_group_name_version, records} ->
-        val = Map.get(versions_by_sys_group_name_version, sys_group_name_version)
-        if is_nil(val) do
-          IO.inspect [sys_group_name_version]
-        end
-        {val, records}
+        {Map.get(versions_by_sys_group_name_version, sys_group_name_version), records}
       end)
       |> Enum.map(fn {version, records} -> structure_diff(version, records) end)
 
