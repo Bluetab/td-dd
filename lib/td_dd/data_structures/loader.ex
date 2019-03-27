@@ -135,7 +135,7 @@ defmodule TdDd.Loader do
         nil -> attrs |> Map.drop([:description])
         _ -> attrs
       end
-
+  
     system_id = fetch_system_id(system, external_ref)
     attrs = Map.put(attrs, :system_id, system_id)
 
@@ -358,8 +358,8 @@ defmodule TdDd.Loader do
   defp find_field(_data_fields, _), do: nil
 
   defp replace_system_value(%{system: system} = attrs) do
-    external_ref = Map.get(system, :external_ref)
-    Map.put(attrs, :system, external_ref)
+    name = Map.get(system, :name)
+    Map.put(attrs, :system, name)
   end
 
   defp errors_or_structs(results) do
@@ -382,7 +382,7 @@ defmodule TdDd.Loader do
 
   defp fetch_system_id(system, nil) do
     system
-      |> DataStructures.get_system_by_external_ref()
+      |> DataStructures.get_system_by_name()
       |> Map.get(:id)
   end
 
