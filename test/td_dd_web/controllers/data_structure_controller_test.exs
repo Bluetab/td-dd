@@ -144,7 +144,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert json_response_data["group"] == "some group"
       assert json_response_data["name"] == "some name"
       assert json_response_data["system"]["id"] == system_id
-      assert json_response_data["system"]["external_ref"] == Map.get(system, :external_ref)
+      assert json_response_data["system"]["external_id"] == Map.get(system, :external_id)
       assert json_response_data["system"]["name"] == Map.get(system, :name)
       assert json_response_data["inserted_at"]
     end
@@ -419,7 +419,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   defp create_data_structure_and_permissions(user_id, role_name, confidential) do
     domain_name = "domain_name"
     domain_id = 1
-    system = insert(:system, external_ref: "NewRef")
+    system = insert(:system, external_id: "NewRef")
     MockTaxonomyCache.create_domain(%{name: domain_name, id: domain_id})
 
     MockPermissionResolver.create_acl_entry(%{

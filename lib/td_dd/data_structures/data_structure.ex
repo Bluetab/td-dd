@@ -140,7 +140,7 @@ defmodule TdDd.DataStructures.DataStructure do
   defp get_system_search_value(system) when is_binary(system), do: system
 
   defp get_system_search_value(system) do
-    Map.take(system, [:id, :name, :external_ref])
+    Map.take(system, [:id, :name, :external_id])
   end
 
   def index_name(_) do

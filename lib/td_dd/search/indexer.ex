@@ -23,7 +23,7 @@ defmodule TdDd.Search.Indexer do
       system: %{
         properties: %{
           id: %{type: "long"},
-          external_ref: %{type: "text", fields: %{raw: %{type: "keyword"}}},
+          external_id: %{type: "text", fields: %{raw: %{type: "keyword"}}},
           name: %{type: "text", fields: %{raw: %{type: "keyword"}}}
         }
       },

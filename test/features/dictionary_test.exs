@@ -47,25 +47,25 @@ defmodule TdDd.DictionaryTest do
   end
 
   # Scenario: Create a new Data Structure
-  defgiven ~r/^an existing system with external reference "(?<external_ref>[^"]+)" and name "(?<name>[^"]+)"$/,
-           %{external_ref: external_ref, name: name},
+  defgiven ~r/^an existing system with external reference "(?<external_id>[^"]+)" and name "(?<name>[^"]+)"$/,
+           %{external_id: external_id, name: name},
            _state do
     token = get_user_token("app-admin")
 
     system_attrs =
       Map.new()
-      |> Map.put("external_ref", external_ref)
+      |> Map.put("external_id", external_id)
       |> Map.put("name", name)
 
     {:ok, status_code, _} = system_create(token, system_attrs)
     assert status_code == 201
   end
 
-  defwhen ~r/^"(?<user_name>[^"]+)" tries to create a Data Structure in the System "(?<external_ref>[^"]+)" with following data:$/,
-          %{user_name: user_name, external_ref: external_ref, table: fields},
+  defwhen ~r/^"(?<user_name>[^"]+)" tries to create a Data Structure in the System "(?<external_id>[^"]+)" with following data:$/,
+          %{user_name: user_name, external_id: external_id, table: fields},
           state do
     token = get_user_token(user_name)
-    system = get_system(token, external_ref)
+    system = get_system(token, external_id)
     system_id = Map.get(system, "id")
 
     attrs =
@@ -106,11 +106,11 @@ defmodule TdDd.DictionaryTest do
 
   # Scenario: Create a new field related to an existing Data Structure inside Data Dictionary
 
-  defand ~r/^existing data structure in system "(?<external_ref>[^"]+)" with following data:$/,
-         %{external_ref: external_ref, table: fields},
+  defand ~r/^existing data structure in system "(?<external_id>[^"]+)" with following data:$/,
+         %{external_id: external_id, table: fields},
          state do
     token_admin = get_user_token("app-admin")
-    system = get_system(token_admin, external_ref)
+    system = get_system(token_admin, external_id)
     system_id = Map.get(system, "id")
 
     attrs =
@@ -325,17 +325,17 @@ defmodule TdDd.DictionaryTest do
     {:ok, status_code, resp |> JSON.decode!()}
   end
 
-  defp get_system(token, external_ref) do
+  defp get_system(token, external_id) do
     {:ok, _, %{"data" => systems}} = system_index(token)
-    systems |> Enum.find(&(Map.get(&1, "external_ref") == external_ref))
+    systems |> Enum.find(&(Map.get(&1, "external_id") == external_id))
   end
 
   defp system_values_format(fields) do
     Enum.map(fields, fn f ->
       name = Map.get(f, :Name)
-      external_ref = Map.get(f, :Reference)
+      external_id = Map.get(f, :Reference)
 
-      %{"name" => name, "external_ref" => external_ref}
+      %{"name" => name, "external_id" => external_id}
     end)
   end
 
@@ -362,7 +362,7 @@ defmodule TdDd.DictionaryTest do
     {:ok, _, %{"data" => data_structures}} = data_structure_index(token)
 
     data_structures
-    |> Enum.find(&(&1["system"]["external_ref"] == system && &1["group"] == group && &1["name"] == name))
+    |> Enum.find(&(&1["system"]["external_id"] == system && &1["group"] == group && &1["name"] == name))
     |> Map.get("id")
     |> data_structure_get(token)
   end

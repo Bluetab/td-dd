@@ -50,7 +50,7 @@ defmodule TdDdWeb.DataStructureVersionView do
     system_params =
       data_structure
       |> Map.get(:system)
-      |> Map.take([:external_ref, :id, :name])
+      |> Map.take([:external_id, :id, :name])
 
     Map.put(json, :system, system_params)
   end

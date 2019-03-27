@@ -73,7 +73,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
             id: 123,
             system: %{
               id: 1,
-              external_ref: "ExId",
+              external_id: "ExId",
               name: "My Name"
             },
             group: "Data Structure group",

@@ -59,7 +59,7 @@ defmodule TdDd.Factory do
   def system_factory do
     %System {
       name: "My system",
-      external_ref: "System_ref"
+      external_id: "System_ref"
     }
   end
 end

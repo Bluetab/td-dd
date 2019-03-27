@@ -64,7 +64,7 @@ defmodule TdDd.DataStructuresTest do
 
       assert data_structure.last_change_by == 42
       assert data_structure.name == "some name"
-      assert data_structure.system.external_ref == "System_ref"
+      assert data_structure.system.external_id == "System_ref"
     end
 
     test "create_data_structure/1 with invalid data returns error changeset" do
@@ -201,9 +201,9 @@ defmodule TdDd.DataStructuresTest do
     end
 
     test "get_version_children/1 returns child versions" do
-      sys1 = insert(:system, name: "Sys1", external_ref: "Ref 1")
-      sys2 = insert(:system, name: "Sys2", external_ref: "Ref 2")
-      sys3 = insert(:system, name: "Sys3", external_ref: "Ref 3")
+      sys1 = insert(:system, name: "Sys1", external_id: "Ref 1")
+      sys2 = insert(:system, name: "Sys2", external_id: "Ref 2")
+      sys3 = insert(:system, name: "Sys3", external_id: "Ref 3")
       ds1 = insert(:data_structure, id: 1, name: "DS1", system: sys1)
       ds2 = insert(:data_structure, id: 2, name: "DS2", system: sys2)
       ds3 = insert(:data_structure, id: 3, name: "DS3", system: sys3)
@@ -218,9 +218,9 @@ defmodule TdDd.DataStructuresTest do
     end
 
     test "get_version_parents/1 returns parent versions" do
-      sys1 = insert(:system, name: "Sys1", external_ref: "Ref 1")
-      sys2 = insert(:system, name: "Sys2", external_ref: "Ref 2")
-      sys3 = insert(:system, name: "Sys3", external_ref: "Ref 3")
+      sys1 = insert(:system, name: "Sys1", external_id: "Ref 1")
+      sys2 = insert(:system, name: "Sys2", external_id: "Ref 2")
+      sys3 = insert(:system, name: "Sys3", external_id: "Ref 3")
       ds1 = insert(:data_structure, id: 4, name: "DS4", system: sys1)
       ds2 = insert(:data_structure, id: 5, name: "DS5", system: sys2)
       ds3 = insert(:data_structure, id: 6, name: "DS6", system: sys3)
@@ -238,7 +238,7 @@ defmodule TdDd.DataStructuresTest do
     test "get_siblings/1 returns sibling structures" do
       systems =
         [7, 8, 9, 10]
-        |> Enum.map(&insert(:system, id: &1, external_ref: "SYS#{&1}"))
+        |> Enum.map(&insert(:system, id: &1, external_id: "SYS#{&1}"))
 
       [ds1, ds2, ds3, ds4] =
         [7, 8, 9, 10]
@@ -274,9 +274,9 @@ defmodule TdDd.DataStructuresTest do
   describe "systems" do
     alias TdDd.DataStructures.System
 
-    @valid_attrs %{external_ref: "some external_ref", name: "some name"}
-    @update_attrs %{external_ref: "some updated external_ref", name: "some updated name"}
-    @invalid_attrs %{external_ref: nil, name: nil}
+    @valid_attrs %{external_id: "some external_id", name: "some name"}
+    @update_attrs %{external_id: "some updated external_id", name: "some updated name"}
+    @invalid_attrs %{external_id: nil, name: nil}
 
     def system_fixture(attrs \\ %{}) do
       {:ok, system} =
@@ -299,7 +299,7 @@ defmodule TdDd.DataStructuresTest do
 
     test "create_system/1 with valid data creates a system" do
       assert {:ok, %System{} = system} = DataStructures.create_system(@valid_attrs)
-      assert system.external_ref == "some external_ref"
+      assert system.external_id == "some external_id"
       assert system.name == "some name"
     end
 
@@ -310,7 +310,7 @@ defmodule TdDd.DataStructuresTest do
     test "update_system/2 with valid data updates the system" do
       system = system_fixture()
       assert {:ok, %System{} = system} = DataStructures.update_system(system, @update_attrs)
-      assert system.external_ref == "some updated external_ref"
+      assert system.external_id == "some updated external_id"
       assert system.name == "some updated name"
     end
 

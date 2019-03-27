@@ -608,20 +608,20 @@ defmodule TdDd.DataStructures do
   def get_system!(id), do: Repo.get!(System, id)
 
   @doc """
-  Gets a single system by external_ref.
+  Gets a single system by external_id.
 
   ## Examples
 
-      iex> get_system_by_external_ref(ref)
+      iex> get_system_by_external_id(ref)
       %System{}
 
-      iex> get_system_by_external_ref(ref)
+      iex> get_system_by_external_id(ref)
       nil
 
   """
-  def get_system_by_external_ref(external_ref) do
+  def get_system_by_external_id(external_id) do
     System
-    |> where([sys], sys.external_ref == ^external_ref)
+    |> where([sys], sys.external_id == ^external_id)
     |> Repo.one()
   end
 

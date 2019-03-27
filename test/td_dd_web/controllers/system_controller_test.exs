@@ -7,14 +7,14 @@ defmodule TdDdWeb.SystemControllerTest do
   alias TdDdWeb.ApiServices.MockTdAuthService
 
   @create_attrs %{
-    external_ref: "some external_ref",
+    external_id: "some external_id",
     name: "some name"
   }
   @update_attrs %{
-    external_ref: "some updated external_ref",
+    external_id: "some updated external_id",
     name: "some updated name"
   }
-  @invalid_attrs %{external_ref: nil, name: nil}
+  @invalid_attrs %{external_id: nil, name: nil}
 
   setup_all do
     start_supervised(MockPermissionResolver)
@@ -51,7 +51,7 @@ defmodule TdDdWeb.SystemControllerTest do
 
       assert %{
                "id" => id,
-               "external_ref" => "some external_ref",
+               "external_id" => "some external_id",
                "name" => "some name"
              } == json_response(conn, 200)["data"]
     end
@@ -75,7 +75,7 @@ defmodule TdDdWeb.SystemControllerTest do
 
       assert %{
                "id" => id,
-               "external_ref" => "some updated external_ref",
+               "external_id" => "some updated external_id",
                "name" => "some updated name"
              } == json_response(conn, 200)["data"]
     end

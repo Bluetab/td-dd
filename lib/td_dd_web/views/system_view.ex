@@ -13,6 +13,6 @@ defmodule TdDdWeb.SystemView do
   def render("system.json", %{system: system}) do
     %{id: system.id,
       name: system.name,
-      external_ref: system.external_ref}
+      external_id: system.external_id}
   end
 end

@@ -28,7 +28,7 @@ defmodule TdDdWeb.DataStructureView do
       data:
         data_structure
         |> data_structure_json
-        |> add_system_with_keys(data_structure, [:external_ref, :id, :name])
+        |> add_system_with_keys(data_structure, [:external_id, :id, :name])
         |> add_dynamic_content(data_structure)
         |> add_data_fields(data_structure)
         |> add_versions(data_structure)
@@ -41,7 +41,7 @@ defmodule TdDdWeb.DataStructureView do
   def render("data_structure.json", %{data_structure: data_structure}) do
     data_structure
     |> data_structure_json
-    |> add_system_with_keys(data_structure, ["external_ref", "id", "name"])
+    |> add_system_with_keys(data_structure, ["external_id", "id", "name"])
     |> add_dynamic_content(data_structure)
   end
 

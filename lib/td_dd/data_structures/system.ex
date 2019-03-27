@@ -6,7 +6,7 @@ defmodule TdDd.DataStructures.System do
   alias TdDd.DataStructures.DataStructure
 
   schema "systems" do
-    field(:external_ref, :string)
+    field(:external_id, :string)
     field(:name, :string)
 
     has_many(:data_structures, DataStructure)
@@ -16,7 +16,7 @@ defmodule TdDd.DataStructures.System do
   @doc false
   def changeset(system, attrs) do
     system
-    |> cast(attrs, [:name, :external_ref])
-    |> validate_required([:name, :external_ref])
+    |> cast(attrs, [:name, :external_id])
+    |> validate_required([:name, :external_id])
   end
 end
