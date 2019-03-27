@@ -3,8 +3,8 @@ defmodule TdDd.Repo.Migrations.CreateSystems do
 
   def change do
     create table(:systems) do
-      add :name, :string
-      add :external_ref, :string
+      add :name, :string, null: false
+      add :external_ref, :string, null: false
       
       timestamps()
     end
