@@ -5,6 +5,7 @@ defmodule TdDdWeb.MetadataController do
   alias Plug.Upload
   alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
   alias TdDd.DataStructures
+  alias TdDd.DataStructures.System
   alias TdDd.Loader
 
   @index_worker Application.get_env(:td_dd, :index_worker)
@@ -24,6 +25,19 @@ defmodule TdDdWeb.MetadataController do
 
   @data_fields_not_blank ["ou", "description"]
 
+  def upload_by_system(conn, %{"system_reference" => system_reference} = params) do
+    with %System{} <- DataStructures.get_system_by_external_id(system_reference) do
+      do_upload(conn, params, system_reference)
+      send_resp(conn, :no_content, "")
+    else 
+      _ -> send_resp(conn, :not_found, Poison.encode!(%{error: "system.not_found"}))
+    end
+  rescue
+    e in RuntimeError ->
+      Logger.error("While uploading #{e.message}")
+      send_resp(conn, :unprocessable_entity, Poison.encode!(%{error: e.message}))
+  end
+  
   @doc """
     Upload metadata:
 
@@ -43,7 +57,7 @@ defmodule TdDdWeb.MetadataController do
       send_resp(conn, :unprocessable_entity, Poison.encode!(%{error: e.message}))
   end
 
-  defp do_upload(conn, params) do
+  defp do_upload(conn, params, system_reference \\ nil) do
     Logger.info("Uploading metadata...")
 
     start_time = DateTime.utc_now()
@@ -54,7 +68,7 @@ defmodule TdDdWeb.MetadataController do
     relation_recs =
       params |> Map.get("data_structure_relations") |> parse_data_structure_relations
 
-    load(conn, structure_recs, field_recs, relation_recs)
+    load(conn, structure_recs, field_recs, relation_recs, system_reference)
 
     end_time = DateTime.utc_now()
 
@@ -90,10 +104,10 @@ defmodule TdDdWeb.MetadataController do
 
   defp parse_data_structure_relations(nil), do: []
 
-  defp load(conn, structure_records, field_records, relation_records) do
+  defp load(conn, structure_records, field_records, relation_records, system_reference) do
     user_id = GuardianPlug.current_resource(conn).id
     audit_fields = %{last_change_at: DateTime.utc_now(), last_change_by: user_id}
-    Loader.load(structure_records, field_records, relation_records, audit_fields)
+    Loader.load(structure_records, field_records, relation_records, audit_fields, system_reference)
   end
 
   defp csv_to_structure(record, domain_map) do

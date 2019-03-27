@@ -141,7 +141,8 @@ defmodule TdDd.Loader do
         nil -> attrs |> Map.drop([:description])
         _ -> attrs
       end
-
+    # TODO: we won't need to fetch the system for each structure
+    # if the system_reference is specified
     system_id = fetch_system_id(system, system_reference)
     attrs = Map.put(attrs, :system_id, system_id)
 
@@ -219,6 +220,7 @@ defmodule TdDd.Loader do
   end
 
   defp key_value(%DataStructureVersion{data_structure: data_structure, version: version} = dsv) do
+    # TODO: we won't need the system in our key once the reference is specified
     map =
       data_structure
       |> Map.take([:system, :group, :name, :external_id])
@@ -258,6 +260,7 @@ defmodule TdDd.Loader do
          child_external_id: child_external_id
        }) do
     # TODO: Support versions other than 0 for parent/child relationships
+    # TODO: we won't need the system in our key once the reference is specified
     parent =
       Map.get(
         versions_by_sys_group_name_version,
@@ -283,7 +286,7 @@ defmodule TdDd.Loader do
         Enum.count(records)
       } records)"
     )
-
+    # TODO: we won't need the system in our key once the reference is specified
     diffs =
       records
       |> Enum.map(&(&1 |> Map.merge(audit_fields)))

@@ -326,6 +326,16 @@ defmodule TdDd.DataStructuresTest do
       assert_raise Ecto.NoResultsError, fn -> DataStructures.get_system!(system.id) end
     end
 
+    test "get_system_by_external_id/1 gets the system" do
+      system = system_fixture()
+      assert DataStructures.get_system_by_external_id(system.external_id) == system
+    end
+
+    test "get_system_by_name/1 gets the system" do
+      system = system_fixture()
+      assert DataStructures.get_system_by_name(system.name) == system
+    end
+
     test "change_system/1 returns a system changeset" do
       system = system_fixture()
       assert %Ecto.Changeset{} = DataStructures.change_system(system)
