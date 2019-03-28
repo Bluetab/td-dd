@@ -59,7 +59,6 @@ defmodule TdDdWeb.Router do
         version: Application.spec(:td_dd, :vsn),
         title: "Truedat Data Dictionary Service"
       },
-      basePath: "/api",
       securityDefinitions: %{
         bearer: %{
           type: "apiKey",
