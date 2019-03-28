@@ -707,4 +707,12 @@ defmodule TdDd.DataStructures do
   def change_system(%System{} = system) do
     System.changeset(system, %{})
   end
+
+  def diff(%System{} = old, %System{} = new) do
+    [:external_id, :name]
+     |> Enum.map(fn field -> {field, Map.get(old, field), Map.get(new, field)} end)
+     |> Enum.reject(fn {_, old, new} -> old == new end)
+     |> Enum.map(fn {field, _, new} -> {field, new} end)
+     |> Map.new()
+  end
 end
