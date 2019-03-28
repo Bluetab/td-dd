@@ -5,6 +5,7 @@ defmodule TdDdWeb.SystemControllerTest do
   alias TdDd.DataStructures
   alias TdDd.DataStructures.System
   alias TdDd.Permissions.MockPermissionResolver
+  alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
 
   @create_attrs %{
@@ -18,8 +19,9 @@ defmodule TdDdWeb.SystemControllerTest do
   @invalid_attrs %{external_id: nil, name: nil}
 
   setup_all do
-    start_supervised(MockPermissionResolver)
+    start_supervised(MockTdAuditService)
     start_supervised(MockTdAuthService)
+    start_supervised(MockPermissionResolver)
     :ok
   end
 

@@ -17,7 +17,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
     last_change_at: "2010-04-17 14:00:00Z",
     last_change_by: 42,
     name: "some name",
-    system: "some system",
     type: "csv",
     ou: "GM"
   }
@@ -27,7 +26,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
     last_change_at: "2011-05-18 15:01:01Z",
     last_change_by: 43,
     name: "some updated name",
-    system: "some updated system",
     type: "table",
     ou: "EM"
   }
