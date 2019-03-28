@@ -2,6 +2,7 @@ defmodule TdDdWeb.SystemController do
   use TdDdWeb, :controller
   use PhoenixSwagger
 
+  alias TdDd.Audit.AuditSupport
   alias TdDd.DataStructures
   alias TdDd.DataStructures.System
   alias TdDdWeb.SwaggerDefinitions
@@ -38,6 +39,7 @@ defmodule TdDdWeb.SystemController do
 
   def create(conn, %{"system" => system_params}) do
     with {:ok, %System{} = system} <- DataStructures.create_system(system_params) do
+      AuditSupport.system_created(conn, system)
       conn
       |> put_status(:created)
       |> put_resp_header("location", Routes.system_path(conn, :show, system))
@@ -76,9 +78,10 @@ defmodule TdDdWeb.SystemController do
   end
 
   def update(conn, %{"id" => id, "system" => system_params}) do
-    system = DataStructures.get_system!(id)
+    old_system = DataStructures.get_system!(id)
 
-    with {:ok, %System{} = system} <- DataStructures.update_system(system, system_params) do
+    with {:ok, %System{} = system} <- DataStructures.update_system(old_system, system_params) do
+      AuditSupport.system_updated(conn, old_system, system)
       render(conn, "show.json", system: system)
     end
   end

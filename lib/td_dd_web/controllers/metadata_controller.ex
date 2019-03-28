@@ -26,6 +26,7 @@ defmodule TdDdWeb.MetadataController do
   @data_fields_not_blank ["ou", "description"]
 
   def upload_by_system(conn, %{"system_reference" => system_reference} = params) do
+    # TODO: Complete implementation once the metada is loaded by System
     with %System{} <- DataStructures.get_system_by_external_id(system_reference) do
       do_upload(conn, params, system_reference)
       send_resp(conn, :no_content, "")
