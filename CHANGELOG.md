@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-1571] Elixir's Logger config will check for EX_LOGGER_FORMAT variable to override format
+- [TD-1593] System as an independent entity 
 
 ## [2.15.0] 2019-03-18
 
