@@ -21,7 +21,6 @@ defmodule TdDq.Rules do
     "table" => {"structure", 2},
     "column" => {"field", 3}
   }
-  @relation_field_types ["business_concept_to_field", "business_concept_to_field_master"]
   @relation_cache Application.get_env(:td_dq, :relation_cache)
 
   @df_cache Application.get_env(:td_dq, :df_cache)
@@ -286,7 +285,7 @@ defmodule TdDq.Rules do
   defp retrieve_cache_information(%Rule{business_concept_id: bc_id} = rule, list_filters) do
     list_resources =
       bc_id
-      |> @relation_cache.get_resources("business_concept", %{relation_type: @relation_field_types})
+      |> @relation_cache.get_resources("business_concept")
       |> Enum.filter(fn %{resource_type: resource_type} -> resource_type == "data_field" end)
       |> Enum.uniq_by(fn %{resource_id: resource_id} -> resource_id end)
 
