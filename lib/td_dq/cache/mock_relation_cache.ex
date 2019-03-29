@@ -10,11 +10,8 @@ defmodule TdDq.MockRelationCache do
     Agent.update(MockRelationCache, &[relation | &1])
   end
 
-  def get_resources(_resource_id, _resource_type, %{relation_type: rt_values}) do
+  def get_resources(_resource_id, _resource_type) do
     MockRelationCache
     |> Agent.get(& &1)
-    |> Enum.filter(fn %{relation_type: relation_type} ->
-      Enum.member?(rt_values, relation_type)
-    end)
   end
 end
