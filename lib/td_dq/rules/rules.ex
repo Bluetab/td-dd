@@ -280,7 +280,7 @@ defmodule TdDq.Rules do
       system_params
       |> Enum.map(&Map.get(&1, "name"))
 
-    ["system" | filters_in_system_params]
+    ["system" | filters_in_system_params] |> Enum.uniq
   end
 
   defp retrieve_cache_information(%Rule{business_concept_id: bc_id} = rule, list_filters) do
@@ -293,6 +293,7 @@ defmodule TdDq.Rules do
     system_values =
       list_filters
       |> Enum.map(&append_values(&1, list_resources))
+      |> Enum.reject(fn {_, values} -> Enum.empty?(values) end)
       |> Enum.into(%{})
 
     rule |> Map.put(:system_values, system_values)
@@ -362,6 +363,8 @@ defmodule TdDq.Rules do
 
     {key, values}
   end
+
+  defp append_values(key, _), do: {key, []}
 
   defp build_resource_map(name, resource_type, resource_id) do
     Map.new()
