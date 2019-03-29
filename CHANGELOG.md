@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Changed
+
+- [TD-1606] Delete references to relation type `business_concept_to_field`
+- [TD-1606] Bumped td_perms version to 2.16.0
+
 ### Added
 
 - [TD-1571] Elixir's Logger config will check for EX_LOGGER_FORMAT variable to override format
