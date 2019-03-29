@@ -15,7 +15,6 @@ defmodule TdDq.RulesTest do
   @list_cache [
     %{
       resource_id: 1,
-      relation_type: "business_concept_to_field",
       context: %{
         "system" => "system_1",
         "structure" => "structure_1",
@@ -27,7 +26,6 @@ defmodule TdDq.RulesTest do
     },
     %{
       resource_id: 2,
-      relation_type: "business_concept_to_field",
       context: %{
         "system" => "system_2",
         "structure" => "structure_2",
@@ -39,7 +37,6 @@ defmodule TdDq.RulesTest do
     },
     %{
       resource_id: 3,
-      relation_type: "business_concept_to_field",
       context: %{
         "system" => "system_3",
         "structure" => "structure_3",
