@@ -121,6 +121,7 @@ defmodule TdDdWeb.DataStructureView do
               name: data_field.name,
               type: data_field.type,
               precision: data_field.precision,
+              metadata: data_field.metadata,
               nullable: data_field.nullable,
               description: data_field.description,
               business_concept_id: data_field.business_concept_id,
