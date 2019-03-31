@@ -55,7 +55,8 @@ defmodule TdDdWeb.DataStructureView do
       confidential: data_structure.confidential,
       domain_id: data_structure.domain_id,
       last_change_at: data_structure.last_change_at,
-      inserted_at: data_structure.inserted_at
+      inserted_at: data_structure.inserted_at,
+      metadata: Map.get(data_structure, :metadata, %{})
     }
   end
 
@@ -120,6 +121,7 @@ defmodule TdDdWeb.DataStructureView do
               name: data_field.name,
               type: data_field.type,
               precision: data_field.precision,
+              metadata: data_field.metadata,
               nullable: data_field.nullable,
               description: data_field.description,
               business_concept_id: data_field.business_concept_id,

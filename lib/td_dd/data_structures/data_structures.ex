@@ -113,7 +113,7 @@ defmodule TdDd.DataStructures do
     |> Ecto.assoc(:children)
     |> Repo.all()
     |> Repo.preload([:data_structure])
-    |> Enum.map(&(&1.data_structure))
+    |> Enum.map(& &1.data_structure)
   end
 
   def get_latest_parents(data_structure_id) do
@@ -141,7 +141,7 @@ defmodule TdDd.DataStructures do
     |> Ecto.assoc(:parents)
     |> Repo.all()
     |> Enum.flat_map(&get_children/1)
-    |> Enum.uniq
+    |> Enum.uniq()
   end
 
   def get_versions(%DataStructureVersion{} = dsv) do
@@ -510,6 +510,10 @@ defmodule TdDd.DataStructures do
   end
 
   def add_domain_id(%{"ou" => domain_name, "domain_id" => nil} = data, domain_map) do
+    data |> Map.put("domain_id", Map.get(domain_map, domain_name))
+  end
+
+  def add_domain_id(%{"ou" => domain_name, "domain_id" => ""} = data, domain_map) do
     data |> Map.put("domain_id", Map.get(domain_map, domain_name))
   end
 

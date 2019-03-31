@@ -19,10 +19,12 @@ defmodule TdDdWeb.DataStructureControllerTest do
     name: "some name",
     system: "some system",
     type: "csv",
-    ou: "GM"
+    ou: "GM",
+    metadata: %{}
   }
   @update_attrs %{
     description: "some updated description",
+    df_content: %{updated: "content"},
     group: "some updated group",
     last_change_at: "2011-05-18 15:01:01Z",
     last_change_by: 43,
@@ -178,7 +180,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       validate_resp_schema(conn, schema, "DataStructureResponse")
       assert json_response_data["id"] == id
-      assert json_response_data["description"] == "some updated description"
+      assert json_response_data["description"] == "some description"
+      assert json_response_data["df_content"] == %{"updated" => "content"}
       assert json_response_data["inserted_at"]
     end
 
@@ -323,7 +326,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
         put(
           conn,
           Routes.data_structure_path(conn, :update, data_structure),
-          data_structure: %{description: "edited desc"}
+          data_structure: %{description: "edited desc", df_content: %{edited: "df_content"}}
         )
 
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
@@ -333,7 +336,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
       json_response_data = json_response(conn, 200)["data"]
 
       assert json_response_data["id"] == id
-      assert json_response_data["description"] == "edited desc"
+      assert json_response_data["description"] == "some description"
+      assert json_response_data["df_content"] == %{"edited" => "df_content"}
     end
 
     @tag authenticated_no_admin_user: "user_without_permission"

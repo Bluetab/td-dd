@@ -1,0 +1,3 @@
+name;external_id;field_name;system;group;type;nullable
+Structure1;1;Field1;System;Group;Column;on
+Structure1;1;Field2;System;Group;Column;No
