@@ -72,7 +72,12 @@ defmodule TdDq.RulesTest do
       rule_type =
         insert(
           :rule_type,
-          params: %{"system_params" => [%{"name" => "table", "type" => "string"}]}
+          params: %{
+            "system_params" => [
+              %{"name" => "table", "type" => "string"},
+              %{"name" => "ddbb", "type" => "string"}
+            ]
+          }
         )
 
       rule = insert(:rule, rule_type: rule_type)

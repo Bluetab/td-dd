@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- [TD-1609] Ignore type param differing from `table`, `column`, or `group` 
+
 ### Changed
 
 - [TD-1606] Delete references to relation type `business_concept_to_field`
