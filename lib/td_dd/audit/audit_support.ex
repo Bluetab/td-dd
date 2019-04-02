@@ -12,19 +12,20 @@ defmodule TdDd.Audit.AuditSupport do
   defp get_not_nil(nil, default), do: default
   defp get_not_nil(value, _), do: value
 
-  def update_data_structure(conn, old_data, %{"df_name" => df_name} = new_data) do
-    fields_to_compare = ["description", "df_name"]
-    diffs = Enum.reduce(fields_to_compare, %{}, fn field, acc ->
-        with value when not is_nil(value) <- Map.get(new_data, field),
-          false <- value == Map.get(old_data, String.to_atom(field)) do
+  def update_data_structure(conn, %{type: type} = old_data, %{"df_content" => _} = new_data) do
+    content_changes =
+      df_content_changes(old_data, new_data, @df_cache.get_template_by_name(type))
+    payload = case content_changes do
+      nil -> %{}
+      content_changes -> %{"df_content" => content_changes}
+    end
+    create_data_structure_event(conn, old_data.id, payload, "update_data_structure")
+  end
+  def update_data_structure(conn, old_data, new_data) do
+    create_data_structure_event(conn, old_data.id, new_data, "update_data_structure")
+  end
 
-          Map.put(acc, field, value)
-        else
-          _ -> acc
-        end
-      end)
-
-    %{content: template_content} = @df_cache.get_template_by_name(df_name)
+  defp df_content_changes(old_data, new_data, %{content: template_content}) do
     field_labels = Enum.reduce(template_content, %{}, fn field, acc ->
         Map.put(acc, Map.get(field, "name"), Map.get(field, "label"))
       end)
@@ -61,18 +62,12 @@ defmodule TdDd.Audit.AuditSupport do
         end)
       |> Enum.filter(& not is_nil(&1))
 
-    changed_content =
-      %{}
-      |> Map.put(:added, added)
-      |> Map.put(:removed, removed)
-      |> Map.put(:changed, changed)
-
-    payload = Map.put(diffs, "df_content", changed_content)
-    create_data_structure_event(conn, old_data.id, payload, "update_data_structure")
+    %{}
+    |> Map.put(:added, added)
+    |> Map.put(:removed, removed)
+    |> Map.put(:changed, changed)
   end
-  def update_data_structure(conn, old_data, new_data) do
-    create_data_structure_event(conn, old_data.id, new_data, "update_data_structure")
-  end
+  defp df_content_changes(_, _, _), do: nil
 
   def delete_data_structure(conn, id) do
     create_data_structure_event(conn, id, %{}, "delete_data_structure")

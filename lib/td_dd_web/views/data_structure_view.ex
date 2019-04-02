@@ -67,7 +67,6 @@ defmodule TdDdWeb.DataStructureView do
 
   defp add_dynamic_content(json, data_structure) do
     %{
-      df_name: data_structure.df_name,
       df_content: data_structure.df_content
     }
     |> Map.merge(json)
