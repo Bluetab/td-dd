@@ -24,7 +24,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
   }
   @update_attrs %{
     description: "some updated description",
-    df_content: %{updated: "content"},
     group: "some updated group",
     last_change_at: "2011-05-18 15:01:01Z",
     last_change_by: 43,
@@ -181,7 +180,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
       validate_resp_schema(conn, schema, "DataStructureResponse")
       assert json_response_data["id"] == id
       assert json_response_data["description"] == "some description"
-      assert json_response_data["df_content"] == %{"updated" => "content"}
       assert json_response_data["inserted_at"]
     end
 
@@ -190,33 +188,14 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn: conn,
       data_structure: data_structure
     } do
-      template_name = "template_name"
-      MockDynamicFormCache.clean_cache()
-
-      MockDynamicFormCache.put_template(%{
-        id: 0,
-        label: "some label",
-        name: template_name,
-        scope: "dd",
-        content: [
-          %{
-            "name" => "field",
-            "type" => "string",
-            "cardinality" => "1"
-          }
-        ]
-      })
-
       conn =
         put(
           conn,
           Routes.data_structure_path(conn, :update, data_structure),
           data_structure: %{
-            df_name: template_name,
             df_content: %{}
           }
         )
-
       assert response(conn, 422)
     end
 
@@ -225,22 +204,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn: conn,
       data_structure: %{id: id} = data_structure
     } do
-      template_name = "template_name"
-      MockDynamicFormCache.clean_cache()
-
-      MockDynamicFormCache.put_template(%{
-        id: 0,
-        label: "some label",
-        name: template_name,
-        scope: "dd",
-        content: [
-          %{
-            "name" => "field",
-            "type" => "string",
-            "cardinality" => "1"
-          }
-        ]
-      })
 
       df_content = %{"field" => "value"}
 
@@ -249,7 +212,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
           conn,
           Routes.data_structure_path(conn, :update, data_structure),
           data_structure: %{
-            df_name: template_name,
             df_content: df_content
           }
         )
@@ -326,7 +288,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
         put(
           conn,
           Routes.data_structure_path(conn, :update, data_structure),
-          data_structure: %{description: "edited desc", df_content: %{edited: "df_content"}}
+          data_structure: %{description: "edited desc", df_content: %{field: "df_content"}}
         )
 
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
@@ -337,7 +299,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert json_response_data["id"] == id
       assert json_response_data["description"] == "some description"
-      assert json_response_data["df_content"] == %{"edited" => "df_content"}
+      assert json_response_data["df_content"] == %{"field" => "df_content"}
     end
 
     @tag authenticated_no_admin_user: "user_without_permission"
@@ -384,7 +346,24 @@ defmodule TdDdWeb.DataStructureControllerTest do
   end
 
   defp create_data_structure(_) do
-    data_structure = insert(:data_structure)
+    template_name = "template_name"
+    MockDynamicFormCache.clean_cache()
+
+    MockDynamicFormCache.put_template(%{
+      id: 0,
+      label: "some label",
+      name: template_name,
+      scope: "dd",
+      content: [
+        %{
+          "name" => "field",
+          "type" => "string",
+          "cardinality" => "1"
+        }
+      ]
+    })
+
+    data_structure = insert(:data_structure, type: template_name)
     data_structure_version = insert(:data_structure_version, data_structure_id: data_structure.id)
     {:ok, data_structure: data_structure, data_structure_version: data_structure_version}
   end
@@ -424,13 +403,31 @@ defmodule TdDdWeb.DataStructureControllerTest do
       role_name: role_name
     })
 
+    template_name = "template_name"
+    MockDynamicFormCache.clean_cache()
+
+    MockDynamicFormCache.put_template(%{
+      id: 0,
+      label: "some label",
+      name: template_name,
+      scope: "dd",
+      content: [
+        %{
+          "name" => "field",
+          "type" => "string",
+          "cardinality" => "1"
+        }
+      ]
+    })
+
     data_structure =
       insert(
         :data_structure,
         confidential: confidential,
         name: "confidential",
         ou: domain_name,
-        domain_id: domain_id
+        domain_id: domain_id,
+        type: template_name
       )
 
     insert(:data_structure_version, data_structure_id: data_structure.id)

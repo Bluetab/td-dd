@@ -230,17 +230,19 @@ defmodule TdDd.DataStructures do
 
   """
   def update_data_structure(
-        %DataStructure{} = data_structure,
-        %{"df_name" => df_name} = attrs
+        %DataStructure{type: type} = data_structure,
+        %{"df_content" => content} = attrs
       )
-      when not is_nil(df_name) do
-    content = Map.get(attrs, "df_content", %{})
-    %{:content => content_schema} = @df_cache.get_template_by_name(df_name)
-    content_changeset = Validation.build_changeset(content, content_schema)
-
-    case content_changeset.valid? do
-      false -> {:error, content_changeset}
-      _ -> do_update_data_structure(data_structure, attrs)
+      when not is_nil(content) do
+    case @df_cache.get_template_by_name(type) do
+      %{:content => content_schema} ->
+        content_changeset = Validation.build_changeset(content, content_schema)
+        case content_changeset.valid? do
+          false -> {:error, content_changeset}
+          _ -> do_update_data_structure(data_structure, attrs)
+        end
+      _ ->
+        {:error, "Invalid template"}
     end
   end
 

@@ -25,7 +25,6 @@ defmodule TdDd.DataStructures.DataStructure do
     field(:ou, :string)
     has_many(:versions, DataStructureVersion, on_delete: :delete_all)
     field(:metadata, :map, default: %{})
-    field(:df_name, :string)
     field(:df_content, :map)
     field(:confidential, :boolean)
     field(:external_id, :string)
@@ -40,7 +39,6 @@ defmodule TdDd.DataStructures.DataStructure do
       :last_change_at,
       :last_change_by,
       :confidential,
-      :df_name,
       :df_content
     ])
   end
@@ -76,7 +74,6 @@ defmodule TdDd.DataStructures.DataStructure do
       :ou,
       :metadata,
       :confidential,
-      :df_name,
       :df_content
     ])
     |> validate_required([:system, :group, :name, :last_change_at, :last_change_by, :metadata])
@@ -120,7 +117,6 @@ defmodule TdDd.DataStructures.DataStructure do
       type: structure.type,
       inserted_at: structure.inserted_at,
       confidential: structure.confidential,
-      df_name: structure.df_name,
       df_content: structure.df_content,
       data_fields: Enum.map(structure.data_fields, &DataField.search_fields/1)
     }
