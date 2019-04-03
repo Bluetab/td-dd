@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-1634] Include data structure metadata field to selectively disable indexing ("indexable" == "false")
+- Improve elasticsearch index mappings
+
 ## [2.16.0] 2019-04-01
 
 ### Added
