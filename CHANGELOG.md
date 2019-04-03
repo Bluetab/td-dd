@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-1634] Include data structure metadata field to selectively disable indexing ("indexable" == "false")
+- Improve elasticsearch index mappings
+
 ### Changed
 
 - [TD-1627] Removes df_name from the structure and uses the structure type as definition of template
