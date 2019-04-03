@@ -18,37 +18,37 @@ defmodule TdDd.Search.Indexer do
     content_mappings = %{properties: get_dynamic_mappings()}
 
     mapping_type = %{
-      id: %{type: "long"},
-      name: %{type: "text", fields: %{raw: %{type: "keyword"}}},
+      id: %{type: "long", index: false},
+      name: %{type: "text", boost: 2, fields: %{raw: %{type: "keyword"}}},
       system: %{type: "text", fields: %{raw: %{type: "keyword"}}},
       group: %{type: "text", fields: %{raw: %{type: "keyword"}}},
       ou: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
       type: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
       confidential: %{type: "boolean", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
       description: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
-      external_id: %{type: "text", fields: %{raw: %{type: "keyword"}}},
+      external_id: %{type: "keyword", index: false},
       domain_ids: %{type: "long"},
       last_change_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-      last_change_by: %{
-        properties: %{
-          id: %{type: "long"},
-          user_name: %{type: "text", fields: %{raw: %{type: "keyword"}}},
-          full_name: %{type: "text", fields: %{raw: %{type: "keyword"}}}
-        }
-      },
+      last_change_by: %{enabled: false},
       inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       data_fields: %{
         properties: %{
           name: %{type: "text"},
           business_concept_id: %{type: "text"},
-          data_structure_id: %{type: "long"},
+          data_structure_id: %{type: "long", index: false},
           description: %{type: "text"},
-          id: %{type: "long"}
+          id: %{type: "long", index: false}
         }
       },
       df_content: content_mappings
     }
-    settings = %{analysis: %{normalizer: %{sortable: %{type: "custom", char_filter: [], filter: ["asciifolding"]}}}}
+
+    settings = %{
+      analysis: %{
+        normalizer: %{sortable: %{type: "custom", char_filter: [], filter: ["asciifolding"]}}
+      }
+    }
+
     %{mappings: %{doc: %{properties: mapping_type}}, settings: settings}
   end
 
