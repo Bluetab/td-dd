@@ -253,5 +253,28 @@ defmodule TdDd.DataStructuresTest do
       assert s3 <~> [ds2, ds3]
       assert s4 <~> [ds4]
     end
+
+    test "delete_data_structure/1 deletes a data_structure with relations" do
+      alias TdDd.DataStructures.DataStructure
+
+      ds1 = insert(:data_structure, id: 1, name: "DS1")
+      ds2 = insert(:data_structure, id: 2, name: "DS2")
+      ds3 = insert(:data_structure, id: 3, name: "DS3")
+      dsv1 = insert(:data_structure_version, data_structure_id: ds1.id)
+      dsv2 = insert(:data_structure_version, data_structure_id: ds2.id)
+      dsv3 = insert(:data_structure_version, data_structure_id: ds3.id)
+
+      insert(:data_structure_relation, parent_id: dsv1.id, child_id: dsv2.id)
+      insert(:data_structure_relation, parent_id: dsv1.id, child_id: dsv3.id)
+
+      assert {:ok, %DataStructure{}} = DataStructures.delete_data_structure(ds1)
+
+      assert_raise Ecto.NoResultsError, fn ->
+        DataStructures.get_data_structure!(ds1.id)
+      end
+
+      assert DataStructures.get_data_structure!(ds2.id) <~> ds2
+      assert DataStructures.get_data_structure!(ds3.id) <~> ds3
+    end
   end
 end
