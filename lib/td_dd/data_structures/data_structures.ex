@@ -120,9 +120,8 @@ defmodule TdDd.DataStructures do
     data_structure_version
     |> Ecto.assoc(:children)
     |> Repo.all()
-    |> Repo.preload([:data_structure])
+    |> Repo.preload(data_structure: [:system])
     |> Enum.map(& &1.data_structure)
-    |> Enum.map(&(&1 |> Repo.preload(:system)))
   end
 
   def get_latest_parents(data_structure_id) do
@@ -239,17 +238,21 @@ defmodule TdDd.DataStructures do
 
   """
   def update_data_structure(
-        %DataStructure{} = data_structure,
-        %{"df_name" => df_name} = attrs
+        %DataStructure{type: type} = data_structure,
+        %{"df_content" => content} = attrs
       )
-      when not is_nil(df_name) do
-    content = Map.get(attrs, "df_content", %{})
-    %{:content => content_schema} = @df_cache.get_template_by_name(df_name)
-    content_changeset = Validation.build_changeset(content, content_schema)
+      when not is_nil(content) do
+    case @df_cache.get_template_by_name(type) do
+      %{:content => content_schema} ->
+        content_changeset = Validation.build_changeset(content, content_schema)
 
-    case content_changeset.valid? do
-      false -> {:error, content_changeset}
-      _ -> do_update_data_structure(data_structure, attrs)
+        case content_changeset.valid? do
+          false -> {:error, content_changeset}
+          _ -> do_update_data_structure(data_structure, attrs)
+        end
+
+      _ ->
+        {:error, "Invalid template"}
     end
   end
 
@@ -522,6 +525,10 @@ defmodule TdDd.DataStructures do
     data |> Map.put("domain_id", Map.get(domain_map, domain_name))
   end
 
+  def add_domain_id(%{"ou" => domain_name, "domain_id" => ""} = data, domain_map) do
+    data |> Map.put("domain_id", Map.get(domain_map, domain_name))
+  end
+
   def add_domain_id(%{"ou" => _, "domain_id" => _} = data, _domain_map), do: data
 
   def add_domain_id(%{"ou" => domain_name} = data, domain_map) do
@@ -710,9 +717,9 @@ defmodule TdDd.DataStructures do
 
   def diff(%System{} = old, %System{} = new) do
     [:external_id, :name]
-     |> Enum.map(fn field -> {field, Map.get(old, field), Map.get(new, field)} end)
-     |> Enum.reject(fn {_, old, new} -> old == new end)
-     |> Enum.map(fn {field, _, new} -> {field, new} end)
-     |> Map.new()
+    |> Enum.map(fn field -> {field, Map.get(old, field), Map.get(new, field)} end)
+    |> Enum.reject(fn {_, old, new} -> old == new end)
+    |> Enum.map(fn {field, _, new} -> {field, new} end)
+    |> Map.new()
   end
 end

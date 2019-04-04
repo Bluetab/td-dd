@@ -12,10 +12,10 @@ defmodule TdDd.DataCase do
   of the test unless the test case is marked as async.
   """
 
-    use ExUnit.CaseTemplate
+  use ExUnit.CaseTemplate
 
-    alias Ecto.Adapters.SQL.Sandbox
-    alias Ecto.Changeset
+  alias Ecto.Adapters.SQL.Sandbox
+  alias Ecto.Changeset
 
   using do
     quote do
@@ -35,6 +35,7 @@ defmodule TdDd.DataCase do
     unless tags[:async] do
       Sandbox.mode(TdDd.Repo, {:shared, self()})
       parent = self()
+
       case Process.whereis(TdDd.Search.IndexWorker) do
         nil -> nil
         pid -> Sandbox.allow(TdDd.Repo, parent, pid)

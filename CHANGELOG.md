@@ -4,8 +4,24 @@
 
 ### Added
 
+- [TD-1634] Include data structure metadata field to selectively disable indexing ("indexable" == "false")
+- Improve elasticsearch index mappings
+
+### Changed
+
+- [TD-1627] Removes df_name from the structure and uses the structure type as definition of template
+- [TD-1636] Use alpine:3.9 as base image for docker runtime
+
+## [2.16.0] 2019-04-01
+
+### Added
+
 - [TD-1571] Elixir's Logger config will check for EX_LOGGER_FORMAT variable to override format
 - [TD-1593] System as an independent entity 
+
+### Changed
+
+- [TD-1530] Changed csv upload to write extra fields on metadata
 
 ## [2.15.0] 2019-03-18
 

@@ -14,11 +14,6 @@ defmodule TdDd.DataStructures.DataStructure do
 
   @taxonomy_cache Application.get_env(:td_dd, :taxonomy_cache)
 
-  @data_structure_modifiable_fields Application.get_env(:td_dd, :metadata)[
-                                      :data_structure_modifiable_fields
-                                    ]
-                                    |> Enum.map(&String.to_atom/1)
-
   schema "data_structures" do
     field(:description, :string)
     field(:domain_id, :integer)
@@ -30,7 +25,6 @@ defmodule TdDd.DataStructures.DataStructure do
     field(:ou, :string)
     has_many(:versions, DataStructureVersion, on_delete: :delete_all)
     field(:metadata, :map, default: %{})
-    field(:df_name, :string)
     field(:df_content, :map)
     field(:confidential, :boolean)
     field(:external_id, :string)
@@ -42,12 +36,23 @@ defmodule TdDd.DataStructures.DataStructure do
   @doc false
   def update_changeset(%DataStructure{} = data_structure, attrs) do
     data_structure
-    |> cast(attrs, [:last_change_at, :last_change_by] ++ @data_structure_modifiable_fields)
+    |> cast(attrs, [
+      :last_change_at,
+      :last_change_by,
+      :confidential,
+      :df_content
+    ])
   end
 
   @doc false
   def loader_changeset(%DataStructure{} = data_structure, attrs) do
-    changeset = data_structure |> cast(attrs, @data_structure_modifiable_fields)
+    changeset =
+      data_structure
+      |> cast(attrs, [
+        :last_change_at,
+        :last_change_by,
+        :metadata
+      ])
 
     case changeset.changes do
       %{} -> changeset
@@ -70,7 +75,6 @@ defmodule TdDd.DataStructures.DataStructure do
       :ou,
       :metadata,
       :confidential,
-      :df_name,
       :df_content,
       :system_id
     ])
@@ -120,7 +124,6 @@ defmodule TdDd.DataStructures.DataStructure do
       type: structure.type,
       inserted_at: structure.inserted_at,
       confidential: structure.confidential,
-      df_name: structure.df_name,
       df_content: structure.df_content,
       data_fields: Enum.map(structure.data_fields, &DataField.search_fields/1)
     }

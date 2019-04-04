@@ -4,6 +4,7 @@ defmodule TdDdWeb.MetadataController do
 
   alias Plug.Upload
   alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
+  alias TdDd.CSV.Reader
   alias TdDd.DataStructures
   alias TdDd.DataStructures.System
   alias TdDd.Loader
@@ -11,19 +12,12 @@ defmodule TdDdWeb.MetadataController do
   @index_worker Application.get_env(:td_dd, :index_worker)
   @taxonomy_cache Application.get_env(:td_dd, :taxonomy_cache)
 
-  @data_structure_keys Application.get_env(:td_dd, :metadata)[:data_structure_keys]
-  @data_field_keys Application.get_env(:td_dd, :metadata)[:data_field_keys]
-  @data_structure_relation_keys Application.get_env(:td_dd, :metadata)[
-                                  :data_structure_relation_keys
-                                ]
-  @data_structure_modifiable_fields Application.get_env(:td_dd, :metadata)[
-                                      :data_structure_modifiable_fields
-                                    ]
-  @data_field_modifiable_fields Application.get_env(:td_dd, :metadata)[
-                                  :data_field_modifiable_fields
-                                ]
-
-  @data_fields_not_blank ["ou", "description"]
+  @structure_import_schema Application.get_env(:td_dd, :metadata)[:structure_import_schema]
+  @structure_import_required Application.get_env(:td_dd, :metadata)[:structure_import_required]
+  @field_import_schema Application.get_env(:td_dd, :metadata)[:field_import_schema]
+  @field_import_required Application.get_env(:td_dd, :metadata)[:field_import_required]
+  @relation_import_schema Application.get_env(:td_dd, :metadata)[:relation_import_schema]
+  @relation_import_required Application.get_env(:td_dd, :metadata)[:relation_import_required]
 
   def upload_by_system(conn, %{"system_reference" => system_reference} = params) do
     # TODO: Complete implementation once the metada is loaded by System
@@ -42,8 +36,37 @@ defmodule TdDdWeb.MetadataController do
   @doc """
     Upload metadata:
 
-      data_structures.csv: system, group, name, description
-      data_fields.csv: system, group, name, field name, type, descripiton, nullable, precision, business_concept_id
+      data_structures.csv: 
+          name: :string required structure name
+          system: :string required system name
+          group: :string required group name
+          type: :string required structure type
+          description: :string optional structure description
+          external_id: :string optional structure external id (unique within system)
+          ou: :string optional domain name
+          version: :integer optional version (defaults to 0)
+          metadata: :map (headers prefixed with "m:", e.g. "m:data_type" will be loaded into this map)
+      data_fields.csv:
+          name: :string required structure name
+          system: :string required system name
+          group: :string required group name
+          external_id: :string optional external id of parent structure
+          field_name: :string required field name
+          description: :string optional field description
+          business_concept_id: :string optional business concept id
+          nullable: :boolean optional field nullability
+          precision: :string optional field precision
+          type: :string optional field type
+          version: :integer optional structure version (defaults to 0)
+          metadata: :map (headers prefixed with "m:", e.g. "m:data_type" will be loaded into this map)
+      data_structure_relations.csv:
+          system: :string required system name
+          parent_group: :string required group name of parent
+          parent_external_id: :string optional external id of parent
+          parent_name: :string optional name of parent (required if parent_external_id is absent)
+          child_group: :string required group name of child
+          child_external_id: :string optional external id of child
+          child_name: :string optional name of child (required if child_external_id is absent)
 
       curl -H "Content-Type: application/json" -X POST -d '{"user":{"user_name":"xxx","password":"xxx"}}' http://localhost:4001/api/sessions
       curl -H "authorization: Bearer xxx" -F "data_structures=@data_structures.csv" -F "data_fields=@data_fields.csv"  http://localhost:4005/api/td_dd/metadata
@@ -63,10 +86,10 @@ defmodule TdDdWeb.MetadataController do
 
     start_time = DateTime.utc_now()
 
-    field_recs = params |> Map.get("data_fields") |> parse_data_fields
-    structure_recs = params |> Map.get("data_structures") |> parse_data_structures
+    {:ok, field_recs} = params |> Map.get("data_fields") |> parse_data_fields
+    {:ok, structure_recs} = params |> Map.get("data_structures") |> parse_data_structures
 
-    relation_recs =
+    {:ok, relation_recs} =
       params |> Map.get("data_structure_relations") |> parse_data_structure_relations
 
     load(conn, structure_recs, field_recs, relation_recs, system_reference)
@@ -80,30 +103,45 @@ defmodule TdDdWeb.MetadataController do
 
   defp parse_data_structures(%Upload{path: path}) do
     domain_map = @taxonomy_cache.get_domain_name_to_id_map()
+    defaults = %{version: 0}
 
     path
     |> File.stream!()
-    |> CSV.decode!(separator: ?;, headers: true)
-    |> Enum.map(&csv_to_structure(&1, domain_map))
+    |> Reader.read_csv(
+      domain_map: domain_map,
+      defaults: defaults,
+      schema: @structure_import_schema,
+      required: @structure_import_required
+    )
   end
+
+  defp parse_data_structures(nil), do: {:ok, []}
 
   defp parse_data_fields(%Upload{path: path}) do
+    defaults = %{version: 0, external_id: nil}
+
     path
     |> File.stream!()
-    |> CSV.decode!(separator: ?;, headers: true)
-    |> Enum.map(&csv_to_field/1)
+    |> Reader.read_csv(
+      defaults: defaults,
+      schema: @field_import_schema,
+      required: @field_import_required,
+      booleans: ["nullable"]
+    )
   end
 
-  defp parse_data_fields(nil), do: []
+  defp parse_data_fields(nil), do: {:ok, []}
 
   defp parse_data_structure_relations(%Upload{path: path}) do
     path
     |> File.stream!()
-    |> CSV.decode!(separator: ?;, headers: true)
-    |> Enum.map(&csv_to_relation/1)
+    |> Reader.read_csv(
+      schema: @relation_import_schema,
+      required: @relation_import_required
+    )
   end
 
-  defp parse_data_structure_relations(nil), do: []
+  defp parse_data_structure_relations(nil), do: {:ok, []}
 
   defp load(conn, structure_records, field_records, relation_records, system_reference) do
     user_id = GuardianPlug.current_resource(conn).id
@@ -116,92 +154,5 @@ defmodule TdDdWeb.MetadataController do
       audit_fields,
       system_reference
     )
-  end
-
-  defp csv_to_structure(record, domain_map) do
-    record
-    |> blank_to_nil(@data_fields_not_blank)
-    |> add_metadata(@data_structure_modifiable_fields)
-    |> DataStructures.add_domain_id(domain_map)
-    |> to_map(@data_structure_keys)
-  end
-
-  defp csv_to_field(record) do
-    record
-    |> add_metadata(@data_field_modifiable_fields)
-    |> to_map(@data_field_keys)
-    |> blanks_to_nils
-  end
-
-  defp blanks_to_nils(map) do
-    map
-    |> Enum.map(&blank_to_nil/1)
-    |> Map.new()
-  end
-
-  defp blank_to_nil({:metadata, v}), do: {:metadata, blanks_to_nils(v)}
-  defp blank_to_nil({k, v}), do: {k, blank_to_nil(v)}
-  defp blank_to_nil(""), do: nil
-  defp blank_to_nil(v), do: v
-
-  defp csv_to_relation(record) do
-    record
-    |> to_map(@data_structure_relation_keys)
-  end
-
-  defp to_map(data, keys) do
-    keys
-    |> Enum.map(fn key -> {key, get_value(data, key)} end)
-    |> Map.new(fn {k, v} -> {String.to_atom(k), v} end)
-  end
-
-  defp blank_to_nil(data, [head | tail]) do
-    data
-    |> blank_to_nil(head)
-    |> blank_to_nil(tail)
-  end
-
-  defp blank_to_nil(data, []), do: data
-
-  defp blank_to_nil(data, field_name) do
-    value = Map.fetch!(data, field_name)
-
-    case value do
-      "" -> Map.put(data, field_name, nil)
-      _ -> data
-    end
-  end
-
-  defp get_value(data, "nullable" = name) do
-    case String.downcase(Map.get(data, name)) do
-      "" -> nil
-      value -> Enum.member?(["t", "true", "y", "yes", "on", "1"], value)
-    end
-  end
-
-  defp get_value(data, "version" = name), do: get_version(data, name)
-
-  defp get_value(data, name), do: Map.get(data, name)
-
-  defp get_version(data, name) do
-    case Map.get(data, name) do
-      # TODO: Use nil instead of 0, automatically version in loader.ex
-      nil ->
-        0
-
-      "" ->
-        0
-
-      value ->
-        String.to_integer(value)
-    end
-  end
-
-  defp add_metadata(data, fields) do
-    metadata =
-      fields
-      |> Enum.reduce(%{}, &Map.put(&2, &1, Map.get(data, &1)))
-
-    Map.put(data, "metadata", metadata)
   end
 end

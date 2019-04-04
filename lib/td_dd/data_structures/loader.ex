@@ -15,7 +15,13 @@ defmodule TdDd.Loader do
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Repo
 
-  def load(structure_records, field_records, relation_records, audit_fields, system_reference \\ nil) do
+  def load(
+        structure_records,
+        field_records,
+        relation_records,
+        audit_fields,
+        system_reference \\ nil
+      ) do
     Logger.info(
       "Starting bulk load process (#{Enum.count(structure_records)}SR+#{Enum.count(field_records)}FR)"
     )
@@ -141,6 +147,7 @@ defmodule TdDd.Loader do
         nil -> attrs |> Map.drop([:description])
         _ -> attrs
       end
+
     # TODO: we won't need to fetch the system for each structure
     # if the system_reference is specified
     system_id = fetch_system_id(system, system_reference)
@@ -286,6 +293,7 @@ defmodule TdDd.Loader do
         Enum.count(records)
       } records)"
     )
+
     # TODO: we won't need the system in our key once the reference is specified
     diffs =
       records

@@ -54,10 +54,10 @@ Feature: Data Dictionary Administration
       | S002       | PI          |
 
     When "app-admin" tries to load dictionary data with following information:
-      | File             | System   | Group        | Structure_Name | Field_Name          | Description                        | Type      | Precision | Nullable | Business_Concept_ID | Domain_Name |
-      | Data Structure   | SAS     | Risks        | TKIDS0001      |                     | TKIDS0001 Description              |           |           |          |                     | Domain_1    |
-      | Data Structure   | SAS     | Risks        | TKIDS0002      |                     | TKIDS0002 Description              |           |           |          |                     | Domain_1    |
-      | Data Structure   | PI     | Teradata     | TKIDS0003      |                     | TKIDS0003 Description              |           |           |          |                     |             |
+      | File             | System  | Group        | Structure_Name | Field_Name          | Description                        | Type      | Precision | Nullable | Business_Concept_ID | Domain_Name |
+      | Data Structure   | SAS     | Risks        | TKIDS0001      |                     | TKIDS0001 Description              | TABLE     |           |          |                     | Domain_1    |
+      | Data Structure   | SAS     | Risks        | TKIDS0002      |                     | TKIDS0002 Description              | TABLE     |           |          |                     | Domain_1    |
+      | Data Structure   | PI      | Teradata     | TKIDS0003      |                     | TKIDS0003 Description              | TABLE     |           |          |                     |             |
       | Field            | SAS     | Risks        | TKIDS0001      | My_Personal01_Field | My_Personal01_Field Description    | CHAR      | 20        | Yes      | BCID001             |             |
       | Field            | SAS     | Risks        | TKIDS0001      | My_Personal02_Field | My_Personal02_Field Description    | VARCHAR   | 80        | No       | BCID002             |             |
       | Field            | SAS     | Risks        | TKIDS0001      | My_Personal03_Field | My_Personal03_Field Description    | DATE      |           | No       | BCID003             |             |

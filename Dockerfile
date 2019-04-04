@@ -26,7 +26,7 @@ RUN mix release --env=${MIX_ENV}
 
 # --- Release with Alpine ----
 ### Minimal run-time image
-FROM alpine:3.8
+FROM alpine:3.9
 
 RUN apk --no-cache update && apk --no-cache upgrade && apk --no-cache add ncurses-libs openssl bash ca-certificates
 

@@ -57,7 +57,8 @@ defmodule TdDdWeb.DataStructureView do
       domain_id: data_structure.domain_id,
       last_change_at: data_structure.last_change_at,
       inserted_at: data_structure.inserted_at,
-      system_id: data_structure.system_id
+      system_id: data_structure.system_id,
+      metadata: Map.get(data_structure, :metadata, %{})
     }
   end
 
@@ -77,7 +78,6 @@ defmodule TdDdWeb.DataStructureView do
 
   defp add_dynamic_content(json, data_structure) do
     %{
-      df_name: data_structure.df_name,
       df_content: data_structure.df_content
     }
     |> Map.merge(json)
@@ -131,6 +131,7 @@ defmodule TdDdWeb.DataStructureView do
               name: data_field.name,
               type: data_field.type,
               precision: data_field.precision,
+              metadata: data_field.metadata,
               nullable: data_field.nullable,
               description: data_field.description,
               business_concept_id: data_field.business_concept_id,
