@@ -10,6 +10,7 @@
 ### Changed
 
 - [TD-1627] Removes df_name from the structure and uses the structure type as definition of template
+- [TD-1636] Use alpine:3.9 as base image for docker runtime
 
 ## [2.16.0] 2019-04-01
 
