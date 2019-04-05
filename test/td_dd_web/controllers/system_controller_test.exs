@@ -2,8 +2,8 @@ defmodule TdDdWeb.SystemControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  alias TdDd.DataStructures
   alias TdDd.DataStructures.System
+  alias TdDd.DataStructures.Systems
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
@@ -26,7 +26,7 @@ defmodule TdDdWeb.SystemControllerTest do
   end
 
   def fixture(:system) do
-    {:ok, system} = DataStructures.create_system(@create_attrs)
+    {:ok, system} = Systems.create_system(@create_attrs)
     system
   end
 
@@ -54,6 +54,7 @@ defmodule TdDdWeb.SystemControllerTest do
 
       conn = get(conn, Routes.system_path(conn, :show, id))
       validate_resp_schema(conn, schema, "SystemResponse")
+
       assert %{
                "id" => id,
                "external_id" => "some external_id",
@@ -72,12 +73,17 @@ defmodule TdDdWeb.SystemControllerTest do
     setup [:create_system]
 
     @tag authenticated_user: @admin_user_name
-    test "renders system when data is valid", %{conn: conn, swagger_schema: schema, system: %System{id: id} = system} do
+    test "renders system when data is valid", %{
+      conn: conn,
+      swagger_schema: schema,
+      system: %System{id: id} = system
+    } do
       conn = put(conn, Routes.system_path(conn, :update, system), system: @update_attrs)
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
       conn = get(conn, Routes.system_path(conn, :show, id))
       validate_resp_schema(conn, schema, "SystemResponse")
+
       assert %{
                "id" => id,
                "external_id" => "some updated external_id",

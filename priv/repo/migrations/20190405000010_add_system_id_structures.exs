@@ -3,7 +3,7 @@ defmodule TdDd.Repo.Migrations.AddSystemIdStructures do
 
   def change do
     alter table(:data_structures) do
-      add :system_id, references(:systems)
+      add(:system_id, references(:systems))
     end
   end
 end

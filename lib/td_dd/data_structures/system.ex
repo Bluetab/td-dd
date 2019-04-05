@@ -4,6 +4,10 @@ defmodule TdDd.DataStructures.System do
   import Ecto.Changeset
 
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.System
+  alias TdDd.Searchable
+
+  @behaviour Searchable
 
   schema "systems" do
     field(:external_id, :string)
@@ -18,5 +22,14 @@ defmodule TdDd.DataStructures.System do
     system
     |> cast(attrs, [:name, :external_id])
     |> validate_required([:name, :external_id])
+  end
+
+  def search_fields(%System{} = system) do
+    system
+    |> Map.take([:id, :external_id, :name])
+  end
+
+  def index_name(_) do
+    "system"
   end
 end

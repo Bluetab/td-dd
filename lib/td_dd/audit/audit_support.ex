@@ -2,8 +2,8 @@ defmodule TdDd.Audit.AuditSupport do
   @moduledoc false
 
   alias TdDd.Audit
-  alias TdDd.DataStructures
   alias TdDd.DataStructures.System
+  alias TdDd.DataStructures.Systems
 
   @df_cache Application.get_env(:td_dd, :df_cache)
 
@@ -105,7 +105,7 @@ defmodule TdDd.Audit.AuditSupport do
   end
 
   def system_updated(conn, %System{} = old, %System{id: id} = new) do
-    params = old |> DataStructures.diff(new)
+    params = old |> Systems.diff(new)
     create_system_event(conn, id, params, "update_system")
   end
 

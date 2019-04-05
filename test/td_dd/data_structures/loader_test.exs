@@ -14,10 +14,10 @@ defmodule TdDd.LoaderTest do
 
   describe "loader" do
     test "load/1 loads changes in data structures, fields and relations" do
-      system = insert(:system, external_id: "SYS1", name: "SYS1")
-      insert(:system, external_id: "SYS2", name: "SYS2")
+      sys1 = insert(:system, external_id: "SYS1", name: "SYS1")
+      sys2 = insert(:system, external_id: "SYS2", name: "SYS2")
 
-      data_structure = insert(:data_structure, system: system, group: "GROUP1", name: "NAME1")
+      data_structure = insert(:data_structure, system: sys1, group: "GROUP1", name: "NAME1")
 
       dsv = insert(:data_structure_version, data_structure_id: data_structure.id, version: 0)
 
@@ -57,7 +57,7 @@ defmodule TdDd.LoaderTest do
       Repo.insert_all("versions_fields", entries)
 
       s1 = %{
-        system: "SYS1",
+        system_id: sys1.id,
         group: "GROUP1",
         name: "NAME1",
         description: "D1",
@@ -66,7 +66,7 @@ defmodule TdDd.LoaderTest do
       }
 
       s2 = %{
-        system: "SYS1",
+        system_id: sys1.id,
         group: "GROUP2",
         name: "NAME2",
         description: "D2",
@@ -75,7 +75,7 @@ defmodule TdDd.LoaderTest do
       }
 
       s3 = %{
-        system: "SYS2",
+        system_id: sys2.id,
         group: "GROUP3",
         name: "NAME3",
         description: "D3",
@@ -84,7 +84,7 @@ defmodule TdDd.LoaderTest do
       }
 
       s4 = %{
-        system: "SYS2",
+        system_id: sys2.id,
         group: "GROUP3",
         name: "NAME4",
         description: "D4",
@@ -93,7 +93,7 @@ defmodule TdDd.LoaderTest do
       }
 
       s5 = %{
-        system: "SYS2",
+        system_id: sys2.id,
         group: "GROUP3",
         name: "NAME4",
         description: "D4",
@@ -102,7 +102,7 @@ defmodule TdDd.LoaderTest do
       }
 
       r1 = %{
-        system: "SYS1",
+        system_id: sys1.id,
         parent_group: "GROUP1",
         parent_external_id: nil,
         parent_name: "NAME1",
@@ -112,7 +112,7 @@ defmodule TdDd.LoaderTest do
       }
 
       r2 = %{
-        system: "SYS2",
+        system_id: sys2.id,
         parent_group: "GROUP3",
         parent_external_id: nil,
         parent_name: "NAME3",
@@ -182,6 +182,7 @@ defmodule TdDd.LoaderTest do
     test "load/1 with structures containing and external_id" do
       system = insert(:system, external_id: "SYS1", name: "SYS1")
       insert(:system, external_id: "SYS2", external_id: "SYS2")
+
       data_structure =
         insert(:data_structure,
           system: system,
@@ -228,7 +229,7 @@ defmodule TdDd.LoaderTest do
       Repo.insert_all("versions_fields", entries)
 
       s1 = %{
-        system: "SYS1",
+        system_id: system.id,
         group: "GROUP1",
         name: "NAME1",
         description: "D1",
@@ -237,7 +238,7 @@ defmodule TdDd.LoaderTest do
       }
 
       s2 = %{
-        system: "SYS1",
+        system_id: system.id,
         group: "GROUP1",
         name: "NAME1",
         description: "D1",
@@ -246,7 +247,7 @@ defmodule TdDd.LoaderTest do
       }
 
       s3 = %{
-        system: "SYS1",
+        system_id: system.id,
         group: "GROUP2",
         name: "NAME2",
         description: "D2",
@@ -255,7 +256,7 @@ defmodule TdDd.LoaderTest do
       }
 
       r1 = %{
-        system: "SYS1",
+        system_id: system.id,
         parent_group: "GROUP1",
         parent_external_id: "EXT1",
         parent_name: "NAME1",
@@ -265,7 +266,7 @@ defmodule TdDd.LoaderTest do
       }
 
       r2 = %{
-        system: "SYS1",
+        system_id: system.id,
         parent_group: "GROUP1",
         parent_name: "NAME1",
         parent_external_id: nil,

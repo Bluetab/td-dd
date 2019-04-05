@@ -74,11 +74,14 @@ defmodule TdDd.CSV.ReaderTest do
 
     @tag fixture: "fields.csv"
     test "read_csv/2 transforms nullable values to boolean", %{stream: stream} do
+      system_map = %{"System" => 42}
+
       {:ok, [r1, r2]} =
         stream
         |> Reader.read_csv(
           schema: @field_import_schema,
-          required: [:name, :system, :group, :field_name, :type],
+          system_map: system_map,
+          required: [:name, :system_id, :group, :field_name, :type],
           booleans: ["nullable"]
         )
 
@@ -89,7 +92,7 @@ defmodule TdDd.CSV.ReaderTest do
                field_name: "Field1",
                group: "Group",
                nullable: true,
-               system: "System",
+               system_id: 42,
                type: "Column"
              }
 
@@ -100,7 +103,7 @@ defmodule TdDd.CSV.ReaderTest do
                field_name: "Field2",
                group: "Group",
                nullable: false,
-               system: "System",
+               system_id: 42,
                type: "Column"
              }
     end

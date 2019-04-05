@@ -64,6 +64,7 @@ defmodule TdDd.DataStructures.DataStructure do
   def changeset(%DataStructure{} = data_structure, attrs) do
     data_structure
     |> cast(attrs, [
+      :system_id,
       :external_id,
       :group,
       :name,
@@ -75,10 +76,9 @@ defmodule TdDd.DataStructures.DataStructure do
       :ou,
       :metadata,
       :confidential,
-      :df_content,
-      :system_id
+      :df_content
     ])
-    |> validate_required([:group, :name, :last_change_at, :last_change_by, :metadata, :system_id])
+    |> validate_required([:system_id, :group, :name, :last_change_at, :last_change_by, :metadata])
     |> validate_length(:group, max: 255)
     |> validate_length(:name, max: 255)
     |> validate_length(:type, max: 255)
@@ -106,7 +106,7 @@ defmodule TdDd.DataStructures.DataStructure do
     system =
       structure
       |> Map.get(:system)
-      |> get_system_search_value()
+      |> (& &1.__struct__.search_fields(&1)).()
 
     %{
       id: structure.id,
@@ -130,7 +130,7 @@ defmodule TdDd.DataStructures.DataStructure do
   end
 
   defp fill_items(structure) do
-    keys_to_fill = [:name, :group, :ou, :system]
+    keys_to_fill = [:name, :group, :ou]
 
     Enum.reduce(keys_to_fill, structure, fn key, acc ->
       case Map.get(acc, key) do
@@ -138,12 +138,6 @@ defmodule TdDd.DataStructures.DataStructure do
         _ -> acc
       end
     end)
-  end
-
-  defp get_system_search_value(system) when is_binary(system), do: system
-
-  defp get_system_search_value(system) do
-    Map.take(system, [:id, :name, :external_id])
   end
 
   def index_name(_) do

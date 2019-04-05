@@ -4,6 +4,7 @@
 
 ### Added
 
+- [TD-1593] System as an independent entity
 - [TD-1634] Include data structure metadata field to selectively disable indexing ("indexable" == "false")
 - Improve elasticsearch index mappings
 
@@ -17,7 +18,6 @@
 ### Added
 
 - [TD-1571] Elixir's Logger config will check for EX_LOGGER_FORMAT variable to override format
-- [TD-1593] System as an independent entity 
 
 ### Changed
 

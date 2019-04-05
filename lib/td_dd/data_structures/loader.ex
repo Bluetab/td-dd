@@ -19,8 +19,7 @@ defmodule TdDd.Loader do
         structure_records,
         field_records,
         relation_records,
-        audit_fields,
-        system_reference \\ nil
+        audit_fields
       ) do
     Logger.info(
       "Starting bulk load process (#{Enum.count(structure_records)}SR+#{Enum.count(field_records)}FR)"
@@ -29,7 +28,6 @@ defmodule TdDd.Loader do
     multi =
       Multi.new()
       |> Multi.run(:audit, fn _, _ -> {:ok, audit_fields} end)
-      |> Multi.run(:system_reference, fn _, _ -> {:ok, system_reference} end)
       |> Multi.run(:structure_records, fn _, _ -> {:ok, structure_records} end)
       |> Multi.run(:field_records, fn _, _ -> {:ok, field_records} end)
       |> Multi.run(:relation_records, fn _, _ -> {:ok, relation_records} end)
@@ -128,31 +126,17 @@ defmodule TdDd.Loader do
 
   defp upsert_structures(_repo, %{
          audit: audit_fields,
-         system_reference: system_reference,
          structure_records: records
        }) do
     Logger.info("Upserting data structures (#{Enum.count(records)} records)")
 
     records
-    |> Enum.map(&(&1 |> Map.merge(audit_fields) |> Map.put(:system_reference, system_reference)))
+    |> Enum.map(&(&1 |> Map.merge(audit_fields)))
     |> Enum.map(&create_or_update_data_structure/1)
     |> errors_or_structs
   end
 
-  defp create_or_update_data_structure(
-         %{description: description, system_reference: system_reference, system: system} = attrs
-       ) do
-    attrs =
-      case description do
-        nil -> attrs |> Map.drop([:description])
-        _ -> attrs
-      end
-
-    # TODO: we won't need to fetch the system for each structure
-    # if the system_reference is specified
-    system_id = fetch_system_id(system, system_reference)
-    attrs = Map.put(attrs, :system_id, system_id)
-
+  defp create_or_update_data_structure(attrs) do
     case fetch_data_structure(Map.take(attrs, [:system_id, :name, :group, :external_id])) do
       nil ->
         %DataStructure{}
@@ -220,22 +204,20 @@ defmodule TdDd.Loader do
   defp versions_by_sys_group_name_version(_repo, %{versions: versions}) do
     versions_by_sys_group_name_version =
       versions
-      |> Repo.preload([:data_structure, data_structure: :system])
+      |> Repo.preload([:data_structure])
       |> Map.new(&key_value/1)
 
     {:ok, versions_by_sys_group_name_version}
   end
 
   defp key_value(%DataStructureVersion{data_structure: data_structure, version: version} = dsv) do
-    # TODO: we won't need the system in our key once the reference is specified
     map =
       data_structure
-      |> Map.take([:system, :group, :name, :external_id])
-      |> replace_system_value()
+      |> Map.take([:system_id, :group, :name, :external_id])
       |> Map.put(:version, version)
 
     key =
-      [:system, :group, :name, :external_id, :version]
+      [:system_id, :group, :name, :external_id, :version]
       |> Enum.map(&Map.get(map, &1))
       |> List.to_tuple()
 
@@ -258,7 +240,7 @@ defmodule TdDd.Loader do
   end
 
   defp find_parent_child(versions_by_sys_group_name_version, %{
-         system: system,
+         system_id: system_id,
          parent_group: parent_group,
          parent_name: parent_name,
          parent_external_id: parent_external_id,
@@ -267,17 +249,16 @@ defmodule TdDd.Loader do
          child_external_id: child_external_id
        }) do
     # TODO: Support versions other than 0 for parent/child relationships
-    # TODO: we won't need the system in our key once the reference is specified
     parent =
       Map.get(
         versions_by_sys_group_name_version,
-        {system, parent_group, parent_name, parent_external_id, 0}
+        {system_id, parent_group, parent_name, parent_external_id, 0}
       )
 
     child =
       Map.get(
         versions_by_sys_group_name_version,
-        {system, child_group, child_name, child_external_id, 0}
+        {system_id, child_group, child_name, child_external_id, 0}
       )
 
     {parent, child}
@@ -294,11 +275,10 @@ defmodule TdDd.Loader do
       } records)"
     )
 
-    # TODO: we won't need the system in our key once the reference is specified
     diffs =
       records
       |> Enum.map(&(&1 |> Map.merge(audit_fields)))
-      |> Enum.group_by(&{&1.system, &1.group, &1.name, &1.external_id, &1.version})
+      |> Enum.group_by(&{&1.system_id, &1.group, &1.name, &1.external_id, &1.version})
       |> Map.to_list()
       |> Enum.map(fn {sys_group_name_version, records} ->
         {Map.get(versions_by_sys_group_name_version, sys_group_name_version), records}
@@ -374,11 +354,6 @@ defmodule TdDd.Loader do
 
   defp find_field(_data_fields, _), do: nil
 
-  defp replace_system_value(%{system: system} = attrs) do
-    name = Map.get(system, :name)
-    Map.put(attrs, :system, name)
-  end
-
   defp errors_or_structs(results) do
     errors = changeset_errors(results)
 
@@ -395,18 +370,6 @@ defmodule TdDd.Loader do
       true -> {:ok, results |> Enum.count()}
       false -> {:error, errors}
     end
-  end
-
-  defp fetch_system_id(system, nil) do
-    system
-    |> DataStructures.get_system_by_name()
-    |> Map.get(:id)
-  end
-
-  defp fetch_system_id(_, system_reference) do
-    system_reference
-    |> DataStructures.get_system_by_external_id()
-    |> Map.get(:id)
   end
 
   defp changeset_errors(results) do

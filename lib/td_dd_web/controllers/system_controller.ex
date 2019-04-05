@@ -3,11 +3,11 @@ defmodule TdDdWeb.SystemController do
   use PhoenixSwagger
 
   alias TdDd.Audit.AuditSupport
-  alias TdDd.DataStructures
   alias TdDd.DataStructures.System
+  alias TdDd.DataStructures.Systems
   alias TdDdWeb.SwaggerDefinitions
 
-  action_fallback TdDdWeb.FallbackController
+  action_fallback(TdDdWeb.FallbackController)
 
   def swagger_definitions do
     SwaggerDefinitions.system_swagger_definitions()
@@ -19,7 +19,7 @@ defmodule TdDdWeb.SystemController do
   end
 
   def index(conn, _params) do
-    systems = DataStructures.list_systems()
+    systems = Systems.list_systems()
     render(conn, "index.json", systems: systems)
   end
 
@@ -38,8 +38,9 @@ defmodule TdDdWeb.SystemController do
   end
 
   def create(conn, %{"system" => system_params}) do
-    with {:ok, %System{} = system} <- DataStructures.create_system(system_params) do
+    with {:ok, %System{} = system} <- Systems.create_system(system_params) do
       AuditSupport.system_created(conn, system)
+
       conn
       |> put_status(:created)
       |> put_resp_header("location", Routes.system_path(conn, :show, system))
@@ -50,16 +51,18 @@ defmodule TdDdWeb.SystemController do
   swagger_path :show do
     description("System Comment")
     produces("application/json")
+
     parameters do
       id(:path, :integer, "System ID", required: true)
     end
+
     response(200, "OK", Schema.ref(:SystemResponse))
     response(403, "Unauthorized")
     response(404, "Not Found")
   end
 
   def show(conn, %{"id" => id}) do
-    system = DataStructures.get_system!(id)
+    system = Systems.get_system!(id)
     render(conn, "show.json", system: system)
   end
 
@@ -78,9 +81,9 @@ defmodule TdDdWeb.SystemController do
   end
 
   def update(conn, %{"id" => id, "system" => system_params}) do
-    old_system = DataStructures.get_system!(id)
+    old_system = Systems.get_system!(id)
 
-    with {:ok, %System{} = system} <- DataStructures.update_system(old_system, system_params) do
+    with {:ok, %System{} = system} <- Systems.update_system(old_system, system_params) do
       AuditSupport.system_updated(conn, old_system, system)
       render(conn, "show.json", system: system)
     end
@@ -100,9 +103,9 @@ defmodule TdDdWeb.SystemController do
   end
 
   def delete(conn, %{"id" => id}) do
-    system = DataStructures.get_system!(id)
+    system = Systems.get_system!(id)
 
-    with {:ok, %System{}} <- DataStructures.delete_system(system) do
+    with {:ok, %System{}} <- Systems.delete_system(system) do
       send_resp(conn, :no_content, "")
     end
   end

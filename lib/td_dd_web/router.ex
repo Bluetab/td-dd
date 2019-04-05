@@ -40,8 +40,9 @@ defmodule TdDdWeb.Router do
 
     resources("/comments", CommentController, except: [:new, :edit])
 
-    resources("/systems", SystemController, except: [:new, :edit])
-    post("/data_structures/:system_reference/metadata", MetadataController, :upload_by_system)
+    resources("/systems", SystemController, except: [:new, :edit]) do
+      post("/metadata", MetadataController, :upload_by_system)
+    end
 
     get("/data_structures/search/reindex_all", SearchController, :reindex_all)
 
