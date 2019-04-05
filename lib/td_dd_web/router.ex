@@ -40,6 +40,10 @@ defmodule TdDdWeb.Router do
 
     resources("/comments", CommentController, except: [:new, :edit])
 
+    resources("/systems", SystemController, except: [:new, :edit]) do
+      post("/metadata", MetadataController, :upload_by_system)
+    end
+
     get("/data_structures/search/reindex_all", SearchController, :reindex_all)
 
     get("/data_structure_filters", DataStructureFilterController, :index)
@@ -56,7 +60,6 @@ defmodule TdDdWeb.Router do
         version: Application.spec(:td_dd, :vsn),
         title: "Truedat Data Dictionary Service"
       },
-      basePath: "/api",
       securityDefinitions: %{
         bearer: %{
           type: "apiKey",

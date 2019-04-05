@@ -28,7 +28,11 @@ defmodule TdDd.DataStructures do
   """
   def list_data_structures(params \\ %{}) do
     filter = build_filter(DataStructure, params)
-    Repo.all(from(ds in DataStructure, where: ^filter))
+
+    DataStructure
+    |> where([ds], ^filter)
+    |> Repo.all()
+    |> Repo.preload(:system)
   end
 
   def build_filter(schema, params) do
@@ -74,7 +78,11 @@ defmodule TdDd.DataStructures do
       ** (Ecto.NoResultsError)
 
   """
-  def get_data_structure!(id), do: Repo.get!(DataStructure, id)
+  def get_data_structure!(id) do
+    DataStructure
+    |> Repo.get!(id)
+    |> Repo.preload(:system)
+  end
 
   def get_data_structure_version!(data_structure_id, version) do
     attrs = %{data_structure_id: data_structure_id, version: version}
@@ -112,7 +120,7 @@ defmodule TdDd.DataStructures do
     data_structure_version
     |> Ecto.assoc(:children)
     |> Repo.all()
-    |> Repo.preload([:data_structure])
+    |> Repo.preload(data_structure: [:system])
     |> Enum.map(& &1.data_structure)
   end
 
@@ -210,7 +218,7 @@ defmodule TdDd.DataStructures do
         |> with_latest_fields
         |> @search_service.put_search
 
-        result
+        {:ok, data_structure |> Repo.preload(:system)}
 
       _ ->
         result
@@ -237,10 +245,12 @@ defmodule TdDd.DataStructures do
     case @df_cache.get_template_by_name(type) do
       %{:content => content_schema} ->
         content_changeset = Validation.build_changeset(content, content_schema)
+
         case content_changeset.valid? do
           false -> {:error, content_changeset}
           _ -> do_update_data_structure(data_structure, attrs)
         end
+
       _ ->
         {:error, "Invalid template"}
     end
@@ -552,7 +562,7 @@ defmodule TdDd.DataStructures do
       Enum.map(data_fields, fn field ->
         external_id =
           DataFieldCache.get_external_id(
-            data_structure.system,
+            data_structure.system.name,
             data_structure.group,
             data_structure.name,
             field.name

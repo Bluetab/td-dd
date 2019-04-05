@@ -51,7 +51,8 @@ defmodule TdDdWeb.SwaggerDefinitions do
 
           properties do
             id(:integer, "Data Structure unique identifier", required: true)
-            system(:string, "Data Structure system", required: true)
+            system(:object, "Data Structure system", required: true)
+            system_id(:integer, "System Id", required: true)
             group(:string, "Data Structure group", required: true)
             name(:string, "Data Structure name", required: true)
             description([:string, :null], "Data Structure description")
@@ -70,7 +71,11 @@ defmodule TdDdWeb.SwaggerDefinitions do
 
           example(%{
             id: 123,
-            system: "Data Structure system",
+            system: %{
+              id: 1,
+              external_id: "ExId",
+              name: "My Name"
+            },
             group: "Data Structure group",
             name: "Data Structure name",
             description: "Data Structure description",
@@ -78,6 +83,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
             ou: "General Management",
             confidential: "Data Structure confidentiality",
             inserted_at: "2018-05-08T17:17:59.691460",
+            system_id: 1,
             data_fields: [],
             metadata: %{
               "description" => "last description",
@@ -109,7 +115,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
             data_structure(
               Schema.new do
                 properties do
-                  system(:string, "Data Structure system", required: true)
+                  system_id(:integer, "System id", required: true)
                   group(:string, "Data Structure group", required: true)
                   name(:string, "Data Structure name", required: true)
                   description(:string, "Data Structure description")
@@ -333,6 +339,73 @@ defmodule TdDdWeb.SwaggerDefinitions do
         swagger_schema do
           properties do
             data(Schema.ref(:Comments))
+          end
+        end
+    }
+  end
+
+  def system_swagger_definitions do
+    %{
+      System:
+        swagger_schema do
+          title("System")
+          description("A System")
+
+          properties do
+            id(:integer, "System unique identifier", required: true)
+            external_id(:string, "Id representing a system externally", required: true)
+            name(:string, "System's name", required: true)
+          end
+
+          example(%{
+            name: "MicroStrategy",
+            external_id: "MS01",
+            id: 1
+          })
+        end,
+      SystemCreate:
+        swagger_schema do
+          properties do
+            system(
+              Schema.new do
+                properties do
+                  external_id(:string, "Id representing a system externally", required: true)
+                  name(:string, "System's name", required: true)
+                end
+              end
+            )
+          end
+        end,
+      SystemUpdate:
+        swagger_schema do
+          properties do
+            system(
+              Schema.new do
+                properties do
+                  external_id(:string, "Id representing a system externally")
+                  name(:string, "System's name")
+                end
+              end
+            )
+          end
+        end,
+      Systems:
+        swagger_schema do
+          title("Systems")
+          description("A collection of Systems")
+          type(:array)
+          items(Schema.ref(:System))
+        end,
+      SystemResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:System))
+          end
+        end,
+      SystemsResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:Systems))
           end
         end
     }
