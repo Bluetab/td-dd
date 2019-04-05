@@ -6,8 +6,8 @@ defmodule TdDd.DataStructures.DataStructure do
   alias TdDd.DataStructures.DataField
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
-  alias TdDd.DataStructures.System
   alias TdDd.Searchable
+  alias TdDd.Systems.System
   alias TdPerms.UserCache
 
   @behaviour Searchable

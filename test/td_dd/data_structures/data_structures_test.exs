@@ -248,7 +248,7 @@ defmodule TdDd.DataStructuresTest do
             :data_structure,
             id: &1,
             name: "DS#{&1}",
-            system: Enum.find(systems, fn sys -> &1 == sys end)
+            system: Enum.find(systems, fn sys -> &1 == sys.id end)
           )
         )
 

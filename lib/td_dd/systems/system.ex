@@ -1,11 +1,11 @@
-defmodule TdDd.DataStructures.System do
+defmodule TdDd.Systems.System do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
 
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.DataStructures.System
   alias TdDd.Searchable
+  alias TdDd.Systems.System
 
   @behaviour Searchable
 

@@ -5,9 +5,9 @@ defmodule TdDdWeb.MetadataController do
   alias Plug.Upload
   alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
   alias TdDd.CSV.Reader
-  alias TdDd.DataStructures.System
-  alias TdDd.DataStructures.Systems
   alias TdDd.Loader
+  alias TdDd.Systems
+  alias TdDd.Systems.System
 
   @index_worker Application.get_env(:td_dd, :index_worker)
   @taxonomy_cache Application.get_env(:td_dd, :taxonomy_cache)

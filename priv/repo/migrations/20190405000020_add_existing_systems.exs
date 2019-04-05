@@ -3,7 +3,7 @@ defmodule TdDd.Repo.Migrations.AddExistingSystems do
 
   import Ecto.Query
   alias TdDd.Repo
-  alias TdDd.DataStructures.System
+  alias TdDd.Systems.System
 
   @systems %{
     "MicroStrategy" => %{external_id: "mstr", name: "MicroStragegy"},

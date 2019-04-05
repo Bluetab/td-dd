@@ -6,7 +6,7 @@ defmodule TdDd.Factory do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
-  alias TdDd.DataStructures.System
+  alias TdDd.Systems.System
 
   def user_factory do
     %User {

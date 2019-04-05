@@ -1,11 +1,11 @@
-defmodule TdDd.DataStructures.Systems do
+defmodule TdDd.Systems do
   @moduledoc """
   The Systems context.
   """
   import Ecto.Query, warn: false
 
-  alias TdDd.DataStructures.System
   alias TdDd.Repo
+  alias TdDd.Systems.System
 
   @doc """
   Returns the list of systems.
@@ -148,7 +148,6 @@ defmodule TdDd.DataStructures.Systems do
   def get_system_name_to_id_map do
     list_systems()
     |> Enum.map(&Map.take(&1, [:name, :id]))
-    |> Enum.map(fn %{id: id, name: name} -> {name, id} end)
-    |> Enum.into(%{})
+    |> Enum.into(%{}, fn %{id: id, name: name} -> {name, id} end)
   end
 end

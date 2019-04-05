@@ -2,8 +2,8 @@ defmodule TdDd.Audit.AuditSupport do
   @moduledoc false
 
   alias TdDd.Audit
-  alias TdDd.DataStructures.System
-  alias TdDd.DataStructures.Systems
+  alias TdDd.Systems
+  alias TdDd.Systems.System
 
   @df_cache Application.get_env(:td_dd, :df_cache)
 

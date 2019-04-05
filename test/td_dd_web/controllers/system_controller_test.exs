@@ -2,9 +2,9 @@ defmodule TdDdWeb.SystemControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  alias TdDd.DataStructures.System
-  alias TdDd.DataStructures.Systems
   alias TdDd.Permissions.MockPermissionResolver
+  alias TdDd.Systems
+  alias TdDd.Systems.System
   alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
 

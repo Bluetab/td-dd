@@ -1,9 +1,9 @@
-defmodule TdDd.DataStructures.SystemsTest do
+defmodule TdDd.SystemsTest do
   use TdDd.DataCase
 
   describe "systems" do
-    alias TdDd.DataStructures.System
-    alias TdDd.DataStructures.Systems
+    alias TdDd.Systems
+    alias TdDd.Systems.System
 
     @valid_attrs %{external_id: "some external_id", name: "some name"}
     @update_attrs %{external_id: "some updated external_id", name: "some updated name"}

@@ -3,8 +3,8 @@ defmodule TdDdWeb.SystemController do
   use PhoenixSwagger
 
   alias TdDd.Audit.AuditSupport
-  alias TdDd.DataStructures.System
-  alias TdDd.DataStructures.Systems
+  alias TdDd.Systems
+  alias TdDd.Systems.System
   alias TdDdWeb.SwaggerDefinitions
 
   action_fallback(TdDdWeb.FallbackController)
