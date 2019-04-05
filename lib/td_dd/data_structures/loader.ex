@@ -15,7 +15,12 @@ defmodule TdDd.Loader do
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Repo
 
-  def load(structure_records, field_records, relation_records, audit_fields) do
+  def load(
+        structure_records,
+        field_records,
+        relation_records,
+        audit_fields
+      ) do
     Logger.info(
       "Starting bulk load process (#{Enum.count(structure_records)}SR+#{Enum.count(field_records)}FR)"
     )
@@ -119,7 +124,10 @@ defmodule TdDd.Loader do
     num_rows
   end
 
-  defp upsert_structures(_repo, %{audit: audit_fields, structure_records: records}) do
+  defp upsert_structures(_repo, %{
+         audit: audit_fields,
+         structure_records: records
+       }) do
     Logger.info("Upserting data structures (#{Enum.count(records)} records)")
 
     records
@@ -129,11 +137,12 @@ defmodule TdDd.Loader do
   end
 
   defp create_or_update_data_structure(attrs) do
-    case fetch_data_structure(Map.take(attrs, [:system, :name, :group, :external_id])) do
+    case fetch_data_structure(Map.take(attrs, [:system_id, :name, :group, :external_id])) do
       nil ->
         %DataStructure{}
         |> DataStructure.changeset(attrs)
         |> Repo.insert()
+
       s ->
         s |> DataStructure.loader_changeset(attrs) |> Repo.update()
     end
@@ -141,7 +150,10 @@ defmodule TdDd.Loader do
 
   defp fetch_data_structure(attrs) do
     filter = DataStructures.build_filter(DataStructure, attrs)
-    Repo.one(from(ds in DataStructure, where: ^filter))
+
+    DataStructure
+    |> where([ds], ^filter)
+    |> Repo.one()
   end
 
   defp upsert_structure_versions(_repo, %{structures: structures, structure_records: records}) do
@@ -192,7 +204,7 @@ defmodule TdDd.Loader do
   defp versions_by_sys_group_name_version(_repo, %{versions: versions}) do
     versions_by_sys_group_name_version =
       versions
-      |> Repo.preload(:data_structure)
+      |> Repo.preload([:data_structure])
       |> Map.new(&key_value/1)
 
     {:ok, versions_by_sys_group_name_version}
@@ -201,11 +213,11 @@ defmodule TdDd.Loader do
   defp key_value(%DataStructureVersion{data_structure: data_structure, version: version} = dsv) do
     map =
       data_structure
-      |> Map.take([:system, :group, :name, :external_id])
+      |> Map.take([:system_id, :group, :name, :external_id])
       |> Map.put(:version, version)
 
     key =
-      [:system, :group, :name, :external_id, :version]
+      [:system_id, :group, :name, :external_id, :version]
       |> Enum.map(&Map.get(map, &1))
       |> List.to_tuple()
 
@@ -228,7 +240,7 @@ defmodule TdDd.Loader do
   end
 
   defp find_parent_child(versions_by_sys_group_name_version, %{
-         system: system,
+         system_id: system_id,
          parent_group: parent_group,
          parent_name: parent_name,
          parent_external_id: parent_external_id,
@@ -240,13 +252,13 @@ defmodule TdDd.Loader do
     parent =
       Map.get(
         versions_by_sys_group_name_version,
-        {system, parent_group, parent_name, parent_external_id, 0}
+        {system_id, parent_group, parent_name, parent_external_id, 0}
       )
 
     child =
       Map.get(
         versions_by_sys_group_name_version,
-        {system, child_group, child_name, child_external_id, 0}
+        {system_id, child_group, child_name, child_external_id, 0}
       )
 
     {parent, child}
@@ -266,7 +278,7 @@ defmodule TdDd.Loader do
     diffs =
       records
       |> Enum.map(&(&1 |> Map.merge(audit_fields)))
-      |> Enum.group_by(&{&1.system, &1.group, &1.name, &1.external_id, &1.version})
+      |> Enum.group_by(&{&1.system_id, &1.group, &1.name, &1.external_id, &1.version})
       |> Map.to_list()
       |> Enum.map(fn {sys_group_name_version, records} ->
         {Map.get(versions_by_sys_group_name_version, sys_group_name_version), records}

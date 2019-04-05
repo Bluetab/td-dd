@@ -12,5 +12,4 @@ defmodule TdDd.DataStructure.Query do
       _ -> "#{query}*"
     end
   end
-
 end

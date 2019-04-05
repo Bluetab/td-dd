@@ -10,10 +10,13 @@ defmodule TdDd.CSV.Reader do
   def read_csv(stream, options \\ []) do
     separator = Keyword.get(options, :separator, ?;)
     domain_map = Keyword.get(options, :domain_map)
+    system_map = Keyword.get(options, :system_map)
 
     records =
       stream
-      |> read_records(separator, domain_map)
+      |> read_records(separator)
+      |> with_domain_id(domain_map)
+      |> with_system_id(system_map)
       |> Enum.map(&csv_to_map(&1, options))
 
     {oks, errors} =
@@ -31,21 +34,38 @@ defmodule TdDd.CSV.Reader do
     end
   end
 
-  defp read_records(stream, separator, nil = _domain_map) do
+  defp read_records(stream, separator) do
     stream
     |> CSV.decode!(separator: separator, headers: true)
     |> Enum.to_list()
   end
 
-  defp read_records(stream, separator, domain_map) do
-    stream
-    |> read_records(separator, nil)
+  defp with_domain_id(records, nil = _domain_map), do: records
+
+  defp with_domain_id(records, domain_map) do
+    records
     |> Enum.map(&DataStructures.add_domain_id(&1, domain_map))
   end
 
+  defp with_system_id(records, nil = _system_map), do: records
+
+  defp with_system_id(records, system_map) do
+    records
+    |> Enum.map(&add_system_id(&1, system_map))
+  end
+
+  defp add_system_id(%{"system" => system} = record, system_map) do
+    system_id = Map.get(system_map, system)
+    Map.put(record, "system_id", system_id)
+  end
+
+  defp add_system_id(record, _system_map) do
+    Map.put(record, "system_id", nil)
+  end
+
   def csv_to_map(record, options \\ []) do
-    data = Keyword.get(options, :defaults, %{})
-    types = Keyword.get(options, :schema, %{})
+    defaults = Keyword.get(options, :defaults, %{}) || %{}
+    types = Keyword.get(options, :schema, %{}) || %{}
     required = Keyword.get(options, :required, [])
     booleans = Keyword.get(options, :booleans, [])
     truthy_values = Keyword.get(options, :truthy_values, @truthy_values)
@@ -56,7 +76,7 @@ defmodule TdDd.CSV.Reader do
 
     meta = extract_meta(params)
 
-    {data, types}
+    {defaults, types}
     |> Changeset.cast(params, Map.keys(types))
     |> Changeset.change(%{metadata: meta})
     |> Changeset.validate_required(required)
