@@ -12,7 +12,7 @@ defmodule TdDd.ReleaseTasks do
     :ecto_sql
   ]
 
-  @repos Application.get_env(:td_auth, :ecto_repos, [])
+  @repos Application.get_env(:td_dd, :ecto_repos, [])
 
   def migrate do
     start_services()

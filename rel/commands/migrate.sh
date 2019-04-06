@@ -1,3 +1,3 @@
 #!/bin/sh
 
-$RELEASE_ROOT_DIR/bin/td_dd eval 'Elixir.TdDd.ReleaseTasks.migrate()'
+$RELEASE_ROOT_DIR/bin/td_dd eval 'Elixir.TdDd.ReleaseTasks.seed()'
