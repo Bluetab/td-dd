@@ -6,54 +6,38 @@ defmodule TdDd.Repo.Migrations.AddExistingSystems do
   alias TdDd.Systems.System
 
   @systems %{
-    "MicroStrategy" => %{external_id: "mstr", name: "MicroStragegy"},
-    "Microstrategy" => %{external_id: "mstr", name: "MicroStragegy"},
+    "MicroStrategy" => %{external_id: "mstr", name: "MicroStrategy"},
     "Azure Blob Storage" => %{external_id: "abs", name: "Azure Blob Storage"},
     "Azure Data Lake Storage" => %{external_id: "adls", name: "Azure Data Lake Storage"},
-    "Azure SQL Database" => %{external_id: "azure-sql", name: "Azure SQL Database"},
-    "DWH Azure SQL Database" => %{external_id: "azure-sql", name: "Azure SQL Database"},
-    "PowerBI" => %{external_id: "pbi", name: "Power BI"},
-    "Power BI" => %{external_id: "pbi", name: "Power BI"},
-    "postgres" => %{external_id: "postgres", name: "PostgreSQL"},
+    "Azure SQL Database" => %{external_id: "azsql", name: "Azure SQL Database"},
+    "DWH Azure SQL Database" => %{external_id: "azsql", name: "Azure SQL Database"},
+    "Power BI" => %{external_id: "powerbi", name: "Power BI"},
+    "PostgreSQL" => %{external_id: "postgres", name: "PostgreSQL"},
     "SAP" => %{external_id: "sap", name: "SAP"},
     "SAS" => %{external_id: "sas", name: "SAS"}
   }
 
-  def up do
-    distinct_systems =
-      fetch_distinct_systems()
-      |> format_to_system_definition()
+  defp system_from_name(name), do: Map.get(@systems, name, %{external_id: name, name: name})
 
-    Repo.insert_all(System, distinct_systems)
+  def up do
+    timestamps = get_timestamps(NaiveDateTime.utc_now())
+
+    systems =
+      from(ds in "data_structures", distinct: true, select: ds.system)
+      |> Repo.all()
+      |> Enum.map(&system_from_name/1)
+      |> Enum.map(&Map.merge(&1, timestamps))
+
+    Repo.insert_all(System, systems)
+  end
+
+  defp get_timestamps(ts) do
+    ts = ts |> NaiveDateTime.truncate(:second)
+    %{inserted_at: ts, updated_at: ts}
   end
 
   def down do
     Repo.delete_all(System)
-  end
-
-  defp fetch_distinct_systems do
-    from(d in "data_structures", select: %{name: d.system})
-    |> distinct(true)
-    |> Repo.all()
-  end
-
-  defp format_to_system_definition(systems) do
-    now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
-    timestamps = %{inserted_at: now, updated_at: now}
-
-    systems
-    |> Enum.map(& &1.name)
-    |> Enum.map(&map_system/1)
-    |> Enum.uniq()
-    |> Enum.map(&Map.merge(&1, timestamps))
-  end
-
-  defp map_system(nil), do: map_system("unknown")
-
-  defp map_system(name) do
-    case Map.get(@systems, name) do
-      nil -> %{external_id: name, name: name}
-      sys -> sys
-    end
+    execute("update data_structures set system=null where system = 'unknown';")
   end
 end
