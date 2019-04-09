@@ -13,6 +13,7 @@ defmodule TdDd.Loader do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.Loader.FieldsAsStructures
   alias TdDd.Repo
 
   def load(
@@ -25,12 +26,19 @@ defmodule TdDd.Loader do
       "Starting bulk load process (#{Enum.count(structure_records)}SR+#{Enum.count(field_records)}FR)"
     )
 
+    {fields_as_structures, fields_as_relations} =
+      fields_as_structures(field_records, structure_records)
+
     multi =
       Multi.new()
       |> Multi.run(:audit, fn _, _ -> {:ok, audit_fields} end)
-      |> Multi.run(:structure_records, fn _, _ -> {:ok, structure_records} end)
+      |> Multi.run(:structure_records, fn _, _ ->
+        {:ok, structure_records ++ fields_as_structures}
+      end)
       |> Multi.run(:field_records, fn _, _ -> {:ok, field_records} end)
-      |> Multi.run(:relation_records, fn _, _ -> {:ok, relation_records} end)
+      |> Multi.run(:relation_records, fn _, _ ->
+        {:ok, relation_records ++ fields_as_relations}
+      end)
       |> Multi.run(:structures, &upsert_structures/2)
       |> Multi.run(:versions, &upsert_structure_versions/2)
       |> Multi.run(:versions_by_sys_group_name_version, &versions_by_sys_group_name_version/2)
@@ -51,6 +59,13 @@ defmodule TdDd.Loader do
         Logger.warn("Bulk load process failed (operation #{failed_operation})")
         {:error, failed_operation, failed_value, changes_so_far}
     end
+  end
+
+  defp fields_as_structures(field_records, structure_records) do
+    fields_by_parent = FieldsAsStructures.group_by_parent(field_records, structure_records)
+    fields_as_structures = FieldsAsStructures.as_structures(fields_by_parent)
+    fields_as_relations = FieldsAsStructures.as_relations(fields_by_parent)
+    {fields_as_structures, fields_as_relations}
   end
 
   defp update_fields(_repo, %{diffs: diffs, audit: audit}) do

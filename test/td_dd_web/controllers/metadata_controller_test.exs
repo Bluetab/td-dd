@@ -55,7 +55,7 @@ defmodule TdDdWeb.MetadataControllerTest do
       search_params = %{ou: "Truedat"}
       conn = get(conn, Routes.data_structure_path(conn, :index, search_params))
       json_response = json_response(conn, 200)["data"]
-      assert length(json_response) == 5
+      assert length(json_response) == 5 + 68
 
       structure_id = get_id(json_response, "Calidad")
       conn = get(conn, Routes.data_structure_path(conn, :show, structure_id))
