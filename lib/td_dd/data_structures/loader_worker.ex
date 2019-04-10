@@ -19,7 +19,7 @@ defmodule TdDd.Loader.LoaderWorker do
     GenServer.cast(TdDd.Loader.LoaderWorker, {:load, structures, fields, relations, audit})
   end
 
-  def ping() do
+  def ping do
     GenServer.call(TdDd.Loader.LoaderWorker, {:ping})
   end
 
