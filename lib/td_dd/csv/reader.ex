@@ -70,15 +70,24 @@ defmodule TdDd.CSV.Reader do
     booleans = Keyword.get(options, :booleans, [])
     truthy_values = Keyword.get(options, :truthy_values, @truthy_values)
 
-    params =
-      record
-      |> values_to_bools(booleans, truthy_values)
+    record
+    |> values_to_bools(booleans, truthy_values)
+    |> changeset(defaults, types, required)
+  end
 
-    meta = extract_meta(params)
+  def changeset(record, defaults, %{metadata: :map} = types, required) do
+    meta = extract_meta(record)
 
     {defaults, types}
-    |> Changeset.cast(params, Map.keys(types))
+    |> Changeset.cast(record, Map.keys(types))
     |> Changeset.change(%{metadata: meta})
+    |> Changeset.validate_required(required)
+    |> Changeset.apply_action(:update)
+  end
+
+  def changeset(record, defaults, types, required) do
+    {defaults, types}
+    |> Changeset.cast(record, Map.keys(types))
     |> Changeset.validate_required(required)
     |> Changeset.apply_action(:update)
   end

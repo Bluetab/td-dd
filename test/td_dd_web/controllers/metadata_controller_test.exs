@@ -2,6 +2,7 @@ defmodule TdDdWeb.MetadataControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
+  alias TdDd.Loader.LoaderWorker
   alias TdDd.MockTaxonomyCache
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDd.Search.MockIndexWorker
@@ -51,6 +52,9 @@ defmodule TdDdWeb.MetadataControllerTest do
         )
 
       assert response(conn, 204) =~ ""
+
+      # waits for loader to complete
+      LoaderWorker.ping()
 
       search_params = %{ou: "Truedat"}
       conn = get(conn, Routes.data_structure_path(conn, :index, search_params))

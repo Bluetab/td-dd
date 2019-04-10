@@ -30,7 +30,7 @@ defmodule TdDd.Search.IndexWorker do
     end_time = DateTime.utc_now()
 
     Logger.info(
-      "Data structures indexed. Elapsed seconds: #{DateTime.diff(end_time, start_time)}"
+      "Data structures indexed in #{DateTime.diff(end_time, start_time, :millisecond)}ms"
     )
 
     {:noreply, state}

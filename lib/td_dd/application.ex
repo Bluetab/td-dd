@@ -15,7 +15,9 @@ defmodule TdDd.Application do
       # Start the endpoint when the application starts
       supervisor(TdDdWeb.Endpoint, []),
       # Worker for background indexing
-      worker(TdDd.Search.IndexWorker, [TdDd.Search.IndexWorker])
+      worker(TdDd.Search.IndexWorker, [TdDd.Search.IndexWorker]),
+      # Worker for background bulk loading
+      worker(TdDd.Loader.LoaderWorker, [TdDd.Loader.LoaderWorker])
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

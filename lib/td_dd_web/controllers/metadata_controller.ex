@@ -5,11 +5,10 @@ defmodule TdDdWeb.MetadataController do
   alias Plug.Upload
   alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
   alias TdDd.CSV.Reader
-  alias TdDd.Loader
+  alias TdDd.Loader.LoaderWorker
   alias TdDd.Systems
   alias TdDd.Systems.System
 
-  @index_worker Application.get_env(:td_dd, :index_worker)
   @taxonomy_cache Application.get_env(:td_dd, :taxonomy_cache)
 
   @structure_import_schema Application.get_env(:td_dd, :metadata)[:structure_import_schema]
@@ -82,10 +81,6 @@ defmodule TdDdWeb.MetadataController do
   end
 
   defp do_upload(conn, params, system_id \\ nil) do
-    Logger.info("Uploading metadata...")
-
-    start_time = DateTime.utc_now()
-
     {:ok, field_recs} = params |> Map.get("data_fields") |> parse_data_fields(system_id)
 
     {:ok, structure_recs} =
@@ -95,12 +90,6 @@ defmodule TdDdWeb.MetadataController do
       params |> Map.get("data_structure_relations") |> parse_data_structure_relations(system_id)
 
     load(conn, structure_recs, field_recs, relation_recs)
-
-    end_time = DateTime.utc_now()
-
-    Logger.info("Metadata uploaded. Elapsed seconds: #{DateTime.diff(end_time, start_time)}")
-
-    @index_worker.reindex()
   end
 
   defp parse_data_structures(nil, _), do: {:ok, []}
@@ -176,11 +165,6 @@ defmodule TdDdWeb.MetadataController do
     user_id = GuardianPlug.current_resource(conn).id
     audit_fields = %{last_change_at: DateTime.utc_now(), last_change_by: user_id}
 
-    Loader.load(
-      structure_records,
-      field_records,
-      relation_records,
-      audit_fields
-    )
+    LoaderWorker.load(structure_records, field_records, relation_records, audit_fields)
   end
 end

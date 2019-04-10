@@ -352,14 +352,14 @@ defmodule TdDd.Loader do
 
     to_modify =
       to_modify
-      |> Enum.filter(fn {field, record} -> has_changes(field, record) end)
+      |> Enum.filter(fn {field, record} -> has_changes?(field, record) end)
 
     %{add: to_insert, modify: to_modify, remove: to_remove}
   end
 
-  defp has_changes(field, %{description: description} = record) do
+  defp has_changes?(field, %{} = record) do
     check_props =
-      case description do
+      case Map.get(record, :description) do
         nil -> [:business_concept_id, :metadata]
         _ -> [:business_concept_id, :description, :metadata]
       end
@@ -373,12 +373,15 @@ defmodule TdDd.Loader do
     field |> Map.take(check_props) != defaults |> Map.merge(record) |> Map.take(check_props)
   end
 
-  defp find_field(data_fields, %{
-         field_name: name,
-         type: type,
-         nullable: nullable,
-         precision: precision
-       }) do
+  defp find_field(
+         data_fields,
+         %{
+           field_name: name,
+           type: type
+         } = attrs
+       ) do
+    nullable = Map.get(attrs, :nullable)
+    precision = Map.get(attrs, :precision)
     match = %{name: name, type: type, nullable: nullable, precision: precision}
 
     data_fields
