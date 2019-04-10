@@ -28,6 +28,7 @@ defmodule TdDdWeb.DataStructureView do
       data:
         data_structure
         |> data_structure_json
+        |> add_system_with_keys(data_structure, [:external_id, :id, :name])
         |> add_dynamic_content(data_structure)
         |> add_data_fields(data_structure)
         |> add_versions(data_structure)
@@ -40,13 +41,13 @@ defmodule TdDdWeb.DataStructureView do
   def render("data_structure.json", %{data_structure: data_structure}) do
     data_structure
     |> data_structure_json
+    |> add_system_with_keys(data_structure, ["external_id", "id", "name"])
     |> add_dynamic_content(data_structure)
   end
 
   defp data_structure_json(data_structure) do
     %{
       id: data_structure.id,
-      system: data_structure.system,
       group: data_structure.group,
       name: data_structure.name,
       description: data_structure.description,
@@ -56,8 +57,18 @@ defmodule TdDdWeb.DataStructureView do
       domain_id: data_structure.domain_id,
       last_change_at: data_structure.last_change_at,
       inserted_at: data_structure.inserted_at,
+      system_id: data_structure.system_id,
       metadata: Map.get(data_structure, :metadata, %{})
     }
+  end
+
+  defp add_system_with_keys(json, data_structure, keys) do
+    system_params =
+      data_structure
+      |> Map.get(:system)
+      |> Map.take(keys)
+
+    Map.put(json, :system, system_params)
   end
 
   defp data_structure_embedded(data_structure) do

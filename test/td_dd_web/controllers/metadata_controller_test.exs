@@ -5,11 +5,13 @@ defmodule TdDdWeb.MetadataControllerTest do
   alias TdDd.MockTaxonomyCache
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDd.Search.MockIndexWorker
+  alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
   alias TdPerms.MockDynamicFormCache
 
   setup_all do
     start_supervised(MockIndexWorker)
+    start_supervised(MockTdAuditService)
     start_supervised(MockTdAuthService)
     start_supervised(MockTaxonomyCache)
     start_supervised(MockPermissionResolver)
@@ -34,6 +36,13 @@ defmodule TdDdWeb.MetadataControllerTest do
       fields: fields,
       relations: relations
     } do
+      conn =
+        post(conn, Routes.system_path(conn, :create),
+          system: %{name: "Power BI", external_id: "pbi"}
+        )
+
+      assert %{"id" => id} = json_response(conn, 201)["data"]
+
       conn =
         post(conn, Routes.metadata_path(conn, :upload),
           data_structures: structures,

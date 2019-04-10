@@ -13,7 +13,6 @@ defmodule TdDd.DataStructuresTest do
       last_change_at: "2010-04-17 14:00:00Z",
       last_change_by: 42,
       name: "some name",
-      system: "some system",
       metadata: %{}
     }
     @update_attrs %{description: "some updated description", df_content: %{updated: "content"}}
@@ -22,8 +21,7 @@ defmodule TdDd.DataStructuresTest do
       group: nil,
       last_change_at: nil,
       last_change_by: nil,
-      name: nil,
-      system: nil
+      name: nil
     }
 
     test "list_data_structures/1 returns all data_structures" do
@@ -40,7 +38,6 @@ defmodule TdDd.DataStructuresTest do
 
     test "get_data_structure!/1 returns the data_structure with given id" do
       data_structure = insert(:data_structure)
-
       assert DataStructures.get_data_structure!(data_structure.id) <~> data_structure
     end
 
@@ -53,8 +50,11 @@ defmodule TdDd.DataStructuresTest do
     end
 
     test "create_data_structure/1 with valid data creates a data_structure" do
+      system = insert(:system)
+      valid_attrs = Map.merge(@valid_attrs, %{system_id: system.id})
+
       assert {:ok, %DataStructure{} = data_structure} =
-               DataStructures.create_data_structure(@valid_attrs)
+               DataStructures.create_data_structure(valid_attrs)
 
       assert data_structure.description == "some description"
       assert data_structure.group == "some group"
@@ -64,7 +64,7 @@ defmodule TdDd.DataStructuresTest do
 
       assert data_structure.last_change_by == 42
       assert data_structure.name == "some name"
-      assert data_structure.system == "some system"
+      assert data_structure.system.external_id == "System_ref"
     end
 
     test "create_data_structure/1 with invalid data returns error changeset" do
@@ -202,9 +202,12 @@ defmodule TdDd.DataStructuresTest do
     end
 
     test "get_version_children/1 returns child versions" do
-      ds1 = insert(:data_structure, id: 1, name: "DS1")
-      ds2 = insert(:data_structure, id: 2, name: "DS2")
-      ds3 = insert(:data_structure, id: 3, name: "DS3")
+      sys1 = insert(:system, name: "Sys1", external_id: "Ref 1")
+      sys2 = insert(:system, name: "Sys2", external_id: "Ref 2")
+      sys3 = insert(:system, name: "Sys3", external_id: "Ref 3")
+      ds1 = insert(:data_structure, id: 1, name: "DS1", system: sys1)
+      ds2 = insert(:data_structure, id: 2, name: "DS2", system: sys2)
+      ds3 = insert(:data_structure, id: 3, name: "DS3", system: sys3)
       dsv1 = insert(:data_structure_version, data_structure_id: ds1.id)
       dsv2 = insert(:data_structure_version, data_structure_id: ds2.id)
       dsv3 = insert(:data_structure_version, data_structure_id: ds3.id)
@@ -216,9 +219,12 @@ defmodule TdDd.DataStructuresTest do
     end
 
     test "get_version_parents/1 returns parent versions" do
-      ds1 = insert(:data_structure, id: 4, name: "DS4")
-      ds2 = insert(:data_structure, id: 5, name: "DS5")
-      ds3 = insert(:data_structure, id: 6, name: "DS6")
+      sys1 = insert(:system, name: "Sys1", external_id: "Ref 1")
+      sys2 = insert(:system, name: "Sys2", external_id: "Ref 2")
+      sys3 = insert(:system, name: "Sys3", external_id: "Ref 3")
+      ds1 = insert(:data_structure, id: 4, name: "DS4", system: sys1)
+      ds2 = insert(:data_structure, id: 5, name: "DS5", system: sys2)
+      ds3 = insert(:data_structure, id: 6, name: "DS6", system: sys3)
       dsv1 = insert(:data_structure_version, data_structure_id: ds1.id)
       dsv2 = insert(:data_structure_version, data_structure_id: ds2.id)
       dsv3 = insert(:data_structure_version, data_structure_id: ds3.id)
@@ -231,9 +237,20 @@ defmodule TdDd.DataStructuresTest do
     end
 
     test "get_siblings/1 returns sibling structures" do
+      systems =
+        [7, 8, 9, 10]
+        |> Enum.map(&insert(:system, id: &1, external_id: "SYS#{&1}"))
+
       [ds1, ds2, ds3, ds4] =
         [7, 8, 9, 10]
-        |> Enum.map(&insert(:data_structure, id: &1, name: "DS#{&1}"))
+        |> Enum.map(
+          &insert(
+            :data_structure,
+            id: &1,
+            name: "DS#{&1}",
+            system: Enum.find(systems, fn sys -> &1 == sys.id end)
+          )
+        )
 
       [dsv1, dsv2, dsv3, dsv4] =
         [ds1, ds2, ds3, ds4]
