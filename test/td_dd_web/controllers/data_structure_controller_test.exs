@@ -19,7 +19,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
     name: "some name",
     type: "csv",
     ou: "GM",
-    metadata: %{}
+    metadata: %{},
+    system_id: 1
   }
   @update_attrs %{
     description: "some updated description",
@@ -51,7 +52,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
   end
 
   setup %{conn: conn} do
-    {:ok, conn: put_req_header(conn, "accept", "application/json")}
+    system = insert(:system, id: 1)
+    {:ok, conn: put_req_header(conn, "accept", "application/json"), system: system}
   end
 
   @admin_user_name "app-admin"
@@ -99,10 +101,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
     @tag authenticated_user: @admin_user_name
     test "search all data_structures", %{conn: conn} do
-      system = insert(:system)
-      system_id = system |> Map.get(:id)
-      create_attrs = Map.merge(@create_attrs, %{system_id: system_id})
-      conn = post(conn, Routes.data_structure_path(conn, :create), data_structure: create_attrs)
+      conn = post(conn, Routes.data_structure_path(conn, :create), data_structure: @create_attrs)
       data_structure = conn.assigns.data_structure
       search_params = %{ou: " one§ tow §  #{data_structure.ou}"}
 
@@ -118,11 +117,12 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
   describe "create data_structure" do
     @tag authenticated_user: @admin_user_name
-    test "renders data_structure when data is valid", %{conn: conn, swagger_schema: schema} do
-      system = insert(:system)
-      system_id = system |> Map.get(:id)
-      create_attrs = Map.merge(@create_attrs, %{system_id: system_id})
-      conn = post(conn, Routes.data_structure_path(conn, :create), data_structure: create_attrs)
+    test "renders data_structure when data is valid", %{
+      conn: conn,
+      swagger_schema: schema,
+      system: system
+    } do
+      conn = post(conn, Routes.data_structure_path(conn, :create), data_structure: @create_attrs)
       assert %{"id" => id} = json_response(conn, 201)["data"]
       validate_resp_schema(conn, schema, "DataStructureResponse")
 
@@ -142,9 +142,9 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert json_response_data["ou"] == "GM"
       assert json_response_data["group"] == "some group"
       assert json_response_data["name"] == "some name"
-      assert json_response_data["system"]["id"] == system_id
-      assert json_response_data["system"]["external_id"] == Map.get(system, :external_id)
-      assert json_response_data["system"]["name"] == Map.get(system, :name)
+      assert json_response_data["system"]["id"] == system.id
+      assert json_response_data["system"]["external_id"] == system.external_id
+      assert json_response_data["system"]["name"] == system.name
       assert json_response_data["inserted_at"]
     end
 
@@ -375,13 +375,12 @@ defmodule TdDdWeb.DataStructureControllerTest do
   end
 
   defp create_structure_hierarchy(_) do
-    system = insert(:system)
-    parent_structure = insert(:data_structure, system: system)
-    structure = insert(:data_structure, system: system)
+    parent_structure = insert(:data_structure)
+    structure = insert(:data_structure)
 
     child_structures = [
-      insert(:data_structure, system: system),
-      insert(:data_structure, system: system)
+      insert(:data_structure),
+      insert(:data_structure)
     ]
 
     parent_version = insert(:data_structure_version, data_structure_id: parent_structure.id)
@@ -405,7 +404,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
   defp create_data_structure_and_permissions(user_id, role_name, confidential) do
     domain_name = "domain_name"
     domain_id = 1
-    system = insert(:system, external_id: "NewRef")
     MockTaxonomyCache.create_domain(%{name: domain_name, id: domain_id})
 
     MockPermissionResolver.create_acl_entry(%{
@@ -440,7 +438,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
         name: "confidential",
         ou: domain_name,
         domain_id: domain_id,
-        system: system,
         type: template_name
       )
 

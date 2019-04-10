@@ -9,7 +9,7 @@ defmodule TdDd.Factory do
   alias TdDd.Systems.System
 
   def user_factory do
-    %User {
+    %User{
       id: 0,
       user_name: "bufoncillo",
       is_admin: false
@@ -17,13 +17,13 @@ defmodule TdDd.Factory do
   end
 
   def data_structure_factory do
-    %DataStructure {
+    %DataStructure{
       description: "some description",
       group: "some group",
       last_change_at: DateTime.utc_now(),
       last_change_by: 0,
       name: "some name",
-      system: build(:system),
+      system_id: 1,
       metadata: %{"description" => "some description"},
       ou: "My organization",
       versions: [],
@@ -33,17 +33,17 @@ defmodule TdDd.Factory do
   end
 
   def data_structure_version_factory do
-    %DataStructureVersion {
-      version: 0,
+    %DataStructureVersion{
+      version: 0
     }
   end
 
   def data_structure_relation_factory do
-    %DataStructureRelation {}
+    %DataStructureRelation{}
   end
 
   def data_field_factory do
-    %DataField {
+    %DataField{
       business_concept_id: nil,
       description: "some description",
       last_change_at: DateTime.utc_now(),
@@ -57,7 +57,7 @@ defmodule TdDd.Factory do
   end
 
   def system_factory do
-    %System {
+    %System{
       name: "My system",
       external_id: "System_ref"
     }

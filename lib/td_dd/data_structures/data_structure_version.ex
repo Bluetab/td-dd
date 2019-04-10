@@ -17,14 +17,12 @@ defmodule TdDd.DataStructures.DataStructureVersion do
 
     many_to_many(:children, DataStructureVersion,
       join_through: DataStructureRelation,
-      join_keys: [parent_id: :id, child_id: :id],
-      on_delete: :delete_all
+      join_keys: [parent_id: :id, child_id: :id]
     )
 
     many_to_many(:parents, DataStructureVersion,
       join_through: DataStructureRelation,
-      join_keys: [child_id: :id, parent_id: :id],
-      on_delete: :delete_all
+      join_keys: [child_id: :id, parent_id: :id]
     )
 
     timestamps(type: :utc_datetime)
