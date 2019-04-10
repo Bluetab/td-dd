@@ -175,13 +175,14 @@ defmodule TdDd.Loader do
   end
 
   defp fetch_data_structure(%{system_id: system_id, name: name, group: group}) do
-    from(
-      s in DataStructure,
-      where:
-        s.system_id == ^system_id and s.name == ^name and s.group == ^group and
-          is_nil(s.external_id)
+    Repo.one(
+      from(
+        s in DataStructure,
+        where:
+          s.system_id == ^system_id and s.name == ^name and s.group == ^group and
+            is_nil(s.external_id)
+      )
     )
-    |> Repo.one()
   end
 
   defp upsert_structure_versions(_repo, %{structures: structures, structure_records: records}) do
