@@ -19,6 +19,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   end
 
   setup %{conn: conn} do
+    insert(:system, id: 1)
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
 
@@ -63,10 +64,9 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   end
 
   defp create_structure_hierarchy(_) do
-    system = insert(:system)
-    parent_structure = insert(:data_structure, system: system)
-    structure = insert(:data_structure, system: system)
-    child_structures = [insert(:data_structure, system: system), insert(:data_structure, system: system)]
+    parent_structure = insert(:data_structure)
+    structure = insert(:data_structure)
+    child_structures = [insert(:data_structure), insert(:data_structure)]
     parent_version = insert(:data_structure_version, data_structure_id: parent_structure.id)
     structure_version = insert(:data_structure_version, data_structure_id: structure.id)
 

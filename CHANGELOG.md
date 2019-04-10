@@ -4,6 +4,7 @@
 
 ### Added
 
+- [TD-1597] allow deletion of data structures with relations
 - [TD-1593] System as an independent entity
 - [TD-1634] Include data structure metadata field to selectively disable indexing ("indexable" == "false")
 - Improve elasticsearch index mappings

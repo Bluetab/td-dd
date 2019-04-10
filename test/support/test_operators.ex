@@ -14,12 +14,14 @@ defmodule TdDd.TestOperators do
 
   ## Equality test for data structures without comparing Ecto associations.
   defp approximately_equal(%DataStructure{} = a, %DataStructure{} = b) do
-    Map.drop(a, [:versions, :data_fields]) == Map.drop(b, [:versions, :data_fields])
+    Map.drop(a, [:versions, :data_fields, :system]) ==
+      Map.drop(b, [:versions, :data_fields, :system])
   end
 
   ## Equality test for data structure versions without comparing Ecto associations.
   defp approximately_equal(%DataStructureVersion{} = a, %DataStructureVersion{} = b) do
-    Map.drop(a, [:children, :parents, :data_fields]) == Map.drop(b, [:children, :parents, :data_fields])
+    Map.drop(a, [:children, :parents, :data_fields]) ==
+      Map.drop(b, [:children, :parents, :data_fields])
   end
 
   defp approximately_equal(a, b), do: a == b

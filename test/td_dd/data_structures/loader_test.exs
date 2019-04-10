@@ -17,7 +17,7 @@ defmodule TdDd.LoaderTest do
       sys1 = insert(:system, external_id: "SYS1", name: "SYS1")
       sys2 = insert(:system, external_id: "SYS2", name: "SYS2")
 
-      data_structure = insert(:data_structure, system: sys1, group: "GROUP1", name: "NAME1")
+      data_structure = insert(:data_structure, system_id: sys1.id, group: "GROUP1", name: "NAME1")
 
       dsv = insert(:data_structure_version, data_structure_id: data_structure.id, version: 0)
 
@@ -185,7 +185,7 @@ defmodule TdDd.LoaderTest do
 
       data_structure =
         insert(:data_structure,
-          system: system,
+          system_id: system.id,
           group: "GROUP1",
           name: "NAME1",
           external_id: "EXT1"

@@ -4,6 +4,11 @@ defmodule TdDd.DataStructuresTest do
   alias TdDd.DataStructures
   import TdDd.TestOperators
 
+  setup _context do
+    system = insert(:system, id: 1)
+    {:ok, system: system}
+  end
+
   describe "data_structures" do
     alias TdDd.DataStructures.DataStructure
 
@@ -13,7 +18,8 @@ defmodule TdDd.DataStructuresTest do
       last_change_at: "2010-04-17 14:00:00Z",
       last_change_by: 42,
       name: "some name",
-      metadata: %{}
+      metadata: %{},
+      system_id: 1
     }
     @update_attrs %{description: "some updated description", df_content: %{updated: "content"}}
     @invalid_attrs %{
@@ -50,11 +56,8 @@ defmodule TdDd.DataStructuresTest do
     end
 
     test "create_data_structure/1 with valid data creates a data_structure" do
-      system = insert(:system)
-      valid_attrs = Map.merge(@valid_attrs, %{system_id: system.id})
-
       assert {:ok, %DataStructure{} = data_structure} =
-               DataStructures.create_data_structure(valid_attrs)
+               DataStructures.create_data_structure(@valid_attrs)
 
       assert data_structure.description == "some description"
       assert data_structure.group == "some group"
@@ -202,12 +205,9 @@ defmodule TdDd.DataStructuresTest do
     end
 
     test "get_version_children/1 returns child versions" do
-      sys1 = insert(:system, name: "Sys1", external_id: "Ref 1")
-      sys2 = insert(:system, name: "Sys2", external_id: "Ref 2")
-      sys3 = insert(:system, name: "Sys3", external_id: "Ref 3")
-      ds1 = insert(:data_structure, id: 1, name: "DS1", system: sys1)
-      ds2 = insert(:data_structure, id: 2, name: "DS2", system: sys2)
-      ds3 = insert(:data_structure, id: 3, name: "DS3", system: sys3)
+      ds1 = insert(:data_structure, id: 1, name: "DS1")
+      ds2 = insert(:data_structure, id: 2, name: "DS2")
+      ds3 = insert(:data_structure, id: 3, name: "DS3")
       dsv1 = insert(:data_structure_version, data_structure_id: ds1.id)
       dsv2 = insert(:data_structure_version, data_structure_id: ds2.id)
       dsv3 = insert(:data_structure_version, data_structure_id: ds3.id)
@@ -219,12 +219,9 @@ defmodule TdDd.DataStructuresTest do
     end
 
     test "get_version_parents/1 returns parent versions" do
-      sys1 = insert(:system, name: "Sys1", external_id: "Ref 1")
-      sys2 = insert(:system, name: "Sys2", external_id: "Ref 2")
-      sys3 = insert(:system, name: "Sys3", external_id: "Ref 3")
-      ds1 = insert(:data_structure, id: 4, name: "DS4", system: sys1)
-      ds2 = insert(:data_structure, id: 5, name: "DS5", system: sys2)
-      ds3 = insert(:data_structure, id: 6, name: "DS6", system: sys3)
+      ds1 = insert(:data_structure, id: 4, name: "DS4")
+      ds2 = insert(:data_structure, id: 5, name: "DS5")
+      ds3 = insert(:data_structure, id: 6, name: "DS6")
       dsv1 = insert(:data_structure_version, data_structure_id: ds1.id)
       dsv2 = insert(:data_structure_version, data_structure_id: ds2.id)
       dsv3 = insert(:data_structure_version, data_structure_id: ds3.id)
@@ -237,10 +234,6 @@ defmodule TdDd.DataStructuresTest do
     end
 
     test "get_siblings/1 returns sibling structures" do
-      systems =
-        [7, 8, 9, 10]
-        |> Enum.map(&insert(:system, id: &1, external_id: "SYS#{&1}"))
-
       [ds1, ds2, ds3, ds4] =
         [7, 8, 9, 10]
         |> Enum.map(
@@ -248,7 +241,7 @@ defmodule TdDd.DataStructuresTest do
             :data_structure,
             id: &1,
             name: "DS#{&1}",
-            system: Enum.find(systems, fn sys -> &1 == sys.id end)
+            system_id: 1
           )
         )
 
@@ -269,6 +262,28 @@ defmodule TdDd.DataStructuresTest do
       assert s2 <~> [ds2, ds3]
       assert s3 <~> [ds2, ds3]
       assert s4 <~> [ds4]
+    end
+
+    test "delete_data_structure/1 deletes a data_structure with relations" do
+      alias TdDd.DataStructures.DataStructure
+      ds1 = insert(:data_structure, id: 51, name: "DS51")
+      ds2 = insert(:data_structure, id: 52, name: "DS52")
+      ds3 = insert(:data_structure, id: 53, name: "DS53")
+      dsv1 = insert(:data_structure_version, data_structure_id: ds1.id)
+      dsv2 = insert(:data_structure_version, data_structure_id: ds2.id)
+      dsv3 = insert(:data_structure_version, data_structure_id: ds3.id)
+
+      insert(:data_structure_relation, parent_id: dsv1.id, child_id: dsv2.id)
+      insert(:data_structure_relation, parent_id: dsv1.id, child_id: dsv3.id)
+
+      assert {:ok, %DataStructure{}} = DataStructures.delete_data_structure(ds1)
+
+      assert_raise Ecto.NoResultsError, fn ->
+        DataStructures.get_data_structure!(ds1.id)
+      end
+
+      assert DataStructures.get_data_structure!(ds2.id) <~> ds2
+      assert DataStructures.get_data_structure!(ds3.id) <~> ds3
     end
   end
 end
