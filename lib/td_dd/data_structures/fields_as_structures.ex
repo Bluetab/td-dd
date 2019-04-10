@@ -4,6 +4,7 @@ defmodule TdDd.Loader.FieldsAsStructures do
   """
 
   @structure_keys [:system_id, :group, :name, :external_id, :version]
+  @liftable_metadata [:nullable, :precision, :business_concept_id]
 
   def group_by_parent(field_records, structure_records) do
     parents =
@@ -27,14 +28,15 @@ defmodule TdDd.Loader.FieldsAsStructures do
     Map.take(map, @structure_keys)
   end
 
-  defp lift_metadata(rec) do
+  def lift_metadata(field_or_record) do
     metadata =
-      rec
-      |> Map.take([:nullable, :precision])
-      |> Enum.into(Map.get(rec, :metadata, %{}))
-      |> Map.put(:class, "field")
+      field_or_record
+      |> Map.take(@liftable_metadata)
+      |> Enum.filter(fn {_, v} -> not is_nil(v) end)
+      |> Enum.into(Map.get(field_or_record, :metadata, %{}))
 
-    rec
+    field_or_record
+    |> Map.drop(@liftable_metadata)
     |> Map.put(:metadata, metadata)
   end
 
@@ -61,6 +63,7 @@ defmodule TdDd.Loader.FieldsAsStructures do
     parent
     |> Map.take([:domain_id, :group, :ou, :system_id, :version])
     |> Map.merge(field)
+    |> Map.put(:class, "field")
     |> Map.put(:external_id, field_id)
   end
 

@@ -15,20 +15,22 @@ defmodule TdDd.DataStructures.DataStructure do
   @taxonomy_cache Application.get_env(:td_dd, :taxonomy_cache)
 
   schema "data_structures" do
+    belongs_to(:system, System, on_replace: :update)
+    has_many(:versions, DataStructureVersion, on_delete: :delete_all)
+
+    field(:class, :string)
+    field(:confidential, :boolean)
     field(:description, :string)
+    field(:df_content, :map)
     field(:domain_id, :integer)
+    field(:external_id, :string)
     field(:group, :string)
     field(:last_change_at, :utc_datetime)
     field(:last_change_by, :integer)
-    field(:name, :string)
-    field(:type, :string)
-    field(:ou, :string)
-    has_many(:versions, DataStructureVersion, on_delete: :delete_all)
     field(:metadata, :map, default: %{})
-    field(:df_content, :map)
-    field(:confidential, :boolean)
-    field(:external_id, :string)
-    belongs_to(:system, System, on_replace: :update)
+    field(:name, :string)
+    field(:ou, :string)
+    field(:type, :string)
 
     timestamps(type: :utc_datetime)
   end
@@ -37,10 +39,10 @@ defmodule TdDd.DataStructures.DataStructure do
   def update_changeset(%DataStructure{} = data_structure, attrs) do
     data_structure
     |> cast(attrs, [
-      :last_change_at,
-      :last_change_by,
       :confidential,
-      :df_content
+      :df_content,
+      :last_change_at,
+      :last_change_by
     ])
   end
 
@@ -64,25 +66,27 @@ defmodule TdDd.DataStructures.DataStructure do
   def changeset(%DataStructure{} = data_structure, attrs) do
     data_structure
     |> cast(attrs, [
-      :system_id,
+      :class,
+      :confidential,
+      :description,
+      :df_content,
+      :domain_id,
       :external_id,
       :group,
-      :name,
-      :domain_id,
-      :description,
       :last_change_at,
       :last_change_by,
-      :type,
-      :ou,
       :metadata,
-      :confidential,
-      :df_content
+      :name,
+      :ou,
+      :system_id,
+      :type
     ])
-    |> validate_required([:system_id, :group, :name, :last_change_at, :last_change_by, :metadata])
+    |> validate_required([:group, :last_change_at, :last_change_by, :metadata, :name, :system_id])
+    |> validate_length(:class, max: 255)
     |> validate_length(:group, max: 255)
     |> validate_length(:name, max: 255)
-    |> validate_length(:type, max: 255)
     |> validate_length(:ou, max: 255)
+    |> validate_length(:type, max: 255)
   end
 
   def search_fields(%DataStructure{last_change_by: last_change_by_id} = structure) do

@@ -8,7 +8,6 @@ defmodule TdDd.Loader do
 
   alias Ecto.Adapters.SQL
   alias Ecto.Multi
-  alias TdDd.DataStructures
   alias TdDd.DataStructures.DataField
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
@@ -152,22 +151,36 @@ defmodule TdDd.Loader do
   end
 
   defp create_or_update_data_structure(attrs) do
-    case fetch_data_structure(Map.take(attrs, [:system_id, :name, :group, :external_id])) do
+    case fetch_data_structure(attrs) do
       nil ->
         %DataStructure{}
         |> DataStructure.changeset(attrs)
         |> Repo.insert()
 
       s ->
-        s |> DataStructure.loader_changeset(attrs) |> Repo.update()
+        s
+        |> DataStructure.loader_changeset(attrs)
+        |> Repo.update()
     end
   end
 
-  defp fetch_data_structure(attrs) do
-    filter = DataStructures.build_filter(DataStructure, attrs)
+  defp fetch_data_structure(%{external_id: nil} = attrs) do
+    attrs
+    |> Map.drop([:external_id])
+    |> fetch_data_structure
+  end
 
-    DataStructure
-    |> where([ds], ^filter)
+  defp fetch_data_structure(%{external_id: _} = attrs) do
+    Repo.get_by(DataStructure, Map.take(attrs, [:system_id, :name, :group, :external_id]))
+  end
+
+  defp fetch_data_structure(%{system_id: system_id, name: name, group: group}) do
+    from(
+      s in DataStructure,
+      where:
+        s.system_id == ^system_id and s.name == ^name and s.group == ^group and
+          is_nil(s.external_id)
+    )
     |> Repo.one()
   end
 
@@ -248,22 +261,26 @@ defmodule TdDd.Loader do
          relation_records: relation_records
        }) do
     relation_records
-    |> Enum.map(&find_parent_child(versions_by_sys_group_name_version, &1))
+    |> Enum.map(&find_parent_child(&1, versions_by_sys_group_name_version))
     |> Enum.filter(fn {parent, child} -> !is_nil(parent) && !is_nil(child) end)
     |> Enum.map(fn {parent, child} -> get_or_create_relation(parent, child) end)
     |> errors_or_structs
   end
 
-  defp find_parent_child(versions_by_sys_group_name_version, %{
-         system_id: system_id,
-         parent_group: parent_group,
-         parent_name: parent_name,
-         parent_external_id: parent_external_id,
-         child_group: child_group,
-         child_name: child_name,
-         child_external_id: child_external_id
-       }) do
+  defp find_parent_child(
+         %{
+           system_id: system_id,
+           parent_group: parent_group,
+           parent_name: parent_name,
+           child_group: child_group,
+           child_name: child_name
+         } = relation,
+         versions_by_sys_group_name_version
+       ) do
     # TODO: Support versions other than 0 for parent/child relationships
+    parent_external_id = Map.get(relation, :parent_external_id)
+    child_external_id = Map.get(relation, :child_external_id)
+
     parent =
       Map.get(
         versions_by_sys_group_name_version,
