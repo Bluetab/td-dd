@@ -4,7 +4,8 @@ defmodule TdDd.Loader.FieldsAsStructures do
   """
 
   @structure_keys [:system_id, :group, :name, :external_id, :version]
-  @liftable_metadata [:nullable, :precision, :business_concept_id]
+  @liftable_metadata [:nullable, :precision, :business_concept_id, :type]
+  @table_types ["tabl", "view"]
 
   def group_by_parent(field_records, structure_records) do
     parents =
@@ -33,7 +34,7 @@ defmodule TdDd.Loader.FieldsAsStructures do
       field_or_record
       |> Map.take(@liftable_metadata)
       |> Enum.filter(fn {_, v} -> not is_nil(v) end)
-      |> Enum.into(Map.get(field_or_record, :metadata, %{}))
+      |> Enum.into(Map.get(field_or_record, :metadata, %{}), fn {k, v} -> {to_string(k), v} end)
 
     field_or_record
     |> Map.drop(@liftable_metadata)
@@ -59,22 +60,22 @@ defmodule TdDd.Loader.FieldsAsStructures do
 
   defp as_child_structure(field, parent) do
     field_id = get_child_id(parent, field)
+    type = child_type(parent, field)
 
     parent
     |> Map.take([:domain_id, :group, :ou, :system_id, :version])
     |> Map.merge(field)
     |> Map.put(:class, "field")
+    |> Map.put(:type, type)
     |> Map.put(:external_id, field_id)
   end
 
   def as_relations({parent, fields}) do
-    fields
-    |> Enum.map(&as_relation(parent, &1))
+    fields |> Enum.map(&as_relation(parent, &1))
   end
 
   def as_relations(fields_by_parent) do
-    fields_by_parent
-    |> Enum.flat_map(&as_relations/1)
+    fields_by_parent |> Enum.flat_map(&as_relations/1)
   end
 
   defp as_relation(
@@ -92,6 +93,16 @@ defmodule TdDd.Loader.FieldsAsStructures do
       child_external_id: field_id,
       child_name: name
     }
+  end
+
+  def child_type(%{} = parent, %{} = child) do
+    parent_type = parent |> Map.get(:type) |> String.downcase()
+    child_type = child |> Map.get(:metadata, %{}) |> Map.get(:type, "Field")
+
+    case Enum.any?(@table_types, &String.contains?(parent_type, &1)) do
+      true -> "Column"
+      false -> child_type
+    end
   end
 
   defp get_child_id(parent, %{field_name: name}) do

@@ -8,14 +8,20 @@ defmodule TdDd.Search do
     Search Engine calls
   """
 
-  def put_bulk_search(:data_structure) do
+  def put_bulk_search(:all) do
     DataStructures.list_data_structures()
+    |> put_bulk_search()
+  end
+
+  def put_bulk_search(data_structures) do
+    data_structures
     |> Enum.filter(&is_indexable?/1)
     |> Enum.chunk_every(100)
     |> Enum.map(&ESClientApi.bulk_index_content/1)
   end
 
   defp is_indexable?(%DataStructure{metadata: %{"indexable" => "false"}}), do: false
+  defp is_indexable?(%DataStructure{class: "field"}), do: false
   defp is_indexable?(_), do: true
 
   # CREATE AND UPDATE

@@ -10,11 +10,17 @@ defmodule TdDd.Loader.FieldsAsStructuresTest do
   @system_id 123
   @domain_map %{"Truedat" => 42}
 
-  setup %{fixture: fixture} do
-    {:ok, structures} = read_structures(fixture <> "/structures.csv")
-    {:ok, fields} = read_fields(fixture <> "/fields.csv")
+  setup context do
+    case Map.get(context, :fixture) do
+      nil ->
+        :ok
 
-    {:ok, structures: structures, fields: fields}
+      fixture ->
+        {:ok, structures} = read_structures(fixture <> "/structures.csv")
+        {:ok, fields} = read_fields(fixture <> "/fields.csv")
+
+        {:ok, structures: structures, fields: fields}
+    end
   end
 
   defp read_structures(path) do
@@ -41,7 +47,7 @@ defmodule TdDd.Loader.FieldsAsStructuresTest do
 
   describe "TdDd.Loader.FieldsAsStructures" do
     @tag fixture: "test/fixtures/fields_as_structures"
-    test "foo", %{structures: structures, fields: fields} do
+    test "converts fields into structures", %{structures: structures, fields: fields} do
       assert Enum.count(structures) == 4
       assert Enum.count(fields) == 58
 
@@ -53,6 +59,19 @@ defmodule TdDd.Loader.FieldsAsStructuresTest do
 
       fields_as_relations = FieldsAsStructures.as_relations(fields_by_parent)
       assert Enum.count(fields_as_relations) == 58
+    end
+
+    test "identifies columns" do
+      table = %{type: "USER_TABLE"}
+      report = %{type: "REPORT"}
+      view = %{type: "Some type with the word view in it"}
+      child1 = %{metadata: %{type: "Foo"}}
+      child2 = %{}
+
+      assert FieldsAsStructures.child_type(table, child1) == "Column"
+      assert FieldsAsStructures.child_type(report, child1) == "Foo"
+      assert FieldsAsStructures.child_type(report, child2) == "Field"
+      assert FieldsAsStructures.child_type(view, child2) == "Column"
     end
   end
 end

@@ -10,7 +10,7 @@ defmodule TdDd.Search.MockIndexWorker do
 
   def reindex_count, do: Agent.get(MockIndexWorker, & &1)
 
-  def reindex do
+  def reindex(_) do
     Agent.update(MockIndexWorker, &[&1 + 1])
   end
 end

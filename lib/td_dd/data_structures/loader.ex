@@ -15,49 +15,32 @@ defmodule TdDd.Loader do
   alias TdDd.Loader.FieldsAsStructures
   alias TdDd.Repo
 
-  def load(
-        structure_records,
-        field_records,
-        relation_records,
-        audit_fields
-      ) do
-    Logger.info(
-      "Starting bulk load process (#{Enum.count(structure_records)}SR+#{Enum.count(field_records)}FR)"
-    )
+  def load(structure_records, field_records, relation_records, audit_fields) do
+    structure_count = Enum.count(structure_records)
+    field_count = Enum.count(field_records)
+    Logger.info("Starting bulk load (#{structure_count}SR+#{field_count}FR)")
 
     {fields_as_structures, fields_as_relations} =
       fields_as_structures(field_records, structure_records)
 
-    multi =
-      Multi.new()
-      |> Multi.run(:audit, fn _, _ -> {:ok, audit_fields} end)
-      |> Multi.run(:structure_records, fn _, _ ->
-        {:ok, structure_records ++ fields_as_structures}
-      end)
-      |> Multi.run(:field_records, fn _, _ -> {:ok, field_records} end)
-      |> Multi.run(:relation_records, fn _, _ ->
-        {:ok, relation_records ++ fields_as_relations}
-      end)
-      |> Multi.run(:structures, &upsert_structures/2)
-      |> Multi.run(:versions, &upsert_structure_versions/2)
-      |> Multi.run(:versions_by_sys_group_name_version, &versions_by_sys_group_name_version/2)
-      |> Multi.run(:relations, &upsert_relations/2)
-      |> Multi.run(:diffs, &diff_structures/2)
-      |> Multi.run(:removed, &remove_fields/2)
-      |> Multi.run(:added, &insert_fields/2)
-      |> Multi.run(:modified, &update_fields/2)
-      |> Repo.transaction()
-
-    case multi do
-      {:ok, context} ->
-        %{added: added, removed: removed, modified: modified} = context
-        Logger.info("Bulk load process completed (-#{removed}F +#{added}F ~#{modified}F)")
-        {:ok, context}
-
-      {:error, failed_operation, failed_value, changes_so_far} ->
-        Logger.warn("Bulk load process failed (operation #{failed_operation})")
-        {:error, failed_operation, failed_value, changes_so_far}
-    end
+    Multi.new()
+    |> Multi.run(:audit, fn _, _ -> {:ok, audit_fields} end)
+    |> Multi.run(:structure_records, fn _, _ ->
+      {:ok, structure_records ++ fields_as_structures}
+    end)
+    |> Multi.run(:field_records, fn _, _ -> {:ok, field_records} end)
+    |> Multi.run(:relation_records, fn _, _ ->
+      {:ok, relation_records ++ fields_as_relations}
+    end)
+    |> Multi.run(:structures, &upsert_structures/2)
+    |> Multi.run(:versions, &upsert_structure_versions/2)
+    |> Multi.run(:versions_by_sys_group_name_version, &versions_by_sys_group_name_version/2)
+    |> Multi.run(:relations, &upsert_relations/2)
+    |> Multi.run(:diffs, &diff_structures/2)
+    |> Multi.run(:removed, &remove_fields/2)
+    |> Multi.run(:added, &insert_fields/2)
+    |> Multi.run(:modified, &update_fields/2)
+    |> Repo.transaction()
   end
 
   defp fields_as_structures(field_records, structure_records) do
@@ -171,7 +154,7 @@ defmodule TdDd.Loader do
   end
 
   defp fetch_data_structure(%{external_id: _} = attrs) do
-    Repo.get_by(DataStructure, Map.take(attrs, [:system_id, :name, :group, :external_id]))
+    Repo.get_by(DataStructure, Map.take(attrs, [:system_id, :external_id]))
   end
 
   defp fetch_data_structure(%{system_id: system_id, name: name, group: group}) do

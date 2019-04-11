@@ -29,17 +29,35 @@ defmodule TdDd.Loader.LoaderWorker do
   end
 
   @impl true
-  def handle_cast({:load, structures, fields, relations, audit}, state) do
+  def handle_cast({:load, structures, fields, relations, %{last_change_at: ts} = audit}, state) do
     Logger.info("Bulk loading data structures")
     start_time = DateTime.utc_now()
-    Loader.load(structures, fields, relations, audit)
-    end_time = DateTime.utc_now()
+    multi = Loader.load(structures, fields, relations, audit)
+    ms = DateTime.diff(DateTime.utc_now(), start_time, :millisecond)
 
-    Logger.info(
-      "Data structures loaded in #{DateTime.diff(end_time, start_time, :millisecond)}ms"
-    )
+    case multi do
+      {:ok, context} ->
+        %{added: added, removed: removed, modified: modified, structures: structures} = context
 
-    @index_worker.reindex()
+        upserts =
+          structures
+          |> Enum.filter(&(&1.last_change_at == ts))
+          |> Enum.count()
+
+        Logger.info(
+          "Bulk load process completed in #{ms}ms (*#{upserts}S -#{removed}F +#{added}F ~#{
+            modified
+          }F)"
+        )
+
+        if upserts + removed + added + modified > 0 do
+          @index_worker.reindex(structures)
+        end
+
+      {:error, failed_operation, _failed_value, _changes_so_far} ->
+        Logger.warn("Bulk load process failed after #{ms}ms (operation #{failed_operation})")
+    end
+
     {:noreply, state}
   end
 

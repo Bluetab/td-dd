@@ -48,17 +48,25 @@ defmodule TdDd.DataStructures.DataStructure do
 
   @doc false
   def loader_changeset(%DataStructure{} = data_structure, attrs) do
+    audit_attrs = attrs |> Map.take([:last_change_at, :last_change_by])
+
     changeset =
       data_structure
       |> cast(attrs, [
-        :last_change_at,
-        :last_change_by,
-        :metadata
+        :class,
+        :confidential,
+        :description,
+        :domain_id,
+        :group,
+        :metadata,
+        :name,
+        :ou,
+        :type
       ])
 
     case changeset.changes do
-      %{} -> changeset
-      _ -> update_changeset(data_structure, attrs)
+      m when map_size(m) > 0 -> changeset |> change(audit_attrs)
+      _ -> changeset
     end
   end
 

@@ -51,13 +51,16 @@ defmodule TdDd.CSV.ReaderTest do
 
       assert r2 == %{
                description: "description",
-               metadata: %{foo: "foo1", bool: true},
+               metadata: %{"foo" => "foo1", "bool" => true},
                name: "name",
                version: 0
              }
 
       assert r3 == %{
-               metadata: %{bar: %{baz: %{spqr: "spqr", xyzzy: "xyzzy"}}, bool: false},
+               metadata: %{
+                 "bar" => %{"baz" => %{"spqr" => "spqr", "xyzzy" => "xyzzy"}},
+                 "bool" => false
+               },
                name: "name",
                version: 0
              }

@@ -10,7 +10,7 @@ defmodule TdDd.Repo.Migrations.CopyFieldsAsStructures do
   alias TdDd.Repo
 
   @ds_props [:domain_id, :group, :ou, :name, :external_id, :system_id, :confidential]
-  @df_props [:description, :last_change_at, :last_change_by, :name, :type, :metadata]
+  @df_props [:description, :last_change_at, :last_change_by, :name, :metadata]
 
   def up do
     fields =
@@ -62,6 +62,7 @@ defmodule TdDd.Repo.Migrations.CopyFieldsAsStructures do
       Map.take(ds, @ds_props)
       |> Map.put(:version, v)
       |> Map.put(:parent_id, parent_id)
+      |> Map.put(:type, FieldsAsStructures.child_type(ds, field))
       |> Map.put(:class, "field")
     end)
     |> Enum.map(&with_external_id(&1, name))

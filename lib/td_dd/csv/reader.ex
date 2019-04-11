@@ -105,7 +105,6 @@ defmodule TdDd.CSV.Reader do
       k
       |> String.replace_leading("m:", "")
       |> String.split(".")
-      |> Enum.map(&String.to_atom/1)
       |> Enum.reverse()
 
     t

@@ -17,7 +17,13 @@ defmodule TdDd.LoaderTest do
       sys1 = insert(:system, external_id: "SYS1", name: "SYS1")
       sys2 = insert(:system, external_id: "SYS2", name: "SYS2")
 
-      data_structure = insert(:data_structure, system_id: sys1.id, group: "GROUP1", name: "NAME1")
+      data_structure =
+        insert(:data_structure,
+          system_id: sys1.id,
+          group: "GROUP1",
+          name: "NAME1",
+          type: "USER_TABLE"
+        )
 
       dsv = insert(:data_structure_version, data_structure_id: data_structure.id, version: 0)
 
@@ -57,48 +63,53 @@ defmodule TdDd.LoaderTest do
       Repo.insert_all("versions_fields", entries)
 
       s1 = %{
-        system_id: sys1.id,
+        description: "D1",
+        external_id: nil,
         group: "GROUP1",
         name: "NAME1",
-        description: "D1",
-        version: 0,
-        external_id: nil
+        system_id: sys1.id,
+        type: "USER_TABLE",
+        version: 0
       }
 
       s2 = %{
-        system_id: sys1.id,
+        description: "D2",
+        external_id: nil,
         group: "GROUP2",
         name: "NAME2",
-        description: "D2",
-        version: 0,
-        external_id: nil
+        system_id: sys1.id,
+        type: "VIEW",
+        version: 0
       }
 
       s3 = %{
-        system_id: sys2.id,
+        description: "D3",
+        external_id: nil,
         group: "GROUP3",
         name: "NAME3",
-        description: "D3",
-        version: 0,
-        external_id: nil
+        system_id: sys2.id,
+        type: "Report",
+        version: 0
       }
 
       s4 = %{
-        system_id: sys2.id,
+        description: "D4",
+        external_id: nil,
         group: "GROUP3",
         name: "NAME4",
-        description: "D4",
-        version: 22,
-        external_id: nil
+        system_id: sys2.id,
+        type: "Folder",
+        version: 22
       }
 
       s5 = %{
-        system_id: sys2.id,
+        description: "D4",
+        external_id: nil,
         group: "GROUP3",
         name: "NAME4",
-        description: "D4",
-        version: 23,
-        external_id: nil
+        system_id: sys2.id,
+        type: "Dimension",
+        version: 23
       }
 
       r1 = %{
@@ -165,7 +176,8 @@ defmodule TdDd.LoaderTest do
       f41 = s4 |> Map.merge(f4)
       f51 = s5 |> Map.merge(f4)
 
-      audit_fields = %{last_change_at: DateTime.utc_now(), last_change_by: 0}
+      ts = DateTime.truncate(DateTime.utc_now(), :second)
+      audit_fields = %{last_change_at: ts, last_change_by: 0}
       structure_records = [s1, s2, s3, s4, s5]
       field_records = [f11, f12, f13, f21, f32, f41, f51]
       relation_records = [r1, r2]
@@ -188,7 +200,8 @@ defmodule TdDd.LoaderTest do
           system_id: system.id,
           group: "GROUP1",
           name: "NAME1",
-          external_id: "EXT1"
+          external_id: "EXT1",
+          type: "Table"
         )
 
       dsv = insert(:data_structure_version, data_structure_id: data_structure.id, version: 0)
@@ -234,7 +247,8 @@ defmodule TdDd.LoaderTest do
         name: "NAME1",
         description: "D1",
         version: 0,
-        external_id: "EXT1"
+        external_id: "EXT1",
+        type: "Table"
       }
 
       s2 = %{
@@ -243,7 +257,8 @@ defmodule TdDd.LoaderTest do
         name: "NAME1",
         description: "D1",
         version: 0,
-        external_id: nil
+        external_id: nil,
+        type: "View"
       }
 
       s3 = %{
@@ -252,7 +267,8 @@ defmodule TdDd.LoaderTest do
         name: "NAME2",
         description: "D2",
         version: 0,
-        external_id: nil
+        external_id: nil,
+        type: "Report"
       }
 
       r1 = %{
@@ -309,7 +325,11 @@ defmodule TdDd.LoaderTest do
       f21 = s2 |> Map.merge(f1)
       f32 = s3 |> Map.merge(f2)
 
-      audit_fields = %{last_change_at: DateTime.utc_now(), last_change_by: 0}
+      audit_fields = %{
+        last_change_at: DateTime.truncate(DateTime.utc_now(), :second),
+        last_change_by: 0
+      }
+
       structure_records = [s1, s2, s3]
       field_records = [f11, f12, f13, f21, f32]
       relation_records = [r1, r2]

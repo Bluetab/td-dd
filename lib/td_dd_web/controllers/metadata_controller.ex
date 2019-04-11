@@ -163,7 +163,11 @@ defmodule TdDdWeb.MetadataController do
 
   defp load(conn, structure_records, field_records, relation_records) do
     user_id = GuardianPlug.current_resource(conn).id
-    audit_fields = %{last_change_at: DateTime.utc_now(), last_change_by: user_id}
+
+    audit_fields = %{
+      last_change_at: DateTime.truncate(DateTime.utc_now(), :second),
+      last_change_by: user_id
+    }
 
     LoaderWorker.load(structure_records, field_records, relation_records, audit_fields)
   end
