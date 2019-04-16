@@ -18,7 +18,7 @@ defmodule TdDdWeb.SearchController do
     user = conn.assigns[:current_user]
 
     with true <- can?(user, reindex_all(DataStructure)) do
-      @index_worker.reindex()
+      @index_worker.reindex(:all)
       send_resp(conn, :accepted, "")
     else
       false ->

@@ -46,6 +46,11 @@ defmodule TdDdWeb.ConnCase do
         nil -> nil
         pid -> Sandbox.allow(TdDd.Repo, parent, pid)
       end
+
+      case Process.whereis(TdDd.Loader.LoaderWorker) do
+        nil -> nil
+        pid -> Sandbox.allow(TdDd.Repo, parent, pid)
+      end
     end
 
     cond do

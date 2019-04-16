@@ -3,15 +3,22 @@ defmodule TdDd.Search.Indexer do
     Manages elasticsearch indices
   """
   alias TdDd.ESClientApi
+  alias TdDd.Repo
   alias TdDd.Search
 
   @df_cache Application.get_env(:td_dd, :df_cache)
 
-  def reindex(:data_structure) do
+  def reindex(:all) do
     ESClientApi.delete!("data_structure")
     mapping = get_mappings() |> Poison.encode!()
     %{status_code: 200} = ESClientApi.put!("data_structure", mapping)
-    Search.put_bulk_search(:data_structure)
+    Search.put_bulk_search(:all)
+  end
+
+  def reindex(data_structures) do
+    data_structures
+    |> Repo.preload(:system)
+    |> Search.put_bulk_search()
   end
 
   defp get_mappings do

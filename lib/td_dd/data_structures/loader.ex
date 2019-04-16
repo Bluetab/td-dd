@@ -8,49 +8,46 @@ defmodule TdDd.Loader do
 
   alias Ecto.Adapters.SQL
   alias Ecto.Multi
-  alias TdDd.DataStructures
   alias TdDd.DataStructures.DataField
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.Loader.FieldsAsStructures
   alias TdDd.Repo
 
-  def load(
-        structure_records,
-        field_records,
-        relation_records,
-        audit_fields
-      ) do
-    Logger.info(
-      "Starting bulk load process (#{Enum.count(structure_records)}SR+#{Enum.count(field_records)}FR)"
-    )
+  def load(structure_records, field_records, relation_records, audit_fields) do
+    structure_count = Enum.count(structure_records)
+    field_count = Enum.count(field_records)
+    Logger.info("Starting bulk load (#{structure_count}SR+#{field_count}FR)")
 
-    multi =
-      Multi.new()
-      |> Multi.run(:audit, fn _, _ -> {:ok, audit_fields} end)
-      |> Multi.run(:structure_records, fn _, _ -> {:ok, structure_records} end)
-      |> Multi.run(:field_records, fn _, _ -> {:ok, field_records} end)
-      |> Multi.run(:relation_records, fn _, _ -> {:ok, relation_records} end)
-      |> Multi.run(:structures, &upsert_structures/2)
-      |> Multi.run(:versions, &upsert_structure_versions/2)
-      |> Multi.run(:versions_by_sys_group_name_version, &versions_by_sys_group_name_version/2)
-      |> Multi.run(:relations, &upsert_relations/2)
-      |> Multi.run(:diffs, &diff_structures/2)
-      |> Multi.run(:removed, &remove_fields/2)
-      |> Multi.run(:added, &insert_fields/2)
-      |> Multi.run(:modified, &update_fields/2)
-      |> Repo.transaction()
+    {fields_as_structures, fields_as_relations} =
+      fields_as_structures(field_records, structure_records)
 
-    case multi do
-      {:ok, context} ->
-        %{added: added, removed: removed, modified: modified} = context
-        Logger.info("Bulk load process completed (-#{removed}F +#{added}F ~#{modified}F)")
-        {:ok, context}
+    Multi.new()
+    |> Multi.run(:audit, fn _, _ -> {:ok, audit_fields} end)
+    |> Multi.run(:structure_records, fn _, _ ->
+      {:ok, structure_records ++ fields_as_structures}
+    end)
+    |> Multi.run(:field_records, fn _, _ -> {:ok, field_records} end)
+    |> Multi.run(:relation_records, fn _, _ ->
+      {:ok, relation_records ++ fields_as_relations}
+    end)
+    |> Multi.run(:structures, &upsert_structures/2)
+    |> Multi.run(:versions, &upsert_structure_versions/2)
+    |> Multi.run(:versions_by_sys_group_name_version, &versions_by_sys_group_name_version/2)
+    |> Multi.run(:relations, &upsert_relations/2)
+    |> Multi.run(:diffs, &diff_structures/2)
+    |> Multi.run(:removed, &remove_fields/2)
+    |> Multi.run(:added, &insert_fields/2)
+    |> Multi.run(:modified, &update_fields/2)
+    |> Repo.transaction()
+  end
 
-      {:error, failed_operation, failed_value, changes_so_far} ->
-        Logger.warn("Bulk load process failed (operation #{failed_operation})")
-        {:error, failed_operation, failed_value, changes_so_far}
-    end
+  defp fields_as_structures(field_records, structure_records) do
+    fields_by_parent = FieldsAsStructures.group_by_parent(field_records, structure_records)
+    fields_as_structures = FieldsAsStructures.as_structures(fields_by_parent)
+    fields_as_relations = FieldsAsStructures.as_relations(fields_by_parent)
+    {fields_as_structures, fields_as_relations}
   end
 
   defp update_fields(_repo, %{diffs: diffs, audit: audit}) do
@@ -137,23 +134,38 @@ defmodule TdDd.Loader do
   end
 
   defp create_or_update_data_structure(attrs) do
-    case fetch_data_structure(Map.take(attrs, [:system_id, :name, :group, :external_id])) do
+    case fetch_data_structure(attrs) do
       nil ->
         %DataStructure{}
         |> DataStructure.changeset(attrs)
         |> Repo.insert()
 
       s ->
-        s |> DataStructure.loader_changeset(attrs) |> Repo.update()
+        s
+        |> DataStructure.loader_changeset(attrs)
+        |> Repo.update()
     end
   end
 
-  defp fetch_data_structure(attrs) do
-    filter = DataStructures.build_filter(DataStructure, attrs)
+  defp fetch_data_structure(%{external_id: nil} = attrs) do
+    attrs
+    |> Map.drop([:external_id])
+    |> fetch_data_structure
+  end
 
-    DataStructure
-    |> where([ds], ^filter)
-    |> Repo.one()
+  defp fetch_data_structure(%{external_id: _} = attrs) do
+    Repo.get_by(DataStructure, Map.take(attrs, [:system_id, :external_id]))
+  end
+
+  defp fetch_data_structure(%{system_id: system_id, name: name, group: group}) do
+    Repo.one(
+      from(
+        s in DataStructure,
+        where:
+          s.system_id == ^system_id and s.name == ^name and s.group == ^group and
+            is_nil(s.external_id)
+      )
+    )
   end
 
   defp upsert_structure_versions(_repo, %{structures: structures, structure_records: records}) do
@@ -233,22 +245,26 @@ defmodule TdDd.Loader do
          relation_records: relation_records
        }) do
     relation_records
-    |> Enum.map(&find_parent_child(versions_by_sys_group_name_version, &1))
+    |> Enum.map(&find_parent_child(&1, versions_by_sys_group_name_version))
     |> Enum.filter(fn {parent, child} -> !is_nil(parent) && !is_nil(child) end)
     |> Enum.map(fn {parent, child} -> get_or_create_relation(parent, child) end)
     |> errors_or_structs
   end
 
-  defp find_parent_child(versions_by_sys_group_name_version, %{
-         system_id: system_id,
-         parent_group: parent_group,
-         parent_name: parent_name,
-         parent_external_id: parent_external_id,
-         child_group: child_group,
-         child_name: child_name,
-         child_external_id: child_external_id
-       }) do
+  defp find_parent_child(
+         %{
+           system_id: system_id,
+           parent_group: parent_group,
+           parent_name: parent_name,
+           child_group: child_group,
+           child_name: child_name
+         } = relation,
+         versions_by_sys_group_name_version
+       ) do
     # TODO: Support versions other than 0 for parent/child relationships
+    parent_external_id = Map.get(relation, :parent_external_id)
+    child_external_id = Map.get(relation, :child_external_id)
+
     parent =
       Map.get(
         versions_by_sys_group_name_version,
@@ -319,14 +335,14 @@ defmodule TdDd.Loader do
 
     to_modify =
       to_modify
-      |> Enum.filter(fn {field, record} -> has_changes(field, record) end)
+      |> Enum.filter(fn {field, record} -> has_changes?(field, record) end)
 
     %{add: to_insert, modify: to_modify, remove: to_remove}
   end
 
-  defp has_changes(field, %{description: description} = record) do
+  defp has_changes?(field, %{} = record) do
     check_props =
-      case description do
+      case Map.get(record, :description) do
         nil -> [:business_concept_id, :metadata]
         _ -> [:business_concept_id, :description, :metadata]
       end
@@ -340,12 +356,15 @@ defmodule TdDd.Loader do
     field |> Map.take(check_props) != defaults |> Map.merge(record) |> Map.take(check_props)
   end
 
-  defp find_field(data_fields, %{
-         field_name: name,
-         type: type,
-         nullable: nullable,
-         precision: precision
-       }) do
+  defp find_field(
+         data_fields,
+         %{
+           field_name: name,
+           type: type
+         } = attrs
+       ) do
+    nullable = Map.get(attrs, :nullable)
+    precision = Map.get(attrs, :precision)
     match = %{name: name, type: type, nullable: nullable, precision: precision}
 
     data_fields

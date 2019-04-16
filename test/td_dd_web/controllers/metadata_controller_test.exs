@@ -2,6 +2,7 @@ defmodule TdDdWeb.MetadataControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
+  alias TdDd.Loader.LoaderWorker
   alias TdDd.MockTaxonomyCache
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDd.Search.MockIndexWorker
@@ -41,7 +42,7 @@ defmodule TdDdWeb.MetadataControllerTest do
           system: %{name: "Power BI", external_id: "pbi"}
         )
 
-      assert %{"id" => id} = json_response(conn, 201)["data"]
+      assert %{"id" => _} = json_response(conn, 201)["data"]
 
       conn =
         post(conn, Routes.metadata_path(conn, :upload),
@@ -52,10 +53,13 @@ defmodule TdDdWeb.MetadataControllerTest do
 
       assert response(conn, 204) =~ ""
 
+      # waits for loader to complete
+      LoaderWorker.ping()
+
       search_params = %{ou: "Truedat"}
       conn = get(conn, Routes.data_structure_path(conn, :index, search_params))
       json_response = json_response(conn, 200)["data"]
-      assert length(json_response) == 5
+      assert length(json_response) == 5 + 68
 
       structure_id = get_id(json_response, "Calidad")
       conn = get(conn, Routes.data_structure_path(conn, :show, structure_id))

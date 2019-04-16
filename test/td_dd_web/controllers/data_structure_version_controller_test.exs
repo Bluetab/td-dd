@@ -64,9 +64,14 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   end
 
   defp create_structure_hierarchy(_) do
-    parent_structure = insert(:data_structure)
-    structure = insert(:data_structure)
-    child_structures = [insert(:data_structure), insert(:data_structure)]
+    parent_structure = insert(:data_structure, external_id: "Parent")
+    structure = insert(:data_structure, external_id: "Structure")
+
+    child_structures = [
+      insert(:data_structure, external_id: "Child1"),
+      insert(:data_structure, external_id: "Child2")
+    ]
+
     parent_version = insert(:data_structure_version, data_structure_id: parent_structure.id)
     structure_version = insert(:data_structure_version, data_structure_id: structure.id)
 
