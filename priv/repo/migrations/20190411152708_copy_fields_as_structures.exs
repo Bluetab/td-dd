@@ -23,23 +23,17 @@ defmodule TdDd.Repo.Migrations.CopyFieldsAsStructures do
       fields
       |> Enum.flat_map(&field_as_structure_attrs/1)
 
-    structures =
+    structure_ids =
       fields_as_structures
       |> Enum.map(&get_or_insert!/1)
-
-    structure_ids =
-      structures
       |> Enum.map(& &1.id)
 
-    versions =
+    version_ids =
       fields_as_structures
       |> Enum.zip(structure_ids)
       |> Enum.map(fn {m, structure_id} -> Map.put(m, :data_structure_id, structure_id) end)
       |> Enum.map(&DataStructureVersion.changeset(%DataStructureVersion{}, &1))
       |> Enum.map(&Repo.insert!/1)
-
-    version_ids =
-      versions
       |> Enum.map(& &1.id)
 
     _relations =
@@ -47,6 +41,7 @@ defmodule TdDd.Repo.Migrations.CopyFieldsAsStructures do
       |> Enum.zip(version_ids)
       |> Enum.map(fn {m, version_id} -> Map.put(m, :child_id, version_id) end)
       |> Enum.map(&DataStructureRelation.changeset(%DataStructureRelation{}, &1))
+      |> Enum.map(&Repo.insert!/1)
   end
 
   def down do
