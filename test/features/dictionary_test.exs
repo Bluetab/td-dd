@@ -230,7 +230,7 @@ defmodule TdDd.DictionaryTest do
 
     {:ok, Map.merge(state, %{status_code: status_code, token_admin: get_user_token("app-admin")})}
   end
-  
+
   defand ~r/^when the system has finished loading the metadata$/, _vars, state do
     LoaderWorker.ping
     {:ok, state}
