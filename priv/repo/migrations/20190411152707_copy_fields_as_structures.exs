@@ -25,8 +25,7 @@ defmodule TdDd.Repo.Migrations.CopyFieldsAsStructures do
 
     structures =
       fields_as_structures
-      |> Enum.map(&DataStructure.changeset(%DataStructure{}, &1))
-      |> Enum.map(&Repo.insert!/1)
+      |> Enum.map(&get_or_insert!/1)
 
     structure_ids =
       structures
@@ -53,6 +52,16 @@ defmodule TdDd.Repo.Migrations.CopyFieldsAsStructures do
   def down do
     from(ds in DataStructure, where: ds.class == "field")
     |> Repo.delete_all()
+  end
+
+  defp get_or_insert!(%{system_id: system_id, external_id: external_id} = attrs) do
+    case Repo.get_by(DataStructure, [system_id: system_id, external_id: external_id]) do
+      nil ->
+        %DataStructure{}
+        |> DataStructure.changeset(attrs)
+        |> Repo.insert!
+      x -> x
+    end
   end
 
   defp field_as_structure_attrs(%DataField{data_structure_versions: dsvs, name: name} = field) do
