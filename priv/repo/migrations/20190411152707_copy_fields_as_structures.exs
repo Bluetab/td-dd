@@ -69,9 +69,9 @@ defmodule TdDd.Repo.Migrations.CopyFieldsAsStructures do
     |> Enum.map(&Map.merge(&1, Map.take(field, @df_props)))
   end
 
-  defp with_external_id(%{external_id: nil, name: name} = attrs, field_name) do
+  defp with_external_id(%{external_id: nil, group: group, name: name} = attrs, field_name) do
     attrs
-    |> Map.put(:external_id, name <> "/" <> field_name)
+    |> Map.put(:external_id, group <> "/" <> name <> "/" <> field_name)
   end
 
   defp with_external_id(%{external_id: external_id} = attrs, field_name) do
