@@ -7,6 +7,7 @@ defmodule TdDd.DictionaryTest do
   import TdDdWeb.Authentication, only: :functions
 
   alias Poison, as: JSON
+  alias TdDd.Loader.LoaderWorker
   alias TdDd.MockTaxonomyCache
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDd.Search.MockIndexWorker
@@ -228,6 +229,11 @@ defmodule TdDd.DictionaryTest do
     {:ok, status_code} = metadata_upload(token, data_structures, data_fields)
 
     {:ok, Map.merge(state, %{status_code: status_code, token_admin: get_user_token("app-admin")})}
+  end
+  
+  defand ~r/^when the system has finished loading the metadata$/, _vars, state do
+    LoaderWorker.ping
+    {:ok, state}
   end
 
   defp field_value_to_data_field(field_value) do

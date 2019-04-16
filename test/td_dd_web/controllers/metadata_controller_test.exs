@@ -42,7 +42,7 @@ defmodule TdDdWeb.MetadataControllerTest do
           system: %{name: "Power BI", external_id: "pbi"}
         )
 
-      assert %{"id" => id} = json_response(conn, 201)["data"]
+      assert %{"id" => _} = json_response(conn, 201)["data"]
 
       conn =
         post(conn, Routes.metadata_path(conn, :upload),
