@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-1697] Dynamic content indexing and mapping
+
 ## [2.17.0] 2019-04-17
 
 ### Added
