@@ -73,18 +73,19 @@ defmodule TdDd.Search.Indexer do
 
   defp get_mappings(%{content: content}) do
     content
+    |> Enum.filter(& Map.get(&1, "type") != "url")
     |> Enum.map(&field_mapping/1)
   end
 
-  defp field_mapping(%{"name" => name, "type" => type}) do
-    {name, mapping_type(type)}
+  defp field_mapping(%{"name" => name, "values" => values}) do
+    {name, mapping_type(values)}
   end
 
   defp field_mapping(%{"name" => name}) do
     {name, mapping_type("string")}
   end
 
-  defp mapping_type("list") do
+  defp mapping_type(values) when is_map(values) do
     %{type: "text", fields: %{raw: %{type: "keyword"}}}
   end
 

@@ -41,6 +41,20 @@ defmodule TdDdWeb.DataStructureControllerTest do
     type: nil,
     ou: nil
   }
+  @default_template_attrs %{
+    id: 0,
+    label: "some label",
+    name: "some template name",
+    scope: "dd",
+    content: [
+      %{
+        "name" => "field",
+        "type" => "string",
+        "cardinality" => "1",
+        "values" => %{"fixed" => ["1", "2"]}
+      }
+    ]
+  }
 
   setup_all do
     start_supervised(MockTdAuthService)
@@ -112,6 +126,24 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert length(json_response) == 1
       json_response = Enum.at(json_response, 0)
       assert json_response["name"] == data_structure.name
+    end
+  end
+
+  describe "search" do
+    @tag :admin_authenticated
+    setup [:create_data_structure]
+    test "search_all", %{conn: conn, data_structure: %DataStructure{id: id}} do
+      conn = post(conn, Routes.data_structure_path(conn, :search), %{})
+      data = json_response(conn, 200)["data"]
+      filters = json_response(conn, 200)["filters"]
+
+      assert length(data) == 1
+
+      template_field_values = Map.get(filters, "field")
+      item = Enum.at(data, 0)
+
+      assert Map.get(item, "id") == id
+      assert template_field_values == ["1"]
     end
   end
 
@@ -355,21 +387,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
     template_name = "template_name"
     MockDynamicFormCache.clean_cache()
 
-    MockDynamicFormCache.put_template(%{
-      id: 0,
-      label: "some label",
-      name: template_name,
-      scope: "dd",
-      content: [
-        %{
-          "name" => "field",
-          "type" => "string",
-          "cardinality" => "1"
-        }
-      ]
-    })
-
-    data_structure = insert(:data_structure, type: template_name)
+    create_template(%{name: template_name})
+    data_structure = insert(:data_structure, type: template_name, df_content: %{"field" => "1"})
     data_structure_version = insert(:data_structure_version, data_structure_id: data_structure.id)
     {:ok, data_structure: data_structure, data_structure_version: data_structure_version}
   end
@@ -417,19 +436,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     template_name = "template_name"
     MockDynamicFormCache.clean_cache()
 
-    MockDynamicFormCache.put_template(%{
-      id: 0,
-      label: "some label",
-      name: template_name,
-      scope: "dd",
-      content: [
-        %{
-          "name" => "field",
-          "type" => "string",
-          "cardinality" => "1"
-        }
-      ]
-    })
+    create_template(%{name: template_name})
 
     data_structure =
       insert(
@@ -443,5 +450,13 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
     insert(:data_structure_version, data_structure_id: data_structure.id)
     data_structure
+  end
+
+  def create_template(attrs \\ %{}) do
+    attrs
+      |> Enum.into(@default_template_attrs)
+      |> MockDynamicFormCache.put_template()
+
+    :ok
   end
 end
