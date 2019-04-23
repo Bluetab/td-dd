@@ -4,7 +4,6 @@ defmodule TdDd.Search.MockSearch do
   alias Poison
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.Search.Aggregations
 
   @df_cache Application.get_env(:td_dd, :df_cache)
 
