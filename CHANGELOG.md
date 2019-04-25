@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-1667] New unique constraint formed from Business Concept Id and Name on rules 
+
 ## [2.16.0] 2019-04-01
 
 ### Fixed
