@@ -64,6 +64,11 @@ defmodule TdDq.Rules.Rule do
       :rule_type_id,
       :type_params
     ])
+    |> unique_constraint(
+      :unique_rule_name_bc_id,
+      name: :rules_business_concept_id_name_index,
+      message: "rule.create.duplicated_name_bc_id"
+    )
     |> validate_number(:goal, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
     |> validate_number(:minimum, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
     |> validate_goal
@@ -111,7 +116,9 @@ defmodule TdDq.Rules.Rule do
       |> Format.apply_template(Map.get(template, :content))
 
     rule_type = Map.take(rule.rule_type, [:id, :name, :params])
-    current_business_concept_version = Map.get(rule, :current_business_concept_version, %{name: ""})
+
+    current_business_concept_version =
+      Map.get(rule, :current_business_concept_version, %{name: ""})
 
     %{
       id: rule.id,

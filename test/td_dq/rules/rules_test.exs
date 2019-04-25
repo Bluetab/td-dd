@@ -151,6 +151,16 @@ defmodule TdDq.RulesTest do
       assert {:error, %Ecto.Changeset{}} = Rules.create_rule(rule_type, creation_attrs)
     end
 
+    test "create_rule/2 with same name and business concept id returns error changeset" do
+      rule_type = insert(:rule_type)
+      insert(:rule, rule_type: rule_type)
+      creation_attrs = Map.from_struct(build(:rule, rule_type_id: rule_type.id))
+      {:error, changeset} = Rules.create_rule(rule_type, creation_attrs)
+
+      errors = Map.get(changeset, :errors)
+      assert Enum.any?(errors, fn {key, _} -> key == :unique_rule_name_bc_id end)
+    end
+
     test "update_rule/2 with valid data updates the rule" do
       rule = insert(:rule)
       update_attrs = Map.from_struct(rule)
@@ -310,7 +320,7 @@ defmodule TdDq.RulesTest do
     test "list_rule_implementations/1 returns all rule_implementations by rule" do
       rule_type = insert(:rule_type)
       rule1 = insert(:rule, rule_type: rule_type)
-      rule2 = insert(:rule, rule_type: rule_type)
+      rule2 = insert(:rule, name: "#{rule1.name} 1", rule_type: rule_type)
       insert(:rule_implementation, implementation_key: "ri1", rule: rule1)
       insert(:rule_implementation, implementation_key: "ri2", rule: rule1)
       insert(:rule_implementation, implementation_key: "ri3", rule: rule1)
@@ -334,7 +344,7 @@ defmodule TdDq.RulesTest do
     test "list_rule_implementations/1 returns all rule_implementations by status" do
       rule_type = insert(:rule_type)
       rule1 = insert(:rule, rule_type: rule_type, active: true)
-      rule2 = insert(:rule, rule_type: rule_type)
+      rule2 = insert(:rule, name: "#{rule1.name} 1", rule_type: rule_type)
       insert(:rule_implementation, implementation_key: "ri1", rule: rule1)
       insert(:rule_implementation, implementation_key: "ri2", rule: rule1)
       insert(:rule_implementation, implementation_key: "ri3", rule: rule1)
