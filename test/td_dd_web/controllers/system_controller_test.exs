@@ -149,6 +149,34 @@ defmodule TdDdWeb.SystemControllerTest do
       [%{"name" => name}] = data
       assert name == "parent"
     end
+
+    @tag authenticated_user: @admin_user_name
+    test "will retrieve only root structures with multiple versions", %{conn: conn, system: system} do
+      ds = insert(:data_structure, system_id: system.id, name: "parent")
+      parent = insert(:data_structure_version, data_structure_id: ds.id)
+
+      ds = insert(:data_structure, system_id: system.id, name: "child")
+      child = insert(:data_structure_version, data_structure_id: ds.id)
+
+      insert(:data_structure_relation, parent_id: parent.id, child_id: child.id)
+
+      insert(:data_structure_version, data_structure_id: ds.id, version: 2)
+
+      conn = get(conn, Routes.system_data_structure_path(conn, :get_system_structures, system))
+      data = json_response(conn, 200)["data"]
+
+      assert length(data) == 2
+    end
+
+    @tag authenticated_user: @admin_user_name
+    test "will not break when structure has no versions", %{conn: conn, system: system} do
+      insert(:data_structure, system_id: system.id, name: "parent")
+
+      conn = get(conn, Routes.system_data_structure_path(conn, :get_system_structures, system))
+      data = json_response(conn, 200)["data"]
+
+      assert Enum.empty?(data)
+    end
   end
 
   defp create_system(_) do
