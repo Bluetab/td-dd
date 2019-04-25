@@ -65,14 +65,14 @@ defmodule TdDq.Rules.Rule do
       :type_params
     ])
     |> unique_constraint(
-      :unique_rule_name_bc_id,
+      :rule_name_bc_id,
       name: :rules_business_concept_id_name_index,
-      message: "rule.create.duplicated_name_bc_id"
+      message: "unique_constraint"
     )
     |> unique_constraint(
-      :unique_rule_name_bc_id,
+      :rule_name_bc_id,
       name: :rules_name_index,
-      message: "rule.create.duplicated_name_bc_id"
+      message: "unique_constraint"
     )
     |> validate_number(:goal, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
     |> validate_number(:minimum, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)

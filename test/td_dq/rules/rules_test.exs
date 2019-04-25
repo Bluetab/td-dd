@@ -158,7 +158,7 @@ defmodule TdDq.RulesTest do
       {:error, changeset} = Rules.create_rule(rule_type, creation_attrs)
 
       errors = Map.get(changeset, :errors)
-      assert Enum.any?(errors, fn {key, _} -> key == :unique_rule_name_bc_id end)
+      assert Enum.any?(errors, fn {key, _} -> key == :rule_name_bc_id end)
     end
 
     test "create_rule/2 with same name and null business concept id" do
@@ -168,7 +168,7 @@ defmodule TdDq.RulesTest do
       {:error, changeset} = Rules.create_rule(rule_type, creation_attrs)
 
       errors = Map.get(changeset, :errors)
-      assert Enum.any?(errors, fn {key, _} -> key == :unique_rule_name_bc_id end)
+      assert Enum.any?(errors, fn {key, _} -> key == :rule_name_bc_id end)
     end
 
     test "update_rule/2 with valid data updates the rule" do
