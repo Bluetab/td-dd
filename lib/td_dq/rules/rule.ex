@@ -69,6 +69,11 @@ defmodule TdDq.Rules.Rule do
       name: :rules_business_concept_id_name_index,
       message: "rule.create.duplicated_name_bc_id"
     )
+    |> unique_constraint(
+      :unique_rule_name_bc_id,
+      name: :rules_name_index,
+      message: "rule.create.duplicated_name_bc_id"
+    )
     |> validate_number(:goal, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
     |> validate_number(:minimum, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
     |> validate_goal
