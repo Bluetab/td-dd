@@ -43,11 +43,14 @@ defmodule TdDd.DataStructures do
     |> Repo.all()
     |> Repo.preload([versions: :parents])
     |> Repo.preload(:system)
-    |> Enum.filter(&current_version_has_no_parents(&1))
+    |> Enum.filter(&structure_has_versions?/1)
+    |> Enum.filter(&last_version_is_root?/1)
   end
 
-  defp current_version_has_no_parents(%{versions: []}), do: false
-  defp current_version_has_no_parents(%{versions: versions}) do
+  defp structure_has_versions?(%{versions: []}), do: false
+  defp structure_has_versions?(_), do: true
+
+  defp last_version_is_root?(%{versions: versions}) do
     versions
     |> Enum.sort_by(&(&1.version))
     |> Enum.reverse
