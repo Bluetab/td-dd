@@ -171,6 +171,26 @@ defmodule TdDq.RulesTest do
       assert Enum.any?(errors, fn {key, _} -> key == :rule_name_bc_id end)
     end
 
+    test "create_rule/2 two soft deleted rules with same name and bc id can be created" do
+      rule_type = insert(:rule_type)
+      insert(:rule, rule_type: rule_type, deleted_at: DateTime.utc_now())
+
+      creation_attrs = Map.from_struct(build(:rule, rule_type_id: rule_type.id, deleted_at: DateTime.utc_now()))
+      {:ok, rule} = Rules.create_rule(rule_type, creation_attrs)
+
+      assert not is_nil(rule.id)
+    end
+
+    test "create_rule/2 can create a rule with same name and bc id as a soft deleted rule" do
+      rule_type = insert(:rule_type)
+      insert(:rule, rule_type: rule_type, deleted_at: DateTime.utc_now())
+
+      creation_attrs = Map.from_struct(build(:rule, rule_type_id: rule_type.id))
+      {:ok, rule} = Rules.create_rule(rule_type, creation_attrs)
+
+      assert not is_nil(rule.id)
+    end
+
     test "update_rule/2 with valid data updates the rule" do
       rule = insert(:rule)
       update_attrs = Map.from_struct(rule)
