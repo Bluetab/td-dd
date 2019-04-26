@@ -35,6 +35,30 @@ defmodule TdDd.DataStructures do
     |> Repo.preload(:system)
   end
 
+  def list_data_structures_with_no_parents(params \\ %{}) do
+    filter = build_filter(DataStructure, params)
+
+    DataStructure
+    |> where([ds], ^filter)
+    |> Repo.all()
+    |> Repo.preload([versions: :parents])
+    |> Repo.preload(:system)
+    |> Enum.filter(&structure_has_versions?/1)
+    |> Enum.filter(&last_version_is_root?/1)
+  end
+
+  defp structure_has_versions?(%{versions: []}), do: false
+  defp structure_has_versions?(_), do: true
+
+  defp last_version_is_root?(%{versions: versions}) do
+    versions
+    |> Enum.sort_by(&(&1.version))
+    |> Enum.reverse
+    |> Enum.at(0)
+    |> Map.get(:parents)
+    |> Enum.empty?
+  end
+
   def build_filter(schema, params) do
     params = CollectionUtils.atomize_keys(params)
     fields = schema.__schema__(:fields)

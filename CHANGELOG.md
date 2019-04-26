@@ -15,6 +15,7 @@
 - [TD-1626] Load data fields as structures
 - [TD-1634] Include data structure metadata field to selectively disable indexing ("indexable" == "false")
 - Improve elasticsearch index mappings
+- [TD-1554] added endpoint for getting root structures of a system
 
 ### Changed
 

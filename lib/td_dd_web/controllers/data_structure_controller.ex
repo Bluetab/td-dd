@@ -291,4 +291,13 @@ defmodule TdDdWeb.DataStructureController do
     |> put_resp_header("x-total-count", "#{total}")
     |> render("index.json", data_structures: data_structures, filters: aggregations)
   end
+
+  def get_system_structures(conn, params) do
+    data_structures = DataStructures.list_data_structures_with_no_parents(params)
+    total = length(data_structures)
+
+    conn
+    |> put_resp_header("x-total-count", "#{total}")
+    |> render("index.json", data_structures: data_structures)
+  end
 end
