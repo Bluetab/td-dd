@@ -151,6 +151,51 @@ defmodule TdDq.RulesTest do
       assert {:error, %Ecto.Changeset{}} = Rules.create_rule(rule_type, creation_attrs)
     end
 
+    test "create_rule/2 with same name and business concept id returns error changeset" do
+      rule_type = insert(:rule_type)
+      insert(:rule, rule_type: rule_type)
+      creation_attrs = Map.from_struct(build(:rule, rule_type_id: rule_type.id))
+      {:error, changeset} = Rules.create_rule(rule_type, creation_attrs)
+
+      errors = Map.get(changeset, :errors)
+      assert Enum.any?(errors, fn {key, _} -> key == :rule_name_bc_id end)
+    end
+
+    test "create_rule/2 with same name and null business concept id" do
+      rule_type = insert(:rule_type)
+      insert(:rule, business_concept_id: nil, rule_type: rule_type)
+
+      creation_attrs =
+        Map.from_struct(build(:rule, business_concept_id: nil, rule_type_id: rule_type.id))
+
+      {:error, changeset} = Rules.create_rule(rule_type, creation_attrs)
+
+      errors = Map.get(changeset, :errors)
+      assert Enum.any?(errors, fn {key, _} -> key == :rule_name_bc_id end)
+    end
+
+    test "create_rule/2 two soft deleted rules with same name and bc id can be created" do
+      rule_type = insert(:rule_type)
+      insert(:rule, rule_type: rule_type, deleted_at: DateTime.utc_now())
+
+      creation_attrs =
+        Map.from_struct(build(:rule, rule_type_id: rule_type.id, deleted_at: DateTime.utc_now()))
+
+      {:ok, rule} = Rules.create_rule(rule_type, creation_attrs)
+
+      assert not is_nil(rule.id)
+    end
+
+    test "create_rule/2 can create a rule with same name and bc id as a soft deleted rule" do
+      rule_type = insert(:rule_type)
+      insert(:rule, rule_type: rule_type, deleted_at: DateTime.utc_now())
+
+      creation_attrs = Map.from_struct(build(:rule, rule_type_id: rule_type.id))
+      {:ok, rule} = Rules.create_rule(rule_type, creation_attrs)
+
+      assert not is_nil(rule.id)
+    end
+
     test "update_rule/2 with valid data updates the rule" do
       rule = insert(:rule)
       update_attrs = Map.from_struct(rule)
@@ -192,6 +237,24 @@ defmodule TdDq.RulesTest do
       assert {:error, %Ecto.Changeset{}} = Rules.update_rule(rule, udpate_attrs)
 
       assert rule == rule_preload(Rules.get_rule!(rule.id))
+    end
+
+    test "update_rule/2 rule with same name and bc id as an existing rule" do
+      rule_type = insert(:rule_type)
+      insert(:rule, name: "Reference name", business_concept_id: nil, rule_type: rule_type)
+
+      rule_to_update =
+        insert(:rule, name: "Name to Update", business_concept_id: nil, rule_type: rule_type)
+
+      update_attrs =
+        rule_to_update
+        |> Map.from_struct()
+        |> Map.put(:name, "Reference name")
+        |> Map.drop([:rule_type_id])
+
+      assert {:error, changeset} = Rules.update_rule(rule_to_update, update_attrs)
+      errors = Map.get(changeset, :errors)
+      assert Enum.any?(errors, fn {key, _} -> key == :rule_name_bc_id end)
     end
 
     test "delete_rule/1 deletes the rule" do
@@ -310,7 +373,7 @@ defmodule TdDq.RulesTest do
     test "list_rule_implementations/1 returns all rule_implementations by rule" do
       rule_type = insert(:rule_type)
       rule1 = insert(:rule, rule_type: rule_type)
-      rule2 = insert(:rule, rule_type: rule_type)
+      rule2 = insert(:rule, name: "#{rule1.name} 1", rule_type: rule_type)
       insert(:rule_implementation, implementation_key: "ri1", rule: rule1)
       insert(:rule_implementation, implementation_key: "ri2", rule: rule1)
       insert(:rule_implementation, implementation_key: "ri3", rule: rule1)
@@ -334,7 +397,7 @@ defmodule TdDq.RulesTest do
     test "list_rule_implementations/1 returns all rule_implementations by status" do
       rule_type = insert(:rule_type)
       rule1 = insert(:rule, rule_type: rule_type, active: true)
-      rule2 = insert(:rule, rule_type: rule_type)
+      rule2 = insert(:rule, name: "#{rule1.name} 1", rule_type: rule_type)
       insert(:rule_implementation, implementation_key: "ri1", rule: rule1)
       insert(:rule_implementation, implementation_key: "ri2", rule: rule1)
       insert(:rule_implementation, implementation_key: "ri3", rule: rule1)

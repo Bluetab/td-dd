@@ -62,14 +62,18 @@ defmodule TdDq.Rules do
   end
 
   defp preload_bc_version(%{business_concept_id: nil} = rule), do: rule
+
   defp preload_bc_version(%{business_concept_id: bc_id} = rule) do
     bcv = %{
       name: BusinessConceptCache.get_name(bc_id),
       id: BusinessConceptCache.get_business_concept_version_id(bc_id)
     }
+
     Map.put(rule, :current_business_concept_version, bcv)
   end
+
   defp preload_bc_version(rule), do: rule
+
   @doc """
   Gets a single rule.
 
@@ -123,13 +127,15 @@ defmodule TdDq.Rules do
   def create_rule(rule_type, attrs \\ %{}) do
     with {:ok, changeset} <- check_base_changeset(attrs),
          {:ok} <- check_dynamic_form_changeset(attrs),
-         {:ok} <-  check_rule_type_changeset(changeset, rule_type) do
-         {:ok, rule} = Repo.insert(changeset)
-         rule = rule
-          |> Repo.preload(:rule_type)
-          |> preload_bc_version
-         @search_service.put_searchable(rule)
-         {:ok, rule}
+         {:ok} <- check_rule_type_changeset(changeset, rule_type),
+         {:ok, rule} <- Repo.insert(changeset) do
+      rule =
+        rule
+        |> Repo.preload(:rule_type)
+        |> preload_bc_version
+
+      @search_service.put_searchable(rule)
+      {:ok, rule}
     else
       error -> error
     end
@@ -137,6 +143,7 @@ defmodule TdDq.Rules do
 
   defp check_base_changeset(attrs, rule \\ %Rule{}) do
     changeset = Rule.changeset(rule, attrs)
+
     case changeset.valid? do
       true -> {:ok, changeset}
       false -> {:error, changeset}
@@ -153,15 +160,18 @@ defmodule TdDq.Rules do
       false -> {:error, content_changeset}
     end
   end
+
   defp check_dynamic_form_changeset(_), do: {:ok}
 
   defp check_rule_type_changeset(changeset, rule_type) do
     input = Changeset.get_change(changeset, :type_params)
     types = get_type_params_or_nil(rule_type)
 
-    type_changeset = types
-    |> rule_type_changeset(input)
-    |> add_rule_type_params_validations(rule_type, types)
+    type_changeset =
+      types
+      |> rule_type_changeset(input)
+      |> add_rule_type_params_validations(rule_type, types)
+
     case type_changeset.valid? do
       true -> {:ok}
       false -> {:error, type_changeset}
@@ -183,7 +193,6 @@ defmodule TdDq.Rules do
   def update_rule(%Rule{} = rule, attrs) do
     with {:ok, changeset} <- check_base_changeset(attrs, rule),
          {:ok} <- check_dynamic_form_changeset(attrs) do
-
       input = Map.get(attrs, :type_params) || Map.get(attrs, "type_params", %{})
       rule_type = Repo.preload(rule, :rule_type).rule_type
       types = get_type_params_or_nil(rule_type)
@@ -197,16 +206,24 @@ defmodule TdDq.Rules do
         type_changeset
         |> validate_non_modifiable_fields(attrs)
 
-      case non_modifiable_changeset.valid? do
-        true ->
-          {:ok, rule} = Repo.update(changeset)
-          rule = rule
+        case non_modifiable_changeset.valid? do
+          true -> do_update_rule(changeset)
+          false -> {:error, non_modifiable_changeset}
+        end
+    else
+      error -> error
+    end
+  end
+
+  defp do_update_rule(changeset) do
+    with {:ok, rule} <- Repo.update(changeset) do
+        rule =
+            rule
             |> Repo.preload(:rule_type)
             |> preload_bc_version
+
           @search_service.put_searchable(rule)
           {:ok, rule}
-        false -> {:error, non_modifiable_changeset}
-      end
     else
       error -> error
     end
@@ -226,24 +243,26 @@ defmodule TdDq.Rules do
   """
   def delete_rule(%Rule{} = rule) do
     @search_service.delete_searchable(rule)
+
     rule
     |> Rule.delete_changeset()
     |> Repo.delete()
   end
 
   def soft_deletion(bcs_ids_to_delete, bcs_ids_to_avoid_deletion) do
-    rules = Rule
-    |> where([r], not is_nil(r.business_concept_id))
-    |> where([r], is_nil(r.deleted_at))
-    |> where(
-      [r],
-      r.business_concept_id in ^bcs_ids_to_delete or
-        r.business_concept_id not in ^bcs_ids_to_avoid_deletion
-    )
+    rules =
+      Rule
+      |> where([r], not is_nil(r.business_concept_id))
+      |> where([r], is_nil(r.deleted_at))
+      |> where(
+        [r],
+        r.business_concept_id in ^bcs_ids_to_delete or
+          r.business_concept_id not in ^bcs_ids_to_avoid_deletion
+      )
 
     rules
     |> Repo.all()
-    |> Enum.each(&(@search_service.delete_searchable(&1)))
+    |> Enum.each(&@search_service.delete_searchable(&1))
 
     rules
     |> update(set: [deleted_at: ^DateTime.utc_now()])
@@ -279,7 +298,7 @@ defmodule TdDq.Rules do
       system_params
       |> Enum.map(&Map.get(&1, "name"))
 
-    ["system" | filters_in_system_params] |> Enum.uniq
+    ["system" | filters_in_system_params] |> Enum.uniq()
   end
 
   defp retrieve_cache_information(%Rule{business_concept_id: bc_id} = rule, list_filters) do
