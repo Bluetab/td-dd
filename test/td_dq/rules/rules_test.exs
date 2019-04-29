@@ -164,7 +164,10 @@ defmodule TdDq.RulesTest do
     test "create_rule/2 with same name and null business concept id" do
       rule_type = insert(:rule_type)
       insert(:rule, business_concept_id: nil, rule_type: rule_type)
-      creation_attrs = Map.from_struct(build(:rule, business_concept_id: nil, rule_type_id: rule_type.id))
+
+      creation_attrs =
+        Map.from_struct(build(:rule, business_concept_id: nil, rule_type_id: rule_type.id))
+
       {:error, changeset} = Rules.create_rule(rule_type, creation_attrs)
 
       errors = Map.get(changeset, :errors)
@@ -175,7 +178,9 @@ defmodule TdDq.RulesTest do
       rule_type = insert(:rule_type)
       insert(:rule, rule_type: rule_type, deleted_at: DateTime.utc_now())
 
-      creation_attrs = Map.from_struct(build(:rule, rule_type_id: rule_type.id, deleted_at: DateTime.utc_now()))
+      creation_attrs =
+        Map.from_struct(build(:rule, rule_type_id: rule_type.id, deleted_at: DateTime.utc_now()))
+
       {:ok, rule} = Rules.create_rule(rule_type, creation_attrs)
 
       assert not is_nil(rule.id)
@@ -237,10 +242,12 @@ defmodule TdDq.RulesTest do
     test "update_rule/2 rule with same name and bc id as an existing rule" do
       rule_type = insert(:rule_type)
       insert(:rule, name: "Reference name", business_concept_id: nil, rule_type: rule_type)
-      rule_to_update = insert(:rule, name: "Name to Update", business_concept_id: nil, rule_type: rule_type)
 
-      update_attrs = 
-        rule_to_update 
+      rule_to_update =
+        insert(:rule, name: "Name to Update", business_concept_id: nil, rule_type: rule_type)
+
+      update_attrs =
+        rule_to_update
         |> Map.from_struct()
         |> Map.put(:name, "Reference name")
         |> Map.drop([:rule_type_id])
