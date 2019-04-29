@@ -206,21 +206,25 @@ defmodule TdDq.Rules do
         type_changeset
         |> validate_non_modifiable_fields(attrs)
 
-      case non_modifiable_changeset.valid? do
-        true ->
-          {:ok, rule} = Repo.update(changeset)
+        case non_modifiable_changeset.valid? do
+          true -> do_update_rule(changeset, rule_type)
+          false -> {:error, non_modifiable_changeset}
+        end
+    else
+      error -> error
+    end
+  end
 
-          rule =
+  defp do_update_rule(changeset, rule_type) do
+    with   {:ok} <- check_rule_type_changeset(changeset, rule_type),
+           {:ok, rule} <- Repo.update(changeset) do
+        rule =
             rule
             |> Repo.preload(:rule_type)
             |> preload_bc_version
 
           @search_service.put_searchable(rule)
           {:ok, rule}
-
-        false ->
-          {:error, non_modifiable_changeset}
-      end
     else
       error -> error
     end
