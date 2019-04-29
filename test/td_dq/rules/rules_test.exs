@@ -234,6 +234,22 @@ defmodule TdDq.RulesTest do
       assert rule == rule_preload(Rules.get_rule!(rule.id))
     end
 
+    test "update_rule/2 rule with same name and bc id as an existing rule" do
+      rule_type = insert(:rule_type)
+      insert(:rule, name: "Reference name", business_concept_id: nil, rule_type: rule_type)
+      rule_to_update = insert(:rule, name: "Name to Update", business_concept_id: nil, rule_type: rule_type)
+
+      update_attrs = 
+        rule_to_update 
+        |> Map.from_struct()
+        |> Map.put(:name, "Reference name")
+        |> Map.drop([:rule_type_id])
+
+      assert {:error, changeset} = Rules.update_rule(rule_to_update, update_attrs)
+      errors = Map.get(changeset, :errors)
+      assert Enum.any?(errors, fn {key, _} -> key == :rule_name_bc_id end)
+    end
+
     test "delete_rule/1 deletes the rule" do
       rule = insert(:rule)
       assert {:ok, %Rule{}} = Rules.delete_rule(rule)
