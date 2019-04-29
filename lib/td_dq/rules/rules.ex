@@ -207,7 +207,7 @@ defmodule TdDq.Rules do
         |> validate_non_modifiable_fields(attrs)
 
         case non_modifiable_changeset.valid? do
-          true -> do_update_rule(changeset, rule_type)
+          true -> do_update_rule(changeset)
           false -> {:error, non_modifiable_changeset}
         end
     else
@@ -215,9 +215,8 @@ defmodule TdDq.Rules do
     end
   end
 
-  defp do_update_rule(changeset, rule_type) do
-    with   {:ok} <- check_rule_type_changeset(changeset, rule_type),
-           {:ok, rule} <- Repo.update(changeset) do
+  defp do_update_rule(changeset) do
+    with {:ok, rule} <- Repo.update(changeset) do
         rule =
             rule
             |> Repo.preload(:rule_type)
