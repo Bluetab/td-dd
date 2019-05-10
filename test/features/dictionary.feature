@@ -63,7 +63,7 @@ Feature: Data Dictionary Administration
       | Field            | SAS     | Risks        | TKIDS0001      | My_Personal03_Field | My_Personal03_Field Description    | DATE      |           | No       | BCID003             |             |
       | Field            | SAS     | Risks        | TKIDS0002      | My_Personal01_Field | My_Personal01bis_Field Description | TIMESTAMP |           | No       | BCID001             |             |
       | Field            | SAS     | Risks        | TKIDS0002      | My_Personal04_Field | My_Personal04_Field Description    | SMALLINT  |           | Yes      |                     |             |
-    Then the system returns a result with code "No Content"
+    Then the system returns a result with code "Accepted"
     And when the system has finished loading the metadata
     And "app-admin" is able to view data field "My_Personal01_Field" from system "S001" group "Risks" and structure "TKIDS0002" with following data:
       | Field               | Value                              |

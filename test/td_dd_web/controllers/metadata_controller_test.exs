@@ -51,7 +51,7 @@ defmodule TdDdWeb.MetadataControllerTest do
           data_structure_relations: relations
         )
 
-      assert response(conn, 204) =~ ""
+      assert response(conn, 202) =~ ""
 
       # waits for loader to complete
       LoaderWorker.ping()
