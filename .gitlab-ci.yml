@@ -1,45 +1,80 @@
 variables:
   VERSION: "2.18.1"
   APP_NAME: "td_dd"
-  ECR_NAMESPACE: "truedat"
-  K8S_DEPLOYMENT: "dd"
-  K8S_CONTAINER: "dd"
+  COMPOSE_FILE: "ci/docker-compose.yml"
+  COMPOSE_PROJECT_NAME: "${APP_NAME}_${CI_PIPELINE_ID}"
+  # See also variables set in ci/env.sh
 
 stages:
   - build
-  - test
   - publish
+  - acceptance
   - deploy
+
+before_script:
+  - source ci/env.sh ecr-login
 
 build:
   stage: build
+  tags:
+    - docker-compose
   script:
-    - docker run --rm -v $(pwd):/code:ro -w /code --entrypoint=/code/ci/build.sh bluetab/amazonlinux-phoenix-postgresql:20190105051037
+    - docker-compose run --rm build
+  after_script:
+    - docker-compose down -v
   artifacts:
-    untracked: true
+    paths:
+      - _build/prod/rel/${APP_NAME}/releases/*/*.tar.gz
 
 test:
-  stage: test
+  stage: build
+  tags:
+    - docker-compose
   script:
-    - docker run --rm -v $(pwd):/code:ro -w /code --entrypoint=/code/ci/test.sh bluetab/amazonlinux-phoenix-postgresql-redis:20190105051228
-  artifacts:
-    untracked: true
+    - docker-compose run --rm test
+  after_script:
+    - docker-compose down -v
 
 publish:
   stage: publish
   only:
     - master
     - tags
+  tags:
+    - docker
   script:
-    - git branch -f master HEAD
-    - export VERSION=${CI_COMMIT_TAG:-${VERSION}-alpha.${CI_PIPELINE_ID}}
-    - docker build --build-arg APP_VERSION=${VERSION} --build-arg APP_NAME=${APP_NAME} --build-arg MIX_ENV=prod -t ${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${CI_COMMIT_SHA} .
-    - docker run --rm -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION mesosphere/aws-cli ecr get-login --no-include-email --region ${AWS_DEFAULT_REGION} | awk '{ sub("\r$", ""); print }' > output
-    - bash -f output
-    - export ECR=$(cat output | egrep -o 'https?://[^ ]+' | awk -F/ '{print $3}')
-    - rm output
-    - docker tag ${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${CI_COMMIT_SHA} ${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${VERSION}
-    - docker push ${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${VERSION}
+    - docker build --build-arg APP_NAME=${APP_NAME} --build-arg APP_VERSION=${APP_VERSION} -t ${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${CI_COMMIT_SHA} .
+    - docker tag ${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${CI_COMMIT_SHA} ${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${APP_VERSION}
+    - docker push ${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${APP_VERSION}
+
+acceptance:
+  stage: acceptance
+  only:
+    - master
+    - tags
+  tags:
+    - docker-compose
+  dependencies: []
+  script:
+    - docker-compose run --rm acceptance
+    - docker-compose logs service
+  after_script:
+    - docker-compose down -v
+
+acceptance:branches:
+  stage: acceptance
+  except:
+    - master
+    - tags
+  tags:
+    - docker-compose
+  script:
+    - docker build --build-arg APP_NAME=${APP_NAME} --build-arg APP_VERSION=${APP_VERSION} -t ${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${CI_COMMIT_SHA} .
+    - docker tag ${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${CI_COMMIT_SHA} ${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${APP_VERSION}
+    - docker-compose run --rm acceptance
+    - docker-compose logs service
+  after_script:
+    - docker-compose down -v
 
 deploy:
   stage: deploy
@@ -48,7 +83,6 @@ deploy:
   only:
     - master
     - tags
+  dependencies: []
   script:
-    - export VERSION=${CI_COMMIT_TAG:-${VERSION}-alpha.${CI_PIPELINE_ID}}
-    - export ECR=$(docker run --rm -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION mesosphere/aws-cli ecr get-authorization-token --output text --query 'authorizationData[].proxyEndpoint' | cut -d/ -f3)
-    - kubectl set image deployment.v1.apps/${K8S_DEPLOYMENT} ${K8S_CONTAINER}=${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${VERSION} --record
+    - kubectl set image deployment.v1.apps/${K8S_DEPLOYMENT} ${K8S_CONTAINER}=${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${APP_VERSION} --record
