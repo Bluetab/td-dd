@@ -17,7 +17,7 @@ config :td_dd, TdDd.Repo,
   username: "postgres",
   password: "postgres",
   database: "td_dd_test",
-  hostname: "localhost",
+  hostname: "postgres",
   pool: Ecto.Adapters.SQL.Sandbox
 
 config :td_dd, :api_services_login,
@@ -32,7 +32,7 @@ config :td_dd, :auth_service,
 
 config :td_dd, :elasticsearch,
   search_service: TdDd.Search.MockSearch,
-  es_host: "localhost",
+  es_host: "elastic",
   es_port: 9200,
   type_name: "doc"
 
@@ -41,7 +41,7 @@ config :td_dd, permission_resolver: TdDd.Permissions.MockPermissionResolver
 config :td_dd, taxonomy_cache: TdDd.MockTaxonomyCache
 config :td_dd, index_worker: TdDd.Search.MockIndexWorker
 
-config :td_perms, redis_host: "localhost"
+config :td_perms, redis_host: "redis"
 
 config :td_dd, :audit_service,
   api_service: TdDdWeb.ApiServices.MockTdAuditService,

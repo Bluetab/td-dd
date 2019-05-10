@@ -53,6 +53,7 @@ defmodule TdDd.Search.Indexer do
           id: %{type: "long", index: false}
         }
       },
+      ancestry: %{enabled: false},
       df_content: content_mappings
     }
 

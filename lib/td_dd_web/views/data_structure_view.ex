@@ -58,7 +58,8 @@ defmodule TdDdWeb.DataStructureView do
       last_change_at: data_structure.last_change_at,
       inserted_at: data_structure.inserted_at,
       system_id: data_structure.system_id,
-      metadata: Map.get(data_structure, :metadata, %{})
+      metadata: Map.get(data_structure, :metadata, %{}),
+      path: Map.get(data_structure, :path, []),
     }
   end
 

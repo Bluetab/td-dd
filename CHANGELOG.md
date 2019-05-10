@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- [TD-1704] Index path of data structures and return in search results
+- Metadata upload success response is now 202 Accepted instead of 204 No Content
+
 ## [2.18.0] 2019-04-30
 
 ### Fixed

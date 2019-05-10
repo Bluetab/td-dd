@@ -113,6 +113,7 @@ defmodule TdDd.DataStructures.DataStructure do
     structure =
       structure
       |> DataStructures.with_latest_fields()
+      |> DataStructures.with_latest_path()
       |> fill_items
 
     system =
@@ -137,7 +138,8 @@ defmodule TdDd.DataStructures.DataStructure do
       inserted_at: structure.inserted_at,
       confidential: structure.confidential,
       df_content: structure.df_content,
-      data_fields: Enum.map(structure.data_fields, &DataField.search_fields/1)
+      data_fields: Enum.map(structure.data_fields, &DataField.search_fields/1),
+      path: structure.path
     }
   end
 
