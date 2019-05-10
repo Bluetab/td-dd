@@ -22,7 +22,7 @@ defmodule TdDdWeb.MetadataController do
     # TODO: Complete implementation once the metada is loaded by System
     with %System{id: system_id} <- Systems.get_system_by_external_id(external_id) do
       do_upload(conn, params, system_id)
-      send_resp(conn, :no_content, "")
+      send_resp(conn, :accepted, "")
     else
       _ -> send_resp(conn, :not_found, Poison.encode!(%{error: "system.not_found"}))
     end
@@ -73,7 +73,7 @@ defmodule TdDdWeb.MetadataController do
   """
   def upload(conn, params) do
     do_upload(conn, params)
-    send_resp(conn, :no_content, "")
+    send_resp(conn, :accepted, "")
   rescue
     e in RuntimeError ->
       Logger.error("While uploading #{e.message}")

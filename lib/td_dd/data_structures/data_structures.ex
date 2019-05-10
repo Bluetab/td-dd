@@ -5,10 +5,10 @@ defmodule TdDd.DataStructures do
 
   import Ecto.Query, warn: false
 
-  alias TdDd.Repo
-
+  alias Ecto.Association.NotLoaded
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.Repo
   alias TdDd.Utils.CollectionUtils
   alias TdDfLib.Validation
   alias TdPerms.DataFieldCache
@@ -605,5 +605,40 @@ defmodule TdDd.DataStructures do
         Map.put(field, :bc_related, RelationCache.get_resources(field.id, "data_field"))
       end)
     )
+  end
+
+  def with_latest_path(%DataStructure{} = data_structure) do
+    path = data_structure
+    |> get_latest_path
+
+    data_structure
+    |> Map.put(:path, path)
+  end
+
+  def get_latest_path(%DataStructure{id: id}) do
+    id
+    |> get_latest_version
+    |> get_path
+  end
+
+  def get_path(%DataStructureVersion{} = dsv) do
+    dsv
+    |> get_ancestry
+    |> Enum.map(& &1.name)
+    |> Enum.reverse
+  end
+
+  def get_ancestry(%DataStructureVersion{parents: [], data_structure: data_structure}) do
+    [data_structure]
+  end
+
+  def get_ancestry(%DataStructureVersion{parents: [parent|_], data_structure: data_structure}) do
+    [data_structure | get_ancestry(parent)]
+  end
+
+  def get_ancestry(%DataStructureVersion{parents: %NotLoaded{}} = data_structure_version) do
+    data_structure_version
+    |> Repo.preload([:parents, :data_structure])
+    |> get_ancestry
   end
 end
