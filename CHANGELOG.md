@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- [TD-1704] Index path of data structures and return in search results
+
 ## [2.18.0] 2019-04-30
 
 ### Fixed
