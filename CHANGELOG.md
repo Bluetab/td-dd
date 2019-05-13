@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## [Unreleased]
+
+### Fixed
+
+- [TD-1774] Newline is missing in logger format
 
 ### Added
 
