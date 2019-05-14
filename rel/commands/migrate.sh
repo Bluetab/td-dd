@@ -1,3 +1,3 @@
 #!/bin/sh
 
-bin/td_dq command Elixir.TdDq.ReleaseTasks seed
+$RELEASE_ROOT_DIR/bin/td_dq eval 'Elixir.TdDq.ReleaseTasks.migrate()'

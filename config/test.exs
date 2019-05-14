@@ -20,7 +20,7 @@ config :td_dq, TdDq.Repo,
   username: "postgres",
   password: "postgres",
   database: "td_dq_test",
-  hostname: "localhost",
+  hostname: "postgres",
   pool: Ecto.Adapters.SQL.Sandbox
 
 config :td_dq, :elasticsearch,
@@ -29,7 +29,8 @@ config :td_dq, :elasticsearch,
   es_port: 9200,
   type_name: "doc"
 
-config :td_dq, :audit_service, api_service: TdDqWeb.ApiServices.MockTdAuditService,
+config :td_dq, :audit_service,
+  api_service: TdDqWeb.ApiServices.MockTdAuditService,
   audit_host: "localhost",
   audit_port: "4007",
   audit_domain: ""
@@ -38,4 +39,4 @@ config :td_dq, df_cache: TdPerms.MockDynamicFormCache
 config :td_dq, permission_resolver: TdDq.Permissions.MockPermissionResolver
 config :td_dq, relation_cache: TdDq.MockRelationCache
 
-config :td_perms, redis_host: "localhost"
+config :td_perms, redis_host: "redis"
