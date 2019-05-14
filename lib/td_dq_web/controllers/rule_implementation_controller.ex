@@ -43,14 +43,16 @@ defmodule TdDqWeb.RuleImplementationController do
       false ->
         conn
         |> put_status(:forbidden)
-        |> render(ErrorView, :"403.json")
+        |> put_view(ErrorView)
+        |> render("403.json")
 
       error ->
         Logger.error("While getting rule implementations... #{inspect(error)}")
 
         conn
         |> put_status(:unprocessable_entity)
-        |> render(ErrorView, :"422.json")
+        |> put_view(ErrorView)
+        |> render("422.json")
     end
   end
 
@@ -124,7 +126,8 @@ defmodule TdDqWeb.RuleImplementationController do
       false ->
         conn
         |> put_status(:forbidden)
-        |> render(ErrorView, :"403.json")
+        |> put_view(ErrorView)
+        |> render("403.json")
 
       {:invalid_implementation_key} ->
         conn
@@ -147,7 +150,8 @@ defmodule TdDqWeb.RuleImplementationController do
       {:error, %Changeset{data: %{__struct__: _}} = changeset} ->
         conn
         |> put_status(:unprocessable_entity)
-        |> render(ChangesetView, "error.json",
+        |> put_view(ChangesetView)
+        |> render("error.json",
           changeset: changeset,
           prefix: "rule.implementation.error"
         )
@@ -155,7 +159,8 @@ defmodule TdDqWeb.RuleImplementationController do
       {:error, %Changeset{} = changeset} ->
         conn
         |> put_status(:unprocessable_entity)
-        |> render(ChangesetView, "error.json",
+        |> put_view(ChangesetView)
+        |> render("error.json",
           changeset: changeset,
           prefix: "rule.implementation.system_params.error"
         )
@@ -165,7 +170,8 @@ defmodule TdDqWeb.RuleImplementationController do
 
         conn
         |> put_status(:unprocessable_entity)
-        |> render(ErrorView, :"422.json")
+        |> put_view(ErrorView)
+        |> render("422.json")
     end
   end
 
@@ -223,12 +229,14 @@ defmodule TdDqWeb.RuleImplementationController do
       false ->
         conn
         |> put_status(:forbidden)
-        |> render(ErrorView, :"403.json")
+        |> put_view(ErrorView)
+        |> render("403.json")
 
       _error ->
         conn
         |> put_status(:unprocessable_entity)
-        |> render(ErrorView, :"422.json")
+        |> put_view(ErrorView)
+        |> render("422.json")
     end
   end
 
@@ -268,12 +276,14 @@ defmodule TdDqWeb.RuleImplementationController do
       false ->
         conn
         |> put_status(:forbidden)
-        |> render(ErrorView, :"403.json")
+        |> put_view(ErrorView)
+        |> render("403.json")
 
       {:error, %Changeset{data: %{__struct__: _}} = changeset} ->
         conn
         |> put_status(:unprocessable_entity)
-        |> render(ChangesetView, "error.json",
+        |> put_view(ChangesetView)
+        |> render("error.json",
           changeset: changeset,
           prefix: "rule.implementation.error"
         )
@@ -281,7 +291,8 @@ defmodule TdDqWeb.RuleImplementationController do
       {:error, %Changeset{} = changeset} ->
         conn
         |> put_status(:unprocessable_entity)
-        |> render(ChangesetView, "error.json",
+        |> put_view(ChangesetView)
+        |> render("error.json",
           changeset: changeset,
           prefix: "rule.implementation.system_params.error"
         )
@@ -291,7 +302,8 @@ defmodule TdDqWeb.RuleImplementationController do
 
         conn
         |> put_status(:unprocessable_entity)
-        |> render(ErrorView, :"422.json")
+        |> put_view(ErrorView)
+        |> render("422.json")
     end
   end
 
@@ -326,12 +338,14 @@ defmodule TdDqWeb.RuleImplementationController do
       false ->
         conn
         |> put_status(:forbidden)
-        |> render(ErrorView, :"403.json")
+        |> put_view(ErrorView)
+        |> render("403.json")
 
       _error ->
         conn
         |> put_status(:unprocessable_entity)
-        |> render(ErrorView, :"422.json")
+        |> put_view(ErrorView)
+        |> render("422.json")
     end
   end
 
@@ -361,14 +375,16 @@ defmodule TdDqWeb.RuleImplementationController do
       false ->
         conn
         |> put_status(:forbidden)
-        |> render(ErrorView, :"403.json")
+        |> put_view(ErrorView)
+        |> render("403.json")
 
       error ->
         Logger.error("While getting rule implementations... #{inspect(error)}")
 
         conn
         |> put_status(:unprocessable_entity)
-        |> render(ErrorView, :"422.json")
+        |> put_view(ErrorView)
+        |> render("422.json")
     end
   end
 
