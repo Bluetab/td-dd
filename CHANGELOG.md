@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [2.19.0] 2019-05-14
 
 ### Fixed
 
