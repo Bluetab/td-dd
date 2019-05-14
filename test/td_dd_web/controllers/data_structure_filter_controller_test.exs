@@ -3,7 +3,6 @@ defmodule TdDdWeb.DataStructureFilterControllerTest do
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   alias TdDd.Permissions.MockPermissionResolver
-  alias TdDd.Search.MockSearch
   alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
   alias TdPerms.MockDynamicFormCache
@@ -21,17 +20,27 @@ defmodule TdDdWeb.DataStructureFilterControllerTest do
   end
 
   @user_name "user"
+
   describe "index" do
     @tag :admin_authenticated
     test "lists all filters (admin user)", %{conn: conn} do
       conn = get(conn, Routes.data_structure_filter_path(conn, :index))
-      assert json_response(conn, 200)["data"] == MockSearch.get_filters(%{})
+      assert json_response(conn, 200)["data"] == %{}
     end
 
     @tag authenticated_no_admin_user: @user_name
     test "lists all filters (non-admin user)", %{conn: conn} do
       conn = get(conn, Routes.data_structure_filter_path(conn, :index))
       assert json_response(conn, 200)["data"] == %{}
+    end
+
+    @tag authenticated_user: @user_name
+    test "search filters should return at least the informed filters", %{conn: conn} do
+     filters = %{"system.name.raw" => ["SAP", "SAS"], "type.raw" => ["KNA1", "KNB1"]}
+      conn = post conn, Routes.data_structure_filter_path(
+        conn, :search, %{"filters" => filters}
+        )
+      assert json_response(conn, 200)["data"] == filters
     end
   end
 end

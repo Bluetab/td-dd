@@ -25,6 +25,13 @@ defmodule TdDdWeb.DataStructureFilterController do
 
   swagger_path :search do
     description("List Data Structure Filters")
+    parameters do
+      search(
+        :body,
+        Schema.ref(:FilterRequest),
+        "Filter parameters"
+      )
+    end
     response(200, "OK", Schema.ref(:FilterResponse))
   end
 

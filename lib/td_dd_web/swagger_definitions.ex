@@ -431,6 +431,20 @@ defmodule TdDdWeb.SwaggerDefinitions do
               name: ["KNA1", "KNB1"]
             }
           })
+        end,
+        FilterRequest:
+        swagger_schema do
+          properties do
+            filters(:object, "Filters", required: false)
+          end
+
+          example(%{
+            filters: %{
+              domain: ["Domain1", "Domain2"],
+              status: ["draft"],
+              data_owner: ["user1"]
+            }
+          })
         end
     }
   end
