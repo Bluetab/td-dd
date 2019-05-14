@@ -42,10 +42,8 @@ Ready to run in production? Please [check our deployment guides](http://www.phoe
 * [Cabbage](https://github.com/cabbage-ex/cabbage) - Story BDD tool
 * [phoenix_swagger](https://github.com/xerions/phoenix_swagger) - Swagger integration to Phoenix framework
 * [ex_json_schema](https://github.com/jonasschmidt/ex_json_schema) - Elixir JSON Schema validator
-* [edeliver](https://github.com/edeliver/edeliver) - Deployment for Elixir and Erlang
 * [canada](https://github.com/jarednorman/canada) - Permission definitions in Elixir apps
 * [comeonin](https://hex.pm/packages/comeonin) - Password hashing library for Elixir
-* [bcrypt_elixir](https://hex.pm/packages/comeonin) - Password hashing library for Elixir
 * [ex_json_schema](https://github.com/jonasschmidt/ex_json_schema) - Elixir JSON Schema validator
 * [csv](https://github.com/beatrichartz/csv) - CSV parsing
 * [timex](https://hexdocs.pm/timex) - A complete date/time library for Elixir projects

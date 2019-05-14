@@ -22,7 +22,7 @@ defmodule TdDqWeb.RuleTypeControllerTest do
   describe "index" do
     @tag :admin_authenticated
     test "lists all rule_type", %{conn: conn} do
-      conn = get conn, rule_type_path(conn, :index)
+      conn = get(conn, rule_type_path(conn, :index))
       assert response(conn, 200)
     end
   end
@@ -35,11 +35,13 @@ defmodule TdDqWeb.RuleTypeControllerTest do
 
       conn = recycle_and_put_headers(conn)
 
-      conn = get conn, rule_type_path(conn, :show, id)
+      conn = get(conn, rule_type_path(conn, :show, id))
+
       assert json_response(conn, 200)["data"] == %{
-        "id" => id,
-        "name" => "some name",
-        "params" => %{}}
+               "id" => id,
+               "name" => "some name",
+               "params" => %{}
+             }
     end
 
     @tag :admin_authenticated
@@ -53,17 +55,22 @@ defmodule TdDqWeb.RuleTypeControllerTest do
     setup [:create_rule_type]
 
     @tag :admin_authenticated
-    test "renders rule_type when data is valid", %{conn: conn, rule_type: %RuleType{id: id} = rule_type} do
+    test "renders rule_type when data is valid", %{
+      conn: conn,
+      rule_type: %RuleType{id: id} = rule_type
+    } do
       conn = put conn, rule_type_path(conn, :update, rule_type), rule_type: @update_attrs
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
       conn = recycle_and_put_headers(conn)
 
-      conn = get conn, rule_type_path(conn, :show, id)
+      conn = get(conn, rule_type_path(conn, :show, id))
+
       assert json_response(conn, 200)["data"] == %{
-        "id" => id,
-        "name" => "some updated name",
-        "params" => %{}}
+               "id" => id,
+               "name" => "some updated name",
+               "params" => %{}
+             }
     end
 
     @tag :admin_authenticated
@@ -78,13 +85,13 @@ defmodule TdDqWeb.RuleTypeControllerTest do
 
     @tag :admin_authenticated
     test "deletes chosen rule_type", %{conn: conn, rule_type: rule_type} do
-      conn = delete conn, rule_type_path(conn, :delete, rule_type)
+      conn = delete(conn, rule_type_path(conn, :delete, rule_type))
       assert response(conn, 204)
 
       conn = recycle_and_put_headers(conn)
 
       assert_error_sent 404, fn ->
-        get conn, rule_type_path(conn, :show, rule_type)
+        get(conn, rule_type_path(conn, :show, rule_type))
       end
     end
   end
@@ -97,15 +104,17 @@ defmodule TdDqWeb.RuleTypeControllerTest do
 
       conn = recycle_and_put_headers(conn)
 
-      conn = get conn, rule_type_path(conn, :show, id)
+      conn = get(conn, rule_type_path(conn, :show, id))
+
       assert json_response(conn, 200)["data"] == %{
-        "id" => id,
-        "name" => "some name",
-        "params" => %{}}
+               "id" => id,
+               "name" => "some name",
+               "params" => %{}
+             }
 
       conn = recycle_and_put_headers(conn)
       conn = post conn, rule_type_path(conn, :create), rule_type: @create_attrs
-      assert %{"errors" => %{"detail" => "Internal server error"}} = json_response(conn, 422)
+      assert %{"errors" => %{"detail" => "Unprocessable Entity"}} = json_response(conn, 422)
     end
   end
 

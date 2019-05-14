@@ -40,14 +40,14 @@ config :phoenix, :stacktrace_depth, 20
 
 # Configure your database
 config :td_dq, TdDq.Repo,
-  adapter: Ecto.Adapters.Postgres,
   username: "postgres",
   password: "postgres",
   database: "td_dq_dev",
   hostname: "localhost",
   pool_size: 10
 
-config :td_dq, :audit_service, api_service: TdDqWeb.ApiServices.HttpTdAuditService,
+config :td_dq, :audit_service,
+  api_service: TdDqWeb.ApiServices.HttpTdAuditService,
   audit_host: "localhost",
   audit_port: "4007",
   audit_domain: ""

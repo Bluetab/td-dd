@@ -17,12 +17,12 @@ config :td_dq, TdDqWeb.Endpoint,
   http: [port: 4004],
   url: [host: "truedat.bluetab.net", port: 8003],
   server: true,
-  version: Mix.Project.config[:version],
+  version: Mix.Project.config()[:version],
   cache_static_manifest: "priv/static/cache_manifest.json"
 
 # Do not print debug messages in production
 config :logger, :console,
-  format: (System.get_env("EX_LOGGER_FORMAT") || "[$level] $message") || "\n",
+  format: (System.get_env("EX_LOGGER_FORMAT") || "[$level] $message") <> "\n",
   level: :info
 
 # ## SSL Support

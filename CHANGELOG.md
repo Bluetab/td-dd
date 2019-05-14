@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-1774] Newline is missing in logs
+
 ## [2.18.0] 2019-04-30
 
 ### Added

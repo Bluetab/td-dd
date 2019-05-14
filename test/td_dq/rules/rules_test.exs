@@ -635,7 +635,12 @@ defmodule TdDq.RulesTest do
       assert {:error, %Ecto.Changeset{} = changeset} = Rules.create_rule_type(@valid_attrs)
 
       assert changeset.valid? == false
-      assert changeset.errors == [name: {"has already been taken", []}]
+
+      assert changeset.errors == [
+               name:
+                 {"has already been taken",
+                  [constraint: :unique, constraint_name: "rule_types_name_index"]}
+             ]
     end
   end
 

@@ -64,9 +64,9 @@ defmodule TdDqWeb.RuleController do
 
       rules = Rules.list_concept_rules(params)
 
-      render(
-        conn,
-        RuleView,
+      conn
+      |> put_view(RuleView)
+      |> render(
         "index.json",
         hypermedia: collection_hypermedia("rule", conn, rules, resource_type),
         rules: rules
@@ -75,12 +75,14 @@ defmodule TdDqWeb.RuleController do
       false ->
         conn
         |> put_status(:forbidden)
-        |> render(ErrorView, :"403.json")
+        |> put_view(ErrorView)
+        |> render("403.json")
 
       {:error, _changeset} ->
         conn
         |> put_status(:unprocessable_entity)
-        |> render(ErrorView, :"422.json")
+        |> put_view(ErrorView)
+        |> render("422.json")
     end
   end
 
@@ -130,24 +132,28 @@ defmodule TdDqWeb.RuleController do
       false ->
         conn
         |> put_status(:forbidden)
-        |> render(ErrorView, :"403.json")
+        |> put_view(ErrorView)
+        |> render("403.json")
       {:error, %Changeset{data: %{__struct__: _}} = changeset} ->
         conn
         |> put_status(:unprocessable_entity)
-        |> render(ChangesetView, "error.json",
+        |> put_view(ChangesetView)
+        |> render("error.json",
                   changeset: changeset,
                   prefix: "rule.error")
       {:error, %Changeset{} = changeset} ->
         conn
         |> put_status(:unprocessable_entity)
-        |> render(ChangesetView, "error.json",
+        |> put_view(ChangesetView)
+        |> render("error.json",
                   changeset: changeset,
                   prefix: "rule.type_params.error")
       error ->
         Logger.error("While creating rule... #{inspect(error)}")
         conn
         |> put_status(:unprocessable_entity)
-        |> render(ErrorView, :"422.json")
+        |> put_view(ErrorView)
+        |> render("422.json")
     end
   end
 
@@ -240,24 +246,28 @@ defmodule TdDqWeb.RuleController do
       false ->
         conn
         |> put_status(:forbidden)
-        |> render(ErrorView, :"403.json")
+        |> put_view(ErrorView)
+        |> render("403.json")
       {:error, %Changeset{data: %{__struct__: _}} = changeset} ->
         conn
         |> put_status(:unprocessable_entity)
-        |> render(ChangesetView, "error.json",
+        |> put_view(ChangesetView)
+        |> render("error.json",
                   changeset: changeset,
                   prefix: "rule.error")
       {:error, %Changeset{} = changeset} ->
         conn
         |> put_status(:unprocessable_entity)
-        |> render(ChangesetView, "error.json",
+        |> put_view(ChangesetView)
+        |> render("error.json",
                   changeset: changeset,
                   prefix: "rule.type_params.error")
       error ->
         Logger.error("While updating rule... #{inspect(error)}")
         conn
         |> put_status(:unprocessable_entity)
-        |> render(ErrorView, :"422.json")
+        |> put_view(ErrorView)
+        |> render("422.json")
     end
   end
 
@@ -305,11 +315,13 @@ defmodule TdDqWeb.RuleController do
       false ->
         conn
         |> put_status(:forbidden)
-        |> render(ErrorView, :"403.json")
+        |> put_view(ErrorView)
+        |> render("403.json")
       {:error, %Changeset{data: %{__struct__: _}} = changeset} ->
         conn
         |> put_status(:unprocessable_entity)
-        |> render(ChangesetView, "error.json",
+        |> put_view(ChangesetView)
+        |> render("error.json",
                   changeset: changeset,
                   prefix: "rule.error")
     end

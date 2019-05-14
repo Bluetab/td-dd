@@ -1,46 +1,23 @@
-# ---- Copy Files/Build ----
-FROM elixir:1.6.6-alpine AS build
+### Minimal runtime image based on alpine:3.9
+ARG RUNTIME_BASE=alpine:3.9
 
-MAINTAINER True-Dat Dev Team
+FROM ${RUNTIME_BASE}
 
-RUN apk --no-cache update \
-    && apk --no-cache add git make g++ \
-    &&  rm -fr /var/cache/apk/*
+LABEL maintainer="info@truedat.io"
 
-# MS Logic
-RUN mkdir /build
-WORKDIR /build
-COPY . /build
-
-ARG MIX_ENV
+ARG MIX_ENV=prod
 ARG APP_VERSION
 ARG APP_NAME
-
-RUN mix local.hex --force
-RUN mix local.rebar --force
-
-RUN mix deps.get
-RUN mix compile
-RUN MIX_ENV=${MIX_ENV} mix phx.swagger.generate priv/static/swagger.json
-
-RUN mix release --env=${MIX_ENV}
-
-# --- Release with Alpine ----
-### Minimal run-time image
-FROM alpine:3.8
-
-RUN apk --no-cache update && apk --no-cache upgrade && apk --no-cache add ncurses-libs openssl bash ca-certificates
-
-ARG MIX_ENV
-ARG APP_VERSION
-ARG APP_NAME
-
-ENV APP_NAME ${APP_NAME}
 
 WORKDIR /app
 
-COPY --from=build /build/_build/${MIX_ENV}/rel/${APP_NAME}/releases/${APP_VERSION}/*.tar.gz ./
+COPY _build/${MIX_ENV}/rel/${APP_NAME}/releases/${APP_VERSION}/*.tar.gz ./
 
-RUN tar -xzf ${APP_NAME}.tar.gz
+RUN apk --no-cache update && \
+    apk --no-cache upgrade && \
+    apk --no-cache add ncurses-libs openssl bash ca-certificates && \
+    rm -rf /var/cache/apk/* && \
+    tar -xzf ${APP_NAME}.tar.gz
 
+ENV APP_NAME ${APP_NAME}
 ENTRYPOINT ["/bin/bash", "-c", "bin/${APP_NAME} foreground"]

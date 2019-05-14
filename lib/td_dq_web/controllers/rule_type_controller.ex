@@ -50,7 +50,8 @@ defmodule TdDqWeb.RuleTypeController do
       _error ->
         conn
         |> put_status(:unprocessable_entity)
-        |> render(ErrorView, :"422.json")
+        |> put_view(ErrorView)
+        |> render("422.json")
     end
   end
 

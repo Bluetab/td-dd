@@ -16,10 +16,10 @@ defmodule TdDqWeb.RuleView do
   end
 
   def render("search.json", %{
-    rules: rules,
-    filters: filters,
-    user_permissions: user_permissions
-  }) do
+        rules: rules,
+        filters: filters,
+        user_permissions: user_permissions
+      }) do
     %{
       user_permissions: user_permissions,
       filters: filters,
@@ -36,7 +36,8 @@ defmodule TdDqWeb.RuleView do
   end
 
   def render("rule.json", %{rule: rule}) do
-    %{id: rule.id,
+    %{
+      id: rule.id,
       business_concept_id: rule.business_concept_id,
       name: rule.name,
       deleted_at: rule.deleted_at,
@@ -70,15 +71,22 @@ defmodule TdDqWeb.RuleView do
     end
   end
 
+  defp add_rule_type(rule_mapping, %{rule_type: %{id: _} = rule_type}) do
+    rule_type_mapping = Map.take(rule_type, [:id, :name, :params])
+    Map.put(rule_mapping, :rule_type, rule_type_mapping)
+  end
+
   defp add_rule_type(rule_mapping, %{rule_type: rule_type}) do
     case Ecto.assoc_loaded?(rule_type) do
       true ->
         rule_type_mapping = Map.take(rule_type, [:id, :name, :params])
         Map.put(rule_mapping, :rule_type, rule_type_mapping)
+
       _ ->
         rule_mapping
     end
   end
+
   defp add_rule_type(rule_mapping, _), do: rule_mapping
 
   defp add_dynamic_content(json, rule) do
