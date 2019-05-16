@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-1743] fixed permissions for quality rules without associated concept
+
 ## [2.19.0] 2019-05-14
 
 ### Fixed
@@ -10,13 +16,13 @@
 
 ### Added
 
-- [TD-1667] New unique constraint formed from Business Concept Id and Name on rules 
+- [TD-1667] New unique constraint formed from Business Concept Id and Name on rules
 
 ## [2.16.0] 2019-04-01
 
 ### Fixed
 
-- [TD-1609] Ignore type param differing from `table`, `column`, or `group` 
+- [TD-1609] Ignore type param differing from `table`, `column`, or `group`
 
 ### Changed
 
@@ -42,10 +48,10 @@
 ### Added
 
 - [TD-1179] Added sopport for Dynamix Fields in DQ
- - added fields df_content and df_name to rules
- - migration moves value o principle and tag to df_content
- - removed principle and tag fields and all its handling
- - added DF content validation on create/update rule
+- added fields df_content and df_name to rules
+- migration moves value o principle and tag to df_content
+- removed principle and tag fields and all its handling
+- added DF content validation on create/update rule
 
 ## [2.13.0] 2019-02-12
 

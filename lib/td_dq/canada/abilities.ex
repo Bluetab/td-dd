@@ -21,10 +21,24 @@ defmodule TdDq.Canada.Abilities do
     end
 
     def can?(%User{} = user, :create, %{
+          "business_concept_id" => nil,
+          "resource_type" => "rule_implementation"
+        }) do
+      RuleImplementationAbilities.can?(user, :manage_rules, "")
+    end
+
+    def can?(%User{} = user, :create, %{
           "business_concept_id" => business_concept_id,
           "resource_type" => "rule_implementation"
         }) do
-        RuleImplementationAbilities.can?(user, :manage_rules, business_concept_id)
+      RuleImplementationAbilities.can?(user, :manage_rules, business_concept_id)
+    end
+
+    def can?(%User{} = user, :update, %{
+          "business_concept_id" => nil,
+          "resource_type" => "rule_implementation"
+        }) do
+      RuleImplementationAbilities.can?(user, :manage_rules, "")
     end
 
     def can?(%User{} = user, :update, %{
@@ -32,6 +46,13 @@ defmodule TdDq.Canada.Abilities do
           "resource_type" => "rule_implementation"
         }) do
       RuleImplementationAbilities.can?(user, :manage_rules, business_concept_id)
+    end
+
+    def can?(%User{} = user, :delete, %{
+          "business_concept_id" => nil,
+          "resource_type" => "rule_implementation"
+        }) do
+      RuleImplementationAbilities.can?(user, :manage_rules, "")
     end
 
     def can?(%User{} = user, :delete, %{
@@ -53,6 +74,13 @@ defmodule TdDq.Canada.Abilities do
     end
 
     def can?(%User{} = user, :create, %{
+          "business_concept_id" => nil,
+          "resource_type" => "rule"
+        }) do
+      RuleAbilities.can?(user, :manage_rules, "")
+    end
+
+    def can?(%User{} = user, :create, %{
           "business_concept_id" => business_concept_id,
           "resource_type" => "rule"
         }) do
@@ -60,10 +88,24 @@ defmodule TdDq.Canada.Abilities do
     end
 
     def can?(%User{} = user, :update, %{
+          "business_concept_id" => nil,
+          "resource_type" => "rule"
+        }) do
+      RuleAbilities.can?(user, :manage_rules, "")
+    end
+
+    def can?(%User{} = user, :update, %{
           "business_concept_id" => business_concept_id,
           "resource_type" => "rule"
         }) do
       RuleAbilities.can?(user, :manage_rules, business_concept_id)
+    end
+
+    def can?(%User{} = user, :delete, %{
+          "business_concept_id" => nil,
+          "resource_type" => "rule"
+        }) do
+      RuleAbilities.can?(user, :manage_rules, "")
     end
 
     def can?(%User{} = user, :delete, %{
