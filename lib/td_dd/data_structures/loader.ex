@@ -264,7 +264,7 @@ defmodule TdDd.Loader do
 
     parent_external_id = Map.get(relation, :parent_external_id)
     child_external_id = Map.get(relation, :child_external_id)
-    version = Map.get(relation, :version)
+    version = Map.get(relation, :version, 0)
 
     parent =
       Map.get(
