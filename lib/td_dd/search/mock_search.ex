@@ -77,12 +77,20 @@ defmodule TdDd.Search.MockSearch do
     %{results: results, aggregations: aggregations, total: Enum.count(results)}
   end
 
+  def get_filters(%{bool: %{should: should}}) do
+    should
+    |> hd
+    |> Map.get(:bool, %{})
+    |> Map.get(:filter, [])
+    |> get_filters()
+  end
+
   def get_filters(query) when is_map(query) do
     query
-      |> Map.get(:query, %{})
-      |> Map.get(:bool, %{})
-      |> Map.get(:filter, [])
-      |> get_filters()
+    |> Map.get(:query, %{})
+    |> Map.get(:bool, %{})
+    |> Map.get(:filter, [])
+    |> get_filters()
   end
 
   def get_filters([]), do: %{}
