@@ -91,7 +91,8 @@ defmodule TdDd.Loader.FieldsAsStructures do
       parent_name: parent_name,
       child_group: group,
       child_external_id: field_id,
-      child_name: name
+      child_name: name,
+      version: Map.get(parent, :version)
     }
   end
 

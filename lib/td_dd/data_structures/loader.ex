@@ -261,20 +261,21 @@ defmodule TdDd.Loader do
          } = relation,
          versions_by_sys_group_name_version
        ) do
-    # TODO: Support versions other than 0 for parent/child relationships
+
     parent_external_id = Map.get(relation, :parent_external_id)
     child_external_id = Map.get(relation, :child_external_id)
+    version = Map.get(relation, :version, 0)
 
     parent =
       Map.get(
         versions_by_sys_group_name_version,
-        {system_id, parent_group, parent_name, parent_external_id, 0}
+        {system_id, parent_group, parent_name, parent_external_id, version}
       )
 
     child =
       Map.get(
         versions_by_sys_group_name_version,
-        {system_id, child_group, child_name, child_external_id, 0}
+        {system_id, child_group, child_name, child_external_id, version}
       )
 
     {parent, child}

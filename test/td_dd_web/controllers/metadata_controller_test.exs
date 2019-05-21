@@ -75,4 +75,44 @@ defmodule TdDdWeb.MetadataControllerTest do
     |> Enum.find(&(&1["name"] == name))
     |> Map.get("id")
   end
+
+  describe "upload datastructures and datafields with versions" do
+    @tag :admin_authenticated
+    @tag fixture: "test/fixtures/metadata"
+    test "uploads structure, field with versions", %{conn: conn} do
+
+      filepath = "test/fixtures/metadata/versions"
+      structures = %Plug.Upload{path: filepath <> "/structures.csv"}
+      fields = %Plug.Upload{path: filepath <> "/fields.csv"}
+
+      conn =
+        post(conn, Routes.system_path(conn, :create),
+          system: %{name: "MicroTest", external_id: "imd_615"}
+        )
+
+      assert %{"id" => _} = json_response(conn, 201)["data"]
+
+      conn =
+        post(conn, Routes.metadata_path(conn, :upload),
+          data_structures: structures,
+          data_fields: fields
+      )
+
+      assert response(conn, 202) =~ ""
+
+      # waits for loader to complete
+      LoaderWorker.ping()
+
+      search_params = %{ou: "Truedat"}
+      conn = get(conn, Routes.data_structure_path(conn, :index, search_params))
+      json_response = json_response(conn, 200)["data"]
+
+      structure_id = get_id(json_response, "spike_prueba")
+      conn = get(conn, Routes.data_structure_path(conn, :show, structure_id))
+      json_response = json_response(conn, 200)["data"]
+
+      assert length(json_response["children"]) == 1
+      assert json_response["parents"] == []
+    end
+  end
 end

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleashed
+
+- [TD-1747] Structures upload is not creating relation between structures and fields when including version number
+
 ## [2.19.0] 2019-05-14
 
 ### Fixed
