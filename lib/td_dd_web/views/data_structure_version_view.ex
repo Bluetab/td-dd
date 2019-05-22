@@ -11,12 +11,16 @@ defmodule TdDdWeb.DataStructureVersionView do
         |> add_siblings
         |> add_children
         |> add_versions
+        |> add_system
+        |> add_ancestry
         |> Map.take([
           :data_structure,
+          :ancestry,
           :children,
           :parents,
           :siblings,
           :data_fields,
+          :system,
           :version,
           :versions,
           :id
@@ -114,4 +118,31 @@ defmodule TdDdWeb.DataStructureVersionView do
     version
     |> Map.take([:version, :inserted_at, :updated_at])
   end
+
+  defp add_system(dsv) do
+    system =
+      case Map.get(dsv, :system) do
+        nil -> nil
+        s -> Map.take(s, [:id, :name])
+      end
+
+    Map.put(dsv, :system, system)
+  end
+
+  defp add_ancestry(dsv) do
+    ancestry =
+      case Map.get(dsv, :ancestry) do
+        nil ->
+          []
+
+        as ->
+          as
+          |> Enum.map(&Map.take(&1, [:id, :name]))
+          |> Enum.drop(1)
+          |> Enum.reverse()
+      end
+
+    Map.put(dsv, :ancestry, ancestry)
+  end
+
 end

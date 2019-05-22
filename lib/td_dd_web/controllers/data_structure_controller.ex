@@ -167,6 +167,7 @@ defmodule TdDdWeb.DataStructureController do
     |> DataStructures.with_latest_children()
     |> DataStructures.with_latest_parents()
     |> DataStructures.with_latest_siblings()
+    |> DataStructures.with_latest_ancestry()
     |> DataStructures.with_field_external_ids()
     |> DataStructures.with_field_links()
   end

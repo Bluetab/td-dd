@@ -34,6 +34,7 @@ defmodule TdDdWeb.DataStructureView do
         |> add_versions(data_structure)
         |> add_parents(data_structure)
         |> add_siblings(data_structure)
+        |> add_ancestry(data_structure)
         |> add_children(data_structure)
     }
   end
@@ -59,7 +60,7 @@ defmodule TdDdWeb.DataStructureView do
       inserted_at: data_structure.inserted_at,
       system_id: data_structure.system_id,
       metadata: Map.get(data_structure, :metadata, %{}),
-      path: Map.get(data_structure, :path, []),
+      path: Map.get(data_structure, :path, [])
     }
   end
 
@@ -102,6 +103,22 @@ defmodule TdDdWeb.DataStructureView do
         relations = Enum.map(rs, &data_structure_embedded/1)
         Map.put(data_structure_json, type, relations)
     end
+  end
+
+  defp add_ancestry(data_structure_json, data_structure) do
+    ancestry =
+      case Map.get(data_structure, :ancestry) do
+        nil ->
+          []
+
+        as ->
+          as
+          |> Enum.map(&Map.take(&1, [:id, :name]))
+          |> Enum.drop(1)
+          |> Enum.reverse()
+      end
+
+    Map.put(data_structure_json, :ancestry, ancestry)
   end
 
   defp add_versions(data_structure_json, data_structure) do

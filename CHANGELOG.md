@@ -1,6 +1,12 @@
 # Changelog
 
-## Unreleashed
+## Unreleased
+
+### Added
+
+- [TD-1703] Include system and ancestry in data structure and data structure version show responses
+
+### Fixed
 
 - [TD-1747] Structures upload is not creating relation between structures and fields when including version number
 
