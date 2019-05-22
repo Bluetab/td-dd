@@ -11,7 +11,6 @@ defmodule TdDqWeb.SearchControllerTest do
   end
 
   @create_attrs %{
-    business_concept_id: "some business_concept_id",
     description: "some description",
     goal: 42,
     minimum: 42,

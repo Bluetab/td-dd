@@ -12,6 +12,14 @@ defmodule TdDq.Search.RuleMappings do
     mapping_type = %{
       id: %{type: "long"},
       business_concept_id: %{type: "text"},
+      domain_ids: %{type: "long"},
+      domain_parents: %{
+        type: "nested",
+        properties: %{
+          id: %{type: "long"},
+          name: %{type: "text", fields: %{raw: %{type: "keyword"}}}
+        }
+      },
       rule_type_id: %{type: "long"},
       version: %{type: "long"},
       name: %{type: "text", fields: %{raw: %{type: "keyword"}}},

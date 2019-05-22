@@ -7,6 +7,7 @@ defmodule TdDq.Search.Aggregations do
   def aggregation_terms do
     static_keywords = [
       {"active.raw", %{terms: %{field: "active.raw"}}},
+      {"domain_parents", %{nested: %{path: "domain_parents"}, aggs: %{distinct_search: %{terms: %{field: "domain_parents.name.raw", size: 50}}}}},
       {"population.raw", %{terms: %{field: "group.raw", size: 50}}},
       {"priority.raw", %{terms: %{field: "type.raw", size: 50}}},
       {"rule_type", %{terms: %{field: "rule_type.name.raw", size: 50}}},

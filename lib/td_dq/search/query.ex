@@ -21,6 +21,14 @@ defmodule TdDq.Search.Query do
     %{terms: %{field => values}}
   end
 
+  defp get_filter(%{aggs: %{distinct_search: distinct_search}, nested: %{path: path}}, values) do
+    %{nested: %{path: path, query: build_nested_query(distinct_search, values)}}
+  end
+
+  defp build_nested_query(%{terms: %{field: field}}, values) do
+    %{terms: %{field => values}} |> bool_query([])
+  end
+
   def create_query(%{"query" => query}, filter) do
     equery = add_query_wildcard(query)
 

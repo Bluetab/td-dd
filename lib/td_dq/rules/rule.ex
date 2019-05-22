@@ -10,6 +10,8 @@ defmodule TdDq.Rules.Rule do
   alias TdPerms.UserCache
 
   @df_cache Application.get_env(:td_dq, :df_cache)
+  @taxonomy_cache Application.get_env(:td_dq, :taxonomy_cache)
+  @bc_cache Application.get_env(:td_dq, :bc_cache)
   @behaviour Searchable
 
   schema "rules" do
@@ -125,9 +127,14 @@ defmodule TdDq.Rules.Rule do
     current_business_concept_version =
       Map.get(rule, :current_business_concept_version, %{name: ""})
 
+    domain_ids = retrieve_domain_ids(rule)
+    domain_parents = Enum.map(domain_ids, &%{id: &1, name: @taxonomy_cache.get_name(&1)})
+
     %{
       id: rule.id,
       business_concept_id: rule.business_concept_id,
+      domain_ids: domain_ids,
+      domain_parents: domain_parents,
       current_business_concept_version: current_business_concept_version,
       rule_type_id: rule.rule_type_id,
       rule_type: rule_type,
@@ -147,6 +154,14 @@ defmodule TdDq.Rules.Rule do
       df_name: rule.df_name,
       df_content: df_content
     }
+  end
+
+  defp retrieve_domain_ids(%{business_concept_id: nil}), do: []
+  defp retrieve_domain_ids(%{business_concept_id: business_concept_id}) do
+    business_concept_id
+      |> @bc_cache.get_parent_id
+      |> String.to_integer
+      |> @taxonomy_cache.get_parent_ids
   end
 
   def index_name do
