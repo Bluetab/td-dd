@@ -6,6 +6,7 @@ defmodule TdDd.Loader.FieldsAsStructures do
   @structure_keys [:system_id, :group, :name, :external_id, :version]
   @liftable_metadata [:nullable, :precision, :business_concept_id, :type]
   @table_types ["tabl", "view"]
+  @white_list_types ["Attribute", "Metric"]
 
   def group_by_parent(field_records, structure_records) do
     parents =
@@ -100,7 +101,7 @@ defmodule TdDd.Loader.FieldsAsStructures do
     parent_type = parent |> Map.get(:type) |> String.downcase()
     child_type = child |> Map.get(:metadata, %{}) |> Map.get(:type, "Field")
 
-    case Enum.any?(@table_types, &String.contains?(parent_type, &1)) do
+    case Enum.any?(@table_types, &String.contains?(parent_type, &1)) and child_type not in @white_list_types do
       true -> "Column"
       false -> child_type
     end
