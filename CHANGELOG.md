@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## [Unreleased]
 
 ### Added
 
@@ -9,6 +9,7 @@
 ### Fixed
 
 - [TD-1747] Structures upload is not creating relation between structures and fields when including version number
+- [TD-1758] Structures with 'field' class are no indexed on create/upload
 
 ## [2.19.0] 2019-05-14
 
