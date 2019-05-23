@@ -41,20 +41,14 @@ defmodule TdDd.DataStructures do
     DataStructure
     |> where([ds], ^filter)
     |> Repo.all()
-    |> Repo.preload([versions: :parents])
-    |> Repo.preload(:system)
-    |> Enum.filter(&structure_has_versions?/1)
-    |> Enum.filter(&last_version_is_root?/1)
+    |> Repo.preload([system: [], versions: :parents])
+    |> Enum.filter(&latest_version_is_root?/1)
   end
 
-  defp structure_has_versions?(%{versions: []}), do: false
-  defp structure_has_versions?(_), do: true
-
-  defp last_version_is_root?(%{versions: versions}) do
+  defp latest_version_is_root?(%DataStructure{versions: []}), do: false
+  defp latest_version_is_root?(%DataStructure{versions: versions}) do
     versions
-    |> Enum.sort_by(&(&1.version))
-    |> Enum.reverse
-    |> Enum.at(0)
+    |> Enum.max_by(& &1.version)
     |> Map.get(:parents)
     |> Enum.empty?
   end
@@ -113,7 +107,7 @@ defmodule TdDd.DataStructures do
 
     DataStructureVersion
     |> Repo.get_by!(attrs)
-    |> Repo.preload(:data_structure)
+    |> Repo.preload([data_structure: :system])
   end
 
   def get_data_structure_with_fields!(data_structure_id) do
@@ -176,6 +170,12 @@ defmodule TdDd.DataStructures do
     |> Enum.uniq()
   end
 
+  def get_latest_ancestry(data_structure_id) do
+    data_structure_id
+    |> get_latest_version
+    |> get_ancestry
+  end
+
   def get_versions(%DataStructureVersion{} = dsv) do
     dsv
     |> Ecto.assoc([:data_structure, :versions])
@@ -213,6 +213,13 @@ defmodule TdDd.DataStructures do
 
     data_structure
     |> Map.put(:siblings, siblings)
+  end
+
+  def with_latest_ancestry(%{id: id} = data_structure) do
+    ancestry = get_latest_ancestry(id)
+
+    data_structure
+    |> Map.put(:ancestry, ancestry)
   end
 
   @doc """
