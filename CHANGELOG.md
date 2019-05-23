@@ -1,8 +1,9 @@
 # Changelog
 
-## Unreleashed
+## Unreleased
 
 - [TD-1747] Structures upload is not creating relation between structures and fields when including version number
+- [TD-1797] Structures of Fields of type Metric and Attribute must have that type instead of Field 
 
 ## [2.19.0] 2019-05-14
 
