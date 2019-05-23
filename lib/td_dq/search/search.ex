@@ -78,4 +78,8 @@ defmodule TdDq.Search do
   defp filter_values({name, %{"buckets" => buckets}}) do
     {name, buckets |> Enum.map(& &1["key"])}
   end
+
+  defp filter_values({name, %{"distinct_search" => distinct_search}}) do
+    filter_values({name, distinct_search})
+  end
 end

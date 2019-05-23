@@ -55,6 +55,8 @@ config :td_perms, permissions: [
 ]
 
 config :td_dq, df_cache: TdPerms.DynamicFormCache
+config :td_dq, taxonomy_cache: TdPerms.TaxonomyCache
+config :td_dq, bc_cache: TdPerms.BusinessConceptCache
 config :td_dq, cache_rules_on_startup: true
 
 config :td_dq, rule_removement: true

@@ -5,6 +5,7 @@
 ### Fixed
 
 - [TD-1743] fixed permissions for quality rules without associated concept
+- [TD-1694] filter rules by domain and domain parents
 
 ## [2.19.0] 2019-05-14
 
