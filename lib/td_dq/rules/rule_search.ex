@@ -9,6 +9,13 @@ defmodule TdDq.Rules.Search do
 
   @search_service Application.get_env(:td_dq, :elasticsearch)[:search_service]
 
+  def get_filter_values(params) do
+    filter_clause = Query.create_filters(params)
+    query = Query.create_query(%{}, filter_clause)
+    search = %{query: query, aggs: Aggregations.aggregation_terms()}
+    @search_service.get_filters("quality_rule", search)
+  end
+
   def search(params, page, size) do
     filter_clause = Query.create_filters(params)
     query = Query.create_query(params, filter_clause)
@@ -41,6 +48,7 @@ defmodule TdDq.Rules.Search do
     map
     |> Enum.into(%{}, fn {k, v} -> {atomize_key(k), atomize_keys(v)} end)
   end
+
   defp atomize_keys(value), do: value
 
   defp atomize_key(key) when is_binary(key), do: String.to_atom(key)

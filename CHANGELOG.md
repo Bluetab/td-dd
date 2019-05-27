@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-1802] Added RuleFilterController
+
 ## [2.20.0] 2019-05-27
 
 ### Fixed

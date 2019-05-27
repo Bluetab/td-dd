@@ -38,6 +38,8 @@ defmodule TdDqWeb.Router do
 
     post("/rules/search", SearchController, :search)
     get("/rules/search/reindex_all", SearchController, :reindex_all)
+
+    post("/rule_filters/search", RuleFilterController, :search)
     resources("/rule_implementations", RuleImplementationController, except: [:new, :edit])
     resources("/rule_types", RuleTypeController, except: [:new, :edit])
   end
