@@ -155,7 +155,7 @@ defmodule TdDqWeb.RuleControllerTest do
   describe "index" do
     @tag authenticated_user: @admin_user_name
     test "lists all rules", %{conn: conn, swagger_schema: schema} do
-      conn = get(conn, rule_path(conn, :index))
+      conn = get(conn, Routes.rule_path(conn, :index))
       validate_resp_schema(conn, schema, "RulesResponse")
       assert json_response(conn, 200)["data"] == []
     end
@@ -164,7 +164,7 @@ defmodule TdDqWeb.RuleControllerTest do
   describe "get_rules_by_concept" do
     @tag authenticated_user: @admin_user_name
     test "lists all rules of a concept", %{conn: conn, swagger_schema: schema} do
-      conn = get(conn, rule_path(conn, :get_rules_by_concept, "id"))
+      conn = get(conn, Routes.rule_path(conn, :get_rules_by_concept, "id"))
       validate_resp_schema(conn, schema, "RulesResponse")
       assert json_response(conn, 200)["data"] == []
     end
@@ -173,7 +173,7 @@ defmodule TdDqWeb.RuleControllerTest do
   describe "verify token is required" do
     test "renders unauthenticated when no token", %{conn: conn, swagger_schema: schema} do
       conn = put_req_header(conn, "content-type", "application/json")
-      conn = post(conn, rule_path(conn, :create), rule: @create_attrs)
+      conn = post(conn, Routes.rule_path(conn, :create), rule: @create_attrs)
       validate_resp_schema(conn, schema, "RuleResponse")
       assert conn.status == 401
     end
@@ -188,7 +188,7 @@ defmodule TdDqWeb.RuleControllerTest do
         "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJ0cnVlQkciLCJleHAiOjE1MTg2MDE2ODMsImlhdCI6MTUxODU5ODA4MywiaXNzIjoidHJ1ZUJHIiwianRpIjoiNTAzNmI5MTQtYmViOC00N2QyLWI4NGQtOTA2ZjMyMTQwMDRhIiwibmJmIjoxNTE4NTk4MDgyLCJzdWIiOiJhcHAtYWRtaW4iLCJ0eXAiOiJhY2Nlc3MifQ.0c_ZpzfiwUeRAbHe-34rvFZNjQoU_0NCMZ-T6r6_DUqPiwlp1H65vY-G1Fs1011ngAAVf3Xf8Vkqp-yOQUDTdw"
 
       conn = put_auth_headers(conn, jwt)
-      conn = post(conn, rule_path(conn, :create), rule: @create_attrs)
+      conn = post(conn, Routes.rule_path(conn, :create), rule: @create_attrs)
       assert conn.status == 401
     end
   end
@@ -202,11 +202,11 @@ defmodule TdDqWeb.RuleControllerTest do
         @create_fixture_attrs
         |> Map.put("rule_type_id", rule_type.id)
 
-      conn = post(conn, rule_path(conn, :create), rule: creation_attrs)
+      conn = post(conn, Routes.rule_path(conn, :create), rule: creation_attrs)
       validate_resp_schema(conn, schema, "RuleResponse")
       assert %{"id" => id} = json_response(conn, 201)["data"]
       conn = recycle_and_put_headers(conn)
-      conn = get(conn, rule_path(conn, :show, id))
+      conn = get(conn, Routes.rule_path(conn, :show, id))
       validate_resp_schema(conn, schema, "RuleResponse")
       comparable_fields = Map.take(json_response(conn, 200)["data"], @comparable_fields)
 
@@ -239,11 +239,11 @@ defmodule TdDqWeb.RuleControllerTest do
         @create_fixture_attrs_no_bc
         |> Map.put("rule_type_id", rule_type.id)
 
-      conn = post(conn, rule_path(conn, :create), rule: creation_attrs)
+      conn = post(conn, Routes.rule_path(conn, :create), rule: creation_attrs)
       validate_resp_schema(conn, schema, "RuleResponse")
       assert %{"id" => id} = json_response(conn, 201)["data"]
       conn = recycle_and_put_headers(conn)
-      conn = get(conn, rule_path(conn, :show, id))
+      conn = get(conn, Routes.rule_path(conn, :show, id))
       validate_resp_schema(conn, schema, "RuleResponse")
       comparable_fields = Map.take(json_response(conn, 200)["data"], @comparable_fields)
 
@@ -267,7 +267,7 @@ defmodule TdDqWeb.RuleControllerTest do
 
     @tag authenticated_user: @admin_user_name
     test "renders errors when data is invalid", %{conn: conn, swagger_schema: schema} do
-      conn = post(conn, rule_path(conn, :create), rule: @invalid_attrs)
+      conn = post(conn, Routes.rule_path(conn, :create), rule: @invalid_attrs)
       validate_resp_schema(conn, schema, "RuleResponse")
       assert json_response(conn, 422)["errors"] != %{}
     end
@@ -285,7 +285,7 @@ defmodule TdDqWeb.RuleControllerTest do
         )
 
       creation_attrs = @create_fixture_attrs |> Map.put("rule_type_id", rule_type.id)
-      conn = post(conn, rule_path(conn, :create), rule: creation_attrs)
+      conn = post(conn, Routes.rule_path(conn, :create), rule: creation_attrs)
       validate_resp_schema(conn, schema, "RuleResponse")
 
       assert %{"id" => id} = json_response(conn, 201)["data"]
@@ -294,7 +294,7 @@ defmodule TdDqWeb.RuleControllerTest do
       conn =
         get(
           conn,
-          rule_rule_path(conn, :get_rule_detail, id)
+          Routes.rule_rule_path(conn, :get_rule_detail, id)
         )
 
       validate_resp_schema(conn, schema, "RuleDetailResponse")
@@ -321,12 +321,12 @@ defmodule TdDqWeb.RuleControllerTest do
       rule: %Rule{id: id} = rule,
       swagger_schema: schema
     } do
-      conn = put(conn, rule_path(conn, :update, rule), rule: @update_attrs)
+      conn = put(conn, Routes.rule_path(conn, :update, rule), rule: @update_attrs)
       validate_resp_schema(conn, schema, "RuleResponse")
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
       conn = recycle_and_put_headers(conn)
-      conn = get(conn, rule_path(conn, :show, id))
+      conn = get(conn, Routes.rule_path(conn, :show, id))
       validate_resp_schema(conn, schema, "RuleResponse")
       comparable_fields = Map.take(json_response(conn, 200)["data"], @comparable_fields)
 
@@ -350,7 +350,7 @@ defmodule TdDqWeb.RuleControllerTest do
 
     @tag authenticated_user: @admin_user_name
     test "renders errors when data is invalid", %{conn: conn, rule: rule, swagger_schema: schema} do
-      conn = put(conn, rule_path(conn, :update, rule), rule: @invalid_attrs)
+      conn = put(conn, Routes.rule_path(conn, :update, rule), rule: @invalid_attrs)
       validate_resp_schema(conn, schema, "RuleResponse")
       assert json_response(conn, 422)["errors"] != %{}
     end
@@ -361,12 +361,12 @@ defmodule TdDqWeb.RuleControllerTest do
 
     @tag authenticated_user: @admin_user_name
     test "deletes chosen rule", %{conn: conn, rule: rule} do
-      conn = delete(conn, rule_path(conn, :delete, rule))
+      conn = delete(conn, Routes.rule_path(conn, :delete, rule))
       assert response(conn, 204)
       conn = recycle_and_put_headers(conn)
 
       assert_error_sent(404, fn ->
-        get(conn, rule_path(conn, :show, rule))
+        get(conn, Routes.rule_path(conn, :show, rule))
       end)
     end
   end

@@ -39,14 +39,14 @@ defmodule TdDqWeb.SearchControllerTest do
   describe "index" do
     @tag authenticated_user: @admin_user_name
     test "search empty rules", %{conn: conn} do
-      conn = post(conn, search_path(conn, :search))
+      conn = post(conn, Routes.search_path(conn, :search))
       assert json_response(conn, 200)["data"] == []
     end
 
     @tag authenticated_user: @admin_user_name
     test "search non empty rules", %{conn: conn} do
       create_rule()
-      conn = post(conn, search_path(conn, :search))
+      conn = post(conn, Routes.search_path(conn, :search))
       assert length(json_response(conn, 200)["data"]) == 1
     end
   end

@@ -16,16 +16,18 @@ defmodule TdDqWeb.ConnCase do
   use ExUnit.CaseTemplate
   alias Ecto.Adapters.SQL.Sandbox
   alias Phoenix.ConnTest
+  alias TdDqWeb.Endpoint
   import TdDqWeb.Authentication, only: :functions
 
   using do
     quote do
       # Import conveniences for testing with connections
-      use Phoenix.ConnTest
-      import TdDqWeb.Router.Helpers
+      use ConnTest
+
+      alias TdDqWeb.Router.Helpers, as: Routes
 
       # The default endpoint for testing
-      @endpoint TdDqWeb.Endpoint
+      @endpoint Endpoint
     end
   end
 
