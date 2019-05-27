@@ -19,12 +19,14 @@ defmodule TdDdWeb.SwaggerDefinitions do
 
           properties do
             id(:integer, "Data Structure version unique identifier", required: true)
-            version(:integer, "Version number", required: true)
-            data_structure(Schema.ref(:DataStructure))
-            data_fields(Schema.ref(:DataFields))
-            parent(Schema.ref(:DataStructuresEmbedded))
+            ancestry(Schema.ref(:DataStructuresEmbedded))
             children(Schema.ref(:DataStructuresEmbedded))
+            data_fields(Schema.ref(:DataFields))
+            data_structure(Schema.ref(:DataStructure))
+            parent(Schema.ref(:DataStructuresEmbedded))
             siblings(Schema.ref(:DataStructuresEmbedded))
+            system(:object, "Data Structure system", required: true)
+            version(:integer, "Version number", required: true)
             versions(:array, "Versions", items: Schema.ref(:Version))
           end
         end,
@@ -66,6 +68,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
             parent(Schema.ref(:DataStructuresEmbedded))
             children(Schema.ref(:DataStructuresEmbedded))
             siblings(Schema.ref(:DataStructuresEmbedded))
+            ancestry(Schema.ref(:DataStructuresEmbedded))
             versions(:array, "Versions", items: Schema.ref(:Version))
           end
 

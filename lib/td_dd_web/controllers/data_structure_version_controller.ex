@@ -56,6 +56,8 @@ defmodule TdDdWeb.DataStructureVersionController do
     children = DataStructures.get_children(dsv)
     fields = DataStructures.get_fields(dsv)
     versions = DataStructures.get_versions(dsv)
+    ancestry = DataStructures.get_ancestry(dsv)
+    system = dsv.data_structure.system
 
     dsv
     |> Map.put(:parents, parents)
@@ -63,5 +65,7 @@ defmodule TdDdWeb.DataStructureVersionController do
     |> Map.put(:siblings, siblings)
     |> Map.put(:data_fields, fields)
     |> Map.put(:versions, versions)
+    |> Map.put(:system, system)
+    |> Map.put(:ancestry, ancestry)
   end
 end

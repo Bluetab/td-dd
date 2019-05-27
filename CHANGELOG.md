@@ -1,9 +1,15 @@
 # Changelog
 
-## Unreleased
+## [Unreleased]
+
+### Added
+
+- [TD-1703] Include system and ancestry in data structure and data structure version show responses
+
+### Fixed
 
 - [TD-1747] Structures upload is not creating relation between structures and fields when including version number
-- [TD-1797] Structures of Fields of type Metric and Attribute must have that type instead of Field 
+- [TD-1758] Structures with 'field' class are no indexed on create/upload
 
 ## [2.19.0] 2019-05-14
 
