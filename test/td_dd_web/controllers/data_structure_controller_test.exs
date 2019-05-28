@@ -13,6 +13,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
   @create_attrs %{
     description: "some description",
+    external_id: "some external_id",
+    class: "some class",
     group: "some group",
     last_change_at: "2010-04-17 14:00:00Z",
     last_change_by: 42,
@@ -132,6 +134,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   describe "search" do
     @tag :admin_authenticated
     setup [:create_data_structure]
+
     test "search_all", %{conn: conn, data_structure: %DataStructure{id: id}} do
       conn = post(conn, Routes.data_structure_path(conn, :search), %{})
       data = json_response(conn, 200)["data"]
@@ -170,6 +173,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
       validate_resp_schema(conn, schema, "DataStructureResponse")
       assert json_response_data["id"] == id
       assert json_response_data["description"] == "some description"
+      assert json_response_data["external_id"] == "some external_id"
+      assert json_response_data["class"] == "some class"
       assert json_response_data["type"] == "csv"
       assert json_response_data["ou"] == "GM"
       assert json_response_data["group"] == "some group"
@@ -454,8 +459,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
   def create_template(attrs \\ %{}) do
     attrs
-      |> Enum.into(@default_template_attrs)
-      |> MockDynamicFormCache.put_template()
+    |> Enum.into(@default_template_attrs)
+    |> MockDynamicFormCache.put_template()
 
     :ok
   end

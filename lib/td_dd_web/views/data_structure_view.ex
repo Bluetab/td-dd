@@ -47,21 +47,24 @@ defmodule TdDdWeb.DataStructureView do
   end
 
   defp data_structure_json(data_structure) do
-    %{
-      id: data_structure.id,
-      group: data_structure.group,
-      name: data_structure.name,
-      description: data_structure.description,
-      type: data_structure.type,
-      ou: data_structure.ou,
-      confidential: data_structure.confidential,
-      domain_id: data_structure.domain_id,
-      last_change_at: data_structure.last_change_at,
-      inserted_at: data_structure.inserted_at,
-      system_id: data_structure.system_id,
-      metadata: Map.get(data_structure, :metadata, %{}),
-      path: Map.get(data_structure, :path, [])
-    }
+    data_structure
+    |> Map.take([
+      :id,
+      :class,
+      :confidential,
+      :description,
+      :domain_id,
+      :external_id,
+      :group,
+      :inserted_at,
+      :last_change_at,
+      :name,
+      :ou,
+      :system_id,
+      :type
+    ])
+    |> Map.put(:metadata, Map.get(data_structure, :metadata, %{}))
+    |> Map.put(:path, Map.get(data_structure, :path, []))
   end
 
   defp add_system_with_keys(json, data_structure, keys) do

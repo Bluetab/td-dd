@@ -57,7 +57,10 @@ defmodule TdDdWeb.SwaggerDefinitions do
             system_id(:integer, "System Id", required: true)
             group(:string, "Data Structure group", required: true)
             name(:string, "Data Structure name", required: true)
+            domain_id([:integer, :null], "Domain Id")
+            class([:string, :null], "Data Structure class")
             description([:string, :null], "Data Structure description")
+            external_id([:string, :null], "Data Structure external id")
             type([:string, :null], "Data Structure type (csv, table...)")
             ou([:string, :null], "Data Structure organizational unit")
             confidential(:boolean, "Data Structure confidentiality")
@@ -435,7 +438,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
             }
           })
         end,
-        FilterRequest:
+      FilterRequest:
         swagger_schema do
           properties do
             filters(:object, "Filters", required: false)

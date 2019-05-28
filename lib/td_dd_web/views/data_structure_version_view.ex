@@ -37,15 +37,18 @@ defmodule TdDdWeb.DataStructureVersionView do
     data_structure
     |> Map.take([
       :id,
-      :group,
-      :name,
-      :description,
-      :type,
-      :ou,
+      :class,
       :confidential,
+      :description,
       :domain_id,
+      :external_id,
+      :group,
+      :inserted_at,
       :last_change_at,
-      :inserted_at
+      :name,
+      :ou,
+      :system_id,
+      :type
     ])
     |> add_system(data_structure)
   end
@@ -144,5 +147,4 @@ defmodule TdDdWeb.DataStructureVersionView do
 
     Map.put(dsv, :ancestry, ancestry)
   end
-
 end
