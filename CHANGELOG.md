@@ -1,5 +1,11 @@
 # Changelog
 
+## [2.20.1] 2019-05-28
+
+### Added
+
+- [TD-1819] Include external_id and class in data structure and data structure version show responses
+
 ## [2.20.0] 2019-05-27
 
 ### Added
