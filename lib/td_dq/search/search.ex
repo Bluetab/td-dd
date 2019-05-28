@@ -44,9 +44,7 @@ defmodule TdDq.Search do
         Logger.info("Item on #{index_name} deleted status 200")
 
       {_, %HTTPoison.Response{status_code: status_code}} ->
-        Logger.error(
-          "ES: Error deleting item on #{index_name} status #{status_code}"
-        )
+        Logger.error("ES: Error deleting item on #{index_name} status #{status_code}")
 
       {:error, %HTTPoison.Error{reason: :econnrefused}} ->
         Logger.error("Error connecting to ES")
@@ -63,6 +61,19 @@ defmodule TdDq.Search do
          body: %{"hits" => %{"hits" => results, "total" => total}, "aggregations" => aggregations}
        }} ->
         %{results: results, aggregations: format_search_aggegations(aggregations), total: total}
+
+      {:ok, %HTTPoison.Response{body: error}} ->
+        error
+    end
+  end
+
+  def get_filters(index_name, query) do
+    response = ESClientApi.search_es(index_name, query)
+
+    case response do
+      {:ok, %HTTPoison.Response{body: %{"aggregations" => aggregations}}} ->
+        aggregations
+        |> format_search_aggegations()
 
       {:ok, %HTTPoison.Response{body: error}} ->
         error
