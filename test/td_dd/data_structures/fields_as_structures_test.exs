@@ -65,10 +65,10 @@ defmodule TdDd.Loader.FieldsAsStructuresTest do
       table = %{type: "USER_TABLE"}
       report = %{type: "REPORT"}
       view = %{type: "Some type with the word view in it"}
-      child1 = %{metadata: %{type: "Foo"}}
+      child1 = %{metadata: %{"type" => "Foo"}}
       child2 = %{}
-      child3 = %{metadata: %{type: "Attribute"}}
-      child4 = %{metadata: %{type: "Metric"}}
+      child3 = %{metadata: %{"type" => "Attribute"}}
+      child4 = %{metadata: %{"type" => "Metric"}}
 
       assert FieldsAsStructures.child_type(table, child1) == "Column"
       assert FieldsAsStructures.child_type(report, child1) == "Foo"
