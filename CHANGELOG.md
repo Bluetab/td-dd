@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-1825] Structures of fields with metadata type are not setting its type correctly - metadata type key is not correct  
+
 ## [2.20.1] 2019-05-28
 
 ### Added
@@ -16,6 +22,7 @@
 
 - [TD-1747] Structures upload is not creating relation between structures and fields when including version number
 - [TD-1758] Structures with 'field' class are no indexed on create/upload
+- [TD-1797] Structures of Fields of type Metric and Attribute must have that type instead of Field
 
 ## [2.19.0] 2019-05-14
 
