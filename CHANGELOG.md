@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-1802] Added RuleFilterController
+- [TD-1824] Bump td-perms version to fix relations key
 
 ## [2.20.0] 2019-05-27
 
