@@ -6,6 +6,10 @@
 
 - [TD-1825] Structures of fields with metadata type are not setting its type correctly - metadata type key is not correct  
 
+### Added
+
+- [TD-1824] Bump td-perms version to fix relations key
+
 ## [2.20.1] 2019-05-28
 
 ### Added
