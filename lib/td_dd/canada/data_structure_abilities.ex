@@ -33,6 +33,10 @@ defmodule TdDd.Canada.DataStructureAbilities do
     Permissions.authorized?(user, :view_data_structure, domain_id)
   end
 
+  def can?(%User{} = user, :view_data_structures_profile, %DataStructure{domain_id: domain_id}) do
+    Permissions.authorized?(user, :view_data_structures_profile, domain_id)
+  end
+
   def can?(%User{}, _action, %DataStructure{}), do: false
 
   def can?(%User{}, _action, DataStructure), do: false
