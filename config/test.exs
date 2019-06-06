@@ -32,7 +32,7 @@ config :td_dd, :auth_service,
 
 config :td_dd, :elasticsearch,
   search_service: TdDd.Search.MockSearch,
-  es_host: "localhost",
+  es_host: "elastic",
   es_port: 9200,
   type_name: "doc"
 
