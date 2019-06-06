@@ -40,6 +40,7 @@ defmodule TdDd.DataStructures do
 
     DataStructure
     |> where([ds], ^filter)
+    |> where([ds], is_nil(ds.class) or ds.class != "field")
     |> Repo.all()
     |> Repo.preload([system: [], versions: :parents])
     |> Enum.filter(&latest_version_is_root?/1)

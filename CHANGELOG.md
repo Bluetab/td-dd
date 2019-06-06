@@ -10,6 +10,10 @@
 
 - [TD-1824] Bump td-perms version to fix relations key
 
+### Changed
+
+- [TD-1847] Filter class field on system_datastructure to improve performance
+
 ## [2.20.1] 2019-05-28
 
 ### Added
