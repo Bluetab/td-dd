@@ -136,7 +136,8 @@ defmodule TdDdWeb.DataStructureController do
     with true <- can?(user, view_data_structure(data_structure)) do
       user_permissions = %{
         update: can?(user, update_data_structure(data_structure)),
-        confidential: can?(user, manage_confidential_structures(data_structure))
+        confidential: can?(user, manage_confidential_structures(data_structure)),
+        view_profiling_permission: can?(user, view_data_structures_profile(data_structure))
       }
 
       render(
