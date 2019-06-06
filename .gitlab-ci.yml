@@ -2,7 +2,7 @@ variables:
   VERSION: "2.20.2"
   APP_NAME: "td_dd"
   COMPOSE_FILE: "ci/docker-compose.yml"
-  COMPOSE_PROJECT_NAME: "${APP_NAME}_${CI_PIPELINE_ID}"
+  COMPOSE_PROJECT_NAME: "${APP_NAME}_${CI_JOB_ID}"
   # See also variables set in ci/env.sh
 
 stages:

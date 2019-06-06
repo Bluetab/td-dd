@@ -264,6 +264,40 @@ defmodule TdDd.DataStructuresTest do
       assert s4 <~> [ds4]
     end
 
+    test "list_data_structures_with_no_parents/1 gets data_structures with no parents" do
+      insert(:system, id: 4, external_id: "id4")
+      insert(:system, id: 5, external_id: "id5")
+      ds1 = insert(:data_structure, id: 51, name: "DS51", system_id: 4)
+      ds2 = insert(:data_structure, id: 52, name: "DS52", system_id: 4)
+      ds3 = insert(:data_structure, id: 53, name: "DS53", system_id: 4)
+      ds4 = insert(:data_structure, id: 55, name: "DS54", system_id: 5)
+      dsv1 = insert(:data_structure_version, data_structure_id: ds1.id)
+      dsv2 = insert(:data_structure_version, data_structure_id: ds2.id)
+      dsv3 = insert(:data_structure_version, data_structure_id: ds3.id)
+      insert(:data_structure_version, data_structure_id: ds4.id)
+      insert(:data_structure_relation, parent_id: dsv1.id, child_id: dsv2.id)
+      insert(:data_structure_relation, parent_id: dsv1.id, child_id: dsv3.id)
+
+      assert [%{id: 51}] = DataStructures.list_data_structures_with_no_parents(%{"system_id" => 4})
+    end
+
+    test "list_data_structures_with_no_parents/1 filters field class data_structures" do
+      insert(:system, id: 4, external_id: "id4")
+      insert(:system, id: 5, external_id: "id5")
+      ds1 = insert(:data_structure, id: 51, name: "DS51", system_id: 4, class: "field")
+      ds2 = insert(:data_structure, id: 52, name: "DS52", system_id: 4)
+      ds3 = insert(:data_structure, id: 53, name: "DS53", system_id: 4)
+      ds4 = insert(:data_structure, id: 55, name: "DS54", system_id: 5)
+      dsv1 = insert(:data_structure_version, data_structure_id: ds1.id)
+      dsv2 = insert(:data_structure_version, data_structure_id: ds2.id)
+      dsv3 = insert(:data_structure_version, data_structure_id: ds3.id)
+      insert(:data_structure_version, data_structure_id: ds4.id)
+      insert(:data_structure_relation, parent_id: dsv1.id, child_id: dsv2.id)
+      insert(:data_structure_relation, parent_id: dsv1.id, child_id: dsv3.id)
+
+      assert [] == DataStructures.list_data_structures_with_no_parents(%{"system_id" => 4})
+    end
+
     test "delete_data_structure/1 deletes a data_structure with relations" do
       alias TdDd.DataStructures.DataStructure
       ds1 = insert(:data_structure, id: 51, name: "DS51")
