@@ -9,7 +9,6 @@ defmodule TdDdWeb.DataFieldControllerTest do
   alias TdDdWeb.ApiServices.MockTdAuthService
 
   @create_attrs %{
-    business_concept_id: "42",
     description: "some description",
     name: "some name",
     nullable: true,
@@ -20,7 +19,6 @@ defmodule TdDdWeb.DataFieldControllerTest do
     metadata: %{}
   }
   @update_attrs %{
-    business_concept_id: "43",
     description: "some updated description",
     name: "some updated name",
     nullable: false,
@@ -30,7 +28,6 @@ defmodule TdDdWeb.DataFieldControllerTest do
     last_change_by: 42
   }
   @invalid_attrs %{
-    business_concept_id: nil,
     description: nil,
     name: nil,
     nullable: nil,
@@ -84,7 +81,6 @@ defmodule TdDdWeb.DataFieldControllerTest do
 
       validate_resp_schema(conn, schema, "DataFieldResponse")
       assert json_response_data["id"] == id
-      assert json_response_data["business_concept_id"] == "42"
       assert json_response_data["description"] == "some description"
       assert json_response_data["name"] == "some name"
       assert json_response_data["nullable"] == true

@@ -31,7 +31,6 @@ defmodule TdDd.DictionaryTest do
     "Type" => "type",
     "Precision" => "precision",
     "Nullable" => "nullable",
-    "Business Concept ID" => "business_concept_id",
     "Description" => "description",
     "Last Modification" => "last_change_at",
     "Bc_related" => "bc_related"
@@ -205,8 +204,7 @@ defmodule TdDd.DictionaryTest do
       "type",
       "description",
       "nullable",
-      "precision",
-      "business_concept_id"
+      "precision"
     ]
 
     data_structures =
@@ -240,7 +238,6 @@ defmodule TdDd.DictionaryTest do
     field_value
     |> field_value_to_api_attrs(@fixed_data_field_values)
     |> Map.update("nullable", false, &(&1 == "YES"))
-    |> Map.update("business_concept_id", nil, &if(&1 == "", do: nil, else: &1))
   end
 
   defp field_value_to_api_attrs(field_value, fixed_values) do
@@ -291,8 +288,7 @@ defmodule TdDd.DictionaryTest do
          Field_Name: field_name,
          Type: type,
          Precision: precision,
-         Nullable: raw_nullable,
-         Business_Concept_ID: business_concept_id
+         Nullable: raw_nullable
        }) do
     data_fields = elem(metadata, 1)
     nullable = if raw_nullable == "YES", do: "1", else: "0"
@@ -306,8 +302,7 @@ defmodule TdDd.DictionaryTest do
         type,
         description,
         nullable,
-        precision,
-        business_concept_id
+        precision
       ]
       | data_fields
     ])

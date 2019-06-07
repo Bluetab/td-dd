@@ -205,7 +205,6 @@ defmodule TdDdWeb.SwaggerDefinitions do
             precision([:string, :null], "Data Field precision")
             nullable([:boolean, :null], "Data Field... is nullable")
             description([:string, :null], "Data Field descrition")
-            business_concept_id([:string, :null], "Asociated Business Concept Id")
             last_change_at(:string, "Data Field last updated at")
             inserted_at(:string, "Data Field creation date")
             metadata(:object, "Data Field data. Uploaded by background processes")
@@ -219,7 +218,6 @@ defmodule TdDdWeb.SwaggerDefinitions do
             precision: "Data Field precision",
             nullable: true,
             description: "Data Field descrition",
-            business_concept_id: "123456",
             last_change_at: "2010-04-17 14:00:00",
             inserted_at: "2018-05-08T17:17:59.691460",
             metadata: %{
@@ -240,7 +238,6 @@ defmodule TdDdWeb.SwaggerDefinitions do
                   precision(:string, "Data Field precision")
                   nullable(:boolean, "Data Field... is nullable")
                   description(:string, "Data Field descrition")
-                  business_concept_id(:string, "Asociated Business Concept Id")
                 end
               end
             )

@@ -6,7 +6,6 @@ defmodule TdDd.DataStructures.DataField do
   alias TdDd.DataStructures.DataStructureVersion
 
   schema "data_fields" do
-    field(:business_concept_id, :string, default: nil)
     field(:description, :string, default: nil)
     field(:last_change_at, :utc_datetime)
     field(:last_change_by, :integer)
@@ -49,20 +48,17 @@ defmodule TdDd.DataStructures.DataField do
       :precision,
       :nullable,
       :description,
-      :business_concept_id,
       :last_change_at,
       :last_change_by,
       :metadata
     ])
     |> validate_required([:name, :last_change_at, :last_change_by, :metadata])
     |> validate_length(:name, max: 255)
-    |> validate_length(:business_concept_id, max: 255)
   end
 
   def search_fields(field) do
     %{
       id: field.id,
-      business_concept_id: field.business_concept_id,
       description: field.description,
       inserted_at: field.inserted_at,
       last_change_at: field.last_change_at,

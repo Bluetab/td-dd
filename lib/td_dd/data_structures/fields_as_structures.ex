@@ -4,7 +4,7 @@ defmodule TdDd.Loader.FieldsAsStructures do
   """
 
   @structure_keys [:system_id, :group, :name, :external_id, :version]
-  @liftable_metadata [:nullable, :precision, :business_concept_id, :type]
+  @liftable_metadata [:nullable, :precision, :type]
   @table_types ["tabl", "view"]
   @white_list_types ["Attribute", "Metric"]
 

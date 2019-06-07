@@ -17,7 +17,6 @@ defmodule TdDdWeb.DataFieldView do
       precision: data_field.precision,
       nullable: data_field.nullable,
       description: data_field.description,
-      business_concept_id: data_field.business_concept_id,
       last_change_at: data_field.last_change_at,
       inserted_at: data_field.inserted_at,
       metadata: data_field.metadata

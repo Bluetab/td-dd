@@ -15,7 +15,6 @@ config :td_dd, :metadata,
   },
   structure_import_required: [:name, :system_id, :group, :type],
   field_import_schema: %{
-    business_concept_id: :string,
     description: :string,
     external_id: :string,
     field_name: :string,

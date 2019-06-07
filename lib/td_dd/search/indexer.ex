@@ -47,7 +47,6 @@ defmodule TdDd.Search.Indexer do
       data_fields: %{
         properties: %{
           name: %{type: "text"},
-          business_concept_id: %{type: "text"},
           data_structure_id: %{type: "long", index: false},
           description: %{type: "text"},
           id: %{type: "long", index: false}

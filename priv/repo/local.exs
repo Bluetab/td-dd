@@ -28,7 +28,6 @@ end
 
 create_data_field = fn id, name ->
   Repo.insert!(%DataField{
-    business_concept_id: "concept",
     description: "data field descripton",
     last_change_at: DateTime.truncate(DateTime.utc_now(), :second),
     last_change_by: 1,

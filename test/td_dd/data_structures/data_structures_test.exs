@@ -105,7 +105,6 @@ defmodule TdDd.DataStructuresTest do
     alias TdDd.DataStructures.DataField
 
     @valid_attrs %{
-      business_concept_id: "42",
       description: "some description",
       last_change_at: "2010-04-17 14:00:00Z",
       last_change_by: 42,
@@ -116,7 +115,6 @@ defmodule TdDd.DataStructuresTest do
       metadata: %{}
     }
     @update_attrs %{
-      business_concept_id: "43",
       description: "some updated description",
       last_change_at: "2011-05-18 15:01:01Z",
       last_change_by: 43,
@@ -126,7 +124,6 @@ defmodule TdDd.DataStructuresTest do
       type: "some updated type"
     }
     @invalid_attrs %{
-      business_concept_id: nil,
       description: nil,
       last_change_at: nil,
       last_change_by: nil,
@@ -156,7 +153,6 @@ defmodule TdDd.DataStructuresTest do
         Map.put(@valid_attrs, :data_structure_version_id, data_structure_version.id)
 
       assert {:ok, %DataField{} = data_field} = DataStructures.create_data_field(creation_attrs)
-      assert data_field.business_concept_id == "42"
       assert data_field.description == "some description"
 
       assert data_field.last_change_at ==

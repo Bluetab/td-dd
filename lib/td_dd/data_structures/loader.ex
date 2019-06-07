@@ -344,8 +344,8 @@ defmodule TdDd.Loader do
   defp has_changes?(field, %{} = record) do
     check_props =
       case Map.get(record, :description) do
-        nil -> [:business_concept_id, :metadata]
-        _ -> [:business_concept_id, :description, :metadata]
+        nil -> [:metadata]
+        _ -> [:description, :metadata]
       end
 
     defaults =
