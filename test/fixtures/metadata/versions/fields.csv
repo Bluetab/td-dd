@@ -1,2 +1,2 @@
-system;group;name;field_name;type;description;nullable;precision;business_concept_id;version;external_id
-MicroTest;conversion;spike_prueba;salary;double;;;;;4;imd_615
+system;group;name;field_name;type;description;nullable;precision;version;external_id
+MicroTest;conversion;spike_prueba;salary;double;;;;4;imd_615

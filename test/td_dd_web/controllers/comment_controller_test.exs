@@ -20,7 +20,6 @@ defmodule TdDdWeb.CommentControllerTest do
   @others_create_attrs %{content: "some content", resource_type: "Field", user_id: 42}
   @others_create_attrs2 %{content: "some content", resource_type: "Structure", user_id: 42}
   @data_field_attrs %{
-    business_concept_id: "42",
     description: "some description",
     name: "some name",
     nullable: true,

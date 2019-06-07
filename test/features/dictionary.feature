@@ -44,7 +44,6 @@ Feature: Data Dictionary Administration
       | Precision           | 20                                                   |
       | Nullable            | Yes                                                  |
       | Description         | My personal fields can be only used by me and myself |
-      | Business Concept ID |                                                      |
       | Last Modification   | Some timestamp                                       |
 
   Scenario: Load metadata (structures and fields) into the system in bulk mode
@@ -72,5 +71,4 @@ Feature: Data Dictionary Administration
       | Precision           |                                    |
       | Nullable            | Yes                                |
       | Description         | My_Personal01bis_Field Description |
-      | Business Concept ID | BCID001                            |
       | Last Modification   | Some timestamp                     |

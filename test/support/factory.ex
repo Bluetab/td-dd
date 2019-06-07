@@ -44,7 +44,6 @@ defmodule TdDd.Factory do
 
   def data_field_factory do
     %DataField{
-      business_concept_id: nil,
       description: "some description",
       last_change_at: DateTime.truncate(DateTime.utc_now(), :second),
       last_change_by: 0,

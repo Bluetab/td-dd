@@ -52,7 +52,6 @@ defmodule TdDdWeb.MetadataController do
           external_id: :string optional external id of parent structure
           field_name: :string required field name
           description: :string optional field description
-          business_concept_id: :string optional business concept id
           nullable: :boolean optional field nullability
           precision: :string optional field precision
           type: :string optional field type
