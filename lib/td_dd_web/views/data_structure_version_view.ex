@@ -96,7 +96,8 @@ defmodule TdDdWeb.DataStructureVersionView do
           :nullable,
           :description,
           :last_change_at,
-          :inserted_at
+          :inserted_at,
+          :field_structure_id
         ])
       )
 
