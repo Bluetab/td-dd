@@ -47,14 +47,6 @@ defmodule TdDd.DataStructuresTest do
       assert DataStructures.get_data_structure!(data_structure.id) <~> data_structure
     end
 
-    test "get_data_structure_with_fields!/1 returns the data_structure with given id and fields" do
-      data_structure = insert(:data_structure)
-      insert(:data_structure_version, data_structure_id: data_structure.id)
-
-      assert DataStructures.get_data_structure_with_fields!(data_structure.id) <~> data_structure
-      # TODO: Need to check fields...
-    end
-
     test "create_data_structure/1 with valid data creates a data_structure" do
       assert {:ok, %DataStructure{} = data_structure} =
                DataStructures.create_data_structure(@valid_attrs)
@@ -185,6 +177,20 @@ defmodule TdDd.DataStructuresTest do
     test "change_data_field/1 returns a data_field changeset" do
       data_field = insert(:data_field)
       assert %Ecto.Changeset{} = DataStructures.change_data_field(data_field)
+    end
+
+    test "get_data_structure_with_fields!/1 returns the data_structure with given id and fields" do
+      data_structure_parent = insert(:data_structure, name: "parent")
+      name = Map.get(@valid_attrs, :name)
+      data_structure_child = insert(:data_structure, name: name, class: "field")
+      data_structure_version_parent = insert(:data_structure_version, data_structure_id: data_structure_parent.id)
+      data_structure_version_child = insert(:data_structure_version, data_structure_id: data_structure_child.id)
+      insert(:data_structure_relation, parent_id: data_structure_version_parent.id, child_id: data_structure_version_child.id)
+      insert(:data_field, Map.put(@valid_attrs, :data_structure_versions, [data_structure_version_parent]))
+      ds = DataStructures.get_data_structure_with_fields!(data_structure_parent.id)
+      assert ds <~> data_structure_parent
+      df = Enum.find(ds.data_fields, & &1.name == name)
+      assert df.field_structure_id == data_structure_child.id
     end
   end
 

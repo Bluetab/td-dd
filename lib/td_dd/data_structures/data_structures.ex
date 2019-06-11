@@ -127,6 +127,7 @@ defmodule TdDd.DataStructures do
     data_structure_version
     |> Ecto.assoc(:data_fields)
     |> Repo.all()
+    |> Enum.map(&with_field_structure_id/1)
   end
 
   def get_latest_children(data_structure_id) do
@@ -551,6 +552,38 @@ defmodule TdDd.DataStructures do
   """
   def change_data_field(%DataField{} = data_field) do
     DataField.changeset(data_field, %{})
+  end
+
+  # Includes the id of the corresponding data structure in a given `%DataField{}` using
+  # the `structure_id` key.
+  defp with_field_structure_id(%DataField{} = data_field) do
+    structure = find_field_structure(data_field)
+    structure_id = Map.get(structure || %{}, :id)
+    Map.put(data_field, :field_structure_id, structure_id)
+  end
+
+  @doc """
+  Returns the `%DataStructure{}` struct corresponding to a given `%DataField{}. If multiple
+  structures are found, only the first will be returned.
+  """
+  def find_field_structure(%DataField{} = data_field) do
+    case find_field_structures(data_field) do
+      [] -> nil
+      [structure | _t] -> structure
+    end
+  end
+
+  @doc """
+  Returns a list of `%DataStructure{}` structs corresponding to a given `%DataField{}.
+  """
+  def find_field_structures(%DataField{name: name} = data_field) do
+    data_field
+    |> Repo.preload([data_structure_versions: [children: :data_structure]])
+    |> Map.get(:data_structure_versions)
+    |> Enum.flat_map(& &1.children)
+    |> Enum.map(& &1.data_structure)
+    |> Enum.filter(& &1.class == "field" && &1.name == name)
+    |> Enum.uniq()
   end
 
   def add_domain_id(%{"ou" => domain_name, "domain_id" => nil} = data, domain_map) do

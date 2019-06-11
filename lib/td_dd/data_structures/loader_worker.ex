@@ -20,7 +20,7 @@ defmodule TdDd.Loader.LoaderWorker do
   end
 
   def ping do
-    GenServer.call(TdDd.Loader.LoaderWorker, {:ping})
+    GenServer.call(TdDd.Loader.LoaderWorker, :ping)
   end
 
   @impl true
@@ -63,7 +63,7 @@ defmodule TdDd.Loader.LoaderWorker do
   end
 
   @impl true
-  def handle_call({:ping}, _from, state) do
+  def handle_call(:ping, _from, state) do
     {:reply, :pong, state}
   end
 end
