@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-1860] Fields were not associated to corresponding version when loading new version of existing structure 
+
 ## [2.21.0] 2019-06-10
 
 ### Fixed
