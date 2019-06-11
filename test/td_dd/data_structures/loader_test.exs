@@ -25,7 +25,16 @@ defmodule TdDd.LoaderTest do
           type: "USER_TABLE"
         )
 
+      ds_2 =
+        insert(:data_structure,
+          system_id: sys1.id,
+          group: "GROUP6",
+          name: "NAME6",
+          type: "USER_TABLE"
+        )
+
       dsv = insert(:data_structure_version, data_structure_id: data_structure.id, version: 0)
+      dsv2 = insert(:data_structure_version, data_structure_id: ds_2.id, version: 0)
 
       field1 =
         insert(:data_field,
@@ -56,9 +65,25 @@ defmodule TdDd.LoaderTest do
           nullable: false
         )
 
+      field4 =
+        insert(:data_field,
+          id: 992,
+          name: "FIELD_TO_KEEP",
+          type: "T2",
+          description: "Will be kept",
+          precision: "P2",
+          nullable: false
+        )
+
       entries =
         [field1, field2, field3]
         |> Enum.map(fn %{id: id} -> %{data_field_id: id, data_structure_version_id: dsv.id} end)
+
+      Repo.insert_all("versions_fields", entries)
+
+      entries =
+        [field4]
+        |> Enum.map(fn %{id: id} -> %{data_field_id: id, data_structure_version_id: dsv2.id} end)
 
       Repo.insert_all("versions_fields", entries)
 
@@ -110,6 +135,16 @@ defmodule TdDd.LoaderTest do
         system_id: sys2.id,
         type: "Dimension",
         version: 23
+      }
+
+      s6 = %{
+        description: nil,
+        external_id: nil,
+        group: "GROUP6",
+        name: "NAME6",
+        system_id: sys1.id,
+        type: "USER_TABLE",
+        version: 1
       }
 
       r1 = %{
@@ -168,6 +203,15 @@ defmodule TdDd.LoaderTest do
         description: "Nueva descripción"
       }
 
+      f5 = %{
+        field_name: "FIELD_TO_KEEP",
+        type: "T2",
+        description: "Will be kept",
+        precision: "P2",
+        nullable: false,
+        version: 1
+      }
+
       f11 = s1 |> Map.merge(f1)
       f12 = s1 |> Map.merge(f2)
       f13 = s1 |> Map.merge(f3)
@@ -175,23 +219,25 @@ defmodule TdDd.LoaderTest do
       f32 = s3 |> Map.merge(f2)
       f41 = s4 |> Map.merge(f4)
       f51 = s5 |> Map.merge(f4)
+      f61 = s6 |> Map.merge(f5)
 
       ts = DateTime.truncate(DateTime.utc_now(), :second)
       audit_fields = %{last_change_at: ts, last_change_by: 0}
-      structure_records = [s1, s2, s3, s4, s5]
-      field_records = [f11, f12, f13, f21, f32, f41, f51]
+      structure_records = [s1, s2, s3, s4, s5, s6]
+      field_records = [f11, f12, f13, f21, f32, f41, f51, f61]
       relation_records = [r1, r2]
 
       assert {:ok, context} =
                Loader.load(structure_records, field_records, relation_records, audit_fields)
 
-      assert %{added: added, removed: removed, modified: modified} = context
+      assert %{added: added, removed: removed, modified: modified, kept: kept} = context
       assert added == 6
       assert removed == 2
       assert modified == 1
+      assert kept == 1
     end
 
-    test "load/1 with structures containing and external_id" do
+    test "load/1 with structures containing an external_id" do
       system = insert(:system, external_id: "SYS1", name: "SYS1")
       insert(:system, external_id: "SYS2", external_id: "SYS2")
 

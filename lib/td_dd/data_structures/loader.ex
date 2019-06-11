@@ -33,11 +33,14 @@ defmodule TdDd.Loader do
       {:ok, relation_records ++ fields_as_relations}
     end)
     |> Multi.run(:structures, &upsert_structures/2)
-    |> Multi.run(:versions, &upsert_structure_versions/2)
+    |> Multi.run(:versions, &get_structure_versions/2)
+    |> Multi.run(:inserted_versions, &insert_structure_versions/2)
+    # |> Multi.run(:versions, &upsert_structure_versions/2)
     |> Multi.run(:versions_by_sys_group_name_version, &versions_by_sys_group_name_version/2)
     |> Multi.run(:relations, &upsert_relations/2)
     |> Multi.run(:diffs, &diff_structures/2)
     |> Multi.run(:removed, &remove_fields/2)
+    |> Multi.run(:kept, &keep_fields/2)
     |> Multi.run(:added, &insert_fields/2)
     |> Multi.run(:modified, &update_fields/2)
     |> Repo.transaction()
@@ -90,6 +93,22 @@ defmodule TdDd.Loader do
     %DataField{}
     |> DataField.changeset(attrs |> Map.merge(%{name: name}) |> Map.merge(audit))
     |> Repo.insert!()
+  end
+
+  defp keep_fields(_repo, %{diffs: diffs}) do
+    to_keep = Enum.flat_map(diffs, &Map.get(&1, :keep))
+
+    Logger.info("Keeping field associations (#{Enum.count(to_keep)} fields)")
+
+    entries =
+      to_keep
+      |> Enum.map(fn {version, field} ->
+        %{data_field_id: field.id, data_structure_version_id: version.id}
+      end)
+
+    {count, _} = Repo.insert_all("versions_fields", entries)
+
+    {:ok, count}
   end
 
   defp remove_fields(_repo, %{diffs: diffs}) do
@@ -168,33 +187,55 @@ defmodule TdDd.Loader do
     )
   end
 
-  defp upsert_structure_versions(_repo, %{structures: structures, structure_records: records}) do
-    Logger.info("Upserting data structure versions (#{Enum.count(structures)} records)")
+  defp get_structure_versions(_repo, %{structures: structures, structure_records: records}) do
+    Logger.info("Getting data structure versions (#{Enum.count(structures)} records)")
+
+    versions =
+      records
+      |> Enum.map(&Map.get(&1, :version))
+      |> Enum.zip(structures)
+      |> Enum.map(&get_structure_version/1)
+
+    {:ok, versions}
+  end
+
+  defp insert_structure_versions(_repo, %{
+         versions: versions,
+         structures: structures,
+         structure_records: records
+       }) do
+    Logger.info("Inserting data structure versions (#{Enum.count(structures)} records)")
 
     records
     |> Enum.map(&Map.get(&1, :version))
     |> Enum.zip(structures)
-    |> Enum.map(&get_or_create_version/1)
+    |> Enum.zip(versions)
+    |> Enum.filter(fn {{_v, _s}, dsv} -> is_nil(dsv) end)
+    |> Enum.map(fn {{v, s}, _dsv} -> {v, s} end)
+    |> Enum.map(&insert_new_version/1)
     |> errors_or_structs
   end
 
-  defp get_or_create_version({nil, data_structure}) do
-    get_or_create_version({0, data_structure})
+  defp insert_new_version({nil, data_structure}) do
+    insert_new_version({0, data_structure})
     # TODO: Should create new version if structure has changed
   end
 
-  defp get_or_create_version({version, %DataStructure{id: id}}) do
+  defp insert_new_version({version, %DataStructure{id: id}}) do
     attrs = %{data_structure_id: id, version: version}
 
-    case Repo.get_by(DataStructureVersion, attrs) do
-      nil ->
-        %DataStructureVersion{}
-        |> DataStructureVersion.changeset(attrs)
-        |> Repo.insert()
+    %DataStructureVersion{}
+    |> DataStructureVersion.changeset(attrs)
+    |> Repo.insert()
+  end
 
-      s ->
-        s |> DataStructureVersion.update_changeset(attrs) |> Repo.update()
-    end
+  defp get_structure_version({nil, data_structure}) do
+    get_structure_version({0, data_structure})
+  end
+
+  defp get_structure_version({version, %DataStructure{id: id}}) do
+    attrs = %{data_structure_id: id, version: version}
+    Repo.get_by(DataStructureVersion, attrs)
   end
 
   defp get_or_create_relation(%DataStructureVersion{id: parent_id}, %DataStructureVersion{
@@ -213,9 +254,14 @@ defmodule TdDd.Loader do
     end
   end
 
-  defp versions_by_sys_group_name_version(_repo, %{versions: versions}) do
+  defp versions_by_sys_group_name_version(_repo, %{
+         versions: versions,
+         inserted_versions: inserted_versions
+       }) do
     versions_by_sys_group_name_version =
       versions
+      |> Enum.filter(& &1)
+      |> Enum.concat(inserted_versions)
       |> Repo.preload([:data_structure])
       |> Map.new(&key_value/1)
 
@@ -261,7 +307,6 @@ defmodule TdDd.Loader do
          } = relation,
          versions_by_sys_group_name_version
        ) do
-
     parent_external_id = Map.get(relation, :parent_external_id)
     child_external_id = Map.get(relation, :child_external_id)
     version = Map.get(relation, :version, 0)
@@ -283,6 +328,7 @@ defmodule TdDd.Loader do
 
   defp diff_structures(_repo, %{
          versions_by_sys_group_name_version: versions_by_sys_group_name_version,
+         inserted_versions: inserted_versions,
          field_records: records,
          audit: audit_fields
        }) do
@@ -292,6 +338,8 @@ defmodule TdDd.Loader do
       } records)"
     )
 
+    inserted_version_ids = inserted_versions |> Enum.map(& &1.id)
+
     diffs =
       records
       |> Enum.map(&(&1 |> Map.merge(audit_fields)))
@@ -300,12 +348,14 @@ defmodule TdDd.Loader do
       |> Enum.map(fn {sys_group_name_version, records} ->
         {Map.get(versions_by_sys_group_name_version, sys_group_name_version), records}
       end)
-      |> Enum.map(fn {version, records} -> structure_diff(version, records) end)
+      |> Enum.map(fn {version, records} ->
+        structure_diff(version, records, Enum.member?(inserted_version_ids, version.id))
+      end)
 
     {:ok, diffs}
   end
 
-  defp structure_diff(version, records) do
+  defp structure_diff(version, records, is_new_version) do
     data_fields =
       version
       |> Ecto.assoc([:data_structure, :versions, :data_fields])
@@ -316,7 +366,7 @@ defmodule TdDd.Loader do
       |> Enum.map(fn record -> find_field(data_fields, record) end)
       |> Enum.zip(records)
 
-    {to_insert, to_modify} =
+    {to_insert, to_keep} =
       to_upsert
       |> Enum.split_with(fn {field, _} -> is_nil(field) end)
 
@@ -328,17 +378,24 @@ defmodule TdDd.Loader do
       data_fields
       |> MapSet.new()
       |> MapSet.difference(
-        to_modify
+        to_keep
         |> Enum.map(fn {field, _} -> field end)
         |> MapSet.new()
       )
       |> Enum.map(fn field -> {version, field} end)
 
     to_modify =
-      to_modify
+      to_keep
       |> Enum.filter(fn {field, record} -> has_changes?(field, record) end)
 
-    %{add: to_insert, modify: to_modify, remove: to_remove}
+    to_keep =
+      if is_new_version do
+        to_keep |> Enum.map(fn {field, _} -> {version, field} end)
+      else
+        []
+      end
+
+    %{add: to_insert, modify: to_modify, remove: to_remove, keep: to_keep}
   end
 
   defp has_changes?(field, %{} = record) do

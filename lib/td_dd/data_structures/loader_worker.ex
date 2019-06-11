@@ -37,7 +37,8 @@ defmodule TdDd.Loader.LoaderWorker do
 
     case multi do
       {:ok, context} ->
-        %{added: added, removed: removed, modified: modified, structures: structures} = context
+        %{added: added, removed: removed, modified: modified, kept: kept, structures: structures} =
+          context
 
         upserts =
           structures
@@ -45,12 +46,12 @@ defmodule TdDd.Loader.LoaderWorker do
           |> Enum.count()
 
         Logger.info(
-          "Bulk load process completed in #{ms}ms (*#{upserts}S -#{removed}F +#{added}F ~#{
+          "Bulk load process completed in #{ms}ms (*#{upserts}S -#{removed}F +#{added}F >#{kept}F ~#{
             modified
           }F)"
         )
 
-        if upserts + removed + added + modified > 0 do
+        if upserts + removed + added + modified + kept > 0 do
           @index_worker.reindex(structures)
         end
 

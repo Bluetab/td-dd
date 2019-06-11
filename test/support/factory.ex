@@ -51,7 +51,7 @@ defmodule TdDd.Factory do
       nullable: "false",
       precision: "some precision",
       type: "some type",
-      metadata: %{"description" => "some description"}
+      metadata: %{}
     }
   end
 
