@@ -42,11 +42,22 @@ defmodule TdDdWeb.DataStructureController do
     render(conn, "index.json", data_structures: data_structures)
   end
 
+  defp logic_deleted_filter(search_params) do
+    m_params = case Map.has_key?(search_params, "filters") do
+      true ->
+        filters = search_params |> Map.get("filters") |> Map.put("status", "")
+        Map.put(search_params, "filters", filters)
+      false -> search_params |> Map.put("filters", %{"status" => ""})
+    end
+    m_params
+  end
+
   defp do_index(user, search_params \\ %{}, page \\ 0, size \\ 50) do
     page = search_params |> Map.get("page", page)
     size = search_params |> Map.get("size", size)
 
     search_params
+    |> logic_deleted_filter
     |> Map.drop(["page", "size"])
     |> Search.search_data_structures(user, page, size)
   end
