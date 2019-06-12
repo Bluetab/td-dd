@@ -127,7 +127,9 @@ defmodule TdDd.DataStructures do
     data_structure_version
     |> Ecto.assoc(:data_fields)
     |> Repo.all()
+    |> Enum.map(&with_field_structure/1)
     |> Enum.map(&with_field_structure_id/1)
+    |> Enum.map(& with_field_structure_has(&1, :df_content))
   end
 
   def get_latest_children(data_structure_id) do
@@ -556,10 +558,23 @@ defmodule TdDd.DataStructures do
 
   # Includes the id of the corresponding data structure in a given `%DataField{}` using
   # the `structure_id` key.
-  defp with_field_structure_id(%DataField{} = data_field) do
+  defp with_field_structure(%DataField{} = data_field) do
     structure = find_field_structure(data_field)
-    structure_id = Map.get(structure || %{}, :id)
+    Map.put(data_field, :field_structure, structure)
+  end
+
+  defp with_field_structure_id(%{field_structure: field_structure} = data_field) do
+
+    structure_id = Map.get(field_structure || %{}, :id)
     Map.put(data_field, :field_structure_id, structure_id)
+  end
+
+  defp with_field_structure_has(%{field_structure: field_structure} = data_field, field) do
+
+    value = Map.get(field_structure || %{}, field)
+    has_value = not is_nil(value)
+    key_string = "has_" <> Atom.to_string(field)
+    Map.put(data_field, String.to_atom(key_string), has_value)
   end
 
   @doc """
