@@ -41,6 +41,7 @@ defmodule TdDd.DataStructures do
     DataStructure
     |> where([ds], ^filter)
     |> where([ds], is_nil(ds.class) or ds.class != "field")
+    |> where([ds], is_nil(ds.deleted_at))
     |> Repo.all()
     |> Repo.preload([system: [], versions: :parents])
     |> Enum.filter(&latest_version_is_root?/1)
@@ -138,10 +139,10 @@ defmodule TdDd.DataStructures do
 
   def get_children(data_structure_version) do
     data_structure_version
-    |> Ecto.assoc(:children)
+    |> Ecto.assoc([:children, :data_structure])
+    |> where([ds], is_nil(ds.deleted_at))
     |> Repo.all()
-    |> Repo.preload(data_structure: [:system])
-    |> Enum.map(& &1.data_structure)
+    |> Repo.preload(:system)
   end
 
   def get_latest_parents(data_structure_id) do
@@ -152,10 +153,10 @@ defmodule TdDd.DataStructures do
 
   def get_parents(data_structure_version) do
     data_structure_version
-    |> Ecto.assoc(:parents)
+    |> Ecto.assoc([:parents, :data_structure])
+    |> where([ds], is_nil(ds.deleted_at))
     |> Repo.all()
-    |> Repo.preload(:data_structure)
-    |> Enum.map(& &1.data_structure)
+    |> Repo.preload(:system)
   end
 
   def get_latest_siblings(data_structure_id) do
