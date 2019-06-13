@@ -58,7 +58,7 @@ defmodule TdDd.Search.Indexer do
         type: "text",
         fields: %{raw: %{
           type: "keyword",
-          null_value: "NULL"
+          null_value: ""
         }}
       }
     }
