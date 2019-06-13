@@ -151,7 +151,8 @@ defmodule TdDd.DataStructures.DataStructure do
       df_content: structure.df_content,
       data_fields: Enum.map(structure.data_fields, &DataField.search_fields/1),
       path: structure.path,
-      status: status
+      status: status,
+      class: structure.class
     }
   end
 

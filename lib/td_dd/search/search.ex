@@ -21,13 +21,10 @@ defmodule TdDd.Search do
   end
 
   defp is_indexable?(%DataStructure{metadata: %{"indexable" => "false"}}), do: false
-  defp is_indexable?(%DataStructure{class: "field"}), do: false
   defp is_indexable?(_), do: true
 
   # CREATE AND UPDATE
   def put_search(%DataStructure{metadata: %{"indexable" => "false"}}),
-    do: {:error, :not_indexable}
-  def put_search(%DataStructure{class: "field"}),
     do: {:error, :not_indexable}
   def put_search(%DataStructure{} = data_structure) do
     search_fields = data_structure.__struct__.search_fields(data_structure)
