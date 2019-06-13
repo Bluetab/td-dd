@@ -10,7 +10,8 @@ defmodule TdDd.Search.Aggregations do
       {"system.name.raw", %{terms: %{field: "system.name.raw", size: 50}}},
       {"group.raw", %{terms: %{field: "group.raw", size: 50}}},
       {"type.raw", %{terms: %{field: "type.raw", size: 50}}},
-      {"confidential.raw", %{terms: %{field: "confidential.raw"}}}
+      {"confidential.raw", %{terms: %{field: "confidential.raw"}}},
+      {"class.raw", %{terms: %{field: "class.raw"}}}
     ]
 
     dynamic_keywords =

@@ -139,7 +139,8 @@ defmodule TdDd.DataStructures.DataStructure do
       confidential: structure.confidential,
       df_content: structure.df_content,
       data_fields: Enum.map(structure.data_fields, &DataField.search_fields/1),
-      path: structure.path
+      path: structure.path,
+      class: structure.class
     }
   end
 
