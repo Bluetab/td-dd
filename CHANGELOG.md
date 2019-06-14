@@ -6,6 +6,7 @@
 
 - [TD-1860] Fields were not associated to corresponding version when loading new version of existing structure 
 - [TD-1864] Indexes structures with 'field' class
+- [TD-1851] Verify permissions while getting the root structures of a System
 
 ### Changed
 
