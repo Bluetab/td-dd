@@ -42,16 +42,17 @@ defmodule TdDd.DataStructures do
     |> where([ds], ^filter)
     |> where([ds], is_nil(ds.class) or ds.class != "field")
     |> Repo.all()
-    |> Repo.preload([system: [], versions: :parents])
+    |> Repo.preload(system: [], versions: :parents)
     |> Enum.filter(&latest_version_is_root?/1)
   end
 
   defp latest_version_is_root?(%DataStructure{versions: []}), do: false
+
   defp latest_version_is_root?(%DataStructure{versions: versions}) do
     versions
     |> Enum.max_by(& &1.version)
     |> Map.get(:parents)
-    |> Enum.empty?
+    |> Enum.empty?()
   end
 
   def build_filter(schema, params) do
@@ -108,7 +109,7 @@ defmodule TdDd.DataStructures do
 
     DataStructureVersion
     |> Repo.get_by!(attrs)
-    |> Repo.preload([data_structure: :system])
+    |> Repo.preload(data_structure: :system)
   end
 
   def get_data_structure_with_fields!(data_structure_id) do
@@ -127,7 +128,9 @@ defmodule TdDd.DataStructures do
     data_structure_version
     |> Ecto.assoc(:data_fields)
     |> Repo.all()
+    |> Enum.map(&with_field_structure/1)
     |> Enum.map(&with_field_structure_id/1)
+    |> Enum.map(&with_field_structure_has(&1, :df_content))
   end
 
   def get_latest_children(data_structure_id) do
@@ -556,10 +559,21 @@ defmodule TdDd.DataStructures do
 
   # Includes the id of the corresponding data structure in a given `%DataField{}` using
   # the `structure_id` key.
-  defp with_field_structure_id(%DataField{} = data_field) do
+  defp with_field_structure(%DataField{} = data_field) do
     structure = find_field_structure(data_field)
-    structure_id = Map.get(structure || %{}, :id)
+    Map.put(data_field, :field_structure, structure)
+  end
+
+  defp with_field_structure_id(%{field_structure: field_structure} = data_field) do
+    structure_id = Map.get(field_structure || %{}, :id)
     Map.put(data_field, :field_structure_id, structure_id)
+  end
+
+  defp with_field_structure_has(%{field_structure: field_structure} = data_field, field) do
+    value = Map.get(field_structure || %{}, field)
+    has_value = not is_nil(value)
+    key_string = "has_" <> Atom.to_string(field)
+    Map.put(data_field, String.to_atom(key_string), has_value)
   end
 
   @doc """
@@ -578,11 +592,11 @@ defmodule TdDd.DataStructures do
   """
   def find_field_structures(%DataField{name: name} = data_field) do
     data_field
-    |> Repo.preload([data_structure_versions: [children: :data_structure]])
+    |> Repo.preload(data_structure_versions: [children: :data_structure])
     |> Map.get(:data_structure_versions)
     |> Enum.flat_map(& &1.children)
     |> Enum.map(& &1.data_structure)
-    |> Enum.filter(& &1.class == "field" && &1.name == name)
+    |> Enum.filter(&(&1.class == "field" && &1.name == name))
     |> Enum.uniq()
   end
 
@@ -649,8 +663,9 @@ defmodule TdDd.DataStructures do
   end
 
   def with_latest_path(%DataStructure{} = data_structure) do
-    path = data_structure
-    |> get_latest_path
+    path =
+      data_structure
+      |> get_latest_path
 
     data_structure
     |> Map.put(:path, path)
@@ -666,14 +681,14 @@ defmodule TdDd.DataStructures do
     dsv
     |> get_ancestry
     |> Enum.map(& &1.name)
-    |> Enum.reverse
+    |> Enum.reverse()
   end
 
   def get_ancestry(%DataStructureVersion{parents: [], data_structure: data_structure}) do
     [data_structure]
   end
 
-  def get_ancestry(%DataStructureVersion{parents: [parent|_], data_structure: data_structure}) do
+  def get_ancestry(%DataStructureVersion{parents: [parent | _], data_structure: data_structure}) do
     [data_structure | get_ancestry(parent)]
   end
 

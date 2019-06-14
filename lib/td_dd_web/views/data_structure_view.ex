@@ -159,7 +159,8 @@ defmodule TdDdWeb.DataStructureView do
               inserted_at: data_field.inserted_at,
               external_id: Map.get(data_field, :external_id),
               bc_related: data_field.bc_related,
-              field_structure_id: Map.get(data_field, :field_structure_id)
+              field_structure_id: Map.get(data_field, :field_structure_id),
+              has_df_content: Map.get(data_field, :has_df_content)
             }
 
             [json | acc]
