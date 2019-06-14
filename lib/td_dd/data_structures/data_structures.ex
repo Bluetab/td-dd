@@ -137,7 +137,6 @@ defmodule TdDd.DataStructures do
     |> get_fields_active
   end
 
-
   def get_fields(data_structure_version) do
     data_structure_version
     |> Ecto.assoc(:data_fields)
@@ -674,11 +673,6 @@ defmodule TdDd.DataStructures do
     has_value = not is_nil(value)
     key_string = "has_" <> Atom.to_string(field)
     Map.put(data_field, String.to_atom(key_string), has_value)
-  end
-
-  defp with_field_structure(%DataField{} = data_field) do
-    structure = find_field_structure(data_field)
-    Map.put(data_field, :field_structure, structure)
   end
 
   @doc """

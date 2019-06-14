@@ -183,18 +183,6 @@ defmodule TdDdWeb.DataStructureController do
     |> DataStructures.with_field_links()
   end
 
-  defp get_data_structure(id) do
-    id
-    |> DataStructures.get_data_structure_with_fields!()
-    |> DataStructures.with_versions()
-    |> DataStructures.with_latest_children()
-    |> DataStructures.with_latest_parents()
-    |> DataStructures.with_latest_siblings()
-    |> DataStructures.with_latest_ancestry()
-    |> DataStructures.with_field_external_ids()
-    |> DataStructures.with_field_links()
-  end
-
   swagger_path :update do
     description("Update Data Structures")
     produces("application/json")
