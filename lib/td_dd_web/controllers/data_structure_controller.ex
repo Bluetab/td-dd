@@ -295,7 +295,13 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   def get_system_structures(conn, params) do
-    data_structures = DataStructures.list_data_structures_with_no_parents(params)
+    user = conn.assigns[:current_user]
+
+    data_structures =
+      params
+      |> DataStructures.list_data_structures_with_no_parents()
+      |> Enum.filter(&can?(user, view_data_structure(&1)))
+
     total = length(data_structures)
 
     conn

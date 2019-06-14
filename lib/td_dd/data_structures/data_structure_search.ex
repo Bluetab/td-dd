@@ -73,7 +73,8 @@ defmodule TdDd.DataStructure.Search do
     filter_data_structures(params, permissions, page, size)
   end
 
-  defp filter_data_structures(_params, [], _page, _size), do: []
+  defp filter_data_structures(_params, [], _page, _size),
+    do: %{results: [], aggregations: %{}, total: 0}
 
   defp filter_data_structures(params, [_h | _t] = permissions, page, size) do
     user_defined_filters = create_filters(params)
