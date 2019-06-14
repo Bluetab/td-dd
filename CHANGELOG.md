@@ -5,6 +5,7 @@
 ### Fixed
 
 - [TD-1860] Fields were not associated to corresponding version when loading new version of existing structure 
+- [TD-1864] Indexes structures with 'field' class
 - [TD-1793] Checks if field structure has df_content and enriches data_structure :show
 
 ## [2.21.0] 2019-06-10
