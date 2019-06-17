@@ -783,17 +783,27 @@ defmodule TdDd.DataStructures do
     |> Enum.reverse()
   end
 
-  def get_ancestry(%DataStructureVersion{parents: [], data_structure: data_structure}) do
-    [data_structure]
-  end
-
-  def get_ancestry(%DataStructureVersion{parents: [parent | _], data_structure: data_structure}) do
-    [data_structure | get_ancestry(parent)]
-  end
-
   def get_ancestry(%DataStructureVersion{parents: %NotLoaded{}} = data_structure_version) do
     data_structure_version
     |> Repo.preload([:parents, :data_structure])
     |> get_ancestry
+  end
+
+  def get_ancestry(%DataStructureVersion{parents: [], data_structure: data_structure}) do
+    [data_structure]
+  end
+
+  def get_ancestry(%DataStructureVersion{parents: parents, data_structure: data_structure}) do
+    parent = case get_first_active_parent(parents) do
+      nil -> hd(parents)
+      parent -> parent
+    end
+    [data_structure | get_ancestry(parent)]
+  end
+
+  defp get_first_active_parent(parents) do
+    parents
+    |> Repo.preload(:data_structure)
+    |> Enum.find(& &1.data_structure.deleted_at == nil)
   end
 end
