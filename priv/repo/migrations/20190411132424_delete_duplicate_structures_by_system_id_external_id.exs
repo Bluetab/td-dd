@@ -1,11 +1,12 @@
 defmodule TdDd.Repo.Migrations.DeleteDuplicateStructuresBySystemIdExternalId do
   use Ecto.Migration
 
-  alias TdDd.DataStructures.DataStructure
+  import Ecto.Query
   alias TdDd.Repo
 
   def change do
-    DataStructure
+    from(ds in "data_structures", 
+      select: %{external_id: ds.external_id, system_id: ds.system_id})
     |> Repo.all()
     |> Enum.filter(&(not is_nil(&1.external_id)))
     |> Enum.group_by(&{&1.system_id, &1.external_id})
