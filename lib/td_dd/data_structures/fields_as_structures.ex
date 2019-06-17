@@ -99,11 +99,18 @@ defmodule TdDd.Loader.FieldsAsStructures do
 
   def child_type(%{} = parent, %{} = child) do
     parent_type = parent |> Map.get(:type) |> String.downcase()
-    child_type = child |> Map.get(:metadata, %{}) |> Map.get("type", "Field")
+    child_type = child |> Map.get(:metadata, %{}) |> Map.get("type", "Column")
 
-    case Enum.any?(@table_types, &String.contains?(parent_type, &1)) and child_type not in @white_list_types do
+    case Enum.any?(@white_list_types, &(&1 == child_type)) do
+      true -> child_type
+      false -> child_type_from_parent(parent_type)
+    end
+  end
+
+  defp child_type_from_parent(parent_type) do
+    case Enum.any?(@table_types, &String.contains?(parent_type, &1)) do
       true -> "Column"
-      false -> child_type
+      false -> "Field"
     end
   end
 

@@ -2,11 +2,13 @@ defmodule TdDdWeb.SystemControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
+  alias TdDd.MockTaxonomyCache
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDd.Systems
   alias TdDd.Systems.System
   alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
+  alias TdPerms.MockDynamicFormCache
 
   @create_attrs %{
     external_id: "some external_id",
@@ -22,6 +24,8 @@ defmodule TdDdWeb.SystemControllerTest do
     start_supervised(MockTdAuditService)
     start_supervised(MockTdAuthService)
     start_supervised(MockPermissionResolver)
+    start_supervised(MockTaxonomyCache)
+    start_supervised(MockDynamicFormCache)
     :ok
   end
 
@@ -151,7 +155,10 @@ defmodule TdDdWeb.SystemControllerTest do
     end
 
     @tag authenticated_user: @admin_user_name
-    test "will retrieve only root structures with multiple versions", %{conn: conn, system: system} do
+    test "will retrieve only root structures with multiple versions", %{
+      conn: conn,
+      system: system
+    } do
       ds = insert(:data_structure, system_id: system.id, name: "parent")
       parent = insert(:data_structure_version, data_structure_id: ds.id)
 
@@ -177,6 +184,49 @@ defmodule TdDdWeb.SystemControllerTest do
 
       assert Enum.empty?(data)
     end
+
+    @tag authenticated_no_admin_user: "user"
+    test "will filter by permissions for non admin users", %{
+      conn: conn,
+      user: %{id: user_id},
+      system: %{id: system_id} = system
+    } do
+      structure = create_data_structure_and_permissions(user_id, "no_perms", false, system_id)
+      conn = get(conn, Routes.system_data_structure_path(conn, :get_system_structures, system))
+      data = json_response(conn, 200)["data"]
+      assert not Enum.any?(data, fn %{"id" => ds_id} -> ds_id == structure.id end)
+    end
+  end
+
+  defp create_data_structure_and_permissions(user_id, role_name, confidential, system_id) do
+    domain_name = "domain_name"
+    domain_id = 1
+
+    MockTaxonomyCache.create_domain(%{name: domain_name, id: domain_id})
+
+    MockPermissionResolver.create_acl_entry(%{
+      principal_id: user_id,
+      principal_type: "user",
+      resource_id: domain_id,
+      resource_type: "domain",
+      role_name: role_name
+    })
+
+    MockDynamicFormCache.clean_cache()
+
+    data_structure =
+      insert(
+        :data_structure,
+        confidential: confidential,
+        name: "ds",
+        ou: domain_name,
+        domain_id: domain_id,
+        system_id: system_id
+      )
+
+    insert(:data_structure_version, data_structure_id: data_structure.id)
+
+    data_structure
   end
 
   defp create_system(_) do

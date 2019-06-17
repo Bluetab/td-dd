@@ -6,11 +6,13 @@
 
 - [TD-1860] Fields were not associated to corresponding version when loading new version of existing structure 
 - [TD-1864] Indexes structures with 'field' class
+- [TD-1851] Verify permissions while getting the root structures of a System
 - [TD-1866] Exclude logic deleted data_structures in catalog navigation, catalog table and filters
 
 ### Changed
 
 - [TD-1793] Checks if field structure has df_content and enriches data_structure :show
+- [TD-1891] Bulk load types translation from data fields to data structures 
 
 ## [2.21.0] 2019-06-10
 

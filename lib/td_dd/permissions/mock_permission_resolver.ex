@@ -37,7 +37,8 @@ defmodule TdDd.Permissions.MockPermissionResolver do
       :update_data_structure,
       :delete_data_structure,
       :manage_confidential_structures
-    ]
+    ],
+    "no_perms" => []
   }
 
   def start_link(_) do

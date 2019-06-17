@@ -71,7 +71,7 @@ defmodule TdDd.Loader.FieldsAsStructuresTest do
       child4 = %{metadata: %{"type" => "Metric"}}
 
       assert FieldsAsStructures.child_type(table, child1) == "Column"
-      assert FieldsAsStructures.child_type(report, child1) == "Foo"
+      assert FieldsAsStructures.child_type(report, child1) == "Field"
       assert FieldsAsStructures.child_type(report, child2) == "Field"
       assert FieldsAsStructures.child_type(view, child2) == "Column"
       assert FieldsAsStructures.child_type(table, child3) == "Attribute"
