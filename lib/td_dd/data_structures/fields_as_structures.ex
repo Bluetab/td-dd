@@ -5,7 +5,7 @@ defmodule TdDd.Loader.FieldsAsStructures do
 
   @structure_keys [:system_id, :group, :name, :external_id, :version]
   @liftable_metadata [:nullable, :precision, :type]
-  @table_types ["table", "view"]
+  @table_types ["tabl", "view"]
   @white_list_types ["Attribute", "Metric"]
 
   def group_by_parent(field_records, structure_records) do
