@@ -30,28 +30,42 @@ defmodule TdDqWeb.RuleResultController do
     Logger.info("Uploading rule results...")
 
     start_time = DateTime.utc_now()
-    rules_results_upload = Map.get(params, @rule_results_param)
-    rule_results_data = rules_results_upload.path
-    |> File.stream!()
-    |> Stream.drop(1)
-    |> CSV.decode!(separator: ?;)
+  
+    rule_results_data = 
+      params 
+      |> Map.get(@rule_results_param) 
+      |> rule_results_from_csv()
 
-    IO.inspect rule_results_data
-
-    Repo.transaction(fn ->
-      upload_in_transaction(conn, rule_results_data)
-    end)
+    with {:ok, _} <- upload_data(conn, rule_results_data)  do
+      index_rule_results(rule_results_data)
+    end
 
     end_time = DateTime.utc_now()
 
-    #TODO index in ES last rule_result of each rule implementation
-    rule_results_data
-    |> Enum.map(fn [implementation_key | _] -> Rules.get_rule_by_implementation_key(implementation_key) end)
-    |> Enum.filter(& not is_nil(&1))
-    |> Enum.uniq_by(fn %{id: id} -> id end)
-    |> Enum.map( &(@search_service.put_searchable(&1)) )
-
     Logger.info("Metadata uploaded. Elapsed seconds: #{DateTime.diff(end_time, start_time)}")
+  end
+
+  defp rule_results_from_csv(%{path: path}) do
+    path
+    |> File.stream!()
+    |> Stream.drop(1)
+    |> CSV.decode!(separator: ?;)
+  end
+
+  defp upload_data(conn, rule_results_data) do
+    Repo.transaction(fn ->
+      upload_in_transaction(conn, rule_results_data)
+    end)
+  end
+
+  defp index_rule_results(rule_results_data) do
+    rule_results_data
+    |> Enum.map(fn [implementation_key | _] ->
+      Rules.get_rule_by_implementation_key(implementation_key)
+    end)
+    |> Enum.filter(&(not is_nil(&1)))
+    |> Enum.uniq_by(fn %{id: id} -> id end)
+    |> Enum.map(&@search_service.put_searchable(&1))
   end
 
   defp upload_in_transaction(_conn, rules_results) do

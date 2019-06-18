@@ -131,10 +131,7 @@ defmodule TdDq.Rules.Rule do
     domain_ids = retrieve_domain_ids(rule)
     domain_parents = Enum.map(domain_ids, &%{id: &1, name: @taxonomy_cache.get_name(&1)})
 
-    execution_result_info =
-      rule
-      |> Rules.get_last_rule_implementations_result()
-      |> get_execution_result_info(rule)
+    execution_result_info = get_execution_result_info(rule)
 
     %{
       id: rule.id,
@@ -163,53 +160,69 @@ defmodule TdDq.Rules.Rule do
     }
   end
 
-  def get_execution_result_info([], rule) do
-    %{}
+  defp get_execution_result_info(rule) do
+    rule_results = Rules.get_last_rule_implementations_result(rule)
+
+    case rule_results do
+      [] -> Map.new()
+      _ -> get_execution_result_info(rule, rule_results)
+    end
   end
-  def get_execution_result_info(rule_results, rule) do
-    %{}
+
+  def get_execution_result_info(%{minimum: minimum, goal: goal}, rule_results) do
+    Map.new()
     |> with_avg(rule_results)
     |> with_last_execution_at(rule_results)
-    |> with_result_text(rule.minimum, rule.goal)
+    |> with_result_text(minimum, goal)
   end
 
   defp with_avg(result_map, rule_results) do
-    result_avg = rule_results
-    |> Enum.map(& &1.result)
-    |> Enum.sum
+    result_avg =
+      rule_results
+      |> Enum.map(& &1.result)
+      |> Enum.sum()
 
-    result_avg = case length(rule_results) do
-      0 -> 0
-      results_length -> result_avg / results_length
-    end
+    result_avg =
+      case length(rule_results) do
+        0 -> 0
+        results_length -> result_avg / results_length
+      end
+
     Map.put(result_map, :result_avg, result_avg)
   end
 
   defp with_last_execution_at(result_map, rule_results) do
-    last_execution_at = rule_results
-    |> Enum.map( & &1.date)
-    |> Enum.max()
+    last_execution_at =
+      rule_results
+      |> Enum.map(& &1.date)
+      |> Enum.max()
+
     Map.put(result_map, :last_execution_at, last_execution_at)
   end
 
   defp with_result_text(result_map, minimum, goal) do
-    result_text = cond do
-      result_map.result_avg < minimum ->
-        "result.under_minimum"
-      result_map.result_avg >= minimum and result_map.result_avg < goal ->
-        "result.under_goal"
+    result_text =
+      cond do
+        result_map.result_avg < minimum ->
+          "result.under_minimum"
+
+        result_map.result_avg >= minimum and result_map.result_avg < goal ->
+          "result.under_goal"
+
         result_map.result_avg >= goal ->
           "result.over_goal"
-    end
+      end
+
     Map.put(result_map, :result_text, result_text)
   end
 
   defp retrieve_domain_ids(%{business_concept_id: nil}), do: []
+
   defp retrieve_domain_ids(%{business_concept_id: business_concept_id}) do
     business_concept_id
-      |> @bc_cache.get_parent_id
-      |> String.to_integer
-      |> @taxonomy_cache.get_parent_ids
+    |> @bc_cache.get_parent_id
+    |> String.to_integer()
+    |> @taxonomy_cache.get_parent_ids
   end
 
   def index_name do
