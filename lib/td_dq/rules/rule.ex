@@ -3,12 +3,12 @@ defmodule TdDq.Rules.Rule do
   use Ecto.Schema
   import Ecto.Changeset
   alias TdDfLib.Format
+  alias TdDq.Rules
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleImplementation
   alias TdDq.Rules.RuleType
   alias TdDq.Searchable
   alias TdPerms.UserCache
-  alias TdDq.Rules
 
   @df_cache Application.get_env(:td_dq, :df_cache)
   @taxonomy_cache Application.get_env(:td_dq, :taxonomy_cache)

@@ -30,13 +30,13 @@ defmodule TdDqWeb.RuleResultController do
     Logger.info("Uploading rule results...")
 
     start_time = DateTime.utc_now()
-  
-    rule_results_data = 
-      params 
-      |> Map.get(@rule_results_param) 
+
+    rule_results_data =
+      params
+      |> Map.get(@rule_results_param)
       |> rule_results_from_csv()
 
-    with {:ok, _} <- upload_data(rule_results_data)  do
+    with {:ok, _} <- upload_data(rule_results_data) do
       index_rule_results(rule_results_data)
     end
 
