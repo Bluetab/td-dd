@@ -445,6 +445,7 @@ defmodule TdDq.Rules do
     |> Repo.preload(:rule_implementations)
     |> Map.get(:rule_implementations)
     |> Enum.map(&get_last_rule_result(&1.implementation_key))
+    |> Enum.filter(& &1)
   end
 
   @doc """
