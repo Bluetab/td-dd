@@ -47,7 +47,6 @@ defmodule TdDd.LoaderTest do
 
       field2 =
         insert(:data_field,
-          id: 99,
           name: "F2",
           type: "T2",
           description: "Field2",
@@ -57,7 +56,6 @@ defmodule TdDd.LoaderTest do
 
       field3 =
         insert(:data_field,
-          id: 991,
           name: "F123123",
           type: "T2",
           description: "Will be deleted",
@@ -67,7 +65,6 @@ defmodule TdDd.LoaderTest do
 
       field4 =
         insert(:data_field,
-          id: 992,
           name: "FIELD_TO_KEEP",
           type: "T2",
           description: "Will be kept",
@@ -263,7 +260,6 @@ defmodule TdDd.LoaderTest do
 
       field2 =
         insert(:data_field,
-          id: 99,
           name: "F2",
           type: "T2",
           description: "Will be deleted",
@@ -273,7 +269,6 @@ defmodule TdDd.LoaderTest do
 
       field3 =
         insert(:data_field,
-          id: 991,
           name: "F123123",
           type: "T2",
           description: "Will be also deleted",
@@ -300,7 +295,7 @@ defmodule TdDd.LoaderTest do
       s2 = %{
         system_id: system.id,
         group: "GROUP1",
-        name: "NAME1",
+        name: "NAME2",
         description: "D1",
         version: 0,
         external_id: nil,
@@ -310,7 +305,7 @@ defmodule TdDd.LoaderTest do
       s3 = %{
         system_id: system.id,
         group: "GROUP2",
-        name: "NAME2",
+        name: "NAME3",
         description: "D2",
         version: 0,
         external_id: nil,
@@ -330,10 +325,10 @@ defmodule TdDd.LoaderTest do
       r2 = %{
         system_id: system.id,
         parent_group: "GROUP1",
-        parent_name: "NAME1",
+        parent_name: "NAME2",
         parent_external_id: nil,
         child_group: "GROUP2",
-        child_name: "NAME2",
+        child_name: "NAME3",
         child_external_id: nil
       }
 
