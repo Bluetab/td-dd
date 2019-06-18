@@ -18,7 +18,7 @@ defmodule TdDqWeb.RuleResultController do
 
   # TODO: tets this
   def upload(conn, params) do
-    do_upload(conn, params)
+    do_upload(params)
     send_resp(conn, :ok, "")
   rescue
     e in RuntimeError ->
@@ -26,7 +26,7 @@ defmodule TdDqWeb.RuleResultController do
       send_resp(conn, :unprocessable_entity, Poison.encode!(%{error: e.message}))
   end
 
-  defp do_upload(conn, params) do
+  defp do_upload(params) do
     Logger.info("Uploading rule results...")
 
     start_time = DateTime.utc_now()
@@ -36,7 +36,7 @@ defmodule TdDqWeb.RuleResultController do
       |> Map.get(@rule_results_param) 
       |> rule_results_from_csv()
 
-    with {:ok, _} <- upload_data(conn, rule_results_data)  do
+    with {:ok, _} <- upload_data(rule_results_data)  do
       index_rule_results(rule_results_data)
     end
 
@@ -52,9 +52,9 @@ defmodule TdDqWeb.RuleResultController do
     |> CSV.decode!(separator: ?;)
   end
 
-  defp upload_data(conn, rule_results_data) do
+  defp upload_data(rule_results_data) do
     Repo.transaction(fn ->
-      upload_in_transaction(conn, rule_results_data)
+      upload_in_transaction(rule_results_data)
     end)
   end
 
@@ -68,7 +68,7 @@ defmodule TdDqWeb.RuleResultController do
     |> Enum.map(&@search_service.put_searchable(&1))
   end
 
-  defp upload_in_transaction(_conn, rules_results) do
+  defp upload_in_transaction(rules_results) do
     Logger.info("Uploading rule results...")
 
     rules_results
