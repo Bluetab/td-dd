@@ -47,7 +47,6 @@ defmodule TdDdWeb.DataStructureController do
     size = search_params |> Map.get("size", size)
 
     search_params
-    |> logic_deleted_filter
     |> Map.drop(["page", "size"])
     |> Search.search_data_structures(user, page, size)
   end
@@ -61,15 +60,6 @@ defmodule TdDdWeb.DataStructureController do
         value
         |> String.split("§")
         |> Enum.map(&String.trim(&1))
-    end
-  end
-
-  defp logic_deleted_filter(search_params) do
-    case Map.has_key?(search_params, "filters") do
-      true ->
-        filters = search_params |> Map.get("filters") |> Map.put("status", "")
-        Map.put(search_params, "filters", filters)
-      false -> search_params |> Map.put("filters", %{"status" => ""})
     end
   end
 
@@ -103,7 +93,7 @@ defmodule TdDdWeb.DataStructureController do
 
       data_structure =
         id
-        |> get_data_structure_active
+        |> get_data_structure
 
       conn
       |> put_status(:created)
@@ -141,7 +131,7 @@ defmodule TdDdWeb.DataStructureController do
   def show(conn, %{"id" => id}) do
     user = conn.assigns[:current_user]
 
-    data_structure = id |> get_data_structure_active()
+    data_structure = id |> get_data_structure()
 
     with true <- can?(user, view_data_structure(data_structure)) do
       user_permissions = %{
@@ -171,13 +161,13 @@ defmodule TdDdWeb.DataStructureController do
     end
   end
 
-  defp get_data_structure_active(id) do
+  defp get_data_structure(id) do
     id
-    |> DataStructures.get_data_structure_with_fields_active!()
+    |> DataStructures.get_data_structure_with_fields!()
     |> DataStructures.with_versions()
-    |> DataStructures.with_latest_children_active()
-    |> DataStructures.with_latest_parents_active()
-    |> DataStructures.with_latest_siblings_active()
+    |> DataStructures.with_latest_children()
+    |> DataStructures.with_latest_parents()
+    |> DataStructures.with_latest_siblings()
     |> DataStructures.with_latest_ancestry()
     |> DataStructures.with_field_external_ids()
     |> DataStructures.with_field_links()
@@ -218,7 +208,7 @@ defmodule TdDdWeb.DataStructureController do
            DataStructures.update_data_structure(data_structure_old, update_params) do
       AuditSupport.update_data_structure(conn, data_structure_old, data_structure_params)
 
-      data_structure = get_data_structure_active(data_structure.id)
+      data_structure = get_data_structure(data_structure.id)
 
       render(conn, "show.json", data_structure: data_structure)
     else

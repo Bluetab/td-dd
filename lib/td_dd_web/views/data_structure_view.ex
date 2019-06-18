@@ -61,8 +61,7 @@ defmodule TdDdWeb.DataStructureView do
       :name,
       :ou,
       :system_id,
-      :type,
-      :deleted_at
+      :type
     ])
     |> Map.put(:metadata, Map.get(data_structure, :metadata, %{}))
     |> Map.put(:path, Map.get(data_structure, :path, []))

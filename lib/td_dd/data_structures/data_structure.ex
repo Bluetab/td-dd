@@ -14,10 +14,6 @@ defmodule TdDd.DataStructures.DataStructure do
 
   @taxonomy_cache Application.get_env(:td_dd, :taxonomy_cache)
 
-  @status %{
-    deleted: "deleted"
-  }
-
   schema "data_structures" do
     belongs_to(:system, System, on_replace: :update)
     has_many(:versions, DataStructureVersion, on_delete: :delete_all)
@@ -35,7 +31,6 @@ defmodule TdDd.DataStructures.DataStructure do
     field(:name, :string)
     field(:ou, :string)
     field(:type, :string)
-    field(:deleted_at, :utc_datetime)
 
     timestamps(type: :utc_datetime)
   end
@@ -126,12 +121,6 @@ defmodule TdDd.DataStructures.DataStructure do
       |> Map.get(:system)
       |> (& &1.__struct__.search_fields(&1)).()
 
-    status =
-      case structure.deleted_at do
-        nil -> ""
-        _del_timestamp -> @status.deleted
-      end
-
     %{
       id: structure.id,
       description: structure.description,
@@ -151,7 +140,6 @@ defmodule TdDd.DataStructures.DataStructure do
       df_content: structure.df_content,
       data_fields: Enum.map(structure.data_fields, &DataField.search_fields/1),
       path: structure.path,
-      status: status,
       class: structure.class
     }
   end
