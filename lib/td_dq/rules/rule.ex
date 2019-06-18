@@ -8,6 +8,7 @@ defmodule TdDq.Rules.Rule do
   alias TdDq.Rules.RuleType
   alias TdDq.Searchable
   alias TdPerms.UserCache
+  alias TdDq.Rules
 
   @df_cache Application.get_env(:td_dq, :df_cache)
   @taxonomy_cache Application.get_env(:td_dq, :taxonomy_cache)
@@ -130,6 +131,11 @@ defmodule TdDq.Rules.Rule do
     domain_ids = retrieve_domain_ids(rule)
     domain_parents = Enum.map(domain_ids, &%{id: &1, name: @taxonomy_cache.get_name(&1)})
 
+    execution_result_info =
+      rule
+      |> Rules.get_last_rule_implementations_result()
+      |> get_execution_result_info(rule)
+
     %{
       id: rule.id,
       business_concept_id: rule.business_concept_id,
@@ -143,6 +149,7 @@ defmodule TdDq.Rules.Rule do
       active: rule.active,
       description: rule.description,
       deleted_at: rule.deleted_at,
+      execution_result_info: execution_result_info,
       updated_by: updated_by,
       updated_at: rule.updated_at,
       inserted_at: rule.inserted_at,
@@ -154,6 +161,47 @@ defmodule TdDq.Rules.Rule do
       df_name: rule.df_name,
       df_content: df_content
     }
+  end
+
+  def get_execution_result_info([], rule) do
+    %{}
+  end
+  def get_execution_result_info(rule_results, rule) do
+    %{}
+    |> with_avg(rule_results)
+    |> with_last_execution_at(rule_results)
+    |> with_result_text(rule.minimum, rule.goal)
+  end
+
+  defp with_avg(result_map, rule_results) do
+    result_avg = rule_results
+    |> Enum.map(& &1.result)
+    |> Enum.sum
+
+    result_avg = case length(rule_results) do
+      0 -> 0
+      results_length -> result_avg / results_length
+    end
+    Map.put(result_map, :result_avg, result_avg)
+  end
+
+  defp with_last_execution_at(result_map, rule_results) do
+    last_execution_at = rule_results
+    |> Enum.map( & &1.date)
+    |> Enum.max()
+    Map.put(result_map, :last_execution_at, last_execution_at)
+  end
+
+  defp with_result_text(result_map, minimum, goal) do
+    result_text = cond do
+      result_map.result_avg < minimum ->
+        "result.under_minimum"
+      result_map.result_avg >= minimum and result_map.result_avg < goal ->
+        "result.under_goal"
+        result_map.result_avg >= goal ->
+          "result.over_goal"
+    end
+    Map.put(result_map, :result_text, result_text)
   end
 
   defp retrieve_domain_ids(%{business_concept_id: nil}), do: []

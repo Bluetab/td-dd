@@ -438,6 +438,16 @@ defmodule TdDq.Rules do
   end
 
   @doc """
+    Returns last rule_result for each rule_implementation of rule
+  """
+  def get_last_rule_implementations_result(rule) do
+      rule = rule
+      |> Repo.preload(:rule_implementations)
+      |> Map.get(:rule_implementations)
+      |> Enum.map(& (get_last_rule_result(&1.implementation_key)))
+  end
+
+  @doc """
   Returns the list of rule_implementations.
 
   ## Examples
@@ -512,6 +522,17 @@ defmodule TdDq.Rules do
     |> join(:inner, [ri], r in assoc(ri, :rule))
     |> where([_, r], is_nil(r.deleted_at))
     |> Repo.get_by!(implementation_key: implementation_key)
+  end
+
+  def get_rule_by_implementation_key(implementation_key) do
+    implementation_rule = implementation_key
+    |> get_rule_implementation_by_key()
+    |> Repo.preload(:rule)
+
+    case implementation_rule do
+      nil -> nil
+      _rule -> Map.get(implementation_rule, :rule)
+    end
   end
 
   @doc """
