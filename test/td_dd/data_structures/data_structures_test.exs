@@ -179,6 +179,68 @@ defmodule TdDd.DataStructuresTest do
       assert %Ecto.Changeset{} = DataStructures.change_data_field(data_field)
     end
 
+    test "get_latest_children_active/1 returns data_structure children excluding logic deleted ones" do
+      data_structure_parent = insert(:data_structure, name: "parent")
+      data_structure_child = insert(:data_structure, name: "child", class: "field")
+      data_structure_child_deleted = insert(:data_structure, name: "deleted_child", class: "field", deleted_at: "2019-06-14 10:00:00Z")
+
+      data_structure_version_parent = insert(:data_structure_version, data_structure_id: data_structure_parent.id)
+      data_structure_version_child = insert(:data_structure_version, data_structure_id: data_structure_child.id)
+      data_structure_version_child_deleted = insert(:data_structure_version, data_structure_id: data_structure_child_deleted.id)
+
+      insert(:data_structure_relation,
+        parent_id: data_structure_version_parent.id,
+        child_id: data_structure_version_child.id
+      )
+      insert(:data_structure_relation,
+        parent_id: data_structure_version_parent.id,
+        child_id: data_structure_version_child_deleted.id
+      )
+      children = DataStructures.get_latest_children_active(data_structure_parent.id)
+      assert children <~> [data_structure_child]
+    end
+
+    test "get_latest_parents_active/1 returns data_structure parents excluding logic deleted ones" do
+      data_structure_parent = insert(:data_structure, name: "parent")
+      data_structure_parent_deleted = insert(:data_structure, name: "parent_deleted", deleted_at: "2019-06-14 10:00:00Z")
+
+      data_structure_child = insert(:data_structure, name: "child", class: "field")
+
+      data_structure_version_parent = insert(:data_structure_version, data_structure_id: data_structure_parent.id)
+      data_structure_version_parent_deleted = insert(:data_structure_version, data_structure_id: data_structure_parent_deleted.id)
+
+      data_structure_version_child = insert(:data_structure_version, data_structure_id: data_structure_child.id)
+
+      insert(:data_structure_relation,
+        parent_id: data_structure_version_parent.id,
+        child_id: data_structure_version_child.id
+      )
+      insert(:data_structure_relation,
+        parent_id: data_structure_version_parent_deleted.id,
+        child_id: data_structure_version_child.id
+      )
+      parents = DataStructures.get_latest_parents_active(data_structure_child.id)
+      assert parents <~> [data_structure_parent]
+    end
+
+    test "get_latest_siblings_active/1 returns data_structure siblings excluding logic deleted ones" do
+      data_structure_parent = insert(:data_structure, name: "parent")
+      data_structure_child = insert(:data_structure, name: "child", class: "field")
+      data_structure_child_2 = insert(:data_structure, name: "child2", class: "field")
+      data_structure_child_deleted = insert(:data_structure, name: "deleted_child", class: "field", deleted_at: "2019-06-14 10:00:00Z")
+
+      data_structure_version_parent = insert(:data_structure_version, data_structure_id: data_structure_parent.id)
+      data_structure_version_child = insert(:data_structure_version, data_structure_id: data_structure_child.id)
+      data_structure_version_child_2 = insert(:data_structure_version, data_structure_id: data_structure_child_2.id)
+      data_structure_version_child_deleted = insert(:data_structure_version, data_structure_id: data_structure_child_deleted.id)
+
+      insert(:data_structure_relation, parent_id: data_structure_version_parent.id, child_id: data_structure_version_child.id)
+      insert(:data_structure_relation, parent_id: data_structure_version_parent.id, child_id: data_structure_version_child_2.id)
+      insert(:data_structure_relation, parent_id: data_structure_version_parent.id, child_id: data_structure_version_child_deleted.id)
+      siblings = DataStructures.get_latest_siblings_active(data_structure_child.id)
+      assert siblings <~> [data_structure_child, data_structure_child_2]
+    end
+
     test "get_data_structure_with_fields!/1 returns the data_structure with given id and fields" do
       data_structure_parent = insert(:data_structure, name: "parent")
       name = Map.get(@valid_attrs, :name)
