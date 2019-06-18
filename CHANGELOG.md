@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-1533] Added structure schema type for system params
+
 ## [2.21.0] 2019-06-10
 
 ### Added
