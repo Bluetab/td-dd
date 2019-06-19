@@ -103,7 +103,7 @@ defmodule TdDdWeb.DataStructureController do
 
       data_structure =
         id
-        |> get_data_structure_active
+        |> get_data_structure
 
       conn
       |> put_status(:created)
@@ -141,7 +141,7 @@ defmodule TdDdWeb.DataStructureController do
   def show(conn, %{"id" => id}) do
     user = conn.assigns[:current_user]
 
-    data_structure = id |> get_data_structure_active()
+    data_structure = id |> get_data_structure()
 
     with true <- can?(user, view_data_structure(data_structure)) do
       user_permissions = %{
@@ -171,13 +171,13 @@ defmodule TdDdWeb.DataStructureController do
     end
   end
 
-  defp get_data_structure_active(id) do
+  defp get_data_structure(id) do
     id
-    |> DataStructures.get_data_structure_with_fields_active!()
+    |> DataStructures.get_data_structure_with_fields!([deleted: false])
     |> DataStructures.with_versions()
-    |> DataStructures.with_latest_children_active()
-    |> DataStructures.with_latest_parents_active()
-    |> DataStructures.with_latest_siblings_active()
+    |> DataStructures.with_latest_children([deleted: false])
+    |> DataStructures.with_latest_parents([deleted: false])
+    |> DataStructures.with_latest_siblings([deleted: false])
     |> DataStructures.with_latest_ancestry()
     |> DataStructures.with_field_external_ids()
     |> DataStructures.with_field_links()
@@ -218,7 +218,7 @@ defmodule TdDdWeb.DataStructureController do
            DataStructures.update_data_structure(data_structure_old, update_params) do
       AuditSupport.update_data_structure(conn, data_structure_old, data_structure_params)
 
-      data_structure = get_data_structure_active(data_structure.id)
+      data_structure = get_data_structure(data_structure.id)
 
       render(conn, "show.json", data_structure: data_structure)
     else
