@@ -12,6 +12,7 @@
 
 - [TD-1793] Checks if field structure has df_content and enriches data_structure :show
 - [TD-1891] Bulk load types translation from data fields to data structures 
+- [TD-1533] Ignores search term when it is no on Aggregation
 
 ## [2.21.0] 2019-06-10
 
