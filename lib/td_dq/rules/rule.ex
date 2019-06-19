@@ -204,13 +204,13 @@ defmodule TdDq.Rules.Rule do
     result_text =
       cond do
         result_map.result_avg < minimum ->
-          "result.under_minimum"
+          "quality_result.under_minimum"
 
         result_map.result_avg >= minimum and result_map.result_avg < goal ->
-          "result.under_goal"
+          "quality_result.under_goal"
 
         result_map.result_avg >= goal ->
-          "result.over_goal"
+          "quality_result.over_goal"
       end
 
     Map.put(result_map, :result_text, result_text)

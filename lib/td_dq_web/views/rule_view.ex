@@ -57,7 +57,8 @@ defmodule TdDqWeb.RuleView do
       current_business_concept_version: %{
         name: BusinessConceptCache.get_name(rule.business_concept_id),
         id: BusinessConceptCache.get_business_concept_version_id(rule.business_concept_id)
-      }
+      },
+      execution_result_info: Map.get(rule, :execution_result_info)
     }
     |> add_rule_type(rule)
     |> add_system_values(rule)
