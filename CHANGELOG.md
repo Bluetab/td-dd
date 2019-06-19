@@ -6,6 +6,10 @@
 
 - [TD-1533] Added structure schema type for system params
 
+### Changed
+
+- [TD-1893] Use CI_JOB_ID instead of CI_PIPELINE_ID
+
 ## [2.21.0] 2019-06-10
 
 ### Added
