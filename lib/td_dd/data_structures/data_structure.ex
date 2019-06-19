@@ -47,7 +47,8 @@ defmodule TdDd.DataStructures.DataStructure do
       :confidential,
       :df_content,
       :last_change_at,
-      :last_change_by
+      :last_change_by,
+      :deleted_at
     ])
   end
 

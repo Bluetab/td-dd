@@ -309,7 +309,7 @@ defmodule TdDdWeb.DataStructureController do
 
     data_structures =
       params
-      |> DataStructures.list_data_structures_with_no_parents()
+      |> DataStructures.list_data_structures_with_no_parents([deleted: false])
       |> Enum.filter(&can?(user, view_data_structure(&1)))
 
     total = length(data_structures)

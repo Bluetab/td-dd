@@ -136,7 +136,6 @@ defmodule TdDd.DataStructures do
     |> Enum.filter(& is_active_field_structure(&1, deleted))
   end
 
-
   defp is_active_field_structure(field, false) do
     case field.field_structure do
       nil -> true
@@ -194,12 +193,23 @@ defmodule TdDd.DataStructures do
   end
 
   def get_siblings(data_structure_version, options \\ []) do
+    deleted = get_deleted_option(options)
     data_structure_version
     |> Ecto.assoc(:parents)
     |> Repo.all()
+    |> Enum.filter(&is_active_data_structure_version(&1, deleted))
     |> Enum.flat_map(&get_children(&1, options))
     |> Enum.uniq()
   end
+
+  defp is_active_data_structure_version(data_structure_version, false) do
+    data_structure = data_structure_version
+    |> Repo.preload(:data_structure)
+    |> Map.get(:data_structure)
+    is_nil(data_structure.deleted_at)
+  end
+
+  defp is_active_data_structure_version(_data_structure_version, _true), do: true
 
   def get_latest_ancestry(data_structure_id) do
     data_structure_id
