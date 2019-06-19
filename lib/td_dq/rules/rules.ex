@@ -914,6 +914,7 @@ defmodule TdDq.Rules do
   defp to_schema_type("string"), do: :string
   defp to_schema_type("list"), do: {:array, :string}
   defp to_schema_type("date"), do: :string
+  defp to_schema_type("structure"), do: :map
 
   def check_available_implementation_key(%{"implementation_key" => ""}),
     do: {:implementation_key_available}
