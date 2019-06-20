@@ -57,18 +57,9 @@ defmodule TdDq.Search.RuleMappings do
         properties: %{
           result_avg: %{type: "long"},
           last_execution_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-          result_text: %{type: "text"}
+          result_text: %{type: "text", fields: %{raw: %{type: "keyword"}}}
         }
       },
-    #  execution_results: %{
-    #     type: "nested",
-    #     properties: %{
-    #       id: %{type: "long"},
-    #       implementation_key: %{type: "text"},
-    #       executed_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-    #       result: %{type: "long"}
-    #     }
-    #   },
       df_content: content_mappings
     }
 
