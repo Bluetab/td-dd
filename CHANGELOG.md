@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- [TD-1690] index implementation results on elastic
+
 ## [2.21.0] 2019-06-10
 
 ### Added
