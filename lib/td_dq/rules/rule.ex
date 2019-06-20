@@ -164,7 +164,7 @@ defmodule TdDq.Rules.Rule do
     rule_results = Rules.get_last_rule_implementations_result(rule)
 
     case rule_results do
-      [] -> Map.new()
+      [] -> %{result_text: "quality_result.no_execution"}
       _ -> get_execution_result_info(rule, rule_results)
     end
   end
