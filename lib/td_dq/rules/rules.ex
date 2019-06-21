@@ -529,7 +529,7 @@ defmodule TdDq.Rules do
     implementation_rule =
       implementation_key
       |> get_rule_implementation_by_key()
-      |> Repo.preload(:rule)
+      |> Repo.preload([rule: :rule_type])
 
     case implementation_rule do
       nil -> nil
