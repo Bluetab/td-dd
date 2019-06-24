@@ -133,7 +133,6 @@ defmodule TdDq.RulesTest do
 
       assert rule.rule_type_id == creation_attrs[:rule_type_id]
       assert rule.business_concept_id == creation_attrs[:business_concept_id]
-      assert rule.description == creation_attrs[:description]
       assert rule.goal == creation_attrs[:goal]
       assert rule.minimum == creation_attrs[:minimum]
       assert rule.name == creation_attrs[:name]
@@ -516,7 +515,6 @@ defmodule TdDq.RulesTest do
                Rules.create_rule_implementation(rule, creation_attrs)
 
       assert rule_implementation.rule_id == creation_attrs[:rule_id]
-      assert rule_implementation.description == creation_attrs[:description]
       assert rule_implementation.system_params == creation_attrs[:system_params]
       assert rule_implementation.system == creation_attrs[:system]
     end
@@ -572,14 +570,12 @@ defmodule TdDq.RulesTest do
         update_attrs
         |> Map.put(:implementation_key, "New implementation_key")
         |> Map.put(:system, "New system")
-        |> Map.put(:description, "New description")
 
       assert {:ok, rule_implementation} =
                Rules.update_rule_implementation(rule_implementation, update_attrs)
 
       assert %RuleImplementation{} = rule_implementation
       assert rule_implementation.rule_id == update_attrs[:rule_id]
-      assert rule_implementation.description == update_attrs[:description]
       assert rule_implementation.system_params == update_attrs[:system_params]
       assert rule_implementation.system == update_attrs[:system]
     end
