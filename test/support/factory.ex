@@ -34,7 +34,6 @@ defmodule TdDq.Factory do
   def rule_implementation_factory do
     %TdDq.Rules.RuleImplementation {
       rule: build(:rule),
-      description: "Rule Implementation description",
       implementation_key: "implementation_key001",
       system_params: %{},
       system: "Rule Implementation System",

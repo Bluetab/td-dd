@@ -60,7 +60,6 @@ defmodule TdDqWeb.SwaggerDefinitions do
 
           properties do
             id(:integer, "Rule Implementation unique identifier", required: true)
-            description(:string, "Rule Implementation description")
             implementation_key(:string, "Rule Implementation implementation_key", required: true)
             system(:string, "Rule Implementation system", required: true)
             system_params(:object, "Rule Implementation parameters", required: true)
@@ -141,7 +140,6 @@ defmodule TdDqWeb.SwaggerDefinitions do
 
           properties do
             id(:integer, "Rule Implementation unique identifier", required: true)
-            description(:string, "Rule Implementation description")
             implementation_key(:string, "Rule Implementation implementation_key", required: true)
             system(:string, "Rule Implementation system", required: true)
             system_params(:object, "Rule Implementation parameters", required: true)
@@ -167,7 +165,6 @@ defmodule TdDqWeb.SwaggerDefinitions do
       RuleImplementationUpdateProps:
         swagger_schema do
           properties do
-            description(:string, "Rule Implementation description")
             implementation_key(:string, "Rule Implementation implementation_key", required: true)
             system(:string, "Rule Implementation system", required: true)
             system_params(:object, "Rule Implementation parameters", required: true)

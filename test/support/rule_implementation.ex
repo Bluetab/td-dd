@@ -8,8 +8,9 @@ defmodule TdDqWeb.RuleImplementation do
   @endpoint TdDqWeb.Endpoint
 
   @test_rule_implementation_table_format %{"Field" => "field", "Type" => "type",
-    "Description" => "description", "System" => "system",
-    "Type Params" => "type_params", "System Params" => "system_params", "Implementation key" => "implementation_key"}
+    "System" => "system",
+    "Type Params" => "type_params", "System Params" => "system_params",
+    "Implementation key" => "implementation_key"}
 
   def rule_implementation_create(token, %{"rule_id" => rule_id,
     "params" => params}) do
