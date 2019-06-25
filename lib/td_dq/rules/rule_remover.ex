@@ -5,8 +5,8 @@ defmodule TdDq.Rules.RuleRemover do
   """
   use GenServer
 
+  alias TdCache.ConceptCache
   alias TdDq.Rules
-  alias TdPerms.BusinessConceptCache
 
   require Logger
 
@@ -27,12 +27,20 @@ defmodule TdDq.Rules.RuleRemover do
   end
 
   def handle_info(:work, state) do
-    bcs_to_delete = BusinessConceptCache.get_deprecated_business_concept_set()
-    bcs_to_avoid_deletion = BusinessConceptCache.get_existing_business_concept_set() -- bcs_to_delete
-
-    Rules.soft_deletion(bcs_to_delete, bcs_to_avoid_deletion)
+    case ConceptCache.active_ids() do
+      {:ok, active_ids} -> soft_deletion(active_ids)
+      _ -> :ok
+    end
 
     schedule_work()
     {:noreply, state}
+  end
+
+  defp soft_deletion([]), do: :ok
+
+  defp soft_deletion(active_ids) do
+    {count, _} = Rules.soft_deletion(active_ids)
+    if count > 0, do: Logger.info("Soft deleted #{count} rules")
+    :ok
   end
 end

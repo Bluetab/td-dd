@@ -24,7 +24,7 @@ defmodule TdDq.Mixfile do
   def application do
     [
       mod: {TdDq.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools, :td_cache]
     ]
   end
 
@@ -57,9 +57,12 @@ defmodule TdDq.Mixfile do
       {:timex, "~> 3.1"},
       {:ex_machina, "~> 2.2.2", only: :test},
       {:canada, "~> 1.0.1"},
-      {:td_perms, git: "https://github.com/Bluetab/td-perms.git", tag: "2.21.1"},
+      {:td_cache,
+       git: "https://github.com/Bluetab/td-cache.git",
+       ref: "7ce90b2796b2d15281a6fed7f5daace01d7799d7"},
       {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "2.21.1"},
-      {:td_hypermedia, git: "https://github.com/Bluetab/td-hypermedia.git", tag: "2.11.0"}
+      {:td_hypermedia, git: "https://github.com/Bluetab/td-hypermedia.git", tag: "2.11.0"},
+      {:td_perms, git: "https://github.com/Bluetab/td-perms.git", tag: "2.21.1"}
     ]
   end
 

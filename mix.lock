@@ -49,6 +49,7 @@
   "ranch": {:hex, :ranch, "1.7.1", "6b1fab51b49196860b733a49c07604465a47bdb78aa10c1c16a3d199f7f8c881", [:rebar3], [], "hexpm"},
   "redix": {:hex, :redix, "0.8.2", "c25158f905bcf8842e9a11411d65b9257ac70057c4330521d1a4d2a44b4f7ecf", [:mix], [], "hexpm"},
   "ssl_verify_fun": {:hex, :ssl_verify_fun, "1.1.4", "f0eafff810d2041e93f915ef59899c923f4568f4585904d010387ed74988e77b", [:make, :mix, :rebar3], [], "hexpm"},
+  "td_cache": {:git, "https://github.com/Bluetab/td-cache.git", "f70607e8ada8a60103b7f1bbfe516152adec3489", [ref: "f70607e8ada8a60103b7f1bbfe516152adec3489"]},
   "td_df_lib": {:git, "https://github.com/Bluetab/td-df-lib.git", "234434f306cce359bc3e4fddf4a2d15ccaafd8e1", [tag: "2.21.1"]},
   "td_hypermedia": {:git, "https://github.com/Bluetab/td-hypermedia.git", "572121b019e2d1a875c956d645a797245b868b9e", [tag: "2.11.0"]},
   "td_perms": {:git, "https://github.com/Bluetab/td-perms.git", "646018eeff1fea643f2b57f9dbaf49e93b16d50a", [tag: "2.21.1"]},

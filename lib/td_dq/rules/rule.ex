@@ -2,16 +2,16 @@ defmodule TdDq.Rules.Rule do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
+  alias TdCache.ConceptCache
+  alias TdCache.TaxonomyCache
+  alias TdCache.UserCache
   alias TdDfLib.Format
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleImplementation
   alias TdDq.Rules.RuleType
   alias TdDq.Searchable
-  alias TdPerms.UserCache
 
   @df_cache Application.get_env(:td_dq, :df_cache)
-  @taxonomy_cache Application.get_env(:td_dq, :taxonomy_cache)
-  @bc_cache Application.get_env(:td_dq, :bc_cache)
   @behaviour Searchable
 
   schema "rules" do
@@ -112,9 +112,9 @@ defmodule TdDq.Rules.Rule do
       end
 
     updated_by =
-      case UserCache.get_user(rule.updated_by) do
-        nil -> %{}
-        user -> user
+      case UserCache.get(rule.updated_by) do
+        {:ok, nil} -> %{}
+        {:ok, user} -> user
       end
 
     df_content =
@@ -127,8 +127,8 @@ defmodule TdDq.Rules.Rule do
     current_business_concept_version =
       Map.get(rule, :current_business_concept_version, %{name: ""})
 
-    domain_ids = retrieve_domain_ids(rule)
-    domain_parents = Enum.map(domain_ids, &%{id: &1, name: @taxonomy_cache.get_name(&1)})
+    domain_ids = get_domain_ids(rule)
+    domain_parents = Enum.map(domain_ids, &%{id: &1, name: TaxonomyCache.get_name(&1)})
 
     %{
       id: rule.id,
@@ -156,12 +156,11 @@ defmodule TdDq.Rules.Rule do
     }
   end
 
-  defp retrieve_domain_ids(%{business_concept_id: nil}), do: []
-  defp retrieve_domain_ids(%{business_concept_id: business_concept_id}) do
-    business_concept_id
-      |> @bc_cache.get_parent_id
-      |> String.to_integer
-      |> @taxonomy_cache.get_parent_ids
+  defp get_domain_ids(%{business_concept_id: nil}), do: []
+
+  defp get_domain_ids(%{business_concept_id: business_concept_id}) do
+    {:ok, domain_ids} = ConceptCache.get(business_concept_id, :domain_ids)
+    domain_ids
   end
 
   def index_name do

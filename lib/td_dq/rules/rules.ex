@@ -5,13 +5,15 @@ defmodule TdDq.Rules do
 
   import Ecto.Query, warn: false
   alias Ecto.Changeset
+  alias TdCache.ConceptCache
   alias TdDfLib.Validation
   alias TdDq.Repo
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleImplementation
   alias TdDq.Rules.RuleResult
   alias TdDq.Rules.RuleType
-  alias TdPerms.BusinessConceptCache
+
+  require Logger
 
   @datetime_format "%Y-%m-%d %H:%M:%S"
   @date_format "%Y-%m-%d"
@@ -63,13 +65,15 @@ defmodule TdDq.Rules do
 
   defp preload_bc_version(%{business_concept_id: nil} = rule), do: rule
 
-  defp preload_bc_version(%{business_concept_id: bc_id} = rule) do
-    bcv = %{
-      name: BusinessConceptCache.get_name(bc_id),
-      id: BusinessConceptCache.get_business_concept_version_id(bc_id)
-    }
+  defp preload_bc_version(%{business_concept_id: business_concept_id} = rule) do
+    case ConceptCache.get(business_concept_id) do
+      {:ok, %{name: name, business_concept_version_id: id}} ->
+        rule
+        |> Map.put(:current_business_concept_version, %{name: name, id: id})
 
-    Map.put(rule, :current_business_concept_version, bcv)
+      _ ->
+        rule
+    end
   end
 
   defp preload_bc_version(rule), do: rule
@@ -206,10 +210,10 @@ defmodule TdDq.Rules do
         type_changeset
         |> validate_non_modifiable_fields(attrs)
 
-        case non_modifiable_changeset.valid? do
-          true -> do_update_rule(changeset)
-          false -> {:error, non_modifiable_changeset}
-        end
+      case non_modifiable_changeset.valid? do
+        true -> do_update_rule(changeset)
+        false -> {:error, non_modifiable_changeset}
+      end
     else
       error -> error
     end
@@ -217,13 +221,13 @@ defmodule TdDq.Rules do
 
   defp do_update_rule(changeset) do
     with {:ok, rule} <- Repo.update(changeset) do
-        rule =
-            rule
-            |> Repo.preload(:rule_type)
-            |> preload_bc_version
+      rule =
+        rule
+        |> Repo.preload(:rule_type)
+        |> preload_bc_version
 
-          @search_service.put_searchable(rule)
-          {:ok, rule}
+      @search_service.put_searchable(rule)
+      {:ok, rule}
     else
       error -> error
     end
@@ -249,23 +253,19 @@ defmodule TdDq.Rules do
     |> Repo.delete()
   end
 
-  def soft_deletion(bcs_ids_to_delete, bcs_ids_to_avoid_deletion) do
-    rules =
+  def soft_deletion(active_ids, ts \\ DateTime.utc_now()) do
+    queryable =
       Rule
       |> where([r], not is_nil(r.business_concept_id))
       |> where([r], is_nil(r.deleted_at))
-      |> where(
-        [r],
-        r.business_concept_id in ^bcs_ids_to_delete or
-          r.business_concept_id not in ^bcs_ids_to_avoid_deletion
-      )
+      |> where([r], r.business_concept_id not in ^active_ids)
 
-    rules
+    queryable
     |> Repo.all()
     |> Enum.each(&@search_service.delete_searchable(&1))
 
-    rules
-    |> update(set: [deleted_at: ^DateTime.utc_now()])
+    queryable
+    |> update(set: [deleted_at: ^ts])
     |> Repo.update_all([])
   end
 
@@ -302,6 +302,7 @@ defmodule TdDq.Rules do
   end
 
   defp retrieve_cache_information(%Rule{business_concept_id: bc_id} = rule, list_filters) do
+    # TODO: TD-1618 Replace with LinkCache
     list_resources =
       bc_id
       |> @relation_cache.get_resources("business_concept")
