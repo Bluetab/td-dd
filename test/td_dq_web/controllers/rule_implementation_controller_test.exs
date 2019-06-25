@@ -50,7 +50,9 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
       creation_attrs = Map.from_struct(build(:rule_implementation, rule_id: rule.id))
 
       conn =
-        post(conn, Routes.rule_implementation_path(conn, :create), rule_implementation: creation_attrs)
+        post(conn, Routes.rule_implementation_path(conn, :create),
+          rule_implementation: creation_attrs
+        )
 
       validate_resp_schema(conn, schema, "RuleImplementationResponse")
       assert %{"id" => id} = json_response(conn, 201)["data"]
@@ -62,7 +64,6 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
       json_response = json_response(conn, 200)["data"]
 
       assert creation_attrs[:rule_id] == json_response["rule_id"]
-      assert creation_attrs[:description] == json_response["description"]
       assert creation_attrs[:system_params] == json_response["system_params"]
       assert creation_attrs[:system] == json_response["system"]
     end
@@ -77,7 +78,9 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
         )
 
       conn =
-        post(conn, Routes.rule_implementation_path(conn, :create), rule_implementation: creation_attrs)
+        post(conn, Routes.rule_implementation_path(conn, :create),
+          rule_implementation: creation_attrs
+        )
 
       assert json_response(conn, 422)["errors"] != %{}
     end
@@ -93,7 +96,6 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
         update_attrs
         |> Map.put(:implementation_key, "New implementation key")
         |> Map.put(:system, "New system")
-        |> Map.put(:description, "New description")
 
       conn =
         put(conn, Routes.rule_implementation_path(conn, :update, rule_implementation),
@@ -110,7 +112,6 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
       json_response = json_response(conn, 200)["data"]
 
       assert update_attrs[:rule_id] == json_response["rule_id"]
-      assert update_attrs[:description] == json_response["description"]
       assert update_attrs[:system_params] == json_response["system_params"]
       assert update_attrs[:system] == json_response["system"]
     end
@@ -163,20 +164,22 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
         )
 
       conn =
-        post(conn, Routes.rule_implementation_path(conn, :create), rule_implementation: creation_attrs)
+        post(conn, Routes.rule_implementation_path(conn, :create),
+          rule_implementation: creation_attrs
+        )
 
       validate_resp_schema(conn, schema, "RuleImplementationResponse")
       assert response(conn, 201)
 
       conn = recycle_and_put_headers(conn)
 
-      conn = get(conn, Routes.rule_rule_implementation_path(conn, :get_rule_implementations, rule.id))
+      conn =
+        get(conn, Routes.rule_rule_implementation_path(conn, :get_rule_implementations, rule.id))
 
       validate_resp_schema(conn, schema, "RuleImplementationsResponse")
       json_response = List.first(json_response(conn, 200)["data"])
 
       assert creation_attrs[:rule_id] == json_response["rule_id"]
-      assert creation_attrs[:description] == json_response["description"]
       assert creation_attrs[:system_params] == json_response["system_params"]
       assert creation_attrs[:system] == json_response["system"]
 

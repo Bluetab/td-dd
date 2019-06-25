@@ -36,7 +36,7 @@ defmodule TdDq.Search.RuleMappings do
       current_business_concept_version: %{
         properties: %{
           id: %{type: "long"},
-          name: %{type: "text", fields: %{raw: %{type: "keyword"}}},
+          name: %{type: "text", fields: %{raw: %{type: "keyword"}}}
         }
       },
       updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
@@ -51,6 +51,13 @@ defmodule TdDq.Search.RuleMappings do
         properties: %{
           id: %{type: "long"},
           name: %{fields: %{raw: %{type: "keyword"}}, type: "text"}
+        }
+      },
+      execution_result_info: %{
+        properties: %{
+          result_avg: %{type: "long"},
+          last_execution_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
+          result_text: %{type: "text", fields: %{raw: %{type: "keyword"}}}
         }
       },
       df_content: content_mappings
@@ -76,7 +83,7 @@ defmodule TdDq.Search.RuleMappings do
 
   defp get_mappings(%{content: content}) do
     content
-    |> Enum.filter(& Map.get(&1, "type") != "url")
+    |> Enum.filter(&(Map.get(&1, "type") != "url"))
     |> Enum.map(&field_mapping/1)
   end
 

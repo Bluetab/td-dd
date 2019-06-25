@@ -12,7 +12,6 @@ Feature: Rule Implementations
       | Field               | Value                                                                                  |
       | Business Concept ID | MYID_333                                                                               |
       | Name                | Field's Rule                                                                           |
-      | Description         | In order to measure quality of this field we will check whether its values are correct |
       | Weight              | 50                                                                                     |
       | Priority            | Medium                                                                                 |
       | Population          | All clients who are older than 18                                                      |
@@ -23,20 +22,17 @@ Feature: Rule Implementations
       | Field               | Value                                                                                  |
       | System              | Oracle                                                                                 |
       | Implementation key  | ri0001                                                                                 |
-      | Description         | My Generic Rule Rule                                                                   |
       | System Params       | %-{ "Table": "Clients", "Field": "Age" }                                               |
     Then the system returns a result with code "Created"
     And "my-user" is able to view a Rule Implementation named "ri0001" with following data:
       | Field               | Value                                                                                  |
       | System              | Oracle                                                                                 |
       | Implementation key  | ri0001                                                                                 |
-      | Description         | My Generic Rule Rule                                                                   |
       | System Params       | %-{ "Table": "Clients", "Field": "Age" }                                               |
     When "my-user" tries to create a Rule Implementation associated to Rule "Field's Rule" with following data:
       | Field               | Value                                                                                  |
       | System              | Oracle                                                                                 |
       | Implementation key  | ri 0001                                                                                |
-      | Description         | My Generic Rule Rule                                                                   |
       | System Params       | %-{ "Table": "Clients", "Field": "Age" }                                               |
     Then the system returns a result with code "Unprocessable Entity"
     And the system returns an error with name "rule.implementation.error.implementation_key.invalid"
@@ -44,7 +40,6 @@ Feature: Rule Implementations
     | Field               | Value                                                                                  |
     | System              | Oracle                                                                                 |
     | Implementation key  |                                                                                        |
-    | Description         | My Generic Rule Rule                                                                   |
     | System Params       | %-{ "Table": "Clients", "Field": "Age" }                                               |
     Then the system returns a result with code "Created"
 
@@ -58,7 +53,6 @@ Feature: Rule Implementations
       | Field               | Value                                                                                  |
       | Business Concept ID | MYID_333                                                                               |
       | Name                | Field's Rule                                                                           |
-      | Description         | In order to measure quality of this field we will check whether its values are correct |
       | Weight              | 50                                                                                     |
       | Priority            | Medium                                                                                 |
       | Population          | All clients who are older than 18                                                      |
@@ -69,13 +63,11 @@ Feature: Rule Implementations
       | Field               | Value                                                                                  |
       | System              | Oracle                                                                                 |
       | Implementation key  | ri0001                                                                                 |
-      | Description         | My Generic Rule Rule                                                                   |
       | System Params       | %-{ "Table": "Clients", "Field": "Age" }                                               |
     When "my-user" tries to create a Rule Implementation associated to Rule "Field's Rule" with following data:
       | Field               | Value                                                                                  |
       | System              | Oracle                                                                                 |
-      | Implementation key  | ri0001                                                                                |
-      | Description         | My Generic Rule Rule                                                                   |
+      | Implementation key  | ri0001                                                                                 |
       | System Params       | %-{ "Table": "Clients", "Field": "Age" }                                               |
     Then the system returns a result with code "Unprocessable Entity"
     And the system returns an error with name "rule.implementation.error.implementation_key.not_available"

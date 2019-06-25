@@ -5,10 +5,13 @@ defmodule TdDq.RulesTest do
 
   alias Ecto.Changeset
   alias TdDq.MockRelationCache
+  alias TdDq.Rule
   alias TdDq.Rules
+  alias TdPerms.MockDynamicFormCache
 
   setup_all do
     start_supervised(MockRelationCache)
+    start_supervised(MockDynamicFormCache)
     :ok
   end
 
@@ -130,7 +133,6 @@ defmodule TdDq.RulesTest do
 
       assert rule.rule_type_id == creation_attrs[:rule_type_id]
       assert rule.business_concept_id == creation_attrs[:business_concept_id]
-      assert rule.description == creation_attrs[:description]
       assert rule.goal == creation_attrs[:goal]
       assert rule.minimum == creation_attrs[:minimum]
       assert rule.name == creation_attrs[:name]
@@ -313,6 +315,66 @@ defmodule TdDq.RulesTest do
              |> Enum.map(&Map.get(&1, :id)) == [not_deleted_rule.id]
     end
 
+    test "get_rule_by_implementation_key/1 retrieves a rule" do
+      implementation_key = "rik1"
+      rule_type = insert(:rule_type)
+      rule = insert(:rule, name: "Deleted Rule", rule_type: rule_type)
+      insert(:rule_implementation, implementation_key: implementation_key, rule: rule)
+
+      %{id: result_id, rule_type: rule_type} =
+        Rules.get_rule_by_implementation_key(implementation_key)
+
+      assert result_id == Map.get(rule, :id)
+      assert rule_type.id == rule |> Map.get(:rule_type) |> Map.get(:id)
+    end
+
+    test "get_last_rule_implementations_result/1 retrieves the last results of a rule implementation" do
+      implementation_key = "rik1"
+      rule_type = insert(:rule_type)
+      rule = insert(:rule, name: "Deleted Rule", rule_type: rule_type)
+      insert(:rule_implementation, implementation_key: implementation_key, rule: rule)
+
+      %{id: result_id, rule_type: rule_type} =
+        Rules.get_rule_by_implementation_key(implementation_key)
+
+      assert result_id == Map.get(rule, :id)
+      assert rule_type.id == rule |> Map.get(:rule_type) |> Map.get(:id)
+    end
+
+    test "search_fields/1 retrieves execution_result_info to be indexed in elastic" do
+      impl_key_1 = "impl_key_1"
+      impl_key_2 = "impl_key_2"
+      goal = 20
+      expected_avg = (60 + 10) / 2
+      expected_message = "quality_result.over_goal"
+      rule = insert(:rule, df_content: %{}, business_concept_id: nil, goal: goal)
+      rule_impl_1 = insert(:rule_implementation, implementation_key: impl_key_1, rule: rule)
+      rule_impl_2 = insert(:rule_implementation, implementation_key: impl_key_2, rule: rule)
+      now = DateTime.utc_now()
+
+      insert(
+        :rule_result,
+        implementation_key: rule_impl_1.implementation_key,
+        result: 10,
+        date: add_to_date_time(now, -1000)
+      )
+
+      insert(
+        :rule_result,
+        implementation_key: rule_impl_2.implementation_key,
+        result: 60,
+        date: now
+      )
+
+      %{execution_result_info: execution_result_info} = Rule.search_fields(rule)
+
+      %{result_avg: result_avg, result_text: result_text} =
+        Map.take(execution_result_info, [:result_avg, :result_text])
+
+      assert result_avg == expected_avg
+      assert expected_message == result_text
+    end
+
     defp rule_preload(rule) do
       rule
       |> Repo.preload(:rule_type)
@@ -417,7 +479,6 @@ defmodule TdDq.RulesTest do
                Rules.create_rule_implementation(rule, creation_attrs)
 
       assert rule_implementation.rule_id == creation_attrs[:rule_id]
-      assert rule_implementation.description == creation_attrs[:description]
       assert rule_implementation.system_params == creation_attrs[:system_params]
       assert rule_implementation.system == creation_attrs[:system]
     end
@@ -473,14 +534,12 @@ defmodule TdDq.RulesTest do
         update_attrs
         |> Map.put(:implementation_key, "New implementation_key")
         |> Map.put(:system, "New system")
-        |> Map.put(:description, "New description")
 
       assert {:ok, rule_implementation} =
                Rules.update_rule_implementation(rule_implementation, update_attrs)
 
       assert %RuleImplementation{} = rule_implementation
       assert rule_implementation.rule_id == update_attrs[:rule_id]
-      assert rule_implementation.description == update_attrs[:description]
       assert rule_implementation.system_params == update_attrs[:system_params]
       assert rule_implementation.system == update_attrs[:system]
     end
@@ -641,6 +700,30 @@ defmodule TdDq.RulesTest do
 
       assert rule_result.result ==
                Rules.get_last_rule_result(rule_implementation.implementation_key).result
+    end
+
+    test "get_last_rule_implementations_result/1 retrives last result of each rule implementation" do
+      rule = insert(:rule)
+      rule_implementation = insert(:rule_implementation, rule: rule)
+      now = DateTime.utc_now()
+
+      insert(
+        :rule_result,
+        implementation_key: rule_implementation.implementation_key,
+        result: 10,
+        date: add_to_date_time(now, -1000)
+      )
+
+      last_rule_result =
+        insert(
+          :rule_result,
+          implementation_key: rule_implementation.implementation_key,
+          result: 60,
+          date: now
+        )
+
+      results = Rules.get_last_rule_implementations_result(rule)
+      assert results == [last_rule_result]
     end
   end
 end

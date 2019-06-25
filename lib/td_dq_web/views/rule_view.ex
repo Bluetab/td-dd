@@ -53,7 +53,8 @@ defmodule TdDqWeb.RuleView do
       inserted_at: rule.inserted_at,
       updated_at: rule.updated_at,
       rule_type_id: rule.rule_type_id,
-      type_params: Map.get(rule, :type_params)
+      type_params: Map.get(rule, :type_params),
+      execution_result_info: Map.get(rule, :execution_result_info)
     }
     |> add_current_version(rule)
     |> add_rule_type(rule)

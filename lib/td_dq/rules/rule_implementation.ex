@@ -6,7 +6,6 @@ defmodule TdDq.Rules.RuleImplementation do
   alias TdDq.Rules.RuleImplementation
 
   schema "rule_implementations" do
-    field(:description, :string, default: nil)
     field(:implementation_key, :string)
     field(:system, :string)
     field(:system_params, :map)
@@ -20,7 +19,6 @@ defmodule TdDq.Rules.RuleImplementation do
     rule_implementation
     |> cast(attrs, [
       :implementation_key,
-      :description,
       :system,
       :system_params,
       :rule_id
@@ -31,6 +29,5 @@ defmodule TdDq.Rules.RuleImplementation do
       :rule_id
     ])
     |> validate_length(:implementation_key, max: 255)
-    |> validate_length(:description, max: 500)
   end
 end

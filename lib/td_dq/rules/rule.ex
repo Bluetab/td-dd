@@ -6,6 +6,7 @@ defmodule TdDq.Rules.Rule do
   alias TdCache.TaxonomyCache
   alias TdCache.UserCache
   alias TdDfLib.Format
+  alias TdDq.Rules
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleImplementation
   alias TdDq.Rules.RuleType
@@ -130,6 +131,8 @@ defmodule TdDq.Rules.Rule do
     domain_ids = get_domain_ids(rule)
     domain_parents = Enum.map(domain_ids, &%{id: &1, name: TaxonomyCache.get_name(&1)})
 
+    execution_result_info = get_execution_result_info(rule)
+
     %{
       id: rule.id,
       business_concept_id: rule.business_concept_id,
@@ -143,6 +146,7 @@ defmodule TdDq.Rules.Rule do
       active: rule.active,
       description: rule.description,
       deleted_at: rule.deleted_at,
+      execution_result_info: execution_result_info,
       updated_by: updated_by,
       updated_at: rule.updated_at,
       inserted_at: rule.inserted_at,
@@ -154,6 +158,62 @@ defmodule TdDq.Rules.Rule do
       df_name: rule.df_name,
       df_content: df_content
     }
+  end
+
+  defp get_execution_result_info(rule) do
+    rule_results = Rules.get_last_rule_implementations_result(rule)
+
+    case rule_results do
+      [] -> %{result_text: "quality_result.no_execution"}
+      _ -> get_execution_result_info(rule, rule_results)
+    end
+  end
+
+  def get_execution_result_info(%{minimum: minimum, goal: goal}, rule_results) do
+    Map.new()
+    |> with_avg(rule_results)
+    |> with_last_execution_at(rule_results)
+    |> with_result_text(minimum, goal)
+  end
+
+  defp with_avg(result_map, rule_results) do
+    result_avg =
+      rule_results
+      |> Enum.map(& &1.result)
+      |> Enum.sum()
+
+    result_avg =
+      case length(rule_results) do
+        0 -> 0
+        results_length -> result_avg / results_length
+      end
+
+    Map.put(result_map, :result_avg, result_avg)
+  end
+
+  defp with_last_execution_at(result_map, rule_results) do
+    last_execution_at =
+      rule_results
+      |> Enum.map(& &1.date)
+      |> Enum.max()
+
+    Map.put(result_map, :last_execution_at, last_execution_at)
+  end
+
+  defp with_result_text(result_map, minimum, goal) do
+    result_text =
+      cond do
+        result_map.result_avg < minimum ->
+          "quality_result.under_minimum"
+
+        result_map.result_avg >= minimum and result_map.result_avg < goal ->
+          "quality_result.under_goal"
+
+        result_map.result_avg >= goal ->
+          "quality_result.over_goal"
+      end
+
+    Map.put(result_map, :result_text, result_text)
   end
 
   defp get_domain_ids(%{business_concept_id: nil}), do: []
