@@ -6,7 +6,6 @@
 use Mix.Config
 
 config :td_dq, permission_resolver: TdPerms.Permissions
-config :td_dq, relation_cache: TdPerms.RelationCache
 
 config :td_perms,
   permissions: [
