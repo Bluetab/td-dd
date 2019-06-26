@@ -4,6 +4,7 @@ defmodule TdDq.Rules.Rule do
   import Ecto.Changeset
   alias TdCache.ConceptCache
   alias TdCache.TaxonomyCache
+  alias TdCache.TemplateCache
   alias TdCache.UserCache
   alias TdDfLib.Format
   alias TdDq.Rules
@@ -12,7 +13,6 @@ defmodule TdDq.Rules.Rule do
   alias TdDq.Rules.RuleType
   alias TdDq.Searchable
 
-  @df_cache Application.get_env(:td_dq, :df_cache)
   @behaviour Searchable
 
   schema "rules" do
@@ -107,7 +107,7 @@ defmodule TdDq.Rules.Rule do
 
   def search_fields(%Rule{} = rule) do
     template =
-      case @df_cache.get_template_by_name(rule.df_name) do
+      case TemplateCache.get_by_name!(rule.df_name) do
         nil -> %{content: []}
         template -> template
       end

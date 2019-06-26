@@ -15,9 +15,13 @@ defmodule TdDq.Cache.RuleLoader do
 
   @impl true
   def init(state) do
-    Process.send_after(self(), :load, 0)
     name = String.replace_prefix("#{__MODULE__}", "Elixir.", "")
     Logger.info("Running #{name}")
+
+    unless Application.get_env(:td_dq, :env) == :test do
+      Process.send_after(self(), :load, 0)
+    end
+
     {:ok, state}
   end
 

@@ -7,11 +7,9 @@ defmodule TdDq.RulesTest do
   alias TdDq.MockRelationCache
   alias TdDq.Rule
   alias TdDq.Rules
-  alias TdPerms.MockDynamicFormCache
 
   setup_all do
     start_supervised(MockRelationCache)
-    start_supervised(MockDynamicFormCache)
     :ok
   end
 

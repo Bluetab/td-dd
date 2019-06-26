@@ -3,10 +3,8 @@ defmodule TdDqWeb.RuleFilterControllerTest do
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   alias TdDqWeb.ApiServices.MockTdAuditService
-  alias TdPerms.MockDynamicFormCache
 
   setup_all do
-    start_supervised(MockDynamicFormCache)
     start_supervised(MockTdAuditService)
     :ok
   end

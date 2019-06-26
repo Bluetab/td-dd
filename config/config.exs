@@ -5,9 +5,12 @@
 # is restricted to this project.
 use Mix.Config
 
-config :td_dq, permission_resolver: TdPerms.Permissions
+# Environment
+config :td_dq, :env, Mix.env()
 
-config :td_perms,
+config :td_dq, permission_resolver: TdCache.Permissions
+
+config :td_cache,
   permissions: [
     :is_admin,
     :create_acl_entry,
@@ -53,9 +56,6 @@ config :td_perms,
     :view_deprecated_ingests,
     :manage_confidential_structures
   ]
-
-config :td_dq, df_cache: TdPerms.DynamicFormCache
-config :td_dq, cache_rules_on_startup: true
 
 config :td_dq, rule_removement: true
 config :td_dq, rule_removement_frequency: 36_00_000
