@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- [TD-1618] Cache improvements (use td-cache instead of td-perms)
+
 ## [3.0.0] 2019-06-25
 
 ### Added
