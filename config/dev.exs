@@ -55,7 +55,7 @@ config :td_dq, :audit_service,
 config :td_dq, qc_types_file: "static/qc_types_dev.json"
 config :td_dq, qr_types_file: "static/qr_types_dev.json"
 
-config :td_perms, redis_host: "localhost"
+config :td_cache, redis_host: "localhost"
 
 config :td_dq, :elasticsearch,
   search_service: TdDq.Search,

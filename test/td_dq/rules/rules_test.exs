@@ -7,11 +7,9 @@ defmodule TdDq.RulesTest do
   alias TdDq.MockRelationCache
   alias TdDq.Rule
   alias TdDq.Rules
-  alias TdPerms.MockDynamicFormCache
 
   setup_all do
     start_supervised(MockRelationCache)
-    start_supervised(MockDynamicFormCache)
     :ok
   end
 
@@ -273,73 +271,37 @@ defmodule TdDq.RulesTest do
     test "soft_deletion modifies field deleted_at with the current timestam" do
       rule_type = insert(:rule_type)
 
-      # Rules with nil business_concept_id
-      insert(:rule, business_concept_id: nil, name: "Rule Name", rule_type: rule_type)
-      insert(:rule, business_concept_id: nil, name: "Rule Name 1", rule_type: rule_type)
+      concept_ids = 1..8 |> Enum.to_list() |> Enum.map(&"#{&1}")
 
-      # Rules with business_concept_id to delete
-      bc_id_d_1 =
-        insert(
-          :rule,
-          business_concept_id: "bc id to delete",
-          name: "Rule Name 2",
-          rule_type: rule_type
+      rules =
+        ([nil, nil] ++ concept_ids)
+        |> Enum.with_index()
+        |> Enum.map(fn {id, idx} ->
+          [business_concept_id: id, name: "Rule Name #{idx}", rule_type: rule_type]
+        end)
+        |> Enum.map(&insert(:rule, &1))
+
+      # 2,4,6,8 are deleted
+      active_ids = ["1", "3", "5", "7"]
+
+      ts = DateTime.utc_now() |> DateTime.truncate(:second)
+      {count, _} = Rules.soft_deletion(active_ids, ts)
+      assert count == 4
+
+      {active_rules, deleted_rules} =
+        rules
+        |> Enum.map(& &1.id)
+        |> Enum.map(&Repo.get!(Rule, &1))
+        |> Enum.split_with(
+          &(is_nil(&1.business_concept_id) or Enum.member?(active_ids, &1.business_concept_id))
         )
 
-      bc_id_d_2 =
-        insert(
-          :rule,
-          business_concept_id: "bc id to delete 2",
-          name: "Rule Name 3",
-          rule_type: rule_type
-        )
+      assert Enum.count(active_rules) == 6
+      assert Enum.count(deleted_rules) == 4
 
-      bcs_to_delete = [bc_id_d_1.business_concept_id, bc_id_d_2.business_concept_id]
-
-      # Rules with business_concept_id to not delete
-      bc_id_nd_1 =
-        insert(
-          :rule,
-          business_concept_id: "bc id to not delete",
-          name: "Rule Name 4",
-          rule_type: rule_type
-        )
-
-      bc_id_nd_2 =
-        insert(
-          :rule,
-          business_concept_id: "bc id to not delete 2",
-          name: "Rule Name 5",
-          rule_type: rule_type
-        )
-
-      bcs_to_avoid_deletion = [bc_id_nd_1.business_concept_id, bc_id_nd_2.business_concept_id]
-
-      Rules.soft_deletion(bcs_to_delete, bcs_to_avoid_deletion)
-      result_list = Rule |> Repo.all()
-
-      nil_deleted_at_list = result_list |> Enum.filter(&is_nil(&1.deleted_at))
-      not_nil_deleted_at_list = result_list |> Enum.filter(&(not is_nil(&1.deleted_at)))
-
-      assert length(nil_deleted_at_list) == 4
-      assert length(not_nil_deleted_at_list) == 2
-
-      assert bcs_to_delete
-             |> Enum.all?(fn b_c ->
-               not_nil_deleted_at_list |> Enum.any?(&(&1.business_concept_id == b_c))
-             end)
-
-      assert bcs_to_avoid_deletion
-             |> Enum.all?(fn b_c ->
-               nil_deleted_at_list |> Enum.any?(&(&1.business_concept_id == b_c))
-             end)
-
-      assert length(
-               Enum.filter(
-                 nil_deleted_at_list,
-                 &(&1.deleted_at == nil && &1.business_concept_id == nil)
-               )
-             ) == 2
+      assert Enum.all?(active_rules, &is_nil(&1.deleted_at))
+      assert Enum.all?(deleted_rules, &(&1.deleted_at == ts))
+      assert Enum.map(deleted_rules, & &1.business_concept_id) == ["2", "4", "6", "8"]
     end
 
     test "list_all_rules retrieves rules which are not deleted" do

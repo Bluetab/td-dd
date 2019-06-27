@@ -3,13 +3,13 @@ defmodule TdDq.Repo.Migrations.RemoveDescriptionFromRuleImplementation do
 
   def up do
     alter table(:rule_implementations) do
-      remove :description
+      remove(:description)
     end
   end
 
   def down do
     alter table(:rule_implementations) do
-      add :description, :string, null: true, size: 500
+      add(:description, :string, null: true, size: 500)
     end
   end
 end
