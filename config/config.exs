@@ -54,11 +54,13 @@ config :td_cache,
     :view_versioned_ingests,
     :view_rejected_ingests,
     :view_deprecated_ingests,
-    :manage_confidential_structures
+    :manage_confidential_structures,
+    :manage_ingest_relations,
+    :view_data_structures_profile
   ]
 
-config :td_dq, rule_removement: true
-config :td_dq, rule_removement_frequency: 36_00_000
+config :td_dq, rule_removal: true
+config :td_dq, rule_removal_frequency: 60 * 60 * 1000
 
 # General application configuration
 config :td_dq,
