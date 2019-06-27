@@ -3,13 +3,13 @@ defmodule TdDdWeb.DataStructureControllerTest do
   import TdDdWeb.Authentication, only: :functions
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
+  alias TdCache.TaxonomyCache
+  alias TdCache.TemplateCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.MockTaxonomyCache
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
-  alias TdPerms.MockDynamicFormCache
 
   @create_attrs %{
     description: "some description",
@@ -62,8 +62,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
     start_supervised(MockTdAuthService)
     start_supervised(MockTdAuditService)
     start_supervised(MockPermissionResolver)
-    start_supervised(MockTaxonomyCache)
-    start_supervised(MockDynamicFormCache)
     :ok
   end
 
@@ -390,8 +388,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
   defp create_data_structure(_) do
     template_name = "template_name"
-    MockDynamicFormCache.clean_cache()
-
     create_template(%{name: template_name})
     data_structure = insert(:data_structure, type: template_name, df_content: %{"field" => "1"})
     data_structure_version = insert(:data_structure_version, data_structure_id: data_structure.id)
@@ -428,7 +424,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   defp create_data_structure_and_permissions(user_id, role_name, confidential) do
     domain_name = "domain_name"
     domain_id = 1
-    MockTaxonomyCache.create_domain(%{name: domain_name, id: domain_id})
+    TaxonomyCache.put_domain(%{name: domain_name, id: domain_id})
 
     MockPermissionResolver.create_acl_entry(%{
       principal_id: user_id,
@@ -439,7 +435,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
     })
 
     template_name = "template_name"
-    MockDynamicFormCache.clean_cache()
 
     create_template(%{name: template_name})
 
@@ -460,7 +455,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   def create_template(attrs \\ %{}) do
     attrs
     |> Enum.into(@default_template_attrs)
-    |> MockDynamicFormCache.put_template()
+    |> TemplateCache.put()
 
     :ok
   end

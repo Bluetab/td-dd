@@ -1,11 +1,10 @@
 defmodule TdDd.Audit.AuditSupport do
   @moduledoc false
 
+  alias TdCache.TemplateCache
   alias TdDd.Audit
   alias TdDd.Systems
   alias TdDd.Systems.System
-
-  @df_cache Application.get_env(:td_dd, :df_cache)
 
   def create_data_structure(conn, id, params) do
     create_data_structure_event(conn, id, params, "create_data_structure")
@@ -15,7 +14,7 @@ defmodule TdDd.Audit.AuditSupport do
   defp get_not_nil(value, _), do: value
 
   def update_data_structure(conn, %{type: type} = old_data, %{"df_content" => _} = new_data) do
-    content_changes = df_content_changes(old_data, new_data, @df_cache.get_template_by_name(type))
+    content_changes = df_content_changes(old_data, new_data, TemplateCache.get_by_name!(type))
 
     payload =
       case content_changes do

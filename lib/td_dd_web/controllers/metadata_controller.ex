@@ -3,13 +3,12 @@ defmodule TdDdWeb.MetadataController do
   use TdDdWeb, :controller
 
   alias Plug.Upload
+  alias TdCache.TaxonomyCache
   alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
   alias TdDd.CSV.Reader
   alias TdDd.Loader.LoaderWorker
   alias TdDd.Systems
   alias TdDd.Systems.System
-
-  @taxonomy_cache Application.get_env(:td_dd, :taxonomy_cache)
 
   @structure_import_schema Application.get_env(:td_dd, :metadata)[:structure_import_schema]
   @structure_import_required Application.get_env(:td_dd, :metadata)[:structure_import_required]
@@ -94,7 +93,7 @@ defmodule TdDdWeb.MetadataController do
   defp parse_data_structures(nil, _), do: {:ok, []}
 
   defp parse_data_structures(%Upload{path: path}, system_id) do
-    domain_map = @taxonomy_cache.get_domain_name_to_id_map()
+    domain_map = TaxonomyCache.get_domain_name_to_id_map()
     system_map = get_system_map(system_id)
 
     defaults =

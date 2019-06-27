@@ -4,6 +4,7 @@ defmodule TdDdWeb.DataStructureController do
   use TdDdWeb, :controller
   use PhoenixSwagger
   alias Ecto
+  alias TdCache.TaxonomyCache
   alias TdDd.Audit.AuditSupport
   alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
   alias TdDd.DataStructure.Search
@@ -11,8 +12,6 @@ defmodule TdDdWeb.DataStructureController do
   alias TdDd.DataStructures.DataStructure
   alias TdDdWeb.ErrorView
   alias TdDdWeb.SwaggerDefinitions
-
-  @taxonomy_cache Application.get_env(:td_dd, :taxonomy_cache)
 
   action_fallback(TdDdWeb.FallbackController)
 
@@ -85,7 +84,7 @@ defmodule TdDdWeb.DataStructureController do
       |> Map.put("last_change_by", get_current_user_id(conn))
       |> Map.put("last_change_at", DateTime.truncate(DateTime.utc_now(), :second))
       |> Map.put("metadata", %{})
-      |> DataStructures.add_domain_id(@taxonomy_cache.get_domain_name_to_id_map())
+      |> DataStructures.add_domain_id(TaxonomyCache.get_domain_name_to_id_map())
 
     with true <- can?(user, create_data_structure(Map.fetch!(creation_params, "domain_id"))),
          {:ok, %DataStructure{id: id}} <- DataStructures.create_data_structure(creation_params) do
@@ -201,7 +200,7 @@ defmodule TdDdWeb.DataStructureController do
       |> check_confidential_field(manage_confidential_structures)
       |> Map.put("last_change_by", get_current_user_id(conn))
       |> Map.put("last_change_at", DateTime.truncate(DateTime.utc_now(), :second))
-      |> DataStructures.add_domain_id(@taxonomy_cache.get_domain_name_to_id_map())
+      |> DataStructures.add_domain_id(TaxonomyCache.get_domain_name_to_id_map())
 
     with true <- can?(user, update_data_structure(data_structure_old)),
          {:ok, %DataStructure{} = data_structure} <-

@@ -5,6 +5,9 @@
 # is restricted to this project.
 use Mix.Config
 
+# Environment
+config :td_dd, :env, Mix.env()
+
 # General application configuration
 config :td_dd,
   ecto_repos: [TdDd.Repo]
@@ -47,12 +50,18 @@ config :td_dd, :audit_service,
   protocol: "http",
   audits_path: "/api/audits/"
 
-config :td_dd, df_cache: TdPerms.DynamicFormCache
-config :td_dd, permission_resolver: TdPerms.Permissions
-config :td_dd, taxonomy_cache: TdPerms.TaxonomyCache
+config :td_dd, permission_resolver: TdCache.Permissions
 config :td_dd, index_worker: TdDd.Search.IndexWorker
 
-config :td_perms,
+config :td_cache, :event_stream,
+  consumer_id: "default",
+  consumer_group: "dd",
+  streams: [
+    [key: "data_structure:events", consumer: TdDd.Cache.StructureLoader],
+    [key: "data_field:events", consumer: TdDd.Cache.FieldLoader]
+  ]
+
+config :td_cache,
   permissions: [
     :is_admin,
     :create_acl_entry,

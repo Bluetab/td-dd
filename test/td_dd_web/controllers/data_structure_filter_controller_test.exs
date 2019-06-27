@@ -2,18 +2,15 @@ defmodule TdDdWeb.DataStructureFilterControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  alias TdDd.MockTaxonomyCache
+  alias TdCache.TaxonomyCache
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
-  alias TdPerms.MockDynamicFormCache
 
   setup_all do
     start_supervised(MockTdAuthService)
     start_supervised(MockTdAuditService)
     start_supervised(MockPermissionResolver)
-    start_supervised(MockTaxonomyCache)
-    start_supervised(MockDynamicFormCache)
     :ok
   end
 
@@ -65,7 +62,7 @@ defmodule TdDdWeb.DataStructureFilterControllerTest do
   defp create_acl(user_id, role_name) do
     domain_name = "domain_name"
     domain_id = 1
-    MockTaxonomyCache.create_domain(%{name: domain_name, id: domain_id})
+    TaxonomyCache.put_domain(%{name: domain_name, id: domain_id})
 
     MockPermissionResolver.create_acl_entry(%{
       principal_id: user_id,

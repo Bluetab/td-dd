@@ -43,10 +43,18 @@ config :td_dd, :elasticsearch,
   es_port: "${ES_PORT}",
   type_name: "doc"
 
-config :td_perms, redis_host: "${REDIS_HOST}"
+config :td_cache, redis_host: "${REDIS_HOST}"
 
 config :td_dd, :audit_service,
   api_service: TdDdWeb.ApiServices.HttpTdAuditService,
   audit_host: "${API_AUDIT_HOST}",
   audit_port: "${API_AUDIT_PORT}",
   audit_domain: ""
+
+config :td_cache, :event_stream,
+  consumer_id: "${HOSTNAME}",
+  consumer_group: "dd",
+  streams: [
+    [key: "data_structure:events", consumer: TdDd.Cache.StructureLoader],
+    [key: "data_field:events", consumer: TdDd.Cache.FieldLoader]
+  ]

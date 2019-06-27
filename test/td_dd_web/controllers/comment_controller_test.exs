@@ -6,7 +6,6 @@ defmodule TdDdWeb.CommentControllerTest do
   alias Guardian.Plug, as: GuardianPlug
   alias TdDd.Comments
   alias TdDd.Comments.Comment
-  alias TdDd.MockTaxonomyCache
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
@@ -52,7 +51,6 @@ defmodule TdDdWeb.CommentControllerTest do
     start_supervised(MockTdAuthService)
     start_supervised(MockTdAuditService)
     start_supervised(MockPermissionResolver)
-    start_supervised(MockTaxonomyCache)
     :ok
   end
 
@@ -134,10 +132,9 @@ defmodule TdDdWeb.CommentControllerTest do
       system = insert(:system)
       system_id = system |> Map.get(:id)
       data_structure_attrs = Map.merge(@data_structure_attrs, %{system_id: system_id})
+
       conn =
-        post(conn, Routes.data_structure_path(conn, :create),
-          data_structure: data_structure_attrs
-        )
+        post(conn, Routes.data_structure_path(conn, :create), data_structure: data_structure_attrs)
 
       assert %{"id" => data_structure_id} = json_response(conn, 201)["data"]
 

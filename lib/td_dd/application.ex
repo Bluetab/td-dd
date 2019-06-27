@@ -17,7 +17,11 @@ defmodule TdDd.Application do
       # Worker for background indexing
       worker(TdDd.Search.IndexWorker, [TdDd.Search.IndexWorker]),
       # Worker for background bulk loading
-      worker(TdDd.Loader.LoaderWorker, [TdDd.Loader.LoaderWorker])
+      worker(TdDd.Loader.LoaderWorker, [TdDd.Loader.LoaderWorker]),
+      # Workers for cache loading
+      worker(TdDd.Cache.SystemLoader, []),
+      worker(TdDd.Cache.StructureLoader, []),
+      worker(TdDd.Cache.FieldLoader, [])
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
