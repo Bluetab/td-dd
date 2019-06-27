@@ -2,17 +2,16 @@ defmodule TdDd.DataStructures.DataStructure do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
+  alias TdCache.TaxonomyCache
+  alias TdCache.UserCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataField
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Searchable
   alias TdDd.Systems.System
-  alias TdPerms.UserCache
 
   @behaviour Searchable
-
-  @taxonomy_cache Application.get_env(:td_dd, :taxonomy_cache)
 
   schema "data_structures" do
     belongs_to(:system, System, on_replace: :update)
@@ -99,16 +98,16 @@ defmodule TdDd.DataStructures.DataStructure do
 
   def search_fields(%DataStructure{last_change_by: last_change_by_id} = structure) do
     last_change_by =
-      case UserCache.get_user(last_change_by_id) do
-        nil -> %{}
-        user -> user
+      case UserCache.get(last_change_by_id) do
+        {:ok, nil} -> %{}
+        {:ok, user} -> user
       end
 
     domain_id = structure.domain_id
 
     domain_ids =
       domain_id
-      |> @taxonomy_cache.get_parent_ids()
+      |> TaxonomyCache.get_parent_ids()
 
     structure =
       structure

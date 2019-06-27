@@ -6,15 +6,15 @@ defmodule TdDd.DataStructures do
   import Ecto.Query, warn: false
 
   alias Ecto.Association.NotLoaded
+  alias TdCache.FieldCache
+  alias TdCache.LinkCache
+  alias TdCache.TemplateCache
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Repo
   alias TdDd.Utils.CollectionUtils
   alias TdDfLib.Validation
-  alias TdPerms.DataFieldCache
-  alias TdPerms.RelationCache
 
-  @df_cache Application.get_env(:td_dd, :df_cache)
   @search_service Application.get_env(:td_dd, :elasticsearch)[:search_service]
 
   @doc """
@@ -278,7 +278,7 @@ defmodule TdDd.DataStructures do
         %{"df_content" => content} = attrs
       )
       when not is_nil(content) do
-    case @df_cache.get_template_by_name(type) do
+    case TemplateCache.get_by_name!(type) do
       %{:content => content_schema} ->
         content_changeset = Validation.build_changeset(content, content_schema)
 
@@ -564,8 +564,12 @@ defmodule TdDd.DataStructures do
     Map.put(data_field, :field_structure, structure)
   end
 
-  defp with_field_structure_id(%{field_structure: field_structure} = data_field) do
-    structure_id = Map.get(field_structure || %{}, :id)
+  @doc """
+  Includes the id of the corresponding data structure of a given `%DataField{}` using
+  the `structure_id` key.
+  """
+  def with_field_structure_id(%DataField{} = data_field) do
+    structure_id = get_field_structure_id(data_field)
     Map.put(data_field, :field_structure_id, structure_id)
   end
 
@@ -574,6 +578,14 @@ defmodule TdDd.DataStructures do
     has_value = not is_nil(value)
     key_string = "has_" <> Atom.to_string(field)
     Map.put(data_field, String.to_atom(key_string), has_value)
+  end
+
+  @doc """
+  Returns the id of the corresponding data structure of a given `%DataField{}`.
+  """
+  def get_field_structure_id(%DataField{} = data_field) do
+    structure = find_field_structure(data_field)
+    Map.get(structure || %{}, :id)
   end
 
   @doc """
@@ -592,11 +604,33 @@ defmodule TdDd.DataStructures do
   """
   def find_field_structures(%DataField{name: name} = data_field) do
     data_field
-    |> Repo.preload(data_structure_versions: [children: :data_structure])
+    |> Repo.preload(data_structure_versions: [children: [data_structure: :system]])
     |> Map.get(:data_structure_versions)
     |> Enum.flat_map(& &1.children)
     |> Enum.map(& &1.data_structure)
     |> Enum.filter(&(&1.class == "field" && &1.name == name))
+    |> Enum.uniq()
+  end
+
+  @doc """
+  Returns the `%DataStructure{}` structs to which a given `%DataField{} belongs. If more than
+  one such structure exists, only the first will be returned.
+  """
+  def get_parent_structure(%DataField{} = data_field) do
+    case get_parent_structures(data_field) do
+      [] -> nil
+      [structure | _t] -> structure
+    end
+  end
+
+  @doc """
+  Returns a list of `%DataStructure{}` structs to which a given `%DataField{} belongs.
+  """
+  def get_parent_structures(%DataField{} = data_field) do
+    data_field
+    |> Repo.preload(data_structure_versions: [data_structure: :system])
+    |> Map.get(:data_structure_versions)
+    |> Enum.map(& &1.data_structure)
     |> Enum.uniq()
   end
 
@@ -638,17 +672,19 @@ defmodule TdDd.DataStructures do
     data_structure
     |> Map.put(
       :data_fields,
-      Enum.map(data_fields, fn field ->
-        external_id =
-          DataFieldCache.get_external_id(
+      Enum.map(
+        data_fields,
+        &Map.put(
+          &1,
+          :external_id,
+          FieldCache.get_external_id(
             data_structure.system.name,
             data_structure.group,
             data_structure.name,
-            field.name
+            &1.name
           )
-
-        Map.put(field, :external_id, external_id)
-      end)
+        )
+      )
     )
   end
 
@@ -656,10 +692,15 @@ defmodule TdDd.DataStructures do
     data_structure
     |> Map.put(
       :data_fields,
-      Enum.map(data_fields, fn field ->
-        Map.put(field, :bc_related, RelationCache.get_resources(field.id, "data_field"))
-      end)
+      Enum.map(data_fields, &Map.put(&1, :bc_related, get_field_links(&1.id)))
     )
+  end
+
+  defp get_field_links(field_id) do
+    case LinkCache.list("data_field", field_id) do
+      {:ok, links} -> links
+      _ -> []
+    end
   end
 
   def with_latest_path(%DataStructure{} = data_structure) do

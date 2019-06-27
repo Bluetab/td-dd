@@ -1,12 +1,11 @@
 defmodule TdDd.Search.Indexer do
   @moduledoc """
-    Manages elasticsearch indices
+  Manages elasticsearch indices
   """
+  alias TdCache.TemplateCache
   alias TdDd.ESClientApi
   alias TdDd.Repo
   alias TdDd.Search
-
-  @df_cache Application.get_env(:td_dd, :df_cache)
 
   def reindex(:all) do
     ESClientApi.delete!("data_structure")
@@ -56,10 +55,12 @@ defmodule TdDd.Search.Indexer do
       df_content: content_mappings,
       class: %{
         type: "text",
-        fields: %{raw: %{
-          type: "keyword",
-          null_value: ""
-        }}
+        fields: %{
+          raw: %{
+            type: "keyword",
+            null_value: ""
+          }
+        }
       }
     }
 
@@ -73,14 +74,14 @@ defmodule TdDd.Search.Indexer do
   end
 
   def get_dynamic_mappings do
-    @df_cache.list_templates()
+    TemplateCache.list!()
     |> Enum.flat_map(&get_mappings/1)
     |> Enum.into(%{})
   end
 
   defp get_mappings(%{content: content}) do
     content
-    |> Enum.filter(& Map.get(&1, "type") != "url")
+    |> Enum.filter(&(Map.get(&1, "type") != "url"))
     |> Enum.map(&field_mapping/1)
   end
 

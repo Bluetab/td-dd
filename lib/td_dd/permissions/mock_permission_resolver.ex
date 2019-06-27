@@ -6,8 +6,7 @@ defmodule TdDd.Permissions.MockPermissionResolver do
   use Agent
 
   alias Poision
-
-  @taxonomy_cache Application.get_env(:td_dd, :taxonomy_cache)
+  alias TdCache.TaxonomyCache
 
   @role_permissions %{
     "admin" => [
@@ -48,7 +47,7 @@ defmodule TdDd.Permissions.MockPermissionResolver do
 
   def has_permission?(session_id, permission, "domain", domain_id) do
     domain_id
-    |> @taxonomy_cache.get_parent_ids
+    |> TaxonomyCache.get_parent_ids()
     |> Enum.any?(&has_resource_permission?(session_id, permission, "domain", &1))
   end
 

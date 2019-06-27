@@ -326,6 +326,8 @@ defmodule TdDd.Loader do
     {parent, child}
   end
 
+  defp find_parent_child(_, _), do: {nil, nil}
+
   defp diff_structures(_repo, %{
          versions_by_sys_group_name_version: versions_by_sys_group_name_version,
          inserted_versions: inserted_versions,

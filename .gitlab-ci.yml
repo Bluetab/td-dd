@@ -57,8 +57,8 @@ acceptance:
   dependencies: []
   script:
     - docker-compose run --rm acceptance
-    - docker-compose logs service
   after_script:
+    - docker-compose logs service
     - docker-compose down -v
 
 acceptance:branches:
@@ -72,8 +72,8 @@ acceptance:branches:
     - docker build --build-arg APP_NAME=${APP_NAME} --build-arg APP_VERSION=${APP_VERSION} -t ${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${CI_COMMIT_SHA} .
     - docker tag ${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${CI_COMMIT_SHA} ${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${APP_VERSION}
     - docker-compose run --rm acceptance
-    - docker-compose logs service
   after_script:
+    - docker-compose logs service
     - docker-compose down -v
 
 deploy:
