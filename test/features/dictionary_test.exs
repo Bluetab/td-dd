@@ -6,7 +6,7 @@ defmodule TdDd.DictionaryTest do
   import TdDdWeb.ResponseCode
   import TdDdWeb.Authentication, only: :functions
 
-  alias Poison, as: JSON
+  alias Jason, as: JSON
   alias TdDd.Loader.LoaderWorker
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDd.Search.MockIndexWorker

@@ -1,7 +1,7 @@
 defmodule TdDd.Search.MockSearch do
   @moduledoc false
 
-  alias Poison
+  alias Jason, as: JSON
   alias TdCache.TemplateCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
@@ -20,8 +20,8 @@ defmodule TdDd.Search.MockSearch do
       data_structures
       |> Enum.map(&DataStructure.search_fields(&1))
       |> Enum.map(&%{_source: &1})
-      |> Poison.encode!()
-      |> Poison.decode!()
+      |> JSON.encode!()
+      |> JSON.decode!()
 
     aggregations = get_aggregations(data_structures, template_list)
 
