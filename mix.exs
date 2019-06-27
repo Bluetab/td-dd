@@ -50,7 +50,7 @@ defmodule TdDq.Mixfile do
       {:distillery, "~> 2.0", runtime: false},
       {:guardian, "~> 1.0"},
       {:comeonin, "~> 4.0"},
-      {:cabbage, git: "https://github.com/Bluetab/cabbage", tag: "v0.3.7-alpha"},
+      {:cabbage, only: [:test], git: "https://github.com/Bluetab/cabbage", tag: "v0.3.7-alpha"},
       {:phoenix_swagger, "~> 0.8.0"},
       {:ex_json_schema, "~> 0.5"},
       {:csv, "~> 2.0.0"},
@@ -58,8 +58,8 @@ defmodule TdDq.Mixfile do
       {:ex_machina, "~> 2.2.2", only: :test},
       {:canada, "~> 1.0.1"},
       {:td_hypermedia, git: "https://github.com/Bluetab/td-hypermedia.git", tag: "2.11.0"},
-      {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "3.0.0"},
-      {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "3.0.0"}
+      {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "3.0.5"},
+      {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "3.0.1"}
     ]
   end
 
