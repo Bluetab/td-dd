@@ -2,6 +2,7 @@ defmodule TdDd.Search.Indexer do
   @moduledoc """
   Manages elasticsearch indices
   """
+  alias Jason, as: JSON
   alias TdCache.TemplateCache
   alias TdDd.ESClientApi
   alias TdDd.Repo
@@ -9,7 +10,7 @@ defmodule TdDd.Search.Indexer do
 
   def reindex(:all) do
     ESClientApi.delete!("data_structure")
-    mapping = get_mappings() |> Poison.encode!()
+    mapping = get_mappings() |> JSON.encode!()
     %{status_code: 200} = ESClientApi.put!("data_structure", mapping)
     Search.put_bulk_search(:all)
   end
