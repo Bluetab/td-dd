@@ -3,10 +3,10 @@ defmodule TdDqWeb.RuleResultController do
   use TdDqWeb, :controller
 
   alias Ecto.Adapters.SQL
+  alias TdCache.ConceptCache
+  alias TdCache.TaxonomyCache
   alias TdDq.Repo
   alias TdDq.Rules
-  alias TdPerms.BusinessConceptCache
-  alias TdPerms.TaxonomyCache
 
   @search_service Application.get_env(:td_dq, :elasticsearch)[:search_service]
 
@@ -94,15 +94,29 @@ defmodule TdDqWeb.RuleResultController do
         ""
 
       rule_implementation ->
-        rule_implementation
-        |> Repo.preload(:rule)
-        |> Map.get(:rule)
-        |> Map.get(:business_concept_id)
-        |> BusinessConceptCache.get_parent_id()
-        |> TaxonomyCache.get_parent_ids()
-        |> Enum.map(&TaxonomyCache.get_name(&1))
-        |> Enum.join(";")
+        case get_concept(rule_implementation) do
+          nil ->
+            []
+
+          concept ->
+            concept
+            |> Map.get(:domain_id)
+            |> TaxonomyCache.get_parent_ids()
+            |> Enum.map(&TaxonomyCache.get_name(&1))
+            |> Enum.join(";")
+        end
     end
+  end
+
+  defp get_concept(rule_implementation) do
+    {:ok, concept} =
+      rule_implementation
+      |> Repo.preload(:rule)
+      |> Map.get(:rule)
+      |> Map.get(:business_concept_id)
+      |> ConceptCache.get()
+
+    concept
   end
 
   def index(conn, _params) do

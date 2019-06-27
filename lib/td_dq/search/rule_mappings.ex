@@ -1,10 +1,8 @@
 defmodule TdDq.Search.RuleMappings do
   @moduledoc """
-    Elastic Search mappings for Quality Rule
+  Elastic Search mappings for Quality Rule
   """
-
-  @df_cache Application.get_env(:td_dq, :df_cache)
-  @df_scope "dq"
+  alias TdCache.TemplateCache
 
   def get_mappings do
     content_mappings = %{properties: get_dynamic_mappings()}
@@ -36,7 +34,7 @@ defmodule TdDq.Search.RuleMappings do
       current_business_concept_version: %{
         properties: %{
           id: %{type: "long"},
-          name: %{type: "text", fields: %{raw: %{type: "keyword"}}},
+          name: %{type: "text", fields: %{raw: %{type: "keyword"}}}
         }
       },
       updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
@@ -75,15 +73,15 @@ defmodule TdDq.Search.RuleMappings do
   end
 
   defp get_dynamic_mappings do
-    @df_scope
-    |> @df_cache.list_templates_by_scope
+    "dq"
+    |> TemplateCache.list_by_scope!()
     |> Enum.flat_map(&get_mappings/1)
     |> Enum.into(%{})
   end
 
   defp get_mappings(%{content: content}) do
     content
-    |> Enum.filter(& Map.get(&1, "type") != "url")
+    |> Enum.filter(&(Map.get(&1, "type") != "url"))
     |> Enum.map(&field_mapping/1)
   end
 

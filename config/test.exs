@@ -9,7 +9,7 @@ config :td_dq, TdDqWeb.Endpoint,
 
 config :td_dq, hashing_module: TdDq.DummyHashing
 
-config :td_dq, rule_removement: false
+config :td_dq, rule_removal: false
 
 # Print only warnings and errors during test
 config :logger, level: :warn
@@ -35,8 +35,7 @@ config :td_dq, :audit_service,
   audit_port: "4007",
   audit_domain: ""
 
-config :td_dq, df_cache: TdPerms.MockDynamicFormCache
 config :td_dq, permission_resolver: TdDq.Permissions.MockPermissionResolver
 config :td_dq, relation_cache: TdDq.MockRelationCache
 
-config :td_perms, redis_host: "redis"
+config :td_cache, redis_host: "redis"

@@ -12,15 +12,14 @@ defmodule TdDq.Application do
       id: TdDq.Rules.RuleRemover,
       start: {TdDq.Rules.RuleRemover, :start_link, []}
     }
+
     # Define workers and child supervisors to be supervised
     children = [
       # Start the Ecto repository
       supervisor(TdDq.Repo, []),
       # Start the endpoint when the application starts
       supervisor(TdDqWeb.Endpoint, []),
-      # Start your own worker by calling: TdDq.Worker.start_link(arg1, arg2, arg3)
-      # worker(TdDq.Worker, [arg1, arg2, arg3]),
-      worker(TdDq.RuleLoader, [TdDq.RuleLoader]),
+      worker(TdDq.Cache.RuleLoader, []),
       worker(TdDq.Search.IndexWorker, [TdDq.Search.IndexWorker]),
       %{
         id: TdDq.CustomSupervisor,

@@ -2,13 +2,7 @@ defmodule TdDqWeb.SearchControllerTest do
   use TdDqWeb.ConnCase
 
   alias TdDq.Rules
-  alias TdPerms.MockDynamicFormCache
   import TdDq.Factory
-
-  setup_all do
-    start_supervised(MockDynamicFormCache)
-    :ok
-  end
 
   @create_attrs %{
     description: "some description",
@@ -50,5 +44,4 @@ defmodule TdDqWeb.SearchControllerTest do
       assert length(json_response(conn, 200)["data"]) == 1
     end
   end
-
 end

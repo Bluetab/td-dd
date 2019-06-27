@@ -5,25 +5,20 @@ defmodule TdDq.Rules do
 
   import Ecto.Query, warn: false
   alias Ecto.Changeset
+  alias TdCache.ConceptCache
+  alias TdCache.LinkCache
+  alias TdCache.TemplateCache
   alias TdDfLib.Validation
   alias TdDq.Repo
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleImplementation
   alias TdDq.Rules.RuleResult
   alias TdDq.Rules.RuleType
-  alias TdPerms.BusinessConceptCache
+
+  require Logger
 
   @datetime_format "%Y-%m-%d %H:%M:%S"
   @date_format "%Y-%m-%d"
-  @params_conversion %{
-    "system" => {"system", 0},
-    "group" => {"group", 1},
-    "table" => {"structure", 2},
-    "column" => {"field", 3}
-  }
-  @relation_cache Application.get_env(:td_dq, :relation_cache)
-
-  @df_cache Application.get_env(:td_dq, :df_cache)
   @search_service Application.get_env(:td_dq, :elasticsearch)[:search_service]
 
   @doc """
@@ -63,13 +58,15 @@ defmodule TdDq.Rules do
 
   defp preload_bc_version(%{business_concept_id: nil} = rule), do: rule
 
-  defp preload_bc_version(%{business_concept_id: bc_id} = rule) do
-    bcv = %{
-      name: BusinessConceptCache.get_name(bc_id),
-      id: BusinessConceptCache.get_business_concept_version_id(bc_id)
-    }
+  defp preload_bc_version(%{business_concept_id: business_concept_id} = rule) do
+    case ConceptCache.get(business_concept_id) do
+      {:ok, %{name: name, business_concept_version_id: id}} ->
+        rule
+        |> Map.put(:current_business_concept_version, %{name: name, id: id})
 
-    Map.put(rule, :current_business_concept_version, bcv)
+      _ ->
+        rule
+    end
   end
 
   defp preload_bc_version(rule), do: rule
@@ -152,7 +149,7 @@ defmodule TdDq.Rules do
 
   defp check_dynamic_form_changeset(%{"df_name" => df_name} = attrs) when not is_nil(df_name) do
     content = Map.get(attrs, "df_content", %{})
-    %{:content => content_schema} = @df_cache.get_template_by_name(df_name)
+    %{:content => content_schema} = TemplateCache.get_by_name!(df_name)
     content_changeset = Validation.build_changeset(content, content_schema)
 
     case content_changeset.valid? do
@@ -249,23 +246,19 @@ defmodule TdDq.Rules do
     |> Repo.delete()
   end
 
-  def soft_deletion(bcs_ids_to_delete, bcs_ids_to_avoid_deletion) do
-    rules =
+  def soft_deletion(active_ids, ts \\ DateTime.utc_now()) do
+    queryable =
       Rule
       |> where([r], not is_nil(r.business_concept_id))
       |> where([r], is_nil(r.deleted_at))
-      |> where(
-        [r],
-        r.business_concept_id in ^bcs_ids_to_delete or
-          r.business_concept_id not in ^bcs_ids_to_avoid_deletion
-      )
+      |> where([r], r.business_concept_id not in ^active_ids)
 
-    rules
+    queryable
     |> Repo.all()
     |> Enum.each(&@search_service.delete_searchable(&1))
 
-    rules
-    |> update(set: [deleted_at: ^DateTime.utc_now()])
+    queryable
+    |> update(set: [deleted_at: ^ts])
     |> Repo.update_all([])
   end
 
@@ -302,15 +295,11 @@ defmodule TdDq.Rules do
   end
 
   defp retrieve_cache_information(%Rule{business_concept_id: bc_id} = rule, list_filters) do
-    list_resources =
-      bc_id
-      |> @relation_cache.get_resources("business_concept")
-      |> Enum.filter(fn %{resource_type: resource_type} -> resource_type == "data_field" end)
-      |> Enum.uniq_by(fn %{resource_id: resource_id} -> resource_id end)
+    {:ok, linked_resources} = LinkCache.list("business_concept", bc_id, "data_field")
 
     system_values =
       list_filters
-      |> Enum.map(&append_values(&1, list_resources))
+      |> Enum.map(&append_values(&1, linked_resources))
       |> Enum.reject(fn {_, values} -> Enum.empty?(values) end)
       |> Enum.into(%{})
 
@@ -318,14 +307,10 @@ defmodule TdDq.Rules do
   end
 
   defp append_values("system" = key, list_resources) do
-    {transformed_key, _} = Map.get(@params_conversion, key)
-
     values =
       list_resources
-      |> Enum.map(fn %{context: context} ->
-        name = context |> Map.get(transformed_key)
-        resource_id = name
-        build_resource_map(name, key, resource_id)
+      |> Enum.map(fn %{system: %{name: name}} ->
+        build_resource_map(name, key, name)
       end)
       |> Enum.uniq_by(fn %{"name" => name} -> name end)
 
@@ -333,16 +318,10 @@ defmodule TdDq.Rules do
   end
 
   defp append_values("group" = key, list_resources) do
-    {transformed_key, _} = Map.get(@params_conversion, key)
-
     values =
       list_resources
-      |> Enum.map(fn %{context: context} ->
-        parent_key = Map.get(context, "system")
-        name = context |> Map.get(transformed_key)
-        resource_id = context |> Map.get("group")
-
-        build_resource_map(name, key, resource_id, parent_key)
+      |> Enum.map(fn %{system: %{name: system}, group: group} ->
+        build_resource_map(group, key, group, system)
       end)
       |> Enum.uniq_by(fn %{"resource_id" => resource_id} -> resource_id end)
 
@@ -350,16 +329,11 @@ defmodule TdDq.Rules do
   end
 
   defp append_values("table" = key, list_resources) do
-    {transformed_key, _} = Map.get(@params_conversion, key)
-
     values =
       list_resources
-      |> Enum.map(fn %{context: context} ->
-        parent_key = Map.get(context, "group")
-        name = context |> Map.get(transformed_key)
-        resource_id = context |> Map.get("structure_id")
-
-        build_resource_map(name, key, resource_id, parent_key)
+      |> Enum.map(fn %{group: group, structure_id: structure_id, path: path} ->
+        [_field | [name | _]] = Enum.reverse(path)
+        build_resource_map(name, key, structure_id, group)
       end)
       |> Enum.uniq_by(fn %{"resource_id" => resource_id} -> resource_id end)
 
@@ -367,15 +341,10 @@ defmodule TdDq.Rules do
   end
 
   defp append_values("column" = key, list_resources) do
-    {transformed_key, _} = Map.get(@params_conversion, key)
-
     values =
       list_resources
-      |> Enum.map(fn %{resource_id: resource_id, context: context} ->
-        parent_key = Map.get(context, "structure_id")
-        name = context |> Map.get(transformed_key)
-
-        build_resource_map(name, key, resource_id, parent_key)
+      |> Enum.map(fn %{id: id, name: name, parent_id: parent_id} ->
+        build_resource_map(name, key, id, parent_id)
       end)
       |> Enum.uniq_by(fn %{"resource_id" => resource_id} -> resource_id end)
 
@@ -529,7 +498,7 @@ defmodule TdDq.Rules do
     implementation_rule =
       implementation_key
       |> get_rule_implementation_by_key()
-      |> Repo.preload([rule: :rule_type])
+      |> Repo.preload(rule: :rule_type)
 
     case implementation_rule do
       nil -> nil

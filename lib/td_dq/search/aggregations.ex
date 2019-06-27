@@ -1,24 +1,28 @@
 defmodule TdDq.Search.Aggregations do
   @moduledoc """
-    Aggregations for elasticsearch
+  Aggregations for elasticsearch
   """
-  @df_cache Application.get_env(:td_dq, :df_cache)
+  alias TdCache.TemplateCache
 
   def aggregation_terms do
     static_keywords = [
       {"active.raw", %{terms: %{field: "active.raw"}}},
-      {"domain_parents", %{nested: %{path: "domain_parents"}, aggs: %{distinct_search: %{terms: %{field: "domain_parents.name.raw", size: 50}}}}},
+      {"domain_parents",
+       %{
+         nested: %{path: "domain_parents"},
+         aggs: %{distinct_search: %{terms: %{field: "domain_parents.name.raw", size: 50}}}
+       }},
       {"population.raw", %{terms: %{field: "group.raw", size: 50}}},
       {"priority.raw", %{terms: %{field: "type.raw", size: 50}}},
       {"rule_type", %{terms: %{field: "rule_type.name.raw", size: 50}}},
       {"current_business_concept_version",
-        %{terms: %{field: "current_business_concept_version.name.raw", size: 50}}
-      },
-      {"execution_result_info.result_text", %{terms: %{field: "execution_result_info.result_text.raw", size: 50}}}
+       %{terms: %{field: "current_business_concept_version.name.raw", size: 50}}},
+      {"execution_result_info.result_text",
+       %{terms: %{field: "execution_result_info.result_text.raw", size: 50}}}
     ]
 
     dynamic_keywords =
-      @df_cache.list_templates_by_scope("dq")
+      TemplateCache.list_by_scope!("dq")
       |> Enum.flat_map(&template_terms/1)
 
     (static_keywords ++ dynamic_keywords)

@@ -1,8 +1,8 @@
 defmodule TdDqWeb.RuleView do
   use TdDqWeb, :view
   use TdHypermedia, :view
+  alias TdCache.ConceptCache
   alias TdDqWeb.RuleView
-  alias TdPerms.BusinessConceptCache
 
   def render("index.json", %{hypermedia: hypermedia, rules: rules}) do
     render_many_hypermedia(rules, hypermedia, RuleView, "rule.json")
@@ -54,15 +54,23 @@ defmodule TdDqWeb.RuleView do
       updated_at: rule.updated_at,
       rule_type_id: rule.rule_type_id,
       type_params: Map.get(rule, :type_params),
-      current_business_concept_version: %{
-        name: BusinessConceptCache.get_name(rule.business_concept_id),
-        id: BusinessConceptCache.get_business_concept_version_id(rule.business_concept_id)
-      },
       execution_result_info: Map.get(rule, :execution_result_info)
     }
+    |> add_current_version(rule)
     |> add_rule_type(rule)
     |> add_system_values(rule)
     |> add_dynamic_content(rule)
+  end
+
+  defp add_current_version(map, %{business_concept_id: business_concept_id}) do
+    case ConceptCache.get(business_concept_id) do
+      {:ok, %{name: name, business_concept_version_id: id}} ->
+        map
+        |> Map.put(:current_business_concept_version, %{name: name, id: id})
+
+      _ ->
+        map
+    end
   end
 
   defp add_system_values(rule_mapping, rule) do
