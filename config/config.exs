@@ -91,6 +91,9 @@ config :logger, :console,
   format: (System.get_env("EX_LOGGER_FORMAT") || "$time $metadata[$level] $message") <> "\n",
   metadata: [:request_id]
 
+# Configuration for Phoenix
+config :phoenix, :json_library, Jason
+
 config :td_dq, :phoenix_swagger,
   swagger_files: %{
     "priv/static/swagger.json" => [router: TdDqWeb.Router]
