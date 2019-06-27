@@ -1,10 +1,12 @@
 defmodule TdDqWeb.RuleImplementation do
   @moduledoc false
 
-  alias Poison, as: JSON
   import TdDqWeb.Router.Helpers
   import TdDqWeb.Authentication, only: :functions
   import TdDqWeb.SupportCommon, only: :functions
+
+  alias Jason, as: JSON
+
   @endpoint TdDqWeb.Endpoint
 
   @test_rule_implementation_table_format %{

@@ -1,12 +1,14 @@
 defmodule TdDqWeb.RuleResultController do
-  require Logger
   use TdDqWeb, :controller
 
   alias Ecto.Adapters.SQL
+  alias Jason, as: JSON
   alias TdCache.ConceptCache
   alias TdCache.TaxonomyCache
   alias TdDq.Repo
   alias TdDq.Rules
+
+  require Logger
 
   @search_service Application.get_env(:td_dq, :elasticsearch)[:search_service]
 
@@ -23,7 +25,7 @@ defmodule TdDqWeb.RuleResultController do
   rescue
     e in RuntimeError ->
       Logger.error("While uploading #{e.message}")
-      send_resp(conn, :unprocessable_entity, Poison.encode!(%{error: e.message}))
+      send_resp(conn, :unprocessable_entity, JSON.encode!(%{error: e.message}))
   end
 
   defp do_upload(params) do

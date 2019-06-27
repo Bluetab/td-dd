@@ -1,11 +1,12 @@
 defmodule TdDq.Search do
-  require Logger
+  @moduledoc """
+  Search Engine calls
+  """
 
+  alias Jason, as: JSON
   alias TdDq.ESClientApi
 
-  @moduledoc """
-    Search Engine calls
-  """
+  require Logger
 
   def put_bulk_search(items) do
     items
@@ -22,7 +23,7 @@ defmodule TdDq.Search do
       ESClientApi.index_content(
         index_name,
         searchable.id,
-        search_fields |> Poison.encode!()
+        search_fields |> JSON.encode!()
       )
 
     case response do

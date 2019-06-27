@@ -1,7 +1,7 @@
 defmodule TdDq.Search.MockSearch do
   @moduledoc false
 
-  alias Poison
+  alias Jason, as: JSON
   alias TdDq.Rules
   alias TdDq.Rules.Rule
 
@@ -15,8 +15,8 @@ defmodule TdDq.Search.MockSearch do
     Rules.list_all_rules()
     |> Enum.map(&Rule.search_fields(&1))
     |> Enum.map(&%{_source: &1})
-    |> Poison.encode!()
-    |> Poison.decode!()
+    |> JSON.encode!()
+    |> JSON.decode!()
     |> search_results()
   end
 

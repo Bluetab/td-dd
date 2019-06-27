@@ -1,7 +1,9 @@
 defmodule TdDq.ESClientApi do
   use HTTPoison.Base
+
+  alias Jason, as: JSON
+
   require Logger
-  alias Poison, as: JSON
 
   @moduledoc false
 
@@ -19,7 +21,7 @@ defmodule TdDq.ESClientApi do
 
   defp build_bulk_doc(item) do
     search_fields = item.__struct__.search_fields(item)
-    "#{search_fields |> Poison.encode!()}"
+    "#{search_fields |> JSON.encode!()}"
   end
 
   defp build_bulk_metadata(index_name, item) do
@@ -68,7 +70,7 @@ defmodule TdDq.ESClientApi do
   """
   def process_response_body(body) do
     body
-    |> Poison.decode!()
+    |> JSON.decode!()
   end
 
   @doc """
