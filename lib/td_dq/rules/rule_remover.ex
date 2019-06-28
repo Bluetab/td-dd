@@ -28,6 +28,7 @@ defmodule TdDq.Rules.RuleRemover do
 
   def handle_info(:work, state) do
     case ConceptCache.active_ids() do
+      {:ok, []} -> :ok
       {:ok, active_ids} -> soft_deletion(active_ids)
       _ -> :ok
     end
