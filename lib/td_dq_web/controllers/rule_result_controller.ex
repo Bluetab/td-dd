@@ -98,7 +98,7 @@ defmodule TdDqWeb.RuleResultController do
       rule_implementation ->
         case get_concept(rule_implementation) do
           nil ->
-            []
+            ""
 
           concept ->
             concept
