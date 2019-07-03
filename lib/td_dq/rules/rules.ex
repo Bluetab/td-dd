@@ -267,8 +267,8 @@ defmodule TdDq.Rules do
     |> Enum.each(&@search_service.delete_searchable(&1))
 
     Multi.new()
-    |> Multi.update_all(:soft_delete_implementation_rules, rule_impl_queryable, set: [deleted_at: ts])
-    |> Multi.update_all(:soft_delete_rules, queryable, set: [deleted_at: ts])
+    |> Multi.update_all(:soft_deleted_implementation_rules, rule_impl_queryable, set: [deleted_at: ts])
+    |> Multi.update_all(:soft_deleted_rules, queryable, set: [deleted_at: ts])
     |> Repo.transaction()
 
   end

@@ -282,13 +282,18 @@ defmodule TdDq.RulesTest do
         |> Enum.map(&insert(:rule, &1))
 
       rules
-      |> Enum.map(&insert(:rule_implementation, %{rule: &1, implementation_key: "ri_of_#{&1.id}"}))
+      |> Enum.map(
+        &insert(:rule_implementation, %{rule: &1, implementation_key: "ri_of_#{&1.id}"})
+      )
 
       # 2,4,6,8 are deleted
       active_ids = ["1", "3", "5", "7"]
 
       ts = DateTime.utc_now() |> DateTime.truncate(:second)
-      {:ok, %{soft_delete_rules: {count, _}, soft_delete_implementation_rules: {ri_count, _}}} = Rules.soft_deletion(active_ids, ts)
+
+      {:ok, %{soft_deleted_rules: {count, _}, soft_deleted_implementation_rules: {ri_count, _}}} =
+        Rules.soft_deletion(active_ids, ts)
+
       assert count == 4
       assert ri_count == 4
 
@@ -337,8 +342,12 @@ defmodule TdDq.RulesTest do
       insert(:rule_implementation, implementation_key: implementation_key, rule: rule)
 
       rule2 = insert(:rule, name: "Rule2", rule_type: rule_type)
-      insert(:rule_implementation, implementation_key: implementation_key, rule: rule2, deleted_at: DateTime.utc_now())
 
+      insert(:rule_implementation,
+        implementation_key: implementation_key,
+        rule: rule2,
+        deleted_at: DateTime.utc_now()
+      )
 
       %{id: result_id, rule_type: rule_type} =
         Rules.get_rule_by_implementation_key(implementation_key)
@@ -436,7 +445,12 @@ defmodule TdDq.RulesTest do
       insert(:rule_implementation, implementation_key: "ri2", rule: rule1)
       insert(:rule_implementation, implementation_key: "ri3", rule: rule1)
       insert(:rule_implementation, implementation_key: "ri4", rule: rule2)
-      insert(:rule_implementation, implementation_key: "ri5", rule: rule2, deleted_at: DateTime.utc_now())
+
+      insert(:rule_implementation,
+        implementation_key: "ri5",
+        rule: rule2,
+        deleted_at: DateTime.utc_now()
+      )
 
       assert length(Rules.list_rule_implementations(%{rule_id: rule1.id})) == 3
     end
@@ -497,7 +511,10 @@ defmodule TdDq.RulesTest do
 
     test "get_rule_implementation_by_key/1 returns nil if the rule_implementation with given implementation key has been soft deleted" do
       rule_implementation =
-        insert(:rule_implementation, implementation_key: "My implementation key", deleted_at: DateTime.utc_now())
+        insert(:rule_implementation,
+          implementation_key: "My implementation key",
+          deleted_at: DateTime.utc_now()
+        )
 
       assert rule_implementation_preload(
                Rules.get_rule_implementation_by_key(rule_implementation.implementation_key)
