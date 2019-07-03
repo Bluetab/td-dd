@@ -595,7 +595,7 @@ defmodule TdDd.DataStructures do
 
   # Includes the id of the corresponding data structure in a given `%DataField{}` using
   # the `structure_id` key.
-  defp with_field_structure(%DataField{} = data_field) do
+  def with_field_structure(%DataField{} = data_field) do
     structure = find_field_structure(data_field)
     Map.put(data_field, :field_structure, structure)
   end

@@ -149,12 +149,29 @@ defmodule TdDd.DataStructures.DataStructure do
       inserted_at: structure.inserted_at,
       confidential: structure.confidential,
       df_content: structure.df_content,
-      data_fields: Enum.map(structure.data_fields, &DataField.search_fields/1),
+      data_fields: non_deleted_data_fields(structure),
       path: structure.path,
       status: status,
       class: structure.class
     }
   end
+
+  defp non_deleted_data_fields(%{data_fields: data_fields}) do
+    data_fields
+    |> Enum.map(&DataStructures.with_field_structure/1)
+    |> Enum.filter(fn data_field -> not is_nil(Map.get(data_field, :field_structure)) end)
+    |> Enum.filter(fn data_field ->
+      deleted_at =
+        data_field
+        |> Map.get(:field_structure, %{})
+        |> Map.get(:deleted_at)
+
+      is_nil(deleted_at)
+    end)
+    |> Enum.map(&DataField.search_fields/1)
+  end
+
+  defp non_deleted_data_fields(_), do: []
 
   defp fill_items(structure) do
     keys_to_fill = [:name, :group, :ou]
