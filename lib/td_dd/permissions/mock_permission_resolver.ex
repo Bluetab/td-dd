@@ -5,9 +5,8 @@ defmodule TdDd.Permissions.MockPermissionResolver do
   """
   use Agent
 
-  alias Poision
-
-  @taxonomy_cache Application.get_env(:td_dd, :taxonomy_cache)
+  alias Jason, as: JSON
+  alias TdCache.TaxonomyCache
 
   @role_permissions %{
     "admin" => [
@@ -48,7 +47,7 @@ defmodule TdDd.Permissions.MockPermissionResolver do
 
   def has_permission?(session_id, permission, "domain", domain_id) do
     domain_id
-    |> @taxonomy_cache.get_parent_ids
+    |> TaxonomyCache.get_parent_ids()
     |> Enum.any?(&has_resource_permission?(session_id, permission, "domain", &1))
   end
 
@@ -82,7 +81,7 @@ defmodule TdDd.Permissions.MockPermissionResolver do
 
   def register_token(resource) do
     %{"sub" => sub, "jti" => jti} = resource |> Map.take(["sub", "jti"])
-    %{"id" => user_id} = sub |> Poison.decode!()
+    %{"id" => user_id} = sub |> JSON.decode!()
     Agent.update(:MockSessions, &Map.put(&1, jti, user_id))
   end
 

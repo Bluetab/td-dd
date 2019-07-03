@@ -3,20 +3,16 @@ defmodule TdDdWeb.MetadataControllerTest do
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   alias TdDd.Loader.LoaderWorker
-  alias TdDd.MockTaxonomyCache
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDd.Search.MockIndexWorker
   alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
-  alias TdPerms.MockDynamicFormCache
 
   setup_all do
     start_supervised(MockIndexWorker)
     start_supervised(MockTdAuditService)
     start_supervised(MockTdAuthService)
-    start_supervised(MockTaxonomyCache)
     start_supervised(MockPermissionResolver)
-    start_supervised(MockDynamicFormCache)
     :ok
   end
 
@@ -80,7 +76,6 @@ defmodule TdDdWeb.MetadataControllerTest do
     @tag :admin_authenticated
     @tag fixture: "test/fixtures/metadata"
     test "uploads structure, field with versions", %{conn: conn} do
-
       filepath = "test/fixtures/metadata/versions"
       structures = %Plug.Upload{path: filepath <> "/structures.csv"}
       fields = %Plug.Upload{path: filepath <> "/fields.csv"}
@@ -96,7 +91,7 @@ defmodule TdDdWeb.MetadataControllerTest do
         post(conn, Routes.metadata_path(conn, :upload),
           data_structures: structures,
           data_fields: fields
-      )
+        )
 
       assert response(conn, 202) =~ ""
 

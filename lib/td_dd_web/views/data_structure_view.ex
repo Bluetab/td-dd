@@ -147,25 +147,24 @@ defmodule TdDdWeb.DataStructureView do
           []
 
         fields ->
-          Enum.reduce(fields, [], fn data_field, acc ->
-            json = %{
-              id: data_field.id,
-              name: data_field.name,
-              type: data_field.type,
-              precision: data_field.precision,
-              metadata: data_field.metadata,
-              nullable: data_field.nullable,
-              description: data_field.description,
-              last_change_at: data_field.last_change_at,
-              inserted_at: data_field.inserted_at,
-              external_id: Map.get(data_field, :external_id),
-              bc_related: data_field.bc_related,
-              field_structure_id: Map.get(data_field, :field_structure_id),
-              has_df_content: Map.get(data_field, :has_df_content)
-            }
-
-            [json | acc]
-          end)
+          Enum.map(
+            fields,
+            &Map.take(&1, [
+              :id,
+              :name,
+              :type,
+              :precision,
+              :metadata,
+              :nullable,
+              :description,
+              :last_change_at,
+              :inserted_at,
+              :external_id,
+              :bc_related,
+              :field_structure_id,
+              :has_df_content
+            ])
+          )
       end
 
     Map.put(data_structure_json, :data_fields, data_fields)

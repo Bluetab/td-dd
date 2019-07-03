@@ -124,6 +124,7 @@ defmodule TdDd.DataStructure.Search do
     filters
     |> Map.to_list()
     |> Enum.map(&to_terms_query/1)
+    |> Enum.reject(&is_nil/1)
   end
 
   def create_filters(_), do: []
@@ -137,6 +138,7 @@ defmodule TdDd.DataStructure.Search do
   defp get_filter(%{terms: %{field: field}}, values, _) do
     %{terms: %{field => values}}
   end
+  defp get_filter(_, _, _), do: nil
 
   defp get_filter(nil, values, filter) when is_list(values) do
     %{terms: %{filter => values}}

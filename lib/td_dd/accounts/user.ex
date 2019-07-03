@@ -1,5 +1,7 @@
 defmodule TdDd.Accounts.User do
   @moduledoc false
+
+  @derive Jason.Encoder
   defstruct id: 0, user_name: nil, password: nil, is_admin: false, jti: nil
 
   def gen_id_from_user_name(user_name) do
