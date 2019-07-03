@@ -172,7 +172,7 @@ defmodule TdDd.DataStructures do
     Keyword.get(options, :deleted, true)
   end
 
-  defp get_latest_parents(data_structure_id, options) do
+  def get_latest_parents(data_structure_id, options \\ []) do
     data_structure_id
     |> get_latest_version
     |> get_parents(options)
