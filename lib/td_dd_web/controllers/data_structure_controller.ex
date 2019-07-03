@@ -46,6 +46,7 @@ defmodule TdDdWeb.DataStructureController do
     size = search_params |> Map.get("size", size)
 
     search_params
+    |> logic_deleted_filter
     |> Map.drop(["page", "size"])
     |> Search.search_data_structures(user, page, size)
   end
@@ -59,6 +60,15 @@ defmodule TdDdWeb.DataStructureController do
         value
         |> String.split("§")
         |> Enum.map(&String.trim(&1))
+    end
+  end
+
+  defp logic_deleted_filter(search_params) do
+    case Map.has_key?(search_params, "filters") do
+      true ->
+        filters = search_params |> Map.get("filters") |> Map.put("status", "")
+        Map.put(search_params, "filters", filters)
+      false -> search_params |> Map.put("filters", %{"status" => ""})
     end
   end
 
@@ -162,11 +172,11 @@ defmodule TdDdWeb.DataStructureController do
 
   defp get_data_structure(id) do
     id
-    |> DataStructures.get_data_structure_with_fields!()
+    |> DataStructures.get_data_structure_with_fields!([deleted: false])
     |> DataStructures.with_versions()
-    |> DataStructures.with_latest_children()
-    |> DataStructures.with_latest_parents()
-    |> DataStructures.with_latest_siblings()
+    |> DataStructures.with_latest_children([deleted: false])
+    |> DataStructures.with_latest_parents([deleted: false])
+    |> DataStructures.with_latest_siblings([deleted: false])
     |> DataStructures.with_latest_ancestry()
     |> DataStructures.with_field_external_ids()
     |> DataStructures.with_field_links()
@@ -298,7 +308,7 @@ defmodule TdDdWeb.DataStructureController do
 
     data_structures =
       params
-      |> DataStructures.list_data_structures_with_no_parents()
+      |> DataStructures.list_data_structures_with_no_parents([deleted: false])
       |> Enum.filter(&can?(user, view_data_structure(&1)))
 
     total = length(data_structures)
