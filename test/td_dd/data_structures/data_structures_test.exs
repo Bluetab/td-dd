@@ -179,6 +179,75 @@ defmodule TdDd.DataStructuresTest do
       assert %Ecto.Changeset{} = DataStructures.change_data_field(data_field)
     end
 
+    test "with_latest_children/1 returns data_structure children excluding logic deleted ones" do
+      data_structure_parent = insert(:data_structure, name: "parent")
+      data_structure_child = insert(:data_structure, name: "child", class: "field")
+      data_structure_child_deleted = insert(:data_structure, name: "deleted_child", class: "field", deleted_at: "2019-06-14 10:00:00Z")
+
+      data_structure_version_parent = insert(:data_structure_version, data_structure_id: data_structure_parent.id)
+      data_structure_version_child = insert(:data_structure_version, data_structure_id: data_structure_child.id)
+      data_structure_version_child_deleted = insert(:data_structure_version, data_structure_id: data_structure_child_deleted.id)
+
+      insert(:data_structure_relation,
+        parent_id: data_structure_version_parent.id,
+        child_id: data_structure_version_child.id
+      )
+      insert(:data_structure_relation,
+        parent_id: data_structure_version_parent.id,
+        child_id: data_structure_version_child_deleted.id
+      )
+      children = data_structure_parent
+      |> DataStructures.with_latest_children([deleted: false])
+      |> Map.get(:children)
+      assert children <~> [data_structure_child]
+    end
+
+    test "with_latest_parents/1 returns data_structure parents excluding logic deleted ones" do
+      data_structure_parent = insert(:data_structure, name: "parent")
+      data_structure_parent_deleted = insert(:data_structure, name: "parent_deleted", deleted_at: "2019-06-14 10:00:00Z")
+
+      data_structure_child = insert(:data_structure, name: "child", class: "field")
+
+      data_structure_version_parent = insert(:data_structure_version, data_structure_id: data_structure_parent.id)
+      data_structure_version_parent_deleted = insert(:data_structure_version, data_structure_id: data_structure_parent_deleted.id)
+
+      data_structure_version_child = insert(:data_structure_version, data_structure_id: data_structure_child.id)
+
+      insert(:data_structure_relation,
+        parent_id: data_structure_version_parent.id,
+        child_id: data_structure_version_child.id
+      )
+      insert(:data_structure_relation,
+        parent_id: data_structure_version_parent_deleted.id,
+        child_id: data_structure_version_child.id
+      )
+      parents = data_structure_child
+      |> DataStructures.with_latest_parents([deleted: false])
+      |> Map.get(:parents)
+      assert parents <~> [data_structure_parent]
+    end
+
+    test "get_latest_siblings/1 returns data_structure siblings excluding logic deleted ones" do
+      data_structure_parent = insert(:data_structure, name: "parent")
+      data_structure_child = insert(:data_structure, name: "child", class: "field")
+      data_structure_child_2 = insert(:data_structure, name: "child2", class: "field")
+      data_structure_child_deleted = insert(:data_structure, name: "deleted_child", class: "field", deleted_at: "2019-06-14 10:00:00Z")
+
+      data_structure_version_parent = insert(:data_structure_version, data_structure_id: data_structure_parent.id)
+      data_structure_version_child = insert(:data_structure_version, data_structure_id: data_structure_child.id)
+      data_structure_version_child_2 = insert(:data_structure_version, data_structure_id: data_structure_child_2.id)
+      data_structure_version_child_deleted = insert(:data_structure_version, data_structure_id: data_structure_child_deleted.id)
+
+      insert(:data_structure_relation, parent_id: data_structure_version_parent.id, child_id: data_structure_version_child.id)
+      insert(:data_structure_relation, parent_id: data_structure_version_parent.id, child_id: data_structure_version_child_2.id)
+      insert(:data_structure_relation, parent_id: data_structure_version_parent.id, child_id: data_structure_version_child_deleted.id)
+      siblings =
+        data_structure_child
+        |> DataStructures.with_latest_siblings([deleted: false])
+        |> Map.get(:siblings)
+      assert siblings <~> [data_structure_child, data_structure_child_2]
+    end
+
     test "get_data_structure_with_fields!/1 returns the data_structure with given id and fields" do
       data_structure_parent = insert(:data_structure, name: "parent")
       name = Map.get(@valid_attrs, :name)
@@ -273,35 +342,6 @@ defmodule TdDd.DataStructuresTest do
       data_structure_versions = DataStructures.list_data_structure_versions(data_structure.id)
       assert length(data_structure_versions) == 1
       assert data_structure_versions |> Enum.at(0) |> Map.get(:id) == data_structure_version.id
-    end
-
-    test "get_version_children/1 returns child versions" do
-      ds1 = insert(:data_structure, id: 1, name: "DS1")
-      ds2 = insert(:data_structure, id: 2, name: "DS2")
-      ds3 = insert(:data_structure, id: 3, name: "DS3")
-      dsv1 = insert(:data_structure_version, data_structure_id: ds1.id)
-      dsv2 = insert(:data_structure_version, data_structure_id: ds2.id)
-      dsv3 = insert(:data_structure_version, data_structure_id: ds3.id)
-
-      insert(:data_structure_relation, parent_id: dsv1.id, child_id: dsv2.id)
-      insert(:data_structure_relation, parent_id: dsv1.id, child_id: dsv3.id)
-      children = DataStructures.get_version_children(dsv1.id)
-      assert children <~> [dsv2, dsv3]
-    end
-
-    test "get_version_parents/1 returns parent versions" do
-      ds1 = insert(:data_structure, id: 4, name: "DS4")
-      ds2 = insert(:data_structure, id: 5, name: "DS5")
-      ds3 = insert(:data_structure, id: 6, name: "DS6")
-      dsv1 = insert(:data_structure_version, data_structure_id: ds1.id)
-      dsv2 = insert(:data_structure_version, data_structure_id: ds2.id)
-      dsv3 = insert(:data_structure_version, data_structure_id: ds3.id)
-
-      insert(:data_structure_relation, child_id: dsv1.id, parent_id: dsv2.id)
-      insert(:data_structure_relation, child_id: dsv1.id, parent_id: dsv3.id)
-
-      parents = DataStructures.get_version_parents(dsv1.id)
-      assert parents <~> [dsv2, dsv3]
     end
 
     test "get_siblings/1 returns sibling structures" do

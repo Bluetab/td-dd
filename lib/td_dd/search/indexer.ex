@@ -54,6 +54,7 @@ defmodule TdDd.Search.Indexer do
       },
       ancestry: %{enabled: false},
       df_content: content_mappings,
+      status: %{type: "keyword", null_value: ""},
       class: %{
         type: "text",
         fields: %{

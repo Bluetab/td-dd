@@ -28,7 +28,8 @@ defmodule TdDd.Factory do
       ou: "My organization",
       versions: [],
       confidential: false,
-      external_id: nil
+      external_id: nil,
+      deleted_at: nil
     }
   end
 
