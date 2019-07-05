@@ -17,7 +17,8 @@ defmodule TdDd.Application do
       # Worker for background indexing
       worker(TdDd.Search.IndexWorker, [TdDd.Search.IndexWorker]),
       # Worker for background bulk loading
-      worker(TdDd.Loader.LoaderWorker, [TdDd.Loader.LoaderWorker])
+      worker(TdDd.Loader.LoaderWorker, [TdDd.Loader.LoaderWorker]),
+      {TdDd.DataStructures.DuplicateRemover, []}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

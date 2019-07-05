@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.0.1] 2019-07-05
+
+### Fixed
+
+- [TD-1967] Task to remove duplicate data structure versions, filter duplicates in CSV input
+
 ## [3.0.0] 2019-06-25
 
 ### Fixed

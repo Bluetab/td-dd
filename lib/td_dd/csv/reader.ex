@@ -38,6 +38,7 @@ defmodule TdDd.CSV.Reader do
     stream
     |> CSV.decode!(separator: separator, headers: true)
     |> Enum.to_list()
+    |> Enum.uniq()
   end
 
   defp with_domain_id(records, nil = _domain_map), do: records
