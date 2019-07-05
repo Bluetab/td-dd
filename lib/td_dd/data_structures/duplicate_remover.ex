@@ -33,8 +33,9 @@ defmodule TdDd.DataStructures.DuplicateRemover do
     and duplicate.id not in (select data_structure_version_id from versions_fields)\
     """
 
-    ids = SQL.query!(Repo, query) |> Map.get(:rows) |> Enum.flat_map(& &1)
+    ids = Repo |> SQL.query!(query) |> Map.get(:rows) |> Enum.flat_map(& &1)
 
+    # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
     from(v in DataStructureVersion, where: v.id in ^ids, select: v.data_structure_id)
     |> Repo.delete_all()
     |> post_process()
@@ -47,6 +48,7 @@ defmodule TdDd.DataStructures.DuplicateRemover do
   defp post_process({count, data_structure_ids}) do
     Logger.info("Deleted #{count} duplicate data structure versions")
 
+    # credo:disable-for-lines:2 Credo.Check.Refactor.PipeChainStart
     from(ds in DataStructure, where: ds.id in ^data_structure_ids)
     |> Repo.all()
     |> IndexWorker.reindex()
