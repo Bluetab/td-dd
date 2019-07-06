@@ -51,10 +51,10 @@ defmodule TdDdWeb.DataStructureVersionController do
 
   defp get_data_structure_version(data_structure_id, version) do
     dsv = DataStructures.get_data_structure_version!(data_structure_id, version)
-    parents = DataStructures.get_parents(dsv)
-    siblings = DataStructures.get_siblings(dsv)
-    children = DataStructures.get_children(dsv)
-    fields = DataStructures.get_fields(dsv)
+    parents = DataStructures.get_parents(dsv, [deleted: false])
+    siblings = DataStructures.get_siblings(dsv, [deleted: false])
+    children = DataStructures.get_children(dsv, [deleted: false])
+    fields = DataStructures.get_fields(dsv, [deleted: false])
     versions = DataStructures.get_versions(dsv)
     ancestry = DataStructures.get_ancestry(dsv)
     system = dsv.data_structure.system

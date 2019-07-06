@@ -4,6 +4,7 @@ defmodule TdDdWeb.DataStructureController do
   use TdDdWeb, :controller
   use PhoenixSwagger
   alias Ecto
+  alias TdCache.TaxonomyCache
   alias TdDd.Audit.AuditSupport
   alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
   alias TdDd.DataStructure.Search
@@ -11,8 +12,6 @@ defmodule TdDdWeb.DataStructureController do
   alias TdDd.DataStructures.DataStructure
   alias TdDdWeb.ErrorView
   alias TdDdWeb.SwaggerDefinitions
-
-  @taxonomy_cache Application.get_env(:td_dd, :taxonomy_cache)
 
   action_fallback(TdDdWeb.FallbackController)
 
@@ -47,6 +46,7 @@ defmodule TdDdWeb.DataStructureController do
     size = search_params |> Map.get("size", size)
 
     search_params
+    |> logic_deleted_filter
     |> Map.drop(["page", "size"])
     |> Search.search_data_structures(user, page, size)
   end
@@ -60,6 +60,15 @@ defmodule TdDdWeb.DataStructureController do
         value
         |> String.split("§")
         |> Enum.map(&String.trim(&1))
+    end
+  end
+
+  defp logic_deleted_filter(search_params) do
+    case Map.has_key?(search_params, "filters") do
+      true ->
+        filters = search_params |> Map.get("filters") |> Map.put("status", "")
+        Map.put(search_params, "filters", filters)
+      false -> search_params |> Map.put("filters", %{"status" => ""})
     end
   end
 
@@ -85,7 +94,7 @@ defmodule TdDdWeb.DataStructureController do
       |> Map.put("last_change_by", get_current_user_id(conn))
       |> Map.put("last_change_at", DateTime.truncate(DateTime.utc_now(), :second))
       |> Map.put("metadata", %{})
-      |> DataStructures.add_domain_id(@taxonomy_cache.get_domain_name_to_id_map())
+      |> DataStructures.add_domain_id(TaxonomyCache.get_domain_name_to_id_map())
 
     with true <- can?(user, create_data_structure(Map.fetch!(creation_params, "domain_id"))),
          {:ok, %DataStructure{id: id}} <- DataStructures.create_data_structure(creation_params) do
@@ -163,11 +172,11 @@ defmodule TdDdWeb.DataStructureController do
 
   defp get_data_structure(id) do
     id
-    |> DataStructures.get_data_structure_with_fields!()
+    |> DataStructures.get_data_structure_with_fields!([deleted: false])
     |> DataStructures.with_versions()
-    |> DataStructures.with_latest_children()
-    |> DataStructures.with_latest_parents()
-    |> DataStructures.with_latest_siblings()
+    |> DataStructures.with_latest_children([deleted: false])
+    |> DataStructures.with_latest_parents([deleted: false])
+    |> DataStructures.with_latest_siblings([deleted: false])
     |> DataStructures.with_latest_ancestry()
     |> DataStructures.with_field_external_ids()
     |> DataStructures.with_field_links()
@@ -201,7 +210,7 @@ defmodule TdDdWeb.DataStructureController do
       |> check_confidential_field(manage_confidential_structures)
       |> Map.put("last_change_by", get_current_user_id(conn))
       |> Map.put("last_change_at", DateTime.truncate(DateTime.utc_now(), :second))
-      |> DataStructures.add_domain_id(@taxonomy_cache.get_domain_name_to_id_map())
+      |> DataStructures.add_domain_id(TaxonomyCache.get_domain_name_to_id_map())
 
     with true <- can?(user, update_data_structure(data_structure_old)),
          {:ok, %DataStructure{} = data_structure} <-
@@ -299,7 +308,7 @@ defmodule TdDdWeb.DataStructureController do
 
     data_structures =
       params
-      |> DataStructures.list_data_structures_with_no_parents()
+      |> DataStructures.list_data_structures_with_no_parents([deleted: false])
       |> Enum.filter(&can?(user, view_data_structure(&1)))
 
     total = length(data_structures)

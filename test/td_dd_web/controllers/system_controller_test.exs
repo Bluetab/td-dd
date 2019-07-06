@@ -2,13 +2,12 @@ defmodule TdDdWeb.SystemControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  alias TdDd.MockTaxonomyCache
+  alias TdCache.TaxonomyCache
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDd.Systems
   alias TdDd.Systems.System
   alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
-  alias TdPerms.MockDynamicFormCache
 
   @create_attrs %{
     external_id: "some external_id",
@@ -24,8 +23,6 @@ defmodule TdDdWeb.SystemControllerTest do
     start_supervised(MockTdAuditService)
     start_supervised(MockTdAuthService)
     start_supervised(MockPermissionResolver)
-    start_supervised(MockTaxonomyCache)
-    start_supervised(MockDynamicFormCache)
     :ok
   end
 
@@ -202,7 +199,7 @@ defmodule TdDdWeb.SystemControllerTest do
     domain_name = "domain_name"
     domain_id = 1
 
-    MockTaxonomyCache.create_domain(%{name: domain_name, id: domain_id})
+    TaxonomyCache.put_domain(%{name: domain_name, id: domain_id})
 
     MockPermissionResolver.create_acl_entry(%{
       principal_id: user_id,
@@ -211,8 +208,6 @@ defmodule TdDdWeb.SystemControllerTest do
       resource_type: "domain",
       role_name: role_name
     })
-
-    MockDynamicFormCache.clean_cache()
 
     data_structure =
       insert(

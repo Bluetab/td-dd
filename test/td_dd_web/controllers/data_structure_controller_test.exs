@@ -3,13 +3,13 @@ defmodule TdDdWeb.DataStructureControllerTest do
   import TdDdWeb.Authentication, only: :functions
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
+  alias TdCache.TaxonomyCache
+  alias TdCache.TemplateCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.MockTaxonomyCache
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
-  alias TdPerms.MockDynamicFormCache
 
   @create_attrs %{
     description: "some description",
@@ -62,8 +62,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
     start_supervised(MockTdAuthService)
     start_supervised(MockTdAuditService)
     start_supervised(MockPermissionResolver)
-    start_supervised(MockTaxonomyCache)
-    start_supervised(MockDynamicFormCache)
     :ok
   end
 
@@ -105,6 +103,43 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn = get(conn, Routes.data_structure_path(conn, :show, id))
       %{"siblings" => siblings} = json_response(conn, 200)["data"]
       assert Enum.count(siblings) == 2
+    end
+  end
+
+  describe "show data_structure with deletions in its hierarchy" do
+    setup [:create_structure_hierarchy_with_logic_deletions]
+
+    @tag authenticated_user: @admin_user_name
+    test "renders a data structure with children excluding deleted", %{
+      conn: conn,
+      parent_structure: %DataStructure{id: parent_id}
+    } do
+      conn = get(conn, Routes.data_structure_path(conn, :show, parent_id))
+      %{"children" => children} = json_response(conn, 200)["data"]
+      assert Enum.count(children) == 2
+      assert Enum.find(children, [], &(Map.get(&1, "name") == "Child_deleted")) == []
+    end
+
+    @tag authenticated_user: @admin_user_name
+    test "renders a data structure with logic deleted parents", %{
+      conn: conn,
+      child_structures: [%DataStructure{id: child_id} | _ ]
+    } do
+      conn = get(conn, Routes.data_structure_path(conn, :show, child_id))
+      %{"parents" => parents} = json_response(conn, 200)["data"]
+      assert Enum.count(parents) == 1
+      assert Enum.find(parents, [], &(Map.get(&1, "name") == "Parent_deleted") == [])
+    end
+
+    @tag authenticated_user: @admin_user_name
+    test "renders a data structure with logic deleted siblings", %{
+      conn: conn,
+      child_structures: [%DataStructure{id: id} | _]
+    } do
+      conn = get(conn, Routes.data_structure_path(conn, :show, id))
+      %{"siblings" => siblings} = json_response(conn, 200)["data"]
+      assert Enum.count(siblings) == 2
+      assert Enum.find(siblings, [], &(Map.get(&1, "name") == "Child_deleted") == [])
     end
   end
 
@@ -390,8 +425,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
   defp create_data_structure(_) do
     template_name = "template_name"
-    MockDynamicFormCache.clean_cache()
-
     create_template(%{name: template_name})
     data_structure = insert(:data_structure, type: template_name, df_content: %{"field" => "1"})
     data_structure_version = insert(:data_structure_version, data_structure_id: data_structure.id)
@@ -425,10 +458,41 @@ defmodule TdDdWeb.DataStructureControllerTest do
      parent_structure: parent_structure, structure: structure, child_structures: child_structures}
   end
 
+  defp create_structure_hierarchy_with_logic_deletions(_) do
+    parent_structure = insert(:data_structure, external_id: "Parent")
+    parent_structure_deleted = insert(:data_structure, external_id: "Parent_deleted", deleted_at: "2019-06-14 11:00:00Z")
+
+    child_structures = [
+      insert(:data_structure, external_id: "Child1", name: "Child1"),
+      insert(:data_structure, external_id: "Child2", name: "Child2"),
+      insert(:data_structure, external_id: "Child_deleted", name: "Child_deleted", deleted_at: "2019-06-14 11:00:00Z")
+    ]
+
+    parent_version = insert(:data_structure_version, data_structure_id: parent_structure.id)
+    parent_structure_version_deleted = insert(:data_structure_version, data_structure_id: parent_structure_deleted.id)
+
+    child_versions =
+      child_structures
+      |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id))
+
+    child_versions
+    |> Enum.each(
+      &insert(:data_structure_relation, parent_id: parent_version.id, child_id: &1.id)
+    )
+
+    child_versions
+    |> Enum.each(
+      &insert(:data_structure_relation, parent_id: parent_structure_version_deleted.id, child_id: &1.id)
+    )
+
+    {:ok,
+     parent_structure: parent_structure, child_structures: child_structures}
+  end
+
   defp create_data_structure_and_permissions(user_id, role_name, confidential) do
     domain_name = "domain_name"
     domain_id = 1
-    MockTaxonomyCache.create_domain(%{name: domain_name, id: domain_id})
+    TaxonomyCache.put_domain(%{name: domain_name, id: domain_id})
 
     MockPermissionResolver.create_acl_entry(%{
       principal_id: user_id,
@@ -439,7 +503,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
     })
 
     template_name = "template_name"
-    MockDynamicFormCache.clean_cache()
 
     create_template(%{name: template_name})
 
@@ -460,7 +523,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   def create_template(attrs \\ %{}) do
     attrs
     |> Enum.into(@default_template_attrs)
-    |> MockDynamicFormCache.put_template()
+    |> TemplateCache.put()
 
     :ok
   end

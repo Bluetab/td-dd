@@ -6,14 +6,12 @@ defmodule TdDd.DictionaryTest do
   import TdDdWeb.ResponseCode
   import TdDdWeb.Authentication, only: :functions
 
-  alias Poison, as: JSON
+  alias Jason, as: JSON
   alias TdDd.Loader.LoaderWorker
-  alias TdDd.MockTaxonomyCache
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDd.Search.MockIndexWorker
   alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
-  alias TdPerms.MockDynamicFormCache
 
   @endpoint TdDdWeb.Endpoint
   @headers {"Content-type", "application/json"}
@@ -40,8 +38,6 @@ defmodule TdDd.DictionaryTest do
     start_supervised(MockTdAuthService)
     start_supervised(MockTdAuditService)
     start_supervised(MockPermissionResolver)
-    start_supervised(MockTaxonomyCache)
-    start_supervised(MockDynamicFormCache)
     start_supervised(MockIndexWorker)
     :ok
   end
@@ -230,7 +226,7 @@ defmodule TdDd.DictionaryTest do
   end
 
   defand ~r/^when the system has finished loading the metadata$/, _vars, state do
-    LoaderWorker.ping
+    LoaderWorker.ping()
     {:ok, state}
   end
 
@@ -363,7 +359,9 @@ defmodule TdDd.DictionaryTest do
     {:ok, _, %{"data" => data_structures}} = data_structure_index(token)
 
     data_structures
-    |> Enum.find(&(&1["system"]["external_id"] == system && &1["group"] == group && &1["name"] == name))
+    |> Enum.find(
+      &(&1["system"]["external_id"] == system && &1["group"] == group && &1["name"] == name)
+    )
     |> Map.get("id")
     |> data_structure_get(token)
   end

@@ -63,7 +63,7 @@ config :td_dd, :elasticsearch,
   es_port: 9200,
   type_name: "doc"
 
-config :td_perms, redis_host: "localhost"
+config :td_cache, redis_host: "localhost"
 
 config :td_dd, :audit_service,
   api_service: TdDdWeb.ApiServices.HttpTdAuditService,

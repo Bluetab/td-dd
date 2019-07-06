@@ -2,17 +2,20 @@ defmodule TdDd.DataStructures.DataStructure do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
+  alias TdCache.TaxonomyCache
+  alias TdCache.UserCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataField
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Searchable
   alias TdDd.Systems.System
-  alias TdPerms.UserCache
 
   @behaviour Searchable
 
-  @taxonomy_cache Application.get_env(:td_dd, :taxonomy_cache)
+  @status %{
+    deleted: "deleted"
+  }
 
   schema "data_structures" do
     belongs_to(:system, System, on_replace: :update)
@@ -31,6 +34,7 @@ defmodule TdDd.DataStructures.DataStructure do
     field(:name, :string)
     field(:ou, :string)
     field(:type, :string)
+    field(:deleted_at, :utc_datetime)
 
     timestamps(type: :utc_datetime)
   end
@@ -42,7 +46,8 @@ defmodule TdDd.DataStructures.DataStructure do
       :confidential,
       :df_content,
       :last_change_at,
-      :last_change_by
+      :last_change_by,
+      :deleted_at
     ])
   end
 
@@ -99,16 +104,16 @@ defmodule TdDd.DataStructures.DataStructure do
 
   def search_fields(%DataStructure{last_change_by: last_change_by_id} = structure) do
     last_change_by =
-      case UserCache.get_user(last_change_by_id) do
-        nil -> %{}
-        user -> user
+      case UserCache.get(last_change_by_id) do
+        {:ok, nil} -> %{}
+        {:ok, user} -> user
       end
 
     domain_id = structure.domain_id
 
     domain_ids =
       domain_id
-      |> @taxonomy_cache.get_parent_ids()
+      |> TaxonomyCache.get_parent_ids()
 
     structure =
       structure
@@ -120,6 +125,12 @@ defmodule TdDd.DataStructures.DataStructure do
       structure
       |> Map.get(:system)
       |> (& &1.__struct__.search_fields(&1)).()
+
+    status =
+      case structure.deleted_at do
+        nil -> ""
+        _del_timestamp -> @status.deleted
+      end
 
     %{
       id: structure.id,
@@ -138,11 +149,29 @@ defmodule TdDd.DataStructures.DataStructure do
       inserted_at: structure.inserted_at,
       confidential: structure.confidential,
       df_content: structure.df_content,
-      data_fields: Enum.map(structure.data_fields, &DataField.search_fields/1),
+      data_fields: non_deleted_data_fields(structure),
       path: structure.path,
+      status: status,
       class: structure.class
     }
   end
+
+  defp non_deleted_data_fields(%{data_fields: data_fields}) do
+    data_fields
+    |> Enum.map(&DataStructures.with_field_structure/1)
+    |> Enum.filter(fn data_field -> not is_nil(Map.get(data_field, :field_structure)) end)
+    |> Enum.filter(fn data_field ->
+      deleted_at =
+        data_field
+        |> Map.get(:field_structure, %{})
+        |> Map.get(:deleted_at)
+
+      is_nil(deleted_at)
+    end)
+    |> Enum.map(&DataField.search_fields/1)
+  end
+
+  defp non_deleted_data_fields(_), do: []
 
   defp fill_items(structure) do
     keys_to_fill = [:name, :group, :ou]

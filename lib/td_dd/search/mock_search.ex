@@ -1,11 +1,10 @@
 defmodule TdDd.Search.MockSearch do
   @moduledoc false
 
-  alias Poison
+  alias Jason, as: JSON
+  alias TdCache.TemplateCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
-
-  @df_cache Application.get_env(:td_dd, :df_cache)
 
   def put_search(_something) do
   end
@@ -14,15 +13,15 @@ defmodule TdDd.Search.MockSearch do
   end
 
   def search("data_structure", %{query: %{bool: %{must: %{match_all: %{}}}}}) do
-    template_list = @df_cache.list_templates()
+    template_list = TemplateCache.list!()
     data_structures = DataStructures.list_data_structures()
 
     results =
       data_structures
       |> Enum.map(&DataStructure.search_fields(&1))
       |> Enum.map(&%{_source: &1})
-      |> Poison.encode!()
-      |> Poison.decode!()
+      |> JSON.encode!()
+      |> JSON.decode!()
 
     aggregations = get_aggregations(data_structures, template_list)
 

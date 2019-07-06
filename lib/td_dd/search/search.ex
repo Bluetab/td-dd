@@ -1,12 +1,14 @@
 defmodule TdDd.Search do
-  require Logger
+  @moduledoc """
+  Search Engine calls
+  """
+
+  alias Jason, as: JSON
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.ESClientApi
 
-  @moduledoc """
-    Search Engine calls
-  """
+  require Logger
 
   def put_bulk_search(:all) do
     DataStructures.list_data_structures()
@@ -26,6 +28,7 @@ defmodule TdDd.Search do
   # CREATE AND UPDATE
   def put_search(%DataStructure{metadata: %{"indexable" => "false"}}),
     do: {:error, :not_indexable}
+
   def put_search(%DataStructure{} = data_structure) do
     search_fields = data_structure.__struct__.search_fields(data_structure)
 
@@ -33,7 +36,7 @@ defmodule TdDd.Search do
       ESClientApi.index_content(
         data_structure.__struct__.index_name(data_structure),
         data_structure.id,
-        search_fields |> Poison.encode!()
+        search_fields |> JSON.encode!()
       )
 
     case response do

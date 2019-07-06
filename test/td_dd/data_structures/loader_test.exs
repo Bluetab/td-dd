@@ -4,11 +4,9 @@ defmodule TdDd.LoaderTest do
   alias TdDd.Loader
   alias TdDd.Repo
   alias TdDd.Search.MockIndexWorker
-  alias TdPerms.MockDynamicFormCache
 
   setup_all do
     start_supervised(MockIndexWorker)
-    start_supervised(MockDynamicFormCache)
     :ok
   end
 
