@@ -7,6 +7,12 @@
 - [TD-1618] Cache improvements. Use td-cache instead of td-perms.
 - [TD-1866] Exclude logic deleted data_structures in catalog navigation, catalog table and filters
 
+## [3.0.1] 2019-07-05
+
+### Fixed
+
+- [TD-1967] Task to remove duplicate data structure versions, filter duplicates in CSV input
+
 ## [3.0.0] 2019-06-25
 
 ### Fixed
