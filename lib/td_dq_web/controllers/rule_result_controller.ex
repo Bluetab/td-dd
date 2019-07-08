@@ -16,7 +16,6 @@ defmodule TdDqWeb.RuleResultController do
     INSERT INTO rule_results ("implementation_key", "date", "result", parent_domains, inserted_at, updated_at)
     VALUES ($1, $2, $3, $4, $5, $5)
   """
-  @rule_results_param "rule_results"
 
   # TODO: tets this
   def upload(conn, params) do
@@ -35,7 +34,7 @@ defmodule TdDqWeb.RuleResultController do
 
     rule_results_data =
       params
-      |> Map.get(@rule_results_param)
+      |> Map.get("rule_results")
       |> rule_results_from_csv()
 
     with {:ok, _} <- upload_data(rule_results_data) do
