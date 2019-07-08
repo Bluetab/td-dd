@@ -7,6 +7,10 @@
 - [TD-1618] Cache improvements. Use td-cache instead of td-perms.
 - [TD-1866] Exclude logic deleted data_structures in catalog navigation, catalog table and filters
 
+### Fixed
+
+- [TD-1969] Fix unreachable clause in data_structure_search 
+
 ## [3.0.1] 2019-07-05
 
 ### Fixed
