@@ -138,7 +138,6 @@ defmodule TdDd.DataStructure.Search do
   defp get_filter(%{terms: %{field: field}}, values, _) do
     %{terms: %{field => values}}
   end
-  defp get_filter(_, _, _), do: nil
 
   defp get_filter(nil, values, filter) when is_list(values) do
     %{terms: %{filter => values}}
@@ -147,6 +146,8 @@ defmodule TdDd.DataStructure.Search do
   defp get_filter(nil, value, filter) when not is_list(value) do
     %{term: %{filter => value}}
   end
+
+  defp get_filter(_, _, _), do: nil
 
   defp create_query(%{"query" => query}) do
     equery = Query.add_query_wildcard(query)
