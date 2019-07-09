@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] 2019-07-09
+
+### Changed
+
+- [TD-1939] Change description type in rules table
+
 ## [3.1.0] 2019-07-08
 
 ### Changed
