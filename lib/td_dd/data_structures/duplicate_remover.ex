@@ -20,9 +20,12 @@ defmodule TdDd.DataStructures.DuplicateRemover do
 
   require Logger
 
-  def start_link(arg) do
-    Task.start_link(__MODULE__, :run, [arg])
+  def start_link(_arg) do
+    env = Application.get_env(:td_dd, :env)
+    Task.start_link(__MODULE__, :run, [env])
   end
+
+  def run(:test), do: :ok
 
   def run(_options) do
     query = """

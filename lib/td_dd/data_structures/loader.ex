@@ -43,6 +43,7 @@ defmodule TdDd.Loader do
     |> Multi.run(:kept, &keep_fields/2)
     |> Multi.run(:added, &insert_fields/2)
     |> Multi.run(:modified, &update_fields/2)
+    |> Multi.run(:deleted_structures, &delete_structures/2)
     |> Repo.transaction()
   end
 
@@ -150,6 +151,29 @@ defmodule TdDd.Loader do
     |> Enum.map(&(&1 |> Map.merge(audit_fields)))
     |> Enum.map(&create_or_update_data_structure/1)
     |> errors_or_structs
+  end
+
+  defp delete_structures(_repo, %{
+         structures: upserted_structures,
+         audit: %{last_change_at: deleted_at}
+       }) do
+    deleted_structures =
+      upserted_structures
+      |> Enum.group_by(&{&1.system_id, &1.group}, & &1.id)
+      |> Enum.map(&delete_group_structures(&1, deleted_at))
+      |> Enum.flat_map(fn {_count, ids} -> ids end)
+
+    {:ok, deleted_structures}
+  end
+
+  defp delete_group_structures({{system_id, group}, upserted_ids}, deleted_at) do
+    from(ds in DataStructure,
+      where: ds.system_id == ^system_id,
+      where: ds.group == ^group,
+      where: ds.id not in ^upserted_ids,
+      select: ds
+    )
+    |> Repo.update_all(set: [deleted_at: deleted_at])
   end
 
   defp create_or_update_data_structure(attrs) do

@@ -49,12 +49,41 @@ defmodule TdDdWeb.DataStructureVersionController do
     end
   end
 
+  def show(conn, %{"id" => data_structure_version_id}) do
+    user = conn.assigns[:current_user]
+
+    dsv = get_data_structure_version(data_structure_version_id)
+
+    with true <- can?(user, view_data_structure(dsv.data_structure)) do
+      render(conn, "show.json", data_structure_version: dsv)
+    else
+      false ->
+        conn
+        |> put_status(:forbidden)
+        |> render(ErrorView, :"403")
+
+      _error ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> render(ErrorView, :"422")
+    end
+  end
+
+  defp get_data_structure_version(data_structure_version_id) do
+    DataStructures.get_data_structure_version!(data_structure_version_id)
+    |> enrich
+  end
+
   defp get_data_structure_version(data_structure_id, version) do
-    dsv = DataStructures.get_data_structure_version!(data_structure_id, version)
-    parents = DataStructures.get_parents(dsv, [deleted: false])
-    siblings = DataStructures.get_siblings(dsv, [deleted: false])
-    children = DataStructures.get_children(dsv, [deleted: false])
-    fields = DataStructures.get_fields(dsv, [deleted: false])
+    DataStructures.get_data_structure_version!(data_structure_id, version)
+    |> enrich
+  end
+
+  defp enrich(dsv) do
+    parents = DataStructures.get_parents(dsv, deleted: false)
+    siblings = DataStructures.get_siblings(dsv, deleted: false)
+    children = DataStructures.get_children(dsv, deleted: false)
+    fields = DataStructures.get_fields(dsv, deleted: false)
     versions = DataStructures.get_versions(dsv)
     ancestry = DataStructures.get_ancestry(dsv)
     system = dsv.data_structure.system

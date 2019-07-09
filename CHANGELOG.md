@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- [TD-1845] Soft deletion of data structures no longer present in CSV input for system/group
+
 ## [3.1.0] 2019-07-08
 
 ### Changed

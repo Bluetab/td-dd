@@ -3,6 +3,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
@@ -57,6 +58,16 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       %{"siblings" => siblings} = json_response(conn, 200)["data"]
       assert Enum.count(siblings) == 2
     end
+
+    @tag authenticated_user: @admin_user_name
+    test "renders a data structure by data_structure_version_id", %{
+      conn: conn,
+      structure_version: %DataStructureVersion{id: id}
+    } do
+      conn = get(conn, Routes.data_structure_version_path(conn, :show, id))
+
+      assert %{"id" => ^id} = json_response(conn, 200)["data"]
+    end
   end
 
   defp create_structure_hierarchy(_) do
@@ -83,6 +94,9 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     )
 
     {:ok,
-     parent_structure: parent_structure, structure: structure, child_structures: child_structures}
+     parent_structure: parent_structure,
+     structure_version: structure_version,
+     structure: structure,
+     child_structures: child_structures}
   end
 end
