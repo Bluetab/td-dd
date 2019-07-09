@@ -376,7 +376,7 @@ defmodule TdDd.LoaderTest do
       assert modified == 1
     end
 
-    test "load/1 allows a structure's class to be set and updated" do
+    test "load/1 allows a fields's metadata to be set and updated" do
       [class1, class2] = [random_string(), random_string()]
       system = insert(:system, external_id: random_string("EXT"), name: random_string("NAME"))
 
@@ -407,12 +407,43 @@ defmodule TdDd.LoaderTest do
                  external_id: structure.external_id
                })
     end
+
+    test "load/1 allows a structure's class to be set and updated" do
+      system = insert(:system, external_id: random_string("EXT"), name: random_string("NAME"))
+
+      structure = random_structure(system.id)
+
+      1..5
+      |> Enum.each(fn _ ->
+        class = random_string()
+        structure = Map.put(structure, :class, class)
+        assert {:ok, _} = Loader.load([structure], [], [], audit())
+
+        assert [%{class: ^class}] =
+                 DataStructures.list_data_structures(%{
+                   system_id: structure.system_id,
+                   external_id: structure.external_id
+                 })
+      end)
+    end
   end
 
   defp audit do
     %{
       last_change_at: DateTime.truncate(DateTime.utc_now(), :second),
       last_change_by: 0
+    }
+  end
+
+  defp random_structure(system_id) do
+    %{
+      system_id: system_id,
+      group: random_string("GROUP"),
+      name: random_string("NAME"),
+      description: random_string("DESC"),
+      version: 0,
+      external_id: random_string("EXT"),
+      type: "Type"
     }
   end
 
