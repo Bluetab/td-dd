@@ -380,7 +380,7 @@ defmodule TdDd.LoaderTest do
       system = insert(:system, external_id: random_string("EXT"), name: random_string("NAME"))
 
       structure = random_structure(system.id)
-      field = random_field(structure) |> Map.put(:metadata, %{"foo" => "bar"})
+      field = structure |> random_field() |> Map.put(:metadata, %{"foo" => "bar"})
 
       assert {:ok, %{structures: [%{id: structure_id}]}} =
                Loader.load([structure], [], [], audit())
