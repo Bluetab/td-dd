@@ -167,13 +167,15 @@ defmodule TdDd.Loader do
   end
 
   defp delete_group_structures({{system_id, group}, upserted_ids}, deleted_at) do
-    from(ds in DataStructure,
-      where: ds.system_id == ^system_id,
-      where: ds.group == ^group,
-      where: ds.id not in ^upserted_ids,
-      select: ds
+    Repo.update_all(
+      from(ds in DataStructure,
+        where: ds.system_id == ^system_id,
+        where: ds.group == ^group,
+        where: ds.id not in ^upserted_ids,
+        select: ds
+      ),
+      set: [deleted_at: deleted_at]
     )
-    |> Repo.update_all(set: [deleted_at: deleted_at])
   end
 
   defp create_or_update_data_structure(attrs) do

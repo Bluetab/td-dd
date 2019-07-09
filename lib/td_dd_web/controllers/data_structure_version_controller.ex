@@ -70,13 +70,15 @@ defmodule TdDdWeb.DataStructureVersionController do
   end
 
   defp get_data_structure_version(data_structure_version_id) do
-    DataStructures.get_data_structure_version!(data_structure_version_id)
-    |> enrich
+    data_structure_version_id
+    |> DataStructures.get_data_structure_version!()
+    |> enrich()
   end
 
   defp get_data_structure_version(data_structure_id, version) do
-    DataStructures.get_data_structure_version!(data_structure_id, version)
-    |> enrich
+    data_structure_id
+    |> DataStructures.get_data_structure_version!(version)
+    |> enrich()
   end
 
   defp enrich(dsv) do
