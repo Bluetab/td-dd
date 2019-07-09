@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- [TD-1927] Allow structure "class" property to be specified in metadata CSV
+
 ## [3.1.0] 2019-07-08
 
 ### Changed

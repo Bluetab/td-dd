@@ -2,6 +2,7 @@ use Mix.Config
 
 config :td_dd, :metadata,
   structure_import_schema: %{
+    class: :string,
     description: :string,
     domain_id: :integer,
     external_id: :string,

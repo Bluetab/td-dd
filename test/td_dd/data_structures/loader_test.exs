@@ -1,6 +1,7 @@
 defmodule TdDd.LoaderTest do
   use TdDd.DataCase
 
+  alias TdDd.DataStructures
   alias TdDd.Loader
   alias TdDd.Repo
   alias TdDd.Search.MockIndexWorker
@@ -216,14 +217,12 @@ defmodule TdDd.LoaderTest do
       f51 = s5 |> Map.merge(f4)
       f61 = s6 |> Map.merge(f5)
 
-      ts = DateTime.truncate(DateTime.utc_now(), :second)
-      audit_fields = %{last_change_at: ts, last_change_by: 0}
       structure_records = [s1, s2, s3, s4, s5, s6]
       field_records = [f11, f12, f13, f21, f32, f41, f51, f61]
       relation_records = [r1, r2]
 
       assert {:ok, context} =
-               Loader.load(structure_records, field_records, relation_records, audit_fields)
+               Loader.load(structure_records, field_records, relation_records, audit())
 
       assert %{added: added, removed: removed, modified: modified, kept: kept} = context
       assert added == 6
@@ -364,22 +363,61 @@ defmodule TdDd.LoaderTest do
       f21 = s2 |> Map.merge(f1)
       f32 = s3 |> Map.merge(f2)
 
-      audit_fields = %{
-        last_change_at: DateTime.truncate(DateTime.utc_now(), :second),
-        last_change_by: 0
-      }
-
       structure_records = [s1, s2, s3]
       field_records = [f11, f12, f13, f21, f32]
       relation_records = [r1, r2]
 
       assert {:ok, context} =
-               Loader.load(structure_records, field_records, relation_records, audit_fields)
+               Loader.load(structure_records, field_records, relation_records, audit())
 
       assert %{added: added, removed: removed, modified: modified} = context
       assert added == 4
       assert removed == 2
       assert modified == 1
     end
+
+    test "load/1 allows a structure's class to be set and updated" do
+      [class1, class2] = [random_string(), random_string()]
+      system = insert(:system, external_id: random_string("EXT"), name: random_string("NAME"))
+
+      structure = %{
+        system_id: system.id,
+        group: random_string("GROUP"),
+        name: random_string("NAME"),
+        description: random_string("DESC"),
+        version: 0,
+        external_id: random_string("EXT"),
+        type: "Type",
+        class: class1
+      }
+
+      assert {:ok, _} = Loader.load([structure], [], [], audit())
+
+      assert [%{class: ^class1}] =
+               DataStructures.list_data_structures(%{
+                 system_id: structure.system_id,
+                 external_id: structure.external_id
+               })
+
+      assert {:ok, _} = Loader.load([Map.put(structure, :class, class2)], [], [], audit())
+
+      assert [%{class: ^class2}] =
+               DataStructures.list_data_structures(%{
+                 system_id: structure.system_id,
+                 external_id: structure.external_id
+               })
+    end
+  end
+
+  defp audit do
+    %{
+      last_change_at: DateTime.truncate(DateTime.utc_now(), :second),
+      last_change_by: 0
+    }
+  end
+
+  defp random_string(prefix \\ "") do
+    id = :rand.uniform(100_000_000)
+    "#{prefix}#{id}"
   end
 end

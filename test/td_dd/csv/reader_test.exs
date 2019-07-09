@@ -57,6 +57,7 @@ defmodule TdDd.CSV.ReaderTest do
              }
 
       assert r3 == %{
+               class: "class1",
                metadata: %{
                  "bar" => %{"baz" => %{"spqr" => "spqr", "xyzzy" => "xyzzy"}},
                  "bool" => false
