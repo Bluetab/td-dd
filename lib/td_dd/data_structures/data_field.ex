@@ -31,11 +31,13 @@ defmodule TdDd.DataStructures.DataField do
 
   @doc false
   def loader_changeset(%DataField{} = data_field, attrs) do
-    changeset = data_field |> cast(attrs, [:description])
+    audit_attrs = attrs |> Map.take([:last_change_at, :last_change_by])
+
+    changeset = data_field |> cast(attrs, [:description, :metadata])
 
     case changeset.changes do
-      %{} -> changeset
-      _ -> update_changeset(data_field, attrs)
+      m when map_size(m) > 0 -> changeset |> change(audit_attrs)
+      _ -> changeset
     end
   end
 

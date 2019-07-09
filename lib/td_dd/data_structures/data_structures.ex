@@ -127,13 +127,14 @@ defmodule TdDd.DataStructures do
 
   def get_fields(data_structure_version, options \\ []) do
     deleted = get_deleted_option(options)
+
     data_structure_version
     |> Ecto.assoc(:data_fields)
     |> Repo.all()
     |> Enum.map(&with_field_structure/1)
     |> Enum.map(&with_field_structure_id/1)
     |> Enum.map(&with_field_structure_has(&1, :df_content))
-    |> Enum.filter(& is_active_field_structure(&1, deleted))
+    |> Enum.filter(&is_active_field_structure(&1, deleted))
   end
 
   defp is_active_field_structure(field, false) do
@@ -145,7 +146,7 @@ defmodule TdDd.DataStructures do
 
   defp is_active_field_structure(_field, _deleted), do: true
 
-  defp get_latest_children(data_structure_id, options) do
+  def get_latest_children(data_structure_id, options \\ []) do
     data_structure_id
     |> get_latest_version
     |> get_children(options)
@@ -194,6 +195,7 @@ defmodule TdDd.DataStructures do
 
   def get_siblings(data_structure_version, options \\ []) do
     deleted = get_deleted_option(options)
+
     data_structure_version
     |> Ecto.assoc(:parents)
     |> Repo.all()
@@ -203,9 +205,11 @@ defmodule TdDd.DataStructures do
   end
 
   defp is_active_data_structure_version(data_structure_version, false) do
-    data_structure = data_structure_version
-    |> Repo.preload(:data_structure)
-    |> Map.get(:data_structure)
+    data_structure =
+      data_structure_version
+      |> Repo.preload(:data_structure)
+      |> Map.get(:data_structure)
+
     is_nil(data_structure.deleted_at)
   end
 
@@ -758,16 +762,18 @@ defmodule TdDd.DataStructures do
   end
 
   def get_ancestry(%DataStructureVersion{parents: parents, data_structure: data_structure}) do
-    parent = case get_first_active_parent(parents) do
-      nil -> hd(parents)
-      parent -> parent
-    end
+    parent =
+      case get_first_active_parent(parents) do
+        nil -> hd(parents)
+        parent -> parent
+      end
+
     [data_structure | get_ancestry(parent)]
   end
 
   defp get_first_active_parent(parents) do
     parents
     |> Repo.preload(:data_structure)
-    |> Enum.find(& &1.data_structure.deleted_at == nil)
+    |> Enum.find(&(&1.data_structure.deleted_at == nil))
   end
 end

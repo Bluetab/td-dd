@@ -24,6 +24,8 @@ defmodule TdDd.DataStructures.DuplicateRemover do
     Task.start_link(__MODULE__, :run, [arg])
   end
 
+  def run(_options), do: :ok
+
   def run(_options) do
     query = """
     select duplicate.id from data_structure_versions duplicate \

@@ -377,35 +377,33 @@ defmodule TdDd.LoaderTest do
     end
 
     test "load/1 allows a fields's metadata to be set and updated" do
-      [class1, class2] = [random_string(), random_string()]
       system = insert(:system, external_id: random_string("EXT"), name: random_string("NAME"))
 
-      structure = %{
-        system_id: system.id,
-        group: random_string("GROUP"),
-        name: random_string("NAME"),
-        description: random_string("DESC"),
-        version: 0,
-        external_id: random_string("EXT"),
-        type: "Type",
-        class: class1
-      }
+      structure = random_structure(system.id)
+      field = random_field(structure) |> Map.put(:metadata, %{"foo" => "bar"})
 
-      assert {:ok, _} = Loader.load([structure], [], [], audit())
+      assert {:ok, %{structures: [%{id: structure_id}]}} =
+               Loader.load([structure], [], [], audit())
 
-      assert [%{class: ^class1}] =
-               DataStructures.list_data_structures(%{
-                 system_id: structure.system_id,
-                 external_id: structure.external_id
-               })
+      1..5
+      |> Enum.each(fn _ ->
+        foo = random_string("FOO")
+        field = Map.put(field, :metadata, %{"foo" => foo})
+        assert {:ok, _} = Loader.load([structure], [field], [], audit())
 
-      assert {:ok, _} = Loader.load([Map.put(structure, :class, class2)], [], [], audit())
+        [%{metadata: metadata}] =
+          structure_id
+          |> DataStructures.get_data_structure_with_fields!()
+          |> Map.get(:data_fields)
 
-      assert [%{class: ^class2}] =
-               DataStructures.list_data_structures(%{
-                 system_id: structure.system_id,
-                 external_id: structure.external_id
-               })
+        assert metadata["foo"] == foo
+
+        [%{metadata: metadata}] =
+          structure_id
+          |> DataStructures.get_latest_children()
+
+        assert metadata["foo"] == foo
+      end)
     end
 
     test "load/1 allows a structure's class to be set and updated" do
@@ -445,6 +443,15 @@ defmodule TdDd.LoaderTest do
       external_id: random_string("EXT"),
       type: "Type"
     }
+  end
+
+  defp random_field(structure) do
+    Map.merge(structure, %{
+      field_name: random_string("FIELD "),
+      type: "CHAR",
+      description: random_string("DESC"),
+      version: 0
+    })
   end
 
   defp random_string(prefix \\ "") do
