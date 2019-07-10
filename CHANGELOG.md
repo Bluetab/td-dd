@@ -12,6 +12,7 @@
 
 - [TD-1618] Cache improvements (use td-cache instead of td-perms)
 - [TD-1924] Use Jason instead of Poison for JSON encoding/decoding
+- [TD-1827] Added float and whole number cast for type params
 
 ## [3.0.0] 2019-06-25
 
