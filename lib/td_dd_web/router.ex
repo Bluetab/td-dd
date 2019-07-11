@@ -31,6 +31,8 @@ defmodule TdDdWeb.Router do
       resources("/versions", DataStructureVersionController, only: [:show])
     end
 
+    resources("/data_structure_versions", DataStructureVersionController, only: [:show])
+
     post("/data_structures/search", DataStructureController, :search)
     post("/data_structures/metadata", MetadataController, :upload)
 

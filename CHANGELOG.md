@@ -6,6 +6,10 @@
 
 - [TD-1854] Data field metadata is not updated during metadata upload
 
+### Added
+
+- [TD-1845] Soft deletion of data structures no longer present in CSV input for system/group
+
 ### Changed
 
 - [TD-1927] Allow structure "class" property to be specified in metadata CSV

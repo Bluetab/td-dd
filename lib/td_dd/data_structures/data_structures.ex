@@ -113,6 +113,12 @@ defmodule TdDd.DataStructures do
     |> Repo.preload(data_structure: :system)
   end
 
+  def get_data_structure_version!(data_structure_version_id) do
+    DataStructureVersion
+    |> Repo.get!(data_structure_version_id)
+    |> Repo.preload(data_structure: :system)
+  end
+
   def get_data_structure_with_fields!(data_structure_id, options \\ []) do
     data_structure_id
     |> get_data_structure!
