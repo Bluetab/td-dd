@@ -2,9 +2,17 @@
 
 ## Unreleased
 
+### Fixed
+
+- [TD-1854] Data field metadata is not updated during metadata upload
+
 ### Added
 
 - [TD-1845] Soft deletion of data structures no longer present in CSV input for system/group
+
+### Changed
+
+- [TD-1927] Allow structure "class" property to be specified in metadata CSV
 
 ## [3.1.0] 2019-07-08
 
@@ -12,10 +20,6 @@
 
 - [TD-1618] Cache improvements. Use td-cache instead of td-perms.
 - [TD-1866] Exclude logic deleted data_structures in catalog navigation, catalog table and filters
-
-### Fixed
-
-- [TD-1969] Fix unreachable clause in data_structure_search 
 
 ## [3.0.1] 2019-07-05
 

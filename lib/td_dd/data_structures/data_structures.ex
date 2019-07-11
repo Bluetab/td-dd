@@ -152,7 +152,7 @@ defmodule TdDd.DataStructures do
 
   defp is_active_field_structure(_field, _deleted), do: true
 
-  defp get_latest_children(data_structure_id, options) do
+  def get_latest_children(data_structure_id, options \\ []) do
     data_structure_id
     |> get_latest_version
     |> get_children(options)

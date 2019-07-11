@@ -1,6 +1,6 @@
 defmodule TdDd.CSV.Reader do
   @moduledoc """
-    Module to read Data Structure CSV
+  Module to read Data Structure CSV
   """
   alias Ecto.Changeset
   alias TdDd.DataStructures

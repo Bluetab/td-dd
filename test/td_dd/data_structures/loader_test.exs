@@ -1,6 +1,7 @@
 defmodule TdDd.LoaderTest do
   use TdDd.DataCase
 
+  alias TdDd.DataStructures
   alias TdDd.Loader
   alias TdDd.Repo
   alias TdDd.Search.MockIndexWorker
@@ -216,14 +217,12 @@ defmodule TdDd.LoaderTest do
       f51 = s5 |> Map.merge(f4)
       f61 = s6 |> Map.merge(f5)
 
-      ts = DateTime.truncate(DateTime.utc_now(), :second)
-      audit_fields = %{last_change_at: ts, last_change_by: 0}
       structure_records = [s1, s2, s3, s4, s5, s6]
       field_records = [f11, f12, f13, f21, f32, f41, f51, f61]
       relation_records = [r1, r2]
 
       assert {:ok, context} =
-               Loader.load(structure_records, field_records, relation_records, audit_fields)
+               Loader.load(structure_records, field_records, relation_records, audit())
 
       assert %{added: added, removed: removed, modified: modified, kept: kept} = context
       assert added == 6
@@ -364,22 +363,99 @@ defmodule TdDd.LoaderTest do
       f21 = s2 |> Map.merge(f1)
       f32 = s3 |> Map.merge(f2)
 
-      audit_fields = %{
-        last_change_at: DateTime.truncate(DateTime.utc_now(), :second),
-        last_change_by: 0
-      }
-
       structure_records = [s1, s2, s3]
       field_records = [f11, f12, f13, f21, f32]
       relation_records = [r1, r2]
 
       assert {:ok, context} =
-               Loader.load(structure_records, field_records, relation_records, audit_fields)
+               Loader.load(structure_records, field_records, relation_records, audit())
 
       assert %{added: added, removed: removed, modified: modified} = context
       assert added == 4
       assert removed == 2
       assert modified == 1
     end
+
+    test "load/1 allows a fields's metadata to be set and updated" do
+      system = insert(:system, external_id: random_string("EXT"), name: random_string("NAME"))
+
+      structure = random_structure(system.id)
+      field = structure |> random_field() |> Map.put(:metadata, %{"foo" => "bar"})
+
+      assert {:ok, %{structures: [%{id: structure_id}]}} =
+               Loader.load([structure], [], [], audit())
+
+      1..5
+      |> Enum.each(fn _ ->
+        foo = random_string("FOO")
+        field = Map.put(field, :metadata, %{"foo" => foo})
+        assert {:ok, _} = Loader.load([structure], [field], [], audit())
+
+        [%{metadata: metadata}] =
+          structure_id
+          |> DataStructures.get_data_structure_with_fields!()
+          |> Map.get(:data_fields)
+
+        assert metadata["foo"] == foo
+
+        [%{metadata: metadata}] =
+          structure_id
+          |> DataStructures.get_latest_children()
+
+        assert metadata["foo"] == foo
+      end)
+    end
+
+    test "load/1 allows a structure's class to be set and updated" do
+      system = insert(:system, external_id: random_string("EXT"), name: random_string("NAME"))
+
+      structure = random_structure(system.id)
+
+      1..5
+      |> Enum.each(fn _ ->
+        class = random_string()
+        structure = Map.put(structure, :class, class)
+        assert {:ok, _} = Loader.load([structure], [], [], audit())
+
+        assert [%{class: ^class}] =
+                 DataStructures.list_data_structures(%{
+                   system_id: structure.system_id,
+                   external_id: structure.external_id
+                 })
+      end)
+    end
+  end
+
+  defp audit do
+    %{
+      last_change_at: DateTime.truncate(DateTime.utc_now(), :second),
+      last_change_by: 0
+    }
+  end
+
+  defp random_structure(system_id) do
+    %{
+      system_id: system_id,
+      group: random_string("GROUP"),
+      name: random_string("NAME"),
+      description: random_string("DESC"),
+      version: 0,
+      external_id: random_string("EXT"),
+      type: "Type"
+    }
+  end
+
+  defp random_field(structure) do
+    Map.merge(structure, %{
+      field_name: random_string("FIELD "),
+      type: "CHAR",
+      description: random_string("DESC"),
+      version: 0
+    })
+  end
+
+  defp random_string(prefix \\ "") do
+    id = :rand.uniform(100_000_000)
+    "#{prefix}#{id}"
   end
 end

@@ -64,7 +64,7 @@ defmodule TdDd.Loader do
   end
 
   defp update_field({field, attrs}, audit) do
-    modifiable_fields = [:description]
+    modifiable_fields = [:description, :metadata]
     attrs = attrs |> Map.take(modifiable_fields) |> Map.merge(audit)
     field |> DataField.loader_changeset(attrs) |> Repo.update()
   end
