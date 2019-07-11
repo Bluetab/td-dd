@@ -34,36 +34,53 @@ defmodule TdDd.Loader.LoaderWorker do
     start_time = DateTime.utc_now()
     multi = Loader.load(structures, fields, relations, audit)
     ms = DateTime.diff(DateTime.utc_now(), start_time, :millisecond)
-
-    case multi do
-      {:ok, context} ->
-        %{added: added, removed: removed, modified: modified, kept: kept, structures: structures} =
-          context
-
-        upserts =
-          structures
-          |> Enum.filter(&(&1.last_change_at == ts))
-          |> Enum.count()
-
-        Logger.info(
-          "Bulk load process completed in #{ms}ms (*#{upserts}S -#{removed}F +#{added}F >#{kept}F ~#{
-            modified
-          }F)"
-        )
-
-        if upserts + removed + added + modified + kept > 0 do
-          @index_worker.reindex(structures)
-        end
-
-      {:error, failed_operation, _failed_value, _changes_so_far} ->
-        Logger.warn("Bulk load process failed after #{ms}ms (operation #{failed_operation})")
-    end
-
+    post_process(multi, ts, ms)
     {:noreply, state}
   end
 
   @impl true
   def handle_call(:ping, _from, state) do
     {:reply, :pong, state}
+  end
+
+  defp post_process(
+         {:ok,
+          %{
+            added: added,
+            removed: removed,
+            modified: modified,
+            kept: kept,
+            structures: structures,
+            deleted_structures: deleted_structures
+          }},
+         ts,
+         ms
+       ) do
+    upserts =
+      structures
+      |> Enum.filter(&(&1.last_change_at == ts))
+      |> Enum.count()
+
+    Logger.info(
+      "Bulk load process completed in #{ms}ms (*#{upserts}S -#{removed}F +#{added}F >#{kept}F ~#{
+        modified
+      }F)"
+    )
+
+    if upserts + removed + added + modified + kept > 0 do
+      @index_worker.reindex(structures)
+    end
+
+    if Enum.count(deleted_structures) > 0 do
+      @index_worker.reindex(deleted_structures)
+    end
+  end
+
+  defp post_process({:error, failed_operation, _failed_value, _changes_so_far}, _ts, ms) do
+    Logger.warn("Bulk load process failed after #{ms}ms (operation #{failed_operation})")
+  end
+
+  defp post_process(_, _, _) do
+    Logger.error("Unexpected multi response")
   end
 end

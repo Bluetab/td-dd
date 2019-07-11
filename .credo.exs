@@ -112,7 +112,7 @@
         {Credo.Check.Refactor.PipeChainStart,
          [
            excluded_argument_types: [:atom, :binary, :fn, :keyword, :number],
-           excluded_functions: []
+           excluded_functions: ["from"]
          ]},
         {Credo.Check.Refactor.UnlessWithElse, []},
 
