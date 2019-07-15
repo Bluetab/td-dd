@@ -5,6 +5,7 @@ defmodule TdDq.Rules do
 
   import Ecto.Query, warn: false
   alias Ecto.Changeset
+  alias Ecto.Multi
   alias TdCache.ConceptCache
   alias TdCache.LinkCache
   alias TdCache.TemplateCache
@@ -247,19 +248,29 @@ defmodule TdDq.Rules do
   end
 
   def soft_deletion(active_ids, ts \\ DateTime.utc_now()) do
+
     queryable =
       Rule
       |> where([r], not is_nil(r.business_concept_id))
       |> where([r], is_nil(r.deleted_at))
       |> where([r], r.business_concept_id not in ^active_ids)
 
+    rule_impl_queryable =
+      RuleImplementation
+      |> join(:inner, [ri], r in assoc(ri, :rule))
+      |> where([_, r], not is_nil(r.business_concept_id))
+      |> where([_, r], is_nil(r.deleted_at))
+      |> where([_, r], r.business_concept_id not in ^active_ids)
+
     queryable
     |> Repo.all()
     |> Enum.each(&@search_service.delete_searchable(&1))
 
-    queryable
-    |> update(set: [deleted_at: ^ts])
-    |> Repo.update_all([])
+    Multi.new()
+    |> Multi.update_all(:soft_deleted_implementation_rules, rule_impl_queryable, set: [deleted_at: ts])
+    |> Multi.update_all(:soft_deleted_rules, queryable, set: [deleted_at: ts])
+    |> Repo.transaction()
+
   end
 
   def get_rule_detail!(id) do
@@ -460,7 +471,8 @@ defmodule TdDq.Rules do
         inner_join: r in Rule,
         on: ri.rule_id == r.id,
         where: ^dynamic,
-        where: is_nil(r.deleted_at)
+        where: is_nil(r.deleted_at),
+        where: is_nil(ri.deleted_at)
       )
 
     query |> Repo.all()
@@ -485,13 +497,6 @@ defmodule TdDq.Rules do
     |> join(:inner, [ri], r in assoc(ri, :rule))
     |> where([_, r], is_nil(r.deleted_at))
     |> Repo.get!(id)
-  end
-
-  def get_rule_implementation_by_key!(implementation_key) do
-    RuleImplementation
-    |> join(:inner, [ri], r in assoc(ri, :rule))
-    |> where([_, r], is_nil(r.deleted_at))
-    |> Repo.get_by!(implementation_key: implementation_key)
   end
 
   def get_rule_by_implementation_key(implementation_key) do
@@ -531,6 +536,7 @@ defmodule TdDq.Rules do
     RuleImplementation
     |> join(:inner, [ri], r in assoc(ri, :rule))
     |> where([_, r], is_nil(r.deleted_at))
+    |> where([ri, _], is_nil(ri.deleted_at))
     |> Repo.get_by(implementation_key: implementation_key)
   end
 
@@ -916,9 +922,8 @@ defmodule TdDq.Rules do
   def check_available_implementation_key(%{"implementation_key" => implementation_key}) do
     count =
       RuleImplementation
-      |> where([r], r.implementation_key == ^implementation_key)
+      |> where([ri], ri.implementation_key == ^implementation_key and is_nil(ri.deleted_at))
       |> Repo.all()
-
     if Enum.empty?(count),
       do: {:implementation_key_available},
       else: {:implementation_key_not_available}

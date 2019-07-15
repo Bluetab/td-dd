@@ -20,6 +20,7 @@
 
 - [TD-1533] Added structure schema type for system params
 - [TD-1690] index implementation results on elastic
+- [TD-1687] Soft deletion of rule implementations
 
 ### Removed
 

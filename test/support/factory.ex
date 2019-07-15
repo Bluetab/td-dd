@@ -36,7 +36,8 @@ defmodule TdDq.Factory do
       rule: build(:rule),
       implementation_key: "implementation_key001",
       system_params: %{},
-      system: "Rule Implementation System"
+      system: "Rule Implementation System",
+      deleted_at: nil
     }
   end
 

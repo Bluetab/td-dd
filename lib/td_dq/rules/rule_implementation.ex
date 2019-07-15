@@ -11,6 +11,7 @@ defmodule TdDq.Rules.RuleImplementation do
     field(:system_params, :map)
     belongs_to(:rule, Rule)
 
+    field(:deleted_at, :utc_datetime)
     timestamps()
   end
 
@@ -18,6 +19,7 @@ defmodule TdDq.Rules.RuleImplementation do
   def changeset(%RuleImplementation{} = rule_implementation, attrs) do
     rule_implementation
     |> cast(attrs, [
+      :deleted_at,
       :implementation_key,
       :system,
       :system_params,

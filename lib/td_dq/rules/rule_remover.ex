@@ -40,8 +40,11 @@ defmodule TdDq.Rules.RuleRemover do
   defp soft_deletion([]), do: :ok
 
   defp soft_deletion(active_ids) do
-    {count, _} = Rules.soft_deletion(active_ids)
+    {:ok, %{soft_deleted_rules: {count, _}, soft_deleted_implementation_rules: {ri_count, _}}} =
+      Rules.soft_deletion(active_ids)
+
     if count > 0, do: Logger.info("Soft deleted #{count} rules")
+    if ri_count > 0, do: Logger.info("Soft deleted #{ri_count} rule implementations")
     :ok
   end
 end
