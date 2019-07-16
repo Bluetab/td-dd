@@ -701,6 +701,7 @@ defmodule TdDd.DataStructures do
   end
 
   def with_field_external_ids(%{data_fields: data_fields} = data_structure) do
+    #TODO call new function of FieldCache.get_external_id(system_external_id, external_id) after refactor of data_fields
     data_structure
     |> Map.put(
       :data_fields,
@@ -781,5 +782,13 @@ defmodule TdDd.DataStructures do
     parents
     |> Repo.preload(:data_structure)
     |> Enum.find(&(&1.data_structure.deleted_at == nil))
+  end
+
+  def get_structure_by_external_ids(system_external_id, external_id) do
+    DataStructure
+    |> join(:inner, [system], s in assoc(system, :system))
+    |> where([_, s], s.external_id == ^system_external_id )
+    |> where([d, _], d.external_id == ^external_id)
+    |> Repo.one()
   end
 end
