@@ -5,6 +5,7 @@
 ### Changed
 
 - [TD-1939] Change description type in rules table
+- [TD-2002] Update td-cache and delete permissions list from config
 
 ## [3.1.0] 2019-07-08
 
