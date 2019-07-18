@@ -68,7 +68,9 @@ defmodule TdDdWeb.DataStructureController do
       true ->
         filters = search_params |> Map.get("filters") |> Map.put("status", "")
         Map.put(search_params, "filters", filters)
-      false -> search_params |> Map.put("filters", %{"status" => ""})
+
+      false ->
+        search_params |> Map.put("filters", %{"status" => ""})
     end
   end
 
@@ -142,6 +144,22 @@ defmodule TdDdWeb.DataStructureController do
 
     data_structure = id |> get_data_structure()
 
+    do_render_data_structure(conn, user, data_structure)
+  end
+
+  defp get_data_structure(id) do
+    id
+    |> DataStructures.get_data_structure_with_fields!(deleted: false)
+    |> DataStructures.with_versions()
+    |> DataStructures.with_latest_children(deleted: false)
+    |> DataStructures.with_latest_parents(deleted: false)
+    |> DataStructures.with_latest_siblings(deleted: false)
+    |> DataStructures.with_latest_ancestry()
+    |> DataStructures.with_field_external_ids()
+    |> DataStructures.with_field_links()
+  end
+
+  defp do_render_data_structure(conn, user, data_structure) do
     with true <- can?(user, view_data_structure(data_structure)) do
       user_permissions = %{
         update: can?(user, update_data_structure(data_structure)),
@@ -168,18 +186,6 @@ defmodule TdDdWeb.DataStructureController do
         |> put_view(ErrorView)
         |> render("422.json")
     end
-  end
-
-  defp get_data_structure(id) do
-    id
-    |> DataStructures.get_data_structure_with_fields!([deleted: false])
-    |> DataStructures.with_versions()
-    |> DataStructures.with_latest_children([deleted: false])
-    |> DataStructures.with_latest_parents([deleted: false])
-    |> DataStructures.with_latest_siblings([deleted: false])
-    |> DataStructures.with_latest_ancestry()
-    |> DataStructures.with_field_external_ids()
-    |> DataStructures.with_field_links()
   end
 
   swagger_path :update do
@@ -316,5 +322,42 @@ defmodule TdDdWeb.DataStructureController do
     conn
     |> put_resp_header("x-total-count", "#{total}")
     |> render("index.json", data_structures: data_structures)
+  end
+
+  swagger_path :get_structure_by_external_ids do
+    description("Show Data Structure by system external id and structure external id")
+    produces("application/json")
+
+    parameters do
+      system_external_id(:path, :string, "System external ID", required: true)
+      structure_external_id(:path, :string, "Structure external ID", required: true)
+    end
+
+    response(200, "OK", Schema.ref(:DataStructureResponse))
+    response(400, "Client Error")
+    response(403, "Unauthorized")
+    response(404, "Not Found")
+    response(422, "Unprocessable Entity")
+  end
+  def get_structure_by_external_ids(conn, %{
+        "system_external_id" => system_external_id,
+        "structure_external_id" => structure_external_id
+      }) do
+    user = conn.assigns[:current_user]
+
+    data_structure =
+      DataStructures.get_structure_by_external_ids(system_external_id, structure_external_id)
+
+    case data_structure do
+      nil ->
+        conn
+        |> put_status(:not_found)
+        |> put_view(ErrorView)
+        |> render("404.json")
+
+      data_structure ->
+        data_structure = get_data_structure(data_structure.id)
+        do_render_data_structure(conn, user, data_structure)
+    end
   end
 end

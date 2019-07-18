@@ -13,6 +13,7 @@
 ### Added
 
 - [TD-1845] Soft deletion of data structures no longer present in CSV input for system/group
+- [TD-1970] New endpoint for "api/systems/{system_external_id}/structures/{structure_external_id}"
 
 ### Changed
 
