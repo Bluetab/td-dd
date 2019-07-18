@@ -6,6 +6,10 @@
 
 - [TD-1854] Data field metadata is not updated during metadata upload
 
+### Changed
+
+- [TD-2002] Update td-cache and delete permissions list from config
+
 ### Added
 
 - [TD-1845] Soft deletion of data structures no longer present in CSV input for system/group
