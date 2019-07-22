@@ -63,14 +63,14 @@ defmodule TdDdWeb.DataStructureController do
     end
   end
 
-  defp logic_deleted_filter(search_params) do
-    case Map.has_key?(search_params, "filters") do
+  defp logic_deleted_filter(params) do
+    case Map.has_key?(params, "filters") do
       true ->
-        filters = search_params |> Map.get("filters") |> Map.put("status", "")
-        Map.put(search_params, "filters", filters)
+        filters = params |> Map.get("filters") |> Map.put("status", "")
+        params = Map.put(params, "filters", filters)
 
       false ->
-        search_params |> Map.put("filters", %{"status" => ""})
+        params |> Map.put("filters", %{"status" => ""})
     end
   end
 
@@ -156,7 +156,6 @@ defmodule TdDdWeb.DataStructureController do
     |> DataStructures.with_latest_siblings(deleted: false)
     |> DataStructures.with_latest_ancestry()
     |> DataStructures.with_field_external_ids()
-    |> DataStructures.with_field_links()
   end
 
   defp do_render_data_structure(conn, user, data_structure) do
@@ -314,7 +313,7 @@ defmodule TdDdWeb.DataStructureController do
 
     data_structures =
       params
-      |> DataStructures.list_data_structures_with_no_parents([deleted: false])
+      |> DataStructures.list_data_structures_with_no_parents(deleted: false)
       |> Enum.filter(&can?(user, view_data_structure(&1)))
 
     total = length(data_structures)
@@ -339,6 +338,7 @@ defmodule TdDdWeb.DataStructureController do
     response(404, "Not Found")
     response(422, "Unprocessable Entity")
   end
+
   def get_structure_by_external_ids(conn, %{
         "system_external_id" => system_external_id,
         "structure_external_id" => structure_external_id

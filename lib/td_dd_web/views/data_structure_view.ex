@@ -1,7 +1,10 @@
 defmodule TdDdWeb.DataStructureView do
   use TdDdWeb, :view
   alias Ecto
+  alias TdDd.DataStructures
   alias TdDdWeb.DataStructureView
+
+  require Logger
 
   def render("index.json", %{data_structures: data_structures, filters: filters}) do
     %{
@@ -36,6 +39,7 @@ defmodule TdDdWeb.DataStructureView do
         |> add_siblings(data_structure)
         |> add_ancestry(data_structure)
         |> add_children(data_structure)
+        |> add_links(data_structure)
     }
   end
 
@@ -135,38 +139,57 @@ defmodule TdDdWeb.DataStructureView do
     Map.put(data_structure_json, :versions, versions)
   end
 
+  defp add_links(data_structure_json, %{id: id}) do
+    data_structure_json
+    |> Map.put(:links, DataStructures.get_structure_links(id))
+  end
+
   defp data_structure_version_json(data_structure_version) do
     data_structure_version
     |> Map.take([:version, :inserted_at, :updated_at])
   end
 
   defp add_data_fields(data_structure_json, data_structure) do
-    data_fields =
+    Logger.info("Adding fields #{DateTime.utc_now()}")
+
+    field_structures =
       case Map.get(data_structure, :data_fields) do
         nil ->
           []
 
         fields ->
-          Enum.map(
-            fields,
-            &Map.take(&1, [
-              :id,
-              :name,
-              :type,
-              :precision,
-              :metadata,
-              :nullable,
-              :description,
-              :last_change_at,
-              :inserted_at,
-              :external_id,
-              :bc_related,
-              :field_structure_id,
-              :has_df_content
-            ])
-          )
+          Enum.map(fields, &field_structure_json/1)
       end
 
-    Map.put(data_structure_json, :data_fields, data_fields)
+    Logger.info("Added fields #{DateTime.utc_now()}")
+
+    Map.put(data_structure_json, :data_fields, field_structures)
+  end
+
+  defp field_structure_json(%{id: id, class: "field", df_content: df_content} = ds) do
+    ds
+    |> Map.take([
+      :id,
+      :name,
+      :type,
+      :metadata,
+      :description,
+      :last_change_at,
+      :inserted_at,
+      :external_id
+    ])
+    |> lift_metadata
+    |> Map.put(:links, DataStructures.get_structure_links(id))
+    |> Map.put(:has_df_content, not is_nil(df_content))
+  end
+
+  defp lift_metadata(%{metadata: metadata} = ds) do
+    metadata =
+      metadata
+      |> Map.new(fn {k, v} -> {String.to_atom(k), v} end)
+
+    ds
+    |> Map.delete(:metadata)
+    |> Map.merge(metadata)
   end
 end

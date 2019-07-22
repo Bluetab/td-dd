@@ -272,63 +272,7 @@ defmodule TdDd.DataStructuresTest do
       ds = DataStructures.get_data_structure_with_fields!(data_structure_parent.id)
       assert ds <~> data_structure_parent
       df = Enum.find(ds.data_fields, &(&1.name == name))
-      assert df.field_structure_id == data_structure_child.id
-    end
-
-    test "get_data_structure_with_fields!/1 returns the data_structure with has_df_content" do
-      data_structure_parent = insert(:data_structure, name: "parent")
-      name = Map.get(@valid_attrs, :name)
-      data_structure_child = insert(:data_structure, name: name, class: "field")
-
-      data_structure_version_parent =
-        insert(:data_structure_version, data_structure_id: data_structure_parent.id)
-
-      data_structure_version_child =
-        insert(:data_structure_version, data_structure_id: data_structure_child.id)
-
-      insert(:data_structure_relation,
-        parent_id: data_structure_version_parent.id,
-        child_id: data_structure_version_child.id
-      )
-
-      insert(
-        :data_field,
-        Map.put(@valid_attrs, :data_structure_versions, [data_structure_version_parent])
-      )
-
-      ds = DataStructures.get_data_structure_with_fields!(data_structure_parent.id)
-      assert ds <~> data_structure_parent
-      df = Enum.find(ds.data_fields, &(&1.name == name))
-      assert df.has_df_content == false
-    end
-
-    test "get_data_structure_with_fields!/1 returns the data_structure with has_df_content with content" do
-      data_structure_parent = insert(:data_structure, name: "parent")
-      name = Map.get(@valid_attrs, :name)
-
-      data_structure_child =
-        insert(:data_structure, name: name, class: "field", df_content: %{has: "value"})
-
-      data_structure_version_parent =
-        insert(:data_structure_version, data_structure_id: data_structure_parent.id)
-
-      data_structure_version_child =
-        insert(:data_structure_version, data_structure_id: data_structure_child.id)
-
-      insert(:data_structure_relation,
-        parent_id: data_structure_version_parent.id,
-        child_id: data_structure_version_child.id
-      )
-
-      insert(
-        :data_field,
-        Map.put(@valid_attrs, :data_structure_versions, [data_structure_version_parent])
-      )
-
-      ds = DataStructures.get_data_structure_with_fields!(data_structure_parent.id)
-      assert ds <~> data_structure_parent
-      df = Enum.find(ds.data_fields, &(&1.name == name))
-      assert df.has_df_content == true
+      assert df.id == data_structure_child.id
     end
   end
 

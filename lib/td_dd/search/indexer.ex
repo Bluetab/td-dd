@@ -47,7 +47,6 @@ defmodule TdDd.Search.Indexer do
       data_fields: %{
         properties: %{
           name: %{type: "text"},
-          data_structure_id: %{type: "long", index: false},
           description: %{type: "text"},
           id: %{type: "long", index: false}
         }
@@ -76,7 +75,7 @@ defmodule TdDd.Search.Indexer do
   end
 
   def get_dynamic_mappings do
-    TemplateCache.list!()
+    TemplateCache.list_by_scope!("dd")
     |> Enum.flat_map(&get_mappings/1)
     |> Enum.into(%{})
   end

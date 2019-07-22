@@ -8,6 +8,7 @@
 
 ### Changed
 
+- [TD-1532] Improve support for linking with business concepts (fields are no longer used)
 - [TD-2002] Update td-cache and delete permissions list from config
 
 ### Added

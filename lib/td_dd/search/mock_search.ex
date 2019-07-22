@@ -13,7 +13,7 @@ defmodule TdDd.Search.MockSearch do
   end
 
   def search("data_structure", %{query: %{bool: %{must: %{match_all: %{}}}}}) do
-    template_list = TemplateCache.list!()
+    template_list = TemplateCache.list_by_scope!("dd")
     data_structures = DataStructures.list_data_structures()
 
     results =
