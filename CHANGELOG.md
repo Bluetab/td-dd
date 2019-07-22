@@ -4,6 +4,10 @@
 
 ### Fixed
 
+- [TD-1996] Change external_id to text in data_structures
+
+### Fixed
+
 - [TD-1854] Data field metadata is not updated during metadata upload
 
 ### Changed
@@ -37,21 +41,21 @@
 
 ### Fixed
 
-- [TD-1860] Fields were not associated to corresponding version when loading new version of existing structure 
+- [TD-1860] Fields were not associated to corresponding version when loading new version of existing structure
 - [TD-1864] Indexes structures with 'field' class
 - [TD-1851] Verify permissions while getting the root structures of a System
 
 ### Changed
 
 - [TD-1793] Checks if field structure has df_content and enriches data_structure :show
-- [TD-1891] Bulk load types translation from data fields to data structures 
+- [TD-1891] Bulk load types translation from data fields to data structures
 - [TD-1533] Ignores search term when it is no on Aggregation
 
 ## [2.21.0] 2019-06-10
 
 ### Fixed
 
-- [TD-1825] Structures of fields with metadata type are not setting its type correctly - metadata type key is not correct  
+- [TD-1825] Structures of fields with metadata type are not setting its type correctly - metadata type key is not correct
 
 ### Added
 
