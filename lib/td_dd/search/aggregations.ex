@@ -15,7 +15,7 @@ defmodule TdDd.Search.Aggregations do
     ]
 
     dynamic_keywords =
-      TemplateCache.list!()
+      TemplateCache.list_by_scope!("dd")
       |> Enum.flat_map(&template_terms/1)
 
     (static_keywords ++ dynamic_keywords)

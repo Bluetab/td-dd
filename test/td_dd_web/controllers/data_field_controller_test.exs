@@ -147,33 +147,6 @@ defmodule TdDdWeb.DataFieldControllerTest do
     end
   end
 
-  describe "data structure fields" do
-    setup [:create_data_field]
-
-    @tag authenticated_user: @admin_user_name
-    test "lists data structure fields ", %{
-      conn: conn,
-      data_field: data_field,
-      data_structure: data_structure,
-      swagger_schema: schema
-    } do
-      conn =
-        get(
-          conn,
-          Routes.data_structure_data_field_path(
-            conn,
-            :data_structure_fields,
-            data_structure.id
-          )
-        )
-
-      validate_resp_schema(conn, schema, "DataFieldsResponse")
-      data_fields = json_response(conn, 200)["data"]
-      assert length(data_fields) == 1
-      assert data_fields |> Enum.at(0) |> Map.get("id") == data_field.id
-    end
-  end
-
   defp create_data_field(_) do
     data_structure = insert(:data_structure)
     data_structure_version = insert(:data_structure_version, data_structure_id: data_structure.id)

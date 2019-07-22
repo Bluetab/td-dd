@@ -1,5 +1,5 @@
 defmodule TdDdWeb.EchoController do
-  use TdDdWeb, [:controller, :warn]
+  use TdDdWeb, [:controller, :debug]
 
   alias Jason, as: JSON
 

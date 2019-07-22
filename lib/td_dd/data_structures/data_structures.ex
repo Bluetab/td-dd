@@ -41,7 +41,7 @@ defmodule TdDd.DataStructures do
     DataStructure
     |> where([ds], ^filter)
     |> where([ds], is_nil(ds.class) or ds.class != "field")
-    |> with_deleted(get_deleted_option(options))
+    |> with_deleted(Keyword.get(options, :deleted, true))
     |> Repo.all()
     |> Repo.preload(system: [], versions: :parents)
     |> Enum.filter(&latest_version_is_root?/1)
@@ -128,29 +128,18 @@ defmodule TdDd.DataStructures do
   def get_latest_fields(data_structure_id, options \\ []) do
     data_structure_id
     |> get_latest_version
-    |> get_fields(options)
+    |> get_field_structures(options)
   end
 
-  def get_fields(data_structure_version, options \\ []) do
-    deleted = get_deleted_option(options)
-
+  def get_field_structures(data_structure_version, options \\ []) do
     data_structure_version
-    |> Ecto.assoc(:data_fields)
+    |> Ecto.assoc(:children)
+    |> join(:inner, [child], ds in assoc(child, :data_structure))
+    |> with_deleted(Keyword.get(options, :deleted, true), 4)
+    |> where([_child, _parent, _rel, ds], ds.class == "field")
+    |> select([_child, _parent, _rel, ds], ds)
     |> Repo.all()
-    |> Enum.map(&with_field_structure/1)
-    |> Enum.map(&with_field_structure_id/1)
-    |> Enum.map(&with_field_structure_has(&1, :df_content))
-    |> Enum.filter(&is_active_field_structure(&1, deleted))
   end
-
-  defp is_active_field_structure(field, false) do
-    case field.field_structure do
-      nil -> true
-      field_structure -> field_structure.deleted_at == nil
-    end
-  end
-
-  defp is_active_field_structure(_field, _deleted), do: true
 
   def get_latest_children(data_structure_id, options \\ []) do
     data_structure_id
@@ -161,22 +150,21 @@ defmodule TdDd.DataStructures do
   def get_children(data_structure_version, options \\ []) do
     data_structure_version
     |> Ecto.assoc([:children, :data_structure])
-    |> with_deleted(get_deleted_option(options))
+    |> with_deleted(Keyword.get(options, :deleted, true))
     |> Repo.all()
     |> Repo.preload(:system)
   end
 
-  defp with_deleted(query, true) do
-    query
-  end
+  defp with_deleted(query, true), do: query
 
   defp with_deleted(query, _deleted) do
-    query
-    |> where([ds], is_nil(ds.deleted_at))
+    where(query, [ds], is_nil(ds.deleted_at))
   end
 
-  defp get_deleted_option(options) do
-    Keyword.get(options, :deleted, true)
+  defp with_deleted(query, true, _), do: query
+
+  defp with_deleted(query, _deleted, 4) do
+    where(query, [_, _, _, ds], is_nil(ds.deleted_at))
   end
 
   def get_latest_parents(data_structure_id, options \\ []) do
@@ -188,7 +176,7 @@ defmodule TdDd.DataStructures do
   def get_parents(data_structure_version, options \\ []) do
     data_structure_version
     |> Ecto.assoc([:parents, :data_structure])
-    |> with_deleted(get_deleted_option(options))
+    |> with_deleted(Keyword.get(options, :deleted, true))
     |> Repo.all()
     |> Repo.preload(:system)
   end
@@ -200,12 +188,10 @@ defmodule TdDd.DataStructures do
   end
 
   def get_siblings(data_structure_version, options \\ []) do
-    deleted = get_deleted_option(options)
-
     data_structure_version
     |> Ecto.assoc(:parents)
     |> Repo.all()
-    |> Enum.filter(&is_active_data_structure_version(&1, deleted))
+    |> Enum.filter(&is_active_data_structure_version(&1, Keyword.get(options, :deleted, true)))
     |> Enum.flat_map(&get_children(&1, options))
     |> Enum.uniq()
   end
@@ -611,22 +597,6 @@ defmodule TdDd.DataStructures do
   end
 
   @doc """
-  Includes the id of the corresponding data structure of a given `%DataField{}` using
-  the `structure_id` key.
-  """
-  def with_field_structure_id(%DataField{} = data_field) do
-    structure_id = get_field_structure_id(data_field)
-    Map.put(data_field, :field_structure_id, structure_id)
-  end
-
-  defp with_field_structure_has(%{field_structure: field_structure} = data_field, field) do
-    value = Map.get(field_structure || %{}, field)
-    has_value = not is_nil(value)
-    key_string = "has_" <> Atom.to_string(field)
-    Map.put(data_field, String.to_atom(key_string), has_value)
-  end
-
-  @doc """
   Returns the id of the corresponding data structure of a given `%DataField{}`.
   """
   def get_field_structure_id(%DataField{} = data_field) do
@@ -701,7 +671,8 @@ defmodule TdDd.DataStructures do
   end
 
   def with_field_external_ids(%{data_fields: data_fields} = data_structure) do
-    #TODO call new function of FieldCache.get_external_id(system_external_id, external_id) after refactor of data_fields
+    # TODO call new function of FieldCache.get_external_id(system_external_id, external_id)
+    # after refactor of data_fields
     data_structure
     |> Map.put(
       :data_fields,
@@ -721,16 +692,8 @@ defmodule TdDd.DataStructures do
     )
   end
 
-  def with_field_links(%{data_fields: data_fields} = data_structure) do
-    data_structure
-    |> Map.put(
-      :data_fields,
-      Enum.map(data_fields, &Map.put(&1, :bc_related, get_field_links(&1.id)))
-    )
-  end
-
-  defp get_field_links(field_id) do
-    case LinkCache.list("data_field", field_id) do
+  def get_structure_links(structure_id) do
+    case LinkCache.list("data_structure", structure_id) do
       {:ok, links} -> links
       _ -> []
     end
@@ -787,7 +750,7 @@ defmodule TdDd.DataStructures do
   def get_structure_by_external_ids(system_external_id, external_id) do
     DataStructure
     |> join(:inner, [system], s in assoc(system, :system))
-    |> where([_, s], s.external_id == ^system_external_id )
+    |> where([_, s], s.external_id == ^system_external_id)
     |> where([d, _], d.external_id == ^external_id)
     |> Repo.one()
   end

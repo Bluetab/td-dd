@@ -164,7 +164,7 @@ defmodule TdDd.DictionaryTest do
     token = get_user_token(user_name)
 
     {:ok, http_status_code, %{"data" => data_field}} =
-      data_field_show(token, data_field_tmp["id"])
+      data_structure_show(token, data_field_tmp["id"])
 
     assert rc_ok() == to_response_code(http_status_code)
     attrs = field_value_to_data_field(fields)
@@ -246,8 +246,12 @@ defmodule TdDd.DictionaryTest do
     assert :ok == elem(DateTime.from_iso8601(target[attr]), 0)
   end
 
-  defp assert_attr("nullable" = attr, value, %{} = target) do
-    assert target[attr] == (value == "YES")
+  defp assert_attr("nullable" = attr, value, %{"metadata" => metadata}) do
+    assert metadata[attr] == (value == "YES")
+  end
+
+  defp assert_attr("type", value, %{"metadata" => %{"type" => type}}) do
+    assert type == value
   end
 
   defp assert_attr(attr, "", %{} = target) do
@@ -385,25 +389,6 @@ defmodule TdDd.DictionaryTest do
 
     %HTTPoison.Response{status_code: status_code, body: resp} =
       HTTPoison.get!(system_url(@endpoint, :index), headers, [])
-
-    {:ok, status_code, resp |> JSON.decode!()}
-  end
-
-  defp data_field_create(token, attrs) do
-    headers = [@headers, {"authorization", "Bearer #{token}"}]
-    body = %{"data_field" => attrs} |> JSON.encode!()
-
-    %HTTPoison.Response{status_code: status_code, body: resp} =
-      HTTPoison.post!(data_field_url(@endpoint, :create), body, headers, [])
-
-    {:ok, status_code, resp |> JSON.decode!()}
-  end
-
-  defp data_field_show(token, id) do
-    headers = [@headers, {"authorization", "Bearer #{token}"}]
-
-    %HTTPoison.Response{status_code: status_code, body: resp} =
-      HTTPoison.get!(data_field_url(@endpoint, :show, id), headers, [])
 
     {:ok, status_code, resp |> JSON.decode!()}
   end
