@@ -4,6 +4,12 @@
 
 ### Fixed
 
+- [TD-2003] Avoid loading a structure with a relation with itself in bulk load
+
+## [3.2.0]
+
+### Fixed
+
 - [TD-1996] Change external_id to text in data_structures
 
 ### Fixed
