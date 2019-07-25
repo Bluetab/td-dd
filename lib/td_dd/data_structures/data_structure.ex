@@ -101,25 +101,27 @@ defmodule TdDd.DataStructures.DataStructure do
     |> validate_length(:type, max: 255)
   end
 
-  def search_fields(%DataStructure{last_change_by: last_change_by_id} = structure) do
+  def search_fields(
+        %DataStructure{id: id, last_change_by: last_change_by_id, domain_id: domain_id} = structure
+      ) do
     last_change_by =
       case UserCache.get(last_change_by_id) do
         {:ok, nil} -> %{}
         {:ok, user} -> user
       end
 
-    domain_id = structure.domain_id
+    domain_ids = TaxonomyCache.get_parent_ids(domain_id)
 
-    domain_ids =
-      domain_id
-      |> TaxonomyCache.get_parent_ids()
+    dsv = DataStructures.get_latest_version(id)
+    path = DataStructures.get_path(dsv)
+
+    data_fields = dsv
+      |> DataStructures.get_field_structures(deleted: false)
+      |> Enum.map(&Map.take(&1, [:id, :name, :description]))
 
     structure =
-      structure
-      |> DataStructures.with_latest_fields()
-      |> DataStructures.with_latest_path()
-      |> DataStructures.with_latest_fields(deleted: false)
-      |> fill_items
+      %{name: "", group: "", ou: ""}
+      |> Map.merge(structure)
 
     system =
       structure
@@ -129,42 +131,32 @@ defmodule TdDd.DataStructures.DataStructure do
     status =
       case structure.deleted_at do
         nil -> ""
-        _del_timestamp -> @status.deleted
+        _deleted_at -> @status.deleted
       end
 
-    %{
-      id: structure.id,
-      description: structure.description,
-      group: structure.group,
-      last_change_at: structure.last_change_at,
-      last_change_by: last_change_by,
-      name: structure.name,
-      ou: structure.ou,
-      external_id: structure.external_id,
-      domain_id: domain_id,
-      domain_ids: domain_ids,
-      system: system,
-      system_id: structure.system_id,
-      type: structure.type,
-      inserted_at: structure.inserted_at,
-      confidential: structure.confidential,
-      df_content: structure.df_content,
-      data_fields: Enum.map(structure.data_fields, &Map.take(&1, [:id, :name, :description])),
-      path: structure.path,
-      status: status,
-      class: structure.class
-    }
-  end
-
-  defp fill_items(structure) do
-    keys_to_fill = [:name, :group, :ou]
-
-    Enum.reduce(keys_to_fill, structure, fn key, acc ->
-      case Map.get(acc, key) do
-        nil -> Map.put(acc, key, "")
-        _ -> acc
-      end
-    end)
+    structure
+    |> Map.take([
+      :id,
+      :description,
+      :group,
+      :last_change_at,
+      :name,
+      :ou,
+      :external_id,
+      :system_id,
+      :type,
+      :inserted_at,
+      :confidential,
+      :df_content,
+      :class
+    ])
+    |> Map.put(:data_fields, data_fields)
+    |> Map.put(:path, path)
+    |> Map.put(:last_change_by, last_change_by)
+    |> Map.put(:domain_id, domain_id)
+    |> Map.put(:domain_ids, domain_ids)
+    |> Map.put(:system, system)
+    |> Map.put(:status, status)
   end
 
   def index_name(_) do

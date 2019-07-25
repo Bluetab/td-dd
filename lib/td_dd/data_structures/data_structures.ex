@@ -395,10 +395,14 @@ defmodule TdDd.DataStructures do
 
   """
   def get_latest_version(data_structure_id) do
-    case list_data_structure_versions(data_structure_id) do
-      [] -> nil
-      vs -> vs |> Enum.max_by(& &1.version)
-    end
+    Repo.one(
+      from(dsv in DataStructureVersion,
+        where: dsv.data_structure_id == type(^data_structure_id, :integer),
+        order_by: [desc: :version],
+        limit: 1,
+        select: dsv
+      )
+    )
   end
 
   def add_domain_id(%{"ou" => domain_name, "domain_id" => nil} = data, domain_map) do
