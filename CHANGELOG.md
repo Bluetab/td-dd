@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- [TD-2028] Eliminate duplicated data structure versions
+
 ### Changed
 
 - [TD-2027] Improve indexing performance
