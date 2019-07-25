@@ -9,7 +9,53 @@ defmodule TdDq.Search.Query do
     |> Map.to_list()
     |> Enum.map(&to_terms_query/1)
   end
+
   def create_filters(_), do: []
+
+  def create_filter_clause(permissions, user_defined_filters) do
+    should_clause =
+      permissions
+      |> Enum.filter(
+        &Enum.any?(&1.permissions, fn p ->
+          p == :view_quality_rule || p == :manage_confidential_business_concepts
+        end)
+      )
+      |> Enum.map(&entry_to_filter_clause(&1, user_defined_filters))
+      |> with_default_clause()
+
+    %{bool: %{should: should_clause}}
+  end
+
+  defp entry_to_filter_clause(
+         %{resource_id: resource_id, permissions: permissions},
+         user_defined_filters
+       ) do
+    domain_clause = %{term: %{domain_ids: resource_id}}
+
+    confidential_clause =
+      case Enum.member?(permissions, :manage_confidential_business_concepts) do
+        true -> %{terms: %{_confidential: [true, false]}}
+        false -> %{terms: %{_confidential: [false]}}
+      end
+
+    %{
+      bool: %{filter: user_defined_filters ++ [domain_clause, confidential_clause]}
+    }
+  end
+
+  defp with_default_clause(filter_clauses) do
+    filter_clauses ++
+      [
+        %{
+          bool: %{
+            filter: [
+              %{terms: %{_confidential: [false]}},
+              %{term: %{domain_ids: -1}}
+              ]
+            }
+        }
+      ]
+  end
 
   defp to_terms_query({filter, values}) do
     Aggregations.aggregation_terms()
@@ -35,6 +81,7 @@ defmodule TdDq.Search.Query do
     %{simple_query_string: %{query: equery}}
     |> bool_query(filter)
   end
+
   def create_query(_params, filter) do
     %{match_all: %{}}
     |> bool_query(filter)

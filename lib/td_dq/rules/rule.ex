@@ -129,13 +129,20 @@ defmodule TdDq.Rules.Rule do
       Map.get(rule, :current_business_concept_version, %{name: ""})
 
     domain_ids = get_domain_ids(rule)
-    domain_parents = Enum.map(domain_ids, &%{id: &1, name: TaxonomyCache.get_name(&1)})
+
+    domain_parents =
+      case domain_ids do
+        -1 -> []
+        _ -> Enum.map(domain_ids, &%{id: &1, name: TaxonomyCache.get_name(&1)})
+      end
 
     execution_result_info = get_execution_result_info(rule)
+    confidential = is_rule_confidential?(rule)
 
     %{
       id: rule.id,
       business_concept_id: rule.business_concept_id,
+      _confidential: confidential,
       domain_ids: domain_ids,
       domain_parents: domain_parents,
       current_business_concept_version: current_business_concept_version,
@@ -216,11 +223,22 @@ defmodule TdDq.Rules.Rule do
     Map.put(result_map, :result_text, result_text)
   end
 
-  defp get_domain_ids(%{business_concept_id: nil}), do: []
+  defp get_domain_ids(%{business_concept_id: nil}), do: -1
 
   defp get_domain_ids(%{business_concept_id: business_concept_id}) do
     {:ok, domain_ids} = ConceptCache.get(business_concept_id, :domain_ids)
     domain_ids
+  end
+
+  defp is_rule_confidential?(%{business_concept_id: nil}), do: false
+
+  defp is_rule_confidential?(%{business_concept_id: business_concept_id}) do
+    {:ok, status} = ConceptCache.member_confidential_ids(business_concept_id)
+
+    case status do
+      1 -> true
+      _ -> false
+    end
   end
 
   def index_name do

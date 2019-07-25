@@ -7,8 +7,8 @@ Feature: Rules
     | innactive          | activate            | active           |
 
   Scenario Outline: Create new Rule, validate types
-    Given user "my-user" logged in the application
-    When "my-user" tries to create a Rule of type <type> with following data and type_params <type_params>:
+    Given user "app-admin" logged in the application
+    When "app-admin" tries to create a Rule of type <type> with following data and type_params <type_params>:
       | Field               | Value                                                                                  |
       | Business Concept ID | MYID_333                                                                               |
       | Name                | Field's Rule                                                                |
@@ -19,7 +19,7 @@ Feature: Rules
       | Goal                | 98                                                                                     |
       | Minimum             | 80                                                                                     |
     Then the system returns a result with code "Created"
-    And "my-user" is able to view rule named "Field's Rule" with with following data:
+    And "app-admin" is able to view rule named "Field's Rule" with with following data:
       | Field               | Value                                                                                     |
       | Business Concept ID | MYID_333                                                                                  |
       | Name                | Field's Rule                                                                              |

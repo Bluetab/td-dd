@@ -36,16 +36,17 @@ defmodule TdDqWeb.SearchController do
   def search(conn, params) do
     page = params |> Map.get("page", 0)
     size = params |> Map.get("size", 20)
+    user = conn.assigns[:current_resource]
 
     %{
       results: rules,
       aggregations: aggregations,
       total: total
-    } = params
+    } =
+      params
       |> Map.drop(["page", "size"])
-      |> Search.search(page, size)
+      |> Search.search(user, page, size)
 
-    user = conn.assigns[:current_resource]
     manage_permission = can?(user, manage(%{"resource_type" => "rule"}))
     user_permissions = %{manage_quality_rules: manage_permission}
 

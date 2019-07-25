@@ -1,11 +1,18 @@
 # Changelog
 
+## [Unreleased]
+
+### Added 
+
+- [TD-1776] permission view_quality_rule
+  
 ## [3.2.0] 2019-07-24
 
 ### Changed
 
 - [TD-1939] Change description type in rules table
 - [TD-2002] Update td-cache and delete permissions list from config
+- [TD-1775] Manage quality rule implementations
 
 ## [3.1.0] 2019-07-08
 

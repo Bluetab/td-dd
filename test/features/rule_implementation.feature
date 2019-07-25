@@ -3,7 +3,7 @@ Feature: Rule Implementations
   be related with a rule type
 
   Scenario: Create a new Rule Implementation
-    Given user "my-user" logged in the application
+    Given user "app-admin" logged in the application
     And a existing Rule Type with name "Integer Values Range" and the following parameters:
       | Params                                                                                                        |
       | {"type_params": [{"name": "Minimum Value", "type": "integer"}, {"name": "Maximum Value", "type": "integer"}]} |
@@ -18,25 +18,25 @@ Feature: Rule Implementations
       | Goal                | 98                                                                                     |
       | Minimum             | 80                                                                                     |
       | Type Params         | %-{ "Minimum Value": 18, "Maximum Value": 50 }                                         |
-    When "my-user" tries to create a Rule Implementation associated to Rule "Field's Rule" with following data:
+    When "app-admin" tries to create a Rule Implementation associated to Rule "Field's Rule" with following data:
       | Field               | Value                                                                                  |
       | System              | Oracle                                                                                 |
       | Implementation key  | ri0001                                                                                 |
       | System Params       | %-{ "Table": "Clients", "Field": "Age" }                                               |
     Then the system returns a result with code "Created"
-    And "my-user" is able to view a Rule Implementation named "ri0001" with following data:
+    And "app-admin" is able to view a Rule Implementation named "ri0001" with following data:
       | Field               | Value                                                                                  |
       | System              | Oracle                                                                                 |
       | Implementation key  | ri0001                                                                                 |
       | System Params       | %-{ "Table": "Clients", "Field": "Age" }                                               |
-    When "my-user" tries to create a Rule Implementation associated to Rule "Field's Rule" with following data:
+    When "app-admin" tries to create a Rule Implementation associated to Rule "Field's Rule" with following data:
       | Field               | Value                                                                                  |
       | System              | Oracle                                                                                 |
       | Implementation key  | ri 0001                                                                                |
       | System Params       | %-{ "Table": "Clients", "Field": "Age" }                                               |
     Then the system returns a result with code "Unprocessable Entity"
     And the system returns an error with name "rule.implementation.error.implementation_key.invalid"
-    When "my-user" tries to create a Rule Implementation associated to Rule "Field's Rule" with following data:
+    When "app-admin" tries to create a Rule Implementation associated to Rule "Field's Rule" with following data:
     | Field               | Value                                                                                  |
     | System              | Oracle                                                                                 |
     | Implementation key  |                                                                                        |
@@ -44,7 +44,7 @@ Feature: Rule Implementations
     Then the system returns a result with code "Created"
 
   Scenario: Create a new Rule Implementation with an existing implementation key
-    Given user "my-user" logged in the application
+    Given user "app-admin" logged in the application
     And a existing Rule Type with name "Integer Values Range" and the following parameters:
       | Params                                                                                                        |
       | {"type_params": [{"name": "Minimum Value", "type": "integer"}, {"name": "Maximum Value", "type": "integer"}]} |
@@ -64,7 +64,7 @@ Feature: Rule Implementations
       | System              | Oracle                                                                                 |
       | Implementation key  | ri0001                                                                                 |
       | System Params       | %-{ "Table": "Clients", "Field": "Age" }                                               |
-    When "my-user" tries to create a Rule Implementation associated to Rule "Field's Rule" with following data:
+    When "app-admin" tries to create a Rule Implementation associated to Rule "Field's Rule" with following data:
       | Field               | Value                                                                                  |
       | System              | Oracle                                                                                 |
       | Implementation key  | ri0001                                                                                 |

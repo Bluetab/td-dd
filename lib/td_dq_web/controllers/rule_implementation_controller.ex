@@ -353,7 +353,7 @@ defmodule TdDqWeb.RuleImplementationController do
     description("List Quality Rules")
 
     parameters do
-      id(:path, :integer, "Rule ID", required: true)
+      rule_id(:path, :integer, "Rule ID", required: true)
     end
 
     response(200, "OK", Schema.ref(:RuleImplementationsResponse))

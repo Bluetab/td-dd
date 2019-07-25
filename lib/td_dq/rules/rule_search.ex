@@ -4,6 +4,8 @@ defmodule TdDq.Rules.Search do
   @moduledoc """
     Helper module to construct rule search queries.
   """
+  alias TdDq.Accounts.User
+  alias TdDq.Permissions
   alias TdDq.Search.Aggregations
   alias TdDq.Search.Query
 
@@ -16,9 +18,37 @@ defmodule TdDq.Rules.Search do
     @search_service.get_filters("quality_rule", search)
   end
 
-  def search(params, page, size) do
+  def search(params, user, page \\ 0, size \\ 50)
+
+  def search(params, %User{is_admin: true}, page, size) do
     filter_clause = Query.create_filters(params)
     query = Query.create_query(params, filter_clause)
+
+    sort = Map.get(params, "sort", ["name.raw"])
+
+    %{
+      from: page * size,
+      size: size,
+      query: query,
+      sort: sort,
+      aggs: Aggregations.aggregation_terms()
+    }
+    |> do_search
+  end
+
+  def search(params, %User{} = user, page, size) do
+    permissions = Permissions.get_domain_permissions(user)
+    filter_rules(params, permissions, page, size)
+  end
+
+  defp filter_rules(_params, [], _page, _size),
+    do: %{results: [], aggregations: %{}, total: 0}
+
+  defp filter_rules(params, [_h | _t] = permissions, page, size) do
+    user_defined_filters = Query.create_filters(params)
+    filter = Query.create_filter_clause(permissions, user_defined_filters)
+
+    query = Query.create_query(params, filter)
 
     sort = Map.get(params, "sort", ["name.raw"])
 

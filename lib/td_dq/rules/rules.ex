@@ -49,6 +49,15 @@ defmodule TdDq.Rules do
     |> Repo.preload(:rule_type)
   end
 
+  def list_rules_with_bc_id do
+    Rule
+    |> where([r], is_nil(r.deleted_at))
+    |> where([r], not is_nil(r.business_concept_id))
+    |> Repo.all()
+    |> Repo.preload(:rule_type)
+    |> Enum.map(&preload_bc_version/1)
+  end
+
   def list_all_rules do
     Rule
     |> where([r], is_nil(r.deleted_at))

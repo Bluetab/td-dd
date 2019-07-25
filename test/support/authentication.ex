@@ -6,6 +6,7 @@ defmodule TdDqWeb.Authentication do
   alias Phoenix.ConnTest
   alias TdDq.Accounts.User
   alias TdDq.Auth.Guardian
+  alias TdDq.Permissions.MockPermissionResolver
   import Plug.Conn
   @headers {"Content-type", "application/json"}
 
@@ -23,10 +24,11 @@ defmodule TdDqWeb.Authentication do
 
   def recycle_and_put_headers(conn) do
     authorization_header = List.first(get_req_header(conn, "authorization"))
+
     conn
     |> ConnTest.recycle()
     |> put_req_header("authorization", authorization_header)
-    end
+  end
 
   # OLD
   # def create_user_auth_conn(user_name) do
@@ -42,7 +44,13 @@ defmodule TdDqWeb.Authentication do
     {:ok, jwt, full_claims} = Guardian.encode_and_sign(user)
     conn = ConnTest.build_conn()
     conn = put_auth_headers(conn, jwt)
-    {:ok, %{conn: conn, jwt: jwt, claims: full_claims}}
+    {:ok, %{conn: conn, jwt: jwt, claims: full_claims, user: user}}
+  end
+
+  def create_user_auth_conn(user, :not_admin) do
+    {:ok, resp} = create_user_auth_conn(user)
+    register_token(Map.get(resp, :jwt))
+    {:ok, resp}
   end
 
   def get_header(token) do
@@ -56,10 +64,10 @@ defmodule TdDqWeb.Authentication do
   end
 
   def build_user_token(%User{} = user) do
-      case Guardian.encode_and_sign(user) do
-        {:ok, jwt, _full_claims} -> jwt
-        _ -> raise "Problems encoding and signing a user"
-      end
+    case Guardian.encode_and_sign(user) do
+      {:ok, jwt, _full_claims} -> jwt
+      _ -> raise "Problems encoding and signing a user"
+    end
   end
 
   def build_user_token(user_name, opts \\ []) when is_binary(user_name) do
@@ -70,4 +78,12 @@ defmodule TdDqWeb.Authentication do
     build_user_token(user_name, is_admin: user_name == "app-admin")
   end
 
+  defp register_token(token) do
+    case Guardian.decode_and_verify(token) do
+      {:ok, resource} -> MockPermissionResolver.register_token(resource)
+      _ -> raise "Problems decoding and verifying token"
+    end
+
+    token
+  end
 end
