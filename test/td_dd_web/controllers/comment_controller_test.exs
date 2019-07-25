@@ -16,17 +16,9 @@ defmodule TdDdWeb.CommentControllerTest do
     resource_type: "some resource_type",
     user_id: 42
   }
-  @others_create_attrs %{content: "some content", resource_type: "Field", user_id: 42}
-  @others_create_attrs2 %{content: "some content", resource_type: "Structure", user_id: 42}
-  @data_field_attrs %{
-    description: "some description",
-    name: "some name",
-    nullable: true,
-    precision: "some precision",
-    type: "some type",
-    last_change_at: "2010-04-17 14:00:00Z",
-    last_change_by: 42
-  }
+
+  @structure_comment_attrs %{content: "some content", resource_type: "Structure", user_id: 42}
+
   @data_structure_attrs %{
     description: "some description",
     group: "some group",
@@ -94,40 +86,6 @@ defmodule TdDdWeb.CommentControllerTest do
     end
 
     @tag authenticated_user: @admin_user_name
-    test "renders comment related to a Data Field", %{conn: conn} do
-      conn = post(conn, Routes.data_field_path(conn, :create), data_field: @data_field_attrs)
-      assert %{"id" => data_field_id} = json_response(conn, 201)["data"]
-
-      conn = recycle_and_put_headers(conn)
-      conn = get(conn, Routes.data_field_path(conn, :show, data_field_id))
-
-      comment_create_attrs = Map.put(@others_create_attrs, :resource_id, data_field_id)
-      conn = recycle_and_put_headers(conn)
-      conn = post(conn, Routes.comment_path(conn, :create), comment: comment_create_attrs)
-      assert %{"id" => id} = json_response(conn, 201)["data"]
-
-      conn = recycle_and_put_headers(conn)
-
-      conn =
-        get(
-          conn,
-          Routes.data_field_comment_path(
-            conn,
-            :get_comment_data_field,
-            comment_create_attrs.resource_id
-          )
-        )
-
-      assert json_response(conn, 200)["data"] == %{
-               "id" => id,
-               "content" => "some content",
-               "resource_id" => data_field_id,
-               "resource_type" => "Field",
-               "user_id" => GuardianPlug.current_resource(conn).user_name
-             }
-    end
-
-    @tag authenticated_user: @admin_user_name
     test "renders comment related to a Data Structure", %{conn: conn} do
       system = insert(:system)
       system_id = system |> Map.get(:id)
@@ -138,7 +96,7 @@ defmodule TdDdWeb.CommentControllerTest do
 
       assert %{"id" => data_structure_id} = json_response(conn, 201)["data"]
 
-      comment_create_attrs = Map.put(@others_create_attrs2, :resource_id, data_structure_id)
+      comment_create_attrs = Map.put(@structure_comment_attrs, :resource_id, data_structure_id)
       conn = recycle_and_put_headers(conn)
       conn = post(conn, Routes.comment_path(conn, :create), comment: comment_create_attrs)
       assert %{"id" => id} = json_response(conn, 201)["data"]

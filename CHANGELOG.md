@@ -6,6 +6,10 @@
 
 - [TD-2028] Eliminate duplicated data structure versions
 
+### Removed
+
+- [TD-1534] Remove data fields from model
+
 ## [3.2.0] 2019-07-24
 
 ### Fixed

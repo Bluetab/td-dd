@@ -393,8 +393,8 @@ defmodule TdDd.DictionaryTest do
     {:ok, status_code, resp |> JSON.decode!()}
   end
 
-  defp data_field_find(%{"data_fields" => fields}, field_name) do
-    Enum.find(fields, &(&1["name"] == field_name))
+  defp data_field_find(%{"children" => children}, field_name) do
+    Enum.find(children, &(&1["name"] == field_name))
   end
 
   defp metadata_upload(token, data_structures, data_fields) do

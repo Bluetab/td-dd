@@ -63,15 +63,13 @@ defmodule TdDdWeb.DataStructureController do
     end
   end
 
-  defp logic_deleted_filter(params) do
-    case Map.has_key?(params, "filters") do
-      true ->
-        filters = params |> Map.get("filters") |> Map.put("status", "")
-        params = Map.put(params, "filters", filters)
+  defp logic_deleted_filter(%{"filters" => filters} = params) do
+    filters = Map.put(filters, "status", "")
+    Map.put(params, "filters", filters)
+  end
 
-      false ->
-        params |> Map.put("filters", %{"status" => ""})
-    end
+  defp logic_deleted_filter(params) do
+    Map.put(params, "filters", %{"status" => ""})
   end
 
   swagger_path :create do

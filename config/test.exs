@@ -39,7 +39,7 @@ config :td_dd, :elasticsearch,
 config :td_dd, permission_resolver: TdDd.Permissions.MockPermissionResolver
 config :td_dd, index_worker: TdDd.Search.MockIndexWorker
 
-config :td_cache, redis_host: "redis"
+config :td_cache, redis_host: "redis", port: 6380
 
 config :td_dd, :audit_service,
   api_service: TdDdWeb.ApiServices.MockTdAuditService,

@@ -3,7 +3,6 @@ defmodule TdDd.LoaderTest do
 
   alias TdDd.DataStructures
   alias TdDd.Loader
-  alias TdDd.Repo
   alias TdDd.Search.MockIndexWorker
 
   setup_all do
@@ -32,56 +31,8 @@ defmodule TdDd.LoaderTest do
           type: "USER_TABLE"
         )
 
-      dsv = insert(:data_structure_version, data_structure_id: data_structure.id, version: 0)
-      dsv2 = insert(:data_structure_version, data_structure_id: ds_2.id, version: 0)
-
-      field1 =
-        insert(:data_field,
-          name: "F1",
-          type: "T1",
-          description: "Field1",
-          precision: "P1",
-          nullable: false
-        )
-
-      field2 =
-        insert(:data_field,
-          name: "F2",
-          type: "T2",
-          description: "Field2",
-          precision: "P2",
-          nullable: true
-        )
-
-      field3 =
-        insert(:data_field,
-          name: "F123123",
-          type: "T2",
-          description: "Will be deleted",
-          precision: "P2",
-          nullable: false
-        )
-
-      field4 =
-        insert(:data_field,
-          name: "FIELD_TO_KEEP",
-          type: "T2",
-          description: "Will be kept",
-          precision: "P2",
-          nullable: false
-        )
-
-      entries =
-        [field1, field2, field3]
-        |> Enum.map(fn %{id: id} -> %{data_field_id: id, data_structure_version_id: dsv.id} end)
-
-      Repo.insert_all("versions_fields", entries)
-
-      entries =
-        [field4]
-        |> Enum.map(fn %{id: id} -> %{data_field_id: id, data_structure_version_id: dsv2.id} end)
-
-      Repo.insert_all("versions_fields", entries)
+      insert(:data_structure_version, data_structure_id: data_structure.id, version: 0)
+      insert(:data_structure_version, data_structure_id: ds_2.id, version: 0)
 
       s1 = %{
         description: "D1",
@@ -224,11 +175,6 @@ defmodule TdDd.LoaderTest do
       assert {:ok, context} =
                Loader.load(structure_records, field_records, relation_records, audit())
 
-      assert %{added: added, removed: removed, modified: modified, kept: kept} = context
-      assert added == 6
-      assert removed == 2
-      assert modified == 1
-      assert kept == 1
     end
 
     test "load/1 with structures containing an external_id" do
@@ -244,40 +190,7 @@ defmodule TdDd.LoaderTest do
           type: "Table"
         )
 
-      dsv = insert(:data_structure_version, data_structure_id: data_structure.id, version: 0)
-
-      field1 =
-        insert(:data_field,
-          name: "F1",
-          type: "T1",
-          description: "Field1",
-          precision: "P1",
-          nullable: false
-        )
-
-      field2 =
-        insert(:data_field,
-          name: "F2",
-          type: "T2",
-          description: "Will be deleted",
-          precision: "P2",
-          nullable: true
-        )
-
-      field3 =
-        insert(:data_field,
-          name: "F123123",
-          type: "T2",
-          description: "Will be also deleted",
-          precision: "P2",
-          nullable: false
-        )
-
-      entries =
-        [field1, field2, field3]
-        |> Enum.map(fn %{id: id} -> %{data_field_id: id, data_structure_version_id: dsv.id} end)
-
-      Repo.insert_all("versions_fields", entries)
+      insert(:data_structure_version, data_structure_id: data_structure.id, version: 0)
 
       s1 = %{
         system_id: system.id,
@@ -369,11 +282,6 @@ defmodule TdDd.LoaderTest do
 
       assert {:ok, context} =
                Loader.load(structure_records, field_records, relation_records, audit())
-
-      assert %{added: added, removed: removed, modified: modified} = context
-      assert added == 4
-      assert removed == 2
-      assert modified == 1
     end
 
     test "load/1 allows a fields's metadata to be set and updated" do

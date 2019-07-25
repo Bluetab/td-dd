@@ -62,7 +62,7 @@ defmodule TdDdWeb.MetadataControllerTest do
       json_response = json_response(conn, 200)["data"]
       assert length(json_response["parents"]) == 1
       assert length(json_response["siblings"]) == 4
-      assert length(json_response["data_fields"]) == 16
+      assert length(json_response["children"]) == 16
     end
   end
 

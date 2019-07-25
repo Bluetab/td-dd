@@ -2,7 +2,6 @@ defmodule TdDd.Factory do
   @moduledoc false
   use ExMachina.Ecto, repo: TdDd.Repo
   alias TdDd.Accounts.User
-  alias TdDd.DataStructures.DataField
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
@@ -41,19 +40,6 @@ defmodule TdDd.Factory do
 
   def data_structure_relation_factory do
     %DataStructureRelation{}
-  end
-
-  def data_field_factory do
-    %DataField{
-      description: "some description",
-      last_change_at: DateTime.truncate(DateTime.utc_now(), :second),
-      last_change_by: 0,
-      name: "some name",
-      nullable: "false",
-      precision: "some precision",
-      type: "some type",
-      metadata: %{}
-    }
   end
 
   def system_factory do
