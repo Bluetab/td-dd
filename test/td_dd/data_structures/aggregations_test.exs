@@ -1,5 +1,5 @@
 defmodule TdDd.Search.AggregationsTest do
-  use TdDq.DataCase
+  use TdDd.DataCase
   alias TdCache.TemplateCache
   alias TdDd.Search.Aggregations
 
@@ -20,7 +20,7 @@ defmodule TdDd.Search.AggregationsTest do
         name: "onefield",
         content: template_content,
         label: "label",
-        scope: "dq"
+        scope: "dd"
       })
 
       aggs = Aggregations.aggregation_terms()
