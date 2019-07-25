@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- [TD-2028] Eliminate duplicated data structure versions
+
 ## [3.2.0] 2019-07-24
 
 ### Fixed
