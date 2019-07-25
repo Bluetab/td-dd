@@ -54,6 +54,12 @@ config :td_dq, :audit_service,
   protocol: "http",
   audits_path: "/api/audits/"
 
+config :td_cache, :event_stream,
+  consumer_id: "default",
+  consumer_group: "dq",
+  streams: [
+    [key: "business_concept:events", consumer: TdDq.Cache.RuleIndexer]
+  ]
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"

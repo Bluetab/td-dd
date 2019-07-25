@@ -27,8 +27,26 @@ defmodule TdDqWeb.RuleView do
     }
   end
 
+  def render("show.json", %{
+        hypermedia: hypermedia,
+        rule: rule,
+        user_permissions: user_permissions
+      }) do
+    Map.merge(
+      %{"user_permissions" => user_permissions},
+      render_one_hypermedia(rule, hypermedia, RuleView, "rule.json")
+    )
+  end
+
   def render("show.json", %{hypermedia: hypermedia, rule: rule}) do
     render_one_hypermedia(rule, hypermedia, RuleView, "rule.json")
+  end
+
+  def render("show.json", %{rule: rule, user_permissions: user_permissions}) do
+    %{
+      user_permissions: user_permissions,
+      data: render_one(rule, RuleView, "rule.json")
+    }
   end
 
   def render("show.json", %{rule: rule}) do

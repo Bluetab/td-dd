@@ -14,4 +14,8 @@ defmodule TdDq.Search.Indexer do
     %{status_code: 200} = ESClientApi.put!(index_name, mapping |> JSON.encode!())
     Search.put_bulk_search(items)
   end
+
+  def partial_reindex(items) do
+    Search.put_bulk_search(items)
+  end
 end

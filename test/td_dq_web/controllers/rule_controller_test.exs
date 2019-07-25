@@ -3,6 +3,7 @@ defmodule TdDqWeb.RuleControllerTest do
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   alias TdDq.MockRelationCache
+  alias TdDq.Permissions.MockPermissionResolver
   alias TdDq.Rules
   alias TdDq.Rules.Rule
   alias TdDqWeb.ApiServices.MockTdAuditService
@@ -12,6 +13,7 @@ defmodule TdDqWeb.RuleControllerTest do
   setup_all do
     start_supervised(MockTdAuditService)
     start_supervised(MockRelationCache)
+    start_supervised(MockPermissionResolver)
     :ok
   end
 
@@ -60,7 +62,7 @@ defmodule TdDqWeb.RuleControllerTest do
     name: "some updated name",
     population: "some updated population",
     priority: "some updated priority",
-    weight: 43,
+    weight: 43
   }
 
   @invalid_attrs %{
@@ -89,10 +91,11 @@ defmodule TdDqWeb.RuleControllerTest do
     "version",
     "updated_by",
     "rule_type_id",
-    "type_params",
+    "type_params"
   ]
 
   @admin_user_name "app-admin"
+  @user_name "Im not an admon"
 
   @list_cache [
     %{
@@ -158,6 +161,61 @@ defmodule TdDqWeb.RuleControllerTest do
       conn = get(conn, Routes.rule_path(conn, :index))
       validate_resp_schema(conn, schema, "RulesResponse")
       assert json_response(conn, 200)["data"] == []
+    end
+
+    @tag authenticated_no_admin_user: @user_name
+    test "lists all rules depending on permissions", %{
+      conn: conn,
+      user: %{id: user_id},
+      swagger_schema: schema
+    } do
+      rule_type = insert(:rule_type)
+      business_concept_id_permission = "1"
+      domain_id_with_permission = 1
+
+      creation_attrs_1 = %{
+        business_concept_id: business_concept_id_permission,
+        description: "some description",
+        goal: 42,
+        minimum: 42,
+        name: "some name 1",
+        population: "some population",
+        priority: "some priority",
+        weight: 42,
+        updated_by: Integer.mod(:binary.decode_unsigned("app-admin"), 100_000),
+        type_params: %{},
+        rule_type_id: rule_type.id
+      }
+
+      creation_attrs_2 = %{
+        business_concept_id: "2",
+        description: "some description",
+        goal: 42,
+        minimum: 42,
+        name: "some name 2",
+        population: "some population",
+        priority: "some priority",
+        weight: 42,
+        updated_by: Integer.mod(:binary.decode_unsigned("app-admin"), 100_000),
+        type_params: %{},
+        rule_type_id: rule_type.id
+      }
+
+      {:ok, rule} = Rules.create_rule(rule_type, creation_attrs_1)
+      Rules.create_rule(rule_type, creation_attrs_2)
+
+      create_acl_entry(
+        user_id,
+        business_concept_id_permission,
+        domain_id_with_permission,
+        [domain_id_with_permission],
+        "watch"
+      )
+
+      conn = get(conn, Routes.rule_path(conn, :index))
+      validate_resp_schema(conn, schema, "RulesResponse")
+
+      assert Enum.all?(json_response(conn, 200)["data"], fn %{"id" => id} -> id == rule.id end)
     end
   end
 
@@ -274,8 +332,12 @@ defmodule TdDqWeb.RuleControllerTest do
   end
 
   describe "get_rule_detail" do
-    @tag authenticated_user: @admin_user_name
-    test "renders rule when data is valid", %{conn: conn, swagger_schema: schema} do
+    @tag authenticated_user: @user_name
+    test "renders rule when data is valid", %{
+      conn: conn,
+      swagger_schema: schema,
+      user: %{id: user_id}
+    } do
       cache_fixture(@list_cache)
 
       rule_type =
@@ -284,7 +346,22 @@ defmodule TdDqWeb.RuleControllerTest do
           params: %{"system_params" => [%{"name" => "table", "type" => "string"}]}
         )
 
-      creation_attrs = @create_fixture_attrs |> Map.put("rule_type_id", rule_type.id)
+      business_concept_id_permission = "1"
+      domain_id_with_permission = "1"
+
+      create_acl_entry(
+        user_id,
+        business_concept_id_permission,
+        domain_id_with_permission,
+        [domain_id_with_permission],
+        "create"
+      )
+
+      creation_attrs =
+        @create_fixture_attrs
+        |> Map.put("rule_type_id", rule_type.id)
+        |> Map.put("business_concept_id", business_concept_id_permission)
+
       conn = post(conn, Routes.rule_path(conn, :create), rule: creation_attrs)
       validate_resp_schema(conn, schema, "RuleResponse")
 
@@ -369,6 +446,18 @@ defmodule TdDqWeb.RuleControllerTest do
         get(conn, Routes.rule_path(conn, :show, rule))
       end)
     end
+  end
+
+  defp create_acl_entry(user_id, bc_id, domain_id, domain_ids, role) do
+    MockPermissionResolver.create_hierarchy(bc_id, domain_ids)
+
+    MockPermissionResolver.create_acl_entry(%{
+      principal_id: user_id,
+      principal_type: "user",
+      resource_id: domain_id,
+      resource_type: "domain",
+      role_name: role
+    })
   end
 
   defp create_rule(_) do

@@ -10,7 +10,7 @@ defmodule TdDq.Search.RuleMappings do
     mapping_type = %{
       id: %{type: "long"},
       business_concept_id: %{type: "text"},
-      domain_ids: %{type: "long"},
+      domain_ids: %{type: "long", null_value: -1},
       domain_parents: %{
         type: "nested",
         properties: %{
@@ -58,6 +58,7 @@ defmodule TdDq.Search.RuleMappings do
           result_text: %{type: "text", fields: %{raw: %{type: "keyword"}}}
         }
       },
+      _confidential: %{type: "boolean"},
       df_content: content_mappings
     }
 

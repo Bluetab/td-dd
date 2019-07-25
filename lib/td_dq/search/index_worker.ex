@@ -17,6 +17,10 @@ defmodule TdDq.Search.IndexWorker do
     GenServer.cast(TdDq.Search.IndexWorker, {:reindex, index_name, items})
   end
 
+  def partial_reindex(items) do
+    GenServer.cast(TdDq.Search.IndexWorker, {:partial_reindex, items})
+  end
+
   @impl true
   def init(state), do: {:ok, state}
 
@@ -26,6 +30,19 @@ defmodule TdDq.Search.IndexWorker do
 
     start_time = DateTime.utc_now()
     Indexer.reindex(index_name, items)
+    end_time = DateTime.utc_now()
+
+    Logger.info(
+      "Indexed. Elapsed seconds: #{DateTime.diff(end_time, start_time)}"
+    )
+
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_cast({:partial_reindex, items}, state) do
+    start_time = DateTime.utc_now()
+    Indexer.partial_reindex(items)
     end_time = DateTime.utc_now()
 
     Logger.info(
