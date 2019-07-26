@@ -46,10 +46,6 @@ defmodule TdDd.Loader.LoaderWorker do
   defp post_process(
          {:ok,
           %{
-            added: added,
-            removed: removed,
-            modified: modified,
-            kept: kept,
             structures: structures,
             deleted_structures: deleted_structures
           }},
@@ -62,12 +58,10 @@ defmodule TdDd.Loader.LoaderWorker do
       |> Enum.count()
 
     Logger.info(
-      "Bulk load process completed in #{ms}ms (*#{upserts}S -#{removed}F +#{added}F >#{kept}F ~#{
-        modified
-      }F)"
+      "Bulk load process completed in #{ms}ms (*#{upserts}S)"
     )
 
-    if upserts + removed + added + modified + kept > 0 do
+    if upserts > 0 do
       @index_worker.reindex(structures)
     end
 

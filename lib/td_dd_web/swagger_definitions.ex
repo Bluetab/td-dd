@@ -21,7 +21,6 @@ defmodule TdDdWeb.SwaggerDefinitions do
             id(:integer, "Data Structure version unique identifier", required: true)
             ancestry(Schema.ref(:DataStructuresEmbedded))
             children(Schema.ref(:DataStructuresEmbedded))
-            data_fields(Schema.ref(:DataFields))
             data_structure(Schema.ref(:DataStructure))
             parent(Schema.ref(:DataStructuresEmbedded))
             siblings(Schema.ref(:DataStructuresEmbedded))
@@ -66,7 +65,6 @@ defmodule TdDdWeb.SwaggerDefinitions do
             confidential(:boolean, "Data Structure confidentiality")
             last_change_at(:string, "Data Structure last updated at")
             inserted_at(:string, "Data Structure creation date")
-            data_fields(Schema.ref(:DataFields))
             metadata(:object, "Data Structure data. Uploaded by background processes")
             parent(Schema.ref(:DataStructuresEmbedded))
             children(Schema.ref(:DataStructuresEmbedded))
@@ -187,92 +185,6 @@ defmodule TdDdWeb.SwaggerDefinitions do
               system: ["Oracle"]
             }
           })
-        end
-    }
-  end
-
-  def data_field_swagger_definitions do
-    %{
-      DataField:
-        swagger_schema do
-          title("Data Field")
-          description("A Data Structure Data Field")
-
-          properties do
-            id(:integer, "Data Field unique identifier", required: true)
-            name(:string, "Data Field name", required: true)
-            type([:string, :null], "Data Field type")
-            precision([:string, :null], "Data Field precision")
-            nullable([:boolean, :null], "Data Field... is nullable")
-            description([:string, :null], "Data Field descrition")
-            last_change_at(:string, "Data Field last updated at")
-            inserted_at(:string, "Data Field creation date")
-            metadata(:object, "Data Field data. Uploaded by background processes")
-            external_id([:string, :null], "Data Field External ID")
-          end
-
-          example(%{
-            id: 123,
-            name: "Data Field name",
-            type: "Data Field type",
-            precision: "Data Field precision",
-            nullable: true,
-            description: "Data Field descrition",
-            last_change_at: "2010-04-17 14:00:00",
-            inserted_at: "2018-05-08T17:17:59.691460",
-            metadata: %{
-              "description" => "last description",
-              "last_change_at" => "2018-05-08T17:17:59.691460"
-            },
-            external_id: "External ID"
-          })
-        end,
-      DataFieldCreate:
-        swagger_schema do
-          properties do
-            data_field(
-              Schema.new do
-                properties do
-                  name(:string, "Data Field name", required: true)
-                  type(:string, "Data Field type")
-                  precision(:string, "Data Field precision")
-                  nullable(:boolean, "Data Field... is nullable")
-                  description(:string, "Data Field descrition")
-                end
-              end
-            )
-          end
-        end,
-      DataFieldUpdate:
-        swagger_schema do
-          properties do
-            data_field(
-              Schema.new do
-                properties do
-                  description(:string, "Data Field description")
-                end
-              end
-            )
-          end
-        end,
-      DataFields:
-        swagger_schema do
-          title("Data Fields")
-          description("A collection of Data Fields")
-          type(:array)
-          items(Schema.ref(:DataField))
-        end,
-      DataFieldResponse:
-        swagger_schema do
-          properties do
-            data(Schema.ref(:DataField))
-          end
-        end,
-      DataFieldsResponse:
-        swagger_schema do
-          properties do
-            data(Schema.ref(:DataFields))
-          end
         end
     }
   end

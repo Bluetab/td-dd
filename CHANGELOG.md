@@ -12,6 +12,10 @@
 - [TD-2028] Eliminate duplicated data structure versions
 - [TD-2003] Avoid loading a structure with a relation with itself in bulk load
 
+### Removed
+
+- [TD-1534] Remove data fields from model
+
 ## [3.2.0] 2019-07-24
 
 ### Fixed

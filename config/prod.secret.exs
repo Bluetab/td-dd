@@ -55,6 +55,5 @@ config :td_cache, :event_stream,
   consumer_id: "${HOSTNAME}",
   consumer_group: "dd",
   streams: [
-    [key: "data_structure:events", consumer: TdDd.Cache.StructureLoader],
-    [key: "data_field:events", consumer: TdDd.Cache.FieldLoader]
+    [key: "data_structure:events", consumer: TdDd.Cache.StructureLoader]
   ]

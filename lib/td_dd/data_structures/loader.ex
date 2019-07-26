@@ -6,9 +6,7 @@ defmodule TdDd.Loader do
 
   import Ecto.Query, warn: false
 
-  alias Ecto.Adapters.SQL
   alias Ecto.Multi
-  alias TdDd.DataStructures.DataField
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
@@ -39,10 +37,6 @@ defmodule TdDd.Loader do
     |> Multi.run(:versions_by_sys_group_name_version, &versions_by_sys_group_name_version/2)
     |> Multi.run(:relations, &upsert_relations/2)
     |> Multi.run(:diffs, &diff_structures/2)
-    |> Multi.run(:removed, &remove_fields/2)
-    |> Multi.run(:kept, &keep_fields/2)
-    |> Multi.run(:added, &insert_fields/2)
-    |> Multi.run(:modified, &update_fields/2)
     |> Multi.run(:deleted_structures, &delete_structures/2)
     |> Repo.transaction()
   end
@@ -52,93 +46,6 @@ defmodule TdDd.Loader do
     fields_as_structures = FieldsAsStructures.as_structures(fields_by_parent)
     fields_as_relations = FieldsAsStructures.as_relations(fields_by_parent)
     {fields_as_structures, fields_as_relations}
-  end
-
-  defp update_fields(_repo, %{diffs: diffs, audit: audit}) do
-    to_update = Enum.flat_map(diffs, &Map.get(&1, :modify))
-    Logger.info("Updating existing fields (#{Enum.count(to_update)} fields)")
-
-    to_update
-    |> Enum.map(&update_field(&1, audit))
-    |> errors_or_count
-  end
-
-  defp update_field({field, attrs}, audit) do
-    modifiable_fields = [:description, :metadata]
-    attrs = attrs |> Map.take(modifiable_fields) |> Map.merge(audit)
-    field |> DataField.loader_changeset(attrs) |> Repo.update()
-  end
-
-  defp insert_fields(_repo, %{diffs: diffs, audit: audit}) do
-    to_insert = Enum.flat_map(diffs, &Map.get(&1, :add))
-    Logger.info("Inserting new fields (#{Enum.count(to_insert)} fields)")
-
-    version_fields =
-      to_insert
-      |> Enum.map(fn {version, attrs} -> {version, insert_field(attrs, audit)} end)
-
-    Logger.info("Inserting new field associations (#{Enum.count(version_fields)} fields)")
-
-    entries =
-      version_fields
-      |> Enum.map(fn {version, field} ->
-        %{data_field_id: field.id, data_structure_version_id: version.id}
-      end)
-
-    {count, _} = Repo.insert_all("versions_fields", entries)
-
-    {:ok, count}
-  end
-
-  defp insert_field(%{field_name: name} = attrs, audit) do
-    %DataField{}
-    |> DataField.changeset(attrs |> Map.merge(%{name: name}) |> Map.merge(audit))
-    |> Repo.insert!()
-  end
-
-  defp keep_fields(_repo, %{diffs: diffs}) do
-    to_keep = Enum.flat_map(diffs, &Map.get(&1, :keep))
-
-    Logger.info("Keeping field associations (#{Enum.count(to_keep)} fields)")
-
-    entries =
-      to_keep
-      |> Enum.map(fn {version, field} ->
-        %{data_field_id: field.id, data_structure_version_id: version.id}
-      end)
-
-    {count, _} = Repo.insert_all("versions_fields", entries)
-
-    {:ok, count}
-  end
-
-  defp remove_fields(_repo, %{diffs: diffs}) do
-    to_remove = Enum.flat_map(diffs, &Map.get(&1, :remove))
-
-    Logger.info("Removing field associations (#{Enum.count(to_remove)} fields)")
-
-    rows =
-      to_remove
-      |> Enum.map(&remove_field/1)
-      |> Enum.sum()
-
-    {:ok, rows}
-  end
-
-  defp remove_field({%DataStructureVersion{id: version_id}, %DataField{id: field_id}}) do
-    remove_field(version_id, field_id)
-  end
-
-  defp remove_field(%{data_field_id: field_id, data_structure_version_id: version_id}) do
-    remove_field(version_id, field_id)
-  end
-
-  defp remove_field(version_id, field_id) do
-    q = "DELETE FROM versions_fields WHERE data_field_id = $1 and data_structure_version_id = $2"
-
-    {:ok, %{num_rows: num_rows}} = SQL.query(Repo, q, [field_id, version_id])
-
-    num_rows
   end
 
   defp upsert_structures(_repo, %{
@@ -386,7 +293,7 @@ defmodule TdDd.Loader do
   defp structure_diff(version, records, is_new_version) do
     data_fields =
       version
-      |> Ecto.assoc([:data_structure, :versions, :data_fields])
+      |> Ecto.assoc([:data_structure, :versions])
       |> Repo.all()
 
     to_upsert =
@@ -464,15 +371,6 @@ defmodule TdDd.Loader do
 
     case Enum.empty?(errors) do
       true -> {:ok, results |> Enum.map(fn {:ok, structure} -> structure end)}
-      false -> {:error, errors}
-    end
-  end
-
-  defp errors_or_count(results) do
-    errors = changeset_errors(results)
-
-    case Enum.empty?(errors) do
-      true -> {:ok, results |> Enum.count()}
       false -> {:error, errors}
     end
   end

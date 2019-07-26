@@ -20,10 +20,7 @@ defmodule TdDd.Application do
       worker(TdDd.Loader.LoaderWorker, [TdDd.Loader.LoaderWorker]),
       # Workers for cache loading
       worker(TdDd.Cache.SystemLoader, []),
-      worker(TdDd.Cache.StructureLoader, []),
-      worker(TdDd.Cache.FieldLoader, []),
-      # Duplicate removal task on startup
-      {TdDd.DataStructures.DuplicateRemover, []}
+      worker(TdDd.Cache.StructureLoader, [])
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

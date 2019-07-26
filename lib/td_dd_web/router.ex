@@ -27,7 +27,6 @@ defmodule TdDdWeb.Router do
 
     resources "/data_structures", DataStructureController, except: [:new, :edit] do
       get("/comment", CommentController, :get_comment_data_structure)
-      get("/data_fields", DataFieldController, :data_structure_fields)
       resources("/versions", DataStructureVersionController, only: [:show])
     end
 
@@ -35,10 +34,6 @@ defmodule TdDdWeb.Router do
 
     post("/data_structures/search", DataStructureController, :search)
     post("/data_structures/metadata", MetadataController, :upload)
-
-    resources "/data_fields", DataFieldController, except: [:new, :edit] do
-      get("/comment", CommentController, :get_comment_data_field)
-    end
 
     resources("/comments", CommentController, except: [:new, :edit])
 
