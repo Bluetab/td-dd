@@ -424,6 +424,34 @@ defmodule TdDd.LoaderTest do
                  })
       end)
     end
+
+    test "load/1 loads fails when structure has relation with itself" do
+      sys1 = insert(:system, external_id: "SYS1", name: "SYS1")
+
+      structure = %{
+        description: "Table with country information",
+        external_id: "xxx",
+        group: "demo",
+        metadata: %{},
+        name: "xxx",
+        ou: "Trial Truedat",
+        system_id: sys1.id,
+        type: "Table",
+        version: 0
+      }
+
+      relation = %{
+        child_external_id: "xxx",
+        child_group: "demo",
+        child_name: "xxx",
+        parent_external_id: "xxx",
+        parent_group: "demo",
+        parent_name: "xxx",
+        system_id: sys1.id
+      }
+
+      assert {:error, :relations, _, _} = Loader.load([structure], [], [relation], audit())
+    end
   end
 
   defp audit do

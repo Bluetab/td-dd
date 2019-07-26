@@ -10,6 +10,7 @@
 ### Fixed
 
 - [TD-2028] Eliminate duplicated data structure versions
+- [TD-2003] Avoid loading a structure with a relation with itself in bulk load
 
 ## [3.2.0] 2019-07-24
 

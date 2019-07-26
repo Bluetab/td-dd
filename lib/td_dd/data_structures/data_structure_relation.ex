@@ -19,6 +19,11 @@ defmodule TdDd.DataStructures.DataStructureRelation do
       :child_id
     ])
     |> validate_required([:parent_id, :child_id])
+    |> check_constraint(
+      :parent_id,
+      name: :avoid_structure_relation_itself,
+      message: "Structure must not have relations with itself"
+    )
   end
 
   @doc false
