@@ -9,6 +9,7 @@
 
 ### Fixed
 
+- [TD-1991] Performance issues due to blocking Redis connections
 - [TD-2028] Eliminate duplicated data structure versions
 - [TD-2003] Avoid loading a structure with a relation with itself in bulk load
 
