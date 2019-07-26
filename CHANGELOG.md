@@ -4,22 +4,19 @@
 
 ### Changed
 
+- [TD-2027] Improve indexing performance
 - [TD-1985] Type of template field user with an aggregation size of 50
+
+### Fixed
+
+- [TD-2028] Eliminate duplicated data structure versions
 
 ## [3.2.0] 2019-07-24
 
 ### Fixed
 
 - [TD-1996] Change external_id to text in data_structures
-
-### Fixed
-
 - [TD-1854] Data field metadata is not updated during metadata upload
-
-### Changed
-
-- [TD-1532] Improve support for linking with business concepts (fields are no longer used)
-- [TD-2002] Update td-cache and delete permissions list from config
 
 ### Added
 
@@ -28,6 +25,8 @@
 
 ### Changed
 
+- [TD-1532] Improve support for linking with business concepts (fields are no longer used)
+- [TD-2002] Update td-cache and delete permissions list from config
 - [TD-1927] Allow structure "class" property to be specified in metadata CSV
 
 ## [3.1.0] 2019-07-08
