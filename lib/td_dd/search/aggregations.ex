@@ -25,7 +25,7 @@ defmodule TdDd.Search.Aggregations do
   def template_terms(%{content: content}) do
     content
     |> Enum.filter(&filter_content_term/1)
-    |> Enum.map(& &1["name"])
+    |> Enum.map(&Map.take(&1, ["name", "type"]))
     |> Enum.map(&content_term/1)
   end
 
@@ -33,7 +33,11 @@ defmodule TdDd.Search.Aggregations do
   def filter_content_term(%{"values" => values}) when is_map(values), do: true
   def filter_content_term(_), do: false
 
-  defp content_term(field) do
+  defp content_term(%{"name" => field, "type" => "user"}) do
+    {field, %{terms: %{field: "df_content.#{field}.raw", size: 50}}}
+  end
+
+  defp content_term(%{"name" => field}) do
     {field, %{terms: %{field: "df_content.#{field}.raw"}}}
   end
 end

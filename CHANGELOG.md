@@ -1,14 +1,15 @@
 # Changelog
 
-## Unreleased
-
-### Fixed
-
-- [TD-2028] Eliminate duplicated data structure versions
+## [Unreleased]
 
 ### Changed
 
 - [TD-2027] Improve indexing performance
+- [TD-1985] Type of template field user with an aggregation size of 50
+
+### Fixed
+
+- [TD-2028] Eliminate duplicated data structure versions
 
 ## [3.2.0] 2019-07-24
 
