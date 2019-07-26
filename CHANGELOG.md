@@ -1,19 +1,17 @@
 # Changelog
 
+## [3.2.1] 2019-07-26
+
+### Fixed
+
+- [TD-1991] Performance improvements
+
 ## [3.2.0] 2019-07-24
 
 ### Fixed
 
 - [TD-1996] Change external_id to text in data_structures
-
-### Fixed
-
 - [TD-1854] Data field metadata is not updated during metadata upload
-
-### Changed
-
-- [TD-1532] Improve support for linking with business concepts (fields are no longer used)
-- [TD-2002] Update td-cache and delete permissions list from config
 
 ### Added
 
@@ -22,6 +20,8 @@
 
 ### Changed
 
+- [TD-1532] Improve support for linking with business concepts (fields are no longer used)
+- [TD-2002] Update td-cache and delete permissions list from config
 - [TD-1927] Allow structure "class" property to be specified in metadata CSV
 
 ## [3.1.0] 2019-07-08

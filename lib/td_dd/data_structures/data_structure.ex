@@ -116,7 +116,6 @@ defmodule TdDd.DataStructures.DataStructure do
 
     structure =
       structure
-      |> DataStructures.with_latest_fields()
       |> DataStructures.with_latest_path()
       |> DataStructures.with_latest_fields(deleted: false)
       |> fill_items
