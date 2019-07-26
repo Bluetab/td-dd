@@ -1,15 +1,16 @@
 # Changelog
 
-## Unreleased
+## [Unreleased]
+
+### Changed
+
+- [TD-2027] Improve indexing performance
+- [TD-1985] Type of template field user with an aggregation size of 50
 
 ### Fixed
 
 - [TD-2028] Eliminate duplicated data structure versions
 - [TD-2003] Avoid loading a structure with a relation with itself in bulk load
-
-### Changed
-
-- [TD-2027] Improve indexing performance
 
 ## [3.2.0] 2019-07-24
 
