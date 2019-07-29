@@ -69,7 +69,7 @@ defmodule TdDdWeb.DataStructureView do
       :deleted_at
     ])
     |> Map.put(:metadata, Map.get(data_structure, :metadata, %{}))
-    |> Map.put(:path, Map.get(data_structure, :path, []))
+    |> add_ancestry(data_structure)
   end
 
   defp add_system_with_keys(json, data_structure, keys) do
