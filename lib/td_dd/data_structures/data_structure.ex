@@ -3,12 +3,14 @@ defmodule TdDd.DataStructures.DataStructure do
   use Ecto.Schema
   import Ecto.Changeset
   alias TdCache.TaxonomyCache
+  alias TdCache.TemplateCache
   alias TdCache.UserCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Searchable
   alias TdDd.Systems.System
+  alias TdDfLib.Format
 
   @behaviour Searchable
 
@@ -102,12 +104,18 @@ defmodule TdDd.DataStructures.DataStructure do
   end
 
   def search_fields(
-        %DataStructure{id: id, last_change_by: last_change_by_id, domain_id: domain_id} = structure
+        %DataStructure{id: id, last_change_by: last_change_by_id, domain_id: domain_id, type: type} = structure
       ) do
     last_change_by =
       case UserCache.get(last_change_by_id) do
         {:ok, nil} -> %{}
         {:ok, user} -> user
+      end
+
+    template =
+      case TemplateCache.get_by_name!(type) do
+        nil -> %{df_content: []}
+        template -> template
       end
 
     domain_ids = TaxonomyCache.get_parent_ids(domain_id)
@@ -134,6 +142,13 @@ defmodule TdDd.DataStructures.DataStructure do
         _deleted_at -> @status.deleted
       end
 
+    template_content = Map.get(template, :content)
+
+    df_content =
+      structure
+      |> Map.get(:df_content)
+      |> format_content(template_content)
+
     structure
     |> Map.take([
       :id,
@@ -147,7 +162,6 @@ defmodule TdDd.DataStructures.DataStructure do
       :type,
       :inserted_at,
       :confidential,
-      :df_content,
       :class
     ])
     |> Map.put(:data_fields, data_fields)
@@ -157,6 +171,15 @@ defmodule TdDd.DataStructures.DataStructure do
     |> Map.put(:domain_ids, domain_ids)
     |> Map.put(:system, system)
     |> Map.put(:status, status)
+    |> Map.put(:df_content, df_content)
+  end
+
+  defp format_content(nil, _), do: nil
+
+  defp format_content(df_content, template_content) do
+    df_content
+      |> Format.apply_template(template_content)
+      |> Format.search_values(template_content)
   end
 
   def index_name(_) do
