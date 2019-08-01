@@ -6,8 +6,8 @@ defmodule TdDd.DataStructures do
   import Ecto.Query, warn: false
 
   alias Ecto.Association.NotLoaded
-  alias TdCache.StructureCache
   alias TdCache.LinkCache
+  alias TdCache.StructureCache
   alias TdCache.TemplateCache
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
