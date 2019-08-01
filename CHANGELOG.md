@@ -5,6 +5,7 @@
 ### Added 
 
 - [TD-1776] permission view_quality_rule
+- [TD-1560] Enriched description field in template content
 
 ### Changed
 

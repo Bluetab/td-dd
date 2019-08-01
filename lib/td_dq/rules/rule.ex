@@ -118,10 +118,13 @@ defmodule TdDq.Rules.Rule do
         {:ok, user} -> user
       end
 
+    template_content = Map.get(template, :content)
+
     df_content =
       rule
       |> Map.get(:df_content)
-      |> Format.apply_template(Map.get(template, :content))
+      |> Format.apply_template(template_content)
+      |> Format.search_values(template_content)
 
     rule_type = Map.take(rule.rule_type, [:id, :name, :params])
 
