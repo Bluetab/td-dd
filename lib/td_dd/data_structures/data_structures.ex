@@ -6,8 +6,8 @@ defmodule TdDd.DataStructures do
   import Ecto.Query, warn: false
 
   alias Ecto.Association.NotLoaded
-  alias TdCache.FieldCache
   alias TdCache.LinkCache
+  alias TdCache.StructureCache
   alias TdCache.TemplateCache
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
@@ -426,8 +426,6 @@ defmodule TdDd.DataStructures do
   end
 
   def with_field_external_ids(%{data_fields: data_fields} = data_structure) do
-    # TODO call new function of FieldCache.get_external_id(system_external_id, external_id)
-    # after refactor of data_fields
     data_structure
     |> Map.put(
       :data_fields,
@@ -436,11 +434,9 @@ defmodule TdDd.DataStructures do
         &Map.put(
           &1,
           :external_id,
-          FieldCache.get_external_id(
-            data_structure.system.name,
-            data_structure.group,
-            data_structure.name,
-            &1.name
+          StructureCache.get_external_id(
+            data_structure.system.external_id,
+            &1.external_id
           )
         )
       )

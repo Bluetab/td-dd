@@ -10,6 +10,7 @@
 
 - [TD-2027] Improve indexing performance
 - [TD-1985] Type of template field user with an aggregation size of 50
+- [TD-2009] Get external id by data structure system and external id, fixed ancestry in structure view
 
 ### Fixed
 
