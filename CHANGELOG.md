@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-1560] Enriched description field in template content
+
 ### Changed
 
 - [TD-2027] Improve indexing performance
