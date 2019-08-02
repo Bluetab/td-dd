@@ -1,7 +1,10 @@
 defmodule TdDd.DataStructures.DataStructureVersion do
   @moduledoc false
+
   use Ecto.Schema
+
   import Ecto.Changeset
+
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
@@ -46,7 +49,6 @@ defmodule TdDd.DataStructures.DataStructureVersion do
         data_structure: structure,
         version: version
       }) do
-
     structure
     |> DataStructure.search_fields()
     |> Map.put(:version, version)

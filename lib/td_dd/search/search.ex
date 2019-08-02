@@ -7,8 +7,11 @@ defmodule TdDd.Search do
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.ESClientApi
+  alias TdDd.Repo
 
   require Logger
+
+  @batch_size 100
 
   def put_bulk_search(:all) do
     DataStructures.list_data_structures()
@@ -17,18 +20,33 @@ defmodule TdDd.Search do
 
   def put_bulk_search(data_structures) do
     data_structures
-    |> Enum.filter(&is_indexable?/1)
-    |> Enum.chunk_every(100)
-    |> Enum.map(&ESClientApi.bulk_index_content/1)
+    |> Enum.chunk_every(@batch_size)
+    |> Enum.map(&bulk_index_batch/1)
   end
 
-  defp is_indexable?(%DataStructure{metadata: %{"indexable" => "false"}}), do: false
-  defp is_indexable?(_), do: true
+  defp bulk_index_batch(items) do
+    time(fn ->
+      items
+      |> Repo.preload(
+        versions: [
+          :data_structure,
+          parents: [:data_structure, parents: [:data_structure, :parents]]
+        ]
+      )
+      |> ESClientApi.bulk_index_content()
+    end)
+  end
+
+  defp time(fun) do
+    ts = DateTime.utc_now()
+    res = fun.()
+    millis = DateTime.diff(DateTime.utc_now(), ts, :millisecond)
+    rate = 1_000 / millis * @batch_size
+    Logger.info("Indexing rate #{rate} items/s")
+    res
+  end
 
   # CREATE AND UPDATE
-  def put_search(%DataStructure{metadata: %{"indexable" => "false"}}),
-    do: {:error, :not_indexable}
-
   def put_search(%DataStructure{} = data_structure) do
     search_fields = data_structure.__struct__.search_fields(data_structure)
 

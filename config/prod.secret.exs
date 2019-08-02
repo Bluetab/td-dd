@@ -40,8 +40,7 @@ config :td_dd, :auth_service,
 config :td_dd, :elasticsearch,
   search_service: TdDd.Search,
   es_host: "${ES_HOST}",
-  es_port: "${ES_PORT}",
-  type_name: "doc"
+  es_port: "${ES_PORT}"
 
 config :td_cache, redis_host: "${REDIS_HOST}"
 

@@ -60,8 +60,7 @@ config :td_dd, :auth_service,
 config :td_dd, :elasticsearch,
   search_service: TdDd.Search,
   es_host: "localhost",
-  es_port: 9200,
-  type_name: "doc"
+  es_port: 9200
 
 config :td_cache, redis_host: "localhost"
 

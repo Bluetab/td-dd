@@ -1,7 +1,9 @@
 defmodule TdDd.DataStructures.DataStructure do
   @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
+
   alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
   alias TdCache.UserCache
@@ -104,7 +106,7 @@ defmodule TdDd.DataStructures.DataStructure do
   end
 
   def search_fields(
-        %DataStructure{id: id, last_change_by: last_change_by_id, domain_id: domain_id, type: type} = structure
+        %DataStructure{last_change_by: last_change_by_id, domain_id: domain_id} = structure
       ) do
     last_change_by =
       case UserCache.get(last_change_by_id) do
@@ -112,18 +114,13 @@ defmodule TdDd.DataStructures.DataStructure do
         {:ok, user} -> user
       end
 
-    template =
-      case TemplateCache.get_by_name!(type) do
-        nil -> %{df_content: []}
-        template -> template
-      end
-
     domain_ids = TaxonomyCache.get_parent_ids(domain_id)
 
-    dsv = DataStructures.get_latest_version(id)
+    dsv = DataStructures.get_latest_version(structure)
     path = DataStructures.get_path(dsv)
 
-    data_fields = dsv
+    data_fields =
+      dsv
       |> DataStructures.get_field_structures(deleted: false)
       |> Enum.map(&Map.take(&1, [:id, :name, :description]))
 
@@ -142,12 +139,7 @@ defmodule TdDd.DataStructures.DataStructure do
         _deleted_at -> @status.deleted
       end
 
-    template_content = Map.get(template, :content)
-
-    df_content =
-      structure
-      |> Map.get(:df_content)
-      |> format_content(template_content)
+    df_content = format_content(structure)
 
     structure
     |> Map.take([
@@ -174,13 +166,22 @@ defmodule TdDd.DataStructures.DataStructure do
     |> Map.put(:df_content, df_content)
   end
 
-  defp format_content(nil, _), do: nil
+  defp format_content(%DataStructure{df_content: nil}), do: nil
 
-  defp format_content(df_content, template_content) do
-    df_content
-      |> Format.apply_template(template_content)
-      |> Format.search_values(template_content)
+  defp format_content(%DataStructure{df_content: df_content}) when map_size(df_content) == 0,
+    do: nil
+
+  defp format_content(%DataStructure{df_content: df_content, type: type}) do
+    format_content(df_content, TemplateCache.get_by_name!(type))
   end
+
+  defp format_content(df_content, %{content: template_content}) do
+    df_content
+    |> Format.apply_template(template_content)
+    |> Format.search_values(template_content)
+  end
+
+  defp format_content(_, _), do: nil
 
   def index_name(_) do
     "data_structure"
