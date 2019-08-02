@@ -30,9 +30,9 @@ defmodule TdDd.DataStructures do
     filter = build_filter(DataStructure, params)
 
     DataStructure
+    |> preload([ds], [:system])
     |> where([ds], ^filter)
     |> Repo.all()
-    |> Repo.preload(:system)
   end
 
   def list_data_structures_with_no_parents(params \\ %{}, options \\ []) do
@@ -383,6 +383,20 @@ defmodule TdDd.DataStructures do
   """
   def change_data_structure(%DataStructure{} = data_structure) do
     DataStructure.changeset(data_structure, %{})
+  end
+
+  @doc """
+  Returns the latest data structure version for a given data structure.
+  """
+  def get_latest_version(%DataStructure{versions: versions}) when is_list(versions) do
+    Enum.max_by(versions, & &1.version)
+  end
+
+  @doc """
+  Returns the latest data structure version for a given data structure.
+  """
+  def get_latest_version(%DataStructure{id: id}) do
+    get_latest_version(id)
   end
 
   @doc """

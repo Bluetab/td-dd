@@ -1,6 +1,8 @@
 defmodule TdDd.Systems.System do
   @moduledoc false
+
   use Ecto.Schema
+
   import Ecto.Changeset
 
   alias TdDd.DataStructures.DataStructure

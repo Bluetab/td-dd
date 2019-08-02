@@ -2,6 +2,7 @@ defmodule TdDd.ESClientApi do
   use HTTPoison.Base
 
   alias Jason, as: JSON
+  alias TdDd.Search.BulkRequest
 
   require Logger
 
@@ -10,43 +11,22 @@ defmodule TdDd.ESClientApi do
   def bulk_index_content(items) do
     json_bulk_data =
       items
-      |> Enum.map(fn item ->
-        [build_bulk_metadata(item.__struct__.index_name(item), item), build_bulk_doc(item)]
-      end)
-      |> List.flatten()
+      |> Enum.map(&BulkRequest.new/1)
       |> Enum.join("\n")
 
     post("_bulk", json_bulk_data <> "\n")
   end
 
-  defp build_bulk_doc(item) do
-    search_fields = item.__struct__.search_fields(item)
-    "#{search_fields |> JSON.encode!()}"
-  end
-
-  defp build_bulk_metadata(index_name, item) do
-    ~s({"index": {"_id": #{item.id}, "_type": "#{get_type_name()}", "_index": "#{index_name}"}})
-  end
-
   def index_content(index_name, id, body) do
-    put(get_search_path(index_name, id), body)
+    put("#{index_name}/doc/#{id}", body)
   end
 
   def delete_content(index_name, id) do
-    delete(get_search_path(index_name, id))
+    delete("#{index_name}/doc/#{id}")
   end
 
   def search_es(index_name, query) do
-    post("#{index_name}/" <> "_search/", query |> JSON.encode!())
-  end
-
-  defp get_type_name do
-    Application.get_env(:td_dd, :elasticsearch)[:type_name]
-  end
-
-  defp get_search_path(index_name, id) do
-    type_name = get_type_name()
-    "#{index_name}/" <> "#{type_name}/" <> "#{id}"
+    post("#{index_name}/_search/", query |> JSON.encode!())
   end
 
   @doc """

@@ -33,8 +33,7 @@ config :td_dd, :auth_service,
 config :td_dd, :elasticsearch,
   search_service: TdDd.Search.MockSearch,
   es_host: "elastic",
-  es_port: 9200,
-  type_name: "doc"
+  es_port: 9200
 
 config :td_dd, permission_resolver: TdDd.Permissions.MockPermissionResolver
 config :td_dd, index_worker: TdDd.Search.MockIndexWorker
