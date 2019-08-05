@@ -175,10 +175,8 @@ defmodule TdDd.DataStructures.DataStructure do
     format_content(df_content, TemplateCache.get_by_name!(type))
   end
 
-  defp format_content(df_content, %{content: template_content}) do
-    df_content
-    |> Format.apply_template(template_content)
-    |> Format.search_values(template_content)
+  defp format_content(df_content, %{} = template_content) do
+    df_content |> Format.search_values(template_content)
   end
 
   defp format_content(_, _), do: nil
