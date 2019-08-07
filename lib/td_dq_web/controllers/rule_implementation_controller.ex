@@ -220,7 +220,7 @@ defmodule TdDqWeb.RuleImplementationController do
   end
 
   def show(conn, %{"id" => id}) do
-    rule_implementation = Rules.get_rule_implementation!(id)
+    rule_implementation = Rules.get_rule_implementation!(id) |> add_last_rule_result()
     user = conn.assigns[:current_resource]
 
     with true <- can?(user, show(rule_implementation)) do
