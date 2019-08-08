@@ -19,6 +19,7 @@ defmodule TdDqWeb.RuleImplementationView do
       system_params: rule_implementation.system_params
     }
     |> add_rule(rule_implementation)
+    |> add_last_rule_results(rule_implementation)
     |> add_rule_results(rule_implementation)
   end
 
@@ -48,7 +49,7 @@ defmodule TdDqWeb.RuleImplementationView do
     end
   end
 
-  defp add_rule_results(rule_implementation_mapping, rule_implementation) do
+  defp add_last_rule_results(rule_implementation_mapping, rule_implementation) do
     rule_results_mappings =
       case Map.get(rule_implementation, :_last_rule_result_, nil) do
         nil ->
@@ -60,5 +61,16 @@ defmodule TdDqWeb.RuleImplementationView do
 
     rule_implementation_mapping
     |> Map.put(:rule_results, rule_results_mappings)
+  end
+
+  defp add_rule_results(rule_implementation_mapping, rule_implementation) do
+    all_rule_results_mappings =
+      Map.get(rule_implementation, :all_rule_results, [])
+      |> Enum.map(&(%{result: &1.result, date: &1.date}))
+
+    case all_rule_results_mappings do
+      [] -> rule_implementation_mapping
+      _ -> Map.put(rule_implementation_mapping, :all_rule_results, all_rule_results_mappings)
+    end
   end
 end
