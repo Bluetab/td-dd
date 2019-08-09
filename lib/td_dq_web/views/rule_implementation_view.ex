@@ -65,7 +65,8 @@ defmodule TdDqWeb.RuleImplementationView do
 
   defp add_rule_results(rule_implementation_mapping, rule_implementation) do
     all_rule_results_mappings =
-      Map.get(rule_implementation, :all_rule_results, [])
+      rule_implementation
+      |> Map.get(:all_rule_results, [])
       |> Enum.map(&(%{result: &1.result, date: &1.date}))
 
     case all_rule_results_mappings do

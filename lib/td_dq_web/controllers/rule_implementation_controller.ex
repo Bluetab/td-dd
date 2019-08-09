@@ -221,7 +221,8 @@ defmodule TdDqWeb.RuleImplementationController do
 
   def show(conn, %{"id" => id}) do
     rule_implementation =
-      Rules.get_rule_implementation!(id)
+      id
+      |> Rules.get_rule_implementation!()
       |> add_rule_results()
       |> add_last_rule_result()
 
