@@ -322,6 +322,17 @@ defmodule TdDq.RulesTest do
              |> Enum.map(&Map.get(&1, :id)) == [not_deleted_rule.id]
     end
 
+    test "list_rules/1 retrieves all rules filtered by ids" do
+      rule_type = insert(:rule_type)
+      rule = insert(:rule, deleted_at: DateTime.utc_now(), name: "Rule 1", rule_type: rule_type)
+      insert(:rule, name: "Rule 2", rule_type: rule_type)
+      rule_3 = insert(:rule, name: "Rule 3", rule_type: rule_type)
+
+      assert [rule.id, rule_3.id]
+             |> Rules.list_rules()
+             |> Enum.map(&Map.get(&1, :id)) == [rule_3.id]
+    end
+
     test "get_rule_by_implementation_key/1 retrieves a rule" do
       implementation_key = "rik1"
       rule_type = insert(:rule_type)
@@ -781,6 +792,76 @@ defmodule TdDq.RulesTest do
 
       results = Rules.get_last_rule_implementations_result(rule)
       assert results == [last_rule_result]
+    end
+
+    test "list_rule_results/1 retrieves all rule results linked to a rule with existing bc id having a higher result than the goal" do
+      rule_type = insert(:rule_type)
+
+      rule_1 =
+        insert(:rule,
+          rule_type: rule_type,
+          name: "Rule 1",
+          business_concept_id: "bc_id_1",
+          goal: 90
+        )
+
+      rule_2 =
+        insert(:rule, rule_type: rule_type, name: "Rule 2", business_concept_id: nil, goal: 70)
+
+      rule_3 =
+        insert(:rule,
+          rule_type: rule_type,
+          name: "Rule 3",
+          business_concept_id: "bc_id_3",
+          goal: 70
+        )
+
+      impl_keys = ["key001", "key002", "key003"]
+
+      rule_impl_1 =
+        insert(:rule_implementation, rule: rule_1, implementation_key: Enum.at(impl_keys, 0))
+
+      rule_impl_2 =
+        insert(:rule_implementation, rule: rule_2, implementation_key: Enum.at(impl_keys, 1))
+
+      rule_impl_3 =
+        insert(:rule_implementation, rule: rule_3, implementation_key: Enum.at(impl_keys, 2))
+
+      rule_result =
+        insert(
+          :rule_result,
+          implementation_key: rule_impl_1.implementation_key,
+          result: 95
+        )
+
+      insert(
+        :rule_result,
+        implementation_key: rule_impl_1.implementation_key,
+        result: 60
+      )
+
+      insert(
+        :rule_result,
+        implementation_key: rule_impl_2.implementation_key,
+        result: 75
+      )
+
+      insert(
+        :rule_result,
+        implementation_key: rule_impl_3.implementation_key,
+        result: 55
+      )
+
+      insert(:rule_result)
+
+      assert Rules.list_rule_results(impl_keys) == [
+               %{
+                 date: rule_result.date,
+                 implementation_key: rule_result.implementation_key,
+                 result: rule_result.result,
+                 rule_id: rule_1.id
+               }
+             ]
     end
   end
 end

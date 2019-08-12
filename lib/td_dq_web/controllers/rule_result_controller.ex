@@ -1,7 +1,6 @@
 defmodule TdDqWeb.RuleResultController do
   use TdDqWeb, :controller
 
-  alias Ecto.Adapters.SQL
   alias Jason, as: JSON
   alias TdCache.ConceptCache
   alias TdCache.TaxonomyCache
@@ -11,11 +10,6 @@ defmodule TdDqWeb.RuleResultController do
   require Logger
 
   @search_service Application.get_env(:td_dq, :elasticsearch)[:search_service]
-
-  @rules_results_query ~S"""
-    INSERT INTO rule_results ("implementation_key", "date", "result", parent_domains, inserted_at, updated_at)
-    VALUES ($1, $2, $3, $4, $5, $5)
-  """
 
   # TODO: tets this
   def upload(conn, params) do
@@ -39,6 +33,7 @@ defmodule TdDqWeb.RuleResultController do
 
     with {:ok, _} <- upload_data(rule_results_data) do
       index_rule_results(rule_results_data)
+      cache_rule_results(rule_results_data)
     end
 
     end_time = DateTime.utc_now()
@@ -73,16 +68,34 @@ defmodule TdDqWeb.RuleResultController do
     Logger.info("Uploading rule results...")
 
     rules_results
-    |> Enum.each(fn data ->
-      data =
-        List.update_at(data, 1, fn x ->
-          Timex.to_datetime(Timex.parse!(x, "{YYYY}-{0M}-{D}-{h24}-{m}-{s}"))
-        end)
+    |> Enum.map(&format_date/1)
+    |> Enum.map(&format_result/1)
+    |> Enum.map(&with_parent_domains/1)
+    |> Enum.map(&to_map/1)
+    |> Enum.map(&Rules.create_rule_result/1)
+  end
 
-      data = List.update_at(data, 2, fn x -> String.to_integer(x) end)
-      data = data ++ [get_parent_domains(data), DateTime.utc_now()]
-      SQL.query!(Repo, @rules_results_query, data)
+  defp format_date(data) do
+    List.update_at(data, 1, fn x ->
+      Timex.to_datetime(Timex.parse!(x, "{YYYY}-{0M}-{D}-{h24}-{m}-{s}"))
     end)
+  end
+
+  defp format_result(data) do
+    List.update_at(data, 2, fn x -> String.to_integer(x) end)
+  end
+
+  defp with_parent_domains(data) do
+    data ++ [get_parent_domains(data)]
+  end
+
+  defp to_map(data) do
+    impl_key = Enum.at(data, 0)
+    date = Enum.at(data, 1)
+    result = Enum.at(data, 2)
+    parent_domains = Enum.at(data, 3)
+
+    %{implementation_key: impl_key, date: date, result: result, parent_domains: parent_domains}
   end
 
   # TODO: Remove this form here. Remove parent domains from rule_result table
@@ -107,6 +120,14 @@ defmodule TdDqWeb.RuleResultController do
             |> Enum.join(";")
         end
     end
+  end
+
+  defp cache_rule_results(rule_results_data) do
+    rule_results_data
+    |> Enum.map(&Enum.at(&1, 0))
+    |> Rules.list_rule_results()
+
+    # TODO
   end
 
   defp get_concept(rule_implementation) do
