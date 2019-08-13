@@ -20,6 +20,7 @@ defmodule TdDq.Application do
       # Start the endpoint when the application starts
       supervisor(TdDqWeb.Endpoint, []),
       worker(TdDq.Cache.RuleLoader, []),
+      worker(TdDq.Cache.RuleResultLoader, []),
       worker(TdDq.Cache.RuleIndexer, []),
       worker(TdDq.Search.IndexWorker, [TdDq.Search.IndexWorker]),
       %{

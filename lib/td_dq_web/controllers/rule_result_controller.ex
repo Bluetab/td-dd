@@ -3,7 +3,9 @@ defmodule TdDqWeb.RuleResultController do
 
   alias Jason, as: JSON
   alias TdCache.ConceptCache
+  alias TdCache.RuleResultCache
   alias TdCache.TaxonomyCache
+  alias TdDq.Cache.RuleResultLoader
   alias TdDq.Repo
   alias TdDq.Rules
 
@@ -31,9 +33,9 @@ defmodule TdDqWeb.RuleResultController do
       |> Map.get("rule_results")
       |> rule_results_from_csv()
 
-    with {:ok, _} <- upload_data(rule_results_data) do
+    with {:ok, rule_results} <- upload_data(rule_results_data) do
       index_rule_results(rule_results_data)
-      cache_rule_results(rule_results_data)
+      cache_rule_results(rule_results)
     end
 
     end_time = DateTime.utc_now()
@@ -122,12 +124,29 @@ defmodule TdDqWeb.RuleResultController do
     end
   end
 
-  defp cache_rule_results(rule_results_data) do
-    rule_results_data
-    |> Enum.map(&Enum.at(&1, 0))
-    |> Rules.list_rule_results()
+  defp cache_rule_results(rule_results) do
+    result_ids =
+      rule_results
+      |> Enum.map(&elem(&1, 1))
+      |> Enum.map(&Map.get(&1, :id))
 
-    # TODO
+    failed_ids =
+      RuleResultCache.members_failed_ids()
+      |> elem(1)
+      |> Enum.map(&String.to_integer(&1))
+
+    ids = result_ids ++ failed_ids
+
+    ids
+    |> Rules.list_rule_results()
+    |> Enum.group_by(&Map.take(&1, [:implementation_key, :date]))
+    |> Enum.map(fn {_k, v} ->
+      Enum.sort(v, &(Map.get(&1, :inserted_at) > Map.get(&2, :inserted_at)))
+    end)
+    |> Enum.map(&hd(&1))
+    |> List.flatten()
+    |> Enum.map(&Map.get(&1, :id))
+    |> RuleResultLoader.failed()
   end
 
   defp get_concept(rule_implementation) do

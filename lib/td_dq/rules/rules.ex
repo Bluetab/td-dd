@@ -928,7 +928,7 @@ defmodule TdDq.Rules do
 
   alias TdDq.Rules.RuleResult
 
-@doc """
+  @doc """
   Creates a rule_result.
 
   ## Examples
@@ -950,21 +950,23 @@ defmodule TdDq.Rules do
     Repo.all(RuleResult)
   end
 
-  def list_rule_results(implementation_keys) do
+  def list_rule_results(ids) do
     RuleResult
     |> join(:inner, [rr, ri], ri in RuleImplementation,
       on: rr.implementation_key == ri.implementation_key
     )
     |> join(:inner, [_, ri, r], r in Rule, on: r.id == ri.rule_id)
-    |> where([rr, _, _], rr.implementation_key in ^implementation_keys)
+    |> where([rr, _, _], rr.id in ^ids)
     |> where([_, _, r], not is_nil(r.business_concept_id))
     |> where([_, _, r], is_nil(r.deleted_at))
-    |> where([rr, _, r], rr.result > r.goal)
+    |> where([rr, _, r], rr.result < r.minimum)
     |> select([rr, _, r], %{
+      id: rr.id,
       date: rr.date,
       implementation_key: rr.implementation_key,
       rule_id: r.id,
-      result: rr.result
+      result: rr.result,
+      inserted_at: rr.inserted_at
     })
     |> Repo.all()
   end

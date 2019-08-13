@@ -802,18 +802,20 @@ defmodule TdDq.RulesTest do
           rule_type: rule_type,
           name: "Rule 1",
           business_concept_id: "bc_id_1",
-          goal: 90
+          minimum: 90,
+          goal: 100
         )
 
       rule_2 =
-        insert(:rule, rule_type: rule_type, name: "Rule 2", business_concept_id: nil, goal: 70)
+        insert(:rule, rule_type: rule_type, name: "Rule 2", business_concept_id: nil, minimum: 70, goal: 80)
 
       rule_3 =
         insert(:rule,
           rule_type: rule_type,
           name: "Rule 3",
           business_concept_id: "bc_id_3",
-          goal: 70
+          minimum: 70,
+          goal: 85
         )
 
       impl_keys = ["key001", "key002", "key003"]
@@ -831,35 +833,46 @@ defmodule TdDq.RulesTest do
         insert(
           :rule_result,
           implementation_key: rule_impl_1.implementation_key,
-          result: 95
+          result: 55
         )
 
-      insert(
-        :rule_result,
-        implementation_key: rule_impl_1.implementation_key,
-        result: 60
-      )
+      rule_result_1 =
+        insert(
+          :rule_result,
+          implementation_key: rule_impl_1.implementation_key,
+          result: 92
+        )
 
-      insert(
-        :rule_result,
-        implementation_key: rule_impl_2.implementation_key,
-        result: 75
-      )
+      rule_result_2 =
+        insert(
+          :rule_result,
+          implementation_key: rule_impl_2.implementation_key,
+          result: 75
+        )
 
-      insert(
-        :rule_result,
-        implementation_key: rule_impl_3.implementation_key,
-        result: 55
-      )
+      rule_result_3 =
+        insert(
+          :rule_result,
+          implementation_key: rule_impl_3.implementation_key,
+          result: 75
+        )
 
-      insert(:rule_result)
+      rule_result_4 = insert(:rule_result)
 
-      assert Rules.list_rule_results(impl_keys) == [
+      assert Rules.list_rule_results([
+               rule_result.id,
+               rule_result_1.id,
+               rule_result_2.id,
+               rule_result_3.id,
+               rule_result_4.id
+             ]) == [
                %{
+                 id: rule_result.id,
                  date: rule_result.date,
                  implementation_key: rule_result.implementation_key,
                  result: rule_result.result,
-                 rule_id: rule_1.id
+                 rule_id: rule_1.id,
+                 inserted_at: rule_result.inserted_at
                }
              ]
     end
