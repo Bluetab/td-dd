@@ -5,10 +5,12 @@ defmodule TdDqWeb.RuleController do
   use PhoenixSwagger
   import Canada, only: [can?: 2]
   alias Ecto.Changeset
+  alias TdCache.EventStream.Publisher
   alias TdDq.Audit
   alias TdDq.Repo
   alias TdDq.Rules
   alias TdDq.Rules.Rule
+  alias TdDq.Rules.Search
   alias TdDqWeb.ChangesetView
   alias TdDqWeb.ErrorView
   alias TdDqWeb.RuleView
@@ -387,5 +389,68 @@ defmodule TdDqWeb.RuleController do
           prefix: "rule.error"
         )
     end
+  end
+
+  swagger_path :execute_rules do
+    description("Execute rules")
+    produces("application/json")
+
+    parameters do
+      search_params(:body, Schema.ref(:RulesExecuteRequest), "Rules search params")
+    end
+
+    response(200, "OK", Schema.ref(:RulesExecuteResponse))
+    response(403, "User is not authorized to perform this action")
+    response(422, "Error while bulk update")
+  end
+
+  def execute_rules(conn, %{"search_params" => search_params}) do
+    user = conn.assigns[:current_resource]
+
+    %{results: rules} = search_all_executable_rules(user, search_params)
+    rules_ids = rules |> Enum.map(&Map.get(&1, :id))
+    event_ids = Enum.join(rules_ids, ",")
+
+    event = %{
+      event: "execute_rules",
+      rules: "rule_ids:#{event_ids}"
+    }
+
+    with {:ok, _event_id} <-
+           Publisher.publish(event, "rules:events") do
+      body = Poison.encode!(%{data: rules_ids})
+
+      conn
+      |> put_resp_content_type("application/json", "utf-8")
+      |> send_resp(200, body)
+    else
+      false ->
+        conn
+        |> put_status(:forbidden)
+        |> put_view(ErrorView)
+        |> render("403.json")
+
+      {:error, error} ->
+        Logger.info("While executing rules... #{inspect(error)}")
+
+        conn
+        |> put_status(:unprocessable_entity)
+        |> put_resp_content_type("application/json", "utf-8")
+        |> send_resp(422, Poison.encode!(%{error: error}))
+
+      error ->
+        Logger.info("Unexpected error while executing rules... #{inspect(error)}")
+
+        conn
+        |> put_status(:unprocessable_entity)
+        |> put_view(ErrorView)
+        |> render("422.json")
+    end
+  end
+
+  defp search_all_executable_rules(user, params) do
+    params
+    |> Map.drop(["page", "size"])
+    |> Search.search(user, 0, 10_000)
   end
 end

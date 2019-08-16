@@ -161,6 +161,24 @@ defmodule TdDq.Canada.Abilities do
         authorized?(user, business_concept_id)
     end
 
+    def can?(%User{} = user, :execute, %{
+          "business_concept_id" => nil,
+          "resource_type" => "rule"
+        }) do
+      RuleAbilities.can?(user, :execute, "")
+    end
+
+    def can?(%User{} = user, :execute, %{
+          "business_concept_id" => business_concept_id,
+          "resource_type" => "rule"
+        }) do
+      RuleAbilities.can?(
+        user,
+        :execute,
+        business_concept_id
+      )
+    end
+
     def can?(%User{}, _action, _entity), do: false
 
     defp authorized?(%User{} = user, business_concept_id) do

@@ -45,10 +45,6 @@ defmodule TdDqWeb.ConnCase do
         user = create_user(@admin_user_name, is_admin: true)
         create_user_auth_conn(user)
 
-      tags[:authenticated_user] ->
-        user = create_user(tags[:authenticated_user], is_admin: true)
-        create_user_auth_conn(user)
-
       tags[:authenticated_no_admin_user] ->
         user = create_user(tags[:authenticated_no_admin_user], is_admin: false)
         create_user_auth_conn(user, :not_admin)

@@ -94,8 +94,7 @@ defmodule TdDqWeb.RuleControllerTest do
     "type_params"
   ]
 
-  @admin_user_name "app-admin"
-  @user_name "Im not an admon"
+  @user_name "Im not an admin"
 
   @list_cache [
     %{
@@ -156,7 +155,7 @@ defmodule TdDqWeb.RuleControllerTest do
   end
 
   describe "index" do
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     test "lists all rules", %{conn: conn, swagger_schema: schema} do
       conn = get(conn, Routes.rule_path(conn, :index))
       validate_resp_schema(conn, schema, "RulesResponse")
@@ -220,7 +219,7 @@ defmodule TdDqWeb.RuleControllerTest do
   end
 
   describe "get_rules_by_concept" do
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     test "lists all rules of a concept", %{conn: conn, swagger_schema: schema} do
       conn = get(conn, Routes.rule_path(conn, :get_rules_by_concept, "id"))
       validate_resp_schema(conn, schema, "RulesResponse")
@@ -252,7 +251,7 @@ defmodule TdDqWeb.RuleControllerTest do
   end
 
   describe "create rule" do
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     test "renders rule when data is valid", %{conn: conn, swagger_schema: schema} do
       rule_type = insert(:rule_type)
 
@@ -286,7 +285,7 @@ defmodule TdDqWeb.RuleControllerTest do
              }
     end
 
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     test "renders rule when data is valid without business concept", %{
       conn: conn,
       swagger_schema: schema
@@ -323,7 +322,7 @@ defmodule TdDqWeb.RuleControllerTest do
              }
     end
 
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     test "renders errors when data is invalid", %{conn: conn, swagger_schema: schema} do
       conn = post(conn, Routes.rule_path(conn, :create), rule: @invalid_attrs)
       validate_resp_schema(conn, schema, "RuleResponse")
@@ -332,7 +331,7 @@ defmodule TdDqWeb.RuleControllerTest do
   end
 
   describe "get_rule_detail" do
-    @tag authenticated_user: @user_name
+    @tag authenticated_no_admin_user: @user_name
     test "renders rule when data is valid", %{
       conn: conn,
       swagger_schema: schema,
@@ -392,7 +391,7 @@ defmodule TdDqWeb.RuleControllerTest do
   describe "update rule" do
     setup [:create_rule]
 
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     test "renders rule when data is valid", %{
       conn: conn,
       rule: %Rule{id: id} = rule,
@@ -425,7 +424,7 @@ defmodule TdDqWeb.RuleControllerTest do
              }
     end
 
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     test "renders errors when data is invalid", %{conn: conn, rule: rule, swagger_schema: schema} do
       conn = put(conn, Routes.rule_path(conn, :update, rule), rule: @invalid_attrs)
       validate_resp_schema(conn, schema, "RuleResponse")
@@ -436,7 +435,7 @@ defmodule TdDqWeb.RuleControllerTest do
   describe "delete rule" do
     setup [:create_rule]
 
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     test "deletes chosen rule", %{conn: conn, rule: rule} do
       conn = delete(conn, Routes.rule_path(conn, :delete, rule))
       assert response(conn, 204)
@@ -445,6 +444,40 @@ defmodule TdDqWeb.RuleControllerTest do
       assert_error_sent(404, fn ->
         get(conn, Routes.rule_path(conn, :show, rule))
       end)
+    end
+  end
+
+  describe "execute_rule" do
+    setup [:create_rule]
+
+    @tag :admin_authenticated
+    test "execute rules as admin and true execution filter", %{conn: conn, rule: rule, swagger_schema: schema} do
+      conn =
+        post(conn, Routes.rule_path(conn, :execute_rules), %{
+          "search_params" => %{"filters" => %{"execution.raw" => [true]}}
+        })
+      validate_resp_schema(conn, schema, "RulesExecuteResponse")
+      assert json_response(conn, 200)["data"] == [rule.id]
+    end
+
+    @tag :admin_authenticated
+    test "execute rules as admin and false execution filter", %{conn: conn, rule: rule, swagger_schema: schema} do
+      conn =
+        post(conn, Routes.rule_path(conn, :execute_rules), %{
+          "search_params" => %{"filters" => %{"execution.raw" => [false]}}
+        })
+      validate_resp_schema(conn, schema, "RulesExecuteResponse")
+      assert json_response(conn, 200)["data"] == [rule.id]
+    end
+
+    @tag :admin_authenticated
+    test "execute rules as admin and no execution filter", %{conn: conn, rule: rule, swagger_schema: schema} do
+      conn =
+        post(conn, Routes.rule_path(conn, :execute_rules), %{
+          "search_params" => %{"filters" => %{}}
+        })
+      validate_resp_schema(conn, schema, "RulesExecuteResponse")
+      assert json_response(conn, 200)["data"] == [rule.id]
     end
   end
 
