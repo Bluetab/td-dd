@@ -5,6 +5,7 @@ defmodule TdDqWeb.RuleController do
   use PhoenixSwagger
   import Canada, only: [can?: 2]
   alias Ecto.Changeset
+  alias Jason, as: JSON
   alias TdCache.EventStream.Publisher
   alias TdDq.Audit
   alias TdDq.Repo
@@ -416,9 +417,8 @@ defmodule TdDqWeb.RuleController do
       rules: "rule_ids:#{event_ids}"
     }
 
-    with {:ok, _event_id} <-
-           Publisher.publish(event, "rules:events") do
-      body = Poison.encode!(%{data: rules_ids})
+    with {:ok, _event_id} <- Publisher.publish(event, "rules:events") do
+      body = JSON.encode!(%{data: rules_ids})
 
       conn
       |> put_resp_content_type("application/json", "utf-8")
