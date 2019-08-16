@@ -35,6 +35,7 @@ defmodule TdDqWeb.Router do
       get("/rule_implementations", RuleImplementationController, :get_rule_implementations)
       get("/detail", RuleController, :get_rule_detail)
     end
+    post("/rules/execute", RuleController, :execute_rules)
 
     post("/rules/search", SearchController, :search)
     get("/rules/search/reindex_all", SearchController, :reindex_all)

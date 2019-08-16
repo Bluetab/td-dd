@@ -22,6 +22,13 @@ defmodule TdDq.Permissions.MockPermissionResolver do
       :view_quality_rule,
       :manage_confidential_business_concepts
     ],
+    "execute_view" => [
+      :view_quality_rule,
+      :execute_quality_rule
+    ],
+    "execute" => [
+      :execute_quality_rule
+    ],
     "no_perms" => []
   }
 
