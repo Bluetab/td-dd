@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- [TD-1656] Added all rule implementation results to rule implementation show response
+
 ### Added
 
 - [TD-2044] Execute rules when I have permissions to execute

@@ -418,6 +418,13 @@ defmodule TdDq.Rules do
     query |> Repo.all()
   end
 
+  def get_rule_implementation_results(implementation_key) do
+    RuleResult
+    |> where([r], r.implementation_key == ^implementation_key)
+    |> order_by(desc: :date)
+    |> Repo.all()
+  end
+
   def get_last_rule_result(implementation_key) do
     RuleResult
     |> where([r], r.implementation_key == ^implementation_key)
