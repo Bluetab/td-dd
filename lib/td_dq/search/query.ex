@@ -15,13 +15,8 @@ defmodule TdDq.Search.Query do
   def create_filter_clause(permissions, user_defined_filters) do
     should_clause =
       permissions
-      |> Enum.filter(
-        &Enum.any?(&1.permissions, fn p ->
-          p == :view_quality_rule || p == :manage_confidential_business_concepts
-        end)
-      )
       |> Enum.map(&entry_to_filter_clause(&1, user_defined_filters))
-      |> with_default_clause()
+      |> with_default_clause(user_defined_filters)
 
     %{bool: %{should: should_clause}}
   end
@@ -43,16 +38,18 @@ defmodule TdDq.Search.Query do
     }
   end
 
-  defp with_default_clause(filter_clauses) do
+  defp with_default_clause(filter_clauses, user_defined_filters) do
     filter_clauses ++
       [
         %{
           bool: %{
-            filter: [
-              %{terms: %{_confidential: [false]}},
-              %{term: %{domain_ids: -1}}
-              ]
-            }
+            filter:
+              user_defined_filters ++
+                [
+                  %{terms: %{_confidential: [false]}},
+                  %{term: %{domain_ids: -1}}
+                ]
+          }
         }
       ]
   end

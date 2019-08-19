@@ -6,6 +6,10 @@
 
 - [TD-1656] Added all rule implementation results to rule implementation show response
 
+### Added
+
+- [TD-2044] Execute rules when I have permissions to execute
+
 ## [3.3.0] 2019-08-05
 
 ### Added 

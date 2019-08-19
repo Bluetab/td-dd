@@ -18,7 +18,8 @@ defmodule TdDq.Search.Aggregations do
       {"current_business_concept_version",
        %{terms: %{field: "current_business_concept_version.name.raw", size: 50}}},
       {"execution_result_info.result_text",
-       %{terms: %{field: "execution_result_info.result_text.raw", size: 50}}}
+       %{terms: %{field: "execution_result_info.result_text.raw", size: 50}}},
+      {"execution.raw", %{terms: %{field: "execution.raw"}}}
     ]
 
     dynamic_keywords =

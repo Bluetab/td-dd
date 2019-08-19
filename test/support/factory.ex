@@ -49,4 +49,20 @@ defmodule TdDq.Factory do
       parent_domains: ""
     }
   end
+
+  def user_factory do
+    %TdDq.Accounts.User {
+      id: 0,
+      user_name: "bufoncillo",
+      is_admin: false
+    }
+  end
+
+  def user_admin_factory do
+    %TdDq.Accounts.User {
+      id: 1,
+      user_name: "bufoncillo_admin",
+      is_admin: true
+    }
+  end
 end

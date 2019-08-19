@@ -25,7 +25,8 @@ defmodule TdDqWeb.RuleFilterController do
   end
 
   def search(conn, params) do
-    filters = Search.get_filter_values(params)
+    user = conn.assigns[:current_resource]
+    filters = Search.get_filter_values(user, params)
     render(conn, "show.json", filters: filters)
   end
 end
