@@ -18,6 +18,7 @@ defmodule TdDd.DataStructuresTest do
       last_change_at: "2010-04-17 14:00:00Z",
       last_change_by: 42,
       name: "some name",
+      external_id: "some external_id",
       metadata: %{},
       system_id: 1
     }
@@ -101,6 +102,7 @@ defmodule TdDd.DataStructuresTest do
           &insert(
             :data_structure,
             name: "DS#{&1}",
+            external_id: "DS#{&1}",
             system_id: 1
           )
         )
@@ -127,10 +129,10 @@ defmodule TdDd.DataStructuresTest do
     test "list_data_structures_with_no_parents/1 gets data_structures with no parents" do
       insert(:system, id: 4, external_id: "id4")
       insert(:system, id: 5, external_id: "id5")
-      ds1 = insert(:data_structure, id: 51, name: "DS51", system_id: 4)
-      ds2 = insert(:data_structure, id: 52, name: "DS52", system_id: 4)
-      ds3 = insert(:data_structure, id: 53, name: "DS53", system_id: 4)
-      ds4 = insert(:data_structure, id: 55, name: "DS54", system_id: 5)
+      ds1 = insert(:data_structure, id: 51, name: "DS51", external_id: "DS51", system_id: 4)
+      ds2 = insert(:data_structure, id: 52, name: "DS52", external_id: "DS52", system_id: 4)
+      ds3 = insert(:data_structure, id: 53, name: "DS53", external_id: "DS53", system_id: 4)
+      ds4 = insert(:data_structure, id: 55, name: "DS54", external_id: "DS54", system_id: 5)
       dsv1 = insert(:data_structure_version, data_structure_id: ds1.id)
       dsv2 = insert(:data_structure_version, data_structure_id: ds2.id)
       dsv3 = insert(:data_structure_version, data_structure_id: ds3.id)
@@ -145,10 +147,19 @@ defmodule TdDd.DataStructuresTest do
     test "list_data_structures_with_no_parents/1 filters field class data_structures" do
       insert(:system, id: 4, external_id: "id4")
       insert(:system, id: 5, external_id: "id5")
-      ds1 = insert(:data_structure, id: 51, name: "DS51", system_id: 4, class: "field")
-      ds2 = insert(:data_structure, id: 52, name: "DS52", system_id: 4)
-      ds3 = insert(:data_structure, id: 53, name: "DS53", system_id: 4)
-      ds4 = insert(:data_structure, id: 55, name: "DS54", system_id: 5)
+
+      ds1 =
+        insert(:data_structure,
+          id: 51,
+          name: "DS51",
+          external_id: "DS51",
+          system_id: 4,
+          class: "field"
+        )
+
+      ds2 = insert(:data_structure, id: 52, name: "DS52", external_id: "DS52", system_id: 4)
+      ds3 = insert(:data_structure, id: 53, name: "DS53", external_id: "DS53", system_id: 4)
+      ds4 = insert(:data_structure, id: 55, name: "DS54", external_id: "DS54", system_id: 5)
       dsv1 = insert(:data_structure_version, data_structure_id: ds1.id)
       dsv2 = insert(:data_structure_version, data_structure_id: ds2.id)
       dsv3 = insert(:data_structure_version, data_structure_id: ds3.id)
@@ -161,9 +172,9 @@ defmodule TdDd.DataStructuresTest do
 
     test "delete_data_structure/1 deletes a data_structure with relations" do
       alias TdDd.DataStructures.DataStructure
-      ds1 = insert(:data_structure, id: 51, name: "DS51")
-      ds2 = insert(:data_structure, id: 52, name: "DS52")
-      ds3 = insert(:data_structure, id: 53, name: "DS53")
+      ds1 = insert(:data_structure, id: 51, name: "DS51", external_id: "DS51")
+      ds2 = insert(:data_structure, id: 52, name: "DS52", external_id: "DS52")
+      ds3 = insert(:data_structure, id: 53, name: "DS53", external_id: "DS53")
       dsv1 = insert(:data_structure_version, data_structure_id: ds1.id)
       dsv2 = insert(:data_structure_version, data_structure_id: ds2.id)
       dsv3 = insert(:data_structure_version, data_structure_id: ds3.id)

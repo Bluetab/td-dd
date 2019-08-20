@@ -19,6 +19,7 @@ defmodule TdDd.DictionaryTest do
     "System" => "system",
     "Group" => "group",
     "Name" => "name",
+    "External ID" => "external_id",
     "Description" => "description",
     "Type" => "type",
     "Organizational Unit" => "ou",
@@ -190,12 +191,21 @@ defmodule TdDd.DictionaryTest do
           state do
     metadata = build_metadata({[], []}, fields)
 
-    data_structures_headers = ["system", "group", "name", "description", "type", "ou"]
+    data_structures_headers = [
+      "system",
+      "group",
+      "name",
+      "external_id",
+      "description",
+      "type",
+      "ou"
+    ]
 
     data_fields_headers = [
       "system",
       "group",
       "name",
+      "external_id",
       "field_name",
       "type",
       "description",
@@ -271,12 +281,16 @@ defmodule TdDd.DictionaryTest do
          Description: description,
          Group: group,
          Structure_Name: name,
+         External_ID: external_id,
          System: system,
          Type: type,
          Domain_Name: ou
        }) do
     data_structures = elem(metadata, 0)
-    put_elem(metadata, 0, [[system, group, name, description, type, ou] | data_structures])
+
+    put_elem(metadata, 0, [
+      [system, group, name, external_id, description, type, ou] | data_structures
+    ])
   end
 
   defp build_metadata(metadata, %{
@@ -284,6 +298,7 @@ defmodule TdDd.DictionaryTest do
          Description: description,
          Group: group,
          Structure_Name: name,
+         External_ID: external_id,
          System: system,
          Field_Name: field_name,
          Type: type,
@@ -298,6 +313,7 @@ defmodule TdDd.DictionaryTest do
         system,
         group,
         name,
+        external_id,
         field_name,
         type,
         description,

@@ -36,7 +36,7 @@ defmodule TdDd.LoaderTest do
 
       s1 = %{
         description: "D1",
-        external_id: nil,
+        external_id: data_structure.external_id,
         group: "GROUP1",
         name: "NAME1",
         system_id: sys1.id,
@@ -46,7 +46,7 @@ defmodule TdDd.LoaderTest do
 
       s2 = %{
         description: "D2",
-        external_id: nil,
+        external_id: random_string(),
         group: "GROUP2",
         name: "NAME2",
         system_id: sys1.id,
@@ -56,7 +56,7 @@ defmodule TdDd.LoaderTest do
 
       s3 = %{
         description: "D3",
-        external_id: nil,
+        external_id: random_string(),
         group: "GROUP3",
         name: "NAME3",
         system_id: sys2.id,
@@ -66,7 +66,7 @@ defmodule TdDd.LoaderTest do
 
       s4 = %{
         description: "D4",
-        external_id: nil,
+        external_id: random_string(),
         group: "GROUP3",
         name: "NAME4",
         system_id: sys2.id,
@@ -76,7 +76,7 @@ defmodule TdDd.LoaderTest do
 
       s5 = %{
         description: "D4",
-        external_id: nil,
+        external_id: random_string(),
         group: "GROUP3",
         name: "NAME4",
         system_id: sys2.id,
@@ -86,7 +86,7 @@ defmodule TdDd.LoaderTest do
 
       s6 = %{
         description: nil,
-        external_id: nil,
+        external_id: random_string(),
         group: "GROUP6",
         name: "NAME6",
         system_id: sys1.id,
@@ -95,23 +95,23 @@ defmodule TdDd.LoaderTest do
       }
 
       r1 = %{
-        system_id: sys1.id,
-        parent_group: "GROUP1",
-        parent_external_id: nil,
-        parent_name: "NAME1",
-        child_group: "GROUP2",
-        child_name: "NAME2",
-        child_external_id: nil
+        system_id: s1.system_id,
+        parent_group: s1.group,
+        parent_external_id: s1.external_id,
+        parent_name: s1.name,
+        child_group: s2.group,
+        child_name: s2.name,
+        child_external_id: s2.external_id
       }
 
       r2 = %{
-        system_id: sys2.id,
-        parent_group: "GROUP3",
-        parent_external_id: nil,
-        parent_name: "NAME3",
-        child_group: "GROUP3",
-        child_name: "NAME4",
-        child_external_id: nil
+        system_id: s3.system_id,
+        parent_group: s3.group,
+        parent_external_id: s3.external_id,
+        parent_name: s3.name,
+        child_group: s4.group,
+        child_name: s4.name,
+        child_external_id: s4.external_id
       }
 
       f1 = %{
@@ -174,7 +174,6 @@ defmodule TdDd.LoaderTest do
 
       assert {:ok, context} =
                Loader.load(structure_records, field_records, relation_records, audit())
-
     end
 
     test "load/1 with structures containing an external_id" do
@@ -208,7 +207,7 @@ defmodule TdDd.LoaderTest do
         name: "NAME2",
         description: "D1",
         version: 0,
-        external_id: nil,
+        external_id: "EXT2",
         type: "View"
       }
 
@@ -218,7 +217,7 @@ defmodule TdDd.LoaderTest do
         name: "NAME3",
         description: "D2",
         version: 0,
-        external_id: nil,
+        external_id: "EXT3",
         type: "Report"
       }
 
@@ -229,17 +228,17 @@ defmodule TdDd.LoaderTest do
         parent_name: "NAME1",
         child_group: "GROUP2",
         child_name: "NAME2",
-        child_external_id: nil
+        child_external_id: "EXT2"
       }
 
       r2 = %{
         system_id: system.id,
         parent_group: "GROUP1",
         parent_name: "NAME2",
-        parent_external_id: nil,
+        parent_external_id: "EXT2",
         child_group: "GROUP2",
         child_name: "NAME3",
-        child_external_id: nil
+        child_external_id: "EXT3"
       }
 
       f1 = %{

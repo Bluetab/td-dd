@@ -16,6 +16,8 @@ defmodule TdDd.Factory do
   end
 
   def data_structure_factory do
+    external_id = "external_id #{random_id()}"
+
     %DataStructure{
       description: "some description",
       group: "some group",
@@ -27,7 +29,7 @@ defmodule TdDd.Factory do
       ou: "My organization",
       versions: [],
       confidential: false,
-      external_id: nil,
+      external_id: external_id,
       deleted_at: nil
     }
   end
@@ -48,4 +50,6 @@ defmodule TdDd.Factory do
       external_id: "System_ref"
     }
   end
+
+  defp random_id, do: :rand.uniform(100_000_000)
 end
