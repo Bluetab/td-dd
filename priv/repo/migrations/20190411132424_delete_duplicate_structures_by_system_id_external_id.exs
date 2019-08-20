@@ -16,8 +16,8 @@ defmodule TdDd.Repo.Migrations.DeleteDuplicateStructuresBySystemIdExternalId do
   end
 
   defp delete_structure(%{id: id}) do
-     from(ds in "data_structures")
-     |> where([ds], ds.id == ^id) 
-     |> Repo.delete_all()
+    from(ds in "data_structures")
+    |> where([ds], ds.id == ^id)
+    |> Repo.delete_all()
   end
 end
