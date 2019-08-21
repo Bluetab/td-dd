@@ -959,6 +959,7 @@ defmodule TdDq.Rules do
     |> where([rr, _, _], rr.id in ^ids)
     |> where([_, _, r], not is_nil(r.business_concept_id))
     |> where([_, _, r], is_nil(r.deleted_at))
+    |> where([_, ri, _], is_nil(ri.deleted_at))
     |> where([rr, _, r], rr.result < r.minimum)
     |> select([rr, _, r], %{
       id: rr.id,
