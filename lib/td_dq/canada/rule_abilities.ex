@@ -20,4 +20,12 @@ defmodule TdDq.Canada.RuleAbilities do
   def can?(%User{} = user, :manage_rules, business_concept_id) do
     Permissions.authorized?(user, :manage_quality_rule, business_concept_id)
   end
+
+  def can?(%User{} = user, :execute, "") do
+    Permissions.authorized?(user, :execute_quality_rule)
+  end
+
+  def can?(%User{} = user, :execute, business_concept_id) do
+    Permissions.authorized?(user, :execute_quality_rule, business_concept_id)
+  end
 end
