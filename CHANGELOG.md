@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] 
+
+### Added
+
+- [TD-1907] Cache failed rule results
+
 ## [3.4.0] 2019-08-19
 
 ### Changed
