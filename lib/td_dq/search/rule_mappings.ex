@@ -51,6 +51,11 @@ defmodule TdDq.Search.RuleMappings do
           name: %{fields: %{raw: %{type: "keyword"}}, type: "text"}
         }
       },
+      type_params: %{
+        properties: %{
+          name: %{fields: %{raw: %{type: "keyword"}}, type: "text"}
+        }
+      },
       execution_result_info: %{
         properties: %{
           result_avg: %{type: "long"},

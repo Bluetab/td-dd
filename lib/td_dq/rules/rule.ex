@@ -148,6 +148,7 @@ defmodule TdDq.Rules.Rule do
       current_business_concept_version: current_business_concept_version,
       rule_type_id: rule.rule_type_id,
       rule_type: rule_type,
+      type_params: rule.type_params,
       version: rule.version,
       name: rule.name,
       active: rule.active,
