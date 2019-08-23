@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- [TD-2061] Data structure external id is now required and unique
+
 ## [3.3.0] 2019-08-05
 
 ### Added
