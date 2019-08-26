@@ -6,6 +6,10 @@
 
 - [TD-2061] Data structure external id is now required and unique
 
+### Fixed
+
+- [TD-2047] Check status filter when retrieving search filters
+
 ## [3.3.0] 2019-08-05
 
 ### Added
