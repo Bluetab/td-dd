@@ -10,6 +10,7 @@ defmodule TdDq.Rules do
   alias TdCache.LinkCache
   alias TdCache.TemplateCache
   alias TdDfLib.Validation
+  alias TdDq.Cache.RuleLoader
   alias TdDq.Repo
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleImplementation
@@ -32,6 +33,13 @@ defmodule TdDq.Rules do
 
   """
   def list_rules(params \\ %{})
+
+  def list_rules(rule_ids) when is_list(rule_ids) do
+    Rule
+    |> where([r], is_nil(r.deleted_at))
+    |> where([r], r.id in ^rule_ids)
+    |> Repo.all()
+  end
 
   def list_rules(params) do
     fields = Rule.__schema__(:fields)
@@ -142,6 +150,7 @@ defmodule TdDq.Rules do
         |> preload_bc_version
 
       @search_service.put_searchable(rule)
+      RuleLoader.refresh(Map.get(rule, :id))
       {:ok, rule}
     else
       error -> error
@@ -230,6 +239,7 @@ defmodule TdDq.Rules do
         |> preload_bc_version
 
       @search_service.put_searchable(rule)
+      RuleLoader.refresh(Map.get(rule, :id))
       {:ok, rule}
     else
       error -> error
@@ -257,7 +267,6 @@ defmodule TdDq.Rules do
   end
 
   def soft_deletion(active_ids, ts \\ DateTime.utc_now()) do
-
     queryable =
       Rule
       |> where([r], not is_nil(r.business_concept_id))
@@ -276,10 +285,11 @@ defmodule TdDq.Rules do
     |> Enum.each(&@search_service.delete_searchable(&1))
 
     Multi.new()
-    |> Multi.update_all(:soft_deleted_implementation_rules, rule_impl_queryable, set: [deleted_at: ts])
+    |> Multi.update_all(:soft_deleted_implementation_rules, rule_impl_queryable,
+      set: [deleted_at: ts]
+    )
     |> Multi.update_all(:soft_deleted_rules, queryable, set: [deleted_at: ts])
     |> Repo.transaction()
-
   end
 
   def get_rule_detail!(id) do
@@ -399,10 +409,6 @@ defmodule TdDq.Rules do
     Rule.changeset(rule, %{})
   end
 
-  def list_rule_results do
-    Repo.all(RuleResult)
-  end
-
   def list_concept_rules(params) do
     fields = Rule.__schema__(:fields)
     dynamic = filter(params, fields)
@@ -431,17 +437,6 @@ defmodule TdDq.Rules do
     |> order_by(desc: :date)
     |> limit(1)
     |> Repo.one()
-  end
-
-  @doc """
-    Returns last rule_result for each rule_implementation of rule
-  """
-  def get_last_rule_implementations_result(rule) do
-    rule
-    |> Repo.preload(:rule_implementations)
-    |> Map.get(:rule_implementations)
-    |> Enum.map(&get_last_rule_result(&1.implementation_key))
-    |> Enum.filter(& &1)
   end
 
   @doc """
@@ -940,8 +935,74 @@ defmodule TdDq.Rules do
       RuleImplementation
       |> where([ri], ri.implementation_key == ^implementation_key and is_nil(ri.deleted_at))
       |> Repo.all()
+
     if Enum.empty?(count),
       do: {:implementation_key_available},
       else: {:implementation_key_not_available}
+  end
+
+  alias TdDq.Rules.RuleResult
+
+  @doc """
+  Creates a rule_result.
+
+  ## Examples
+
+      iex> create_rule_result(%{field: value})
+      {:ok, %RuleResult{}}
+
+      iex> create_rule_result(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_rule_result(attrs \\ %{}) do
+    %RuleResult{}
+    |> RuleResult.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def list_rule_results do
+    Repo.all(RuleResult)
+  end
+
+  def list_rule_results(ids) do
+    RuleResult
+    |> join(:inner, [rr, ri], ri in RuleImplementation,
+      on: rr.implementation_key == ri.implementation_key
+    )
+    |> join(:inner, [_, ri, r], r in Rule, on: r.id == ri.rule_id)
+    |> where([rr, _, _], rr.id in ^ids)
+    |> where([_, _, r], not is_nil(r.business_concept_id))
+    |> where([_, _, r], is_nil(r.deleted_at))
+    |> where([_, ri, _], is_nil(ri.deleted_at))
+    |> where([rr, _, r], rr.result < r.minimum)
+    |> select([rr, _, r], %{
+      id: rr.id,
+      date: rr.date,
+      implementation_key: rr.implementation_key,
+      rule_id: r.id,
+      result: rr.result,
+      inserted_at: rr.inserted_at
+    })
+    |> Repo.all()
+  end
+
+  def get_last_rule_result(implementation_key) do
+    RuleResult
+    |> where([r], r.implementation_key == ^implementation_key)
+    |> order_by(desc: :date)
+    |> limit(1)
+    |> Repo.one()
+  end
+
+  @doc """
+    Returns last rule_result for each rule_implementation of rule
+  """
+  def get_last_rule_implementations_result(rule) do
+    rule
+    |> Repo.preload(:rule_implementations)
+    |> Map.get(:rule_implementations)
+    |> Enum.map(&get_last_rule_result(&1.implementation_key))
+    |> Enum.filter(& &1)
   end
 end
