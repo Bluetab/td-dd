@@ -37,6 +37,7 @@ defmodule TdDdWeb.DataStructureFilterController do
 
   def search(conn, params) do
     user = conn.assigns[:current_user]
+    params = Search.logic_deleted_filter(params)
     filters = Search.get_filter_values(user, params)
     render(conn, "show.json", filters: filters)
   end

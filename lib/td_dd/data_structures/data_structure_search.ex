@@ -211,4 +211,13 @@ defmodule TdDd.DataStructure.Search do
 
     %{results: results, aggregations: aggregations, total: total}
   end
+
+  def logic_deleted_filter(%{"filters" => filters} = params) do
+    filters = Map.put(filters, "status", "")
+    Map.put(params, "filters", filters)
+  end
+
+  def logic_deleted_filter(params) do
+    Map.put(params, "filters", %{"status" => ""})
+  end
 end

@@ -46,7 +46,7 @@ defmodule TdDdWeb.DataStructureController do
     size = search_params |> Map.get("size", size)
 
     search_params
-    |> logic_deleted_filter
+    |> Search.logic_deleted_filter
     |> Map.drop(["page", "size"])
     |> Search.search_data_structures(user, page, size)
   end
@@ -61,15 +61,6 @@ defmodule TdDdWeb.DataStructureController do
         |> String.split("§")
         |> Enum.map(&String.trim(&1))
     end
-  end
-
-  defp logic_deleted_filter(%{"filters" => filters} = params) do
-    filters = Map.put(filters, "status", "")
-    Map.put(params, "filters", filters)
-  end
-
-  defp logic_deleted_filter(params) do
-    Map.put(params, "filters", %{"status" => ""})
   end
 
   swagger_path :create do
