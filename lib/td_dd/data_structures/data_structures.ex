@@ -384,15 +384,14 @@ defmodule TdDd.DataStructures do
 
   """
   def get_latest_version(data_structure_id, options) do
-    Repo.one(
-      from(dsv in DataStructureVersion,
-        where: dsv.data_structure_id == type(^data_structure_id, :integer),
-        order_by: [desc: :version],
-        limit: 1,
-        select: dsv,
-        preload: :data_structure
-      )
+    from(dsv in DataStructureVersion,
+      where: dsv.data_structure_id == type(^data_structure_id, :integer),
+      order_by: [desc: :version],
+      limit: 1,
+      select: dsv,
+      preload: :data_structure
     )
+    |> Repo.one()
     |> enrich(options)
   end
 
