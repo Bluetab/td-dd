@@ -51,6 +51,12 @@ defmodule TdDdWeb.DataStructureView do
   end
 
   defp data_structure_json(data_structure) do
+    dsv_attrs =
+      data_structure
+      |> Map.get(:versions, [])
+      |> Enum.max_by(& &1.version, fn -> %{} end)
+      |> Map.take([:class, :description, :metadata, :group, :name, :type, :deleted_at])
+
     data_structure
     |> Map.take([
       :id,
@@ -66,10 +72,12 @@ defmodule TdDdWeb.DataStructureView do
       :ou,
       :system_id,
       :type,
-      :deleted_at
+      :deleted_at,
+      :path
     ])
-    |> Map.put(:metadata, Map.get(data_structure, :metadata, %{}))
-    |> Map.put(:path, Map.get(data_structure, :path, [] ))
+    |> Map.merge(dsv_attrs)
+    |> Map.put_new(:metadata, %{})
+    |> Map.put_new(:path, [])
   end
 
   defp add_system_with_keys(json, data_structure, keys) do
@@ -81,9 +89,8 @@ defmodule TdDdWeb.DataStructureView do
     Map.put(json, :system, system_params)
   end
 
-  defp data_structure_embedded(data_structure) do
-    data_structure
-    |> Map.take([:id, :name, :type])
+  defp data_structure_version_embedded(dsv) do
+    Map.take(dsv, [:data_structure_id, :id, :name, :type])
   end
 
   defp add_dynamic_content(json, data_structure) do
@@ -108,7 +115,7 @@ defmodule TdDdWeb.DataStructureView do
         data_structure_json
 
       rs ->
-        relations = Enum.map(rs, &data_structure_embedded/1)
+        relations = Enum.map(rs, &data_structure_version_embedded/1)
         Map.put(data_structure_json, type, relations)
     end
   end
@@ -121,7 +128,7 @@ defmodule TdDdWeb.DataStructureView do
 
         as ->
           as
-          |> Enum.map(&Map.take(&1, [:id, :name]))
+          |> Enum.map(&Map.take(&1, [:data_structure_id, :name]))
           |> Enum.drop(1)
           |> Enum.reverse()
       end
@@ -150,8 +157,6 @@ defmodule TdDdWeb.DataStructureView do
   end
 
   defp add_data_fields(data_structure_json, data_structure) do
-    Logger.info("Adding fields #{DateTime.utc_now()}")
-
     field_structures =
       case Map.get(data_structure, :data_fields) do
         nil ->
@@ -161,34 +166,38 @@ defmodule TdDdWeb.DataStructureView do
           Enum.map(fields, &field_structure_json/1)
       end
 
-    Logger.info("Added fields #{DateTime.utc_now()}")
-
     Map.put(data_structure_json, :data_fields, field_structures)
   end
 
-  defp field_structure_json(%{id: id, class: "field", df_content: df_content} = ds) do
-    ds
+  defp field_structure_json(
+         %{
+           data_structure_id: data_structure_id,
+           class: "field",
+           data_structure: %{df_content: df_content, external_id: external_id}
+         } = dsv
+       ) do
+    dsv
     |> Map.take([
-      :id,
       :name,
       :type,
       :metadata,
       :description,
       :last_change_at,
       :inserted_at,
-      :external_id
+      :links
     ])
-    |> lift_metadata
-    |> Map.put(:links, DataStructures.get_structure_links(id))
+    |> lift_metadata()
+    |> Map.put(:id, data_structure_id)
+    |> Map.put(:external_id, external_id)
     |> Map.put(:has_df_content, not is_nil(df_content))
   end
 
-  defp lift_metadata(%{metadata: metadata} = ds) do
+  defp lift_metadata(%{metadata: metadata} = dsv) do
     metadata =
       metadata
       |> Map.new(fn {k, v} -> {String.to_atom(k), v} end)
 
-    ds
+    dsv
     |> Map.delete(:metadata)
     |> Map.merge(metadata)
   end

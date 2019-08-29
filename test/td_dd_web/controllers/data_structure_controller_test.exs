@@ -174,6 +174,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     test "search all data_structures", %{conn: conn} do
       conn = post(conn, Routes.data_structure_path(conn, :create), data_structure: @create_attrs)
       data_structure = conn.assigns.data_structure
+      [dsv | _] = data_structure.versions
       search_params = %{ou: " one§ tow §  #{data_structure.ou}"}
 
       conn = recycle_and_put_headers(conn)
@@ -182,7 +183,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       json_response = json_response(conn, 200)["data"]
       assert length(json_response) == 1
       json_response = Enum.at(json_response, 0)
-      assert json_response["name"] == data_structure.name
+      assert json_response["name"] == dsv.name
     end
   end
 
@@ -192,8 +193,9 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
     test "search_all", %{conn: conn, data_structure: %DataStructure{id: id}} do
       conn = post(conn, Routes.data_structure_path(conn, :search), %{})
-      data = json_response(conn, 200)["data"]
-      filters = json_response(conn, 200)["filters"]
+      json = json_response(conn, 200)
+      data = json["data"]
+      filters = json["filters"]
 
       assert length(data) == 1
 
@@ -386,7 +388,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
         put(
           conn,
           Routes.data_structure_path(conn, :update, data_structure),
-          data_structure: %{description: "edited desc", df_content: %{field: "df_content"}}
+          data_structure: %{df_content: %{field: "df_content"}}
         )
 
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
@@ -396,7 +398,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
       json_response_data = json_response(conn, 200)["data"]
 
       assert json_response_data["id"] == id
-      assert json_response_data["description"] == "some description"
       assert json_response_data["df_content"] == %{"field" => "df_content"}
     end
 
@@ -414,12 +415,12 @@ defmodule TdDdWeb.DataStructureControllerTest do
         put(
           conn,
           Routes.data_structure_path(conn, :update, data_structure),
-          data_structure: %{description: "edited desc"}
+          data_structure: %{df_content: %{foo: "bar"}}
         )
 
       assert json_response(conn, 403)
       new_data_structure = DataStructures.get_data_structure!(id)
-      assert Map.get(new_data_structure, :description) == "some description"
+      assert Map.get(new_data_structure, :df_content) == nil
     end
 
     @tag authenticated_no_admin_user: "user_without_confidential"
@@ -446,8 +447,11 @@ defmodule TdDdWeb.DataStructureControllerTest do
   defp create_data_structure(_) do
     template_name = "template_name"
     create_template(%{name: template_name})
-    data_structure = insert(:data_structure, type: template_name, df_content: %{"field" => "1"})
-    data_structure_version = insert(:data_structure_version, data_structure_id: data_structure.id)
+    data_structure = insert(:data_structure, df_content: %{"field" => "1"})
+
+    data_structure_version =
+      insert(:data_structure_version, data_structure_id: data_structure.id, type: template_name)
+
     {:ok, data_structure: data_structure, data_structure_version: data_structure_version}
   end
 
@@ -479,29 +483,36 @@ defmodule TdDdWeb.DataStructureControllerTest do
   end
 
   defp create_structure_hierarchy_with_logic_deletions(_) do
-    parent_structure = insert(:data_structure, external_id: "Parent")
+    deleted_at = "2019-06-14 11:00:00Z"
+    parent = insert(:data_structure, external_id: "Parent")
+    parent_deleted = insert(:data_structure, external_id: "Parent_deleted")
 
-    parent_structure_deleted =
-      insert(:data_structure, external_id: "Parent_deleted", deleted_at: "2019-06-14 11:00:00Z")
-
-    child_structures = [
-      insert(:data_structure, external_id: "Child1", name: "Child1"),
-      insert(:data_structure, external_id: "Child2", name: "Child2"),
+    children = [
+      insert(:data_structure, external_id: "Child1"),
+      insert(:data_structure, external_id: "Child2"),
       insert(:data_structure,
-        external_id: "Child_deleted",
-        name: "Child_deleted",
-        deleted_at: "2019-06-14 11:00:00Z"
+        external_id: "Child_deleted"
       )
     ]
 
-    parent_version = insert(:data_structure_version, data_structure_id: parent_structure.id)
+    parent_version =
+      insert(:data_structure_version,
+        data_structure_id: parent.id,
+        name: parent.external_id,
+        deleted_at: deleted_at
+      )
 
-    parent_structure_version_deleted =
-      insert(:data_structure_version, data_structure_id: parent_structure_deleted.id)
+    parent_version_deleted = insert(:data_structure_version, data_structure_id: parent_deleted.id)
 
     child_versions =
-      child_structures
-      |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id))
+      children
+      |> Enum.map(
+        &insert(:data_structure_version,
+          data_structure_id: &1.id,
+          name: &1.external_id,
+          deleted_at: if(&1.external_id == "Child_deleted", do: deleted_at, else: nil)
+        )
+      )
 
     child_versions
     |> Enum.each(&insert(:data_structure_relation, parent_id: parent_version.id, child_id: &1.id))
@@ -509,12 +520,12 @@ defmodule TdDdWeb.DataStructureControllerTest do
     child_versions
     |> Enum.each(
       &insert(:data_structure_relation,
-        parent_id: parent_structure_version_deleted.id,
+        parent_id: parent_version_deleted.id,
         child_id: &1.id
       )
     )
 
-    {:ok, parent_structure: parent_structure, child_structures: child_structures}
+    {:ok, parent_structure: parent, child_structures: children}
   end
 
   defp create_data_structure_and_permissions(user_id, role_name, confidential) do
@@ -535,16 +546,14 @@ defmodule TdDdWeb.DataStructureControllerTest do
     create_template(%{name: template_name})
 
     data_structure =
-      insert(
-        :data_structure,
-        confidential: confidential,
-        name: "confidential",
-        ou: domain_name,
-        domain_id: domain_id,
-        type: template_name
-      )
+      insert(:data_structure, confidential: confidential, ou: domain_name, domain_id: domain_id)
 
-    insert(:data_structure_version, data_structure_id: data_structure.id)
+    insert(:data_structure_version,
+      data_structure_id: data_structure.id,
+      name: data_structure.external_id,
+      type: template_name
+    )
+
     data_structure
   end
 

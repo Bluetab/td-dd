@@ -19,23 +19,23 @@ defmodule TdDd.Factory do
     external_id = "external_id #{random_id()}"
 
     %DataStructure{
-      description: "some description",
-      group: "some group",
       last_change_at: DateTime.truncate(DateTime.utc_now(), :second),
       last_change_by: 0,
-      name: "some name",
       system_id: 1,
-      metadata: %{"description" => "some description"},
       ou: "My organization",
       versions: [],
       confidential: false,
-      external_id: external_id,
-      deleted_at: nil
+      external_id: external_id
     }
   end
 
   def data_structure_version_factory do
     %DataStructureVersion{
+      deleted_at: nil,
+      description: "some description",
+      group: "some group",
+      name: "some name",
+      metadata: %{"description" => "some description"},
       version: 0
     }
   end

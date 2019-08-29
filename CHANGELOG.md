@@ -5,6 +5,7 @@
 ### Changed
 
 - [TD-2061] Data structure external id is now required and unique
+- [TD-2072] Refactor model to move mutable/versionable fields from DataStructure to DataStructureVersion
 
 ### Fixed
 

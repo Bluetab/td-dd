@@ -14,6 +14,14 @@ defmodule TdDd.DataStructures.DataStructureVersion do
 
   schema "data_structure_versions" do
     field(:version, :integer, default: 0)
+    field(:class, :string)
+    field(:description, :string)
+    field(:metadata, :map, default: %{})
+    field(:group, :string)
+    field(:name, :string)
+    field(:type, :string)
+    field(:deleted_at, :utc_datetime)
+
     belongs_to(:data_structure, DataStructure)
 
     many_to_many(:children, DataStructureVersion,
@@ -32,17 +40,33 @@ defmodule TdDd.DataStructures.DataStructureVersion do
   @doc false
   def update_changeset(%DataStructureVersion{} = data_structure_version, attrs) do
     data_structure_version
-    |> cast(attrs, [:version])
+    |> cast(attrs, [:class, :deleted_at, :description, :metadata, :group, :name, :type, :version])
+    |> validate_lengths()
   end
 
   @doc false
   def changeset(%DataStructureVersion{} = data_structure_version, attrs) do
     data_structure_version
     |> cast(attrs, [
-      :version,
-      :data_structure_id
+      :class,
+      :data_structure_id,
+      :description,
+      :group,
+      :metadata,
+      :name,
+      :type,
+      :version
     ])
-    |> validate_required([:version, :data_structure_id])
+    |> validate_required([:data_structure_id, :group, :metadata, :name, :version])
+    |> validate_lengths()
+  end
+
+  defp validate_lengths(changeset) do
+    changeset
+    |> validate_length(:class, max: 255)
+    |> validate_length(:group, max: 255)
+    |> validate_length(:name, max: 255)
+    |> validate_length(:type, max: 255)
   end
 
   def search_fields(%DataStructureVersion{

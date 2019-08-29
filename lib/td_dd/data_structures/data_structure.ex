@@ -24,20 +24,13 @@ defmodule TdDd.DataStructures.DataStructure do
     belongs_to(:system, System, on_replace: :update)
     has_many(:versions, DataStructureVersion, on_delete: :delete_all)
 
-    field(:class, :string)
     field(:confidential, :boolean)
-    field(:description, :string)
     field(:df_content, :map)
     field(:domain_id, :integer)
     field(:external_id, :string)
-    field(:group, :string)
     field(:last_change_at, :utc_datetime)
     field(:last_change_by, :integer)
-    field(:metadata, :map, default: %{})
-    field(:name, :string)
     field(:ou, :string)
-    field(:type, :string)
-    field(:deleted_at, :utc_datetime)
 
     timestamps(type: :utc_datetime)
   end
@@ -49,8 +42,7 @@ defmodule TdDd.DataStructures.DataStructure do
       :confidential,
       :df_content,
       :last_change_at,
-      :last_change_by,
-      :deleted_at
+      :last_change_by
     ])
   end
 
@@ -61,15 +53,9 @@ defmodule TdDd.DataStructures.DataStructure do
     changeset =
       data_structure
       |> cast(attrs, [
-        :class,
         :confidential,
-        :description,
         :domain_id,
-        :group,
-        :metadata,
-        :name,
-        :ou,
-        :type
+        :ou
       ])
 
     case changeset.changes do
@@ -82,27 +68,22 @@ defmodule TdDd.DataStructures.DataStructure do
   def changeset(%DataStructure{} = data_structure, attrs) do
     data_structure
     |> cast(attrs, [
-      :class,
       :confidential,
-      :description,
       :df_content,
       :domain_id,
       :external_id,
-      :group,
       :last_change_at,
       :last_change_by,
-      :metadata,
-      :name,
       :ou,
-      :system_id,
-      :type
+      :system_id
     ])
-    |> validate_required([:group, :last_change_at, :last_change_by, :metadata, :name, :system_id])
-    |> validate_length(:class, max: 255)
-    |> validate_length(:group, max: 255)
-    |> validate_length(:name, max: 255)
+    |> validate_required([
+      :last_change_at,
+      :last_change_by,
+      :external_id,
+      :system_id
+    ])
     |> validate_length(:ou, max: 255)
-    |> validate_length(:type, max: 255)
   end
 
   def search_fields(
@@ -116,17 +97,13 @@ defmodule TdDd.DataStructures.DataStructure do
 
     domain_ids = TaxonomyCache.get_parent_ids(domain_id)
 
-    dsv = DataStructures.get_latest_version(structure)
+    dsv = DataStructures.get_latest_version(structure, [:data_fields])
     path = DataStructures.get_path(dsv)
 
     data_fields =
       dsv
-      |> DataStructures.get_field_structures(deleted: false)
-      |> Enum.map(&Map.take(&1, [:id, :name, :description]))
-
-    structure =
-      %{name: "", group: "", ou: ""}
-      |> Map.merge(structure)
+      |> Map.get(:data_fields)
+      |> Enum.map(&Map.take(&1, [:id, :data_structure_id, :name, :description]))
 
     system =
       structure
@@ -134,27 +111,22 @@ defmodule TdDd.DataStructures.DataStructure do
       |> (& &1.__struct__.search_fields(&1)).()
 
     status =
-      case structure.deleted_at do
+      case dsv.deleted_at do
         nil -> ""
         _deleted_at -> @status.deleted
       end
 
-    df_content = format_content(structure)
+    df_content = format_content(structure, dsv.type)
 
     structure
     |> Map.take([
       :id,
-      :description,
-      :group,
       :last_change_at,
-      :name,
       :ou,
       :external_id,
       :system_id,
-      :type,
       :inserted_at,
-      :confidential,
-      :class
+      :confidential
     ])
     |> Map.put(:data_fields, data_fields)
     |> Map.put(:path, path)
@@ -164,14 +136,24 @@ defmodule TdDd.DataStructures.DataStructure do
     |> Map.put(:system, system)
     |> Map.put(:status, status)
     |> Map.put(:df_content, df_content)
+    |> Map.put_new(:ou, "")
+    |> Map.merge(
+      Map.take(dsv, [
+        :class,
+        :description,
+        :group,
+        :name,
+        :type
+      ])
+    )
   end
 
-  defp format_content(%DataStructure{df_content: nil}), do: nil
+  defp format_content(%DataStructure{df_content: nil}, _), do: nil
 
-  defp format_content(%DataStructure{df_content: df_content}) when map_size(df_content) == 0,
+  defp format_content(%DataStructure{df_content: df_content}, _) when map_size(df_content) == 0,
     do: nil
 
-  defp format_content(%DataStructure{df_content: df_content, type: type}) do
+  defp format_content(%DataStructure{df_content: df_content}, type) do
     format_content(df_content, TemplateCache.get_by_name!(type))
   end
 

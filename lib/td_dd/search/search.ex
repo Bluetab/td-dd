@@ -59,10 +59,10 @@ defmodule TdDd.Search do
 
     case response do
       {:ok, %HTTPoison.Response{status_code: status}} ->
-        Logger.info("Data Structure #{data_structure.name} created/updated status #{status}")
+        Logger.info("Data Structure #{data_structure.id} created/updated status #{status}")
 
       {:error, _error} ->
-        Logger.error("ES: Error creating/updating Data Structure #{data_structure.name}")
+        Logger.error("ES: Error creating/updating Data Structure #{data_structure.id}")
     end
   end
 

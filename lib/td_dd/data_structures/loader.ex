@@ -32,11 +32,10 @@ defmodule TdDd.Loader do
     end)
     |> Multi.run(:structures, &upsert_structures/2)
     |> Multi.run(:versions, &get_structure_versions/2)
+    |> Multi.run(:updated_versions, &update_structure_versions/2)
     |> Multi.run(:inserted_versions, &insert_structure_versions/2)
-    # |> Multi.run(:versions, &upsert_structure_versions/2)
-    |> Multi.run(:versions_by_sys_group_name_version, &versions_by_sys_group_name_version/2)
+    |> Multi.run(:versions_by_external_id, &versions_by_external_id/2)
     |> Multi.run(:relations, &upsert_relations/2)
-    |> Multi.run(:diffs, &diff_structures/2)
     |> Multi.run(:deleted_structures, &delete_structures/2)
     |> Repo.transaction()
   end
@@ -61,24 +60,30 @@ defmodule TdDd.Loader do
   end
 
   defp delete_structures(_repo, %{
-         structures: upserted_structures,
+         versions: versions,
+         inserted_versions: inserted_versions,
          audit: %{last_change_at: deleted_at}
        }) do
-    deleted_structures =
-      upserted_structures
-      |> Enum.group_by(&{&1.system_id, &1.group}, & &1.id)
+    deleted_versions =
+      versions
+      |> Enum.filter(& &1)
+      |> Enum.concat(inserted_versions)
+      |> Repo.preload(:data_structure)
+      |> Enum.group_by(&{&1.data_structure.system_id, &1.group}, & &1.id)
       |> Enum.map(&delete_group_structures(&1, deleted_at))
-      |> Enum.flat_map(fn {_count, ids} -> ids end)
+      |> Enum.flat_map(fn {_count, data_structures} -> data_structures end)
+      |> Repo.preload(:versions)
 
-    {:ok, deleted_structures}
+    {:ok, deleted_versions}
   end
 
   defp delete_group_structures({{system_id, group}, upserted_ids}, deleted_at) do
     Repo.update_all(
-      from(ds in DataStructure,
+      from(dsv in DataStructureVersion,
+        join: ds in assoc(dsv, :data_structure),
         where: ds.system_id == ^system_id,
-        where: ds.group == ^group,
-        where: ds.id not in ^upserted_ids,
+        where: dsv.group == ^group,
+        where: dsv.id not in ^upserted_ids,
         select: ds
       ),
       set: [deleted_at: deleted_at]
@@ -132,6 +137,22 @@ defmodule TdDd.Loader do
     {:ok, versions}
   end
 
+  defp update_structure_versions(_repo, %{versions: versions, structure_records: records}) do
+    Logger.info("Updating data structure versions (#{Enum.count(records)} records)")
+
+    versions
+    |> Enum.zip(records)
+    |> Enum.reject(fn {dsv, _record} -> is_nil(dsv) end)
+    |> Enum.map(&update_structure_version/1)
+    |> errors_or_structs
+  end
+
+  defp update_structure_version({%DataStructureVersion{} = dsv, %{} = attrs}) do
+    dsv
+    |> DataStructureVersion.update_changeset(attrs)
+    |> Repo.update()
+  end
+
   defp insert_structure_versions(_repo, %{
          versions: versions,
          structures: structures,
@@ -142,20 +163,20 @@ defmodule TdDd.Loader do
     records
     |> Enum.map(&Map.get(&1, :version))
     |> Enum.zip(structures)
+    |> Enum.zip(records)
     |> Enum.zip(versions)
-    |> Enum.filter(fn {{_v, _s}, dsv} -> is_nil(dsv) end)
-    |> Enum.map(fn {{v, s}, _dsv} -> {v, s} end)
+    |> Enum.filter(fn {{{_v, _s}, _rec}, dsv} -> is_nil(dsv) end)
+    |> Enum.map(fn {{{v, s}, r}, _dsv} -> {v, s, r} end)
     |> Enum.map(&insert_new_version/1)
     |> errors_or_structs
   end
 
-  defp insert_new_version({nil, data_structure}) do
-    insert_new_version({0, data_structure})
-    # TODO: Should create new version if structure has changed
+  defp insert_new_version({nil, data_structure, record}) do
+    insert_new_version({0, data_structure, record})
   end
 
-  defp insert_new_version({version, %DataStructure{id: id}}) do
-    attrs = %{data_structure_id: id, version: version}
+  defp insert_new_version({version, %DataStructure{id: id}, record}) do
+    attrs = Map.merge(record, %{data_structure_id: id, version: version})
 
     %DataStructureVersion{}
     |> DataStructureVersion.changeset(attrs)
@@ -187,30 +208,22 @@ defmodule TdDd.Loader do
     end
   end
 
-  defp versions_by_sys_group_name_version(_repo, %{
-         versions: versions,
-         inserted_versions: inserted_versions
-       }) do
-    versions_by_sys_group_name_version =
+  defp versions_by_external_id(_repo, %{versions: versions, inserted_versions: inserted_versions}) do
+    versions_by_external_id =
       versions
       |> Enum.filter(& &1)
       |> Enum.concat(inserted_versions)
-      |> Repo.preload([:data_structure])
+      |> Repo.preload(:data_structure)
       |> Map.new(&key_value/1)
 
-    {:ok, versions_by_sys_group_name_version}
+    {:ok, versions_by_external_id}
   end
 
-  defp key_value(%DataStructureVersion{data_structure: data_structure, version: version} = dsv) do
-    map =
-      data_structure
-      |> Map.take([:system_id, :group, :name, :external_id])
-      |> Map.put(:version, version)
-
-    key =
-      [:system_id, :group, :name, :external_id, :version]
-      |> Enum.map(&Map.get(map, &1))
-      |> List.to_tuple()
+  defp key_value(
+         %DataStructureVersion{data_structure: %{external_id: external_id}, version: version} =
+           dsv
+       ) do
+    key = {external_id, version}
 
     {key, dsv}
   end
@@ -220,157 +233,36 @@ defmodule TdDd.Loader do
   end
 
   defp upsert_relations(_repo, %{
-         versions_by_sys_group_name_version: versions_by_sys_group_name_version,
+         versions_by_external_id: versions_by_external_id,
          relation_records: relation_records
        }) do
     relation_records
-    |> Enum.map(&find_parent_child(&1, versions_by_sys_group_name_version))
+    |> Enum.map(&find_parent_child(&1, versions_by_external_id))
     |> Enum.filter(fn {parent, child} -> !is_nil(parent) && !is_nil(child) end)
     |> Enum.map(fn {parent, child} -> get_or_create_relation(parent, child) end)
     |> errors_or_structs
   end
 
   defp find_parent_child(
-         %{
-           system_id: system_id,
-           parent_group: parent_group,
-           parent_name: parent_name,
-           child_group: child_group,
-           child_name: child_name
-         } = relation,
-         versions_by_sys_group_name_version
+         %{parent_external_id: parent_external_id, child_external_id: child_external_id} =
+           relation,
+         versions_by_external_id
        ) do
-    parent_external_id = Map.get(relation, :parent_external_id)
-    child_external_id = Map.get(relation, :child_external_id)
     version = Map.get(relation, :version, 0)
 
-    parent =
-      Map.get(
-        versions_by_sys_group_name_version,
-        {system_id, parent_group, parent_name, parent_external_id, version}
-      )
-
-    child =
-      Map.get(
-        versions_by_sys_group_name_version,
-        {system_id, child_group, child_name, child_external_id, version}
-      )
+    parent = Map.get(versions_by_external_id, {parent_external_id, version})
+    child = Map.get(versions_by_external_id, {child_external_id, version})
 
     {parent, child}
   end
 
   defp find_parent_child(_, _), do: {nil, nil}
 
-  defp diff_structures(_repo, %{
-         versions_by_sys_group_name_version: versions_by_sys_group_name_version,
-         inserted_versions: inserted_versions,
-         field_records: records,
-         audit: audit_fields
-       }) do
-    Logger.info(
-      "Calculating differences (#{Enum.count(versions_by_sys_group_name_version)} versions, #{
-        Enum.count(records)
-      } records)"
-    )
-
-    inserted_version_ids = inserted_versions |> Enum.map(& &1.id)
-
-    diffs =
-      records
-      |> Enum.map(&(&1 |> Map.merge(audit_fields)))
-      |> Enum.group_by(&{&1.system_id, &1.group, &1.name, &1.external_id, &1.version})
-      |> Map.to_list()
-      |> Enum.map(fn {sys_group_name_version, records} ->
-        {Map.get(versions_by_sys_group_name_version, sys_group_name_version), records}
-      end)
-      |> Enum.map(fn {version, records} ->
-        structure_diff(version, records, Enum.member?(inserted_version_ids, version.id))
-      end)
-
-    {:ok, diffs}
-  end
-
-  defp structure_diff(version, records, is_new_version) do
-    data_fields =
-      version
-      |> Ecto.assoc([:data_structure, :versions])
-      |> Repo.all()
-
-    to_upsert =
-      records
-      |> Enum.map(fn record -> find_field(data_fields, record) end)
-      |> Enum.zip(records)
-
-    {to_insert, to_keep} =
-      to_upsert
-      |> Enum.split_with(fn {field, _} -> is_nil(field) end)
-
-    to_insert =
-      to_insert
-      |> Enum.map(fn {_, record} -> {version, record} end)
-
-    to_remove =
-      data_fields
-      |> MapSet.new()
-      |> MapSet.difference(
-        to_keep
-        |> Enum.map(fn {field, _} -> field end)
-        |> MapSet.new()
-      )
-      |> Enum.map(fn field -> {version, field} end)
-
-    to_modify =
-      to_keep
-      |> Enum.filter(fn {field, record} -> has_changes?(field, record) end)
-
-    to_keep =
-      if is_new_version do
-        to_keep |> Enum.map(fn {field, _} -> {version, field} end)
-      else
-        []
-      end
-
-    %{add: to_insert, modify: to_modify, remove: to_remove, keep: to_keep}
-  end
-
-  defp has_changes?(field, %{} = record) do
-    check_props =
-      case Map.get(record, :description) do
-        nil -> [:metadata]
-        _ -> [:description, :metadata]
-      end
-
-    defaults =
-      check_props
-      |> Enum.map(fn p -> {p, nil} end)
-      |> Enum.concat([{:metadata, %{}}])
-      |> Map.new()
-
-    field |> Map.take(check_props) != defaults |> Map.merge(record) |> Map.take(check_props)
-  end
-
-  defp find_field(
-         data_fields,
-         %{
-           field_name: name,
-           type: type
-         } = attrs
-       ) do
-    nullable = Map.get(attrs, :nullable)
-    precision = Map.get(attrs, :precision)
-    match = %{name: name, type: type, nullable: nullable, precision: precision}
-
-    data_fields
-    |> Enum.find(&Map.equal?(match, Map.take(&1, [:name, :type, :nullable, :precision])))
-  end
-
-  defp find_field(_data_fields, _), do: nil
-
   defp errors_or_structs(results) do
     errors = changeset_errors(results)
 
     case Enum.empty?(errors) do
-      true -> {:ok, results |> Enum.map(fn {:ok, structure} -> structure end)}
+      true -> {:ok, results |> Enum.map(fn {:ok, struct} -> struct end)}
       false -> {:error, errors}
     end
   end

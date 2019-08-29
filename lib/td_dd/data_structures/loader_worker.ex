@@ -47,26 +47,32 @@ defmodule TdDd.Loader.LoaderWorker do
          {:ok,
           %{
             structures: structures,
+            updated_versions: updated_versions,
+            inserted_versions: inserted_versions,
             deleted_structures: deleted_structures
           }},
          ts,
          ms
        ) do
-    upserts =
+    upsert_count =
       structures
       |> Enum.filter(&(&1.last_change_at == ts))
       |> Enum.count()
 
+    update_count = Enum.count(updated_versions)
+    insert_count = Enum.count(inserted_versions)
+    delete_count = Enum.count(deleted_structures)
+
     Logger.info(
-      "Bulk load process completed in #{ms}ms (*#{upserts}S)"
+      "Bulk load process completed in #{ms}ms (*#{upsert_count}S +#{insert_count}V *#{
+        update_count
+      }V -#{delete_count}V)"
     )
 
-    if upserts > 0 do
-      @index_worker.reindex(structures)
-    end
-
-    if Enum.count(deleted_structures) > 0 do
-      @index_worker.reindex(deleted_structures)
+    if upsert_count + update_count + insert_count + delete_count > 0 do
+      deleted_structures
+      |> Enum.concat(structures)
+      |> @index_worker.reindex
     end
   end
 

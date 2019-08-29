@@ -46,7 +46,7 @@ defmodule TdDdWeb.DataStructureController do
     size = search_params |> Map.get("size", size)
 
     search_params
-    |> Search.logic_deleted_filter
+    |> Search.logic_deleted_filter()
     |> Map.drop(["page", "size"])
     |> Search.search_data_structures(user, page, size)
   end
@@ -77,11 +77,11 @@ defmodule TdDdWeb.DataStructureController do
     response(422, "Unprocessable Entity")
   end
 
-  def create(conn, %{"data_structure" => data_structure_params}) do
+  def create(conn, %{"data_structure" => attrs}) do
     user = conn.assigns[:current_user]
 
     creation_params =
-      data_structure_params
+      attrs
       |> Map.put("last_change_by", get_current_user_id(conn))
       |> Map.put("last_change_at", DateTime.truncate(DateTime.utc_now(), :second))
       |> Map.put("metadata", %{})
@@ -89,11 +89,8 @@ defmodule TdDdWeb.DataStructureController do
 
     with true <- can?(user, create_data_structure(Map.fetch!(creation_params, "domain_id"))),
          {:ok, %DataStructure{id: id}} <- DataStructures.create_data_structure(creation_params) do
-      AuditSupport.create_data_structure(conn, id, data_structure_params)
-
-      data_structure =
-        id
-        |> get_data_structure
+      AuditSupport.create_data_structure(conn, id, attrs)
+      data_structure = get_data_structure(id)
 
       conn
       |> put_status(:created)
@@ -130,21 +127,41 @@ defmodule TdDdWeb.DataStructureController do
 
   def show(conn, %{"id" => id}) do
     user = conn.assigns[:current_user]
-
-    data_structure = id |> get_data_structure()
-
+    data_structure = get_data_structure(id)
     do_render_data_structure(conn, user, data_structure)
   end
 
+  @lift_attrs [:class, :description, :metadata, :group, :name, :type, :deleted_at]
+  @enrich_attrs [
+    :parents,
+    :children,
+    :siblings,
+    :data_fields,
+    :data_field_external_ids,
+    :data_field_links,
+    :versions,
+    :system,
+    :ancestry
+  ]
+
   defp get_data_structure(id) do
-    id
-    |> DataStructures.get_data_structure_with_fields!(deleted: false)
-    |> DataStructures.with_versions()
-    |> DataStructures.with_latest_children(deleted: false)
-    |> DataStructures.with_latest_parents(deleted: false)
-    |> DataStructures.with_latest_siblings(deleted: false)
-    |> DataStructures.with_latest_ancestry()
-    |> DataStructures.with_field_external_ids()
+    case DataStructures.get_latest_version(id, @enrich_attrs) do
+      nil ->
+        DataStructures.get_data_structure!(id)
+
+      dsv ->
+        dsv
+        |> Map.get(:data_structure)
+        |> Map.merge(Map.take(dsv, @enrich_attrs))
+        |> Map.merge(Map.take(dsv, @lift_attrs))
+    end
+  end
+
+  defp do_render_data_structure(conn, _user, nil) do
+    conn
+    |> put_status(:not_found)
+    |> put_view(ErrorView)
+    |> render("404.json")
   end
 
   defp do_render_data_structure(conn, user, data_structure) do
@@ -191,16 +208,16 @@ defmodule TdDdWeb.DataStructureController do
     response(422, "Unprocessable Entity")
   end
 
-  def update(conn, %{"id" => id, "data_structure" => data_structure_params}) do
+  def update(conn, %{"id" => id, "data_structure" => attrs}) do
     user = conn.assigns[:current_user]
 
-    data_structure_old = DataStructures.get_data_structure_with_fields!(id)
+    data_structure_old = DataStructures.get_data_structure!(id)
 
     manage_confidential_structures =
       can?(user, manage_confidential_structures(data_structure_old))
 
     update_params =
-      data_structure_params
+      attrs
       |> check_confidential_field(manage_confidential_structures)
       |> Map.put("last_change_by", get_current_user_id(conn))
       |> Map.put("last_change_at", DateTime.truncate(DateTime.utc_now(), :second))
@@ -209,11 +226,10 @@ defmodule TdDdWeb.DataStructureController do
     with true <- can?(user, update_data_structure(data_structure_old)),
          {:ok, %DataStructure{} = data_structure} <-
            DataStructures.update_data_structure(data_structure_old, update_params) do
-      AuditSupport.update_data_structure(conn, data_structure_old, data_structure_params)
+      AuditSupport.update_data_structure(conn, data_structure_old, attrs)
 
       data_structure = get_data_structure(data_structure.id)
-
-      render(conn, "show.json", data_structure: data_structure)
+      do_render_data_structure(conn, user, data_structure)
     else
       false ->
         conn

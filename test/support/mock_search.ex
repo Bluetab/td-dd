@@ -32,13 +32,20 @@ defmodule TdDd.Search.MockSearch do
   defp get_aggregations(_, []), do: %{}
 
   defp get_aggregations(data_structures, template_list) do
-    agg_fields = Enum.map(data_structures, &Map.take(&1, [:ou, :system, :type, :df_content]))
+    indexed_structures =
+      data_structures
+      |> Enum.map(&DataStructure.search_fields/1)
+
+    agg_fields =
+      indexed_structures
+      |> Enum.map(&Map.take(&1, [:ou, :system, :type, :df_content]))
 
     types = get_aggegation_values_for_field(agg_fields, :type)
     domains = get_aggegation_values_for_field(agg_fields, :ou)
-    content = dynamic_content(data_structures, template_list)
+    content = dynamic_content(indexed_structures, template_list)
 
-    %{"ou.raw" => domains, "type.raw" => types} |> Map.merge(content)
+    %{"ou.raw" => domains, "type.raw" => types}
+    |> Map.merge(content)
   end
 
   defp get_aggegation_values_for_field(agg_fields, field) do
@@ -57,8 +64,8 @@ defmodule TdDd.Search.MockSearch do
     data_structures
     |> Enum.filter(&Enum.member?(template_names, Map.get(&1, :type)))
     |> Enum.map(&Map.get(&1, :df_content))
-    |> Enum.map(&Enum.to_list(&1))
-    |> List.flatten()
+    |> Enum.filter(& &1)
+    |> Enum.flat_map(&Enum.to_list/1)
     |> Enum.reduce(%{}, &update_content_values(&1, &2))
   end
 
