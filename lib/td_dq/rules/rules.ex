@@ -987,14 +987,6 @@ defmodule TdDq.Rules do
     |> Repo.all()
   end
 
-  def get_last_rule_result(implementation_key) do
-    RuleResult
-    |> where([r], r.implementation_key == ^implementation_key)
-    |> order_by(desc: :date)
-    |> limit(1)
-    |> Repo.one()
-  end
-
   @doc """
     Returns last rule_result for each rule_implementation of rule
   """

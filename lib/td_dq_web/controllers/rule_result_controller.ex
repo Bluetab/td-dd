@@ -46,8 +46,8 @@ defmodule TdDqWeb.RuleResultController do
   defp rule_results_from_csv(%{path: path}) do
     path
     |> File.stream!()
-    |> Stream.drop(1)
-    |> CSV.decode!(separator: ?;)
+    |> CSV.decode!(separator: ?;, headers: true)
+    |> Enum.to_list()
   end
 
   defp upload_data(rule_results_data) do
@@ -58,7 +58,7 @@ defmodule TdDqWeb.RuleResultController do
 
   defp index_rule_results(rule_results_data) do
     rule_results_data
-    |> Enum.map(fn [implementation_key | _] ->
+    |> Enum.map(fn %{"implementation_key" => implementation_key} ->
       Rules.get_rule_by_implementation_key(implementation_key)
     end)
     |> Enum.filter(&(not is_nil(&1)))
@@ -71,39 +71,45 @@ defmodule TdDqWeb.RuleResultController do
 
     rules_results
     |> Enum.map(&format_date/1)
-    |> Enum.map(&format_result/1)
     |> Enum.map(&with_parent_domains/1)
     |> Enum.map(&to_map/1)
     |> Enum.map(&Rules.create_rule_result/1)
   end
 
   defp format_date(data) do
-    List.update_at(data, 1, fn x ->
-      Timex.to_datetime(Timex.parse!(x, "{YYYY}-{0M}-{D}-{h24}-{m}-{s}"))
-    end)
-  end
-
-  defp format_result(data) do
-    List.update_at(data, 2, fn x -> String.to_integer(x) end)
+    %{
+      data
+      | "date" =>
+          Timex.to_datetime(Timex.parse!(Map.get(data, "date"), "{YYYY}-{0M}-{D}-{h24}-{m}-{s}"))
+    }
   end
 
   defp with_parent_domains(data) do
-    data ++ [get_parent_domains(data)]
+    Map.put(data, "parent_domains", get_parent_domains(data))
   end
 
   defp to_map(data) do
-    impl_key = Enum.at(data, 0)
-    date = Enum.at(data, 1)
-    result = Enum.at(data, 2)
-    parent_domains = Enum.at(data, 3)
+    impl_key = Map.get(data, "implementation_key")
+    date = Map.get(data, "date")
+    result = Map.get(data, "result")
+    parent_domains = Map.get(data, "parent_domains")
+    errors = Map.get(data, "errors")
+    records = Map.get(data, "records")
 
-    %{implementation_key: impl_key, date: date, result: result, parent_domains: parent_domains}
+    %{
+      implementation_key: impl_key,
+      date: date,
+      result: result,
+      parent_domains: parent_domains,
+      errors: errors,
+      records: records
+    }
   end
 
   # TODO: Remove this form here. Remove parent domains from rule_result table
   defp get_parent_domains(data) do
     data
-    |> Enum.at(0)
+    |> Map.get("implementation_key")
     |> Rules.get_rule_implementation_by_key()
     |> case do
       nil ->
