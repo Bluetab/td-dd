@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-1907] Cache failed rule results
+- [TD-1986] Added errors and records to rule implementation results
 
 ## [3.4.0] 2019-08-19
 
