@@ -46,7 +46,7 @@ defmodule TdDdWeb.DataStructureController do
     size = search_params |> Map.get("size", size)
 
     search_params
-    |> Search.logic_deleted_filter()
+    |> Map.put(:without, ["deleted_at"])
     |> Map.drop(["page", "size"])
     |> Search.search_data_structures(user, page, size)
   end
@@ -313,15 +313,24 @@ defmodule TdDdWeb.DataStructureController do
     |> render("index.json", data_structures: data_structures, filters: aggregations)
   end
 
+  swagger_path :get_system_structures do
+    description("List System Root Data Structures")
+
+    parameters do
+      system_id(:path, :string, "List of organizational units", required: true)
+    end
+
+    response(200, "OK", Schema.ref(:DataStructuresResponse))
+  end
+
   def get_system_structures(conn, params) do
     user = conn.assigns[:current_user]
 
-    data_structures =
+    %{results: data_structures, total: total} =
       params
-      |> DataStructures.list_data_structures_with_no_parents(deleted: false)
-      |> Enum.filter(&can?(user, view_data_structure(&1)))
-
-    total = length(data_structures)
+      |> Map.put("filters", %{system_id: String.to_integer(Map.get(params, "system_id"))})
+      |> Map.put(:without, ["path", "deleted_at"])
+      |> Search.search_data_structures(user, 0, 1_000)
 
     conn
     |> put_resp_header("x-total-count", "#{total}")

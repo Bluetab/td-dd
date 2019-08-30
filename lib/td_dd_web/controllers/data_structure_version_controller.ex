@@ -45,14 +45,14 @@ defmodule TdDdWeb.DataStructureVersionController do
     render_with_permissions(conn, user, dsv)
   end
 
-  def render_with_permissions(conn, _user, nil) do
+  defp render_with_permissions(conn, _user, nil) do
     conn
     |> put_status(:not_found)
     |> put_view(ErrorView)
     |> render("404.json")
   end
 
-  def render_with_permissions(conn, user, %{data_structure: data_structure} = dsv) do
+  defp render_with_permissions(conn, user, %{data_structure: data_structure} = dsv) do
     with true <- can?(user, view_data_structure(data_structure)) do
       user_permissions = %{
         update: can?(user, update_data_structure(data_structure)),

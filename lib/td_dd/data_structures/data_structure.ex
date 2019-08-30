@@ -16,10 +16,6 @@ defmodule TdDd.DataStructures.DataStructure do
 
   @behaviour Searchable
 
-  @status %{
-    deleted: "deleted"
-  }
-
   schema "data_structures" do
     belongs_to(:system, System, on_replace: :update)
     has_many(:versions, DataStructureVersion, on_delete: :delete_all)
@@ -86,9 +82,17 @@ defmodule TdDd.DataStructures.DataStructure do
     |> validate_length(:ou, max: 255)
   end
 
-  def search_fields(
-        %DataStructure{last_change_by: last_change_by_id, domain_id: domain_id} = structure
-      ) do
+  def search_fields(%DataStructure{} = structure) do
+    dsv = DataStructures.get_latest_version(structure, [:data_fields])
+    search_fields(structure, dsv)
+  end
+
+  defp search_fields(%DataStructure{}, nil = _version), do: %{}
+
+  defp search_fields(
+         %DataStructure{last_change_by: last_change_by_id, domain_id: domain_id} = structure,
+         %DataStructureVersion{} = dsv
+       ) do
     last_change_by =
       case UserCache.get(last_change_by_id) do
         {:ok, nil} -> %{}
@@ -97,7 +101,6 @@ defmodule TdDd.DataStructures.DataStructure do
 
     domain_ids = TaxonomyCache.get_parent_ids(domain_id)
 
-    dsv = DataStructures.get_latest_version(structure, [:data_fields])
     path = DataStructures.get_path(dsv)
 
     data_fields =
@@ -109,12 +112,6 @@ defmodule TdDd.DataStructures.DataStructure do
       structure
       |> Map.get(:system)
       |> (& &1.__struct__.search_fields(&1)).()
-
-    status =
-      case dsv.deleted_at do
-        nil -> ""
-        _deleted_at -> @status.deleted
-      end
 
     df_content = format_content(structure, dsv.type)
 
@@ -134,13 +131,13 @@ defmodule TdDd.DataStructures.DataStructure do
     |> Map.put(:domain_id, domain_id)
     |> Map.put(:domain_ids, domain_ids)
     |> Map.put(:system, system)
-    |> Map.put(:status, status)
     |> Map.put(:df_content, df_content)
     |> Map.put_new(:ou, "")
     |> Map.merge(
       Map.take(dsv, [
         :class,
         :description,
+        :deleted_at,
         :group,
         :name,
         :type

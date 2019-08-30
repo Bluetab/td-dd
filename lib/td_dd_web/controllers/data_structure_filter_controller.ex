@@ -25,6 +25,7 @@ defmodule TdDdWeb.DataStructureFilterController do
 
   swagger_path :search do
     description("List Data Structure Filters")
+
     parameters do
       search(
         :body,
@@ -32,12 +33,13 @@ defmodule TdDdWeb.DataStructureFilterController do
         "Filter parameters"
       )
     end
+
     response(200, "OK", Schema.ref(:FilterResponse))
   end
 
   def search(conn, params) do
     user = conn.assigns[:current_user]
-    params = Search.logic_deleted_filter(params)
+    params = Map.put(params, :without, ["deleted_at"])
     filters = Search.get_filter_values(user, params)
     render(conn, "show.json", filters: filters)
   end

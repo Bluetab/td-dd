@@ -39,6 +39,7 @@ defmodule TdDd.Search.Indexer do
       description: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
       external_id: %{type: "keyword", index: false},
       domain_ids: %{type: "long"},
+      deleted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       last_change_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       last_change_by: %{enabled: false},
       inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},

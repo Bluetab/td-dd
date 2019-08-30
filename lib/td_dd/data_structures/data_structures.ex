@@ -37,30 +37,6 @@ defmodule TdDd.DataStructures do
     |> Enum.map(&enrich(&1, options))
   end
 
-  def list_data_structures_with_no_parents(params \\ %{}, options \\ []) do
-    filter = build_filter(DataStructure, params)
-
-    DataStructure
-    |> where([ds], ^filter)
-    |> join(:left, [ds], dsv in assoc(ds, :versions))
-    |> where([ds, dsv], is_nil(dsv.class) or dsv.class != "field")
-    |> with_deleted(options, dynamic([_, dsv], is_nil(dsv.deleted_at)))
-    |> select([ds, dsv], ds)
-    |> distinct(true)
-    |> Repo.all()
-    |> Repo.preload(system: [], versions: :parents)
-    |> Enum.filter(&latest_version_is_root?/1)
-  end
-
-  defp latest_version_is_root?(%DataStructure{versions: []}), do: false
-
-  defp latest_version_is_root?(%DataStructure{versions: versions}) do
-    versions
-    |> Enum.max_by(& &1.version)
-    |> Map.get(:parents)
-    |> Enum.empty?()
-  end
-
   def build_filter(schema, params) do
     params = CollectionUtils.atomize_keys(params)
     fields = schema.__schema__(:fields)

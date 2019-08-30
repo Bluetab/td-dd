@@ -12,13 +12,14 @@ defmodule TdDd.Search.MockSearch do
   def delete_search(_something) do
   end
 
-  def search("data_structure", %{query: %{bool: %{must: %{match_all: %{}}}}}) do
+  def search("data_structure", %{query: %{bool: %{filter: filters, must: %{match_all: %{}}}}}) do
     template_list = TemplateCache.list_by_scope!("dd")
     data_structures = DataStructures.list_data_structures()
 
     results =
       data_structures
       |> Enum.map(&DataStructure.search_fields(&1))
+      |> apply_filters(filters)
       |> Enum.map(&%{_source: &1})
       |> JSON.encode!()
       |> JSON.decode!()
@@ -26,6 +27,35 @@ defmodule TdDd.Search.MockSearch do
     aggregations = get_aggregations(data_structures, template_list)
 
     search_results(results, aggregations)
+  end
+
+  defp apply_filters(dss, []), do: dss
+
+  defp apply_filters(dss, [filter | filters]) do
+    dss
+    |> apply_filter(filter)
+    |> apply_filters(filters)
+  end
+
+  defp apply_filter(dss, %{term: %{system_id: system_id}}) do
+    Enum.filter(dss, &(Map.get(&1, :system_id) == system_id))
+  end
+
+  defp apply_filter(dss, %{bool: %{must_not: %{exists: %{field: field}}}}) do
+    Enum.filter(dss, &is_missing?(&1, field))
+  end
+
+  defp apply_filter(dss, %{terms: %{"ou.raw" => values}}) do
+    Enum.filter(dss, &Enum.member?(values, Map.get(&1, :ou)))
+  end
+
+  defp is_missing?(ds, field) do
+    case Map.get(ds, String.to_atom(field)) do
+      nil -> true
+      [] -> true
+      "" -> true
+      _ -> false
+    end
   end
 
   defp get_aggregations([], _), do: %{}
