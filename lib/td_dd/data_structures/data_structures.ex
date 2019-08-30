@@ -470,15 +470,6 @@ defmodule TdDd.DataStructures do
     |> Repo.one()
   end
 
-  def get_structure_version_by_hash_and_external_id(hash, external_id) do
-    DataStructureVersion
-    |> join(:inner, [data_structure], ds in assoc(data_structure, :data_structure))
-    |> where([_, ds], ds.external_id == ^external_id)
-    |> where([dsv, _], dsv.hash == ^hash)
-    |> preload([:data_structure])
-    |> Repo.one()
-  end
-
   defp with_deleted(query, options, dynamic) when is_list(options) do
     include_deleted = Keyword.get(options, :deleted, true)
     with_deleted(query, include_deleted, dynamic)
