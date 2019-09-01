@@ -5,6 +5,7 @@ defmodule TdDd.Search.Indexer do
   alias Jason, as: JSON
   alias TdCache.TemplateCache
   alias TdDd.ESClientApi
+  alias TdDd.Repo
   alias TdDd.Search
 
   def reindex(:all) do
@@ -16,6 +17,7 @@ defmodule TdDd.Search.Indexer do
 
   def reindex(data_structures) do
     data_structures
+    |> Repo.preload(:system)
     |> Search.put_bulk_search()
   end
 
