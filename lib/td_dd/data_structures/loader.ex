@@ -84,6 +84,7 @@ defmodule TdDd.Loader do
         where: ds.system_id == ^system_id,
         where: dsv.group == ^group,
         where: dsv.id not in ^upserted_ids,
+        where: is_nil(dsv.deleted_at),
         select: ds
       ),
       set: [deleted_at: deleted_at]
@@ -214,18 +215,13 @@ defmodule TdDd.Loader do
       |> Enum.filter(& &1)
       |> Enum.concat(inserted_versions)
       |> Repo.preload(:data_structure)
-      |> Map.new(&key_value/1)
+      |> Map.new(&get_external_id/1)
 
     {:ok, versions_by_external_id}
   end
 
-  defp key_value(
-         %DataStructureVersion{data_structure: %{external_id: external_id}, version: version} =
-           dsv
-       ) do
-    key = {external_id, version}
-
-    {key, dsv}
+  defp get_external_id(%DataStructureVersion{data_structure: %{external_id: external_id}} = dsv) do
+    {external_id, dsv}
   end
 
   defp upsert_relations(_repo, %{relation_records: []}) do
@@ -244,14 +240,11 @@ defmodule TdDd.Loader do
   end
 
   defp find_parent_child(
-         %{parent_external_id: parent_external_id, child_external_id: child_external_id} =
-           relation,
+         %{parent_external_id: parent_external_id, child_external_id: child_external_id},
          versions_by_external_id
        ) do
-    version = Map.get(relation, :version, 0)
-
-    parent = Map.get(versions_by_external_id, {parent_external_id, version})
-    child = Map.get(versions_by_external_id, {child_external_id, version})
+    parent = Map.get(versions_by_external_id, parent_external_id)
+    child = Map.get(versions_by_external_id, child_external_id)
 
     {parent, child}
   end
