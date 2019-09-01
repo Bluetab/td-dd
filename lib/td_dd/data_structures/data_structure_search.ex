@@ -1,8 +1,6 @@
 defmodule TdDd.DataStructure.Search do
-  require Logger
-
   @moduledoc """
-    Helper module to construct business concept search queries.
+  Helper module to construct business concept search queries.
   """
   alias TdDd.Accounts.User
   alias TdDd.DataStructure.Query
@@ -10,13 +8,15 @@ defmodule TdDd.DataStructure.Search do
   alias TdDd.Search.Aggregations
   alias TdDd.Utils.CollectionUtils
 
+  require Logger
+
   @search_service Application.get_env(:td_dd, :elasticsearch)[:search_service]
 
   def get_filter_values(user, params \\ %{})
 
   def get_filter_values(%User{is_admin: true}, params) do
     filter_clause = create_filters(params)
-    query = %{} |> create_query(filter_clause)
+    query = create_query(%{}, filter_clause)
     search = %{query: query, aggs: Aggregations.aggregation_terms()}
     @search_service.get_filters(search)
   end
@@ -35,7 +35,7 @@ defmodule TdDd.DataStructure.Search do
   def get_filter_values(permissions, params) do
     user_defined_filters = create_filters(params)
     filter = permissions |> create_filter_clause(user_defined_filters)
-    query = %{} |> create_query(filter)
+    query = create_query(%{}, filter)
     search = %{query: query, aggs: Aggregations.aggregation_terms()}
     @search_service.get_filters(search)
   end
@@ -43,13 +43,8 @@ defmodule TdDd.DataStructure.Search do
   def search_data_structures(params, user, page \\ 0, size \\ 50)
 
   def search_data_structures(params, %User{is_admin: true}, page, size) do
-    filter_clause = create_filters(params)
-
-    query =
-      case filter_clause do
-        [] -> create_query(params)
-        _ -> create_query(params, filter_clause)
-      end
+    filters = create_filters(params)
+    query = create_query(params, filters)
 
     sort = Map.get(params, "sort", ["name.raw"])
 
@@ -120,6 +115,14 @@ defmodule TdDd.DataStructure.Search do
     }
   end
 
+  def create_filters(%{without: without_fields} = params) do
+    filters = create_filters(Map.delete(params, :without))
+
+    without_fields
+    |> Enum.map(&%{bool: %{must_not: %{exists: %{field: &1}}}})
+    |> Enum.concat(filters)
+  end
+
   def create_filters(%{"filters" => filters}) do
     filters
     |> Map.to_list()
@@ -128,6 +131,10 @@ defmodule TdDd.DataStructure.Search do
   end
 
   def create_filters(_), do: []
+
+  defp to_terms_query({:system_id, system_id}) do
+    get_filter(nil, system_id, :system_id)
+  end
 
   defp to_terms_query({filter, values}) do
     Aggregations.aggregation_terms()
@@ -149,14 +156,14 @@ defmodule TdDd.DataStructure.Search do
 
   defp get_filter(_, _, _), do: nil
 
-  defp create_query(%{"query" => query}) do
+  defp create_query(%{"query" => query}, []) do
     equery = Query.add_query_wildcard(query)
 
     %{simple_query_string: %{query: equery}}
     |> bool_query
   end
 
-  defp create_query(_params) do
+  defp create_query(_params, []) do
     %{match_all: %{}}
     |> bool_query
   end
@@ -173,12 +180,14 @@ defmodule TdDd.DataStructure.Search do
     |> bool_query(filter)
   end
 
-  defp bool_query(query, filter) do
-    %{bool: %{must: query, filter: filter}}
+  defp bool_query(query, filter \\ nil)
+
+  defp bool_query(query, filter) when is_nil(filter) do
+    %{bool: %{must: query}}
   end
 
-  defp bool_query(query) do
-    %{bool: %{must: query}}
+  defp bool_query(query, filter) do
+    %{bool: %{must: query, filter: filter}}
   end
 
   defp do_search(search) do
@@ -210,14 +219,5 @@ defmodule TdDd.DataStructure.Search do
       end)
 
     %{results: results, aggregations: aggregations, total: total}
-  end
-
-  def logic_deleted_filter(%{"filters" => filters} = params) do
-    filters = Map.put(filters, "status", "")
-    Map.put(params, "filters", filters)
-  end
-
-  def logic_deleted_filter(params) do
-    Map.put(params, "filters", %{"status" => ""})
   end
 end

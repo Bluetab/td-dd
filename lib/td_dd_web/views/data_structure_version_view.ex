@@ -1,6 +1,12 @@
 defmodule TdDdWeb.DataStructureVersionView do
   use TdDdWeb, :view
 
+  def render("show.json", %{data_structure_version: dsv, user_permissions: user_permissions}) do
+    "show.json"
+    |> render(%{data_structure_version: dsv})
+    |> Map.put(:user_permissions, user_permissions)
+  end
+
   def render("show.json", %{data_structure_version: dsv}) do
     %{
       data:
@@ -14,16 +20,23 @@ defmodule TdDdWeb.DataStructureVersionView do
         |> add_system
         |> add_ancestry
         |> Map.take([
-          :data_structure,
           :ancestry,
           :children,
+          :class,
+          :data_fields,
+          :data_structure,
+          :deleted_at,
+          :description,
+          :group,
+          :id,
+          :links,
+          :name,
           :parents,
           :siblings,
-          :data_fields,
           :system,
+          :type,
           :version,
-          :versions,
-          :id
+          :versions
         ])
     }
   end
@@ -37,18 +50,14 @@ defmodule TdDdWeb.DataStructureVersionView do
     data_structure
     |> Map.take([
       :id,
-      :class,
       :confidential,
-      :description,
       :domain_id,
       :external_id,
-      :group,
       :inserted_at,
       :last_change_at,
-      :name,
       :ou,
       :system_id,
-      :type
+      :df_content
     ])
     |> add_system(data_structure)
   end
@@ -62,9 +71,8 @@ defmodule TdDdWeb.DataStructureVersionView do
     Map.put(json, :system, system_params)
   end
 
-  defp data_structure_embedded(data_structure) do
-    data_structure
-    |> Map.take([:id, :name, :type])
+  defp data_structure_version_embedded(dsv) do
+    Map.take(dsv, [:data_structure_id, :id, :name, :type])
   end
 
   defp add_children(data_structure_version), do: add_relations(data_structure_version, :children)
@@ -79,33 +87,35 @@ defmodule TdDdWeb.DataStructureVersionView do
         data_structure_version
 
       rs ->
-        relations = Enum.map(rs, &data_structure_embedded/1)
+        relations = Enum.map(rs, &data_structure_version_embedded/1)
         Map.put(data_structure_version, type, relations)
     end
   end
 
-  defp add_data_fields(%{data_fields: fields} = dsv) do
-    data_fields =
-      fields
-      |> Enum.map(
-        &Map.take(&1, [
-          :id,
-          :name,
-          :type,
-          :precision,
-          :nullable,
-          :description,
-          :last_change_at,
-          :inserted_at,
-          :field_structure_id
-        ])
-      )
-
-    Map.put(dsv, :data_fields, data_fields)
+  defp add_data_fields(%{data_fields: data_fields} = dsv) do
+    field_structures = Enum.map(data_fields, &field_structure_json/1)
+    Map.put(dsv, :data_fields, field_structures)
   end
 
   defp add_data_fields(dsv) do
     Map.put(dsv, :data_fields, [])
+  end
+
+  defp field_structure_json(%{class: "field", data_structure: %{df_content: df_content}} = dsv) do
+    dsv
+    |> Map.take([
+      :name,
+      :data_structure_id,
+      :external_id,
+      :type,
+      :metadata,
+      :description,
+      :last_change_at,
+      :inserted_at,
+      :links
+    ])
+    |> lift_metadata()
+    |> Map.put(:has_df_content, not is_nil(df_content))
   end
 
   defp add_versions(dsv) do
@@ -120,7 +130,7 @@ defmodule TdDdWeb.DataStructureVersionView do
 
   defp version_json(version) do
     version
-    |> Map.take([:version, :inserted_at, :updated_at])
+    |> Map.take([:version, :deleted_at, :inserted_at, :updated_at])
   end
 
   defp add_system(dsv) do
@@ -141,11 +151,20 @@ defmodule TdDdWeb.DataStructureVersionView do
 
         as ->
           as
-          |> Enum.map(&Map.take(&1, [:id, :name]))
-          |> Enum.drop(1)
+          |> Enum.map(&Map.take(&1, [:data_structure_id, :name]))
           |> Enum.reverse()
       end
 
     Map.put(dsv, :ancestry, ancestry)
+  end
+
+  defp lift_metadata(%{metadata: metadata} = dsv) do
+    metadata =
+      metadata
+      |> Map.new(fn {k, v} -> {String.to_atom(k), v} end)
+
+    dsv
+    |> Map.delete(:metadata)
+    |> Map.merge(metadata)
   end
 end

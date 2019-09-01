@@ -12,13 +12,14 @@ defmodule TdDd.Search.MockSearch do
   def delete_search(_something) do
   end
 
-  def search("data_structure", %{query: %{bool: %{must: %{match_all: %{}}}}}) do
+  def search("data_structure", %{query: %{bool: %{filter: filters, must: %{match_all: %{}}}}}) do
     template_list = TemplateCache.list_by_scope!("dd")
     data_structures = DataStructures.list_data_structures()
 
     results =
       data_structures
       |> Enum.map(&DataStructure.search_fields(&1))
+      |> apply_filters(filters)
       |> Enum.map(&%{_source: &1})
       |> JSON.encode!()
       |> JSON.decode!()
@@ -28,17 +29,53 @@ defmodule TdDd.Search.MockSearch do
     search_results(results, aggregations)
   end
 
+  defp apply_filters(dss, []), do: dss
+
+  defp apply_filters(dss, [filter | filters]) do
+    dss
+    |> apply_filter(filter)
+    |> apply_filters(filters)
+  end
+
+  defp apply_filter(dss, %{term: %{system_id: system_id}}) do
+    Enum.filter(dss, &(Map.get(&1, :system_id) == system_id))
+  end
+
+  defp apply_filter(dss, %{bool: %{must_not: %{exists: %{field: field}}}}) do
+    Enum.filter(dss, &is_missing?(&1, field))
+  end
+
+  defp apply_filter(dss, %{terms: %{"ou.raw" => values}}) do
+    Enum.filter(dss, &Enum.member?(values, Map.get(&1, :ou)))
+  end
+
+  defp is_missing?(ds, field) do
+    case Map.get(ds, String.to_atom(field)) do
+      nil -> true
+      [] -> true
+      "" -> true
+      _ -> false
+    end
+  end
+
   defp get_aggregations([], _), do: %{}
   defp get_aggregations(_, []), do: %{}
 
   defp get_aggregations(data_structures, template_list) do
-    agg_fields = Enum.map(data_structures, &Map.take(&1, [:ou, :system, :type, :df_content]))
+    indexed_structures =
+      data_structures
+      |> Enum.map(&DataStructure.search_fields/1)
+
+    agg_fields =
+      indexed_structures
+      |> Enum.map(&Map.take(&1, [:ou, :system, :type, :df_content]))
 
     types = get_aggegation_values_for_field(agg_fields, :type)
     domains = get_aggegation_values_for_field(agg_fields, :ou)
-    content = dynamic_content(data_structures, template_list)
+    content = dynamic_content(indexed_structures, template_list)
 
-    %{"ou.raw" => domains, "type.raw" => types} |> Map.merge(content)
+    %{"ou.raw" => domains, "type.raw" => types}
+    |> Map.merge(content)
   end
 
   defp get_aggegation_values_for_field(agg_fields, field) do
@@ -57,8 +94,8 @@ defmodule TdDd.Search.MockSearch do
     data_structures
     |> Enum.filter(&Enum.member?(template_names, Map.get(&1, :type)))
     |> Enum.map(&Map.get(&1, :df_content))
-    |> Enum.map(&Enum.to_list(&1))
-    |> List.flatten()
+    |> Enum.filter(& &1)
+    |> Enum.flat_map(&Enum.to_list/1)
     |> Enum.reduce(%{}, &update_content_values(&1, &2))
   end
 

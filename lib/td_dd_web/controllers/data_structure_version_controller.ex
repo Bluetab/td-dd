@@ -34,19 +34,7 @@ defmodule TdDdWeb.DataStructureVersionController do
 
     dsv = get_data_structure_version(data_structure_id, version)
 
-    with true <- can?(user, view_data_structure(dsv.data_structure)) do
-      render(conn, "show.json", data_structure_version: dsv)
-    else
-      false ->
-        conn
-        |> put_status(:forbidden)
-        |> render(ErrorView, :"403")
-
-      _error ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> render(ErrorView, :"422")
-    end
+    render_with_permissions(conn, user, dsv)
   end
 
   def show(conn, %{"id" => data_structure_version_id}) do
@@ -54,8 +42,25 @@ defmodule TdDdWeb.DataStructureVersionController do
 
     dsv = get_data_structure_version(data_structure_version_id)
 
-    with true <- can?(user, view_data_structure(dsv.data_structure)) do
-      render(conn, "show.json", data_structure_version: dsv)
+    render_with_permissions(conn, user, dsv)
+  end
+
+  defp render_with_permissions(conn, _user, nil) do
+    conn
+    |> put_status(:not_found)
+    |> put_view(ErrorView)
+    |> render("404.json")
+  end
+
+  defp render_with_permissions(conn, user, %{data_structure: data_structure} = dsv) do
+    with true <- can?(user, view_data_structure(data_structure)) do
+      user_permissions = %{
+        update: can?(user, update_data_structure(data_structure)),
+        confidential: can?(user, manage_confidential_structures(data_structure)),
+        view_profiling_permission: can?(user, view_data_structures_profile(data_structure))
+      }
+
+      render(conn, "show.json", data_structure_version: dsv, user_permissions: user_permissions)
     else
       false ->
         conn
@@ -69,34 +74,28 @@ defmodule TdDdWeb.DataStructureVersionController do
     end
   end
 
+  @enrich_attrs [
+    :parents,
+    :children,
+    :siblings,
+    :data_fields,
+    :data_field_external_ids,
+    :data_field_links,
+    :versions,
+    :system,
+    :ancestry,
+    :links
+  ]
+
   defp get_data_structure_version(data_structure_version_id) do
-    data_structure_version_id
-    |> DataStructures.get_data_structure_version!()
-    |> enrich()
+    DataStructures.get_data_structure_version!(data_structure_version_id, @enrich_attrs)
+  end
+
+  defp get_data_structure_version(data_structure_id, "latest") do
+    DataStructures.get_latest_version(data_structure_id, @enrich_attrs)
   end
 
   defp get_data_structure_version(data_structure_id, version) do
-    data_structure_id
-    |> DataStructures.get_data_structure_version!(version)
-    |> enrich()
-  end
-
-  defp enrich(dsv) do
-    parents = DataStructures.get_parents(dsv, deleted: false)
-    siblings = DataStructures.get_siblings(dsv, deleted: false)
-    children = DataStructures.get_children(dsv, deleted: false)
-    fields = DataStructures.get_field_structures(dsv, deleted: false)
-    versions = DataStructures.get_versions(dsv)
-    ancestry = DataStructures.get_ancestry(dsv)
-    system = dsv.data_structure.system
-
-    dsv
-    |> Map.put(:parents, parents)
-    |> Map.put(:children, children)
-    |> Map.put(:siblings, siblings)
-    |> Map.put(:data_fields, fields)
-    |> Map.put(:versions, versions)
-    |> Map.put(:system, system)
-    |> Map.put(:ancestry, ancestry)
+    DataStructures.get_data_structure_version!(data_structure_id, version, @enrich_attrs)
   end
 end

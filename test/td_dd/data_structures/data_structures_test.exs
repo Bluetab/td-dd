@@ -13,16 +13,19 @@ defmodule TdDd.DataStructuresTest do
     alias TdDd.DataStructures.DataStructure
 
     @valid_attrs %{
-      description: "some description",
-      group: "some group",
-      last_change_at: "2010-04-17 14:00:00Z",
-      last_change_by: 42,
-      name: "some name",
-      external_id: "some external_id",
-      metadata: %{},
-      system_id: 1
+      "description" => "some description",
+      "group" => "some group",
+      "last_change_at" => "2010-04-17 14:00:00Z",
+      "last_change_by" => 42,
+      "name" => "some name",
+      "external_id" => "some external_id",
+      "metadata" => %{},
+      "system_id" => 1
     }
-    @update_attrs %{description: "some updated description", df_content: %{updated: "content"}}
+    @update_attrs %{
+      # description: "some updated description",
+      df_content: %{updated: "content"}
+    }
     @invalid_attrs %{
       description: nil,
       group: nil,
@@ -36,7 +39,7 @@ defmodule TdDd.DataStructuresTest do
       assert DataStructures.list_data_structures() <~> [data_structure]
     end
 
-    test "list_data_structures/1 returns all data_structures form a search" do
+    test "list_data_structures/1 returns all data_structures from a search" do
       data_structure = insert(:data_structure)
       search_params = %{ou: [data_structure.ou]}
 
@@ -52,14 +55,10 @@ defmodule TdDd.DataStructuresTest do
       assert {:ok, %DataStructure{} = data_structure} =
                DataStructures.create_data_structure(@valid_attrs)
 
-      assert data_structure.description == "some description"
-      assert data_structure.group == "some group"
-
       assert data_structure.last_change_at ==
                DateTime.from_naive!(~N[2010-04-17 14:00:00Z], "Etc/UTC")
 
       assert data_structure.last_change_by == 42
-      assert data_structure.name == "some name"
       assert data_structure.system.external_id == "System_ref"
     end
 
@@ -75,7 +74,6 @@ defmodule TdDd.DataStructuresTest do
                DataStructures.update_data_structure(data_structure, @update_attrs)
 
       assert %DataStructure{} = data_structure
-      assert data_structure.description == "some description"
       assert data_structure.df_content == %{updated: "content"}
     end
 
@@ -95,13 +93,12 @@ defmodule TdDd.DataStructuresTest do
   end
 
   describe "data structure versions" do
-    test "get_siblings/1 returns sibling structures" do
+    test "get_siblings/1 returns sibling structure versions" do
       [ds1, ds2, ds3, ds4] =
         1..4
         |> Enum.map(
           &insert(
             :data_structure,
-            name: "DS#{&1}",
             external_id: "DS#{&1}",
             system_id: 1
           )
@@ -109,75 +106,29 @@ defmodule TdDd.DataStructuresTest do
 
       [dsv1, dsv2, dsv3, dsv4] =
         [ds1, ds2, ds3, ds4]
-        |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id))
+        |> Enum.map(
+          &insert(:data_structure_version, data_structure_id: &1.id, name: &1.external_id)
+        )
 
       [{dsv1, dsv2}, {dsv1, dsv3}, {dsv2, dsv4}, {dsv3, dsv4}]
       |> Enum.map(fn {parent, child} ->
         insert(:data_structure_relation, parent_id: parent.id, child_id: child.id)
       end)
 
-      [s1, s2, s3, s4] =
-        [dsv1, dsv2, dsv3, dsv4]
-        |> Enum.map(&DataStructures.get_siblings/1)
-
-      assert s1 == []
-      assert s2 <~> [ds2, ds3]
-      assert s3 <~> [ds2, ds3]
-      assert s4 <~> [ds4]
-    end
-
-    test "list_data_structures_with_no_parents/1 gets data_structures with no parents" do
-      insert(:system, id: 4, external_id: "id4")
-      insert(:system, id: 5, external_id: "id5")
-      ds1 = insert(:data_structure, id: 51, name: "DS51", external_id: "DS51", system_id: 4)
-      ds2 = insert(:data_structure, id: 52, name: "DS52", external_id: "DS52", system_id: 4)
-      ds3 = insert(:data_structure, id: 53, name: "DS53", external_id: "DS53", system_id: 4)
-      ds4 = insert(:data_structure, id: 55, name: "DS54", external_id: "DS54", system_id: 5)
-      dsv1 = insert(:data_structure_version, data_structure_id: ds1.id)
-      dsv2 = insert(:data_structure_version, data_structure_id: ds2.id)
-      dsv3 = insert(:data_structure_version, data_structure_id: ds3.id)
-      insert(:data_structure_version, data_structure_id: ds4.id)
-      insert(:data_structure_relation, parent_id: dsv1.id, child_id: dsv2.id)
-      insert(:data_structure_relation, parent_id: dsv1.id, child_id: dsv3.id)
-
-      assert [%{id: 51}] =
-               DataStructures.list_data_structures_with_no_parents(%{"system_id" => 4})
-    end
-
-    test "list_data_structures_with_no_parents/1 filters field class data_structures" do
-      insert(:system, id: 4, external_id: "id4")
-      insert(:system, id: 5, external_id: "id5")
-
-      ds1 =
-        insert(:data_structure,
-          id: 51,
-          name: "DS51",
-          external_id: "DS51",
-          system_id: 4,
-          class: "field"
-        )
-
-      ds2 = insert(:data_structure, id: 52, name: "DS52", external_id: "DS52", system_id: 4)
-      ds3 = insert(:data_structure, id: 53, name: "DS53", external_id: "DS53", system_id: 4)
-      ds4 = insert(:data_structure, id: 55, name: "DS54", external_id: "DS54", system_id: 5)
-      dsv1 = insert(:data_structure_version, data_structure_id: ds1.id)
-      dsv2 = insert(:data_structure_version, data_structure_id: ds2.id)
-      dsv3 = insert(:data_structure_version, data_structure_id: ds3.id)
-      insert(:data_structure_version, data_structure_id: ds4.id)
-      insert(:data_structure_relation, parent_id: dsv1.id, child_id: dsv2.id)
-      insert(:data_structure_relation, parent_id: dsv1.id, child_id: dsv3.id)
-
-      assert [] == DataStructures.list_data_structures_with_no_parents(%{"system_id" => 4})
+      assert DataStructures.get_siblings(dsv1) == []
+      assert DataStructures.get_siblings(dsv2) <~> [dsv2, dsv3]
+      assert DataStructures.get_siblings(dsv3) <~> [dsv2, dsv3]
+      assert DataStructures.get_siblings(dsv4) <~> [dsv4]
     end
 
     test "delete_data_structure/1 deletes a data_structure with relations" do
       alias TdDd.DataStructures.DataStructure
-      ds1 = insert(:data_structure, id: 51, name: "DS51", external_id: "DS51")
-      ds2 = insert(:data_structure, id: 52, name: "DS52", external_id: "DS52")
-      ds3 = insert(:data_structure, id: 53, name: "DS53", external_id: "DS53")
-      dsv1 = insert(:data_structure_version, data_structure_id: ds1.id)
-      dsv2 = insert(:data_structure_version, data_structure_id: ds2.id)
-      dsv3 = insert(:data_structure_version, data_structure_id: ds3.id)
+      ds1 = insert(:data_structure, id: 51, external_id: "DS51")
+      ds2 = insert(:data_structure, id: 52, external_id: "DS52")
+      ds3 = insert(:data_structure, id: 53, external_id: "DS53")
+      dsv1 = insert(:data_structure_version, data_structure_id: ds1.id, name: ds1.external_id)
+      dsv2 = insert(:data_structure_version, data_structure_id: ds2.id, name: ds1.external_id)
+      dsv3 = insert(:data_structure_version, data_structure_id: ds3.id, name: ds1.external_id)
 
       insert(:data_structure_relation, parent_id: dsv1.id, child_id: dsv2.id)
       insert(:data_structure_relation, parent_id: dsv1.id, child_id: dsv3.id)

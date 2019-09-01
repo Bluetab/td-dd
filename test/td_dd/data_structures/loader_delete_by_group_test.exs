@@ -44,8 +44,11 @@ defmodule TdDd.Loader.DeleteByGroupTest do
       audit = audit()
       {:ok, %{deleted_structures: deleted_structures}} = Loader.load(structures, [], [], audit)
       assert Enum.count(deleted_structures) == 2
-      assert Enum.all?(deleted_structures, &(&1.group == "group1"))
-      assert Enum.all?(deleted_structures, &(&1.deleted_at == audit.last_change_at))
+
+      deleted_versions = Enum.flat_map(deleted_structures, & &1.versions)
+      assert Enum.count(deleted_versions) == 2
+      assert Enum.all?(deleted_versions, &(&1.group == "group1"))
+      assert Enum.all?(deleted_versions, &(&1.deleted_at == audit.last_change_at))
     end
   end
 end

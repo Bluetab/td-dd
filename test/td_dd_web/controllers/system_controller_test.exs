@@ -118,12 +118,12 @@ defmodule TdDdWeb.SystemControllerTest do
 
     @tag authenticated_user: @admin_user_name
     test "will filter structures by system", %{conn: conn, system: system} do
-      ds = insert(:data_structure, system_id: system.id, name: "struc1")
-      insert(:data_structure_version, data_structure_id: ds.id)
+      ds = insert(:data_structure, system_id: system.id, external_id: "struc1")
+      insert(:data_structure_version, data_structure_id: ds.id, name: ds.external_id)
 
       system2 = insert(:system)
-      ds = insert(:data_structure, system_id: system2.id, name: "struc2")
-      insert(:data_structure_version, data_structure_id: ds.id)
+      ds = insert(:data_structure, system_id: system2.id, external_id: "struc2")
+      insert(:data_structure_version, data_structure_id: ds.id, name: ds.external_id)
 
       conn = get(conn, Routes.system_data_structure_path(conn, :get_system_structures, system))
       data = json_response(conn, 200)["data"]
@@ -135,11 +135,11 @@ defmodule TdDdWeb.SystemControllerTest do
 
     @tag authenticated_user: @admin_user_name
     test "will retrieve only root structures", %{conn: conn, system: system} do
-      ds = insert(:data_structure, system_id: system.id, name: "parent")
-      parent = insert(:data_structure_version, data_structure_id: ds.id)
+      ds = insert(:data_structure, system_id: system.id, external_id: "parent")
+      parent = insert(:data_structure_version, data_structure_id: ds.id, name: ds.external_id)
 
-      ds = insert(:data_structure, system_id: system.id, name: "child")
-      child = insert(:data_structure_version, data_structure_id: ds.id)
+      ds = insert(:data_structure, system_id: system.id, external_id: "child")
+      child = insert(:data_structure_version, data_structure_id: ds.id, name: ds.external_id)
 
       insert(:data_structure_relation, parent_id: parent.id, child_id: child.id)
 
@@ -156,11 +156,11 @@ defmodule TdDdWeb.SystemControllerTest do
       conn: conn,
       system: system
     } do
-      ds = insert(:data_structure, system_id: system.id, name: "parent")
-      parent = insert(:data_structure_version, data_structure_id: ds.id)
+      ds = insert(:data_structure, system_id: system.id, external_id: "parent")
+      parent = insert(:data_structure_version, data_structure_id: ds.id, name: ds.external_id)
 
-      ds = insert(:data_structure, system_id: system.id, name: "child")
-      child = insert(:data_structure_version, data_structure_id: ds.id)
+      ds = insert(:data_structure, system_id: system.id, external_id: "child")
+      child = insert(:data_structure_version, data_structure_id: ds.id, name: ds.external_id)
 
       insert(:data_structure_relation, parent_id: parent.id, child_id: child.id)
 
@@ -174,7 +174,7 @@ defmodule TdDdWeb.SystemControllerTest do
 
     @tag authenticated_user: @admin_user_name
     test "will not break when structure has no versions", %{conn: conn, system: system} do
-      insert(:data_structure, system_id: system.id, name: "parent")
+      insert(:data_structure, system_id: system.id, external_id: "parent")
 
       conn = get(conn, Routes.system_data_structure_path(conn, :get_system_structures, system))
       data = json_response(conn, 200)["data"]
@@ -213,13 +213,16 @@ defmodule TdDdWeb.SystemControllerTest do
       insert(
         :data_structure,
         confidential: confidential,
-        name: "ds",
+        external_id: "ds",
         ou: domain_name,
         domain_id: domain_id,
         system_id: system_id
       )
 
-    insert(:data_structure_version, data_structure_id: data_structure.id)
+    insert(:data_structure_version,
+      data_structure_id: data_structure.id,
+      name: data_structure.external_id
+    )
 
     data_structure
   end

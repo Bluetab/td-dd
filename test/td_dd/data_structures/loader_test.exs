@@ -15,28 +15,28 @@ defmodule TdDd.LoaderTest do
       sys1 = insert(:system, external_id: "SYS1", name: "SYS1")
       sys2 = insert(:system, external_id: "SYS2", name: "SYS2")
 
-      data_structure =
-        insert(:data_structure,
-          system_id: sys1.id,
-          group: "GROUP1",
-          name: "NAME1",
-          type: "USER_TABLE"
-        )
+      ds1 = insert(:data_structure, system_id: sys1.id)
+      ds2 = insert(:data_structure, system_id: sys1.id)
 
-      ds_2 =
-        insert(:data_structure,
-          system_id: sys1.id,
-          group: "GROUP6",
-          name: "NAME6",
-          type: "USER_TABLE"
-        )
+      insert(:data_structure_version,
+        data_structure_id: ds1.id,
+        group: "GROUP1",
+        name: "NAME1",
+        type: "USER_TABLE",
+        version: 0
+      )
 
-      insert(:data_structure_version, data_structure_id: data_structure.id, version: 0)
-      insert(:data_structure_version, data_structure_id: ds_2.id, version: 0)
+      insert(:data_structure_version,
+        data_structure_id: ds2.id,
+        group: "GROUP6",
+        name: "NAME6",
+        type: "USER_TABLE",
+        version: 0
+      )
 
       s1 = %{
         description: "D1",
-        external_id: data_structure.external_id,
+        external_id: ds1.external_id,
         group: "GROUP1",
         name: "NAME1",
         system_id: sys1.id,
@@ -180,16 +180,15 @@ defmodule TdDd.LoaderTest do
       system = insert(:system, external_id: "SYS1", name: "SYS1")
       insert(:system, external_id: "SYS2", external_id: "SYS2")
 
-      data_structure =
-        insert(:data_structure,
-          system_id: system.id,
-          group: "GROUP1",
-          name: "NAME1",
-          external_id: "EXT1",
-          type: "Table"
-        )
+      data_structure = insert(:data_structure, system_id: system.id, external_id: "EXT1")
 
-      insert(:data_structure_version, data_structure_id: data_structure.id, version: 0)
+      insert(:data_structure_version,
+        data_structure_id: data_structure.id,
+        group: "GROUP1",
+        name: "NAME1",
+        type: "Table",
+        version: 0
+      )
 
       s1 = %{
         system_id: system.id,
@@ -298,18 +297,11 @@ defmodule TdDd.LoaderTest do
         field = Map.put(field, :metadata, %{"foo" => foo})
         assert {:ok, _} = Loader.load([structure], [field], [], audit())
 
-        [%{metadata: metadata}] =
-          structure_id
-          |> DataStructures.get_data_structure_with_fields!()
-          |> Map.get(:data_fields)
+        %{data_fields: data_fields, children: children} =
+          DataStructures.get_latest_version(structure_id, [:children, :data_fields])
 
-        assert metadata["foo"] == foo
-
-        [%{metadata: metadata}] =
-          structure_id
-          |> DataStructures.get_latest_children()
-
-        assert metadata["foo"] == foo
+        assert [%{metadata: %{"foo" => ^foo}}] = data_fields
+        assert [%{metadata: %{"foo" => ^foo}}] = children
       end)
     end
 
@@ -324,11 +316,13 @@ defmodule TdDd.LoaderTest do
         structure = Map.put(structure, :class, class)
         assert {:ok, _} = Loader.load([structure], [], [], audit())
 
-        assert [%{class: ^class}] =
-                 DataStructures.list_data_structures(%{
-                   system_id: structure.system_id,
-                   external_id: structure.external_id
-                 })
+        assert [%{latest: %{class: ^class}}] =
+                 DataStructures.list_data_structures(
+                   %{
+                     external_id: structure.external_id
+                   },
+                   [:latest]
+                 )
       end)
     end
 
