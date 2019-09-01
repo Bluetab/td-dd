@@ -153,7 +153,7 @@ defmodule TdDdWeb.DataStructureView do
 
   defp data_structure_version_json(data_structure_version) do
     data_structure_version
-    |> Map.take([:version, :inserted_at, :updated_at])
+    |> Map.take([:version, :deleted_at, :inserted_at, :updated_at])
   end
 
   defp add_data_fields(data_structure_json, data_structure) do

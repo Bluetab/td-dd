@@ -149,6 +149,8 @@ defmodule TdDd.Loader do
   end
 
   defp update_structure_version({%DataStructureVersion{} = dsv, %{} = attrs}) do
+    attrs = Map.put(attrs, :deleted_at, nil)
+
     dsv
     |> DataStructureVersion.update_changeset(attrs)
     |> Repo.update()

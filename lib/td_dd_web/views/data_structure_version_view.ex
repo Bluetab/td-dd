@@ -130,7 +130,7 @@ defmodule TdDdWeb.DataStructureVersionView do
 
   defp version_json(version) do
     version
-    |> Map.take([:version, :inserted_at, :updated_at])
+    |> Map.take([:version, :deleted_at, :inserted_at, :updated_at])
   end
 
   defp add_system(dsv) do
