@@ -25,6 +25,7 @@ defmodule TdDdWeb.DataStructureVersionView do
           :class,
           :data_fields,
           :data_structure,
+          :deleted_at,
           :description,
           :group,
           :id,
