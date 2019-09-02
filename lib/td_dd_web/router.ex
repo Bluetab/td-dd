@@ -23,7 +23,6 @@ defmodule TdDdWeb.Router do
 
   scope "/api", TdDdWeb do
     pipe_through([:api, :api_secure, :api_authorized])
-    post("/td_dd/metadata", MetadataController, :upload)
 
     resources "/data_structures", DataStructureController, except: [:new, :edit] do
       get("/comment", CommentController, :get_comment_data_structure)
