@@ -1,10 +1,10 @@
 # Changelog
 
-## [Unreleased]
+## [3.5.1] 2019-09-03
 
 ### Fixed
 
-- [TD-2080] Fixed error trying to cache DataStructure with incomplete properties (now retrieved from DataStructureVersion)
+- [TD-2080] DataStructureLoader was failing due to changes in [TD-2072]
 
 ## [3.5.0] 2019-09-02
 
