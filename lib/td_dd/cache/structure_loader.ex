@@ -9,7 +9,7 @@ defmodule TdDd.Cache.StructureLoader do
 
   alias TdCache.StructureCache
   alias TdDd.DataStructures
-  alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureVersion
 
   require Logger
 
@@ -46,30 +46,27 @@ defmodule TdDd.Cache.StructureLoader do
       |> Enum.map(&String.split(&1, ":"))
       |> Enum.flat_map(&tl(&1))
       |> Enum.map(&String.to_integer/1)
-      |> Enum.map(&cache_data_structure/1)
+      |> Enum.map(&DataStructures.get_latest_version(&1, [:system]))
+      |> Enum.filter(& &1)
+      |> Enum.map(&to_cache_entry/1)
+      |> Enum.map(&put_cache/1)
 
     {:reply, reply, state}
   end
 
   ## Private functions
 
-  defp cache_data_structure(id) do
-    id
-    |> DataStructures.get_data_structure!()
-    |> to_cache_entry
-    |> put_cache
-  end
-
-  defp to_cache_entry(%DataStructure{} = structure) do
+  defp to_cache_entry(%DataStructureVersion{data_structure_id: id} = dsv) do
     system =
-      structure
+      dsv
       |> Map.get(:system, %{})
       |> Map.take([:id, :external_id, :name])
 
-    structure
-    |> Map.take([:id, :group, :name, :type, :metadata, :updated_at])
+    dsv
+    |> Map.take([:group, :name, :type, :metadata, :updated_at])
+    |> Map.put(:id, id)
     |> Map.put(:system, system)
-    |> Map.put(:path, DataStructures.get_latest_path(structure))
+    |> Map.put(:path, DataStructures.get_path(dsv))
   end
 
   defp put_cache(entry) do
