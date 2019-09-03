@@ -5,6 +5,7 @@
 ### Fixed
 
 - [TD-2080] DataStructureLoader was failing due to changes in [TD-2072]
+- [TD-2081] Event stream consumer did not respect redis_host and port config options
 
 ## [3.5.0] 2019-09-02
 
