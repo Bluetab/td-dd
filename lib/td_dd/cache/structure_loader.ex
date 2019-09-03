@@ -46,19 +46,15 @@ defmodule TdDd.Cache.StructureLoader do
       |> Enum.map(&String.split(&1, ":"))
       |> Enum.flat_map(&tl(&1))
       |> Enum.map(&String.to_integer/1)
-      |> Enum.map(&cache_data_structure/1)
+      |> Enum.map(&DataStructures.get_latest_version(&1, [:system]))
+      |> Enum.filter(& &1)
+      |> Enum.map(&to_cache_entry/1)
+      |> Enum.map(&put_cache/1)
 
     {:reply, reply, state}
   end
 
   ## Private functions
-
-  defp cache_data_structure(id) do
-    id
-    |> DataStructures.get_latest_version([:system])
-    |> to_cache_entry
-    |> put_cache
-  end
 
   defp to_cache_entry(%DataStructureVersion{data_structure_id: id} = dsv) do
     system =
