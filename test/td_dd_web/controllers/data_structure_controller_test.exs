@@ -305,7 +305,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn: conn,
       data_structure: %{id: id} = data_structure
     } do
-      df_content = %{"field" => "value"}
+      df_content = %{"field" => "1"}
 
       conn =
         put(
@@ -388,7 +388,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
         put(
           conn,
           Routes.data_structure_path(conn, :update, data_structure),
-          data_structure: %{df_content: %{field: "df_content"}}
+          data_structure: %{df_content: %{"field" => "2"}}
         )
 
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
@@ -398,7 +398,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       json_response_data = json_response(conn, 200)["data"]
 
       assert json_response_data["id"] == id
-      assert json_response_data["df_content"] == %{"field" => "df_content"}
+      assert json_response_data["df_content"] == %{"field" => "2"}
     end
 
     @tag authenticated_no_admin_user: "user_without_permission"
