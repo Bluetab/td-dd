@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-2087] DataStructure response excluded immediate parent from ancesty
+
 ## [3.5.1] 2019-09-03
 
 ### Fixed
