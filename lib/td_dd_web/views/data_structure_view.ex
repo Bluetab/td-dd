@@ -129,7 +129,6 @@ defmodule TdDdWeb.DataStructureView do
         as ->
           as
           |> Enum.map(&Map.take(&1, [:data_structure_id, :name]))
-          |> Enum.drop(1)
           |> Enum.reverse()
       end
 

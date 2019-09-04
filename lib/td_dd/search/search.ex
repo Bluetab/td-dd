@@ -67,17 +67,15 @@ defmodule TdDd.Search do
   end
 
   # DELETE
-  def delete_search(%DataStructure{} = data_structure) do
-    response = ESClientApi.delete_content("data_structure", data_structure.id)
+  def delete_search(%DataStructure{id: id} = data_structure) do
+    response = ESClientApi.delete_content("data_structure", id)
 
     case response do
       {_, %HTTPoison.Response{status_code: 200}} ->
-        Logger.info("DataStructure #{data_structure.name} deleted status 200")
+        Logger.info("DataStructure #{id} deleted status 200")
 
       {_, %HTTPoison.Response{status_code: status_code}} ->
-        Logger.error(
-          "ES: Error deleting data_structure #{data_structure.name} status #{status_code}"
-        )
+        Logger.error("ES: Error deleting data_structure #{id} status #{status_code}")
 
       {:error, %HTTPoison.Error{reason: :econnrefused}} ->
         Logger.error("Error connecting to ES")
