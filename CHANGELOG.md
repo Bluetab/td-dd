@@ -4,7 +4,7 @@
 
 ### Fixed
 
-- [TD-2087] DataStructure response excluded immediate parent from ancesty
+- [TD-2087] DataStructure response excluded immediate parent from ancestry
 
 ## [3.5.1] 2019-09-03
 
