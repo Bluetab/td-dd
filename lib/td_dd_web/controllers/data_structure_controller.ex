@@ -7,6 +7,7 @@ defmodule TdDdWeb.DataStructureController do
   alias TdCache.TaxonomyCache
   alias TdDd.Audit.AuditSupport
   alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
+  alias TdDd.DataStructure.BulkUpdate
   alias TdDd.DataStructure.Search
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
@@ -373,5 +374,69 @@ defmodule TdDdWeb.DataStructureController do
         data_structure = get_data_structure(data_structure.id)
         do_render_data_structure(conn, user, data_structure)
     end
+  end
+
+  swagger_path :bulk_update do
+    description("Bulk Update of extra info structures")
+    produces("application/json")
+
+    parameters do
+      bulk_update_request(
+        :body,
+        Schema.ref(:BulkUpdateRequest),
+        "Search query filter parameters and update attributes"
+      )
+    end
+
+    response(200, "OK", Schema.ref(:BulkUpdateResponse))
+    response(403, "User is not authorized to perform this action")
+    response(422, "Error while bulk update")
+  end
+
+  def bulk_update(conn, %{
+        "bulk_update_request" => %{
+          "update_attributes" => update_attributes,
+          "search_params" => search_params
+        }
+      }) do
+    user = conn.assigns[:current_user]
+
+    with true <- user.is_admin,
+         %{results: results} <- search_all_structures(user, search_params),
+         {:ok, response} <- BulkUpdate.update_all(user, results, update_attributes) do
+      body = Poison.encode!(%{data: %{message: response}})
+
+      conn
+      |> put_resp_content_type("application/json", "utf-8")
+      |> send_resp(200, body)
+    else
+      false ->
+        conn
+        |> put_status(:forbidden)
+        |> put_view(ErrorView)
+        |> render("403.json")
+
+      {:error, error} ->
+        Logger.info("While updating data structures... #{inspect(error)}")
+
+        conn
+        |> put_status(:unprocessable_entity)
+        |> put_resp_content_type("application/json", "utf-8")
+        |> send_resp(422, Poison.encode!(%{error: error}))
+
+      error ->
+        Logger.info("Unexpected error while updating data structures... #{inspect(error)}")
+
+        conn
+        |> put_status(:unprocessable_entity)
+        |> put_view(ErrorView)
+        |> render("422.json")
+    end
+  end
+
+  defp search_all_structures(user, params) do
+    params
+    |> Map.drop(["page", "size"])
+    |> Search.search_data_structures(user, 0, 10_000)
   end
 end

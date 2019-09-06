@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-2046] Bulk update endpoint for Data Catalog extra info
+
 ## [3.5.2] 2019-09-04
 
 ### Fixed
