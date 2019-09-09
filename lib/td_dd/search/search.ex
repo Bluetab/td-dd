@@ -67,7 +67,7 @@ defmodule TdDd.Search do
   end
 
   # DELETE
-  def delete_search(%DataStructure{id: id} = data_structure) do
+  def delete_search(%DataStructure{id: id}) do
     response = ESClientApi.delete_content("data_structure", id)
 
     case response do
