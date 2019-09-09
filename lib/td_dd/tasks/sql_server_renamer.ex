@@ -21,6 +21,7 @@ defmodule SqlServerRenamer do
 
   def run(_options) do
     case Repo.transaction(fn ->
+           delete_invalid_structures()
            schemas = rename_schemas()
            tables = rename_tables()
            columns = rename_columns()
@@ -30,6 +31,20 @@ defmodule SqlServerRenamer do
       {:ok, n} -> Logger.info("Renamed #{n} SQL Server structures")
       e -> e
     end
+  end
+
+  def delete_invalid_structures do
+    from(dsv in DataStructureVersion)
+    |> where([dsv], dsv.type in ["VIEW", "USER_TABLE"])
+    |> join(:inner, [dsv], ds in assoc(dsv, :data_structure))
+    |> where([_, ds], like(ds.external_id, "sqlserver://%"))
+    |> select([dsv, ds], dsv)
+    |> Repo.all()
+    |> Enum.reject(&Map.has_key?(&1.metadata, "schema"))
+    |> Enum.map(&Repo.delete!/1)
+
+    Repo
+    |> SQL.query("DELETE FROM data_structures WHERE id NOT IN (SELECT data_structure_id FROM data_structure_versions)")
   end
 
   def rename_schemas do
