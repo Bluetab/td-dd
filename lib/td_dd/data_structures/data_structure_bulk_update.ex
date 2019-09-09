@@ -58,4 +58,6 @@ defmodule TdDd.DataStructure.BulkUpdate do
         error
     end
   end
+
+  defp update_data(_, _, acc), do: {:ok, acc}
 end
