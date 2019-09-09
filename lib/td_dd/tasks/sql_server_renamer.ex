@@ -41,7 +41,7 @@ defmodule SqlServerRenamer do
     |> select([dsv, ds], dsv)
     |> Repo.all()
     |> Enum.reject(&Map.has_key?(&1.metadata, "schema"))
-    |> Enum.map(&Repo.delete!/1)
+    |> Enum.each(&Repo.delete!/1)
 
     Repo
     |> SQL.query("DELETE FROM data_structures WHERE id NOT IN (SELECT data_structure_id FROM data_structure_versions)")
