@@ -3,7 +3,6 @@ defmodule TdDd.DataStructure.BulkUpdate do
   require Logger
 
   alias TdDd.DataStructures
-  alias TdDd.BusinessConcepts.BusinessConceptVersion
   alias TdDd.Cache.ConceptLoader
   alias TdDd.Repo
   alias TdDd.Taxonomies

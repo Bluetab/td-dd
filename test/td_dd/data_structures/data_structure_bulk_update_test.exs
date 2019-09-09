@@ -1,10 +1,10 @@
 defmodule TdDd.DataStructureBulkUpdateTest do
   use TdDd.DataCase
 
+  alias TdCache.TemplateCache
   alias TdDd.DataStructure.BulkUpdate
   alias TdDd.DataStructures
   alias TdDdWeb.ApiServices.MockTdAuthService
-  alias TdCache.TemplateCache
 
   setup_all do
     start_supervised(MockTdAuthService)
