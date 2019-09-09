@@ -35,7 +35,7 @@ defmodule SqlServerRenamer do
 
   def delete_invalid_structures do
     from(dsv in DataStructureVersion)
-    |> where([dsv], dsv.type in ["VIEW", "USER_TABLE"])
+    |> where([dsv], dsv.type != "Database")
     |> join(:inner, [dsv], ds in assoc(dsv, :data_structure))
     |> where([_, ds], like(ds.external_id, "sqlserver://%"))
     |> select([dsv, ds], dsv)
@@ -44,7 +44,9 @@ defmodule SqlServerRenamer do
     |> Enum.each(&Repo.delete!/1)
 
     Repo
-    |> SQL.query("DELETE FROM data_structures WHERE id NOT IN (SELECT data_structure_id FROM data_structure_versions)")
+    |> SQL.query(
+      "DELETE FROM data_structures WHERE id NOT IN (SELECT data_structure_id FROM data_structure_versions)"
+    )
   end
 
   def rename_schemas do
