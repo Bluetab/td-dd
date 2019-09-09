@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.5.3] 2019-09-09
+
+### Changed
+
+- Startup task to rename external_id of SQL server structures
+
 ## [3.5.2] 2019-09-04
 
 ### Fixed
