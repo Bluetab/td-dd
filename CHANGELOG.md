@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] 2019-09-10
+
+### Deleted
+
+- [TD-2095] Field name from system params' path 
+
 ## [3.5.1] 2019-09-03
 
 ### Fixed
