@@ -16,7 +16,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
     external_id: "some external_id",
     class: "some class",
     group: "some group",
-    last_change_at: "2010-04-17 14:00:00Z",
     last_change_by: 42,
     name: "some name",
     type: "csv",
@@ -27,7 +26,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
   @update_attrs %{
     description: "some updated description",
     group: "some updated group",
-    last_change_at: "2011-05-18 15:01:01Z",
     last_change_by: 43,
     name: "some updated name",
     type: "table",
@@ -36,7 +34,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
   @invalid_attrs %{
     description: nil,
     group: nil,
-    last_change_at: nil,
     last_change_by: nil,
     name: nil,
     system: nil,
@@ -110,14 +107,15 @@ defmodule TdDdWeb.DataStructureControllerTest do
     setup [:create_structure_hierarchy_with_logic_deletions]
 
     @tag authenticated_user: @admin_user_name
-    test "renders a data structure with children excluding deleted", %{
+    test "renders a data structure with children including deleted", %{
       conn: conn,
       parent_structure: %DataStructure{id: parent_id}
     } do
       conn = get(conn, Routes.data_structure_path(conn, :show, parent_id))
       %{"children" => children} = json_response(conn, 200)["data"]
-      assert Enum.count(children) == 2
-      assert Enum.find(children, [], &(Map.get(&1, "name") == "Child_deleted")) == []
+      assert Enum.count(children) == 3
+      assert [deleted_child] = Enum.filter(children, & &1["deleted_at"])
+      assert deleted_child["name"] == "Child_deleted"
     end
 
     @tag authenticated_user: @admin_user_name
@@ -126,9 +124,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
       child_structures: [%DataStructure{id: child_id} | _]
     } do
       conn = get(conn, Routes.data_structure_path(conn, :show, child_id))
-      %{"parents" => parents} = json_response(conn, 200)["data"]
-      assert Enum.count(parents) == 1
-      assert Enum.find(parents, [], &(Map.get(&1, "name") == "Parent_deleted" == []))
+      assert %{"parents" => [parent]} = json_response(conn, 200)["data"]
+      assert parent["name"] != "Parent_deleted"
     end
 
     @tag authenticated_user: @admin_user_name
@@ -223,10 +220,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn = get(conn, Routes.data_structure_path(conn, :show, id))
       json_response_data = conn |> json_response(200) |> Map.get("data")
 
-      json_response_data =
-        json_response_data
-        |> Map.drop(["last_change_by", "last_change_at"])
-
       validate_resp_schema(conn, schema, "DataStructureResponse")
       assert json_response_data["id"] == id
       assert json_response_data["description"] == "some description"
@@ -271,11 +264,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn = get(conn, Routes.data_structure_path(conn, :show, id))
       json_response_data = json_response(conn, 200)["data"]
-
-      json_response_data =
-        json_response_data
-        |> Map.delete("last_change_by")
-        |> Map.delete("last_change_at")
 
       validate_resp_schema(conn, schema, "DataStructureResponse")
       assert json_response_data["id"] == id
@@ -490,9 +478,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     children = [
       insert(:data_structure, external_id: "Child1"),
       insert(:data_structure, external_id: "Child2"),
-      insert(:data_structure,
-        external_id: "Child_deleted"
-      )
+      insert(:data_structure, external_id: "Child_deleted")
     ]
 
     parent_version =

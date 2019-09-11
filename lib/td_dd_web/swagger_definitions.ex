@@ -63,7 +63,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
             type([:string, :null], "Data Structure type (csv, table...)")
             ou([:string, :null], "Data Structure organizational unit")
             confidential(:boolean, "Data Structure confidentiality")
-            last_change_at(:string, "Data Structure last updated at")
+            updated_at(:string, "Data Structure last updated at")
             inserted_at(:string, "Data Structure creation date")
             metadata(:object, "Data Structure data. Uploaded by background processes")
             parent(Schema.ref(:DataStructuresEmbedded))
@@ -92,7 +92,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
             metadata: %{
               "description" => "last description",
               "ou" => "Super Management",
-              "last_change_at" => "2018-05-08T17:17:59.691460"
+              "updated_at" => "2018-05-08T17:17:59.691460"
             }
           })
         end,

@@ -24,7 +24,6 @@ defmodule TdDd.DataStructures.DataStructure do
     field(:df_content, :map)
     field(:domain_id, :integer)
     field(:external_id, :string)
-    field(:last_change_at, :utc_datetime)
     field(:last_change_by, :integer)
     field(:ou, :string)
 
@@ -37,27 +36,8 @@ defmodule TdDd.DataStructures.DataStructure do
     |> cast(attrs, [
       :confidential,
       :df_content,
-      :last_change_at,
       :last_change_by
     ])
-  end
-
-  @doc false
-  def loader_changeset(%DataStructure{} = data_structure, attrs) do
-    audit_attrs = attrs |> Map.take([:last_change_at, :last_change_by])
-
-    changeset =
-      data_structure
-      |> cast(attrs, [
-        :confidential,
-        :domain_id,
-        :ou
-      ])
-
-    case changeset.changes do
-      m when map_size(m) > 0 -> changeset |> change(audit_attrs)
-      _ -> changeset
-    end
   end
 
   @doc false
@@ -68,13 +48,11 @@ defmodule TdDd.DataStructures.DataStructure do
       :df_content,
       :domain_id,
       :external_id,
-      :last_change_at,
       :last_change_by,
       :ou,
       :system_id
     ])
     |> validate_required([
-      :last_change_at,
       :last_change_by,
       :external_id,
       :system_id
@@ -118,11 +96,11 @@ defmodule TdDd.DataStructures.DataStructure do
     structure
     |> Map.take([
       :id,
-      :last_change_at,
       :ou,
       :external_id,
       :system_id,
       :inserted_at,
+      :updated_at,
       :confidential
     ])
     |> Map.put(:data_fields, data_fields)

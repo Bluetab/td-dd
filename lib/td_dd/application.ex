@@ -41,7 +41,9 @@ defmodule TdDd.Application do
 
   defp startup_tasks(:test), do: []
 
-  defp startup_tasks(_) do
-    [{SqlServerRenamer, []}]
+  defp startup_tasks(_env) do
+    [
+      {TdDd.DataStructures.Hasher, []}
+    ]
   end
 end

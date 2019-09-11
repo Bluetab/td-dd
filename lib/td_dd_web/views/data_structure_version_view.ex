@@ -42,8 +42,7 @@ defmodule TdDdWeb.DataStructureVersionView do
   end
 
   defp add_data_structure(%{data_structure: data_structure} = dsv) do
-    dsv
-    |> Map.put(:data_structure, data_structure_json(data_structure))
+    Map.put(dsv, :data_structure, data_structure_json(data_structure))
   end
 
   defp data_structure_json(data_structure) do
@@ -54,7 +53,7 @@ defmodule TdDdWeb.DataStructureVersionView do
       :domain_id,
       :external_id,
       :inserted_at,
-      :last_change_at,
+      :updated_at,
       :ou,
       :system_id,
       :df_content
@@ -72,7 +71,7 @@ defmodule TdDdWeb.DataStructureVersionView do
   end
 
   defp data_structure_version_embedded(dsv) do
-    Map.take(dsv, [:data_structure_id, :id, :name, :type])
+    Map.take(dsv, [:data_structure_id, :id, :name, :type, :deleted_at])
   end
 
   defp add_children(data_structure_version), do: add_relations(data_structure_version, :children)
@@ -110,7 +109,7 @@ defmodule TdDdWeb.DataStructureVersionView do
       :type,
       :metadata,
       :description,
-      :last_change_at,
+      :deleted_at,
       :inserted_at,
       :links
     ])

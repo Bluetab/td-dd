@@ -100,8 +100,8 @@ defmodule TdDdWeb.MetadataController do
 
     defaults =
       case system_id do
-        nil -> %{version: 0}
-        _ -> %{system_id: system_id, version: 0}
+        nil -> %{}
+        _ -> %{system_id: system_id}
       end
 
     path
@@ -120,8 +120,8 @@ defmodule TdDdWeb.MetadataController do
   defp parse_data_fields(%Upload{path: path}, system_id) do
     defaults =
       case system_id do
-        nil -> %{version: 0, external_id: nil}
-        _ -> %{version: 0, external_id: nil, system_id: system_id}
+        nil -> %{external_id: nil}
+        _ -> %{external_id: nil, system_id: system_id}
       end
 
     system_map = get_system_map(system_id)
@@ -163,12 +163,8 @@ defmodule TdDdWeb.MetadataController do
 
   defp load(conn, structure_records, field_records, relation_records) do
     user_id = GuardianPlug.current_resource(conn).id
-
-    audit_fields = %{
-      last_change_at: DateTime.truncate(DateTime.utc_now(), :second),
-      last_change_by: user_id
-    }
-
+    ts = DateTime.truncate(DateTime.utc_now(), :second)
+    audit_fields = %{ts: ts, last_change_by: user_id}
     LoaderWorker.load(structure_records, field_records, relation_records, audit_fields)
   end
 end

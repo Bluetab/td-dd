@@ -86,6 +86,11 @@ defmodule TdDd.DataStructures do
     |> Repo.preload(:system)
   end
 
+  def get_data_structures(ids, preload \\ :system) do
+    from(ds in DataStructure, where: ds.id in ^ids, preload: ^preload, select: ds)
+    |> Repo.all()
+  end
+
   def get_data_structure_version!(data_structure_id, version, options) do
     attrs = %{data_structure_id: data_structure_id, version: version}
 
@@ -111,11 +116,13 @@ defmodule TdDd.DataStructures do
   end
 
   defp enrich(%DataStructureVersion{} = dsv, options) do
+    deleted = not is_nil(Map.get(dsv, :deleted_at))
+
     dsv
-    |> enrich(options, :parents, fn dsv -> get_parents(dsv, deleted: false) end)
-    |> enrich(options, :children, fn dsv -> get_children(dsv, deleted: false) end)
-    |> enrich(options, :siblings, fn dsv -> get_siblings(dsv, deleted: false) end)
-    |> enrich(options, :data_fields, fn dsv -> get_field_structures(dsv, deleted: false) end)
+    |> enrich(options, :parents, fn dsv -> get_parents(dsv, deleted: deleted) end)
+    |> enrich(options, :children, fn dsv -> get_children(dsv, deleted: deleted) end)
+    |> enrich(options, :siblings, fn dsv -> get_siblings(dsv, deleted: deleted) end)
+    |> enrich(options, :data_fields, fn dsv -> get_field_structures(dsv, deleted: deleted) end)
     |> enrich(options, :data_field_external_ids, fn dsv -> get_field_external_ids(dsv) end)
     |> enrich(options, :data_field_links, fn dsv -> get_field_links(dsv) end)
     |> enrich(options, :versions, fn dsv -> get_versions(dsv) end)
@@ -145,8 +152,6 @@ defmodule TdDd.DataStructures do
     |> Ecto.assoc(:children)
     |> where([child, _parent, _rel], child.class == "field")
     |> with_deleted(options, dynamic([child, _parent, _rel], is_nil(child.deleted_at)))
-    # |> join(:inner, [child, _parent, _rel], ds in assoc(child, :data_structure))
-    # |> select([_child, _parent, _rel, ds], ds)
     |> select([child, _parent, _rel], child)
     |> Repo.all()
   end
@@ -156,11 +161,11 @@ defmodule TdDd.DataStructures do
     |> where([r], r.parent_id == ^id)
     |> join(:inner, [r], parent in assoc(r, :child))
     |> with_deleted(options, dynamic([_, parent], is_nil(parent.deleted_at)))
-    # |> join(:inner, [_, parent], ds in assoc(parent, :data_structure))
-    # |> select([_, _, ds], ds)
+    |> order_by([_, child], asc: child.data_structure_id, desc: child.version)
     |> select([_, child], child)
     |> distinct(true)
     |> Repo.all()
+    |> Enum.uniq_by(& &1.data_structure_id)
     |> Repo.preload(data_structure: :system)
   end
 
@@ -169,11 +174,11 @@ defmodule TdDd.DataStructures do
     |> where([r], r.child_id == ^id)
     |> join(:inner, [r], parent in assoc(r, :parent))
     |> with_deleted(options, dynamic([_, parent], is_nil(parent.deleted_at)))
-    # |> join(:inner, [_, parent], ds in assoc(parent, :data_structure))
-    # |> select([_, _, ds], ds)
+    |> order_by([_, parent], asc: parent.data_structure_id, desc: parent.version)
     |> select([_, parent], parent)
     |> distinct(true)
     |> Repo.all()
+    |> Enum.uniq_by(& &1.data_structure_id)
     |> Repo.preload(data_structure: :system)
   end
 
@@ -184,11 +189,11 @@ defmodule TdDd.DataStructures do
     |> join(:inner, [_, parent], child in assoc(parent, :children))
     |> with_deleted(options, dynamic([_, parent, _], is_nil(parent.deleted_at)))
     |> with_deleted(options, dynamic([_, _, child], is_nil(child.deleted_at)))
-    # |> join(:inner, [_, _, child], ds in assoc(child, :data_structure))
-    # |> select([_, _, _, ds], ds)
-    |> select([_, _, child], child)
+    |> order_by([_, _, sibling], asc: sibling.data_structure_id, desc: sibling.version)
+    |> select([_, _, sibling], sibling)
     |> distinct(true)
     |> Repo.all()
+    |> Enum.uniq_by(& &1.data_structure_id)
   end
 
   def get_versions(%DataStructureVersion{} = dsv) do
@@ -467,6 +472,16 @@ defmodule TdDd.DataStructures do
     |> join(:inner, [system], s in assoc(system, :system))
     |> where([_, s], s.external_id == ^system_external_id)
     |> where([d, _], d.external_id == ^external_id)
+    |> Repo.one()
+  end
+
+  def get_latest_version_by_external_id(external_id, options \\ []) do
+    DataStructureVersion
+    |> with_deleted(options, dynamic([dsv], is_nil(dsv.deleted_at)))
+    |> join(:inner, [data_structure], ds in assoc(data_structure, :data_structure))
+    |> where([_, ds], ds.external_id == ^external_id)
+    |> order_by([dsv, ds], desc: dsv.version)
+    |> limit(1)
     |> Repo.one()
   end
 
