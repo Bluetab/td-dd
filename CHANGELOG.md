@@ -1,6 +1,10 @@
 # Changelog
 
-## [Unreleased] 2019-09-10
+## [Unreleased]
+
+### Changed
+
+- Use td-hypermedia 3.6.1
 
 ### Deleted
 

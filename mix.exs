@@ -57,7 +57,7 @@ defmodule TdDq.Mixfile do
       {:timex, "~> 3.1"},
       {:ex_machina, "~> 2.2.2", only: :test},
       {:canada, "~> 1.0.1"},
-      {:td_hypermedia, git: "https://github.com/Bluetab/td-hypermedia.git", tag: "2.11.0"},
+      {:td_hypermedia, git: "https://github.com/Bluetab/td-hypermedia.git", tag: "3.6.1"},
       {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "3.5.1"},
       {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "3.5.0"}
     ]

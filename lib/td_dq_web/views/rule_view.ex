@@ -4,8 +4,8 @@ defmodule TdDqWeb.RuleView do
   alias TdCache.ConceptCache
   alias TdDqWeb.RuleView
 
-  def render("index.json", %{hypermedia: hypermedia, rules: rules}) do
-    render_many_hypermedia(rules, hypermedia, RuleView, "rule.json")
+  def render("index.json", %{hypermedia: hypermedia}) do
+    render_many_hypermedia(hypermedia, RuleView, "rule.json")
   end
 
   def render("index.json", %{rules: rules, user_permissions: user_permissions}) do
