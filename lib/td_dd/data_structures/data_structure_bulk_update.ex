@@ -49,7 +49,7 @@ defmodule TdDd.DataStructure.BulkUpdate do
   end
 
   defp update_data([head | tail], update_attributes, acc) do
-    case DataStructures.update_data_structure(head, update_attributes) do
+    case DataStructures.update_data_structure(head, update_attributes, true) do
       {:ok, ds} ->
         update_data(tail, update_attributes, [ds | acc])
 
