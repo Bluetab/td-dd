@@ -17,8 +17,8 @@ defmodule TdDd.Search.IndexWorker do
     GenServer.cast(TdDd.Search.IndexWorker, {:reindex, :all})
   end
 
-  def reindex(structures) do
-    GenServer.cast(TdDd.Search.IndexWorker, {:reindex, structures})
+  def reindex(ids) do
+    GenServer.cast(TdDd.Search.IndexWorker, {:reindex, ids})
   end
 
   @impl true
@@ -29,21 +29,17 @@ defmodule TdDd.Search.IndexWorker do
   @impl true
   def handle_cast({:reindex, :all}, state) do
     Logger.info("Reindexing all data structures")
-    start_time = DateTime.utc_now()
-    Indexer.reindex(:all)
-    millis = DateTime.utc_now() |> DateTime.diff(start_time, :millisecond)
-    Logger.info("Data structures indexed in #{millis}ms")
+    {ms, _} = Timer.time(fn -> Indexer.reindex(:all) end)
+    Logger.info("Data structures indexed in #{ms}ms")
 
     {:noreply, state}
   end
 
   @impl true
-  def handle_cast({:reindex, structures}, state) do
-    Logger.info("Reindexing #{Enum.count(structures)} data structures")
-    start_time = DateTime.utc_now()
-    Indexer.reindex(structures)
-    millis = DateTime.utc_now() |> DateTime.diff(start_time, :millisecond)
-    Logger.info("Data structures indexed in #{millis}ms")
+  def handle_cast({:reindex, ids}, state) do
+    Logger.info("Reindexing #{Enum.count(ids)} data structures")
+    {ms, _} = Timer.time(fn -> Indexer.reindex(ids) end)
+    Logger.info("Data structures indexed in #{ms}ms")
 
     {:noreply, state}
   end

@@ -22,8 +22,8 @@ defmodule TdDd.TestOperators do
 
   ## Equality test for data structure versions without comparing Ecto associations.
   defp approximately_equal(%DataStructureVersion{} = a, %DataStructureVersion{} = b) do
-    Map.drop(a, [:children, :parents]) ==
-      Map.drop(b, [:children, :parents])
+    Map.drop(a, [:children, :parents, :data_structure]) ==
+      Map.drop(b, [:children, :parents, :data_structure])
   end
 
   defp approximately_equal(a, b), do: a == b

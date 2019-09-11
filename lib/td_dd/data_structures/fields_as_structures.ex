@@ -3,7 +3,7 @@ defmodule TdDd.Loader.FieldsAsStructures do
   Support for loading data fields as structures.
   """
 
-  @structure_keys [:system_id, :group, :name, :external_id, :version]
+  @structure_keys [:system_id, :group, :name, :external_id]
   @liftable_metadata [:nullable, :precision, :type]
   @table_types ["tabl", "view"]
   @white_list_types ["Attribute", "Metric"]
@@ -11,23 +11,13 @@ defmodule TdDd.Loader.FieldsAsStructures do
   def group_by_parent(field_records, structure_records) do
     parents =
       structure_records
-      |> Enum.group_by(&parent_key/1)
+      |> Enum.group_by(& &1.external_id)
       |> Enum.into(%{}, fn {key, [h | _]} -> {key, h} end)
 
     field_records
     |> Enum.map(&lift_metadata/1)
-    |> Enum.group_by(&parent_key/1, &Map.drop(&1, @structure_keys))
+    |> Enum.group_by(& &1.external_id, &Map.drop(&1, @structure_keys))
     |> Enum.into(%{}, fn {keys, recs} -> {Map.get(parents, keys), recs} end)
-  end
-
-  defp parent_key(%{external_id: nil} = map) do
-    map
-    |> Map.drop([:external_id])
-    |> parent_key
-  end
-
-  defp parent_key(%{} = map) do
-    Map.take(map, @structure_keys)
   end
 
   def lift_metadata(field_or_record) do
@@ -54,7 +44,7 @@ defmodule TdDd.Loader.FieldsAsStructures do
 
   defp as_structure(parent, %{field_name: name} = field) do
     field
-    |> Map.drop([:field_name])
+    |> Map.delete(:field_name)
     |> Map.put(:name, name)
     |> as_child_structure(parent)
   end
@@ -64,7 +54,7 @@ defmodule TdDd.Loader.FieldsAsStructures do
     type = child_type(parent, field)
 
     parent
-    |> Map.take([:domain_id, :group, :ou, :system_id, :version])
+    |> Map.take([:domain_id, :group, :ou, :system_id])
     |> Map.merge(field)
     |> Map.put(:class, "field")
     |> Map.put(:type, type)
@@ -79,22 +69,9 @@ defmodule TdDd.Loader.FieldsAsStructures do
     fields_by_parent |> Enum.flat_map(&as_relations/1)
   end
 
-  defp as_relation(
-         %{group: group, system_id: system_id, name: parent_name} = parent,
-         %{field_name: name} = field
-       ) do
+  defp as_relation(%{external_id: external_id} = parent, field) do
     field_id = get_child_id(parent, field)
-
-    %{
-      system_id: system_id,
-      parent_group: group,
-      parent_external_id: Map.get(parent, :external_id),
-      parent_name: parent_name,
-      child_group: group,
-      child_external_id: field_id,
-      child_name: name,
-      version: Map.get(parent, :version)
-    }
+    %{parent_external_id: external_id, child_external_id: field_id}
   end
 
   def child_type(%{} = parent, %{} = child) do
@@ -114,15 +91,11 @@ defmodule TdDd.Loader.FieldsAsStructures do
     end
   end
 
-  defp get_child_id(parent, %{field_name: name}) do
-    get_parent_id(parent) <> "/" <> name
+  defp get_child_id(%{external_id: external_id}, %{field_name: name}) do
+    external_id <> "/" <> name
   end
 
-  defp get_child_id(parent, %{name: name}) do
-    get_parent_id(parent) <> "/" <> name
+  defp get_child_id(%{external_id: external_id}, %{name: name}) do
+    external_id <> "/" <> name
   end
-
-  defp get_parent_id(%{name: name, external_id: nil}), do: name
-  defp get_parent_id(%{external_id: external_id}), do: external_id
-  defp get_parent_id(%{name: name}), do: name
 end

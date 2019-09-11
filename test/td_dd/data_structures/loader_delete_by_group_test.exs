@@ -1,6 +1,8 @@
 defmodule TdDd.Loader.DeleteByGroupTest do
   use TdDd.DataCase
+
   alias TdDd.CSV.Reader
+  alias TdDd.DataStructures
   alias TdDd.Loader
 
   @structure_import_schema Application.get_env(:td_dd, :metadata)[:structure_import_schema]
@@ -23,7 +25,7 @@ defmodule TdDd.Loader.DeleteByGroupTest do
 
   defp audit do
     ts = DateTime.truncate(DateTime.utc_now(), :second)
-    %{last_change_at: ts, last_change_by: 0}
+    %{last_change_by: 0, ts: ts}
   end
 
   defp read_structures(path, system_id) do
@@ -42,13 +44,13 @@ defmodule TdDd.Loader.DeleteByGroupTest do
       structures: structures
     } do
       audit = audit()
-      {:ok, %{deleted_structures: deleted_structures}} = Loader.load(structures, [], [], audit)
-      assert Enum.count(deleted_structures) == 2
+      {:ok, data_structure_ids} = Loader.load(structures, [], [], audit)
+      assert Enum.count(data_structure_ids) == 2
 
-      deleted_versions = Enum.flat_map(deleted_structures, & &1.versions)
-      assert Enum.count(deleted_versions) == 2
-      assert Enum.all?(deleted_versions, &(&1.group == "group1"))
-      assert Enum.all?(deleted_versions, &(&1.deleted_at == audit.last_change_at))
+      dsvs = Enum.map(data_structure_ids, &DataStructures.get_latest_version/1)
+      assert Enum.count(dsvs) == 2
+      assert Enum.all?(dsvs, &(&1.group == "group1"))
+      assert Enum.all?(dsvs, &(&1.deleted_at == audit.ts))
     end
   end
 end

@@ -23,7 +23,7 @@ defmodule TdDd.DictionaryTest do
     "Description" => "description",
     "Type" => "type",
     "Organizational Unit" => "ou",
-    "Last Modification" => "last_change_at"
+    "Last Modification" => "updated_at"
   }
   @fixed_data_field_values %{
     "Field Name" => "name",
@@ -31,7 +31,7 @@ defmodule TdDd.DictionaryTest do
     "Precision" => "precision",
     "Nullable" => "nullable",
     "Description" => "description",
-    "Last Modification" => "last_change_at",
+    "Last Modification" => "updated_at",
     "Bc_related" => "bc_related"
   }
 
@@ -252,7 +252,7 @@ defmodule TdDd.DictionaryTest do
     end)
   end
 
-  defp assert_attr("last_change_at" = attr, _value, %{} = target) do
+  defp assert_attr("updated_at" = attr, _value, %{} = target) do
     assert :ok == elem(DateTime.from_iso8601(target[attr]), 0)
   end
 

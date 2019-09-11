@@ -22,7 +22,6 @@ defmodule TdDdWeb.CommentControllerTest do
   @data_structure_attrs %{
     description: "some description",
     group: "some group",
-    last_change_at: "2010-04-17 14:00:00Z",
     last_change_by: 42,
     name: "some name",
     external_id: "whatever external_id"

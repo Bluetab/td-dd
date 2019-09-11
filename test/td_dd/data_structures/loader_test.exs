@@ -288,8 +288,7 @@ defmodule TdDd.LoaderTest do
       structure = random_structure(system.id)
       field = structure |> random_field() |> Map.put(:metadata, %{"foo" => "bar"})
 
-      assert {:ok, %{structures: [%{id: structure_id}]}} =
-               Loader.load([structure], [], [], audit())
+      assert {:ok, [structure_id]} = Loader.load([structure], [], [], audit())
 
       1..5
       |> Enum.each(fn _ ->
@@ -351,15 +350,14 @@ defmodule TdDd.LoaderTest do
         system_id: sys1.id
       }
 
-      assert {:error, :relations, _, _} = Loader.load([structure], [], [relation], audit())
+      assert_raise(RuntimeError, fn -> Loader.load([structure], [], [relation], audit()) end)
     end
   end
 
   defp audit do
-    %{
-      last_change_at: DateTime.truncate(DateTime.utc_now(), :second),
-      last_change_by: 0
-    }
+    ts = DateTime.truncate(DateTime.utc_now(), :second)
+
+    %{last_change_by: 0, ts: ts}
   end
 
   defp random_structure(system_id) do

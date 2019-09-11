@@ -2,6 +2,8 @@ defmodule TdDd.DataStructuresTest do
   use TdDd.DataCase
 
   alias TdDd.DataStructures
+  alias TdDd.DataStructures.DataStructure
+
   import TdDd.TestOperators
 
   setup _context do
@@ -10,12 +12,9 @@ defmodule TdDd.DataStructuresTest do
   end
 
   describe "data_structures" do
-    alias TdDd.DataStructures.DataStructure
-
     @valid_attrs %{
       "description" => "some description",
       "group" => "some group",
-      "last_change_at" => "2010-04-17 14:00:00Z",
       "last_change_by" => 42,
       "name" => "some name",
       "external_id" => "some external_id",
@@ -29,7 +28,6 @@ defmodule TdDd.DataStructuresTest do
     @invalid_attrs %{
       description: nil,
       group: nil,
-      last_change_at: nil,
       last_change_by: nil,
       name: nil
     }
@@ -54,9 +52,6 @@ defmodule TdDd.DataStructuresTest do
     test "create_data_structure/1 with valid data creates a data_structure" do
       assert {:ok, %DataStructure{} = data_structure} =
                DataStructures.create_data_structure(@valid_attrs)
-
-      assert data_structure.last_change_at ==
-               DateTime.from_naive!(~N[2010-04-17 14:00:00Z], "Etc/UTC")
 
       assert data_structure.last_change_by == 42
       assert data_structure.system.external_id == "System_ref"
@@ -122,7 +117,6 @@ defmodule TdDd.DataStructuresTest do
     end
 
     test "delete_data_structure/1 deletes a data_structure with relations" do
-      alias TdDd.DataStructures.DataStructure
       ds1 = insert(:data_structure, id: 51, external_id: "DS51")
       ds2 = insert(:data_structure, id: 52, external_id: "DS52")
       ds3 = insert(:data_structure, id: 53, external_id: "DS53")
@@ -141,6 +135,147 @@ defmodule TdDd.DataStructuresTest do
 
       assert DataStructures.get_data_structure!(ds2.id) <~> ds2
       assert DataStructures.get_data_structure!(ds3.id) <~> ds3
+    end
+
+    test "get_data_structure_version!/2 enriches with parents, children and siblings" do
+      [dsv, parent, child, sibling] =
+        ["structure", "parent", "child", "sibling"]
+        |> Enum.map(&insert(:data_structure, external_id: &1))
+        |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id))
+
+      insert(:data_structure_relation, parent_id: parent.id, child_id: dsv.id)
+      insert(:data_structure_relation, parent_id: parent.id, child_id: sibling.id)
+      insert(:data_structure_relation, parent_id: dsv.id, child_id: child.id)
+
+      enrich_opts = [:parents, :children, :siblings]
+
+      assert %{id: id, parents: parents, children: children, siblings: siblings} =
+               DataStructures.get_data_structure_version!(dsv.id, enrich_opts)
+
+      assert id == dsv.id
+      assert parents <~> [parent]
+      assert children <~> [child]
+      assert siblings <~> [dsv, sibling]
+    end
+
+    test "get_data_structure_version!/2 excludes deleted children if structure is not deleted" do
+      [dsv, child, deleted_child] =
+        ["structure", "child", "deleted_child"]
+        |> Enum.map(&insert(:data_structure, external_id: &1))
+        |> Enum.map(
+          &insert(:data_structure_version, data_structure_id: &1.id, deleted_at: deleted_at(&1))
+        )
+
+      insert(:data_structure_relation, parent_id: dsv.id, child_id: child.id)
+      insert(:data_structure_relation, parent_id: dsv.id, child_id: deleted_child.id)
+
+      assert %{children: children} =
+               DataStructures.get_data_structure_version!(dsv.id, [:children])
+
+      assert children <~> [child]
+    end
+
+    defp deleted_at(%{external_id: "deleted_child"}), do: DateTime.utc_now()
+    defp deleted_at(_), do: nil
+
+    test "get_data_structure_version!/2 includes deleted children if structure is deleted" do
+      [dsv | deleted_children] =
+        ["structure", "child", "child2"]
+        |> Enum.map(&insert(:data_structure, external_id: &1))
+        |> Enum.map(
+          &insert(:data_structure_version,
+            data_structure_id: &1.id,
+            deleted_at: DateTime.utc_now()
+          )
+        )
+
+      deleted_children
+      |> Enum.each(&insert(:data_structure_relation, parent_id: dsv.id, child_id: &1.id))
+
+      assert %{children: children} =
+               DataStructures.get_data_structure_version!(dsv.id, [:children])
+
+      assert children <~> deleted_children
+    end
+
+    test "get_data_structure_version!/2 enriches with fields" do
+      [dsv | fields] =
+        ["structure", "field1", "field2", "field3"]
+        |> Enum.map(&insert(:data_structure, external_id: "get_data_structure_version!/2 " <> &1))
+        |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id, class: "field"))
+
+      Enum.map(fields, &insert(:data_structure_relation, parent_id: dsv.id, child_id: &1.id))
+
+      assert %{data_fields: data_fields} =
+               DataStructures.get_data_structure_version!(dsv.id, [:data_fields])
+
+      assert data_fields <~> fields
+    end
+
+    test "get_data_structure_version!/2 enriches with versions" do
+      ds = insert(:data_structure, external_id: "get_data_structure_version!/2 versioned")
+
+      [dsv | dsvs] =
+        0..3
+        |> Enum.map(&insert(:data_structure_version, data_structure_id: ds.id, version: &1))
+
+      assert %{versions: versions} =
+               DataStructures.get_data_structure_version!(dsv.id, [:versions])
+
+      assert versions <~> [dsv | dsvs]
+    end
+
+    test "get_data_structure_version!/2 enriches with system" do
+      sys = insert(:system, external_id: "foo")
+
+      ds =
+        insert(:data_structure,
+          external_id: "get_data_structure_version!/2 system",
+          system_id: sys.id
+        )
+
+      dsv = insert(:data_structure_version, data_structure_id: ds.id)
+
+      assert %{system: system} = DataStructures.get_data_structure_version!(dsv.id, [:system])
+
+      assert system == sys
+    end
+
+    test "get_data_structure_version!/2 enriches with ancestry and path" do
+      dsvs =
+        ["foo", "bar", "baz", "xyzzy"]
+        |> Enum.map(&insert(:data_structure, external_id: &1))
+        |> Enum.map(
+          &insert(:data_structure_version, data_structure_id: &1.id, name: &1.external_id)
+        )
+
+      dsvs
+      |> Enum.chunk_every(2, 1, :discard)
+      |> Enum.map(fn [parent, child] ->
+        insert(:data_structure_relation, parent_id: parent.id, child_id: child.id)
+      end)
+
+      [child | parents] = dsvs |> Enum.reverse()
+
+      assert %{ancestry: ancestry, path: path} =
+               DataStructures.get_data_structure_version!(child.id, [:ancestry, :path])
+
+      assert ancestry == parents
+      assert path == ["foo", "bar", "baz"]
+    end
+
+    test "get_latest_version_by_external_id/2 obtains the latest version of a structure" do
+      external_id = "get_latest_version_by_external_id/2"
+      ts = DateTime.utc_now()
+      ds = insert(:data_structure, external_id: external_id)
+
+      insert(:data_structure_version, data_structure_id: ds.id, version: 0, deleted_at: ts)
+      insert(:data_structure_version, data_structure_id: ds.id, version: 1)
+      v2 = insert(:data_structure_version, data_structure_id: ds.id, version: 2)
+      v3 = insert(:data_structure_version, data_structure_id: ds.id, version: 3, deleted_at: ts)
+
+      assert DataStructures.get_latest_version_by_external_id(external_id) <~> v3
+      assert DataStructures.get_latest_version_by_external_id(external_id, deleted: false) <~> v2
     end
   end
 end
