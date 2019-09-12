@@ -4,6 +4,7 @@ defmodule TdDd.CSV.ReaderTest do
 
   @structure_import_schema Application.get_env(:td_dd, :metadata)[:structure_import_schema]
   @field_import_schema Application.get_env(:td_dd, :metadata)[:field_import_schema]
+  @field_import_required Application.get_env(:td_dd, :metadata)[:field_import_required]
 
   setup context do
     if path = context[:fixture] do
@@ -85,29 +86,23 @@ defmodule TdDd.CSV.ReaderTest do
         |> Reader.read_csv(
           schema: @field_import_schema,
           system_map: system_map,
-          required: [:name, :system_id, :group, :field_name, :type],
+          required: @field_import_required,
           booleans: ["nullable"]
         )
 
       assert r1 == %{
                metadata: %{},
-               name: "Structure1",
                external_id: "1",
                field_name: "Field1",
-               group: "Group",
                nullable: true,
-               system_id: 42,
                type: "Column"
              }
 
       assert r2 == %{
                metadata: %{},
-               name: "Structure1",
-               external_id: "1",
+               external_id: "2",
                field_name: "Field2",
-               group: "Group",
                nullable: false,
-               system_id: 42,
                type: "Column"
              }
     end

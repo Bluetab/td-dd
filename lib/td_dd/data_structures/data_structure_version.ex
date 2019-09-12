@@ -21,6 +21,9 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     field(:name, :string)
     field(:type, :string)
     field(:deleted_at, :utc_datetime)
+    field(:hash, :binary)
+    field(:ghash, :binary)
+    field(:lhash, :binary)
 
     belongs_to(:data_structure, DataStructure)
 
@@ -40,9 +43,32 @@ defmodule TdDd.DataStructures.DataStructureVersion do
   @doc false
   def update_changeset(%DataStructureVersion{} = data_structure_version, attrs) do
     data_structure_version
-    |> cast(attrs, [:class, :deleted_at, :description, :metadata, :group, :name, :type, :version])
+    |> cast(attrs, [
+      :class,
+      :deleted_at,
+      :description,
+      :hash,
+      :lhash,
+      :ghash,
+      :metadata,
+      :group,
+      :name,
+      :type,
+      :version
+    ])
     |> validate_lengths()
+    |> preserve_timestamp_on_delete()
   end
+
+  defp preserve_timestamp_on_delete(
+         %{changes: %{deleted_at: deleted_at}, data: %{updated_at: updated_at}} = changeset
+       )
+       when not is_nil(deleted_at) do
+    changeset
+    |> force_change(:updated_at, updated_at)
+  end
+
+  defp preserve_timestamp_on_delete(changeset), do: changeset
 
   @doc false
   def changeset(%DataStructureVersion{} = data_structure_version, attrs) do
@@ -55,7 +81,10 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       :metadata,
       :name,
       :type,
-      :version
+      :version,
+      :lhash,
+      :ghash,
+      :hash
     ])
     |> validate_required([:data_structure_id, :group, :metadata, :name, :version])
     |> validate_lengths()
@@ -69,10 +98,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     |> validate_length(:type, max: 255)
   end
 
-  def search_fields(%DataStructureVersion{
-        data_structure: structure,
-        version: version
-      }) do
+  def search_fields(%DataStructureVersion{data_structure: structure, version: version}) do
     structure
     |> DataStructure.search_fields()
     |> Map.put(:version, version)

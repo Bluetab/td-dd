@@ -84,7 +84,6 @@ defmodule TdDdWeb.DataStructureController do
     creation_params =
       attrs
       |> Map.put("last_change_by", get_current_user_id(conn))
-      |> Map.put("last_change_at", DateTime.truncate(DateTime.utc_now(), :second))
       |> Map.put("metadata", %{})
       |> DataStructures.add_domain_id(TaxonomyCache.get_domain_name_to_id_map())
 
@@ -221,7 +220,6 @@ defmodule TdDdWeb.DataStructureController do
       attrs
       |> check_confidential_field(manage_confidential_structures)
       |> Map.put("last_change_by", get_current_user_id(conn))
-      |> Map.put("last_change_at", DateTime.truncate(DateTime.utc_now(), :second))
       |> DataStructures.add_domain_id(TaxonomyCache.get_domain_name_to_id_map())
 
     with true <- can?(user, update_data_structure(data_structure_old)),

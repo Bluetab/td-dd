@@ -8,20 +8,23 @@ defmodule TdDd.Application do
   def start(_type, _args) do
     import Supervisor.Spec
 
+    env = Application.get_env(:td_dd, :env)
+
     # Define workers and child supervisors to be supervised
-    children = [
-      # Start the Ecto repository
-      supervisor(TdDd.Repo, []),
-      # Start the endpoint when the application starts
-      supervisor(TdDdWeb.Endpoint, []),
-      # Worker for background indexing
-      worker(TdDd.Search.IndexWorker, [TdDd.Search.IndexWorker]),
-      # Worker for background bulk loading
-      worker(TdDd.Loader.LoaderWorker, [TdDd.Loader.LoaderWorker]),
-      # Workers for cache loading
-      worker(TdDd.Cache.SystemLoader, []),
-      worker(TdDd.Cache.StructureLoader, [])
-    ]
+    children =
+      [
+        # Start the Ecto repository
+        supervisor(TdDd.Repo, []),
+        # Start the endpoint when the application starts
+        supervisor(TdDdWeb.Endpoint, []),
+        # Worker for background indexing
+        worker(TdDd.Search.IndexWorker, [TdDd.Search.IndexWorker]),
+        # Worker for background bulk loading
+        worker(TdDd.Loader.LoaderWorker, [TdDd.Loader.LoaderWorker]),
+        # Workers for cache loading
+        worker(TdDd.Cache.SystemLoader, []),
+        worker(TdDd.Cache.StructureLoader, [])
+      ] ++ startup_tasks(env)
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
@@ -34,5 +37,13 @@ defmodule TdDd.Application do
   def config_change(changed, _new, removed) do
     Endpoint.config_change(changed, removed)
     :ok
+  end
+
+  defp startup_tasks(:test), do: []
+
+  defp startup_tasks(_env) do
+    [
+      {TdDd.DataStructures.Hasher, []}
+    ]
   end
 end

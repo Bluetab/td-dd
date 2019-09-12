@@ -19,7 +19,6 @@ defmodule TdDd.Factory do
     external_id = "external_id #{random_id()}"
 
     %DataStructure{
-      last_change_at: DateTime.truncate(DateTime.utc_now(), :second),
       last_change_by: 0,
       system_id: 1,
       ou: "My organization",

@@ -4,7 +4,31 @@
 
 ### Added
 
+- [TD-1650] Automatic versioning of changed data structures
 - [TD-2046] Bulk update endpoint for Data Catalog extra info
+
+### Changed
+
+- Metadata upload format (see config/metadata.exs for detail):
+  - Structures CSV required fields:
+    - `external_id` (globally unique)
+    - `name`
+    - `system` (or `POST` to `/systems/:system_external_id/metadata`)
+    - `group`
+    - `type`
+  - Fields CSV required fields:
+    - `external_id` (of structure)
+    - `field_name`
+    - `type`
+  - Relations CSV required fields:
+    - `parent_external_id`
+    - `child_external_id`
+
+## [3.5.5] 2019-09-09
+
+### Changed
+
+- Startup task to rename external_id of SQL server structures
 
 ## [3.5.2] 2019-09-04
 

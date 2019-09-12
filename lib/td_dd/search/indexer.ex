@@ -5,7 +5,6 @@ defmodule TdDd.Search.Indexer do
   alias Jason, as: JSON
   alias TdCache.TemplateCache
   alias TdDd.ESClientApi
-  alias TdDd.Repo
   alias TdDd.Search
 
   def reindex(:all) do
@@ -15,10 +14,8 @@ defmodule TdDd.Search.Indexer do
     Search.put_bulk_search(:all)
   end
 
-  def reindex(data_structures) do
-    data_structures
-    |> Repo.preload(:system)
-    |> Search.put_bulk_search()
+  def reindex(ids) do
+    Search.put_bulk_search(ids)
   end
 
   defp get_mappings do
@@ -42,9 +39,9 @@ defmodule TdDd.Search.Indexer do
       external_id: %{type: "keyword", index: false},
       domain_ids: %{type: "long"},
       deleted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-      last_change_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       last_change_by: %{enabled: false},
       inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
+      updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       data_fields: %{
         properties: %{
           name: %{type: "text"},

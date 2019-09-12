@@ -67,7 +67,7 @@ defmodule TdDdWeb.DataStructureView do
       :external_id,
       :group,
       :inserted_at,
-      :last_change_at,
+      :updated_at,
       :name,
       :ou,
       :system_id,
@@ -90,7 +90,7 @@ defmodule TdDdWeb.DataStructureView do
   end
 
   defp data_structure_version_embedded(dsv) do
-    Map.take(dsv, [:data_structure_id, :id, :name, :type])
+    Map.take(dsv, [:data_structure_id, :id, :name, :type, :deleted_at])
   end
 
   defp add_dynamic_content(json, data_structure) do
@@ -181,7 +181,7 @@ defmodule TdDdWeb.DataStructureView do
       :type,
       :metadata,
       :description,
-      :last_change_at,
+      :deleted_at,
       :inserted_at,
       :links
     ])

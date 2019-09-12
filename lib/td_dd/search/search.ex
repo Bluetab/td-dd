@@ -3,6 +3,8 @@ defmodule TdDd.Search do
   Search Engine calls
   """
 
+  import Ecto.Query, only: [from: 2]
+
   alias Jason, as: JSON
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
@@ -13,14 +15,21 @@ defmodule TdDd.Search do
 
   @batch_size 100
 
+  @preload [
+    :system,
+    versions: [:data_structure, parents: [:data_structure, parents: [:data_structure, :parents]]]
+  ]
+
   def put_bulk_search(:all) do
-    DataStructures.list_data_structures()
+    from(ds in "data_structures", select: ds.id)
+    |> Repo.all()
     |> put_bulk_search()
   end
 
-  def put_bulk_search(data_structures) do
-    data_structures
-    |> Enum.chunk_every(@batch_size)
+  def put_bulk_search(ids) do
+    ids
+    |> Stream.chunk_every(@batch_size)
+    |> Stream.map(&DataStructures.get_data_structures(&1, @preload))
     |> Enum.map(&bulk_index_batch/1)
   end
 
@@ -38,10 +47,8 @@ defmodule TdDd.Search do
   end
 
   defp time(fun) do
-    ts = DateTime.utc_now()
-    res = fun.()
-    millis = DateTime.diff(DateTime.utc_now(), ts, :millisecond)
-    rate = 1_000 / millis * @batch_size
+    {millis, res} = Timer.time(fun)
+    rate = div(1_000 * @batch_size, millis)
     Logger.info("Indexing rate #{rate} items/s")
     res
   end
@@ -67,7 +74,7 @@ defmodule TdDd.Search do
   end
 
   # DELETE
-  def delete_search(%DataStructure{id: id} = data_structure) do
+  def delete_search(%DataStructure{id: id}) do
     response = ESClientApi.delete_content("data_structure", id)
 
     case response do
