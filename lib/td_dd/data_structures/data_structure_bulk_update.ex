@@ -2,11 +2,8 @@ defmodule TdDd.DataStructure.BulkUpdate do
   @moduledoc false
   require Logger
 
-  alias TdCache.TemplateCache
-  alias TdDd.Cache.ConceptLoader
   alias TdDd.DataStructures
   alias TdDd.Repo
-  alias TdDd.Taxonomies
 
   def update_all(_user, data_structures, %{"df_content" => content}) do
     data_structures =
