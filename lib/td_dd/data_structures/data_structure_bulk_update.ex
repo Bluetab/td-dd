@@ -5,12 +5,17 @@ defmodule TdDd.DataStructure.BulkUpdate do
   alias TdDd.DataStructures
   alias TdDd.Repo
 
-  def update_all(_user, data_structures, %{"df_content" => content}) do
+  def update_all(user, data_structures, %{"df_content" => content}) do
     data_structures =
       data_structures
       |> Enum.map(&DataStructures.get_data_structure!(&1.id))
 
-    case update(data_structures, %{"df_content" => content}) do
+    update_attributes =
+      %{}
+      |> Map.put("df_content", content)
+      |> Map.put("last_change_by", user.id)
+
+    case update(data_structures, update_attributes) do
       {:ok, ds_list} -> {:ok, ds_list |> Enum.map(& &1.id)}
       error -> error
     end
@@ -29,7 +34,7 @@ defmodule TdDd.DataStructure.BulkUpdate do
     end_time = DateTime.utc_now()
 
     Logger.info(
-      "Business concept versions updated. Elapsed seconds: #{DateTime.diff(end_time, start_time)}"
+      "Data structures updated. Elapsed seconds: #{DateTime.diff(end_time, start_time)}"
     )
 
     transaction_result
