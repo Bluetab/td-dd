@@ -16,7 +16,7 @@ defmodule TdDd.DataStructure.BulkUpdate do
       |> Map.put("last_change_by", user.id)
 
     case update(data_structures, update_attributes) do
-      {:ok, ds_list} -> {:ok, ds_list |> Enum.map(& "#{&1.id}")}
+      {:ok, ds_list} -> {:ok, ds_list |> Enum.map(& &1.id)}
       error -> error
     end
   end
