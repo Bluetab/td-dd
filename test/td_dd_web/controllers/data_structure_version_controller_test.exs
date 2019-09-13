@@ -75,7 +75,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     @tag :admin_authenticated
     test "bulk update of data structures", %{conn: conn} do
       structure = insert(:data_structure, external_id: "Structure")
-      structure_version = insert(:data_structure_version, data_structure_id: structure.id)
+      _structure_version = insert(:data_structure_version, data_structure_id: structure.id)
 
       TemplateCache.put(%{
         name: "Table",
@@ -129,7 +129,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     @tag :admin_authenticated
     test "bulk update of data structures with no filter type", %{conn: conn} do
       structure = insert(:data_structure, external_id: "Structure")
-      structure_version = insert(:data_structure_version, data_structure_id: structure.id)
+      _structure_version = insert(:data_structure_version, data_structure_id: structure.id)
 
       conn =
         post(conn, Routes.data_structure_path(conn, :bulk_update), %{
