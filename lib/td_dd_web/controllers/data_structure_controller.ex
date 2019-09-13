@@ -4,6 +4,7 @@ defmodule TdDdWeb.DataStructureController do
   use TdDdWeb, :controller
   use PhoenixSwagger
   alias Ecto
+  alias Jason, as: JSON
   alias TdCache.TaxonomyCache
   alias TdDd.Audit.AuditSupport
   alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
@@ -402,7 +403,7 @@ defmodule TdDdWeb.DataStructureController do
     with true <- user.is_admin,
          %{results: results} <- search_all_structures(user, search_params),
          {:ok, response} <- BulkUpdate.update_all(user, results, update_attributes) do
-      body = Poison.encode!(%{data: %{message: response}})
+      body = JSON.encode!(%{data: %{message: response}})
 
       conn
       |> put_resp_content_type("application/json", "utf-8")
@@ -420,7 +421,7 @@ defmodule TdDdWeb.DataStructureController do
         conn
         |> put_status(:unprocessable_entity)
         |> put_resp_content_type("application/json", "utf-8")
-        |> send_resp(422, Poison.encode!(%{error: error}))
+        |> send_resp(422, JSON.encode!(%{error: error}))
 
       error ->
         Logger.info("Unexpected error while updating data structures... #{inspect(error)}")
