@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-1650] Automatic versioning of changed data structures
+- [TD-2046] Bulk update endpoint for Data Catalog extra info
 
 ### Changed
 

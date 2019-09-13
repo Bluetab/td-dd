@@ -49,6 +49,10 @@ defmodule TdDd.Search.MockSearch do
     Enum.filter(dss, &Enum.member?(values, Map.get(&1, :ou)))
   end
 
+  defp apply_filter(dss, %{terms: %{"type.raw" => values}}) do
+    Enum.filter(dss, &Enum.member?(values, Map.get(&1, :type)))
+  end
+
   defp is_missing?(ds, field) do
     case Map.get(ds, String.to_atom(field)) do
       nil -> true

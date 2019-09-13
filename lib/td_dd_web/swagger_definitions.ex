@@ -144,6 +144,19 @@ defmodule TdDdWeb.SwaggerDefinitions do
             )
           end
         end,
+      BulkUpdateRequest:
+        swagger_schema do
+          properties do
+            bulk_update_request(
+              Schema.new do
+                properties do
+                  update_attributes(:object, "Update attributes")
+                  search_params(:object, "Search params")
+                end
+              end
+            )
+          end
+        end,
       DataStructures:
         swagger_schema do
           title("Data Structures")
@@ -157,6 +170,25 @@ defmodule TdDdWeb.SwaggerDefinitions do
           description("A collection of embedded Data Structures")
           type(:array)
           items(Schema.ref(:DataStructureEmbedded))
+        end,
+      DataStructureIDs:
+        swagger_schema do
+          title("Data Structure IDs updated")
+          description("An array of Data Structure IDs")
+          type(:array)
+          items(%{type: :integer})
+        end,
+      BulkUpdateResponse:
+        swagger_schema do
+          properties do
+            data(
+              Schema.new do
+                properties do
+                  message(Schema.ref(:DataStructureIDs))
+                end
+              end
+            )
+          end
         end,
       DataStructureResponse:
         swagger_schema do

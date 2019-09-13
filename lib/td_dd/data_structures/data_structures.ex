@@ -259,13 +259,24 @@ defmodule TdDd.DataStructures do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_data_structure(%DataStructure{} = data_structure, %{"df_content" => content} = attrs)
+  def update_data_structure(data_structure, attrs, is_bulk \\ false)
+
+  def update_data_structure(
+        %DataStructure{} = data_structure,
+        %{"df_content" => content} = attrs,
+        is_bulk
+      )
       when not is_nil(content) do
     %{type: type} = get_latest_version(data_structure)
 
     case TemplateCache.get_by_name!(type) do
       %{:content => content_schema} ->
-        content_changeset = Validation.build_changeset(content, content_schema)
+        attrs =
+          data_structure
+          |> add_no_updated_fields(attrs, is_bulk)
+
+        content_changeset =
+          Validation.build_changeset(Map.get(attrs, "df_content"), content_schema)
 
         case content_changeset.valid? do
           false -> {:error, content_changeset}
@@ -277,7 +288,7 @@ defmodule TdDd.DataStructures do
     end
   end
 
-  def update_data_structure(%DataStructure{} = data_structure, attrs) do
+  def update_data_structure(%DataStructure{} = data_structure, attrs, _is_bulk) do
     do_update_data_structure(data_structure, attrs)
   end
 
@@ -297,6 +308,18 @@ defmodule TdDd.DataStructures do
       _ ->
         result
     end
+  end
+
+  defp add_no_updated_fields(_data_structure, attrs, false), do: attrs
+
+  defp add_no_updated_fields(%DataStructure{:df_content => nil} = _data_structure, attrs, true),
+    do: attrs
+
+  defp add_no_updated_fields(data_structure, attrs, true) do
+    new_content =
+      Map.merge(Map.get(attrs, "df_content"), data_structure.df_content, fn _k, v1, _v2 -> v1 end)
+
+    Map.put(attrs, "df_content", new_content)
   end
 
   @doc """

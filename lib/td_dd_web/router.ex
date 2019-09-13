@@ -33,6 +33,7 @@ defmodule TdDdWeb.Router do
 
     post("/data_structures/search", DataStructureController, :search)
     post("/data_structures/metadata", MetadataController, :upload)
+    post("/data_structures/bulk_update", DataStructureController, :bulk_update)
 
     resources("/comments", CommentController, except: [:new, :edit])
 

@@ -2,6 +2,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
+  alias TdCache.TemplateCache
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Permissions.MockPermissionResolver
@@ -67,6 +68,91 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       conn = get(conn, Routes.data_structure_version_path(conn, :show, id))
 
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
+    end
+  end
+
+  describe "bulk_update" do
+    @tag :admin_authenticated
+    test "bulk update of data structures", %{conn: conn} do
+      structure = insert(:data_structure, external_id: "Structure")
+      _structure_version = insert(:data_structure_version, data_structure_id: structure.id)
+
+      TemplateCache.put(%{
+        name: "Table",
+        content: [
+          %{
+            "name" => "Field1",
+            "type" => "string",
+            "group" => "Multiple Group",
+            "label" => "Multiple 1",
+            "values" => nil,
+            "cardinality" => "1"
+          },
+          %{
+            "name" => "Field2",
+            "type" => "string",
+            "group" => "Multiple Group",
+            "label" => "Multiple 1",
+            "values" => nil,
+            "cardinality" => "1"
+          }
+        ],
+        scope: "test",
+        label: "template_label",
+        id: "999"
+      })
+
+      conn =
+        post(conn, Routes.data_structure_path(conn, :bulk_update), %{
+          "bulk_update_request" => %{
+            "update_attributes" => %{
+              "df_content" => %{
+                "Field1" => "hola soy field 1",
+                "Field2" => "hola soy field 2"
+              },
+              "otra_cosa" => 2
+            },
+            "search_params" => %{
+              "filters" => %{
+                "type.raw" => [
+                  "Table"
+                ]
+              }
+            }
+          }
+        })
+
+      %{"message" => updated_data_structures_ids} = json_response(conn, 200)["data"]
+      assert Enum.at(updated_data_structures_ids, 0) == structure.id
+    end
+
+    @tag :admin_authenticated
+    test "bulk update of data structures with no filter type", %{conn: conn} do
+      structure = insert(:data_structure, external_id: "Structure")
+      _structure_version = insert(:data_structure_version, data_structure_id: structure.id)
+
+      conn =
+        post(conn, Routes.data_structure_path(conn, :bulk_update), %{
+          "bulk_update_request" => %{
+            "update_attributes" => %{
+              "df_content" => %{
+                "Field1" => "hola soy field 1",
+                "Field2" => "hola soy field 2"
+              },
+              "otra_cosa" => 2
+            },
+            "search_params" => %{
+              "filters" => %{
+                "type.raw" => [
+                  "Field"
+                ]
+              }
+            }
+          }
+        })
+
+      %{"message" => updated_data_structures_ids} = json_response(conn, 200)["data"]
+      assert Enum.at(updated_data_structures_ids, 0) == nil
     end
   end
 

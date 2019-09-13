@@ -35,7 +35,20 @@ defmodule TdDd.Factory do
       group: "some group",
       name: "some name",
       metadata: %{"description" => "some description"},
-      version: 0
+      version: 0,
+      type: "Table"
+    }
+  end
+
+  def data_structure_version_no_table_factory do
+    %DataStructureVersion{
+      deleted_at: nil,
+      description: "some description",
+      group: "some group",
+      name: "some name",
+      metadata: %{"description" => "some description"},
+      version: 0,
+      type: "Schema"
     }
   end
 
