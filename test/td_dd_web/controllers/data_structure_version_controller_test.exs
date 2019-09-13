@@ -123,7 +123,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
         })
 
       %{"message" => updated_data_structures_ids} = json_response(conn, 200)["data"]
-      assert Enum.at(updated_data_structures_ids, 0) == structure.id
+      assert Enum.at(updated_data_structures_ids, 0) == "#{structure.id}"
     end
 
     @tag :admin_authenticated
