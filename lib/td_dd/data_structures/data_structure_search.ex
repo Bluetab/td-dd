@@ -12,20 +12,20 @@ defmodule TdDd.DataStructure.Search do
 
   @search_service Application.get_env(:td_dd, :elasticsearch)[:search_service]
 
-  def get_filter_values(user, params \\ %{})
+  def get_filter_values(user, permission, params)
 
-  def get_filter_values(%User{is_admin: true}, params) do
+  def get_filter_values(%User{is_admin: true}, _permission, params) do
     filter_clause = create_filters(params)
     query = create_query(%{}, filter_clause)
     search = %{query: query, aggs: Aggregations.aggregation_terms()}
     @search_service.get_filters(search)
   end
 
-  def get_filter_values(%User{} = user, params) do
+  def get_filter_values(%User{} = user, permission, params) do
     permissions =
       user
       |> Permissions.get_domain_permissions()
-      |> Enum.filter(&Enum.member?(&1.permissions, :view_data_structure))
+      |> Enum.filter(&Enum.member?(&1.permissions, permission))
 
     get_filter_values(permissions, params)
   end
@@ -40,9 +40,9 @@ defmodule TdDd.DataStructure.Search do
     @search_service.get_filters(search)
   end
 
-  def search_data_structures(params, user, page \\ 0, size \\ 50)
+  def search_data_structures(params, user, permission, page \\ 0, size \\ 50)
 
-  def search_data_structures(params, %User{is_admin: true}, page, size) do
+  def search_data_structures(params, %User{is_admin: true}, _permission, page, size) do
     filters = create_filters(params)
     query = create_query(params, filters)
 
@@ -59,11 +59,11 @@ defmodule TdDd.DataStructure.Search do
   end
 
   # Non-admin search
-  def search_data_structures(params, %User{} = user, page, size) do
+  def search_data_structures(params, %User{} = user, permission, page, size) do
     permissions =
       user
       |> Permissions.get_domain_permissions()
-      |> Enum.filter(&Enum.member?(&1.permissions, :view_data_structure))
+      |> Enum.filter(&Enum.member?(&1.permissions, permission))
 
     filter_data_structures(params, permissions, page, size)
   end
