@@ -3,8 +3,8 @@ defmodule TdDd.Repo.Migrations.CreateProfiles do
 
   def change do
     create table(:profiles) do
-      add :value, :map
-      add :data_structure_id, references(:data_structures)
+      add :value, :map, null: false
+      add :data_structure_id, references(:data_structures), null: false
 
       timestamps()
     end
