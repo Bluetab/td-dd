@@ -34,5 +34,13 @@ defmodule TdDd.ProfilingLoaderTest do
       attrs1 = %{external_id: external_id, nullable: true, mode: "bar"}
       assert {:error, _error} = ProfilingLoader.load([attrs1])
     end
+
+    test "load/1 error when missing params" do
+      external_id = "DS1"
+      sys1 = insert(:system, external_id: "SYS1", name: "SYS1")
+      insert(:data_structure, external_id: external_id, system_id: sys1.id)
+      attrs1 = %{external_id: external_id}
+      assert {:error, _error} = ProfilingLoader.load([attrs1])
+    end
   end
 end
