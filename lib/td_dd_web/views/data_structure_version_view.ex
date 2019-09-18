@@ -100,7 +100,7 @@ defmodule TdDdWeb.DataStructureVersionView do
     Map.put(dsv, :data_fields, [])
   end
 
-  defp field_structure_json(%{class: "field", data_structure: %{df_content: df_content}} = dsv) do
+  defp field_structure_json(%{class: "field", data_structure: %{df_content: df_content, profile: profile}} = dsv) do
     dsv
     |> Map.take([
       :name,
@@ -114,6 +114,7 @@ defmodule TdDdWeb.DataStructureVersionView do
       :links
     ])
     |> lift_metadata()
+    |> with_profile_attrs(profile)
     |> Map.put(:has_df_content, not is_nil(df_content))
   end
 
@@ -165,5 +166,15 @@ defmodule TdDdWeb.DataStructureVersionView do
     dsv
     |> Map.delete(:metadata)
     |> Map.merge(metadata)
+  end
+
+  defp with_profile_attrs(dsv, nil), do: dsv 
+
+  defp with_profile_attrs(dsv, %{value: value}) do
+    profile =
+      value
+      |> Map.new(fn {k, v} -> {String.to_atom(k), v} end)
+    
+    Map.put(dsv, :profile, profile)
   end
 end

@@ -130,6 +130,9 @@ defmodule TdDd.DataStructures do
     |> enrich(options, :system, fn dsv ->
       dsv |> Repo.preload(data_structure: :system) |> Map.get(:data_structure) |> Map.get(:system)
     end)
+    |> enrich(options, :profile, fn dsv ->
+      dsv |> Repo.preload(data_structure: :profile) |> Map.get(:data_structure) |> Map.get(:profile)
+    end)
     |> enrich(options, :ancestry, fn dsv -> get_ancestry(dsv) end)
     |> enrich(options, :path, fn dsv -> get_path(dsv) end)
     |> enrich(options, :links, fn %{data_structure_id: id} -> get_structure_links(id) end)
@@ -155,6 +158,7 @@ defmodule TdDd.DataStructures do
     |> with_deleted(options, dynamic([child, _parent, _rel], is_nil(child.deleted_at)))
     |> select([child, _parent, _rel], child)
     |> Repo.all()
+    |> Repo.preload(data_structure: :profile)
   end
 
   def get_children(%DataStructureVersion{id: id}, options \\ []) do
