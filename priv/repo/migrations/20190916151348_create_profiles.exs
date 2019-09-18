@@ -9,5 +9,6 @@ defmodule TdDd.Repo.Migrations.CreateProfiles do
       timestamps()
     end
 
+    create unique_index(:profiles, [:data_structure_id])
   end
 end
