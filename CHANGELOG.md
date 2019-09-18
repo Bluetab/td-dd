@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-2089] Profiling support for structures
+
 ## [3.6.0] 2019-09-16
 
 ### Added
