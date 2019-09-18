@@ -45,15 +45,20 @@ defmodule TdDd.ProfilingLoader do
       %DataStructure{id: id, profile: nil} ->
         Map.new()
         |> Map.put(:data_structure_id, id)
-        |> Map.put(:value, Map.drop(attrs, [:external_id]))
+        |> Map.merge(Map.take(attrs, [:value]))
         |> DataStructures.create_profile()
 
       %DataStructure{profile: profile} ->
-        value = Map.drop(attrs, [:external_id])
-        DataStructures.update_profile(profile, %{value: value})
+        DataStructures.update_profile(profile, Map.take(attrs, [:value]))
 
       nil ->
-        {:error, %{error: "Missing structure with external_id #{Map.get(attrs, :external_id)}"}}
+        {:error,
+         %{
+           errors: [
+             external_id:
+               {"Missing structure with external_id #{Map.get(attrs, :external_id)}", []}
+           ]
+         }}
     end
   end
 

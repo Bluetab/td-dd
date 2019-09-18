@@ -9,16 +9,15 @@ defmodule TdDdWeb.ProfileController do
 
   require Logger
 
-  action_fallback TdDdWeb.FallbackController
-
   @profiling_import_required Application.get_env(:td_dd, :profiling)[:profiling_import_required]
   @profiling_import_schema Application.get_env(:td_dd, :profiling)[:profiling_import_schema]
 
-  def upload_profiling(conn, %{"profiling" => profiling}) do
+  def upload(conn, %{"profiling" => profiling}) do
     user = GuardianPlug.current_resource(conn)
 
     with true <- Map.get(user, :is_admin) do
       do_upload(profiling)
+      send_resp(conn, :accepted, "")
     else
       false ->
           conn

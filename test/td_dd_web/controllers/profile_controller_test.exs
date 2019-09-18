@@ -1,88 +1,45 @@
 defmodule TdDdWeb.ProfileControllerTest do
   use TdDdWeb.ConnCase
+  use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  # alias TdDd.DataStructures
-  # alias TdDd.DataStructures.Profile
+  alias TdDd.DataStructures
+  alias TdDd.Loader.LoaderWorker
+  alias TdDd.Permissions.MockPermissionResolver
+  alias TdDdWeb.ApiServices.MockTdAuditService
+  alias TdDdWeb.ApiServices.MockTdAuthService
 
-  # @create_attrs %{
-  #   value: %{}
-  # }
-  # @update_attrs %{
-  #   value: %{}
-  # }
-  # @invalid_attrs %{value: nil}
+  setup_all do
+    start_supervised(MockTdAuditService)
+    start_supervised(MockTdAuthService)
+    start_supervised(MockPermissionResolver)
+    :ok
+  end
 
-  # def fixture(:profile) do
-  #   {:ok, profile} = DataStructures.create_profile(@create_attrs)
-  #   profile
-  # end
+  setup %{fixture: fixture} do
+    profiling = %Plug.Upload{path: fixture <> "/profiles.csv"}
+    {:ok, profiling: profiling}
+  end
 
-  # setup %{conn: conn} do
-  #   {:ok, conn: put_req_header(conn, "accept", "application/json")}
-  # end
+  describe "upload profiling" do
+    @tag :admin_authenticated
+    @tag fixture: "test/fixtures/profiling"
+    test "uploads profiles for data structures", %{
+      conn: conn,
+      profiling: profiling
+    } do
+      sys1 = insert(:system, external_id: "SYS1", name: "SYS1")
 
-  # describe "index" do
-  #   test "lists all profiles", %{conn: conn} do
-  #     conn = get(conn, Routes.profile_path(conn, :index))
-  #     assert json_response(conn, 200)["data"] == []
-  #   end
-  # end
+      insert(:data_structure, external_id: "DS1", system_id: sys1.id)
+      insert(:data_structure, external_id: "DS2", system_id: sys1.id)
+      insert(:data_structure, external_id: "DS3", system_id: sys1.id)
 
-  # describe "create profile" do
-  #   test "renders profile when data is valid", %{conn: conn} do
-  #     conn = post(conn, Routes.profile_path(conn, :create), profile: @create_attrs)
-  #     assert %{"id" => id} = json_response(conn, 201)["data"]
+      conn = post(conn, Routes.profile_path(conn, :upload), profiling: profiling)
 
-  #     conn = get(conn, Routes.profile_path(conn, :show, id))
+      assert response(conn, 202) =~ ""
 
-  #     assert %{
-  #              "id" => id,
-  #              "value" => {}
-  #            } = json_response(conn, 200)["data"]
-  #   end
-
-  #   test "renders errors when data is invalid", %{conn: conn} do
-  #     conn = post(conn, Routes.profile_path(conn, :create), profile: @invalid_attrs)
-  #     assert json_response(conn, 422)["errors"] != %{}
-  #   end
-  # end
-
-  # describe "update profile" do
-  #   setup [:create_profile]
-
-  #   test "renders profile when data is valid", %{conn: conn, profile: %Profile{id: id} = profile} do
-  #     conn = put(conn, Routes.profile_path(conn, :update, profile), profile: @update_attrs)
-  #     assert %{"id" => ^id} = json_response(conn, 200)["data"]
-
-  #     conn = get(conn, Routes.profile_path(conn, :show, id))
-
-  #     assert %{
-  #              "id" => id,
-  #              "value" => {}
-  #            } = json_response(conn, 200)["data"]
-  #   end
-
-  #   test "renders errors when data is invalid", %{conn: conn, profile: profile} do
-  #     conn = put(conn, Routes.profile_path(conn, :update, profile), profile: @invalid_attrs)
-  #     assert json_response(conn, 422)["errors"] != %{}
-  #   end
-  # end
-
-  # describe "delete profile" do
-  #   setup [:create_profile]
-
-  #   test "deletes chosen profile", %{conn: conn, profile: profile} do
-  #     conn = delete(conn, Routes.profile_path(conn, :delete, profile))
-  #     assert response(conn, 204)
-
-  #     assert_error_sent 404, fn ->
-  #       get(conn, Routes.profile_path(conn, :show, profile))
-  #     end
-  #   end
-  # end
-
-  # defp create_profile(_) do
-  #   profile = fixture(:profile)
-  #   {:ok, profile: profile}
-  # end
+      # waits for loader to complete
+      LoaderWorker.ping()
+      assert Enum.count(DataStructures.list_profiles()) == 3
+    end
+  end
 end
