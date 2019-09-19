@@ -30,7 +30,7 @@ defmodule TdDd.DataStructureCase do
 
         dsvs
         |> Enum.chunk_every(2, 1, :discard)
-        |> Enum.map(fn [parent, child] ->
+        |> Enum.each(fn [parent, child] ->
           insert(:data_structure_relation, parent_id: parent.id, child_id: child.id)
         end)
 
