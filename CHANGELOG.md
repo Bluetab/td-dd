@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-2118] Metadata as mapping in data structures search 
+
 ## [3.6.0] 2019-09-16
 
 ### Added
