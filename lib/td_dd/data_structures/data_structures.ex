@@ -465,15 +465,31 @@ defmodule TdDd.DataStructures do
     |> Enum.reverse()
   end
 
+  def get_ancestors(dsv, opts \\ [deleted: false])
+
+  def get_ancestors(%DataStructureVersion{parents: %NotLoaded{}} = data_structure_version, opts) do
+    data_structure_version
+    |> Repo.preload(:parents)
+    |> get_ancestors(opts)
+  end
+
+  def get_ancestors(%DataStructureVersion{parents: []}, _opts), do: []
+
+  def get_ancestors(%DataStructureVersion{parents: parents}, opts) do
+    parents = case opts[:deleted] do
+      false -> Enum.reject(parents, & &1.deleted_at)
+      _ -> parents
+    end
+    parents ++ Enum.flat_map(parents, &get_ancestors/1)
+  end
+
   defp get_ancestry(%DataStructureVersion{parents: %NotLoaded{}} = data_structure_version) do
     data_structure_version
     |> Repo.preload(:parents)
     |> get_ancestry
   end
 
-  defp get_ancestry(%DataStructureVersion{parents: []}) do
-    []
-  end
+  defp get_ancestry(%DataStructureVersion{parents: []}), do: []
 
   defp get_ancestry(%DataStructureVersion{parents: parents}) do
     parent =

@@ -7,12 +7,7 @@ defmodule TdDd.TestOperators do
   alias TdDd.DataStructures.DataStructureVersion
 
   def a <~> b, do: approximately_equal(a, b)
-
-  defp approximately_equal([_ | _] = l1, [_ | _] = l2) do
-    l1 = Enum.sort(l1)
-    l2 = Enum.sort(l2)
-    approximately_equal_sorted(l1, l2)
-  end
+  def a <|> b, do: approximately_equal(Enum.sort(a), Enum.sort(b))
 
   ## Equality test for data structures without comparing Ecto associations.
   defp approximately_equal(%DataStructure{} = a, %DataStructure{} = b) do
@@ -26,9 +21,9 @@ defmodule TdDd.TestOperators do
       Map.drop(b, [:children, :parents, :data_structure])
   end
 
-  defp approximately_equal(a, b), do: a == b
-
-  defp approximately_equal_sorted([h | t], [h2 | t2]) do
+  defp approximately_equal([h | t], [h2 | t2]) do
     approximately_equal(h, h2) && approximately_equal(t, t2)
   end
+
+  defp approximately_equal(a, b), do: a == b
 end
