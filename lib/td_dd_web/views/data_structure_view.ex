@@ -46,6 +46,7 @@ defmodule TdDdWeb.DataStructureView do
   def render("data_structure.json", %{data_structure: data_structure}) do
     data_structure
     |> data_structure_json
+    |> add_metadata(data_structure)
     |> add_system_with_keys(data_structure, ["external_id", "id", "name"])
     |> add_dynamic_content(data_structure)
   end
@@ -166,6 +167,17 @@ defmodule TdDdWeb.DataStructureView do
       end
 
     Map.put(data_structure_json, :data_fields, field_structures)
+  end
+
+  defp add_metadata(data_structure_json, data_structure) do
+    case Map.get(data_structure_json, :metadata, %{}) == %{} do
+      true ->
+        metadata = Map.get(data_structure, :metadata, %{})
+        Map.put(data_structure_json, :metadata, metadata)
+
+      false ->
+        data_structure_json
+    end
   end
 
   defp field_structure_json(

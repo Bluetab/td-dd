@@ -118,7 +118,8 @@ defmodule TdDd.DataStructures.DataStructure do
         :deleted_at,
         :group,
         :name,
-        :type
+        :type,
+        :metadata
       ])
     )
   end

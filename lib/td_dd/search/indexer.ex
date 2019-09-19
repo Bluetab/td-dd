@@ -60,6 +60,10 @@ defmodule TdDd.Search.Indexer do
             null_value: ""
           }
         }
+      },
+      metadata: %{
+        dynamic: true,
+        properties: %{}
       }
     }
 
