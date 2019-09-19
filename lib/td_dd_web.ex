@@ -20,9 +20,28 @@ defmodule TdDdWeb do
   def controller(log \\ :info) do
     quote bind_quoted: [log: log] do
       use Phoenix.Controller, namespace: TdDdWeb, log: log
+
       import Plug.Conn
       import TdDdWeb.Gettext
+
+      alias TdDdWeb.ErrorView
       alias TdDdWeb.Router.Helpers, as: Routes
+
+      def render_error(conn, :not_found), do: render_error(conn, :not_found, "404.json")
+      def render_error(conn, :forbidden), do: render_error(conn, :forbidden, "403.json")
+
+      def render_error(conn, :internal_server_error),
+        do: render_error(conn, :internal_server_error, "500.json")
+
+      def render_error(conn, :unprocessable_entity),
+        do: render_error(conn, :unprocessable_entity, "422.json")
+
+      defp render_error(conn, status, template) do
+        conn
+        |> put_status(status)
+        |> put_view(ErrorView)
+        |> render(template)
+      end
     end
   end
 

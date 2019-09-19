@@ -14,9 +14,6 @@ defmodule TdDdWeb.FallbackController do
   end
 
   def call(conn, {:error, :not_found}) do
-    conn
-    |> put_status(:not_found)
-    |> put_view(TdDdWeb.ErrorView)
-    |> render("404.json")
+    render_error(conn, :not_found)
   end
 end
