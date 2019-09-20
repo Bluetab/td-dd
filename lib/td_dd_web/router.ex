@@ -38,6 +38,7 @@ defmodule TdDdWeb.Router do
     resources("/comments", CommentController, except: [:new, :edit])
 
     get("/systems/:system_external_id/structures/:structure_external_id", DataStructureController, :get_structure_by_external_ids)
+    post("/profiles/upload", ProfileController, :upload)
 
     resources("/systems", SystemController, except: [:new, :edit]) do
       post("/metadata", MetadataController, :upload_by_system)

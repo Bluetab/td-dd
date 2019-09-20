@@ -80,6 +80,15 @@ defmodule TdDd.DataStructuresTest do
       data_structure = insert(:data_structure)
       assert %Ecto.Changeset{} = DataStructures.change_data_structure(data_structure)
     end
+
+    test "find_data_structure/1 returns a data structure" do
+      %{id: id, external_id: external_id} = insert(:data_structure)
+      result = DataStructures.find_data_structure(%{external_id: external_id})
+
+      assert %DataStructure{} = result
+      assert result.id == id
+      assert result.external_id == external_id
+    end
   end
 
   describe "data structure versions" do
@@ -269,6 +278,49 @@ defmodule TdDd.DataStructuresTest do
         |> Enum.reverse()
 
       assert DataStructures.get_ancestors(child) <~> parents
+    end
+  end
+
+  describe "profiles" do
+    alias TdDd.DataStructures.Profile
+
+    @valid_attrs %{value: %{}, data_structure_id: 0}
+    @update_attrs %{value: %{"foo" => "bar"}}
+    @invalid_attrs %{value: nil, data_structure_id: nil}
+
+    defp profile_fixture do
+      ds = insert(:data_structure)
+      attrs = Map.put(@valid_attrs, :data_structure_id, ds.id)
+      {:ok, structure} = DataStructures.create_profile(attrs)
+
+      structure
+    end
+
+    test "get_profile!/1 gets the profile" do
+      profile = profile_fixture()
+      assert profile.id == DataStructures.get_profile!(profile.id).id
+    end
+
+    test "create_profile/1 with valid attrs creates the profile" do
+      ds = insert(:data_structure)
+      attrs = Map.put(@valid_attrs, :data_structure_id, ds.id)
+
+      assert {:ok, %Profile{value: value, data_structure_id: ds_id}} =
+               DataStructures.create_profile(attrs)
+
+      assert ds.id == ds_id
+      assert attrs.value == value
+    end
+
+    test "create_profile/1 with invalid attrs returns an error" do
+      assert {:error, %Ecto.Changeset{}} = DataStructures.create_profile(@invalid_attrs)
+    end
+
+    test "update_profile/1 with valid attrs updates the profile" do
+      profile = profile_fixture()
+
+      assert {:ok, %Profile{value: value}} = DataStructures.update_profile(profile, @update_attrs)
+      assert @update_attrs.value == value
     end
   end
 end
