@@ -12,6 +12,7 @@ defmodule TdDd.DataStructures do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.Profile
   alias TdDd.Repo
   alias TdDd.Utils.CollectionUtils
   alias TdDfLib.Validation
@@ -129,6 +130,9 @@ defmodule TdDd.DataStructures do
     |> enrich(options, :system, fn dsv ->
       dsv |> Repo.preload(data_structure: :system) |> Map.get(:data_structure) |> Map.get(:system)
     end)
+    |> enrich(options, :profile, fn dsv ->
+      dsv |> Repo.preload(data_structure: :profile) |> Map.get(:data_structure) |> Map.get(:profile)
+    end)
     |> enrich(options, :ancestry, fn dsv -> get_ancestry(dsv) end)
     |> enrich(options, :path, fn dsv -> get_path(dsv) end)
     |> enrich(options, :links, fn %{data_structure_id: id} -> get_structure_links(id) end)
@@ -154,6 +158,7 @@ defmodule TdDd.DataStructures do
     |> with_deleted(options, dynamic([child, _parent, _rel], is_nil(child.deleted_at)))
     |> select([child, _parent, _rel], child)
     |> Repo.all()
+    |> Repo.preload(data_structure: :profile)
   end
 
   def get_children(%DataStructureVersion{id: id}, options \\ []) do
@@ -518,5 +523,99 @@ defmodule TdDd.DataStructures do
   defp with_deleted(query, _false, dynamic) do
     query
     |> where(^dynamic)
+  end
+
+  @doc """
+  Returns the list of profiles.
+
+  ## Examples
+
+      iex> list_profiles()
+      [%Profile{}, ...]
+
+  """
+  def list_profiles do
+    Repo.all(Profile)
+  end
+
+  @doc """
+  Gets a single profile.
+
+  Raises `Ecto.NoResultsError` if the Profile does not exist.
+
+  ## Examples
+
+      iex> get_profile!(123)
+      %Profile{}
+
+      iex> get_profile!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_profile!(id), do: Repo.get!(Profile, id)
+
+  @doc """
+  Creates a profile.
+
+  ## Examples
+
+      iex> create_profile(%{field: value})
+      {:ok, %Profile{}}
+
+      iex> create_profile(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_profile(attrs \\ %{}) do
+    %Profile{}
+    |> Profile.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a profile.
+
+  ## Examples
+
+      iex> update_profile(profile, %{field: new_value})
+      {:ok, %Profile{}}
+
+      iex> update_profile(profile, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_profile(%Profile{} = profile, attrs) do
+    profile
+    |> Profile.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a Profile.
+
+  ## Examples
+
+      iex> delete_profile(profile)
+      {:ok, %Profile{}}
+
+      iex> delete_profile(profile)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_profile(%Profile{} = profile) do
+    Repo.delete(profile)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking profile changes.
+
+  ## Examples
+
+      iex> change_profile(profile)
+      %Ecto.Changeset{source: %Profile{}}
+
+  """
+  def change_profile(%Profile{} = profile) do
+    Profile.changeset(profile, %{})
   end
 end

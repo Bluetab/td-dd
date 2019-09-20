@@ -4,6 +4,13 @@
 
 ### Added
 
+- [TD-2089] Profiling support for structures
+- [TD-2118] Metadata as mapping in data structures search 
+
+## [3.6.0] 2019-09-16
+
+### Added
+
 - [TD-1650] Automatic versioning of changed data structures
 - [TD-2046] Bulk update endpoint for Data Catalog extra info
 - [TD-2090] Search results and filters now use `:link_data_structure` permission instead of `:view_data_structure` depending on `referer` header

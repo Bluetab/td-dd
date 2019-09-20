@@ -6,6 +6,7 @@ defmodule TdDd.Loader.LoaderWorker do
   use GenServer
 
   alias TdDd.Loader
+  alias TdDd.ProfilingLoader
 
   require Logger
 
@@ -17,6 +18,10 @@ defmodule TdDd.Loader.LoaderWorker do
 
   def load(structures, fields, relations, audit) do
     GenServer.cast(TdDd.Loader.LoaderWorker, {:load, structures, fields, relations, audit})
+  end
+
+  def load(profiles) do
+    GenServer.cast(TdDd.Loader.LoaderWorker, {:load, profiles})
   end
 
   def ping(timeout \\ 5000) do
@@ -38,6 +43,23 @@ defmodule TdDd.Loader.LoaderWorker do
         count = Enum.count(ids)
         Logger.info("Bulk load process completed in #{ms}ms (#{count} upserts)")
         post_process(ids)
+
+      _ ->
+        Logger.warn("Bulk load failed after #{ms}")
+    end
+
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_cast({:load, profiles}, state) do
+    Logger.info("Bulk loading profiles")
+    {ms, res} = Timer.time(fn -> ProfilingLoader.load(profiles) end)
+
+    case res do
+      {:ok, ids} ->
+        count = Enum.count(ids)
+        Logger.info("Bulk load process completed in #{ms}ms (#{count} upserts)")
 
       _ ->
         Logger.warn("Bulk load failed after #{ms}")

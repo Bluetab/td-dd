@@ -43,6 +43,7 @@ defmodule TdDdWeb.Router do
       DataStructureController,
       :get_structure_by_external_ids
     )
+    post("/profiles/upload", ProfileController, :upload)
 
     resources("/systems", SystemController, except: [:new, :edit]) do
       post("/metadata", MetadataController, :upload_by_system)
