@@ -4,6 +4,7 @@
 
 ### Added
 
+- [TD-2089] Profiling support for structures
 - [TD-2118] Metadata as mapping in data structures search 
 
 ## [3.6.0] 2019-09-16
