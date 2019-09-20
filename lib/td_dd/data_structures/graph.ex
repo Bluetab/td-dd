@@ -6,23 +6,108 @@ defmodule TdDd.DataStructures.Graph do
 
   alias TdDd.DataStructures.Hasher
 
-  def new(structures, relations) do
-    graph =
-      structures
-      |> Enum.reduce(:digraph.new([:acyclic]), &add_structure/2)
+  require Logger
 
-    graph =
-      relations
-      |> Enum.reduce(graph, &add_relation/2)
+  @doc """
+  Creates a new directed acyclic graph of structures and their relations.
+  Propagates hashes bottom-up (see `TdDd.DataStructure.Hasher` for details).
+  """
+  def new(structures, relations) do
+    graph = Enum.reduce(structures, :digraph.new([:acyclic]), &add_structure/2)
+    graph = Enum.reduce(relations, graph, &add_relation/2)
 
     propagate_hashes(graph)
+  end
+
+  @doc """
+  Reads a record with a given external_id from a graph, including it's hashes in the
+  resulting struct.
+  """
+  def get(graph, external_id) do
+    case :digraph.vertex(graph, external_id) do
+      {^external_id, labels} ->
+        labels
+        |> Keyword.get(:record)
+        |> Map.put(:hash, Keyword.get(labels, :hash))
+        |> Map.put(:lhash, Keyword.get(labels, :lhash))
+        |> Map.put(:ghash, Keyword.get(labels, :ghash))
+    end
+  end
+
+  @doc """
+  Add vertices and edges to an existing digraph. This is used to recalculate
+  hashes of ancestors when a data structure ancestry is changed (i.e. when
+  it is moved from one parent to another).
+
+  The first argument is a tuple of:
+
+  `structures` - a list of tuples {external_id, struct}
+  `relations` - a list of relations %{parent_external_id, child_external_id}
+
+  The second argument is an existing digraph. Validation is performed
+  before adding the vertices to ensure that:
+
+  - the graph currently has a single arborescence root
+  - none of the vertices to add currently exists in the graph
+
+  Hashes will be propagated for any structures labeled with the label
+  :rehash set.
+  """
+  def add(records, graph)
+
+  def add(nil, graph), do: {:ok, graph}
+
+  def add({structures, relations}, graph) do
+    with {:yes, _} <- :digraph_utils.arborescence_root(graph),
+         :ok <- validate_graph(graph, structures) do
+      graph = Enum.reduce(structures, graph, &add_structure/2)
+      graph = Enum.reduce(relations, graph, &add_relation/2)
+
+      # identify vertices to be refreshed
+      to_refresh =
+        structures
+        |> Enum.filter(fn {_, record} -> Map.has_key?(record, :rehash) end)
+        |> Enum.map(fn {id, _} -> id end)
+
+      # update their hashes
+      graph
+      |> bottom_up()
+      |> Enum.filter(&Enum.member?(to_refresh, &1))
+      |> Enum.each(&propagate_hashes(&1, graph))
+
+      {:ok, graph}
+    else
+      :no -> :multiple_roots
+      e -> e
+    end
+  end
+
+  defp validate_graph(graph, structure_records) do
+    structure_records
+    |> Enum.map(fn {external_id, _} -> external_id end)
+    |> Enum.map(&:digraph.vertex(graph, &1))
+    |> Enum.find(& &1)
+    |> validate_nil()
+  end
+
+  defp validate_nil(nil), do: :ok
+
+  defp validate_nil({external_id, _labels}) do
+    Logger.warn("#{external_id} :vertex_exists")
+    raise ":vertex_exists"
+    :vertex_exists
+  end
+
+  defp bottom_up(g) do
+    g
+    |> :digraph_utils.topsort()
+    |> Enum.reverse()
   end
 
   defp propagate_hashes(g) do
     # Calculate hashes from bottom up
     g
-    |> :digraph_utils.topsort()
-    |> Enum.reverse()
+    |> bottom_up()
     |> Enum.each(&propagate_hashes(&1, g))
 
     g
@@ -70,14 +155,22 @@ defmodule TdDd.DataStructures.Graph do
     |> Hasher.hash()
   end
 
+  defp add_structure({external_id, %{} = struct}, graph) do
+    labels =
+      struct
+      |> Map.take([:hash, :lhash, :ghash, :rehash])
+      |> Map.put(:record, Hasher.to_hashable(struct))
+      |> Keyword.new()
+
+    add_vertex(external_id, graph, labels)
+  end
+
   defp add_structure(structure, graph) do
     hash = Hasher.hash(structure)
 
     structure
     |> get_id()
     |> add_vertex(graph, record: structure, hash: hash)
-
-    graph
   end
 
   defp add_relation(relation, graph) do
@@ -117,8 +210,12 @@ defmodule TdDd.DataStructures.Graph do
 
   defp add_vertex(id, graph, labels) do
     case :digraph.vertex(graph, id) do
-      false -> :digraph.add_vertex(graph, id, labels)
-      _ -> raise("duplicate")
+      false ->
+        :digraph.add_vertex(graph, id, labels)
+        graph
+
+      _ ->
+        raise("duplicate #{id}")
     end
   end
 

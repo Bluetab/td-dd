@@ -107,7 +107,9 @@ defmodule TdDd.DataStructures do
     |> enrich(options)
   end
 
-  defp enrich(nil, _), do: nil
+  defp enrich(nil = _target, _opts), do: nil
+
+  defp enrich(target, nil = _opts), do: target
 
   defp enrich(%DataStructure{} = ds, options) do
     ds
@@ -476,10 +478,12 @@ defmodule TdDd.DataStructures do
   def get_ancestors(%DataStructureVersion{parents: []}, _opts), do: []
 
   def get_ancestors(%DataStructureVersion{parents: parents}, opts) do
-    parents = case opts[:deleted] do
-      false -> Enum.reject(parents, & &1.deleted_at)
-      _ -> parents
-    end
+    parents =
+      case opts[:deleted] do
+        false -> Enum.reject(parents, & &1.deleted_at)
+        _ -> parents
+      end
+
     parents ++ Enum.flat_map(parents, &get_ancestors/1)
   end
 
@@ -522,6 +526,7 @@ defmodule TdDd.DataStructures do
     |> order_by([dsv, ds], desc: dsv.version)
     |> limit(1)
     |> Repo.one()
+    |> enrich(options[:enrich])
   end
 
   defp with_deleted(query, options, dynamic) when is_list(options) do

@@ -6,6 +6,7 @@ defmodule TdDd.Loader.LoaderWorker do
   use GenServer
 
   alias TdDd.Loader
+  alias TdDd.Repo
 
   require Logger
 
@@ -15,12 +16,18 @@ defmodule TdDd.Loader.LoaderWorker do
     GenServer.start_link(__MODULE__, nil, name: name)
   end
 
-  def load(structures, fields, relations, audit) do
-    GenServer.cast(TdDd.Loader.LoaderWorker, {:load, structures, fields, relations, audit})
+  def load(structures, fields, relations, audit, opts \\ []) do
+    case Keyword.has_key?(opts, :data_structure) do
+      nil ->
+        GenServer.cast(__MODULE__, {:load, structures, fields, relations, audit})
+
+      _ ->
+        GenServer.call(__MODULE__, {:load, structures, fields, relations, audit, opts})
+    end
   end
 
   def ping(timeout \\ 5000) do
-    GenServer.call(TdDd.Loader.LoaderWorker, :ping, timeout)
+    GenServer.call(__MODULE__, :ping, timeout)
   end
 
   @impl true
@@ -30,8 +37,24 @@ defmodule TdDd.Loader.LoaderWorker do
 
   @impl true
   def handle_cast({:load, structures, fields, relations, audit}, state) do
+    Repo.transaction(fn -> do_load(structures, fields, relations, audit) end)
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_call({:load, structures, fields, relations, audit, opts}, _from, state) do
+    reply = Repo.transaction(fn -> do_load(structures, fields, relations, audit, opts) end)
+    {:reply, reply, state}
+  end
+
+  @impl true
+  def handle_call(:ping, _from, state) do
+    {:reply, :pong, state}
+  end
+
+  defp do_load(structures, fields, relations, audit, opts \\ []) do
     Logger.info("Bulk loading data structures")
-    {ms, res} = Timer.time(fn -> Loader.load(structures, fields, relations, audit) end)
+    {ms, res} = Timer.time(fn -> Loader.load(structures, fields, relations, audit, opts) end)
 
     case res do
       {:ok, ids} ->
@@ -39,16 +62,10 @@ defmodule TdDd.Loader.LoaderWorker do
         Logger.info("Bulk load process completed in #{ms}ms (#{count} upserts)")
         post_process(ids)
 
-      _ ->
-        Logger.warn("Bulk load failed after #{ms}")
+      e ->
+        Logger.warn("Bulk load failed after #{ms}ms (#{inspect(e)})")
+        Repo.rollback(e)
     end
-
-    {:noreply, state}
-  end
-
-  @impl true
-  def handle_call(:ping, _from, state) do
-    {:reply, :pong, state}
   end
 
   defp post_process([]), do: :ok

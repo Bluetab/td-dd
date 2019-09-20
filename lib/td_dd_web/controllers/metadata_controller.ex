@@ -1,11 +1,14 @@
 defmodule TdDdWeb.MetadataController do
   use TdDdWeb, :controller
 
+  import Canada, only: [can?: 2]
+
   alias Jason, as: JSON
   alias Plug.Upload
   alias TdCache.TaxonomyCache
   alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
   alias TdDd.CSV.Reader
+  alias TdDd.DataStructures
   alias TdDd.Loader.LoaderWorker
   alias TdDd.Systems
   alias TdDd.Systems.System
@@ -22,7 +25,7 @@ defmodule TdDdWeb.MetadataController do
   def upload_by_system(conn, %{"system_id" => external_id} = params) do
     # TODO: Complete implementation once the metada is loaded by System
     with %System{id: system_id} <- Systems.get_system_by_external_id(external_id) do
-      do_upload(conn, params, system_id)
+      do_upload(conn, params, system_id: system_id)
       send_resp(conn, :accepted, "")
     else
       _ -> send_resp(conn, :not_found, JSON.encode!(%{error: "system.not_found"}))
@@ -37,40 +40,80 @@ defmodule TdDdWeb.MetadataController do
     Upload metadata:
 
       data_structures.csv: 
+          external_id: :string required structure external id (unique within system)
           name: :string required structure name
           system: :string required system name
           group: :string required group name
           type: :string required structure type
+          class: :string optional structure class (e.g. "field")
           description: :string optional structure description
-          external_id: :string optional structure external id (unique within system)
           ou: :string optional domain name
-          version: :integer optional version (defaults to 0)
           metadata: :map (headers prefixed with "m:", e.g. "m:data_type" will be loaded into this map)
       data_fields.csv:
-          name: :string required structure name
-          system: :string required system name
-          group: :string required group name
-          external_id: :string optional external id of parent structure
+          external_id: :string required external id of parent structure
           field_name: :string required field name
           description: :string optional field description
           nullable: :boolean optional field nullability
           precision: :string optional field precision
-          type: :string optional field type
-          version: :integer optional structure version (defaults to 0)
+          type: :string optional field data type
           metadata: :map (headers prefixed with "m:", e.g. "m:data_type" will be loaded into this map)
       data_structure_relations.csv:
-          system: :string required system name
-          parent_group: :string required group name of parent
-          parent_external_id: :string optional external id of parent
-          parent_name: :string optional name of parent (required if parent_external_id is absent)
-          child_group: :string required group name of child
-          child_external_id: :string optional external id of child
-          child_name: :string optional name of child (required if child_external_id is absent)
+          parent_external_id: :string required external id of parent
+          child_external_id: :string required external id of child
 
       curl -H "Content-Type: application/json" -X POST -d '{"user":{"user_name":"xxx","password":"xxx"}}' http://localhost:4001/api/sessions
-      curl -H "authorization: Bearer xxx" -F "data_structures=@data_structures.csv" -F "data_fields=@data_fields.csv"  http://localhost:4005/api/td_dd/metadata
+      curl -H "Authorization: Bearer xxx" -F "data_structures=@data_structures.csv" -F "data_fields=@data_fields.csv"  http://localhost:4005/api/data_structures/metadata
 
+      To synchronously upload metadata for a specific structure and it's children, the external_id of
+      the parent structure can be specified using the "external_id" form field. An optional "parent_external_id"
+      can also be specified, in which case the parent must aleady exist:
+
+      curl -H "Authorization: Bearer xxx" -F "data_structures=@data_structures.csv" -F "external_id=SOME_EXTERNAL_ID"  http://localhost:4005/api/data_structures/metadata
   """
+  def upload(
+        conn,
+        %{"external_id" => external_id, "parent_external_id" => parent_external_id} = params
+      ) do
+    user = conn.assigns[:current_user]
+
+    with true <- can?(user, upload(DataStructure)),
+         parent when not is_nil(parent) <-
+           DataStructures.find_data_structure(%{external_id: parent_external_id}),
+         dsv <-
+           DataStructures.get_latest_version_by_external_id(external_id,
+             deleted: true,
+             enrich: [:data_structure, :parents]
+           ),
+         {:ok, _} <-
+           do_upload(conn, params,
+             data_structure_version: dsv,
+             external_id: external_id,
+             parent_external_id: parent_external_id
+           ),
+         dsv <- DataStructures.get_latest_version_by_external_id(external_id, enrich: [:ancestry]) do
+      render(conn, "show.json", data_structure_version: dsv)
+    else
+      false -> render_error(conn, :forbidden)
+      nil -> render_error(conn, :not_found)
+      _error -> render_error(conn, :unprocessable_entity)
+    end
+  end
+
+  def upload(conn, %{"external_id" => external_id} = params) do
+    user = conn.assigns[:current_user]
+
+    with true <- can?(user, upload(DataStructure)),
+         dsv <- DataStructures.get_latest_version_by_external_id(external_id, deleted: true),
+         {:ok, _} <-
+           do_upload(conn, params, data_structure_version: dsv, external_id: external_id),
+         dsv <- DataStructures.get_latest_version_by_external_id(external_id, enrich: [:ancestry]) do
+      render(conn, "show.json", data_structure_version: dsv)
+    else
+      false -> render_error(conn, :forbidden)
+      _error -> render_error(conn, :unprocessable_entity)
+    end
+  end
+
   def upload(conn, params) do
     do_upload(conn, params)
     send_resp(conn, :accepted, "")
@@ -80,7 +123,9 @@ defmodule TdDdWeb.MetadataController do
       send_resp(conn, :unprocessable_entity, JSON.encode!(%{error: e.message}))
   end
 
-  defp do_upload(conn, params, system_id \\ nil) do
+  defp do_upload(conn, params, opts \\ []) do
+    system_id = opts[:system_id]
+
     {:ok, field_recs} = params |> Map.get("data_fields") |> parse_data_fields(system_id)
 
     {:ok, structure_recs} =
@@ -89,7 +134,7 @@ defmodule TdDdWeb.MetadataController do
     {:ok, relation_recs} =
       params |> Map.get("data_structure_relations") |> parse_data_structure_relations(system_id)
 
-    load(conn, structure_recs, field_recs, relation_recs)
+    load(conn, structure_recs, field_recs, relation_recs, opts)
   end
 
   defp parse_data_structures(nil, _), do: {:ok, []}
@@ -161,10 +206,10 @@ defmodule TdDdWeb.MetadataController do
   defp get_system_map(nil), do: Systems.get_system_name_to_id_map()
   defp get_system_map(_system_id), do: nil
 
-  defp load(conn, structure_records, field_records, relation_records) do
+  defp load(conn, structure_records, field_records, relation_records, opts) do
     user_id = GuardianPlug.current_resource(conn).id
     ts = DateTime.truncate(DateTime.utc_now(), :second)
     audit_fields = %{ts: ts, last_change_by: user_id}
-    LoaderWorker.load(structure_records, field_records, relation_records, audit_fields)
+    LoaderWorker.load(structure_records, field_records, relation_records, audit_fields, opts)
   end
 end

@@ -139,11 +139,16 @@ defmodule TdDd.DataStructures.Hasher do
 
   def hash(record, fields) when is_map(record) do
     record
+    |> to_hashable(fields)
+    |> Jason.encode!()
+    |> hash()
+  end
+
+  def to_hashable(record, fields \\ @hash_fields) do
+    record
     |> Map.take(fields)
     |> Enum.reject(fn {_, v} -> is_nil(v) end)
     |> Map.new()
-    |> Jason.encode!()
-    |> hash()
   end
 
   def hash(record) when is_map(record) do

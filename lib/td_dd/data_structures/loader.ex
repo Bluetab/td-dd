@@ -6,6 +6,7 @@ defmodule TdDd.Loader do
   import Ecto.Query, warn: false
 
   alias TdDd.DataStructures
+  alias TdDd.DataStructures.Ancestry
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
@@ -15,31 +16,29 @@ defmodule TdDd.Loader do
 
   require Logger
 
-  def load(structure_records, field_records, relation_records, audit_attrs) do
+  def load(structure_records, field_records, relation_records, audit_attrs, opts \\ []) do
     structure_count = Enum.count(structure_records)
     field_count = Enum.count(field_records)
     Logger.info("Starting bulk load (#{structure_count}SR+#{field_count}FR)")
 
-    {fields_as_structures, fields_as_relations} =
-      fields_as_structures(field_records, structure_records)
-
-    structure_records = structure_records ++ fields_as_structures
-    relation_records = relation_records ++ fields_as_relations
+    {structure_records, relation_records} =
+      FieldsAsStructures.fields_as_structures(structure_records, field_records, relation_records)
 
     graph = Graph.new(structure_records, relation_records)
 
     try do
-      Repo.transaction(fn -> do_load(structure_records, graph, audit_attrs) end)
+      case opts[:external_id]
+           |> Ancestry.get_ancestor_records(opts[:parent_external_id])
+           |> Graph.add(graph) do
+        {:ok, graph} ->
+          Repo.transaction(fn -> do_load(structure_records, graph, audit_attrs) end)
+
+        e ->
+          e
+      end
     after
       :digraph.delete(graph)
     end
-  end
-
-  defp fields_as_structures(field_records, structure_records) do
-    fields_by_parent = FieldsAsStructures.group_by_parent(field_records, structure_records)
-    fields_as_structures = FieldsAsStructures.as_structures(fields_by_parent)
-    fields_as_relations = FieldsAsStructures.as_relations(fields_by_parent)
-    {fields_as_structures, fields_as_relations}
   end
 
   defp do_load(structure_records, graph, %{ts: ts} = audit_attrs) do
@@ -49,9 +48,8 @@ defmodule TdDd.Loader do
       Logger.info("Discarded #{discard_count} structures")
     end
 
-    res = load_graph(graph, audit_attrs)
+    %{updated: updated, inserted: inserted} = load_graph(graph, audit_attrs)
 
-    %{updated: updated, inserted: inserted} = res
     Enum.uniq(updated ++ discarded ++ inserted)
   end
 
@@ -98,7 +96,7 @@ defmodule TdDd.Loader do
   end
 
   defp reduce_graph([external_id | tail], graph, audit_attrs, updated_ids, inserted_ids) do
-    attrs = to_map(graph, external_id)
+    attrs = Graph.get(graph, external_id)
     %{lhash: lhash, ghash: ghash} = attrs
 
     {tail, updated, inserted} =
@@ -109,6 +107,7 @@ defmodule TdDd.Loader do
           {tail, [], [new_version]}
 
         %{ghash: ^ghash, deleted_at: deleted_at} = current_version ->
+          Logger.debug("#{external_id} ghash unchanged (discard)")
           {:ok, updated_version} = do_update(current_version)
           tail = prune(external_id, tail, graph)
           {tail, if(is_nil(deleted_at), do: [], else: [updated_version]), []}
@@ -145,16 +144,18 @@ defmodule TdDd.Loader do
   defp insert_relations([], _graph, _audit_attrs), do: 0
 
   defp insert_relations(data_structure_ids, graph, %{ts: ts}) do
-    entries =
-      from(ds in DataStructure,
-        where: ds.id in ^data_structure_ids,
-        select: ds.external_id
-      )
-      |> Repo.all()
-      |> Enum.map(&{&1, :digraph.in_neighbours(graph, &1), :digraph.out_neighbours(graph, &1)})
-      |> Enum.flat_map(&relation_attrs(&1, ts))
-      |> Enum.uniq()
+    from(ds in DataStructure,
+      where: ds.id in ^data_structure_ids,
+      select: ds.external_id
+    )
+    |> Repo.all()
+    |> Enum.map(&{&1, :digraph.in_neighbours(graph, &1), :digraph.out_neighbours(graph, &1)})
+    |> Enum.flat_map(&relation_attrs(&1, ts))
+    |> Enum.uniq()
+    |> do_insert_relations()
+  end
 
+  defp do_insert_relations(entries) do
     entries
     |> Enum.chunk_every(1000)
     |> Enum.map(fn chunk -> Repo.insert_all(DataStructureRelation, chunk) end)
@@ -167,12 +168,12 @@ defmodule TdDd.Loader do
 
     parent_rels =
       parent_external_ids
-      |> Enum.map(&(&1 |> DataStructures.get_latest_version_by_external_id |> Map.get(:id)))
+      |> Enum.map(&(&1 |> DataStructures.get_latest_version_by_external_id() |> Map.get(:id)))
       |> Enum.map(&%{parent_id: &1, child_id: id, inserted_at: ts, updated_at: ts})
 
     child_rels =
       child_external_ids
-      |> Enum.map(&(&1 |> DataStructures.get_latest_version_by_external_id |> Map.get(:id)))
+      |> Enum.map(&(&1 |> DataStructures.get_latest_version_by_external_id() |> Map.get(:id)))
       |> Enum.map(&%{parent_id: id, child_id: &1, inserted_at: ts, updated_at: ts})
 
     parent_rels ++ child_rels
@@ -246,16 +247,5 @@ defmodule TdDd.Loader do
     %DataStructureVersion{}
     |> DataStructureVersion.changeset(attrs)
     |> Repo.insert()
-  end
-
-  defp to_map(graph, external_id) do
-    case :digraph.vertex(graph, external_id) do
-      {^external_id, labels} ->
-        labels
-        |> Keyword.get(:record)
-        |> Map.put(:hash, Keyword.get(labels, :hash))
-        |> Map.put(:lhash, Keyword.get(labels, :lhash))
-        |> Map.put(:ghash, Keyword.get(labels, :ghash))
-    end
   end
 end
