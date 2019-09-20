@@ -41,23 +41,6 @@ defmodule TdDd.Loader.LoaderWorker do
   end
 
   @impl true
-  def handle_cast({:load, structures, fields, relations, audit}, state) do
-    Repo.transaction(fn -> do_load(structures, fields, relations, audit) end)
-    {:noreply, state}
-  end
-
-  @impl true
-  def handle_call({:load, structures, fields, relations, audit, opts}, _from, state) do
-    reply = Repo.transaction(fn -> do_load(structures, fields, relations, audit, opts) end)
-    {:reply, reply, state}
-  end
-
-  @impl true
-  def handle_call(:ping, _from, state) do
-    {:reply, :pong, state}
-  end
-
-  @impl true
   def handle_cast({:profiles, profiles}, state) do
     Logger.info("Bulk loading profiles")
     {ms, res} = Timer.time(fn -> ProfilingLoader.load(profiles) end)
@@ -72,6 +55,18 @@ defmodule TdDd.Loader.LoaderWorker do
     end
 
     {:noreply, state}
+  end
+
+  @impl true
+  def handle_cast({:load, structures, fields, relations, audit}, state) do
+    Repo.transaction(fn -> do_load(structures, fields, relations, audit) end)
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_call({:load, structures, fields, relations, audit, opts}, _from, state) do
+    reply = Repo.transaction(fn -> do_load(structures, fields, relations, audit, opts) end)
+    {:reply, reply, state}
   end
 
   @impl true
@@ -93,8 +88,6 @@ defmodule TdDd.Loader.LoaderWorker do
         Logger.warn("Bulk load failed after #{ms}ms (#{inspect(e)})")
         Repo.rollback(e)
     end
-
-    {:noreply, state}
   end
 
   defp post_process([]), do: :ok
