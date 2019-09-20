@@ -18,8 +18,7 @@ config :td_dd, TdDd.Repo,
   password: "postgres",
   database: "td_dd_test",
   hostname: "postgres",
-  pool: Ecto.Adapters.SQL.Sandbox,
-  ownership_timeout: 60_000
+  pool: Ecto.Adapters.SQL.Sandbox
 
 config :td_dd, :api_services_login,
   api_username: "api-admin",
