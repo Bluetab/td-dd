@@ -12,6 +12,18 @@ defmodule TdDd.DataStructures.Ancestry do
   alias TdDd.Repo
 
   @doc """
+  For a given external_id, obtain the id of the corresponding data structure
+  and all it's descendents. Used to reindex a data structure and it's descendents
+  when it's route has been affected by a bulk upload process.
+  """
+  def get_descendent_ids(external_id) do
+    dsv = DataStructures.get_latest_version_by_external_id(external_id)
+
+    [dsv | DataStructures.get_descendents(dsv)]
+    |> Enum.map(& &1.data_structure_id)
+  end
+
+  @doc """
   Obtain structure and relation records for the current and future ancestors of a given
   external_id and parent_external_id.
   """
@@ -31,6 +43,7 @@ defmodule TdDd.DataStructures.Ancestry do
       get_new_ancestor_relations(parent_external_id, [external_id])
     ]
     |> Enum.concat()
+    |> Enum.uniq_by(fn {_, ancestor} -> ancestor.data_structure_id end)
     |> to_records(external_id, parent_external_id)
   end
 
@@ -39,7 +52,6 @@ defmodule TdDd.DataStructures.Ancestry do
       dsv
       |> DataStructures.get_ancestors()
       |> Repo.preload(:data_structure)
-      |> Enum.map(&Map.put(&1, :rehash, true))
 
     ancestors
     |> Enum.map(&get_children(&1, excludes))
@@ -87,11 +99,20 @@ defmodule TdDd.DataStructures.Ancestry do
       |> Enum.flat_map(&relation_records/1)
       |> Enum.uniq()
 
-    structure_records =
+    parents =
       children_with_ancestors
-      |> Enum.flat_map(fn {children, parent} -> [Map.put(parent, :rehash, true) | children] end)
-      |> Enum.sort_by(&(not Map.has_key?(&1, :rehash)))
-      |> Enum.uniq_by(& &1.data_structure_id)
+      |> Enum.map(fn {_, parent} -> Map.drop(parent, [:lhash, :ghash]) end)
+
+    parent_data_structure_ids = Enum.map(parents, & &1.data_structure_id)
+
+    children =
+      children_with_ancestors
+      |> Enum.flat_map(fn {children, _} -> children end)
+      |> Enum.reject(&Enum.member?(parent_data_structure_ids, &1.data_structure_id))
+
+    structure_records =
+      [parents, children]
+      |> Enum.concat()
       |> Enum.map(&structure_record/1)
 
     {structure_records, relation_records}

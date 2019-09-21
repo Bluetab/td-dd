@@ -19,6 +19,21 @@ defmodule TdDd.DataStructures.Graph do
     propagate_hashes(graph)
   end
 
+  def new(structures, relations, nil) do
+    {:ok, new(structures, relations)}
+  end
+
+  def new(structures, relations, root_id) do
+    with graph <- new(structures, relations),
+         {:yes, ^root_id} <- :digraph_utils.arborescence_root(graph) do
+      {:ok, graph}
+    else
+      {:yes, _} -> {:error, :root_mismatch}
+      :no -> {:error, :invalid_graph}
+      e -> e
+    end
+  end
+
   @doc """
   Reads a record with a given external_id from a graph, including it's hashes in the
   resulting struct.
@@ -45,28 +60,25 @@ defmodule TdDd.DataStructures.Graph do
   `relations` - a list of relations %{parent_external_id, child_external_id}
 
   The second argument is an existing digraph. Validation is performed
-  before adding the vertices to ensure that:
+  before adding the vertices to ensure that none of the vertices to add
+  currently exists in the graph
 
-  - the graph currently has a single arborescence root
-  - none of the vertices to add currently exists in the graph
-
-  Hashes will be propagated for any structures labeled with the label
-  :rehash set.
+  Hashes will be propagated for any structures without the label
+  :ghash.
   """
   def add(records, graph)
 
   def add(nil, graph), do: {:ok, graph}
 
   def add({structures, relations}, graph) do
-    with {:yes, _} <- :digraph_utils.arborescence_root(graph),
-         :ok <- validate_graph(graph, structures) do
+    with :ok <- validate_graph(graph, structures) do
       graph = Enum.reduce(structures, graph, &add_structure/2)
       graph = Enum.reduce(relations, graph, &add_relation/2)
 
       # identify vertices to be refreshed
       to_refresh =
         structures
-        |> Enum.filter(fn {_, record} -> Map.has_key?(record, :rehash) end)
+        |> Enum.reject(fn {_, record} -> Map.has_key?(record, :ghash) end)
         |> Enum.map(fn {id, _} -> id end)
 
       # update their hashes
@@ -77,7 +89,6 @@ defmodule TdDd.DataStructures.Graph do
 
       {:ok, graph}
     else
-      :no -> :multiple_roots
       e -> e
     end
   end
@@ -158,7 +169,7 @@ defmodule TdDd.DataStructures.Graph do
   defp add_structure({external_id, %{} = struct}, graph) do
     labels =
       struct
-      |> Map.take([:hash, :lhash, :ghash, :rehash])
+      |> Map.take([:hash, :lhash, :ghash])
       |> Map.put(:record, Hasher.to_hashable(struct))
       |> Keyword.new()
 

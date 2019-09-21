@@ -342,12 +342,7 @@ defmodule TdDd.LoaderTest do
 
       relation = %{
         child_external_id: "xxx",
-        child_group: "demo",
-        child_name: "xxx",
-        parent_external_id: "xxx",
-        parent_group: "demo",
-        parent_name: "xxx",
-        system_id: sys1.id
+        parent_external_id: "xxx"
       }
 
       assert_raise(RuntimeError, fn -> Loader.load([structure], [], [relation], audit()) end)

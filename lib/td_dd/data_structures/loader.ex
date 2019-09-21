@@ -24,18 +24,35 @@ defmodule TdDd.Loader do
     {structure_records, relation_records} =
       FieldsAsStructures.fields_as_structures(structure_records, field_records, relation_records)
 
+    do_load(
+      structure_records,
+      relation_records,
+      audit_attrs,
+      opts[:external_id],
+      opts[:parent_external_id]
+    )
+  end
+
+  defp do_load(structure_records, relation_records, audit_attrs, nil, nil) do
     graph = Graph.new(structure_records, relation_records)
 
     try do
-      case opts[:external_id]
-           |> Ancestry.get_ancestor_records(opts[:parent_external_id])
-           |> Graph.add(graph) do
-        {:ok, graph} ->
-          Repo.transaction(fn -> do_load(structure_records, graph, audit_attrs) end)
+      Repo.transaction(fn -> do_load(structure_records, graph, audit_attrs) end)
+    after
+      :digraph.delete(graph)
+    end
+  end
 
-        e ->
-          e
-      end
+  defp do_load(structure_records, relation_records, audit_attrs, external_id, parent_external_id) do
+    {:ok, graph} = Graph.new(structure_records, relation_records, external_id)
+
+    try do
+      {:ok, graph} =
+        external_id
+        |> Ancestry.get_ancestor_records(parent_external_id)
+        |> Graph.add(graph)
+
+      Repo.transaction(fn -> do_load(structure_records, graph, audit_attrs) end)
     after
       :digraph.delete(graph)
     end

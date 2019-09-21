@@ -5,6 +5,7 @@ defmodule TdDd.Loader.LoaderWorker do
 
   use GenServer
 
+  alias TdDd.DataStructures.Ancestry
   alias TdDd.Loader
   alias TdDd.ProfilingLoader
   alias TdDd.Repo
@@ -82,7 +83,7 @@ defmodule TdDd.Loader.LoaderWorker do
       {:ok, ids} ->
         count = Enum.count(ids)
         Logger.info("Bulk load process completed in #{ms}ms (#{count} upserts)")
-        post_process(ids)
+        post_process(ids, opts)
 
       e ->
         Logger.warn("Bulk load failed after #{ms}ms (#{inspect(e)})")
@@ -90,9 +91,19 @@ defmodule TdDd.Loader.LoaderWorker do
     end
   end
 
-  defp post_process([]), do: :ok
+  defp post_process([], _), do: :ok
 
-  defp post_process(ids) do
-    @index_worker.reindex(ids)
+  defp post_process(ids, opts) do
+    # If any ids have been returned by the bulk load process, these
+    # data structures should be reindexed. As the ancestry of a
+    # given external_id may have changed, also reindex that data structure
+    # and all it's descendents.
+    case opts[:external_id] do
+      nil -> []
+      external_id -> Ancestry.get_descendent_ids(external_id)
+    end
+    |> Enum.concat(ids)
+    |> Enum.uniq()
+    |> @index_worker.reindex()
   end
 end
