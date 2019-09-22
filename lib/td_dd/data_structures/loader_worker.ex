@@ -97,19 +97,19 @@ defmodule TdDd.Loader.LoaderWorker do
     do_post_process(ids, opts[:external_id])
   end
 
-  defp do_post_process(ids, external_id) do
+  defp do_post_process(ids, nil) do
     # If any ids have been returned by the bulk load process, these
-    # data structures should be reindexed. As the ancestry of a
-    # given external_id may have changed, also reindex that data structure
-    # and all it's descendents.
+    # data structures should be reindexed.
+    @index_worker.reindex(ids)
+  end
+
+  defp do_post_process(ids, external_id) do
+    #  As the ancestry of the loaded structure may have changed, also reindex
+    # that data structure and it's descendents.
     external_id
     |> Ancestry.get_descendent_ids()
     |> Enum.concat(ids)
     |> Enum.uniq()
     |> do_post_process(nil)
-  end
-
-  defp do_post_process(ids, nil) do
-    @index_worker.reindex(ids)
   end
 end
