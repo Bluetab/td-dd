@@ -8,6 +8,7 @@ defmodule TdDq.Rules do
   alias Ecto.Multi
   alias TdCache.ConceptCache
   alias TdCache.LinkCache
+  alias TdCache.RuleCache
   alias TdCache.TemplateCache
   alias TdDfLib.Validation
   alias TdDq.Cache.RuleLoader
@@ -258,12 +259,19 @@ defmodule TdDq.Rules do
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_rule(%Rule{} = rule) do
-    @search_service.delete_searchable(rule)
-
+  def delete_rule(%Rule{id: id} = rule) do
     rule
-    |> Rule.delete_changeset()
-    |> Repo.delete()
+      |> Rule.delete_changeset()
+      |> Repo.delete()
+      |> case do
+        {:ok, %Rule{}} ->
+           @search_service.delete_searchable(rule)
+           RuleCache.delete(id)
+
+           {:ok, %Rule{}}
+        
+        error -> error
+      end  
   end
 
   def soft_deletion(active_ids, ts \\ DateTime.utc_now()) do
@@ -280,9 +288,7 @@ defmodule TdDq.Rules do
       |> where([_, r], is_nil(r.deleted_at))
       |> where([_, r], r.business_concept_id not in ^active_ids)
 
-    queryable
-    |> Repo.all()
-    |> Enum.each(&@search_service.delete_searchable(&1))
+    rules = Repo.all(queryable)
 
     Multi.new()
     |> Multi.update_all(:soft_deleted_implementation_rules, rule_impl_queryable,
@@ -290,6 +296,14 @@ defmodule TdDq.Rules do
     )
     |> Multi.update_all(:soft_deleted_rules, queryable, set: [deleted_at: ts])
     |> Repo.transaction()
+    |> case do
+      {:ok, results} -> 
+        delete_searchables(rules)
+        delete_from_cache(rules)
+
+        {:ok, results}
+      error -> error
+    end
   end
 
   def get_rule_detail!(id) do
@@ -394,6 +408,16 @@ defmodule TdDq.Rules do
     name
     |> build_resource_map(resource_type, resource_id)
     |> Map.put("parent_key", parent_key)
+  end
+
+  defp delete_searchables(rules) do
+    Enum.map(rules, &@search_service.delete_searchable/1)
+  end
+
+  defp delete_from_cache(rules) do
+    rules
+      |> Enum.map(& &1.id)
+      |> Enum.map(&RuleCache.delete/1)
   end
 
   @doc """
