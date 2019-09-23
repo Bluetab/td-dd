@@ -172,8 +172,9 @@ defmodule TdDdWeb.DataStructureView do
   defp add_metadata(data_structure_json, data_structure) do
     case Map.get(data_structure_json, :metadata, %{}) == %{} do
       true ->
-        metadata = Map.get(data_structure, :metadata, %{})
-        Map.put(data_structure_json, :metadata, metadata)
+          data_structure
+          |> Map.get(:metadata, %{})
+          |> Map.merge(data_structure_json)
 
       false ->
         data_structure_json

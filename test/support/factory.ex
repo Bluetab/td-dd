@@ -5,6 +5,7 @@ defmodule TdDd.Factory do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.Profile
   alias TdDd.Systems.System
 
   def user_factory do
@@ -60,6 +61,13 @@ defmodule TdDd.Factory do
     %System{
       name: "My system",
       external_id: "System_ref"
+    }
+  end
+
+  def profile_factory do
+    %Profile{
+      value: %{"foo" => "bar"},
+      data_structure: build(:data_structure)
     }
   end
 

@@ -86,6 +86,16 @@ defmodule TdDd.CSV.Reader do
     |> Changeset.apply_action(:update)
   end
 
+  def changeset(record, defaults, %{value: :map} = types, required) do
+    profiling = extract_profiling(record)
+
+    {defaults, types}
+    |> Changeset.cast(record, Map.keys(types))
+    |> Changeset.change(%{value: profiling})
+    |> Changeset.validate_required(required)
+    |> Changeset.apply_action(:update)
+  end
+
   def changeset(record, defaults, types, required) do
     {defaults, types}
     |> Changeset.cast(record, Map.keys(types))
@@ -96,6 +106,12 @@ defmodule TdDd.CSV.Reader do
   def extract_meta(map) do
     map
     |> Enum.filter(fn {k, _} -> String.starts_with?(k, "m:") end)
+    |> Enum.reduce(%{}, &reduce_metadata/2)
+  end
+
+  def extract_profiling(map) do
+    map
+    |> Enum.filter(fn {k, _} -> k != "external_id" end)
     |> Enum.reduce(%{}, &reduce_metadata/2)
   end
 
