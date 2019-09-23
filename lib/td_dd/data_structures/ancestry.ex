@@ -29,8 +29,6 @@ defmodule TdDd.DataStructures.Ancestry do
   """
   def get_ancestor_records(external_id, parent_external_id)
 
-  def get_ancestor_records(nil = _external_id, nil = _parent_external_id), do: nil
-
   def get_ancestor_records(external_id, nil) do
     external_id
     |> get_current_ancestor_relations([external_id])

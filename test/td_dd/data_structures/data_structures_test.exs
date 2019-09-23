@@ -272,12 +272,20 @@ defmodule TdDd.DataStructuresTest do
     end
 
     test "get_ancestors/2 obtains all ancestors of a data structure version" do
-      [child | parents] =
+      [child | ancestors] =
         ["foo", "bar", "baz", "xyzzy"]
         |> create_hierarchy()
         |> Enum.reverse()
 
-      assert DataStructures.get_ancestors(child) <~> parents
+      assert DataStructures.get_ancestors(child) <~> ancestors
+    end
+
+    test "get_descendents/2 obtains all descendents of a data structure version" do
+      [parent | descendents] =
+        ["foo", "bar", "baz", "xyzzy"]
+        |> create_hierarchy()
+
+      assert DataStructures.get_descendents(parent) <~> descendents
     end
   end
 
