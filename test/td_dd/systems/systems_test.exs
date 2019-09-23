@@ -71,5 +71,16 @@ defmodule TdDd.SystemsTest do
       system = system_fixture()
       assert %Ecto.Changeset{} = Systems.change_system(system)
     end
+
+    test "get_system_groups_by_external_id/1 gets the system" do
+      system = system_fixture()
+      ds1 = insert(:data_structure, system_id: system.id, external_id: "external_id1")
+      ds2 = insert(:data_structure, system_id: system.id,  external_id: "external_id2")
+      insert(:data_structure_version, data_structure_id: ds1.id, version: 0, group: "group_1")
+      insert(:data_structure_version, data_structure_id: ds1.id, version: 1, group: "group_2")
+      insert(:data_structure_version, data_structure_id: ds2.id, version: 0, group: "group_1")
+      insert(:data_structure_version, data_structure_id: ds2.id, version: 1, group: "group_2")
+      assert Systems.get_system_groups_by_external_id(system.external_id) == ["group_2"]
+    end
   end
 end

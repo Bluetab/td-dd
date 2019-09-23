@@ -42,6 +42,7 @@ defmodule TdDdWeb.Router do
     resources("/systems", SystemController, except: [:new, :edit]) do
       post("/metadata", MetadataController, :upload_by_system)
       get("/structures", DataStructureController, :get_system_structures)
+      get("/groups", SystemController, :get_system_groups)
     end
 
     get("/data_structures/search/reindex_all", SearchController, :reindex_all)

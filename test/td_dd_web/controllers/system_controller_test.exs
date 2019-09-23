@@ -195,6 +195,15 @@ defmodule TdDdWeb.SystemControllerTest do
     end
   end
 
+  describe "get_system_groups" do
+    @tag authenticated_user: @admin_user_name
+    test "get_system_groups", %{conn: conn, swagger_schema: schema} do
+      conn = get(conn, Routes.system_system_path(conn, :get_system_groups, "external_id"))
+      validate_resp_schema(conn, schema, "SystemsGroupsResponse")
+      assert json_response(conn, 200)["data"] == []
+    end
+  end
+
   defp create_data_structure_and_permissions(user_id, role_name, confidential, system_id) do
     domain_name = "domain_name"
     domain_id = 1

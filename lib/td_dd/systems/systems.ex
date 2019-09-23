@@ -150,4 +150,27 @@ defmodule TdDd.Systems do
     |> Enum.map(&Map.take(&1, [:name, :id]))
     |> Enum.into(%{}, fn %{id: id, name: name} -> {name, id} end)
   end
+
+  def get_system_groups_by_external_id(external_id) do
+    external_id
+    |> get_structure_versions_from_system()
+    |> get_max_versions()
+    |> Enum.map(& &1.group)
+    |> Enum.uniq() 
+  end
+
+  defp get_structure_versions_from_system(external_id) do
+    System
+    |> where([sys], sys.external_id == ^external_id)
+    |> join(:inner, [sys], ds in assoc(sys, :data_structures))
+    |> join(:inner, [_sys, ds], dsv in assoc(ds, :versions))
+    |> select([_sys, _ds, dsv], dsv)
+    |> Repo.all()
+  end
+
+  defp get_max_versions(versions) do
+    versions
+      |> Enum.group_by(& &1.data_structure_id)
+      |> Enum.map(fn {_k, v} -> Enum.max_by(v, & &1.version) end)
+  end
 end
