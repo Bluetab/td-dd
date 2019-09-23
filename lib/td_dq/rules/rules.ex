@@ -261,17 +261,18 @@ defmodule TdDq.Rules do
   """
   def delete_rule(%Rule{id: id} = rule) do
     rule
-      |> Rule.delete_changeset()
-      |> Repo.delete()
-      |> case do
-        {:ok, %Rule{}} ->
-           @search_service.delete_searchable(rule)
-           RuleCache.delete(id)
+    |> Rule.delete_changeset()
+    |> Repo.delete()
+    |> case do
+      {:ok, %Rule{}} ->
+        @search_service.delete_searchable(rule)
+        RuleCache.delete(id)
 
-           {:ok, %Rule{}}
-        
-        error -> error
-      end  
+        {:ok, %Rule{}}
+
+      error ->
+        error
+    end
   end
 
   def soft_deletion(active_ids, ts \\ DateTime.utc_now()) do
@@ -297,12 +298,14 @@ defmodule TdDq.Rules do
     |> Multi.update_all(:soft_deleted_rules, queryable, set: [deleted_at: ts])
     |> Repo.transaction()
     |> case do
-      {:ok, results} -> 
+      {:ok, results} ->
         delete_searchables(rules)
         delete_from_cache(rules)
 
         {:ok, results}
-      error -> error
+
+      error ->
+        error
     end
   end
 
@@ -416,8 +419,8 @@ defmodule TdDq.Rules do
 
   defp delete_from_cache(rules) do
     rules
-      |> Enum.map(& &1.id)
-      |> Enum.map(&RuleCache.delete/1)
+    |> Enum.map(& &1.id)
+    |> Enum.map(&RuleCache.delete/1)
   end
 
   @doc """
