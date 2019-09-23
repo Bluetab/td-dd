@@ -19,12 +19,12 @@ defmodule TdDd.Loader.LoaderWorker do
   end
 
   def load(structures, fields, relations, audit, opts \\ []) do
-    case Keyword.has_key?(opts, :data_structure) do
-      nil ->
-        GenServer.cast(__MODULE__, {:load, structures, fields, relations, audit})
+    case Keyword.has_key?(opts, :external_id) do
+      true ->
+        GenServer.call(__MODULE__, {:load, structures, fields, relations, audit, opts})
 
       _ ->
-        GenServer.call(__MODULE__, {:load, structures, fields, relations, audit, opts})
+        GenServer.cast(__MODULE__, {:load, structures, fields, relations, audit})
     end
   end
 
