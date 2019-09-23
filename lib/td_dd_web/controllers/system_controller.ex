@@ -4,6 +4,7 @@ defmodule TdDdWeb.SystemController do
 
   alias Jason, as: JSON
   alias TdDd.Audit.AuditSupport
+  alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
   alias TdDd.Systems
   alias TdDd.Systems.System
   alias TdDdWeb.SwaggerDefinitions
@@ -122,14 +123,23 @@ defmodule TdDdWeb.SystemController do
     response(200, "OK", Schema.ref(:SystemsGroupsResponse))
     response(403, "Unauthorized")
     response(404, "Not Found")
-    
   end
 
   def get_system_groups(conn, %{"system_id" => system_external_id}) do
-    groups = Systems.get_system_groups_by_external_id(system_external_id)
-    
-    conn
-    |> put_resp_content_type("application/json", "utf-8")
-    |> send_resp(:ok, JSON.encode!(%{data: groups}))
+    user = GuardianPlug.current_resource(conn)
+
+    with true <- Map.get(user, :is_admin) do
+      groups = Systems.get_system_groups_by_external_id(system_external_id)
+
+      conn
+      |> put_resp_content_type("application/json", "utf-8")
+      |> send_resp(:ok, JSON.encode!(%{data: groups}))
+    else
+      false ->
+        conn
+        |> put_status(:forbidden)
+        |> put_view(ErrorView)
+        |> render("403.json")
+    end
   end
 end
