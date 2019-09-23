@@ -31,25 +31,26 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   def index(conn, params) do
-    user = conn.assigns[:current_user]
-
     %{results: data_structures} =
       case getOUs(params) do
-        [] -> do_index(user)
-        in_params -> do_index(user, %{"filters" => %{"ou.raw" => in_params}}, 0, 10_000)
+        [] -> do_index(conn)
+        in_params -> do_index(conn, %{"filters" => %{"ou.raw" => in_params}}, 0, 10_000)
       end
 
     render(conn, "index.json", data_structures: data_structures)
   end
 
-  defp do_index(user, search_params \\ %{}, page \\ 0, size \\ 50) do
+  defp do_index(conn, search_params \\ %{}, page \\ 0, size \\ 50) do
+    user = conn.assigns[:current_user]
+    permission = conn.assigns[:search_permission]
+
     page = search_params |> Map.get("page", page)
     size = search_params |> Map.get("size", size)
 
     search_params
     |> Map.put(:without, ["deleted_at"])
     |> Map.drop(["page", "size"])
-    |> Search.search_data_structures(user, page, size)
+    |> Search.search_data_structures(user, permission, page, size)
   end
 
   defp getOUs(params) do
@@ -259,9 +260,7 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   def search(conn, params) do
-    user = conn.assigns[:current_user]
-
-    %{results: data_structures, aggregations: aggregations, total: total} = do_index(user, params)
+    %{results: data_structures, aggregations: aggregations, total: total} = do_index(conn, params)
 
     conn
     |> put_resp_header("x-total-count", "#{total}")
@@ -280,12 +279,13 @@ defmodule TdDdWeb.DataStructureController do
 
   def get_system_structures(conn, params) do
     user = conn.assigns[:current_user]
+    permission = conn.assigns[:search_permission]
 
     %{results: data_structures, total: total} =
       params
       |> Map.put("filters", %{system_id: String.to_integer(Map.get(params, "system_id"))})
       |> Map.put(:without, ["path", "deleted_at"])
-      |> Search.search_data_structures(user, 0, 1_000)
+      |> Search.search_data_structures(user, permission, 0, 1_000)
 
     conn
     |> put_resp_header("x-total-count", "#{total}")
@@ -351,9 +351,10 @@ defmodule TdDdWeb.DataStructureController do
         }
       }) do
     user = conn.assigns[:current_user]
+    permission = conn.assigns[:search_permission]
 
     with true <- user.is_admin,
-         %{results: results} <- search_all_structures(user, search_params),
+         %{results: results} <- search_all_structures(user, permission, search_params),
          {:ok, response} <- BulkUpdate.update_all(user, results, update_attributes) do
       body = JSON.encode!(%{data: %{message: response}})
 
@@ -378,9 +379,9 @@ defmodule TdDdWeb.DataStructureController do
     end
   end
 
-  defp search_all_structures(user, params) do
+  defp search_all_structures(user, permission, params) do
     params
     |> Map.drop(["page", "size"])
-    |> Search.search_data_structures(user, 0, 10_000)
+    |> Search.search_data_structures(user, permission, 0, 10_000)
   end
 end
