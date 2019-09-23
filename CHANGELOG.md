@@ -13,6 +13,7 @@
 
 - [TD-1650] Automatic versioning of changed data structures
 - [TD-2046] Bulk update endpoint for Data Catalog extra info
+- [TD-2090] Search results and filters now use `:link_data_structure` permission instead of `:view_data_structure` depending on `referer` header
 
 ### Changed
 
