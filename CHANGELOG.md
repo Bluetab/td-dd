@@ -1,5 +1,12 @@
 # Changelog
 
+
+## [Unreleased]
+
+### Added
+
+- [TD-2084] Delete rule from cache and expose event
+
 ## [3.6.0] 2019-09-16
 
 ### Changed
