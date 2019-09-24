@@ -25,16 +25,17 @@ defmodule TdDdWeb.Router do
   scope "/api", TdDdWeb do
     pipe_through([:api, :api_secure, :api_authorized])
 
+    patch("/data_structures/metadata", MetadataController, :upload)
+    post("/data_structures/metadata", MetadataController, :upload)
+    post("/data_structures/search", DataStructureController, :search)
+    post("/data_structures/bulk_update", DataStructureController, :bulk_update)
+
     resources "/data_structures", DataStructureController, except: [:new, :edit] do
       get("/comment", CommentController, :get_comment_data_structure)
       resources("/versions", DataStructureVersionController, only: [:show])
     end
 
     resources("/data_structure_versions", DataStructureVersionController, only: [:show])
-
-    post("/data_structures/search", DataStructureController, :search)
-    post("/data_structures/metadata", MetadataController, :upload)
-    post("/data_structures/bulk_update", DataStructureController, :bulk_update)
 
     resources("/comments", CommentController, except: [:new, :edit])
 
@@ -43,6 +44,7 @@ defmodule TdDdWeb.Router do
       DataStructureController,
       :get_structure_by_external_ids
     )
+
     post("/profiles/upload", ProfileController, :upload)
 
     resources("/systems", SystemController, except: [:new, :edit]) do

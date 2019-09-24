@@ -1,12 +1,14 @@
 defmodule TdDdWeb.DataStructureVersionController do
-  require Logger
-  import Canada, only: [can?: 2]
   use TdDdWeb, :controller
   use PhoenixSwagger
+
+  import Canada, only: [can?: 2]
+
   alias Ecto
   alias TdDd.DataStructures
-  alias TdDdWeb.ErrorView
   alias TdDdWeb.SwaggerDefinitions
+
+  require Logger
 
   action_fallback(TdDdWeb.FallbackController)
 
@@ -46,10 +48,7 @@ defmodule TdDdWeb.DataStructureVersionController do
   end
 
   defp render_with_permissions(conn, _user, nil) do
-    conn
-    |> put_status(:not_found)
-    |> put_view(ErrorView)
-    |> render("404.json")
+    render_error(conn, :not_found)
   end
 
   defp render_with_permissions(conn, user, %{data_structure: data_structure} = dsv) do
@@ -62,15 +61,8 @@ defmodule TdDdWeb.DataStructureVersionController do
 
       render(conn, "show.json", data_structure_version: dsv, user_permissions: user_permissions)
     else
-      false ->
-        conn
-        |> put_status(:forbidden)
-        |> render(ErrorView, :"403")
-
-      _error ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> render(ErrorView, :"422")
+      false -> render_error(conn, :forbidden)
+      _error -> render_error(conn, :unprocessable_entity)
     end
   end
 

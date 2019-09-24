@@ -108,7 +108,9 @@ defmodule TdDd.DataStructures do
     |> enrich(options)
   end
 
-  defp enrich(nil, _), do: nil
+  defp enrich(nil = _target, _opts), do: nil
+
+  defp enrich(target, nil = _opts), do: target
 
   defp enrich(%DataStructure{} = ds, options) do
     ds
@@ -130,9 +132,7 @@ defmodule TdDd.DataStructures do
     |> enrich(options, :system, fn dsv ->
       dsv |> Repo.preload(data_structure: :system) |> Map.get(:data_structure) |> Map.get(:system)
     end)
-    |> enrich(options, :profile, fn dsv ->
-      dsv |> Repo.preload(data_structure: :profile) |> Map.get(:data_structure) |> Map.get(:profile)
-    end)
+    |> enrich(options, :profile, fn dsv -> get_profile(dsv) end)
     |> enrich(options, :ancestry, fn dsv -> get_ancestry(dsv) end)
     |> enrich(options, :path, fn dsv -> get_path(dsv) end)
     |> enrich(options, :links, fn %{data_structure_id: id} -> get_structure_links(id) end)
@@ -150,6 +150,13 @@ defmodule TdDd.DataStructures do
   defp get_target_key(:data_field_external_ids), do: :data_fields
   defp get_target_key(:data_field_links), do: :data_fields
   defp get_target_key(key), do: key
+
+  defp get_profile(%DataStructureVersion{} = dsv) do
+    dsv
+    |> Repo.preload(data_structure: :profile)
+    |> Map.get(:data_structure)
+    |> Map.get(:profile)
+  end
 
   def get_field_structures(data_structure_version, options \\ []) do
     data_structure_version
@@ -457,17 +464,38 @@ defmodule TdDd.DataStructures do
     end
   end
 
-  def get_latest_path(%DataStructure{id: id}) do
-    id
-    |> get_latest_version()
-    |> get_path()
-  end
-
   def get_path(%DataStructureVersion{} = dsv) do
     dsv
     |> get_ancestry
     |> Enum.map(& &1.name)
     |> Enum.reverse()
+  end
+
+  def get_ancestors(dsv, opts \\ [deleted: false]) do
+    get_recursive(dsv, :parents, opts)
+  end
+
+  def get_descendents(dsv, opts \\ [deleted: false]) do
+    get_recursive(dsv, :children, opts)
+  end
+
+  defp get_recursive(%DataStructureVersion{} = dsv, key, opts) do
+    case Map.get(dsv, key) do
+      %NotLoaded{} ->
+        dsv |> Repo.preload(key) |> get_recursive(key, opts)
+
+      [] ->
+        []
+
+      dsvs ->
+        dsvs =
+          case opts[:deleted] do
+            false -> Enum.reject(dsvs, & &1.deleted_at)
+            _ -> dsvs
+          end
+
+        dsvs ++ Enum.flat_map(dsvs, &get_recursive(&1, key, opts))
+    end
   end
 
   defp get_ancestry(%DataStructureVersion{parents: %NotLoaded{}} = data_structure_version) do
@@ -476,18 +504,13 @@ defmodule TdDd.DataStructures do
     |> get_ancestry
   end
 
-  defp get_ancestry(%DataStructureVersion{parents: []}) do
-    []
-  end
+  defp get_ancestry(%DataStructureVersion{parents: []}), do: []
 
   defp get_ancestry(%DataStructureVersion{parents: parents}) do
-    parent =
-      case get_first_active_parent(parents) do
-        nil -> hd(parents)
-        parent -> parent
-      end
-
-    [parent | get_ancestry(parent)]
+    case get_first_active_parent(parents) do
+      nil -> []
+      parent -> [parent | get_ancestry(parent)]
+    end
   end
 
   defp get_first_active_parent(parents) do
@@ -511,6 +534,7 @@ defmodule TdDd.DataStructures do
     |> order_by([dsv, ds], desc: dsv.version)
     |> limit(1)
     |> Repo.one()
+    |> enrich(options[:enrich])
   end
 
   defp with_deleted(query, options, dynamic) when is_list(options) do

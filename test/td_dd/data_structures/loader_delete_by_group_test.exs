@@ -3,6 +3,7 @@ defmodule TdDd.Loader.DeleteByGroupTest do
 
   alias TdDd.CSV.Reader
   alias TdDd.DataStructures
+  alias TdDd.DataStructures.Graph
   alias TdDd.Loader
 
   @structure_import_schema Application.get_env(:td_dd, :metadata)[:structure_import_schema]
@@ -15,7 +16,7 @@ defmodule TdDd.Loader.DeleteByGroupTest do
     {:ok, structures1} =
       read_structures("test/fixtures/loader/delete_by_group/structures1.csv", system_id)
 
-    {:ok, _} = Loader.load(structures1, [], [], audit())
+    {:ok, _} = Loader.load(Graph.new(), structures1, [], [], audit())
 
     {:ok, structures} =
       read_structures("test/fixtures/loader/delete_by_group/structures2.csv", system_id)
@@ -44,7 +45,7 @@ defmodule TdDd.Loader.DeleteByGroupTest do
       structures: structures
     } do
       audit = audit()
-      {:ok, data_structure_ids} = Loader.load(structures, [], [], audit)
+      {:ok, data_structure_ids} = Loader.load(Graph.new(), structures, [], [], audit)
       assert Enum.count(data_structure_ids) == 2
 
       dsvs = Enum.map(data_structure_ids, &DataStructures.get_latest_version/1)

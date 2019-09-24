@@ -74,6 +74,7 @@ defmodule TdDd.DataStructureBulkUpdateTest do
       structure1 = insert(:data_structure, external_id: "Structure1")
       _structure_version1 = insert(:data_structure_version, data_structure_id: structure1.id)
       structure_no_table = insert(:data_structure, external_id: "Structure3")
+
       _structure_version_no_table =
         insert(:data_structure_version_no_table, data_structure_id: structure_no_table.id)
 
@@ -109,7 +110,8 @@ defmodule TdDd.DataStructureBulkUpdateTest do
         }
       }
 
-      assert {:error, "Invalid template"} = BulkUpdate.update_all(user, [structure1, structure_no_table], params)
+      assert {:error, "Invalid template"} =
+               BulkUpdate.update_all(user, [structure1, structure_no_table], params)
     end
   end
 
@@ -169,7 +171,7 @@ defmodule TdDd.DataStructureBulkUpdateTest do
 
     params = %{
       "df_content" => %{
-        "Field1" => "hola solo actualiza field 1",
+        "Field1" => "hola solo actualiza field 1"
       }
     }
 
