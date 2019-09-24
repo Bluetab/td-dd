@@ -35,17 +35,19 @@ defmodule TdDq.Search do
     end
   end
 
-  # DELETE
-  def delete_searchable(searchable) do
-    index_name = searchable.__struct__.index_name()
-    response = ESClientApi.delete_content(index_name, searchable.id)
+  def delete(index_name, ids) when is_list(ids) do
+    Enum.map(ids, &delete(index_name, &1))
+  end
+
+  def delete(index_name, id) do
+    response = ESClientApi.delete_content(index_name, id)
 
     case response do
       {_, %HTTPoison.Response{status_code: 200}} ->
-        Logger.info("Item on #{index_name} deleted status 200")
+        Logger.info("Item #{id} on #{index_name} deleted status 200")
 
       {_, %HTTPoison.Response{status_code: status_code}} ->
-        Logger.error("ES: Error deleting item on #{index_name} status #{status_code}")
+        Logger.error("ES: Error deleting item #{id} on #{index_name} status #{status_code}")
 
       {:error, %HTTPoison.Error{reason: :econnrefused}} ->
         Logger.error("Error connecting to ES")

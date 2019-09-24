@@ -4,6 +4,7 @@ defmodule TdDq.Cache.RuleLoader do
   """
 
   use GenServer
+
   alias TdCache.RuleCache
   alias TdDq.Rules
 
@@ -19,6 +20,14 @@ defmodule TdDq.Cache.RuleLoader do
 
   def refresh(rule_id) do
     refresh([rule_id])
+  end
+
+  def delete(rule_ids) when is_list(rule_ids) do
+    GenServer.call(__MODULE__, {:delete, rule_ids})
+  end
+
+  def delete(rule_id) do
+    delete([rule_id])
   end
 
   @impl true
@@ -55,6 +64,17 @@ defmodule TdDq.Cache.RuleLoader do
   def handle_call({:refresh, ids}, _from, state) do
     reply = cache_rules(ids)
     {:reply, reply, state}
+  end
+
+  @impl true
+  def handle_call({:delete, ids}, _from, state) do
+    delete_count =
+      ids
+      |> Enum.map(&RuleCache.delete/1)
+      |> Enum.reject(&(&1 == {:ok, [0, 0]}))
+      |> Enum.count()
+
+    {:reply, delete_count, state}
   end
 
   def cache_rules(ids) do
