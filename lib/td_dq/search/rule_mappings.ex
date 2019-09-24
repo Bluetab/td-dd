@@ -20,7 +20,7 @@ defmodule TdDq.Search.RuleMappings do
       },
       rule_type_id: %{type: "long"},
       version: %{type: "long"},
-      name: %{type: "text", fields: %{raw: %{type: "keyword"}}},
+      name: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
       active: %{type: "boolean", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
       description: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
       deleted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
@@ -34,7 +34,7 @@ defmodule TdDq.Search.RuleMappings do
       current_business_concept_version: %{
         properties: %{
           id: %{type: "long"},
-          name: %{type: "text", fields: %{raw: %{type: "keyword"}}}
+          name: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}}
         }
       },
       updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
@@ -48,7 +48,7 @@ defmodule TdDq.Search.RuleMappings do
       rule_type: %{
         properties: %{
           id: %{type: "long"},
-          name: %{fields: %{raw: %{type: "keyword"}}, type: "text"}
+          name: %{fields: %{raw: %{type: "keyword", normalizer: "sortable"}}, type: "text"}
         }
       },
       type_params: %{

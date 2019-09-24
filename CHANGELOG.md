@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- [TD-2069] Added ES mappings for sort normalization
+
 ## [3.6.0] 2019-09-16
 
 ### Changed
