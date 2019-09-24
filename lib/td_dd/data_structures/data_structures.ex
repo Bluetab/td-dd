@@ -352,6 +352,16 @@ defmodule TdDd.DataStructures do
     end
   end
 
+  def delete_all(version_ids \\ []) do
+    resp = 
+      DataStructureVersion
+      |> where([dsv], dsv.id in ^version_ids)
+      |> update([dsv], set: [deleted_at: ^DateTime.truncate(DateTime.utc_now(), :second)])
+      |> Repo.update_all([])
+    
+    {:ok, resp}
+  end
+
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking data_structure changes.
 

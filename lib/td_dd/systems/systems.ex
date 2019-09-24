@@ -4,6 +4,8 @@ defmodule TdDd.Systems do
   """
   import Ecto.Query, warn: false
 
+  alias Ecto.Changeset
+  alias TdDd.DataStructures
   alias TdDd.Repo
   alias TdDd.Systems.System
 
@@ -151,15 +153,24 @@ defmodule TdDd.Systems do
     |> Enum.into(%{}, fn %{id: id, name: name} -> {name, id} end)
   end
 
-  def get_system_groups_by_external_id(external_id) do
+  def get_system_groups(external_id) do
     external_id
-    |> get_structure_versions_from_system()
+    |> get_structure_versions()
     |> get_max_versions()
     |> Enum.map(& &1.group)
     |> Enum.uniq() 
   end
 
-  defp get_structure_versions_from_system(external_id) do
+  def delete_structure_versions(external_id, group_name) do 
+    external_id
+    |> get_structure_versions()
+    |> get_max_versions()
+    |> Enum.filter(&(&1.group == group_name))
+    |> Enum.map(& &1.id)
+    |> DataStructures.delete_all()
+  end
+
+  defp get_structure_versions(external_id) do
     System
     |> where([sys], sys.external_id == ^external_id)
     |> join(:inner, [sys], ds in assoc(sys, :data_structures))
@@ -168,7 +179,7 @@ defmodule TdDd.Systems do
     |> Repo.all()
   end
 
-  defp get_max_versions(versions) do
+   defp get_max_versions(versions) do
     versions
       |> Enum.group_by(& &1.data_structure_id)
       |> Enum.map(fn {_k, v} -> Enum.max_by(v, & &1.version) end)
