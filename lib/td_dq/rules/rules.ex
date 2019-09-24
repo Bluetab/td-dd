@@ -4,11 +4,11 @@ defmodule TdDq.Rules do
   """
 
   import Ecto.Query, warn: false
+
   alias Ecto.Changeset
   alias Ecto.Multi
   alias TdCache.ConceptCache
   alias TdCache.LinkCache
-  alias TdCache.RuleCache
   alias TdCache.TemplateCache
   alias TdDfLib.Validation
   alias TdDq.Cache.RuleLoader
@@ -260,53 +260,56 @@ defmodule TdDq.Rules do
 
   """
   def delete_rule(%Rule{id: id} = rule) do
-    rule
-    |> Rule.delete_changeset()
-    |> Repo.delete()
-    |> case do
-      {:ok, %Rule{}} ->
-        @search_service.delete_searchable(rule)
-        RuleCache.delete(id)
-
-        {:ok, %Rule{}}
+    case do_delete_rule(rule) do
+      {:ok, rule} ->
+        RuleLoader.delete(id)
+        @search_service.delete(Rule.index_name(), id)
+        {:ok, rule}
 
       error ->
         error
     end
   end
 
+  defp do_delete_rule(%Rule{} = rule) do
+    rule
+    |> Rule.delete_changeset()
+    |> Repo.delete()
+  end
+
   def soft_deletion(active_ids, ts \\ DateTime.utc_now()) do
-    queryable =
-      Rule
-      |> where([r], not is_nil(r.business_concept_id))
-      |> where([r], is_nil(r.deleted_at))
-      |> where([r], r.business_concept_id not in ^active_ids)
-
-    rule_impl_queryable =
-      RuleImplementation
-      |> join(:inner, [ri], r in assoc(ri, :rule))
-      |> where([_, r], not is_nil(r.business_concept_id))
-      |> where([_, r], is_nil(r.deleted_at))
-      |> where([_, r], r.business_concept_id not in ^active_ids)
-
-    rules = Repo.all(queryable)
-
-    Multi.new()
-    |> Multi.update_all(:soft_deleted_implementation_rules, rule_impl_queryable,
-      set: [deleted_at: ts]
-    )
-    |> Multi.update_all(:soft_deleted_rules, queryable, set: [deleted_at: ts])
-    |> Repo.transaction()
-    |> case do
-      {:ok, results} ->
-        delete_searchables(rules)
-        delete_from_cache(rules)
+    case do_soft_deletion(active_ids, ts) do
+      {:ok, %{rules: {_, rule_ids}} = results} ->
+        RuleLoader.delete(rule_ids)
+        @search_service.delete(Rule.index_name(), rule_ids)
 
         {:ok, results}
 
       error ->
         error
     end
+  end
+
+  defp do_soft_deletion(active_ids, ts) do
+    rules_to_delete =
+      Rule
+      |> where([r], not is_nil(r.business_concept_id))
+      |> where([r], is_nil(r.deleted_at))
+      |> where([r], r.business_concept_id not in ^active_ids)
+      |> select([r], r.id)
+
+    impls_to_delete =
+      RuleImplementation
+      |> join(:inner, [ri], r in assoc(ri, :rule))
+      |> where([_, r], not is_nil(r.business_concept_id))
+      |> where([_, r], is_nil(r.deleted_at))
+      |> where([_, r], r.business_concept_id not in ^active_ids)
+      |> select([ri, _], ri.id)
+
+    Multi.new()
+    |> Multi.update_all(:impls, impls_to_delete, set: [deleted_at: ts])
+    |> Multi.update_all(:rules, rules_to_delete, set: [deleted_at: ts])
+    |> Repo.transaction()
   end
 
   def get_rule_detail!(id) do
@@ -411,16 +414,6 @@ defmodule TdDq.Rules do
     name
     |> build_resource_map(resource_type, resource_id)
     |> Map.put("parent_key", parent_key)
-  end
-
-  defp delete_searchables(rules) do
-    Enum.map(rules, &@search_service.delete_searchable/1)
-  end
-
-  defp delete_from_cache(rules) do
-    rules
-    |> Enum.map(& &1.id)
-    |> Enum.map(&RuleCache.delete/1)
   end
 
   @doc """

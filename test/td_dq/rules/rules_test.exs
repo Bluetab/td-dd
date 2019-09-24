@@ -291,8 +291,7 @@ defmodule TdDq.RulesTest do
 
       ts = DateTime.utc_now() |> DateTime.truncate(:second)
 
-      {:ok, %{soft_deleted_rules: {count, _}, soft_deleted_implementation_rules: {ri_count, _}}} =
-        Rules.soft_deletion(active_ids, ts)
+      {:ok, %{rules: {count, _}, impls: {ri_count, _}}} = Rules.soft_deletion(active_ids, ts)
 
       assert count == 4
       assert ri_count == 4
@@ -807,7 +806,13 @@ defmodule TdDq.RulesTest do
         )
 
       rule_2 =
-        insert(:rule, rule_type: rule_type, name: "Rule 2", business_concept_id: nil, minimum: 70, goal: 80)
+        insert(:rule,
+          rule_type: rule_type,
+          name: "Rule 2",
+          business_concept_id: nil,
+          minimum: 70,
+          goal: 80
+        )
 
       rule_3 =
         insert(:rule,
