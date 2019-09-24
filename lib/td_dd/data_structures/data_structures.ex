@@ -464,12 +464,6 @@ defmodule TdDd.DataStructures do
     end
   end
 
-  def get_latest_path(%DataStructure{id: id}) do
-    id
-    |> get_latest_version()
-    |> get_path()
-  end
-
   def get_path(%DataStructureVersion{} = dsv) do
     dsv
     |> get_ancestry
@@ -513,13 +507,10 @@ defmodule TdDd.DataStructures do
   defp get_ancestry(%DataStructureVersion{parents: []}), do: []
 
   defp get_ancestry(%DataStructureVersion{parents: parents}) do
-    parent =
-      case get_first_active_parent(parents) do
-        nil -> hd(parents)
-        parent -> parent
-      end
-
-    [parent | get_ancestry(parent)]
+    case get_first_active_parent(parents) do
+      nil -> []
+      parent -> [parent | get_ancestry(parent)]
+    end
   end
 
   defp get_first_active_parent(parents) do
