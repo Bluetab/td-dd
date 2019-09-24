@@ -94,7 +94,6 @@ defmodule TdDdWeb.MetadataController do
         render_error(conn, :not_found)
 
       _error ->
-        IO.inspect(_error)
         render_error(conn, :unprocessable_entity)
     end
   end
@@ -111,7 +110,6 @@ defmodule TdDdWeb.MetadataController do
         render_error(conn, :forbidden)
 
       _error ->
-        IO.inspect(_error)
         render_error(conn, :unprocessable_entity)
     end
   end
