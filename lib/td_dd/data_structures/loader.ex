@@ -16,7 +16,7 @@ defmodule TdDd.Loader do
 
   require Logger
 
-  def load(structure_records, field_records, relation_records, audit_attrs, opts \\ []) do
+  def load(graph, structure_records, field_records, relation_records, audit_attrs, opts \\ []) do
     structure_count = Enum.count(structure_records)
     field_count = Enum.count(field_records)
     Logger.info("Starting bulk load (#{structure_count}SR+#{field_count}FR)")
@@ -25,6 +25,7 @@ defmodule TdDd.Loader do
       FieldsAsStructures.fields_as_structures(structure_records, field_records, relation_records)
 
     do_load(
+      graph,
       structure_records,
       relation_records,
       audit_attrs,
@@ -33,28 +34,35 @@ defmodule TdDd.Loader do
     )
   end
 
-  defp do_load(structure_records, relation_records, audit_attrs, nil, nil) do
-    graph = Graph.new(structure_records, relation_records)
-
-    try do
-      Repo.transaction(fn -> do_load(structure_records, graph, audit_attrs) end)
-    after
-      :digraph.delete(graph)
-    end
+  defp do_load(graph, structure_records, relation_records, audit_attrs, nil, nil) do
+    {:ok, graph} = Graph.add(graph, structure_records, relation_records)
+    Repo.transaction(fn -> do_load(structure_records, graph, audit_attrs) end)
   end
 
-  defp do_load(structure_records, relation_records, audit_attrs, external_id, parent_external_id) do
-    {:ok, graph} = Graph.new(structure_records, relation_records, external_id)
+  defp do_load(
+         graph,
+         structure_records,
+         relation_records,
+         audit_attrs,
+         external_id,
+         parent_external_id
+       ) do
+    {:ok, graph} = Graph.add(graph, structure_records, relation_records)
 
-    try do
-      {:ok, graph} =
-        external_id
-        |> Ancestry.get_ancestor_records(parent_external_id)
-        |> Graph.add(graph)
+    case Graph.root(graph) do
+      ^external_id ->
+        Repo.transaction(fn ->
+          ancestor_records = Ancestry.get_ancestor_records(external_id, parent_external_id)
+          {:ok, graph} = Graph.add(graph, ancestor_records)
 
-      Repo.transaction(fn -> do_load(structure_records, graph, audit_attrs) end)
-    after
-      :digraph.delete(graph)
+          do_load(structure_records, graph, audit_attrs)
+        end)
+
+      nil ->
+        {:error, :invalid_graph}
+
+      _ ->
+        {:error, :root_mismatch}
     end
   end
 
@@ -97,13 +105,13 @@ defmodule TdDd.Loader do
 
   defp load_graph(graph, audit_attrs) do
     graph
-    |> :digraph_utils.topsort()
-    |> reduce_graph(graph, audit_attrs)
+    |> Graph.top_down()
+    |> reduce(graph, audit_attrs)
   end
 
-  defp reduce_graph(external_ids, graph, audit_attrs, updated_ids \\ [], inserted_ids \\ [])
+  defp reduce(external_ids, graph, audit_attrs, updated_ids \\ [], inserted_ids \\ [])
 
-  defp reduce_graph([], graph, audit_attrs, updated_ids, inserted_ids) do
+  defp reduce([], graph, audit_attrs, updated_ids, inserted_ids) do
     update_count = Enum.count(updated_ids)
     insert_count = Enum.count(inserted_ids)
     Logger.info("Structures loaded (inserted=#{insert_count} updated=#{update_count})")
@@ -112,7 +120,7 @@ defmodule TdDd.Loader do
     %{updated: updated_ids, inserted: inserted_ids}
   end
 
-  defp reduce_graph([external_id | tail], graph, audit_attrs, updated_ids, inserted_ids) do
+  defp reduce([external_id | tail], graph, audit_attrs, updated_ids, inserted_ids) do
     attrs = Graph.get(graph, external_id)
     %{lhash: lhash, ghash: ghash} = attrs
 
@@ -143,7 +151,7 @@ defmodule TdDd.Loader do
           {tail, [], [new_version]}
       end
 
-    reduce_graph(
+    reduce(
       tail,
       graph,
       audit_attrs,
@@ -153,7 +161,7 @@ defmodule TdDd.Loader do
   end
 
   defp prune(external_id, external_ids, graph) do
-    descendents = :digraph_utils.reachable([external_id], graph)
+    descendents = Graph.descendents(graph, external_id)
     Logger.debug("#{external_id} pruned (#{Enum.count(descendents)} descendents)")
     Enum.reject(external_ids, &Enum.member?(descendents, &1))
   end
@@ -166,7 +174,7 @@ defmodule TdDd.Loader do
       select: ds.external_id
     )
     |> Repo.all()
-    |> Enum.map(&{&1, :digraph.in_neighbours(graph, &1), :digraph.out_neighbours(graph, &1)})
+    |> Enum.map(&{&1, Graph.parents(graph, &1), Graph.children(graph, &1)})
     |> Enum.flat_map(&relation_attrs(&1, ts))
     |> Enum.uniq()
     |> do_insert_relations()

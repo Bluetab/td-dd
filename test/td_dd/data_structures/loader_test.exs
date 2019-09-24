@@ -2,6 +2,7 @@ defmodule TdDd.LoaderTest do
   use TdDd.DataCase
 
   alias TdDd.DataStructures
+  alias TdDd.DataStructures.Graph
   alias TdDd.Loader
   alias TdDd.Search.MockIndexWorker
 
@@ -173,7 +174,13 @@ defmodule TdDd.LoaderTest do
       relation_records = [r1, r2]
 
       assert {:ok, context} =
-               Loader.load(structure_records, field_records, relation_records, audit())
+               Loader.load(
+                 Graph.new(),
+                 structure_records,
+                 field_records,
+                 relation_records,
+                 audit()
+               )
     end
 
     test "load/1 with structures containing an external_id" do
@@ -279,7 +286,13 @@ defmodule TdDd.LoaderTest do
       relation_records = [r1, r2]
 
       assert {:ok, context} =
-               Loader.load(structure_records, field_records, relation_records, audit())
+               Loader.load(
+                 Graph.new(),
+                 structure_records,
+                 field_records,
+                 relation_records,
+                 audit()
+               )
     end
 
     test "load/1 allows a fields's metadata to be set and updated" do
@@ -288,13 +301,13 @@ defmodule TdDd.LoaderTest do
       structure = random_structure(system.id)
       field = structure |> random_field() |> Map.put(:metadata, %{"foo" => "bar"})
 
-      assert {:ok, [structure_id]} = Loader.load([structure], [], [], audit())
+      assert {:ok, [structure_id]} = Loader.load(Graph.new(), [structure], [], [], audit())
 
       1..5
       |> Enum.each(fn _ ->
         foo = random_string("FOO")
         field = Map.put(field, :metadata, %{"foo" => foo})
-        assert {:ok, _} = Loader.load([structure], [field], [], audit())
+        assert {:ok, _} = Loader.load(Graph.new(), [structure], [field], [], audit())
 
         %{data_fields: data_fields, children: children} =
           DataStructures.get_latest_version(structure_id, [:children, :data_fields])
@@ -313,7 +326,7 @@ defmodule TdDd.LoaderTest do
       |> Enum.each(fn _ ->
         class = random_string()
         structure = Map.put(structure, :class, class)
-        assert {:ok, _} = Loader.load([structure], [], [], audit())
+        assert {:ok, _} = Loader.load(Graph.new(), [structure], [], [], audit())
 
         assert [%{latest: %{class: ^class}}] =
                  DataStructures.list_data_structures(
@@ -345,7 +358,9 @@ defmodule TdDd.LoaderTest do
         parent_external_id: "xxx"
       }
 
-      assert_raise(RuntimeError, fn -> Loader.load([structure], [], [relation], audit()) end)
+      assert_raise(RuntimeError, fn ->
+        Loader.load(Graph.new(), [structure], [], [relation], audit())
+      end)
     end
   end
 

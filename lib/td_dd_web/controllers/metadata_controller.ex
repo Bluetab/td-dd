@@ -79,23 +79,23 @@ defmodule TdDdWeb.MetadataController do
     with true <- can?(user, upload(DataStructure)),
          parent when not is_nil(parent) <-
            DataStructures.find_data_structure(%{external_id: parent_external_id}),
-         dsv <-
-           DataStructures.get_latest_version_by_external_id(external_id,
-             deleted: true,
-             enrich: [:data_structure, :parents]
-           ),
-         {:ok, _} <-
+         :ok <-
            do_upload(conn, params,
-             data_structure_version: dsv,
              external_id: external_id,
              parent_external_id: parent_external_id
            ),
          dsv <- DataStructures.get_latest_version_by_external_id(external_id, enrich: [:ancestry]) do
       render(conn, "show.json", data_structure_version: dsv)
     else
-      false -> render_error(conn, :forbidden)
-      nil -> render_error(conn, :not_found)
-      _error -> render_error(conn, :unprocessable_entity)
+      false ->
+        render_error(conn, :forbidden)
+
+      nil ->
+        render_error(conn, :not_found)
+
+      _error ->
+        IO.inspect(_error)
+        render_error(conn, :unprocessable_entity)
     end
   end
 
@@ -103,14 +103,16 @@ defmodule TdDdWeb.MetadataController do
     user = conn.assigns[:current_user]
 
     with true <- can?(user, upload(DataStructure)),
-         dsv <- DataStructures.get_latest_version_by_external_id(external_id, deleted: true),
-         {:ok, _} <-
-           do_upload(conn, params, data_structure_version: dsv, external_id: external_id),
+         :ok <- do_upload(conn, params, external_id: external_id),
          dsv <- DataStructures.get_latest_version_by_external_id(external_id, enrich: [:ancestry]) do
       render(conn, "show.json", data_structure_version: dsv)
     else
-      false -> render_error(conn, :forbidden)
-      _error -> render_error(conn, :unprocessable_entity)
+      false ->
+        render_error(conn, :forbidden)
+
+      _error ->
+        IO.inspect(_error)
+        render_error(conn, :unprocessable_entity)
     end
   end
 

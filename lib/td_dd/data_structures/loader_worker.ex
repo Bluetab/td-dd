@@ -6,9 +6,9 @@ defmodule TdDd.Loader.LoaderWorker do
   use GenServer
 
   alias TdDd.DataStructures.Ancestry
+  alias TdDd.DataStructures.Graph
   alias TdDd.Loader
   alias TdDd.ProfilingLoader
-  alias TdDd.Repo
 
   require Logger
 
@@ -60,13 +60,13 @@ defmodule TdDd.Loader.LoaderWorker do
 
   @impl true
   def handle_cast({:load, structures, fields, relations, audit}, state) do
-    Repo.transaction(fn -> do_load(structures, fields, relations, audit) end)
+    do_load(structures, fields, relations, audit)
     {:noreply, state}
   end
 
   @impl true
   def handle_call({:load, structures, fields, relations, audit, opts}, _from, state) do
-    reply = Repo.transaction(fn -> do_load(structures, fields, relations, audit, opts) end)
+    reply = do_load(structures, fields, relations, audit, opts)
     {:reply, reply, state}
   end
 
@@ -77,17 +77,24 @@ defmodule TdDd.Loader.LoaderWorker do
 
   defp do_load(structures, fields, relations, audit, opts \\ []) do
     Logger.info("Bulk loading data structures")
-    {ms, res} = Timer.time(fn -> Loader.load(structures, fields, relations, audit, opts) end)
+    graph = Graph.new()
 
-    case res do
-      {:ok, ids} ->
-        count = Enum.count(ids)
-        Logger.info("Bulk load process completed in #{ms}ms (#{count} upserts)")
-        post_process(ids, opts)
+    try do
+      {ms, res} =
+        Timer.time(fn -> Loader.load(graph, structures, fields, relations, audit, opts) end)
 
-      e ->
-        Logger.warn("Bulk load failed after #{ms}ms (#{inspect(e)})")
-        Repo.rollback(e)
+      case res do
+        {:ok, ids} ->
+          count = Enum.count(ids)
+          Logger.info("Bulk load process completed in #{ms}ms (#{count} upserts)")
+          post_process(ids, opts)
+
+        e ->
+          Logger.warn("Bulk load failed after #{ms}ms (#{inspect(e)})")
+          e
+      end
+    after
+      Graph.delete(graph)
     end
   end
 
