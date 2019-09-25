@@ -132,16 +132,7 @@ defmodule TdDd.DataStructures do
     |> enrich(options, :system, fn dsv ->
       dsv |> Repo.preload(data_structure: :system) |> Map.get(:data_structure) |> Map.get(:system)
     end)
-<<<<<<< HEAD
-    |> enrich(options, :profile, fn dsv ->
-      dsv
-      |> Repo.preload(data_structure: :profile)
-      |> Map.get(:data_structure)
-      |> Map.get(:profile)
-    end)
-=======
     |> enrich(options, :profile, fn dsv -> get_profile(dsv) end)
->>>>>>> ac70b0487d5de22c2e52f1f271329d8f590e7aaa
     |> enrich(options, :ancestry, fn dsv -> get_ancestry(dsv) end)
     |> enrich(options, :path, fn dsv -> get_path(dsv) end)
     |> enrich(options, :links, fn %{data_structure_id: id} -> get_structure_links(id) end)
