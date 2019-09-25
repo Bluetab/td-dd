@@ -5,11 +5,9 @@ defmodule TdDq.Search.MockSearch do
   alias TdDq.Rules
   alias TdDq.Rules.Rule
 
-  def put_searchable(_something) do
-  end
+  def put_searchable(_searchable), do: :ok
 
-  def delete_searchable(_something) do
-  end
+  def delete(_index_name, _ids), do: :ok
 
   def search("quality_rule", %{query: %{bool: %{must: %{match_all: %{}}}}}) do
     Rules.list_all_rules()

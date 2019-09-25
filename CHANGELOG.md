@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- [TD-2084] Delete rule from cache and expose event
 - [TD-2069] Added ES mappings for sort normalization
 
 ## [3.6.0] 2019-09-16
