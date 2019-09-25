@@ -8,6 +8,13 @@ defmodule TdDd.Loader.FieldsAsStructures do
   @table_types ["tabl", "view"]
   @white_list_types ["Attribute", "Metric"]
 
+  def fields_as_structures(structure_records, field_records, relation_records) do
+    fields_by_parent = group_by_parent(field_records, structure_records)
+    fields_as_structures = as_structures(fields_by_parent)
+    fields_as_relations = as_relations(fields_by_parent)
+    {structure_records ++ fields_as_structures, relation_records ++ fields_as_relations}
+  end
+
   def group_by_parent(field_records, structure_records) do
     parents =
       structure_records

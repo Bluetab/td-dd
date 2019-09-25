@@ -17,6 +17,8 @@ defmodule TdDd.Search.IndexWorker do
     GenServer.cast(TdDd.Search.IndexWorker, {:reindex, :all})
   end
 
+  def reindex([]), do: :ok
+
   def reindex(ids) do
     GenServer.cast(TdDd.Search.IndexWorker, {:reindex, ids})
   end

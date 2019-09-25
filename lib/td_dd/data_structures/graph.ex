@@ -6,23 +6,168 @@ defmodule TdDd.DataStructures.Graph do
 
   alias TdDd.DataStructures.Hasher
 
-  def new(structures, relations) do
-    graph =
-      structures
-      |> Enum.reduce(:digraph.new([:acyclic]), &add_structure/2)
+  require Logger
 
-    graph =
-      relations
-      |> Enum.reduce(graph, &add_relation/2)
+  @doc """
+  Create a new directed acyclic graph (see :digraph.new/1)
+  """
+  def new(options \\ [:acyclic]) do
+    :digraph.new(options)
+  end
 
-    propagate_hashes(graph)
+  @doc """
+  Delete a digraph (see :digraph.new/1)
+  """
+  def delete(graph) do
+    :digraph.delete(graph)
+  end
+
+  @doc """
+  Returns a list of parent vertices for a given vertex
+  """
+  def parents(graph, external_id) do
+    :digraph.in_neighbours(graph, external_id)
+  end
+
+  @doc """
+  Returns a list of child vertices for a given vertex
+  """
+  def children(graph, external_id) do
+    :digraph.out_neighbours(graph, external_id)
+  end
+
+  @doc """
+  Returns a list of descendent vertices for a set of vertices
+  """
+  def descendents(graph, external_ids) when is_list(external_ids) do
+    :digraph_utils.reachable(external_ids, graph)
+  end
+
+  @doc """
+  Returns a list of descendent vertices for a given vertex
+  """
+  def descendents(graph, external_id) do
+    descendents(graph, [external_id])
+  end
+
+  @doc """
+  Returns a topological ordering of vertices in a graph (see :digraph_utils.topsort)
+  """
+  def top_down(graph) do
+    :digraph_utils.topsort(graph)
+  end
+
+  @doc """
+  Returns an inverse topological ordering of vertices in a graph (see :digraph_utils.topsort)
+  """
+  def bottom_up(graph) do
+    graph
+    |> top_down()
+    |> Enum.reverse()
+  end
+
+  @doc """
+  Returns the id of the arborescence root of a graph, or nil if the graph is not an arborescence
+  """
+  def root(graph) do
+    case :digraph_utils.arborescence_root(graph) do
+      {:yes, id} -> id
+      _ -> nil
+    end
+  end
+
+  @doc """
+  Adds structure and relation records to a directed acyclic graph.
+  Propagates hashes bottom-up (see `TdDd.DataStructure.Hasher` for details).
+  """
+  def add(graph, structures, relations) do
+    graph = Enum.reduce(structures, graph, &add_structure/2)
+    graph = Enum.reduce(relations, graph, &add_relation/2)
+    graph = propagate_hashes(graph)
+    {:ok, graph}
+  end
+
+  @doc """
+  Add vertices and edges to an existing digraph. This is used to recalculate
+  hashes of ancestors when a data structure ancestry is changed (i.e. when
+  it is moved from one parent to another).
+
+  The first argument is an existing digraph. Validation is performed
+  before adding the vertices to ensure that none of the vertices to add
+  currently exists in the graph
+
+  The second argument is a tuple of:
+
+  `structures` - a list of tuples {external_id, struct}
+  `relations` - a list of relations %{parent_external_id, child_external_id}
+
+  Hashes will be propagated for any structures without the label
+  :ghash.
+  """
+  def add(graph, records)
+
+  def add(graph, nil), do: {:ok, graph}
+
+  def add(graph, {[], []}), do: {:ok, graph}
+
+  def add(graph, {structures, relations}) do
+    with :ok <- validate_graph(graph, structures) do
+      graph = Enum.reduce(structures, graph, &add_structure/2)
+      graph = Enum.reduce(relations, graph, &add_relation/2)
+
+      # identify vertices to be refreshed
+      to_refresh =
+        structures
+        |> Enum.reject(fn {_, record} -> Map.has_key?(record, :ghash) end)
+        |> Enum.map(fn {id, _} -> id end)
+
+      # update their hashes
+      graph
+      |> bottom_up()
+      |> Enum.filter(&Enum.member?(to_refresh, &1))
+      |> Enum.each(&propagate_hashes(&1, graph))
+
+      {:ok, graph}
+    else
+      e -> e
+    end
+  end
+
+  @doc """
+  Reads a record with a given external_id from a graph, including it's hashes in the
+  resulting struct.
+  """
+  def get(graph, external_id) do
+    case :digraph.vertex(graph, external_id) do
+      {^external_id, labels} ->
+        labels
+        |> Keyword.get(:record)
+        |> Map.put(:hash, Keyword.get(labels, :hash))
+        |> Map.put(:lhash, Keyword.get(labels, :lhash))
+        |> Map.put(:ghash, Keyword.get(labels, :ghash))
+    end
+  end
+
+  defp validate_graph(graph, structure_records) do
+    structure_records
+    |> Enum.map(fn {external_id, _} -> external_id end)
+    |> Enum.map(&:digraph.vertex(graph, &1))
+    |> Enum.find(& &1)
+    |> validate_nil()
+  end
+
+  defp validate_nil(nil), do: :ok
+
+  defp validate_nil({external_id, _labels}) do
+    Logger.warn("#{external_id} :vertex_exists")
+    raise ":vertex_exists"
+    :vertex_exists
   end
 
   defp propagate_hashes(g) do
     # Calculate hashes from bottom up
     g
-    |> :digraph_utils.topsort()
-    |> Enum.reverse()
+    |> bottom_up()
     |> Enum.each(&propagate_hashes(&1, g))
 
     g
@@ -70,14 +215,22 @@ defmodule TdDd.DataStructures.Graph do
     |> Hasher.hash()
   end
 
+  defp add_structure({external_id, %{} = struct}, graph) do
+    labels =
+      struct
+      |> Map.take([:hash, :lhash, :ghash])
+      |> Map.put(:record, Hasher.to_hashable(struct))
+      |> Keyword.new()
+
+    add_vertex(external_id, graph, labels)
+  end
+
   defp add_structure(structure, graph) do
     hash = Hasher.hash(structure)
 
     structure
     |> get_id()
     |> add_vertex(graph, record: structure, hash: hash)
-
-    graph
   end
 
   defp add_relation(relation, graph) do
@@ -117,8 +270,12 @@ defmodule TdDd.DataStructures.Graph do
 
   defp add_vertex(id, graph, labels) do
     case :digraph.vertex(graph, id) do
-      false -> :digraph.add_vertex(graph, id, labels)
-      _ -> raise("duplicate")
+      false ->
+        :digraph.add_vertex(graph, id, labels)
+        graph
+
+      _ ->
+        raise("duplicate #{id}")
     end
   end
 

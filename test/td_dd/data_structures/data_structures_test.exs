@@ -1,15 +1,10 @@
 defmodule TdDd.DataStructuresTest do
-  use TdDd.DataCase
+  use TdDd.DataStructureCase
 
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
 
   import TdDd.TestOperators
-
-  setup _context do
-    system = insert(:system, id: 1)
-    {:ok, system: system}
-  end
 
   describe "data_structures" do
     @valid_attrs %{
@@ -120,9 +115,9 @@ defmodule TdDd.DataStructuresTest do
       end)
 
       assert DataStructures.get_siblings(dsv1) == []
-      assert DataStructures.get_siblings(dsv2) <~> [dsv2, dsv3]
-      assert DataStructures.get_siblings(dsv3) <~> [dsv2, dsv3]
-      assert DataStructures.get_siblings(dsv4) <~> [dsv4]
+      assert DataStructures.get_siblings(dsv2) <|> [dsv2, dsv3]
+      assert DataStructures.get_siblings(dsv3) <|> [dsv2, dsv3]
+      assert DataStructures.get_siblings(dsv4) <|> [dsv4]
     end
 
     test "delete_data_structure/1 deletes a data_structure with relations" do
@@ -162,9 +157,9 @@ defmodule TdDd.DataStructuresTest do
                DataStructures.get_data_structure_version!(dsv.id, enrich_opts)
 
       assert id == dsv.id
-      assert parents <~> [parent]
-      assert children <~> [child]
-      assert siblings <~> [dsv, sibling]
+      assert parents <|> [parent]
+      assert children <|> [child]
+      assert siblings <|> [dsv, sibling]
     end
 
     test "get_data_structure_version!/2 excludes deleted children if structure is not deleted" do
@@ -181,7 +176,7 @@ defmodule TdDd.DataStructuresTest do
       assert %{children: children} =
                DataStructures.get_data_structure_version!(dsv.id, [:children])
 
-      assert children <~> [child]
+      assert children <|> [child]
     end
 
     defp deleted_at(%{external_id: "deleted_child"}), do: DateTime.utc_now()
@@ -204,7 +199,7 @@ defmodule TdDd.DataStructuresTest do
       assert %{children: children} =
                DataStructures.get_data_structure_version!(dsv.id, [:children])
 
-      assert children <~> deleted_children
+      assert children <|> deleted_children
     end
 
     test "get_data_structure_version!/2 enriches with fields" do
@@ -218,7 +213,7 @@ defmodule TdDd.DataStructuresTest do
       assert %{data_fields: data_fields} =
                DataStructures.get_data_structure_version!(dsv.id, [:data_fields])
 
-      assert data_fields <~> fields
+      assert data_fields <|> fields
     end
 
     test "get_data_structure_version!/2 enriches with versions" do
@@ -231,7 +226,7 @@ defmodule TdDd.DataStructuresTest do
       assert %{versions: versions} =
                DataStructures.get_data_structure_version!(dsv.id, [:versions])
 
-      assert versions <~> [dsv | dsvs]
+      assert versions <|> [dsv | dsvs]
     end
 
     test "get_data_structure_version!/2 enriches with system" do
@@ -251,25 +246,14 @@ defmodule TdDd.DataStructuresTest do
     end
 
     test "get_data_structure_version!/2 enriches with ancestry and path" do
-      dsvs =
-        ["foo", "bar", "baz", "xyzzy"]
-        |> Enum.map(&insert(:data_structure, external_id: &1))
-        |> Enum.map(
-          &insert(:data_structure_version, data_structure_id: &1.id, name: &1.external_id)
-        )
-
-      dsvs
-      |> Enum.chunk_every(2, 1, :discard)
-      |> Enum.map(fn [parent, child] ->
-        insert(:data_structure_relation, parent_id: parent.id, child_id: child.id)
-      end)
+      dsvs = create_hierarchy(["foo", "bar", "baz", "xyzzy"])
 
       [child | parents] = dsvs |> Enum.reverse()
 
       assert %{ancestry: ancestry, path: path} =
                DataStructures.get_data_structure_version!(child.id, [:ancestry, :path])
 
-      assert ancestry == parents
+      assert ancestry <~> parents
       assert path == ["foo", "bar", "baz"]
     end
 
@@ -285,6 +269,23 @@ defmodule TdDd.DataStructuresTest do
 
       assert DataStructures.get_latest_version_by_external_id(external_id) <~> v3
       assert DataStructures.get_latest_version_by_external_id(external_id, deleted: false) <~> v2
+    end
+
+    test "get_ancestors/2 obtains all ancestors of a data structure version" do
+      [child | ancestors] =
+        ["foo", "bar", "baz", "xyzzy"]
+        |> create_hierarchy()
+        |> Enum.reverse()
+
+      assert DataStructures.get_ancestors(child) <~> ancestors
+    end
+
+    test "get_descendents/2 obtains all descendents of a data structure version" do
+      [parent | descendents] =
+        ["foo", "bar", "baz", "xyzzy"]
+        |> create_hierarchy()
+
+      assert DataStructures.get_descendents(parent) <~> descendents
     end
   end
 
