@@ -65,7 +65,7 @@ defmodule TdDq.Cache.RuleLoader do
   def handle_info(:clean, state) do
     {:ok, cached_ids} = RuleCache.read_rule_keys()
 
-    rule_ids = 
+    rule_ids =
       Rules.list_rules()
       |> Enum.map(& &1.id)
       |> MapSet.new()
@@ -81,7 +81,7 @@ defmodule TdDq.Cache.RuleLoader do
       |> Enum.map(&RuleCache.delete/1)
       |> Enum.reject(&(&1 == {:ok, [0, 0]}))
       |> Enum.count()
-      
+
     case count do
       0 -> Logger.debug("RuleLoader: no deleted rules")
       n -> Logger.info("RuleLoader: put #{n} rules")
