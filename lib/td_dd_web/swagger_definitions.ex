@@ -358,6 +358,21 @@ defmodule TdDdWeb.SwaggerDefinitions do
     }
   end
 
+  def group_swagger_definitions do
+    %{
+      GroupsResponse:
+        swagger_schema do
+          properties do
+            data(:array, "Group names")
+          end
+
+          example(%{
+            data: ["group 1", "group 2"]
+          })
+        end
+    }
+  end
+
   def filter_swagger_definitions do
     %{
       FilterResponse:

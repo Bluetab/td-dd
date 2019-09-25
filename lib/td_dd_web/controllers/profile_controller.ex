@@ -19,11 +19,7 @@ defmodule TdDdWeb.ProfileController do
       do_upload(profiling)
       send_resp(conn, :accepted, "")
     else
-      false ->
-          conn
-          |> put_status(:forbidden)
-          |> put_view(ErrorView)
-          |> render("403.json")
+      false -> render_error(conn, :forbidden)
     end
   rescue
     e in RuntimeError ->
@@ -39,8 +35,10 @@ defmodule TdDdWeb.ProfileController do
   defp parse_profiling(%Upload{path: path}) do
     path
     |> File.stream!()
-    |> Reader.read_csv([schema: @profiling_import_schema,
-      required: @profiling_import_required])
+    |> Reader.read_csv(
+      schema: @profiling_import_schema,
+      required: @profiling_import_required
+    )
   end
 
   defp load(recs) do
