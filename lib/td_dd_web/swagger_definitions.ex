@@ -354,12 +354,18 @@ defmodule TdDdWeb.SwaggerDefinitions do
           properties do
             data(Schema.ref(:Systems))
           end
-        end,
-      SystemsGroupsResponse:
+        end
+    }
+  end
+
+  def group_swagger_definitions do
+    %{
+      GroupsResponse:
         swagger_schema do
           properties do
             data(:array, "Group names")
           end
+
           example(%{
             data: ["group 1", "group 2"]
           })

@@ -50,8 +50,7 @@ defmodule TdDdWeb.Router do
     resources("/systems", SystemController, except: [:new, :edit]) do
       post("/metadata", MetadataController, :upload_by_system)
       get("/structures", DataStructureController, :get_system_structures)
-      get("/groups", SystemController, :get_system_groups)
-      delete("/groups/:group_name", SystemController, :delete_structure_versions)
+      resources("/groups", GroupController, only: [:index, :delete])
     end
 
     get("/data_structures/search/reindex_all", SearchController, :reindex_all)

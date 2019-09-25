@@ -75,7 +75,7 @@ defmodule TdDdWeb.DataStructureController do
 
     response(201, "OK", Schema.ref(:DataStructureResponse))
     response(400, "Client Error")
-    response(403, "Unauthorized")
+    response(403, "Forbidden")
     response(422, "Unprocessable Entity")
   end
 
@@ -113,7 +113,7 @@ defmodule TdDdWeb.DataStructureController do
 
     response(200, "OK", Schema.ref(:DataStructureResponse))
     response(400, "Client Error")
-    response(403, "Unauthorized")
+    response(403, "Forbidden")
     response(422, "Unprocessable Entity")
   end
 
@@ -179,7 +179,7 @@ defmodule TdDdWeb.DataStructureController do
 
     response(201, "OK", Schema.ref(:DataStructureResponse))
     response(400, "Client Error")
-    response(403, "Unauthorized")
+    response(403, "Forbidden")
     response(422, "Unprocessable Entity")
   end
 
@@ -223,7 +223,7 @@ defmodule TdDdWeb.DataStructureController do
 
     response(204, "No Content")
     response(400, "Client Error")
-    response(403, "Unauthorized")
+    response(403, "Forbidden")
     response(422, "Unprocessable Entity")
   end
 
@@ -303,7 +303,7 @@ defmodule TdDdWeb.DataStructureController do
 
     response(200, "OK", Schema.ref(:DataStructureResponse))
     response(400, "Client Error")
-    response(403, "Unauthorized")
+    response(403, "Forbidden")
     response(404, "Not Found")
     response(422, "Unprocessable Entity")
   end

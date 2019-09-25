@@ -2,9 +2,7 @@ defmodule TdDdWeb.SystemController do
   use TdDdWeb, :controller
   use PhoenixSwagger
 
-  alias Jason, as: JSON
   alias TdDd.Audit.AuditSupport
-  alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
   alias TdDd.Systems
   alias TdDd.Systems.System
   alias TdDdWeb.SwaggerDefinitions
@@ -34,7 +32,7 @@ defmodule TdDdWeb.SystemController do
     end
 
     response(201, "OK", Schema.ref(:SystemResponse))
-    response(403, "Unauthorized")
+    response(403, "Forbidden")
     response(404, "Not Found")
     response(422, "Unprocessable Entity")
   end
@@ -59,7 +57,7 @@ defmodule TdDdWeb.SystemController do
     end
 
     response(200, "OK", Schema.ref(:SystemResponse))
-    response(403, "Unauthorized")
+    response(403, "Forbidden")
     response(404, "Not Found")
   end
 
@@ -78,7 +76,7 @@ defmodule TdDdWeb.SystemController do
     end
 
     response(201, "OK", Schema.ref(:SystemResponse))
-    response(403, "Unauthorized")
+    response(403, "Forbidden")
     response(422, "Unprocessable Entity")
   end
 
@@ -100,7 +98,7 @@ defmodule TdDdWeb.SystemController do
     end
 
     response(204, "No Content")
-    response(403, "Unauthorized")
+    response(403, "Forbidden")
     response(422, "Unprocessable Entity")
   end
 
@@ -109,66 +107,6 @@ defmodule TdDdWeb.SystemController do
 
     with {:ok, %System{}} <- Systems.delete_system(system) do
       send_resp(conn, :no_content, "")
-    end
-  end
-
-  swagger_path :get_system_groups do
-    description("List of Systems Groups")
-    produces("application/json")
-
-    parameters do
-      external_id(:path, :integer, "External ID", required: true)
-    end
-
-    response(200, "OK", Schema.ref(:SystemsGroupsResponse))
-    response(403, "Unauthorized")
-    response(404, "Not Found")
-  end
-
-  def get_system_groups(conn, %{"system_id" => system_external_id}) do
-    user = GuardianPlug.current_resource(conn)
-
-    with true <- Map.get(user, :is_admin) do
-      groups = Systems.get_system_groups(system_external_id)
-
-      conn
-      |> put_resp_content_type("application/json", "utf-8")
-      |> send_resp(:ok, JSON.encode!(%{data: groups}))
-    else
-      false ->
-        conn
-        |> put_status(:forbidden)
-        |> put_view(ErrorView)
-        |> render("403.json")
-    end
-  end
-
-  swagger_path :delete_structure_versions do
-    description("Delete Structures Version")
-    produces("application/json")
-
-    parameters do
-      id(:path, :integer, "System ID", required: true)
-      group_name :path, :string, "Group Name", required: true
-    end
-
-    response(204, "No Content")
-    response(403, "Unauthorized")
-    response(422, "Unprocessable Entity")
-  end
-
-  def delete_structure_versions(conn, %{"system_id" => system_external_id, "group_name" => group}) do
-    user = GuardianPlug.current_resource(conn)
-
-    with true <- Map.get(user, :is_admin),
-      {:ok, _} <- Systems.delete_structure_versions(system_external_id, group) do
-      send_resp(conn, :no_content, "")
-    else
-      false ->
-        conn
-        |> put_status(:forbidden)
-        |> put_view(ErrorView)
-        |> render("403.json")
     end
   end
 end
