@@ -1,11 +1,10 @@
 # Changelog
 
-
 ## [Unreleased]
 
 ### Added
 
-- [TD-2084] Delete rule from cache and expose event
+- [TD-2084] Delete stale rules from cache and publish rule deletion events
 
 ## [3.6.0] 2019-09-16
 
