@@ -12,7 +12,6 @@ defmodule TdDdWeb.DataStructureController do
   alias TdDd.DataStructure.Search
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
-  alias TdDdWeb.ErrorView
   alias TdDdWeb.SwaggerDefinitions
 
   action_fallback(TdDdWeb.FallbackController)
@@ -99,17 +98,8 @@ defmodule TdDdWeb.DataStructureController do
       |> put_resp_header("location", Routes.data_structure_path(conn, :show, data_structure))
       |> render("show.json", data_structure: data_structure)
     else
-      false ->
-        conn
-        |> put_status(:forbidden)
-        |> put_view(ErrorView)
-        |> render("403.json")
-
-      _error ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> put_view(ErrorView)
-        |> render("422.json")
+      false -> render_error(conn, :forbidden)
+      _error -> render_error(conn, :unprocessable_entity)
     end
   end
 
@@ -160,10 +150,7 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   defp do_render_data_structure(conn, _user, nil) do
-    conn
-    |> put_status(:not_found)
-    |> put_view(ErrorView)
-    |> render("404.json")
+    render_error(conn, :not_found)
   end
 
   defp do_render_data_structure(conn, user, data_structure) do
@@ -174,24 +161,10 @@ defmodule TdDdWeb.DataStructureController do
         view_profiling_permission: can?(user, view_data_structures_profile(data_structure))
       }
 
-      render(
-        conn,
-        "show.json",
-        data_structure: data_structure,
-        user_permissions: user_permissions
-      )
+      render(conn, "show.json", data_structure: data_structure, user_permissions: user_permissions)
     else
-      false ->
-        conn
-        |> put_status(:forbidden)
-        |> put_view(ErrorView)
-        |> render("403.json")
-
-      _error ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> put_view(ErrorView)
-        |> render("422.json")
+      false -> render_error(conn, :forbidden)
+      _error -> render_error(conn, :unprocessable_entity)
     end
   end
 
@@ -232,17 +205,8 @@ defmodule TdDdWeb.DataStructureController do
       data_structure = get_data_structure(data_structure.id)
       do_render_data_structure(conn, user, data_structure)
     else
-      false ->
-        conn
-        |> put_status(:forbidden)
-        |> put_view(ErrorView)
-        |> render("403.json")
-
-      _error ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> put_view(ErrorView)
-        |> render("422.json")
+      false -> render_error(conn, :forbidden)
+      _error -> render_error(conn, :unprocessable_entity)
     end
   end
 
@@ -272,17 +236,8 @@ defmodule TdDdWeb.DataStructureController do
       AuditSupport.delete_data_structure(conn, id)
       send_resp(conn, :no_content, "")
     else
-      false ->
-        conn
-        |> put_status(:forbidden)
-        |> put_view(ErrorView)
-        |> render("403.json")
-
-      _error ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> put_view(ErrorView)
-        |> render("422.json")
+      false -> render_error(conn, :forbidden)
+      _error -> render_error(conn, :unprocessable_entity)
     end
   end
 
@@ -364,10 +319,7 @@ defmodule TdDdWeb.DataStructureController do
 
     case data_structure do
       nil ->
-        conn
-        |> put_status(:not_found)
-        |> put_view(ErrorView)
-        |> render("404.json")
+        render_error(conn, :not_found)
 
       data_structure ->
         data_structure = get_data_structure(data_structure.id)
@@ -411,10 +363,7 @@ defmodule TdDdWeb.DataStructureController do
       |> send_resp(200, body)
     else
       false ->
-        conn
-        |> put_status(:forbidden)
-        |> put_view(ErrorView)
-        |> render("403.json")
+        render_error(conn, :forbidden)
 
       {:error, error} ->
         Logger.info("While updating data structures... #{inspect(error)}")
@@ -426,11 +375,7 @@ defmodule TdDdWeb.DataStructureController do
 
       error ->
         Logger.info("Unexpected error while updating data structures... #{inspect(error)}")
-
-        conn
-        |> put_status(:unprocessable_entity)
-        |> put_view(ErrorView)
-        |> render("422.json")
+        render_error(conn, :unprocessable_entity)
     end
   end
 

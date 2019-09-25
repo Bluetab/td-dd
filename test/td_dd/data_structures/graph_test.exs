@@ -8,8 +8,7 @@ defmodule TdDd.DataStructures.GraphTest do
       external_ids = ["foo", "bar", "baz"]
       {structures, relations} = tree(external_ids)
 
-      graph = Graph.new(structures, relations)
-
+      assert {:ok, graph} = Graph.add(Graph.new(), structures, relations)
       assert :digraph.no_vertices(graph) == 3
       assert :digraph.no_edges(graph) == 2
       assert MapSet.new(:digraph.vertices(graph)) == MapSet.new(external_ids)
@@ -18,7 +17,7 @@ defmodule TdDd.DataStructures.GraphTest do
     test "new/2 does not allow cycles" do
       {structures, relations} = tree(["foo", "bar", "baz", "foo"])
 
-      assert_raise(RuntimeError, fn -> Graph.new(structures, relations) end)
+      assert_raise(RuntimeError, fn -> Graph.add(Graph.new(), structures, relations) end)
     end
   end
 

@@ -16,6 +16,7 @@ defmodule TdDd.DataStructures.Hasher do
   import Ecto.Changeset
   import Ecto.Query
 
+  alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Repo
 
@@ -25,19 +26,45 @@ defmodule TdDd.DataStructures.Hasher do
   @batch_size 1_000
 
   def start_link(_arg) do
-    Task.start_link(__MODULE__, :run, name: __MODULE__)
+    Task.start_link(__MODULE__, :run, [])
   end
 
-  def run(_options) do
-    unless Application.get_env(:td_dd, :env) == :test do
-      {ms, count} = Timer.time(fn -> hash_self(1, -1) end)
-      if count > 0, do: Logger.info("Calculated #{count} hashes in #{ms} ms")
-      {ms, count} = Timer.time(fn -> hash_local(1, -1) end)
-      if count > 0, do: Logger.info("Calculated #{count} lhashes in #{ms} ms")
-      {ms, count} = Timer.time(fn -> hash_global(1, -1) end)
-      if count > 0, do: Logger.info("Calculated #{count} ghashes in #{ms} ms")
-      Logger.info("All structures are hashed")
+  def run(options \\ []) do
+    if options[:rehash] do
+      {ms, count} = Timer.time(fn -> rehash(options[:rehash]) end)
+      if count > 0, do: Logger.info("Reset #{count} hashes in #{ms} ms")
     end
+
+    {ms, h_count} = Timer.time(fn -> hash_self(1, -1) end)
+    if h_count > 0, do: Logger.info("Calculated #{h_count} hashes in #{ms} ms")
+    {ms, l_count} = Timer.time(fn -> hash_local(1, -1) end)
+    if l_count > 0, do: Logger.info("Calculated #{l_count} lhashes in #{ms} ms")
+    {ms, g_count} = Timer.time(fn -> hash_global(1, -1) end)
+    if g_count > 0, do: Logger.info("Calculated #{g_count} ghashes in #{ms} ms")
+    Logger.info("All structures are hashed")
+    {:ok, hash: h_count, lhash: l_count, ghash: g_count}
+  end
+
+  defp rehash(%DataStructureVersion{id: id} = dsv) do
+    ancestor_ids =
+      dsv
+      |> DataStructures.get_ancestors()
+      |> Enum.map(& &1.id)
+
+    rehash([id | ancestor_ids])
+  end
+
+  defp rehash([]), do: 0
+
+  defp rehash(ids) when is_list(ids) do
+    {count, _} =
+      from(dsv in DataStructureVersion,
+        where: dsv.id in ^ids,
+        update: [set: [hash: nil, lhash: nil, ghash: nil]]
+      )
+      |> Repo.update_all([])
+
+    count
   end
 
   defp hash_self(0, acc), do: acc + 1
@@ -112,9 +139,16 @@ defmodule TdDd.DataStructures.Hasher do
 
   def hash(record, fields) when is_map(record) do
     record
-    |> Map.take(fields)
+    |> to_hashable(fields)
     |> Jason.encode!()
     |> hash()
+  end
+
+  def to_hashable(record, fields \\ @hash_fields) do
+    record
+    |> Map.take(fields)
+    |> Enum.reject(fn {_, v} -> is_nil(v) end)
+    |> Map.new()
   end
 
   def hash(record) when is_map(record) do
