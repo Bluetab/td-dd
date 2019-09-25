@@ -205,14 +205,17 @@ defmodule TdDdWeb.SystemControllerTest do
   end
 
   describe "delete_structure_versions" do
+    setup [:create_system]
     @tag authenticated_user: @admin_user_name
     test "delete_structure_versions", %{conn: conn, system: system} do
-      conn = delete(conn, Routes.system_path(conn, :delete_structure_versions, system))
+      data_structure = insert(:data_structure, system_id: system.id)
+      insert(:data_structure_version,
+        data_structure_id: data_structure.id,
+        name: data_structure.external_id,
+        group: "group_name"
+      )
+      conn = delete(conn, Routes.system_system_path(conn, :delete_structure_versions, system.external_id, "group_name"))
       assert response(conn, 204)
-
-      assert_error_sent(404, fn ->
-        get(conn, Routes.system_path(conn, :show, system))
-      end)
     end
   end
 

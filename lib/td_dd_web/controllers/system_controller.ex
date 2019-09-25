@@ -143,10 +143,24 @@ defmodule TdDdWeb.SystemController do
     end
   end
 
+  swagger_path :delete_structure_versions do
+    description("Delete Structures Version")
+    produces("application/json")
+
+    parameters do
+      id(:path, :integer, "System ID", required: true)
+      group_name :path, :string, "Group Name", required: true
+    end
+
+    response(204, "No Content")
+    response(403, "Unauthorized")
+    response(422, "Unprocessable Entity")
+  end
+
   def delete_structure_versions(conn, %{"system_id" => system_external_id, "group_name" => group}) do
     user = GuardianPlug.current_resource(conn)
 
-    with true <- Map.get(user, :is_admin,
+    with true <- Map.get(user, :is_admin),
       {:ok, _} <- Systems.delete_structure_versions(system_external_id, group) do
       send_resp(conn, :no_content, "")
     else

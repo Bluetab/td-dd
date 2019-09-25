@@ -76,7 +76,7 @@ defmodule TdDd.SystemsTest do
     test "get_system_groups/1 gets the system" do
       system = system_fixture()
       ds1 = insert(:data_structure, system_id: system.id, external_id: "external_id1")
-      ds2 = insert(:data_structure, system_id: system.id,  external_id: "external_id2")
+      ds2 = insert(:data_structure, system_id: system.id, external_id: "external_id2")
       insert(:data_structure_version, data_structure_id: ds1.id, version: 0, group: "group_1")
       insert(:data_structure_version, data_structure_id: ds1.id, version: 1, group: "group_2")
       insert(:data_structure_version, data_structure_id: ds2.id, version: 0, group: "group_1")
@@ -87,31 +87,30 @@ defmodule TdDd.SystemsTest do
     test "delete_structure_versions/2 deletes structure versions given and external_id and group_name" do
       system = system_fixture()
       ds1 = insert(:data_structure, system_id: system.id, external_id: "external_id1")
-      ds2 = insert(:data_structure, system_id: system.id,  external_id: "external_id2")
-      ds3 = insert(:data_structure, system_id: system.id,  external_id: "external_id3")
+      ds2 = insert(:data_structure, system_id: system.id, external_id: "external_id2")
+      ds3 = insert(:data_structure, system_id: system.id, external_id: "external_id3")
       insert(:data_structure_version, data_structure_id: ds1.id, version: 0, group: "group_1")
       insert(:data_structure_version, data_structure_id: ds1.id, version: 1, group: "group_2")
       insert(:data_structure_version, data_structure_id: ds2.id, version: 0, group: "group_1")
       insert(:data_structure_version, data_structure_id: ds2.id, version: 1, group: "group_2")
       insert(:data_structure_version, data_structure_id: ds3.id, version: 0, group: "group_1")
-      
-      assert {:ok, {2, _}} = Systems.delete_structure_versions(system.external_id, "group_2")
-      
-      ds1 = 
-       ds1 
-       |> Map.get(:id)
-       |> DataStructures.get_data_structure!() 
-       |> DataStructures.with_versions()
 
-      ds2 = 
-       ds2 
-       |> Map.get(:id)
-       |> DataStructures.get_data_structure!()
-       |> DataStructures.with_versions()
-       
+      assert {:ok, {2, _}} = Systems.delete_structure_versions(system.external_id, "group_2")
+
+      ds1 =
+        ds1
+        |> Map.get(:id)
+        |> DataStructures.get_data_structure!()
+        |> DataStructures.with_versions()
+
+      ds2 =
+        ds2
+        |> Map.get(:id)
+        |> DataStructures.get_data_structure!()
+        |> DataStructures.with_versions()
 
       assert not is_nil(DataStructures.get_latest_version(ds1).deleted_at)
-      assert not is_nil(DataStructures.get_latest_version(ds2).deleted_at) 
+      assert not is_nil(DataStructures.get_latest_version(ds2).deleted_at)
     end
   end
 end

@@ -131,7 +131,10 @@ defmodule TdDd.DataStructures do
       dsv |> Repo.preload(data_structure: :system) |> Map.get(:data_structure) |> Map.get(:system)
     end)
     |> enrich(options, :profile, fn dsv ->
-      dsv |> Repo.preload(data_structure: :profile) |> Map.get(:data_structure) |> Map.get(:profile)
+      dsv
+      |> Repo.preload(data_structure: :profile)
+      |> Map.get(:data_structure)
+      |> Map.get(:profile)
     end)
     |> enrich(options, :ancestry, fn dsv -> get_ancestry(dsv) end)
     |> enrich(options, :path, fn dsv -> get_path(dsv) end)
@@ -353,12 +356,12 @@ defmodule TdDd.DataStructures do
   end
 
   def delete_all(version_ids \\ []) do
-    resp = 
+    resp =
       DataStructureVersion
       |> where([dsv], dsv.id in ^version_ids)
       |> update([dsv], set: [deleted_at: ^DateTime.truncate(DateTime.utc_now(), :second)])
       |> Repo.update_all([])
-    
+
     {:ok, resp}
   end
 
