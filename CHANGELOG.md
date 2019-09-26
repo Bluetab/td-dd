@@ -2,7 +2,10 @@
 
 ## [Unreleased]
 
-- [TD-2084] Delete rule from cache and expose event
+### Added
+
+- [TD-1619] Accept ISO-8601 datetime format in rule results
+- [TD-2084] Delete stale rules from cache and publish rule deletion events
 - [TD-2069] Added ES mappings for sort normalization
 
 ## [3.6.0] 2019-09-16
@@ -13,7 +16,7 @@
 
 ### Deleted
 
-- [TD-2095] Field name from system params' path 
+- [TD-2095] Field name from system params' path
 
 ## [3.5.1] 2019-09-03
 
@@ -40,7 +43,7 @@
 
 ## [3.3.0] 2019-08-05
 
-### Added 
+### Added
 
 - [TD-1776] permission view_quality_rule
 - [TD-1560] Enriched description field in template content
@@ -49,7 +52,7 @@
 
 - [TD-1985] Type of template field user with an aggregation size of 50
 - [TD-2037] Bump cache version due to lack of performance
-  
+
 ## [3.2.0] 2019-07-24
 
 ### Changed

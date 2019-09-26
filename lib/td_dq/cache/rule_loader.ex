@@ -36,6 +36,7 @@ defmodule TdDq.Cache.RuleLoader do
     Logger.info("Running #{name}")
 
     unless Application.get_env(:td_dq, :env) == :test do
+      Process.send_after(self(), :clean, 0)
       Process.send_after(self(), :load, 0)
     end
 
@@ -55,6 +56,35 @@ defmodule TdDq.Cache.RuleLoader do
       0 -> Logger.debug("RuleLoader: no rules changed")
       1 -> Logger.info("RuleLoader: put 1 rule")
       n -> Logger.info("RuleLoader: put #{n} rules")
+    end
+
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info(:clean, state) do
+    rule_ids =
+      Rules.list_rules()
+      |> Enum.map(&Integer.to_string(&1.id))
+      |> MapSet.new()
+
+    count =
+      case RuleCache.keys() do
+        {:ok, keys} ->
+          keys
+          |> MapSet.new(&String.replace_leading(&1, "rule:", ""))
+          |> MapSet.difference(rule_ids)
+          |> Enum.map(&RuleCache.delete/1)
+          |> Enum.count()
+
+        _ ->
+          :error
+      end
+
+    case count do
+      :error -> Logger.warn("RuleLoader: error reading keys from cache")
+      0 -> Logger.debug("RuleLoader: no stale rules in cache")
+      n -> Logger.info("RuleLoader: deleted #{n} stale rules from cache")
     end
 
     {:noreply, state}
