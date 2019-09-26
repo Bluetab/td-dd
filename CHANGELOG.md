@@ -4,6 +4,7 @@
 
 ### Added
 
+- [TD-1619] Accept ISO-8601 datetime format in rule results
 - [TD-2084] Delete stale rules from cache and publish rule deletion events
 
 ## [3.6.0] 2019-09-16

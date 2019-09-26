@@ -70,40 +70,12 @@ defmodule TdDqWeb.RuleResultController do
     Logger.info("Uploading rule results...")
 
     rules_results
-    |> Enum.map(&format_date/1)
     |> Enum.map(&with_parent_domains/1)
-    |> Enum.map(&to_map/1)
     |> Enum.map(&Rules.create_rule_result/1)
-  end
-
-  defp format_date(data) do
-    %{
-      data
-      | "date" =>
-          Timex.to_datetime(Timex.parse!(Map.get(data, "date"), "{YYYY}-{0M}-{D}-{h24}-{m}-{s}"))
-    }
   end
 
   defp with_parent_domains(data) do
     Map.put(data, "parent_domains", get_parent_domains(data))
-  end
-
-  defp to_map(data) do
-    impl_key = Map.get(data, "implementation_key")
-    date = Map.get(data, "date")
-    result = Map.get(data, "result")
-    parent_domains = Map.get(data, "parent_domains")
-    errors = Map.get(data, "errors")
-    records = Map.get(data, "records")
-
-    %{
-      implementation_key: impl_key,
-      date: date,
-      result: result,
-      parent_domains: parent_domains,
-      errors: errors,
-      records: records
-    }
   end
 
   # TODO: Remove this form here. Remove parent domains from rule_result table
