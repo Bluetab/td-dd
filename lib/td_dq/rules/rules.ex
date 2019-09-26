@@ -20,8 +20,6 @@ defmodule TdDq.Rules do
 
   require Logger
 
-  @datetime_format "%Y-%m-%d %H:%M:%S"
-  @date_format "%Y-%m-%d"
   @search_service Application.get_env(:td_dq, :elasticsearch)[:search_service]
 
   @doc """
@@ -896,7 +894,7 @@ defmodule TdDq.Rules do
   defp add_type_params_validations(changeset, %{"name" => name, "type" => "date"}) do
     field = String.to_atom(name)
 
-    case parse_date(Changeset.get_field(changeset, field), :error) do
+    case Date.from_iso8601(Changeset.get_field(changeset, field)) do
       {:ok, _} -> changeset
       _ -> Changeset.add_error(changeset, field, "cast.date")
     end
@@ -905,37 +903,17 @@ defmodule TdDq.Rules do
   defp add_type_params_validations(changeset, _), do: changeset
 
   defp parse_date(value, error_code) do
-    case binary_to_date(value) do
-      {:ok, date} ->
-        {:ok, date}
-
-      _ ->
-        case binary_to_datetime(value) do
-          {:ok, datetime} -> {:ok, datetime}
-          _ -> {:error, error_code}
-        end
+    case Date.from_iso8601(value) do
+      {:ok, date} -> {:ok, date}
+      _ -> {:error, error_code}
     end
   end
 
   defp validate_date_range(from, to) do
-    case DateTime.compare(from, to) do
+    case Date.compare(from, to) do
       :lt -> {:ok}
       :eq -> {:ok}
       :gt -> {:error, :invalid_range}
-    end
-  end
-
-  defp binary_to_date(value) do
-    case Timex.parse(value, @date_format, :strftime) do
-      {:ok, date} -> {:ok, Timex.to_datetime(date)}
-      _ -> {:error}
-    end
-  end
-
-  defp binary_to_datetime(value) do
-    case Timex.parse(value, @datetime_format, :strftime) do
-      {:ok, date} -> {:ok, Timex.to_datetime(date)}
-      _ -> {:error}
     end
   end
 
