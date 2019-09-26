@@ -1,10 +1,10 @@
 defmodule TdDd.SystemsTest do
   use TdDd.DataCase
 
-  describe "systems" do
-    alias TdDd.Systems
-    alias TdDd.Systems.System
+  alias TdDd.Systems
+  alias TdDd.Systems.System
 
+  describe "systems" do
     @valid_attrs %{external_id: "some external_id", name: "some name"}
     @update_attrs %{external_id: "some updated external_id", name: "some updated name"}
     @invalid_attrs %{external_id: nil, name: nil}

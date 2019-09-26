@@ -32,7 +32,7 @@ defmodule TdDdWeb.SystemController do
     end
 
     response(201, "OK", Schema.ref(:SystemResponse))
-    response(403, "Unauthorized")
+    response(403, "Forbidden")
     response(404, "Not Found")
     response(422, "Unprocessable Entity")
   end
@@ -57,7 +57,7 @@ defmodule TdDdWeb.SystemController do
     end
 
     response(200, "OK", Schema.ref(:SystemResponse))
-    response(403, "Unauthorized")
+    response(403, "Forbidden")
     response(404, "Not Found")
   end
 
@@ -76,7 +76,7 @@ defmodule TdDdWeb.SystemController do
     end
 
     response(201, "OK", Schema.ref(:SystemResponse))
-    response(403, "Unauthorized")
+    response(403, "Forbidden")
     response(422, "Unprocessable Entity")
   end
 
@@ -98,7 +98,7 @@ defmodule TdDdWeb.SystemController do
     end
 
     response(204, "No Content")
-    response(403, "Unauthorized")
+    response(403, "Forbidden")
     response(422, "Unprocessable Entity")
   end
 

@@ -27,7 +27,7 @@ defmodule TdDdWeb.DataStructureVersionController do
 
     response(200, "OK", Schema.ref(:DataStructureVersionResponse))
     response(400, "Client Error")
-    response(403, "Unauthorized")
+    response(403, "Forbidden")
     response(422, "Unprocessable Entity")
   end
 
