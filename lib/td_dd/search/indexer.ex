@@ -23,15 +23,15 @@ defmodule TdDd.Search.Indexer do
 
     mapping_type = %{
       id: %{type: "long", index: false},
-      name: %{type: "text", boost: 2, fields: %{raw: %{type: "keyword"}}},
+      name: %{type: "text", boost: 2, fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
       system: %{
         properties: %{
           id: %{type: "long", index: false},
           external_id: %{type: "text", fields: %{raw: %{type: "keyword"}}},
-          name: %{type: "text", fields: %{raw: %{type: "keyword"}}}
+          name: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}}
         }
       },
-      group: %{type: "text", fields: %{raw: %{type: "keyword"}}},
+      group: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
       ou: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
       type: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
       confidential: %{type: "boolean", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
@@ -65,7 +65,7 @@ defmodule TdDd.Search.Indexer do
 
     settings = %{
       analysis: %{
-        normalizer: %{sortable: %{type: "custom", char_filter: [], filter: ["asciifolding"]}}
+        normalizer: %{sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}}
       }
     }
 

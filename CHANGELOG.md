@@ -8,6 +8,7 @@
 - [TD-2077] Support synchronous metadata upload for a specific data structure
 - [TD-2089] Profiling support for structures
 - [TD-2118] Metadata as mapping in data structures search
+- [TD-2068] Use sortable normalizer for some fields in ES mappings
 
 ## [3.6.0] 2019-09-16
 
