@@ -5,13 +5,12 @@ defmodule TdDqWeb.RuleResultController do
   alias TdCache.ConceptCache
   alias TdCache.RuleResultCache
   alias TdCache.TaxonomyCache
+  alias TdDq.Cache.RuleLoader
   alias TdDq.Cache.RuleResultLoader
   alias TdDq.Repo
   alias TdDq.Rules
 
   require Logger
-
-  @search_service Application.get_env(:td_dq, :elasticsearch)[:search_service]
 
   # TODO: tets this
   def upload(conn, params) do
@@ -63,7 +62,8 @@ defmodule TdDqWeb.RuleResultController do
     end)
     |> Enum.filter(&(not is_nil(&1)))
     |> Enum.uniq_by(fn %{id: id} -> id end)
-    |> Enum.map(&@search_service.put_searchable(&1))
+    |> Enum.map(& &1.id)
+    |> RuleLoader.refresh()
   end
 
   defp upload_in_transaction(rules_results) do

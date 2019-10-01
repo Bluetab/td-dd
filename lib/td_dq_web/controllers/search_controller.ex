@@ -5,7 +5,6 @@ defmodule TdDqWeb.SearchController do
   import Canada, only: [can?: 2]
   alias TdDq.Accounts.User
   alias TdDq.Rules
-  alias TdDq.Rules.Rule
   alias TdDq.Rules.Search
   alias TdDq.Search.IndexWorker
 
@@ -20,9 +19,7 @@ defmodule TdDqWeb.SearchController do
   end
 
   def reindex_all(conn, _params) do
-    rules = Rules.list_all_rules()
-    index_name = Rule.index_name()
-    IndexWorker.reindex(index_name, rules)
+    IndexWorker.reindex(:all)
     send_resp(conn, :accepted, "")
   end
 
