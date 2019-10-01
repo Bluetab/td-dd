@@ -18,6 +18,7 @@ defmodule TdDq.Search.RuleMappings do
           name: %{type: "text", fields: %{raw: %{type: "keyword"}}}
         }
       },
+      users_roles: %{fields: %{raw: %{type: "keyword", normalizer: "sortable"}}, type: "text"},
       rule_type_id: %{type: "long"},
       version: %{type: "long"},
       name: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
