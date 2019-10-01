@@ -148,8 +148,8 @@ defmodule TdDq.Rules do
         |> Repo.preload(:rule_type)
         |> preload_bc_version
 
-      @search_service.put_searchable(rule)
       RuleLoader.refresh(Map.get(rule, :id))
+
       {:ok, rule}
     else
       error -> error
@@ -237,7 +237,6 @@ defmodule TdDq.Rules do
         |> Repo.preload(:rule_type)
         |> preload_bc_version
 
-      @search_service.put_searchable(rule)
       RuleLoader.refresh(Map.get(rule, :id))
       {:ok, rule}
     else

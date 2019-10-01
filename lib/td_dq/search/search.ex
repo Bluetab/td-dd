@@ -6,12 +6,34 @@ defmodule TdDq.Search do
   alias Jason, as: JSON
   alias TdDq.ESClientApi
 
+  alias Elasticsearch.Index.Bulk
+  alias TdDq.Rules.Indexable
+  alias TdDq.Search.Cluster
+
   require Logger
 
-  def put_bulk_search(items) do
-    items
-    |> Enum.chunk_every(100)
-    |> Enum.map(&ESClientApi.bulk_index_content/1)
+  @index "rules"
+
+  def put_bulk_search(:rule) do
+    Elasticsearch.Index.hot_swap(Cluster, @index)
+  end
+
+  def put_bulk_search(rules, :rule) do
+    bulk =
+      rules
+      |> Enum.map(&Bulk.encode!(Cluster, &1, @index, "index"))
+      |> Enum.join("")
+
+    Elasticsearch.post(Cluster, "/#{@index}/_doc/_bulk", bulk)
+  end
+
+  def put_bulk_delete(ids, :rule) do
+    bulk =
+      ids 
+      |> Enum.map(&Bulk.encode!(Cluster, %Indexable{id: &1}, @index, "delete"))
+      |> Enum.join("")
+
+    Elasticsearch.post(Cluster, "/#{@index}/_doc/_bulk", bulk)
   end
 
   # CREATE AND UPDATE

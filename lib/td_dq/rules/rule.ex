@@ -105,69 +105,6 @@ defmodule TdDq.Rules.Rule do
     end
   end
 
-  def search_fields(%Rule{} = rule) do
-    template =
-      case TemplateCache.get_by_name!(rule.df_name) do
-        nil -> %{content: []}
-        template -> template
-      end
-
-    updated_by =
-      case UserCache.get(rule.updated_by) do
-        {:ok, nil} -> %{}
-        {:ok, user} -> user
-      end
-
-    df_content =
-      rule
-      |> Map.get(:df_content)
-      |> Format.search_values(template)
-
-    rule_type = Map.take(rule.rule_type, [:id, :name, :params])
-
-    current_business_concept_version =
-      Map.get(rule, :current_business_concept_version, %{name: ""})
-
-    domain_ids = get_domain_ids(rule)
-
-    domain_parents =
-      case domain_ids do
-        -1 -> []
-        _ -> Enum.map(domain_ids, &%{id: &1, name: TaxonomyCache.get_name(&1)})
-      end
-
-    execution_result_info = get_execution_result_info(rule)
-    confidential = is_rule_confidential?(rule)
-
-    %{
-      id: rule.id,
-      business_concept_id: rule.business_concept_id,
-      _confidential: confidential,
-      domain_ids: domain_ids,
-      domain_parents: domain_parents,
-      current_business_concept_version: current_business_concept_version,
-      rule_type_id: rule.rule_type_id,
-      rule_type: rule_type,
-      type_params: rule.type_params,
-      version: rule.version,
-      name: rule.name,
-      active: rule.active,
-      description: rule.description,
-      deleted_at: rule.deleted_at,
-      execution_result_info: execution_result_info,
-      updated_by: updated_by,
-      updated_at: rule.updated_at,
-      inserted_at: rule.inserted_at,
-      goal: rule.goal,
-      minimum: rule.minimum,
-      weight: rule.weight,
-      population: rule.population,
-      priority: rule.priority,
-      df_name: rule.df_name,
-      df_content: df_content
-    }
-  end
-
   defp get_execution_result_info(rule) do
     rule_results = Rules.get_last_rule_implementations_result(rule)
 

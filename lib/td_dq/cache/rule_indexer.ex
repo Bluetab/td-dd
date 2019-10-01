@@ -45,13 +45,16 @@ defmodule TdDq.Cache.RuleIndexer do
 
   ## Private functions
   defp process(%{event: "concept_updated", resource_id: resource_id}) do
-    rules = Rules.list_rules(%{"business_concept_id" => resource_id})
-    IndexWorker.partial_reindex(rules)
+    %{"business_concept_id" => resource_id}
+    |> Rules.list_rules()
+    |> Enum.map(&Map.get(&1, :id))
+    |> IndexWorker.reindex()
   end
 
   defp process(%{event: "confidential_concepts"}) do
-    rules = Rules.list_rules_with_bc_id()
-    IndexWorker.partial_reindex(rules)
+    Rules.list_rules_with_bc_id()
+    |> Enum.map(&Map.get(&1, :id))
+    |> IndexWorker.reindex()
   end
 
   defp process(_), do: :ok
