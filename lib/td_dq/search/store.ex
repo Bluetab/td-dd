@@ -8,8 +8,8 @@ defmodule TdDq.Search.Store do
   import Ecto.Query
 
   alias TdDq.Repo
-  alias TdDq.Rules.Rule
   alias TdDq.Rules.Indexable
+  alias TdDq.Rules.Rule
 
   @impl true
   def stream(Indexable) do
