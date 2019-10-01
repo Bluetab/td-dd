@@ -60,6 +60,10 @@ config :td_cache, :event_stream,
   streams: [
     [key: "business_concept:events", consumer: TdDq.Cache.RuleIndexer]
   ]
+
+# Import Elasticsearch config
+import_config "elastic.exs"
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"

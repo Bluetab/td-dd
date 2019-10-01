@@ -23,6 +23,8 @@ defmodule TdDq.Application do
       worker(TdDq.Cache.RuleResultLoader, []),
       worker(TdDq.Cache.RuleIndexer, []),
       worker(TdDq.Search.IndexWorker, [TdDq.Search.IndexWorker]),
+      # Elasticsearch worker
+      TdDq.Search.Cluster,
       %{
         id: TdDq.CustomSupervisor,
         start:
