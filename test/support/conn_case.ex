@@ -42,15 +42,16 @@ defmodule TdDdWeb.ConnCase do
       Sandbox.mode(TdDd.Repo, {:shared, self()})
       parent = self()
 
-      case Process.whereis(TdDd.Search.IndexWorker) do
-        nil -> nil
-        pid -> Sandbox.allow(TdDd.Repo, parent, pid)
-      end
+      Enum.each([TdDd.Search.IndexWorker, TdDd.Loader.LoaderWorker], fn worker ->
+        case Process.whereis(worker) do
+          nil ->
+            nil
 
-      case Process.whereis(TdDd.Loader.LoaderWorker) do
-        nil -> nil
-        pid -> Sandbox.allow(TdDd.Repo, parent, pid)
-      end
+          pid ->
+            on_exit(fn -> worker.ping(20_000) end)
+            Sandbox.allow(TdDd.Repo, parent, pid)
+        end
+      end)
     end
 
     cond do

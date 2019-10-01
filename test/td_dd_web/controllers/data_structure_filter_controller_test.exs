@@ -2,7 +2,6 @@ defmodule TdDdWeb.DataStructureFilterControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  alias TdCache.TaxonomyCache
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
@@ -30,46 +29,5 @@ defmodule TdDdWeb.DataStructureFilterControllerTest do
       conn = get(conn, Routes.data_structure_filter_path(conn, :index))
       assert json_response(conn, 200)["data"] == %{}
     end
-
-    @tag authenticated_no_admin_user: "user2"
-    test "search filters should return at least the informed filters", %{
-      conn: conn,
-      user: %{id: user_id}
-    } do
-      # role with :view_data_structure permission
-      role_name = "watch"
-      create_acl(user_id, role_name)
-      filters = %{"system.name.raw" => ["SAP", "SAS"], "type.raw" => ["KNA1", "KNB1"]}
-
-      conn =
-        post(
-          conn,
-          Routes.data_structure_filter_path(
-            conn,
-            :search,
-            %{"filters" => filters}
-          )
-        )
-
-      assert json_response(conn, 200)["data"] == %{
-               "system.name.raw" => ["SAP", "SAS"],
-               "type.raw" => ["KNA1", "KNB1"],
-               "confidential" => [false]
-             }
-    end
-  end
-
-  defp create_acl(user_id, role_name) do
-    domain_name = "domain_name"
-    domain_id = 1
-    TaxonomyCache.put_domain(%{name: domain_name, id: domain_id})
-
-    MockPermissionResolver.create_acl_entry(%{
-      principal_id: user_id,
-      principal_type: "user",
-      resource_id: domain_id,
-      resource_type: "domain",
-      role_name: role_name
-    })
   end
 end

@@ -57,11 +57,6 @@ config :td_dd, :auth_service,
   auth_port: "4001",
   auth_domain: ""
 
-config :td_dd, :elasticsearch,
-  search_service: TdDd.Search,
-  es_host: "localhost",
-  es_port: 9200
-
 config :td_cache, redis_host: "localhost"
 
 config :td_dd, :audit_service,

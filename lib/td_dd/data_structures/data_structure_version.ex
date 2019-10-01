@@ -8,9 +8,6 @@ defmodule TdDd.DataStructures.DataStructureVersion do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
-  alias TdDd.Searchable
-
-  @behaviour Searchable
 
   schema "data_structure_versions" do
     field(:version, :integer, default: 0)
@@ -96,15 +93,5 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     |> validate_length(:group, max: 255)
     |> validate_length(:name, max: 255)
     |> validate_length(:type, max: 255)
-  end
-
-  def search_fields(%DataStructureVersion{data_structure: structure, version: version}) do
-    structure
-    |> DataStructure.search_fields()
-    |> Map.put(:version, version)
-  end
-
-  def index_name(_) do
-    "data_structure"
   end
 end

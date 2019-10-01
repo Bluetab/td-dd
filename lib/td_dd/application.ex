@@ -17,6 +17,8 @@ defmodule TdDd.Application do
         supervisor(TdDd.Repo, []),
         # Start the endpoint when the application starts
         supervisor(TdDdWeb.Endpoint, []),
+        # Elasticsearch worker
+        TdDd.Search.Cluster,
         # Worker for background indexing
         worker(TdDd.Search.IndexWorker, [TdDd.Search.IndexWorker]),
         # Worker for background bulk loading

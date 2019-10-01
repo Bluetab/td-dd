@@ -5,12 +5,11 @@ defmodule TdDd.DataStructure.Search do
   alias TdDd.Accounts.User
   alias TdDd.DataStructure.Query
   alias TdDd.Permissions
+  alias TdDd.Search
   alias TdDd.Search.Aggregations
   alias TdDd.Utils.CollectionUtils
 
   require Logger
-
-  @search_service Application.get_env(:td_dd, :elasticsearch)[:search_service]
 
   def get_filter_values(user, permission, params)
 
@@ -18,7 +17,7 @@ defmodule TdDd.DataStructure.Search do
     filter_clause = create_filters(params)
     query = create_query(%{}, filter_clause)
     search = %{query: query, aggs: Aggregations.aggregation_terms()}
-    @search_service.get_filters(search)
+    Search.get_filters(search)
   end
 
   def get_filter_values(%User{} = user, permission, params) do
@@ -37,7 +36,7 @@ defmodule TdDd.DataStructure.Search do
     filter = permissions |> create_filter_clause(user_defined_filters)
     query = create_query(%{}, filter)
     search = %{query: query, aggs: Aggregations.aggregation_terms()}
-    @search_service.get_filters(search)
+    Search.get_filters(search)
   end
 
   def search_data_structures(params, user, permission, page \\ 0, size \\ 50)
@@ -191,32 +190,28 @@ defmodule TdDd.DataStructure.Search do
   end
 
   defp do_search(search) do
-    %{results: results, aggregations: aggregations, total: total} =
-      @search_service.search("data_structure", search)
+    %{results: results, aggregations: aggregations, total: total} = Search.search(search)
 
     results =
       results
       |> Enum.map(&Map.get(&1, "_source"))
       |> Enum.map(fn ds ->
-        CollectionUtils.atomize_keys(
-          Map.put(
-            ds,
-            "last_change_by",
-            CollectionUtils.atomize_keys(Map.get(ds, "last_change_by"))
-          )
-        )
+        last_change_by =
+          ds
+          |> Map.get("last_change_by", %{})
+          |> CollectionUtils.atomize_keys()
+
+        Map.put(ds, "last_change_by", last_change_by)
       end)
       |> Enum.map(fn ds ->
-        CollectionUtils.atomize_keys(
-          Map.put(
-            ds,
-            "data_fields",
-            Enum.map(ds.data_fields, fn df ->
-              CollectionUtils.atomize_keys(df)
-            end)
-          )
-        )
+        data_fields =
+          ds
+          |> Map.get("data_fields", [])
+          |> Enum.map(&CollectionUtils.atomize_keys/1)
+
+        Map.put(ds, "data_fields", data_fields)
       end)
+      |> Enum.map(&CollectionUtils.atomize_keys/1)
 
     %{results: results, aggregations: aggregations, total: total}
   end

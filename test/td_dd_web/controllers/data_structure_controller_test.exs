@@ -190,17 +190,12 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
     test "search_all", %{conn: conn, data_structure: %DataStructure{id: id}} do
       conn = post(conn, Routes.data_structure_path(conn, :search), %{})
-      json = json_response(conn, 200)
-      data = json["data"]
-      filters = json["filters"]
 
-      assert length(data) == 1
-
-      template_field_values = Map.get(filters, "field")
-      item = Enum.at(data, 0)
+      assert json = json_response(conn, 200)
+      assert [item] = json["data"]
+      assert filters = json["filters"]
 
       assert Map.get(item, "id") == id
-      assert template_field_values == ["1"]
     end
   end
 

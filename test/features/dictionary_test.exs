@@ -236,7 +236,7 @@ defmodule TdDd.DictionaryTest do
   end
 
   defand ~r/^when the system has finished loading the metadata$/, _vars, state do
-    LoaderWorker.ping()
+    LoaderWorker.ping(20_000)
     {:ok, state}
   end
 

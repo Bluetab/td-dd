@@ -57,11 +57,15 @@ config :td_cache, :event_stream,
   consumer_id: "default",
   consumer_group: "dd",
   streams: [
-    [key: "data_structure:events", consumer: TdDd.Cache.StructureLoader]
+    [key: "data_structure:events", consumer: TdDd.Cache.StructureLoader],
+    [key: "template:events", consumer: TdDd.Search.IndexWorker]
   ]
 
 import_config "metadata.exs"
 import_config "profiling.exs"
+
+# Import Elasticsearch config
+import_config "elastic.exs"
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

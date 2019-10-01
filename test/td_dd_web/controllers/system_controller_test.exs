@@ -175,11 +175,8 @@ defmodule TdDdWeb.SystemControllerTest do
     @tag authenticated_user: @admin_user_name
     test "will not break when structure has no versions", %{conn: conn, system: system} do
       insert(:data_structure, system_id: system.id, external_id: "parent")
-
       conn = get(conn, Routes.system_data_structure_path(conn, :get_system_structures, system))
-      data = json_response(conn, 200)["data"]
-
-      assert Enum.empty?(data)
+      assert json_response(conn, 200)["data"] == []
     end
 
     @tag authenticated_no_admin_user: "user"

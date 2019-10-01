@@ -4,13 +4,17 @@ defmodule TdDd.Search.Indexer do
   """
   alias Jason, as: JSON
   alias TdCache.TemplateCache
-  alias TdDd.ESClientApi
   alias TdDd.Search
+  alias TdDd.Search.Cluster
 
   def reindex(:all) do
-    ESClientApi.delete!("data_structure")
-    mapping = get_mappings() |> JSON.encode!()
-    %{status_code: 200} = ESClientApi.put!("data_structure", mapping)
+    template =
+      get_mappings()
+      |> Map.put(:index_patterns, "structures-*")
+      |> JSON.encode!()
+
+    {:ok, _} = Elasticsearch.put(Cluster, "/_template/structures", template)
+
     Search.put_bulk_search(:all)
   end
 
@@ -45,7 +49,6 @@ defmodule TdDd.Search.Indexer do
       data_fields: %{
         properties: %{
           name: %{type: "text"},
-          description: %{type: "text"},
           id: %{type: "long", index: false}
         }
       },
@@ -65,11 +68,14 @@ defmodule TdDd.Search.Indexer do
 
     settings = %{
       analysis: %{
-        normalizer: %{sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}}
-      }
+        normalizer: %{
+          sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}
+        }
+      },
+      number_of_shards: 1
     }
 
-    %{mappings: %{doc: %{properties: mapping_type}}, settings: settings}
+    %{mappings: %{_doc: %{properties: mapping_type}}, settings: settings}
   end
 
   def get_dynamic_mappings do

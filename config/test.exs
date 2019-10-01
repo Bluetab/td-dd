@@ -30,11 +30,6 @@ config :td_dd, :auth_service,
   auth_port: "4001",
   auth_domain: ""
 
-config :td_dd, :elasticsearch,
-  search_service: TdDd.Search.MockSearch,
-  es_host: "elastic",
-  es_port: 9200
-
 config :td_dd, permission_resolver: TdDd.Permissions.MockPermissionResolver
 config :td_dd, index_worker: TdDd.Search.MockIndexWorker
 
@@ -45,3 +40,5 @@ config :td_dd, :audit_service,
   audit_host: "localhost",
   audit_port: "4007",
   audit_domain: ""
+
+config :td_dd, TdDd.Search.Cluster, api: TdDd.ElasticsearchMock

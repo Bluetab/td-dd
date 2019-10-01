@@ -3,125 +3,91 @@ defmodule TdDd.Search do
   Search Engine calls
   """
 
-  import Ecto.Query, only: [from: 2]
-
-  alias Jason, as: JSON
-  alias TdDd.DataStructures
+  alias Elasticsearch.Index
+  alias Elasticsearch.Index.Bulk
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.ESClientApi
-  alias TdDd.Repo
+  alias TdDd.Search.Cluster
+  alias TdDd.Search.Store
 
   require Logger
 
-  @batch_size 100
-
-  @preload [
-    :system,
-    versions: [:data_structure, parents: [:data_structure, parents: [:data_structure, :parents]]]
-  ]
+  @index "structures"
+  @index_config Application.get_env(:td_dd, TdDd.Search.Cluster, :indexes)
 
   def put_bulk_search(:all) do
-    from(ds in "data_structures", select: ds.id)
-    |> Repo.all()
-    |> put_bulk_search()
+    Index.hot_swap(Cluster, @index)
   end
 
   def put_bulk_search(ids) do
+    %{bulk_page_size: bulk_page_size} =
+      @index_config
+      |> Keyword.get(:indexes)
+      |> Map.get(:structures)
+
     ids
-    |> Stream.chunk_every(@batch_size)
-    |> Stream.map(&DataStructures.get_data_structures(&1, @preload))
-    |> Enum.map(&bulk_index_batch/1)
-  end
+    |> Stream.chunk_every(bulk_page_size)
+    |> Stream.map(&Store.list(&1))
+    |> Stream.map(fn chunk ->
+      time(bulk_page_size, fn ->
+        bulk =
+          chunk
+          |> Enum.map(&Bulk.encode!(Cluster, &1, @index, "index"))
+          |> Enum.join("")
 
-  defp bulk_index_batch(items) do
-    time(fn ->
-      items
-      |> Repo.preload(
-        versions: [
-          :data_structure,
-          parents: [:data_structure, parents: [:data_structure, :parents]]
-        ]
-      )
-      |> ESClientApi.bulk_index_content()
+        Elasticsearch.post(Cluster, "/#{@index}/_doc/_bulk", bulk)
+      end)
     end)
+    |> Stream.run()
   end
 
-  defp time(fun) do
+  defp time(bulk_page_size, fun) do
     {millis, res} = Timer.time(fun)
-    rate = div(1_000 * @batch_size, millis)
-    Logger.info("Indexing rate #{rate} items/s")
+
+    case millis do
+      0 ->
+        Logger.info("Indexing rate :infinity items/s")
+
+      millis ->
+        rate = div(1_000 * bulk_page_size, millis)
+        Logger.info("Indexing rate #{rate} items/s")
+    end
+
     res
   end
 
-  # CREATE AND UPDATE
-  def put_search(%DataStructure{} = data_structure) do
-    search_fields = data_structure.__struct__.search_fields(data_structure)
-
-    response =
-      ESClientApi.index_content(
-        data_structure.__struct__.index_name(data_structure),
-        data_structure.id,
-        search_fields |> JSON.encode!()
-      )
-
-    case response do
-      {:ok, %HTTPoison.Response{status_code: status}} ->
-        Logger.info("Data Structure #{data_structure.id} created/updated status #{status}")
-
-      {:error, _error} ->
-        Logger.error("ES: Error creating/updating Data Structure #{data_structure.id}")
-    end
-  end
-
   # DELETE
-  def delete_search(%DataStructure{id: id}) do
-    response = ESClientApi.delete_content("data_structure", id)
-
-    case response do
-      {_, %HTTPoison.Response{status_code: 200}} ->
-        Logger.info("DataStructure #{id} deleted status 200")
-
-      {_, %HTTPoison.Response{status_code: status_code}} ->
-        Logger.error("ES: Error deleting data_structure #{id} status #{status_code}")
-
-      {:error, %HTTPoison.Error{reason: :econnrefused}} ->
-        Logger.error("Error connecting to ES")
-    end
+  def delete_search(%DataStructure{} = structure) do
+    Elasticsearch.delete_document(Cluster, structure, @index)
   end
 
-  def search(index_name, query) do
+  def search(query) do
     Logger.debug(fn -> "Query: #{inspect(query)}" end)
-    response = ESClientApi.search_es(index_name, query)
+    response = Elasticsearch.post(Cluster, "/#{@index}/_search", query)
 
     case response do
-      {:ok,
-       %HTTPoison.Response{
-         body: %{"hits" => %{"hits" => results, "total" => total}, "aggregations" => aggregations}
-       }} ->
-        %{results: results, aggregations: format_search_aggegations(aggregations), total: total}
+      {:ok, %{"hits" => %{"hits" => results, "total" => total}} = res} ->
+        aggregations = Map.get(res, "aggregations", %{})
+        %{results: results, total: total, aggregations: aggregations}
 
-      {:ok, %HTTPoison.Response{body: error}} ->
+      {:error, %Elasticsearch.Exception{message: message} = error} ->
+        Logger.warn("Error response from Elasticsearch: #{message}")
         error
     end
   end
 
   def get_filters(query) do
-    response = ESClientApi.search_es("data_structure", query)
+    response = Elasticsearch.post(Cluster, "/#{@index}/_search", query)
 
     case response do
-      {:ok, %HTTPoison.Response{body: %{"aggregations" => aggregations}}} ->
+      {:ok, %{"aggregations" => aggregations}} ->
         aggregations
-        |> format_search_aggegations()
+        |> Map.to_list()
+        |> Enum.into(%{}, &filter_values/1)
 
-      {:ok, %HTTPoison.Response{body: error}} ->
+      {:error, %Elasticsearch.Exception{message: message} = error} ->
+        Logger.warn("Error response from Elasticsearch: #{message}")
         error
     end
-  end
-
-  defp format_search_aggegations(aggregations) do
-    aggregations
-    |> Map.to_list()
-    |> Enum.into(%{}, &filter_values/1)
   end
 
   defp filter_values({name, %{"buckets" => buckets}}) do

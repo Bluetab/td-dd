@@ -38,7 +38,7 @@ defmodule TdDdWeb.ProfileControllerTest do
       assert response(conn, 202) =~ ""
 
       # waits for loader to complete
-      LoaderWorker.ping()
+      LoaderWorker.ping(20_000)
       assert Enum.count(DataStructures.list_profiles()) == 3
     end
   end

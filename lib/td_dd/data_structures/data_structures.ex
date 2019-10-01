@@ -14,10 +14,9 @@ defmodule TdDd.DataStructures do
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Profile
   alias TdDd.Repo
+  alias TdDd.Search
   alias TdDd.Utils.CollectionUtils
   alias TdDfLib.Validation
-
-  @search_service Application.get_env(:td_dd, :elasticsearch)[:search_service]
 
   @doc """
   Returns the list of data_structures.
@@ -238,7 +237,7 @@ defmodule TdDd.DataStructures do
     Repo.transaction(fn ->
       with {:ok, data_structure} <- insert_data_structure(ds_attrs),
            {:ok, _dsv} <- insert_data_structure_version(data_structure, dsv_attrs) do
-        @search_service.put_search(data_structure)
+        Search.put_bulk_search([data_structure.id])
         Repo.preload(data_structure, :system)
       else
         {:error, e} -> Repo.rollback(e)
@@ -305,19 +304,15 @@ defmodule TdDd.DataStructures do
   end
 
   defp do_update_data_structure(%DataStructure{} = data_structure, attrs) do
-    result =
-      data_structure
-      |> DataStructure.update_changeset(attrs)
-      |> Repo.update()
-
-    case result do
-      {:ok, data_structure} ->
-        data_structure
-        |> @search_service.put_search
-
+    data_structure
+    |> DataStructure.update_changeset(attrs)
+    |> Repo.update()
+    |> case do
+      {:ok, %{id: id}} = result ->
+        Search.put_bulk_search([id])
         result
 
-      _ ->
+      result ->
         result
     end
   end
@@ -351,7 +346,7 @@ defmodule TdDd.DataStructures do
 
     case result do
       {:ok, data_structure} ->
-        @search_service.delete_search(data_structure)
+        Search.delete_search(data_structure)
         result
 
       _ ->

@@ -84,7 +84,7 @@ defmodule TdDdWeb.DataStructureView do
   defp add_system_with_keys(json, data_structure, keys) do
     system_params =
       data_structure
-      |> Map.get(:system)
+      |> Map.get(:system, %{})
       |> Map.take(keys)
 
     Map.put(json, :system, system_params)
@@ -95,9 +95,9 @@ defmodule TdDdWeb.DataStructureView do
   end
 
   defp add_dynamic_content(json, data_structure) do
-    %{
-      df_content: data_structure.df_content
-    }
+    df_content = Map.get(data_structure, :df_content, %{})
+
+    %{df_content: df_content}
     |> Map.merge(json)
   end
 
@@ -172,9 +172,9 @@ defmodule TdDdWeb.DataStructureView do
   defp add_metadata(data_structure_json, data_structure) do
     case Map.get(data_structure_json, :metadata, %{}) == %{} do
       true ->
-          data_structure
-          |> Map.get(:metadata, %{})
-          |> Map.merge(data_structure_json)
+        data_structure
+        |> Map.get(:metadata, %{})
+        |> Map.merge(data_structure_json)
 
       false ->
         data_structure_json

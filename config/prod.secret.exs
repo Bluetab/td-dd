@@ -37,12 +37,9 @@ config :td_dd, :auth_service,
   auth_port: "${API_AUTH_PORT}",
   auth_domain: ""
 
-config :td_dd, :elasticsearch,
-  search_service: TdDd.Search,
-  es_host: "${ES_HOST}",
-  es_port: "${ES_PORT}"
-
 config :td_cache, redis_host: "${REDIS_HOST}"
+
+config :td_dd, TdDd.Search.Cluster, url: "${ES_URL}"
 
 config :td_dd, :audit_service,
   api_service: TdDdWeb.ApiServices.HttpTdAuditService,
@@ -54,5 +51,6 @@ config :td_cache, :event_stream,
   consumer_id: "${HOSTNAME}",
   consumer_group: "dd",
   streams: [
-    [key: "data_structure:events", consumer: TdDd.Cache.StructureLoader]
+    [key: "data_structure:events", consumer: TdDd.Cache.StructureLoader],
+    [key: "template:events", consumer: TdDd.Search.IndexWorker]
   ]
