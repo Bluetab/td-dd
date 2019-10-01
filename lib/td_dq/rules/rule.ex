@@ -233,7 +233,7 @@ defmodule TdDq.Rules.Rule do
     {:ok, domain_ids} = ConceptCache.get(business_concept_id, :domain_ids)
     domain_ids
   end
-  
+
   defp get_users_roles(-1), do: []
   defp get_users_roles(domain_ids) do
     Enum.flat_map(domain_ids, &AclCache.get_acl_roles(:domain, &1))
