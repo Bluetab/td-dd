@@ -1,4 +1,4 @@
-defmodule TdDd.Tasks.ReplaceIndex do
+defmodule TdDd.Search.Reindex do
   @moduledoc """
   A startup task to check for the existence of expected indexes in
   Elasticsearch, and to create them if they don't exist.
@@ -102,8 +102,9 @@ defmodule TdDd.Tasks.ReplaceIndex do
     end
   end
 
+  # Ensure only one instance of dd is reindexing by creating a lock in Redis
   defp aquire_lock? do
-    case Redix.command!(["SET", "TdDd.Tasks.ReplaceIndex:LOCK", "LOCKED", "NX", "EX", 3600]) do
+    case Redix.command!(["SET", "TdDd.Search.Reindex:LOCK", node(), "NX", "EX", 3600]) do
       "OK" -> true
       _ -> false
     end
