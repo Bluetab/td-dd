@@ -86,7 +86,7 @@ defimpl Document, for: Indexable do
     end
   end
 
-  def get_execution_result_info(%{minimum: minimum, goal: goal}, rule_results) do
+  defp get_execution_result_info(%{minimum: minimum, goal: goal}, rule_results) do
     Map.new()
     |> with_avg(rule_results)
     |> with_last_execution_at(rule_results)

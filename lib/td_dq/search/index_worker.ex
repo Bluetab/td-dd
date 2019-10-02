@@ -47,6 +47,16 @@ defmodule TdDq.Search.IndexWorker do
   end
 
   @impl true
+  def handle_cast({:consume, events}, state) do
+    case Enum.any?(events, &reindex_event?/1) do
+      true -> do_reindex(:all)
+      _ -> :ok
+    end
+
+    {:noreply, state}
+  end
+
+  @impl true
   def handle_call({:reindex, ids}, _from, state) do
     Logger.info("Reindexing #{Enum.count(ids)} rules")
     start_time = DateTime.utc_now()
@@ -68,16 +78,6 @@ defmodule TdDq.Search.IndexWorker do
     {:reply, reply, state}
   end
 
-  @impl true
-  def handle_cast({:consume, events}, state) do
-    case Enum.any?(events, &reindex_event?/1) do
-      true -> do_reindex(:all)
-      _ -> :ok
-    end
-
-    {:noreply, state}
-  end
-
   defp reindex_event?(%{event: "add_template", scope: "dq"}), do: true
 
   defp reindex_event?(_), do: false
@@ -89,8 +89,6 @@ defmodule TdDq.Search.IndexWorker do
     Indexer.reindex(:rule)
     end_time = DateTime.utc_now()
 
-    Logger.info(
-      "Indexed. Elapsed seconds: #{DateTime.diff(end_time, start_time)}"
-    )
+    Logger.info("Indexed. Elapsed seconds: #{DateTime.diff(end_time, start_time)}")
   end
 end

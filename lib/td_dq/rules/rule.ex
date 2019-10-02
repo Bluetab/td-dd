@@ -2,18 +2,9 @@ defmodule TdDq.Rules.Rule do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
-  alias TdCache.ConceptCache
-  alias TdCache.TaxonomyCache
-  alias TdCache.TemplateCache
-  alias TdCache.UserCache
-  alias TdDfLib.Format
-  alias TdDq.Rules
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleImplementation
   alias TdDq.Rules.RuleType
-  alias TdDq.Searchable
-
-  @behaviour Searchable
 
   schema "rules" do
     field(:business_concept_id, :string)
@@ -103,83 +94,5 @@ defmodule TdDq.Rules.Rule do
       _ ->
         changeset
     end
-  end
-
-  defp get_execution_result_info(rule) do
-    rule_results = Rules.get_last_rule_implementations_result(rule)
-
-    case rule_results do
-      [] -> %{result_text: "quality_result.no_execution"}
-      _ -> get_execution_result_info(rule, rule_results)
-    end
-  end
-
-  def get_execution_result_info(%{minimum: minimum, goal: goal}, rule_results) do
-    Map.new()
-    |> with_avg(rule_results)
-    |> with_last_execution_at(rule_results)
-    |> with_result_text(minimum, goal)
-  end
-
-  defp with_avg(result_map, rule_results) do
-    result_avg =
-      rule_results
-      |> Enum.map(& &1.result)
-      |> Enum.sum()
-
-    result_avg =
-      case length(rule_results) do
-        0 -> 0
-        results_length -> result_avg / results_length
-      end
-
-    Map.put(result_map, :result_avg, result_avg)
-  end
-
-  defp with_last_execution_at(result_map, rule_results) do
-    last_execution_at =
-      rule_results
-      |> Enum.map(& &1.date)
-      |> Enum.max()
-
-    Map.put(result_map, :last_execution_at, last_execution_at)
-  end
-
-  defp with_result_text(result_map, minimum, goal) do
-    result_text =
-      cond do
-        result_map.result_avg < minimum ->
-          "quality_result.under_minimum"
-
-        result_map.result_avg >= minimum and result_map.result_avg < goal ->
-          "quality_result.under_goal"
-
-        result_map.result_avg >= goal ->
-          "quality_result.over_goal"
-      end
-
-    Map.put(result_map, :result_text, result_text)
-  end
-
-  defp get_domain_ids(%{business_concept_id: nil}), do: -1
-
-  defp get_domain_ids(%{business_concept_id: business_concept_id}) do
-    {:ok, domain_ids} = ConceptCache.get(business_concept_id, :domain_ids)
-    domain_ids
-  end
-
-  defp is_rule_confidential?(%{business_concept_id: nil}), do: false
-
-  defp is_rule_confidential?(%{business_concept_id: business_concept_id}) do
-    {:ok, status} = ConceptCache.member_confidential_ids(business_concept_id)
-
-    case status do
-      1 -> true
-      _ -> false
-    end
-  end
-
-  def index_name do
-    "quality_rule"
   end
 end
