@@ -3,7 +3,7 @@ defmodule TdDq.Search do
   Search Engine calls
   """
   alias Elasticsearch.Index.Bulk
-  alias TdDq.Rules.Indexable
+  alias TdDq.Rules.Rule
   alias TdDq.Search.Cluster
 
   require Logger
@@ -24,7 +24,7 @@ defmodule TdDq.Search do
   end
 
   def put_bulk_delete(ids, :rule) do
-    Enum.map(ids, &Elasticsearch.delete_document(Cluster, %Indexable{rule: %{id: &1}}, @index))
+    Enum.map(ids, &Elasticsearch.delete_document(Cluster, %Rule{id: &1}, @index))
   end
 
   def search(query) do

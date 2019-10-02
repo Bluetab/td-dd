@@ -3,6 +3,8 @@ defmodule TdDq.Search.IndexWorker do
   GenServer to run reindex task
   """
 
+  @behaviour TdCache.EventStream.Consumer
+
   use GenServer
 
   alias TdDq.Search.Indexer
@@ -33,6 +35,14 @@ defmodule TdDq.Search.IndexWorker do
     delete([id])
   end
 
+  ## EventStream.Consumer Callbacks
+
+   @impl true
+   def consume(events) do
+     GenServer.cast(__MODULE__, {:consume, events})
+   end
+
+  ## GenServer Callbacks
   @impl true
   def init(state) do
     name = String.replace_prefix("#{__MODULE__}", "Elixir.", "")

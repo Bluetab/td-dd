@@ -8,16 +8,16 @@ defmodule TdDq.Search.Store do
   import Ecto.Query
 
   alias TdDq.Repo
-  alias TdDq.Rules.Indexable
   alias TdDq.Rules.Rule
 
   @impl true
-  def stream(Indexable) do
+  def stream(Rule) do
     Rule
     |> where([r], is_nil(r.deleted_at))
     |> join(:inner, [r], rt in assoc(r, :rule_type))
-    |> select([r, rt], %Indexable{rule: r, rule_type: rt})
+    |> select([r], r)
     |> Repo.stream()
+    |> Enum.map(&Repo.preload(&1, :rule_type))
   end
 
   @impl true

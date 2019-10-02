@@ -36,7 +36,7 @@ config :td_dq, TdDq.Search.Cluster,
       #
       # Each piece of data that is returned by the store must implement the
       # Elasticsearch.Document protocol.
-      sources: [TdDq.Rules.Indexable],
+      sources: [TdDq.Rules.Rule],
 
       # When indexing data using the `mix elasticsearch.build` task,
       # control the data ingestion rate by raising or lowering the number

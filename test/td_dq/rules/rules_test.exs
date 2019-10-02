@@ -8,7 +8,6 @@ defmodule TdDq.RulesTest do
   alias TdDq.MockRelationCache
   alias TdDq.Rule
   alias TdDq.Rules
-  alias TdDq.Rules.Indexable
 
   setup_all do
     start_supervised(MockRelationCache)
@@ -407,7 +406,7 @@ defmodule TdDq.RulesTest do
         date: now
       )
 
-      %{execution_result_info: execution_result_info} = Document.encode(%Indexable{rule: rule, rule_type: rule.rule_type})
+      %{execution_result_info: execution_result_info} = Document.encode(rule)
 
       %{result_avg: result_avg, result_text: result_text} =
         Map.take(execution_result_info, [:result_avg, :result_text])
