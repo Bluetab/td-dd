@@ -42,16 +42,7 @@ defmodule TdDq.Search.IndexWorker do
 
   @impl true
   def handle_cast({:reindex, :all}, state) do
-    Logger.info("Reindexing all rules")
-
-    start_time = DateTime.utc_now()
-    Indexer.reindex(:rule)
-    end_time = DateTime.utc_now()
-
-    Logger.info(
-      "Indexed. Elapsed seconds: #{DateTime.diff(end_time, start_time)}"
-    )
-
+    do_reindex(:all)
     {:noreply, state}
   end
 
@@ -75,5 +66,31 @@ defmodule TdDq.Search.IndexWorker do
     Logger.info("Rules deleted in #{millis}ms")
 
     {:reply, reply, state}
+  end
+
+  @impl true
+  def handle_cast({:consume, events}, state) do
+    case Enum.any?(events, &reindex_event?/1) do
+      true -> do_reindex(:all)
+      _ -> :ok
+    end
+
+    {:noreply, state}
+  end
+
+  defp reindex_event?(%{event: "add_template", scope: "dq"}), do: true
+
+  defp reindex_event?(_), do: false
+
+  defp do_reindex(:all) do
+    Logger.info("Reindexing all rules")
+
+    start_time = DateTime.utc_now()
+    Indexer.reindex(:rule)
+    end_time = DateTime.utc_now()
+
+    Logger.info(
+      "Indexed. Elapsed seconds: #{DateTime.diff(end_time, start_time)}"
+    )
   end
 end

@@ -43,3 +43,11 @@ config :td_dq, :elasticsearch,
   type_name: "doc"
 
 config :td_cache, redis_host: "${REDIS_HOST}"
+
+config :td_cache, :event_stream,
+  consumer_id: "${HOSTNAME}",
+  consumer_group: "dq",
+  streams: [
+    [key: "business_concept:events", consumer: TdDq.Cache.RuleIndexer],
+    [key: "template:events", consumer: TdDq.Search.IndexWorker]
+  ]

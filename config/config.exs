@@ -58,7 +58,8 @@ config :td_cache, :event_stream,
   consumer_id: "default",
   consumer_group: "dq",
   streams: [
-    [key: "business_concept:events", consumer: TdDq.Cache.RuleIndexer]
+    [key: "business_concept:events", consumer: TdDq.Cache.RuleIndexer],
+    [key: "template:events", consumer: TdDq.Search.IndexWorker]
   ]
 
 # Import Elasticsearch config
