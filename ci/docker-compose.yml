@@ -59,6 +59,7 @@ services:
       DB_USER: postgres
       REDIS_HOST: redis
       REPLACE_OS_VARS: "true"
+      ES_URL: http://elastic:9200
     depends_on:
       - postgres
       - redis
