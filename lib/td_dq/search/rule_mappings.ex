@@ -75,7 +75,7 @@ defmodule TdDq.Search.RuleMappings do
       }
     }
 
-    %{mappings: %{doc: %{properties: mapping_type}}, settings: settings}
+    %{mappings: %{_doc: %{properties: mapping_type}}, settings: settings}
   end
 
   defp get_dynamic_mappings do

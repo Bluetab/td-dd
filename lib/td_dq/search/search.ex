@@ -24,12 +24,7 @@ defmodule TdDq.Search do
   end
 
   def put_bulk_delete(ids, :rule) do
-    bulk =
-      ids
-      |> Enum.map(&Bulk.encode!(Cluster, %Indexable{rule: %{id: &1}}, @index, "delete"))
-      |> Enum.join("")
-
-    Elasticsearch.post(Cluster, "/#{@index}/_doc/_bulk", bulk)
+    Enum.map(ids, &Elasticsearch.delete_document(Cluster, %Indexable{rule: %{id: &1}}, @index))
   end
 
   def search(query) do

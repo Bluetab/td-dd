@@ -4,8 +4,26 @@ alias TdCache.UserCache
 alias TdCache.TaxonomyCache
 alias TdCache.TemplateCache
 alias TdDfLib.Format
+alias TdDq.Repo
 alias TdDq.Rules
 alias TdDq.Rules.Indexable
+alias TdDq.Rules.Rule
+
+defimpl Document, for: Rule do
+  @impl Document
+  def id(%Rule{id: id}), do: id
+
+  @impl Document
+  def routing(_), do: false
+
+  @impl Document
+  def encode(rule) do
+    %{rule_type: rule_type} = Repo.preload(rule, :rule_type)
+
+    %Indexable{rule: rule, rule_type: rule_type}
+    |> Document.encode()
+  end
+end
 
 defimpl Document, for: Indexable do
   @impl Document
@@ -13,6 +31,9 @@ defimpl Document, for: Indexable do
 
   @impl Document
   def routing(_), do: false
+
+  @impl Document
+  def encode(%Indexable{rule_type: rule_type}) when rule_type == %{}, do: "\n"
 
   @impl Document
   def encode(%Indexable{rule: rule, rule_type: rule_type}) do
