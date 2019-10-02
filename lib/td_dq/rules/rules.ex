@@ -20,8 +20,6 @@ defmodule TdDq.Rules do
 
   require Logger
 
-  @search_service Application.get_env(:td_dq, :elasticsearch)[:search_service]
-
   @doc """
   Returns the list of rules.
 
@@ -260,7 +258,7 @@ defmodule TdDq.Rules do
     case do_delete_rule(rule) do
       {:ok, rule} ->
         RuleLoader.delete(id)
-        @search_service.delete(Rule.index_name(), id)
+
         {:ok, rule}
 
       error ->
@@ -278,7 +276,6 @@ defmodule TdDq.Rules do
     case do_soft_deletion(active_ids, ts) do
       {:ok, %{rules: {_, rule_ids}} = results} ->
         RuleLoader.delete(rule_ids)
-        @search_service.delete(Rule.index_name(), rule_ids)
 
         {:ok, results}
 

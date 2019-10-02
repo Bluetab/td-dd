@@ -27,6 +27,9 @@ config :td_dq, TdDq.Auth.Guardian,
   ttl: {1, :hours},
   secret_key: "${GUARDIAN_SECRET_KEY}"
 
+config :td_dq, TdDq.Search.Cluster,
+  url: "${ES_URL}"
+
 config :td_dq, :audit_service,
   api_service: TdDqWeb.ApiServices.HttpTdAuditService,
   audit_host: "${API_AUDIT_HOST}",
