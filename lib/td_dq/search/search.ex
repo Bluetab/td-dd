@@ -25,7 +25,7 @@ defmodule TdDq.Search do
 
   def put_bulk_delete(ids, :rule) do
     bulk =
-      ids 
+      ids
       |> Enum.map(&Bulk.encode!(Cluster, %Indexable{rule: %{id: &1}}, @index, "delete"))
       |> Enum.join("")
 
