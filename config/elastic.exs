@@ -3,7 +3,7 @@ use Mix.Config
 config :td_dd, TdDd.Search.Cluster,
   # The URL where Elasticsearch is hosted on your system
   # override this in prod.exs
-  url: "http://localhost:9200",
+  url: "http://elastic:9200",
 
   # If you want to mock the responses of the Elasticsearch JSON API
   # for testing or other purposes, you can inject a different module
