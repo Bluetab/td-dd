@@ -3,8 +3,8 @@ defmodule TdDq.RulesTest do
   import Ecto.Query, warn: false
   import TdDq.Factory
 
-  alias Elasticsearch.Document
   alias Ecto.Changeset
+  alias Elasticsearch.Document
   alias TdDq.MockRelationCache
   alias TdDq.Rule
   alias TdDq.Rules

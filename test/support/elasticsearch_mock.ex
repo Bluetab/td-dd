@@ -94,7 +94,7 @@ defmodule TdDq.ElasticsearchMock do
     end)
   end
 
-  defp do_search() do
+  defp do_search do
     Rules.list_all_rules()
     |> Enum.map(&Document.encode(&1))
     |> Enum.map(&%{_source: &1})
