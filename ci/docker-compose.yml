@@ -84,6 +84,12 @@ services:
       - redis
       - elastic
 
+  wait_for_elastic:
+    image: bluetab/wait-for:20190507133127
+    command: elastic:9200 -t 30 -- curl --silent elastic:9200
+    depends_on:
+      - elastic
+
   acceptance:
     image: bluetab/wait-for:20190507133127
     command: service:4005 -t 30 -- curl --silent service:4005/api/ping
