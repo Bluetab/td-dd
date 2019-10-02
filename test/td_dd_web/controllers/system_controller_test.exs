@@ -23,6 +23,7 @@ defmodule TdDdWeb.SystemControllerTest do
     start_supervised(MockTdAuditService)
     start_supervised(MockTdAuthService)
     start_supervised(MockPermissionResolver)
+    start_supervised(TdDd.DataStructures.PathCache)
     :ok
   end
 

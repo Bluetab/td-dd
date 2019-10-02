@@ -9,12 +9,12 @@ defmodule TdDd.Search.Store do
 
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Repo
-  alias TdDd.Search.Indexable
 
   @impl true
-  def stream(Indexable) do
+  def stream(DataStructureVersion) do
     query()
     |> Repo.stream()
+    |> Stream.map(&preload/1)
   end
 
   @impl true
@@ -27,6 +27,7 @@ defmodule TdDd.Search.Store do
     ids
     |> query()
     |> Repo.all()
+    |> Enum.map(&preload/1)
   end
 
   def query do
@@ -34,7 +35,7 @@ defmodule TdDd.Search.Store do
       where: is_nil(dsv.deleted_at),
       join: ds in assoc(dsv, :data_structure),
       join: s in assoc(ds, :system),
-      select: %Indexable{data_structure_version: dsv, data_structure: ds, system: s}
+      select: {dsv, ds, s}
     )
   end
 
@@ -44,7 +45,12 @@ defmodule TdDd.Search.Store do
       where: dsv.data_structure_id in ^ids,
       join: ds in assoc(dsv, :data_structure),
       join: s in assoc(ds, :system),
-      select: %Indexable{data_structure_version: dsv, data_structure: ds, system: s}
+      select: {dsv, ds, s}
     )
+  end
+
+  defp preload({data_structure_version, data_structure, system}) do
+    data_structure = Map.put(data_structure, :system, system)
+    Map.put(data_structure_version, :data_structure, data_structure)
   end
 end

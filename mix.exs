@@ -57,7 +57,8 @@ defmodule TdDd.Mixfile do
       {:phoenix_swagger, "~> 0.8.0"},
       {:ex_json_schema, "~> 0.5"},
       {:elasticsearch,
-       git: "https://github.com/Bluetab/elasticsearch-elixir.git", branch: "feature/encoding-opts"},
+       git: "https://github.com/Bluetab/elasticsearch-elixir.git",
+       branch: "feature/bulk-index-action"},
       {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "3.7.2"},
       {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "3.5.0"}
     ]

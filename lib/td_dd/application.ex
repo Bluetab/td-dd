@@ -19,6 +19,8 @@ defmodule TdDd.Application do
         supervisor(TdDdWeb.Endpoint, []),
         # Elasticsearch worker
         TdDd.Search.Cluster,
+        # Path cache to improve indexing performance
+        TdDd.DataStructures.PathCache,
         # Worker for background indexing
         worker(TdDd.Search.IndexWorker, [TdDd.Search.IndexWorker]),
         # Worker for background bulk loading
@@ -45,7 +47,8 @@ defmodule TdDd.Application do
 
   defp startup_tasks(_env) do
     [
-      {TdDd.DataStructures.Hasher, []}
+      {TdDd.DataStructures.Hasher, []},
+      {TdDd.Tasks.ReplaceIndex, []}
     ]
   end
 end

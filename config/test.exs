@@ -33,8 +33,6 @@ config :td_dd, :auth_service,
 config :td_dd, permission_resolver: TdDd.Permissions.MockPermissionResolver
 config :td_dd, index_worker: TdDd.Search.MockIndexWorker
 
-config :td_cache, redis_host: "redis"
-
 config :td_dd, :audit_service,
   api_service: TdDdWeb.ApiServices.MockTdAuditService,
   audit_host: "localhost",
@@ -42,3 +40,7 @@ config :td_dd, :audit_service,
   audit_domain: ""
 
 config :td_dd, TdDd.Search.Cluster, api: TdDd.ElasticsearchMock
+
+config :td_cache, redis_host: "redis"
+
+config :td_cache, :event_stream, streams: []

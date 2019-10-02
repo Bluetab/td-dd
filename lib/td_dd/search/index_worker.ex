@@ -7,6 +7,7 @@ defmodule TdDd.Search.IndexWorker do
 
   use GenServer
 
+  alias TdDd.DataStructures.PathCache
   alias TdDd.Search.Indexer
 
   require Logger
@@ -54,6 +55,7 @@ defmodule TdDd.Search.IndexWorker do
 
   @impl true
   def handle_cast({:reindex, :all}, state) do
+    PathCache.refresh(10_000)
     do_reindex(:all)
 
     {:noreply, state}
@@ -61,6 +63,7 @@ defmodule TdDd.Search.IndexWorker do
 
   @impl true
   def handle_cast({:reindex, ids}, state) do
+    PathCache.refresh(10_000)
     Logger.info("Reindexing #{Enum.count(ids)} data structures")
     {ms, _} = Timer.time(fn -> Indexer.reindex(ids) end)
     Logger.info("Data structures indexed in #{ms}ms")

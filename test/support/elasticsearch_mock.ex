@@ -8,8 +8,8 @@ defmodule TdDd.ElasticsearchMock do
   alias Elasticsearch.Document
   alias HTTPoison.Response
   alias Jason, as: JSON
-  alias TdDd.DataStructures
-  alias TdDd.Search.Indexable
+  alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.PathCache
   alias TdDd.Search.Store
 
   require Logger
@@ -42,6 +42,8 @@ defmodule TdDd.ElasticsearchMock do
 
   @impl true
   def request(_config, :post, "/structures/_search", data, _opts) do
+    PathCache.refresh()
+
     data
     |> do_search()
     |> search_results(data)
@@ -321,7 +323,7 @@ defmodule TdDd.ElasticsearchMock do
 
   defp list_documents do
     Store.transaction(fn ->
-      Indexable
+      DataStructureVersion
       |> Store.stream()
       |> Enum.map(&Document.encode/1)
     end)

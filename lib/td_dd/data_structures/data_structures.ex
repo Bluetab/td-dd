@@ -124,7 +124,12 @@ defmodule TdDd.DataStructures do
     |> enrich(options, :parents, fn dsv -> get_parents(dsv, deleted: deleted) end)
     |> enrich(options, :children, fn dsv -> get_children(dsv, deleted: deleted) end)
     |> enrich(options, :siblings, fn dsv -> get_siblings(dsv, deleted: deleted) end)
-    |> enrich(options, :data_fields, fn dsv -> get_field_structures(dsv, deleted: deleted) end)
+    |> enrich(options, :data_fields, fn dsv ->
+      get_field_structures(dsv,
+        deleted: deleted,
+        preload: if(Enum.member?(options, :profile), do: [data_structure: :profile], else: [])
+      )
+    end)
     |> enrich(options, :data_field_external_ids, fn dsv -> get_field_external_ids(dsv) end)
     |> enrich(options, :data_field_links, fn dsv -> get_field_links(dsv) end)
     |> enrich(options, :versions, fn dsv -> get_versions(dsv) end)
@@ -164,7 +169,7 @@ defmodule TdDd.DataStructures do
     |> with_deleted(options, dynamic([child, _parent, _rel], is_nil(child.deleted_at)))
     |> select([child, _parent, _rel], child)
     |> Repo.all()
-    |> Repo.preload(data_structure: :profile)
+    |> Repo.preload(options[:preload] || [])
   end
 
   def get_children(%DataStructureVersion{id: id}, options \\ []) do
@@ -342,10 +347,12 @@ defmodule TdDd.DataStructures do
 
   """
   def delete_data_structure(%DataStructure{} = data_structure) do
+    data_structure = Repo.preload(data_structure, :versions)
+
     result = Repo.delete(data_structure)
 
     case result do
-      {:ok, data_structure} ->
+      {:ok, _} ->
         Search.delete_search(data_structure)
         result
 

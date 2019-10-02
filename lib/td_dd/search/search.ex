@@ -56,8 +56,8 @@ defmodule TdDd.Search do
   end
 
   # DELETE
-  def delete_search(%DataStructure{} = structure) do
-    Elasticsearch.delete_document(Cluster, structure, @index)
+  def delete_search(%DataStructure{versions: versions}) do
+    Enum.each(versions, fn dsv -> Elasticsearch.delete_document(Cluster, dsv, @index) end)
   end
 
   def search(query) do
