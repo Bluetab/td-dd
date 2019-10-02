@@ -37,5 +37,7 @@ config :td_dq, :audit_service,
 
 config :td_dq, permission_resolver: TdDq.Permissions.MockPermissionResolver
 config :td_dq, relation_cache: TdDq.MockRelationCache
+config :td_dq, TdDq.Search.Cluster, api: TdDq.ElasticsearchMock
 
 config :td_cache, redis_host: "redis"
+

@@ -33,9 +33,6 @@ defimpl Document, for: Indexable do
   def routing(_), do: false
 
   @impl Document
-  def encode(%Indexable{rule_type: rule_type}) when rule_type == %{}, do: "\n"
-
-  @impl Document
   def encode(%Indexable{rule: rule, rule_type: rule_type}) do
     template = TemplateCache.get_by_name!(rule.df_name) || %{content: []}
     updated_by = get_user(rule.updated_by)

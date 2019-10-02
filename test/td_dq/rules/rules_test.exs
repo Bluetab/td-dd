@@ -3,10 +3,12 @@ defmodule TdDq.RulesTest do
   import Ecto.Query, warn: false
   import TdDq.Factory
 
+  alias Elasticsearch.Document
   alias Ecto.Changeset
   alias TdDq.MockRelationCache
   alias TdDq.Rule
   alias TdDq.Rules
+  alias TdDq.Rules.Indexable
 
   setup_all do
     start_supervised(MockRelationCache)
@@ -380,7 +382,7 @@ defmodule TdDq.RulesTest do
       assert rule_type.id == rule |> Map.get(:rule_type) |> Map.get(:id)
     end
 
-    test "search_fields/1 retrieves execution_result_info to be indexed in elastic" do
+    test "encode/1 retrieves execution_result_info to be indexed in elastic" do
       impl_key_1 = "impl_key_1"
       impl_key_2 = "impl_key_2"
       goal = 20
@@ -405,7 +407,7 @@ defmodule TdDq.RulesTest do
         date: now
       )
 
-      %{execution_result_info: execution_result_info} = Rule.search_fields(rule)
+      %{execution_result_info: execution_result_info} = Document.encode(%Indexable{rule: rule, rule_type: rule.rule_type})
 
       %{result_avg: result_avg, result_text: result_text} =
         Map.take(execution_result_info, [:result_avg, :result_text])
