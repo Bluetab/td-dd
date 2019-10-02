@@ -1,9 +1,10 @@
 defmodule TdDd.Tasks.ReplaceIndex do
   @moduledoc """
   A startup task to check for the existence of expected indexes in
-  Elasticsearch, and to create them if they don't exist. Additionally,
-  the task will ensure that any data structure versions which have been
-  replaced by a newer version will have the deleted_at property set.
+  Elasticsearch, and to create them if they don't exist.
+
+  Before indexing, the task soft-deletes any obsolete data structure versions
+  and any orphaned fields.
   """
 
   use Task
@@ -22,10 +23,15 @@ defmodule TdDd.Tasks.ReplaceIndex do
     Task.start_link(__MODULE__, :run, [])
   end
 
-  def run() do
+  def run do
     case soft_delete_obsolete_versions() do
       {0, _} -> Logger.debug("No obsolete versions deleted")
-      {count, _} -> Logger.debug("Soft-deleted #{count} obsolete data structure versions")
+      {count, _} -> Logger.warn("Soft-deleted #{count} obsolete data structure versions")
+    end
+
+    case soft_delete_orphan_fields() do
+      {0, _} -> Logger.debug("No orphan fields deleted")
+      {count, _} -> Logger.warn("Soft-deleted #{count} orphan fields")
     end
 
     unless alias_exists?("structures") do
@@ -47,6 +53,28 @@ defmodule TdDd.Tasks.ReplaceIndex do
         join: newer in assoc(ds, :versions),
         where: is_nil(newer.deleted_at),
         where: newer.version > dsv.version,
+        update: [set: [deleted_at: ^ts]],
+        select: dsv.id
+      ),
+      []
+    )
+  end
+
+  defp soft_delete_orphan_fields(ts \\ DateTime.utc_now()) do
+    orphan_ids =
+      Repo.all(
+        from(dsv in DataStructureVersion,
+          where: is_nil(dsv.deleted_at),
+          where: dsv.class == "field",
+          left_join: p in assoc(dsv, :parents),
+          where: is_nil(p),
+          select: dsv.id
+        )
+      )
+
+    Repo.update_all(
+      from(dsv in DataStructureVersion,
+        where: dsv.id in ^orphan_ids,
         update: [set: [deleted_at: ^ts]],
         select: dsv.id
       ),

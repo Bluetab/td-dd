@@ -6,9 +6,9 @@ defmodule TdDd.DataStructures.PathCache do
 
   import Ecto.Query
 
-  alias TdDd.Repo
-  alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.DataStructureRelation
+  alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.Repo
 
   require Logger
 

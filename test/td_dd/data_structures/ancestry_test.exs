@@ -3,7 +3,7 @@ defmodule TdDd.DataStructures.AncestryTest do
 
   alias TdDd.DataStructures.Ancestry
 
-  describe "TdDd.DataStructures" do
+  describe "TdDd.DataStructures.Ancestry" do
     test "get_descendent_ids/1 returns all descendents for a given external_id" do
       dsvs = create_hierarchy(["foo", "bar", "baz", "xyzzy"])
       assert ids = Ancestry.get_descendent_ids("foo")
