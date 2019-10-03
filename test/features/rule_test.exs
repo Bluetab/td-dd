@@ -2,10 +2,12 @@ defmodule TdQd.RuleTest do
   @moduledoc false
   use Cabbage.Feature, async: false, file: "rule.feature"
   use TdDqWeb.ConnCase
+
   import TdDqWeb.Authentication, only: :functions
   import TdDqWeb.Rule, only: :functions
   import TdDqWeb.RuleType, only: :functions
   import TdDqWeb.ResponseCode, only: :functions
+
   alias TdDq.Permissions.MockPermissionResolver
   alias TdDqWeb.ApiServices.MockTdAuditService
 

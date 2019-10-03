@@ -16,8 +16,10 @@ defmodule Timer do
       micros
       |> div(divisor)
       |> on_complete.(res)
-    after
+
       res
+    rescue
+      _ -> res
     end
   end
 end

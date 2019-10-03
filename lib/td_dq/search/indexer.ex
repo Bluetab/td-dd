@@ -7,7 +7,7 @@ defmodule TdDq.Search.Indexer do
   alias Jason, as: JSON
   alias TdCache.Redix
   alias TdDq.Search.Cluster
-  alias TdDq.Search.RuleMappings
+  alias TdDq.Search.Mappings
   alias TdDq.Search.Store
 
   require Logger
@@ -17,7 +17,7 @@ defmodule TdDq.Search.Indexer do
 
   def reindex(:all) do
     template =
-      RuleMappings.get_mappings()
+      Mappings.get_mappings()
       |> Map.put(:index_patterns, "#{@index}-*")
       |> JSON.encode!()
 

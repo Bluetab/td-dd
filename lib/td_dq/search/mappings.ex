@@ -1,4 +1,4 @@
-defmodule TdDq.Search.RuleMappings do
+defmodule TdDq.Search.Mappings do
   @moduledoc """
   Elastic Search mappings for Quality Rule
   """
