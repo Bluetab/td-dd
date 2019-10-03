@@ -23,8 +23,10 @@ config :td_dd, TdDdWeb.Endpoint,
 # (without the 'end of line' character)
 # EX_LOGGER_FORMAT='$date $time [$level] $message'
 config :logger, :console,
-  format: (System.get_env("EX_LOGGER_FORMAT") || "$time $metadata[$level] $message") <> "\n",
-  metadata: [:request_id]
+  format: (System.get_env("EX_LOGGER_FORMAT") || "$date\T$time\Z [$level]$levelpad $metadata$message") <> "\n",
+  level: :info,
+  metadata: [:pid, :module],
+  utc_log: true
 
 # Configuration for Phoenix
 config :phoenix, :json_library, Jason

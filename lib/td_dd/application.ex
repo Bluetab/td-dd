@@ -47,8 +47,7 @@ defmodule TdDd.Application do
 
   defp startup_tasks(_env) do
     [
-      {TdDd.DataStructures.Hasher, []},
-      {TdDd.Search.Reindex, []}
+      {TdDd.DataStructures.Hasher, []}
     ]
   end
 end

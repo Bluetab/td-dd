@@ -29,10 +29,6 @@ config :td_dd, TdDdWeb.Endpoint,
 # configured to run both http and https servers on
 # different ports.
 
-# Do not include metadata nor timestamps in development logs
-config :logger, :console,
-  format: (System.get_env("EX_LOGGER_FORMAT") || "[$level] $message") <> "\n"
-
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.
 config :phoenix, :stacktrace_depth, 20

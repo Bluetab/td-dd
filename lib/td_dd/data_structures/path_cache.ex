@@ -41,22 +41,29 @@ defmodule TdDd.DataStructures.PathCache do
 
   @impl true
   def handle_info(:load_cache, _state) do
-    {ms, graph} = Timer.time(fn -> load_cache() end)
-    Logger.info("Path cache loaded in #{ms}ms")
-    {:noreply, graph}
+    state = do_load()
+    {:noreply, state}
   end
 
   @impl true
   def handle_call(:refresh, _from, _state) do
-    {ms, graph} = Timer.time(fn -> load_cache() end)
-    Logger.info("Path cache refreshed in #{ms}ms")
-    {:reply, :ok, graph}
+    state = do_load()
+    {:reply, :ok, state}
   end
 
   @impl true
   def handle_call(id, _from, state) do
     path = Map.get(state, id, [])
     {:reply, path, state}
+  end
+
+  ## Private functions
+
+  defp do_load do
+    Timer.time(
+      fn -> load_cache() end,
+      fn ms, _ -> Logger.info("Path cache refreshed in #{ms}ms") end
+    )
   end
 
   defp load_cache do

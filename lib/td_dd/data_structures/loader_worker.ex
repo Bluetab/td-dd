@@ -44,16 +44,20 @@ defmodule TdDd.Loader.LoaderWorker do
   @impl true
   def handle_cast({:profiles, profiles}, state) do
     Logger.info("Bulk loading profiles")
-    {ms, res} = Timer.time(fn -> ProfilingLoader.load(profiles) end)
 
-    case res do
-      {:ok, ids} ->
-        count = Enum.count(ids)
-        Logger.info("Bulk load process completed in #{ms}ms (#{count} upserts)")
+    Timer.time(
+      fn -> ProfilingLoader.load(profiles) end,
+      fn ms, res ->
+        case res do
+          {:ok, ids} ->
+            count = Enum.count(ids)
+            Logger.info("Bulk load process completed in #{ms}ms (#{count} upserts)")
 
-      _ ->
-        Logger.warn("Bulk load failed after #{ms}")
-    end
+          _ ->
+            Logger.warn("Bulk load failed after #{ms}")
+        end
+      end
+    )
 
     {:noreply, state}
   end
@@ -80,19 +84,21 @@ defmodule TdDd.Loader.LoaderWorker do
     graph = Graph.new()
 
     try do
-      {ms, res} =
-        Timer.time(fn -> Loader.load(graph, structures, fields, relations, audit, opts) end)
+      Timer.time(
+        fn -> Loader.load(graph, structures, fields, relations, audit, opts) end,
+        fn ms, res ->
+          case res do
+            {:ok, ids} ->
+              count = Enum.count(ids)
+              Logger.info("Bulk load process completed in #{ms}ms (#{count} upserts)")
+              post_process(ids, opts)
 
-      case res do
-        {:ok, ids} ->
-          count = Enum.count(ids)
-          Logger.info("Bulk load process completed in #{ms}ms (#{count} upserts)")
-          post_process(ids, opts)
-
-        e ->
-          Logger.warn("Bulk load failed after #{ms}ms (#{inspect(e)})")
-          e
-      end
+            e ->
+              Logger.warn("Bulk load failed after #{ms}ms (#{inspect(e)})")
+              e
+          end
+        end
+      )
     after
       Graph.delete(graph)
     end

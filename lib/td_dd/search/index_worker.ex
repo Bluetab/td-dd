@@ -45,7 +45,18 @@ defmodule TdDd.Search.IndexWorker do
   def init(state) do
     name = String.replace_prefix("#{__MODULE__}", "Elixir.", "")
     Logger.info("Running #{name}")
+
+    unless Application.get_env(:td_dd, :env) == :test do
+      Process.send_after(self(), :migrate, 0)
+    end
+
     {:ok, state}
+  end
+
+  @impl GenServer
+  def handle_info(:migrate, state) do
+    Indexer.migrate()
+    {:noreply, state}
   end
 
   @impl true
@@ -56,6 +67,7 @@ defmodule TdDd.Search.IndexWorker do
   @impl true
   def handle_cast({:reindex, :all}, state) do
     PathCache.refresh(10_000)
+    Logger.info("Reindexing all data structures")
     do_reindex(:all)
 
     {:noreply, state}
@@ -65,8 +77,7 @@ defmodule TdDd.Search.IndexWorker do
   def handle_cast({:reindex, ids}, state) do
     PathCache.refresh(10_000)
     Logger.info("Reindexing #{Enum.count(ids)} data structures")
-    {ms, _} = Timer.time(fn -> Indexer.reindex(ids) end)
-    Logger.info("Data structures indexed in #{ms}ms")
+    do_reindex(ids)
 
     {:noreply, state}
   end
@@ -81,10 +92,11 @@ defmodule TdDd.Search.IndexWorker do
     {:noreply, state}
   end
 
-  defp do_reindex(:all) do
-    Logger.info("Reindexing all data structures")
-    {ms, _} = Timer.time(fn -> Indexer.reindex(:all) end)
-    Logger.info("Data structures indexed in #{ms}ms")
+  defp do_reindex(ids) do
+    Timer.time(
+      fn -> Indexer.reindex(ids) end,
+      fn ms -> Logger.info("Data structures indexed in #{ms}ms") end
+    )
   end
 
   defp reindex_event?(%{event: "add_template", scope: "dd"}), do: true

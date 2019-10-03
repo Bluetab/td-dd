@@ -6,6 +6,7 @@ defmodule TdDd.Search.Indexer do
   alias Elasticsearch.Index
   alias Elasticsearch.Index.Bulk
   alias Jason, as: JSON
+  alias TdDd.DataStructures.Migrations
   alias TdDd.Search.Cluster
   alias TdDd.Search.Mappings
   alias TdDd.Search.Store
@@ -58,18 +59,64 @@ defmodule TdDd.Search.Indexer do
     end)
   end
 
-  defp time(bulk_page_size, fun) do
-    {millis, res} = Timer.time(fun)
+  def migrate do
+    unless alias_exists?(@index) do
+      if Migrations.can_migrate?("TD-1721") do
+        case Migrations.soft_delete_obsolete_versions() do
+          {0, _} -> Logger.debug("No obsolete versions deleted")
+          {count, _} -> Logger.warn("Soft-deleted #{count} obsolete data structure versions")
+        end
 
-    case millis do
-      0 ->
-        Logger.info("Indexing rate :infinity items/s")
+        case Migrations.soft_delete_orphan_fields() do
+          {0, _} -> Logger.debug("No orphan fields deleted")
+          {count, _} -> Logger.warn("Soft-deleted #{count} orphan fields")
+        end
 
-      millis ->
-        rate = div(1_000 * bulk_page_size, millis)
-        Logger.info("Indexing rate #{rate} items/s")
+        delete_existing_index(@index)
+
+        Timer.time(
+          fn -> reindex(:all) end,
+          fn millis, _ -> Logger.info("Migrated index #{@index} in #{millis}ms") end
+        )
+      else
+        Logger.warn("Another process is migrating")
+      end
     end
+  end
 
-    res
+  defp time(bulk_page_size, fun) do
+    Timer.time(
+      fun,
+      fn millis, _ ->
+        case millis do
+          0 ->
+            Logger.info("Indexing rate :infinity items/s")
+
+          millis ->
+            rate = div(1_000 * bulk_page_size, millis)
+            Logger.info("Indexing rate #{rate} items/s")
+        end
+      end
+    )
+  end
+
+  defp alias_exists?(name) do
+    case Elasticsearch.head(Cluster, "/_alias/#{name}") do
+      {:ok, _} -> true
+      {:error, _} -> false
+    end
+  end
+
+  defp delete_existing_index(name) do
+    case Elasticsearch.delete(Cluster, "/#{name}") do
+      {:ok, _} ->
+        Logger.info("Deleted index #{name}")
+
+      {:error, %{status: 404}} ->
+        :ok
+
+      error ->
+        error
+    end
   end
 end
