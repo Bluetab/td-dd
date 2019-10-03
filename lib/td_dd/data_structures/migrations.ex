@@ -6,8 +6,8 @@ defmodule TdDd.DataStructures.Migrations do
   import Ecto.Query
 
   alias TdCache.Redix
-  alias TdDd.Repo
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.Repo
 
   def soft_delete_obsolete_versions(ts \\ DateTime.utc_now()) do
     Repo.update_all(
