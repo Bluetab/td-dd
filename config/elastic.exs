@@ -41,11 +41,13 @@ config :td_dq, TdDq.Search.Cluster,
       # When indexing data using the `mix elasticsearch.build` task,
       # control the data ingestion rate by raising or lowering the number
       # of items to send in each bulk request.
-      bulk_page_size: 1_000,
+      bulk_page_size: 1000,
 
       # Likewise, wait a given period between posting pages to give
       # Elasticsearch time to catch up.
-      # 1 second
-      bulk_wait_interval: 1_000
+      bulk_wait_interval: 0,
+
+      # Support create or replace
+      bulk_action: "index"
     }
   }

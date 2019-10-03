@@ -27,8 +27,7 @@ config :td_dq, TdDq.Auth.Guardian,
   ttl: {1, :hours},
   secret_key: "${GUARDIAN_SECRET_KEY}"
 
-config :td_dq, TdDq.Search.Cluster,
-  url: "${ES_URL}"
+config :td_dq, TdDq.Search.Cluster, url: "${ES_URL}"
 
 config :td_dq, :audit_service,
   api_service: TdDqWeb.ApiServices.HttpTdAuditService,
@@ -48,6 +47,6 @@ config :td_cache, :event_stream,
   consumer_id: "${HOSTNAME}",
   consumer_group: "dq",
   streams: [
-    [key: "business_concept:events", consumer: TdDq.Cache.RuleIndexer],
+    [key: "business_concept:events", consumer: TdDq.Search.IndexWorker],
     [key: "template:events", consumer: TdDq.Search.IndexWorker]
   ]

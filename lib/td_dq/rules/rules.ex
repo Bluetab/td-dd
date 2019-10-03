@@ -445,14 +445,6 @@ defmodule TdDq.Rules do
     |> Repo.all()
   end
 
-  def get_last_rule_result(implementation_key) do
-    RuleResult
-    |> where([r], r.implementation_key == ^implementation_key)
-    |> order_by(desc: :date)
-    |> limit(1)
-    |> Repo.one()
-  end
-
   @doc """
   Returns the list of rule_implementations.
 
@@ -982,13 +974,21 @@ defmodule TdDq.Rules do
   end
 
   @doc """
-    Returns last rule_result for each rule_implementation of rule
+  Returns last rule_result for each rule_implementation of rule
   """
-  def get_last_rule_implementations_result(rule) do
+  def get_latest_rule_results(%Rule{} = rule) do
     rule
     |> Repo.preload(:rule_implementations)
     |> Map.get(:rule_implementations)
-    |> Enum.map(&get_last_rule_result(&1.implementation_key))
+    |> Enum.map(&get_latest_rule_result(&1.implementation_key))
     |> Enum.filter(& &1)
+  end
+
+  def get_latest_rule_result(implementation_key) do
+    RuleResult
+    |> where([r], r.implementation_key == ^implementation_key)
+    |> order_by(desc: :date)
+    |> limit(1)
+    |> Repo.one()
   end
 end

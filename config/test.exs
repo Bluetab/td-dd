@@ -41,3 +41,4 @@ config :td_dq, TdDq.Search.Cluster, api: TdDq.ElasticsearchMock
 
 config :td_cache, redis_host: "redis"
 
+config :td_cache, :event_stream, streams: []

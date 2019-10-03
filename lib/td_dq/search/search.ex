@@ -2,30 +2,11 @@ defmodule TdDq.Search do
   @moduledoc """
   Search Engine calls
   """
-  alias Elasticsearch.Index.Bulk
-  alias TdDq.Rules.Rule
   alias TdDq.Search.Cluster
 
   require Logger
 
   @index "rules"
-
-  def put_bulk_search(:rule) do
-    Elasticsearch.Index.hot_swap(Cluster, @index)
-  end
-
-  def put_bulk_search(rules, :rule) do
-    bulk =
-      rules
-      |> Enum.map(&Bulk.encode!(Cluster, &1, @index, "index"))
-      |> Enum.join("")
-
-    Elasticsearch.post(Cluster, "/#{@index}/_doc/_bulk", bulk)
-  end
-
-  def put_bulk_delete(ids, :rule) do
-    Enum.map(ids, &Elasticsearch.delete_document(Cluster, %Rule{id: &1}, @index))
-  end
 
   def search(query) do
     Logger.debug(fn -> "Query: #{inspect(query)}" end)
