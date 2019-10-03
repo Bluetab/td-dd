@@ -5,7 +5,20 @@ defmodule TdDd.CSV.Download do
 
   alias TdCache.TemplateCache
 
-  def to_csv(structures, header_labels) do
+  @headers [
+    "type",
+    "name",
+    "group",
+    "ou",
+    "system",
+    "path",
+    "description",
+    "external_id",
+    "inserted_at",
+    "deleted_at"
+  ]
+
+  def to_csv(structures, header_labels \\ nil) do
     structures_by_type = Enum.group_by(structures, &(Map.get(&1, :type) ))
     types = Map.keys(structures_by_type)
 
@@ -46,12 +59,12 @@ defmodule TdDd.CSV.Download do
       values = [
         structure.type,
         structure.name,
-        structure.external_id,
         structure.group,
         structure.ou,
         Map.get(structure.system, "name"),
         Enum.join(structure.path, " > "),
         structure.description,
+        structure.external_id,
         structure.inserted_at,
         structure.deleted_at
       ]
@@ -76,19 +89,12 @@ defmodule TdDd.CSV.Download do
     |> Enum.to_list()
   end
 
+  defp build_headers(nil) do
+    @headers
+  end
+
   defp build_headers(header_labels) do
-    [
-      "type",
-      "name",
-      "external_id",
-      "group",
-      "ou",
-      "system",
-      "path",
-      "description",
-      "inserted_at",
-      "deleted_at"
-    ]
+    @headers
     |> Enum.map(fn h -> Map.get(header_labels, h, h) end)
   end
 
