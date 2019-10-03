@@ -19,7 +19,7 @@ defmodule TdDd.CSV.Download do
   ]
 
   def to_csv(structures, header_labels \\ nil) do
-    structures_by_type = Enum.group_by(structures, &(Map.get(&1, :type) ))
+    structures_by_type = Enum.group_by(structures, &Map.get(&1, :type))
     types = Map.keys(structures_by_type)
 
     templates_by_type = Enum.reduce(types, %{}, &Map.put(&2, &1, TemplateCache.get_by_name!(&1)))
@@ -29,7 +29,9 @@ defmodule TdDd.CSV.Download do
         structures = Map.get(structures_by_type, type)
         template = Map.get(templates_by_type, type)
 
-        csv_list = template_structures_to_csv(template, structures, header_labels, !Enum.empty?(acc))
+        csv_list =
+          template_structures_to_csv(template, structures, header_labels, !Enum.empty?(acc))
+
         acc ++ csv_list
       end)
 

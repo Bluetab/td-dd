@@ -397,6 +397,7 @@ defmodule TdDdWeb.DataStructureController do
         "Search query parameter"
       )
     end
+
     response(200, "OK")
     response(403, "User is not authorized to perform this action")
     response(422, "Error while CSV download")
@@ -418,8 +419,11 @@ defmodule TdDdWeb.DataStructureController do
     %{results: data_structures} = search_all_structures(user, permission, params)
 
     case data_structures do
-      [] -> send_resp(conn, :no_content, "")
-      _ -> conn
+      [] ->
+        send_resp(conn, :no_content, "")
+
+      _ ->
+        conn
         |> put_resp_content_type("text/csv", "utf-8")
         |> put_resp_header("content-disposition", "attachment; filename=\"structures.zip\"")
         |> send_resp(200, Download.to_csv(data_structures, header_labels))

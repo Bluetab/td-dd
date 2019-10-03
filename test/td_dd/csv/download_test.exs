@@ -55,15 +55,18 @@ defmodule TdDd.DownloadTest do
         system: %{"external_id" => "sys", "name" => "sys_name"}
       }
 
-      structures = [ structure_1 ]
+      structures = [structure_1]
       csv = Download.to_csv(structures)
 
       assert csv ==
-        """
-        type;name;group;ou;system;path;description;external_id;inserted_at;deleted_at;Add Info 1\r
-        #{structure_1.type};#{structure_1.name};#{structure_1.group};#{structure_1.ou};#{Map.get(structure_1.system,"name")};CMC > Objetos Públicos > Informes > Cuadro de Mando Integral;#{structure_1.description};#{structure_1.external_id};#{structure_1.inserted_at};#{structure_1.deleted_at};field_value\r
-        """
-
+               """
+               type;name;group;ou;system;path;description;external_id;inserted_at;deleted_at;Add Info 1\r
+               #{structure_1.type};#{structure_1.name};#{structure_1.group};#{structure_1.ou};#{
+                 Map.get(structure_1.system, "name")
+               };CMC > Objetos Públicos > Informes > Cuadro de Mando Integral;#{
+                 structure_1.description
+               };#{structure_1.external_id};#{structure_1.inserted_at};#{structure_1.deleted_at};field_value\r
+               """
     end
   end
 end
