@@ -3,8 +3,7 @@ use Mix.Config
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
 config :td_dq, TdDqWeb.Endpoint,
-  http: [port: 3004],
-  url: [host: "localhost", port: 3004],
+  http: [port: 4004],
   server: true
 
 config :td_dq, hashing_module: TdDq.DummyHashing
