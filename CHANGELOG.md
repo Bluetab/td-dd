@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+## Added
+
+- [TD-2048] New column system_required in Rule
+
+## Changed
+
+- [TD-2048] Optional system in Rule Implementations
+
 ## [3.7.0] 2019-09-30
 
 ### Added
