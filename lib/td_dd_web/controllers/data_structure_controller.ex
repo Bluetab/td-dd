@@ -8,6 +8,7 @@ defmodule TdDdWeb.DataStructureController do
   alias TdCache.TaxonomyCache
   alias TdDd.Audit.AuditSupport
   alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
+  alias TdDd.CSV.Download
   alias TdDd.DataStructure.BulkUpdate
   alias TdDd.DataStructure.Search
   alias TdDd.DataStructures
@@ -383,5 +384,49 @@ defmodule TdDdWeb.DataStructureController do
     params
     |> Map.drop(["page", "size"])
     |> Search.search_data_structures(user, permission, 0, 10_000)
+  end
+
+  swagger_path :csv do
+    description("Download CSV of structures")
+    produces("application/json")
+
+    parameters do
+      search(
+        :body,
+        Schema.ref(:DataStructureSearchRequest),
+        "Search query parameter"
+      )
+    end
+
+    response(200, "OK")
+    response(403, "User is not authorized to perform this action")
+    response(422, "Error while CSV download")
+  end
+
+  def csv(conn, params) do
+    header_labels =
+      params
+      |> Map.get("header_labels", %{})
+
+    params =
+      params
+      |> Map.drop(["header_labels"])
+      |> Map.drop(["page", "size"])
+
+    permission = conn.assigns[:search_permission]
+    user = conn.assigns[:current_user]
+
+    %{results: data_structures} = search_all_structures(user, permission, params)
+
+    case data_structures do
+      [] ->
+        send_resp(conn, :no_content, "")
+
+      _ ->
+        conn
+        |> put_resp_content_type("text/csv", "utf-8")
+        |> put_resp_header("content-disposition", "attachment; filename=\"structures.zip\"")
+        |> send_resp(200, Download.to_csv(data_structures, header_labels))
+    end
   end
 end
