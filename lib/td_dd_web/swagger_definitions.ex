@@ -157,6 +157,18 @@ defmodule TdDdWeb.SwaggerDefinitions do
             )
           end
         end,
+      CsvRequest:
+        swagger_schema do
+          properties do
+            csv_request(
+              Schema.new do
+                properties do
+                  search_params(:object, "Search params")
+                end
+              end
+            )
+          end
+        end,
       DataStructures:
         swagger_schema do
           title("Data Structures")

@@ -16,6 +16,7 @@
 - [TD-2089] Profiling support for structures
 - [TD-2118] Metadata as mapping in data structures search
 - [TD-2068] Use sortable normalizer for some fields in ES mappings
+- [TD-1871] Structures CSV download
 
 ## [3.6.0] 2019-09-16
 
