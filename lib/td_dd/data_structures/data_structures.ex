@@ -14,7 +14,7 @@ defmodule TdDd.DataStructures do
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Profile
   alias TdDd.Repo
-  alias TdDd.Search.Indexer
+  alias TdDd.Search.IndexWorker
   alias TdDd.Utils.CollectionUtils
   alias TdDfLib.Validation
 
@@ -242,7 +242,7 @@ defmodule TdDd.DataStructures do
     Repo.transaction(fn ->
       with {:ok, data_structure} <- insert_data_structure(ds_attrs),
            {:ok, _dsv} <- insert_data_structure_version(data_structure, dsv_attrs) do
-        Indexer.reindex(data_structure.id)
+        IndexWorker.reindex(data_structure.id, 10_000)
         Repo.preload(data_structure, :system)
       else
         {:error, e} -> Repo.rollback(e)
@@ -314,7 +314,7 @@ defmodule TdDd.DataStructures do
     |> Repo.update()
     |> case do
       {:ok, %{id: id}} = result ->
-        Indexer.reindex(id)
+        IndexWorker.reindex(id)
         result
 
       result ->
@@ -355,7 +355,8 @@ defmodule TdDd.DataStructures do
       {:ok, _} ->
         data_structure
         |> Map.get(:versions)
-        |> Indexer.delete_all()
+        |> Enum.map(& &1.id)
+        |> IndexWorker.delete()
 
         result
 

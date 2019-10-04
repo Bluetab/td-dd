@@ -88,10 +88,10 @@ defmodule TdDd.Loader.LoaderWorker do
         fn -> Loader.load(graph, structures, fields, relations, audit, opts) end,
         fn ms, res ->
           case res do
-            {:ok, ids} ->
-              count = Enum.count(ids)
+            {:ok, data_structure_ids} ->
+              count = Enum.count(data_structure_ids)
               Logger.info("Bulk load process completed in #{ms}ms (#{count} upserts)")
-              post_process(ids, opts)
+              post_process(data_structure_ids, opts)
 
             e ->
               Logger.warn("Bulk load failed after #{ms}ms (#{inspect(e)})")
@@ -106,22 +106,22 @@ defmodule TdDd.Loader.LoaderWorker do
 
   defp post_process([], _), do: :ok
 
-  defp post_process(ids, opts) do
-    do_post_process(ids, opts[:external_id])
+  defp post_process(data_structure_ids, opts) do
+    do_post_process(data_structure_ids, opts[:external_id])
   end
 
-  defp do_post_process(ids, nil) do
+  defp do_post_process(data_structure_ids, nil) do
     # If any ids have been returned by the bulk load process, these
     # data structures should be reindexed.
-    @index_worker.reindex(ids)
+    @index_worker.reindex(data_structure_ids)
   end
 
-  defp do_post_process(ids, external_id) do
+  defp do_post_process(data_structure_ids, external_id) do
     #  As the ancestry of the loaded structure may have changed, also reindex
     # that data structure and it's descendents.
     external_id
     |> Ancestry.get_descendent_ids()
-    |> Enum.concat(ids)
+    |> Enum.concat(data_structure_ids)
     |> Enum.uniq()
     |> do_post_process(nil)
   end

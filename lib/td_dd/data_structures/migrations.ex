@@ -49,7 +49,7 @@ defmodule TdDd.DataStructures.Migrations do
 
   # Ensure only one instance of dd is reindexing by creating a lock in Redis
   def can_migrate?(id) do
-    Redix.command!(["SET", "TdDd.DataStructures.Migrations:" <> id, node(), "NX", "EX", 3600]) ==
+    Redix.command!(["SET", "TdDd.DataStructures.Migrations:#{id}", node(), "NX", "EX", 3600]) ==
       "OK"
   end
 end

@@ -24,8 +24,16 @@ defmodule TdDd.Search.IndexWorker do
 
   def reindex([]), do: :ok
 
-  def reindex(ids) do
-    GenServer.cast(__MODULE__, {:reindex, ids})
+  def reindex(data_structure_ids) do
+    GenServer.cast(__MODULE__, {:reindex, data_structure_ids})
+  end
+
+  def reindex(data_structure_ids, timeout) do
+    GenServer.call(__MODULE__, {:reindex, data_structure_ids}, timeout)
+  end
+
+  def delete(data_structure_version_ids) do
+    GenServer.cast(__MODULE__, {:delete, data_structure_version_ids})
   end
 
   def ping(timeout \\ 5000) do
@@ -65,20 +73,36 @@ defmodule TdDd.Search.IndexWorker do
   end
 
   @impl true
-  def handle_cast({:reindex, :all}, state) do
+  def handle_call({:reindex, data_structure_ids}, _from, state) do
     PathCache.refresh(10_000)
-    Logger.info("Reindexing all data structures")
-    do_reindex(:all)
+    reply = do_reindex(data_structure_ids)
+
+    {:reply, reply, state}
+  end
+
+  @impl true
+  def handle_cast({:delete, data_structure_version_ids}, state) do
+    Timer.time(
+      fn -> Indexer.delete(data_structure_version_ids) end,
+      fn ms, _ ->
+        Logger.info("Deleted #{Enum.count(data_structure_version_ids)} documents in #{ms}ms")
+      end
+    )
 
     {:noreply, state}
   end
 
   @impl true
-  def handle_cast({:reindex, ids}, state) do
+  def handle_cast({:reindex, :all}, state) do
     PathCache.refresh(10_000)
-    Logger.info("Reindexing #{Enum.count(ids)} data structures")
-    do_reindex(ids)
+    do_reindex(:all)
+    {:noreply, state}
+  end
 
+  @impl true
+  def handle_cast({:reindex, data_structure_ids}, state) do
+    PathCache.refresh(10_000)
+    do_reindex(data_structure_ids)
     {:noreply, state}
   end
 
@@ -92,10 +116,21 @@ defmodule TdDd.Search.IndexWorker do
     {:noreply, state}
   end
 
-  defp do_reindex(ids) do
+  defp do_reindex(:all) do
+    Logger.info("Reindexing all data structures")
+
     Timer.time(
-      fn -> Indexer.reindex(ids) end,
-      fn ms -> Logger.info("Data structures indexed in #{ms}ms") end
+      fn -> Indexer.reindex(:all) end,
+      fn ms, _ -> Logger.info("Reindexed all data structures in #{ms}ms") end
+    )
+  end
+
+  defp do_reindex(data_structure_ids) do
+    count = Enum.count(data_structure_ids)
+
+    Timer.time(
+      fn -> Indexer.reindex(data_structure_ids) end,
+      fn ms, _ -> Logger.info("Reindexed #{count} data structures in #{ms}ms") end
     )
   end
 

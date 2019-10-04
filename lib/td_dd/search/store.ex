@@ -7,50 +7,31 @@ defmodule TdDd.Search.Store do
 
   import Ecto.Query
 
-  alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Repo
 
+  @chunk_size 1000
+
   @impl true
-  def stream(DataStructureVersion) do
-    query()
+  def stream(schema) do
+    schema
+    |> where([dsv], is_nil(dsv.deleted_at))
+    |> select([dsv], dsv)
     |> Repo.stream()
-    |> Stream.map(&preload/1)
+    |> Repo.stream_preload(@chunk_size, data_structure: :system)
+  end
+
+  def stream(schema, data_structure_ids) do
+    schema
+    |> where([dsv], is_nil(dsv.deleted_at))
+    |> where([dsv], dsv.data_structure_id in ^data_structure_ids)
+    |> select([dsv], dsv)
+    |> Repo.stream()
+    |> Repo.stream_preload(@chunk_size, data_structure: :system)
   end
 
   @impl true
   def transaction(fun) do
     {:ok, result} = Repo.transaction(fun, timeout: :infinity)
     result
-  end
-
-  def list(ids) do
-    ids
-    |> query()
-    |> Repo.all()
-    |> Enum.map(&preload/1)
-  end
-
-  def query do
-    from(dsv in DataStructureVersion,
-      where: is_nil(dsv.deleted_at),
-      join: ds in assoc(dsv, :data_structure),
-      join: s in assoc(ds, :system),
-      select: {dsv, ds, s}
-    )
-  end
-
-  def query(ids) do
-    from(dsv in DataStructureVersion,
-      where: is_nil(dsv.deleted_at),
-      where: dsv.data_structure_id in ^ids,
-      join: ds in assoc(dsv, :data_structure),
-      join: s in assoc(ds, :system),
-      select: {dsv, ds, s}
-    )
-  end
-
-  defp preload({data_structure_version, data_structure, system}) do
-    data_structure = Map.put(data_structure, :system, system)
-    Map.put(data_structure_version, :data_structure, data_structure)
   end
 end
