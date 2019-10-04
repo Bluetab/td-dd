@@ -11,7 +11,7 @@ defmodule TdDd.DataStructureBulkUpdateTest do
     :ok
   end
 
-  describe "business_concepts_bulk_update" do
+  describe "data_structures_bulk_update" do
     test "update_all/3 update all data structure with valid data" do
       user = build(:user)
       insert(:system, id: 1)

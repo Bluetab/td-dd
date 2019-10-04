@@ -31,18 +31,44 @@ defmodule TdDd.DataStructures.Hasher do
 
   def run(options \\ []) do
     if options[:rehash] do
-      {ms, count} = Timer.time(fn -> rehash(options[:rehash]) end)
-      if count > 0, do: Logger.info("Reset #{count} hashes in #{ms} ms")
+      reset_hashes(options[:rehash])
     end
 
-    {ms, h_count} = Timer.time(fn -> hash_self(1, -1) end)
-    if h_count > 0, do: Logger.info("Calculated #{h_count} hashes in #{ms} ms")
-    {ms, l_count} = Timer.time(fn -> hash_local(1, -1) end)
-    if l_count > 0, do: Logger.info("Calculated #{l_count} lhashes in #{ms} ms")
-    {ms, g_count} = Timer.time(fn -> hash_global(1, -1) end)
-    if g_count > 0, do: Logger.info("Calculated #{g_count} ghashes in #{ms} ms")
+    h_count =
+      Timer.time(
+        fn -> hash_self(1, -1) end,
+        fn ms, count ->
+          if count > 0, do: Logger.info("Calculated #{count} hashes in #{ms} ms")
+        end
+      )
+
+    l_count =
+      Timer.time(
+        fn -> hash_local(1, -1) end,
+        fn ms, count ->
+          if count > 0, do: Logger.info("Calculated #{count} lhashes in #{ms} ms")
+        end
+      )
+
+    g_count =
+      Timer.time(
+        fn -> hash_global(1, -1) end,
+        fn ms, count ->
+          if count > 0, do: Logger.info("Calculated #{count} ghashes in #{ms} ms")
+        end
+      )
+
     Logger.info("All structures are hashed")
     {:ok, hash: h_count, lhash: l_count, ghash: g_count}
+  end
+
+  defp reset_hashes(ids) do
+    Timer.time(
+      fn -> rehash(ids) end,
+      fn ms, count ->
+        if count > 0, do: Logger.info("Reset #{count} hashes in #{ms} ms")
+      end
+    )
   end
 
   defp rehash(%DataStructureVersion{id: id} = dsv) do

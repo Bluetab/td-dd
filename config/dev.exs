@@ -29,10 +29,6 @@ config :td_dd, TdDdWeb.Endpoint,
 # configured to run both http and https servers on
 # different ports.
 
-# Do not include metadata nor timestamps in development logs
-config :logger, :console,
-  format: (System.get_env("EX_LOGGER_FORMAT") || "[$level] $message") <> "\n"
-
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.
 config :phoenix, :stacktrace_depth, 20
@@ -56,11 +52,6 @@ config :td_dd, :auth_service,
   auth_host: "localhost",
   auth_port: "4001",
   auth_domain: ""
-
-config :td_dd, :elasticsearch,
-  search_service: TdDd.Search,
-  es_host: "localhost",
-  es_port: 9200
 
 config :td_cache, redis_host: "localhost"
 

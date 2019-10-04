@@ -14,8 +14,8 @@ defmodule TdDd.Loader.LoaderWorker do
 
   @index_worker Application.get_env(:td_dd, :index_worker)
 
-  def start_link(name \\ nil) do
-    GenServer.start_link(__MODULE__, nil, name: name)
+  def start_link(_opts) do
+    GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
 
   def load(structures, fields, relations, audit, opts \\ []) do
@@ -44,16 +44,20 @@ defmodule TdDd.Loader.LoaderWorker do
   @impl true
   def handle_cast({:profiles, profiles}, state) do
     Logger.info("Bulk loading profiles")
-    {ms, res} = Timer.time(fn -> ProfilingLoader.load(profiles) end)
 
-    case res do
-      {:ok, ids} ->
-        count = Enum.count(ids)
-        Logger.info("Bulk load process completed in #{ms}ms (#{count} upserts)")
+    Timer.time(
+      fn -> ProfilingLoader.load(profiles) end,
+      fn ms, res ->
+        case res do
+          {:ok, ids} ->
+            count = Enum.count(ids)
+            Logger.info("Bulk load process completed in #{ms}ms (#{count} upserts)")
 
-      _ ->
-        Logger.warn("Bulk load failed after #{ms}")
-    end
+          _ ->
+            Logger.warn("Bulk load failed after #{ms}")
+        end
+      end
+    )
 
     {:noreply, state}
   end
@@ -80,19 +84,21 @@ defmodule TdDd.Loader.LoaderWorker do
     graph = Graph.new()
 
     try do
-      {ms, res} =
-        Timer.time(fn -> Loader.load(graph, structures, fields, relations, audit, opts) end)
+      Timer.time(
+        fn -> Loader.load(graph, structures, fields, relations, audit, opts) end,
+        fn ms, res ->
+          case res do
+            {:ok, data_structure_ids} ->
+              count = Enum.count(data_structure_ids)
+              Logger.info("Bulk load process completed in #{ms}ms (#{count} upserts)")
+              post_process(data_structure_ids, opts)
 
-      case res do
-        {:ok, ids} ->
-          count = Enum.count(ids)
-          Logger.info("Bulk load process completed in #{ms}ms (#{count} upserts)")
-          post_process(ids, opts)
-
-        e ->
-          Logger.warn("Bulk load failed after #{ms}ms (#{inspect(e)})")
-          e
-      end
+            e ->
+              Logger.warn("Bulk load failed after #{ms}ms (#{inspect(e)})")
+              e
+          end
+        end
+      )
     after
       Graph.delete(graph)
     end
@@ -100,22 +106,22 @@ defmodule TdDd.Loader.LoaderWorker do
 
   defp post_process([], _), do: :ok
 
-  defp post_process(ids, opts) do
-    do_post_process(ids, opts[:external_id])
+  defp post_process(data_structure_ids, opts) do
+    do_post_process(data_structure_ids, opts[:external_id])
   end
 
-  defp do_post_process(ids, nil) do
+  defp do_post_process(data_structure_ids, nil) do
     # If any ids have been returned by the bulk load process, these
     # data structures should be reindexed.
-    @index_worker.reindex(ids)
+    @index_worker.reindex(data_structure_ids)
   end
 
-  defp do_post_process(ids, external_id) do
+  defp do_post_process(data_structure_ids, external_id) do
     #  As the ancestry of the loaded structure may have changed, also reindex
     # that data structure and it's descendents.
     external_id
     |> Ancestry.get_descendent_ids()
-    |> Enum.concat(ids)
+    |> Enum.concat(data_structure_ids)
     |> Enum.uniq()
     |> do_post_process(nil)
   end

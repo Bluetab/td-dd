@@ -2,103 +2,123 @@ defmodule TdDd.Search.Indexer do
   @moduledoc """
   Manages elasticsearch indices
   """
+
+  alias Elasticsearch.Index
+  alias Elasticsearch.Index.Bulk
   alias Jason, as: JSON
-  alias TdCache.TemplateCache
-  alias TdDd.ESClientApi
-  alias TdDd.Search
+  alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.Migrations
+  alias TdDd.Search.Cluster
+  alias TdDd.Search.Mappings
+  alias TdDd.Search.Store
+
+  require Logger
+
+  @index :structures
+  @action "index"
 
   def reindex(:all) do
-    ESClientApi.delete!("data_structure")
-    mapping = get_mappings() |> JSON.encode!()
-    %{status_code: 200} = ESClientApi.put!("data_structure", mapping)
-    Search.put_bulk_search(:all)
+    {:ok, _} =
+      Mappings.get_mappings()
+      |> Map.put(:index_patterns, "#{@index}-*")
+      |> JSON.encode!()
+      |> put_template(@index)
+
+    Index.hot_swap(Cluster, @index)
   end
 
-  def reindex(ids) do
-    Search.put_bulk_search(ids)
+  def reindex(ids) when is_list(ids) do
+    Store.transaction(fn ->
+      DataStructureVersion
+      |> Store.stream(ids)
+      |> Stream.map(&Bulk.encode!(Cluster, &1, @index, @action))
+      |> Stream.chunk_every(bulk_page_size(@index))
+      |> Stream.map(&Enum.join(&1, ""))
+      |> Stream.map(&Elasticsearch.post(Cluster, "/#{@index}/_doc/_bulk", &1))
+      |> Stream.map(&log(&1, @action))
+      |> Stream.run()
+    end)
   end
 
-  defp get_mappings do
-    content_mappings = %{properties: get_dynamic_mappings()}
+  def reindex(id), do: reindex([id])
 
-    mapping_type = %{
-      id: %{type: "long", index: false},
-      name: %{type: "text", boost: 2, fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
-      system: %{
-        properties: %{
-          id: %{type: "long", index: false},
-          external_id: %{type: "text", fields: %{raw: %{type: "keyword"}}},
-          name: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}}
-        }
-      },
-      group: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
-      ou: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
-      type: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
-      confidential: %{type: "boolean", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
-      description: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
-      external_id: %{type: "keyword", index: false},
-      domain_ids: %{type: "long"},
-      deleted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-      last_change_by: %{enabled: false},
-      inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-      updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-      data_fields: %{
-        properties: %{
-          name: %{type: "text"},
-          description: %{type: "text"},
-          id: %{type: "long", index: false}
-        }
-      },
-      ancestry: %{enabled: false},
-      df_content: content_mappings,
-      status: %{type: "keyword", null_value: ""},
-      class: %{
-        type: "text",
-        fields: %{
-          raw: %{
-            type: "keyword",
-            null_value: ""
-          }
-        }
-      }
-    }
-
-    settings = %{
-      analysis: %{
-        normalizer: %{sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}}
-      }
-    }
-
-    %{mappings: %{doc: %{properties: mapping_type}}, settings: settings}
+  def delete(ids) when is_list(ids) do
+    Enum.each(ids, &Elasticsearch.delete_document(Cluster, &1, @index))
   end
 
-  def get_dynamic_mappings do
-    TemplateCache.list_by_scope!("dd")
-    |> Enum.flat_map(&get_mappings/1)
-    |> Enum.into(%{})
+  def delete(id), do: delete([id])
+
+  def migrate do
+    unless alias_exists?(@index) do
+      if Migrations.can_migrate?("TD-1721") do
+        case Migrations.soft_delete_obsolete_versions() do
+          {0, _} -> Logger.debug("No obsolete versions deleted")
+          {count, _} -> Logger.warn("Soft-deleted #{count} obsolete data structure versions")
+        end
+
+        case Migrations.soft_delete_orphan_fields() do
+          {0, _} -> Logger.debug("No orphan fields deleted")
+          {count, _} -> Logger.warn("Soft-deleted #{count} orphan fields")
+        end
+
+        delete_existing_index(@index)
+
+        Timer.time(
+          fn -> reindex(:all) end,
+          fn millis, _ -> Logger.info("Migrated index #{@index} in #{millis}ms") end
+        )
+      else
+        Logger.warn("Another process is migrating")
+      end
+    end
   end
 
-  defp get_mappings(%{content: content}) do
-    content
-    |> Enum.filter(&(Map.get(&1, "type") != "url"))
-    |> Enum.map(&field_mapping/1)
+  defp put_template(template, name) do
+    Elasticsearch.put(Cluster, "/_template/#{name}", template)
   end
 
-  defp field_mapping(%{"name" => name, "type" => "enriched_text"}) do
-    {name, mapping_type("enriched_text")}
+  defp bulk_page_size(index) do
+    :td_dd
+    |> Application.get_env(Cluster)
+    |> Keyword.get(:indexes)
+    |> Map.get(index)
+    |> Map.get(:bulk_page_size)
   end
 
-  defp field_mapping(%{"name" => name, "values" => values}) do
-    {name, mapping_type(values)}
+  defp alias_exists?(name) do
+    case Elasticsearch.head(Cluster, "/_alias/#{name}") do
+      {:ok, _} -> true
+      {:error, _} -> false
+    end
   end
 
-  defp field_mapping(%{"name" => name}) do
-    {name, mapping_type("string")}
+  defp delete_existing_index(name) do
+    case Elasticsearch.delete(Cluster, "/#{name}") do
+      {:ok, _} ->
+        Logger.info("Deleted index #{name}")
+
+      {:error, %{status: 404}} ->
+        :ok
+
+      error ->
+        error
+    end
   end
 
-  defp mapping_type(values) when is_map(values) do
-    %{type: "text", fields: %{raw: %{type: "keyword"}}}
+  defp log({:ok, %{"errors" => false, "items" => items, "took" => took}}, _action) do
+    Logger.info("Indexed #{Enum.count(items)} documents (took=#{took})")
   end
 
-  defp mapping_type(_default), do: %{type: "text"}
+  defp log({:ok, %{"errors" => true} = response}, action) do
+    first_error = response["items"] |> Enum.find(& &1[action]["error"])
+    Logger.warn("Bulk indexing encountered errors #{inspect(first_error)}")
+  end
+
+  defp log({:error, error}, _action) do
+    Logger.warn("Bulk indexing encountered errors #{inspect(error)}")
+  end
+
+  defp log(error, _action) do
+    Logger.warn("Bulk indexing encountered errors #{inspect(error)}")
+  end
 end

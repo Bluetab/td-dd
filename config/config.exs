@@ -23,8 +23,10 @@ config :td_dd, TdDdWeb.Endpoint,
 # (without the 'end of line' character)
 # EX_LOGGER_FORMAT='$date $time [$level] $message'
 config :logger, :console,
-  format: (System.get_env("EX_LOGGER_FORMAT") || "$time $metadata[$level] $message") <> "\n",
-  metadata: [:request_id]
+  format: (System.get_env("EX_LOGGER_FORMAT") || "$date\T$time\Z [$level]$levelpad $metadata$message") <> "\n",
+  level: :info,
+  metadata: [:pid, :module],
+  utc_log: true
 
 # Configuration for Phoenix
 config :phoenix, :json_library, Jason
@@ -57,11 +59,15 @@ config :td_cache, :event_stream,
   consumer_id: "default",
   consumer_group: "dd",
   streams: [
-    [key: "data_structure:events", consumer: TdDd.Cache.StructureLoader]
+    [key: "data_structure:events", consumer: TdDd.Cache.StructureLoader],
+    [key: "template:events", consumer: TdDd.Search.IndexWorker]
   ]
 
 import_config "metadata.exs"
 import_config "profiling.exs"
+
+# Import Elasticsearch config
+import_config "elastic.exs"
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

@@ -12,6 +12,7 @@ defmodule TdDdWeb.ProfileControllerTest do
     start_supervised(MockTdAuditService)
     start_supervised(MockTdAuthService)
     start_supervised(MockPermissionResolver)
+    start_supervised(LoaderWorker)
     :ok
   end
 
@@ -38,7 +39,7 @@ defmodule TdDdWeb.ProfileControllerTest do
       assert response(conn, 202) =~ ""
 
       # waits for loader to complete
-      LoaderWorker.ping()
+      LoaderWorker.ping(20_000)
       assert Enum.count(DataStructures.list_profiles()) == 3
     end
   end

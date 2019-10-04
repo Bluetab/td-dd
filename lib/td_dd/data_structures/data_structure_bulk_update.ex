@@ -4,6 +4,7 @@ defmodule TdDd.DataStructure.BulkUpdate do
 
   alias TdDd.DataStructures
   alias TdDd.Repo
+  alias TdDd.Search.IndexWorker
 
   def update_all(user, data_structures, %{"df_content" => content}) do
     data_structures =
@@ -24,34 +25,39 @@ defmodule TdDd.DataStructure.BulkUpdate do
   defp update(data_structures, update_attributes) do
     Logger.info("Updating data structures...")
 
-    start_time = DateTime.utc_now()
-
-    transaction_result =
-      Repo.transaction(fn ->
-        update_in_transaction(data_structures, update_attributes)
-      end)
-
-    end_time = DateTime.utc_now()
-
-    Logger.info(
-      "Data structures updated. Elapsed seconds: #{DateTime.diff(end_time, start_time)}"
+    Timer.time(
+      fn -> update_in_transaction(data_structures, update_attributes) end,
+      fn ms, _ ->
+        "Data structures updated in #{ms}ms"
+      end
     )
-
-    transaction_result
   end
 
   defp update_in_transaction(data_structures, update_attributes) do
-    case update_data(data_structures, update_attributes, []) do
-      {:ok, ds_list} ->
-        ds_list
+    Repo.transaction(fn ->
+      case update_data(data_structures, update_attributes, []) do
+        {:ok, ds_list} ->
+          ds_list
 
-      {:error, err} ->
-        Repo.rollback(err)
-    end
+        {:error, err} ->
+          Repo.rollback(err)
+      end
+    end)
+    |> reindex()
   end
 
+  defp reindex({:ok, data_structures}) do
+    data_structures
+    |> Enum.map(& &1.id)
+    |> IndexWorker.reindex()
+
+    {:ok, data_structures}
+  end
+
+  defp reindex(errors), do: errors
+
   defp update_data([head | tail], update_attributes, acc) do
-    case DataStructures.update_data_structure(head, update_attributes, true) do
+    case DataStructures.update_data_structure(head, update_attributes, bulk: true) do
       {:ok, ds} ->
         update_data(tail, update_attributes, [ds | acc])
 

@@ -14,10 +14,9 @@ defmodule TdDd.DataStructures do
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Profile
   alias TdDd.Repo
+  alias TdDd.Search.IndexWorker
   alias TdDd.Utils.CollectionUtils
   alias TdDfLib.Validation
-
-  @search_service Application.get_env(:td_dd, :elasticsearch)[:search_service]
 
   @doc """
   Returns the list of data_structures.
@@ -125,7 +124,12 @@ defmodule TdDd.DataStructures do
     |> enrich(options, :parents, fn dsv -> get_parents(dsv, deleted: deleted) end)
     |> enrich(options, :children, fn dsv -> get_children(dsv, deleted: deleted) end)
     |> enrich(options, :siblings, fn dsv -> get_siblings(dsv, deleted: deleted) end)
-    |> enrich(options, :data_fields, fn dsv -> get_field_structures(dsv, deleted: deleted) end)
+    |> enrich(options, :data_fields, fn dsv ->
+      get_field_structures(dsv,
+        deleted: deleted,
+        preload: if(Enum.member?(options, :profile), do: [data_structure: :profile], else: [])
+      )
+    end)
     |> enrich(options, :data_field_external_ids, fn dsv -> get_field_external_ids(dsv) end)
     |> enrich(options, :data_field_links, fn dsv -> get_field_links(dsv) end)
     |> enrich(options, :versions, fn dsv -> get_versions(dsv) end)
@@ -165,7 +169,7 @@ defmodule TdDd.DataStructures do
     |> with_deleted(options, dynamic([child, _parent, _rel], is_nil(child.deleted_at)))
     |> select([child, _parent, _rel], child)
     |> Repo.all()
-    |> Repo.preload(data_structure: :profile)
+    |> Repo.preload(options[:preload] || [])
   end
 
   def get_children(%DataStructureVersion{id: id}, options \\ []) do
@@ -238,7 +242,7 @@ defmodule TdDd.DataStructures do
     Repo.transaction(fn ->
       with {:ok, data_structure} <- insert_data_structure(ds_attrs),
            {:ok, _dsv} <- insert_data_structure_version(data_structure, dsv_attrs) do
-        @search_service.put_search(data_structure)
+        IndexWorker.reindex(data_structure.id)
         Repo.preload(data_structure, :system)
       else
         {:error, e} -> Repo.rollback(e)
@@ -271,12 +275,12 @@ defmodule TdDd.DataStructures do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_data_structure(data_structure, attrs, is_bulk \\ false)
+  def update_data_structure(data_structure, attrs, opts \\ [])
 
   def update_data_structure(
         %DataStructure{} = data_structure,
         %{"df_content" => content} = attrs,
-        is_bulk
+        opts
       )
       when not is_nil(content) do
     %{type: type} = get_latest_version(data_structure)
@@ -285,14 +289,14 @@ defmodule TdDd.DataStructures do
       %{:content => content_schema} ->
         attrs =
           data_structure
-          |> add_no_updated_fields(attrs, is_bulk)
+          |> add_no_updated_fields(attrs, opts[:bulk])
 
         content_changeset =
           Validation.build_changeset(Map.get(attrs, "df_content"), content_schema)
 
         case content_changeset.valid? do
           false -> {:error, content_changeset}
-          _ -> do_update_data_structure(data_structure, attrs)
+          _ -> do_update_data_structure(data_structure, attrs, opts)
         end
 
       _ ->
@@ -300,29 +304,23 @@ defmodule TdDd.DataStructures do
     end
   end
 
-  def update_data_structure(%DataStructure{} = data_structure, attrs, _is_bulk) do
-    do_update_data_structure(data_structure, attrs)
+  def update_data_structure(%DataStructure{} = data_structure, attrs, opts) do
+    do_update_data_structure(data_structure, attrs, opts)
   end
 
-  defp do_update_data_structure(%DataStructure{} = data_structure, attrs) do
-    result =
-      data_structure
-      |> DataStructure.update_changeset(attrs)
-      |> Repo.update()
-
-    case result do
-      {:ok, data_structure} ->
-        data_structure
-        |> @search_service.put_search
-
-        result
-
-      _ ->
-        result
-    end
+  defp do_update_data_structure(%DataStructure{} = data_structure, attrs, opts) do
+    data_structure
+    |> DataStructure.update_changeset(attrs)
+    |> Repo.update()
+    |> reindex(opts[:reindex])
   end
 
-  defp add_no_updated_fields(_data_structure, attrs, false), do: attrs
+  defp reindex({:ok, %{id: id}} = result, true) do
+    IndexWorker.reindex(id)
+    result
+  end
+
+  defp reindex(result, _), do: result
 
   defp add_no_updated_fields(%DataStructure{:df_content => nil} = _data_structure, attrs, true),
     do: attrs
@@ -333,6 +331,8 @@ defmodule TdDd.DataStructures do
 
     Map.put(attrs, "df_content", new_content)
   end
+
+  defp add_no_updated_fields(_data_structure, attrs, _), do: attrs
 
   @doc """
   Deletes a DataStructure.
@@ -347,11 +347,17 @@ defmodule TdDd.DataStructures do
 
   """
   def delete_data_structure(%DataStructure{} = data_structure) do
+    data_structure = Repo.preload(data_structure, :versions)
+
     result = Repo.delete(data_structure)
 
     case result do
-      {:ok, data_structure} ->
-        @search_service.delete_search(data_structure)
+      {:ok, _} ->
+        data_structure
+        |> Map.get(:versions)
+        |> Enum.map(& &1.id)
+        |> IndexWorker.delete()
+
         result
 
       _ ->

@@ -5,12 +5,10 @@ defmodule TdDd.DataStructures.DataStructureVersion do
 
   import Ecto.Changeset
 
+  alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
-  alias TdDd.Searchable
-
-  @behaviour Searchable
 
   schema "data_structure_versions" do
     field(:version, :integer, default: 0)
@@ -98,13 +96,97 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     |> validate_length(:type, max: 255)
   end
 
-  def search_fields(%DataStructureVersion{data_structure: structure, version: version}) do
-    structure
-    |> DataStructure.search_fields()
-    |> Map.put(:version, version)
-  end
+  defimpl Elasticsearch.Document do
+    alias TdCache.TaxonomyCache
+    alias TdCache.TemplateCache
+    alias TdCache.UserCache
+    alias TdDd.DataStructures.PathCache
+    alias TdDfLib.Format
 
-  def index_name(_) do
-    "data_structure"
+    @impl Elasticsearch.Document
+    def id(%{id: id}), do: id
+
+    @impl Elasticsearch.Document
+    def routing(_), do: false
+
+    @impl Elasticsearch.Document
+    def encode(%DataStructureVersion{id: id, data_structure: structure, type: type} = dsv) do
+      path = PathCache.path(id)
+      path_sort = Enum.join(path, "~")
+
+      structure
+      |> Map.take([
+        :id,
+        :ou,
+        :domain_id,
+        :external_id,
+        :system_id,
+        :inserted_at,
+        :confidential
+      ])
+      |> Map.put(:data_fields, get_data_fields(dsv))
+      |> Map.put(:path, path)
+      |> Map.put(:path_sort, path_sort)
+      |> Map.put(:last_change_by, get_last_change_by(structure))
+      |> Map.put(:domain_ids, get_domain_ids(structure))
+      |> Map.put(:system, get_system(structure))
+      |> Map.put(:df_content, format_content(structure, type))
+      |> Map.put_new(:ou, "")
+      |> Map.merge(
+        Map.take(dsv, [
+          :class,
+          :description,
+          :deleted_at,
+          :updated_at,
+          :group,
+          :name,
+          :type,
+          :metadata
+        ])
+      )
+    end
+
+    defp get_system(%DataStructure{system: system}) do
+      Map.take(system, [:id, :external_id, :name])
+    end
+
+    defp get_data_fields(%DataStructureVersion{} = dsv) do
+      dsv
+      |> DataStructures.get_field_structures(deleted: false)
+      |> Enum.map(&Map.take(&1, [:id, :name]))
+    end
+
+    defp get_domain_ids(%DataStructure{domain_id: domain_id}) do
+      case domain_id do
+        nil -> []
+        domain_id -> TaxonomyCache.get_parent_ids(domain_id)
+      end
+    end
+
+    defp get_last_change_by(%DataStructure{last_change_by: last_change_by}) do
+      get_user(last_change_by)
+    end
+
+    defp get_user(user_id) do
+      case UserCache.get(user_id) do
+        {:ok, nil} -> %{}
+        {:ok, user} -> user
+      end
+    end
+
+    defp format_content(%DataStructure{df_content: nil}, _), do: nil
+
+    defp format_content(%DataStructure{df_content: df_content}, _) when map_size(df_content) == 0,
+      do: nil
+
+    defp format_content(%DataStructure{df_content: df_content}, type) do
+      format_content(df_content, TemplateCache.get_by_name!(type))
+    end
+
+    defp format_content(df_content, %{} = template_content) do
+      df_content |> Format.search_values(template_content)
+    end
+
+    defp format_content(_, _), do: nil
   end
 end

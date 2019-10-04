@@ -3,14 +3,23 @@ defmodule Timer do
   Utility for timing function invocations
   """
 
-  def time(fun, unit \\ :millis)
+  def time(fun, on_complete, unit \\ :millis)
 
-  def time(fun, :millis), do: do_time(fun, 1_000)
+  def time(fun, on_complete, :millis), do: do_time(fun, on_complete, 1_000)
 
-  def time(fun, :seconds), do: do_time(fun, 1_000_000)
+  def time(fun, on_complete, :seconds), do: do_time(fun, on_complete, 1_000_000)
 
-  defp do_time(fun, divisor) do
+  defp do_time(fun, on_complete, divisor) do
     {micros, res} = :timer.tc(fun)
-    {div(micros, divisor), res}
+
+    try do
+      micros
+      |> div(divisor)
+      |> on_complete.(res)
+
+      res
+    rescue
+      _ -> res
+    end
   end
 end
