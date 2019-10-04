@@ -39,8 +39,6 @@ config :td_dd, :auth_service,
 
 config :td_cache, redis_host: "${REDIS_HOST}"
 
-config :td_dd, TdDd.Search.Cluster, url: "${ES_URL}"
-
 config :td_dd, :audit_service,
   api_service: TdDdWeb.ApiServices.HttpTdAuditService,
   audit_host: "${API_AUDIT_HOST}",
