@@ -25,6 +25,7 @@ defmodule TdDq.Rules.Rule do
     field(:name, :string)
     field(:population, :string)
     field(:priority, :string)
+    field(:system_required, :boolean, default: false)
     field(:weight, :integer)
     field(:version, :integer, default: 1)
     field(:updated_by, :integer)
@@ -58,7 +59,8 @@ defmodule TdDq.Rules.Rule do
       :rule_type_id,
       :type_params,
       :df_name,
-      :df_content
+      :df_content,
+      :system_required
     ])
     |> validate_required([
       :name,
