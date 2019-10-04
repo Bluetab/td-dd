@@ -39,8 +39,10 @@ config :td_dq, hashing_module: Comeonin.Bcrypt
 # (without the 'end of line' character)
 # EX_LOGGER_FORMAT='$date $time [$level] $message'
 config :logger, :console,
-  format: (System.get_env("EX_LOGGER_FORMAT") || "$time $metadata[$level] $message") <> "\n",
-  metadata: [:request_id]
+  format: (System.get_env("EX_LOGGER_FORMAT") || "$date\T$time\Z [$level]$levelpad $metadata$message") <> "\n",
+  level: :info,
+  metadata: [:pid, :module],
+  utc_log: true
 
 # Configuration for Phoenix
 config :phoenix, :json_library, Jason
@@ -58,8 +60,13 @@ config :td_cache, :event_stream,
   consumer_id: "default",
   consumer_group: "dq",
   streams: [
-    [key: "business_concept:events", consumer: TdDq.Cache.RuleIndexer]
+    [key: "business_concept:events", consumer: TdDq.Search.IndexWorker],
+    [key: "template:events", consumer: TdDq.Search.IndexWorker]
   ]
+
+# Import Elasticsearch config
+import_config "elastic.exs"
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"

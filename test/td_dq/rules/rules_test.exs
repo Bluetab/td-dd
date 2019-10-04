@@ -1,15 +1,21 @@
 defmodule TdDq.RulesTest do
   use TdDq.DataCase
+
   import Ecto.Query, warn: false
   import TdDq.Factory
 
   alias Ecto.Changeset
+  alias Elasticsearch.Document
+  alias TdDq.Cache.RuleLoader
   alias TdDq.MockRelationCache
   alias TdDq.Rule
   alias TdDq.Rules
+  alias TdDq.Search.IndexWorker
 
   setup_all do
     start_supervised(MockRelationCache)
+    start_supervised(IndexWorker)
+    start_supervised(RuleLoader)
     :ok
   end
 
@@ -366,8 +372,7 @@ defmodule TdDq.RulesTest do
       assert rule_type.id == rule |> Map.get(:rule_type) |> Map.get(:id)
     end
 
-    ## TODO review this test because it is duplicated with previous test
-    test "get_last_rule_implementations_result/1 retrieves the last results of a rule implementation" do
+    test "get_rule_by_implementation_key/1 retrieves a rule by implementation key" do
       implementation_key = "rik1"
       rule_type = insert(:rule_type)
       rule = insert(:rule, name: "Deleted Rule", rule_type: rule_type)
@@ -380,7 +385,7 @@ defmodule TdDq.RulesTest do
       assert rule_type.id == rule |> Map.get(:rule_type) |> Map.get(:id)
     end
 
-    test "search_fields/1 retrieves execution_result_info to be indexed in elastic" do
+    test "encode/1 retrieves execution_result_info to be indexed in elastic" do
       impl_key_1 = "impl_key_1"
       impl_key_2 = "impl_key_2"
       goal = 20
@@ -405,7 +410,7 @@ defmodule TdDq.RulesTest do
         date: now
       )
 
-      %{execution_result_info: execution_result_info} = Rule.search_fields(rule)
+      %{execution_result_info: execution_result_info} = Document.encode(rule)
 
       %{result_avg: result_avg, result_text: result_text} =
         Map.take(execution_result_info, [:result_avg, :result_text])
@@ -739,37 +744,21 @@ defmodule TdDq.RulesTest do
       DateTime.from_unix!(DateTime.to_unix(datetime) + increment)
     end
 
-    test "get_last_rule_result/1 returns last rule_implementation rule result" do
-      rule_implementation = insert(:rule_implementation)
+    test "get_latest_rule_result/1 returns last rule_implementation rule result" do
+      %{implementation_key: key} = insert(:rule_implementation)
       now = DateTime.utc_now()
 
-      insert(
-        :rule_result,
-        implementation_key: rule_implementation.implementation_key,
-        result: 10,
-        date: add_to_date_time(now, -1000)
-      )
+      insert(:rule_result, implementation_key: key, result: 10, date: add_to_date_time(now, -1000))
 
-      rule_result =
-        insert(
-          :rule_result,
-          implementation_key: rule_implementation.implementation_key,
-          result: 60,
-          date: now
-        )
+      rule_result = insert(:rule_result, implementation_key: key, result: 60, date: now)
 
-      insert(
-        :rule_result,
-        implementation_key: rule_implementation.implementation_key,
-        result: 80,
-        date: add_to_date_time(now, -2000)
-      )
+      insert(:rule_result, implementation_key: key, result: 80, date: add_to_date_time(now, -2000))
 
-      assert rule_result.result ==
-               Rules.get_last_rule_result(rule_implementation.implementation_key).result
+      assert %{result: result} = Rules.get_latest_rule_result(key)
+      assert result == rule_result.result
     end
 
-    test "get_last_rule_implementations_result/1 retrives last result of each rule implementation" do
+    test "get_latest_rule_results/1 retrives last result of each rule implementation" do
       rule = insert(:rule)
       rule_implementation = insert(:rule_implementation, rule: rule)
       now = DateTime.utc_now()
@@ -789,7 +778,7 @@ defmodule TdDq.RulesTest do
           date: now
         )
 
-      results = Rules.get_last_rule_implementations_result(rule)
+      results = Rules.get_latest_rule_results(rule)
       assert results == [last_rule_result]
     end
 

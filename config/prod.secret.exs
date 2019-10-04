@@ -27,16 +27,20 @@ config :td_dq, TdDq.Auth.Guardian,
   ttl: {1, :hours},
   secret_key: "${GUARDIAN_SECRET_KEY}"
 
+config :td_dq, TdDq.Search.Cluster, url: "${ES_URL}"
+
 config :td_dq, :audit_service,
   api_service: TdDqWeb.ApiServices.HttpTdAuditService,
   audit_host: "${API_AUDIT_HOST}",
   audit_port: "${API_AUDIT_PORT}",
   audit_domain: ""
 
-config :td_dq, :elasticsearch,
-  search_service: TdDq.Search,
-  es_host: "${ES_HOST}",
-  es_port: "${ES_PORT}",
-  type_name: "doc"
-
 config :td_cache, redis_host: "${REDIS_HOST}"
+
+config :td_cache, :event_stream,
+  consumer_id: "${HOSTNAME}",
+  consumer_group: "dq",
+  streams: [
+    [key: "business_concept:events", consumer: TdDq.Search.IndexWorker],
+    [key: "template:events", consumer: TdDq.Search.IndexWorker]
+  ]

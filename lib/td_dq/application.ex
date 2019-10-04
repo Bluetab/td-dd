@@ -6,31 +6,18 @@ defmodule TdDq.Application do
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
   def start(_type, _args) do
-    import Supervisor.Spec
-
-    rule_remover_worker = %{
-      id: TdDq.Rules.RuleRemover,
-      start: {TdDq.Rules.RuleRemover, :start_link, []}
-    }
+    env = Application.get_env(:td_dq, :env)
 
     # Define workers and child supervisors to be supervised
-    children = [
-      # Start the Ecto repository
-      supervisor(TdDq.Repo, []),
-      # Start the endpoint when the application starts
-      supervisor(TdDqWeb.Endpoint, []),
-      worker(TdDq.Cache.RuleLoader, []),
-      worker(TdDq.Cache.RuleResultLoader, []),
-      worker(TdDq.Cache.RuleIndexer, []),
-      worker(TdDq.Search.IndexWorker, [TdDq.Search.IndexWorker]),
-      %{
-        id: TdDq.CustomSupervisor,
-        start:
-          {TdDq.CustomSupervisor, :start_link,
-           [%{children: [rule_remover_worker], strategy: :one_for_one}]},
-        type: :supervisor
-      }
-    ]
+    children =
+      [
+        # Start the Ecto repository
+        TdDq.Repo,
+        # Start the endpoint when the application starts
+        TdDqWeb.Endpoint,
+        # Elasticsearch worker
+        TdDq.Search.Cluster
+      ] ++ workers(env)
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
@@ -43,5 +30,18 @@ defmodule TdDq.Application do
   def config_change(changed, _new, removed) do
     Endpoint.config_change(changed, removed)
     :ok
+  end
+
+  defp workers(:test), do: []
+
+  defp workers(_env) do
+    [
+      # Cache workers
+      TdDq.Cache.RuleLoader,
+      TdDq.Cache.RuleResultLoader,
+      TdDq.Search.IndexWorker,
+      # Worker to remove stale rules
+      TdDq.Rules.RuleRemover
+    ]
   end
 end

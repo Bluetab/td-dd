@@ -7,8 +7,11 @@ defmodule TdDq.Cache.RuleLoader do
 
   alias TdCache.RuleCache
   alias TdDq.Rules
+  alias TdDq.Search.IndexWorker
 
   require Logger
+
+  ## Client API
 
   def start_link(config \\ []) do
     GenServer.start_link(__MODULE__, config, name: __MODULE__)
@@ -29,6 +32,12 @@ defmodule TdDq.Cache.RuleLoader do
   def delete(rule_id) do
     delete([rule_id])
   end
+
+  def ping(timeout \\ 5000) do
+    GenServer.call(__MODULE__, :ping, timeout)
+  end
+
+  ## GenServer Callbacks
 
   @impl true
   def init(state) do
@@ -91,8 +100,14 @@ defmodule TdDq.Cache.RuleLoader do
   end
 
   @impl true
+  def handle_call(:ping, _from, state) do
+    {:reply, :pong, state}
+  end
+
+  @impl true
   def handle_call({:refresh, ids}, _from, state) do
     reply = cache_rules(ids)
+    IndexWorker.reindex(ids)
     {:reply, reply, state}
   end
 
@@ -104,10 +119,14 @@ defmodule TdDq.Cache.RuleLoader do
       |> Enum.reject(&(&1 == {:ok, [0, 0]}))
       |> Enum.count()
 
+    IndexWorker.delete(ids)
+
     {:reply, delete_count, state}
   end
 
-  def cache_rules(ids) do
+  ## Private functions
+
+  defp cache_rules(ids) do
     ids
     |> Rules.list_rules()
     |> Enum.filter(&(not is_nil(&1.business_concept_id)))

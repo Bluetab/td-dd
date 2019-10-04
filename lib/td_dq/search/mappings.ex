@@ -1,4 +1,4 @@
-defmodule TdDq.Search.RuleMappings do
+defmodule TdDq.Search.Mappings do
   @moduledoc """
   Elastic Search mappings for Quality Rule
   """
@@ -75,7 +75,7 @@ defmodule TdDq.Search.RuleMappings do
       }
     }
 
-    %{mappings: %{doc: %{properties: mapping_type}}, settings: settings}
+    %{mappings: %{_doc: %{properties: mapping_type}}, settings: settings}
   end
 
   defp get_dynamic_mappings do
