@@ -242,7 +242,7 @@ defmodule TdDd.DataStructures do
     Repo.transaction(fn ->
       with {:ok, data_structure} <- insert_data_structure(ds_attrs),
            {:ok, _dsv} <- insert_data_structure_version(data_structure, dsv_attrs) do
-        IndexWorker.reindex(data_structure.id, 10_000)
+        IndexWorker.reindex(data_structure.id)
         Repo.preload(data_structure, :system)
       else
         {:error, e} -> Repo.rollback(e)
@@ -275,12 +275,12 @@ defmodule TdDd.DataStructures do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_data_structure(data_structure, attrs, is_bulk \\ false)
+  def update_data_structure(data_structure, attrs, opts \\ [])
 
   def update_data_structure(
         %DataStructure{} = data_structure,
         %{"df_content" => content} = attrs,
-        is_bulk
+        opts
       )
       when not is_nil(content) do
     %{type: type} = get_latest_version(data_structure)
@@ -289,14 +289,14 @@ defmodule TdDd.DataStructures do
       %{:content => content_schema} ->
         attrs =
           data_structure
-          |> add_no_updated_fields(attrs, is_bulk)
+          |> add_no_updated_fields(attrs, opts[:bulk])
 
         content_changeset =
           Validation.build_changeset(Map.get(attrs, "df_content"), content_schema)
 
         case content_changeset.valid? do
           false -> {:error, content_changeset}
-          _ -> do_update_data_structure(data_structure, attrs)
+          _ -> do_update_data_structure(data_structure, attrs, opts)
         end
 
       _ ->
@@ -304,25 +304,23 @@ defmodule TdDd.DataStructures do
     end
   end
 
-  def update_data_structure(%DataStructure{} = data_structure, attrs, _is_bulk) do
-    do_update_data_structure(data_structure, attrs)
+  def update_data_structure(%DataStructure{} = data_structure, attrs, opts) do
+    do_update_data_structure(data_structure, attrs, opts)
   end
 
-  defp do_update_data_structure(%DataStructure{} = data_structure, attrs) do
+  defp do_update_data_structure(%DataStructure{} = data_structure, attrs, opts) do
     data_structure
     |> DataStructure.update_changeset(attrs)
     |> Repo.update()
-    |> case do
-      {:ok, %{id: id}} = result ->
-        IndexWorker.reindex(id)
-        result
-
-      result ->
-        result
-    end
+    |> reindex(opts[:reindex])
   end
 
-  defp add_no_updated_fields(_data_structure, attrs, false), do: attrs
+  defp reindex({:ok, %{id: id}} = result, true) do
+    IndexWorker.reindex(id)
+    result
+  end
+
+  defp reindex(result, _), do: result
 
   defp add_no_updated_fields(%DataStructure{:df_content => nil} = _data_structure, attrs, true),
     do: attrs
@@ -333,6 +331,8 @@ defmodule TdDd.DataStructures do
 
     Map.put(attrs, "df_content", new_content)
   end
+
+  defp add_no_updated_fields(_data_structure, attrs, _), do: attrs
 
   @doc """
   Deletes a DataStructure.

@@ -26,6 +26,7 @@ defmodule TdDdWeb.ConnCase do
       use ConnTest
 
       alias TdDdWeb.Router.Helpers, as: Routes
+
       import TdDd.Factory
 
       # The default endpoint for testing
@@ -42,16 +43,14 @@ defmodule TdDdWeb.ConnCase do
       Sandbox.mode(TdDd.Repo, {:shared, self()})
       parent = self()
 
-      Enum.each([TdDd.Search.IndexWorker, TdDd.Loader.LoaderWorker], fn worker ->
-        case Process.whereis(worker) do
-          nil ->
-            nil
-
-          pid ->
-            on_exit(fn -> worker.ping(20_000) end)
-            Sandbox.allow(TdDd.Repo, parent, pid)
-        end
-      end)
+      allow(
+        parent,
+        [
+          TdDd.DataStructures.PathCache,
+          TdDd.Loader.LoaderWorker,
+          TdDd.Search.IndexWorker
+        ]
+      )
     end
 
     cond do
@@ -70,5 +69,14 @@ defmodule TdDdWeb.ConnCase do
       true ->
         {:ok, conn: ConnTest.build_conn()}
     end
+  end
+
+  defp allow(parent, workers) do
+    Enum.each(workers, fn worker ->
+      case Process.whereis(worker) do
+        nil -> nil
+        pid -> Sandbox.allow(TdDd.Repo, parent, pid)
+      end
+    end)
   end
 end

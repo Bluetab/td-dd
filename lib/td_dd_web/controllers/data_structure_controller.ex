@@ -199,7 +199,7 @@ defmodule TdDdWeb.DataStructureController do
 
     with true <- can?(user, update_data_structure(data_structure_old)),
          {:ok, %DataStructure{} = data_structure} <-
-           DataStructures.update_data_structure(data_structure_old, update_params) do
+           DataStructures.update_data_structure(data_structure_old, update_params, reindex: true) do
       AuditSupport.update_data_structure(conn, data_structure_old, attrs)
 
       data_structure = get_data_structure(data_structure.id)

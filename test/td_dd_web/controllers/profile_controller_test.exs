@@ -12,6 +12,7 @@ defmodule TdDdWeb.ProfileControllerTest do
     start_supervised(MockTdAuditService)
     start_supervised(MockTdAuthService)
     start_supervised(MockPermissionResolver)
+    start_supervised(LoaderWorker)
     :ok
   end
 

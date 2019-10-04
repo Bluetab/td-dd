@@ -117,4 +117,8 @@ defmodule TdDd.Search.Indexer do
   defp log({:error, error}, _action) do
     Logger.warn("Bulk indexing encountered errors #{inspect(error)}")
   end
+
+  defp log(error, _action) do
+    Logger.warn("Bulk indexing encountered errors #{inspect(error)}")
+  end
 end

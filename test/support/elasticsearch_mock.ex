@@ -21,22 +21,22 @@ defmodule TdDd.ElasticsearchMock do
 
   @impl true
   def request(_config, :put, "/_template/structures", _data, _opts) do
-    {:ok, %Response{status_code: 200, body: JSON.encode!(%{})}}
+    {:ok, %Response{status_code: 200, body: %{}}}
   end
 
   @impl true
   def request(_config, :post, "/_aliases", _data, _opts) do
-    {:ok, %Response{status_code: 200, body: JSON.encode!(%{})}}
+    {:ok, %Response{status_code: 200, body: %{}}}
   end
 
   @impl true
   def request(_config, _method, "/structures-" <> _suffix, _data, _opts) do
-    {:ok, %Response{status_code: 200, body: JSON.encode!(%{})}}
+    {:ok, %Response{status_code: 200, body: %{}}}
   end
 
   @impl true
   def request(_config, :post, "/structures/_doc/_bulk", _data, _opts) do
-    body = JSON.encode!(%{"took" => 10, "errors" => false})
+    body = %{"took" => 10, "items" => [], "errors" => false}
     {:ok, %Response{status_code: 200, body: body}}
   end
 
@@ -51,7 +51,7 @@ defmodule TdDd.ElasticsearchMock do
 
   @impl true
   def request(_config, :delete, "/structures/_doc/" <> _id, _data, _opts) do
-    {:ok, %Response{status_code: 200, body: JSON.encode!(%{result: "deleted"})}}
+    {:ok, %Response{status_code: 200, body: %{result: "deleted"}}}
   end
 
   @impl true

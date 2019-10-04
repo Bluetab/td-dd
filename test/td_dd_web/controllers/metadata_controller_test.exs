@@ -2,6 +2,7 @@ defmodule TdDdWeb.MetadataControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
+  alias TdDd.DataStructures.PathCache
   alias TdDd.Loader.LoaderWorker
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDd.Search.MockIndexWorker
@@ -13,6 +14,8 @@ defmodule TdDdWeb.MetadataControllerTest do
     start_supervised(MockTdAuditService)
     start_supervised(MockTdAuthService)
     start_supervised(MockPermissionResolver)
+    start_supervised(LoaderWorker)
+    start_supervised(PathCache)
     :ok
   end
 

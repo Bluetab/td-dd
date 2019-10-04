@@ -14,8 +14,8 @@ defmodule TdDd.Loader.LoaderWorker do
 
   @index_worker Application.get_env(:td_dd, :index_worker)
 
-  def start_link(name \\ nil) do
-    GenServer.start_link(__MODULE__, nil, name: name)
+  def start_link(_opts) do
+    GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
 
   def load(structures, fields, relations, audit, opts \\ []) do

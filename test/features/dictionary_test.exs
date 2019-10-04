@@ -7,6 +7,7 @@ defmodule TdDd.DictionaryTest do
   import TdDdWeb.Authentication, only: :functions
 
   alias Jason, as: JSON
+  alias TdDd.DataStructures.PathCache
   alias TdDd.Loader.LoaderWorker
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDd.Search.MockIndexWorker
@@ -40,6 +41,8 @@ defmodule TdDd.DictionaryTest do
     start_supervised(MockTdAuditService)
     start_supervised(MockPermissionResolver)
     start_supervised(MockIndexWorker)
+    start_supervised(LoaderWorker)
+    start_supervised(PathCache)
     :ok
   end
 

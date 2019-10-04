@@ -14,8 +14,8 @@ defmodule TdDd.Search.IndexWorker do
 
   ## Client API
 
-  def start_link(name \\ nil) do
-    GenServer.start_link(__MODULE__, nil, name: name)
+  def start_link(_opts) do
+    GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
 
   def reindex(:all) do
@@ -28,16 +28,8 @@ defmodule TdDd.Search.IndexWorker do
     GenServer.cast(__MODULE__, {:reindex, data_structure_ids})
   end
 
-  def reindex(data_structure_ids, timeout) do
-    GenServer.call(__MODULE__, {:reindex, data_structure_ids}, timeout)
-  end
-
   def delete(data_structure_version_ids) do
     GenServer.cast(__MODULE__, {:delete, data_structure_version_ids})
-  end
-
-  def ping(timeout \\ 5000) do
-    GenServer.call(__MODULE__, :ping, timeout)
   end
 
   ## EventStream.Consumer Callbacks
@@ -65,19 +57,6 @@ defmodule TdDd.Search.IndexWorker do
   def handle_info(:migrate, state) do
     Indexer.migrate()
     {:noreply, state}
-  end
-
-  @impl true
-  def handle_call(:ping, _from, state) do
-    {:reply, :pong, state}
-  end
-
-  @impl true
-  def handle_call({:reindex, data_structure_ids}, _from, state) do
-    PathCache.refresh(10_000)
-    reply = do_reindex(data_structure_ids)
-
-    {:reply, reply, state}
   end
 
   @impl true
@@ -125,7 +104,7 @@ defmodule TdDd.Search.IndexWorker do
     )
   end
 
-  defp do_reindex(data_structure_ids) do
+  defp do_reindex(data_structure_ids) when is_list(data_structure_ids) do
     count = Enum.count(data_structure_ids)
 
     Timer.time(
@@ -133,6 +112,8 @@ defmodule TdDd.Search.IndexWorker do
       fn ms, _ -> Logger.info("Reindexed #{count} data structures in #{ms}ms") end
     )
   end
+
+  defp do_reindex(data_structure_id), do: do_reindex([data_structure_id])
 
   defp reindex_event?(%{event: "add_template", scope: "dd"}), do: true
 

@@ -6,29 +6,18 @@ defmodule TdDd.Application do
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
   def start(_type, _args) do
-    import Supervisor.Spec
-
     env = Application.get_env(:td_dd, :env)
 
     # Define workers and child supervisors to be supervised
     children =
       [
         # Start the Ecto repository
-        supervisor(TdDd.Repo, []),
+        TdDd.Repo,
         # Start the endpoint when the application starts
-        supervisor(TdDdWeb.Endpoint, []),
+        TdDdWeb.Endpoint,
         # Elasticsearch worker
-        TdDd.Search.Cluster,
-        # Path cache to improve indexing performance
-        TdDd.DataStructures.PathCache,
-        # Worker for background indexing
-        worker(TdDd.Search.IndexWorker, [TdDd.Search.IndexWorker]),
-        # Worker for background bulk loading
-        worker(TdDd.Loader.LoaderWorker, [TdDd.Loader.LoaderWorker]),
-        # Workers for cache loading
-        worker(TdDd.Cache.SystemLoader, []),
-        worker(TdDd.Cache.StructureLoader, [])
-      ] ++ startup_tasks(env)
+        TdDd.Search.Cluster
+      ] ++ workers(env)
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
@@ -43,11 +32,20 @@ defmodule TdDd.Application do
     :ok
   end
 
-  defp startup_tasks(:test), do: []
+  defp workers(:test), do: []
 
-  defp startup_tasks(_env) do
+  defp workers(_env) do
     [
-      {TdDd.DataStructures.Hasher, []}
+      # Path cache to improve indexing performance
+      TdDd.DataStructures.PathCache,
+      # Worker for background indexing
+      TdDd.Search.IndexWorker,
+      # Worker for background bulk loading
+      TdDd.Loader.LoaderWorker,
+      # Workers for cache loading
+      TdDd.Cache.SystemLoader,
+      TdDd.Cache.StructureLoader,
+      TdDd.DataStructures.Hasher
     ]
   end
 end
