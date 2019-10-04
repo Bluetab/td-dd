@@ -8,12 +8,16 @@ defmodule TdQd.RuleTest do
   import TdDqWeb.RuleType, only: :functions
   import TdDqWeb.ResponseCode, only: :functions
 
+  alias TdDq.Cache.RuleLoader
   alias TdDq.Permissions.MockPermissionResolver
+  alias TdDq.Search.IndexWorker
   alias TdDqWeb.ApiServices.MockTdAuditService
 
   setup_all do
     start_supervised(MockTdAuditService)
     start_supervised(MockPermissionResolver)
+    start_supervised(IndexWorker)
+    start_supervised(RuleLoader)
     :ok
   end
 
@@ -30,9 +34,11 @@ defmodule TdQd.RuleTest do
     assert user_name == state[:user_name]
 
     rule_type = rule_type_find(token, %{name: rule_type_name})
-    rule_type_id = rule_type
-    |> Map.get("id")
-    |> to_string
+
+    rule_type_id =
+      rule_type
+      |> Map.get("id")
+      |> to_string
 
     table =
       table ++
@@ -66,8 +72,7 @@ defmodule TdQd.RuleTest do
   defand ~r/^a existing Rule Type with name "(?<qr_name>[^"]+)" and the following parameters:$/,
          %{qr_name: qr_name, table: table},
          %{token: token} = _state do
-    {:ok, _status_code, _resp} =
-      rule_type_create(token, %{"name" => qr_name, "params" => table})
+    {:ok, _status_code, _resp} = rule_type_create(token, %{"name" => qr_name, "params" => table})
   end
 
   def assert_attr("active" = attr, value, %{} = target) do

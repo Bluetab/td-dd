@@ -1,16 +1,21 @@
 defmodule TdDq.RulesTest do
   use TdDq.DataCase
+
   import Ecto.Query, warn: false
   import TdDq.Factory
 
   alias Ecto.Changeset
   alias Elasticsearch.Document
+  alias TdDq.Cache.RuleLoader
   alias TdDq.MockRelationCache
   alias TdDq.Rule
   alias TdDq.Rules
+  alias TdDq.Search.IndexWorker
 
   setup_all do
     start_supervised(MockRelationCache)
+    start_supervised(IndexWorker)
+    start_supervised(RuleLoader)
     :ok
   end
 

@@ -8,7 +8,8 @@ defmodule TdDq.ElasticsearchMock do
   alias Elasticsearch.Document
   alias HTTPoison.Response
   alias Jason, as: JSON
-  alias TdDq.Rules
+  alias TdDq.Rules.Rule
+  alias TdDq.Search.Store
 
   require Logger
 
@@ -19,22 +20,22 @@ defmodule TdDq.ElasticsearchMock do
 
   @impl true
   def request(_config, :put, "/_template/rules", _data, _opts) do
-    {:ok, %Response{status_code: 200, body: JSON.encode!(%{})}}
+    {:ok, %Response{status_code: 200, body: %{}}}
   end
 
   @impl true
   def request(_config, :post, "/_aliases", _data, _opts) do
-    {:ok, %Response{status_code: 200, body: JSON.encode!(%{})}}
+    {:ok, %Response{status_code: 200, body: %{}}}
   end
 
   @impl true
   def request(_config, _method, "/rules-" <> _suffix, _data, _opts) do
-    {:ok, %Response{status_code: 200, body: JSON.encode!(%{})}}
+    {:ok, %Response{status_code: 200, body: %{}}}
   end
 
   @impl true
   def request(_config, :post, "/rules/_doc/_bulk", _data, _opts) do
-    body = JSON.encode!(%{"took" => 10, "errors" => false})
+    body = %{"took" => 10, "items" => [], "errors" => false}
     {:ok, %Response{status_code: 200, body: body}}
   end
 
@@ -95,14 +96,24 @@ defmodule TdDq.ElasticsearchMock do
   end
 
   defp do_search do
-    Rules.list_all_rules()
-    |> Enum.map(&Document.encode(&1))
-    |> Enum.map(&%{_source: &1})
-    |> JSON.encode!()
-    |> JSON.decode!()
+    list_documents()
   end
 
-  defp search_results(results, filters \\ %{}) do
+  defp list_documents do
+    Store.transaction(fn ->
+      Rule
+      |> Store.stream()
+      |> Enum.map(&Document.encode/1)
+    end)
+  end
+
+  defp search_results(hits, filters \\ %{}) do
+    results =
+      hits
+      |> Enum.map(&%{_source: &1})
+      |> JSON.encode!()
+      |> JSON.decode!()
+
     body = %{
       "hits" => %{"hits" => results, "total" => Enum.count(results)},
       "aggregations" => filters

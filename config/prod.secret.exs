@@ -35,12 +35,6 @@ config :td_dq, :audit_service,
   audit_port: "${API_AUDIT_PORT}",
   audit_domain: ""
 
-config :td_dq, :elasticsearch,
-  search_service: TdDq.Search,
-  es_host: "${ES_HOST}",
-  es_port: "${ES_PORT}",
-  type_name: "doc"
-
 config :td_cache, redis_host: "${REDIS_HOST}"
 
 config :td_cache, :event_stream,
