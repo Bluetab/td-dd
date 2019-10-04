@@ -1,8 +1,8 @@
 use Mix.Config
 
 config :td_dd, TdDd.Search.Cluster,
-  # The URL where Elasticsearch is hosted on your system
-  # override this in prod.exs
+  # The default URL where Elasticsearch is hosted on your system.
+  # Will be overridden by the `ES_URL` environment variable if set.
   url: "http://elastic:9200",
 
   # If you want to mock the responses of the Elasticsearch JSON API
@@ -10,7 +10,7 @@ config :td_dd, TdDd.Search.Cluster,
   # here. It must implement the Elasticsearch.API behaviour.
   api: Elasticsearch.API.HTTP,
 
-  # Customize the library used for JSON encoding/decoding.
+  # The library used for JSON encoding/decoding.
   json_library: Jason,
 
   # You should configure each index which you maintain in Elasticsearch here.
@@ -21,10 +21,10 @@ config :td_dd, TdDd.Search.Cluster,
     # built with a timestamp included in the name, like "posts-5902341238".
     # It will then be aliased to "posts" for easy querying.
     structures: %{
-      # This file describes the mappings and settings for your index. It will
+      # This map describes the mappings and settings for your index. It will
       # be posted as-is to Elasticsearch when you create your index, and
       # therefore allows all the settings you could post directly.
-      settings: "priv/elasticsearch/structures.json",
+      settings: %{},
 
       # This store module must implement a store behaviour. It will be used to
       # fetch data for each source in each indexes' `sources` list, below:
@@ -38,8 +38,7 @@ config :td_dd, TdDd.Search.Cluster,
       # Elasticsearch.Document protocol.
       sources: [TdDd.DataStructures.DataStructureVersion],
 
-      # When indexing data using the `mix elasticsearch.build` task,
-      # control the data ingestion rate by raising or lowering the number
+      # Controls the data ingestion rate by raising or lowering the number
       # of items to send in each bulk request.
       bulk_page_size: 1000,
 
