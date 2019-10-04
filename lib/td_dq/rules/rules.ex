@@ -582,8 +582,7 @@ defmodule TdDq.Rules do
 
   """
   def create_rule_implementation(rule, attrs \\ %{}) do
-    changeset = RuleImplementation.changeset(%RuleImplementation{}, attrs)
-
+    changeset = RuleImplementation.changeset(%RuleImplementation{rule: rule}, attrs)
     case changeset.valid? do
       true ->
         input = Changeset.get_change(changeset, :system_params)

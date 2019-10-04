@@ -25,7 +25,7 @@ defmodule TdDq.Rules.Rule do
     field(:name, :string)
     field(:population, :string)
     field(:priority, :string)
-    field(:system_required, :boolean, default: false)
+    field(:system_required, :boolean, default: true)
     field(:weight, :integer)
     field(:version, :integer, default: 1)
     field(:updated_by, :integer)

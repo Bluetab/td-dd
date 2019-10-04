@@ -25,11 +25,29 @@ defmodule TdDq.Rules.RuleImplementation do
       :system_params,
       :rule_id
     ])
-    |> validate_required([
+    |> validate_required(required_attrs(rule_implementation))
+    |> validate_length(:implementation_key, max: 255)
+  end
+
+  defp required_attrs(%RuleImplementation{rule: %Rule{} = rule}) do
+    case rule.system_required do
+      true ->
+        [
+          :system,
+          :system_params,
+          :rule_id
+        ]
+
+      false ->
+        [:system_params, :rule_id]
+    end
+  end
+
+  defp required_attrs(_any) do
+    [
       :system,
       :system_params,
       :rule_id
-    ])
-    |> validate_length(:implementation_key, max: 255)
+    ]
   end
 end

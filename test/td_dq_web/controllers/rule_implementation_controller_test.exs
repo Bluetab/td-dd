@@ -84,6 +84,51 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
 
       assert json_response(conn, 422)["errors"] != %{}
     end
+
+    @tag :admin_authenticated
+    test "renders created when rule does not require system and it is not passed in rule implementation ",
+         %{conn: conn} do
+      rule_type = insert(:rule_type)
+      rule = insert(:rule, rule_type: rule_type, system_required: false, active: true)
+
+      creation_attrs =
+        Map.from_struct(
+          build(:rule_implementation, rule_id: rule.id, implementation_key: "", system: nil)
+        )
+
+      conn =
+        post(conn, Routes.rule_implementation_path(conn, :create),
+          rule_implementation: creation_attrs
+        )
+
+      assert %{"id" => id} = json_response(conn, 201)["data"]
+    end
+
+    @tag :admin_authenticated
+    test "renders errors when rule requires system and it is not passed in rule implementation ",
+         %{conn: conn} do
+      rule_type = insert(:rule_type)
+      rule = insert(:rule, rule_type: rule_type, system_required: true, active: true)
+
+      creation_attrs =
+        Map.from_struct(
+          build(:rule_implementation, rule_id: rule.id, implementation_key: "", system: nil)
+        )
+
+      conn =
+        post(conn, Routes.rule_implementation_path(conn, :create),
+          rule_implementation: creation_attrs
+        )
+
+      assert json_response(conn, 422) == %{
+               "errors" => [
+                 %{
+                   "code" => "undefined",
+                   "name" => "rule.implementation.error.system.required"
+                 }
+               ]
+             }
+    end
   end
 
   describe "update rule_implementation" do
