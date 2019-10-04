@@ -61,11 +61,11 @@ defmodule TdDd.Search.Indexer do
           {count, _} -> Logger.warn("Soft-deleted #{count} orphan fields")
         end
 
-        delete_existing_index(@index)
+        delete_existing_index("data_structure")
 
         Timer.time(
           fn -> reindex(:all) end,
-          fn millis, _ -> Logger.info("Migrated index #{@index} in #{millis}ms") end
+          fn millis, _ -> Logger.info("Created index #{@index} in #{millis}ms") end
         )
       else
         Logger.warn("Another process is migrating")

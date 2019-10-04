@@ -6,10 +6,11 @@ defmodule TdDd.Search.Cluster do
   require Logger
 
   def init(config) do
-    case read_url() do
-      nil -> config
-      url -> Map.put(config, :url, url)
-    end
+    config =
+      case read_url() do
+        nil -> config
+        url -> Map.put(config, :url, url)
+      end
 
     {:ok, config}
   end
