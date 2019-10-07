@@ -52,11 +52,11 @@ defmodule TdDq.Search.Aggregations do
   defp content_term(%{"name" => field, "type" => "user"}, "dq") do
     {field, %{terms: %{field: "df_content.#{field}.raw", size: 50}}}
   end
-  
+
   defp content_term(%{"name" => field}, "dq") do
     {field, %{terms: %{field: "df_content.#{field}.raw"}}}
   end
-  
+
   defp content_term(%{"name" => field, "type" => "user"}, "bg") do
     {field, %{terms: %{field: "current_business_concept_version.content.#{field}.raw", size: 50}}}
   end
