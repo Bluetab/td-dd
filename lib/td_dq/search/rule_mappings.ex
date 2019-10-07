@@ -5,7 +5,8 @@ defmodule TdDq.Search.RuleMappings do
   alias TdCache.TemplateCache
 
   def get_mappings do
-    content_mappings = %{properties: get_dynamic_mappings()}
+    content_mappings = %{properties: get_dynamic_mappings("dq")}
+    content_mappings_bg = %{properties: get_dynamic_mappings("bg")}
 
     mapping_type = %{
       id: %{type: "long"},
@@ -18,7 +19,6 @@ defmodule TdDq.Search.RuleMappings do
           name: %{type: "text", fields: %{raw: %{type: "keyword"}}}
         }
       },
-      users_roles: %{fields: %{raw: %{type: "keyword", normalizer: "sortable"}}, type: "text"},
       rule_type_id: %{type: "long"},
       version: %{type: "long"},
       name: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
@@ -35,7 +35,8 @@ defmodule TdDq.Search.RuleMappings do
       current_business_concept_version: %{
         properties: %{
           id: %{type: "long"},
-          name: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}}
+          name: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
+          content: content_mappings_bg
         }
       },
       updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
@@ -79,14 +80,20 @@ defmodule TdDq.Search.RuleMappings do
     %{mappings: %{doc: %{properties: mapping_type}}, settings: settings}
   end
 
-  defp get_dynamic_mappings do
-    "dq"
+  defp get_dynamic_mappings(scope) do
+    scope
     |> TemplateCache.list_by_scope!()
-    |> Enum.flat_map(&get_mappings/1)
+    |> Enum.flat_map(&get_mappings(&1, scope))
     |> Enum.into(%{})
   end
 
-  defp get_mappings(%{content: content}) do
+  defp get_mappings(%{content: content}, "bg") do
+    content
+    |> Enum.filter(&(Map.get(&1, "type") == "user"))
+    |> Enum.map(&field_mapping/1)
+  end
+
+  defp get_mappings(%{content: content}, _scope) do
     content
     |> Enum.filter(&(Map.get(&1, "type") != "url"))
     |> Enum.map(&field_mapping/1)

@@ -1,6 +1,7 @@
 defmodule TdDqWeb.RuleView do
   use TdDqWeb, :view
   use TdHypermedia, :view
+  alias Jason, as: JSON
   alias TdCache.ConceptCache
   alias TdDqWeb.RuleView
 
@@ -72,8 +73,7 @@ defmodule TdDqWeb.RuleView do
       updated_at: rule.updated_at,
       rule_type_id: rule.rule_type_id,
       type_params: Map.get(rule, :type_params),
-      execution_result_info: Map.get(rule, :execution_result_info),
-      users_roles: Map.get(rule, :users_roles, [])
+      execution_result_info: Map.get(rule, :execution_result_info)
     }
     |> add_current_version(rule)
     |> add_rule_type(rule)
@@ -83,9 +83,9 @@ defmodule TdDqWeb.RuleView do
 
   defp add_current_version(map, %{business_concept_id: business_concept_id}) do
     case ConceptCache.get(business_concept_id) do
-      {:ok, %{name: name, business_concept_version_id: id}} ->
+      {:ok, %{name: name, business_concept_version_id: id, content: content}} ->
         map
-        |> Map.put(:current_business_concept_version, %{name: name, id: id})
+        |> Map.put(:current_business_concept_version, %{name: name, id: id, content: JSON.decode!(content)})
 
       _ ->
         map

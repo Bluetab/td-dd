@@ -2,7 +2,7 @@ defmodule TdDq.Rules.Rule do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
-  alias TdCache.AclCache
+  alias Jason, as: JSON
   alias TdCache.ConceptCache
   alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
@@ -126,11 +126,19 @@ defmodule TdDq.Rules.Rule do
 
     rule_type = Map.take(rule.rule_type, [:id, :name, :params])
 
+    concept_content =
+      case ConceptCache.get(rule.business_concept_id) do
+        {:ok, %{content: content}} -> JSON.decode!(content)
+        _ -> %{}
+      end
+
     current_business_concept_version =
-      Map.get(rule, :current_business_concept_version, %{name: ""})
+      Map.merge(
+        Map.get(rule, :current_business_concept_version, %{name: ""}),
+        %{content: concept_content}
+      )
 
     domain_ids = get_domain_ids(rule)
-    users_roles = get_users_roles(domain_ids)
 
     domain_parents =
       case domain_ids do
@@ -147,7 +155,6 @@ defmodule TdDq.Rules.Rule do
       _confidential: confidential,
       domain_ids: domain_ids,
       domain_parents: domain_parents,
-      users_roles: users_roles,
       current_business_concept_version: current_business_concept_version,
       rule_type_id: rule.rule_type_id,
       rule_type: rule_type,
@@ -232,11 +239,6 @@ defmodule TdDq.Rules.Rule do
   defp get_domain_ids(%{business_concept_id: business_concept_id}) do
     {:ok, domain_ids} = ConceptCache.get(business_concept_id, :domain_ids)
     domain_ids
-  end
-
-  defp get_users_roles(-1), do: []
-  defp get_users_roles(domain_ids) do
-    Enum.flat_map(domain_ids, &AclCache.get_acl_roles(:domain, &1))
   end
 
   defp is_rule_confidential?(%{business_concept_id: nil}), do: false
