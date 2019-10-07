@@ -17,8 +17,7 @@ defmodule TdDq.Factory do
       version: 1,
       updated_by: 1,
       rule_type: build(:rule_type),
-      type_params: %{},
-      system_required: true
+      type_params: %{}
     }
   end
 
@@ -28,6 +27,18 @@ defmodule TdDq.Factory do
       params: %{
         "type_params" => [],
         "system_params" => []
+      }
+    }
+  end
+
+  def structure_rule_type_factory do
+    %TdDq.Rules.RuleType{
+      name: "Rule Type",
+      params: %{
+        "type_params" => [],
+        "system_params" => [
+          %{"name" => "system_required", "type" => "boolean", "value" => false, "hidden" => true}
+        ]
       }
     }
   end
@@ -52,7 +63,7 @@ defmodule TdDq.Factory do
   end
 
   def user_factory do
-    %TdDq.Accounts.User {
+    %TdDq.Accounts.User{
       id: 0,
       user_name: "bufoncillo",
       is_admin: false
@@ -60,7 +71,7 @@ defmodule TdDq.Factory do
   end
 
   def user_admin_factory do
-    %TdDq.Accounts.User {
+    %TdDq.Accounts.User{
       id: 1,
       user_name: "bufoncillo_admin",
       is_admin: true

@@ -571,6 +571,7 @@ defmodule TdDq.Rules do
   """
   def create_rule_implementation(rule, attrs \\ %{}) do
     changeset = RuleImplementation.changeset(%RuleImplementation{rule: rule}, attrs)
+
     case changeset.valid? do
       true ->
         input = Changeset.get_change(changeset, :system_params)
@@ -774,6 +775,10 @@ defmodule TdDq.Rules do
 
   defp get_system_params_or_nil(%RuleType{} = rule_type) do
     rule_type.params["system_params"]
+    |> case do
+      nil -> nil
+      params -> params |> Enum.filter(fn param -> Map.get(param, "hidden") in [nil, false] end)
+    end
   end
 
   defp get_type_params_or_nil(nil), do: nil
@@ -911,6 +916,7 @@ defmodule TdDq.Rules do
   defp to_schema_type("structure"), do: :map
   defp to_schema_type("float"), do: :float
   defp to_schema_type("whole_number"), do: :integer
+  defp to_schema_type("boolean"), do: :boolean
 
   def check_available_implementation_key(%{"implementation_key" => ""}),
     do: {:implementation_key_available}

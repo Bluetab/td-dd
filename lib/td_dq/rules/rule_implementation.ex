@@ -29,8 +29,22 @@ defmodule TdDq.Rules.RuleImplementation do
     |> validate_length(:implementation_key, max: 255)
   end
 
-  defp required_attrs(%RuleImplementation{rule: %Rule{} = rule}) do
-    case rule.system_required do
+  defp required_attrs(%RuleImplementation{
+         rule:
+           %Rule{
+             rule_type:
+               %TdDq.Rules.RuleType{params: %{"system_params" => system_params}} = rule_type
+           } = rule
+       }) do
+    system_required =
+      system_params
+      |> Enum.find(fn param -> Map.get(param, "name") == "system_required" end)
+      |> case do
+        nil -> true
+        system_required_props -> Map.get(system_required_props, "value")
+      end
+
+    case system_required do
       true ->
         [
           :system,
@@ -39,7 +53,10 @@ defmodule TdDq.Rules.RuleImplementation do
         ]
 
       false ->
-        [:system_params, :rule_id]
+        [
+          :system_params,
+          :rule_id
+        ]
     end
   end
 

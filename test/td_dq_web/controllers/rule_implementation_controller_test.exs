@@ -86,10 +86,10 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
     end
 
     @tag :admin_authenticated
-    test "renders created when rule does not require system and it is not passed in rule implementation ",
+    test "renders created when rule type does not require system and it is not passed in rule implementation ",
          %{conn: conn} do
-      rule_type = insert(:rule_type)
-      rule = insert(:rule, rule_type: rule_type, system_required: false, active: true)
+      rule_type = insert(:structure_rule_type)
+      rule = insert(:rule, rule_type: rule_type, active: true)
 
       creation_attrs =
         Map.from_struct(
@@ -108,7 +108,7 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
     test "renders errors when rule requires system and it is not passed in rule implementation ",
          %{conn: conn} do
       rule_type = insert(:rule_type)
-      rule = insert(:rule, rule_type: rule_type, system_required: true, active: true)
+      rule = insert(:rule, rule_type: rule_type, active: true)
 
       creation_attrs =
         Map.from_struct(

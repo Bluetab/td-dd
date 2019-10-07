@@ -103,7 +103,9 @@ defmodule TdDqWeb.RuleImplementationController do
   def create(conn, %{"rule_implementation" => rule_implementation_params}) do
     user = conn.assigns[:current_resource]
     rule_id = rule_implementation_params["rule_id"]
-    rule = Rules.get_rule_or_nil(rule_id)
+    rule = rule_id
+    |> Rules.get_rule_or_nil()
+    |> Repo.preload([:rule_type])
 
     resource_type = %{
       "business_concept_id" => rule.business_concept_id,
