@@ -86,9 +86,15 @@ defmodule TdDq.Search.Mappings do
   end
 
   defp get_mappings(%{content: content}) do
-    content
-    |> Enum.filter(&(Map.get(&1, "type") != "url"))
-    |> Enum.map(&field_mapping/1)
+    Enum.map(content, &field_mapping/1)
+  end
+
+  defp field_mapping(%{"name" => name, "type" => "table"}) do
+    {name, %{enabled: false}}
+  end
+
+  defp field_mapping(%{"name" => name, "type" => "url"}) do
+    {name, %{enabled: false}}
   end
 
   defp field_mapping(%{"name" => name, "type" => "enriched_text"}) do
