@@ -40,19 +40,24 @@ defmodule TdDq.Search.Aggregations do
     |> Enum.filter(&filter_content_term/1)
     |> Enum.map(&Map.take(&1, ["name", "type"]))
     |> Enum.filter(&only_user_type(&1, scope))
-    |> Enum.map(&content_term/1)
+    |> Enum.map(&content_term(&1, scope))
   end
 
   def filter_content_term(%{"values" => values}) when is_map(values), do: true
   def filter_content_term(_), do: false
   def only_user_type(%{"type" => "user"}, "bg"), do: true
-  def only_user_type(_, _), do: false
+  def only_user_type(_field, "bg"), do: false
+  def only_user_type(_field, "dq"), do: true
 
-  defp content_term(%{"name" => field, "type" => "user"}) do
-    {field, %{terms: %{field: "current_business_concept_version.content.#{field}.raw", size: 50}}}
+  defp content_term(%{"name" => field, "type" => "user"}, "dq") do
+    {field, %{terms: %{field: "df_content.#{field}.raw", size: 50}}}
   end
-
-  defp content_term(%{"name" => field}) do
-    {field, %{terms: %{field: "current_business_concept_version.content.#{field}.raw"}}}
+  
+  defp content_term(%{"name" => field}, "dq") do
+    {field, %{terms: %{field: "df_content.#{field}.raw"}}}
+  end
+  
+  defp content_term(%{"name" => field, "type" => "user"}, "bg") do
+    {field, %{terms: %{field: "current_business_concept_version.content.#{field}.raw", size: 50}}}
   end
 end
