@@ -13,19 +13,21 @@ defmodule TdDq.Rules.RuleRemover do
   @rule_removal Application.get_env(:td_dq, :rule_removal)
   @rule_removal_frequency Application.get_env(:td_dq, :rule_removal_frequency)
 
-  def start_link(opts \\ %{}) do
-    GenServer.start_link(__MODULE__, opts)
+  ## Client API
+
+  def start_link(_) do
+    GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
 
+  ## GenServer Callbacks
+
+  @impl true
   def init(state) do
     if @rule_removal, do: schedule_work()
     {:ok, state}
   end
 
-  defp schedule_work do
-    Process.send_after(self(), :work, @rule_removal_frequency)
-  end
-
+  @impl true
   def handle_info(:work, state) do
     case ConceptCache.active_ids() do
       {:ok, []} -> :ok
@@ -35,6 +37,12 @@ defmodule TdDq.Rules.RuleRemover do
 
     schedule_work()
     {:noreply, state}
+  end
+
+  ## Private functions
+
+  defp schedule_work do
+    Process.send_after(self(), :work, @rule_removal_frequency)
   end
 
   defp soft_deletion([]), do: :ok

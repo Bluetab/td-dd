@@ -2,88 +2,40 @@ defmodule TdDq.Search do
   @moduledoc """
   Search Engine calls
   """
-
-  alias Jason, as: JSON
-  alias TdDq.ESClientApi
+  alias TdDq.Search.Cluster
 
   require Logger
 
-  def put_bulk_search(items) do
-    items
-    |> Enum.chunk_every(100)
-    |> Enum.map(&ESClientApi.bulk_index_content/1)
-  end
+  @index "rules"
 
-  # CREATE AND UPDATE
-  def put_searchable(searchable) do
-    search_fields = searchable.__struct__.search_fields(searchable)
-    index_name = searchable.__struct__.index_name()
-
-    response =
-      ESClientApi.index_content(
-        index_name,
-        searchable.id,
-        search_fields |> JSON.encode!()
-      )
-
-    case response do
-      {:ok, %HTTPoison.Response{status_code: _}} ->
-        Logger.info("Item on #{index_name} was created/updated")
-
-      {:error, _error} ->
-        Logger.error("ES: Error creating/updating Item on #{index_name}")
-    end
-  end
-
-  def delete(index_name, ids) when is_list(ids) do
-    Enum.map(ids, &delete(index_name, &1))
-  end
-
-  def delete(index_name, id) do
-    response = ESClientApi.delete_content(index_name, id)
-
-    case response do
-      {_, %HTTPoison.Response{status_code: 200}} ->
-        Logger.info("Item #{id} on #{index_name} deleted status 200")
-
-      {_, %HTTPoison.Response{status_code: status_code}} ->
-        Logger.error("ES: Error deleting item #{id} on #{index_name} status #{status_code}")
-
-      {:error, %HTTPoison.Error{reason: :econnrefused}} ->
-        Logger.error("Error connecting to ES")
-    end
-  end
-
-  def search(index_name, query) do
+  def search(query) do
     Logger.debug(fn -> "Query: #{inspect(query)}" end)
-    response = ESClientApi.search_es(index_name, query)
+    response = Elasticsearch.post(Cluster, "/#{@index}/_search", query)
 
     case response do
-      {:ok,
-       %HTTPoison.Response{
-         body: %{"hits" => %{"hits" => results, "total" => total}, "aggregations" => aggregations}
-       }} ->
-        %{results: results, aggregations: format_search_aggegations(aggregations), total: total}
+      {:ok, %{"hits" => %{"hits" => results, "total" => total}, "aggregations" => aggregations}} ->
+        %{results: results, aggregations: format_search_aggregations(aggregations), total: total}
 
-      {:ok, %HTTPoison.Response{body: error}} ->
+      {:error, %Elasticsearch.Exception{message: message} = error} ->
+        Logger.warn("Error response from Elasticsearch: #{message}")
         error
     end
   end
 
-  def get_filters(index_name, query) do
-    response = ESClientApi.search_es(index_name, query)
+  def get_filters(query) do
+    response = Elasticsearch.post(Cluster, "/#{@index}/_search", query)
 
     case response do
-      {:ok, %HTTPoison.Response{body: %{"aggregations" => aggregations}}} ->
-        aggregations
-        |> format_search_aggegations()
+      {:ok, %{"aggregations" => aggregations}} ->
+        format_search_aggregations(aggregations)
 
-      {:ok, %HTTPoison.Response{body: error}} ->
+      {:error, %Elasticsearch.Exception{message: message} = error} ->
+        Logger.warn("Error response from Elasticsearch: #{message}")
         error
     end
   end
 
-  defp format_search_aggegations(aggregations) do
+  defp format_search_aggregations(aggregations) do
     aggregations
     |> Map.to_list()
     |> Enum.into(%{}, &filter_values/1)

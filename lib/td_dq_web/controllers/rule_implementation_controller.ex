@@ -397,12 +397,15 @@ defmodule TdDqWeb.RuleImplementationController do
     rule_implementation
     |> Map.put(
       :_last_rule_result_,
-      Rules.get_last_rule_result(rule_implementation.implementation_key)
+      Rules.get_latest_rule_result(rule_implementation.implementation_key)
     )
   end
 
   defp add_rule_results(rule_implementation) do
     rule_implementation
-    |> Map.put(:all_rule_results, Rules.get_rule_implementation_results(rule_implementation.implementation_key))
+    |> Map.put(
+      :all_rule_results,
+      Rules.get_rule_implementation_results(rule_implementation.implementation_key)
+    )
   end
 end

@@ -1,4 +1,4 @@
-defmodule TdDq.Search.RuleMappings do
+defmodule TdDq.Search.Mappings do
   @moduledoc """
   Elastic Search mappings for Quality Rule
   """
@@ -77,7 +77,7 @@ defmodule TdDq.Search.RuleMappings do
       }
     }
 
-    %{mappings: %{doc: %{properties: mapping_type}}, settings: settings}
+    %{mappings: %{_doc: %{properties: mapping_type}}, settings: settings}
   end
 
   defp get_dynamic_mappings(scope) do
@@ -94,9 +94,15 @@ defmodule TdDq.Search.RuleMappings do
   end
 
   defp get_mappings(%{content: content}, _scope) do
-    content
-    |> Enum.filter(&(Map.get(&1, "type") != "url"))
-    |> Enum.map(&field_mapping/1)
+    Enum.map(content, &field_mapping/1)
+  end
+
+  defp field_mapping(%{"name" => name, "type" => "table"}) do
+    {name, %{enabled: false}}
+  end
+
+  defp field_mapping(%{"name" => name, "type" => "url"}) do
+    {name, %{enabled: false}}
   end
 
   defp field_mapping(%{"name" => name, "type" => "enriched_text"}) do

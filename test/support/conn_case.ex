@@ -38,6 +38,18 @@ defmodule TdDqWeb.ConnCase do
 
     unless tags[:async] do
       Sandbox.mode(TdDq.Repo, {:shared, self()})
+      parent = self()
+
+      Enum.each([TdDq.Search.IndexWorker, TdDq.Cache.RuleLoader], fn worker ->
+        case Process.whereis(worker) do
+          nil ->
+            nil
+
+          pid ->
+            on_exit(fn -> worker.ping(20_000) end)
+            Sandbox.allow(TdDq.Repo, parent, pid)
+        end
+      end)
     end
 
     cond do

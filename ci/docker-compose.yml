@@ -2,6 +2,26 @@
 version: "3.4"
 
 services:
+  elastic:
+    image: docker.elastic.co/elasticsearch/elasticsearch-oss:6.2.4
+    environment:
+      - cluster.name=truedat
+      - bootstrap.memory_lock=true
+      - discovery.type=single-node
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    healthcheck:
+      test: curl --silent http://localhost:9200/_cat/health?h=status | grep -q -E green\|yellow || exit 1
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
   postgres:
     image: postgres:9.6.10-alpine
     restart: always
@@ -59,9 +79,17 @@ services:
       DB_USER: postgres
       REDIS_HOST: redis
       REPLACE_OS_VARS: "true"
+      ES_URL: http://elastic:9200
     depends_on:
+      - elastic
       - postgres
       - redis
+
+  wait_for_elastic:
+    image: bluetab/wait-for:20190507133127
+    command: elastic:9200 -t 30 -- curl --silent elastic:9200
+    depends_on:
+      - elastic
 
   acceptance:
     image: bluetab/wait-for:20190507133127

@@ -2,18 +2,23 @@ defmodule TdDqWeb.RuleControllerTest do
   use TdDqWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
+  import TdDqWeb.Authentication, only: :functions
+  import TdDq.Factory
+
+  alias TdDq.Cache.RuleLoader
   alias TdDq.MockRelationCache
   alias TdDq.Permissions.MockPermissionResolver
   alias TdDq.Rules
   alias TdDq.Rules.Rule
+  alias TdDq.Search.IndexWorker
   alias TdDqWeb.ApiServices.MockTdAuditService
-  import TdDqWeb.Authentication, only: :functions
-  import TdDq.Factory
 
   setup_all do
     start_supervised(MockTdAuditService)
     start_supervised(MockRelationCache)
     start_supervised(MockPermissionResolver)
+    start_supervised(IndexWorker)
+    start_supervised(RuleLoader)
     :ok
   end
 
@@ -451,31 +456,46 @@ defmodule TdDqWeb.RuleControllerTest do
     setup [:create_rule]
 
     @tag :admin_authenticated
-    test "execute rules as admin and true execution filter", %{conn: conn, rule: rule, swagger_schema: schema} do
+    test "execute rules as admin and true execution filter", %{
+      conn: conn,
+      rule: rule,
+      swagger_schema: schema
+    } do
       conn =
         post(conn, Routes.rule_path(conn, :execute_rules), %{
           "search_params" => %{"filters" => %{"execution.raw" => [true]}}
         })
+
       validate_resp_schema(conn, schema, "RulesExecuteResponse")
       assert json_response(conn, 200)["data"] == [rule.id]
     end
 
     @tag :admin_authenticated
-    test "execute rules as admin and false execution filter", %{conn: conn, rule: rule, swagger_schema: schema} do
+    test "execute rules as admin and false execution filter", %{
+      conn: conn,
+      rule: rule,
+      swagger_schema: schema
+    } do
       conn =
         post(conn, Routes.rule_path(conn, :execute_rules), %{
           "search_params" => %{"filters" => %{"execution.raw" => [false]}}
         })
+
       validate_resp_schema(conn, schema, "RulesExecuteResponse")
       assert json_response(conn, 200)["data"] == [rule.id]
     end
 
     @tag :admin_authenticated
-    test "execute rules as admin and no execution filter", %{conn: conn, rule: rule, swagger_schema: schema} do
+    test "execute rules as admin and no execution filter", %{
+      conn: conn,
+      rule: rule,
+      swagger_schema: schema
+    } do
       conn =
         post(conn, Routes.rule_path(conn, :execute_rules), %{
           "search_params" => %{"filters" => %{}}
         })
+
       validate_resp_schema(conn, schema, "RulesExecuteResponse")
       assert json_response(conn, 200)["data"] == [rule.id]
     end

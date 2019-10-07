@@ -6,16 +6,15 @@ defmodule TdDq.Rules.Search do
   """
   alias TdDq.Accounts.User
   alias TdDq.Permissions
+  alias TdDq.Search
   alias TdDq.Search.Aggregations
   alias TdDq.Search.Query
-
-  @search_service Application.get_env(:td_dq, :elasticsearch)[:search_service]
 
   def get_filter_values(%User{is_admin: true}, params) do
     filter_clause = Query.create_filters(params)
     query = Query.create_query(%{}, filter_clause)
     search = %{query: query, aggs: Aggregations.aggregation_terms()}
-    @search_service.get_filters("quality_rule", search)
+    Search.get_filters(search)
   end
 
   def get_filter_values(%User{} = user, params) do
@@ -37,7 +36,7 @@ defmodule TdDq.Rules.Search do
     filter = Query.create_filter_clause(permissions, user_defined_filters)
     query = Query.create_query(params, filter)
     search = %{query: query, aggs: Aggregations.aggregation_terms()}
-    @search_service.get_filters("quality_rule", search)
+    Search.get_filters(search)
   end
 
   def search(params, user, page \\ 0, size \\ 50)
@@ -117,7 +116,7 @@ defmodule TdDq.Rules.Search do
 
   defp do_search(search) do
     %{results: results, aggregations: aggregations, total: total} =
-      @search_service.search("quality_rule", search)
+      Search.search(search)
 
     results =
       results
