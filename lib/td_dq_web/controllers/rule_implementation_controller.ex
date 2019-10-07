@@ -401,7 +401,7 @@ defmodule TdDqWeb.RuleImplementationController do
     rule_implementation
     |> Map.put(
       :_last_rule_result_,
-      Rules.get_last_rule_result(rule_implementation.implementation_key)
+      Rules.get_latest_rule_result(rule_implementation.implementation_key)
     )
   end
 
