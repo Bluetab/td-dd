@@ -76,7 +76,8 @@ defmodule TdDdWeb.DataStructureVersionController do
     :versions,
     :system,
     :ancestry,
-    :links
+    :links,
+    :profile
   ]
 
   defp get_data_structure_version(data_structure_version_id) do

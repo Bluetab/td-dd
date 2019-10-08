@@ -170,8 +170,6 @@ defmodule TdDdWeb.DataStructureVersionView do
     |> Map.merge(metadata)
   end
 
-  defp with_profile_attrs(dsv, nil), do: dsv
-
   defp with_profile_attrs(dsv, %{value: value}) do
     profile =
       value
@@ -179,4 +177,6 @@ defmodule TdDdWeb.DataStructureVersionView do
 
     Map.put(dsv, :profile, profile)
   end
+
+  defp with_profile_attrs(dsv, _), do: dsv
 end
