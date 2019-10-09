@@ -14,6 +14,7 @@ config :td_dd, :metadata,
     type: :string
   },
   structure_import_required: [:name, :external_id, :system_id, :group, :type],
+  structure_import_boolean: ["m:nullable"],
   field_import_schema: %{
     description: :string,
     external_id: :string,
