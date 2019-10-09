@@ -31,6 +31,18 @@ defmodule TdDq.Factory do
     }
   end
 
+  def structure_rule_type_factory do
+    %TdDq.Rules.RuleType{
+      name: "Rule Type",
+      params: %{
+        "type_params" => [],
+        "system_params" => [
+          %{"name" => "system_required", "type" => "boolean", "value" => false, "hidden" => true}
+        ]
+      }
+    }
+  end
+
   def rule_implementation_factory do
     %TdDq.Rules.RuleImplementation{
       rule: build(:rule),
@@ -51,7 +63,7 @@ defmodule TdDq.Factory do
   end
 
   def user_factory do
-    %TdDq.Accounts.User {
+    %TdDq.Accounts.User{
       id: 0,
       user_name: "bufoncillo",
       is_admin: false
@@ -59,7 +71,7 @@ defmodule TdDq.Factory do
   end
 
   def user_admin_factory do
-    %TdDq.Accounts.User {
+    %TdDq.Accounts.User{
       id: 1,
       user_name: "bufoncillo_admin",
       is_admin: true

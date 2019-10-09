@@ -8,6 +8,7 @@ defmodule TdDqWeb.RuleImplementationController do
   alias Ecto.Changeset
   alias TdDq.Repo
   alias TdDq.Rules
+  alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleImplementation
   alias TdDqWeb.ChangesetView
   alias TdDqWeb.ErrorView
@@ -102,7 +103,9 @@ defmodule TdDqWeb.RuleImplementationController do
   def create(conn, %{"rule_implementation" => rule_implementation_params}) do
     user = conn.assigns[:current_resource]
     rule_id = rule_implementation_params["rule_id"]
-    rule = Rules.get_rule_or_nil(rule_id)
+    rule = rule_id
+    |> Rules.get_rule_or_nil()
+    |> Repo.preload([:rule_type])
 
     resource_type = %{
       "business_concept_id" => rule.business_concept_id,
@@ -117,7 +120,7 @@ defmodule TdDqWeb.RuleImplementationController do
          {:ok, %RuleImplementation{} = rule_implementation} <-
            Rules.create_rule_implementation(rule, rule_implementation_params),
          {:ok, %RuleImplementation{} = rule_implementation} <-
-           generate_implementation_key(rule_implementation) do
+           generate_implementation_key(rule_implementation, rule) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", rule_implementation_path(conn, :show, rule_implementation))
@@ -191,7 +194,9 @@ defmodule TdDqWeb.RuleImplementationController do
   defp valid_format?(implementation_key), do: Regex.match?(~r/^[A-z0-9]*$/, implementation_key)
 
   defp generate_implementation_key(
-         %RuleImplementation{implementation_key: implementation_key, id: id} = rule_implementation
+         %RuleImplementation{implementation_key: implementation_key, id: id} =
+           rule_implementation,
+         %Rule{} = rule
        ) do
     case implementation_key do
       nil ->
@@ -200,6 +205,7 @@ defmodule TdDqWeb.RuleImplementationController do
           |> Map.put(:implementation_key, "ri" <> Integer.to_string(id))
 
         rule_implementation
+        |> Map.put(:rule, rule)
         |> Rules.update_rule_implementation(Map.from_struct(new_rule_implementation))
 
       _ ->
