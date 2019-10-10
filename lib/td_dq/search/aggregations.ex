@@ -21,31 +21,29 @@ defmodule TdDq.Search.Aggregations do
       {"execution.raw", %{terms: %{field: "execution.raw"}}}
     ]
 
-    dynamic_keywords =
-      TemplateCache.list_by_scope!("dq")
-      |> Enum.flat_map(&template_terms(&1, "dq"))
-
-    bg_dynamic_keywords =
-      TemplateCache.list_by_scope!("bg")
-      |> Enum.flat_map(&template_terms(&1, "bg"))
-
-    (static_keywords ++ dynamic_keywords ++ bg_dynamic_keywords)
+    ["dq", "bg"]
+    |> Enum.flat_map(&template_terms/1)
+    |> Enum.concat(static_keywords)
     |> Enum.into(%{})
   end
 
-  def template_terms(%{content: content}, scope) do
+  defp template_terms(scope) do
+    scope
+    |> TemplateCache.list_by_scope!()
+    |> Enum.flat_map(&template_terms(&1, scope))
+    |> Enum.uniq()
+  end
+
+  defp template_terms(%{content: content}, scope) do
     content
     |> Enum.filter(&filter_content_term/1)
     |> Enum.map(&Map.take(&1, ["name", "type"]))
-    |> Enum.filter(&only_user_type(&1, scope))
+    |> Enum.reject(&(scope == "bg" and &1["type"] != "user"))
     |> Enum.map(&content_term(&1, scope))
   end
 
-  def filter_content_term(%{"values" => values}) when is_map(values), do: true
-  def filter_content_term(_), do: false
-  def only_user_type(%{"type" => "user"}, "bg"), do: true
-  def only_user_type(_field, "bg"), do: false
-  def only_user_type(_field, "dq"), do: true
+  defp filter_content_term(%{"values" => values}) when is_map(values), do: true
+  defp filter_content_term(_), do: false
 
   defp content_term(%{"name" => field, "type" => "user"}, "dq") do
     {field, %{terms: %{field: "df_content.#{field}.raw", size: 50}}}
