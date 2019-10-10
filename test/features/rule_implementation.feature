@@ -12,9 +12,6 @@ Feature: Rule Implementations
       | Field               | Value                                                                                  |
       | Business Concept ID | MYID_333                                                                               |
       | Name                | Field's Rule                                                                           |
-      | Weight              | 50                                                                                     |
-      | Priority            | Medium                                                                                 |
-      | Population          | All clients who are older than 18                                                      |
       | Goal                | 98                                                                                     |
       | Minimum             | 80                                                                                     |
       | Type Params         | %-{ "Minimum Value": 18, "Maximum Value": 50 }                                         |
@@ -53,9 +50,6 @@ Feature: Rule Implementations
       | Field               | Value                                                                                  |
       | Business Concept ID | MYID_333                                                                               |
       | Name                | Field's Rule                                                                           |
-      | Weight              | 50                                                                                     |
-      | Priority            | Medium                                                                                 |
-      | Population          | All clients who are older than 18                                                      |
       | Goal                | 98                                                                                     |
       | Minimum             | 80                                                                                     |
       | Type Params         | %-{ "Minimum Value": 18, "Maximum Value": 50 }                                         |

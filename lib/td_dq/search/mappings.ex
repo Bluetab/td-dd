@@ -8,7 +8,7 @@ defmodule TdDq.Search.Mappings do
   @raw_sort %{raw: %{type: "keyword"}, sort: %{type: "keyword", normalizer: "sortable"}}
 
   def get_mappings do
-    content_mappings = %{properties: get_dynamic_mappings()}
+    content_mappings = %{properties: get_dynamic_mappings("dq")}
 
     mapping_type = %{
       id: %{type: "long"},
@@ -37,17 +37,17 @@ defmodule TdDq.Search.Mappings do
       current_business_concept_version: %{
         properties: %{
           id: %{type: "long"},
-          name: %{type: "text", fields: @raw_sort}
+          name: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
+          content: %{
+            properties: get_dynamic_mappings("bg", "user")
+          }
         }
       },
       updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       goal: %{type: "long"},
       minimum: %{type: "long"},
-      weight: %{type: "long"},
-      population: %{type: "text", fields: @raw},
-      priority: %{type: "text", fields: @raw},
-      df_name: %{type: "text", fields: @raw},
+      df_name: %{type: "text", fields: %{raw: %{type: "keyword"}}},
       rule_type: %{
         properties: %{
           id: %{type: "long"},
@@ -81,14 +81,20 @@ defmodule TdDq.Search.Mappings do
     %{mappings: %{_doc: %{properties: mapping_type}}, settings: settings}
   end
 
-  defp get_dynamic_mappings do
-    "dq"
+  def get_dynamic_mappings(scope, type \\ nil) do
+    scope
     |> TemplateCache.list_by_scope!()
-    |> Enum.flat_map(&get_mappings/1)
+    |> Enum.flat_map(&get_mappings(&1, scope, type))
     |> Enum.into(%{})
   end
 
-  defp get_mappings(%{content: content}) do
+  defp get_mappings(%{content: content}, "bg", type) do
+    content
+    |> Enum.filter(&(Map.get(&1, "type") == type))
+    |> Enum.map(&field_mapping/1)
+  end
+
+  defp get_mappings(%{content: content}, _scope, _type) do
     Enum.map(content, &field_mapping/1)
   end
 
@@ -102,6 +108,10 @@ defmodule TdDq.Search.Mappings do
 
   defp field_mapping(%{"name" => name, "type" => "enriched_text"}) do
     {name, mapping_type("enriched_text")}
+  end
+
+  defp field_mapping(%{"name" => name, "type" => "user"}) do
+    {name, %{type: "text", fields: @raw_sort}}
   end
 
   defp field_mapping(%{"name" => name, "values" => values}) do
