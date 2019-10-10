@@ -4,6 +4,9 @@ defmodule TdDq.Search.Mappings do
   """
   alias TdCache.TemplateCache
 
+  @raw %{raw: %{type: "keyword"}}
+  @raw_sort %{raw: %{type: "keyword"}, sort: %{type: "keyword", normalizer: "sortable"}}
+
   def get_mappings do
     content_mappings = %{properties: get_dynamic_mappings()}
 
@@ -15,7 +18,7 @@ defmodule TdDq.Search.Mappings do
         type: "nested",
         properties: %{
           id: %{type: "long"},
-          name: %{type: "text", fields: %{raw: %{type: "keyword"}}}
+          name: %{type: "text", fields: @raw}
         }
       },
       rule_type_id: %{type: "long"},
@@ -27,14 +30,14 @@ defmodule TdDq.Search.Mappings do
       updated_by: %{
         properties: %{
           id: %{type: "long"},
-          user_name: %{type: "text", fields: %{raw: %{type: "keyword"}}},
-          full_name: %{type: "text", fields: %{raw: %{type: "keyword"}}}
+          user_name: %{type: "text", fields: @raw},
+          full_name: %{type: "text", fields: @raw}
         }
       },
       current_business_concept_version: %{
         properties: %{
           id: %{type: "long"},
-          name: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}}
+          name: %{type: "text", fields: @raw_sort}
         }
       },
       updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
@@ -42,9 +45,9 @@ defmodule TdDq.Search.Mappings do
       goal: %{type: "long"},
       minimum: %{type: "long"},
       weight: %{type: "long"},
-      population: %{type: "text", fields: %{raw: %{type: "keyword"}}},
-      priority: %{type: "text", fields: %{raw: %{type: "keyword"}}},
-      df_name: %{type: "text", fields: %{raw: %{type: "keyword"}}},
+      population: %{type: "text", fields: @raw},
+      priority: %{type: "text", fields: @raw},
+      df_name: %{type: "text", fields: @raw},
       rule_type: %{
         properties: %{
           id: %{type: "long"},
@@ -53,14 +56,14 @@ defmodule TdDq.Search.Mappings do
       },
       type_params: %{
         properties: %{
-          name: %{fields: %{raw: %{type: "keyword"}}, type: "text"}
+          name: %{fields: @raw, type: "text"}
         }
       },
       execution_result_info: %{
         properties: %{
           result_avg: %{type: "long"},
           last_execution_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-          result_text: %{type: "text", fields: %{raw: %{type: "keyword"}}}
+          result_text: %{type: "text", fields: @raw}
         }
       },
       _confidential: %{type: "boolean"},
@@ -110,7 +113,7 @@ defmodule TdDq.Search.Mappings do
   end
 
   defp mapping_type(values) when is_map(values) do
-    %{type: "text", fields: %{raw: %{type: "keyword"}}}
+    %{type: "text", fields: @raw}
   end
 
   defp mapping_type(_default), do: %{type: "text"}
