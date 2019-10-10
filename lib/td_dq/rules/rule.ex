@@ -1,8 +1,9 @@
 defmodule TdDq.Rules.Rule do
   @moduledoc false
   use Ecto.Schema
+
   import Ecto.Changeset
-  alias Jason, as: JSON
+
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleImplementation
   alias TdDq.Rules.RuleType
@@ -15,9 +16,6 @@ defmodule TdDq.Rules.Rule do
     field(:goal, :integer)
     field(:minimum, :integer)
     field(:name, :string)
-    field(:population, :string)
-    field(:priority, :string)
-    field(:weight, :integer)
     field(:version, :integer, default: 1)
     field(:updated_by, :integer)
     field(:type_params, :map)
@@ -40,9 +38,6 @@ defmodule TdDq.Rules.Rule do
       :name,
       :deleted_at,
       :description,
-      :weight,
-      :priority,
-      :population,
       :goal,
       :minimum,
       :version,
@@ -148,9 +143,6 @@ defmodule TdDq.Rules.Rule do
         inserted_at: rule.inserted_at,
         goal: rule.goal,
         minimum: rule.minimum,
-        weight: rule.weight,
-        population: rule.population,
-        priority: rule.priority,
         df_name: rule.df_name,
         df_content: df_content
       }
@@ -238,21 +230,11 @@ defmodule TdDq.Rules.Rule do
     defp get_business_concept_version(%{business_concept_id: nil}), do: %{name: ""}
 
     defp get_business_concept_version(%{business_concept_id: business_concept_id}) do
-      concept_content =
-        case ConceptCache.get(business_concept_id) do
-          {:ok, %{content: content}} -> JSON.decode!(content)
-          _ -> %{}
-        end
-
       case ConceptCache.get(business_concept_id) do
-        {:ok, nil} ->
-          %{name: ""}
-
-        {:ok, concept} ->
-          Map.merge(
-            Map.take(concept, [:name, :id]),
-            %{content: concept_content}
-          )
+        {:ok, %{} = concept} when map_size(concept) > 0 ->
+          concept
+          |> Map.take([:name, :id, :content])
+          |> Map.put_new(:name, "")
 
         _ ->
           %{name: ""}

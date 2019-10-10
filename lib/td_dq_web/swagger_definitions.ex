@@ -18,10 +18,6 @@ defmodule TdDqWeb.SwaggerDefinitions do
             goal(:integer, "goal percentage (1-100)")
             minimum(:integer, "minimum goal (1-100)")
             name(:string, "rule name")
-            population(:string, "population target description")
-            priority(:string, "Priority (Medium,...)")
-            weight(:integer, "weight")
-            # , default: "false"
             active(:boolean, "active (Default: false)")
             version(:integer, "version number")
             updated_by(:integer, "updated by user id")
@@ -41,10 +37,6 @@ defmodule TdDqWeb.SwaggerDefinitions do
             goal(:integer, "goal percentage (1-100)")
             minimum(:integer, "minimum goal (1-100)")
             name(:string, "rule name")
-            population(:string, "population target description")
-            priority(:string, "Priority (Medium,...)")
-            weight(:integer, "weight")
-            # , default: "false"
             active(:boolean, "active (Default: false)")
             version(:integer, "version number")
             updated_by(:integer, "updated by user id")
@@ -81,14 +73,11 @@ defmodule TdDqWeb.SwaggerDefinitions do
             goal(:integer, "goal percentage (1-100)")
             minimum(:integer, "minimum goal (1-100)")
             name(:string, "rule name", required: true)
-            population(:string, "population target description")
-            priority(:string, "Priority (Medium,...)")
-            weight(:integer, "weight")
             active(:boolean, "Active/Inactive")
-            version(:integer, "weight")
-            updated_by(:integer, "weight")
-            type(:string, "weight")
-            type_params(:object, "weight")
+            version(:integer, "Version")
+            updated_by(:integer, "Updated by (id)")
+            type(:string, "Type")
+            type_params(:object, "Type parameters")
           end
         end,
       RuleCreate:

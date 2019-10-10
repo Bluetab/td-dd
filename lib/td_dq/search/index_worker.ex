@@ -135,7 +135,7 @@ defmodule TdDq.Search.IndexWorker do
     |> Enum.map(& &1.id)
   end
 
-  defp read_rule_ids(%{event: "add_template", scope: "dq"}), do: :all
+  defp read_rule_ids(%{event: "template_updated", scope: "dq"}), do: :all
 
   defp read_rule_ids(_), do: []
 end

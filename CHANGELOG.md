@@ -4,7 +4,7 @@
 
 ### Added
 
-- [TD-1859] Add users roles information in rule related with business concept
+- [TD-1859] Index cached content of related business concept
 
 ## [3.7.0] 2019-09-30
 

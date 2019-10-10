@@ -1,7 +1,7 @@
 defmodule TdDqWeb.RuleView do
   use TdDqWeb, :view
   use TdHypermedia, :view
-  alias Jason, as: JSON
+
   alias TdCache.ConceptCache
   alias TdDqWeb.RuleView
 
@@ -61,9 +61,6 @@ defmodule TdDqWeb.RuleView do
       name: rule.name,
       deleted_at: rule.deleted_at,
       description: rule.description,
-      weight: rule.weight,
-      priority: rule.priority,
-      population: rule.population,
       goal: rule.goal,
       minimum: rule.minimum,
       active: rule.active,
@@ -81,14 +78,18 @@ defmodule TdDqWeb.RuleView do
     |> add_dynamic_content(rule)
   end
 
-  defp add_current_version(map, %{business_concept_id: business_concept_id}) do
+  defp add_current_version(rule, %{business_concept_id: business_concept_id}) do
     case ConceptCache.get(business_concept_id) do
-      {:ok, %{name: name, business_concept_version_id: id, content: content}} ->
-        map
-        |> Map.put(:current_business_concept_version, %{name: name, id: id, content: JSON.decode!(content)})
+      {:ok, %{business_concept_version_id: id} = concept} ->
+        current_version =
+          concept
+          |> Map.take([:name, :content])
+          |> Map.put(:id, id)
+
+        Map.put(rule, :current_business_concept_version, current_version)
 
       _ ->
-        map
+        rule
     end
   end
 

@@ -12,8 +12,6 @@ defmodule TdDq.Search.Aggregations do
          nested: %{path: "domain_parents"},
          aggs: %{distinct_search: %{terms: %{field: "domain_parents.name.raw", size: 50}}}
        }},
-      {"population.raw", %{terms: %{field: "group.raw", size: 50}}},
-      {"priority.raw", %{terms: %{field: "type.raw", size: 50}}},
       {"rule_type", %{terms: %{field: "rule_type.name.raw", size: 50}}},
       {"type_params", %{terms: %{field: "type_params.name.raw", size: 50}}},
       {"current_business_concept_version",

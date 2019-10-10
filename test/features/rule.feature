@@ -13,9 +13,6 @@ Feature: Rules
       | Business Concept ID | MYID_333                                                                               |
       | Name                | Field's Rule                                                                |
       | Description         | In order to measure quality of this field we will check whether its values are correct |
-      | Weight              | 50                                                                                     |
-      | Priority            | Medium                                                                                 |
-      | Population          | All clients who are older than 18                                                      |
       | Goal                | 98                                                                                     |
       | Minimum             | 80                                                                                     |
     Then the system returns a result with code "Created"
@@ -25,9 +22,6 @@ Feature: Rules
       | Name                | Field's Rule                                                                              |
       | Description         | In order to measure quality of this field we will check whether its values are correct    |
       | Active              | false                                                                                     |
-      | Weight              | 50                                                                                        |
-      | Priority            | Medium                                                                                    |
-      | Population          | All clients who are older than 18                                                         |
       | Goal                | 98                                                                                        |
       | Minimum             | 80                                                                                        |
       | Version             | 1                                                                                         |

@@ -20,9 +20,6 @@ defmodule TdDqWeb.SearchControllerTest do
     goal: 42,
     minimum: 42,
     name: "some name",
-    population: "some population",
-    priority: "some priority",
-    weight: 42,
     type_params: %{},
     df_content: %{},
     df_name: "none"
@@ -72,9 +69,6 @@ defmodule TdDqWeb.SearchControllerTest do
         goal: 42,
         minimum: 42,
         name: "some name 1",
-        population: "some population",
-        priority: "some priority",
-        weight: 42,
         updated_by: Integer.mod(:binary.decode_unsigned("app-admin"), 100_000),
         type_params: %{},
         rule_type_id: rule_type.id
@@ -86,9 +80,6 @@ defmodule TdDqWeb.SearchControllerTest do
         goal: 42,
         minimum: 42,
         name: "some name 2",
-        population: "some population",
-        priority: "some priority",
-        weight: 42,
         updated_by: Integer.mod(:binary.decode_unsigned("app-admin"), 100_000),
         type_params: %{},
         rule_type_id: rule_type.id

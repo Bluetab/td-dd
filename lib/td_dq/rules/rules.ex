@@ -76,8 +76,7 @@ defmodule TdDq.Rules do
   defp preload_bc_version(%{business_concept_id: business_concept_id} = rule) do
     case ConceptCache.get(business_concept_id) do
       {:ok, %{name: name, business_concept_version_id: id}} ->
-        rule
-        |> Map.put(:current_business_concept_version, %{name: name, id: id})
+        Map.put(rule, :current_business_concept_version, %{name: name, id: id})
 
       _ ->
         rule

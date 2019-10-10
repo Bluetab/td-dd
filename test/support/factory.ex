@@ -10,9 +10,6 @@ defmodule TdDq.Factory do
       goal: 30,
       minimum: 12,
       name: "Rule Name",
-      population: "Rule Population",
-      priority: "Rule Priority",
-      weight: 12,
       active: false,
       version: 1,
       updated_by: 1,
@@ -51,7 +48,7 @@ defmodule TdDq.Factory do
   end
 
   def user_factory do
-    %TdDq.Accounts.User {
+    %TdDq.Accounts.User{
       id: 0,
       user_name: "bufoncillo",
       is_admin: false
@@ -59,7 +56,7 @@ defmodule TdDq.Factory do
   end
 
   def user_admin_factory do
-    %TdDq.Accounts.User {
+    %TdDq.Accounts.User{
       id: 1,
       user_name: "bufoncillo_admin",
       is_admin: true
