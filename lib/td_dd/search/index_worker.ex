@@ -115,7 +115,7 @@ defmodule TdDd.Search.IndexWorker do
 
   defp do_reindex(data_structure_id), do: do_reindex([data_structure_id])
 
-  defp reindex_event?(%{event: "add_template", scope: "dd"}), do: true
+  defp reindex_event?(%{event: "template_updated", scope: "dd"}), do: true
 
   defp reindex_event?(_), do: false
 end
