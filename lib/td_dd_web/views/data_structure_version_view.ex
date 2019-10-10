@@ -1,9 +1,22 @@
 defmodule TdDdWeb.DataStructureVersionView do
   use TdDdWeb, :view
+  use TdHypermedia, :view
 
-  def render("show.json", %{data_structure_version: dsv, user_permissions: user_permissions}) do
-    "show.json"
-    |> render(%{data_structure_version: dsv})
+  alias TdDdWeb.DataStructureVersionView
+
+  def render(
+        "show.json",
+        %{data_structure_version: dsv, user_permissions: user_permissions, hypermedia: hypermedia} =
+          assigns
+      ) do
+    dsv
+    |> render_one_hypermedia(
+      hypermedia,
+      DataStructureVersionView,
+      "show.json",
+      Map.drop(assigns, [:hypermedia, :data_structure_version, :user_permissions])
+    )
+    |> lift_data()
     |> Map.put(:user_permissions, user_permissions)
   end
 
@@ -179,4 +192,16 @@ defmodule TdDdWeb.DataStructureVersionView do
   end
 
   defp with_profile_attrs(dsv, _), do: dsv
+
+  defp lift_data(%{"data" => data} = attrs) when is_map(data) do
+    case Map.get(data, :data) do
+      nil ->
+        attrs
+
+      nested ->
+        Map.put(attrs, "data", nested)
+    end
+  end
+
+  defp lift_data(attrs), do: attrs
 end

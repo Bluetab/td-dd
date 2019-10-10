@@ -6,6 +6,7 @@
 
 - [TD-1721] Reindex automatically when a template changes
   - Breaking change: New environment variable ES_URL replaces existing ES_HOST/ES_PORT
+- [TD-2124] Users without permission to link a data structure should not get the option to link in data catalog
 
 ## [3.7.0] 2019-09-30
 
