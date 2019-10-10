@@ -36,7 +36,9 @@ defmodule TdDdWeb.Router do
       resources("/versions", DataStructureVersionController, only: [:show])
     end
 
-    resources("/data_structure_versions", DataStructureVersionController, only: [:show])
+    resources("/data_structure_versions", DataStructureVersionController, only: [:show]) do
+      post("/links", DataStructureLinkController, :create_link)
+    end
 
     resources("/comments", CommentController, except: [:new, :edit])
 

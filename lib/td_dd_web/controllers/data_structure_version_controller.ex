@@ -1,5 +1,6 @@
 defmodule TdDdWeb.DataStructureVersionController do
   use TdDdWeb, :controller
+  use TdHypermedia, :controller
   use PhoenixSwagger
 
   import Canada, only: [can?: 2]
@@ -33,17 +34,13 @@ defmodule TdDdWeb.DataStructureVersionController do
 
   def show(conn, %{"data_structure_id" => data_structure_id, "id" => version}) do
     user = conn.assigns[:current_user]
-
     dsv = get_data_structure_version(data_structure_id, version)
-
     render_with_permissions(conn, user, dsv)
   end
 
   def show(conn, %{"id" => data_structure_version_id}) do
     user = conn.assigns[:current_user]
-
     dsv = get_data_structure_version(data_structure_version_id)
-
     render_with_permissions(conn, user, dsv)
   end
 
@@ -59,7 +56,11 @@ defmodule TdDdWeb.DataStructureVersionController do
         view_profiling_permission: can?(user, view_data_structures_profile(data_structure))
       }
 
-      render(conn, "show.json", data_structure_version: dsv, user_permissions: user_permissions)
+      render(conn, "show.json",
+        data_structure_version: dsv,
+        user_permissions: user_permissions,
+        hypermedia: hypermedia("data_structure_version", conn, dsv)
+      )
     else
       false -> render_error(conn, :forbidden)
       _error -> render_error(conn, :unprocessable_entity)

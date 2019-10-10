@@ -47,6 +47,7 @@
   "ssl_verify_fun": {:hex, :ssl_verify_fun, "1.1.4", "f0eafff810d2041e93f915ef59899c923f4568f4585904d010387ed74988e77b", [:make, :mix, :rebar3], [], "hexpm"},
   "td_cache": {:git, "https://github.com/Bluetab/td-cache.git", "1fc48c7f442f681666ef08678ba8f87e1f753069", [tag: "3.7.2"]},
   "td_df_lib": {:git, "https://github.com/Bluetab/td-df-lib.git", "709f620768ce97f2885ee214d7148ef25da45d19", [tag: "3.5.0"]},
+  "td_hypermedia": {:git, "https://github.com/Bluetab/td-hypermedia.git", "f47fb179949a2320af8f46e86ef4a39b26981726", [tag: "3.6.1"]},
   "telemetry": {:hex, :telemetry, "0.4.0", "8339bee3fa8b91cb84d14c2935f8ecf399ccd87301ad6da6b71c09553834b2ab", [:rebar3], [], "hexpm"},
   "unicode_util_compat": {:hex, :unicode_util_compat, "0.4.1", "d869e4c68901dd9531385bb0c8c40444ebf624e60b6962d95952775cac5e90cd", [:rebar3], [], "hexpm"},
   "vex": {:hex, :vex, "0.6.0", "4e79b396b2ec18cd909eed0450b19108d9631842598d46552dc05031100b7a56", [:mix], [], "hexpm"},
