@@ -54,6 +54,10 @@ defmodule TdDqWeb.Rule do
       attrs
       |> cast_to_int_attrs(@rule_integer_fields)
 
+    attrs =
+      attrs
+      |> cast_description()
+
     do_rule_create(token, attrs)
   end
 
@@ -94,5 +98,15 @@ defmodule TdDqWeb.Rule do
           l1
           |> Enum.into(l2, fn {k, v} -> {k, String.to_integer(v)} end)
         end).()
+  end
+
+  defp cast_description(attrs) do
+    case Map.get(attrs, "description") do
+      nil ->
+        attrs
+
+      description ->
+        Map.put(attrs, "description", %{"document" => description})
+    end
   end
 end

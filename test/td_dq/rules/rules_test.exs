@@ -209,7 +209,7 @@ defmodule TdDq.RulesTest do
       update_attrs =
         update_attrs
         |> Map.put(:name, "New name")
-        |> Map.put(:description, "New description")
+        |> Map.put(:description, %{"document" => "New description"})
         |> Map.drop([:rule_type_id])
 
       assert {:ok, rule} = Rules.update_rule(rule, update_attrs)
@@ -238,7 +238,7 @@ defmodule TdDq.RulesTest do
       udpate_attrs =
         update_attrs
         |> Map.put(:name, "New name")
-        |> Map.put(:description, "New description")
+        |> Map.put(:description, %{"document" => "New description"})
 
       assert {:error, %Ecto.Changeset{}} = Rules.update_rule(rule, udpate_attrs)
 

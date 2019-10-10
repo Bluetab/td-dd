@@ -24,7 +24,7 @@ defmodule TdDqWeb.RuleControllerTest do
 
   @create_fixture_attrs %{
     business_concept_id: "some business_concept_id",
-    description: "some description",
+    description: %{"document" => "some description"},
     goal: 42,
     minimum: 42,
     name: "some name",
@@ -36,7 +36,7 @@ defmodule TdDqWeb.RuleControllerTest do
   }
 
   @create_fixture_attrs_no_bc %{
-    description: "some description",
+    description: %{"document" => "some description"},
     goal: 42,
     minimum: 42,
     name: "some name",
@@ -49,7 +49,7 @@ defmodule TdDqWeb.RuleControllerTest do
 
   @create_attrs %{
     business_concept_id: "some business_concept_id",
-    description: "some description",
+    description: %{"document" => "some description"},
     goal: 42,
     minimum: 42,
     name: "some name",
@@ -61,7 +61,7 @@ defmodule TdDqWeb.RuleControllerTest do
 
   @update_attrs %{
     business_concept_id: "some updated business_concept_id",
-    description: "some updated description",
+    description: %{"document" => "some updated description"},
     goal: 43,
     minimum: 43,
     name: "some updated name",
@@ -179,7 +179,7 @@ defmodule TdDqWeb.RuleControllerTest do
 
       creation_attrs_1 = %{
         business_concept_id: business_concept_id_permission,
-        description: "some description",
+        description: %{"document" => "some description"},
         goal: 42,
         minimum: 42,
         name: "some name 1",
@@ -193,7 +193,7 @@ defmodule TdDqWeb.RuleControllerTest do
 
       creation_attrs_2 = %{
         business_concept_id: "2",
-        description: "some description",
+        description: %{"document" => "some description"},
         goal: 42,
         minimum: 42,
         name: "some name 2",
@@ -275,7 +275,7 @@ defmodule TdDqWeb.RuleControllerTest do
       assert comparable_fields == %{
                "id" => id,
                "business_concept_id" => "some business_concept_id",
-               "description" => "some description",
+               "description" => %{"document" => "some description"},
                "goal" => 42,
                "minimum" => 42,
                "name" => "some name",
@@ -312,7 +312,7 @@ defmodule TdDqWeb.RuleControllerTest do
       assert comparable_fields == %{
                "id" => id,
                "business_concept_id" => nil,
-               "description" => "some description",
+               "description" => %{"document" => "some description"},
                "goal" => 42,
                "minimum" => 42,
                "name" => "some name",
@@ -414,7 +414,7 @@ defmodule TdDqWeb.RuleControllerTest do
       assert comparable_fields == %{
                "id" => id,
                "business_concept_id" => "some updated business_concept_id",
-               "description" => "some updated description",
+               "description" => %{"document" => "some updated description"},
                "goal" => 43,
                "minimum" => 43,
                "name" => "some updated name",

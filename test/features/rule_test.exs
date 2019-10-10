@@ -79,6 +79,10 @@ defmodule TdQd.RuleTest do
     assert active_to_boolean(value) == target[attr]
   end
 
+  def assert_attr("description" = attr, value, %{} = target) do
+    assert value == Map.get(target[attr], "document")
+  end
+
   def assert_attr(attr, value, %{} = target) do
     assert value == target[attr]
   end
