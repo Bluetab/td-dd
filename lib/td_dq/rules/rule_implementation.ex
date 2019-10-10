@@ -33,8 +33,8 @@ defmodule TdDq.Rules.RuleImplementation do
          rule:
            %Rule{
              rule_type:
-               %TdDq.Rules.RuleType{params: %{"system_params" => system_params}} = rule_type
-           } = rule
+               %TdDq.Rules.RuleType{params: %{"system_params" => system_params}}
+           }
        }) do
     system_required =
       system_params
