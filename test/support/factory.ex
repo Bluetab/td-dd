@@ -28,6 +28,18 @@ defmodule TdDq.Factory do
     }
   end
 
+  def structure_rule_type_factory do
+    %TdDq.Rules.RuleType{
+      name: "Rule Type",
+      params: %{
+        "type_params" => [],
+        "system_params" => [
+          %{"name" => "system_required", "type" => "boolean", "value" => false, "hidden" => true}
+        ]
+      }
+    }
+  end
+
   def rule_implementation_factory do
     %TdDq.Rules.RuleImplementation{
       rule: build(:rule),

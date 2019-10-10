@@ -5,6 +5,12 @@
 ### Added
 
 - [TD-1859] Index cached content of related business concept
+- [TD-2048] New Rule Type system param ´system_required´ of type boolean with hidden property
+
+### Changed
+
+- [TD-2048] Attribute system in Rule Implementation requirement is defined in Rule Type system params as ´system_required´
+- [TD-2158] Sortable mappings used in filters with sort and raw properties
 
 ## [3.7.0] 2019-09-30
 
