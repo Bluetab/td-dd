@@ -7,7 +7,10 @@ defmodule TdDd.DownloadTest do
   alias TdCache.TemplateCache
 
   def create_template(template) do
-    TemplateCache.put(template)
+    template
+    |> Map.put(:updated_at, DateTime.utc_now())
+    |> TemplateCache.put()
+
     template
   end
 

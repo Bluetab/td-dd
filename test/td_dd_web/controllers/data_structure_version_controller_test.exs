@@ -101,7 +101,8 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
         ],
         scope: "test",
         label: "template_label",
-        id: "999"
+        id: "999",
+        updated_at: DateTime.utc_now()
       })
 
       conn =

@@ -543,6 +543,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   def create_template(attrs \\ %{}) do
     attrs
     |> Enum.into(@default_template_attrs)
+    |> Map.put(:updated_at, DateTime.utc_now())
     |> TemplateCache.put()
 
     :ok
