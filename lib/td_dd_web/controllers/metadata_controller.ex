@@ -17,6 +17,7 @@ defmodule TdDdWeb.MetadataController do
 
   @structure_import_schema Application.get_env(:td_dd, :metadata)[:structure_import_schema]
   @structure_import_required Application.get_env(:td_dd, :metadata)[:structure_import_required]
+  @structure_import_boolean Application.get_env(:td_dd, :metadata)[:structure_import_boolean]
   @field_import_schema Application.get_env(:td_dd, :metadata)[:field_import_schema]
   @field_import_required Application.get_env(:td_dd, :metadata)[:field_import_required]
   @relation_import_schema Application.get_env(:td_dd, :metadata)[:relation_import_schema]
@@ -156,7 +157,8 @@ defmodule TdDdWeb.MetadataController do
       system_map: system_map,
       defaults: defaults,
       schema: @structure_import_schema,
-      required: @structure_import_required
+      required: @structure_import_required,
+      booleans: @structure_import_boolean
     )
   end
 
