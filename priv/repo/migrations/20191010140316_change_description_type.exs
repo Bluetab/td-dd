@@ -18,7 +18,6 @@ defmodule TdDq.Repo.Migrations.ChangeDescriptionType do
     |> select([r], %{id: r.id, description: r.description_backup})
     |> Repo.all()
     |> Enum.map(&description_to_map/1)
-    |> IO.inspect
     |> Enum.each(&update_description/1)
   end
 
