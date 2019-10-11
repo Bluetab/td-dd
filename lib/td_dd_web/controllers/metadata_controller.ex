@@ -103,7 +103,7 @@ defmodule TdDdWeb.MetadataController do
     user = conn.assigns[:current_user]
 
     with true <- can?(user, upload(DataStructure)),
-         :ok <- do_upload(conn, params, external_id: external_id),
+         :ok, _ <- do_upload(conn, params, external_id: external_id),
          dsv <- DataStructures.get_latest_version_by_external_id(external_id, enrich: [:ancestry]) do
       render(conn, "show.json", data_structure_version: dsv)
     else
