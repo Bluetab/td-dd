@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- [TD-2188] Synchronous upload does not work
+
 ### Changed
 
 - [TD-2176] Nullable field as boolean in metadata
