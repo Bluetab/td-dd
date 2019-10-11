@@ -45,9 +45,9 @@ defmodule TdDdWeb.MetadataControllerTest do
 
       conn =
         post(conn, Routes.metadata_path(conn, :upload),
-          data_structures: structures,
-          data_fields: fields,
-          data_structure_relations: relations
+          data_structures: structures |> Map.put(:filename, "structures"),
+          data_fields: fields |> Map.put(:filename, "fields"),
+          data_structure_relations: relations |> Map.put(:filename, "relations")
         )
 
       assert response(conn, 202) =~ ""
