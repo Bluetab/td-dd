@@ -37,7 +37,7 @@ defmodule TdDq.Search.Mappings do
       current_business_concept_version: %{
         properties: %{
           id: %{type: "long"},
-          name: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
+          name: %{type: "text", fields: @raw_sort},
           content: %{
             properties: get_dynamic_mappings("bg", "user")
           }
