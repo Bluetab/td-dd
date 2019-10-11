@@ -14,9 +14,6 @@ defmodule TdDqWeb.Rule do
     "Business Concept ID" => "business_concept_id",
     "Name" => "name",
     "Description" => "description",
-    "Weight" => "weight",
-    "Priority" => "priority",
-    "Population" => "population",
     "Goal" => "goal",
     "Minimum" => "minimum",
     "Type" => "rule_type_id",
@@ -30,7 +27,7 @@ defmodule TdDqWeb.Rule do
     "Last Modification" => "inserted_at"
   }
 
-  @rule_integer_fields ["rule_type_id", "weight", "goal", "minimum"]
+  @rule_integer_fields ["rule_type_id", "goal", "minimum"]
 
   def active_to_boolean("true"), do: true
   def active_to_boolean("false"), do: false
