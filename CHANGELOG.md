@@ -8,6 +8,7 @@
 
 ### Changed
 
+- [TD-2130] In bulk upload move parsing functions to GenServer"
 - [TD-2176] Nullable field as boolean in metadata
 - [TD-1721] Reindex automatically when a template changes
   - Breaking change: New environment variable ES_URL replaces existing ES_HOST/ES_PORT

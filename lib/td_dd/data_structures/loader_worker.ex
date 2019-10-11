@@ -5,26 +5,46 @@ defmodule TdDd.Loader.LoaderWorker do
 
   use GenServer
 
+  alias Plug.Upload
+  alias TdCache.TaxonomyCache
+  alias TdDd.CSV.Reader
   alias TdDd.DataStructures.Ancestry
   alias TdDd.DataStructures.Graph
   alias TdDd.Loader
   alias TdDd.ProfilingLoader
+  alias TdDd.Systems
 
   require Logger
 
   @index_worker Application.get_env(:td_dd, :index_worker)
 
+  @structure_import_schema Application.get_env(:td_dd, :metadata)[:structure_import_schema]
+  @structure_import_required Application.get_env(:td_dd, :metadata)[:structure_import_required]
+  @structure_import_boolean Application.get_env(:td_dd, :metadata)[:structure_import_boolean]
+  @field_import_schema Application.get_env(:td_dd, :metadata)[:field_import_schema]
+  @field_import_required Application.get_env(:td_dd, :metadata)[:field_import_required]
+  @relation_import_schema Application.get_env(:td_dd, :metadata)[:relation_import_schema]
+  @relation_import_required Application.get_env(:td_dd, :metadata)[:relation_import_required]
+
   def start_link(_opts) do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
 
-  def load(structures, fields, relations, audit, opts \\ []) do
+  def load(structures_file, fields_file, relations_file, audit, opts \\ []) do
+    system_id = opts[:system_id]
+
     case Keyword.has_key?(opts, :external_id) do
       true ->
-        GenServer.call(__MODULE__, {:load, structures, fields, relations, audit, opts})
+        GenServer.call(
+          __MODULE__,
+          {:load, structures_file, fields_file, relations_file, system_id, audit, opts}
+        )
 
       _ ->
-        GenServer.cast(__MODULE__, {:load, structures, fields, relations, audit})
+        GenServer.cast(
+          __MODULE__,
+          {:load, structures_file, fields_file, relations_file, system_id, audit}
+        )
     end
   end
 
@@ -63,14 +83,28 @@ defmodule TdDd.Loader.LoaderWorker do
   end
 
   @impl true
-  def handle_cast({:load, structures, fields, relations, audit}, state) do
-    do_load(structures, fields, relations, audit)
+  def handle_cast({:load, structures_file, fields_file, relations_file, system_id, audit}, state) do
+    {:ok, field_recs} = fields_file |> parse_data_fields(system_id)
+
+    {:ok, structure_recs} = structures_file |> parse_data_structures(system_id)
+
+    {:ok, relation_recs} = relations_file |> parse_data_structure_relations(system_id)
+    do_load(structure_recs, field_recs, relation_recs, audit)
     {:noreply, state}
   end
 
   @impl true
-  def handle_call({:load, structures, fields, relations, audit, opts}, _from, state) do
-    reply = do_load(structures, fields, relations, audit, opts)
+  def handle_call(
+        {:load, structures_file, fields_file, relations_file, system_id, audit, opts},
+        _from,
+        state
+      ) do
+    {:ok, field_recs} = fields_file |> parse_data_fields(system_id)
+
+    {:ok, structure_recs} = structures_file |> parse_data_structures(system_id)
+
+    {:ok, relation_recs} = relations_file |> parse_data_structure_relations(system_id)
+    reply = do_load(structure_recs, field_recs, relation_recs, audit, opts)
     {:reply, reply, state}
   end
 
@@ -103,6 +137,88 @@ defmodule TdDd.Loader.LoaderWorker do
       Graph.delete(graph)
     end
   end
+
+  defp parse_data_structures(nil, _), do: {:ok, []}
+
+  defp parse_data_structures(%Upload{path: path}, system_id) do
+    domain_map = TaxonomyCache.get_domain_name_to_id_map()
+    system_map = get_system_map(system_id)
+
+    defaults =
+      case system_id do
+        nil -> %{}
+        _ -> %{system_id: system_id}
+      end
+
+    records =
+      path
+      |> File.stream!()
+      |> Reader.read_csv(
+        domain_map: domain_map,
+        system_map: system_map,
+        defaults: defaults,
+        schema: @structure_import_schema,
+        required: @structure_import_required,
+        booleans: @structure_import_boolean
+      )
+
+    File.rm("#{path}")
+    records
+  end
+
+  defp parse_data_fields(nil, _), do: {:ok, []}
+
+  defp parse_data_fields(%Upload{path: path}, system_id) do
+    defaults =
+      case system_id do
+        nil -> %{external_id: nil}
+        _ -> %{external_id: nil, system_id: system_id}
+      end
+
+    system_map = get_system_map(system_id)
+
+    records =
+      path
+      |> File.stream!()
+      |> Reader.read_csv(
+        defaults: defaults,
+        system_map: system_map,
+        schema: @field_import_schema,
+        required: @field_import_required,
+        booleans: ["nullable"]
+      )
+
+    File.rm("#{path}")
+    records
+  end
+
+  defp parse_data_structure_relations(nil, _), do: {:ok, []}
+
+  defp parse_data_structure_relations(%Upload{path: path}, system_id) do
+    system_map = get_system_map(system_id)
+
+    defaults =
+      case system_id do
+        nil -> %{}
+        _ -> %{system_id: system_id}
+      end
+
+    records =
+      path
+      |> File.stream!()
+      |> Reader.read_csv(
+        defaults: defaults,
+        system_map: system_map,
+        schema: @relation_import_schema,
+        required: @relation_import_required
+      )
+
+    File.rm("#{path}")
+    records
+  end
+
+  defp get_system_map(nil), do: Systems.get_system_name_to_id_map()
+  defp get_system_map(_system_id), do: nil
 
   defp post_process([], _), do: :ok
 

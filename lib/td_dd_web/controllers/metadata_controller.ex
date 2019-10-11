@@ -4,24 +4,13 @@ defmodule TdDdWeb.MetadataController do
   import Canada, only: [can?: 2]
 
   alias Jason, as: JSON
-  alias Plug.Upload
-  alias TdCache.TaxonomyCache
   alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
-  alias TdDd.CSV.Reader
   alias TdDd.DataStructures
   alias TdDd.Loader.LoaderWorker
   alias TdDd.Systems
   alias TdDd.Systems.System
 
   require Logger
-
-  @structure_import_schema Application.get_env(:td_dd, :metadata)[:structure_import_schema]
-  @structure_import_required Application.get_env(:td_dd, :metadata)[:structure_import_required]
-  @structure_import_boolean Application.get_env(:td_dd, :metadata)[:structure_import_boolean]
-  @field_import_schema Application.get_env(:td_dd, :metadata)[:field_import_schema]
-  @field_import_required Application.get_env(:td_dd, :metadata)[:field_import_required]
-  @relation_import_schema Application.get_env(:td_dd, :metadata)[:relation_import_schema]
-  @relation_import_required Application.get_env(:td_dd, :metadata)[:relation_import_required]
 
   def upload_by_system(conn, %{"system_id" => external_id} = params) do
     # TODO: Complete implementation once the metada is loaded by System
@@ -125,88 +114,19 @@ defmodule TdDdWeb.MetadataController do
   end
 
   defp do_upload(conn, params, opts \\ []) do
-    system_id = opts[:system_id]
-
-    {:ok, field_recs} = params |> Map.get("data_fields") |> parse_data_fields(system_id)
-
-    {:ok, structure_recs} =
-      params |> Map.get("data_structures") |> parse_data_structures(system_id)
-
-    {:ok, relation_recs} =
-      params |> Map.get("data_structure_relations") |> parse_data_structure_relations(system_id)
-
-    load(conn, structure_recs, field_recs, relation_recs, opts)
+    fields_file = move_file(params |> Map.get("data_fields"))
+    structures_file = move_file(params |> Map.get("data_structures"))
+    relations_file = move_file(params |> Map.get("data_structure_relations"))
+    load(conn, structures_file, fields_file, relations_file, opts)
   end
 
-  defp parse_data_structures(nil, _), do: {:ok, []}
+  defp move_file(nil), do: nil
 
-  defp parse_data_structures(%Upload{path: path}, system_id) do
-    domain_map = TaxonomyCache.get_domain_name_to_id_map()
-    system_map = get_system_map(system_id)
-
-    defaults =
-      case system_id do
-        nil -> %{}
-        _ -> %{system_id: system_id}
-      end
-
-    path
-    |> File.stream!()
-    |> Reader.read_csv(
-      domain_map: domain_map,
-      system_map: system_map,
-      defaults: defaults,
-      schema: @structure_import_schema,
-      required: @structure_import_required,
-      booleans: @structure_import_boolean
-    )
+  defp move_file(file) do
+    new_path = "/tmp/#{:os.system_time(:milli_seconds)}-#{Map.get(file, :filename)}"
+    File.cp(Map.get(file, :path), "#{new_path}")
+    file |> Map.put(:path, "#{new_path}")
   end
-
-  defp parse_data_fields(nil, _), do: {:ok, []}
-
-  defp parse_data_fields(%Upload{path: path}, system_id) do
-    defaults =
-      case system_id do
-        nil -> %{external_id: nil}
-        _ -> %{external_id: nil, system_id: system_id}
-      end
-
-    system_map = get_system_map(system_id)
-
-    path
-    |> File.stream!()
-    |> Reader.read_csv(
-      defaults: defaults,
-      system_map: system_map,
-      schema: @field_import_schema,
-      required: @field_import_required,
-      booleans: ["nullable"]
-    )
-  end
-
-  defp parse_data_structure_relations(nil, _), do: {:ok, []}
-
-  defp parse_data_structure_relations(%Upload{path: path}, system_id) do
-    system_map = get_system_map(system_id)
-
-    defaults =
-      case system_id do
-        nil -> %{}
-        _ -> %{system_id: system_id}
-      end
-
-    path
-    |> File.stream!()
-    |> Reader.read_csv(
-      defaults: defaults,
-      system_map: system_map,
-      schema: @relation_import_schema,
-      required: @relation_import_required
-    )
-  end
-
-  defp get_system_map(nil), do: Systems.get_system_name_to_id_map()
-  defp get_system_map(_system_id), do: nil
 
   defp load(conn, structure_records, field_records, relation_records, opts) do
     user_id = GuardianPlug.current_resource(conn).id
