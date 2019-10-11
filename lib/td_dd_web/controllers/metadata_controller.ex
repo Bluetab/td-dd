@@ -80,7 +80,7 @@ defmodule TdDdWeb.MetadataController do
     with true <- can?(user, upload(DataStructure)),
          parent when not is_nil(parent) <-
            DataStructures.find_data_structure(%{external_id: parent_external_id}),
-         :ok <-
+         :ok, _ <-
            do_upload(conn, params,
              external_id: external_id,
              parent_external_id: parent_external_id
