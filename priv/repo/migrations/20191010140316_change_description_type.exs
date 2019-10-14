@@ -26,6 +26,8 @@ defmodule TdDq.Repo.Migrations.ChangeDescriptionType do
     Map.put(attrs, :description, to_map(description))
   end
 
+  defp to_map(""), do: %{}
+
   defp to_map(description) do
     nodes =
       description
