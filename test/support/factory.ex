@@ -14,7 +14,8 @@ defmodule TdDq.Factory do
       version: 1,
       updated_by: 1,
       rule_type: build(:rule_type),
-      type_params: %{}
+      type_params: %{},
+      result_type: "percentage"
     }
   end
 

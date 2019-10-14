@@ -386,8 +386,8 @@ defmodule TdDq.RulesTest do
       impl_key_1 = "impl_key_1"
       impl_key_2 = "impl_key_2"
       goal = 20
-      expected_avg = (60 + 10) / 2
-      expected_message = "quality_result.over_goal"
+      expected_result = 10
+      expected_message = "quality_result.under_minimum"
       rule = insert(:rule, df_content: %{}, business_concept_id: nil, goal: goal)
       rule_impl_1 = insert(:rule_implementation, implementation_key: impl_key_1, rule: rule)
       rule_impl_2 = insert(:rule_implementation, implementation_key: impl_key_2, rule: rule)
@@ -409,10 +409,10 @@ defmodule TdDq.RulesTest do
 
       %{execution_result_info: execution_result_info} = Document.encode(rule)
 
-      %{result_avg: result_avg, result_text: result_text} =
-        Map.take(execution_result_info, [:result_avg, :result_text])
+      %{result: result, result_text: result_text} =
+        Map.take(execution_result_info, [:result, :result_text])
 
-      assert result_avg == expected_avg
+      assert result == expected_result
       assert expected_message == result_text
     end
 
