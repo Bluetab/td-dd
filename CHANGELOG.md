@@ -6,6 +6,7 @@
 
 - [TD-1859] Index cached content of related business concept
 - [TD-2048] New Rule Type system param ´system_required´ of type boolean with hidden property
+- [TD-1987] New Rule property result_type of types percentage or errors number
 
 ### Changed
 
