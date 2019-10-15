@@ -204,7 +204,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     test "search with query performs ngram search on name", %{conn: conn} do
       %{data_structure_id: id} =
         insert(:data_structure_version,
-          name: "foo_bar_baz",
+          name: "foobarbaz",
           data_structure: build(:data_structure, external_id: "foobarbaz")
         )
 
