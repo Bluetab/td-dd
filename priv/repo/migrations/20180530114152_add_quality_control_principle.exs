@@ -3,7 +3,7 @@ defmodule TdDq.Repo.Migrations.AddQualityControlPrinciple do
 
   def change do
     alter table("quality_controls") do
-      add :principle, :map
+      add(:principle, :map)
     end
   end
 end

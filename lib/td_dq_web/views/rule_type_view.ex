@@ -11,8 +11,6 @@ defmodule TdDqWeb.RuleTypeView do
   end
 
   def render("rule_type.json", %{rule_type: rule_type}) do
-    %{id: rule_type.id,
-      name: rule_type.name,
-      params: rule_type.params}
+    %{id: rule_type.id, name: rule_type.name, params: rule_type.params}
   end
 end

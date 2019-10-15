@@ -11,15 +11,14 @@ defmodule TdDq.Repo.Migrations.RenameColumnAndModifyTypeRuleResult do
   """
 
   def change do
-
-    drop constraint(:rule_results, "rule_results_rule_implementation_id_fkey")
-    alter table(:rule_results), do: modify :rule_implementation_id, :string
+    drop(constraint(:rule_results, "rule_results_rule_implementation_id_fkey"))
+    alter(table(:rule_results), do: modify(:rule_implementation_id, :string))
 
     flush()
 
     SQL.query!(Repo, @update_implementation_key)
 
-    rename table(:rule_results), :rule_implementation_id, to: :implementation_key
-    create unique_index(:rule_implementations, [:implementation_key])
+    rename(table(:rule_results), :rule_implementation_id, to: :implementation_key)
+    create(unique_index(:rule_implementations, [:implementation_key]))
   end
 end

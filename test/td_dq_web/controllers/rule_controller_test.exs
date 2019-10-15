@@ -305,33 +305,47 @@ defmodule TdDqWeb.RuleControllerTest do
     end
 
     @tag :admin_authenticated
-    test "renders errors when rule result type is numeric and goal is higher than minimum", %{conn: conn} do
+    test "renders errors when rule result type is numeric and goal is higher than minimum", %{
+      conn: conn
+    } do
       rule_type = insert(:rule_type)
+
       creation_attrs =
-        Map.merge(@create_fixture_attrs_no_bc,
-        %{rule_type_id: rule_type.id, result_type: "errors_number", minimum: 5, goal: 10})
+        Map.merge(
+          @create_fixture_attrs_no_bc,
+          %{rule_type_id: rule_type.id, result_type: "errors_number", minimum: 5, goal: 10}
+        )
+
       conn = post(conn, Routes.rule_path(conn, :create), rule: creation_attrs)
+
       assert json_response(conn, 422)["errors"] == [
-        %{
-          "code" => "undefined",
-          "name" => "rule.error.minimum.must.be.greater.than.or.equal.to.goal"
-        }
-      ]
+               %{
+                 "code" => "undefined",
+                 "name" => "rule.error.minimum.must.be.greater.than.or.equal.to.goal"
+               }
+             ]
     end
 
     @tag :admin_authenticated
-    test "renders errors when rule result type is percentage and goal is lower than minimum", %{conn: conn} do
+    test "renders errors when rule result type is percentage and goal is lower than minimum", %{
+      conn: conn
+    } do
       rule_type = insert(:rule_type)
+
       creation_attrs =
-        Map.merge(@create_fixture_attrs_no_bc,
-        %{rule_type_id: rule_type.id, result_type: "percentage", minimum: 50, goal: 10})
+        Map.merge(
+          @create_fixture_attrs_no_bc,
+          %{rule_type_id: rule_type.id, result_type: "percentage", minimum: 50, goal: 10}
+        )
+
       conn = post(conn, Routes.rule_path(conn, :create), rule: creation_attrs)
+
       assert json_response(conn, 422)["errors"] == [
-        %{
-          "code" => "undefined",
-          "name" => "rule.error.goal.must.be.greater.than.or.equal.to.minimum"
-        }
-      ]
+               %{
+                 "code" => "undefined",
+                 "name" => "rule.error.goal.must.be.greater.than.or.equal.to.minimum"
+               }
+             ]
     end
   end
 

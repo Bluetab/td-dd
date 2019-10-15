@@ -30,24 +30,25 @@ defmodule TdDq.Repo.Migrations.ModifyStatusFieldInRulesTable do
   end
 
   def up do
-    rename table(:rules), :status, to: :status_backup
-    alter table(:rules), do: add :active, :boolean
-    alter table(:rules), do: add :deleted_at, :utc_datetime
+    rename(table(:rules), :status, to: :status_backup)
+    alter(table(:rules), do: add(:active, :boolean))
+    alter(table(:rules), do: add(:deleted_at, :utc_datetime))
     flush()
 
-    from(r in "rules", select: %{
-      id: r.id,
-      status: r.status_backup,
-      last_update: r.updated_at
-    })
-    |> Repo.all
+    from(r in "rules",
+      select: %{
+        id: r.id,
+        status: r.status_backup,
+        last_update: r.updated_at
+      }
+    )
+    |> Repo.all()
     |> Enum.each(&update_rule_record/1)
   end
 
   def down do
-    alter table(:rules), do: remove :active
-    alter table(:rules), do: remove :deleted_at
-    rename table(:rules), :status_backup, to: :status
+    alter(table(:rules), do: remove(:active))
+    alter(table(:rules), do: remove(:deleted_at))
+    rename(table(:rules), :status_backup, to: :status)
   end
-
 end

@@ -39,7 +39,9 @@ config :td_dq, hashing_module: Comeonin.Bcrypt
 # (without the 'end of line' character)
 # EX_LOGGER_FORMAT='$date $time [$level] $message'
 config :logger, :console,
-  format: (System.get_env("EX_LOGGER_FORMAT") || "$date\T$time\Z [$level]$levelpad $metadata$message") <> "\n",
+  format:
+    (System.get_env("EX_LOGGER_FORMAT") || "$date\T$time\Z [$level]$levelpad $metadata$message") <>
+      "\n",
   level: :info,
   metadata: [:pid, :module],
   utc_log: true

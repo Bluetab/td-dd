@@ -28,8 +28,9 @@ defmodule TdDqWeb do
 
   def view do
     quote do
-      use Phoenix.View, root: "lib/td_dq_web/templates",
-                        namespace: TdDqWeb
+      use Phoenix.View,
+        root: "lib/td_dq_web/templates",
+        namespace: TdDqWeb
 
       # Import convenience functions from controllers
       import Phoenix.Controller, only: [get_flash: 2, view_module: 1]

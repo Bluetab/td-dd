@@ -40,8 +40,7 @@ defmodule TdDqWeb.RuleTypeController do
   end
 
   def create(conn, %{"rule_type" => rule_type_params}) do
-    with {:ok, %RuleType{} = rule_type} <-
-           Rules.create_rule_type(rule_type_params) do
+    with {:ok, %RuleType{} = rule_type} <- Rules.create_rule_type(rule_type_params) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", rule_type_path(conn, :show, rule_type))
@@ -93,8 +92,7 @@ defmodule TdDqWeb.RuleTypeController do
   def update(conn, %{"id" => id, "rule_type" => rule_type_params}) do
     rule_type = Rules.get_rule_type!(id)
 
-    with {:ok, %RuleType{} = rule_type} <-
-           Rules.update_rule_type(rule_type, rule_type_params) do
+    with {:ok, %RuleType{} = rule_type} <- Rules.update_rule_type(rule_type, rule_type_params) do
       render(conn, "show.json", rule_type: rule_type)
     end
   end

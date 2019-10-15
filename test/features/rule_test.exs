@@ -42,8 +42,7 @@ defmodule TdQd.RuleTest do
 
     table =
       table ++
-        [%{Field: "Type", Value: rule_type_id}] ++
-        [%{Field: "Type Params", Value: type_params}]
+        [%{Field: "Type", Value: rule_type_id}] ++ [%{Field: "Type Params", Value: type_params}]
 
     {:ok, status_code, _resp} = rule_create(token, table)
     {:ok, Map.merge(state, %{status_code: status_code})}
