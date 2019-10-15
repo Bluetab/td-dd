@@ -103,9 +103,11 @@ defmodule TdDqWeb.RuleImplementationController do
   def create(conn, %{"rule_implementation" => rule_implementation_params}) do
     user = conn.assigns[:current_resource]
     rule_id = rule_implementation_params["rule_id"]
-    rule = rule_id
-    |> Rules.get_rule_or_nil()
-    |> Repo.preload([:rule_type])
+
+    rule =
+      rule_id
+      |> Rules.get_rule_or_nil()
+      |> Repo.preload([:rule_type])
 
     resource_type = %{
       "business_concept_id" => rule.business_concept_id,
@@ -370,14 +372,16 @@ defmodule TdDqWeb.RuleImplementationController do
     response(200, "OK", Schema.ref(:RuleImplementationsResponse))
   end
 
-  def get_rule_implementations(conn, %{"rule_id" => id}) do
+  def get_rule_implementations(conn, %{"rule_id" => id} = params) do
     user = conn.assigns[:current_resource]
     rule_id = String.to_integer(id)
 
     with true <- can?(user, index(RuleImplementation)) do
+      opts = deleted_implementations(params)
+
       rule_implementations =
         %{"rule_id" => rule_id}
-        |> Rules.list_rule_implementations()
+        |> Rules.list_rule_implementations(opts)
         |> Enum.map(&Repo.preload(&1, [:rule, [rule: :rule_type]]))
         |> Enum.map(&add_last_rule_result(&1))
 
@@ -414,4 +418,8 @@ defmodule TdDqWeb.RuleImplementationController do
       Rules.get_rule_implementation_results(rule_implementation.implementation_key)
     )
   end
+
+  defp deleted_implementations(%{"status" => "deleted"}), do: [deleted: true]
+
+  defp deleted_implementations(_), do: []
 end

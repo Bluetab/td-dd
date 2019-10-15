@@ -449,49 +449,24 @@ defmodule TdDq.Rules do
 
   ## Examples
 
-      iex> list_rule_implementations()
+      iex> list_rule_implementations(params, opts)
       [%RuleImplementation{}, ...]
 
   """
-  def list_rule_implementations(params \\ %{})
+  def list_rule_implementations(params \\ %{}, opts \\ [])
 
-  def list_rule_implementations(params) do
-    dynamic = filter(params, RuleImplementation.__schema__(:fields))
+  def list_rule_implementations(params, opts) do
     rule_params = Map.get(params, :rule) || Map.get(params, "rule", %{})
     rule_fields = Rule.__schema__(:fields)
+    dynamic = filter(params, RuleImplementation.__schema__(:fields))
+    dynamic = dynamic_rule_params(rule_params, rule_fields, dynamic)
 
-    dynamic =
-      Enum.reduce(Map.keys(rule_params), dynamic, fn key, acc ->
-        key_as_atom = if is_binary(key), do: String.to_atom(key), else: key
-
-        case {Enum.member?(rule_fields, key_as_atom), is_map(Map.get(rule_params, key))} do
-          {true, true} ->
-            json_query = Map.get(rule_params, key)
-
-            dynamic(
-              [_, p],
-              fragment("(?) @> ?::jsonb", field(p, ^key_as_atom), ^json_query) and ^acc
-            )
-
-          {true, false} ->
-            dynamic([_, p], field(p, ^key_as_atom) == ^rule_params[key] and ^acc)
-
-          {false, _} ->
-            acc
-        end
-      end)
-
-    query =
-      from(
-        ri in RuleImplementation,
-        inner_join: r in Rule,
-        on: ri.rule_id == r.id,
-        where: ^dynamic,
-        where: is_nil(r.deleted_at),
-        where: is_nil(ri.deleted_at)
-      )
-
-    query |> Repo.all()
+    RuleImplementation
+    |> join(:inner, [ri], r in assoc(ri, :rule))
+    |> where(^dynamic)
+    |> where([_ri, r], is_nil(r.deleted_at))
+    |> deleted_implementations(opts)
+    |> Repo.all()
   end
 
   @doc """
@@ -790,7 +765,7 @@ defmodule TdDq.Rules do
     dynamic = true
 
     Enum.reduce(Map.keys(params), dynamic, fn key, acc ->
-      key_as_atom = if is_binary(key), do: String.to_atom(key), else: key
+      key_as_atom = binary_to_atom(key)
 
       case Enum.member?(fields, key_as_atom) and !is_map(Map.get(params, key)) do
         true -> dynamic([p], field(p, ^key_as_atom) == ^params[key] and ^acc)
@@ -967,8 +942,8 @@ defmodule TdDq.Rules do
     |> where([_, ri, _], is_nil(ri.deleted_at))
     |> where(
       [rr, _, r],
-      (r.result_type == ^Rule.result_type.percentage and rr.result < r.minimum) or
-        (r.result_type == ^Rule.result_type.errors_number and rr.result > r.goal)
+      (r.result_type == ^Rule.result_type().percentage and rr.result < r.minimum) or
+        (r.result_type == ^Rule.result_type().errors_number and rr.result > r.goal)
     )
     |> select([rr, _, r], %{
       id: rr.id,
@@ -998,5 +973,43 @@ defmodule TdDq.Rules do
     |> order_by(desc: :date)
     |> limit(1)
     |> Repo.one()
+  end
+
+  defp dynamic_rule_params(params, fields, dynamic) do
+    names = Map.keys(params)
+
+    Enum.reduce(names, dynamic, fn name, acc ->
+      atom_name = binary_to_atom(name)
+
+      case Enum.member?(fields, atom_name) do
+        false ->
+          acc
+
+        true ->
+          params
+          |> Map.get(name)
+          |> dynamic_filter(atom_name, acc)
+      end
+    end)
+  end
+
+  defp binary_to_atom(value), do: if(is_binary(value), do: String.to_atom(value), else: value)
+
+  defp dynamic_filter(field, atom_name, acc) when is_map(field) do
+    dynamic([_, p], fragment("(?) @> ?::jsonb", field(p, ^atom_name), ^field) and ^acc)
+  end
+
+  defp dynamic_filter(field, atom_name, acc) do
+    dynamic([_, p], field(p, ^atom_name) == ^field and ^acc)
+  end
+
+  defp deleted_implementations(query, options) do
+    case Keyword.get(options, :deleted, false) do
+      true ->
+        where(query, [ri, _r], not is_nil(ri.deleted_at))
+
+      false ->
+        where(query, [ri, _r], is_nil(ri.deleted_at))
+    end
   end
 end
