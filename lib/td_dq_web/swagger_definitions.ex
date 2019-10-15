@@ -14,7 +14,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
           properties do
             id(:integer, "unique identifier", required: true)
             business_concept_id([:string, nil], "business concept id")
-            description(:string, "description", required: true)
+            description(:object, "Description")
             goal(:integer, "goal percentage (1-100)")
             minimum(:integer, "minimum goal (1-100)")
             name(:string, "rule name")
@@ -33,7 +33,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
           properties do
             id(:integer, "unique identifier", required: true)
             business_concept_id([:string, nil], "business concept id")
-            description(:string, "description", required: true)
+            description(:object, "Description")
             goal(:integer, "goal percentage (1-100)")
             minimum(:integer, "minimum goal (1-100)")
             name(:string, "rule name")
@@ -69,7 +69,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
         swagger_schema do
           properties do
             business_concept_id([:string, nil], "business concept id")
-            description(:string, "description")
+            description(:object, "Description")
             goal(:integer, "goal percentage (1-100)")
             minimum(:integer, "minimum goal (1-100)")
             name(:string, "rule name", required: true)

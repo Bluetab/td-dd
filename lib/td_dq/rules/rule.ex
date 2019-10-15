@@ -17,7 +17,7 @@ defmodule TdDq.Rules.Rule do
     field(:business_concept_id, :string)
     field(:active, :boolean, default: false)
     field(:deleted_at, :utc_datetime)
-    field(:description, :string)
+    field(:description, :map)
     field(:goal, :integer)
     field(:minimum, :integer)
     field(:name, :string)
@@ -129,6 +129,7 @@ defmodule TdDq.Rules.Rule do
     alias TdCache.TemplateCache
     alias TdCache.UserCache
     alias TdDfLib.Format
+    alias TdDfLib.RichText
     alias TdDq.Rules
 
     @impl Elasticsearch.Document
@@ -167,7 +168,7 @@ defmodule TdDq.Rules.Rule do
         version: rule.version,
         name: rule.name,
         active: rule.active,
-        description: rule.description,
+        description: RichText.to_plain_text(rule.description),
         deleted_at: rule.deleted_at,
         execution_result_info: execution_result_info,
         updated_by: updated_by,
