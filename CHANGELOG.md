@@ -12,6 +12,7 @@
 
 - [TD-2048] Attribute system in Rule Implementation requirement is defined in Rule Type system params as ´system_required´
 - [TD-2158] Sortable mappings used in filters with sort and raw properties
+- [TD-2093] Description type to map
 
 ## [3.7.0] 2019-09-30
 

@@ -16,7 +16,7 @@ defmodule TdDqWeb.SearchControllerTest do
   end
 
   @create_attrs %{
-    description: "some description",
+    description: %{"document" => "some description"},
     goal: 42,
     minimum: 42,
     name: "some name",
@@ -65,7 +65,7 @@ defmodule TdDqWeb.SearchControllerTest do
 
       creation_attrs_1 = %{
         business_concept_id: concept_1,
-        description: "some description",
+        description: %{"document" => "some description"},
         goal: 42,
         minimum: 42,
         name: "some name 1",
@@ -76,7 +76,7 @@ defmodule TdDqWeb.SearchControllerTest do
 
       creation_attrs_2 = %{
         business_concept_id: concept_2,
-        description: "some description",
+        description: %{"document" => "some description"},
         goal: 42,
         minimum: 42,
         name: "some name 2",
