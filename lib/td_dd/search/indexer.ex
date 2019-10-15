@@ -6,8 +6,8 @@ defmodule TdDd.Search.Indexer do
   alias Elasticsearch.Index
   alias Elasticsearch.Index.Bulk
   alias Jason, as: JSON
+  alias TdCache.Redix
   alias TdDd.DataStructures.DataStructureVersion
-  alias TdDd.DataStructures.Migrations
   alias TdDd.Search.Cluster
   alias TdDd.Search.Mappings
   alias TdDd.Search.Store
@@ -49,27 +49,11 @@ defmodule TdDd.Search.Indexer do
   def delete(id), do: delete([id])
 
   def migrate do
-    unless alias_exists?(@index) do
-      if Migrations.can_migrate?("TD-1721") do
-        case Migrations.soft_delete_obsolete_versions() do
-          {0, _} -> Logger.debug("No obsolete versions deleted")
-          {count, _} -> Logger.warn("Soft-deleted #{count} obsolete data structure versions")
-        end
-
-        case Migrations.soft_delete_orphan_fields() do
-          {0, _} -> Logger.debug("No orphan fields deleted")
-          {count, _} -> Logger.warn("Soft-deleted #{count} orphan fields")
-        end
-
-        delete_existing_index("data_structure")
-
-        Timer.time(
-          fn -> reindex(:all) end,
-          fn millis, _ -> Logger.info("Created index #{@index} in #{millis}ms") end
-        )
-      else
-        Logger.warn("Another process is migrating")
-      end
+    if acquire_lock?("TD-2144") do
+      Timer.time(
+        fn -> reindex(:all) end,
+        fn millis, _ -> Logger.info("Reindexed #{@index} in #{millis}ms") end
+      )
     end
   end
 
@@ -83,26 +67,6 @@ defmodule TdDd.Search.Indexer do
     |> Keyword.get(:indexes)
     |> Map.get(index)
     |> Map.get(:bulk_page_size)
-  end
-
-  defp alias_exists?(name) do
-    case Elasticsearch.head(Cluster, "/_alias/#{name}") do
-      {:ok, _} -> true
-      {:error, _} -> false
-    end
-  end
-
-  defp delete_existing_index(name) do
-    case Elasticsearch.delete(Cluster, "/#{name}") do
-      {:ok, _} ->
-        Logger.info("Deleted index #{name}")
-
-      {:error, %{status: 404}} ->
-        :ok
-
-      error ->
-        error
-    end
   end
 
   defp log({:ok, %{"errors" => false, "items" => items, "took" => took}}, _action) do
@@ -120,5 +84,10 @@ defmodule TdDd.Search.Indexer do
 
   defp log(error, _action) do
     Logger.warn("Bulk indexing encountered errors #{inspect(error)}")
+  end
+
+  # Ensure only one instance of dd is reindexing by creating a lock in Redis
+  defp acquire_lock?(id) do
+    Redix.command!(["SET", "TdDd.DataStructures.Migrations:#{id}", node(), "NX"]) == "OK"
   end
 end

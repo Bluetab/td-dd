@@ -3,7 +3,6 @@ defmodule TdDd.DataStructure.Search do
   Helper module to construct business concept search queries.
   """
   alias TdDd.Accounts.User
-  alias TdDd.DataStructure.Query
   alias TdDd.Permissions
   alias TdDd.Search
   alias TdDd.Search.Aggregations
@@ -155,38 +154,44 @@ defmodule TdDd.DataStructure.Search do
 
   defp get_filter(_, _, _), do: nil
 
-  defp create_query(%{"query" => query}, []) do
-    equery = Query.add_query_wildcard(query)
-
-    %{simple_query_string: %{query: equery}}
-    |> bool_query
-  end
-
-  defp create_query(_params, []) do
-    %{match_all: %{}}
-    |> bool_query
-  end
-
   defp create_query(%{"query" => query}, filter) do
-    equery = Query.add_query_wildcard(query)
-
-    %{simple_query_string: %{query: equery}}
+    ~r/\s/
+    |> Regex.split(query, trim: true)
+    |> Enum.map(&multi_match(&1))
     |> bool_query(filter)
   end
 
   defp create_query(_params, filter) do
-    %{match_all: %{}}
+    [%{match_all: %{}}]
     |> bool_query(filter)
   end
 
-  defp bool_query(query, filter \\ nil)
-
-  defp bool_query(query, filter) when is_nil(filter) do
-    %{bool: %{must: query}}
+  defp multi_match(query) do
+    %{
+      multi_match: %{
+        query: query,
+        type: "phrase_prefix",
+        fields: ["name^2", "name.ngram", "system.name", "data_fields.name", "path"]
+      }
+    }
   end
 
-  defp bool_query(query, filter) do
-    %{bool: %{must: query, filter: filter}}
+  defp bool_query(query, []), do: bool_query(query, nil)
+
+  defp bool_query([clause], filter) when is_nil(filter) do
+    %{bool: %{must: clause}}
+  end
+
+  defp bool_query(clauses, filter) when is_nil(filter) do
+    %{bool: %{should: clauses, minimum_should_match: Enum.count(clauses)}}
+  end
+
+  defp bool_query([clause], filter) do
+    %{bool: %{must: clause, filter: filter}}
+  end
+
+  defp bool_query(clauses, filter) do
+    %{bool: %{should: clauses, filter: filter, minimum_should_match: Enum.count(clauses)}}
   end
 
   defp do_search(search) do
