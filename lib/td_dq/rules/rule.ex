@@ -8,6 +8,11 @@ defmodule TdDq.Rules.Rule do
   alias TdDq.Rules.RuleImplementation
   alias TdDq.Rules.RuleType
 
+  @result_type %{
+    percentage: "percentage",
+    errors_number: "errors_number"
+  }
+
   schema "rules" do
     field(:business_concept_id, :string)
     field(:active, :boolean, default: false)
@@ -19,6 +24,7 @@ defmodule TdDq.Rules.Rule do
     field(:version, :integer, default: 1)
     field(:updated_by, :integer)
     field(:type_params, :map)
+    field(:result_type, :string, default: @result_type.percentage)
     belongs_to(:rule_type, RuleType)
 
     has_many(:rule_implementations, RuleImplementation)
@@ -45,14 +51,16 @@ defmodule TdDq.Rules.Rule do
       :rule_type_id,
       :type_params,
       :df_name,
-      :df_content
+      :df_content,
+      :result_type
     ])
     |> validate_required([
       :name,
       :goal,
       :minimum,
       :rule_type_id,
-      :type_params
+      :type_params,
+      :result_type
     ])
     |> unique_constraint(
       :rule_name_bc_id,
@@ -64,8 +72,6 @@ defmodule TdDq.Rules.Rule do
       name: :rules_name_index,
       message: "unique_constraint"
     )
-    |> validate_number(:goal, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
-    |> validate_number(:minimum, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
     |> validate_goal
     |> foreign_key_constraint(:rule_type_id)
   end
@@ -81,15 +87,35 @@ defmodule TdDq.Rules.Rule do
       true ->
         minimum = get_field(changeset, :minimum)
         goal = get_field(changeset, :goal)
-
-        case minimum <= goal do
-          true -> changeset
-          false -> add_error(changeset, :goal, "must.be.greater.than.or.equal.to.minimum")
-        end
-
+        result_type = get_field(changeset, :result_type)
+        do_validate_goal(changeset, minimum, goal, result_type)
       _ ->
         changeset
     end
+  end
+
+  defp do_validate_goal(changeset, minimum, goal, "percentage") do
+    changeset = changeset
+    |> validate_number(:goal, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
+    |> validate_number(:minimum, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
+    case minimum <= goal do
+      true -> changeset
+      false -> add_error(changeset, :goal, "must.be.greater.than.or.equal.to.minimum")
+    end
+  end
+
+  defp do_validate_goal(changeset, minimum, goal, "errors_number") do
+    changeset = changeset
+    |> validate_number(:goal, greater_than_or_equal_to: 0)
+    |> validate_number(:minimum, greater_than_or_equal_to: 0)
+    case minimum >= goal do
+      true -> changeset
+      false -> add_error(changeset, :minimum, "must.be.greater.than.or.equal.to.goal")
+    end
+  end
+
+  def result_type do
+    @result_type
   end
 
   defimpl Elasticsearch.Document do
@@ -132,6 +158,7 @@ defmodule TdDq.Rules.Rule do
         current_business_concept_version: bcv,
         rule_type_id: rule.rule_type_id,
         rule_type: rule_type,
+        result_type: rule.result_type,
         type_params: rule.type_params,
         version: rule.version,
         name: rule.name,
@@ -156,26 +183,29 @@ defmodule TdDq.Rules.Rule do
       end
     end
 
-    defp get_execution_result_info(%Rule{minimum: minimum, goal: goal}, rule_results) do
+    defp get_execution_result_info(%Rule{minimum: minimum, goal: goal, result_type: result_type} = rule, rule_results) do
       Map.new()
-      |> with_avg(rule_results)
+      |> with_result(rule_results, rule)
       |> with_last_execution_at(rule_results)
-      |> with_result_text(minimum, goal)
+      |> with_result_text(minimum, goal, result_type)
     end
 
-    defp with_avg(result_map, rule_results) do
-      result_avg =
+    defp with_result(result_map, rule_results, %Rule{result_type: "percentage"}) do
+      result =
         rule_results
         |> Enum.map(& &1.result)
-        |> Enum.sum()
+        |> Enum.min()
 
-      result_avg =
-        case length(rule_results) do
-          0 -> 0
-          results_length -> result_avg / results_length
-        end
+      Map.put(result_map, :result, result)
+    end
 
-      Map.put(result_map, :result_avg, result_avg)
+    defp with_result(result_map, rule_results, %Rule{result_type: "errors_number"}) do
+      result =
+        rule_results
+        |> Enum.map(& &1.result)
+        |> Enum.max()
+
+      Map.put(result_map, :result, result)
     end
 
     defp with_last_execution_at(result_map, rule_results) do
@@ -187,16 +217,32 @@ defmodule TdDq.Rules.Rule do
       Map.put(result_map, :last_execution_at, last_execution_at)
     end
 
-    defp with_result_text(result_map, minimum, goal) do
+    defp with_result_text(result_map, minimum, goal, "percentage") do
       result_text =
         cond do
-          result_map.result_avg < minimum ->
+          result_map.result < minimum ->
             "quality_result.under_minimum"
 
-          result_map.result_avg >= minimum and result_map.result_avg < goal ->
+          result_map.result >= minimum and result_map.result < goal ->
             "quality_result.under_goal"
 
-          result_map.result_avg >= goal ->
+          result_map.result >= goal ->
+            "quality_result.over_goal"
+        end
+
+      Map.put(result_map, :result_text, result_text)
+    end
+
+    defp with_result_text(result_map, minimum, goal, "errors_number") do
+      result_text =
+        cond do
+          result_map.result > minimum ->
+            "quality_result.under_minimum"
+
+          result_map.result <= minimum and result_map.result > goal ->
+            "quality_result.under_goal"
+
+          result_map.result <= goal ->
             "quality_result.over_goal"
         end
 

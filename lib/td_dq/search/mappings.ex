@@ -54,6 +54,7 @@ defmodule TdDq.Search.Mappings do
           name: %{fields: %{raw: %{type: "keyword", normalizer: "sortable"}}, type: "text"}
         }
       },
+      result_type: %{type: "text"},
       type_params: %{
         properties: %{
           name: %{fields: @raw, type: "text"}
@@ -61,7 +62,7 @@ defmodule TdDq.Search.Mappings do
       },
       execution_result_info: %{
         properties: %{
-          result_avg: %{type: "long"},
+          result: %{type: "long"},
           last_execution_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
           result_text: %{type: "text", fields: @raw}
         }

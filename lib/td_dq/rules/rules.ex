@@ -965,7 +965,11 @@ defmodule TdDq.Rules do
     |> where([_, _, r], not is_nil(r.business_concept_id))
     |> where([_, _, r], is_nil(r.deleted_at))
     |> where([_, ri, _], is_nil(ri.deleted_at))
-    |> where([rr, _, r], rr.result < r.minimum)
+    |> where(
+      [rr, _, r],
+      (r.result_type == ^Rule.result_type.percentage and rr.result < r.minimum) or
+        (r.result_type == ^Rule.result_type.errors_number and rr.result > r.goal)
+    )
     |> select([rr, _, r], %{
       id: rr.id,
       date: rr.date,
