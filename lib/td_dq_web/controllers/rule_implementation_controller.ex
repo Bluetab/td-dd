@@ -332,7 +332,7 @@ defmodule TdDqWeb.RuleImplementationController do
     response(400, "Client Error")
   end
 
-  def delete(conn, %{"id" => id}) do
+  def delete(conn, %{"id" => id} = params) do
     rule_implementation = Rules.get_rule_implementation!(id)
     user = conn.assigns[:current_resource]
     rule = Repo.preload(rule_implementation, :rule).rule
@@ -345,7 +345,7 @@ defmodule TdDqWeb.RuleImplementationController do
                "resource_type" => "rule_implementation"
              })
            ),
-         {:ok, %RuleImplementation{}} <- Rules.delete_rule_implementation(rule_implementation) do
+         {:ok, %RuleImplementation{}} <- Rules.delete_rule_implementation(rule_implementation, mode_deletion(params)) do
       send_resp(conn, :no_content, "")
     else
       false ->
@@ -422,4 +422,8 @@ defmodule TdDqWeb.RuleImplementationController do
   defp deleted_implementations(%{"status" => "deleted"}), do: [deleted: true]
 
   defp deleted_implementations(_), do: []
+
+  defp mode_deletion(%{"mode" => "soft"}), do: [soft_deletion: true]
+
+  defp mode_deletion(_), do: []
 end

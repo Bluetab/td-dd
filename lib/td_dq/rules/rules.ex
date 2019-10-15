@@ -600,15 +600,23 @@ defmodule TdDq.Rules do
 
   ## Examples
 
-      iex> delete_rule_implementation(rule_implementation)
+      iex> delete_rule_implementation(rule_implementation, opts)
       {:ok, %RuleImplementation{}}
 
-      iex> delete_rule_implementation(rule_implementation)
+      iex> delete_rule_implementation(rule_implementation, opts)
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_rule_implementation(%RuleImplementation{} = rule_implementation) do
-    Repo.delete(rule_implementation)
+  def delete_rule_implementation(%RuleImplementation{} = rule_implementation, opts \\ []) do
+    case Keyword.get(opts, :soft_deletion, false) do
+      true ->
+        update_rule_implementation(rule_implementation, %{deleted_at: DateTime.utc_now()})
+
+        {:ok, %RuleImplementation{}}
+
+      false ->
+        Repo.delete(rule_implementation)
+    end
   end
 
   @doc """
