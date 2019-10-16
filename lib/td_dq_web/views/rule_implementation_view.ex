@@ -16,7 +16,8 @@ defmodule TdDqWeb.RuleImplementationView do
       rule_id: rule_implementation.rule_id,
       implementation_key: rule_implementation.implementation_key,
       system: rule_implementation.system,
-      system_params: rule_implementation.system_params
+      system_params: rule_implementation.system_params,
+      deleted_at: rule_implementation.deleted_at
     }
     |> add_rule(rule_implementation)
     |> add_last_rule_results(rule_implementation)

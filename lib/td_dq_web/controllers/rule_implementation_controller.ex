@@ -283,7 +283,10 @@ defmodule TdDqWeb.RuleImplementationController do
 
     with true <- can?(user, update(resource_type)),
          {:ok, %RuleImplementation{} = rule_implementation} <-
-           Rules.update_rule_implementation(rule_implementation, rule_implementation_params) do
+           Rules.update_rule_implementation(
+             rule_implementation,
+             with_soft_delete(rule_implementation_params)
+           ) do
       render(conn, "show.json", rule_implementation: rule_implementation)
     else
       false ->
@@ -332,7 +335,7 @@ defmodule TdDqWeb.RuleImplementationController do
     response(400, "Client Error")
   end
 
-  def delete(conn, %{"id" => id} = params) do
+  def delete(conn, %{"id" => id}) do
     rule_implementation = Rules.get_rule_implementation!(id)
     user = conn.assigns[:current_resource]
     rule = Repo.preload(rule_implementation, :rule).rule
@@ -345,7 +348,7 @@ defmodule TdDqWeb.RuleImplementationController do
                "resource_type" => "rule_implementation"
              })
            ),
-         {:ok, %RuleImplementation{}} <- Rules.delete_rule_implementation(rule_implementation, mode_deletion(params)) do
+         {:ok, %RuleImplementation{}} <- Rules.delete_rule_implementation(rule_implementation) do
       send_resp(conn, :no_content, "")
     else
       false ->
@@ -362,7 +365,7 @@ defmodule TdDqWeb.RuleImplementationController do
     end
   end
 
-  swagger_path :get_rule_implementations do
+  swagger_path :search_rule_implementations do
     description("List Quality Rules")
 
     parameters do
@@ -372,7 +375,7 @@ defmodule TdDqWeb.RuleImplementationController do
     response(200, "OK", Schema.ref(:RuleImplementationsResponse))
   end
 
-  def get_rule_implementations(conn, %{"rule_id" => id} = params) do
+  def search_rule_implementations(conn, %{"rule_id" => id} = params) do
     user = conn.assigns[:current_resource]
     rule_id = String.to_integer(id)
 
@@ -423,7 +426,11 @@ defmodule TdDqWeb.RuleImplementationController do
 
   defp deleted_implementations(_), do: []
 
-  defp mode_deletion(%{"mode" => "soft"}), do: [soft_deletion: true]
+  defp with_soft_delete(%{"soft_delete" => true} = params) do
+    params
+    |> Map.delete("soft_delete")
+    |> Map.put("deleted_at", DateTime.utc_now())
+  end
 
-  defp mode_deletion(_), do: []
+  defp with_soft_delete(params), do: params
 end

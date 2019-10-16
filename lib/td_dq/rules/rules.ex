@@ -554,8 +554,11 @@ defmodule TdDq.Rules do
         types_changeset = rule_type_changeset(types, input)
 
         case types_changeset.valid? do
-          true -> changeset |> Repo.insert()
-          false -> {:error, types_changeset}
+          true ->
+            Repo.insert(changeset)
+
+          false ->
+            {:error, types_changeset}
         end
 
       false ->
@@ -581,13 +584,24 @@ defmodule TdDq.Rules do
     case changeset.valid? do
       true ->
         input = Map.get(attrs, :system_params) || Map.get(attrs, "system_params", %{})
-        rule_type = Repo.preload(rule_implementation, [:rule, rule: :rule_type]).rule.rule_type
+
+        rule =
+          rule_implementation
+          |> Repo.preload([:rule, rule: :rule_type])
+          |> Map.get(:rule)
+
+        rule_type = Map.get(rule, :rule_type)
         types = get_system_params_or_nil(rule_type)
         type_changeset = rule_type_changeset(types, input)
 
         case type_changeset.valid? do
-          true -> changeset |> Repo.update()
-          false -> {:error, type_changeset}
+          true ->
+            reply = Repo.update(changeset)
+            RuleLoader.refresh(Map.get(rule, :id))
+            reply
+
+          false ->
+            {:error, type_changeset}
         end
 
       false ->
@@ -607,16 +621,10 @@ defmodule TdDq.Rules do
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_rule_implementation(%RuleImplementation{} = rule_implementation, opts \\ []) do
-    case Keyword.get(opts, :soft_deletion, false) do
-      true ->
-        update_rule_implementation(rule_implementation, %{deleted_at: DateTime.utc_now()})
-
-        {:ok, %RuleImplementation{}}
-
-      false ->
-        Repo.delete(rule_implementation)
-    end
+  def delete_rule_implementation(%RuleImplementation{} = rule_implementation) do
+    reply = Repo.delete(rule_implementation)
+    RuleLoader.refresh(Map.get(rule_implementation, :rule_id))
+    reply
   end
 
   @doc """
@@ -978,6 +986,10 @@ defmodule TdDq.Rules do
   def get_latest_rule_result(implementation_key) do
     RuleResult
     |> where([r], r.implementation_key == ^implementation_key)
+    |> join(:inner, [r, ri], ri in RuleImplementation,
+      on: r.implementation_key == ri.implementation_key
+    )
+    |> where([r, ri], is_nil(ri.deleted_at))
     |> order_by(desc: :date)
     |> limit(1)
     |> Repo.one()
