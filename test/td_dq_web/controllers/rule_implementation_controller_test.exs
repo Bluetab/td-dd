@@ -172,8 +172,9 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
     @tag :admin_authenticated
     test "soft delete rule implementation", %{conn: conn, swagger_schema: schema} do
       rule_implementation = insert(:rule_implementation)
-      update_attrs = 
-        rule_implementation 
+
+      update_attrs =
+        rule_implementation
         |> Map.from_struct()
         |> Map.put(:soft_delete, true)
 
@@ -255,7 +256,10 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
       conn = recycle_and_put_headers(conn)
 
       conn =
-        post(conn, Routes.rule_rule_implementation_path(conn, :search_rule_implementations, rule.id))
+        post(
+          conn,
+          Routes.rule_rule_implementation_path(conn, :search_rule_implementations, rule.id)
+        )
 
       validate_resp_schema(conn, schema, "RuleImplementationsResponse")
       json_response = List.first(json_response(conn, 200)["data"])
@@ -269,7 +273,11 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
       conn =
         post(
           conn,
-          Routes.rule_rule_implementation_path(conn, :search_rule_implementations, @invalid_rule_id)
+          Routes.rule_rule_implementation_path(
+            conn,
+            :search_rule_implementations,
+            @invalid_rule_id
+          )
         )
 
       validate_resp_schema(conn, schema, "RuleImplementationsResponse")
@@ -279,9 +287,17 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
     @tag :admin_authenticated
     test "lists all deleted rule_implementations of a rule", %{conn: conn, swagger_schema: schema} do
       rule = insert(:rule)
-      rule_implementation = insert(:rule_implementation, rule: rule, deleted_at: DateTime.utc_now())
+
+      rule_implementation =
+        insert(:rule_implementation, rule: rule, deleted_at: DateTime.utc_now())
+
       conn =
-        post(conn, Routes.rule_rule_implementation_path(conn, :search_rule_implementations, rule.id, %{"status" => "deleted"}))
+        post(
+          conn,
+          Routes.rule_rule_implementation_path(conn, :search_rule_implementations, rule.id, %{
+            "status" => "deleted"
+          })
+        )
 
       validate_resp_schema(conn, schema, "RuleImplementationsResponse")
       json_response = List.first(json_response(conn, 200)["data"])
