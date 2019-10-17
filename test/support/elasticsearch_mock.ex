@@ -115,28 +115,13 @@ defmodule TdDd.ElasticsearchMock do
     end
   end
 
-  defp create_must(%{simple_query_string: %{query: query}}) do
-    case Regex.run(~r/^(.*)\*/, query, capture: :all_but_first) do
-      [prefix] -> create_prefix_query(prefix)
-      _ -> raise("query #{query} is not mocked")
-    end
-  end
+  defp create_must(%{multi_match: multi_match}) do
+    f = create_multi_match(multi_match)
 
-  defp create_prefix_query(prefix) do
     fn _acc ->
       list_documents()
-      |> Enum.filter(&matches_prefix?(&1, [:name], prefix))
+      |> Enum.filter(&f.(&1))
     end
-  end
-
-  defp matches_prefix?(structure, fields, prefix) do
-    fields
-    |> Enum.any?(fn field ->
-      structure
-      |> Map.get(field)
-      |> String.downcase()
-      |> String.starts_with?(String.downcase(prefix))
-    end)
   end
 
   defp create_filter([]), do: fn _ -> true end
@@ -239,6 +224,70 @@ defmodule TdDd.ElasticsearchMock do
 
   defp create_should(%{bool: bool}) do
     create_bool_filter(bool)
+  end
+
+  defp create_multi_match(%{fields: fields, query: query, type: type}) do
+    fns = Enum.map(fields, &create_field_match(&1, query, type))
+
+    fn el ->
+      Enum.any?(fns, fn f -> f.(el) end)
+    end
+  end
+
+  defp create_field_match("name^2", query, "phrase_prefix") do
+    fn doc ->
+      doc
+      |> Map.get(:name, "")
+      |> String.downcase()
+      |> String.starts_with?(String.downcase(query))
+    end
+  end
+
+  defp create_field_match("system.name", query, "phrase_prefix") do
+    fn doc ->
+      doc
+      |> Map.get(:system, %{})
+      |> Map.get(:name, "")
+      |> String.starts_with?(String.downcase(query))
+    end
+  end
+
+  defp create_field_match("data_fields.name", query, "phrase_prefix") do
+    fn doc ->
+      doc
+      |> Map.get(:data_fields, [])
+      |> Enum.map(&Map.get(&1, :name))
+      |> Enum.map(&String.downcase/1)
+      |> Enum.any?(&String.starts_with?(&1, String.downcase(query)))
+    end
+  end
+
+  defp create_field_match("path", query, "phrase_prefix") do
+    fn doc ->
+      doc
+      |> Map.get(:path, [])
+      |> Enum.any?(&(&1 == query))
+    end
+  end
+
+  defp create_field_match("name.ngram", query, _) do
+    ngrams = ngrams(query, 3)
+
+    fn doc ->
+      doc
+      |> Map.get(:name, "")
+      |> ngrams(3)
+      |> Enum.any?(fn ngram -> Enum.member?(ngrams, ngram) end)
+    end
+  end
+
+  defp ngrams(str, size) do
+    str
+    |> String.downcase()
+    |> String.replace(~r/\s/, "")
+    |> String.to_charlist()
+    |> Enum.chunk_every(size, 1, :discard)
+    |> Enum.map(&to_string/1)
   end
 
   defp create_bool_filter(bool) do

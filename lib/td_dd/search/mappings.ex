@@ -6,13 +6,14 @@ defmodule TdDd.Search.Mappings do
 
   @raw %{raw: %{type: "keyword"}}
   @raw_sort %{raw: %{type: "keyword"}, sort: %{type: "keyword", normalizer: "sortable"}}
+  @raw_sort_ngram %{raw: %{type: "keyword"}, sort: %{type: "keyword", normalizer: "sortable"}, ngram: %{type: "text", analyzer: "ngram"}}
 
   def get_mappings do
     content_mappings = %{properties: get_dynamic_mappings()}
 
     properties = %{
       id: %{type: "long", index: false},
-      name: %{type: "text", boost: 2, fields: @raw_sort},
+      name: %{type: "text", fields: @raw_sort_ngram},
       system: %{
         properties: %{
           id: %{type: "long", index: false},
@@ -47,8 +48,22 @@ defmodule TdDd.Search.Mappings do
 
     settings = %{
       analysis: %{
+        analyzer: %{
+          ngram: %{
+            filter: ["lowercase", "asciifolding"],
+            tokenizer: "ngram"
+          }
+        },
         normalizer: %{
           sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}
+        },
+        tokenizer: %{
+          ngram: %{
+            type: "ngram",
+            min_gram: 3,
+            max_gram: 3,
+            token_chars: ["letter", "digit"]
+          }
         }
       },
       number_of_shards: 1
