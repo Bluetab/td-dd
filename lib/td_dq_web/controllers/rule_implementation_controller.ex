@@ -386,7 +386,7 @@ defmodule TdDqWeb.RuleImplementationController do
         %{"rule_id" => rule_id}
         |> Rules.list_rule_implementations(opts)
         |> Enum.map(&Repo.preload(&1, [:rule, [rule: :rule_type]]))
-        |> Enum.map(&add_last_rule_result(&1))
+        |> Enum.map(&add_last_rule_result(&1, opts))
 
       render(conn, "index.json", rule_implementations: rule_implementations)
     else
@@ -406,11 +406,11 @@ defmodule TdDqWeb.RuleImplementationController do
     end
   end
 
-  defp add_last_rule_result(rule_implementation) do
+  defp add_last_rule_result(rule_implementation, opts \\ []) do
     rule_implementation
     |> Map.put(
       :_last_rule_result_,
-      Rules.get_latest_rule_result(rule_implementation.implementation_key)
+      Rules.get_latest_rule_result(rule_implementation.implementation_key, opts)
     )
   end
 

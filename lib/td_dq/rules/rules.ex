@@ -465,7 +465,7 @@ defmodule TdDq.Rules do
     |> join(:inner, [ri], r in assoc(ri, :rule))
     |> where(^dynamic)
     |> where([_ri, r], is_nil(r.deleted_at))
-    |> deleted_implementations(opts)
+    |> deleted_implementations(opts, :implementations)
     |> Repo.all()
   end
 
@@ -975,21 +975,21 @@ defmodule TdDq.Rules do
   @doc """
   Returns last rule_result for each rule_implementation of rule
   """
-  def get_latest_rule_results(%Rule{} = rule) do
+  def get_latest_rule_results(%Rule{} = rule, opts \\ []) do
     rule
     |> Repo.preload(:rule_implementations)
     |> Map.get(:rule_implementations)
-    |> Enum.map(&get_latest_rule_result(&1.implementation_key))
+    |> Enum.map(&get_latest_rule_result(&1.implementation_key, opts))
     |> Enum.filter(& &1)
   end
 
-  def get_latest_rule_result(implementation_key) do
+  def get_latest_rule_result(implementation_key, opts \\ []) do
     RuleResult
     |> where([r], r.implementation_key == ^implementation_key)
     |> join(:inner, [r, ri], ri in RuleImplementation,
       on: r.implementation_key == ri.implementation_key
     )
-    |> where([r, ri], is_nil(ri.deleted_at))
+    |> deleted_implementations(opts, :results)
     |> order_by(desc: :date)
     |> limit(1)
     |> Repo.one()
@@ -1023,13 +1023,29 @@ defmodule TdDq.Rules do
     dynamic([_, p], field(p, ^atom_name) == ^field and ^acc)
   end
 
-  defp deleted_implementations(query, options) do
+  defp deleted_implementations(query, options, order) do
     case Keyword.get(options, :deleted, false) do
       true ->
-        where(query, [ri, _r], not is_nil(ri.deleted_at))
+        with_deleted(query, order)
 
       false ->
-        where(query, [ri, _r], is_nil(ri.deleted_at))
+        without_deleted(query, order)
     end
+  end
+
+  defp with_deleted(query, :implementations) do
+    where(query, [ri, _r], not is_nil(ri.deleted_at))
+  end
+
+  defp with_deleted(query, :results) do
+    where(query, [_r, ri], not is_nil(ri.deleted_at))
+  end
+
+  defp without_deleted(query, :implementations) do
+    where(query, [ri, _r], is_nil(ri.deleted_at))
+  end
+
+  defp without_deleted(query, :results) do
+    where(query, [_r, ri], is_nil(ri.deleted_at))
   end
 end
