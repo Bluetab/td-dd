@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-1881] Rule Implementations soft deletion: Update for soft delete implementations and query them
+
 ## [3.8.0] 2019-10-14
 
 ### Added
