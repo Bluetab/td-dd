@@ -46,6 +46,10 @@ defmodule TdDd.Canada.DataStructureAbilities do
     Permissions.authorized?(user, :view_data_structures_profile, domain_id)
   end
 
+  def can?(%User{} = user, :upload, domain_id) do
+    Permissions.authorized?(user, :manage_structures_metadata, domain_id)
+  end
+
   def can?(%User{}, _action, %DataStructure{}), do: false
 
   def can?(%User{}, _action, DataStructure), do: false

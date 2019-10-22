@@ -11,11 +11,12 @@ defmodule TdDd.CSV.Reader do
     separator = Keyword.get(options, :separator, ?;)
     domain_map = Keyword.get(options, :domain_map)
     system_map = Keyword.get(options, :system_map)
+    domain = Keyword.get(options, :domain)
 
     records =
       stream
       |> read_records(separator)
-      |> with_domain_id(domain_map)
+      |> with_domain_id(domain_map, domain)
       |> with_system_id(system_map)
       |> Enum.map(&csv_to_map(&1, options))
 
@@ -39,6 +40,17 @@ defmodule TdDd.CSV.Reader do
     |> CSV.decode!(separator: separator, headers: true)
     |> Enum.to_list()
     |> Enum.uniq()
+  end
+
+  defp with_domain_id(records, domain_map, nil) do
+    with_domain_id(records, domain_map)
+  end
+
+  defp with_domain_id(records, nil = _domain_map, _domain), do: records
+
+  defp with_domain_id(records, domain_map, domain) do
+    records
+    |> Enum.map(&DataStructures.add_domain_id(&1, domain_map, domain))
   end
 
   defp with_domain_id(records, nil = _domain_map), do: records

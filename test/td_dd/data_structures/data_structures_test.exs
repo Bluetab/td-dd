@@ -89,6 +89,16 @@ defmodule TdDd.DataStructuresTest do
       assert result.id == id
       assert result.external_id == external_id
     end
+
+    test "add_domain_id/3" do
+      data = %{"id" => 3, "name" => "structure", "ou" => "domain_2"}
+      domain_map = %{"domain_1" => 1, "domain_2" => 2}
+      domain_name = "domain_1"
+
+      result = DataStructures.add_domain_id(data, domain_map, domain_name)
+
+      assert result == %{"id" => 3, "name" => "structure", "ou" => "domain_1", "domain_id" => 1}
+    end
   end
 
   describe "data structure versions" do

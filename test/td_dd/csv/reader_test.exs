@@ -77,6 +77,27 @@ defmodule TdDd.CSV.ReaderTest do
              }
     end
 
+    @tag fixture: "structures.csv"
+    test "read_csv/2 returns ok with records and ou as specified domain", %{stream: stream} do
+      defaults = %{version: 0}
+      required = [:name]
+
+      {:ok, results} =
+        stream
+        |> Reader.read_csv(
+          domain_map: %{"domain1" => 42, "domain2" => 43},
+          defaults: defaults,
+          schema: @structure_import_schema,
+          required: required,
+          domain: "domain2",
+          booleans: ["m:bool"]
+        )
+
+      assert Enum.all?(results, fn %{ou: ou, domain_id: domain_id} ->
+               domain_id == 43 && ou == "domain2"
+             end)
+    end
+
     @tag fixture: "fields.csv"
     test "read_csv/2 transforms nullable values to boolean", %{stream: stream} do
       system_map = %{"System" => 42}

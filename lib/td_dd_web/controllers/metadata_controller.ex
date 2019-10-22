@@ -4,6 +4,7 @@ defmodule TdDdWeb.MetadataController do
   import Canada, only: [can?: 2]
 
   alias Jason, as: JSON
+  alias TdCache.TaxonomyCache
   alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
   alias TdDd.DataStructures
   alias TdDd.Loader.LoaderWorker
@@ -14,10 +15,14 @@ defmodule TdDdWeb.MetadataController do
 
   def upload_by_system(conn, %{"system_id" => external_id} = params) do
     # TODO: Complete implementation once the metada is loaded by System
-    with %System{id: system_id} <- Systems.get_system_by_external_id(external_id) do
+    user = conn.assigns[:current_user]
+
+    with true <- can_upload?(user, params),
+         %System{id: system_id} <- Systems.get_system_by_external_id(external_id) do
       do_upload(conn, params, system_id: system_id)
       send_resp(conn, :accepted, "")
     else
+      false -> render_error(conn, :forbidden)
       _ -> send_resp(conn, :not_found, JSON.encode!(%{error: "system.not_found"}))
     end
   rescue
@@ -66,10 +71,11 @@ defmodule TdDdWeb.MetadataController do
       ) do
     user = conn.assigns[:current_user]
 
-    with true <- can?(user, upload(DataStructure)),
+    with true <- can_upload?(user, params),
          parent when not is_nil(parent) <-
            DataStructures.find_data_structure(%{external_id: parent_external_id}),
-         :ok, _ <-
+         :ok,
+         _ <-
            do_upload(conn, params,
              external_id: external_id,
              parent_external_id: parent_external_id
@@ -91,8 +97,9 @@ defmodule TdDdWeb.MetadataController do
   def upload(conn, %{"external_id" => external_id} = params) do
     user = conn.assigns[:current_user]
 
-    with true <- can?(user, upload(DataStructure)),
-         :ok, _ <- do_upload(conn, params, external_id: external_id),
+    with true <- can_upload?(user, params),
+         :ok,
+         _ <- do_upload(conn, params, external_id: external_id),
          dsv <- DataStructures.get_latest_version_by_external_id(external_id, enrich: [:ancestry]) do
       render(conn, "show.json", data_structure_version: dsv)
     else
@@ -105,8 +112,14 @@ defmodule TdDdWeb.MetadataController do
   end
 
   def upload(conn, params) do
-    do_upload(conn, params)
-    send_resp(conn, :accepted, "")
+    user = conn.assigns[:current_user]
+
+    with true <- can_upload?(user, params) do
+      do_upload(conn, params)
+      send_resp(conn, :accepted, "")
+    else
+      false -> render_error(conn, :forbidden)
+    end
   rescue
     e in RuntimeError ->
       Logger.error("While uploading #{e.message}")
@@ -117,7 +130,7 @@ defmodule TdDdWeb.MetadataController do
     fields_file = move_file(params |> Map.get("data_fields"))
     structures_file = move_file(params |> Map.get("data_structures"))
     relations_file = move_file(params |> Map.get("data_structure_relations"))
-    load(conn, structures_file, fields_file, relations_file, opts)
+    load(conn, structures_file, fields_file, relations_file, with_domain(opts, params))
   end
 
   defp move_file(nil), do: nil
@@ -133,5 +146,20 @@ defmodule TdDdWeb.MetadataController do
     ts = DateTime.truncate(DateTime.utc_now(), :second)
     audit_fields = %{ts: ts, last_change_by: user_id}
     LoaderWorker.load(structure_records, field_records, relation_records, audit_fields, opts)
+  end
+
+  defp can_upload?(user, %{"domain" => domain_name}) do
+    domain_id =
+      TaxonomyCache.get_domain_name_to_id_map()
+      |> Map.get(domain_name)
+
+    can?(user, upload(domain_id))
+  end
+
+  defp can_upload?(user, _params), do: can?(user, upload(DataStructure))
+
+  defp with_domain(opts, params) do
+    domain = Map.get(params, "domain")
+    Keyword.put(opts, :domain, domain)
   end
 end
