@@ -417,6 +417,10 @@ defmodule TdDd.DataStructures do
     |> enrich(options)
   end
 
+  def add_domain_id(data, domain_map, domain_name) do
+    data |> Map.put("domain_id", Map.get(domain_map, domain_name)) |> Map.put("ou", domain_name)
+  end
+
   def add_domain_id(%{"ou" => domain_name, "domain_id" => nil} = data, domain_map) do
     data |> Map.put("domain_id", Map.get(domain_map, domain_name))
   end

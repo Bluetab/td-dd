@@ -32,18 +32,19 @@ defmodule TdDd.Loader.LoaderWorker do
 
   def load(structures_file, fields_file, relations_file, audit, opts \\ []) do
     system_id = opts[:system_id]
+    domain = opts[:domain]
 
     case Keyword.has_key?(opts, :external_id) do
       true ->
         GenServer.call(
           __MODULE__,
-          {:load, structures_file, fields_file, relations_file, system_id, audit, opts}
+          {:load, structures_file, fields_file, relations_file, system_id, domain, audit, opts}
         )
 
       _ ->
         GenServer.cast(
           __MODULE__,
-          {:load, structures_file, fields_file, relations_file, system_id, audit}
+          {:load, structures_file, fields_file, relations_file, system_id, domain, audit}
         )
     end
   end
@@ -83,27 +84,28 @@ defmodule TdDd.Loader.LoaderWorker do
   end
 
   @impl true
-  def handle_cast({:load, structures_file, fields_file, relations_file, system_id, audit}, state) do
+  def handle_cast(
+        {:load, structures_file, fields_file, relations_file, system_id, domain, audit},
+        state
+      ) do
     {:ok, field_recs} = fields_file |> parse_data_fields(system_id)
-
-    {:ok, structure_recs} = structures_file |> parse_data_structures(system_id)
-
+    {:ok, structure_recs} = structures_file |> parse_data_structures(system_id, domain)
     {:ok, relation_recs} = relations_file |> parse_data_structure_relations(system_id)
+
     do_load(structure_recs, field_recs, relation_recs, audit)
     {:noreply, state}
   end
 
   @impl true
   def handle_call(
-        {:load, structures_file, fields_file, relations_file, system_id, audit, opts},
+        {:load, structures_file, fields_file, relations_file, system_id, domain, audit, opts},
         _from,
         state
       ) do
     {:ok, field_recs} = fields_file |> parse_data_fields(system_id)
-
-    {:ok, structure_recs} = structures_file |> parse_data_structures(system_id)
-
+    {:ok, structure_recs} = structures_file |> parse_data_structures(system_id, domain)
     {:ok, relation_recs} = relations_file |> parse_data_structure_relations(system_id)
+
     reply = do_load(structure_recs, field_recs, relation_recs, audit, opts)
     {:reply, reply, state}
   end
@@ -138,9 +140,9 @@ defmodule TdDd.Loader.LoaderWorker do
     end
   end
 
-  defp parse_data_structures(nil, _), do: {:ok, []}
+  defp parse_data_structures(nil, _, _), do: {:ok, []}
 
-  defp parse_data_structures(%Upload{path: path}, system_id) do
+  defp parse_data_structures(%Upload{path: path}, system_id, domain) do
     domain_map = TaxonomyCache.get_domain_name_to_id_map()
     system_map = get_system_map(system_id)
 
@@ -155,6 +157,7 @@ defmodule TdDd.Loader.LoaderWorker do
       |> File.stream!()
       |> Reader.read_csv(
         domain_map: domain_map,
+        domain: domain,
         system_map: system_map,
         defaults: defaults,
         schema: @structure_import_schema,
