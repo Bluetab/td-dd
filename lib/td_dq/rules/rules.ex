@@ -792,6 +792,8 @@ defmodule TdDq.Rules do
 
   defp rule_type_changeset(nil, _input), do: Changeset.cast({%{}, %{}}, %{}, [])
 
+  defp rule_type_changeset(_, input) when input == %{}, do: Changeset.cast({%{}, %{}}, %{}, [])
+
   defp rule_type_changeset(types, input) do
     fields =
       types
