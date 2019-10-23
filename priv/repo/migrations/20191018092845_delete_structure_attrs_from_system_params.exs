@@ -1,4 +1,4 @@
-defmodule TdDq.Repo.Migrations.AddExternalIdToSystemParams do
+defmodule TdDq.Repo.Migrations.DeleteStructureAttrsFromSystemParams do
   use Ecto.Migration
 
   import Ecto.Query
@@ -27,10 +27,8 @@ defmodule TdDq.Repo.Migrations.AddExternalIdToSystemParams do
       rule_type_params: rt.params
     })
     |> Repo.all()
-    |> Enum.filter(&without_external_id/1)
-    |> Enum.map(&insert_external_id/1)
-    |> IO.inspect
-    # |> Enum.map(&update_system_params/1)
+    |> Enum.map(&delete_structure_params/1)
+    |> Enum.map(&update_system_params/1)
   end
 
   defp of_type_structure(%{params: %{"system_params" => system_params}})
@@ -49,26 +47,7 @@ defmodule TdDq.Repo.Migrations.AddExternalIdToSystemParams do
     Map.get(system_params, "type") == "structure"
   end
 
-  defp without_external_id(%{system_params: system_params}) when system_params == %{}, do: false
-
-  defp without_external_id(%{system_params: nil}), do: false
-
-  defp without_external_id(%{system_params: system_params}) do
-    case has_external_id(system_params) do
-      [] -> true
-      _ -> false
-    end
-  end
-
-  defp has_external_id(system_params) do
-    system_params
-    |> Enum.filter(fn {_, value} -> is_map(value) end)
-    |> Enum.filter(fn {_, value} ->
-      Map.has_key?(value, "external_id")
-    end)
-  end
-
-  defp insert_external_id(%{
+  defp delete_structure_params(%{
          id: id,
          system_params: system_params,
          rule_type_id: rule_type_id,
@@ -83,7 +62,7 @@ defmodule TdDq.Repo.Migrations.AddExternalIdToSystemParams do
       system_params
       |> Enum.filter(fn {key, value} -> key in type_params_names and Map.has_key?(value, "id") end)
       |> Enum.map(fn {key, value} ->
-        param = Map.put(value, "external_id", "---Retrieve from Redis?-xxxxxx-----")
+        param = %{"id" => Map.get(value, "id")}
         {key, param}
       end)
       |> Enum.into(system_params)
