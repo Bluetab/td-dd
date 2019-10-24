@@ -62,7 +62,7 @@ defmodule TdDq.Repo.Migrations.DeleteStructureAttrsFromSystemParams do
       system_params
       |> Enum.filter(fn {key, value} -> key in type_params_names and Map.has_key?(value, "id") end)
       |> Enum.map(fn {key, value} ->
-        param = %{"id" => Map.get(value, "id")}
+        param = %{"id" => Map.get(value, "id"), "name" => Map.get(value, "name", "")}
         {key, param}
       end)
       |> Enum.into(system_params)

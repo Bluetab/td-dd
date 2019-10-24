@@ -415,7 +415,7 @@ defmodule TdDqWeb.RuleImplementationController do
 
   defp add_system_params_info(
          %RuleImplementation{
-           rule: %{rule_type: %{params: %{"system_params" => rule_type_system_params}}}
+           rule: %{rule_type: %{params: %{"system_params" => _rule_type_system_params}}}
          } = rule_implementation
        ) do
     Rules.get_rule_implementation_system_params_info(rule_implementation)

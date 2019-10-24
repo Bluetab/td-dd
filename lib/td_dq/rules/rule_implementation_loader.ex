@@ -1,20 +1,19 @@
 defmodule TdDq.Rules.RuleImplementation.Loader do
   @moduledoc """
-  GenServer to run reindex task
+  GenServer to put structures used in rule implementations in cache
   """
-
-  @behaviour TdCache.EventStream.Consumer
 
   use GenServer
 
   import Ecto.Query
 
-  alias TdDq.Rules
-  alias TdDq.Repo
   alias TdCache.Redix
-  alias TdCache.StructureCache
+  alias TdDq.Repo
+  alias TdDq.Rules
 
   require Logger
+
+  @rule_implementation_structures_migration_key "TdDq.RuleImplementations.Migrations:cache_structures"
 
   ## Client API
 
@@ -24,13 +23,6 @@ defmodule TdDq.Rules.RuleImplementation.Loader do
 
   def ping(timeout \\ 5000) do
     GenServer.call(__MODULE__, :ping, timeout)
-  end
-
-  ## EventStream.Consumer Callbacks
-
-  @impl TdCache.EventStream.Consumer
-  def consume(events) do
-    GenServer.cast(__MODULE__, {:consume, events})
   end
 
   ## GenServer Callbacks
@@ -49,13 +41,11 @@ defmodule TdDq.Rules.RuleImplementation.Loader do
 
   @impl true
   def handle_info(:put_structure_ids, state) do
-    structure_ids = get_rule_implementations_structure_ids()
-    Enum.map(structure_ids, &Rules.add_rule_implementation_structure_link/1)
-    {:noreply, state}
-  end
-
-  @impl GenServer
-  def handle_cast({:consume, events}, state) do
+    if Redix.exists?(@rule_implementation_structures_migration_key) == false do
+      structure_ids = get_rule_implementations_structure_ids()
+      Enum.each(structure_ids, &Rules.add_rule_implementation_structure_link/1)
+      Redix.command!(["SET", @rule_implementation_structures_migration_key, "#{DateTime.utc_now()}"])
+    end
     {:noreply, state}
   end
 
@@ -66,7 +56,7 @@ defmodule TdDq.Rules.RuleImplementation.Loader do
 
   ## Private functions
 
-  defp get_rule_implementations_structure_ids() do
+  defp get_rule_implementations_structure_ids do
     rule_types =
       from(rt in "rule_types")
       |> select([rt], %{id: rt.id, params: rt.params})
@@ -94,9 +84,9 @@ defmodule TdDq.Rules.RuleImplementation.Loader do
   end
 
   defp get_structures_id(%{
-         id: id,
+         id: _id,
          system_params: system_params,
-         rule_type_id: rule_type_id,
+         rule_type_id: _rule_type_id,
          rule_type_params: %{"system_params" => rule_type_params}
        }) do
     type_params_names =
@@ -107,7 +97,7 @@ defmodule TdDq.Rules.RuleImplementation.Loader do
     structure_ids =
       system_params
       |> Enum.filter(fn {key, value} -> key in type_params_names and Map.has_key?(value, "id") end)
-      |> Enum.map(fn {key, value} ->
+      |> Enum.map(fn {_key, value} ->
         Map.get(value, "id")
       end)
 
@@ -115,9 +105,9 @@ defmodule TdDq.Rules.RuleImplementation.Loader do
   end
 
   defp get_structures_id(%{
-         id: id,
-         system_params: system_params,
-         rule_type_id: rule_type_id,
+         id: _id,
+         system_params: _system_params,
+         rule_type_id: _rule_type_id,
          rule_type_params: _rule_type_params
        }) do
     []
