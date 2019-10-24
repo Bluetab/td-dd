@@ -48,7 +48,7 @@ defmodule TdDd.Search.AggregationsTest do
     end
 
     test "aggregation_terms/0 returns aggregations of static fields" do
-      aggs = Aggregations.aggregation_terms() 
+      aggs = Aggregations.aggregation_terms()
       assert Enum.all?(@static_fields, &Map.has_key?(aggs, &1))
     end
   end
