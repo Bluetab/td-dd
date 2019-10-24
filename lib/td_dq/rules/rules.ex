@@ -598,7 +598,7 @@ defmodule TdDq.Rules do
       |> get_rule_implementation_structure_system_params()
       |> Enum.into(system_params, fn {key, value} ->
         structure_id = Map.get(value, "id")
-        {:ok, structure} = StructureCache.get(structure_id)
+        structure = read_structure_from_cache(structure_id)
         param =
           Map.new
           |> Map.put(:id, structure_id)
@@ -611,6 +611,14 @@ defmodule TdDq.Rules do
       end)
 
     Map.put(rule_implementation, :system_params, new_system_params)
+  end
+
+  defp read_structure_from_cache(structure_id) do
+    {:ok, structure} = StructureCache.get(structure_id)
+    case structure do
+      nil -> %{}
+      _ -> structure
+    end
   end
 
   defp insert_rule_implementation(changeset) do
