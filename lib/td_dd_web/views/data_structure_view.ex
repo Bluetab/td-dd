@@ -74,7 +74,8 @@ defmodule TdDdWeb.DataStructureView do
       :system_id,
       :type,
       :deleted_at,
-      :path
+      :path,
+      :field_type
     ])
     |> Map.merge(dsv_attrs)
     |> Map.put_new(:metadata, %{})
