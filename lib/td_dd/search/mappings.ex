@@ -24,6 +24,7 @@ defmodule TdDd.Search.Mappings do
       group: %{type: "text", fields: @raw_sort},
       ou: %{type: "text", fields: @raw_sort},
       type: %{type: "text", fields: @raw_sort},
+      field_type: %{type: "text", fields: @raw_sort},
       confidential: %{type: "boolean", fields: @raw},
       description: %{type: "text", fields: @raw_sort},
       external_id: %{type: "keyword", index: false},

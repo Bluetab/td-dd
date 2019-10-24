@@ -74,7 +74,8 @@ defmodule TdDdWeb.DataStructureView do
       :system_id,
       :type,
       :deleted_at,
-      :path
+      :path,
+      :field_type
     ])
     |> Map.merge(dsv_attrs)
     |> Map.put_new(:metadata, %{})
@@ -174,7 +175,8 @@ defmodule TdDdWeb.DataStructureView do
       true ->
         data_structure
         |> Map.get(:metadata, %{})
-        |> Map.merge(data_structure_json)
+        |> Map.new(fn {k, v} -> {String.to_atom(k), v} end)
+        |> Map.merge(data_structure_json, fn _k, v1, v2 -> v2 || v1 end)
 
       false ->
         data_structure_json
