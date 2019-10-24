@@ -10,6 +10,8 @@ defmodule TdDq.Rules.RuleImplementation.Loader do
   alias TdCache.Redix
   alias TdDq.Repo
   alias TdDq.Rules
+  alias TdDq.Rules.RuleImplementation
+  alias TdDq.Rules.RuleType
 
   require Logger
 
@@ -58,14 +60,14 @@ defmodule TdDq.Rules.RuleImplementation.Loader do
 
   defp get_rule_implementations_structure_ids do
     rule_types =
-      from(rt in "rule_types")
+      RuleType
       |> select([rt], %{id: rt.id, params: rt.params})
       |> Repo.all()
       |> Enum.filter(&of_type_structure/1)
 
     rule_types_ids = Enum.map(rule_types, &Map.get(&1, :id))
 
-    from(ri in "rule_implementations")
+    RuleImplementation
     |> join(:inner, [ri, r], r in "rules", on: r.id == ri.rule_id)
     |> join(:inner, [_, r, rt], rt in "rule_types", on: rt.id == r.rule_type_id)
     |> where([ri, _, _], is_nil(ri.deleted_at))
