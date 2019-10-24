@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-2144] Support ngram-search in structure name
+- [TD-2159] Mapping for data field type
 
 ### Changed
 
