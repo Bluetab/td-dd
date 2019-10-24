@@ -3,6 +3,15 @@ defmodule TdDd.Search.AggregationsTest do
   alias TdCache.TemplateCache
   alias TdDd.Search.Aggregations
 
+  @static_fields [
+    "ou.raw",
+    "system.name.raw",
+    "group.raw",
+    "type.raw",
+    "confidential.raw",
+    "class.raw",
+    "field_type.raw"
+  ]
   def create_template(template) do
     template
     |> Map.put(:updated_at, DateTime.utc_now())
@@ -36,6 +45,11 @@ defmodule TdDd.Search.AggregationsTest do
 
       assert size == 50
       assert field == "df_content.userfield.raw"
+    end
+
+    test "aggregation_terms/0 returns aggregations of static fields" do
+      aggs = Aggregations.aggregation_terms() 
+      assert Enum.all?(@static_fields, &Map.has_key?(aggs, &1))
     end
   end
 end
