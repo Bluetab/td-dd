@@ -38,6 +38,7 @@ defmodule TdDqWeb.RuleImplementationController do
         filters
         |> Rules.list_rule_implementations()
         |> Enum.map(&Repo.preload(&1, [:rule, rule: :rule_type]))
+        |> Enum.map(&add_system_params_info(&1))
 
       render(conn, "index.json", rule_implementations: rule_implementations)
     else
