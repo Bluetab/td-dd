@@ -123,6 +123,7 @@ defmodule TdDqWeb.RuleImplementationController do
            Rules.create_rule_implementation(rule, rule_implementation_params),
          {:ok, %RuleImplementation{} = rule_implementation} <-
            generate_implementation_key(rule_implementation, rule) do
+
       conn
       |> put_status(:created)
       |> put_resp_header("location", rule_implementation_path(conn, :show, rule_implementation))
@@ -231,8 +232,10 @@ defmodule TdDqWeb.RuleImplementationController do
     rule_implementation =
       id
       |> Rules.get_rule_implementation!()
+      |> Repo.preload([:rule, [rule: :rule_type]])
       |> add_rule_results()
       |> add_last_rule_result()
+      |> add_system_params_info()
 
     user = conn.assigns[:current_resource]
 
@@ -386,7 +389,8 @@ defmodule TdDqWeb.RuleImplementationController do
         %{"rule_id" => rule_id}
         |> Rules.list_rule_implementations(opts)
         |> Enum.map(&Repo.preload(&1, [:rule, [rule: :rule_type]]))
-        |> Enum.map(&add_last_rule_result(&1, opts))
+        |> Enum.map(&add_last_rule_result(&1))
+        |> Enum.map(&add_system_params_info(&1))
 
       render(conn, "index.json", rule_implementations: rule_implementations)
     else
@@ -412,6 +416,18 @@ defmodule TdDqWeb.RuleImplementationController do
       :_last_rule_result_,
       Rules.get_latest_rule_result(rule_implementation.implementation_key, opts)
     )
+  end
+
+  defp add_system_params_info(
+         %RuleImplementation{
+           rule: %{rule_type: %{params: %{"system_params" => _rule_type_system_params}}}
+         } = rule_implementation
+       ) do
+    Rules.get_rule_implementation_system_params_info(rule_implementation)
+  end
+
+  defp add_system_params_info(rule_implementation) do
+    rule_implementation
   end
 
   defp add_rule_results(rule_implementation) do

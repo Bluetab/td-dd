@@ -8,7 +8,9 @@ defmodule TdDq.Rules do
   alias Ecto.Changeset
   alias Ecto.Multi
   alias TdCache.ConceptCache
+  alias TdCache.EventStream.Publisher
   alias TdCache.LinkCache
+  alias TdCache.StructureCache
   alias TdCache.TemplateCache
   alias TdDfLib.Validation
   alias TdDq.Cache.RuleLoader
@@ -554,16 +556,108 @@ defmodule TdDq.Rules do
         types_changeset = rule_type_changeset(types, input)
 
         case types_changeset.valid? do
-          true ->
-            Repo.insert(changeset)
-
-          false ->
-            {:error, types_changeset}
+          true -> insert_rule_implementation(changeset)
+          false -> {:error, types_changeset}
         end
 
       false ->
         {:error, changeset}
     end
+  end
+
+  def get_rule_implementation_system_params_info(%RuleImplementation{} = rule_implementation) do
+    system_params = Map.get(rule_implementation, :system_params, %{})
+
+    new_system_params =
+      rule_implementation
+      |> get_rule_implementation_structure_system_params()
+      |> Enum.into(system_params, fn {key, value} ->
+        structure_id = Map.get(value, "id")
+        structure = read_structure_from_cache(structure_id)
+        param =
+          Map.new
+          |> Map.put(:id, structure_id)
+          |> Map.put(:external_id, Map.get(structure, :external_id))
+          |> Map.put(:name, Map.get(structure, :name, Map.get(value, "name", "")))
+          |> Map.put(:path, Map.get(structure, :path, []))
+          |> Map.put(:system, Map.get(structure, :system))
+          |> Map.put(:type, Map.get(structure, :type))
+        {key, param}
+      end)
+
+    Map.put(rule_implementation, :system_params, new_system_params)
+  end
+
+  defp read_structure_from_cache(structure_id) do
+    {:ok, structure} = StructureCache.get(structure_id)
+    case structure do
+      nil -> %{}
+      _ -> structure
+    end
+  end
+
+  defp insert_rule_implementation(changeset) do
+    result =
+      changeset
+      |> Repo.insert()
+
+    case result do
+      {:ok, rule_implementation} ->
+        add_rule_implementation_structure_links(rule_implementation)
+
+      _ ->
+        result
+    end
+
+    result
+  end
+
+  def get_rule_implementation_structure_system_params(%RuleImplementation{} = rule_implementation) do
+    type_params_names = get_structure_rule_type_params(rule_implementation)
+
+    case type_params_names do
+      [] ->
+        []
+
+      _ ->
+        rule_implementation
+        |> Map.get(:system_params, [])
+        |> Enum.filter(fn {key, value} ->
+          key in type_params_names and Map.has_key?(value, "id")
+        end)
+    end
+  end
+
+  defp add_rule_implementation_structure_links(%RuleImplementation{} = rule_implementation) do
+    rule_implementation
+    |> get_rule_implementation_structure_system_params()
+    |> Enum.map(fn {_key, value} ->
+      Map.get(value, "id")
+    end)
+    |> Enum.uniq()
+    |> Enum.map(&add_rule_implementation_structure_link/1)
+  end
+
+  defp get_structure_rule_type_params(%RuleImplementation{
+         rule: %{rule_type: %{params: %{"system_params" => rule_type_system_params}}}
+       }) do
+    rule_type_system_params
+    |> Enum.filter(fn param -> Map.get(param, "type") == "structure" end)
+    |> Enum.map(fn param -> Map.get(param, "name") end)
+  end
+
+  defp get_structure_rule_type_params(_rule_implementation) do
+    []
+  end
+
+  def add_rule_implementation_structure_link(structure_id) do
+    Publisher.publish(
+      %{
+        event: "add_rule_implementation_link",
+        structure_id: structure_id
+      },
+      "data_structure:events"
+    )
   end
 
   @doc """
@@ -595,18 +689,27 @@ defmodule TdDq.Rules do
         type_changeset = rule_type_changeset(types, input)
 
         case type_changeset.valid? do
-          true ->
-            reply = Repo.update(changeset)
-            RuleLoader.refresh(Map.get(rule, :id))
-            reply
-
-          false ->
-            {:error, type_changeset}
+          true -> update_rule_implementation(changeset)
+          false -> {:error, type_changeset}
         end
 
       false ->
         {:error, changeset}
     end
+  end
+
+  defp update_rule_implementation(changeset) do
+    result = changeset |> Repo.update()
+
+    case result do
+      {:ok, rule_implementation} ->
+        add_rule_implementation_structure_links(rule_implementation)
+
+      _ ->
+        result
+    end
+
+    result
   end
 
   @doc """
