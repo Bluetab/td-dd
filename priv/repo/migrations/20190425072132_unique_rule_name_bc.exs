@@ -6,16 +6,16 @@ defmodule TdDq.Repo.Migrations.UniqueRuleNameBc do
   alias TdDq.Rules.Rule
 
   def change do
-      Rule
-      |> group_by([r], [r.business_concept_id, r.name])
-      |> having([r], count(r.name) > 1)
-      |> select([r], {r.name, r.business_concept_id})
-      |> Repo.all()
-      |> Enum.map(&get_rules(&1))
-      |> Enum.map(&get_tail(&1))
-      |> Enum.map(&update_names(&1))
-      |> List.flatten()
-      |> Enum.map(&do_update(&1))
+    Rule
+    |> group_by([r], [r.business_concept_id, r.name])
+    |> having([r], count(r.name) > 1)
+    |> select([r], {r.name, r.business_concept_id})
+    |> Repo.all()
+    |> Enum.map(&get_rules(&1))
+    |> Enum.map(&get_tail(&1))
+    |> Enum.map(&update_names(&1))
+    |> List.flatten()
+    |> Enum.map(&do_update(&1))
   end
 
   defp get_rules({name, bc_id}) do
@@ -28,11 +28,12 @@ defmodule TdDq.Repo.Migrations.UniqueRuleNameBc do
   defp filter_by_name_and_bc_id(query, name, nil) do
     query |> where([r], is_nil(r.business_concept_id) and r.name == ^name)
   end
+
   defp filter_by_name_and_bc_id(query, name, id) do
     query |> where([r], r.name == ^name and r.business_concept_id == ^id)
   end
 
-  defp get_tail([_ | tail]), do: tail 
+  defp get_tail([_ | tail]), do: tail
 
   defp update_names(duplicated_rules) do
     Enum.reduce(0..(length(duplicated_rules) - 1), [], fn i, acc ->
@@ -43,7 +44,7 @@ defmodule TdDq.Repo.Migrations.UniqueRuleNameBc do
   end
 
   defp do_update({id, name}) do
-    Rule 
+    Rule
     |> where([r], r.id == ^id)
     |> update([u], set: [name: ^name])
     |> Repo.update_all([])

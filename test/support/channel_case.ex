@@ -28,10 +28,11 @@ defmodule TdDqWeb.ChannelCase do
 
   setup tags do
     :ok = Sandbox.checkout(TdDq.Repo)
+
     unless tags[:async] do
       Sandbox.mode(TdDq.Repo, {:shared, self()})
     end
+
     :ok
   end
-
 end

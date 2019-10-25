@@ -36,9 +36,7 @@ defmodule TdQd.RuleImplementationTest do
       |> Map.get("id")
       |> to_string
 
-    table =
-      table ++
-        [%{Field: "Type", Value: rule_type_id}]
+    table = table ++ [%{Field: "Type", Value: rule_type_id}]
 
     {:ok, status_code, _resp} = rule_create(token, table)
     assert rc_created() == to_response_code(status_code)

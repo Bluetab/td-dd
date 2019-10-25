@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-1881] Rule Implementations soft deletion: Update for soft delete implementations and query them
+
 ### Changed
 
 - [TD-2187] Retrieve/Store rule implementations structures using Structure Cache. Delete redundant structure info stored in rule_implementations. Load in Structure Cache structures being used by existing Rule Implementations

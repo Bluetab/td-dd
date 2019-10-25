@@ -3,8 +3,16 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
   import TdDq.Factory
   import TdDqWeb.Authentication, only: :functions
+  alias TdDq.Cache.RuleLoader
+  alias TdDq.Search.IndexWorker
 
   @invalid_rule_id -1
+
+  setup_all do
+    start_supervised(IndexWorker)
+    start_supervised(RuleLoader)
+    :ok
+  end
 
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
@@ -162,6 +170,35 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
     end
 
     @tag :admin_authenticated
+    test "soft delete rule implementation", %{conn: conn, swagger_schema: schema} do
+      rule_implementation = insert(:rule_implementation)
+
+      update_attrs =
+        rule_implementation
+        |> Map.from_struct()
+        |> Map.put(:soft_delete, true)
+
+      conn =
+        put(conn, Routes.rule_implementation_path(conn, :update, rule_implementation),
+          rule_implementation: update_attrs
+        )
+
+      validate_resp_schema(conn, schema, "RuleImplementationResponse")
+      assert %{"id" => id} = json_response(conn, 200)["data"]
+
+      conn = recycle_and_put_headers(conn)
+
+      conn = get(conn, Routes.rule_implementation_path(conn, :show, id))
+      validate_resp_schema(conn, schema, "RuleImplementationResponse")
+      json_response = json_response(conn, 200)["data"]
+
+      assert update_attrs[:rule_id] == json_response["rule_id"]
+      assert update_attrs[:system_params] == json_response["system_params"]
+      assert update_attrs[:system] == json_response["system"]
+      assert not is_nil(json_response["deleted_at"])
+    end
+
+    @tag :admin_authenticated
     test "renders errors when data is invalid", %{conn: conn} do
       rule_implementation = insert(:rule_implementation)
       update_attrs = Map.from_struct(rule_implementation)
@@ -195,7 +232,7 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
     end
   end
 
-  describe "get_rule_implementations" do
+  describe "search_rule_implementations" do
     @tag :admin_authenticated
     test "lists all rule_implementations from a rule", %{conn: conn, swagger_schema: schema} do
       rule = insert(:rule)
@@ -219,7 +256,10 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
       conn = recycle_and_put_headers(conn)
 
       conn =
-        get(conn, Routes.rule_rule_implementation_path(conn, :get_rule_implementations, rule.id))
+        post(
+          conn,
+          Routes.rule_rule_implementation_path(conn, :search_rule_implementations, rule.id)
+        )
 
       validate_resp_schema(conn, schema, "RuleImplementationsResponse")
       json_response = List.first(json_response(conn, 200)["data"])
@@ -231,13 +271,40 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
       conn = recycle_and_put_headers(conn)
 
       conn =
-        get(
+        post(
           conn,
-          Routes.rule_rule_implementation_path(conn, :get_rule_implementations, @invalid_rule_id)
+          Routes.rule_rule_implementation_path(
+            conn,
+            :search_rule_implementations,
+            @invalid_rule_id
+          )
         )
 
       validate_resp_schema(conn, schema, "RuleImplementationsResponse")
       assert json_response(conn, 200)["data"] == []
+    end
+
+    @tag :admin_authenticated
+    test "lists all deleted rule_implementations of a rule", %{conn: conn, swagger_schema: schema} do
+      rule = insert(:rule)
+
+      rule_implementation =
+        insert(:rule_implementation, rule: rule, deleted_at: DateTime.utc_now())
+
+      conn =
+        post(
+          conn,
+          Routes.rule_rule_implementation_path(conn, :search_rule_implementations, rule.id, %{
+            "status" => "deleted"
+          })
+        )
+
+      validate_resp_schema(conn, schema, "RuleImplementationsResponse")
+      json_response = List.first(json_response(conn, 200)["data"])
+
+      assert Map.get(rule_implementation, :rule_id) == json_response["rule_id"]
+      assert Map.get(rule_implementation, :system_params) == json_response["system_params"]
+      assert Map.get(rule_implementation, :system) == json_response["system"]
     end
   end
 end
