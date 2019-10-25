@@ -50,7 +50,6 @@ defmodule TdDq.Repo.Migrations.DeleteStructureAttrsFromSystemParams do
   defp delete_structure_params(%{
          id: id,
          system_params: system_params,
-         rule_type_id: rule_type_id,
          rule_type_params: %{"system_params" => rule_type_params}
        }) do
     type_params_names =
