@@ -11,6 +11,10 @@
 
 - [TD-2200] Prevalence of data structure's attributes over metadata on versions index
 
+### Changed
+
+- [TD-2187] Add external_id to Structure cached info. Put in cache structures present in rule_implementations system_params
+
 ## [3.8.0] 2019-10-14
 
 ### Fixed
