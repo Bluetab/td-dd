@@ -3,7 +3,7 @@ defmodule TdDq.Repo.Migrations.ChangeDescriptionRuleType do
 
   def change do
     alter table(:rules) do
-      modify :description, :text
+      modify(:description, :text)
     end
   end
 end

@@ -451,49 +451,24 @@ defmodule TdDq.Rules do
 
   ## Examples
 
-      iex> list_rule_implementations()
+      iex> list_rule_implementations(params, opts)
       [%RuleImplementation{}, ...]
 
   """
-  def list_rule_implementations(params \\ %{})
+  def list_rule_implementations(params \\ %{}, opts \\ [])
 
-  def list_rule_implementations(params) do
-    dynamic = filter(params, RuleImplementation.__schema__(:fields))
+  def list_rule_implementations(params, opts) do
     rule_params = Map.get(params, :rule) || Map.get(params, "rule", %{})
     rule_fields = Rule.__schema__(:fields)
+    dynamic = filter(params, RuleImplementation.__schema__(:fields))
+    dynamic = dynamic_rule_params(rule_params, rule_fields, dynamic)
 
-    dynamic =
-      Enum.reduce(Map.keys(rule_params), dynamic, fn key, acc ->
-        key_as_atom = if is_binary(key), do: String.to_atom(key), else: key
-
-        case {Enum.member?(rule_fields, key_as_atom), is_map(Map.get(rule_params, key))} do
-          {true, true} ->
-            json_query = Map.get(rule_params, key)
-
-            dynamic(
-              [_, p],
-              fragment("(?) @> ?::jsonb", field(p, ^key_as_atom), ^json_query) and ^acc
-            )
-
-          {true, false} ->
-            dynamic([_, p], field(p, ^key_as_atom) == ^rule_params[key] and ^acc)
-
-          {false, _} ->
-            acc
-        end
-      end)
-
-    query =
-      from(
-        ri in RuleImplementation,
-        inner_join: r in Rule,
-        on: ri.rule_id == r.id,
-        where: ^dynamic,
-        where: is_nil(r.deleted_at),
-        where: is_nil(ri.deleted_at)
-      )
-
-    query |> Repo.all()
+    RuleImplementation
+    |> join(:inner, [ri], r in assoc(ri, :rule))
+    |> where(^dynamic)
+    |> where([_ri, r], is_nil(r.deleted_at))
+    |> deleted_implementations(opts, :implementations)
+    |> Repo.all()
   end
 
   @doc """
@@ -703,7 +678,13 @@ defmodule TdDq.Rules do
     case changeset.valid? do
       true ->
         input = Map.get(attrs, :system_params) || Map.get(attrs, "system_params", %{})
-        rule_type = Repo.preload(rule_implementation, [:rule, rule: :rule_type]).rule.rule_type
+
+        rule =
+          rule_implementation
+          |> Repo.preload([:rule, rule: :rule_type])
+          |> Map.get(:rule)
+
+        rule_type = Map.get(rule, :rule_type)
         types = get_system_params_or_nil(rule_type)
         type_changeset = rule_type_changeset(types, input)
 
@@ -736,15 +717,17 @@ defmodule TdDq.Rules do
 
   ## Examples
 
-      iex> delete_rule_implementation(rule_implementation)
+      iex> delete_rule_implementation(rule_implementation, opts)
       {:ok, %RuleImplementation{}}
 
-      iex> delete_rule_implementation(rule_implementation)
+      iex> delete_rule_implementation(rule_implementation, opts)
       {:error, %Ecto.Changeset{}}
 
   """
   def delete_rule_implementation(%RuleImplementation{} = rule_implementation) do
-    Repo.delete(rule_implementation)
+    reply = Repo.delete(rule_implementation)
+    RuleLoader.refresh(Map.get(rule_implementation, :rule_id))
+    reply
   end
 
   @doc """
@@ -901,7 +884,7 @@ defmodule TdDq.Rules do
     dynamic = true
 
     Enum.reduce(Map.keys(params), dynamic, fn key, acc ->
-      key_as_atom = if is_binary(key), do: String.to_atom(key), else: key
+      key_as_atom = binary_to_atom(key)
 
       case Enum.member?(fields, key_as_atom) and !is_map(Map.get(params, key)) do
         true -> dynamic([p], field(p, ^key_as_atom) == ^params[key] and ^acc)
@@ -911,6 +894,8 @@ defmodule TdDq.Rules do
   end
 
   defp rule_type_changeset(nil, _input), do: Changeset.cast({%{}, %{}}, %{}, [])
+
+  defp rule_type_changeset(_, input) when input == %{}, do: Changeset.cast({%{}, %{}}, %{}, [])
 
   defp rule_type_changeset(types, input) do
     fields =
@@ -1095,19 +1080,77 @@ defmodule TdDq.Rules do
   @doc """
   Returns last rule_result for each rule_implementation of rule
   """
-  def get_latest_rule_results(%Rule{} = rule) do
+  def get_latest_rule_results(%Rule{} = rule, opts \\ []) do
     rule
     |> Repo.preload(:rule_implementations)
     |> Map.get(:rule_implementations)
-    |> Enum.map(&get_latest_rule_result(&1.implementation_key))
+    |> Enum.map(&get_latest_rule_result(&1.implementation_key, opts))
     |> Enum.filter(& &1)
   end
 
-  def get_latest_rule_result(implementation_key) do
+  def get_latest_rule_result(implementation_key, opts \\ []) do
     RuleResult
     |> where([r], r.implementation_key == ^implementation_key)
+    |> join(:inner, [r, ri], ri in RuleImplementation,
+      on: r.implementation_key == ri.implementation_key
+    )
+    |> deleted_implementations(opts, :results)
     |> order_by(desc: :date)
     |> limit(1)
     |> Repo.one()
+  end
+
+  defp dynamic_rule_params(params, fields, dynamic) do
+    names = Map.keys(params)
+
+    Enum.reduce(names, dynamic, fn name, acc ->
+      atom_name = binary_to_atom(name)
+
+      case Enum.member?(fields, atom_name) do
+        false ->
+          acc
+
+        true ->
+          params
+          |> Map.get(name)
+          |> dynamic_filter(atom_name, acc)
+      end
+    end)
+  end
+
+  defp binary_to_atom(value), do: if(is_binary(value), do: String.to_atom(value), else: value)
+
+  defp dynamic_filter(field, atom_name, acc) when is_map(field) do
+    dynamic([_, p], fragment("(?) @> ?::jsonb", field(p, ^atom_name), ^field) and ^acc)
+  end
+
+  defp dynamic_filter(field, atom_name, acc) do
+    dynamic([_, p], field(p, ^atom_name) == ^field and ^acc)
+  end
+
+  defp deleted_implementations(query, options, order) do
+    case Keyword.get(options, :deleted, false) do
+      true ->
+        with_deleted(query, order)
+
+      false ->
+        without_deleted(query, order)
+    end
+  end
+
+  defp with_deleted(query, :implementations) do
+    where(query, [ri, _r], not is_nil(ri.deleted_at))
+  end
+
+  defp with_deleted(query, :results) do
+    where(query, [_r, ri], not is_nil(ri.deleted_at))
+  end
+
+  defp without_deleted(query, :implementations) do
+    where(query, [ri, _r], is_nil(ri.deleted_at))
+  end
+
+  defp without_deleted(query, :results) do
+    where(query, [_r, ri], is_nil(ri.deleted_at))
   end
 end

@@ -29,5 +29,4 @@ defmodule TdDq.Permissions do
   def get_domain_permissions(%User{jti: jti}) do
     @permission_resolver.get_acls_by_resource_type(jti, "domain")
   end
-
 end

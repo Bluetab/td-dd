@@ -491,6 +491,19 @@ defmodule TdDq.RulesTest do
       assert length(Rules.list_rule_implementations(%{rule: %{active: true}})) == 3
     end
 
+    test "list_rule_implementations/1 returns deleted rule_implementations when opts provided" do
+      rule_type = insert(:rule_type)
+      rule = insert(:rule, rule_type: rule_type, active: true)
+
+      insert(:rule_implementation, implementation_key: "ri1", rule: rule, deleted_at: DateTime.utc_now())
+      insert(:rule_implementation, implementation_key: "ri2", rule: rule)
+      insert(:rule_implementation, implementation_key: "ri3", rule: rule)
+
+      results = Rules.list_rule_implementations(%{"rule_id" => rule.id}, [deleted: true])
+      assert length(results) == 1
+      assert Enum.any?(results, fn %{implementation_key: implementation_key} -> implementation_key == "ri1" end)
+    end
+
     test "get_rule_implementation!/1 returns the rule_implementation with given id" do
       rule_implementation = insert(:rule_implementation)
 

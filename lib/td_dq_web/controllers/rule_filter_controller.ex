@@ -14,6 +14,7 @@ defmodule TdDqWeb.RuleFilterController do
 
   swagger_path :search do
     description("List Quality Rule Filters")
+
     parameters do
       search(
         :body,
@@ -21,6 +22,7 @@ defmodule TdDqWeb.RuleFilterController do
         "Filter parameters"
       )
     end
+
     response(200, "OK", Schema.ref(:FilterResponse))
   end
 

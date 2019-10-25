@@ -73,7 +73,6 @@ defmodule TdDqWeb.SearchController do
     can?(
       user,
       execute(%{"business_concept_id" => rule.business_concept_id, "resource_type" => "rule"})
-    ) &&
-      can?(user, show(Rules.get_rule!(rule.id)))
+    ) && can?(user, show(Rules.get_rule!(rule.id)))
   end
 end

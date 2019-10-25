@@ -115,8 +115,7 @@ defmodule TdDq.Rules.Search do
   end
 
   defp do_search(search) do
-    %{results: results, aggregations: aggregations, total: total} =
-      Search.search(search)
+    %{results: results, aggregations: aggregations, total: total} = Search.search(search)
 
     results =
       results

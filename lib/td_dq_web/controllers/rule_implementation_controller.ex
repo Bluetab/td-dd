@@ -286,7 +286,10 @@ defmodule TdDqWeb.RuleImplementationController do
 
     with true <- can?(user, update(resource_type)),
          {:ok, %RuleImplementation{} = rule_implementation} <-
-           Rules.update_rule_implementation(rule_implementation, rule_implementation_params) do
+           Rules.update_rule_implementation(
+             rule_implementation,
+             with_soft_delete(rule_implementation_params)
+           ) do
       render(conn, "show.json", rule_implementation: rule_implementation)
     else
       false ->
@@ -365,7 +368,7 @@ defmodule TdDqWeb.RuleImplementationController do
     end
   end
 
-  swagger_path :get_rule_implementations do
+  swagger_path :search_rule_implementations do
     description("List Quality Rules")
 
     parameters do
@@ -375,14 +378,16 @@ defmodule TdDqWeb.RuleImplementationController do
     response(200, "OK", Schema.ref(:RuleImplementationsResponse))
   end
 
-  def get_rule_implementations(conn, %{"rule_id" => id}) do
+  def search_rule_implementations(conn, %{"rule_id" => id} = params) do
     user = conn.assigns[:current_resource]
     rule_id = String.to_integer(id)
 
     with true <- can?(user, index(RuleImplementation)) do
+      opts = deleted_implementations(params)
+
       rule_implementations =
         %{"rule_id" => rule_id}
-        |> Rules.list_rule_implementations()
+        |> Rules.list_rule_implementations(opts)
         |> Enum.map(&Repo.preload(&1, [:rule, [rule: :rule_type]]))
         |> Enum.map(&add_last_rule_result(&1))
         |> Enum.map(&add_system_params_info(&1))
@@ -405,11 +410,11 @@ defmodule TdDqWeb.RuleImplementationController do
     end
   end
 
-  defp add_last_rule_result(rule_implementation) do
+  defp add_last_rule_result(rule_implementation, opts \\ []) do
     rule_implementation
     |> Map.put(
       :_last_rule_result_,
-      Rules.get_latest_rule_result(rule_implementation.implementation_key)
+      Rules.get_latest_rule_result(rule_implementation.implementation_key, opts)
     )
   end
 
@@ -432,4 +437,16 @@ defmodule TdDqWeb.RuleImplementationController do
       Rules.get_rule_implementation_results(rule_implementation.implementation_key)
     )
   end
+
+  defp deleted_implementations(%{"status" => "deleted"}), do: [deleted: true]
+
+  defp deleted_implementations(_), do: []
+
+  defp with_soft_delete(%{"soft_delete" => true} = params) do
+    params
+    |> Map.delete("soft_delete")
+    |> Map.put("deleted_at", DateTime.utc_now())
+  end
+
+  defp with_soft_delete(params), do: params
 end

@@ -89,15 +89,18 @@ defmodule TdDq.Rules.Rule do
         goal = get_field(changeset, :goal)
         result_type = get_field(changeset, :result_type)
         do_validate_goal(changeset, minimum, goal, result_type)
+
       _ ->
         changeset
     end
   end
 
   defp do_validate_goal(changeset, minimum, goal, "percentage") do
-    changeset = changeset
-    |> validate_number(:goal, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
-    |> validate_number(:minimum, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
+    changeset =
+      changeset
+      |> validate_number(:goal, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
+      |> validate_number(:minimum, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
+
     case minimum <= goal do
       true -> changeset
       false -> add_error(changeset, :goal, "must.be.greater.than.or.equal.to.minimum")
@@ -105,9 +108,11 @@ defmodule TdDq.Rules.Rule do
   end
 
   defp do_validate_goal(changeset, minimum, goal, "errors_number") do
-    changeset = changeset
-    |> validate_number(:goal, greater_than_or_equal_to: 0)
-    |> validate_number(:minimum, greater_than_or_equal_to: 0)
+    changeset =
+      changeset
+      |> validate_number(:goal, greater_than_or_equal_to: 0)
+      |> validate_number(:minimum, greater_than_or_equal_to: 0)
+
     case minimum >= goal do
       true -> changeset
       false -> add_error(changeset, :minimum, "must.be.greater.than.or.equal.to.goal")
@@ -183,7 +188,10 @@ defmodule TdDq.Rules.Rule do
       end
     end
 
-    defp get_execution_result_info(%Rule{minimum: minimum, goal: goal, result_type: result_type} = rule, rule_results) do
+    defp get_execution_result_info(
+           %Rule{minimum: minimum, goal: goal, result_type: result_type} = rule,
+           rule_results
+         ) do
       Map.new()
       |> with_result(rule_results, rule)
       |> with_last_execution_at(rule_results)
