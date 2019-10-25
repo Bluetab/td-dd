@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-2187] Retrieve/Store rule implementations structures using Structure Cache. Delete redundant structure info stored in rule_implementations. Load in Structure Cache structures being used by existing Rule Implementations
+
 ## [3.8.0] 2019-10-14
 
 ### Added
