@@ -307,4 +307,16 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
       assert Map.get(rule_implementation, :system) == json_response["system"]
     end
   end
+
+  describe "search_rules_implementations" do
+    @tag :admin_authenticated
+    test "lists all rule_implementations given some request params", %{conn: conn, swagger_schema: schema} do
+
+      conn =
+        post(conn, Routes.rule_implementation_path(conn, :search_rules_implementations, %{}))
+
+      validate_resp_schema(conn, schema, "RuleImplementationsResponse")
+      assert json_response(conn, 200)["data"] == []
+    end
+  end
 end

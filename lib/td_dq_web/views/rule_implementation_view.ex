@@ -30,7 +30,13 @@ defmodule TdDqWeb.RuleImplementationView do
         rule = rule_implementation.rule
 
         rule_mapping =
-          %{name: rule.name, type_params: rule.type_params}
+          %{
+            name: rule.name,
+            type_params: rule.type_params,
+            minimum: rule.minimum,
+            goal: rule.goal,
+            result_type: rule.result_type
+          }
           |> add_rule_type(rule)
 
         Map.put(rule_implementation_mapping, :rule, rule_mapping)

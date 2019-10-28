@@ -411,6 +411,48 @@ defmodule TdDqWeb.RuleImplementationController do
     end
   end
 
+  def search_rules_implementations(conn, params) do
+    user = conn.assigns[:current_resource]
+
+    filters =
+      %{}
+      |> add_filter(params, "structure_id")
+
+    with true <- can?(user, index(RuleImplementation)) do
+      rule_implementations =
+        filters
+        |> Rules.list_rule_implementations()
+        |> Enum.map(&Repo.preload(&1, [:rule, [rule: :rule_type]]))
+        |> Enum.map(&add_last_rule_result(&1))
+
+      render(conn, "index.json", rule_implementations: rule_implementations)
+    else
+      false ->
+        conn
+        |> put_status(:forbidden)
+        |> put_view(ErrorView)
+        |> render("403.json")
+
+      error ->
+        Logger.error("While getting rule implementations... #{inspect(error)}")
+
+        conn
+        |> put_status(:unprocessable_entity)
+        |> put_view(ErrorView)
+        |> render("422.json")
+    end
+  end
+
+  defp add_filter(filters, params, param_name) do
+    case Map.get(params, param_name) do
+      nil ->
+        filters
+
+      value ->
+        Map.put(filters, param_name, String.to_integer(value))
+    end
+  end
+
   defp add_last_rule_result(rule_implementation, opts \\ []) do
     rule_implementation
     |> Map.put(
