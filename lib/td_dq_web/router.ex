@@ -43,6 +43,7 @@ defmodule TdDqWeb.Router do
 
     post("/rule_filters/search", RuleFilterController, :search)
     resources("/rule_implementations", RuleImplementationController, except: [:new, :edit])
+    post("/rule_implementations/search", RuleImplementationController, :search_rules_implementations)
     resources("/rule_types", RuleTypeController, except: [:new, :edit])
   end
 

@@ -656,6 +656,84 @@ defmodule TdDq.RulesTest do
       assert %Ecto.Changeset{} = Rules.change_rule_implementation(rule_implementation)
     end
 
+    test "list_rule_implementations/1 returns all rule_implementations by structure" do
+      rule_type = insert(:structure_rule_type_with_params)
+      rule = insert(:rule, rule_type: rule_type)
+
+      system_params_ri11 = %{
+        "field1" => %{
+          "id" => 2,
+          "name" => "FIELD2",
+          "path" => [
+            "ONEPATH"
+          ],
+          "type" => "VARIABLE",
+          "system" => %{
+            "id" => 2,
+            "name" => "my_system",
+            "external_id" => "my_system"
+          }
+        },
+        "field2" => %{
+          "id" => 2,
+          "name" => "FIELD2",
+          "path" => [
+            "ONEPATH"
+          ],
+          "type" => "VARIABLE",
+          "system" => %{
+            "id" => 2,
+            "name" => "my_system",
+            "external_id" => "my_system"
+          }
+        }
+      }
+
+      system_params_ri12 = %{
+        "field1" => %{
+          "id" => 1,
+          "name" => "FIELD1",
+          "path" => [
+            "ONEPATH"
+          ],
+          "type" => "VARIABLE",
+          "system" => %{
+            "id" => 2,
+            "name" => "my_system",
+            "external_id" => "my_system"
+          }
+        },
+        "field2" => %{
+          "id" => 2,
+          "name" => "FIELD2",
+          "path" => [
+            "ONEPATH"
+          ],
+          "type" => "VARIABLE",
+          "system" => %{
+            "id" => 2,
+            "name" => "my_system",
+            "external_id" => "my_system"
+          }
+        }
+      }
+
+      insert(:rule_implementation,
+        implementation_key: "ri11",
+        rule: rule,
+        system_params: system_params_ri11
+      )
+
+      insert(:rule_implementation,
+        implementation_key: "ri12",
+        rule: rule,
+        system_params: system_params_ri12
+      )
+
+      assert length(Rules.list_rule_implementations(%{"structure_id" => 1})) == 1
+      assert length(Rules.list_rule_implementations(%{"structure_id" => 2})) == 2
+    end
+
     defp rule_implementation_preload(rule_implementation) do
       rule_implementation
       |> Repo.preload([:rule, rule: :rule_type])

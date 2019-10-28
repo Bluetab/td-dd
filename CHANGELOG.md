@@ -4,6 +4,7 @@
 
 ### Added
 
+- [TD-1493] Given a structure_id get implementations associated
 - [TD-1881] Rule Implementations soft deletion: Update for soft delete implementations and query them
 
 ### Changed

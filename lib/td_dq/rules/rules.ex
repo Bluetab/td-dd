@@ -457,6 +457,20 @@ defmodule TdDq.Rules do
   """
   def list_rule_implementations(params \\ %{}, opts \\ [])
 
+  def list_rule_implementations(%{"structure_id" => structure_id}, _opts) do
+    json_query = %{
+      "system_params" => [
+        %{"type" => "structure"}
+      ]
+    }
+
+    rule_types = get_items_using_json_filter("params", json_query, RuleType)
+
+    rule_types
+    |> get_fields_name()
+    |> get_implementations_by_fields(structure_id)
+  end
+
   def list_rule_implementations(params, opts) do
     rule_params = Map.get(params, :rule) || Map.get(params, "rule", %{})
     rule_fields = Rule.__schema__(:fields)
@@ -469,6 +483,49 @@ defmodule TdDq.Rules do
     |> where([_ri, r], is_nil(r.deleted_at))
     |> deleted_implementations(opts, :implementations)
     |> Repo.all()
+  end
+
+  defp get_fields_name(rule_types) do
+    rule_types
+    |> Enum.map(fn rule_type ->
+      rule_type =
+        rule_type
+        |> get_system_params_or_nil()
+        |> Enum.map(&Map.get(&1, "name"))
+
+      rule_type
+    end)
+    |> List.flatten()
+    |> Enum.uniq()
+  end
+
+  defp get_implementations_by_fields(fields_name, structure_id) do
+    fields_name
+    |> Enum.map(
+      &get_items_using_json_filter(
+        "system_params",
+        get_json_query(&1, structure_id),
+        RuleImplementation
+      )
+    )
+    |> List.flatten()
+    |> Enum.uniq()
+  end
+
+  defp get_json_query(field_name, structure_id) do
+    %{
+      field_name => %{"id" => structure_id}
+    }
+  end
+
+  defp get_items_using_json_filter(key, json_query, schema) do
+    query =
+      from(
+        rt in schema,
+        where: fragment("(?) @> ?::jsonb", field(rt, ^String.to_atom(key)), ^json_query)
+      )
+
+    query |> Repo.all()
   end
 
   @doc """

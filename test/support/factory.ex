@@ -41,6 +41,42 @@ defmodule TdDq.Factory do
     }
   end
 
+  def structure_rule_type_with_params_factory do
+    %TdDq.Rules.RuleType{
+      name: "Rule Type",
+      params: %{
+        "type_params" => [],
+        "system_params" => [
+          %{"name" => "system_required", "type" => "boolean", "value" => false, "hidden" => true},
+          %{
+            "name" => "field1",
+            "type" => "structure",
+            "options" => %{
+              "allowFreeText" => true,
+              "defaultFilters" => %{
+                "class.raw" => [
+                  "field"
+                ]
+              }
+            }
+          },
+          %{
+            "name" => "field2",
+            "type" => "structure",
+            "options" => %{
+              "allowFreeText" => true,
+              "defaultFilters" => %{
+                "class.raw" => [
+                  "field"
+                ]
+              }
+            }
+          }
+        ]
+      }
+    }
+  end
+
   def rule_implementation_factory do
     %TdDq.Rules.RuleImplementation{
       rule: build(:rule),
