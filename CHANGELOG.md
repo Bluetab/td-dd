@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-1881] show implementations results whether deleted or not
+
 ## [3.9.0] 2019-10-28
 
 ### Added
