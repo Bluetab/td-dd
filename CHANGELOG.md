@@ -1,11 +1,20 @@
 # Changelog
 
-## [Unreleased]
+## [3.9.0] 2019-10-28
 
 ### Added
 
 - [TD-2186] Return profile info in data structure view
 - [TD-2144] Support ngram-search in structure name
+- [TD-2159] Mapping for data field type
+
+### Changed
+
+- [TD-2200] Prevalence of data structure's attributes over metadata on versions index
+
+### Changed
+
+- [TD-2187] Add external_id to Structure cached info. Put in cache structures present in rule_implementations system_params
 
 ## [3.8.0] 2019-10-14
 

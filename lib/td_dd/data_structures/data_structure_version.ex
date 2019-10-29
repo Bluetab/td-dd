@@ -132,6 +132,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       |> Map.put(:system, get_system(structure))
       |> Map.put(:df_content, format_content(structure, type))
       |> Map.put_new(:ou, "")
+      |> Map.put_new(:field_type, get_field_type(dsv))
       |> Map.merge(
         Map.take(dsv, [
           :class,
@@ -188,5 +189,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     end
 
     defp format_content(_, _), do: nil
+
+    defp get_field_type(%DataStructureVersion{metadata: metadata}), do: Map.get(metadata, "type")
   end
 end
