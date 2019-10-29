@@ -1137,21 +1137,20 @@ defmodule TdDq.Rules do
   @doc """
   Returns last rule_result for each rule_implementation of rule
   """
-  def get_latest_rule_results(%Rule{} = rule, opts \\ []) do
+  def get_latest_rule_results(%Rule{} = rule) do
     rule
     |> Repo.preload(:rule_implementations)
     |> Map.get(:rule_implementations)
-    |> Enum.map(&get_latest_rule_result(&1.implementation_key, opts))
+    |> Enum.map(&get_latest_rule_result(&1.implementation_key))
     |> Enum.filter(& &1)
   end
 
-  def get_latest_rule_result(implementation_key, opts \\ []) do
+  def get_latest_rule_result(implementation_key) do
     RuleResult
     |> where([r], r.implementation_key == ^implementation_key)
     |> join(:inner, [r, ri], ri in RuleImplementation,
       on: r.implementation_key == ri.implementation_key
     )
-    |> deleted_implementations(opts, :results)
     |> order_by(desc: :date)
     |> limit(1)
     |> Repo.one()
