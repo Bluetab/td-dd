@@ -62,7 +62,9 @@ defmodule TdDq.Search.Mappings do
       },
       execution_result_info: %{
         properties: %{
-          result: %{type: "long"},
+          result: %{type: "float"},
+          errors: %{type: "long"},
+          records: %{type: "long"},
           last_execution_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
           result_text: %{type: "text", fields: @raw}
         }

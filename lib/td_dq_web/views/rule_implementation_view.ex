@@ -63,7 +63,7 @@ defmodule TdDqWeb.RuleImplementationView do
           []
 
         last_rule_result ->
-          [%{result: last_rule_result.result, date: last_rule_result.date}]
+          [%{result: last_rule_result.result, date: last_rule_result.date, errors: last_rule_result.errors}]
       end
 
     rule_implementation_mapping
