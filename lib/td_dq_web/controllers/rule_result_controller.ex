@@ -113,7 +113,7 @@ defmodule TdDqWeb.RuleResultController do
     {oks, errors} =
     rules_results
     |> Enum.map(&with_parent_domains/1)
-    |> Enum.with_index()
+    |> Enum.with_index(2)
     |> Enum.map(fn {rule_result, index} ->
       {result_code, changeset} = Rules.create_rule_result(rule_result)
       %{result_code: result_code, changeset: changeset, row_number: index}
