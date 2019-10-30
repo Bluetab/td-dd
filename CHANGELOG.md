@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Changed
+
+- [TD-2199] Rule result as float. Errors uploaded in Rule Results and result calculated for errors_number Rule Type.
+- [TD-2226] Added Error response in Rule Results upload
+
 ### Fixed
 
 - [TD-1881] show implementations results whether deleted or not

@@ -1121,7 +1121,7 @@ defmodule TdDq.Rules do
     |> where(
       [rr, _, r],
       (r.result_type == ^Rule.result_type().percentage and rr.result < r.minimum) or
-        (r.result_type == ^Rule.result_type().errors_number and rr.result > r.goal)
+        (r.result_type == ^Rule.result_type().errors_number and rr.errors > r.goal)
     )
     |> select([rr, _, r], %{
       id: rr.id,

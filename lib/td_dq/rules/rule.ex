@@ -189,7 +189,7 @@ defmodule TdDq.Rules.Rule do
     end
 
     defp get_execution_result_info(
-           %Rule{minimum: minimum, goal: goal, result_type: result_type} = rule,
+           %Rule{minimum: minimum, goal: goal, result_type: result_type},
            rule_results
          ) do
       Map.new()
@@ -219,6 +219,8 @@ defmodule TdDq.Rules.Rule do
     end
 
     defp with_result_text(%{result: result} = result_map, minimum, goal, "percentage") do
+
+      result = Decimal.to_float(result)
       result_text =
         cond do
           result < minimum ->
