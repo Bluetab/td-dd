@@ -31,11 +31,15 @@ defmodule TdDqWeb.RuleResultController do
     |> Enum.map(fn error ->
       %{changeset: changeset, row_number: row_number} = error
       changeset_errors = Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
-        Enum.reduce(opts, msg, fn {key, value}, acc ->
-          String.replace(acc, "%{#{key}}", to_string(value))
-        end)
+        format_error(msg, opts)
       end)
       Map.put(changeset_errors, :row_number, row_number)
+    end)
+  end
+
+  defp format_error(msg, opts) do
+    Enum.reduce(opts, msg, fn {key, value}, acc ->
+      String.replace(acc, "%{#{key}}", to_string(value))
     end)
   end
 
@@ -87,7 +91,7 @@ defmodule TdDqWeb.RuleResultController do
   end
 
   defp calculate_quality(records, errors) do
-    abs((records - errors)/records) * 100
+    abs((records - errors) / records) * 100
   end
 
   defp upload_data(rule_results_data) do

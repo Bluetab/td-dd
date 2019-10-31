@@ -932,7 +932,6 @@ defmodule TdDq.RulesTest do
       rule_impl_4 =
         insert(:rule_implementation, rule: rule_4, implementation_key: Enum.at(impl_keys, 3))
 
-
       rule_result =
         insert(
           :rule_result,
