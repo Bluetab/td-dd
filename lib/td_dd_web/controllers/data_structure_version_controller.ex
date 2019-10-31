@@ -1,6 +1,5 @@
 defmodule TdDdWeb.DataStructureVersionController do
   use TdDdWeb, :controller
-  use TdHypermedia, :controller
   use PhoenixSwagger
 
   import Canada, only: [can?: 2]
@@ -44,23 +43,39 @@ defmodule TdDdWeb.DataStructureVersionController do
     render_with_permissions(conn, user, dsv)
   end
 
+  swagger_path :profiling do
+    description("Gets Profiling")
+    produces("application/json")
+
+    response(202, "Accepted")
+  end
+
+  def profiling(conn, _params) do
+    # This method is only used to generate an action in the data structure hypermedia response
+    send_resp(conn, :accepted, "")
+  end
+
+  swagger_path :confidential do
+    description("Gets Confidential Structures")
+    produces("application/json")
+
+    response(202, "Accepted")
+  end
+
+  def manage_confidential_structures(conn, _params) do
+    # This method is only used to generate an action in the data structure hypermedia response
+    send_resp(conn, :accepted, "")
+  end
+
   defp render_with_permissions(conn, _user, nil) do
     render_error(conn, :not_found)
   end
 
   defp render_with_permissions(conn, user, %{data_structure: data_structure} = dsv) do
-    with true <- can?(user, view_data_structure(data_structure)) do
-      user_permissions = %{
-        update: can?(user, update_data_structure(data_structure)),
-        confidential: can?(user, manage_confidential_structures(data_structure)),
-        view_profiling_permission: can?(user, view_data_structures_profile(data_structure))
-      }
-
-      render(conn, "show.json",
-        data_structure_version: dsv,
-        user_permissions: user_permissions,
-        hypermedia: hypermedia("data_structure_version", conn, dsv)
-      )
+    with true <- can?(user, view_data_structure(data_structure)) do    
+      conn
+      |> put_hypermedia("data_structure_versions", data_structure_version: dsv)
+      |> render("show.json")
     else
       false -> render_error(conn, :forbidden)
       _error -> render_error(conn, :unprocessable_entity)

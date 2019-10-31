@@ -37,6 +37,8 @@ defmodule TdDdWeb.Router do
     end
 
     resources("/data_structure_versions", DataStructureVersionController, only: [:show]) do
+      get("/profiling", DataStructureVersionController, :view_data_structures_profile)
+      get("/confidential", DataStructureVersionController, :manage_confidential_structures)
       post("/links", DataStructureLinkController, :create_link)
     end
 

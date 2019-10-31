@@ -1,57 +1,43 @@
 defmodule TdDdWeb.DataStructureVersionView do
   use TdDdWeb, :view
-  use TdHypermedia, :view
 
-  alias TdDdWeb.DataStructureVersionView
-
-  def render(
-        "show.json",
-        %{data_structure_version: dsv, user_permissions: user_permissions, hypermedia: hypermedia} =
-          assigns
-      ) do
-    dsv
-    |> render_one_hypermedia(
-      hypermedia,
-      DataStructureVersionView,
-      "show.json",
-      Map.drop(assigns, [:hypermedia, :data_structure_version, :user_permissions])
-    )
-    |> lift_data()
-    |> Map.put(:user_permissions, user_permissions)
-  end
+  alias TdHypermedia.View
 
   def render("show.json", %{data_structure_version: dsv}) do
-    %{
-      data:
-        dsv
-        |> add_data_structure
-        |> add_data_fields
-        |> add_parents
-        |> add_siblings
-        |> add_children
-        |> add_versions
-        |> add_system
-        |> add_ancestry
-        |> Map.take([
-          :ancestry,
-          :children,
-          :class,
-          :data_fields,
-          :data_structure,
-          :deleted_at,
-          :description,
-          :group,
-          :id,
-          :links,
-          :name,
-          :parents,
-          :siblings,
-          :system,
-          :type,
-          :version,
-          :versions
-        ])
-    }
+    View.with_actions(
+      %{
+        data:
+          dsv
+          |> add_data_structure
+          |> add_data_fields
+          |> add_parents
+          |> add_siblings
+          |> add_children
+          |> add_versions
+          |> add_system
+          |> add_ancestry
+          |> Map.take([
+            :ancestry,
+            :children,
+            :class,
+            :data_fields,
+            :data_structure,
+            :deleted_at,
+            :description,
+            :group,
+            :id,
+            :links,
+            :name,
+            :parents,
+            :siblings,
+            :system,
+            :type,
+            :version,
+            :versions
+          ])
+      },
+      dsv
+    )
   end
 
   defp add_data_structure(%{data_structure: data_structure} = dsv) do
@@ -193,15 +179,15 @@ defmodule TdDdWeb.DataStructureVersionView do
 
   defp with_profile_attrs(dsv, _), do: dsv
 
-  defp lift_data(%{"data" => data} = attrs) when is_map(data) do
-    case Map.get(data, :data) do
-      nil ->
-        attrs
+  # defp lift_data(%{"data" => data} = attrs) when is_map(data) do
+  #   case Map.get(data, :data) do
+  #     nil ->
+  #       attrs
 
-      nested ->
-        Map.put(attrs, "data", nested)
-    end
-  end
+  #     nested ->
+  #       Map.put(attrs, "data", nested)
+  #   end
+  # end
 
-  defp lift_data(attrs), do: attrs
+  # defp lift_data(attrs), do: attrs
 end

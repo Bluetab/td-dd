@@ -1,6 +1,5 @@
 defmodule TdDdWeb.DataStructureLinkController do
   use TdDdWeb, :controller
-  use TdHypermedia, :controller
   use PhoenixSwagger
 
   alias TdDdWeb.ErrorView
