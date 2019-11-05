@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- [TD-2164] Changed phoenix_swagger and ex_json_schema dependencies to fix swagger
 - [TD-1881] show implementations results whether deleted or not
 
 ## [3.9.0] 2019-10-28

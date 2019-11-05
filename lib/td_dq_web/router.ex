@@ -1,9 +1,7 @@
 defmodule TdDqWeb.Router do
   use TdDqWeb, :router
 
-  @endpoint_url "#{Application.get_env(:td_dq, TdDqWeb.Endpoint)[:url][:host]}:#{
-                  Application.get_env(:td_dq, TdDqWeb.Endpoint)[:url][:port]
-                }"
+  @endpoint_url "#{Application.get_env(:td_dq, TdDqWeb.Endpoint)[:url][:host]}:#{Application.get_env(:td_dq, TdDqWeb.Endpoint)[:http][:port]}"
 
   pipeline :api do
     plug(TdDq.Auth.Pipeline.Unsecure)
