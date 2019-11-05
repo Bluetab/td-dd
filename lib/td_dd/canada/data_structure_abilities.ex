@@ -19,7 +19,7 @@ defmodule TdDd.Canada.DataStructureAbilities do
     (!confidential || Permissions.authorized?(user, :manage_confidential_structures, domain_id))
   end
 
-  def can?(%User{} = user, :update_data_structure, %DataStructure{domain_id: domain_id, confidential: confidential}) do
+  def can?(%User{} = user, :update, %DataStructure{domain_id: domain_id, confidential: confidential}) do
     Permissions.authorized?(user, :update_data_structure, domain_id) &&
     (!confidential || Permissions.authorized?(user, :manage_confidential_structures, domain_id))
   end

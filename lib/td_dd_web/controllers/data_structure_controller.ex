@@ -198,7 +198,7 @@ defmodule TdDdWeb.DataStructureController do
       |> Map.put("last_change_by", get_current_user_id(conn))
       |> DataStructures.add_domain_id(TaxonomyCache.get_domain_name_to_id_map())
 
-    with true <- can?(user, update_data_structure(data_structure_old)),
+    with true <- can?(user, update(data_structure_old)),
          {:ok, %DataStructure{} = data_structure} <-
            DataStructures.update_data_structure(data_structure_old, update_params, reindex: true) do
       AuditSupport.update_data_structure(conn, data_structure_old, attrs)

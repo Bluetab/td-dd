@@ -74,7 +74,7 @@ defmodule TdDdWeb.DataStructureVersionController do
   defp render_with_permissions(conn, user, %{data_structure: data_structure} = dsv) do
     with true <- can?(user, view_data_structure(data_structure)) do
       conn
-      |> put_hypermedia("data_structure_versions", data_structure_version: dsv)
+      |> put_hypermedia(["data_structure_versions", "data_structures"], data_structure_version: dsv)
       |> render("show.json")
     else
       false -> render_error(conn, :forbidden)

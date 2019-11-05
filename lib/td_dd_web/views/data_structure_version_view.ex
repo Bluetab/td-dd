@@ -16,6 +16,7 @@ defmodule TdDdWeb.DataStructureVersionView do
           |> add_versions
           |> add_system
           |> add_ancestry
+          |> add_profile
           |> Map.take([
             :ancestry,
             :children,
@@ -33,7 +34,8 @@ defmodule TdDdWeb.DataStructureVersionView do
             :system,
             :type,
             :version,
-            :versions
+            :versions,
+            :profile
           ])
       },
       dsv
@@ -98,6 +100,11 @@ defmodule TdDdWeb.DataStructureVersionView do
   defp add_data_fields(dsv) do
     Map.put(dsv, :data_fields, [])
   end
+
+  defp add_profile(%{class: "field", profile: profile} = dsv) do
+    dsv |> with_profile_attrs(profile)
+  end
+  defp add_profile(dsv), do: dsv
 
   defp field_structure_json(
          %{class: "field", data_structure: %{df_content: df_content, profile: profile}} = dsv
@@ -178,16 +185,4 @@ defmodule TdDdWeb.DataStructureVersionView do
   end
 
   defp with_profile_attrs(dsv, _), do: dsv
-
-  # defp lift_data(%{"data" => data} = attrs) when is_map(data) do
-  #   case Map.get(data, :data) do
-  #     nil ->
-  #       attrs
-
-  #     nested ->
-  #       Map.put(attrs, "data", nested)
-  #   end
-  # end
-
-  # defp lift_data(attrs), do: attrs
 end
