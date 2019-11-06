@@ -201,7 +201,7 @@ defmodule TdDq.Rules.Rule do
     defp with_result(result_map, rule_results) do
       result =
         rule_results
-        |> Enum.min(fn rule_result -> rule_result.result end)
+        |> Enum.min_by(fn rule_result -> rule_result.result end)
 
       result_map
       |> Map.put(:result, Map.get(result, :result))
