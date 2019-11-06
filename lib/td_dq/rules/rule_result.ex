@@ -11,7 +11,7 @@ defmodule TdDq.Rules.RuleResult do
   schema "rule_results" do
     field(:implementation_key, :string)
     field(:date, :utc_datetime)
-    field(:result, :integer)
+    field(:result, :decimal, precision: 5, scale: 2)
     field(:parent_domains, :string, default: "")
     field(:errors, :integer)
     field(:records, :integer)
@@ -25,6 +25,7 @@ defmodule TdDq.Rules.RuleResult do
     rule_result
     |> cast(attrs, [:implementation_key, :date, :parent_domains, :result, :errors, :records])
     |> validate_required([:implementation_key, :date, :result])
+    |> validate_number(:result, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
   end
 
   defp format_date(%{"date" => date} = attrs) do

@@ -386,7 +386,7 @@ defmodule TdDq.RulesTest do
       impl_key_1 = "impl_key_1"
       impl_key_2 = "impl_key_2"
       goal = 20
-      expected_result = 10
+      expected_result = 10 |> Decimal.round(2)
       expected_message = "quality_result.under_minimum"
       rule = insert(:rule, df_content: %{}, business_concept_id: nil, goal: goal)
       rule_impl_1 = insert(:rule_implementation, implementation_key: impl_key_1, rule: rule)
@@ -396,14 +396,14 @@ defmodule TdDq.RulesTest do
       insert(
         :rule_result,
         implementation_key: rule_impl_1.implementation_key,
-        result: 10,
+        result: 10 |> Decimal.round(2),
         date: add_to_date_time(now, -1000)
       )
 
       insert(
         :rule_result,
         implementation_key: rule_impl_2.implementation_key,
-        result: 60,
+        result: 60 |> Decimal.round(2),
         date: now
       )
 
@@ -495,13 +495,21 @@ defmodule TdDq.RulesTest do
       rule_type = insert(:rule_type)
       rule = insert(:rule, rule_type: rule_type, active: true)
 
-      insert(:rule_implementation, implementation_key: "ri1", rule: rule, deleted_at: DateTime.utc_now())
+      insert(:rule_implementation,
+        implementation_key: "ri1",
+        rule: rule,
+        deleted_at: DateTime.utc_now()
+      )
+
       insert(:rule_implementation, implementation_key: "ri2", rule: rule)
       insert(:rule_implementation, implementation_key: "ri3", rule: rule)
 
-      results = Rules.list_rule_implementations(%{"rule_id" => rule.id}, [deleted: true])
+      results = Rules.list_rule_implementations(%{"rule_id" => rule.id}, deleted: true)
       assert length(results) == 1
-      assert Enum.any?(results, fn %{implementation_key: implementation_key} -> implementation_key == "ri1" end)
+
+      assert Enum.any?(results, fn %{implementation_key: implementation_key} ->
+               implementation_key == "ri1"
+             end)
     end
 
     test "get_rule_implementation!/1 returns the rule_implementation with given id" do
@@ -843,7 +851,7 @@ defmodule TdDq.RulesTest do
       insert(:rule_result, implementation_key: key, result: 80, date: add_to_date_time(now, -2000))
 
       assert %{result: result} = Rules.get_latest_rule_result(key)
-      assert result == rule_result.result
+      assert result == rule_result.result |> Decimal.round(2)
     end
 
     test "get_latest_rule_results/1 retrives last result of each rule implementation" do
@@ -854,7 +862,7 @@ defmodule TdDq.RulesTest do
       insert(
         :rule_result,
         implementation_key: rule_implementation.implementation_key,
-        result: 10,
+        result: 10 |> Decimal.round(2),
         date: add_to_date_time(now, -1000)
       )
 
@@ -862,7 +870,7 @@ defmodule TdDq.RulesTest do
         insert(
           :rule_result,
           implementation_key: rule_implementation.implementation_key,
-          result: 60,
+          result: 60 |> Decimal.round(2),
           date: now
         )
 
@@ -870,7 +878,7 @@ defmodule TdDq.RulesTest do
       assert results == [last_rule_result]
     end
 
-    test "list_rule_results/1 retrieves all rule results linked to a rule with existing bc id having a higher result than the goal" do
+    test "list_rule_results/1 retrieves rule results linked to a rule with existing bc id having a lower result than the minimum or more errors than goal errors" do
       rule_type = insert(:rule_type)
 
       rule_1 =
@@ -900,7 +908,17 @@ defmodule TdDq.RulesTest do
           goal: 85
         )
 
-      impl_keys = ["key001", "key002", "key003"]
+      rule_4 =
+        insert(:rule,
+        rule_type: rule_type,
+        name: "Rule 4",
+        business_concept_id: "bc_id_1",
+        minimum: 20,
+        goal: 10,
+        result_type: "errors_number"
+      )
+
+      impl_keys = ["key001", "key002", "key003", "key004"]
 
       rule_impl_1 =
         insert(:rule_implementation, rule: rule_1, implementation_key: Enum.at(impl_keys, 0))
@@ -911,42 +929,52 @@ defmodule TdDq.RulesTest do
       rule_impl_3 =
         insert(:rule_implementation, rule: rule_3, implementation_key: Enum.at(impl_keys, 2))
 
+      rule_impl_4 =
+        insert(:rule_implementation, rule: rule_4, implementation_key: Enum.at(impl_keys, 3))
+
       rule_result =
         insert(
           :rule_result,
           implementation_key: rule_impl_1.implementation_key,
-          result: 55
+          result: 55 |> Decimal.round(2)
         )
 
       rule_result_1 =
         insert(
           :rule_result,
           implementation_key: rule_impl_1.implementation_key,
-          result: 92
+          result: 92 |> Decimal.round(2)
         )
 
       rule_result_2 =
         insert(
           :rule_result,
           implementation_key: rule_impl_2.implementation_key,
-          result: 75
+          result: 75 |> Decimal.round(2)
         )
 
       rule_result_3 =
         insert(
           :rule_result,
           implementation_key: rule_impl_3.implementation_key,
-          result: 75
+          result: 75 |> Decimal.round(2)
         )
 
       rule_result_4 = insert(:rule_result)
+
+      rule_result_5 = insert(
+        :rule_result,
+        implementation_key: rule_impl_4.implementation_key,
+        errors: 30
+      )
 
       assert Rules.list_rule_results([
                rule_result.id,
                rule_result_1.id,
                rule_result_2.id,
                rule_result_3.id,
-               rule_result_4.id
+               rule_result_4.id,
+               rule_result_5.id
              ]) == [
                %{
                  id: rule_result.id,
@@ -955,6 +983,14 @@ defmodule TdDq.RulesTest do
                  result: rule_result.result,
                  rule_id: rule_1.id,
                  inserted_at: rule_result.inserted_at
+               },
+               %{
+                 id: rule_result_5.id,
+                 date: rule_result_5.date,
+                 implementation_key: rule_result_5.implementation_key,
+                 result: rule_result_5.result |> Decimal.round(2),
+                 rule_id: rule_4.id,
+                 inserted_at: rule_result_5.inserted_at
                }
              ]
     end

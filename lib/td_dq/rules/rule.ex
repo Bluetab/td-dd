@@ -189,31 +189,24 @@ defmodule TdDq.Rules.Rule do
     end
 
     defp get_execution_result_info(
-           %Rule{minimum: minimum, goal: goal, result_type: result_type} = rule,
+           %Rule{minimum: minimum, goal: goal, result_type: result_type},
            rule_results
          ) do
       Map.new()
-      |> with_result(rule_results, rule)
+      |> with_result(rule_results)
       |> with_last_execution_at(rule_results)
       |> with_result_text(minimum, goal, result_type)
     end
 
-    defp with_result(result_map, rule_results, %Rule{result_type: "percentage"}) do
+    defp with_result(result_map, rule_results) do
       result =
         rule_results
-        |> Enum.map(& &1.result)
-        |> Enum.min()
+        |> Enum.min_by(fn rule_result -> rule_result.result end)
 
-      Map.put(result_map, :result, result)
-    end
-
-    defp with_result(result_map, rule_results, %Rule{result_type: "errors_number"}) do
-      result =
-        rule_results
-        |> Enum.map(& &1.result)
-        |> Enum.max()
-
-      Map.put(result_map, :result, result)
+      result_map
+      |> Map.put(:result, Map.get(result, :result))
+      |> Map.put(:errors, Map.get(result, :errors))
+      |> Map.put(:records, Map.get(result, :records))
     end
 
     defp with_last_execution_at(result_map, rule_results) do
@@ -225,36 +218,42 @@ defmodule TdDq.Rules.Rule do
       Map.put(result_map, :last_execution_at, last_execution_at)
     end
 
-    defp with_result_text(result_map, minimum, goal, "percentage") do
+    defp with_result_text(%{result: result} = result_map, minimum, goal, "percentage") do
+
+      result = Decimal.to_float(result)
       result_text =
         cond do
-          result_map.result < minimum ->
+          result < minimum ->
             "quality_result.under_minimum"
 
-          result_map.result >= minimum and result_map.result < goal ->
+          result >= minimum and result < goal ->
             "quality_result.under_goal"
 
-          result_map.result >= goal ->
+          result >= goal ->
             "quality_result.over_goal"
         end
 
       Map.put(result_map, :result_text, result_text)
     end
 
-    defp with_result_text(result_map, minimum, goal, "errors_number") do
+    defp with_result_text(%{errors: errors} = result_map, minimum, goal, "errors_number") do
       result_text =
         cond do
-          result_map.result > minimum ->
+          errors > minimum ->
             "quality_result.under_minimum"
 
-          result_map.result <= minimum and result_map.result > goal ->
+          errors <= minimum and errors > goal ->
             "quality_result.under_goal"
 
-          result_map.result <= goal ->
+          errors <= goal ->
             "quality_result.over_goal"
         end
 
       Map.put(result_map, :result_text, result_text)
+    end
+
+    defp with_result_text(result_map, _minimum, _goal, _type) do
+      result_map
     end
 
     defp get_domain_ids(%{business_concept_id: nil}), do: -1

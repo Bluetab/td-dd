@@ -14,12 +14,33 @@ defmodule TdDqWeb.RuleResultController do
 
   # TODO: tets this
   def upload(conn, params) do
-    do_upload(params)
-    send_resp(conn, :ok, "")
+    case do_upload(params) do
+      {:ok, _rule_results} ->
+        send_resp(conn, :ok, "")
+      {:error, errors} ->
+        send_resp(conn, :unprocessable_entity, JSON.encode!(%{errors: get_errors_detail(errors)}))
+    end
   rescue
     e in RuntimeError ->
       Logger.error("While uploading #{e.message}")
       send_resp(conn, :unprocessable_entity, JSON.encode!(%{error: e.message}))
+  end
+
+  defp get_errors_detail(errors) do
+    errors
+    |> Enum.map(fn error ->
+      %{changeset: changeset, row_number: row_number} = error
+      changeset_errors = Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
+        format_error(msg, opts)
+      end)
+      Map.put(changeset_errors, :row_number, row_number)
+    end)
+  end
+
+  defp format_error(msg, opts) do
+    Enum.reduce(opts, msg, fn {key, value}, acc ->
+      String.replace(acc, "%{#{key}}", to_string(value))
+    end)
   end
 
   defp do_upload(params) do
@@ -32,14 +53,18 @@ defmodule TdDqWeb.RuleResultController do
       |> Map.get("rule_results")
       |> rule_results_from_csv()
 
-    with {:ok, rule_results} <- upload_data(rule_results_data) do
+    resp = with {:ok, rule_results} <- upload_data(rule_results_data) do
       index_rule_results(rule_results_data)
       cache_rule_results(rule_results)
+      {:ok, rule_results}
+    else
+      response -> response
     end
 
     end_time = DateTime.utc_now()
 
     Logger.info("Metadata uploaded. Elapsed seconds: #{DateTime.diff(end_time, start_time)}")
+    resp
   end
 
   defp rule_results_from_csv(%{path: path}) do
@@ -47,6 +72,26 @@ defmodule TdDqWeb.RuleResultController do
     |> File.stream!()
     |> CSV.decode!(separator: ?;, headers: true)
     |> Enum.to_list()
+    |> Enum.map(fn rule_result ->
+      set_quality_data(rule_result)
+    end
+    )
+  end
+
+  defp set_quality_data(%{"records" => records, "errors" => errors}  = rule_result) do
+    Map.put(rule_result, "result", calculate_quality(String.to_integer(records), String.to_integer(errors)))
+  end
+
+  defp set_quality_data(rule_result) do
+    rule_result
+  end
+
+  defp calculate_quality(0, _errors) do
+    0
+  end
+
+  defp calculate_quality(records, errors) do
+    abs((records - errors) / records) * 100
   end
 
   defp upload_data(rule_results_data) do
@@ -69,9 +114,24 @@ defmodule TdDqWeb.RuleResultController do
   defp upload_in_transaction(rules_results) do
     Logger.info("Uploading rule results...")
 
+    {oks, errors} =
     rules_results
     |> Enum.map(&with_parent_domains/1)
-    |> Enum.map(&Rules.create_rule_result/1)
+    |> Enum.with_index(2)
+    |> Enum.map(fn {rule_result, index} ->
+      {result_code, changeset} = Rules.create_rule_result(rule_result)
+      %{result_code: result_code, changeset: changeset, row_number: index}
+    end)
+    |> Enum.split_with(fn %{result_code: result_code} -> result_code == :ok end)
+
+    case errors do
+      [] ->
+        Enum.map(oks, &(Map.get(&1, :changeset)))
+
+      _ ->
+        Repo.rollback(errors)
+        {:error, errors}
+    end
   end
 
   defp with_parent_domains(data) do
@@ -105,7 +165,6 @@ defmodule TdDqWeb.RuleResultController do
   defp cache_rule_results(rule_results) do
     result_ids =
       rule_results
-      |> Enum.map(&elem(&1, 1))
       |> Enum.map(&Map.get(&1, :id))
 
     failed_ids =
