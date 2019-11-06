@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-606] Use new hypermedia implementation
+
 ## [3.9.0] 2019-10-28
 
 ### Added
