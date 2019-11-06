@@ -22,7 +22,7 @@ defmodule TdDdWeb do
       use Phoenix.Controller, namespace: TdDdWeb, log: log
 
       import Plug.Conn
-      import Plug.TdHypermedia
+      import TdHypermedia
       import TdDdWeb.Gettext
 
       alias TdDdWeb.ErrorView
