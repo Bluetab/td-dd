@@ -510,6 +510,23 @@ defmodule TdDqWeb.RuleControllerTest do
       validate_resp_schema(conn, schema, "RulesExecuteResponse")
       assert json_response(conn, 200)["data"] == [rule.id]
     end
+
+    @tag :admin_authenticated
+    test "execute rules as admin with rule_ids filter", %{
+      conn: conn,
+        rule: rule,
+        swagger_schema: schema
+    } do
+      rule_type = insert(:rule_type, name: "Rule Type 2")
+      other_rule = insert(:rule, rule_type: rule_type)
+      conn =
+          post(conn, Routes.rule_path(conn, :execute_rules), %{
+            "search_params" => %{"rule_ids" => [rule.id, other_rule.id]}
+          })
+
+        validate_resp_schema(conn, schema, "RulesExecuteResponse")
+        assert json_response(conn, 200)["data"] == [rule.id, other_rule.id]
+    end
   end
 
   defp create_acl_entry(user_id, bc_id, domain_id, domain_ids, role) do

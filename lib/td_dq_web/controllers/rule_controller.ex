@@ -408,8 +408,7 @@ defmodule TdDqWeb.RuleController do
   def execute_rules(conn, %{"search_params" => search_params}) do
     user = conn.assigns[:current_resource]
 
-    %{results: rules} = search_all_executable_rules(user, search_params)
-    rules_ids = rules |> Enum.map(&Map.get(&1, :id))
+    rules_ids = search_all_executable_rule_ids(user, search_params)
     event_ids = Enum.join(rules_ids, ",")
 
     event = %{
@@ -448,9 +447,14 @@ defmodule TdDqWeb.RuleController do
     end
   end
 
-  defp search_all_executable_rules(user, params) do
-    params
+  defp search_all_executable_rule_ids(_user, %{"rule_ids" => rule_ids}) do
+    rule_ids
+  end
+
+  defp search_all_executable_rule_ids(user, params) do
+    %{results: rules} = params
     |> Map.drop(["page", "size"])
     |> Search.search(user, 0, 10_000)
+    rules |> Enum.map(&Map.get(&1, :id))
   end
 end
