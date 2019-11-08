@@ -11,6 +11,7 @@
 
 - [TD-2164] Changed phoenix_swagger and ex_json_schema dependencies to fix swagger
 - [TD-1881] show implementations results whether deleted or not
+- [TD-2208] Rule ids can be sent as parameter in Rules execution endpoint
 
 ## [3.9.0] 2019-10-28
 
