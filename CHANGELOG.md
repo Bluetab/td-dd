@@ -1,10 +1,15 @@
 # Changelog
 
-## [3.9.0] 2019-10-28
+## [3.10.0] 2019-11-11
 
 ### Added
 
 - [TD-2186] Return profile info in data structure view
+
+## [3.9.0] 2019-10-28
+
+### Added
+
 - [TD-2144] Support ngram-search in structure name
 - [TD-2159] Mapping for data field type
 
