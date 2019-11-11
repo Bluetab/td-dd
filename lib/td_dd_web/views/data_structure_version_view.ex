@@ -51,7 +51,8 @@ defmodule TdDdWeb.DataStructureVersionView do
           :type,
           :version,
           :versions,
-          :profile
+          :profile,
+          :data_structure_lineage_id
         ])
     }
   end
@@ -66,6 +67,7 @@ defmodule TdDdWeb.DataStructureVersionView do
       :id,
       :confidential,
       :domain_id,
+      :domain,
       :external_id,
       :inserted_at,
       :updated_at,
