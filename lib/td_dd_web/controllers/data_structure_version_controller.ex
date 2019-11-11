@@ -6,6 +6,7 @@ defmodule TdDdWeb.DataStructureVersionController do
   import Canada, only: [can?: 2]
 
   alias Ecto
+  alias TdCache.TaxonomyCache
   alias TdDd.DataStructures
   alias TdDdWeb.SwaggerDefinitions
 
@@ -34,14 +35,36 @@ defmodule TdDdWeb.DataStructureVersionController do
 
   def show(conn, %{"data_structure_id" => data_structure_id, "id" => version}) do
     user = conn.assigns[:current_user]
-    dsv = get_data_structure_version(data_structure_id, version)
+
+    dsv =
+      data_structure_id
+      |> get_data_structure_version(version)
+      |> with_domain()
+
     render_with_permissions(conn, user, dsv)
   end
 
   def show(conn, %{"id" => data_structure_version_id}) do
     user = conn.assigns[:current_user]
-    dsv = get_data_structure_version(data_structure_version_id)
+
+    dsv =
+      data_structure_version_id
+      |> get_data_structure_version()
+      |> with_domain()
+
     render_with_permissions(conn, user, dsv)
+  end
+
+  defp with_domain(nil), do: nil
+
+  defp with_domain(%{data_structure: data_structure} = dsv) do
+    domain_name =
+      data_structure
+      |> Map.get(:domain_id)
+      |> TaxonomyCache.get_name()
+
+    data_structure = Map.put(data_structure, :domain, domain_name)
+    Map.put(dsv, :data_structure, data_structure)
   end
 
   defp render_with_permissions(conn, _user, nil) do
@@ -78,7 +101,8 @@ defmodule TdDdWeb.DataStructureVersionController do
     :system,
     :ancestry,
     :links,
-    :profile
+    :profile,
+    :data_structure_lineage_id
   ]
 
   defp get_data_structure_version(data_structure_version_id) do

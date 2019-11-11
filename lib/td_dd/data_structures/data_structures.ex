@@ -136,6 +136,7 @@ defmodule TdDd.DataStructures do
     |> enrich(options, :system, fn dsv ->
       dsv |> Repo.preload(data_structure: :system) |> Map.get(:data_structure) |> Map.get(:system)
     end)
+    |> enrich(options, :data_structure_lineage_id, fn dsv -> get_lineage_id(dsv) end)
     |> enrich(options, :profile, fn dsv -> get_profile(dsv) end)
     |> enrich(options, :ancestry, fn dsv -> get_ancestry(dsv) end)
     |> enrich(options, :path, fn dsv -> get_path(dsv) end)
@@ -441,6 +442,18 @@ defmodule TdDd.DataStructures do
     Repo.get_by(DataStructure, clauses)
   end
 
+  def get_lineage_id(%{system: %NotLoaded{}, data_structure: data_structure}) do
+    get_lineage_id(%{data_structure: data_structure})
+  end
+
+  def get_lineage_id(%{system: system, data_structure: data_structure}) do
+    StructureCache.get_external_id(system.external_id, data_structure.external_id)
+  end
+
+  def get_lineage_id(%{data_structure: data_structure}) do
+    StructureCache.get_external_id(data_structure.system.external_id, data_structure.external_id)
+  end
+
   def get_field_external_ids(%{data_fields: data_fields}) do
     data_fields
     |> Repo.preload(data_structure: :system)
@@ -448,10 +461,7 @@ defmodule TdDd.DataStructures do
       &Map.put(
         &1,
         :external_id,
-        StructureCache.get_external_id(
-          &1.data_structure.system.external_id,
-          &1.data_structure.external_id
-        )
+        get_lineage_id(&1)
       )
     )
   end

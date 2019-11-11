@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-2115] data_structure_lineage_id having external id of data lineage
+
 ## [3.10.0] 2019-11-11
 
 ### Added
