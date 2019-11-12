@@ -46,7 +46,7 @@ defmodule TdDd.Mixfile do
       {:postgrex, ">= 0.0.0"},
       {:gettext, "~> 0.11"},
       {:cabbage, only: [:test], git: "https://github.com/Bluetab/cabbage", tag: "v0.3.7-alpha"},
-      {:httpoison, "~> 1.0"},
+      {:httpoison, "~> 1.6.2"},
       {:distillery, "~> 2.0", runtime: false},
       {:credo, "~> 1.0.0", only: [:dev, :test], runtime: false},
       {:guardian, "~> 1.0"},
@@ -59,7 +59,7 @@ defmodule TdDd.Mixfile do
       {:elasticsearch,
        git: "https://github.com/Bluetab/elasticsearch-elixir.git",
        branch: "feature/bulk-index-action"},
-       {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "3.9.1"},
+      {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "3.9.1"},
       {:td_hypermedia, git: "https://github.com/Bluetab/td-hypermedia.git", tag: "3.6.1"},
       {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "3.5.0"}
     ]
