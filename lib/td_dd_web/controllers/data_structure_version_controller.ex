@@ -39,6 +39,7 @@ defmodule TdDdWeb.DataStructureVersionController do
     dsv =
       data_structure_id
       |> get_data_structure_version(version)
+      |> filter(user, :view_data_structures_profile)
       |> with_domain()
 
     render_with_permissions(conn, user, dsv)
@@ -50,9 +51,22 @@ defmodule TdDdWeb.DataStructureVersionController do
     dsv =
       data_structure_version_id
       |> get_data_structure_version()
+      |> filter(user, :view_data_structures_profile)
       |> with_domain()
 
     render_with_permissions(conn, user, dsv)
+  end
+
+  defp filter(nil, _user, _permission), do: nil
+
+  defp filter(%{data_structure: data_structure} = dsv, user, :view_data_structures_profile) do
+    case can?(user, view_data_structures_profile(data_structure)) do
+      true ->
+        dsv
+
+      false ->
+        Map.delete(dsv, :profile)
+    end
   end
 
   defp with_domain(nil), do: nil
