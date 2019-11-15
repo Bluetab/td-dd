@@ -107,17 +107,17 @@ defmodule TdDd.DataStructures do
     |> enrich(options)
   end
 
-  defp enrich(nil = _target, _opts), do: nil
+  def enrich(nil = _target, _opts), do: nil
 
-  defp enrich(target, nil = _opts), do: target
+  def enrich(target, nil = _opts), do: target
 
-  defp enrich(%DataStructure{} = ds, options) do
+  def enrich(%DataStructure{} = ds, options) do
     ds
     |> enrich(options, :versions, fn ds -> Repo.preload(ds, :versions) end)
     |> enrich(options, :latest, fn ds -> get_latest_version(ds) end)
   end
 
-  defp enrich(%DataStructureVersion{} = dsv, options) do
+  def enrich(%DataStructureVersion{} = dsv, options) do
     deleted = not is_nil(Map.get(dsv, :deleted_at))
 
     dsv
@@ -143,7 +143,7 @@ defmodule TdDd.DataStructures do
     |> enrich(options, :links, fn %{data_structure_id: id} -> get_structure_links(id) end)
   end
 
-  defp enrich(%{} = target, options, key, fun) do
+  def enrich(%{} = target, options, key, fun) do
     target_key = get_target_key(key)
 
     case Enum.member?(options, key) do
