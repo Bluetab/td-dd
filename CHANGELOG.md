@@ -6,6 +6,10 @@
 
 - [TD-2115] data_structure_lineage_id having external id of data lineage
 
+### Changed
+
+- [TD-2250] filter profiling whe user has not permission `view_data_structures_profile`
+
 ## [3.10.0] 2019-11-11
 
 ### Added
