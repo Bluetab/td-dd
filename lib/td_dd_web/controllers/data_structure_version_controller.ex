@@ -8,6 +8,8 @@ defmodule TdDdWeb.DataStructureVersionController do
   alias Ecto
   alias TdCache.TaxonomyCache
   alias TdDd.DataStructures
+  alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureVersion
   alias TdDdWeb.SwaggerDefinitions
 
   require Logger
@@ -51,25 +53,40 @@ defmodule TdDdWeb.DataStructureVersionController do
   def show(conn, %{"data_structure_id" => data_structure_id, "id" => version}) do
     user = conn.assigns[:current_user]
 
-    dsv = get_data_structure_version(data_structure_id, version)
-    options = filter(user, dsv)
-    dsv = DataStructures.enrich(dsv, options)
-    render_with_permissions(conn, user, with_domain(dsv))
+    with %DataStructure{} = data_structure <-
+           DataStructures.get_data_structure!(data_structure_id) do
+      options = filter(user, data_structure)
+
+      dsv =
+        data_structure_id
+        |> get_data_structure_version(version, options)
+        |> with_domain()
+
+      render_with_permissions(conn, user, dsv)
+    else
+      %Ecto.NoResultsError{} -> render_error(conn, :not_found)
+    end
   end
 
   def show(conn, %{"id" => data_structure_version_id}) do
     user = conn.assigns[:current_user]
 
-    dsv = get_data_structure_version(data_structure_version_id)
-    options = filter(user, dsv)
-    dsv = DataStructures.enrich(dsv, options)
+    with %DataStructureVersion{data_structure: data_structure} <-
+           DataStructures.get_data_structure_version!(data_structure_version_id) do
+      options = filter(user, data_structure)
 
-    render_with_permissions(conn, user, with_domain(dsv))
+      dsv =
+        data_structure_version_id
+        |> get_data_structure_version(options)
+        |> with_domain()
+
+      render_with_permissions(conn, user, dsv)
+    else
+      %Ecto.NoResultsError{} -> render_error(conn, :not_found)
+    end
   end
 
-  defp filter(_user, nil), do: nil
-
-  defp filter(user, %{data_structure: data_structure}) do
+  defp filter(user, data_structure) do
     Enum.filter(@enrich_attrs, &filter(user, data_structure, &1))
   end
 
@@ -114,15 +131,15 @@ defmodule TdDdWeb.DataStructureVersionController do
     end
   end
 
-  defp get_data_structure_version(data_structure_version_id) do
-    DataStructures.get_data_structure_version!(data_structure_version_id, nil)
+  defp get_data_structure_version(data_structure_version_id, options) do
+    DataStructures.get_data_structure_version!(data_structure_version_id, options)
   end
 
-  defp get_data_structure_version(data_structure_id, "latest") do
-    DataStructures.get_latest_version(data_structure_id, nil)
+  defp get_data_structure_version(data_structure_id, "latest", options) do
+    DataStructures.get_latest_version(data_structure_id, options)
   end
 
-  defp get_data_structure_version(data_structure_id, version) do
-    DataStructures.get_data_structure_version!(data_structure_id, version, nil)
+  defp get_data_structure_version(data_structure_id, version, options) do
+    DataStructures.get_data_structure_version!(data_structure_id, version, options)
   end
 end

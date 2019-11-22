@@ -86,6 +86,26 @@ defmodule TdDd.DataStructures do
     |> Repo.preload(:system)
   end
 
+  @doc """
+  Gets a single data_structure_version.
+
+  Raises `Ecto.NoResultsError` if the Data structure version does not exist.
+
+  ## Examples
+
+      iex> get_data_structure!(123)
+      %DataStructureVersion{}
+
+      iex> get_data_structure!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_data_structure_version!(id) do
+    DataStructureVersion
+    |> Repo.get!(id)
+    |> Repo.preload(:data_structure)
+  end
+
   def get_data_structures(ids, preload \\ :system) do
     from(ds in DataStructure, where: ds.id in ^ids, preload: ^preload, select: ds)
     |> Repo.all()
@@ -107,17 +127,17 @@ defmodule TdDd.DataStructures do
     |> enrich(options)
   end
 
-  def enrich(nil = _target, _opts), do: nil
+  defp enrich(nil = _target, _opts), do: nil
 
-  def enrich(target, nil = _opts), do: target
+  defp enrich(target, nil = _opts), do: target
 
-  def enrich(%DataStructure{} = ds, options) do
+  defp enrich(%DataStructure{} = ds, options) do
     ds
     |> enrich(options, :versions, fn ds -> Repo.preload(ds, :versions) end)
     |> enrich(options, :latest, fn ds -> get_latest_version(ds) end)
   end
 
-  def enrich(%DataStructureVersion{} = dsv, options) do
+  defp enrich(%DataStructureVersion{} = dsv, options) do
     deleted = not is_nil(Map.get(dsv, :deleted_at))
 
     dsv
@@ -143,7 +163,7 @@ defmodule TdDd.DataStructures do
     |> enrich(options, :links, fn %{data_structure_id: id} -> get_structure_links(id) end)
   end
 
-  def enrich(%{} = target, options, key, fun) do
+  defp enrich(%{} = target, options, key, fun) do
     target_key = get_target_key(key)
 
     case Enum.member?(options, key) do
