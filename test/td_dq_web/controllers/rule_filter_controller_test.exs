@@ -16,7 +16,7 @@ defmodule TdDqWeb.RuleFilterControllerTest do
   describe "index" do
     @tag :admin_authenticated
     test "search filters should return at least the informed filters", %{conn: conn} do
-      filters = %{"rule_type" => ["TYPE1", "TYPE2"], "active.raw" => [true]}
+      filters = %{"active.raw" => [true]}
 
       conn =
         post(
@@ -29,7 +29,6 @@ defmodule TdDqWeb.RuleFilterControllerTest do
         )
 
       assert json_response(conn, 200)["data"] == %{
-               "rule_type.name.raw" => ["TYPE1", "TYPE2"],
                "active.raw" => ["true"]
              }
     end

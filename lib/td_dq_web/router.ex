@@ -31,7 +31,6 @@ defmodule TdDqWeb.Router do
 
     resources "/rules", RuleController, except: [:new, :edit] do
       post("/rule_implementations", RuleImplementationController, :search_rule_implementations)
-      get("/detail", RuleController, :get_rule_detail)
     end
 
     post("/rules/execute", RuleController, :execute_rules)
@@ -42,7 +41,6 @@ defmodule TdDqWeb.Router do
     post("/rule_filters/search", RuleFilterController, :search)
     resources("/rule_implementations", RuleImplementationController, except: [:new, :edit])
     post("/rule_implementations/search", RuleImplementationController, :search_rules_implementations)
-    resources("/rule_types", RuleTypeController, except: [:new, :edit])
   end
 
   def swagger_info do

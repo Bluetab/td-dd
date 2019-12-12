@@ -83,58 +83,9 @@ defmodule TdDqWeb.RuleControllerTest do
 
   @user_name "Im not an admin"
 
-  @list_cache [
-    %{
-      resource_id: 1,
-      relation_type: "business_concept_to_field",
-      context: %{
-        "system" => "system_1",
-        "structure" => "structure_1",
-        "structure_id" => "1",
-        "group" => "group_1",
-        "field" => "field_1"
-      },
-      resource_type: "data_field"
-    },
-    %{
-      resource_id: 2,
-      relation_type: "business_concept_to_field",
-      context: %{
-        "system" => "system_2",
-        "structure" => "structure_2",
-        "structure_id" => "2",
-        "group" => "group_2",
-        "field" => "field_2"
-      },
-      resource_type: "data_field"
-    },
-    %{
-      resource_id: 3,
-      relation_type: "business_concept_to_field",
-      context: %{
-        "system" => "system_3",
-        "structure" => "structure_3",
-        "structure_id" => "3",
-        "group" => "group_3",
-        "field" => "field_3"
-      },
-      resource_type: "data_field"
-    }
-  ]
-
   def fixture(:rule) do
-    rule_type = insert(:rule_type)
-
-    creation_attrs =
-      @create_fixture_attrs
-      |> Map.put(:rule_type_id, rule_type.id)
-
-    {:ok, rule} = Rules.create_rule(rule_type, creation_attrs)
+    {:ok, rule} = Rules.create_rule(@create_fixture_attrs)
     rule
-  end
-
-  defp cache_fixture(resources_list) do
-    resources_list |> Enum.map(&MockRelationCache.put_relation(&1))
   end
 
   setup %{conn: conn} do
@@ -155,7 +106,6 @@ defmodule TdDqWeb.RuleControllerTest do
       user: %{id: user_id},
       swagger_schema: schema
     } do
-      rule_type = insert(:rule_type)
       business_concept_id_permission = "1"
       domain_id_with_permission = 1
 
@@ -166,8 +116,6 @@ defmodule TdDqWeb.RuleControllerTest do
         minimum: 42,
         name: "some name 1",
         updated_by: Integer.mod(:binary.decode_unsigned("app-admin"), 100_000),
-        type_params: %{},
-        rule_type_id: rule_type.id
       }
 
       creation_attrs_2 = %{
@@ -177,12 +125,10 @@ defmodule TdDqWeb.RuleControllerTest do
         minimum: 42,
         name: "some name 2",
         updated_by: Integer.mod(:binary.decode_unsigned("app-admin"), 100_000),
-        type_params: %{},
-        rule_type_id: rule_type.id
       }
 
-      {:ok, rule} = Rules.create_rule(rule_type, creation_attrs_1)
-      Rules.create_rule(rule_type, creation_attrs_2)
+      {:ok, rule} = Rules.create_rule(creation_attrs_1)
+      Rules.create_rule(creation_attrs_2)
 
       create_acl_entry(
         user_id,
@@ -234,11 +180,9 @@ defmodule TdDqWeb.RuleControllerTest do
   describe "create rule" do
     @tag :admin_authenticated
     test "renders rule when data is valid", %{conn: conn, swagger_schema: schema} do
-      rule_type = insert(:rule_type)
 
       creation_attrs =
         @create_fixture_attrs
-        |> Map.put("rule_type_id", rule_type.id)
 
       conn = post(conn, Routes.rule_path(conn, :create), rule: creation_attrs)
       validate_resp_schema(conn, schema, "RuleResponse")
@@ -257,9 +201,7 @@ defmodule TdDqWeb.RuleControllerTest do
                "name" => "some name",
                "active" => false,
                "version" => 1,
-               "updated_by" => @create_fixture_attrs.updated_by,
-               "rule_type_id" => rule_type.id,
-               "type_params" => %{}
+               "updated_by" => @create_fixture_attrs.updated_by
              }
     end
 
@@ -268,13 +210,7 @@ defmodule TdDqWeb.RuleControllerTest do
       conn: conn,
       swagger_schema: schema
     } do
-      rule_type = insert(:rule_type)
-
-      creation_attrs =
-        @create_fixture_attrs_no_bc
-        |> Map.put("rule_type_id", rule_type.id)
-
-      conn = post(conn, Routes.rule_path(conn, :create), rule: creation_attrs)
+      conn = post(conn, Routes.rule_path(conn, :create), rule: @create_fixture_attrs_no_bc)
       validate_resp_schema(conn, schema, "RuleResponse")
       assert %{"id" => id} = json_response(conn, 201)["data"]
       conn = recycle_and_put_headers(conn)
@@ -291,9 +227,7 @@ defmodule TdDqWeb.RuleControllerTest do
                "name" => "some name",
                "active" => false,
                "version" => 1,
-               "updated_by" => @create_fixture_attrs.updated_by,
-               "rule_type_id" => rule_type.id,
-               "type_params" => %{}
+               "updated_by" => @create_fixture_attrs.updated_by
              }
     end
 
@@ -308,12 +242,10 @@ defmodule TdDqWeb.RuleControllerTest do
     test "renders errors when rule result type is numeric and goal is higher than minimum", %{
       conn: conn
     } do
-      rule_type = insert(:rule_type)
-
       creation_attrs =
         Map.merge(
           @create_fixture_attrs_no_bc,
-          %{rule_type_id: rule_type.id, result_type: "errors_number", minimum: 5, goal: 10}
+          %{result_type: "errors_number", minimum: 5, goal: 10}
         )
 
       conn = post(conn, Routes.rule_path(conn, :create), rule: creation_attrs)
@@ -330,12 +262,10 @@ defmodule TdDqWeb.RuleControllerTest do
     test "renders errors when rule result type is percentage and goal is lower than minimum", %{
       conn: conn
     } do
-      rule_type = insert(:rule_type)
-
       creation_attrs =
         Map.merge(
           @create_fixture_attrs_no_bc,
-          %{rule_type_id: rule_type.id, result_type: "percentage", minimum: 50, goal: 10}
+          %{result_type: "percentage", minimum: 50, goal: 10}
         )
 
       conn = post(conn, Routes.rule_path(conn, :create), rule: creation_attrs)
@@ -346,64 +276,6 @@ defmodule TdDqWeb.RuleControllerTest do
                  "name" => "rule.error.goal.must.be.greater.than.or.equal.to.minimum"
                }
              ]
-    end
-  end
-
-  describe "get_rule_detail" do
-    @tag authenticated_no_admin_user: @user_name
-    test "renders rule when data is valid", %{
-      conn: conn,
-      swagger_schema: schema,
-      user: %{id: user_id}
-    } do
-      cache_fixture(@list_cache)
-
-      rule_type =
-        insert(
-          :rule_type,
-          params: %{"system_params" => [%{"name" => "table", "type" => "string"}]}
-        )
-
-      business_concept_id_permission = "1"
-      domain_id_with_permission = "1"
-
-      create_acl_entry(
-        user_id,
-        business_concept_id_permission,
-        domain_id_with_permission,
-        [domain_id_with_permission],
-        "create"
-      )
-
-      creation_attrs =
-        @create_fixture_attrs
-        |> Map.put("rule_type_id", rule_type.id)
-        |> Map.put("business_concept_id", business_concept_id_permission)
-
-      conn = post(conn, Routes.rule_path(conn, :create), rule: creation_attrs)
-      validate_resp_schema(conn, schema, "RuleResponse")
-
-      assert %{"id" => id} = json_response(conn, 201)["data"]
-      conn = recycle_and_put_headers(conn)
-
-      conn =
-        get(
-          conn,
-          Routes.rule_rule_path(conn, :get_rule_detail, id)
-        )
-
-      validate_resp_schema(conn, schema, "RuleDetailResponse")
-      %{"system_values" => system_values} = json_response(conn, 200)["data"]
-
-      system_params_in_response = system_values |> Map.get("system", [])
-
-      system_params_in_resource_list =
-        @list_cache |> Enum.map(&(&1 |> Map.get(:context) |> Map.get("system")))
-
-      assert system_params_in_response
-             |> Enum.all?(fn %{"name" => name} ->
-               Enum.member?(system_params_in_resource_list, name)
-             end)
     end
   end
 
@@ -434,10 +306,8 @@ defmodule TdDqWeb.RuleControllerTest do
                "name" => "some updated name",
                "active" => false,
                "version" => 1,
-               "updated_by" => @create_fixture_attrs.updated_by,
-               "rule_type_id" => rule.rule_type_id,
-               "type_params" => %{}
-             }
+               "updated_by" => @create_fixture_attrs.updated_by
+      }
     end
 
     @tag :admin_authenticated
@@ -517,8 +387,7 @@ defmodule TdDqWeb.RuleControllerTest do
         rule: rule,
         swagger_schema: schema
     } do
-      rule_type = insert(:rule_type, name: "Rule Type 2")
-      other_rule = insert(:rule, rule_type: rule_type)
+      other_rule = insert(:rule)
       conn =
           post(conn, Routes.rule_path(conn, :execute_rules), %{
             "search_params" => %{"rule_ids" => [rule.id, other_rule.id]}

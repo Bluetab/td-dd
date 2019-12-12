@@ -68,13 +68,10 @@ defmodule TdDqWeb.RuleView do
       updated_by: rule.updated_by,
       inserted_at: rule.inserted_at,
       updated_at: rule.updated_at,
-      rule_type_id: rule.rule_type_id,
-      type_params: Map.get(rule, :type_params),
       execution_result_info: Map.get(rule, :execution_result_info),
       result_type: Map.get(rule, :result_type)
     }
     |> add_current_version(rule)
-    |> add_rule_type(rule)
     |> add_system_values(rule)
     |> add_dynamic_content(rule)
   end
@@ -100,24 +97,6 @@ defmodule TdDqWeb.RuleView do
       value -> rule_mapping |> Map.put(:system_values, value)
     end
   end
-
-  defp add_rule_type(rule_mapping, %{rule_type: %{id: _} = rule_type}) do
-    rule_type_mapping = Map.take(rule_type, [:id, :name, :params])
-    Map.put(rule_mapping, :rule_type, rule_type_mapping)
-  end
-
-  defp add_rule_type(rule_mapping, %{rule_type: rule_type}) do
-    case Ecto.assoc_loaded?(rule_type) do
-      true ->
-        rule_type_mapping = Map.take(rule_type, [:id, :name, :params])
-        Map.put(rule_mapping, :rule_type, rule_type_mapping)
-
-      _ ->
-        rule_mapping
-    end
-  end
-
-  defp add_rule_type(rule_mapping, _), do: rule_mapping
 
   defp add_dynamic_content(json, rule) do
     %{

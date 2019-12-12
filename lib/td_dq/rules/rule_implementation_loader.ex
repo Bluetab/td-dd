@@ -10,8 +10,6 @@ defmodule TdDq.Rules.RuleImplementation.Loader do
   alias TdCache.Redix
   alias TdDq.Repo
   alias TdDq.Rules
-  alias TdDq.Rules.RuleImplementation
-  alias TdDq.Rules.RuleType
 
   require Logger
 
@@ -46,8 +44,14 @@ defmodule TdDq.Rules.RuleImplementation.Loader do
     if Redix.exists?(@rule_implementation_structures_migration_key) == false do
       structure_ids = get_rule_implementations_structure_ids()
       Enum.each(structure_ids, &Rules.add_rule_implementation_structure_link/1)
-      Redix.command!(["SET", @rule_implementation_structures_migration_key, "#{DateTime.utc_now()}"])
+
+      Redix.command!([
+        "SET",
+        @rule_implementation_structures_migration_key,
+        "#{DateTime.utc_now()}"
+      ])
     end
+
     {:noreply, state}
   end
 
@@ -60,18 +64,19 @@ defmodule TdDq.Rules.RuleImplementation.Loader do
 
   defp get_rule_implementations_structure_ids do
     rule_types =
-      RuleType
-      |> select([rt], %{id: rt.id, params: rt.params})
-      |> Repo.all()
-      |> Enum.filter(&of_type_structure/1)
-
+      Repo.all(
+        from(rt in "rule_types",
+          select: %{id: rt.id, params: rt.params}
+        )
+      )
+    rule_types = Enum.filter(rule_types, &of_type_structure/1)
     rule_types_ids = Enum.map(rule_types, &Map.get(&1, :id))
 
-    RuleImplementation
+    query = from(ri in "rule_implementations")
+
+    query
     |> join(:inner, [ri, r], r in "rules", on: r.id == ri.rule_id)
     |> join(:inner, [_, r, rt], rt in "rule_types", on: rt.id == r.rule_type_id)
-    |> where([ri, _, _], is_nil(ri.deleted_at))
-    |> where([_, r, _], is_nil(r.deleted_at))
     |> where([_, _, rt], rt.id in ^rule_types_ids)
     |> select([ri, _, rt], %{
       id: ri.id,

@@ -1,6 +1,6 @@
 defmodule TdDq.Rules.RuleRemover do
   @moduledoc """
-  This Module will be used to perform a soft removal of those rules which 
+  This Module will be used to perform a soft removal of those rules which
   business concept has been deleted or deprecated
   """
   use GenServer

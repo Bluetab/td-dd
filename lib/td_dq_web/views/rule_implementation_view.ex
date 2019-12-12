@@ -1,5 +1,7 @@
 defmodule TdDqWeb.RuleImplementationView do
   use TdDqWeb, :view
+  alias TdDqWeb.RuleImplementation.ConditionView
+  alias TdDqWeb.RuleImplementation.DatasetView
   alias TdDqWeb.RuleImplementationView
 
   def render("index.json", %{rule_implementations: rule_implementations}) do
@@ -15,8 +17,9 @@ defmodule TdDqWeb.RuleImplementationView do
       id: rule_implementation.id,
       rule_id: rule_implementation.rule_id,
       implementation_key: rule_implementation.implementation_key,
-      system: rule_implementation.system,
-      system_params: rule_implementation.system_params,
+      dataset: render_many(rule_implementation.dataset, DatasetView, "dataset_row.json"),
+      population: render_many(rule_implementation.population, ConditionView, "condition_row.json"),
+      validations: render_many(rule_implementation.validations, ConditionView, "condition_row.json"),
       deleted_at: rule_implementation.deleted_at
     }
     |> add_rule(rule_implementation)
@@ -29,30 +32,17 @@ defmodule TdDqWeb.RuleImplementationView do
       true ->
         rule = rule_implementation.rule
 
-        rule_mapping =
-          %{
-            name: rule.name,
-            type_params: rule.type_params,
-            minimum: rule.minimum,
-            goal: rule.goal,
-            result_type: rule.result_type
-          }
-          |> add_rule_type(rule)
+        rule_mapping = %{
+          name: rule.name,
+          minimum: rule.minimum,
+          goal: rule.goal,
+          result_type: rule.result_type
+        }
 
         Map.put(rule_implementation_mapping, :rule, rule_mapping)
 
       _ ->
         rule_implementation_mapping
-    end
-  end
-
-  defp add_rule_type(rule_mapping, rule) do
-    case Ecto.assoc_loaded?(rule.rule_type) do
-      true ->
-        Map.put(rule_mapping, :rule_type, %{name: rule.rule_type.name})
-
-      _ ->
-        rule_mapping
     end
   end
 
@@ -63,7 +53,13 @@ defmodule TdDqWeb.RuleImplementationView do
           []
 
         last_rule_result ->
-          [%{result: last_rule_result.result, date: last_rule_result.date, errors: last_rule_result.errors}]
+          [
+            %{
+              result: last_rule_result.result,
+              date: last_rule_result.date,
+              errors: last_rule_result.errors
+            }
+          ]
       end
 
     rule_implementation_mapping
@@ -80,5 +76,66 @@ defmodule TdDqWeb.RuleImplementationView do
       [] -> rule_implementation_mapping
       _ -> Map.put(rule_implementation_mapping, :all_rule_results, all_rule_results_mappings)
     end
+  end
+end
+
+defmodule TdDqWeb.RuleImplementation.StructureView do
+  use TdDqWeb, :view
+
+  def render("structure.json", %{structure: structure}) do
+    %{
+      id: Map.get(structure, :id),
+      name: Map.get(structure, :name),
+      path: Map.get(structure, :path),
+      system: Map.get(structure, :system),
+      external_id: Map.get(structure, :external_id),
+      type: Map.get(structure, :type)
+    }
+  end
+end
+
+defmodule TdDqWeb.RuleImplementation.DatasetView do
+  use TdDqWeb, :view
+
+  alias TdDqWeb.RuleImplementation.StructureView
+
+  def render("dataset_row.json", %{dataset: %{structure: structure} = dataset_row}) do
+    case dataset_row.left do
+      nil -> %{
+        structure: render_one(structure, StructureView, "structure.json")
+      }
+      _ -> %{
+        structure: render_one(structure, StructureView, "structure.json"),
+        left: render_one(dataset_row.left, StructureView, "structure.json"),
+        right: render_one(dataset_row.right, StructureView, "structure.json")
+      }
+    end
+
+  end
+end
+
+defmodule TdDqWeb.RuleImplementation.ConditionView do
+  use TdDqWeb, :view
+
+  alias TdDqWeb.RuleImplementation.OperatorView
+  alias TdDqWeb.RuleImplementation.StructureView
+
+  def render("condition_row.json", %{condition: row}) do
+    %{
+      structure: render_one(row.structure, StructureView, "structure.json"),
+      operator: render_one(row.operator, OperatorView, "operator.json"),
+      value: row.value
+    }
+  end
+end
+
+defmodule TdDqWeb.RuleImplementation.OperatorView do
+  use TdDqWeb, :view
+
+  def render("operator.json", %{operator: operator}) do
+    %{
+      name: operator.name,
+      value_type: operator.value_type
+    }
   end
 end

@@ -6,7 +6,6 @@ defmodule TdDq.Rules.Rule do
 
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleImplementation
-  alias TdDq.Rules.RuleType
 
   @result_type %{
     percentage: "percentage",
@@ -23,9 +22,7 @@ defmodule TdDq.Rules.Rule do
     field(:name, :string)
     field(:version, :integer, default: 1)
     field(:updated_by, :integer)
-    field(:type_params, :map)
     field(:result_type, :string, default: @result_type.percentage)
-    belongs_to(:rule_type, RuleType)
 
     has_many(:rule_implementations, RuleImplementation)
 
@@ -48,8 +45,6 @@ defmodule TdDq.Rules.Rule do
       :minimum,
       :version,
       :updated_by,
-      :rule_type_id,
-      :type_params,
       :df_name,
       :df_content,
       :result_type
@@ -58,8 +53,6 @@ defmodule TdDq.Rules.Rule do
       :name,
       :goal,
       :minimum,
-      :rule_type_id,
-      :type_params,
       :result_type
     ])
     |> unique_constraint(
@@ -73,7 +66,6 @@ defmodule TdDq.Rules.Rule do
       message: "unique_constraint"
     )
     |> validate_goal
-    |> foreign_key_constraint(:rule_type_id)
   end
 
   def delete_changeset(%Rule{} = rule) do
@@ -139,12 +131,11 @@ defmodule TdDq.Rules.Rule do
     def routing(_), do: false
 
     @impl Elasticsearch.Document
-    def encode(%Rule{rule_type: rule_type} = rule) do
+    def encode(%Rule{} = rule) do
       template = TemplateCache.get_by_name!(rule.df_name) || %{content: []}
       updated_by = get_user(rule.updated_by)
       execution_result_info = get_execution_result_info(rule)
       confidential = confidential?(rule)
-      rule_type = Map.take(rule_type, [:id, :name, :params])
       bcv = get_business_concept_version(rule)
       domain_ids = get_domain_ids(rule)
       domain_parents = get_domain_parents(domain_ids)
@@ -161,10 +152,7 @@ defmodule TdDq.Rules.Rule do
         domain_ids: domain_ids,
         domain_parents: domain_parents,
         current_business_concept_version: bcv,
-        rule_type_id: rule.rule_type_id,
-        rule_type: rule_type,
         result_type: rule.result_type,
-        type_params: rule.type_params,
         version: rule.version,
         name: rule.name,
         active: rule.active,

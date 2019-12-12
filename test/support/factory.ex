@@ -4,7 +4,7 @@ defmodule TdDq.Factory do
 
   def rule_factory do
     %TdDq.Rules.Rule{
-      business_concept_id: "Rule Business Concept Id",
+      business_concept_id: "4",
       deleted_at: nil,
       description: %{"document" => "Rule Description"},
       goal: 30,
@@ -13,67 +13,7 @@ defmodule TdDq.Factory do
       active: false,
       version: 1,
       updated_by: 1,
-      rule_type: build(:rule_type),
-      type_params: %{},
       result_type: "percentage"
-    }
-  end
-
-  def rule_type_factory do
-    %TdDq.Rules.RuleType{
-      name: "Rule Type",
-      params: %{
-        "type_params" => [],
-        "system_params" => []
-      }
-    }
-  end
-
-  def structure_rule_type_factory do
-    %TdDq.Rules.RuleType{
-      name: "Rule Type",
-      params: %{
-        "type_params" => [],
-        "system_params" => [
-          %{"name" => "system_required", "type" => "boolean", "value" => false, "hidden" => true}
-        ]
-      }
-    }
-  end
-
-  def structure_rule_type_with_params_factory do
-    %TdDq.Rules.RuleType{
-      name: "Rule Type",
-      params: %{
-        "type_params" => [],
-        "system_params" => [
-          %{"name" => "system_required", "type" => "boolean", "value" => false, "hidden" => true},
-          %{
-            "name" => "field1",
-            "type" => "structure",
-            "options" => %{
-              "allowFreeText" => true,
-              "defaultFilters" => %{
-                "class.raw" => [
-                  "field"
-                ]
-              }
-            }
-          },
-          %{
-            "name" => "field2",
-            "type" => "structure",
-            "options" => %{
-              "allowFreeText" => true,
-              "defaultFilters" => %{
-                "class.raw" => [
-                  "field"
-                ]
-              }
-            }
-          }
-        ]
-      }
     }
   end
 
@@ -81,9 +21,25 @@ defmodule TdDq.Factory do
     %TdDq.Rules.RuleImplementation{
       rule: build(:rule),
       implementation_key: "implementation_key001",
-      system_params: %{},
-      system: "Rule Implementation System",
-      deleted_at: nil
+      deleted_at: nil,
+      dataset: [
+        %{structure: %{id: 14_080}},
+        %{structure: %{id: 3233}, left: %{id: 14_863}, right: %{id: 4028}}
+      ],
+      population: [
+        %{
+          value: [%{"raw" => 8}],
+          operator: %{name: "eq", value_type: "number"},
+          structure: %{id: 6311}
+        }
+      ],
+      validations: [
+        %{
+          value: [%{"id" => 80}],
+          operator: %{name: "eq", value_type: "field"},
+          structure: %{id: 800}
+        }
+      ]
     }
   end
 

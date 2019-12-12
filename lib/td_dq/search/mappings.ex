@@ -21,7 +21,6 @@ defmodule TdDq.Search.Mappings do
           name: %{type: "text", fields: @raw}
         }
       },
-      rule_type_id: %{type: "long"},
       version: %{type: "long"},
       name: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
       active: %{type: "boolean", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
@@ -48,12 +47,6 @@ defmodule TdDq.Search.Mappings do
       goal: %{type: "long"},
       minimum: %{type: "long"},
       df_name: %{type: "text", fields: %{raw: %{type: "keyword"}}},
-      rule_type: %{
-        properties: %{
-          id: %{type: "long"},
-          name: %{fields: %{raw: %{type: "keyword", normalizer: "sortable"}}, type: "text"}
-        }
-      },
       result_type: %{type: "text"},
       type_params: %{
         properties: %{
