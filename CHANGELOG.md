@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-2210] Cache parent id in structures' cache
+
 ## [3.11.0] 2019-11-25
 
 ### Added
