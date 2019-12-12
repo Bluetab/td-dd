@@ -8,6 +8,11 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
 
   @invalid_rule_id -1
 
+  @valid_dataset [
+    %{structure: %{id: 14_080}},
+    %{left: %{id: 14_863}, right: %{id: 4028}, structure: %{id: 3233}}
+  ]
+
   setup_all do
     start_supervised(IndexWorker)
     start_supervised(RuleLoader)
@@ -31,9 +36,8 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
       conn: conn,
       swagger_schema: schema
     } do
-      rule_type = insert(:rule_type)
-      rule1 = insert(:rule, rule_type: rule_type, business_concept_id: "xyz", active: true)
-      rule2 = insert(:rule, rule_type: rule_type)
+      rule1 = insert(:rule, business_concept_id: "xyz", active: true)
+      rule2 = insert(:rule)
       insert(:rule_implementation, implementation_key: "ri1", rule: rule1)
       insert(:rule_implementation, implementation_key: "ri2", rule: rule1)
       insert(:rule_implementation, implementation_key: "ri3", rule: rule1)
@@ -55,7 +59,24 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
     test "renders rule_implementation when data is valid", %{conn: conn, swagger_schema: schema} do
       rule = insert(:rule)
 
-      creation_attrs = Map.from_struct(build(:rule_implementation, rule_id: rule.id))
+      creation_attrs =
+        %{
+          implementation_key: "a1",
+          rule_id: rule.id,
+          dataset: @valid_dataset,
+          population: [],
+          validations: [
+            %{
+              operator: %{
+                name: "gt",
+                value_type: "timestamp"
+              },
+              structure: %{id: 12_554},
+              value: [%{raw: "2019-12-02 05:35:00"}]
+            }
+          ]
+        }
+        |> Map.Helpers.stringify_keys()
 
       conn =
         post(conn, Routes.rule_implementation_path(conn, :create),
@@ -71,9 +92,11 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
       validate_resp_schema(conn, schema, "RuleImplementationResponse")
       json_response = json_response(conn, 200)["data"]
 
-      assert creation_attrs[:rule_id] == json_response["rule_id"]
-      assert creation_attrs[:system_params] == json_response["system_params"]
-      assert creation_attrs[:system] == json_response["system"]
+      assert rule.id == json_response["rule_id"]
+      assert equals_condition_row(
+               Map.get(json_response, "validations"),
+               Map.get(creation_attrs, "validations")
+             )
     end
 
     @tag :admin_authenticated
@@ -82,7 +105,13 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
 
       creation_attrs =
         Map.from_struct(
-          build(:rule_implementation, rule_id: rule.id, implementation_key: nil, system: nil)
+          build(:rule_implementation,
+            rule_id: rule.id,
+            dataset: [
+              %{id: 14_080},
+              %{id: 3233, right: %{id: "a"}, left: %{id: 22}, join_type: "inner"}
+            ]
+          )
         )
 
       conn =
@@ -94,14 +123,25 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
     end
 
     @tag :admin_authenticated
-    test "renders created when rule type does not require system and it is not passed in rule implementation ",
-         %{conn: conn} do
-      rule_type = insert(:structure_rule_type)
-      rule = insert(:rule, rule_type: rule_type, active: true)
+    test "renders errors when validations is invalid", %{conn: conn} do
+      rule = insert(:rule)
 
       creation_attrs =
         Map.from_struct(
-          build(:rule_implementation, rule_id: rule.id, implementation_key: "", system: nil)
+          build(:rule_implementation,
+            rule_id: rule.id,
+            dataset: [
+              %{structure: %{id: 14_080}},
+              %{structure: %{id: 3233}, right: %{id: 1}, left: %{id: 22}, join_type: "inner"}
+            ],
+            validations: [
+              %{
+                structure: %{id: 2},
+                operator: %{name: "eq", value_type: "number"},
+                value: [%{raw: "4"}]
+              }
+            ]
+          )
         )
 
       conn =
@@ -109,33 +149,7 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
           rule_implementation: creation_attrs
         )
 
-      assert %{"id" => id} = json_response(conn, 201)["data"]
-    end
-
-    @tag :admin_authenticated
-    test "renders errors when rule requires system and it is not passed in rule implementation ",
-         %{conn: conn} do
-      rule_type = insert(:rule_type)
-      rule = insert(:rule, rule_type: rule_type, active: true)
-
-      creation_attrs =
-        Map.from_struct(
-          build(:rule_implementation, rule_id: rule.id, implementation_key: "", system: nil)
-        )
-
-      conn =
-        post(conn, Routes.rule_implementation_path(conn, :create),
-          rule_implementation: creation_attrs
-        )
-
-      assert json_response(conn, 422) == %{
-               "errors" => [
-                 %{
-                   "code" => "undefined",
-                   "name" => "rule.implementation.error.system.required"
-                 }
-               ]
-             }
+      assert json_response(conn, 422)["errors"] != []
     end
   end
 
@@ -143,12 +157,21 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
     @tag :admin_authenticated
     test "renders rule_implementation when data is valid", %{conn: conn, swagger_schema: schema} do
       rule_implementation = insert(:rule_implementation)
-      update_attrs = Map.from_struct(rule_implementation)
 
       update_attrs =
-        update_attrs
-        |> Map.put(:implementation_key, "New implementation key")
-        |> Map.put(:system, "New system")
+        %{
+          population: [
+            %{
+              value: [%{id: 11}],
+              operator: %{
+                name: "eq",
+                value_type: "number"
+              },
+              structure: %{id: 60_311}
+            }
+          ]
+        }
+        |> Map.Helpers.stringify_keys()
 
       conn =
         put(conn, Routes.rule_implementation_path(conn, :update, rule_implementation),
@@ -164,19 +187,21 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
       validate_resp_schema(conn, schema, "RuleImplementationResponse")
       json_response = json_response(conn, 200)["data"]
 
-      assert update_attrs[:rule_id] == json_response["rule_id"]
-      assert update_attrs[:system_params] == json_response["system_params"]
-      assert update_attrs[:system] == json_response["system"]
+      assert rule_implementation.rule_id == json_response["rule_id"]
+
+      assert length(rule_implementation.validations) == length(json_response["validations"])
+
+      assert equals_condition_row(
+               Map.get(json_response, "population"),
+               Map.get(update_attrs, "population")
+             )
     end
 
     @tag :admin_authenticated
     test "soft delete rule implementation", %{conn: conn, swagger_schema: schema} do
       rule_implementation = insert(:rule_implementation)
 
-      update_attrs =
-        rule_implementation
-        |> Map.from_struct()
-        |> Map.put(:soft_delete, true)
+      update_attrs = %{soft_delete: true}
 
       conn =
         put(conn, Routes.rule_implementation_path(conn, :update, rule_implementation),
@@ -192,21 +217,47 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
       validate_resp_schema(conn, schema, "RuleImplementationResponse")
       json_response = json_response(conn, 200)["data"]
 
-      assert update_attrs[:rule_id] == json_response["rule_id"]
-      assert update_attrs[:system_params] == json_response["system_params"]
-      assert update_attrs[:system] == json_response["system"]
+      assert rule_implementation.rule_id == json_response["rule_id"]
       assert not is_nil(json_response["deleted_at"])
+    end
+
+    @tag :admin_authenticated
+    test "cannot update rule implementation implementation key", %{conn: conn, swagger_schema: schema} do
+      rule_implementation = insert(:rule_implementation)
+      update_attrs = %{implementation_key: "updated"}
+
+      conn =
+        put(conn, Routes.rule_implementation_path(conn, :update, rule_implementation),
+          rule_implementation: update_attrs
+        )
+
+      validate_resp_schema(conn, schema, "RuleImplementationResponse")
+      assert %{"id" => id} = json_response(conn, 200)["data"]
+
+      conn = recycle_and_put_headers(conn)
+
+      conn = get(conn, Routes.rule_implementation_path(conn, :show, id))
+      validate_resp_schema(conn, schema, "RuleImplementationResponse")
+      json_response = json_response(conn, 200)["data"]
+
+      assert rule_implementation.rule_id == json_response["rule_id"]
+      assert json_response["implementation_key"] != update_attrs.implementation_key
     end
 
     @tag :admin_authenticated
     test "renders errors when data is invalid", %{conn: conn} do
       rule_implementation = insert(:rule_implementation)
-      update_attrs = Map.from_struct(rule_implementation)
 
-      update_attrs =
-        update_attrs
-        |> Map.put(:implementation_key, nil)
-        |> Map.put(:system, nil)
+      update_attrs = %{population: [
+        %{
+          value: [%{id: 2}],
+          operator: %{
+            name: "eq",
+            value_type: "number"
+          },
+          structure: %{id2: 6311}
+        }
+      ]}
 
       conn =
         put(conn, Routes.rule_implementation_path(conn, :update, rule_implementation),
@@ -310,13 +361,30 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
 
   describe "search_rules_implementations" do
     @tag :admin_authenticated
-    test "lists all rule_implementations given some request params", %{conn: conn, swagger_schema: schema} do
-
-      conn =
-        post(conn, Routes.rule_implementation_path(conn, :search_rules_implementations, %{}))
+    test "lists all rule_implementations given some request params", %{
+      conn: conn,
+      swagger_schema: schema
+    } do
+      conn = post(conn, Routes.rule_implementation_path(conn, :search_rules_implementations, %{}))
 
       validate_resp_schema(conn, schema, "RuleImplementationsResponse")
       assert json_response(conn, 200)["data"] == []
     end
+  end
+
+  defp equals_condition_row(population_response, population_update) do
+    population_response
+    |> Enum.with_index()
+    |> Enum.all?(fn {response_population, index} ->
+      update_attrs_population = Enum.at(population_update, index)
+      assert update_attrs_population["operator"] == response_population["operator"]
+      assert update_attrs_population["structure"]["id"] == response_population["structure"]["id"]
+      values_index = Enum.with_index(update_attrs_population |> Map.get("value"))
+
+      Enum.map(values_index, fn {value, index} ->
+        assert value |> Map.get("id") ==
+                 response_population |> Map.get("value") |> Enum.at(index) |> Map.get("id")
+      end)
+    end)
   end
 end

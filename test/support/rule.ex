@@ -15,9 +15,7 @@ defmodule TdDqWeb.Rule do
     "Name" => "name",
     "Description" => "description",
     "Goal" => "goal",
-    "Minimum" => "minimum",
-    "Type" => "rule_type_id",
-    "Type Params" => "type_params"
+    "Minimum" => "minimum"
   }
 
   @test_to_api_get_alias %{
@@ -27,7 +25,7 @@ defmodule TdDqWeb.Rule do
     "Last Modification" => "inserted_at"
   }
 
-  @rule_integer_fields ["rule_type_id", "goal", "minimum"]
+  @rule_integer_fields ["goal", "minimum"]
 
   def active_to_boolean("true"), do: true
   def active_to_boolean("false"), do: false

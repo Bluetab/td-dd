@@ -1,8 +1,6 @@
 defmodule TdDqWeb.SearchControllerTest do
   use TdDqWeb.ConnCase
 
-  import TdDq.Factory
-
   alias TdDq.Cache.RuleLoader
   alias TdDq.Permissions.MockPermissionResolver
   alias TdDq.Rules
@@ -28,13 +26,8 @@ defmodule TdDqWeb.SearchControllerTest do
   @user_name "Im not an admin"
 
   defp create_rule do
-    rule_type = insert(:rule_type)
 
-    creation_attrs =
-      @create_attrs
-      |> Map.put(:rule_type_id, rule_type.id)
-
-    {:ok, rule} = Rules.create_rule(rule_type, creation_attrs)
+    {:ok, rule} = Rules.create_rule(@create_attrs)
     rule
   end
 
@@ -57,7 +50,6 @@ defmodule TdDqWeb.SearchControllerTest do
       conn: conn,
       user: %{id: user_id}
     } do
-      rule_type = insert(:rule_type)
       concept_1 = "1"
       concept_2 = "2"
       domain1_view = 1
@@ -70,8 +62,6 @@ defmodule TdDqWeb.SearchControllerTest do
         minimum: 42,
         name: "some name 1",
         updated_by: Integer.mod(:binary.decode_unsigned("app-admin"), 100_000),
-        type_params: %{},
-        rule_type_id: rule_type.id
       }
 
       creation_attrs_2 = %{
@@ -81,12 +71,10 @@ defmodule TdDqWeb.SearchControllerTest do
         minimum: 42,
         name: "some name 2",
         updated_by: Integer.mod(:binary.decode_unsigned("app-admin"), 100_000),
-        type_params: %{},
-        rule_type_id: rule_type.id
       }
 
-      Rules.create_rule(rule_type, creation_attrs_1)
-      Rules.create_rule(rule_type, creation_attrs_2)
+      Rules.create_rule(creation_attrs_1)
+      Rules.create_rule(creation_attrs_2)
 
       create_acl_entry(
         user_id,

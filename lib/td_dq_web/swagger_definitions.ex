@@ -21,28 +21,6 @@ defmodule TdDqWeb.SwaggerDefinitions do
             active(:boolean, "active (Default: false)")
             version(:integer, "version number")
             updated_by(:integer, "updated by user id")
-            type_params(:object, "rule type_params")
-            rule_type_id(:integer, "Belongs to rule type", required: true)
-          end
-        end,
-      RuleDetail:
-        swagger_schema do
-          title("Rule Detail")
-          description("Rule entity with possible system values to create an implementation")
-
-          properties do
-            id(:integer, "unique identifier", required: true)
-            business_concept_id([:string, nil], "business concept id")
-            description(:object, "Description")
-            goal(:integer, "goal percentage (1-100)")
-            minimum(:integer, "minimum goal (1-100)")
-            name(:string, "rule name")
-            active(:boolean, "active (Default: false)")
-            version(:integer, "version number")
-            updated_by(:integer, "updated by user id")
-            type_params(:object, "rule type_params")
-            rule_type_id(:integer, "Belongs to rule type", required: true)
-            system_values(:object, "Possible system values retrieved to create an implementation")
           end
         end,
       RuleImplementation:
@@ -53,9 +31,51 @@ defmodule TdDqWeb.SwaggerDefinitions do
           properties do
             id(:integer, "Rule Implementation unique identifier", required: true)
             implementation_key(:string, "Rule Implementation implementation_key", required: true)
-            system(:string, "Rule Implementation system", required: true)
-            system_params(:object, "Rule Implementation parameters", required: true)
             rule_id(:integer, "Belongs to rule", required: true)
+            dataset(Schema.ref(:DatasetArray), required: true)
+            population(Schema.ref(:ConditionArray), required: false)
+            validations(Schema.ref(:ConditionArray), required: true)
+          end
+        end,
+      DatasetArray:
+        swagger_schema do
+          type(:array)
+          items(Schema.ref(:Dataset))
+      end,
+      ConditionArray:
+        swagger_schema do
+          type(:array)
+          items(Schema.ref(:Condition))
+        end,
+      Condition:
+        swagger_schema do
+          properties do
+            value(:array, "Values", required: true)
+            operator(Schema.ref(:Operator))
+            structure(Schema.ref(:Structure))
+          end
+        end,
+      Dataset:
+        swagger_schema do
+          properties do
+            structure(Schema.ref(:Structure))
+            left(Schema.ref(:Structure))
+            right(Schema.ref(:Structure))
+            join_type(:string)
+          end
+        end,
+      Structure:
+        swagger_schema do
+          properties do
+            id(:integer, "structure id", required: true)
+          end
+        end,
+      Operator:
+        swagger_schema do
+          properties do
+            name(:string)
+            group(:string)
+            value_type(:string)
           end
         end,
       RuleImplementations:
@@ -76,8 +96,6 @@ defmodule TdDqWeb.SwaggerDefinitions do
             active(:boolean, "Active/Inactive")
             version(:integer, "Version")
             updated_by(:integer, "Updated by (id)")
-            type(:string, "Type")
-            type_params(:object, "Type parameters")
           end
         end,
       RuleCreate:
@@ -124,13 +142,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
             data(Schema.ref(:Rule))
           end
         end,
-      RuleDetailResponse:
-        swagger_schema do
-          properties do
-            data(Schema.ref(:RuleDetail))
-          end
-        end,
-      RulesResponse:
+     RulesResponse:
         swagger_schema do
           properties do
             data(Schema.ref(:Rules))
@@ -149,9 +161,50 @@ defmodule TdDqWeb.SwaggerDefinitions do
           properties do
             id(:integer, "Rule Implementation unique identifier", required: true)
             implementation_key(:string, "Rule Implementation implementation_key", required: true)
-            system(:string, "Rule Implementation system", required: true)
-            system_params(:object, "Rule Implementation parameters", required: true)
             rule_id(:integer, "Belongs to rule", required: true)
+            dataset(Schema.ref(:DatasetArray), "Dataset", required: true)
+            population(Schema.ref(:ConditionArray))
+            validations(Schema.ref(:ConditionArray), "Validations", required: true)
+          end
+        end,
+      DatasetArray:
+        swagger_schema do
+          type(:array)
+          items(Schema.ref(:Dataset))
+      end,
+      ConditionArray:
+        swagger_schema do
+          type(:array)
+          items(Schema.ref(:Condition))
+        end,
+      Condition:
+        swagger_schema do
+          properties do
+            value(:array, "Values", required: true)
+            operator(Schema.ref(:Operator), "Operator", required: true)
+            structure(Schema.ref(:Structure), "Structure", required: true)
+          end
+        end,
+      Dataset:
+        swagger_schema do
+          properties do
+            structure(Schema.ref(:Structure), "dataset structure", required: true)
+            left(Schema.ref(:Structure))
+            right(Schema.ref(:Structure))
+            join_type(:string)
+          end
+        end,
+      Structure:
+        swagger_schema do
+          properties do
+            id(:integer, "structure id", required: true)
+          end
+        end,
+      Operator:
+        swagger_schema do
+          properties do
+            name(:string, "Operator name", required: true)
+            value_type(:string)
           end
         end,
       RuleImplementationCreateProps:
@@ -159,8 +212,6 @@ defmodule TdDqWeb.SwaggerDefinitions do
           properties do
             description(:string, "Rule Implementation description")
             implementation_key(:string, "Rule Implementation implementation_key", required: true)
-            system(:string, "Rule Implementation system", required: true)
-            system_params(:object, "Rule Implementation parameters", required: true)
             rule_id(:integer, "belongs to rule", required: true)
           end
         end,
@@ -174,8 +225,6 @@ defmodule TdDqWeb.SwaggerDefinitions do
         swagger_schema do
           properties do
             implementation_key(:string, "Rule Implementation implementation_key", required: true)
-            system(:string, "Rule Implementation system", required: true)
-            system_params(:object, "Rule Implementation parameters", required: true)
           end
         end,
       RuleImplementationUpdate:
@@ -206,67 +255,6 @@ defmodule TdDqWeb.SwaggerDefinitions do
     }
   end
 
-  def rule_type_definitions do
-    %{
-      RuleType:
-        swagger_schema do
-          title("Rule Type")
-          description("Rule Type entity")
-
-          properties do
-            id(:integer, "Rule Type unique identifier", required: true)
-            name(:string, "Rule Type name", required: true)
-            params(:object, "Rule Type parameters", required: true)
-          end
-        end,
-      RuleTypeCreateProps:
-        swagger_schema do
-          properties do
-            name(:string, "Rule Type name", required: true)
-            params(:object, "Rule Type parameters", required: true)
-          end
-        end,
-      RuleTypeCreate:
-        swagger_schema do
-          properties do
-            rule_type(Schema.ref(:RuleTypeCreateProps))
-          end
-        end,
-      RuleTypeUpdateProps:
-        swagger_schema do
-          properties do
-            name(:string, "Rule Type name", required: true)
-            params(:object, "Rule Type parameters", required: true)
-          end
-        end,
-      RuleTypeUpdate:
-        swagger_schema do
-          properties do
-            rule_type(Schema.ref(:RuleTypeUpdateProps))
-          end
-        end,
-      RuleTypes:
-        swagger_schema do
-          title("Rule Types")
-          description("A collection of Rule Types")
-          type(:array)
-          items(Schema.ref(:RuleType))
-        end,
-      RuleTypeResponse:
-        swagger_schema do
-          properties do
-            data(Schema.ref(:RuleType))
-          end
-        end,
-      RuleTypesResponse:
-        swagger_schema do
-          properties do
-            data(Schema.ref(:RuleTypes))
-          end
-        end
-    }
-  end
-
   def filter_swagger_definitions do
     %{
       FilterResponse:
@@ -283,8 +271,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
 
           example(%{
             data: %{
-              active: [true, false],
-              rule_type_id: [1, 2]
+              active: [true, false]
             }
           })
         end,

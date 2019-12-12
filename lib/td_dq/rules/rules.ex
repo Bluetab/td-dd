@@ -9,7 +9,6 @@ defmodule TdDq.Rules do
   alias Ecto.Multi
   alias TdCache.ConceptCache
   alias TdCache.EventStream.Publisher
-  alias TdCache.LinkCache
   alias TdCache.StructureCache
   alias TdCache.TemplateCache
   alias TdDfLib.Validation
@@ -18,7 +17,6 @@ defmodule TdDq.Rules do
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleImplementation
   alias TdDq.Rules.RuleResult
-  alias TdDq.Rules.RuleType
 
   require Logger
 
@@ -53,7 +51,6 @@ defmodule TdDq.Rules do
 
     query
     |> Repo.all()
-    |> Repo.preload(:rule_type)
   end
 
   def list_rules_with_bc_id do
@@ -61,7 +58,6 @@ defmodule TdDq.Rules do
     |> where([r], is_nil(r.deleted_at))
     |> where([r], not is_nil(r.business_concept_id))
     |> Repo.all()
-    |> Repo.preload(:rule_type)
     |> Enum.map(&preload_bc_version/1)
   end
 
@@ -69,7 +65,6 @@ defmodule TdDq.Rules do
     Rule
     |> where([r], is_nil(r.deleted_at))
     |> Repo.all()
-    |> Repo.preload(:rule_type)
     |> Enum.map(&preload_bc_version/1)
   end
 
@@ -137,14 +132,12 @@ defmodule TdDq.Rules do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_rule(rule_type, attrs \\ %{}) do
+  def create_rule(attrs \\ %{}) do
     with {:ok, changeset} <- check_base_changeset(attrs),
          {:ok} <- check_dynamic_form_changeset(attrs),
-         {:ok} <- check_rule_type_changeset(changeset, rule_type),
          {:ok, rule} <- Repo.insert(changeset) do
       rule =
         rule
-        |> Repo.preload(:rule_type)
         |> preload_bc_version
 
       RuleLoader.refresh(Map.get(rule, :id))
@@ -177,21 +170,6 @@ defmodule TdDq.Rules do
 
   defp check_dynamic_form_changeset(_), do: {:ok}
 
-  defp check_rule_type_changeset(changeset, rule_type) do
-    input = Changeset.get_change(changeset, :type_params)
-    types = get_type_params_or_nil(rule_type)
-
-    type_changeset =
-      types
-      |> rule_type_changeset(input)
-      |> add_rule_type_params_validations(rule_type, types)
-
-    case type_changeset.valid? do
-      true -> {:ok}
-      false -> {:error, type_changeset}
-    end
-  end
-
   @doc """
   Updates a rule.
 
@@ -207,23 +185,7 @@ defmodule TdDq.Rules do
   def update_rule(%Rule{} = rule, attrs) do
     with {:ok, changeset} <- check_base_changeset(attrs, rule),
          {:ok} <- check_dynamic_form_changeset(attrs) do
-      input = Map.get(attrs, :type_params) || Map.get(attrs, "type_params", %{})
-      rule_type = Repo.preload(rule, :rule_type).rule_type
-      types = get_type_params_or_nil(rule_type)
-
-      type_changeset =
-        types
-        |> rule_type_changeset(input)
-        |> add_rule_type_params_validations(rule_type, types)
-
-      non_modifiable_changeset =
-        type_changeset
-        |> validate_non_modifiable_fields(attrs)
-
-      case non_modifiable_changeset.valid? do
-        true -> do_update_rule(changeset)
-        false -> {:error, non_modifiable_changeset}
-      end
+      do_update_rule(changeset)
     else
       error -> error
     end
@@ -233,7 +195,6 @@ defmodule TdDq.Rules do
     with {:ok, rule} <- Repo.update(changeset) do
       rule =
         rule
-        |> Repo.preload(:rule_type)
         |> preload_bc_version
 
       RuleLoader.refresh(Map.get(rule, :id))
@@ -307,110 +268,6 @@ defmodule TdDq.Rules do
     |> Repo.transaction()
   end
 
-  def get_rule_detail!(id) do
-    id
-    |> get_rule!()
-    |> Repo.preload(:rule_type)
-    |> load_relation_detail_from_cache()
-  end
-
-  defp load_relation_detail_from_cache(%Rule{business_concept_id: nil} = rule), do: rule
-
-  defp load_relation_detail_from_cache(%Rule{rule_type: rule_type} = rule) do
-    list_filters =
-      rule_type
-      |> Map.get(:params, %{})
-      |> Map.get("system_params", [])
-      |> retrieve_params_to_filter()
-
-    case list_filters do
-      [] -> rule
-      list_filters -> rule |> retrieve_cache_information(list_filters)
-    end
-  end
-
-  defp retrieve_params_to_filter([]), do: []
-
-  defp retrieve_params_to_filter(system_params) do
-    filters_in_system_params =
-      system_params
-      |> Enum.map(&Map.get(&1, "name"))
-
-    ["system" | filters_in_system_params] |> Enum.uniq()
-  end
-
-  defp retrieve_cache_information(%Rule{business_concept_id: bc_id} = rule, list_filters) do
-    {:ok, linked_resources} = LinkCache.list("business_concept", bc_id, "data_field")
-
-    system_values =
-      list_filters
-      |> Enum.map(&append_values(&1, linked_resources))
-      |> Enum.reject(fn {_, values} -> Enum.empty?(values) end)
-      |> Enum.into(%{})
-
-    rule |> Map.put(:system_values, system_values)
-  end
-
-  defp append_values("system" = key, list_resources) do
-    values =
-      list_resources
-      |> Enum.map(fn %{system: %{name: name}} ->
-        build_resource_map(name, key, name)
-      end)
-      |> Enum.uniq_by(fn %{"name" => name} -> name end)
-
-    {key, values}
-  end
-
-  defp append_values("group" = key, list_resources) do
-    values =
-      list_resources
-      |> Enum.map(fn %{system: %{name: system}, group: group} ->
-        build_resource_map(group, key, group, system)
-      end)
-      |> Enum.uniq_by(fn %{"resource_id" => resource_id} -> resource_id end)
-
-    {key, values}
-  end
-
-  defp append_values("table" = key, list_resources) do
-    values =
-      list_resources
-      |> Enum.map(fn %{group: group, structure_id: structure_id, path: path} ->
-        [_field | [name | _]] = Enum.reverse(path)
-        build_resource_map(name, key, structure_id, group)
-      end)
-      |> Enum.uniq_by(fn %{"resource_id" => resource_id} -> resource_id end)
-
-    {key, values}
-  end
-
-  defp append_values("column" = key, list_resources) do
-    values =
-      list_resources
-      |> Enum.map(fn %{id: id, name: name, parent_id: parent_id} ->
-        build_resource_map(name, key, id, parent_id)
-      end)
-      |> Enum.uniq_by(fn %{"resource_id" => resource_id} -> resource_id end)
-
-    {key, values}
-  end
-
-  defp append_values(key, _), do: {key, []}
-
-  defp build_resource_map(name, resource_type, resource_id) do
-    Map.new()
-    |> Map.put("name", name)
-    |> Map.put("resource_type", resource_type)
-    |> Map.put("resource_id", resource_id)
-  end
-
-  defp build_resource_map(name, resource_type, resource_id, parent_key) do
-    name
-    |> build_resource_map(resource_type, resource_id)
-    |> Map.put("parent_key", parent_key)
-  end
-
   @doc """
   Returns an `%Ecto.Changeset{}` for tracking rule changes.
 
@@ -458,17 +315,29 @@ defmodule TdDq.Rules do
   def list_rule_implementations(params \\ %{}, opts \\ [])
 
   def list_rule_implementations(%{"structure_id" => structure_id}, _opts) do
-    json_query = %{
-      "system_params" => [
-        %{"type" => "structure"}
-      ]
-    }
+    condition =
+      dynamic(
+        [ri],
+        fragment(
+          "exists (select * from unnest(?) obj where (obj->'structure'->>'id')::int = ?)",
+          ri.dataset,
+          ^structure_id
+        ) or false
+      )
 
-    rule_types = get_items_using_json_filter("params", json_query, RuleType)
+    condition =
+      dynamic(
+        [ri],
+        fragment(
+          "exists (select * from unnest(?) obj where (obj->'structure'->>'id')::int = ?)",
+          ri.validations,
+          ^structure_id
+        ) or ^condition
+      )
 
-    rule_types
-    |> get_fields_name()
-    |> get_implementations_by_fields(structure_id)
+    RuleImplementation
+    |> where(^condition)
+    |> Repo.all()
   end
 
   def list_rule_implementations(params, opts) do
@@ -483,49 +352,6 @@ defmodule TdDq.Rules do
     |> where([_ri, r], is_nil(r.deleted_at))
     |> deleted_implementations(opts, :implementations)
     |> Repo.all()
-  end
-
-  defp get_fields_name(rule_types) do
-    rule_types
-    |> Enum.map(fn rule_type ->
-      rule_type =
-        rule_type
-        |> get_system_params_or_nil()
-        |> Enum.map(&Map.get(&1, "name"))
-
-      rule_type
-    end)
-    |> List.flatten()
-    |> Enum.uniq()
-  end
-
-  defp get_implementations_by_fields(fields_name, structure_id) do
-    fields_name
-    |> Enum.map(
-      &get_items_using_json_filter(
-        "system_params",
-        get_json_query(&1, structure_id),
-        RuleImplementation
-      )
-    )
-    |> List.flatten()
-    |> Enum.uniq()
-  end
-
-  defp get_json_query(field_name, structure_id) do
-    %{
-      field_name => %{"id" => structure_id}
-    }
-  end
-
-  defp get_items_using_json_filter(key, json_query, schema) do
-    query =
-      from(
-        rt in schema,
-        where: fragment("(?) @> ?::jsonb", field(rt, ^String.to_atom(key)), ^json_query)
-      )
-
-    query |> Repo.all()
   end
 
   @doc """
@@ -553,7 +379,7 @@ defmodule TdDq.Rules do
     implementation_rule =
       implementation_key
       |> get_rule_implementation_by_key()
-      |> Repo.preload(rule: :rule_type)
+      |> Repo.preload(:rule)
 
     case implementation_rule do
       nil -> nil
@@ -607,46 +433,135 @@ defmodule TdDq.Rules do
 
     case changeset.valid? do
       true ->
-        input = Changeset.get_change(changeset, :system_params)
-        rule_type = get_rule_type_or_nil(rule)
-        types = get_system_params_or_nil(rule_type)
-        types_changeset = rule_type_changeset(types, input)
-
-        case types_changeset.valid? do
-          true -> insert_rule_implementation(changeset)
-          false -> {:error, types_changeset}
-        end
+        insert_rule_implementation(changeset)
 
       false ->
-        {:error, changeset}
+        errors =
+          Changeset.traverse_errors(changeset, fn {_msg, opts} ->
+            "#{Keyword.get(opts, :validation)}"
+          end)
+
+        {:error, changeset, errors}
     end
   end
 
-  def get_rule_implementation_system_params_info(%RuleImplementation{} = rule_implementation) do
-    system_params = Map.get(rule_implementation, :system_params, %{})
+  defp put_structure_cached_attributes(structure_map, cached_info) do
+    structure_map
+    |> Map.put(:external_id, Map.get(cached_info, :external_id))
+    |> Map.put(:name, Map.get(cached_info, :name, Map.get(structure_map, :name, "")))
+    |> Map.put(:path, Map.get(cached_info, :path, []))
+    |> Map.put(:system, Map.get(cached_info, :system))
+    |> Map.put(:type, Map.get(cached_info, :type))
+  end
 
-    new_system_params =
-      rule_implementation
-      |> get_rule_implementation_structure_system_params()
-      |> Enum.into(system_params, fn {key, value} ->
-        structure_id = Map.get(value, "id")
-        structure = read_structure_from_cache(structure_id)
-        param =
-          Map.new
-          |> Map.put(:id, structure_id)
-          |> Map.put(:external_id, Map.get(structure, :external_id))
-          |> Map.put(:name, Map.get(structure, :name, Map.get(value, "name", "")))
-          |> Map.put(:path, Map.get(structure, :path, []))
-          |> Map.put(:system, Map.get(structure, :system))
-          |> Map.put(:type, Map.get(structure, :type))
-        {key, param}
+  defp enrich_joined_structures(%{left: %{id: left_id}, right: %{id: right_id}} = structure_map) do
+    structure_map
+    |> Map.put(
+      :left,
+      put_structure_cached_attributes(%{id: left_id}, read_structure_from_cache(left_id))
+    )
+    |> Map.put(
+      :right,
+      put_structure_cached_attributes(%{id: right_id}, read_structure_from_cache(right_id))
+    )
+  end
+
+  defp enrich_joined_structures(structure_map) do
+    structure_map
+  end
+
+  defp enrich_value_structure(%{"id" => id} = value_map) do
+    cached_structure = read_structure_from_cache(id)
+    put_structure_cached_attributes(value_map, cached_structure)
+  end
+
+  defp enrich_value_structure(value_map) do
+    value_map
+  end
+
+  defp enrich_value_structures(population_row) do
+    values = Map.get(population_row, :value)
+
+    case values do
+      nil ->
+        population_row
+
+      _ ->
+        values = Enum.map(values, fn value ->
+          enrich_value_structure(value)
+        end)
+        Map.put(population_row, :value, values)
+    end
+  end
+
+  def enrich_rule_implementation_structures(%RuleImplementation{} = rule_implementation) do
+    enriched_dataset =
+      Enum.map(rule_implementation.dataset, fn dataset_row ->
+        case dataset_row |> Map.get(:structure) |> Map.get(:id) do
+          nil ->
+            dataset_row
+
+          id ->
+            cached_structure = read_structure_from_cache(id)
+
+            dataset_row
+            |> Map.put(
+              :structure,
+              put_structure_cached_attributes(Map.get(dataset_row, :structure), cached_structure)
+            )
+            |> enrich_joined_structures
+        end
       end)
 
-    Map.put(rule_implementation, :system_params, new_system_params)
+    enriched_population =
+      Enum.map(rule_implementation.population, fn population_row ->
+        case Map.get(population_row, :structure) do
+          nil ->
+            population_row
+
+          structure ->
+            cached_structure = read_structure_from_cache(Map.get(structure, :id))
+
+            enriched_info =
+              population_row
+              |> Map.get(:structure)
+              |> put_structure_cached_attributes(cached_structure)
+
+            population_row
+            |> Map.put(:structure, enriched_info)
+            |> enrich_value_structures()
+        end
+      end)
+
+    enriched_validations =
+      Enum.map(rule_implementation.validations, fn validations_row ->
+        case Map.get(validations_row, :structure) do
+          nil ->
+            validations_row
+
+          structure ->
+            cached_structure = read_structure_from_cache(Map.get(structure, :id))
+
+            enriched_info =
+              validations_row
+              |> Map.get(:structure)
+              |> put_structure_cached_attributes(cached_structure)
+
+            validations_row
+            |> Map.put(:structure, enriched_info)
+            |> enrich_value_structures()
+        end
+      end)
+
+    rule_implementation
+    |> Map.put(:dataset, enriched_dataset)
+    |> Map.put(:population, enriched_population)
+    |> Map.put(:validations, enriched_validations)
   end
 
   defp read_structure_from_cache(structure_id) do
     {:ok, structure} = StructureCache.get(structure_id)
+
     case structure do
       nil -> %{}
       _ -> structure
@@ -669,42 +584,74 @@ defmodule TdDq.Rules do
     result
   end
 
-  def get_rule_implementation_structure_system_params(%RuleImplementation{} = rule_implementation) do
-    type_params_names = get_structure_rule_type_params(rule_implementation)
-
-    case type_params_names do
-      [] ->
-        []
-
-      _ ->
-        rule_implementation
-        |> Map.get(:system_params, [])
-        |> Enum.filter(fn {key, value} ->
-          key in type_params_names and Map.has_key?(value, "id")
-        end)
-    end
+  defp get_dataset_row_ids(%{left: %{id: left_id}, right: %{id: right_id}}) do
+    [left_id, right_id]
   end
 
-  defp add_rule_implementation_structure_links(%RuleImplementation{} = rule_implementation) do
-    rule_implementation
-    |> get_rule_implementation_structure_system_params()
-    |> Enum.map(fn {_key, value} ->
-      Map.get(value, "id")
+  defp get_dataset_row_ids(_structure) do
+    []
+  end
+
+  defp get_value_id(%{"id" => value_id}) do
+    value_id
+  end
+
+  defp get_value_id(_value) do
+    nil
+  end
+
+  defp get_filters_value_ids(values) when is_list(values) do
+    Enum.map(values, fn value ->
+      get_value_id(value)
     end)
+  end
+
+  defp get_filters_value_ids(_other) do
+    []
+  end
+
+  defp get_structure_id(%{structure: %{id: id}}) do
+    id
+  end
+
+  defp get_structure_id(_any) do
+    nil
+  end
+
+  def get_structures_ids(%RuleImplementation{} = rule_implementation) do
+    dataset_ids =
+      rule_implementation
+      |> Map.get(:dataset)
+      |> Enum.map(fn dataset_row ->
+        [get_structure_id(dataset_row)] ++ get_dataset_row_ids(dataset_row)
+      end)
+
+    population_ids =
+      rule_implementation
+      |> Map.get(:population)
+      |> Enum.map(fn structure ->
+        [get_structure_id(structure)] ++ get_filters_value_ids(Map.get(structure, :value))
+      end)
+
+    validations_ids =
+      rule_implementation
+      |> Map.get(:validations)
+      |> Enum.map(fn structure ->
+        [get_structure_id(structure)] ++ get_filters_value_ids(Map.get(structure, :value))
+      end)
+
+    ids = dataset_ids ++ population_ids ++ validations_ids
+
+    ids
+    |> List.flatten()
+    |> Enum.filter(&(not is_nil(&1)))
+  end
+
+  def add_rule_implementation_structure_links(%RuleImplementation{} = rule_implementation) do
+    rule_implementation
+    |> get_structures_ids()
     |> Enum.uniq()
     |> Enum.map(&add_rule_implementation_structure_link/1)
-  end
-
-  defp get_structure_rule_type_params(%RuleImplementation{
-         rule: %{rule_type: %{params: %{"system_params" => rule_type_system_params}}}
-       }) do
-    rule_type_system_params
-    |> Enum.filter(fn param -> Map.get(param, "type") == "structure" end)
-    |> Enum.map(fn param -> Map.get(param, "name") end)
-  end
-
-  defp get_structure_rule_type_params(_rule_implementation) do
-    []
   end
 
   def add_rule_implementation_structure_link(structure_id) do
@@ -734,20 +681,9 @@ defmodule TdDq.Rules do
 
     case changeset.valid? do
       true ->
-        input = Map.get(attrs, :system_params) || Map.get(attrs, "system_params", %{})
-
-        rule =
-          rule_implementation
-          |> Repo.preload([:rule, rule: :rule_type])
-          |> Map.get(:rule)
-
-        rule_type = Map.get(rule, :rule_type)
-        types = get_system_params_or_nil(rule_type)
-        type_changeset = rule_type_changeset(types, input)
-
-        case type_changeset.valid? do
+        case true do
           true -> update_rule_implementation(changeset)
-          false -> {:error, type_changeset}
+          false -> {:error, changeset}
         end
 
       false ->
@@ -800,142 +736,8 @@ defmodule TdDq.Rules do
     RuleImplementation.changeset(rule_implementation, %{})
   end
 
-  alias TdDq.Rules.RuleType
-
-  @doc """
-  Returns the list of rule_type.
-
-  ## Examples
-
-      iex> list_rule_types()
-      [%RuleType{}, ...]
-
-  """
-  def list_rule_types do
-    Repo.all(RuleType)
-  end
-
-  @doc """
-  Gets a single rule_type.
-
-  Raises `Ecto.NoResultsError` if the Rule types does not exist.
-
-  ## Examples
-
-      iex> get_rule_type!(123)
-      %RuleType{}
-
-      iex> get_rule_type!(456)
-      ** (Ecto.NoResultsError)
-
-  """
-  def get_rule_type!(id), do: Repo.get!(RuleType, id)
-
-  @doc """
-  Gets a single rule_type.
-
-  ## Examples
-
-      iex> get_rule_type(123)
-      %RuleType{}
-
-      iex> get_rule_type(456)
-      ** nil
-
-  """
-  def get_rule_type(id), do: Repo.get(RuleType, id)
-
-  def get_rule_type_by_name(name) do
-    Repo.get_by(RuleType, name: name)
-  end
-
-  @doc """
-  Creates a rule_type.
-
-  ## Examples
-
-      iex> create_rule_type(%{field: value})
-      {:ok, %RuleType{}}
-
-      iex> create_rule_type(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_rule_type(attrs \\ %{}) do
-    %RuleType{}
-    |> RuleType.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  @doc """
-  Updates a rule_type.
-
-  ## Examples
-
-      iex> update_rule_type(rule_type, %{field: new_value})
-      {:ok, %RuleType{}}
-
-      iex> update_rule_type(rule_type, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_rule_type(%RuleType{} = rule_type, attrs) do
-    rule_type
-    |> RuleType.changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
-  Deletes a RuleType.
-
-  ## Examples
-
-      iex> delete_rule_type(rule_type)
-      {:ok, %RuleType{}}
-
-      iex> delete_rule_type(rule_type)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_rule_type(%RuleType{} = rule_type) do
-    Repo.delete(rule_type)
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking rule_type changes.
-
-  ## Examples
-
-      iex> change_rule_type(rule_type)
-      %Ecto.Changeset{source: %RuleType{}}
-
-  """
-  def change_rule_type(%RuleType{} = rule_type) do
-    RuleType.changeset(rule_type, %{})
-  end
-
   def get_rule_or_nil(id) when is_nil(id) or id == "", do: nil
   def get_rule_or_nil(id), do: get_rule(id)
-
-  def get_rule_type_or_nil(id) when is_nil(id) or is_binary(id), do: nil
-  def get_rule_type_or_nil(id) when is_integer(id), do: get_rule_type(id)
-  def get_rule_type_or_nil(%Rule{} = rule), do: Repo.preload(rule, :rule_type).rule_type
-
-  defp get_system_params_or_nil(nil), do: nil
-
-  defp get_system_params_or_nil(%RuleType{} = rule_type) do
-    rule_type.params["system_params"]
-    |> case do
-      nil -> nil
-      params -> params |> Enum.filter(fn param -> Map.get(param, "hidden") in [nil, false] end)
-    end
-  end
-
-  defp get_type_params_or_nil(nil), do: nil
-
-  defp get_type_params_or_nil(%RuleType{} = rule_type) do
-    rule_type.params["type_params"]
-  end
 
   defp filter(params, fields) do
     dynamic = true
@@ -949,126 +751,6 @@ defmodule TdDq.Rules do
       end
     end)
   end
-
-  defp rule_type_changeset(nil, _input), do: Changeset.cast({%{}, %{}}, %{}, [])
-
-  defp rule_type_changeset(_, input) when input == %{}, do: Changeset.cast({%{}, %{}}, %{}, [])
-
-  defp rule_type_changeset(types, input) do
-    fields =
-      types
-      |> Enum.map(&{String.to_atom(&1["name"]), to_schema_type(&1["type"])})
-      |> Map.new()
-
-    {input, fields}
-    |> Changeset.cast(input, Map.keys(fields))
-    |> Changeset.validate_required(Map.keys(fields))
-  end
-
-  defp validate_non_modifiable_fields(changeset, %{rule_type_id: _}),
-    do: add_non_modifiable_error(changeset, :rule_type_id, "non.modifiable.field")
-
-  defp validate_non_modifiable_fields(changeset, %{"rule_type_id" => _}),
-    do: add_non_modifiable_error(changeset, :rule_type_id, "non.modifiable.field")
-
-  defp validate_non_modifiable_fields(changeset, _attrs),
-    do: changeset
-
-  defp add_non_modifiable_error(changeset, field, message),
-    do: Changeset.add_error(changeset, field, message)
-
-  defp add_rule_type_params_validations(changeset, _, nil), do: changeset
-
-  defp add_rule_type_params_validations(changeset, %{name: "integer_values_range"}, _) do
-    case changeset.valid? do
-      true ->
-        min_value = Changeset.get_field(changeset, :min_value)
-        max_value = Changeset.get_field(changeset, :max_value)
-
-        case min_value <= max_value do
-          true ->
-            changeset
-
-          false ->
-            Changeset.add_error(changeset, :max_value, "must.be.greater.than.or.equal.to.minimum")
-        end
-
-      false ->
-        changeset
-    end
-  end
-
-  defp add_rule_type_params_validations(changeset, %{name: "dates_range"}, _) do
-    case changeset.valid? do
-      true ->
-        with {:ok, min_date} <-
-               parse_date(Changeset.get_field(changeset, :min_date), :error_min_date),
-             {:ok, max_date} <-
-               parse_date(Changeset.get_field(changeset, :max_date), :error_max_date),
-             {:ok} <- validate_date_range(min_date, max_date) do
-          changeset
-        else
-          {:error, :error_min_date} ->
-            Changeset.add_error(changeset, :min_date, "cast.date")
-
-          {:error, :error_max_date} ->
-            Changeset.add_error(changeset, :max_date, "cast.date")
-
-          {:error, :invalid_range} ->
-            Changeset.add_error(changeset, :max_date, "must.be.greater.than.or.equal.to.min_date")
-        end
-
-      false ->
-        changeset
-    end
-  end
-
-  defp add_rule_type_params_validations(changeset, _, types) do
-    add_type_params_validations(changeset, types)
-  end
-
-  defp add_type_params_validations(changeset, [head | tail]) do
-    changeset
-    |> add_type_params_validations(head)
-    |> add_type_params_validations(tail)
-  end
-
-  defp add_type_params_validations(changeset, []), do: changeset
-
-  defp add_type_params_validations(changeset, %{"name" => name, "type" => "date"}) do
-    field = String.to_atom(name)
-
-    case Date.from_iso8601(Changeset.get_field(changeset, field)) do
-      {:ok, _} -> changeset
-      _ -> Changeset.add_error(changeset, field, "cast.date")
-    end
-  end
-
-  defp add_type_params_validations(changeset, _), do: changeset
-
-  defp parse_date(value, error_code) do
-    case Date.from_iso8601(value) do
-      {:ok, date} -> {:ok, date}
-      _ -> {:error, error_code}
-    end
-  end
-
-  defp validate_date_range(from, to) do
-    case Date.compare(from, to) do
-      :lt -> {:ok}
-      :eq -> {:ok}
-      :gt -> {:error, :invalid_range}
-    end
-  end
-
-  defp to_schema_type("integer"), do: :integer
-  defp to_schema_type("string"), do: :string
-  defp to_schema_type("list"), do: {:array, :string}
-  defp to_schema_type("date"), do: :string
-  defp to_schema_type("structure"), do: :map
-  defp to_schema_type("float"), do: :float
-  defp to_schema_type("whole_number"), do: :integer
-  defp to_schema_type("boolean"), do: :boolean
 
   def check_available_implementation_key(%{"implementation_key" => ""}),
     do: {:implementation_key_available}

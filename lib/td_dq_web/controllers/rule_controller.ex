@@ -8,7 +8,6 @@ defmodule TdDqWeb.RuleController do
   alias Jason, as: JSON
   alias TdCache.EventStream.Publisher
   alias TdDq.Audit
-  alias TdDq.Repo
   alias TdDq.Rules
   alias TdDq.Rules.Rule
   alias TdDq.Rules.Search
@@ -111,8 +110,6 @@ defmodule TdDqWeb.RuleController do
 
   def create(conn, %{"rule" => rule_params}) do
     user = conn.assigns[:current_resource]
-    rule_type_id = rule_params["rule_type_id"]
-    rule_type = Rules.get_rule_type_or_nil(rule_type_id)
 
     creation_attrs =
       rule_params
@@ -124,7 +121,7 @@ defmodule TdDqWeb.RuleController do
       |> Map.put("resource_type", "rule")
 
     with true <- can?(user, create(resource_type)),
-         {:ok, %Rule{} = rule} <- Rules.create_rule(rule_type, creation_attrs) do
+         {:ok, %Rule{} = rule} <- Rules.create_rule(creation_attrs) do
       audit = %{
         "audit" => %{
           "resource_id" => rule.id,
@@ -211,7 +208,6 @@ defmodule TdDqWeb.RuleController do
     rule =
       id
       |> Rules.get_rule!()
-      |> Repo.preload(:rule_type)
 
     with true <- can?(user, show(rule)) do
       render(
@@ -224,42 +220,6 @@ defmodule TdDqWeb.RuleController do
           }),
         rule: rule,
         user_permissions: get_user_permissions(conn, rule)
-      )
-    else
-      false ->
-        conn
-        |> put_status(:forbidden)
-        |> put_view(ErrorView)
-        |> render("403.json")
-    end
-  end
-
-  swagger_path :get_rule_detail do
-    description("Show Rule with details over the data of its relations")
-    produces("application/json")
-
-    parameters do
-      id(:path, :integer, "Rule ID", required: true)
-    end
-
-    response(200, "OK", Schema.ref(:RuleDetailResponse))
-    response(400, "Client Error")
-  end
-
-  def get_rule_detail(conn, %{"rule_id" => id}) do
-    user = conn.assigns[:current_resource]
-    rule = Rules.get_rule_detail!(id)
-
-    with true <- can?(user, show(rule)) do
-      render(
-        conn,
-        "show.json",
-        hypermedia:
-          hypermedia("rule", conn, %{
-            "business_concept_id" => rule.business_concept_id,
-            "resource_type" => "rule"
-          }),
-        rule: rule
       )
     else
       false ->
@@ -361,7 +321,6 @@ defmodule TdDqWeb.RuleController do
         rule
         |> Map.from_struct()
         |> Map.delete(:__meta__)
-        |> Map.delete(:rule_type)
         |> Map.delete(:rule_implementations)
 
       audit = %{

@@ -37,8 +37,8 @@ defmodule TdDqWeb.RuleImplementationController do
       rule_implementations =
         filters
         |> Rules.list_rule_implementations()
-        |> Enum.map(&Repo.preload(&1, [:rule, rule: :rule_type]))
-        |> Enum.map(&add_system_params_info(&1))
+        |> Enum.map(&Repo.preload(&1, [:rule]))
+        |> Enum.map(&Rules.enrich_rule_implementation_structures(&1))
 
       render(conn, "index.json", rule_implementations: rule_implementations)
     else
@@ -108,7 +108,6 @@ defmodule TdDqWeb.RuleImplementationController do
     rule =
       rule_id
       |> Rules.get_rule_or_nil()
-      |> Repo.preload([:rule_type])
 
     resource_type = %{
       "business_concept_id" => rule.business_concept_id,
@@ -154,22 +153,14 @@ defmodule TdDqWeb.RuleImplementationController do
           ]
         })
 
-      {:error, %Changeset{data: %{__struct__: _}} = changeset} ->
+      {:error, %Changeset{data: %{__struct__: _}} = changeset, errors} ->
         conn
         |> put_status(:unprocessable_entity)
         |> put_view(ChangesetView)
-        |> render("error.json",
+        |> render("nested_errors.json",
           changeset: changeset,
+          errors: errors,
           prefix: "rule.implementation.error"
-        )
-
-      {:error, %Changeset{} = changeset} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> put_view(ChangesetView)
-        |> render("error.json",
-          changeset: changeset,
-          prefix: "rule.implementation.system_params.error"
         )
 
       error ->
@@ -204,13 +195,11 @@ defmodule TdDqWeb.RuleImplementationController do
        ) do
     case implementation_key do
       nil ->
-        new_rule_implementation =
-          rule_implementation
-          |> Map.put(:implementation_key, "ri" <> Integer.to_string(id))
+        params = Map.put(%{}, :implementation_key, "ri" <> Integer.to_string(id))
 
         rule_implementation
         |> Map.put(:rule, rule)
-        |> Rules.update_rule_implementation(Map.from_struct(new_rule_implementation))
+        |> Rules.update_rule_implementation(params)
 
       _ ->
         {:ok, rule_implementation}
@@ -233,10 +222,10 @@ defmodule TdDqWeb.RuleImplementationController do
     rule_implementation =
       id
       |> Rules.get_rule_implementation!()
-      |> Repo.preload([:rule, [rule: :rule_type]])
+      |> Repo.preload([:rule])
       |> add_rule_results()
       |> add_last_rule_result()
-      |> add_system_params_info()
+      |> Rules.enrich_rule_implementation_structures()
 
     user = conn.assigns[:current_resource]
 
@@ -272,11 +261,12 @@ defmodule TdDqWeb.RuleImplementationController do
 
   def update(conn, %{"id" => id, "rule_implementation" => rule_implementation_params}) do
     user = conn.assigns[:current_resource]
+    update_params = rule_implementation_params |> Map.drop([:implementation_key, "implementation_key"])
 
     rule_implementation =
       id
       |> Rules.get_rule_implementation!()
-      |> Repo.preload([:rule, rule: :rule_type])
+      |> Repo.preload([:rule])
 
     rule = rule_implementation.rule
 
@@ -289,7 +279,7 @@ defmodule TdDqWeb.RuleImplementationController do
          {:ok, %RuleImplementation{} = rule_implementation} <-
            Rules.update_rule_implementation(
              rule_implementation,
-             with_soft_delete(rule_implementation_params)
+             with_soft_delete(update_params)
            ) do
       render(conn, "show.json", rule_implementation: rule_implementation)
     else
@@ -389,9 +379,9 @@ defmodule TdDqWeb.RuleImplementationController do
       rule_implementations =
         %{"rule_id" => rule_id}
         |> Rules.list_rule_implementations(opts)
-        |> Enum.map(&Repo.preload(&1, [:rule, [rule: :rule_type]]))
+        |> Enum.map(&Repo.preload(&1, [:rule]))
         |> Enum.map(&add_last_rule_result(&1))
-        |> Enum.map(&add_system_params_info(&1))
+        |> Enum.map(&Rules.enrich_rule_implementation_structures(&1))
 
       render(conn, "index.json", rule_implementations: rule_implementations)
     else
@@ -422,7 +412,7 @@ defmodule TdDqWeb.RuleImplementationController do
       rule_implementations =
         filters
         |> Rules.list_rule_implementations()
-        |> Enum.map(&Repo.preload(&1, [:rule, [rule: :rule_type]]))
+        |> Enum.map(&Repo.preload(&1, [:rule]))
         |> Enum.map(&add_last_rule_result(&1))
 
       render(conn, "index.json", rule_implementations: rule_implementations)
@@ -459,18 +449,6 @@ defmodule TdDqWeb.RuleImplementationController do
       :_last_rule_result_,
       Rules.get_latest_rule_result(rule_implementation.implementation_key)
     )
-  end
-
-  defp add_system_params_info(
-         %RuleImplementation{
-           rule: %{rule_type: %{params: %{"system_params" => _rule_type_system_params}}}
-         } = rule_implementation
-       ) do
-    Rules.get_rule_implementation_system_params_info(rule_implementation)
-  end
-
-  defp add_system_params_info(rule_implementation) do
-    rule_implementation
   end
 
   defp add_rule_results(rule_implementation) do

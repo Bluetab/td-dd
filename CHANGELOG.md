@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-2210] Rule Implementation model and removal of rule types
+
 ## [3.10.0] 2019-11-11
 
 ### Changed

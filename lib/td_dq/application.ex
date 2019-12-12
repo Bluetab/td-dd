@@ -43,7 +43,8 @@ defmodule TdDq.Application do
       # Worker to remove stale rules
       TdDq.Rules.RuleRemover,
       # Process to cache Rule Implementations Structures
-      TdDq.Rules.RuleImplementation.Loader
+      TdDq.Rules.RuleImplementation.Loader,
+      TdDq.Rules.RuleImplementation.Migrator
     ]
   end
 end

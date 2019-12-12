@@ -41,6 +41,10 @@ defmodule TdDqWeb.ChangesetSupport do
     translate_errors_with_prefix(changeset, String.split(prefix, "."))
   end
 
+  def translate_errors(changeset, prefix) do
+    translate_errors_with_prefix(changeset, String.split(prefix, "."))
+  end
+
   defp translate_errors_with_prefix(changeset, prefix) do
     prefix_items = get_actual_prefix(changeset, prefix)
 
