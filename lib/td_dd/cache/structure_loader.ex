@@ -14,7 +14,7 @@ defmodule TdDd.Cache.StructureLoader do
 
   require Logger
 
-  @structure_external_id_migration_key "TdDd.DataStructures.Migrations:add_external_id"
+  @structure_parent_id_migration_key "TdDd.DataStructures.Migrations:td-2210"
 
   ## Client API
 
@@ -47,12 +47,12 @@ defmodule TdDd.Cache.StructureLoader do
   def handle_info(:refresh_cached_structures, state) do
 
     try do
-      if Redix.exists?(@structure_external_id_migration_key) == false do
+      if Redix.exists?(@structure_parent_id_migration_key) == false do
         Timer.time(
           fn -> refresh_cached_structures() end,
           fn ms, _ -> Logger.info("Structures in cache refreshed in #{ms}ms") end
         )
-        Redix.command!(["SET", @structure_external_id_migration_key, "#{DateTime.utc_now()}"])
+        Redix.command!(["SET", @structure_parent_id_migration_key, "#{DateTime.utc_now()}"])
       end
     rescue e -> Logger.error("Unexpected error while refreshing cached structures... #{inspect(e)}")
     end
@@ -91,7 +91,7 @@ defmodule TdDd.Cache.StructureLoader do
 
   defp cache_structures(structure_ids, opts \\ []) do
     structure_ids
-    |> Enum.map(&DataStructures.get_latest_version(&1, [:system]))
+    |> Enum.map(&DataStructures.get_latest_version(&1, [:system, :parents]))
     |> Enum.filter(& &1)
     |> Enum.map(&to_cache_entry/1)
     |> Enum.map(&(put_cache(&1, opts)))
@@ -109,6 +109,15 @@ defmodule TdDd.Cache.StructureLoader do
     |> Map.put(:system, system)
     |> Map.put(:path, DataStructures.get_path(dsv))
     |> Map.put(:external_id, Map.get(ds, :external_id))
+    |> Map.put(:parent_id, get_first_parent_id(dsv))
+  end
+
+  defp get_first_parent_id(dsv) do
+    case dsv.parents do
+      nil -> nil
+      [] -> nil
+      [parent_dsv | _o] -> parent_dsv.data_structure_id
+    end
   end
 
   defp put_cache(entry, opts) do
