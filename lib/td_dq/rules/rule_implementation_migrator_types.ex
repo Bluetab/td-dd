@@ -62,11 +62,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
         id: id,
         system_params: system_params,
         rule_type_name: rule_type_name,
-        rule_type_params: rule_type_params,
+        rule_type_params: %{"system_params" => [%{"name" => param_name}]},
         rule_rule_type_params: rule_rule_type_params
       })
       when rule_type_name in ["003_integer_values_range", "integer_values_range"] do
-    %{"system_params" => [%{"name" => param_name}]} = rule_type_params
     field_id = system_params[param_name]["id"]
     parent_id = get_parent_id(field_id)
     max_value = Map.get(rule_rule_type_params, "max_value")
@@ -89,11 +88,11 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
         id: id,
         system_params: system_params,
         rule_type_name: rule_type_name,
-        rule_type_params: rule_type_params,
+        rule_type_params: %{"system_params" => [%{"name" => param_name}]},
         rule_rule_type_params: rule_rule_type_params
       })
       when rule_type_name in ["004_max_value", "max_value"] do
-    %{"system_params" => [%{"name" => param_name}]} = rule_type_params
+
     field_id = system_params[param_name]["id"]
     parent_id = get_parent_id(field_id)
     %{"max_value" => max_value} = rule_rule_type_params
@@ -115,11 +114,11 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
         id: id,
         system_params: system_params,
         rule_type_name: rule_type_name,
-        rule_type_params: rule_type_params,
+        rule_type_params: %{"system_params" => [%{"name" => param_name}]},
         rule_rule_type_params: rule_rule_type_params
       })
       when rule_type_name in ["005_min_value", "min_value"] do
-    %{"system_params" => [%{"name" => param_name}]} = rule_type_params
+
     field_id = system_params[param_name]["id"]
     parent_id = get_parent_id(field_id)
     %{"min_value" => min_value} = rule_rule_type_params
@@ -165,10 +164,9 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
         id: id,
         system_params: system_params,
         rule_type_name: rule_type_name,
-        rule_type_params: rule_type_params
+        rule_type_params: %{"system_params" => [%{"name" => param_name}]}
       })
       when rule_type_name in ["007_numeric_format", "numeric_format"] do
-    %{"system_params" => [%{"name" => param_name}]} = rule_type_params
     field_id = system_params[param_name]["id"]
     parent_id = get_parent_id(field_id)
     dataset = [%{structure: %{id: parent_id}}]
@@ -189,9 +187,8 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
         id: id,
         system_params: system_params,
         rule_type_name: "008_date_format",
-        rule_type_params: rule_type_params
+        rule_type_params: %{"system_params" => [%{"name" => param_name}]}
       }) do
-    %{"system_params" => [%{"name" => param_name}]} = rule_type_params
     field_id = system_params[param_name]["id"]
     parent_id = get_parent_id(field_id)
     dataset = [%{structure: %{id: parent_id}}]
@@ -238,13 +235,12 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
         id: id,
         system_params: system_params,
         rule_type_name: "rango_fechas",
-        rule_type_params: rule_type_params,
+        rule_type_params: %{"system_params" => [%{"name" => param_name}]},
         rule_rule_type_params: %{
           "max_date" => "Último período de validación",
           "min_date" => min_value
         }
       }) do
-    %{"system_params" => [%{"name" => param_name}]} = rule_type_params
     field_id = system_params[param_name]["id"]
     parent_id = get_parent_id(field_id)
 
@@ -272,11 +268,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
         id: id,
         system_params: system_params,
         rule_type_name: rule_type_name,
-        rule_type_params: rule_type_params,
+        rule_type_params: %{"system_params" => [%{"name" => param_name}]},
         rule_rule_type_params: rule_rule_type_params
       })
       when rule_type_name in ["010_max_date", "max_date"] do
-    %{"system_params" => [%{"name" => param_name}]} = rule_type_params
     field_id = system_params[param_name]["id"]
     parent_id = get_parent_id(field_id)
     %{"max_date" => max_value} = rule_rule_type_params
@@ -298,11 +293,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
         id: id,
         system_params: system_params,
         rule_type_name: rule_type_name,
-        rule_type_params: rule_type_params,
+        rule_type_params: %{"system_params" => [%{"name" => param_name}]},
         rule_rule_type_params: rule_rule_type_params
       })
       when rule_type_name in ["011_min_date", "min_date"] do
-    %{"system_params" => [%{"name" => param_name}]} = rule_type_params
     field_id = system_params[param_name]["id"]
     parent_id = get_parent_id(field_id)
     %{"min_date" => min_value} = rule_rule_type_params
@@ -324,11 +318,11 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
         id: id,
         system_params: system_params,
         rule_type_name: rule_type_name,
-        rule_type_params: rule_type_params,
+        rule_type_params: %{"system_params" => [%{"name" => param_name}]},
         rule_rule_type_params: rule_rule_type_params
       })
       when rule_type_name in ["012_max_text", "max_text"] do
-    %{"system_params" => [%{"name" => param_name}]} = rule_type_params
+
     field_id = system_params[param_name]["id"]
     parent_id = get_parent_id(field_id)
     %{"num_characters" => num} = rule_rule_type_params
@@ -350,11 +344,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
         id: id,
         system_params: system_params,
         rule_type_name: rule_type_name,
-        rule_type_params: rule_type_params,
+        rule_type_params: %{"system_params" => [%{"name" => param_name}]},
         rule_rule_type_params: rule_rule_type_params
       })
       when rule_type_name in ["013_min_text", "min_text"] do
-    %{"system_params" => [%{"name" => param_name}]} = rule_type_params
     field_id = system_params[param_name]["id"]
     parent_id = get_parent_id(field_id)
     %{"num_characters" => num} = rule_rule_type_params
@@ -376,11 +369,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
         id: id,
         system_params: system_params,
         rule_type_name: rule_type_name,
-        rule_type_params: rule_type_params,
+        rule_type_params: %{"system_params" => [%{"name" => param_name}]},
         rule_rule_type_params: rule_rule_type_params
       })
       when rule_type_name in ["014_in_list", "in_list", "lista_valores"] do
-    %{"system_params" => [%{"name" => param_name}]} = rule_type_params
     field_id = system_params[param_name]["id"]
     parent_id = get_parent_id(field_id)
     %{"values_list" => values} = rule_rule_type_params
@@ -424,9 +416,8 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
         id: id,
         system_params: system_params,
         rule_type_name: "datos_ausentes",
-        rule_type_params: rule_type_params
+        rule_type_params: %{"system_params" => [%{"name" => param_name}]}
       }) do
-    %{"system_params" => [%{"name" => param_name}]} = rule_type_params
     field_id = system_params[param_name]["id"]
     parent_id = get_parent_id(field_id)
     dataset = [%{structure: %{id: parent_id}}]
@@ -486,9 +477,8 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
         id: id,
         system_params: system_params,
         rule_type_name: "date_format",
-        rule_type_params: rule_type_params
+        rule_type_params: %{"system_params" => [%{"name" => param_name}]}
       }) do
-    %{"system_params" => [%{"name" => param_name}]} = rule_type_params
     field_id = system_params[param_name]["id"]
     parent_id = get_parent_id(field_id)
     dataset = [%{structure: %{id: parent_id}}]
@@ -509,9 +499,8 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
         id: id,
         system_params: system_params,
         rule_type_name: "VALID_DNI_AND_CIF",
-        rule_type_params: rule_type_params
+        rule_type_params: %{"system_params" => [%{"name" => param_name}]}
       }) do
-    %{"system_params" => [%{"name" => param_name}]} = rule_type_params
     field_id = system_params[param_name]["id"]
     parent_id = get_parent_id(field_id)
     dataset = [%{structure: %{id: parent_id}}]
