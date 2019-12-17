@@ -172,6 +172,13 @@ defmodule TdDd.DataStructuresTest do
       assert siblings <|> [dsv, sibling]
     end
 
+    test "get_data_structure_version!/1 returns the data_structure with given id" do
+      data_structure_version = insert(:data_structure_version)
+
+      assert DataStructures.get_data_structure_version!(data_structure_version.id)
+             <~> data_structure_version
+    end
+
     test "get_data_structure_version!/2 excludes deleted children if structure is not deleted" do
       [dsv, child, deleted_child] =
         ["structure", "child", "deleted_child"]

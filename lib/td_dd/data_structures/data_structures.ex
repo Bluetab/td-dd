@@ -86,6 +86,26 @@ defmodule TdDd.DataStructures do
     |> Repo.preload(:system)
   end
 
+  @doc """
+  Gets a single data_structure_version.
+
+  Raises `Ecto.NoResultsError` if the Data structure version does not exist.
+
+  ## Examples
+
+      iex> get_data_structure!(123)
+      %DataStructureVersion{}
+
+      iex> get_data_structure!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_data_structure_version!(id) do
+    DataStructureVersion
+    |> Repo.get!(id)
+    |> Repo.preload(:data_structure)
+  end
+
   def get_data_structures(ids, preload \\ :system) do
     from(ds in DataStructure, where: ds.id in ^ids, preload: ^preload, select: ds)
     |> Repo.all()

@@ -8,6 +8,8 @@ defmodule TdDdWeb.DataStructureVersionController do
   alias Ecto
   alias TdCache.TaxonomyCache
   alias TdDd.DataStructures
+  alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureVersion
   alias TdDdWeb.SwaggerDefinitions
 
   require Logger
@@ -17,6 +19,21 @@ defmodule TdDdWeb.DataStructureVersionController do
   def swagger_definitions do
     SwaggerDefinitions.data_structure_version_swagger_definitions()
   end
+
+  @enrich_attrs [
+    :parents,
+    :children,
+    :siblings,
+    :data_fields,
+    :data_field_external_ids,
+    :data_field_links,
+    :versions,
+    :system,
+    :ancestry,
+    :links,
+    :profile,
+    :data_structure_lineage_id
+  ]
 
   swagger_path :show do
     description("Show Data Structure")
@@ -36,24 +53,48 @@ defmodule TdDdWeb.DataStructureVersionController do
   def show(conn, %{"data_structure_id" => data_structure_id, "id" => version}) do
     user = conn.assigns[:current_user]
 
-    dsv =
-      data_structure_id
-      |> get_data_structure_version(version)
-      |> with_domain()
+    with %DataStructure{} = data_structure <-
+           DataStructures.get_data_structure!(data_structure_id) do
+      options = filter(user, data_structure)
 
-    render_with_permissions(conn, user, dsv)
+      dsv =
+        data_structure_id
+        |> get_data_structure_version(version, options)
+        |> with_domain()
+
+      render_with_permissions(conn, user, dsv)
+    else
+      %Ecto.NoResultsError{} -> render_error(conn, :not_found)
+    end
   end
 
   def show(conn, %{"id" => data_structure_version_id}) do
     user = conn.assigns[:current_user]
 
-    dsv =
-      data_structure_version_id
-      |> get_data_structure_version()
-      |> with_domain()
+    with %DataStructureVersion{data_structure: data_structure} <-
+           DataStructures.get_data_structure_version!(data_structure_version_id) do
+      options = filter(user, data_structure)
 
-    render_with_permissions(conn, user, dsv)
+      dsv =
+        data_structure_version_id
+        |> get_data_structure_version(options)
+        |> with_domain()
+
+      render_with_permissions(conn, user, dsv)
+    else
+      %Ecto.NoResultsError{} -> render_error(conn, :not_found)
+    end
   end
+
+  defp filter(user, data_structure) do
+    Enum.filter(@enrich_attrs, &filter(user, data_structure, &1))
+  end
+
+  defp filter(user, data_structure, :profile) do
+    can?(user, view_data_structures_profile(data_structure))
+  end
+
+  defp filter(_user, _data_structure, _attr), do: true
 
   defp with_domain(nil), do: nil
 
@@ -90,30 +131,15 @@ defmodule TdDdWeb.DataStructureVersionController do
     end
   end
 
-  @enrich_attrs [
-    :parents,
-    :children,
-    :siblings,
-    :data_fields,
-    :data_field_external_ids,
-    :data_field_links,
-    :versions,
-    :system,
-    :ancestry,
-    :links,
-    :profile,
-    :data_structure_lineage_id
-  ]
-
-  defp get_data_structure_version(data_structure_version_id) do
-    DataStructures.get_data_structure_version!(data_structure_version_id, @enrich_attrs)
+  defp get_data_structure_version(data_structure_version_id, options) do
+    DataStructures.get_data_structure_version!(data_structure_version_id, options)
   end
 
-  defp get_data_structure_version(data_structure_id, "latest") do
-    DataStructures.get_latest_version(data_structure_id, @enrich_attrs)
+  defp get_data_structure_version(data_structure_id, "latest", options) do
+    DataStructures.get_latest_version(data_structure_id, options)
   end
 
-  defp get_data_structure_version(data_structure_id, version) do
-    DataStructures.get_data_structure_version!(data_structure_id, version, @enrich_attrs)
+  defp get_data_structure_version(data_structure_id, version, options) do
+    DataStructures.get_data_structure_version!(data_structure_id, version, options)
   end
 end
