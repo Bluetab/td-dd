@@ -4,6 +4,12 @@
 
 ### Added
 
+- [TD-2210] Cache parent id in structures' cache
+
+## [3.11.0] 2019-11-25
+
+### Added
+
 - [TD-2115] data_structure_lineage_id having external id of data lineage
 
 ### Changed
