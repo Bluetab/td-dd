@@ -7,7 +7,7 @@ use Mix.Config
 # watchers to your application. For example, we use it
 # with webpack to recompile .js and .css sources.
 config :td_cx, TdCxWeb.Endpoint,
-  http: [port: 4000],
+  http: [port: 4008],
   debug_errors: true,
   code_reloader: true,
   check_origin: false,
@@ -54,3 +54,19 @@ config :td_cx, TdCx.Repo,
   database: "td_cx_dev",
   hostname: "localhost",
   pool_size: 10
+
+config :td_cx, :api_services_login,
+  api_username: "api-admin",
+  api_password: "apipass"
+
+config :td_cx, :auth_service,
+  api_service: TdDdWeb.ApiServices.HttpTdAuthService,
+  auth_host: "localhost",
+  auth_port: "4001",
+  auth_domain: ""
+
+config :td_cx, :audit_service,
+  api_service: TdDdWeb.ApiServices.HttpTdAuditService,
+  audit_host: "localhost",
+  audit_port: "4007",
+  audit_domain: ""

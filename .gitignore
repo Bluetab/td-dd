@@ -1,0 +1,16 @@
+# App artifacts
+/_build
+/deps
+/.elixir_ls
+
+# Generated on crash by the VM
+erl_crash.dump
+
+# Generated code
+priv/static/swagger.json
+
+# User-specific local stuff
+.DS_Store
+.iex.exs
+local
+data
