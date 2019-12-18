@@ -13,7 +13,17 @@ config :td_cx, TdCxWeb.Endpoint,
 
 # Configure your database
 config :td_cx, TdCx.Repo,
-  username: "postgres",
-  password: "postgres",
-  database: "td_cx_prod",
-  pool_size: 15
+  username: "${DB_USER}",
+  password: "${DB_PASSWORD}",
+  database: "${DB_NAME}",
+  hostname: "${DB_HOST}",
+  pool_size: 10
+
+config :td_cx, TdCx.Auth.Guardian,
+  # optional
+  allowed_algos: ["HS512"],
+  issuer: "tdauth",
+  ttl: {1, :hours},
+  secret_key: "${GUARDIAN_SECRET_KEY}"
+
+config :td_cache, redis_host: "${REDIS_HOST}"

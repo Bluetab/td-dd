@@ -8,6 +8,7 @@ use Mix.Config
 # with webpack to recompile .js and .css sources.
 config :td_cx, TdCxWeb.Endpoint,
   http: [port: 4008],
+  url: [host: "localhost", port: 4008],
   debug_errors: true,
   code_reloader: true,
   check_origin: false,
@@ -38,7 +39,8 @@ config :td_cx, TdCxWeb.Endpoint,
 # different ports.
 
 # Do not include metadata nor timestamps in development logs
-config :logger, :console, format: "[$level] $message\n"
+config :logger, :console,
+  format: (System.get_env("EX_LOGGER_FORMAT") || "[$level] $message") <> "\n"
 
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.
@@ -70,3 +72,5 @@ config :td_cx, :audit_service,
   audit_host: "localhost",
   audit_port: "4007",
   audit_domain: ""
+
+config :td_cache, redis_host: "localhost"

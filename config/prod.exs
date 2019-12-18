@@ -10,12 +10,15 @@ use Mix.Config
 # which you should run after static files are built and
 # before starting your production server.
 config :td_cx, TdCxWeb.Endpoint,
-  http: [:inet6, port: System.get_env("PORT") || 4000],
-  url: [host: "example.com", port: 80],
+  http: [port: 4008],
+  url: [host: "demo.truedat.io", port: 443],
+  server: true,
   cache_static_manifest: "priv/static/cache_manifest.json"
 
 # Do not print debug messages in production
-config :logger, level: :info
+config :logger, :console,
+  format: (System.get_env("EX_LOGGER_FORMAT") || "[$level] $message") <> "\n",
+  level: :info
 
 # ## SSL Support
 #

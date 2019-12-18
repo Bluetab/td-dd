@@ -4,8 +4,8 @@ defmodule TdCx.MixProject do
   def project do
     [
       app: :td_cx,
-      version: "0.1.0",
-      elixir: "~> 1.5",
+      version: "3.12.0",
+      elixir: "~> 1.6",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
@@ -40,7 +40,15 @@ defmodule TdCx.MixProject do
       {:postgrex, ">= 0.0.0"},
       {:gettext, "~> 0.11"},
       {:jason, "~> 1.0"},
-      {:plug_cowboy, "~> 2.0"}
+      {:plug_cowboy, "~> 2.0"},
+      {:httpoison, "~> 1.0"},
+      {:distillery, "~> 2.0", runtime: false},
+      {:credo, "~> 1.0.0", only: [:dev, :test], runtime: false},
+      {:guardian, "~> 1.0"},
+      {:canada, "~> 1.0.1"},
+      {:ex_machina, "~> 2.2.2", only: :test},
+      {:phoenix_swagger, "~> 0.8.0"},
+      {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "3.8.0"}
     ]
   end
 
