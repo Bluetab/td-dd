@@ -3,6 +3,7 @@ defmodule TdCxWeb.SourceController do
 
   alias TdCx.Sources
   alias TdCx.Sources.Source
+  alias TdCxWeb.ErrorView
 
   action_fallback TdCxWeb.FallbackController
 
@@ -17,6 +18,12 @@ defmodule TdCxWeb.SourceController do
       |> put_status(:created)
       |> put_resp_header("location", Routes.source_path(conn, :show, source))
       |> render("show.json", source: source)
+    else
+      _error ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> put_view(ErrorView)
+        |> render("422.json")
     end
   end
 

@@ -1,5 +1,5 @@
 defmodule TdCx.Sources.Source do
-  @moduledoc false
+  @moduledoc "Source entity"
 
   use Ecto.Schema
   import Ecto.Changeset
@@ -7,17 +7,17 @@ defmodule TdCx.Sources.Source do
   schema "sources" do
     field :config, {:array, :map}
     field :external_id, :string
-    field :secrets, {:array, :map}
+    field :secrets_key, :string
     field :type, :string
 
-    timestamps(type: :utc_datetime)
+    timestamps(type: :utc_datetime_usec)
   end
 
   @doc false
   def changeset(source, attrs) do
     source
-    |> cast(attrs, [:type, :external_id, :secrets, :config])
-    |> validate_required([:type, :external_id, :config])
+    |> cast(attrs, [:external_id, :config, :secrets_key, :type])
+    |> validate_required([:external_id, :config, :type])
     |> unique_constraint(:external_id)
   end
 end

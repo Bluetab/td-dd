@@ -8,6 +8,8 @@ defmodule TdCx.Sources do
 
   alias TdCx.Sources.Source
 
+  require Logger
+
   @doc """
   Returns the list of sources.
 
@@ -49,10 +51,36 @@ defmodule TdCx.Sources do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_source(attrs \\ %{}) do
+  def create_source(%{"secrets" => secrets, "external_id" => external_id, "type" => type } = attrs ) do
+    IO.inspect attrs
+    secrets_key = "#{type}_#{external_id}"
+
+    with {:ok} <- store_secrets(secrets_key, secrets) do
+      attrs = attrs
+      |> Map.put("secrets_key", secrets_key)
+      |> Map.drop("secrets")
+
+      %Source{}
+      |> Source.changeset(attrs)
+      |> Repo.insert()
+    else
+      error ->
+        Logger.error(
+          error
+        )
+        {:error, "Error storing secrets"}
+    end
+  end
+
+  def create_source(attrs) do
     %Source{}
     |> Source.changeset(attrs)
     |> Repo.insert()
+  end
+
+  defp store_secrets(secrets_key, secrets) do
+    token_info = Application.get_env(:td_cx, :vault)
+    Vaultex.Client.write(secrets_key, %{"value" => secrets}, :token, {token_info[:token]})
   end
 
   @doc """
