@@ -21,3 +21,9 @@ config :td_cx, :auth_service, api_service: TdCxWeb.ApiServices.MockTdAuthService
 config :td_cx, permission_resolver: TdCx.Permissions.MockPermissionResolver
 
 config :td_cache, redis_host: "redis"
+
+config :td_cx, :vault,
+  token: "vault_secret_token1234"
+
+config :vaultex, vault_addr: "http://vault:8200"
+

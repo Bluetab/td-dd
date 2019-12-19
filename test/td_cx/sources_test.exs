@@ -6,9 +6,9 @@ defmodule TdCx.SourcesTest do
   describe "sources" do
     alias TdCx.Sources.Source
 
-    @valid_attrs %{config: [], external_id: "some external_id", secrets: [], type: "some type"}
-    @update_attrs %{config: [], external_id: "some updated external_id", secrets: [], type: "some updated type"}
-    @invalid_attrs %{config: nil, external_id: nil, secrets: nil, type: nil}
+    @valid_attrs %{config: [], external_id: "some external_id", secrets_key: "some secrets_key", type: "some type"}
+    @update_attrs %{config: [], external_id: "some updated external_id", secrets_key: "some updated secrets_key", type: "some updated type"}
+    @invalid_attrs %{config: nil, external_id: nil, secrets_key: nil, type: nil}
 
     def source_fixture(attrs \\ %{}) do
       {:ok, source} =
@@ -33,7 +33,7 @@ defmodule TdCx.SourcesTest do
       assert {:ok, %Source{} = source} = Sources.create_source(@valid_attrs)
       assert source.config == []
       assert source.external_id == "some external_id"
-      assert source.secrets == []
+      assert source.secrets_key == "some secrets_key"
       assert source.type == "some type"
     end
 
@@ -46,7 +46,7 @@ defmodule TdCx.SourcesTest do
       assert {:ok, %Source{} = source} = Sources.update_source(source, @update_attrs)
       assert source.config == []
       assert source.external_id == "some updated external_id"
-      assert source.secrets == []
+      assert source.secrets_key == "some updated secrets_key"
       assert source.type == "some updated type"
     end
 

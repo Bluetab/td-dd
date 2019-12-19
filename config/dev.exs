@@ -74,3 +74,8 @@ config :td_cx, :audit_service,
   audit_domain: ""
 
 config :td_cache, redis_host: "localhost"
+
+config :td_cx, :vault,
+  token: "vault_secret_token1234"
+
+config :vaultex, vault_addr: "http://0.0.0.0:8200"

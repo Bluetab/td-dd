@@ -3,10 +3,10 @@ defmodule TdCx.Repo.Migrations.CreateSources do
 
   def change do
     create table(:sources) do
-      add :type, :string
       add :external_id, :string
-      add :secrets, {:array, :map}
       add :config, {:array, :map}
+      add :secrets_key, :string
+      add :type, :string
 
       timestamps(type: :utc_datetime_usec)
     end

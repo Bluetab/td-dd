@@ -12,9 +12,9 @@ defmodule TdCxWeb.SourceView do
 
   def render("source.json", %{source: source}) do
     %{id: source.id,
-      type: source.type,
       external_id: source.external_id,
-      secrets: source.secrets,
-      config: source.config}
+      config: source.config,
+      secrets_key: source.secrets_key,
+      type: source.type}
   end
 end

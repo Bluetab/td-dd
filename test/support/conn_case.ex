@@ -14,6 +14,8 @@ defmodule TdCxWeb.ConnCase do
   """
 
   use ExUnit.CaseTemplate
+  import TdCxWeb.Authentication, only: :functions
+  alias Ecto.Adapters.SQL.Sandbox
 
   using do
     quote do
@@ -26,13 +28,27 @@ defmodule TdCxWeb.ConnCase do
     end
   end
 
+  @admin_user_name "app-admin"
+
   setup tags do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(TdCx.Repo)
+    :ok = Sandbox.checkout(TdCx.Repo)
 
     unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(TdCx.Repo, {:shared, self()})
+      Sandbox.mode(TdCx.Repo, {:shared, self()})
     end
 
-    {:ok, conn: Phoenix.ConnTest.build_conn()}
+    cond do
+      tags[:admin_authenticated] ->
+        user = create_user(@admin_user_name, is_admin: true)
+        create_user_auth_conn(user)
+
+      tags[:authenticated_no_admin_user] ->
+        user = create_user(tags[:authenticated_no_admin_user], is_admin: false)
+        create_user_auth_conn(user, :not_admin)
+
+      true ->
+        {:ok, conn: Phoenix.ConnTest.build_conn()}
+    end
+
   end
 end

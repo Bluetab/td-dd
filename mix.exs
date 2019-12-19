@@ -20,7 +20,7 @@ defmodule TdCx.MixProject do
   def application do
     [
       mod: {TdCx.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools, :vaultex]
     ]
   end
 
@@ -48,6 +48,7 @@ defmodule TdCx.MixProject do
       {:canada, "~> 1.0.1"},
       {:ex_machina, "~> 2.2.2", only: :test},
       {:phoenix_swagger, "~> 0.8.0"},
+      {:vaultex, "~> 0.8"},
       {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "3.8.0"}
     ]
   end

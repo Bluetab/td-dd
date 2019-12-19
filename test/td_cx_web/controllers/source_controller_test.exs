@@ -7,16 +7,16 @@ defmodule TdCxWeb.SourceControllerTest do
   @create_attrs %{
     config: [],
     external_id: "some external_id",
-    secrets: [],
+    secrets_key: "some secrets_key",
     type: "some type"
   }
   @update_attrs %{
     config: [],
     external_id: "some updated external_id",
-    secrets: [],
+    secrets_key: "some updated secrets_key",
     type: "some updated type"
   }
-  @invalid_attrs %{config: nil, external_id: nil, secrets: nil, type: nil}
+  @invalid_attrs %{config: nil, external_id: nil, secrets_key: nil, type: nil}
 
   def fixture(:source) do
     {:ok, source} = Sources.create_source(@create_attrs)
@@ -28,6 +28,7 @@ defmodule TdCxWeb.SourceControllerTest do
   end
 
   describe "index" do
+    @tag :admin_authenticated
     test "lists all sources", %{conn: conn} do
       conn = get(conn, Routes.source_path(conn, :index))
       assert json_response(conn, 200)["data"] == []
@@ -35,6 +36,7 @@ defmodule TdCxWeb.SourceControllerTest do
   end
 
   describe "create source" do
+    @tag :admin_authenticated
     test "renders source when data is valid", %{conn: conn} do
       conn = post(conn, Routes.source_path(conn, :create), source: @create_attrs)
       assert %{"id" => id} = json_response(conn, 201)["data"]
@@ -45,11 +47,12 @@ defmodule TdCxWeb.SourceControllerTest do
                "id" => id,
                "config" => [],
                "external_id" => "some external_id",
-               "secrets" => [],
+               "secrets_key" => "some secrets_key",
                "type" => "some type"
              } = json_response(conn, 200)["data"]
     end
 
+    @tag :admin_authenticated
     test "renders errors when data is invalid", %{conn: conn} do
       conn = post(conn, Routes.source_path(conn, :create), source: @invalid_attrs)
       assert json_response(conn, 422)["errors"] != %{}
@@ -59,6 +62,7 @@ defmodule TdCxWeb.SourceControllerTest do
   describe "update source" do
     setup [:create_source]
 
+    @tag :admin_authenticated
     test "renders source when data is valid", %{conn: conn, source: %Source{id: id} = source} do
       conn = put(conn, Routes.source_path(conn, :update, source), source: @update_attrs)
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
@@ -69,11 +73,12 @@ defmodule TdCxWeb.SourceControllerTest do
                "id" => id,
                "config" => [],
                "external_id" => "some updated external_id",
-               "secrets" => [],
+               "secrets_key" => "some updated secrets_key",
                "type" => "some updated type"
              } = json_response(conn, 200)["data"]
     end
 
+    @tag :admin_authenticated
     test "renders errors when data is invalid", %{conn: conn, source: source} do
       conn = put(conn, Routes.source_path(conn, :update, source), source: @invalid_attrs)
       assert json_response(conn, 422)["errors"] != %{}
@@ -83,6 +88,7 @@ defmodule TdCxWeb.SourceControllerTest do
   describe "delete source" do
     setup [:create_source]
 
+    @tag :admin_authenticated
     test "deletes chosen source", %{conn: conn, source: source} do
       conn = delete(conn, Routes.source_path(conn, :delete, source))
       assert response(conn, 204)

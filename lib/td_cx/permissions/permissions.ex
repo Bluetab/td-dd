@@ -1,4 +1,4 @@
-  defmodule TdDf.Permissions do
+  defmodule TdCx.Permissions do
   @moduledoc """
   The Permissions context.
   """
