@@ -3,7 +3,6 @@ defmodule TdCxWeb.SourceController do
 
   alias TdCx.Sources
   alias TdCx.Sources.Source
-  alias TdCxWeb.ErrorView
 
   action_fallback TdCxWeb.FallbackController
 
@@ -18,23 +17,25 @@ defmodule TdCxWeb.SourceController do
       |> put_status(:created)
       |> put_resp_header("location", Routes.source_path(conn, :show, source))
       |> render("show.json", source: source)
-    else
-      _error ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> put_view(ErrorView)
-        |> render("422.json")
     end
   end
 
   def show(conn, %{"id" => id}) do
+    user = conn.assigns[:current_user]
     source = Sources.get_source!(id)
-    render(conn, "show.json", source: source)
+
+    case user.user_name == source.type do
+      true ->
+        source = Sources.enrich_secrets(source)
+        render(conn, "show_secrets.json", source: source)
+        _ ->
+          render(conn, "show.json", source: source)
+    end
   end
 
   def update(conn, %{"id" => id, "source" => source_params}) do
-    source = Sources.get_source!(id)
 
+    source = Sources.get_source!(id)
     with {:ok, %Source{} = source} <- Sources.update_source(source, source_params) do
       render(conn, "show.json", source: source)
     end

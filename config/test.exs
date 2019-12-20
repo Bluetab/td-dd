@@ -23,7 +23,8 @@ config :td_cx, permission_resolver: TdCx.Permissions.MockPermissionResolver
 config :td_cache, redis_host: "redis"
 
 config :td_cx, :vault,
-  token: "vault_secret_token1234"
+  token: "vault_secret_token1234",
+  secrets_path: "secret/data/cx/"
 
 config :vaultex, vault_addr: "http://vault:8200"
 

@@ -5,13 +5,13 @@ defmodule TdCxWeb.SourceControllerTest do
   alias TdCx.Sources.Source
 
   @create_attrs %{
-    config: [],
+    config: %{},
     external_id: "some external_id",
     secrets_key: "some secrets_key",
     type: "some type"
   }
   @update_attrs %{
-    config: [],
+    config: %{},
     external_id: "some updated external_id",
     secrets_key: "some updated secrets_key",
     type: "some updated type"
@@ -45,9 +45,8 @@ defmodule TdCxWeb.SourceControllerTest do
 
       assert %{
                "id" => id,
-               "config" => [],
+               "config" => %{},
                "external_id" => "some external_id",
-               "secrets_key" => "some secrets_key",
                "type" => "some type"
              } = json_response(conn, 200)["data"]
     end
@@ -71,10 +70,9 @@ defmodule TdCxWeb.SourceControllerTest do
 
       assert %{
                "id" => id,
-               "config" => [],
-               "external_id" => "some updated external_id",
-               "secrets_key" => "some updated secrets_key",
-               "type" => "some updated type"
+               "config" => %{},
+               "external_id" => "some external_id",
+               "type" => "some type"
              } = json_response(conn, 200)["data"]
     end
 

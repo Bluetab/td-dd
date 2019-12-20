@@ -5,7 +5,7 @@ defmodule TdCx.Sources.Source do
   import Ecto.Changeset
 
   schema "sources" do
-    field :config, {:array, :map}
+    field :config, :map
     field :external_id, :string
     field :secrets_key, :string
     field :type, :string
@@ -17,7 +17,21 @@ defmodule TdCx.Sources.Source do
   def changeset(source, attrs) do
     source
     |> cast(attrs, [:external_id, :config, :secrets_key, :type])
-    |> validate_required([:external_id, :config, :type])
+    |> validate_required([:external_id, :type])
+    |> validate_required_inclusion([:secrets_key, :config])
     |> unique_constraint(:external_id)
+  end
+
+  def validate_required_inclusion(changeset, fields) do
+    if Enum.any?(fields, &present?(changeset, &1)) do
+      changeset
+    else
+      add_error(changeset, hd(fields), "One of these fields must be present: #{inspect fields}")
+    end
+  end
+
+  def present?(changeset, field) do
+    value = get_field(changeset, field)
+    value && value != ""
   end
 end

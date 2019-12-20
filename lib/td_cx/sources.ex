@@ -37,7 +37,18 @@ defmodule TdCx.Sources do
       ** (Ecto.NoResultsError)
 
   """
-  def get_source!(id), do: Repo.get!(Source, id)
+  def get_source!(id) do
+    Repo.get!(Source, id)
+  end
+
+  def enrich_secrets(%Source{secrets_key: nil} = source) do
+    source
+  end
+
+  def enrich_secrets(source) do
+    secrets = read_secrets(source.secrets_key)
+    Map.put(source, :secrets, secrets)
+  end
 
   @doc """
   Creates a source.
@@ -51,23 +62,23 @@ defmodule TdCx.Sources do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_source(%{"secrets" => secrets, "external_id" => external_id, "type" => type } = attrs ) do
-    IO.inspect attrs
-    secrets_key = "#{type}_#{external_id}"
+  def create_source(%{"secrets" => secrets, "external_id" => external_id, "type" => type} = attrs) do
+    # :hackney_trace.enable(:max, :io)
 
-    with {:ok} <- store_secrets(secrets_key, secrets) do
-      attrs = attrs
-      |> Map.put("secrets_key", secrets_key)
-      |> Map.drop("secrets")
+    secrets_key = build_secret_key(type, external_id)
+
+    with {:ok, _r} <- write_secrets(secrets_key, secrets) do
+      attrs =
+        attrs
+        |> Map.put("secrets_key", secrets_key)
+        |> Map.drop(["secrets"])
 
       %Source{}
       |> Source.changeset(attrs)
       |> Repo.insert()
     else
-      error ->
-        Logger.error(
-          error
-        )
+      {:error, error} ->
+        Logger.error(error)
         {:error, "Error storing secrets"}
     end
   end
@@ -78,9 +89,32 @@ defmodule TdCx.Sources do
     |> Repo.insert()
   end
 
-  defp store_secrets(secrets_key, secrets) do
-    token_info = Application.get_env(:td_cx, :vault)
-    Vaultex.Client.write(secrets_key, %{"value" => secrets}, :token, {token_info[:token]})
+  defp build_secret_key(type, external_id) do
+    "#{type}/#{external_id}"
+  end
+
+  defp write_secrets(secrets_key, secrets) do
+    vault_config = Application.get_env(:td_cx, :vault)
+    token = vault_config[:token]
+    secrets_path = vault_config[:secrets_path]
+
+    Vaultex.Client.write(
+      "#{secrets_path}#{secrets_key}",
+      %{"data" => %{"value" => secrets}},
+      :token,
+      {token}
+    )
+  end
+
+  defp read_secrets(secrets_key) do
+    vault_config = Application.get_env(:td_cx, :vault)
+    token = vault_config[:token]
+    secrets_path = vault_config[:secrets_path]
+
+    {:ok, %{"data" => %{"value" => value}}} =
+      Vaultex.Client.read("#{secrets_path}#{secrets_key}", :token, {token})
+
+    value
   end
 
   @doc """
@@ -95,9 +129,30 @@ defmodule TdCx.Sources do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_source(%Source{} = source, attrs) do
+  def update_source(%Source{type: type, external_id: external_id} = source, %{"secrets" => secrets, "config" => _config} = attrs) do
+
+    secrets_key = build_secret_key(type, external_id)
+
+    with {:ok, _r} <- write_secrets(secrets_key, secrets) do
+      attrs =
+        attrs
+        |> Map.put("secrets_key", secrets_key)
+        |> Map.drop(["secrets", "type", "external_id"])
+
+      source
+      |> Source.changeset(attrs)
+      |> Repo.update()
+    else
+      {:error, error} ->
+        Logger.error(error)
+        {:error, "Error storing secrets"}
+    end
+  end
+
+  def update_source(%Source{} = source, %{"config" => _config} = attrs) do
+    updateable_attrs = Map.drop(attrs, ["secrets", "type", "external_id"])
     source
-    |> Source.changeset(attrs)
+    |> Source.changeset(updateable_attrs)
     |> Repo.update()
   end
 
