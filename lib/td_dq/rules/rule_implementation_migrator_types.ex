@@ -7,6 +7,7 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
 
   alias TdDq.Repo
   alias TdDq.Rules
+  alias TdDq.Rules.RuleImplementation
 
   require Logger
 
@@ -92,7 +93,6 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
         rule_rule_type_params: rule_rule_type_params
       })
       when rule_type_name in ["004_max_value", "max_value"] do
-
     field_id = system_params[param_name]["id"]
     parent_id = get_parent_id(field_id)
     %{"max_value" => max_value} = rule_rule_type_params
@@ -118,7 +118,6 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
         rule_rule_type_params: rule_rule_type_params
       })
       when rule_type_name in ["005_min_value", "min_value"] do
-
     field_id = system_params[param_name]["id"]
     parent_id = get_parent_id(field_id)
     %{"min_value" => min_value} = rule_rule_type_params
@@ -322,7 +321,6 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
         rule_rule_type_params: rule_rule_type_params
       })
       when rule_type_name in ["012_max_text", "max_text"] do
-
     field_id = system_params[param_name]["id"]
     parent_id = get_parent_id(field_id)
     %{"num_characters" => num} = rule_rule_type_params
@@ -781,7 +779,7 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
     |> where([ri], ri.id == ^id)
     |> Repo.update_all([])
 
-    rule_implementation = Rules.get_rule_implementation!(id)
+    rule_implementation = get_rule_implementation(id)
     Rules.add_rule_implementation_structure_links(rule_implementation)
   end
 
@@ -795,5 +793,9 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
       parent_id ->
         String.to_integer(parent_id)
     end
+  end
+
+  defp get_rule_implementation(id) do
+     Repo.get!(RuleImplementation, id)
   end
 end
