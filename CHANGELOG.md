@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-2210] Migrate implementations associated with a deleted rule 
+
 ## [3.12.0] 2019-12-19
 
 ### Added
