@@ -13,6 +13,10 @@ config :td_dd, TdDd.Search.Cluster,
   # The library used for JSON encoding/decoding.
   json_library: Jason,
 
+  default_options: [
+    recv_timeout: 40_000,
+  ],
+
   # You should configure each index which you maintain in Elasticsearch here.
   # This configuration will be read by the `mix elasticsearch.build` task,
   # described below.
