@@ -68,6 +68,12 @@ defmodule TdCx.Sources do
       {:error, %Ecto.Changeset{}}
 
   """
+  def create_source(%{"secrets" => %{}, "external_id" => external_id, "type" => type} = attrs) do
+    %Source{}
+    |> Source.changeset(attrs)
+    |> Repo.insert()
+  end
+
   def create_source(%{"secrets" => secrets, "external_id" => external_id, "type" => type} = attrs) do
 
     secrets_key = build_secret_key(type, external_id)
@@ -134,6 +140,14 @@ defmodule TdCx.Sources do
       {:error, %Ecto.Changeset{}}
 
   """
+  def update_source(%Source{} = source, %{"secrets" => %{}} = attrs) do
+    updateable_attrs = Map.drop(attrs, ["secrets", "type", "external_id"])
+
+    source
+    |> Source.changeset(updateable_attrs)
+    |> Repo.update()
+  end
+
   def update_source(
         %Source{type: type, external_id: external_id} = source,
         %{"secrets" => secrets, "config" => _config} = attrs

@@ -11,12 +11,12 @@ defmodule TdCxWeb.SourceControllerTest do
   end
 
   @create_attrs %{
-    config: %{},
+    config: %{"a" => 1},
     external_id: "some external_id",
     type: "some type"
   }
   @update_attrs %{
-    config: %{},
+    config: %{"b" => 1},
     external_id: "some external_id",
     type: "some updated type"
   }
@@ -131,9 +131,8 @@ defmodule TdCxWeb.SourceControllerTest do
       conn = delete(conn, Routes.source_path(conn, :delete, source.external_id))
       assert response(conn, 204)
 
-      assert_error_sent(404, fn ->
-        get(conn, Routes.source_path(conn, :show, source.external_id))
-      end)
+      conn = get(conn, Routes.source_path(conn, :show, source.external_id))
+      assert response(conn, 404)
     end
   end
 
