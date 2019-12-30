@@ -7,13 +7,11 @@ defmodule TdCxWeb.SourceControllerTest do
   @create_attrs %{
     config: %{},
     external_id: "some external_id",
-    secrets_key: "some secrets_key",
     type: "some type"
   }
   @update_attrs %{
     config: %{},
     external_id: "some updated external_id",
-    secrets_key: "some updated secrets_key",
     type: "some updated type"
   }
   @invalid_attrs %{config: nil, external_id: nil, secrets_key: nil, type: nil}

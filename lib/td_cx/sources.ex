@@ -23,6 +23,12 @@ defmodule TdCx.Sources do
     Repo.all(Source)
   end
 
+  def list_sources_by_source_type(source_type) do
+    Source
+    |> where([s], s.type == ^source_type)
+    |> Repo.all()
+  end
+
   @doc """
   Gets a single source.
 
@@ -63,7 +69,6 @@ defmodule TdCx.Sources do
 
   """
   def create_source(%{"secrets" => secrets, "external_id" => external_id, "type" => type} = attrs) do
-    # :hackney_trace.enable(:max, :io)
 
     secrets_key = build_secret_key(type, external_id)
 
@@ -129,8 +134,10 @@ defmodule TdCx.Sources do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_source(%Source{type: type, external_id: external_id} = source, %{"secrets" => secrets, "config" => _config} = attrs) do
-
+  def update_source(
+        %Source{type: type, external_id: external_id} = source,
+        %{"secrets" => secrets, "config" => _config} = attrs
+      ) do
     secrets_key = build_secret_key(type, external_id)
 
     with {:ok, _r} <- write_secrets(secrets_key, secrets) do
@@ -151,6 +158,7 @@ defmodule TdCx.Sources do
 
   def update_source(%Source{} = source, %{"config" => _config} = attrs) do
     updateable_attrs = Map.drop(attrs, ["secrets", "type", "external_id"])
+
     source
     |> Source.changeset(updateable_attrs)
     |> Repo.update()

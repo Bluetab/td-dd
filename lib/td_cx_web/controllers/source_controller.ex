@@ -4,7 +4,21 @@ defmodule TdCxWeb.SourceController do
   alias TdCx.Sources
   alias TdCx.Sources.Source
 
-  action_fallback TdCxWeb.FallbackController
+  action_fallback(TdCxWeb.FallbackController)
+
+  def index(conn, %{"type" => source_type}) do
+    user = conn.assigns[:current_user]
+    sources = Sources.list_sources_by_source_type(source_type)
+
+    case user.user_name == source_type do
+      true ->
+        sources = Enum.map(sources, &Sources.enrich_secrets(&1))
+        render(conn, "index_with_secrets.json", sources: sources)
+
+      _ ->
+        render(conn, "index.json", sources: sources)
+    end
+  end
 
   def index(conn, _params) do
     sources = Sources.list_sources()
@@ -27,15 +41,16 @@ defmodule TdCxWeb.SourceController do
     case user.user_name == source.type do
       true ->
         source = Sources.enrich_secrets(source)
-        render(conn, "show_secrets.json", source: source)
-        _ ->
-          render(conn, "show.json", source: source)
+        render(conn, "show_with_secrets.json", source: source)
+
+      _ ->
+        render(conn, "show.json", source: source)
     end
   end
 
   def update(conn, %{"id" => id, "source" => source_params}) do
-
     source = Sources.get_source!(id)
+
     with {:ok, %Source{} = source} <- Sources.update_source(source, source_params) do
       render(conn, "show.json", source: source)
     end
