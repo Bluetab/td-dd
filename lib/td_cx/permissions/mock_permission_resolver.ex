@@ -6,7 +6,6 @@ defmodule TdCx.Permissions.MockPermissionResolver do
   use Agent
 
   alias Jason, as: JSON
-  alias TdCache.TaxonomyCache
 
   @role_permissions %{}
 
@@ -15,11 +14,10 @@ defmodule TdCx.Permissions.MockPermissionResolver do
     Agent.start_link(fn -> Map.new() end, name: :MockSessions)
   end
 
-  def has_permission?(session_id, permission, "domain", domain_id) do
-    domain_id
-    |> TaxonomyCache.get_parent_ids()
-    |> Enum.any?(&has_resource_permission?(session_id, permission, "domain", &1))
-  end
+  def has_permission?(_jti, _permission, _business_concept, _business_concept_id), do: true
+
+  def has_permission?(_jti, _permission), do: true
+
 
   def has_resource_permission?(session_id, permission, resource_type, resource_id) do
     user_id = Agent.get(:MockSessions, &Map.get(&1, session_id))

@@ -1,8 +1,11 @@
 defmodule TdCxWeb.SourceController do
   use TdCxWeb, :controller
 
+  import Canada, only: [can?: 2]
+
   alias TdCx.Sources
   alias TdCx.Sources.Source
+  alias TdCxWeb.ErrorView
 
   action_fallback(TdCxWeb.FallbackController)
 
@@ -26,41 +29,104 @@ defmodule TdCxWeb.SourceController do
   end
 
   def create(conn, %{"source" => source_params}) do
-    with {:ok, %Source{} = source} <- Sources.create_source(source_params) do
+    user = conn.assigns[:current_user]
+
+    with true <- can?(user, create(%Source{})),
+         {:ok, %Source{} = source} <- Sources.create_source(source_params) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", Routes.source_path(conn, :show, source))
       |> render("show.json", source: source)
+    else
+      false ->
+        conn
+        |> put_status(:forbidden)
+        |> put_view(ErrorView)
+        |> render("403.json")
+
+      _error ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> put_view(ErrorView)
+        |> render("422.json")
     end
   end
 
-  def show(conn, %{"id" => id}) do
+  def show(conn, %{"external_id" => external_id}) do
     user = conn.assigns[:current_user]
-    source = Sources.get_source!(id)
 
-    case user.user_name == source.type do
-      true ->
-        source = Sources.enrich_secrets(source)
-        render(conn, "show_with_secrets.json", source: source)
+    with true <- can?(user, show(%Source{})),
+         %Source{} = source <- Sources.get_source!(external_id) do
+      case user.user_name == source.type do
+        true ->
+          source = Sources.enrich_secrets(source)
+          render(conn, "show_with_secrets.json", source: source)
 
-      _ ->
-        render(conn, "show.json", source: source)
+        _ ->
+          render(conn, "show.json", source: source)
+      end
+    else
+      false ->
+        conn
+        |> put_status(:forbidden)
+        |> put_view(ErrorView)
+        |> render("403.json")
+
+      nil ->
+        conn
+        |> put_status(:not_found)
+        |> put_view(ErrorView)
+        |> render("404.json")
     end
   end
 
-  def update(conn, %{"id" => id, "source" => source_params}) do
-    source = Sources.get_source!(id)
+  def update(conn, %{"external_id" => external_id, "source" => source_params}) do
+    user = conn.assigns[:current_user]
 
-    with {:ok, %Source{} = source} <- Sources.update_source(source, source_params) do
+    with true <- can?(user, update(%Source{})),
+         %Source{} = source <- Sources.get_source!(external_id),
+         {:ok, %Source{} = source} <- Sources.update_source(source, source_params) do
       render(conn, "show.json", source: source)
+    else
+      false ->
+        conn
+        |> put_status(:forbidden)
+        |> put_view(ErrorView)
+        |> render("403.json")
+
+      nil ->
+        conn
+        |> put_status(:not_found)
+        |> put_view(ErrorView)
+        |> render("404.json")
+
+      {:error, _error} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> put_view(ErrorView)
+        |> render("422.json")
     end
   end
 
-  def delete(conn, %{"id" => id}) do
-    source = Sources.get_source!(id)
+  def delete(conn, %{"external_id" => external_id}) do
+    user = conn.assigns[:current_user]
 
-    with {:ok, %Source{}} <- Sources.delete_source(source) do
+    with true <- can?(user, delete(%Source{})),
+         %Source{} = source <- Sources.get_source!(external_id),
+         {:ok, %Source{} = _source} <- Sources.delete_source(source) do
       send_resp(conn, :no_content, "")
+    else
+      false ->
+        conn
+        |> put_status(:forbidden)
+        |> put_view(ErrorView)
+        |> render("403.json")
+
+      nil ->
+        conn
+        |> put_status(:not_found)
+        |> put_view(ErrorView)
+        |> render("404.json")
     end
   end
 end

@@ -43,8 +43,8 @@ defmodule TdCx.Sources do
       ** (Ecto.NoResultsError)
 
   """
-  def get_source!(id) do
-    Repo.get!(Source, id)
+  def get_source!(external_id) do
+    Repo.get_by!(Source, external_id: external_id)
   end
 
   def enrich_secrets(%Source{secrets_key: nil} = source) do

@@ -31,7 +31,13 @@ defmodule TdCxWeb.Router do
   scope "/api", TdCxWeb do
     pipe_through [:api, :api_secure, :api_authorized]
 
-    resources "/sources", SourceController, except: [:new, :edit]
+    resources "/sources", SourceController, except: [:new, :edit, :show, :update, :delete]
+
+    get("/sources/:external_id", SourceController, :show)
+    patch("/sources/:external_id", SourceController, :update)
+    put("/sources/:external_id", SourceController, :update)
+    delete("/sources/:external_id", SourceController, :delete)
+
   end
 
   def swagger_info do

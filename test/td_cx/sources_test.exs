@@ -26,7 +26,7 @@ defmodule TdCx.SourcesTest do
 
     test "get_source!/1 returns the source with given id" do
       source = source_fixture()
-      assert Sources.get_source!(source.id) == source
+      assert Sources.get_source!(source.external_id) == source
     end
 
     test "create_source/1 with valid data creates a source" do
@@ -50,13 +50,13 @@ defmodule TdCx.SourcesTest do
     test "update_source/2 with invalid data returns error changeset" do
       source = source_fixture()
       assert {:error, %Ecto.Changeset{}} = Sources.update_source(source, @invalid_attrs)
-      assert source == Sources.get_source!(source.id)
+      assert source == Sources.get_source!(source.external_id)
     end
 
     test "delete_source/1 deletes the source" do
       source = source_fixture()
       assert {:ok, %Source{}} = Sources.delete_source(source)
-      assert_raise Ecto.NoResultsError, fn -> Sources.get_source!(source.id) end
+      assert_raise Ecto.NoResultsError, fn -> Sources.get_source!(source.external_id) end
     end
 
     test "change_source/1 returns a source changeset" do
