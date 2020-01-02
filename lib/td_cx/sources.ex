@@ -68,16 +68,14 @@ defmodule TdCx.Sources do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_source(%{"secrets" => %{}, "external_id" => external_id, "type" => type} = attrs) do
+  def create_source(%{"secrets" => secrets} = attrs) when secrets == %{} do
     %Source{}
     |> Source.changeset(attrs)
     |> Repo.insert()
   end
 
   def create_source(%{"secrets" => secrets, "external_id" => external_id, "type" => type} = attrs) do
-
     secrets_key = build_secret_key(type, external_id)
-
     with {:ok, _r} <- write_secrets(secrets_key, secrets) do
       attrs =
         attrs
@@ -88,9 +86,14 @@ defmodule TdCx.Sources do
       |> Source.changeset(attrs)
       |> Repo.insert()
     else
-      {:error, error} ->
+      {:error, [error]} ->
         Logger.error(error)
-        {:error, "Error storing secrets"}
+        {:vault_error, "Error storing secrets"}
+
+      {:error, [error, error_code]} ->
+        Logger.error(error_code)
+        Logger.error(error)
+        {:vault_error, "Error storing secrets"}
     end
   end
 
@@ -128,6 +131,18 @@ defmodule TdCx.Sources do
     value
   end
 
+  defp delete_secrets(nil) do
+    :ok
+  end
+
+  defp delete_secrets(secrets_key) do
+    vault_config = Application.get_env(:td_cx, :vault)
+    token = vault_config[:token]
+    secrets_path = vault_config[:secrets_path]
+
+    Vaultex.Client.delete("#{secrets_path}#{secrets_key}", :token, {token})
+  end
+
   @doc """
   Updates a source.
 
@@ -140,12 +155,8 @@ defmodule TdCx.Sources do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_source(%Source{} = source, %{"secrets" => %{}} = attrs) do
-    updateable_attrs = Map.drop(attrs, ["secrets", "type", "external_id"])
-
-    source
-    |> Source.changeset(updateable_attrs)
-    |> Repo.update()
+  def update_source(%Source{} = source, %{"secrets" => secrets} = attrs) when secrets == %{} do
+    do_update_source(source, attrs)
   end
 
   def update_source(
@@ -164,18 +175,40 @@ defmodule TdCx.Sources do
       |> Source.changeset(attrs)
       |> Repo.update()
     else
-      {:error, error} ->
+      {:error, [error]} ->
         Logger.error(error)
-        {:error, "Error storing secrets"}
+        {:vault_error, "Error storing secrets"}
+
+      {:error, [error, error_code]} ->
+        Logger.error(error_code)
+        Logger.error(error)
+        {:vault_error, "Error storing secrets"}
     end
   end
 
   def update_source(%Source{} = source, %{"config" => _config} = attrs) do
-    updateable_attrs = Map.drop(attrs, ["secrets", "type", "external_id"])
+    do_update_source(source, attrs)
+  end
 
-    source
-    |> Source.changeset(updateable_attrs)
-    |> Repo.update()
+  defp do_update_source(source, attrs) do
+    updateable_attrs = Map.drop(attrs, ["secrets", "type", "external_id"])
+    updateable_attrs = Map.put(updateable_attrs, "secrets_key", nil)
+
+    case delete_secrets(source.secrets_key) do
+      :ok ->
+        source
+        |> Source.changeset(updateable_attrs)
+        |> Repo.update()
+
+      {:error, [error]} ->
+        Logger.error(error)
+        {:vault_error, "Error deleting secrets #{source.secrets_key}"}
+
+      {:error, [error, error_code]} ->
+        Logger.error(error_code)
+        Logger.error(error)
+        {:vault_error, "Error deleting secrets #{source.secrets_key}"}
+    end
   end
 
   @doc """
@@ -190,8 +223,24 @@ defmodule TdCx.Sources do
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_source(%Source{} = source) do
+  def delete_source(%Source{secrets_key: nil} = source) do
     Repo.delete(source)
+  end
+
+  def delete_source(%Source{secrets_key: secrets_key} = source) do
+    case delete_secrets(secrets_key) do
+      :ok ->
+        Repo.delete(source)
+
+      {:error, [error]} ->
+        Logger.error(error)
+        {:vault_error, "Error deleting secrets #{secrets_key}"}
+
+      {:error, [error, error_code]} ->
+        Logger.error(error_code)
+        Logger.error(error)
+        {:vault_error, "Error deleting secrets #{secrets_key}"}
+    end
   end
 
   @doc """
