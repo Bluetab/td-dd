@@ -14,7 +14,7 @@ config :td_cx, TdCx.Repo,
   username: "postgres",
   password: "postgres",
   database: "td_cx_test",
-  hostname: "localhost",
+  hostname: "postgres",
   pool: Ecto.Adapters.SQL.Sandbox
 
 config :td_cx, :auth_service, api_service: TdCxWeb.ApiServices.MockTdAuthService
