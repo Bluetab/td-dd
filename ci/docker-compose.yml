@@ -74,6 +74,6 @@ services:
 
   acceptance:
     image: bluetab/wait-for:20190507133127
-    command: service:4004 -t 30 -- curl --silent service:4004/api/ping
+    command: service:4008 -t 30 -- curl --silent service:4008/api/ping
     depends_on:
       - service
