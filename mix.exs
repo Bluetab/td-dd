@@ -42,7 +42,7 @@ defmodule TdCx.MixProject do
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:httpoison, "~> 1.0"},
-      {:distillery, "~> 2.0", runtime: false},
+      {:distillery, "== 2.0.12", runtime: false},
       {:credo, "~> 1.0.0", only: [:dev, :test], runtime: false},
       {:guardian, "~> 1.0"},
       {:canada, "~> 1.0.1"},
