@@ -18,7 +18,6 @@ defmodule TdCx.Permissions.MockPermissionResolver do
 
   def has_permission?(_jti, _permission), do: true
 
-
   def has_resource_permission?(session_id, permission, resource_type, resource_id) do
     user_id = Agent.get(:MockSessions, &Map.get(&1, session_id))
 
