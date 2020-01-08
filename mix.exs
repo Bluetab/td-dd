@@ -4,10 +4,14 @@ defmodule TdCx.MixProject do
   def project do
     [
       app: :td_cx,
-      version: "3.12.0",
+      version:
+        case System.get_env("APP_VERSION") do
+          nil -> "3.12.0-local"
+          v -> v
+        end,
       elixir: "~> 1.6",
       elixirc_paths: elixirc_paths(Mix.env()),
-      compilers: [:phoenix, :gettext] ++ Mix.compilers(),
+      compilers: [:phoenix, :gettext] ++ Mix.compilers() ++ [:phoenix_swagger],
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps()
@@ -20,7 +24,7 @@ defmodule TdCx.MixProject do
   def application do
     [
       mod: {TdCx.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools, :vaultex]
     ]
   end
 
@@ -42,12 +46,14 @@ defmodule TdCx.MixProject do
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:httpoison, "~> 1.0"},
-      {:distillery, "~> 2.0", runtime: false},
+      {:distillery, "== 2.0.12", runtime: false},
       {:credo, "~> 1.0.0", only: [:dev, :test], runtime: false},
       {:guardian, "~> 1.0"},
       {:canada, "~> 1.0.1"},
       {:ex_machina, "~> 2.2.2", only: :test},
       {:phoenix_swagger, "~> 0.8.0"},
+      {:ex_json_schema, "~> 0.5"},
+      {:vaultex, "~> 0.8"},
       {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "3.8.0"}
     ]
   end

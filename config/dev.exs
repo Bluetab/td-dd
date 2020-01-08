@@ -40,6 +40,7 @@ config :td_cx, TdCxWeb.Endpoint,
 
 # Do not include metadata nor timestamps in development logs
 config :logger, :console,
+  level: :debug,
   format: (System.get_env("EX_LOGGER_FORMAT") || "[$level] $message") <> "\n"
 
 # Set a higher stacktrace during development. Avoid configuring such
@@ -74,3 +75,11 @@ config :td_cx, :audit_service,
   audit_domain: ""
 
 config :td_cache, redis_host: "localhost"
+
+config :td_cx, :vault,
+  token: "vault_secret_token1234",
+  secrets_path: "secret/data/cx/"
+
+config :vaultex, vault_addr: "http://0.0.0.0:8200"
+
+
