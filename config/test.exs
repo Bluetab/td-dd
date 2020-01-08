@@ -14,10 +14,17 @@ config :td_cx, TdCx.Repo,
   username: "postgres",
   password: "postgres",
   database: "td_cx_test",
-  hostname: "localhost",
+  hostname: "postgres",
   pool: Ecto.Adapters.SQL.Sandbox
 
 config :td_cx, :auth_service, api_service: TdCxWeb.ApiServices.MockTdAuthService
 config :td_cx, permission_resolver: TdCx.Permissions.MockPermissionResolver
 
 config :td_cache, redis_host: "redis"
+
+config :td_cx, :vault,
+  token: "vault_secret_token1234",
+  secrets_path: "secret/data/cx/"
+
+config :vaultex, vault_addr: "http://vault:8200"
+

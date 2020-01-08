@@ -44,7 +44,7 @@ config :td_cx, :auth_service,
 
 config :td_cx, :phoenix_swagger,
   swagger_files: %{
-    "priv/static/swagger.json" => [router: TdDdWeb.Router]
+    "priv/static/swagger.json" => [router: TdCxWeb.Router]
   }
 
 config :td_cx, :audit_service,

@@ -27,3 +27,9 @@ config :td_cx, TdCx.Auth.Guardian,
   secret_key: "${GUARDIAN_SECRET_KEY}"
 
 config :td_cache, redis_host: "${REDIS_HOST}"
+
+config :td_cx, :vault,
+  token: "${VAULT_TOKEN}",
+  secrets_path: "${VAULT_SECRETS_PATH}"
+
+config :vaultex, vault_addr: "http://${VAULT_SERVICE_HOST}:${VAULT_SERVICE_PORT}"
