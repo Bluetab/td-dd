@@ -4,7 +4,11 @@ defmodule TdCx.MixProject do
   def project do
     [
       app: :td_cx,
-      version: "3.12.0",
+      version:
+        case System.get_env("APP_VERSION") do
+          nil -> "3.12.0-local"
+          v -> v
+        end,
       elixir: "~> 1.6",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers() ++ [:phoenix_swagger],
