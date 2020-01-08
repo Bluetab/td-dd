@@ -76,7 +76,7 @@ defmodule TdCx.Sources do
 
   def create_source(%{"secrets" => secrets, "external_id" => external_id, "type" => type} = attrs) do
     secrets_key = build_secret_key(type, external_id)
-    with {:ok, _r} <- write_secrets(secrets_key, secrets) do
+    with :ok <- write_secrets(secrets_key, secrets) do
       attrs =
         attrs
         |> Map.put("secrets_key", secrets_key)
@@ -112,12 +112,18 @@ defmodule TdCx.Sources do
     token = vault_config[:token]
     secrets_path = vault_config[:secrets_path]
 
-    Vaultex.Client.write(
+    response = Vaultex.Client.write(
       "#{secrets_path}#{secrets_key}",
       %{"data" => %{"value" => secrets}},
       :token,
       {token}
     )
+
+    case response do
+      :ok -> :ok
+      {:ok, _r} -> :ok
+      _error -> response
+    end
   end
 
   defp read_secrets(secrets_key) do
@@ -165,7 +171,7 @@ defmodule TdCx.Sources do
       ) do
     secrets_key = build_secret_key(type, external_id)
 
-    with {:ok, _r} <- write_secrets(secrets_key, secrets) do
+    with :ok <- write_secrets(secrets_key, secrets) do
       attrs =
         attrs
         |> Map.put("secrets_key", secrets_key)
