@@ -31,11 +31,7 @@ defmodule TdCx.Sources.Source do
   end
 
   def present?(changeset, field) do
-    # IO.puts "----present"
-    # IO.inspect field
-    # IO.inspect changeset
     value = get_field(changeset, field)
-    # IO.inspect value
     value != nil && value != "" && value != %{}
   end
 end
