@@ -22,7 +22,7 @@ defmodule TdCxWeb.SourceView do
     %{
       id: source.id,
       external_id: source.external_id,
-      config: source.config,
+      config: Map.get(source, :config, %{}) || %{},
       secrets_key: Map.get(source, :secrets_key),
       secrets: Map.get(source, :secrets),
       type: source.type
@@ -30,6 +30,11 @@ defmodule TdCxWeb.SourceView do
   end
 
   def render("source.json", %{source: source}) do
-    %{id: source.id, external_id: source.external_id, config: source.config, type: source.type}
+    %{
+      id: source.id,
+      external_id: source.external_id,
+      config: Map.get(source, :config, %{}) || %{},
+      type: source.type
+    }
   end
 end

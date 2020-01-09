@@ -167,7 +167,7 @@ defmodule TdCx.Sources do
 
   def update_source(
         %Source{type: type, external_id: external_id} = source,
-        %{"secrets" => secrets, "config" => _config} = attrs
+        %{"secrets" => secrets} = attrs
       ) do
     secrets_key = build_secret_key(type, external_id)
 
