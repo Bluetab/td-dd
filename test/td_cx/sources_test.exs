@@ -8,7 +8,7 @@ defmodule TdCx.SourcesTest do
 
     @valid_attrs %{"config" => %{}, "external_id" => "some external_id", "secrets_key" => "some secrets_key", "type" => "some type"}
     @update_attrs %{"config" => %{"a" => 2}}
-    @invalid_attrs %{"config" => nil, "external_id" => nil, "secrets_key" => nil, "type" => nil}
+    @invalid_attrs %{"config" => 2, "external_id" => nil, "secrets_key" => nil, "type" => nil}
 
     def source_fixture(attrs \\ %{}) do
       {:ok, source} =
