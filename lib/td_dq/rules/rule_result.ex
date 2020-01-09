@@ -5,13 +5,16 @@ defmodule TdDq.Rules.RuleResult do
 
   import Ecto.Changeset
 
+  alias Decimal
   alias TdDq.DateParser
   alias TdDq.Rules.RuleResult
+
+  @scale 2
 
   schema "rule_results" do
     field(:implementation_key, :string)
     field(:date, :utc_datetime)
-    field(:result, :decimal, precision: 5, scale: 2)
+    field(:result, :decimal, precision: 5, scale: @scale)
     field(:parent_domains, :string, default: "")
     field(:errors, :integer)
     field(:records, :integer)
@@ -20,7 +23,10 @@ defmodule TdDq.Rules.RuleResult do
 
   @doc false
   def changeset(%RuleResult{} = rule_result, attrs) do
-    attrs = format_date(attrs)
+    attrs =
+      attrs
+      |> format_date()
+      |> format_result()
 
     rule_result
     |> cast(attrs, [:implementation_key, :date, :parent_domains, :result, :errors, :records])
@@ -38,4 +44,11 @@ defmodule TdDq.Rules.RuleResult do
   end
 
   defp format_date(attrs), do: attrs
+
+  defp format_result(%{"result" => result} = attrs) when is_float(result) do
+    result = Decimal.round(Decimal.from_float(result), @scale, :floor)
+    Map.put(attrs, "result", result)
+  end
+
+  defp format_result(attrs), do: attrs
 end
