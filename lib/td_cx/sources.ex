@@ -76,6 +76,7 @@ defmodule TdCx.Sources do
 
   def create_source(%{"secrets" => secrets, "external_id" => external_id, "type" => type} = attrs) do
     secrets_key = build_secret_key(type, external_id)
+
     with :ok <- write_secrets(secrets_key, secrets) do
       attrs =
         attrs
@@ -86,14 +87,7 @@ defmodule TdCx.Sources do
       |> Source.changeset(attrs)
       |> Repo.insert()
     else
-      {:error, [error]} ->
-        Logger.error(error)
-        {:vault_error, "Error storing secrets"}
-
-      {:error, [error, error_code]} ->
-        Logger.error(error_code)
-        Logger.error(error)
-        {:vault_error, "Error storing secrets"}
+      {:vault_error, error} -> {:vault_error, error}
     end
   end
 
@@ -112,17 +106,32 @@ defmodule TdCx.Sources do
     token = vault_config[:token]
     secrets_path = vault_config[:secrets_path]
 
-    response = Vaultex.Client.write(
-      "#{secrets_path}#{secrets_key}",
-      %{"data" => %{"value" => secrets}},
-      :token,
-      {token}
-    )
+    response =
+      Vaultex.Client.write(
+        "#{secrets_path}#{secrets_key}",
+        %{"data" => %{"value" => secrets}},
+        :token,
+        {token}
+      )
 
     case response do
-      :ok -> :ok
-      {:ok, _r} -> :ok
-      _error -> response
+      :ok ->
+        :ok
+
+      {:ok, _r} ->
+        :ok
+
+      {:error, [error]} ->
+        Logger.error(error)
+        {:vault_error, "Error storing secrets"}
+
+      {:error, [error, error_code]} ->
+        Logger.error(error_code)
+        Logger.error(error)
+        {:vault_error, "Error storing secrets"}
+
+      _error ->
+        response
     end
   end
 
@@ -131,10 +140,15 @@ defmodule TdCx.Sources do
     token = vault_config[:token]
     secrets_path = vault_config[:secrets_path]
 
-    {:ok, %{"data" => %{"value" => value}}} =
-      Vaultex.Client.read("#{secrets_path}#{secrets_key}", :token, {token})
+    response = Vaultex.Client.read("#{secrets_path}#{secrets_key}", :token, {token})
 
-    value
+    case response do
+      {:ok, %{"data" => %{"value" => value}}} ->
+        value
+
+      {:ok, %{"data" => nil}} ->
+        %{}
+    end
   end
 
   defp delete_secrets(nil) do
@@ -146,7 +160,23 @@ defmodule TdCx.Sources do
     token = vault_config[:token]
     secrets_path = vault_config[:secrets_path]
 
-    Vaultex.Client.delete("#{secrets_path}#{secrets_key}", :token, {token})
+    case Vaultex.Client.delete("#{secrets_path}#{secrets_key}", :token, {token}) do
+      :ok ->
+        :ok
+
+      {:error, [error]} ->
+        Logger.error(error)
+        {:vault_error, "Error deleting secrets #{secrets_key}"}
+
+      {:error, [error, error_code]} ->
+        Logger.error(error_code)
+        Logger.error(error)
+        {:vault_error, "Error deleting secrets #{secrets_key}"}
+
+      {:error, code} ->
+        Logger.error(code)
+        {:vault_error, "Error deleting secrets #{secrets_key}"}
+    end
   end
 
   @doc """
@@ -181,19 +211,14 @@ defmodule TdCx.Sources do
       |> Source.changeset(attrs)
       |> Repo.update()
     else
-      {:error, [error]} ->
-        Logger.error(error)
-        {:vault_error, "Error storing secrets"}
-
-      {:error, [error, error_code]} ->
-        Logger.error(error_code)
-        Logger.error(error)
-        {:vault_error, "Error storing secrets"}
+      {:vault_error, error} -> {:vault_error, error}
     end
   end
 
-  def update_source(%Source{} = source, %{"config" => _config} = attrs) do
-    do_update_source(source, attrs)
+  def update_source(%Source{} = source, %{"config" => config}) do
+    source
+    |> Source.changeset(%{"config" => config})
+    |> Repo.update()
   end
 
   defp do_update_source(source, attrs) do
@@ -206,14 +231,8 @@ defmodule TdCx.Sources do
         |> Source.changeset(updateable_attrs)
         |> Repo.update()
 
-      {:error, [error]} ->
-        Logger.error(error)
-        {:vault_error, "Error deleting secrets #{source.secrets_key}"}
-
-      {:error, [error, error_code]} ->
-        Logger.error(error_code)
-        Logger.error(error)
-        {:vault_error, "Error deleting secrets #{source.secrets_key}"}
+      {:vault_error, error} ->
+        {:vault_error, error}
     end
   end
 
@@ -238,14 +257,8 @@ defmodule TdCx.Sources do
       :ok ->
         Repo.delete(source)
 
-      {:error, [error]} ->
-        Logger.error(error)
-        {:vault_error, "Error deleting secrets #{secrets_key}"}
-
-      {:error, [error, error_code]} ->
-        Logger.error(error_code)
-        Logger.error(error)
-        {:vault_error, "Error deleting secrets #{secrets_key}"}
+      {:vault_error, error} ->
+        {:vault_error, error}
     end
   end
 

@@ -26,7 +26,7 @@ defmodule TdCx.Sources.Source do
     if Enum.any?(fields, &present?(changeset, &1)) do
       changeset
     else
-      add_error(changeset, hd(fields), "One of these fields must be present: #{inspect fields}")
+      add_error(changeset, hd(fields), "One of these fields must be present: [secrets, config]")
     end
   end
 
