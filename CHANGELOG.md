@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-2272] 40 seconds timeout to query elasticsearch 
+
 ## [3.12.0] 2019-12-19
 
 ### Added
