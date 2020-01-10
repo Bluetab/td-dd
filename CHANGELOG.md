@@ -6,6 +6,10 @@
 
 - [TD-2210] Migrate implementations associated with a deleted rule 
 
+### Changed
+
+- [TD-2288] Round floor of results in rule results
+
 ## [3.12.0] 2019-12-19
 
 ### Added

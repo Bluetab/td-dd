@@ -8,6 +8,7 @@ defmodule TdDq.RuleResultsTest do
   alias TdDq.Cache.RuleLoader
   alias TdDq.MockRelationCache
   alias TdDq.Rules
+  alias TdDq.Rules.RuleResult
   alias TdDq.Search.IndexWorker
 
   setup_all do
@@ -205,5 +206,36 @@ defmodule TdDq.RuleResultsTest do
       assert result == expected_result
       assert expected_message == result_text
     end
+
+    test "create_rule_result/1 creates a rule result with valid result" do
+      errors = 2
+      records = 1_000_000
+      result = calculate_result(records, errors)
+      implementation_key = "IMPL4"
+
+      params = %{
+        "date" => "2019-01-31-00-00-00",
+        "errors" => errors,
+        "implementation_key" => implementation_key,
+        "records" => records,
+        "result" => result
+      }
+
+      assert {:ok, %RuleResult{} = rr} = Rules.create_rule_result(params)
+      assert rr.implementation_key == implementation_key
+      assert rr.errors == errors
+      assert rr.records == records
+      assert rr.result == round_decimal(result)
+    end
+  end
+
+  defp calculate_result(0, _errors), do: 0
+
+  defp calculate_result(records, errors) do
+    abs((records - errors) / records) * 100
+  end
+
+  defp round_decimal(result) do
+    Decimal.round(Decimal.from_float(result), 2, :floor)
   end
 end
