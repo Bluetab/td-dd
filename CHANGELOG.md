@@ -2,6 +2,12 @@
 
 ## [3.13.0] 2020-01-13
 
+### Changed
+
+- [TD-1658] List results related to non deleted rules or implementations
+
+## [3.13.0] 2020-01-13
+
 ### Fixed
 
 - [TD-2210] Migrate implementations associated with a deleted rule 

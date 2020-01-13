@@ -787,7 +787,14 @@ defmodule TdDq.Rules do
   end
 
   def list_rule_results do
-    Repo.all(RuleResult)
+    RuleResult
+    |> join(:inner, [rr, ri], ri in RuleImplementation,
+      on: rr.implementation_key == ri.implementation_key
+    )
+    |> join(:inner, [_, ri, r], r in Rule, on: r.id == ri.rule_id)
+    |> where([_, _, r], is_nil(r.deleted_at))
+    |> where([_, ri, _], is_nil(ri.deleted_at))
+    |> Repo.all()
   end
 
   def list_rule_results(ids) do
