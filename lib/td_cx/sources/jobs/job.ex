@@ -3,11 +3,13 @@ defmodule TdCx.Sources.Jobs.Job do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias TdCx.Sources.Events.Event
   alias TdCx.Sources.Source
 
   schema "jobs" do
-    belongs_to :source, Source
-    field :external_id, Ecto.UUID, autogenerate: true
+    belongs_to(:source, Source)
+    has_many(:events, Event)
+    field(:external_id, Ecto.UUID, autogenerate: true)
 
     timestamps()
   end

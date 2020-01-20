@@ -35,6 +35,11 @@ defmodule TdCxWeb.Router do
       get("/jobs", JobController, :source_jobs)
       post("/jobs", JobController, :create_job)
     end
+
+    resources "/jobs", JobController, except: [:new, :edit, :update, :create, :show, :index, :delete], param: "external_id" do
+      get("/events", EventController, :job_events)
+      post("/events", EventController, :create_event)
+    end
   end
 
   def swagger_info do

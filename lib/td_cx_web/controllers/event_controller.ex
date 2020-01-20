@@ -1,22 +1,22 @@
-defmodule TdCxWeb.JobController do
+defmodule TdCxWeb.EventController do
   use TdCxWeb, :controller
 
   import Canada, only: [can?: 2]
 
-  alias TdCx.Sources
+  alias TdCx.Sources.Events
+  alias TdCx.Sources.Events.Event
   alias TdCx.Sources.Jobs
   alias TdCx.Sources.Jobs.Job
-  alias TdCx.Sources.Source
   alias TdCxWeb.ErrorView
 
-  action_fallback(TdCxWeb.FallbackController)
+  action_fallback TdCxWeb.FallbackController
 
-  def source_jobs(conn, %{"source_external_id" => source_id}) do
+  def job_events(conn, %{"job_external_id" => job_id}) do
     user = conn.assigns[:current_user]
 
-    with true <- can?(user, index(%Job{})),
-         %Source{jobs: jobs} <- Sources.get_source!(source_id, [:jobs]) do
-      render(conn, "index.json", jobs: jobs)
+    with true <- can?(user, index(%Event{})),
+         %Job{events: events} <- Jobs.get_job!(job_id, [:events]) do
+      render(conn, "index.json", events: events)
     else
       false ->
         conn
@@ -32,15 +32,15 @@ defmodule TdCxWeb.JobController do
       |> render("404.json")
   end
 
-  def create_job(conn, %{"source_external_id" => source_external_id}) do
+  def create_event(conn, %{"job_external_id" => job_external_id, "event" => event_params}) do
     user = conn.assigns[:current_user]
 
-    with true <- can?(user, create(%Job{})),
-         %Source{id: id} <- Sources.get_source!(source_external_id),
-         {:ok, %Job{} = job} <- Jobs.create_job(%{source_id: id}) do
+    with true <- can?(user, create(%Event{})),
+         %Job{id: id} <- Jobs.get_job!(job_external_id),
+         {:ok, %Event{} = event} <- Events.create_event(Map.put(event_params, "job_id", id)) do
       conn
       |> put_status(:created)
-      |> render("show.json", job: job)
+      |> render("show.json", event: event)
     else
       false ->
         conn

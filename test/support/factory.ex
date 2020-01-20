@@ -3,6 +3,7 @@ defmodule TdCx.Factory do
 
   use ExMachina.Ecto, repo: TdCx.Repo
 
+  alias TdCx.Sources.Events.Event
   alias TdCx.Sources.Jobs.Job
   alias TdCx.Sources.Source
 
@@ -18,6 +19,15 @@ defmodule TdCx.Factory do
   def job_factory do
     %Job{
       source: build(:source)
+    }
+  end
+
+  def event_factory do
+    %Event{
+      job: build(:job),
+      date: DateTime.utc_now(),
+      type: "init",
+      message: "Message"
     }
   end
 end

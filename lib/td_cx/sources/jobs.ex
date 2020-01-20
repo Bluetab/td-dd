@@ -35,7 +35,12 @@ defmodule TdCx.Sources.Jobs do
       ** (Ecto.NoResultsError)
 
   """
-  def get_job!(id), do: Repo.get!(Job, id)
+
+  def get_job!(external_id, options \\ []) do
+    Job
+    |> Repo.get_by!(external_id: external_id)
+    |> enrich(options)
+  end
 
   @doc """
   Creates a job.
@@ -100,5 +105,11 @@ defmodule TdCx.Sources.Jobs do
   """
   def change_job(%Job{} = job) do
     Job.changeset(job, %{})
+  end
+
+  defp enrich(%Job{} = job, []), do: job
+
+  defp enrich(%Job{} = job, options) do
+    Repo.preload(job, options)
   end
 end

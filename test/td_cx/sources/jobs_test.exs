@@ -12,5 +12,18 @@ defmodule TdCx.Sources.JobsTest do
       assert job.source_id == source.id
       assert not is_nil(job.external_id)
     end
+
+    test "get_job!/2 will get a job with its events" do
+      fixture = insert(:job)
+      event = insert(:event, job: fixture)
+
+      assert %Job{id: id, events: events, external_id: external_id} =
+               Jobs.get_job!(fixture.external_id, [:events])
+
+      assert id == fixture.id
+      assert external_id == fixture.external_id
+      assert length(events) == 1
+      assert Enum.any?(events, &(&1.id == event.id))
+    end
   end
 end
