@@ -1,4 +1,5 @@
 defmodule TdCx.Sources.Jobs.Job do
+  @moduledoc "Job entity"
   use Ecto.Schema
   import Ecto.Changeset
 

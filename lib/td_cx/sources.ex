@@ -58,7 +58,7 @@ defmodule TdCx.Sources do
     Map.put(source, :secrets, secrets)
   end
 
-  defp enrich(%Source{} = source, []), do: source 
+  defp enrich(%Source{} = source, []), do: source
 
   defp enrich(%Source{} = source, options) do
     Repo.preload(source, options)
