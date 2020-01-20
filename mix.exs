@@ -51,10 +51,8 @@ defmodule TdDq.Mixfile do
       {:guardian, "~> 1.0"},
       {:comeonin, "~> 4.0"},
       {:cabbage, only: [:test], git: "https://github.com/Bluetab/cabbage", tag: "v0.3.7-alpha"},
-      {:phoenix_swagger,
-       git: "https://github.com/xerions/phoenix_swagger",
-       ref: "6869934eb0838b9f249226628eabeaedbdef8ea3"},
-      {:ex_json_schema, "== 0.5.7"},
+      {:phoenix_swagger, "~> 0.8.2"},
+      {:ex_json_schema, "~> 0.7.3"},
       {:csv, "~> 2.0.0"},
       {:ex_machina, "~> 2.2.2", only: :test},
       {:canada, "~> 1.0.1"},
@@ -63,7 +61,8 @@ defmodule TdDq.Mixfile do
        branch: "feature/bulk-index-action"},
       {:td_hypermedia, git: "https://github.com/Bluetab/td-hypermedia.git", tag: "3.6.1"},
       {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "3.9.1"},
-      {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "3.5.0"}
+      {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "3.14.0"},
+      {:poison, "~> 3.1"}
     ]
   end
 
