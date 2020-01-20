@@ -23,6 +23,8 @@ defmodule TdCxWeb.ConnCase do
       use Phoenix.ConnTest
       alias TdCxWeb.Router.Helpers, as: Routes
 
+      import TdCx.Factory
+
       # The default endpoint for testing
       @endpoint TdCxWeb.Endpoint
     end

@@ -4,11 +4,14 @@ defmodule TdCx.Sources.Source do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias TdCx.Sources.Jobs.Job
+  
   schema "sources" do
     field :config, :map
     field :external_id, :string
     field :secrets_key, :string
     field :type, :string
+    has_many :jobs, Job
 
     timestamps(type: :utc_datetime_usec)
   end

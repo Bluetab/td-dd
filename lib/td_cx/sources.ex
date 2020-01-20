@@ -43,8 +43,10 @@ defmodule TdCx.Sources do
       ** (Ecto.NoResultsError)
 
   """
-  def get_source!(external_id) do
-    Repo.get_by!(Source, external_id: external_id)
+  def get_source!(external_id, options \\ []) do
+    Source
+    |> Repo.get_by!(external_id: external_id)
+    |> enrich(options)
   end
 
   def enrich_secrets(%Source{secrets_key: nil} = source) do
@@ -54,6 +56,12 @@ defmodule TdCx.Sources do
   def enrich_secrets(source) do
     secrets = read_secrets(source.secrets_key)
     Map.put(source, :secrets, secrets)
+  end
+
+  defp enrich(%Source{} = source, []), do: source 
+
+  defp enrich(%Source{} = source, options) do
+    Repo.preload(source, options)
   end
 
   @doc """

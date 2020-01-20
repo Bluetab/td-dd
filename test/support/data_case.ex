@@ -23,6 +23,7 @@ defmodule TdCx.DataCase do
       import Ecto.Changeset
       import Ecto.Query
       import TdCx.DataCase
+      import TdCx.Factory
     end
   end
 
