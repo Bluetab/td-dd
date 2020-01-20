@@ -16,6 +16,7 @@ defmodule TdDd.DataStructures do
   alias TdDd.Repo
   alias TdDd.Search.IndexWorker
   alias TdDd.Utils.CollectionUtils
+  alias TdDfLib.Format
   alias TdDfLib.Validation
 
   @doc """
@@ -308,6 +309,7 @@ defmodule TdDd.DataStructures do
 
     case TemplateCache.get_by_name!(type) do
       %{:content => content_schema} ->
+        content_schema = Format.flatten_content_fields(content_schema)
         attrs =
           data_structure
           |> add_no_updated_fields(attrs, opts[:bulk])

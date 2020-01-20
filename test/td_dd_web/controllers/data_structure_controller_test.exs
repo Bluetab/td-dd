@@ -46,14 +46,17 @@ defmodule TdDdWeb.DataStructureControllerTest do
     label: "some label",
     name: "some template name",
     scope: "dd",
-    content: [
-      %{
-        "name" => "field",
-        "type" => "string",
-        "cardinality" => "1",
-        "values" => %{"fixed" => ["1", "2"]}
-      }
-    ]
+    content: [%{
+      "name" => "group",
+      "fields" => [
+        %{
+          "name" => "field",
+          "type" => "string",
+          "cardinality" => "1",
+          "values" => %{"fixed" => ["1", "2"]}
+        }
+      ]
+    }]
   }
 
   setup_all do

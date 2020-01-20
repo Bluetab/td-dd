@@ -5,6 +5,7 @@ defmodule TdDd.Audit.AuditSupport do
   alias TdDd.Audit
   alias TdDd.Systems
   alias TdDd.Systems.System
+  alias TdDfLib.Format
 
   def create_data_structure(conn, id, params) do
     create_data_structure_event(conn, id, params, "create_data_structure")
@@ -30,8 +31,9 @@ defmodule TdDd.Audit.AuditSupport do
   end
 
   defp df_content_changes(old_data, new_data, %{content: template_content}) do
-    field_labels =
-      Enum.reduce(template_content, %{}, fn field, acc ->
+    field_labels = template_content
+      |> Format.flatten_content_fields
+      |> Enum.reduce(%{}, fn field, acc ->
         Map.put(acc, Map.get(field, "name"), Map.get(field, "label"))
       end)
 
