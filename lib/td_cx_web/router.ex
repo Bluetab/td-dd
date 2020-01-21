@@ -40,6 +40,10 @@ defmodule TdCxWeb.Router do
       get("/events", EventController, :job_events)
       post("/events", EventController, :create_event)
     end
+
+    post("/jobs/search", JobController, :search)
+    post("/jobs_filters/search", JobFilterController, :search)
+    get("/jobs/search/reindex_all", SearchController, :reindex_all)
   end
 
   def swagger_info do

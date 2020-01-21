@@ -184,4 +184,27 @@ defmodule TdCxWeb.SwaggerDefinitions do
         end
     }
   end
+
+  def filter_swagger_definitions do
+    %{
+      FilterResponse:
+        swagger_schema do
+          title("Filters")
+
+          description(
+            "An object whose keys are filter names and values are arrays of filterable values"
+          )
+
+          properties do
+            data(:object, "Filter values", required: true)
+          end
+
+          example(%{
+            data: %{
+              status: ["init", "end"]
+            }
+          })
+        end
+    }
+  end
 end
