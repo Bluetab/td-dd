@@ -4,7 +4,6 @@ defmodule TdCx.Search.IndexWorker do
   """
   use GenServer
 
-  # TODO
   alias TdCx.Search.Indexer
 
   require Logger

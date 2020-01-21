@@ -6,6 +6,7 @@ defmodule TdCx.Sources.Events do
   import Ecto.Query, warn: false
   alias TdCx.Repo
 
+  alias TdCx.Search.IndexWorker
   alias TdCx.Sources.Events.Event
 
   @doc """
@@ -53,6 +54,13 @@ defmodule TdCx.Sources.Events do
     %Event{}
     |> Event.changeset(attrs)
     |> Repo.insert()
+    |> case do
+      {:ok, %Event{} = event} ->
+        IndexWorker.reindex(event.job_id)
+        {:ok, event}
+        
+      error -> error
+    end
   end
 
   @doc """

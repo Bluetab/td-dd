@@ -2,10 +2,10 @@ defmodule TdCx.Sources.Jobs do
   @moduledoc """
   The Sources.Jobs context.
   """
-
   import Ecto.Query, warn: false
+  
   alias TdCx.Repo
-
+  alias TdCx.Search.IndexWorker
   alias TdCx.Sources.Jobs.Job
 
   @doc """
@@ -58,6 +58,13 @@ defmodule TdCx.Sources.Jobs do
     %Job{}
     |> Job.changeset(attrs)
     |> Repo.insert()
+    |> case do
+      {:ok, %Job{} = job} ->
+        IndexWorker.reindex(job.id)
+        {:ok, job}
+        
+      error -> error
+    end 
   end
 
   @doc """
