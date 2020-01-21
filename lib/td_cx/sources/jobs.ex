@@ -3,7 +3,7 @@ defmodule TdCx.Sources.Jobs do
   The Sources.Jobs context.
   """
   import Ecto.Query, warn: false
-  
+
   alias TdCx.Repo
   alias TdCx.Search.IndexWorker
   alias TdCx.Sources.Jobs.Job
@@ -62,9 +62,10 @@ defmodule TdCx.Sources.Jobs do
       {:ok, %Job{} = job} ->
         IndexWorker.reindex(job.id)
         {:ok, job}
-        
-      error -> error
-    end 
+
+      error ->
+        error
+    end
   end
 
   @doc """

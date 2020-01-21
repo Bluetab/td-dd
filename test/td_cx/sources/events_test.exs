@@ -1,9 +1,15 @@
 defmodule TdCx.Sources.EventsTest do
   use TdCx.DataCase
 
+  alias TdCx.Search.IndexWorker
   alias TdCx.Sources.Events
 
   @valid_attrs %{date: DateTime.utc_now(), type: "init", message: "Message"}
+
+  setup_all do
+    start_supervised(IndexWorker)
+    :ok
+  end
 
   describe "events" do
     alias TdCx.Sources.Events.Event

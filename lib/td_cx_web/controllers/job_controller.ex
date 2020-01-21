@@ -6,6 +6,7 @@ defmodule TdCxWeb.JobController do
   alias TdCx.Sources
   alias TdCx.Sources.Jobs
   alias TdCx.Sources.Jobs.Job
+  alias TdCx.Sources.Jobs.Search
   alias TdCx.Sources.Source
   alias TdCxWeb.ErrorView
 
@@ -60,5 +61,20 @@ defmodule TdCxWeb.JobController do
       |> put_status(:not_found)
       |> put_view(ErrorView)
       |> render("404.json")
+  end
+
+  def search(conn, params) do
+    user = conn.assigns[:current_user]
+    page = params |> Map.get("page", 0)
+    size = params |> Map.get("size", 50)
+
+    params
+    |> Map.drop(["page", "size"])
+    |> Search.search_jobs(user, page, size)
+    |> render_search(conn)
+  end
+
+  def render_search(results, conn) do
+    render(conn, "index.json", jobs: results)
   end
 end

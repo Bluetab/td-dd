@@ -26,7 +26,7 @@ defmodule TdCx.Search.Store do
     jobs = from(job in schema)
 
     jobs
-    |> where([job], job.id in ^ids) 
+    |> where([job], job.id in ^ids)
     |> select([job], job)
     |> Repo.stream()
     |> Repo.stream_preload(1000, [:source, :events])

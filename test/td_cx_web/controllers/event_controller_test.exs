@@ -1,10 +1,17 @@
 defmodule TdCxWeb.EventControllerTest do
   use TdCxWeb.ConnCase
 
+  alias TdCx.Search.IndexWorker
+
   @valid_attrs %{"date" => DateTime.utc_now(), "type" => "init", "message" => "Message"}
 
   def fixture(:event) do
     insert(:event)
+  end
+
+  setup_all do
+    start_supervised(IndexWorker)
+    :ok
   end
 
   setup %{conn: conn} do

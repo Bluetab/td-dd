@@ -1,7 +1,13 @@
 defmodule TdCx.Sources.JobsTest do
   use TdCx.DataCase
 
+  alias TdCx.Search.IndexWorker
   alias TdCx.Sources.Jobs
+
+  setup_all do
+    start_supervised(IndexWorker)
+    :ok
+  end
 
   describe "jobs" do
     alias TdCx.Sources.Jobs.Job

@@ -58,8 +58,9 @@ defmodule TdCx.Sources.Events do
       {:ok, %Event{} = event} ->
         IndexWorker.reindex(event.job_id)
         {:ok, event}
-        
-      error -> error
+
+      error ->
+        error
     end
   end
 

@@ -1,8 +1,15 @@
 defmodule TdCxWeb.JobControllerTest do
   use TdCxWeb.ConnCase
 
+  alias TdCx.Search.IndexWorker
+
   def fixture(:job) do
     insert(:job)
+  end
+
+  setup_all do
+    start_supervised(IndexWorker)
+    :ok
   end
 
   setup %{conn: conn} do
