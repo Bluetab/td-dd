@@ -55,6 +55,9 @@ defmodule TdCx.MixProject do
       {:phoenix_swagger, "~> 0.8.0"},
       {:ex_json_schema, "~> 0.5"},
       {:vaultex, "~> 0.8"},
+      {:elasticsearch,
+       git: "https://github.com/Bluetab/elasticsearch-elixir.git",
+       branch: "feature/bulk-index-action"},
       {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "3.8.0"}
     ]
   end

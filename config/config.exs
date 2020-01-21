@@ -53,6 +53,10 @@ config :td_cx, :audit_service,
 
 config :td_cx, permission_resolver: TdCache.Permissions
 config :td_cx, acl_cache: TdCache.AclCache
+config :td_cx, index_worker: TdCx.Search.IndexWorker
+
+# Import Elasticsearch config
+import_config "elastic.exs"
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.

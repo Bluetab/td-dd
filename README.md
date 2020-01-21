@@ -49,7 +49,7 @@ Ready to run in production? Please [check our deployment guides](http://www.phoe
 
 * **Bluetab Solutions Group, SL** - *Initial work* - [Bluetab](http://www.bluetab.net)
 
-See also the list of [contributors](https://github.com/bluetab/td-bg) who participated in this project.
+See also the list of [contributors](https://github.com/bluetab/td-cx) who participated in this project.
 
 ## License
 

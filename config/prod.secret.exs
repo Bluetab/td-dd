@@ -28,6 +28,9 @@ config :td_cx, TdCx.Auth.Guardian,
 
 config :td_cache, redis_host: "${REDIS_HOST}"
 
+config :td_cx, TdCx.Search.Cluster,
+  url: "${ES_URL}"
+
 config :td_cx, :vault,
   token: "${VAULT_TOKEN}",
   secrets_path: "${VAULT_SECRETS_PATH}"

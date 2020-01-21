@@ -20,6 +20,8 @@ config :td_cx, TdCx.Repo,
 config :td_cx, :auth_service, api_service: TdCxWeb.ApiServices.MockTdAuthService
 config :td_cx, permission_resolver: TdCx.Permissions.MockPermissionResolver
 
+config :td_cx, TdCx.Search.Cluster, api: TdCx.ElasticsearchMock
+
 config :td_cache, redis_host: "redis"
 
 config :td_cx, :vault,
