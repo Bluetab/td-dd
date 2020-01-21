@@ -23,7 +23,7 @@ defmodule TdCxWeb.JobController do
     produces("application/json")
 
     parameters do
-      external_id(:path, :string, "source external id", required: true)
+      source_external_id(:path, :string, "source external id", required: true)
     end
 
     response(200, "OK", Schema.ref(:JobsResponse))
@@ -57,7 +57,7 @@ defmodule TdCxWeb.JobController do
     produces("application/json")
 
     parameters do
-      external_id(:path, :string, "source external id", required: true)
+      source_external_id(:path, :string, "source external id", required: true)
     end
 
     response(200, "OK", Schema.ref(:JobResponse))

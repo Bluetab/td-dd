@@ -22,7 +22,7 @@ defmodule TdCxWeb.EventController do
     produces("application/json")
 
     parameters do
-      external_id(:path, :string, "job external id", required: true)
+      job_external_id(:path, :string, "job external id", required: true)
     end
 
     response(200, "OK", Schema.ref(:EventsResponse))
@@ -56,7 +56,7 @@ defmodule TdCxWeb.EventController do
     produces("application/json")
 
     parameters do
-      external_id(:path, :string, "source external id", required: true)
+      job_external_id(:path, :string, "source external id", required: true)
       event(:body, Schema.ref(:CreateEvent), "Parameters used to create a event")
     end
 

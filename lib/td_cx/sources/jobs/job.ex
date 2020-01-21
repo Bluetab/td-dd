@@ -43,7 +43,7 @@ defmodule TdCx.Sources.Jobs.Job do
     defp metrics([]), do: Map.new()
 
     defp metrics(events) do
-      {min, max} = Enum.min_max_by(events, fn %{date: date} -> Date.to_erl(date) end)
+      {min, max} = Enum.min_max_by(events, fn %{date: date} -> date end)
 
       Map.new()
       |> Map.put(:start_date, Map.get(min, :date))
