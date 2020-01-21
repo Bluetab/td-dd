@@ -1,5 +1,6 @@
 defmodule TdCxWeb.JobController do
   use TdCxWeb, :controller
+  use PhoenixSwagger
 
   import Canada, only: [can?: 2]
 
@@ -9,8 +10,26 @@ defmodule TdCxWeb.JobController do
   alias TdCx.Sources.Jobs.Search
   alias TdCx.Sources.Source
   alias TdCxWeb.ErrorView
+  alias TdCxWeb.SwaggerDefinitions
 
   action_fallback(TdCxWeb.FallbackController)
+
+  def swagger_definitions do
+    SwaggerDefinitions.job_definitions()
+  end
+
+  swagger_path :source_jobs do
+    description("Get jobs of a given source")
+    produces("application/json")
+
+    parameters do
+      external_id(:path, :string, "source external id", required: true)
+    end
+
+    response(200, "OK", Schema.ref(:JobsResponse))
+    response(403, "Forbidden")
+    response(404, "Not found")
+  end
 
   def source_jobs(conn, %{"source_external_id" => source_id}) do
     user = conn.assigns[:current_user]
@@ -31,6 +50,20 @@ defmodule TdCxWeb.JobController do
       |> put_status(:not_found)
       |> put_view(ErrorView)
       |> render("404.json")
+  end
+
+  swagger_path :create_job do
+    description("Creates job of a given source")
+    produces("application/json")
+
+    parameters do
+      external_id(:path, :string, "source external id", required: true)
+    end
+
+    response(200, "OK", Schema.ref(:JobResponse))
+    response(403, "Forbidden")
+    response(404, "Not found")
+    response(422, "Client Error")
   end
 
   def create_job(conn, %{"source_external_id" => source_external_id}) do
@@ -61,6 +94,20 @@ defmodule TdCxWeb.JobController do
       |> put_status(:not_found)
       |> put_view(ErrorView)
       |> render("404.json")
+  end
+
+  swagger_path :search do
+    description("Search jobs")
+
+    parameters do
+      search(
+        :body,
+        Schema.ref(:JobFilterRequest),
+        "Search query and filter parameters"
+      )
+    end
+
+    response(200, "OK", Schema.ref(:JobsResponse))
   end
 
   def search(conn, params) do

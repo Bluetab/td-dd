@@ -46,8 +46,8 @@ defmodule TdCx.Sources.Jobs.Job do
       {min, max} = Enum.min_max_by(events, fn %{date: date} -> Date.to_erl(date) end)
 
       Map.new()
-      |> Map.put(:start, Map.get(min, :date))
-      |> Map.put(:end, Map.get(max, :date))
+      |> Map.put(:start_date, Map.get(min, :date))
+      |> Map.put(:end_date, Map.get(max, :date))
       |> Map.put(:status, Map.get(max, :type))
       |> Map.put(:message, Map.get(max, :message))
     end
