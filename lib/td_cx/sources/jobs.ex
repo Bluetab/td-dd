@@ -40,6 +40,7 @@ defmodule TdCx.Sources.Jobs do
     Job
     |> Repo.get_by!(external_id: external_id)
     |> enrich(options)
+    |> with_metrics()
   end
 
   @doc """
@@ -60,6 +61,7 @@ defmodule TdCx.Sources.Jobs do
     |> Repo.insert()
     |> case do
       {:ok, %Job{} = job} ->
+        job = Repo.preload(job, [:source])
         IndexWorker.reindex(job.id)
         {:ok, job}
 
@@ -67,6 +69,12 @@ defmodule TdCx.Sources.Jobs do
         error
     end
   end
+
+  def with_metrics(%{events: events} = job) when is_list(events) do
+    Map.merge(job, metrics(events))
+  end
+
+  def with_metrics(job), do: job
 
   def metrics([]), do: Map.new()
 

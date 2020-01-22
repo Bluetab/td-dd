@@ -48,7 +48,7 @@ defmodule TdCx.ElasticsearchMock do
     Jobs.list_jobs()
     |> Repo.preload([:source, :events])
     |> Enum.map(&with_source/1)
-    |> Enum.map(&metrics/1)
+    |> Enum.map(&Jobs.with_metrics/1)
     |> Enum.map(&Map.delete(&1, :__meta__))
     |> Enum.map(&Map.from_struct/1)
     |> search_results()
@@ -83,9 +83,5 @@ defmodule TdCx.ElasticsearchMock do
 
   defp with_source(%{source: source} = job) do
     Map.put(job, :source, Map.take(source, [:external_id, :type]))
-  end
-
-  defp metrics(%{events: events} = job) do
-    Map.merge(job, Jobs.metrics(events))
   end
 end

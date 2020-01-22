@@ -152,6 +152,7 @@ defmodule TdCxWeb.SourceController do
         |> put_status(:forbidden)
         |> put_view(ErrorView)
         |> render("403.json")
+
       {:vault_error, _message} ->
         conn
         |> put_status(:internal_server_error)
@@ -203,12 +204,18 @@ defmodule TdCxWeb.SourceController do
         |> put_status(:not_found)
         |> put_view(ErrorView)
         |> render("404.json")
-      {:vault_error, _message} ->
-          conn
-          |> put_status(:internal_server_error)
-          |> put_view(ErrorView)
-          |> render("500.json")
 
+      {:error, changeset} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> put_view(TdCxWeb.ChangesetView)
+        |> render("error.json", changeset: changeset)
+
+      {:vault_error, _message} ->
+        conn
+        |> put_status(:internal_server_error)
+        |> put_view(ErrorView)
+        |> render("500.json")
     end
   end
 end

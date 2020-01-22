@@ -257,13 +257,17 @@ defmodule TdCx.Sources do
 
   """
   def delete_source(%Source{secrets_key: nil} = source) do
-    Repo.delete(source)
+    source
+    |> Source.delete_changeset()
+    |> Repo.delete()
   end
 
   def delete_source(%Source{secrets_key: secrets_key} = source) do
     case delete_secrets(secrets_key) do
       :ok ->
-        Repo.delete(source)
+        source
+        |> Source.delete_changeset()
+        |> Repo.delete()
 
       {:vault_error, error} ->
         {:vault_error, error}
