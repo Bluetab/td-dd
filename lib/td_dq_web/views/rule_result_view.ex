@@ -8,7 +8,7 @@ defmodule TdDqWeb.RuleResultView do
 
   def render("rule_result.json", %{rule_result: rule_result}) do
     %{
-      rule_implementation_id: rule_result.implementation_key,
+      implementation_key: rule_result.implementation_key,
       date: rule_result.date,
       result: rule_result.result,
       records: Map.get(rule_result, :records),

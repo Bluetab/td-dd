@@ -4,6 +4,7 @@
 
 ### Changed
 
+- [TD-1658] List results related to non deleted rules or implementations
 - [TD-2269] Update elasticsearch mapping for dynamic field using new content model
 
 ## [3.13.0] 2020-01-13
