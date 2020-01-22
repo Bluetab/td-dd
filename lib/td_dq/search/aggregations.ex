@@ -3,6 +3,7 @@ defmodule TdDq.Search.Aggregations do
   Aggregations for elasticsearch
   """
   alias TdCache.TemplateCache
+  alias TdDfLib.Format
 
   def aggregation_terms do
     static_keywords = [
@@ -34,6 +35,7 @@ defmodule TdDq.Search.Aggregations do
 
   defp template_terms(%{content: content}, scope) do
     content
+    |> Format.flatten_content_fields
     |> Enum.filter(&filter_content_term/1)
     |> Enum.map(&Map.take(&1, ["name", "type"]))
     |> Enum.reject(&(scope == "bg" and &1["type"] != "user"))

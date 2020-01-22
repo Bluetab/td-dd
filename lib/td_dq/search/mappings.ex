@@ -3,6 +3,7 @@ defmodule TdDq.Search.Mappings do
   Elastic Search mappings for Quality Rule
   """
   alias TdCache.TemplateCache
+  alias TdDfLib.Format
 
   @raw %{raw: %{type: "keyword"}}
   @raw_sort %{raw: %{type: "keyword"}, sort: %{type: "keyword", normalizer: "sortable"}}
@@ -86,12 +87,15 @@ defmodule TdDq.Search.Mappings do
 
   defp get_mappings(%{content: content}, "bg", type) do
     content
+    |> Format.flatten_content_fields
     |> Enum.filter(&(Map.get(&1, "type") == type))
     |> Enum.map(&field_mapping/1)
   end
 
   defp get_mappings(%{content: content}, _scope, _type) do
-    Enum.map(content, &field_mapping/1)
+    content
+    |> Format.flatten_content_fields
+    |> Enum.map(&field_mapping/1)
   end
 
   defp field_mapping(%{"name" => name, "type" => "table"}) do
