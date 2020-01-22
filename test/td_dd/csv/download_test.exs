@@ -32,13 +32,16 @@ defmodule TdDd.DownloadTest do
         name: template_name,
         label: "label",
         scope: "dd",
-        content: [
-          %{
-            "name" => field_name,
-            "type" => "list",
-            "label" => field_label
-          }
-        ]
+        content: [%{
+          "name" => "group",
+          "fields" => [
+            %{
+              "name" => field_name,
+              "type" => "list",
+              "label" => field_label
+            }
+          ]
+        }]
       })
 
       structure_1 = %{

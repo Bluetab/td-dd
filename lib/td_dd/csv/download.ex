@@ -4,6 +4,7 @@ defmodule TdDd.CSV.Download do
   """
 
   alias TdCache.TemplateCache
+  alias TdDfLib.Format
 
   @headers [
     "type",
@@ -45,7 +46,7 @@ defmodule TdDd.CSV.Download do
   end
 
   defp template_structures_to_csv(template, structures, header_labels, add_separation) do
-    content = template.content
+    content = Format.flatten_content_fields(template.content)
     content_fields = Enum.reduce(content, [], &(&2 ++ [Map.take(&1, ["name", "values", "type"])]))
     content_labels = Enum.reduce(content, [], &(&2 ++ [Map.get(&1, "label")]))
     headers = build_headers(header_labels)
