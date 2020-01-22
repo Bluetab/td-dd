@@ -23,7 +23,7 @@ defmodule TdCxWeb.JobController do
     produces("application/json")
 
     parameters do
-      source_external_id(:path, :string, "source external id", required: true)
+      source_external_id(:path, :string, "job external id", required: true)
     end
 
     response(200, "OK", Schema.ref(:JobsResponse))
@@ -33,10 +33,11 @@ defmodule TdCxWeb.JobController do
 
   def source_jobs(conn, %{"source_external_id" => source_id}) do
     user = conn.assigns[:current_user]
+    params = %{"filters" => %{"source.external_id" => source_id}}
 
-    with true <- can?(user, index(%Job{})),
-         %Source{jobs: jobs} <- Sources.get_source!(source_id, [:jobs]) do
-      render(conn, "index.json", jobs: jobs)
+    with true <- can?(user, index(Job)),
+         %{results: results} <- Search.search_jobs(params, user, 0, 10_000) do
+      render(conn, "index.json", jobs: results)
     else
       false ->
         conn
@@ -57,7 +58,7 @@ defmodule TdCxWeb.JobController do
     produces("application/json")
 
     parameters do
-      source_external_id(:path, :string, "source external id", required: true)
+      source_external_id(:path, :string, "job external id", required: true)
     end
 
     response(200, "OK", Schema.ref(:JobResponse))
@@ -69,7 +70,7 @@ defmodule TdCxWeb.JobController do
   def create_job(conn, %{"source_external_id" => source_external_id}) do
     user = conn.assigns[:current_user]
 
-    with true <- can?(user, create(%Job{})),
+    with true <- can?(user, create(Job)),
          %Source{id: id} <- Sources.get_source!(source_external_id),
          {:ok, %Job{} = job} <- Jobs.create_job(%{source_id: id}) do
       conn
@@ -87,6 +88,40 @@ defmodule TdCxWeb.JobController do
         |> put_status(:unprocessable_entity)
         |> put_view(TdCxWeb.ChangesetView)
         |> render("error.json", changeset: changeset)
+    end
+  rescue
+    _e in Ecto.NoResultsError ->
+      conn
+      |> put_status(:not_found)
+      |> put_view(ErrorView)
+      |> render("404.json")
+  end
+
+  swagger_path :show do
+    description("Get job with the given external_id")
+    produces("application/json")
+
+    parameters do
+      external_id(:path, :string, "external id of job", required: true)
+    end
+
+    response(200, "OK", Schema.ref(:JobResponse))
+    response(403, "Forbidden")
+    response(422, "Client Error")
+  end
+
+  def show(conn, %{"external_id" => external_id}) do
+    user = conn.assigns[:current_user]
+
+    with true <- can?(user, show(Job)),
+         %Job{} = job <- Jobs.get_job!(external_id, [:events, :source]) do
+          render(conn, "show.json", job: job)
+    else
+      false ->
+        conn
+        |> put_status(:forbidden)
+        |> put_view(ErrorView)
+        |> render("403.json")
     end
   rescue
     _e in Ecto.NoResultsError ->
@@ -122,6 +157,7 @@ defmodule TdCxWeb.JobController do
   end
 
   def render_search(results, conn) do
+    results = Map.get(results, :results)
     render(conn, "index.json", jobs: results)
   end
 end

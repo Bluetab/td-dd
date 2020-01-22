@@ -36,7 +36,7 @@ defmodule TdCxWeb.Router do
       post("/jobs", JobController, :create_job)
     end
 
-    resources "/jobs", JobController, except: [:new, :edit, :update, :create, :show, :index, :delete], param: "external_id" do
+    resources "/jobs", JobController, except: [:new, :edit, :update, :create, :index, :delete], param: "external_id" do
       get("/events", EventController, :job_events)
       post("/events", EventController, :create_event)
     end

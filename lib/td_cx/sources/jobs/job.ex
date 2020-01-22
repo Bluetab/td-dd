@@ -4,6 +4,7 @@ defmodule TdCx.Sources.Jobs.Job do
   import Ecto.Changeset
 
   alias TdCx.Sources.Events.Event
+  alias TdCx.Sources.Jobs
   alias TdCx.Sources.Jobs.Job
   alias TdCx.Sources.Source
 
@@ -37,19 +38,7 @@ defmodule TdCx.Sources.Jobs.Job do
         :external_id
       ])
       |> Map.merge(%{source: Map.take(source, [:external_id, :type])})
-      |> Map.merge(metrics(events))
-    end
-
-    defp metrics([]), do: Map.new()
-
-    defp metrics(events) do
-      {min, max} = Enum.min_max_by(events, fn %{date: date} -> date end)
-
-      Map.new()
-      |> Map.put(:start_date, Map.get(min, :date))
-      |> Map.put(:end_date, Map.get(max, :date))
-      |> Map.put(:status, Map.get(max, :type))
-      |> Map.put(:message, Map.get(max, :message))
+      |> Map.merge(Jobs.metrics(events))
     end
   end
 end

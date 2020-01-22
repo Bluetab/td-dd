@@ -40,6 +40,9 @@ defmodule TdCx.Sources.Jobs.Search do
     |> do_search
   end
 
+  def search_jobs(_params, _user, _page, _size),
+    do: %{results: [], aggregations: %{}, total: 0}
+
   defp create_filters(%{"filters" => filters}) do
     filters
     |> Map.to_list()

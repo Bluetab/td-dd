@@ -68,51 +68,16 @@ defmodule TdCx.Sources.Jobs do
     end
   end
 
-  @doc """
-  Updates a job.
+  def metrics([]), do: Map.new()
 
-  ## Examples
+  def metrics(events) do
+    {min, max} = Enum.min_max_by(events, fn %{date: date} -> date end)
 
-      iex> update_job(job, %{field: new_value})
-      {:ok, %Job{}}
-
-      iex> update_job(job, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_job(%Job{} = job, attrs) do
-    job
-    |> Job.changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
-  Deletes a Job.
-
-  ## Examples
-
-      iex> delete_job(job)
-      {:ok, %Job{}}
-
-      iex> delete_job(job)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_job(%Job{} = job) do
-    Repo.delete(job)
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking job changes.
-
-  ## Examples
-
-      iex> change_job(job)
-      %Ecto.Changeset{source: %Job{}}
-
-  """
-  def change_job(%Job{} = job) do
-    Job.changeset(job, %{})
+    Map.new()
+    |> Map.put(:start_date, Map.get(min, :date))
+    |> Map.put(:end_date, Map.get(max, :date))
+    |> Map.put(:status, Map.get(max, :type))
+    |> Map.put(:message, Map.get(max, :message))
   end
 
   defp enrich(%Job{} = job, []), do: job
