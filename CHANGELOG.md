@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] 
+
+### Changed
+
+- [TD-1658] List results related to non deleted rules or implementations
+
 ## [3.13.0] 2020-01-13
 
 ### Fixed

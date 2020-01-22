@@ -173,6 +173,35 @@ defmodule TdDq.RuleResultsTest do
              ]
     end
 
+    test "list_rule_results retrieves results of non soft deleted rules and implementations" do
+      rule_1 = insert(:rule, name: "Rule 1")
+      rule_2 = insert(:rule, name: "Rule 2")
+
+      impl_1 =
+        insert(:rule_implementation,
+          rule: rule_1,
+          implementation_key: "key001",
+          deleted_at: DateTime.utc_now()
+        )
+
+      impl_2 = insert(:rule_implementation, rule: rule_2, implementation_key: "key002")
+
+      insert(
+        :rule_result,
+        implementation_key: impl_1.implementation_key,
+        result: 55 |> Decimal.round(2)
+      )
+
+      result =
+        insert(
+          :rule_result,
+          implementation_key: impl_2.implementation_key,
+          result: 92 |> Decimal.round(2)
+        )
+
+      assert Rules.list_rule_results() == [result]
+    end
+
     test "encode/1 retrieves execution_result_info to be indexed in elastic" do
       impl_key_1 = "impl_key_1"
       impl_key_2 = "impl_key_2"
