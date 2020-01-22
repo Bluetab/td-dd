@@ -85,6 +85,7 @@ services:
       DB_NAME: postgres
       DB_PASSWORD: postgres
       DB_USER: postgres
+      ES_URL: http://elastic:9200
       REDIS_HOST: redis
       REPLACE_OS_VARS: "true"
     depends_on:
