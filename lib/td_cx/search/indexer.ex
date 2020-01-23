@@ -50,7 +50,7 @@ defmodule TdCx.Search.Indexer do
   def migrate do
     unless alias_exists?(@index) do
       if can_migrate?() do
-        delete_existing_index("job")
+        delete_existing_index("jobs")
 
         Timer.time(
           fn -> reindex(:all) end,
