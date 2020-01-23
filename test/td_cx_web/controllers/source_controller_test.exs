@@ -10,21 +10,54 @@ defmodule TdCxWeb.SourceControllerTest do
     :ok
   end
 
+  @app_admin_template %{
+    id: 1,
+    name: "app-admin",
+    label: "app-admin",
+    scope: "cx",
+    content: [
+      %{
+        "name" => "a",
+        "type" => "string",
+        "group" => "New Group 1",
+        "label" => "a",
+        "widget" => "string",
+        "disabled" => true,
+        "cardinality" => "1"
+      }
+    ]
+  }
+
   @create_attrs %{
-    config: %{"a" => 1},
-    external_id: "some external_id",
-    type: "some type"
+    "config" => %{"a" => "1"},
+    "external_id" => "some external_id",
+    "type" => "app-admin"
   }
   @update_attrs %{
-    config: %{"b" => 1},
-    external_id: "some external_id",
-    type: "some updated type"
+    "config" => %{"a" => "3"},
+    "external_id" => "some external_id",
+    "type" => "some updated type"
   }
-  @invalid_attrs %{config: nil, external_id: "some external_id", secrets_key: nil, type: nil}
+  @invalid_update_attrs %{
+    "config" => %{"b" => "1"},
+    "external_id" => "some external_id",
+    "type" => "some updated type"
+  }
+  @invalid_attrs %{
+    "config" => nil,
+    "external_id" => "some external_id",
+    "secrets_key" => nil,
+    "type" => nil
+  }
 
   def fixture(:source) do
     {:ok, source} = Sources.create_source(@create_attrs)
     source
+  end
+
+  def fixture(:template) do
+    {:ok, template} = Templates.create_template(@app_admin_template)
+    template
   end
 
   setup %{conn: conn} do
@@ -36,16 +69,33 @@ defmodule TdCxWeb.SourceControllerTest do
 
     @tag :admin_authenticated
     test "lists all sources", %{conn: conn} do
-      conn = get(conn, Routes.source_path(conn, :index, type: "some type"))
+      conn = get(conn, Routes.source_path(conn, :index, type: "app-admin"))
 
       assert [
                %{
-                 "config" => %{},
+                 "config" => %{"a" => "1"},
                  "external_id" => "some external_id",
                  "id" => id,
-                 "type" => "some type"
+                 "type" => "app-admin"
                }
              ] = json_response(conn, 200)["data"]
+    end
+  end
+
+  describe "show" do
+    setup [:create_source]
+
+    @tag :admin_authenticated
+    test "show source", %{conn: conn} do
+      conn = get(conn, Routes.source_path(conn, :show, "some external_id"))
+
+      assert %{
+               "config" => %{"a" => "1"},
+               "external_id" => "some external_id",
+               "id" => id,
+               "type" => "app-admin"
+             } = json_response(conn, 200)["data"]
+      assert %{"a" => "1"} == json_response(conn, 200)["data"]["config"]
     end
   end
 
@@ -58,6 +108,7 @@ defmodule TdCxWeb.SourceControllerTest do
 
     @tag :admin_authenticated
     test "renders source when data is valid", %{conn: conn} do
+      Templates.create_template(@app_admin_template)
       conn = post(conn, Routes.source_path(conn, :create), source: @create_attrs)
       assert %{"external_id" => external_id} = json_response(conn, 201)["data"]
 
@@ -65,14 +116,15 @@ defmodule TdCxWeb.SourceControllerTest do
 
       assert %{
                "id" => id,
-               "config" => %{},
+               "config" => %{"a" => "1"},
                "external_id" => "some external_id",
-               "type" => "some type"
+               "type" => "app-admin"
              } = json_response(conn, 200)["data"]
     end
 
     @tag :admin_authenticated
     test "renders errors when data is invalid", %{conn: conn} do
+      Templates.create_template(@app_admin_template)
       conn = post(conn, Routes.source_path(conn, :create), source: @invalid_attrs)
       assert json_response(conn, 422)["errors"] != %{}
     end
@@ -102,10 +154,21 @@ defmodule TdCxWeb.SourceControllerTest do
 
       assert %{
                "id" => id,
-               "config" => %{},
+               "config" => %{"a" => "3"},
                "external_id" => "some external_id",
-               "type" => "some type"
+               "type" => "app-admin"
              } = json_response(conn, 200)["data"]
+    end
+
+    @tag :admin_authenticated
+    test "renders errors when template content is invalid", %{
+      conn: conn,
+      source: %Source{external_id: external_id}
+    } do
+      conn =
+        put(conn, Routes.source_path(conn, :update, external_id), source: @invalid_update_attrs)
+
+      assert json_response(conn, 422)["errors"] == %{"a" => ["can't be blank"]}
     end
 
     @tag :admin_authenticated
@@ -137,6 +200,7 @@ defmodule TdCxWeb.SourceControllerTest do
   end
 
   defp create_source(_) do
+    Templates.create_template(@app_admin_template)
     source = fixture(:source)
     {:ok, source: source}
   end
