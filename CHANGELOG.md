@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-1595] Data lineage support
+
 ### Changed
 
 - [TD-2269] Update elasticsearch mapping for dynamic field using new content model

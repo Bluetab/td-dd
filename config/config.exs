@@ -64,6 +64,13 @@ config :td_cache, :event_stream,
     [key: "template:events", consumer: TdDd.Search.IndexWorker]
   ]
 
+config :td_dd, :neo4j,
+  user: "neo4j",
+  password: "neo4j",
+  host: "localhost"
+
+config :tzdata, :autoupdate, :disabled
+
 import_config "metadata.exs"
 import_config "profiling.exs"
 
