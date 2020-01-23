@@ -19,7 +19,6 @@ defmodule TdCxWeb.SwaggerDefinitions do
                     required: true
                   )
 
-                  secrets(:object, "Secret configuration to be stored in vault")
                   config(:object, "Source configuration")
                 end
               end
@@ -32,7 +31,6 @@ defmodule TdCxWeb.SwaggerDefinitions do
             source(
               Schema.new do
                 properties do
-                  secrets(:object, "Secret configuration to be stored in vault")
                   config(:object, "Source configuration")
                 end
               end
@@ -54,19 +52,6 @@ defmodule TdCxWeb.SwaggerDefinitions do
           properties do
             id(:integer, "Source Id", required: true)
             type(:string, "Source type that matches with a template in scope cx", required: true)
-            config(:object, "Source configuration")
-        end
-        end,
-        SourceWithSecrets:
-        swagger_schema do
-          title("Source with secrets")
-          description("Representation of a source with secrets")
-
-          properties do
-            id(:integer, "Source Id", required: true)
-            type(:string, "Source type that matches with a template in scope cx", required: true)
-            secrets(:object, "Secret configuration to be stored in vault")
-            secrets_key(:string, "Vault key")
             config(:object, "Source configuration")
         end
         end,

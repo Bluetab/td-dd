@@ -55,7 +55,8 @@ defmodule TdCx.MixProject do
       {:phoenix_swagger, "~> 0.8.0"},
       {:ex_json_schema, "~> 0.5"},
       {:vaultex, "~> 0.8"},
-      {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "3.8.0"}
+      {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "3.8.0"},
+      {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "3.14.0"}
     ]
   end
 
