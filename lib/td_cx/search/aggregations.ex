@@ -6,7 +6,7 @@ defmodule TdCx.Search.Aggregations do
   def aggregation_terms do
     keywords = [
       {"source_type", %{terms: %{field: "source.type.raw", size: 50}}},
-      {"source_status", %{terms: %{field: "source.status.raw", size: 50}}}
+      {"job_status", %{terms: %{field: "status.raw", size: 50}}}
     ]
 
     Enum.into(keywords, %{})
