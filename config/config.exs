@@ -30,6 +30,7 @@ config :logger, :console,
 
 # Configuration for Phoenix
 config :phoenix, :json_library, Jason
+config :phoenix_swagger, json_library: Jason
 
 config :td_dd, TdDd.Auth.Guardian,
   # optional
