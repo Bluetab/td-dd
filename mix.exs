@@ -61,8 +61,7 @@ defmodule TdDd.Mixfile do
        branch: "feature/bulk-index-action"},
       {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "3.9.1"},
       {:td_hypermedia, git: "https://github.com/Bluetab/td-hypermedia.git", tag: "3.6.1"},
-      {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "3.14.0"},
-      {:poison, "~> 3.1"}
+      {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "3.14.0"}
     ]
   end
 
