@@ -208,6 +208,13 @@ defmodule TdCxWeb.SourceController do
         |> put_status(:not_found)
         |> put_view(ErrorView)
         |> render("404.json")
+
+      {:error, changeset} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> put_view(TdCxWeb.ChangesetView)
+        |> render("error.json", changeset: changeset)
+
       {:vault_error, message} ->
         conn
         |> put_status(:unprocessable_entity)

@@ -23,6 +23,7 @@ defmodule TdCx.DataCase do
       import Ecto.Changeset
       import Ecto.Query
       import TdCx.DataCase
+      import TdCx.Factory
     end
   end
 
@@ -31,6 +32,12 @@ defmodule TdCx.DataCase do
 
     unless tags[:async] do
       Sandbox.mode(TdCx.Repo, {:shared, self()})
+      parent = self()
+
+      case Process.whereis(TdCx.Search.IndexWorker) do
+        nil -> nil
+        pid -> Sandbox.allow(TdCx.Repo, parent, pid)
+      end
     end
 
     :ok

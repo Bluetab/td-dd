@@ -6,15 +6,18 @@ defmodule TdCx.Application do
   use Application
 
   def start(_type, _args) do
+    env = Application.get_env(:td_cx, :env)
     # List all child processes to be supervised
     children = [
       # Start the Ecto repository
       TdCx.Repo,
       # Start the endpoint when the application starts
-      TdCxWeb.Endpoint
+      TdCxWeb.Endpoint,
+      # Elasticsearch worker
+      TdCx.Search.Cluster
       # Starts a worker by calling: TdCx.Worker.start_link(arg)
       # {TdCx.Worker, arg},
-    ]
+    ] ++ workers(env)
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
@@ -27,5 +30,14 @@ defmodule TdCx.Application do
   def config_change(changed, _new, removed) do
     TdCxWeb.Endpoint.config_change(changed, removed)
     :ok
+  end
+
+  defp workers(:test), do: []
+
+  defp workers(_env) do
+    [
+      # Worker for background indexing
+      TdCx.Search.IndexWorker
+    ]
   end
 end

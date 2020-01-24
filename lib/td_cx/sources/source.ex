@@ -4,11 +4,15 @@ defmodule TdCx.Sources.Source do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias TdCx.Sources.Jobs.Job
+  alias TdCx.Sources.Source
+
   schema "sources" do
-    field :config, :map
-    field :external_id, :string
-    field :secrets_key, :string
-    field :type, :string
+    field(:config, :map)
+    field(:external_id, :string)
+    field(:secrets_key, :string)
+    field(:type, :string)
+    has_many(:jobs, Job)
 
     timestamps(type: :utc_datetime_usec)
   end
@@ -20,6 +24,12 @@ defmodule TdCx.Sources.Source do
     |> validate_required([:external_id, :type])
     |> validate_required_inclusion([:secrets_key, :config])
     |> unique_constraint(:external_id)
+  end
+
+  def delete_changeset(%Source{} = source) do
+    source
+    |> change()
+    |> foreign_key_constraint(:jobs, name: :jobs_source_id_fkey, message: "source.delete.existing.jobs")
   end
 
   def validate_required_inclusion(changeset, fields) do

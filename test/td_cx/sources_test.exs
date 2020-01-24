@@ -46,6 +46,16 @@ defmodule TdCx.SourcesTest do
       assert Sources.get_source!(source.external_id) == source
     end
 
+    test "get_source!/2 with jobs option with get source with its jobs" do
+      source = source_fixture()
+      job = insert(:job, source: source)
+      options = [:jobs]
+      assert %Source{id: id, jobs: jobs} = Sources.get_source!(source.external_id, options)
+      assert id == source.id
+      assert length(jobs) == 1
+      assert Enum.any?(jobs, & &1.id == job.id)
+    end
+
     test "create_source/1 with valid data creates a source" do
       assert {:ok, %Source{} = source} = Sources.create_source(@valid_attrs)
       assert source.config == %{"a" => "1"}

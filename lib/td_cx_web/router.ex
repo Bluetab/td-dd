@@ -31,13 +31,19 @@ defmodule TdCxWeb.Router do
   scope "/api", TdCxWeb do
     pipe_through [:api, :api_secure, :api_authorized]
 
-    resources "/sources", SourceController, except: [:new, :edit, :show, :update, :delete]
+    resources "/sources", SourceController, except: [:new, :edit], param: "external_id" do
+      get("/jobs", JobController, :source_jobs)
+      post("/jobs", JobController, :create_job)
+    end
 
-    get("/sources/:external_id", SourceController, :show)
-    patch("/sources/:external_id", SourceController, :update)
-    put("/sources/:external_id", SourceController, :update)
-    delete("/sources/:external_id", SourceController, :delete)
+    resources "/jobs", JobController, except: [:new, :edit, :update, :create, :index, :delete], param: "external_id" do
+      get("/events", EventController, :job_events)
+      post("/events", EventController, :create_event)
+    end
 
+    post("/jobs/search", JobController, :search)
+    post("/jobs_filters/search", JobFilterController, :search)
+    get("/jobs/search/reindex_all", SearchController, :reindex_all)
   end
 
   def swagger_info do

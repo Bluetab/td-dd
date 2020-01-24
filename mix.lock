@@ -14,6 +14,7 @@
   "distillery": {:hex, :distillery, "2.0.12", "6e78fe042df82610ac3fa50bd7d2d8190ad287d120d3cd1682d83a44e8b34dfb", [:mix], [{:artificery, "~> 0.2", [hex: :artificery, repo: "hexpm", optional: false]}], "hexpm"},
   "ecto": {:hex, :ecto, "3.3.0", "9193e261d25c1814324d0b3304fccbadab840b286d270c3b75dfd28c30a3ae15", [:mix], [{:decimal, "~> 1.6", [hex: :decimal, repo: "hexpm", optional: false]}, {:jason, "~> 1.0", [hex: :jason, repo: "hexpm", optional: true]}], "hexpm"},
   "ecto_sql": {:hex, :ecto_sql, "3.3.2", "92804e0de69bb63e621273c3492252cb08a29475c05d40eeb6f41ad2d483cfd3", [:mix], [{:db_connection, "~> 2.2", [hex: :db_connection, repo: "hexpm", optional: false]}, {:ecto, "~> 3.3", [hex: :ecto, repo: "hexpm", optional: false]}, {:myxql, "~> 0.3.0", [hex: :myxql, repo: "hexpm", optional: true]}, {:postgrex, "~> 0.15.0", [hex: :postgrex, repo: "hexpm", optional: true]}, {:telemetry, "~> 0.4.0", [hex: :telemetry, repo: "hexpm", optional: false]}], "hexpm"},
+  "elasticsearch": {:git, "https://github.com/Bluetab/elasticsearch-elixir.git", "3d44a0b63e2c9dc28469572e4fab1ed06e3bc1fd", [branch: "feature/bulk-index-action"]},
   "eliver": {:hex, :eliver, "2.0.3", "ddfb3a9e77028298dd8cb9d91bfe16a39db67a1f43830bb8f1c3ad085a9c96fe", [:mix], [{:enquirer, "~> 0.1.0", [hex: :enquirer, repo: "hexpm", optional: false]}], "hexpm"},
   "enquirer": {:hex, :enquirer, "0.1.0", "96ca1a330c919652db4baed6cf572d8c9957a8a305365c54490262c337996a18", [:mix], [], "hexpm"},
   "ex_json_schema": {:hex, :ex_json_schema, "0.7.3", "3289bf2edf57eb1ae0d5af35bc6d6c37d7e6d935f72e0120c7f0704510956049", [:mix], [], "hexpm"},
@@ -46,4 +47,5 @@
   "telemetry": {:hex, :telemetry, "0.4.1", "ae2718484892448a24470e6aa341bc847c3277bfb8d4e9289f7474d752c09c7f", [:rebar3], [], "hexpm"},
   "unicode_util_compat": {:hex, :unicode_util_compat, "0.4.1", "d869e4c68901dd9531385bb0c8c40444ebf624e60b6962d95952775cac5e90cd", [:rebar3], [], "hexpm"},
   "vaultex": {:hex, :vaultex, "0.12.0", "3781c921484e7abf2fa3ffbb45af8f02aa19d612789a5ceea7334b43fcf10588", [:mix], [{:eliver, "~> 2.0", [hex: :eliver, repo: "hexpm", optional: false]}, {:ex_aws, "~> 2.0", [hex: :ex_aws, repo: "hexpm", optional: true]}, {:httpoison, "~> 1.0", [hex: :httpoison, repo: "hexpm", optional: false]}, {:poison, "~> 3.1", [hex: :poison, repo: "hexpm", optional: false]}], "hexpm"},
+  "vex": {:hex, :vex, "0.6.0", "4e79b396b2ec18cd909eed0450b19108d9631842598d46552dc05031100b7a56", [:mix], [], "hexpm"},
 }

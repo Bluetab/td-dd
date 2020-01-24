@@ -45,8 +45,10 @@ defmodule TdCx.Sources do
       ** (Ecto.NoResultsError)
 
   """
-  def get_source!(external_id) do
-    Repo.get_by!(Source, external_id: external_id)
+  def get_source!(external_id, options \\ []) do
+    Source
+    |> Repo.get_by!(external_id: external_id)
+    |> enrich(options)
   end
 
   def enrich_secrets(user_name, %Source{type: user_name} = source) do
@@ -69,6 +71,12 @@ defmodule TdCx.Sources do
       _ -> Map.put(source, :config, Map.merge(Map.get(source, :config, %{}) || %{}, secrets || %{}))
 
     end
+  end
+
+  defp enrich(%Source{} = source, []), do: source
+
+  defp enrich(%Source{} = source, options) do
+    Repo.preload(source, options)
   end
 
   @doc """
@@ -252,13 +260,17 @@ defmodule TdCx.Sources do
 
   """
   def delete_source(%Source{secrets_key: nil} = source) do
-    Repo.delete(source)
+    source
+    |> Source.delete_changeset()
+    |> Repo.delete()
   end
 
   def delete_source(%Source{secrets_key: secrets_key} = source) do
     case Vault.delete_secrets(secrets_key) do
       :ok ->
-        Repo.delete(source)
+        source
+        |> Source.delete_changeset()
+        |> Repo.delete()
 
       {:vault_error, error} ->
         {:vault_error, error}
