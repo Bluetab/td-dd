@@ -10,6 +10,8 @@ defmodule TdCx.Sources do
   alias TdCx.Vault
   alias TdDfLib.Validation
 
+  import Canada, only: [can?: 2]
+
   require Logger
 
   @doc """
@@ -51,12 +53,12 @@ defmodule TdCx.Sources do
     |> enrich(options)
   end
 
-  def enrich_secrets(user_name, %Source{type: user_name} = source) do
-    enrich_secrets(source)
-  end
+  def enrich_secrets(user, %Source{} = source) do
+    case can?(user, view_secrets(source)) do
+      true ->  enrich_secrets(source)
+      _ -> source
+    end
 
-  def enrich_secrets(_user_name, %Source{type: _other_type} = source) do
-    source
   end
 
   def enrich_secrets(%Source{secrets_key: nil} = source) do
