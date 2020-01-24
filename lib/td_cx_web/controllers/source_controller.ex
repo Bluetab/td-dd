@@ -28,11 +28,11 @@ defmodule TdCxWeb.SourceController do
     response(422, "Client Error")
   end
 
-  def index(conn, %{"type" => source_type}) do
+  def index(conn, %{"type" => source_type} = attrs) do
     user = conn.assigns[:current_user]
     sources = Sources.list_sources_by_source_type(source_type)
 
-    case user.user_name == source_type do
+    case can?(user, view_secrets(attrs)) do
       true ->
         sources = Enum.map(sources, &Sources.enrich_secrets(&1))
         render(conn, "index.json", sources: sources)
@@ -101,7 +101,7 @@ defmodule TdCxWeb.SourceController do
 
     with true <- can?(user, show(%Source{})),
          %Source{} = source <- Sources.get_source!(external_id),
-         %Source{} = source <- Sources.enrich_secrets(user.user_name, source) do
+         %Source{} = source <- Sources.enrich_secrets(user, source) do
           render(conn, "show.json", source: source)
 
     else
