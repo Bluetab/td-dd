@@ -94,9 +94,9 @@ services:
       DB_PASSWORD: postgres
       DB_USER: postgres
       ES_URL: http://elastic:9200
-      NEO_HOST: neo
-      NEO_USER: neo4j
-      NEO_PASSWORD: f00B4Rb4z
+      NEO4J_HOST: neo
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: f00B4Rb4z
       REDIS_HOST: redis
       REPLACE_OS_VARS: "true"
     depends_on:
