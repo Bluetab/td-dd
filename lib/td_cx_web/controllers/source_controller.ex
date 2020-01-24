@@ -35,7 +35,7 @@ defmodule TdCxWeb.SourceController do
     case user.user_name == source_type do
       true ->
         sources = Enum.map(sources, &Sources.enrich_secrets(&1))
-        render(conn, "index_with_secrets.json", sources: sources)
+        render(conn, "index.json", sources: sources)
 
       _ ->
         render(conn, "index.json", sources: sources)
@@ -62,7 +62,6 @@ defmodule TdCxWeb.SourceController do
 
   def create(conn, %{"source" => source_params}) do
     user = conn.assigns[:current_user]
-
     with true <- can?(user, create(%Source{})),
          {:ok, %Source{} = source} <- Sources.create_source(source_params) do
       conn
@@ -101,21 +100,24 @@ defmodule TdCxWeb.SourceController do
     user = conn.assigns[:current_user]
 
     with true <- can?(user, show(%Source{})),
-         %Source{} = source <- Sources.get_source!(external_id) do
-      case user.user_name == source.type do
-        true ->
-          source = Sources.enrich_secrets(source)
-          render(conn, "show_with_secrets.json", source: source)
-
-        _ ->
+         %Source{} = source <- Sources.get_source!(external_id),
+         %Source{} = source <- Sources.enrich_secrets(user.user_name, source) do
           render(conn, "show.json", source: source)
-      end
+
     else
       false ->
         conn
         |> put_status(:forbidden)
         |> put_view(ErrorView)
         |> render("403.json")
+      {:error, message} ->
+        conn
+        |> put_status(:unprocessable_entity)
+        |> json(%{
+          errors: [
+            %{name: "vault_error", code: message}
+          ]
+        })
     end
   rescue
     _e in Ecto.NoResultsError ->
@@ -152,12 +154,14 @@ defmodule TdCxWeb.SourceController do
         |> put_status(:forbidden)
         |> put_view(ErrorView)
         |> render("403.json")
-
-      {:vault_error, _message} ->
+      {:vault_error, message} ->
         conn
-        |> put_status(:internal_server_error)
-        |> put_view(ErrorView)
-        |> render("500.json")
+        |> put_status(:unprocessable_entity)
+        |> json(%{
+          errors: [
+            %{name: "vault_error", code: message}
+          ]
+        })
 
       {:error, changeset} ->
         conn
@@ -211,11 +215,15 @@ defmodule TdCxWeb.SourceController do
         |> put_view(TdCxWeb.ChangesetView)
         |> render("error.json", changeset: changeset)
 
-      {:vault_error, _message} ->
+      {:vault_error, message} ->
         conn
-        |> put_status(:internal_server_error)
-        |> put_view(ErrorView)
-        |> render("500.json")
+        |> put_status(:unprocessable_entity)
+        |> json(%{
+          errors: [
+            %{name: "vault_error", code: message}
+          ]
+        })
+
     end
   end
 end
