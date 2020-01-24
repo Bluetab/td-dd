@@ -46,17 +46,8 @@ defmodule TdDd.Application do
       TdDd.Cache.SystemLoader,
       TdDd.Cache.StructureLoader,
       TdDd.DataStructures.Hasher,
-      TdDd.Lineage.GraphData
-    ] ++ bolt_workers()
-  end
-
-  defp bolt_workers do
-    with config when not is_nil(config) <- Application.get_env(:td_dd, :neo4j),
-         %{user: user, password: password, host: host} <- Map.new(config) do
-      url = "bolt://#{user}:#{password}@#{host}"
-      [{Bolt.Sips, [url: url, timeout: 120_000, idle_interval: 120_000]}]
-    else
-      _ -> []
-    end
+      {Bolt.Sips, Application.get_env(:bolt_sips, Bolt)},
+      TdDd.Lineage.GraphData,
+    ]
   end
 end

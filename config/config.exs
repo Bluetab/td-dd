@@ -23,7 +23,9 @@ config :td_dd, TdDdWeb.Endpoint,
 # (without the 'end of line' character)
 # EX_LOGGER_FORMAT='$date $time [$level] $message'
 config :logger, :console,
-  format: (System.get_env("EX_LOGGER_FORMAT") || "$date\T$time\Z [$level]$levelpad $metadata$message") <> "\n",
+  format:
+    (System.get_env("EX_LOGGER_FORMAT") || "$date\T$time\Z [$level]$levelpad $metadata$message") <>
+      "\n",
   level: :info,
   metadata: [:pid, :module],
   utc_log: true
@@ -64,10 +66,12 @@ config :td_cache, :event_stream,
     [key: "template:events", consumer: TdDd.Search.IndexWorker]
   ]
 
-config :td_dd, :neo4j,
-  user: "neo4j",
-  password: "neo4j",
-  host: "localhost"
+config :bolt_sips, Bolt,
+  hostname: "neo",
+  basic_auth: [username: "neo4j", password: "f00B4Rb4z"],
+  pool_size: 3,
+  timeout: 60_000,
+  idle_interval: 60_000
 
 config :tzdata, :autoupdate, :disabled
 

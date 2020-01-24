@@ -74,8 +74,8 @@ defmodule TdDd.Lineage.GraphData do
   rescue
     e ->
       Logger.error("#{inspect(e)}")
-      Logger.info("Error loading graph data, will try again in 60 seconds")
-      Process.send_after(self(), :load, 60_000)
+      Logger.info("Error loading graph data, will retry after #{@refresh_interval}ms")
+      Process.send_after(self(), :load, @refresh_interval)
       {:noreply, state}
   end
 
@@ -94,6 +94,8 @@ defmodule TdDd.Lineage.GraphData do
   rescue
     e ->
       Logger.error("#{inspect(e)}")
+      Logger.info("Error refreshing graph data, will retry after #{@refresh_interval}ms")
+      Process.send_after(self(), :refresh, @refresh_interval)
       {:noreply, state}
   end
 
