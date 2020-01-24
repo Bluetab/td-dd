@@ -59,7 +59,7 @@ services:
       start_period: 10s
 
   build:
-    image: bluetab/elixir:1.7.4-alpine-20190503114134
+    image: bluetab/elixir:1.8.2-alpine-20200124123100
     command: ci/build.sh
     environment:
       APP_VERSION: "${APP_VERSION}"
@@ -72,7 +72,7 @@ services:
       - "${CI_PROJECT_DIR}:/code"
 
   test:
-    image: bluetab/elixir:1.7.4-alpine-20190503114134
+    image: bluetab/elixir:1.8.2-alpine-20200124123100
     command: ci/test.sh
     environment:
       HOME: /tmp # CURRENT_UID doesn't have a home
