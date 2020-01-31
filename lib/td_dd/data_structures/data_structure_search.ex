@@ -38,6 +38,48 @@ defmodule TdDd.DataStructure.Search do
     Search.get_filters(search)
   end
 
+  def get_aggregations_values(%User{is_admin: true}, _permission, params, agg_terms) do
+    filter_clause = create_filters(params)
+    query = create_query(%{}, filter_clause)
+    search = %{size: 0, query: query, aggs: agg_terms}
+    search
+    |> Search.search()
+    |> get_aggregations_results(agg_terms)
+  end
+
+  def get_aggregations_values(%User{} = user, permission, params, agg_terms) do
+    permissions =
+      user
+      |> Permissions.get_domain_permissions()
+      |> Enum.filter(&Enum.member?(&1.permissions, permission))
+
+    get_agg_terms_with_perms(permissions, params, agg_terms)
+  end
+
+  defp get_agg_terms_with_perms([], _params, _agg_terms), do: []
+
+  defp get_agg_terms_with_perms(permissions, params, agg_terms) do
+    user_defined_filters = create_filters(params)
+    filter = permissions |> create_filter_clause(user_defined_filters)
+    query = create_query(%{}, filter)
+    search = %{size: 0, query: query, aggs: agg_terms}
+    search
+    |> Search.search()
+    |> get_aggregations_results(agg_terms)
+  end
+
+  defp get_aggregations_results(results, agg_terms) do
+    [agg_term] = Map.keys(agg_terms)
+    results = results
+    |> Map.get(:aggregations, %{})
+    |> Map.get(agg_term, %{})
+    |> Map.get("buckets")
+    case results do
+      nil -> []
+      _ -> results
+    end
+  end
+
   def search_data_structures(params, user, permission, page \\ 0, size \\ 50)
 
   def search_data_structures(params, %User{is_admin: true}, _permission, page, size) do

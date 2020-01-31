@@ -1,10 +1,13 @@
 # Changelog
 
-## [Unreleased]
+### Added
+
+## [Unreleased] 
 
 ### Added
 
 - [TD-1595] Data lineage support
+- [TD-2284] Show systems to user with read permission in any structure, return structures count
 
 ## [3.14.0] 2020-01-27
 

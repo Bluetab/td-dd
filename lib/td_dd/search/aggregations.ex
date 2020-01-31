@@ -5,10 +5,12 @@ defmodule TdDd.Search.Aggregations do
   alias TdCache.TemplateCache
   alias TdDfLib.Format
 
+  @systems_aggregation_term "system.name.raw"
+
   def aggregation_terms do
     static_keywords = [
       {"ou.raw", %{terms: %{field: "ou.raw", size: 50}}},
-      {"system.name.raw", %{terms: %{field: "system.name.raw", size: 50}}},
+      {@systems_aggregation_term, %{terms: %{field: "system.name.raw", size: 50}}},
       {"group.raw", %{terms: %{field: "group.raw", size: 50}}},
       {"type.raw", %{terms: %{field: "type.raw", size: 50}}},
       {"confidential.raw", %{terms: %{field: "confidential.raw"}}},
@@ -22,6 +24,10 @@ defmodule TdDd.Search.Aggregations do
 
     (static_keywords ++ dynamic_keywords)
     |> Enum.into(%{})
+  end
+
+  def get_systems_agg_terms do
+    Map.take(aggregation_terms(), [@systems_aggregation_term])
   end
 
   def template_terms(%{content: content}) do
