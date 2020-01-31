@@ -10,9 +10,16 @@ defmodule TdDdWeb.SystemView do
     %{data: render_one(system, SystemView, "system.json")}
   end
 
-  def render("system.json", %{system: system}) do
-    %{id: system.id,
+  def render("system.json", %{system: %{structures_count: structures_count} = system}) do
+    %{
+      id: system.id,
       name: system.name,
-      external_id: system.external_id}
+      external_id: system.external_id,
+      structures_count: structures_count
+    }
+  end
+
+  def render("system.json", %{system: system}) do
+    %{id: system.id, name: system.name, external_id: system.external_id}
   end
 end
