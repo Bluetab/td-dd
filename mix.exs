@@ -9,7 +9,7 @@ defmodule TdDd.Mixfile do
           nil -> "3.14.0-local"
           v -> v
         end,
-      elixir: "~> 1.6",
+      elixir: "~> 1.8",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers() ++ [:phoenix_swagger],
       start_permanent: Mix.env() == :prod,
@@ -62,7 +62,8 @@ defmodule TdDd.Mixfile do
       {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "3.9.1"},
       {:td_hypermedia, git: "https://github.com/Bluetab/td-hypermedia.git", tag: "3.6.1"},
       {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "3.14.0"},
-      {:poison, "~> 3.1"}
+      {:bolt_sips, git: "https://github.com/Bluetab/bolt_sips.git", branch: "master"},
+      {:graph, git: "https://github.com/Bluetab/graph.git", tag: "0.1.1"}
     ]
   end
 

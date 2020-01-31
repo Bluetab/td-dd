@@ -52,3 +52,10 @@ config :td_cache, :event_stream,
     [key: "data_structure:events", consumer: TdDd.Cache.StructureLoader],
     [key: "template:events", consumer: TdDd.Search.IndexWorker]
   ]
+
+config :bolt_sips, Bolt,
+  hostname: "${NEO4J_HOST}",
+  basic_auth: [
+    username: "${NEO4J_USER}",
+    password: "${NEO4J_PASSWORD}"
+  ]

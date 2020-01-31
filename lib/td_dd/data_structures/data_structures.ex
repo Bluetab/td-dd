@@ -7,12 +7,12 @@ defmodule TdDd.DataStructures do
 
   alias Ecto.Association.NotLoaded
   alias TdCache.LinkCache
-  alias TdCache.StructureCache
   alias TdCache.TemplateCache
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Profile
+  alias TdDd.Lineage.GraphData
   alias TdDd.Repo
   alias TdDd.Search.IndexWorker
   alias TdDd.Utils.CollectionUtils
@@ -151,13 +151,13 @@ defmodule TdDd.DataStructures do
         preload: if(Enum.member?(options, :profile), do: [data_structure: :profile], else: [])
       )
     end)
-    |> enrich(options, :data_field_external_ids, fn dsv -> get_field_external_ids(dsv) end)
+    |> enrich(options, :data_field_degree, fn dsv -> get_field_degree(dsv) end)
     |> enrich(options, :data_field_links, fn dsv -> get_field_links(dsv) end)
     |> enrich(options, :versions, fn dsv -> get_versions(dsv) end)
     |> enrich(options, :system, fn dsv ->
       dsv |> Repo.preload(data_structure: :system) |> Map.get(:data_structure) |> Map.get(:system)
     end)
-    |> enrich(options, :data_structure_lineage_id, fn dsv -> get_lineage_id(dsv) end)
+    |> enrich(options, :degree, fn dsv -> get_degree(dsv) end)
     |> enrich(options, :profile, fn dsv -> get_profile(dsv) end)
     |> enrich(options, :ancestry, fn dsv -> get_ancestry(dsv) end)
     |> enrich(options, :path, fn dsv -> get_path(dsv) end)
@@ -173,7 +173,7 @@ defmodule TdDd.DataStructures do
     end
   end
 
-  defp get_target_key(:data_field_external_ids), do: :data_fields
+  defp get_target_key(:data_field_degree), do: :data_fields
   defp get_target_key(:data_field_links), do: :data_fields
   defp get_target_key(key), do: key
 
@@ -207,7 +207,7 @@ defmodule TdDd.DataStructures do
     |> Repo.preload(data_structure: :system)
   end
 
-  def get_parents(%DataStructureVersion{id: id}, options \\ []) do
+  defp get_parents(%DataStructureVersion{id: id}, options) do
     DataStructureRelation
     |> where([r], r.child_id == ^id)
     |> join(:inner, [r], parent in assoc(r, :parent))
@@ -234,15 +234,10 @@ defmodule TdDd.DataStructures do
     |> Enum.uniq_by(& &1.data_structure_id)
   end
 
-  def get_versions(%DataStructureVersion{} = dsv) do
+  defp get_versions(%DataStructureVersion{} = dsv) do
     dsv
     |> Ecto.assoc([:data_structure, :versions])
     |> Repo.all()
-  end
-
-  def with_versions(%DataStructure{} = data_structure) do
-    data_structure
-    |> Repo.preload(:versions)
   end
 
   @doc """
@@ -310,6 +305,7 @@ defmodule TdDd.DataStructures do
     case TemplateCache.get_by_name!(type) do
       %{:content => content_schema} ->
         content_schema = Format.flatten_content_fields(content_schema)
+
         attrs =
           data_structure
           |> add_no_updated_fields(attrs, opts[:bulk])
@@ -388,19 +384,6 @@ defmodule TdDd.DataStructures do
     end
   end
 
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking data_structure changes.
-
-  ## Examples
-
-      iex> change_data_structure(data_structure)
-      %Ecto.Changeset{source: %DataStructure{}}
-
-  """
-  def change_data_structure(%DataStructure{} = data_structure) do
-    DataStructure.changeset(data_structure, %{})
-  end
-
   def get_latest_version(target, options \\ [])
 
   @doc """
@@ -464,31 +447,31 @@ defmodule TdDd.DataStructures do
     Repo.get_by(DataStructure, clauses)
   end
 
-  def get_lineage_id(%{system: %NotLoaded{}, data_structure: data_structure}) do
-    get_lineage_id(%{data_structure: data_structure})
+  defp get_degree(%{data_structure: %{external_id: external_id}}) do
+    case GraphData.degree(external_id) do
+      {:ok, degree} -> degree
+      {:error, _} -> nil
+    end
   end
 
-  def get_lineage_id(%{system: system, data_structure: data_structure}) do
-    StructureCache.get_external_id(system.external_id, data_structure.external_id)
-  end
+  defp get_degree(_), do: nil
 
-  def get_lineage_id(%{data_structure: data_structure}) do
-    StructureCache.get_external_id(data_structure.system.external_id, data_structure.external_id)
-  end
-
-  def get_field_external_ids(%{data_fields: data_fields}) do
+  defp get_field_degree(%{data_fields: data_fields}) do
     data_fields
     |> Repo.preload(data_structure: :system)
-    |> Enum.map(
-      &Map.put(
-        &1,
-        :external_id,
-        get_lineage_id(&1)
-      )
-    )
+    |> Enum.map(&add_degree/1)
   end
 
-  def get_field_links(%{data_fields: data_fields}) do
+  defp add_degree(dsv) do
+    dsv
+    |> get_degree()
+    |> do_add_degree(dsv)
+  end
+
+  defp do_add_degree(nil, dsv), do: dsv
+  defp do_add_degree(degree, dsv), do: Map.put(dsv, :degree, degree)
+
+  defp get_field_links(%{data_fields: data_fields}) do
     data_fields
     |> Enum.map(
       &Map.put(
@@ -558,14 +541,6 @@ defmodule TdDd.DataStructures do
   defp get_first_active_parent(parents) do
     parents
     |> Enum.find(&(&1.deleted_at == nil))
-  end
-
-  def get_structure_by_external_ids(system_external_id, external_id) do
-    DataStructure
-    |> join(:inner, [system], s in assoc(system, :system))
-    |> where([_, s], s.external_id == ^system_external_id)
-    |> where([d, _], d.external_id == ^external_id)
-    |> Repo.one()
   end
 
   def get_latest_version_by_external_id(external_id, options \\ []) do
@@ -683,5 +658,15 @@ defmodule TdDd.DataStructures do
   """
   def change_profile(%Profile{} = profile) do
     Profile.changeset(profile, %{})
+  end
+
+  @doc """
+  Returns a Map whose keys are external ids and whose values are data
+  structure ids.
+  """
+  def external_id_map do
+    from(ds in DataStructure, select: {ds.external_id, ds.id})
+    |> Repo.all()
+    |> Map.new()
   end
 end

@@ -198,7 +198,8 @@ defmodule TdDdWeb.DataStructureView do
       :description,
       :deleted_at,
       :inserted_at,
-      :links
+      :links,
+      :degree
     ])
     |> lift_metadata()
     |> Map.put(:id, data_structure_id)

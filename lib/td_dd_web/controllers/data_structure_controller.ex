@@ -130,7 +130,7 @@ defmodule TdDdWeb.DataStructureController do
     :children,
     :siblings,
     :data_fields,
-    :data_field_external_ids,
+    :data_field_degree,
     :data_field_links,
     :versions,
     :system,
@@ -291,41 +291,6 @@ defmodule TdDdWeb.DataStructureController do
     conn
     |> put_resp_header("x-total-count", "#{total}")
     |> render("index.json", data_structures: data_structures)
-  end
-
-  swagger_path :get_structure_by_external_ids do
-    description("Show Data Structure by system external id and structure external id")
-    produces("application/json")
-
-    parameters do
-      system_external_id(:path, :string, "System external ID", required: true)
-      structure_external_id(:path, :string, "Structure external ID", required: true)
-    end
-
-    response(200, "OK", Schema.ref(:DataStructureResponse))
-    response(400, "Client Error")
-    response(403, "Forbidden")
-    response(404, "Not Found")
-    response(422, "Unprocessable Entity")
-  end
-
-  def get_structure_by_external_ids(conn, %{
-        "system_external_id" => system_external_id,
-        "structure_external_id" => structure_external_id
-      }) do
-    user = conn.assigns[:current_user]
-
-    data_structure =
-      DataStructures.get_structure_by_external_ids(system_external_id, structure_external_id)
-
-    case data_structure do
-      nil ->
-        render_error(conn, :not_found)
-
-      data_structure ->
-        data_structure = get_data_structure(data_structure.id)
-        do_render_data_structure(conn, user, data_structure)
-    end
   end
 
   swagger_path :bulk_update do
