@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased] 
+
+### Added
+
+- [TD-2269] Update elasticsearch mapping for dynamic field using new content model
+- [TD-2284] Show systems to user with read permission in any structure, return structures count
+
 ## [3.14.0] 2020-01-27
 
 ### Changed

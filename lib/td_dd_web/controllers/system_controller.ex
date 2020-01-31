@@ -5,6 +5,7 @@ defmodule TdDdWeb.SystemController do
   alias TdDd.Audit.AuditSupport
   alias TdDd.Systems
   alias TdDd.Systems.System
+  alias TdDd.Systems.SystemSearch
   alias TdDdWeb.SwaggerDefinitions
 
   action_fallback(TdDdWeb.FallbackController)
@@ -19,7 +20,10 @@ defmodule TdDdWeb.SystemController do
   end
 
   def index(conn, _params) do
-    systems = Systems.list_systems()
+    user = conn.assigns[:current_user]
+    permission = conn.assigns[:search_permission]
+    params = Map.put(%{}, :without, ["deleted_at"])
+    systems = SystemSearch.search_systems(user, permission, params)
     render(conn, "index.json", systems: systems)
   end
 
