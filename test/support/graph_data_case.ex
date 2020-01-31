@@ -1,4 +1,8 @@
 defmodule TdDd.GraphDataCase do
+  @moduledoc """
+  Graph Data setup for tests.
+  """
+
   use ExUnit.CaseTemplate
 
   using do

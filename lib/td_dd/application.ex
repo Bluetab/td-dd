@@ -49,7 +49,7 @@ defmodule TdDd.Application do
     ] ++ lineage_workers()
   end
 
-  defp lineage_workers() do
+  defp lineage_workers do
     # Neo4j hostname must be configured for lineage workers to start
     with config <- Application.get_env(:bolt_sips, Bolt),
          true <- bolt_enabled?(config) do

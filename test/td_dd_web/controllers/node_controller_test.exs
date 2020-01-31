@@ -2,9 +2,9 @@ defmodule TdDdWeb.NodeControllerTest do
   use TdDdWeb.ConnCase
   use TdDd.GraphDataCase
 
-  alias TdDd.Permissions.MockPermissionResolver
   alias TdDd.Lineage.GraphData
   alias TdDd.Lineage.GraphData.State
+  alias TdDd.Permissions.MockPermissionResolver
   alias TdDdWeb.ApiServices.MockTdAuthService
 
   @admin_user_name "app-admin"
