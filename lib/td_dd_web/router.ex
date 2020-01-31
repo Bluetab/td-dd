@@ -42,11 +42,9 @@ defmodule TdDdWeb.Router do
 
     resources("/comments", CommentController, except: [:new, :edit])
 
-    get(
-      "/systems/:system_external_id/structures/:structure_external_id",
-      DataStructureController,
-      :get_structure_by_external_ids
-    )
+    resources("/graphs", GraphController, only: [:create, :show])
+
+    resources("/nodes", NodeController, only: [:index, :show])
 
     post("/profiles/upload", ProfileController, :upload)
 

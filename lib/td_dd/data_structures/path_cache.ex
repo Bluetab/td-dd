@@ -19,7 +19,7 @@ defmodule TdDd.DataStructures.PathCache do
   end
 
   def path(id) do
-    GenServer.call(__MODULE__, id)
+    GenServer.call(__MODULE__, id, 10_000)
   end
 
   def refresh(timeout \\ 5000) do

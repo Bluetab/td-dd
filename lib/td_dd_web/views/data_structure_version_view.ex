@@ -41,6 +41,7 @@ defmodule TdDdWeb.DataStructureVersionView do
           :data_structure,
           :deleted_at,
           :description,
+          :external_id,
           :group,
           :id,
           :links,
@@ -52,7 +53,7 @@ defmodule TdDdWeb.DataStructureVersionView do
           :version,
           :versions,
           :profile,
-          :data_structure_lineage_id
+          :degree
         ])
     }
   end
@@ -120,6 +121,7 @@ defmodule TdDdWeb.DataStructureVersionView do
   defp add_profile(%{class: "field", profile: profile} = dsv) do
     dsv |> with_profile_attrs(profile)
   end
+
   defp add_profile(dsv), do: dsv
 
   defp field_structure_json(
@@ -127,15 +129,16 @@ defmodule TdDdWeb.DataStructureVersionView do
        ) do
     dsv
     |> Map.take([
-      :name,
       :data_structure_id,
-      :external_id,
-      :type,
-      :metadata,
-      :description,
+      :degree,
       :deleted_at,
+      :description,
+      :external_id,
       :inserted_at,
-      :links
+      :links,
+      :metadata,
+      :name,
+      :type
     ])
     |> lift_metadata()
     |> with_profile_attrs(profile)

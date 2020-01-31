@@ -6,11 +6,14 @@ defmodule TdDd.Lineage.GraphData do
   use GenServer
 
   alias Graph.Traversal
+  alias TdDd.DataStructures
+  alias TdDd.Lineage.GraphData.Nodes
+  alias TdDd.Lineage.GraphData.State
   alias TdDd.Neo
 
   require Logger
 
-  defstruct g: %Graph{}, t: %Graph{}, ids: [], excludes: [], source_ids: [], type: nil
+  defstruct g: %Graph{}, t: %Graph{}, ids: [], excludes: [], source_ids: [], type: nil, hash: nil
 
   @types %{"CONTAINS" => :contains, "DEPENDS" => :depends}
   @refresh_interval 60_000
@@ -23,6 +26,19 @@ defmodule TdDd.Lineage.GraphData do
   @doc "Returns the current state"
   def state do
     GenServer.call(__MODULE__, :state)
+  end
+
+  @doc "Returns nodes in the graph"
+  def nodes(id \\ nil) do
+    GenServer.call(__MODULE__, {:nodes, id})
+  end
+
+  @doc """
+  Returns `true` if the external id exists in the graph, `false`
+  otherwise.
+  """
+  def degree(external_id) do
+    GenServer.call(__MODULE__, {:degree, external_id})
   end
 
   @doc "Reloads graph data from Neo4j"
@@ -52,12 +68,21 @@ defmodule TdDd.Lineage.GraphData do
   ## GenServer callbacks
 
   @impl true
-  def init(_opts) do
+  def init(opts) do
     unless Application.get_env(:td_dd, :env) == :test do
       Process.send_after(self(), :load, 1_000)
     end
 
-    {:ok, %{}}
+    state =
+      case Keyword.get(opts, :state) do
+        %State{} = s -> s
+        _ -> %State{}
+      end
+
+    name = String.replace_prefix("#{__MODULE__}", "Elixir.", "")
+    Logger.info("Running #{name}")
+
+    {:ok, state}
   end
 
   @impl true
@@ -100,8 +125,30 @@ defmodule TdDd.Lineage.GraphData do
   end
 
   @impl true
+  def handle_call({:degree, external_id}, _from, %{depends: depends} = state) do
+    reply =
+      if Graph.has_vertex?(depends, external_id) do
+        {:ok,
+         %{
+           in: Graph.in_degree(depends, external_id),
+           out: Graph.out_degree(depends, external_id)
+         }}
+      else
+        {:error, :bad_vertex}
+      end
+
+    {:reply, reply, state}
+  end
+
+  @impl true
   def handle_call(:state, _from, state) do
     {:reply, state, state}
+  end
+
+  @impl true
+  def handle_call({:nodes, id}, _from, state) do
+    reply = Nodes.query_nodes(id, state)
+    {:reply, reply, state}
   end
 
   @impl true
@@ -121,6 +168,7 @@ defmodule TdDd.Lineage.GraphData do
       |> do_lineage(external_ids, opts[:excludes])
       |> subgraph(state, :lineage, opts ++ [reverse: true])
       |> add_source_ids(external_ids)
+      |> hash(state)
 
     {:reply, reply, state}
   rescue
@@ -136,6 +184,7 @@ defmodule TdDd.Lineage.GraphData do
       |> do_impact(external_ids, opts[:excludes])
       |> subgraph(state, :impact, opts)
       |> add_source_ids(external_ids)
+      |> hash(state)
 
     {:reply, reply, state}
   rescue
@@ -163,6 +212,7 @@ defmodule TdDd.Lineage.GraphData do
     |> Enum.max_by(fn %{ids: ids} -> Enum.count(ids) end)
     |> subgraph(state, type, opts)
     |> add_source_ids(:sample)
+    |> hash(state)
   end
 
   defp siblings(v, %Graph{} = contains) do
@@ -255,21 +305,37 @@ defmodule TdDd.Lineage.GraphData do
     }
   end
 
+  def nodes(type, external_id_map) do
+    type
+    |> Neo.nodes()
+    |> Enum.group_by(fn
+      %{properties: %{"external_id" => external_id}} -> external_id
+      _ -> nil
+    end)
+    |> Enum.map(fn {external_id, nodes} -> {Map.get(external_id_map, external_id), nodes} end)
+    |> Enum.flat_map(fn
+      {nil, nodes} -> nodes
+      {id, nodes} -> Enum.map(nodes, &Map.put(&1, :structure_id, id))
+    end)
+  end
+
   defp do_load do
     ts = Neo.store_creation_date()
 
     Logger.info("Data load started, StoreCreationDate=#{ts}...")
 
-    groups = Neo.nodes("Group")
+    external_id_map = DataStructures.external_id_map()
+    Logger.info("Read #{Enum.count(external_id_map)} external_ids...")
+
+    groups = nodes("Group", external_id_map)
     Logger.info("Read #{Enum.count(groups)} groups from Neo4j...")
-    resources = Neo.nodes("Resource")
+    resources = nodes("Resource", external_id_map)
     Logger.info("Read #{Enum.count(resources)} resources from Neo4j...")
 
     id_map =
       groups
       |> Enum.concat(resources)
-      |> Enum.map(&{&1.id, &1.properties["external_id"]})
-      |> Map.new()
+      |> Map.new(&{&1.id, &1.properties["external_id"]})
 
     Logger.info("Mapped #{Enum.count(id_map)} ids...")
 
@@ -312,7 +378,9 @@ defmodule TdDd.Lineage.GraphData do
 
     Logger.info("Imported #{Graph.no_edges(depends)} graph edges...")
 
-    %{contains: contains, depends: depends, ts: ts}
+    roots = Graph.source_vertices(contains)
+
+    %State{contains: contains, depends: depends, roots: roots, ts: ts}
   end
 
   defp add_edge(%{id: id, start: v1, end: v2}, %Graph{} = g) do
@@ -339,7 +407,7 @@ defmodule TdDd.Lineage.GraphData do
     add_source_ids(graph_data, source_ids)
   end
 
-  defp add_source_ids(%__MODULE__{excludes: excludes} = res, external_ids) do
+  defp add_source_ids(%__MODULE__{excludes: excludes} = graph_data, external_ids) do
     source_ids =
       case excludes do
         [] ->
@@ -352,6 +420,31 @@ defmodule TdDd.Lineage.GraphData do
           |> MapSet.to_list()
       end
 
-    %{res | source_ids: source_ids}
+    %{graph_data | source_ids: source_ids}
   end
+
+  defp hash(%__MODULE__{source_ids: source_ids, ids: ids, type: type} = graph_data, %{ts: ts}) do
+    hash =
+      %{ids: Enum.sort(ids), source_ids: Enum.sort(source_ids), type: type, ts: ts}
+      |> Jason.encode!()
+      |> do_hash()
+      |> Base.url_encode64()
+
+    %{graph_data | hash: hash}
+  end
+
+  defp do_hash(json) do
+    :crypto.hash(:sha256, json)
+  end
+
+  def node_label(%{data: data}), do: node_label(data)
+
+  def node_label(%{properties: properties, labels: [class], id: id}) do
+    properties
+    |> Map.take(["name", "external_id", "type"])
+    |> Map.put(:class, class)
+    |> Map.put(:id, id)
+  end
+
+  def sortable(%{"name" => name}), do: String.downcase(name)
 end

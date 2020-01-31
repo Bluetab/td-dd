@@ -48,6 +48,7 @@ defmodule TdDd.Application do
       TdDd.DataStructures.Hasher,
       {Bolt.Sips, Application.get_env(:bolt_sips, Bolt)},
       TdDd.Lineage.GraphData,
+      TdDd.Lineage
     ]
   end
 end

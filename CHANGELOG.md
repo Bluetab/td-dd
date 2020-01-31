@@ -1,10 +1,12 @@
 # Changelog
 
-## [3.14.0] 2020-01-27
+## [Unreleased]
 
 ### Added
 
 - [TD-1595] Data lineage support
+
+## [3.14.0] 2020-01-27
 
 ### Changed
 
