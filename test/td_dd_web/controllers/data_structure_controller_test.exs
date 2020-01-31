@@ -46,17 +46,19 @@ defmodule TdDdWeb.DataStructureControllerTest do
     label: "some label",
     name: "some template name",
     scope: "dd",
-    content: [%{
-      "name" => "group",
-      "fields" => [
-        %{
-          "name" => "field",
-          "type" => "string",
-          "cardinality" => "1",
-          "values" => %{"fixed" => ["1", "2"]}
-        }
-      ]
-    }]
+    content: [
+      %{
+        "name" => "group",
+        "fields" => [
+          %{
+            "name" => "field",
+            "type" => "string",
+            "cardinality" => "1",
+            "values" => %{"fixed" => ["1", "2"]}
+          }
+        ]
+      }
+    ]
   }
 
   setup_all do
@@ -142,26 +144,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
       %{"siblings" => siblings} = json_response(conn, 200)["data"]
       assert Enum.count(siblings) == 2
       assert Enum.find(siblings, [], &(Map.get(&1, "name") == "Child_deleted" == []))
-    end
-  end
-
-  describe "show by system_external_id and structure external_id" do
-    setup [:create_structure_hierarchy]
-
-    @tag authenticated_user: @admin_user_name
-    test "renders a data structure", %{
-      conn: conn
-    } do
-      conn =
-        get(
-          conn,
-          Routes.data_structure_path(conn, :get_structure_by_external_ids, "System_ref", "Parent")
-        )
-
-      data_structure = json_response(conn, 200)["data"]
-
-      assert data_structure != nil and data_structure["system"]["external_id"] == "System_ref" and
-               data_structure["external_id"] == "Parent"
     end
   end
 

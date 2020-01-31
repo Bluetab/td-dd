@@ -76,11 +76,6 @@ defmodule TdDd.DataStructuresTest do
       end
     end
 
-    test "change_data_structure/1 returns a data_structure changeset" do
-      data_structure = insert(:data_structure)
-      assert %Ecto.Changeset{} = DataStructures.change_data_structure(data_structure)
-    end
-
     test "find_data_structure/1 returns a data structure" do
       %{id: id, external_id: external_id} = insert(:data_structure)
       result = DataStructures.find_data_structure(%{external_id: external_id})

@@ -30,21 +30,25 @@ defmodule TdDd.DataCase do
   end
 
   setup tags do
-    :ok = Sandbox.checkout(TdDd.Repo)
+    case Sandbox.checkout(TdDd.Repo) do
+      :ok ->
+        unless tags[:async] do
+          Sandbox.mode(TdDd.Repo, {:shared, self()})
+          parent = self()
 
-    unless tags[:async] do
-      Sandbox.mode(TdDd.Repo, {:shared, self()})
-      parent = self()
+          case Process.whereis(TdDd.DataStructures.PathCache) do
+            nil -> nil
+            pid -> Sandbox.allow(TdDd.Repo, parent, pid)
+          end
 
-      case Process.whereis(TdDd.DataStructures.PathCache) do
-        nil -> nil
-        pid -> Sandbox.allow(TdDd.Repo, parent, pid)
-      end
+          case Process.whereis(TdDd.Search.IndexWorker) do
+            nil -> nil
+            pid -> Sandbox.allow(TdDd.Repo, parent, pid)
+          end
+        end
 
-      case Process.whereis(TdDd.Search.IndexWorker) do
-        nil -> nil
-        pid -> Sandbox.allow(TdDd.Repo, parent, pid)
-      end
+      {:already, :owner} ->
+        :ok
     end
 
     :ok

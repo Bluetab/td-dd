@@ -46,6 +46,31 @@ defmodule TdDd.Application do
       TdDd.Cache.SystemLoader,
       TdDd.Cache.StructureLoader,
       TdDd.DataStructures.Hasher
-    ]
+    ] ++ lineage_workers()
   end
+
+  defp lineage_workers do
+    # Neo4j hostname must be configured for lineage workers to start
+    with config <- Application.get_env(:bolt_sips, Bolt),
+         true <- bolt_enabled?(config) do
+      [
+        {Bolt.Sips, config},
+        TdDd.Lineage.GraphData,
+        TdDd.Lineage
+      ]
+    else
+      _ -> []
+    end
+  end
+
+  defp bolt_enabled?(keywords) when is_list(keywords) do
+    if Keyword.keyword?(keywords) do
+      keywords
+      |> Keyword.get(:hostname)
+      |> bolt_enabled?()
+    end
+  end
+
+  defp bolt_enabled?(val) when is_binary(val) and byte_size(val) > 0, do: true
+  defp bolt_enabled?(_), do: false
 end
