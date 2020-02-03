@@ -30,7 +30,7 @@ defmodule TdDd.DataStructures.GraphTest do
       external_ids
       |> Enum.chunk_every(2, 1, :discard)
       |> Enum.map(fn [parent, child] ->
-        %{parent_external_id: parent, child_external_id: child}
+        %{parent_external_id: parent, child_external_id: child, relation_type_id: 1, relation_type_name: "default"}
       end)
 
     {structures, relations}

@@ -6,6 +6,11 @@
 
 ### Added
 
+- [TD-2292] Relation type in structures relations
+
+### Changed
+
+- [TD-2269] Update elasticsearch mapping for dynamic field using new content model
 - [TD-1595] Data lineage support
 - [TD-2284] Show systems to user with read permission in any structure, return structures count
 

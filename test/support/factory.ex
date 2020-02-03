@@ -6,6 +6,7 @@ defmodule TdDd.Factory do
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Profile
+  alias TdDd.DataStructures.RelationType
   alias TdDd.Systems.System
 
   def user_factory do
@@ -61,6 +62,12 @@ defmodule TdDd.Factory do
     %System{
       name: "My system",
       external_id: "System_ref"
+    }
+  end
+
+  def relation_type_factory do
+    %RelationType{
+      name: "relation_type_name"
     }
   end
 

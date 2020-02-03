@@ -26,14 +26,20 @@ defmodule TdDd.DataStructures.Graph do
   Returns a list of parent vertices for a given vertex
   """
   def parents(graph, external_id) do
-    :digraph.in_neighbours(graph, external_id)
+    graph
+    |> :digraph.in_edges(external_id)
+    |> Enum.map(&:digraph.edge(graph, &1))
+    |> Enum.map(fn {_, parent, _, labels} -> {parent, labels} end)
   end
 
   @doc """
   Returns a list of child vertices for a given vertex
   """
   def children(graph, external_id) do
-    :digraph.out_neighbours(graph, external_id)
+    graph
+    |> :digraph.out_edges(external_id)
+    |> Enum.map(&:digraph.edge(graph, &1))
+    |> Enum.map(fn {_, _, child, labels} -> {child, labels} end)
   end
 
   @doc """
@@ -164,6 +170,37 @@ defmodule TdDd.DataStructures.Graph do
     :vertex_exists
   end
 
+  defp get_edge_child_vertex(
+         g,
+         {_, _, external_id, [relation_type_id: rel_type_id, relation_type_name: rel_type_name]}
+       ) do
+    {_, keyword} = :digraph.vertex(g, external_id)
+
+    keyword =
+      case rel_type_name do
+        "default" ->
+          keyword
+        _ ->
+          rhash =
+            keyword
+            |> Keyword.get(:hash)
+            |> Kernel.<>("#{rel_type_id}")
+            |> Hasher.hash()
+
+          rghash =
+            keyword
+            |> Keyword.get(:ghash)
+            |> Kernel.<>("#{rel_type_id}")
+            |> Hasher.hash()
+
+          keyword
+            |> Keyword.put(:rhash, rhash)
+            |> Keyword.put(:rghash, rghash)
+      end
+
+    {external_id, keyword}
+  end
+
   defp propagate_hashes(g) do
     # Calculate hashes from bottom up
     g
@@ -178,8 +215,9 @@ defmodule TdDd.DataStructures.Graph do
 
     children =
       g
-      |> :digraph.out_neighbours(id)
-      |> Enum.map(&:digraph.vertex(g, &1))
+      |> :digraph.out_edges(id)
+      |> Enum.map(&:digraph.edge(g, &1))
+      |> Enum.map(&get_edge_child_vertex(g, &1))
 
     lhash = local_hash([parent | children])
     ghash = global_hash([parent | children])
@@ -198,7 +236,7 @@ defmodule TdDd.DataStructures.Graph do
   def local_hash(vertices) do
     vertices
     |> Enum.map(fn {_, labels} -> labels end)
-    |> Enum.map(& &1[:hash])
+    |> Enum.map(&(&1[:rhash] || &1[:hash]))
     |> Hasher.hash()
   end
 
@@ -209,7 +247,7 @@ defmodule TdDd.DataStructures.Graph do
     child_hashes =
       children
       |> Enum.map(fn {_, labels} -> labels end)
-      |> Enum.map(&(&1[:ghash] || &1[:hash]))
+      |> Enum.map(&(&1[:rghash] || &1[:ghash] || &1[:hash]))
 
     [labels[:hash] | child_hashes]
     |> Hasher.hash()
@@ -236,15 +274,20 @@ defmodule TdDd.DataStructures.Graph do
   defp add_relation(relation, graph) do
     parent = parent_vertex(relation, graph)
     child = child_vertex(relation, graph)
-    add_parent_child(graph, parent, child)
+    add_parent_child(graph, parent, child, relation)
   end
 
-  defp add_parent_child(_graph, id, id) do
+  defp add_parent_child(_graph, id, id, _relation) do
     raise("reflexive relations are not permitted (#{id})")
   end
 
-  defp add_parent_child(graph, parent, child) do
-    :digraph.add_edge(graph, parent, child)
+  defp add_parent_child(graph, parent, child, relation) do
+    labels =
+      relation
+      |> Map.take([:relation_type_id, :relation_type_name])
+      |> Keyword.new()
+
+    :digraph.add_edge(graph, parent, child, labels)
     graph
   end
 
