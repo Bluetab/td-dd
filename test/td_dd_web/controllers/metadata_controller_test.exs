@@ -11,6 +11,8 @@ defmodule TdDdWeb.MetadataControllerTest do
   alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
 
+  @import_dir Application.get_env(:td_dd, :import_dir)
+
   setup_all do
     start_supervised(MockIndexWorker)
     start_supervised(MockTdAuditService)
@@ -23,11 +25,25 @@ defmodule TdDdWeb.MetadataControllerTest do
   end
 
   setup %{fixture: fixture} do
-    structures = %Plug.Upload{path: fixture <> "/structures.csv"}
-    fields = %Plug.Upload{path: fixture <> "/fields.csv"}
-    relations = %Plug.Upload{path: fixture <> "/relations.csv"}
+    on_exit(fn ->
+      ["nodes.csv", "rels.csv"]
+      |> Enum.map(&Path.join([@import_dir, &1]))
+      |> Enum.each(&File.rm/1)
+    end)
 
-    {:ok, structures: structures, fields: fields, relations: relations}
+    params =
+      %{
+        structures: "structures.csv",
+        fields: "fields.csv",
+        relations: "relations.csv",
+        nodes: "nodes.csv",
+        rels: "rels.csv"
+      }
+      |> Enum.map(fn {k, v} -> {k, Path.join([fixture, v])} end)
+      |> Enum.filter(fn {_, v} -> File.exists?(v) end)
+      |> Map.new(fn {k, v} -> {k, %Plug.Upload{path: v, filename: Path.basename(v)}} end)
+
+    {:ok, params}
   end
 
   describe "upload" do
@@ -165,6 +181,38 @@ defmodule TdDdWeb.MetadataControllerTest do
       assert length(json_response["parents"]) == 1
       assert length(json_response["siblings"]) == 4
       assert length(json_response["children"]) == 16
+    end
+  end
+
+  describe "data lineage metadata upload" do
+    @tag :admin_authenticated
+    @tag fixture: "test/fixtures/lineage"
+    test "uploads nodes and relations metadata", %{conn: conn, nodes: nodes, rels: rels} do
+      refute File.exists?(Path.join([@import_dir, "nodes.csv"]))
+      refute File.exists?(Path.join([@import_dir, "rels.csv"]))
+
+      conn = post(conn, Routes.metadata_path(conn, :upload), nodes: nodes, rels: rels)
+      assert response(conn, 202) =~ ""
+      assert File.exists?(Path.join([@import_dir, "nodes.csv"]))
+      assert File.exists?(Path.join([@import_dir, "rels.csv"]))
+    end
+
+    @tag :admin_authenticated
+    @tag fixture: "test/fixtures/lineage"
+    test "uploads nodes metadata", %{conn: conn, nodes: nodes} do
+      refute File.exists?(Path.join([@import_dir, "nodes.csv"]))
+      conn = post(conn, Routes.metadata_path(conn, :upload), nodes: nodes)
+      assert response(conn, 202) =~ ""
+      assert File.exists?(Path.join([@import_dir, "nodes.csv"]))
+    end
+
+    @tag :admin_authenticated
+    @tag fixture: "test/fixtures/lineage"
+    test "uploads relations metadata", %{conn: conn, rels: rels} do
+      refute File.exists?(Path.join([@import_dir, "rels.csv"]))
+      conn = post(conn, Routes.metadata_path(conn, :upload), rels: rels)
+      assert response(conn, 202) =~ ""
+      assert File.exists?(Path.join([@import_dir, "rels.csv"]))
     end
   end
 
