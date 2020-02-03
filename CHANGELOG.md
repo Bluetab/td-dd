@@ -2,16 +2,17 @@
 
 ### Added
 
-## [Unreleased] 
+## [Unreleased]
 
 ### Added
 
+- [TD-1595] Data lineage support
+- [TD-2327] Data lineage metadata upload at `/api/data_structures/metadata` and `/api/td_dl/metadata`
 - [TD-2292] Relation type in structures relations
 
 ### Changed
 
 - [TD-2269] Update elasticsearch mapping for dynamic field using new content model
-- [TD-1595] Data lineage support
 - [TD-2284] Show systems to user with read permission in any structure, return structures count
 
 ## [3.14.0] 2020-01-27
@@ -24,7 +25,7 @@
 
 ### Changed
 
-- [TD-2272] 40 seconds timeout to query elasticsearch 
+- [TD-2272] 40 seconds timeout to query elasticsearch
 
 ## [3.12.0] 2019-12-19
 

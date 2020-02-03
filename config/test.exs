@@ -44,3 +44,5 @@ config :td_dd, TdDd.Search.Cluster, api: TdDd.ElasticsearchMock
 config :td_cache, redis_host: "redis"
 
 config :td_cache, :event_stream, streams: []
+
+config :td_dd, import_dir: "/tmp"

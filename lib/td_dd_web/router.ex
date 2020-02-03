@@ -60,6 +60,8 @@ defmodule TdDdWeb.Router do
     post("/data_structure_filters/search", DataStructureFilterController, :search)
 
     resources "/relation_types", RelationTypeController, except: [:new, :edit]
+
+    post("/td_dl/metadata", MetadataController, :upload)
   end
 
   scope "/api/swagger" do
