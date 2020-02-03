@@ -72,6 +72,53 @@ defmodule TdDdWeb.MetadataControllerTest do
     end
 
     @tag :admin_authenticated
+    @tag fixture: "test/fixtures/metadata/relation_type"
+    test "uploads structure, field and relation with relation_type_name metadata", %{
+      conn: conn,
+      structures: structures,
+      fields: fields,
+      relations: relations
+    } do
+      conn =
+        post(conn, Routes.system_path(conn, :create),
+          system: %{name: "Power BI", external_id: "pbi"}
+        )
+
+      assert %{"id" => _} = json_response(conn, 201)["data"]
+      insert(:relation_type, name: "relation_type_1")
+
+      conn =
+        post(conn, Routes.metadata_path(conn, :upload),
+          data_structures: structures |> Map.put(:filename, "structures"),
+          data_fields: fields |> Map.put(:filename, "fields"),
+          data_structure_relations: relations |> Map.put(:filename, "relations")
+        )
+
+      assert response(conn, 202) =~ ""
+
+      # waits for loader to complete
+      LoaderWorker.ping(20_000)
+
+      search_params = %{ou: "Truedat"}
+      conn = get(conn, Routes.data_structure_path(conn, :index, search_params))
+      json_response = json_response(conn, 200)["data"]
+      assert length(json_response) == 5 + 68
+
+      structure_id = get_id(json_response, "Calidad")
+      conn = get(conn, Routes.data_structure_path(conn, :show, structure_id))
+      structure_json_response = json_response(conn, 200)["data"]
+      assert length(structure_json_response["parents"]) == 1
+      assert length(structure_json_response["siblings"]) == 4
+      assert length(structure_json_response["children"]) == 16
+
+      relation_parent_id = get_id(json_response, "Dashboard Gobierno y Calidad v1")
+      conn = get(conn, Routes.data_structure_path(conn, :show, relation_parent_id))
+      json_response = json_response(conn, 200)["data"]
+      assert json_response["parents"] == []
+      assert length(json_response["children"]) == 4
+    end
+
+    @tag :admin_authenticated
     @tag fixture: "test/fixtures/metadata"
     test "uploads structure, field and relation metadata whe domain is specified", %{
       conn: conn,

@@ -2,6 +2,7 @@ defmodule TdDd.LoaderTest do
   use TdDd.DataCase
 
   alias TdDd.DataStructures
+  alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.Graph
   alias TdDd.Loader
   alias TdDd.Search.MockIndexWorker
@@ -361,6 +362,102 @@ defmodule TdDd.LoaderTest do
       assert_raise(RuntimeError, fn ->
         Loader.load(Graph.new(), [structure], [], [relation], audit())
       end)
+    end
+
+    test "load/1 loads changes in relations with relation type" do
+      sys1 = insert(:system, external_id: "SYS1", name: "SYS1")
+      insert(:relation_type, name: "relation_type")
+      insert(:relation_type, name: "relation_type_2")
+
+      ds1 = insert(:data_structure, system_id: sys1.id)
+      ds2 = insert(:data_structure, system_id: sys1.id)
+
+      insert(:data_structure_version,
+        data_structure_id: ds1.id,
+        group: "GROUP1",
+        name: "NAME1",
+        type: "USER_TABLE",
+        version: 0
+      )
+
+      insert(:data_structure_version,
+        data_structure_id: ds2.id,
+        group: "GROUP6",
+        name: "NAME2",
+        type: "USER_TABLE",
+        version: 0
+      )
+
+      s1 = %{
+        external_id: ds1.external_id,
+        group: "GROUP1",
+        name: "NAME1",
+        type: "USER_TABLE",
+        system_id: sys1.id
+      }
+
+      s2 = %{
+        external_id: ds2.external_id,
+        group: "GROUP6",
+        name: "NAME2",
+        type: "USER_TABLE",
+        system_id: sys1.id
+      }
+
+      r1 = %{
+        parent_external_id: ds1.external_id,
+        child_external_id: ds2.external_id
+      }
+
+      r1_with_type = %{
+        parent_external_id: ds1.external_id,
+        child_external_id: ds2.external_id,
+        relation_type_name: "relation_type"
+      }
+
+      r2_with_type = %{
+        parent_external_id: ds1.external_id,
+        child_external_id: ds2.external_id,
+        relation_type_name: "relation_type_2"
+      }
+
+      structure_records = [s1, s2]
+      relation_records = [r1]
+      relation_records_with_type = [r1_with_type, r2_with_type]
+
+      {:ok, _} =
+        Loader.load(
+          Graph.new(),
+          structure_records,
+          [],
+          relation_records,
+          audit()
+        )
+
+      {:ok, _} =
+        Loader.load(
+          Graph.new(),
+          structure_records,
+          [],
+          relation_records_with_type,
+          audit()
+        )
+
+      ds1_last_version =
+        %{}
+        |> DataStructures.list_data_structures([:versions])
+        |> Enum.filter(&(&1.id == ds1.id))
+        |> hd
+        |> DataStructures.get_latest_version()
+
+      assert 2 == Map.get(ds1_last_version, :version)
+
+      assert ["relation_type", "relation_type_2"] ==
+               from(dsr in DataStructureRelation, where: dsr.parent_id == ^ds1_last_version.id)
+               |> Repo.all()
+               |> Repo.preload([:relation_type])
+               |> Enum.map(&Map.get(&1, :relation_type))
+               |> Enum.map(&Map.get(&1, :name))
     end
   end
 

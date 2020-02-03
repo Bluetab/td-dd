@@ -8,6 +8,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.PathCache
+  alias TdDd.DataStructures.RelationTypes
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
@@ -458,11 +459,13 @@ defmodule TdDdWeb.DataStructureControllerTest do
       child_structures
       |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id))
 
-    insert(:data_structure_relation, parent_id: parent_version.id, child_id: structure_version.id)
+    default_relation_type_id = RelationTypes.get_default_relation_type().id
+
+    insert(:data_structure_relation, parent_id: parent_version.id, child_id: structure_version.id, relation_type_id: default_relation_type_id)
 
     child_versions
     |> Enum.each(
-      &insert(:data_structure_relation, parent_id: structure_version.id, child_id: &1.id)
+      &insert(:data_structure_relation, parent_id: structure_version.id, child_id: &1.id, relation_type_id: default_relation_type_id)
     )
 
     {:ok,
@@ -499,14 +502,17 @@ defmodule TdDdWeb.DataStructureControllerTest do
         )
       )
 
+    default_relation_type_id = RelationTypes.get_default_relation_type().id
+
     child_versions
-    |> Enum.each(&insert(:data_structure_relation, parent_id: parent_version.id, child_id: &1.id))
+    |> Enum.each(&insert(:data_structure_relation, parent_id: parent_version.id, child_id: &1.id, relation_type_id: default_relation_type_id))
 
     child_versions
     |> Enum.each(
       &insert(:data_structure_relation,
         parent_id: parent_version_deleted.id,
-        child_id: &1.id
+        child_id: &1.id,
+        relation_type_id: default_relation_type_id
       )
     )
 

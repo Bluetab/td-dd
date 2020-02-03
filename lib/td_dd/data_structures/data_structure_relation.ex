@@ -4,10 +4,12 @@ defmodule TdDd.DataStructures.DataStructureRelation do
   import Ecto.Changeset
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.RelationType
 
   schema "data_structure_relations" do
     belongs_to(:parent, DataStructureVersion)
     belongs_to(:child, DataStructureVersion)
+    belongs_to(:relation_type, RelationType)
     timestamps(type: :utc_datetime)
   end
 
@@ -18,7 +20,7 @@ defmodule TdDd.DataStructures.DataStructureRelation do
       :parent_id,
       :child_id
     ])
-    |> validate_required([:parent_id, :child_id])
+    |> validate_required([:parent_id, :child_id, :relation_type_id])
     |> check_constraint(
       :parent_id,
       name: :avoid_structure_relation_itself,
@@ -29,6 +31,6 @@ defmodule TdDd.DataStructures.DataStructureRelation do
   @doc false
   def update_changeset(%DataStructureRelation{} = data_structure_relation, attrs) do
     data_structure_relation
-    |> cast(attrs, [:parent_id, :child_id])
+    |> cast(attrs, [:parent_id, :child_id, :relation_type_id])
   end
 end

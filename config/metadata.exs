@@ -27,6 +27,7 @@ config :td_dd, :metadata,
   field_import_required: [:external_id, :field_name, :type],
   relation_import_schema: %{
     parent_external_id: :string,
-    child_external_id: :string
+    child_external_id: :string,
+    relation_type_name: :string
   },
   relation_import_required: [:parent_external_id, :child_external_id]
