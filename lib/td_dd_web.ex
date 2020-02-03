@@ -33,6 +33,9 @@ defmodule TdDdWeb do
       def render_error(conn, :internal_server_error),
         do: render_error(conn, :internal_server_error, "500.json")
 
+      def render_error(conn, :insufficient_storage),
+        do: render_error(conn, :insufficient_storage, "507.json")
+
       def render_error(conn, :unprocessable_entity),
         do: render_error(conn, :unprocessable_entity, "422.json")
 

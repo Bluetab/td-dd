@@ -4,16 +4,20 @@ defmodule TdDdWeb.MetadataController do
   import Canada, only: [can?: 2]
 
   alias Jason, as: JSON
+  alias Plug.Upload
   alias TdCache.TaxonomyCache
   alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
   alias TdDd.DataStructures
   alias TdDd.Loader.LoaderWorker
   alias TdDd.Systems
-  alias TdDd.Systems.System
 
   require Logger
 
+  @import_dir Application.get_env(:td_dd, :import_dir)
+
   def upload_by_system(conn, %{"system_id" => external_id} = params) do
+    alias TdDd.Systems.System
+
     # TODO: Complete implementation once the metada is loaded by System
     user = conn.assigns[:current_user]
 
@@ -34,7 +38,7 @@ defmodule TdDdWeb.MetadataController do
   @doc """
     Upload metadata:
 
-      data_structures.csv: 
+      data_structures.csv:
           external_id: :string required structure external id (unique within system)
           name: :string required structure name
           system: :string required system name
@@ -111,6 +115,9 @@ defmodule TdDdWeb.MetadataController do
     end
   end
 
+  def upload(conn, %{"nodes" => _} = params), do: upload_lineage(conn, params)
+  def upload(conn, %{"rels" => _} = params), do: upload_lineage(conn, params)
+
   def upload(conn, params) do
     user = conn.assigns[:current_user]
 
@@ -127,19 +134,53 @@ defmodule TdDdWeb.MetadataController do
   end
 
   defp do_upload(conn, params, opts \\ []) do
-    fields_file = move_file(params |> Map.get("data_fields"))
-    structures_file = move_file(params |> Map.get("data_structures"))
-    relations_file = move_file(params |> Map.get("data_structure_relations"))
-    load(conn, structures_file, fields_file, relations_file, with_domain(opts, params))
+    [fields, structures, relations] =
+      ["data_fields", "data_structures", "data_structure_relations"]
+      |> Enum.map(&Map.get(params, &1))
+      |> Enum.map(&copy_file/1)
+
+    load(conn, structures, fields, relations, with_domain(opts, params))
   end
 
-  defp move_file(nil), do: nil
+  defp upload_lineage(conn, %{} = params) do
+    user = conn.assigns[:current_user]
 
-  defp move_file(file) do
-    new_path = "/tmp/#{:os.system_time(:milli_seconds)}-#{Map.get(file, :filename)}"
-    File.cp(Map.get(file, :path), "#{new_path}")
-    file |> Map.put(:path, "#{new_path}")
+    with true <- can_upload?(user, params) do
+      case do_upload_lineage(params) do
+        :ok -> send_resp(conn, :accepted, "")
+        :error -> render_error(conn, :insufficient_storage)
+      end
+    else
+      false -> render_error(conn, :forbidden)
+    end
   end
+
+  defp copy_file(nil), do: nil
+
+  defp copy_file(%Upload{path: path, filename: filename}) do
+    destination_file =
+      System.tmp_dir()
+      |> Path.join("#{:os.system_time(:milli_seconds)}-#{filename}")
+
+    case File.cp(path, "#{destination_file}") do
+      :ok -> destination_file
+    end
+  end
+
+  defp do_upload_lineage(%{} = params) do
+    params
+    |> Map.take(["nodes", "rels"])
+    |> Map.values()
+    |> Enum.map(fn %Upload{path: path, filename: filename} ->
+      {path, Path.join([@import_dir, filename])}
+    end)
+    |> Enum.map(fn {source_file, dest_file} -> File.cp(source_file, dest_file) end)
+    |> check_status()
+  end
+
+  defp check_status([:ok]), do: :ok
+  defp check_status([:ok | tail]), do: check_status(tail)
+  defp check_status(_), do: :error
 
   defp load(conn, structure_records, field_records, relation_records, opts) do
     user_id = GuardianPlug.current_resource(conn).id

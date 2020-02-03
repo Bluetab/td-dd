@@ -59,3 +59,5 @@ config :bolt_sips, Bolt,
     username: "${NEO4J_USER}",
     password: "${NEO4J_PASSWORD}"
   ]
+
+config :td_dd, import_dir: "${IMPORT_DIR}"
