@@ -1,7 +1,7 @@
 %{
   "artificery": {:hex, :artificery, "0.4.1", "90b1fcedb9034853b36dbea2174f9fc1172bd50b0686a723178103def5c9c1c8", [:mix], [], "hexpm"},
   "base64url": {:hex, :base64url, "0.0.1", "36a90125f5948e3afd7be97662a1504b934dd5dac78451ca6e9abf85a10286be", [:rebar], [], "hexpm"},
-  "bolt_sips": {:git, "https://github.com/Bluetab/bolt_sips.git", "384e96d71495aea22982ff3930dab1e7541d963e", [branch: "master"]},
+  "bolt_sips": {:hex, :bolt_sips, "2.0.4", "ba33ab6d3f4590e4256aaffbe57e9174d32946c349daf6cbb49076de991aefd5", [:mix], [{:calendar, "~> 0.17.2", [hex: :calendar, repo: "hexpm", optional: false]}, {:db_connection, "~> 2.2", [hex: :db_connection, repo: "hexpm", optional: false]}, {:jason, "~> 1.1", [hex: :jason, repo: "hexpm", optional: false]}, {:poison, "~> 3.1", [hex: :poison, repo: "hexpm", optional: false]}, {:retry, "0.9.1", [hex: :retry, repo: "hexpm", optional: false]}], "hexpm"},
   "bunt": {:hex, :bunt, "0.2.0", "951c6e801e8b1d2cbe58ebbd3e616a869061ddadcc4863d0a2182541acae9a38", [:mix], [], "hexpm"},
   "cabbage": {:git, "https://github.com/Bluetab/cabbage", "b6f5a7020caa6115260e3f8ddde5465240b4b3bb", [tag: "v0.3.7-alpha"]},
   "calendar": {:hex, :calendar, "0.17.6", "ec291cb2e4ba499c2e8c0ef5f4ace974e2f9d02ae9e807e711a9b0c7850b9aee", [:mix], [{:tzdata, "~> 0.5.20 or ~> 0.1.201603 or ~> 1.0", [hex: :tzdata, repo: "hexpm", optional: false]}], "hexpm"},

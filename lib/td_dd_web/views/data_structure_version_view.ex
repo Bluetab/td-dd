@@ -133,7 +133,6 @@ defmodule TdDdWeb.DataStructureVersionView do
       :degree,
       :deleted_at,
       :description,
-      :external_id,
       :inserted_at,
       :links,
       :metadata,

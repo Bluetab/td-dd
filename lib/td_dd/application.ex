@@ -56,7 +56,8 @@ defmodule TdDd.Application do
       [
         {Bolt.Sips, config},
         TdDd.Lineage.GraphData,
-        TdDd.Lineage
+        TdDd.Lineage,
+        {TdCache.CacheCleaner, Application.get_env(:td_dd, :cache_cleaner, [])}
       ]
     else
       _ -> []
