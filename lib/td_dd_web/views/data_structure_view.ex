@@ -192,6 +192,7 @@ defmodule TdDdWeb.DataStructureView do
        ) do
     dsv
     |> Map.take([
+      :degree,
       :name,
       :type,
       :metadata,
