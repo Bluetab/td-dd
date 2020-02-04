@@ -5,7 +5,6 @@ defmodule TdDd.Loader.LoaderWorker do
 
   use GenServer
 
-  alias Plug.Upload
   alias TdCache.TaxonomyCache
   alias TdDd.CSV.Reader
   alias TdDd.DataStructures.Ancestry
@@ -142,7 +141,7 @@ defmodule TdDd.Loader.LoaderWorker do
 
   defp parse_data_structures(nil, _, _), do: {:ok, []}
 
-  defp parse_data_structures(%Upload{path: path}, system_id, domain) do
+  defp parse_data_structures(path, system_id, domain) do
     domain_map = TaxonomyCache.get_domain_name_to_id_map()
     system_map = get_system_map(system_id)
 
@@ -171,7 +170,7 @@ defmodule TdDd.Loader.LoaderWorker do
 
   defp parse_data_fields(nil, _), do: {:ok, []}
 
-  defp parse_data_fields(%Upload{path: path}, system_id) do
+  defp parse_data_fields(path, system_id) do
     defaults =
       case system_id do
         nil -> %{external_id: nil}
@@ -197,7 +196,7 @@ defmodule TdDd.Loader.LoaderWorker do
 
   defp parse_data_structure_relations(nil, _), do: {:ok, []}
 
-  defp parse_data_structure_relations(%Upload{path: path}, system_id) do
+  defp parse_data_structure_relations(path, system_id) do
     system_map = get_system_map(system_id)
 
     defaults =

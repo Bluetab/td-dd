@@ -22,7 +22,7 @@ defmodule TdDd.DataStructures.Hasher do
 
   require Logger
 
-  @hash_fields [:class, :description, :group, :metadata, :name, :type]
+  @hash_fields [:class, :description, :group, :metadata, :name, :type, :relation_type_id]
   @batch_size 1_000
 
   def start_link(_arg) do

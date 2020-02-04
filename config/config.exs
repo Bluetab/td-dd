@@ -57,6 +57,7 @@ config :td_dd, :audit_service,
 
 config :td_dd, permission_resolver: TdCache.Permissions
 config :td_dd, index_worker: TdDd.Search.IndexWorker
+config :td_dd, import_dir: "/import"
 
 config :td_cache, :event_stream,
   consumer_id: "default",

@@ -4,6 +4,60 @@ defmodule TdDdWeb.SwaggerDefinitions do
   """
   import PhoenixSwagger
 
+  def relation_type_definitions do
+    %{
+      RelationTypeResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:RelationType))
+          end
+        end,
+      RelationTypesResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:RelationTypes))
+          end
+        end,
+      UpdateRelationType:
+        swagger_schema do
+          properties do
+            relation_type(Schema.ref(:RelationTypeEdit))
+          end
+        end,
+      CreateRelationType:
+        swagger_schema do
+          properties do
+            relation_type(Schema.ref(:RelationTypeEdit))
+          end
+        end,
+      RelationType:
+        swagger_schema do
+          title("RelationType")
+          description("Representation of a RelationType")
+
+          properties do
+            id(:integer, "Relation Type Id", required: true)
+            name(:string, "Relation Type name", required: true)
+            description(:string, "Relation Type description", required: false)
+          end
+        end,
+      RelationTypes:
+        swagger_schema do
+          title("RelationTypes")
+          description("A collection of relation type")
+          type(:array)
+          items(Schema.ref(:RelationType))
+        end,
+      RelationTypeEdit:
+        swagger_schema do
+          properties do
+            name(:string, "Relation Type name")
+            description(:string, "Relation Type description")
+          end
+        end
+    }
+  end
+
   def data_structure_version_swagger_definitions do
     %{
       DataStructureVersionResponse:

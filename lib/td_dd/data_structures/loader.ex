@@ -11,6 +11,7 @@ defmodule TdDd.Loader do
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Graph
+  alias TdDd.DataStructures.RelationTypes
   alias TdDd.Loader.FieldsAsStructures
   alias TdDd.Repo
 
@@ -24,6 +25,18 @@ defmodule TdDd.Loader do
     {structure_records, relation_records} =
       FieldsAsStructures.fields_as_structures(structure_records, field_records, relation_records)
 
+    default_relation_type = RelationTypes.get_default_relation_type()
+    relation_types_id_map = RelationTypes.get_relation_type_name_to_id_map()
+
+    relation_records =
+      relation_records
+      |> Enum.map(&{&1, get_relation_type(&1, relation_types_id_map, default_relation_type)})
+      |> Enum.map(fn {rel, {rel_type_id, rel_type_name}} ->
+        rel
+        |> Map.put(:relation_type_id, rel_type_id)
+        |> Map.put(:relation_type_name, rel_type_name)
+      end)
+
     do_load(
       graph,
       structure_records,
@@ -33,6 +46,14 @@ defmodule TdDd.Loader do
       opts[:parent_external_id]
     )
   end
+
+  defp get_relation_type(%{relation_type_name: ""}, _, default), do: {default.id, default.name}
+
+  defp get_relation_type(%{relation_type_name: relation_type_name}, id_maps, _) do
+    {Map.get(id_maps, relation_type_name), relation_type_name}
+  end
+
+  defp get_relation_type(_, _, default), do: {default.id, default.name}
 
   defp do_load(graph, structure_records, relation_records, audit_attrs, nil, nil) do
     {:ok, graph} = Graph.add(graph, structure_records, relation_records)
@@ -188,18 +209,43 @@ defmodule TdDd.Loader do
     |> Enum.sum()
   end
 
+  defp get_structure_id_and_relation_type({external_id, [relation_type_id: relation_type_id, relation_type_name: _name]}) do
+    structure_id =
+      external_id
+      |> DataStructures.get_latest_version_by_external_id()
+      |> Map.get(:id)
+
+    {structure_id, relation_type_id}
+  end
+
   defp relation_attrs({external_id, parent_external_ids, child_external_ids}, ts) do
     %{id: id} = DataStructures.get_latest_version_by_external_id(external_id)
 
     parent_rels =
       parent_external_ids
-      |> Enum.map(&(&1 |> DataStructures.get_latest_version_by_external_id() |> Map.get(:id)))
-      |> Enum.map(&%{parent_id: &1, child_id: id, inserted_at: ts, updated_at: ts})
+      |> Enum.map(&get_structure_id_and_relation_type(&1))
+      |> Enum.map(fn {external_id, relation_type_id} ->
+        %{
+          parent_id: external_id,
+          child_id: id,
+          inserted_at: ts,
+          relation_type_id: relation_type_id,
+          updated_at: ts
+        }
+      end)
 
     child_rels =
       child_external_ids
-      |> Enum.map(&(&1 |> DataStructures.get_latest_version_by_external_id() |> Map.get(:id)))
-      |> Enum.map(&%{parent_id: id, child_id: &1, inserted_at: ts, updated_at: ts})
+      |> Enum.map(&get_structure_id_and_relation_type(&1))
+      |> Enum.map(fn {external_id, relation_type_id} ->
+        %{
+          parent_id: id,
+          child_id: external_id,
+          inserted_at: ts,
+          relation_type_id: relation_type_id,
+          updated_at: ts
+        }
+      end)
 
     parent_rels ++ child_rels
   end

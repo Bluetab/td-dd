@@ -4,6 +4,7 @@ defmodule TdDdWeb.SystemControllerTest do
 
   alias TdCache.TaxonomyCache
   alias TdDd.DataStructures.PathCache
+  alias TdDd.DataStructures.RelationTypes
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDd.Systems
   alias TdDd.Systems.System
@@ -143,7 +144,9 @@ defmodule TdDdWeb.SystemControllerTest do
       ds = insert(:data_structure, system_id: system.id, external_id: "child")
       child = insert(:data_structure_version, data_structure_id: ds.id, name: ds.external_id)
 
-      insert(:data_structure_relation, parent_id: parent.id, child_id: child.id)
+      default_relation_type_id = RelationTypes.get_default_relation_type().id
+
+      insert(:data_structure_relation, parent_id: parent.id, child_id: child.id, relation_type_id: default_relation_type_id)
 
       conn = get(conn, Routes.system_data_structure_path(conn, :get_system_structures, system))
       data = json_response(conn, 200)["data"]
@@ -164,7 +167,9 @@ defmodule TdDdWeb.SystemControllerTest do
       ds = insert(:data_structure, system_id: system.id, external_id: "child")
       child = insert(:data_structure_version, data_structure_id: ds.id, name: ds.external_id)
 
-      insert(:data_structure_relation, parent_id: parent.id, child_id: child.id)
+      default_relation_type_id = RelationTypes.get_default_relation_type().id
+
+      insert(:data_structure_relation, parent_id: parent.id, child_id: child.id, relation_type_id: default_relation_type_id)
 
       insert(:data_structure_version, data_structure_id: ds.id, version: 2)
 

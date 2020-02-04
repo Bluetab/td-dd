@@ -9,6 +9,8 @@ defmodule TdDd.DataStructureCase do
 
   use ExUnit.CaseTemplate
 
+  alias TdDd.DataStructures.RelationTypes
+
   using do
     quote do
       use TdDd.DataCase
@@ -28,10 +30,16 @@ defmodule TdDd.DataStructureCase do
             )
           )
 
+        default_relation_type_id = RelationTypes.get_default_relation_type().id
+
         dsvs
         |> Enum.chunk_every(2, 1, :discard)
         |> Enum.each(fn [parent, child] ->
-          insert(:data_structure_relation, parent_id: parent.id, child_id: child.id)
+          insert(:data_structure_relation,
+            parent_id: parent.id,
+            child_id: child.id,
+            relation_type_id: default_relation_type_id
+          )
         end)
 
         dsvs
