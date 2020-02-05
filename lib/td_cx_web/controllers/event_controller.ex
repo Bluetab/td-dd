@@ -17,7 +17,7 @@ defmodule TdCxWeb.EventController do
     SwaggerDefinitions.event_definitions()
   end
 
-  swagger_path :job_events do
+  swagger_path :index do
     description("Get events of a given job")
     produces("application/json")
 
@@ -30,7 +30,7 @@ defmodule TdCxWeb.EventController do
     response(404, "Not found")
   end
 
-  def job_events(conn, %{"job_external_id" => job_id}) do
+  def index(conn, %{"job_external_id" => job_id}) do
     user = conn.assigns[:current_user]
 
     with true <- can?(user, index(%Event{})),
@@ -51,7 +51,7 @@ defmodule TdCxWeb.EventController do
       |> render("404.json")
   end
 
-  swagger_path :create_event do
+  swagger_path :create do
     description("Creates event for a given job")
     produces("application/json")
 
@@ -66,7 +66,7 @@ defmodule TdCxWeb.EventController do
     response(422, "Client Error")
   end
 
-  def create_event(conn, %{"job_external_id" => job_external_id, "event" => event_params}) do
+  def create(conn, %{"job_external_id" => job_external_id, "event" => event_params}) do
     user = conn.assigns[:current_user]
 
     with true <- can?(user, create(%Event{})),

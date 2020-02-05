@@ -12,8 +12,8 @@ defmodule TdCx.Search.Mappings do
       external_id: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
       source: %{
         properties: %{
-          external_id: %{type: "text"},
-          type: %{type: "text", fields: @raw}
+          external_id: %{type: "text", fields: @raw_sort},
+          type: %{type: "text", fields: @raw_sort}
         }
       },
       start_date: %{type: "date", format: "strict_date_optional_time||epoch_millis"},

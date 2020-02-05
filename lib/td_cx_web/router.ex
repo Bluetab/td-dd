@@ -32,17 +32,15 @@ defmodule TdCxWeb.Router do
     pipe_through [:api, :api_secure, :api_authorized]
 
     resources "/sources", SourceController, except: [:new, :edit], param: "external_id" do
-      get("/jobs", JobController, :source_jobs)
-      post("/jobs", JobController, :create_job)
+      resources("/jobs", JobController, only: [:index, :create])
     end
 
-    resources "/jobs", JobController, except: [:new, :edit, :update, :create, :index, :delete], param: "external_id" do
-      get("/events", EventController, :job_events)
-      post("/events", EventController, :create_event)
+    resources "/jobs", JobController, only: [:show], param: "external_id" do
+      resources("/events", EventController, only: [:index, :create])
     end
 
     post("/jobs/search", JobController, :search)
-    post("/jobs_filters/search", JobFilterController, :search)
+    post("/job_filters/search", JobFilterController, :search)
     get("/jobs/search/reindex_all", SearchController, :reindex_all)
   end
 

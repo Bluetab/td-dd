@@ -24,7 +24,7 @@ defmodule TdCxWeb.EventControllerTest do
     @tag :admin_authenticated
     test "lists events of a job", %{conn: conn, event: event} do
       job = Map.get(event, :job, %{})
-      conn = get(conn, Routes.job_event_path(conn, :job_events, job.external_id))
+      conn = get(conn, Routes.job_event_path(conn, :index, job.external_id))
       events = json_response(conn, 200)["data"]
 
       assert length(events) == 1
@@ -38,7 +38,7 @@ defmodule TdCxWeb.EventControllerTest do
       job = insert(:job)
 
       conn =
-        post(conn, Routes.job_event_path(conn, :create_event, job.external_id),
+        post(conn, Routes.job_event_path(conn, :index, job.external_id),
           event: @valid_attrs
         )
 
@@ -52,7 +52,7 @@ defmodule TdCxWeb.EventControllerTest do
     @tag :admin_authenticated
     test "renders errors when job does not exist", %{conn: conn} do
       conn =
-        post(conn, Routes.job_event_path(conn, :create_event, Ecto.UUID.generate()), event: %{})
+        post(conn, Routes.job_event_path(conn, :index, Ecto.UUID.generate()), event: %{})
 
       assert json_response(conn, 404)["errors"] != %{}
     end
