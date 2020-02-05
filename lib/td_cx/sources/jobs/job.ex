@@ -31,13 +31,13 @@ defmodule TdCx.Sources.Jobs.Job do
     def routing(_), do: false
 
     @impl Elasticsearch.Document
-    def encode(%Job{source: source, events: events} = job) do
-      job
-      |> Map.take([
-        :id,
-        :external_id
-      ])
-      |> Map.merge(%{source: Map.take(source, [:external_id, :type])})
+    def encode(%Job{source: source, events: events, id: id, external_id: external_id}) do
+      %{
+        id: id,
+        external_id: external_id,
+        status: "",
+        source: Map.take(source, [:external_id, :type])
+      }
       |> Map.merge(Jobs.metrics(events))
     end
   end

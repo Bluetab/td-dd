@@ -18,7 +18,7 @@ defmodule TdCxWeb.JobController do
     SwaggerDefinitions.job_definitions()
   end
 
-  swagger_path :source_jobs do
+  swagger_path :index do
     description("Get jobs of a given source")
     produces("application/json")
 
@@ -31,7 +31,7 @@ defmodule TdCxWeb.JobController do
     response(404, "Not found")
   end
 
-  def source_jobs(conn, %{"source_external_id" => source_id}) do
+  def index(conn, %{"source_external_id" => source_id}) do
     user = conn.assigns[:current_user]
     params = %{"filters" => %{"source.external_id" => source_id}}
 
@@ -53,7 +53,7 @@ defmodule TdCxWeb.JobController do
       |> render("404.json")
   end
 
-  swagger_path :create_job do
+  swagger_path :create do
     description("Creates job of a given source")
     produces("application/json")
 
@@ -67,7 +67,7 @@ defmodule TdCxWeb.JobController do
     response(422, "Client Error")
   end
 
-  def create_job(conn, %{"source_external_id" => source_external_id}) do
+  def create(conn, %{"source_external_id" => source_external_id}) do
     user = conn.assigns[:current_user]
 
     with true <- can?(user, create(Job)),
@@ -157,7 +157,10 @@ defmodule TdCxWeb.JobController do
   end
 
   def render_search(results, conn) do
-    results = Map.get(results, :results)
-    render(conn, "index.json", jobs: results)
+    jobs = Map.get(results, :results)
+    total = Map.get(results, :total)
+    conn
+    |> put_resp_header("x-total-count", "#{total}")
+    |> render("index.json", jobs: jobs)
   end
 end

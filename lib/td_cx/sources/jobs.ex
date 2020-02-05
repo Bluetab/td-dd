@@ -59,16 +59,15 @@ defmodule TdCx.Sources.Jobs do
     %Job{}
     |> Job.changeset(attrs)
     |> Repo.insert()
-    |> case do
-      {:ok, %Job{} = job} ->
-        job = Repo.preload(job, [:source])
-        IndexWorker.reindex(job.id)
-        {:ok, job}
-
-      error ->
-        error
-    end
+    |> reindex()
   end
+
+  defp reindex({:ok, %Job{id: id} = job}) do
+    IndexWorker.reindex(id)
+    {:ok, Repo.preload(job, [:source])}
+  end
+
+  defp reindex(error), do: error
 
   def with_metrics(%{events: events} = job) when is_list(events) do
     Map.merge(job, metrics(events))
@@ -76,10 +75,11 @@ defmodule TdCx.Sources.Jobs do
 
   def with_metrics(job), do: job
 
-  def metrics([]), do: Map.new()
+  def metrics([] = _events), do: Map.new()
 
   def metrics(events) do
-    {min, max} = Enum.min_max_by(events, fn %{date: date} -> date end)
+    {min, max} =
+      Enum.min_max_by(events, fn %{date: date} -> DateTime.to_unix(date, :millisecond) end)
 
     Map.new()
     |> Map.put(:start_date, Map.get(min, :date))
