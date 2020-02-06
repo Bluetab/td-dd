@@ -13,8 +13,6 @@ defmodule TdDdWeb.MetadataController do
 
   require Logger
 
-  @import_dir Application.get_env(:td_dd, :import_dir)
-
   def upload_by_system(conn, %{"system_id" => external_id} = params) do
     alias TdDd.Systems.System
 
@@ -168,14 +166,27 @@ defmodule TdDdWeb.MetadataController do
   end
 
   defp do_upload_lineage(%{} = params) do
+    import_dir = Application.get_env(:td_dd, :import_dir)
     params
     |> Map.take(["nodes", "rels"])
     |> Map.values()
     |> Enum.map(fn %Upload{path: path, filename: filename} ->
-      {path, Path.join([@import_dir, filename])}
+      {path, Path.join([import_dir, filename])}
     end)
-    |> Enum.map(fn {source_file, dest_file} -> File.cp(source_file, dest_file) end)
+    |> Enum.map(fn {source_file, dest_file} -> copy(source_file, dest_file) end)
     |> check_status()
+  end
+
+  defp copy(source, dest) do
+    source
+    |> File.cp(dest)
+    |> log_error(source, dest)
+  end
+
+  defp log_error(:ok, _, _), do: :ok
+  defp log_error(error, source, dest) do
+    Logger.warn("Error copying #{source} to #{dest}: #{inspect(error)}")
+    error
   end
 
   defp check_status([:ok]), do: :ok
