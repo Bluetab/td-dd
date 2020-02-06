@@ -9,6 +9,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.PathCache
   alias TdDd.DataStructures.RelationTypes
+  alias TdDd.Lineage.GraphData
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
@@ -67,6 +68,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     start_supervised(MockTdAuditService)
     start_supervised(MockPermissionResolver)
     start_supervised(PathCache)
+    start_supervised(GraphData)
     :ok
   end
 
@@ -85,7 +87,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn: conn,
       structure: %DataStructure{id: child_id}
     } do
-      conn = get(conn, Routes.data_structure_path(conn, :show, child_id))
+      conn = get(conn, Routes.data_structure_data_structure_version_path(conn, :show, child_id, "latest"))
       %{"children" => children} = json_response(conn, 200)["data"]
       assert Enum.count(children) == 2
     end
@@ -95,7 +97,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn: conn,
       structure: %DataStructure{id: child_id}
     } do
-      conn = get(conn, Routes.data_structure_path(conn, :show, child_id))
+      conn = get(conn, Routes.data_structure_data_structure_version_path(conn, :show, child_id, "latest"))
       %{"parents" => parents} = json_response(conn, 200)["data"]
       assert Enum.count(parents) == 1
     end
@@ -105,7 +107,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn: conn,
       child_structures: [%DataStructure{id: id} | _]
     } do
-      conn = get(conn, Routes.data_structure_path(conn, :show, id))
+      conn = get(conn, Routes.data_structure_data_structure_version_path(conn, :show, id, "latest"))
       %{"siblings" => siblings} = json_response(conn, 200)["data"]
       assert Enum.count(siblings) == 2
     end
@@ -119,7 +121,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn: conn,
       parent_structure: %DataStructure{id: parent_id}
     } do
-      conn = get(conn, Routes.data_structure_path(conn, :show, parent_id))
+      conn = get(conn, Routes.data_structure_data_structure_version_path(conn, :show, parent_id, "latest"))
       %{"children" => children} = json_response(conn, 200)["data"]
       assert Enum.count(children) == 3
       assert [deleted_child] = Enum.filter(children, & &1["deleted_at"])
@@ -131,7 +133,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn: conn,
       child_structures: [%DataStructure{id: child_id} | _]
     } do
-      conn = get(conn, Routes.data_structure_path(conn, :show, child_id))
+      conn = get(conn, Routes.data_structure_data_structure_version_path(conn, :show, child_id, "latest"))
       assert %{"parents" => [parent]} = json_response(conn, 200)["data"]
       assert parent["name"] != "Parent_deleted"
     end
@@ -141,7 +143,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn: conn,
       child_structures: [%DataStructure{id: id} | _]
     } do
-      conn = get(conn, Routes.data_structure_path(conn, :show, id))
+      conn = get(conn, Routes.data_structure_data_structure_version_path(conn, :show, id, "latest"))
       %{"siblings" => siblings} = json_response(conn, 200)["data"]
       assert Enum.count(siblings) == 2
       assert Enum.find(siblings, [], &(Map.get(&1, "name") == "Child_deleted" == []))
@@ -217,22 +219,21 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn = recycle_and_put_headers(conn)
 
-      conn = get(conn, Routes.data_structure_path(conn, :show, id))
+      conn = get(conn, Routes.data_structure_data_structure_version_path(conn, :show, id, "latest"))
       json_response_data = conn |> json_response(200) |> Map.get("data")
 
-      validate_resp_schema(conn, schema, "DataStructureResponse")
-      assert json_response_data["id"] == id
+      validate_resp_schema(conn, schema, "DataStructureVersionResponse")
+      assert json_response_data["data_structure"]["id"] == id
       assert json_response_data["description"] == "some description"
-      assert json_response_data["external_id"] == "some external_id"
+      assert json_response_data["data_structure"]["external_id"] == "some external_id"
       assert json_response_data["class"] == "some class"
       assert json_response_data["type"] == "csv"
-      assert json_response_data["ou"] == "GM"
+      assert json_response_data["data_structure"]["ou"] == "GM"
       assert json_response_data["group"] == "some group"
       assert json_response_data["name"] == "some name"
       assert json_response_data["system"]["id"] == system.id
-      assert json_response_data["system"]["external_id"] == system.external_id
       assert json_response_data["system"]["name"] == system.name
-      assert json_response_data["inserted_at"]
+      assert json_response_data["data_structure"]["inserted_at"]
     end
 
     @tag authenticated_user: @admin_user_name
@@ -262,13 +263,13 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       conn = recycle_and_put_headers(conn)
 
-      conn = get(conn, Routes.data_structure_path(conn, :show, id))
+      conn = get(conn, Routes.data_structure_data_structure_version_path(conn, :show, id, "latest"))
       json_response_data = json_response(conn, 200)["data"]
 
-      validate_resp_schema(conn, schema, "DataStructureResponse")
-      assert json_response_data["id"] == id
+      validate_resp_schema(conn, schema, "DataStructureVersionResponse")
+      assert json_response_data["data_structure"]["id"] == id
       assert json_response_data["description"] == "some description"
-      assert json_response_data["inserted_at"]
+      assert json_response_data["data_structure"]["inserted_at"]
     end
 
     @tag authenticated_user: @admin_user_name
@@ -307,10 +308,10 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
 
       conn = recycle_and_put_headers(conn)
-      conn = get(conn, Routes.data_structure_path(conn, :show, id))
+      conn = get(conn, Routes.data_structure_data_structure_version_path(conn, :show, id, "latest"))
       json_response_data = json_response(conn, 200)["data"]
 
-      assert json_response_data["df_content"] == df_content
+      assert json_response_data["data_structure"]["df_content"] == df_content
     end
   end
 
@@ -329,7 +330,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn = recycle_and_put_headers(conn)
 
       assert_error_sent(404, fn ->
-        get(conn, Routes.data_structure_path(conn, :show, data_structure))
+        conn = get(conn, Routes.data_structure_data_structure_version_path(conn, :show, data_structure.id, "latest"))
         validate_resp_schema(conn, schema, "DataStructureResponse")
       end)
     end
@@ -355,11 +356,11 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
       conn = recycle_and_put_headers(conn)
 
-      conn = get(conn, Routes.data_structure_path(conn, :show, id))
+      conn = get(conn, Routes.data_structure_data_structure_version_path(conn, :show, id, "latest"))
       json_response_data = json_response(conn, 200)["data"]
 
-      assert json_response_data["id"] == id
-      assert json_response_data["confidential"] == true
+      assert json_response_data["data_structure"]["id"] == id
+      assert json_response_data["data_structure"]["confidential"] == true
     end
 
     @tag authenticated_no_admin_user: "user"
@@ -382,11 +383,11 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
       conn = recycle_and_put_headers(conn)
 
-      conn = get(conn, Routes.data_structure_path(conn, :show, id))
+      conn = get(conn, Routes.data_structure_data_structure_version_path(conn, :show, id, "latest"))
       json_response_data = json_response(conn, 200)["data"]
 
-      assert json_response_data["id"] == id
-      assert json_response_data["df_content"] == %{"field" => "2"}
+      assert json_response_data["data_structure"]["id"] == id
+      assert json_response_data["data_structure"]["df_content"] == %{"field" => "2"}
     end
 
     @tag authenticated_no_admin_user: "user_without_permission"

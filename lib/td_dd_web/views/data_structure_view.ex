@@ -1,7 +1,6 @@
 defmodule TdDdWeb.DataStructureView do
   use TdDdWeb, :view
-  alias Ecto
-  alias TdDd.DataStructures
+
   alias TdDdWeb.DataStructureView
 
   require Logger
@@ -30,22 +29,22 @@ defmodule TdDdWeb.DataStructureView do
     %{
       data:
         data_structure
-        |> data_structure_json
+        |> data_structure_json()
         |> add_system_with_keys(data_structure, [:external_id, :id, :name])
         |> add_dynamic_content(data_structure)
         |> add_data_fields(data_structure)
         |> add_versions(data_structure)
         |> add_parents(data_structure)
+        |> add_embedded_relations(data_structure)
         |> add_siblings(data_structure)
         |> add_ancestry(data_structure)
         |> add_children(data_structure)
-        |> add_links(data_structure)
     }
   end
 
   def render("data_structure.json", %{data_structure: data_structure}) do
     data_structure
-    |> data_structure_json
+    |> data_structure_json()
     |> add_metadata(data_structure)
     |> add_system_with_keys(data_structure, ["external_id", "id", "name"])
     |> add_dynamic_content(data_structure)
@@ -60,22 +59,23 @@ defmodule TdDdWeb.DataStructureView do
 
     data_structure
     |> Map.take([
-      :id,
       :class,
       :confidential,
+      :deleted_at,
       :description,
       :domain_id,
       :external_id,
+      :field_type,
       :group,
+      :id,
       :inserted_at,
-      :updated_at,
+      :links,
       :name,
       :ou,
+      :path,
       :system_id,
       :type,
-      :deleted_at,
-      :path,
-      :field_type
+      :updated_at
     ])
     |> Map.merge(dsv_attrs)
     |> Map.put_new(:metadata, %{})
@@ -111,6 +111,22 @@ defmodule TdDdWeb.DataStructureView do
   defp add_siblings(data_structure_json, data_structure),
     do: add_relations(data_structure_json, data_structure, :siblings)
 
+  defp add_embedded_relations(data_structure_json, data_structure),
+    do: add_relations(data_structure_json, data_structure, :relations)
+
+  defp add_relations(data_structure_json, data_structure, :relations = type) do
+    case Map.get(data_structure, type) do
+      nil ->
+        data_structure_json
+
+      %{parents: parents, children: children} ->
+        parents = Enum.map(parents, &embedded_relation/1)
+        children = Enum.map(children, &embedded_relation/1)
+
+        Map.put(data_structure_json, type, %{parents: parents, children: children})
+    end
+  end
+
   defp add_relations(data_structure_json, data_structure, type) do
     case Map.get(data_structure, type) do
       nil ->
@@ -120,6 +136,15 @@ defmodule TdDdWeb.DataStructureView do
         relations = Enum.map(rs, &data_structure_version_embedded/1)
         Map.put(data_structure_json, type, relations)
     end
+  end
+
+  defp embedded_relation(%{version: version, relation: relation, relation_type: relation_type}) do
+    structure = data_structure_version_embedded(version)
+
+    Map.new()
+    |> Map.put(:id, relation.id)
+    |> Map.put(:structure, structure)
+    |> Map.put(:relation_type, Map.take(relation_type, [:id, :name, :description]))
   end
 
   defp add_ancestry(data_structure_json, data_structure) do
@@ -147,14 +172,8 @@ defmodule TdDdWeb.DataStructureView do
     Map.put(data_structure_json, :versions, versions)
   end
 
-  defp add_links(data_structure_json, %{id: id}) do
-    data_structure_json
-    |> Map.put(:links, DataStructures.get_structure_links(id))
-  end
-
   defp data_structure_version_json(data_structure_version) do
-    data_structure_version
-    |> Map.take([:version, :deleted_at, :inserted_at, :updated_at])
+    Map.take(data_structure_version, [:version, :deleted_at, :inserted_at, :updated_at])
   end
 
   defp add_data_fields(data_structure_json, data_structure) do
@@ -192,6 +211,7 @@ defmodule TdDdWeb.DataStructureView do
        ) do
     dsv
     |> Map.take([
+      :degree,
       :name,
       :type,
       :metadata,
@@ -208,9 +228,7 @@ defmodule TdDdWeb.DataStructureView do
   end
 
   defp lift_metadata(%{metadata: metadata} = dsv) do
-    metadata =
-      metadata
-      |> Map.new(fn {k, v} -> {String.to_atom(k), v} end)
+    metadata = Map.new(metadata, fn {k, v} -> {String.to_atom(k), v} end)
 
     dsv
     |> Map.delete(:metadata)

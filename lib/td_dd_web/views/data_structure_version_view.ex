@@ -33,6 +33,7 @@ defmodule TdDdWeb.DataStructureVersionView do
         |> add_system
         |> add_ancestry
         |> add_profile
+        |> add_embedded_relations(dsv)
         |> Map.take([
           :ancestry,
           :children,
@@ -53,7 +54,8 @@ defmodule TdDdWeb.DataStructureVersionView do
           :version,
           :versions,
           :profile,
-          :degree
+          :degree,
+          :relations
         ])
     }
   end
@@ -98,6 +100,31 @@ defmodule TdDdWeb.DataStructureVersionView do
 
   defp add_siblings(data_structure_version), do: add_relations(data_structure_version, :siblings)
 
+  defp add_embedded_relations(data_structure_json, data_structure),
+    do: add_relations(data_structure_json, data_structure, :relations)
+
+  defp add_relations(data_structure_json, data_structure, :relations = type) do
+    case Map.get(data_structure, type) do
+      nil ->
+        data_structure_json
+
+      %{parents: parents, children: children} ->
+        parents = Enum.map(parents, &embedded_relation/1)
+        children = Enum.map(children, &embedded_relation/1)
+
+        Map.put(data_structure_json, type, %{parents: parents, children: children})
+    end
+  end
+
+  defp embedded_relation(%{version: version, relation: relation, relation_type: relation_type}) do
+    structure = data_structure_version_embedded(version)
+
+    Map.new()
+    |> Map.put(:id, relation.id)
+    |> Map.put(:structure, structure)
+    |> Map.put(:relation_type, Map.take(relation_type, [:id, :name, :description]))
+  end
+
   defp add_relations(data_structure_version, type) do
     case Map.get(data_structure_version, type) do
       nil ->
@@ -133,7 +160,6 @@ defmodule TdDdWeb.DataStructureVersionView do
       :degree,
       :deleted_at,
       :description,
-      :external_id,
       :inserted_at,
       :links,
       :metadata,

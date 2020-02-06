@@ -33,7 +33,8 @@ defmodule TdDdWeb.DataStructureVersionController do
     :ancestry,
     :links,
     :profile,
-    :degree
+    :degree,
+    :relations
   ]
 
   swagger_path :show do

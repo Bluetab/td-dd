@@ -96,7 +96,7 @@ defmodule TdDdWeb.DataStructureController do
 
       conn
       |> put_status(:created)
-      |> put_resp_header("location", Routes.data_structure_path(conn, :show, data_structure))
+      |> put_resp_header("location", Routes.data_structure_data_structure_version_path(conn, :show, id, "latest"))
       |> render("show.json", data_structure: data_structure)
     else
       false -> render_error(conn, :forbidden)
@@ -104,37 +104,19 @@ defmodule TdDdWeb.DataStructureController do
     end
   end
 
-  swagger_path :show do
-    description("Show Data Structure")
-    produces("application/json")
-
-    parameters do
-      id(:path, :integer, "Data Structure ID", required: true)
-    end
-
-    response(200, "OK", Schema.ref(:DataStructureResponse))
-    response(400, "Client Error")
-    response(403, "Forbidden")
-    response(422, "Unprocessable Entity")
-  end
-
-  def show(conn, %{"id" => id}) do
-    user = conn.assigns[:current_user]
-    data_structure = get_data_structure(id)
-    do_render_data_structure(conn, user, data_structure)
-  end
-
   @lift_attrs [:class, :description, :metadata, :group, :name, :type, :deleted_at]
   @enrich_attrs [
-    :parents,
+    :ancestry,
     :children,
-    :siblings,
-    :data_fields,
     :data_field_degree,
     :data_field_links,
-    :versions,
+    :data_fields,
+    :links,
+    :parents,
+    :relations,
+    :siblings,
     :system,
-    :ancestry
+    :versions
   ]
 
   defp get_data_structure(id) do

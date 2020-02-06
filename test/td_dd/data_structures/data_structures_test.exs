@@ -119,7 +119,11 @@ defmodule TdDd.DataStructuresTest do
 
       [{dsv1, dsv2}, {dsv1, dsv3}, {dsv2, dsv4}, {dsv3, dsv4}]
       |> Enum.map(fn {parent, child} ->
-        insert(:data_structure_relation, parent_id: parent.id, child_id: child.id, relation_type_id: default_relation_type_id)
+        insert(:data_structure_relation,
+          parent_id: parent.id,
+          child_id: child.id,
+          relation_type_id: default_relation_type_id
+        )
       end)
 
       assert DataStructures.get_siblings(dsv1) == []
@@ -138,8 +142,17 @@ defmodule TdDd.DataStructuresTest do
 
       default_relation_type_id = RelationTypes.get_default_relation_type().id
 
-      insert(:data_structure_relation, parent_id: dsv1.id, child_id: dsv2.id, relation_type_id: default_relation_type_id)
-      insert(:data_structure_relation, parent_id: dsv1.id, child_id: dsv3.id, relation_type_id: default_relation_type_id)
+      insert(:data_structure_relation,
+        parent_id: dsv1.id,
+        child_id: dsv2.id,
+        relation_type_id: default_relation_type_id
+      )
+
+      insert(:data_structure_relation,
+        parent_id: dsv1.id,
+        child_id: dsv3.id,
+        relation_type_id: default_relation_type_id
+      )
 
       assert {:ok, %DataStructure{}} = DataStructures.delete_data_structure(ds1)
 
@@ -151,7 +164,7 @@ defmodule TdDd.DataStructuresTest do
       assert DataStructures.get_data_structure!(ds3.id) <~> ds3
     end
 
-    test "get_data_structure_version!/2 enriches with parents, children and siblings" do
+    test "get_data_structure_version!/2 enriches with parents, children, siblings and relations" do
       [dsv, parent, child, sibling] =
         ["structure", "parent", "child", "sibling"]
         |> Enum.map(&insert(:data_structure, external_id: &1))
@@ -159,19 +172,40 @@ defmodule TdDd.DataStructuresTest do
 
       default_relation_type_id = RelationTypes.get_default_relation_type().id
 
-      insert(:data_structure_relation, parent_id: parent.id, child_id: dsv.id, relation_type_id: default_relation_type_id)
-      insert(:data_structure_relation, parent_id: parent.id, child_id: sibling.id, relation_type_id: default_relation_type_id)
-      insert(:data_structure_relation, parent_id: dsv.id, child_id: child.id, relation_type_id: default_relation_type_id)
+      insert(:data_structure_relation,
+        parent_id: parent.id,
+        child_id: dsv.id,
+        relation_type_id: default_relation_type_id
+      )
 
-      enrich_opts = [:parents, :children, :siblings]
+      insert(:data_structure_relation,
+        parent_id: parent.id,
+        child_id: sibling.id,
+        relation_type_id: default_relation_type_id
+      )
 
-      assert %{id: id, parents: parents, children: children, siblings: siblings} =
-               DataStructures.get_data_structure_version!(dsv.id, enrich_opts)
+      insert(:data_structure_relation,
+        parent_id: dsv.id,
+        child_id: child.id,
+        relation_type_id: default_relation_type_id
+      )
+
+      enrich_opts = [:parents, :children, :siblings, :relations]
+
+      assert %{
+               id: id,
+               parents: parents,
+               children: children,
+               siblings: siblings,
+               relations: relations
+             } = DataStructures.get_data_structure_version!(dsv.id, enrich_opts)
 
       assert id == dsv.id
       assert parents <|> [parent]
       assert children <|> [child]
-      assert siblings <|> [dsv, sibling]
+      assert siblings <|> [sibling, dsv]
+      assert relations.parents == []
+      assert relations.children == []
     end
 
     test "get_data_structure_version!/1 returns the data_structure with given id" do
@@ -191,13 +225,101 @@ defmodule TdDd.DataStructuresTest do
 
       default_relation_type_id = RelationTypes.get_default_relation_type().id
 
-      insert(:data_structure_relation, parent_id: dsv.id, child_id: child.id, relation_type_id: default_relation_type_id)
-      insert(:data_structure_relation, parent_id: dsv.id, child_id: deleted_child.id, relation_type_id: default_relation_type_id)
+      insert(:data_structure_relation,
+        parent_id: dsv.id,
+        child_id: child.id,
+        relation_type_id: default_relation_type_id
+      )
+
+      insert(:data_structure_relation,
+        parent_id: dsv.id,
+        child_id: deleted_child.id,
+        relation_type_id: default_relation_type_id
+      )
 
       assert %{children: children} =
                DataStructures.get_data_structure_version!(dsv.id, [:children])
 
       assert children <|> [child]
+    end
+
+    test "get_data_structure_version!/2 gets custom relations" do
+      [
+        dsv,
+        parent,
+        parent_custom_relation,
+        child,
+        child_custom_relation,
+        sibling,
+        sibling_custom_relation
+      ] =
+        [
+          "structure",
+          "parent",
+          "parent_custom_relation",
+          "child",
+          "child_custom_relation",
+          "sibling",
+          "sibling_custom_relation"
+        ]
+        |> Enum.map(&insert(:data_structure, external_id: &1))
+        |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id))
+
+      custom = insert(:relation_type, name: "relation_type_1")
+      default_relation_type_id = RelationTypes.get_default_relation_type().id
+
+      insert(:data_structure_relation,
+        parent_id: parent.id,
+        child_id: dsv.id,
+        relation_type_id: default_relation_type_id
+      )
+
+      insert(:data_structure_relation,
+        parent_id: parent_custom_relation.id,
+        child_id: dsv.id,
+        relation_type_id: custom.id
+      )
+
+      insert(:data_structure_relation,
+        parent_id: parent.id,
+        child_id: sibling.id,
+        relation_type_id: default_relation_type_id
+      )
+
+      insert(:data_structure_relation,
+        parent_id: parent.id,
+        child_id: sibling_custom_relation.id,
+        relation_type_id: custom.id
+      )
+
+      insert(:data_structure_relation,
+        parent_id: dsv.id,
+        child_id: child_custom_relation.id,
+        relation_type_id: custom.id
+      )
+
+      insert(:data_structure_relation,
+        parent_id: dsv.id,
+        child_id: child.id,
+        relation_type_id: default_relation_type_id
+      )
+
+      enrich_opts = [:parents, :children, :siblings, :relations]
+
+      assert %{
+               id: id,
+               parents: parents,
+               children: children,
+               siblings: siblings,
+               relations: relations
+             } = DataStructures.get_data_structure_version!(dsv.id, enrich_opts)
+
+      assert id == dsv.id
+      assert parents <|> [parent]
+      assert children <|> [child]
+      assert siblings <|> [sibling, dsv]
+      assert Enum.map(relations.parents, & &1.version) <|> [parent_custom_relation]
+      assert Enum.map(relations.children, & &1.version) <|> [child_custom_relation]
     end
 
     defp deleted_at(%{external_id: "deleted_child"}), do: DateTime.utc_now()
@@ -215,8 +337,15 @@ defmodule TdDd.DataStructuresTest do
         )
 
       default_relation_type_id = RelationTypes.get_default_relation_type().id
+
       deleted_children
-      |> Enum.each(&insert(:data_structure_relation, parent_id: dsv.id, child_id: &1.id, relation_type_id: default_relation_type_id))
+      |> Enum.each(
+        &insert(:data_structure_relation,
+          parent_id: dsv.id,
+          child_id: &1.id,
+          relation_type_id: default_relation_type_id
+        )
+      )
 
       assert %{children: children} =
                DataStructures.get_data_structure_version!(dsv.id, [:children])
@@ -231,7 +360,15 @@ defmodule TdDd.DataStructuresTest do
         |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id, class: "field"))
 
       default_relation_type_id = RelationTypes.get_default_relation_type().id
-      Enum.map(fields, &insert(:data_structure_relation, parent_id: dsv.id, child_id: &1.id, relation_type_id: default_relation_type_id))
+
+      Enum.map(
+        fields,
+        &insert(:data_structure_relation,
+          parent_id: dsv.id,
+          child_id: &1.id,
+          relation_type_id: default_relation_type_id
+        )
+      )
 
       assert %{data_fields: data_fields} =
                DataStructures.get_data_structure_version!(dsv.id, [:data_fields])

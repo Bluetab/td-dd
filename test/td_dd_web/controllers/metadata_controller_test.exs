@@ -80,7 +80,7 @@ defmodule TdDdWeb.MetadataControllerTest do
       assert length(json_response) == 5 + 68
 
       structure_id = get_id(json_response, "Calidad")
-      conn = get(conn, Routes.data_structure_path(conn, :show, structure_id))
+      conn = get(conn, Routes.data_structure_data_structure_version_path(conn, :show, structure_id, "latest"))
       json_response = json_response(conn, 200)["data"]
       assert length(json_response["parents"]) == 1
       assert length(json_response["siblings"]) == 4
@@ -121,17 +121,17 @@ defmodule TdDdWeb.MetadataControllerTest do
       assert length(json_response) == 5 + 68
 
       structure_id = get_id(json_response, "Calidad")
-      conn = get(conn, Routes.data_structure_path(conn, :show, structure_id))
+      conn = get(conn, Routes.data_structure_data_structure_version_path(conn, :show, structure_id, "latest"))
       structure_json_response = json_response(conn, 200)["data"]
       assert length(structure_json_response["parents"]) == 1
-      assert length(structure_json_response["siblings"]) == 4
+      assert length(structure_json_response["siblings"]) == 3
       assert length(structure_json_response["children"]) == 16
 
       relation_parent_id = get_id(json_response, "Dashboard Gobierno y Calidad v1")
-      conn = get(conn, Routes.data_structure_path(conn, :show, relation_parent_id))
+      conn = get(conn, Routes.data_structure_data_structure_version_path(conn, :show, relation_parent_id, "latest"))
       json_response = json_response(conn, 200)["data"]
       assert json_response["parents"] == []
-      assert length(json_response["children"]) == 4
+      assert length(json_response["children"]) == 3
     end
 
     @tag :admin_authenticated
@@ -176,7 +176,7 @@ defmodule TdDdWeb.MetadataControllerTest do
              end)
 
       structure_id = get_id(json_response, "Calidad")
-      conn = get(conn, Routes.data_structure_path(conn, :show, structure_id))
+      conn = get(conn, Routes.data_structure_data_structure_version_path(conn, :show, structure_id, "latest"))
       json_response = json_response(conn, 200)["data"]
       assert length(json_response["parents"]) == 1
       assert length(json_response["siblings"]) == 4
