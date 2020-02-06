@@ -78,7 +78,7 @@ config :tzdata, :autoupdate, :disabled
 
 config :td_dd, :cache_cleaner,
   clean_on_startup: true,
-  patterns: ["structures:external_ids:*"]
+  patterns: ["structures:external_ids:*", "data_fields:external_ids"]
 
 import_config "metadata.exs"
 import_config "profiling.exs"
