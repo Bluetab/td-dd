@@ -181,7 +181,7 @@ defmodule TdDdWeb.MetadataController do
   defp check_status([:ok]), do: :ok
   defp check_status([:ok | tail]), do: check_status(tail)
   defp check_status([{:error, reason} | _]) do
-    Logger.warning("Error copying file: #{inspect(reason)}")
+    Logger.warn("Error copying file: #{inspect(reason)}")
     :error
   end
   defp check_status(_), do: :error
