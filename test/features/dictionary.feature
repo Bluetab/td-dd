@@ -43,8 +43,5 @@ Feature: Data Dictionary Administration
     And "app-admin" is able to view data field "My_Personal01_Field" from system "S001" group "Risks" and structure "TKIDS0002" with following data:
       | Field             | Value                              |
       | Field Name        | My_Personal01_Field                |
-      | Type              | TIMESTAMP                          |
-      | Precision         |                                    |
-      | Nullable          | Yes                                |
+      | Type              | Column                             |
       | Description       | My_Personal01bis_Field Description |
-      | Last Modification | Some timestamp                     |

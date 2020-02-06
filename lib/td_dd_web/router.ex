@@ -31,7 +31,7 @@ defmodule TdDdWeb.Router do
     post("/data_structures/bulk_update", DataStructureController, :bulk_update)
     post("/data_structures/csv", DataStructureController, :csv)
 
-    resources "/data_structures", DataStructureController, except: [:new, :edit] do
+    resources "/data_structures", DataStructureController, except: [:new, :edit, :show] do
       get("/comment", CommentController, :get_comment_data_structure)
       resources("/versions", DataStructureVersionController, only: [:show])
     end

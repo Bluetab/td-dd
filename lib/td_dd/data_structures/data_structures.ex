@@ -12,6 +12,7 @@ defmodule TdDd.DataStructures do
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Profile
+  alias TdDd.DataStructures.RelationType
   alias TdDd.Lineage.GraphData
   alias TdDd.Repo
   alias TdDd.Search.IndexWorker
@@ -134,34 +135,33 @@ defmodule TdDd.DataStructures do
 
   defp enrich(%DataStructure{} = ds, options) do
     ds
-    |> enrich(options, :versions, fn ds -> Repo.preload(ds, :versions) end)
-    |> enrich(options, :latest, fn ds -> get_latest_version(ds) end)
+    |> enrich(options, :versions, &Repo.preload(&1, :versions))
+    |> enrich(options, :latest, &get_latest_version/1)
   end
 
   defp enrich(%DataStructureVersion{} = dsv, options) do
     deleted = not is_nil(Map.get(dsv, :deleted_at))
+    preload = if Enum.member?(options, :profile), do: [data_structure: :profile], else: []
 
     dsv
-    |> enrich(options, :parents, fn dsv -> get_parents(dsv, deleted: deleted) end)
-    |> enrich(options, :children, fn dsv -> get_children(dsv, deleted: deleted) end)
-    |> enrich(options, :siblings, fn dsv -> get_siblings(dsv, deleted: deleted) end)
-    |> enrich(options, :data_fields, fn dsv ->
-      get_field_structures(dsv,
-        deleted: deleted,
-        preload: if(Enum.member?(options, :profile), do: [data_structure: :profile], else: [])
-      )
-    end)
-    |> enrich(options, :data_field_degree, fn dsv -> get_field_degree(dsv) end)
-    |> enrich(options, :data_field_links, fn dsv -> get_field_links(dsv) end)
-    |> enrich(options, :versions, fn dsv -> get_versions(dsv) end)
-    |> enrich(options, :system, fn dsv ->
-      dsv |> Repo.preload(data_structure: :system) |> Map.get(:data_structure) |> Map.get(:system)
-    end)
-    |> enrich(options, :degree, fn dsv -> get_degree(dsv) end)
-    |> enrich(options, :profile, fn dsv -> get_profile(dsv) end)
-    |> enrich(options, :ancestry, fn dsv -> get_ancestry(dsv) end)
-    |> enrich(options, :path, fn dsv -> get_path(dsv) end)
-    |> enrich(options, :links, fn %{data_structure_id: id} -> get_structure_links(id) end)
+    |> enrich(options, :system, &get_system/1)
+    |> enrich(options, :parents, &get_parents(&1, deleted: deleted))
+    |> enrich(options, :children, &get_children(&1, deleted: deleted))
+    |> enrich(options, :siblings, &get_siblings(&1, deleted: deleted))
+    |> enrich(
+      options,
+      :data_fields,
+      &get_field_structures(&1, deleted: deleted, preload: preload)
+    )
+    |> enrich(options, :data_field_degree, &get_field_degree/1)
+    |> enrich(options, :data_field_links, &get_field_links/1)
+    |> enrich(options, :relations, &get_relations(&1, deleted: deleted, custom_relation: true))
+    |> enrich(options, :versions, &get_versions/1)
+    |> enrich(options, :degree, &get_degree/1)
+    |> enrich(options, :profile, &get_profile/1)
+    |> enrich(options, :ancestry, &get_ancestry/1)
+    |> enrich(options, :path, &get_path/1)
+    |> enrich(options, :links, &get_structure_links/1)
   end
 
   defp enrich(%{} = target, options, key, fun) do
@@ -177,6 +177,13 @@ defmodule TdDd.DataStructures do
   defp get_target_key(:data_field_links), do: :data_fields
   defp get_target_key(key), do: key
 
+  defp get_system(%DataStructureVersion{} = dsv) do
+    dsv
+    |> Repo.preload(data_structure: :system)
+    |> Map.get(:data_structure)
+    |> Map.get(:system)
+  end
+
   defp get_profile(%DataStructureVersion{} = dsv) do
     dsv
     |> Repo.preload(data_structure: :profile)
@@ -184,7 +191,7 @@ defmodule TdDd.DataStructures do
     |> Map.get(:profile)
   end
 
-  def get_field_structures(data_structure_version, options \\ []) do
+  def get_field_structures(data_structure_version, options) do
     data_structure_version
     |> Ecto.assoc(:children)
     |> where([child, _parent, _rel], child.class == "field")
@@ -198,46 +205,130 @@ defmodule TdDd.DataStructures do
     DataStructureRelation
     |> where([r], r.parent_id == ^id)
     |> join(:inner, [r], parent in assoc(r, :child))
-    |> with_deleted(options, dynamic([_, parent], is_nil(parent.deleted_at)))
-    |> order_by([_, child], asc: child.data_structure_id, desc: child.version)
-    |> select([_, child], child)
-    |> distinct(true)
+    |> join(:inner, [r, _parent, _], r in assoc(r, :relation_type))
+    |> with_deleted(
+      Keyword.get(options, :deleted),
+      dynamic([_, parent, _], is_nil(parent.deleted_at))
+    )
+    |> relation_type_condition(
+      Keyword.get(options, :custom_relation),
+      dynamic([_, _child, relation_type], relation_type.name != ^RelationType.default()),
+      dynamic([_, _child, relation_type], relation_type.name == ^RelationType.default())
+    )
+    |> order_by([_, child, _], asc: child.data_structure_id, desc: child.version)
+    |> distinct([_, child, _], child)
+    |> select([r, child, relation_type], %{
+      version: child,
+      relation: r,
+      relation_type: relation_type
+    })
     |> Repo.all()
-    |> Enum.uniq_by(& &1.data_structure_id)
-    |> Repo.preload(data_structure: :system)
+    |> select_structures(Keyword.get(options, :custom_relation))
   end
 
   defp get_parents(%DataStructureVersion{id: id}, options) do
     DataStructureRelation
     |> where([r], r.child_id == ^id)
     |> join(:inner, [r], parent in assoc(r, :parent))
-    |> with_deleted(options, dynamic([_, parent], is_nil(parent.deleted_at)))
-    |> order_by([_, parent], asc: parent.data_structure_id, desc: parent.version)
-    |> select([_, parent], parent)
-    |> distinct(true)
+    |> join(:inner, [r, _parent], relation_type in assoc(r, :relation_type))
+    |> with_deleted(
+      Keyword.get(options, :deleted),
+      dynamic([_, parent, _], is_nil(parent.deleted_at))
+    )
+    |> relation_type_condition(
+      Keyword.get(options, :custom_relation),
+      dynamic([_, _parent, relation_type], relation_type.name != ^RelationType.default()),
+      dynamic([_, _parent, relation_type], relation_type.name == ^RelationType.default())
+    )
+    |> order_by([_, parent, _], asc: parent.data_structure_id, desc: parent.version)
+    |> distinct([_, parent, _], parent)
+    |> select([r, parent, relation_type], %{
+      version: parent,
+      relation: r,
+      relation_type: relation_type
+    })
     |> Repo.all()
-    |> Enum.uniq_by(& &1.data_structure_id)
-    |> Repo.preload(data_structure: :system)
+    |> select_structures(Keyword.get(options, :custom_relation))
   end
 
   def get_siblings(%DataStructureVersion{id: id}, options \\ []) do
     DataStructureRelation
     |> where([r], r.child_id == ^id)
     |> join(:inner, [r], parent in assoc(r, :parent))
-    |> join(:inner, [_, parent], child in assoc(parent, :children))
-    |> with_deleted(options, dynamic([_, parent, _], is_nil(parent.deleted_at)))
-    |> with_deleted(options, dynamic([_, _, child], is_nil(child.deleted_at)))
-    |> order_by([_, _, sibling], asc: sibling.data_structure_id, desc: sibling.version)
-    |> select([_, _, sibling], sibling)
-    |> distinct(true)
+    |> join(:inner, [r, _parent], parent_rt in assoc(r, :relation_type))
+    |> join(:inner, [_r, parent, _parent_rt, r_c], r_c in DataStructureRelation,
+      on: parent.id == r_c.parent_id
+    )
+    |> join(:inner, [_r, _parent, _parent_rt, r_c], child_rt in assoc(r_c, :relation_type))
+    |> join(:inner, [_r, _parent, _parent_rt, r_c, _child_rt], sibling in assoc(r_c, :child))
+    |> with_deleted(
+      options,
+      dynamic([_r, parent, _parent_rt, _r_c, _child_rt, _sibling], is_nil(parent.deleted_at))
+    )
+    |> with_deleted(
+      options,
+      dynamic([_r, parent, _parent_rt, _r_c, _child_rt, sibling], is_nil(sibling.deleted_at))
+    )
+    |> relation_type_condition(
+      Keyword.get(options, :custom_relation),
+      dynamic(
+        [_r, _parent, parent_rt, _r_c, _child_rt, _sibling],
+        parent_rt.name != ^RelationType.default()
+      ),
+      dynamic(
+        [_r, _parent, parent_rt, _r_c, _child_rt, _sibling],
+        parent_rt.name == ^RelationType.default()
+      )
+    )
+    |> relation_type_condition(
+      Keyword.get(options, :custom_relation),
+      dynamic(
+        [_r, _parent, _parent_rt, _r_c, child_rt, _sibling],
+        child_rt.name != ^RelationType.default()
+      ),
+      dynamic(
+        [_r, _parent, _parent_rt, _r_c, child_rt, _sibling],
+        child_rt.name == ^RelationType.default()
+      )
+    )
+    |> order_by([_r, _parent, _parent_rt, _r_c, _child_rt, sibling],
+      asc: sibling.data_structure_id,
+      desc: sibling.version
+    )
+    |> distinct([_r, _parent, _parent_rt, _r_c, _child_rt, sibling], sibling)
+    |> select([_r, _parent, _parent_rt, _r_c, _child_rt, sibling], sibling)
     |> Repo.all()
     |> Enum.uniq_by(& &1.data_structure_id)
+  end
+
+  defp get_relations(%DataStructureVersion{} = version, options) do
+    parents = get_parents(version, options)
+    children = get_children(version, options)
+
+    %{parents: parents, children: children}
   end
 
   defp get_versions(%DataStructureVersion{} = dsv) do
     dsv
     |> Ecto.assoc([:data_structure, :versions])
     |> Repo.all()
+  end
+
+  defp select_structures(versions, true) do
+    versions
+    |> Enum.uniq_by(& &1.version.data_structure_id)
+    |> Enum.map(&preload_system/1)
+  end
+
+  defp select_structures(versions, _false) do
+    versions
+    |> Enum.map(& &1.version)
+    |> Enum.uniq_by(& &1.data_structure_id)
+    |> Repo.preload(data_structure: :system)
+  end
+
+  defp preload_system(%{version: v} = version) do
+    Map.put(version, :version, Repo.preload(v, data_structure: :system))
   end
 
   @doc """
@@ -472,18 +563,11 @@ defmodule TdDd.DataStructures do
   defp do_add_degree(degree, dsv), do: Map.put(dsv, :degree, degree)
 
   defp get_field_links(%{data_fields: data_fields}) do
-    data_fields
-    |> Enum.map(
-      &Map.put(
-        &1,
-        :links,
-        get_structure_links(&1.data_structure_id)
-      )
-    )
+    Enum.map(data_fields, &Map.put(&1, :links, get_structure_links(&1)))
   end
 
-  def get_structure_links(structure_id) do
-    case LinkCache.list("data_structure", structure_id) do
+  def get_structure_links(%{data_structure_id: id}) do
+    case LinkCache.list("data_structure", id) do
       {:ok, links} -> links
       _ -> []
     end
@@ -565,6 +649,11 @@ defmodule TdDd.DataStructures do
     query
     |> where(^dynamic)
   end
+
+  defp relation_type_condition(query, true, custom, _default), do: where(query, ^custom)
+
+  defp relation_type_condition(query, _false, _custom, default),
+    do: where(query, ^default)
 
   @doc """
   Returns the list of profiles.

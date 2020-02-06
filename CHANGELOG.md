@@ -7,6 +7,7 @@
 - [TD-1595] Data lineage support
 - [TD-2327] Data lineage metadata upload at `/api/data_structures/metadata` and `/api/td_dl/metadata`
 - [TD-2292] Relation type in structures relations
+- [TD-2293] Relation type in structures api
 
 ### Changed
 

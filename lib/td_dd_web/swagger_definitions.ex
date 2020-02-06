@@ -78,6 +78,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
             data_structure(Schema.ref(:DataStructure))
             parent(Schema.ref(:DataStructuresEmbedded))
             siblings(Schema.ref(:DataStructuresEmbedded))
+            relations(Schema.ref(:EmbeddedRelation))
             system(:object, "Data Structure system", required: true)
             version(:integer, "Version number", required: true)
             versions(:array, "Versions", items: Schema.ref(:Version))
@@ -108,8 +109,8 @@ defmodule TdDdWeb.SwaggerDefinitions do
             id(:integer, "Data Structure unique identifier", required: true)
             system(:object, "Data Structure system", required: true)
             system_id(:integer, "System Id", required: true)
-            group(:string, "Data Structure group", required: true)
-            name(:string, "Data Structure name", required: true)
+            group(:string, "Data Structure group")
+            name(:string, "Data Structure name")
             domain_id([:integer, :null], "Domain Id")
             class([:string, :null], "Data Structure class")
             description([:string, :null], "Data Structure description")
@@ -124,6 +125,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
             children(Schema.ref(:DataStructuresEmbedded))
             siblings(Schema.ref(:DataStructuresEmbedded))
             ancestry(Schema.ref(:DataStructuresEmbedded))
+            relations(Schema.ref(:EmbeddedRelation))
             versions(:array, "Versions", items: Schema.ref(:Version))
           end
 
@@ -149,6 +151,31 @@ defmodule TdDdWeb.SwaggerDefinitions do
               "updated_at" => "2018-05-08T17:17:59.691460"
             }
           })
+        end,
+      Relation:
+        swagger_schema do
+        title("Relation")
+        properties do
+          structure(Schema.ref(:DataStructureEmbedded))
+          relation_type(Schema.ref(:RelationType))
+        end
+      end,
+      Relations:
+        swagger_schema do
+          title("Relations")
+          description("Relation collection")
+          type(:array)
+          items(Schema.ref(:Relation))
+      end,
+      EmbeddedRelation:
+        swagger_schema do
+          title("Embedded Relation")
+          description("An embedded Data Structure")
+
+          properties do
+            parents(Schema.ref(:Relations))
+            children(Schema.ref(:Relations))
+          end
         end,
       DataStructureEmbedded:
         swagger_schema do

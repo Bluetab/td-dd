@@ -30,11 +30,8 @@ defmodule TdDd.DictionaryTest do
   @fixed_data_field_values %{
     "Field Name" => "name",
     "Type" => "type",
-    "Precision" => "precision",
-    "Nullable" => "nullable",
     "Description" => "description",
-    "Last Modification" => "updated_at",
-    "Bc_related" => "bc_related"
+    "Last Modification" => "updated_at"
   }
 
   setup_all do
@@ -100,7 +97,7 @@ defmodule TdDd.DictionaryTest do
     assert data_structure_tmp
 
     {:ok, http_status_code, %{"data" => data_structure}} =
-      data_structure_show(token, data_structure_tmp["id"])
+      data_structure_version_show(token, data_structure_tmp["data_structure"]["id"])
 
     assert rc_ok() == to_response_code(http_status_code)
     assert_attrs(attrs, data_structure)
@@ -170,7 +167,7 @@ defmodule TdDd.DictionaryTest do
     token = get_user_token(user_name)
 
     {:ok, http_status_code, %{"data" => data_field}} =
-      data_structure_show(token, data_field_tmp["id"])
+      data_structure_version_show(token, data_field_tmp["data_structure_id"])
 
     assert rc_ok() == to_response_code(http_status_code)
     attrs = field_value_to_data_field(fields)
@@ -248,13 +245,24 @@ defmodule TdDd.DictionaryTest do
   defp field_value_to_data_field(field_value) do
     field_value
     |> field_value_to_api_attrs(@fixed_data_field_values)
-    |> Map.update("nullable", false, &(&1 == "YES"))
   end
 
   defp field_value_to_api_attrs(field_value, fixed_values) do
     Enum.reduce(field_value, %{}, fn x, acc ->
       Map.put(acc, Map.get(fixed_values, x."Field", x."Field"), x."Value")
     end)
+  end
+
+  defp assert_attr("external_id", value, %{"data_structure" => data_structure}) do
+    assert_attr("external_id", value, data_structure)
+  end
+
+  defp assert_attr("ou", value, %{"data_structure" => data_structure}) do
+    assert_attr("ou", value, data_structure)
+  end
+
+  defp assert_attr("updated_at", value, %{"data_structure" => data_structure}) do
+    assert_attr("updated_at", value, data_structure)
   end
 
   defp assert_attr("updated_at" = attr, _value, %{} = target) do
@@ -371,11 +379,15 @@ defmodule TdDd.DictionaryTest do
     {:ok, status_code, resp |> JSON.decode!()}
   end
 
-  defp data_structure_show(token, id) do
+  defp data_structure_version_show(token, id) do
     headers = [@headers, {"authorization", "Bearer #{token}"}]
 
     %HTTPoison.Response{status_code: status_code, body: resp} =
-      HTTPoison.get!(data_structure_url(@endpoint, :show, id), headers, [])
+      HTTPoison.get!(
+        data_structure_data_structure_version_url(@endpoint, :show, id, "latest"),
+        headers,
+        []
+      )
 
     {:ok, status_code, resp |> JSON.decode!()}
   end
@@ -392,7 +404,7 @@ defmodule TdDd.DictionaryTest do
   end
 
   defp data_structure_get(id, token) do
-    {:ok, _status_code, %{"data" => data_structure}} = data_structure_show(token, id)
+    {:ok, _status_code, %{"data" => data_structure}} = data_structure_version_show(token, id)
     data_structure
   end
 
