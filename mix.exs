@@ -9,12 +9,19 @@ defmodule TdDd.Mixfile do
           nil -> "3.14.0-local"
           v -> v
         end,
-      elixir: "~> 1.8",
+      elixir: "~> 1.10",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers() ++ [:phoenix_swagger],
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
-      deps: deps()
+      deps: deps(),
+      releases: [
+        td_dd: [
+          include_executables_for: [:unix],
+          applications: [runtime_tools: :permanent],
+          steps: [:assemble, &copy_bin_files/1, :tar]
+        ]
+      ]
     ]
   end
 
@@ -32,6 +39,11 @@ defmodule TdDd.Mixfile do
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
+  defp copy_bin_files(release) do
+    File.cp_r("rel/bin", Path.join(release.path, "bin"))
+    release
+  end
+
   # Specifies your project dependencies.
   #
   # Type `mix help deps` for examples and options.
@@ -43,11 +55,10 @@ defmodule TdDd.Mixfile do
       {:phoenix_ecto, "~> 4.0", override: true},
       {:ecto_sql, "~> 3.0"},
       {:jason, "~> 1.0"},
-      {:postgrex, ">= 0.0.0"},
+      {:postgrex, "~> 0.15.0"},
       {:gettext, "~> 0.11"},
       {:cabbage, only: [:test], git: "https://github.com/Bluetab/cabbage", tag: "v0.3.7-alpha"},
       {:httpoison, "~> 1.6.2"},
-      {:distillery, "~> 2.0", runtime: false},
       {:credo, "~> 1.0.0", only: [:dev, :test], runtime: false},
       {:guardian, "~> 1.0"},
       {:canada, "~> 1.0.1"},
