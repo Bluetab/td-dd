@@ -1,2 +1,0 @@
-set -e
-bin/td_dd migrate

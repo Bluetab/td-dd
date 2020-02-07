@@ -41,11 +41,6 @@ config :td_dd, TdDd.Auth.Guardian,
   ttl: {1, :hours},
   secret_key: "SuperSecretTruedat"
 
-config :td_dd, :auth_service,
-  protocol: "http",
-  users_path: "/api/users/",
-  sessions_path: "/api/sessions/"
-
 config :td_dd, :phoenix_swagger,
   swagger_files: %{
     "priv/static/swagger.json" => [router: TdDdWeb.Router]

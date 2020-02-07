@@ -4,5 +4,5 @@ set -o nounset
 set -o pipefail
 set -o xtrace
 
-mix release --env=${MIX_ENV:-prod}
+mix release
 find . -name "*.tar.gz"

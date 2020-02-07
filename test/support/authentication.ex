@@ -7,9 +7,8 @@ defmodule TdDdWeb.Authentication do
   alias TdDd.Accounts.User
   alias TdDd.Auth.Guardian
   alias TdDd.Permissions.MockPermissionResolver
+  alias TdDdWeb.ApiServices.MockTdAuthService
   import Plug.Conn
-
-  @td_auth_api Application.get_env(:td_dd, :auth_service)[:api_service]
 
   @headers {"Content-type", "application/json"}
 
@@ -41,7 +40,7 @@ defmodule TdDdWeb.Authentication do
   # defp create_user(user_name, opts \\ []) do
   #   is_admin = Keyword.get(opts, :is_admin, false)
   #   password = Keyword.get(opts, :password, "secret")
-  #   user = @td_auth_api.create_user(%{"user" => %{user_name: user_name, is_admin: is_admin, password: password}})
+  #   user = MockTdAuthService.create_user(%{"user" => %{user_name: user_name, is_admin: is_admin, password: password}})
   #   user
   # end
 
@@ -50,18 +49,18 @@ defmodule TdDdWeb.Authentication do
       nil ->
         is_admin = Keyword.get(opts, :is_admin, false)
         password = Keyword.get(opts, :password, "secret")
-        @td_auth_api.create_user(%{"user" => %{user_name: user_name, is_admin: is_admin, password: password}})
+        MockTdAuthService.create_user(%{"user" => %{user_name: user_name, is_admin: is_admin, password: password}})
       user -> user
     end
     user
   end
 
   def get_user_by_name(user_name) do
-    @td_auth_api.get_user_by_name(user_name)
+    MockTdAuthService.get_user_by_name(user_name)
   end
 
   def get_users do
-    @td_auth_api.index()
+    MockTdAuthService.index()
   end
 
   def build_user_token(%User{} = user) do

@@ -44,9 +44,6 @@ services:
 
   neo:
     image: bluetab/neo4j:3.5.5
-    ports:
-      - "7474:7474/tcp"
-      - "7687:7687/tcp"
     environment:
       NEO4J_AUTH: "neo4j/f00B4Rb4z"
       NEO4J_USER: "neo4j"
@@ -59,7 +56,7 @@ services:
       start_period: 10s
 
   build:
-    image: bluetab/elixir:1.8.2-alpine-20200124123100
+    image: bluetab/elixir:1.10.0-alpine-20200207083846
     command: ci/build.sh
     environment:
       APP_VERSION: "${APP_VERSION}"
@@ -72,7 +69,7 @@ services:
       - "${CI_PROJECT_DIR}:/code"
 
   test:
-    image: bluetab/elixir:1.8.2-alpine-20200124123100
+    image: bluetab/elixir:1.10.0-alpine-20200207083846
     command: ci/test.sh
     environment:
       HOME: /tmp # CURRENT_UID doesn't have a home
@@ -89,16 +86,19 @@ services:
   service:
     image: ${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${APP_VERSION}
     environment:
+      API_AUDIT_HOST: audit
+      API_AUDIT_PORT: "4007"
       DB_HOST: postgres
       DB_NAME: postgres
       DB_PASSWORD: postgres
       DB_USER: postgres
       ES_URL: http://elastic:9200
+      GUARDIAN_SECRET_KEY: topsecret
+      IMPORT_DIR: /import
       NEO4J_HOST: neo
-      NEO4J_USER: neo4j
       NEO4J_PASSWORD: f00B4Rb4z
+      NEO4J_USER: neo4j
       REDIS_HOST: redis
-      REPLACE_OS_VARS: "true"
     depends_on:
       - postgres
       - redis

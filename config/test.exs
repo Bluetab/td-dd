@@ -20,16 +20,6 @@ config :td_dd, TdDd.Repo,
   hostname: "postgres",
   pool: Ecto.Adapters.SQL.Sandbox
 
-config :td_dd, :api_services_login,
-  api_username: "api-admin",
-  api_password: "apipass"
-
-config :td_dd, :auth_service,
-  api_service: TdDdWeb.ApiServices.MockTdAuthService,
-  auth_host: "localhost",
-  auth_port: "4001",
-  auth_domain: ""
-
 config :td_dd, permission_resolver: TdDd.Permissions.MockPermissionResolver
 config :td_dd, index_worker: TdDd.Search.MockIndexWorker
 

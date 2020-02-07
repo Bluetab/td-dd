@@ -27,16 +27,6 @@ config :td_dd, TdDd.Auth.Guardian,
   ttl: {1, :hours},
   secret_key: "${GUARDIAN_SECRET_KEY}"
 
-config :td_dd, :api_services_login,
-  api_username: "${API_USER}",
-  api_password: "${API_PASSWORD}"
-
-config :td_dd, :auth_service,
-  api_service: TdDdWeb.ApiServices.HttpTdAuthService,
-  auth_host: "${API_AUTH_HOST}",
-  auth_port: "${API_AUTH_PORT}",
-  auth_domain: ""
-
 config :td_cache, redis_host: "${REDIS_HOST}"
 
 config :td_dd, :audit_service,
