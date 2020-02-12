@@ -38,7 +38,10 @@ defmodule TdDd.Lineage.GraphData do
   otherwise.
   """
   def degree(external_id) do
-    GenServer.call(__MODULE__, {:degree, external_id})
+    case Process.whereis(__MODULE__) do
+      nil -> {:error, :down}
+      _ -> GenServer.call(__MODULE__, {:degree, external_id})
+    end
   end
 
   @doc "Reloads graph data from Neo4j"

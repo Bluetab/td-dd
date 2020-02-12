@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-2342] API failures when Neo4J is not present
+
 ## [3.15.0] 2020-02-10
 
 ### Added

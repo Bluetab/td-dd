@@ -55,36 +55,38 @@ defmodule TdDdWeb.DataStructureVersionController do
   def show(conn, %{"data_structure_id" => data_structure_id, "id" => version}) do
     user = conn.assigns[:current_user]
 
-    with %DataStructure{} = data_structure <-
-           DataStructures.get_data_structure!(data_structure_id) do
-      options = filter(user, data_structure)
+    case DataStructures.get_data_structure!(data_structure_id) do
+      %DataStructure{} = data_structure ->
+        options = filter(user, data_structure)
 
-      dsv =
-        data_structure_id
-        |> get_data_structure_version(version, options)
-        |> with_domain()
+        dsv =
+          data_structure_id
+          |> get_data_structure_version(version, options)
+          |> with_domain()
 
-      render_with_permissions(conn, user, dsv)
-    else
-      %Ecto.NoResultsError{} -> render_error(conn, :not_found)
+        render_with_permissions(conn, user, dsv)
+
+      %Ecto.NoResultsError{} ->
+        render_error(conn, :not_found)
     end
   end
 
   def show(conn, %{"id" => data_structure_version_id}) do
     user = conn.assigns[:current_user]
 
-    with %DataStructureVersion{data_structure: data_structure} <-
-           DataStructures.get_data_structure_version!(data_structure_version_id) do
-      options = filter(user, data_structure)
+    case DataStructures.get_data_structure_version!(data_structure_version_id) do
+      %DataStructureVersion{data_structure: data_structure} ->
+        options = filter(user, data_structure)
 
-      dsv =
-        data_structure_version_id
-        |> get_data_structure_version(options)
-        |> with_domain()
+        dsv =
+          data_structure_version_id
+          |> get_data_structure_version(options)
+          |> with_domain()
 
-      render_with_permissions(conn, user, dsv)
-    else
-      %Ecto.NoResultsError{} -> render_error(conn, :not_found)
+        render_with_permissions(conn, user, dsv)
+
+      %Ecto.NoResultsError{} ->
+        render_error(conn, :not_found)
     end
   end
 
@@ -115,7 +117,7 @@ defmodule TdDdWeb.DataStructureVersionController do
   end
 
   defp render_with_permissions(conn, user, %{data_structure: data_structure} = dsv) do
-    with true <- can?(user, view_data_structure(data_structure)) do
+    if can?(user, view_data_structure(data_structure)) do
       user_permissions = %{
         update: can?(user, update_data_structure(data_structure)),
         confidential: can?(user, manage_confidential_structures(data_structure)),
@@ -128,8 +130,7 @@ defmodule TdDdWeb.DataStructureVersionController do
         hypermedia: hypermedia("data_structure_version", conn, dsv)
       )
     else
-      false -> render_error(conn, :forbidden)
-      _error -> render_error(conn, :unprocessable_entity)
+      render_error(conn, :forbidden)
     end
   end
 

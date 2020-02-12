@@ -15,11 +15,11 @@ defmodule TdDdWeb.ProfileController do
   def upload(conn, %{"profiling" => profiling}) do
     user = GuardianPlug.current_resource(conn)
 
-    with true <- Map.get(user, :is_admin) do
+    if Map.get(user, :is_admin) do
       do_upload(profiling)
       send_resp(conn, :accepted, "")
     else
-      false -> render_error(conn, :forbidden)
+      render_error(conn, :forbidden)
     end
   rescue
     e in RuntimeError ->

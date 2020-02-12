@@ -119,11 +119,11 @@ defmodule TdDdWeb.MetadataController do
   def upload(conn, params) do
     user = conn.assigns[:current_user]
 
-    with true <- can_upload?(user, params) do
+    if can_upload?(user, params) do
       do_upload(conn, params)
       send_resp(conn, :accepted, "")
     else
-      false -> render_error(conn, :forbidden)
+      render_error(conn, :forbidden)
     end
   rescue
     e in RuntimeError ->
@@ -143,13 +143,13 @@ defmodule TdDdWeb.MetadataController do
   defp upload_lineage(conn, %{} = params) do
     user = conn.assigns[:current_user]
 
-    with true <- can_upload?(user, params) do
+    if can_upload?(user, params) do
       case do_upload_lineage(params) do
         :ok -> send_resp(conn, :accepted, "")
         :error -> render_error(conn, :insufficient_storage)
       end
     else
-      false -> render_error(conn, :forbidden)
+      render_error(conn, :forbidden)
     end
   end
 
@@ -167,6 +167,7 @@ defmodule TdDdWeb.MetadataController do
 
   defp do_upload_lineage(%{} = params) do
     import_dir = Application.get_env(:td_dd, :import_dir)
+
     params
     |> Map.take(["nodes", "rels"])
     |> Map.values()
@@ -184,6 +185,7 @@ defmodule TdDdWeb.MetadataController do
   end
 
   defp log_error(:ok, _, _), do: :ok
+
   defp log_error(error, source, dest) do
     Logger.warn("Error copying #{source} to #{dest}: #{inspect(error)}")
     error
@@ -191,10 +193,12 @@ defmodule TdDdWeb.MetadataController do
 
   defp check_status([:ok]), do: :ok
   defp check_status([:ok | tail]), do: check_status(tail)
+
   defp check_status([{:error, reason} | _]) do
     Logger.warn("Error copying file: #{inspect(reason)}")
     :error
   end
+
   defp check_status(_), do: :error
 
   defp load(conn, structure_records, field_records, relation_records, opts) do
