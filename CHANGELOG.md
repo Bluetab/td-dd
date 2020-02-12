@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] 
+
+### Changed
+
+- [TD-2340] date ecto format in events table
+
 ## [3.15.0] 2020-02-10
 
 ### Added
