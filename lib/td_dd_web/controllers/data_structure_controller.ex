@@ -33,7 +33,7 @@ defmodule TdDdWeb.DataStructureController do
 
   def index(conn, params) do
     %{results: data_structures} =
-      case getOUs(params) do
+      case get_ous(params) do
         [] -> do_index(conn)
         in_params -> do_index(conn, %{"filters" => %{"ou.raw" => in_params}}, 0, 10_000)
       end
@@ -54,7 +54,7 @@ defmodule TdDdWeb.DataStructureController do
     |> Search.search_data_structures(user, permission, page, size)
   end
 
-  defp getOUs(params) do
+  defp get_ous(params) do
     case Map.get(params, "ou", nil) do
       nil ->
         []
@@ -96,7 +96,10 @@ defmodule TdDdWeb.DataStructureController do
 
       conn
       |> put_status(:created)
-      |> put_resp_header("location", Routes.data_structure_data_structure_version_path(conn, :show, id, "latest"))
+      |> put_resp_header(
+        "location",
+        Routes.data_structure_data_structure_version_path(conn, :show, id, "latest")
+      )
       |> render("show.json", data_structure: data_structure)
     else
       false -> render_error(conn, :forbidden)
@@ -137,7 +140,7 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   defp do_render_data_structure(conn, user, data_structure) do
-    with true <- can?(user, view_data_structure(data_structure)) do
+    if can?(user, view_data_structure(data_structure)) do
       user_permissions = %{
         update: can?(user, update_data_structure(data_structure)),
         confidential: can?(user, manage_confidential_structures(data_structure)),
@@ -146,8 +149,7 @@ defmodule TdDdWeb.DataStructureController do
 
       render(conn, "show.json", data_structure: data_structure, user_permissions: user_permissions)
     else
-      false -> render_error(conn, :forbidden)
-      _error -> render_error(conn, :unprocessable_entity)
+      render_error(conn, :forbidden)
     end
   end
 

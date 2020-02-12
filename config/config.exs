@@ -47,12 +47,21 @@ config :td_dd, :phoenix_swagger,
   }
 
 config :td_dd, :audit_service,
-  protocol: "http",
-  audits_path: "/api/audits/"
+  api_service: TdDdWeb.ApiServices.HttpTdAuditService,
+  audit_domain: "",
+  audit_host: "localhost",
+  audit_port: "4007",
+  audits_path: "/api/audits/",
+  protocol: "http"
 
 config :td_dd, permission_resolver: TdCache.Permissions
 config :td_dd, index_worker: TdDd.Search.IndexWorker
 config :td_dd, import_dir: "/import"
+
+# Default timeout increased for bulk metadata upload
+config :td_dd, TdDd.Repo,
+  pool_size: 10,
+  timeout: 600_000
 
 config :td_cache, :event_stream,
   consumer_id: "default",

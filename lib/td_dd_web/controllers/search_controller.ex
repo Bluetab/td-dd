@@ -18,12 +18,11 @@ defmodule TdDdWeb.SearchController do
   def reindex_all(conn, _params) do
     user = conn.assigns[:current_user]
 
-    with true <- can?(user, reindex_all(DataStructure)) do
+    if can?(user, reindex_all(DataStructure)) do
       @index_worker.reindex(:all)
       send_resp(conn, :accepted, "")
     else
-      false -> render_error(conn, :forbidden)
-      _error -> render_error(conn, :internal_server_error)
+      render_error(conn, :forbidden)
     end
   end
 end

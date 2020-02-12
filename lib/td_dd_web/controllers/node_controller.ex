@@ -1,5 +1,6 @@
 defmodule TdDdWeb.NodeController do
   use TdDdWeb, :controller
+
   # use PhoenixSwagger
 
   alias TdDd.Lineage.GraphData
@@ -15,14 +16,16 @@ defmodule TdDdWeb.NodeController do
   end
 
   defp query_nodes(conn, id \\ nil) do
-    with {:ok, data} <- GraphData.nodes(id) do
-      json = %{data: data} |> Jason.encode!()
+    case GraphData.nodes(id) do
+      {:ok, data} ->
+        json = %{data: data} |> Jason.encode!()
 
-      conn
-      |> put_resp_content_type("application/json", "utf-8")
-      |> send_resp(200, json)
-    else
-      {:error, :not_found} -> render_error(conn, :not_found)
+        conn
+        |> put_resp_content_type("application/json", "utf-8")
+        |> send_resp(200, json)
+
+      {:error, :not_found} ->
+        render_error(conn, :not_found)
     end
   end
 end

@@ -17,9 +17,8 @@ defmodule TdDd.ProfilingLoader do
   end
 
   defp do_load(profile_records) do
-    with {:ok, results} <- upsert_profiles(profile_records) do
-      results
-    else
+    case upsert_profiles(profile_records) do
+      {:ok, results} -> results
       {:error, err} -> Repo.rollback(err)
     end
   end

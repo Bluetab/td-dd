@@ -117,25 +117,27 @@ defmodule TdDd.DataStructures.Graph do
   def add(graph, {[], []}), do: {:ok, graph}
 
   def add(graph, {structures, relations}) do
-    with :ok <- validate_graph(graph, structures) do
-      graph = Enum.reduce(structures, graph, &add_structure/2)
-      graph = Enum.reduce(relations, graph, &add_relation/2)
+    case validate_graph(graph, structures) do
+      :ok ->
+        graph = Enum.reduce(structures, graph, &add_structure/2)
+        graph = Enum.reduce(relations, graph, &add_relation/2)
 
-      # identify vertices to be refreshed
-      to_refresh =
-        structures
-        |> Enum.reject(fn {_, record} -> Map.has_key?(record, :ghash) end)
-        |> Enum.map(fn {id, _} -> id end)
+        # identify vertices to be refreshed
+        to_refresh =
+          structures
+          |> Enum.reject(fn {_, record} -> Map.has_key?(record, :ghash) end)
+          |> Enum.map(fn {id, _} -> id end)
 
-      # update their hashes
-      graph
-      |> bottom_up()
-      |> Enum.filter(&Enum.member?(to_refresh, &1))
-      |> Enum.each(&propagate_hashes(&1, graph))
+        # update their hashes
+        graph
+        |> bottom_up()
+        |> Enum.filter(&Enum.member?(to_refresh, &1))
+        |> Enum.each(&propagate_hashes(&1, graph))
 
-      {:ok, graph}
-    else
-      e -> e
+        {:ok, graph}
+
+      e ->
+        e
     end
   end
 
@@ -180,6 +182,7 @@ defmodule TdDd.DataStructures.Graph do
       case rel_type_name do
         "default" ->
           keyword
+
         _ ->
           rhash =
             keyword
@@ -194,8 +197,8 @@ defmodule TdDd.DataStructures.Graph do
             |> Hasher.hash()
 
           keyword
-            |> Keyword.put(:rhash, rhash)
-            |> Keyword.put(:rghash, rghash)
+          |> Keyword.put(:rhash, rhash)
+          |> Keyword.put(:rghash, rghash)
       end
 
     {external_id, keyword}

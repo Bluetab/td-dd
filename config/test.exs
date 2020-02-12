@@ -18,16 +18,13 @@ config :td_dd, TdDd.Repo,
   password: "postgres",
   database: "td_dd_test",
   hostname: "postgres",
-  pool: Ecto.Adapters.SQL.Sandbox
+  pool: Ecto.Adapters.SQL.Sandbox,
+  pool_size: 1
 
 config :td_dd, permission_resolver: TdDd.Permissions.MockPermissionResolver
 config :td_dd, index_worker: TdDd.Search.MockIndexWorker
 
-config :td_dd, :audit_service,
-  api_service: TdDdWeb.ApiServices.MockTdAuditService,
-  audit_host: "localhost",
-  audit_port: "4007",
-  audit_domain: ""
+config :td_dd, :audit_service, api_service: TdDdWeb.ApiServices.MockTdAuditService
 
 config :td_dd, TdDd.Search.Cluster, api: TdDd.ElasticsearchMock
 
