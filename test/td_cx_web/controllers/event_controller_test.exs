@@ -3,7 +3,7 @@ defmodule TdCxWeb.EventControllerTest do
 
   alias TdCx.Search.IndexWorker
 
-  @valid_attrs %{"date" => DateTime.utc_now(), "type" => "init", "message" => "Message"}
+  @valid_attrs %{"type" => "init", "message" => "Message"}
 
   def fixture(:event) do
     insert(:event)

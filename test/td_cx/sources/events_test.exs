@@ -4,7 +4,7 @@ defmodule TdCx.Sources.EventsTest do
   alias TdCx.Search.IndexWorker
   alias TdCx.Sources.Events
 
-  @valid_attrs %{date: DateTime.utc_now(), type: "init", message: "Message"}
+  @valid_attrs %{type: "init", message: "Message"}
 
   setup_all do
     start_supervised(IndexWorker)
@@ -20,7 +20,6 @@ defmodule TdCx.Sources.EventsTest do
 
       assert {:ok, %Event{} = event} = Events.create_event(attrs)
       assert event.job_id == job.id
-      assert event.date == @valid_attrs.date
       assert event.type == @valid_attrs.type
       assert event.message == @valid_attrs.message
     end

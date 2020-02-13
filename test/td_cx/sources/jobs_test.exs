@@ -34,16 +34,14 @@ defmodule TdCx.Sources.JobsTest do
 
     test "metrics/1 will get job last event" do
       fixture = insert(:job)
-      d1 = DateTime.utc_now()
-      d2 = DateTime.to_unix(d1, :millisecond) + 1
-      d2 = elem(DateTime.from_unix(d2, :millisecond), 1)
-      e1 = insert(:event, job: fixture, date: d1, type: "init")
-      e2 = insert(:event, job: fixture, date: d2, type: "end")
+      e1 = insert(:event, job: fixture, type: "init")
+      :timer.sleep(1)
+      e2 = insert(:event, job: fixture, type: "end")
 
       metrics = Jobs.metrics([e1, e2])
       assert metrics.status == e2.type
-      assert metrics.start_date == e1.date
-      assert metrics.end_date == e2.date
+      assert metrics.start_date == e1.inserted_at
+      assert metrics.end_date == e2.inserted_at
     end
   end
 end

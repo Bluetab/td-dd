@@ -62,6 +62,7 @@ defmodule TdCxWeb.SourceController do
 
   def create(conn, %{"source" => source_params}) do
     user = conn.assigns[:current_user]
+
     with true <- can?(user, create(%Source{})),
          {:ok, %Source{} = source} <- Sources.create_source(source_params) do
       conn
@@ -102,14 +103,14 @@ defmodule TdCxWeb.SourceController do
     with true <- can?(user, show(%Source{})),
          %Source{} = source <- Sources.get_source!(external_id),
          %Source{} = source <- Sources.enrich_secrets(user, source) do
-          render(conn, "show.json", source: source)
-
+      render(conn, "show.json", source: source)
     else
       false ->
         conn
         |> put_status(:forbidden)
         |> put_view(ErrorView)
         |> render("403.json")
+
       {:error, message} ->
         conn
         |> put_status(:unprocessable_entity)
@@ -154,6 +155,7 @@ defmodule TdCxWeb.SourceController do
         |> put_status(:forbidden)
         |> put_view(ErrorView)
         |> render("403.json")
+
       {:vault_error, message} ->
         conn
         |> put_status(:unprocessable_entity)
@@ -223,7 +225,6 @@ defmodule TdCxWeb.SourceController do
             %{name: "vault_error", code: message}
           ]
         })
-
     end
   end
 end
