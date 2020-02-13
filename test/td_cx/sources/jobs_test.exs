@@ -31,5 +31,17 @@ defmodule TdCx.Sources.JobsTest do
       assert length(events) == 1
       assert Enum.any?(events, &(&1.id == event.id))
     end
+
+    test "metrics/1 will get job last event" do
+      fixture = insert(:job)
+      e1 = insert(:event, job: fixture, type: "init")
+      :timer.sleep(1)
+      e2 = insert(:event, job: fixture, type: "end")
+
+      metrics = Jobs.metrics([e1, e2])
+      assert metrics.status == e2.type
+      assert metrics.start_date == e1.inserted_at
+      assert metrics.end_date == e2.inserted_at
+    end
   end
 end

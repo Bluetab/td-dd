@@ -79,11 +79,11 @@ defmodule TdCx.Sources.Jobs do
 
   def metrics(events) do
     {min, max} =
-      Enum.min_max_by(events, fn %{date: date} -> DateTime.to_unix(date, :millisecond) end)
+      Enum.min_max_by(events, fn %{inserted_at: inserted_at} -> DateTime.to_unix(inserted_at, :millisecond) end)
 
     Map.new()
-    |> Map.put(:start_date, Map.get(min, :date))
-    |> Map.put(:end_date, Map.get(max, :date))
+    |> Map.put(:start_date, Map.get(min, :inserted_at))
+    |> Map.put(:end_date, Map.get(max, :inserted_at))
     |> Map.put(:status, Map.get(max, :type))
     |> Map.put(:message, Map.get(max, :message))
   end

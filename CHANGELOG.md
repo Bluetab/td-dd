@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] 
+
+### Changed
+
+- [TD-2340] Use `inserted_at` instead of `date` on events logging
+
 ## [3.15.0] 2020-02-10
 
 ### Added

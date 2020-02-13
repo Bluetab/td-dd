@@ -25,7 +25,6 @@ defmodule TdCx.Factory do
   def event_factory do
     %Event{
       job: build(:job),
-      date: DateTime.utc_now(),
       type: "init",
       message: "Message"
     }

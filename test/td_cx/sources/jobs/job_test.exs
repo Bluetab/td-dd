@@ -21,12 +21,9 @@ defmodule TdCx.Sources.Jobs.JobTest do
 
     test "encode/1 with events" do
       job = insert(:job)
-      now = DateTime.utc_now()
 
-      ["foo", "bar", "baz"]
-      |> Enum.with_index()
-      |> Enum.map(fn {type, ms} ->
-        insert(:event, type: type, job: job, date: DateTime.add(now, ms, :millisecond))
+      Enum.each(["foo", "bar", "baz"], fn type ->
+        insert(:event, type: type, job: job)
       end)
 
       job = Repo.preload(job, [:source, :events])

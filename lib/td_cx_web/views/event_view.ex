@@ -11,6 +11,11 @@ defmodule TdCxWeb.EventView do
   end
 
   def render("event.json", %{event: event}) do
-    %{id: event.id, date: DateTime.to_iso8601(event.date), type: event.type, message: event.message}
+    %{
+      id: event.id,
+      type: event.type,
+      message: event.message,
+      inserted_at: event.inserted_at
+    }
   end
 end

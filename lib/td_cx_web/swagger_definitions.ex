@@ -136,7 +136,7 @@ defmodule TdCxWeb.SwaggerDefinitions do
 
           properties do
             id(:integer, "Event Id", required: true)
-            date(:string, "Event date")
+            inserted_at(:string, "Event insertion date")
             type(:string, "Event type")
             message(:string, "Event message")
           end
@@ -159,7 +159,6 @@ defmodule TdCxWeb.SwaggerDefinitions do
             event(
               Schema.new do
                 properties do
-                  date(:string, "Event date")
                   type(:string, "Event type")
                   message(:string, "Event message")
                 end
