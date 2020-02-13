@@ -4,7 +4,7 @@
 
 ### Changed
 
-- [TD-2340] date ecto format in events table
+- [TD-2340] Use `inserted_at` instead of `date` on events logging
 
 ## [3.15.0] 2020-02-10
 
