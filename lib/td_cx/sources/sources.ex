@@ -30,6 +30,7 @@ defmodule TdCx.Sources do
   def list_sources_by_source_type(source_type) do
     Source
     |> where([s], s.type == ^source_type)
+    |> where([s], s.active == true)
     |> Repo.all()
   end
 
@@ -185,15 +186,15 @@ defmodule TdCx.Sources do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_source(%Source{} = source, attrs) do
+  def update_source(%Source{} = source, %{"config" => config} = attrs) do
     with {:ok} <- check_base_changeset(attrs, source),
          {:ok} <-
            is_valid_template_content(%{
              "type" => Map.get(source, :type),
-             "config" => Map.get(attrs, "config")
+             "config" => config
            }) do
       %{"secrets" => secrets, "config" => config} =
-        separate_config(%{"type" => Map.get(source, :type), "config" => Map.get(attrs, "config")})
+        separate_config(%{"type" => Map.get(source, :type), "config" => config})
 
       attrs =
         attrs
@@ -205,6 +206,11 @@ defmodule TdCx.Sources do
       error ->
         error
     end
+  end
+  def update_source(%Source{} = source, attrs) do
+    source
+    |> Source.changeset(attrs)
+    |> Repo.update()
   end
 
   defp do_update_source(%Source{} = source, %{"secrets" => secrets} = attrs)

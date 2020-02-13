@@ -6,8 +6,8 @@ defmodule TdCx.SourcesTest do
   describe "sources" do
     alias TdCx.Sources.Source
 
-    @valid_attrs %{"config" => %{"a" => "1"}, "external_id" => "some external_id", "secrets_key" => "some secrets_key", "type" => "app-admin"}
-    @update_attrs %{"config" => %{"a" => "2"}}
+    @valid_attrs %{"config" => %{"a" => "1"}, "external_id" => "some external_id", "secrets_key" => "some secrets_key", "type" => "app-admin", "active" => true}
+    @update_attrs %{"config" => %{"a" => "2"}, "active" => false}
     @invalid_attrs %{"config" => 2, "external_id" => nil, "secrets_key" => nil, "type" => nil}
     @app_admin_template %{
       id: 1,
@@ -39,6 +39,50 @@ defmodule TdCx.SourcesTest do
     test "list_sources/0 returns all sources" do
       source = source_fixture()
       assert Sources.list_sources() == [source]
+    end
+
+    test "list_sources_by_source_type/1 returns only sources of a type" do
+      Templates.create_template(%{name: "type1", id: 2, content: [], scope: "cx"})
+      Templates.create_template(%{name: "type2", id: 3, content: [], scope: "cx"})
+
+      type = "type1"
+      {:ok, src1} = Sources.create_source(%{
+        "external_id" => "ext1",
+        "type" => type,
+        "secrets_key" => "s",
+        "config" => %{}
+      })
+      Sources.create_source(%{
+        "external_id" => "ext2",
+        "type" => "type2",
+        "secrets_key" => "s",
+        "config" => %{}
+      })
+
+      assert length(Sources.list_sources()) == 2
+      assert [^src1] = Sources.list_sources_by_source_type(type)
+    end
+
+    test "list_sources_by_source_type/1 returns only active sources" do
+      type = "type1"
+      Templates.create_template(%{name: type, id: 2, content: [], scope: "cx"})
+
+      {:ok, src1} = Sources.create_source(%{
+        "external_id" => "ext1",
+        "type" => type,
+        "secrets_key" => "s",
+        "config" => %{}
+      })
+      Sources.create_source(%{
+        "external_id" => "ext2",
+        "type" => type,
+        "secrets_key" => "s",
+        "config" => %{},
+        "active" => false
+      })
+
+      assert length(Sources.list_sources()) == 2
+      assert [^src1] = Sources.list_sources_by_source_type(type)
     end
 
     test "get_source!/1 returns the source with given id" do

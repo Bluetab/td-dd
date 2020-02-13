@@ -31,12 +31,14 @@ defmodule TdCxWeb.SourceControllerTest do
   @create_attrs %{
     "config" => %{"a" => "1"},
     "external_id" => "some external_id",
-    "type" => "app-admin"
+    "type" => "app-admin",
+    "active" => true
   }
   @update_attrs %{
     "config" => %{"a" => "3"},
     "external_id" => "some external_id",
-    "type" => "some updated type"
+    "type" => "some updated type",
+    "active" => false
   }
   @invalid_update_attrs %{
     "config" => %{"b" => "1"},
@@ -76,7 +78,8 @@ defmodule TdCxWeb.SourceControllerTest do
                  "config" => %{"a" => "1"},
                  "external_id" => "some external_id",
                  "id" => id,
-                 "type" => "app-admin"
+                 "type" => "app-admin",
+                 "active" => true
                }
              ] = json_response(conn, 200)["data"]
     end
@@ -93,7 +96,8 @@ defmodule TdCxWeb.SourceControllerTest do
                "config" => %{"a" => "1"},
                "external_id" => "some external_id",
                "id" => id,
-               "type" => "app-admin"
+               "type" => "app-admin",
+               "active" => true
              } = json_response(conn, 200)["data"]
       assert %{"a" => "1"} == json_response(conn, 200)["data"]["config"]
     end
@@ -118,7 +122,8 @@ defmodule TdCxWeb.SourceControllerTest do
                "id" => id,
                "config" => %{"a" => "1"},
                "external_id" => "some external_id",
-               "type" => "app-admin"
+               "type" => "app-admin",
+               "active" => true
              } = json_response(conn, 200)["data"]
     end
 
@@ -156,7 +161,8 @@ defmodule TdCxWeb.SourceControllerTest do
                "id" => id,
                "config" => %{"a" => "3"},
                "external_id" => "some external_id",
-               "type" => "app-admin"
+               "type" => "app-admin",
+               "active" => false
              } = json_response(conn, 200)["data"]
     end
 

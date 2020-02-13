@@ -15,7 +15,8 @@ defmodule TdCxWeb.SourceView do
       id: source.id,
       external_id: source.external_id,
       config: Map.get(source, :config, %{}) || %{},
-      type: source.type
+      type: source.type,
+      active: source.active
     }
   end
 end

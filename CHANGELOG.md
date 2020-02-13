@@ -1,6 +1,10 @@
 # Changelog
 
-## [Unreleased] 
+## [Unreleased]
+
+### Added
+
+- [TD-2313] Added active property on source
 
 ### Changed
 
