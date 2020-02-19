@@ -1,4 +1,5 @@
-ou;name;description;m:foo;m:bar.baz.spqr;m:bar.baz.xyzzy;m:bool;class
-;name;description;foo1;;;YeS;
-;name;;;spqr;xyzzy;off;class1
-domain1;name;description;;;;;
+domain_external_id;ou;name;description;m:foo;m:bar.baz.spqr;m:bar.baz.xyzzy;m:bool;class
+;;name;description;foo1;;;YeS;
+;;name;;;spqr;xyzzy;off;class1
+;domain1;name;description;;;;;
+domain2_eid;domain1;name;description;;;;;

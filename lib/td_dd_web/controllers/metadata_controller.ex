@@ -16,7 +16,6 @@ defmodule TdDdWeb.MetadataController do
   def upload_by_system(conn, %{"system_id" => external_id} = params) do
     alias TdDd.Systems.System
 
-    # TODO: Complete implementation once the metada is loaded by System
     user = conn.assigns[:current_user]
 
     with true <- can_upload?(user, params),

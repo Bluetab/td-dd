@@ -1,8 +1,9 @@
 defmodule TdDdWeb.DataStructureController do
-  require Logger
-  import Canada, only: [can?: 2]
   use TdDdWeb, :controller
   use PhoenixSwagger
+
+  import Canada, only: [can?: 2]
+
   alias Ecto
   alias Jason, as: JSON
   alias TdCache.TaxonomyCache
@@ -15,6 +16,8 @@ defmodule TdDdWeb.DataStructureController do
   alias TdDd.DataStructures.DataStructure
   alias TdDdWeb.SwaggerDefinitions
 
+  require Logger
+
   action_fallback(TdDdWeb.FallbackController)
 
   def swagger_definitions do
@@ -23,47 +26,12 @@ defmodule TdDdWeb.DataStructureController do
 
   swagger_path :index do
     description("List Data Structures")
-
-    parameters do
-      ou(:query, :string, "List of organizational units", required: false)
-    end
-
     response(200, "OK", Schema.ref(:DataStructuresResponse))
   end
 
-  def index(conn, params) do
-    %{results: data_structures} =
-      case get_ous(params) do
-        [] -> do_index(conn)
-        in_params -> do_index(conn, %{"filters" => %{"ou.raw" => in_params}}, 0, 10_000)
-      end
-
+  def index(conn, _params) do
+    %{results: data_structures} = do_index(conn, %{}, 0, 10_000)
     render(conn, "index.json", data_structures: data_structures)
-  end
-
-  defp do_index(conn, search_params \\ %{}, page \\ 0, size \\ 50) do
-    user = conn.assigns[:current_user]
-    permission = conn.assigns[:search_permission]
-
-    page = search_params |> Map.get("page", page)
-    size = search_params |> Map.get("size", size)
-
-    search_params
-    |> Map.put(:without, ["deleted_at"])
-    |> Map.drop(["page", "size"])
-    |> Search.search_data_structures(user, permission, page, size)
-  end
-
-  defp get_ous(params) do
-    case Map.get(params, "ou", nil) do
-      nil ->
-        []
-
-      value ->
-        value
-        |> String.split("§")
-        |> Enum.map(&String.trim(&1))
-    end
   end
 
   swagger_path :create do
@@ -82,14 +50,17 @@ defmodule TdDdWeb.DataStructureController do
 
   def create(conn, %{"data_structure" => attrs}) do
     user = conn.assigns[:current_user]
+    names = TaxonomyCache.get_domain_name_to_id_map()
+    external_ids = TaxonomyCache.get_domain_external_id_to_id_map()
 
     creation_params =
       attrs
       |> Map.put("last_change_by", get_current_user_id(conn))
       |> Map.put("metadata", %{})
-      |> DataStructures.add_domain_id(TaxonomyCache.get_domain_name_to_id_map())
+      |> DataStructures.put_domain_id(names, external_ids)
 
-    with true <- can?(user, create_data_structure(Map.fetch!(creation_params, "domain_id"))),
+    with domain_id <- Map.get(creation_params, "domain_id"),
+         true <- can?(user, create_data_structure(domain_id)),
          {:ok, %DataStructure{id: id}} <- DataStructures.create_data_structure(creation_params) do
       AuditSupport.create_data_structure(conn, id, attrs)
       data_structure = get_data_structure(id)
@@ -114,6 +85,7 @@ defmodule TdDdWeb.DataStructureController do
     :data_field_degree,
     :data_field_links,
     :data_fields,
+    :domain,
     :links,
     :parents,
     :relations,
@@ -176,11 +148,14 @@ defmodule TdDdWeb.DataStructureController do
     manage_confidential_structures =
       can?(user, manage_confidential_structures(data_structure_old))
 
+    names = TaxonomyCache.get_domain_name_to_id_map()
+    external_ids = TaxonomyCache.get_domain_external_id_to_id_map()
+
     update_params =
       attrs
       |> check_confidential_field(manage_confidential_structures)
       |> Map.put("last_change_by", get_current_user_id(conn))
-      |> DataStructures.add_domain_id(TaxonomyCache.get_domain_name_to_id_map())
+      |> DataStructures.put_domain_id(names, external_ids)
 
     with true <- can?(user, update_data_structure(data_structure_old)),
          {:ok, %DataStructure{} = data_structure} <-
@@ -377,5 +352,18 @@ defmodule TdDdWeb.DataStructureController do
         |> put_resp_header("content-disposition", "attachment; filename=\"structures.zip\"")
         |> send_resp(200, Download.to_csv(data_structures, header_labels))
     end
+  end
+
+  defp do_index(conn, search_params, page \\ 0, size \\ 50) do
+    user = conn.assigns[:current_user]
+    permission = conn.assigns[:search_permission]
+
+    page = search_params |> Map.get("page", page)
+    size = search_params |> Map.get("size", size)
+
+    search_params
+    |> Map.put(:without, ["deleted_at"])
+    |> Map.drop(["page", "size"])
+    |> Search.search_data_structures(user, permission, page, size)
   end
 end

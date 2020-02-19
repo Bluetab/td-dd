@@ -4,7 +4,6 @@ defmodule TdDd.Search.AggregationsTest do
   alias TdDd.Search.Aggregations
 
   @static_fields [
-    "ou.raw",
     "system.name.raw",
     "group.raw",
     "type.raw",

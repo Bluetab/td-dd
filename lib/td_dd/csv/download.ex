@@ -10,7 +10,7 @@ defmodule TdDd.CSV.Download do
     "type",
     "name",
     "group",
-    "ou",
+    "domain",
     "system",
     "path",
     "description",
@@ -63,7 +63,7 @@ defmodule TdDd.CSV.Download do
         structure.type,
         structure.name,
         structure.group,
-        structure.ou,
+        get_domain(structure),
         Map.get(structure.system, "name"),
         Enum.join(structure.path, " > "),
         structure.description,
@@ -148,4 +148,7 @@ defmodule TdDd.CSV.Download do
 
   defp build_empty_list(acc, l) when l < 1, do: acc
   defp build_empty_list(acc, l), do: ["" | build_empty_list(acc, l - 1)]
+
+  defp get_domain(%{domain: %{"name" => name}}), do: name
+  defp get_domain(_), do: nil
 end

@@ -2,6 +2,14 @@ defmodule TdDdWeb.MetadataControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
+  import Routes,
+    only: [
+      data_structure_data_structure_version_path: 4,
+      data_structure_path: 2,
+      metadata_path: 2,
+      system_path: 2
+    ]
+
   alias TdCache.TaxonomyCache
   alias TdDd.DataStructures.PathCache
   alias TdDd.Lineage.GraphData
@@ -55,18 +63,16 @@ defmodule TdDdWeb.MetadataControllerTest do
       fields: fields,
       relations: relations
     } do
-      conn =
-        post(conn, Routes.system_path(conn, :create),
-          system: %{name: "Power BI", external_id: "pbi"}
-        )
-
-      assert %{"id" => _} = json_response(conn, 201)["data"]
+      assert %{"data" => %{"id" => _}} =
+               conn
+               |> post(system_path(conn, :create), system: %{name: "Power BI", external_id: "pbi"})
+               |> json_response(201)
 
       conn =
-        post(conn, Routes.metadata_path(conn, :upload),
-          data_structures: structures |> Map.put(:filename, "structures"),
-          data_fields: fields |> Map.put(:filename, "fields"),
-          data_structure_relations: relations |> Map.put(:filename, "relations")
+        post(conn, metadata_path(conn, :upload),
+          data_structures: Map.put(structures, :filename, "structures"),
+          data_fields: Map.put(fields, :filename, "fields"),
+          data_structure_relations: Map.put(relations, :filename, "relations")
         )
 
       assert response(conn, 202) =~ ""
@@ -74,17 +80,23 @@ defmodule TdDdWeb.MetadataControllerTest do
       # waits for loader to complete
       LoaderWorker.ping(20_000)
 
-      search_params = %{ou: "Truedat"}
-      conn = get(conn, Routes.data_structure_path(conn, :index, search_params))
-      json_response = json_response(conn, 200)["data"]
-      assert length(json_response) == 5 + 68
+      assert %{"data" => data} =
+               conn
+               |> get(data_structure_path(conn, :index))
+               |> json_response(200)
 
-      structure_id = get_id(json_response, "Calidad")
-      conn = get(conn, Routes.data_structure_data_structure_version_path(conn, :show, structure_id, "latest"))
-      json_response = json_response(conn, 200)["data"]
-      assert length(json_response["parents"]) == 1
-      assert length(json_response["siblings"]) == 4
-      assert length(json_response["children"]) == 16
+      assert length(data) == 5 + 68
+
+      structure_id = get_id(data, "Calidad")
+
+      %{"data" => data} =
+        conn
+        |> get(data_structure_data_structure_version_path(conn, :show, structure_id, "latest"))
+        |> json_response(200)
+
+      assert length(data["parents"]) == 1
+      assert length(data["siblings"]) == 4
+      assert length(data["children"]) == 16
     end
 
     @tag :admin_authenticated
@@ -96,18 +108,16 @@ defmodule TdDdWeb.MetadataControllerTest do
       relations: relations
     } do
       conn =
-        post(conn, Routes.system_path(conn, :create),
-          system: %{name: "Power BI", external_id: "pbi"}
-        )
+        post(conn, system_path(conn, :create), system: %{name: "Power BI", external_id: "pbi"})
 
       assert %{"id" => _} = json_response(conn, 201)["data"]
       insert(:relation_type, name: "relation_type_1")
 
       conn =
-        post(conn, Routes.metadata_path(conn, :upload),
-          data_structures: structures |> Map.put(:filename, "structures"),
-          data_fields: fields |> Map.put(:filename, "fields"),
-          data_structure_relations: relations |> Map.put(:filename, "relations")
+        post(conn, metadata_path(conn, :upload),
+          data_structures: Map.put(structures, :filename, "structures"),
+          data_fields: Map.put(fields, :filename, "fields"),
+          data_structure_relations: Map.put(relations, :filename, "relations")
         )
 
       assert response(conn, 202) =~ ""
@@ -115,49 +125,65 @@ defmodule TdDdWeb.MetadataControllerTest do
       # waits for loader to complete
       LoaderWorker.ping(20_000)
 
-      search_params = %{ou: "Truedat"}
-      conn = get(conn, Routes.data_structure_path(conn, :index, search_params))
-      json_response = json_response(conn, 200)["data"]
-      assert length(json_response) == 5 + 68
+      assert %{"data" => data} =
+               conn
+               |> get(data_structure_path(conn, :index))
+               |> json_response(200)
 
-      structure_id = get_id(json_response, "Calidad")
-      conn = get(conn, Routes.data_structure_data_structure_version_path(conn, :show, structure_id, "latest"))
-      structure_json_response = json_response(conn, 200)["data"]
-      assert length(structure_json_response["parents"]) == 1
-      assert length(structure_json_response["siblings"]) == 3
-      assert length(structure_json_response["children"]) == 16
+      assert length(data) == 5 + 68
 
-      relation_parent_id = get_id(json_response, "Dashboard Gobierno y Calidad v1")
-      conn = get(conn, Routes.data_structure_data_structure_version_path(conn, :show, relation_parent_id, "latest"))
-      json_response = json_response(conn, 200)["data"]
-      assert json_response["parents"] == []
-      assert length(json_response["children"]) == 3
+      structure_id = get_id(data, "Calidad")
+      relation_parent_id = get_id(data, "Dashboard Gobierno y Calidad v1")
+
+      assert %{"data" => data} =
+               conn
+               |> get(
+                 data_structure_data_structure_version_path(conn, :show, structure_id, "latest")
+               )
+               |> json_response(200)
+
+      assert length(data["parents"]) == 1
+      assert length(data["siblings"]) == 3
+      assert length(data["children"]) == 16
+
+      assert %{"data" => %{"parents" => parents, "children" => children}} =
+               conn
+               |> get(
+                 data_structure_data_structure_version_path(
+                   conn,
+                   :show,
+                   relation_parent_id,
+                   "latest"
+                 )
+               )
+               |> json_response(200)
+
+      assert parents == []
+      assert length(children) == 3
     end
 
     @tag :admin_authenticated
     @tag fixture: "test/fixtures/metadata"
-    test "uploads structure, field and relation metadata whe domain is specified", %{
+    test "uploads structure, field and relation metadata when domain is specified", %{
       conn: conn,
       structures: structures,
       fields: fields,
       relations: relations
     } do
-      domain = "Domain1"
-      domain_id = 1
+      domain = "domain_name"
+      domain_id = :random.uniform(1_000_000)
       TaxonomyCache.put_domain(%{name: domain, id: domain_id})
 
       conn =
-        post(conn, Routes.system_path(conn, :create),
-          system: %{name: "Power BI", external_id: "pbi"}
-        )
+        post(conn, system_path(conn, :create), system: %{name: "Power BI", external_id: "pbi"})
 
       assert %{"id" => _} = json_response(conn, 201)["data"]
 
       conn =
-        post(conn, Routes.metadata_path(conn, :upload),
-          data_structures: structures |> Map.put(:filename, "structures"),
-          data_fields: fields |> Map.put(:filename, "fields"),
-          data_structure_relations: relations |> Map.put(:filename, "relations"),
+        post(conn, metadata_path(conn, :upload),
+          data_structures: Map.put(structures, :filename, "structures"),
+          data_fields: Map.put(fields, :filename, "fields"),
+          data_structure_relations: Map.put(relations, :filename, "relations"),
           domain: domain
         )
 
@@ -166,21 +192,26 @@ defmodule TdDdWeb.MetadataControllerTest do
       # waits for loader to complete
       LoaderWorker.ping(20_000)
 
-      search_params = %{ou: domain}
-      conn = get(conn, Routes.data_structure_path(conn, :index, search_params))
+      conn = get(conn, data_structure_path(conn, :index))
       json_response = json_response(conn, 200)["data"]
       assert length(json_response) == 5 + 68
 
-      assert Enum.all?(json_response, fn %{"ou" => ou, "domain_id" => id} ->
-               id == domain_id && ou == domain
+      assert Enum.all?(json_response, fn %{"domain_id" => id, "domain" => d} ->
+               id == domain_id and domain == Map.get(d, "name")
              end)
 
       structure_id = get_id(json_response, "Calidad")
-      conn = get(conn, Routes.data_structure_data_structure_version_path(conn, :show, structure_id, "latest"))
-      json_response = json_response(conn, 200)["data"]
-      assert length(json_response["parents"]) == 1
-      assert length(json_response["siblings"]) == 4
-      assert length(json_response["children"]) == 16
+
+      assert %{"data" => data} =
+               conn
+               |> get(
+                 data_structure_data_structure_version_path(conn, :show, structure_id, "latest")
+               )
+               |> json_response(200)
+
+      assert length(data["parents"]) == 1
+      assert length(data["siblings"]) == 4
+      assert length(data["children"]) == 16
     end
   end
 
@@ -191,7 +222,7 @@ defmodule TdDdWeb.MetadataControllerTest do
       refute File.exists?(Path.join([@import_dir, "nodes.csv"]))
       refute File.exists?(Path.join([@import_dir, "rels.csv"]))
 
-      conn = post(conn, Routes.metadata_path(conn, :upload), nodes: nodes, rels: rels)
+      conn = post(conn, metadata_path(conn, :upload), nodes: nodes, rels: rels)
       assert response(conn, 202) =~ ""
       assert File.exists?(Path.join([@import_dir, "nodes.csv"]))
       assert File.exists?(Path.join([@import_dir, "rels.csv"]))
@@ -201,7 +232,7 @@ defmodule TdDdWeb.MetadataControllerTest do
     @tag fixture: "test/fixtures/lineage"
     test "uploads nodes metadata", %{conn: conn, nodes: nodes} do
       refute File.exists?(Path.join([@import_dir, "nodes.csv"]))
-      conn = post(conn, Routes.metadata_path(conn, :upload), nodes: nodes)
+      conn = post(conn, metadata_path(conn, :upload), nodes: nodes)
       assert response(conn, 202) =~ ""
       assert File.exists?(Path.join([@import_dir, "nodes.csv"]))
     end
@@ -210,7 +241,7 @@ defmodule TdDdWeb.MetadataControllerTest do
     @tag fixture: "test/fixtures/lineage"
     test "uploads relations metadata", %{conn: conn, rels: rels} do
       refute File.exists?(Path.join([@import_dir, "rels.csv"]))
-      conn = post(conn, Routes.metadata_path(conn, :upload), rels: rels)
+      conn = post(conn, metadata_path(conn, :upload), rels: rels)
       assert response(conn, 202) =~ ""
       assert File.exists?(Path.join([@import_dir, "rels.csv"]))
     end

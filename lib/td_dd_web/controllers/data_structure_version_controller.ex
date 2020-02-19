@@ -6,7 +6,6 @@ defmodule TdDdWeb.DataStructureVersionController do
   import Canada, only: [can?: 2]
 
   alias Ecto
-  alias TdCache.TaxonomyCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
@@ -34,7 +33,8 @@ defmodule TdDdWeb.DataStructureVersionController do
     :links,
     :profile,
     :degree,
-    :relations
+    :relations,
+    :domain
   ]
 
   swagger_path :show do
@@ -58,12 +58,7 @@ defmodule TdDdWeb.DataStructureVersionController do
     case DataStructures.get_data_structure!(data_structure_id) do
       %DataStructure{} = data_structure ->
         options = filter(user, data_structure)
-
-        dsv =
-          data_structure_id
-          |> get_data_structure_version(version, options)
-          |> with_domain()
-
+        dsv = get_data_structure_version(data_structure_id, version, options)
         render_with_permissions(conn, user, dsv)
 
       %Ecto.NoResultsError{} ->
@@ -77,12 +72,7 @@ defmodule TdDdWeb.DataStructureVersionController do
     case DataStructures.get_data_structure_version!(data_structure_version_id) do
       %DataStructureVersion{data_structure: data_structure} ->
         options = filter(user, data_structure)
-
-        dsv =
-          data_structure_version_id
-          |> get_data_structure_version(options)
-          |> with_domain()
-
+        dsv = get_data_structure_version(data_structure_version_id, options)
         render_with_permissions(conn, user, dsv)
 
       %Ecto.NoResultsError{} ->
@@ -99,18 +89,6 @@ defmodule TdDdWeb.DataStructureVersionController do
   end
 
   defp filter(_user, _data_structure, _attr), do: true
-
-  defp with_domain(nil), do: nil
-
-  defp with_domain(%{data_structure: data_structure} = dsv) do
-    domain_name =
-      data_structure
-      |> Map.get(:domain_id)
-      |> TaxonomyCache.get_name()
-
-    data_structure = Map.put(data_structure, :domain, domain_name)
-    Map.put(dsv, :data_structure, data_structure)
-  end
 
   defp render_with_permissions(conn, _user, nil) do
     render_error(conn, :not_found)

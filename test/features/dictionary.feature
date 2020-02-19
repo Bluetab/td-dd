@@ -10,7 +10,6 @@ Feature: Data Dictionary Administration
       | External ID         | Risks/TKIDS001                                                       |
       | Description         | We are describing this table as a table in Risks group in SAS System |
       | Type                | Table                                                                |
-      | Organizational Unit | General Management                                                   |
     Then the system returns a result with code "Created"
     And "app-admin" is able to view data structure in system "S001" group "Risks" and structure "TKIDS0001"  with following data:
       | Field               | Value                                                                |
@@ -19,7 +18,6 @@ Feature: Data Dictionary Administration
       | External ID         | Risks/TKIDS001                                                       |
       | Description         | We are describing this table as a table in Risks group in SAS System |
       | Type                | Table                                                                |
-      | Organizational Unit | General Management                                                   |
       | Last Modification   | Some timestamp                                                       |
 
   Scenario: Load metadata (structures and fields) into the system in bulk mode

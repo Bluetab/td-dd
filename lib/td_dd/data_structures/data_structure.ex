@@ -19,7 +19,6 @@ defmodule TdDd.DataStructures.DataStructure do
     field(:domain_id, :integer)
     field(:external_id, :string)
     field(:last_change_by, :integer)
-    field(:ou, :string)
 
     timestamps(type: :utc_datetime)
   end
@@ -43,7 +42,6 @@ defmodule TdDd.DataStructures.DataStructure do
       :domain_id,
       :external_id,
       :last_change_by,
-      :ou,
       :system_id
     ])
     |> validate_required([
@@ -51,6 +49,5 @@ defmodule TdDd.DataStructures.DataStructure do
       :external_id,
       :system_id
     ])
-    |> validate_length(:ou, max: 255)
   end
 end

@@ -1,6 +1,7 @@
 defmodule TdDd.DataStructuresTest do
   use TdDd.DataStructureCase
 
+  alias TdCache.TaxonomyCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.RelationTypes
@@ -35,7 +36,7 @@ defmodule TdDd.DataStructuresTest do
 
     test "list_data_structures/1 returns all data_structures from a search" do
       data_structure = insert(:data_structure)
-      search_params = %{ou: [data_structure.ou]}
+      search_params = %{external_id: [data_structure.external_id]}
 
       assert DataStructures.list_data_structures(search_params), [data_structure]
     end
@@ -86,14 +87,37 @@ defmodule TdDd.DataStructuresTest do
       assert result.external_id == external_id
     end
 
-    test "add_domain_id/3" do
-      data = %{"id" => 3, "name" => "structure", "ou" => "domain_2"}
-      domain_map = %{"domain_1" => 1, "domain_2" => 2}
-      domain_name = "domain_1"
+    test "put_domain_id/3 with domain_name" do
+      data = %{"domain_id" => :foo}
+      domain_map = %{"foo" => :bar}
+      assert %{"domain_id" => :bar} = DataStructures.put_domain_id(data, domain_map, "foo")
+      assert %{"domain_id" => :foo} = DataStructures.put_domain_id(data, nil, "foo")
+    end
 
-      result = DataStructures.add_domain_id(data, domain_map, domain_name)
+    test "put_domain_id/3 with ou and/or domain_external_id" do
+      import DataStructures, only: [put_domain_id: 3]
+      ous = %{"foo" => :foo}
+      ids = %{"bar" => :bar}
 
-      assert result == %{"id" => 3, "name" => "structure", "ou" => "domain_1", "domain_id" => 1}
+      assert %{"domain_id" => :baz} =
+               put_domain_id(%{"domain_id" => :baz, "ou" => "foo"}, ous, ids)
+
+      assert %{"domain_id" => :foo} = put_domain_id(%{"domain_id" => "", "ou" => "foo"}, ous, ids)
+      assert %{"domain_id" => :foo} = put_domain_id(%{"ou" => "foo"}, ous, ids)
+
+      assert %{"domain_id" => :bar} =
+               put_domain_id(%{"domain_external_id" => "bar", "ou" => "foo"}, ous, ids)
+
+      assert %{"domain_id" => :bar} =
+               put_domain_id(
+                 %{"domain_id" => "", "domain_external_id" => "bar", "ou" => "foo"},
+                 ous,
+                 ids
+               )
+
+      refute %{"domain_external_id" => "foo", "ou" => "bar"}
+             |> put_domain_id(ous, ids)
+             |> Map.has_key?("domain_id")
     end
   end
 
@@ -405,6 +429,22 @@ defmodule TdDd.DataStructuresTest do
       assert system == sys
     end
 
+    test "get_data_structure_version!/2 enriches with domain" do
+      domain = domain_fixture()
+      ds = insert(:data_structure, domain_id: domain.id)
+      dsv = insert(:data_structure_version, data_structure_id: ds.id)
+      assert %{domain: d} = DataStructures.get_data_structure_version!(dsv.id, [:domain])
+
+      assert domain.id == d.id
+      assert domain.name == d.name
+    end
+
+    test "get_data_structure_version!/2 enriches with empty domain when there is not domain id" do
+      ds = insert(:data_structure)
+      dsv = insert(:data_structure_version, data_structure_id: ds.id)
+      assert %{domain: %{}} = DataStructures.get_data_structure_version!(dsv.id, [:domain])
+    end
+
     test "get_data_structure_version!/2 enriches with ancestry and path" do
       dsvs = create_hierarchy(["foo", "bar", "baz", "xyzzy"])
 
@@ -446,6 +486,14 @@ defmodule TdDd.DataStructuresTest do
         |> create_hierarchy()
 
       assert DataStructures.get_descendents(parent) <~> descendents
+    end
+
+    defp domain_fixture do
+      domain_name = "domain_name"
+      domain_id = :random.uniform(1_000_000)
+      TaxonomyCache.put_domain(%{name: domain_name, id: domain_id})
+
+      %{id: domain_id, name: domain_name}
     end
   end
 

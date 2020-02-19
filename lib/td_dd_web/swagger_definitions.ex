@@ -116,7 +116,6 @@ defmodule TdDdWeb.SwaggerDefinitions do
             description([:string, :null], "Data Structure description")
             external_id([:string, :null], "Data Structure external id")
             type([:string, :null], "Data Structure type (csv, table...)")
-            ou([:string, :null], "Data Structure organizational unit")
             confidential(:boolean, "Data Structure confidentiality")
             updated_at(:string, "Data Structure last updated at")
             inserted_at(:string, "Data Structure creation date")
@@ -140,14 +139,12 @@ defmodule TdDdWeb.SwaggerDefinitions do
             name: "Data Structure name",
             description: "Data Structure description",
             type: "Csv",
-            ou: "General Management",
             confidential: "Data Structure confidentiality",
             inserted_at: "2018-05-08T17:17:59.691460",
             system_id: 1,
             data_fields: [],
             metadata: %{
               "description" => "last description",
-              "ou" => "Super Management",
               "updated_at" => "2018-05-08T17:17:59.691460"
             }
           })
@@ -205,7 +202,6 @@ defmodule TdDdWeb.SwaggerDefinitions do
                   name(:string, "Data Structure name", required: true)
                   description(:string, "Data Structure description")
                   type(:string, "Data Structure type (csv, table...)")
-                  ou(:string, "Data Structure organizational unit")
                   confidential(:boolean, "Data Structure confidentiality")
                 end
               end
@@ -219,7 +215,6 @@ defmodule TdDdWeb.SwaggerDefinitions do
               Schema.new do
                 properties do
                   description(:string, "Data Structure description")
-                  ou(:string, "Data Structure organizational unit")
                 end
               end
             )

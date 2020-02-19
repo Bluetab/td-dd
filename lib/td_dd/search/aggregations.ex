@@ -9,8 +9,8 @@ defmodule TdDd.Search.Aggregations do
 
   def aggregation_terms do
     static_keywords = [
-      {"ou.raw", %{terms: %{field: "ou.raw", size: 50}}},
       {@systems_aggregation_term, %{terms: %{field: "system.name.raw", size: 50}}},
+      {"domain.name.raw", %{terms: %{field: "domain.name.raw", size: 50}}},
       {"group.raw", %{terms: %{field: "group.raw", size: 50}}},
       {"type.raw", %{terms: %{field: "type.raw", size: 50}}},
       {"confidential.raw", %{terms: %{field: "confidential.raw"}}},

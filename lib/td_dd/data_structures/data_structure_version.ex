@@ -113,11 +113,11 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     def encode(%DataStructureVersion{id: id, data_structure: structure, type: type} = dsv) do
       path = PathCache.path(id)
       path_sort = Enum.join(path, "~")
+      domain = TaxonomyCache.get_domain(structure.domain_id) || %{}
 
       structure
       |> Map.take([
         :id,
-        :ou,
         :domain_id,
         :external_id,
         :system_id,
@@ -131,8 +131,8 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       |> Map.put(:domain_ids, get_domain_ids(structure))
       |> Map.put(:system, get_system(structure))
       |> Map.put(:df_content, format_content(structure, type))
-      |> Map.put_new(:ou, "")
       |> Map.put_new(:field_type, get_field_type(dsv))
+      |> Map.put_new(:domain, Map.take(domain, [:id, :name, :external_id]))
       |> Map.merge(
         Map.take(dsv, [
           :class,

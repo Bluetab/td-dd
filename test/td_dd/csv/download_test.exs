@@ -44,6 +44,8 @@ defmodule TdDd.DownloadTest do
         }]
       })
 
+      domain_name = "domain_1"
+
       structure_1 = %{
         name: "1. 4. 4 Primas Bajas (grafico)",
         description: "Gráfico de evolución mensual de la prima",
@@ -51,11 +53,11 @@ defmodule TdDd.DownloadTest do
         df_content: %{
           field_name => ["field_value"]
         },
+        domain: %{"external_id" => "ex_id_1", "name" => domain_name},
         inserted_at: "2018-05-05",
         deleted_at: "2018-05-05",
         external_id: "myext_292929",
         group: "gr",
-        ou: "BK",
         path: ["CMC", "Objetos Públicos", "Informes", "Cuadro de Mando Integral"],
         type: "Table",
         system: %{"external_id" => "sys", "name" => "sys_name"}
@@ -66,8 +68,8 @@ defmodule TdDd.DownloadTest do
 
       assert csv ==
                """
-               type;name;group;ou;system;path;description;external_id;inserted_at;deleted_at;Add Info 1\r
-               #{structure_1.type};#{structure_1.name};#{structure_1.group};#{structure_1.ou};#{
+               type;name;group;domain;system;path;description;external_id;inserted_at;deleted_at;Add Info 1\r
+               #{structure_1.type};#{structure_1.name};#{structure_1.group};#{domain_name};#{
                  Map.get(structure_1.system, "name")
                };CMC > Objetos Públicos > Informes > Cuadro de Mando Integral;#{
                  structure_1.description
