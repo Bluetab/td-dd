@@ -23,7 +23,6 @@ defmodule TdDd.Factory do
     %DataStructure{
       last_change_by: 0,
       system_id: 1,
-      ou: "My organization",
       versions: [],
       confidential: false,
       external_id: external_id

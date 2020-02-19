@@ -7,6 +7,7 @@ defmodule TdDd.DataStructures do
 
   alias Ecto.Association.NotLoaded
   alias TdCache.LinkCache
+  alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
@@ -137,6 +138,7 @@ defmodule TdDd.DataStructures do
     ds
     |> enrich(options, :versions, &Repo.preload(&1, :versions))
     |> enrich(options, :latest, &get_latest_version/1)
+    |> enrich(options, :domain, &get_domain/1)
   end
 
   defp enrich(%DataStructureVersion{} = dsv, options) do
@@ -162,6 +164,7 @@ defmodule TdDd.DataStructures do
     |> enrich(options, :ancestry, &get_ancestry/1)
     |> enrich(options, :path, &get_path/1)
     |> enrich(options, :links, &get_structure_links/1)
+    |> enrich(options, :domain, &get_domain/1)
   end
 
   defp enrich(%{} = target, options, key, fun) do
@@ -329,6 +332,27 @@ defmodule TdDd.DataStructures do
 
   defp preload_system(%{version: v} = version) do
     Map.put(version, :version, Repo.preload(v, data_structure: :system))
+  end
+
+  defp get_domain(%DataStructureVersion{data_structure: %NotLoaded{}} = version) do
+    version
+    |> Repo.preload(:data_structure)
+    |> get_domain()
+  end
+
+  defp get_domain(%DataStructureVersion{data_structure: data_structure}) do
+    domain_id = Map.get(data_structure, :domain_id)
+
+    case domain_id do
+      nil -> %{}
+      domain_id -> TaxonomyCache.get_domain(domain_id) || %{}
+    end
+  end
+
+  defp get_domain(%DataStructure{domain_id: nil}), do: %{}
+
+  defp get_domain(%DataStructure{domain_id: domain_id}) do
+    TaxonomyCache.get_domain(domain_id) || %{}
   end
 
   @doc """
@@ -514,25 +538,42 @@ defmodule TdDd.DataStructures do
     |> enrich(options)
   end
 
-  def add_domain_id(data, domain_map, domain_name) do
-    data |> Map.put("domain_id", Map.get(domain_map, domain_name)) |> Map.put("ou", domain_name)
+  def put_domain_id(data, %{} = domain_map, domain_name) when is_binary(domain_name) do
+    case Map.get(domain_map, domain_name) do
+      nil -> data
+      domain_id -> Map.put(data, "domain_id", domain_id)
+    end
   end
 
-  def add_domain_id(%{"ou" => domain_name, "domain_id" => nil} = data, domain_map) do
-    data |> Map.put("domain_id", Map.get(domain_map, domain_name))
+  def put_domain_id(%{"domain_id" => domain_id} = data, names, external_ids)
+      when is_nil(domain_id) or domain_id == "" do
+    with_domain_id(data, names, external_ids)
   end
 
-  def add_domain_id(%{"ou" => domain_name, "domain_id" => ""} = data, domain_map) do
-    data |> Map.put("domain_id", Map.get(domain_map, domain_name))
+  def put_domain_id(%{"domain_id" => _} = data, _ous, _external_ids), do: data
+
+  def put_domain_id(data, ous, external_ids) do
+    with_domain_id(data, ous, external_ids)
   end
 
-  def add_domain_id(%{"ou" => _, "domain_id" => _} = data, _domain_map), do: data
-
-  def add_domain_id(%{"ou" => domain_name} = data, domain_map) do
-    data |> Map.put("domain_id", Map.get(domain_map, domain_name))
+  defp with_domain_id(data, ous, external_ids) do
+    case get_domain_id(data, ous, external_ids) do
+      nil -> data
+      domain_id -> Map.put(data, "domain_id", domain_id)
+    end
   end
 
-  def add_domain_id(data, _domain_map), do: data |> Map.put("domain_id", nil)
+  defp get_domain_id(%{"domain_external_id" => external_id}, _ous, %{} = external_ids)
+       when not is_nil(external_id) and external_id != "" do
+    Map.get(external_ids, external_id)
+  end
+
+  defp get_domain_id(%{"ou" => ou}, %{} = ous, external_id)
+       when not is_nil(external_id) and external_id != "" do
+    Map.get(ous, ou)
+  end
+
+  defp get_domain_id(_data, _ous, _external_id), do: nil
 
   def find_data_structure(%{} = clauses) do
     Repo.get_by(DataStructure, clauses)

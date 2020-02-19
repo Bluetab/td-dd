@@ -201,7 +201,7 @@ defmodule TdDdWeb.SystemControllerTest do
 
   defp create_data_structure_and_permissions(user_id, role_name, confidential, system_id) do
     domain_name = "domain_name"
-    domain_id = 1
+    domain_id = :random.uniform(1_000_000)
 
     TaxonomyCache.put_domain(%{name: domain_name, id: domain_id})
 
@@ -218,7 +218,6 @@ defmodule TdDdWeb.SystemControllerTest do
         :data_structure,
         confidential: confidential,
         external_id: "ds",
-        ou: domain_name,
         domain_id: domain_id,
         system_id: system_id
       )

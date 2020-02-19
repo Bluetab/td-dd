@@ -61,7 +61,7 @@ defmodule TdDd.Loader.FieldsAsStructures do
     type = child_type(parent, field)
 
     parent
-    |> Map.take([:domain_id, :group, :ou, :system_id])
+    |> Map.take([:domain_id, :group, :system_id])
     |> Map.merge(field)
     |> Map.put(:class, "field")
     |> Map.put(:type, type)

@@ -40,10 +40,11 @@ defmodule TdDd.CSV.ReaderTest do
       defaults = %{version: 0}
       required = [:name]
 
-      {:ok, [r2, r3, r4]} =
+      {:ok, [r2, r3, r4, r5]} =
         stream
         |> Reader.read_csv(
-          domain_map: %{"domain1" => 42},
+          domain_names: %{"domain1" => 42},
+          domain_external_ids: %{"domain2_eid" => 43},
           defaults: defaults,
           schema: @structure_import_schema,
           required: required,
@@ -75,6 +76,16 @@ defmodule TdDd.CSV.ReaderTest do
                ou: "domain1",
                version: 0
              }
+
+      assert r5 == %{
+          description: "description",
+          domain_id: 43,
+          metadata: %{},
+          name: "name",
+          version: 0,
+          domain_external_id: "domain2_eid",
+          ou: "domain1"
+        }
     end
 
     @tag fixture: "structures.csv"
@@ -85,7 +96,7 @@ defmodule TdDd.CSV.ReaderTest do
       {:ok, results} =
         stream
         |> Reader.read_csv(
-          domain_map: %{"domain1" => 42, "domain2" => 43},
+          domain_names: %{"domain1" => 42, "domain2" => 43},
           defaults: defaults,
           schema: @structure_import_schema,
           required: required,
@@ -93,8 +104,8 @@ defmodule TdDd.CSV.ReaderTest do
           booleans: ["m:bool"]
         )
 
-      assert Enum.all?(results, fn %{ou: ou, domain_id: domain_id} ->
-               domain_id == 43 && ou == "domain2"
+      assert Enum.all?(results, fn %{domain_id: domain_id} ->
+               domain_id == 43
              end)
     end
 

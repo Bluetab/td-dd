@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Changed
+
+- [TD-2328] Support `domain_external_id` in structure metadata, removed `ou` from model
+
+## [3.15.1] 2020-02-12
+
 ### Fixed
 
 - [TD-2342] API failures when Neo4J is not present

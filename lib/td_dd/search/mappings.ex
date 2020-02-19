@@ -22,8 +22,14 @@ defmodule TdDd.Search.Mappings do
           name: %{type: "text", fields: @raw_sort}
         }
       },
+      domain: %{
+        properties: %{
+          id: %{type: "long"},
+          name: %{type: "text", fields: @raw_sort},
+          external_id: %{type: "text", fields: @raw}
+        }
+      },
       group: %{type: "text", fields: @raw_sort},
-      ou: %{type: "text", fields: @raw_sort},
       type: %{type: "text", fields: @raw_sort},
       field_type: %{type: "text", fields: @raw_sort},
       confidential: %{type: "boolean", fields: @raw},

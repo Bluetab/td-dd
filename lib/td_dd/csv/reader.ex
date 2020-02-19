@@ -9,14 +9,15 @@ defmodule TdDd.CSV.Reader do
 
   def read_csv(stream, options \\ []) do
     separator = Keyword.get(options, :separator, ?;)
-    domain_map = Keyword.get(options, :domain_map)
+    domain_names = Keyword.get(options, :domain_names)
+    domain_external_ids = Keyword.get(options, :domain_external_ids)
     system_map = Keyword.get(options, :system_map)
     domain = Keyword.get(options, :domain)
 
     records =
       stream
       |> read_records(separator)
-      |> with_domain_id(domain_map, domain)
+      |> with_domain_id(domain, domain_names, domain_external_ids)
       |> with_system_id(system_map)
       |> Enum.map(&csv_to_map(&1, options))
 
@@ -42,22 +43,16 @@ defmodule TdDd.CSV.Reader do
     |> Enum.uniq()
   end
 
-  defp with_domain_id(records, domain_map, nil) do
-    with_domain_id(records, domain_map)
+  defp with_domain_id(records, nil, names, external_ids) do
+    with_domain_id(records, names, external_ids)
   end
 
-  defp with_domain_id(records, nil = _domain_map, _domain), do: records
-
-  defp with_domain_id(records, domain_map, domain) do
-    records
-    |> Enum.map(&DataStructures.add_domain_id(&1, domain_map, domain))
+  defp with_domain_id(records, domain, names, _external_ids) do
+    Enum.map(records, &DataStructures.put_domain_id(&1, names, domain))
   end
 
-  defp with_domain_id(records, nil = _domain_map), do: records
-
-  defp with_domain_id(records, domain_map) do
-    records
-    |> Enum.map(&DataStructures.add_domain_id(&1, domain_map))
+  defp with_domain_id(records, names, external_ids) do
+    Enum.map(records, &DataStructures.put_domain_id(&1, names, external_ids))
   end
 
   defp with_system_id(records, nil = _system_map), do: records

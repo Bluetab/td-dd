@@ -55,7 +55,8 @@ defmodule TdDdWeb.DataStructureVersionView do
           :versions,
           :profile,
           :degree,
-          :relations
+          :relations,
+          :domain
         ])
     }
   end
@@ -74,7 +75,6 @@ defmodule TdDdWeb.DataStructureVersionView do
       :external_id,
       :inserted_at,
       :updated_at,
-      :ou,
       :system_id,
       :df_content
     ])

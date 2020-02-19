@@ -160,10 +160,6 @@ defmodule TdDd.ElasticsearchMock do
     end
   end
 
-  defp create_terms_filter(%{"ou.raw" => values}) do
-    fn doc -> Enum.member?(values, doc.ou) end
-  end
-
   defp create_terms_filter(%{"system.name.raw" => values}) do
     fn doc ->
       value =
