@@ -13,4 +13,4 @@ priv/static/swagger.json
 .DS_Store
 .iex.exs
 local
-data
+data/

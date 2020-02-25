@@ -56,10 +56,9 @@ defmodule TdCx.Sources do
 
   def enrich_secrets(user, %Source{} = source) do
     case can?(user, view_secrets(source)) do
-      true ->  enrich_secrets(source)
+      true -> enrich_secrets(source)
       _ -> source
     end
-
   end
 
   def enrich_secrets(%Source{secrets_key: nil} = source) do
@@ -68,11 +67,13 @@ defmodule TdCx.Sources do
 
   def enrich_secrets(source) do
     secrets = Vault.read_secrets(source.secrets_key)
+
     case secrets do
       {:error, msg} ->
         {:error, msg}
-      _ -> Map.put(source, :config, Map.merge(Map.get(source, :config, %{}) || %{}, secrets || %{}))
 
+      _ ->
+        Map.put(source, :config, Map.merge(Map.get(source, :config, %{}) || %{}, secrets || %{}))
     end
   end
 
@@ -111,12 +112,15 @@ defmodule TdCx.Sources do
 
   defp separate_config(%{"config" => config, "type" => type}) do
     %{:content => content_schema} = TemplateCache.get_by_name!(type)
-    secret_keys = content_schema
-    |> Enum.filter(fn group -> Map.get(group, "is_secret") == true  end)
-    |> Enum.map((fn group -> Map.get(group, "fields") end))
-    |> List.flatten()
-    |> Enum.map((fn field -> Map.get(field, "name") end))
-    {secrets, config } = Map.split(config, secret_keys)
+
+    secret_keys =
+      content_schema
+      |> Enum.filter(fn group -> Map.get(group, "is_secret") == true end)
+      |> Enum.map(fn group -> Map.get(group, "fields") end)
+      |> List.flatten()
+      |> Enum.map(fn field -> Map.get(field, "name") end)
+
+    {secrets, config} = Map.split(config, secret_keys)
     %{"secrets" => secrets, "config" => config}
   end
 
@@ -131,17 +135,19 @@ defmodule TdCx.Sources do
        ) do
     secrets_key = build_secret_key(type, external_id)
 
-    with :ok <- Vault.write_secrets(secrets_key, secrets) do
-      attrs =
-        attrs
-        |> Map.put("secrets_key", secrets_key)
-        |> Map.drop(["secrets"])
+    case Vault.write_secrets(secrets_key, secrets) do
+      :ok ->
+        attrs =
+          attrs
+          |> Map.put("secrets_key", secrets_key)
+          |> Map.drop(["secrets"])
 
-      %Source{}
-      |> Source.changeset(attrs)
-      |> Repo.insert()
-    else
-      {:vault_error, error} -> {:vault_error, error}
+        %Source{}
+        |> Source.changeset(attrs)
+        |> Repo.insert()
+
+      error ->
+        error
     end
   end
 
@@ -152,7 +158,7 @@ defmodule TdCx.Sources do
   end
 
   defp check_base_changeset(attrs, source \\ %Source{}) do
-    changeset = changeset = Source.changeset(source, attrs)
+    changeset = Source.changeset(source, attrs)
 
     case changeset.valid? do
       true -> {:ok}
@@ -164,6 +170,7 @@ defmodule TdCx.Sources do
        when not is_nil(type) do
     %{:content => content_schema} = TemplateCache.get_by_name!(type)
     content_changeset = Validation.build_changeset(config, content_schema)
+
     case content_changeset.valid? do
       true -> {:ok}
       false -> {:error, content_changeset}
@@ -207,6 +214,7 @@ defmodule TdCx.Sources do
         error
     end
   end
+
   def update_source(%Source{} = source, attrs) do
     source
     |> Source.changeset(attrs)
@@ -235,17 +243,19 @@ defmodule TdCx.Sources do
        ) do
     secrets_key = build_secret_key(type, external_id)
 
-    with :ok <- Vault.write_secrets(secrets_key, secrets) do
-      attrs =
-        attrs
-        |> Map.put("secrets_key", secrets_key)
-        |> Map.drop(["secrets", "type", "external_id"])
+    case Vault.write_secrets(secrets_key, secrets) do
+      :ok ->
+        attrs =
+          attrs
+          |> Map.put("secrets_key", secrets_key)
+          |> Map.drop(["secrets", "type", "external_id"])
 
-      source
-      |> Source.changeset(attrs)
-      |> Repo.update()
-    else
-      {:vault_error, error} -> {:vault_error, error}
+        source
+        |> Source.changeset(attrs)
+        |> Repo.update()
+
+      error ->
+        error
     end
   end
 
