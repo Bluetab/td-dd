@@ -18,21 +18,14 @@ defmodule TdCxWeb.SearchController do
   def reindex_all(conn, _params) do
     user = conn.assigns[:current_user]
 
-    with true <- can?(user, reindex_all(Job)) do
+    if can?(user, reindex_all(Job)) do
       @index_worker.reindex(:all)
       send_resp(conn, :accepted, "")
     else
-      false ->
-        conn
-        |> put_status(:forbidden)
-        |> put_view(ErrorView)
-        |> render("403.json")
-
-      _error ->
-        conn
-        |> put_status(:internal_server_error)
-        |> put_view(ErrorView)
-        |> render("500.json")
+      conn
+      |> put_status(:forbidden)
+      |> put_view(ErrorView)
+      |> render("403.json")
     end
   end
 end

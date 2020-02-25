@@ -29,6 +29,7 @@ config :logger, :console,
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
+config :phoenix_swagger, :json_library, Jason
 
 config :td_cx, TdCx.Auth.Guardian,
   # optional

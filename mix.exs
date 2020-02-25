@@ -6,7 +6,7 @@ defmodule TdCx.MixProject do
       app: :td_cx,
       version:
         case System.get_env("APP_VERSION") do
-          nil -> "3.15.0-local"
+          nil -> "3.16.0-local"
           v -> v
         end,
       elixir: "~> 1.8",
@@ -46,12 +46,11 @@ defmodule TdCx.MixProject do
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:httpoison, "~> 1.0"},
-      {:poison, "== 3.1.0"},
       {:distillery, "== 2.0.12", runtime: false},
-      {:credo, "~> 1.0.0", only: [:dev, :test], runtime: false},
+      {:credo, "~> 1.2", only: [:dev, :test], runtime: false},
       {:guardian, "~> 1.0"},
-      {:canada, "~> 1.0.1"},
-      {:ex_machina, "~> 2.2.2", only: :test},
+      {:canada, "~> 2.0"},
+      {:ex_machina, "~> 2.4", only: :test},
       {:phoenix_swagger, "~> 0.8.0"},
       {:ex_json_schema, "~> 0.5"},
       {:vaultex, "~> 0.8"},
