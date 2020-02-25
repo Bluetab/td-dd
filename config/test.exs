@@ -6,9 +6,6 @@ config :td_dd, TdDdWeb.Endpoint,
   http: [port: 4005],
   server: true
 
-# Hashing algorithm just for testing porpouses
-config :td_dd, hashing_module: TrueBG.DummyHashing
-
 # Print only warnings and errors during test
 config :logger, level: :warn
 
