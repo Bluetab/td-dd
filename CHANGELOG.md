@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-2336] System now has df_content
+
 ## [3.16.0] 2020-02-25
 
 ### Changed
