@@ -19,18 +19,26 @@ defmodule TdDd.Systems.SystemSearch do
   end
 
   defp get_systems_with_count(user, permission, params) do
-    agg_results = Search.get_aggregations_values(user, permission, params, Aggregations.get_systems_agg_terms())
+    agg_terms = Aggregations.get_agg_terms([
+      %{"agg_name" => "systems", "field_name" => "system.name.raw"},
+      %{"agg_name" => "types", "field_name" => "type.raw"}
+    ])
+    agg_results = Search.get_aggregations_values(user, permission, params, agg_terms)
     systems = Systems.list_systems()
     Enum.map(systems, fn system ->
       structures_count =
         Enum.find(agg_results, %{"doc_count" => 0}, fn agg_result ->
           Map.get(agg_result, "key") == system.name
         end)
+      types_count = Enum.map(Map.get(structures_count, "aggs", []), fn type_count ->
+        %{ name: type_count["key"], count: type_count["doc_count"]}
+      end)
+      structures_count = Map.put(%{count: structures_count["doc_count"]}, "types", types_count)
       %{
         id: system.id,
         name: system.name,
         external_id: system.external_id,
-        structures_count: Map.get(structures_count, "doc_count")
+        structures_count: structures_count
       }
     end)
   end

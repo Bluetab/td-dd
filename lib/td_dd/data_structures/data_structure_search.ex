@@ -69,14 +69,48 @@ defmodule TdDd.DataStructure.Search do
   end
 
   defp get_aggregations_results(results, agg_terms) do
-    [agg_term] = Map.keys(agg_terms)
+    agg_names = get_aggregations_names(%{"aggs" => agg_terms})
+    results = results |> Map.get(:aggregations)
+    get_agg_results(agg_names, results)
+  end
+
+  defp get_agg_results([agg_name | agg_names], results) do
     results = results
-    |> Map.get(:aggregations, %{})
-    |> Map.get(agg_term, %{})
+    |> Map.get(agg_name)
     |> Map.get("buckets")
-    case results do
-      nil -> []
-      _ -> results
+    r = Enum.map(results, fn bucket ->
+      agg_name_values = %{"type" => agg_name, "doc_count" => bucket["doc_count"], "key" => bucket["key"]}
+      case agg_names do
+        [] ->
+          agg_name_values
+        _ ->
+            Map.put(agg_name_values, "aggs", get_agg_results(agg_names, bucket))
+        end
+    end)
+  end
+
+
+  @doc """
+  Extracts aggregations name from aggs format like:
+    %{
+    "systems" => %{
+      :terms => %{field: "system.name.raw"},
+      "aggs" => %{
+        "types" => %{
+          :terms => %{field: "type.raw"},
+          "aggs" => %{"groups" => %{terms: %{field: "group.raw"}}}
+        }
+      }
+    }
+  """
+  defp get_aggregations_names(agg_terms) do
+    case Map.get(agg_terms, "aggs") do
+      nil ->
+        []
+        aggs ->
+          [agg_key] = Map.keys(aggs)
+          key_aggs = Map.get(aggs, agg_key)
+          [agg_key] ++ get_aggregations_names(key_aggs)
     end
   end
 
