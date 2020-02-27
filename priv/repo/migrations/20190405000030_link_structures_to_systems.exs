@@ -4,10 +4,12 @@ defmodule TdDd.Repo.Migrations.LinkStructuresToSystems do
   import Ecto.Query
 
   alias TdDd.Repo
-  alias TdDd.Systems.System
 
   def up do
-    System
+    query = from "systems",
+      select: [:name, :id]
+
+    query
     |> Repo.all()
     |> Enum.map(&Map.take(&1, [:name, :id]))
     |> Enum.each(&update_system_id/1)

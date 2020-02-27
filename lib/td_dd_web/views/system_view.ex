@@ -14,6 +14,7 @@ defmodule TdDdWeb.SystemView do
     %{
       id: system.id,
       name: system.name,
+      df_content: system.df_content,
       external_id: system.external_id,
       structures_count: structures_count
     }
