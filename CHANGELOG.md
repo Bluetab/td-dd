@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-2309] Unique rule implementation key. Renamed current implementation key duplicates
+
 ## [3.14.0] 2020-01-27
 
 ### Changed
