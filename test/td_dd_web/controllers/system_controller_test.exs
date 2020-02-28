@@ -62,7 +62,8 @@ defmodule TdDdWeb.SystemControllerTest do
       assert %{
                "id" => id,
                "external_id" => "some external_id",
-               "name" => "some name"
+               "name" => "some name",
+               "df_content" => nil
              } == json_response(conn, 200)["data"]
     end
 
@@ -91,7 +92,8 @@ defmodule TdDdWeb.SystemControllerTest do
       assert %{
                "id" => id,
                "external_id" => "some updated external_id",
-               "name" => "some updated name"
+               "name" => "some updated name",
+               "df_content" => nil
              } == json_response(conn, 200)["data"]
     end
 
