@@ -211,24 +211,6 @@ defmodule TdDq.RulesTest do
       assert result_id == Map.get(rule, :id)
     end
 
-    test "get_rule_by_implementation_key/1 retrieves a single rule when there are soft deleted implementation rules with same implementation key" do
-      implementation_key = "rik1"
-      rule = insert(:rule, name: "Deleted Rule")
-      insert(:rule_implementation, implementation_key: implementation_key, rule: rule)
-
-      rule2 = insert(:rule, name: "Rule2")
-
-      insert(:rule_implementation,
-        implementation_key: implementation_key,
-        rule: rule2,
-        deleted_at: DateTime.utc_now()
-      )
-
-      %{id: result_id} = Rules.get_rule_by_implementation_key(implementation_key)
-
-      assert result_id == Map.get(rule, :id)
-    end
-
     test "get_rule_by_implementation_key/1 retrieves a rule by implementation key" do
       implementation_key = "rik1"
       rule = insert(:rule, name: "Deleted Rule")
