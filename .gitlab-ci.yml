@@ -24,7 +24,7 @@ build:
     - docker-compose down -v
   artifacts:
     paths:
-      - _build/prod/rel/${APP_NAME}/releases/*/*.tar.gz
+      - _build/prod/*.tar.gz
 
 test:
   stage: build
@@ -58,9 +58,9 @@ acceptance:
   script:
     - docker-compose run --rm wait_for_elastic
     - docker-compose run --rm acceptance
-    - docker-compose logs service
   after_script:
     - docker-compose logs elastic
+    - docker-compose logs service
     - docker-compose down -v
 
 acceptance:branches:
@@ -75,9 +75,9 @@ acceptance:branches:
     - docker tag ${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${CI_COMMIT_SHA} ${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${APP_VERSION}
     - docker-compose run --rm wait_for_elastic
     - docker-compose run --rm acceptance
-    - docker-compose logs service
   after_script:
     - docker-compose logs elastic
+    - docker-compose logs service
     - docker-compose down -v
 
 deploy:

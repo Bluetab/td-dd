@@ -15,10 +15,15 @@ config :td_cx,
 
 # Configures the endpoint
 config :td_cx, TdCxWeb.Endpoint,
+  http: [port: 4008],
   url: [host: "localhost"],
   secret_key_base: "QnGIoDqTQVcsX0mbc6Yw2n03R2FfJKbYjb1W3EqD9SK1Wklgk8R3oowCJwPVoRrm",
   render_errors: [view: TdCxWeb.ErrorView, accepts: ~w(json)],
   pubsub: [name: TdCx.PubSub, adapter: Phoenix.PubSub.PG2]
+
+# Default timeout increased for bulk metadata upload
+config :td_cx, TdCx.Repo,
+  pool_size: 10
 
 # Configures Elixir's Logger
 config :logger, :console,
@@ -38,19 +43,10 @@ config :td_cx, TdCx.Auth.Guardian,
   ttl: {1, :hours},
   secret_key: "SuperSecretTruedat"
 
-config :td_cx, :auth_service,
-  protocol: "http",
-  users_path: "/api/users/",
-  sessions_path: "/api/sessions/"
-
 config :td_cx, :phoenix_swagger,
   swagger_files: %{
     "priv/static/swagger.json" => [router: TdCxWeb.Router]
   }
-
-config :td_cx, :audit_service,
-  protocol: "http",
-  audits_path: "/api/audits/"
 
 config :td_cx, permission_resolver: TdCache.Permissions
 config :td_cx, acl_cache: TdCache.AclCache
