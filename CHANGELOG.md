@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-2336] System now has df_content
+- [TD-2329] System search returns structure count info: count of structures by type and total structures count
 
 ## [3.16.0] 2020-02-25
 
