@@ -55,6 +55,7 @@ defmodule TdDd.Systems.SystemSearch do
         id: system.id,
         name: system.name,
         external_id: system.external_id,
+        df_content: system.df_content,
         structures_count: structures_count
       }
     end)
