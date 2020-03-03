@@ -1,5 +1,15 @@
 # Changelog
 
+## [3.16.1] 2020-03-03
+
+### Fixed
+
+- [TD-2357] Poison import needed on vaultex
+
+### Changed
+
+- [TD-2357] Use elixir version `1.10`
+
 ## [3.16.0] 2020-02-25
 
 ### Added

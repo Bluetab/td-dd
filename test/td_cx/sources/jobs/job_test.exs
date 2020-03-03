@@ -21,13 +21,14 @@ defmodule TdCx.Sources.Jobs.JobTest do
 
     test "encode/1 with events" do
       job = insert(:job)
+      now = DateTime.utc_now()
 
-      Enum.each(["foo", "bar", "baz"], fn type ->
-        insert(:event, type: type, job: job)
+      Enum.each(1..3, fn i ->
+        insert(:event, type: "type_#{i}", job: job, inserted_at: DateTime.add(now, i))
       end)
 
       job = Repo.preload(job, [:source, :events])
-      assert %{status: "baz"} = Document.encode(job)
+      assert %{status: "type_3"} = Document.encode(job)
     end
   end
 end
