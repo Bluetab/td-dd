@@ -758,7 +758,7 @@ defmodule TdDq.Rules do
   def check_available_implementation_key(%{"implementation_key" => implementation_key}) do
     count =
       RuleImplementation
-      |> where([ri], ri.implementation_key == ^implementation_key and is_nil(ri.deleted_at))
+      |> where([ri], ri.implementation_key == ^implementation_key)
       |> Repo.all()
 
     if Enum.empty?(count),
