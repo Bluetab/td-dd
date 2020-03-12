@@ -14,6 +14,7 @@ defmodule TdDd.DataStructures do
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Profile
   alias TdDd.DataStructures.RelationType
+  alias TdDd.DataStructures.StructureMetadata
   alias TdDd.Lineage.GraphData
   alias TdDd.Repo
   alias TdDd.Search.IndexWorker
@@ -798,5 +799,57 @@ defmodule TdDd.DataStructures do
     from(ds in DataStructure, select: {ds.external_id, ds.id})
     |> Repo.all()
     |> Map.new()
+  end
+
+  @doc """
+  Creates mutable metadata.
+
+  ## Examples
+
+      iex> create_structure_metadata(%{field: value})
+      {:ok, %StructureMetadata{}}
+
+      iex> create_structure_metadata(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_structure_metadata(attrs \\ %{}) do
+    %StructureMetadata{}
+    |> StructureMetadata.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Gets a single metadata.
+
+  Raises `Ecto.NoResultsError` if the metadata does not exist.
+
+  ## Examples
+
+      iex> get_structure_metadata!(123)
+      %StructureMetadata{}
+
+      iex> get_structure_metadata!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_structure_metadata!(id), do: Repo.get!(StructureMetadata, id)
+
+  @doc """
+  Updates metadata.
+
+  ## Examples
+
+      iex> update_structure_metadata(structure_metadata, %{field: new_value})
+      {:ok, %StructureMetadata{}}
+
+      iex> update_structure_metadata(structure_metadata, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_structure_metadata(%StructureMetadata{} = structure_metadata, attrs) do
+    structure_metadata
+    |> StructureMetadata.changeset(attrs)
+    |> Repo.update()
   end
 end

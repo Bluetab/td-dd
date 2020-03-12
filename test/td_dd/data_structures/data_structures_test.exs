@@ -539,4 +539,56 @@ defmodule TdDd.DataStructuresTest do
       assert @update_attrs.value == value
     end
   end
+
+  describe "structure_metadata" do
+    alias TdDd.DataStructures.StructureMetadata
+
+    @valid_attrs %{fields: %{}, data_structure_id: 0, version: 0}
+    @update_attrs %{fields: %{"foo" => "bar"}, version: 0}
+    @invalid_attrs %{fields: nil, data_structure_id: nil, version: nil}
+
+    defp structure_metadata_fixture do
+      ds = insert(:data_structure)
+      attrs = Map.put(@valid_attrs, :data_structure_id, ds.id)
+      {:ok, structure_metadata} = DataStructures.create_structure_metadata(attrs)
+
+      structure_metadata
+    end
+
+    test "get_structure_metadata!/1 gets the metadata" do
+      structure_metadata = structure_metadata_fixture()
+
+      assert structure_metadata.id ==
+               DataStructures.get_structure_metadata!(structure_metadata.id).id
+    end
+
+    test "create_structure_metadata/1 with valid attrs creates the metadata" do
+      ds = insert(:data_structure)
+      attrs = Map.put(@valid_attrs, :data_structure_id, ds.id)
+
+      assert {:ok, %StructureMetadata{fields: fields, data_structure_id: ds_id, version: version}} =
+               DataStructures.create_structure_metadata(attrs)
+
+      assert ds.id == ds_id
+      assert attrs.fields == fields
+      assert attrs.version == version
+    end
+
+    test "create_structure_metadata/1 with invalid attrs returns an error" do
+      assert {:error, %Ecto.Changeset{}} =
+               DataStructures.create_structure_metadata(@invalid_attrs)
+    end
+
+    test "update_structure_metadata/1 with valid attrs updates the metadata" do
+      ds = insert(:data_structure)
+      mm = insert(:structure_metadata, data_structure: ds)
+
+      assert {:ok, %StructureMetadata{fields: fields, data_structure_id: ds_id, version: version}} =
+               DataStructures.update_structure_metadata(mm, @update_attrs)
+
+      assert ds.id == ds_id
+      assert @update_attrs.fields == fields
+      assert @update_attrs.version == version
+    end
+  end
 end
