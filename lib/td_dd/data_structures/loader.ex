@@ -95,8 +95,9 @@ defmodule TdDd.Loader do
     end
 
     %{updated: updated, inserted: inserted} = load_graph(graph, audit_attrs)
+    %{updated: updated_metadata} = load_mutable_metadata(structure_records)
 
-    Enum.uniq(updated ++ discarded ++ inserted)
+    Enum.uniq(updated ++ discarded ++ inserted ++ updated_metadata)
   end
 
   defp discard_absent_structures(structure_records, ts) do
@@ -209,7 +210,9 @@ defmodule TdDd.Loader do
     |> Enum.sum()
   end
 
-  defp get_structure_id_and_relation_type({external_id, [relation_type_id: relation_type_id, relation_type_name: _name]}) do
+  defp get_structure_id_and_relation_type(
+         {external_id, [relation_type_id: relation_type_id, relation_type_name: _name]}
+       ) do
     structure_id =
       external_id
       |> DataStructures.get_latest_version_by_external_id()
@@ -318,5 +321,89 @@ defmodule TdDd.Loader do
     %DataStructureVersion{}
     |> DataStructureVersion.changeset(attrs)
     |> Repo.insert()
+  end
+
+  defp load_mutable_metadata(records) do
+    records
+    |> Enum.filter(&Map.get(&1, :mutable_metadata))
+    |> Enum.filter(&(Map.get(&1, :mutable_metadata) != %{}))
+    |> do_load_mutable_metadata()
+  end
+
+  defp do_load_mutable_metadata([]), do: %{updated: []}
+
+  defp do_load_mutable_metadata(records) do
+    records
+    |> Enum.map(&Map.get(&1, :external_id))
+    |> reduce_metadata()
+
+    []
+  end
+
+  defp reduce_metadata(records, updated_ids \\ [])
+
+  defp reduce_metadata([], updated_ids) do
+    update_count = Enum.count(updated_ids)
+    Logger.info("Structures with metadata updated: updated=#{update_count})")
+    %{updated: updated_ids}
+  end
+
+  defp reduce_metadata([record | tail], updated_ids) do
+    %{external_id: external_id, mutable_metadata: mutable_metadata} =
+      Map.take(record, [:external_id, :mutable_metadata])
+
+    ids =
+      external_id
+      |> DataStructures.get_data_structure_by_external_id()
+      |> upsert_metadata(mutable_metadata)
+
+    reduce_metadata(tail, updated_ids ++ ids)
+  end
+
+  defp upsert_metadata(nil, _), do: []
+  # TODO: Update data_Structure ????
+  defp upsert_metadata(%DataStructure{id: id} = _data_structure, mutable_metadata) do
+    ids =
+      case DataStructures.get_latest_metadata_version(id) do
+        nil ->
+          DataStructures.create_structure_metadata(
+            Map.merge(mutable_metadata, %{version: 0, data_structure_id: id})
+          )
+
+          [id]
+
+        current_metadata ->
+          create_metadata_version(id, current_metadata, mutable_metadata)
+      end
+
+    ids
+  end
+
+  defp create_metadata_version(id, current_metadata, mutable_metadata) do
+    ids =
+      unless not equal?(current_metadata, mutable_metadata) do
+        DataStructures.create_structure_metadata(
+          Map.merge(mutable_metadata, %{
+            version: current_metadata.version + 1,
+            data_structure_id: id
+          })
+        )
+
+        [id]
+      end
+
+    ids || []
+  end
+
+  defp equal?(current_metadata, mutable_metadata) do
+    fields = Map.get(current_metadata, :fields, %{})
+    same_keys? = Map.keys(fields) == Map.keys(mutable_metadata)
+
+    same_values? =
+      Enum.all?(Map.keys(mutable_metadata), fn key ->
+        Map.get(mutable_metadata, key) == Map.get(current_metadata, key)
+      end)
+
+    same_keys? && same_values?
   end
 end

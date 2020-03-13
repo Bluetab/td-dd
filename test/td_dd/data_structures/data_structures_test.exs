@@ -46,6 +46,35 @@ defmodule TdDd.DataStructuresTest do
       assert DataStructures.get_data_structure!(data_structure.id) <~> data_structure
     end
 
+    test "get_data_structure_by_external_id/1 returns the data_structure with metadata versions" do
+      data_structure = insert(:data_structure)
+
+      assert DataStructures.get_data_structure_by_external_id(data_structure.external_id)
+             <~> data_structure
+    end
+
+    test "get_latest_metadata_version/1 returns the latest version of the metadata" do
+      data_structure = insert(:data_structure)
+
+      ms =
+        Enum.map(
+          0..5,
+          &insert(:structure_metadata, version: &1, data_structure_id: data_structure.id)
+        )
+
+      assert DataStructures.get_latest_metadata_version(data_structure.id).id ==
+               Enum.max_by(ms, & &1.version).id
+    end
+
+    test "get_latest_metadata_version/1 returns nil when there is not metadata" do
+      data_structure = insert(:data_structure)
+      assert is_nil(DataStructures.get_latest_metadata_version(data_structure.id))
+    end
+
+    test "get_data_structure!/1 returns error when structure does not exist" do
+      assert_raise Ecto.NoResultsError, fn -> DataStructures.get_data_structure!(1) end
+    end
+
     test "create_data_structure/1 with valid data creates a data_structure" do
       assert {:ok, %DataStructure{} = data_structure} =
                DataStructures.create_data_structure(@valid_attrs)

@@ -91,6 +91,24 @@ defmodule TdDd.DataStructures do
   end
 
   @doc """
+  Gets a single data_structure by external_id.
+
+  Returns nil if the Data structure does not exist.
+
+  ## Examples
+
+      iex> get_data_structure_by_external_id!(123)
+      %DataStructure{}
+
+      iex> get_data_structure_by_external_id(456)
+      ** nil
+
+  """
+  def get_data_structure_by_external_id(external_id) do
+    Repo.get_by(DataStructure, external_id: external_id)
+  end
+
+  @doc """
   Gets a single data_structure_version.
 
   Raises `Ecto.NoResultsError` if the Data structure version does not exist.
@@ -851,5 +869,15 @@ defmodule TdDd.DataStructures do
     structure_metadata
     |> StructureMetadata.changeset(attrs)
     |> Repo.update()
+  end
+
+  def get_latest_metadata_version(id) do
+    StructureMetadata
+    |> where([sm], sm.data_structure_id == ^id)
+    |> order_by(desc: :version)
+    |> limit(1)
+    |> preload(:data_structure)
+    |> select([sm], sm)
+    |> Repo.one()
   end
 end

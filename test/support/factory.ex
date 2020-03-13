@@ -81,8 +81,7 @@ defmodule TdDd.Factory do
   def structure_metadata_factory do
     %StructureMetadata{
       fields: %{"foo" => "bar"},
-      version: 0,
-      data_structure: build(:data_structure)
+      version: 0
     }
   end
 
