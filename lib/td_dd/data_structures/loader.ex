@@ -336,8 +336,6 @@ defmodule TdDd.Loader do
     records
     |> Enum.map(&Map.get(&1, :external_id))
     |> reduce_metadata()
-
-    []
   end
 
   defp reduce_metadata(records, updated_ids \\ [])
