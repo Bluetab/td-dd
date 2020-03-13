@@ -54,6 +54,7 @@ defmodule TdDd.CSV.ReaderTest do
       assert r2 == %{
                description: "description",
                metadata: %{"foo" => "foo1", "bool" => true},
+               mutable_metadata: %{"foo" => %{"bar" => "muta_foo"}},
                name: "name",
                version: 0
              }
@@ -64,6 +65,7 @@ defmodule TdDd.CSV.ReaderTest do
                  "bar" => %{"baz" => %{"spqr" => "spqr", "xyzzy" => "xyzzy"}},
                  "bool" => false
                },
+               mutable_metadata: %{},
                name: "name",
                version: 0
              }
@@ -72,6 +74,7 @@ defmodule TdDd.CSV.ReaderTest do
                description: "description",
                domain_id: 42,
                metadata: %{},
+               mutable_metadata: %{"foo" => %{"bar" => "baz"}},
                name: "name",
                ou: "domain1",
                version: 0
@@ -81,6 +84,7 @@ defmodule TdDd.CSV.ReaderTest do
           description: "description",
           domain_id: 43,
           metadata: %{},
+          mutable_metadata: %{},
           name: "name",
           version: 0,
           domain_external_id: "domain2_eid",
@@ -127,7 +131,8 @@ defmodule TdDd.CSV.ReaderTest do
                external_id: "1",
                field_name: "Field1",
                nullable: true,
-               type: "Column"
+               type: "Column",
+               mutable_metadata: %{}
              }
 
       assert r2 == %{
@@ -135,7 +140,8 @@ defmodule TdDd.CSV.ReaderTest do
                external_id: "2",
                field_name: "Field2",
                nullable: false,
-               type: "Column"
+               type: "Column",
+               mutable_metadata: %{}
              }
     end
   end
