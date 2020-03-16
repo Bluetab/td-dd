@@ -378,7 +378,7 @@ defmodule TdDd.Loader do
   end
 
   defp insert_metadata(nil, _, _), do: []
-  # TODO: Update data_Structure ????
+
   defp insert_metadata(%DataStructure{id: id} = data_structure, mutable_metadata, audit_attrs) do
     id
     |> DataStructures.get_latest_metadata_version()
