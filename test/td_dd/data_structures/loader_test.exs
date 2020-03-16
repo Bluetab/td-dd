@@ -399,8 +399,9 @@ defmodule TdDd.LoaderTest do
 
       v3 =
         DataStructures.get_latest_version_by_external_id(s1.external_id <> "/" <> f11.field_name)
-      
+
       m1_deleted = m1
+
       [m1, m2, m3] =
         Enum.map([v1, v2, v3], &DataStructures.get_latest_metadata_version(&1.data_structure_id))
 
