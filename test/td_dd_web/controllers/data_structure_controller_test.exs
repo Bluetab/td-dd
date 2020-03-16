@@ -120,6 +120,32 @@ defmodule TdDdWeb.DataStructureControllerTest do
       %{"siblings" => siblings} = json_response(conn, 200)["data"]
       assert Enum.count(siblings) == 2
     end
+
+    @tag authenticated_user: @admin_user_name
+    test "renders metadata versions when exist", %{
+      conn: conn,
+      parent_structure: %DataStructure{id: parent_id},
+      structure: %DataStructure{id: child_id}
+    } do
+      conn =
+        get(
+          conn,
+          Routes.data_structure_data_structure_version_path(conn, :show, parent_id, "latest")
+        )
+
+      assert %{"metadata_versions" => []} = json_response(conn, 200)["data"]
+
+      conn = recycle_and_put_headers(conn)
+
+      conn =
+        get(
+          conn,
+          Routes.data_structure_data_structure_version_path(conn, :show, child_id, "latest")
+        )
+
+      assert %{"metadata_versions" => metadata_versions} = json_response(conn, 200)["data"]
+      assert length(metadata_versions) == 1
+    end
   end
 
   describe "show data_structure with deletions in its hierarchy" do
@@ -488,6 +514,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   defp create_structure_hierarchy(_) do
     parent_structure = insert(:data_structure, external_id: "Parent")
     structure = insert(:data_structure, external_id: "Structure")
+    insert(:structure_metadata, data_structure_id: structure.id)
 
     child_structures = [
       insert(:data_structure, external_id: "Child1"),

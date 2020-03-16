@@ -238,7 +238,7 @@ defmodule TdDdWeb.DataStructureView do
   end
 
   defp add_metadata_versions(data_structure_json, %{metadata_versions: versions}) when is_list(versions) do
-    versions = Enum.map(versions, &Map.take(&1, [:fields, :version, :id, :deleted_at]))
+    versions = Enum.map(versions, &Map.take(&1, [:fields, :version, :id, :deleted_at, :data_structure_id]))
     Map.put(data_structure_json, :metadata_versions, versions)
   end
 
