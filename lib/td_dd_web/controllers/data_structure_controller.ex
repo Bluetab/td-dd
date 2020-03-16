@@ -91,7 +91,8 @@ defmodule TdDdWeb.DataStructureController do
     :relations,
     :siblings,
     :system,
-    :versions
+    :versions,
+    :metadata_versions
   ]
 
   defp get_data_structure(id) do

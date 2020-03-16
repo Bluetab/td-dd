@@ -158,6 +158,7 @@ defmodule TdDd.DataStructures do
     |> enrich(options, :versions, &Repo.preload(&1, :versions))
     |> enrich(options, :latest, &get_latest_version/1)
     |> enrich(options, :domain, &get_domain/1)
+    |> enrich(options, :metadata_versions, &get_metadata_versions/1)
   end
 
   defp enrich(%DataStructureVersion{} = dsv, options) do
@@ -184,6 +185,7 @@ defmodule TdDd.DataStructures do
     |> enrich(options, :path, &get_path/1)
     |> enrich(options, :links, &get_structure_links/1)
     |> enrich(options, :domain, &get_domain/1)
+    |> enrich(options, :metadata_versions, &get_metadata_versions/1)
   end
 
   defp enrich(%{} = target, options, key, fun) do
@@ -372,6 +374,14 @@ defmodule TdDd.DataStructures do
 
   defp get_domain(%DataStructure{domain_id: domain_id}) do
     TaxonomyCache.get_domain(domain_id) || %{}
+  end
+
+  defp get_metadata_versions(%DataStructure{} = data_structure) do
+    Repo.preload(data_structure, :metadata_versions)
+  end
+
+  defp get_metadata_versions(%DataStructureVersion{} = version) do
+    Repo.preload(version, data_structure: :metadata_versions)
   end
 
   @doc """
@@ -871,9 +881,10 @@ defmodule TdDd.DataStructures do
     |> Repo.update()
   end
 
-  def get_latest_metadata_version(id) do
+  def get_latest_metadata_version(id, options \\ []) do
     StructureMetadata
     |> where([sm], sm.data_structure_id == ^id)
+    |> with_deleted(options, dynamic([sm], is_nil(sm.deleted_at)))
     |> order_by(desc: :version)
     |> limit(1)
     |> preload(:data_structure)

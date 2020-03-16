@@ -53,7 +53,7 @@ defmodule TdDd.DataStructuresTest do
              <~> data_structure
     end
 
-    test "get_latest_metadata_version/1 returns the latest version of the metadata" do
+    test "get_latest_metadata_version/2 returns the latest version of the metadata" do
       data_structure = insert(:data_structure)
 
       ms =
@@ -66,9 +66,22 @@ defmodule TdDd.DataStructuresTest do
                Enum.max_by(ms, & &1.version).id
     end
 
-    test "get_latest_metadata_version/1 returns nil when there is not metadata" do
+    test "get_latest_metadata_version/2 returns nil when there is not metadata" do
       data_structure = insert(:data_structure)
       assert is_nil(DataStructures.get_latest_metadata_version(data_structure.id))
+    end
+
+    test "get_latest_metadata_version/2 hides deleted versions when specified" do
+      data_structure = insert(:data_structure)
+
+      ms =
+        insert(:structure_metadata,
+          data_structure_id: data_structure.id,
+          deleted_at: DateTime.utc_now()
+        )
+
+      assert is_nil(DataStructures.get_latest_metadata_version(data_structure.id, deleted: false))
+      assert DataStructures.get_latest_metadata_version(data_structure.id).id == ms.id
     end
 
     test "get_data_structure!/1 returns error when structure does not exist" do
