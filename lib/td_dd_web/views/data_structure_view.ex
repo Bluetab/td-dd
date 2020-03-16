@@ -30,6 +30,7 @@ defmodule TdDdWeb.DataStructureView do
       data:
         data_structure
         |> data_structure_json()
+        |> add_metadata_versions(data_structure)
         |> add_system_with_keys(data_structure, [:external_id, :id, :name])
         |> add_dynamic_content(data_structure)
         |> add_data_fields(data_structure)
@@ -75,7 +76,8 @@ defmodule TdDdWeb.DataStructureView do
       :path,
       :system_id,
       :type,
-      :updated_at
+      :updated_at,
+      :mutable_metadata
     ])
     |> Map.merge(dsv_attrs)
     |> Map.put_new(:metadata, %{})
@@ -234,4 +236,11 @@ defmodule TdDdWeb.DataStructureView do
     |> Map.delete(:metadata)
     |> Map.merge(metadata)
   end
+
+  defp add_metadata_versions(data_structure_json, %{metadata_versions: versions}) when is_list(versions) do
+    versions = Enum.map(versions, &Map.take(&1, [:fields, :version, :id, :deleted_at]))
+    Map.put(data_structure_json, :metadata_versions, versions)
+  end
+
+  defp add_metadata_versions(data_structure_json, _), do: data_structure_json
 end

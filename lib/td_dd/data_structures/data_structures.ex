@@ -377,11 +377,16 @@ defmodule TdDd.DataStructures do
   end
 
   defp get_metadata_versions(%DataStructure{} = data_structure) do
-    Repo.preload(data_structure, :metadata_versions)
+    data_structure
+    |> Repo.preload(:metadata_versions)
+    |> Repo.get(:metadata_versions)
   end
 
   defp get_metadata_versions(%DataStructureVersion{} = version) do
-    Repo.preload(version, data_structure: :metadata_versions)
+    version
+    |> Repo.preload(data_structure: :metadata_versions)
+    |> Map.get(:data_structure)
+    |> Map.get(:metadata_versions)
   end
 
   @doc """
