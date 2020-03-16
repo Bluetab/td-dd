@@ -333,9 +333,7 @@ defmodule TdDd.Loader do
   defp do_load_mutable_metadata([]), do: %{updated: []}
 
   defp do_load_mutable_metadata(records) do
-    records
-    |> Enum.map(&Map.get(&1, :external_id))
-    |> reduce_metadata()
+    reduce_metadata(records)
   end
 
   defp reduce_metadata(records, updated_ids \\ [])
@@ -364,9 +362,11 @@ defmodule TdDd.Loader do
     ids =
       case DataStructures.get_latest_metadata_version(id) do
         nil ->
-          DataStructures.create_structure_metadata(
-            Map.merge(mutable_metadata, %{version: 0, data_structure_id: id})
-          )
+          DataStructures.create_structure_metadata(%{
+            version: 0,
+            data_structure_id: id,
+            fields: mutable_metadata
+          })
 
           [id]
 
@@ -379,13 +379,12 @@ defmodule TdDd.Loader do
 
   defp create_metadata_version(id, current_metadata, mutable_metadata) do
     ids =
-      unless not equal?(current_metadata, mutable_metadata) do
-        DataStructures.create_structure_metadata(
-          Map.merge(mutable_metadata, %{
-            version: current_metadata.version + 1,
-            data_structure_id: id
-          })
-        )
+      unless equals?(current_metadata, mutable_metadata) do
+        DataStructures.create_structure_metadata(%{
+          version: current_metadata.version + 1,
+          data_structure_id: id,
+          fields: mutable_metadata
+        })
 
         [id]
       end
@@ -393,13 +392,13 @@ defmodule TdDd.Loader do
     ids || []
   end
 
-  defp equal?(current_metadata, mutable_metadata) do
+  defp equals?(current_metadata, mutable_metadata) do
     fields = Map.get(current_metadata, :fields, %{})
     same_keys? = Map.keys(fields) == Map.keys(mutable_metadata)
 
     same_values? =
       Enum.all?(Map.keys(mutable_metadata), fn key ->
-        Map.get(mutable_metadata, key) == Map.get(current_metadata, key)
+        Map.get(mutable_metadata, key) == Map.get(fields, key)
       end)
 
     same_keys? && same_values?

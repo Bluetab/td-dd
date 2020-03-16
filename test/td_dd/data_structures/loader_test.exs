@@ -296,6 +296,126 @@ defmodule TdDd.LoaderTest do
                )
     end
 
+    test "load/1 with structures updates structures without generate version" do
+      system = insert(:system, external_id: "SYS1", name: "SYS1")
+
+      s1 = %{
+        system_id: system.id,
+        group: "GROUP1",
+        name: "NAME1",
+        description: "D1",
+        external_id: "EXT1",
+        type: "Table",
+        metadata: %{"bar" => "baz"},
+        mutable_metadata: %{"foo" => "bar"}
+      }
+
+      s2 = %{
+        system_id: system.id,
+        group: "GROUP1",
+        name: "NAME2",
+        description: "D1",
+        version: 0,
+        external_id: "EXT2",
+        type: "View"
+      }
+
+      r1 = %{
+        system_id: system.id,
+        parent_group: "GROUP1",
+        parent_external_id: "EXT1",
+        parent_name: "NAME1",
+        child_group: "GROUP2",
+        child_name: "NAME2",
+        child_external_id: "EXT2"
+      }
+
+      f1 = %{
+        field_name: "F1",
+        type: "T1",
+        nullable: false,
+        precision: "P1",
+        description: "D1NEW",
+        version: 0
+      }
+
+      f11 = Map.merge(s1, f1)
+
+      structure_records = [s1, s2]
+      field_records = [f11]
+      relation_records = [r1]
+
+      assert {:ok, context} =
+               Loader.load(
+                 Graph.new(),
+                 structure_records,
+                 field_records,
+                 relation_records,
+                 audit()
+               )
+
+      v1 = DataStructures.get_latest_version_by_external_id(s1.external_id)
+      v2 = DataStructures.get_latest_version_by_external_id(s2.external_id)
+
+      v3 =
+        DataStructures.get_latest_version_by_external_id(s1.external_id <> "/" <> f11.field_name)
+
+      [m1, m2, m3] =
+        Enum.map([v1, v2, v3], &DataStructures.get_latest_metadata_version(&1.data_structure_id))
+
+      assert Enum.all?([v1, v2, v3], &(&1.version == 0))
+
+      assert m1.version == 0
+      assert m1.fields == %{"foo" => "bar"}
+
+      assert is_nil(m2)
+
+      assert m3.version == 0
+      assert m3.fields == %{"foo" => "bar"}
+
+      s1 =
+        s1
+        |> Map.put(:description, "blah")
+        |> Map.put(:mutable_metadata, %{"foo" => "bar2"})
+
+      s2 = Map.put(s2, :mutable_metadata, %{"foo" => "bar"})
+      f11 = Map.put(f11, :mutable_metadata, %{"foo" => "bar"})
+
+      structure_records = [s1, s2]
+      field_records = [f11]
+      relation_records = [r1]
+
+      assert {:ok, context} =
+               Loader.load(
+                 Graph.new(),
+                 structure_records,
+                 field_records,
+                 relation_records,
+                 audit()
+               )
+
+      v1 = DataStructures.get_latest_version_by_external_id(s1.external_id)
+      v2 = DataStructures.get_latest_version_by_external_id(s2.external_id)
+
+      v3 =
+        DataStructures.get_latest_version_by_external_id(s1.external_id <> "/" <> f11.field_name)
+
+      [m1, m2, m3] =
+        Enum.map([v1, v2, v3], &DataStructures.get_latest_metadata_version(&1.data_structure_id))
+
+      assert v1.version == 1
+      assert m1.version == 1
+      assert m1.fields == %{"foo" => "bar2"}
+
+      assert v2.version == 0
+      assert m2.version == 0
+      assert m2.fields == %{"foo" => "bar"}
+
+      assert v3.version == 0
+      assert m3.version == 0
+      assert m3.fields == %{"foo" => "bar"}
+    end
+
     test "load/1 allows a fields's metadata to be set and updated" do
       system = insert(:system, external_id: random_string("EXT"), name: random_string("NAME"))
 
