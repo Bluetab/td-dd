@@ -24,7 +24,13 @@ defmodule TdDq.Factory do
       deleted_at: nil,
       dataset: [
         %{structure: %{id: 14_080}},
-        %{structure: %{id: 3233}, left: %{id: 14_863}, right: %{id: 4028}}
+        %{
+          structure: %{id: 3233},
+          clauses: [
+            %{left: %{id: 14_863}, right: %{id: 4028}}
+          ],
+          join_type: "inner"
+        }
       ],
       population: [
         %{

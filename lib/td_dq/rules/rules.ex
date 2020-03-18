@@ -454,7 +454,16 @@ defmodule TdDq.Rules do
     |> Map.put(:type, Map.get(cached_info, :type))
   end
 
-  defp enrich_joined_structures(%{left: %{id: left_id}, right: %{id: right_id}} = structure_map) do
+  defp enrich_joined_structures(%{clauses: clauses} = structure_map) when is_list(clauses) do
+    clauses = Enum.map(clauses, &enrich_clause_structures/1)
+    Map.put(structure_map, :clauses, clauses)
+  end
+
+  defp enrich_joined_structures(structure_map) do
+    structure_map
+  end
+
+  defp enrich_clause_structures(%{left: %{id: left_id}, right: %{id: right_id}} = structure_map) do
     structure_map
     |> Map.put(
       :left,
@@ -464,10 +473,6 @@ defmodule TdDq.Rules do
       :right,
       put_structure_cached_attributes(%{id: right_id}, read_structure_from_cache(right_id))
     )
-  end
-
-  defp enrich_joined_structures(structure_map) do
-    structure_map
   end
 
   defp enrich_value_structure(%{"id" => id} = value_map) do
@@ -487,9 +492,11 @@ defmodule TdDq.Rules do
         population_row
 
       _ ->
-        values = Enum.map(values, fn value ->
-          enrich_value_structure(value)
-        end)
+        values =
+          Enum.map(values, fn value ->
+            enrich_value_structure(value)
+          end)
+
         Map.put(population_row, :value, values)
     end
   end
@@ -584,11 +591,19 @@ defmodule TdDq.Rules do
     result
   end
 
-  defp get_dataset_row_ids(%{left: %{id: left_id}, right: %{id: right_id}}) do
-    [left_id, right_id]
+  defp get_dataset_row_ids(%{clauses: clauses}) do
+    Enum.flat_map(clauses, &get_join_clause_ids/1)
   end
 
   defp get_dataset_row_ids(_structure) do
+    []
+  end
+
+  defp get_join_clause_ids(%{left: %{id: left_id}, right: %{id: right_id}}) do
+    [left_id, right_id]
+  end
+
+  defp get_join_clause_ids(_) do
     []
   end
 
