@@ -97,20 +97,33 @@ end
 defmodule TdDqWeb.RuleImplementation.DatasetView do
   use TdDqWeb, :view
 
+  alias TdDqWeb.RuleImplementation.JoinClauseView
   alias TdDqWeb.RuleImplementation.StructureView
 
   def render("dataset_row.json", %{dataset: %{structure: structure} = dataset_row}) do
-    case dataset_row.left do
+    case dataset_row.clauses do
       nil -> %{
         structure: render_one(structure, StructureView, "structure.json")
       }
       _ -> %{
         structure: render_one(structure, StructureView, "structure.json"),
-        left: render_one(dataset_row.left, StructureView, "structure.json"),
-        right: render_one(dataset_row.right, StructureView, "structure.json")
+        clauses: render_many(dataset_row.clauses, JoinClauseView, "join_clause_row.json")
       }
     end
 
+  end
+end
+
+defmodule TdDqWeb.RuleImplementation.JoinClauseView do
+  use TdDqWeb, :view
+
+  alias TdDqWeb.RuleImplementation.StructureView
+
+  def render("join_clause_row.json", %{join_clause: join_clause_row}) do
+    %{
+      left: render_one(join_clause_row.left, StructureView, "structure.json"),
+      right: render_one(join_clause_row.right, StructureView, "structure.json")
+    }
   end
 end
 

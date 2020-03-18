@@ -226,7 +226,7 @@ defmodule TdDq.RulesTest do
         %{
           dataset: [
             %{structure: %{id: 1}},
-            %{left: %{id: 2}, right: %{id: 3}, structure: %{id: 4}}
+            %{clauses: [%{left: %{id: 2}, right: %{id: 3}}], structure: %{id: 4}}
           ],
           population: [
             %{

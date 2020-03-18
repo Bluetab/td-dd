@@ -18,7 +18,13 @@ defmodule TdDq.RuleImplementationsTest do
 
   @valid_dataset [
     %{structure: %{id: 14_080}},
-    %{left: %{id: 14_863}, right: %{id: 4028}, structure: %{id: 3233}}
+    %{clauses: [
+      %{left: %{id: 14_863}, right: %{id: 4028}}
+    ], structure: %{id: 3233}}
+  ]
+
+  @valid_single_dataset [
+    %{structure: %{id: 14_080}}
   ]
 
   @valid_population [
@@ -186,7 +192,7 @@ defmodule TdDq.RuleImplementationsTest do
              ) == nil
     end
 
-    test "create_rule_implementation/1 with invalid dataset returns errors" do
+    test "create_rule_implementation/1 with dataset missing clause content returns errors" do
       rule = insert(:rule)
 
       creation_attrs =
@@ -195,7 +201,7 @@ defmodule TdDq.RuleImplementationsTest do
           population: @valid_population,
           dataset: [
             %{structure: %{id: 14_080}},
-            %{structure: %{id: 3233}, left: %{id: 22}, join_type: "inner"}
+            %{structure: %{id: 3233}, clauses: [], join_type: "inner"}
           ],
           validations: @valid_validations
         }
@@ -204,7 +210,50 @@ defmodule TdDq.RuleImplementationsTest do
       assert {:error, %Ecto.Changeset{}, errors} =
                Rules.create_rule_implementation(rule, creation_attrs)
 
-      assert errors |> Map.get(:dataset) |> Enum.any?(&(Map.get(&1, :right) == ["required"]))
+      assert errors |> Map.get(:dataset) |> Enum.any?(&(Map.get(&1, :clauses) == ["required"]))
+    end
+
+    test "create_rule_implementation/1 with dataset missing clause right returns errors" do
+      rule = insert(:rule)
+
+      creation_attrs =
+        %{
+          rule_id: rule.id,
+          population: @valid_population,
+          dataset: [
+            %{structure: %{id: 14_080}},
+            %{structure: %{id: 3233}, clauses: [%{left: %{id: 14_863}}], join_type: "inner"}
+          ],
+          validations: @valid_validations
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert {:error, %Ecto.Changeset{}, errors} =
+               Rules.create_rule_implementation(rule, creation_attrs)
+
+      expected_errors = %{dataset: [%{}, %{clauses: [%{right: ["required"]}]}]}
+      assert errors == expected_errors
+    end
+
+    test "create_rule_implementation/1 with dataset missing clause key returns errors" do
+      rule = insert(:rule)
+
+      creation_attrs =
+        %{
+          rule_id: rule.id,
+          population: @valid_population,
+          dataset: [
+            %{structure: %{id: 14_080}},
+            %{structure: %{id: 3233}, join_type: "inner"}
+          ],
+          validations: @valid_validations
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert {:error, %Ecto.Changeset{}, errors} =
+               Rules.create_rule_implementation(rule, creation_attrs)
+
+      assert errors |> Map.get(:dataset) |> Enum.any?(&(Map.get(&1, :clauses) == ["required"]))
     end
 
     test "create_rule_implementation/1 with invalid population returns errors" do
@@ -323,6 +372,24 @@ defmodule TdDq.RuleImplementationsTest do
         %{
           rule_id: rule.id,
           dataset: @valid_dataset,
+          population: @valid_population,
+          validations: @valid_validations
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert {:ok, %RuleImplementation{} = rule_implementation} =
+               Rules.create_rule_implementation(rule, creation_attrs)
+
+      assert rule_implementation.rule_id == creation_attrs["rule_id"]
+    end
+
+    test "create_rule_implementation/1 with valid data with single structure creates a rule_implementation" do
+      rule = insert(:rule)
+
+      creation_attrs =
+        %{
+          rule_id: rule.id,
+          dataset: @valid_single_dataset,
           population: @valid_population,
           validations: @valid_validations
         }
