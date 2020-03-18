@@ -10,7 +10,7 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
 
   @valid_dataset [
     %{structure: %{id: 14_080}},
-    %{left: %{id: 14_863}, right: %{id: 4028}, structure: %{id: 3233}}
+    %{clauses: [%{left: %{id: 14_863}, right: %{id: 4028}}], structure: %{id: 3233}}
   ]
 
   setup_all do
@@ -132,7 +132,11 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
             rule_id: rule.id,
             dataset: [
               %{structure: %{id: 14_080}},
-              %{structure: %{id: 3233}, right: %{id: 1}, left: %{id: 22}, join_type: "inner"}
+              %{
+                structure: %{id: 3233},
+                clauses: [%{right: %{id: 1}, left: %{id: 22}}],
+                join_type: "inner"
+              }
             ],
             validations: [
               %{

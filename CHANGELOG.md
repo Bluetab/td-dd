@@ -6,6 +6,10 @@
 
 - [TD-2256] New field `params` in Rule Results for storing JSON params
 
+### Changed
+
+- [TD-2359] Rule Implementation schema adapted to accept multiple join clauses
+
 ## [3.17.0] 2020-03-09
 
 ### Changed
@@ -23,7 +27,7 @@
 
 ### Fixed
 
-- [TD-2210] Migrate implementations associated with a deleted rule 
+- [TD-2210] Migrate implementations associated with a deleted rule
 
 ### Changed
 
