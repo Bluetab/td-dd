@@ -3,6 +3,7 @@ defmodule TdDqWeb.RuleImplementationView do
   alias TdDqWeb.RuleImplementation.ConditionView
   alias TdDqWeb.RuleImplementation.DatasetView
   alias TdDqWeb.RuleImplementationView
+  alias TdDqWeb.RuleResultView
 
   def render("index.json", %{rule_implementations: rule_implementations}) do
     %{data: render_many(rule_implementations, RuleImplementationView, "rule_implementation.json")}
@@ -70,7 +71,8 @@ defmodule TdDqWeb.RuleImplementationView do
     all_rule_results_mappings =
       rule_implementation
       |> Map.get(:all_rule_results, [])
-      |> Enum.map(&%{result: &1.result, date: &1.date, records: &1.records, errors: &1.errors})
+      |> Enum.map(&Map.from_struct(&1))
+      |> Enum.map(&(render_one(&1, RuleResultView, "rule_result.json")))
 
     case all_rule_results_mappings do
       [] -> rule_implementation_mapping

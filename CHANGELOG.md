@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-2256] New field `params` in Rule Results for storing JSON params
+
 ## [3.17.0] 2020-03-09
 
 ### Changed
