@@ -585,6 +585,95 @@ defmodule TdDd.LoaderTest do
                |> Enum.map(&Map.get(&1, :relation_type))
                |> Enum.map(&Map.get(&1, :name))
     end
+
+    test "load/1 loads all subtree when it is recovered from a deletion and there are no changes" do
+      sys = insert(:system, external_id: "SYS1", name: "SYS1")
+
+      s1 = %{
+        external_id: "EXT1",
+        group: "GROUP1",
+        name: "NAME1",
+        type: "USER_TABLE",
+        system_id: sys.id
+      }
+
+      s2 = %{
+        external_id: "EXT2",
+        group: "GROUP6",
+        name: "NAME2",
+        type: "USER_TABLE",
+        system_id: sys.id
+      }
+
+      s3 = %{
+        external_id: "EXT3",
+        group: "GROUP3",
+        name: "NAME3",
+        type: "USER_TABLE",
+        system_id: sys.id
+      }
+
+      s4 = %{
+        external_id: "EXT4",
+        group: "GROUP4",
+        name: "NAME4",
+        type: "USER_TABLE",
+        system_id: sys.id
+      }
+
+      r1 = %{
+        parent_external_id: s1.external_id,
+        child_external_id: s2.external_id
+      }
+
+      r2 = %{
+        parent_external_id: s3.external_id,
+        child_external_id: s4.external_id
+      }
+
+      structure_records = [s1, s2, s3, s4]
+      relation_records = [r1, r2]
+
+      {:ok, _} =
+        Loader.load(
+          Graph.new(),
+          structure_records,
+          [],
+          relation_records,
+          audit()
+        )
+
+      structure_records = [s1, s2]
+      relation_records = [r1]
+
+      {:ok, _} =
+        Loader.load(
+          Graph.new(),
+          structure_records,
+          [],
+          relation_records,
+          audit()
+        )
+
+      structure_records = [s1, s2, s3, s4]
+      relation_records = [r1, r2]
+
+      {:ok, _} =
+        Loader.load(
+          Graph.new(),
+          structure_records,
+          [],
+          relation_records,
+          audit()
+        )
+
+      assert Enum.all?([s3, s4], fn %{external_id: external_id} ->
+               %{version: version, deleted_at: deleted_at} =
+                 DataStructures.get_latest_version_by_external_id(external_id)
+
+               version == 0 and is_nil(deleted_at)
+             end)
+    end
   end
 
   defp audit do
