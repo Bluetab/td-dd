@@ -155,7 +155,7 @@ defmodule TdDd.Loader do
         %{ghash: ^ghash, deleted_at: deleted_at} = current_version ->
           Logger.debug("#{external_id} ghash unchanged (discard)")
           {:ok, updated_version} = do_update(current_version)
-          tail = prune(external_id, tail, graph)
+          tail = prune(external_id, tail, graph, deleted_at)
           {tail, if(is_nil(deleted_at), do: [], else: [updated_version]), []}
 
         %{lhash: ^lhash, deleted_at: deleted_at} = current_version ->
@@ -181,11 +181,13 @@ defmodule TdDd.Loader do
     )
   end
 
-  defp prune(external_id, external_ids, graph) do
+  defp prune(external_id, external_ids, graph, nil = _deleted_at) do
     descendents = Graph.descendents(graph, external_id)
     Logger.debug("#{external_id} pruned (#{Enum.count(descendents)} descendents)")
     Enum.reject(external_ids, &Enum.member?(descendents, &1))
   end
+
+  defp prune(external_id, external_ids, graph, deleted_at), do: external_ids
 
   defp insert_relations([], _graph, _audit_attrs), do: 0
 
@@ -209,7 +211,9 @@ defmodule TdDd.Loader do
     |> Enum.sum()
   end
 
-  defp get_structure_id_and_relation_type({external_id, [relation_type_id: relation_type_id, relation_type_name: _name]}) do
+  defp get_structure_id_and_relation_type(
+         {external_id, [relation_type_id: relation_type_id, relation_type_name: _name]}
+       ) do
     structure_id =
       external_id
       |> DataStructures.get_latest_version_by_external_id()
