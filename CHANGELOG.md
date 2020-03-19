@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-2218] Revaluate structure children when its deletion is undone
+
 ## [3.17.0] 2020-03-09
 
 ### Added
