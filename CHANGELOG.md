@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-2326] Support for mutable metadata
+
 ### Changed
 
 - [TD-2218] Revaluate structure children when its deletion is undone
