@@ -76,6 +76,9 @@ defmodule TdDqWeb.RuleResultController do
       set_quality_data(rule_result)
     end
     )
+    |> Enum.map(fn rule_result ->
+      set_quality_params(rule_result)
+    end)
   end
 
   defp set_quality_data(%{"records" => records, "errors" => errors}  = rule_result) do
@@ -84,6 +87,26 @@ defmodule TdDqWeb.RuleResultController do
 
   defp set_quality_data(rule_result) do
     rule_result
+  end
+
+  defp set_quality_params(rule_result) do
+    params = rule_result
+    |> Enum.filter(fn {k, _} -> String.starts_with?(k, "m:") end)
+    |> Enum.reduce(%{}, &put_params/2)
+
+    case params === %{} do
+      true -> rule_result
+      _ -> Map.put(rule_result, "params", params)
+    end
+  end
+
+  defp put_params({_k, ""}, acc) do
+    acc
+  end
+
+  defp put_params({k, v}, acc) do
+    k_suffix = String.replace_leading(k, "m:", "")
+    Map.put(acc, k_suffix, v)
   end
 
   defp calculate_quality(0, _errors) do

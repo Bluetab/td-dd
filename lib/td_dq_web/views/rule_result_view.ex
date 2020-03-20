@@ -14,5 +14,13 @@ defmodule TdDqWeb.RuleResultView do
       records: Map.get(rule_result, :records),
       errors: Map.get(rule_result, :errors)
     }
+    |> with_params(rule_result)
+  end
+
+  defp with_params(rule_result_json, %{params: params}) do
+    case params === %{} do
+      true -> rule_result_json
+      _ -> Map.put(rule_result_json, :params, params)
+    end
   end
 end
