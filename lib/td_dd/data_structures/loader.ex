@@ -212,7 +212,7 @@ defmodule TdDd.Loader do
     Enum.reject(external_ids, &Enum.member?(descendents, &1))
   end
 
-  defp prune(external_id, external_ids, graph, deleted_at), do: external_ids
+  defp prune(_external_id, external_ids, _graph, _deleted_at), do: external_ids
 
   defp insert_relations([], _graph, _audit_attrs), do: 0
 
@@ -424,16 +424,15 @@ defmodule TdDd.Loader do
          %DataStructure{id: id} = data_structure,
          %{ts: ts} = audit_attrs
        ) do
-    ids =
-      unless equals?(current_metadata, mutable_metadata) do
-        insert_metadata_version(current_metadata.version + 1, mutable_metadata, id)
-        DataStructures.update_structure_metadata(current_metadata, %{deleted_at: ts})
-        update_structure(data_structure, audit_attrs)
+    if Map.get(current_metadata, :fields, %{}) == mutable_metadata do
+      []
+    else
+      insert_metadata_version(current_metadata.version + 1, mutable_metadata, id)
+      DataStructures.update_structure_metadata(current_metadata, %{deleted_at: ts})
+      update_structure(data_structure, audit_attrs)
 
-        [id]
-      end
-
-    ids || []
+      [id]
+    end
   end
 
   defp create_metadata_version(
@@ -460,17 +459,5 @@ defmodule TdDd.Loader do
     data_structure
     |> DataStructure.update_changeset(attrs)
     |> Repo.update()
-  end
-
-  defp equals?(current_metadata, mutable_metadata) do
-    fields = Map.get(current_metadata, :fields, %{})
-    same_keys? = Map.keys(fields) == Map.keys(mutable_metadata)
-
-    same_values? =
-      Enum.all?(Map.keys(mutable_metadata), fn key ->
-        Map.get(mutable_metadata, key) == Map.get(fields, key)
-      end)
-
-    same_keys? && same_values?
   end
 end
