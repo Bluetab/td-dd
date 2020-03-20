@@ -46,6 +46,48 @@ defmodule TdDd.DataStructuresTest do
       assert DataStructures.get_data_structure!(data_structure.id) <~> data_structure
     end
 
+    test "get_data_structure_by_external_id/1 returns the data_structure with metadata versions" do
+      data_structure = insert(:data_structure)
+
+      assert DataStructures.get_data_structure_by_external_id(data_structure.external_id)
+             <~> data_structure
+    end
+
+    test "get_latest_metadata_version/2 returns the latest version of the metadata" do
+      data_structure = insert(:data_structure)
+
+      ms =
+        Enum.map(
+          0..5,
+          &insert(:structure_metadata, version: &1, data_structure_id: data_structure.id)
+        )
+
+      assert DataStructures.get_latest_metadata_version(data_structure.id).id ==
+               Enum.max_by(ms, & &1.version).id
+    end
+
+    test "get_latest_metadata_version/2 returns nil when there is not metadata" do
+      data_structure = insert(:data_structure)
+      assert is_nil(DataStructures.get_latest_metadata_version(data_structure.id))
+    end
+
+    test "get_latest_metadata_version/2 hides deleted versions when specified" do
+      data_structure = insert(:data_structure)
+
+      ms =
+        insert(:structure_metadata,
+          data_structure_id: data_structure.id,
+          deleted_at: DateTime.utc_now()
+        )
+
+      assert is_nil(DataStructures.get_latest_metadata_version(data_structure.id, deleted: false))
+      assert DataStructures.get_latest_metadata_version(data_structure.id).id == ms.id
+    end
+
+    test "get_data_structure!/1 returns error when structure does not exist" do
+      assert_raise Ecto.NoResultsError, fn -> DataStructures.get_data_structure!(1) end
+    end
+
     test "create_data_structure/1 with valid data creates a data_structure" do
       assert {:ok, %DataStructure{} = data_structure} =
                DataStructures.create_data_structure(@valid_attrs)
@@ -537,6 +579,58 @@ defmodule TdDd.DataStructuresTest do
 
       assert {:ok, %Profile{value: value}} = DataStructures.update_profile(profile, @update_attrs)
       assert @update_attrs.value == value
+    end
+  end
+
+  describe "structure_metadata" do
+    alias TdDd.DataStructures.StructureMetadata
+
+    @valid_attrs %{fields: %{}, data_structure_id: 0, version: 0}
+    @update_attrs %{fields: %{"foo" => "bar"}, version: 0}
+    @invalid_attrs %{fields: nil, data_structure_id: nil, version: nil}
+
+    defp structure_metadata_fixture do
+      ds = insert(:data_structure)
+      attrs = Map.put(@valid_attrs, :data_structure_id, ds.id)
+      {:ok, structure_metadata} = DataStructures.create_structure_metadata(attrs)
+
+      structure_metadata
+    end
+
+    test "get_structure_metadata!/1 gets the metadata" do
+      structure_metadata = structure_metadata_fixture()
+
+      assert structure_metadata.id ==
+               DataStructures.get_structure_metadata!(structure_metadata.id).id
+    end
+
+    test "create_structure_metadata/1 with valid attrs creates the metadata" do
+      ds = insert(:data_structure)
+      attrs = Map.put(@valid_attrs, :data_structure_id, ds.id)
+
+      assert {:ok, %StructureMetadata{fields: fields, data_structure_id: ds_id, version: version}} =
+               DataStructures.create_structure_metadata(attrs)
+
+      assert ds.id == ds_id
+      assert attrs.fields == fields
+      assert attrs.version == version
+    end
+
+    test "create_structure_metadata/1 with invalid attrs returns an error" do
+      assert {:error, %Ecto.Changeset{}} =
+               DataStructures.create_structure_metadata(@invalid_attrs)
+    end
+
+    test "update_structure_metadata/1 with valid attrs updates the metadata" do
+      ds = insert(:data_structure)
+      mm = insert(:structure_metadata, data_structure: ds)
+
+      assert {:ok, %StructureMetadata{fields: fields, data_structure_id: ds_id, version: version}} =
+               DataStructures.update_structure_metadata(mm, @update_attrs)
+
+      assert ds.id == ds_id
+      assert @update_attrs.fields == fields
+      assert @update_attrs.version == version
     end
   end
 end

@@ -7,11 +7,13 @@ defmodule TdDd.DataStructures.DataStructure do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Profile
+  alias TdDd.DataStructures.StructureMetadata
   alias TdDd.Systems.System
 
   schema "data_structures" do
     belongs_to(:system, System, on_replace: :update)
     has_many(:versions, DataStructureVersion, on_delete: :delete_all)
+    has_many(:metadata_versions, StructureMetadata, on_delete: :delete_all)
     has_one(:profile, Profile, on_delete: :delete_all)
 
     field(:confidential, :boolean)
