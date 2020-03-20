@@ -83,12 +83,14 @@ defmodule TdDd.CSV.Reader do
     |> changeset(defaults, types, required)
   end
 
-  def changeset(record, defaults, %{metadata: :map} = types, required) do
-    meta = extract_meta(record)
+  def changeset(record, defaults, %{metadata: :map, mutable_metadata: :map} = types, required) do
+    meta = extract_meta(record, "m:")
+    mutable_meta = extract_meta(record, "mm:")
 
     {defaults, types}
     |> Changeset.cast(record, Map.keys(types))
     |> Changeset.change(%{metadata: meta})
+    |> Changeset.change(%{mutable_metadata: mutable_meta})
     |> Changeset.validate_required(required)
     |> Changeset.apply_action(:update)
   end
@@ -110,24 +112,24 @@ defmodule TdDd.CSV.Reader do
     |> Changeset.apply_action(:update)
   end
 
-  def extract_meta(map) do
+  def extract_meta(map, prefix) do
     map
-    |> Enum.filter(fn {k, _} -> String.starts_with?(k, "m:") end)
-    |> Enum.reduce(%{}, &reduce_metadata/2)
+    |> Enum.filter(fn {k, _} -> String.starts_with?(k, prefix) end)
+    |> Enum.reduce(%{}, &reduce_metadata(&1, &2, prefix))
   end
 
   def extract_profiling(map) do
     map
     |> Enum.filter(fn {k, _} -> k != "external_id" end)
-    |> Enum.reduce(%{}, &reduce_metadata/2)
+    |> Enum.reduce(%{}, &reduce_metadata(&1, &2, "m:"))
   end
 
-  defp reduce_metadata({_, ""}, acc), do: acc
+  defp reduce_metadata({_, ""}, acc, _prefix), do: acc
 
-  defp reduce_metadata({k, v}, %{} = acc) do
+  defp reduce_metadata({k, v}, %{} = acc, prefix) do
     [h | t] =
       k
-      |> String.replace_leading("m:", "")
+      |> String.replace_leading(prefix, "")
       |> String.split(".")
       |> Enum.reverse()
 

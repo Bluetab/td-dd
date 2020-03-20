@@ -34,6 +34,7 @@ defmodule TdDdWeb.DataStructureVersionView do
         |> add_ancestry
         |> add_profile
         |> add_embedded_relations(dsv)
+        |> add_metadata_versions
         |> Map.take([
           :ancestry,
           :children,
@@ -56,7 +57,8 @@ defmodule TdDdWeb.DataStructureVersionView do
           :profile,
           :degree,
           :relations,
-          :domain
+          :domain,
+          :metadata_versions
         ])
     }
   end
@@ -242,4 +244,11 @@ defmodule TdDdWeb.DataStructureVersionView do
   end
 
   defp lift_data(attrs), do: attrs
+
+  defp add_metadata_versions(%{metadata_versions: versions} = dsv) when is_list(versions) do
+    versions = Enum.map(versions, &Map.take(&1, [:fields, :version, :id, :deleted_at, :data_structure_id]))
+    Map.put(dsv, :metadata_versions, versions)
+  end
+
+  defp add_metadata_versions(dsv), do: Map.put(dsv, :metadata_versions, [])
 end

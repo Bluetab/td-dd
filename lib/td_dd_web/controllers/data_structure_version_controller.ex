@@ -34,7 +34,8 @@ defmodule TdDdWeb.DataStructureVersionController do
     :profile,
     :degree,
     :relations,
-    :domain
+    :domain,
+    :metadata_versions
   ]
 
   swagger_path :show do

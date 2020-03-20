@@ -14,6 +14,7 @@ defmodule TdDd.DataStructures do
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Profile
   alias TdDd.DataStructures.RelationType
+  alias TdDd.DataStructures.StructureMetadata
   alias TdDd.Lineage.GraphData
   alias TdDd.Repo
   alias TdDd.Search.IndexWorker
@@ -90,6 +91,24 @@ defmodule TdDd.DataStructures do
   end
 
   @doc """
+  Gets a single data_structure by external_id.
+
+  Returns nil if the Data structure does not exist.
+
+  ## Examples
+
+      iex> get_data_structure_by_external_id!(123)
+      %DataStructure{}
+
+      iex> get_data_structure_by_external_id(456)
+      ** nil
+
+  """
+  def get_data_structure_by_external_id(external_id) do
+    Repo.get_by(DataStructure, external_id: external_id)
+  end
+
+  @doc """
   Gets a single data_structure_version.
 
   Raises `Ecto.NoResultsError` if the Data structure version does not exist.
@@ -139,6 +158,7 @@ defmodule TdDd.DataStructures do
     |> enrich(options, :versions, &Repo.preload(&1, :versions))
     |> enrich(options, :latest, &get_latest_version/1)
     |> enrich(options, :domain, &get_domain/1)
+    |> enrich(options, :metadata_versions, &get_metadata_versions/1)
   end
 
   defp enrich(%DataStructureVersion{} = dsv, options) do
@@ -165,6 +185,7 @@ defmodule TdDd.DataStructures do
     |> enrich(options, :path, &get_path/1)
     |> enrich(options, :links, &get_structure_links/1)
     |> enrich(options, :domain, &get_domain/1)
+    |> enrich(options, :metadata_versions, &get_metadata_versions/1)
   end
 
   defp enrich(%{} = target, options, key, fun) do
@@ -353,6 +374,19 @@ defmodule TdDd.DataStructures do
 
   defp get_domain(%DataStructure{domain_id: domain_id}) do
     TaxonomyCache.get_domain(domain_id) || %{}
+  end
+
+  defp get_metadata_versions(%DataStructure{} = data_structure) do
+    data_structure
+    |> Repo.preload(:metadata_versions)
+    |> Repo.get(:metadata_versions)
+  end
+
+  defp get_metadata_versions(%DataStructureVersion{} = version) do
+    version
+    |> Repo.preload(data_structure: :metadata_versions)
+    |> Map.get(:data_structure)
+    |> Map.get(:metadata_versions)
   end
 
   @doc """
@@ -798,5 +832,68 @@ defmodule TdDd.DataStructures do
     from(ds in DataStructure, select: {ds.external_id, ds.id})
     |> Repo.all()
     |> Map.new()
+  end
+
+  @doc """
+  Creates mutable metadata.
+
+  ## Examples
+
+      iex> create_structure_metadata(%{field: value})
+      {:ok, %StructureMetadata{}}
+
+      iex> create_structure_metadata(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_structure_metadata(attrs \\ %{}) do
+    %StructureMetadata{}
+    |> StructureMetadata.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Gets a single metadata.
+
+  Raises `Ecto.NoResultsError` if the metadata does not exist.
+
+  ## Examples
+
+      iex> get_structure_metadata!(123)
+      %StructureMetadata{}
+
+      iex> get_structure_metadata!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_structure_metadata!(id), do: Repo.get!(StructureMetadata, id)
+
+  @doc """
+  Updates metadata.
+
+  ## Examples
+
+      iex> update_structure_metadata(structure_metadata, %{field: new_value})
+      {:ok, %StructureMetadata{}}
+
+      iex> update_structure_metadata(structure_metadata, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_structure_metadata(%StructureMetadata{} = structure_metadata, attrs) do
+    structure_metadata
+    |> StructureMetadata.changeset(attrs)
+    |> Repo.update()
+  end
+
+  def get_latest_metadata_version(id, options \\ []) do
+    StructureMetadata
+    |> where([sm], sm.data_structure_id == ^id)
+    |> with_deleted(options, dynamic([sm], is_nil(sm.deleted_at)))
+    |> order_by(desc: :version)
+    |> limit(1)
+    |> preload(:data_structure)
+    |> select([sm], sm)
+    |> Repo.one()
   end
 end

@@ -7,6 +7,7 @@ defmodule TdDd.Factory do
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Profile
   alias TdDd.DataStructures.RelationType
+  alias TdDd.DataStructures.StructureMetadata
   alias TdDd.Systems.System
 
   def user_factory do
@@ -74,6 +75,13 @@ defmodule TdDd.Factory do
     %Profile{
       value: %{"foo" => "bar"},
       data_structure: build(:data_structure)
+    }
+  end
+
+  def structure_metadata_factory do
+    %StructureMetadata{
+      fields: %{"foo" => "bar"},
+      version: 0
     }
   end
 

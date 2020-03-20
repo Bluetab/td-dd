@@ -82,6 +82,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
             system(:object, "Data Structure system", required: true)
             version(:integer, "Version number", required: true)
             versions(:array, "Versions", items: Schema.ref(:Version))
+            metadata_versions(:array, "Metadata Versions", items: Schema.ref(:MetadataVersion))
           end
         end,
       Version:
@@ -93,6 +94,19 @@ defmodule TdDdWeb.SwaggerDefinitions do
             version(:integer, "Version number", required: true)
             inserted_at(:string, "Insertion date")
             updated_at(:string, "Modification date")
+          end
+        end,
+      MetadataVersion:
+        swagger_schema do
+          title("Version")
+          description("A version")
+
+          properties do
+            id(:integer, "Id of the metadata", required: true)
+            version(:integer, "Version number", required: true)
+            deleted_at(:string, "Deletion date")
+            data_structure_id(:string, "Structure Id")
+            fields(:object, "Fields composing the metadata")
           end
         end
     }
