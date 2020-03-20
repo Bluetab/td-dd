@@ -18,6 +18,7 @@ defmodule TdDq.Rules.RuleResult do
     field(:parent_domains, :string, default: "")
     field(:errors, :integer)
     field(:records, :integer)
+    field(:params, :map, default: %{})
     timestamps()
   end
 
@@ -29,7 +30,7 @@ defmodule TdDq.Rules.RuleResult do
       |> format_result()
 
     rule_result
-    |> cast(attrs, [:implementation_key, :date, :parent_domains, :result, :errors, :records])
+    |> cast(attrs, [:implementation_key, :date, :parent_domains, :result, :errors, :records, :params])
     |> validate_required([:implementation_key, :date, :result])
     |> validate_number(:result, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
   end
