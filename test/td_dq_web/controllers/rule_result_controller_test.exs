@@ -5,8 +5,8 @@ defmodule TdDqWeb.RuleResultControllerTest do
   import TdDqWeb.Authentication, only: :functions
 
   alias TdDq.Cache.RuleLoader
-  alias TdDq.Search.IndexWorker
   alias TdDq.Cache.RuleResultLoader
+  alias TdDq.Search.IndexWorker
 
   setup_all do
     start_supervised(RuleLoader)
@@ -66,8 +66,6 @@ defmodule TdDqWeb.RuleResultControllerTest do
       assert Enum.map(results, &(&1["result"])) == ["0.00", "99.99"]
     end
 
-
-
     @tag :admin_authenticated
     @tag fixture: "test/fixtures/rule_results/rule_results.csv"
     test "uploads rule results with custom params in csv", %{
@@ -96,12 +94,10 @@ defmodule TdDqWeb.RuleResultControllerTest do
           "errors" => 2,
           "implementation_key" => "ri135",
           "params" => %{"param1" => "valor", "param2" => "valor2", "param3" => "4"},
-          "records" => 1000000,
+          "records" => 1_000_000,
           "result" => "99.99"
         }
       ]
     end
   end
-
-
 end
