@@ -45,7 +45,8 @@ defmodule TdDd.Application do
       # Workers for cache loading
       TdDd.Cache.SystemLoader,
       TdDd.Cache.StructureLoader,
-      TdDd.DataStructures.Hasher
+      TdDd.DataStructures.Hasher,
+      TdDd.Cache.DomainLoader
     ] ++ lineage_workers()
   end
 
