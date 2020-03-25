@@ -45,7 +45,7 @@ defmodule TdDq.Application do
       # Process to cache Rule Implementations Structures
       TdDq.Rules.RuleImplementation.Loader,
       TdDq.Rules.RuleImplementation.Migrator,
-      TdDq.Cache.DomainLoader
+      TdDq.Cache.DomainEventConsumer
     ]
   end
 end

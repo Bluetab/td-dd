@@ -1,4 +1,4 @@
-defmodule TdDq.Cache.DomainLoader do
+defmodule TdDq.Cache.DomainEventConsumer do
   @moduledoc """
   Module to manage domain related data structure information.
   """
