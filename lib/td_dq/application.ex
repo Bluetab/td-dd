@@ -44,7 +44,8 @@ defmodule TdDq.Application do
       TdDq.Rules.RuleRemover,
       # Process to cache Rule Implementations Structures
       TdDq.Rules.RuleImplementation.Loader,
-      TdDq.Rules.RuleImplementation.Migrator
+      TdDq.Rules.RuleImplementation.Migrator,
+      TdDq.Cache.DomainLoader
     ]
   end
 end
