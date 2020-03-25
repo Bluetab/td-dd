@@ -42,11 +42,12 @@ defmodule TdDd.Application do
       TdDd.Search.IndexWorker,
       # Worker for background bulk loading
       TdDd.Loader.LoaderWorker,
+      # Task to recalculate data structure hashes on startup
+      TdDd.DataStructures.Hasher,
       # Workers for cache loading
       TdDd.Cache.SystemLoader,
       TdDd.Cache.StructureLoader,
-      TdDd.DataStructures.Hasher,
-      TdDd.Cache.DomainLoader
+      TdDd.Cache.DomainEventConsumer
     ] ++ lineage_workers()
   end
 

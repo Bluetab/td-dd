@@ -1,6 +1,6 @@
-defmodule TdDd.Cache.DomainLoader do
+defmodule TdDd.Cache.DomainEventConsumer do
   @moduledoc """
-  Module to manage domain related data structure information.
+  Module to dispatch actions when domain-related events are received.
   """
 
   @behaviour TdCache.EventStream.Consumer
@@ -37,26 +37,34 @@ defmodule TdDd.Cache.DomainLoader do
 
   @impl true
   def handle_cast({:consume, events}, state) do
-    domain_ids =
-      events
-      |> Enum.filter(&(&1.event == "domain_updated"))
-      |> Enum.map(&Map.get(&1, :domain))
-      |> Enum.map(&(&1 |> String.split(":") |> List.last()))
-      |> Enum.map(&String.to_integer/1)
-      |> Enum.uniq()
-
-    unless domain_ids == [] do
-      %{}
-      |> Map.put(:domain_id, domain_ids)
-      |> DataStructures.list_data_structures()
-      |> Enum.map(& &1.id)
-      |> do_reindex()
-    end
+    events
+    |> read_structure_ids()
+    |> IndexWorker.reindex()
 
     {:noreply, state}
   end
 
-  defp do_reindex(structure_ids) do
-    IndexWorker.reindex(structure_ids)
+  defp read_structure_ids(events) do
+    case read_domain_ids(events) do
+      [] ->
+        []
+
+      domain_ids ->
+        %{domain_id: domain_ids}
+        |> DataStructures.list_data_structures()
+        |> Enum.map(& &1.id)
+    end
   end
+
+  defp read_domain_ids(events) do
+    events
+    |> Enum.flat_map(&read_domain_id/1)
+    |> Enum.uniq()
+  end
+
+  defp read_domain_id(%{event: "domain_updated", domain: "domain:" <> domain_id}) do
+    [String.to_integer(domain_id)]
+  end
+
+  defp read_domain_id(_), do: []
 end

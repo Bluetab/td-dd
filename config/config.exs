@@ -69,7 +69,7 @@ config :td_cache, :event_stream,
   streams: [
     [key: "data_structure:events", consumer: TdDd.Cache.StructureLoader],
     [key: "template:events", consumer: TdDd.Search.IndexWorker],
-    [key: "domain:events", consumer: TdDd.Cache.DomainLoader]
+    [key: "domain:events", consumer: TdDd.Cache.DomainEventConsumer]
   ]
 
 config :bolt_sips, Bolt,
