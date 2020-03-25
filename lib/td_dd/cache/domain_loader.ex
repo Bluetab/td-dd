@@ -40,13 +40,8 @@ defmodule TdDd.Cache.DomainLoader do
     domain_ids =
       events
       |> Enum.filter(&(&1.event == "domain_updated"))
-      |> Enum.map(&Map.take(&1, [:domain, :children_ids]))
-      |> Enum.map(fn %{domain: d, children_ids: c_ids} ->
-        domain_id = d |> String.split(":") |> List.last()
-        children_ids = c_ids |> String.split(",") |> Enum.filter(&(&1 != ""))
-        [domain_id | children_ids]
-      end)
-      |> List.flatten()
+      |> Enum.map(&Map.get(&1, :domain))
+      |> Enum.map(&(&1 |> String.split(":") |> List.last()))
       |> Enum.map(&String.to_integer/1)
       |> Enum.uniq()
 
