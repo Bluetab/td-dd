@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-2364] Reindex structures linked to updated domains
+
 ## [3.18.9] 2020-03-23
 
 ### Added

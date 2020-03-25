@@ -204,8 +204,9 @@ defmodule TdDdWeb.SystemControllerTest do
   defp create_data_structure_and_permissions(user_id, role_name, confidential, system_id) do
     domain_name = "domain_name"
     domain_id = :random.uniform(1_000_000)
+    updated_at = DateTime.utc_now()
 
-    TaxonomyCache.put_domain(%{name: domain_name, id: domain_id})
+    TaxonomyCache.put_domain(%{name: domain_name, id: domain_id, updated_at: updated_at})
 
     MockPermissionResolver.create_acl_entry(%{
       principal_id: user_id,

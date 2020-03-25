@@ -533,7 +533,8 @@ defmodule TdDd.DataStructuresTest do
     defp domain_fixture do
       domain_name = "domain_name"
       domain_id = :random.uniform(1_000_000)
-      TaxonomyCache.put_domain(%{name: domain_name, id: domain_id})
+      updated_at = DateTime.utc_now()
+      TaxonomyCache.put_domain(%{name: domain_name, id: domain_id, updated_at: updated_at})
 
       %{id: domain_id, name: domain_name}
     end

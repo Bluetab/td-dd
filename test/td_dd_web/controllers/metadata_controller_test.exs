@@ -172,7 +172,7 @@ defmodule TdDdWeb.MetadataControllerTest do
     } do
       domain = "domain_name"
       domain_id = :random.uniform(1_000_000)
-      TaxonomyCache.put_domain(%{name: domain, id: domain_id})
+      TaxonomyCache.put_domain(%{name: domain, id: domain_id, updated_at: DateTime.utc_now()})
 
       conn =
         post(conn, system_path(conn, :create), system: %{name: "Power BI", external_id: "pbi"})

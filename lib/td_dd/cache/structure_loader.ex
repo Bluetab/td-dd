@@ -45,16 +45,17 @@ defmodule TdDd.Cache.StructureLoader do
 
   @impl true
   def handle_info(:refresh_cached_structures, state) do
-
     try do
       if Redix.exists?(@structure_parent_id_migration_key) == false do
         Timer.time(
           fn -> refresh_cached_structures() end,
           fn ms, _ -> Logger.info("Structures in cache refreshed in #{ms}ms") end
         )
+
         Redix.command!(["SET", @structure_parent_id_migration_key, "#{DateTime.utc_now()}"])
       end
-    rescue e -> Logger.error("Unexpected error while refreshing cached structures... #{inspect(e)}")
+    rescue
+      e -> Logger.error("Unexpected error while refreshing cached structures... #{inspect(e)}")
     end
 
     {:noreply, state}
@@ -94,7 +95,7 @@ defmodule TdDd.Cache.StructureLoader do
     |> Enum.map(&DataStructures.get_latest_version(&1, [:system, :parents]))
     |> Enum.filter(& &1)
     |> Enum.map(&to_cache_entry/1)
-    |> Enum.map(&(put_cache(&1, opts)))
+    |> Enum.map(&put_cache(&1, opts))
   end
 
   defp to_cache_entry(%DataStructureVersion{data_structure_id: id, data_structure: ds} = dsv) do
@@ -126,8 +127,9 @@ defmodule TdDd.Cache.StructureLoader do
 
   defp refresh_cached_structures do
     structure_keys = Redix.command!(["SMEMBERS", "data_structure:keys"])
+
     structure_keys
     |> extract_structure_ids()
-    |> cache_structures([force: true])
+    |> cache_structures(force: true)
   end
 end

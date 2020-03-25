@@ -82,22 +82,18 @@ defmodule TdDd.DataStructure.Search do
       |> Map.get(agg_name, %{})
       |> Map.get("buckets", [])
 
-    r =
-      Enum.map(results, fn bucket ->
-        agg_name_values = %{
-          "type" => agg_name,
-          "doc_count" => bucket["doc_count"],
-          "key" => bucket["key"]
-        }
+    Enum.map(results, fn bucket ->
+      agg_name_values = %{
+        "type" => agg_name,
+        "doc_count" => bucket["doc_count"],
+        "key" => bucket["key"]
+      }
 
-        case agg_names do
-          [] ->
-            agg_name_values
-
-          _ ->
-            Map.put(agg_name_values, "aggs", get_agg_results(agg_names, bucket))
-        end
-      end)
+      case agg_names do
+        [] -> agg_name_values
+        _ -> Map.put(agg_name_values, "aggs", get_agg_results(agg_names, bucket))
+      end
+    end)
   end
 
   @doc """
