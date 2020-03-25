@@ -6,6 +6,12 @@
 
 - [TD-2364] Reindex structures linked to updated domains
 
+## [3.18.9] 2020-03-23
+
+### Added
+
+- [TD-2326] Support for mutable metadata
+
 ### Changed
 
 - [TD-2218] Revaluate structure children when its deletion is undone
