@@ -1,10 +1,10 @@
 # Changelog
 
-## [3.18.9] 2020-03-23
+## [Unreleased]
 
 ### Added
 
-- [TD-2326] Support for mutable metadata
+- [TD-2364] Reindex structures linked to updated domains
 
 ### Changed
 
