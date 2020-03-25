@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- [TD-2364] Reindex rules on domain update 
+
 ### Fixed
 
 - [TD-2365] Read concept from Redis cache in rule reindexing
