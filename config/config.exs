@@ -31,9 +31,6 @@ config :td_dq, TdDq.Auth.Guardian,
   ttl: {1, :hours},
   secret_key: "SuperSecretTruedat"
 
-# Hashing algorithm
-config :td_dq, hashing_module: Comeonin.Bcrypt
-
 # Configures Elixir's Logger
 # set EX_LOGGER_FORMAT environment variable to override Elixir's Logger format
 # (without the 'end of line' character)
@@ -48,6 +45,7 @@ config :logger, :console,
 
 # Configuration for Phoenix
 config :phoenix, :json_library, Jason
+config :phoenix_swagger, :json_library, Jason
 
 config :td_dq, :phoenix_swagger,
   swagger_files: %{

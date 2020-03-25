@@ -30,8 +30,12 @@ defmodule TdDqWeb.RuleResultControllerTest do
       conn: conn,
       rule_results_file: rule_results_file
     } do
-      conn = post(conn, Routes.rule_result_path(conn, :upload), rule_results: rule_results_file)
-      assert response(conn, 422) == "{\"errors\":[{\"date\":[\"is invalid\"],\"row_number\":2}]}"
+      assert %{"errors" => errors} =
+               conn
+               |> post(Routes.rule_result_path(conn, :upload), rule_results: rule_results_file)
+               |> json_response(:unprocessable_entity)
+
+      assert errors == [%{"date" => ["is invalid"], "row_number" => 2}]
     end
 
     @tag :admin_authenticated
@@ -47,7 +51,7 @@ defmodule TdDqWeb.RuleResultControllerTest do
       conn = recycle_and_put_headers(conn)
       conn = get(conn, Routes.rule_implementation_path(conn, :show, rule_implementation.id))
       results = json_response(conn, 200)["data"]["all_rule_results"]
-      assert Enum.map(results, &(&1["result"])) == ["4.00", "72.00"]
+      assert Enum.map(results, & &1["result"]) == ["4.00", "72.00"]
     end
 
     @tag :admin_authenticated
@@ -63,7 +67,7 @@ defmodule TdDqWeb.RuleResultControllerTest do
       conn = recycle_and_put_headers(conn)
       conn = get(conn, Routes.rule_implementation_path(conn, :show, rule_implementation.id))
       results = json_response(conn, 200)["data"]["all_rule_results"]
-      assert Enum.map(results, &(&1["result"])) == ["0.00", "99.99"]
+      assert Enum.map(results, & &1["result"]) == ["0.00", "99.99"]
     end
 
     @tag :admin_authenticated
@@ -81,23 +85,23 @@ defmodule TdDqWeb.RuleResultControllerTest do
       results = json_response(conn, 200)["data"]["all_rule_results"]
 
       assert results == [
-        %{
-          "date" => "2019-08-30T00:00:00Z",
-          "errors" => 4,
-          "implementation_key" => "ri135",
-          "params" => %{"param3" => "5"},
-          "records" => 4,
-          "result" => "0.00"
-        },
-        %{
-          "date" => "2019-08-29T00:00:00Z",
-          "errors" => 2,
-          "implementation_key" => "ri135",
-          "params" => %{"param1" => "valor", "param2" => "valor2", "param3" => "4"},
-          "records" => 1_000_000,
-          "result" => "99.99"
-        }
-      ]
+               %{
+                 "date" => "2019-08-30T00:00:00Z",
+                 "errors" => 4,
+                 "implementation_key" => "ri135",
+                 "params" => %{"param3" => "5"},
+                 "records" => 4,
+                 "result" => "0.00"
+               },
+               %{
+                 "date" => "2019-08-29T00:00:00Z",
+                 "errors" => 2,
+                 "implementation_key" => "ri135",
+                 "params" => %{"param1" => "valor", "param2" => "valor2", "param3" => "4"},
+                 "records" => 1_000_000,
+                 "result" => "99.99"
+               }
+             ]
     end
   end
 end

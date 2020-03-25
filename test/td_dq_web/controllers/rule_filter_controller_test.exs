@@ -5,7 +5,7 @@ defmodule TdDqWeb.RuleFilterControllerTest do
   alias TdDqWeb.ApiServices.MockTdAuditService
 
   setup_all do
-    start_supervised(MockTdAuditService)
+    start_supervised!(MockTdAuditService)
     :ok
   end
 
@@ -18,19 +18,12 @@ defmodule TdDqWeb.RuleFilterControllerTest do
     test "search filters should return at least the informed filters", %{conn: conn} do
       filters = %{"active.raw" => [true]}
 
-      conn =
-        post(
-          conn,
-          Routes.rule_filter_path(
-            conn,
-            :search,
-            %{"filters" => filters}
-          )
-        )
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.rule_filter_path(conn, :search, %{"filters" => filters}))
+               |> json_response(:ok)
 
-      assert json_response(conn, 200)["data"] == %{
-               "active.raw" => ["true"]
-             }
+      assert data == %{"active.raw" => ["true"]}
     end
   end
 end
