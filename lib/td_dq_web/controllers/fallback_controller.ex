@@ -6,6 +6,8 @@ defmodule TdDqWeb.FallbackController do
   """
   use TdDqWeb, :controller
 
+  alias TdDqWeb.ErrorView
+
   def call(conn, {:error, %Ecto.Changeset{} = changeset}) do
     conn
     |> put_status(:unprocessable_entity)
@@ -18,5 +20,12 @@ defmodule TdDqWeb.FallbackController do
     |> put_status(:not_found)
     |> put_view(TdDqWeb.ErrorView)
     |> render("404.json")
+  end
+
+  def call(conn, {:can, false}) do
+    conn
+    |> put_status(:forbidden)
+    |> put_view(ErrorView)
+    |> render("403.json")
   end
 end

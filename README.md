@@ -39,14 +39,11 @@ Ready to run in production? Please [check our deployment guides](http://www.phoe
 * [credo](http://credo-ci.org/) - Static code analysis tool for the Elixir language
 * [distillery](https://github.com/bitwalker/distillery) - Release packaging for the Erlang VM
 * [guardian](https://github.com/ueberauth/guardian) - Authentication library
-* [Cabbage](https://github.com/cabbage-ex/cabbage) - Story BDD tool
 * [phoenix_swagger](https://github.com/xerions/phoenix_swagger) - Swagger integration to Phoenix framework
 * [ex_json_schema](https://github.com/jonasschmidt/ex_json_schema) - Elixir JSON Schema validator
 * [canada](https://github.com/jarednorman/canada) - Permission definitions in Elixir apps
-* [comeonin](https://hex.pm/packages/comeonin) - Password hashing library for Elixir
 * [ex_json_schema](https://github.com/jonasschmidt/ex_json_schema) - Elixir JSON Schema validator
 * [csv](https://github.com/beatrichartz/csv) - CSV parsing
-* [timex](https://hexdocs.pm/timex) - A complete date/time library for Elixir projects
 
 
 ## Authors

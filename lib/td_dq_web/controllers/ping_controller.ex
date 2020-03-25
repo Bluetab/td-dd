@@ -4,6 +4,6 @@ defmodule TdDqWeb.PingController do
   action_fallback TdDqWeb.FallbackController
 
   def ping(conn, _params) do
-    send_resp(conn, 200, "pong")
+    send_resp(conn, :ok, "pong")
   end
 end

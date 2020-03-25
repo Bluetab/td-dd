@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-2365] Read concept from Redis cache in rule reindexing
+
 ## [3.18.0] 2020-03-23
 
 ### Added

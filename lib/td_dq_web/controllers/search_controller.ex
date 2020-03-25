@@ -1,8 +1,9 @@
 defmodule TdDqWeb.SearchController do
   use TdDqWeb, :controller
-
   use PhoenixSwagger
+
   import Canada, only: [can?: 2]
+
   alias TdDq.Accounts.User
   alias TdDq.Rules
   alias TdDq.Rules.Search

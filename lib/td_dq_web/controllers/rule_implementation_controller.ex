@@ -33,7 +33,7 @@ defmodule TdDqWeb.RuleImplementationController do
       |> add_rule_filter(params, "rule_business_concept_id", "business_concept_id")
       |> add_rule_filter(params, "is_rule_active", "active")
 
-    with true <- can?(user, index(RuleImplementation)) do
+    with {:can, true} <- {:can, can?(user, index(RuleImplementation))} do
       rule_implementations =
         filters
         |> Rules.list_rule_implementations()
@@ -41,20 +41,6 @@ defmodule TdDqWeb.RuleImplementationController do
         |> Enum.map(&Rules.enrich_rule_implementation_structures(&1))
 
       render(conn, "index.json", rule_implementations: rule_implementations)
-    else
-      false ->
-        conn
-        |> put_status(:forbidden)
-        |> put_view(ErrorView)
-        |> render("403.json")
-
-      error ->
-        Logger.error("While getting rule implementations... #{inspect(error)}")
-
-        conn
-        |> put_status(:unprocessable_entity)
-        |> put_view(ErrorView)
-        |> render("422.json")
     end
   end
 
@@ -105,16 +91,14 @@ defmodule TdDqWeb.RuleImplementationController do
     user = conn.assigns[:current_resource]
     rule_id = rule_implementation_params["rule_id"]
 
-    rule =
-      rule_id
-      |> Rules.get_rule_or_nil()
+    rule = Rules.get_rule_or_nil(rule_id)
 
     resource_type = %{
       "business_concept_id" => rule.business_concept_id,
       "resource_type" => "rule_implementation"
     }
 
-    with true <- can?(user, create(resource_type)),
+    with {:can, true} <- {:can, can?(user, create(resource_type))},
          {:valid_implementation_key} <-
            check_valid_implementation_key(rule_implementation_params),
          {:implementation_key_available} <-
@@ -123,18 +107,11 @@ defmodule TdDqWeb.RuleImplementationController do
            Rules.create_rule_implementation(rule, rule_implementation_params),
          {:ok, %RuleImplementation{} = rule_implementation} <-
            generate_implementation_key(rule_implementation, rule) do
-
       conn
       |> put_status(:created)
       |> put_resp_header("location", rule_implementation_path(conn, :show, rule_implementation))
       |> render("show.json", rule_implementation: rule_implementation)
     else
-      false ->
-        conn
-        |> put_status(:forbidden)
-        |> put_view(ErrorView)
-        |> render("403.json")
-
       {:invalid_implementation_key} ->
         conn
         |> put_status(:unprocessable_entity)
@@ -229,20 +206,8 @@ defmodule TdDqWeb.RuleImplementationController do
 
     user = conn.assigns[:current_resource]
 
-    with true <- can?(user, show(rule_implementation)) do
+    with {:can, true} <- {:can, can?(user, show(rule_implementation))} do
       render(conn, "show.json", rule_implementation: rule_implementation)
-    else
-      false ->
-        conn
-        |> put_status(:forbidden)
-        |> put_view(ErrorView)
-        |> render("403.json")
-
-      _error ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> put_view(ErrorView)
-        |> render("422.json")
     end
   end
 
@@ -261,7 +226,9 @@ defmodule TdDqWeb.RuleImplementationController do
 
   def update(conn, %{"id" => id, "rule_implementation" => rule_implementation_params}) do
     user = conn.assigns[:current_resource]
-    update_params = rule_implementation_params |> Map.drop([:implementation_key, "implementation_key"])
+
+    update_params =
+      Map.drop(rule_implementation_params, [:implementation_key, "implementation_key"])
 
     rule_implementation =
       id
@@ -275,7 +242,7 @@ defmodule TdDqWeb.RuleImplementationController do
       "resource_type" => "rule_implementation"
     }
 
-    with true <- can?(user, update(resource_type)),
+    with {:can, true} <- {:can, can?(user, update(resource_type))},
          {:ok, %RuleImplementation{} = rule_implementation} <-
            Rules.update_rule_implementation(
              rule_implementation,
@@ -283,12 +250,6 @@ defmodule TdDqWeb.RuleImplementationController do
            ) do
       render(conn, "show.json", rule_implementation: rule_implementation)
     else
-      false ->
-        conn
-        |> put_status(:forbidden)
-        |> put_view(ErrorView)
-        |> render("403.json")
-
       {:error, %Changeset{data: %{__struct__: _}} = changeset} ->
         conn
         |> put_status(:unprocessable_entity)
@@ -334,23 +295,18 @@ defmodule TdDqWeb.RuleImplementationController do
     user = conn.assigns[:current_resource]
     rule = Repo.preload(rule_implementation, :rule).rule
 
-    with true <-
-           can?(
-             user,
-             delete(%{
-               "business_concept_id" => rule.business_concept_id,
-               "resource_type" => "rule_implementation"
-             })
-           ),
+    with {:can, true} <-
+           {:can,
+            can?(
+              user,
+              delete(%{
+                "business_concept_id" => rule.business_concept_id,
+                "resource_type" => "rule_implementation"
+              })
+            )},
          {:ok, %RuleImplementation{}} <- Rules.delete_rule_implementation(rule_implementation) do
       send_resp(conn, :no_content, "")
     else
-      false ->
-        conn
-        |> put_status(:forbidden)
-        |> put_view(ErrorView)
-        |> render("403.json")
-
       _error ->
         conn
         |> put_status(:unprocessable_entity)
@@ -373,7 +329,7 @@ defmodule TdDqWeb.RuleImplementationController do
     user = conn.assigns[:current_resource]
     rule_id = String.to_integer(id)
 
-    with true <- can?(user, index(RuleImplementation)) do
+    with {:can, true} <- {:can, can?(user, index(RuleImplementation))} do
       opts = deleted_implementations(params)
 
       rule_implementations =
@@ -384,31 +340,15 @@ defmodule TdDqWeb.RuleImplementationController do
         |> Enum.map(&Rules.enrich_rule_implementation_structures(&1))
 
       render(conn, "index.json", rule_implementations: rule_implementations)
-    else
-      false ->
-        conn
-        |> put_status(:forbidden)
-        |> put_view(ErrorView)
-        |> render("403.json")
-
-      error ->
-        Logger.error("While getting rule implementations... #{inspect(error)}")
-
-        conn
-        |> put_status(:unprocessable_entity)
-        |> put_view(ErrorView)
-        |> render("422.json")
     end
   end
 
   def search_rules_implementations(conn, params) do
     user = conn.assigns[:current_resource]
 
-    filters =
-      %{}
-      |> add_filter(params, "structure_id")
+    filters = add_filter(%{}, params, "structure_id")
 
-    with true <- can?(user, index(RuleImplementation)) do
+    with {:can, true} <- {:can, can?(user, index(RuleImplementation))} do
       rule_implementations =
         filters
         |> Rules.list_rule_implementations()
@@ -416,20 +356,6 @@ defmodule TdDqWeb.RuleImplementationController do
         |> Enum.map(&add_last_rule_result(&1))
 
       render(conn, "index.json", rule_implementations: rule_implementations)
-    else
-      false ->
-        conn
-        |> put_status(:forbidden)
-        |> put_view(ErrorView)
-        |> render("403.json")
-
-      error ->
-        Logger.error("While getting rule implementations... #{inspect(error)}")
-
-        conn
-        |> put_status(:unprocessable_entity)
-        |> put_view(ErrorView)
-        |> render("422.json")
     end
   end
 

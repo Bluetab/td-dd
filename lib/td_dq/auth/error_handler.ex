@@ -6,6 +6,6 @@ defmodule TdDq.Auth.ErrorHandler do
 
   def auth_error(conn, {type, _reason}, _opts) do
     body = JSON.encode!(%{message: to_string(type)})
-    send_resp(conn, 401, body)
+    send_resp(conn, :unauthorized, body)
   end
 end
