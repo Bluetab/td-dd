@@ -1,9 +1,10 @@
 defmodule TdDqWeb.RuleController do
-  require Logger
   use TdHypermedia, :controller
   use TdDqWeb, :controller
   use PhoenixSwagger
+
   import Canada, only: [can?: 2]
+
   alias Ecto.Changeset
   alias Jason, as: JSON
   alias TdCache.EventStream.Publisher
@@ -15,6 +16,8 @@ defmodule TdDqWeb.RuleController do
   alias TdDqWeb.ErrorView
   alias TdDqWeb.RuleView
   alias TdDqWeb.SwaggerDefinitions
+
+  require Logger
 
   action_fallback(TdDqWeb.FallbackController)
 
@@ -63,7 +66,7 @@ defmodule TdDqWeb.RuleController do
       "resource_type" => "rule"
     }
 
-    with true <- can?(user, get_rules_by_concept(resource_type)) do
+    with {:can, true} <- {:can, can?(user, get_rules_by_concept(resource_type))} do
       params =
         params
         |> Map.put("business_concept_id", id)
@@ -81,18 +84,6 @@ defmodule TdDqWeb.RuleController do
         hypermedia: collection_hypermedia("rule", conn, rules, resource_type),
         rules: rules
       )
-    else
-      false ->
-        conn
-        |> put_status(:forbidden)
-        |> put_view(ErrorView)
-        |> render("403.json")
-
-      {:error, _changeset} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> put_view(ErrorView)
-        |> render("422.json")
     end
   end
 
@@ -111,16 +102,14 @@ defmodule TdDqWeb.RuleController do
   def create(conn, %{"rule" => rule_params}) do
     user = conn.assigns[:current_resource]
 
-    creation_attrs =
-      rule_params
-      |> Map.put_new("updated_by", user.id)
+    creation_attrs = Map.put_new(rule_params, "updated_by", user.id)
 
     resource_type =
       rule_params
       |> Map.take(["business_concept_id"])
       |> Map.put("resource_type", "rule")
 
-    with true <- can?(user, create(resource_type)),
+    with {:can, true} <- {:can, can?(user, create(resource_type))},
          {:ok, %Rule{} = rule} <- Rules.create_rule(creation_attrs) do
       audit = %{
         "audit" => %{
@@ -137,12 +126,6 @@ defmodule TdDqWeb.RuleController do
       |> put_resp_header("location", rule_path(conn, :show, rule))
       |> render("show.json", rule: rule, user_permissions: get_user_permissions(conn, rule))
     else
-      false ->
-        conn
-        |> put_status(:forbidden)
-        |> put_view(ErrorView)
-        |> render("403.json")
-
       {:error, %Changeset{data: %{__struct__: _}} = changeset} ->
         conn
         |> put_status(:unprocessable_entity)
@@ -205,11 +188,9 @@ defmodule TdDqWeb.RuleController do
   def show(conn, %{"id" => id}) do
     user = conn.assigns[:current_resource]
 
-    rule =
-      id
-      |> Rules.get_rule!()
+    rule = Rules.get_rule!(id)
 
-    with true <- can?(user, show(rule)) do
+    with {:can, true} <- {:can, can?(user, show(rule))} do
       render(
         conn,
         "show.json",
@@ -221,12 +202,6 @@ defmodule TdDqWeb.RuleController do
         rule: rule,
         user_permissions: get_user_permissions(conn, rule)
       )
-    else
-      false ->
-        conn
-        |> put_status(:forbidden)
-        |> put_view(ErrorView)
-        |> render("403.json")
     end
   end
 
@@ -252,20 +227,12 @@ defmodule TdDqWeb.RuleController do
       "resource_type" => "rule"
     }
 
-    update_attrs =
-      rule_params
-      |> Map.put_new("updated_by", user.id)
+    update_attrs = Map.put_new(rule_params, "updated_by", user.id)
 
-    with true <- can?(user, update(resource_type)),
+    with {:can, true} <- {:can, can?(user, update(resource_type))},
          {:ok, %Rule{} = rule} <- Rules.update_rule(rule, update_attrs) do
       render(conn, "show.json", rule: rule, user_permissions: get_user_permissions(conn, rule))
     else
-      false ->
-        conn
-        |> put_status(:forbidden)
-        |> put_view(ErrorView)
-        |> render("403.json")
-
       {:error, %Changeset{data: %{__struct__: _}} = changeset} ->
         conn
         |> put_status(:unprocessable_entity)
@@ -315,7 +282,7 @@ defmodule TdDqWeb.RuleController do
       "resource_type" => "rule"
     }
 
-    with true <- can?(user, delete(resource_type)),
+    with {:can, true} <- {:can, can?(user, delete(resource_type))},
          {:ok, %Rule{}} <- Rules.delete_rule(rule) do
       rule_params =
         rule
@@ -334,12 +301,6 @@ defmodule TdDqWeb.RuleController do
       Audit.create_event(conn, audit, @events.delete_rule)
       send_resp(conn, :no_content, "")
     else
-      false ->
-        conn
-        |> put_status(:forbidden)
-        |> put_view(ErrorView)
-        |> render("403.json")
-
       {:error, %Changeset{data: %{__struct__: _}} = changeset} ->
         conn
         |> put_status(:unprocessable_entity)
@@ -375,34 +336,20 @@ defmodule TdDqWeb.RuleController do
       rules: "rule_ids:#{event_ids}"
     }
 
-    with {:ok, _event_id} <- Publisher.publish(event, "rules:events") do
-      body = JSON.encode!(%{data: rules_ids})
+    case Publisher.publish(event, "rules:events") do
+      {:ok, _event_id} ->
+        body = JSON.encode!(%{data: rules_ids})
 
-      conn
-      |> put_resp_content_type("application/json", "utf-8")
-      |> send_resp(200, body)
-    else
-      false ->
         conn
-        |> put_status(:forbidden)
-        |> put_view(ErrorView)
-        |> render("403.json")
+        |> put_resp_content_type("application/json", "utf-8")
+        |> send_resp(:ok, body)
 
       {:error, error} ->
         Logger.info("While executing rules... #{inspect(error)}")
 
         conn
-        |> put_status(:unprocessable_entity)
         |> put_resp_content_type("application/json", "utf-8")
-        |> send_resp(422, Poison.encode!(%{error: error}))
-
-      error ->
-        Logger.info("Unexpected error while executing rules... #{inspect(error)}")
-
-        conn
-        |> put_status(:unprocessable_entity)
-        |> put_view(ErrorView)
-        |> render("422.json")
+        |> send_resp(:unprocessable_entity, JSON.encode!(%{error: error}))
     end
   end
 
@@ -411,9 +358,11 @@ defmodule TdDqWeb.RuleController do
   end
 
   defp search_all_executable_rule_ids(user, params) do
-    %{results: rules} = params
-    |> Map.drop(["page", "size"])
-    |> Search.search(user, 0, 10_000)
-    rules |> Enum.map(&Map.get(&1, :id))
+    %{results: rules} =
+      params
+      |> Map.drop(["page", "size"])
+      |> Search.search(user, 0, 10_000)
+
+    Enum.map(rules, &Map.get(&1, :id))
   end
 end

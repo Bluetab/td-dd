@@ -207,8 +207,8 @@ defmodule TdDq.Rules.Rule do
     end
 
     defp with_result_text(%{result: result} = result_map, minimum, goal, "percentage") do
-
       result = Decimal.to_float(result)
+
       result_text =
         cond do
           result < minimum ->
@@ -247,7 +247,7 @@ defmodule TdDq.Rules.Rule do
     defp get_domain_ids(%{business_concept_id: nil}), do: -1
 
     defp get_domain_ids(%{business_concept_id: business_concept_id}) do
-      {:ok, domain_ids} = ConceptCache.get(business_concept_id, :domain_ids)
+      {:ok, domain_ids} = ConceptCache.get(business_concept_id, :domain_ids, refresh: true)
       domain_ids
     end
 
@@ -272,7 +272,7 @@ defmodule TdDq.Rules.Rule do
     defp get_business_concept_version(%{business_concept_id: nil}), do: %{name: ""}
 
     defp get_business_concept_version(%{business_concept_id: business_concept_id}) do
-      case ConceptCache.get(business_concept_id) do
+      case ConceptCache.get(business_concept_id, refresh: true) do
         {:ok, %{} = concept} when map_size(concept) > 0 ->
           concept
           |> Map.take([:name, :id, :content])

@@ -193,14 +193,9 @@ defmodule TdDq.Rules do
 
   defp do_update_rule(changeset) do
     with {:ok, rule} <- Repo.update(changeset) do
-      rule =
-        rule
-        |> preload_bc_version
-
+      rule = preload_bc_version(rule)
       RuleLoader.refresh(Map.get(rule, :id))
       {:ok, rule}
-    else
-      error -> error
     end
   end
 

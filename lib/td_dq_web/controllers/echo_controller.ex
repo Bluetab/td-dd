@@ -6,6 +6,6 @@ defmodule TdDqWeb.EchoController do
   action_fallback TdDqWeb.FallbackController
 
   def echo(conn, params) do
-    send_resp(conn, 200, params |> JSON.encode!())
+    send_resp(conn, :ok, params |> JSON.encode!())
   end
 end

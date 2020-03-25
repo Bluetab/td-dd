@@ -6,8 +6,6 @@ config :td_dq, TdDqWeb.Endpoint,
   http: [port: 4004],
   server: true
 
-config :td_dq, hashing_module: TdDq.DummyHashing
-
 config :td_dq, rule_removal: false
 
 # Print only warnings and errors during test
