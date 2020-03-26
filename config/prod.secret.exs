@@ -38,9 +38,4 @@ config :td_dq, :audit_service,
 config :td_cache, redis_host: "${REDIS_HOST}"
 
 config :td_cache, :event_stream,
-  consumer_id: "${HOSTNAME}",
-  consumer_group: "dq",
-  streams: [
-    [key: "business_concept:events", consumer: TdDq.Search.IndexWorker],
-    [key: "template:events", consumer: TdDq.Search.IndexWorker]
-  ]
+  consumer_id: "${HOSTNAME}"

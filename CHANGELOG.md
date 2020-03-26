@@ -4,7 +4,7 @@
 
 ### Changed
 
-- [TD-2364] Reindex rules on domain update 
+- [TD-2364] Reindex rules on domain update
 
 ### Fixed
 
