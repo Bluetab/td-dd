@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-2364] Reindex structures linked to updated domains
+- [TD-2318] Include node types in `/api/graphs/:id` response
 
 ## [3.18.9] 2020-03-23
 
