@@ -25,18 +25,7 @@ defmodule TdDd.Loader do
 
     {structure_records, relation_records} =
       FieldsAsStructures.fields_as_structures(structure_records, field_records, relation_records)
-
-    default_relation_type = RelationTypes.get_default_relation_type()
-    relation_types_id_map = RelationTypes.get_relation_type_name_to_id_map()
-
-    relation_records =
-      relation_records
-      |> Enum.map(&{&1, get_relation_type(&1, relation_types_id_map, default_relation_type)})
-      |> Enum.map(fn {rel, {rel_type_id, rel_type_name}} ->
-        rel
-        |> Map.put(:relation_type_id, rel_type_id)
-        |> Map.put(:relation_type_name, rel_type_name)
-      end)
+    relation_records = RelationTypes.with_relation_types(relation_records)
 
     do_load(
       graph,
@@ -47,14 +36,6 @@ defmodule TdDd.Loader do
       opts[:parent_external_id]
     )
   end
-
-  defp get_relation_type(%{relation_type_name: ""}, _, default), do: {default.id, default.name}
-
-  defp get_relation_type(%{relation_type_name: relation_type_name}, id_maps, _) do
-    {Map.get(id_maps, relation_type_name), relation_type_name}
-  end
-
-  defp get_relation_type(_, _, default), do: {default.id, default.name}
 
   defp do_load(graph, structure_records, relation_records, audit_attrs, nil, nil) do
     {:ok, graph} = Graph.add(graph, structure_records, relation_records)
@@ -74,7 +55,11 @@ defmodule TdDd.Loader do
     case Graph.root(graph) do
       ^external_id ->
         Repo.transaction(fn ->
-          ancestor_records = Ancestry.get_ancestor_records(external_id, parent_external_id)
+          ancestor_records =
+            external_id
+            |> Ancestry.get_ancestor_records(parent_external_id)
+            |> RelationTypes.with_relation_types()
+
           {:ok, graph} = Graph.add(graph, ancestor_records)
 
           do_load(structure_records, graph, audit_attrs)

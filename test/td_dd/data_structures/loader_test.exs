@@ -1,14 +1,17 @@
 defmodule TdDd.LoaderTest do
   use TdDd.DataCase
 
+  import TdDd.TestOperators
+
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructureRelation
+  alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Graph
   alias TdDd.Loader
   alias TdDd.Search.MockIndexWorker
 
   setup_all do
-    start_supervised(MockIndexWorker)
+    start_supervised!(MockIndexWorker)
     :ok
   end
 
@@ -673,6 +676,53 @@ defmodule TdDd.LoaderTest do
 
                version == 0 and is_nil(deleted_at)
              end)
+    end
+
+    test "load/1 when external_id and parent_external_id provided" do
+      external_id = "parent_external_id"
+      child_external_id = "child_external_id"
+      sys = insert(:system, external_id: "SYS1", name: "SYS1")
+      ds = insert(:data_structure, external_id: external_id, system_id: sys.id)
+      version = insert(:data_structure_version, data_structure_id: ds.id)
+
+      s1 = %{
+        external_id: ds.external_id,
+        group: version.group,
+        name: version.name,
+        type: version.type,
+        system_id: sys.id
+      }
+
+      s2 = %{
+        external_id: child_external_id,
+        group: "CHILD_GROUP",
+        name: "NAME2",
+        type: version.type,
+        system_id: sys.id
+      }
+
+      r1 = %{
+        parent_external_id: s1.external_id,
+        child_external_id: s2.external_id
+      }
+
+      structure_records = [s1, s2]
+      relation_records = [r1]
+
+      {:ok, _} =
+        Loader.load(
+          Graph.new(),
+          structure_records,
+          [],
+          relation_records,
+          audit()
+        )
+
+      assert %DataStructureVersion{children: [child | _]} =
+               DataStructures.get_latest_version_by_external_id(external_id, enrich: [:children])
+
+      data_structure_version = DataStructures.get_latest_version_by_external_id(child_external_id)
+      assert data_structure_version <~> child
     end
   end
 

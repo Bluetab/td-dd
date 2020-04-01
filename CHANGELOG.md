@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- [TD-2364] Synchronous load when `external_id` and `parent_external_id` provided
+
 ### Added
 
 - [TD-2364] Reindex structures linked to updated domains

@@ -13,7 +13,6 @@ defmodule TdDd.DataStructures do
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Profile
-  alias TdDd.DataStructures.RelationType
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.Lineage.GraphData
   alias TdDd.Repo
@@ -236,8 +235,8 @@ defmodule TdDd.DataStructures do
     )
     |> relation_type_condition(
       Keyword.get(options, :custom_relation),
-      dynamic([_, _child, relation_type], relation_type.name != ^RelationType.default()),
-      dynamic([_, _child, relation_type], relation_type.name == ^RelationType.default())
+      dynamic([_, _child, relation_type], relation_type.name != "default"),
+      dynamic([_, _child, relation_type], relation_type.name == "default")
     )
     |> order_by([_, child, _], asc: child.data_structure_id, desc: child.version)
     |> distinct([_, child, _], child)
@@ -261,8 +260,8 @@ defmodule TdDd.DataStructures do
     )
     |> relation_type_condition(
       Keyword.get(options, :custom_relation),
-      dynamic([_, _parent, relation_type], relation_type.name != ^RelationType.default()),
-      dynamic([_, _parent, relation_type], relation_type.name == ^RelationType.default())
+      dynamic([_, _parent, relation_type], relation_type.name != "default"),
+      dynamic([_, _parent, relation_type], relation_type.name == "default")
     )
     |> order_by([_, parent, _], asc: parent.data_structure_id, desc: parent.version)
     |> distinct([_, parent, _], parent)
@@ -295,25 +294,13 @@ defmodule TdDd.DataStructures do
     )
     |> relation_type_condition(
       Keyword.get(options, :custom_relation),
-      dynamic(
-        [_r, _parent, parent_rt, _r_c, _child_rt, _sibling],
-        parent_rt.name != ^RelationType.default()
-      ),
-      dynamic(
-        [_r, _parent, parent_rt, _r_c, _child_rt, _sibling],
-        parent_rt.name == ^RelationType.default()
-      )
+      dynamic([_r, _parent, parent_rt, _r_c, _child_rt, _sibling], parent_rt.name != "default"),
+      dynamic([_r, _parent, parent_rt, _r_c, _child_rt, _sibling], parent_rt.name == "default")
     )
     |> relation_type_condition(
       Keyword.get(options, :custom_relation),
-      dynamic(
-        [_r, _parent, _parent_rt, _r_c, child_rt, _sibling],
-        child_rt.name != ^RelationType.default()
-      ),
-      dynamic(
-        [_r, _parent, _parent_rt, _r_c, child_rt, _sibling],
-        child_rt.name == ^RelationType.default()
-      )
+      dynamic([_r, _parent, _parent_rt, _r_c, child_rt, _sibling], child_rt.name != "default"),
+      dynamic([_r, _parent, _parent_rt, _r_c, child_rt, _sibling], child_rt.name == "default")
     )
     |> order_by([_r, _parent, _parent_rt, _r_c, _child_rt, sibling],
       asc: sibling.data_structure_id,

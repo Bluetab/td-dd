@@ -181,14 +181,14 @@ defmodule TdDd.DataStructuresTest do
           &insert(:data_structure_version, data_structure_id: &1.id, name: &1.external_id)
         )
 
-      default_relation_type_id = RelationTypes.get_default_relation_type().id
+      %{id: relation_type_id} = RelationTypes.get_default()
 
       [{dsv1, dsv2}, {dsv1, dsv3}, {dsv2, dsv4}, {dsv3, dsv4}]
       |> Enum.map(fn {parent, child} ->
         insert(:data_structure_relation,
           parent_id: parent.id,
           child_id: child.id,
-          relation_type_id: default_relation_type_id
+          relation_type_id: relation_type_id
         )
       end)
 
@@ -206,18 +206,18 @@ defmodule TdDd.DataStructuresTest do
       dsv2 = insert(:data_structure_version, data_structure_id: ds2.id, name: ds1.external_id)
       dsv3 = insert(:data_structure_version, data_structure_id: ds3.id, name: ds1.external_id)
 
-      default_relation_type_id = RelationTypes.get_default_relation_type().id
+      %{id: relation_type_id} = RelationTypes.get_default()
 
       insert(:data_structure_relation,
         parent_id: dsv1.id,
         child_id: dsv2.id,
-        relation_type_id: default_relation_type_id
+        relation_type_id: relation_type_id
       )
 
       insert(:data_structure_relation,
         parent_id: dsv1.id,
         child_id: dsv3.id,
-        relation_type_id: default_relation_type_id
+        relation_type_id: relation_type_id
       )
 
       assert {:ok, %DataStructure{}} = DataStructures.delete_data_structure(ds1)
@@ -236,24 +236,24 @@ defmodule TdDd.DataStructuresTest do
         |> Enum.map(&insert(:data_structure, external_id: &1))
         |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id))
 
-      default_relation_type_id = RelationTypes.get_default_relation_type().id
+      %{id: relation_type_id} = RelationTypes.get_default()
 
       insert(:data_structure_relation,
         parent_id: parent.id,
         child_id: dsv.id,
-        relation_type_id: default_relation_type_id
+        relation_type_id: relation_type_id
       )
 
       insert(:data_structure_relation,
         parent_id: parent.id,
         child_id: sibling.id,
-        relation_type_id: default_relation_type_id
+        relation_type_id: relation_type_id
       )
 
       insert(:data_structure_relation,
         parent_id: dsv.id,
         child_id: child.id,
-        relation_type_id: default_relation_type_id
+        relation_type_id: relation_type_id
       )
 
       enrich_opts = [:parents, :children, :siblings, :relations]
@@ -289,18 +289,18 @@ defmodule TdDd.DataStructuresTest do
           &insert(:data_structure_version, data_structure_id: &1.id, deleted_at: deleted_at(&1))
         )
 
-      default_relation_type_id = RelationTypes.get_default_relation_type().id
+      %{id: relation_type_id} = RelationTypes.get_default()
 
       insert(:data_structure_relation,
         parent_id: dsv.id,
         child_id: child.id,
-        relation_type_id: default_relation_type_id
+        relation_type_id: relation_type_id
       )
 
       insert(:data_structure_relation,
         parent_id: dsv.id,
         child_id: deleted_child.id,
-        relation_type_id: default_relation_type_id
+        relation_type_id: relation_type_id
       )
 
       assert %{children: children} =
@@ -331,43 +331,43 @@ defmodule TdDd.DataStructuresTest do
         |> Enum.map(&insert(:data_structure, external_id: &1))
         |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id))
 
-      custom = insert(:relation_type, name: "relation_type_1")
-      default_relation_type_id = RelationTypes.get_default_relation_type().id
+      %{id: custom_id} = insert(:relation_type, name: "relation_type_1")
+      %{id: default_id} = RelationTypes.get_default()
 
       insert(:data_structure_relation,
         parent_id: parent.id,
         child_id: dsv.id,
-        relation_type_id: default_relation_type_id
+        relation_type_id: default_id
       )
 
       insert(:data_structure_relation,
         parent_id: parent_custom_relation.id,
         child_id: dsv.id,
-        relation_type_id: custom.id
+        relation_type_id: custom_id
       )
 
       insert(:data_structure_relation,
         parent_id: parent.id,
         child_id: sibling.id,
-        relation_type_id: default_relation_type_id
+        relation_type_id: default_id
       )
 
       insert(:data_structure_relation,
         parent_id: parent.id,
         child_id: sibling_custom_relation.id,
-        relation_type_id: custom.id
+        relation_type_id: custom_id
       )
 
       insert(:data_structure_relation,
         parent_id: dsv.id,
         child_id: child_custom_relation.id,
-        relation_type_id: custom.id
+        relation_type_id: custom_id
       )
 
       insert(:data_structure_relation,
         parent_id: dsv.id,
         child_id: child.id,
-        relation_type_id: default_relation_type_id
+        relation_type_id: default_id
       )
 
       enrich_opts = [:parents, :children, :siblings, :relations]
@@ -402,14 +402,14 @@ defmodule TdDd.DataStructuresTest do
           )
         )
 
-      default_relation_type_id = RelationTypes.get_default_relation_type().id
+      %{id: relation_type_id} = RelationTypes.get_default()
 
       deleted_children
       |> Enum.each(
         &insert(:data_structure_relation,
           parent_id: dsv.id,
           child_id: &1.id,
-          relation_type_id: default_relation_type_id
+          relation_type_id: relation_type_id
         )
       )
 
@@ -425,14 +425,14 @@ defmodule TdDd.DataStructuresTest do
         |> Enum.map(&insert(:data_structure, external_id: "get_data_structure_version!/2 " <> &1))
         |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id, class: "field"))
 
-      default_relation_type_id = RelationTypes.get_default_relation_type().id
+      %{id: relation_type_id} = RelationTypes.get_default()
 
       Enum.map(
         fields,
         &insert(:data_structure_relation,
           parent_id: dsv.id,
           child_id: &1.id,
-          relation_type_id: default_relation_type_id
+          relation_type_id: relation_type_id
         )
       )
 

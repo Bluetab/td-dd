@@ -3,7 +3,7 @@ defmodule TdDd.Repo.Migrations.DeleteOuField do
 
   def change do
     alter table("data_structures") do
-      remove :ou
+      remove(:ou, :string, null: true)
     end
   end
 end
