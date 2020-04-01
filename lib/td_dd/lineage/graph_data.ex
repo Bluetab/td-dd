@@ -370,6 +370,7 @@ defmodule TdDd.Lineage.GraphData do
     contains =
       Neo.relations("CONTAINS")
       |> Enum.map(&to_edge(&1, id_map))
+      |> Enum.uniq_by(&Map.take(&1, [:start, :end]))
       |> Enum.reduce(contains, &add_edge/2)
 
     Logger.info("Imported #{Graph.no_edges(contains)} tree edges...")
@@ -377,6 +378,7 @@ defmodule TdDd.Lineage.GraphData do
     depends =
       Neo.relations("DEPENDS")
       |> Enum.map(&to_edge(&1, id_map))
+      |> Enum.uniq_by(&Map.take(&1, [:start, :end]))
       |> Enum.reduce(depends, &add_edge/2)
 
     Logger.info("Imported #{Graph.no_edges(depends)} graph edges...")
@@ -399,7 +401,6 @@ defmodule TdDd.Lineage.GraphData do
 
   defp to_edge(%{type: type, start: start_id, end: end_id} = attrs, id_map) do
     attrs
-    |> Map.drop([:type])
     |> Map.put(:type, Map.get(@types, type))
     |> Map.put(:start, Map.get(id_map, start_id))
     |> Map.put(:end, Map.get(id_map, end_id))
