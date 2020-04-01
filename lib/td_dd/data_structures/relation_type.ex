@@ -1,11 +1,14 @@
 defmodule TdDd.DataStructures.RelationType do
-  @moduledoc false
+  @moduledoc """
+  Ecto Schema module for relation types (types of relationships between data
+  structures).
+  """
+
   use Ecto.Schema
+
   import Ecto.Changeset
 
   alias TdDd.DataStructures.RelationType
-
-  @default "default"
 
   schema "relation_types" do
     field(:name, :string)
@@ -14,18 +17,10 @@ defmodule TdDd.DataStructures.RelationType do
     timestamps()
   end
 
-  @doc false
   def changeset(%RelationType{} = relation_type, attrs) do
     relation_type
-    |> cast(attrs, [
-      :name,
-      :description
-    ])
+    |> cast(attrs, [:name, :description])
     |> validate_required([:name])
     |> unique_constraint(:name)
-  end
-
-  def default do
-    @default
   end
 end

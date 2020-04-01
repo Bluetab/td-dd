@@ -177,7 +177,6 @@ defmodule TdDd.DataStructures.Graph do
          {_, _, external_id, [relation_type_id: rel_type_id, relation_type_name: rel_type_name]}
        ) do
     {_, keyword} = :digraph.vertex(g, external_id)
-
     keyword =
       case rel_type_name do
         "default" ->

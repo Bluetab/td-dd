@@ -30,7 +30,7 @@ defmodule TdDd.DataStructureCase do
             )
           )
 
-        default_relation_type_id = RelationTypes.get_default_relation_type().id
+        %{id: relation_type_id} = RelationTypes.get_default()
 
         dsvs
         |> Enum.chunk_every(2, 1, :discard)
@@ -38,7 +38,7 @@ defmodule TdDd.DataStructureCase do
           insert(:data_structure_relation,
             parent_id: parent.id,
             child_id: child.id,
-            relation_type_id: default_relation_type_id
+            relation_type_id: relation_type_id
           )
         end)
 

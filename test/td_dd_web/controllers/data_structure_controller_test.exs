@@ -473,12 +473,12 @@ defmodule TdDdWeb.DataStructureControllerTest do
       child_structures
       |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id))
 
-    default_relation_type_id = RelationTypes.get_default_relation_type().id
+    %{id: relation_type_id} = RelationTypes.get_default()
 
     insert(:data_structure_relation,
       parent_id: parent_version.id,
       child_id: structure_version.id,
-      relation_type_id: default_relation_type_id
+      relation_type_id: relation_type_id
     )
 
     Enum.each(
@@ -486,7 +486,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       &insert(:data_structure_relation,
         parent_id: structure_version.id,
         child_id: &1.id,
-        relation_type_id: default_relation_type_id
+        relation_type_id: relation_type_id
       )
     )
 
@@ -524,14 +524,14 @@ defmodule TdDdWeb.DataStructureControllerTest do
         )
       )
 
-    default_relation_type_id = RelationTypes.get_default_relation_type().id
+    %{id: relation_type_id} = RelationTypes.get_default()
 
     Enum.each(
       child_versions,
       &insert(:data_structure_relation,
         parent_id: parent_version.id,
         child_id: &1.id,
-        relation_type_id: default_relation_type_id
+        relation_type_id: relation_type_id
       )
     )
 
@@ -540,7 +540,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       &insert(:data_structure_relation,
         parent_id: parent_version_deleted.id,
         child_id: &1.id,
-        relation_type_id: default_relation_type_id
+        relation_type_id: relation_type_id
       )
     )
 

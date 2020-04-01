@@ -21,12 +21,6 @@ defmodule TdDd.DataStructures.RelationTypes do
     Repo.all(RelationType)
   end
 
-  def get_relation_type_name_to_id_map do
-    list_relation_types()
-    |> Enum.map(&Map.take(&1, [:name, :id]))
-    |> Enum.into(%{}, fn %{id: id, name: name} -> {name, id} end)
-  end
-
   @doc """
   Gets a single relation_type.
 
@@ -43,8 +37,8 @@ defmodule TdDd.DataStructures.RelationTypes do
   """
   def get_relation_type!(id), do: Repo.get!(RelationType, id)
 
-  def get_default_relation_type do
-    Repo.get_by(RelationType, name: RelationType.default)
+  def get_default do
+    Repo.get_by(RelationType, name: "default")
   end
 
   @doc """
@@ -99,16 +93,40 @@ defmodule TdDd.DataStructures.RelationTypes do
     Repo.delete(relation_type)
   end
 
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking relation_type changes.
+  def with_relation_types(records) do
+    default_relation_type = get_default()
 
-  ## Examples
+    name_to_id_map =
+      list_relation_types()
+      |> Map.new(fn %{id: id, name: name} -> {name, id} end)
 
-      iex> change_relation_type(relation_type)
-      %Ecto.Changeset{source: %RelationType{}}
-
-  """
-  def change_relation_type(%RelationType{} = relation_type) do
-    RelationType.changeset(relation_type, %{})
+    with_relation_types(records, default_relation_type, name_to_id_map)
   end
+
+  def with_relation_types({structures, relations}, default_relation_type, name_to_id_map) do
+    relation_records = with_relation_types(relations, default_relation_type, name_to_id_map)
+
+    {structures, relation_records}
+  end
+
+  def with_relation_types(relation_records, default_relation_type, name_to_id_map)
+      when is_list(relation_records) do
+    relation_records
+    |> Enum.map(&{&1, get_relation_type(&1, name_to_id_map, default_relation_type)})
+    |> Enum.map(fn {rel, {type, name}} ->
+      rel
+      |> Map.put(:relation_type_id, type)
+      |> Map.put(:relation_type_name, name)
+    end)
+  end
+
+  def with_relation_types(relation_records, _, _), do: relation_records
+
+  defp get_relation_type(%{relation_type_name: ""}, _, default), do: {default.id, default.name}
+
+  defp get_relation_type(%{relation_type_name: relation_type_name}, id_maps, _) do
+    {Map.get(id_maps, relation_type_name), relation_type_name}
+  end
+
+  defp get_relation_type(_, _, default), do: {default.id, default.name}
 end
