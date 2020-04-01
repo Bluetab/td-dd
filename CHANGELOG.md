@@ -15,7 +15,7 @@
 
 - [TD-2472] GraphData: Ignore duplicate relations when importing from Neo4j
 
-## [3.18.9] 2020-03-23
+## [3.18.0] 2020-03-23
 
 ### Added
 
