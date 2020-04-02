@@ -5,6 +5,7 @@
 ### Changed
 
 - [TD-2364] Reindex rules on domain update
+- [TD-1691] Cache rules not being linked to a concept
 
 ### Fixed
 

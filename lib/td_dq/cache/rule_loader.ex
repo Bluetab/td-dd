@@ -56,7 +56,6 @@ defmodule TdDq.Cache.RuleLoader do
   def handle_info(:load, state) do
     count =
       Rules.list_rules()
-      |> Enum.filter(&(not is_nil(&1.business_concept_id)))
       |> Enum.map(&RuleCache.put/1)
       |> Enum.reject(&(&1 == {:ok, []}))
       |> Enum.count()
@@ -129,7 +128,6 @@ defmodule TdDq.Cache.RuleLoader do
   defp cache_rules(ids) do
     ids
     |> Rules.list_rules()
-    |> Enum.filter(&(not is_nil(&1.business_concept_id)))
     |> Enum.map(&RuleCache.put/1)
     |> Enum.reject(&(&1 == {:ok, []}))
     |> Enum.count()
