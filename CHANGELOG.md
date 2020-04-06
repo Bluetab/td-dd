@@ -1,10 +1,10 @@
 # Changelog
 
-## [Unreleased]
+## [3.19.0] 2020-04-06
 
 ### Fixed
 
-- [TD-2364] Synchronous load when `external_id` and `parent_external_id` provided
+- [TD-2364] Loader issue when `external_id` and `parent_external_id` provided
 
 ### Added
 
