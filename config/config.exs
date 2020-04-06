@@ -53,8 +53,12 @@ config :td_dq, :phoenix_swagger,
   }
 
 config :td_dq, :audit_service,
-  protocol: "http",
-  audits_path: "/api/audits/"
+  api_service: TdDqWeb.ApiServices.HttpTdAuditService,
+  audit_domain: "",
+  audit_host: "localhost",
+  audit_port: "4007",
+  audits_path: "/api/audits/",
+  protocol: "http"
 
 config :td_cache, :event_stream,
   consumer_id: "default",

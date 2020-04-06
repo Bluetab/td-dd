@@ -27,10 +27,7 @@ config :td_dq, :elasticsearch,
   type_name: "doc"
 
 config :td_dq, :audit_service,
-  api_service: TdDqWeb.ApiServices.MockTdAuditService,
-  audit_host: "localhost",
-  audit_port: "4007",
-  audit_domain: ""
+  api_service: TdDqWeb.ApiServices.MockTdAuditService
 
 config :td_dq, permission_resolver: TdDq.Permissions.MockPermissionResolver
 config :td_dq, relation_cache: TdDq.MockRelationCache

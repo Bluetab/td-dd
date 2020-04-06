@@ -194,9 +194,7 @@ defmodule TdDqWeb.RuleResultController do
   end
 
   defp cache_rule_results(rule_results) do
-    result_ids =
-      rule_results
-      |> Enum.map(&Map.get(&1, :id))
+    result_ids = Enum.map(rule_results, &Map.get(&1, :id))
 
     failed_ids =
       RuleResultCache.members_failed_ids()
@@ -209,10 +207,8 @@ defmodule TdDqWeb.RuleResultController do
     |> Rules.list_rule_results()
     |> Enum.group_by(&Map.take(&1, [:implementation_key, :date]))
     |> Enum.map(fn {_k, v} ->
-      Enum.sort(v, &(Map.get(&1, :inserted_at) > Map.get(&2, :inserted_at)))
+      Enum.max_by(v, & &1.inserted_at, NaiveDateTime)
     end)
-    |> Enum.map(&hd(&1))
-    |> List.flatten()
     |> Enum.map(&Map.get(&1, :id))
     |> RuleResultLoader.failed()
   end
