@@ -8,12 +8,10 @@ defmodule TdCx.Accounts.User do
             is_admin: false,
             email: nil,
             full_name: nil,
-            gids: [],
             groups: [],
             jti: nil
 
   def gen_id_from_user_name(user_name) do
     Integer.mod(:binary.decode_unsigned(user_name), 100_000)
   end
-
 end
