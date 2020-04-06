@@ -176,7 +176,8 @@ defmodule TdDd.DataStructures do
     )
     |> enrich(options, :data_field_degree, &get_field_degree/1)
     |> enrich(options, :data_field_links, &get_field_links/1)
-    |> enrich(options, :relations, &get_relations(&1, deleted: deleted, custom_relation: true))
+    |> enrich(options, :relations, &get_relations(&1, deleted: deleted, default: false))
+    |> enrich(options, :relation_links, &get_relation_links/1)
     |> enrich(options, :versions, &get_versions/1)
     |> enrich(options, :degree, &get_degree/1)
     |> enrich(options, :profile, &get_profile/1)
@@ -198,6 +199,7 @@ defmodule TdDd.DataStructures do
 
   defp get_target_key(:data_field_degree), do: :data_fields
   defp get_target_key(:data_field_links), do: :data_fields
+  defp get_target_key(:relation_links), do: :relations
   defp get_target_key(key), do: key
 
   defp get_system(%DataStructureVersion{} = dsv) do
@@ -234,9 +236,9 @@ defmodule TdDd.DataStructures do
       dynamic([_, parent, _], is_nil(parent.deleted_at))
     )
     |> relation_type_condition(
-      Keyword.get(options, :custom_relation),
-      dynamic([_, _child, relation_type], relation_type.name != "default"),
-      dynamic([_, _child, relation_type], relation_type.name == "default")
+      Keyword.get(options, :default),
+      dynamic([_, _child, relation_type], relation_type.name == "default"),
+      dynamic([_, _child, relation_type], relation_type.name != "default")
     )
     |> order_by([_, child, _], asc: child.data_structure_id, desc: child.version)
     |> distinct([_, child, _], child)
@@ -246,7 +248,7 @@ defmodule TdDd.DataStructures do
       relation_type: relation_type
     })
     |> Repo.all()
-    |> select_structures(Keyword.get(options, :custom_relation))
+    |> select_structures(Keyword.get(options, :default))
   end
 
   defp get_parents(%DataStructureVersion{id: id}, options) do
@@ -259,9 +261,9 @@ defmodule TdDd.DataStructures do
       dynamic([_, parent, _], is_nil(parent.deleted_at))
     )
     |> relation_type_condition(
-      Keyword.get(options, :custom_relation),
-      dynamic([_, _parent, relation_type], relation_type.name != "default"),
-      dynamic([_, _parent, relation_type], relation_type.name == "default")
+      Keyword.get(options, :default),
+      dynamic([_, _parent, relation_type], relation_type.name == "default"),
+      dynamic([_, _parent, relation_type], relation_type.name != "default")
     )
     |> order_by([_, parent, _], asc: parent.data_structure_id, desc: parent.version)
     |> distinct([_, parent, _], parent)
@@ -271,7 +273,7 @@ defmodule TdDd.DataStructures do
       relation_type: relation_type
     })
     |> Repo.all()
-    |> select_structures(Keyword.get(options, :custom_relation))
+    |> select_structures(Keyword.get(options, :default))
   end
 
   def get_siblings(%DataStructureVersion{id: id}, options \\ []) do
@@ -293,14 +295,14 @@ defmodule TdDd.DataStructures do
       dynamic([_r, parent, _parent_rt, _r_c, _child_rt, sibling], is_nil(sibling.deleted_at))
     )
     |> relation_type_condition(
-      Keyword.get(options, :custom_relation),
-      dynamic([_r, _parent, parent_rt, _r_c, _child_rt, _sibling], parent_rt.name != "default"),
-      dynamic([_r, _parent, parent_rt, _r_c, _child_rt, _sibling], parent_rt.name == "default")
+      Keyword.get(options, :default),
+      dynamic([_r, _parent, parent_rt, _r_c, _child_rt, _sibling], parent_rt.name == "default"),
+      dynamic([_r, _parent, parent_rt, _r_c, _child_rt, _sibling], parent_rt.name != "default")
     )
     |> relation_type_condition(
-      Keyword.get(options, :custom_relation),
-      dynamic([_r, _parent, _parent_rt, _r_c, child_rt, _sibling], child_rt.name != "default"),
-      dynamic([_r, _parent, _parent_rt, _r_c, child_rt, _sibling], child_rt.name == "default")
+      Keyword.get(options, :default),
+      dynamic([_r, _parent, _parent_rt, _r_c, child_rt, _sibling], child_rt.name == "default"),
+      dynamic([_r, _parent, _parent_rt, _r_c, child_rt, _sibling], child_rt.name != "default")
     )
     |> order_by([_r, _parent, _parent_rt, _r_c, _child_rt, sibling],
       asc: sibling.data_structure_id,
@@ -319,19 +321,37 @@ defmodule TdDd.DataStructures do
     %{parents: parents, children: children}
   end
 
+  defp get_relation_links(%{relations: relations}) do
+    %{parents: parents, children: children} = relations
+
+    children =
+      Enum.map(children, fn %{version: dsv} = child ->
+        Map.put(child, :links, get_structure_links(dsv))
+      end)
+
+    parents =
+      Enum.map(parents, fn %{version: dsv} = parent ->
+        Map.put(parent, :links, get_structure_links(dsv))
+      end)
+
+    relations
+    |> Map.put(:children, children)
+    |> Map.put(:parents, parents)
+  end
+
   defp get_versions(%DataStructureVersion{} = dsv) do
     dsv
     |> Ecto.assoc([:data_structure, :versions])
     |> Repo.all()
   end
 
-  defp select_structures(versions, true) do
+  defp select_structures(versions, false) do
     versions
     |> Enum.uniq_by(& &1.version.data_structure_id)
     |> Enum.map(&preload_system/1)
   end
 
-  defp select_structures(versions, _false) do
+  defp select_structures(versions, _not_false) do
     versions
     |> Enum.map(& &1.version)
     |> Enum.uniq_by(& &1.data_structure_id)
@@ -712,9 +732,9 @@ defmodule TdDd.DataStructures do
     |> where(^dynamic)
   end
 
-  defp relation_type_condition(query, true, custom, _default), do: where(query, ^custom)
+  defp relation_type_condition(query, false, _default, custom), do: where(query, ^custom)
 
-  defp relation_type_condition(query, _false, _custom, default),
+  defp relation_type_condition(query, _not_false, default, _custom),
     do: where(query, ^default)
 
   @doc """

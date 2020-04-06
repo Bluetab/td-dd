@@ -34,6 +34,7 @@ defmodule TdDdWeb.DataStructureVersionController do
     :profile,
     :degree,
     :relations,
+    :relation_links,
     :domain,
     :metadata_versions
   ]
