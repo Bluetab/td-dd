@@ -1,6 +1,6 @@
 # Truedat Data Quality
 
-TdDQ is a back-end service developed as part of True Dat project that supports the genearation of Data Quality rules linked to Business Glossary Terms
+TdDQ is a back-end service developed as part of True Dat project that supports the generation of Data Quality rules linked to Business Glossary Terms
 
 ## Getting Started
 
@@ -17,7 +17,7 @@ To start your Phoenix server:
   * Create and migrate your database with `mix ecto.create && mix ecto.migrate`
   * Start Phoenix endpoint with `mix phx.server`
 
-  * Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+  * Now you can visit [`localhost:4004`](http://localhost:4004) from your browser.
 
 ## Running the tests
 

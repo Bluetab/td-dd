@@ -19,8 +19,8 @@ config :td_dq,
 
 # Configures the endpoint
 config :td_dq, TdDqWeb.Endpoint,
+  http: [port: 4004],
   url: [host: "localhost"],
-  secret_key_base: "/vMEDjTjLb9Re9GSKu6LYCE+qq7KuIvk2V65O1x4aMhStPltM87BMjeUw+zebVF3",
   render_errors: [view: TdDqWeb.ErrorView, accepts: ~w(json)]
 
 # Configures Auth module Guardian
