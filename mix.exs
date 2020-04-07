@@ -9,7 +9,7 @@ defmodule TdDq.Mixfile do
           nil -> "3.19.0-local"
           v -> v
         end,
-      elixir: "~> 1.6",
+      elixir: "~> 1.10",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [:phoenix, :gettext] ++ Mix.compilers() ++ [:phoenix_swagger],
       start_permanent: Mix.env() == :prod,
