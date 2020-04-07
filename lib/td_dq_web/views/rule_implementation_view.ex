@@ -19,8 +19,10 @@ defmodule TdDqWeb.RuleImplementationView do
       rule_id: rule_implementation.rule_id,
       implementation_key: rule_implementation.implementation_key,
       dataset: render_many(rule_implementation.dataset, DatasetView, "dataset_row.json"),
-      population: render_many(rule_implementation.population, ConditionView, "condition_row.json"),
-      validations: render_many(rule_implementation.validations, ConditionView, "condition_row.json"),
+      population:
+        render_many(rule_implementation.population, ConditionView, "condition_row.json"),
+      validations:
+        render_many(rule_implementation.validations, ConditionView, "condition_row.json"),
       deleted_at: rule_implementation.deleted_at
     }
     |> add_rule(rule_implementation)
@@ -72,7 +74,7 @@ defmodule TdDqWeb.RuleImplementationView do
       rule_implementation
       |> Map.get(:all_rule_results, [])
       |> Enum.map(&Map.from_struct(&1))
-      |> Enum.map(&(render_one(&1, RuleResultView, "rule_result.json")))
+      |> Enum.map(&render_one(&1, RuleResultView, "rule_result.json"))
 
     case all_rule_results_mappings do
       [] -> rule_implementation_mapping
@@ -104,15 +106,17 @@ defmodule TdDqWeb.RuleImplementation.DatasetView do
 
   def render("dataset_row.json", %{dataset: %{structure: structure} = dataset_row}) do
     case dataset_row.clauses do
-      nil -> %{
-        structure: render_one(structure, StructureView, "structure.json")
-      }
-      _ -> %{
-        structure: render_one(structure, StructureView, "structure.json"),
-        clauses: render_many(dataset_row.clauses, JoinClauseView, "join_clause_row.json")
-      }
-    end
+      nil ->
+        %{
+          structure: render_one(structure, StructureView, "structure.json")
+        }
 
+      _ ->
+        %{
+          structure: render_one(structure, StructureView, "structure.json"),
+          clauses: render_many(dataset_row.clauses, JoinClauseView, "join_clause_row.json")
+        }
+    end
   end
 end
 

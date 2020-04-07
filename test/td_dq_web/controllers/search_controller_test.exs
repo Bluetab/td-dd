@@ -26,7 +26,6 @@ defmodule TdDqWeb.SearchControllerTest do
   @user_name "Im not an admin"
 
   defp create_rule do
-
     {:ok, rule} = Rules.create_rule(@create_attrs)
     rule
   end
@@ -61,7 +60,7 @@ defmodule TdDqWeb.SearchControllerTest do
         goal: 42,
         minimum: 42,
         name: "some name 1",
-        updated_by: Integer.mod(:binary.decode_unsigned("app-admin"), 100_000),
+        updated_by: Integer.mod(:binary.decode_unsigned("app-admin"), 100_000)
       }
 
       creation_attrs_2 = %{
@@ -70,7 +69,7 @@ defmodule TdDqWeb.SearchControllerTest do
         goal: 42,
         minimum: 42,
         name: "some name 2",
-        updated_by: Integer.mod(:binary.decode_unsigned("app-admin"), 100_000),
+        updated_by: Integer.mod(:binary.decode_unsigned("app-admin"), 100_000)
       }
 
       Rules.create_rule(creation_attrs_1)

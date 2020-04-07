@@ -69,6 +69,7 @@ defmodule TdDq.Rules.RuleImplementation.Loader do
           select: %{id: rt.id, params: rt.params}
         )
       )
+
     rule_types = Enum.filter(rule_types, &of_type_structure/1)
     rule_types_ids = Enum.map(rule_types, &Map.get(&1, :id))
 

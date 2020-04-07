@@ -1,8 +1,6 @@
 defmodule TdDqWeb.Router do
   use TdDqWeb, :router
 
-  @endpoint_url "#{Application.get_env(:td_dq, TdDqWeb.Endpoint)[:url][:host]}:#{Application.get_env(:td_dq, TdDqWeb.Endpoint)[:http][:port]}"
-
   pipeline :api do
     plug(TdDq.Auth.Pipeline.Unsecure)
     plug(:accepts, ["json"])
@@ -40,17 +38,21 @@ defmodule TdDqWeb.Router do
 
     post("/rule_filters/search", RuleFilterController, :search)
     resources("/rule_implementations", RuleImplementationController, except: [:new, :edit])
-    post("/rule_implementations/search", RuleImplementationController, :search_rules_implementations)
+
+    post(
+      "/rule_implementations/search",
+      RuleImplementationController,
+      :search_rules_implementations
+    )
   end
 
   def swagger_info do
     %{
-      schemes: ["http"],
+      schemes: ["http", "https"],
       info: %{
-        version: "1.0",
-        title: "Rules"
+        version: "3.10",
+        title: "Truedat Data Quality Service"
       },
-      host: @endpoint_url,
       basePath: "/",
       securityDefinitions: %{
         bearer: %{

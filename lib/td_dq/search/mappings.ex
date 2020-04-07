@@ -87,14 +87,14 @@ defmodule TdDq.Search.Mappings do
 
   defp get_mappings(%{content: content}, "bg", type) do
     content
-    |> Format.flatten_content_fields
+    |> Format.flatten_content_fields()
     |> Enum.filter(&(Map.get(&1, "type") == type))
     |> Enum.map(&field_mapping/1)
   end
 
   defp get_mappings(%{content: content}, _scope, _type) do
     content
-    |> Format.flatten_content_fields
+    |> Format.flatten_content_fields()
     |> Enum.map(&field_mapping/1)
   end
 

@@ -18,9 +18,12 @@ defmodule TdDq.RuleImplementationsTest do
 
   @valid_dataset [
     %{structure: %{id: 14_080}},
-    %{clauses: [
-      %{left: %{id: 14_863}, right: %{id: 4028}}
-    ], structure: %{id: 3233}}
+    %{
+      clauses: [
+        %{left: %{id: 14_863}, right: %{id: 4028}}
+      ],
+      structure: %{id: 3233}
+    }
   ]
 
   @valid_single_dataset [
