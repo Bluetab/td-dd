@@ -14,8 +14,8 @@ config :td_dd,
 
 # Configures the endpoint
 config :td_dd, TdDdWeb.Endpoint,
+  http: [port: 4005],
   url: [host: "localhost"],
-  secret_key_base: "StwjLbs7tnN3G28P1N1+urbZaH0GX9Ps2y9mg3SOb9DdrWAEJdcKfkV8rKAxL2QF",
   render_errors: [view: TdDdWeb.ErrorView, accepts: ~w(json)]
 
 # Configures Elixir's Logger
