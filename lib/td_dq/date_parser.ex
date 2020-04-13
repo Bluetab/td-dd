@@ -20,11 +20,11 @@ defmodule TdDq.DateParser do
 
       iex> {:ok, datetime, 7200} = TdDq.DateParser.parse("2015-01-24T01:50:07+02:00")
       iex> datetime
-      #DateTime<2015-01-23 23:50:07Z>
+      ~U[2015-01-23 23:50:07Z]
 
       iex> {:ok, datetime, _} = TdDq.DateParser.parse("2015-01-23")
       iex> datetime
-      #DateTime<2015-01-23 00:00:00Z>
+      ~U[2015-01-23 00:00:00Z]
 
       iex> TdDq.DateParser.parse("2015-02-29")
       {:error, :invalid_date}

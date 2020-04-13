@@ -36,7 +36,7 @@ defmodule TdDq.Cache.DomainEventConsumer do
 
   @impl true
   def handle_cast({:consume, events}, state) do
-    case Enum.any?(events, & &1.event == "domain_updated") do
+    case Enum.any?(events, &(&1.event == "domain_updated")) do
       true -> do_reindex()
       _ -> :ok
     end

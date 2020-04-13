@@ -4,13 +4,13 @@ defmodule TdDq.Repo.Migrations.ChangeDescriptionType do
   alias TdDq.Repo
 
   def change do
-    rename table(:rules), :description, to: :description_backup
-    alter table(:rules), do: add :description, :map
-    
+    rename(table(:rules), :description, to: :description_backup)
+    alter(table(:rules), do: add(:description, :map))
+
     flush()
-    
+
     migrate_descriptions()
-    alter table(:rules), do: remove :description_backup
+    alter(table(:rules), do: remove(:description_backup))
   end
 
   defp migrate_descriptions do
@@ -22,7 +22,7 @@ defmodule TdDq.Repo.Migrations.ChangeDescriptionType do
   end
 
   defp description_to_map(%{description: description} = attrs) do
-    description = description ||""
+    description = description || ""
     Map.put(attrs, :description, to_map(description))
   end
 
@@ -33,7 +33,7 @@ defmodule TdDq.Repo.Migrations.ChangeDescriptionType do
       description
       |> String.split("\n")
       |> Enum.map(&build_node/1)
-    
+
     %{document: %{nodes: nodes}}
   end
 

@@ -796,6 +796,6 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
   end
 
   defp get_rule_implementation(id) do
-     Repo.get!(RuleImplementation, id)
+    Repo.get!(RuleImplementation, id)
   end
 end

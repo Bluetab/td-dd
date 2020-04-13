@@ -19,8 +19,8 @@ config :td_dq,
 
 # Configures the endpoint
 config :td_dq, TdDqWeb.Endpoint,
+  http: [port: 4004],
   url: [host: "localhost"],
-  secret_key_base: "/vMEDjTjLb9Re9GSKu6LYCE+qq7KuIvk2V65O1x4aMhStPltM87BMjeUw+zebVF3",
   render_errors: [view: TdDqWeb.ErrorView, accepts: ~w(json)]
 
 # Configures Auth module Guardian
@@ -53,8 +53,12 @@ config :td_dq, :phoenix_swagger,
   }
 
 config :td_dq, :audit_service,
-  protocol: "http",
-  audits_path: "/api/audits/"
+  api_service: TdDqWeb.ApiServices.HttpTdAuditService,
+  audit_domain: "",
+  audit_host: "localhost",
+  audit_port: "4007",
+  audits_path: "/api/audits/",
+  protocol: "http"
 
 config :td_cache, :event_stream,
   consumer_id: "default",

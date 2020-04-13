@@ -9,19 +9,21 @@ defmodule TdDq.Repo.Migrations.MigrateDatasetJoinsToNewFormat do
     UPDATE rule_implementations
     SET dataset = $1
     WHERE id = $2
-  """ 
+  """
   def up do
-    (from r in "rule_implementations",
-      select: %{id: r.id, dataset: r.dataset})
-    |> Repo.all
+    from(r in "rule_implementations",
+      select: %{id: r.id, dataset: r.dataset}
+    )
+    |> Repo.all()
     |> Enum.map(&rule_implementation_to_clauses/1)
     |> Enum.each(&execute_update/1)
   end
 
   def down do
-    (from r in "rule_implementations",
-      select: %{id: r.id, dataset: r.dataset})
-    |> Repo.all
+    from(r in "rule_implementations",
+      select: %{id: r.id, dataset: r.dataset}
+    )
+    |> Repo.all()
     |> Enum.map(&rule_implementation_from_clauses/1)
     |> Enum.each(&execute_update/1)
   end
@@ -41,7 +43,8 @@ defmodule TdDq.Repo.Migrations.MigrateDatasetJoinsToNewFormat do
   end
 
   defp structure_to_clauses(
-    %{"left" => %{"id" => left_id}, "right" => %{"id" => right_id}} = structure) do
+         %{"left" => %{"id" => left_id}, "right" => %{"id" => right_id}} = structure
+       ) do
     structure
     |> Map.drop(["left", "right"])
     |> Map.put("clauses", [
@@ -64,9 +67,13 @@ defmodule TdDq.Repo.Migrations.MigrateDatasetJoinsToNewFormat do
     |> Map.put("right", nil)
   end
 
-  defp structure_from_clauses(%{"clauses" => [
-    %{"left" => %{"id" => left_id}, "right" => %{"id" => right_id}} | _
-  ]} = structure) do
+  defp structure_from_clauses(
+         %{
+           "clauses" => [
+             %{"left" => %{"id" => left_id}, "right" => %{"id" => right_id}} | _
+           ]
+         } = structure
+       ) do
     structure
     |> Map.drop(["clauses"])
     |> Map.put("left", %{"id" => left_id})
@@ -74,5 +81,4 @@ defmodule TdDq.Repo.Migrations.MigrateDatasetJoinsToNewFormat do
   end
 
   defp structure_from_clauses(structure), do: structure
-
 end

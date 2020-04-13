@@ -15,10 +15,7 @@ defmodule TdDq.Repo.Migrations.UniqueRuleImplementationKey do
 
     drop(unique_index(:rule_implementations, [:implementation_key], where: "deleted_at IS NULL"))
 
-    create(
-      unique_index(:rule_implementations, [:implementation_key])
-    )
-
+    create(unique_index(:rule_implementations, [:implementation_key]))
   end
 
   defp do_update({implementation_key}) do

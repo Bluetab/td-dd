@@ -35,7 +35,7 @@ defmodule TdDq.Search.Aggregations do
 
   defp template_terms(%{content: content}, scope) do
     content
-    |> Format.flatten_content_fields
+    |> Format.flatten_content_fields()
     |> Enum.filter(&filter_content_term/1)
     |> Enum.map(&Map.take(&1, ["name", "type"]))
     |> Enum.reject(&(scope == "bg" and &1["type"] != "user"))

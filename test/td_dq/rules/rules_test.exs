@@ -222,46 +222,46 @@ defmodule TdDq.RulesTest do
     end
 
     test "get_structures_ids returns ids of all structures present in rule_implementation" do
-      creation_attrs =
-        %{
-          dataset: [
-            %{structure: %{id: 1}},
-            %{clauses: [%{left: %{id: 2}, right: %{id: 3}}], structure: %{id: 4}}
-          ],
-          population: [
-            %{
-              operator: %{
-                group: "gt",
-                name: "timestamp_gt_timestamp",
-                value_type: "timestamp"
-              },
-              structure: %{id: 5},
-              value: [%{raw: "2019-12-02 05:35:00"}]
-            }
-          ],
-          validations: [
-            %{
-              operator: %{
-                group: "gt",
-                name: "timestamp_gt_timestamp",
-                value_type: "timestamp"
-              },
-              structure: %{id: 6},
-              value: [%{raw: "2019-12-02 05:35:00"}]
-            }
-          ]
-        }
+      creation_attrs = %{
+        dataset: [
+          %{structure: %{id: 1}},
+          %{clauses: [%{left: %{id: 2}, right: %{id: 3}}], structure: %{id: 4}}
+        ],
+        population: [
+          %{
+            operator: %{
+              group: "gt",
+              name: "timestamp_gt_timestamp",
+              value_type: "timestamp"
+            },
+            structure: %{id: 5},
+            value: [%{raw: "2019-12-02 05:35:00"}]
+          }
+        ],
+        validations: [
+          %{
+            operator: %{
+              group: "gt",
+              name: "timestamp_gt_timestamp",
+              value_type: "timestamp"
+            },
+            structure: %{id: 6},
+            value: [%{raw: "2019-12-02 05:35:00"}]
+          }
+        ]
+      }
 
       implementation_key = "rik1"
       rule = insert(:rule, name: "R1")
 
-      rule_implementaton = insert(:rule_implementation,
-        implementation_key: implementation_key,
-        rule: rule,
-        dataset: creation_attrs.dataset,
-        population: creation_attrs.population,
-        validations: creation_attrs.validations
-      )
+      rule_implementaton =
+        insert(:rule_implementation,
+          implementation_key: implementation_key,
+          rule: rule,
+          dataset: creation_attrs.dataset,
+          population: creation_attrs.population,
+          validations: creation_attrs.validations
+        )
 
       structures_ids = Rules.get_structures_ids(rule_implementaton)
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-2408] Migrated to Elixir 1.10
+
 ## [3.19.0] 2020-04-06
 
 ### Changed

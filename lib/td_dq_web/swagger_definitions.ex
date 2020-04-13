@@ -41,7 +41,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
         swagger_schema do
           type(:array)
           items(Schema.ref(:Dataset))
-      end,
+        end,
       ConditionArray:
         swagger_schema do
           type(:array)
@@ -142,7 +142,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
             data(Schema.ref(:Rule))
           end
         end,
-     RulesResponse:
+      RulesResponse:
         swagger_schema do
           properties do
             data(Schema.ref(:Rules))
@@ -171,7 +171,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
         swagger_schema do
           type(:array)
           items(Schema.ref(:Dataset))
-      end,
+        end,
       ConditionArray:
         swagger_schema do
           type(:array)
