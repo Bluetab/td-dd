@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-2361] Rule Implementations of raw type
+
 ### Changed
 
 - [TD-2408] Migrated to Elixir 1.10

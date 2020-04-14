@@ -2,6 +2,7 @@ defmodule TdDqWeb.RuleImplementationView do
   use TdDqWeb, :view
   alias TdDqWeb.RuleImplementation.ConditionView
   alias TdDqWeb.RuleImplementation.DatasetView
+  alias TdDqWeb.RuleImplementation.RawContent
   alias TdDqWeb.RuleImplementationView
   alias TdDqWeb.RuleResultView
 
@@ -13,11 +14,26 @@ defmodule TdDqWeb.RuleImplementationView do
     %{data: render_one(rule_implementation, RuleImplementationView, "rule_implementation.json")}
   end
 
+  def render("rule_implementation.json", %{rule_implementation: %{implementation_type: "raw"} = rule_implementation} ) do
+    %{
+      id: rule_implementation.id,
+      rule_id: rule_implementation.rule_id,
+      implementation_key: rule_implementation.implementation_key,
+      implementation_type: rule_implementation.implementation_type,
+      raw_content: render_one(rule_implementation.raw_content, RawContent, "raw_content.json"),
+      deleted_at: rule_implementation.deleted_at
+    }
+    |> add_rule(rule_implementation)
+    |> add_last_rule_results(rule_implementation)
+    |> add_rule_results(rule_implementation)
+  end
+
   def render("rule_implementation.json", %{rule_implementation: rule_implementation}) do
     %{
       id: rule_implementation.id,
       rule_id: rule_implementation.rule_id,
       implementation_key: rule_implementation.implementation_key,
+      implementation_type: rule_implementation.implementation_type,
       dataset: render_many(rule_implementation.dataset, DatasetView, "dataset_row.json"),
       population:
         render_many(rule_implementation.population, ConditionView, "condition_row.json"),
@@ -80,6 +96,19 @@ defmodule TdDqWeb.RuleImplementationView do
       [] -> rule_implementation_mapping
       _ -> Map.put(rule_implementation_mapping, :all_rule_results, all_rule_results_mappings)
     end
+  end
+end
+
+defmodule TdDqWeb.RuleImplementation.RawContent do
+  use TdDqWeb, :view
+
+  def render("raw_content.json", %{raw_content: raw_content}) do
+    %{
+      system: Map.get(raw_content, :system),
+      dataset: Map.get(raw_content, :dataset),
+      population: Map.get(raw_content, :population),
+      validations: Map.get(raw_content, :validations)
+    }
   end
 end
 

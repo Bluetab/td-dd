@@ -24,6 +24,10 @@ defmodule TdDqWeb.ChangesetView do
   defp compose_errors(errors, errors_key, prefix) do
     errors
     |> Map.get(errors_key, [])
+    |> case do
+      list_value when is_list(list_value) -> list_value
+      value -> [value]
+    end
     |> Enum.map(fn error ->
       case is_map(error) do
         true ->

@@ -10,6 +10,7 @@ defmodule TdDq.Rules do
   alias TdCache.ConceptCache
   alias TdCache.EventStream.Publisher
   alias TdCache.StructureCache
+  alias TdCache.SystemCache
   alias TdCache.TemplateCache
   alias TdDfLib.Validation
   alias TdDq.Cache.RuleLoader
@@ -494,6 +495,20 @@ defmodule TdDq.Rules do
 
         Map.put(population_row, :value, values)
     end
+  end
+
+  def enrich_system(
+        %RuleImplementation{
+          implementation_type: "raw",
+          raw_content: %{system: system_id} = raw_content
+        } = rule_implementation
+      ) do
+    {:ok, system_info} = SystemCache.get(system_id)
+    Map.put(rule_implementation, :raw_content, Map.put(raw_content, :system, system_info))
+  end
+
+  def enrich_system(%RuleImplementation{} = rule_implementation) do
+    rule_implementation
   end
 
   def enrich_rule_implementation_structures(%RuleImplementation{} = rule_implementation) do
