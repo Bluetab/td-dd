@@ -118,6 +118,13 @@ defmodule TdDdWeb.DataStructureVersionView do
     end
   end
 
+  defp embedded_relation(%{links: links} = struct) do
+    struct
+    |> Map.delete(:links)
+    |> embedded_relation()
+    |> Map.put(:links, links)
+  end
+
   defp embedded_relation(%{version: version, relation: relation, relation_type: relation_type}) do
     structure = data_structure_version_embedded(version)
 
@@ -246,7 +253,9 @@ defmodule TdDdWeb.DataStructureVersionView do
   defp lift_data(attrs), do: attrs
 
   defp add_metadata_versions(%{metadata_versions: versions} = dsv) when is_list(versions) do
-    versions = Enum.map(versions, &Map.take(&1, [:fields, :version, :id, :deleted_at, :data_structure_id]))
+    versions =
+      Enum.map(versions, &Map.take(&1, [:fields, :version, :id, :deleted_at, :data_structure_id]))
+
     Map.put(dsv, :metadata_versions, versions)
   end
 

@@ -8,6 +8,40 @@ defmodule TdDd.DataStructuresTest do
 
   import TdDd.TestOperators
 
+  setup do
+    alias TdCache.{ConceptCache, LinkCache, StructureCache, SystemCache}
+
+    concept = %{id: "LINKED_CONCEPT", name: "concept"}
+    system = insert(:system, external_id: "test_system")
+    data_structure = insert(:data_structure, system_id: system.id)
+    data_structure_version = insert(:data_structure_version, data_structure_id: data_structure.id)
+    {:ok, _} = ConceptCache.put(concept)
+    {:ok, _} = SystemCache.put(system)
+    {:ok, _} = StructureCache.put(data_structure)
+
+    {:ok, _} =
+      LinkCache.put(%{
+        id: 123_456_789,
+        updated_at: DateTime.utc_now(),
+        source_type: "data_structure",
+        source_id: data_structure.id,
+        target_type: "business_concept",
+        target_id: concept.id
+      })
+
+    on_exit(fn ->
+      LinkCache.delete(123_456_789)
+      StructureCache.delete(data_structure.id)
+      SystemCache.delete(system.id)
+      ConceptCache.delete(concept.id)
+    end)
+
+    {:ok,
+     data_structure: data_structure,
+     data_structure_version: data_structure_version,
+     system: system}
+  end
+
   describe "data_structures" do
     @valid_attrs %{
       "description" => "some description",
@@ -29,33 +63,33 @@ defmodule TdDd.DataStructuresTest do
       name: nil
     }
 
-    test "list_data_structures/1 returns all data_structures" do
-      data_structure = insert(:data_structure)
+    test "list_data_structures/1 returns all data_structures", %{data_structure: data_structure} do
       assert DataStructures.list_data_structures() <~> [data_structure]
     end
 
-    test "list_data_structures/1 returns all data_structures from a search" do
-      data_structure = insert(:data_structure)
+    test "list_data_structures/1 returns all data_structures from a search", %{
+      data_structure: data_structure
+    } do
       search_params = %{external_id: [data_structure.external_id]}
 
       assert DataStructures.list_data_structures(search_params), [data_structure]
     end
 
-    test "get_data_structure!/1 returns the data_structure with given id" do
-      data_structure = insert(:data_structure)
+    test "get_data_structure!/1 returns the data_structure with given id", %{
+      data_structure: data_structure
+    } do
       assert DataStructures.get_data_structure!(data_structure.id) <~> data_structure
     end
 
-    test "get_data_structure_by_external_id/1 returns the data_structure with metadata versions" do
-      data_structure = insert(:data_structure)
-
+    test "get_data_structure_by_external_id/1 returns the data_structure with metadata versions",
+         %{data_structure: data_structure} do
       assert DataStructures.get_data_structure_by_external_id(data_structure.external_id)
              <~> data_structure
     end
 
-    test "get_latest_metadata_version/2 returns the latest version of the metadata" do
-      data_structure = insert(:data_structure)
-
+    test "get_latest_metadata_version/2 returns the latest version of the metadata", %{
+      data_structure: data_structure
+    } do
       ms =
         Enum.map(
           0..5,
@@ -66,14 +100,15 @@ defmodule TdDd.DataStructuresTest do
                Enum.max_by(ms, & &1.version).id
     end
 
-    test "get_latest_metadata_version/2 returns nil when there is not metadata" do
-      data_structure = insert(:data_structure)
+    test "get_latest_metadata_version/2 returns nil when there is not metadata", %{
+      data_structure: data_structure
+    } do
       assert is_nil(DataStructures.get_latest_metadata_version(data_structure.id))
     end
 
-    test "get_latest_metadata_version/2 hides deleted versions when specified" do
-      data_structure = insert(:data_structure)
-
+    test "get_latest_metadata_version/2 hides deleted versions when specified", %{
+      data_structure: data_structure
+    } do
       ms =
         insert(:structure_metadata,
           data_structure_id: data_structure.id,
@@ -100,10 +135,9 @@ defmodule TdDd.DataStructuresTest do
       assert {:error, %Ecto.Changeset{}} = DataStructures.create_data_structure(@invalid_attrs)
     end
 
-    test "update_data_structure/2 with valid data updates the data_structure" do
-      data_structure = insert(:data_structure)
-      insert(:data_structure_version, data_structure_id: data_structure.id)
-
+    test "update_data_structure/2 with valid data updates the data_structure", %{
+      data_structure: data_structure
+    } do
       assert {:ok, data_structure} =
                DataStructures.update_data_structure(data_structure, @update_attrs)
 
@@ -111,8 +145,7 @@ defmodule TdDd.DataStructuresTest do
       assert data_structure.df_content == %{updated: "content"}
     end
 
-    test "delete_data_structure/1 deletes the data_structure" do
-      data_structure = insert(:data_structure)
+    test "delete_data_structure/1 deletes the data_structure", %{data_structure: data_structure} do
       assert {:ok, %DataStructure{}} = DataStructures.delete_data_structure(data_structure)
 
       assert_raise Ecto.NoResultsError, fn ->
@@ -120,8 +153,8 @@ defmodule TdDd.DataStructuresTest do
       end
     end
 
-    test "find_data_structure/1 returns a data structure" do
-      %{id: id, external_id: external_id} = insert(:data_structure)
+    test "find_data_structure/1 returns a data structure", %{data_structure: data_structure} do
+      %{id: id, external_id: external_id} = data_structure
       result = DataStructures.find_data_structure(%{external_id: external_id})
 
       assert %DataStructure{} = result
@@ -274,9 +307,9 @@ defmodule TdDd.DataStructuresTest do
       assert relations.children == []
     end
 
-    test "get_data_structure_version!/1 returns the data_structure with given id" do
-      data_structure_version = insert(:data_structure_version)
-
+    test "get_data_structure_version!/1 returns the data_structure with given id", %{
+      data_structure_version: data_structure_version
+    } do
       assert DataStructures.get_data_structure_version!(data_structure_version.id)
              <~> data_structure_version
     end
@@ -309,24 +342,22 @@ defmodule TdDd.DataStructuresTest do
       assert children <|> [child]
     end
 
-    test "get_data_structure_version!/2 gets custom relations" do
+    test "get_data_structure_version!/2 gets custom relations", %{
+      data_structure_version: child_custom_relation
+    } do
       [
         dsv,
         parent,
         parent_custom_relation,
         child,
-        child_custom_relation,
-        sibling,
-        sibling_custom_relation
+        sibling
       ] =
         [
           "structure",
           "parent",
           "parent_custom_relation",
           "child",
-          "child_custom_relation",
-          "sibling",
-          "sibling_custom_relation"
+          "sibling"
         ]
         |> Enum.map(&insert(:data_structure, external_id: &1))
         |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id))
@@ -353,12 +384,6 @@ defmodule TdDd.DataStructuresTest do
       )
 
       insert(:data_structure_relation,
-        parent_id: parent.id,
-        child_id: sibling_custom_relation.id,
-        relation_type_id: custom_id
-      )
-
-      insert(:data_structure_relation,
         parent_id: dsv.id,
         child_id: child_custom_relation.id,
         relation_type_id: custom_id
@@ -370,7 +395,7 @@ defmodule TdDd.DataStructuresTest do
         relation_type_id: default_id
       )
 
-      enrich_opts = [:parents, :children, :siblings, :relations]
+      enrich_opts = [:parents, :children, :siblings, :relations, :relation_links]
 
       assert %{
                id: id,
@@ -384,8 +409,11 @@ defmodule TdDd.DataStructuresTest do
       assert parents <|> [parent]
       assert children <|> [child]
       assert siblings <|> [sibling, dsv]
-      assert Enum.map(relations.parents, & &1.version) <|> [parent_custom_relation]
-      assert Enum.map(relations.children, & &1.version) <|> [child_custom_relation]
+      assert %{parents: [parent_relation], children: [child_relation]} = relations
+      assert parent_relation.version <~> parent_custom_relation
+      assert child_relation.version <~> child_custom_relation
+      assert [link] = child_relation.links
+      assert %{resource_type: :concept, resource_id: "LINKED_CONCEPT"} = link
     end
 
     defp deleted_at(%{external_id: "deleted_child"}), do: DateTime.utc_now()
@@ -442,8 +470,8 @@ defmodule TdDd.DataStructuresTest do
       assert data_fields <|> fields
     end
 
-    test "get_data_structure_version!/2 enriches with versions" do
-      ds = insert(:data_structure, external_id: "get_data_structure_version!/2 versioned")
+    test "get_data_structure_version!/2 enriches with versions", %{system: system} do
+      ds = insert(:data_structure, system_id: system.id)
 
       [dsv | dsvs] =
         0..3
@@ -455,17 +483,10 @@ defmodule TdDd.DataStructuresTest do
       assert versions <|> [dsv | dsvs]
     end
 
-    test "get_data_structure_version!/2 enriches with system" do
-      sys = insert(:system, external_id: "foo")
-
-      ds =
-        insert(:data_structure,
-          external_id: "get_data_structure_version!/2 system",
-          system_id: sys.id
-        )
-
-      dsv = insert(:data_structure_version, data_structure_id: ds.id)
-
+    test "get_data_structure_version!/2 enriches with system", %{
+      data_structure_version: dsv,
+      system: sys
+    } do
       assert %{system: system} = DataStructures.get_data_structure_version!(dsv.id, [:system])
 
       assert system == sys
@@ -481,9 +502,8 @@ defmodule TdDd.DataStructuresTest do
       assert domain.name == d.name
     end
 
-    test "get_data_structure_version!/2 enriches with empty domain when there is not domain id" do
-      ds = insert(:data_structure)
-      dsv = insert(:data_structure_version, data_structure_id: ds.id)
+    test "get_data_structure_version!/2 enriches with empty domain when there is not domain id",
+         %{data_structure_version: dsv} do
       assert %{domain: %{}} = DataStructures.get_data_structure_version!(dsv.id, [:domain])
     end
 
@@ -605,8 +625,9 @@ defmodule TdDd.DataStructuresTest do
                DataStructures.get_structure_metadata!(structure_metadata.id).id
     end
 
-    test "create_structure_metadata/1 with valid attrs creates the metadata" do
-      ds = insert(:data_structure)
+    test "create_structure_metadata/1 with valid attrs creates the metadata", %{
+      data_structure: ds
+    } do
       attrs = Map.put(@valid_attrs, :data_structure_id, ds.id)
 
       assert {:ok, %StructureMetadata{fields: fields, data_structure_id: ds_id, version: version}} =
@@ -622,8 +643,9 @@ defmodule TdDd.DataStructuresTest do
                DataStructures.create_structure_metadata(@invalid_attrs)
     end
 
-    test "update_structure_metadata/1 with valid attrs updates the metadata" do
-      ds = insert(:data_structure)
+    test "update_structure_metadata/1 with valid attrs updates the metadata", %{
+      data_structure: ds
+    } do
       mm = insert(:structure_metadata, data_structure: ds)
 
       assert {:ok, %StructureMetadata{fields: fields, data_structure_id: ds_id, version: version}} =

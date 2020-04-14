@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-2439] Include links in data structure relations response
+
 ## [3.19.0] 2020-04-06
 
 ### Fixed
