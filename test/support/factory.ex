@@ -17,11 +17,28 @@ defmodule TdDq.Factory do
     }
   end
 
+  def rule_implementation_raw_factory do
+    %TdDq.Rules.RuleImplementation{
+      rule: build(:rule),
+      implementation_key: "implementation_key001",
+      implementation_type: "raw",
+      raw_content: %{
+        dataset: "cliente c join address a on c.address_id=a.id",
+        population: nil,
+        system: 1,
+        validations: "c.city = 'MADRID'"
+      },
+      deleted_at: nil
+    }
+  end
+
   def rule_implementation_factory do
     %TdDq.Rules.RuleImplementation{
       rule: build(:rule),
       implementation_key: "implementation_key001",
+      implementation_type: "default",
       deleted_at: nil,
+      raw_content: %{dataset: nil, population: nil, system: nil, validations: nil},
       dataset: [
         %{structure: %{id: 14_080}},
         %{

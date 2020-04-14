@@ -72,6 +72,13 @@ defmodule TdDq.RuleImplementationsTest do
     }
   ]
 
+  @valid_raw_content %{
+    dataset: "clientes c join address a on c.address_id=a.id",
+    population: "a.country = 'SPAIN'",
+    validations: "a.city is null",
+    system: 1
+  }
+
   describe "rule_implementations" do
     alias TdDq.Rules.RuleImplementation
 
@@ -90,8 +97,9 @@ defmodule TdDq.RuleImplementationsTest do
       insert(:rule_implementation, implementation_key: "ri2", rule: rule1)
       insert(:rule_implementation, implementation_key: "ri3", rule: rule1)
       insert(:rule_implementation, implementation_key: "ri4", rule: rule2)
+      insert(:rule_implementation_raw, implementation_key: "ri5", rule: rule1)
 
-      assert length(Rules.list_rule_implementations(%{rule_id: rule1.id})) == 3
+      assert length(Rules.list_rule_implementations(%{rule_id: rule1.id})) == 4
     end
 
     test "list_rule_implementations/1 returns non deleted rule_implementations by rule" do
@@ -101,14 +109,15 @@ defmodule TdDq.RuleImplementationsTest do
       insert(:rule_implementation, implementation_key: "ri2", rule: rule1)
       insert(:rule_implementation, implementation_key: "ri3", rule: rule1)
       insert(:rule_implementation, implementation_key: "ri4", rule: rule2)
-
+      insert(:rule_implementation_raw, implementation_key: "ri5", rule: rule2)
       insert(:rule_implementation,
-        implementation_key: "ri5",
+        implementation_key: "ri6",
         rule: rule2,
         deleted_at: DateTime.utc_now()
       )
 
       assert length(Rules.list_rule_implementations(%{rule_id: rule1.id})) == 3
+      assert length(Rules.list_rule_implementations(%{rule_id: rule2.id})) == 2
     end
 
     test "list_rule_implementations/1 returns all rule_implementations by business_concept_id" do
@@ -377,6 +386,46 @@ defmodule TdDq.RuleImplementationsTest do
           dataset: @valid_dataset,
           population: @valid_population,
           validations: @valid_validations
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert {:ok, %RuleImplementation{} = rule_implementation} =
+               Rules.create_rule_implementation(rule, creation_attrs)
+
+      assert rule_implementation.rule_id == creation_attrs["rule_id"]
+    end
+
+    test "create_rule_implementation/1 with invalid keywords in raw content of raw implementation returns error" do
+      rule = insert(:rule)
+
+      creation_attrs =
+        %{
+          rule_id: rule.id,
+          implementation_type: "raw",
+          raw_content: %{
+            dataset: "cliente c join address a on c.address_id=a.id",
+            validations: "drop cliente",
+            system: 1
+          }
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert {:error, %Ecto.Changeset{}, errors} =
+               Rules.create_rule_implementation(rule, creation_attrs)
+
+      assert errors
+             |> Map.get(:raw_content)
+             |> Map.get(:validations) == ["invalid_content"]
+    end
+
+    test "create_rule_implementation/1 with valid data for raw implementation creates a rule_implementation" do
+      rule = insert(:rule)
+
+      creation_attrs =
+        %{
+          rule_id: rule.id,
+          raw_content: @valid_raw_content,
+          implementation_type: "raw"
         }
         |> Map.Helpers.stringify_keys()
 

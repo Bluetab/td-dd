@@ -39,6 +39,7 @@ defmodule TdDqWeb.RuleImplementationController do
         |> Rules.list_rule_implementations()
         |> Enum.map(&Repo.preload(&1, [:rule]))
         |> Enum.map(&Rules.enrich_rule_implementation_structures(&1))
+        |> Enum.map(&Rules.enrich_system(&1))
 
       render(conn, "index.json", rule_implementations: rule_implementations)
     end
@@ -95,7 +96,8 @@ defmodule TdDqWeb.RuleImplementationController do
 
     resource_type = %{
       "business_concept_id" => rule.business_concept_id,
-      "resource_type" => "rule_implementation"
+      "resource_type" => "rule_implementation",
+      "implementation_type" => Map.get(rule_implementation_params, "implementation_type")
     }
 
     with {:can, true} <- {:can, can?(user, create(resource_type))},
@@ -112,6 +114,12 @@ defmodule TdDqWeb.RuleImplementationController do
       |> put_resp_header("location", rule_implementation_path(conn, :show, rule_implementation))
       |> render("show.json", rule_implementation: rule_implementation)
     else
+      {:can, false} ->
+        conn
+        |> put_status(:forbidden)
+        |> put_view(ErrorView)
+        |> render("403.json")
+
       {:invalid_implementation_key} ->
         conn
         |> put_status(:unprocessable_entity)
@@ -203,6 +211,7 @@ defmodule TdDqWeb.RuleImplementationController do
       |> add_rule_results()
       |> add_last_rule_result()
       |> Rules.enrich_rule_implementation_structures()
+      |> Rules.enrich_system()
 
     user = conn.assigns[:current_resource]
 
@@ -228,7 +237,12 @@ defmodule TdDqWeb.RuleImplementationController do
     user = conn.assigns[:current_resource]
 
     update_params =
-      Map.drop(rule_implementation_params, [:implementation_key, "implementation_key"])
+      Map.drop(rule_implementation_params, [
+        :implementation_key,
+        "implementation_key",
+        :implementation_type,
+        "implementation_type"
+      ])
 
     rule_implementation =
       id
@@ -239,7 +253,8 @@ defmodule TdDqWeb.RuleImplementationController do
 
     resource_type = %{
       "business_concept_id" => rule.business_concept_id,
-      "resource_type" => "rule_implementation"
+      "resource_type" => "rule_implementation",
+      "implementation_type" => rule_implementation.implementation_type
     }
 
     with {:can, true} <- {:can, can?(user, update(resource_type))},
@@ -250,6 +265,12 @@ defmodule TdDqWeb.RuleImplementationController do
            ) do
       render(conn, "show.json", rule_implementation: rule_implementation)
     else
+      {:can, false} ->
+        conn
+        |> put_status(:forbidden)
+        |> put_view(ErrorView)
+        |> render("403.json")
+
       {:error, %Changeset{data: %{__struct__: _}} = changeset} ->
         conn
         |> put_status(:unprocessable_entity)
@@ -301,7 +322,8 @@ defmodule TdDqWeb.RuleImplementationController do
               user,
               delete(%{
                 "business_concept_id" => rule.business_concept_id,
-                "resource_type" => "rule_implementation"
+                "resource_type" => "rule_implementation",
+                "implementation_type" => rule_implementation.implementation_type
               })
             )},
          {:ok, %RuleImplementation{}} <- Rules.delete_rule_implementation(rule_implementation) do
@@ -338,6 +360,7 @@ defmodule TdDqWeb.RuleImplementationController do
         |> Enum.map(&Repo.preload(&1, [:rule]))
         |> Enum.map(&add_last_rule_result(&1))
         |> Enum.map(&Rules.enrich_rule_implementation_structures(&1))
+        |> Enum.map(&Rules.enrich_system(&1))
 
       render(conn, "index.json", rule_implementations: rule_implementations)
     end

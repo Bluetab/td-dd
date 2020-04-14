@@ -6,13 +6,17 @@ defmodule TdDq.Rules.RuleImplementation do
   alias TdDq.Rules.RuleImplementation
   alias TdDq.Rules.RuleImplementation.ConditionRow
   alias TdDq.Rules.RuleImplementation.DatasetRow
+  alias TdDq.Rules.RuleImplementation.RawContent
 
   schema "rule_implementations" do
     field(:implementation_key, :string)
+    field(:implementation_type, :string, default: "default")
 
     embeds_many(:dataset, DatasetRow, on_replace: :delete)
     embeds_many(:population, ConditionRow, on_replace: :delete)
     embeds_many(:validations, ConditionRow, on_replace: :delete)
+
+    embeds_one(:raw_content, RawContent, on_replace: :delete)
 
     belongs_to(:rule, Rule)
 
@@ -26,13 +30,100 @@ defmodule TdDq.Rules.RuleImplementation do
     |> cast(attrs, [
       :deleted_at,
       :rule_id,
-      :implementation_key
+      :implementation_key,
+      :implementation_type
     ])
+    |> custom_changeset(rule_implementation)
+    |> validate_length(:implementation_key, max: 255)
+    |> validate_inclusion(:implementation_type, ["default", "raw"])
+  end
+
+  defp custom_changeset(
+         %Ecto.Changeset{changes: %{implementation_type: "raw"}} = changeset,
+         _rule_implementation
+       ) do
+    raw_changeset(changeset)
+  end
+
+  defp custom_changeset(%Ecto.Changeset{} = changeset, %RuleImplementation{
+         implementation_type: "raw"
+       }) do
+    raw_changeset(changeset)
+  end
+
+  defp custom_changeset(
+         %Ecto.Changeset{changes: %{implementation_type: _type}} = changeset,
+         _rule_implementation
+       ) do
+    default_changeset(changeset)
+  end
+
+  defp custom_changeset(%Ecto.Changeset{} = changeset, %RuleImplementation{
+         implementation_type: _type
+       }) do
+    default_changeset(changeset)
+  end
+
+  defp raw_changeset(changeset) do
+    changeset
+    |> cast_embed(:raw_content, with: &RawContent.changeset/2, required: true)
+    |> validate_required([:rule_id, :raw_content])
+  end
+
+  def default_changeset(changeset) do
+    changeset
     |> cast_embed(:dataset, with: &DatasetRow.changeset/2, required: true)
     |> cast_embed(:population, with: &ConditionRow.changeset/2, required: false)
     |> cast_embed(:validations, with: &ConditionRow.changeset/2, required: true)
     |> validate_required([:rule_id, :dataset, :validations])
-    |> validate_length(:implementation_key, max: 255)
+  end
+end
+
+defmodule TdDq.Rules.RuleImplementation.RawContent do
+  @moduledoc false
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  @primary_key false
+  embedded_schema do
+    field(:dataset, :string)
+    field(:population, :string)
+    field(:validations, :string)
+    field(:system, :integer)
+  end
+
+  def changeset(%__MODULE__{} = lead, params \\ %{}) do
+    lead
+    |> cast(params, [:dataset, :population, :validations, :system])
+    |> valid_content?([:dataset, :population, :validations])
+    |> validate_required([:dataset, :validations, :system])
+  end
+
+  defp valid_content?(changeset, fields) do
+    Enum.reduce(fields, changeset, fn field, changeset ->
+      field_value = get_change(changeset, field)
+
+      case has_invalid_content(field_value) do
+        true ->
+          add_error(changeset, field, "invalid.#{field}",
+            validation: String.to_atom("invalid_content")
+          )
+
+        _ ->
+          changeset
+      end
+    end)
+  end
+
+  def has_invalid_content(nil) do
+    false
+  end
+
+  def has_invalid_content(text) do
+    result =
+      Regex.run(~r/(?i)(\b(DROP|DELETE|INSERT|UPDATE|CALL|EXEC|EXECUTE|ALTER)\b|;|--|#)/, text)
+
+    result != nil && length(result) > 0
   end
 end
 

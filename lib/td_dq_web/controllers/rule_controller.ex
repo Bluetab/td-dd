@@ -166,10 +166,19 @@ defmodule TdDqWeb.RuleController do
           "business_concept_id" => rule.business_concept_id
         })
       )
+    manage_raw_rule_implementations =
+      can?(
+        user,
+        manage_raw(%{
+          "resource_type" => "rule_implementation",
+          "business_concept_id" => rule.business_concept_id
+        })
+      )
 
     %{
       manage_quality_rules: manage_permission,
-      manage_quality_rule_implementations: manage_rule_implementations
+      manage_quality_rule_implementations: manage_rule_implementations,
+      manage_raw_quality_rule_implementations: manage_raw_rule_implementations
     }
   end
 

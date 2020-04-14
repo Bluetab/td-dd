@@ -161,10 +161,19 @@ defmodule TdDqWeb.SwaggerDefinitions do
           properties do
             id(:integer, "Rule Implementation unique identifier", required: true)
             implementation_key(:string, "Rule Implementation implementation_key", required: true)
+
+            implementation_type(:string, "Rule implementation type (default or raw)",
+              required: true
+            )
+
             rule_id(:integer, "Belongs to rule", required: true)
-            dataset(Schema.ref(:DatasetArray), "Dataset", required: true)
+            dataset(Schema.ref(:DatasetArray), "Dataset", required: false)
             population(Schema.ref(:ConditionArray))
-            validations(Schema.ref(:ConditionArray), "Validations", required: true)
+            validations(Schema.ref(:ConditionArray), "Validations", required: false)
+
+            raw_content(Schema.ref(:RawContent), "Raw content for raw implementation type",
+              required: false
+            )
           end
         end,
       DatasetArray:
@@ -205,6 +214,15 @@ defmodule TdDqWeb.SwaggerDefinitions do
           properties do
             name(:string, "Operator name", required: true)
             value_type(:string)
+          end
+        end,
+      RawContent:
+        swagger_schema do
+          properties do
+            dataset(:string, "dataset raw text", required: true)
+            population([:string, nil], "population raw text", required: false)
+            validations(:string, "validations raw text", required: true)
+            system([:object, nil], "system id, external id and name", required: true)
           end
         end,
       RuleImplementationCreateProps:

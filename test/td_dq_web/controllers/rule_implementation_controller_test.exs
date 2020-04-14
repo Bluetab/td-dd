@@ -42,6 +42,7 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
       insert(:rule_implementation, implementation_key: "ri2", rule: rule1)
       insert(:rule_implementation, implementation_key: "ri3", rule: rule1)
       insert(:rule_implementation, implementation_key: "ri4", rule: rule2)
+      insert(:rule_implementation_raw, implementation_key: "ri5", rule: rule1)
 
       conn =
         get(conn, Routes.rule_implementation_path(conn, :index), %{
@@ -50,7 +51,7 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
         })
 
       validate_resp_schema(conn, schema, "RuleImplementationsResponse")
-      assert length(json_response(conn, :ok)["data"]) == 3
+      assert length(json_response(conn, :ok)["data"]) == 4
     end
   end
 
