@@ -40,13 +40,11 @@ defmodule TdDd.Loader.FieldsAsStructures do
   end
 
   def as_structures({parent, fields}) do
-    fields
-    |> Enum.map(&as_structure(parent, &1))
+    Enum.map(fields, &as_structure(parent, &1))
   end
 
   def as_structures(fields_by_parent) do
-    fields_by_parent
-    |> Enum.flat_map(&as_structures/1)
+    Enum.flat_map(fields_by_parent, &as_structures/1)
   end
 
   defp as_structure(parent, %{field_name: name} = field) do
@@ -63,17 +61,18 @@ defmodule TdDd.Loader.FieldsAsStructures do
     parent
     |> Map.take([:domain_id, :group, :system_id])
     |> Map.merge(field)
+    |> Map.delete(:field_external_id)
     |> Map.put(:class, "field")
     |> Map.put(:type, type)
     |> Map.put(:external_id, field_id)
   end
 
   def as_relations({parent, fields}) do
-    fields |> Enum.map(&as_relation(parent, &1))
+     Enum.map(fields, &as_relation(parent, &1))
   end
 
   def as_relations(fields_by_parent) do
-    fields_by_parent |> Enum.flat_map(&as_relations/1)
+     Enum.flat_map(fields_by_parent, &as_relations/1)
   end
 
   defp as_relation(%{external_id: external_id} = parent, field) do
@@ -96,6 +95,10 @@ defmodule TdDd.Loader.FieldsAsStructures do
       true -> "Column"
       false -> "Field"
     end
+  end
+
+  defp get_child_id(_, %{field_external_id: external_id}) do
+    external_id
   end
 
   defp get_child_id(%{external_id: external_id}, %{field_name: name}) do

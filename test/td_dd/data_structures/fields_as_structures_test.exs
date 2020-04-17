@@ -79,5 +79,21 @@ defmodule TdDd.Loader.FieldsAsStructuresTest do
       assert FieldsAsStructures.child_type(table, child4) == "Metric"
       assert FieldsAsStructures.child_type(report, child4) == "Metric"
     end
+
+    test "uses field_external_id if present" do
+      parent = %{external_id: "external_id", type: "type"}
+
+      assert [
+               %{external_id: "field_external_id"},
+               %{external_id: "external_id/field2"}
+             ] =
+               FieldsAsStructures.as_structures(
+                 {parent,
+                  [
+                    %{field_external_id: "field_external_id", field_name: "field1"},
+                    %{field_name: "field2"}
+                  ]}
+               )
+    end
   end
 end

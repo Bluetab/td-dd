@@ -127,21 +127,22 @@ defmodule TdDd.CSV.ReaderTest do
         )
 
       assert r1 == %{
-               metadata: %{},
                external_id: "1",
+               field_external_id: "987",
                field_name: "Field1",
+               metadata: %{},
+               mutable_metadata: %{},
                nullable: true,
-               type: "Column",
-               mutable_metadata: %{}
+               type: "Column"
              }
 
       assert r2 == %{
-               metadata: %{},
                external_id: "2",
                field_name: "Field2",
+               metadata: %{},
+               mutable_metadata: %{},
                nullable: false,
-               type: "Column",
-               mutable_metadata: %{}
+               type: "Column"
              }
     end
   end
