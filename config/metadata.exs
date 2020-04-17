@@ -20,6 +20,7 @@ config :td_dd, :metadata,
   field_import_schema: %{
     description: :string,
     external_id: :string,
+    field_external_id: :string,
     field_name: :string,
     metadata: :map,
     mutable_metadata: :map,

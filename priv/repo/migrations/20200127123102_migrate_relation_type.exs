@@ -2,8 +2,6 @@ defmodule TdDd.Repo.Migrations.MigrateRelationType do
   use Ecto.Migration
 
   def up do
-    now = DateTime.utc_now()
-
     execute("""
     insert into relation_types(name, description, inserted_at, updated_at)
     values('default', 'Parent/Child', now(), now())

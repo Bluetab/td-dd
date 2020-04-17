@@ -87,9 +87,9 @@ defmodule TdDd.Loader.LoaderWorker do
         {:load, structures_file, fields_file, relations_file, system_id, domain, audit},
         state
       ) do
-    {:ok, field_recs} = fields_file |> parse_data_fields(system_id)
-    {:ok, structure_recs} = structures_file |> parse_data_structures(system_id, domain)
-    {:ok, relation_recs} = relations_file |> parse_data_structure_relations(system_id)
+    {:ok, field_recs} = parse_data_fields(fields_file, system_id)
+    {:ok, structure_recs} = parse_data_structures(structures_file, system_id, domain)
+    {:ok, relation_recs} = parse_data_structure_relations(relations_file, system_id)
 
     do_load(structure_recs, field_recs, relation_recs, audit)
     {:noreply, state}
@@ -101,9 +101,9 @@ defmodule TdDd.Loader.LoaderWorker do
         _from,
         state
       ) do
-    {:ok, field_recs} = fields_file |> parse_data_fields(system_id)
-    {:ok, structure_recs} = structures_file |> parse_data_structures(system_id, domain)
-    {:ok, relation_recs} = relations_file |> parse_data_structure_relations(system_id)
+    {:ok, field_recs} = parse_data_fields(fields_file, system_id)
+    {:ok, structure_recs} = parse_data_structures(structures_file, system_id, domain)
+    {:ok, relation_recs} = parse_data_structure_relations(relations_file, system_id)
 
     reply = do_load(structure_recs, field_recs, relation_recs, audit, opts)
     {:reply, reply, state}

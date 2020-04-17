@@ -48,10 +48,11 @@ defmodule TdDdWeb.MetadataController do
       data_fields.csv:
           external_id: :string required external id of parent structure
           field_name: :string required field name
+          type: :string required field type
           description: :string optional field description
           nullable: :boolean optional field nullability
           precision: :string optional field precision
-          type: :string optional field data type
+          field_external_id: :string optional field external id
           metadata: :map (headers prefixed with "m:", e.g. "m:data_type" will be loaded into this map)
       data_structure_relations.csv:
           parent_external_id: :string required external id of parent
@@ -200,11 +201,11 @@ defmodule TdDdWeb.MetadataController do
 
   defp check_status(_), do: :error
 
-  defp load(conn, structure_records, field_records, relation_records, opts) do
+  defp load(conn, structures_file, fields_file, relations_file, opts) do
     user_id = GuardianPlug.current_resource(conn).id
     ts = DateTime.truncate(DateTime.utc_now(), :second)
     audit_fields = %{ts: ts, last_change_by: user_id}
-    LoaderWorker.load(structure_records, field_records, relation_records, audit_fields, opts)
+    LoaderWorker.load(structures_file, fields_file, relations_file, audit_fields, opts)
   end
 
   defp can_upload?(user, %{"domain" => domain_name}) do

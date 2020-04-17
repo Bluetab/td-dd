@@ -6,8 +6,7 @@ defmodule TdDdWeb.MetadataControllerTest do
     only: [
       data_structure_data_structure_version_path: 4,
       data_structure_path: 2,
-      metadata_path: 2,
-      system_path: 2
+      metadata_path: 2
     ]
 
   alias TdCache.TaxonomyCache
@@ -33,6 +32,8 @@ defmodule TdDdWeb.MetadataControllerTest do
   end
 
   setup %{fixture: fixture} do
+    insert(:system, name: "Power BI", external_id: "pbi")
+
     on_exit(fn ->
       ["nodes.csv", "rels.csv"]
       |> Enum.map(&Path.join([@import_dir, &1]))
@@ -63,19 +64,13 @@ defmodule TdDdWeb.MetadataControllerTest do
       fields: fields,
       relations: relations
     } do
-      assert %{"data" => %{"id" => _}} =
-               conn
-               |> post(system_path(conn, :create), system: %{name: "Power BI", external_id: "pbi"})
-               |> json_response(201)
-
-      conn =
-        post(conn, metadata_path(conn, :upload),
-          data_structures: Map.put(structures, :filename, "structures"),
-          data_fields: Map.put(fields, :filename, "fields"),
-          data_structure_relations: Map.put(relations, :filename, "relations")
-        )
-
-      assert response(conn, 202) =~ ""
+      assert conn
+             |> post(metadata_path(conn, :upload),
+               data_structures: Map.put(structures, :filename, "structures"),
+               data_fields: Map.put(fields, :filename, "fields"),
+               data_structure_relations: Map.put(relations, :filename, "relations")
+             )
+             |> response(:accepted)
 
       # waits for loader to complete
       LoaderWorker.ping(20_000)
@@ -83,20 +78,50 @@ defmodule TdDdWeb.MetadataControllerTest do
       assert %{"data" => data} =
                conn
                |> get(data_structure_path(conn, :index))
-               |> json_response(200)
+               |> json_response(:ok)
 
       assert length(data) == 5 + 68
 
       structure_id = get_id(data, "Calidad")
 
-      %{"data" => data} =
-        conn
-        |> get(data_structure_data_structure_version_path(conn, :show, structure_id, "latest"))
-        |> json_response(200)
+      assert %{"data" => %{"parents" => parents, "children" => children, "siblings" => siblings}} =
+               conn
+               |> get(
+                 data_structure_data_structure_version_path(conn, :show, structure_id, "latest")
+               )
+               |> json_response(:ok)
 
-      assert length(data["parents"]) == 1
-      assert length(data["siblings"]) == 4
-      assert length(data["children"]) == 16
+      assert length(parents) == 1
+      assert length(siblings) == 4
+      assert length(children) == 16
+    end
+
+    @tag :admin_authenticated
+    @tag fixture: "test/fixtures/metadata/field_external_id"
+    test "maintains field_external_id if specified", %{
+      conn: conn,
+      structures: structures,
+      fields: fields
+    } do
+      assert conn
+             |> post(metadata_path(conn, :upload),
+               data_structures: Map.put(structures, :filename, "structures"),
+               data_fields: Map.put(fields, :filename, "fields")
+             )
+             |> response(:accepted)
+
+      # waits for loader to complete
+      LoaderWorker.ping(20_000)
+
+      assert %{"data" => data} =
+               conn
+               |> get(data_structure_path(conn, :index))
+               |> json_response(:ok)
+
+      external_ids = Enum.map(data, & &1["external_id"])
+      assert Enum.member?(external_ids, "parent_external_id")
+      assert Enum.member?(external_ids, "parent_external_id/Field1")
+      assert Enum.member?(external_ids, "field_with_external_id")
     end
 
     @tag :admin_authenticated
@@ -107,10 +132,6 @@ defmodule TdDdWeb.MetadataControllerTest do
       fields: fields,
       relations: relations
     } do
-      conn =
-        post(conn, system_path(conn, :create), system: %{name: "Power BI", external_id: "pbi"})
-
-      assert %{"id" => _} = json_response(conn, 201)["data"]
       insert(:relation_type, name: "relation_type_1")
 
       conn =
@@ -173,11 +194,6 @@ defmodule TdDdWeb.MetadataControllerTest do
       domain = "domain_name"
       domain_id = :random.uniform(1_000_000)
       TaxonomyCache.put_domain(%{name: domain, id: domain_id, updated_at: DateTime.utc_now()})
-
-      conn =
-        post(conn, system_path(conn, :create), system: %{name: "Power BI", external_id: "pbi"})
-
-      assert %{"id" => _} = json_response(conn, 201)["data"]
 
       conn =
         post(conn, metadata_path(conn, :upload),

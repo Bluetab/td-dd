@@ -1,0 +1,3 @@
+type;external_id;field_name;field_external_id
+Column;parent_external_id;Field1;
+Column;parent_external_id;Field2;field_with_external_id
