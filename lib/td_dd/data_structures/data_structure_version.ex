@@ -25,6 +25,9 @@ defmodule TdDd.DataStructures.DataStructureVersion do
 
     belongs_to(:data_structure, DataStructure)
 
+    has_many(:child_relations, DataStructureRelation, foreign_key: :parent_id)
+    has_many(:parent_relations, DataStructureRelation, foreign_key: :child_id)
+
     many_to_many(:children, DataStructureVersion,
       join_through: DataStructureRelation,
       join_keys: [parent_id: :id, child_id: :id]

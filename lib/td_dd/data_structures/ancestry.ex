@@ -1,9 +1,9 @@
 defmodule TdDd.DataStructures.Ancestry do
   @moduledoc """
-  This module is used by the bulk load process to obtain current (as-is)
-  and new (to-be) ancestors of a data structure. The ancestors and their
-  children are loaded into the bulk load graph (see `TdDd.DataStructures.Graph`)
-  in order that their hashes can be recalculated.
+  This module is used by the bulk load process to obtain current (as-is) and new
+  (to-be) ancestors of a data structure. The ancestors and their children are
+  loaded into the bulk load graph (see `TdDd.DataStructures.MerkleGraph`) in
+  order that their hashes can be recalculated.
   """
 
   alias TdDd.DataStructures

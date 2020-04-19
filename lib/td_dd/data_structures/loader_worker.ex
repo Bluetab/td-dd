@@ -8,7 +8,6 @@ defmodule TdDd.Loader.LoaderWorker do
   alias TdCache.TaxonomyCache
   alias TdDd.CSV.Reader
   alias TdDd.DataStructures.Ancestry
-  alias TdDd.DataStructures.Graph
   alias TdDd.Loader
   alias TdDd.ProfilingLoader
   alias TdDd.Systems
@@ -116,27 +115,22 @@ defmodule TdDd.Loader.LoaderWorker do
 
   defp do_load(structures, fields, relations, audit, opts \\ []) do
     Logger.info("Bulk loading data structures")
-    graph = Graph.new()
 
-    try do
-      Timer.time(
-        fn -> Loader.load(graph, structures, fields, relations, audit, opts) end,
-        fn ms, res ->
-          case res do
-            {:ok, data_structure_ids} ->
-              count = Enum.count(data_structure_ids)
-              Logger.info("Bulk load process completed in #{ms}ms (#{count} upserts)")
-              post_process(data_structure_ids, opts)
+    Timer.time(
+      fn -> Loader.load(structures, fields, relations, audit, opts) end,
+      fn ms, res ->
+        case res do
+          {:ok, data_structure_ids} ->
+            count = Enum.count(data_structure_ids)
+            Logger.info("Bulk load process completed in #{ms}ms (#{count} upserts)")
+            post_process(data_structure_ids, opts)
 
-            e ->
-              Logger.warn("Bulk load failed after #{ms}ms (#{inspect(e)})")
-              e
-          end
+          e ->
+            Logger.warn("Bulk load failed after #{ms}ms (#{inspect(e)})")
+            e
         end
-      )
-    after
-      Graph.delete(graph)
-    end
+      end
+    )
   end
 
   defp parse_data_structures(nil, _, _), do: {:ok, []}

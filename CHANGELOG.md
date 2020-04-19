@@ -7,6 +7,13 @@
 - [TD-2439] Include links in data structure relations response
 - [TD-2531] Support `field_external_id` in `data_fields` metadata
 
+### Changed
+
+- [TD-2531] Include `external_id` in data structure hash calculation. Also,
+  replace usage of Erlang's `:digraph` library with `Graph`. Note that this the
+  hashes of all data structures will be recalculated the first time the service
+  starts after this change is applied.
+
 ## [3.19.0] 2020-04-06
 
 ### Fixed
