@@ -22,7 +22,7 @@ defmodule TdDd.DataStructures.PathCache do
     GenServer.call(__MODULE__, id, 10_000)
   end
 
-  def refresh(timeout \\ 5000) do
+  def refresh(timeout \\ 20_000) do
     GenServer.call(__MODULE__, :refresh, timeout)
   end
 
@@ -67,17 +67,17 @@ defmodule TdDd.DataStructures.PathCache do
   end
 
   defp load_cache do
-    graph = :digraph.new()
-
-    try do
+    {:ok, graph} =
       Repo.transaction(fn ->
-        from(ds in DataStructureVersion,
-          where: is_nil(ds.deleted_at),
-          select: {ds.id, ds.name}
-        )
-        |> Repo.stream()
-        |> Stream.each(fn {id, name} -> :digraph.add_vertex(graph, id, name) end)
-        |> Stream.run()
+        graph =
+          from(ds in DataStructureVersion,
+            where: is_nil(ds.deleted_at),
+            select: {ds.id, ds.name}
+          )
+          |> Repo.stream(max_rows: 1_000)
+          |> Enum.reduce(Graph.new(), fn {id, name}, graph ->
+            Graph.add_vertex(graph, id, name: name)
+          end)
 
         from(dsr in DataStructureRelation,
           join: child in assoc(dsr, :child),
@@ -86,31 +86,22 @@ defmodule TdDd.DataStructures.PathCache do
           where: is_nil(parent.deleted_at),
           select: {dsr.parent_id, dsr.child_id}
         )
-        |> Repo.stream()
-        |> Stream.each(fn {parent_id, child_id} ->
-          :digraph.add_edge(graph, parent_id, child_id)
+        |> Repo.stream(max_rows: 1_000)
+        |> Enum.reduce(graph, fn {parent_id, child_id}, graph ->
+          Graph.add_edge(graph, parent_id, child_id)
         end)
-        |> Stream.run()
       end)
 
-      graph
-      |> :digraph.vertices()
-      |> Enum.map(fn id -> {id, path(graph, id, [])} end)
-      |> Map.new()
-    after
-      :digraph.delete(graph)
-    end
+    graph
+    |> Graph.vertices()
+    |> Enum.map(fn id -> {id, path(graph, id, [])} end)
+    |> Map.new()
   end
 
   defp path(graph, id, acc) do
-    case :digraph.in_neighbours(graph, id) do
-      [] ->
-        acc
-        |> Enum.map(&:digraph.vertex(graph, &1))
-        |> Enum.map(fn {_, name} -> name end)
-
-      [h | _] ->
-        path(graph, h, [h | acc])
+    case Graph.in_neighbours(graph, id) do
+      [] -> Enum.map(acc, &Graph.vertex(graph, &1, :name))
+      [h | _] -> path(graph, h, [h | acc])
     end
   end
 end

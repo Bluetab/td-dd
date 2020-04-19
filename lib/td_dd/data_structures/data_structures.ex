@@ -728,8 +728,7 @@ defmodule TdDd.DataStructures do
   defp with_deleted(query, true, _), do: query
 
   defp with_deleted(query, _false, dynamic) do
-    query
-    |> where(^dynamic)
+    where(query, ^dynamic)
   end
 
   defp relation_type_condition(query, false, _default, custom), do: where(query, ^custom)

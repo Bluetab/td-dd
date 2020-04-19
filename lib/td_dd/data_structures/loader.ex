@@ -10,7 +10,7 @@ defmodule TdDd.Loader do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
-  alias TdDd.DataStructures.Graph
+  alias TdDd.DataStructures.MerkleGraph
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.Loader.FieldsAsStructures
@@ -18,17 +18,17 @@ defmodule TdDd.Loader do
 
   require Logger
 
-  def load(graph, structure_records, field_records, relation_records, audit_attrs, opts \\ []) do
+  def load(structure_records, field_records, relation_records, audit_attrs, opts \\ []) do
     structure_count = Enum.count(structure_records)
     field_count = Enum.count(field_records)
     Logger.info("Starting bulk load (#{structure_count}SR+#{field_count}FR)")
 
     {structure_records, relation_records} =
       FieldsAsStructures.fields_as_structures(structure_records, field_records, relation_records)
+
     relation_records = RelationTypes.with_relation_types(relation_records)
 
     do_load(
-      graph,
       structure_records,
       relation_records,
       audit_attrs,
@@ -37,22 +37,21 @@ defmodule TdDd.Loader do
     )
   end
 
-  defp do_load(graph, structure_records, relation_records, audit_attrs, nil, nil) do
-    {:ok, graph} = Graph.add(graph, structure_records, relation_records)
+  defp do_load(structure_records, relation_records, audit_attrs, nil, nil) do
+    {:ok, graph} = MerkleGraph.new(structure_records, relation_records)
     Repo.transaction(fn -> do_load(structure_records, graph, audit_attrs) end)
   end
 
   defp do_load(
-         graph,
          structure_records,
          relation_records,
          audit_attrs,
          external_id,
          parent_external_id
        ) do
-    {:ok, graph} = Graph.add(graph, structure_records, relation_records)
+    {:ok, graph} = MerkleGraph.new(structure_records, relation_records)
 
-    case Graph.root(graph) do
+    case MerkleGraph.root(graph) do
       ^external_id ->
         Repo.transaction(fn ->
           ancestor_records =
@@ -60,7 +59,7 @@ defmodule TdDd.Loader do
             |> Ancestry.get_ancestor_records(parent_external_id)
             |> RelationTypes.with_relation_types()
 
-          {:ok, graph} = Graph.add(graph, ancestor_records)
+          {:ok, graph} = MerkleGraph.add(graph, ancestor_records)
 
           do_load(structure_records, graph, audit_attrs)
         end)
@@ -83,7 +82,10 @@ defmodule TdDd.Loader do
     %{updated: updated, inserted: inserted} = load_graph(graph, audit_attrs)
     %{updated: updated_metadata} = load_mutable_metadata(structure_records, audit_attrs)
 
-    Enum.uniq(updated ++ discarded ++ inserted ++ updated_metadata)
+    upserted_ids =
+      [updated, inserted] |> Enum.flat_map(&Map.values/1) |> Enum.map(& &1.data_structure_id)
+
+    Enum.uniq(discarded ++ upserted_ids ++ updated_metadata)
   end
 
   defp discard_absent_structures(structure_records, ts) do
@@ -136,23 +138,23 @@ defmodule TdDd.Loader do
 
   defp load_graph(graph, audit_attrs) do
     graph
-    |> Graph.top_down()
+    |> MerkleGraph.top_down()
     |> reduce(graph, audit_attrs)
   end
 
-  defp reduce(external_ids, graph, audit_attrs, updated_ids \\ [], inserted_ids \\ [])
+  defp reduce(external_ids, graph, audit_attrs, updated \\ %{}, inserted \\ %{})
 
-  defp reduce([], graph, audit_attrs, updated_ids, inserted_ids) do
-    update_count = Enum.count(updated_ids)
-    insert_count = Enum.count(inserted_ids)
+  defp reduce([], graph, audit_attrs, updated, inserted) do
+    update_count = Enum.count(updated)
+    insert_count = Enum.count(inserted)
     Logger.info("Structures loaded (inserted=#{insert_count} updated=#{update_count})")
-    rel_count = insert_relations(inserted_ids, graph, audit_attrs)
+    rel_count = insert_relations(inserted, graph, audit_attrs)
     Logger.info("Relations loaded (inserted=#{rel_count})")
-    %{updated: updated_ids, inserted: inserted_ids}
+    %{updated: updated, inserted: inserted}
   end
 
-  defp reduce([external_id | tail], graph, audit_attrs, updated_ids, inserted_ids) do
-    attrs = Graph.get(graph, external_id)
+  defp reduce([external_id | tail], graph, audit_attrs, %{} = updated, %{} = inserted) do
+    attrs = MerkleGraph.get(graph, external_id)
     %{lhash: lhash, ghash: ghash} = attrs
 
     {tail, updated, inserted} =
@@ -160,54 +162,53 @@ defmodule TdDd.Loader do
         nil ->
           Logger.debug("#{external_id} new")
           {:ok, new_version} = do_insert(attrs, audit_attrs)
-          {tail, [], [new_version]}
+          {tail, updated, Map.put(inserted, external_id, ids(new_version))}
 
         %{ghash: ^ghash, deleted_at: deleted_at} = current_version ->
           Logger.debug("#{external_id} ghash unchanged (discard)")
           {:ok, updated_version} = do_update(current_version)
           tail = prune(external_id, tail, graph, deleted_at)
-          {tail, if(is_nil(deleted_at), do: [], else: [updated_version]), []}
+
+          {tail,
+           if(deleted_at, do: Map.put(updated, external_id, ids(updated_version)), else: updated),
+           inserted}
 
         %{lhash: ^lhash, deleted_at: deleted_at} = current_version ->
           Logger.debug("#{external_id} ghash changed (update)")
           {:ok, updated_version} = do_update(current_version, attrs)
-          {tail, if(is_nil(deleted_at), do: [], else: [updated_version]), []}
+
+          {tail,
+           if(deleted_at, do: Map.put(updated, external_id, ids(updated_version)), else: updated),
+           inserted}
 
         current_version ->
           Logger.debug("#{external_id} lhash or hash changed (new version)")
           {:ok, new_version} = do_replace(current_version, attrs, audit_attrs)
-
-          # TODO: If/when we reindex versions instead of structures we should return the following:
-          # {tail, [current_version], [new_version]}
-          {tail, [], [new_version]}
+          {tail, updated, Map.put(inserted, external_id, ids(new_version))}
       end
 
-    reduce(
-      tail,
-      graph,
-      audit_attrs,
-      Enum.map(updated, & &1.data_structure_id) ++ updated_ids,
-      Enum.map(inserted, & &1.data_structure_id) ++ inserted_ids
-    )
+    reduce(tail, graph, audit_attrs, updated, inserted)
+  end
+
+  defp ids(%{id: id, data_structure_id: data_structure_id} = _dsv) do
+    %{id: id, data_structure_id: data_structure_id}
   end
 
   defp prune(external_id, external_ids, graph, nil = _deleted_at) do
-    descendents = Graph.descendents(graph, external_id)
+    descendents = MerkleGraph.descendents(graph, external_id)
     Logger.debug("#{external_id} pruned (#{Enum.count(descendents)} descendents)")
     Enum.reject(external_ids, &Enum.member?(descendents, &1))
   end
 
   defp prune(_external_id, external_ids, _graph, _deleted_at), do: external_ids
 
-  defp insert_relations([], _graph, _audit_attrs), do: 0
+  defp insert_relations(%{} = inserted, _graph, _audit_attrs) when inserted == %{}, do: 0
 
-  defp insert_relations(data_structure_ids, graph, %{ts: ts}) do
-    from(ds in DataStructure,
-      where: ds.id in ^data_structure_ids,
-      select: ds.external_id
-    )
-    |> Repo.all()
-    |> Enum.map(&{&1, Graph.parents(graph, &1), Graph.children(graph, &1)})
+  defp insert_relations(%{} = inserted, graph, %{ts: ts}) do
+    inserted
+    |> Enum.map(fn {external_id, %{id: id}} ->
+      {id, MerkleGraph.in_edges(graph, external_id), MerkleGraph.out_edges(graph, external_id)}
+    end)
     |> Enum.flat_map(&relation_attrs(&1, ts))
     |> Enum.uniq()
     |> do_insert_relations()
@@ -221,47 +222,34 @@ defmodule TdDd.Loader do
     |> Enum.sum()
   end
 
-  defp get_structure_id_and_relation_type(
-         {external_id, [relation_type_id: relation_type_id, relation_type_name: _name]}
-       ) do
-    structure_id =
-      external_id
-      |> DataStructures.get_latest_version_by_external_id()
-      |> Map.get(:id)
-
-    {structure_id, relation_type_id}
+  defp relation_attrs({id, in_edges, out_edges}, ts) do
+    parent_rels = Enum.map(in_edges, &parent_rel(id, &1, ts))
+    child_rels = Enum.map(out_edges, &child_rel(id, &1, ts))
+    parent_rels ++ child_rels
   end
 
-  defp relation_attrs({external_id, parent_external_ids, child_external_ids}, ts) do
-    %{id: id} = DataStructures.get_latest_version_by_external_id(external_id)
+  defp parent_rel(child_id, %{v1: external_id, label: %{relation_type_id: type_id}}, ts) do
+    %{id: parent_id} = DataStructures.get_latest_version_by_external_id(external_id)
 
-    parent_rels =
-      parent_external_ids
-      |> Enum.map(&get_structure_id_and_relation_type(&1))
-      |> Enum.map(fn {external_id, relation_type_id} ->
-        %{
-          parent_id: external_id,
-          child_id: id,
-          inserted_at: ts,
-          relation_type_id: relation_type_id,
-          updated_at: ts
-        }
-      end)
+    %{
+      parent_id: parent_id,
+      child_id: child_id,
+      relation_type_id: type_id,
+      inserted_at: ts,
+      updated_at: ts
+    }
+  end
 
-    child_rels =
-      child_external_ids
-      |> Enum.map(&get_structure_id_and_relation_type(&1))
-      |> Enum.map(fn {external_id, relation_type_id} ->
-        %{
-          parent_id: id,
-          child_id: external_id,
-          inserted_at: ts,
-          relation_type_id: relation_type_id,
-          updated_at: ts
-        }
-      end)
+  defp child_rel(parent_id, %{v2: external_id, label: %{relation_type_id: type_id}}, ts) do
+    %{id: child_id} = DataStructures.get_latest_version_by_external_id(external_id)
 
-    parent_rels ++ child_rels
+    %{
+      parent_id: parent_id,
+      child_id: child_id,
+      relation_type_id: type_id,
+      inserted_at: ts,
+      updated_at: ts
+    }
   end
 
   defp do_insert(attrs, audit_attrs) do

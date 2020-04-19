@@ -22,11 +22,19 @@ defmodule TdDd.DataStructures.Hasher do
 
   require Logger
 
-  @hash_fields [:class, :description, :group, :metadata, :name, :type, :relation_type_id]
+  @hash_fields [
+    :class,
+    :description,
+    :external_id,
+    :group,
+    :metadata,
+    :name,
+    :type
+  ]
   @batch_size 1_000
 
-  def start_link(_arg) do
-    Task.start_link(__MODULE__, :run, [])
+  def start_link(arg) do
+    Task.start_link(__MODULE__, :run, [arg])
   end
 
   def run(options \\ []) do
@@ -97,7 +105,7 @@ defmodule TdDd.DataStructures.Hasher do
 
   defp hash_self(_, acc) do
     count =
-      from(dsv in DataStructureVersion)
+      DataStructureVersion
       |> where([dsv], is_nil(dsv.hash))
       |> join(:inner, [dsv], ds in assoc(dsv, :data_structure))
       |> select([dsv, ds], {dsv, ds.external_id})
@@ -114,15 +122,15 @@ defmodule TdDd.DataStructures.Hasher do
 
   defp hash_local(_, acc) do
     count =
-      from(dsv in DataStructureVersion)
+      DataStructureVersion
       |> where([dsv], is_nil(dsv.lhash))
-      |> join(:left, [dsv], dsr in assoc(dsv, :children))
+      |> join(:left, [dsv], child in assoc(dsv, :children))
       |> group_by([dsv, child, rel], dsv.id)
       |> having([dsv, child, rel], count(child.lhash) == count(child.id))
       |> limit(^@batch_size)
       |> Repo.all()
-      |> Repo.preload(:children)
-      |> Enum.map(&update_hashes(&1, %{lhash: lhash(&1)}))
+      |> Repo.preload(child_relations: :child)
+      |> Enum.map(&update_hashes(&1, %{lhash: tree_hash(&1, :lhash)}))
       |> Enum.count()
 
     hash_local(count, acc + count)
@@ -132,15 +140,15 @@ defmodule TdDd.DataStructures.Hasher do
 
   defp hash_global(_, acc) do
     count =
-      from(dsv in DataStructureVersion)
+      DataStructureVersion
       |> where([dsv], is_nil(dsv.ghash))
-      |> join(:left, [dsv], dsr in assoc(dsv, :children))
+      |> join(:left, [dsv], child in assoc(dsv, :children))
       |> group_by([dsv, child, rel], dsv.id)
       |> having([dsv, child, rel], count(child.ghash) == count(child.id))
       |> limit(^@batch_size)
       |> Repo.all()
-      |> Repo.preload(:children)
-      |> Enum.map(&update_hashes(&1, %{ghash: ghash(&1)}))
+      |> Repo.preload(child_relations: :child)
+      |> Enum.map(&update_hashes(&1, %{ghash: tree_hash(&1, :ghash)}))
       |> Enum.count()
 
     hash_global(count, acc + count)
@@ -153,15 +161,20 @@ defmodule TdDd.DataStructures.Hasher do
     |> Repo.update!()
   end
 
-  def lhash(%DataStructureVersion{children: children, hash: own_hash}) do
-    [own_hash | Enum.map(children, & &1.hash)]
+  defp tree_hash(%DataStructureVersion{child_relations: child_relations, hash: own_hash}, type) do
+    child_hashes =
+      child_relations
+      |> Enum.group_by(& &1.relation_type_id, hash_fn(type))
+      |> Enum.flat_map(fn {relation_type_id, hashes} ->
+        [hash(relation_type_id) | hashes]
+      end)
+
+    [own_hash | child_hashes]
     |> hash()
   end
 
-  def ghash(%DataStructureVersion{children: children, hash: own_hash}) do
-    [own_hash | Enum.map(children, & &1.ghash)]
-    |> hash()
-  end
+  defp hash_fn(:lhash), do: & &1.child.hash
+  defp hash_fn(:ghash), do: & &1.child.ghash
 
   def hash(record, fields) when is_map(record) do
     record
@@ -189,5 +202,11 @@ defmodule TdDd.DataStructures.Hasher do
 
   def hash(binary) when is_binary(binary) do
     :crypto.hash(:sha256, binary)
+  end
+
+  def hash(integer) when is_integer(integer) do
+    integer
+    |> to_string()
+    |> hash()
   end
 end

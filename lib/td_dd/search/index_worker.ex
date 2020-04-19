@@ -73,14 +73,14 @@ defmodule TdDd.Search.IndexWorker do
 
   @impl true
   def handle_cast({:reindex, :all}, state) do
-    PathCache.refresh(10_000)
+    PathCache.refresh(20_000)
     do_reindex(:all)
     {:noreply, state}
   end
 
   @impl true
   def handle_cast({:reindex, data_structure_ids}, state) do
-    PathCache.refresh(10_000)
+    PathCache.refresh(20_000)
     do_reindex(data_structure_ids)
     {:noreply, state}
   end
