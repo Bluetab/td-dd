@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.20.1] 2020-04-24
+
+### Fixed
+
+- [TD-2520] Root id retrieval from merkle graph
+
 ## [3.20.0] 2020-04-20
 
 ### Added

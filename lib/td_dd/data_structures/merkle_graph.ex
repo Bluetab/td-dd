@@ -78,10 +78,7 @@ defmodule TdDd.DataStructures.MerkleGraph do
   an arborescence
   """
   def root(graph) do
-    case Traversal.arborescence_root(graph) do
-      {:yes, id} -> id
-      _ -> nil
-    end
+    Traversal.arborescence_root(graph)
   end
 
   @doc """

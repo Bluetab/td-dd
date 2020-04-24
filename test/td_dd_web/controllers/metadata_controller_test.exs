@@ -10,6 +10,8 @@ defmodule TdDdWeb.MetadataControllerTest do
     ]
 
   alias TdCache.TaxonomyCache
+  alias TdDd.DataStructures
+  alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.PathCache
   alias TdDd.Lineage.GraphData
   alias TdDd.Loader.LoaderWorker
@@ -31,7 +33,7 @@ defmodule TdDdWeb.MetadataControllerTest do
     :ok
   end
 
-  setup %{fixture: fixture} do
+  setup %{} = tags do
     insert(:system, name: "Power BI", external_id: "pbi")
 
     on_exit(fn ->
@@ -40,19 +42,25 @@ defmodule TdDdWeb.MetadataControllerTest do
       |> Enum.each(&File.rm/1)
     end)
 
-    params =
-      %{
-        structures: "structures.csv",
-        fields: "fields.csv",
-        relations: "relations.csv",
-        nodes: "nodes.csv",
-        rels: "rels.csv"
-      }
-      |> Enum.map(fn {k, v} -> {k, Path.join([fixture, v])} end)
-      |> Enum.filter(fn {_, v} -> File.exists?(v) end)
-      |> Map.new(fn {k, v} -> {k, %Plug.Upload{path: v, filename: Path.basename(v)}} end)
+    case tags[:fixture] do
+      nil ->
+        :ok
 
-    {:ok, params}
+      fixture ->
+        params =
+          %{
+            structures: "structures.csv",
+            fields: "fields.csv",
+            relations: "relations.csv",
+            nodes: "nodes.csv",
+            rels: "rels.csv"
+          }
+          |> Enum.map(fn {k, v} -> {k, Path.join([fixture, v])} end)
+          |> Enum.filter(fn {_, v} -> File.exists?(v) end)
+          |> Map.new(fn {k, v} -> {k, upload(v)} end)
+
+        {:ok, params}
+    end
   end
 
   describe "upload" do
@@ -261,6 +269,59 @@ defmodule TdDdWeb.MetadataControllerTest do
       assert response(conn, 202) =~ ""
       assert File.exists?(Path.join([@import_dir, "rels.csv"]))
     end
+  end
+
+  describe "td-2520" do
+    @tag :admin_authenticated
+    test "td-2520 synchronous load with parent_external_id and external_id", %{conn: conn} do
+      insert(:system, external_id: "test1", name: "test1")
+
+      assert conn
+             |> post(metadata_path(conn, :upload),
+               data_structures: upload("test/fixtures/td2520/structures1.csv")
+             )
+             |> response(:accepted)
+
+      # wait for loader to complete
+      LoaderWorker.ping(20_000)
+
+      assert %DataStructure{id: id} =
+               DataStructures.get_data_structure_by_external_id("td-2520.root")
+
+      assert conn
+             |> post(metadata_path(conn, :upload),
+               data_structures: upload("test/fixtures/td2520/structures2.csv"),
+               data_structure_relations: upload("test/fixtures/td2520/relations2.csv"),
+               parent_external_id: "td-2520.root",
+               external_id: "td-2520.child1"
+             )
+             |> response(:ok)
+
+      LoaderWorker.ping(20_000)
+
+      assert conn
+             |> post(metadata_path(conn, :upload),
+               data_structures: upload("test/fixtures/td2520/structures3.csv"),
+               data_structure_relations: upload("test/fixtures/td2520/relations3.csv"),
+               parent_external_id: "td-2520.root",
+               external_id: "td-2520.child2"
+             )
+             |> response(:ok)
+
+      conn =
+        get(conn, Routes.data_structure_data_structure_version_path(conn, :show, id, "latest"))
+
+      %{"children" => children} = json_response(conn, 200)["data"]
+      assert Enum.count(children) == 2
+
+      assert Enum.all?(["Child1", "Child2"], fn name ->
+               Enum.any?(children, &(&1["name"] == name))
+             end)
+    end
+  end
+
+  defp upload(path) do
+    %Plug.Upload{path: path, filename: Path.basename(path)}
   end
 
   defp get_id(json, name) do
