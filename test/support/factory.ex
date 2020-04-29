@@ -59,7 +59,7 @@ defmodule TdDq.Factory do
       validations: [
         %{
           value: [%{"id" => 80}],
-          operator: %{name: "eq", value_type: "field"},
+          operator: %{name: "references", value_type: "field", value_type_filter: "any"},
           structure: %{id: 800}
         }
       ]

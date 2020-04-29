@@ -20,7 +20,11 @@ defmodule TdDq.Canada.RuleImplementationAbilities do
         Permissions.authorized?(user, :manage_raw_quality_rule_implementations)
 
       business_concept_id ->
-        Permissions.authorized?(user, :manage_raw_quality_rule_implementations, business_concept_id)
+        Permissions.authorized?(
+          user,
+          :manage_raw_quality_rule_implementations,
+          business_concept_id
+        )
     end
   end
 

@@ -248,6 +248,7 @@ defmodule TdDqWeb.RuleImplementationController do
       id
       |> Rules.get_rule_implementation!()
       |> Repo.preload([:rule])
+      |> add_rule_results()
 
     rule = rule_implementation.rule
 
@@ -258,6 +259,7 @@ defmodule TdDqWeb.RuleImplementationController do
     }
 
     with {:can, true} <- {:can, can?(user, update(resource_type))},
+         {:editable, true} <- {:editable, Enum.empty?(rule_implementation.all_rule_results)},
          {:ok, %RuleImplementation{} = rule_implementation} <-
            Rules.update_rule_implementation(
              rule_implementation,

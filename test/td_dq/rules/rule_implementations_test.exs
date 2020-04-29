@@ -110,6 +110,7 @@ defmodule TdDq.RuleImplementationsTest do
       insert(:rule_implementation, implementation_key: "ri3", rule: rule1)
       insert(:rule_implementation, implementation_key: "ri4", rule: rule2)
       insert(:rule_implementation_raw, implementation_key: "ri5", rule: rule2)
+
       insert(:rule_implementation,
         implementation_key: "ri6",
         rule: rule2,
