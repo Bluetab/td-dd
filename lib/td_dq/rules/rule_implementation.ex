@@ -386,11 +386,12 @@ defmodule TdDq.Rules.RuleImplementation.Operator do
   embedded_schema do
     field(:name, :string)
     field(:value_type, :string)
+    field(:value_type_filter, :string)
   end
 
   def changeset(%__MODULE__{} = lead, params \\ %{}) do
     lead
-    |> cast(params, [:name, :value_type])
-    |> validate_required([:name])
+    |> cast(params, [:name, :value_type, :value_type_filter])
+    |> validate_required([:name, :value_type])
   end
 end

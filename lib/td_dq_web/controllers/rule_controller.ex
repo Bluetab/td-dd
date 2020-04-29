@@ -166,6 +166,7 @@ defmodule TdDqWeb.RuleController do
           "business_concept_id" => rule.business_concept_id
         })
       )
+
     manage_raw_rule_implementations =
       can?(
         user,

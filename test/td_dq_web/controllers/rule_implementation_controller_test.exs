@@ -204,6 +204,44 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
     end
 
     @tag :admin_authenticated
+    test "rule implementation cannot be updated if it has rule results", %{
+      conn: conn,
+      swagger_schema: schema
+    } do
+      rule_implementation = insert(:rule_implementation)
+
+      update_attrs =
+        %{
+          population: [
+            %{
+              value: [%{id: 11}],
+              operator: %{
+                name: "eq",
+                value_type: "number"
+              },
+              structure: %{id: 60_311}
+            }
+          ]
+        }
+        |> Map.Helpers.stringify_keys()
+
+      insert(
+        :rule_result,
+        implementation_key: rule_implementation.implementation_key,
+        result: 10 |> Decimal.round(2),
+        date: DateTime.utc_now()
+      )
+
+      conn =
+        put(conn, Routes.rule_implementation_path(conn, :update, rule_implementation),
+          rule_implementation: update_attrs
+        )
+
+      validate_resp_schema(conn, schema, "RuleImplementationResponse")
+      assert json_response(conn, :unprocessable_entity)["errors"] != %{}
+    end
+
+    @tag :admin_authenticated
     test "soft delete rule implementation", %{conn: conn, swagger_schema: schema} do
       rule_implementation = insert(:rule_implementation)
 

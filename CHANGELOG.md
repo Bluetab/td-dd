@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-2491] Implementation not editable if it has rule results. Added value_type_filter to operator
+
 ## [3.20.0] 2020-04-20
 
 ### Added

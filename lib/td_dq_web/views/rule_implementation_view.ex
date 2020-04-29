@@ -14,7 +14,9 @@ defmodule TdDqWeb.RuleImplementationView do
     %{data: render_one(rule_implementation, RuleImplementationView, "rule_implementation.json")}
   end
 
-  def render("rule_implementation.json", %{rule_implementation: %{implementation_type: "raw"} = rule_implementation} ) do
+  def render("rule_implementation.json", %{
+        rule_implementation: %{implementation_type: "raw"} = rule_implementation
+      }) do
     %{
       id: rule_implementation.id,
       rule_id: rule_implementation.rule_id,
@@ -180,10 +182,18 @@ end
 defmodule TdDqWeb.RuleImplementation.OperatorView do
   use TdDqWeb, :view
 
-  def render("operator.json", %{operator: operator}) do
+  def render("operator.json", %{operator: %{value_type_filter: nil} = operator}) do
     %{
       name: operator.name,
       value_type: operator.value_type
+    }
+  end
+
+  def render("operator.json", %{operator: operator}) do
+    %{
+      name: operator.name,
+      value_type: operator.value_type,
+      value_type_filter: operator.value_type_filter
     }
   end
 end
