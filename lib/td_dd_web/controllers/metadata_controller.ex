@@ -113,9 +113,6 @@ defmodule TdDdWeb.MetadataController do
     end
   end
 
-  def upload(conn, %{"nodes" => _} = params), do: upload_lineage(conn, params)
-  def upload(conn, %{"rels" => _} = params), do: upload_lineage(conn, params)
-
   def upload(conn, params) do
     user = conn.assigns[:current_user]
 
@@ -140,19 +137,6 @@ defmodule TdDdWeb.MetadataController do
     load(conn, structures, fields, relations, with_domain(opts, params))
   end
 
-  defp upload_lineage(conn, %{} = params) do
-    user = conn.assigns[:current_user]
-
-    if can_upload?(user, params) do
-      case do_upload_lineage(params) do
-        :ok -> send_resp(conn, :accepted, "")
-        :error -> render_error(conn, :insufficient_storage)
-      end
-    else
-      render_error(conn, :forbidden)
-    end
-  end
-
   defp copy_file(nil), do: nil
 
   defp copy_file(%Upload{path: path, filename: filename}) do
@@ -164,42 +148,6 @@ defmodule TdDdWeb.MetadataController do
       :ok -> destination_file
     end
   end
-
-  defp do_upload_lineage(%{} = params) do
-    import_dir = Application.get_env(:td_dd, :import_dir)
-
-    params
-    |> Map.take(["nodes", "rels"])
-    |> Map.values()
-    |> Enum.map(fn %Upload{path: path, filename: filename} ->
-      {path, Path.join([import_dir, filename])}
-    end)
-    |> Enum.map(fn {source_file, dest_file} -> copy(source_file, dest_file) end)
-    |> check_status()
-  end
-
-  defp copy(source, dest) do
-    source
-    |> File.cp(dest)
-    |> log_error(source, dest)
-  end
-
-  defp log_error(:ok, _, _), do: :ok
-
-  defp log_error(error, source, dest) do
-    Logger.warn("Error copying #{source} to #{dest}: #{inspect(error)}")
-    error
-  end
-
-  defp check_status([:ok]), do: :ok
-  defp check_status([:ok | tail]), do: check_status(tail)
-
-  defp check_status([{:error, reason} | _]) do
-    Logger.warn("Error copying file: #{inspect(reason)}")
-    :error
-  end
-
-  defp check_status(_), do: :error
 
   defp load(conn, structures_file, fields_file, relations_file, opts) do
     user_id = GuardianPlug.current_resource(conn).id

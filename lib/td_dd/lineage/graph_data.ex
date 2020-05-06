@@ -6,10 +6,9 @@ defmodule TdDd.Lineage.GraphData do
   use GenServer
 
   alias Graph.Traversal
-  alias TdDd.DataStructures
   alias TdDd.Lineage.GraphData.Nodes
   alias TdDd.Lineage.GraphData.State
-  alias TdDd.Neo
+  alias TdDd.Lineage.Units
 
   require Logger
 
@@ -44,11 +43,6 @@ defmodule TdDd.Lineage.GraphData do
     end
   end
 
-  @doc "Reloads graph data from Neo4j"
-  def reload do
-    send(__MODULE__, :load)
-  end
-
   @doc "Returns the lineage graph data for the specified external ids"
   def lineage(external_ids, opts) when is_list(external_ids) do
     GenServer.call(__MODULE__, {:lineage, external_ids, opts})
@@ -73,7 +67,7 @@ defmodule TdDd.Lineage.GraphData do
   @impl true
   def init(opts) do
     unless Application.get_env(:td_dd, :env) == :test do
-      Process.send_after(self(), :load, 1_000)
+      Process.send_after(self(), :refresh, 2_000)
     end
 
     state =
@@ -89,42 +83,50 @@ defmodule TdDd.Lineage.GraphData do
   end
 
   @impl true
-  def handle_info(:load, state) do
-    state =
-      Timer.time(
-        fn -> do_load() end,
-        fn ms, _ -> Logger.info("Graph data loaded in #{ms}ms") end
-      )
+  def handle_info({:DOWN, ref, :process, _pid, result}, state) do
+    unless result == :normal do
+      Logger.warn("#{inspect(ref)} failed")
+    end
 
     Process.send_after(self(), :refresh, @refresh_interval)
+    {:noreply, Map.delete(state, :loading)}
+  end
 
-    {:noreply, state}
-  rescue
-    e ->
-      Logger.error("#{inspect(e)}")
-      Logger.info("Error loading graph data, will retry after #{@refresh_interval}ms")
-      Process.send_after(self(), :load, @refresh_interval)
-      {:noreply, state}
+  @impl true
+  def handle_info({:load, ts}, state) do
+    Task.Supervisor.async_nolink(TdDd.TaskSupervisor, fn -> do_load(ts) end)
+    {:noreply, Map.put(state, :loading, DateTime.utc_now())}
+  end
+
+  @impl true
+  def handle_info({_ref, %State{} = state}, %{loading: ts} = _state) do
+    ms = DateTime.diff(DateTime.utc_now(), ts, :millisecond)
+    Logger.info("Graph data loaded in #{ms}ms")
+    {:noreply, Map.delete(state, :loading)}
+  end
+
+  @impl true
+  def handle_info({_ref, _}, state) do
+    {:noreply, Map.delete(state, :loading)}
   end
 
   @impl true
   def handle_info(:refresh, %{ts: ts} = state) do
-    case Neo.store_creation_date() do
-      ^ts ->
-        Process.send_after(self(), :refresh, @refresh_interval)
+    alias TdDd.Lineage.Import
 
-      _ ->
-        Logger.info("Store creation date changed, scheduling reload")
-        Process.send_after(self(), :load, 1_000)
+    if Import.busy?() do
+      Process.send_after(self(), :refresh, @refresh_interval)
+    else
+      case Units.last_updated() do
+        ^ts ->
+          Process.send_after(self(), :refresh, @refresh_interval)
+
+        last_updated ->
+          Process.send_after(self(), {:load, last_updated}, 0)
+      end
     end
 
     {:noreply, state}
-  rescue
-    e ->
-      Logger.error("#{inspect(e)}")
-      Logger.info("Error refreshing graph data, will retry after #{@refresh_interval}ms")
-      Process.send_after(self(), :refresh, @refresh_interval)
-      {:noreply, state}
   end
 
   @impl true
@@ -247,7 +249,7 @@ defmodule TdDd.Lineage.GraphData do
     t
     |> Graph.source_vertices()
     |> Enum.reduce(
-      Graph.add_vertex(t, :root, data: %{id: "@@ROOT"}),
+      Graph.add_vertex(t, :root, %{id: "@@ROOT"}),
       &Graph.add_edge(&2, :root, &1)
     )
   end
@@ -308,80 +310,61 @@ defmodule TdDd.Lineage.GraphData do
     }
   end
 
-  def nodes(type, external_id_map) do
-    type
-    |> Neo.nodes()
-    |> Enum.group_by(fn
-      %{properties: %{"external_id" => external_id}} -> external_id
-      _ -> nil
-    end)
-    |> Enum.map(fn {external_id, nodes} -> {Map.get(external_id_map, external_id), nodes} end)
-    |> Enum.flat_map(fn
-      {nil, nodes} -> nodes
-      {id, nodes} -> Enum.map(nodes, &Map.put(&1, :structure_id, id))
-    end)
+  defp data_label(%{label: label, type: type, external_id: external_id} = node) do
+    label
+    |> Map.put(:class, type)
+    |> Map.put(:external_id, external_id)
+    |> Map.merge(Map.take(node, [:structure_id]))
   end
 
-  defp do_load do
-    ts = Neo.store_creation_date()
+  defp do_load(nil = _last_updated), do: :ok
 
-    Logger.info("Data load started, StoreCreationDate=#{ts}...")
+  defp do_load(ts) do
+    Logger.info("Load started (ts=#{DateTime.to_iso8601(ts)})")
 
-    external_id_map = DataStructures.external_id_map()
-    Logger.info("Read #{Enum.count(external_id_map)} external_ids...")
+    groups = Units.list_nodes(type: "Group")
+    Logger.info("Read #{Enum.count(groups)} groups")
+    resources = Units.list_nodes(type: "Resource")
+    Logger.info("Read #{Enum.count(resources)} resources")
 
-    groups = nodes("Group", external_id_map)
-    Logger.info("Read #{Enum.count(groups)} groups from Neo4j...")
-    resources = nodes("Resource", external_id_map)
-    Logger.info("Read #{Enum.count(resources)} resources from Neo4j...")
+    vertices = Enum.concat(groups, resources)
+    id_map = Map.new(vertices, &{&1.id, &1.external_id})
 
-    id_map =
-      groups
-      |> Enum.concat(resources)
-      |> Map.new(&{&1.id, &1.properties["external_id"]})
-
-    Logger.info("Mapped #{Enum.count(id_map)} ids...")
+    Logger.info("Mapped #{Enum.count(id_map)} ids")
 
     contains =
       Enum.reduce(
-        groups,
+        vertices,
         Graph.new([], acyclic: true),
-        &Graph.add_vertex(&2, &1.properties["external_id"], data: &1)
+        &Graph.add_vertex(&2, &1.external_id, data_label(&1))
       )
 
-    contains =
-      Enum.reduce(
-        resources,
-        contains,
-        &Graph.add_vertex(&2, &1.properties["external_id"], data: &1)
-      )
-
-    Logger.info("Imported #{Graph.no_vertices(contains)} tree vertices...")
+    Logger.info("Imported #{Graph.no_vertices(contains)} tree vertices")
 
     depends =
       Enum.reduce(
         resources,
         Graph.new(),
-        &Graph.add_vertex(&2, &1.properties["external_id"], data: &1)
+        &Graph.add_vertex(&2, &1.external_id, data_label(&1))
       )
 
-    Logger.info("Imported #{Graph.no_vertices(depends)} graph vertices...")
+    Logger.info("Imported #{Graph.no_vertices(depends)} graph vertices")
 
     contains =
-      Neo.relations("CONTAINS")
+      Units.list_relations(type: "CONTAINS")
       |> Enum.map(&to_edge(&1, id_map))
       |> Enum.uniq_by(&Map.take(&1, [:start, :end]))
       |> Enum.reduce(contains, &add_edge/2)
 
-    Logger.info("Imported #{Graph.no_edges(contains)} tree edges...")
+    Logger.info("Imported #{Graph.no_edges(contains)} tree edges")
 
     depends =
-      Neo.relations("DEPENDS")
+      Units.list_relations(type: "DEPENDS")
       |> Enum.map(&to_edge(&1, id_map))
       |> Enum.uniq_by(&Map.take(&1, [:start, :end]))
       |> Enum.reduce(depends, &add_edge/2)
 
-    Logger.info("Imported #{Graph.no_edges(depends)} graph edges...")
+    Logger.info("Imported #{Graph.no_edges(depends)} graph edges")
 
     roots = Graph.source_vertices(contains)
 
@@ -399,7 +382,7 @@ defmodule TdDd.Lineage.GraphData do
     end
   end
 
-  defp to_edge(%{type: type, start: start_id, end: end_id} = attrs, id_map) do
+  defp to_edge(%{type: type, start_id: start_id, end_id: end_id} = attrs, id_map) do
     attrs
     |> Map.put(:type, Map.get(@types, type))
     |> Map.put(:start, Map.get(id_map, start_id))
@@ -439,15 +422,6 @@ defmodule TdDd.Lineage.GraphData do
 
   defp do_hash(json) do
     :crypto.hash(:sha256, json)
-  end
-
-  def node_label(%{data: data}), do: node_label(data)
-
-  def node_label(%{properties: properties, labels: [class], id: id}) do
-    properties
-    |> Map.take(["name", "external_id", "type"])
-    |> Map.put(:class, class)
-    |> Map.put(:id, id)
   end
 
   def sortable(%{"name" => name}), do: String.downcase(name)

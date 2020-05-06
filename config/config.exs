@@ -56,11 +56,10 @@ config :td_dd, :audit_service,
 
 config :td_dd, permission_resolver: TdCache.Permissions
 config :td_dd, index_worker: TdDd.Search.IndexWorker
-config :td_dd, import_dir: "/import"
 
 # Default timeout increased for bulk metadata upload
 config :td_dd, TdDd.Repo,
-  pool_size: 10,
+  pool_size: 6,
   timeout: 600_000
 
 config :td_cache, :event_stream,
@@ -71,15 +70,6 @@ config :td_cache, :event_stream,
     [key: "template:events", consumer: TdDd.Search.IndexWorker],
     [key: "domain:events", consumer: TdDd.Cache.DomainEventConsumer]
   ]
-
-config :bolt_sips, Bolt,
-  hostname: "neo",
-  basic_auth: [username: "neo4j", password: "f00B4Rb4z"],
-  pool_size: 3,
-  timeout: 60_000,
-  idle_interval: 60_000
-
-config :tzdata, :autoupdate, :disabled
 
 config :td_dd, :cache_cleaner,
   clean_on_startup: true,

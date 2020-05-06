@@ -42,11 +42,10 @@ defmodule TdDd.GraphDataCase do
 
       defp label(external_id, class \\ "Resource", type \\ "foo_type") do
         %{
-          data: %{
-            id: external_id,
-            labels: [class],
-            properties: %{"name" => external_id, "external_id" => external_id, "type" => type}
-          }
+          :class => class,
+          :external_id => external_id,
+          "name" => external_id,
+          "type" => type
         }
       end
     end

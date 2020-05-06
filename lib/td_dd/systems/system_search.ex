@@ -5,7 +5,7 @@ defmodule TdDd.Systems.SystemSearch do
   import Ecto.Query, warn: false
 
   alias TdDd.Accounts.User
-  alias TdDd.DataStructure.Search
+  alias TdDd.DataStructures.Search
   alias TdDd.Search.Aggregations
   alias TdDd.Systems
 

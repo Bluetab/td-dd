@@ -46,6 +46,10 @@ defmodule TdDdWeb.Router do
 
     resources("/nodes", NodeController, only: [:index, :show])
 
+    resources("/units", UnitController, except: [:new, :edit], param: "name") do
+      resources("/events", UnitEventController, only: [:index], name: "event")
+    end
+
     post("/profiles/upload", ProfileController, :upload)
 
     resources("/systems", SystemController, except: [:new, :edit]) do
@@ -60,8 +64,6 @@ defmodule TdDdWeb.Router do
     post("/data_structure_filters/search", DataStructureFilterController, :search)
 
     resources "/relation_types", RelationTypeController, except: [:new, :edit]
-
-    post("/td_dl/metadata", MetadataController, :upload)
   end
 
   scope "/api/swagger" do

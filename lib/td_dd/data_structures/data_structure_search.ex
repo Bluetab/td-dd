@@ -1,4 +1,4 @@
-defmodule TdDd.DataStructure.Search do
+defmodule TdDd.DataStructures.Search do
   @moduledoc """
   Helper module to construct business concept search queries.
   """
@@ -96,19 +96,17 @@ defmodule TdDd.DataStructure.Search do
     end)
   end
 
-  @doc """
-  Extracts aggregations name from aggs format like:
-    %{
-    "systems" => %{
-      :terms => %{field: "system.name.raw"},
-      "aggs" => %{
-        "types" => %{
-          :terms => %{field: "type.raw"},
-          "aggs" => %{"groups" => %{terms: %{field: "group.raw"}}}
-        }
-      }
-    }
-  """
+  # Extracts aggregations name from aggs format like:
+  #   %{
+  #     "systems" => %{
+  #     :terms => %{field: "system.name.raw"},
+  #     "aggs" => %{
+  #       "types" => %{
+  #         :terms => %{field: "type.raw"},
+  #         "aggs" => %{"groups" => %{terms: %{field: "group.raw"}}}
+  #       }
+  #     }
+  #   }
   defp get_aggregations_names(agg_terms) do
     case Map.get(agg_terms, "aggs") do
       nil ->

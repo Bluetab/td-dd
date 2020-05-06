@@ -1,6 +1,7 @@
 defmodule TdDd.Factory do
   @moduledoc false
   use ExMachina.Ecto, repo: TdDd.Repo
+
   alias TdDd.Accounts.User
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
@@ -8,6 +9,7 @@ defmodule TdDd.Factory do
   alias TdDd.DataStructures.Profile
   alias TdDd.DataStructures.RelationType
   alias TdDd.DataStructures.StructureMetadata
+  alias TdDd.Lineage.Units
   alias TdDd.Systems.System
 
   def user_factory do
@@ -83,6 +85,22 @@ defmodule TdDd.Factory do
       fields: %{"foo" => "bar"},
       version: 0
     }
+  end
+
+  def unit_factory do
+    %Units.Unit{name: sequence("unit")}
+  end
+
+  def unit_event_factory do
+    %Units.Event{event: "EventType", inserted_at: DateTime.utc_now()}
+  end
+
+  def node_factory do
+    %Units.Node{external_id: sequence("node_external_id"), type: "Resource"}
+  end
+
+  def edge_factory do
+    %Units.Edge{type: "DEPENDS"}
   end
 
   defp random_id, do: :rand.uniform(100_000_000)

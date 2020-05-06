@@ -12,9 +12,9 @@ defmodule TdDd.DataStructures.DataStructure do
 
   schema "data_structures" do
     belongs_to(:system, System, on_replace: :update)
-    has_many(:versions, DataStructureVersion, on_delete: :delete_all)
-    has_many(:metadata_versions, StructureMetadata, on_delete: :delete_all)
-    has_one(:profile, Profile, on_delete: :delete_all)
+    has_many(:versions, DataStructureVersion)
+    has_many(:metadata_versions, StructureMetadata)
+    has_one(:profile, Profile)
 
     field(:confidential, :boolean)
     field(:df_content, :map)

@@ -36,6 +36,8 @@ defmodule TdDd.Application do
 
   defp workers(_env) do
     [
+      # Task supervisor
+      {Task.Supervisor, name: TdDd.TaskSupervisor},
       # Path cache to improve indexing performance
       TdDd.DataStructures.PathCache,
       # Worker for background indexing
@@ -47,33 +49,12 @@ defmodule TdDd.Application do
       # Workers for cache loading
       TdDd.Cache.SystemLoader,
       TdDd.Cache.StructureLoader,
-      TdDd.Cache.DomainEventConsumer
-    ] ++ lineage_workers()
+      TdDd.Cache.DomainEventConsumer,
+      # Lineage workers
+      TdDd.Lineage.Import,
+      TdDd.Lineage.GraphData,
+      TdDd.Lineage,
+      {TdCache.CacheCleaner, Application.get_env(:td_dd, :cache_cleaner, [])}
+    ]
   end
-
-  defp lineage_workers do
-    # Neo4j hostname must be configured for lineage workers to start
-    with config <- Application.get_env(:bolt_sips, Bolt),
-         true <- bolt_enabled?(config) do
-      [
-        {Bolt.Sips, config},
-        TdDd.Lineage.GraphData,
-        TdDd.Lineage,
-        {TdCache.CacheCleaner, Application.get_env(:td_dd, :cache_cleaner, [])}
-      ]
-    else
-      _ -> []
-    end
-  end
-
-  defp bolt_enabled?(keywords) when is_list(keywords) do
-    if Keyword.keyword?(keywords) do
-      keywords
-      |> Keyword.get(:hostname)
-      |> bolt_enabled?()
-    end
-  end
-
-  defp bolt_enabled?(val) when is_binary(val) and byte_size(val) > 0, do: true
-  defp bolt_enabled?(_), do: false
 end

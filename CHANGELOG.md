@@ -1,5 +1,28 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-2373] Removed dependency on Neo4j:
+  - Neo4j is no longer used. The graph model is now persisted in PostgreSQL.
+  - Lineage metadata is now uploaded using `PUT /api/units/:unit_name` passing
+    `nodes` and `rels` files as form encoded data. Since the import process is
+    performed as a background task, the API returns `202 Accepted`.
+  - Each `unit_name` represents a replaceable unit of lineage metadata. New data
+    files uploaded using the same unit name will overwrite the existing nodes
+    and relations in that unit.
+  - Latest status for a unit can be queried using `GET /api/units/:unit_name`.
+  - Events relating to a unit can be queried using `GET
+    /api/units/:unit_name/events`.
+  - A unit can be logically deleted using `DELETE /api/units/:unit_name`.
+  - A unit can be physically deleted using `DELETE
+    /api/units/:unit_name?logical=false`.
+
+### Removed
+
+- [TD-2373] **BREAKING CHANGE** lineage data can no longer be uploaded to `/api/data_structures/metadata` or `/api/td_dl`
+
 ## [3.20.1] 2020-04-24
 
 ### Fixed

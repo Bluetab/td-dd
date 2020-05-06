@@ -83,7 +83,7 @@ defmodule TdDd.DataStructures.MerkleGraph do
 
   @doc """
   Adds structure and relation records to a directed acyclic graph. Propagates
-  hashes bottom-up (see `TdDd.DataStructure.Hasher` for details).
+  hashes bottom-up (see `TdDd.DataStructures.Hasher` for details).
   """
   def new(structures, relations) do
     graph = Graph.new([], acyclic: true)

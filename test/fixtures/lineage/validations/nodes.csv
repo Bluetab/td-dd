@@ -1,0 +1,7 @@
+external_id:ID,:LABEL
+Group1,Group
+Group2,Group
+Group3,Group
+Resource1,Resource
+Resource2,Resource
+InvalidNode1,InvalidNodeLabel

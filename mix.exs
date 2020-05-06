@@ -49,20 +49,19 @@ defmodule TdDd.Mixfile do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:phoenix, "~> 1.4.0"},
+      {:phoenix, "~> 1.5.0"},
       {:plug_cowboy, "~> 2.0"},
       {:phoenix_ecto, "~> 4.0", override: true},
       {:ecto_sql, "~> 3.0"},
       {:jason, "~> 1.0"},
       {:postgrex, "~> 0.15.0"},
       {:gettext, "~> 0.11"},
-      {:cabbage, only: [:test], git: "https://github.com/Bluetab/cabbage", tag: "v0.3.7-alpha"},
       {:httpoison, "~> 1.6.2"},
       {:credo, "~> 1.2", only: [:dev, :test], runtime: false},
-      {:guardian, "~> 1.0"},
-      {:canada, "~> 1.0.1"},
+      {:guardian, "~> 2.0"},
+      {:canada, "~> 2.0", override: true},
       {:ex_machina, "~> 2.3", only: [:test]},
-      {:cors_plug, "~> 1.2"},
+      {:cors_plug, "~> 2.0"},
       {:csv, "~> 2.3"},
       {:phoenix_swagger, "~> 0.8.2"},
       {:ex_json_schema, "~> 0.7.3"},
@@ -72,7 +71,6 @@ defmodule TdDd.Mixfile do
       {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "3.20.0"},
       {:td_hypermedia, git: "https://github.com/Bluetab/td-hypermedia.git", tag: "3.6.1"},
       {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "3.14.0"},
-      {:bolt_sips, "~> 2.0.4"},
       {:graph, git: "https://github.com/Bluetab/graph.git", tag: "0.1.1"}
     ]
   end
