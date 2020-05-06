@@ -16,17 +16,17 @@ defmodule TdDdWeb.ConnCase do
   use ExUnit.CaseTemplate
 
   alias Ecto.Adapters.SQL.Sandbox
-  alias Phoenix.ConnTest
   alias TdDdWeb.Endpoint
+
   import TdDdWeb.Authentication, only: :functions
 
   using do
     quote do
       # Import conveniences for testing with connections
-      use ConnTest
-
       alias TdDdWeb.Router.Helpers, as: Routes
 
+      import Plug.Conn
+      import Phoenix.ConnTest
       import TdDd.Factory
 
       # The default endpoint for testing
@@ -39,18 +39,16 @@ defmodule TdDdWeb.ConnCase do
   setup tags do
     :ok = Sandbox.checkout(TdDd.Repo)
 
-    unless tags[:async] do
+    if tags[:async] or tags[:sandbox] == :shared do
       Sandbox.mode(TdDd.Repo, {:shared, self()})
+    else
       parent = self()
 
-      allow(
-        parent,
-        [
-          TdDd.DataStructures.PathCache,
-          TdDd.Loader.LoaderWorker,
-          TdDd.Search.IndexWorker
-        ]
-      )
+      allow(parent, [
+        TdDd.DataStructures.PathCache,
+        TdDd.Loader.LoaderWorker,
+        TdDd.Search.IndexWorker
+      ])
     end
 
     cond do
@@ -67,7 +65,7 @@ defmodule TdDdWeb.ConnCase do
         create_user_auth_conn(user)
 
       true ->
-        {:ok, conn: ConnTest.build_conn()}
+        {:ok, conn: Phoenix.ConnTest.build_conn()}
     end
   end
 

@@ -35,7 +35,6 @@ Ready to run in production? Please [check our deployment guides](http://www.phoe
 * [Postgrex](http://hexdocs.pm/postgrex/) - PostgreSQL driver for Elixir
 * [Gettext](https://hexdocs.pm/gettext) - Internationalization and localization support for Elixir
 * [Cowboy](https://ninenines.eu) - HTTP server for Erlang/OTP
-* [Cabbage](https://github.com/cabbage-ex/cabbage) - Story BDD tool
 * [httpoison](https://hex.pm/packages/httpoison) - HTTP client for Elixir
 * [credo](http://credo-ci.org/) - Static code analysis tool for the Elixir language
 * [guardian](https://github.com/ueberauth/guardian) - Authentication library

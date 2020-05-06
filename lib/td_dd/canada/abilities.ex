@@ -20,6 +20,8 @@ defmodule TdDd.Canada.Abilities do
       LinkAbilities.can?(user, :create_link, data_structure)
     end
 
+    def can?(%User{} = _user, _action, Unit), do: false
+
     def can?(%User{} = user, action, %DataStructure{} = data_structure) do
       DataStructureAbilities.can?(user, action, data_structure)
     end

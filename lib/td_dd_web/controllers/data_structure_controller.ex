@@ -10,10 +10,10 @@ defmodule TdDdWeb.DataStructureController do
   alias TdDd.Audit.AuditSupport
   alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
   alias TdDd.CSV.Download
-  alias TdDd.DataStructure.BulkUpdate
-  alias TdDd.DataStructure.Search
   alias TdDd.DataStructures
+  alias TdDd.DataStructures.BulkUpdate
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.Search
   alias TdDdWeb.SwaggerDefinitions
 
   require Logger

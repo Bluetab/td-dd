@@ -1,5 +1,5 @@
 defmodule TdDdWeb.GraphControllerTest do
-  use TdDdWeb.ConnCase
+  use TdDdWeb.ConnCase, async: true
   use TdDd.GraphDataCase
   use TdDd.DataCase
 

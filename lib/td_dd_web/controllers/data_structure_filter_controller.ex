@@ -3,7 +3,7 @@ defmodule TdDdWeb.DataStructureFilterController do
   use TdDdWeb, :controller
   use PhoenixSwagger
 
-  alias TdDd.DataStructure.Search
+  alias TdDd.DataStructures.Search
   alias TdDdWeb.SwaggerDefinitions
 
   action_fallback(TdDdWeb.FallbackController)

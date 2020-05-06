@@ -165,19 +165,20 @@ defmodule TdDdWeb.SwaggerDefinitions do
         end,
       Relation:
         swagger_schema do
-        title("Relation")
-        properties do
-          structure(Schema.ref(:DataStructureEmbedded))
-          relation_type(Schema.ref(:RelationType))
-        end
-      end,
+          title("Relation")
+
+          properties do
+            structure(Schema.ref(:DataStructureEmbedded))
+            relation_type(Schema.ref(:RelationType))
+          end
+        end,
       Relations:
         swagger_schema do
           title("Relations")
           description("Relation collection")
           type(:array)
           items(Schema.ref(:Relation))
-      end,
+        end,
       EmbeddedRelation:
         swagger_schema do
           title("Embedded Relation")
@@ -509,6 +510,67 @@ defmodule TdDdWeb.SwaggerDefinitions do
               data_owner: ["user1"]
             }
           })
+        end
+    }
+  end
+
+  def unit_swagger_definitions do
+    %{
+      Unit:
+        swagger_schema do
+          title("Unit")
+          description("A Unit of lineage data")
+
+          properties do
+            name(:string, "unique name", required: true)
+            status(Schema.ref(:UnitEvent))
+            deleted_at(:string, "logical deletion timestamp")
+            inserted_at(:string, "insert timestamp")
+            updated_at(:string, "update timestamp")
+          end
+        end,
+      Units:
+        swagger_schema do
+          title("Units")
+          description("A collection of Units")
+          type(:array)
+          items(Schema.ref(:Unit))
+        end,
+      UnitEvent:
+        swagger_schema do
+          title("Unit Event")
+          description("An event associated with a Unit")
+
+          properties do
+            event(:string, "event", required: true)
+            info(:object, "event information")
+            timestamp(:string, "event timestamp")
+          end
+        end,
+      UnitEvents:
+        swagger_schema do
+          title("Unit Events")
+          description("A collection of Unit Events")
+          type(:array)
+          items(Schema.ref(:UnitEvent))
+        end,
+      UnitResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:Unit))
+          end
+        end,
+      UnitsResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:Units))
+          end
+        end,
+      UnitEventsResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:UnitEvents))
+          end
         end
     }
   end

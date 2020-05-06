@@ -121,8 +121,6 @@ defmodule TdDd.Lineage do
     end
   end
 
-  defp label_fn(%{data: data}), do: label_fn(data)
-
   defp label_fn(%{structure_id: structure_id} = data) do
     data
     |> Map.delete(:structure_id)
@@ -130,11 +128,11 @@ defmodule TdDd.Lineage do
     |> Map.put(:structure_id, structure_id)
   end
 
-  defp label_fn(%{properties: %{"external_id" => id, "name" => name, "type" => type}}) do
+  defp label_fn(%{:external_id => id, "name" => name, "type" => type}) do
     %{id: id, name: name, type: type}
   end
 
-  defp label_fn(%{properties: %{"external_id" => id, "name" => name}}) do
+  defp label_fn(%{:external_id => id, "name" => name}) do
     %{id: id, name: name}
   end
 

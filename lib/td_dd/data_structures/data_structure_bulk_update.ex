@@ -1,4 +1,4 @@
-defmodule TdDd.DataStructure.BulkUpdate do
+defmodule TdDd.DataStructures.BulkUpdate do
   @moduledoc false
   require Logger
 

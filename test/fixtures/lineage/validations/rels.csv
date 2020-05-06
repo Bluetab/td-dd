@@ -1,0 +1,8 @@
+:START_ID,:END_ID,:TYPE
+Group1,Resource1,CONTAINS
+Group2,Resource1,CONTAINS
+Group1,Group3,CONTAINS
+Group2,Group3,CONTAINS
+Resource1,Resource2,CONTAINS
+Group1,Group2,DEPENDS
+Group1,Resource2,InvalidEdgeType

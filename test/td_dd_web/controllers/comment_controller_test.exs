@@ -1,9 +1,7 @@
 defmodule TdDdWeb.CommentControllerTest do
   use TdDdWeb.ConnCase
-  import TdDdWeb.Authentication, only: :functions
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  alias Guardian.Plug, as: GuardianPlug
   alias TdDd.Comments
   alias TdDd.Comments.Comment
   alias TdDd.Permissions.MockPermissionResolver
@@ -63,20 +61,22 @@ defmodule TdDdWeb.CommentControllerTest do
   describe "create comment" do
     @tag authenticated_user: @admin_user_name
     test "renders comment when data is valid", %{conn: conn} do
-      conn = post(conn, Routes.comment_path(conn, :create), comment: @create_attrs)
-      assert %{"id" => id} = json_response(conn, 201)["data"]
+      assert %{"data" => %{"id" => id}} =
+               conn
+               |> post(Routes.comment_path(conn, :create), comment: @create_attrs)
+               |> json_response(:created)
 
-      conn = recycle_and_put_headers(conn)
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.comment_path(conn, :show, id))
+               |> json_response(:ok)
 
-      conn = get(conn, Routes.comment_path(conn, :show, id))
-
-      assert json_response(conn, 200)["data"] == %{
+      assert %{
                "id" => id,
                "content" => "some content",
                "resource_id" => 42,
-               "resource_type" => "some resource_type",
-               "user_id" => GuardianPlug.current_resource(conn).id
-             }
+               "resource_type" => "some resource_type"
+             } = data
     end
 
     @tag authenticated_user: @admin_user_name
@@ -91,35 +91,37 @@ defmodule TdDdWeb.CommentControllerTest do
       system_id = system |> Map.get(:id)
       data_structure_attrs = Map.merge(@data_structure_attrs, %{system_id: system_id})
 
-      conn =
-        post(conn, Routes.data_structure_path(conn, :create), data_structure: data_structure_attrs)
-
-      assert %{"id" => data_structure_id} = json_response(conn, 201)["data"]
+      assert %{"data" => %{"id" => data_structure_id}} =
+               conn
+               |> post(Routes.data_structure_path(conn, :create),
+                 data_structure: data_structure_attrs
+               )
+               |> json_response(:created)
 
       comment_create_attrs = Map.put(@structure_comment_attrs, :resource_id, data_structure_id)
-      conn = recycle_and_put_headers(conn)
-      conn = post(conn, Routes.comment_path(conn, :create), comment: comment_create_attrs)
-      assert %{"id" => id} = json_response(conn, 201)["data"]
 
-      conn = recycle_and_put_headers(conn)
+      assert %{"data" => %{"id" => id}} =
+               conn
+               |> post(Routes.comment_path(conn, :create), comment: comment_create_attrs)
+               |> json_response(:created)
 
-      conn =
-        get(
-          conn,
-          Routes.data_structure_comment_path(
-            conn,
-            :get_comment_data_structure,
-            comment_create_attrs.resource_id
-          )
-        )
+      assert %{"data" => data} =
+               conn
+               |> get(
+                 Routes.data_structure_comment_path(
+                   conn,
+                   :get_comment_data_structure,
+                   comment_create_attrs.resource_id
+                 )
+               )
+               |> json_response(:ok)
 
-      assert json_response(conn, 200)["data"] == %{
+      assert %{
                "id" => id,
                "content" => "some content",
                "resource_id" => data_structure_id,
-               "resource_type" => "Structure",
-               "user_id" => GuardianPlug.current_resource(conn).user_name
-             }
+               "resource_type" => "Structure"
+             } = data
     end
   end
 
@@ -128,14 +130,17 @@ defmodule TdDdWeb.CommentControllerTest do
 
     @tag authenticated_user: @admin_user_name
     test "renders comment when data is valid", %{conn: conn, comment: %Comment{id: id} = comment} do
-      conn = put(conn, Routes.comment_path(conn, :update, comment), comment: @update_attrs)
-      assert %{"id" => ^id} = json_response(conn, 200)["data"]
+      assert %{"data" => %{"id" => ^id}} =
+               conn
+               |> put(Routes.comment_path(conn, :update, comment), comment: @update_attrs)
+               |> json_response(:ok)
 
-      conn = recycle_and_put_headers(conn)
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.comment_path(conn, :show, id))
+               |> json_response(:ok)
 
-      conn = get(conn, Routes.comment_path(conn, :show, id))
-
-      assert json_response(conn, 200)["data"] == %{
+      assert data == %{
                "id" => id,
                "content" => "some updated content",
                "resource_id" => 43,
@@ -156,12 +161,11 @@ defmodule TdDdWeb.CommentControllerTest do
 
     @tag authenticated_user: @admin_user_name
     test "deletes chosen comment", %{conn: conn, comment: comment} do
-      conn = delete(conn, Routes.comment_path(conn, :delete, comment))
-      assert response(conn, 204)
+      assert conn
+             |> delete(Routes.comment_path(conn, :delete, comment))
+             |> response(:no_content)
 
-      conn = recycle_and_put_headers(conn)
-
-      assert_error_sent(404, fn ->
+      assert_error_sent(:not_found, fn ->
         get(conn, Routes.comment_path(conn, :show, comment))
       end)
     end

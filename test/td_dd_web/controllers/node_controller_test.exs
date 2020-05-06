@@ -27,7 +27,7 @@ defmodule TdDdWeb.NodeControllerTest do
     test "index returns the top-level groups and parent nil", %{conn: conn} do
       conn = get(conn, Routes.node_path(conn, :index))
       assert [%{"parent" => nil, "groups" => [group]}] = json_response(conn, 200)["data"]
-      assert %{"external_id" => "foo", "id" => "foo", "name" => "foo"} = group
+      assert %{"external_id" => "foo", "name" => "foo"} = group
     end
 
     @tag authenticated_user: @admin_user_name
@@ -39,10 +39,9 @@ defmodule TdDdWeb.NodeControllerTest do
       assert [first, second] = json_response(conn, 200)["data"]
 
       assert %{"groups" => [group], "parent" => nil} = first
-      assert %{"external_id" => "foo", "id" => "foo", "name" => "foo"} = group
+      assert %{"external_id" => "foo", "name" => "foo"} = group
 
       assert %{"parent" => "foo", "resources" => resources} = second
-      assert %{"bar" => _bar, "baz" => _baz} = Enum.group_by(resources, & &1["id"])
       assert %{"bar" => _bar, "baz" => _baz} = Enum.group_by(resources, & &1["external_id"])
       assert %{"bar" => _bar, "baz" => _baz} = Enum.group_by(resources, & &1["name"])
       assert %{"foo_type" => [_bar, _baz]} = Enum.group_by(resources, & &1["type"])
