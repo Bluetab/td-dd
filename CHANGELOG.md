@@ -4,6 +4,10 @@
 
 ### Changed
 
+- [TD-2589] Include `df_content.*`, `description` and `path.text` in search
+  fields. Note that a complete reindex is required for the `path.text` field to
+  be indexed. This will be performed automatically when the service starts
+  unless the key `TdDd.DataStructures.Migrations:TD-2589` exists in Redis.
 - [TD-2373] Removed dependency on Neo4j:
   - Neo4j is no longer used. The graph model is now persisted in PostgreSQL.
   - Lineage metadata is now uploaded using `PUT /api/units/:unit_name` passing

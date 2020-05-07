@@ -6,6 +6,7 @@ defmodule TdDd.Search.Mappings do
   alias TdDfLib.Format
 
   @raw %{raw: %{type: "keyword"}}
+  @text %{text: %{type: "text"}}
   @raw_sort %{raw: %{type: "keyword"}, sort: %{type: "keyword", normalizer: "sortable"}}
   @raw_sort_ngram %{raw: %{type: "keyword"}, sort: %{type: "keyword", normalizer: "sortable"}, ngram: %{type: "text", analyzer: "ngram"}}
 
@@ -40,7 +41,7 @@ defmodule TdDd.Search.Mappings do
       last_change_by: %{enabled: false},
       inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-      path: %{type: "keyword"},
+      path: %{type: "keyword", fields: @text},
       path_sort: %{type: "keyword", normalizer: "sortable"},
       data_fields: %{
         properties: %{
