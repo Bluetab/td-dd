@@ -4,6 +4,7 @@
 
 ### Changed
 
+- [TD-2321] Include `metadata` in data structure version response
 - [TD-2589] Include `df_content.*`, `description` and `path.text` in search
   fields. Note that a complete reindex is required for the `path.text` field to
   be indexed. This will be performed automatically when the service starts

@@ -34,25 +34,27 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     @tag authenticated_user: @admin_user_name
     test "renders a data structure with children", %{
       conn: conn,
-      structure: %DataStructure{id: child_id}
+      structure: %DataStructure{id: id}
     } do
-      conn =
-        get(conn, Routes.data_structure_data_structure_version_path(conn, :show, child_id, 0))
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.data_structure_data_structure_version_path(conn, :show, id, 0))
+               |> json_response(:ok)
 
-      %{"children" => children} = json_response(conn, 200)["data"]
-      assert Enum.count(children) == 2
+      assert %{"children" => [_, _]} = data
     end
 
     @tag authenticated_user: @admin_user_name
     test "renders a data structure with parents", %{
       conn: conn,
-      structure: %DataStructure{id: child_id}
+      structure: %DataStructure{id: id}
     } do
-      conn =
-        get(conn, Routes.data_structure_data_structure_version_path(conn, :show, child_id, 0))
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.data_structure_data_structure_version_path(conn, :show, id, 0))
+               |> json_response(:ok)
 
-      %{"parents" => parents} = json_response(conn, 200)["data"]
-      assert Enum.count(parents) == 1
+      assert %{"parents" => [_parent]} = data
     end
 
     @tag authenticated_user: @admin_user_name
@@ -60,9 +62,25 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       conn: conn,
       child_structures: [%DataStructure{id: id} | _]
     } do
-      conn = get(conn, Routes.data_structure_data_structure_version_path(conn, :show, id, 0))
-      %{"siblings" => siblings} = json_response(conn, 200)["data"]
-      assert Enum.count(siblings) == 2
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.data_structure_data_structure_version_path(conn, :show, id, 0))
+               |> json_response(:ok)
+
+      assert %{"siblings" => [_, _]} = data
+    end
+
+    @tag authenticated_user: @admin_user_name
+    test "renders a data structure with metadata", %{
+      conn: conn,
+      structure: %DataStructure{id: id}
+    } do
+      assert %{"data" => %{"metadata" => metadata}} =
+               conn
+               |> get(Routes.data_structure_data_structure_version_path(conn, :show, id, 0))
+               |> json_response(:ok)
+
+      assert %{"foo" => "bar"} = metadata
     end
 
     @tag authenticated_user: @admin_user_name
@@ -70,17 +88,20 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       conn: conn,
       structure_version: %DataStructureVersion{id: id}
     } do
-      conn = get(conn, Routes.data_structure_version_path(conn, :show, id))
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.data_structure_version_path(conn, :show, id))
+               |> json_response(:ok)
 
-      assert %{"id" => ^id} = json_response(conn, 200)["data"]
+      assert %{"id" => ^id} = data
     end
   end
 
   describe "bulk_update" do
     @tag :admin_authenticated
     test "bulk update of data structures", %{conn: conn} do
-      structure = insert(:data_structure, external_id: "Structure")
-      _structure_version = insert(:data_structure_version, data_structure_id: structure.id)
+      %{id: structure_id} = insert(:data_structure, external_id: "Structure")
+      insert(:data_structure_version, data_structure_id: structure_id)
 
       TemplateCache.put(%{
         name: "Table",
@@ -113,57 +134,59 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
         updated_at: DateTime.utc_now()
       })
 
-      conn =
-        post(conn, Routes.data_structure_path(conn, :bulk_update), %{
-          "bulk_update_request" => %{
-            "update_attributes" => %{
-              "df_content" => %{
-                "Field1" => "hola soy field 1",
-                "Field2" => "hola soy field 2"
-              },
-              "otra_cosa" => 2
-            },
-            "search_params" => %{
-              "filters" => %{
-                "type.raw" => [
-                  "Table"
-                ]
-              }
-            }
-          }
-        })
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.data_structure_path(conn, :bulk_update), %{
+                 "bulk_update_request" => %{
+                   "update_attributes" => %{
+                     "df_content" => %{
+                       "Field1" => "hola soy field 1",
+                       "Field2" => "hola soy field 2"
+                     },
+                     "otra_cosa" => 2
+                   },
+                   "search_params" => %{
+                     "filters" => %{
+                       "type.raw" => [
+                         "Table"
+                       ]
+                     }
+                   }
+                 }
+               })
+               |> json_response(:ok)
 
-      %{"message" => updated_data_structures_ids} = json_response(conn, 200)["data"]
-      assert Enum.at(updated_data_structures_ids, 0) == structure.id
+      assert %{"message" => [^structure_id | _]} = data
     end
 
     @tag :admin_authenticated
     test "bulk update of data structures with no filter type", %{conn: conn} do
-      structure = insert(:data_structure, external_id: "Structure")
-      _structure_version = insert(:data_structure_version, data_structure_id: structure.id)
+      %{id: structure_id} = insert(:data_structure, external_id: "Structure")
+      insert(:data_structure_version, data_structure_id: structure_id)
 
-      conn =
-        post(conn, Routes.data_structure_path(conn, :bulk_update), %{
-          "bulk_update_request" => %{
-            "update_attributes" => %{
-              "df_content" => %{
-                "Field1" => "hola soy field 1",
-                "Field2" => "hola soy field 2"
-              },
-              "otra_cosa" => 2
-            },
-            "search_params" => %{
-              "filters" => %{
-                "type.raw" => [
-                  "Field"
-                ]
-              }
-            }
-          }
-        })
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.data_structure_path(conn, :bulk_update), %{
+                 "bulk_update_request" => %{
+                   "update_attributes" => %{
+                     "df_content" => %{
+                       "Field1" => "hola soy field 1",
+                       "Field2" => "hola soy field 2"
+                     },
+                     "otra_cosa" => 2
+                   },
+                   "search_params" => %{
+                     "filters" => %{
+                       "type.raw" => [
+                         "Field"
+                       ]
+                     }
+                   }
+                 }
+               })
+               |> json_response(:ok)
 
-      %{"message" => updated_data_structures_ids} = json_response(conn, 200)["data"]
-      assert Enum.at(updated_data_structures_ids, 0) == nil
+      assert %{"message" => []} = data
     end
   end
 
@@ -177,11 +200,12 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     ]
 
     parent_version = insert(:data_structure_version, data_structure_id: parent_structure.id)
-    structure_version = insert(:data_structure_version, data_structure_id: structure.id)
+
+    structure_version =
+      insert(:data_structure_version, data_structure_id: structure.id, metadata: %{foo: "bar"})
 
     child_versions =
-      child_structures
-      |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id))
+      Enum.map(child_structures, &insert(:data_structure_version, data_structure_id: &1.id))
 
     %{id: relation_type_id} = RelationTypes.get_default()
 
@@ -191,8 +215,8 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       relation_type_id: relation_type_id
     )
 
-    child_versions
-    |> Enum.each(
+    Enum.each(
+      child_versions,
       &insert(:data_structure_relation,
         parent_id: structure_version.id,
         child_id: &1.id,
