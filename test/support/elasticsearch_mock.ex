@@ -258,11 +258,28 @@ defmodule TdDd.ElasticsearchMock do
     end
   end
 
-  defp create_field_match("path", query, "phrase_prefix") do
+  defp create_field_match("path.text", query, "phrase_prefix") do
     fn doc ->
       doc
       |> Map.get(:path, [])
-      |> Enum.any?(&(&1 == query))
+      |> Enum.any?(&String.starts_with?(&1, query))
+    end
+  end
+
+  defp create_field_match("description", query, "phrase_prefix") do
+    fn doc ->
+      doc
+      |> Map.get(:description, "")
+      |> String.starts_with?(String.downcase(query))
+    end
+  end
+
+  defp create_field_match("df_content.*", query, "phrase_prefix") do
+    fn doc ->
+      doc
+      |> Map.get(:df_content, %{})
+      |> Map.values()
+      |> Enum.any?(&String.starts_with?(&1, String.downcase(query)))
     end
   end
 

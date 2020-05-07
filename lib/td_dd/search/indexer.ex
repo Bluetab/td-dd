@@ -49,7 +49,8 @@ defmodule TdDd.Search.Indexer do
   def delete(id), do: delete([id])
 
   def migrate do
-    if acquire_lock?("TD-2144") do
+    if acquire_lock?("TD-2589") do
+      Logger.info("Reindexing all data structures...")
       Timer.time(
         fn -> reindex(:all) end,
         fn millis, _ -> Logger.info("Reindexed #{@index} in #{millis}ms") end

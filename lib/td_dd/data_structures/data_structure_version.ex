@@ -189,7 +189,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     end
 
     defp format_content(df_content, %{} = template_content) do
-      df_content |> Format.search_values(template_content)
+       Format.search_values(df_content, template_content)
     end
 
     defp format_content(_, _), do: nil

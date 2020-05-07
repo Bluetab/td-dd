@@ -222,9 +222,30 @@ defmodule TdDdWeb.DataStructureControllerTest do
           data_structure: build(:data_structure, external_id: "foobarbaz")
         )
 
-      assert %{"data" => [%{"id" => ^id}], "filters" => filters} =
+      assert %{"data" => [%{"id" => ^id}]} =
                conn
                |> post(data_structure_path(conn, :search), %{"query" => "obar"})
+               |> json_response(:ok)
+    end
+
+    @tag :admin_authenticated
+    test "search with query performs search on dynamic content", %{conn: conn} do
+      create_template(%{name: "template_name"})
+
+      %{data_structure_id: id} =
+        insert(:data_structure_version,
+          name: "boofarfaz",
+          type: "template_name",
+          data_structure:
+            build(:data_structure,
+              external_id: "boofarfaz",
+              df_content: %{"field" => "xyzzy"}
+            )
+        )
+
+      assert %{"data" => [%{"id" => ^id}]} =
+               conn
+               |> post(data_structure_path(conn, :search), %{"query" => "xyzz"})
                |> json_response(:ok)
     end
   end

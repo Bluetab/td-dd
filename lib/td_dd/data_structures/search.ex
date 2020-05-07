@@ -252,7 +252,15 @@ defmodule TdDd.DataStructures.Search do
       multi_match: %{
         query: query,
         type: "phrase_prefix",
-        fields: ["name^2", "name.ngram", "system.name", "data_fields.name", "path"]
+        fields: [
+          "name^2",
+          "name.ngram",
+          "system.name",
+          "data_fields.name",
+          "path.text",
+          "description",
+          "df_content.*"
+        ]
       }
     }
   end
@@ -264,7 +272,10 @@ defmodule TdDd.DataStructures.Search do
   end
 
   defp bool_query(clauses, filter) when is_nil(filter) do
-    %{bool: %{should: clauses, minimum_should_match: Enum.count(clauses)}}
+    # https://www.elastic.co/guide/en/elasticsearch/reference/6.2/query-dsl-minimum-should-match.html
+    # If there are 2 clauses they are both required. For 3 or more clauses only
+    # 75% are required.
+    %{bool: %{should: clauses, minimum_should_match: "2<-75%"}}
   end
 
   defp bool_query([clause], filter) do
