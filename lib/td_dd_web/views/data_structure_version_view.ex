@@ -47,6 +47,7 @@ defmodule TdDdWeb.DataStructureVersionView do
           :group,
           :id,
           :links,
+          :metadata,
           :name,
           :parents,
           :siblings,
