@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.21.1] 2020-05-08
+
+### Fixed
+
+- [TD-2609] Could not create rule implementations with operators without value
+
 ## [3.21.0] 2020-05-04
 
 ### Changed
