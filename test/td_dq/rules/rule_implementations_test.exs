@@ -226,6 +226,32 @@ defmodule TdDq.RuleImplementationsTest do
       assert errors |> Map.get(:dataset) |> Enum.any?(&(Map.get(&1, :clauses) == ["required"]))
     end
 
+    test "create_rule_implementation/1 with operator without value and value type creates the implementation correctly" do
+      rule = insert(:rule)
+
+      creation_attrs =
+        %{
+          rule_id: rule.id,
+          dataset: @valid_dataset,
+          validations: [
+            %{
+              operator: %{
+                name: "empty"
+              },
+              structure: %{id: 800},
+              value: []
+            }
+          ],
+          population: []
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert {:ok, %RuleImplementation{} = rule_implementation} =
+               Rules.create_rule_implementation(rule, creation_attrs)
+
+      assert rule_implementation.rule_id == creation_attrs["rule_id"]
+    end
+
     test "create_rule_implementation/1 with dataset missing clause right returns errors" do
       rule = insert(:rule)
 
