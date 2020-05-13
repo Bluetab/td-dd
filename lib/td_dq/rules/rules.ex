@@ -300,57 +300,6 @@ defmodule TdDq.Rules do
   end
 
   @doc """
-  Returns the list of rule_implementations.
-
-  ## Examples
-
-      iex> list_rule_implementations(params, opts)
-      [%RuleImplementation{}, ...]
-
-  """
-  def list_rule_implementations(params \\ %{}, opts \\ [])
-
-  def list_rule_implementations(%{"structure_id" => structure_id}, _opts) do
-    condition =
-      dynamic(
-        [ri],
-        fragment(
-          "exists (select * from unnest(?) obj where (obj->'structure'->>'id')::int = ?)",
-          ri.dataset,
-          ^structure_id
-        ) or false
-      )
-
-    condition =
-      dynamic(
-        [ri],
-        fragment(
-          "exists (select * from unnest(?) obj where (obj->'structure'->>'id')::int = ?)",
-          ri.validations,
-          ^structure_id
-        ) or ^condition
-      )
-
-    RuleImplementation
-    |> where(^condition)
-    |> Repo.all()
-  end
-
-  def list_rule_implementations(params, opts) do
-    rule_params = Map.get(params, :rule) || Map.get(params, "rule", %{})
-    rule_fields = Rule.__schema__(:fields)
-    dynamic = filter(params, RuleImplementation.__schema__(:fields))
-    dynamic = dynamic_rule_params(rule_params, rule_fields, dynamic)
-
-    RuleImplementation
-    |> join(:inner, [ri], r in assoc(ri, :rule))
-    |> where(^dynamic)
-    |> where([_ri, r], is_nil(r.deleted_at))
-    |> deleted_implementations(opts, :implementations)
-    |> Repo.all()
-  end
-
-  @doc """
   Gets a single rule_implementation.
 
   Raises `Ecto.NoResultsError` if the Rule does not exist.
@@ -442,12 +391,18 @@ defmodule TdDq.Rules do
   end
 
   defp put_structure_cached_attributes(structure_map, cached_info) do
-    structure_map
-    |> Map.put(:external_id, Map.get(cached_info, :external_id))
-    |> Map.put(:name, Map.get(cached_info, :name, Map.get(structure_map, :name, "")))
-    |> Map.put(:path, Map.get(cached_info, :path, []))
-    |> Map.put(:system, Map.get(cached_info, :system))
-    |> Map.put(:type, Map.get(cached_info, :type))
+    structure_map =
+      structure_map
+      |> Map.put(:external_id, Map.get(cached_info, :external_id))
+      |> Map.put(:name, Map.get(cached_info, :name, Map.get(structure_map, :name, "")))
+      |> Map.put(:path, Map.get(cached_info, :path, []))
+      |> Map.put(:system, Map.get(cached_info, :system))
+      |> Map.put(:type, Map.get(cached_info, :type))
+
+    case Map.get(cached_info, :metadata) do
+      nil -> structure_map
+      metadata -> Map.put(structure_map, :metadata, metadata)
+    end
   end
 
   defp enrich_joined_structures(%{clauses: clauses} = structure_map) when is_list(clauses) do
@@ -870,7 +825,119 @@ defmodule TdDq.Rules do
     |> Repo.one()
   end
 
-  defp dynamic_rule_params(params, fields, dynamic) do
+  @doc """
+  Returns the list of rule_implementations.
+
+  ## Examples
+
+      iex> list_rule_implementations(params, opts)
+      [%RuleImplementation{}, ...]
+
+  """
+  def list_rule_implementations(params \\ %{}, opts \\ [])
+
+  def list_rule_implementations(%{"structure_id" => structure_id}, _opts) do
+    condition =
+      dynamic(
+        [ri],
+        fragment(
+          "exists (select * from unnest(?) obj where (obj->'structure'->>'id')::int = ?)",
+          ri.dataset,
+          ^structure_id
+        ) or false
+      )
+
+    condition =
+      dynamic(
+        [ri],
+        fragment(
+          "exists (select * from unnest(?) obj where (obj->'structure'->>'id')::int = ?)",
+          ri.validations,
+          ^structure_id
+        ) or ^condition
+      )
+
+    RuleImplementation
+    |> where(^condition)
+    |> Repo.all()
+  end
+
+  def list_rule_implementations(params, opts) do
+    rule_params = Map.get(params, :rule) || Map.get(params, "rule", %{})
+    rule_fields = Rule.__schema__(:fields)
+    rule_implementation_fields = RuleImplementation.__schema__(:fields)
+
+    structure_filters = Map.get(params, "structure")
+
+    dynamic = dynamic_params(:rule_implementation, params, rule_implementation_fields, true)
+    dynamic = dynamic_params(:rule, rule_params, rule_fields, dynamic)
+
+    RuleImplementation
+    |> join(:inner, [ri], r in assoc(ri, :rule))
+    |> where(^dynamic)
+    |> where([_ri, r], is_nil(r.deleted_at))
+    |> deleted_implementations(opts, :implementations)
+    |> Repo.all()
+    |> filter_by_structures(structure_filters, opts)
+  end
+
+  defp filter_by_structures(rule_implementations, filter, options) when is_nil(filter) do
+    case Keyword.get(options, :enrich_structures, false) do
+      true -> Enum.map(rule_implementations, &enrich_rule_implementation_structures(&1))
+      _ -> rule_implementations
+    end
+  end
+
+  defp filter_by_structures(rule_implementations, structure_filters, _options) do
+    rule_implementations
+    |> Enum.map(&enrich_rule_implementation_structures(&1))
+    |> Enum.filter(&apply_structure_filters(&1, structure_filters))
+  end
+
+  defp apply_structure_filters(%{dataset: dataset} = _rule_implementation, structure_filters) do
+    dataset_structures = Enum.map(dataset, fn dataset_row -> Map.get(dataset_row, :structure) end)
+
+    case dataset_structures do
+      [] ->
+        false
+
+      _ ->
+        Enum.any?(dataset_structures, fn structure ->
+          passes_filters(structure, structure_filters)
+        end)
+    end
+  end
+
+  defp passes_filters(structure, structure_filters) do
+    filters_keys = Map.keys(structure_filters)
+
+    Enum.all?(filters_keys, fn filter_key ->
+      key_as_atom = if is_binary(filter_key), do: String.to_atom(filter_key), else: filter_key
+
+      case Map.get(structure, key_as_atom) do
+        nil ->
+          false
+
+        structure_value ->
+          passes_filter_by_type(Map.get(structure_filters, filter_key), structure_value)
+      end
+    end)
+  end
+
+  defp passes_filter_by_type(filter_value, structure_value) when is_map(filter_value) do
+    filter_value =
+      filter_value
+      |> MapSet.new()
+
+    structure_value = structure_value |> Map.Helpers.stringify_keys() |> MapSet.new()
+    MapSet.subset?(filter_value, structure_value)
+  end
+
+  defp passes_filter_by_type(filter_value, structure_value) do
+    filter_value === structure_value
+  end
+
+  defp dynamic_params(entity, params, fields, dynamic) do
     names = Map.keys(params)
 
     Enum.reduce(names, dynamic, fn name, acc ->
@@ -883,18 +950,26 @@ defmodule TdDq.Rules do
         true ->
           params
           |> Map.get(name)
-          |> dynamic_filter(atom_name, acc)
+          |> dynamic_filter(atom_name, acc, entity)
       end
     end)
   end
 
   defp binary_to_atom(value), do: if(is_binary(value), do: String.to_atom(value), else: value)
 
-  defp dynamic_filter(field, atom_name, acc) when is_map(field) do
+  defp dynamic_filter(field, atom_name, acc, :rule_implementation) when is_map(field) do
+    dynamic([p, _], fragment("(?) @> ?::jsonb", field(p, ^atom_name), ^field) and ^acc)
+  end
+
+  defp dynamic_filter(field, atom_name, acc, :rule_implementation) do
+    dynamic([p, _], field(p, ^atom_name) == ^field and ^acc)
+  end
+
+  defp dynamic_filter(field, atom_name, acc, :rule) when is_map(field) do
     dynamic([_, p], fragment("(?) @> ?::jsonb", field(p, ^atom_name), ^field) and ^acc)
   end
 
-  defp dynamic_filter(field, atom_name, acc) do
+  defp dynamic_filter(field, atom_name, acc, :rule) do
     dynamic([_, p], field(p, ^atom_name) == ^field and ^acc)
   end
 

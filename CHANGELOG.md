@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-2495] Added rule implementations endpoint to filter rule implementations by rule, rule implementation and dataset structures properties 
+
 ## [3.21.1] 2020-05-08
 
 ### Fixed

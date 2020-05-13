@@ -1,8 +1,12 @@
 defmodule TdDqWeb.RuleImplementationControllerTest do
   use TdDqWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
+
   import TdDq.Factory
   import TdDqWeb.Authentication, only: :functions
+
+  alias TdCache.StructureCache
+  alias TdCache.SystemCache
   alias TdDq.Cache.RuleLoader
   alias TdDq.Search.IndexWorker
 
@@ -14,6 +18,28 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
   ]
 
   setup_all do
+    system = %{id: 1, external_id: "sys1_ext_id", name: "sys1"}
+
+    structure = %{
+      id: 14_080,
+      name: "name",
+      external_id: "ext_id",
+      group: "group",
+      type: "type",
+      path: ["foo", "bar"],
+      updated_at: DateTime.utc_now(),
+      metadata: %{"alias" => "source_alias"},
+      system_id: system.id
+    }
+
+    {:ok, _} = SystemCache.put(system)
+    {:ok, _} = StructureCache.put(structure)
+
+    on_exit(fn ->
+      SystemCache.delete(system.id)
+      StructureCache.delete(structure.id)
+    end)
+
     start_supervised(IndexWorker)
     start_supervised(RuleLoader)
     :ok
@@ -410,15 +436,56 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
 
   describe "search_rules_implementations" do
     @tag :admin_authenticated
-    test "lists all rule_implementations given some request params", %{
+    test "lists rule_implementations according structure_id", %{
       conn: conn,
       swagger_schema: schema
     } do
-      conn = post(conn, Routes.rule_implementation_path(conn, :search_rules_implementations, %{}))
+      rule = insert(:rule)
+      rule_implementation = insert(:rule_implementation, rule: rule)
+      insert(:rule_implementation_raw, rule: rule, implementation_key: "second")
+      insert(:rule_result)
+
+      params = %{"structure_id" => 14_080}
+
+      conn =
+        post(
+          conn,
+          Routes.rule_implementation_path(conn, :search_rules_implementations, params)
+        )
 
       validate_resp_schema(conn, schema, "RuleImplementationsResponse")
-      assert json_response(conn, :ok)["data"] == []
+      json_implementations = json_response(conn, :ok)["data"]
+      assert length(json_implementations) == 1
+      json_rule_implementation = List.first(json_response(conn, :ok)["data"])
+      assert json_rule_implementation["id"] == rule_implementation.id
     end
+  end
+
+  @tag :admin_authenticated
+  test "lists all rule_implementations according filter", %{conn: conn, swagger_schema: schema} do
+    rule = insert(:rule)
+    rule_implementation = insert(:rule_implementation, rule: rule)
+    insert(:rule_implementation_raw, rule: rule, implementation_key: "second")
+    insert(:rule_result)
+
+    filters = %{
+      "rule" => %{"active" => false},
+      "structure" => %{"metadata" => %{"alias" => "source_alias"}}
+    }
+
+    conn =
+      post(
+        conn,
+        Routes.rule_implementation_path(conn, :search_rules_implementations, %{
+          "filters" => filters
+        })
+      )
+
+    validate_resp_schema(conn, schema, "RuleImplementationsResponse")
+    json_implementations = json_response(conn, :ok)["data"]
+    assert length(json_implementations) == 1
+    json_rule_implementation = List.first(json_response(conn, :ok)["data"])
+    assert json_rule_implementation["id"] == rule_implementation.id
   end
 
   defp equals_condition_row(population_response, population_update) do

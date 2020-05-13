@@ -368,14 +368,27 @@ defmodule TdDqWeb.RuleImplementationController do
     end
   end
 
-  def search_rules_implementations(conn, params) do
-    user = conn.assigns[:current_resource]
+  swagger_path :search_rules_implementations do
+    description("Searh rule implementations")
+    parameters do
+      search(
+        :body,
+        Schema.ref(:RuleImplementationsSearchFilters),
+        "Filter by Rule, Rule Implementation or structure properties"
+      )
+    end
+    produces("application/json")
 
-    filters = add_filter(%{}, params, "structure_id")
+    response(200, "OK", Schema.ref(:RuleImplementationsResponse))
+  end
+
+  # Endpoint used by DD to search structure implementations
+  def search_rules_implementations(conn, %{"structure_id" => structure_id}) do
+    user = conn.assigns[:current_resource]
 
     with {:can, true} <- {:can, can?(user, index(RuleImplementation))} do
       rule_implementations =
-        filters
+        %{"structure_id" => String.to_integer(structure_id)}
         |> Rules.list_rule_implementations()
         |> Enum.map(&Repo.preload(&1, [:rule]))
         |> Enum.map(&add_last_rule_result(&1))
@@ -384,13 +397,21 @@ defmodule TdDqWeb.RuleImplementationController do
     end
   end
 
-  defp add_filter(filters, params, param_name) do
-    case Map.get(params, param_name) do
-      nil ->
-        filters
+  # Endpoint for dq engine
+  def search_rules_implementations(conn, filters) do
+    filters = Map.get(filters, "filters", %{})
+    user = conn.assigns[:current_resource]
+    opts = deleted_implementations(filters)
+    opts = Keyword.put(opts, :enrich_structures, true)
 
-      value ->
-        Map.put(filters, param_name, String.to_integer(value))
+    with {:can, true} <- {:can, can?(user, index(RuleImplementation))} do
+      rule_implementations =
+        filters
+        |> Rules.list_rule_implementations(opts)
+        |> Enum.map(&Repo.preload(&1, [:rule]))
+        |> Enum.map(&add_last_rule_result(&1))
+
+      render(conn, "index.json", rule_implementations: rule_implementations)
     end
   end
 
