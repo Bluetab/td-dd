@@ -4,7 +4,9 @@
 
 ### Added
 
-- [TD-2495] Added rule implementations endpoint to filter rule implementations by rule, rule implementation and dataset structures properties 
+- [TD-2495] Added rule implementations endpoint to filter rule implementations
+  by rule, rule implementation and dataset structures properties
+- [TD-2624] Support Base64 encoded rule implementation `raw_content` properties
 
 ## [3.21.1] 2020-05-08
 
@@ -16,7 +18,8 @@
 
 ### Changed
 
-- [TD-2491] Implementation not editable if it has rule results. Added value_type_filter to operator
+- [TD-2491] Implementation not editable if it has rule results. Added
+  value_type_filter to operator
 
 ## [3.20.0] 2020-04-20
 
@@ -53,7 +56,8 @@
 
 ### Changed
 
-- [TD-2309] Unique rule implementation key. Renamed current implementation key duplicates
+- [TD-2309] Unique rule implementation key. Renamed current implementation key
+  duplicates
 
 ## [3.14.0] 2020-01-27
 
@@ -82,12 +86,14 @@
 
 ### Changed
 
-- [TD-2199] Rule result as float. Errors uploaded in Rule Results and result calculated for errors_number Rule Type.
+- [TD-2199] Rule result as float. Errors uploaded in Rule Results and result
+  calculated for errors_number Rule Type.
 - [TD-2226] Added Error response in Rule Results upload
 
 ### Fixed
 
-- [TD-2164] Changed phoenix_swagger and ex_json_schema dependencies to fix swagger
+- [TD-2164] Changed phoenix_swagger and ex_json_schema dependencies to fix
+  swagger
 - [TD-1881] show implementations results whether deleted or not
 - [TD-2208] Rule ids can be sent as parameter in Rules execution endpoint
 
@@ -96,23 +102,28 @@
 ### Added
 
 - [TD-1493] Given a structure_id get implementations associated
-- [TD-1881] Rule Implementations soft deletion: Update for soft delete implementations and query them
+- [TD-1881] Rule Implementations soft deletion: Update for soft delete
+  implementations and query them
 
 ### Changed
 
-- [TD-2187] Retrieve/Store rule implementations structures using Structure Cache. Delete redundant structure info stored in rule_implementations. Load in Structure Cache structures being used by existing Rule Implementations
+- [TD-2187] Retrieve/Store rule implementations structures using Structure
+  Cache. Delete redundant structure info stored in rule_implementations. Load in
+  Structure Cache structures being used by existing Rule Implementations
 
 ## [3.8.0] 2019-10-14
 
 ### Added
 
 - [TD-1859] Index cached content of related business concept
-- [TD-2048] New Rule Type system param ´system_required´ of type boolean with hidden property
+- [TD-2048] New Rule Type system param ´system_required´ of type boolean with
+  hidden property
 - [TD-1987] New Rule property result_type of types percentage or errors number
 
 ### Changed
 
-- [TD-2048] Attribute system in Rule Implementation requirement is defined in Rule Type system params as ´system_required´
+- [TD-2048] Attribute system in Rule Implementation requirement is defined in
+  Rule Type system params as ´system_required´
 - [TD-2158] Sortable mappings used in filters with sort and raw properties
 - [TD-2093] Description type to map
 
@@ -138,7 +149,8 @@
 
 ### Fixed
 
-- [TD-2081] Event stream consumer did not respect redis_host and port config options
+- [TD-2081] Event stream consumer did not respect redis_host and port config
+  options
 
 ## [3.5.0] 2019-09-02
 
@@ -151,7 +163,8 @@
 
 ### Changed
 
-- [TD-1656] Added all rule implementation results to rule implementation show response
+- [TD-1656] Added all rule implementation results to rule implementation show
+  response
 
 ### Added
 
@@ -225,7 +238,8 @@
 
 ### Added
 
-- [TD-1667] New unique constraint formed from Business Concept Id and Name on rules
+- [TD-1667] New unique constraint formed from Business Concept Id and Name on
+  rules
 
 ## [2.16.0] 2019-04-01
 
@@ -240,7 +254,8 @@
 
 ### Added
 
-- [TD-1571] Elixir's Logger config will check for EX_LOGGER_FORMAT variable to override format
+- [TD-1571] Elixir's Logger config will check for EX_LOGGER_FORMAT variable to
+  override format
 
 ### Fixed
 
@@ -272,13 +287,15 @@
 
 ### Modified
 
-- [TD-967] New endpoint created to retrieve the rule detail with the possible system params used to create an implementation
+- [TD-967] New endpoint created to retrieve the rule detail with the possible
+  system params used to create an implementation
 
 ## [2.12.0] 2019-01-29
 
 ### Added
 
-- [TD-1390] Those rules attached to a deleted or deprecated business concept will be deleted by a soft deletion
+- [TD-1390] Those rules attached to a deleted or deprecated business concept
+  will be deleted by a soft deletion
 
 ## [2.11.0] 2019-01-11
 

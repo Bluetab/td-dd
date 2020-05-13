@@ -1,10 +1,11 @@
 defmodule TdDqWeb.RuleImplementationController do
-  require Logger
   use TdDqWeb, :controller
   use TdHypermedia, :controller
   use PhoenixSwagger
 
   import Canada, only: [can?: 2]
+  import TdDqWeb.RuleImplementationSupport, only: [decode: 1]
+
   alias Ecto.Changeset
   alias TdDq.Repo
   alias TdDq.Rules
@@ -13,6 +14,8 @@ defmodule TdDqWeb.RuleImplementationController do
   alias TdDqWeb.ChangesetView
   alias TdDqWeb.ErrorView
   alias TdDqWeb.SwaggerDefinitions
+
+  require Logger
 
   action_fallback(TdDqWeb.FallbackController)
 
@@ -90,6 +93,7 @@ defmodule TdDqWeb.RuleImplementationController do
 
   def create(conn, %{"rule_implementation" => rule_implementation_params}) do
     user = conn.assigns[:current_resource]
+    rule_implementation_params = decode(rule_implementation_params)
     rule_id = rule_implementation_params["rule_id"]
 
     rule = Rules.get_rule_or_nil(rule_id)
@@ -237,7 +241,9 @@ defmodule TdDqWeb.RuleImplementationController do
     user = conn.assigns[:current_resource]
 
     update_params =
-      Map.drop(rule_implementation_params, [
+      rule_implementation_params
+      |> decode()
+      |> Map.drop([
         :implementation_key,
         "implementation_key",
         :implementation_type,
