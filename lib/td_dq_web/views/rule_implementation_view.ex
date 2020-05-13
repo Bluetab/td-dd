@@ -124,7 +124,8 @@ defmodule TdDqWeb.RuleImplementation.StructureView do
       path: Map.get(structure, :path),
       system: Map.get(structure, :system),
       external_id: Map.get(structure, :external_id),
-      type: Map.get(structure, :type)
+      type: Map.get(structure, :type),
+      metadata: Map.get(structure, :metadata)
     }
   end
 end

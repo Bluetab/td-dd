@@ -56,7 +56,15 @@ defmodule Map.Helpers do
   def stringify_keys(nil), do: nil
 
   def stringify_keys(%{} = map) do
-    Enum.into(map, %{}, fn {k, v} -> {Atom.to_string(k), stringify_keys(v)} end)
+    Enum.into(map, %{}, fn {k, v} ->
+      atom_key =
+        case is_atom(k) do
+          true -> Atom.to_string(k)
+          _ -> k
+        end
+
+      {atom_key, stringify_keys(v)}
+    end)
   end
 
   # Walk the list and stringify the keys of
