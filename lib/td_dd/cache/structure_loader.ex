@@ -14,7 +14,7 @@ defmodule TdDd.Cache.StructureLoader do
 
   require Logger
 
-  @structure_parent_id_migration_key "TdDd.DataStructures.Migrations:td-2210"
+  @structure_metadata_migration_key "TdDd.DataStructures.Migrations:td-2495"
 
   ## Client API
 
@@ -46,13 +46,13 @@ defmodule TdDd.Cache.StructureLoader do
   @impl true
   def handle_info(:refresh_cached_structures, state) do
     try do
-      if Redix.exists?(@structure_parent_id_migration_key) == false do
+      if Redix.exists?(@structure_metadata_migration_key) == false do
         Timer.time(
           fn -> refresh_cached_structures() end,
           fn ms, _ -> Logger.info("Structures in cache refreshed in #{ms}ms") end
         )
 
-        Redix.command!(["SET", @structure_parent_id_migration_key, "#{DateTime.utc_now()}"])
+        Redix.command!(["SET", @structure_metadata_migration_key, "#{DateTime.utc_now()}"])
       end
     rescue
       e -> Logger.error("Unexpected error while refreshing cached structures... #{inspect(e)}")
