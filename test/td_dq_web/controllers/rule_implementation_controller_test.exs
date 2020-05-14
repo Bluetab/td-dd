@@ -341,6 +341,36 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
 
       assert json_response(conn, :unprocessable_entity)["errors"] != %{}
     end
+
+    @tag :admin_authenticated
+    test "accepts base64 encoded raw_content", %{conn: conn, swagger_schema: schema} do
+      %{id: id} = insert(:rule_implementation_raw)
+
+      params = %{
+        "rule_implementation" => %{
+          "raw_content" => %{
+            "system" => 123,
+            "dataset" => Base.encode64("Some dataset"),
+            "population" => "Not encoded",
+            "validations" => Base.encode64("Encoded population")
+          }
+        }
+      }
+
+      assert %{"data" => data} =
+               conn
+               |> patch(Routes.rule_implementation_path(conn, :update, id, params))
+               |> validate_resp_schema(schema, "RuleImplementationResponse")
+               |> json_response(:ok)
+
+      assert %{
+               "raw_content" => %{
+                 "dataset" => "Some dataset",
+                 "population" => "Not encoded",
+                 "validations" => "Encoded population"
+               }
+             } = data
+    end
   end
 
   describe "delete rule_implementation" do
