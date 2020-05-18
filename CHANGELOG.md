@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [3.22.0] 2020-05-18
 
 ### Changed
 
@@ -18,12 +18,10 @@
     files uploaded using the same unit name will overwrite the existing nodes
     and relations in that unit.
   - Latest status for a unit can be queried using `GET /api/units/:unit_name`.
-  - Events relating to a unit can be queried using `GET
-    /api/units/:unit_name/events`.
+  - Events relating to a unit can be queried using `GET /api/units/:unit_name/events`.
   - A unit can be logically deleted using `DELETE /api/units/:unit_name`.
-  - A unit can be physically deleted using `DELETE
-    /api/units/:unit_name?logical=false`.
-  - [TD-2495] Changed structures loader migration key to cache all structures again including their metadata 
+  - A unit can be physically deleted using `DELETE /api/units/:unit_name?logical=false`.
+  - [TD-2495] Changed structures loader migration key to cache all structures again including their metadata
 
 ### Removed
 
