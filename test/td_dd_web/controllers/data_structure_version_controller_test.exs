@@ -41,7 +41,9 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                |> get(Routes.data_structure_data_structure_version_path(conn, :show, id, 0))
                |> json_response(:ok)
 
-      assert %{"children" => [_, _]} = data
+      assert %{"children" => children} = data
+      assert [_, _] = children
+      assert Enum.all?(children, &Map.get(&1, "order") == 1)
     end
 
     @tag authenticated_user: @admin_user_name
@@ -205,7 +207,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       insert(:data_structure_version, data_structure_id: structure.id, metadata: %{foo: "bar"})
 
     child_versions =
-      Enum.map(child_structures, &insert(:data_structure_version, data_structure_id: &1.id))
+      Enum.map(child_structures, &insert(:data_structure_version, data_structure_id: &1.id, metadata: %{"order" => 1}))
 
     %{id: relation_type_id} = RelationTypes.get_default()
 
