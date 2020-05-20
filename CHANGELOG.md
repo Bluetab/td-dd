@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] 
+
+### Changed
+
+- [TD-2643] Show metadata on structure relations
+
 ## [3.22.0] 2020-05-18
 
 ### Changed
