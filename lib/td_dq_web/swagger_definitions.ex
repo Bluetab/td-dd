@@ -271,20 +271,20 @@ defmodule TdDqWeb.SwaggerDefinitions do
           end
         end,
       RuleImplementationsSearchFilters:
-      swagger_schema do
-        properties do
-          structure_id(:integer, "structure id", required: false)
-          filters(:object, "Filters", required: false)
-        end
+        swagger_schema do
+          properties do
+            structure_id(:integer, "structure id", required: false)
+            filters(:object, "Filters", required: false)
+          end
 
-        example(%{
-          filters: %{
-            rule: %{active: true},
-            implementation_key: "ri1",
-            structure: %{metadata: %{alias_: "source_alias"}}
-          }
-        })
-      end
+          example(%{
+            filters: %{
+              rule: %{active: true},
+              implementation_key: "ri1",
+              structure: %{metadata: %{alias_: "source_alias"}}
+            }
+          })
+        end
     }
   end
 
