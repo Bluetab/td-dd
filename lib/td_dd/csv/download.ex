@@ -15,8 +15,7 @@ defmodule TdDd.CSV.Download do
     "path",
     "description",
     "external_id",
-    "inserted_at",
-    "deleted_at"
+    "inserted_at"
   ]
 
   def to_csv(structures, header_labels \\ nil) do
