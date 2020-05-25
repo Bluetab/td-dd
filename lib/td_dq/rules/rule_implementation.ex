@@ -90,13 +90,28 @@ defmodule TdDq.Rules.RuleImplementation.RawContent do
     field(:population, :string)
     field(:validations, :string)
     field(:system, :integer)
+    field(:structure_alias, :string)
   end
 
   def changeset(%__MODULE__{} = lead, params \\ %{}) do
     lead
-    |> cast(params, [:dataset, :population, :validations, :system])
+    |> cast(params, [:dataset, :population, :validations, :system, :structure_alias])
     |> valid_content?([:dataset, :population, :validations])
-    |> validate_required([:dataset, :validations, :system])
+    |> validate_required([:dataset, :validations])
+    |> validate_required_inclusion([:system, :structure_alias])
+  end
+
+  def validate_required_inclusion(changeset, fields) do
+    if Enum.any?(fields, &present?(changeset, &1)) do
+      changeset
+    else
+      add_error(changeset, hd(fields), "One of these fields must be present: [system, structure_alias]")
+    end
+  end
+
+  def present?(changeset, field) do
+    value = get_field(changeset, field)
+    value != nil && value != "" && value != %{}
   end
 
   defp valid_content?(changeset, fields) do

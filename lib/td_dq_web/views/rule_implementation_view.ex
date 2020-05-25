@@ -107,6 +107,7 @@ defmodule TdDqWeb.RuleImplementation.RawContent do
   def render("raw_content.json", %{raw_content: raw_content}) do
     %{
       system: Map.get(raw_content, :system),
+      structure_alias: Map.get(raw_content, :structure_alias),
       dataset: Map.get(raw_content, :dataset),
       population: Map.get(raw_content, :population),
       validations: Map.get(raw_content, :validations)
