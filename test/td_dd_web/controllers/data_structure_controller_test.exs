@@ -466,6 +466,36 @@ defmodule TdDdWeb.DataStructureControllerTest do
     end
   end
 
+  describe "csv" do
+    setup [:create_data_structure]
+    @tag authenticated_user: @admin_user_name
+    test "gets csv content", %{
+      conn: conn,
+      data_structure: data_structure,
+      data_structure_version: data_structure_version
+    } do
+      child_structure = insert(:data_structure, external_id: "Child1")
+
+      child_version =
+        insert(:data_structure_version,
+          data_structure_id: child_structure.id,
+          deleted_at: DateTime.utc_now()
+        )
+
+      %{id: relation_type_id} = RelationTypes.get_default()
+
+      insert(:data_structure_relation,
+        parent_id: data_structure_version.id,
+        child_id: child_version.id,
+        relation_type_id: relation_type_id
+      )
+
+      assert %{resp_body: resp_body} = post(conn, data_structure_path(conn, :csv, %{}))
+      assert String.contains?(resp_body, data_structure.external_id)
+      assert not String.contains?(resp_body, child_structure.external_id)
+    end
+  end
+
   defp create_data_structure(_) do
     template_name = "template_name"
     create_template(%{name: template_name})

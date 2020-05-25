@@ -307,6 +307,7 @@ defmodule TdDdWeb.DataStructureController do
 
   defp search_all_structures(user, permission, params) do
     params
+    |> Map.put(:without, ["deleted_at"])
     |> Map.drop(["page", "size"])
     |> Search.search_data_structures(user, permission, 0, 10_000)
   end
