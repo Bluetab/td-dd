@@ -55,7 +55,6 @@ defmodule TdDd.DownloadTest do
         },
         domain: %{"external_id" => "ex_id_1", "name" => domain_name},
         inserted_at: "2018-05-05",
-        deleted_at: "2018-05-05",
         external_id: "myext_292929",
         group: "gr",
         path: ["CMC", "Objetos Públicos", "Informes", "Cuadro de Mando Integral"],
@@ -68,12 +67,12 @@ defmodule TdDd.DownloadTest do
 
       assert csv ==
                """
-               type;name;group;domain;system;path;description;external_id;inserted_at;deleted_at;Add Info 1\r
+               type;name;group;domain;system;path;description;external_id;inserted_at;Add Info 1\r
                #{structure_1.type};#{structure_1.name};#{structure_1.group};#{domain_name};#{
                  Map.get(structure_1.system, "name")
                };CMC > Objetos Públicos > Informes > Cuadro de Mando Integral;#{
                  structure_1.description
-               };#{structure_1.external_id};#{structure_1.inserted_at};#{structure_1.deleted_at};field_value\r
+               };#{structure_1.external_id};#{structure_1.inserted_at};field_value\r
                """
     end
   end

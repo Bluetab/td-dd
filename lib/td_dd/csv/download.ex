@@ -67,8 +67,7 @@ defmodule TdDd.CSV.Download do
         Enum.join(structure.path, " > "),
         structure.description,
         structure.external_id,
-        structure.inserted_at,
-        structure.deleted_at
+        structure.inserted_at
       ]
 
       Enum.reduce(content_fields, values, &(&2 ++ [&1 |> get_content_field(content)]))
