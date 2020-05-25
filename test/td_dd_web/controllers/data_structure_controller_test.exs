@@ -87,6 +87,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                |> json_response(:ok)
 
       assert Enum.count(children) == 2
+      assert Enum.all?(children, &Map.get(&1, "order") == 1)
     end
 
     @tag authenticated_user: @admin_user_name
@@ -492,7 +493,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
     child_versions =
       child_structures
-      |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id))
+      |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id, metadata: %{"order" => 1}))
 
     %{id: relation_type_id} = RelationTypes.get_default()
 
