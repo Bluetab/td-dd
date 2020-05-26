@@ -77,7 +77,8 @@ defmodule TdDdWeb.DataStructureView do
       :system_id,
       :type,
       :updated_at,
-      :mutable_metadata
+      :mutable_metadata,
+      :metadata
     ])
     |> Map.merge(dsv_attrs)
     |> Map.put_new(:metadata, %{})
