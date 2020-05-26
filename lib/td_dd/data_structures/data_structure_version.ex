@@ -136,6 +136,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       |> Map.put(:df_content, format_content(structure, type))
       |> Map.put(:mutable_metadata, get_mutable_metadata(structure))
       |> Map.put_new(:field_type, get_field_type(dsv))
+      |> Map.put(:source_alias, get_source_alias(dsv))
       |> Map.put_new(:domain, Map.take(domain, [:id, :name, :external_id]))
       |> Map.merge(
         Map.take(dsv, [
@@ -195,6 +196,8 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     defp format_content(_, _), do: nil
 
     defp get_field_type(%DataStructureVersion{metadata: metadata}), do: Map.get(metadata, "type")
+
+    defp get_source_alias(%DataStructureVersion{metadata: metadata}), do: Map.get(metadata, "alias")
 
     defp get_mutable_metadata(%DataStructure{id: id}) do
       metadata = DataStructures.get_latest_metadata_version(id, deleted: false) || Map.new()
