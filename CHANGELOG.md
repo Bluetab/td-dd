@@ -6,6 +6,10 @@
 
 - [TD-2629] Update td-df-lib to omit template fields of type `image` on indexing
 
+### Fixed
+
+- [TD-2633] Allow logic deletion of rule implementations with results
+
 ## [3.22.0] 2020-05-18
 
 ### Added

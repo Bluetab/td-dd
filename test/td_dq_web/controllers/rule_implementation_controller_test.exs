@@ -270,7 +270,7 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
     @tag :admin_authenticated
     test "soft delete rule implementation", %{conn: conn, swagger_schema: schema} do
       rule_implementation = insert(:rule_implementation)
-
+      insert(:rule_result, implementation_key: rule_implementation.implementation_key)
       update_attrs = %{soft_delete: true}
 
       conn =

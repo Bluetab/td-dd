@@ -265,7 +265,11 @@ defmodule TdDqWeb.RuleImplementationController do
     }
 
     with {:can, true} <- {:can, can?(user, update(resource_type))},
-         {:editable, true} <- {:editable, Enum.empty?(rule_implementation.all_rule_results)},
+         {:editable, true} <-
+           {:editable,
+            Enum.empty?(rule_implementation.all_rule_results) ||
+              (Map.keys(rule_implementation_params) == ["soft_delete"] &&
+                 Map.get(rule_implementation_params, "soft_delete") == true)},
          {:ok, %RuleImplementation{} = rule_implementation} <-
            Rules.update_rule_implementation(
              rule_implementation,
@@ -376,6 +380,7 @@ defmodule TdDqWeb.RuleImplementationController do
 
   swagger_path :search_rules_implementations do
     description("Searh rule implementations")
+
     parameters do
       search(
         :body,
@@ -383,6 +388,7 @@ defmodule TdDqWeb.RuleImplementationController do
         "Filter by Rule, Rule Implementation or structure properties"
       )
     end
+
     produces("application/json")
 
     response(200, "OK", Schema.ref(:RuleImplementationsResponse))
