@@ -94,7 +94,9 @@ defmodule TdDdWeb.DataStructureVersionView do
   end
 
   defp data_structure_version_embedded(dsv) do
-    Map.take(dsv, [:data_structure_id, :id, :name, :type, :deleted_at])
+    dsv
+    |> Map.take([:data_structure_id, :id, :name, :type, :deleted_at, :metadata])
+    |> lift_metadata()
   end
 
   defp add_children(data_structure_version), do: add_relations(data_structure_version, :children)
