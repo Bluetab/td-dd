@@ -5,6 +5,7 @@
 ### Changed
 
 - [TD-2643] Show metadata on structure relations
+- [TD-2487] Exclude deleted structures from csv download
 
 ## [3.22.0] 2020-05-18
 
