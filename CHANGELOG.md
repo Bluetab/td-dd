@@ -1,6 +1,11 @@
 # Changelog
 
-## [Unreleased] 
+## [Unreleased]
+
+### Added
+
+- [TD-2562] Endpoint `GET /api/data_structures/search/source_alias` to return the list of 
+distinct structures metadata aliases
 
 ### Changed
 
