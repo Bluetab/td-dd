@@ -11,6 +11,7 @@ distinct structures metadata aliases
 
 - [TD-2643] Show metadata on structure relations
 - [TD-2487] Exclude deleted structures from csv download
+- [TD-2629] Update td-df-lib to omit template fields of type `image` on indexing
 
 ## [3.22.0] 2020-05-18
 
