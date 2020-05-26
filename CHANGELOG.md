@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-2629] Update td-df-lib to omit template fields of type `image` on indexing
+
 ## [3.16.1] 2020-03-03
 
 ### Fixed
