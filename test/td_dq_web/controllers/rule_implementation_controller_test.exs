@@ -128,6 +128,69 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
     end
 
     @tag :admin_authenticated
+    test "can create raw rule implementation with alias", %{conn: conn, swagger_schema: schema} do
+      rule = insert(:rule)
+
+      creation_attrs =
+        %{
+          implementation_key: "a1",
+          implementation_type: "raw",
+          rule_id: rule.id,
+          raw_content: %{
+            dataset: "cliente c join address a on c.address_id=a.id",
+            population: nil,
+            structure_alias: "str_alias",
+            validations: "c.city = 'MADRID'"
+          }
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.rule_implementation_path(conn, :create),
+                 rule_implementation: creation_attrs
+               )
+               |> validate_resp_schema(schema, "RuleImplementationResponse")
+               |> json_response(:created)
+
+      assert %{
+               "raw_content" => %{
+                 "dataset" => "cliente c join address a on c.address_id=a.id",
+                 "population" => nil,
+                 "validations" => "c.city = 'MADRID'"
+               }
+             } = data
+    end
+
+    @tag :admin_authenticated
+    test "errors trying to create raw rule implementation without system and alias", %{conn: conn, swagger_schema: schema} do
+      rule = insert(:rule)
+
+      creation_attrs =
+        %{
+          implementation_key: "a1",
+          implementation_type: "raw",
+          rule_id: rule.id,
+          raw_content: %{
+            dataset: "cliente c join address a on c.address_id=a.id",
+            population: nil,
+            validations: "c.city = 'MADRID'"
+          }
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert %{"errors" => [errors]} =
+               conn
+               |> post(Routes.rule_implementation_path(conn, :create),
+                 rule_implementation: creation_attrs
+               )
+               |> validate_resp_schema(schema, "RuleImplementationResponse")
+               |> json_response(422)
+
+      assert errors == %{"name" => "rule.implementation.error.raw_content.system."}
+    end
+
+    @tag :admin_authenticated
     test "renders errors when data is invalid", %{conn: conn} do
       rule = insert(:rule)
 

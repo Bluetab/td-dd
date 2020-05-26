@@ -6,6 +6,10 @@
 
 - [TD-2633] Allow logic deletion of rule implementations with results
 
+### Added
+
+- [TD-2562] Rule implementations of raw type can have system or structure alias
+
 ## [3.22.0] 2020-05-18
 
 ### Added

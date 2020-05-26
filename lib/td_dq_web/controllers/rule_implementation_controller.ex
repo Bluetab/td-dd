@@ -284,6 +284,7 @@ defmodule TdDqWeb.RuleImplementationController do
         |> render("403.json")
 
       {:error, %Changeset{data: %{__struct__: _}} = changeset} ->
+        Logger.error("While updating rule implemenation... #{inspect(changeset)}")
         conn
         |> put_status(:unprocessable_entity)
         |> put_view(ChangesetView)
