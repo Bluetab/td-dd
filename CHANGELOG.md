@@ -6,6 +6,10 @@
 
 - [TD-2633] Allow logic deletion of rule implementations with results
 
+### Added
+
+- [TD-2562] Rule implementations of raw type can have system or structure alias
+
 ## [3.22.0] 2020-05-18
 
 ### Added
@@ -13,7 +17,6 @@
 - [TD-2495] Added rule implementations endpoint to filter rule implementations
   by rule, rule implementation and dataset structures properties
 - [TD-2624] Support Base64 encoded rule implementation `raw_content` properties
-- [TD-2562] Rule implementations of raw type can have system or structure alias
 
 ## [3.21.1] 2020-05-08
 
