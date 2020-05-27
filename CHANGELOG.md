@@ -4,14 +4,19 @@
 
 ### Added
 
-- [TD-2562] Endpoint `GET /api/data_structures/search/source_alias` to return the list of 
-distinct structures metadata aliases
+- [TD-2562] Endpoint `GET /api/data_structures/search/source_alias` to return
+  the list of distinct structures metadata aliases
 
 ### Changed
 
 - [TD-2643] Show metadata on structure relations
 - [TD-2487] Exclude deleted structures from csv download
 - [TD-2629] Update td-df-lib to omit template fields of type `image` on indexing
+
+### Removed
+
+- [TD-2691] Removed unused comments functionality (routes
+  `/api/data_structures/:id/comments` and `/api/comments`)
 
 ## [3.22.0] 2020-05-18
 
