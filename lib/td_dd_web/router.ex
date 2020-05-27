@@ -32,15 +32,12 @@ defmodule TdDdWeb.Router do
     post("/data_structures/csv", DataStructureController, :csv)
 
     resources "/data_structures", DataStructureController, except: [:new, :edit, :show] do
-      get("/comment", CommentController, :get_comment_data_structure)
       resources("/versions", DataStructureVersionController, only: [:show])
     end
 
     resources("/data_structure_versions", DataStructureVersionController, only: [:show]) do
       post("/links", DataStructureLinkController, :create_link)
     end
-
-    resources("/comments", CommentController, except: [:new, :edit])
 
     resources("/graphs", GraphController, only: [:create, :show])
 
