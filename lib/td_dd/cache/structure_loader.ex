@@ -15,7 +15,7 @@ defmodule TdDd.Cache.StructureLoader do
   require Logger
 
   @index_worker Application.get_env(:td_dd, :index_worker)
-  @structure_metadata_migration_key "TdDd.DataStructures.Migrations:td-2495"
+  @structure_metadata_migration_key "TdDd.DataStructures.Migrations:td-2261"
 
   ## Client API
 
