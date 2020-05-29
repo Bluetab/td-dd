@@ -14,12 +14,21 @@ defmodule TdDd.Cache.StructureLoader do
 
   require Logger
 
+  @index_worker Application.get_env(:td_dd, :index_worker)
   @structure_metadata_migration_key "TdDd.DataStructures.Migrations:td-2495"
 
   ## Client API
 
   def start_link(config \\ []) do
     GenServer.start_link(__MODULE__, config, name: __MODULE__)
+  end
+
+  def refresh(data_structure_ids) when is_list(data_structure_ids) do
+    GenServer.call(__MODULE__, {:refresh, data_structure_ids})
+  end
+
+  def refresh(data_structure_id) do
+    refresh([data_structure_id])
   end
 
   ## EventStream.Consumer Callbacks
@@ -68,6 +77,13 @@ defmodule TdDd.Cache.StructureLoader do
     {:reply, reply, state}
   end
 
+  @impl GenServer
+  def handle_call({:refresh, ids}, _from, state) do
+    reply = cache_structures(ids, force: true)
+    @index_worker.reindex(ids)
+    {:reply, reply, state}
+  end
+
   defp read_structure_ids(%{event: "add_link", source: source, target: target}) do
     extract_structure_ids([source, target])
   end
@@ -105,7 +121,7 @@ defmodule TdDd.Cache.StructureLoader do
       |> Map.take([:id, :external_id, :name])
 
     dsv
-    |> Map.take([:group, :name, :type, :metadata, :updated_at])
+    |> Map.take([:group, :name, :type, :metadata, :updated_at, :deleted_at])
     |> Map.put(:id, id)
     |> Map.put(:system, system)
     |> Map.put(:path, DataStructures.get_path(dsv))
