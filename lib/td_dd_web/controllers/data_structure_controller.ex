@@ -8,15 +8,12 @@ defmodule TdDdWeb.DataStructureController do
   alias Jason, as: JSON
   alias TdCache.TaxonomyCache
   alias TdDd.Audit.AuditSupport
-  alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
   alias TdDd.CSV.Download
   alias TdDd.DataStructures
   alias TdDd.DataStructures.BulkUpdate
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.Search
   alias TdDdWeb.SwaggerDefinitions
-
-  require Logger
 
   action_fallback(TdDdWeb.FallbackController)
 
@@ -32,50 +29,6 @@ defmodule TdDdWeb.DataStructureController do
   def index(conn, _params) do
     %{results: data_structures} = do_index(conn, %{}, 0, 10_000)
     render(conn, "index.json", data_structures: data_structures)
-  end
-
-  swagger_path :create do
-    description("Creates Data Structure")
-    produces("application/json")
-
-    parameters do
-      data_structure(:body, Schema.ref(:DataStructureCreate), "Data Structure create attrs")
-    end
-
-    response(201, "OK", Schema.ref(:DataStructureResponse))
-    response(400, "Client Error")
-    response(403, "Forbidden")
-    response(422, "Unprocessable Entity")
-  end
-
-  def create(conn, %{"data_structure" => attrs}) do
-    user = conn.assigns[:current_user]
-    names = TaxonomyCache.get_domain_name_to_id_map()
-    external_ids = TaxonomyCache.get_domain_external_id_to_id_map()
-
-    creation_params =
-      attrs
-      |> Map.put("last_change_by", get_current_user_id(conn))
-      |> Map.put("metadata", %{})
-      |> DataStructures.put_domain_id(names, external_ids)
-
-    with domain_id <- Map.get(creation_params, "domain_id"),
-         true <- can?(user, create_data_structure(domain_id)),
-         {:ok, %DataStructure{id: id}} <- DataStructures.create_data_structure(creation_params) do
-      AuditSupport.create_data_structure(conn, id, attrs)
-      data_structure = get_data_structure(id)
-
-      conn
-      |> put_status(:created)
-      |> put_resp_header(
-        "location",
-        Routes.data_structure_data_structure_version_path(conn, :show, id, "latest")
-      )
-      |> render("show.json", data_structure: data_structure)
-    else
-      false -> render_error(conn, :forbidden)
-      _error -> render_error(conn, :unprocessable_entity)
-    end
   end
 
   @lift_attrs [:class, :description, :metadata, :group, :name, :type, :deleted_at]
@@ -142,7 +95,7 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   def update(conn, %{"id" => id, "data_structure" => attrs}) do
-    user = conn.assigns[:current_user]
+    %{id: user_id} = user = conn.assigns[:current_user]
 
     data_structure_old = DataStructures.get_data_structure!(id)
 
@@ -155,19 +108,16 @@ defmodule TdDdWeb.DataStructureController do
     update_params =
       attrs
       |> check_confidential_field(manage_confidential_structures)
-      |> Map.put("last_change_by", get_current_user_id(conn))
+      |> Map.put("last_change_by", user_id)
       |> DataStructures.put_domain_id(names, external_ids)
 
-    with true <- can?(user, update_data_structure(data_structure_old)),
+    with {:can, true} <- {:can, can?(user, update_data_structure(data_structure_old))},
          {:ok, %DataStructure{} = data_structure} <-
-           DataStructures.update_data_structure(data_structure_old, update_params, reindex: true) do
+           DataStructures.update_data_structure(data_structure_old, update_params) do
       AuditSupport.update_data_structure(conn, data_structure_old, attrs)
 
       data_structure = get_data_structure(data_structure.id)
       do_render_data_structure(conn, user, data_structure)
-    else
-      false -> render_error(conn, :forbidden)
-      _error -> render_error(conn, :unprocessable_entity)
     end
   end
 
@@ -192,18 +142,11 @@ defmodule TdDdWeb.DataStructureController do
     user = conn.assigns[:current_user]
     data_structure = DataStructures.get_data_structure!(id)
 
-    with true <- can?(user, delete_data_structure(data_structure)),
+    with {:can, true} <- {:can, can?(user, delete_data_structure(data_structure))},
          {:ok, %DataStructure{}} <- DataStructures.delete_data_structure(data_structure) do
       AuditSupport.delete_data_structure(conn, id)
       send_resp(conn, :no_content, "")
-    else
-      false -> render_error(conn, :forbidden)
-      _error -> render_error(conn, :unprocessable_entity)
     end
-  end
-
-  defp get_current_user_id(conn) do
-    GuardianPlug.current_resource(conn).id
   end
 
   swagger_path :search do
@@ -267,41 +210,27 @@ defmodule TdDdWeb.DataStructureController do
 
     response(200, "OK", Schema.ref(:BulkUpdateResponse))
     response(403, "User is not authorized to perform this action")
-    response(422, "Error while bulk update")
+    response(422, "Error during bulk update")
   end
 
   def bulk_update(conn, %{
         "bulk_update_request" => %{
-          "update_attributes" => update_attributes,
-          "search_params" => search_params
+          "search_params" => search_params,
+          "update_attributes" => update_params
         }
       }) do
     user = conn.assigns[:current_user]
     permission = conn.assigns[:search_permission]
 
-    with true <- user.is_admin,
+    with {:can, true} <- {:can, user.is_admin},
          %{results: results} <- search_all_structures(user, permission, search_params),
-         {:ok, response} <- BulkUpdate.update_all(user, results, update_attributes) do
+         ids <- Enum.map(results, & &1.id),
+         {:ok, response} <- BulkUpdate.update_all(ids, update_params, user) do
       body = JSON.encode!(%{data: %{message: response}})
 
       conn
       |> put_resp_content_type("application/json", "utf-8")
-      |> send_resp(200, body)
-    else
-      false ->
-        render_error(conn, :forbidden)
-
-      {:error, error} ->
-        Logger.info("While updating data structures... #{inspect(error)}")
-
-        conn
-        |> put_status(:unprocessable_entity)
-        |> put_resp_content_type("application/json", "utf-8")
-        |> send_resp(422, JSON.encode!(%{error: error}))
-
-      error ->
-        Logger.info("Unexpected error while updating data structures... #{inspect(error)}")
-        render_error(conn, :unprocessable_entity)
+      |> send_resp(:ok, body)
     end
   end
 
@@ -317,11 +246,7 @@ defmodule TdDdWeb.DataStructureController do
     produces("application/json")
 
     parameters do
-      search(
-        :body,
-        Schema.ref(:DataStructureSearchRequest),
-        "Search query parameter"
-      )
+      search(:body, Schema.ref(:DataStructureSearchRequest), "Search query parameter")
     end
 
     response(200, "OK")
@@ -330,14 +255,8 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   def csv(conn, params) do
-    header_labels =
-      params
-      |> Map.get("header_labels", %{})
-
-    params =
-      params
-      |> Map.drop(["header_labels"])
-      |> Map.drop(["page", "size"])
+    header_labels = Map.get(params, "header_labels", %{})
+    params = Map.drop(params, ["header_labels", "page", "size"])
 
     permission = conn.assigns[:search_permission]
     user = conn.assigns[:current_user]
@@ -352,7 +271,7 @@ defmodule TdDdWeb.DataStructureController do
         conn
         |> put_resp_content_type("text/csv", "utf-8")
         |> put_resp_header("content-disposition", "attachment; filename=\"structures.zip\"")
-        |> send_resp(200, Download.to_csv(data_structures, header_labels))
+        |> send_resp(:ok, Download.to_csv(data_structures, header_labels))
     end
   end
 
@@ -360,8 +279,8 @@ defmodule TdDdWeb.DataStructureController do
     user = conn.assigns[:current_user]
     permission = conn.assigns[:search_permission]
 
-    page = search_params |> Map.get("page", page)
-    size = search_params |> Map.get("size", size)
+    page = Map.get(search_params, "page", page)
+    size = Map.get(search_params, "size", size)
 
     search_params
     |> Map.put(:without, ["deleted_at"])

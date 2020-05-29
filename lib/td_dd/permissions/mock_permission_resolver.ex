@@ -10,7 +10,6 @@ defmodule TdDd.Permissions.MockPermissionResolver do
 
   @role_permissions %{
     "admin" => [
-      :create_data_structure,
       :delete_data_structure,
       :update_data_structure,
       :view_data_structure
@@ -19,8 +18,7 @@ defmodule TdDd.Permissions.MockPermissionResolver do
       :view_data_structure
     ],
     "create" => [
-      :view_data_structure,
-      :create_data_structure
+      :view_data_structure
     ],
     "editor" => [
       :view_data_structure,

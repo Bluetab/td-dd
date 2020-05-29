@@ -6,7 +6,6 @@ defmodule TdDdWeb.SystemControllerTest do
   alias TdDd.DataStructures.PathCache
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Permissions.MockPermissionResolver
-  alias TdDd.Systems
   alias TdDd.Systems.System
   alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
@@ -29,13 +28,9 @@ defmodule TdDdWeb.SystemControllerTest do
     :ok
   end
 
-  def fixture(:system) do
-    {:ok, system} = Systems.create_system(@create_attrs)
-    system
-  end
-
   setup %{conn: conn} do
-    {:ok, conn: put_req_header(conn, "accept", "application/json")}
+    system = insert(:system)
+    {:ok, conn: put_req_header(conn, "accept", "application/json"), system: system}
   end
 
   @admin_user_name "app-admin"
@@ -43,84 +38,83 @@ defmodule TdDdWeb.SystemControllerTest do
   describe "index" do
     @tag authenticated_user: @admin_user_name
     test "lists all systems", %{conn: conn, swagger_schema: schema} do
-      conn = get(conn, Routes.system_path(conn, :index))
-      validate_resp_schema(conn, schema, "SystemsResponse")
-      assert json_response(conn, 200)["data"] == []
+      assert %{"data" => [_system]} =
+               conn
+               |> get(Routes.system_path(conn, :index))
+               |> validate_resp_schema(schema, "SystemsResponse")
+               |> json_response(:ok)
     end
   end
 
   describe "create system" do
     @tag authenticated_user: @admin_user_name
     test "renders system when data is valid", %{conn: conn, swagger_schema: schema} do
-      conn = post(conn, Routes.system_path(conn, :create), system: @create_attrs)
-      assert %{"id" => id} = json_response(conn, 201)["data"]
-      validate_resp_schema(conn, schema, "SystemResponse")
-
-      conn = get(conn, Routes.system_path(conn, :show, id))
-      validate_resp_schema(conn, schema, "SystemResponse")
-
-      assert %{
-               "id" => id,
-               "external_id" => "some external_id",
-               "name" => "some name",
-               "df_content" => nil
-             } == json_response(conn, 200)["data"]
+      assert %{"data" => %{"id" => id}} =
+               conn
+               |> post(Routes.system_path(conn, :create), system: @create_attrs)
+               |> validate_resp_schema(schema, "SystemResponse")
+               |> json_response(:created)
     end
 
     @tag authenticated_user: @admin_user_name
     test "renders errors when data is invalid", %{conn: conn} do
-      conn = post(conn, Routes.system_path(conn, :create), system: @invalid_attrs)
-      assert json_response(conn, 422)["errors"] != %{}
+      assert %{"errors" => errors} =
+               conn
+               |> post(Routes.system_path(conn, :create), system: @invalid_attrs)
+               |> json_response(:unprocessable_entity)
     end
   end
 
   describe "update system" do
-    setup [:create_system]
-
     @tag authenticated_user: @admin_user_name
     test "renders system when data is valid", %{
       conn: conn,
       swagger_schema: schema,
       system: %System{id: id} = system
     } do
-      conn = put(conn, Routes.system_path(conn, :update, system), system: @update_attrs)
-      assert %{"id" => ^id} = json_response(conn, 200)["data"]
-
-      conn = get(conn, Routes.system_path(conn, :show, id))
-      validate_resp_schema(conn, schema, "SystemResponse")
+      assert %{"data" => data} =
+               conn
+               |> put(Routes.system_path(conn, :update, system), system: @update_attrs)
+               |> validate_resp_schema(schema, "SystemResponse")
+               |> json_response(:ok)
 
       assert %{
-               "id" => id,
+               "id" => ^id,
                "external_id" => "some updated external_id",
                "name" => "some updated name",
                "df_content" => nil
-             } == json_response(conn, 200)["data"]
+             } = data
     end
 
     @tag authenticated_user: @admin_user_name
     test "renders errors when data is invalid", %{conn: conn, system: system} do
-      conn = put(conn, Routes.system_path(conn, :update, system), system: @invalid_attrs)
-      assert json_response(conn, 422)["errors"] != %{}
+      assert %{"errors" => errors} =
+               conn
+               |> put(Routes.system_path(conn, :update, system), system: @invalid_attrs)
+               |> json_response(:unprocessable_entity)
+
+      assert errors != %{}
     end
   end
 
   describe "delete system" do
-    setup [:create_system]
-
     @tag authenticated_user: @admin_user_name
     test "deletes chosen system", %{conn: conn, system: system} do
-      conn = delete(conn, Routes.system_path(conn, :delete, system))
-      assert response(conn, 204)
+      assert conn
+             |> delete(Routes.system_path(conn, :delete, system))
+             |> response(:no_content)
+    end
 
-      assert_error_sent(404, fn ->
-        get(conn, Routes.system_path(conn, :show, system))
-      end)
+    @tag authenticated_user: @admin_user_name
+    test "returns not_found if system does not exist", %{conn: conn} do
+      assert %{"errors" => _errors} =
+               conn
+               |> delete(Routes.system_path(conn, :delete, -1))
+               |> json_response(:not_found)
     end
   end
 
   describe "get system structures" do
-    setup [:create_system]
-
     @tag authenticated_user: @admin_user_name
     test "will filter structures by system", %{conn: conn, system: system} do
       ds = insert(:data_structure, system_id: system.id, external_id: "struc1")
@@ -130,12 +124,12 @@ defmodule TdDdWeb.SystemControllerTest do
       ds = insert(:data_structure, system_id: system2.id, external_id: "struc2")
       insert(:data_structure_version, data_structure_id: ds.id, name: ds.external_id)
 
-      conn = get(conn, Routes.system_data_structure_path(conn, :get_system_structures, system))
-      data = json_response(conn, 200)["data"]
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.system_data_structure_path(conn, :get_system_structures, system))
+               |> json_response(:ok)
 
-      assert length(data) == 1
-      [%{"name" => name}] = data
-      assert name == "struc1"
+      assert [%{"name" => "struc1"}] = data
     end
 
     @tag authenticated_user: @admin_user_name
@@ -154,12 +148,12 @@ defmodule TdDdWeb.SystemControllerTest do
         relation_type_id: relation_type_id
       )
 
-      conn = get(conn, Routes.system_data_structure_path(conn, :get_system_structures, system))
-      data = json_response(conn, 200)["data"]
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.system_data_structure_path(conn, :get_system_structures, system))
+               |> json_response(:ok)
 
-      assert length(data) == 1
-      [%{"name" => name}] = data
-      assert name == "parent"
+      assert [%{"name" => "parent"}] = data
     end
 
     @tag authenticated_user: @admin_user_name
@@ -183,8 +177,10 @@ defmodule TdDdWeb.SystemControllerTest do
 
       insert(:data_structure_version, data_structure_id: ds.id, version: 2)
 
-      conn = get(conn, Routes.system_data_structure_path(conn, :get_system_structures, system))
-      data = json_response(conn, 200)["data"]
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.system_data_structure_path(conn, :get_system_structures, system))
+               |> json_response(:ok)
 
       assert length(data) == 2
     end
@@ -192,8 +188,11 @@ defmodule TdDdWeb.SystemControllerTest do
     @tag authenticated_user: @admin_user_name
     test "will not break when structure has no versions", %{conn: conn, system: system} do
       insert(:data_structure, system_id: system.id, external_id: "parent")
-      conn = get(conn, Routes.system_data_structure_path(conn, :get_system_structures, system))
-      assert json_response(conn, 200)["data"] == []
+
+      assert %{"data" => []} =
+               conn
+               |> get(Routes.system_data_structure_path(conn, :get_system_structures, system))
+               |> json_response(:ok)
     end
 
     @tag authenticated_no_admin_user: "user"
@@ -203,8 +202,12 @@ defmodule TdDdWeb.SystemControllerTest do
       system: %{id: system_id} = system
     } do
       structure = create_data_structure_and_permissions(user_id, "no_perms", false, system_id)
-      conn = get(conn, Routes.system_data_structure_path(conn, :get_system_structures, system))
-      data = json_response(conn, 200)["data"]
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.system_data_structure_path(conn, :get_system_structures, system))
+               |> json_response(:ok)
+
       assert not Enum.any?(data, fn %{"id" => ds_id} -> ds_id == structure.id end)
     end
   end
@@ -239,10 +242,5 @@ defmodule TdDdWeb.SystemControllerTest do
     )
 
     data_structure
-  end
-
-  defp create_system(_) do
-    system = fixture(:system)
-    {:ok, system: system}
   end
 end

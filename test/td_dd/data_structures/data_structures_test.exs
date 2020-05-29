@@ -8,13 +8,25 @@ defmodule TdDd.DataStructuresTest do
 
   import TdDd.TestOperators
 
-  setup do
+  setup_all do
+    alias TdCache.TemplateCache
+    %{id: template_id, name: template_name} = template = build(:template)
+    {:ok, _} = TemplateCache.put(template)
+    on_exit(fn -> TemplateCache.delete(template_id) end)
+    [template_name: template_name]
+  end
+
+  setup %{template_name: template_name} do
     alias TdCache.{ConceptCache, LinkCache, StructureCache, SystemCache}
 
     concept = %{id: "LINKED_CONCEPT", name: "concept"}
     system = insert(:system, external_id: "test_system")
-    data_structure = insert(:data_structure, system_id: system.id)
-    data_structure_version = insert(:data_structure_version, data_structure_id: data_structure.id)
+    valid_content = %{"string" => "initial", "list" => "one"}
+    data_structure = insert(:data_structure, system_id: system.id, df_content: valid_content)
+
+    data_structure_version =
+      insert(:data_structure_version, data_structure_id: data_structure.id, type: template_name)
+
     {:ok, _} = ConceptCache.put(concept)
     {:ok, _} = SystemCache.put(system)
     {:ok, _} = StructureCache.put(data_structure)
@@ -43,18 +55,9 @@ defmodule TdDd.DataStructuresTest do
   end
 
   describe "data_structures" do
-    @valid_attrs %{
-      "description" => "some description",
-      "group" => "some group",
-      "last_change_by" => 42,
-      "name" => "some name",
-      "external_id" => "some external_id",
-      "metadata" => %{},
-      "system_id" => 1
-    }
     @update_attrs %{
       # description: "some updated description",
-      df_content: %{updated: "content"}
+      df_content: %{"string" => "changed", "list" => "two"}
     }
     @invalid_attrs %{
       description: nil,
@@ -123,34 +126,21 @@ defmodule TdDd.DataStructuresTest do
       assert_raise Ecto.NoResultsError, fn -> DataStructures.get_data_structure!(1) end
     end
 
-    test "create_data_structure/1 with valid data creates a data_structure" do
-      assert {:ok, %DataStructure{} = data_structure} =
-               DataStructures.create_data_structure(@valid_attrs)
-
-      assert data_structure.last_change_by == 42
-      assert data_structure.system.external_id == "System_ref"
-    end
-
-    test "create_data_structure/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = DataStructures.create_data_structure(@invalid_attrs)
-    end
-
     test "update_data_structure/2 with valid data updates the data_structure", %{
       data_structure: data_structure
     } do
-      assert {:ok, data_structure} =
+      assert {:ok, %DataStructure{} = data_structure} =
                DataStructures.update_data_structure(data_structure, @update_attrs)
 
       assert %DataStructure{} = data_structure
-      assert data_structure.df_content == %{updated: "content"}
+      assert %{"list" => "two", "string" => "changed"} = data_structure.df_content
     end
 
     test "delete_data_structure/1 deletes the data_structure", %{data_structure: data_structure} do
-      assert {:ok, %DataStructure{}} = DataStructures.delete_data_structure(data_structure)
+      assert {:ok, %DataStructure{} = data_structure} =
+               DataStructures.delete_data_structure(data_structure)
 
-      assert_raise Ecto.NoResultsError, fn ->
-        DataStructures.get_data_structure!(data_structure.id)
-      end
+      assert %{__meta__: %{state: :deleted}} = data_structure
     end
 
     test "find_data_structure/1 returns a data structure", %{data_structure: data_structure} do
@@ -253,7 +243,10 @@ defmodule TdDd.DataStructuresTest do
         relation_type_id: relation_type_id
       )
 
-      assert {:ok, %DataStructure{}} = DataStructures.delete_data_structure(ds1)
+      assert {:ok, %DataStructure{} = data_structure} =
+               DataStructures.delete_data_structure(ds1)
+
+      assert %{__meta__: %{state: :deleted}} = data_structure
 
       assert_raise Ecto.NoResultsError, fn ->
         DataStructures.get_data_structure!(ds1.id)
@@ -315,9 +308,11 @@ defmodule TdDd.DataStructuresTest do
     end
 
     test "get_data_structure_version!/2 excludes deleted children if structure is not deleted" do
+      %{id: system_id} = insert(:system)
+
       [dsv, child, deleted_child] =
         ["structure", "child", "deleted_child"]
-        |> Enum.map(&insert(:data_structure, external_id: &1))
+        |> Enum.map(&insert(:data_structure, external_id: &1, system_id: system_id))
         |> Enum.map(
           &insert(:data_structure_version, data_structure_id: &1.id, deleted_at: deleted_at(&1))
         )
@@ -520,9 +515,10 @@ defmodule TdDd.DataStructuresTest do
     end
 
     test "get_latest_version_by_external_id/2 obtains the latest version of a structure" do
+      %{id: system_id} = insert(:system)
       external_id = "get_latest_version_by_external_id/2"
       ts = DateTime.utc_now()
-      ds = insert(:data_structure, external_id: external_id)
+      ds = insert(:data_structure, external_id: external_id, system_id: system_id)
 
       insert(:data_structure_version, data_structure_id: ds.id, version: 0, deleted_at: ts)
       insert(:data_structure_version, data_structure_id: ds.id, version: 1)
@@ -567,17 +563,13 @@ defmodule TdDd.DataStructuresTest do
     @update_attrs %{value: %{"foo" => "bar"}}
     @invalid_attrs %{value: nil, data_structure_id: nil}
 
-    defp profile_fixture do
-      ds = insert(:data_structure)
-      attrs = Map.put(@valid_attrs, :data_structure_id, ds.id)
-      {:ok, structure} = DataStructures.create_profile(attrs)
-
-      structure
+    setup do
+      profile = insert(:profile, data_structure: build(:data_structure, system: build(:system)))
+      [profile: profile]
     end
 
-    test "get_profile!/1 gets the profile" do
-      profile = profile_fixture()
-      assert profile.id == DataStructures.get_profile!(profile.id).id
+    test "get_profile!/1 gets the profile", %{profile: %{id: id}} do
+      assert %{id: ^id} = DataStructures.get_profile!(id)
     end
 
     test "create_profile/1 with valid attrs creates the profile" do
@@ -595,9 +587,7 @@ defmodule TdDd.DataStructuresTest do
       assert {:error, %Ecto.Changeset{}} = DataStructures.create_profile(@invalid_attrs)
     end
 
-    test "update_profile/1 with valid attrs updates the profile" do
-      profile = profile_fixture()
-
+    test "update_profile/1 with valid attrs updates the profile", %{profile: profile} do
       assert {:ok, %Profile{value: value}} = DataStructures.update_profile(profile, @update_attrs)
       assert @update_attrs.value == value
     end

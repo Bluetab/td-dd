@@ -6,9 +6,9 @@ defmodule TdDd.DataStructures do
   import Ecto.Query, warn: false
 
   alias Ecto.Association.NotLoaded
+  alias Ecto.Multi
   alias TdCache.LinkCache
   alias TdCache.TaxonomyCache
-  alias TdCache.TemplateCache
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
@@ -17,9 +17,6 @@ defmodule TdDd.DataStructures do
   alias TdDd.Lineage.GraphData
   alias TdDd.Repo
   alias TdDd.Search.IndexWorker
-  alias TdDd.Utils.CollectionUtils
-  alias TdDfLib.Format
-  alias TdDfLib.Validation
 
   @doc """
   Returns the list of data_structures.
@@ -30,43 +27,24 @@ defmodule TdDd.DataStructures do
       [%DataStructure{}, ...]
 
   """
-  def list_data_structures(params \\ %{}, options \\ []) do
-    filter = build_filter(DataStructure, params)
+  def list_data_structures(clauses \\ %{}, options \\ []) do
+    clauses
+    |> Enum.reduce(DataStructure, fn
+      {:external_id, external_ids}, q when is_list(external_ids) ->
+        where(q, [ds], ds.external_id in ^external_ids)
 
-    DataStructure
-    |> preload([ds], [:system])
-    |> where([ds], ^filter)
+      {:external_id, external_id}, q ->
+        where(q, [ds], ds.external_id == ^external_id)
+
+      {:domain_id, domain_id}, q ->
+        where(q, [ds], ds.domain_id == ^domain_id)
+
+      {:id, {:in, ids}}, q ->
+        where(q, [ds], ds.id in ^ids)
+    end)
+    |> preload(:system)
     |> Repo.all()
     |> Enum.map(&enrich(&1, options))
-  end
-
-  def build_filter(schema, params) do
-    params = CollectionUtils.atomize_keys(params)
-    fields = schema.__schema__(:fields)
-    dynamic = true
-
-    Enum.reduce(Map.keys(params), dynamic, fn key, acc ->
-      case Enum.member?(fields, key) do
-        true -> add_filter(key, params[key], acc)
-        false -> acc
-      end
-    end)
-  end
-
-  defp add_filter(key, value, acc) do
-    cond do
-      is_list(value) and value == [] ->
-        acc
-
-      is_list(value) ->
-        dynamic([ds], field(ds, ^key) in ^value and ^acc)
-
-      is_nil(value) ->
-        dynamic([ds], is_nil(field(ds, ^key)) and ^acc)
-
-      value ->
-        dynamic([ds], field(ds, ^key) == ^value and ^acc)
-    end
   end
 
   @doc """
@@ -397,46 +375,6 @@ defmodule TdDd.DataStructures do
   end
 
   @doc """
-  Creates a data_structure.
-
-  ## Examples
-
-      iex> create_data_structure(%{field: value})
-      {:ok, %DataStructure{}}
-
-      iex> create_data_structure(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_data_structure(attrs \\ %{}) do
-    {dsv_attrs, ds_attrs} =
-      Map.split(attrs, ["class", "description", "metadata", "group", "name", "type", "version"])
-
-    Repo.transaction(fn ->
-      with {:ok, data_structure} <- insert_data_structure(ds_attrs),
-           {:ok, _dsv} <- insert_data_structure_version(data_structure, dsv_attrs) do
-        IndexWorker.reindex(data_structure.id)
-        Repo.preload(data_structure, :system)
-      else
-        {:error, e} -> Repo.rollback(e)
-        e -> Repo.rollback(e)
-      end
-    end)
-  end
-
-  defp insert_data_structure(attrs) do
-    %DataStructure{}
-    |> DataStructure.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  defp insert_data_structure_version(%DataStructure{id: data_structure_id}, attrs) do
-    %DataStructureVersion{data_structure_id: data_structure_id, version: 0}
-    |> DataStructureVersion.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  @doc """
   Updates a data_structure.
 
   ## Examples
@@ -448,66 +386,28 @@ defmodule TdDd.DataStructures do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_data_structure(data_structure, attrs, opts \\ [])
+  def update_data_structure(data_structure, attrs)
 
-  def update_data_structure(
-        %DataStructure{} = data_structure,
-        %{"df_content" => content} = attrs,
-        opts
-      )
-      when not is_nil(content) do
-    %{type: type} = get_latest_version(data_structure)
+  def update_data_structure(%DataStructure{} = data_structure, params) do
+    changeset = DataStructure.update_changeset(data_structure, params)
 
-    case TemplateCache.get_by_name!(type) do
-      %{:content => content_schema} ->
-        content_schema = Format.flatten_content_fields(content_schema)
+    Multi.new()
+    |> Multi.update(:data_structure, changeset)
+    |> Repo.transaction()
+    |> on_update()
+  end
 
-        attrs =
-          data_structure
-          |> add_no_updated_fields(attrs, opts[:bulk])
+  defp on_update({:ok, %{} = res}) do
+    with %{data_structure: %{id: id}} <- res do
+      IndexWorker.reindex(id)
+    end
 
-        content_changeset =
-          Validation.build_changeset(Map.get(attrs, "df_content"), content_schema)
-
-        case content_changeset.valid? do
-          false -> {:error, content_changeset}
-          _ -> do_update_data_structure(data_structure, attrs, opts)
-        end
-
-      _ ->
-        {:error, "Invalid template"}
+    with %{data_structure: data_structure} <- res do
+      {:ok, data_structure}
     end
   end
 
-  def update_data_structure(%DataStructure{} = data_structure, attrs, opts) do
-    do_update_data_structure(data_structure, attrs, opts)
-  end
-
-  defp do_update_data_structure(%DataStructure{} = data_structure, attrs, opts) do
-    data_structure
-    |> DataStructure.update_changeset(attrs)
-    |> Repo.update()
-    |> reindex(opts[:reindex])
-  end
-
-  defp reindex({:ok, %{id: id}} = result, true) do
-    IndexWorker.reindex(id)
-    result
-  end
-
-  defp reindex(result, _), do: result
-
-  defp add_no_updated_fields(%DataStructure{:df_content => nil} = _data_structure, attrs, true),
-    do: attrs
-
-  defp add_no_updated_fields(data_structure, attrs, true) do
-    new_content =
-      Map.merge(Map.get(attrs, "df_content"), data_structure.df_content, fn _k, v1, _v2 -> v1 end)
-
-    Map.put(attrs, "df_content", new_content)
-  end
-
-  defp add_no_updated_fields(_data_structure, attrs, _), do: attrs
+  defp on_update(res), do: res
 
   @doc """
   Deletes a DataStructure.
@@ -522,23 +422,33 @@ defmodule TdDd.DataStructures do
 
   """
   def delete_data_structure(%DataStructure{} = data_structure) do
-    data_structure = Repo.preload(data_structure, :versions)
+    Multi.new()
+    |> Multi.run(:delete_versions, fn _, _ ->
+      {:ok, delete_data_structure_versions(data_structure)}
+    end)
+    |> Multi.delete(:data_structure, data_structure)
+    |> Repo.transaction()
+    |> on_delete()
+  end
 
-    result = Repo.delete(data_structure)
+  defp delete_data_structure_versions(%DataStructure{id: data_structure_id}) do
+    DataStructureVersion
+    |> where([dsv], dsv.data_structure_id == ^data_structure_id)
+    |> select([dsv], dsv.id)
+    |> Repo.delete_all()
+  end
 
-    case result do
-      {:ok, _} ->
-        data_structure
-        |> Map.get(:versions)
-        |> Enum.map(& &1.id)
-        |> IndexWorker.delete()
+  defp on_delete({:ok, %{} = res}) do
+    with %{delete_versions: {_count, dsv_ids}} <- res do
+      IndexWorker.delete(dsv_ids)
+    end
 
-        result
-
-      _ ->
-        result
+    with %{data_structure: data_structure} <- res do
+      {:ok, data_structure}
     end
   end
+
+  defp on_delete(res), do: res
 
   def get_latest_version(target, options \\ [])
 

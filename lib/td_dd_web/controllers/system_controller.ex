@@ -2,6 +2,8 @@ defmodule TdDdWeb.SystemController do
   use TdDdWeb, :controller
   use PhoenixSwagger
 
+  import Canada, only: [can?: 2]
+
   alias TdDd.Audit.AuditSupport
   alias TdDd.Systems
   alias TdDd.Systems.System
@@ -37,12 +39,13 @@ defmodule TdDdWeb.SystemController do
 
     response(201, "OK", Schema.ref(:SystemResponse))
     response(403, "Forbidden")
-    response(404, "Not Found")
     response(422, "Unprocessable Entity")
   end
 
-  def create(conn, %{"system" => system_params}) do
-    with {:ok, %System{} = system} <- Systems.create_system(system_params) do
+  def create(conn, %{"system" => params}) do
+    with user <- conn.assigns[:current_user],
+         {:can, true} <- {:can, can?(user, create(System))},
+         {:ok, %System{} = system} <- Systems.create_system(params) do
       AuditSupport.system_created(conn, system)
 
       conn
@@ -66,8 +69,9 @@ defmodule TdDdWeb.SystemController do
   end
 
   def show(conn, %{"id" => id}) do
-    system = Systems.get_system!(id)
-    render(conn, "show.json", system: system)
+    with {:ok, system} <- Systems.get_system(id) do
+      render(conn, "show.json", system: system)
+    end
   end
 
   swagger_path :update do
@@ -84,12 +88,13 @@ defmodule TdDdWeb.SystemController do
     response(422, "Unprocessable Entity")
   end
 
-  def update(conn, %{"id" => id, "system" => system_params}) do
-    old_system = Systems.get_system!(id)
-
-    with {:ok, %System{} = system} <- Systems.update_system(old_system, system_params) do
-      AuditSupport.system_updated(conn, old_system, system)
-      render(conn, "show.json", system: system)
+  def update(conn, %{"id" => id, "system" => params}) do
+    with user <- conn.assigns[:current_user],
+         {:ok, system} <- Systems.get_system(id),
+         {:can, true} <- {:can, can?(user, update(system))},
+         {:ok, %System{} = updated_system} <- Systems.update_system(system, params) do
+      AuditSupport.system_updated(conn, system, system)
+      render(conn, "show.json", system: updated_system)
     end
   end
 
@@ -107,9 +112,10 @@ defmodule TdDdWeb.SystemController do
   end
 
   def delete(conn, %{"id" => id}) do
-    system = Systems.get_system!(id)
-
-    with {:ok, %System{}} <- Systems.delete_system(system) do
+    with user <- conn.assigns[:current_user],
+         {:ok, system} <- Systems.get_system(id),
+         {:can, true} <- {:can, can?(user, delete(system))},
+         {:ok, _multi} <- Systems.delete_system(system) do
       send_resp(conn, :no_content, "")
     end
   end

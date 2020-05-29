@@ -4,72 +4,69 @@ defmodule TdDd.SystemsTest do
   alias TdDd.Systems
   alias TdDd.Systems.System
 
-  describe "systems" do
-    @valid_attrs %{external_id: "some external_id", name: "some name"}
-    @update_attrs %{external_id: "some updated external_id", name: "some updated name"}
-    @invalid_attrs %{external_id: nil, name: nil}
+  setup do
+    [system: insert(:system)]
+  end
 
-    def system_fixture(attrs \\ %{}) do
-      {:ok, system} =
-        attrs
-        |> Enum.into(@valid_attrs)
-        |> Systems.create_system()
-
-      system
-    end
-
-    test "list_systems/0 returns all systems" do
-      system = system_fixture()
+  describe "list_systems/0" do
+    test "returns all systems", %{system: system} do
       assert Systems.list_systems() == [system]
     end
+  end
 
-    test "get_system!/1 returns the system with given id" do
-      system = system_fixture()
-      assert Systems.get_system!(system.id) == system
+  describe "get_system/1" do
+    test "returns the system with given id", %{system: system} do
+      assert Systems.get_system(system.id) == {:ok, system}
     end
 
-    test "create_system/1 with valid data creates a system" do
-      assert {:ok, %System{} = system} = Systems.create_system(@valid_attrs)
-      assert system.external_id == "some external_id"
-      assert system.name == "some name"
+    test "returns error if system is not found" do
+      assert Systems.get_system(-1) == {:error, :not_found}
+    end
+  end
+
+  describe "create_system/2" do
+    test "creates a system with valid data" do
+      %{name: name, external_id: external_id} =
+        params = :system |> build() |> Map.take([:external_id, :name])
+
+      assert {:ok, %System{} = system} = Systems.create_system(params)
+      assert %{external_id: ^external_id, name: ^name} = system
     end
 
-    test "create_system/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Systems.create_system(@invalid_attrs)
+    test "returns error changeset with invalid data" do
+      assert {:error, %Ecto.Changeset{}} = Systems.create_system(%{})
+    end
+  end
+
+  describe "update_system/3" do
+    test "updates the system with valid data", %{system: system} do
+      %{name: name, external_id: external_id} =
+        params = :system |> build() |> Map.take([:external_id, :name])
+
+      assert {:ok, %System{} = system} = Systems.update_system(system, params)
+      assert %{external_id: ^external_id, name: ^name} = system
     end
 
-    test "update_system/2 with valid data updates the system" do
-      system = system_fixture()
-      assert {:ok, %System{} = system} = Systems.update_system(system, @update_attrs)
-      assert system.external_id == "some updated external_id"
-      assert system.name == "some updated name"
+    test "returns error changeset with invalid data", %{system: system} do
+      assert {:error, %Ecto.Changeset{}} =
+               Systems.update_system(system, %{name: nil})
+    end
+  end
+
+  describe "delete_system/1" do
+    test "deletes the system", %{system: system} do
+      assert {:ok, %System{} = system} = Systems.delete_system(system)
+      assert %{__meta__: %{state: :deleted}} = system
+    end
+  end
+
+  describe "get_by/1" do
+    test "gets the system by external_id", %{system: system} do
+      assert Systems.get_by(external_id: system.external_id) == system
     end
 
-    test "update_system/2 with invalid data returns error changeset" do
-      system = system_fixture()
-      assert {:error, %Ecto.Changeset{}} = Systems.update_system(system, @invalid_attrs)
-      assert system == Systems.get_system!(system.id)
-    end
-
-    test "delete_system/1 deletes the system" do
-      system = system_fixture()
-      assert {:ok, %System{}} = Systems.delete_system(system)
-      assert_raise Ecto.NoResultsError, fn -> Systems.get_system!(system.id) end
-    end
-
-    test "get_system_by_external_id/1 gets the system" do
-      system = system_fixture()
-      assert Systems.get_system_by_external_id(system.external_id) == system
-    end
-
-    test "get_system_by_name/1 gets the system" do
-      system = system_fixture()
-      assert Systems.get_system_by_name(system.name) == system
-    end
-
-    test "change_system/1 returns a system changeset" do
-      system = system_fixture()
-      assert %Ecto.Changeset{} = Systems.change_system(system)
+    test "gets the system by name", %{system: system} do
+      assert Systems.get_by(name: system.name) == system
     end
   end
 end

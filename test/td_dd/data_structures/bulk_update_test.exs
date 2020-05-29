@@ -1,203 +1,125 @@
 defmodule TdDd.DataStructures.BulkUpdateTest do
   use TdDd.DataCase
 
+  import TdDd.TestOperators
+
   alias TdCache.TemplateCache
-  alias TdDd.DataStructures
+  alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.BulkUpdate
+  alias TdDd.Repo
   alias TdDdWeb.ApiServices.MockTdAuthService
+
+  @valid_content %{"string" => "present", "list" => "one"}
+  @valid_params %{"df_content" => @valid_content}
 
   setup_all do
     start_supervised(MockTdAuthService)
-    :ok
+
+    %{id: template_id, name: type} = template = build(:template)
+    TemplateCache.put(template, publish: false)
+
+    on_exit(fn ->
+      TemplateCache.delete(template_id)
+    end)
+
+    [type: type]
   end
 
-  describe "data_structures_bulk_update" do
-    test "update_all/3 update all data structure with valid data" do
+  describe "update_all/3" do
+    test "update alls data structure with valid data", %{type: type} do
       user = build(:user)
-      insert(:system, id: 1)
 
-      structure1 = insert(:data_structure, external_id: "Structure1")
-      _structure_version1 = insert(:data_structure_version, data_structure_id: structure1.id)
-      structure2 = insert(:data_structure, external_id: "Structure2")
-      _structure_version2 = insert(:data_structure_version, data_structure_id: structure2.id)
+      ids =
+        1..10
+        |> Enum.map(fn _ -> valid_structure(type) end)
+        |> Enum.map(& &1.data_structure_id)
 
-      TemplateCache.put(%{
-        name: "Table",
-        content: [%{
-          "name" => "group",
-          "fields" => [
-            %{
-              "name" => "Field1",
-              "type" => "string",
-              "group" => "Multiple Group",
-              "label" => "Multiple 1",
-              "values" => nil,
-              "cardinality" => "1"
-            },
-            %{
-              "name" => "Field2",
-              "type" => "string",
-              "group" => "Multiple Group",
-              "label" => "Multiple 1",
-              "values" => nil,
-              "cardinality" => "1"
-            }
-          ]
-        }],
-        scope: "test",
-        label: "template_label",
-        id: "999",
-        updated_at: DateTime.utc_now()
-      })
+      assert {:ok, updated_ids} = BulkUpdate.update_all(ids, @valid_params, user)
+      assert ids <|> updated_ids
 
-      params = %{
-        "df_content" => %{
-          "Field1" => "hola soy field 1",
-          "Field2" => "hola soy field 2"
-        }
-      }
-
-      assert {:ok, ds_ids} = BulkUpdate.update_all(user, [structure1, structure2], params)
-      assert length(ds_ids) == 2
-
-      assert DataStructures.get_latest_version(structure1.id).data_structure.df_content == %{
-               "Field1" => "hola soy field 1",
-               "Field2" => "hola soy field 2"
-             }
-
-      assert DataStructures.get_latest_version(structure2.id).data_structure.df_content == %{
-               "Field1" => "hola soy field 1",
-               "Field2" => "hola soy field 2"
-             }
+      assert ids
+             |> Enum.map(&Repo.get(DataStructure, &1))
+             |> Enum.map(& &1.df_content)
+             |> Enum.all?(&(&1 == @valid_content))
     end
 
-    test "update_all/3 update all data structure with invalid data: structure type -> Schema" do
+    test "ignores unchanged data structures", %{type: type} do
+      %{id: user_id} = user = build(:user)
+
+      ids =
+        1..10
+        |> Enum.map(fn
+          n when n > 5 -> valid_structure(type, df_content: @valid_content, last_change_by: 99)
+          _ -> valid_structure(type)
+        end)
+        |> Enum.map(& &1.data_structure_id)
+
+      assert {:ok, updated_ids} = BulkUpdate.update_all(ids, @valid_params, user)
+
+      structures = Enum.map(ids, &Repo.get(DataStructure, &1))
+
+      assert structures
+             |> Enum.map(& &1.df_content)
+             |> Enum.all?(&(&1 == @valid_content))
+
+      assert %{99 => unchanged_ids, ^user_id => changed_ids} =
+               Enum.group_by(structures, & &1.last_change_by, & &1.id)
+
+      assert Enum.count(unchanged_ids) == 5
+      assert Enum.count(changed_ids) == 5
+      assert changed_ids <|> updated_ids
+    end
+
+    test "returns an error if a structure has no template", %{type: type} do
       user = build(:user)
-      insert(:system, id: 1)
 
-      structure1 = insert(:data_structure, external_id: "Structure1")
-      _structure_version1 = insert(:data_structure_version, data_structure_id: structure1.id)
-      structure_no_table = insert(:data_structure, external_id: "Structure3")
+      ids =
+        1..10
+        |> Enum.map(fn
+          9 -> invalid_structure()
+          _ -> valid_structure(type)
+        end)
+        |> Enum.map(& &1.data_structure_id)
 
-      _structure_version_no_table =
-        insert(:data_structure_version_no_table, data_structure_id: structure_no_table.id)
+      assert {:error, changeset} = BulkUpdate.update_all(ids, @valid_params, user)
+      assert %{data: data, errors: errors} = changeset
+      assert %{external_id: "the bad one"} = data
+      assert {"invalid template", _} = errors[:df_content]
+    end
 
-      TemplateCache.put(%{
-        name: "Table",
-        content: [%{
-          "name" => "group",
-          "fields" => [
-            %{
-              "name" => "Field1",
-              "type" => "string",
-              "group" => "Multiple Group",
-              "label" => "Multiple 1",
-              "values" => nil,
-              "cardinality" => "1"
-            },
-            %{
-              "name" => "Field2",
-              "type" => "string",
-              "group" => "Multiple Group",
-              "label" => "Multiple 1",
-              "values" => nil,
-              "cardinality" => "1"
-            }
-          ]
-        }],
-        scope: "test",
-        label: "template_label",
-        id: "999",
-        updated_at: DateTime.utc_now()
-      })
+    test "only updates specified fields", %{type: type} do
+      user = build(:user)
 
-      params = %{
-        "df_content" => %{
-          "Field1" => "hola soy field 1",
-          "Field2" => "hola soy field 2"
-        }
-      }
+      initial_content = Map.replace!(@valid_content, "string", "initial")
 
-      assert {:error, "Invalid template"} =
-               BulkUpdate.update_all(user, [structure1, structure_no_table], params)
+      ids =
+        1..10
+        |> Enum.map(fn _ -> valid_structure(type, df_content: initial_content) end)
+        |> Enum.map(& &1.data_structure_id)
+
+      assert {:ok, updated_ids} =
+               BulkUpdate.update_all(ids, %{"df_content" => %{"string" => "updated"}}, user)
+
+      assert ids <|> updated_ids
+
+      assert ids
+             |> Enum.map(&Repo.get(DataStructure, &1))
+             |> Enum.map(& &1.df_content)
+             |> Enum.all?(&(&1 == %{"string" => "updated", "list" => initial_content["list"]}))
     end
   end
 
-  test "update_all/3 update only updated fields" do
-    user = build(:user)
-    insert(:system, id: 1)
+  defp invalid_structure do
+    insert(:data_structure_version,
+      type: "missing_type",
+      data_structure: build(:data_structure, external_id: "the bad one")
+    )
+  end
 
-    structure1 = insert(:data_structure, external_id: "Structure1")
-    _structure_version1 = insert(:data_structure_version, data_structure_id: structure1.id)
-    structure2 = insert(:data_structure, external_id: "Structure2")
-    _structure_version2 = insert(:data_structure_version, data_structure_id: structure2.id)
-
-    TemplateCache.put(%{
-      name: "Table",
-      content: [%{
-        "name" => "group",
-        "fields" => [
-          %{
-            "name" => "Field1",
-            "type" => "string",
-            "group" => "Multiple Group",
-            "label" => "Multiple 1",
-            "values" => nil,
-            "cardinality" => "1"
-          },
-          %{
-            "name" => "Field2",
-            "type" => "string",
-            "group" => "Multiple Group",
-            "label" => "Multiple 1",
-            "values" => nil,
-            "cardinality" => "1"
-          }
-        ]
-      }],
-      scope: "test",
-      label: "template_label",
-      id: "999",
-      updated_at: DateTime.utc_now()
-    })
-
-    params = %{
-      "df_content" => %{
-        "Field1" => "hola soy field 1",
-        "Field2" => "hola soy field 2"
-      }
-    }
-
-    assert {:ok, ds_ids} = BulkUpdate.update_all(user, [structure1, structure2], params)
-    assert length(ds_ids) == 2
-
-    assert DataStructures.get_latest_version(structure1.id).data_structure.df_content == %{
-             "Field1" => "hola soy field 1",
-             "Field2" => "hola soy field 2"
-           }
-
-    assert DataStructures.get_latest_version(structure2.id).data_structure.df_content == %{
-             "Field1" => "hola soy field 1",
-             "Field2" => "hola soy field 2"
-           }
-
-    params = %{
-      "df_content" => %{
-        "Field1" => "hola solo actualiza field 1"
-      }
-    }
-
-    assert {:ok, ds_ids} = BulkUpdate.update_all(user, [structure1, structure2], params)
-    assert length(ds_ids) == 2
-
-    assert DataStructures.get_latest_version(structure1.id).data_structure.df_content == %{
-             "Field1" => "hola solo actualiza field 1",
-             "Field2" => "hola soy field 2"
-           }
-
-    assert DataStructures.get_latest_version(structure2.id).data_structure.df_content == %{
-             "Field1" => "hola solo actualiza field 1",
-             "Field2" => "hola soy field 2"
-           }
+  defp valid_structure(type, ds_opts \\ []) do
+    insert(:data_structure_version,
+      type: type,
+      data_structure: build(:data_structure, ds_opts)
+    )
   end
 end

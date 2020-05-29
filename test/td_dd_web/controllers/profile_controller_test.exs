@@ -5,11 +5,9 @@ defmodule TdDdWeb.ProfileControllerTest do
   alias TdDd.DataStructures
   alias TdDd.Loader.LoaderWorker
   alias TdDd.Permissions.MockPermissionResolver
-  alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
 
   setup_all do
-    start_supervised(MockTdAuditService)
     start_supervised(MockTdAuthService)
     start_supervised(MockPermissionResolver)
     start_supervised(LoaderWorker)

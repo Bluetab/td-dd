@@ -206,23 +206,6 @@ defmodule TdDdWeb.SwaggerDefinitions do
             type: "Csv"
           })
         end,
-      DataStructureCreate:
-        swagger_schema do
-          properties do
-            data_structure(
-              Schema.new do
-                properties do
-                  system_id(:integer, "System id", required: true)
-                  group(:string, "Data Structure group", required: true)
-                  name(:string, "Data Structure name", required: true)
-                  description(:string, "Data Structure description")
-                  type(:string, "Data Structure type (csv, table...)")
-                  confidential(:boolean, "Data Structure confidentiality")
-                end
-              end
-            )
-          end
-        end,
       DataStructureUpdate:
         swagger_schema do
           properties do
