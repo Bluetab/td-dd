@@ -107,6 +107,27 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
              |> Enum.map(& &1.df_content)
              |> Enum.all?(&(&1 == %{"string" => "updated", "list" => initial_content["list"]}))
     end
+
+    test "ignores empty fields", %{type: type} do
+      user = build(:user)
+
+      initial_content = Map.replace!(@valid_content, "string", "initial")
+
+      ids =
+        1..10
+        |> Enum.map(fn _ -> valid_structure(type, df_content: initial_content) end)
+        |> Enum.map(& &1.data_structure_id)
+
+      assert {:ok, updated_ids} =
+               BulkUpdate.update_all(ids, %{"df_content" => %{"string" => "", "list" => "two"}}, user)
+
+      assert ids <|> updated_ids
+
+      assert ids
+             |> Enum.map(&Repo.get(DataStructure, &1))
+             |> Enum.map(& &1.df_content)
+             |> Enum.all?(&(&1 == %{"string" => initial_content["string"], "list" => "two"}))
+    end
   end
 
   defp invalid_structure do
