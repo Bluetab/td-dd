@@ -1,4 +1,4 @@
-defmodule TdDd.DataStructures.Content do
+defmodule TdDd.DataStructures.Validation do
   @moduledoc """
   Provides functions for merging and validating data structure dynamic content.
   """
@@ -7,16 +7,6 @@ defmodule TdDd.DataStructures.Content do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDfLib.Validation
-
-  def merge(content, current_content)
-
-  def merge(nil = _content, _current_content), do: nil
-
-  def merge(content, nil = _current_content), do: content
-
-  def merge(%{} = content, %{} = current_content) do
-    Map.merge(content, current_content, fn _field, new_val, _current_val -> new_val end)
-  end
 
   @doc """
   Returns a validator function that can be used by

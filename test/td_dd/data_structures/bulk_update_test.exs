@@ -4,8 +4,8 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
   import TdDd.TestOperators
 
   alias TdCache.TemplateCache
-  alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.BulkUpdate
+  alias TdDd.DataStructures.DataStructure
   alias TdDd.Repo
   alias TdDdWeb.ApiServices.MockTdAuthService
 

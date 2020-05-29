@@ -7,11 +7,12 @@ defmodule TdDd.DataStructures.DataStructure do
 
   import Ecto.Changeset
 
-  alias TdDd.DataStructures.Content
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Profile
   alias TdDd.DataStructures.StructureMetadata
+  alias TdDd.DataStructures.Validation
   alias TdDd.Systems.System
+  alias TdDfLib.Content
 
   @audit_fields [:last_change_by]
 
@@ -49,14 +50,14 @@ defmodule TdDd.DataStructures.DataStructure do
       :last_change_by,
       :system_id
     ])
-    |> validate_change(:df_content, Content.validator(data_structure))
+    |> validate_change(:df_content, Validation.validator(data_structure))
   end
 
   def update_changeset(%__MODULE__{} = data_structure, params) do
     data_structure
     |> cast(params, [:confidential, :df_content])
     |> put_audit(params)
-    |> validate_change(:df_content, Content.validator(data_structure))
+    |> validate_change(:df_content, Validation.validator(data_structure))
   end
 
   def merge_changeset(%__MODULE__{df_content: current_content} = data_structure, params) do
@@ -64,7 +65,7 @@ defmodule TdDd.DataStructures.DataStructure do
     |> cast(params, [:confidential, :df_content])
     |> update_change(:df_content, &Content.merge(&1, current_content))
     |> put_audit(params)
-    |> validate_change(:df_content, Content.validator(data_structure))
+    |> validate_change(:df_content, Validation.validator(data_structure))
   end
 
   defp put_audit(%{changes: changes} = changeset, _params)
