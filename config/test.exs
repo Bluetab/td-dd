@@ -23,6 +23,6 @@ config :td_dd, :audit_service, api_service: TdDdWeb.ApiServices.MockTdAuditServi
 
 config :td_dd, TdDd.Search.Cluster, api: TdDd.ElasticsearchMock
 
-config :td_cache, redis_host: "redis", port: 6380
+config :td_cache, redis_host: "redis"
 
 config :td_cache, :event_stream, streams: []

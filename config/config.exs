@@ -85,4 +85,4 @@ import_config "elastic.exs"
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"
 
-config :td_dd, import_dir: "/home/bluetab/Documentos/SAS/Temp"
+
