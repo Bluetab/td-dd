@@ -30,16 +30,15 @@ defmodule TdDdWeb.GroupController do
   def index(conn, %{"system_id" => system_external_id}) do
     user = GuardianPlug.current_resource(conn)
 
-    with true <- Map.get(user, :is_admin, false),
-         system when not is_nil(system) <- Systems.get_system_by_external_id(system_external_id) do
+    with {:can, true} <- {:can, Map.get(user, :is_admin)},
+         system when not is_nil(system) <- Systems.get_by(external_id: system_external_id) do
       groups = Groups.list_by_system(system_external_id)
 
       conn
       |> put_resp_content_type("application/json", "utf-8")
       |> send_resp(:ok, JSON.encode!(%{data: groups}))
     else
-      false -> render_error(conn, :forbidden)
-      nil -> render_error(conn, :not_found)
+      nil -> {:error, :not_found}
     end
   end
 
@@ -60,14 +59,12 @@ defmodule TdDdWeb.GroupController do
   def delete(conn, %{"system_id" => system_external_id, "id" => group}) do
     user = GuardianPlug.current_resource(conn)
 
-    with true <- Map.get(user, :is_admin, false),
-         system when not is_nil(system) <- Systems.get_system_by_external_id(system_external_id),
+    with {:can, true} <- {:can, Map.get(user, :is_admin)},
+         system when not is_nil(system) <- Systems.get_by(external_id: system_external_id),
          :ok <- Groups.delete(system_external_id, group) do
       send_resp(conn, :no_content, "")
     else
-      false -> render_error(conn, :forbidden)
-      nil -> render_error(conn, :not_found)
-      _error -> render_error(conn, :unprocessable_entity)
+      nil -> {:error, :not_found}
     end
   end
 end

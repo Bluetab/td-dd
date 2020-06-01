@@ -14,17 +14,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
   import Routes
 
-  @create_attrs %{
-    description: "some description",
-    external_id: "some external_id",
-    class: "some class",
-    group: "some group",
-    last_change_by: 42,
-    name: "some name",
-    type: "csv",
-    metadata: %{},
-    system_id: 1
-  }
   @update_attrs %{
     description: "some updated description",
     group: "some updated group",
@@ -32,14 +21,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     name: "some updated name",
     type: "table"
   }
-  @invalid_attrs %{
-    description: nil,
-    group: nil,
-    last_change_by: nil,
-    name: nil,
-    system: nil,
-    type: nil
-  }
+
   @default_template_attrs %{
     id: 0,
     label: "some label",
@@ -87,7 +69,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                |> json_response(:ok)
 
       assert Enum.count(children) == 2
-      assert Enum.all?(children, &Map.get(&1, "order") == 1)
+      assert Enum.all?(children, &(Map.get(&1, "order") == 1))
     end
 
     @tag authenticated_user: @admin_user_name
@@ -192,15 +174,15 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
     @tag authenticated_user: @admin_user_name
     test "search all data_structures", %{conn: conn} do
-      assert %{assigns: %{data_structure: %{versions: [dsv | _]}}} =
-               post(conn, data_structure_path(conn, :create), data_structure: @create_attrs)
+      %{name: name, data_structure: %{id: id, external_id: external_id}} =
+        insert(:data_structure_version)
 
-      assert %{"data" => [%{"name" => name}]} =
+      assert %{"data" => data} =
                conn
                |> get(data_structure_path(conn, :index))
                |> json_response(:ok)
 
-      assert name == dsv.name
+      assert [%{"id" => ^id, "name" => ^name, "external_id" => ^external_id}] = data
     end
   end
 
@@ -248,48 +230,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
                conn
                |> post(data_structure_path(conn, :search), %{"query" => "xyzz"})
                |> json_response(:ok)
-    end
-  end
-
-  describe "create data_structure" do
-    @tag authenticated_user: @admin_user_name
-    test "renders data_structure when data is valid", %{
-      conn: conn,
-      swagger_schema: schema,
-      system: system
-    } do
-      assert %{"data" => %{"id" => id}} =
-               conn
-               |> post(data_structure_path(conn, :create), data_structure: @create_attrs)
-               |> validate_resp_schema(schema, "DataStructureResponse")
-               |> json_response(:created)
-
-      assert %{"data" => data} =
-               conn
-               |> get(data_structure_data_structure_version_path(conn, :show, id, "latest"))
-               |> validate_resp_schema(schema, "DataStructureVersionResponse")
-               |> json_response(:ok)
-
-      assert data["data_structure"]["id"] == id
-      assert data["description"] == "some description"
-      assert data["data_structure"]["external_id"] == "some external_id"
-      assert data["class"] == "some class"
-      assert data["type"] == "csv"
-      assert data["group"] == "some group"
-      assert data["name"] == "some name"
-      assert data["system"]["id"] == system.id
-      assert data["system"]["name"] == system.name
-      assert data["data_structure"]["inserted_at"]
-    end
-
-    @tag authenticated_user: @admin_user_name
-    test "renders errors when data is invalid", %{conn: conn} do
-      assert %{"errors" => errors} =
-               conn
-               |> post(data_structure_path(conn, :create), data_structure: @invalid_attrs)
-               |> json_response(:unprocessable_entity)
-
-      assert errors != %{}
     end
   end
 
@@ -523,7 +463,9 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
     child_versions =
       child_structures
-      |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id, metadata: %{"order" => 1}))
+      |> Enum.map(
+        &insert(:data_structure_version, data_structure_id: &1.id, metadata: %{"order" => 1})
+      )
 
     %{id: relation_type_id} = RelationTypes.get_default()
 

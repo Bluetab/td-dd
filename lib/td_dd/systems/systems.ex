@@ -23,53 +23,40 @@ defmodule TdDd.Systems do
   @doc """
   Gets a single system.
 
-  Raises `Ecto.NoResultsError` if the System does not exist.
+  Returns the tuple `{:ok, system}` if the system exists, or `{:error,
+  :not_found}` if it doesn't.
 
   ## Examples
 
-      iex> get_system!(123)
-      %System{}
+      iex> get_system(123)
+      {:ok, %System{}}
 
-      iex> get_system!(456)
-      ** (Ecto.NoResultsError)
-
-  """
-  def get_system!(id), do: Repo.get!(System, id)
-
-  @doc """
-  Gets a single system by external_id.
-
-  ## Examples
-
-      iex> get_system_by_external_id(ref)
-      %System{}
-
-      iex> get_system_by_external_id(ref)
-      nil
+      iex> get_system(456)
+      {:error, :not_found}
 
   """
-  def get_system_by_external_id(external_id) do
-    System
-    |> where([sys], sys.external_id == ^external_id)
-    |> Repo.one()
+  def get_system(id) do
+    case Repo.get(System, id) do
+      nil -> {:error, :not_found}
+      system -> {:ok, system}
+    end
   end
 
   @doc """
-  Gets a single system by name.
+  Fetches a single system matching the specified clauses.
+  See `Repo.get_by/3`.
 
   ## Examples
 
-      iex> get_system_by_name(name)
+      iex> get_by(external_id: external_id)
       %System{}
 
-      iex> get_system_by_name(name)
+      iex> get_by(name: name)
       nil
 
   """
-  def get_system_by_name(name) do
-    System
-    |> where([sys], sys.name == ^name)
-    |> Repo.one()
+  def get_by(clauses) do
+    Repo.get_by(System, clauses)
   end
 
   @doc """

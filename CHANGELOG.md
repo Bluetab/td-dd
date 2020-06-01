@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- [TD-2636] Bulk update was replacing instead of merging dynamic content
+
 ### Added
 
 - [TD-2562] Endpoint `GET /api/data_structures/search/source_alias` to return

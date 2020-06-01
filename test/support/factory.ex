@@ -1,6 +1,7 @@
 defmodule TdDd.Factory do
   @moduledoc false
   use ExMachina.Ecto, repo: TdDd.Repo
+  use TdDfLib.TemplateFactory
 
   alias TdDd.Accounts.User
   alias TdDd.DataStructures.DataStructure
@@ -14,27 +15,28 @@ defmodule TdDd.Factory do
 
   def user_factory do
     %User{
-      id: 0,
-      user_name: "bufoncillo",
-      is_admin: false
+      id: sequence(:user_id, & &1),
+      user_name: sequence("user_name"),
+      # TODO: Revise all usages of build(:user), etc.
+      is_admin: true
     }
   end
 
-  def data_structure_factory do
-    external_id = "external_id #{random_id()}"
+  def data_structure_factory(attrs) do
+    attrs = default_assoc(attrs, :system_id, :system)
 
     %DataStructure{
-      last_change_by: 0,
-      system_id: 1,
-      versions: [],
       confidential: false,
-      external_id: external_id
+      external_id: sequence("ds_external_id"),
+      last_change_by: 0
     }
+    |> merge_attributes(attrs)
   end
 
-  def data_structure_version_factory do
+  def data_structure_version_factory(attrs) do
+    attrs = default_assoc(attrs, :data_structure_id, :data_structure)
+
     %DataStructureVersion{
-      deleted_at: nil,
       description: "some description",
       group: "some group",
       name: "some name",
@@ -42,18 +44,7 @@ defmodule TdDd.Factory do
       version: 0,
       type: "Table"
     }
-  end
-
-  def data_structure_version_no_table_factory do
-    %DataStructureVersion{
-      deleted_at: nil,
-      description: "some description",
-      group: "some group",
-      name: "some name",
-      metadata: %{"description" => "some description"},
-      version: 0,
-      type: "Schema"
-    }
+    |> merge_attributes(attrs)
   end
 
   def data_structure_relation_factory do
@@ -62,8 +53,8 @@ defmodule TdDd.Factory do
 
   def system_factory do
     %System{
-      name: "My system",
-      external_id: "System_ref"
+      name: sequence("system_name"),
+      external_id: sequence("system_external_id")
     }
   end
 
@@ -73,11 +64,11 @@ defmodule TdDd.Factory do
     }
   end
 
-  def profile_factory do
-    %Profile{
-      value: %{"foo" => "bar"},
-      data_structure: build(:data_structure)
-    }
+  def profile_factory(attrs) do
+    attrs = default_assoc(attrs, :data_structure_id, :data_structure)
+
+    %Profile{value: %{"foo" => "bar"}}
+    |> merge_attributes(attrs)
   end
 
   def structure_metadata_factory do
@@ -103,5 +94,11 @@ defmodule TdDd.Factory do
     %Units.Edge{type: "DEPENDS"}
   end
 
-  defp random_id, do: :rand.uniform(100_000_000)
+  defp default_assoc(attrs, id_key, key) do
+    if Enum.any?([key, id_key], &Map.has_key?(attrs, &1)) do
+      attrs
+    else
+      Map.put(attrs, key, build(key))
+    end
+  end
 end

@@ -17,12 +17,10 @@ defmodule TdDdWeb.MetadataControllerTest do
   alias TdDd.Loader.LoaderWorker
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDd.Search.MockIndexWorker
-  alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
 
   setup_all do
     start_supervised(MockIndexWorker)
-    start_supervised(MockTdAuditService)
     start_supervised(MockTdAuthService)
     start_supervised(MockPermissionResolver)
     start_supervised(LoaderWorker)

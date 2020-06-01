@@ -4,12 +4,10 @@ defmodule TdDdWeb.DataStructureFilterControllerTest do
 
   alias TdDd.DataStructures.PathCache
   alias TdDd.Permissions.MockPermissionResolver
-  alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
 
   setup_all do
     start_supervised(MockTdAuthService)
-    start_supervised(MockTdAuditService)
     start_supervised(MockPermissionResolver)
     start_supervised(PathCache)
     :ok

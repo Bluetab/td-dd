@@ -6,10 +6,6 @@ defmodule TdDd.Canada.DataStructureAbilities do
 
   def can?(%User{}, _action, %DataStructure{domain_id: nil}), do: false
 
-  def can?(%User{} = user, :create_data_structure, domain_id) do
-      Permissions.authorized?(user, :create_data_structure, domain_id)
-  end
-
   def can?(%User{} = user, :manage_confidential_structures, %DataStructure{domain_id: domain_id}) do
     Permissions.authorized?(user, :manage_confidential_structures, domain_id)
   end
