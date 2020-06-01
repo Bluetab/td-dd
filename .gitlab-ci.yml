@@ -1,5 +1,5 @@
 variables:
-  VERSION: "3.16.1"
+  VERSION: "3.23.1" # used for alpha builds
   APP_NAME: "td_cx"
   COMPOSE_FILE: "ci/docker-compose.yml"
   COMPOSE_PROJECT_NAME: "${APP_NAME}_${CI_JOB_ID}"
