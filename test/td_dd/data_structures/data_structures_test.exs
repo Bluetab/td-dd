@@ -243,8 +243,7 @@ defmodule TdDd.DataStructuresTest do
         relation_type_id: relation_type_id
       )
 
-      assert {:ok, %DataStructure{} = data_structure} =
-               DataStructures.delete_data_structure(ds1)
+      assert {:ok, %DataStructure{} = data_structure} = DataStructures.delete_data_structure(ds1)
 
       assert %{__meta__: %{state: :deleted}} = data_structure
 
@@ -544,6 +543,63 @@ defmodule TdDd.DataStructuresTest do
         |> create_hierarchy()
 
       assert DataStructures.get_descendents(parent) <~> descendents
+    end
+
+    test "get_path/2 obtains all descendents of a data structure version" do
+      %{id: system_id} = insert(:system)
+
+      p =
+        insert(:data_structure_version,
+          name: "dsv1",
+          data_structure: build(:data_structure, external_id: "dsv1", system_id: system_id)
+        )
+
+      p1 =
+        insert(:data_structure_version,
+          name: "dsv2",
+          data_structure: build(:data_structure, external_id: "dsv2", system_id: system_id)
+        )
+
+      c1 =
+        insert(:data_structure_version,
+          name: "c1",
+          data_structure: build(:data_structure, external_id: "c1", system_id: system_id)
+        )
+
+      versions =
+        Enum.map(
+          2..50,
+          &insert(:data_structure_version,
+            name: "c#{&1}",
+            data_structure: build(:data_structure, external_id: "c#{&1}", system_id: system_id)
+          )
+        )
+
+      %{id: default_type_id} = RelationTypes.get_default()
+      %{id: custom_id} = insert(:relation_type, name: "relation_type_1")
+
+      Enum.each(
+        versions,
+        &insert(:data_structure_relation,
+          parent_id: &1.id,
+          child_id: c1.id,
+          relation_type_id: custom_id
+        )
+      )
+
+      insert(:data_structure_relation,
+        parent_id: p.id,
+        child_id: p1.id,
+        relation_type_id: default_type_id
+      )
+
+      insert(:data_structure_relation,
+        parent_id: p1.id,
+        child_id: c1.id,
+        relation_type_id: default_type_id
+      )
+
+      assert DataStructures.get_path(c1) == ["dsv1", "dsv2"]
     end
 
     defp domain_fixture do
