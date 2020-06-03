@@ -15,11 +15,15 @@ defmodule TdDdWeb.FallbackController do
     |> render("error.json", changeset: changeset)
   end
 
+  def call(conn, {:error, _field, %Ecto.Changeset{} = changeset, _changes_so_far}) do
+    call(conn, {:error, changeset})
+  end
+
   def call(conn, {:error, :not_found}) do
     render_error(conn, :not_found)
   end
 
-  def call(conn, {:can, :false}) do
+  def call(conn, {:can, false}) do
     render_error(conn, :forbidden)
   end
 

@@ -1,5 +1,7 @@
 defmodule TdDd.DataStructures.DataStructureVersion do
-  @moduledoc false
+  @moduledoc """
+  Ecto Schema module for Data Structure Versions.
+  """
 
   use Ecto.Schema
 
@@ -8,7 +10,6 @@ defmodule TdDd.DataStructures.DataStructureVersion do
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
-  alias TdDd.DataStructures.DataStructureVersion
 
   schema "data_structure_versions" do
     field(:version, :integer, default: 0)
@@ -28,12 +29,12 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     has_many(:child_relations, DataStructureRelation, foreign_key: :parent_id)
     has_many(:parent_relations, DataStructureRelation, foreign_key: :child_id)
 
-    many_to_many(:children, DataStructureVersion,
+    many_to_many(:children, __MODULE__,
       join_through: DataStructureRelation,
       join_keys: [parent_id: :id, child_id: :id]
     )
 
-    many_to_many(:parents, DataStructureVersion,
+    many_to_many(:parents, __MODULE__,
       join_through: DataStructureRelation,
       join_keys: [child_id: :id, parent_id: :id]
     )
@@ -42,7 +43,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
   end
 
   @doc false
-  def update_changeset(%DataStructureVersion{} = data_structure_version, attrs) do
+  def update_changeset(%__MODULE__{} = data_structure_version, attrs) do
     data_structure_version
     |> cast(attrs, [
       :class,
@@ -71,8 +72,11 @@ defmodule TdDd.DataStructures.DataStructureVersion do
 
   defp preserve_timestamp_on_delete(changeset), do: changeset
 
-  @doc false
-  def changeset(%DataStructureVersion{} = data_structure_version, attrs) do
+  def changeset(%{} = params) do
+    changeset(%__MODULE__{}, params)
+  end
+
+  def changeset(%__MODULE__{} = data_structure_version, attrs) do
     data_structure_version
     |> cast(attrs, [
       :class,
@@ -103,6 +107,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     alias TdCache.TaxonomyCache
     alias TdCache.TemplateCache
     alias TdCache.UserCache
+    alias TdDd.DataStructures.DataStructureVersion
     alias TdDd.DataStructures.PathCache
     alias TdDfLib.Format
 

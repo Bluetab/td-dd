@@ -62,9 +62,6 @@ defmodule TdDdWeb.DataStructureVersionController do
         options = filter(user, data_structure)
         dsv = get_data_structure_version(data_structure_id, version, options)
         render_with_permissions(conn, user, dsv)
-
-      %Ecto.NoResultsError{} ->
-        render_error(conn, :not_found)
     end
   end
 
@@ -76,9 +73,6 @@ defmodule TdDdWeb.DataStructureVersionController do
         options = filter(user, data_structure)
         dsv = get_data_structure_version(data_structure_version_id, options)
         render_with_permissions(conn, user, dsv)
-
-      %Ecto.NoResultsError{} ->
-        render_error(conn, :not_found)
     end
   end
 

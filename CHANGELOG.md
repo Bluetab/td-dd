@@ -1,6 +1,10 @@
 # Changelog
 
-## [Unreleased]
+## [3.23.0] 2020-06-01
+
+### Fixed
+
+- [TD-2636] Bulk update was replacing instead of merging dynamic content
 
 ### Added
 

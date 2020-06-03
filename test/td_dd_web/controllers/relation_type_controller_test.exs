@@ -4,7 +4,6 @@ defmodule TdDdWeb.RelationTypeControllerTest do
   alias TdDd.DataStructures.RelationType
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Permissions.MockPermissionResolver
-  alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
 
   @create_attrs %{
@@ -21,7 +20,6 @@ defmodule TdDdWeb.RelationTypeControllerTest do
 
   setup_all do
     start_supervised(MockTdAuthService)
-    start_supervised(MockTdAuditService)
     start_supervised(MockPermissionResolver)
     :ok
   end

@@ -1,5 +1,8 @@
 defmodule TdDd.Systems.System do
-  @moduledoc false
+  @moduledoc """
+  Ecto schema module for Systems.
+  """
+
   use Ecto.Schema
 
   import Ecto.Changeset
@@ -15,10 +18,14 @@ defmodule TdDd.Systems.System do
     timestamps()
   end
 
-  @doc false
-  def changeset(system, attrs) do
+  def changeset(params) do
+    changeset(%__MODULE__{}, params)
+  end
+
+  def changeset(%__MODULE__{} = system, attrs) do
     system
     |> cast(attrs, [:name, :external_id, :df_content])
     |> validate_required([:name, :external_id])
+    |> unique_constraint(:external_id)
   end
 end
