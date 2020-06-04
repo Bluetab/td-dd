@@ -17,6 +17,7 @@
 - [TD-2487] Exclude deleted structures from csv download
 - [TD-2629] Update td-df-lib to omit template fields of type `image` on indexing
 - [TD-2492] Update td-df-lib to include new numeric template types
+- [TD-2261] Cache structures on load
 
 ### Removed
 

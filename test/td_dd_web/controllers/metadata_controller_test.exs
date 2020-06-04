@@ -10,6 +10,7 @@ defmodule TdDdWeb.MetadataControllerTest do
     ]
 
   alias TdCache.TaxonomyCache
+  alias TdDd.Cache.StructureLoader
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.PathCache
@@ -23,6 +24,7 @@ defmodule TdDdWeb.MetadataControllerTest do
     start_supervised(MockIndexWorker)
     start_supervised(MockTdAuthService)
     start_supervised(MockPermissionResolver)
+    start_supervised(StructureLoader)
     start_supervised(LoaderWorker)
     start_supervised(PathCache)
     start_supervised(GraphData)
