@@ -53,9 +53,9 @@ defmodule TdCx.MixProject do
       {:phoenix_pubsub, "~> 1.1"},
       {:phoenix_ecto, "~> 4.0"},
       {:ecto_sql, "~> 3.0"},
-      {:postgrex, ">= 0.0.0"},
+      {:postgrex, "~> 0.15.0"},
       {:gettext, "~> 0.11"},
-      {:jason, "~> 1.0"},
+      {:jason, "~> 1.1"},
       {:plug_cowboy, "~> 2.0"},
       {:httpoison, "~> 1.0"},
       {:poison, "~> 3.1"},
@@ -69,8 +69,8 @@ defmodule TdCx.MixProject do
       {:elasticsearch,
        git: "https://github.com/Bluetab/elasticsearch-elixir.git",
        branch: "feature/bulk-index-action"},
-      {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "3.8.0"},
-      {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "3.23.1"}
+      {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "3.24.3"},
+      {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", branch: "feature/td-2637"}
     ]
   end
 
