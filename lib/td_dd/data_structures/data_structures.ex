@@ -599,25 +599,15 @@ defmodule TdDd.DataStructures do
     end
   end
 
-  defp get_ancestry(%DataStructureVersion{parents: %NotLoaded{}} = data_structure_version) do
+  defp get_ancestry(%DataStructureVersion{} = data_structure_version) do
     data_structure_version
-    |> Repo.preload(:parents)
-    |> get_ancestry
+    |> get_parents(deleted: false)
+    |> get_ancestry()
   end
 
-  defp get_ancestry(%DataStructureVersion{parents: []}), do: []
+  defp get_ancestry([]), do: []
 
-  defp get_ancestry(%DataStructureVersion{parents: parents}) do
-    case get_first_active_parent(parents) do
-      nil -> []
-      parent -> [parent | get_ancestry(parent)]
-    end
-  end
-
-  defp get_first_active_parent(parents) do
-    parents
-    |> Enum.find(&(&1.deleted_at == nil))
-  end
+  defp get_ancestry([parent | _t]), do: [parent | get_ancestry(parent)]
 
   def get_latest_version_by_external_id(external_id, options \\ []) do
     DataStructureVersion

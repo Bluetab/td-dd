@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-2593] Retrive parents over `default` relation type to build path 
+
 ## [3.23.0] 2020-06-01
 
 ### Fixed

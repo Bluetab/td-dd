@@ -82,6 +82,8 @@ defmodule TdDd.DataStructures.PathCache do
         from(dsr in DataStructureRelation,
           join: child in assoc(dsr, :child),
           join: parent in assoc(dsr, :parent),
+          join: relation_type in assoc(dsr, :relation_type),
+          where: relation_type.name == "default",
           where: is_nil(child.deleted_at),
           where: is_nil(parent.deleted_at),
           select: {dsr.parent_id, dsr.child_id}
