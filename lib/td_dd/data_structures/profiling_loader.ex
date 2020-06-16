@@ -3,9 +3,9 @@ defmodule TdDd.ProfilingLoader do
   Bulk loader for profiles
   """
 
-  import Ecto.Query, warn: false
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.Profiles
   alias TdDd.Repo
 
   require Logger
@@ -45,10 +45,10 @@ defmodule TdDd.ProfilingLoader do
         Map.new()
         |> Map.put(:data_structure_id, id)
         |> Map.merge(Map.take(attrs, [:value]))
-        |> DataStructures.create_profile()
+        |> Profiles.create_profile()
 
       %DataStructure{profile: profile} ->
-        DataStructures.update_profile(profile, Map.take(attrs, [:value]))
+        Profiles.update_profile(profile, Map.take(attrs, [:value]))
 
       nil ->
         {:error,

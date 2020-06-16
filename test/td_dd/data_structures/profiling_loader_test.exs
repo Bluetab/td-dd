@@ -1,10 +1,10 @@
 defmodule TdDd.ProfilingLoaderTest do
   use TdDd.DataCase
 
-  alias TdDd.DataStructures
+  alias TdDd.DataStructures.Profiles
   alias TdDd.ProfilingLoader
 
-  describe "loader" do
+  describe "TdDd.ProfilingLoader" do
     test "load/1 loads changes in data profiles" do
       sys1 = insert(:system, external_id: "SYS1", name: "SYS1")
 
@@ -18,7 +18,7 @@ defmodule TdDd.ProfilingLoaderTest do
 
       assert {:ok, profile_ids} = ProfilingLoader.load([attrs1, attrs2])
 
-      profiles = Enum.map(profile_ids, &DataStructures.get_profile!(&1))
+      profiles = Enum.map(profile_ids, &Profiles.get_profile!(&1))
 
       assert Enum.count(profiles) == 2
 

@@ -1,19 +1,28 @@
 defmodule TdDd.DataStructuresTest do
   use TdDd.DataStructureCase
 
+  alias TdCache.Redix
+  alias TdCache.Redix.Stream
   alias TdCache.TaxonomyCache
+  alias TdCache.TemplateCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.RelationTypes
 
   import TdDd.TestOperators
 
+  @stream TdCache.Audit.stream()
+
   setup_all do
-    alias TdCache.TemplateCache
     %{id: template_id, name: template_name} = template = build(:template)
     {:ok, _} = TemplateCache.put(template)
-    on_exit(fn -> TemplateCache.delete(template_id) end)
-    [template_name: template_name]
+
+    on_exit(fn ->
+      TemplateCache.delete(template_id)
+      Redix.del!(@stream)
+    end)
+
+    [template_name: template_name, user: build(:user)]
   end
 
   setup %{template_name: template_name} do
@@ -48,10 +57,89 @@ defmodule TdDd.DataStructuresTest do
       ConceptCache.delete(concept.id)
     end)
 
-    {:ok,
-     data_structure: data_structure,
-     data_structure_version: data_structure_version,
-     system: system}
+    [
+      data_structure: data_structure,
+      data_structure_version: data_structure_version,
+      system: system
+    ]
+  end
+
+  describe "update_data_structure/3" do
+    test "updates the data_structure with valid data", %{
+      data_structure: data_structure,
+      user: user
+    } do
+      params = %{df_content: %{"string" => "changed", "list" => "two"}}
+
+      assert {:ok, %{data_structure: data_structure}} =
+               DataStructures.update_data_structure(data_structure, params, user)
+
+      assert %DataStructure{} = data_structure
+      assert %{"list" => "two", "string" => "changed"} = data_structure.df_content
+    end
+
+    test "emits an audit event", %{data_structure: data_structure, user: user} do
+      params = %{df_content: %{"string" => "changed", "list" => "two"}}
+
+      assert {:ok, %{audit: event_id}} =
+               DataStructures.update_data_structure(data_structure, params, user)
+
+      assert {:ok, [%{id: ^event_id}]} =
+               Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+    end
+  end
+
+  describe "delete_data_structure/2" do
+    test "delete_data_structure/1 deletes the data_structure", %{
+      data_structure: data_structure,
+      user: user
+    } do
+      assert {:ok, %{data_structure: data_structure}} =
+               DataStructures.delete_data_structure(data_structure, user)
+
+      assert %{__meta__: %{state: :deleted}} = data_structure
+    end
+
+    test "emits an audit event", %{
+      data_structure: data_structure,
+      user: user
+    } do
+      assert {:ok, %{audit: event_id}} =
+               DataStructures.delete_data_structure(data_structure, user)
+
+      assert {:ok, [%{id: ^event_id}]} =
+               Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+    end
+
+    test "deletes a data_structure with relations", %{user: user} do
+      ds1 = insert(:data_structure, id: 51, external_id: "DS51")
+      ds2 = insert(:data_structure, id: 52, external_id: "DS52")
+      ds3 = insert(:data_structure, id: 53, external_id: "DS53")
+      dsv1 = insert(:data_structure_version, data_structure_id: ds1.id, name: ds1.external_id)
+      dsv2 = insert(:data_structure_version, data_structure_id: ds2.id, name: ds1.external_id)
+      dsv3 = insert(:data_structure_version, data_structure_id: ds3.id, name: ds1.external_id)
+
+      %{id: relation_type_id} = RelationTypes.get_default()
+
+      insert(:data_structure_relation,
+        parent_id: dsv1.id,
+        child_id: dsv2.id,
+        relation_type_id: relation_type_id
+      )
+
+      insert(:data_structure_relation,
+        parent_id: dsv1.id,
+        child_id: dsv3.id,
+        relation_type_id: relation_type_id
+      )
+
+      assert {:ok, %{data_structure: data_structure}} =
+               DataStructures.delete_data_structure(ds1, user)
+
+      assert %{__meta__: %{state: :deleted}} = data_structure
+      assert DataStructures.get_data_structure!(ds2.id) <~> ds2
+      assert DataStructures.get_data_structure!(ds3.id) <~> ds3
+    end
   end
 
   describe "data_structures" do
@@ -124,23 +212,6 @@ defmodule TdDd.DataStructuresTest do
 
     test "get_data_structure!/1 returns error when structure does not exist" do
       assert_raise Ecto.NoResultsError, fn -> DataStructures.get_data_structure!(1) end
-    end
-
-    test "update_data_structure/2 with valid data updates the data_structure", %{
-      data_structure: data_structure
-    } do
-      assert {:ok, %DataStructure{} = data_structure} =
-               DataStructures.update_data_structure(data_structure, @update_attrs)
-
-      assert %DataStructure{} = data_structure
-      assert %{"list" => "two", "string" => "changed"} = data_structure.df_content
-    end
-
-    test "delete_data_structure/1 deletes the data_structure", %{data_structure: data_structure} do
-      assert {:ok, %DataStructure{} = data_structure} =
-               DataStructures.delete_data_structure(data_structure)
-
-      assert %{__meta__: %{state: :deleted}} = data_structure
     end
 
     test "find_data_structure/1 returns a data structure", %{data_structure: data_structure} do
@@ -221,7 +292,9 @@ defmodule TdDd.DataStructuresTest do
       assert DataStructures.get_siblings(dsv4) <|> [dsv4]
     end
 
-    test "delete_data_structure/1 deletes a data_structure with relations" do
+    test "delete_data_structure/1 deletes a data_structure with relations", %{
+      user: user
+    } do
       ds1 = insert(:data_structure, id: 51, external_id: "DS51")
       ds2 = insert(:data_structure, id: 52, external_id: "DS52")
       ds3 = insert(:data_structure, id: 53, external_id: "DS53")
@@ -243,7 +316,8 @@ defmodule TdDd.DataStructuresTest do
         relation_type_id: relation_type_id
       )
 
-      assert {:ok, %DataStructure{} = data_structure} = DataStructures.delete_data_structure(ds1)
+      assert {:ok, %{} = reply} = DataStructures.delete_data_structure(ds1, user)
+      data_structure = Map.get(reply, :data_structure)
 
       assert %{__meta__: %{state: :deleted}} = data_structure
 
@@ -609,43 +683,6 @@ defmodule TdDd.DataStructuresTest do
       TaxonomyCache.put_domain(%{name: domain_name, id: domain_id, updated_at: updated_at})
 
       %{id: domain_id, name: domain_name}
-    end
-  end
-
-  describe "profiles" do
-    alias TdDd.DataStructures.Profile
-
-    @valid_attrs %{value: %{}, data_structure_id: 0}
-    @update_attrs %{value: %{"foo" => "bar"}}
-    @invalid_attrs %{value: nil, data_structure_id: nil}
-
-    setup do
-      profile = insert(:profile, data_structure: build(:data_structure, system: build(:system)))
-      [profile: profile]
-    end
-
-    test "get_profile!/1 gets the profile", %{profile: %{id: id}} do
-      assert %{id: ^id} = DataStructures.get_profile!(id)
-    end
-
-    test "create_profile/1 with valid attrs creates the profile" do
-      ds = insert(:data_structure)
-      attrs = Map.put(@valid_attrs, :data_structure_id, ds.id)
-
-      assert {:ok, %Profile{value: value, data_structure_id: ds_id}} =
-               DataStructures.create_profile(attrs)
-
-      assert ds.id == ds_id
-      assert attrs.value == value
-    end
-
-    test "create_profile/1 with invalid attrs returns an error" do
-      assert {:error, %Ecto.Changeset{}} = DataStructures.create_profile(@invalid_attrs)
-    end
-
-    test "update_profile/1 with valid attrs updates the profile", %{profile: profile} do
-      assert {:ok, %Profile{value: value}} = DataStructures.update_profile(profile, @update_attrs)
-      assert @update_attrs.value == value
     end
   end
 

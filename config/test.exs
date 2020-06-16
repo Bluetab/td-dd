@@ -19,9 +19,9 @@ config :td_dd, TdDd.Repo,
 config :td_dd, permission_resolver: TdDd.Permissions.MockPermissionResolver
 config :td_dd, index_worker: TdDd.Search.MockIndexWorker
 
-config :td_dd, :audit_service, api_service: TdDdWeb.ApiServices.MockTdAuditService
-
 config :td_dd, TdDd.Search.Cluster, api: TdDd.ElasticsearchMock
+
+config :td_cache, :audit, stream: "audit:events:test"
 
 config :td_cache, redis_host: "redis"
 

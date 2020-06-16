@@ -2,7 +2,7 @@ defmodule TdDdWeb.ProfileControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  alias TdDd.DataStructures
+  alias TdDd.DataStructures.Profiles
   alias TdDd.Loader.LoaderWorker
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDdWeb.ApiServices.MockTdAuthService
@@ -38,7 +38,7 @@ defmodule TdDdWeb.ProfileControllerTest do
 
       # waits for loader to complete
       LoaderWorker.ping(20_000)
-      assert Enum.count(DataStructures.list_profiles()) == 3
+      assert Enum.count(Profiles.list_profiles()) == 3
     end
   end
 end

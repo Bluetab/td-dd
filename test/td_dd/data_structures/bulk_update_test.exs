@@ -26,7 +26,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
   end
 
   describe "update_all/3" do
-    test "update alls data structure with valid data", %{type: type} do
+    test "update all data structures with valid data", %{type: type} do
       user = build(:user)
 
       ids =
@@ -34,13 +34,25 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         |> Enum.map(fn _ -> valid_structure(type) end)
         |> Enum.map(& &1.data_structure_id)
 
-      assert {:ok, updated_ids} = BulkUpdate.update_all(ids, @valid_params, user)
-      assert ids <|> updated_ids
+      assert {:ok, %{updates: updates}} = BulkUpdate.update_all(ids, @valid_params, user)
+      assert Map.keys(updates) <|> ids
 
       assert ids
              |> Enum.map(&Repo.get(DataStructure, &1))
              |> Enum.map(& &1.df_content)
              |> Enum.all?(&(&1 == @valid_content))
+    end
+
+    test "emits audit events for updated structures", %{type: type} do
+      user = build(:user)
+
+      ids =
+        1..10
+        |> Enum.map(fn _ -> valid_structure(type) end)
+        |> Enum.map(& &1.data_structure_id)
+
+      assert {:ok, %{updates: updates, audit: audit}} = BulkUpdate.update_all(ids, @valid_params, user)
+      assert Enum.count(audit) == Enum.count(updates)
     end
 
     test "ignores unchanged data structures", %{type: type} do
@@ -54,7 +66,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         end)
         |> Enum.map(& &1.data_structure_id)
 
-      assert {:ok, updated_ids} = BulkUpdate.update_all(ids, @valid_params, user)
+      assert {:ok, %{updates: updates}} = BulkUpdate.update_all(ids, @valid_params, user)
 
       structures = Enum.map(ids, &Repo.get(DataStructure, &1))
 
@@ -67,7 +79,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert Enum.count(unchanged_ids) == 5
       assert Enum.count(changed_ids) == 5
-      assert changed_ids <|> updated_ids
+      assert Map.keys(updates) <|> changed_ids
     end
 
     test "returns an error if a structure has no template", %{type: type} do
@@ -81,7 +93,9 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         end)
         |> Enum.map(& &1.data_structure_id)
 
-      assert {:error, changeset} = BulkUpdate.update_all(ids, @valid_params, user)
+      assert {:error, :updates, changeset, _changes_so_far} =
+               BulkUpdate.update_all(ids, @valid_params, user)
+
       assert %{data: data, errors: errors} = changeset
       assert %{external_id: "the bad one"} = data
       assert {"invalid template", _} = errors[:df_content]
@@ -97,10 +111,10 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         |> Enum.map(fn _ -> valid_structure(type, df_content: initial_content) end)
         |> Enum.map(& &1.data_structure_id)
 
-      assert {:ok, updated_ids} =
+      assert {:ok, %{updates: updates}} =
                BulkUpdate.update_all(ids, %{"df_content" => %{"string" => "updated"}}, user)
 
-      assert ids <|> updated_ids
+      assert Map.keys(updates) <|> ids
 
       assert ids
              |> Enum.map(&Repo.get(DataStructure, &1))
@@ -118,10 +132,14 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         |> Enum.map(fn _ -> valid_structure(type, df_content: initial_content) end)
         |> Enum.map(& &1.data_structure_id)
 
-      assert {:ok, updated_ids} =
-               BulkUpdate.update_all(ids, %{"df_content" => %{"string" => "", "list" => "two"}}, user)
+      assert {:ok, %{updates: updates}} =
+               BulkUpdate.update_all(
+                 ids,
+                 %{"df_content" => %{"string" => "", "list" => "two"}},
+                 user
+               )
 
-      assert ids <|> updated_ids
+      assert Map.keys(updates) <|> ids
 
       assert ids
              |> Enum.map(&Repo.get(DataStructure, &1))

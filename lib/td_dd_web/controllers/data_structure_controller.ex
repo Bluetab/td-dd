@@ -7,11 +7,9 @@ defmodule TdDdWeb.DataStructureController do
   alias Ecto
   alias Jason, as: JSON
   alias TdCache.TaxonomyCache
-  alias TdDd.Audit.AuditSupport
   alias TdDd.CSV.Download
   alias TdDd.DataStructures
   alias TdDd.DataStructures.BulkUpdate
-  alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.Search
   alias TdDdWeb.SwaggerDefinitions
 
@@ -112,10 +110,8 @@ defmodule TdDdWeb.DataStructureController do
       |> DataStructures.put_domain_id(names, external_ids)
 
     with {:can, true} <- {:can, can?(user, update_data_structure(data_structure_old))},
-         {:ok, %DataStructure{} = data_structure} <-
-           DataStructures.update_data_structure(data_structure_old, update_params) do
-      AuditSupport.update_data_structure(conn, data_structure_old, attrs)
-
+         {:ok, %{data_structure: data_structure}} <-
+           DataStructures.update_data_structure(data_structure_old, update_params, user) do
       data_structure = get_data_structure(data_structure.id)
       do_render_data_structure(conn, user, data_structure)
     end
@@ -143,8 +139,8 @@ defmodule TdDdWeb.DataStructureController do
     data_structure = DataStructures.get_data_structure!(id)
 
     with {:can, true} <- {:can, can?(user, delete_data_structure(data_structure))},
-         {:ok, %DataStructure{}} <- DataStructures.delete_data_structure(data_structure) do
-      AuditSupport.delete_data_structure(conn, id)
+         {:ok, %{data_structure: _deleted_data_structure}} <-
+           DataStructures.delete_data_structure(data_structure, user) do
       send_resp(conn, :no_content, "")
     end
   end
@@ -225,8 +221,8 @@ defmodule TdDdWeb.DataStructureController do
     with {:can, true} <- {:can, user.is_admin},
          %{results: results} <- search_all_structures(user, permission, search_params),
          ids <- Enum.map(results, & &1.id),
-         {:ok, response} <- BulkUpdate.update_all(ids, update_params, user) do
-      body = JSON.encode!(%{data: %{message: response}})
+         {:ok, %{updates: updates}} <- BulkUpdate.update_all(ids, update_params, user) do
+      body = JSON.encode!(%{data: %{message: Map.keys(updates)}})
 
       conn
       |> put_resp_content_type("application/json", "utf-8")
