@@ -2,7 +2,6 @@ defmodule TdDq.RuleResultsTest do
   use TdDq.DataCase
 
   import Ecto.Query, warn: false
-  import TdDq.Factory
 
   alias Elasticsearch.Document
   alias TdDq.Cache.RuleLoader

@@ -11,10 +11,9 @@ defmodule TdDq.Rules do
   alias TdCache.EventStream.Publisher
   alias TdCache.StructureCache
   alias TdCache.SystemCache
-  alias TdCache.TemplateCache
-  alias TdDfLib.Validation
   alias TdDq.Cache.RuleLoader
   alias TdDq.Repo
+  alias TdDq.Rules.Audit
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleImplementation
   alias TdDq.Rules.RuleResult
@@ -133,43 +132,14 @@ defmodule TdDq.Rules do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_rule(attrs \\ %{}) do
-    with {:ok, changeset} <- check_base_changeset(attrs),
-         {:ok} <- check_dynamic_form_changeset(attrs),
-         {:ok, rule} <- Repo.insert(changeset) do
-      rule =
-        rule
-        |> preload_bc_version
+  def create_rule(%{} = params, %{id: user_id} = _user) do
+    changeset = Rule.changeset(params)
 
-      RuleLoader.refresh(Map.get(rule, :id))
-
-      {:ok, rule}
-    else
-      error -> error
-    end
+    Multi.new()
+    |> Multi.insert(:rule, changeset)
+    |> Multi.run(:audit, Audit, :rule_created, [changeset, user_id])
+    |> Repo.transaction()
   end
-
-  defp check_base_changeset(attrs, rule \\ %Rule{}) do
-    changeset = Rule.changeset(rule, attrs)
-
-    case changeset.valid? do
-      true -> {:ok, changeset}
-      false -> {:error, changeset}
-    end
-  end
-
-  defp check_dynamic_form_changeset(%{"df_name" => df_name} = attrs) when not is_nil(df_name) do
-    content = Map.get(attrs, "df_content", %{})
-    %{:content => content_schema} = TemplateCache.get_by_name!(df_name)
-    content_changeset = Validation.build_changeset(content, content_schema)
-
-    case content_changeset.valid? do
-      true -> {:ok}
-      false -> {:error, content_changeset}
-    end
-  end
-
-  defp check_dynamic_form_changeset(_), do: {:ok}
 
   @doc """
   Updates a rule.
@@ -183,20 +153,23 @@ defmodule TdDq.Rules do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_rule(%Rule{} = rule, attrs) do
-    with {:ok, changeset} <- check_base_changeset(attrs, rule),
-         {:ok} <- check_dynamic_form_changeset(attrs) do
-      do_update_rule(changeset)
-    else
-      error -> error
-    end
+  def update_rule(%Rule{} = rule, %{} = params, %{id: user_id} = _user) do
+    changeset =
+      rule
+      |> Repo.preload(:rule_implementations)
+      |> Rule.changeset(params)
+
+    Multi.new()
+    |> Multi.update(:rule, changeset)
+    |> Multi.run(:audit, Audit, :rule_updated, [changeset, user_id])
+    |> Repo.transaction()
+    |> on_update()
   end
 
-  defp do_update_rule(changeset) do
-    with {:ok, rule} <- Repo.update(changeset) do
-      rule = preload_bc_version(rule)
-      RuleLoader.refresh(Map.get(rule, :id))
-      {:ok, rule}
+  defp on_update(res) do
+    with {:ok, %{rule: %{id: rule_id}}} <- res do
+      RuleLoader.refresh(rule_id)
+      res
     end
   end
 
@@ -212,22 +185,22 @@ defmodule TdDq.Rules do
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_rule(%Rule{id: id} = rule) do
-    case do_delete_rule(rule) do
-      {:ok, rule} ->
-        RuleLoader.delete(id)
+  def delete_rule(%Rule{} = rule, %{id: user_id}) do
+    changeset = Rule.delete_changeset(rule)
 
-        {:ok, rule}
-
-      error ->
-        error
-    end
+    Multi.new()
+    |> Multi.delete(:rule, changeset)
+    |> Multi.run(:audit, Audit, :rule_deleted, [user_id])
+    |> Repo.transaction()
+    |> on_delete()
   end
 
-  defp do_delete_rule(%Rule{} = rule) do
-    rule
-    |> Rule.delete_changeset()
-    |> Repo.delete()
+  defp on_delete(res) do
+    with {:ok, %{rule: %{id: rule_id}}} <- res do
+      RuleLoader.delete(rule_id)
+    end
+
+    res
   end
 
   def soft_deletion(active_ids, ts \\ DateTime.utc_now()) do
@@ -261,35 +234,21 @@ defmodule TdDq.Rules do
     Multi.new()
     |> Multi.update_all(:impls, impls_to_delete, set: [deleted_at: ts])
     |> Multi.update_all(:rules, rules_to_delete, set: [deleted_at: ts])
+    # TODO: audit?
     |> Repo.transaction()
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking rule changes.
-
-  ## Examples
-
-      iex> change_rule(rule)
-      %Ecto.Changeset{source: %Rule{}}
-
-  """
-  def change_rule(%Rule{} = rule) do
-    Rule.changeset(rule, %{})
   end
 
   def list_concept_rules(params) do
     fields = Rule.__schema__(:fields)
     dynamic = filter(params, fields)
 
-    query =
-      from(
-        p in Rule,
-        where: ^dynamic,
-        where: is_nil(p.deleted_at),
-        order_by: [desc: :business_concept_id]
-      )
-
-    query |> Repo.all()
+    from(
+      p in Rule,
+      where: ^dynamic,
+      where: is_nil(p.deleted_at),
+      order_by: [desc: :business_concept_id]
+    )
+    |> Repo.all()
   end
 
   def get_rule_implementation_results(implementation_key) do
@@ -366,15 +325,15 @@ defmodule TdDq.Rules do
 
   ## Examples
 
-      iex> create_rule_implementation(%{field: value})
+      iex> create_rule_implementation(rule, %{field: value})
       {:ok, %RuleImplementation{}}
 
-      iex> create_rule_implementation(%{field: bad_value})
+      iex> create_rule_implementation(rule, %{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_rule_implementation(rule, attrs \\ %{}) do
-    changeset = RuleImplementation.changeset(%RuleImplementation{rule: rule}, attrs)
+  def create_rule_implementation(rule, params \\ %{}) do
+    changeset = RuleImplementation.changeset(%RuleImplementation{rule: rule}, params)
 
     case changeset.valid? do
       true ->
@@ -656,8 +615,8 @@ defmodule TdDq.Rules do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_rule_implementation(%RuleImplementation{} = rule_implementation, attrs) do
-    changeset = RuleImplementation.changeset(rule_implementation, attrs)
+  def update_rule_implementation(%RuleImplementation{} = rule_implementation, params) do
+    changeset = RuleImplementation.changeset(rule_implementation, params)
 
     case changeset.valid? do
       true ->
@@ -760,9 +719,9 @@ defmodule TdDq.Rules do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_rule_result(attrs \\ %{}) do
+  def create_rule_result(params \\ %{}) do
     %RuleResult{}
-    |> RuleResult.changeset(attrs)
+    |> RuleResult.changeset(params)
     |> Repo.insert()
   end
 

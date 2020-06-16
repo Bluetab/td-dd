@@ -8,9 +8,7 @@ defmodule TdDqWeb.RuleController do
   alias Ecto.Changeset
   alias Jason, as: JSON
   alias TdCache.EventStream.Publisher
-  alias TdDq.Audit
   alias TdDq.Rules
-  alias TdDq.Rules.Rule
   alias TdDq.Rules.Search
   alias TdDqWeb.ChangesetView
   alias TdDqWeb.ErrorView
@@ -20,8 +18,6 @@ defmodule TdDqWeb.RuleController do
   require Logger
 
   action_fallback(TdDqWeb.FallbackController)
-
-  @events %{create_rule: "create_rule", delete_rule: "delete_rule"}
 
   def swagger_definitions do
     SwaggerDefinitions.rule_definitions()
@@ -92,7 +88,7 @@ defmodule TdDqWeb.RuleController do
     produces("application/json")
 
     parameters do
-      rule(:body, Schema.ref(:RuleCreate), "Rule create attrs")
+      rule(:body, Schema.ref(:RuleCreate), "Rule creation parameters")
     end
 
     response(201, "Created", Schema.ref(:RuleResponse))
@@ -102,7 +98,7 @@ defmodule TdDqWeb.RuleController do
   def create(conn, %{"rule" => rule_params}) do
     user = conn.assigns[:current_resource]
 
-    creation_attrs = Map.put_new(rule_params, "updated_by", user.id)
+    params = Map.put_new(rule_params, "updated_by", user.id)
 
     resource_type =
       rule_params
@@ -110,23 +106,13 @@ defmodule TdDqWeb.RuleController do
       |> Map.put("resource_type", "rule")
 
     with {:can, true} <- {:can, can?(user, create(resource_type))},
-         {:ok, %Rule{} = rule} <- Rules.create_rule(creation_attrs) do
-      audit = %{
-        "audit" => %{
-          "resource_id" => rule.id,
-          "resource_type" => "rule",
-          "payload" => rule_params
-        }
-      }
-
-      Audit.create_event(conn, audit, @events.create_rule)
-
+         {:ok, %{rule: rule}} <- Rules.create_rule(params, user) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", rule_path(conn, :show, rule))
       |> render("show.json", rule: rule, user_permissions: get_user_permissions(conn, rule))
     else
-      {:error, %Changeset{data: %{__struct__: _}} = changeset} ->
+      {:error, :rule, %Changeset{data: %{__struct__: _}} = changeset, _} ->
         conn
         |> put_status(:unprocessable_entity)
         |> put_view(ChangesetView)
@@ -135,7 +121,7 @@ defmodule TdDqWeb.RuleController do
           prefix: "rule.error"
         )
 
-      {:error, %Changeset{} = changeset} ->
+      {:error, :rule, %Changeset{} = changeset, _} ->
         conn
         |> put_status(:unprocessable_entity)
         |> put_view(ChangesetView)
@@ -220,7 +206,7 @@ defmodule TdDqWeb.RuleController do
     produces("application/json")
 
     parameters do
-      rule(:body, Schema.ref(:RuleUpdate), "Rule update attrs")
+      rule(:body, Schema.ref(:RuleUpdate), "Rule update parameters")
       id(:path, :integer, "Rule ID", required: true)
     end
 
@@ -237,13 +223,13 @@ defmodule TdDqWeb.RuleController do
       "resource_type" => "rule"
     }
 
-    update_attrs = Map.put_new(rule_params, "updated_by", user.id)
+    params = Map.put_new(rule_params, "updated_by", user.id)
 
     with {:can, true} <- {:can, can?(user, update(resource_type))},
-         {:ok, %Rule{} = rule} <- Rules.update_rule(rule, update_attrs) do
+         {:ok, %{rule: rule}} <- Rules.update_rule(rule, params, user) do
       render(conn, "show.json", rule: rule, user_permissions: get_user_permissions(conn, rule))
     else
-      {:error, %Changeset{data: %{__struct__: _}} = changeset} ->
+      {:error, :rule, %Changeset{data: %{__struct__: _}} = changeset, _} ->
         conn
         |> put_status(:unprocessable_entity)
         |> put_view(ChangesetView)
@@ -252,7 +238,7 @@ defmodule TdDqWeb.RuleController do
           prefix: "rule.error"
         )
 
-      {:error, %Changeset{} = changeset} ->
+      {:error, :rule, %Changeset{} = changeset, _} ->
         conn
         |> put_status(:unprocessable_entity)
         |> put_view(ChangesetView)
@@ -293,25 +279,10 @@ defmodule TdDqWeb.RuleController do
     }
 
     with {:can, true} <- {:can, can?(user, delete(resource_type))},
-         {:ok, %Rule{}} <- Rules.delete_rule(rule) do
-      rule_params =
-        rule
-        |> Map.from_struct()
-        |> Map.delete(:__meta__)
-        |> Map.delete(:rule_implementations)
-
-      audit = %{
-        "audit" => %{
-          "resource_id" => rule.id,
-          "resource_type" => "rule",
-          "payload" => rule_params
-        }
-      }
-
-      Audit.create_event(conn, audit, @events.delete_rule)
+         {:ok, _res} <- Rules.delete_rule(rule, user) do
       send_resp(conn, :no_content, "")
     else
-      {:error, %Changeset{data: %{__struct__: _}} = changeset} ->
+      {:error, :rule, %Changeset{data: %{__struct__: _}} = changeset, _} ->
         conn
         |> put_status(:unprocessable_entity)
         |> put_view(ChangesetView)

@@ -2,13 +2,6 @@ defmodule TdDqWeb.RuleFilterControllerTest do
   use TdDqWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  alias TdDqWeb.ApiServices.MockTdAuditService
-
-  setup_all do
-    start_supervised!(MockTdAuditService)
-    :ok
-  end
-
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end

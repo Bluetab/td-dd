@@ -52,13 +52,9 @@ config :td_dq, :phoenix_swagger,
     "priv/static/swagger.json" => [router: TdDqWeb.Router]
   }
 
-config :td_dq, :audit_service,
-  api_service: TdDqWeb.ApiServices.HttpTdAuditService,
-  audit_domain: "",
-  audit_host: "localhost",
-  audit_port: "4007",
-  audits_path: "/api/audits/",
-  protocol: "http"
+config :td_cache, :audit,
+  service: "td_dq",
+  stream: "audit:events"
 
 config :td_cache, :event_stream,
   consumer_id: "default",

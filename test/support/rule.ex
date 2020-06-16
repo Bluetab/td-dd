@@ -41,19 +41,13 @@ defmodule TdDqWeb.Rule do
   end
 
   def rule_create(token, table) do
-    attrs =
+    params =
       table
       |> field_value_to_api_attrs(@test_to_api_create_alias)
-
-    attrs =
-      attrs
       |> cast_to_int_attrs(@rule_integer_fields)
-
-    attrs =
-      attrs
       |> cast_description()
 
-    do_rule_create(token, attrs)
+    do_rule_create(token, params)
   end
 
   def do_rule_create(token, rule_params) do
@@ -95,13 +89,10 @@ defmodule TdDqWeb.Rule do
         end).()
   end
 
-  defp cast_description(attrs) do
-    case Map.get(attrs, "description") do
-      nil ->
-        attrs
-
-      description ->
-        Map.put(attrs, "description", %{"document" => description})
+  defp cast_description(params) do
+    case Map.get(params, "description") do
+      nil -> params
+      description -> Map.put(params, "description", %{"document" => description})
     end
   end
 end

@@ -1,7 +1,6 @@
 defmodule TdDqWeb.RuleResultControllerTest do
   use TdDqWeb.ConnCase
 
-  import TdDq.Factory
   import TdDqWeb.Authentication, only: :functions
 
   alias TdDq.Cache.RuleLoader

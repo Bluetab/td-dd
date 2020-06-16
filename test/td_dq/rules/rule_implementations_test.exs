@@ -2,7 +2,6 @@ defmodule TdDq.RuleImplementationsTest do
   use TdDq.DataCase
 
   import Ecto.Query, warn: false
-  import TdDq.Factory
 
   alias TdDq.Cache.RuleLoader
   alias TdDq.MockRelationCache
@@ -205,7 +204,7 @@ defmodule TdDq.RuleImplementationsTest do
              ) == nil
     end
 
-    test "create_rule_implementation/1 with dataset missing clause content returns errors" do
+    test "create_rule_implementation/2 with dataset missing clause content returns errors" do
       rule = insert(:rule)
 
       creation_attrs =
@@ -226,7 +225,7 @@ defmodule TdDq.RuleImplementationsTest do
       assert errors |> Map.get(:dataset) |> Enum.any?(&(Map.get(&1, :clauses) == ["required"]))
     end
 
-    test "create_rule_implementation/1 with operator without value and value type creates the implementation correctly" do
+    test "create_rule_implementation/2 with operator without value and value type creates the implementation correctly" do
       rule = insert(:rule)
 
       creation_attrs =
@@ -252,7 +251,7 @@ defmodule TdDq.RuleImplementationsTest do
       assert rule_implementation.rule_id == creation_attrs["rule_id"]
     end
 
-    test "create_rule_implementation/1 with dataset missing clause right returns errors" do
+    test "create_rule_implementation/2 with dataset missing clause right returns errors" do
       rule = insert(:rule)
 
       creation_attrs =
@@ -274,7 +273,7 @@ defmodule TdDq.RuleImplementationsTest do
       assert errors == expected_errors
     end
 
-    test "create_rule_implementation/1 with dataset missing clause key returns errors" do
+    test "create_rule_implementation/2 with dataset missing clause key returns errors" do
       rule = insert(:rule)
 
       creation_attrs =
@@ -295,7 +294,7 @@ defmodule TdDq.RuleImplementationsTest do
       assert errors |> Map.get(:dataset) |> Enum.any?(&(Map.get(&1, :clauses) == ["required"]))
     end
 
-    test "create_rule_implementation/1 with invalid population returns errors" do
+    test "create_rule_implementation/2 with invalid population returns errors" do
       rule = insert(:rule)
 
       creation_attrs =
@@ -322,7 +321,7 @@ defmodule TdDq.RuleImplementationsTest do
       assert errors |> Map.get(:population) |> Enum.any?(&(Map.get(&1, :value) == ["invalid"]))
     end
 
-    test "create_rule_implementation/1 with missing operator in validations returns errors" do
+    test "create_rule_implementation/2 with missing operator in validations returns errors" do
       rule = insert(:rule)
 
       creation_attrs =
@@ -347,7 +346,7 @@ defmodule TdDq.RuleImplementationsTest do
              |> Enum.any?(&(Map.get(&1, :operator) == ["required"]))
     end
 
-    test "create_rule_implementation/1 with invalid range value in validations returns errors" do
+    test "create_rule_implementation/2 with invalid range value in validations returns errors" do
       rule = insert(:rule)
 
       creation_attrs =
@@ -375,7 +374,7 @@ defmodule TdDq.RuleImplementationsTest do
       assert errors |> Map.get(:validations) |> Enum.any?(&(Map.get(&1, :value) == ["invalid"]))
     end
 
-    test "create_rule_implementation/1 with invalid range dates in validations returns errors" do
+    test "create_rule_implementation/2 with invalid range dates in validations returns errors" do
       rule = insert(:rule)
 
       creation_attrs =
@@ -404,7 +403,7 @@ defmodule TdDq.RuleImplementationsTest do
              |> Enum.any?(&(Map.get(&1, :value) == ["left_value_must_be_le_than_right"]))
     end
 
-    test "create_rule_implementation/1 with valid data creates a rule_implementation" do
+    test "create_rule_implementation/2 with valid data creates a rule_implementation" do
       rule = insert(:rule)
 
       creation_attrs =
@@ -422,7 +421,7 @@ defmodule TdDq.RuleImplementationsTest do
       assert rule_implementation.rule_id == creation_attrs["rule_id"]
     end
 
-    test "create_rule_implementation/1 with invalid keywords in raw content of raw implementation returns error" do
+    test "create_rule_implementation/2 with invalid keywords in raw content of raw implementation returns error" do
       rule = insert(:rule)
 
       creation_attrs =
@@ -445,7 +444,7 @@ defmodule TdDq.RuleImplementationsTest do
              |> Map.get(:validations) == ["invalid_content"]
     end
 
-    test "create_rule_implementation/1 with valid data for raw implementation creates a rule_implementation" do
+    test "create_rule_implementation/2 with valid data for raw implementation creates a rule_implementation" do
       rule = insert(:rule)
 
       creation_attrs =
@@ -462,7 +461,7 @@ defmodule TdDq.RuleImplementationsTest do
       assert rule_implementation.rule_id == creation_attrs["rule_id"]
     end
 
-    test "create_rule_implementation/1 with valid data with single structure creates a rule_implementation" do
+    test "create_rule_implementation/2 with valid data with single structure creates a rule_implementation" do
       rule = insert(:rule)
 
       creation_attrs =
@@ -480,7 +479,7 @@ defmodule TdDq.RuleImplementationsTest do
       assert rule_implementation.rule_id == creation_attrs["rule_id"]
     end
 
-    test "create_rule_implementation/1 with valid data with timestamp creates a rule_implementation" do
+    test "create_rule_implementation/2 with valid data with timestamp creates a rule_implementation" do
       rule = insert(:rule)
 
       creation_attrs =
@@ -508,7 +507,7 @@ defmodule TdDq.RuleImplementationsTest do
       assert rule_implementation.rule_id == creation_attrs["rule_id"]
     end
 
-    test "create_rule_implementation/1 with invalid data with timestamp range returns error" do
+    test "create_rule_implementation/2 with invalid data with timestamp range returns error" do
       rule = insert(:rule)
 
       creation_attrs =

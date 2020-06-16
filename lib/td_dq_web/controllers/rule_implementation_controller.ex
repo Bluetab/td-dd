@@ -83,7 +83,7 @@ defmodule TdDqWeb.RuleImplementationController do
       rule_implementation(
         :body,
         Schema.ref(:RuleImplementationCreate),
-        "Quality Rule create attrs"
+        "Quality Rule creation parameters"
       )
     end
 
@@ -229,7 +229,7 @@ defmodule TdDqWeb.RuleImplementationController do
     produces("application/json")
 
     parameters do
-      rule(:body, Schema.ref(:RuleImplementationUpdate), "Quality Rule update attrs")
+      rule(:body, Schema.ref(:RuleImplementationUpdate), "Quality Rule update parameters")
       id(:path, :integer, "Quality Rule ID", required: true)
     end
 
@@ -285,6 +285,7 @@ defmodule TdDqWeb.RuleImplementationController do
 
       {:error, %Changeset{data: %{__struct__: _}} = changeset} ->
         Logger.error("While updating rule implemenation... #{inspect(changeset)}")
+
         conn
         |> put_status(:unprocessable_entity)
         |> put_view(ChangesetView)

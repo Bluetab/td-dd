@@ -2,7 +2,6 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
   use TdDqWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  import TdDq.Factory
   import TdDqWeb.Authentication, only: :functions
 
   alias TdCache.StructureCache
@@ -163,7 +162,10 @@ defmodule TdDqWeb.RuleImplementationControllerTest do
     end
 
     @tag :admin_authenticated
-    test "errors trying to create raw rule implementation without system and alias", %{conn: conn, swagger_schema: schema} do
+    test "errors trying to create raw rule implementation without system and alias", %{
+      conn: conn,
+      swagger_schema: schema
+    } do
       rule = insert(:rule)
 
       creation_attrs =

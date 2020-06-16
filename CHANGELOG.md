@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+### Changed
+
+- [TD-2637] Audit events are now published to Redis instead of via HTTP
+
 ## [3.23.0] 2020-06-01
 
 ### Changed

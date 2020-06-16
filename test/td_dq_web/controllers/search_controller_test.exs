@@ -3,7 +3,6 @@ defmodule TdDqWeb.SearchControllerTest do
 
   alias TdDq.Cache.RuleLoader
   alias TdDq.Permissions.MockPermissionResolver
-  alias TdDq.Rules
   alias TdDq.Search.IndexWorker
 
   setup_all do
@@ -13,22 +12,7 @@ defmodule TdDqWeb.SearchControllerTest do
     :ok
   end
 
-  @create_attrs %{
-    description: %{"document" => "some description"},
-    goal: 42,
-    minimum: 42,
-    name: "some name",
-    type_params: %{},
-    df_content: %{},
-    df_name: "none"
-  }
-
   @user_name "Im not an admin"
-
-  defp create_rule do
-    {:ok, rule} = Rules.create_rule(@create_attrs)
-    rule
-  end
 
   describe "index" do
     @tag :admin_authenticated
@@ -39,7 +23,7 @@ defmodule TdDqWeb.SearchControllerTest do
 
     @tag :admin_authenticated
     test "search non empty rules", %{conn: conn} do
-      create_rule()
+      insert(:rule)
       conn = post(conn, Routes.search_path(conn, :search))
       assert length(json_response(conn, 200)["data"]) == 1
     end
@@ -72,8 +56,8 @@ defmodule TdDqWeb.SearchControllerTest do
         updated_by: Integer.mod(:binary.decode_unsigned("app-admin"), 100_000)
       }
 
-      Rules.create_rule(creation_attrs_1)
-      Rules.create_rule(creation_attrs_2)
+      insert(:rule, creation_attrs_1)
+      insert(:rule, creation_attrs_2)
 
       create_acl_entry(
         user_id,
