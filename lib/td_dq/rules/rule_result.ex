@@ -22,15 +22,14 @@ defmodule TdDq.Rules.RuleResult do
     timestamps()
   end
 
-  @doc false
-  def changeset(%RuleResult{} = rule_result, attrs) do
-    attrs =
-      attrs
+  def changeset(%RuleResult{} = rule_result, params) do
+    params =
+      params
       |> format_date()
       |> format_result()
 
     rule_result
-    |> cast(attrs, [
+    |> cast(params, [
       :implementation_key,
       :date,
       :parent_domains,
@@ -43,21 +42,21 @@ defmodule TdDq.Rules.RuleResult do
     |> validate_number(:result, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
   end
 
-  defp format_date(%{"date" => date} = attrs) do
+  defp format_date(%{"date" => date} = params) do
     # Standard datetime formats will be handled by Ecto, we only need to
     # transform non-standard formats (YYYY-MM-DD or YYYY-MM-DD-HH-MM-SS).
     case DateParser.parse(date, [:utc_date, :legacy]) do
-      {:ok, datetime, _} -> Map.put(attrs, "date", datetime)
-      _ -> attrs
+      {:ok, datetime, _} -> Map.put(params, "date", datetime)
+      _ -> params
     end
   end
 
-  defp format_date(attrs), do: attrs
+  defp format_date(params), do: params
 
-  defp format_result(%{"result" => result} = attrs) when is_float(result) do
+  defp format_result(%{"result" => result} = params) when is_float(result) do
     result = Decimal.round(Decimal.from_float(result), @scale, :floor)
-    Map.put(attrs, "result", result)
+    Map.put(params, "result", result)
   end
 
-  defp format_result(attrs), do: attrs
+  defp format_result(params), do: params
 end

@@ -9,10 +9,6 @@ config :td_dq, TdDq.Repo,
 
 config :td_dq, TdDq.Auth.Guardian, secret_key: System.fetch_env!("GUARDIAN_SECRET_KEY")
 
-config :td_dq, :audit_service,
-  audit_host: System.fetch_env!("API_AUDIT_HOST"),
-  audit_port: System.fetch_env!("API_AUDIT_PORT")
-
 config :td_dq, TdDq.Search.Cluster, url: System.fetch_env!("ES_URL")
 
 config :td_cache, redis_host: System.fetch_env!("REDIS_HOST")

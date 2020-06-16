@@ -14,15 +14,19 @@ defmodule TdDqWeb.ConnCase do
   """
 
   use ExUnit.CaseTemplate
+
+  import TdDqWeb.Authentication, only: :functions
+
   alias Ecto.Adapters.SQL.Sandbox
   alias Phoenix.ConnTest
   alias TdDqWeb.Endpoint
-  import TdDqWeb.Authentication, only: :functions
 
   using do
     quote do
       # Import conveniences for testing with connections
       use ConnTest
+
+      import TdDq.Factory
 
       alias TdDqWeb.Router.Helpers, as: Routes
 

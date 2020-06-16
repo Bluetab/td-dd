@@ -2,143 +2,87 @@ defmodule TdDq.RulesTest do
   use TdDq.DataCase
 
   import Ecto.Query, warn: false
-  import TdDq.Factory
 
+  alias TdCache.Redix
+  alias TdCache.Redix.Stream
   alias TdDq.Cache.RuleLoader
   alias TdDq.MockRelationCache
-  alias TdDq.Rule
   alias TdDq.Rules
+  alias TdDq.Rules.Rule
   alias TdDq.Search.IndexWorker
+
+  @stream TdCache.Audit.stream()
 
   setup_all do
     start_supervised(MockRelationCache)
     start_supervised(IndexWorker)
     start_supervised(RuleLoader)
+    [user: build(:user)]
+  end
+
+  setup do
+    on_exit(fn -> Redix.del!(@stream) end)
     :ok
   end
 
-  describe "rule" do
-    alias TdDq.Rules.Rule
-
-    test "list_rule/0 returns all rules" do
+  describe "list_rules/0" do
+    test "returns all rules" do
       rule = insert(:rule)
       assert Rules.list_rules() == [rule]
     end
+  end
 
-    test "get_rule/1 returns the rule with given id" do
+  describe "get_rule/1" do
+    test "returns the rule with given id" do
       rule = insert(:rule)
       assert Rules.get_rule!(rule.id) == rule
     end
+  end
 
-    test "create_rule/1 with valid data creates a rule" do
-      creation_attrs = Map.from_struct(build(:rule))
-
-      assert {:ok, %Rule{} = rule} = Rules.create_rule(creation_attrs)
-
-      assert rule.business_concept_id == creation_attrs[:business_concept_id]
-      assert rule.goal == creation_attrs[:goal]
-      assert rule.minimum == creation_attrs[:minimum]
-      assert rule.name == creation_attrs[:name]
-      assert rule.active == creation_attrs[:active]
-      assert rule.version == creation_attrs[:version]
-      assert rule.updated_by == creation_attrs[:updated_by]
+  describe "create_rule/2" do
+    test "creates a rule with valid data", %{user: user} do
+      params = string_params_for(:rule)
+      assert {:ok, %{rule: rule}} = Rules.create_rule(params, user)
     end
 
-    test "create_rule/1 with invalid data returns error changeset" do
-      creation_attrs = Map.from_struct(build(:rule, name: nil))
-
-      assert {:error, %Ecto.Changeset{}} = Rules.create_rule(creation_attrs)
+    test "publishes an audit event", %{user: user} do
+      params = string_params_for(:rule)
+      assert {:ok, %{audit: event_id}} = Rules.create_rule(params, user)
+      assert {:ok, [%{id: ^event_id}]} = Stream.read(:redix, @stream, transform: true)
     end
 
-    test "create_rule/2 with same name and business concept id returns error changeset" do
-      insert(:rule)
-      creation_attrs = Map.from_struct(build(:rule))
-      {:error, changeset} = Rules.create_rule(creation_attrs)
-
-      errors = Map.get(changeset, :errors)
-      assert Enum.any?(errors, fn {key, _} -> key == :rule_name_bc_id end)
+    test "returns error and changeset if changeset is invalid", %{user: user} do
+      params = Map.from_struct(build(:rule, name: nil))
+      assert {:error, :rule, %Ecto.Changeset{}, _} = Rules.create_rule(params, user)
     end
+  end
 
-    test "create_rule/2 with same name and null business concept id" do
-      insert(:rule, business_concept_id: nil)
-
-      creation_attrs = Map.from_struct(build(:rule, business_concept_id: nil))
-
-      {:error, changeset} = Rules.create_rule(creation_attrs)
-
-      errors = Map.get(changeset, :errors)
-      assert Enum.any?(errors, fn {key, _} -> key == :rule_name_bc_id end)
-    end
-
-    test "create_rule/2 two soft deleted rules with same name and bc id can be created" do
-      insert(:rule, deleted_at: DateTime.utc_now())
-
-      creation_attrs = Map.from_struct(build(:rule, deleted_at: DateTime.utc_now()))
-
-      {:ok, rule} = Rules.create_rule(creation_attrs)
-
-      assert not is_nil(rule.id)
-    end
-
-    test "create_rule/2 can create a rule with same name and bc id as a soft deleted rule" do
-      insert(:rule, deleted_at: DateTime.utc_now())
-
-      creation_attrs = Map.from_struct(build(:rule))
-      {:ok, rule} = Rules.create_rule(creation_attrs)
-
-      assert not is_nil(rule.id)
-    end
-
-    test "update_rule/2 with valid data updates the rule" do
+  describe "update_rule/3" do
+    test "updates rule if changes are valid", %{user: user} do
       rule = insert(:rule)
-      update_attrs = Map.from_struct(rule)
-
-      update_attrs =
-        update_attrs
-        |> Map.put(:name, "New name")
-        |> Map.put(:description, %{"document" => "New description"})
-
-      assert {:ok, rule} = Rules.update_rule(rule, update_attrs)
-      assert %Rule{} = rule
-      assert rule.description == update_attrs[:description]
+      params = %{"name" => "New name", "description" => %{"document" => "New description"}}
+      assert {:ok, %{rule: rule}} = Rules.update_rule(rule, params, user)
     end
 
-    test "update_rule/2 with invalid data returns error changeset" do
+    test "publishes an audit event", %{user: user} do
       rule = insert(:rule)
-      update_attrs = Map.from_struct(rule)
-
-      udpate_attrs =
-        update_attrs
-        |> Map.put(:name, nil)
-        |> Map.put(:system, nil)
-
-      assert {:error, %Ecto.Changeset{}} = Rules.update_rule(rule, udpate_attrs)
+      params = %{"name" => "New name"}
+      assert {:ok, %{audit: event_id}} = Rules.update_rule(rule, params, user)
+      assert {:ok, [%{id: ^event_id}]} = Stream.read(:redix, @stream, transform: true)
     end
 
-    test "update_rule/2 rule with same name and bc id as an existing rule" do
-      insert(:rule, name: "Reference name", business_concept_id: nil)
-
-      rule_to_update = insert(:rule, name: "Name to Update", business_concept_id: nil)
-
-      update_attrs =
-        rule_to_update
-        |> Map.from_struct()
-        |> Map.put(:name, "Reference name")
-
-      assert {:error, changeset} = Rules.update_rule(rule_to_update, update_attrs)
-      errors = Map.get(changeset, :errors)
-      assert Enum.any?(errors, fn {key, _} -> key == :rule_name_bc_id end)
-    end
-
-    test "delete_rule/1 deletes the rule" do
+    test "returns error and changeset if changeset is invalid", %{user: user} do
       rule = insert(:rule)
-      assert {:ok, %Rule{}} = Rules.delete_rule(rule)
-      assert_raise Ecto.NoResultsError, fn -> Rules.get_rule!(rule.id) end
+      params = %{name: nil}
+      assert {:error, :rule, %Ecto.Changeset{}, _} = Rules.update_rule(rule, params, user)
     end
+  end
 
-    test "change_rule/1 returns a rule changeset" do
+  describe "rule" do
+    test "delete_rule/1 deletes the rule", %{user: user} do
       rule = insert(:rule)
-      assert %Ecto.Changeset{} = Rules.change_rule(rule)
+      assert {:ok, %{rule: rule}} = Rules.delete_rule(rule, user)
+      assert %{__meta__: %{state: :deleted}} = rule
     end
 
     test "soft_deletion modifies field deleted_at of rule and associated rule_implementations with the current timestamp" do

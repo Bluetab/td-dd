@@ -2,19 +2,15 @@ defmodule TdDqWeb.RuleControllerTest do
   use TdDqWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  import TdDqWeb.Authentication, only: :functions
-  import TdDq.Factory
-
+  alias TdCache.{Audit, Redix}
   alias TdDq.Cache.RuleLoader
   alias TdDq.MockRelationCache
   alias TdDq.Permissions.MockPermissionResolver
   alias TdDq.Rules
   alias TdDq.Rules.Rule
   alias TdDq.Search.IndexWorker
-  alias TdDqWeb.ApiServices.MockTdAuditService
 
   setup_all do
-    start_supervised(MockTdAuditService)
     start_supervised(MockRelationCache)
     start_supervised(MockPermissionResolver)
     start_supervised(IndexWorker)
@@ -22,82 +18,25 @@ defmodule TdDqWeb.RuleControllerTest do
     :ok
   end
 
-  @create_fixture_attrs %{
-    business_concept_id: "some business_concept_id",
-    description: %{"document" => "some description"},
-    goal: 42,
-    minimum: 42,
-    name: "some name",
-    updated_by: Integer.mod(:binary.decode_unsigned("app-admin"), 100_000),
-    type_params: %{}
-  }
-
-  @create_fixture_attrs_no_bc %{
-    description: %{"document" => "some description"},
-    goal: 42,
-    minimum: 42,
-    name: "some name",
-    updated_by: Integer.mod(:binary.decode_unsigned("app-admin"), 100_000),
-    type_params: %{}
-  }
-
-  @create_attrs %{
-    business_concept_id: "some business_concept_id",
-    description: %{"document" => "some description"},
-    goal: 42,
-    minimum: 42,
-    name: "some name",
-    type_params: %{}
-  }
-
-  @update_attrs %{
-    business_concept_id: "some updated business_concept_id",
-    description: %{"document" => "some updated description"},
-    goal: 43,
-    minimum: 43,
-    name: "some updated name"
-  }
-
-  @invalid_attrs %{
-    business_concept_id: nil,
-    description: nil,
-    goal: nil,
-    minimum: nil,
-    name: nil,
-    type_params: nil
-  }
-
-  @comparable_fields [
-    "id",
-    "business_concept_id",
-    "description",
-    "goal",
-    "minimum",
-    "name",
-    "active",
-    "version",
-    "updated_by",
-    "rule_type_id",
-    "type_params"
-  ]
-
   @user_name "Im not an admin"
 
-  def fixture(:rule) do
-    {:ok, rule} = Rules.create_rule(@create_fixture_attrs)
-    rule
-  end
-
   setup %{conn: conn} do
-    {:ok, conn: put_req_header(conn, "accept", "application/json")}
+    on_exit(fn -> Redix.del!(Audit.stream()) end)
+
+    [
+      conn: put_req_header(conn, "accept", "application/json"),
+      rule: insert(:rule)
+    ]
   end
 
   describe "index" do
     @tag :admin_authenticated
     test "lists all rules", %{conn: conn, swagger_schema: schema} do
-      conn = get(conn, Routes.rule_path(conn, :index))
-      validate_resp_schema(conn, schema, "RulesResponse")
-      assert json_response(conn, :ok)["data"] == []
+      assert %{"data" => [_rule]} =
+               conn
+               |> get(Routes.rule_path(conn, :index))
+               |> validate_resp_schema(schema, "RulesResponse")
+               |> json_response(:ok)
     end
 
     @tag authenticated_no_admin_user: @user_name
@@ -106,6 +45,7 @@ defmodule TdDqWeb.RuleControllerTest do
       user: %{id: user_id},
       swagger_schema: schema
     } do
+      user = build(:user, user_name: @user_name)
       business_concept_id_permission = "1"
       domain_id_with_permission = 1
 
@@ -127,8 +67,8 @@ defmodule TdDqWeb.RuleControllerTest do
         updated_by: Integer.mod(:binary.decode_unsigned("app-admin"), 100_000)
       }
 
-      {:ok, rule} = Rules.create_rule(creation_attrs_1)
-      Rules.create_rule(creation_attrs_2)
+      {:ok, %{rule: rule}} = Rules.create_rule(creation_attrs_1, user)
+      Rules.create_rule(creation_attrs_2, user)
 
       create_acl_entry(
         user_id,
@@ -138,69 +78,50 @@ defmodule TdDqWeb.RuleControllerTest do
         "watch"
       )
 
-      conn = get(conn, Routes.rule_path(conn, :index))
-      validate_resp_schema(conn, schema, "RulesResponse")
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.rule_path(conn, :index))
+               |> validate_resp_schema(schema, "RulesResponse")
+               |> json_response(:ok)
 
-      assert Enum.all?(json_response(conn, :ok)["data"], fn %{"id" => id} -> id == rule.id end)
+      assert Enum.all?(data, fn %{"id" => id} -> id == rule.id end)
     end
   end
 
   describe "get_rules_by_concept" do
     @tag :admin_authenticated
     test "lists all rules of a concept", %{conn: conn, swagger_schema: schema} do
-      conn = get(conn, Routes.rule_path(conn, :get_rules_by_concept, "id"))
-      validate_resp_schema(conn, schema, "RulesResponse")
-      assert json_response(conn, :ok)["data"] == []
+      assert %{"data" => []} =
+               conn
+               |> get(Routes.rule_path(conn, :get_rules_by_concept, "id"))
+               |> validate_resp_schema(schema, "RulesResponse")
+               |> json_response(:ok)
     end
   end
 
   describe "verify token is required" do
-    test "renders unauthenticated when no token", %{conn: conn, swagger_schema: schema} do
-      conn = put_req_header(conn, "content-type", "application/json")
-      conn = post(conn, Routes.rule_path(conn, :create), rule: @create_attrs)
-      validate_resp_schema(conn, schema, "RuleResponse")
-      assert conn.status == 401
-    end
-  end
+    test "renders unauthenticated when no token", %{conn: conn} do
+      params = string_params_for(:rule)
 
-  describe "verify token secret key must be the one in config" do
-    test "renders unauthenticated when passing token signed with invalid secret key", %{
-      conn: conn
-    } do
-      # token with secret key SuperSecretTruedat2"
-      jwt =
-        "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJ0cnVlQkciLCJleHAiOjE1MTg2MDE2ODMsImlhdCI6MTUxODU5ODA4MywiaXNzIjoidHJ1ZUJHIiwianRpIjoiNTAzNmI5MTQtYmViOC00N2QyLWI4NGQtOTA2ZjMyMTQwMDRhIiwibmJmIjoxNTE4NTk4MDgyLCJzdWIiOiJhcHAtYWRtaW4iLCJ0eXAiOiJhY2Nlc3MifQ.0c_ZpzfiwUeRAbHe-34rvFZNjQoU_0NCMZ-T6r6_DUqPiwlp1H65vY-G1Fs1011ngAAVf3Xf8Vkqp-yOQUDTdw"
-
-      conn = put_auth_headers(conn, jwt)
-      conn = post(conn, Routes.rule_path(conn, :create), rule: @create_attrs)
-      assert conn.status == 401
+      assert conn
+             |> put_req_header("content-type", "application/json")
+             |> post(Routes.rule_path(conn, :create), rule: params)
+             |> response(:unauthorized)
     end
   end
 
   describe "create rule" do
     @tag :admin_authenticated
     test "renders rule when data is valid", %{conn: conn, swagger_schema: schema} do
-      creation_attrs = @create_fixture_attrs
+      params = string_params_for(:rule)
 
-      conn = post(conn, Routes.rule_path(conn, :create), rule: creation_attrs)
-      validate_resp_schema(conn, schema, "RuleResponse")
-      assert %{"id" => id} = json_response(conn, 201)["data"]
-      conn = recycle_and_put_headers(conn)
-      conn = get(conn, Routes.rule_path(conn, :show, id))
-      validate_resp_schema(conn, schema, "RuleResponse")
-      comparable_fields = Map.take(json_response(conn, :ok)["data"], @comparable_fields)
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.rule_path(conn, :create), rule: params)
+               |> validate_resp_schema(schema, "RuleResponse")
+               |> json_response(:created)
 
-      assert comparable_fields == %{
-               "id" => id,
-               "business_concept_id" => "some business_concept_id",
-               "description" => %{"document" => "some description"},
-               "goal" => 42,
-               "minimum" => 42,
-               "name" => "some name",
-               "active" => false,
-               "version" => 1,
-               "updated_by" => @create_fixture_attrs.updated_by
-             }
+      assert %{"id" => id} = data
     end
 
     @tag :admin_authenticated
@@ -208,32 +129,26 @@ defmodule TdDqWeb.RuleControllerTest do
       conn: conn,
       swagger_schema: schema
     } do
-      conn = post(conn, Routes.rule_path(conn, :create), rule: @create_fixture_attrs_no_bc)
-      validate_resp_schema(conn, schema, "RuleResponse")
-      assert %{"id" => id} = json_response(conn, 201)["data"]
-      conn = recycle_and_put_headers(conn)
-      conn = get(conn, Routes.rule_path(conn, :show, id))
-      validate_resp_schema(conn, schema, "RuleResponse")
-      comparable_fields = Map.take(json_response(conn, :ok)["data"], @comparable_fields)
+      rule_params =
+        string_params_for(:rule)
+        |> Map.delete("business_concept_id")
 
-      assert comparable_fields == %{
-               "id" => id,
-               "business_concept_id" => nil,
-               "description" => %{"document" => "some description"},
-               "goal" => 42,
-               "minimum" => 42,
-               "name" => "some name",
-               "active" => false,
-               "version" => 1,
-               "updated_by" => @create_fixture_attrs.updated_by
-             }
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.rule_path(conn, :create), rule: rule_params)
+               |> validate_resp_schema(schema, "RuleResponse")
+               |> json_response(:created)
+
+      assert %{"id" => _id, "business_concept_id" => nil} = data
     end
 
     @tag :admin_authenticated
     test "renders errors when data is invalid", %{conn: conn} do
+      params = string_params_for(:rule, name: nil)
+
       assert %{"errors" => _errors} =
                conn
-               |> post(Routes.rule_path(conn, :create), rule: @invalid_attrs)
+               |> post(Routes.rule_path(conn, :create), rule: params)
                |> json_response(:unprocessable_entity)
     end
 
@@ -241,15 +156,11 @@ defmodule TdDqWeb.RuleControllerTest do
     test "renders errors when rule result type is numeric and goal is higher than minimum", %{
       conn: conn
     } do
-      creation_attrs =
-        Map.merge(
-          @create_fixture_attrs_no_bc,
-          %{result_type: "errors_number", minimum: 5, goal: 10}
-        )
+      params = string_params_for(:rule, minimum: 5, goal: 10, result_type: "errors_number")
 
       assert %{"errors" => errors} =
                conn
-               |> post(Routes.rule_path(conn, :create), rule: creation_attrs)
+               |> post(Routes.rule_path(conn, :create), rule: params)
                |> json_response(:unprocessable_entity)
 
       assert errors == [
@@ -264,15 +175,11 @@ defmodule TdDqWeb.RuleControllerTest do
     test "renders errors when rule result type is percentage and goal is lower than minimum", %{
       conn: conn
     } do
-      creation_attrs =
-        Map.merge(
-          @create_fixture_attrs_no_bc,
-          %{result_type: "percentage", minimum: 50, goal: 10}
-        )
+      params = string_params_for(:rule, result_type: "percentage", minimum: 50, goal: 10)
 
       assert %{"errors" => errors} =
                conn
-               |> post(Routes.rule_path(conn, :create), rule: creation_attrs)
+               |> post(Routes.rule_path(conn, :create), rule: params)
                |> json_response(:unprocessable_entity)
 
       assert errors == [
@@ -285,7 +192,9 @@ defmodule TdDqWeb.RuleControllerTest do
   end
 
   describe "update rule" do
-    setup [:create_rule]
+    setup do
+      [rule: insert(:rule)]
+    end
 
     @tag :admin_authenticated
     test "renders rule when data is valid", %{
@@ -293,39 +202,32 @@ defmodule TdDqWeb.RuleControllerTest do
       rule: %Rule{id: id} = rule,
       swagger_schema: schema
     } do
-      conn = put(conn, Routes.rule_path(conn, :update, rule), rule: @update_attrs)
-      validate_resp_schema(conn, schema, "RuleResponse")
-      assert %{"id" => ^id} = json_response(conn, :ok)["data"]
+      params = string_params_for(:rule)
 
-      conn = recycle_and_put_headers(conn)
-      conn = get(conn, Routes.rule_path(conn, :show, id))
-      validate_resp_schema(conn, schema, "RuleResponse")
-      comparable_fields = Map.take(json_response(conn, :ok)["data"], @comparable_fields)
+      assert %{"data" => data} =
+               conn
+               |> put(Routes.rule_path(conn, :update, rule), rule: params)
+               |> validate_resp_schema(schema, "RuleResponse")
+               |> json_response(:ok)
 
-      assert comparable_fields == %{
-               "id" => id,
-               "business_concept_id" => "some updated business_concept_id",
-               "description" => %{"document" => "some updated description"},
-               "goal" => 43,
-               "minimum" => 43,
-               "name" => "some updated name",
-               "active" => false,
-               "version" => 1,
-               "updated_by" => @create_fixture_attrs.updated_by
-             }
+      assert %{"id" => ^id} = data
     end
 
     @tag :admin_authenticated
     test "renders errors when data is invalid", %{conn: conn, rule: rule, swagger_schema: schema} do
-      conn = put(conn, Routes.rule_path(conn, :update, rule), rule: @invalid_attrs)
-      validate_resp_schema(conn, schema, "RuleResponse")
-      assert json_response(conn, :unprocessable_entity)["errors"] != %{}
+      params = %{"name" => nil}
+
+      assert %{"errors" => errors} =
+               conn
+               |> put(Routes.rule_path(conn, :update, rule), rule: params)
+               |> validate_resp_schema(schema, "RuleResponse")
+               |> json_response(:unprocessable_entity)
+
+      assert errors != %{}
     end
   end
 
   describe "delete rule" do
-    setup [:create_rule]
-
     @tag :admin_authenticated
     test "deletes chosen rule", %{conn: conn, rule: rule} do
       assert conn
@@ -339,8 +241,6 @@ defmodule TdDqWeb.RuleControllerTest do
   end
 
   describe "execute_rule" do
-    setup [:create_rule]
-
     @tag :admin_authenticated
     test "execute rules as admin and true execution filter", %{
       conn: conn,
@@ -422,10 +322,5 @@ defmodule TdDqWeb.RuleControllerTest do
       resource_type: "domain",
       role_name: role
     })
-  end
-
-  defp create_rule(_) do
-    rule = fixture(:rule)
-    {:ok, rule: rule}
   end
 end

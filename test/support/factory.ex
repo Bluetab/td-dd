@@ -1,18 +1,21 @@
 defmodule TdDq.Factory do
-  @moduledoc false
+  @moduledoc """
+  An `ExMachina` factory for data quality tests.
+  """
+
   use ExMachina.Ecto, repo: TdDq.Repo
+  use TdDfLib.TemplateFactory
 
   def rule_factory do
     %TdDq.Rules.Rule{
-      business_concept_id: "4",
-      deleted_at: nil,
+      business_concept_id: sequence(:business_concept_id, &"#{&1}"),
       description: %{"document" => "Rule Description"},
       goal: 30,
       minimum: 12,
-      name: "Rule Name",
+      name: sequence("rule_name"),
       active: false,
       version: 1,
-      updated_by: 1,
+      updated_by: sequence(:updated_by, & &1),
       result_type: "percentage"
     }
   end

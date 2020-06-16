@@ -24,10 +24,9 @@ defmodule TdDq.Rules.RuleImplementation do
     timestamps()
   end
 
-  @doc false
-  def changeset(%RuleImplementation{} = rule_implementation, attrs) do
+  def changeset(%RuleImplementation{} = rule_implementation, params) do
     rule_implementation
-    |> cast(attrs, [
+    |> cast(params, [
       :deleted_at,
       :rule_id,
       :implementation_key,
@@ -105,7 +104,11 @@ defmodule TdDq.Rules.RuleImplementation.RawContent do
     if Enum.any?(fields, &present?(changeset, &1)) do
       changeset
     else
-      add_error(changeset, hd(fields), "One of these fields must be present: [system, structure_alias]")
+      add_error(
+        changeset,
+        hd(fields),
+        "One of these fields must be present: [system, structure_alias]"
+      )
     end
   end
 

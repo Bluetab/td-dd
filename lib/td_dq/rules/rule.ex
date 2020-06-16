@@ -1,9 +1,13 @@
 defmodule TdDq.Rules.Rule do
-  @moduledoc false
+  @moduledoc """
+  Ecto Schema module for quality rules.
+  """
+
   use Ecto.Schema
 
   import Ecto.Changeset
 
+  alias TdDfLib.Validation
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleImplementation
 
@@ -32,10 +36,13 @@ defmodule TdDq.Rules.Rule do
     timestamps()
   end
 
-  @doc false
-  def changeset(%Rule{} = rule, attrs) do
+  def changeset(%{} = params) do
+    changeset(%__MODULE__{}, params)
+  end
+
+  def changeset(%__MODULE__{} = rule, params) do
     rule
-    |> cast(attrs, [
+    |> cast(params, [
       :business_concept_id,
       :active,
       :name,
@@ -55,6 +62,9 @@ defmodule TdDq.Rules.Rule do
       :minimum,
       :result_type
     ])
+    |> validate_inclusion(:result_type, ["percentage", "errors_number"])
+    |> validate_goal()
+    |> validate_content()
     |> unique_constraint(
       :rule_name_bc_id,
       name: :rules_business_concept_id_name_index,
@@ -65,27 +75,22 @@ defmodule TdDq.Rules.Rule do
       name: :rules_name_index,
       message: "unique_constraint"
     )
-    |> validate_goal
   end
 
-  def delete_changeset(%Rule{} = rule) do
+  def delete_changeset(%__MODULE__{} = rule) do
     rule
     |> change()
     |> no_assoc_constraint(:rule_implementations, message: "rule.delete.existing.implementations")
   end
 
-  defp validate_goal(changeset) do
-    case changeset.valid? do
-      true ->
-        minimum = get_field(changeset, :minimum)
-        goal = get_field(changeset, :goal)
-        result_type = get_field(changeset, :result_type)
-        do_validate_goal(changeset, minimum, goal, result_type)
-
-      _ ->
-        changeset
-    end
+  defp validate_goal(%{valid?: true} = changeset) do
+    minimum = get_field(changeset, :minimum)
+    goal = get_field(changeset, :goal)
+    result_type = get_field(changeset, :result_type)
+    do_validate_goal(changeset, minimum, goal, result_type)
   end
+
+  defp validate_goal(changeset), do: changeset
 
   defp do_validate_goal(changeset, minimum, goal, "percentage") do
     changeset =
@@ -115,6 +120,26 @@ defmodule TdDq.Rules.Rule do
     @result_type
   end
 
+  defp validate_content(%{} = changeset) do
+    case get_field(changeset, :df_name) do
+      nil ->
+        validate_change(changeset, :df_content, empty_content_validator())
+
+      template_name ->
+        changeset
+        |> validate_required(:df_content)
+        |> validate_change(:df_content, Validation.validator(template_name))
+    end
+  end
+
+  defp empty_content_validator do
+    fn
+      _, nil -> []
+      _, value when value == %{} -> []
+      field, _ -> [{field, :missing_type}]
+    end
+  end
+
   defimpl Elasticsearch.Document do
     alias TdCache.ConceptCache
     alias TdCache.TaxonomyCache
@@ -123,6 +148,7 @@ defmodule TdDq.Rules.Rule do
     alias TdDfLib.Format
     alias TdDfLib.RichText
     alias TdDq.Rules
+    alias TdDq.Rules.Rule
 
     @impl Elasticsearch.Document
     def id(%Rule{id: id}), do: id
