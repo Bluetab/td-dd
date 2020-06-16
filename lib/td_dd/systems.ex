@@ -2,9 +2,9 @@ defmodule TdDd.Systems do
   @moduledoc """
   The Systems context.
   """
-  import Ecto.Query, warn: false
-
+  alias Ecto.Multi
   alias TdDd.Repo
+  alias TdDd.Systems.Audit
   alias TdDd.Systems.System
 
   @doc """
@@ -64,17 +64,20 @@ defmodule TdDd.Systems do
 
   ## Examples
 
-      iex> create_system(%{field: value})
+      iex> create_system(%{field: value}, user)
       {:ok, %System{}}
 
-      iex> create_system(%{field: bad_value})
+      iex> create_system(%{field: bad_value}, user)
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_system(attrs \\ %{}) do
-    %System{}
-    |> System.changeset(attrs)
-    |> Repo.insert()
+  def create_system(%{} = params, %{id: user_id}) do
+    changeset = System.changeset(params)
+
+    Multi.new()
+    |> Multi.insert(:system, changeset)
+    |> Multi.run(:audit, Audit, :system_created, [changeset, user_id])
+    |> Repo.transaction()
   end
 
   @doc """
@@ -82,17 +85,20 @@ defmodule TdDd.Systems do
 
   ## Examples
 
-      iex> update_system(system, %{field: new_value})
+      iex> update_system(system, %{field: new_value}, user)
       {:ok, %System{}}
 
-      iex> update_system(system, %{field: bad_value})
+      iex> update_system(system, %{field: bad_value}, user)
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_system(%System{} = system, attrs) do
-    system
-    |> System.changeset(attrs)
-    |> Repo.update()
+  def update_system(%System{} = system, %{} = params, %{id: user_id}) do
+    changeset = System.changeset(system, params)
+
+    Multi.new()
+    |> Multi.update(:system, changeset)
+    |> Multi.run(:audit, Audit, :system_updated, [changeset, user_id])
+    |> Repo.transaction()
   end
 
   @doc """
@@ -100,36 +106,18 @@ defmodule TdDd.Systems do
 
   ## Examples
 
-      iex> delete_system(system)
+      iex> delete_system(system, user)
       {:ok, %System{}}
 
-      iex> delete_system(system)
+      iex> delete_system(system, user)
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_system(%System{} = system) do
-    Repo.delete(system)
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking system changes.
-
-  ## Examples
-
-      iex> change_system(system)
-      %Ecto.Changeset{source: %System{}}
-
-  """
-  def change_system(%System{} = system) do
-    System.changeset(system, %{})
-  end
-
-  def diff(%System{} = old, %System{} = new) do
-    [:external_id, :name]
-    |> Enum.map(fn field -> {field, Map.get(old, field), Map.get(new, field)} end)
-    |> Enum.reject(fn {_, old, new} -> old == new end)
-    |> Enum.map(fn {field, _, new} -> {field, new} end)
-    |> Map.new()
+  def delete_system(%System{} = system, %{id: user_id}) do
+    Multi.new()
+    |> Multi.delete(:system, system)
+    |> Multi.run(:audit, Audit, :system_deleted, [user_id])
+    |> Repo.transaction()
   end
 
   def get_system_name_to_id_map do

@@ -73,8 +73,6 @@ services:
   service:
     image: ${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${APP_VERSION}
     environment:
-      API_AUDIT_HOST: audit
-      API_AUDIT_PORT: "4007"
       DB_HOST: postgres
       DB_NAME: postgres
       DB_PASSWORD: postgres

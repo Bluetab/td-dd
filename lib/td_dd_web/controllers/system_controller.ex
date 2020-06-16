@@ -4,7 +4,6 @@ defmodule TdDdWeb.SystemController do
 
   import Canada, only: [can?: 2]
 
-  alias TdDd.Audit.AuditSupport
   alias TdDd.Systems
   alias TdDd.Systems.System
   alias TdDd.Systems.SystemSearch
@@ -45,9 +44,7 @@ defmodule TdDdWeb.SystemController do
   def create(conn, %{"system" => params}) do
     with user <- conn.assigns[:current_user],
          {:can, true} <- {:can, can?(user, create(System))},
-         {:ok, %System{} = system} <- Systems.create_system(params) do
-      AuditSupport.system_created(conn, system)
-
+         {:ok, %{system: system}} <- Systems.create_system(params, user) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", Routes.system_path(conn, :show, system))
@@ -92,8 +89,7 @@ defmodule TdDdWeb.SystemController do
     with user <- conn.assigns[:current_user],
          {:ok, system} <- Systems.get_system(id),
          {:can, true} <- {:can, can?(user, update(system))},
-         {:ok, %System{} = updated_system} <- Systems.update_system(system, params) do
-      AuditSupport.system_updated(conn, system, system)
+         {:ok, %{system: updated_system}} <- Systems.update_system(system, params, user) do
       render(conn, "show.json", system: updated_system)
     end
   end
@@ -115,7 +111,7 @@ defmodule TdDdWeb.SystemController do
     with user <- conn.assigns[:current_user],
          {:ok, system} <- Systems.get_system(id),
          {:can, true} <- {:can, can?(user, delete(system))},
-         {:ok, _multi} <- Systems.delete_system(system) do
+         {:ok, %{system: _deleted_system}} <- Systems.delete_system(system, user) do
       send_resp(conn, :no_content, "")
     end
   end

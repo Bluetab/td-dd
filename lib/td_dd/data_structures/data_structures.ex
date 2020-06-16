@@ -9,10 +9,10 @@ defmodule TdDd.DataStructures do
   alias Ecto.Multi
   alias TdCache.LinkCache
   alias TdCache.TaxonomyCache
+  alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
-  alias TdDd.DataStructures.Profile
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.Lineage.GraphData
   alias TdDd.Repo
@@ -111,10 +111,10 @@ defmodule TdDd.DataStructures do
   end
 
   def get_data_structure_version!(data_structure_id, version, options) do
-    attrs = %{data_structure_id: data_structure_id, version: version}
+    params = %{data_structure_id: data_structure_id, version: version}
 
     DataStructureVersion
-    |> Repo.get_by!(attrs)
+    |> Repo.get_by!(params)
     |> Repo.preload(data_structure: :system)
     |> enrich(options)
   end
@@ -379,20 +379,19 @@ defmodule TdDd.DataStructures do
 
   ## Examples
 
-      iex> update_data_structure(data_structure, %{field: new_value})
+      iex> update_data_structure(data_structure, %{field: new_value}, user)
       {:ok, %DataStructure{}}
 
-      iex> update_data_structure(data_structure, %{field: bad_value})
+      iex> update_data_structure(data_structure, %{field: bad_value}, user)
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_data_structure(data_structure, attrs)
-
-  def update_data_structure(%DataStructure{} = data_structure, params) do
+  def update_data_structure(%DataStructure{} = data_structure, %{} = params, %{id: user_id}) do
     changeset = DataStructure.update_changeset(data_structure, params)
 
     Multi.new()
     |> Multi.update(:data_structure, changeset)
+    |> Multi.run(:audit, Audit, :data_structure_updated, [changeset, user_id])
     |> Repo.transaction()
     |> on_update()
   end
@@ -401,10 +400,7 @@ defmodule TdDd.DataStructures do
     with %{data_structure: %{id: id}} <- res do
       IndexWorker.reindex(id)
     end
-
-    with %{data_structure: data_structure} <- res do
-      {:ok, data_structure}
-    end
+    {:ok, res}
   end
 
   defp on_update(res), do: res
@@ -414,19 +410,20 @@ defmodule TdDd.DataStructures do
 
   ## Examples
 
-      iex> delete_data_structure(data_structure)
+      iex> delete_data_structure(data_structure, user)
       {:ok, %DataStructure{}}
 
-      iex> delete_data_structure(data_structure)
+      iex> delete_data_structure(data_structure, user)
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_data_structure(%DataStructure{} = data_structure) do
+  def delete_data_structure(%DataStructure{} = data_structure, %{id: user_id}) do
     Multi.new()
     |> Multi.run(:delete_versions, fn _, _ ->
       {:ok, delete_data_structure_versions(data_structure)}
     end)
     |> Multi.delete(:data_structure, data_structure)
+    |> Multi.run(:audit, Audit, :data_structure_deleted, [user_id])
     |> Repo.transaction()
     |> on_delete()
   end
@@ -442,10 +439,7 @@ defmodule TdDd.DataStructures do
     with %{delete_versions: {_count, dsv_ids}} <- res do
       IndexWorker.delete(dsv_ids)
     end
-
-    with %{data_structure: data_structure} <- res do
-      {:ok, data_structure}
-    end
+    {:ok, res}
   end
 
   defp on_delete(res), do: res
@@ -637,100 +631,6 @@ defmodule TdDd.DataStructures do
     do: where(query, ^default)
 
   @doc """
-  Returns the list of profiles.
-
-  ## Examples
-
-      iex> list_profiles()
-      [%Profile{}, ...]
-
-  """
-  def list_profiles do
-    Repo.all(Profile)
-  end
-
-  @doc """
-  Gets a single profile.
-
-  Raises `Ecto.NoResultsError` if the Profile does not exist.
-
-  ## Examples
-
-      iex> get_profile!(123)
-      %Profile{}
-
-      iex> get_profile!(456)
-      ** (Ecto.NoResultsError)
-
-  """
-  def get_profile!(id), do: Repo.get!(Profile, id)
-
-  @doc """
-  Creates a profile.
-
-  ## Examples
-
-      iex> create_profile(%{field: value})
-      {:ok, %Profile{}}
-
-      iex> create_profile(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_profile(attrs \\ %{}) do
-    %Profile{}
-    |> Profile.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  @doc """
-  Updates a profile.
-
-  ## Examples
-
-      iex> update_profile(profile, %{field: new_value})
-      {:ok, %Profile{}}
-
-      iex> update_profile(profile, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_profile(%Profile{} = profile, attrs) do
-    profile
-    |> Profile.changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
-  Deletes a Profile.
-
-  ## Examples
-
-      iex> delete_profile(profile)
-      {:ok, %Profile{}}
-
-      iex> delete_profile(profile)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_profile(%Profile{} = profile) do
-    Repo.delete(profile)
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking profile changes.
-
-  ## Examples
-
-      iex> change_profile(profile)
-      %Ecto.Changeset{source: %Profile{}}
-
-  """
-  def change_profile(%Profile{} = profile) do
-    Profile.changeset(profile, %{})
-  end
-
-  @doc """
   Returns a Map whose keys are external ids and whose values are data
   structure ids.
   """
@@ -752,9 +652,9 @@ defmodule TdDd.DataStructures do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_structure_metadata(attrs \\ %{}) do
+  def create_structure_metadata(params) do
     %StructureMetadata{}
-    |> StructureMetadata.changeset(attrs)
+    |> StructureMetadata.changeset(params)
     |> Repo.insert()
   end
 
@@ -786,9 +686,9 @@ defmodule TdDd.DataStructures do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_structure_metadata(%StructureMetadata{} = structure_metadata, attrs) do
+  def update_structure_metadata(%StructureMetadata{} = structure_metadata, params) do
     structure_metadata
-    |> StructureMetadata.changeset(attrs)
+    |> StructureMetadata.changeset(params)
     |> Repo.update()
   end
 

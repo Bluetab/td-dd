@@ -12,11 +12,6 @@ config :td_dd, TdDd.Auth.Guardian, secret_key: System.fetch_env!("GUARDIAN_SECRE
 
 config :td_cache, redis_host: System.fetch_env!("REDIS_HOST")
 
-config :td_dd, :audit_service,
-  api_service: TdDdWeb.ApiServices.HttpTdAuditService,
-  audit_host: System.fetch_env!("API_AUDIT_HOST"),
-  audit_port: System.fetch_env!("API_AUDIT_PORT")
-
 config :td_cache, :event_stream, consumer_id: System.fetch_env!("HOSTNAME")
 
 config :td_dd, import_dir: System.get_env("IMPORT_DIR")

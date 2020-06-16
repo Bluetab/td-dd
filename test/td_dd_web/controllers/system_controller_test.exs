@@ -7,7 +7,6 @@ defmodule TdDdWeb.SystemControllerTest do
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDd.Systems.System
-  alias TdDdWeb.ApiServices.MockTdAuditService
   alias TdDdWeb.ApiServices.MockTdAuthService
 
   @create_attrs %{
@@ -21,7 +20,6 @@ defmodule TdDdWeb.SystemControllerTest do
   @invalid_attrs %{external_id: nil, name: nil}
 
   setup_all do
-    start_supervised(MockTdAuditService)
     start_supervised(MockTdAuthService)
     start_supervised(MockPermissionResolver)
     start_supervised(PathCache)

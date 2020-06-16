@@ -46,14 +46,6 @@ config :td_dd, :phoenix_swagger,
     "priv/static/swagger.json" => [router: TdDdWeb.Router]
   }
 
-config :td_dd, :audit_service,
-  api_service: TdDdWeb.ApiServices.HttpTdAuditService,
-  audit_domain: "",
-  audit_host: "localhost",
-  audit_port: "4007",
-  audits_path: "/api/audits/",
-  protocol: "http"
-
 config :td_dd, permission_resolver: TdCache.Permissions
 config :td_dd, index_worker: TdDd.Search.IndexWorker
 
@@ -61,6 +53,10 @@ config :td_dd, index_worker: TdDd.Search.IndexWorker
 config :td_dd, TdDd.Repo,
   pool_size: 6,
   timeout: 600_000
+
+config :td_cache, :audit,
+  service: "td_dd",
+  stream: "audit:events"
 
 config :td_cache, :event_stream,
   consumer_id: "default",
