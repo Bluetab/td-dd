@@ -42,8 +42,6 @@ Ready to run in production? Please [check our deployment guides](http://www.phoe
 * [phoenix_swagger](https://github.com/xerions/phoenix_swagger) - Swagger integration to Phoenix framework
 * [ex_json_schema](https://github.com/jonasschmidt/ex_json_schema) - Elixir JSON Schema validator
 * [canada](https://github.com/jarednorman/canada) - Permission definitions in Elixir apps
-* [comeonin](https://hex.pm/packages/comeonin) - Password hashing library for Elixir
-
 
 ## Authors
 
