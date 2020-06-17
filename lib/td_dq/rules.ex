@@ -139,6 +139,14 @@ defmodule TdDq.Rules do
     |> Multi.insert(:rule, changeset)
     |> Multi.run(:audit, Audit, :rule_created, [changeset, user_id])
     |> Repo.transaction()
+    |> on_create()
+  end
+
+  defp on_create(res) do
+    with {:ok, %{rule: %{id: rule_id}}} <- res do
+      RuleLoader.refresh(rule_id)
+      res
+    end
   end
 
   @doc """
