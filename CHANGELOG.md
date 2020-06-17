@@ -2,7 +2,9 @@
 
 ## [Unreleased]
 
-### Changed
+### Fixed
+
+- [TD-2769] Reindex on rule creation
 
 ### Changed
 
