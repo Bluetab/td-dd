@@ -24,7 +24,8 @@ defmodule TdDqWeb.Router do
     pipe_through([:api, :api_secure])
 
     post("/rule_results", RuleResultController, :upload)
-    get("/rule_results", RuleResultController, :index)
+    resources("/rule_results", RuleResultController, only: [:index, :delete])
+
     get("/rules/concept/:id", RuleController, :get_rules_by_concept)
 
     resources "/rules", RuleController, except: [:new, :edit] do

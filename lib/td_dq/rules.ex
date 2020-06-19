@@ -287,10 +287,10 @@ defmodule TdDq.Rules do
     |> Repo.get!(id)
   end
 
-  def get_rule_by_implementation_key(implementation_key) do
+  def get_rule_by_implementation_key(implementation_key, opts \\ []) do
     implementation_rule =
       implementation_key
-      |> get_rule_implementation_by_key()
+      |> get_rule_implementation_by_key(opts[:deleted])
       |> Repo.preload(:rule)
 
     case implementation_rule do
@@ -320,7 +320,15 @@ defmodule TdDq.Rules do
     |> Repo.get(id)
   end
 
-  def get_rule_implementation_by_key(implementation_key) do
+  def get_rule_implementation_by_key(implementation_key, deleted \\ nil)
+
+  def get_rule_implementation_by_key(implementation_key, true) do
+    RuleImplementation
+    |> join(:inner, [ri], r in assoc(ri, :rule))
+    |> Repo.get_by(implementation_key: implementation_key)
+  end
+
+  def get_rule_implementation_by_key(implementation_key, _deleted) do
     RuleImplementation
     |> join(:inner, [ri], r in assoc(ri, :rule))
     |> where([_, r], is_nil(r.deleted_at))
@@ -733,6 +741,14 @@ defmodule TdDq.Rules do
     |> Repo.insert()
   end
 
+  def get_rule_result(id) do
+    Repo.get_by(RuleResult, id: id)
+  end
+
+  def delete_rule_result(%RuleResult{} = rule_result) do
+    Repo.delete(rule_result)
+  end
+
   def list_rule_results do
     RuleResult
     |> join(:inner, [rr, ri], ri in RuleImplementation,
@@ -771,12 +787,13 @@ defmodule TdDq.Rules do
   end
 
   @doc """
-  Returns last rule_result for each rule_implementation of rule
+  Returns last rule_result for each active rule_implementation of rule
   """
   def get_latest_rule_results(%Rule{} = rule) do
     rule
     |> Repo.preload(:rule_implementations)
     |> Map.get(:rule_implementations)
+    |> Enum.filter(&is_nil(Map.get(&1, :deleted_at)))
     |> Enum.map(&get_latest_rule_result(&1.implementation_key))
     |> Enum.filter(& &1)
   end

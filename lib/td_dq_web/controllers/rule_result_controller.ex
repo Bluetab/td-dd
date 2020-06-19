@@ -1,5 +1,8 @@
 defmodule TdDqWeb.RuleResultController do
   use TdDqWeb, :controller
+  use PhoenixSwagger
+
+  import Canada, only: [can?: 2]
 
   alias Jason, as: JSON
   alias TdCache.ConceptCache
@@ -11,6 +14,8 @@ defmodule TdDqWeb.RuleResultController do
   alias TdDq.Rules
 
   require Logger
+
+  action_fallback(TdDqWeb.FallbackController)
 
   def upload(conn, params) do
     case do_upload(params) do
@@ -26,6 +31,31 @@ defmodule TdDqWeb.RuleResultController do
     e in RuntimeError ->
       Logger.error("While uploading #{e.message}")
       send_resp(conn, :unprocessable_entity, JSON.encode!(%{error: e.message}))
+  end
+
+  swagger_path :delete do
+    description("Delete Rule Result")
+    produces("application/json")
+
+    parameters do
+      id(:path, :integer, "Rule Result ID", required: true)
+    end
+
+    response(422, "Unprocessable Entity")
+    response(500, "Internal Server Error")
+  end
+
+  def delete(conn, %{"id" => id}) do
+    with user <- conn.assigns[:current_resource],
+         rule_result <- Rules.get_rule_result(id),
+         {:can, true} <- {:can, can?(user, delete(rule_result))},
+         rule <-
+           Rules.get_rule_by_implementation_key(rule_result.implementation_key, deleted: true),
+         {:ok, _rule_result} <- Rules.delete_rule_result(rule_result) do
+      RuleResultCache.delete(rule_result.id)
+      RuleLoader.refresh([rule.id])
+      send_resp(conn, :no_content, "")
+    end
   end
 
   defp get_errors_detail(errors) do

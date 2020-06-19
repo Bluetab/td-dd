@@ -38,8 +38,7 @@ defmodule TdDq.Rules.AuditTest do
 
       changeset = Rule.changeset(rule, params)
 
-      assert {:ok, event_id} =
-               Audit.rule_updated(Repo, %{rule: rule}, changeset, user_id)
+      assert {:ok, event_id} = Audit.rule_updated(Repo, %{rule: rule}, changeset, user_id)
 
       assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
 

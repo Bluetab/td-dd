@@ -2,8 +2,13 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-2581] Rule implementation results can be deleted by Admin users
+
 ### Fixed
 
+- [TD-2581] Do not include archived implementations results in Rule quality calculation
 - [TD-2769] Reindex on rule creation
 
 ### Changed

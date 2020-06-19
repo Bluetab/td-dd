@@ -22,6 +22,18 @@ defmodule TdDqWeb.RuleResultControllerTest do
     {:ok, rule_results_file: rule_results, rule_implementation: ri}
   end
 
+  describe "delete rule results" do
+    @tag :admin_authenticated
+    @tag fixture: ""
+    test "Admin user correctly deletes rule result", %{conn: conn} do
+      %{implementation_key: key} = insert(:rule_implementation)
+      now = DateTime.utc_now()
+      rule_result = insert(:rule_result, implementation_key: key, result: 60, date: now)
+      conn = delete(conn, Routes.rule_result_path(conn, :delete, rule_result.id))
+      assert response(conn, 204)
+    end
+  end
+
   describe "upload rule results" do
     @tag :admin_authenticated
     @tag fixture: "test/fixtures/rule_results/rule_results_invalid_format.csv"
@@ -82,6 +94,7 @@ defmodule TdDqWeb.RuleResultControllerTest do
       conn = recycle_and_put_headers(conn)
       conn = get(conn, Routes.rule_implementation_path(conn, :show, rule_implementation.id))
       results = json_response(conn, 200)["data"]["all_rule_results"]
+      results = Enum.map(results, &Map.drop(&1, ["id"]))
 
       assert results == [
                %{

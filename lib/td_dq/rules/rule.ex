@@ -197,8 +197,11 @@ defmodule TdDq.Rules.Rule do
 
     defp get_execution_result_info(%Rule{} = rule) do
       case Rules.get_latest_rule_results(rule) do
-        [] -> %{result_text: "quality_result.no_execution"}
-        results -> get_execution_result_info(rule, results)
+        [] ->
+          %{result_text: "quality_result.no_execution"}
+
+        results ->
+          get_execution_result_info(rule, results)
       end
     end
 
