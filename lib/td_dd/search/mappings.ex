@@ -30,6 +30,12 @@ defmodule TdDd.Search.Mappings do
           external_id: %{type: "text", fields: @raw}
         }
       },
+      parent: %{
+        properties: %{
+          name: %{type: "text", fields: @raw},
+          external_id: %{type: "text", fields: @raw}
+        }
+      },
       group: %{type: "text", fields: @raw_sort},
       type: %{type: "text", fields: @raw_sort},
       field_type: %{type: "text", fields: @raw_sort},
