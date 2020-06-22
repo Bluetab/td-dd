@@ -71,6 +71,7 @@ defmodule TdDdWeb.DataStructureView do
       :group,
       :id,
       :inserted_at,
+      :linked_concepts_count,
       :links,
       :name,
       :parent,

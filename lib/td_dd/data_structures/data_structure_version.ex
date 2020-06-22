@@ -107,6 +107,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     alias TdCache.TaxonomyCache
     alias TdCache.TemplateCache
     alias TdCache.UserCache
+    alias TdDd.DataStructures
     alias TdDd.DataStructures.DataStructureVersion
     alias TdDd.DataStructures.PathCache
     alias TdDfLib.Format
@@ -123,6 +124,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       parent = PathCache.parent(id)
       path_sort = Enum.join(path, "~")
       domain = TaxonomyCache.get_domain(structure.domain_id) || %{}
+      linked_concepts = linked_concepts(dsv)
 
       structure
       |> Map.take([
@@ -138,6 +140,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       |> Map.put(:path_sort, path_sort)
       |> Map.put(:parent, parent)
       |> Map.put(:last_change_by, get_last_change_by(structure))
+      |> Map.put(:linked_concepts_count, linked_concepts)
       |> Map.put(:domain_ids, get_domain_ids(structure))
       |> Map.put(:system, get_system(structure))
       |> Map.put(:df_content, format_content(structure, type))
@@ -210,6 +213,10 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     defp get_mutable_metadata(%DataStructure{id: id}) do
       metadata = DataStructures.get_latest_metadata_version(id, deleted: false) || Map.new()
       Map.get(metadata, :fields, %{})
+    end
+
+    defp linked_concepts(dsv) do
+      Enum.count(DataStructures.get_structure_links(dsv), & &1.resource_type == :concept)
     end
   end
 end
