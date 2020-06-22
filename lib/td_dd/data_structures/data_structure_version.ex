@@ -157,7 +157,8 @@ defmodule TdDd.DataStructures.DataStructureVersion do
           :group,
           :name,
           :type,
-          :metadata
+          :metadata,
+          :version
         ])
       )
     end

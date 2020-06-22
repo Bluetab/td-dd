@@ -60,7 +60,8 @@ defmodule TdDd.Search.Mappings do
       df_content: content_mappings,
       status: %{type: "keyword", null_value: ""},
       class: %{type: "text", fields: %{raw: %{type: "keyword", null_value: ""}}},
-      source_alias: %{type: "keyword", fields: @raw_sort}
+      source_alias: %{type: "keyword", fields: @raw_sort},
+      version: %{type: "short"}
     }
 
     settings = %{
