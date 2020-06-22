@@ -73,6 +73,7 @@ defmodule TdDdWeb.DataStructureView do
       :inserted_at,
       :links,
       :name,
+      :parent,
       :path,
       :system_id,
       :type,
