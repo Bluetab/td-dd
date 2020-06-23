@@ -284,13 +284,13 @@ defmodule TdDdWeb.DataStructureController do
     |> Search.search_data_structures(user, permission, page, size)
   end
 
-  defp deleted_structures(%{"filters" => %{"deleted" => true}} = search_params) do
-    filters = Map.delete(Map.get(search_params, "filters", %{}), "deleted")
+  defp deleted_structures(%{"filters" => %{"all" => true}} = search_params) do
+    filters = Map.delete(Map.get(search_params, "filters", %{}), "all")
     Map.put(search_params, "filters", filters)
   end
 
   defp deleted_structures(search_params) do
-    filters = Map.delete(Map.get(search_params, "filters", %{}), "deleted")
+    filters = Map.delete(Map.get(search_params, "filters", %{}), "all")
     search_params
     |> Map.put("filters", filters)
     |> Map.put(:without, ["deleted_at"])

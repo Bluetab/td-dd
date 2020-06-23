@@ -116,7 +116,9 @@ defmodule TdDdWeb.SystemController do
     end
   end
 
-  defp deleted(%{"deleted" => true}), do: Map.new()
+  defp deleted(%{"all" => "true"}), do: Map.new()
+
+  defp deleted(%{"all" => true}), do: Map.new()
 
   defp deleted(_params) do
     Map.put(%{}, :without, ["deleted_at"])
