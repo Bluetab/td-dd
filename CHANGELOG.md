@@ -14,6 +14,7 @@
 ### Changed
 
 - [TD-2637] Audit events are now published to Redis instead of via HTTP
+- [TD-2779] New audit event `rule_result_created` for rule results
 
 ## [3.23.0] 2020-06-01
 
@@ -138,8 +139,8 @@
 ### Changed
 
 - [TD-2187] Retrieve/Store rule implementations structures using Structure
-  Cache. Delete redundant structure info stored in rule_implementations. Load in
-  Structure Cache structures being used by existing Rule Implementations
+  Cache. Delete redundant structure info stored in implementations. Load in
+  Structure Cache structures being used by existing implementations.
 
 ## [3.8.0] 2019-10-14
 

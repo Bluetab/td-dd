@@ -65,6 +65,10 @@ config :td_cache, :event_stream,
     [key: "domain:events", consumer: TdDq.Cache.DomainEventConsumer]
   ]
 
+config :td_dq, :cache_cleaner,
+  clean_on_startup: true,
+  patterns: ["rule_result:*"]
+
 # Import Elasticsearch config
 import_config "elastic.exs"
 

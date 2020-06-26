@@ -20,77 +20,117 @@ defmodule TdDq.Factory do
     }
   end
 
-  def rule_implementation_raw_factory do
-    %TdDq.Rules.RuleImplementation{
+  def raw_implementation_factory do
+    %TdDq.Rules.Implementations.Implementation{
       rule: build(:rule),
-      implementation_key: "implementation_key001",
+      implementation_key: sequence("ri"),
       implementation_type: "raw",
-      raw_content: %{
-        dataset: "cliente c join address a on c.address_id=a.id",
-        population: nil,
-        system: 1,
-        validations: "c.city = 'MADRID'"
-      },
+      raw_content: build(:raw_content),
       deleted_at: nil
     }
   end
 
-  def rule_implementation_factory do
-    %TdDq.Rules.RuleImplementation{
-      rule: build(:rule),
-      implementation_key: "implementation_key001",
-      implementation_type: "default",
-      deleted_at: nil,
-      raw_content: %{dataset: nil, population: nil, system: nil, validations: nil},
-      dataset: [
-        %{structure: %{id: 14_080}},
-        %{
-          structure: %{id: 3233},
-          clauses: [
-            %{left: %{id: 14_863}, right: %{id: 4028}}
-          ],
-          join_type: "inner"
-        }
-      ],
-      population: [
-        %{
-          value: [%{"raw" => 8}],
-          operator: %{name: "eq", value_type: "number"},
-          structure: %{id: 6311}
-        }
-      ],
-      validations: [
-        %{
-          value: [%{"id" => 80}],
-          operator: %{name: "references", value_type: "field", value_type_filter: "any"},
-          structure: %{id: 800}
-        }
-      ]
+  def raw_content_factory do
+    %TdDq.Rules.Implementations.RawContent{
+      dataset: "clientes c join address a on c.address_id=a.id",
+      population: "a.country = 'SPAIN'",
+      system: 1,
+      validations: "a.city is null"
     }
+  end
+
+  def implementation_factory(attrs) do
+    attrs = default_assoc(attrs, :rule_id, :rule)
+
+    %TdDq.Rules.Implementations.Implementation{
+      implementation_key: sequence("implementation_key"),
+      implementation_type: "default",
+      dataset: build(:dataset),
+      population: build(:population),
+      validations: build(:validations)
+    }
+    |> merge_attributes(attrs)
+  end
+
+  def dataset_factory(_attrs) do
+    [
+      build(:dataset_row),
+      build(:dataset_row, clauses: [build(:dataset_clause)], join_type: "inner")
+    ]
+  end
+
+  def dataset_row_factory do
+    %TdDq.Rules.Implementations.DatasetRow{
+      structure: build(:dataset_structure)
+    }
+  end
+
+  def dataset_structure_factory do
+    %TdDq.Rules.Implementations.Structure{
+      id: sequence(:dataset_structure_id, &(&1 + 14_080))
+    }
+  end
+
+  def dataset_clause_factory do
+    %TdDq.Rules.Implementations.JoinClause{
+      left: build(:dataset_structure),
+      right: build(:dataset_structure)
+    }
+  end
+
+  def population_factory(_attrs) do
+    [build(:condition_row)]
+  end
+
+  def validations_factory(_attrs) do
+    [build(:condition_row)]
+  end
+
+  def condition_row_factory do
+    %TdDq.Rules.Implementations.ConditionRow{
+      value: [%{"raw" => 8}],
+      operator: build(:operator),
+      structure: build(:dataset_structure)
+    }
+  end
+
+  def operator_factory do
+    %TdDq.Rules.Implementations.Operator{name: "eq", value_type: "number"}
   end
 
   def rule_result_factory do
     %TdDq.Rules.RuleResult{
-      implementation_key: "implementation_key001",
-      result: 50,
-      date: DateTime.utc_now(),
-      parent_domains: ""
+      implementation_key: sequence("ri"),
+      result: Decimal.round(50, 2),
+      date: DateTime.utc_now()
     }
+  end
+
+  def rule_result_record_factory(attrs) do
+    %{
+      implementation_key: sequence("ri"),
+      date: "2020-02-02T00:00:00Z",
+      result: "0",
+      records: "",
+      errors: ""
+    }
+    |> merge_attributes(attrs)
+    |> Enum.reject(fn {_k, v} -> v == "" end)
+    |> Map.new()
   end
 
   def user_factory do
     %TdDq.Accounts.User{
-      id: 0,
-      user_name: "bufoncillo",
-      is_admin: false
+      id: sequence(:user_id, & &1),
+      user_name: sequence("user_name")
     }
   end
 
-  def user_admin_factory do
-    %TdDq.Accounts.User{
-      id: 1,
-      user_name: "bufoncillo_admin",
-      is_admin: true
-    }
+  defp default_assoc(attrs, id_key, key) do
+    if Enum.any?([key, id_key], &Map.has_key?(attrs, &1)) do
+      attrs
+    else
+      Map.put(attrs, key, build(key))
+    end
   end
 end

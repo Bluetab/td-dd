@@ -1,4 +1,4 @@
-defmodule TdDq.Rules.RuleImplementation.Loader do
+defmodule TdDq.Rules.Implementations.Loader do
   @moduledoc """
   GenServer to put structures used in rule implementations in cache
   """
@@ -9,11 +9,11 @@ defmodule TdDq.Rules.RuleImplementation.Loader do
 
   alias TdCache.Redix
   alias TdDq.Repo
-  alias TdDq.Rules
+  alias TdDq.Rules.Implementations
 
   require Logger
 
-  @rule_implementation_structures_migration_key "TdDq.RuleImplementations.Migrations:cache_structures"
+  @implementation_structures_migration_key "TdDq.Implementations.Migrations:cache_structures"
 
   ## Client API
 
@@ -41,13 +41,13 @@ defmodule TdDq.Rules.RuleImplementation.Loader do
 
   @impl true
   def handle_info(:put_structure_ids, state) do
-    if Redix.exists?(@rule_implementation_structures_migration_key) == false do
-      structure_ids = get_rule_implementations_structure_ids()
-      Enum.each(structure_ids, &Rules.add_rule_implementation_structure_link/1)
+    if Redix.exists?(@implementation_structures_migration_key) == false do
+      structure_ids = get_implementations_structure_ids()
+      Enum.each(structure_ids, &Implementations.add_structure_link/1)
 
       Redix.command!([
         "SET",
-        @rule_implementation_structures_migration_key,
+        @implementation_structures_migration_key,
         "#{DateTime.utc_now()}"
       ])
     end
@@ -62,7 +62,7 @@ defmodule TdDq.Rules.RuleImplementation.Loader do
 
   ## Private functions
 
-  defp get_rule_implementations_structure_ids do
+  defp get_implementations_structure_ids do
     rule_types =
       Repo.all(
         from(rt in "rule_types",

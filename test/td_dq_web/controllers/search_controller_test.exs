@@ -1,14 +1,10 @@
 defmodule TdDqWeb.SearchControllerTest do
   use TdDqWeb.ConnCase
 
-  alias TdDq.Cache.RuleLoader
   alias TdDq.Permissions.MockPermissionResolver
-  alias TdDq.Search.IndexWorker
 
   setup_all do
-    start_supervised(MockPermissionResolver)
-    start_supervised(IndexWorker)
-    start_supervised(RuleLoader)
+    start_supervised!(MockPermissionResolver)
     :ok
   end
 

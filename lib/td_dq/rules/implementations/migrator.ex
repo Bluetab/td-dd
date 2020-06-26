@@ -1,4 +1,4 @@
-defmodule TdDq.Rules.RuleImplementation.Migrator do
+defmodule TdDq.Rules.Implementations.Migrator do
   @moduledoc """
   GenServer to put structures used in rule implementations in cache
   """
@@ -9,12 +9,12 @@ defmodule TdDq.Rules.RuleImplementation.Migrator do
 
   alias TdCache.Redix
   alias TdDq.Repo
-  alias TdDq.Rules.RuleImplementation.MigratorTypes
+  alias TdDq.Rules.Implementations.MigratorTypes
 
   require Logger
 
-  @rule_implementation_structures_cache_migration_key "TdDq.RuleImplementations.Migrations:cache_structures"
-  @rule_implementation_structures_migration_key "TdDq.RuleImplementations.Migrations:td-2210"
+  @implementation_structures_cache_migration_key "TdDq.Implementations.Migrations:cache_structures"
+  @implementation_structures_migration_key "TdDq.Implementations.Migrations:td-2210"
   @structure_parent_id_migration_key "TdDd.DataStructures.Migrations:td-2210"
 
   ## Client API
@@ -35,17 +35,17 @@ defmodule TdDq.Rules.RuleImplementation.Migrator do
     Logger.info("Running #{name}")
 
     unless Application.get_env(:td_dq, :env) == :test do
-      Process.send_after(self(), :migrate_rule_implementations, 0)
+      Process.send_after(self(), :migrate_implementations, 0)
     end
 
     {:ok, state}
   end
 
   @impl true
-  def handle_info(:migrate_rule_implementations, state) do
-    if Redix.exists?(@rule_implementation_structures_cache_migration_key) == true and
+  def handle_info(:migrate_implementations, state) do
+    if Redix.exists?(@implementation_structures_cache_migration_key) == true and
          Redix.exists?(@structure_parent_id_migration_key) == true and
-         Redix.exists?(@rule_implementation_structures_migration_key) == false do
+         Redix.exists?(@implementation_structures_migration_key) == false do
       query = from(ri in "rule_implementations")
 
       query
@@ -59,16 +59,16 @@ defmodule TdDq.Rules.RuleImplementation.Migrator do
         rule_rule_type_params: r.type_params
       })
       |> Repo.all()
-      |> Enum.each(&MigratorTypes.migrate_rule_implementation(&1))
+      |> Enum.each(&MigratorTypes.migrate_implementation/1)
 
       Redix.command!([
         "SET",
-        @rule_implementation_structures_migration_key,
+        @implementation_structures_migration_key,
         "#{DateTime.utc_now()}"
       ])
     end
 
-    Process.send_after(self(), :migrate_rule_implementations, 60_000)
+    Process.send_after(self(), :migrate_implementations, 60_000)
 
     {:noreply, state}
   end

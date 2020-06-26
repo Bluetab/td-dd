@@ -3,10 +3,10 @@ defmodule TdDq.Repo.Migrations.UniqueRuleImplementationKey do
   import Ecto.Query, warn: false
 
   alias TdDq.Repo
-  alias TdDq.Rules.RuleImplementation
+  alias TdDq.Rules.Implementations.Implementation
 
   def change do
-    RuleImplementation
+    Implementation
     |> group_by([ri], [ri.implementation_key])
     |> having([ri], count(ri.id) > 1)
     |> select([ri], {ri.implementation_key})
@@ -21,7 +21,7 @@ defmodule TdDq.Repo.Migrations.UniqueRuleImplementationKey do
   defp do_update({implementation_key}) do
     now = DateTime.utc_now()
 
-    RuleImplementation
+    Implementation
     |> where([ri], ri.implementation_key == ^implementation_key)
     |> where([ri], not is_nil(ri.deleted_at))
     |> update([ri],

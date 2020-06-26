@@ -4,29 +4,27 @@ defmodule TdDqWeb.RuleResultControllerTest do
   import TdDqWeb.Authentication, only: :functions
 
   alias TdDq.Cache.RuleLoader
-  alias TdDq.Cache.RuleResultLoader
   alias TdDq.Search.IndexWorker
 
   setup_all do
     start_supervised(RuleLoader)
     start_supervised(IndexWorker)
-    start_supervised(RuleResultLoader)
     :ok
   end
 
   setup %{fixture: fixture} do
     rule = insert(:rule, active: true)
-    ri = insert(:rule_implementation, implementation_key: "ri135", rule: rule)
+    ri = insert(:implementation, implementation_key: "ri135", rule: rule)
 
     rule_results = %Plug.Upload{path: fixture}
-    {:ok, rule_results_file: rule_results, rule_implementation: ri}
+    {:ok, rule_results_file: rule_results, implementation: ri}
   end
 
   describe "delete rule results" do
     @tag :admin_authenticated
     @tag fixture: ""
     test "Admin user correctly deletes rule result", %{conn: conn} do
-      %{implementation_key: key} = insert(:rule_implementation)
+      %{implementation_key: key} = insert(:implementation)
       now = DateTime.utc_now()
       rule_result = insert(:rule_result, implementation_key: key, result: 60, date: now)
       conn = delete(conn, Routes.rule_result_path(conn, :delete, rule_result.id))
@@ -41,12 +39,13 @@ defmodule TdDqWeb.RuleResultControllerTest do
       conn: conn,
       rule_results_file: rule_results_file
     } do
-      assert %{"errors" => errors} =
+      assert %{"errors" => errors, "row" => row} =
                conn
                |> post(Routes.rule_result_path(conn, :upload), rule_results: rule_results_file)
                |> json_response(:unprocessable_entity)
 
-      assert errors == [%{"date" => ["is invalid"], "row_number" => 2}]
+      assert errors == %{"date" => ["is invalid"]}
+      assert row == 2
     end
 
     @tag :admin_authenticated
@@ -54,13 +53,13 @@ defmodule TdDqWeb.RuleResultControllerTest do
     test "can load results specifying result", %{
       conn: conn,
       rule_results_file: rule_results_file,
-      rule_implementation: rule_implementation
+      implementation: implementation
     } do
       conn = post(conn, Routes.rule_result_path(conn, :upload), rule_results: rule_results_file)
       assert response(conn, 200)
 
       conn = recycle_and_put_headers(conn)
-      conn = get(conn, Routes.rule_implementation_path(conn, :show, rule_implementation.id))
+      conn = get(conn, Routes.implementation_path(conn, :show, implementation.id))
       results = json_response(conn, 200)["data"]["all_rule_results"]
       assert Enum.map(results, & &1["result"]) == ["4.00", "72.00"]
     end
@@ -70,13 +69,13 @@ defmodule TdDqWeb.RuleResultControllerTest do
     test "can load results specifying errors and records (result is calculated)", %{
       conn: conn,
       rule_results_file: rule_results_file,
-      rule_implementation: rule_implementation
+      implementation: implementation
     } do
       conn = post(conn, Routes.rule_result_path(conn, :upload), rule_results: rule_results_file)
       assert response(conn, 200)
 
       conn = recycle_and_put_headers(conn)
-      conn = get(conn, Routes.rule_implementation_path(conn, :show, rule_implementation.id))
+      conn = get(conn, Routes.implementation_path(conn, :show, implementation.id))
       results = json_response(conn, 200)["data"]["all_rule_results"]
       assert Enum.map(results, & &1["result"]) == ["0.00", "99.99"]
     end
@@ -86,13 +85,13 @@ defmodule TdDqWeb.RuleResultControllerTest do
     test "uploads rule results with custom params in csv", %{
       conn: conn,
       rule_results_file: rule_results_file,
-      rule_implementation: rule_implementation
+      implementation: implementation
     } do
       conn = post(conn, Routes.rule_result_path(conn, :upload), rule_results: rule_results_file)
       assert response(conn, 200)
 
       conn = recycle_and_put_headers(conn)
-      conn = get(conn, Routes.rule_implementation_path(conn, :show, rule_implementation.id))
+      conn = get(conn, Routes.implementation_path(conn, :show, implementation.id))
       results = json_response(conn, 200)["data"]["all_rule_results"]
       results = Enum.map(results, &Map.drop(&1, ["id"]))
 

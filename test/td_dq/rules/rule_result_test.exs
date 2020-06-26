@@ -7,49 +7,60 @@ defmodule TdDq.Rules.RuleResultTest do
   @date DateTime.from_naive!(~N[2015-01-23 00:00:00], "Etc/UTC")
   @datetime DateTime.from_naive!(~N[2015-01-23 23:50:07], "Etc/UTC")
 
-  describe "TdDq.Rules.RuleResult" do
-    test "changeset/2 accepts date format YYYY-MM-DD" do
+  describe "changeset/2" do
+    test "accepts date format YYYY-MM-DD" do
       params = %{"date" => "2015-01-23"}
 
       assert {:ok, date} =
-               %RuleResult{}
-               |> RuleResult.changeset(params)
+               params
+               |> RuleResult.changeset()
                |> Changeset.fetch_change(:date)
 
       assert date == @date
     end
 
-    test "changeset/2 accepts date format YYYY-MM-DD-HH-MM-SS" do
+    test "accepts date format YYYY-MM-DD-HH-MM-SS" do
       params = %{"date" => "2015-01-23-23-50-07"}
 
       assert {:ok, date} =
-               %RuleResult{}
-               |> RuleResult.changeset(params)
+               params
+               |> RuleResult.changeset()
                |> Changeset.fetch_change(:date)
 
       assert date == @datetime
     end
 
-    test "changeset/2 accepts ISO8601 date format with timezone" do
+    test "accepts ISO8601 date format with timezone" do
       params = %{"date" => "2015-01-24T01:50:07+02:00"}
 
       assert {:ok, date} =
-               %RuleResult{}
-               |> RuleResult.changeset(params)
+               params
+               |> RuleResult.changeset()
                |> Changeset.fetch_change(:date)
 
       assert date == @datetime
     end
 
-    test "changeset/2 accepts ISO8601 date format without timezone" do
+    test "accepts ISO8601 date format without timezone" do
       params = %{"date" => "2015-01-23 23:50:07"}
 
       assert {:ok, date} =
-               %RuleResult{}
-               |> RuleResult.changeset(params)
+               params
+               |> RuleResult.changeset()
                |> Changeset.fetch_change(:date)
 
       assert date == @datetime
+    end
+
+    test "accepts row_number" do
+      params = %{"row_number" => 123}
+
+      assert {:ok, row_number} =
+               params
+               |> RuleResult.changeset()
+               |> Changeset.fetch_change(:row_number)
+
+      assert row_number == 123
     end
   end
 end
