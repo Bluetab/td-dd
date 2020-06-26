@@ -1,40 +1,41 @@
 defmodule TdDq.Canada.Abilities do
   @moduledoc false
+
   alias TdCache.ConceptCache
   alias TdDq.Accounts.User
+  alias TdDq.Canada.ImplementationAbilities
   alias TdDq.Canada.RuleAbilities
-  alias TdDq.Canada.RuleImplementationAbilities
   alias TdDq.Permissions
+  alias TdDq.Rules.Implementations.Implementation
   alias TdDq.Rules.Rule
-  alias TdDq.Rules.RuleImplementation
 
   defimpl Canada.Can, for: User do
     def can?(%User{is_admin: true}, _action, _domain) do
       true
     end
 
-    def can?(%User{} = user, action, RuleImplementation)
+    def can?(%User{} = user, action, Implementation)
         when action in [:index] do
-      RuleImplementationAbilities.can?(user, action, RuleImplementation)
+      ImplementationAbilities.can?(user, action, Implementation)
     end
 
-    def can?(%User{} = user, action, %RuleImplementation{} = rule_implementation)
+    def can?(%User{} = user, action, %Implementation{} = implementation)
         when action in [:update, :delete, :show] do
-      RuleImplementationAbilities.can?(user, action, rule_implementation)
+      ImplementationAbilities.can?(user, action, implementation)
     end
 
     def can?(%User{} = user, :manage, %{
           "business_concept_id" => nil,
-          "resource_type" => "rule_implementation"
+          "resource_type" => "implementation"
         }) do
-      RuleImplementationAbilities.can?(user, :manage_quality_rule_implementations, "")
+      ImplementationAbilities.can?(user, :manage_quality_rule_implementations, "")
     end
 
     def can?(%User{} = user, :manage, %{
           "business_concept_id" => business_concept_id,
-          "resource_type" => "rule_implementation"
+          "resource_type" => "implementation"
         }) do
-      RuleImplementationAbilities.can?(
+      ImplementationAbilities.can?(
         user,
         :manage_quality_rule_implementations,
         business_concept_id
@@ -43,16 +44,16 @@ defmodule TdDq.Canada.Abilities do
 
     def can?(%User{} = user, :manage_raw, %{
           "business_concept_id" => nil,
-          "resource_type" => "rule_implementation"
+          "resource_type" => "implementation"
         }) do
-      RuleImplementationAbilities.can?(user, :manage_raw_quality_rule_implementations, "")
+      ImplementationAbilities.can?(user, :manage_raw_quality_rule_implementations, "")
     end
 
     def can?(%User{} = user, :manage_raw, %{
           "business_concept_id" => business_concept_id,
-          "resource_type" => "rule_implementation"
+          "resource_type" => "implementation"
         }) do
-      RuleImplementationAbilities.can?(
+      ImplementationAbilities.can?(
         user,
         :manage_raw_quality_rule_implementations,
         business_concept_id
@@ -70,25 +71,25 @@ defmodule TdDq.Canada.Abilities do
 
     def can?(%User{} = user, :create, %{
           "business_concept_id" => nil,
-          "resource_type" => "rule_implementation",
+          "resource_type" => "implementation",
           "implementation_type" => "raw"
         }) do
-      RuleImplementationAbilities.can?(user, :manage_raw_quality_rule_implementations, "")
+      ImplementationAbilities.can?(user, :manage_raw_quality_rule_implementations, "")
     end
 
     def can?(%User{} = user, :create, %{
           "business_concept_id" => nil,
-          "resource_type" => "rule_implementation"
+          "resource_type" => "implementation"
         }) do
-      RuleImplementationAbilities.can?(user, :manage_quality_rule_implementations, "")
+      ImplementationAbilities.can?(user, :manage_quality_rule_implementations, "")
     end
 
     def can?(%User{} = user, :create, %{
           "business_concept_id" => business_concept_id,
-          "resource_type" => "rule_implementation",
+          "resource_type" => "implementation",
           "implementation_type" => "raw"
         }) do
-      RuleImplementationAbilities.can?(
+      ImplementationAbilities.can?(
         user,
         :manage_raw_quality_rule_implementations,
         business_concept_id
@@ -97,9 +98,9 @@ defmodule TdDq.Canada.Abilities do
 
     def can?(%User{} = user, :create, %{
           "business_concept_id" => business_concept_id,
-          "resource_type" => "rule_implementation"
+          "resource_type" => "implementation"
         }) do
-      RuleImplementationAbilities.can?(
+      ImplementationAbilities.can?(
         user,
         :manage_quality_rule_implementations,
         business_concept_id
@@ -108,25 +109,25 @@ defmodule TdDq.Canada.Abilities do
 
     def can?(%User{} = user, :update, %{
           "business_concept_id" => nil,
-          "resource_type" => "rule_implementation",
+          "resource_type" => "implementation",
           "implementation_type" => "raw"
         }) do
-      RuleImplementationAbilities.can?(user, :manage_raw_quality_rule_implementations, "")
+      ImplementationAbilities.can?(user, :manage_raw_quality_rule_implementations, "")
     end
 
     def can?(%User{} = user, :update, %{
           "business_concept_id" => nil,
-          "resource_type" => "rule_implementation"
+          "resource_type" => "implementation"
         }) do
-      RuleImplementationAbilities.can?(user, :manage_quality_rule_implementations, "")
+      ImplementationAbilities.can?(user, :manage_quality_rule_implementations, "")
     end
 
     def can?(%User{} = user, :update, %{
           "business_concept_id" => business_concept_id,
-          "resource_type" => "rule_implementation",
+          "resource_type" => "implementation",
           "implementation_type" => "raw"
         }) do
-      RuleImplementationAbilities.can?(
+      ImplementationAbilities.can?(
         user,
         :manage_raw_quality_rule_implementations,
         business_concept_id
@@ -135,9 +136,9 @@ defmodule TdDq.Canada.Abilities do
 
     def can?(%User{} = user, :update, %{
           "business_concept_id" => business_concept_id,
-          "resource_type" => "rule_implementation"
+          "resource_type" => "implementation"
         }) do
-      RuleImplementationAbilities.can?(
+      ImplementationAbilities.can?(
         user,
         :manage_quality_rule_implementations,
         business_concept_id
@@ -146,25 +147,25 @@ defmodule TdDq.Canada.Abilities do
 
     def can?(%User{} = user, :delete, %{
           "business_concept_id" => nil,
-          "resource_type" => "rule_implementation",
+          "resource_type" => "implementation",
           "implementation_type" => "raw"
         }) do
-      RuleImplementationAbilities.can?(user, :manage_raw_quality_rule_implementations, "")
+      ImplementationAbilities.can?(user, :manage_raw_quality_rule_implementations, "")
     end
 
     def can?(%User{} = user, :delete, %{
           "business_concept_id" => nil,
-          "resource_type" => "rule_implementation"
+          "resource_type" => "implementation"
         }) do
-      RuleImplementationAbilities.can?(user, :manage_quality_rule_implementations, "")
+      ImplementationAbilities.can?(user, :manage_quality_rule_implementations, "")
     end
 
     def can?(%User{} = user, :delete, %{
           "business_concept_id" => business_concept_id,
-          "resource_type" => "rule_implementation",
+          "resource_type" => "implementation",
           "implementation_type" => "raw"
         }) do
-      RuleImplementationAbilities.can?(
+      ImplementationAbilities.can?(
         user,
         :manage_raw_quality_rule_implementations,
         business_concept_id
@@ -173,9 +174,9 @@ defmodule TdDq.Canada.Abilities do
 
     def can?(%User{} = user, :delete, %{
           "business_concept_id" => business_concept_id,
-          "resource_type" => "rule_implementation"
+          "resource_type" => "implementation"
         }) do
-      RuleImplementationAbilities.can?(
+      ImplementationAbilities.can?(
         user,
         :manage_quality_rule_implementations,
         business_concept_id

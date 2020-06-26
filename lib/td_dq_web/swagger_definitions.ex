@@ -23,7 +23,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
             updated_by(:integer, "updated by user id")
           end
         end,
-      RuleImplementation:
+      Implementation:
         swagger_schema do
           title("Rule Implementation")
           description("Rule Implementation entity")
@@ -78,12 +78,12 @@ defmodule TdDqWeb.SwaggerDefinitions do
             value_type(:string)
           end
         end,
-      RuleImplementations:
+      Implementations:
         swagger_schema do
           title("Rule Implementations")
           description("A collection of Rule Implementations")
           type(:array)
-          items(Schema.ref(:RuleImplementation))
+          items(Schema.ref(:Implementation))
         end,
       RuleCreateProps:
         swagger_schema do
@@ -151,9 +151,9 @@ defmodule TdDqWeb.SwaggerDefinitions do
     }
   end
 
-  def rule_implementation_definitions do
+  def implementation_definitions do
     %{
-      RuleImplementation:
+      Implementation:
         swagger_schema do
           title("Rule Implementation")
           description("Rule Implementation entity")
@@ -225,7 +225,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
             system([:object, :integer, nil], "system id, external id and name", required: true)
           end
         end,
-      RuleImplementationCreateProps:
+      ImplementationCreateProps:
         swagger_schema do
           properties do
             description(:string, "Rule Implementation description")
@@ -233,44 +233,44 @@ defmodule TdDqWeb.SwaggerDefinitions do
             rule_id(:integer, "belongs to rule", required: true)
           end
         end,
-      RuleImplementationCreate:
+      ImplementationCreate:
         swagger_schema do
           properties do
-            rule_implementation(Schema.ref(:RuleImplementationCreateProps))
+            rule_implementation(Schema.ref(:ImplementationCreateProps))
           end
         end,
-      RuleImplementationUpdateProps:
+      ImplementationUpdateProps:
         swagger_schema do
           properties do
             implementation_key(:string, "Rule Implementation implementation_key", required: true)
           end
         end,
-      RuleImplementationUpdate:
+      ImplementationUpdate:
         swagger_schema do
           properties do
-            rule_implementation(Schema.ref(:RuleImplementationUpdateProps))
+            rule_implementation(Schema.ref(:ImplementationUpdateProps))
           end
         end,
-      RuleImplementations:
+      Implementations:
         swagger_schema do
           title("Rule Implementations")
           description("A collection of Rule Implementations")
           type(:array)
-          items(Schema.ref(:RuleImplementation))
+          items(Schema.ref(:Implementation))
         end,
-      RuleImplementationResponse:
+      ImplementationResponse:
         swagger_schema do
           properties do
-            data(Schema.ref(:RuleImplementation))
+            data(Schema.ref(:Implementation))
           end
         end,
-      RuleImplementationsResponse:
+      ImplementationsResponse:
         swagger_schema do
           properties do
-            data(Schema.ref(:RuleImplementations))
+            data(Schema.ref(:Implementations))
           end
         end,
-      RuleImplementationsSearchFilters:
+      ImplementationsSearchFilters:
         swagger_schema do
           properties do
             structure_id(:integer, "structure id", required: false)

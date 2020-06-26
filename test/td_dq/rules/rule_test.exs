@@ -106,7 +106,7 @@ defmodule TdDq.Rules.RuleTest do
 
   describe "delete_changeset/1" do
     test "validates a rule has no implementations" do
-      %{rule: rule} = insert(:rule_implementation)
+      %{rule: rule} = insert(:implementation)
 
       assert {:error, changeset} =
                rule

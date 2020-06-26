@@ -8,13 +8,8 @@ defmodule TdDq.Rules.Rule do
   import Ecto.Changeset
 
   alias TdDfLib.Validation
+  alias TdDq.Rules.Implementations.Implementation
   alias TdDq.Rules.Rule
-  alias TdDq.Rules.RuleImplementation
-
-  @result_type %{
-    percentage: "percentage",
-    errors_number: "errors_number"
-  }
 
   schema "rules" do
     field(:business_concept_id, :string)
@@ -26,9 +21,9 @@ defmodule TdDq.Rules.Rule do
     field(:name, :string)
     field(:version, :integer, default: 1)
     field(:updated_by, :integer)
-    field(:result_type, :string, default: @result_type.percentage)
+    field(:result_type, :string, default: "percentage")
 
-    has_many(:rule_implementations, RuleImplementation)
+    has_many(:rule_implementations, Implementation)
 
     field(:df_name, :string)
     field(:df_content, :map)
@@ -116,10 +111,6 @@ defmodule TdDq.Rules.Rule do
     end
   end
 
-  def result_type do
-    @result_type
-  end
-
   defp validate_content(%{} = changeset) do
     case get_field(changeset, :df_name) do
       nil ->
@@ -147,8 +138,8 @@ defmodule TdDq.Rules.Rule do
     alias TdCache.UserCache
     alias TdDfLib.Format
     alias TdDfLib.RichText
-    alias TdDq.Rules
     alias TdDq.Rules.Rule
+    alias TdDq.Rules.RuleResults
 
     @impl Elasticsearch.Document
     def id(%Rule{id: id}), do: id
@@ -196,7 +187,7 @@ defmodule TdDq.Rules.Rule do
     end
 
     defp get_execution_result_info(%Rule{} = rule) do
-      case Rules.get_latest_rule_results(rule) do
+      case RuleResults.get_latest_rule_results(rule) do
         [] ->
           %{result_text: "quality_result.no_execution"}
 

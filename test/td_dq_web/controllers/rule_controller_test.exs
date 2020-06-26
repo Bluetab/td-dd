@@ -163,12 +163,7 @@ defmodule TdDqWeb.RuleControllerTest do
                |> post(Routes.rule_path(conn, :create), rule: params)
                |> json_response(:unprocessable_entity)
 
-      assert errors == [
-               %{
-                 "code" => "undefined",
-                 "name" => "rule.error.minimum.must.be.greater.than.or.equal.to.goal"
-               }
-             ]
+      assert %{"minimum" => ["must.be.greater.than.or.equal.to.goal"]} = errors
     end
 
     @tag :admin_authenticated
@@ -182,12 +177,7 @@ defmodule TdDqWeb.RuleControllerTest do
                |> post(Routes.rule_path(conn, :create), rule: params)
                |> json_response(:unprocessable_entity)
 
-      assert errors == [
-               %{
-                 "code" => "undefined",
-                 "name" => "rule.error.goal.must.be.greater.than.or.equal.to.minimum"
-               }
-             ]
+      assert %{"goal" => ["must.be.greater.than.or.equal.to.minimum"]} = errors
     end
   end
 

@@ -48,11 +48,13 @@ defmodule TdDq.RulesTest do
     test "publishes an audit event", %{user: user} do
       params = string_params_for(:rule)
       assert {:ok, %{audit: event_id}} = Rules.create_rule(params, user)
-      assert {:ok, [%{id: ^event_id}]} = Stream.read(:redix, @stream, transform: true)
+
+      assert {:ok, [%{id: ^event_id}]} =
+               Stream.range(:redix, @stream, event_id, event_id, transform: :range)
     end
 
     test "returns error and changeset if changeset is invalid", %{user: user} do
-      params = Map.from_struct(build(:rule, name: nil))
+      params = string_params_for(:rule, name: nil)
       assert {:error, :rule, %Ecto.Changeset{}, _} = Rules.create_rule(params, user)
     end
   end
@@ -68,7 +70,9 @@ defmodule TdDq.RulesTest do
       rule = insert(:rule)
       params = %{"name" => "New name"}
       assert {:ok, %{audit: event_id}} = Rules.update_rule(rule, params, user)
-      assert {:ok, [%{id: ^event_id}]} = Stream.read(:redix, @stream, transform: true)
+
+      assert {:ok, [%{id: ^event_id}]} =
+               Stream.range(:redix, @stream, event_id, event_id, transform: :range)
     end
 
     test "returns error and changeset if changeset is invalid", %{user: user} do
@@ -85,7 +89,7 @@ defmodule TdDq.RulesTest do
       assert %{__meta__: %{state: :deleted}} = rule
     end
 
-    test "soft_deletion modifies field deleted_at of rule and associated rule_implementations with the current timestamp" do
+    test "soft_deletion modifies field deleted_at of rule and associated implementations with the current timestamp" do
       concept_ids = 1..8 |> Enum.to_list() |> Enum.map(&"#{&1}")
 
       rules =
@@ -97,9 +101,7 @@ defmodule TdDq.RulesTest do
         |> Enum.map(&insert(:rule, &1))
 
       rules
-      |> Enum.map(
-        &insert(:rule_implementation, %{rule: &1, implementation_key: "ri_of_#{&1.id}"})
-      )
+      |> Enum.map(&insert(:implementation, %{rule: &1, implementation_key: "ri_of_#{&1.id}"}))
 
       # 2,4,6,8 are deleted
       active_ids = ["1", "3", "5", "7"]
@@ -148,7 +150,7 @@ defmodule TdDq.RulesTest do
     test "get_rule_by_implementation_key/1 retrieves a rule" do
       implementation_key = "rik1"
       rule = insert(:rule, name: "Active Rule")
-      insert(:rule_implementation, implementation_key: implementation_key, rule: rule)
+      insert(:implementation, implementation_key: implementation_key, rule: rule)
 
       %{id: result_id} = Rules.get_rule_by_implementation_key(implementation_key)
 
@@ -158,7 +160,7 @@ defmodule TdDq.RulesTest do
     test "get_rule_by_implementation_key/2 with deleted option retrieves a deleted rule by implementation key" do
       implementation_key = "rik1"
       rule = insert(:rule, name: "Deleted Rule", deleted_at: DateTime.utc_now())
-      insert(:rule_implementation, implementation_key: implementation_key, rule: rule)
+      insert(:implementation, implementation_key: implementation_key, rule: rule)
 
       %{id: result_id} = Rules.get_rule_by_implementation_key(implementation_key, deleted: true)
 
@@ -168,75 +170,10 @@ defmodule TdDq.RulesTest do
     test "get_rule_by_implementation_key/2 without deleted option or false value does not retrieve a deleted rule by implementation key" do
       implementation_key = "rik1"
       rule = insert(:rule, name: "Deleted Rule", deleted_at: DateTime.utc_now())
-      insert(:rule_implementation, implementation_key: implementation_key, rule: rule)
+      insert(:implementation, implementation_key: implementation_key, rule: rule)
 
       assert nil == Rules.get_rule_by_implementation_key(implementation_key, deleted: false)
       assert nil == Rules.get_rule_by_implementation_key(implementation_key)
-    end
-
-    test "get_structures_ids returns ids of all structures present in rule_implementation" do
-      creation_attrs = %{
-        dataset: [
-          %{structure: %{id: 1}},
-          %{clauses: [%{left: %{id: 2}, right: %{id: 3}}], structure: %{id: 4}}
-        ],
-        population: [
-          %{
-            operator: %{
-              group: "gt",
-              name: "timestamp_gt_timestamp",
-              value_type: "timestamp"
-            },
-            structure: %{id: 5},
-            value: [%{raw: "2019-12-02 05:35:00"}]
-          }
-        ],
-        validations: [
-          %{
-            operator: %{
-              group: "gt",
-              name: "timestamp_gt_timestamp",
-              value_type: "timestamp"
-            },
-            structure: %{id: 6},
-            value: [%{raw: "2019-12-02 05:35:00"}]
-          }
-        ]
-      }
-
-      implementation_key = "rik1"
-      rule = insert(:rule, name: "R1")
-
-      rule_implementaton =
-        insert(:rule_implementation,
-          implementation_key: implementation_key,
-          rule: rule,
-          dataset: creation_attrs.dataset,
-          population: creation_attrs.population,
-          validations: creation_attrs.validations
-        )
-
-      structures_ids = Rules.get_structures_ids(rule_implementaton)
-
-      assert Enum.sort(structures_ids) == [1, 2, 3, 4, 5, 6]
-    end
-  end
-
-  describe "rule result" do
-    test "get_rule_result/1 returns result by id" do
-      %{implementation_key: key} = insert(:rule_implementation)
-      now = DateTime.utc_now()
-      rule_result = insert(:rule_result, implementation_key: key, result: 60, date: now)
-      db_rule_result = Rules.get_rule_result(rule_result.id)
-      assert rule_result.id == db_rule_result.id
-    end
-
-    test "delete_rule_result/1 deletes passed %RuleResult{}" do
-      %{implementation_key: key} = insert(:rule_implementation)
-      now = DateTime.utc_now()
-      rule_result = insert(:rule_result, implementation_key: key, result: 60, date: now)
-      Rules.delete_rule_result(rule_result)
-      refute Rules.get_rule_result(rule_result.id)
     end
   end
 end

@@ -1,5 +1,7 @@
 defmodule TdDq.Rules.RuleResult do
-  @moduledoc false
+  @moduledoc """
+  Ecto Schema module for Data Quality Rule Results.
+  """
 
   use Ecto.Schema
 
@@ -7,7 +9,6 @@ defmodule TdDq.Rules.RuleResult do
 
   alias Decimal
   alias TdDq.DateParser
-  alias TdDq.Rules.RuleResult
 
   @scale 2
 
@@ -15,14 +16,18 @@ defmodule TdDq.Rules.RuleResult do
     field(:implementation_key, :string)
     field(:date, :utc_datetime)
     field(:result, :decimal, precision: 5, scale: @scale)
-    field(:parent_domains, :string, default: "")
     field(:errors, :integer)
     field(:records, :integer)
     field(:params, :map, default: %{})
+    field(:row_number, :integer, virtual: true)
     timestamps()
   end
 
-  def changeset(%RuleResult{} = rule_result, params) do
+  def changeset(%{} = params) do
+    changeset(%__MODULE__{}, params)
+  end
+
+  def changeset(%__MODULE__{} = rule_result, params) do
     params =
       params
       |> format_date()
@@ -32,11 +37,11 @@ defmodule TdDq.Rules.RuleResult do
     |> cast(params, [
       :implementation_key,
       :date,
-      :parent_domains,
       :result,
       :errors,
       :records,
-      :params
+      :params,
+      :row_number
     ])
     |> validate_required([:implementation_key, :date, :result])
     |> validate_number(:result, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)

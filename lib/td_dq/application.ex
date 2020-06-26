@@ -38,14 +38,14 @@ defmodule TdDq.Application do
     [
       # Cache workers
       TdDq.Cache.RuleLoader,
-      TdDq.Cache.RuleResultLoader,
       TdDq.Search.IndexWorker,
       # Worker to remove stale rules
       TdDq.Rules.RuleRemover,
       # Process to cache Rule Implementations Structures
-      TdDq.Rules.RuleImplementation.Loader,
-      TdDq.Rules.RuleImplementation.Migrator,
-      TdDq.Cache.DomainEventConsumer
+      TdDq.Rules.Implementations.Loader,
+      TdDq.Rules.Implementations.Migrator,
+      TdDq.Cache.DomainEventConsumer,
+      {TdCache.CacheCleaner, Application.get_env(:td_dq, :cache_cleaner, [])}
     ]
   end
 end

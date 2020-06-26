@@ -7,6 +7,10 @@ defmodule TdDq.Audit.AuditSupport do
   alias TdCache.Audit
   alias TdDfLib.{MapDiff, Masks}
 
+  def publish(events) when is_list(events) do
+    Audit.publish_all(events)
+  end
+
   def publish(event, resource_type, resource_id, user_id, payload \\ %{})
 
   def publish(event, resource_type, resource_id, user_id, %Changeset{changes: changes, data: data}) do

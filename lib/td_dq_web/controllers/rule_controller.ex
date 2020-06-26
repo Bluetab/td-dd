@@ -148,7 +148,7 @@ defmodule TdDqWeb.RuleController do
       can?(
         user,
         manage(%{
-          "resource_type" => "rule_implementation",
+          "resource_type" => "implementation",
           "business_concept_id" => rule.business_concept_id
         })
       )
@@ -157,7 +157,7 @@ defmodule TdDqWeb.RuleController do
       can?(
         user,
         manage_raw(%{
-          "resource_type" => "rule_implementation",
+          "resource_type" => "implementation",
           "business_concept_id" => rule.business_concept_id
         })
       )

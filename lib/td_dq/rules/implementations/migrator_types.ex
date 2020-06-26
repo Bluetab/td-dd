@@ -1,4 +1,4 @@
-defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
+defmodule TdDq.Rules.Implementations.MigratorTypes do
   @moduledoc """
   GenServer to put structures used in rule implementations in cache
   """
@@ -6,8 +6,8 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
   import Ecto.Query
 
   alias TdDq.Repo
-  alias TdDq.Rules
-  alias TdDq.Rules.RuleImplementation
+  alias TdDq.Rules.Implementations
+  alias TdDq.Rules.Implementations.Implementation
 
   require Logger
 
@@ -31,17 +31,17 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
     }
   end
 
-  def migrate_rule_implementation(%{
+  def migrate_implementation(%{
         id: id,
         system_params: %{"column" => _column, "group" => _group, "table" => _table},
         rule_type_name: _any,
         rule_type_params: _rule_type_params,
         rule_rule_type_params: _rule_rule_type_params
       }) do
-    Logger.info("Skipped migration of rule_implementation with id #{id}")
+    Logger.info("Skipped migration of implementation with id #{id}")
   end
 
-  def migrate_rule_implementation(%{
+  def migrate_implementation(%{
         id: id,
         system_params: system_params,
         rule_type_name: rule_type_name,
@@ -56,10 +56,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
     parent_id = get_parent_id(field_id)
     dataset = [%{structure: %{id: parent_id}}]
     validations = [get_condition_row("not_empty", field_id)]
-    update_rule_implementation(id, dataset, [], validations)
+    update_implementation(id, dataset, [], validations)
   end
 
-  def migrate_rule_implementation(%{
+  def migrate_implementation(%{
         id: id,
         system_params: system_params,
         rule_type_name: rule_type_name,
@@ -82,10 +82,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
       )
     ]
 
-    update_rule_implementation(id, dataset, [], validations)
+    update_implementation(id, dataset, [], validations)
   end
 
-  def migrate_rule_implementation(%{
+  def migrate_implementation(%{
         id: id,
         system_params: system_params,
         rule_type_name: rule_type_name,
@@ -107,10 +107,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
       )
     ]
 
-    update_rule_implementation(id, dataset, [], validations)
+    update_implementation(id, dataset, [], validations)
   end
 
-  def migrate_rule_implementation(%{
+  def migrate_implementation(%{
         id: id,
         system_params: system_params,
         rule_type_name: rule_type_name,
@@ -132,10 +132,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
       )
     ]
 
-    update_rule_implementation(id, dataset, [], validations)
+    update_implementation(id, dataset, [], validations)
   end
 
-  def migrate_rule_implementation(%{
+  def migrate_implementation(%{
         id: id,
         system_params: system_params,
         rule_type_name: rule_type_name,
@@ -156,10 +156,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
       )
     ]
 
-    update_rule_implementation(id, dataset, [], validations)
+    update_implementation(id, dataset, [], validations)
   end
 
-  def migrate_rule_implementation(%{
+  def migrate_implementation(%{
         id: id,
         system_params: system_params,
         rule_type_name: rule_type_name,
@@ -179,10 +179,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
       )
     ]
 
-    update_rule_implementation(id, dataset, [], validations)
+    update_implementation(id, dataset, [], validations)
   end
 
-  def migrate_rule_implementation(%{
+  def migrate_implementation(%{
         id: id,
         system_params: system_params,
         rule_type_name: "008_date_format",
@@ -201,10 +201,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
       )
     ]
 
-    update_rule_implementation(id, dataset, [], validations)
+    update_implementation(id, dataset, [], validations)
   end
 
-  def migrate_rule_implementation(%{
+  def migrate_implementation(%{
         id: id,
         system_params: system_params,
         rule_type_name: rule_type_name,
@@ -227,10 +227,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
       )
     ]
 
-    update_rule_implementation(id, dataset, [], validations)
+    update_implementation(id, dataset, [], validations)
   end
 
-  def migrate_rule_implementation(%{
+  def migrate_implementation(%{
         id: id,
         system_params: system_params,
         rule_type_name: "rango_fechas",
@@ -260,10 +260,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
       )
     ]
 
-    update_rule_implementation(id, dataset, [], validations)
+    update_implementation(id, dataset, [], validations)
   end
 
-  def migrate_rule_implementation(%{
+  def migrate_implementation(%{
         id: id,
         system_params: system_params,
         rule_type_name: rule_type_name,
@@ -285,10 +285,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
       )
     ]
 
-    update_rule_implementation(id, dataset, [], validations)
+    update_implementation(id, dataset, [], validations)
   end
 
-  def migrate_rule_implementation(%{
+  def migrate_implementation(%{
         id: id,
         system_params: system_params,
         rule_type_name: rule_type_name,
@@ -310,10 +310,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
       )
     ]
 
-    update_rule_implementation(id, dataset, [], validations)
+    update_implementation(id, dataset, [], validations)
   end
 
-  def migrate_rule_implementation(%{
+  def migrate_implementation(%{
         id: id,
         system_params: system_params,
         rule_type_name: rule_type_name,
@@ -335,10 +335,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
       )
     ]
 
-    update_rule_implementation(id, dataset, [], validations)
+    update_implementation(id, dataset, [], validations)
   end
 
-  def migrate_rule_implementation(%{
+  def migrate_implementation(%{
         id: id,
         system_params: system_params,
         rule_type_name: rule_type_name,
@@ -360,10 +360,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
       )
     ]
 
-    update_rule_implementation(id, dataset, [], validations)
+    update_implementation(id, dataset, [], validations)
   end
 
-  def migrate_rule_implementation(%{
+  def migrate_implementation(%{
         id: id,
         system_params: system_params,
         rule_type_name: rule_type_name,
@@ -385,10 +385,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
       )
     ]
 
-    update_rule_implementation(id, dataset, [], validations)
+    update_implementation(id, dataset, [], validations)
   end
 
-  def migrate_rule_implementation(%{
+  def migrate_implementation(%{
         id: id,
         system_params: system_params,
         rule_type_name: "comparacion_magnitudes"
@@ -407,10 +407,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
       )
     ]
 
-    update_rule_implementation(id, dataset, [], validations)
+    update_implementation(id, dataset, [], validations)
   end
 
-  def migrate_rule_implementation(%{
+  def migrate_implementation(%{
         id: id,
         system_params: system_params,
         rule_type_name: "datos_ausentes",
@@ -427,10 +427,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
       )
     ]
 
-    update_rule_implementation(id, dataset, [], validations)
+    update_implementation(id, dataset, [], validations)
   end
 
-  def migrate_rule_implementation(%{
+  def migrate_implementation(%{
         id: id,
         system_params: system_params,
         rule_type_name: rule_type_name,
@@ -446,10 +446,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
     parent_id = get_parent_id(field_id)
     dataset = [%{structure: %{id: parent_id}}]
     validations = [get_condition_row("unique", field_id)]
-    update_rule_implementation(id, dataset, [], validations)
+    update_implementation(id, dataset, [], validations)
   end
 
-  def migrate_rule_implementation(%{
+  def migrate_implementation(%{
         id: id,
         system_params: system_params,
         rule_type_name: "consistency"
@@ -468,10 +468,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
       )
     ]
 
-    update_rule_implementation(id, dataset, [], validations)
+    update_implementation(id, dataset, [], validations)
   end
 
-  def migrate_rule_implementation(%{
+  def migrate_implementation(%{
         id: id,
         system_params: system_params,
         rule_type_name: "date_format",
@@ -490,10 +490,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
       )
     ]
 
-    update_rule_implementation(id, dataset, [], validations)
+    update_implementation(id, dataset, [], validations)
   end
 
-  def migrate_rule_implementation(%{
+  def migrate_implementation(%{
         id: id,
         system_params: system_params,
         rule_type_name: "VALID_DNI_AND_CIF",
@@ -512,10 +512,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
       )
     ]
 
-    update_rule_implementation(id, dataset, [], validations)
+    update_implementation(id, dataset, [], validations)
   end
 
-  def migrate_rule_implementation(%{
+  def migrate_implementation(%{
         id: id,
         system_params: system_params,
         rule_type_name: "email",
@@ -534,10 +534,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
       )
     ]
 
-    update_rule_implementation(id, dataset, [], validations)
+    update_implementation(id, dataset, [], validations)
   end
 
-  def migrate_rule_implementation(%{
+  def migrate_implementation(%{
         id: id,
         system_params: system_params,
         rule_type_name: "integridad_datos_maestros"
@@ -571,10 +571,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
           %{}
       end
 
-    update_rule_implementation(id, dataset, [], [validation])
+    update_implementation(id, dataset, [], [validation])
   end
 
-  def migrate_rule_implementation(%{
+  def migrate_implementation(%{
         id: id,
         system_params: system_params,
         rule_type_name: "rango_numericos",
@@ -597,10 +597,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
       )
     ]
 
-    update_rule_implementation(id, dataset, [], validations)
+    update_implementation(id, dataset, [], validations)
   end
 
-  def migrate_rule_implementation(%{
+  def migrate_implementation(%{
         id: id,
         system_params: system_params,
         rule_type_name: "phone"
@@ -613,10 +613,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
     phone_validation = get_condition_row("format_of", "string", [%{raw: "phone"}], phone_id)
     country_population = get_condition_row("eq", "string", [%{raw: "ES"}], country_id)
 
-    update_rule_implementation(id, dataset, [country_population], [phone_validation])
+    update_implementation(id, dataset, [country_population], [phone_validation])
   end
 
-  def migrate_rule_implementation(%{
+  def migrate_implementation(%{
         id: id,
         system_params: system_params,
         rule_type_name: "integridad_datos_relacionados"
@@ -650,10 +650,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
           %{}
       end
 
-    update_rule_implementation(id, dataset, [], [validation])
+    update_implementation(id, dataset, [], [validation])
   end
 
-  def migrate_rule_implementation(%{
+  def migrate_implementation(%{
         id: id,
         system_params: %{
           "Campo" => %{
@@ -685,10 +685,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
       )
     ]
 
-    update_rule_implementation(id, dataset, [], validations)
+    update_implementation(id, dataset, [], validations)
   end
 
-  def migrate_rule_implementation(%{
+  def migrate_implementation(%{
         id: id,
         system_params: %{
           "Campo" => %{
@@ -710,10 +710,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
       )
     ]
 
-    update_rule_implementation(id, dataset, [], validations)
+    update_implementation(id, dataset, [], validations)
   end
 
-  def migrate_rule_implementation(%{
+  def migrate_implementation(%{
         id: id,
         system_params: %{"Campo" => %{"id" => field_id}},
         rule_type_name: "VALID_DATE_AND_LASTDAYMONTH"
@@ -739,10 +739,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
       )
     ]
 
-    update_rule_implementation(id, dataset, population, validations)
+    update_implementation(id, dataset, population, validations)
   end
 
-  def migrate_rule_implementation(%{
+  def migrate_implementation(%{
         id: id,
         system_params: %{"Campo" => %{"id" => field_id}, "REGEXP" => regex},
         rule_type_name: "MEETS_REGEXP"
@@ -759,10 +759,10 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
       )
     ]
 
-    update_rule_implementation(id, dataset, [], validations)
+    update_implementation(id, dataset, [], validations)
   end
 
-  def migrate_rule_implementation(%{
+  def migrate_implementation(%{
         id: id,
         rule_type_name: rule_type_name
       }) do
@@ -771,7 +771,7 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
     )
   end
 
-  defp update_rule_implementation(id, dataset, population, validations) do
+  defp update_implementation(id, dataset, population, validations) do
     query = from(ri in "rule_implementations")
 
     query
@@ -779,8 +779,8 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
     |> where([ri], ri.id == ^id)
     |> Repo.update_all([])
 
-    rule_implementation = get_rule_implementation(id)
-    Rules.add_rule_implementation_structure_links(rule_implementation)
+    implementation = get_implementation(id)
+    Implementations.add_structure_links(implementation)
   end
 
   defp get_parent_id(field_id) do
@@ -795,7 +795,7 @@ defmodule TdDq.Rules.RuleImplementation.MigratorTypes do
     end
   end
 
-  defp get_rule_implementation(id) do
-    Repo.get!(RuleImplementation, id)
+  defp get_implementation(id) do
+    Repo.get!(Implementation, id)
   end
 end
