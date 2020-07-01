@@ -24,8 +24,8 @@ defmodule TdDqWeb.ConnCase do
   using do
     quote do
       # Import conveniences for testing with connections
-      use ConnTest
-
+      import Plug.Conn
+      import Phoenix.ConnTest
       import TdDq.Factory
 
       alias TdDqWeb.Router.Helpers, as: Routes

@@ -2,8 +2,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
   use TdDqWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  import TdDqWeb.Authentication, only: :functions
-
   alias TdCache.StructureCache
   alias TdCache.SystemCache
   alias TdDq.Cache.RuleLoader
@@ -105,22 +103,26 @@ defmodule TdDqWeb.ImplementationControllerTest do
         }
         |> Map.Helpers.stringify_keys()
 
-      conn =
-        post(conn, Routes.implementation_path(conn, :create), rule_implementation: creation_attrs)
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.implementation_path(conn, :create),
+                 rule_implementation: creation_attrs
+               )
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:created)
 
-      validate_resp_schema(conn, schema, "ImplementationResponse")
-      assert %{"id" => id} = json_response(conn, :created)["data"]
+      assert %{"id" => id} = data
 
-      conn = recycle_and_put_headers(conn)
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:ok)
 
-      conn = get(conn, Routes.implementation_path(conn, :show, id))
-      validate_resp_schema(conn, schema, "ImplementationResponse")
-      json_response = json_response(conn, :ok)["data"]
-
-      assert rule.id == json_response["rule_id"]
+      assert rule.id == data["rule_id"]
 
       assert equals_condition_row(
-               Map.get(json_response, "validations"),
+               Map.get(data, "validations"),
                Map.get(creation_attrs, "validations")
              )
     end
@@ -265,26 +267,28 @@ defmodule TdDqWeb.ImplementationControllerTest do
         }
         |> Map.Helpers.stringify_keys()
 
-      conn =
-        put(conn, Routes.implementation_path(conn, :update, implementation),
-          rule_implementation: params
-        )
+      assert %{"data" => data} =
+               conn
+               |> put(Routes.implementation_path(conn, :update, implementation),
+                 rule_implementation: params
+               )
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:ok)
 
-      validate_resp_schema(conn, schema, "ImplementationResponse")
-      assert %{"id" => id} = json_response(conn, :ok)["data"]
+      assert %{"id" => id} = data
 
-      conn = recycle_and_put_headers(conn)
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:ok)
 
-      conn = get(conn, Routes.implementation_path(conn, :show, id))
-      validate_resp_schema(conn, schema, "ImplementationResponse")
-      json_response = json_response(conn, :ok)["data"]
+      assert implementation.rule_id == data["rule_id"]
 
-      assert implementation.rule_id == json_response["rule_id"]
-
-      assert length(implementation.validations) == length(json_response["validations"])
+      assert length(implementation.validations) == length(data["validations"])
 
       assert equals_condition_row(
-               Map.get(json_response, "population"),
+               Map.get(data, "population"),
                Map.get(params, "population")
              )
     end
@@ -329,22 +333,24 @@ defmodule TdDqWeb.ImplementationControllerTest do
       insert(:rule_result, implementation_key: implementation.implementation_key)
       update_attrs = %{soft_delete: true}
 
-      conn =
-        put(conn, Routes.implementation_path(conn, :update, implementation),
-          rule_implementation: update_attrs
-        )
+      assert %{"data" => data} =
+               conn
+               |> put(Routes.implementation_path(conn, :update, implementation),
+                 rule_implementation: update_attrs
+               )
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:ok)
 
-      validate_resp_schema(conn, schema, "ImplementationResponse")
-      assert %{"id" => id} = json_response(conn, :ok)["data"]
+      assert %{"id" => id} = data
 
-      conn = recycle_and_put_headers(conn)
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:ok)
 
-      conn = get(conn, Routes.implementation_path(conn, :show, id))
-      validate_resp_schema(conn, schema, "ImplementationResponse")
-      json_response = json_response(conn, :ok)["data"]
-
-      assert implementation.rule_id == json_response["rule_id"]
-      assert not is_nil(json_response["deleted_at"])
+      assert implementation.rule_id == data["rule_id"]
+      assert data["deleted_at"]
     end
 
     @tag :admin_authenticated
@@ -355,22 +361,24 @@ defmodule TdDqWeb.ImplementationControllerTest do
       implementation = insert(:implementation)
       update_attrs = %{implementation_key: "updated"}
 
-      conn =
-        put(conn, Routes.implementation_path(conn, :update, implementation),
-          rule_implementation: update_attrs
-        )
+      assert %{"data" => data} =
+               conn
+               |> put(Routes.implementation_path(conn, :update, implementation),
+                 rule_implementation: update_attrs
+               )
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:ok)
 
-      validate_resp_schema(conn, schema, "ImplementationResponse")
-      assert %{"id" => id} = json_response(conn, :ok)["data"]
+      assert %{"id" => id} = data
 
-      conn = recycle_and_put_headers(conn)
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:ok)
 
-      conn = get(conn, Routes.implementation_path(conn, :show, id))
-      validate_resp_schema(conn, schema, "ImplementationResponse")
-      json_response = json_response(conn, :ok)["data"]
-
-      assert implementation.rule_id == json_response["rule_id"]
-      assert json_response["implementation_key"] != update_attrs.implementation_key
+      assert implementation.rule_id == data["rule_id"]
+      assert data["implementation_key"] != update_attrs.implementation_key
     end
 
     @tag :admin_authenticated
@@ -433,12 +441,12 @@ defmodule TdDqWeb.ImplementationControllerTest do
     @tag :admin_authenticated
     test "deletes chosen implementation", %{conn: conn} do
       implementation = insert(:implementation)
-      conn = delete(conn, Routes.implementation_path(conn, :delete, implementation))
-      assert response(conn, 204)
 
-      conn = recycle_and_put_headers(conn)
+      assert conn
+             |> delete(Routes.implementation_path(conn, :delete, implementation))
+             |> response(:no_content)
 
-      assert_error_sent(404, fn ->
+      assert_error_sent(:not_found, fn ->
         get(conn, Routes.implementation_path(conn, :show, implementation))
       end)
     end
@@ -447,45 +455,28 @@ defmodule TdDqWeb.ImplementationControllerTest do
   describe "search_rule_implementations" do
     @tag :admin_authenticated
     test "lists all implementations from a rule", %{conn: conn, swagger_schema: schema} do
-      %{id: rule_id} = rule = insert(:rule)
+      %{rule_id: rule_id} = insert(:implementation)
 
-      creation_attrs = string_params_for(:implementation, rule_id: rule.id)
+      assert %{"data" => [data]} =
+               conn
+               |> post(
+                 Routes.rule_implementation_path(conn, :search_rule_implementations, rule_id)
+               )
+               |> validate_resp_schema(schema, "ImplementationsResponse")
+               |> json_response(:ok)
 
-      conn =
-        post(conn, Routes.implementation_path(conn, :create), rule_implementation: creation_attrs)
+      assert %{"rule_id" => ^rule_id} = data
 
-      validate_resp_schema(conn, schema, "ImplementationResponse")
-      assert response(conn, :created)
-
-      conn = recycle_and_put_headers(conn)
-
-      conn =
-        post(
-          conn,
-          Routes.rule_implementation_path(conn, :search_rule_implementations, rule.id)
-        )
-
-      validate_resp_schema(conn, schema, "ImplementationsResponse")
-      json_response = List.first(json_response(conn, :ok)["data"])
-
-      assert json_response["rule_id"] == rule_id
-      assert creation_attrs[:system_params] == json_response["system_params"]
-      assert creation_attrs[:system] == json_response["system"]
-
-      conn = recycle_and_put_headers(conn)
-
-      conn =
-        post(
-          conn,
-          Routes.rule_implementation_path(
-            conn,
-            :search_rule_implementations,
-            @invalid_rule_id
-          )
-        )
-
-      validate_resp_schema(conn, schema, "ImplementationsResponse")
-      assert json_response(conn, :ok)["data"] == []
+      assert %{"data" => []} =
+               conn
+               |> post(
+                 Routes.rule_implementation_path(
+                   conn,
+                   :search_rule_implementations,
+                   @invalid_rule_id
+                 )
+               )
+               |> json_response(:ok)
     end
 
     @tag :admin_authenticated

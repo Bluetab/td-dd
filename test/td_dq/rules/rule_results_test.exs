@@ -4,6 +4,7 @@ defmodule TdDq.RuleResultsTest do
   import Ecto.Query, warn: false
 
   alias Elasticsearch.Document
+  alias TdCache.ConceptCache
   alias TdCache.Redix
   alias TdCache.Redix.Stream
   alias TdCache.RuleCache
@@ -14,13 +15,19 @@ defmodule TdDq.RuleResultsTest do
   alias TdDq.Search.IndexWorker
 
   @stream TdCache.Audit.stream()
+  @concept_id 987_654_321
 
   setup_all do
     start_supervised(MockRelationCache)
     start_supervised(IndexWorker)
     start_supervised(RuleLoader)
 
-    on_exit(fn -> Redix.del!(@stream) end)
+    ConceptCache.put(%{id: @concept_id, domain_id: 42})
+
+    on_exit(fn ->
+      ConceptCache.delete(@concept_id)
+      Redix.del!(@stream)
+    end)
   end
 
   describe "get_rule_result/1" do
@@ -194,8 +201,14 @@ defmodule TdDq.RuleResultsTest do
                }
     end
 
-    test "publishes audit events" do
-      rule = build(:rule, result_type: "percentage", goal: 100, minimum: 80)
+    test "publishes audit events with domain_ids" do
+      rule =
+        build(:rule,
+          result_type: "percentage",
+          goal: 100,
+          minimum: 80,
+          business_concept_id: "#{@concept_id}"
+        )
 
       %{implementation_key: key} = insert(:implementation, rule: rule)
       params = %{"foo" => "bar"}
@@ -211,7 +224,7 @@ defmodule TdDq.RuleResultsTest do
       assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
       assert %{event: "rule_result_created", payload: payload} = event
 
-      assert %{"result" => "90.00", "status" => "warn", "params" => ^params} =
+      assert %{"result" => "90.00", "status" => "warn", "params" => ^params, "domain_ids" => _} =
                Jason.decode!(payload)
     end
 
