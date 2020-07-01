@@ -5,6 +5,11 @@
 ### Changed
 
 - [TD-2637] Audit events are now published to Redis instead of via HTTP
+- [TD-2322] Allow to query deleted structures and systems having deleted structures
+
+### Added
+
+- [TD-2322] Index structure parent and number of linked concepts
 
 ## [3.24.0] 2020-06-15
 

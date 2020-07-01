@@ -30,6 +30,12 @@ defmodule TdDd.Search.Mappings do
           external_id: %{type: "text", fields: @raw}
         }
       },
+      parent: %{
+        properties: %{
+          name: %{type: "text", fields: @raw},
+          external_id: %{type: "text", fields: @raw}
+        }
+      },
       group: %{type: "text", fields: @raw_sort},
       type: %{type: "text", fields: @raw_sort},
       field_type: %{type: "text", fields: @raw_sort},
@@ -39,6 +45,7 @@ defmodule TdDd.Search.Mappings do
       domain_ids: %{type: "long"},
       deleted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       last_change_by: %{enabled: false},
+      linked_concepts_count: %{type: "short"},
       inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       path: %{type: "keyword", fields: @text},
@@ -53,7 +60,8 @@ defmodule TdDd.Search.Mappings do
       df_content: content_mappings,
       status: %{type: "keyword", null_value: ""},
       class: %{type: "text", fields: %{raw: %{type: "keyword", null_value: ""}}},
-      source_alias: %{type: "keyword", fields: @raw_sort}
+      source_alias: %{type: "keyword", fields: @raw_sort},
+      version: %{type: "short"}
     }
 
     settings = %{

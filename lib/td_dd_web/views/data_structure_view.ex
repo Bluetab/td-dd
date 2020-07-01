@@ -71,14 +71,17 @@ defmodule TdDdWeb.DataStructureView do
       :group,
       :id,
       :inserted_at,
+      :linked_concepts_count,
       :links,
       :name,
+      :parent,
       :path,
       :system_id,
       :type,
       :updated_at,
       :mutable_metadata,
-      :metadata
+      :metadata,
+      :version
     ])
     |> Map.merge(dsv_attrs)
     |> Map.put_new(:metadata, %{})

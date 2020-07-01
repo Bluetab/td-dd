@@ -107,6 +107,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     alias TdCache.TaxonomyCache
     alias TdCache.TemplateCache
     alias TdCache.UserCache
+    alias TdDd.DataStructures
     alias TdDd.DataStructures.DataStructureVersion
     alias TdDd.DataStructures.PathCache
     alias TdDfLib.Format
@@ -120,8 +121,10 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     @impl Elasticsearch.Document
     def encode(%DataStructureVersion{id: id, data_structure: structure, type: type} = dsv) do
       path = PathCache.path(id)
+      parent = PathCache.parent(id)
       path_sort = Enum.join(path, "~")
       domain = TaxonomyCache.get_domain(structure.domain_id) || %{}
+      linked_concepts = linked_concepts(dsv)
 
       structure
       |> Map.take([
@@ -135,7 +138,9 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       |> Map.put(:data_fields, get_data_fields(dsv))
       |> Map.put(:path, path)
       |> Map.put(:path_sort, path_sort)
+      |> Map.put(:parent, parent)
       |> Map.put(:last_change_by, get_last_change_by(structure))
+      |> Map.put(:linked_concepts_count, linked_concepts)
       |> Map.put(:domain_ids, get_domain_ids(structure))
       |> Map.put(:system, get_system(structure))
       |> Map.put(:df_content, format_content(structure, type))
@@ -152,7 +157,8 @@ defmodule TdDd.DataStructures.DataStructureVersion do
           :group,
           :name,
           :type,
-          :metadata
+          :metadata,
+          :version
         ])
       )
     end
@@ -195,18 +201,23 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     end
 
     defp format_content(df_content, %{} = template_content) do
-       Format.search_values(df_content, template_content)
+      Format.search_values(df_content, template_content)
     end
 
     defp format_content(_, _), do: nil
 
     defp get_field_type(%DataStructureVersion{metadata: metadata}), do: Map.get(metadata, "type")
 
-    defp get_source_alias(%DataStructureVersion{metadata: metadata}), do: Map.get(metadata, "alias")
+    defp get_source_alias(%DataStructureVersion{metadata: metadata}),
+      do: Map.get(metadata, "alias")
 
     defp get_mutable_metadata(%DataStructure{id: id}) do
       metadata = DataStructures.get_latest_metadata_version(id, deleted: false) || Map.new()
       Map.get(metadata, :fields, %{})
+    end
+
+    defp linked_concepts(dsv) do
+      Enum.count(DataStructures.get_structure_links(dsv), & &1.resource_type == :concept)
     end
   end
 end

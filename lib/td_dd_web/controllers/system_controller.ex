@@ -20,10 +20,10 @@ defmodule TdDdWeb.SystemController do
     response(200, "OK", Schema.ref(:SystemsResponse))
   end
 
-  def index(conn, _params) do
+  def index(conn, params) do
     user = conn.assigns[:current_user]
     permission = conn.assigns[:search_permission]
-    params = Map.put(%{}, :without, ["deleted_at"])
+    params = deleted(params)
     systems = SystemSearch.search_systems(user, permission, params)
     render(conn, "index.json", systems: systems)
   end
@@ -114,5 +114,13 @@ defmodule TdDdWeb.SystemController do
          {:ok, %{system: _deleted_system}} <- Systems.delete_system(system, user) do
       send_resp(conn, :no_content, "")
     end
+  end
+
+  defp deleted(%{"all" => "true"}), do: Map.new()
+
+  defp deleted(%{"all" => true}), do: Map.new()
+
+  defp deleted(_params) do
+    Map.put(%{}, :without, ["deleted_at"])
   end
 end
