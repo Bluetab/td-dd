@@ -1,8 +1,6 @@
 defmodule TdDqWeb.RuleResultControllerTest do
   use TdDqWeb.ConnCase
 
-  import TdDqWeb.Authentication, only: :functions
-
   alias TdDq.Cache.RuleLoader
   alias TdDq.Search.IndexWorker
 
@@ -55,12 +53,16 @@ defmodule TdDqWeb.RuleResultControllerTest do
       rule_results_file: rule_results_file,
       implementation: implementation
     } do
-      conn = post(conn, Routes.rule_result_path(conn, :upload), rule_results: rule_results_file)
-      assert response(conn, 200)
+      assert conn
+             |> post(Routes.rule_result_path(conn, :upload), rule_results: rule_results_file)
+             |> response(:ok)
 
-      conn = recycle_and_put_headers(conn)
-      conn = get(conn, Routes.implementation_path(conn, :show, implementation.id))
-      results = json_response(conn, 200)["data"]["all_rule_results"]
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, implementation.id))
+               |> json_response(:ok)
+
+      assert %{"all_rule_results" => results} = data
       assert Enum.map(results, & &1["result"]) == ["4.00", "72.00"]
     end
 
@@ -71,12 +73,16 @@ defmodule TdDqWeb.RuleResultControllerTest do
       rule_results_file: rule_results_file,
       implementation: implementation
     } do
-      conn = post(conn, Routes.rule_result_path(conn, :upload), rule_results: rule_results_file)
-      assert response(conn, 200)
+      assert conn
+             |> post(Routes.rule_result_path(conn, :upload), rule_results: rule_results_file)
+             |> response(:ok)
 
-      conn = recycle_and_put_headers(conn)
-      conn = get(conn, Routes.implementation_path(conn, :show, implementation.id))
-      results = json_response(conn, 200)["data"]["all_rule_results"]
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, implementation.id))
+               |> json_response(:ok)
+
+      assert %{"all_rule_results" => results} = data
       assert Enum.map(results, & &1["result"]) == ["0.00", "99.99"]
     end
 
@@ -87,12 +93,16 @@ defmodule TdDqWeb.RuleResultControllerTest do
       rule_results_file: rule_results_file,
       implementation: implementation
     } do
-      conn = post(conn, Routes.rule_result_path(conn, :upload), rule_results: rule_results_file)
-      assert response(conn, 200)
+      assert conn
+             |> post(Routes.rule_result_path(conn, :upload), rule_results: rule_results_file)
+             |> response(:ok)
 
-      conn = recycle_and_put_headers(conn)
-      conn = get(conn, Routes.implementation_path(conn, :show, implementation.id))
-      results = json_response(conn, 200)["data"]["all_rule_results"]
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, implementation.id))
+               |> json_response(:ok)
+
+      assert %{"all_rule_results" => results} = data
       results = Enum.map(results, &Map.drop(&1, ["id"]))
 
       assert results == [

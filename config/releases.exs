@@ -11,6 +11,8 @@ config :td_dq, TdDq.Auth.Guardian, secret_key: System.fetch_env!("GUARDIAN_SECRE
 
 config :td_dq, TdDq.Search.Cluster, url: System.fetch_env!("ES_URL")
 
-config :td_cache, redis_host: System.fetch_env!("REDIS_HOST")
+config :td_cache,
+  redis_host: System.fetch_env!("REDIS_HOST"),
+  port: System.get_env("REDIS_PORT", "6379") |> String.to_integer()
 
 config :td_cache, :event_stream, consumer_id: System.fetch_env!("HOSTNAME")

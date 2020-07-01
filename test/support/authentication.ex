@@ -22,24 +22,6 @@ defmodule TdDqWeb.Authentication do
     |> put_req_header("authorization", "Bearer #{jwt}")
   end
 
-  def recycle_and_put_headers(conn) do
-    authorization_header = List.first(get_req_header(conn, "authorization"))
-
-    conn
-    |> ConnTest.recycle()
-    |> put_req_header("authorization", authorization_header)
-  end
-
-  # OLD
-  # def create_user_auth_conn(user_name) do
-  #  user = %{"user_name": user_name}
-  #  {:ok, jwt, full_claims} = Guardian.encode_and_sign(user)
-  #  conn = ConnTest.build_conn()
-  #  |> put_auth_headers(jwt)
-  #  |> assign(:current_user, user)
-  #  {:ok, %{conn: conn, jwt: jwt, claims: full_claims}}
-  # end
-
   def create_user_auth_conn(user) do
     {:ok, jwt, full_claims} = Guardian.encode_and_sign(user)
     conn = ConnTest.build_conn()

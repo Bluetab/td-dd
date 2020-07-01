@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [4.0.0] 2020-07-01
 
 ### Added
 
@@ -8,13 +8,14 @@
 
 ### Fixed
 
-- [TD-2581] Do not include archived implementations results in Rule quality calculation
+- [TD-2581] Exclude archived implementations from quality calculation
 - [TD-2769] Reindex on rule creation
 
 ### Changed
 
 - [TD-2637] Audit events are now published to Redis instead of via HTTP
 - [TD-2779] New audit event `rule_result_created` for rule results
+- [TD-2585] Include `domain_ids` in `rule_result_created` events
 
 ## [3.23.0] 2020-06-01
 
