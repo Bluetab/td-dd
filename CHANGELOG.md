@@ -1,11 +1,12 @@
 # Changelog
 
-## [Unreleased]
+## [4.0.0] 2020-07-01
 
 ### Changed
 
 - [TD-2637] Audit events are now published to Redis instead of via HTTP
-- [TD-2322] Allow to query deleted structures and systems having deleted structures
+- [TD-2322] Allow to query deleted structures and systems having deleted
+  structures
 
 ### Added
 
