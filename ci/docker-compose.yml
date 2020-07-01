@@ -34,9 +34,9 @@ services:
 
   redis:
     image: library/redis:5.0-alpine
-    command: redis-server --appendonly yes
+    command: redis-server --port 6380 --appendonly yes
     healthcheck:
-      test: redis-cli -h localhost ping | grep -q PONG || exit 1
+      test: redis-cli -h localhost -p 6380 ping | grep -q PONG || exit 1
       interval: 60s
       timeout: 5s
       retries: 3
@@ -86,6 +86,7 @@ services:
       ES_URL: http://elastic:9200
       GUARDIAN_SECRET_KEY: topsecret
       REDIS_HOST: redis
+      REDIS_PORT: "6380"
       VAULT_ADDR: http://vault:8200/
       VAULT_SECRETS_PATH: secret/data/cx/
       VAULT_TOKEN: vault_secret_token1234

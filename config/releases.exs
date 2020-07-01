@@ -11,8 +11,10 @@ config :td_cx, TdCx.Auth.Guardian, secret_key: System.fetch_env!("GUARDIAN_SECRE
 
 config :td_cx, TdCx.Search.Cluster, url: System.fetch_env!("ES_URL")
 
-config :td_cache, redis_host: System.fetch_env!("REDIS_HOST")
-
 config :td_cx, :vault,
   token: System.fetch_env!("VAULT_TOKEN"),
   secrets_path: System.fetch_env!("VAULT_SECRETS_PATH")
+
+config :td_cache,
+  redis_host: System.fetch_env!("REDIS_HOST"),
+  port: System.get_env("REDIS_PORT", "6379") |> String.to_integer()

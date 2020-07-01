@@ -18,8 +18,7 @@ config :td_cx, TdCxWeb.Endpoint,
   http: [port: 4008],
   url: [host: "localhost"],
   secret_key_base: "QnGIoDqTQVcsX0mbc6Yw2n03R2FfJKbYjb1W3EqD9SK1Wklgk8R3oowCJwPVoRrm",
-  render_errors: [view: TdCxWeb.ErrorView, accepts: ~w(json)],
-  pubsub: [name: TdCx.PubSub, adapter: Phoenix.PubSub.PG2]
+  render_errors: [view: TdCxWeb.ErrorView, accepts: ~w(json)]
 
 # Default timeout increased for bulk metadata upload
 config :td_cx, TdCx.Repo,
