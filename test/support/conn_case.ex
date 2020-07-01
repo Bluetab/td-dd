@@ -20,10 +20,11 @@ defmodule TdCxWeb.ConnCase do
   using do
     quote do
       # Import conveniences for testing with connections
-      use Phoenix.ConnTest
-      alias TdCxWeb.Router.Helpers, as: Routes
-
+      import Plug.Conn
+      import Phoenix.ConnTest
       import TdCx.Factory
+
+      alias TdCxWeb.Router.Helpers, as: Routes
 
       # The default endpoint for testing
       @endpoint TdCxWeb.Endpoint

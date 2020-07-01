@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.0.0] 2020-07-01
+
+### Changed
+
+- Updated to Phoenix 1.5
+
 ## [3.23.0] 2020-06-01
 
 ### Changed
