@@ -74,6 +74,7 @@ defmodule TdDd.Cache.StructureLoader do
   def handle_call({:consume, events}, _from, state) do
     structure_ids = Enum.flat_map(events, &read_structure_ids/1)
     reply = cache_structures(structure_ids)
+    @index_worker.reindex(structure_ids)
     {:reply, reply, state}
   end
 
@@ -85,6 +86,10 @@ defmodule TdDd.Cache.StructureLoader do
   end
 
   defp read_structure_ids(%{event: "add_link", source: source, target: target}) do
+    extract_structure_ids([source, target])
+  end
+
+  defp read_structure_ids(%{event: "remove_link", source: source, target: target}) do
     extract_structure_ids([source, target])
   end
 

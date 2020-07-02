@@ -61,6 +61,7 @@ defmodule TdDd.DataStructures.PatchCacheTest do
 
       PathCache.refresh()
       assert PathCache.path(c1.id) == [p.name]
+      assert PathCache.parent(c1.id) == %{name: p.name, external_id: "dsv1"}
     end
   end
 end

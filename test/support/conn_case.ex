@@ -23,11 +23,11 @@ defmodule TdDdWeb.ConnCase do
   using do
     quote do
       # Import conveniences for testing with connections
-      alias TdDdWeb.Router.Helpers, as: Routes
-
       import Plug.Conn
       import Phoenix.ConnTest
       import TdDd.Factory
+
+      alias TdDdWeb.Router.Helpers, as: Routes
 
       # The default endpoint for testing
       @endpoint Endpoint

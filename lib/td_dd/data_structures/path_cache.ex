@@ -19,7 +19,11 @@ defmodule TdDd.DataStructures.PathCache do
   end
 
   def path(id) do
-    GenServer.call(__MODULE__, id, 10_000)
+    GenServer.call(__MODULE__, {:path, id}, 10_000)
+  end
+
+  def parent(id) do
+    GenServer.call(__MODULE__, {:parent, id}, 10_000)
   end
 
   def refresh(timeout \\ 20_000) do
@@ -52,9 +56,23 @@ defmodule TdDd.DataStructures.PathCache do
   end
 
   @impl true
-  def handle_call(id, _from, state) do
-    path = Map.get(state, id, [])
+  def handle_call({:path, id}, _from, state) do
+    path =
+      state
+      |> Map.get(id, [])
+      |> Enum.map(&Map.get(&1, :name))
+
     {:reply, path, state}
+  end
+
+  @impl true
+  def handle_call({:parent, id}, _from, state) do
+    parent =
+      state
+      |> Map.get(id, [])
+      |> List.last()
+
+    {:reply, parent, state}
   end
 
   ## Private functions
@@ -70,13 +88,14 @@ defmodule TdDd.DataStructures.PathCache do
     {:ok, graph} =
       Repo.transaction(fn ->
         graph =
-          from(ds in DataStructureVersion,
-            where: is_nil(ds.deleted_at),
-            select: {ds.id, ds.name}
+          from(dsv in DataStructureVersion,
+            where: is_nil(dsv.deleted_at),
+            join: ds in assoc(dsv, :data_structure),
+            select: {dsv.id, dsv.name, ds.external_id}
           )
           |> Repo.stream(max_rows: 1_000)
-          |> Enum.reduce(Graph.new(), fn {id, name}, graph ->
-            Graph.add_vertex(graph, id, name: name)
+          |> Enum.reduce(Graph.new(), fn {id, name, external_id}, graph ->
+            Graph.add_vertex(graph, id, name: name, external_id: external_id)
           end)
 
         from(dsr in DataStructureRelation,
@@ -102,8 +121,16 @@ defmodule TdDd.DataStructures.PathCache do
 
   defp path(graph, id, acc) do
     case Graph.in_neighbours(graph, id) do
-      [] -> Enum.map(acc, &Graph.vertex(graph, &1, :name))
-      [h | _] -> path(graph, h, [h | acc])
+      [] ->
+        Enum.map(acc, fn id ->
+          %{
+            name: Graph.vertex(graph, id, :name),
+            external_id: Graph.vertex(graph, id, :external_id)
+          }
+        end)
+
+      [h | _] ->
+        path(graph, h, [h | acc])
     end
   end
 end
