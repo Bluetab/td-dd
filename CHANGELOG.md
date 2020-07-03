@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.0.1] 2020-07-03
+
+### Fixed
+
+- [TD-2805] Rename redis keys controlling migration in implementations migrator to avoid re-running it
+
 ## [4.0.0] 2020-07-01
 
 ### Added
