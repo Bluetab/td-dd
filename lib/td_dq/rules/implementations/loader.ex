@@ -13,7 +13,7 @@ defmodule TdDq.Rules.Implementations.Loader do
 
   require Logger
 
-  @implementation_structures_migration_key "TdDq.Implementations.Migrations:cache_structures"
+  @implementation_structures_migration_key "TdDq.RuleImplementations.Migrations:cache_structures"
 
   ## Client API
 
