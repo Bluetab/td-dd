@@ -2,6 +2,7 @@ defmodule TdDd.DataStructures.DataStructureTest do
   use TdDd.DataCase
 
   alias Ecto.Changeset
+  alias TdCache.StructureTypeCache
   alias TdCache.TemplateCache
   alias TdDd.DataStructures.DataStructure
 
@@ -12,8 +13,14 @@ defmodule TdDd.DataStructures.DataStructureTest do
     %{id: template_id, name: type} = template = build(:template)
     TemplateCache.put(template, publish: false)
 
+    %{id: structure_type_id} =
+      structure_type = build(:data_structure_type, structure_type: type, template_id: template_id)
+
+    {:ok, _} = StructureTypeCache.put(structure_type)
+
     on_exit(fn ->
       TemplateCache.delete(template_id)
+      StructureTypeCache.delete(structure_type_id)
     end)
 
     [type: type]

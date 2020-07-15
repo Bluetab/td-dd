@@ -3,8 +3,10 @@ defmodule TdDd.Canada.Abilities do
   alias TdCache.Link
   alias TdDd.Accounts.User
   alias TdDd.Canada.DataStructureAbilities
+  alias TdDd.Canada.DataStructureTypeAbilities
   alias TdDd.Canada.LinkAbilities
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureType
 
   defimpl Canada.Can, for: User do
     # administrator is superpowerful
@@ -28,6 +30,10 @@ defmodule TdDd.Canada.Abilities do
 
     def can?(%User{} = user, action, %{data_structure: data_structure}) do
       DataStructureAbilities.can?(user, action, data_structure)
+    end
+
+    def can?(%User{} = user, action, %DataStructureType{} = data_structure_type) do
+      DataStructureTypeAbilities.can?(user, action, data_structure_type)
     end
 
     def can?(%User{} = user, action, domain_id) do

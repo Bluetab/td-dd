@@ -12,6 +12,7 @@ defmodule TdDd.DataStructures do
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
+  alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.Lineage.GraphData
@@ -167,6 +168,7 @@ defmodule TdDd.DataStructures do
     |> enrich(options, :links, &get_structure_links/1)
     |> enrich(options, :domain, &get_domain/1)
     |> enrich(options, :metadata_versions, &get_metadata_versions/1)
+    |> enrich(options, :data_structure_type, &get_data_structure_type/1)
   end
 
   defp enrich(%{} = target, options, key, fun) do
@@ -195,6 +197,12 @@ defmodule TdDd.DataStructures do
     |> Repo.preload(data_structure: :profile)
     |> Map.get(:data_structure)
     |> Map.get(:profile)
+  end
+
+  def get_data_structure_type(%DataStructureVersion{} = dsv) do
+    DataStructureType
+    |> where([ds_type], ds_type.structure_type == ^dsv.type)
+    |> Repo.one()
   end
 
   def get_field_structures(data_structure_version, options) do

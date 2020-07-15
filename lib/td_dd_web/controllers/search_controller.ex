@@ -42,4 +42,17 @@ defmodule TdDdWeb.SearchController do
     body = JSON.encode!(%{data: source_aliases})
     send_resp(conn, :ok, body)
   end
+
+  def get_structures_metadata_types(conn, _params) do
+    user = conn.assigns[:current_user]
+    permission = conn.assigns[:search_permission]
+    params = Map.put(%{}, :without, ["deleted_at"])
+    agg_terms =
+      Aggregations.get_agg_terms([
+        %{"agg_name" => "metadata_type", "field_name" => "type.raw"}])
+    agg_results = Search.get_aggregations_values(user, permission, params, agg_terms)
+    metadata_types = Enum.map(agg_results, &(Map.get(&1, "key")))
+    body = JSON.encode!(%{data: metadata_types})
+    send_resp(conn, :ok, body)
+  end
 end
