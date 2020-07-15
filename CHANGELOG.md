@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-2826] DataStructures.list_data_structures can receive domain_id list
+
 ## [4.0.0] 2020-07-01
 
 ### Changed
