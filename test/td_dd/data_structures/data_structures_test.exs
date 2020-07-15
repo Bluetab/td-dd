@@ -3,6 +3,7 @@ defmodule TdDd.DataStructuresTest do
 
   alias TdCache.Redix
   alias TdCache.Redix.Stream
+  alias TdCache.StructureTypeCache
   alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
   alias TdDd.DataStructures
@@ -17,8 +18,15 @@ defmodule TdDd.DataStructuresTest do
     %{id: template_id, name: template_name} = template = build(:template)
     {:ok, _} = TemplateCache.put(template)
 
+    %{id: structure_type_id} =
+      structure_type =
+      build(:data_structure_type, structure_type: template_name, template_id: template_id)
+
+    {:ok, _} = StructureTypeCache.put(structure_type)
+
     on_exit(fn ->
       TemplateCache.delete(template_id)
+      StructureTypeCache.delete(structure_type_id)
       Redix.del!(@stream)
     end)
 
@@ -39,6 +47,14 @@ defmodule TdDd.DataStructuresTest do
     {:ok, _} = ConceptCache.put(concept)
     {:ok, _} = SystemCache.put(system)
     {:ok, _} = StructureCache.put(data_structure)
+    %{id: template_id, name: template_name} = template = build(:template, name: template_name)
+    {:ok, _} = TemplateCache.put(template)
+
+    %{id: structure_type_id} =
+      structure_type =
+      build(:data_structure_type, structure_type: template_name, template_id: template_id)
+
+    {:ok, _} = StructureTypeCache.put(structure_type)
 
     {:ok, _} =
       LinkCache.put(%{
@@ -55,6 +71,8 @@ defmodule TdDd.DataStructuresTest do
       StructureCache.delete(data_structure.id)
       SystemCache.delete(system.id)
       ConceptCache.delete(concept.id)
+      TemplateCache.delete(template_id)
+      StructureTypeCache.delete(structure_type_id)
     end)
 
     [

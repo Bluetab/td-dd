@@ -104,6 +104,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
   end
 
   defimpl Elasticsearch.Document do
+    alias TdCache.StructureTypeCache
     alias TdCache.TaxonomyCache
     alias TdCache.TemplateCache
     alias TdCache.UserCache
@@ -197,10 +198,16 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       do: nil
 
     defp format_content(%DataStructure{df_content: df_content}, type) do
-      format_content(df_content, TemplateCache.get_by_name!(type))
+      case StructureTypeCache.get_by_type(type) do
+        {:ok, %{template_id: template_id}} ->
+          format_content(df_content, TemplateCache.get(template_id))
+
+        _ ->
+          %{}
+      end
     end
 
-    defp format_content(df_content, %{} = template_content) do
+    defp format_content(df_content, {:ok, %{} = template_content}) do
       Format.search_values(df_content, template_content)
     end
 
@@ -217,7 +224,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     end
 
     defp linked_concepts(dsv) do
-      Enum.count(DataStructures.get_structure_links(dsv), & &1.resource_type == :concept)
+      Enum.count(DataStructures.get_structure_links(dsv), &(&1.resource_type == :concept))
     end
   end
 end

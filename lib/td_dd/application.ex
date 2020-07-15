@@ -49,7 +49,10 @@ defmodule TdDd.Application do
       # Workers for cache loading
       TdDd.Cache.SystemLoader,
       TdDd.Cache.StructureLoader,
+      TdDd.Cache.StructureTypeLoader,
       TdDd.Cache.DomainEventConsumer,
+      # Worker for DataStructureType migration
+      TdDd.DataStructures.DataStructureTypeMigrator,
       # Lineage workers
       TdDd.Lineage.Import,
       TdDd.Lineage.GraphData,

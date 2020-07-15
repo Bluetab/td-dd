@@ -2,6 +2,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
+  alias TdCache.StructureTypeCache
   alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
   alias TdDd.DataStructures
@@ -51,6 +52,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
   setup %{conn: conn} do
     system = insert(:system, id: 1)
+    data_structure_type = insert(:data_structure_type, template_id: @default_template_attrs.id, structure_type: @default_template_attrs.name)
+    StructureTypeCache.put(data_structure_type)
     {:ok, conn: put_req_header(conn, "accept", "application/json"), system: system}
   end
 
@@ -211,7 +214,9 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
     @tag :admin_authenticated
     test "search with query performs search on dynamic content", %{conn: conn} do
-      create_template(%{name: "template_name"})
+      create_template(%{name: "template_name", id: 1})
+      data_structure_type = insert(:data_structure_type, template_id: 1, structure_type: "template_name", id: 20, translation: nil)
+      StructureTypeCache.put(data_structure_type)
 
       %{data_structure_id: id} =
         insert(:data_structure_version,
@@ -438,6 +443,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   defp create_data_structure(_) do
     template_name = "template_name"
     create_template(%{name: template_name})
+
     data_structure = insert(:data_structure, df_content: %{"field" => "1"})
 
     data_structure_version =
@@ -556,7 +562,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
     template_name = "template_name"
 
     create_template(%{name: template_name})
-
     data_structure = insert(:data_structure, confidential: confidential, domain_id: domain_id)
 
     insert(:data_structure_version,

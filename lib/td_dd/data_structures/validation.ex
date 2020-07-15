@@ -2,7 +2,8 @@ defmodule TdDd.DataStructures.Validation do
   @moduledoc """
   Provides functions for merging and validating data structure dynamic content.
   """
-
+  alias TdCache.StructureTypeCache
+  alias TdCache.TemplateCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
@@ -33,7 +34,14 @@ defmodule TdDd.DataStructures.Validation do
     |> template_name()
   end
 
-  defp template_name(%DataStructureVersion{type: type}), do: type
+  defp template_name(%DataStructureVersion{type: type}) do
+    with {:ok, %{template_id: template_id}} <- StructureTypeCache.get_by_type(type),
+         {:ok, %{name: name}} <- TemplateCache.get(template_id) do
+      name
+    else
+      _ -> ""
+    end
+  end
 
   defp template_name(_), do: nil
 end

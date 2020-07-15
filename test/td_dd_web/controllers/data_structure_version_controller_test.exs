@@ -2,6 +2,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
+  alias TdCache.StructureTypeCache
   alias TdCache.TemplateCache
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
@@ -22,6 +23,51 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   setup %{conn: conn} do
     insert(:system, id: 1)
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
+
+    type = "Table"
+    template_id = "999"
+
+    {:ok, _} =
+      TemplateCache.put(%{
+        name: type,
+        content: [
+          %{
+            "name" => "group",
+            "fields" => [
+              %{
+                "name" => "Field1",
+                "type" => "string",
+                "group" => "Multiple Group",
+                "label" => "Multiple 1",
+                "values" => nil,
+                "cardinality" => "1"
+              },
+              %{
+                "name" => "Field2",
+                "type" => "string",
+                "group" => "Multiple Group",
+                "label" => "Multiple 1",
+                "values" => nil,
+                "cardinality" => "1"
+              }
+            ]
+          }
+        ],
+        scope: "test",
+        label: "template_label",
+        id: template_id,
+        updated_at: DateTime.utc_now()
+      })
+
+    %{id: structure_type_id} =
+      structure_type = build(:data_structure_type, template_id: template_id, structure_type: type)
+
+    {:ok, _} = StructureTypeCache.put(structure_type)
+
+    on_exit(fn ->
+      TemplateCache.delete(template_id)
+      StructureTypeCache.delete(structure_type_id)
+    end)
   end
 
   @admin_user_name "app-admin"
@@ -41,7 +87,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
 
       assert %{"children" => children} = data
       assert [_, _] = children
-      assert Enum.all?(children, &Map.get(&1, "order") == 1)
+      assert Enum.all?(children, &(Map.get(&1, "order") == 1))
     end
 
     @tag authenticated_user: @admin_user_name
@@ -102,37 +148,6 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     test "bulk update of data structures", %{conn: conn} do
       %{id: structure_id} = insert(:data_structure, external_id: "Structure")
       insert(:data_structure_version, data_structure_id: structure_id)
-
-      TemplateCache.put(%{
-        name: "Table",
-        content: [
-          %{
-            "name" => "group",
-            "fields" => [
-              %{
-                "name" => "Field1",
-                "type" => "string",
-                "group" => "Multiple Group",
-                "label" => "Multiple 1",
-                "values" => nil,
-                "cardinality" => "1"
-              },
-              %{
-                "name" => "Field2",
-                "type" => "string",
-                "group" => "Multiple Group",
-                "label" => "Multiple 1",
-                "values" => nil,
-                "cardinality" => "1"
-              }
-            ]
-          }
-        ],
-        scope: "test",
-        label: "template_label",
-        id: "999",
-        updated_at: DateTime.utc_now()
-      })
 
       assert %{"data" => data} =
                conn
@@ -205,7 +220,10 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       insert(:data_structure_version, data_structure_id: structure.id, metadata: %{foo: "bar"})
 
     child_versions =
-      Enum.map(child_structures, &insert(:data_structure_version, data_structure_id: &1.id, metadata: %{"order" => 1}))
+      Enum.map(
+        child_structures,
+        &insert(:data_structure_version, data_structure_id: &1.id, metadata: %{"order" => 1})
+      )
 
     %{id: relation_type_id} = RelationTypes.get_default()
 
