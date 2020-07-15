@@ -36,6 +36,9 @@ defmodule TdDd.DataStructures do
       {:external_id, external_id}, q ->
         where(q, [ds], ds.external_id == ^external_id)
 
+      {:domain_id, domain_id}, q when is_list(domain_id) ->
+        where(q, [ds], ds.domain_id in ^domain_id)
+
       {:domain_id, domain_id}, q ->
         where(q, [ds], ds.domain_id == ^domain_id)
 
@@ -400,6 +403,7 @@ defmodule TdDd.DataStructures do
     with %{data_structure: %{id: id}} <- res do
       IndexWorker.reindex(id)
     end
+
     {:ok, res}
   end
 
@@ -439,6 +443,7 @@ defmodule TdDd.DataStructures do
     with %{delete_versions: {_count, dsv_ids}} <- res do
       IndexWorker.delete(dsv_ids)
     end
+
     {:ok, res}
   end
 
