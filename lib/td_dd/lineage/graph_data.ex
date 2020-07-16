@@ -170,7 +170,7 @@ defmodule TdDd.Lineage.GraphData do
   def handle_call({:lineage, external_ids, opts}, _from, state) do
     reply =
       state
-      |> do_lineage(external_ids, opts[:excludes])
+      |> do_lineage(external_ids, opts[:excludes], opts[:levels])
       |> subgraph(state, :lineage, opts ++ [reverse: true])
       |> add_source_ids(external_ids)
       |> hash(state)
@@ -186,7 +186,7 @@ defmodule TdDd.Lineage.GraphData do
   def handle_call({:impact, external_ids, opts}, _from, state) do
     reply =
       state
-      |> do_impact(external_ids, opts[:excludes])
+      |> do_impact(external_ids, opts[:excludes], opts[:levels])
       |> subgraph(state, :impact, opts)
       |> add_source_ids(external_ids)
       |> hash(state)
@@ -254,34 +254,35 @@ defmodule TdDd.Lineage.GraphData do
     )
   end
 
-  defp do_lineage(state, external_ids, excludes \\ [])
-  defp do_lineage(state, external_ids, nil), do: do_lineage(state, external_ids, [])
-
-  defp do_lineage(%{contains: contains, depends: depends}, external_ids, excludes) do
+  defp do_lineage(state, external_ids, excludes \\ [], levels \\ :all)
+  defp do_lineage(state, external_ids, nil, levels), do: do_lineage(state, external_ids, [], levels)
+  defp do_lineage(state, external_ids, excludes, nil), do: do_lineage(state, external_ids, excludes, :all)
+  defp do_lineage(%{contains: contains, depends: depends}, external_ids, excludes, levels) do
     excludes =
       case excludes do
         [] -> []
-        _ -> Traversal.reaching(excludes, depends)
+        _ -> do_reaching(excludes, depends, levels)
       end
 
     external_ids
-    |> Traversal.reaching(depends)
+    |> do_reaching(depends, levels)
     |> filter_excludes(excludes)
     |> reaching(contains)
   end
 
-  defp do_impact(state, external_ids, excludes \\ [])
-  defp do_impact(state, external_ids, nil), do: do_impact(state, external_ids, [])
+  defp do_impact(state, external_ids, excludes \\ [], levels \\ :all)
+  defp do_impact(state, external_ids, nil, levels), do: do_impact(state, external_ids, [], levels)
+  defp do_impact(state, external_ids, excludes, nil), do: do_impact(state, external_ids, excludes, :all)
 
-  defp do_impact(%{contains: contains, depends: depends}, external_ids, excludes) do
+  defp do_impact(%{contains: contains, depends: depends}, external_ids, excludes, levels) do
     excludes =
       case excludes do
         [] -> []
-        _ -> Traversal.reachable(excludes, depends)
+        _ -> do_reachable(excludes, depends, levels)
       end
 
     external_ids
-    |> Traversal.reachable(depends)
+    |> do_reachable(depends, levels)
     |> filter_excludes(excludes)
     |> reaching(contains)
   end
@@ -308,6 +309,22 @@ defmodule TdDd.Lineage.GraphData do
       ids: MapSet.to_list(ids),
       excludes: MapSet.to_list(excludes)
     }
+  end
+
+  defp do_reaching(ids, graph, :all) do
+    Traversal.reaching(ids, graph)
+  end
+
+  defp do_reaching(ids, graph, levels) do
+    Traversal.reaching(ids, graph, levels)
+  end
+
+  defp do_reachable(ids, graph, :all) do
+    Traversal.reachable(ids, graph)
+  end
+
+  defp do_reachable(ids, graph, levels) do
+    Traversal.reachable(ids, graph, levels)
   end
 
   defp data_label(%{label: label, type: type, external_id: external_id} = node) do

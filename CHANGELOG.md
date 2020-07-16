@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-911] Allow to limit lineage/impact levels 
+
 ### Fixed
 
 - [TD-2826] DataStructures.list_data_structures can receive domain_id list

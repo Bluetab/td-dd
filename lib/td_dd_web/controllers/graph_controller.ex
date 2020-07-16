@@ -1,5 +1,6 @@
 defmodule TdDdWeb.GraphController do
   use TdDdWeb, :controller
+
   # use PhoenixSwagger
 
   alias TdDd.Lineage
@@ -12,7 +13,7 @@ defmodule TdDdWeb.GraphController do
     with %Graph{id: id} <- do_drawing(params) do
       data =
         params
-        |> Map.take(["ids", "type"])
+        |> Map.take(["ids", "type", "levels"])
         |> Map.put(:id, id)
 
       json = %{data: data} |> Jason.encode!()
@@ -44,6 +45,17 @@ defmodule TdDdWeb.GraphController do
 
   defp do_drawing(%{"type" => "sample"}), do: Lineage.sample()
 
-  defp options(%{"excludes" => excludes}), do: [excludes: excludes]
+  defp options(%{} = params) do
+    []
+    |> with_excludes(params)
+    |> with_levels(params)
+  end
+
   defp options(_params), do: []
+
+  defp with_excludes(acc, %{"excludes" => excludes}), do: acc ++ [excludes: excludes]
+  defp with_excludes(acc, _params), do: acc
+
+  defp with_levels(acc, %{"levels" => levels}), do: acc ++ [levels: levels]
+  defp with_levels(acc, _params), do: acc
 end
