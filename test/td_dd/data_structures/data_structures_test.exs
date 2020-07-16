@@ -241,36 +241,34 @@ defmodule TdDd.DataStructuresTest do
       assert result.external_id == external_id
     end
 
-    test "put_domain_id/3 with domain_name" do
+    test "put_domain_id/3 with domain external id" do
       data = %{"domain_id" => :foo}
       domain_map = %{"foo" => :bar}
       assert %{"domain_id" => :bar} = DataStructures.put_domain_id(data, domain_map, "foo")
       assert %{"domain_id" => :foo} = DataStructures.put_domain_id(data, nil, "foo")
     end
 
-    test "put_domain_id/3 with ou and/or domain_external_id" do
-      import DataStructures, only: [put_domain_id: 3]
-      ous = %{"foo" => :foo}
-      ids = %{"bar" => :bar}
+    test "put_domain_id/2 with ou and/or domain_external_id" do
+      import DataStructures, only: [put_domain_id: 2]
+      ids = %{"bar" => :bar, "foo" => :foo}
 
       assert %{"domain_id" => :baz} =
-               put_domain_id(%{"domain_id" => :baz, "ou" => "foo"}, ous, ids)
+               put_domain_id(%{"domain_id" => :baz, "ou" => "foo"}, ids)
 
-      assert %{"domain_id" => :foo} = put_domain_id(%{"domain_id" => "", "ou" => "foo"}, ous, ids)
-      assert %{"domain_id" => :foo} = put_domain_id(%{"ou" => "foo"}, ous, ids)
+      assert %{"domain_id" => :foo} = put_domain_id(%{"domain_id" => "", "ou" => "foo"}, ids)
+      assert %{"domain_id" => :foo} = put_domain_id(%{"ou" => "foo"}, ids)
 
       assert %{"domain_id" => :bar} =
-               put_domain_id(%{"domain_external_id" => "bar", "ou" => "foo"}, ous, ids)
+               put_domain_id(%{"domain_external_id" => "bar"}, ids)
 
       assert %{"domain_id" => :bar} =
                put_domain_id(
-                 %{"domain_id" => "", "domain_external_id" => "bar", "ou" => "foo"},
-                 ous,
+                 %{"domain_id" => "", "domain_external_id" => "bar"},
                  ids
                )
 
-      refute %{"domain_external_id" => "foo", "ou" => "bar"}
-             |> put_domain_id(ous, ids)
+      refute %{"domain_external_id" => "baz", "ou" => "baz"}
+             |> put_domain_id(ids)
              |> Map.has_key?("domain_id")
     end
   end
