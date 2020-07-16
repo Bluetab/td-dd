@@ -135,7 +135,6 @@ defmodule TdDd.Loader.LoaderWorker do
   defp parse_data_structures(nil, _, _), do: {:ok, []}
 
   defp parse_data_structures(path, system_id, domain) do
-    domain_names = TaxonomyCache.get_domain_name_to_id_map()
     domain_external_ids = TaxonomyCache.get_domain_external_id_to_id_map()
     system_map = get_system_map(system_id)
 
@@ -149,7 +148,6 @@ defmodule TdDd.Loader.LoaderWorker do
       path
       |> File.stream!()
       |> Reader.read_csv(
-        domain_names: domain_names,
         domain_external_ids: domain_external_ids,
         domain: domain,
         system_map: system_map,

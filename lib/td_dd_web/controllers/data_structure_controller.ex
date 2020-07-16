@@ -94,7 +94,7 @@ defmodule TdDdWeb.DataStructureController do
 
   def update(conn, %{"id" => id, "data_structure" => attrs}) do
     %{id: user_id} = user = conn.assigns[:current_user]
-
+    # TODO
     data_structure_old = DataStructures.get_data_structure!(id)
 
     manage_confidential_structures =
