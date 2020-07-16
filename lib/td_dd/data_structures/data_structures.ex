@@ -12,6 +12,7 @@ defmodule TdDd.DataStructures do
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
+  alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.Lineage.GraphData
@@ -35,6 +36,9 @@ defmodule TdDd.DataStructures do
 
       {:external_id, external_id}, q ->
         where(q, [ds], ds.external_id == ^external_id)
+
+      {:domain_id, domain_id}, q when is_list(domain_id) ->
+        where(q, [ds], ds.domain_id in ^domain_id)
 
       {:domain_id, domain_id}, q ->
         where(q, [ds], ds.domain_id == ^domain_id)
@@ -164,6 +168,7 @@ defmodule TdDd.DataStructures do
     |> enrich(options, :links, &get_structure_links/1)
     |> enrich(options, :domain, &get_domain/1)
     |> enrich(options, :metadata_versions, &get_metadata_versions/1)
+    |> enrich(options, :data_structure_type, &get_data_structure_type/1)
   end
 
   defp enrich(%{} = target, options, key, fun) do
@@ -192,6 +197,12 @@ defmodule TdDd.DataStructures do
     |> Repo.preload(data_structure: :profile)
     |> Map.get(:data_structure)
     |> Map.get(:profile)
+  end
+
+  def get_data_structure_type(%DataStructureVersion{} = dsv) do
+    DataStructureType
+    |> where([ds_type], ds_type.structure_type == ^dsv.type)
+    |> Repo.one()
   end
 
   def get_field_structures(data_structure_version, options) do
@@ -400,6 +411,7 @@ defmodule TdDd.DataStructures do
     with %{data_structure: %{id: id}} <- res do
       IndexWorker.reindex(id)
     end
+
     {:ok, res}
   end
 
@@ -439,6 +451,7 @@ defmodule TdDd.DataStructures do
     with %{delete_versions: {_count, dsv_ids}} <- res do
       IndexWorker.delete(dsv_ids)
     end
+
     {:ok, res}
   end
 

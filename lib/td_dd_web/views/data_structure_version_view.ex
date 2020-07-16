@@ -35,6 +35,7 @@ defmodule TdDdWeb.DataStructureVersionView do
         |> add_profile
         |> add_embedded_relations(dsv)
         |> add_metadata_versions
+        |> add_data_structure_type
         |> Map.take([
           :ancestry,
           :children,
@@ -59,7 +60,8 @@ defmodule TdDdWeb.DataStructureVersionView do
           :degree,
           :relations,
           :domain,
-          :metadata_versions
+          :metadata_versions,
+          :data_structure_type
         ])
     }
   end
@@ -263,4 +265,12 @@ defmodule TdDdWeb.DataStructureVersionView do
   end
 
   defp add_metadata_versions(dsv), do: Map.put(dsv, :metadata_versions, [])
+
+  defp add_data_structure_type(%{data_structure_type: nil} = dsv), do: Map.put(dsv, :data_structure_type, %{})
+
+  defp add_data_structure_type(%{data_structure_type: data_structure_type} = dsv) do
+    Map.put(dsv, :data_structure_type, Map.take(data_structure_type, [:template_id, :translation]))
+  end
+
+  defp add_data_structure_type(dsv), do: Map.put(dsv, :data_structure_type, %{})
 end

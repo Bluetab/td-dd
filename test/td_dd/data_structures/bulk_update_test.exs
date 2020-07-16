@@ -3,6 +3,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
   import TdDd.TestOperators
 
+  alias TdCache.StructureTypeCache
   alias TdCache.TemplateCache
   alias TdDd.DataStructures.BulkUpdate
   alias TdDd.DataStructures.DataStructure
@@ -18,8 +19,14 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     %{id: template_id, name: type} = template = build(:template)
     TemplateCache.put(template, publish: false)
 
+    %{id: structure_type_id} =
+      structure_type = build(:data_structure_type, structure_type: type, template_id: template_id)
+
+    {:ok, _} = StructureTypeCache.put(structure_type)
+
     on_exit(fn ->
       TemplateCache.delete(template_id)
+      StructureTypeCache.delete(structure_type_id)
     end)
 
     [type: type]
@@ -51,7 +58,9 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         |> Enum.map(fn _ -> valid_structure(type) end)
         |> Enum.map(& &1.data_structure_id)
 
-      assert {:ok, %{updates: updates, audit: audit}} = BulkUpdate.update_all(ids, @valid_params, user)
+      assert {:ok, %{updates: updates, audit: audit}} =
+               BulkUpdate.update_all(ids, @valid_params, user)
+
       assert Enum.count(audit) == Enum.count(updates)
     end
 

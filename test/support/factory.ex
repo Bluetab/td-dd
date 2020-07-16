@@ -6,6 +6,7 @@ defmodule TdDd.Factory do
   alias TdDd.Accounts.User
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
+  alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Profile
   alias TdDd.DataStructures.RelationType
@@ -49,6 +50,15 @@ defmodule TdDd.Factory do
 
   def data_structure_relation_factory do
     %DataStructureRelation{}
+  end
+
+  def data_structure_type_factory do
+    %DataStructureType{
+      id: sequence(:structure_type_id, &(&1 + 999_000)),
+      structure_type: "Table",
+      template_id: 0,
+      translation: ""
+    }
   end
 
   def system_factory do
