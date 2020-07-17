@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-911] Allow to limit lineage/impact levels 
+- [TD-2322] Allow to search all data structures versions without 10_000 limit using ES scroll API
 
 ### Fixed
 

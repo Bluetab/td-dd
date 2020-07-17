@@ -278,10 +278,21 @@ defmodule TdDdWeb.DataStructureController do
     page = Map.get(search_params, "page", page)
     size = Map.get(search_params, "size", size)
 
+    search_all =
+      search_params
+      |> Map.get("filters", %{})
+      |> Map.get("all")
+
+    scroll =
+      case search_all do
+        true -> "1m"
+        _ -> nil
+      end
+
     search_params
     |> deleted_structures()
     |> Map.drop(["page", "size"])
-    |> Search.search_data_structures(user, permission, page, size)
+    |> Search.search_data_structures(user, permission, page, size, scroll)
   end
 
   defp deleted_structures(%{"filters" => %{"all" => true}} = search_params) do
