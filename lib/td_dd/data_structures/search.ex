@@ -119,9 +119,9 @@ defmodule TdDd.DataStructures.Search do
     end
   end
 
-  def search_data_structures(params, user, permission, page \\ 0, size \\ 50)
+  def search_data_structures(params, user, permission, page \\ 0, size \\ 50, scroll \\ nil)
 
-  def search_data_structures(params, %User{is_admin: true}, _permission, page, size) do
+  def search_data_structures(params, %User{is_admin: true}, _permission, page, size, scroll) do
     filters = create_filters(params)
     query = create_query(params, filters)
 
@@ -134,23 +134,23 @@ defmodule TdDd.DataStructures.Search do
       sort: sort,
       aggs: Aggregations.aggregation_terms()
     }
-    |> do_search
+    |> do_search(scroll)
   end
 
   # Non-admin search
-  def search_data_structures(params, %User{} = user, permission, page, size) do
+  def search_data_structures(params, %User{} = user, permission, page, size, scroll) do
     permissions =
       user
       |> Permissions.get_domain_permissions()
       |> Enum.filter(&Enum.member?(&1.permissions, permission))
 
-    filter_data_structures(params, permissions, page, size)
+    filter_data_structures(params, permissions, page, size, scroll)
   end
 
-  defp filter_data_structures(_params, [], _page, _size),
+  defp filter_data_structures(_params, [], _page, _size, _scroll),
     do: %{results: [], aggregations: %{}, total: 0}
 
-  defp filter_data_structures(params, [_h | _t] = permissions, page, size) do
+  defp filter_data_structures(params, [_h | _t] = permissions, page, size, scroll) do
     user_defined_filters = create_filters(params)
 
     filter = permissions |> create_filter_clause(user_defined_filters)
@@ -166,7 +166,7 @@ defmodule TdDd.DataStructures.Search do
       sort: sort,
       aggs: Aggregations.aggregation_terms()
     }
-    |> do_search
+    |> do_search(scroll)
   end
 
   defp create_filter_clause(permissions, user_defined_filters) do
@@ -286,8 +286,12 @@ defmodule TdDd.DataStructures.Search do
     %{bool: %{should: clauses, filter: filter, minimum_should_match: Enum.count(clauses)}}
   end
 
-  defp do_search(search) do
-    %{results: results, aggregations: aggregations, total: total} = Search.search(search)
+  defp do_search(search, scroll) do
+    %{results: results, aggregations: aggregations, total: total} =
+      case scroll do
+        nil -> Search.search(search)
+        _ -> Search.search(search, scroll)
+      end
 
     results =
       results
