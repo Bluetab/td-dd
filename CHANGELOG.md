@@ -11,6 +11,10 @@
 
 - [TD-2826] DataStructures.list_data_structures can receive domain_id list
 
+### Changed
+
+- [TD-2280] Do not retrieve information by name
+
 ## [4.0.0] 2020-07-01
 
 ### Changed
