@@ -189,16 +189,23 @@ defmodule TdDdWeb.MetadataControllerTest do
       fields: fields,
       relations: relations
     } do
-      domain = "domain_name"
       domain_id = :random.uniform(1_000_000)
-      TaxonomyCache.put_domain(%{name: domain, id: domain_id, updated_at: DateTime.utc_now()})
+      domain_name = "domain_name#{domain_id}"
+      domain_external_id = "domain_exid#{domain_id}"
+
+      TaxonomyCache.put_domain(%{
+        external_id: domain_external_id,
+        name: domain_name,
+        id: domain_id,
+        updated_at: DateTime.utc_now()
+      })
 
       conn =
         post(conn, metadata_path(conn, :upload),
           data_structures: Map.put(structures, :filename, "structures"),
           data_fields: Map.put(fields, :filename, "fields"),
           data_structure_relations: Map.put(relations, :filename, "relations"),
-          domain: domain
+          domain: domain_external_id
         )
 
       assert response(conn, 202) =~ ""
@@ -211,7 +218,8 @@ defmodule TdDdWeb.MetadataControllerTest do
       assert length(json_response) == 5 + 68
 
       assert Enum.all?(json_response, fn %{"domain_id" => id, "domain" => d} ->
-               id == domain_id and domain == Map.get(d, "name")
+               id == domain_id and domain_name == Map.get(d, "name") and
+                 Map.get(d, "external_id") == domain_external_id
              end)
 
       structure_id = get_id(json_response, "Calidad")

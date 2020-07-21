@@ -549,6 +549,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     domain_name = "domain_name"
     domain_id = :random.uniform(1_000_000)
     updated_at = DateTime.utc_now()
+    template_id = :random.uniform(1_000_000)
     TaxonomyCache.put_domain(%{name: domain_name, id: domain_id, updated_at: updated_at})
 
     MockPermissionResolver.create_acl_entry(%{
@@ -561,14 +562,16 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
     template_name = "template_name"
 
-    create_template(%{name: template_name})
+    create_template(%{id: template_id, name: template_name})
     data_structure = insert(:data_structure, confidential: confidential, domain_id: domain_id)
 
-    insert(:data_structure_version,
+    dsv = insert(:data_structure_version,
       data_structure_id: data_structure.id,
       name: data_structure.external_id,
       type: template_name
     )
+
+    insert(:data_structure_type, structure_type: dsv.type, template_id: template_id)
 
     data_structure
   end

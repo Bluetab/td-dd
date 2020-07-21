@@ -496,42 +496,44 @@ defmodule TdDd.DataStructures do
     |> enrich(options)
   end
 
-  def put_domain_id(data, %{} = domain_map, domain_name) when is_binary(domain_name) do
-    case Map.get(domain_map, domain_name) do
+  def put_domain_id(data, %{} = domain_map, domain) when is_binary(domain) do
+    case Map.get(domain_map, domain) do
       nil -> data
       domain_id -> Map.put(data, "domain_id", domain_id)
     end
   end
 
-  def put_domain_id(%{"domain_id" => domain_id} = data, names, external_ids)
+  def put_domain_id(data, _domain_map, _domain), do: data
+
+  def put_domain_id(%{"domain_id" => domain_id} = data, external_ids)
       when is_nil(domain_id) or domain_id == "" do
-    with_domain_id(data, names, external_ids)
+    with_domain_id(data, external_ids)
   end
 
-  def put_domain_id(%{"domain_id" => _} = data, _ous, _external_ids), do: data
+  def put_domain_id(%{"domain_id" => _} = data, _external_ids), do: data
 
-  def put_domain_id(data, ous, external_ids) do
-    with_domain_id(data, ous, external_ids)
+  def put_domain_id(data, external_ids) do
+    with_domain_id(data, external_ids)
   end
 
-  defp with_domain_id(data, ous, external_ids) do
-    case get_domain_id(data, ous, external_ids) do
+  defp with_domain_id(data, external_ids) do
+    case get_domain_id(data, external_ids) do
       nil -> data
       domain_id -> Map.put(data, "domain_id", domain_id)
     end
   end
 
-  defp get_domain_id(%{"domain_external_id" => external_id}, _ous, %{} = external_ids)
+  defp get_domain_id(%{"domain_external_id" => external_id}, %{} = external_ids)
        when not is_nil(external_id) and external_id != "" do
     Map.get(external_ids, external_id)
   end
 
-  defp get_domain_id(%{"ou" => ou}, %{} = ous, external_id)
-       when not is_nil(external_id) and external_id != "" do
-    Map.get(ous, ou)
+  defp get_domain_id(%{"ou" => ou}, %{} = external_ids)
+       when not is_nil(ou) and ou != "" do
+    Map.get(external_ids, ou)
   end
 
-  defp get_domain_id(_data, _ous, _external_id), do: nil
+  defp get_domain_id(_data, _external_id), do: nil
 
   def find_data_structure(%{} = clauses) do
     Repo.get_by(DataStructure, clauses)

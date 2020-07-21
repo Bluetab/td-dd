@@ -136,11 +136,8 @@ defmodule TdDdWeb.MetadataController do
     LoaderWorker.load(structures_file, fields_file, relations_file, audit_fields, opts)
   end
 
-  defp can_upload?(user, %{"domain" => domain_name}) do
-    domain_id =
-      TaxonomyCache.get_domain_name_to_id_map()
-      |> Map.get(domain_name)
-
+  defp can_upload?(user, %{"domain" => external_id}) do
+    domain_id = Map.get(TaxonomyCache.get_domain_external_id_to_id_map(), external_id)
     can?(user, upload(domain_id))
   end
 

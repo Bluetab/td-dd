@@ -94,20 +94,18 @@ defmodule TdDdWeb.DataStructureController do
 
   def update(conn, %{"id" => id, "data_structure" => attrs}) do
     %{id: user_id} = user = conn.assigns[:current_user]
-
     data_structure_old = DataStructures.get_data_structure!(id)
 
     manage_confidential_structures =
       can?(user, manage_confidential_structures(data_structure_old))
 
-    names = TaxonomyCache.get_domain_name_to_id_map()
     external_ids = TaxonomyCache.get_domain_external_id_to_id_map()
 
     update_params =
       attrs
       |> check_confidential_field(manage_confidential_structures)
       |> Map.put("last_change_by", user_id)
-      |> DataStructures.put_domain_id(names, external_ids)
+      |> DataStructures.put_domain_id(external_ids)
 
     with {:can, true} <- {:can, can?(user, update_data_structure(data_structure_old))},
          {:ok, %{data_structure: data_structure}} <-

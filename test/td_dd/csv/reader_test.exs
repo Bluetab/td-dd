@@ -43,8 +43,7 @@ defmodule TdDd.CSV.ReaderTest do
       {:ok, [r2, r3, r4, r5]} =
         stream
         |> Reader.read_csv(
-          domain_names: %{"domain1" => 42},
-          domain_external_ids: %{"domain2_eid" => 43},
+          domain_external_ids: %{"domain2_eid" => 43, "domain1" => 42},
           defaults: defaults,
           schema: @structure_import_schema,
           required: required,
@@ -100,7 +99,7 @@ defmodule TdDd.CSV.ReaderTest do
       {:ok, results} =
         stream
         |> Reader.read_csv(
-          domain_names: %{"domain1" => 42, "domain2" => 43},
+          domain_external_ids: %{"domain1" => 42, "domain2" => 43},
           defaults: defaults,
           schema: @structure_import_schema,
           required: required,
