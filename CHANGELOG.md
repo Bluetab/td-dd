@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-2832] `REPO_TIMEOUT` and `PATH_CACHE_TIMEOUT` to change timeout due to performance
+
 ## [3.20.1] 2020-04-24
 
 ### Fixed
