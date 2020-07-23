@@ -12,6 +12,8 @@ defmodule TdDd.Search.IndexWorker do
 
   require Logger
 
+  @path_cache Application.get_env(:td_dd, :path_cache, [])
+
   ## Client API
 
   def start_link(_opts) do
@@ -73,14 +75,16 @@ defmodule TdDd.Search.IndexWorker do
 
   @impl true
   def handle_cast({:reindex, :all}, state) do
-    PathCache.refresh(20_000)
+    timeout = Keyword.get(@path_cache, :timeout, 20_000)
+    PathCache.refresh(timeout)
     do_reindex(:all)
     {:noreply, state}
   end
 
   @impl true
   def handle_cast({:reindex, data_structure_ids}, state) do
-    PathCache.refresh(20_000)
+    timeout = Keyword.get(@path_cache, :timeout, 20_000)
+    PathCache.refresh(timeout)
     do_reindex(data_structure_ids)
     {:noreply, state}
   end

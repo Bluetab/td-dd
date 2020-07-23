@@ -57,11 +57,13 @@ config :td_dd, :audit_service,
 config :td_dd, permission_resolver: TdCache.Permissions
 config :td_dd, index_worker: TdDd.Search.IndexWorker
 config :td_dd, import_dir: "/import"
+config :td_dd, :path_cache, 
+  timeout: System.get_env("PATH_CACHE_TIMEOUT", "20000") |> String.to_integer()
 
 # Default timeout increased for bulk metadata upload
 config :td_dd, TdDd.Repo,
   pool_size: 10,
-  timeout: 600_000
+  timeout: System.get_env("REPO_TIMEOUT", "600000") |> String.to_integer()
 
 config :td_cache, :event_stream,
   consumer_id: "default",
