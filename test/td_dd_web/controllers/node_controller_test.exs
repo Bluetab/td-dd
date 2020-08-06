@@ -10,13 +10,15 @@ defmodule TdDdWeb.NodeControllerTest do
   @admin_user_name "app-admin"
 
   setup_all do
+    stop_supervised(GraphData)
+    start_supervised(GraphData)
     start_supervised(MockTdAuthService)
     start_supervised(MockPermissionResolver)
     :ok
   end
 
   setup %{conn: conn} = tags do
-    start_supervised({GraphData, state: setup_state(tags)})
+    GraphData.state(state: setup_state(tags))
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
 
