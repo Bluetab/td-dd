@@ -60,7 +60,6 @@ defmodule TdDd.Lineage.GraphData.Nodes do
       [node]
       |> Traversal.reachable(t)
       |> Enum.map(&Graph.vertex(t, &1))
-      |> Enum.filter(&resource?/1)
       |> Enum.map(&Map.get(&1, :id))
 
     case resource_ids do
@@ -83,9 +82,6 @@ defmodule TdDd.Lineage.GraphData.Nodes do
     import Canada, only: [can?: 2]
     not Enum.all?(structures, &can?(user, view_data_structure(&1)))
   end
-
-  defp resource?(%Graph.Vertex{label: %{class: "Resource"}}), do: true
-  defp resource?(_vertex), do: false
 
   defp class(%{class: "Group"}), do: :groups
   defp class(%{class: "Resource"}), do: :resources
