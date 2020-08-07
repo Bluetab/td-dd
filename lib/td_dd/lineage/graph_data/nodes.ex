@@ -73,7 +73,6 @@ defmodule TdDd.Lineage.GraphData.Nodes do
         |> Units.list_nodes(preload: [:structure])
         |> Enum.filter(&(not is_nil(Map.get(&1, :structure))))
         |> Enum.map(&Map.get(&1, :structure))
-        |> Enum.filter(&Map.get(&1, :domain_id))
         |> reject?(user)
     end
   end
