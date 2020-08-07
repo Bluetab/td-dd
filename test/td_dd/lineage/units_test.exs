@@ -70,6 +70,12 @@ defmodule TdDd.Lineage.UnitsTest do
       assert Units.list_nodes(type: type) == [node]
     end
 
+    test "returns the list of nodes by external id" do
+      %{external_id: external_id} = node = insert(:node)
+      assert Units.list_nodes(external_id: external_id) == [node]
+      assert Units.list_nodes(external_id: [external_id]) == [node]
+    end
+
     test "filters deleted nodes" do
       %{type: type} = insert(:node, deleted_at: DateTime.utc_now())
       assert Units.list_nodes(type: type) == []
