@@ -1,5 +1,12 @@
 # Changelog
 
+
+## [Unreleased]
+
+### Changed
+
+- [TD-2285] Check permissions for nodes related to structures
+
 ## [4.1.0] 2020-07-20
 
 ### Added
