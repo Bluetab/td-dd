@@ -1,5 +1,12 @@
 # Changelog
 
+## [3.20.3]
+
+### Changed
+
+- Updated TdCache version to write metadata
+- Remove deploy from gitlab ci pipeline
+
 ## [3.20.2]
 
 ### Added
