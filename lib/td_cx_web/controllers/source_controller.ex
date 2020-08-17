@@ -43,7 +43,7 @@ defmodule TdCxWeb.SourceController do
   end
 
   def index(conn, _params) do
-    sources = Sources.list_sources()
+    sources = Sources.list_sources(deleted: false)
     render(conn, "index.json", sources: sources)
   end
 
@@ -63,24 +63,12 @@ defmodule TdCxWeb.SourceController do
   def create(conn, %{"source" => source_params}) do
     user = conn.assigns[:current_user]
 
-    with true <- can?(user, create(%Source{})),
+    with {:can, true} <- {:can, can?(user, create(%Source{}))},
          {:ok, %Source{} = source} <- Sources.create_source(source_params) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", Routes.source_path(conn, :show, source))
       |> render("show.json", source: source)
-    else
-      false ->
-        conn
-        |> put_status(:forbidden)
-        |> put_view(ErrorView)
-        |> render("403.json")
-
-      {:error, changeset} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> put_view(TdCxWeb.ChangesetView)
-        |> render("error.json", changeset: changeset)
     end
   end
 
@@ -100,25 +88,10 @@ defmodule TdCxWeb.SourceController do
   def show(conn, %{"external_id" => external_id}) do
     user = conn.assigns[:current_user]
 
-    with true <- can?(user, show(%Source{})),
+    with {:can, true} <- {:can, can?(user, show(%Source{}))},
          %Source{} = source <- Sources.get_source!(external_id),
          %Source{} = source <- Sources.enrich_secrets(user, source) do
       render(conn, "show.json", source: source)
-    else
-      false ->
-        conn
-        |> put_status(:forbidden)
-        |> put_view(ErrorView)
-        |> render("403.json")
-
-      {:error, message} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> json(%{
-          errors: [
-            %{name: "vault_error", code: message}
-          ]
-        })
     end
   rescue
     _e in Ecto.NoResultsError ->
@@ -145,31 +118,10 @@ defmodule TdCxWeb.SourceController do
   def update(conn, %{"external_id" => external_id, "source" => source_params}) do
     user = conn.assigns[:current_user]
 
-    with true <- can?(user, update(%Source{})),
+    with {:can, true} <- {:can, can?(user, update(%Source{}))},
          %Source{} = source <- Sources.get_source!(external_id),
          {:ok, %Source{} = source} <- Sources.update_source(source, source_params) do
       render(conn, "show.json", source: source)
-    else
-      false ->
-        conn
-        |> put_status(:forbidden)
-        |> put_view(ErrorView)
-        |> render("403.json")
-
-      {:vault_error, message} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> json(%{
-          errors: [
-            %{name: "vault_error", code: message}
-          ]
-        })
-
-      {:error, changeset} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> put_view(TdCxWeb.ChangesetView)
-        |> render("error.json", changeset: changeset)
     end
   rescue
     _e in Ecto.NoResultsError ->
@@ -194,37 +146,10 @@ defmodule TdCxWeb.SourceController do
   def delete(conn, %{"external_id" => external_id}) do
     user = conn.assigns[:current_user]
 
-    with true <- can?(user, delete(%Source{})),
-         %Source{} = source <- Sources.get_source!(external_id),
+    with {:can, true} <- {:can, can?(user, delete(%Source{}))},
+         %Source{} = source <- Sources.get_source!(external_id, [:jobs]),
          {:ok, %Source{} = _source} <- Sources.delete_source(source) do
       send_resp(conn, :no_content, "")
-    else
-      false ->
-        conn
-        |> put_status(:forbidden)
-        |> put_view(ErrorView)
-        |> render("403.json")
-
-      nil ->
-        conn
-        |> put_status(:not_found)
-        |> put_view(ErrorView)
-        |> render("404.json")
-
-      {:error, changeset} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> put_view(TdCxWeb.ChangesetView)
-        |> render("error.json", changeset: changeset)
-
-      {:vault_error, message} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> json(%{
-          errors: [
-            %{name: "vault_error", code: message}
-          ]
-        })
     end
   end
 end

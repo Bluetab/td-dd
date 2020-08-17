@@ -15,13 +15,14 @@ defmodule TdCx.Sources.Source do
     field(:active, :boolean, default: true)
     has_many(:jobs, Job)
 
+    field(:deleted_at, :utc_datetime)
     timestamps(type: :utc_datetime_usec)
   end
 
   @doc false
   def changeset(source, attrs) do
     source
-    |> cast(attrs, [:external_id, :config, :secrets_key, :type, :active])
+    |> cast(attrs, [:external_id, :config, :secrets_key, :type, :active, :deleted_at])
     |> validate_required([:external_id, :type])
     |> validate_required_inclusion([:secrets_key, :config])
     |> unique_constraint(:external_id)
