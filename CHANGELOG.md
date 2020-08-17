@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-2719] Soft deletion of sources with jobs
+ 
 ## [4.0.0] 2020-07-01
 
 ### Changed

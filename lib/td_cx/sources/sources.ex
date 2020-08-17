@@ -23,14 +23,28 @@ defmodule TdCx.Sources do
       [%Source{}, ...]
 
   """
-  def list_sources do
-    Repo.all(Source)
+  def list_sources(options \\ []) do
+    Source
+    |> with_deleted(options, dynamic([s], is_nil(s.deleted_at)))
+    |> Repo.all()
+  end
+
+  defp with_deleted(query, options, dynamic) when is_list(options) do
+    include_deleted = Keyword.get(options, :deleted, true)
+    with_deleted(query, include_deleted, dynamic)
+  end
+
+  defp with_deleted(query, true, _), do: query
+
+  defp with_deleted(query, _false, dynamic) do
+    where(query, ^dynamic)
   end
 
   def list_sources_by_source_type(source_type) do
     Source
     |> where([s], s.type == ^source_type)
     |> where([s], s.active == true)
+    |> where([s], is_nil(s.deleted_at))
     |> Repo.all()
   end
 
@@ -50,7 +64,9 @@ defmodule TdCx.Sources do
   """
   def get_source!(external_id, options \\ []) do
     Source
-    |> Repo.get_by!(external_id: external_id)
+    |> where([s], s.external_id == ^external_id)
+    |> where([s], is_nil(s.deleted_at))
+    |> Repo.one!()
     |> enrich(options)
   end
 
@@ -277,22 +293,27 @@ defmodule TdCx.Sources do
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_source(%Source{secrets_key: nil} = source) do
+  def delete_source(%Source{secrets_key: secrets_key} = source) do
+    with {:ok, source} <- do_delete_source(source),
+         _v <- Vault.delete_secrets(secrets_key) do
+      {:ok, source}
+    end
+  end
+
+  defp do_delete_source(%Source{external_id: external_id, jobs: %Ecto.Association.NotLoaded{}}) do
+    external_id
+    |> get_source!([:jobs])
+    |> do_delete_source()
+  end
+
+  defp do_delete_source(%Source{jobs: jobs} = source) when jobs == [] do
     source
     |> Source.delete_changeset()
     |> Repo.delete()
   end
 
-  def delete_source(%Source{secrets_key: secrets_key} = source) do
-    case Vault.delete_secrets(secrets_key) do
-      :ok ->
-        source
-        |> Source.delete_changeset()
-        |> Repo.delete()
-
-      {:vault_error, error} ->
-        {:vault_error, error}
-    end
+  defp do_delete_source(%Source{jobs: jobs} = source) when length(jobs) > 0 do
+    update_source(source, %{deleted_at: DateTime.utc_now()})
   end
 
   @doc """

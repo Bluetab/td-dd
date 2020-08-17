@@ -41,6 +41,13 @@ defmodule TdCx.SourcesTest do
       assert Sources.list_sources() == [source]
     end
 
+    test "list_sources/1 with deleted false returns non deleted sources" do
+      source = source_fixture()
+      _s2 = source_fixture(%{"deleted_at" => "2018-11-14 09:31:07Z"})
+      assert Sources.list_sources(deleted: false) == [source]
+      assert length(Sources.list_sources()) == 2
+    end
+
     test "list_sources_by_source_type/1 returns only sources of a type" do
       Templates.create_template(%{name: "type1", id: 2, content: [], scope: "cx"})
       Templates.create_template(%{name: "type2", id: 3, content: [], scope: "cx"})

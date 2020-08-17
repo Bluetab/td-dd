@@ -12,7 +12,8 @@ defmodule TdCx.Factory do
       config: %{},
       external_id: "some external_id",
       secrets_key: "some secrets_key",
-      type: "some type"
+      type: "some type",
+      deleted_at: nil
     }
   end
 

@@ -19,4 +19,21 @@ defmodule TdCxWeb.FallbackController do
     |> put_view(TdCxWeb.ErrorView)
     |> render(:"404")
   end
+
+  def call(conn, {:can, false}) do
+    conn
+    |> put_status(:forbidden)
+    |> put_view(TdCxWeb.ErrorView)
+    |> render("403.json")
+  end
+
+  def call(conn, {:vault_error, message}) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> json(%{
+      errors: [
+        %{name: "vault_error", code: message}
+      ]
+    })
+  end
 end
