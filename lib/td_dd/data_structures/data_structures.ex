@@ -145,20 +145,41 @@ defmodule TdDd.DataStructures do
   defp enrich(%DataStructureVersion{} = dsv, options) do
     deleted = not is_nil(Map.get(dsv, :deleted_at))
     preload = if Enum.member?(options, :profile), do: [data_structure: :profile], else: []
+    with_confidential = Enum.member?(options, :with_confidential)
 
     dsv
     |> enrich(options, :system, &get_system/1)
-    |> enrich(options, :parents, &get_parents(&1, deleted: deleted))
-    |> enrich(options, :children, &get_children(&1, deleted: deleted))
-    |> enrich(options, :siblings, &get_siblings(&1, deleted: deleted))
+    |> enrich(
+      options,
+      :parents,
+      &get_parents(&1, deleted: deleted, with_confidential: with_confidential)
+    )
+    |> enrich(
+      options,
+      :children,
+      &get_children(&1, deleted: deleted, with_confidential: with_confidential)
+    )
+    |> enrich(
+      options,
+      :siblings,
+      &get_siblings(&1, deleted: deleted, with_confidential: with_confidential)
+    )
     |> enrich(
       options,
       :data_fields,
-      &get_field_structures(&1, deleted: deleted, preload: preload)
+      &get_field_structures(&1,
+        deleted: deleted,
+        preload: preload,
+        with_confidential: with_confidential
+      )
     )
     |> enrich(options, :data_field_degree, &get_field_degree/1)
     |> enrich(options, :data_field_links, &get_field_links/1)
-    |> enrich(options, :relations, &get_relations(&1, deleted: deleted, default: false))
+    |> enrich(
+      options,
+      :relations,
+      &get_relations(&1, deleted: deleted, default: false, with_confidential: with_confidential)
+    )
     |> enrich(options, :relation_links, &get_relation_links/1)
     |> enrich(options, :versions, &get_versions/1)
     |> enrich(options, :degree, &get_degree/1)
@@ -208,9 +229,14 @@ defmodule TdDd.DataStructures do
   def get_field_structures(data_structure_version, options) do
     data_structure_version
     |> Ecto.assoc(:children)
-    |> where([child, _parent, _rel], child.class == "field")
-    |> with_deleted(options, dynamic([child, _parent, _rel], is_nil(child.deleted_at)))
-    |> select([child, _parent, _rel], child)
+    |> join(:inner, [child, _parent, _rel, child_ds], child in assoc(child, :data_structure))
+    |> where([child, _parent, _rel, _child_ds], child.class == "field")
+    |> with_confidential(
+      Keyword.get(options, :with_confidential),
+      dynamic([_child, _parent, _rel, child_ds], child_ds.confidential == false)
+    )
+    |> with_deleted(options, dynamic([child, _parent, _rel, _child_ds], is_nil(child.deleted_at)))
+    |> select([child, _parent, _rel, _child_ds], child)
     |> Repo.all()
     |> Repo.preload(options[:preload] || [])
   end
@@ -220,17 +246,22 @@ defmodule TdDd.DataStructures do
     |> where([r], r.parent_id == ^id)
     |> join(:inner, [r], parent in assoc(r, :child))
     |> join(:inner, [r, _parent, _], r in assoc(r, :relation_type))
+    |> join(:inner, [_r, child, _], child in assoc(child, :data_structure))
     |> with_deleted(
       Keyword.get(options, :deleted),
       dynamic([_, parent, _], is_nil(parent.deleted_at))
     )
+    |> with_confidential(
+      Keyword.get(options, :with_confidential),
+      dynamic([_, _child, _, ds_child], ds_child.confidential == false)
+    )
     |> relation_type_condition(
       Keyword.get(options, :default),
-      dynamic([_, _child, relation_type], relation_type.name == "default"),
-      dynamic([_, _child, relation_type], relation_type.name != "default")
+      dynamic([_, _child, relation_type, _], relation_type.name == "default"),
+      dynamic([_, _child, relation_type, _], relation_type.name != "default")
     )
-    |> order_by([_, child, _], asc: child.data_structure_id, desc: child.version)
-    |> distinct([_, child, _], child)
+    |> order_by([_, child, _, _], asc: child.data_structure_id, desc: child.version)
+    |> distinct([_, child, _, _], child)
     |> select([r, child, relation_type], %{
       version: child,
       relation: r,
@@ -245,17 +276,22 @@ defmodule TdDd.DataStructures do
     |> where([r], r.child_id == ^id)
     |> join(:inner, [r], parent in assoc(r, :parent))
     |> join(:inner, [r, _parent], relation_type in assoc(r, :relation_type))
+    |> join(:inner, [_r, parent, _relation_type], parent in assoc(parent, :data_structure))
     |> with_deleted(
       Keyword.get(options, :deleted),
-      dynamic([_, parent, _], is_nil(parent.deleted_at))
+      dynamic([_, parent, _, _], is_nil(parent.deleted_at))
     )
     |> relation_type_condition(
       Keyword.get(options, :default),
-      dynamic([_, _parent, relation_type], relation_type.name == "default"),
-      dynamic([_, _parent, relation_type], relation_type.name != "default")
+      dynamic([_, _parent, relation_type, _], relation_type.name == "default"),
+      dynamic([_, _parent, relation_type, _], relation_type.name != "default")
     )
-    |> order_by([_, parent, _], asc: parent.data_structure_id, desc: parent.version)
-    |> distinct([_, parent, _], parent)
+    |> with_confidential(
+      Keyword.get(options, :with_confidential),
+      dynamic([_, _parent, _relation_type, parent_ds], parent_ds.confidential == false)
+    )
+    |> order_by([_, parent, _, _], asc: parent.data_structure_id, desc: parent.version)
+    |> distinct([_, parent, _, _], parent)
     |> select([r, parent, relation_type], %{
       version: parent,
       relation: r,
@@ -275,30 +311,60 @@ defmodule TdDd.DataStructures do
     )
     |> join(:inner, [_r, _parent, _parent_rt, r_c], child_rt in assoc(r_c, :relation_type))
     |> join(:inner, [_r, _parent, _parent_rt, r_c, _child_rt], sibling in assoc(r_c, :child))
-    |> with_deleted(
-      options,
-      dynamic([_r, parent, _parent_rt, _r_c, _child_rt, _sibling], is_nil(parent.deleted_at))
+    |> join(
+      :inner,
+      [_r, _parent, _parent_rt, _r_c, _child_rt, sibling],
+      sibling in assoc(sibling, :data_structure)
     )
     |> with_deleted(
       options,
-      dynamic([_r, parent, _parent_rt, _r_c, _child_rt, sibling], is_nil(sibling.deleted_at))
+      dynamic(
+        [_r, parent, _parent_rt, _r_c, _child_rt, _sibling, _sibling_ds],
+        is_nil(parent.deleted_at)
+      )
+    )
+    |> with_deleted(
+      options,
+      dynamic(
+        [_r, parent, _parent_rt, _r_c, _child_rt, sibling, _sibling_ds],
+        is_nil(sibling.deleted_at)
+      )
+    )
+    |> with_confidential(
+      Keyword.get(options, :with_confidential),
+      dynamic(
+        [_r, _parent, _parent_rt, _r_c, _child_rt, _sibling, sibling_ds],
+        sibling_ds.confidential == false
+      )
     )
     |> relation_type_condition(
       Keyword.get(options, :default),
-      dynamic([_r, _parent, parent_rt, _r_c, _child_rt, _sibling], parent_rt.name == "default"),
-      dynamic([_r, _parent, parent_rt, _r_c, _child_rt, _sibling], parent_rt.name != "default")
+      dynamic(
+        [_r, _parent, parent_rt, _r_c, _child_rt, _sibling, _sibling_ds],
+        parent_rt.name == "default"
+      ),
+      dynamic(
+        [_r, _parent, parent_rt, _r_c, _child_rt, _sibling, _sibling_ds],
+        parent_rt.name != "default"
+      )
     )
     |> relation_type_condition(
       Keyword.get(options, :default),
-      dynamic([_r, _parent, _parent_rt, _r_c, child_rt, _sibling], child_rt.name == "default"),
-      dynamic([_r, _parent, _parent_rt, _r_c, child_rt, _sibling], child_rt.name != "default")
+      dynamic(
+        [_r, _parent, _parent_rt, _r_c, child_rt, _sibling, _sibling_ds],
+        child_rt.name == "default"
+      ),
+      dynamic(
+        [_r, _parent, _parent_rt, _r_c, child_rt, _sibling, _sibling_ds],
+        child_rt.name != "default"
+      )
     )
-    |> order_by([_r, _parent, _parent_rt, _r_c, _child_rt, sibling],
+    |> order_by([_r, _parent, _parent_rt, _r_c, _child_rt, sibling, _sibling_ds],
       asc: sibling.data_structure_id,
       desc: sibling.version
     )
-    |> distinct([_r, _parent, _parent_rt, _r_c, _child_rt, sibling], sibling)
-    |> select([_r, _parent, _parent_rt, _r_c, _child_rt, sibling], sibling)
+    |> distinct([_r, _parent, _parent_rt, _r_c, _child_rt, sibling, _sibling_ds], sibling)
+    |> select([_r, _parent, _parent_rt, _r_c, _child_rt, sibling, _sibling_ds], sibling)
     |> Repo.all()
     |> Enum.uniq_by(& &1.data_structure_id)
   end
@@ -637,6 +703,12 @@ defmodule TdDd.DataStructures do
   defp with_deleted(query, true, _), do: query
 
   defp with_deleted(query, _false, dynamic) do
+    where(query, ^dynamic)
+  end
+
+  defp with_confidential(query, true, _), do: query
+
+  defp with_confidential(query, _false, dynamic) do
     where(query, ^dynamic)
   end
 

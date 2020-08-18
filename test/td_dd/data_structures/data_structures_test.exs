@@ -252,14 +252,12 @@ defmodule TdDd.DataStructuresTest do
       import DataStructures, only: [put_domain_id: 2]
       ids = %{"bar" => :bar, "foo" => :foo}
 
-      assert %{"domain_id" => :baz} =
-               put_domain_id(%{"domain_id" => :baz, "ou" => "foo"}, ids)
+      assert %{"domain_id" => :baz} = put_domain_id(%{"domain_id" => :baz, "ou" => "foo"}, ids)
 
       assert %{"domain_id" => :foo} = put_domain_id(%{"domain_id" => "", "ou" => "foo"}, ids)
       assert %{"domain_id" => :foo} = put_domain_id(%{"ou" => "foo"}, ids)
 
-      assert %{"domain_id" => :bar} =
-               put_domain_id(%{"domain_external_id" => "bar"}, ids)
+      assert %{"domain_id" => :bar} = put_domain_id(%{"domain_external_id" => "bar"}, ids)
 
       assert %{"domain_id" => :bar} =
                put_domain_id(
@@ -387,6 +385,121 @@ defmodule TdDd.DataStructuresTest do
       assert siblings <|> [sibling, dsv]
       assert relations.parents == []
       assert relations.children == []
+    end
+
+    test "get_data_structure_version!/2 with options: parents, children, siblings, with_confidential enriches including confidential" do
+      [dsv, parent, child, sibling, r_child] =
+        ["structure", "parent", "child", "sibling", "r_child"]
+        |> Enum.map(&insert(:data_structure, external_id: &1))
+        |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id))
+
+      [child_confidential, sibling_confidential, r_child_confidential] =
+        ["child_confidential", "sibling_confidential", "r_child_confidential"]
+        |> Enum.map(&insert(:data_structure, external_id: &1, confidential: true))
+        |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id))
+
+      fields =
+        ["field1", "field2", "field3"]
+        |> Enum.map(&insert(:data_structure, external_id: &1))
+        |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id, class: "field"))
+
+      field_confidential =
+        ["field4_confidential"]
+        |> Enum.map(&insert(:data_structure, external_id: &1, confidential: true))
+        |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id, class: "field"))
+
+      %{id: relation_type_id} = RelationTypes.get_default()
+      %{id: custom_relation_id} = insert(:relation_type, name: "relation_type_1")
+
+      Enum.map(
+        fields ++ field_confidential,
+        &insert(:data_structure_relation,
+          parent_id: dsv.id,
+          child_id: &1.id,
+          relation_type_id: relation_type_id
+        )
+      )
+
+      insert(:data_structure_relation,
+        parent_id: parent.id,
+        child_id: dsv.id,
+        relation_type_id: relation_type_id
+      )
+
+      insert(:data_structure_relation,
+        parent_id: parent.id,
+        child_id: sibling.id,
+        relation_type_id: relation_type_id
+      )
+
+      insert(:data_structure_relation,
+        parent_id: parent.id,
+        child_id: sibling_confidential.id,
+        relation_type_id: relation_type_id
+      )
+
+      insert(:data_structure_relation,
+        parent_id: dsv.id,
+        child_id: child.id,
+        relation_type_id: relation_type_id
+      )
+
+      insert(:data_structure_relation,
+        parent_id: dsv.id,
+        child_id: r_child.id,
+        relation_type_id: custom_relation_id
+      )
+
+      insert(:data_structure_relation,
+        parent_id: dsv.id,
+        child_id: r_child_confidential.id,
+        relation_type_id: custom_relation_id
+      )
+
+      insert(:data_structure_relation,
+        parent_id: dsv.id,
+        child_id: child_confidential.id,
+        relation_type_id: relation_type_id
+      )
+
+      enrich_opts = [:parents, :children, :siblings, :relations, :data_fields]
+
+      assert %{
+               id: id,
+               parents: parents,
+               children: children,
+               siblings: siblings,
+               relations: relations,
+               data_fields: data_fields
+             } = DataStructures.get_data_structure_version!(dsv.id, enrich_opts)
+
+      assert id == dsv.id
+      assert parents <|> [parent]
+      assert children <|> ([child] ++ fields)
+      assert siblings <|> [sibling, dsv]
+      assert data_fields <|> fields
+      assert %{children: [child_relation]} = relations
+      assert child_relation.version <~> r_child
+
+      enrich_opts = [:parents, :children, :siblings, :with_confidential, :relations]
+
+      assert %{
+               id: id,
+               parents: parents,
+               children: children,
+               siblings: siblings,
+               relations: relations
+             } = DataStructures.get_data_structure_version!(dsv.id, enrich_opts)
+
+      assert id == dsv.id
+      assert parents <|> [parent]
+      assert children <|> ([child, child_confidential] ++ fields ++ field_confidential)
+      assert siblings <|> [sibling, dsv, sibling_confidential]
+      assert %{children: child_rels} = relations
+      assert Enum.find(child_rels, &(&1.version.id == r_child.id)).version <~> r_child
+
+      assert Enum.find(child_rels, &(&1.version.id == r_child_confidential.id)).version
+             <~> r_child_confidential
     end
 
     test "get_data_structure_version!/1 returns the data_structure with given id", %{

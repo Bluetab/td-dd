@@ -1,17 +1,27 @@
 # Changelog
 
-
 ## [Unreleased]
 
 ### Changed
 
 - [TD-2285] Check permissions for nodes related to structures
 
+### Fixed
+
+- [TD-2310] Exclude confidential structures from children and siblings 
+if user has no permission to manage confidential structures
+
+## [4.2.0] 2020-08-17
+
+### Added
+
+- [TD-2280] As a business glossary I want to create a concept with the same name as an existing concept in another domain to allow multi-organization management
+
 ## [4.1.0] 2020-07-20
 
 ### Added
 
-- [TD-911] Allow to limit lineage/impact levels 
+- [TD-911] Allow to limit lineage/impact levels
 - [TD-2322] Allow to search all data structures versions without 10_000 limit using ES scroll API
 
 ### Fixed
@@ -38,7 +48,7 @@
 
 ### Fixed
 
-- [TD-2593] Retrive parents over `default` relation type to build path 
+- [TD-2593] Retrive parents over `default` relation type to build path
 
 ## [3.23.0] 2020-06-01
 
