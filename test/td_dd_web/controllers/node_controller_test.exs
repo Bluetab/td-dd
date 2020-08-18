@@ -168,5 +168,68 @@ defmodule TdDdWeb.NodeControllerTest do
 
       assert %{"external_id" => "xyz", "name" => "xyz"} = group
     end
+
+    @tag authenticated_no_admin_user: "user"
+    @tag contains: %{"foo" => ["bar", "baz"]}
+    @tag depends: [{"bar", "baz"}]
+    test "will filter a group if a user has not permissions over any of the group's permissions", %{
+      conn: conn,
+      user: %{id: user_id}
+    } do
+      domain_id = :random.uniform(1_000_000)
+      TaxonomyCache.put_domain(%{name: "domain", id: domain_id, updated_at: DateTime.utc_now()})
+
+      MockPermissionResolver.create_acl_entry(%{
+        principal_id: user_id,
+        principal_type: "user",
+        resource_id: domain_id,
+        resource_type: "domain",
+        role_name: "no_perms"
+      })
+
+      insert(
+        :node,
+        external_id: "foo"
+      )
+
+      data_structure =
+        insert(
+          :data_structure,
+          external_id: "bar",
+          domain_id: domain_id
+        )
+
+      insert(:data_structure_version,
+        data_structure_id: data_structure.id,
+        name: data_structure.external_id
+      )
+
+      insert(
+        :node,
+        external_id: data_structure.external_id,
+        structure: data_structure
+      )
+
+      data_structure =
+        insert(
+          :data_structure,
+          external_id: "baz",
+          domain_id: domain_id
+        )
+
+      insert(:data_structure_version,
+        data_structure_id: data_structure.id,
+        name: data_structure.external_id
+      )
+
+      insert(
+        :node,
+        external_id: data_structure.external_id,
+        structure: data_structure
+      )
+
+      conn = get(conn, Routes.node_path(conn, :index))
+      assert [%{"parent" => nil}] = json_response(conn, 200)["data"]
+    end
   end
 end
