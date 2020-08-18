@@ -66,10 +66,11 @@ defmodule TdDd.Lineage.GraphData.Nodes do
         |> Traversal.reachable(t)
         |> Enum.map(&Graph.vertex(t, &1))
         |> Enum.map(&Map.get(&1, :id))
-        |> List.delete(node) 
+        |> List.delete(node)
         |> reject?(user)
 
-      false -> true
+      false ->
+        true
     end
   end
 
@@ -83,18 +84,23 @@ defmodule TdDd.Lineage.GraphData.Nodes do
   defp reject?([], _user), do: false
 
   defp reject?(ids, user) do
-    nodes =
-      Map.new()
-      |> Map.put(:external_id, ids)
-      |> Units.list_nodes(preload: [:structure])
-
-    groups = Enum.filter(nodes, &(Map.get(&1, :type) == "Group"))
-    resources = Enum.filter(nodes, &(Map.get(&1, :type) == "Resource"))
+    resources = fetch_nodes(ids, "Resource")
 
     case reject_collection?(resources, user) do
-      false -> reject_collection?(groups, user)
-      _ -> true
+      false ->
+        groups = fetch_nodes(ids, "Group")
+        reject_collection?(groups, user)
+
+      _ ->
+        true
     end
+  end
+
+  defp fetch_nodes(ids, type) do
+    Map.new()
+    |> Map.put(:external_id, ids)
+    |> Map.put(:type, type)
+    |> Units.list_nodes(preload: [:structure])
   end
 
   defp reject_collection?([], _user), do: false
