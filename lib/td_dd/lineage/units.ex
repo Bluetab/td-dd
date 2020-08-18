@@ -61,6 +61,12 @@ defmodule TdDd.Lineage.Units do
     |> Enum.at(0)
   end
 
+  def get_node(external_id, options \\ []) do
+    Node
+    |> Repo.get_by(external_id: external_id)
+    |> Repo.preload(options[:preload] || [])
+  end
+
   def list_nodes(clauses, options \\ []) do
     clauses
     |> Map.new()
@@ -68,11 +74,18 @@ defmodule TdDd.Lineage.Units do
     |> Enum.reduce(Node, fn
       {:external_id, external_ids}, q when is_list(external_ids) ->
         where(q, [ds], ds.external_id in ^external_ids)
+
       {:external_id, external_id}, q ->
         where(q, [ds], ds.external_id == ^external_id)
-      {:type, type}, q -> where(q, [n], n.type == ^type)
-      {:deleted, false}, q -> where(q, [n], is_nil(n.deleted_at))
-      {:deleted, _true}, q -> q
+
+      {:type, type}, q ->
+        where(q, [n], n.type == ^type)
+
+      {:deleted, false}, q ->
+        where(q, [n], is_nil(n.deleted_at))
+
+      {:deleted, _true}, q ->
+        q
     end)
     |> Repo.all()
     |> Repo.preload(options[:preload] || [])

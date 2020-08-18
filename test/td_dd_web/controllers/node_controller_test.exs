@@ -70,6 +70,16 @@ defmodule TdDdWeb.NodeControllerTest do
         role_name: "no_perms"
       })
 
+      insert(
+        :node,
+        external_id: "foo"
+      )
+
+      insert(
+        :node,
+        external_id: "xyz"
+      )
+
       data_structure =
         insert(
           :data_structure,
