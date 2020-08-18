@@ -37,7 +37,8 @@ defmodule TdDdWeb.DataStructureVersionController do
     :relation_links,
     :domain,
     :metadata_versions,
-    :data_structure_type
+    :data_structure_type,
+    :with_confidential
   ]
 
   swagger_path :show do
@@ -83,6 +84,10 @@ defmodule TdDdWeb.DataStructureVersionController do
 
   defp filter(user, data_structure, :profile) do
     can?(user, view_data_structures_profile(data_structure))
+  end
+
+  defp filter(user, data_structure, :with_confidential) do
+    can?(user, manage_confidential_structures(data_structure))
   end
 
   defp filter(_user, _data_structure, _attr), do: true
