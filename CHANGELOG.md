@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-2310] Exclude confidential structures from children and siblings 
+if user has no permission to manage confidential structures
+
 ## [4.2.0] 2020-08-17
 
 ### Added
