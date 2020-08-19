@@ -45,6 +45,11 @@ defmodule TdDd.DataCase do
             nil -> nil
             pid -> Sandbox.allow(TdDd.Repo, parent, pid)
           end
+
+          case Process.whereis(TdDd.Lineage.GraphData) do
+            nil -> nil
+            pid -> Sandbox.allow(TdDd.Repo, parent, pid)
+          end
         end
 
       {:already, :owner} ->

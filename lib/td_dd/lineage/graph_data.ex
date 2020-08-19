@@ -27,9 +27,14 @@ defmodule TdDd.Lineage.GraphData do
     GenServer.call(__MODULE__, :state)
   end
 
+  @doc "Modifies the current state"
+  def state(state) do
+    GenServer.call(__MODULE__, {:state, state})
+  end
+
   @doc "Returns nodes in the graph"
-  def nodes(id \\ nil) do
-    GenServer.call(__MODULE__, {:nodes, id})
+  def nodes(id \\ nil, user) do
+    GenServer.call(__MODULE__, {:nodes, id, user})
   end
 
   @doc """
@@ -70,11 +75,7 @@ defmodule TdDd.Lineage.GraphData do
       Process.send_after(self(), :refresh, 2_000)
     end
 
-    state =
-      case Keyword.get(opts, :state) do
-        %State{} = s -> s
-        _ -> %State{}
-      end
+    state = state_from_opts(opts)
 
     name = String.replace_prefix("#{__MODULE__}", "Elixir.", "")
     Logger.info("Running #{name}")
@@ -151,8 +152,19 @@ defmodule TdDd.Lineage.GraphData do
   end
 
   @impl true
-  def handle_call({:nodes, id}, _from, state) do
-    reply = Nodes.query_nodes(id, state)
+  def handle_call({:state, opts}, _from, state) do
+    state =
+      case Application.get_env(:td_dd, :env) == :test do
+        true -> state_from_opts(opts)
+        _ -> state
+      end
+
+    {:reply, state, state}
+  end
+
+  @impl true
+  def handle_call({:nodes, id, user}, _from, state) do
+    reply = Nodes.query_nodes(id, user, state)
     {:reply, reply, state}
   end
 
@@ -255,8 +267,13 @@ defmodule TdDd.Lineage.GraphData do
   end
 
   defp do_lineage(state, external_ids, excludes \\ [], levels \\ :all)
-  defp do_lineage(state, external_ids, nil, levels), do: do_lineage(state, external_ids, [], levels)
-  defp do_lineage(state, external_ids, excludes, nil), do: do_lineage(state, external_ids, excludes, :all)
+
+  defp do_lineage(state, external_ids, nil, levels),
+    do: do_lineage(state, external_ids, [], levels)
+
+  defp do_lineage(state, external_ids, excludes, nil),
+    do: do_lineage(state, external_ids, excludes, :all)
+
   defp do_lineage(%{contains: contains, depends: depends}, external_ids, excludes, levels) do
     excludes =
       case excludes do
@@ -272,7 +289,9 @@ defmodule TdDd.Lineage.GraphData do
 
   defp do_impact(state, external_ids, excludes \\ [], levels \\ :all)
   defp do_impact(state, external_ids, nil, levels), do: do_impact(state, external_ids, [], levels)
-  defp do_impact(state, external_ids, excludes, nil), do: do_impact(state, external_ids, excludes, :all)
+
+  defp do_impact(state, external_ids, excludes, nil),
+    do: do_impact(state, external_ids, excludes, :all)
 
   defp do_impact(%{contains: contains, depends: depends}, external_ids, excludes, levels) do
     excludes =
@@ -442,4 +461,11 @@ defmodule TdDd.Lineage.GraphData do
   end
 
   def sortable(%{"name" => name}), do: String.downcase(name)
+
+  defp state_from_opts(opts) do
+    case Keyword.get(opts, :state) do
+      %State{} = s -> s
+      _ -> %State{}
+    end
+  end
 end

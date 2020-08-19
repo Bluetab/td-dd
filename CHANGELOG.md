@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- [TD-2285] Check permissions for nodes related to structures
+
 ### Fixed
 
 - [TD-2310] Exclude confidential structures from children and siblings 

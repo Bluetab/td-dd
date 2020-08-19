@@ -16,7 +16,8 @@ defmodule TdDdWeb.NodeController do
   end
 
   defp query_nodes(conn, id \\ nil) do
-    case GraphData.nodes(id) do
+    user = conn.assigns[:current_user]
+    case GraphData.nodes(id, user) do
       {:ok, data} ->
         json = %{data: data} |> Jason.encode!()
 
