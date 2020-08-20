@@ -62,6 +62,9 @@ defmodule TdDdWeb.Router do
     get("/data_structure_filters", DataStructureFilterController, :index)
     post("/data_structure_filters/search", DataStructureFilterController, :search)
 
+    get("/data_structure_user_filters/user/me", UserSearchFilterController, :index_by_user)
+    resources("/data_structure_user_filters", UserSearchFilterController, except: [:new, :edit])
+
     resources "/relation_types", RelationTypeController, except: [:new, :edit]
 
     resources "/data_structure_types", DataStructureTypeController

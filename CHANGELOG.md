@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-2928] Data Dictionary custom user search filters
+
 ### Changed
 
 - [TD-2285] Check permissions for nodes related to structures
