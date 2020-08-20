@@ -576,4 +576,63 @@ defmodule TdDdWeb.SwaggerDefinitions do
         end
     }
   end
+
+  def user_search_filters_definitions do
+    %{
+      UserSearchFilter:
+        swagger_schema do
+          title("User search filter")
+          description("A User search filter")
+
+          properties do
+            id(:integer, "User search filter unique identifier", required: true)
+            name(:string, "Name", required: true)
+            user_id(:integer, "Current user id", required: true)
+            filters(:object, "Search filters")
+          end
+
+          example(%{
+            id: 5,
+            name: "Tipo basic",
+            user_id: 3,
+            filters: %{
+              "pais" => ["Australia", "", "Argelia"],
+              "link_count" => ["linked_terms", "not_linked_terms"]
+            }
+          })
+        end,
+      UserSearchFilters:
+        swagger_schema do
+          title("UserSearchFilters")
+          description("A collection of user search filter")
+          type(:array)
+          items(Schema.ref(:UserSearchFilter))
+        end,
+      CreateUserSearchFilter:
+        swagger_schema do
+          properties do
+            user_search_filter(
+              Schema.new do
+                properties do
+                  name(:string, "Search name", required: true)
+                  filters(:object, "Search filters")
+                end
+              end
+            )
+          end
+        end,
+      UserSearchFilterResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:UserSearchFilter))
+          end
+        end,
+      UserSearchFiltersResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:UserSearchFilters))
+          end
+        end
+    }
+  end
 end

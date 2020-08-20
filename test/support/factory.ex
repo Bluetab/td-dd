@@ -13,6 +13,7 @@ defmodule TdDd.Factory do
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.Lineage.Units
   alias TdDd.Systems.System
+  alias TdDd.UserSearchFilters.UserSearchFilter
 
   def user_factory do
     %User{
@@ -102,6 +103,15 @@ defmodule TdDd.Factory do
 
   def edge_factory do
     %Units.Edge{type: "DEPENDS"}
+  end
+
+  def user_search_filter_factory do
+    %UserSearchFilter{
+      id: sequence(:user_search_filter, & &1),
+      name:  sequence("filter_name"),
+      filters: %{country: ["Sp"]},
+      user_id: sequence(:user_id, & &1)
+    }
   end
 
   defp default_assoc(attrs, id_key, key) do
