@@ -4,6 +4,7 @@ defmodule TdDdWeb.UnitController do
 
   import Canada, only: [can?: 2]
 
+  alias TdCache.TaxonomyCache
   alias TdDd.Lineage.Import
   alias TdDd.Lineage.Units
 
@@ -63,11 +64,12 @@ defmodule TdDdWeb.UnitController do
     response(400, "Client Error")
   end
 
-  def update(conn, %{"name" => name, "nodes" => nodes, "rels" => rels}) do
+  def update(conn, %{"nodes" => nodes, "rels" => rels} = params) do
     user = conn.assigns[:current_user]
-
+    attrs = attributes(params)
     with {:can, true} <- {:can, can?(user, update(Unit))},
-         {:ok, %Units.Unit{} = unit} <- Units.get_or_create_unit(%{name: name}),
+         {:ok, %Units.Unit{} = unit} <- Units.get_or_create_unit(attrs),
+         {:ok, %Units.Unit{} = unit} <- Units.update_unit(unit, attrs),
          {:ok, nodes_path} <- copy(nodes),
          {:ok, rels_path} <- copy(rels) do
       Import.load(unit, nodes_path, rels_path)
@@ -106,4 +108,19 @@ defmodule TdDdWeb.UnitController do
       dir -> dir
     end
   end
+
+  defp attributes(params) do
+    Map.new()
+    |> with_name(params)
+    |> with_domain_id(params)
+  end
+
+  defp with_name(acc, %{"name" => name}), do: Map.put(acc, :name, name)
+  defp with_name(acc, _attrs), do: acc
+
+  defp with_domain_id(acc, %{"domain" => domain}) do
+    domain_id = Map.get(TaxonomyCache.get_domain_external_id_to_id_map(), domain)
+    Map.put(acc, :domain_id, domain_id)
+  end
+  defp with_domain_id(acc, _attrs), do: acc
 end

@@ -123,6 +123,15 @@ defmodule TdDd.Lineage.UnitsTest do
     end
   end
 
+  describe "Units.update_unit/2" do
+    test "updates unit when attributes changes" do
+      %{id: id, name: name, deleted_at: deleted_at} = unit = insert(:unit)
+      assert {:ok, %Units.Unit{id: ^id, name: ^name, deleted_at: ^deleted_at}} = Units.update_unit(unit, %{name: name})
+      assert {:ok, %Units.Unit{id: ^id, name: "new_name", deleted_at: ^deleted_at}} = Units.update_unit(unit, %{name: "new_name"})
+      assert {:ok, %Units.Unit{id: ^id, domain_id: 1}} = Units.update_unit(unit, %{domain_id: 1})
+    end
+  end
+
   describe "delete_unit/2" do
     setup do
       assert %{id: unit_id} = unit = insert(:unit)
