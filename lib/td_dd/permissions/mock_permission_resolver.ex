@@ -15,7 +15,8 @@ defmodule TdDd.Permissions.MockPermissionResolver do
       :view_data_structure
     ],
     "watch" => [
-      :view_data_structure
+      :view_data_structure,
+      :view_lineage
     ],
     "create" => [
       :view_data_structure
