@@ -51,9 +51,9 @@ defmodule TdDdWeb.UnitController do
 
   def create(conn, %{} = params) do
     user = conn.assigns[:current_user]
-
+    attrs = attributes(params)
     with {:can, true} <- {:can, can?(user, create(Unit))},
-         {:ok, unit} <- Units.create_unit(params) do
+         {:ok, unit} <- Units.create_unit(attrs) do
       render(conn, "show.json", unit: unit)
     end
   end
