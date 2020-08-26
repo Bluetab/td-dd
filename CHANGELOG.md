@@ -8,7 +8,7 @@
 
 ### Changed
 
-- [TD-2285] Check permissions for nodes related to structures
+- [TD-2285] Check permissions for nodes related to units
 
 ### Fixed
 
