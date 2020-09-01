@@ -146,7 +146,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   describe "bulk_update" do
     @tag :admin_authenticated
     test "bulk update of data structures", %{conn: conn} do
-      %{id: structure_id} = insert(:data_structure, external_id: "Structure")
+      %{id: structure_id} = insert(:data_structure, external_id: "Structure", df_content: %{"Field1" => "foo", "Field2" => "bar"})
       insert(:data_structure_version, data_structure_id: structure_id)
 
       assert %{"data" => data} =

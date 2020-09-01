@@ -6,7 +6,7 @@ defmodule TdDd.DataStructures.DataStructureTest do
   alias TdCache.TemplateCache
   alias TdDd.DataStructures.DataStructure
 
-  @invalid_content %{"list" => "four"}
+  @invalid_content %{"string" => nil, "list" => "four"}
   @valid_content %{"string" => "present", "list" => "one"}
 
   setup_all do

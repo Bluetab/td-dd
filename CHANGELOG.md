@@ -9,6 +9,9 @@
 ### Changed
 
 - [TD-2285] Check permissions for nodes related to structures
+- [TD-2720] Bulk Update:
+  - Update only structures having content
+  - Validate only updated fields
 
 ### Fixed
 
