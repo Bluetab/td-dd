@@ -38,7 +38,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       ids =
         1..10
-        |> Enum.map(fn _ -> valid_structure(type) end)
+        |> Enum.map(fn _ -> valid_structure(type, df_content: %{"string" => "foo"}) end)
         |> Enum.map(& &1.data_structure_id)
 
       assert {:ok, %{updates: updates}} = BulkUpdate.update_all(ids, @valid_params, user)
@@ -71,7 +71,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         1..10
         |> Enum.map(fn
           n when n > 5 -> valid_structure(type, df_content: @valid_content, last_change_by: 99)
-          _ -> valid_structure(type)
+          _ -> valid_structure(type, df_content: %{"string" => "foo", "list" => "bar"})
         end)
         |> Enum.map(& &1.data_structure_id)
 
@@ -93,12 +93,13 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
     test "returns an error if a structure has no template", %{type: type} do
       user = build(:user)
+      content = %{"string" => "foo", "list" => "bar"}
 
       ids =
         1..10
         |> Enum.map(fn
           9 -> invalid_structure()
-          _ -> valid_structure(type)
+          _ -> valid_structure(type, df_content: content)
         end)
         |> Enum.map(& &1.data_structure_id)
 
@@ -131,6 +132,24 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
              |> Enum.all?(&(&1 == %{"string" => "updated", "list" => initial_content["list"]}))
     end
 
+    test "only validates specified fields", %{type: type} do
+      user = build(:user)
+
+      id =
+        insert(:data_structure_version,
+          type: type,
+          data_structure: build(:data_structure, df_content: %{"list" => "two"})
+        ).data_structure_id
+
+      assert {:ok, %{updates: updates}} =
+               BulkUpdate.update_all([id], %{"df_content" => %{"list" => "one"}}, user)
+
+      assert [id]
+             |> Enum.map(&Repo.get(DataStructure, &1))
+             |> Enum.map(& &1.df_content)
+             |> Enum.all?(&(&1 == %{"list" => "one"}))
+    end
+
     test "ignores empty fields", %{type: type} do
       user = build(:user)
 
@@ -160,7 +179,8 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
   defp invalid_structure do
     insert(:data_structure_version,
       type: "missing_type",
-      data_structure: build(:data_structure, external_id: "the bad one")
+      data_structure:
+        build(:data_structure, external_id: "the bad one", df_content: %{"foo" => "bar"})
     )
   end
 
