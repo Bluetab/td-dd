@@ -2,6 +2,7 @@ defmodule TdCx.ConfigurationsTest do
   use TdCx.DataCase
 
   alias TdCx.Configurations
+  alias TdCx.Vault
 
   @valid_attrs %{
     content: %{"field2" => "mandatory"},
@@ -205,6 +206,16 @@ defmodule TdCx.ConfigurationsTest do
       assert_raise Ecto.NoResultsError, fn ->
         Configurations.get_configuration!(configuration.id)
       end
+    end
+
+    test "delete_configuration/1 deletes its vault secrets" do
+      {:ok, %Configuration{secrets_key: secrets_key} = configuration} =
+        Configurations.create_configuration(@valid_secret_attrs)
+      assert %{"secret_field" => "secret_value"} == Vault.read_secrets(secrets_key)
+      
+      assert {:ok, %Configuration{}} = Configurations.delete_configuration(configuration)
+
+      assert %{} == Vault.read_secrets(secrets_key)
     end
   end
 end

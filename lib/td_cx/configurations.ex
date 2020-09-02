@@ -124,7 +124,8 @@ defmodule TdCx.Configurations do
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_configuration(%Configuration{} = configuration) do
+  def delete_configuration(%Configuration{secrets_key: secrets_key} = configuration) do
+    Vault.delete_secrets(secrets_key)
     Repo.delete(configuration)
   end
 
