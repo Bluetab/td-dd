@@ -4,16 +4,21 @@ defmodule TdCx.ConfigurationsTest do
   alias TdCx.Configurations
 
   @valid_attrs %{
-    config: %{"field2" => "mandatory"},
+    content: %{"field2" => "mandatory"},
     deleted_at: "2010-04-17T14:00:00.000000Z",
     external_id: "some external_id",
-    secrets_key: "some secrets_key",
     type: "config"
+  }
+  @valid_secret_attrs %{
+    content: %{"secret_field" => "secret_value", "public_field" => "public_value"},
+    deleted_at: "2010-04-17T14:00:00.000000Z",
+    external_id: "some secret external_id",
+    type: "secret_config"
   }
   @update_attrs %{
     deleted_at: "2011-05-18T15:01:01.000000Z"
   }
-  @invalid_attrs %{config: %{"field3" => "foo"}}
+  @invalid_attrs %{content: %{"field3" => "foo"}}
   @app_admin_template %{
     id: 1,
     name: "config",
@@ -41,10 +46,47 @@ defmodule TdCx.ConfigurationsTest do
       }
     ]
   }
+  @secret_template %{
+    id: 2,
+    name: "secret_config",
+    label: "secret_config",
+    scope: "ca",
+    content: [
+      %{
+        "name" => "Secret Group",
+        "is_secret" => true,
+        "fields" => [
+          %{
+            "name" => "secret_field",
+            "type" => "string",
+            "label" => "Secret Field",
+            "values" => nil,
+            "cardinality" => "?"
+          }
+        ]
+      },
+      %{
+        "name" => "Not Secret Group",
+        "fields" => [
+          %{
+            "name" => "public_field",
+            "type" => "string",
+            "label" => "Public Field",
+            "values" => nil,
+            "cardinality" => "1"
+          }
+        ]
+      }
+    ]
+  }
 
   setup_all do
     template = Templates.create_template(@app_admin_template)
-    on_exit(fn -> Templates.delete(template) end)
+    secret_template = Templates.create_template(@secret_template)
+    on_exit(fn -> 
+      Templates.delete(template)
+      Templates.delete(secret_template)
+    end)
   end
 
   describe "configurations" do
@@ -70,7 +112,7 @@ defmodule TdCx.ConfigurationsTest do
       assert {:ok, %Configuration{} = configuration} =
                Configurations.create_configuration(@valid_attrs)
 
-      assert configuration.config == %{"field2" => "mandatory"}
+      assert configuration.content == %{"field2" => "mandatory"}
 
       assert configuration.deleted_at ==
                DateTime.from_naive!(~N[2010-04-17T14:00:00.000000Z], "Etc/UTC")
@@ -78,6 +120,25 @@ defmodule TdCx.ConfigurationsTest do
       assert configuration.external_id == "some external_id"
       assert configuration.type == "config"
       assert is_nil(configuration.secrets_key)
+    end
+
+    test "create_configuration/1 with valid data creates a configuration with secrets" do
+      assert {:ok, %Configuration{} = configuration} =
+               Configurations.create_configuration(@valid_secret_attrs)
+
+      assert configuration.content == %{"public_field" => "public_value"}
+
+      assert configuration.deleted_at ==
+               DateTime.from_naive!(~N[2010-04-17T14:00:00.000000Z], "Etc/UTC")
+
+      assert configuration.external_id == "some secret external_id"
+      assert configuration.type == "secret_config"
+      refute is_nil(configuration.secrets_key)
+
+      assert %{"public_field" => "public_value", "secret_field" => "secret_value"} == configuration
+      |> Map.get(:id)
+      |> Configurations.get_configuration!([:secrets])
+      |> Map.get(:content)
     end
 
     test "create_configuration/1 with repeated external_id returns error changeset" do
@@ -99,11 +160,27 @@ defmodule TdCx.ConfigurationsTest do
       assert {:ok, %Configuration{} = configuration} =
                Configurations.update_configuration(configuration, @update_attrs)
 
-      assert configuration.config == %{}
+      assert configuration.content == %{}
 
       assert configuration.deleted_at ==
                DateTime.from_naive!(~N[2011-05-18T15:01:01.000000Z], "Etc/UTC")
 
+    end
+
+    test "update_configuration/2 with valid data updates the configuration with secrets" do
+      {:ok, %Configuration{} = configuration} = Configurations.create_configuration(@valid_secret_attrs)
+
+      updated_content = %{"secret_field" => "updated secret_value", "public_field" => "updated public_value"}
+
+      assert {:ok, %Configuration{} = configuration} =
+               Configurations.update_configuration(configuration, %{content: updated_content})
+
+      assert configuration.content == %{"public_field" => "updated public_value"}
+
+      assert updated_content == configuration
+      |> Map.get(:id)
+      |> Configurations.get_configuration!([:secrets])
+      |> Map.get(:content)
     end
 
     test "update_configuration/2 with invalid data returns error changeset" do

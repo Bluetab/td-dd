@@ -7,7 +7,7 @@ defmodule TdCx.Configurations.Configuration do
   alias TdDfLib.Validation
 
   schema "configurations" do
-    field(:config, :map)
+    field(:content, :map)
     field(:deleted_at, :utc_datetime_usec)
     field(:external_id, :string)
     field(:secrets_key, :string)
@@ -24,7 +24,7 @@ defmodule TdCx.Configurations.Configuration do
   @doc false
   def changeset(configuration, attrs) do
     configuration
-    |> cast(attrs, [:config, :external_id, :type, :deleted_at])
+    |> cast(attrs, [:content, :external_id, :type, :deleted_at])
     |> validate_required([:external_id, :type])
     |> unique_constraint(:external_id)
     |> validate_template(configuration)
@@ -33,12 +33,12 @@ defmodule TdCx.Configurations.Configuration do
   @doc false
   def update_changeset(configuration, attrs) do
     configuration
-    |> cast(attrs, [:config, :deleted_at])
+    |> cast(attrs, [:content, :deleted_at])
     |> validate_template(configuration)
   end
 
-  def update_config(changeset, config) do
-    put_change(changeset, :config, config)
+  def update_config(changeset, content) do
+    put_change(changeset, :content, content)
   end
 
   def update_secrets_key(changeset, secrets_key) do
@@ -46,7 +46,7 @@ defmodule TdCx.Configurations.Configuration do
   end
 
   defp validate_template(%Ecto.Changeset{valid?: true} = changeset, configuration) do
-    validate_change(changeset, :config, Validation.validator(template_name(configuration, changeset)))
+    validate_change(changeset, :content, Validation.validator(template_name(configuration, changeset)))
   end
 
   defp validate_template(changeset, _attrs), do: changeset

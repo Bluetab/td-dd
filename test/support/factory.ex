@@ -36,9 +36,8 @@ defmodule TdCx.Factory do
   def configuration_factory do
     %Configuration{
       type: "config",
-      config: %{},
+      content: %{},
       external_id: "external_id",
-      secrets_key: "tsshhh",
       deleted_at: nil
     }
   end

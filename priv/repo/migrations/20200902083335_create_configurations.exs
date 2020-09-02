@@ -3,7 +3,7 @@ defmodule TdCx.Repo.Migrations.CreateConfigurations do
 
   def up do
     create table(:configurations) do
-      add :config, :map
+      add :content, :map
       add :external_id, :string, null: false
       add :secrets_key, :string
       add :type, :string, null: false

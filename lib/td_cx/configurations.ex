@@ -146,19 +146,20 @@ defmodule TdCx.Configurations do
   end
 
   defp enrich(%Configuration{} = configuration, [_ | _] = opts) do
-    Enum.map(opts, &with_attr(configuration, &1))
+    Enum.reduce(opts, configuration, &with_attr/2)
   end
 
   defp enrich(configuration, _opts), do: configuration
 
-  defp with_attr(%Configuration{secrets_key: nil} = configuration, :secrets), do: configuration
+  defp with_attr(:secrets, %Configuration{secrets_key: nil} = configuration), do: configuration
 
   defp with_attr(
-         %Configuration{secrets_key: secrets_key, config: config} = configuration,
-         :secrets
+         :secrets,
+         %Configuration{secrets_key: secrets_key, content: content} = configuration
        ) do
+
     secrets = Vault.read_secrets(secrets_key)
-    config = config || %{}
+    content = content || %{}
 
     case secrets do
       {:error, msg} ->
@@ -166,11 +167,11 @@ defmodule TdCx.Configurations do
 
       _ ->
         secrets = secrets || %{}
-        Map.put(configuration, :config, Map.merge(config, secrets))
+        Map.put(configuration, :content, Map.merge(content, secrets))
     end
   end
 
-  defp with_attr(configuration, _attr), do: configuration
+  defp with_attr(_attr, configuration), do: configuration
 
   defp changeset(attrs) do
     changeset = Configuration.changeset(attrs)
@@ -191,27 +192,27 @@ defmodule TdCx.Configurations do
   end
 
   defp create_secrets(
-         %{base: %{changes: %{type: type, external_id: external_id, config: config}}}
+         %{base: %{changes: %{type: type, external_id: external_id, content: content}}}
        ) do
-      persist_secrets(external_id, type, config)
+      persist_secrets(external_id, type, content)
   end
 
   defp create_secrets(_changes), do: {:ok, []}
 
   defp update_secrets(
          %{type: type, external_id: external_id},
-         %{base: %{changes: %{config: config}}}
+         %{base: %{changes: %{content: content}}}
        ) do
-      persist_secrets(external_id, type, config)
+      persist_secrets(external_id, type, content)
   end
 
   defp update_secrets(_config, _changes), do: {:ok, []}
 
-  defp persist_secrets(external_id, type, config) do
+  defp persist_secrets(external_id, type, content) do
     secrets = secret_fields(type)
     key = secrets_key(type, external_id)
 
-    case insert_vault(key, secrets, config) do
+    case insert_vault(key, secrets, content) do
       :ok -> {:ok, secrets}
       error -> error
     end
@@ -227,32 +228,32 @@ defmodule TdCx.Configurations do
     |> Enum.map(&Map.get(&1, "name"))
   end
 
-  defp insert_vault(key, [_ | _] = secrets, config) do
-    secret_config = Map.take(config, secrets)
+  defp insert_vault(key, [_ | _] = secrets, content) do
+    secret_config = Map.take(content, secrets)
     Vault.write_secrets(key, secret_config)
   end
 
   defp insert_vault(_key, [], _changes), do: :ok
 
   defp do_insert(%{
-         base: %{changes: %{config: config, type: type, external_id: external_id}} = changeset,
+         base: %{changes: %{content: content, type: type, external_id: external_id}} = changeset,
          secrets: [_ | _] = secrets
        }) do
-    {_secrets, config} = Map.split(config, secrets)
+    {_secrets, content} = Map.split(content, secrets)
 
     changeset
-    |> Configuration.update_config(config)
+    |> Configuration.update_config(content)
     |> Configuration.update_secrets_key(secrets_key(type, external_id))
   end
 
   defp do_insert(%{base: changeset}), do: changeset
 
   defp do_update(%{
-         base: %{changes: %{config: config}} = changeset,
+         base: %{changes: %{content: content}} = changeset,
          secrets: [_ | _] = secrets
        }) do
-    {_secrets, config} = Map.split(config, secrets)
-    Configuration.update_config(changeset, config)
+    {_secrets, content} = Map.split(content, secrets)
+    Configuration.update_config(changeset, content)
   end
 
   defp do_update(%{base: changeset}), do: changeset
