@@ -3,6 +3,7 @@ defmodule TdCx.Factory do
 
   use ExMachina.Ecto, repo: TdCx.Repo
 
+  alias TdCx.Configurations.Configuration
   alias TdCx.Sources.Events.Event
   alias TdCx.Sources.Jobs.Job
   alias TdCx.Sources.Source
@@ -29,6 +30,16 @@ defmodule TdCx.Factory do
       type: "init",
       message: "Message",
       inserted_at: DateTime.utc_now()
+    }
+  end
+
+  def configuration_factory do
+    %Configuration{
+      type: "config",
+      config: %{},
+      external_id: "external_id",
+      secrets_key: "tsshhh",
+      deleted_at: nil
     }
   end
 end

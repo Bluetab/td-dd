@@ -39,6 +39,7 @@ defmodule TdCxWeb.Router do
       resources("/events", EventController, only: [:index, :create])
     end
 
+    resources "/configurations", ConfigurationController, except: [:new, :edit]
     post("/jobs/search", JobController, :search)
     post("/job_filters/search", JobFilterController, :search)
     get("/jobs/search/reindex_all", SearchController, :reindex_all)
