@@ -12,6 +12,7 @@ defmodule TdDd.DataStructures.DataStructure do
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.DataStructures.Validation
   alias TdDd.Systems.System
+  alias TdDd.Utils.CollectionUtils
   alias TdDfLib.Content
 
   @audit_fields [:last_change_by]
@@ -65,7 +66,7 @@ defmodule TdDd.DataStructures.DataStructure do
     |> cast(params, [:confidential, :df_content])
     |> update_change(:df_content, &Content.merge(&1, current_content))
     |> put_audit(params)
-    |> validate_change(:df_content, Validation.validator(data_structure))
+    |> validate_content(data_structure, params)
   end
 
   defp put_audit(%{changes: changes} = changeset, _params)
@@ -76,4 +77,30 @@ defmodule TdDd.DataStructures.DataStructure do
   defp put_audit(changeset, %{} = params) do
     cast(changeset, params, @audit_fields)
   end
+
+  defp validate_content(
+         %{valid?: true, changes: %{df_content: df_content}} = changeset,
+         data_structure,
+         params
+       )
+       when is_map(df_content) do
+    fields =
+      params
+      |> CollectionUtils.atomize_keys()
+      |> Map.get(:df_content, %{})
+      |> Map.keys()
+
+    case Validation.validator(data_structure, df_content, fields) do
+      {:error, error} ->
+        add_error(changeset, :df_content, "invalid template", reason: error)
+
+      %{valid?: false, errors: [_ | _] = errors} ->
+        add_error(changeset, :df_content, "invalid content", errors)
+
+      _ ->
+        changeset
+    end
+  end
+
+  defp validate_content(changeset, _data_structure, _params), do: changeset
 end
