@@ -83,7 +83,8 @@ defmodule TdCx.ConfigurationsTest do
   setup_all do
     template = Templates.create_template(@app_admin_template)
     secret_template = Templates.create_template(@secret_template)
-    on_exit(fn -> 
+
+    on_exit(fn ->
       Templates.delete(template)
       Templates.delete(secret_template)
     end)
@@ -135,10 +136,11 @@ defmodule TdCx.ConfigurationsTest do
       assert configuration.type == "secret_config"
       refute is_nil(configuration.secrets_key)
 
-      assert %{"public_field" => "public_value", "secret_field" => "secret_value"} == configuration
-      |> Map.get(:id)
-      |> Configurations.get_configuration!([:secrets])
-      |> Map.get(:content)
+      assert %{"public_field" => "public_value", "secret_field" => "secret_value"} ==
+               configuration
+               |> Map.get(:id)
+               |> Configurations.get_configuration!([:secrets])
+               |> Map.get(:content)
     end
 
     test "create_configuration/1 with repeated external_id returns error changeset" do
@@ -164,23 +166,27 @@ defmodule TdCx.ConfigurationsTest do
 
       assert configuration.deleted_at ==
                DateTime.from_naive!(~N[2011-05-18T15:01:01.000000Z], "Etc/UTC")
-
     end
 
     test "update_configuration/2 with valid data updates the configuration with secrets" do
-      {:ok, %Configuration{} = configuration} = Configurations.create_configuration(@valid_secret_attrs)
+      {:ok, %Configuration{} = configuration} =
+        Configurations.create_configuration(@valid_secret_attrs)
 
-      updated_content = %{"secret_field" => "updated secret_value", "public_field" => "updated public_value"}
+      updated_content = %{
+        "secret_field" => "updated secret_value",
+        "public_field" => "updated public_value"
+      }
 
       assert {:ok, %Configuration{} = configuration} =
                Configurations.update_configuration(configuration, %{content: updated_content})
 
       assert configuration.content == %{"public_field" => "updated public_value"}
 
-      assert updated_content == configuration
-      |> Map.get(:id)
-      |> Configurations.get_configuration!([:secrets])
-      |> Map.get(:content)
+      assert updated_content ==
+               configuration
+               |> Map.get(:id)
+               |> Configurations.get_configuration!([:secrets])
+               |> Map.get(:content)
     end
 
     test "update_configuration/2 with invalid data returns error changeset" do
