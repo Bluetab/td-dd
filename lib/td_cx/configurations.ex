@@ -193,13 +193,7 @@ defmodule TdCx.Configurations do
   defp create_secrets(
          %{base: %{changes: %{type: type, external_id: external_id, config: config}}}
        ) do
-    secrets = secret_fields(type)
-    key = secrets_key(type, external_id)
-
-    case insert_vault(key, secrets, config) do
-      :ok -> {:ok, secrets}
-      error -> error
-    end
+      persist_secrets(external_id, type, config)
   end
 
   defp create_secrets(_changes), do: {:ok, []}
@@ -208,6 +202,12 @@ defmodule TdCx.Configurations do
          %{type: type, external_id: external_id},
          %{base: %{changes: %{config: config}}}
        ) do
+      persist_secrets(external_id, type, config)
+  end
+
+  defp update_secrets(_config, _changes), do: {:ok, []}
+
+  defp persist_secrets(external_id, type, config) do
     secrets = secret_fields(type)
     key = secrets_key(type, external_id)
 
@@ -216,8 +216,6 @@ defmodule TdCx.Configurations do
       error -> error
     end
   end
-
-  defp update_secrets(_config, _changes), do: {:ok, []}
 
   defp secret_fields(type) do
     %{:content => content} = TemplateCache.get_by_name!(type)
