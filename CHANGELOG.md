@@ -8,15 +8,15 @@
 
 ### Changed
 
-- [TD-2285] Check permissions for nodes related to structures
+- [TD-2285] Check permissions for nodes related to units
 - [TD-2720] Bulk Update:
   - Update only structures having content
   - Validate only updated fields
 
 ### Fixed
 
-- [TD-2310] Exclude confidential structures from children and siblings 
-if user has no permission to manage confidential structures
+- [TD-2310] Exclude confidential structures from children and siblings
+  if user has no permission to manage confidential structures
 
 ## [4.2.0] 2020-08-17
 

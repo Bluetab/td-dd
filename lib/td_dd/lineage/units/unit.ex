@@ -11,6 +11,7 @@ defmodule TdDd.Lineage.Units.Unit do
   schema "units" do
     field(:name, :string)
     field(:deleted_at, :utc_datetime_usec)
+    field(:domain_id, :integer)
     field(:status, :map, virtual: true)
 
     has_many(:edges, Edge)
@@ -27,7 +28,7 @@ defmodule TdDd.Lineage.Units.Unit do
 
   def changeset(%__MODULE__{} = collection, %{} = params) do
     collection
-    |> cast(params, [:name, :deleted_at, :updated_at])
+    |> cast(params, [:name, :deleted_at, :domain_id, :updated_at])
     |> validate_required([:name])
     |> unset_deleted_at()
     |> unique_constraint(:name)

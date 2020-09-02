@@ -70,50 +70,24 @@ defmodule TdDdWeb.NodeControllerTest do
         role_name: "no_perms"
       })
 
-      insert(
-        :node,
-        external_id: "foo"
-      )
+      unit = insert(:unit, domain_id: domain_id)
 
       insert(
         :node,
-        external_id: "xyz"
-      )
-
-      data_structure =
-        insert(
-          :data_structure,
-          external_id: "bar",
-          domain_id: domain_id
-        )
-
-      insert(:data_structure_version,
-        data_structure_id: data_structure.id,
-        name: data_structure.external_id
+        external_id: "foo",
+        units: [unit]
       )
 
       insert(
         :node,
-        external_id: data_structure.external_id,
-        structure: data_structure
-      )
-
-      data_structure =
-        insert(
-          :data_structure,
-          external_id: "baz",
-          domain_id: domain_id
-        )
-
-      insert(:data_structure_version,
-        data_structure_id: data_structure.id,
-        name: data_structure.external_id
+        external_id: "bar",
+        units: [unit]
       )
 
       insert(
         :node,
-        external_id: data_structure.external_id,
-        structure: data_structure
+        external_id: "baz",
+        units: [unit]
       )
 
       domain_id = :random.uniform(1_000_000)
@@ -127,40 +101,24 @@ defmodule TdDdWeb.NodeControllerTest do
         role_name: "watch"
       })
 
-      data_structure =
-        insert(
-          :data_structure,
-          external_id: "x",
-          domain_id: domain_id
-        )
+      unit = insert(:unit, domain_id: domain_id)
 
-      insert(:data_structure_version,
-        data_structure_id: data_structure.id,
-        name: data_structure.external_id
+      insert(
+        :node,
+        external_id: "xyz",
+        units: [unit]
       )
 
       insert(
         :node,
-        external_id: data_structure.external_id,
-        structure: data_structure
-      )
-
-      data_structure =
-        insert(
-          :data_structure,
-          external_id: "y",
-          domain_id: domain_id
-        )
-
-      insert(:data_structure_version,
-        data_structure_id: data_structure.id,
-        name: data_structure.external_id
+        external_id: "x",
+        units: [unit]
       )
 
       insert(
         :node,
-        external_id: data_structure.external_id,
-        structure: data_structure
+        external_id: "y",
+        units: [unit]
       )
 
       conn = get(conn, Routes.node_path(conn, :index))
@@ -172,10 +130,11 @@ defmodule TdDdWeb.NodeControllerTest do
     @tag authenticated_no_admin_user: "user"
     @tag contains: %{"foo" => ["bar", "baz"]}
     @tag depends: [{"bar", "baz"}]
-    test "will filter a group if a user has not permissions over any of the group's permissions", %{
-      conn: conn,
-      user: %{id: user_id}
-    } do
+    test "will filter a group if a user has not permissions over any of the group's permissions",
+         %{
+           conn: conn,
+           user: %{id: user_id}
+         } do
       domain_id = :random.uniform(1_000_000)
       TaxonomyCache.put_domain(%{name: "domain", id: domain_id, updated_at: DateTime.utc_now()})
 
@@ -187,49 +146,29 @@ defmodule TdDdWeb.NodeControllerTest do
         role_name: "no_perms"
       })
 
+      unit = insert(:unit, domain_id: domain_id)
+
       insert(
         :node,
-        external_id: "foo"
-      )
-
-      data_structure =
-        insert(
-          :data_structure,
-          external_id: "bar",
-          domain_id: domain_id
-        )
-
-      insert(:data_structure_version,
-        data_structure_id: data_structure.id,
-        name: data_structure.external_id
+        external_id: "foo",
+        units: [unit]
       )
 
       insert(
         :node,
-        external_id: data_structure.external_id,
-        structure: data_structure
-      )
-
-      data_structure =
-        insert(
-          :data_structure,
-          external_id: "baz",
-          domain_id: domain_id
-        )
-
-      insert(:data_structure_version,
-        data_structure_id: data_structure.id,
-        name: data_structure.external_id
+        external_id: "bar",
+        units: [unit]
       )
 
       insert(
         :node,
-        external_id: data_structure.external_id,
-        structure: data_structure
+        external_id: "baz",
+        units: [unit]
       )
 
       conn = get(conn, Routes.node_path(conn, :index))
-      assert [%{"parent" => nil}] = json_response(conn, 200)["data"]
+      assert resp = [%{"parent" => nil}] = json_response(conn, 200)["data"]
+      refute Map.has_key?(hd(resp), "groups")
     end
   end
 end
