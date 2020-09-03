@@ -39,6 +39,7 @@ defmodule TdDdWeb.Router do
       post("/links", DataStructureLinkController, :create_link)
     end
 
+    post("/graphs/csv", GraphController, :csv)
     resources("/graphs", GraphController, only: [:create, :show])
 
     resources("/nodes", NodeController, only: [:index, :show])

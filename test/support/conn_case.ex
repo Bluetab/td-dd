@@ -49,6 +49,7 @@ defmodule TdDdWeb.ConnCase do
         TdDd.Loader.LoaderWorker,
         TdDd.Search.IndexWorker,
         TdDd.Cache.StructureLoader,
+        TdDd.Lineage,
         TdDd.Lineage.GraphData
       ])
     end

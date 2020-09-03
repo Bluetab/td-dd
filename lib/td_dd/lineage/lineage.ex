@@ -4,8 +4,10 @@ defmodule TdDd.Lineage do
   """
   use GenServer
 
+  alias Graph
   alias Graph.Drawing
   alias Graph.Layout
+  alias TdDd.CSV.Download
   alias TdDd.Lineage.GraphData
   alias TdDd.Lineage.Graphs
 
@@ -51,6 +53,38 @@ defmodule TdDd.Lineage do
   def impact(external_id, opts), do: impact([external_id], opts)
 
   @doc """
+  Returns a csv lineage/impact for the specified `external_id`. Branches can
+  be pruned from the graph by specifying the `:excludes` option with a list of
+  external_ids.
+  """
+  def lineage_csv(external_ids, opts) when is_list(external_ids) do
+    GenServer.call(__MODULE__, {:lineage_csv, external_ids, opts}, 60_000)
+  end
+
+  @doc """
+  Returns a csv lineage/impact for the specified `external_id`. Branches can
+  be pruned from the graph by specifying the `:excludes` option with a list of
+  external_ids.
+  """
+  def lineage_csv(external_id, opts), do: lineage_csv([external_id], opts)
+
+  @doc """
+  Returns a csv lineage for the specified `external_id`. Branches can
+  be pruned from the graph by specifying the `:excludes` option with a list of
+  external_ids.
+  """
+  def impact_csv(external_ids, opts) when is_list(external_ids) do
+    GenServer.call(__MODULE__, {:impact_csv, external_ids, opts}, 60_000)
+  end
+
+  @doc """
+  Returns a csv impact for the specified `external_id`. Branches can
+  be pruned from the graph by specifying the `:excludes` option with a list of
+  external_ids.
+  """
+  def impact_csv(external_id, opts), do: impact_csv([external_id], opts)
+
+  @doc """
   Returns a lineage or impact graph drawing for a random sample.
   """
   def sample do
@@ -84,6 +118,22 @@ defmodule TdDd.Lineage do
       |> drawing(opts ++ [type: :impact])
 
     {:reply, drawing, state}
+  end
+
+  @impl true
+  def handle_call({:lineage_csv, external_ids, opts}, _from, state) do
+    lineage = GraphData.lineage(external_ids, opts)
+    {contains, depends} = do_csv(lineage, opts ++ [type: :lineage])
+    content = Download.linage_to_csv(contains, depends, opts[:header_labels])
+    {:reply, content, state}
+  end
+
+  @impl true
+  def handle_call({:impact_csv, external_ids, opts}, _from, state) do
+    impact = GraphData.impact(external_ids, opts)
+    {contains, depends} = do_csv(impact, opts ++ [type: :impact])
+    content = Download.linage_to_csv(contains, depends, opts[:header_labels])
+    {:reply, content, state}
   end
 
   @impl true
@@ -139,4 +189,57 @@ defmodule TdDd.Lineage do
   defp label_fn(%{id: id}), do: %{id: id}
 
   defp label_fn(_), do: %{}
+
+  defp do_csv(%{g: g, t: t}, opts) do
+    contains = edges(t)
+    depends = edges(g)
+
+    {relations(t, contains), relations(g, depends, opts[:type])}
+  end
+
+  defp edges(graph) do
+    graph
+    |> Graph.get_edges()
+    |> Enum.reject(fn %{v1: v1} -> v1 == :root end)
+  end
+
+  defp relations(graph, edges, type \\ nil)
+
+  defp relations(graph, edges, type) do
+    edges
+    |> Enum.map(&source_to_target(&1, graph, type))
+    |> Enum.reject(fn rel ->
+      Map.get(rel[:source], :external_id) == Map.get(rel[:target], :external_id)
+    end)
+  end
+
+  defp source_to_target(%{v1: v1, v2: v2}, graph, :lineage) do
+    source = vertex_attrs(v2, graph)
+    target = vertex_attrs(v1, graph)
+
+    [source: source, target: target]
+  end
+
+  defp source_to_target(%{v1: v1, v2: v2}, graph, _type) do
+    source = vertex_attrs(v1, graph)
+    target = vertex_attrs(v2, graph)
+
+    [source: source, target: target]
+  end
+
+  defp vertex_attrs(id, graph) do
+    label =
+      graph
+      |> Graph.vertex(id)
+      |> Map.get(:label)
+
+    class = Map.get(label, :class)
+    external_id = Map.get(label, :external_id)
+    name = Map.get(label, "name")
+
+    Map.new()
+    |> Map.put(:external_id, external_id)
+    |> Map.put(:name, name)
+    |> Map.put(:class, class)
+  end
 end
