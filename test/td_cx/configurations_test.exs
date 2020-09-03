@@ -108,6 +108,12 @@ defmodule TdCx.ConfigurationsTest do
       assert Configurations.get_configuration!(configuration.id) == configuration
     end
 
+    test "get_configuration_by_external_id!/1 returns the configuration with given external_id" do
+      external_id = "my_ext_id"
+      configuration = insert(:configuration, external_id: external_id)
+      assert Configurations.get_configuration_by_external_id!(external_id) == configuration
+    end
+
     test "create_configuration/1 with valid data creates a configuration" do
       assert {:ok, %Configuration{} = configuration} =
                Configurations.create_configuration(@valid_attrs)

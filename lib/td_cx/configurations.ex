@@ -50,6 +50,26 @@ defmodule TdCx.Configurations do
   end
 
   @doc """
+  Gets a single configuration by external_id.
+
+  Raises `Ecto.NoResultsError` if the Configuration does not exist.
+
+  ## Examples
+
+      iex> get_configuration_by_external_id!(123)
+      %Configuration{}
+
+      iex> get_configuration_by_external_id!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_configuration_by_external_id!(external_id, opts \\ []) do
+    Configuration
+    |> Repo.get_by!(external_id: external_id)
+    |> enrich(opts)
+  end
+
+  @doc """
   Creates a configuration.
 
   ## Examples
