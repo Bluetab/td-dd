@@ -29,6 +29,13 @@ defmodule TdCxWeb.ConfigurationControllerTest do
       }
     ]
   }
+  @another_template %{
+    id: 6,
+    name: "another_config",
+    label: "another_config",
+    scope: "ca",
+    content: []
+  }
 
   @create_attrs %{
     content: %{"field1" => "value"},
@@ -47,9 +54,28 @@ defmodule TdCxWeb.ConfigurationControllerTest do
 
   describe "index" do
     setup [:create_configuration]
+    setup [:create_another_configuration]
 
     @tag authenticated_no_admin_user: "user"
     test "lists all configurations", %{conn: conn} do
+      conn = get(conn, Routes.configuration_path(conn, :index))
+
+      assert [
+               %{
+                 "content" => %{"field1" => "value"},
+                 "external_id" => "external_id",
+                 "type" => "config"
+               },
+               %{
+                 "content" => %{},
+                 "external_id" => "another_external_id",
+                 "type" => "another_config"
+               }
+             ] = json_response(conn, 200)["data"]
+    end
+
+    @tag authenticated_no_admin_user: "user"
+    test "lists only configurations", %{conn: conn} do
       conn = get(conn, Routes.configuration_path(conn, :index, type: "config"))
 
       assert [
@@ -182,8 +208,19 @@ defmodule TdCxWeb.ConfigurationControllerTest do
     {:ok, configuration: configuration}
   end
 
+  defp create_another_configuration(_) do
+    create_another_template(nil)
+    configuration = insert(:configuration, content: %{}, external_id: "another_external_id", type: "another_config")
+    {:ok, configuration: configuration}
+  end
+
   defp create_template(_) do
     template = Templates.create_template(@test_template)
+    {:ok, template: template}
+  end
+
+  defp create_another_template(_) do
+    template = Templates.create_template(@another_template)
     {:ok, template: template}
   end
 end

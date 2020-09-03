@@ -22,6 +22,7 @@ defmodule TdCx.Configurations do
   """
   def list_configurations(clauses \\ %{}, opts \\ []) do
     clauses
+    |> Map.Helpers.atomize_keys
     |> Enum.reduce(Configuration, fn
       {:type, type}, q -> where(q, [c], c.type == ^type)
     end)
