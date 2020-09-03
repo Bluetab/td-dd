@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-2928] Data Dictionary custom user search filters
+- [TD-2587] Download CSV for a given graph
 
 ### Changed
 

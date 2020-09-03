@@ -18,6 +18,16 @@ defmodule TdDd.CSV.Download do
     "inserted_at"
   ]
 
+  @lineage_headers [
+    "source_external_id",
+    "source_name",
+    "source_class",
+    "target_external_id",
+    "target_name",
+    "target_class",
+    "relation_type"
+  ]
+
   def to_csv(structures, header_labels \\ nil) do
     structures_by_type = Enum.group_by(structures, &Map.get(&1, :type))
     types = Map.keys(structures_by_type)
@@ -36,6 +46,18 @@ defmodule TdDd.CSV.Download do
       end)
 
     to_string(list)
+  end
+
+  def linage_to_csv(contains, depends, header_labels \\ nil) do
+    headers = build_headers(header_labels, @lineage_headers)
+    contains = lineage_csv_rows(contains, "CONTAINS")
+    depends = lineage_csv_rows(depends, "DEPENDS")
+    list = [headers] ++ contains ++ depends
+
+    list
+    |> CSV.encode(separator: ?;)
+    |> Enum.to_list()
+    |> List.to_string()
   end
 
   defp template_structures_to_csv(nil, structures, header_labels, add_separation) do
@@ -90,13 +112,33 @@ defmodule TdDd.CSV.Download do
     |> Enum.to_list()
   end
 
-  defp build_headers(nil) do
-    @headers
+  defp lineage_csv_rows(relations, type) do
+    Enum.map(relations, &relation_row(&1, type))
   end
 
-  defp build_headers(header_labels) do
-    @headers
-    |> Enum.map(fn h -> Map.get(header_labels, h, h) end)
+  defp relation_row(relation, type) do
+    source = relation[:source]
+    target = relation[:target]
+
+    [
+      Map.get(source, :external_id),
+      Map.get(source, :name),
+      Map.get(source, :class),
+      Map.get(target, :external_id),
+      Map.get(target, :name),
+      Map.get(target, :class),
+      type
+    ]
+  end
+
+  defp build_headers(header_labels, headers \\ @headers)
+
+  defp build_headers(nil, headers) do
+    headers
+  end
+
+  defp build_headers(header_labels, headers) do
+    Enum.map(headers, fn h -> Map.get(header_labels, h, h) end)
   end
 
   defp get_content_field(_template, nil) do

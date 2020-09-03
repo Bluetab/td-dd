@@ -5,6 +5,7 @@ defmodule TdDd.DownloadTest do
   use TdDd.DataCase
 
   alias TdCache.TemplateCache
+  alias TdDd.CSV.Download
 
   def create_template(template) do
     template
@@ -15,8 +16,6 @@ defmodule TdDd.DownloadTest do
   end
 
   describe "Structures download" do
-    alias TdDd.CSV.Download
-
     test "download empty csv" do
       csv = Download.to_csv([])
       assert csv == ""
@@ -32,16 +31,18 @@ defmodule TdDd.DownloadTest do
         name: template_name,
         label: "label",
         scope: "dd",
-        content: [%{
-          "name" => "group",
-          "fields" => [
-            %{
-              "name" => field_name,
-              "type" => "list",
-              "label" => field_label
-            }
-          ]
-        }]
+        content: [
+          %{
+            "name" => "group",
+            "fields" => [
+              %{
+                "name" => field_name,
+                "type" => "list",
+                "label" => field_label
+              }
+            ]
+          }
+        ]
       })
 
       domain_name = "domain_1"
@@ -73,6 +74,45 @@ defmodule TdDd.DownloadTest do
                };CMC > Objetos Públicos > Informes > Cuadro de Mando Integral;#{
                  structure_1.description
                };#{structure_1.external_id};#{structure_1.inserted_at};field_value\r
+               """
+    end
+  end
+
+  describe "Lineage download" do
+    test "linage_to_csv/3 return csv content" do
+      contains_row = [
+        source: %{external_id: "eid1", name: "name", class: "Group"},
+        target: %{external_id: "eid2", name: "name1", class: "Group"}
+      ]
+
+      contains = [contains_row]
+
+      depends_row = [
+        source: %{external_id: "eid3", name: "name2", class: "Resource"},
+        target: %{external_id: "eid4", name: "name3", class: "Resource"}
+      ]
+
+      depends = [depends_row]
+
+      headers = %{
+        "source_external_id" => "Id Origen",
+        "source_name" => "Nombre Origen",
+        "source_class" => "Tipo Origen",
+        "target_external_id" => "Id Destino",
+        "target_name" => "Nombre Destino",
+        "target_class" => "Tipo Destino",
+        "relation_type" => "Tipo Relación"
+      }
+
+      assert Download.linage_to_csv(contains, depends, headers) ==
+               """
+               Id Origen;Nombre Origen;Tipo Origen;Id Destino;Nombre Destino;Tipo Destino;Tipo Relación\r
+               #{contains_row[:source].external_id};#{contains_row[:source].name};Group;#{
+                 contains_row[:target].external_id
+               };#{contains_row[:target].name};Group;CONTAINS\r
+               #{depends_row[:source].external_id};#{depends_row[:source].name};Resource;#{
+                 depends_row[:target].external_id
+               };#{depends_row[:target].name};Resource;DEPENDS\r
                """
     end
   end
