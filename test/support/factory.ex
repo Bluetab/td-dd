@@ -37,8 +37,7 @@ defmodule TdCx.Factory do
     %Configuration{
       type: "config",
       content: %{},
-      external_id: "external_id",
-      deleted_at: nil
+      external_id: "external_id"
     }
   end
 end

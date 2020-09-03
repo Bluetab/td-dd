@@ -11,11 +11,12 @@ defmodule TdCxWeb.ConfigurationView do
   end
 
   def render("configuration.json", %{configuration: configuration}) do
-    %{id: configuration.id,
-      config: configuration.config,
+    %{
+      id: configuration.id,
+      content: configuration.content,
       external_id: configuration.external_id,
       secrets_key: configuration.secrets_key,
-      type: configuration.type,
-      deleted_at: configuration.deleted_at}
+      type: configuration.type
+    }
   end
 end

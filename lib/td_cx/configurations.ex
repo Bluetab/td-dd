@@ -22,20 +22,11 @@ defmodule TdCx.Configurations do
   """
   def list_configurations(clauses \\ %{}, opts \\ []) do
     clauses
-    |> with_deleted()
     |> Enum.reduce(Configuration, fn
       {:type, type}, q -> where(q, [c], c.type == ^type)
-      {:deleted, false}, q -> where(q, [c], is_nil(c.deleted_at))
     end)
     |> Repo.all()
     |> enrich(opts)
-  end
-
-  defp with_deleted(clauses) do
-    case Map.has_key?(clauses, :deleted) do
-      true -> clauses
-      _ -> Map.put(clauses, :deleted, false)
-    end
   end
 
   @doc """

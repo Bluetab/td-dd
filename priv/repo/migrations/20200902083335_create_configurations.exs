@@ -7,7 +7,6 @@ defmodule TdCx.Repo.Migrations.CreateConfigurations do
       add :external_id, :string, null: false
       add :secrets_key, :string
       add :type, :string, null: false
-      add :deleted_at, :utc_datetime_usec
 
       timestamps()
     end

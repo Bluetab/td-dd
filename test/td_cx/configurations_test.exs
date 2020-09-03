@@ -6,18 +6,16 @@ defmodule TdCx.ConfigurationsTest do
 
   @valid_attrs %{
     content: %{"field2" => "mandatory"},
-    deleted_at: "2010-04-17T14:00:00.000000Z",
     external_id: "some external_id",
     type: "config"
   }
   @valid_secret_attrs %{
     content: %{"secret_field" => "secret_value", "public_field" => "public_value"},
-    deleted_at: "2010-04-17T14:00:00.000000Z",
     external_id: "some secret external_id",
     type: "secret_config"
   }
   @update_attrs %{
-    deleted_at: "2011-05-18T15:01:01.000000Z"
+    content: %{"field2" => "updated mandatory"}
   }
   @invalid_attrs %{content: %{"field3" => "foo"}}
   @app_admin_template %{
@@ -116,9 +114,6 @@ defmodule TdCx.ConfigurationsTest do
 
       assert configuration.content == %{"field2" => "mandatory"}
 
-      assert configuration.deleted_at ==
-               DateTime.from_naive!(~N[2010-04-17T14:00:00.000000Z], "Etc/UTC")
-
       assert configuration.external_id == "some external_id"
       assert configuration.type == "config"
       assert is_nil(configuration.secrets_key)
@@ -129,9 +124,6 @@ defmodule TdCx.ConfigurationsTest do
                Configurations.create_configuration(@valid_secret_attrs)
 
       assert configuration.content == %{"public_field" => "public_value"}
-
-      assert configuration.deleted_at ==
-               DateTime.from_naive!(~N[2010-04-17T14:00:00.000000Z], "Etc/UTC")
 
       assert configuration.external_id == "some secret external_id"
       assert configuration.type == "secret_config"
@@ -163,10 +155,7 @@ defmodule TdCx.ConfigurationsTest do
       assert {:ok, %Configuration{} = configuration} =
                Configurations.update_configuration(configuration, @update_attrs)
 
-      assert configuration.content == %{}
-
-      assert configuration.deleted_at ==
-               DateTime.from_naive!(~N[2011-05-18T15:01:01.000000Z], "Etc/UTC")
+      assert configuration.content == %{"field2" => "updated mandatory"}
     end
 
     test "update_configuration/2 with valid data updates the configuration with secrets" do
@@ -211,8 +200,9 @@ defmodule TdCx.ConfigurationsTest do
     test "delete_configuration/1 deletes its vault secrets" do
       {:ok, %Configuration{secrets_key: secrets_key} = configuration} =
         Configurations.create_configuration(@valid_secret_attrs)
+
       assert %{"secret_field" => "secret_value"} == Vault.read_secrets(secrets_key)
-      
+
       assert {:ok, %Configuration{}} = Configurations.delete_configuration(configuration)
 
       assert %{} == Vault.read_secrets(secrets_key)

@@ -8,7 +8,6 @@ defmodule TdCx.Configurations.Configuration do
 
   schema "configurations" do
     field(:content, :map)
-    field(:deleted_at, :utc_datetime_usec)
     field(:external_id, :string)
     field(:secrets_key, :string)
     field(:type, :string)
@@ -24,7 +23,7 @@ defmodule TdCx.Configurations.Configuration do
   @doc false
   def changeset(configuration, attrs) do
     configuration
-    |> cast(attrs, [:content, :external_id, :type, :deleted_at])
+    |> cast(attrs, [:content, :external_id, :type])
     |> validate_required([:external_id, :type])
     |> unique_constraint(:external_id)
     |> validate_template(configuration)
@@ -33,7 +32,7 @@ defmodule TdCx.Configurations.Configuration do
   @doc false
   def update_changeset(configuration, attrs) do
     configuration
-    |> cast(attrs, [:content, :deleted_at])
+    |> cast(attrs, [:content])
     |> validate_template(configuration)
   end
 
