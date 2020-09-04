@@ -52,7 +52,7 @@ defmodule TdCxWeb.SwaggerDefinitions do
             config(:object, "Source configuration")
           end
         end,
-        SourceResponse:
+      SourceResponse:
         swagger_schema do
           properties do
             data(Schema.ref(:Source))
@@ -62,6 +62,76 @@ defmodule TdCxWeb.SwaggerDefinitions do
         swagger_schema do
           properties do
             data(Schema.ref(:Sources))
+          end
+        end
+    }
+  end
+
+  def configuration_definitions do
+    %{
+      CreateConfiguration:
+        swagger_schema do
+          properties do
+            configuration(
+              Schema.new do
+                properties do
+                  external_id(:string, "External id of the configuration", required: true)
+
+                  type(:string, "Configuration type that matches with a template in scope ca",
+                    required: true
+                  )
+
+                  content(:object, "Configuration dynamic content")
+                end
+              end
+            )
+          end
+        end,
+      UpdateConfiguration:
+        swagger_schema do
+          properties do
+            configuration(
+              Schema.new do
+                properties do
+                  content(:object, "Configuration dynamic content")
+                end
+              end
+            )
+          end
+        end,
+      Configurations:
+        swagger_schema do
+          title("Configurations")
+          description("A collection of configurations")
+          type(:array)
+          items(Schema.ref(:Configuration))
+        end,
+      Configuration:
+        swagger_schema do
+          title("Configuration")
+          description("Representation of a configuration")
+
+          properties do
+            id(:integer, "Configuration Id", required: true)
+
+            type(:string, "Configuration type that matches with a template in scope ca",
+              required: true
+            )
+
+            content(:object, "Configuration dynamic content")
+            secrets_key(:string, "Secrets Key")
+          end
+        end,
+      ConfigurationResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:Configuration))
+          end
+        end,
+      ConfigurationsResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:Configurations))
           end
         end
     }

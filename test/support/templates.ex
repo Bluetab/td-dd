@@ -33,6 +33,10 @@ defmodule Templates do
     put_template(attrs)
   end
 
+  def delete(%{id: id}) do
+    TemplateCache.delete(id)
+  end
+
   defp put_template(%{updated_at: _updated_at} = attrs) do
     TemplateCache.put(attrs)
     Map.delete(attrs, :updated_at)
