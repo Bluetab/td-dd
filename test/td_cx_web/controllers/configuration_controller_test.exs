@@ -29,6 +29,40 @@ defmodule TdCxWeb.ConfigurationControllerTest do
       }
     ]
   }
+
+  @secret_template %{
+    id: 7,
+    name: "secret_config",
+    label: "secret_config",
+    scope: "ca",
+    content: [
+      %{
+        "name" => "Group 1",
+        "fields" => [
+          %{
+            "name" => "field1",
+            "type" => "string",
+            "label" => "Multiple 1",
+            "values" => nil,
+            "cardinality" => "1"
+          }
+        ]
+      },
+      %{
+        "name" => "secret_group",
+        "is_secret" => true,
+        "fields" => [
+          %{
+            "name" => "secret_field",
+            "type" => "string",
+            "label" => "Secret",
+            "values" => nil,
+            "cardinality" => "1"
+          }
+        ]
+      }
+    ]
+  }
   @another_template %{
     id: 6,
     name: "another_config",
@@ -55,6 +89,7 @@ defmodule TdCxWeb.ConfigurationControllerTest do
   describe "index" do
     setup [:create_configuration]
     setup [:create_another_configuration]
+    setup [:create_secret_configuration]
 
     @tag authenticated_no_admin_user: "user"
     test "lists all configurations", %{conn: conn} do
@@ -70,7 +105,12 @@ defmodule TdCxWeb.ConfigurationControllerTest do
                  "content" => %{},
                  "external_id" => "another_external_id",
                  "type" => "another_config"
-               }
+               },
+               %{
+                "content" => %{"field1" => "value", "secret_field" => "secret value"},
+                "external_id" => "secret_external_id",
+                "type" => "secret_config"
+                }
              ] = json_response(conn, 200)["data"]
     end
 
@@ -90,6 +130,7 @@ defmodule TdCxWeb.ConfigurationControllerTest do
 
   describe "show" do
     setup [:create_configuration]
+    setup [:create_secret_configuration]
 
     @tag authenticated_no_admin_user: "user"
     test "show configuration", %{conn: conn} do
@@ -99,6 +140,18 @@ defmodule TdCxWeb.ConfigurationControllerTest do
                "content" => %{"field1" => "value"},
                "external_id" => "external_id",
                "type" => "config"
+             } =
+               json_response(conn, 200)["data"]
+    end
+
+    @tag :admin_authenticated
+    test "show configuration with secrets", %{conn: conn} do
+      conn = get(conn, Routes.configuration_path(conn, :show, "secret_external_id"))
+
+      assert %{
+               "content" => %{"field1" => "value", "secret_field" => "secret value"},
+               "external_id" => "secret_external_id",
+               "type" => "secret_config"
              } =
                json_response(conn, 200)["data"]
     end
@@ -208,6 +261,15 @@ defmodule TdCxWeb.ConfigurationControllerTest do
     {:ok, configuration: configuration}
   end
 
+  defp create_secret_configuration(_) do
+    create_secret_template(nil)
+    configuration = insert(:configuration, 
+      content: %{"field1" => "value", "secret_field" => "secret value"},
+      external_id: "secret_external_id", type: "secret_config"
+    )
+    {:ok, configuration: configuration}
+  end
+
   defp create_another_configuration(_) do
     create_another_template(nil)
     configuration = insert(:configuration, content: %{}, external_id: "another_external_id", type: "another_config")
@@ -216,6 +278,11 @@ defmodule TdCxWeb.ConfigurationControllerTest do
 
   defp create_template(_) do
     template = Templates.create_template(@test_template)
+    {:ok, template: template}
+  end
+
+  defp create_secret_template(_) do
+    template = Templates.create_template(@secret_template)
     {:ok, template: template}
   end
 
