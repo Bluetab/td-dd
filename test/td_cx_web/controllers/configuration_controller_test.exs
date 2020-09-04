@@ -107,10 +107,10 @@ defmodule TdCxWeb.ConfigurationControllerTest do
                  "type" => "another_config"
                },
                %{
-                "content" => %{"field1" => "value", "secret_field" => "secret value"},
-                "external_id" => "secret_external_id",
-                "type" => "secret_config"
-                }
+                 "content" => %{"field1" => "value", "secret_field" => "secret value"},
+                 "external_id" => "secret_external_id",
+                 "type" => "secret_config"
+               }
              ] = json_response(conn, 200)["data"]
     end
 
@@ -140,8 +140,7 @@ defmodule TdCxWeb.ConfigurationControllerTest do
                "content" => %{"field1" => "value"},
                "external_id" => "external_id",
                "type" => "config"
-             } =
-               json_response(conn, 200)["data"]
+             } = json_response(conn, 200)["data"]
     end
 
     @tag :admin_authenticated
@@ -152,8 +151,7 @@ defmodule TdCxWeb.ConfigurationControllerTest do
                "content" => %{"field1" => "value", "secret_field" => "secret value"},
                "external_id" => "secret_external_id",
                "type" => "secret_config"
-             } =
-               json_response(conn, 200)["data"]
+             } = json_response(conn, 200)["data"]
     end
   end
 
@@ -263,16 +261,27 @@ defmodule TdCxWeb.ConfigurationControllerTest do
 
   defp create_secret_configuration(_) do
     create_secret_template(nil)
-    configuration = insert(:configuration, 
-      content: %{"field1" => "value", "secret_field" => "secret value"},
-      external_id: "secret_external_id", type: "secret_config"
-    )
+
+    configuration =
+      insert(:configuration,
+        content: %{"field1" => "value", "secret_field" => "secret value"},
+        external_id: "secret_external_id",
+        type: "secret_config"
+      )
+
     {:ok, configuration: configuration}
   end
 
   defp create_another_configuration(_) do
     create_another_template(nil)
-    configuration = insert(:configuration, content: %{}, external_id: "another_external_id", type: "another_config")
+
+    configuration =
+      insert(:configuration,
+        content: %{},
+        external_id: "another_external_id",
+        type: "another_config"
+      )
+
     {:ok, configuration: configuration}
   end
 
