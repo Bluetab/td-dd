@@ -1,12 +1,12 @@
 # Changelog
 
-## [Unreleased]
+## [4.3.0] 2020-09-07
 
 ### Changed
 
 - [TD-2719] Soft deletion of sources with jobs
 - [TD-2908] Support for configurations
- 
+
 ## [4.0.0] 2020-07-01
 
 ### Changed
