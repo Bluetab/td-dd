@@ -9,6 +9,7 @@ defmodule TdDd.DataStructures.DataStructureType do
     field :structure_type, :string
     field :template_id, :integer
     field :translation, :string
+    field :metadata_fields, {:array, :string}
 
     timestamps()
   end
@@ -16,7 +17,7 @@ defmodule TdDd.DataStructures.DataStructureType do
   @doc false
   def changeset(data_structure_type, attrs) do
     data_structure_type
-    |> cast(attrs, [:structure_type, :translation, :template_id])
+    |> cast(attrs, [:structure_type, :translation, :template_id, :metadata_fields])
     |> validate_required([:structure_type, :template_id])
     |> unique_constraint(:structure_type)
   end

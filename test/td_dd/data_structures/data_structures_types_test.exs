@@ -9,14 +9,16 @@ defmodule TdDd.DataStructures.DataStructuresTypesTest do
     @valid_attrs %{
       structure_type: "some structure_type",
       template_id: 42,
-      translation: "some translation"
+      translation: "some translation",
+      metadata_fields: []
     }
     @update_attrs %{
       structure_type: "some updated structure_type",
       template_id: 43,
-      translation: "some updated translation"
+      translation: "some updated translation",
+      metadata_fields: ["field"]
     }
-    @invalid_attrs %{structure_type: nil, template_id: nil, translation: nil}
+    @invalid_attrs %{structure_type: nil, template_id: nil, translation: nil, metadata_fields: nil}
 
     def data_structure_type_fixture(attrs \\ %{}) do
       {:ok, data_structure_type} =
@@ -46,6 +48,7 @@ defmodule TdDd.DataStructures.DataStructuresTypesTest do
       assert data_structure_type.structure_type == "some structure_type"
       assert data_structure_type.template_id == 42
       assert data_structure_type.translation == "some translation"
+      assert data_structure_type.metadata_fields == []
     end
 
     test "create_data_structure_type/1 with invalid data returns error changeset" do
@@ -62,6 +65,7 @@ defmodule TdDd.DataStructures.DataStructuresTypesTest do
       assert data_structure_type.structure_type == "some updated structure_type"
       assert data_structure_type.template_id == 43
       assert data_structure_type.translation == "some updated translation"
+      assert data_structure_type.metadata_fields == ["field"]
     end
 
     test "update_data_structure_type/2 with invalid data returns error changeset" do
