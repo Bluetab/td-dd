@@ -9,7 +9,7 @@ defmodule TdDd.DataStructures.DataStructureType do
     field :structure_type, :string
     field :template_id, :integer
     field :translation, :string
-    field :metadata_fields, {:array, :string}
+    field :metadata_fields, {:array, :string}, default: []
 
     timestamps()
   end
