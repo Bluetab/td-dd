@@ -58,7 +58,7 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
                "structure_type" => "some structure_type",
                "template_id" => 42,
                "translation" => "some translation",
-               "metadata_fields" => []
+               "metadata_fields" => nil
              } = json_response(conn, 200)["data"]
     end
 
@@ -95,7 +95,7 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
                "structure_type" => "some updated structure_type",
                "template_id" => 43,
                "translation" => "some updated translation",
-               "metadata_fields" => []
+               "metadata_fields" => nil
              } = json_response(conn, 200)["data"]
     end
 

@@ -59,7 +59,7 @@ defmodule TdDd.Factory do
       structure_type: "Table",
       template_id: 0,
       translation: "",
-      metadata_fields: []
+      metadata_fields: %{}
     }
   end
 

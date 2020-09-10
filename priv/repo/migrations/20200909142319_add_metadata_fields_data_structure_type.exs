@@ -3,7 +3,7 @@ defmodule TdDd.Repo.Migrations.AddMetadataFieldsDataStructureType do
 
   def up do
     alter table(:data_structure_types) do
-      add(:metadata_fields, {:array, :string})
+      add(:metadata_fields, :map) 
     end
   end
 
