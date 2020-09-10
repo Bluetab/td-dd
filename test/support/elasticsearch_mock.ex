@@ -50,6 +50,28 @@ defmodule TdDd.ElasticsearchMock do
   end
 
   @impl true
+  def request(_config, :post, "/structures/_search?scroll=1m", data, _opts) do
+    PathCache.refresh()
+
+    data
+    |> do_search()
+    |> search_results(data)
+    |> case do
+      {:ok, %Response{status_code: 200, body: body}} ->
+        body = Map.put(body, "_scroll_id", "id")
+        {:ok, %Response{status_code: 200, body: body}}
+
+      err ->
+        err
+    end
+  end
+
+  @impl true
+  def request(_config, :post, "/_search/scroll", data, _opts) do
+    {:ok, %{"_scroll_id" => Map.get(data, :scroll_id), "hits" => %{"hits" => []}}}
+  end
+
+  @impl true
   def request(_config, :delete, "/structures/_doc/" <> _id, _data, _opts) do
     {:ok, %Response{status_code: 200, body: %{result: "deleted"}}}
   end
