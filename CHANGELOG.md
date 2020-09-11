@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-2943]:
+  - Data Structure Type: Metadata fields
+  - Endpoint to query all possible metadata fields for a given query
+
+
 ## [4.3.0] 2020-09-07
 
 ### Added
