@@ -24,7 +24,7 @@ defmodule TdDd.Cache.StructureLoader do
   end
 
   def refresh(data_structure_ids) when is_list(data_structure_ids) do
-    GenServer.call(__MODULE__, {:refresh, data_structure_ids})
+    GenServer.call(__MODULE__, {:refresh, data_structure_ids}, 60_000)
   end
 
   def refresh(data_structure_id) do

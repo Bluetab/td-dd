@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-2966] Increased timeout in `StructureLoader.refresh/1`
+
 ## [4.3.0] 2020-09-07
 
 ### Added
