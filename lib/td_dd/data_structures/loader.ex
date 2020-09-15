@@ -336,7 +336,7 @@ defmodule TdDd.Loader do
 
   defp reduce_metadata([], _audit_attrs, updated_ids) do
     update_count = Enum.count(updated_ids)
-    Logger.info("Structure metadata: upserted=#{update_count})")
+    Logger.info("Metadata loaded (upserted=#{update_count})")
     %{updated: updated_ids}
   end
 
