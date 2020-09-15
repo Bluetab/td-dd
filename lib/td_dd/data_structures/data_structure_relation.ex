@@ -13,13 +13,9 @@ defmodule TdDd.DataStructures.DataStructureRelation do
     timestamps(type: :utc_datetime)
   end
 
-  @doc false
-  def changeset(%DataStructureRelation{} = data_structure_relation, attrs) do
+  def changeset(%DataStructureRelation{} = data_structure_relation, params) do
     data_structure_relation
-    |> cast(attrs, [
-      :parent_id,
-      :child_id
-    ])
+    |> cast(params, [:parent_id, :child_id])
     |> validate_required([:parent_id, :child_id, :relation_type_id])
     |> check_constraint(
       :parent_id,
@@ -28,9 +24,7 @@ defmodule TdDd.DataStructures.DataStructureRelation do
     )
   end
 
-  @doc false
-  def update_changeset(%DataStructureRelation{} = data_structure_relation, attrs) do
-    data_structure_relation
-    |> cast(attrs, [:parent_id, :child_id, :relation_type_id])
+  def update_changeset(%DataStructureRelation{} = data_structure_relation, params) do
+    cast(data_structure_relation, params, [:parent_id, :child_id, :relation_type_id])
   end
 end

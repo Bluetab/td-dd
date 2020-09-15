@@ -336,7 +336,7 @@ defmodule TdDd.Loader do
 
   defp reduce_metadata([], _audit_attrs, updated_ids) do
     update_count = Enum.count(updated_ids)
-    Logger.info("Structures with metadata updated: updated=#{update_count})")
+    Logger.info("Structure metadata: upserted=#{update_count})")
     %{updated: updated_ids}
   end
 
@@ -381,7 +381,7 @@ defmodule TdDd.Loader do
 
   defp create_metadata_version(
          nil,
-         mutable_metadata,
+         %{} = mutable_metadata,
          %DataStructure{id: id} = data_structure,
          audit_attrs
        ) do
@@ -392,12 +392,12 @@ defmodule TdDd.Loader do
   end
 
   defp create_metadata_version(
-         %StructureMetadata{deleted_at: nil} = current_metadata,
-         mutable_metadata,
+         %StructureMetadata{deleted_at: nil, fields: fields} = current_metadata,
+         %{} = mutable_metadata,
          %DataStructure{id: id} = data_structure,
          %{ts: ts} = audit_attrs
        ) do
-    if Map.get(current_metadata, :fields, %{}) == mutable_metadata do
+    if fields == mutable_metadata do
       []
     else
       insert_metadata_version(current_metadata.version + 1, mutable_metadata, id)
@@ -409,12 +409,12 @@ defmodule TdDd.Loader do
   end
 
   defp create_metadata_version(
-         current_metadata,
+         %{version: current_metadata_version} = _current_metadata,
          mutable_metadata,
          %DataStructure{id: id} = data_structure,
          audit_attrs
        ) do
-    insert_metadata_version(current_metadata.version + 1, mutable_metadata, id)
+    insert_metadata_version(current_metadata_version + 1, mutable_metadata, id)
     update_structure(data_structure, audit_attrs)
 
     [id]

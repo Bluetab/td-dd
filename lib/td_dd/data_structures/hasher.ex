@@ -154,9 +154,9 @@ defmodule TdDd.DataStructures.Hasher do
     hash_global(count, acc + count)
   end
 
-  defp update_hashes(%DataStructureVersion{updated_at: updated_at} = dsv, attrs) do
+  defp update_hashes(%DataStructureVersion{updated_at: updated_at} = dsv, params) do
     dsv
-    |> cast(attrs, [:hash, :lhash, :ghash])
+    |> cast(params, [:hash, :lhash, :ghash])
     |> force_change(:updated_at, updated_at)
     |> Repo.update!()
   end

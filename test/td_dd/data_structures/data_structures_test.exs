@@ -273,13 +273,15 @@ defmodule TdDd.DataStructuresTest do
 
   describe "data structure versions" do
     test "get_siblings/1 returns sibling structure versions" do
+      %{id: system_id} = insert(:system)
+
       [ds1, ds2, ds3, ds4] =
         1..4
         |> Enum.map(
           &insert(
             :data_structure,
             external_id: "DS#{&1}",
-            system_id: 1
+            system_id: system_id
           )
         )
 
