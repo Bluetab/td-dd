@@ -16,4 +16,6 @@ config :td_cache,
 
 config :td_cache, :event_stream, consumer_id: System.fetch_env!("HOSTNAME")
 
-config :td_dd, import_dir: System.get_env("IMPORT_DIR")
+config :td_dd,
+  import_dir: System.get_env("IMPORT_DIR"),
+  refresh_timeout: System.get_env("REFRESH_TIMEOUT", "120000") |> String.to_integer()
