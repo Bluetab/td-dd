@@ -12,10 +12,9 @@ defmodule TdDd.DataStructures.Profile do
     timestamps()
   end
 
-  @doc false
-  def changeset(profile, attrs) do
+  def changeset(profile, params) do
     profile
-    |> cast(attrs, [:value, :data_structure_id])
+    |> cast(params, [:value, :data_structure_id])
     |> validate_required([:value, :data_structure_id])
   end
 end

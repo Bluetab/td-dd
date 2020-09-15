@@ -26,7 +26,7 @@ defmodule TdDd.DataStructures.PathCache do
     GenServer.call(__MODULE__, {:parent, id}, 10_000)
   end
 
-  def refresh(timeout \\ 20_000) do
+  def refresh(timeout \\ 60_000) do
     GenServer.call(__MODULE__, :refresh, timeout)
   end
 
@@ -108,15 +108,20 @@ defmodule TdDd.DataStructures.PathCache do
           select: {dsr.parent_id, dsr.child_id}
         )
         |> Repo.stream(max_rows: 1_000)
-        |> Enum.reduce(graph, fn {parent_id, child_id}, graph ->
-          Graph.add_edge(graph, parent_id, child_id)
-        end)
+        |> Enum.reduce(graph, &add_relation/2)
       end)
 
     graph
     |> Graph.vertices()
     |> Enum.map(fn id -> {id, path(graph, id, [])} end)
     |> Map.new()
+  end
+
+  defp add_relation({parent_id, child_id}, graph) do
+    case Graph.add_edge(graph, parent_id, child_id) do
+      %Graph{} = g -> g
+      {:error, :bad_vertex} -> graph
+    end
   end
 
   defp path(graph, id, acc) do

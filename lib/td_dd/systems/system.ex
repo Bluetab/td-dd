@@ -22,9 +22,9 @@ defmodule TdDd.Systems.System do
     changeset(%__MODULE__{}, params)
   end
 
-  def changeset(%__MODULE__{} = system, attrs) do
+  def changeset(%__MODULE__{} = system, params) do
     system
-    |> cast(attrs, [:name, :external_id, :df_content])
+    |> cast(params, [:name, :external_id, :df_content])
     |> validate_required([:name, :external_id])
     |> unique_constraint(:external_id)
   end

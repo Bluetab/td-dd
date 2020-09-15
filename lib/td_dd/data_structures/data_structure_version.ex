@@ -42,10 +42,9 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     timestamps(type: :utc_datetime)
   end
 
-  @doc false
-  def update_changeset(%__MODULE__{} = data_structure_version, attrs) do
+  def update_changeset(%__MODULE__{} = data_structure_version, params) do
     data_structure_version
-    |> cast(attrs, [
+    |> cast(params, [
       :class,
       :deleted_at,
       :description,
@@ -76,9 +75,9 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     changeset(%__MODULE__{}, params)
   end
 
-  def changeset(%__MODULE__{} = data_structure_version, attrs) do
+  def changeset(%__MODULE__{} = data_structure_version, params) do
     data_structure_version
-    |> cast(attrs, [
+    |> cast(params, [
       :class,
       :data_structure_id,
       :description,

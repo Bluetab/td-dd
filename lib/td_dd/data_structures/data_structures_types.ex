@@ -73,10 +73,10 @@ defmodule TdDd.DataStructures.DataStructuresTypes do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_data_structure_type(attrs \\ %{}) do
+  def create_data_structure_type(params \\ %{}) do
     Repo.transaction(fn ->
       %DataStructureType{}
-      |> DataStructureType.changeset(attrs)
+      |> DataStructureType.changeset(params)
       |> Repo.insert()
       |> on_upsert()
     end)
@@ -107,10 +107,10 @@ defmodule TdDd.DataStructures.DataStructuresTypes do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_data_structure_type(%DataStructureType{} = data_structure_type, attrs) do
+  def update_data_structure_type(%DataStructureType{} = data_structure_type, params) do
     Repo.transaction(fn ->
       data_structure_type
-      |> DataStructureType.changeset(attrs)
+      |> DataStructureType.changeset(params)
       |> Repo.update()
       |> on_upsert()
     end)
@@ -162,7 +162,7 @@ defmodule TdDd.DataStructures.DataStructuresTypes do
       %Ecto.Changeset{data: %DataStructureType{}}
 
   """
-  def change_data_structure_type(%DataStructureType{} = data_structure_type, attrs \\ %{}) do
-    DataStructureType.changeset(data_structure_type, attrs)
+  def change_data_structure_type(%DataStructureType{} = data_structure_type, params \\ %{}) do
+    DataStructureType.changeset(data_structure_type, params)
   end
 end

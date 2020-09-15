@@ -47,7 +47,7 @@ defmodule TdDd.Loader.LoaderWorker do
   end
 
   def load(profiles) do
-    GenServer.cast(TdDd.Loader.LoaderWorker, {:profiles, profiles})
+    GenServer.cast(__MODULE__, {:profiles, profiles})
   end
 
   def ping(timeout \\ 5000) do
