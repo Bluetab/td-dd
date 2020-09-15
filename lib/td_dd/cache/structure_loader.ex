@@ -15,6 +15,7 @@ defmodule TdDd.Cache.StructureLoader do
   require Logger
 
   @index_worker Application.get_env(:td_dd, :index_worker)
+  @refresh_timeout Application.get_env(:td_dd, :refresh_timeout, 120_000)
   @structure_metadata_migration_key "TdDd.DataStructures.Migrations:td-2261"
 
   ## Client API
@@ -24,7 +25,7 @@ defmodule TdDd.Cache.StructureLoader do
   end
 
   def refresh(data_structure_ids) when is_list(data_structure_ids) do
-    GenServer.call(__MODULE__, {:refresh, data_structure_ids}, 60_000)
+    GenServer.call(__MODULE__, {:refresh, data_structure_ids}, @refresh_timeout)
   end
 
   def refresh(data_structure_id) do
@@ -80,6 +81,8 @@ defmodule TdDd.Cache.StructureLoader do
 
   @impl GenServer
   def handle_call({:refresh, ids}, _from, state) do
+    count = Enum.count(ids)
+    Logger.info("Refreshing #{count} structures...")
     reply = cache_structures(ids, force: true)
     @index_worker.reindex(ids)
     {:reply, reply, state}
