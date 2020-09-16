@@ -139,7 +139,8 @@ defmodule TdDd.Cache.StructureLoader do
 
   defp clean_cached_structures(keep_ids) do
     ids_to_delete =
-      Redix.command!(["SMEMBERS", "data_structure:keys"])
+      ["SMEMBERS", "data_structure:keys"]
+      |> Redix.command!()
       |> Enum.map(fn "data_structure:" <> id -> String.to_integer(id) end)
       |> Enum.reject(&(&1 in keep_ids))
 
@@ -175,7 +176,8 @@ defmodule TdDd.Cache.StructureLoader do
       |> Enum.map(&String.to_integer/1)
 
     linked_structure_ids =
-      Redix.command!(["SMEMBERS", "link:keys"])
+      ["SMEMBERS", "link:keys"]
+      |> Redix.command!()
       |> Enum.map(&Redix.read_map!/1)
       |> Enum.flat_map(fn %{source: source, target: target} -> [source, target] end)
       |> Enum.filter(&String.starts_with?(&1, "data_structure:"))
