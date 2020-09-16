@@ -6,7 +6,6 @@ defmodule TdDd.Loader.LoaderWorker do
   use GenServer
 
   alias TdCache.TaxonomyCache
-  alias TdDd.Cache.StructureLoader
   alias TdDd.CSV.Reader
   alias TdDd.DataStructures.Ancestry
   alias TdDd.Loader
@@ -15,6 +14,7 @@ defmodule TdDd.Loader.LoaderWorker do
 
   require Logger
 
+  @index_worker Application.get_env(:td_dd, :index_worker)
   @structure_import_schema Application.get_env(:td_dd, :metadata)[:structure_import_schema]
   @structure_import_required Application.get_env(:td_dd, :metadata)[:structure_import_required]
   @structure_import_boolean Application.get_env(:td_dd, :metadata)[:structure_import_boolean]
@@ -224,7 +224,7 @@ defmodule TdDd.Loader.LoaderWorker do
   defp do_post_process(data_structure_ids, nil) do
     # If any ids have been returned by the bulk load process, these
     # data structures should be reindexed.
-    StructureLoader.refresh(data_structure_ids)
+    @index_worker.reindex(data_structure_ids)
   end
 
   defp do_post_process(data_structure_ids, external_id) do
