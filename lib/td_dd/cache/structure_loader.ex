@@ -15,21 +15,12 @@ defmodule TdDd.Cache.StructureLoader do
   require Logger
 
   @index_worker Application.get_env(:td_dd, :index_worker)
-  @refresh_timeout Application.get_env(:td_dd, :refresh_timeout, 120_000)
-  @structure_metadata_migration_key "TdDd.DataStructures.Migrations:td-2261"
+  @structure_metadata_migration_key "TdDd.DataStructures.Migrations:td-2979"
 
   ## Client API
 
   def start_link(config \\ []) do
     GenServer.start_link(__MODULE__, config, name: __MODULE__)
-  end
-
-  def refresh(data_structure_ids) when is_list(data_structure_ids) do
-    GenServer.call(__MODULE__, {:refresh, data_structure_ids}, @refresh_timeout)
-  end
-
-  def refresh(data_structure_id) do
-    refresh([data_structure_id])
   end
 
   ## EventStream.Consumer Callbacks
@@ -59,7 +50,7 @@ defmodule TdDd.Cache.StructureLoader do
       if Redix.exists?(@structure_metadata_migration_key) == false do
         Timer.time(
           fn -> refresh_cached_structures() end,
-          fn ms, _ -> Logger.info("Structures in cache refreshed in #{ms}ms") end
+          fn ms, _ -> Logger.info("Structure cache refreshed in #{ms}ms") end
         )
 
         Redix.command!(["SET", @structure_metadata_migration_key, "#{DateTime.utc_now()}"])
@@ -76,15 +67,6 @@ defmodule TdDd.Cache.StructureLoader do
     structure_ids = Enum.flat_map(events, &read_structure_ids/1)
     reply = cache_structures(structure_ids)
     @index_worker.reindex(structure_ids)
-    {:reply, reply, state}
-  end
-
-  @impl GenServer
-  def handle_call({:refresh, ids}, _from, state) do
-    count = Enum.count(ids)
-    Logger.info("Refreshing #{count} structures...")
-    reply = cache_structures(ids, force: true)
-    @index_worker.reindex(ids)
     {:reply, reply, state}
   end
 
@@ -107,8 +89,7 @@ defmodule TdDd.Cache.StructureLoader do
     structure_keys
     |> Enum.filter(&String.starts_with?(&1, "data_structure:"))
     |> Enum.uniq()
-    |> Enum.map(&String.split(&1, ":"))
-    |> Enum.flat_map(&tl(&1))
+    |> Enum.map(fn "data_structure:" <> id -> id end)
     |> Enum.map(&String.to_integer/1)
   end
 
@@ -150,10 +131,60 @@ defmodule TdDd.Cache.StructureLoader do
   end
 
   defp refresh_cached_structures do
-    structure_keys = Redix.command!(["SMEMBERS", "data_structure:keys"])
+    with [_ | _] = keep_ids <- read_referenced_structure_ids(),
+         count <- clean_cached_structures(keep_ids) do
+      Logger.info("Removed #{count} structures from cache")
+    end
+  end
 
-    structure_keys
-    |> extract_structure_ids()
-    |> cache_structures(force: true)
+  defp clean_cached_structures(keep_ids) do
+    ids_to_delete =
+      ["SMEMBERS", "data_structure:keys"]
+      |> Redix.command!()
+      |> Enum.map(fn "data_structure:" <> id -> String.to_integer(id) end)
+      |> Enum.reject(&(&1 in keep_ids))
+
+    keep_ids
+    |> Enum.map(&"data_structure:#{&1}")
+    |> Enum.chunk_every(1000)
+    |> Enum.map(&["SADD", "data_structure:keys:keep" | &1])
+    |> Redix.transaction_pipeline!()
+
+    ids_to_delete
+    |> Enum.flat_map(&["data_structure:#{&1}", "data_structure:#{&1}:path"])
+    |> Enum.chunk_every(1000)
+    |> Enum.map(&["DEL" | &1])
+    |> Enum.concat([
+      ["SINTERSTORE", "data_structures:keys", "data_structures:keys", "data_structures:keys:keep"]
+    ])
+    |> Redix.transaction_pipeline!()
+    |> Enum.sum()
+  end
+
+  defp read_referenced_structure_ids do
+    alias TdCache.Redix.Stream
+
+    {:ok, events} = Stream.read(:redix, "data_structure:events", transform: true)
+
+    rule_structure_ids =
+      events
+      |> Enum.flat_map(fn
+        %{event: "add_rule_implementation_link", structure_id: id} -> [id]
+        _ -> []
+      end)
+      |> Enum.uniq()
+      |> Enum.map(&String.to_integer/1)
+
+    linked_structure_ids =
+      ["SMEMBERS", "link:keys"]
+      |> Redix.command!()
+      |> Enum.map(&Redix.read_map!/1)
+      |> Enum.flat_map(fn %{source: source, target: target} -> [source, target] end)
+      |> Enum.filter(&String.starts_with?(&1, "data_structure:"))
+      |> Enum.map(fn "data_structure:" <> id -> id end)
+      |> Enum.map(&String.to_integer/1)
+      |> Enum.uniq()
+
+    Enum.uniq(rule_structure_ids ++ linked_structure_ids)
   end
 end
