@@ -735,8 +735,9 @@ defmodule TdDd.DataStructures do
 
       {:type, type}, q ->
         where(q, [dsv], dsv.type == ^type)
-      
-      _, q -> q
+
+      _, q ->
+        q
     end)
     |> where([dsv], is_nil(dsv.deleted_at))
     |> select([_dsv], fragment("jsonb_object_keys(metadata)"))
