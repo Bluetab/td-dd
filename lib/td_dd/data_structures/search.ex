@@ -72,7 +72,7 @@ defmodule TdDd.DataStructures.Search do
 
   defp get_aggregations_results(results, agg_terms) do
     agg_names = get_aggregations_names(%{"aggs" => agg_terms})
-    results = results |> Map.get(:aggregations)
+    results = Map.get(results, :aggregations)
     get_agg_results(agg_names, results)
   end
 
@@ -119,9 +119,16 @@ defmodule TdDd.DataStructures.Search do
     end
   end
 
-  def search_data_structures(params, user, permission, page \\ 0, size \\ 50, scroll \\ nil)
+  def scroll_data_structures(%{"scroll_id" => _, "scroll" => _} = scroll_params) do
+    scroll_params
+    |> Map.take(["scroll_id", "scroll"])
+    |> Search.scroll()
+    |> transform_response()
+  end
 
-  def search_data_structures(params, %User{is_admin: true}, _permission, page, size, scroll) do
+  def search_data_structures(params, user, permission, page \\ 0, size \\ 50)
+
+  def search_data_structures(params, %User{is_admin: true}, _permission, page, size) do
     filters = create_filters(params)
     query = create_query(params, filters)
 
@@ -131,42 +138,47 @@ defmodule TdDd.DataStructures.Search do
       from: page * size,
       size: size,
       query: query,
-      sort: sort,
-      aggs: Aggregations.aggregation_terms()
+      sort: sort
     }
-    |> do_search(scroll)
+    |> aggs(params)
+    |> do_search(params)
   end
 
   # Non-admin search
-  def search_data_structures(params, %User{} = user, permission, page, size, scroll) do
+  def search_data_structures(params, %User{} = user, permission, page, size) do
     permissions =
       user
       |> Permissions.get_domain_permissions()
       |> Enum.filter(&Enum.member?(&1.permissions, permission))
 
-    filter_data_structures(params, permissions, page, size, scroll)
+    filter_data_structures(params, permissions, page, size)
   end
 
-  defp filter_data_structures(_params, [], _page, _size, _scroll),
-    do: %{results: [], aggregations: %{}, total: 0}
+  # Don't request aggregations if we're scrolling
+  defp aggs(%{} = search_body, %{"scroll" => _}), do: search_body
 
-  defp filter_data_structures(params, [_h | _t] = permissions, page, size, scroll) do
+  defp aggs(%{} = search_body, %{} = _params) do
+    Map.put(search_body, :aggs, Aggregations.aggregation_terms())
+  end
+
+  defp filter_data_structures(_params, [], _page, _size) do
+    %{results: [], aggregations: %{}, total: 0}
+  end
+
+  defp filter_data_structures(params, [_h | _t] = permissions, page, size) do
     user_defined_filters = create_filters(params)
-
-    filter = permissions |> create_filter_clause(user_defined_filters)
-
+    filter = create_filter_clause(permissions, user_defined_filters)
     query = create_query(params, filter)
-
     sort = Map.get(params, "sort", ["name.raw"])
 
     %{
       from: page * size,
       size: size,
       query: query,
-      sort: sort,
-      aggs: Aggregations.aggregation_terms()
+      sort: sort
     }
-    |> do_search(scroll)
+    |> aggs(params)
+    |> do_search(params)
   end
 
   defp create_filter_clause(permissions, user_defined_filters) do
@@ -286,13 +298,17 @@ defmodule TdDd.DataStructures.Search do
     %{bool: %{should: clauses, filter: filter, minimum_should_match: Enum.count(clauses)}}
   end
 
-  defp do_search(search, scroll) do
-    %{results: results, aggregations: aggregations, total: total} =
-      case scroll do
-        nil -> Search.search(search)
-        _ -> Search.search(search, scroll)
-      end
+  defp do_search(search, params) do
+    params
+    |> Map.take(["scroll"])
+    |> case do
+      %{"scroll" => _scroll} = query_params -> Search.search(search, query_params)
+      _ -> Search.search(search)
+    end
+    |> transform_response()
+  end
 
+  defp transform_response(%{results: results} = response) do
     results =
       results
       |> Enum.map(&Map.get(&1, "_source"))
@@ -314,6 +330,6 @@ defmodule TdDd.DataStructures.Search do
       end)
       |> Enum.map(&CollectionUtils.atomize_keys/1)
 
-    %{results: results, aggregations: aggregations, total: total}
+    Map.put(response, :results, results)
   end
 end
