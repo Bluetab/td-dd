@@ -124,13 +124,15 @@ defmodule TdDdWeb.SwaggerDefinitions do
             structure_type(:string, "Structure type", required: true)
             template_id(:integer, "Template Id", required: true)
             translation(:string, "Default translation message")
+            metadata_fields(:array, "Available metadata fields for this type")
           end
 
           example(%{
             id: 88,
             structure_type: "Table",
             template_id: 3,
-            translation: "Tabla"
+            translation: "Tabla",
+            metadata_fields: ["field_1", "field_2"]
           })
         end,
       DataStructureTypeWithTemplate:
@@ -143,13 +145,15 @@ defmodule TdDdWeb.SwaggerDefinitions do
             structure_type(:string, "Structure type", required: true)
             template(:object, "Template Id and Name", required: true)
             translation(:string, "Default translation message")
+            metadata_fields(:array, "Available metadata fields for this type")
           end
 
           example(%{
             id: 88,
             structure_type: "Table",
             template: %{id: 3, name: "TableTemplate"},
-            translation: "Tabla"
+            translation: "Tabla",
+            metadata_fields: ["field_1", "field_2"]
           })
         end,
       DataStructureTypes:
@@ -168,6 +172,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
                   structure_type(:string, "Data Structure type", required: true)
                   template_id(:integer, "Template Id", required: true)
                   translation(:string, "Default translation message")
+                  metadata_fields(:array, "Available metadata fields for this type")
                 end
               end
             )
@@ -181,6 +186,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
                 properties do
                   template_id(:integer, "Template Id", required: true)
                   translation(:string, "Default translation message")
+                  metadata_fields(:array, "Available metadata fields for this type")
                 end
               end
             )

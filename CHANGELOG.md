@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-2943]:
+  - Data Structure Type: Metadata fields
+  - Endpoint to query all possible metadata fields for a given query
+
 ### Fixed
 
 - [TD-2979] Timeout issues loading metadata
