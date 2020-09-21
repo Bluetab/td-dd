@@ -6,9 +6,13 @@ defmodule TdDdWeb.SearchController do
 
   alias Jason, as: JSON
 
+  alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.Search
   alias TdDd.Search.Aggregations
+  alias TdDd.Utils.CollectionUtils
+
+  action_fallback(TdDdWeb.FallbackController)
 
   @index_worker Application.get_env(:td_dd, :index_worker)
 
@@ -64,21 +68,17 @@ defmodule TdDdWeb.SearchController do
 
   def search_structures_metadata_fields(conn, params) do
     user = conn.assigns[:current_user]
-    permission = conn.assigns[:search_permission]
 
-    metadata_fields =
-      params
-      |> Map.put(:without, ["deleted_at"])
-      |> Search.search_data_structures(user, permission, 0, 10_000, "1m")
-      |> Map.get(:results)
-      |> Enum.map(&Map.get(&1, :metadata))
-      |> Enum.reject(&Enum.empty?/1)
-      |> Enum.map(&Map.keys/1)
-      |> List.flatten()
-      |> Enum.uniq()
+    with {:can, true} <- {:can, user.is_admin} do
+      metadata_fields =
+        params
+        |> Map.get("filters", %{})
+        |> CollectionUtils.atomize_keys()
+        |> DataStructures.get_structures_metadata_fields()
 
-    conn
-    |> put_resp_content_type("application/json", "utf-8")
-    |> send_resp(:ok, JSON.encode!(%{data: metadata_fields}))
+      conn
+      |> put_resp_content_type("application/json", "utf-8")
+      |> send_resp(:ok, JSON.encode!(%{data: metadata_fields}))
+    end
   end
 end
