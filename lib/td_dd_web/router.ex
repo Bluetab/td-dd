@@ -30,6 +30,8 @@ defmodule TdDdWeb.Router do
     post("/data_structures/search", DataStructureController, :search)
     post("/data_structures/bulk_update", DataStructureController, :bulk_update)
     post("/data_structures/csv", DataStructureController, :csv)
+    post("/data_structures/bulk_update_template_content", DataStructureController, :bulk_update_template_content)
+
 
     resources "/data_structures", DataStructureController, except: [:new, :edit, :show] do
       resources("/versions", DataStructureVersionController, only: [:show])
