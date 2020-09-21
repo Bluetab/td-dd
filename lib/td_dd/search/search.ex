@@ -24,15 +24,16 @@ defmodule TdDd.Search do
     end
   end
 
-  def search(query, scroll) do
-    Logger.debug(fn -> "Query: #{inspect(query)} #{scroll}" end)
-    response = Elasticsearch.post(Cluster, "/#{@index}/_search?scroll=#{scroll}", query)
+  def search(body, query_params) do
+    Logger.debug(fn -> "Query: #{inspect(body)} #{inspect(query_params)}" end)
+
+    response =
+      Elasticsearch.post(Cluster, "/#{@index}/_search?" <> URI.encode_query(query_params), body)
 
     case response do
-      {:ok, %{"_scroll_id" => scroll_id, "hits" => %{"hits" => hits, "total" => total}} = res} ->
-        results = scroll_search(hits, hits, scroll_id, scroll)
+      {:ok, %{"_scroll_id" => scroll_id, "hits" => %{"hits" => results, "total" => total}} = res} ->
         aggregations = Map.get(res, "aggregations", %{})
-        %{results: results, total: total, aggregations: aggregations}
+        %{results: results, total: total, aggregations: aggregations, scroll_id: scroll_id}
 
       {:error, %Elasticsearch.Exception{message: message} = error} ->
         Logger.warn("Error response from Elasticsearch: #{message}")
@@ -40,23 +41,19 @@ defmodule TdDd.Search do
     end
   end
 
-  defp scroll_search(results, [], _scroll_id, _scroll) do
-    results
-  end
-
-  defp scroll_search(results, _hits, scroll_id, scroll) do
-    query = %{scroll: scroll, scroll_id: scroll_id}
-    response = Elasticsearch.post(Cluster, "/_search/scroll", query)
+  def scroll(scroll_params) do
+    Logger.debug(fn -> "Scroll: #{inspect(scroll_params)}" end)
+    response = Elasticsearch.post(Cluster, "/_search/scroll", scroll_params)
 
     case response do
-      {:ok, %{"_scroll_id" => _scroll_id, "hits" => %{"hits" => []}}} ->
-        results
-      {:ok, %{"_scroll_id" => scroll_id, "hits" => %{"hits" => hits}}} ->
-        scroll_search(results ++ hits, hits, scroll_id, scroll)
-      err ->
-        err
-    end
+      {:ok, %{"_scroll_id" => scroll_id, "hits" => %{"hits" => results, "total" => total}} = res} ->
+        aggregations = Map.get(res, "aggregations", %{})
+        %{results: results, total: total, aggregations: aggregations, scroll_id: scroll_id}
 
+      {:error, %Elasticsearch.Exception{message: message} = error} ->
+        Logger.warn("Error response from Elasticsearch: #{message}")
+        error
+    end
   end
 
   def get_filters(query) do

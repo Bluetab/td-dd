@@ -226,6 +226,44 @@ defmodule TdDdWeb.DataStructureControllerTest do
     end
   end
 
+  describe "search with scroll" do
+    setup do
+      Enum.each(1..7, fn _ -> insert(:data_structure_version) end)
+    end
+
+    @tag :admin_authenticated
+    test "returns scroll_id and pages results", %{conn: conn} do
+      assert %{"data" => data, "scroll_id" => scroll_id} =
+               conn
+               |> post(data_structure_path(conn, :search), %{
+                 "filters" => %{"all" => true},
+                 "size" => 5,
+                 "scroll" => "1m"
+               })
+               |> json_response(:ok)
+
+      assert length(data) == 5
+
+      assert %{"data" => data, "scroll_id" => scroll_id} =
+               conn
+               |> post(data_structure_path(conn, :search), %{
+                 "scroll_id" => scroll_id,
+                 "scroll" => "1m"
+               })
+               |> json_response(:ok)
+
+      assert length(data) == 2
+
+      assert %{"data" => [], "scroll_id" => scroll_id} =
+               conn
+               |> post(data_structure_path(conn, :search), %{
+                 "scroll_id" => scroll_id,
+                 "scroll" => "1m"
+               })
+               |> json_response(:ok)
+    end
+  end
+
   describe "update data_structure" do
     setup [:create_data_structure]
 
