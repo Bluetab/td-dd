@@ -16,7 +16,7 @@ defmodule TdDdWeb.SearchControllerTest do
 
   describe "search" do
     @tag :admin_authenticated
-    test "search with query performs ngram search on name", %{conn: conn} do
+    test "search_structures_metadata_fields (admin)", %{conn: conn} do
       insert(:data_structure_version,
         name: "foo",
         type: "type",
@@ -38,11 +38,21 @@ defmodule TdDdWeb.SearchControllerTest do
       assert %{"data" => [_ | _] = fields} =
                conn
                |> post(search_path(conn, :search_structures_metadata_fields), %{
-                 "filters" => %{"type.raw" => ["type"]}
+                 "filters" => %{"type" => ["type"]}
                })
                |> json_response(:ok)
 
       assert Enum.all?(["foo", "bar", "Xyz"], &(&1 in fields))
+    end
+
+    @tag authenticated_no_admin_user: "user1"
+    test "search_structures_metadata_fields (non-admin user)", %{conn: conn} do
+      conn =
+        post(conn, search_path(conn, :search_structures_metadata_fields), %{
+          "filters" => %{"type" => ["type"]}
+        })
+
+      assert response(conn, 403)
     end
   end
 end
