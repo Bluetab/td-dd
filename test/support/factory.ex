@@ -58,7 +58,8 @@ defmodule TdDd.Factory do
       id: sequence(:structure_type_id, &(&1 + 999_000)),
       structure_type: "Table",
       template_id: 0,
-      translation: ""
+      translation: "",
+      metadata_fields: %{}
     }
   end
 

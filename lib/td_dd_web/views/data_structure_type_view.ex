@@ -14,6 +14,7 @@ defmodule TdDdWeb.DataStructureTypeView do
     %{id: data_structure_type.id,
       structure_type: data_structure_type.structure_type,
       translation: data_structure_type.translation,
+      metadata_fields: data_structure_type.metadata_fields,
       template: %{id: template.id, name: template.name}
     }
   end
@@ -22,6 +23,7 @@ defmodule TdDdWeb.DataStructureTypeView do
     %{id: data_structure_type.id,
       structure_type: data_structure_type.structure_type,
       translation: data_structure_type.translation,
+      metadata_fields: data_structure_type.metadata_fields,
       template_id: data_structure_type.template_id}
   end
 end
