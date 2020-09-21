@@ -53,22 +53,14 @@ defmodule TdDd.ElasticsearchMock do
   def request(_config, :post, "/structures/_search?scroll=1m", data, _opts) do
     PathCache.refresh()
 
-    data
-    |> do_search()
-    |> search_results(data)
-    |> case do
-      {:ok, %Response{status_code: 200, body: body}} ->
-        body = Map.put(body, "_scroll_id", "id")
-        {:ok, %Response{status_code: 200, body: body}}
-
-      err ->
-        err
-    end
+    do_scroll(data)
   end
 
   @impl true
   def request(_config, :post, "/_search/scroll", data, _opts) do
-    {:ok, %{"_scroll_id" => Map.get(data, :scroll_id), "hits" => %{"hits" => []}}}
+    data
+    |> decode_scroll_id()
+    |> do_scroll()
   end
 
   @impl true
@@ -80,6 +72,17 @@ defmodule TdDd.ElasticsearchMock do
   def request(_config, method, url, data, _opts) do
     Logger.warn("#{method} #{url} #{Jason.encode!(data)}")
     search_results([])
+  end
+
+  defp do_scroll(scroll_params) do
+    scroll_params
+    |> do_search()
+    |> search_results(scroll_params)
+    |> case do
+      {:ok, %Response{status_code: 200, body: body}} ->
+        body = Map.put(body, "_scroll_id", encode_scroll_id(scroll_params))
+        {:ok, %Response{status_code: 200, body: body}}
+    end
   end
 
   defp do_search(%{query: query} = params) do
@@ -427,5 +430,22 @@ defmodule TdDd.ElasticsearchMock do
     }
 
     {:ok, %Response{status_code: 200, body: body}}
+  end
+
+  defp encode_scroll_id(%{from: from, size: size} = params) do
+    params
+    |> Map.put(:from, size + from)
+    |> Jason.encode!()
+    |> Base.encode64()
+  end
+
+  defp decode_scroll_id(%{"scroll_id" => scroll_id}) do
+    decode_scroll_id(scroll_id)
+  end
+
+  defp decode_scroll_id(scroll_id) do
+    scroll_id
+    |> Base.decode64!()
+    |> Jason.decode!(keys: :atoms)
   end
 end

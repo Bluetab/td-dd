@@ -5,6 +5,12 @@ defmodule TdDdWeb.DataStructureView do
 
   require Logger
 
+  def render("index.json", %{scroll_id: scroll_id} = assigns) do
+    "index.json"
+    |> render(Map.delete(assigns, :scroll_id))
+    |> Map.put(:scroll_id, scroll_id)
+  end
+
   def render("index.json", %{data_structures: data_structures, filters: filters}) do
     %{
       data: render_many(data_structures, DataStructureView, "data_structure.json"),

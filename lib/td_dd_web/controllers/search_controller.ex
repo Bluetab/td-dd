@@ -5,7 +5,6 @@ defmodule TdDdWeb.SearchController do
   import Canada, only: [can?: 2]
 
   alias Jason, as: JSON
-
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.Search
   alias TdDd.Search.Aggregations
@@ -69,7 +68,7 @@ defmodule TdDdWeb.SearchController do
     metadata_fields =
       params
       |> Map.put(:without, ["deleted_at"])
-      |> Search.search_data_structures(user, permission, 0, 10_000, "1m")
+      |> Search.search_data_structures(user, permission, 0, 10_000)
       |> Map.get(:results)
       |> Enum.map(&Map.get(&1, :metadata))
       |> Enum.reject(&Enum.empty?/1)
