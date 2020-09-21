@@ -727,6 +727,21 @@ defmodule TdDd.DataStructures do
     |> Map.new()
   end
 
+  def get_structures_metadata_fields(clauses \\ %{}) do
+    clauses
+    |> Enum.reduce(DataStructureVersion, fn
+      {:type, types}, q when is_list(types) ->
+        where(q, [dsv], dsv.type in ^types)
+
+      {:type, type}, q ->
+        where(q, [dsv], dsv.type == ^type)
+    end)
+    |> where([dsv], is_nil(dsv.deleted_at))
+    |> select([_dsv], fragment("jsonb_object_keys(metadata)"))
+    |> distinct(true)
+    |> Repo.all()
+  end
+
   @doc """
   Creates mutable metadata.
 

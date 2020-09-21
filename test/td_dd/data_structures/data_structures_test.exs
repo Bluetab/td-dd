@@ -269,6 +269,24 @@ defmodule TdDd.DataStructuresTest do
              |> put_domain_id(ids)
              |> Map.has_key?("domain_id")
     end
+
+    test "get_structures_metadata_fields/1 will retrieve all metada fields of the filtered structures" do
+      insert(:data_structure_version, type: "foo", metadata: %{"foo" => "value"})
+      insert(:data_structure_version, type: "foo", metadata: %{"Foo" => "value"})
+      insert(:data_structure_version, type: "foo", metadata: %{"bar" => "value"})
+      insert(:data_structure_version, type: "bar", metadata: %{"xyz" => "value"})
+
+      insert(:data_structure_version,
+        type: "bar",
+        metadata: %{"baz" => "value"},
+        deleted_at: DateTime.utc_now()
+      )
+
+      assert [_ | _] =
+               fields = DataStructures.get_structures_metadata_fields(%{type: ["foo", "bar"]})
+
+      assert Enum.all?(["xyz", "Foo", "bar", "foo"], &(&1 in fields))
+    end
   end
 
   describe "data structure versions" do
