@@ -37,25 +37,25 @@ defmodule TdDd.ProfilingLoader do
 
   defp upsert_profiles([], acc), do: {:ok, acc}
 
-  defp upsert_profile(attrs) do
-    structure = get_data_structure(attrs)
+  defp upsert_profile(params) do
+    structure = get_data_structure(params)
 
     case structure do
       %DataStructure{id: id, profile: nil} ->
         Map.new()
         |> Map.put(:data_structure_id, id)
-        |> Map.merge(Map.take(attrs, [:value]))
+        |> Map.merge(Map.take(params, [:value]))
         |> Profiles.create_profile()
 
       %DataStructure{profile: profile} ->
-        Profiles.update_profile(profile, Map.take(attrs, [:value]))
+        Profiles.update_profile(profile, Map.take(params, [:value]))
 
       nil ->
         {:error,
          %{
            errors: [
              external_id:
-               {"Missing structure with external_id #{Map.get(attrs, :external_id)}", []}
+               {"Missing structure with external_id #{Map.get(params, :external_id)}", []}
            ]
          }}
     end

@@ -1,6 +1,10 @@
 defmodule TdDd.DataStructures.StructureMetadata do
-  @moduledoc false
+  @moduledoc """
+  Ecto schema module for mutable structure metadata
+  """
+
   use Ecto.Schema
+
   import Ecto.Changeset
 
   alias TdDd.DataStructures.DataStructure
@@ -14,10 +18,9 @@ defmodule TdDd.DataStructures.StructureMetadata do
     timestamps()
   end
 
-  @doc false
-  def changeset(structure_metadata, attrs) do
+  def changeset(structure_metadata, params) do
     structure_metadata
-    |> cast(attrs, [:version, :fields, :data_structure_id, :deleted_at])
+    |> cast(params, [:version, :fields, :data_structure_id, :deleted_at])
     |> validate_required([:version, :fields, :data_structure_id])
   end
 end

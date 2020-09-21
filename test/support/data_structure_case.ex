@@ -15,11 +15,6 @@ defmodule TdDd.DataStructureCase do
     quote do
       use TdDd.DataCase
 
-      setup _context do
-        system = insert(:system, id: 1)
-        {:ok, system: system}
-      end
-
       def create_hierarchy(names) do
         %{id: system_id} = insert(:system)
 

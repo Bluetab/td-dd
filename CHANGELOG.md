@@ -8,6 +8,9 @@
   - Data Structure Type: Metadata fields
   - Endpoint to query all possible metadata fields for a given query
 
+### Fixed
+
+- [TD-2979] Timeout issues loading metadata
 
 ## [4.3.0] 2020-09-07
 

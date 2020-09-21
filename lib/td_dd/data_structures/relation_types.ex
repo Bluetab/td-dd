@@ -53,9 +53,9 @@ defmodule TdDd.DataStructures.RelationTypes do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_relation_type(attrs \\ %{}) do
+  def create_relation_type(params \\ %{}) do
     %RelationType{}
-    |> RelationType.changeset(attrs)
+    |> RelationType.changeset(params)
     |> Repo.insert()
   end
 
@@ -71,9 +71,9 @@ defmodule TdDd.DataStructures.RelationTypes do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_relation_type(%RelationType{} = relation_type, attrs) do
+  def update_relation_type(%RelationType{} = relation_type, params) do
     relation_type
-    |> RelationType.changeset(attrs)
+    |> RelationType.changeset(params)
     |> Repo.update()
   end
 

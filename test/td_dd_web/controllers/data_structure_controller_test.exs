@@ -14,32 +14,14 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
   import Routes
 
+  @template_name "data_structure_controller_test_template"
+
   @update_attrs %{
     description: "some updated description",
     group: "some updated group",
     last_change_by: 43,
     name: "some updated name",
     type: "table"
-  }
-
-  @default_template_attrs %{
-    id: 0,
-    label: "some label",
-    name: "some template name",
-    scope: "dd",
-    content: [
-      %{
-        "name" => "group",
-        "fields" => [
-          %{
-            "name" => "field",
-            "type" => "string",
-            "cardinality" => "1",
-            "values" => %{"fixed" => ["1", "2"]}
-          }
-        ]
-      }
-    ]
   }
 
   setup_all do
@@ -51,9 +33,21 @@ defmodule TdDdWeb.DataStructureControllerTest do
   end
 
   setup %{conn: conn} do
-    system = insert(:system, id: 1)
-    data_structure_type = insert(:data_structure_type, template_id: @default_template_attrs.id, structure_type: @default_template_attrs.name)
-    StructureTypeCache.put(data_structure_type)
+    %{id: template_id, name: template_name} = template = build(:template, name: @template_name)
+    {:ok, _} = TemplateCache.put(template, publish: false)
+    system = insert(:system)
+
+    %{id: structure_type_id} =
+      structure_type =
+      insert(:data_structure_type, structure_type: template_name, template_id: template_id)
+
+    StructureTypeCache.put(structure_type)
+
+    on_exit(fn ->
+      TemplateCache.delete(template_id)
+      StructureTypeCache.delete(structure_type_id)
+    end)
+
     {:ok, conn: put_req_header(conn, "accept", "application/json"), system: system}
   end
 
@@ -214,18 +208,14 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
     @tag :admin_authenticated
     test "search with query performs search on dynamic content", %{conn: conn} do
-      create_template(%{name: "template_name", id: 1})
-      data_structure_type = insert(:data_structure_type, template_id: 1, structure_type: "template_name", id: 20, translation: nil)
-      StructureTypeCache.put(data_structure_type)
-
       %{data_structure_id: id} =
         insert(:data_structure_version,
           name: "boofarfaz",
-          type: "template_name",
+          type: @template_name,
           data_structure:
             build(:data_structure,
               external_id: "boofarfaz",
-              df_content: %{"field" => "xyzzy"}
+              df_content: %{"string" => "xyzzy"}
             )
         )
 
@@ -357,7 +347,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert %{"data" => %{"id" => ^id}} =
                conn
                |> put(data_structure_path(conn, :update, data_structure),
-                 data_structure: %{df_content: %{"field" => "2"}}
+                 data_structure: %{df_content: %{"string" => "foo", "list" => "one"}}
                )
                |> json_response(:ok)
 
@@ -367,7 +357,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                |> json_response(:ok)
 
       assert data["data_structure"]["id"] == id
-      assert data["data_structure"]["df_content"] == %{"field" => "2"}
+      assert data["data_structure"]["df_content"] == %{"list" => "one", "string" => "foo"}
       assert data["domain"]["name"] == "domain_name"
     end
 
@@ -441,13 +431,10 @@ defmodule TdDdWeb.DataStructureControllerTest do
   end
 
   defp create_data_structure(_) do
-    template_name = "template_name"
-    create_template(%{name: template_name})
-
     data_structure = insert(:data_structure, df_content: %{"field" => "1"})
 
     data_structure_version =
-      insert(:data_structure_version, data_structure_id: data_structure.id, type: template_name)
+      insert(:data_structure_version, data_structure_id: data_structure.id, type: @template_name)
 
     {:ok, data_structure: data_structure, data_structure_version: data_structure_version}
   end
@@ -549,7 +536,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
     domain_name = "domain_name"
     domain_id = :random.uniform(1_000_000)
     updated_at = DateTime.utc_now()
-    template_id = :random.uniform(1_000_000)
     TaxonomyCache.put_domain(%{name: domain_name, id: domain_id, updated_at: updated_at})
 
     MockPermissionResolver.create_acl_entry(%{
@@ -560,28 +546,14 @@ defmodule TdDdWeb.DataStructureControllerTest do
       role_name: role_name
     })
 
-    template_name = "template_name"
-
-    create_template(%{id: template_id, name: template_name})
     data_structure = insert(:data_structure, confidential: confidential, domain_id: domain_id)
 
-    dsv = insert(:data_structure_version,
+    insert(:data_structure_version,
       data_structure_id: data_structure.id,
       name: data_structure.external_id,
-      type: template_name
+      type: @template_name
     )
 
-    insert(:data_structure_type, structure_type: dsv.type, template_id: template_id)
-
     data_structure
-  end
-
-  def create_template(attrs \\ %{}) do
-    attrs
-    |> Enum.into(@default_template_attrs)
-    |> Map.put(:updated_at, DateTime.utc_now())
-    |> TemplateCache.put()
-
-    :ok
   end
 end

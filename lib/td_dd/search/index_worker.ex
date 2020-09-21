@@ -73,14 +73,14 @@ defmodule TdDd.Search.IndexWorker do
 
   @impl true
   def handle_cast({:reindex, :all}, state) do
-    PathCache.refresh(20_000)
+    PathCache.refresh()
     do_reindex(:all)
     {:noreply, state}
   end
 
   @impl true
   def handle_cast({:reindex, data_structure_ids}, state) do
-    PathCache.refresh(20_000)
+    PathCache.refresh()
     do_reindex(data_structure_ids)
     {:noreply, state}
   end
@@ -106,6 +106,7 @@ defmodule TdDd.Search.IndexWorker do
 
   defp do_reindex(data_structure_ids) when is_list(data_structure_ids) do
     count = Enum.count(data_structure_ids)
+    Logger.info("Reindexing #{count} data structures")
 
     Timer.time(
       fn -> Indexer.reindex(data_structure_ids) end,
