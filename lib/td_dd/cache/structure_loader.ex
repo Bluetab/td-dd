@@ -36,7 +36,7 @@ defmodule TdDd.Cache.StructureLoader do
   ## GenServer callbacks
 
   @impl GenServer
-  def init(config = _init_arg) do
+  def init(config) do
     name = String.replace_prefix("#{__MODULE__}", "Elixir.", "")
     Logger.info("Running #{name}")
     {:ok, config}
