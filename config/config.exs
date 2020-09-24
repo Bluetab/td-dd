@@ -69,7 +69,20 @@ config :td_cache, :event_stream,
 
 config :td_dd, :cache_cleaner,
   clean_on_startup: true,
-  patterns: ["structures:external_ids:*", "data_fields:external_ids"]
+  patterns: [
+    "structures:external_ids:*",
+    "data_fields:external_ids",
+    "TdDd.DataStructures.Migrations:td-2979"
+  ]
+
+config :td_dd, TdDd.Scheduler,
+  jobs: [
+    [
+      schedule: "@hourly",
+      task: {TdDd.Cache.StructureLoader, :refresh, []},
+      run_strategy: Quantum.RunStrategy.Local
+    ]
+  ]
 
 import_config "metadata.exs"
 import_config "profiling.exs"
@@ -80,5 +93,3 @@ import_config "elastic.exs"
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"
-
-

@@ -15,7 +15,6 @@ defmodule TdDd.Cache.StructureLoader do
   require Logger
 
   @index_worker Application.get_env(:td_dd, :index_worker)
-  @structure_metadata_migration_key "TdDd.DataStructures.Migrations:td-2979"
 
   ## Client API
 
@@ -23,52 +22,41 @@ defmodule TdDd.Cache.StructureLoader do
     GenServer.start_link(__MODULE__, config, name: __MODULE__)
   end
 
+  def refresh do
+    GenServer.cast(__MODULE__, :refresh)
+  end
+
   ## EventStream.Consumer Callbacks
 
-  @impl true
+  @impl TdCache.EventStream.Consumer
   def consume(events) do
     GenServer.call(__MODULE__, {:consume, events})
   end
 
   ## GenServer callbacks
 
-  @impl true
-  def init(state) do
+  @impl GenServer
+  def init(config = _init_arg) do
     name = String.replace_prefix("#{__MODULE__}", "Elixir.", "")
     Logger.info("Running #{name}")
-
-    unless Application.get_env(:td_dd, :env) == :test do
-      Process.send_after(self(), :refresh_cached_structures, 0)
-    end
-
-    {:ok, state}
+    {:ok, config}
   end
 
-  @impl true
-  def handle_info(:refresh_cached_structures, state) do
-    try do
-      if Redix.exists?(@structure_metadata_migration_key) == false do
-        Timer.time(
-          fn -> refresh_cached_structures() end,
-          fn ms, _ -> Logger.info("Structure cache refreshed in #{ms}ms") end
-        )
-
-        Redix.command!(["SET", @structure_metadata_migration_key, "#{DateTime.utc_now()}"])
-      end
-    rescue
-      e -> Logger.error("Unexpected error while refreshing cached structures... #{inspect(e)}")
-    end
-
+  @impl GenServer
+  def handle_cast(:refresh, state) do
+    do_refresh()
     {:noreply, state}
   end
 
-  @impl true
+  @impl GenServer
   def handle_call({:consume, events}, _from, state) do
     structure_ids = Enum.flat_map(events, &read_structure_ids/1)
     reply = cache_structures(structure_ids)
     @index_worker.reindex(structure_ids)
     {:reply, reply, state}
   end
+
+  ## Private functions
 
   defp read_structure_ids(%{event: "add_link", source: source, target: target}) do
     extract_structure_ids([source, target])
@@ -92,8 +80,6 @@ defmodule TdDd.Cache.StructureLoader do
     |> Enum.map(fn "data_structure:" <> id -> id end)
     |> Enum.map(&String.to_integer/1)
   end
-
-  ## Private functions
 
   defp cache_structures(structure_ids, opts \\ []) do
     structure_ids
@@ -130,10 +116,21 @@ defmodule TdDd.Cache.StructureLoader do
     StructureCache.put(entry, opts)
   end
 
+  defp do_refresh do
+    Timer.time(
+      fn -> refresh_cached_structures() end,
+      fn ms, _ -> Logger.info("Structure cache refreshed in #{ms}ms") end
+    )
+  rescue
+    e -> Logger.error("Unexpected error while refreshing cached structures... #{inspect(e)}")
+  end
+
   defp refresh_cached_structures do
-    with [_ | _] = keep_ids <- read_referenced_structure_ids(),
+    with [_ | _] = keep_ids <- StructureCache.referenced_ids(),
          count <- clean_cached_structures(keep_ids) do
-      Logger.info("Removed #{count} structures from cache")
+      unless count == 0 do
+        Logger.info("Removed #{count} structures from cache")
+      end
     end
   end
 
@@ -159,32 +156,5 @@ defmodule TdDd.Cache.StructureLoader do
     ])
     |> Redix.transaction_pipeline!()
     |> Enum.sum()
-  end
-
-  defp read_referenced_structure_ids do
-    alias TdCache.Redix.Stream
-
-    {:ok, events} = Stream.read(:redix, "data_structure:events", transform: true)
-
-    rule_structure_ids =
-      events
-      |> Enum.flat_map(fn
-        %{event: "add_rule_implementation_link", structure_id: id} -> [id]
-        _ -> []
-      end)
-      |> Enum.uniq()
-      |> Enum.map(&String.to_integer/1)
-
-    linked_structure_ids =
-      ["SMEMBERS", "link:keys"]
-      |> Redix.command!()
-      |> Enum.map(&Redix.read_map!/1)
-      |> Enum.flat_map(fn %{source: source, target: target} -> [source, target] end)
-      |> Enum.filter(&String.starts_with?(&1, "data_structure:"))
-      |> Enum.map(fn "data_structure:" <> id -> id end)
-      |> Enum.map(&String.to_integer/1)
-      |> Enum.uniq()
-
-    Enum.uniq(rule_structure_ids ++ linked_structure_ids)
   end
 end

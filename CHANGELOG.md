@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-2988] Cache entries for data structures are now refreshed every hour
+
 ## [4.4.0] 2020-09-22
 
 ### Added
