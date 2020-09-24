@@ -81,26 +81,23 @@ defmodule TdDd.Cache.StructureLoader do
     |> Enum.map(&String.to_integer/1)
   end
 
-  defp cache_structures(structure_ids, opts \\ []) do
+  defp cache_structures(structure_ids) do
     structure_ids
-    |> Enum.map(&DataStructures.get_latest_version(&1, [:system, :parents]))
+    |> Enum.map(&DataStructures.get_latest_version(&1, [:parents]))
     |> Enum.filter(& &1)
     |> Enum.map(&to_cache_entry/1)
-    |> Enum.map(&put_cache(&1, opts))
+    |> Enum.map(&StructureCache.put/1)
   end
 
   defp to_cache_entry(%DataStructureVersion{data_structure_id: id, data_structure: ds} = dsv) do
-    system =
-      dsv
-      |> Map.get(:system, %{})
-      |> Map.take([:id, :external_id, :name])
+    %{external_id: external_id, system_id: system_id} = ds
 
     dsv
     |> Map.take([:group, :name, :type, :metadata, :updated_at, :deleted_at])
     |> Map.put(:id, id)
-    |> Map.put(:system, system)
     |> Map.put(:path, DataStructures.get_path(dsv))
-    |> Map.put(:external_id, Map.get(ds, :external_id))
+    |> Map.put(:external_id, external_id)
+    |> Map.put(:system_id, system_id)
     |> Map.put(:parent_id, get_first_parent_id(dsv))
   end
 
@@ -112,14 +109,14 @@ defmodule TdDd.Cache.StructureLoader do
     end
   end
 
-  defp put_cache(entry, opts) do
-    StructureCache.put(entry, opts)
-  end
-
   defp do_refresh do
     Timer.time(
       fn -> refresh_cached_structures() end,
-      fn ms, _ -> Logger.info("Structure cache refreshed in #{ms}ms") end
+      fn ms, {updated, removed} ->
+        Logger.info(
+          "Structure cache refreshed in #{ms}ms (updated=#{updated}, removed=#{removed})"
+        )
+      end
     )
   rescue
     e -> Logger.error("Unexpected error while refreshing cached structures... #{inspect(e)}")
@@ -127,10 +124,14 @@ defmodule TdDd.Cache.StructureLoader do
 
   defp refresh_cached_structures do
     with [_ | _] = keep_ids <- StructureCache.referenced_ids(),
-         count <- clean_cached_structures(keep_ids) do
-      unless count == 0 do
-        Logger.info("Removed #{count} structures from cache")
-      end
+         remove_count <- clean_cached_structures(keep_ids),
+         updates <- cache_structures(keep_ids),
+         update_count <-
+           Enum.count(updates, fn
+             {:ok, ["OK" | _]} -> true
+             _ -> false
+           end) do
+      {update_count, remove_count}
     end
   end
 
