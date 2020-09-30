@@ -37,7 +37,7 @@ defmodule Map.Helpers do
 
   def atomize_keys(%{} = map) do
     map
-    |> Enum.into(%{}, fn {k, v} -> {String.to_atom(k), atomize_keys(v)} end)
+    |> Enum.into(%{}, fn {k, v} -> {atomize_key(k), atomize_keys(v)} end)
   end
 
   # Walk the list and atomize the keys of
@@ -49,6 +49,9 @@ defmodule Map.Helpers do
   def atomize_keys(not_a_map) do
     not_a_map
   end
+
+  defp atomize_key(key) when is_binary(key), do: String.to_atom(key)
+  defp atomize_key(key), do: key
 
   @doc """
   Convert map atom keys to strings

@@ -17,53 +17,57 @@ defmodule TdDqWeb.ImplementationView do
   def render("implementation.json", %{
         implementation: %{implementation_type: "raw"} = implementation
       }) do
-    %{
-      id: implementation.id,
-      rule_id: implementation.rule_id,
-      implementation_key: implementation.implementation_key,
-      implementation_type: implementation.implementation_type,
-      raw_content: render_one(implementation.raw_content, RawContent, "raw_content.json"),
-      deleted_at: implementation.deleted_at
-    }
+    implementation
+    |> Map.take([
+      :current_business_concept_version,
+      :id,
+      :rule_id,
+      :implementation_key,
+      :implementation_type,
+      :deleted_at,
+      :execution_result_info,
+      :structure_aliases
+    ])
+    |> Map.put(
+      :raw_content,
+      render_one(implementation.raw_content, RawContent, "raw_content.json")
+    )
     |> add_rule(implementation)
     |> add_last_rule_results(implementation)
     |> add_rule_results(implementation)
   end
 
   def render("implementation.json", %{implementation: implementation}) do
-    %{
-      id: implementation.id,
-      rule_id: implementation.rule_id,
-      implementation_key: implementation.implementation_key,
-      implementation_type: implementation.implementation_type,
-      dataset: render_many(implementation.dataset, DatasetView, "dataset_row.json"),
-      population: render_many(implementation.population, ConditionView, "condition_row.json"),
-      validations: render_many(implementation.validations, ConditionView, "condition_row.json"),
-      deleted_at: implementation.deleted_at
-    }
+    implementation
+    |> Map.take([
+      :current_business_concept_version,
+      :id,
+      :rule_id,
+      :implementation_key,
+      :implementation_type,
+      :deleted_at,
+      :execution_result_info,
+      :structure_aliases
+    ])
+    |> Map.put(:dataset, render_many(implementation.dataset, DatasetView, "dataset_row.json"))
+    |> Map.put(
+      :population,
+      render_many(implementation.population, ConditionView, "condition_row.json")
+    )
+    |> Map.put(
+      :validations,
+      render_many(implementation.validations, ConditionView, "condition_row.json")
+    )
     |> add_rule(implementation)
     |> add_last_rule_results(implementation)
     |> add_rule_results(implementation)
   end
 
-  defp add_rule(implementation_mapping, implementation) do
-    case Ecto.assoc_loaded?(implementation.rule) do
-      true ->
-        rule = implementation.rule
-
-        rule_mapping = %{
-          name: rule.name,
-          minimum: rule.minimum,
-          goal: rule.goal,
-          result_type: rule.result_type
-        }
-
-        Map.put(implementation_mapping, :rule, rule_mapping)
-
-      _ ->
-        implementation_mapping
-    end
+  defp add_rule(mapping, %{rule: rule}) when map_size(rule) > 0 do
+    Map.put(mapping, :rule, Map.take(rule, [:active, :goal, :name, :minimum, :result_type, :df_content]))
   end
+
+  defp add_rule(mapping, _implementation), do: mapping
 
   defp add_last_rule_results(implementation_mapping, implementation) do
     rule_results_mappings =

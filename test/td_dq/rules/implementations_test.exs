@@ -342,4 +342,19 @@ defmodule TdDq.Rules.ImplementationsTest do
       assert Enum.sort(structures_ids) == [1, 2, 3, 4, 5, 6]
     end
   end
+
+  describe "get_rule_implementations/1" do
+    test "returns all implementations of a set of rules" do
+      r = insert(:rule)
+      r1 = insert(:rule)
+
+      ri = insert(:implementation, rule: r)
+      ri1 = insert(:implementation, rule: r1)
+      ids = [ri.id, ri1.id]
+
+      assert Implementations.get_rule_implementations([]) == []
+      assert [_ | _] = implementations = Implementations.get_rule_implementations([r.id, r1.id])
+      Enum.all?(implementations, &(&1.id in ids))
+    end
+  end
 end

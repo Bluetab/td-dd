@@ -132,10 +132,8 @@ defmodule TdDq.Rules.Rule do
   end
 
   defimpl Elasticsearch.Document do
-    alias TdCache.ConceptCache
-    alias TdCache.TaxonomyCache
+    alias Search.Helpers
     alias TdCache.TemplateCache
-    alias TdCache.UserCache
     alias TdDfLib.Format
     alias TdDfLib.RichText
     alias TdDq.Rules.Rule
@@ -150,12 +148,12 @@ defmodule TdDq.Rules.Rule do
     @impl Elasticsearch.Document
     def encode(%Rule{} = rule) do
       template = TemplateCache.get_by_name!(rule.df_name) || %{content: []}
-      updated_by = get_user(rule.updated_by)
+      updated_by = Helpers.get_user(rule.updated_by)
       execution_result_info = get_execution_result_info(rule)
-      confidential = confidential?(rule)
-      bcv = get_business_concept_version(rule)
-      domain_ids = get_domain_ids(rule)
-      domain_parents = get_domain_parents(domain_ids)
+      confidential = Helpers.confidential?(rule)
+      bcv = Helpers.get_business_concept_version(rule)
+      domain_ids = Helpers.get_domain_ids(rule)
+      domain_parents = Helpers.get_domain_parents(domain_ids)
 
       df_content =
         rule
@@ -203,7 +201,7 @@ defmodule TdDq.Rules.Rule do
       Map.new()
       |> with_result(rule_results)
       |> with_last_execution_at(rule_results)
-      |> with_result_text(minimum, goal, result_type)
+      |> Helpers.with_result_text(minimum, goal, result_type)
     end
 
     defp with_result(result_map, rule_results) do
@@ -224,90 +222,6 @@ defmodule TdDq.Rules.Rule do
         |> Enum.max()
 
       Map.put(result_map, :last_execution_at, last_execution_at)
-    end
-
-    defp with_result_text(%{result: result} = result_map, minimum, goal, "percentage") do
-      result = Decimal.to_float(result)
-
-      result_text =
-        cond do
-          result < minimum ->
-            "quality_result.under_minimum"
-
-          result >= minimum and result < goal ->
-            "quality_result.under_goal"
-
-          result >= goal ->
-            "quality_result.over_goal"
-        end
-
-      Map.put(result_map, :result_text, result_text)
-    end
-
-    defp with_result_text(%{errors: errors} = result_map, minimum, goal, "errors_number") do
-      result_text =
-        cond do
-          errors > minimum ->
-            "quality_result.under_minimum"
-
-          errors <= minimum and errors > goal ->
-            "quality_result.under_goal"
-
-          errors <= goal ->
-            "quality_result.over_goal"
-        end
-
-      Map.put(result_map, :result_text, result_text)
-    end
-
-    defp with_result_text(result_map, _minimum, _goal, _type) do
-      result_map
-    end
-
-    defp get_domain_ids(%{business_concept_id: nil}), do: -1
-
-    defp get_domain_ids(%{business_concept_id: business_concept_id}) do
-      {:ok, domain_ids} = ConceptCache.get(business_concept_id, :domain_ids, refresh: true)
-      domain_ids
-    end
-
-    defp confidential?(%{business_concept_id: nil}), do: false
-
-    defp confidential?(%{business_concept_id: business_concept_id}) do
-      {:ok, status} = ConceptCache.member_confidential_ids(business_concept_id)
-
-      case status do
-        1 -> true
-        _ -> false
-      end
-    end
-
-    defp get_user(user_id) do
-      case UserCache.get(user_id) do
-        {:ok, nil} -> %{}
-        {:ok, user} -> user
-      end
-    end
-
-    defp get_business_concept_version(%{business_concept_id: nil}), do: %{name: ""}
-
-    defp get_business_concept_version(%{business_concept_id: business_concept_id}) do
-      case ConceptCache.get(business_concept_id, refresh: true) do
-        {:ok, %{} = concept} when map_size(concept) > 0 ->
-          concept
-          |> Map.take([:name, :id, :content])
-          |> Map.put_new(:name, "")
-
-        _ ->
-          %{name: ""}
-      end
-    end
-
-    defp get_domain_parents(domain_ids) do
-      case domain_ids do
-        -1 -> []
-        _ -> Enum.map(domain_ids, &%{id: &1, name: TaxonomyCache.get_name(&1)})
-      end
     end
   end
 end

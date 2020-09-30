@@ -31,7 +31,7 @@ defmodule TdDq.Search.AggregationsTest do
         scope: "dq"
       })
 
-      aggs = Aggregations.aggregation_terms()
+      aggs = Aggregations.rule_aggregation_terms()
 
       %{field: field, size: size} =
         aggs

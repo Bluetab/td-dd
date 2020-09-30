@@ -7,6 +7,7 @@ defmodule TdDq.Search.Indexer do
   alias Elasticsearch.Index.Bulk
   alias Jason, as: JSON
   alias TdCache.Redix
+  alias TdDq.Rules.Implementations.Implementation
   alias TdDq.Rules.Rule
   alias TdDq.Search.Cluster
   alias TdDq.Search.Mappings
@@ -14,48 +15,81 @@ defmodule TdDq.Search.Indexer do
 
   require Logger
 
-  @index :rules
+  @rule_index :rules
+  @implementation_index :implementations
   @action "index"
 
-  def reindex(:all) do
-    {:ok, _} =
-      Mappings.get_mappings()
-      |> Map.put(:index_patterns, "#{@index}-*")
-      |> JSON.encode!()
-      |> put_template(@index)
-
-    Index.hot_swap(Cluster, @index)
+  def reindex_rules(:all) do
+    do_reindex_all(Mappings.get_rule_mappings(), @rule_index)
   end
 
-  def reindex(ids) do
+  def reindex_rules(ids) do
+    do_reindex(Rule, @rule_index, ids)
+  end
+
+  def reindex_implementations(:all) do
+    do_reindex_all(Mappings.get_implementation_mappings(), @implementation_index)
+  end
+
+  def reindex_implementations(ids) do
+    do_reindex(Implementation, @implementation_index, ids)
+  end
+
+  defp do_reindex_all(mappings, index) do
+    {:ok, _} =
+      mappings
+      |> Map.put(:index_patterns, "#{index}-*")
+      |> JSON.encode!()
+      |> put_template(index)
+
+    Index.hot_swap(Cluster, index)
+  end
+
+  defp do_reindex(schema, index, ids) do
     Store.transaction(fn ->
-      Rule
+      schema
       |> Store.stream(ids)
-      |> Stream.map(&Bulk.encode!(Cluster, &1, @index, "index"))
-      |> Stream.chunk_every(bulk_page_size(@index))
+      |> Stream.map(&Bulk.encode!(Cluster, &1, index, "index"))
+      |> Stream.chunk_every(bulk_page_size(index))
       |> Stream.map(&Enum.join(&1, ""))
-      |> Stream.map(&Elasticsearch.post(Cluster, "/#{@index}/_doc/_bulk", &1))
+      |> Stream.map(&Elasticsearch.post(Cluster, "/#{index}/_doc/_bulk", &1))
       |> Stream.map(&log(&1, @action))
       |> Stream.run()
     end)
   end
 
-  def delete(ids) do
-    Enum.map(ids, &Elasticsearch.delete_document(Cluster, &1, @index))
+  def delete_rules(ids) do
+    delete(ids, @rule_index)
+  end
+
+  def delete_implementations(ids) do
+    delete(ids, @implementation_index)
   end
 
   def migrate do
-    unless alias_exists?(@index) do
-      if can_migrate?() do
-        delete_existing_index("quality_rule")
+    if can_migrate?() do
+      migrate_rules()
+      migrate_implementations()
+    end
+  end
 
-        Timer.time(
-          fn -> reindex(:all) end,
-          fn millis, _ -> Logger.info("Created index #{@index} in #{millis}ms") end
-        )
-      else
-        Logger.warn("Another process is migrating")
-      end
+  defp migrate_rules do
+    unless alias_exists?(@rule_index) do
+      delete_existing_index("quality_rule")
+
+      Timer.time(
+        fn -> reindex_rules(:all) end,
+        fn millis, _ -> Logger.info("Created index #{@rule_index} in #{millis}ms") end
+      )
+    end
+  end
+
+  defp migrate_implementations do
+    unless alias_exists?(@implementation_index) do
+      Timer.time(
+        fn -> reindex_implementations(:all) end,
+        fn millis, _ -> Logger.info("Created index #{@implementation_index} in #{millis}ms") end
+      )
     end
   end
 
@@ -76,6 +110,10 @@ defmodule TdDq.Search.Indexer do
       {:ok, _} -> true
       {:error, _} -> false
     end
+  end
+
+  defp delete(ids, index) do
+    Enum.map(ids, &Elasticsearch.delete_document(Cluster, &1, index))
   end
 
   defp delete_existing_index(name) do

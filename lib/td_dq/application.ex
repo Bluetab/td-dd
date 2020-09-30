@@ -45,7 +45,8 @@ defmodule TdDq.Application do
       TdDq.Rules.Implementations.Loader,
       TdDq.Rules.Implementations.Migrator,
       TdDq.Cache.DomainEventConsumer,
-      {TdCache.CacheCleaner, Application.get_env(:td_dq, :cache_cleaner, [])}
+      {TdCache.CacheCleaner, Application.get_env(:td_dq, :cache_cleaner, [])},
+      TdDq.Scheduler
     ]
   end
 end

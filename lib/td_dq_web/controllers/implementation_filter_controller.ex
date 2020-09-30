@@ -1,4 +1,4 @@
-defmodule TdDqWeb.RuleFilterController do
+defmodule TdDqWeb.ImplementationFilterController do
   require Logger
   use TdDqWeb, :controller
   use PhoenixSwagger
@@ -6,16 +6,16 @@ defmodule TdDqWeb.RuleFilterController do
   alias TdDq.Rules.Search
   alias TdDqWeb.SwaggerDefinitions
 
-  action_fallback(TdDqWeb.FallbackController)
-
   plug :put_view, TdDqWeb.FilterView
+
+  action_fallback(TdDqWeb.FallbackController)
 
   def swagger_definitions do
     SwaggerDefinitions.filter_swagger_definitions()
   end
 
   swagger_path :search do
-    description("List Quality Rule Filters")
+    description("List Implementation Filters")
 
     parameters do
       search(
@@ -30,7 +30,8 @@ defmodule TdDqWeb.RuleFilterController do
 
   def search(conn, params) do
     user = conn.assigns[:current_resource]
-    filters = Search.get_filter_values(user, params)
+    params = Map.put(params, :without, ["deleted_at"])
+    filters = Search.get_filter_values(user, params, :implementations)
     render(conn, "show.json", filters: filters)
   end
 end

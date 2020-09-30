@@ -6,11 +6,9 @@ defmodule TdDq.Search do
 
   require Logger
 
-  @index "rules"
-
-  def search(query) do
+  def search(query, index) do
     Logger.debug(fn -> "Query: #{inspect(query)}" end)
-    response = Elasticsearch.post(Cluster, "/#{@index}/_search", query)
+    response = Elasticsearch.post(Cluster, "/#{index}/_search", query)
 
     case response do
       {:ok, %{"hits" => %{"hits" => results, "total" => total}, "aggregations" => aggregations}} ->
@@ -22,8 +20,8 @@ defmodule TdDq.Search do
     end
   end
 
-  def get_filters(query) do
-    response = Elasticsearch.post(Cluster, "/#{@index}/_search", query)
+  def get_filters(query, index) do
+    response = Elasticsearch.post(Cluster, "/#{index}/_search", query)
 
     case response do
       {:ok, %{"aggregations" => aggregations}} ->

@@ -62,6 +62,7 @@ defmodule TdDq.Mixfile do
       {:phoenix_swagger, "~> 0.8.2"},
       {:ex_json_schema, "~> 0.7.3"},
       {:csv, "~> 2.0.0"},
+      {:quantum, "~> 3.0"},
       {:ex_machina, "~> 2.3", only: :test},
       {:canada, "~> 2.0"},
       {:elasticsearch,

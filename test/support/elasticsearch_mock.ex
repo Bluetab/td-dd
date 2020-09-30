@@ -8,6 +8,7 @@ defmodule TdDq.ElasticsearchMock do
   alias Elasticsearch.Document
   alias HTTPoison.Response
   alias Jason, as: JSON
+  alias TdDq.Rules.Implementations.Implementation
   alias TdDq.Rules.Rule
   alias TdDq.Search.Store
 
@@ -40,6 +41,24 @@ defmodule TdDq.ElasticsearchMock do
   end
 
   @impl true
+  def request(_config, :post, "/implementations/_doc/_bulk", _data, _opts) do
+    body = %{"took" => 10, "items" => [], "errors" => false}
+    {:ok, %Response{status_code: 200, body: body}}
+  end
+
+  @impl true
+  def request(
+        _config,
+        :post,
+        "/implementations/_search",
+        %{query: %{bool: %{must: %{match_all: %{}}, filter: filter}}},
+        _opts
+      ) do
+    filters = get_filters(filter)
+    Implementation |> do_search() |> search_results(filters)
+  end
+
+  @impl true
   def request(
         _config,
         :post,
@@ -64,6 +83,11 @@ defmodule TdDq.ElasticsearchMock do
 
   @impl true
   def request(_config, :delete, "/rules/_doc/" <> _id, _data, _opts) do
+    {:ok, %Response{status_code: 200, body: JSON.encode!(%{result: "deleted"})}}
+  end
+
+  @impl true
+  def request(_config, :delete, "/implementations/_doc/" <> _id, _data, _opts) do
     {:ok, %Response{status_code: 200, body: JSON.encode!(%{result: "deleted"})}}
   end
 
@@ -95,13 +119,13 @@ defmodule TdDq.ElasticsearchMock do
     end)
   end
 
-  defp do_search do
-    list_documents()
+  defp do_search(schema \\ Rule) do
+    list_documents(schema)
   end
 
-  defp list_documents do
+  defp list_documents(schema) do
     Store.transaction(fn ->
-      Rule
+      schema
       |> Store.stream()
       |> Enum.map(&Document.encode/1)
     end)

@@ -13,15 +13,23 @@ defmodule TdDqWeb.SearchControllerTest do
   describe "index" do
     @tag :admin_authenticated
     test "search empty rules", %{conn: conn} do
-      conn = post(conn, Routes.search_path(conn, :search))
+      conn = post(conn, Routes.search_path(conn, :search_rules))
       assert json_response(conn, 200)["data"] == []
     end
 
     @tag :admin_authenticated
     test "search non empty rules", %{conn: conn} do
       insert(:rule)
-      conn = post(conn, Routes.search_path(conn, :search))
+      conn = post(conn, Routes.search_path(conn, :search_rules))
       assert length(json_response(conn, 200)["data"]) == 1
+    end
+
+    @tag :admin_authenticated
+    test "search implementations", %{conn: conn} do
+      implementation = insert(:implementation)
+      conn = post(conn, Routes.search_path(conn, :search_implementations))
+      assert [_ | _] = response = json_response(conn, 200)["data"]
+      assert Enum.any?(response, fn %{"id" => id} -> id ==  implementation.id end)
     end
 
     @tag authenticated_no_admin_user: @user_name
@@ -72,7 +80,7 @@ defmodule TdDqWeb.SearchControllerTest do
       )
 
       conn =
-        post(conn, Routes.search_path(conn, :search), %{
+        post(conn, Routes.search_path(conn, :search_rules), %{
           "filters" => %{}
         })
 
@@ -92,7 +100,7 @@ defmodule TdDqWeb.SearchControllerTest do
       )
 
       conn =
-        post(conn, Routes.search_path(conn, :search), %{
+        post(conn, Routes.search_path(conn, :search_rules), %{
           "filters" => %{}
         })
 

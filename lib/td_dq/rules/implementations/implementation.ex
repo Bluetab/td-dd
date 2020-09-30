@@ -10,6 +10,7 @@ defmodule TdDq.Rules.Implementations.Implementation do
   alias TdDq.Rules.Implementations
   alias TdDq.Rules.Implementations.ConditionRow
   alias TdDq.Rules.Implementations.DatasetRow
+  alias TdDq.Rules.Implementations.Implementation
   alias TdDq.Rules.Implementations.RawContent
   alias TdDq.Rules.Rule
 
@@ -97,5 +98,165 @@ defmodule TdDq.Rules.Implementations.Implementation do
     |> cast_embed(:population, with: &ConditionRow.changeset/2, required: false)
     |> cast_embed(:validations, with: &ConditionRow.changeset/2, required: true)
     |> validate_required([:dataset, :validations])
+  end
+
+  defimpl Elasticsearch.Document do
+    alias Search.Helpers
+    alias TdCache.SystemCache
+    alias TdDq.Rules.Rule
+    alias TdDq.Rules.RuleResults
+
+    @implementation_keys [
+      :dataset,
+      :deleted_at,
+      :id,
+      :implementation_key,
+      :implementation_type,
+      :population,
+      :rule_id,
+      :inserted_at,
+      :updated_at,
+      :validations
+    ]
+    @rule_keys [:active, :goal, :id, :minimum, :name, :version, :df_content, :result_type]
+
+    @impl Elasticsearch.Document
+    def id(%Implementation{id: id}), do: id
+
+    @impl Elasticsearch.Document
+    def routing(_), do: false
+
+    @impl Elasticsearch.Document
+    def encode(
+          %Implementation{implementation_key: implementation_key, rule: rule} = implementation
+        ) do
+      confidential = Helpers.confidential?(rule)
+      bcv = Helpers.get_business_concept_version(rule)
+      execution_result_info = get_execution_result_info(rule, implementation_key)
+      domain_ids = Helpers.get_domain_ids(rule)
+      domain_parents = Helpers.get_domain_parents(domain_ids)
+      updated_by = Helpers.get_user(rule.updated_by)
+      structure_ids = Implementations.get_structure_ids(implementation)
+      structure_aliases = get_aliases(structure_ids)
+
+      implementation
+      |> Implementations.enrich_implementation_structures()
+      |> Map.take(@implementation_keys)
+      |> transform_dataset()
+      |> transform_population()
+      |> transform_validations()
+      |> Map.put(:raw_content, get_raw_content(implementation))
+      |> Map.put(:rule, Map.take(rule, @rule_keys))
+      |> Map.put(:structure_aliases, structure_aliases)
+      |> Map.put(:updated_by, updated_by)
+      |> Map.put(:execution_result_info, execution_result_info)
+      |> Map.put(:domain_ids, domain_ids)
+      |> Map.put(:structure_ids, structure_ids)
+      |> Map.put(:domain_parents, domain_parents)
+      |> Map.put(:current_business_concept_version, bcv)
+      |> Map.put(:_confidential, confidential)
+      |> Map.put(:business_concept_id, Map.get(rule, :business_concept_id))
+    end
+
+    defp get_execution_result_info(%Rule{} = rule, implementation_key) do
+      case RuleResults.get_latest_rule_result(implementation_key) do
+        nil -> %{result_text: "quality_result.no_execution"}
+        result -> build_result_info(rule, result)
+      end
+    end
+
+    defp build_result_info(
+           %Rule{minimum: minimum, goal: goal, result_type: result_type},
+           rule_result
+         ) do
+      Map.new()
+      |> with_result(rule_result)
+      |> with_date(rule_result)
+      |> Helpers.with_result_text(minimum, goal, result_type)
+    end
+
+    defp with_result(result_map, rule_result) do
+      rule_result
+      |> Map.take([:result, :errors, :records])
+      |> Map.merge(result_map)
+    end
+
+    defp with_date(result_map, rule_result) do
+      Map.put(result_map, :date, Map.get(rule_result, :date))
+    end
+
+    defp get_raw_content(implementation) do
+      raw_content = Map.get(implementation, :raw_content) || %{}
+
+      raw_content
+      |> Map.take([:dataset, :population, :validations, :structure_alias, :system])
+      |> enrich_system()
+    end
+
+    def enrich_system(%{system: system} = content) do
+      {:ok, data} = SystemCache.get(system)
+      Map.put(content, :system, data)
+    end
+
+    def enrich_system(content), do: content
+
+    defp transform_dataset(%{dataset: dataset = [_ | _]} = data) do
+      Map.put(data, :dataset, Enum.map(dataset, &dataset_row/1))
+    end
+
+    defp transform_dataset(data), do: data
+
+    defp transform_population(%{population: population = [_ | _]} = data) do
+      Map.put(data, :population, Enum.map(population, &condition_row/1))
+    end
+
+    defp transform_population(data), do: data
+
+    defp transform_validations(%{validations: validations = [_ | _]} = data) do
+      Map.put(data, :validations, Enum.map(validations, &condition_row/1))
+    end
+
+    defp transform_validations(data), do: data
+
+    defp dataset_row(row) do
+      Map.new()
+      |> Map.put(:clauses, Enum.map(Map.get(row, :clauses, []), &get_clause/1))
+      |> Map.put(:structure, get_structure_fields(Map.get(row, :structure, %{})))
+      |> Map.put(:join_type, Map.get(row, :join_type))
+    end
+
+    defp condition_row(row) do
+      Map.new()
+      |> Map.put(:operator, get_operator_fields(Map.get(row, :operator, %{})))
+      |> Map.put(:structure, get_structure_fields(Map.get(row, :structure, %{})))
+      |> Map.put(:value, Map.get(row, :value, []))
+    end
+
+    defp get_clause(row) do
+      left = Map.get(row, :left, %{})
+      right = Map.get(row, :right, %{})
+
+      Map.new()
+      |> Map.put(:left, get_structure_fields(left))
+      |> Map.put(:right, get_structure_fields(right))
+    end
+
+    defp get_structure_fields(structure) do
+      Map.take(structure, [:external_id, :id, :name, :path, :system])
+    end
+
+    defp get_operator_fields(operator) do
+      Map.take(operator, [:name, :value_type, :value_type_filter])
+    end
+
+    defp get_aliases(structure_ids) do
+      structure_ids
+      |> Enum.map(&Implementations.read_structure_from_cache/1)
+      |> Enum.filter(&(not Enum.empty?(&1)))
+      |> Enum.map(&Map.get(&1, :metadata, %{}))
+      |> Enum.map(&Map.get(&1, "alias"))
+      |> Enum.filter(& &1)
+      |> Enum.uniq()
+    end
   end
 end
