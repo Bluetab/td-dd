@@ -300,6 +300,21 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert %{"enriched_text" => ^text, "integer" => 9} =
                DataStructures.get_data_structure_by_external_id("ex_id9").df_content
+
+      assert %{} = DataStructures.get_data_structure_by_external_id("ex_id9").df_content
+    end
+
+    test "returns error on content" do
+      user = build(:user)
+      upload = %{path: "test/fixtures/td2942/upload_invalid.csv"}
+
+      assert {:error, :updates, %{errors: [df_content: {_, [critical: {_, validation}]}]}, _} =
+               BulkUpdate.from_csv(upload, user)
+
+      assert Keyword.get(validation, :validation) == :inclusion
+      assert Keyword.get(validation, :enum) == ["Yes", "No"]
+      assert %{"text" => "foo"} =
+               DataStructures.get_data_structure_by_external_id("ex_id1").df_content
     end
   end
 
