@@ -57,7 +57,9 @@ defmodule TdDd.Application do
       TdDd.Lineage.Import,
       TdDd.Lineage.GraphData,
       TdDd.Lineage,
-      {TdCache.CacheCleaner, Application.get_env(:td_dd, :cache_cleaner, [])}
+      {TdCache.CacheCleaner, Application.get_env(:td_dd, :cache_cleaner, [])},
+      # Scheduler for periodic tasks
+      TdDd.Scheduler
     ]
   end
 end

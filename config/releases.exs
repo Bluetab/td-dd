@@ -17,3 +17,12 @@ config :td_cache,
 config :td_cache, :event_stream, consumer_id: System.fetch_env!("HOSTNAME")
 
 config :td_dd, import_dir: System.get_env("IMPORT_DIR")
+
+config :td_dd, TdDd.Scheduler,
+  jobs: [
+    [
+      schedule: System.get_env("CACHE_REFRESH_SCHEDULE", "@hourly"),
+      task: {TdDd.Cache.StructureLoader, :refresh, []},
+      run_strategy: Quantum.RunStrategy.Local
+    ]
+  ]
