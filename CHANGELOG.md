@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+### Changed
+
+- [TD-2988] Cache entries for data structures are now refreshed every hour
+
+## [4.4.0] 2020-09-22
+
+### Added
+
+- [TD-2943]:
+  - Data Structure Type: Metadata fields
+  - Endpoint to query all possible metadata fields for a given query
+
 ### Fixed
 
 - [TD-2979] Timeout issues loading metadata
@@ -22,21 +34,27 @@
 
 ### Fixed
 
-- [TD-2310] Exclude confidential structures from children and siblings
-  if user has no permission to manage confidential structures
+- [TD-2310] Exclude confidential structures from children and siblings if user
+  has no permission to manage confidential structures
 
 ## [4.2.0] 2020-08-17
 
 ### Added
 
-- [TD-2280] As a business glossary I want to create a concept with the same name as an existing concept in another domain to allow multi-organization management
+- [TD-2280] As a business glossary I want to create a concept with the same name
+  as an existing concept in another domain to allow multi-organization
+  management
+- [TD-2941] Enable scrolling on `/api/data_structures/search` endpoint:
+  - Initiate scrolling by including `scroll` parameter in request body
+  - Continue scrolling by sending a request body with `scroll_id` and `scroll`
 
 ## [4.1.0] 2020-07-20
 
 ### Added
 
 - [TD-911] Allow to limit lineage/impact levels
-- [TD-2322] Allow to search all data structures versions without 10_000 limit using ES scroll API
+- [TD-2322] Allow to search all data structures versions without 10_000 limit
+  using ES scroll API
 
 ### Fixed
 

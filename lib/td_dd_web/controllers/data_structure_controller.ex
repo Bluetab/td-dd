@@ -25,7 +25,7 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   def index(conn, _params) do
-    %{results: data_structures} = do_index(conn, %{}, 0, 10_000)
+    %{results: data_structures} = do_search(conn, %{}, 0, 10_000)
     render(conn, "index.json", data_structures: data_structures)
   end
 
@@ -158,11 +158,19 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   def search(conn, params) do
-    %{results: data_structures, aggregations: aggregations, total: total} = do_index(conn, params)
+    %{total: total} = response = do_search(conn, params)
 
     conn
     |> put_resp_header("x-total-count", "#{total}")
-    |> render("index.json", data_structures: data_structures, filters: aggregations)
+    |> render("index.json", search_assigns(response))
+  end
+
+  defp search_assigns(%{results: data_structures, scroll_id: scroll_id}) do
+    [data_structures: data_structures, scroll_id: scroll_id]
+  end
+
+  defp search_assigns(%{results: data_structures, aggregations: aggregations}) do
+    [data_structures: data_structures, filters: aggregations]
   end
 
   swagger_path :get_system_structures do
@@ -280,37 +288,33 @@ defmodule TdDdWeb.DataStructureController do
     end
   end
 
-  defp do_index(conn, search_params, page \\ 0, size \\ 50) do
+  defp do_search(conn, params, page \\ 0, size \\ 50)
+
+  defp do_search(_conn, %{"scroll" => _, "scroll_id" => _} = scroll_params, _page, _size) do
+    Search.scroll_data_structures(scroll_params)
+  end
+
+  defp do_search(conn, search_params, page, size) do
     user = conn.assigns[:current_user]
     permission = conn.assigns[:search_permission]
 
     page = Map.get(search_params, "page", page)
     size = Map.get(search_params, "size", size)
 
-    search_all =
-      search_params
-      |> Map.get("filters", %{})
-      |> Map.get("all")
-
-    scroll =
-      case search_all do
-        true -> "1m"
-        _ -> nil
-      end
-
     search_params
     |> deleted_structures()
     |> Map.drop(["page", "size"])
-    |> Search.search_data_structures(user, permission, page, size, scroll)
+    |> Search.search_data_structures(user, permission, page, size)
   end
 
-  defp deleted_structures(%{"filters" => %{"all" => true}} = search_params) do
-    filters = Map.delete(Map.get(search_params, "filters", %{}), "all")
+  defp deleted_structures(%{"filters" => %{"all" => true} = filters} = search_params) do
+    filters = Map.delete(filters, "all")
     Map.put(search_params, "filters", filters)
   end
 
   defp deleted_structures(search_params) do
     filters = Map.delete(Map.get(search_params, "filters", %{}), "all")
+
     search_params
     |> Map.put("filters", filters)
     |> Map.put(:without, ["deleted_at"])

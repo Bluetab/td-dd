@@ -6,9 +6,13 @@ defmodule TdDdWeb.SearchController do
 
   alias Jason, as: JSON
 
+  alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.Search
   alias TdDd.Search.Aggregations
+  alias TdDd.Utils.CollectionUtils
+
+  action_fallback(TdDdWeb.FallbackController)
 
   @index_worker Application.get_env(:td_dd, :index_worker)
 
@@ -34,11 +38,14 @@ defmodule TdDdWeb.SearchController do
     user = conn.assigns[:current_user]
     permission = conn.assigns[:search_permission]
     params = Map.put(%{}, :without, ["deleted_at"])
+
     agg_terms =
       Aggregations.get_agg_terms([
-        %{"agg_name" => "source_aliases", "field_name" => "source_alias.raw"}])
+        %{"agg_name" => "source_aliases", "field_name" => "source_alias.raw"}
+      ])
+
     agg_results = Search.get_aggregations_values(user, permission, params, agg_terms)
-    source_aliases = Enum.map(agg_results, &(Map.get(&1, "key")))
+    source_aliases = Enum.map(agg_results, &Map.get(&1, "key"))
     body = JSON.encode!(%{data: source_aliases})
     send_resp(conn, :ok, body)
   end
@@ -47,12 +54,31 @@ defmodule TdDdWeb.SearchController do
     user = conn.assigns[:current_user]
     permission = conn.assigns[:search_permission]
     params = Map.put(%{}, :without, ["deleted_at"])
+
     agg_terms =
       Aggregations.get_agg_terms([
-        %{"agg_name" => "metadata_type", "field_name" => "type.raw"}])
+        %{"agg_name" => "metadata_type", "field_name" => "type.raw"}
+      ])
+
     agg_results = Search.get_aggregations_values(user, permission, params, agg_terms)
-    metadata_types = Enum.map(agg_results, &(Map.get(&1, "key")))
+    metadata_types = Enum.map(agg_results, &Map.get(&1, "key"))
     body = JSON.encode!(%{data: metadata_types})
     send_resp(conn, :ok, body)
+  end
+
+  def search_structures_metadata_fields(conn, params) do
+    user = conn.assigns[:current_user]
+
+    with {:can, true} <- {:can, user.is_admin} do
+      metadata_fields =
+        params
+        |> Map.get("filters", %{})
+        |> CollectionUtils.atomize_keys()
+        |> DataStructures.get_structures_metadata_fields()
+
+      conn
+      |> put_resp_content_type("application/json", "utf-8")
+      |> send_resp(:ok, JSON.encode!(%{data: metadata_fields}))
+    end
   end
 end
