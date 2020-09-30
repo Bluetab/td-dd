@@ -26,9 +26,9 @@ defmodule TdDd.DataStructures.BulkUpdate do
 
   def from_csv(nil, _user), do: {:error, %{message: :no_csv_uploaded}}
 
-  def from_csv(structures_content_upload, user) do
+  def from_csv(upload, user) do
     rows =
-      structures_content_upload
+      upload
       |> Map.get(:path)
       |> Path.expand()
       |> File.stream!()
@@ -73,39 +73,28 @@ defmodule TdDd.DataStructures.BulkUpdate do
       |> DataStructures.template_name()
       |> Templates.content_schema()
 
-    template_fields =
-      content_schema
-      |> Enum.map(& &1["name"])
-
-    content =
-      row
-      |> Map.take(template_fields)
-
+    template_fields = Enum.map(content_schema, & &1["name"])
+    content = Map.take(row, template_fields)
     content = format_content(%{content: content, content_schema: content_schema})
-
-    # |> Map.new(fn {k, v} -> {String.to_atom(k), v} end)
 
     {%{df_content: content}, %{data_structure: data_structure, row_index: row_index}}
   end
 
-  defp format_content(%{content: content, content_schema: content_schema} = params)
+  defp format_content(%{content: content, content_schema: content_schema})
        when not is_nil(content) do
-    content =
-      content_schema
-      |> Enum.filter(fn %{"type" => schema_type, "cardinality" => cardinality} ->
-        schema_type in ["url", "enriched_text"] or
-          (schema_type in ["string", "user"] and cardinality in ["*", "+"])
-      end)
-      |> Enum.filter(fn %{"name" => name} ->
-        field_content = Map.get(content, name)
-        not is_nil(field_content) and is_binary(field_content) and field_content != ""
-      end)
-      |> Enum.into(
-        content,
-        &format_field(&1, content)
-      )
-
-    Map.put(params, :content, content)
+    content_schema
+    |> Enum.filter(fn %{"type" => schema_type, "cardinality" => cardinality} ->
+      schema_type in ["url", "enriched_text", "integer", "float"] or
+        (schema_type in ["string", "user"] and cardinality in ["*", "+"])
+    end)
+    |> Enum.filter(fn %{"name" => name} ->
+      field_content = Map.get(content, name)
+      not is_nil(field_content) and is_binary(field_content) and field_content != ""
+    end)
+    |> Enum.into(
+      content,
+      &format_field(&1, content)
+    )
   end
 
   defp format_content(params), do: params
