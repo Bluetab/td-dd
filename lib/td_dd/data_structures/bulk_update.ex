@@ -11,8 +11,8 @@ defmodule TdDd.DataStructures.BulkUpdate do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Repo
   alias TdDd.Search.IndexWorker
-  alias TdDfLib.Templates
   alias TdDfLib.Format
+  alias TdDfLib.Templates
 
   def update_all(ids, %{"df_content" => content}, %{id: user_id} = user) do
     params = %{"df_content" => content, "last_change_by" => user_id}
@@ -77,17 +77,19 @@ defmodule TdDd.DataStructures.BulkUpdate do
       content_schema
       |> Enum.map(& &1["name"])
 
-
-    content = row
-    |> Map.take(template_fields)
+    content =
+      row
+      |> Map.take(template_fields)
 
     content = format_content(%{content: content, content_schema: content_schema})
-    #|> Map.new(fn {k, v} -> {String.to_atom(k), v} end)
+
+    # |> Map.new(fn {k, v} -> {String.to_atom(k), v} end)
 
     {%{df_content: content}, %{data_structure: data_structure, row_index: row_index}}
   end
 
-  defp format_content(%{content: content, content_schema: content_schema} = params) when not is_nil(content) do
+  defp format_content(%{content: content, content_schema: content_schema} = params)
+       when not is_nil(content) do
     content =
       content_schema
       |> Enum.filter(fn %{"type" => schema_type, "cardinality" => cardinality} ->
