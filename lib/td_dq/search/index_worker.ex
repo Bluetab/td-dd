@@ -8,6 +8,7 @@ defmodule TdDq.Search.IndexWorker do
   use GenServer
 
   alias TdDq.Rules
+  alias TdDq.Rules.Implementations
   alias TdDq.Search.Indexer
 
   require Logger
@@ -18,24 +19,52 @@ defmodule TdDq.Search.IndexWorker do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
 
+  def reindex do
+    GenServer.cast(__MODULE__, :reindex)
+  end
+
   def reindex(:all) do
     GenServer.cast(__MODULE__, {:reindex, :all})
   end
 
-  def reindex(ids) when is_list(ids) do
-    GenServer.call(__MODULE__, {:reindex, ids})
+  def reindex_implementations(:all) do
+    GenServer.cast(__MODULE__, {:reindex_implementations, :all})
   end
 
-  def reindex(id) do
-    reindex([id])
+  def reindex_implementations(ids) when is_list(ids) do
+    GenServer.call(__MODULE__, {:reindex_implementations, ids})
   end
 
-  def delete(ids) when is_list(ids) do
-    GenServer.call(__MODULE__, {:delete, ids})
+  def reindex_implementations(id) do
+    reindex_implementations([id])
   end
 
-  def delete(id) do
-    delete([id])
+  def reindex_rules(:all) do
+    GenServer.cast(__MODULE__, {:reindex_rules, :all})
+  end
+
+  def reindex_rules(ids) when is_list(ids) do
+    GenServer.call(__MODULE__, {:reindex_rules, ids})
+  end
+
+  def reindex_rules(id) do
+    reindex_rules([id])
+  end
+
+  def delete_rules(ids) when is_list(ids) do
+    GenServer.call(__MODULE__, {:delete_rules, ids})
+  end
+
+  def delete_rules(id) do
+    delete_rules([id])
+  end
+
+  def delete_implementations(ids) when is_list(ids) do
+    GenServer.call(__MODULE__, {:delete_implementations, ids})
+  end
+
+  def delete_implementations(id) do
+    delete_implementations([id])
   end
 
   def ping(timeout \\ 5000) do
@@ -70,25 +99,62 @@ defmodule TdDq.Search.IndexWorker do
   end
 
   @impl GenServer
+  def handle_cast(:reindex, state) do
+    do_reindex_implementations(:all)
+
+    {:noreply, state}
+  end
+
+  @impl GenServer
   def handle_cast({:reindex, :all}, state) do
     do_reindex(:all)
     {:noreply, state}
   end
 
   @impl GenServer
+  def handle_cast({:reindex_rules, :all}, state) do
+    do_reindex_rules(:all)
+    {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_cast({:reindex_implementations, :all}, state) do
+    do_reindex_implementations(:all)
+    {:noreply, state}
+  end
+
+  @impl GenServer
   def handle_cast({:consume, events}, state) do
-    ids =
+    rule_ids =
       events
       |> Enum.flat_map(&read_rule_ids/1)
       |> Enum.uniq()
 
-    if Enum.member?(ids, :all) do
+    implementation_ids =
+      rule_ids
+      |> Implementations.get_rule_implementations()
+      |> Enum.map(&Map.get(&1, :id))
+
+    if Enum.member?(rule_ids, :all) do
       do_reindex(:all)
     else
-      do_reindex(ids)
+      do_reindex_rules(rule_ids)
+      do_reindex_implementations(implementation_ids)
     end
 
     {:noreply, state}
+  end
+
+  @impl GenServer
+  def handle_call({:reindex_rules, ids}, _from, state) do
+    reply = do_reindex_rules(ids)
+    {:reply, reply, state}
+  end
+
+  @impl GenServer
+  def handle_call({:reindex_implementations, ids}, _from, state) do
+    reply = do_reindex_implementations(ids)
+    {:reply, reply, state}
   end
 
   @impl GenServer
@@ -97,30 +163,48 @@ defmodule TdDq.Search.IndexWorker do
   end
 
   @impl GenServer
-  def handle_call({:reindex, ids}, _from, state) do
-    reply = do_reindex(ids)
-    {:reply, reply, state}
-  end
-
-  @impl GenServer
-  def handle_call({:delete, ids}, _from, state) do
+  def handle_call({:delete_rules, ids}, _from, state) do
     reply =
       Timer.time(
-        fn -> Indexer.delete(ids) end,
+        fn -> Indexer.delete_rules(ids) end,
         fn millis, _ -> Logger.info("Rules deleted in #{millis}ms") end
       )
 
     {:reply, reply, state}
   end
 
+  @impl GenServer
+  def handle_call({:delete_implementations, ids}, _from, state) do
+    reply =
+      Timer.time(
+        fn -> Indexer.delete_implementations(ids) end,
+        fn millis, _ -> Logger.info("Implementations deleted in #{millis}ms") end
+      )
+
+    {:reply, reply, state}
+  end
+
   ## Private functions
+  defp do_reindex(:all) do
+    do_reindex_rules(:all)
+    do_reindex_implementations(:all)
+  end
 
-  defp do_reindex([]), do: :ok
+  defp do_reindex_rules([]), do: :ok
 
-  defp do_reindex(ids) do
+  defp do_reindex_rules(ids) do
     Timer.time(
-      fn -> Indexer.reindex(ids) end,
+      fn -> Indexer.reindex_rules(ids) end,
       fn millis, _ -> Logger.info("Rules indexed in #{millis}ms") end
+    )
+  end
+
+  defp do_reindex_implementations([]), do: :ok
+
+  defp do_reindex_implementations(ids) do
+    Timer.time(
+      fn -> Indexer.reindex_implementations(ids) end,
+      fn millis, _ -> Logger.info("Implementations indexed in #{millis}ms") end
     )
   end
 

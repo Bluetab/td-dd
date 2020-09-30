@@ -8,7 +8,7 @@ defmodule TdDq.Search.Mappings do
   @raw %{raw: %{type: "keyword"}}
   @raw_sort %{raw: %{type: "keyword"}, sort: %{type: "keyword", normalizer: "sortable"}}
 
-  def get_mappings do
+  def get_rule_mappings do
     content_mappings = %{properties: get_dynamic_mappings("dq")}
 
     mapping_type = %{
@@ -78,6 +78,100 @@ defmodule TdDq.Search.Mappings do
     %{mappings: %{_doc: %{properties: mapping_type}}, settings: settings}
   end
 
+  def get_implementation_mappings do
+    mapping_type = %{
+      id: %{type: "long"},
+      business_concept_id: %{type: "text"},
+      rule_id: %{type: "long"},
+      domain_ids: %{type: "long", null_value: -1},
+      domain_parents: %{
+        type: "nested",
+        properties: %{
+          id: %{type: "long", index: false},
+          name: %{type: "text", fields: @raw}
+        }
+      },
+      structure_ids: %{type: "long", null_value: -1},
+      structure_aliases: %{type: "text", fields: @raw},
+      rule: %{
+        properties: %{
+          version: %{type: "long"},
+          name: %{type: "text", fields: @raw_sort},
+          active: %{type: "boolean", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
+          goal: %{type: "long"},
+          minimum: %{type: "long"},
+          df_content: %{properties: get_dynamic_mappings("dq")},
+          result_type: %{type: "text"}
+        }
+      },
+      updated_by: %{
+        properties: %{
+          id: %{type: "long", index: false},
+          user_name: %{type: "text", fields: @raw},
+          full_name: %{type: "text", fields: @raw}
+        }
+      },
+      current_business_concept_version: %{
+        properties: %{
+          id: %{type: "long", index: false},
+          name: %{type: "text", fields: @raw_sort},
+          content: %{
+            properties: get_dynamic_mappings("bg", "user")
+          }
+        }
+      },
+      updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
+      inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
+      implementation_key: %{type: "text", fields: @raw},
+      implementation_type: %{type: "text", fields: @raw_sort},
+      execution_result_info: %{
+        properties: %{
+          result: %{type: "float"},
+          errors: %{type: "long"},
+          records: %{type: "long"},
+          date: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
+          result_text: %{type: "text", fields: @raw}
+        }
+      },
+      _confidential: %{type: "boolean"},
+      raw_content: %{
+        properties: %{
+          dataset: %{type: "text", fields: @raw},
+          population: %{type: "text", fields: @raw},
+          validations: %{type: "text", fields: @raw},
+          structure_alias: %{type: "text", fields: @raw},
+          system: %{properties: get_system_mappings()}
+        }
+      },
+      dataset: %{
+        type: "nested",
+        properties: %{
+          clauses: %{
+            type: "nested",
+            properties: %{
+              left: %{properties: get_structure_mappings()},
+              right: %{properties: get_structure_mappings()}
+            }
+          },
+          join_type: %{type: "text", fields: @raw},
+          structure: %{properties: get_structure_mappings()}
+        }
+      },
+      population: get_condition_mappings(),
+      validations: get_condition_mappings()
+    }
+
+    settings = %{
+      analysis: %{
+        normalizer: %{
+          sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}
+        }
+      }
+    }
+
+    %{mappings: %{_doc: %{properties: mapping_type}}, settings: settings}
+  end
+
   def get_dynamic_mappings(scope, type \\ nil) do
     scope
     |> TemplateCache.list_by_scope!()
@@ -127,4 +221,44 @@ defmodule TdDq.Search.Mappings do
   end
 
   defp mapping_type(_default), do: %{type: "text"}
+
+  defp get_system_mappings do
+    %{
+      id: %{type: "long", index: false},
+      external_id: %{type: "text", fields: @raw},
+      name: %{type: "text", fields: @raw_sort}
+    }
+  end
+
+  defp get_structure_mappings do
+    %{
+      external_id: %{type: "text", fields: @raw},
+      id: %{type: "long", index: false},
+      name: %{type: "text", fields: @raw},
+      system: %{properties: get_system_mappings()},
+      type: %{type: "text", fields: @raw}
+    }
+  end
+
+  defp get_condition_mappings do
+    %{
+      type: "nested",
+      properties: %{
+        operator: %{
+          properties: %{
+            name: %{type: "text", fields: @raw},
+            value_type: %{type: "text", fields: @raw},
+            value_type_filter: %{type: "text", fields: @raw}
+          }
+        },
+        structure: %{
+          properties: get_structure_mappings()
+        },
+        value: %{
+          type: "object",
+          enabled: false
+        }
+      }
+    }
+  end
 end

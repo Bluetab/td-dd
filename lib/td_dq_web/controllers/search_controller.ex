@@ -9,22 +9,35 @@ defmodule TdDqWeb.SearchController do
   alias TdDq.Rules.Search
   alias TdDq.Search.IndexWorker
 
-  plug :put_view, TdDqWeb.RuleView
+  plug :put_view, TdDqWeb.SearchView
 
-  swagger_path :reindex_all do
-    description("Reindex all ES indexes with DB content")
+  swagger_path :reindex_all_rules do
+    description("Reindex rule index with DB content")
     produces("application/json")
 
     response(202, "Accepted")
     response(500, "Client Error")
   end
 
-  def reindex_all(conn, _params) do
-    IndexWorker.reindex(:all)
+  def reindex_all_rules(conn, _params) do
+    IndexWorker.reindex_rules(:all)
     send_resp(conn, :accepted, "")
   end
 
-  swagger_path :search do
+  swagger_path :reindex_all_implementations do
+    description("Reindex implementation index with DB content")
+    produces("application/json")
+
+    response(202, "Accepted")
+    response(500, "Client Error")
+  end
+
+  def reindex_all_implementations(conn, _params) do
+    IndexWorker.reindex_implementations(:all)
+    send_resp(conn, :accepted, "")
+  end
+
+  swagger_path :search_rules do
     description("Search for rules")
     produces("application/json")
 
@@ -32,7 +45,7 @@ defmodule TdDqWeb.SearchController do
     response(500, "Client Error")
   end
 
-  def search(conn, params) do
+  def search_rules(conn, params) do
     page = params |> Map.get("page", 0)
     size = params |> Map.get("size", 20)
     user = conn.assigns[:current_resource]
@@ -52,6 +65,37 @@ defmodule TdDqWeb.SearchController do
       rules: rules,
       filters: aggregations,
       user_permissions: get_user_permissions(user, rules)
+    )
+  end
+
+  swagger_path :search_implementations do
+    description("Search for implementations")
+    produces("application/json")
+
+    response(200, "Accepted")
+    response(500, "Client Error")
+  end
+
+  def search_implementations(conn, params) do
+    page = params |> Map.get("page", 0)
+    size = params |> Map.get("size", 20)
+    user = conn.assigns[:current_resource]
+
+    %{
+      results: implementations,
+      aggregations: aggregations,
+      total: total
+    } =
+      params
+      |> Map.put(:without, ["deleted_at"])
+      |> Map.drop(["page", "size"])
+      |> Search.search(user, page, size, :implementations)
+
+    conn
+    |> put_resp_header("x-total-count", "#{total}")
+    |> render("search.json",
+      implementations: implementations,
+      filters: aggregations
     )
   end
 

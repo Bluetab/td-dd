@@ -7,6 +7,7 @@ defmodule TdDq.Cache.RuleLoader do
 
   alias TdCache.RuleCache
   alias TdDq.Rules
+  alias TdDq.Rules.Implementations
   alias TdDq.Search.IndexWorker
 
   require Logger
@@ -106,7 +107,13 @@ defmodule TdDq.Cache.RuleLoader do
   @impl true
   def handle_call({:refresh, ids}, _from, state) do
     reply = cache_rules(ids)
-    IndexWorker.reindex(ids)
+    IndexWorker.reindex_rules(ids)
+
+    ids
+    |> Implementations.get_rule_implementations()
+    |> Enum.map(&Map.get(&1, :id))
+    |> IndexWorker.reindex_implementations()
+
     {:reply, reply, state}
   end
 
@@ -118,7 +125,12 @@ defmodule TdDq.Cache.RuleLoader do
       |> Enum.reject(&(&1 == {:ok, [0, 0]}))
       |> Enum.count()
 
-    IndexWorker.delete(ids)
+    IndexWorker.delete_rules(ids)
+
+    ids
+    |> Implementations.get_rule_implementations()
+    |> Enum.map(&Map.get(&1, :id))
+    |> IndexWorker.delete_implementations()
 
     {:reply, delete_count, state}
   end

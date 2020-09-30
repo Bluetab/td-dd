@@ -7,8 +7,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
   alias TdDq.Cache.RuleLoader
   alias TdDq.Search.IndexWorker
 
-  @invalid_rule_id -1
-
   @valid_dataset [
     %{structure: %{id: 14_080}},
     %{clauses: [%{left: %{id: 14_863}, right: %{id: 4028}}], structure: %{id: 3233}}
@@ -466,17 +464,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> json_response(:ok)
 
       assert %{"rule_id" => ^rule_id} = data
-
-      assert %{"data" => []} =
-               conn
-               |> post(
-                 Routes.rule_implementation_path(
-                   conn,
-                   :search_rule_implementations,
-                   @invalid_rule_id
-                 )
-               )
-               |> json_response(:ok)
     end
 
     @tag :admin_authenticated
@@ -500,55 +487,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert Map.get(implementation, :system_params) == json_response["system_params"]
       assert Map.get(implementation, :system) == json_response["system"]
     end
-  end
-
-  describe "search_rules_implementations" do
-    @tag :admin_authenticated
-    test "lists implementations according structure_id", %{
-      conn: conn,
-      swagger_schema: schema
-    } do
-      %{id: id, dataset: [%{structure: %{id: structure_id}} | _]} = insert(:implementation)
-
-      params = %{"structure_id" => structure_id}
-
-      assert %{"data" => [implementation]} =
-               conn
-               |> post(Routes.implementation_path(conn, :search_rules_implementations, params))
-               |> validate_resp_schema(schema, "ImplementationsResponse")
-               |> json_response(:ok)
-
-      assert %{"id" => ^id} = implementation
-    end
-  end
-
-  @tag :admin_authenticated
-  test "lists all implementations according filter", %{
-    conn: conn,
-    swagger_schema: schema,
-    structure: structure
-  } do
-    %{id: structure_id} = structure
-    dataset_row = build(:dataset_row, structure: build(:dataset_structure, id: structure_id))
-
-    %{id: id} = insert(:implementation, rule: build(:rule, active: false), dataset: [dataset_row])
-
-    filters = %{
-      "rule" => %{"active" => false},
-      "structure" => %{"metadata" => %{"alias" => "source_alias"}}
-    }
-
-    assert %{"data" => [implementation]} =
-             conn
-             |> post(
-               Routes.implementation_path(conn, :search_rules_implementations, %{
-                 "filters" => filters
-               })
-             )
-             |> validate_resp_schema(schema, "ImplementationsResponse")
-             |> json_response(:ok)
-
-    assert %{"id" => ^id} = implementation
   end
 
   defp equals_condition_row(population_response, population_update) do

@@ -5,7 +5,7 @@ defmodule TdDq.Search.Aggregations do
   alias TdCache.TemplateCache
   alias TdDfLib.Format
 
-  def aggregation_terms do
+  def rule_aggregation_terms do
     static_keywords = [
       {"active.raw", %{terms: %{field: "active.raw"}}},
       {"domain_parents",
@@ -18,6 +18,26 @@ defmodule TdDq.Search.Aggregations do
       {"execution_result_info.result_text",
        %{terms: %{field: "execution_result_info.result_text.raw", size: 50}}},
       {"execution.raw", %{terms: %{field: "execution.raw"}}}
+    ]
+
+    ["dq", "bg"]
+    |> Enum.flat_map(&template_terms/1)
+    |> Enum.concat(static_keywords)
+    |> Enum.into(%{})
+  end
+
+  def implementation_aggregation_terms do
+    static_keywords = [
+      {"domain_parents",
+       %{
+         nested: %{path: "domain_parents"},
+         aggs: %{distinct_search: %{terms: %{field: "domain_parents.name.raw", size: 50}}}
+       }},
+      {"current_business_concept_version",
+       %{terms: %{field: "current_business_concept_version.name.raw", size: 50}}},
+      {"execution_result_info.result_text",
+       %{terms: %{field: "execution_result_info.result_text.raw", size: 50}}},
+      {"rule", %{terms: %{field: "rule.name.raw", size: 50}}}
     ]
 
     ["dq", "bg"]

@@ -12,6 +12,7 @@ defmodule TdDqWeb.ImplementationController do
   alias TdDq.Rules.Implementations
   alias TdDq.Rules.Implementations.Implementation
   alias TdDq.Rules.RuleResults
+  alias TdDq.Rules.Search
   alias TdDqWeb.ChangesetView
   alias TdDqWeb.ErrorView
   alias TdDqWeb.SwaggerDefinitions
@@ -286,64 +287,16 @@ defmodule TdDqWeb.ImplementationController do
     rule_id = String.to_integer(id)
 
     with {:can, true} <- {:can, can?(user, index(Implementation))} do
-      opts = deleted_implementations(params)
 
-      implementations =
-        %{"rule_id" => rule_id}
-        |> Implementations.list_implementations(opts)
-        |> Enum.map(&Repo.preload(&1, [:rule]))
-        |> Enum.map(&add_last_rule_result/1)
-        |> Enum.map(&Implementations.enrich_implementation_structures/1)
-        |> Enum.map(&Implementations.enrich_system/1)
-
-      render(conn, "index.json", implementations: implementations)
-    end
-  end
-
-  swagger_path :search_rules_implementations do
-    description("Searh rule implementations")
-
-    parameters do
-      search(
-        :body,
-        Schema.ref(:ImplementationsSearchFilters),
-        "Filter by Rule, Rule Implementation or structure properties"
-      )
-    end
-
-    produces("application/json")
-
-    response(200, "OK", Schema.ref(:ImplementationsResponse))
-  end
-
-  # Endpoint used by DD to search structure implementations
-  def search_rules_implementations(conn, %{"structure_id" => structure_id}) do
-    user = conn.assigns[:current_resource]
-
-    with {:can, true} <- {:can, can?(user, index(Implementation))} do
-      implementations =
-        %{"structure_id" => String.to_integer(structure_id)}
-        |> Implementations.list_implementations()
-        |> Enum.map(&Repo.preload(&1, [:rule]))
-        |> Enum.map(&add_last_rule_result(&1))
-
-      render(conn, "index.json", implementations: implementations)
-    end
-  end
-
-  # Endpoint for dq engine
-  def search_rules_implementations(conn, filters) do
-    filters = Map.get(filters, "filters", %{})
-    user = conn.assigns[:current_resource]
-    opts = deleted_implementations(filters)
-    opts = Keyword.put(opts, :enrich_structures, true)
-
-    with {:can, true} <- {:can, can?(user, index(Implementation))} do
-      implementations =
-        filters
-        |> Implementations.list_implementations(opts)
-        |> Enum.map(&Repo.preload(&1, [:rule]))
-        |> Enum.map(&add_last_rule_result(&1))
+      %{
+        results: implementations
+      } =
+        params
+        |> Map.put("filters", %{rule_id: rule_id})
+        |> deleted_implementations()
+        |> Map.delete("status")
+        |> Map.drop(["page", "size"])
+        |> Search.search(user, 0, 1000, :implementations)
 
       render(conn, "index.json", implementations: implementations)
     end
@@ -365,9 +318,9 @@ defmodule TdDqWeb.ImplementationController do
     )
   end
 
-  defp deleted_implementations(%{"status" => "deleted"}), do: [deleted: true]
+  defp deleted_implementations(%{"status" => "deleted"} = params), do: Map.put(params, :with, ["deleted_at"])
 
-  defp deleted_implementations(_), do: []
+  defp deleted_implementations(params), do: Map.put(params, :without, ["deleted_at"])
 
   defp with_soft_delete(%{"soft_delete" => true} = params) do
     params

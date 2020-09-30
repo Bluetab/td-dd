@@ -16,18 +16,6 @@ defmodule TdDqWeb.RuleView do
     }
   end
 
-  def render("search.json", %{
-        rules: rules,
-        filters: filters,
-        user_permissions: user_permissions
-      }) do
-    %{
-      user_permissions: user_permissions,
-      filters: filters,
-      data: render_many(rules, RuleView, "rule.json")
-    }
-  end
-
   def render("show.json", %{
         hypermedia: hypermedia,
         rule: rule,

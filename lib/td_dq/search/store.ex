@@ -8,21 +8,43 @@ defmodule TdDq.Search.Store do
   import Ecto.Query
 
   alias TdDq.Repo
+  alias TdDq.Rules.Implementations.Implementation
+  alias TdDq.Rules.Rule
 
   @impl true
-  def stream(schema) do
+  def stream(Rule = schema) do
     schema
     |> where([r], is_nil(r.deleted_at))
     |> select([r], r)
     |> Repo.stream()
   end
 
-  def stream(schema, ids) do
+  @impl true
+  def stream(Implementation = schema) do
+    schema
+    |> join(:inner, [ri, r], r in Rule, on: ri.rule_id == r.id)
+    |> where([_ri, r], is_nil(r.deleted_at))
+    |> select([ri, _r], ri)
+    |> Repo.stream()
+    |> Repo.stream_preload(1000, :rule)
+  end
+
+  def stream(Rule = schema, ids) do
     schema
     |> where([r], is_nil(r.deleted_at))
     |> where([r], r.id in ^ids)
     |> select([r], r)
     |> Repo.stream()
+  end
+
+  def stream(Implementation = schema, ids) do
+    schema
+    |> join(:inner, [ri, r], r in Rule, on: ri.rule_id == r.id)
+    |> where([_ri, r], is_nil(r.deleted_at))
+    |> where([ri, _r], ri.id in ^ids)
+    |> select([ri, _r], ri)
+    |> Repo.stream()
+    |> Repo.stream_preload(1000, :rule)
   end
 
   @impl true

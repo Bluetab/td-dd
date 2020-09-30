@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-2530] Implementation index on elastic search
+
 ## [4.0.1] 2020-07-03
 
 ### Fixed

@@ -1,4 +1,4 @@
-defmodule TdDqWeb.RuleFilterView do
+defmodule TdDqWeb.FilterView do
   use TdDqWeb, :view
 
   def render("show.json", %{filters: filters}) do

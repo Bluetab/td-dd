@@ -16,3 +16,12 @@ config :td_cache,
   port: System.get_env("REDIS_PORT", "6379") |> String.to_integer()
 
 config :td_cache, :event_stream, consumer_id: System.fetch_env!("HOSTNAME")
+
+config :td_dq, TdDq.Scheduler,
+  jobs: [
+    [
+      schedule: System.get_env("ELASTIC_REFRESH_SCHEDULE", "@hourly"),
+      task: {TdDq.Search.IndexWorker, :reindex, []},
+      run_strategy: Quantum.RunStrategy.Local
+    ]
+  ]
