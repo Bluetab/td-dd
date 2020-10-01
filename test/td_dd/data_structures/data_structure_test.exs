@@ -141,7 +141,7 @@ defmodule TdDd.DataStructures.DataStructureTest do
                DataStructure.merge_changeset(structure, %{df_content: %{"foo" => "bar"}})
 
       assert length(errors) == 1
-      assert {"invalid template", [reason: :template_not_found]} = errors[:df_content]
+      assert {"invalid_template", [reason: :template_not_found]} = errors[:df_content]
     end
 
     test "validates invalid content when template exists", %{structure: structure} do
@@ -149,7 +149,7 @@ defmodule TdDd.DataStructures.DataStructureTest do
                DataStructure.merge_changeset(structure, %{df_content: @invalid_content})
 
       assert length(errors) == 1
-      assert {"invalid content", details} = errors[:df_content]
+      assert {"invalid_content", details} = errors[:df_content]
       assert {"can't be blank", [validation: :required]} = details[:string]
       assert {"is invalid", [validation: :inclusion, enum: _]} = details[:list]
     end

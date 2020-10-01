@@ -35,13 +35,23 @@ defmodule TdDd.DataStructures.BulkUpdate do
       |> CSV.decode!(separator: ?;, headers: true)
       |> Enum.to_list()
 
-    external_ids = Enum.map(rows, &Map.get(&1, "external_id"))
-    data_structures = DataStructures.list_data_structures(%{external_id: external_ids})
-
     rows
     |> Enum.with_index()
-    |> Enum.map(&prepare_content(&1, data_structures))
-    |> do_csv_bulk_update(user.id)
+    |> Enum.map(fn {row, index} -> {row, index + 2} end)
+    |> Enum.map(fn {%{"external_id" => external_id} = row, index} ->
+      {row, DataStructures.get_data_structure_by_external_id(external_id), index}
+    end)
+    |> Enum.filter(fn {_row, data_structure, _index} -> data_structure end)
+    |> Enum.reduce_while([], fn {row, data_structure, index}, acc ->
+      case format_content(row, data_structure, index) do
+        {:error, error} -> {:halt, {:error, error}}
+        content -> {:cont, acc ++ [content]}
+      end
+    end)
+    |> case do
+      [_ | _] = contents -> do_csv_bulk_update(contents, user.id)
+      errors -> errors
+    end
   end
 
   defp do_csv_bulk_update(rows, user_id) do
@@ -54,10 +64,10 @@ defmodule TdDd.DataStructures.BulkUpdate do
 
   defp csv_bulk_update(_repo, _changes_so_far, rows) do
     rows
-    |> Enum.map(fn {content, %{data_structure: data_structure}} ->
-      DataStructure.merge_changeset(data_structure, content)
+    |> Enum.map(fn {content, %{data_structure: data_structure, row_index: row_index}} ->
+      {DataStructure.merge_changeset(data_structure, content), row_index}
     end)
-    |> Enum.reject(&(&1.changes == %{}))
+    |> Enum.reject(fn {changeset, _row_index} -> changeset.changes == %{} end)
     |> Enum.reduce_while(%{}, &reduce_changesets/2)
     |> case do
       %{} = res -> {:ok, res}
@@ -65,23 +75,25 @@ defmodule TdDd.DataStructures.BulkUpdate do
     end
   end
 
-  defp prepare_content({%{"external_id" => external_id} = row, row_index}, data_structures) do
-    data_structure = Enum.find(data_structures, &(Map.get(&1, :external_id) == external_id))
+  defp format_content(row, data_structure, row_index) do
+    data_structure
+    |> DataStructures.template_name()
+    |> Templates.content_schema()
+    |> case do
+      {:error, error} ->
+        {:error, error}
 
-    content_schema =
-      data_structure
-      |> DataStructures.template_name()
-      |> Templates.content_schema()
+      content_schema ->
+        template_fields =
+          content_schema
+          |> Enum.filter(&(Map.get(&1, "type") != "table"))
+          |> Enum.map(&Map.get(&1, "name"))
 
-    template_fields =
-      content_schema
-      |> Enum.filter(&(Map.get(&1, "type") != "table"))
-      |> Enum.map(&Map.get(&1, "name"))
+        content = Map.take(row, template_fields)
+        content = format_content(%{content: content, content_schema: content_schema})
 
-    content = Map.take(row, template_fields)
-    content = format_content(%{content: content, content_schema: content_schema})
-
-    {%{df_content: content}, %{data_structure: data_structure, row_index: row_index}}
+        {%{df_content: content}, %{data_structure: data_structure, row_index: row_index}}
+    end
   end
 
   defp format_content(%{content: content, content_schema: content_schema})
@@ -131,6 +143,16 @@ defmodule TdDd.DataStructures.BulkUpdate do
     |> case do
       %{} = res -> {:ok, res}
       error -> error
+    end
+  end
+
+  defp reduce_changesets({%{} = changeset, row_index}, %{} = acc) do
+    case Repo.update(changeset) do
+      {:ok, %{id: id}} ->
+        {:cont, Map.put(acc, id, changeset)}
+
+      {:error, error} ->
+        {:halt, {:error, Map.put(error, :row, row_index)}}
     end
   end
 

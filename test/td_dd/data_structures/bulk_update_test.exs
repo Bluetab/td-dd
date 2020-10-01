@@ -187,7 +187,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert %{data: data, errors: errors} = changeset
       assert %{external_id: "the bad one"} = data
-      assert {"invalid template", _} = errors[:df_content]
+      assert {"invalid_template", _} = errors[:df_content]
     end
 
     test "only updates specified fields", %{type: type} do
