@@ -73,7 +73,11 @@ defmodule TdDd.DataStructures.BulkUpdate do
       |> DataStructures.template_name()
       |> Templates.content_schema()
 
-    template_fields = Enum.map(content_schema, & &1["name"])
+    template_fields =
+      content_schema
+      |> Enum.filter(&(Map.get(&1, "type") != "table"))
+      |> Enum.map(&Map.get(&1, "name"))
+
     content = Map.take(row, template_fields)
     content = format_content(%{content: content, content_schema: content_schema})
 
