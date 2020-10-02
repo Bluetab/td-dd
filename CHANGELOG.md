@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-2942] CSV upload of structures extra info
+
 ### Changed
 
 - [TD-2988] Cache entries for data structures are now refreshed every hour

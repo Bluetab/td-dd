@@ -5,6 +5,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
   alias TdCache.StructureTypeCache
   alias TdCache.TemplateCache
+  alias TdDd.DataStructures
   alias TdDd.DataStructures.BulkUpdate
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Repo
@@ -12,6 +13,84 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
   @valid_content %{"string" => "present", "list" => "one"}
   @valid_params %{"df_content" => @valid_content}
+  @c1 [
+    %{
+      "name" => "group",
+      "fields" => [
+        %{
+          "cardinality" => "?",
+          "label" => "Text",
+          "name" => "text",
+          "type" => "string",
+          "widget" => "string"
+        },
+        %{
+          "cardinality" => "1",
+          "default" => "",
+          "description" => "description",
+          "label" => "critical term",
+          "name" => "critical",
+          "type" => "string",
+          "values" => %{
+            "fixed" => ["Yes", "No"]
+          }
+        },
+        %{
+          "cardinality" => "+",
+          "description" => "description",
+          "label" => "Role",
+          "name" => "role",
+          "type" => "user"
+        },
+        %{
+          "cardinality" => "*",
+          "label" => "Clave valor",
+          "name" => "key_value",
+          "type" => "string",
+          "values" => %{
+            "fixed_tuple" => [
+              %{"text" => "Elemento 1", "value" => "1"},
+              %{"text" => "Elemento 2", "value" => "2"},
+              %{"text" => "Elemento 3", "value" => "3"},
+              %{"text" => "Elemento 4", "value" => "4"}
+            ]
+          },
+          "widget" => "dropdown"
+        }
+      ]
+    }
+  ]
+
+  @c2 [
+    %{
+      "name" => "group",
+      "fields" => [
+        %{
+          "cardinality" => "?",
+          "label" => "Texto Enriquecido",
+          "name" => "enriched_text",
+          "type" => "enriched_text",
+          "widget" => "enriched_text"
+        },
+        %{
+          "cardinality" => "*",
+          "label" => "Urls One Or None",
+          "name" => "urls_one_or_none",
+          "type" => "url",
+          "values" => nil,
+          "widget" => "pair_list"
+        },
+        %{
+          "cardinality" => "?",
+          "label" => "Numeric",
+          "name" => "integer",
+          "type" => "integer",
+          "values" => nil,
+          "widget" => "number"
+        }
+      ]
+    }
+  ]
 
   setup_all do
     start_supervised(MockTdAuthService)
@@ -108,7 +187,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert %{data: data, errors: errors} = changeset
       assert %{external_id: "the bad one"} = data
-      assert {"invalid template", _} = errors[:df_content]
+      assert {"invalid_template", _} = errors[:df_content]
     end
 
     test "only updates specified fields", %{type: type} do
@@ -176,6 +255,69 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     end
   end
 
+  describe "from_csv/2" do
+    setup [:from_csv_templates]
+
+    test "update all data structures content", %{sts: sts} do
+      user = build(:user)
+      structure_ids = Enum.map(sts, & &1.data_structure_id)
+      upload = %{path: "test/fixtures/td2942/upload.csv"}
+      assert {:ok, %{updates: updates}} = BulkUpdate.from_csv(upload, user)
+      ids = Map.keys(updates)
+      assert length(ids) == 9
+      assert Enum.all?(ids, fn id -> id in structure_ids end)
+
+      assert %{"text" => "text", "critical" => "Yes", "role" => ["Role"], "key_value" => ["1"]} =
+               DataStructures.get_data_structure_by_external_id("ex_id1").df_content
+
+      assert %{"text" => "text2", "critical" => "Yes", "role" => ["Role"]} =
+               DataStructures.get_data_structure_by_external_id("ex_id2").df_content
+
+      assert %{"text" => "foo", "critical" => "No", "role" => ["Role"]} =
+               DataStructures.get_data_structure_by_external_id("ex_id3").df_content
+
+      assert %{"text" => "foo", "critical" => "No", "role" => ["Role 1"]} =
+               DataStructures.get_data_structure_by_external_id("ex_id4").df_content
+
+      assert %{"text" => "foo", "critical" => "No", "role" => ["Role 2"], "key_value" => ["2"]} =
+               DataStructures.get_data_structure_by_external_id("ex_id5").df_content
+
+      text = to_enriched_text("I’m 6")
+
+      assert %{"enriched_text" => ^text} =
+               DataStructures.get_data_structure_by_external_id("ex_id6").df_content
+
+      text = to_enriched_text("Enriched text")
+      url = to_content_url("https://www.google.es")
+
+      assert %{"enriched_text" => ^text, "urls_one_or_none" => ^url, "integer" => 3} =
+               DataStructures.get_data_structure_by_external_id("ex_id7").df_content
+
+      assert %{"urls_one_or_none" => ^url, "integer" => 2} =
+               DataStructures.get_data_structure_by_external_id("ex_id8").df_content
+
+      text = to_enriched_text("I’m 9")
+
+      assert %{"enriched_text" => ^text, "integer" => 9} =
+               DataStructures.get_data_structure_by_external_id("ex_id9").df_content
+
+      assert %{} = DataStructures.get_data_structure_by_external_id("ex_id9").df_content
+    end
+
+    test "returns error on content" do
+      user = build(:user)
+      upload = %{path: "test/fixtures/td2942/upload_invalid.csv"}
+
+      assert {:error, :updates, %{errors: [df_content: {_, [critical: {_, validation}]}]}, _} =
+               BulkUpdate.from_csv(upload, user)
+
+      assert Keyword.get(validation, :validation) == :inclusion
+      assert Keyword.get(validation, :enum) == ["Yes", "No"]
+      assert %{"text" => "foo"} =
+               DataStructures.get_data_structure_by_external_id("ex_id1").df_content
+    end
+  end
+
   defp invalid_structure do
     insert(:data_structure_version,
       type: "missing_type",
@@ -189,5 +331,53 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       type: type,
       data_structure: build(:data_structure, ds_opts)
     )
+  end
+
+  defp from_csv_templates(_) do
+    %{id: id_t1, name: type} = t1 = build(:template, content: @c1)
+    TemplateCache.put(t1, publish: false)
+    %{id: st1_id} = st1 = build(:data_structure_type, structure_type: type, template_id: id_t1)
+    {:ok, _} = StructureTypeCache.put(st1)
+
+    sts1 =
+      Enum.map(1..5, fn id ->
+        valid_structure(type, external_id: "ex_id#{id}", df_content: %{"text" => "foo"})
+      end)
+
+    %{id: id_t2, name: type} = t2 = build(:template, content: @c2)
+    TemplateCache.put(t2, publish: false)
+    %{id: st2_id} = st2 = build(:data_structure_type, structure_type: type, template_id: id_t2)
+    {:ok, _} = StructureTypeCache.put(st2)
+    sts2 = Enum.map(6..10, fn id -> valid_structure(type, external_id: "ex_id#{id}") end)
+
+    on_exit(fn ->
+      TemplateCache.delete(id_t1)
+      TemplateCache.delete(id_t2)
+
+      StructureTypeCache.delete(st1_id)
+      StructureTypeCache.delete(st2_id)
+    end)
+
+    [sts: sts1 ++ sts2]
+  end
+
+  defp to_content_url(url) do
+    [%{"url_name" => url, "url_value" => url}]
+  end
+
+  defp to_enriched_text(text) do
+    %{
+      "document" => %{
+        "nodes" => [
+          %{
+            "nodes" => [
+              %{"leaves" => [%{"text" => text}], "object" => "text"}
+            ],
+            "object" => "block",
+            "type" => "paragraph"
+          }
+        ]
+      }
+    }
   end
 end

@@ -31,6 +31,12 @@ defmodule TdDdWeb.Router do
     post("/data_structures/bulk_update", DataStructureController, :bulk_update)
     post("/data_structures/csv", DataStructureController, :csv)
 
+    post(
+      "/data_structures/bulk_update_template_content",
+      DataStructureController,
+      :bulk_update_template_content
+    )
+
     resources "/data_structures", DataStructureController, except: [:new, :edit, :show] do
       resources("/versions", DataStructureVersionController, only: [:show])
     end
@@ -58,8 +64,18 @@ defmodule TdDdWeb.Router do
 
     get("/data_structures/search/reindex_all", SearchController, :reindex_all)
     get("/data_structures/search/source_alias", SearchController, :get_source_aliases)
-    get("/data_structures/search/metadata_types", SearchController, :get_structures_metadata_types)
-    post("/data_structures/search/metadata_fields", SearchController, :search_structures_metadata_fields)
+
+    get(
+      "/data_structures/search/metadata_types",
+      SearchController,
+      :get_structures_metadata_types
+    )
+
+    post(
+      "/data_structures/search/metadata_fields",
+      SearchController,
+      :search_structures_metadata_fields
+    )
 
     get("/data_structure_filters", DataStructureFilterController, :index)
     post("/data_structure_filters/search", DataStructureFilterController, :search)
