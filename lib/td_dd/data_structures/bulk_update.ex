@@ -5,6 +5,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
 
   require Logger
 
+  alias Codepagex
   alias Ecto.Multi
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Audit
@@ -27,6 +28,29 @@ defmodule TdDd.DataStructures.BulkUpdate do
   def from_csv(nil, _user), do: {:error, %{message: :no_csv_uploaded}}
 
   def from_csv(upload, user) do
+    with {:ok, rows} <- parse_file(upload) do
+      rows
+      |> decode_rows()
+      |> Enum.with_index()
+      |> Enum.map(fn {row, index} -> {row, index + 2} end)
+      |> Enum.map(fn {%{"external_id" => external_id} = row, index} ->
+        {row, DataStructures.get_data_structure_by_external_id(external_id), index}
+      end)
+      |> Enum.filter(fn {_row, data_structure, _index} -> data_structure end)
+      |> Enum.reduce_while([], fn {row, data_structure, index}, acc ->
+        case format_content(row, data_structure, index) do
+          {:error, error} -> {:halt, {:error, error}}
+          content -> {:cont, acc ++ [content]}
+        end
+      end)
+      |> case do
+        [_ | _] = contents -> do_csv_bulk_update(contents, user.id)
+        errors -> errors
+      end
+    end
+  end
+
+  defp parse_file(upload) do
     rows =
       upload
       |> Map.get(:path)
@@ -35,22 +59,31 @@ defmodule TdDd.DataStructures.BulkUpdate do
       |> CSV.decode!(separator: ?;, headers: true)
       |> Enum.to_list()
 
-    rows
-    |> Enum.with_index()
-    |> Enum.map(fn {row, index} -> {row, index + 2} end)
-    |> Enum.map(fn {%{"external_id" => external_id} = row, index} ->
-      {row, DataStructures.get_data_structure_by_external_id(external_id), index}
-    end)
-    |> Enum.filter(fn {_row, data_structure, _index} -> data_structure end)
-    |> Enum.reduce_while([], fn {row, data_structure, index}, acc ->
-      case format_content(row, data_structure, index) do
-        {:error, error} -> {:halt, {:error, error}}
-        content -> {:cont, acc ++ [content]}
-      end
-    end)
-    |> case do
-      [_ | _] = contents -> do_csv_bulk_update(contents, user.id)
-      errors -> errors
+    {:ok, rows}
+  rescue
+    _ -> {:error, %{message: :invalid_file_format}}
+  end
+
+  defp decode_rows(rows) do
+    Enum.map(rows, &decode_row/1)
+  end
+
+  defp decode_row(row) do
+    row
+    |> Enum.to_list()
+    |> Enum.map(fn {key, value} -> {key, decode(value)} end)
+    |> Enum.into(Map.new())
+  end
+
+  defp decode(value) do
+    if String.valid?(value) do
+      value
+    else
+      Codepagex.to_string!(
+        value,
+        "VENDORS/MICSFT/WINDOWS/CP1252",
+        Codepagex.use_utf_replacement()
+      )
     end
   end
 

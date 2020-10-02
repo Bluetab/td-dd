@@ -66,6 +66,7 @@ defmodule TdDd.Mixfile do
       {:csv, "~> 2.3"},
       {:phoenix_swagger, "~> 0.8.2"},
       {:ex_json_schema, "~> 0.7.3"},
+      {:codepagex, "~> 0.1.4"},
       {:elasticsearch,
        git: "https://github.com/Bluetab/elasticsearch-elixir.git",
        branch: "feature/bulk-index-action"},
