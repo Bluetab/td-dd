@@ -236,6 +236,17 @@ defmodule TdDdWeb.DataStructureController do
     end
   end
 
+  def bulk_update_template_content(conn, params) do
+    user = conn.assigns[:current_user]
+    structures_content_upload = Map.get(params, "structures")
+
+    with {:can, true} <- {:can, user.is_admin},
+         {:ok, %{updates: updates}} <- BulkUpdate.from_csv(structures_content_upload, user),
+         body <- JSON.encode!(%{data: %{message: Map.keys(updates)}}) do
+      send_resp(conn, :ok, body)
+    end
+  end
+
   defp search_all_structures(user, permission, params) do
     params
     |> Map.put(:without, ["deleted_at"])

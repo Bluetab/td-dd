@@ -8,7 +8,9 @@ defmodule TdDd.DataStructures do
   alias Ecto.Association.NotLoaded
   alias Ecto.Multi
   alias TdCache.LinkCache
+  alias TdCache.StructureTypeCache
   alias TdCache.TaxonomyCache
+  alias TdCache.TemplateCache
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
@@ -807,4 +809,21 @@ defmodule TdDd.DataStructures do
     |> select([sm], sm)
     |> Repo.one()
   end
+
+  def template_name(%DataStructure{} = data_structure) do
+    data_structure
+    |> get_latest_version()
+    |> template_name()
+  end
+
+  def template_name(%DataStructureVersion{type: type}) do
+    with {:ok, %{template_id: template_id}} <- StructureTypeCache.get_by_type(type),
+         {:ok, %{name: name}} <- TemplateCache.get(template_id) do
+      name
+    else
+      _ -> ""
+    end
+  end
+
+  def template_name(_), do: nil
 end
