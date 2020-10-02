@@ -46,6 +46,12 @@ config :td_dd, :phoenix_swagger,
     "priv/static/swagger.json" => [router: TdDdWeb.Router]
   }
 
+config :codepagex, :encodings, [
+    :ascii,
+    ~r[iso8859]i,
+    "VENDORS/MICSFT/WINDOWS/CP1252"
+]
+
 config :td_dd, permission_resolver: TdCache.Permissions
 config :td_dd, index_worker: TdDd.Search.IndexWorker
 
