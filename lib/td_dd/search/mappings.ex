@@ -11,7 +11,7 @@ defmodule TdDd.Search.Mappings do
   @raw_sort_ngram %{raw: %{type: "keyword"}, sort: %{type: "keyword", normalizer: "sortable"}, ngram: %{type: "text", analyzer: "ngram"}}
 
   def get_mappings do
-    content_mappings = %{properties: get_dynamic_mappings()}
+    content_mappings = %{type: "object", properties: get_dynamic_mappings()}
 
     properties = %{
       id: %{type: "long", index: false},
@@ -40,6 +40,7 @@ defmodule TdDd.Search.Mappings do
       type: %{type: "text", fields: @raw_sort},
       field_type: %{type: "text", fields: @raw_sort},
       confidential: %{type: "boolean", fields: @raw},
+      with_content: %{type: "boolean", fields: @raw},
       description: %{type: "text", fields: @raw_sort},
       external_id: %{type: "keyword", index: false},
       domain_ids: %{type: "long"},
@@ -56,6 +57,7 @@ defmodule TdDd.Search.Mappings do
           id: %{type: "long", index: false}
         }
       },
+
       ancestry: %{enabled: false},
       df_content: content_mappings,
       status: %{type: "keyword", null_value: ""},
