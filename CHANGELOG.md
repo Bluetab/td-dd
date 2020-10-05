@@ -2,6 +2,11 @@
 
 ## [4.5.0] 2020-10-05
 
+### Added
+
+- [TD-2942] CSV upload of structures extra info
+- [TD-2958] Extra info mapping and aggregations
+
 ### Changed
 
 - [TD-2988] Cache entries for data structures are now refreshed every hour

@@ -9,6 +9,10 @@ defmodule TdDdWeb.ChangesetView do
   See `Ecto.Changeset.traverse_errors/2` and
   `TdDdWeb.ErrorHelpers.translate_error/1` for more details.
   """
+  def translate_errors(%{row: row} = changeset) do
+    Map.put(Changeset.traverse_errors(changeset, &translate_error/1), :row, row)
+  end
+
   def translate_errors(changeset) do
     Changeset.traverse_errors(changeset, &translate_error/1)
   end

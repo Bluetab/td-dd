@@ -92,10 +92,10 @@ defmodule TdDd.DataStructures.DataStructure do
 
     case Validation.validator(data_structure, df_content, fields) do
       {:error, error} ->
-        add_error(changeset, :df_content, "invalid template", reason: error)
+        add_error(changeset, :df_content, "invalid_template", reason: error)
 
       %{valid?: false, errors: [_ | _] = errors} ->
-        add_error(changeset, :df_content, "invalid content", errors)
+        add_error(changeset, :df_content, "invalid_content", errors)
 
       _ ->
         changeset

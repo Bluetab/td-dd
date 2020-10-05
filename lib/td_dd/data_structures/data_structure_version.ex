@@ -125,6 +125,8 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       path_sort = Enum.join(path, "~")
       domain = TaxonomyCache.get_domain(structure.domain_id) || %{}
       linked_concepts = linked_concepts(dsv)
+      df_content = format_content(structure, type)
+      with_content = not Enum.empty?(df_content || %{})
 
       structure
       |> Map.take([
@@ -143,7 +145,8 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       |> Map.put(:linked_concepts_count, linked_concepts)
       |> Map.put(:domain_ids, get_domain_ids(structure))
       |> Map.put(:system, get_system(structure))
-      |> Map.put(:df_content, format_content(structure, type))
+      |> Map.put(:df_content, df_content)
+      |> Map.put(:with_content, with_content)
       |> Map.put(:mutable_metadata, get_mutable_metadata(structure))
       |> Map.put_new(:field_type, get_field_type(dsv))
       |> Map.put(:source_alias, get_source_alias(dsv))
