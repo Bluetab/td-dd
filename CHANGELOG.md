@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [4.5.0] 2020-10-05
 
 ### Changed
 
