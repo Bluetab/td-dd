@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-2942] CSV upload of structures extra info
+- [TD-2958] Extra info mapping and aggregations
 
 ### Changed
 

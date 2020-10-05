@@ -13,7 +13,8 @@ defmodule TdDd.Search.Aggregations do
       {"type.raw", %{terms: %{field: "type.raw", size: 50}}},
       {"confidential.raw", %{terms: %{field: "confidential.raw"}}},
       {"class.raw", %{terms: %{field: "class.raw"}}},
-      {"field_type.raw", %{terms: %{field: "field_type.raw", size: 50}}}
+      {"field_type.raw", %{terms: %{field: "field_type.raw", size: 50}}},
+      {"with_content.raw", %{terms: %{field: "with_content.raw"}}}
     ]
 
     dynamic_keywords =
@@ -29,16 +30,20 @@ defmodule TdDd.Search.Aggregations do
   end
 
   def get_agg_terms([agg_definition | agg_defs]) do
-      %{"agg_name" => agg_name, "field_name" => field_name} = agg_definition
-      new_term_value = %{terms: %{field: field_name, size: 50}}
-      new_term_value = case agg_defs do
+    %{"agg_name" => agg_name, "field_name" => field_name} = agg_definition
+    new_term_value = %{terms: %{field: field_name, size: 50}}
+
+    new_term_value =
+      case agg_defs do
         [] ->
           new_term_value
+
         _ ->
           new_agg_term_aggs = get_agg_terms(agg_defs)
           Map.put(new_term_value, "aggs", new_agg_term_aggs)
       end
-      %{agg_name => new_term_value}
+
+    %{agg_name => new_term_value}
   end
 
   def get_agg_term(agg_name, field_name) do
@@ -47,7 +52,7 @@ defmodule TdDd.Search.Aggregations do
 
   def template_terms(%{content: content}) do
     content
-    |> Format.flatten_content_fields
+    |> Format.flatten_content_fields()
     |> Enum.filter(&filter_content_term/1)
     |> Enum.map(&Map.take(&1, ["name", "type"]))
     |> Enum.map(&content_term/1)
