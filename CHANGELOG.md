@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.5.1] 2020-10-06
+
+### Fixed
+
+- [TD-3037] Add metadata on implementations index
+
 ## [4.5.0] 2020-10-05
 
 ### Added
