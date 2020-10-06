@@ -56,7 +56,7 @@ defmodule TdDq.Rules.Search do
       |> Permissions.get_domain_permissions()
       |> get_permissions(user_defined_filters, index)
 
-    filter_rules(params, permissions, page, size, index)
+    filter(params, permissions, page, size, index)
   end
 
   defp get_filters([], _, _index), do: %{}
@@ -110,17 +110,17 @@ defmodule TdDq.Rules.Search do
       permission_names == :manage_confidential_business_concepts
   end
 
-  defp filter_rules(_params, [], _page, _size, _index),
+  defp filter(_params, [], _page, _size, _index),
     do: %{results: [], aggregations: %{}, total: 0}
 
-  defp filter_rules(params, [_h | _t] = permissions, page, size, index) do
+  defp filter(params, [_h | _t] = permissions, page, size, index) do
     user_defined_filters = Query.create_filters(params, index)
     user_defined_filters = user_defined_filters |> delete_execution_filter
     filter = Query.create_filter_clause(permissions, user_defined_filters)
 
     query = Query.create_query(params, filter)
 
-    sort = Map.get(params, "sort", ["name.raw"])
+    sort = Map.get(params, "sort", default_sort(index))
 
     %{
       from: page * size,

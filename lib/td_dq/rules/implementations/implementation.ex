@@ -242,7 +242,7 @@ defmodule TdDq.Rules.Implementations.Implementation do
     end
 
     defp get_structure_fields(structure) do
-      Map.take(structure, [:external_id, :id, :name, :path, :system])
+      Map.take(structure, [:external_id, :id, :name, :path, :system, :type, :metadata])
     end
 
     defp get_operator_fields(operator) do

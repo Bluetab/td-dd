@@ -236,7 +236,8 @@ defmodule TdDq.Search.Mappings do
       id: %{type: "long", index: false},
       name: %{type: "text", fields: @raw},
       system: %{properties: get_system_mappings()},
-      type: %{type: "text", fields: @raw}
+      type: %{type: "text", fields: @raw},
+      metadata: %{enabled: false}
     }
   end
 
