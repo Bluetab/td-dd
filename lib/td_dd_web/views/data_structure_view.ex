@@ -1,6 +1,7 @@
 defmodule TdDdWeb.DataStructureView do
   use TdDdWeb, :view
 
+  alias TdDd.DataStructures
   alias TdDdWeb.DataStructureView
 
   require Logger
@@ -110,7 +111,10 @@ defmodule TdDdWeb.DataStructureView do
   end
 
   defp add_dynamic_content(json, data_structure) do
-    df_content = Map.get(data_structure, :df_content, %{})
+    df_content =
+      data_structure
+      |> Map.get(:df_content, %{})
+      |> DataStructures.get_cached_content(data_structure)
 
     %{df_content: df_content}
     |> Map.merge(json)

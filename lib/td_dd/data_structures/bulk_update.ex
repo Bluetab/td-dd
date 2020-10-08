@@ -117,12 +117,12 @@ defmodule TdDd.DataStructures.BulkUpdate do
         {:error, error}
 
       content_schema ->
-        template_fields =
-          content_schema
-          |> Enum.filter(&(Map.get(&1, "type") != "table"))
-          |> Enum.map(&Map.get(&1, "name"))
+        template_fields = Enum.filter(content_schema, &(Map.get(&1, "type") != "table"))
+        field_names = Enum.map(template_fields, &Map.get(&1, "name"))
 
-        content = Map.take(row, template_fields)
+        content = Map.take(row, field_names)
+        fields = Map.keys(content)
+        content_schema = Enum.filter(template_fields, &(Map.get(&1, "name") in fields))
         content = format_content(%{content: content, content_schema: content_schema})
 
         {%{df_content: content}, %{data_structure: data_structure, row_index: row_index}}
@@ -131,6 +131,8 @@ defmodule TdDd.DataStructures.BulkUpdate do
 
   defp format_content(%{content: content, content_schema: content_schema})
        when not is_nil(content) do
+    content = Format.apply_template(content, content_schema)
+
     content_schema
     |> Enum.filter(fn %{"type" => schema_type, "cardinality" => cardinality} ->
       schema_type in ["url", "enriched_text", "integer", "float"] or

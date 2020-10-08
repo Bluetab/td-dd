@@ -2,6 +2,7 @@ defmodule TdDdWeb.DataStructureVersionView do
   use TdDdWeb, :view
   use TdHypermedia, :view
 
+  alias TdDd.DataStructures
   alias TdDdWeb.DataStructureVersionView
 
   def render(
@@ -36,6 +37,7 @@ defmodule TdDdWeb.DataStructureVersionView do
         |> add_embedded_relations(dsv)
         |> add_metadata_versions
         |> add_data_structure_type
+        |> add_cached_content
         |> Map.take([
           :ancestry,
           :children,
@@ -273,4 +275,16 @@ defmodule TdDdWeb.DataStructureVersionView do
   end
 
   defp add_data_structure_type(dsv), do: Map.put(dsv, :data_structure_type, %{})
+
+  defp add_cached_content(dsv) do
+    structure = Map.get(dsv, :data_structure)
+
+    df_content =
+      structure
+      |> Map.get(:df_content, %{})
+      |> DataStructures.get_cached_content(dsv)
+
+    structure = Map.put(structure, :df_content, df_content)
+    Map.put(dsv, :data_structure, structure)
+  end
 end
