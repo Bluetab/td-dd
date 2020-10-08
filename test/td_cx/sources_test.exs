@@ -14,15 +14,20 @@ defmodule TdCx.SourcesTest do
       name: "app-admin",
       label: "app-admin",
       scope: "cx",
-      content: [%{
-        "name" => "a",
-        "type" => "string",
-        "group" => "New Group 1",
-        "label" => "a",
-        "widget" => "string",
-        "disabled" => true,
-        "cardinality" => "1"
-      }]
+      content: [
+        %{
+          "name" => "New Group 1",
+          "fields" => [
+            %{
+              "name" => "a",
+              "type" => "string",
+              "label" => "a",
+              "widget" => "string",
+              "cardinality" => "1"
+            }
+          ]
+        }
+      ]
     }
 
     def source_fixture(attrs \\ %{}) do
