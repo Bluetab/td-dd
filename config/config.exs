@@ -79,7 +79,7 @@ import_config "#{Mix.env()}.exs"
 config :td_dq, TdDq.Scheduler,
   jobs: [
     [
-      schedule: "@hourly",
+      schedule: "@daily",
       task: {TdDq.Search.IndexWorker, :reindex, []},
       run_strategy: Quantum.RunStrategy.Local
     ]
