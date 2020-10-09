@@ -103,6 +103,8 @@ defmodule TdDq.Rules.Implementations.Implementation do
   defimpl Elasticsearch.Document do
     alias Search.Helpers
     alias TdCache.SystemCache
+    alias TdCache.TemplateCache
+    alias TdDfLib.Format
     alias TdDq.Rules.Rule
     alias TdDq.Rules.RuleResults
 
@@ -118,7 +120,17 @@ defmodule TdDq.Rules.Implementations.Implementation do
       :updated_at,
       :validations
     ]
-    @rule_keys [:active, :goal, :id, :minimum, :name, :version, :df_content, :result_type]
+    @rule_keys [
+      :active,
+      :goal,
+      :id,
+      :minimum,
+      :name,
+      :version,
+      :df_content,
+      :df_name,
+      :result_type
+    ]
 
     @impl Elasticsearch.Document
     def id(%Implementation{id: id}), do: id
@@ -145,6 +157,7 @@ defmodule TdDq.Rules.Implementations.Implementation do
       |> transform_dataset()
       |> transform_population()
       |> transform_validations()
+      |> with_rule(rule)
       |> Map.put(:raw_content, get_raw_content(implementation))
       |> Map.put(:rule, Map.take(rule, @rule_keys))
       |> Map.put(:structure_aliases, structure_aliases)
@@ -257,6 +270,18 @@ defmodule TdDq.Rules.Implementations.Implementation do
       |> Enum.map(&Map.get(&1, "alias"))
       |> Enum.filter(& &1)
       |> Enum.uniq()
+    end
+
+    defp with_rule(data, rule) do
+      template = TemplateCache.get_by_name!(rule.df_name) || %{content: []}
+
+      df_content =
+        rule
+        |> Map.get(:df_content)
+        |> Format.search_values(template)
+
+      rule = Map.put(rule, :df_content, df_content)
+      Map.put(data, :rule, Map.take(rule, @rule_keys))
     end
   end
 end
