@@ -3,11 +3,13 @@ defmodule TdDd.SystemsTest do
 
   alias TdCache.Redix
   alias TdCache.Redix.Stream
+  alias TdDd.Cache.SystemLoader
   alias TdDd.Systems
 
   @stream TdCache.Audit.stream()
 
   setup_all do
+    start_supervised(SystemLoader)
     Redix.del!(@stream)
     :ok
   end

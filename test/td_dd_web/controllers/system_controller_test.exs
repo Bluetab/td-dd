@@ -3,6 +3,7 @@ defmodule TdDdWeb.SystemControllerTest do
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   alias TdCache.TaxonomyCache
+  alias TdDd.Cache.SystemLoader
   alias TdDd.DataStructures.PathCache
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Permissions.MockPermissionResolver
@@ -23,6 +24,7 @@ defmodule TdDdWeb.SystemControllerTest do
     start_supervised(MockTdAuthService)
     start_supervised(MockPermissionResolver)
     start_supervised(PathCache)
+    start_supervised(SystemLoader)
     :ok
   end
 
