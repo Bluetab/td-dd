@@ -18,3 +18,12 @@ config :td_cx, :vault,
 config :td_cache,
   redis_host: System.fetch_env!("REDIS_HOST"),
   port: System.get_env("REDIS_PORT", "6379") |> String.to_integer()
+
+config :td_cx, TdCx.Scheduler,
+  jobs: [
+    [
+      schedule: System.get_env("ELASTIC_REFRESH_SCHEDULE", "@daily"),
+      task: {TdCx.Search.IndexWorker, :reindex, []},
+      run_strategy: Quantum.RunStrategy.Local
+    ]
+  ]

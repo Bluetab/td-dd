@@ -60,6 +60,7 @@ defmodule TdCx.MixProject do
       {:poison, "~> 3.1"},
       {:credo, "~> 1.4", only: [:dev, :test], runtime: false},
       {:guardian, "~> 2.0"},
+      {:quantum, "~> 3.0"},
       {:canada, "~> 2.0"},
       {:ex_machina, "~> 2.4", only: :test},
       {:phoenix_swagger, "~> 0.8.0"},

@@ -51,6 +51,15 @@ config :td_cx, permission_resolver: TdCache.Permissions
 config :td_cx, acl_cache: TdCache.AclCache
 config :td_cx, index_worker: TdCx.Search.IndexWorker
 
+config :td_cx, TdCx.Scheduler,
+  jobs: [
+    [
+      schedule: "@daily",
+      task: {TdCx.Search.IndexWorker, :reindex, []},
+      run_strategy: Quantum.RunStrategy.Local
+    ]
+  ]
+
 # Import Elasticsearch config
 import_config "elastic.exs"
 
