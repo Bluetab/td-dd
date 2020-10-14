@@ -62,6 +62,17 @@ defmodule TdDq.ElasticsearchMock do
   def request(
         _config,
         :post,
+        "/implementations/_search",
+        %{query: %{bool: %{must: %{match_all: %{}}}}},
+        _opts
+      ) do
+    Implementation |> do_search() |> search_results()
+  end
+
+  @impl true
+  def request(
+        _config,
+        :post,
         "/rules/_search",
         %{query: %{bool: %{must: %{match_all: %{}}, filter: filter}}},
         _opts

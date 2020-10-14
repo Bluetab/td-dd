@@ -16,8 +16,7 @@ defmodule TdDq.Search.Aggregations do
       {"current_business_concept_version",
        %{terms: %{field: "current_business_concept_version.name.raw", size: 50}}},
       {"execution_result_info.result_text",
-       %{terms: %{field: "execution_result_info.result_text.raw", size: 50}}},
-      {"execution.raw", %{terms: %{field: "execution.raw"}}}
+       %{terms: %{field: "execution_result_info.result_text.raw", size: 50}}}
     ]
 
     ["dq", "bg"]
@@ -37,7 +36,8 @@ defmodule TdDq.Search.Aggregations do
        %{terms: %{field: "current_business_concept_version.name.raw", size: 50}}},
       {"execution_result_info.result_text",
        %{terms: %{field: "execution_result_info.result_text.raw", size: 50}}},
-      {"rule", %{terms: %{field: "rule.name.raw", size: 50}}}
+      {"rule", %{terms: %{field: "rule.name.raw", size: 50}}},
+      {"execution.raw", %{terms: %{field: "execution.raw"}}}
     ]
 
     ["dq", "bg"]

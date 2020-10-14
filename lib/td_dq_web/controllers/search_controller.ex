@@ -49,6 +49,8 @@ defmodule TdDqWeb.SearchController do
     page = params |> Map.get("page", 0)
     size = params |> Map.get("size", 20)
     user = conn.assigns[:current_resource]
+    manage_permission = can?(user, manage(%{"resource_type" => "rule"}))
+    user_permissions = %{manage_quality_rules: manage_permission}
 
     %{
       results: rules,
@@ -63,7 +65,8 @@ defmodule TdDqWeb.SearchController do
     |> put_resp_header("x-total-count", "#{total}")
     |> render("search.json",
       rules: rules,
-      filters: aggregations
+      filters: aggregations,
+      user_permissions: user_permissions
     )
   end
 

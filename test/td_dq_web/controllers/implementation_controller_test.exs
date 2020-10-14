@@ -489,6 +489,80 @@ defmodule TdDqWeb.ImplementationControllerTest do
     end
   end
 
+    describe "execute_rule" do
+    setup do
+      [implementation: insert(:implementation)]
+    end
+
+    @tag :admin_authenticated
+    test "execute implementations as admin and true execution filter", %{
+      conn: conn,
+      implementation: implementation,
+      swagger_schema: schema
+    } do
+      params = %{"filters" => %{"execution.raw" => [true]}}
+
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.implementation_path(conn, :execute_implementations), params)
+               |> validate_resp_schema(schema, "ImplementationsExecuteResponse")
+               |> json_response(:ok)
+
+      assert data == [implementation.implementation_key]
+    end
+
+    @tag :admin_authenticated
+    test "execute implementations as admin and false execution filter", %{
+      conn: conn,
+      implementation: implementation,
+      swagger_schema: schema
+    } do
+      params = %{"filters" => %{"execution.raw" => [false]}}
+
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.implementation_path(conn, :execute_implementations), params)
+               |> validate_resp_schema(schema, "ImplementationsExecuteResponse")
+               |> json_response(:ok)
+
+      assert data == [implementation.implementation_key]
+    end
+
+    @tag :admin_authenticated
+    test "execute implementations as admin and no execution filter", %{
+      conn: conn,
+      implementation: implementation,
+      swagger_schema: schema
+    } do
+      params = %{"filters" => %{}}
+
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.implementation_path(conn, :execute_implementations), params)
+               |> validate_resp_schema(schema, "ImplementationsExecuteResponse")
+               |> json_response(:ok)
+
+      assert data == [implementation.implementation_key]
+    end
+
+    @tag :admin_authenticated
+    test "execute implementations as admin with rule_ids filter", %{
+      conn: conn,
+      implementation: implementation,
+      swagger_schema: schema
+    } do
+      params = %{"filters" => %{"id" => [implementation.id]}}
+
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.implementation_path(conn, :execute_implementations), params)
+               |> validate_resp_schema(schema, "ImplementationsExecuteResponse")
+               |> json_response(:ok)
+
+      assert data == [implementation.implementation_key]
+    end
+  end
+
   defp equals_condition_row(population_response, population_update) do
     population_response
     |> Enum.with_index()

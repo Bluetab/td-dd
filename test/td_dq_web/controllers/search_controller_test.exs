@@ -33,7 +33,7 @@ defmodule TdDqWeb.SearchControllerTest do
     end
 
     @tag authenticated_no_admin_user: @user_name
-    test "list permissions depending on implementations", %{
+    test "list implementations depending on permissions", %{
       conn: conn,
       user: %{id: user_id}
     } do

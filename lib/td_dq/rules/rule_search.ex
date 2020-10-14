@@ -76,14 +76,13 @@ defmodule TdDq.Rules.Search do
 
   defp get_permissions(domain_permissions, user_defined_filters, index) do
     case index do
-      :rules -> get_permissions(domain_permissions, user_defined_filters)
-      :implementations -> get_permissions(domain_permissions)
+      :rules -> get_permissions(domain_permissions)
+      :implementations -> get_permissions(domain_permissions, user_defined_filters)
     end
   end
 
   defp get_permissions(domain_permissions, user_defined_filters) do
-    domain_permissions
-    |> Enum.filter(fn permissions_obj ->
+    Enum.filter(domain_permissions, fn permissions_obj ->
       case do_rules_execution(user_defined_filters) do
         true ->
           check_execute_and_view_permission(permissions_obj)
@@ -102,7 +101,7 @@ defmodule TdDq.Rules.Search do
 
   defp check_execute_and_view_permission(permissions_obj) do
     Enum.member?(permissions_obj.permissions, :execute_quality_rule) &&
-      Enum.member?(permissions_obj.permissions, :view_quality_rule)
+      Enum.any?(permissions_obj.permissions, &check_view_or_manage_permission(&1))
   end
 
   defp check_view_or_manage_permission(permission_names) do
@@ -151,8 +150,7 @@ defmodule TdDq.Rules.Search do
   end
 
   defp delete_execution_filter(user_defined_filters) do
-    user_defined_filters
-    |> Enum.filter(&(!Enum.at(Map.get(get_filter(&1), "execution.raw", []), 0)))
+    Enum.filter(user_defined_filters, &(!Enum.at(Map.get(get_filter(&1), "execution.raw", []), 0)))
   end
 
   defp get_filter(%{terms: field}), do: field

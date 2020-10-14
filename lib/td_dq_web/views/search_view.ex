@@ -7,11 +7,13 @@ defmodule TdDqWeb.SearchView do
 
   def render("search.json", %{
         rules: rules,
-        filters: filters
+        filters: filters,
+        user_permissions: user_permissions
       }) do
     %{
       filters: filters,
-      data: render_many(rules, RuleView, "rule.json")
+      data: render_many(rules, RuleView, "rule.json"),
+      user_permissions: user_permissions
     }
   end
 

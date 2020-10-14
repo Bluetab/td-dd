@@ -6,10 +6,7 @@ defmodule TdDqWeb.RuleController do
   import Canada, only: [can?: 2]
 
   alias Ecto.Changeset
-  alias Jason, as: JSON
-  alias TdCache.EventStream.Publisher
   alias TdDq.Rules
-  alias TdDq.Rules.Search
   alias TdDqWeb.ChangesetView
   alias TdDqWeb.ErrorView
   alias TdDqWeb.RuleView
@@ -291,59 +288,5 @@ defmodule TdDqWeb.RuleController do
           prefix: "rule.error"
         )
     end
-  end
-
-  swagger_path :execute_rules do
-    description("Execute rules")
-    produces("application/json")
-
-    parameters do
-      search_params(:body, Schema.ref(:RulesExecuteRequest), "Rules search params")
-    end
-
-    response(200, "OK", Schema.ref(:RulesExecuteResponse))
-    response(403, "User is not authorized to perform this action")
-    response(422, "Error while bulk update")
-  end
-
-  def execute_rules(conn, %{"search_params" => search_params}) do
-    user = conn.assigns[:current_resource]
-
-    rules_ids = search_all_executable_rule_ids(user, search_params)
-    event_ids = Enum.join(rules_ids, ",")
-
-    event = %{
-      event: "execute_rules",
-      rules: "rule_ids:#{event_ids}"
-    }
-
-    case Publisher.publish(event, "rules:events") do
-      {:ok, _event_id} ->
-        body = JSON.encode!(%{data: rules_ids})
-
-        conn
-        |> put_resp_content_type("application/json", "utf-8")
-        |> send_resp(:ok, body)
-
-      {:error, error} ->
-        Logger.info("While executing rules... #{inspect(error)}")
-
-        conn
-        |> put_resp_content_type("application/json", "utf-8")
-        |> send_resp(:unprocessable_entity, JSON.encode!(%{error: error}))
-    end
-  end
-
-  defp search_all_executable_rule_ids(_user, %{"rule_ids" => rule_ids}) do
-    rule_ids
-  end
-
-  defp search_all_executable_rule_ids(user, params) do
-    %{results: rules} =
-      params
-      |> Map.drop(["page", "size"])
-      |> Search.search(user, 0, 10_000)
-
-    Enum.map(rules, &Map.get(&1, :id))
   end
 end
