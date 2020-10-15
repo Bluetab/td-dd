@@ -4,7 +4,7 @@
 
 ### Changed
 
-- [TD-3047] Migrate executions fonctionality from rules to implementations
+- [TD-3047] Migrate executions functionality from rules to implementations
 
 ## [4.5.1] 2020-10-06
 
