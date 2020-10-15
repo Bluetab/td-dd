@@ -56,10 +56,10 @@ defmodule TdDq.Canada.ImplementationAbilities do
   end
 
   def can?(%User{} = user, :execute, "") do
-    Permissions.authorized?(user, :execute_quality_rule)
+    Permissions.authorized?(user, :execute_quality_rule_implementations)
   end
 
   def can?(%User{} = user, :execute, business_concept_id) do
-    Permissions.authorized?(user, :execute_quality_rule, business_concept_id)
+    Permissions.authorized?(user, :execute_quality_rule_implementations, business_concept_id)
   end
 end

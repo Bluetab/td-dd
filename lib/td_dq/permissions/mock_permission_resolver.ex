@@ -24,10 +24,10 @@ defmodule TdDq.Permissions.MockPermissionResolver do
     ],
     "execute_view" => [
       :view_quality_rule,
-      :execute_quality_rule
+      :execute_quality_rule_implementations
     ],
     "execute" => [
-      :execute_quality_rule
+      :execute_quality_rule_implementations
     ],
     "no_perms" => []
   }

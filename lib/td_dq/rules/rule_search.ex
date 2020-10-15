@@ -100,7 +100,7 @@ defmodule TdDq.Rules.Search do
   end
 
   defp check_execute_and_view_permission(permissions_obj) do
-    Enum.member?(permissions_obj.permissions, :execute_quality_rule) &&
+    Enum.member?(permissions_obj.permissions, :execute_quality_rule_implementations) &&
       Enum.any?(permissions_obj.permissions, &check_view_or_manage_permission(&1))
   end
 
