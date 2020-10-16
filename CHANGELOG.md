@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-3058] Database connection timeout now can be configured using the
+  environment variable `DB_TIMEOUT_MILLIS`
+
 ## [4.5.0] 2020-10-05
 
 ### Added
