@@ -112,6 +112,18 @@ defmodule TdDd.Search.Mappings do
     {name, %{enabled: false}}
   end
 
+  defp field_mapping(%{"name" => name, "type" => "system"}) do
+    {name,
+     %{
+       type: "nested",
+       properties: %{
+         id: %{type: "long"},
+         name: %{type: "text", fields: @raw},
+         external_id: %{type: "text", fields: @raw}
+       }
+     }}
+  end
+
   defp field_mapping(%{"name" => name, "type" => "enriched_text"}) do
     {name, mapping_type("enriched_text")}
   end

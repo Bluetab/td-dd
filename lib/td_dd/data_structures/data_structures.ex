@@ -20,6 +20,7 @@ defmodule TdDd.DataStructures do
   alias TdDd.Lineage.GraphData
   alias TdDd.Repo
   alias TdDd.Search.IndexWorker
+  alias TdDfLib.Format
 
   @doc """
   Returns the list of data_structures.
@@ -131,6 +132,18 @@ defmodule TdDd.DataStructures do
     |> Repo.preload(data_structure: :system)
     |> enrich(options)
   end
+
+  def get_cached_content(%{} = content, %{data_structure_type: %{template_id: template_id}}) do
+    case TemplateCache.get(template_id) do
+      {:ok, template} ->
+        Format.enrich_content_values(content, template)
+
+      _ ->
+        content
+    end
+  end
+
+  def get_cached_content(content, _structure), do: content
 
   defp enrich(nil = _target, _opts), do: nil
 

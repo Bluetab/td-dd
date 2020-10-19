@@ -237,6 +237,10 @@ defmodule TdDd.DataStructures.Search do
     %{terms: %{field => values}}
   end
 
+  defp get_filter(%{aggs: %{distinct_search: distinct_search}, nested: %{path: path}}, values, _) do
+    %{nested: %{path: path, query: build_nested_query(distinct_search, values)}}
+  end
+
   defp get_filter(nil, values, filter) when is_list(values) do
     %{terms: %{filter => values}}
   end
@@ -246,6 +250,11 @@ defmodule TdDd.DataStructures.Search do
   end
 
   defp get_filter(_, _, _), do: nil
+
+  defp build_nested_query(%{terms: %{field: field}}, values) do
+    %{terms: %{field => values}}
+    |> bool_query()
+  end
 
   defp create_query(%{"query" => query}, filter) do
     ~r/\s/
@@ -263,6 +272,7 @@ defmodule TdDd.DataStructures.Search do
     %{
       multi_match: %{
         query: query,
+        lenient: true,
         type: "phrase_prefix",
         fields: [
           "name^2",
@@ -296,6 +306,10 @@ defmodule TdDd.DataStructures.Search do
 
   defp bool_query(clauses, filter) do
     %{bool: %{should: clauses, filter: filter, minimum_should_match: Enum.count(clauses)}}
+  end
+
+  defp bool_query(query) do
+    %{bool: %{must: query}}
   end
 
   defp do_search(search, params) do

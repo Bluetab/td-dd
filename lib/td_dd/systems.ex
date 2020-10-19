@@ -3,6 +3,7 @@ defmodule TdDd.Systems do
   The Systems context.
   """
   alias Ecto.Multi
+  alias TdDd.Cache.SystemLoader
   alias TdDd.Repo
   alias TdDd.Systems.Audit
   alias TdDd.Systems.System
@@ -78,6 +79,7 @@ defmodule TdDd.Systems do
     |> Multi.insert(:system, changeset)
     |> Multi.run(:audit, Audit, :system_created, [changeset, user_id])
     |> Repo.transaction()
+    |> on_upsert()
   end
 
   @doc """
@@ -99,6 +101,7 @@ defmodule TdDd.Systems do
     |> Multi.update(:system, changeset)
     |> Multi.run(:audit, Audit, :system_updated, [changeset, user_id])
     |> Repo.transaction()
+    |> on_upsert()
   end
 
   @doc """
@@ -118,11 +121,26 @@ defmodule TdDd.Systems do
     |> Multi.delete(:system, system)
     |> Multi.run(:audit, Audit, :system_deleted, [user_id])
     |> Repo.transaction()
+    |> on_delete()
   end
 
   def get_system_name_to_id_map do
     list_systems()
     |> Enum.map(&Map.take(&1, [:name, :id]))
     |> Enum.into(%{}, fn %{id: id, name: name} -> {name, id} end)
+  end
+
+  defp on_upsert(result) do
+    with {:ok, %{system: system}} <- result do
+      SystemLoader.refresh(system.id)
+      result
+    end
+  end
+
+  defp on_delete(res) do
+    with {:ok, %{system: %{id: id}}} <- res do
+      SystemLoader.delete(id)
+      res
+    end
   end
 end
