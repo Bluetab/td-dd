@@ -14,6 +14,10 @@ defmodule TdCx.Search.IndexWorker do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
 
+  def reindex do
+    GenServer.cast(__MODULE__, {:reindex, :all})
+  end
+
   def reindex(:all) do
     GenServer.cast(__MODULE__, {:reindex, :all})
   end

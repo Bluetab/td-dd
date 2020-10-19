@@ -17,13 +17,16 @@ defmodule TdCxWeb.SourceControllerTest do
     scope: "cx",
     content: [
       %{
-        "name" => "a",
-        "type" => "string",
-        "group" => "New Group 1",
-        "label" => "a",
-        "widget" => "string",
-        "disabled" => true,
-        "cardinality" => "1"
+        "name" => "New Group 1",
+        "fields" => [
+          %{
+            "name" => "a",
+            "type" => "string",
+            "label" => "a",
+            "widget" => "string",
+            "cardinality" => "1"
+          }
+        ]
       }
     ]
   }
@@ -99,6 +102,7 @@ defmodule TdCxWeb.SourceControllerTest do
                "type" => "app-admin",
                "active" => true
              } = json_response(conn, 200)["data"]
+
       assert %{"a" => "1"} == json_response(conn, 200)["data"]["config"]
     end
   end

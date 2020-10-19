@@ -6,7 +6,7 @@ defmodule TdCxWeb.JobFilterController do
   alias TdCx.Sources.Jobs.Search
   alias TdCxWeb.SwaggerDefinitions
 
-  action_fallback(TdBgWeb.FallbackController)
+  action_fallback(TdCxWeb.FallbackController)
 
   def swagger_definitions do
     SwaggerDefinitions.filter_swagger_definitions()

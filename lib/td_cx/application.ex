@@ -37,7 +37,8 @@ defmodule TdCx.Application do
   defp workers(_env) do
     [
       # Worker for background indexing
-      TdCx.Search.IndexWorker
+      TdCx.Search.IndexWorker,
+      TdCx.Scheduler
     ]
   end
 end

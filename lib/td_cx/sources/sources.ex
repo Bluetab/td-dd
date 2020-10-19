@@ -8,6 +8,7 @@ defmodule TdCx.Sources do
   alias TdCx.Repo
   alias TdCx.Sources.Source
   alias TdCx.Vault
+  alias TdDfLib.Format
   alias TdDfLib.Validation
 
   import Canada, only: [can?: 2]
@@ -185,6 +186,7 @@ defmodule TdCx.Sources do
   defp is_valid_template_content(%{"type" => type, "config" => config} = _attrs)
        when not is_nil(type) do
     %{:content => content_schema} = TemplateCache.get_by_name!(type)
+    content_schema = Format.flatten_content_fields(content_schema)
     content_changeset = Validation.build_changeset(config, content_schema)
 
     case content_changeset.valid? do

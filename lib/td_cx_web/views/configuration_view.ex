@@ -1,5 +1,6 @@
 defmodule TdCxWeb.ConfigurationView do
   use TdCxWeb, :view
+  alias TdCx.Format
   alias TdCxWeb.ConfigurationView
 
   def render("index.json", %{configurations: configurations}) do
@@ -18,5 +19,17 @@ defmodule TdCxWeb.ConfigurationView do
       secrets_key: configuration.secrets_key,
       type: configuration.type
     }
+    |> add_cached_content()
+  end
+
+  defp add_cached_content(configuration) do
+    type = Map.get(configuration, :type)
+
+    content =
+      configuration
+      |> Map.get(:content)
+      |> Format.get_cached_content(type)
+
+    Map.put(configuration, :content, content)
   end
 end
