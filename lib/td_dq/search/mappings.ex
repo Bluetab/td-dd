@@ -95,6 +95,7 @@ defmodule TdDq.Search.Mappings do
       structure_aliases: %{type: "text", fields: @raw},
       rule: %{
         properties: %{
+          df_name: %{type: "text", fields: @raw},
           version: %{type: "long"},
           name: %{type: "text", fields: @raw_sort},
           active: %{type: "boolean", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
@@ -206,6 +207,18 @@ defmodule TdDq.Search.Mappings do
 
   defp field_mapping(%{"name" => name, "type" => "user"}) do
     {name, %{type: "text", fields: @raw_sort}}
+  end
+
+  defp field_mapping(%{"name" => name, "type" => "system"}) do
+    {name,
+     %{
+       type: "nested",
+       properties: %{
+         id: %{type: "long"},
+         name: %{type: "text", fields: @raw},
+         external_id: %{type: "text", fields: @raw}
+       }
+     }}
   end
 
   defp field_mapping(%{"name" => name, "values" => values}) do
