@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-3047] Migrate executions functionality from rules to implementations
+
 ## [4.6.0] 2020-10-19
 
 ### Added

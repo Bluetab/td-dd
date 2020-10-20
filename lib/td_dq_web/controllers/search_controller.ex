@@ -5,7 +5,7 @@ defmodule TdDqWeb.SearchController do
   import Canada, only: [can?: 2]
 
   alias TdDq.Accounts.User
-  alias TdDq.Rules
+  alias TdDq.Rules.Implementations.Implementation
   alias TdDq.Rules.Search
   alias TdDq.Search.IndexWorker
 
@@ -49,6 +49,8 @@ defmodule TdDqWeb.SearchController do
     page = params |> Map.get("page", 0)
     size = params |> Map.get("size", 20)
     user = conn.assigns[:current_resource]
+    manage_permission = can?(user, manage(%{"resource_type" => "rule"}))
+    user_permissions = %{manage_quality_rules: manage_permission}
 
     %{
       results: rules,
@@ -64,7 +66,7 @@ defmodule TdDqWeb.SearchController do
     |> render("search.json",
       rules: rules,
       filters: aggregations,
-      user_permissions: get_user_permissions(user, rules)
+      user_permissions: user_permissions
     )
   end
 
@@ -95,29 +97,28 @@ defmodule TdDqWeb.SearchController do
     |> put_resp_header("x-total-count", "#{total}")
     |> render("search.json",
       implementations: implementations,
-      filters: aggregations
+      filters: aggregations,
+      user_permissions: get_user_permissions(user, implementations)
     )
   end
 
-  defp get_user_permissions(%User{is_admin: true}, _rules),
-    do: %{manage_quality_rules: true, execute_quality_rules: true}
+  defp get_user_permissions(%User{is_admin: true}, _implementations),
+    do: %{manage: true, execute: true}
 
-  defp get_user_permissions(user, rules) do
-    manage_permission = can?(user, manage(%{"resource_type" => "rule"}))
+  defp get_user_permissions(user, implementations) do
+    manage? = can?(user, manage(Implementation))
+    execute? = Enum.any?(implementations, &can_execute?(user, &1))
 
-    execute_permission =
-      rules
-      |> Enum.filter(&can_execute_and_view(user, &1))
-      |> Enum.empty?()
-      |> Kernel.!()
-
-    %{manage_quality_rules: manage_permission, execute_quality_rules: execute_permission}
+    %{manage: manage?, execute: execute?}
   end
 
-  defp can_execute_and_view(user, rule) do
+  defp can_execute?(user, implementation) do
     can?(
       user,
-      execute(%{"business_concept_id" => rule.business_concept_id, "resource_type" => "rule"})
-    ) && can?(user, show(Rules.get_rule!(rule.id)))
+      execute(%{
+        "business_concept_id" => Map.get(implementation, :business_concept_id),
+        "resource_type" => "implementation"
+      })
+    )
   end
 end

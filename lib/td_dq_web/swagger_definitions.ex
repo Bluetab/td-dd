@@ -117,25 +117,6 @@ defmodule TdDqWeb.SwaggerDefinitions do
           type(:array)
           items(Schema.ref(:Rule))
         end,
-      RulesExecuteRequest:
-        swagger_schema do
-          properties do
-            search_params(:object, "Search params")
-          end
-        end,
-      RulesIDs:
-        swagger_schema do
-          title("Rules IDs")
-          description("Rules IDs to execute")
-          type(:array)
-          items(%{type: :integer})
-        end,
-      RulesExecuteResponse:
-        swagger_schema do
-          properties do
-            data(Schema.ref(:RulesIDs))
-          end
-        end,
       RuleResponse:
         swagger_schema do
           properties do
@@ -192,6 +173,25 @@ defmodule TdDqWeb.SwaggerDefinitions do
             value(:array, "Values", required: true)
             operator(Schema.ref(:Operator), "Operator", required: true)
             structure(Schema.ref(:Structure), "Structure", required: true)
+          end
+        end,
+      ImplementationsExecuteRequest:
+        swagger_schema do
+          properties do
+            search_params(:object, "Search params")
+          end
+        end,
+      ImplementationKeys:
+        swagger_schema do
+          title("Implementation external ids")
+          description("Implementation external ids to execute")
+          type(:array)
+          items(%{type: :string})
+        end,
+      ImplementationsExecuteResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:ImplementationKeys))
           end
         end,
       Dataset:

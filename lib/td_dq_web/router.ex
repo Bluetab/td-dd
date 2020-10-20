@@ -32,8 +32,6 @@ defmodule TdDqWeb.Router do
       post("/rule_implementations", ImplementationController, :search_rule_implementations)
     end
 
-    post("/rules/execute", RuleController, :execute_rules)
-
     post("/rules/search", SearchController, :search_rules)
     get("/rules/search/reindex_all", SearchController, :reindex_all_rules)
     get("/rule_implementations/search/reindex_all", SearchController, :reindex_all_implementations)
@@ -42,6 +40,7 @@ defmodule TdDqWeb.Router do
     post("/rule_implementation_filters/search", ImplementationFilterController, :search)
     resources("/rule_implementations", ImplementationController, except: [:new, :edit])
     post("/rule_implementations/search", SearchController, :search_implementations)
+    post("/rule_implementations/execute", ImplementationController, :execute_implementations)
   end
 
   def swagger_info do

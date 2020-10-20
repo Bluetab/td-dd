@@ -29,11 +29,11 @@ defmodule TdDqWeb.SearchControllerTest do
       implementation = insert(:implementation)
       conn = post(conn, Routes.search_path(conn, :search_implementations))
       assert [_ | _] = response = json_response(conn, 200)["data"]
-      assert Enum.any?(response, fn %{"id" => id} -> id ==  implementation.id end)
+      assert Enum.any?(response, fn %{"id" => id} -> id == implementation.id end)
     end
 
     @tag authenticated_no_admin_user: @user_name
-    test "list permissions depending on rules", %{
+    test "list implementations depending on permissions", %{
       conn: conn,
       user: %{id: user_id}
     } do
@@ -60,8 +60,8 @@ defmodule TdDqWeb.SearchControllerTest do
         updated_by: Integer.mod(:binary.decode_unsigned("app-admin"), 100_000)
       }
 
-      insert(:rule, creation_attrs_1)
-      insert(:rule, creation_attrs_2)
+      insert(:implementation, rule: build(:rule, creation_attrs_1))
+      insert(:implementation, rule: build(:rule, creation_attrs_2))
 
       create_acl_entry(
         user_id,
@@ -74,21 +74,21 @@ defmodule TdDqWeb.SearchControllerTest do
       create_acl_entry(
         user_id,
         concept_2,
-        domain2_execute,
-        [domain2_execute],
-        "execute"
+        domain1_view,
+        [domain1_view],
+        "watch"
       )
 
       conn =
-        post(conn, Routes.search_path(conn, :search_rules), %{
+        post(conn, Routes.search_path(conn, :search_implementations), %{
           "filters" => %{}
         })
 
       assert length(json_response(conn, 200)["data"]) == 2
 
       assert json_response(conn, 200)["user_permissions"] == %{
-               "execute_quality_rules" => false,
-               "manage_quality_rules" => true
+               "execute" => false,
+               "manage" => true
              }
 
       create_acl_entry(
@@ -100,15 +100,15 @@ defmodule TdDqWeb.SearchControllerTest do
       )
 
       conn =
-        post(conn, Routes.search_path(conn, :search_rules), %{
+        post(conn, Routes.search_path(conn, :search_implementations), %{
           "filters" => %{}
         })
 
       assert length(json_response(conn, 200)["data"]) == 2
 
       assert json_response(conn, 200)["user_permissions"] == %{
-               "execute_quality_rules" => true,
-               "manage_quality_rules" => true
+               "execute" => true,
+               "manage" => true
              }
     end
   end

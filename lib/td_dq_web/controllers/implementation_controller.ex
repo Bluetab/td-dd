@@ -7,6 +7,8 @@ defmodule TdDqWeb.ImplementationController do
   import TdDqWeb.RuleImplementationSupport, only: [decode: 1]
 
   alias Ecto.Changeset
+  alias Jason, as: JSON
+  alias TdCache.EventStream.Publisher
   alias TdDq.Repo
   alias TdDq.Rules
   alias TdDq.Rules.Implementations
@@ -192,7 +194,7 @@ defmodule TdDqWeb.ImplementationController do
               (Map.keys(implementation_params) == ["soft_delete"] &&
                  Map.get(implementation_params, "soft_delete") == true)},
          {:ok, %Implementation{} = implementation} <-
-          Implementations.update_implementation(
+           Implementations.update_implementation(
              implementation,
              with_soft_delete(update_params)
            ) do
@@ -287,7 +289,6 @@ defmodule TdDqWeb.ImplementationController do
     rule_id = String.to_integer(id)
 
     with {:can, true} <- {:can, can?(user, index(Implementation))} do
-
       %{
         results: implementations
       } =
@@ -300,6 +301,61 @@ defmodule TdDqWeb.ImplementationController do
 
       render(conn, "index.json", implementations: implementations)
     end
+  end
+
+  swagger_path :execute_implementations do
+    description("Execute implementations")
+    produces("application/json")
+
+    parameters do
+      search_params(
+        :body,
+        Schema.ref(:ImplementationsExecuteRequest),
+        "Implementation search params"
+      )
+    end
+
+    response(200, "OK", Schema.ref(:ImplementationsExecuteResponse))
+    response(403, "User is not authorized to perform this action")
+    response(422, "Error while executing implementations")
+  end
+
+  def execute_implementations(conn, params) do
+    user = conn.assigns[:current_resource]
+    implementations = search_executable_implementations(user, params)
+    keys = Enum.map(implementations, &Map.get(&1, :implementation_key))
+    payload = Enum.map(implementations, &Map.take(&1, [:implementation_key, :structure_aliases]))
+
+    event = %{
+      event: "execute_implementations",
+      payload: JSON.encode!(payload),
+    }
+
+    case Publisher.publish(event, "cx:events") do
+      {:ok, _event_id} ->
+        body = JSON.encode!(%{data: keys})
+
+        conn
+        |> put_resp_content_type("application/json", "utf-8")
+        |> send_resp(:ok, body)
+
+      {:error, error} ->
+        Logger.info("While executing implementations... #{inspect(error)}")
+
+        conn
+        |> put_resp_content_type("application/json", "utf-8")
+        |> send_resp(:unprocessable_entity, JSON.encode!(%{error: error}))
+    end
+  end
+
+  defp search_executable_implementations(user, params) do
+    %{results: implementations} =
+      params
+      |> Map.put(:without, ["deleted_at"])
+      |> Map.drop(["page", "size"])
+      |> Search.search(user, 0, 10_000, :implementations)
+
+    implementations
   end
 
   defp add_last_rule_result(implementation) do
@@ -318,7 +374,8 @@ defmodule TdDqWeb.ImplementationController do
     )
   end
 
-  defp deleted_implementations(%{"status" => "deleted"} = params), do: Map.put(params, :with, ["deleted_at"])
+  defp deleted_implementations(%{"status" => "deleted"} = params),
+    do: Map.put(params, :with, ["deleted_at"])
 
   defp deleted_implementations(params), do: Map.put(params, :without, ["deleted_at"])
 
