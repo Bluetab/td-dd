@@ -69,6 +69,15 @@ config :td_dq, :cache_cleaner,
   clean_on_startup: true,
   patterns: ["rule_result:*"]
 
+config :td_dq, TdDq.Scheduler,
+  jobs: [
+    [
+      schedule: "@daily",
+      task: {TdDq.Search.IndexWorker, :reindex, []},
+      run_strategy: Quantum.RunStrategy.Local
+    ]
+  ]
+
 # Import Elasticsearch config
 import_config "elastic.exs"
 
@@ -76,11 +85,3 @@ import_config "elastic.exs"
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"
 
-config :td_dq, TdDq.Scheduler,
-  jobs: [
-    [
-      schedule: "@hourly",
-      task: {TdDq.Search.IndexWorker, :reindex, []},
-      run_strategy: Quantum.RunStrategy.Local
-    ]
-  ]

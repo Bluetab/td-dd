@@ -1,6 +1,7 @@
 defmodule TdDqWeb.ImplementationView do
   use TdDqWeb, :view
 
+  alias TdDq.Rules
   alias TdDqWeb.Implementation.ConditionView
   alias TdDqWeb.Implementation.DatasetView
   alias TdDqWeb.Implementation.RawContent
@@ -64,10 +65,26 @@ defmodule TdDqWeb.ImplementationView do
   end
 
   defp add_rule(mapping, %{rule: rule}) when map_size(rule) > 0 do
-    Map.put(mapping, :rule, Map.take(rule, [:active, :goal, :name, :minimum, :result_type, :df_content]))
+    rule =
+      rule
+      |> Map.take([:active, :goal, :name, :minimum, :result_type, :df_content, :df_name])
+      |> add_dynamic_content()
+
+    Map.put(mapping, :rule, rule)
   end
 
   defp add_rule(mapping, _implementation), do: mapping
+
+  defp add_dynamic_content(rule) do
+    df_name = Map.get(rule, :df_name)
+
+    content =
+      rule
+      |> Map.get(:df_content)
+      |> Rules.get_cached_content(df_name)
+
+    Map.put(rule, :df_content, content)
+  end
 
   defp add_last_rule_results(implementation_mapping, implementation) do
     rule_results_mappings =

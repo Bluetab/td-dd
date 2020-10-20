@@ -100,7 +100,7 @@ defmodule TdDq.Search.IndexWorker do
 
   @impl GenServer
   def handle_cast(:reindex, state) do
-    do_reindex_implementations(:all)
+    do_reindex(:all)
 
     {:noreply, state}
   end

@@ -7,6 +7,8 @@ defmodule TdDq.Rules do
 
   alias Ecto.Multi
   alias TdCache.ConceptCache
+  alias TdCache.TemplateCache
+  alias TdDfLib.Format
   alias TdDq.Cache.RuleLoader
   alias TdDq.Repo
   alias TdDq.Rules.Audit
@@ -269,6 +271,18 @@ defmodule TdDq.Rules do
 
   def get_rule_or_nil(id) when is_nil(id) or id == "", do: nil
   def get_rule_or_nil(id), do: get_rule(id)
+
+  def get_cached_content(%{} = content, type) when is_binary(type) do
+    case TemplateCache.get_by_name!(type) do
+      template = %{} ->
+        Format.enrich_content_values(content, template)
+
+      _ ->
+        content
+    end
+  end
+
+  def get_cached_content(content, _type), do: content
 
   defp filter(params, fields) do
     params

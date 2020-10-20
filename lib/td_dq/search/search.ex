@@ -8,6 +8,7 @@ defmodule TdDq.Search do
 
   def search(query, index) do
     Logger.debug(fn -> "Query: #{inspect(query)}" end)
+
     response = Elasticsearch.post(Cluster, "/#{index}/_search", query)
 
     case response do
@@ -46,4 +47,6 @@ defmodule TdDq.Search do
   defp filter_values({name, %{"distinct_search" => distinct_search}}) do
     filter_values({name, distinct_search})
   end
+
+  defp filter_values({name, %{"doc_count" => 0}}), do: {name, []}
 end

@@ -3,6 +3,7 @@ defmodule TdDqWeb.RuleView do
   use TdHypermedia, :view
 
   alias TdCache.ConceptCache
+  alias TdDq.Rules
   alias TdDqWeb.RuleView
 
   def render("index.json", %{hypermedia: hypermedia}) do
@@ -87,9 +88,16 @@ defmodule TdDqWeb.RuleView do
   end
 
   defp add_dynamic_content(json, rule) do
+    df_name = Map.get(rule, :df_name)
+
+    content =
+      rule
+      |> Map.get(:df_content)
+      |> Rules.get_cached_content(df_name)
+
     %{
-      df_name: rule.df_name,
-      df_content: rule.df_content
+      df_name: df_name,
+      df_content: content
     }
     |> Map.merge(json)
   end
