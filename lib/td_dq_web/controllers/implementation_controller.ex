@@ -324,7 +324,7 @@ defmodule TdDqWeb.ImplementationController do
     user = conn.assigns[:current_resource]
     implementations = search_executable_implementations(user, params)
     keys = Enum.map(implementations, &Map.get(&1, :implementation_key))
-    payload =  Enum.map(implementations, &Map.take(&1, [:implementation_key, :structure_aliases]))
+    payload = Enum.map(implementations, &Map.take(&1, [:implementation_key, :structure_aliases]))
 
     event = %{
       event: "execute_implementations",
