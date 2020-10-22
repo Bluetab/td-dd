@@ -30,7 +30,6 @@ defmodule TdDd.DataStructures.BulkUpdate do
   def from_csv(upload, user) do
     with {:ok, rows} <- parse_file(upload) do
       rows
-      |> decode_rows()
       |> Enum.with_index()
       |> Enum.map(fn {row, index} -> {row, index + 2} end)
       |> Enum.map(fn {%{"external_id" => external_id} = row, index} ->
@@ -50,12 +49,17 @@ defmodule TdDd.DataStructures.BulkUpdate do
     end
   end
 
-  defp parse_file(upload) do
+  def parse_file(%{path: path}) do
+    parse_file(path)
+  end
+
+  def parse_file(path) do
     rows =
-      upload
-      |> Map.get(:path)
+      path
       |> Path.expand()
       |> File.stream!()
+      |> Stream.map(&recode/1)
+      |> Stream.reject(&String.trim(&1) == "")
       |> CSV.decode!(separator: ?;, headers: true)
       |> Enum.to_list()
 
@@ -64,26 +68,11 @@ defmodule TdDd.DataStructures.BulkUpdate do
     _ -> {:error, %{message: :invalid_file_format}}
   end
 
-  defp decode_rows(rows) do
-    Enum.map(rows, &decode_row/1)
-  end
-
-  defp decode_row(row) do
-    row
-    |> Enum.to_list()
-    |> Enum.map(fn {key, value} -> {key, decode(value)} end)
-    |> Enum.into(Map.new())
-  end
-
-  defp decode(value) do
-    if String.valid?(value) do
-      value
+  defp recode(s) do
+    if String.valid?(s) do
+      s
     else
-      Codepagex.to_string!(
-        value,
-        "VENDORS/MICSFT/WINDOWS/CP1252",
-        Codepagex.use_utf_replacement()
-      )
+      Codepagex.to_string!(s, "VENDORS/MICSFT/WINDOWS/CP1252", Codepagex.use_utf_replacement())
     end
   end
 
