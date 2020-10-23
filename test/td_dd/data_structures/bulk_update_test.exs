@@ -111,6 +111,26 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     [type: type]
   end
 
+  describe "parse_file/1" do
+    test "ignores empty lines" do
+      assert {:ok, rows} = BulkUpdate.parse_file("test/fixtures/td3071/empty_lines.csv")
+
+      assert rows == [
+               %{"bar" => "2", "foo" => "1"},
+               %{"bar" => "4", "foo" => "3"}
+             ]
+    end
+
+    test "converts Windows 1252 to UTF-8" do
+      assert {:ok, rows} = BulkUpdate.parse_file("test/fixtures/td3071/cp1252.csv")
+
+      assert rows == [
+               %{"encoding" => "CP1252", "text" => "“IS WONDERFUL”"},
+               %{"encoding" => "UTF-8", "text" => "R.I.P."}
+             ]
+    end
+  end
+
   describe "update_all/3" do
     test "update all data structures with valid data", %{type: type} do
       user = build(:user)
@@ -220,7 +240,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
           data_structure: build(:data_structure, df_content: %{"list" => "two"})
         ).data_structure_id
 
-      assert {:ok, %{updates: updates}} =
+      assert {:ok, %{updates: _updates}} =
                BulkUpdate.update_all([id], %{"df_content" => %{"list" => "one"}}, user)
 
       assert [id]
@@ -313,6 +333,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert Keyword.get(validation, :validation) == :inclusion
       assert Keyword.get(validation, :enum) == ["Yes", "No"]
+
       assert %{"text" => "foo"} =
                DataStructures.get_data_structure_by_external_id("ex_id1").df_content
     end
