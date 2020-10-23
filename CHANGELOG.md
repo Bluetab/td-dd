@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-3071] Ignore empty lines on bulk upload
+
 ## [4.6.0] 2020-10-19
 
 ### Added
