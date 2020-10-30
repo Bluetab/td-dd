@@ -185,6 +185,19 @@ defmodule TdDq.Rules.ImplementationsTest do
       assert implementation.rule_id == params["rule_id"]
     end
 
+    test "with duplicated implementation key returns an error", %{rule: rule} do
+      impl = insert(:implementation)
+
+      params =
+        string_params_for(:implementation,
+          rule_id: rule.id,
+          implementation_key: impl.implementation_key
+        )
+
+      assert {:error, %{valid?: false, errors: [implementation_key: {"duplicated", _}]}} =
+               Implementations.create_implementation(rule, params)
+    end
+
     test "with invalid keywords in raw content of raw implementation returns error", %{rule: rule} do
       raw_content = build(:raw_content, validations: "drop cliente")
       params = string_params_for(:raw_implementation, raw_content: raw_content)

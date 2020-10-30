@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- [TD-3027] Controlled error while creating/updating an implementation with
+  duplicated key
+
 ### Changed
 
 - [TD-3047] Migrate executions functionality from rules to implementations
@@ -13,7 +18,7 @@
 - [TD-2485]:
   - Enrich template fields from cache
   - Mappings for system type of templates
-  
+
 ## [4.5.1] 2020-10-06
 
 ### Fixed
@@ -30,7 +35,8 @@
 
 ### Fixed
 
-- [TD-2805] Rename redis keys controlling migration in implementations migrator to avoid re-running it
+- [TD-2805] Rename redis keys controlling migration in implementations migrator
+  to avoid re-running it
 
 ## [4.0.0] 2020-07-01
 

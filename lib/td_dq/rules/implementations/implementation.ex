@@ -59,6 +59,10 @@ defmodule TdDq.Rules.Implementations.Implementation do
         |> validate_required([:implementation_key])
         |> validate_length(:implementation_key, max: 255)
         |> validate_format(:implementation_key, ~r/^[A-z0-9]*$/)
+        |> unique_constraint(:implementation_key,
+          name: :rule_implementations_implementation_key_index,
+          message: "duplicated"
+        )
     end
   end
 
