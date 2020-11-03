@@ -69,7 +69,7 @@ defmodule TdCx.MixProject do
       {:elasticsearch,
        git: "https://github.com/Bluetab/elasticsearch-elixir.git",
        branch: "feature/bulk-index-action"},
-      {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "4.6.0"},
+      {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "4.7.1", override: true},
       {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "4.6.0"}
     ]
   end

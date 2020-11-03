@@ -1,12 +1,14 @@
 defmodule TdCxWeb.SourceControllerTest do
   use TdCxWeb.ConnCase
 
+  alias TdCx.Cache.SourceLoader
   alias TdCx.Permissions.MockPermissionResolver
   alias TdCx.Sources
   alias TdCx.Sources.Source
 
   setup_all do
     start_supervised(MockPermissionResolver)
+    start_supervised(SourceLoader)
     :ok
   end
 

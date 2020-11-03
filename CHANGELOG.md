@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-2952] As a user with permission to execute rules I want to run implementations manually
+  from the implementations screen for Kubernetes Cluster. Cached sources
+
 ## [4.6.0] 2020-10-19
 
 ### Added
