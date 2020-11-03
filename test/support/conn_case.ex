@@ -38,6 +38,11 @@ defmodule TdCxWeb.ConnCase do
 
     unless tags[:async] do
       Sandbox.mode(TdCx.Repo, {:shared, self()})
+      parent = self()
+
+      allow(parent, [
+        TdCx.Cache.SourceLoader
+      ])
     end
 
     cond do
@@ -52,6 +57,16 @@ defmodule TdCxWeb.ConnCase do
       true ->
         {:ok, conn: Phoenix.ConnTest.build_conn()}
     end
+  end
 
+  defp allow(parent, workers) do
+    Enum.each(workers, fn worker ->
+      case Process.whereis(worker) do
+        nil ->
+          nil
+
+        pid -> Sandbox.allow(TdCx.Repo, parent, pid)
+      end
+    end)
   end
 end

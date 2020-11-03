@@ -1,7 +1,13 @@
 defmodule TdCx.SourcesTest do
   use TdCx.DataCase
 
+  alias TdCx.Cache.SourceLoader
   alias TdCx.Sources
+
+  setup_all do
+    start_supervised(SourceLoader)
+    :ok
+  end
 
   describe "sources" do
     alias TdCx.Sources.Source

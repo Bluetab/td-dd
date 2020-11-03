@@ -34,10 +34,10 @@ defmodule TdCx.DataCase do
       Sandbox.mode(TdCx.Repo, {:shared, self()})
       parent = self()
 
-      case Process.whereis(TdCx.Search.IndexWorker) do
-        nil -> nil
-        pid -> Sandbox.allow(TdCx.Repo, parent, pid)
-      end
+      allow(parent, [
+        TdCx.Cache.SourceLoader,
+        TdCx.Search.IndexWorker
+      ])
     end
 
     :ok
@@ -56,6 +56,17 @@ defmodule TdCx.DataCase do
       Enum.reduce(opts, message, fn {key, value}, acc ->
         String.replace(acc, "%{#{key}}", to_string(value))
       end)
+    end)
+  end
+
+  defp allow(parent, workers) do
+    Enum.each(workers, fn worker ->
+      case Process.whereis(worker) do
+        nil ->
+          nil
+
+        pid -> Sandbox.allow(TdCx.Repo, parent, pid)
+      end
     end)
   end
 end

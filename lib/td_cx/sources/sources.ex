@@ -5,6 +5,7 @@ defmodule TdCx.Sources do
 
   import Ecto.Query, warn: false
   alias TdCache.TemplateCache
+  alias TdCx.Cache.SourceLoader
   alias TdCx.Repo
   alias TdCx.Sources.Source
   alias TdCx.Vault
@@ -121,6 +122,7 @@ defmodule TdCx.Sources do
       |> Map.put("secrets", secrets)
       |> Map.put("config", config)
       |> do_create_source()
+      |> on_upsert()
     else
       error ->
         error
@@ -226,7 +228,9 @@ defmodule TdCx.Sources do
         |> Map.put("secrets", secrets)
         |> Map.put("config", config)
 
-      do_update_source(source, attrs)
+      source
+      |> do_update_source(attrs)
+      |> on_upsert()
     else
       error ->
         error
@@ -237,6 +241,7 @@ defmodule TdCx.Sources do
     source
     |> Source.changeset(attrs)
     |> Repo.update()
+    |> on_upsert()
   end
 
   defp do_update_source(%Source{} = source, %{"secrets" => secrets} = attrs)
@@ -283,6 +288,13 @@ defmodule TdCx.Sources do
     |> Repo.update()
   end
 
+  defp on_upsert(result) do
+    with {:ok, %Source{external_id: external_id} = _} <- result do
+      SourceLoader.refresh(external_id)
+      result
+    end
+  end
+
   @doc """
   Deletes a Source.
 
@@ -298,7 +310,7 @@ defmodule TdCx.Sources do
   def delete_source(%Source{secrets_key: secrets_key} = source) do
     with {:ok, source} <- do_delete_source(source),
          _v <- Vault.delete_secrets(secrets_key) do
-      {:ok, source}
+      on_delete({:ok, source})
     end
   end
 
@@ -316,6 +328,13 @@ defmodule TdCx.Sources do
 
   defp do_delete_source(%Source{jobs: jobs} = source) when length(jobs) > 0 do
     update_source(source, %{deleted_at: DateTime.utc_now()})
+  end
+
+  defp on_delete(res) do
+    with {:ok, %Source{id: id} = _} <- res do
+      SourceLoader.delete(id)
+      res
+    end
   end
 
   @doc """
