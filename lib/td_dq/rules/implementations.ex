@@ -397,7 +397,8 @@ defmodule TdDq.Rules.Implementations do
     values = Map.get(row, :value)
 
     case values do
-      nil -> row
+      nil ->
+        row
 
       _ ->
         values = Enum.map(values, &enrich_value_structure/1)

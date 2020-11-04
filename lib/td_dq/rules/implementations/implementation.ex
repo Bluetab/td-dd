@@ -131,8 +131,8 @@ defmodule TdDq.Rules.Implementations.Implementation do
       :minimum,
       :name,
       :version,
-      :df_content,
       :df_name,
+      :df_content,
       :result_type
     ]
 

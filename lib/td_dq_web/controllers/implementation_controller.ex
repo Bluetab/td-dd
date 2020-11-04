@@ -12,6 +12,7 @@ defmodule TdDqWeb.ImplementationController do
   alias TdDq.Repo
   alias TdDq.Rules
   alias TdDq.Rules.Implementations
+  alias TdDq.Rules.Implementations.Download
   alias TdDq.Rules.Implementations.Implementation
   alias TdDq.Rules.RuleResults
   alias TdDq.Rules.Search
@@ -303,6 +304,37 @@ defmodule TdDqWeb.ImplementationController do
     end
   end
 
+  swagger_path :csv do
+    description("Download CSV of implementations")
+    produces("application/json")
+
+    parameters do
+      search(:body, Schema.ref(:ImplementationsSearchFilters), "Search query parameter")
+    end
+
+    response(200, "OK")
+    response(403, "User is not authorized to perform this action")
+    response(422, "Error while CSV download")
+  end
+
+  def csv(conn, params) do
+    user = conn.assigns[:current_resource]
+
+    {header_labels, params} = Map.pop(params, "header_labels", %{})
+    {content_labels, params} = Map.pop(params, "content_labels", %{})
+
+    %{results: implementations} =
+      params
+      |> deleted_implementations()
+      |> Map.drop(["page", "size"])
+      |> Search.search(user, 0, 10_000, :implementations)
+
+    conn
+    |> put_resp_content_type("text/csv", "utf-8")
+    |> put_resp_header("content-disposition", "attachment; filename=\"implementations.zip\"")
+    |> send_resp(:ok, Download.to_csv(implementations, header_labels, content_labels))
+  end
+
   swagger_path :execute_implementations do
     description("Execute implementations")
     produces("application/json")
@@ -328,7 +360,7 @@ defmodule TdDqWeb.ImplementationController do
 
     event = %{
       event: "execute_implementations",
-      payload: JSON.encode!(payload),
+      payload: JSON.encode!(payload)
     }
 
     case Publisher.publish(event, "cx:events") do

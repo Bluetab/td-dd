@@ -63,18 +63,20 @@ defmodule TdDq.Rules.RuleTest do
     test "validates goal and minimum are between 0 and 100 if result_type is percentage" do
       params = params_for(:rule, result_type: "percentage", goal: 101, minimum: -1)
       assert %{valid?: false, errors: errors} = Rule.changeset(params)
-      assert {_, [validation: number, kind: :less_than_or_equal_to, number: 100]} = errors[:goal]
+      assert {_, [validation: :number, kind: :less_than_or_equal_to, number: 100]} = errors[:goal]
 
-      assert {_, [validation: number, kind: :greater_than_or_equal_to, number: 0]} =
+      assert {_, [validation: :number, kind: :greater_than_or_equal_to, number: 0]} =
                errors[:minimum]
     end
 
     test "validates goal and minimum >= 0 if result_type is errors_number" do
       params = params_for(:rule, result_type: "errors_number", goal: -1, minimum: -1)
       assert %{valid?: false, errors: errors} = Rule.changeset(params)
-      assert {_, [validation: number, kind: :greater_than_or_equal_to, number: 0]} = errors[:goal]
 
-      assert {_, [validation: number, kind: :greater_than_or_equal_to, number: 0]} =
+      assert {_, [validation: :number, kind: :greater_than_or_equal_to, number: 0]} =
+               errors[:goal]
+
+      assert {_, [validation: :number, kind: :greater_than_or_equal_to, number: 0]} =
                errors[:minimum]
     end
 
