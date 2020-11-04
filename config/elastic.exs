@@ -50,7 +50,7 @@ config :td_dq, TdDq.Search.Cluster,
       bulk_action: "index"
     },
     implementations: %{
-       # This map describes the mappings and settings for your index. It will
+      # This map describes the mappings and settings for your index. It will
       # be posted as-is to Elasticsearch when you create your index, and
       # therefore allows all the settings you could post directly.
       settings: %{},

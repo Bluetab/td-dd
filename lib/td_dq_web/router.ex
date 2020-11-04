@@ -34,11 +34,17 @@ defmodule TdDqWeb.Router do
 
     post("/rules/search", SearchController, :search_rules)
     get("/rules/search/reindex_all", SearchController, :reindex_all_rules)
-    get("/rule_implementations/search/reindex_all", SearchController, :reindex_all_implementations)
+
+    get(
+      "/rule_implementations/search/reindex_all",
+      SearchController,
+      :reindex_all_implementations
+    )
 
     post("/rule_filters/search", RuleFilterController, :search)
     post("/rule_implementation_filters/search", ImplementationFilterController, :search)
     resources("/rule_implementations", ImplementationController, except: [:new, :edit])
+    post("/rule_implementations/csv", ImplementationController, :csv)
     post("/rule_implementations/search", SearchController, :search_implementations)
     post("/rule_implementations/execute", ImplementationController, :execute_implementations)
   end

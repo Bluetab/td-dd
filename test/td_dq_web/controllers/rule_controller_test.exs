@@ -121,7 +121,7 @@ defmodule TdDqWeb.RuleControllerTest do
                |> validate_resp_schema(schema, "RuleResponse")
                |> json_response(:created)
 
-      assert %{"id" => id} = data
+      assert %{"id" => _id} = data
     end
 
     @tag :admin_authenticated

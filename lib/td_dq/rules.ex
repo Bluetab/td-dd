@@ -296,5 +296,4 @@ defmodule TdDq.Rules do
       dynamic([p], field(p, ^field) == ^value and ^acc)
     end)
   end
-
 end

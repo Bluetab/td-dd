@@ -53,7 +53,7 @@ defmodule TdDq.RuleResultsTest do
       %{id: rule_id, name: name} = rule = insert(:rule)
       rule_result = insert(:rule_result)
 
-      assert {:ok, %{__meta__: meta}} = RuleResults.delete_rule_result(rule_result, rule)
+      assert {:ok, _result} = RuleResults.delete_rule_result(rule_result, rule)
       assert {:ok, %{name: ^name}} = RuleCache.get(rule_id)
 
       on_exit(fn -> RuleCache.delete(rule_id) end)

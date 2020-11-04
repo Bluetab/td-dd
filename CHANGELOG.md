@@ -2,6 +2,10 @@
 
 ## [4.7.0] 2020-11-03
 
+### Added
+
+- [TD-2092] Download implementations in csv format
+
 ### Fixed
 
 - [TD-3027] Controlled error while creating/updating an implementation with

@@ -42,7 +42,7 @@ defmodule TdDq.RulesTest do
   describe "create_rule/2" do
     test "creates a rule with valid data", %{user: user} do
       params = string_params_for(:rule)
-      assert {:ok, %{rule: rule}} = Rules.create_rule(params, user)
+      assert {:ok, %{rule: _rule}} = Rules.create_rule(params, user)
     end
 
     test "publishes an audit event", %{user: user} do
@@ -63,7 +63,7 @@ defmodule TdDq.RulesTest do
     test "updates rule if changes are valid", %{user: user} do
       rule = insert(:rule)
       params = %{"name" => "New name", "description" => %{"document" => "New description"}}
-      assert {:ok, %{rule: rule}} = Rules.update_rule(rule, params, user)
+      assert {:ok, %{rule: _rule}} = Rules.update_rule(rule, params, user)
     end
 
     test "publishes an audit event", %{user: user} do

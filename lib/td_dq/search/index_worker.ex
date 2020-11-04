@@ -130,16 +130,15 @@ defmodule TdDq.Search.IndexWorker do
       |> Enum.flat_map(&read_rule_ids/1)
       |> Enum.uniq()
 
-    implementation_ids =
-      rule_ids
-      |> Implementations.get_rule_implementations()
-      |> Enum.map(&Map.get(&1, :id))
-
     if Enum.member?(rule_ids, :all) do
       do_reindex(:all)
     else
       do_reindex_rules(rule_ids)
-      do_reindex_implementations(implementation_ids)
+
+      rule_ids
+      |> Implementations.get_rule_implementations()
+      |> Enum.map(&Map.get(&1, :id))
+      |> do_reindex_implementations()
     end
 
     {:noreply, state}
