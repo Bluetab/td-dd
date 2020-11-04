@@ -68,7 +68,7 @@ defmodule TdCx.Cache.SourceLoader do
   ## Private functions
 
   defp refresh_all_sources do
-    with sources <- Sources.list_sources(),
+    with sources <- Sources.list_sources(deleted: false),
          {:ok, cached_sources} <- SourceCache.sources(),
          ids_to_delete <- sources_to_delete(sources, cached_sources) do
       load_source_data(sources)
