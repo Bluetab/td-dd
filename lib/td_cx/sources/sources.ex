@@ -288,12 +288,18 @@ defmodule TdCx.Sources do
     |> Repo.update()
   end
 
-  defp on_upsert(result) do
-    with {:ok, %Source{external_id: external_id} = _} <- result do
-      SourceLoader.refresh(external_id)
-      result
-    end
+  defp on_upsert({:ok, %Source{id: id, deleted_at: deleted_at}} = result)
+       when not is_nil(deleted_at) do
+    SourceLoader.delete(id)
+    result
   end
+
+  defp on_upsert({:ok, %Source{external_id: external_id}} = result) do
+    SourceLoader.refresh(external_id)
+    result
+  end
+
+  defp on_upsert(result), do: result
 
   @doc """
   Deletes a Source.

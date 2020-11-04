@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.7.1] 2020-11-04
+
+### Fixed
+
+- [TD-2952] Remove deleted sources from cache
+
 ## [4.7.0] 2020-11-03
 
 ### Added
