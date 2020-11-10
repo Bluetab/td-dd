@@ -5,6 +5,7 @@
 ### Changed
 
 - [TD-2727] Support for job detail view
+- [TD-3109] Include timestamp and metadata in log entries
 
 ## [4.7.1] 2020-11-04
 

@@ -11,8 +11,3 @@ use Mix.Config
 # before starting your production server.
 config :td_cx, TdCxWeb.Endpoint,
   server: true
-
-# Do not print debug messages in production
-config :logger, :console,
-  format: (System.get_env("EX_LOGGER_FORMAT") || "[$level] $message") <> "\n",
-  level: :info
