@@ -11,6 +11,10 @@ defmodule TdCxWeb.SourceView do
     %{data: render_one(source, SourceView, "source.json")}
   end
 
+  def render("embedded.json", %{source: source}) do
+    Map.take(source, [:id, :external_id, :type, :active])
+  end
+
   def render("source.json", %{source: source}) do
     %{
       id: source.id,

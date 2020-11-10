@@ -21,16 +21,20 @@ defmodule TdCxWeb.JobControllerTest do
 
     @tag :admin_authenticated
     test "lists jobs of a source", %{conn: conn, job: job} do
-      source = Map.get(job, :source, %{})
+      %{source: source, external_id: external_id} = job
+      %{external_id: source_external_id, type: source_type} = source
 
-      conn = get(conn, Routes.source_job_path(conn, :index, source.external_id))
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.source_job_path(conn, :index, source_external_id))
+               |> json_response(:ok)
 
-      assert json_response(conn, 200)["data"] == [
+      assert [
                %{
-                 "external_id" => job.external_id,
-                 "source" => %{"external_id" => source.external_id, "type" => source.type}
+                 "external_id" => ^external_id,
+                 "source" => %{"external_id" => ^source_external_id, "type" => ^source_type}
                }
-             ]
+             ] = data
     end
 
     @tag :admin_authenticated
@@ -50,19 +54,15 @@ defmodule TdCxWeb.JobControllerTest do
   describe "create job" do
     @tag :admin_authenticated
     test "creates job for a source", %{conn: conn} do
-      source = insert(:source)
-      conn = post(conn, Routes.source_job_path(conn, :create, source.external_id))
-      assert %{"external_id" => external_id} = json_response(conn, 201)["data"]
+      %{external_id: source_external_id} = insert(:source)
+
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.source_job_path(conn, :create, source_external_id))
+               |> json_response(:created)
+
+      assert %{"external_id" => external_id} = data
       assert not is_nil(external_id)
-
-      conn = get(conn, Routes.source_job_path(conn, :index, source.external_id))
-
-      assert json_response(conn, 200)["data"] == [
-               %{
-                 "external_id" => external_id,
-                 "source" => %{"external_id" => source.external_id, "type" => source.type}
-               }
-             ]
     end
 
     @tag :admin_authenticated
@@ -77,13 +77,19 @@ defmodule TdCxWeb.JobControllerTest do
 
     @tag :admin_authenticated
     test "show created job", %{conn: conn, job: job} do
-      source = Map.get(job, :source, %{})
+      %{external_id: external_id, source: source} = job
+      %{external_id: source_external_id, type: source_type} = source
+
       conn = get(conn, Routes.job_path(conn, :show, job.external_id))
 
-      assert json_response(conn, 200)["data"] == %{
-               "external_id" => job.external_id,
-               "source" => %{"external_id" => source.external_id, "type" => source.type}
-             }
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.job_path(conn, :show, job.external_id))
+               |> json_response(:ok)
+
+      assert %{"external_id" => ^external_id, "_embedded" => embedded} = data
+      assert %{"source" => source} = embedded
+      assert %{"external_id" => ^source_external_id, "type" => ^source_type} = source
     end
   end
 

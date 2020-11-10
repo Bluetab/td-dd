@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-2727] Support for job detail view
+
 ## [4.7.1] 2020-11-04
 
 ### Fixed
@@ -10,8 +16,9 @@
 
 ### Added
 
-- [TD-2952] As a user with permission to execute rules I want to run implementations manually
-  from the implementations screen for Kubernetes Cluster. Cached sources
+- [TD-2952] As a user with permission to execute rules I want to run
+  implementations manually from the implementations screen for Kubernetes
+  Cluster. Cached sources
 
 ## [4.6.0] 2020-10-19
 
@@ -20,7 +27,7 @@
 - [TD-2485]:
   - Enrich template fields from cache
   - Mappings for system type of templates
-  
+
 ## [4.3.0] 2020-09-07
 
 ### Changed
