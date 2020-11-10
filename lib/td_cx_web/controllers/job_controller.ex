@@ -37,7 +37,7 @@ defmodule TdCxWeb.JobController do
 
     with true <- can?(user, index(Job)),
          %{results: results} <- Search.search_jobs(params, user, 0, 10_000) do
-      render(conn, "index.json", jobs: results)
+      render(conn, "search.json", jobs: results)
     else
       false ->
         conn
@@ -115,7 +115,7 @@ defmodule TdCxWeb.JobController do
 
     with true <- can?(user, show(Job)),
          %Job{} = job <- Jobs.get_job!(external_id, [:events, :source]) do
-          render(conn, "show.json", job: job)
+      render(conn, "show.json", job: job)
     else
       false ->
         conn
@@ -135,11 +135,7 @@ defmodule TdCxWeb.JobController do
     description("Search jobs")
 
     parameters do
-      search(
-        :body,
-        Schema.ref(:JobFilterRequest),
-        "Search query and filter parameters"
-      )
+      search(:body, Schema.ref(:JobFilterRequest), "Search query and filter parameters")
     end
 
     response(200, "OK", Schema.ref(:JobsResponse))
@@ -147,8 +143,8 @@ defmodule TdCxWeb.JobController do
 
   def search(conn, params) do
     user = conn.assigns[:current_user]
-    page = params |> Map.get("page", 0)
-    size = params |> Map.get("size", 50)
+    page = Map.get(params, "page", 0)
+    size = Map.get(params, "size", 50)
 
     params
     |> Map.drop(["page", "size"])
@@ -159,8 +155,9 @@ defmodule TdCxWeb.JobController do
   def render_search(results, conn) do
     jobs = Map.get(results, :results)
     total = Map.get(results, :total)
+
     conn
     |> put_resp_header("x-total-count", "#{total}")
-    |> render("index.json", jobs: jobs)
+    |> render("search.json", jobs: jobs)
   end
 end

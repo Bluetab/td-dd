@@ -76,17 +76,20 @@ defmodule TdCxWeb.SourceControllerTest do
 
     @tag :admin_authenticated
     test "lists all sources", %{conn: conn} do
-      conn = get(conn, Routes.source_path(conn, :index, type: "app-admin"))
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.source_path(conn, :index, type: "app-admin"))
+               |> json_response(:ok)
 
       assert [
                %{
                  "config" => %{"a" => "1"},
                  "external_id" => "some external_id",
-                 "id" => id,
+                 "id" => _id,
                  "type" => "app-admin",
                  "active" => true
                }
-             ] = json_response(conn, 200)["data"]
+             ] = data
     end
   end
 
@@ -95,17 +98,18 @@ defmodule TdCxWeb.SourceControllerTest do
 
     @tag :admin_authenticated
     test "show source", %{conn: conn} do
-      conn = get(conn, Routes.source_path(conn, :show, "some external_id"))
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.source_path(conn, :show, "some external_id"))
+               |> json_response(:ok)
 
       assert %{
                "config" => %{"a" => "1"},
                "external_id" => "some external_id",
-               "id" => id,
+               "id" => _id,
                "type" => "app-admin",
                "active" => true
-             } = json_response(conn, 200)["data"]
-
-      assert %{"a" => "1"} == json_response(conn, 200)["data"]["config"]
+             } = data
     end
   end
 
@@ -119,18 +123,19 @@ defmodule TdCxWeb.SourceControllerTest do
     @tag :admin_authenticated
     test "renders source when data is valid", %{conn: conn} do
       Templates.create_template(@app_admin_template)
-      conn = post(conn, Routes.source_path(conn, :create), source: @create_attrs)
-      assert %{"external_id" => external_id} = json_response(conn, 201)["data"]
 
-      conn = get(conn, Routes.source_path(conn, :show, external_id))
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.source_path(conn, :create), source: @create_attrs)
+               |> json_response(:created)
 
       assert %{
-               "id" => id,
+               "id" => _id,
                "config" => %{"a" => "1"},
                "external_id" => "some external_id",
                "type" => "app-admin",
                "active" => true
-             } = json_response(conn, 200)["data"]
+             } = data
     end
 
     @tag :admin_authenticated
@@ -158,18 +163,18 @@ defmodule TdCxWeb.SourceControllerTest do
       conn: conn,
       source: %Source{external_id: external_id}
     } do
-      conn = put(conn, Routes.source_path(conn, :update, external_id), source: @update_attrs)
-      assert %{"external_id" => ^external_id} = json_response(conn, 200)["data"]
-
-      conn = get(conn, Routes.source_path(conn, :show, external_id))
+      assert %{"data" => data} =
+               conn
+               |> put(Routes.source_path(conn, :update, external_id), source: @update_attrs)
+               |> json_response(:ok)
 
       assert %{
-               "id" => id,
+               "id" => _id,
                "config" => %{"a" => "3"},
-               "external_id" => "some external_id",
+               "external_id" => ^external_id,
                "type" => "app-admin",
                "active" => false
-             } = json_response(conn, 200)["data"]
+             } = data
     end
 
     @tag :admin_authenticated

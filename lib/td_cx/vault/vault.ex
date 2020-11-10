@@ -30,8 +30,7 @@ defmodule TdCx.Vault do
         {:vault_error, "Error storing secrets"}
 
       {:error, [error, error_code]} ->
-        Logger.error(error_code)
-        Logger.error(error)
+        Logger.error("#{error_code}: #{error}")
         {:vault_error, "Error storing secrets"}
 
       _error ->
@@ -77,8 +76,7 @@ defmodule TdCx.Vault do
         {:vault_error, "Error deleting secrets #{secrets_key}"}
 
       {:error, [error, error_code]} ->
-        Logger.error(error_code)
-        Logger.error(error)
+        Logger.error("#{error_code}: #{error}")
         {:vault_error, "Error deleting secrets #{secrets_key}"}
 
       {:error, code} ->
