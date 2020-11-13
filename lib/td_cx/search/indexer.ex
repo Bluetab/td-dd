@@ -23,7 +23,9 @@ defmodule TdCx.Search.Indexer do
       |> JSON.encode!()
       |> put_template(@index)
 
-    Index.hot_swap(Cluster, @index)
+    Cluster
+    |> Index.hot_swap(@index)
+    |> log_errors()
   end
 
   def reindex(ids) do
@@ -114,5 +116,27 @@ defmodule TdCx.Search.Indexer do
 
   defp log(error, _action) do
     Logger.warn("Bulk indexing encountered errors #{inspect(error)}")
+  end
+
+  defp log_errors(:ok), do: :ok
+  defp log_errors({:error, [e | _] = es}), do: log_errors(e, length(es))
+  defp log_errors({:error, e}), do: log_errors(e, 1)
+
+  defp log_errors(e, 1) do
+    message = message(e)
+    Logger.warn("Reindexing finished with error: #{message}")
+  end
+
+  defp log_errors(e, count) do
+    message = message(e)
+    Logger.warn("Reindexing finished with #{count} errors including: #{message}")
+  end
+
+  defp message(e) do
+    if Exception.exception?(e) do
+      Exception.message(e)
+    else
+      "#{inspect(e)}"
+    end
   end
 end
