@@ -3,7 +3,6 @@ defmodule TdCx.Search.Mappings do
   Generates mappings for elasticsearch
   """
 
-  @raw %{raw: %{type: "keyword"}}
   @raw_sort %{raw: %{type: "keyword"}, sort: %{type: "keyword", normalizer: "sortable"}}
 
   def get_mappings do
@@ -19,7 +18,7 @@ defmodule TdCx.Search.Mappings do
       start_date: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       end_date: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       status: %{type: "text", fields: @raw_sort},
-      message: %{type: "text", fields: @raw}
+      message: %{type: "text"}
     }
 
     settings = %{

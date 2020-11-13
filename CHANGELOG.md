@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- [TD-3114] Issue with mappings was causing indexing to fail
+
 ### Changed
 
 - [TD-2727] Support for job detail view
