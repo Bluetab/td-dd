@@ -538,24 +538,6 @@ defmodule TdDd.DataStructures do
 
   defp on_delete(res), do: res
 
-  def get_latest_version(target, options \\ [])
-
-  @doc """
-  Returns the latest data structure version for a given data structure.
-  """
-  def get_latest_version(%DataStructure{versions: versions}, options) when is_list(versions) do
-    versions
-    |> Enum.max_by(& &1.version)
-    |> enrich(options)
-  end
-
-  @doc """
-  Returns the latest data structure version for a given data structure.
-  """
-  def get_latest_version(%DataStructure{id: id}, options) do
-    get_latest_version(id, options)
-  end
-
   @doc """
   Returns the latest data structure version for a given data structure id;
 
@@ -565,6 +547,18 @@ defmodule TdDd.DataStructures do
       %DataStructureVersion{}
 
   """
+  def get_latest_version(target, options \\ [])
+
+  def get_latest_version(%DataStructure{versions: versions}, options) when is_list(versions) do
+    versions
+    |> Enum.max_by(& &1.version)
+    |> enrich(options)
+  end
+
+  def get_latest_version(%DataStructure{id: id}, options) do
+    get_latest_version(id, options)
+  end
+
   def get_latest_version(data_structure_id, options) do
     from(dsv in DataStructureVersion,
       where: dsv.data_structure_id == type(^data_structure_id, :integer),
@@ -651,7 +645,6 @@ defmodule TdDd.DataStructures do
   def get_structure_links(%{data_structure_id: id}) do
     case LinkCache.list("data_structure", id) do
       {:ok, links} -> links
-      _ -> []
     end
   end
 

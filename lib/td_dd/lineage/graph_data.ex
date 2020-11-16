@@ -310,8 +310,6 @@ defmodule TdDd.Lineage.GraphData do
     %{ids: Traversal.reaching(ids, contains), excludes: excludes}
   end
 
-  defp reaching(ids, contains), do: reaching(%{ids: ids, excludes: []}, contains)
-
   defp filter_excludes(external_ids, []), do: %{ids: external_ids, excludes: []}
 
   defp filter_excludes(external_ids, [_ | _] = excludes) do
@@ -320,7 +318,7 @@ defmodule TdDd.Lineage.GraphData do
     |> do_filter_excludes(MapSet.new(external_ids))
   end
 
-  defp do_filter_excludes(%MapSet{} = excludes, %MapSet{} = external_ids) do
+  defp do_filter_excludes(excludes, external_ids) do
     excludes = MapSet.intersection(excludes, external_ids)
     ids = MapSet.difference(external_ids, excludes)
 

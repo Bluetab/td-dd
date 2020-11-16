@@ -28,6 +28,7 @@ defmodule TdDd.DataStructures.DataStructure do
     field(:domain_id, :integer)
     field(:external_id, :string)
     field(:last_change_by, :integer)
+    field(:row, :integer, virtual: true)
 
     timestamps(type: :utc_datetime)
   end
@@ -56,7 +57,7 @@ defmodule TdDd.DataStructures.DataStructure do
 
   def update_changeset(%__MODULE__{} = data_structure, params) do
     data_structure
-    |> cast(params, [:confidential, :df_content])
+    |> cast(params, [:confidential, :df_content, :domain_id])
     |> put_audit(params)
     |> validate_change(:df_content, Validation.validator(data_structure))
   end

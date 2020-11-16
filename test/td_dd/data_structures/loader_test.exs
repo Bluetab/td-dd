@@ -176,7 +176,7 @@ defmodule TdDd.LoaderTest do
       field_records = [f11, f12, f13, f21, f32, f41, f51, f61]
       relation_records = [r1, r2]
 
-      assert {:ok, context} =
+      assert {:ok, _context} =
                Loader.load(structure_records, field_records, relation_records, audit())
     end
 
@@ -282,7 +282,7 @@ defmodule TdDd.LoaderTest do
       field_records = [f11, f12, f13, f21, f32]
       relation_records = [r1, r2]
 
-      assert {:ok, context} =
+      assert {:ok, _context} =
                Loader.load(structure_records, field_records, relation_records, audit())
     end
 
@@ -335,7 +335,7 @@ defmodule TdDd.LoaderTest do
       field_records = [f11]
       relation_records = [r1]
 
-      assert {:ok, context} =
+      assert {:ok, _context} =
                Loader.load(structure_records, field_records, relation_records, audit())
 
       v1 = DataStructures.get_latest_version_by_external_id(s1.external_id)
@@ -369,7 +369,7 @@ defmodule TdDd.LoaderTest do
       field_records = [f11]
       relation_records = [r1]
 
-      assert {:ok, context} =
+      assert {:ok, _context} =
                Loader.load(structure_records, field_records, relation_records, audit())
 
       v1 = DataStructures.get_latest_version_by_external_id(s1.external_id)

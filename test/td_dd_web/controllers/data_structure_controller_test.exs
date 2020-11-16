@@ -186,7 +186,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
     @tag :admin_authenticated
     test "search_all", %{conn: conn, data_structure: %{id: id}} do
-      assert %{"data" => [%{"id" => ^id}], "filters" => filters} =
+      assert %{"data" => [%{"id" => ^id}], "filters" => _filters} =
                conn
                |> post(data_structure_path(conn, :search), %{})
                |> json_response(:ok)
@@ -254,7 +254,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert length(data) == 2
 
-      assert %{"data" => [], "scroll_id" => scroll_id} =
+      assert %{"data" => [], "scroll_id" => _scroll_id} =
                conn
                |> post(data_structure_path(conn, :search), %{
                  "scroll_id" => scroll_id,
