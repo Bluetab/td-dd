@@ -1,10 +1,12 @@
 # Changelog
 
-## [4.7.0] 2020-11-03
+## [4.8.0] 2020-11-16
 
 ### Added
-
 - [TD-2092] Download implementations in csv format
+
+
+## [4.7.0] 2020-11-03
 
 ### Fixed
 
