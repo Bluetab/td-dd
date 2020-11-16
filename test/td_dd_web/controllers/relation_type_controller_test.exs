@@ -24,11 +24,6 @@ defmodule TdDdWeb.RelationTypeControllerTest do
     :ok
   end
 
-  def fixture(:relation_type) do
-    {:ok, relation_type} = RelationTypes.create_relation_type(@create_attrs)
-    relation_type
-  end
-
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
@@ -36,30 +31,44 @@ defmodule TdDdWeb.RelationTypeControllerTest do
   describe "index" do
     @tag authenticated_user: @admin_user_name
     test "lists all relation_types", %{conn: conn} do
-      conn = get(conn, Routes.relation_type_path(conn, :index))
-      assert json_response(conn, 200)["data"] == [%{"description" => "Parent/Child", "id" => 1, "name" => "default"}]
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.relation_type_path(conn, :index))
+               |> json_response(:ok)
+
+      assert [%{"description" => "Parent/Child", "id" => 1, "name" => "default"}] = data
     end
   end
 
   describe "create relation_type" do
     @tag authenticated_user: @admin_user_name
     test "renders relation_type when data is valid", %{conn: conn} do
-      conn = post(conn, Routes.relation_type_path(conn, :create), relation_type: @create_attrs)
-      assert %{"id" => id} = json_response(conn, 201)["data"]
+      assert %{"data" => %{"id" => id}} =
+               conn
+               |> post(Routes.relation_type_path(conn, :create), relation_type: @create_attrs)
+               |> json_response(:created)
 
-      conn = get(conn, Routes.relation_type_path(conn, :show, id))
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.relation_type_path(conn, :show, id))
+               |> json_response(:ok)
 
       assert %{
-               "id" => id,
+               "id" => _id,
                "description" => "some description",
                "name" => "some name"
-             } = json_response(conn, 200)["data"]
+             } = data
     end
 
     @tag authenticated_user: @admin_user_name
     test "renders errors when data is invalid", %{conn: conn} do
-      conn = post(conn, Routes.relation_type_path(conn, :create), relation_type: @invalid_attrs)
-      assert json_response(conn, 422)["errors"] != %{}
+      assert %{"errors" => errors} =
+               conn
+               |> post(Routes.relation_type_path(conn, :create), relation_type: @invalid_attrs)
+               |> json_response(:unprocessable_entity)
+
+      assert errors
+      assert errors != %{}
     end
   end
 
@@ -67,23 +76,40 @@ defmodule TdDdWeb.RelationTypeControllerTest do
     setup [:create_relation_type]
 
     @tag authenticated_user: @admin_user_name
-    test "renders relation_type when data is valid", %{conn: conn, relation_type: %RelationType{id: id} = relation_type} do
-      conn = put(conn, Routes.relation_type_path(conn, :update, relation_type), relation_type: @update_attrs)
-      assert %{"id" => ^id} = json_response(conn, 200)["data"]
+    test "renders relation_type when data is valid", %{
+      conn: conn,
+      relation_type: %RelationType{id: id} = relation_type
+    } do
+      assert %{"data" => %{"id" => ^id}} =
+               conn
+               |> put(Routes.relation_type_path(conn, :update, relation_type),
+                 relation_type: @update_attrs
+               )
+               |> json_response(:ok)
 
-      conn = get(conn, Routes.relation_type_path(conn, :show, id))
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.relation_type_path(conn, :show, id))
+               |> json_response(:ok)
 
       assert %{
-               "id" => id,
+               "id" => _id,
                "description" => "some updated description",
                "name" => "some updated name"
-             } = json_response(conn, 200)["data"]
+             } = data
     end
 
     @tag authenticated_user: @admin_user_name
     test "renders errors when data is invalid", %{conn: conn, relation_type: relation_type} do
-      conn = put(conn, Routes.relation_type_path(conn, :update, relation_type), relation_type: @invalid_attrs)
-      assert json_response(conn, 422)["errors"] != %{}
+      assert %{"errors" => errors} =
+               conn
+               |> put(Routes.relation_type_path(conn, :update, relation_type),
+                 relation_type: @invalid_attrs
+               )
+               |> json_response(:unprocessable_entity)
+
+      assert errors
+      assert errors != %{}
     end
   end
 
@@ -92,17 +118,18 @@ defmodule TdDdWeb.RelationTypeControllerTest do
 
     @tag authenticated_user: @admin_user_name
     test "deletes chosen relation_type", %{conn: conn, relation_type: relation_type} do
-      conn = delete(conn, Routes.relation_type_path(conn, :delete, relation_type))
-      assert response(conn, 204)
+      assert conn
+             |> delete(Routes.relation_type_path(conn, :delete, relation_type))
+             |> response(:no_content)
 
-      assert_error_sent 404, fn ->
+      assert_error_sent :not_found, fn ->
         get(conn, Routes.relation_type_path(conn, :show, relation_type))
       end
     end
   end
 
   defp create_relation_type(_) do
-    relation_type = fixture(:relation_type)
+    {:ok, relation_type} = RelationTypes.create_relation_type(@create_attrs)
     {:ok, relation_type: relation_type}
   end
 end

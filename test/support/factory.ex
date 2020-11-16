@@ -19,7 +19,6 @@ defmodule TdDd.Factory do
     %User{
       id: sequence(:user_id, & &1),
       user_name: sequence("user_name"),
-      # TODO: Revise all usages of build(:user), etc.
       is_admin: true
     }
   end

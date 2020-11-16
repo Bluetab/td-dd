@@ -99,10 +99,10 @@ defmodule TdDd.Lineage.UnitsTest do
     test "links nodes to data structures by external_id", %{unit: unit} do
       assert %{id: system_id} = insert(:system)
 
-      assert %{id: structure_id, external_id: external_id} =
+      assert %{id: _structure_id, external_id: external_id} =
                insert(:data_structure, system_id: system_id)
 
-      assert %{external_id: external_id} = insert(:node, units: [unit], external_id: external_id)
+      assert %{external_id: ^external_id} = insert(:node, units: [unit], external_id: external_id)
       assert {:ok, 1} = Units.link_nodes(unit_id: unit.id)
     end
   end
@@ -134,10 +134,10 @@ defmodule TdDd.Lineage.UnitsTest do
 
   describe "delete_unit/2" do
     setup do
-      assert %{id: unit_id} = unit = insert(:unit)
+      assert %{id: _unit_id} = unit = insert(:unit)
       assert %{id: start_id} = node1 = insert(:node, units: [unit])
       assert %{id: end_id} = node2 = insert(:node, units: [unit])
-      assert %{id: edge_id} = edge = insert(:edge, start_id: start_id, end_id: end_id, unit: unit)
+      assert %{id: _edge_id} = edge = insert(:edge, start_id: start_id, end_id: end_id, unit: unit)
       [unit: unit, nodes: [node1, node2], edges: [edge]]
     end
 
@@ -213,7 +213,7 @@ defmodule TdDd.Lineage.UnitsTest do
              } = multi
 
       assert {1, deleted_ids} = delete_nodes
-      assert %Units.Unit{id: ^unit_id, deleted_at: deleted_at} = delete_unit
+      assert %Units.Unit{id: ^unit_id, deleted_at: _deleted_at} = delete_unit
       assert {2, _} = delete_unit_nodes
 
       refute MapSet.member?(deleted_ids, n1.id)

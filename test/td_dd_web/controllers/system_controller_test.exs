@@ -49,7 +49,7 @@ defmodule TdDdWeb.SystemControllerTest do
   describe "create system" do
     @tag authenticated_user: @admin_user_name
     test "renders system when data is valid", %{conn: conn, swagger_schema: schema} do
-      assert %{"data" => %{"id" => id}} =
+      assert %{"data" => %{"id" => _id}} =
                conn
                |> post(Routes.system_path(conn, :create), system: @create_attrs)
                |> validate_resp_schema(schema, "SystemResponse")
@@ -58,7 +58,7 @@ defmodule TdDdWeb.SystemControllerTest do
 
     @tag authenticated_user: @admin_user_name
     test "renders errors when data is invalid", %{conn: conn} do
-      assert %{"errors" => errors} =
+      assert %{"errors" => _errors} =
                conn
                |> post(Routes.system_path(conn, :create), system: @invalid_attrs)
                |> json_response(:unprocessable_entity)
