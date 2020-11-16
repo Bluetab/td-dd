@@ -14,7 +14,7 @@ defmodule TdDd.Search.Indexer do
 
   require Logger
 
-  @index "structures"
+  @index :structures
   @action "index"
 
   def reindex(:all) do
@@ -45,7 +45,7 @@ defmodule TdDd.Search.Indexer do
   def reindex(id), do: reindex([id])
 
   def delete(ids) when is_list(ids) do
-    Enum.each(ids, &Elasticsearch.delete_document(Cluster, &1, @index))
+    Enum.each(ids, &Elasticsearch.delete_document(Cluster, &1, "#{@index}"))
   end
 
   def delete(id), do: delete([id])
