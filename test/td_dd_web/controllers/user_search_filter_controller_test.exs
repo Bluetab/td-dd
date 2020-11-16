@@ -2,7 +2,6 @@ defmodule TdDdWeb.UserSearchFilterControllerTest do
   use TdDdWeb.ConnCase
 
   alias TdDd.Permissions.MockPermissionResolver
-  alias TdDd.UserSearchFilters
   alias TdDdWeb.ApiServices.MockTdAuthService
 
   setup_all do
@@ -18,11 +17,6 @@ defmodule TdDdWeb.UserSearchFilterControllerTest do
 
   @invalid_attrs %{filters: nil, name: nil, user_id: nil}
 
-  def fixture(:user_search_filter) do
-    {:ok, user_search_filter} = UserSearchFilters.create_user_search_filter(@create_attrs)
-    user_search_filter
-  end
-
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
@@ -30,58 +24,63 @@ defmodule TdDdWeb.UserSearchFilterControllerTest do
   describe "index" do
     @tag :admin_authenticated
     test "lists all user_search_filters", %{conn: conn} do
-      conn = get(conn, Routes.user_search_filter_path(conn, :index))
-      assert json_response(conn, 200)["data"] == []
+      assert %{"data" => []} =
+               conn
+               |> get(Routes.user_search_filter_path(conn, :index))
+               |> json_response(:ok)
     end
   end
 
   describe "index by user" do
     @tag :admin_authenticated
-    test "lists current user user_search_filters", %{conn: conn} do
-      conn1 = get(conn, Routes.user_search_filter_path(conn, :index))
-      current_user_id = conn1 |> Map.get(:assigns) |> Map.get(:current_user) |> Map.get(:id)
-
+    test "lists current user user_search_filters", %{conn: conn, user: %{id: user_id}} do
       insert(:user_search_filter, user_id: 1)
       insert(:user_search_filter, user_id: 2)
-      insert(:user_search_filter, name: "a", user_id: current_user_id)
-      insert(:user_search_filter, name: "b", user_id: current_user_id)
+      insert(:user_search_filter, name: "a", user_id: user_id)
+      insert(:user_search_filter, name: "b", user_id: user_id)
 
-      conn = get(conn, Routes.user_search_filter_path(conn, :index_by_user))
-      user_filters = json_response(conn, 200)["data"]
-      [user_id] = user_filters |> Enum.map(&(Map.get(&1, "user_id"))) |> Enum.uniq()
-      assert user_id == current_user_id
-      assert length(user_filters) == 2
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.user_search_filter_path(conn, :index_by_user))
+               |> json_response(:ok)
+
+      assert [%{"user_id" => ^user_id}, %{"user_id" => ^user_id}] = data
     end
   end
 
   describe "create user_search_filter" do
     @tag :admin_authenticated
     test "renders user_search_filter when data is valid", %{conn: conn} do
-      conn =
-        post(conn, Routes.user_search_filter_path(conn, :create),
-          user_search_filter: @create_attrs
-        )
+      assert %{"data" => %{"id" => id}} =
+               conn
+               |> post(Routes.user_search_filter_path(conn, :create),
+                 user_search_filter: @create_attrs
+               )
+               |> json_response(:created)
 
-      assert %{"id" => id} = json_response(conn, 201)["data"]
-
-      conn = get(conn, Routes.user_search_filter_path(conn, :show, id))
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.user_search_filter_path(conn, :show, id))
+               |> json_response(:ok)
 
       assert %{
-               "id" => id,
+               "id" => _id,
                "filters" => %{},
                "name" => "some name",
-               "user_id" => user_id
-             } = json_response(conn, 200)["data"]
+               "user_id" => _user_id
+             } = data
     end
 
     @tag :admin_authenticated
     test "renders errors when data is invalid", %{conn: conn} do
-      conn =
-        post(conn, Routes.user_search_filter_path(conn, :create),
-          user_search_filter: @invalid_attrs
-        )
+      assert %{"errors" => %{} = errors} =
+               conn
+               |> post(Routes.user_search_filter_path(conn, :create),
+                 user_search_filter: @invalid_attrs
+               )
+               |> json_response(:unprocessable_entity)
 
-      assert json_response(conn, 422)["errors"] != %{}
+      assert errors != %{}
     end
   end
 
@@ -90,19 +89,20 @@ defmodule TdDdWeb.UserSearchFilterControllerTest do
     test "deletes chosen user_search_filter", %{
       conn: conn
     } do
-      conn1 =
-        post(conn, Routes.user_search_filter_path(conn, :create),
-          user_search_filter: @create_attrs
-        )
+      assert %{"data" => %{"id" => id}} =
+               conn
+               |> post(Routes.user_search_filter_path(conn, :create),
+                 user_search_filter: @create_attrs
+               )
+               |> json_response(:created)
 
-      user_search_filter = conn1 |> Map.get(:assigns) |> Map.get(:user_search_filter)
+      assert conn
+             |> delete(Routes.user_search_filter_path(conn, :delete, id))
+             |> response(:no_content)
 
-      conn = delete(conn, Routes.user_search_filter_path(conn, :delete, user_search_filter))
-      assert response(conn, 204)
-
-      conn = get(conn, Routes.user_search_filter_path(conn, :show, user_search_filter))
-
-      assert response(conn, 404)
+      assert conn
+             |> get(Routes.user_search_filter_path(conn, :show, id))
+             |> response(:not_found)
     end
   end
 end

@@ -25,15 +25,12 @@ defmodule TdDd.Lineage do
   be pruned from the graph by specifying the `:excludes` option with a list of
   external_ids.
   """
+  def lineage(external_ids, opts)
+
   def lineage(external_ids, opts) when is_list(external_ids) do
     GenServer.call(__MODULE__, {:lineage, external_ids, opts}, 60_000)
   end
 
-  @doc """
-  Returns a lineage graph drawing for the specified `external_id`. Branches can
-  be pruned from the graph by specifying the `:excludes` option with a list of
-  external_ids.
-  """
   def lineage(external_id, opts), do: lineage([external_id], opts)
 
   @doc """
@@ -41,15 +38,12 @@ defmodule TdDd.Lineage do
   be pruned from the graph by specifying the `:excludes` option with a list of
   external_ids.
   """
+  def impact(external_id, opts)
+
   def impact(external_ids, opts) when is_list(external_ids) do
     GenServer.call(__MODULE__, {:impact, external_ids, opts}, 60_000)
   end
 
-  @doc """
-  Returns an impact graph drawing for the specified `external_id`. Branches can
-  be pruned from the graph by specifying the `:excludes` option with a list of
-  external_ids.
-  """
   def impact(external_id, opts), do: impact([external_id], opts)
 
   @doc """
@@ -57,15 +51,12 @@ defmodule TdDd.Lineage do
   be pruned from the graph by specifying the `:excludes` option with a list of
   external_ids.
   """
+  def lineage_csv(external_id, opts)
+
   def lineage_csv(external_ids, opts) when is_list(external_ids) do
     GenServer.call(__MODULE__, {:lineage_csv, external_ids, opts}, 60_000)
   end
 
-  @doc """
-  Returns a csv lineage/impact for the specified `external_id`. Branches can
-  be pruned from the graph by specifying the `:excludes` option with a list of
-  external_ids.
-  """
   def lineage_csv(external_id, opts), do: lineage_csv([external_id], opts)
 
   @doc """
@@ -73,15 +64,12 @@ defmodule TdDd.Lineage do
   be pruned from the graph by specifying the `:excludes` option with a list of
   external_ids.
   """
+  def impact_csv(external_id, opts)
+
   def impact_csv(external_ids, opts) when is_list(external_ids) do
     GenServer.call(__MODULE__, {:impact_csv, external_ids, opts}, 60_000)
   end
 
-  @doc """
-  Returns a csv impact for the specified `external_id`. Branches can
-  be pruned from the graph by specifying the `:excludes` option with a list of
-  external_ids.
-  """
   def impact_csv(external_id, opts), do: impact_csv([external_id], opts)
 
   @doc """

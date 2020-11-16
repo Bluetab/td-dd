@@ -38,6 +38,7 @@ defmodule TdDdWeb.GroupController do
       |> put_resp_content_type("application/json", "utf-8")
       |> send_resp(:ok, JSON.encode!(%{data: groups}))
     else
+      {:can, false} -> {:can, false}
       nil -> {:error, :not_found}
     end
   end
@@ -64,6 +65,7 @@ defmodule TdDdWeb.GroupController do
          :ok <- Groups.delete(system_external_id, group) do
       send_resp(conn, :no_content, "")
     else
+      {:can, false} -> {:can, false}
       nil -> {:error, :not_found}
     end
   end

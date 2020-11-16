@@ -27,6 +27,6 @@ defmodule TdDd.Lineage.Units.Edge do
     edge
     |> cast(params, [:unit_id, :start_id, :end_id, :type])
     |> validate_required([:unit_id, :start_id, :end_id, :type])
-    |> unique_constraint(:unit_edge, [:unit_id, :start_id, :end_id])
+    |> unique_constraint([:unit_id, :start_id, :end_id])
   end
 end

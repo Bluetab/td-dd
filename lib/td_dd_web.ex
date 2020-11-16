@@ -85,10 +85,8 @@ defmodule TdDdWeb do
     apply(__MODULE__, which, [])
   end
 
-  @doc """
-  Custom log level for controllers
-  """
   defmacro __using__([:controller = which, log]) do
+    # Custom log level for controllers
     apply(__MODULE__, which, [log])
   end
 end

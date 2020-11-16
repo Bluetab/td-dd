@@ -44,13 +44,12 @@ defmodule TdDd.DataStructures.MerkleGraph do
   @doc """
   Returns a list of descendent vertices for a set of vertices
   """
+  def descendents(graph, external_ids)
+
   def descendents(graph, external_ids) when is_list(external_ids) do
     Traversal.reachable(external_ids, graph)
   end
 
-  @doc """
-  Returns a list of descendent vertices for a given vertex
-  """
   def descendents(graph, external_id) do
     descendents(graph, [external_id])
   end
@@ -135,9 +134,6 @@ defmodule TdDd.DataStructures.MerkleGraph do
           |> Enum.reduce(graph, &propagate_hashes/2)
 
         {:ok, graph}
-
-      e ->
-        e
     end
   end
 
@@ -167,7 +163,6 @@ defmodule TdDd.DataStructures.MerkleGraph do
   defp validate_nil({external_id, _labels}) do
     Logger.warn("#{external_id} :vertex_exists")
     raise ":vertex_exists"
-    :vertex_exists
   end
 
   defp propagate_hashes(g) do

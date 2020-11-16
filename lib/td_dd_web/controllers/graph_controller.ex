@@ -21,7 +21,7 @@ defmodule TdDdWeb.GraphController do
       conn
       |> put_resp_header("location", Routes.graph_path(TdDdWeb.Endpoint, :show, id))
       |> put_resp_content_type("application/json", "utf-8")
-      |> send_resp(201, json)
+      |> send_resp(:created, json)
     end
   end
 
@@ -78,8 +78,6 @@ defmodule TdDdWeb.GraphController do
     |> with_levels(params)
     |> with_header_labels(params)
   end
-
-  defp options(_params), do: []
 
   defp with_excludes(acc, %{"excludes" => excludes}), do: acc ++ [excludes: excludes]
   defp with_excludes(acc, _params), do: acc

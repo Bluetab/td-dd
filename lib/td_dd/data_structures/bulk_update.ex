@@ -6,6 +6,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
   require Logger
 
   alias Codepagex
+  alias Ecto.Changeset
   alias Ecto.Multi
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Audit
@@ -59,7 +60,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
       |> Path.expand()
       |> File.stream!()
       |> Stream.map(&recode/1)
-      |> Stream.reject(&String.trim(&1) == "")
+      |> Stream.reject(&(String.trim(&1) == ""))
       |> CSV.decode!(separator: ?;, headers: true)
       |> Enum.to_list()
 
@@ -175,8 +176,8 @@ defmodule TdDd.DataStructures.BulkUpdate do
       {:ok, %{id: id}} ->
         {:cont, Map.put(acc, id, changeset)}
 
-      {:error, error} ->
-        {:halt, {:error, Map.put(error, :row, row_index)}}
+      {:error, changeset} ->
+        {:halt, {:error, Changeset.put_change(changeset, :row, row_index)}}
     end
   end
 

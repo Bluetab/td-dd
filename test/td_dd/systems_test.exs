@@ -42,14 +42,14 @@ defmodule TdDd.SystemsTest do
       %{name: name, external_id: external_id} =
         params = :system |> build() |> Map.take([:external_id, :name])
 
-      assert {:ok, %{system: system} = res} = Systems.create_system(params, user)
+      assert {:ok, %{system: system}} = Systems.create_system(params, user)
       assert %{external_id: ^external_id, name: ^name} = system
     end
 
     test "emits an audit event", %{user: user} do
       params = :system |> build() |> Map.take([:external_id, :name])
 
-      assert {:ok, %{audit: event_id} = res} = Systems.create_system(params, user)
+      assert {:ok, %{audit: event_id}} = Systems.create_system(params, user)
       assert {:ok, [%{id: ^event_id}]} = Stream.read(:redix, @stream, transform: true)
     end
 
@@ -63,7 +63,7 @@ defmodule TdDd.SystemsTest do
       %{name: name, external_id: external_id} =
         params = :system |> build() |> Map.take([:external_id, :name])
 
-      assert {:ok, %{system: system} = res} = Systems.update_system(system, params, user)
+      assert {:ok, %{system: system}} = Systems.update_system(system, params, user)
       assert %{external_id: ^external_id, name: ^name} = system
     end
 

@@ -2,15 +2,8 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
   use TdDdWeb.ConnCase
 
   alias TdDd.DataStructures.DataStructuresTypes
-  alias TdDd.DataStructures.DataStructureType
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDdWeb.ApiServices.MockTdAuthService
-
-  setup_all do
-    start_supervised(MockTdAuthService)
-    start_supervised(MockPermissionResolver)
-    :ok
-  end
 
   @create_attrs %{
     structure_type: "some structure_type",
@@ -24,9 +17,10 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
   }
   @invalid_attrs %{structure_type: nil, template_id: nil, translation: nil}
 
-  def fixture(:data_structure_type) do
-    {:ok, data_structure_type} = DataStructuresTypes.create_data_structure_type(@create_attrs)
-    data_structure_type
+  setup_all do
+    start_supervised(MockTdAuthService)
+    start_supervised(MockPermissionResolver)
+    :ok
   end
 
   setup %{conn: conn} do
@@ -36,40 +30,47 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
   describe "index" do
     @tag :admin_authenticated
     test "lists all data_structure_types", %{conn: conn} do
-      conn = get(conn, Routes.data_structure_type_path(conn, :index))
-      assert json_response(conn, 200)["data"] == []
+      assert %{"data" => []} =
+               conn
+               |> get(Routes.data_structure_type_path(conn, :index))
+               |> json_response(:ok)
     end
   end
 
   describe "create data_structure_type" do
     @tag :admin_authenticated
     test "renders data_structure_type when data is valid", %{conn: conn} do
-      conn =
-        post(conn, Routes.data_structure_type_path(conn, :create),
-          data_structure_type: @create_attrs
-        )
+      assert %{"data" => %{"id" => id}} =
+               conn
+               |> post(Routes.data_structure_type_path(conn, :create),
+                 data_structure_type: @create_attrs
+               )
+               |> json_response(:created)
 
-      assert %{"id" => id} = json_response(conn, 201)["data"]
-
-      conn = get(conn, Routes.data_structure_type_path(conn, :show, id))
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.data_structure_type_path(conn, :show, id))
+               |> json_response(:ok)
 
       assert %{
-               "id" => id,
+               "id" => _id,
                "structure_type" => "some structure_type",
                "template_id" => 42,
                "translation" => "some translation",
                "metadata_fields" => nil
-             } = json_response(conn, 200)["data"]
+             } = data
     end
 
     @tag :admin_authenticated
     test "renders errors when data is invalid", %{conn: conn} do
-      conn =
-        post(conn, Routes.data_structure_type_path(conn, :create),
-          data_structure_type: @invalid_attrs
-        )
+      assert %{"errors" => %{} = errors} =
+               conn
+               |> post(Routes.data_structure_type_path(conn, :create),
+                 data_structure_type: @invalid_attrs
+               )
+               |> json_response(:unprocessable_entity)
 
-      assert json_response(conn, 422)["errors"] != %{}
+      assert errors != %{}
     end
   end
 
@@ -79,24 +80,27 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
     @tag :admin_authenticated
     test "renders data_structure_type when data is valid", %{
       conn: conn,
-      data_structure_type: %DataStructureType{id: id} = data_structure_type
+      data_structure_type: %{id: id}
     } do
-      conn =
-        put(conn, Routes.data_structure_type_path(conn, :update, data_structure_type),
-          data_structure_type: @update_attrs
-        )
+      assert %{"data" => %{"id" => ^id}} =
+               conn
+               |> put(Routes.data_structure_type_path(conn, :update, id),
+                 data_structure_type: @update_attrs
+               )
+               |> json_response(:ok)
 
-      assert %{"id" => ^id} = json_response(conn, 200)["data"]
-
-      conn = get(conn, Routes.data_structure_type_path(conn, :show, id))
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.data_structure_type_path(conn, :show, id))
+               |> json_response(:ok)
 
       assert %{
-               "id" => id,
+               "id" => _id,
                "structure_type" => "some updated structure_type",
                "template_id" => 43,
                "translation" => "some updated translation",
                "metadata_fields" => nil
-             } = json_response(conn, 200)["data"]
+             } = data
     end
 
     @tag :admin_authenticated
@@ -104,12 +108,14 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
       conn: conn,
       data_structure_type: data_structure_type
     } do
-      conn =
-        put(conn, Routes.data_structure_type_path(conn, :update, data_structure_type),
-          data_structure_type: @invalid_attrs
-        )
+      assert %{"errors" => %{} = errors} =
+               conn
+               |> put(Routes.data_structure_type_path(conn, :update, data_structure_type),
+                 data_structure_type: @invalid_attrs
+               )
+               |> json_response(:unprocessable_entity)
 
-      assert json_response(conn, 422)["errors"] != %{}
+      assert errors != %{}
     end
   end
 
@@ -121,17 +127,18 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
       conn: conn,
       data_structure_type: data_structure_type
     } do
-      conn = delete(conn, Routes.data_structure_type_path(conn, :delete, data_structure_type))
-      assert response(conn, 204)
+      assert conn
+             |> delete(Routes.data_structure_type_path(conn, :delete, data_structure_type))
+             |> response(:no_content)
 
-      assert_error_sent 404, fn ->
+      assert_error_sent :not_found, fn ->
         get(conn, Routes.data_structure_type_path(conn, :show, data_structure_type))
       end
     end
   end
 
   defp create_data_structure_type(_) do
-    data_structure_type = fixture(:data_structure_type)
+    {:ok, data_structure_type} = DataStructuresTypes.create_data_structure_type(@create_attrs)
     %{data_structure_type: data_structure_type}
   end
 end
