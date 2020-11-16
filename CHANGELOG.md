@@ -4,7 +4,7 @@
 
 ### Added
 
-- [TD-2258] The `domain_id` of a data structure can now be modified via API
+- [TD-3112] The `domain_id` of a data structure can now be modified via API
 - [TD-3115] Log error responses received from elasticsearch during bulk
   reindexing
 
