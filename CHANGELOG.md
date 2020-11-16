@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [4.8.0] 2020-11-16
 
 ### Fixed
 
