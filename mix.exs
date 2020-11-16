@@ -70,7 +70,7 @@ defmodule TdDq.Mixfile do
        branch: "feature/bulk-index-action"},
       {:td_hypermedia, git: "https://github.com/Bluetab/td-hypermedia.git", tag: "4.0.0"},
       {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "4.7.0", override: true},
-      {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "4.6.0"}
+      {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", branch: "feature/td-3089"}
     ]
   end
 
