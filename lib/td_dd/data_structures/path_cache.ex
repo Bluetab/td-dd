@@ -26,7 +26,14 @@ defmodule TdDd.DataStructures.PathCache do
     GenServer.call(__MODULE__, {:parent, id}, 10_000)
   end
 
-  def refresh(timeout \\ 60_000) do
+  def refresh do
+    :td_dd
+    |> Application.get_env(TdDd.Repo, [])
+    |> Keyword.get(:timeout, 600_000)
+    |> refresh()
+  end
+
+  def refresh(timeout) do
     GenServer.call(__MODULE__, :refresh, timeout)
   end
 
