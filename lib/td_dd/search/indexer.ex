@@ -14,7 +14,7 @@ defmodule TdDd.Search.Indexer do
 
   require Logger
 
-  @index :structures
+  @index "structures"
   @action "index"
 
   def reindex(:all) do
@@ -24,7 +24,9 @@ defmodule TdDd.Search.Indexer do
       |> JSON.encode!()
       |> put_template(@index)
 
-    Index.hot_swap(Cluster, @index)
+    Cluster
+    |> Index.hot_swap(@index)
+    |> log_errors()
   end
 
   def reindex(ids) when is_list(ids) do
@@ -51,6 +53,7 @@ defmodule TdDd.Search.Indexer do
   def migrate do
     if acquire_lock?("TD-2589") do
       Logger.info("Reindexing all data structures...")
+
       Timer.time(
         fn -> reindex(:all) end,
         fn millis, _ -> Logger.info("Reindexed #{@index} in #{millis}ms") end
@@ -90,5 +93,27 @@ defmodule TdDd.Search.Indexer do
   # Ensure only one instance of dd is reindexing by creating a lock in Redis
   defp acquire_lock?(id) do
     Redix.command!(["SET", "TdDd.DataStructures.Migrations:#{id}", node(), "NX"]) == "OK"
+  end
+
+  defp log_errors(:ok), do: :ok
+  defp log_errors({:error, [e | _] = es}), do: log_errors(e, length(es))
+  defp log_errors({:error, e}), do: log_errors(e, 1)
+
+  defp log_errors(e, 1) do
+    message = message(e)
+    Logger.warn("Reindexing finished with error: #{message}")
+  end
+
+  defp log_errors(e, count) do
+    message = message(e)
+    Logger.warn("Reindexing finished with #{count} errors including: #{message}")
+  end
+
+  defp message(e) do
+    if Exception.exception?(e) do
+      Exception.message(e)
+    else
+      "#{inspect(e)}"
+    end
   end
 end

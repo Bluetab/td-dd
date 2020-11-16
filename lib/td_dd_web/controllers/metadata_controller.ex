@@ -23,6 +23,7 @@ defmodule TdDdWeb.MetadataController do
       do_upload(conn, params, system_id: system_id)
       send_resp(conn, :accepted, "")
     else
+      {:can, false} -> {:can, false}
       nil -> {:error, :not_found}
     end
   end
@@ -79,6 +80,7 @@ defmodule TdDdWeb.MetadataController do
          dsv <- DataStructures.get_latest_version_by_external_id(external_id, enrich: [:ancestry]) do
       render(conn, "show.json", data_structure_version: dsv)
     else
+      {:can, false} -> {:can, false}
       nil -> {:error, :not_found}
     end
   end
