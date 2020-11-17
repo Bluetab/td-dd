@@ -1,10 +1,16 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-3089] Widget and type `copy` on df
+
 ## [4.8.0] 2020-11-16
 
 ### Added
-- [TD-2092] Download implementations in csv format
 
+- [TD-2092] Download implementations in csv format
 
 ## [4.7.0] 2020-11-03
 
