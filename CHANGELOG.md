@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-2258] Filter structures by `linked_concepts_count`
+
 ## [4.8.0] 2020-11-16
 
 ### Added
