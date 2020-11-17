@@ -10,6 +10,11 @@ defmodule TdDd.DataStructures.Search do
 
   require Logger
 
+  @field_to_range %{
+    "linked" => %{gt: 0},
+    "unlinked" => %{gte: 0, lt: 1}
+  }
+
   def get_filter_values(user, permission, params)
 
   def get_filter_values(%User{is_admin: true}, _permission, params) do
@@ -249,11 +254,29 @@ defmodule TdDd.DataStructures.Search do
     %{term: %{filter => value}}
   end
 
+  defp get_filter(_, values, "linked_concepts_count" = filter) do
+    %{range: create_range(filter, values)}
+  end
+
   defp get_filter(_, _, _), do: nil
 
   defp build_nested_query(%{terms: %{field: field}}, values) do
     %{terms: %{field => values}}
     |> bool_query()
+  end
+
+  defp create_range(_filter, []), do: []
+
+  defp create_range(filter, values) do
+    %{filter => range_condition(values)}
+  end
+
+  defp range_condition(values) do
+    case values do
+      [head] -> Map.fetch!(@field_to_range, head)
+      [_ | _] -> %{gte: 0}
+      _ -> %{}
+    end
   end
 
   defp create_query(%{"query" => query}, filter) do

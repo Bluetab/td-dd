@@ -65,8 +65,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
          %{changes: %{deleted_at: deleted_at}, data: %{updated_at: updated_at}} = changeset
        )
        when not is_nil(deleted_at) do
-    changeset
-    |> force_change(:updated_at, updated_at)
+    force_change(changeset, :updated_at, updated_at)
   end
 
   defp preserve_timestamp_on_delete(changeset), do: changeset
