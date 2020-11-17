@@ -112,6 +112,10 @@ defmodule TdDd.Search.Mappings do
     {name, %{enabled: false}}
   end
 
+  defp field_mapping(%{"name" => name, "type" => "copy"}) do
+    {name, %{enabled: false}}
+  end
+
   defp field_mapping(%{"name" => name, "type" => "system"}) do
     {name,
      %{

@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-3089] Widget and type `copy` on df
+
 ## [4.8.0] 2020-11-16
 
 ### Added
