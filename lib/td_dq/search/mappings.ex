@@ -213,7 +213,7 @@ defmodule TdDq.Search.Mappings do
     {name, %{type: "text", fields: @raw_sort}}
   end
 
-  defp field_mapping(%{"name" => name, "type" => "system"}) do
+  defp field_mapping(%{"name" => name, "type" => type}) when type in ["domain", "system"] do
     {name,
      %{
        type: "nested",
