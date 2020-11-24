@@ -55,6 +55,7 @@ defmodule TdDd.Lineage.Import.Loader do
       {:ok, Map.new(nodes, fn %{id: id, external_id: external_id} -> {external_id, id} end)}
     end)
     |> Multi.run(:upsert_unit_nodes, &upsert_unit_nodes/2)
+    |> Multi.run(:delete_orphaned_nodes, fn _, _ -> Units.delete_orphaned_nodes(logical: true) end)
     |> Multi.run(:upsert_edges, &upsert_edges/2)
     |> Multi.run(:link, fn _, %{unit: unit} -> Units.link_nodes(unit_id: unit.id) end)
     |> Repo.transaction()

@@ -200,7 +200,7 @@ defmodule TdDd.Lineage.Units do
     end)
   end
 
-  defp delete_orphaned_nodes(opts) do
+  def delete_orphaned_nodes(opts) do
     Repo.transaction(fn ->
       current_ids =
         "units_nodes"
