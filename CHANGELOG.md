@@ -6,6 +6,10 @@
 
 - [TD-3089] Widget and type `copy` on df
 
+### Changed
+
+- [TD-2946] Refresh unit on PUT request
+
 ## [4.8.0] 2020-11-16
 
 ### Added
