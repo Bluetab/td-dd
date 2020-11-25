@@ -1,8 +1,6 @@
 defmodule TdDd.Lineage.UnitsTest do
   use TdDd.DataCase
 
-  import Ecto.Query
-
   alias TdDd.Lineage.Units
 
   setup do
@@ -109,19 +107,20 @@ defmodule TdDd.Lineage.UnitsTest do
     end
   end
 
-  describe "Units.get_or_create_unit/1" do
+  describe "Units.refresh_unit/1" do
     test "inserts a unit if it doesn't exist" do
       ts = DateTime.utc_now()
 
       assert {:ok, %Units.Unit{inserted_at: inserted_at}} =
-               Units.get_or_create_unit(%{name: "foo"})
+               Units.refresh_unit(%{name: "foo"})
 
       assert DateTime.compare(ts, inserted_at) == :lt
     end
 
-    test "gets a unit if it exists" do
+    test "refreshes a unit if it exists" do
       assert %{id: id, name: name} = insert(:unit)
-      assert {:ok, %Units.Unit{id: ^id}} = Units.get_or_create_unit(%{name: name})
+      assert {:ok, %Units.Unit{name: ^name} = unit} = Units.refresh_unit(%{name: name})
+      refute unit.id == id
     end
   end
 
@@ -234,28 +233,6 @@ defmodule TdDd.Lineage.UnitsTest do
       assert %{deleted_at: nil} = TdDd.Repo.get(Units.Node, n1.id)
       Enum.each(node_ids, fn id -> refute TdDd.Repo.get(Units.Node, id) end)
       Enum.each(edge_ids, fn id -> refute TdDd.Repo.get(Units.Edge, id) end)
-    end
-  end
-
-  describe "delete_orphaned_nodes/1" do
-    setup do
-      assert %{id: unit_id} = unit = insert(:unit)
-      assert %{id: start_id} = node1 = insert(:node, units: [unit])
-      assert %{id: end_id} = node2 = insert(:node, units: [unit])
-
-      "units_nodes"
-      |> where([u], is_nil(u.deleted_at))
-      |> where([u], u.unit_id == ^unit_id)
-      |> where([u], u.node_id in ^[start_id, end_id])
-      |> TdDd.Repo.update_all(set: [deleted_at: DateTime.utc_now()])
-
-      [unit: unit, nodes: [node1, node2]]
-    end
-
-    test "deletes unit nodes when units_nodes are deleted", %{nodes: nodes} do
-      assert Enum.all?(nodes, &is_nil(&1.deleted_at))
-      assert {:ok, {2, _set}} = Units.delete_orphaned_nodes(logical: true)
-      assert Enum.all?(nodes, &(not is_nil(TdDd.Repo.get(Units.Node, &1.id).deleted_at)))
     end
   end
 end

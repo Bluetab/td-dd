@@ -147,11 +147,13 @@ defmodule TdDd.Lineage.Units do
     |> Repo.update()
   end
 
-  def get_or_create_unit(%{name: name} = params) do
-    case Repo.get_by(Unit, name: name) do
-      nil -> create_unit(params)
-      unit -> {:ok, unit}
+  def refresh_unit(%{name: name} = params) do
+    reply = get_by(name: name)
+    unless reply == {:error, :not_found} do
+      {:ok, unit} = reply
+      delete_unit(unit, logical: false)
     end
+    create_unit(params)
   end
 
   def delete_unit(%Unit{id: id} = unit, opts \\ []) do
@@ -200,7 +202,7 @@ defmodule TdDd.Lineage.Units do
     end)
   end
 
-  def delete_orphaned_nodes(opts) do
+  defp delete_orphaned_nodes(opts) do
     Repo.transaction(fn ->
       current_ids =
         "units_nodes"
