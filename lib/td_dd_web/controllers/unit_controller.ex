@@ -52,6 +52,7 @@ defmodule TdDdWeb.UnitController do
   def create(conn, %{} = params) do
     user = conn.assigns[:current_user]
     attrs = attributes(params)
+
     with {:can, true} <- {:can, can?(user, create(Unit))},
          {:ok, unit} <- Units.create_unit(attrs) do
       render(conn, "show.json", unit: unit)
@@ -67,8 +68,9 @@ defmodule TdDdWeb.UnitController do
   def update(conn, %{"nodes" => nodes, "rels" => rels} = params) do
     user = conn.assigns[:current_user]
     attrs = attributes(params)
+
     with {:can, true} <- {:can, can?(user, update(Unit))},
-         {:ok, %Units.Unit{} = unit} <- Units.refresh_unit(attrs),
+         {:ok, %Units.Unit{} = unit} <- Units.replace_unit(attrs),
          {:ok, nodes_path} <- copy(nodes),
          {:ok, rels_path} <- copy(rels) do
       Import.load(unit, nodes_path, rels_path)
@@ -121,5 +123,6 @@ defmodule TdDdWeb.UnitController do
     domain_id = Map.get(TaxonomyCache.get_domain_external_id_to_id_map(), domain)
     Map.put(acc, :domain_id, domain_id)
   end
+
   defp with_domain_id(acc, _attrs), do: acc
 end

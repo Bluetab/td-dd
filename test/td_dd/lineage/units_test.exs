@@ -107,20 +107,17 @@ defmodule TdDd.Lineage.UnitsTest do
     end
   end
 
-  describe "Units.refresh_unit/1" do
+  describe "Units.replace_unit/1" do
     test "inserts a unit if it doesn't exist" do
       ts = DateTime.utc_now()
-
-      assert {:ok, %Units.Unit{inserted_at: inserted_at}} =
-               Units.refresh_unit(%{name: "foo"})
-
+      assert {:ok, %Units.Unit{inserted_at: inserted_at}} = Units.replace_unit(%{name: "foo"})
       assert DateTime.compare(ts, inserted_at) == :lt
     end
 
     test "refreshes a unit if it exists" do
-      assert %{id: id, name: name} = insert(:unit)
-      assert {:ok, %Units.Unit{name: ^name} = unit} = Units.refresh_unit(%{name: name})
-      refute unit.id == id
+      assert %{id: prev_id, name: name} = insert(:unit)
+      assert {:ok, %Units.Unit{name: ^name, id: id}} = Units.replace_unit(%{name: name})
+      refute id == prev_id
     end
   end
 

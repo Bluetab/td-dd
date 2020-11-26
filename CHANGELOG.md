@@ -5,14 +5,11 @@
 ### Changed
 
 - [TD-2258] Filter structures by `linked_concepts_count`
+- [TD-2946] Replace unit on PUT request
 
 ### Added
 
 - [TD-3089] Widget and type `copy` on df
-
-### Changed
-
-- [TD-2946] Refresh unit on PUT request
 
 ## [4.8.0] 2020-11-16
 
