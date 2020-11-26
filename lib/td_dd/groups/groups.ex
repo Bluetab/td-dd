@@ -8,7 +8,7 @@ defmodule TdDd.Groups do
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Repo
 
-  @index_worker Application.get_env(:td_dd, :index_worker)
+  @index_worker Application.compile_env(:td_dd, :index_worker)
 
   def list_by_system(system_external_id) do
     Repo.all(
