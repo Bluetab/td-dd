@@ -15,6 +15,7 @@ defmodule TdDd.Cache.StructureLoader do
   require Logger
 
   @index_worker Application.get_env(:td_dd, :index_worker)
+  @structures_migration_key "TdDd.Structures.Migrations:cache_structures"
 
   ## Client API
 
@@ -39,7 +40,26 @@ defmodule TdDd.Cache.StructureLoader do
   def init(config) do
     name = String.replace_prefix("#{__MODULE__}", "Elixir.", "")
     Logger.info("Running #{name}")
+
+    unless Application.get_env(:td_dd, :env) == :test do
+      Process.send_after(self(), :migrate, 0)
+    end
+
     {:ok, config}
+  end
+
+  @impl GenServer
+  def handle_info(:migrate, state) do
+    if Redix.exists?(@structures_migration_key) == false do
+      do_refresh(force: true)
+      Redix.command!([
+        "SET",
+        @structures_migration_key,
+        "#{DateTime.utc_now()}"
+      ])
+    end
+
+    {:noreply, state}
   end
 
   @impl GenServer
@@ -81,12 +101,12 @@ defmodule TdDd.Cache.StructureLoader do
     |> Enum.map(&String.to_integer/1)
   end
 
-  defp cache_structures(structure_ids) do
+  defp cache_structures(structure_ids, opts \\ []) do
     structure_ids
     |> Enum.map(&DataStructures.get_latest_version(&1, [:parents]))
     |> Enum.filter(& &1)
     |> Enum.map(&to_cache_entry/1)
-    |> Enum.map(&StructureCache.put/1)
+    |> Enum.map(&StructureCache.put(&1, opts))
   end
 
   defp to_cache_entry(%DataStructureVersion{data_structure_id: id, data_structure: ds} = dsv) do
@@ -109,9 +129,9 @@ defmodule TdDd.Cache.StructureLoader do
     end
   end
 
-  defp do_refresh do
+  defp do_refresh(opts \\ []) do
     Timer.time(
-      fn -> refresh_cached_structures() end,
+      fn -> refresh_cached_structures(opts) end,
       fn ms, {updated, removed} ->
         Logger.info(
           "Structure cache refreshed in #{ms}ms (updated=#{updated}, removed=#{removed})"
@@ -122,10 +142,10 @@ defmodule TdDd.Cache.StructureLoader do
     e -> Logger.error("Unexpected error while refreshing cached structures... #{inspect(e)}")
   end
 
-  defp refresh_cached_structures do
+  defp refresh_cached_structures(opts) do
     with [_ | _] = keep_ids <- StructureCache.referenced_ids(),
          remove_count <- clean_cached_structures(keep_ids),
-         updates <- cache_structures(keep_ids),
+         updates <- cache_structures(keep_ids, opts),
          update_count <-
            Enum.count(updates, fn
              {:ok, ["OK" | _]} -> true
@@ -153,7 +173,8 @@ defmodule TdDd.Cache.StructureLoader do
     |> Enum.chunk_every(1000)
     |> Enum.map(&["DEL" | &1])
     |> Enum.concat([
-      ["SINTERSTORE", "data_structures:keys", "data_structures:keys", "data_structures:keys:keep"]
+      ["SINTERSTORE", "data_structures:keys", "data_structures:keys", "data_structures:keys:keep"],
+      ["SINTERSTORE", "data_structures:keys:deleted", "data_structures:keys:deleted", "data_structures:keys:keep"]
     ])
     |> Redix.transaction_pipeline!()
     |> Enum.sum()
