@@ -5,8 +5,10 @@ defmodule TdDd.Loader.DeleteByGroupTest do
   alias TdDd.DataStructures
   alias TdDd.Loader
 
-  @structure_import_schema Application.get_env(:td_dd, :metadata)[:structure_import_schema]
-  @structure_import_required Application.get_env(:td_dd, :metadata)[:structure_import_required]
+  @structure_import_schema Application.compile_env(:td_dd, :metadata)[:structure_import_schema]
+  @structure_import_required Application.compile_env(:td_dd, :metadata)[
+                               :structure_import_required
+                             ]
   @domain_map %{"Truedat" => 42}
 
   setup do

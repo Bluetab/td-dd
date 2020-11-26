@@ -9,8 +9,10 @@ defmodule TdDdWeb.ProfileController do
 
   require Logger
 
-  @profiling_import_required Application.get_env(:td_dd, :profiling)[:profiling_import_required]
-  @profiling_import_schema Application.get_env(:td_dd, :profiling)[:profiling_import_schema]
+  @profiling_import_required Application.compile_env(:td_dd, :profiling)[
+                               :profiling_import_required
+                             ]
+  @profiling_import_schema Application.compile_env(:td_dd, :profiling)[:profiling_import_schema]
 
   def upload(conn, %{"profiling" => profiling}) do
     user = GuardianPlug.current_resource(conn)

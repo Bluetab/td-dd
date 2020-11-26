@@ -14,7 +14,9 @@ defmodule TdDd.Search.Aggregations do
       {"confidential.raw", %{terms: %{field: "confidential.raw"}}},
       {"class.raw", %{terms: %{field: "class.raw"}}},
       {"field_type.raw", %{terms: %{field: "field_type.raw", size: 50}}},
-      {"with_content.raw", %{terms: %{field: "with_content.raw"}}}
+      {"with_content.raw", %{terms: %{field: "with_content.raw"}}},
+      {"linked_concepts_count",
+       %{terms: %{script: "doc['linked_concepts_count'].value > 0 ? 'linked' : 'unlinked'"}}}
     ]
 
     dynamic_keywords =
