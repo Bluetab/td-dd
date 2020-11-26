@@ -14,14 +14,16 @@ defmodule TdDd.Loader.LoaderWorker do
 
   require Logger
 
-  @index_worker Application.get_env(:td_dd, :index_worker)
-  @structure_import_schema Application.get_env(:td_dd, :metadata)[:structure_import_schema]
-  @structure_import_required Application.get_env(:td_dd, :metadata)[:structure_import_required]
-  @structure_import_boolean Application.get_env(:td_dd, :metadata)[:structure_import_boolean]
-  @field_import_schema Application.get_env(:td_dd, :metadata)[:field_import_schema]
-  @field_import_required Application.get_env(:td_dd, :metadata)[:field_import_required]
-  @relation_import_schema Application.get_env(:td_dd, :metadata)[:relation_import_schema]
-  @relation_import_required Application.get_env(:td_dd, :metadata)[:relation_import_required]
+  @index_worker Application.compile_env(:td_dd, :index_worker)
+  @structure_import_schema Application.compile_env(:td_dd, :metadata)[:structure_import_schema]
+  @structure_import_required Application.compile_env(:td_dd, :metadata)[
+                               :structure_import_required
+                             ]
+  @structure_import_boolean Application.compile_env(:td_dd, :metadata)[:structure_import_boolean]
+  @field_import_schema Application.compile_env(:td_dd, :metadata)[:field_import_schema]
+  @field_import_required Application.compile_env(:td_dd, :metadata)[:field_import_required]
+  @relation_import_schema Application.compile_env(:td_dd, :metadata)[:relation_import_schema]
+  @relation_import_required Application.compile_env(:td_dd, :metadata)[:relation_import_required]
 
   def start_link(_opts) do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)

@@ -2,9 +2,9 @@ defmodule TdDd.CSV.ReaderTest do
   use TdDd.DataCase
   alias TdDd.CSV.Reader
 
-  @structure_import_schema Application.get_env(:td_dd, :metadata)[:structure_import_schema]
-  @field_import_schema Application.get_env(:td_dd, :metadata)[:field_import_schema]
-  @field_import_required Application.get_env(:td_dd, :metadata)[:field_import_required]
+  @structure_import_schema Application.compile_env(:td_dd, :metadata)[:structure_import_schema]
+  @field_import_schema Application.compile_env(:td_dd, :metadata)[:field_import_schema]
+  @field_import_required Application.compile_env(:td_dd, :metadata)[:field_import_required]
 
   setup context do
     if path = context[:fixture] do
@@ -80,15 +80,15 @@ defmodule TdDd.CSV.ReaderTest do
              }
 
       assert r5 == %{
-          description: "description",
-          domain_id: 43,
-          metadata: %{},
-          mutable_metadata: %{},
-          name: "name",
-          version: 0,
-          domain_external_id: "domain2_eid",
-          ou: "domain1"
-        }
+               description: "description",
+               domain_id: 43,
+               metadata: %{},
+               mutable_metadata: %{},
+               name: "name",
+               version: 0,
+               domain_external_id: "domain2_eid",
+               ou: "domain1"
+             }
     end
 
     @tag fixture: "structures.csv"
