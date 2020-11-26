@@ -18,15 +18,16 @@ defmodule TdDd.Search.Indexer do
   @action "index"
 
   def reindex(:all) do
-    {:ok, _} =
-      Mappings.get_mappings()
-      |> Map.put(:index_patterns, "#{@index}-*")
-      |> JSON.encode!()
-      |> put_template(@index)
-
-    Cluster
-    |> Index.hot_swap(@index)
-    |> log_errors()
+    Mappings.get_mappings()
+    |> Map.put(:index_patterns, "#{@index}-*")
+    |> JSON.encode!()
+    |> put_template(@index)
+    |> case do
+      {:ok, _} ->
+        Cluster
+        |> Index.hot_swap(@index)
+        |> log_errors()
+    end
   end
 
   def reindex(ids) when is_list(ids) do

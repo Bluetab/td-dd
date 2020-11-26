@@ -65,8 +65,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
          %{changes: %{deleted_at: deleted_at}, data: %{updated_at: updated_at}} = changeset
        )
        when not is_nil(deleted_at) do
-    changeset
-    |> force_change(:updated_at, updated_at)
+    force_change(changeset, :updated_at, updated_at)
   end
 
   defp preserve_timestamp_on_delete(changeset), do: changeset
@@ -124,7 +123,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       parent = PathCache.parent(id)
       path_sort = Enum.join(path, "~")
       domain = TaxonomyCache.get_domain(structure.domain_id) || %{}
-      linked_concepts = linked_concepts(dsv)
+      linked_concept_count = linked_concept_count(dsv)
       df_content = format_content(structure, type)
       with_content = not Enum.empty?(df_content || %{})
 
@@ -142,7 +141,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       |> Map.put(:path_sort, path_sort)
       |> Map.put(:parent, parent)
       |> Map.put(:last_change_by, get_last_change_by(structure))
-      |> Map.put(:linked_concepts_count, linked_concepts)
+      |> Map.put(:linked_concepts_count, linked_concept_count)
       |> Map.put(:domain_ids, get_domain_ids(structure))
       |> Map.put(:system, get_system(structure))
       |> Map.put(:df_content, df_content)
@@ -225,8 +224,10 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       Map.get(metadata, :fields, %{})
     end
 
-    defp linked_concepts(dsv) do
-      Enum.count(DataStructures.get_structure_links(dsv), &(&1.resource_type == :concept))
+    defp linked_concept_count(dsv) do
+      dsv
+      |> DataStructures.get_structure_links(:business_concept)
+      |> Enum.count()
     end
   end
 end

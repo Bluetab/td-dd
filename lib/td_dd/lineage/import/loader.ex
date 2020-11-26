@@ -46,10 +46,7 @@ defmodule TdDd.Lineage.Import.Loader do
   defp do_load(unit, graph) do
     Multi.new()
     |> Multi.run(:graph, fn _, _ -> {:ok, graph} end)
-    |> Multi.run(:unit, fn _, _ -> Units.update_unit(unit, %{deleted_at: nil}) end)
-    |> Multi.run(:delete_unit_nodes, fn _, _ ->
-      Units.delete_unit_nodes([unit_id: unit.id], logical: true)
-    end)
+    |> Multi.run(:unit, fn _, _ -> {:ok, unit} end)
     |> Multi.run(:upsert_nodes, fn _, _ -> upsert_nodes(graph) end)
     |> Multi.run(:node_map, fn _, %{upsert_nodes: {_, nodes}} ->
       {:ok, Map.new(nodes, fn %{id: id, external_id: external_id} -> {external_id, id} end)}

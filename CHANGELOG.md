@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Changed
+
+- [TD-2258] Filter structures by `linked_concepts_count`
+- [TD-2946] Replace unit on PUT request
+
 ### Added
 
 - [TD-3089] Widget and type `copy` on df
@@ -466,8 +471,8 @@
 
 ### Changed
 
-- [TD-1793] Checks if field structure has `df_content` and enriches data_structure
-  :show
+- [TD-1793] Checks if field structure has `df_content` and enriches
+  data_structure :show
 - [TD-1891] Bulk load types translation from data fields to data structures
 - [TD-1533] Ignores search term when it is no on Aggregation
 

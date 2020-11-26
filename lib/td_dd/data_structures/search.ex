@@ -249,6 +249,14 @@ defmodule TdDd.DataStructures.Search do
     %{term: %{filter => value}}
   end
 
+  defp get_filter(_, ["linked"], "linked_concepts_count") do
+    %{range: %{"linked_concepts_count" => %{gt: 0}}}
+  end
+
+  defp get_filter(_, ["unlinked"], "linked_concepts_count") do
+    %{term: %{"linked_concepts_count" => 0}}
+  end
+
   defp get_filter(_, _, _), do: nil
 
   defp build_nested_query(%{terms: %{field: field}}, values) do
