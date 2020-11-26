@@ -5,6 +5,7 @@
 ### Changed
 
 - [TD-2258] Filter structures by `linked_concepts_count`
+- [TD-2946] Replace unit on PUT request
 
 ### Added
 

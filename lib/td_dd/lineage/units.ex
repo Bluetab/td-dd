@@ -147,10 +147,14 @@ defmodule TdDd.Lineage.Units do
     |> Repo.update()
   end
 
-  def get_or_create_unit(%{name: name} = params) do
+  def replace_unit(%{name: name} = params) do
     case Repo.get_by(Unit, name: name) do
-      nil -> create_unit(params)
-      unit -> {:ok, unit}
+      nil ->
+        create_unit(params)
+
+      unit ->
+        delete_unit(unit, logical: false)
+        create_unit(params)
     end
   end
 
@@ -159,15 +163,9 @@ defmodule TdDd.Lineage.Units do
 
     multi =
       Multi.new()
-      |> Multi.run(:delete_unit_nodes, fn _, _ ->
-        delete_unit_nodes([unit_id: id], opts)
-      end)
-      |> Multi.run(:delete_unit, fn _, _ ->
-        do_delete_unit(unit, opts[:logical])
-      end)
-      |> Multi.run(:delete_nodes, fn _, _ ->
-        delete_orphaned_nodes(opts)
-      end)
+      |> Multi.run(:delete_unit_nodes, fn _, _ -> delete_unit_nodes([unit_id: id], opts) end)
+      |> Multi.run(:delete_unit, fn _, _ -> do_delete_unit(unit, opts[:logical]) end)
+      |> Multi.run(:delete_nodes, fn _, _ -> delete_orphaned_nodes(opts) end)
 
     multi =
       if opts[:logical] do
