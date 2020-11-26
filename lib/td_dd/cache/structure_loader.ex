@@ -14,7 +14,7 @@ defmodule TdDd.Cache.StructureLoader do
 
   require Logger
 
-  @index_worker Application.get_env(:td_dd, :index_worker)
+  @index_worker Application.compile_env(:td_dd, :index_worker)
 
   ## Client API
 

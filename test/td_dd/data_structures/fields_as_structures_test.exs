@@ -3,10 +3,12 @@ defmodule TdDd.Loader.FieldsAsStructuresTest do
   alias TdDd.CSV.Reader
   alias TdDd.Loader.FieldsAsStructures
 
-  @structure_import_schema Application.get_env(:td_dd, :metadata)[:structure_import_schema]
-  @structure_import_required Application.get_env(:td_dd, :metadata)[:structure_import_required]
-  @field_import_schema Application.get_env(:td_dd, :metadata)[:field_import_schema]
-  @field_import_required Application.get_env(:td_dd, :metadata)[:field_import_required]
+  @structure_import_schema Application.compile_env(:td_dd, :metadata)[:structure_import_schema]
+  @structure_import_required Application.compile_env(:td_dd, :metadata)[
+                               :structure_import_required
+                             ]
+  @field_import_schema Application.compile_env(:td_dd, :metadata)[:field_import_schema]
+  @field_import_required Application.compile_env(:td_dd, :metadata)[:field_import_required]
   @system_id 123
   @domain_map %{"Truedat" => 42}
 
