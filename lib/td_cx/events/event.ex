@@ -1,10 +1,10 @@
-defmodule TdCx.Sources.Events.Event do
+defmodule TdCx.Events.Event do
   @moduledoc "Event entity"
 
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias TdCx.Sources.Jobs.Job
+  alias TdCx.Jobs.Job
 
   schema "events" do
     belongs_to(:job, Job)

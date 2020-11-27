@@ -6,10 +6,10 @@ defmodule TdCx.Search.Indexer do
   alias Elasticsearch.Index.Bulk
   alias Jason, as: JSON
   alias TdCache.Redix
+  alias TdCx.Jobs.Job
   alias TdCx.Search.Cluster
   alias TdCx.Search.Mappings
   alias TdCx.Search.Store
-  alias TdCx.Sources.Jobs.Job
 
   require Logger
 
@@ -17,15 +17,19 @@ defmodule TdCx.Search.Indexer do
   @action "index"
 
   def reindex(:all) do
-    {:ok, _} =
-      Mappings.get_mappings()
-      |> Map.put(:index_patterns, "#{@index}-*")
-      |> JSON.encode!()
-      |> put_template(@index)
+    Mappings.get_mappings()
+    |> Map.put(:index_patterns, "#{@index}-*")
+    |> JSON.encode!()
+    |> put_template(@index)
+    |> case do
+      {:ok, _} ->
+        Cluster
+        |> Index.hot_swap(@index)
+        |> log_errors()
 
-    Cluster
-    |> Index.hot_swap(@index)
-    |> log_errors()
+      error ->
+        error
+    end
   end
 
   def reindex(ids) do
@@ -73,7 +77,14 @@ defmodule TdCx.Search.Indexer do
   end
 
   defp put_template(template, name) do
-    Elasticsearch.put(Cluster, "/_template/#{name}", template)
+    case Elasticsearch.put(Cluster, "/_template/#{name}", template) do
+      {:ok, res} ->
+        {:ok, res}
+
+      {:error, e} ->
+        Logger.warn("Error updating template #{name}: #{inspect(e)}")
+        {:error, e}
+    end
   end
 
   defp alias_exists?(name) do

@@ -90,8 +90,9 @@ defmodule TdCxWeb.SourceController do
 
     with {:can, true} <- {:can, can?(user, show(%Source{}))},
          %Source{} = source <- Sources.get_source!(external_id),
-         %Source{} = source <- Sources.enrich_secrets(user, source) do
-      render(conn, "show.json", source: source)
+         %Source{} = source <- Sources.enrich_secrets(user, source),
+         job_types <- Sources.job_types(user, source) do
+      render(conn, "show.json", source: source, job_types: job_types)
     end
   rescue
     _e in Ecto.NoResultsError ->
@@ -147,7 +148,7 @@ defmodule TdCxWeb.SourceController do
     user = conn.assigns[:current_user]
 
     with {:can, true} <- {:can, can?(user, delete(%Source{}))},
-         %Source{} = source <- Sources.get_source!(external_id, [:jobs]),
+         %Source{} = source <- Sources.get_source!(external_id: external_id, preload: :jobs),
          {:ok, %Source{} = _source} <- Sources.delete_source(source) do
       send_resp(conn, :no_content, "")
     end

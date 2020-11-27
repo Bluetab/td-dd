@@ -2,8 +2,7 @@ use Mix.Config
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
-config :td_cx, TdCxWeb.Endpoint,
-  server: false
+config :td_cx, TdCxWeb.Endpoint, server: false
 
 # Print only warnings and errors during test
 config :logger, level: :warn
@@ -27,3 +26,13 @@ config :td_cx, :vault,
   secrets_path: "secret/data/cx/"
 
 config :vaultex, vault_addr: "http://vault:8200"
+
+config :k8s,
+  discovery_driver: K8s.Discovery.Driver.File,
+  discovery_opts: [config: "test/support/k8s/discovery.json"],
+  http_provider: K8s.Client.DynamicHTTPProvider,
+  clusters: %{
+    default: %{
+      conn: "test/support/k8s/kube-config.yaml"
+    }
+  }

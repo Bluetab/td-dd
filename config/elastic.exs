@@ -36,7 +36,7 @@ config :td_cx, TdCx.Search.Cluster,
       #
       # Each piece of data that is returned by the store must implement the
       # Elasticsearch.Document protocol.
-      sources: [TdCx.Sources.Jobs.Job],
+      sources: [TdCx.Jobs.Job],
 
       # Controls the data ingestion rate by raising or lowering the number
       # of items to send in each bulk request.

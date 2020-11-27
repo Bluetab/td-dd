@@ -8,7 +8,7 @@
   alias TdCx.Accounts.User
   alias TdCx.Taxonomies.Domain
 
-  @permission_resolver Application.get_env(:td_cx, :permission_resolver)
+  @permission_resolver Application.compile_env(:td_cx, :permission_resolver)
 
   def get_domain_permissions(%User{jti: jti}) do
     @permission_resolver.get_acls_by_resource_type(jti, "domain")
@@ -36,5 +36,4 @@
   end
 
   def authorized?(_, _, _), do: false
-
 end

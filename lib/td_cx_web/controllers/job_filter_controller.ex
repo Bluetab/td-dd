@@ -3,7 +3,7 @@ defmodule TdCxWeb.JobFilterController do
   use TdCxWeb, :controller
   use PhoenixSwagger
 
-  alias TdCx.Sources.Jobs.Search
+  alias TdCx.Jobs.Search
   alias TdCxWeb.SwaggerDefinitions
 
   action_fallback(TdCxWeb.FallbackController)

@@ -12,7 +12,13 @@ defmodule TdCx.SourcesTest do
   describe "sources" do
     alias TdCx.Sources.Source
 
-    @valid_attrs %{"config" => %{"a" => "1"}, "external_id" => "some external_id", "secrets_key" => "some secrets_key", "type" => "app-admin", "active" => true}
+    @valid_attrs %{
+      "config" => %{"a" => "1"},
+      "external_id" => "some external_id",
+      "secrets_key" => "some secrets_key",
+      "type" => "app-admin",
+      "active" => true
+    }
     @update_attrs %{"config" => %{"a" => "2"}, "active" => false}
     @invalid_attrs %{"config" => 2, "external_id" => nil, "secrets_key" => nil, "type" => nil}
     @app_admin_template %{
@@ -64,12 +70,15 @@ defmodule TdCx.SourcesTest do
       Templates.create_template(%{name: "type2", id: 3, content: [], scope: "cx"})
 
       type = "type1"
-      {:ok, src1} = Sources.create_source(%{
-        "external_id" => "ext1",
-        "type" => type,
-        "secrets_key" => "s",
-        "config" => %{}
-      })
+
+      {:ok, src1} =
+        Sources.create_source(%{
+          "external_id" => "ext1",
+          "type" => type,
+          "secrets_key" => "s",
+          "config" => %{}
+        })
+
       Sources.create_source(%{
         "external_id" => "ext2",
         "type" => "type2",
@@ -85,12 +94,14 @@ defmodule TdCx.SourcesTest do
       type = "type1"
       Templates.create_template(%{name: type, id: 2, content: [], scope: "cx"})
 
-      {:ok, src1} = Sources.create_source(%{
-        "external_id" => "ext1",
-        "type" => type,
-        "secrets_key" => "s",
-        "config" => %{}
-      })
+      {:ok, src1} =
+        Sources.create_source(%{
+          "external_id" => "ext1",
+          "type" => type,
+          "secrets_key" => "s",
+          "config" => %{}
+        })
+
       Sources.create_source(%{
         "external_id" => "ext2",
         "type" => type,
@@ -109,20 +120,20 @@ defmodule TdCx.SourcesTest do
     end
 
     test "get_source!/2 with jobs option with get source with its jobs" do
-      source = source_fixture()
-      job = insert(:job, source: source)
-      options = [:jobs]
-      assert %Source{id: id, jobs: jobs} = Sources.get_source!(source.external_id, options)
-      assert id == source.id
-      assert length(jobs) == 1
-      assert Enum.any?(jobs, & &1.id == job.id)
+      %{id: source_id, external_id: external_id} = source = source_fixture()
+      %{id: job_id} = insert(:job, source: source)
+
+      assert %Source{id: ^source_id, jobs: jobs} =
+               Sources.get_source!(external_id: external_id, preload: :jobs)
+
+      assert [%{id: ^job_id}] = jobs
     end
 
     test "create_source/1 with valid data creates a source" do
       assert {:ok, %Source{} = source} = Sources.create_source(@valid_attrs)
       assert source.config == %{"a" => "1"}
       assert source.external_id == "some external_id"
-      #assert source.secrets_key == "some secrets_key"
+      # assert source.secrets_key == "some secrets_key"
       assert source.type == "app-admin"
     end
 

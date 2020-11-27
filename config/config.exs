@@ -20,13 +20,13 @@ config :td_cx, TdCxWeb.Endpoint,
   secret_key_base: "QnGIoDqTQVcsX0mbc6Yw2n03R2FfJKbYjb1W3EqD9SK1Wklgk8R3oowCJwPVoRrm",
   render_errors: [view: TdCxWeb.ErrorView, accepts: ~w(json)]
 
-# Default timeout increased for bulk metadata upload
-config :td_cx, TdCx.Repo,
-  pool_size: 10
+config :td_cx, TdCx.Repo, pool_size: 4
 
 # Configures Elixir's Logger
 config :logger, :console,
-  format: (System.get_env("EX_LOGGER_FORMAT") || "$date\T$time\Z [$level]$levelpad $metadata$message") <> "\n",
+  format:
+    (System.get_env("EX_LOGGER_FORMAT") || "$date\T$time\Z [$level]$levelpad $metadata$message") <>
+      "\n",
   level: :info,
   metadata: [:pid, :module],
   utc_log: true
@@ -59,6 +59,10 @@ config :td_cx, TdCx.Scheduler,
       run_strategy: Quantum.RunStrategy.Local
     ]
   ]
+
+# Kubernetes configuration
+config :td_cx, TdCx.K8s, namespace: "default"
+config :k8s, clusters: %{}
 
 # Import Elasticsearch config
 import_config "elastic.exs"

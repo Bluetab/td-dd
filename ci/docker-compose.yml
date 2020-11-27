@@ -71,6 +71,7 @@ services:
     user: ${CURRENT_UID-0:0}
     volumes:
       - "${CI_PROJECT_DIR}:/code"
+      - "${CI_PROJECT_DIR}/ci/.kube:/tmp/.kube"
     depends_on:
       - postgres
       - redis

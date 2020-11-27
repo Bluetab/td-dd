@@ -4,10 +4,10 @@ defmodule TdCxWeb.JobController do
 
   import Canada, only: [can?: 2]
 
+  alias TdCx.Jobs
+  alias TdCx.Jobs.Job
+  alias TdCx.Jobs.Search
   alias TdCx.Sources
-  alias TdCx.Sources.Jobs
-  alias TdCx.Sources.Jobs.Job
-  alias TdCx.Sources.Jobs.Search
   alias TdCx.Sources.Source
   alias TdCxWeb.ErrorView
   alias TdCxWeb.SwaggerDefinitions
@@ -67,12 +67,13 @@ defmodule TdCxWeb.JobController do
     response(422, "Client Error")
   end
 
-  def create(conn, %{"source_external_id" => source_external_id}) do
+  def create(conn, %{"source_external_id" => source_external_id} = params) do
     user = conn.assigns[:current_user]
 
     with true <- can?(user, create(Job)),
          %Source{id: id} <- Sources.get_source!(source_external_id),
-         {:ok, %Job{} = job} <- Jobs.create_job(%{source_id: id}) do
+         {:ok, %Job{} = job} <- params |> Map.put("source_id", id) |> Jobs.create_job(),
+         :ok <- Jobs.launch(job) do
       conn
       |> put_status(:created)
       |> render("show.json", job: job)

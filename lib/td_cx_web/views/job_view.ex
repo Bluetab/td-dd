@@ -18,7 +18,7 @@ defmodule TdCxWeb.JobView do
 
   def render("job.json", %{job: job}) do
     job
-    |> Map.take([:id, :external_id, :inserted_at, :updated_at])
+    |> Map.take([:id, :external_id, :inserted_at, :updated_at, :type])
     |> put_embeddings(job)
   end
 

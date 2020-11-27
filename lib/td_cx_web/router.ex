@@ -1,7 +1,7 @@
 defmodule TdCxWeb.Router do
   use TdCxWeb, :router
 
-  @endpoint_url "#{Application.get_env(:td_cx, TdCxWeb.Endpoint)[:url][:host]}:#{Application.get_env(:td_cx, TdCxWeb.Endpoint)[:url][:port]}"
+  @endpoint_url "#{Application.compile_env(:td_cx, TdCxWeb.Endpoint)[:url][:host]}:#{Application.compile_env(:td_cx, TdCxWeb.Endpoint)[:url][:port]}"
 
   pipeline :api do
     plug TdCx.Auth.Pipeline.Unsecure

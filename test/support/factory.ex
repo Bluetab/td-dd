@@ -4,8 +4,8 @@ defmodule TdCx.Factory do
   use ExMachina.Ecto, repo: TdCx.Repo
 
   alias TdCx.Configurations.Configuration
-  alias TdCx.Sources.Events.Event
-  alias TdCx.Sources.Jobs.Job
+  alias TdCx.Events.Event
+  alias TdCx.Jobs.Job
   alias TdCx.Sources.Source
 
   def source_factory do

@@ -4,8 +4,10 @@ defmodule TdCx.Sources do
   """
 
   import Ecto.Query, warn: false
+
   alias TdCache.TemplateCache
   alias TdCx.Cache.SourceLoader
+  alias TdCx.K8s
   alias TdCx.Repo
   alias TdCx.Sources.Source
   alias TdCx.Vault
@@ -64,7 +66,25 @@ defmodule TdCx.Sources do
       ** (Ecto.NoResultsError)
 
   """
-  def get_source!(external_id, options \\ []) do
+  def get_source!(params_or_identifier)
+
+  def get_source!(params_or_identifier) do
+    params_or_identifier
+    |> source_params()
+    |> Enum.reduce(Source, fn
+      {:external_id, external_id}, q -> where(q, [s], s.external_id == ^external_id)
+      {:id, id}, q -> where(q, [s], s.id == ^id)
+      {:preload, preloads}, q -> preload(q, ^preloads)
+    end)
+    |> Repo.one!()
+  end
+
+  defp source_params(%{} = params), do: params
+  defp source_params(external_id) when is_binary(external_id), do: %{external_id: external_id}
+  defp source_params(id) when is_integer(id), do: %{id: id}
+  defp source_params(list) when is_list(list), do: Map.new(list)
+
+  def old_get_source!(external_id, options \\ []) do
     Source
     |> where([s], s.external_id == ^external_id)
     |> where([s], is_nil(s.deleted_at))
@@ -321,8 +341,8 @@ defmodule TdCx.Sources do
   end
 
   defp do_delete_source(%Source{external_id: external_id, jobs: %Ecto.Association.NotLoaded{}}) do
-    external_id
-    |> get_source!([:jobs])
+    [external_id: external_id, preload: :jobs]
+    |> get_source!()
     |> do_delete_source()
   end
 
@@ -354,5 +374,17 @@ defmodule TdCx.Sources do
   """
   def change_source(%Source{} = source) do
     Source.changeset(source, %{})
+  end
+
+  def job_types(user, %Source{type: connector_type} = source) do
+    with true <- can?(user, view_job_types(source)),
+         {:ok, cron_jobs} <- K8s.list_cronjobs(connector: connector_type, launch_type: "manual") do
+      cron_jobs
+      |> Enum.map(&Kernel.get_in(&1, ["metadata", "labels", "truedat.io/connector-type"]))
+      |> Enum.reject(&is_nil/1)
+      |> Enum.uniq()
+    else
+      _ -> nil
+    end
   end
 end
