@@ -194,10 +194,11 @@ defmodule TdDqWeb.ImplementationController do
             Enum.empty?(implementation.all_rule_results) ||
               (Map.keys(implementation_params) == ["soft_delete"] &&
                  Map.get(implementation_params, "soft_delete") == true)},
-         {:ok, %Implementation{} = implementation} <-
+         {:ok, %{implementation: %Implementation{} = implementation}} <-
            Implementations.update_implementation(
              implementation,
-             with_soft_delete(update_params)
+             with_soft_delete(update_params),
+             user
            ) do
       render(conn, "show.json", implementation: implementation)
     else

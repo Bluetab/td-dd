@@ -224,23 +224,25 @@ defmodule TdDq.Rules do
   defp do_soft_deletion(active_ids, ts) do
     rules_to_delete =
       Rule
-      |> where([r], not is_nil(r.business_concept_id))
       |> where([r], is_nil(r.deleted_at))
+      |> where([r], not is_nil(r.business_concept_id))
       |> where([r], r.business_concept_id not in ^active_ids)
       |> select([r], r.id)
 
     impls_to_delete =
       Implementation
       |> join(:inner, [ri], r in assoc(ri, :rule))
+      |> where([i], is_nil(i.deleted_at))
       |> where([_, r], not is_nil(r.business_concept_id))
       |> where([_, r], is_nil(r.deleted_at))
       |> where([_, r], r.business_concept_id not in ^active_ids)
-      |> select([ri, _], ri.id)
+      |> select([ri, _], ri)
 
     Multi.new()
-    |> Multi.update_all(:impls, impls_to_delete, set: [deleted_at: ts])
+    |> Multi.update_all(:deprecated, impls_to_delete, set: [deleted_at: ts])
     |> Multi.update_all(:rules, rules_to_delete, set: [deleted_at: ts])
-    # TODO: audit?
+    |> Multi.run(:audit, Audit, :implementations_deprecated, [])
+    # TODO: audit rule deletion?
     |> Repo.transaction()
   end
 

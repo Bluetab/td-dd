@@ -95,20 +95,18 @@ defmodule TdDq.RulesTest do
       rules =
         ([nil, nil] ++ concept_ids)
         |> Enum.with_index()
-        |> Enum.map(fn {id, idx} ->
-          [business_concept_id: id, name: "Rule Name #{idx}"]
-        end)
+        |> Enum.map(fn {id, idx} -> [business_concept_id: id, name: "Rule Name #{idx}"] end)
         |> Enum.map(&insert(:rule, &1))
 
       rules
-      |> Enum.map(&insert(:implementation, %{rule: &1, implementation_key: "ri_of_#{&1.id}"}))
+      |> Enum.map(&insert(:implementation, rule_id: &1.id, implementation_key: "ri_of_#{&1.id}"))
 
       # 2,4,6,8 are deleted
       active_ids = ["1", "3", "5", "7"]
 
       ts = DateTime.utc_now() |> DateTime.truncate(:second)
 
-      {:ok, %{rules: {count, _}, impls: {ri_count, _}}} = Rules.soft_deletion(active_ids, ts)
+      {:ok, %{rules: {count, _}, deprecated: {ri_count, _}}} = Rules.soft_deletion(active_ids, ts)
 
       assert count == 4
       assert ri_count == 4

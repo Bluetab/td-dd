@@ -71,9 +71,14 @@ config :td_dq, :cache_cleaner,
 
 config :td_dq, TdDq.Scheduler,
   jobs: [
-    [
+    reindexer: [
       schedule: "@daily",
       task: {TdDq.Search.IndexWorker, :reindex, []},
+      run_strategy: Quantum.RunStrategy.Local
+    ],
+    deprecater: [
+      schedule: "@hourly",
+      task: {TdDq.Rules.Implementations.Loader, :deprecate, []},
       run_strategy: Quantum.RunStrategy.Local
     ]
   ]
@@ -84,4 +89,3 @@ import_config "elastic.exs"
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"
-

@@ -269,7 +269,7 @@ defmodule TdDq.Rules.ImplementationsTest do
         }
         |> Map.Helpers.stringify_keys()
 
-      assert {:ok, updated_implementation} =
+      assert {:ok, %{implementation: updated_implementation}} =
                Implementations.update_implementation(implementation, update_attrs)
 
       assert %Implementation{} = updated_implementation
@@ -294,7 +294,7 @@ defmodule TdDq.Rules.ImplementationsTest do
       implementation = insert(:implementation)
       udpate_attrs = Map.put(%{}, :dataset, nil)
 
-      assert {:error, %Changeset{}} =
+      assert {:error, :implementation, %Changeset{}, _} =
                Implementations.update_implementation(implementation, udpate_attrs)
     end
   end
@@ -368,6 +368,38 @@ defmodule TdDq.Rules.ImplementationsTest do
       assert Implementations.get_rule_implementations([]) == []
       assert [_ | _] = implementations = Implementations.get_rule_implementations([r.id, r1.id])
       Enum.all?(implementations, &(&1.id in ids))
+    end
+  end
+
+  describe "deprecate/1" do
+    test "logically deletes implementations" do
+      deleted_at = DateTime.utc_now()
+      %{id: id1} = insert(:implementation, rule: build(:rule))
+      %{id: id2} = insert(:implementation, rule: build(:rule), deleted_at: deleted_at)
+      %{id: id3} = insert(:implementation, rule: build(:rule))
+
+      assert {:ok, %{deprecated: deprecated}} = Implementations.deprecate([id1, id2, id3])
+      assert {2, [%{id: ^id1}, %{id: ^id3}]} = deprecated
+    end
+
+    test "publishes audit events" do
+      deleted_at = DateTime.utc_now()
+      %{id: id1} = insert(:implementation, rule: build(:rule))
+      %{id: id2} = insert(:implementation, rule: build(:rule), deleted_at: deleted_at)
+      %{id: id3} = insert(:implementation, rule: build(:rule))
+
+      assert {:ok, %{audit: audit}} = Implementations.deprecate([id1, id2, id3])
+      assert length(audit) == 2
+    end
+  end
+
+  describe "deprecate_implementations/1" do
+    test "deprecates implementations referencing deleted structure ids" do
+      %{id: id1} = ri1 = insert(:implementation, rule: build(:rule))
+      [structure_id | _] = Implementations.get_structure_ids(ri1)
+      TdCache.StructureCache.delete(structure_id)
+      assert {:ok, %{deprecated: deprecated}} = Implementations.deprecate_implementations()
+      assert {1, [%{id: ^id1}]} = deprecated
     end
   end
 end

@@ -19,9 +19,14 @@ config :td_cache, :event_stream, consumer_id: System.fetch_env!("HOSTNAME")
 
 config :td_dq, TdDq.Scheduler,
   jobs: [
-    [
+    reindexer: [
       schedule: System.get_env("ELASTIC_REFRESH_SCHEDULE", "@daily"),
       task: {TdDq.Search.IndexWorker, :reindex, []},
+      run_strategy: Quantum.RunStrategy.Local
+    ],
+    deprecater: [
+      schedule: System.get_env("DEPRECATER_SCHEDULE", "@hourly"),
+      task: {TdDq.Rules.Implementations.Loader, :deprecate, []},
       run_strategy: Quantum.RunStrategy.Local
     ]
   ]

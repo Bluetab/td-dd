@@ -249,9 +249,9 @@ defmodule TdDq.Search.Mappings do
 
   defp get_structure_mappings do
     %{
-      external_id: %{type: "text", fields: @raw},
-      id: %{type: "long", index: false},
-      name: %{type: "text", fields: @raw},
+      external_id: %{type: "text"},
+      id: %{type: "long"},
+      name: %{type: "text"},
       system: %{properties: get_system_mappings()},
       type: %{type: "text", fields: @raw},
       metadata: %{enabled: false}
