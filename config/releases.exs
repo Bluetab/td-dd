@@ -21,7 +21,7 @@ config :td_dd, import_dir: System.get_env("IMPORT_DIR")
 
 config :td_dd, TdDd.Scheduler,
   jobs: [
-    [
+    cache_refresher: [
       schedule: System.get_env("CACHE_REFRESH_SCHEDULE", "@hourly"),
       task: {TdDd.Cache.StructureLoader, :refresh, []},
       run_strategy: Quantum.RunStrategy.Local
