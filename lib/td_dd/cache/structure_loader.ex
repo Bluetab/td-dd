@@ -15,7 +15,6 @@ defmodule TdDd.Cache.StructureLoader do
   require Logger
 
   @index_worker Application.compile_env(:td_dd, :index_worker)
-  @structures_migration_key "TdDd.Structures.Migrations:cache_structures"
 
   ## Client API
 
@@ -50,13 +49,9 @@ defmodule TdDd.Cache.StructureLoader do
 
   @impl GenServer
   def handle_info(:migrate, state) do
-    if Redix.exists?(@structures_migration_key) == false do
+    if Redix.acquire_lock?("TdDd.Structures.Migrations:TD-3066") do
+      # Force cache refresh to populate set of deleted referenced structures
       do_refresh(force: true)
-      Redix.command!([
-        "SET",
-        @structures_migration_key,
-        "#{DateTime.utc_now()}"
-      ])
     end
 
     {:noreply, state}
@@ -101,7 +96,7 @@ defmodule TdDd.Cache.StructureLoader do
     |> Enum.map(&String.to_integer/1)
   end
 
-  defp cache_structures(structure_ids, opts \\ []) do
+  def cache_structures(structure_ids, opts \\ []) do
     structure_ids
     |> Enum.map(&DataStructures.get_latest_version(&1, [:parents]))
     |> Enum.filter(& &1)
@@ -173,10 +168,10 @@ defmodule TdDd.Cache.StructureLoader do
     |> Enum.chunk_every(1000)
     |> Enum.map(&["DEL" | &1])
     |> Enum.concat([
-      ["SINTERSTORE", "data_structures:keys", "data_structures:keys", "data_structures:keys:keep"],
-      ["SINTERSTORE", "data_structures:keys:deleted", "data_structures:keys:deleted", "data_structures:keys:keep"]
+      ["SINTERSTORE", "data_structure:keys", "data_structure:keys", "data_structure:keys:keep"]
     ])
     |> Redix.transaction_pipeline!()
-    |> Enum.sum()
+
+    Enum.count(ids_to_delete)
   end
 end
