@@ -83,7 +83,7 @@ config :td_dd, :cache_cleaner,
 
 config :td_dd, TdDd.Scheduler,
   jobs: [
-    [
+    cache_refresher: [
       schedule: "@hourly",
       task: {TdDd.Cache.StructureLoader, :refresh, []},
       run_strategy: Quantum.RunStrategy.Local
