@@ -5,12 +5,14 @@
 ### Added
 
 - [TD-3089] Widget and type `copy` on df
+- [TD-3066] Deprecate implementations and publish audit event if a referenced
+  structure is deleted
 
 ## [4.8.0] 2020-11-16
 
 ### Added
 
-- [TD-2092] Download implementations in csv format
+- [TD-2092] Download implementations in CSV format
 
 ## [4.7.0] 2020-11-03
 

@@ -5,12 +5,17 @@ defmodule TdDq.Rules.Implementations do
 
   import Ecto.Query
 
+  alias Ecto.Multi
   alias TdCache.EventStream.Publisher
   alias TdCache.StructureCache
   alias TdCache.SystemCache
   alias TdDq.Cache.RuleLoader
   alias TdDq.Repo
+  alias TdDq.Rules.Audit
+  alias TdDq.Rules.Implementations.ConditionRow
+  alias TdDq.Rules.Implementations.DatasetRow
   alias TdDq.Rules.Implementations.Implementation
+  alias TdDq.Rules.Implementations.Structure
   alias TdDq.Rules.Rule
   alias TdDq.Search.IndexWorker
 
@@ -75,18 +80,68 @@ defmodule TdDq.Rules.Implementations do
 
   ## Examples
 
-      iex> update_implementation(implementation, %{field: new_value})
+      iex> update_implementation(implementation, %{field: new_value}, user)
       {:ok, %Implementation{}}
 
-      iex> update_implementation(implementation, %{field: bad_value})
+      iex> update_implementation(implementation, %{field: bad_value}, user)
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_implementation(%Implementation{} = implementation, params) do
-    implementation
-    |> Implementation.changeset(params)
-    |> Repo.update()
+  def update_implementation(%Implementation{} = implementation, params, user \\ %{}) do
+    changeset = Implementation.changeset(implementation, params)
+    user_id = Map.get(user, :id)
+
+    Multi.new()
+    |> Multi.update(:implementation, changeset)
+    |> Multi.run(:audit, Audit, :implementation_updated, [changeset, user_id])
+    |> Repo.transaction()
     |> on_upsert()
+  end
+
+  @spec deprecate_implementations ::
+          :ok | {:ok, map} | {:error, Multi.name(), any, %{required(Multi.name()) => any}}
+  def deprecate_implementations do
+    deleted_structure_ids = StructureCache.deleted_ids() |> MapSet.new()
+
+    list_implementations()
+    |> Enum.map(fn impl -> {impl, get_structure_ids(impl)} end)
+    |> Enum.reject(fn {_, ids} -> MapSet.disjoint?(deleted_structure_ids, MapSet.new(ids)) end)
+    |> Enum.map(fn {%{id: id}, _} -> id end)
+    |> deprecate()
+  end
+
+  @spec deprecate(list(integer())) ::
+          :ok | {:ok, map} | {:error, Multi.name(), any, %{required(Multi.name()) => any}}
+  def deprecate([]), do: :ok
+
+  def deprecate(ids) do
+    ts = DateTime.utc_now()
+
+    query =
+      Implementation
+      |> where([i], i.id in ^ids)
+      |> where([i], is_nil(i.deleted_at))
+      |> select([i], i)
+
+    Multi.new()
+    |> Multi.update_all(:deprecated, query, set: [deleted_at: ts])
+    |> Multi.run(:audit, Audit, :implementations_deprecated, [])
+    |> Repo.transaction()
+    |> on_deprecate()
+  end
+
+  defp on_deprecate(result) do
+    case result do
+      {:ok, %{deprecated: {_, [_ | _] = impls}}} ->
+        impls
+        |> Enum.map(& &1.id)
+        |> IndexWorker.reindex_implementations()
+
+        result
+
+      _ ->
+        result
+    end
   end
 
   @doc """
@@ -106,6 +161,12 @@ defmodule TdDq.Rules.Implementations do
     RuleLoader.refresh(Map.get(implementation, :rule_id))
     IndexWorker.delete_implementations(id)
     reply
+  end
+
+  defp on_upsert({:ok, %{implementation: implementation}} = result) do
+    add_structure_links(implementation)
+    IndexWorker.reindex_implementations(Map.get(implementation, :id))
+    result
   end
 
   defp on_upsert(result) do
@@ -134,32 +195,11 @@ defmodule TdDq.Rules.Implementations do
   end
 
   def get_structure_ids(%Implementation{} = implementation) do
-    dataset_ids =
-      implementation
-      |> Map.get(:dataset)
-      |> Enum.map(fn dataset_row ->
-        [get_structure_id(dataset_row)] ++ get_dataset_row_ids(dataset_row)
-      end)
-
-    population_ids =
-      implementation
-      |> Map.get(:population)
-      |> Enum.map(fn structure ->
-        [get_structure_id(structure)] ++ get_filters_value_ids(Map.get(structure, :value))
-      end)
-
-    validations_ids =
-      implementation
-      |> Map.get(:validations)
-      |> Enum.map(fn structure ->
-        [get_structure_id(structure)] ++ get_filters_value_ids(Map.get(structure, :value))
-      end)
-
-    ids = dataset_ids ++ population_ids ++ validations_ids
-
-    ids
-    |> List.flatten()
-    |> Enum.filter(&(not is_nil(&1)))
+    implementation
+    |> Map.take([:dataset, :population, :validations])
+    |> Map.values()
+    |> Enum.flat_map(&structure_ids/1)
+    |> Enum.uniq()
   end
 
   @doc """
@@ -423,27 +463,17 @@ defmodule TdDq.Rules.Implementations do
     end
   end
 
-  defp get_structure_id(%{structure: %{id: id}}), do: id
-  defp get_structure_id(_any), do: nil
+  defp structure_ids([_ | _] = values), do: Enum.flat_map(values, &structure_ids/1)
+  defp structure_ids(%Structure{id: id}), do: [id]
 
-  defp get_dataset_row_ids(%{clauses: clauses}) do
-    Enum.flat_map(clauses, &get_join_clause_ids/1)
-  end
+  defp structure_ids(%ConditionRow{structure: structure, value: values}),
+    do: structure_ids([structure | values])
 
-  defp get_dataset_row_ids(_structure), do: []
+  defp structure_ids(%DatasetRow{structure: structure, clauses: clauses}),
+    do: structure_ids([structure | clauses])
 
-  defp get_join_clause_ids(%{left: %{id: left_id}, right: %{id: right_id}}) do
-    [left_id, right_id]
-  end
-
-  defp get_join_clause_ids(_), do: []
-
-  defp get_filters_value_ids(values) when is_list(values) do
-    Enum.map(values, &get_value_id/1)
-  end
-
-  defp get_filters_value_ids(_other), do: []
-
-  defp get_value_id(%{"id" => value_id}), do: value_id
-  defp get_value_id(_value), do: nil
+  defp structure_ids(%{left: %{id: left_id}, right: %{id: right_id}}), do: [left_id, right_id]
+  defp structure_ids(%{value: value}), do: structure_ids(value)
+  defp structure_ids(%{"id" => id}), do: [id]
+  defp structure_ids(_any), do: []
 end
