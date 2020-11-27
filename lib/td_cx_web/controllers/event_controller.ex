@@ -4,10 +4,10 @@ defmodule TdCxWeb.EventController do
 
   import Canada, only: [can?: 2]
 
-  alias TdCx.Sources.Events
-  alias TdCx.Sources.Events.Event
-  alias TdCx.Sources.Jobs
-  alias TdCx.Sources.Jobs.Job
+  alias TdCx.Events
+  alias TdCx.Events.Event
+  alias TdCx.Jobs
+  alias TdCx.Jobs.Job
   alias TdCxWeb.ErrorView
   alias TdCxWeb.SwaggerDefinitions
 

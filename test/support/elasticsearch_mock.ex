@@ -7,8 +7,8 @@ defmodule TdCx.ElasticsearchMock do
 
   alias HTTPoison.Response
   alias Jason, as: JSON
+  alias TdCx.Jobs
   alias TdCx.Repo
-  alias TdCx.Sources.Jobs
 
   require Logger
 

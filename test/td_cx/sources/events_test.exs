@@ -1,8 +1,8 @@
 defmodule TdCx.Sources.EventsTest do
   use TdCx.DataCase
 
+  alias TdCx.Events
   alias TdCx.Search.IndexWorker
-  alias TdCx.Sources.Events
 
   @valid_attrs %{type: "init", message: "Message"}
 
@@ -12,7 +12,7 @@ defmodule TdCx.Sources.EventsTest do
   end
 
   describe "events" do
-    alias TdCx.Sources.Events.Event
+    alias TdCx.Events.Event
 
     test "create_event/0 creates an event" do
       job = insert(:job)

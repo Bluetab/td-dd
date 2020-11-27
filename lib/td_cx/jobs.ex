@@ -1,12 +1,13 @@
-defmodule TdCx.Sources.Jobs do
+defmodule TdCx.Jobs do
   @moduledoc """
-  The Sources.Jobs context.
+  The Jobs context.
   """
   import Ecto.Query, warn: false
 
+  alias TdCx.Jobs.Job
+  alias TdCx.K8s
   alias TdCx.Repo
   alias TdCx.Search.IndexWorker
-  alias TdCx.Sources.Jobs.Job
 
   @doc """
   Returns the list of jobs.
@@ -79,7 +80,9 @@ defmodule TdCx.Sources.Jobs do
 
   def metrics(events) do
     {min, max} =
-      Enum.min_max_by(events, fn %{inserted_at: inserted_at} -> DateTime.to_unix(inserted_at, :millisecond) end)
+      Enum.min_max_by(events, fn %{inserted_at: inserted_at} ->
+        DateTime.to_unix(inserted_at, :millisecond)
+      end)
 
     Map.new()
     |> Map.put(:start_date, Map.get(min, :inserted_at))
@@ -92,5 +95,9 @@ defmodule TdCx.Sources.Jobs do
 
   defp enrich(%Job{} = job, options) do
     Repo.preload(job, options)
+  end
+
+  def launch(%Job{} = job) do
+    K8s.launch(job)
   end
 end

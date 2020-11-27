@@ -1,7 +1,8 @@
-defmodule TdCx.Sources.Jobs.Search do
+defmodule TdCx.Jobs.Search do
   @moduledoc """
-    Helper module to construct job search queries.
+  Helper module to construct job search queries.
   """
+
   alias TdCx.Accounts.User
   alias TdCx.Search
   alias TdCx.Search.Aggregations

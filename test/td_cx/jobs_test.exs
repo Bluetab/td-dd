@@ -1,8 +1,8 @@
 defmodule TdCx.Sources.JobsTest do
   use TdCx.DataCase
 
+  alias TdCx.Jobs
   alias TdCx.Search.IndexWorker
-  alias TdCx.Sources.Jobs
 
   setup_all do
     start_supervised(IndexWorker)
@@ -10,7 +10,7 @@ defmodule TdCx.Sources.JobsTest do
   end
 
   describe "jobs" do
-    alias TdCx.Sources.Jobs.Job
+    alias TdCx.Jobs.Job
 
     test "create_job/1 with valid data creates a job" do
       source = insert(:source)

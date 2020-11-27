@@ -1,13 +1,13 @@
-defmodule TdCx.Sources.Events do
+defmodule TdCx.Events do
   @moduledoc """
-  The Sources.Events context.
+  The Events context.
   """
 
   import Ecto.Query, warn: false
-  alias TdCx.Repo
 
+  alias TdCx.Events.Event
+  alias TdCx.Repo
   alias TdCx.Search.IndexWorker
-  alias TdCx.Sources.Events.Event
 
   @doc """
   Returns the list of events.
