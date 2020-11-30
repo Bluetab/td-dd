@@ -78,4 +78,6 @@ defmodule TdDd.Search do
   defp filter_values({name, %{"distinct_search" => distinct_search}}) do
     filter_values({name, distinct_search})
   end
+
+  defp filter_values({name, %{"doc_count" => 0}}), do: {name, []}
 end

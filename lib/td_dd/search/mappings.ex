@@ -8,7 +8,11 @@ defmodule TdDd.Search.Mappings do
   @raw %{raw: %{type: "keyword"}}
   @text %{text: %{type: "text"}}
   @raw_sort %{raw: %{type: "keyword"}, sort: %{type: "keyword", normalizer: "sortable"}}
-  @raw_sort_ngram %{raw: %{type: "keyword"}, sort: %{type: "keyword", normalizer: "sortable"}, ngram: %{type: "text", analyzer: "ngram"}}
+  @raw_sort_ngram %{
+    raw: %{type: "keyword"},
+    sort: %{type: "keyword", normalizer: "sortable"},
+    ngram: %{type: "text", analyzer: "ngram"}
+  }
 
   def get_mappings do
     content_mappings = %{type: "object", properties: get_dynamic_mappings()}
@@ -57,7 +61,6 @@ defmodule TdDd.Search.Mappings do
           id: %{type: "long", index: false}
         }
       },
-
       ancestry: %{enabled: false},
       df_content: content_mappings,
       status: %{type: "keyword", null_value: ""},
@@ -100,7 +103,7 @@ defmodule TdDd.Search.Mappings do
 
   defp get_mappings(%{content: content}) do
     content
-    |> Format.flatten_content_fields
+    |> Format.flatten_content_fields()
     |> Enum.map(&field_mapping/1)
   end
 
@@ -116,7 +119,7 @@ defmodule TdDd.Search.Mappings do
     {name, %{enabled: false}}
   end
 
-  defp field_mapping(%{"name" => name, "type" => "system"}) do
+  defp field_mapping(%{"name" => name, "type" => type}) when type in ["domain", "system"] do
     {name,
      %{
        type: "nested",
