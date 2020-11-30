@@ -1,8 +1,6 @@
 defmodule TdCxWeb.Router do
   use TdCxWeb, :router
 
-  @endpoint_url "#{Application.compile_env(:td_cx, TdCxWeb.Endpoint)[:url][:host]}:#{Application.compile_env(:td_cx, TdCxWeb.Endpoint)[:url][:port]}"
-
   pipeline :api do
     plug TdCx.Auth.Pipeline.Unsecure
     plug TdCxWeb.Locale
@@ -47,12 +45,11 @@ defmodule TdCxWeb.Router do
 
   def swagger_info do
     %{
-      schemes: ["http"],
+      schemes: ["http", "https"],
       info: %{
-        version: "1.0",
-        title: "TdCx"
+        version: Application.spec(:td_cx, :vsn),
+        title: "Truedat Connector Management Service"
       },
-      host: @endpoint_url,
       securityDefinitions:
         %{
           bearer:
