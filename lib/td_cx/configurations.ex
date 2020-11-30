@@ -227,6 +227,7 @@ defmodule TdCx.Configurations do
 
     case insert_vault(key, secrets, content) do
       :ok -> {:ok, secrets}
+      {:vault_error, error} -> {:error, error}
       error -> error
     end
   end

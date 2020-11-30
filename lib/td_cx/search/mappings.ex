@@ -18,6 +18,7 @@ defmodule TdCx.Search.Mappings do
       start_date: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       end_date: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       status: %{type: "text", fields: @raw_sort},
+      type: %{type: "text", fields: @raw_sort},
       message: %{type: "text"}
     }
 

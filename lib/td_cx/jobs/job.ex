@@ -36,9 +36,11 @@ defmodule TdCx.Jobs.Job do
     @impl Elasticsearch.Document
     def encode(%Job{source: source, events: events} = job) do
       source = Map.take(source, [:external_id, :type])
+      type = Map.get(job, :type) || ""
 
       job
       |> Map.take([:id, :external_id, :type])
+      |> Map.put(:type, type)
       |> Map.put(:status, "")
       |> Map.put(:source, source)
       |> Map.merge(Jobs.metrics(events))
