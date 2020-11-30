@@ -2,10 +2,10 @@ defmodule TdCxWeb.SearchController do
   use TdCxWeb, :controller
   import Canada, only: [can?: 2]
   use PhoenixSwagger
-  alias TdCx.Sources.Jobs.Job
+  alias TdCx.Jobs.Job
   alias TdCxWeb.ErrorView
 
-  @index_worker Application.get_env(:td_cx, :index_worker)
+  @index_worker Application.compile_env(:td_cx, :index_worker)
 
   swagger_path :reindex_all do
     description("Reindex all ES indexes with DB content")

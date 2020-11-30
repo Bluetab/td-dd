@@ -1,14 +1,47 @@
+defmodule TdCxWeb.SourceControllerTest.K8sMock do
+  use ExUnit.Case
+
+  import TdCx.K8s.Factory
+
+  def request(
+        :get,
+        "https://k8smock/apis/batch/v1beta1/namespaces/default/cronjobs",
+        _,
+        _headers,
+        opts
+      ) do
+    assert Keyword.get(opts, :params) == %{
+             labelSelector: "truedat.io/connector-engine=app-admin,truedat.io/launch-type=manual"
+           }
+
+    body =
+      :list
+      |> build(%{"items" => [build(:cron_job)]})
+      |> Jason.encode!()
+
+    {:ok, %HTTPoison.Response{status_code: 200, body: body}}
+  end
+end
+
 defmodule TdCxWeb.SourceControllerTest do
   use TdCxWeb.ConnCase
 
+  alias K8s.Client.DynamicHTTPProvider
   alias TdCx.Cache.SourceLoader
   alias TdCx.Permissions.MockPermissionResolver
   alias TdCx.Sources
   alias TdCx.Sources.Source
 
   setup_all do
-    start_supervised(MockPermissionResolver)
-    start_supervised(SourceLoader)
+    {:ok, _pid} = start_supervised(MockPermissionResolver)
+    {:ok, _pid} = start_supervised(SourceLoader)
+    :ok
+  end
+
+  setup do
+    {:ok, pid} = start_supervised({TdCx.K8s, Application.get_env(:td_cx, TdCx.K8s, [])})
+    {:ok, _} = start_supervised(DynamicHTTPProvider)
+    DynamicHTTPProvider.register(pid, __MODULE__.K8sMock)
     :ok
   end
 
@@ -104,11 +137,12 @@ defmodule TdCxWeb.SourceControllerTest do
                |> json_response(:ok)
 
       assert %{
-               "config" => %{"a" => "1"},
-               "external_id" => "some external_id",
                "id" => _id,
+               "external_id" => "some external_id",
+               "active" => true,
                "type" => "app-admin",
-               "active" => true
+               "config" => %{"a" => "1"},
+               "job_types" => ["Metadata"]
              } = data
     end
   end

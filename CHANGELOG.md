@@ -1,9 +1,10 @@
 # Changelog
 
-## [Unreleased]
+## [4.9.0] 2020-11-30
 
 ### Added
 
+- [TD-2949] Support for creating connector jobs in Kubernetes
 - [TD-3089] Widget and type `copy` on df
 - [TD-2486] Template type `domain`
 

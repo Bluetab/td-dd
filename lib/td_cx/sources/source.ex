@@ -1,25 +1,27 @@
 defmodule TdCx.Sources.Source do
-  @moduledoc "Source entity"
+  @moduledoc """
+  Ecto Schema module for metadata sources.
+  """
 
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias TdCx.Sources.Jobs.Job
+  alias TdCx.Jobs.Job
   alias TdCx.Sources.Source
 
   schema "sources" do
+    field(:active, :boolean, default: true)
     field(:config, :map)
+    field(:deleted_at, :utc_datetime)
     field(:external_id, :string)
     field(:secrets_key, :string)
     field(:type, :string)
-    field(:active, :boolean, default: true)
+
     has_many(:jobs, Job)
 
-    field(:deleted_at, :utc_datetime)
     timestamps(type: :utc_datetime_usec)
   end
 
-  @doc false
   def changeset(source, attrs) do
     source
     |> cast(attrs, [:external_id, :config, :secrets_key, :type, :active, :deleted_at])
@@ -31,7 +33,10 @@ defmodule TdCx.Sources.Source do
   def delete_changeset(%Source{} = source) do
     source
     |> change()
-    |> foreign_key_constraint(:jobs, name: :jobs_source_id_fkey, message: "source.delete.existing.jobs")
+    |> foreign_key_constraint(:jobs,
+      name: :jobs_source_id_fkey,
+      message: "source.delete.existing.jobs"
+    )
   end
 
   def validate_required_inclusion(changeset, fields) do

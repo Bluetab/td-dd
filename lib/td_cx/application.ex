@@ -10,6 +10,8 @@ defmodule TdCx.Application do
     # List all child processes to be supervised
     children =
       [
+        # Task supervisor
+        {Task.Supervisor, name: TdCx.TaskSupervisor},
         # Start the Ecto repository
         TdCx.Repo,
         # Start the endpoint when the application starts
@@ -37,10 +39,10 @@ defmodule TdCx.Application do
 
   defp workers(_env) do
     [
-      # Worker for background indexing
       TdCx.Search.IndexWorker,
       TdCx.Cache.SourceLoader,
-      TdCx.Scheduler
+      TdCx.Scheduler,
+      {TdCx.K8s, Application.get_env(:td_cx, TdCx.K8s, [])}
     ]
   end
 end

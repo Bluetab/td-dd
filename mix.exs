@@ -6,7 +6,7 @@ defmodule TdCx.MixProject do
       app: :td_cx,
       version:
         case System.get_env("APP_VERSION") do
-          nil -> "4.8.1-local"
+          nil -> "4.9.0-local"
           v -> v
         end,
       elixir: "~> 1.10",
@@ -66,6 +66,7 @@ defmodule TdCx.MixProject do
       {:phoenix_swagger, "~> 0.8.0"},
       {:ex_json_schema, "~> 0.5"},
       {:vaultex, "~> 0.8"},
+      {:k8s, "~> 0.5"},
       {:elasticsearch,
        git: "https://github.com/Bluetab/elasticsearch-elixir.git",
        branch: "feature/bulk-index-action"},

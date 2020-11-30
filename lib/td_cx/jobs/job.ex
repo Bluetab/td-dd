@@ -1,25 +1,28 @@
-defmodule TdCx.Sources.Jobs.Job do
-  @moduledoc "Job entity"
+defmodule TdCx.Jobs.Job do
+  @moduledoc """
+  Ecto Schema module for jobs
+  """
+
   use Ecto.Schema
+
   import Ecto.Changeset
 
-  alias TdCx.Sources.Events.Event
-  alias TdCx.Sources.Jobs
-  alias TdCx.Sources.Jobs.Job
+  alias TdCx.Events.Event
+  alias TdCx.Jobs
+  alias TdCx.Jobs.Job
   alias TdCx.Sources.Source
 
   schema "jobs" do
+    field(:external_id, Ecto.UUID, autogenerate: true)
+    field(:type, :string)
     belongs_to(:source, Source)
     has_many(:events, Event)
-    field(:external_id, Ecto.UUID, autogenerate: true)
-
     timestamps()
   end
 
-  @doc false
   def changeset(job, attrs) do
     job
-    |> cast(attrs, [:source_id])
+    |> cast(attrs, [:source_id, :type])
     |> validate_required([:source_id])
   end
 
@@ -31,13 +34,13 @@ defmodule TdCx.Sources.Jobs.Job do
     def routing(_), do: false
 
     @impl Elasticsearch.Document
-    def encode(%Job{source: source, events: events, id: id, external_id: external_id}) do
-      %{
-        id: id,
-        external_id: external_id,
-        status: "",
-        source: Map.take(source, [:external_id, :type])
-      }
+    def encode(%Job{source: source, events: events} = job) do
+      source = Map.take(source, [:external_id, :type])
+
+      job
+      |> Map.take([:id, :external_id, :type])
+      |> Map.put(:status, "")
+      |> Map.put(:source, source)
       |> Map.merge(Jobs.metrics(events))
     end
   end

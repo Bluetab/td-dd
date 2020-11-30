@@ -27,3 +27,5 @@ config :td_cx, TdCx.Scheduler,
       run_strategy: Quantum.RunStrategy.Local
     ]
   ]
+
+config :td_cx, TdCx.K8s, namespace: System.get_env("K8S_NAMESPACE", "default")
