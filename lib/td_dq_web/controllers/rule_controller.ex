@@ -109,6 +109,7 @@ defmodule TdDqWeb.RuleController do
       |> put_resp_header("location", rule_path(conn, :show, rule))
       |> render("show.json", rule: rule, user_permissions: get_user_permissions(conn, rule))
     else
+      {:can, false} -> {:can, false}
       {:error, :rule, %Changeset{data: %{__struct__: _}} = changeset, _} ->
         conn
         |> put_status(:unprocessable_entity)
@@ -226,6 +227,7 @@ defmodule TdDqWeb.RuleController do
          {:ok, %{rule: rule}} <- Rules.update_rule(rule, params, user) do
       render(conn, "show.json", rule: rule, user_permissions: get_user_permissions(conn, rule))
     else
+      {:can, false} -> {:can, false}
       {:error, :rule, %Changeset{data: %{__struct__: _}} = changeset, _} ->
         conn
         |> put_status(:unprocessable_entity)
@@ -279,6 +281,7 @@ defmodule TdDqWeb.RuleController do
          {:ok, _res} <- Rules.delete_rule(rule, user) do
       send_resp(conn, :no_content, "")
     else
+      {:can, false} -> {:can, false}
       {:error, :rule, %Changeset{data: %{__struct__: _}} = changeset, _} ->
         conn
         |> put_status(:unprocessable_entity)

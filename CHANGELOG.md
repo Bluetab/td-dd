@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- [TD-2486] Template type `domain`
+
 ## [4.9.0] 2020-11-30
 
 ### Added

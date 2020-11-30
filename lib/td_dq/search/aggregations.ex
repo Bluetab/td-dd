@@ -62,6 +62,7 @@ defmodule TdDq.Search.Aggregations do
     |> Enum.map(&content_term(&1, scope))
   end
 
+  defp filter_content_term(%{"type" => "domain"}), do: true
   defp filter_content_term(%{"type" => "system"}), do: true
   defp filter_content_term(%{"values" => values}) when is_map(values), do: true
   defp filter_content_term(_), do: false
@@ -70,7 +71,7 @@ defmodule TdDq.Search.Aggregations do
     {field, %{terms: %{field: "df_content.#{field}.raw", size: 50}}}
   end
 
-  defp content_term(%{"name" => field, "type" => "system"}, "dq") do
+  defp content_term(%{"name" => field, "type" => type}, "dq") when type in ["domain", "system"] do
     {field,
      %{
        nested: %{path: "df_content.#{field}"},
