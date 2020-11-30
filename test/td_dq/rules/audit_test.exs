@@ -6,6 +6,7 @@ defmodule TdDq.Rules.AuditTest do
   alias TdCache.TemplateCache
   alias TdDq.Repo
   alias TdDq.Rules.Audit
+  alias TdDq.Rules.Implementations.Implementation
   alias TdDq.Rules.Rule
 
   @stream TdCache.Audit.stream()
@@ -27,7 +28,8 @@ defmodule TdDq.Rules.AuditTest do
 
     user = build(:user, is_admin: true)
     rule = insert(:rule, df_name: template_name)
-    [user: user, rule: rule]
+    implementation = insert(:implementation, rule: rule, deleted_at: nil)
+    [user: user, rule: rule, implementation: implementation]
   end
 
   describe "rule_updated/4" do
@@ -81,6 +83,74 @@ defmodule TdDq.Rules.AuditTest do
                ts: _ts,
                user_id: ^user_id
              } = event
+    end
+  end
+
+  describe "implementation_updated/4" do
+    test "publishes on soft deletion", %{implementation: implementation, user: %{id: user_id}} do
+      %{id: implementation_id, implementation_key: implementation_key, rule_id: rule_id} =
+        implementation
+
+      params = %{deleted_at: DateTime.utc_now()}
+
+      changeset = Implementation.changeset(implementation, params)
+
+      assert {:ok, event_id} =
+               Audit.implementation_updated(
+                 Repo,
+                 %{implementation: implementation},
+                 changeset,
+                 user_id
+               )
+
+      assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+
+      user_id = "#{user_id}"
+      resource_id = "#{implementation_id}"
+
+      assert %{
+               event: "implementation_deprecated",
+               payload: payload,
+               resource_id: ^resource_id,
+               resource_type: "implementation",
+               service: "td_dq",
+               ts: _ts,
+               user_id: ^user_id
+             } = event
+
+      assert %{
+               "implementation_key" => ^implementation_key,
+               "rule_id" => ^rule_id
+             } = Jason.decode!(payload)
+    end
+  end
+
+  describe "implementations_deprecated/2" do
+    test "publishes implementation_deprecated event", %{implementation: implementation} do
+      %{id: implementation_id, implementation_key: implementation_key, rule_id: rule_id} =
+        implementation
+
+      assert {:ok, [event_id]} =
+               Audit.implementations_deprecated(Repo, %{deprecated: {1, [implementation]}})
+
+      assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+
+      resource_id = "#{implementation_id}"
+
+      assert %{
+               event: "implementation_deprecated",
+               payload: payload,
+               resource_id: ^resource_id,
+               resource_type: "implementation",
+               service: "td_dq",
+               ts: _ts,
+               user_id: ""
+             } = event
+
+      assert %{
+               "implementation_key" => ^implementation_key,
+               "rule_id" => ^rule_id
+             } = Jason.decode!(payload)
     end
   end
 end

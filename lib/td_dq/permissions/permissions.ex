@@ -7,7 +7,7 @@ defmodule TdDq.Permissions do
 
   alias TdDq.Accounts.User
 
-  @permission_resolver Application.get_env(:td_dq, :permission_resolver)
+  @permission_resolver Application.compile_env(:td_dq, :permission_resolver)
 
   @doc """
   Check if user has a permission in a domain.

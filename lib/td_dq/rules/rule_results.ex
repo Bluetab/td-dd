@@ -170,16 +170,16 @@ defmodule TdDq.Rules.RuleResults do
 
   defp status(%{result_type: "errors_number", errors: errors, minimum: threshold, goal: target}) do
     cond do
-      Decimal.cmp(errors, threshold) == :gt -> "fail"
-      Decimal.cmp(errors, target) == :gt -> "warn"
+      Decimal.compare(errors, threshold) == :gt -> "fail"
+      Decimal.compare(errors, target) == :gt -> "warn"
       true -> "success"
     end
   end
 
   defp status(%{result_type: "percentage", result: result, minimum: threshold, goal: target}) do
     cond do
-      Decimal.cmp(result, threshold) == :lt -> "fail"
-      Decimal.cmp(result, target) == :lt -> "warn"
+      Decimal.compare(result, threshold) == :lt -> "fail"
+      Decimal.compare(result, target) == :lt -> "warn"
       true -> "success"
     end
   end

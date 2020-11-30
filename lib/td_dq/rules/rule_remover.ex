@@ -10,8 +10,8 @@ defmodule TdDq.Rules.RuleRemover do
 
   require Logger
 
-  @rule_removal Application.get_env(:td_dq, :rule_removal)
-  @rule_removal_frequency Application.get_env(:td_dq, :rule_removal_frequency)
+  @rule_removal Application.compile_env(:td_dq, :rule_removal)
+  @rule_removal_frequency Application.compile_env(:td_dq, :rule_removal_frequency)
 
   ## Client API
 
@@ -48,7 +48,7 @@ defmodule TdDq.Rules.RuleRemover do
   defp soft_deletion([]), do: :ok
 
   defp soft_deletion(active_ids) do
-    {:ok, %{rules: {rule_count, _}, impls: {impl_count, _}}} = Rules.soft_deletion(active_ids)
+    {:ok, %{rules: {rule_count, _}, deprecated: {impl_count, _}}} = Rules.soft_deletion(active_ids)
 
     if rule_count > 0, do: Logger.info("Soft deleted #{rule_count} rules")
     if impl_count > 0, do: Logger.info("Soft deleted #{impl_count} rule implementations")

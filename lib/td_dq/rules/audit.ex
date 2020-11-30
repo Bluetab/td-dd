@@ -31,6 +31,43 @@ defmodule TdDq.Rules.Audit do
   end
 
   @doc """
+  Publishes `:implementation_deprecated` events. Should be called using `Ecto.Multi.run/5`.
+  """
+  def implementations_deprecated(_repo, %{deprecated: {_, [_ | _] = impls}}) do
+    impls
+    |> Enum.map(fn %{id: id} = implementation ->
+      payload = Map.take(implementation, [:implementation_key, :rule_id])
+      publish("implementation_deprecated", "implementation", id, nil, payload)
+    end)
+    |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+    |> case do
+      %{error: errors} -> {:error, errors}
+      %{ok: event_ids} -> {:ok, event_ids}
+    end
+  end
+
+  def implementations_deprecated(_repo, _), do: {:ok, []}
+
+  @doc """
+  Publishes a `:implementation_deprecated` event. Should be called using `Ecto.Multi.run/5`.
+  """
+  def implementation_updated(
+        _repo,
+        %{implementation: %{id: id} = implementation},
+        %{changes: %{deleted_at: deleted_at}},
+        user_id
+      )
+      when not is_nil(deleted_at) do
+    payload = Map.take(implementation, [:implementation_key, :rule_id])
+    publish("implementation_deprecated", "implementation", id, user_id, payload)
+  end
+
+  # TODO: Publish implementation create and update events
+  def implementation_updated(_repo, _implementation, _changeset, _user_id) do
+    {:ok, :unchanged}
+  end
+
+  @doc """
   Publishes `:rule_result_created` events.  Should be called using `Ecto.Multi.run/5`.
   """
   def rule_results_created(_repo, %{results: results}, user_id) do

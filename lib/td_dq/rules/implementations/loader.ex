@@ -25,6 +25,10 @@ defmodule TdDq.Rules.Implementations.Loader do
     GenServer.call(__MODULE__, :ping, timeout)
   end
 
+  def deprecate do
+    GenServer.cast(__MODULE__, :deprecate)
+  end
+
   ## GenServer Callbacks
 
   @impl GenServer
@@ -58,6 +62,13 @@ defmodule TdDq.Rules.Implementations.Loader do
   @impl GenServer
   def handle_call(:ping, _from, state) do
     {:reply, :pong, state}
+  end
+
+  @impl GenServer
+  def handle_cast(:deprecate, state) do
+    do_deprecate()
+
+    {:noreply, state}
   end
 
   ## Private functions
@@ -135,5 +146,17 @@ defmodule TdDq.Rules.Implementations.Loader do
 
   defp is_structure_type(system_params) do
     Map.get(system_params, "type") == "structure"
+  end
+
+  @spec do_deprecate :: :ok
+  def do_deprecate do
+    with res <- Implementations.deprecate_implementations(),
+         {:ok, %{deprecated: {n, _}}} when n > 0 <- res do
+      Logger.info("Deprecated #{n} implementations")
+    else
+      :ok -> :ok
+      {:ok, %{deprecated: {0, _}}} -> :ok
+      {:error, op, _, _} -> Logger.warn("Failed to deprecate implementations #{op}")
+    end
   end
 end
