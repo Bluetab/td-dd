@@ -107,27 +107,30 @@ defmodule TdDd.Lineage.UnitsTest do
     end
   end
 
-  describe "Units.get_or_create_unit/1" do
+  describe "Units.replace_unit/1" do
     test "inserts a unit if it doesn't exist" do
       ts = DateTime.utc_now()
-
-      assert {:ok, %Units.Unit{inserted_at: inserted_at}} =
-               Units.get_or_create_unit(%{name: "foo"})
-
+      assert {:ok, %Units.Unit{inserted_at: inserted_at}} = Units.replace_unit(%{name: "foo"})
       assert DateTime.compare(ts, inserted_at) == :lt
     end
 
-    test "gets a unit if it exists" do
-      assert %{id: id, name: name} = insert(:unit)
-      assert {:ok, %Units.Unit{id: ^id}} = Units.get_or_create_unit(%{name: name})
+    test "refreshes a unit if it exists" do
+      assert %{id: prev_id, name: name} = insert(:unit)
+      assert {:ok, %Units.Unit{name: ^name, id: id}} = Units.replace_unit(%{name: name})
+      refute id == prev_id
     end
   end
 
   describe "Units.update_unit/2" do
     test "updates unit when attributes changes" do
       %{id: id, name: name, deleted_at: deleted_at} = unit = insert(:unit)
-      assert {:ok, %Units.Unit{id: ^id, name: ^name, deleted_at: ^deleted_at}} = Units.update_unit(unit, %{name: name})
-      assert {:ok, %Units.Unit{id: ^id, name: "new_name", deleted_at: ^deleted_at}} = Units.update_unit(unit, %{name: "new_name"})
+
+      assert {:ok, %Units.Unit{id: ^id, name: ^name, deleted_at: ^deleted_at}} =
+               Units.update_unit(unit, %{name: name})
+
+      assert {:ok, %Units.Unit{id: ^id, name: "new_name", deleted_at: ^deleted_at}} =
+               Units.update_unit(unit, %{name: "new_name"})
+
       assert {:ok, %Units.Unit{id: ^id, domain_id: 1}} = Units.update_unit(unit, %{domain_id: 1})
     end
   end
@@ -137,7 +140,10 @@ defmodule TdDd.Lineage.UnitsTest do
       assert %{id: _unit_id} = unit = insert(:unit)
       assert %{id: start_id} = node1 = insert(:node, units: [unit])
       assert %{id: end_id} = node2 = insert(:node, units: [unit])
-      assert %{id: _edge_id} = edge = insert(:edge, start_id: start_id, end_id: end_id, unit: unit)
+
+      assert %{id: _edge_id} =
+               edge = insert(:edge, start_id: start_id, end_id: end_id, unit: unit)
+
       [unit: unit, nodes: [node1, node2], edges: [edge]]
     end
 

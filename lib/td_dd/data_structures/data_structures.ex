@@ -648,6 +648,12 @@ defmodule TdDd.DataStructures do
     end
   end
 
+  def get_structure_links(%{data_structure_id: id}, resource_type) do
+    case LinkCache.list("data_structure", id, resource_type) do
+      {:ok, links} -> links
+    end
+  end
+
   def get_path(%DataStructureVersion{} = dsv) do
     dsv
     |> get_ancestry

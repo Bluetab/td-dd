@@ -14,7 +14,7 @@ defmodule TdDdWeb.SearchController do
 
   action_fallback(TdDdWeb.FallbackController)
 
-  @index_worker Application.get_env(:td_dd, :index_worker)
+  @index_worker Application.compile_env(:td_dd, :index_worker)
 
   swagger_path :reindex_all do
     description("Reindex all ES indexes with DB content")
