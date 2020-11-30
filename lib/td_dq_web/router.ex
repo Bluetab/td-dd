@@ -53,7 +53,7 @@ defmodule TdDqWeb.Router do
     %{
       schemes: ["http", "https"],
       info: %{
-        version: "3.10",
+        version: Application.spec(:td_dq, :vsn),
         title: "Truedat Data Quality Service"
       },
       basePath: "/",
