@@ -101,8 +101,8 @@ defmodule TdDq.Factory do
   def rule_result_factory do
     %TdDq.Rules.RuleResult{
       implementation_key: sequence("ri"),
-      result: Decimal.round(50, 2),
-      date: DateTime.utc_now()
+      result: "#{Decimal.round(50, 2)}",
+      date: "#{DateTime.utc_now()}"
     }
   end
 
