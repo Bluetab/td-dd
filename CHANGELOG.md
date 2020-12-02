@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- [TD-3128] Rule results `records` and `errors` fields were limited to
+  PostgreSQL `integer` values (maximum 2,147,483,647). They have now been
+  changed to `bigint` (maximum 9,223,372,036,854,775,807).
 - [TD-2486] Template type `domain`
 
 ## [4.9.0] 2020-11-30

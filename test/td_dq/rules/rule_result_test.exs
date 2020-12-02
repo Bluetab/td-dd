@@ -1,7 +1,8 @@
 defmodule TdDq.Rules.RuleResultTest do
-  use ExUnit.Case
+  use TdDq.DataCase
 
   alias Ecto.Changeset
+  alias TdDq.Repo
   alias TdDq.Rules.RuleResult
 
   @date DateTime.from_naive!(~N[2015-01-23 00:00:00], "Etc/UTC")
@@ -61,6 +62,18 @@ defmodule TdDq.Rules.RuleResultTest do
                |> Changeset.fetch_change(:row_number)
 
       assert row_number == 123
+    end
+
+    test "accepts large values in errors and records fields" do
+      {errors, records} = {4_715_670_290, 9_223_372_036_854_775_807}
+
+      assert {:ok, %{id: id}} =
+               :rule_result
+               |> string_params_for(records: records, errors: errors, result: 0)
+               |> RuleResult.changeset()
+               |> Repo.insert()
+
+      assert %{errors: ^errors, records: ^records} = Repo.get!(RuleResult, id)
     end
   end
 end
