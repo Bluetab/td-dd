@@ -3,10 +3,6 @@ defmodule TdCxWeb.JobControllerTest do
 
   alias TdCx.Search.IndexWorker
 
-  def fixture(:job) do
-    insert(:job)
-  end
-
   setup_all do
     start_supervised(IndexWorker)
     :ok
@@ -40,12 +36,17 @@ defmodule TdCxWeb.JobControllerTest do
     @tag :admin_authenticated
     test "search all", %{conn: conn, job: job} do
       source = Map.get(job, :source, %{})
-      conn = post(conn, Routes.job_path(conn, :search), %{})
 
-      assert json_response(conn, 200)["data"] == [
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.job_path(conn, :search), %{})
+               |> json_response(:ok)
+
+      assert data == [
                %{
                  "external_id" => job.external_id,
-                 "source" => %{"external_id" => source.external_id, "type" => source.type}
+                 "source" => %{"external_id" => source.external_id, "type" => source.type},
+                 "type" => job.type
                }
              ]
     end
@@ -94,7 +95,7 @@ defmodule TdCxWeb.JobControllerTest do
   end
 
   defp create_job(_) do
-    job = fixture(:job)
+    job = insert(:job)
     {:ok, job: job}
   end
 end

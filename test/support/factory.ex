@@ -20,7 +20,8 @@ defmodule TdCx.Factory do
 
   def job_factory do
     %Job{
-      source: build(:source)
+      source: build(:source),
+      type: sequence(:job_type, ["Metadata", "DQ", "Profile"])
     }
   end
 
