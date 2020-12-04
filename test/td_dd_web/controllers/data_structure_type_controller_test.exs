@@ -26,7 +26,7 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
 
   setup %{conn: conn} do
     %{id: id} = template = build(:template)
-    TemplateCache.put(template)
+    TemplateCache.put(template, publish: false)
 
     on_exit(fn ->
       TemplateCache.delete(id)
