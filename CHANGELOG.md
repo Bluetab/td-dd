@@ -7,6 +7,10 @@
 - [TD-3065] Support filtering on `updated_at` (date range)
 - [TD-2486] Template type `domain`
 
+### Fixed
+
+- [TD-3142] `/api/data_structure_types` was failing if template was missing
+
 ## [4.9.0] 2020-11-30
 
 ### Changed
@@ -178,11 +182,9 @@
     files uploaded using the same unit name will overwrite the existing nodes
     and relations in that unit.
   - Latest status for a unit can be queried using `GET /api/units/:unit_name`.
-  - Events relating to a unit can be queried using `GET
-    /api/units/:unit_name/events`.
+  - Events relating to a unit can be queried using `GET /api/units/:unit_name/events`.
   - A unit can be logically deleted using `DELETE /api/units/:unit_name`.
-  - A unit can be physically deleted using `DELETE
-    /api/units/:unit_name?logical=false`.
+  - A unit can be physically deleted using `DELETE /api/units/:unit_name?logical=false`.
   - [TD-2495] Changed structures loader migration key to cache all structures
     again including their metadata
 

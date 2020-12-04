@@ -10,6 +10,7 @@ defmodule TdDd.DataStructures.DataStructureType do
     field(:template_id, :integer)
     field(:translation, :string)
     field(:metadata_fields, :map)
+    field(:template, :map, virtual: true)
 
     timestamps()
   end
