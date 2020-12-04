@@ -24,8 +24,10 @@ defmodule TdDd.DataStructures.DataStructuresTypes do
   end
 
   def enrich_template(%DataStructureType{template_id: template_id} = structure_type) do
-    {:ok, template} = TemplateCache.get(template_id)
-    Map.put(structure_type, :template, template)
+    case TemplateCache.get(template_id) do
+      {:ok, template} -> %{structure_type | template: template}
+      _ -> structure_type
+    end
   end
 
   @doc """

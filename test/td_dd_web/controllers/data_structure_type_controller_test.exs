@@ -1,6 +1,7 @@
 defmodule TdDdWeb.DataStructureTypeControllerTest do
   use TdDdWeb.ConnCase
 
+  alias TdCache.TemplateCache
   alias TdDd.DataStructures.DataStructuresTypes
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDdWeb.ApiServices.MockTdAuthService
@@ -24,16 +25,41 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
   end
 
   setup %{conn: conn} do
-    {:ok, conn: put_req_header(conn, "accept", "application/json")}
+    %{id: id} = template = build(:template)
+    TemplateCache.put(template, publish: false)
+
+    on_exit(fn ->
+      TemplateCache.delete(id)
+    end)
+
+    [conn: put_req_header(conn, "accept", "application/json"), template: template]
   end
 
   describe "index" do
     @tag :admin_authenticated
     test "lists all data_structure_types", %{conn: conn} do
-      assert %{"data" => []} =
+      insert(:data_structure_type, template_id: 123)
+
+      assert %{"data" => [structure_type]} =
                conn
                |> get(Routes.data_structure_type_path(conn, :index))
                |> json_response(:ok)
+
+      assert %{"template_id" => 123} = structure_type
+      refute Map.has_key?(structure_type, "template")
+    end
+
+    @tag :admin_authenticated
+    test "enriches template", %{conn: conn, template: %{id: template_id}} do
+      insert(:data_structure_type, template_id: template_id)
+
+      assert %{"data" => [structure_type]} =
+               conn
+               |> get(Routes.data_structure_type_path(conn, :index))
+               |> json_response(:ok)
+
+      assert %{"template" => %{"id" => ^template_id}} = structure_type
+      refute Map.has_key?(structure_type, "template_id")
     end
   end
 
