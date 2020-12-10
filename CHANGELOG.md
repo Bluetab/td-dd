@@ -4,11 +4,30 @@
 
 ### Added
 
-- [TD-3089] Widget and type `copy` on df
+- [TD-3065] Support filtering on `updated_at` (date range)
+- [TD-2486] Template type `domain`
 
 ### Changed
 
 - [TD-2655] Modify `domain_id` of a data structure via csv
+### Fixed
+
+- [TD-3142] `/api/data_structure_types` was failing if template was missing
+
+## [4.9.0] 2020-11-30
+
+### Changed
+
+- [TD-2258] Filter structures by `linked_concepts_count`
+- [TD-2946] Replace unit on PUT request
+
+### Added
+
+- [TD-3089] Widget and type `copy` on df
+
+### Changed
+
+- [TD-3066] Keep track of deleted structures in redis
 
 ## [4.8.0] 2020-11-16
 
@@ -466,8 +485,8 @@
 
 ### Changed
 
-- [TD-1793] Checks if field structure has `df_content` and enriches data_structure
-  :show
+- [TD-1793] Checks if field structure has `df_content` and enriches
+  data_structure :show
 - [TD-1891] Bulk load types translation from data fields to data structures
 - [TD-1533] Ignores search term when it is no on Aggregation
 

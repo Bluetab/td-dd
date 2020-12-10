@@ -14,7 +14,9 @@ defmodule TdDd.Search.Aggregations do
       {"confidential.raw", %{terms: %{field: "confidential.raw"}}},
       {"class.raw", %{terms: %{field: "class.raw"}}},
       {"field_type.raw", %{terms: %{field: "field_type.raw", size: 50}}},
-      {"with_content.raw", %{terms: %{field: "with_content.raw"}}}
+      {"with_content.raw", %{terms: %{field: "with_content.raw"}}},
+      {"linked_concepts_count",
+       %{terms: %{script: "doc['linked_concepts_count'].value > 0 ? 'linked' : 'unlinked'"}}}
     ]
 
     dynamic_keywords =
@@ -59,6 +61,7 @@ defmodule TdDd.Search.Aggregations do
   end
 
   defp filter_content_term(%{"name" => "_confidential"}), do: true
+  defp filter_content_term(%{"type" => "domain"}), do: true
   defp filter_content_term(%{"type" => "system"}), do: true
   defp filter_content_term(%{"values" => values}) when is_map(values), do: true
   defp filter_content_term(_), do: false
@@ -67,11 +70,13 @@ defmodule TdDd.Search.Aggregations do
     {field, %{terms: %{field: "df_content.#{field}.raw", size: 50}}}
   end
 
-  defp content_term(%{"name" => field, "type" => "system"}) do
+  defp content_term(%{"name" => field, "type" => type}) when type in ["domain", "system"] do
     {field,
      %{
        nested: %{path: "df_content.#{field}"},
-       aggs: %{distinct_search: %{terms: %{field: "df_content.#{field}.external_id.raw", size: 50}}}
+       aggs: %{
+         distinct_search: %{terms: %{field: "df_content.#{field}.external_id.raw", size: 50}}
+       }
      }}
   end
 

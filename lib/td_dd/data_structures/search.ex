@@ -207,7 +207,9 @@ defmodule TdDd.DataStructures.Search do
   end
 
   def create_filters(%{without: without_fields} = params) do
-    filters = create_filters(Map.delete(params, :without))
+    filters = params
+    |> Map.delete(:without)
+    |> create_filters()
 
     without_fields
     |> Enum.map(&%{bool: %{must_not: %{exists: %{field: &1}}}})
@@ -217,17 +219,21 @@ defmodule TdDd.DataStructures.Search do
   def create_filters(%{"filters" => filters}) do
     filters
     |> Map.to_list()
-    |> Enum.map(&to_terms_query/1)
+    |> Enum.map(&to_filter_query/1)
     |> Enum.reject(&is_nil/1)
   end
 
   def create_filters(_), do: []
 
-  defp to_terms_query({:system_id, system_id}) do
+  defp to_filter_query({:system_id, system_id}) do
     get_filter(nil, system_id, :system_id)
   end
 
-  defp to_terms_query({filter, values}) do
+  defp to_filter_query({"updated_at", value}) do
+    %{range: %{updated_at: value}}
+  end
+
+  defp to_filter_query({filter, values}) do
     Aggregations.aggregation_terms()
     |> Map.get(filter)
     |> get_filter(values, filter)
@@ -247,6 +253,14 @@ defmodule TdDd.DataStructures.Search do
 
   defp get_filter(nil, value, filter) when not is_list(value) do
     %{term: %{filter => value}}
+  end
+
+  defp get_filter(_, ["linked"], "linked_concepts_count") do
+    %{range: %{"linked_concepts_count" => %{gt: 0}}}
+  end
+
+  defp get_filter(_, ["unlinked"], "linked_concepts_count") do
+    %{term: %{"linked_concepts_count" => 0}}
   end
 
   defp get_filter(_, _, _), do: nil
