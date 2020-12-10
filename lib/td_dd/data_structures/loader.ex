@@ -336,7 +336,7 @@ defmodule TdDd.Loader do
 
   defp reduce_mutable_fields([], _audit_attrs, updated_ids) do
     update_count = Enum.count(updated_ids)
-    Logger.info("Metadata loaded (upserted=#{update_count})")
+    Logger.info("Mutable fields loaded (upserted=#{update_count})")
     %{updated: updated_ids}
   end
 
@@ -344,7 +344,11 @@ defmodule TdDd.Loader do
     external_id = Map.get(record, :external_id)
     mutable_metadata = Map.get(record, :mutable_metadata)
     ts = Map.get(audit_attrs, :ts)
-    attrs = Map.take(record, [:domain_id])
+
+    attrs =
+      record
+      |> Map.take([:domain_id])
+      |> Map.put_new(:domain_id, nil)
 
     ids =
       case DataStructures.get_data_structure_by_external_id(external_id) do
