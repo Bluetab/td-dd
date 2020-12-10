@@ -286,7 +286,7 @@ defmodule TdDd.LoaderTest do
                Loader.load(structure_records, field_records, relation_records, audit())
     end
 
-    test "load/1 with structures updates structures without generate version" do
+    test "load/1 updates structures mutable fields without generate version" do
       system = insert(:system, external_id: "SYS1", name: "SYS1")
 
       s1 = %{
@@ -297,7 +297,8 @@ defmodule TdDd.LoaderTest do
         external_id: "EXT1",
         type: "Table",
         metadata: %{"bar" => "baz"},
-        mutable_metadata: %{"foo" => "bar"}
+        mutable_metadata: %{"foo" => "bar"},
+        domain_id: 1
       }
 
       s2 = %{
@@ -307,7 +308,8 @@ defmodule TdDd.LoaderTest do
         description: "D1",
         version: 0,
         external_id: "EXT2",
-        type: "View"
+        type: "View",
+        domain_id: 1
       }
 
       r1 = %{
@@ -326,7 +328,8 @@ defmodule TdDd.LoaderTest do
         nullable: false,
         precision: "P1",
         description: "D1NEW",
-        version: 0
+        version: 0,
+        domain_id: 1
       }
 
       f11 = Map.merge(s1, f1)
@@ -363,6 +366,7 @@ defmodule TdDd.LoaderTest do
         |> Map.put(:mutable_metadata, %{"foo" => "bar2"})
 
       s2 = Map.put(s2, :mutable_metadata, %{"foo" => "bar"})
+      s2 = Map.put(s2, :domain_id, 3)
       f11 = Map.put(f11, :mutable_metadata, %{"foo" => "bar"})
 
       structure_records = [s1, s2]
@@ -378,6 +382,8 @@ defmodule TdDd.LoaderTest do
       v3 =
         DataStructures.get_latest_version_by_external_id(s1.external_id <> "/" <> f11.field_name)
 
+      s_v2 = DataStructures.get_data_structure_by_external_id(s2.external_id)
+
       m1_deleted = m1
 
       [m1, m2, m3] =
@@ -391,6 +397,7 @@ defmodule TdDd.LoaderTest do
 
       assert v2.version == 0
       assert m2.version == 0
+      assert s_v2.domain_id == 3
       assert m2.fields == %{"foo" => "bar"}
       assert is_nil(m2.deleted_at)
 
