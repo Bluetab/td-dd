@@ -6,6 +6,10 @@
 
 - [TD-3089] Widget and type `copy` on df
 
+### Changed
+
+- [TD-2655] Modify `domain_id` of a data structure via csv
+
 ## [4.8.0] 2020-11-16
 
 ### Added
