@@ -6,6 +6,8 @@
 
 - [TD-3065] Support filtering on `updated_at` (date range)
 - [TD-2486] Template type `domain`
+- [TD-2655] Support bulk updating of domain_id, improve performance of mutable
+  metadata updates
 
 ### Fixed
 

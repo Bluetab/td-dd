@@ -146,7 +146,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       |> Map.put(:system, get_system(structure))
       |> Map.put(:df_content, df_content)
       |> Map.put(:with_content, with_content)
-      |> Map.put(:mutable_metadata, get_mutable_metadata(structure))
+      |> Map.put(:mutable_metadata, get_mutable_metadata(dsv))
       |> Map.put_new(:field_type, get_field_type(dsv))
       |> Map.put(:source_alias, get_source_alias(dsv))
       |> Map.put_new(:domain, Map.take(domain, [:id, :name, :external_id]))
@@ -219,9 +219,18 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     defp get_source_alias(%DataStructureVersion{metadata: metadata}),
       do: Map.get(metadata, "alias")
 
-    defp get_mutable_metadata(%DataStructure{id: id}) do
-      metadata = DataStructures.get_latest_metadata_version(id, deleted: false) || Map.new()
-      Map.get(metadata, :fields, %{})
+    defp get_mutable_metadata(%DataStructureVersion{deleted_at: nil} = dsv) do
+      case DataStructures.get_metadata_version(dsv) do
+        %{fields: %{} = fields, deleted_at: nil} -> fields
+        _ -> %{}
+      end
+    end
+
+    defp get_mutable_metadata(%DataStructureVersion{} = dsv) do
+      case DataStructures.get_metadata_version(dsv) do
+        %{fields: %{} = fields} -> fields
+        _ -> %{}
+      end
     end
 
     defp linked_concept_count(dsv) do

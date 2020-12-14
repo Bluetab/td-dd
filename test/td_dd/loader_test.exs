@@ -344,8 +344,7 @@ defmodule TdDd.LoaderTest do
       v3 =
         DataStructures.get_latest_version_by_external_id(s1.external_id <> "/" <> f11.field_name)
 
-      [m1, m2, m3] =
-        Enum.map([v1, v2, v3], &DataStructures.get_latest_metadata_version(&1.data_structure_id))
+      [m1, m2, m3] = Enum.map([v1, v2, v3], &DataStructures.get_metadata_version/1)
 
       assert Enum.all?([v1, v2, v3], &(&1.version == 0))
 
@@ -380,14 +379,13 @@ defmodule TdDd.LoaderTest do
 
       m1_deleted = m1
 
-      [m1, m2, m3] =
-        Enum.map([v1, v2, v3], &DataStructures.get_latest_metadata_version(&1.data_structure_id))
+      [m1, m2, m3] = Enum.map([v1, v2, v3], &DataStructures.get_metadata_version/1)
 
       assert v1.version == 1
       assert m1.version == 1
       assert m1.fields == %{"foo" => "bar2"}
       assert is_nil(m1.deleted_at)
-      assert not is_nil(DataStructures.get_structure_metadata!(m1_deleted.id).deleted_at)
+      refute is_nil(DataStructures.get_structure_metadata!(m1_deleted.id).deleted_at)
 
       assert v2.version == 0
       assert m2.version == 0

@@ -160,6 +160,40 @@ defmodule TdDd.DataStructuresTest do
     end
   end
 
+  describe "get_metadata_version/1" do
+    test "returns the latest version of the metadata overlapping with the data structure version" do
+      %{id: id} = insert(:data_structure)
+
+      [dsv1, dsv2, dsv3] =
+        [
+          [inserted_at: ~U[2020-01-01 00:00:00Z], deleted_at: ~U[2020-02-01 00:00:00Z]],
+          [inserted_at: ~U[2020-02-01 00:00:00Z], deleted_at: ~U[2020-03-01 00:00:00Z]],
+          [inserted_at: ~U[2020-04-01 00:00:00Z]]
+        ]
+        |> Enum.with_index()
+        |> Enum.map(fn {params, v} ->
+          params |> Keyword.put(:data_structure_id, id) |> Keyword.put(:version, v)
+        end)
+        |> Enum.map(&insert(:data_structure_version, &1))
+
+      [sm1, _sm2, sm3] =
+        [
+          [inserted_at: ~U[2020-02-02 00:00:00Z], deleted_at: ~U[2020-02-03 00:00:00Z]],
+          [inserted_at: ~U[2020-03-02 00:00:00Z], deleted_at: ~U[2020-04-05 00:00:00Z]],
+          [inserted_at: ~U[2020-05-01 00:00:00Z]]
+        ]
+        |> Enum.with_index()
+        |> Enum.map(fn {params, v} ->
+          params |> Keyword.put(:data_structure_id, id) |> Keyword.put(:version, v)
+        end)
+        |> Enum.map(&insert(:structure_metadata, &1))
+
+      assert DataStructures.get_metadata_version(dsv1) == nil
+      assert DataStructures.get_metadata_version(dsv2) == sm1
+      assert DataStructures.get_metadata_version(dsv3) == sm3
+    end
+  end
+
   describe "data_structures" do
     @update_attrs %{
       # description: "some updated description",
@@ -194,38 +228,6 @@ defmodule TdDd.DataStructuresTest do
          %{data_structure: data_structure} do
       assert DataStructures.get_data_structure_by_external_id(data_structure.external_id)
              <~> data_structure
-    end
-
-    test "get_latest_metadata_version/2 returns the latest version of the metadata", %{
-      data_structure: data_structure
-    } do
-      ms =
-        Enum.map(
-          0..5,
-          &insert(:structure_metadata, version: &1, data_structure_id: data_structure.id)
-        )
-
-      assert DataStructures.get_latest_metadata_version(data_structure.id).id ==
-               Enum.max_by(ms, & &1.version).id
-    end
-
-    test "get_latest_metadata_version/2 returns nil when there is not metadata", %{
-      data_structure: data_structure
-    } do
-      assert is_nil(DataStructures.get_latest_metadata_version(data_structure.id))
-    end
-
-    test "get_latest_metadata_version/2 hides deleted versions when specified", %{
-      data_structure: data_structure
-    } do
-      ms =
-        insert(:structure_metadata,
-          data_structure_id: data_structure.id,
-          deleted_at: DateTime.utc_now()
-        )
-
-      assert is_nil(DataStructures.get_latest_metadata_version(data_structure.id, deleted: false))
-      assert DataStructures.get_latest_metadata_version(data_structure.id).id == ms.id
     end
 
     test "get_data_structure!/1 returns error when structure does not exist" do
