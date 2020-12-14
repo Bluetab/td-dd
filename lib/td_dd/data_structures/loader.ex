@@ -13,7 +13,9 @@ defmodule TdDd.Loader do
   alias TdDd.DataStructures.MerkleGraph
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.DataStructures.StructureMetadata
+  alias TdDd.Loader.DomainIdLoader
   alias TdDd.Loader.FieldsAsStructures
+  alias TdDd.Loader.MutableMetadataLoader
   alias TdDd.Repo
 
   require Logger
@@ -80,12 +82,14 @@ defmodule TdDd.Loader do
     end
 
     %{updated: updated, inserted: inserted} = load_graph(graph, audit_attrs)
-    %{updated: updated_metadata} = load_mutable_metadata(structure_records, audit_attrs)
+
+    {:ok, updated_domain} = DomainIdLoader.load(structure_records, ts)
+    {:ok, updated_metadata} = MutableMetadataLoader.load(structure_records, ts)
 
     upserted_ids =
       [updated, inserted] |> Enum.flat_map(&Map.values/1) |> Enum.map(& &1.data_structure_id)
 
-    Enum.uniq(discarded ++ upserted_ids ++ updated_metadata)
+    Enum.uniq(discarded ++ upserted_ids ++ updated_domain ++ updated_metadata)
   end
 
   defp discard_absent_structures(structure_records, ts) do
@@ -320,117 +324,5 @@ defmodule TdDd.Loader do
     %DataStructureVersion{}
     |> DataStructureVersion.changeset(attrs)
     |> Repo.insert()
-  end
-
-  defp load_mutable_metadata(records, audit_attrs) do
-    do_load_mutable_metadata(records, audit_attrs)
-  end
-
-  defp do_load_mutable_metadata([], _), do: %{updated: []}
-
-  defp do_load_mutable_metadata(records, audit_attrs) do
-    reduce_metadata(records, audit_attrs)
-  end
-
-  defp reduce_metadata(records, audit_attrs, updated_ids \\ [])
-
-  defp reduce_metadata([], _audit_attrs, updated_ids) do
-    update_count = Enum.count(updated_ids)
-    Logger.info("Metadata loaded (upserted=#{update_count})")
-    %{updated: updated_ids}
-  end
-
-  defp reduce_metadata([record | tail], audit_attrs, updated_ids) do
-    external_id = Map.get(record, :external_id)
-    mutable_metadata = Map.get(record, :mutable_metadata)
-
-    ids =
-      external_id
-      |> DataStructures.get_data_structure_by_external_id()
-      |> update_metadata(mutable_metadata, audit_attrs)
-
-    reduce_metadata(tail, audit_attrs, updated_ids ++ ids)
-  end
-
-  defp update_metadata(nil, _, _), do: []
-
-  defp update_metadata(%DataStructure{id: id} = data_structure, mutable_metadata, audit_attrs) do
-    id
-    |> DataStructures.get_latest_metadata_version()
-    |> create_metadata_version(mutable_metadata, data_structure, audit_attrs)
-  end
-
-  defp create_metadata_version(
-         current_metadata,
-         mutable_metadata,
-         %DataStructure{id: id} = data_structure,
-         %{ts: ts} = audit_attrs
-       )
-       when mutable_metadata == %{} or is_nil(mutable_metadata) do
-    case current_metadata do
-      %StructureMetadata{deleted_at: nil} ->
-        DataStructures.update_structure_metadata(current_metadata, %{deleted_at: ts})
-        update_structure(data_structure, audit_attrs)
-
-        [id]
-
-      _ ->
-        []
-    end
-  end
-
-  defp create_metadata_version(
-         nil,
-         %{} = mutable_metadata,
-         %DataStructure{id: id} = data_structure,
-         audit_attrs
-       ) do
-    insert_metadata_version(0, mutable_metadata, id)
-    update_structure(data_structure, audit_attrs)
-
-    [id]
-  end
-
-  defp create_metadata_version(
-         %StructureMetadata{deleted_at: nil, fields: fields} = current_metadata,
-         %{} = mutable_metadata,
-         %DataStructure{id: id} = data_structure,
-         %{ts: ts} = audit_attrs
-       ) do
-    if fields == mutable_metadata do
-      []
-    else
-      insert_metadata_version(current_metadata.version + 1, mutable_metadata, id)
-      DataStructures.update_structure_metadata(current_metadata, %{deleted_at: ts})
-      update_structure(data_structure, audit_attrs)
-
-      [id]
-    end
-  end
-
-  defp create_metadata_version(
-         %{version: current_metadata_version} = _current_metadata,
-         mutable_metadata,
-         %DataStructure{id: id} = data_structure,
-         audit_attrs
-       ) do
-    insert_metadata_version(current_metadata_version + 1, mutable_metadata, id)
-    update_structure(data_structure, audit_attrs)
-
-    [id]
-  end
-
-  defp insert_metadata_version(version, fields, data_structure_id) do
-    DataStructures.create_structure_metadata(%{
-      version: version,
-      data_structure_id: data_structure_id,
-      fields: fields
-    })
-  end
-
-  defp update_structure(data_structure, attrs) do
-    data_structure
-    |> DataStructure.update_changeset(attrs)
-    |> Repo.update()
   end
 end

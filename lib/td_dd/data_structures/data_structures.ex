@@ -811,14 +811,25 @@ defmodule TdDd.DataStructures do
     |> Repo.update()
   end
 
-  def get_latest_metadata_version(id, options \\ []) do
+  def get_metadata_version(%DataStructureVersion{
+        data_structure_id: structure_id,
+        inserted_at: inserted_at,
+        deleted_at: deleted_at
+      }) do
     StructureMetadata
-    |> where([sm], sm.data_structure_id == ^id)
-    |> with_deleted(options, dynamic([sm], is_nil(sm.deleted_at)))
+    |> where([sm], sm.data_structure_id == ^structure_id)
+    |> where(
+      [sm],
+      fragment(
+        "(?, COALESCE(?, NOW())) OVERLAPS (?, COALESCE(?, NOW()))",
+        ^inserted_at,
+        ^deleted_at,
+        sm.inserted_at,
+        sm.deleted_at
+      )
+    )
     |> order_by(desc: :version)
-    |> limit(1)
-    |> preload(:data_structure)
-    |> select([sm], sm)
+    |> distinct(:data_structure_id)
     |> Repo.one()
   end
 
@@ -838,4 +849,21 @@ defmodule TdDd.DataStructures do
   end
 
   def template_name(_), do: nil
+
+  def get_latest_metadata_by_external_ids(external_ids) do
+    DataStructure
+    |> where([ds], ds.external_id in ^external_ids)
+    |> join(:left, [ds], m in subquery(latest_mutable_metadata_query()),
+      on: m.data_structure_id == ds.id
+    )
+    |> select_merge([ds, m], %{latest_metadata: m})
+    |> Repo.all()
+  end
+
+  @spec latest_mutable_metadata_query :: Ecto.Query.t()
+  def latest_mutable_metadata_query do
+    StructureMetadata
+    |> distinct(:data_structure_id)
+    |> order_by(asc: :data_structure_id, desc: :version)
+  end
 end

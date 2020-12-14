@@ -29,6 +29,7 @@ defmodule TdDd.DataStructures.DataStructure do
     field(:external_id, :string)
     field(:last_change_by, :integer)
     field(:row, :integer, virtual: true)
+    field(:latest_metadata, :map, virtual: true)
 
     timestamps(type: :utc_datetime)
   end
