@@ -18,7 +18,11 @@ RUN apk --no-cache update && \
     apk --no-cache add ncurses-libs openssl bash ca-certificates && \
     rm -rf /var/cache/apk/* && \
     tar -xzf *.tar.gz && \
-    rm *.tar.gz
+    rm *.tar.gz && \
+    adduser -h /app -D app && \
+    chown -R app: /app
+
+USER app
 
 ENV APP_NAME ${APP_NAME}
 ENTRYPOINT ["/bin/bash", "-c", "bin/start.sh"]
