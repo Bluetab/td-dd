@@ -1,13 +1,13 @@
 # Changelog
 
-
-## [Unreleased] 2020-12-14
+## [Unreleased]
 
 ### Changed
 
+- [TD-3170] Build docker image which runs with non-root user
 - [TD-2655] Support bulk updating of domain_id, improve performance of mutable
   metadata updates
-  
+
 ## [4.10.0] 2020-12-14
 
 ### Added
