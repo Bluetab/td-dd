@@ -6,7 +6,7 @@ defmodule TdDd.Cache.StructureTypeLoader do
   use GenServer
 
   alias TdCache.StructureTypeCache
-  alias TdDd.DataStructures.DataStructuresTypes
+  alias TdDd.DataStructures.DataStructureTypes
 
   require Logger
 
@@ -22,9 +22,11 @@ defmodule TdDd.Cache.StructureTypeLoader do
   def init(state) do
     name = String.replace_prefix("#{__MODULE__}", "Elixir.", "")
     Logger.info("Running #{name}")
+
     unless Application.get_env(:td_dd, :env) == :test do
       Process.send_after(self(), :load_structure_types, 0)
     end
+
     {:ok, state}
   end
 
@@ -38,7 +40,7 @@ defmodule TdDd.Cache.StructureTypeLoader do
   ## Private functions
 
   defp load_structure_types do
-    DataStructuresTypes.list_data_structure_types()
+    DataStructureTypes.list_data_structure_types()
     |> load_structure_type_data()
   end
 
