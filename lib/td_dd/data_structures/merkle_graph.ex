@@ -108,6 +108,7 @@ defmodule TdDd.DataStructures.MerkleGraph do
 
   Hashes will be propagated for any structures without the label `:ghash.`
   """
+  @spec add(Graph.t(), nil | {[map], [map]}) :: {:ok, Graph.t()}
   def add(graph, records)
 
   def add(graph, nil), do: {:ok, graph}
@@ -150,6 +151,7 @@ defmodule TdDd.DataStructures.MerkleGraph do
     end
   end
 
+  @spec validate_graph(Graph.t(), [map]) :: :ok
   defp validate_graph(graph, structure_records) do
     structure_records
     |> Enum.map(fn {external_id, _} -> external_id end)

@@ -5,8 +5,9 @@
 ### Changed
 
 - [TD-3170] Build docker image which runs with non-root user
-- [TD-2655] Support bulk updating of domain_id, improve performance of mutable
-  metadata updates
+- [TD-2655] Support bulk updating of domain_id
+- [TD-2331] Return the path of deleted structures
+- Performance improvements of metadata load process
 
 ## [4.10.0] 2020-12-14
 

@@ -46,7 +46,6 @@ defmodule TdDdWeb.ConnCase do
 
       allow(parent, [
         TdDd.Cache.SystemLoader,
-        TdDd.DataStructures.PathCache,
         TdDd.Loader.LoaderWorker,
         TdDd.Search.IndexWorker,
         TdDd.Cache.StructureLoader,

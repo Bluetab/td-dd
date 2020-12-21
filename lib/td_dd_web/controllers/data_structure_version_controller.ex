@@ -29,7 +29,6 @@ defmodule TdDdWeb.DataStructureVersionController do
     :data_field_links,
     :versions,
     :system,
-    :ancestry,
     :links,
     :profile,
     :degree,

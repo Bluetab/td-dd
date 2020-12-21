@@ -13,7 +13,6 @@ defmodule TdDdWeb.MetadataControllerTest do
   alias TdDd.Cache.StructureLoader
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.DataStructures.PathCache
   alias TdDd.Lineage.GraphData
   alias TdDd.Loader.LoaderWorker
   alias TdDd.Permissions.MockPermissionResolver
@@ -26,7 +25,6 @@ defmodule TdDdWeb.MetadataControllerTest do
     start_supervised(MockPermissionResolver)
     start_supervised(StructureLoader)
     start_supervised(LoaderWorker)
-    start_supervised(PathCache)
     start_supervised(GraphData)
     :ok
   end
@@ -139,7 +137,7 @@ defmodule TdDdWeb.MetadataControllerTest do
           data_structure_relations: Map.put(relations, :filename, "relations")
         )
 
-      assert response(conn, 202) =~ ""
+      assert response(conn, :accepted) =~ ""
 
       # waits for loader to complete
       LoaderWorker.ping(20_000)
@@ -147,7 +145,7 @@ defmodule TdDdWeb.MetadataControllerTest do
       assert %{"data" => data} =
                conn
                |> get(data_structure_path(conn, :index))
-               |> json_response(200)
+               |> json_response(:ok)
 
       assert length(data) == 5 + 68
 
@@ -159,7 +157,7 @@ defmodule TdDdWeb.MetadataControllerTest do
                |> get(
                  data_structure_data_structure_version_path(conn, :show, structure_id, "latest")
                )
-               |> json_response(200)
+               |> json_response(:ok)
 
       assert length(data["parents"]) == 1
       assert length(data["siblings"]) == 3
@@ -175,7 +173,7 @@ defmodule TdDdWeb.MetadataControllerTest do
                    "latest"
                  )
                )
-               |> json_response(200)
+               |> json_response(:ok)
 
       assert parents == []
       assert length(children) == 3
@@ -239,7 +237,7 @@ defmodule TdDdWeb.MetadataControllerTest do
 
   describe "td-2520" do
     @tag :admin_authenticated
-    test "td-2520 synchronous load with parent_external_id and external_id", %{conn: conn} do
+    test "synchronous load with parent_external_id and external_id", %{conn: conn} do
       insert(:system, external_id: "test1", name: "test1")
 
       assert conn

@@ -31,7 +31,6 @@ defmodule TdDdWeb.DataStructureController do
 
   @lift_attrs [:class, :description, :metadata, :group, :name, :type, :deleted_at]
   @enrich_attrs [
-    :ancestry,
     :children,
     :data_field_degree,
     :data_field_links,

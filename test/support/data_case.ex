@@ -36,11 +36,6 @@ defmodule TdDd.DataCase do
           Sandbox.mode(TdDd.Repo, {:shared, self()})
           parent = self()
 
-          case Process.whereis(TdDd.DataStructures.PathCache) do
-            nil -> nil
-            pid -> Sandbox.allow(TdDd.Repo, parent, pid)
-          end
-
           case Process.whereis(TdDd.Search.IndexWorker) do
             nil -> nil
             pid -> Sandbox.allow(TdDd.Repo, parent, pid)

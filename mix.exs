@@ -58,6 +58,7 @@ defmodule TdDd.Mixfile do
       {:gettext, "~> 0.11"},
       {:httpoison, "~> 1.6.2"},
       {:credo, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
       {:guardian, "~> 2.0"},
       {:canada, "~> 2.0"},
       {:quantum, "~> 3.0"},
@@ -67,13 +68,14 @@ defmodule TdDd.Mixfile do
       {:phoenix_swagger, "~> 0.8.2"},
       {:ex_json_schema, "~> 0.7.3"},
       {:codepagex, "~> 0.1.4"},
+      {:bimap, "~> 1.1"},
       {:elasticsearch,
        git: "https://github.com/Bluetab/elasticsearch-elixir.git",
        branch: "feature/bulk-index-action"},
       {:td_hypermedia, git: "https://github.com/Bluetab/td-hypermedia.git", tag: "4.0.0"},
-      {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "4.9.1"},
-      {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "4.10.0"},
-      {:graph, git: "https://github.com/Bluetab/graph.git", tag: "1.0.0"}
+      {:td_cache, git: "https://github.com/Bluetab/td-cache.git", branch: "feature/td-3103"},
+      {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", branch: "feature/td-3103"},
+      {:graph, path: "../graph"}
     ]
   end
 

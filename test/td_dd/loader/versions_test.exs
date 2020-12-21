@@ -1,4 +1,4 @@
-defmodule TdDd.Loader.DeleteByGroupTest do
+defmodule TdDd.Loader.VersionsTest do
   use TdDd.DataCase
 
   alias TdDd.CSV.Reader
@@ -42,13 +42,15 @@ defmodule TdDd.Loader.DeleteByGroupTest do
   end
 
   describe "TdDd.Loader" do
-    test "sets the deleted_at of structures which are no longer present in the input CSV", %{
+    test "sets the deleted_at of existing structures which are absent in the input", %{
       structures: structures
     } do
       audit = audit()
-      {:ok, data_structure_ids} = Loader.load(structures, [], [], audit)
-      assert Enum.count(data_structure_ids) == 2
 
+      assert {:ok, %{delete_versions: {2, data_structure_ids}}} =
+               Loader.load(structures, [], [], audit)
+
+      assert Enum.count(data_structure_ids) == 2
       dsvs = Enum.map(data_structure_ids, &DataStructures.get_latest_version/1)
       assert Enum.count(dsvs) == 2
       assert Enum.all?(dsvs, &(&1.group == "group1"))

@@ -167,14 +167,14 @@ defmodule TdDdWeb.DataStructureView do
 
   defp add_ancestry(data_structure_json, data_structure) do
     ancestry =
-      case Map.get(data_structure, :ancestry) do
-        nil ->
-          []
+      case Map.get(data_structure, :path) do
+        %{structure_ids: [_ | ids], names: [_ | names]} ->
+          [ids, names]
+          |> Enum.zip()
+          |> Enum.map(fn {id, name} -> %{data_structure_id: id, name: name} end)
 
-        as ->
-          as
-          |> Enum.map(&Map.take(&1, [:data_structure_id, :name]))
-          |> Enum.reverse()
+        _ ->
+          []
       end
 
     Map.put(data_structure_json, :ancestry, ancestry)

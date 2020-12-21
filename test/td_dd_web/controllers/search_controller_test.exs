@@ -1,7 +1,6 @@
 defmodule TdDdWeb.SearchControllerTest do
   use TdDdWeb.ConnCase
 
-  alias TdDd.DataStructures.PathCache
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDdWeb.ApiServices.MockTdAuthService
 
@@ -10,7 +9,6 @@ defmodule TdDdWeb.SearchControllerTest do
   setup_all do
     start_supervised(MockTdAuthService)
     start_supervised(MockPermissionResolver)
-    start_supervised(PathCache)
     :ok
   end
 

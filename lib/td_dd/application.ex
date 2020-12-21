@@ -11,11 +11,8 @@ defmodule TdDd.Application do
     # Define workers and child supervisors to be supervised
     children =
       [
-        # Start the Ecto repository
         TdDd.Repo,
-        # Start the endpoint when the application starts
         TdDdWeb.Endpoint,
-        # Elasticsearch worker
         TdDd.Search.Cluster
       ] ++ workers(env)
 
@@ -38,8 +35,6 @@ defmodule TdDd.Application do
     [
       # Task supervisor
       {Task.Supervisor, name: TdDd.TaskSupervisor},
-      # Path cache to improve indexing performance
-      TdDd.DataStructures.PathCache,
       # Worker for background indexing
       TdDd.Search.IndexWorker,
       # Worker for background bulk loading

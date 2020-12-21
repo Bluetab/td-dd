@@ -121,7 +121,7 @@ defmodule TdDd.Loader.LoaderWorker do
       fn -> Loader.load(structures, fields, relations, audit, opts) end,
       fn ms, res ->
         case res do
-          {:ok, data_structure_ids} ->
+          {:ok, %{structure_ids: data_structure_ids}} ->
             count = Enum.count(data_structure_ids)
             Logger.info("Bulk load process completed in #{ms}ms (#{count} upserts)")
             post_process(data_structure_ids, opts)
@@ -230,7 +230,7 @@ defmodule TdDd.Loader.LoaderWorker do
   end
 
   defp do_post_process(data_structure_ids, external_id) do
-    #  As the ancestry of the loaded structure may have changed, also reindex
+    # As the ancestry of the loaded structure may have changed, also reindex
     # that data structure and it's descendents.
     external_id
     |> Ancestry.get_descendent_ids()

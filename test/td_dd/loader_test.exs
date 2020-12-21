@@ -1,12 +1,14 @@
 defmodule TdDd.LoaderTest do
   use TdDd.DataCase
 
+  import Ecto.Query
   import TdDd.TestOperators
 
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Loader
+  alias TdDd.Repo
   alias TdDd.Search.MockIndexWorker
 
   setup_all do
@@ -14,8 +16,8 @@ defmodule TdDd.LoaderTest do
     :ok
   end
 
-  describe "loader" do
-    test "load/1 loads changes in data structures, fields and relations" do
+  describe "load/1" do
+    test "loads changes in data structures, fields and relations" do
       sys1 = insert(:system, external_id: "SYS1", name: "SYS1")
       sys2 = insert(:system, external_id: "SYS2", name: "SYS2")
 
@@ -163,14 +165,14 @@ defmodule TdDd.LoaderTest do
         version: 1
       }
 
-      f11 = s1 |> Map.merge(f1)
-      f12 = s1 |> Map.merge(f2)
-      f13 = s1 |> Map.merge(f3)
-      f21 = s2 |> Map.merge(f1)
-      f32 = s3 |> Map.merge(f2)
-      f41 = s4 |> Map.merge(f4)
-      f51 = s5 |> Map.merge(f4)
-      f61 = s6 |> Map.merge(f5)
+      f11 = Map.merge(s1, f1)
+      f12 = Map.merge(s1, f2)
+      f13 = Map.merge(s1, f3)
+      f21 = Map.merge(s2, f1)
+      f32 = Map.merge(s3, f2)
+      f41 = Map.merge(s4, f4)
+      f51 = Map.merge(s5, f4)
+      f61 = Map.merge(s6, f5)
 
       structure_records = [s1, s2, s3, s4, s5, s6]
       field_records = [f11, f12, f13, f21, f32, f41, f51, f61]
@@ -180,7 +182,7 @@ defmodule TdDd.LoaderTest do
                Loader.load(structure_records, field_records, relation_records, audit())
     end
 
-    test "load/1 with structures containing an external_id" do
+    test "with structures containing an external_id" do
       system = insert(:system, external_id: "SYS1", name: "SYS1")
       insert(:system, external_id: "SYS2", external_id: "SYS2")
 
@@ -272,11 +274,11 @@ defmodule TdDd.LoaderTest do
         version: 0
       }
 
-      f11 = s1 |> Map.merge(f1)
-      f12 = s1 |> Map.merge(f2)
-      f13 = s1 |> Map.merge(f3)
-      f21 = s2 |> Map.merge(f1)
-      f32 = s3 |> Map.merge(f2)
+      f11 = Map.merge(s1, f1)
+      f12 = Map.merge(s1, f2)
+      f13 = Map.merge(s1, f3)
+      f21 = Map.merge(s2, f1)
+      f32 = Map.merge(s3, f2)
 
       structure_records = [s1, s2, s3]
       field_records = [f11, f12, f13, f21, f32]
@@ -286,7 +288,7 @@ defmodule TdDd.LoaderTest do
                Loader.load(structure_records, field_records, relation_records, audit())
     end
 
-    test "load/1 with structures updates structures without generate version" do
+    test "with structures updates structures without generate version" do
       system = insert(:system, external_id: "SYS1", name: "SYS1")
 
       s1 = %{
@@ -398,13 +400,13 @@ defmodule TdDd.LoaderTest do
       assert is_nil(m3.deleted_at)
     end
 
-    test "load/1 allows a fields's metadata to be set and updated" do
+    test "allows a fields's metadata to be set and updated" do
       system = insert(:system, external_id: random_string("EXT"), name: random_string("NAME"))
 
       structure = random_structure(system.id)
       field = structure |> random_field() |> Map.put(:metadata, %{"foo" => "bar"})
 
-      assert {:ok, [structure_id]} = Loader.load([structure], [], [], audit())
+      assert {:ok, %{insert_versions: {1, [%{data_structure_id: structure_id}]}}} = Loader.load([structure], [], [], audit())
 
       1..5
       |> Enum.each(fn _ ->
@@ -420,7 +422,7 @@ defmodule TdDd.LoaderTest do
       end)
     end
 
-    test "load/1 allows a structure's class to be set and updated" do
+    test "allows a structure's class to be set and updated" do
       system = insert(:system, external_id: random_string("EXT"), name: random_string("NAME"))
 
       structure = random_structure(system.id)
@@ -438,7 +440,7 @@ defmodule TdDd.LoaderTest do
       end)
     end
 
-    test "load/1 loads fails when structure has relation with itself" do
+    test "loads fails when structure has relation with itself" do
       sys1 = insert(:system, external_id: "SYS1", name: "SYS1")
 
       structure = %{
@@ -458,7 +460,7 @@ defmodule TdDd.LoaderTest do
       assert_raise(RuntimeError, fn -> Loader.load([structure], [], [relation], audit()) end)
     end
 
-    test "load/1 loads changes in relations with relation type" do
+    test "loads changes in relations with relation type" do
       sys1 = insert(:system, external_id: "SYS1", name: "SYS1")
       insert(:relation_type, name: "relation_type")
       insert(:relation_type, name: "relation_type_2")
@@ -536,7 +538,7 @@ defmodule TdDd.LoaderTest do
       assert relation_types == ["relation_type", "relation_type_2"]
     end
 
-    test "load/1 loads all subtree when it is recovered from a deletion and there are no changes" do
+    test "loads all subtree when it is recovered from a deletion and there are no changes" do
       sys = insert(:system, external_id: "SYS1", name: "SYS1")
 
       s1 = %{
@@ -604,7 +606,7 @@ defmodule TdDd.LoaderTest do
              end)
     end
 
-    test "load/1 when external_id and parent_external_id provided" do
+    test "when external_id and parent_external_id provided" do
       external_id = "parent_external_id"
       child_external_id = "child_external_id"
       sys = insert(:system, external_id: "SYS1", name: "SYS1")
@@ -642,6 +644,78 @@ defmodule TdDd.LoaderTest do
 
       data_structure_version = DataStructures.get_latest_version_by_external_id(child_external_id)
       assert data_structure_version <~> child
+    end
+
+    test "restores an unchanged, deleted structure" do
+      system = insert(:system, external_id: "SYS1", name: "SYS1")
+
+      s1 = %{
+        system_id: system.id,
+        group: "GROUP1",
+        name: "NAME1",
+        description: "D1",
+        external_id: "EXT1",
+        type: "Table",
+        metadata: %{"bar" => "baz"},
+        mutable_metadata: %{"foo" => "bar"}
+      }
+
+      structure_records = [s1]
+
+      assert {:ok, multi} = Loader.load(structure_records, [], [], audit())
+      assert %{insert_versions: {1, [%{id: id}]}} = multi
+
+      assert %{ts: ts} = audit()
+
+      assert {1, [^id]} =
+               DataStructureVersion
+               |> select([ds], ds.id)
+               |> where(id: ^id)
+               |> update(set: [deleted_at: ^ts])
+               |> Repo.update_all([])
+
+      assert {:ok, multi} = Loader.load(structure_records, [], [], audit())
+      assert %{restore_versions: {1, [_]}} = multi
+      assert %{deleted_at: nil} = Repo.get(DataStructureVersion, id)
+    end
+
+    test "updates ghash and deleted_at if lhash is unchanged" do
+      %{id: system_id} = insert(:system, external_id: "SYS1", name: "SYS1")
+
+      s1 = %{
+        system_id: system_id,
+        group: "GROUP1",
+        name: "NAME1",
+        description: "D1",
+        external_id: "EXT1",
+        type: "Table",
+        metadata: %{"bar" => "baz"},
+        mutable_metadata: %{"foo" => "bar"}
+      }
+
+      s2 = %{s1 | external_id: "EXT2", name: "NAME2"}
+      s3 = %{s1 | external_id: "EXT3", name: "NAME3"}
+      r12 = %{parent_external_id: "EXT1", child_external_id: "EXT2"}
+      r23 = %{parent_external_id: "EXT2", child_external_id: "EXT3"}
+
+      assert {:ok, multi} = Loader.load([s1, s2, s3], [], [r12, r23], audit())
+      assert %{insert_versions: {3, [%{id: id1}, %{id: id2}, %{id: id3}]}} = multi
+      assert %{ghash: ghash1} = Repo.get(DataStructureVersion, id1)
+
+      assert %{ts: ts} = audit()
+
+      assert {3, _} =
+               DataStructureVersion
+               |> select([ds], ds.id)
+               |> where([ds], ds.id in ^[id1, id2, id3])
+               |> update(set: [deleted_at: ^ts])
+               |> Repo.update_all([])
+
+      s3 = %{s3 | name: "CHANGED"}
+      assert {:ok, multi} = Loader.load([s1, s2, s3], [], [r12, r23], audit())
+      assert %{update_versions: {1, [%{id: ^id1}]}} = multi
+      assert %{deleted_at: nil, ghash: ghash2} = Repo.get(DataStructureVersion, id1)
+      refute ghash1 == ghash2
     end
   end
 

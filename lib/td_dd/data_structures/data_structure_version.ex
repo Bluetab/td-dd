@@ -23,6 +23,8 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     field(:hash, :binary)
     field(:ghash, :binary)
     field(:lhash, :binary)
+    field(:path, :map, virtual: true)
+    field(:external_id, :string, virtual: true)
 
     belongs_to(:data_structure, DataStructure)
 
@@ -108,7 +110,6 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     alias TdCache.UserCache
     alias TdDd.DataStructures
     alias TdDd.DataStructures.DataStructureVersion
-    alias TdDd.DataStructures.PathCache
     alias TdDfLib.Format
 
     @impl Elasticsearch.Document
@@ -118,9 +119,9 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     def routing(_), do: false
 
     @impl Elasticsearch.Document
-    def encode(%DataStructureVersion{id: id, data_structure: structure, type: type} = dsv) do
-      path = PathCache.path(id)
-      parent = PathCache.parent(id)
+    def encode(%DataStructureVersion{data_structure: structure, type: type} = dsv) do
+      path = path(dsv)
+      parent = parent(dsv)
       path_sort = Enum.join(path, "~")
       domain = TaxonomyCache.get_domain(structure.domain_id) || %{}
       linked_concept_count = linked_concept_count(dsv)
@@ -164,6 +165,18 @@ defmodule TdDd.DataStructures.DataStructureVersion do
         ])
       )
     end
+
+    defp path(%DataStructureVersion{path: %{names: [_ | parent_path]}}) do
+      Enum.reverse(parent_path)
+    end
+
+    defp path(_), do: []
+
+    defp parent(%DataStructureVersion{path: %{names: [_, name | _], external_ids: [_, external_id | _]}}) do
+      %{name: name, external_id: external_id}
+    end
+
+    defp parent(_), do: nil
 
     defp get_system(%DataStructure{system: system}) do
       Map.take(system, [:id, :external_id, :name])

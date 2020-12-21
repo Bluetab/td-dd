@@ -5,22 +5,15 @@ defmodule TdDd.Loader do
 
   import Ecto.Query, warn: false
 
-  alias TdDd.DataStructures
-  alias TdDd.DataStructures.Ancestry
-  alias TdDd.DataStructures.DataStructure
-  alias TdDd.DataStructures.DataStructureRelation
-  alias TdDd.DataStructures.DataStructureVersion
-  alias TdDd.DataStructures.MerkleGraph
+  alias Ecto.Multi
   alias TdDd.DataStructures.RelationTypes
-  alias TdDd.DataStructures.StructureMetadata
-  alias TdDd.Loader.DomainIdLoader
+  alias TdDd.Loader.Context
   alias TdDd.Loader.FieldsAsStructures
-  alias TdDd.Loader.MutableMetadataLoader
   alias TdDd.Repo
 
   require Logger
 
-  def load(structure_records, field_records, relation_records, audit_attrs, opts \\ []) do
+  def load(structure_records, field_records, relation_records, audit, opts \\ []) do
     structure_count = Enum.count(structure_records)
     field_count = Enum.count(field_records)
     Logger.info("Starting bulk load (#{structure_count}SR+#{field_count}FR)")
@@ -30,299 +23,50 @@ defmodule TdDd.Loader do
 
     relation_records = RelationTypes.with_relation_types(relation_records)
 
-    do_load(
-      structure_records,
-      relation_records,
-      audit_attrs,
-      opts[:external_id],
-      opts[:parent_external_id]
-    )
+    multi(structure_records, relation_records, audit, opts)
   end
 
-  defp do_load(structure_records, relation_records, audit_attrs, nil, nil) do
-    {:ok, graph} = MerkleGraph.new(structure_records, relation_records)
-    Repo.transaction(fn -> do_load(structure_records, graph, audit_attrs) end)
+  @spec multi([map], [map], %{ts: DateTime.t()}, Keyword.t()) ::
+          {:ok, map} | {:error, Multi.name(), any(), %{required(Multi.name()) => any()}}
+  def multi(structure_records, relation_records, %{ts: ts} = audit, opts \\ []) do
+    alias TdDd.Loader.LoadGraph
+    alias TdDd.Loader.Metadata
+    alias TdDd.Loader.Relations
+    alias TdDd.Loader.Structures
+    alias TdDd.Loader.Versions
+
+    Multi.new()
+    |> Multi.run(:graph, LoadGraph, :load_graph, [structure_records, relation_records, opts])
+    |> Multi.run(:context, Context, :create_context, [audit])
+    |> Multi.run(:delete_versions, Versions, :delete_missing_versions, [structure_records, ts])
+    |> Multi.run(:insert_versions, Versions, :insert_new_versions, [ts])
+    |> Multi.run(:restore_versions, Versions, :restore_deleted_versions, [])
+    |> Multi.run(:update_versions, Versions, :update_existing_versions, [ts])
+    |> Multi.run(:replace_versions, Versions, :replace_changed_versions, [ts])
+    |> Multi.run(:insert_relations, Relations, :insert_new_relations, [ts])
+    |> Multi.run(:update_domain_ids, Structures, :update_domain_ids, [structure_records, ts])
+    |> Multi.run(:delete_metadata, Metadata, :delete_missing_metadata, [ts])
+    |> Multi.run(:replace_metadata, Metadata, :replace_metadata, [structure_records, ts])
+    |> Multi.run(:structure_ids, __MODULE__, :structure_ids, [])
+    |> Repo.transaction()
   end
 
-  defp do_load(
-         structure_records,
-         relation_records,
-         audit_attrs,
-         external_id,
-         parent_external_id
-       ) do
-    {:ok, graph} = MerkleGraph.new(structure_records, relation_records)
+  def structure_ids(_repo, %{} = changes) do
+    structure_ids =
+      changes
+      |> Map.drop([:context, :graph, :insert_relations])
+      |> Enum.flat_map(&structure_ids/1)
+      |> Enum.uniq()
 
-    case MerkleGraph.root(graph) do
-      ^external_id ->
-        Repo.transaction(fn ->
-          ancestor_records =
-            external_id
-            |> Ancestry.get_ancestor_records(parent_external_id)
-            |> RelationTypes.with_relation_types()
-
-          {:ok, graph} = MerkleGraph.add(graph, ancestor_records)
-
-          do_load(structure_records, graph, audit_attrs)
-        end)
-
-      nil ->
-        {:error, :invalid_graph}
-
-      _ ->
-        {:error, :root_mismatch}
-    end
+    {:ok, structure_ids}
   end
 
-  defp do_load(structure_records, graph, %{ts: ts} = audit_attrs) do
-    {discard_count, discarded} = discard_absent_structures(structure_records, ts)
-
-    if discard_count > 0 do
-      Logger.info("Discarded #{discard_count} structures")
-    end
-
-    %{updated: updated, inserted: inserted} = load_graph(graph, audit_attrs)
-
-    {:ok, updated_domain} = DomainIdLoader.load(structure_records, ts)
-    {:ok, updated_metadata} = MutableMetadataLoader.load(structure_records, ts)
-
-    upserted_ids =
-      [updated, inserted] |> Enum.flat_map(&Map.values/1) |> Enum.map(& &1.data_structure_id)
-
-    Enum.uniq(discarded ++ upserted_ids ++ updated_domain ++ updated_metadata)
-  end
-
-  defp discard_absent_structures(structure_records, ts) do
-    structure_records
-    |> Enum.group_by(
-      fn %{group: group, system_id: system_id} -> {system_id, group} end,
-      &Map.get(&1, :external_id)
-    )
-    |> Enum.map(&discard_absent_group_structures(&1, ts))
-    |> Enum.reduce(fn {count1, ids1}, {count2, ids2} -> {count1 + count2, ids1 ++ ids2} end)
-  end
-
-  defp discard_absent_group_structures({{system_id, group}, external_ids}, ts) do
-    reply = discard_structure_versions(system_id, group, external_ids, ts)
-    ids = elem(reply, 1)
-
-    unless ids == [] do
-      discard_metadata_versions(ids, ts)
-    end
-
-    reply
-  end
-
-  defp discard_structure_versions(system_id, group, external_ids, ts) do
-    Repo.update_all(
-      from(dsv in DataStructureVersion,
-        where: dsv.group == ^group,
-        where: is_nil(dsv.deleted_at),
-        join: ds in assoc(dsv, :data_structure),
-        where: ds.system_id == ^system_id,
-        where: ds.external_id not in ^external_ids,
-        update: [set: [deleted_at: ^ts]],
-        select: dsv.data_structure_id
-      ),
-      []
-    )
-  end
-
-  defp discard_metadata_versions(ids, ts) do
-    Repo.update_all(
-      from(sm in StructureMetadata,
-        join: ds in assoc(sm, :data_structure),
-        where: is_nil(sm.deleted_at),
-        where: ds.id in ^ids,
-        update: [set: [deleted_at: ^ts]]
-      ),
-      []
-    )
-  end
-
-  defp load_graph(graph, audit_attrs) do
-    graph
-    |> MerkleGraph.top_down()
-    |> reduce(graph, audit_attrs)
-  end
-
-  defp reduce(external_ids, graph, audit_attrs, updated \\ %{}, inserted \\ %{})
-
-  defp reduce([], graph, audit_attrs, updated, inserted) do
-    update_count = Enum.count(updated)
-    insert_count = Enum.count(inserted)
-    Logger.info("Structures loaded (inserted=#{insert_count} updated=#{update_count})")
-    rel_count = insert_relations(inserted, graph, audit_attrs)
-    Logger.info("Relations loaded (inserted=#{rel_count})")
-    %{updated: updated, inserted: inserted}
-  end
-
-  defp reduce([external_id | tail], graph, audit_attrs, %{} = updated, %{} = inserted) do
-    attrs = MerkleGraph.get(graph, external_id)
-    %{lhash: lhash, ghash: ghash} = attrs
-
-    {tail, updated, inserted} =
-      case DataStructures.get_latest_version_by_external_id(external_id, deleted: true) do
-        nil ->
-          Logger.debug("#{external_id} new")
-          {:ok, new_version} = do_insert(attrs, audit_attrs)
-          {tail, updated, Map.put(inserted, external_id, ids(new_version))}
-
-        %{ghash: ^ghash, deleted_at: deleted_at} = current_version ->
-          Logger.debug("#{external_id} ghash unchanged (discard)")
-          {:ok, updated_version} = do_update(current_version)
-          tail = prune(external_id, tail, graph, deleted_at)
-
-          {tail,
-           if(deleted_at, do: Map.put(updated, external_id, ids(updated_version)), else: updated),
-           inserted}
-
-        %{lhash: ^lhash, deleted_at: deleted_at} = current_version ->
-          Logger.debug("#{external_id} ghash changed (update)")
-          {:ok, updated_version} = do_update(current_version, attrs)
-
-          {tail,
-           if(deleted_at, do: Map.put(updated, external_id, ids(updated_version)), else: updated),
-           inserted}
-
-        current_version ->
-          Logger.debug("#{external_id} lhash or hash changed (new version)")
-          {:ok, new_version} = do_replace(current_version, attrs, audit_attrs)
-          {tail, updated, Map.put(inserted, external_id, ids(new_version))}
-      end
-
-    reduce(tail, graph, audit_attrs, updated, inserted)
-  end
-
-  defp ids(%{id: id, data_structure_id: data_structure_id} = _dsv) do
-    %{id: id, data_structure_id: data_structure_id}
-  end
-
-  defp prune(external_id, external_ids, graph, nil = _deleted_at) do
-    descendents = MerkleGraph.descendents(graph, external_id)
-    Logger.debug("#{external_id} pruned (#{Enum.count(descendents)} descendents)")
-    Enum.reject(external_ids, &Enum.member?(descendents, &1))
-  end
-
-  defp prune(_external_id, external_ids, _graph, _deleted_at), do: external_ids
-
-  defp insert_relations(%{} = inserted, _graph, _audit_attrs) when inserted == %{}, do: 0
-
-  defp insert_relations(%{} = inserted, graph, %{ts: ts}) do
-    inserted
-    |> Enum.map(fn {external_id, %{id: id}} ->
-      {id, MerkleGraph.in_edges(graph, external_id), MerkleGraph.out_edges(graph, external_id)}
-    end)
-    |> Enum.flat_map(&relation_attrs(&1, ts))
-    |> Enum.uniq()
-    |> do_insert_relations()
-  end
-
-  defp do_insert_relations(entries) do
-    entries
-    |> Enum.chunk_every(1000)
-    |> Enum.map(fn chunk -> Repo.insert_all(DataStructureRelation, chunk) end)
-    |> Enum.map(fn {count, _} -> count end)
-    |> Enum.sum()
-  end
-
-  defp relation_attrs({id, in_edges, out_edges}, ts) do
-    parent_rels = Enum.map(in_edges, &parent_rel(id, &1, ts))
-    child_rels = Enum.map(out_edges, &child_rel(id, &1, ts))
-    parent_rels ++ child_rels
-  end
-
-  defp parent_rel(child_id, %{v1: external_id, label: %{relation_type_id: type_id}}, ts) do
-    %{id: parent_id} = DataStructures.get_latest_version_by_external_id(external_id)
-
-    %{
-      parent_id: parent_id,
-      child_id: child_id,
-      relation_type_id: type_id,
-      inserted_at: ts,
-      updated_at: ts
-    }
-  end
-
-  defp child_rel(parent_id, %{v2: external_id, label: %{relation_type_id: type_id}}, ts) do
-    %{id: child_id} = DataStructures.get_latest_version_by_external_id(external_id)
-
-    %{
-      parent_id: parent_id,
-      child_id: child_id,
-      relation_type_id: type_id,
-      inserted_at: ts,
-      updated_at: ts
-    }
-  end
-
-  defp do_insert(attrs, audit_attrs) do
-    %{id: data_structure_id} = do_insert_structure(attrs, audit_attrs)
-
-    attrs =
-      attrs
-      |> Map.put(:version, 0)
-      |> Map.put(:data_structure_id, data_structure_id)
-
-    %DataStructureVersion{}
-    |> DataStructureVersion.changeset(attrs)
-    |> Repo.insert()
-  end
-
-  defp do_insert_structure(%{external_id: external_id} = attrs, audit_attrs) do
-    case DataStructures.find_data_structure(%{external_id: external_id}) do
-      nil ->
-        %DataStructure{}
-        |> DataStructure.changeset(Map.merge(attrs, audit_attrs))
-        |> Repo.insert!()
-
-      ds ->
-        ds
-    end
-  end
-
-  defp do_update(%DataStructureVersion{deleted_at: nil} = dsv) do
-    {:ok, dsv}
-  end
-
-  defp do_update(%DataStructureVersion{} = dsv) do
-    dsv
-    |> DataStructureVersion.update_changeset(%{deleted_at: nil})
-    |> Repo.update()
-  end
-
-  defp do_update(%DataStructureVersion{deleted_at: nil} = dsv, attrs) do
-    dsv
-    |> DataStructureVersion.update_changeset(attrs)
-    |> Repo.update()
-  end
-
-  defp do_update(%DataStructureVersion{} = dsv, attrs) do
-    attrs = Map.put(attrs, :deleted_at, nil)
-
-    dsv
-    |> DataStructureVersion.update_changeset(attrs)
-    |> Repo.update()
-  end
-
-  defp do_replace(
-         %DataStructureVersion{version: version, data_structure_id: data_structure_id} = current,
-         attrs,
-         %{ts: ts}
-       ) do
-    attrs =
-      attrs
-      |> Map.put(:version, version + 1)
-      |> Map.put(:data_structure_id, data_structure_id)
-
-    # soft-delete current version
-    current
-    |> DataStructureVersion.update_changeset(%{deleted_at: ts})
-    |> Repo.update()
-
-    # insert new version
-    %DataStructureVersion{}
-    |> DataStructureVersion.changeset(attrs)
-    |> Repo.insert()
-  end
+  defp structure_ids({:delete_versions, {_, ids}}), do: ids
+  defp structure_ids({:restore_versions, {_, ids}}), do: ids
+  defp structure_ids({:update_domain_ids, {_, ids}}), do: ids
+  defp structure_ids({:delete_metadata, {_, ids}}), do: ids
+  defp structure_ids({:replace_metadata, ids}), do: ids
+  defp structure_ids({:insert_versions, {_, dsvs}}), do: Enum.map(dsvs, & &1.data_structure_id)
+  defp structure_ids({:update_versions, {_, dsvs}}), do: Enum.map(dsvs, & &1.data_structure_id)
+  defp structure_ids({:replace_versions, {_, dsvs}}), do: Enum.map(dsvs, & &1.data_structure_id)
 end
