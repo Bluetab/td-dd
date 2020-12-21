@@ -75,7 +75,7 @@ defmodule TdDd.Mixfile do
       {:td_hypermedia, git: "https://github.com/Bluetab/td-hypermedia.git", tag: "4.0.0"},
       {:td_cache, git: "https://github.com/Bluetab/td-cache.git", branch: "feature/td-3103"},
       {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", branch: "feature/td-3103"},
-      {:graph, path: "../graph"}
+      {:graph, git: "https://github.com/Bluetab/graph.git", tag: "1.0.0"}
     ]
   end
 
