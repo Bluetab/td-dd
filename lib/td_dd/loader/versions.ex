@@ -115,22 +115,22 @@ defmodule TdDd.Loader.Versions do
   end
 
   @doc """
-  Replace data structure versions whose hash has  changed. In this case, the
+  Replace data structure versions whose hash has changed. In this case, the
   current version is logically deleted and a new version is inserted.
   """
   def replace_changed_versions(_repo, %{context: context}, ts),
     do: replace_changed_versions(context, ts)
 
   defp replace_changed_versions(
-        %{
-          lhash: lhash,
-          ghash: ghash,
-          entries: entries,
-          structure_id_map: structure_id_map,
-          version_id_map: version_id_map
-        },
-        ts
-      ) do
+         %{
+           lhash: lhash,
+           ghash: ghash,
+           entries: entries,
+           structure_id_map: structure_id_map,
+           version_id_map: version_id_map
+         },
+         ts
+       ) do
     entries =
       entries
       |> Enum.reject(&Map.has_key?(ghash, &1.ghash))
@@ -194,7 +194,7 @@ defmodule TdDd.Loader.Versions do
 
   @doc """
   Logically delete data structure versions whose external_id is absent from the
-  structure records, but whose group is present.
+  structure records, but whose system_id and group is present.
   """
   def delete_missing_versions(_repo, %{} = _changes, structure_records, ts) do
     {:ok, delete_missing_versions(structure_records, ts)}
@@ -204,7 +204,7 @@ defmodule TdDd.Loader.Versions do
     structure_records
     |> Enum.group_by(
       fn %{group: group, system_id: system_id} -> {system_id, group} end,
-      &Map.get(&1, :external_id)
+      fn %{external_id: external_id} -> external_id end
     )
     |> Enum.map(&delete_missing_group_structures(&1, ts))
     |> Enum.reduce(fn {count1, ids1}, {count2, ids2} -> {count1 + count2, ids1 ++ ids2} end)
