@@ -60,7 +60,8 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       })
 
     %{id: structure_type_id} =
-      structure_type = build(:data_structure_type, template_id: template_id, structure_type: type)
+      structure_type =
+      insert(:data_structure_type, template_id: template_id, structure_type: type)
 
     {:ok, _} = StructureTypeCache.put(structure_type)
 
@@ -146,7 +147,12 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   describe "bulk_update" do
     @tag :admin_authenticated
     test "bulk update of data structures", %{conn: conn} do
-      %{id: structure_id} = insert(:data_structure, external_id: "Structure", df_content: %{"Field1" => "foo", "Field2" => "bar"})
+      %{id: structure_id} =
+        insert(:data_structure,
+          external_id: "Structure",
+          df_content: %{"Field1" => "foo", "Field2" => "bar"}
+        )
+
       insert(:data_structure_version, data_structure_id: structure_id)
 
       assert %{"data" => data} =

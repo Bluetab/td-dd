@@ -12,7 +12,7 @@ defmodule TdDd.DataStructures.ValidationTest do
 
       %{id: structure_type_id} =
         structure_type =
-        build(:data_structure_type, structure_type: template_name, template_id: template_id)
+        insert(:data_structure_type, structure_type: template_name, template_id: template_id)
 
       {:ok, _} = StructureTypeCache.put(structure_type)
 

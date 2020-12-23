@@ -2,7 +2,7 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
   use TdDdWeb.ConnCase
 
   alias TdCache.TemplateCache
-  alias TdDd.DataStructures.DataStructuresTypes
+  alias TdDd.DataStructures.DataStructureTypes
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDdWeb.ApiServices.MockTdAuthService
 
@@ -164,7 +164,7 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
   end
 
   defp create_data_structure_type(_) do
-    {:ok, data_structure_type} = DataStructuresTypes.create_data_structure_type(@create_attrs)
+    {:ok, data_structure_type} = DataStructureTypes.create_data_structure_type(@create_attrs)
     %{data_structure_type: data_structure_type}
   end
 end

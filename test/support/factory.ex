@@ -54,11 +54,10 @@ defmodule TdDd.Factory do
 
   def data_structure_type_factory do
     %DataStructureType{
-      id: sequence(:structure_type_id, &(&1 + 999_000)),
-      structure_type: "Table",
-      template_id: 0,
-      translation: "",
-      metadata_fields: %{}
+      structure_type: sequence("structure_type"),
+      template_id: sequence(:template_id, & &1),
+      translation: sequence("system_name"),
+      metadata_fields: %{"foo" => "bar"}
     }
   end
 
@@ -108,7 +107,7 @@ defmodule TdDd.Factory do
   def user_search_filter_factory do
     %UserSearchFilter{
       id: sequence(:user_search_filter, & &1),
-      name:  sequence("filter_name"),
+      name: sequence("filter_name"),
       filters: %{country: ["Sp"]},
       user_id: sequence(:user_id, & &1)
     }

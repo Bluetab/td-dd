@@ -8,6 +8,11 @@
 - [TD-2655] Support bulk updating of domain_id, improve performance of mutable
   metadata updates
 
+### Fixed
+
+- [TD-3172] Return error changeset when a data structure type cannot be inserted
+  or updated
+
 ## [4.10.0] 2020-12-14
 
 ### Added

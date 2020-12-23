@@ -10,23 +10,23 @@ defmodule TdDd.DataStructures.DataStructureTest do
   @valid_content %{"string" => "present", "list" => "one"}
 
   setup_all do
-    %{id: template_id, name: type} = template = build(:template)
+    %{id: template_id, name: template_name} = template = build(:template)
     TemplateCache.put(template, publish: false)
 
-    %{id: structure_type_id} =
-      structure_type = build(:data_structure_type, structure_type: type, template_id: template_id)
+    on_exit(fn -> TemplateCache.delete(template_id) end)
 
-    {:ok, _} = StructureTypeCache.put(structure_type)
-
-    on_exit(fn ->
-      TemplateCache.delete(template_id)
-      StructureTypeCache.delete(structure_type_id)
-    end)
-
-    [type: type]
+    [template: template, type: template_name]
   end
 
-  setup %{type: type} do
+  setup %{template: %{id: template_id}, type: type} do
+    %{id: data_structure_type_id} =
+      data_structure_type =
+      insert(:data_structure_type, structure_type: type, template_id: template_id)
+
+    {:ok, _} = StructureTypeCache.put(data_structure_type)
+
+    on_exit(fn -> StructureTypeCache.delete(data_structure_type_id) end)
+
     %{data_structure: structure} =
       insert(:data_structure_version,
         type: type,
