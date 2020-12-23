@@ -726,15 +726,17 @@ defmodule TdDd.DataStructuresTest do
       assert %{domain: %{}} = DataStructures.get_data_structure_version!(dsv.id, [:domain])
     end
 
-    test "get_data_structure_version!/2 enriches with ancestry and path" do
-      dsvs = create_hierarchy(["foo", "bar", "baz", "xyzzy"])
+    test "get_path!/1 returns the names of the structures default ancestors" do
+      [child | _] =
+        ["foo", "bar", "baz", "xyzzy"]
+        |> create_hierarchy()
+        |> Enum.reverse()
 
-      [child | parents] = dsvs |> Enum.reverse()
+      path =
+        child.id
+        |> DataStructures.get_data_structure_version!()
+        |> DataStructures.get_path()
 
-      assert %{ancestry: ancestry, path: path} =
-               DataStructures.get_data_structure_version!(child.id, [:ancestry, :path])
-
-      assert ancestry <~> parents
       assert path == ["foo", "bar", "baz"]
     end
 
@@ -824,7 +826,12 @@ defmodule TdDd.DataStructuresTest do
         relation_type_id: default_type_id
       )
 
-      assert DataStructures.get_path(c1) == ["dsv1", "dsv2"]
+      path =
+        c1.id
+        |> DataStructures.get_data_structure_version!()
+        |> DataStructures.get_path()
+
+      assert path == ["dsv1", "dsv2"]
     end
 
     defp domain_fixture do

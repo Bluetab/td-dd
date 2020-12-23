@@ -6,7 +6,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
   alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
   alias TdDd.DataStructures
-  alias TdDd.DataStructures.PathCache
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Lineage.GraphData
   alias TdDd.Permissions.MockPermissionResolver
@@ -27,7 +26,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
   setup_all do
     start_supervised(MockTdAuthService)
     start_supervised(MockPermissionResolver)
-    start_supervised(PathCache)
     start_supervised(GraphData)
     :ok
   end

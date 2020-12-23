@@ -2,14 +2,12 @@ defmodule TdDdWeb.DataStructureFilterControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  alias TdDd.DataStructures.PathCache
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDdWeb.ApiServices.MockTdAuthService
 
   setup_all do
     start_supervised(MockTdAuthService)
     start_supervised(MockPermissionResolver)
-    start_supervised(PathCache)
     :ok
   end
 

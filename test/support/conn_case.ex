@@ -46,8 +46,7 @@ defmodule TdDdWeb.ConnCase do
 
       allow(parent, [
         TdDd.Cache.SystemLoader,
-        TdDd.DataStructures.PathCache,
-        TdDd.Loader.LoaderWorker,
+        TdDd.Loader.Worker,
         TdDd.Search.IndexWorker,
         TdDd.Cache.StructureLoader,
         TdDd.Lineage,
@@ -76,9 +75,7 @@ defmodule TdDdWeb.ConnCase do
   defp allow(parent, workers) do
     Enum.each(workers, fn worker ->
       case Process.whereis(worker) do
-        nil ->
-          nil
-
+        nil -> nil
         pid -> Sandbox.allow(TdDd.Repo, parent, pid)
       end
     end)

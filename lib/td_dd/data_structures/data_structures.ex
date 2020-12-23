@@ -16,6 +16,7 @@ defmodule TdDd.DataStructures do
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.Paths
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.Lineage.GraphData
   alias TdDd.Repo
@@ -108,6 +109,7 @@ defmodule TdDd.DataStructures do
   """
   def get_data_structure_version!(id) do
     DataStructureVersion
+    |> Paths.with_path(distinct: :id)
     |> Repo.get!(id)
     |> Repo.preload(:data_structure)
   end
@@ -121,6 +123,7 @@ defmodule TdDd.DataStructures do
     params = %{data_structure_id: data_structure_id, version: version}
 
     DataStructureVersion
+    |> Paths.with_path(distinct: :id)
     |> Repo.get_by!(params)
     |> Repo.preload(data_structure: :system)
     |> enrich(options)
@@ -128,6 +131,7 @@ defmodule TdDd.DataStructures do
 
   def get_data_structure_version!(data_structure_version_id, options) do
     DataStructureVersion
+    |> Paths.with_path(distinct: :id)
     |> Repo.get!(data_structure_version_id)
     |> Repo.preload(data_structure: :system)
     |> enrich(options)
@@ -199,8 +203,6 @@ defmodule TdDd.DataStructures do
     |> enrich(options, :versions, &get_versions/1)
     |> enrich(options, :degree, &get_degree/1)
     |> enrich(options, :profile, &get_profile/1)
-    |> enrich(options, :ancestry, &get_ancestry/1)
-    |> enrich(options, :path, &get_path/1)
     |> enrich(options, :links, &get_structure_links/1)
     |> enrich(options, :domain, &get_domain/1)
     |> enrich(options, :metadata_versions, &get_metadata_versions/1)
@@ -277,7 +279,7 @@ defmodule TdDd.DataStructures do
     )
     |> order_by([_, child, _, _], asc: child.data_structure_id, desc: child.version)
     |> distinct([_, child, _, _], child)
-    |> select([r, child, relation_type], %{
+    |> select([r, child, relation_type, _], %{
       version: child,
       relation: r,
       relation_type: relation_type
@@ -560,13 +562,10 @@ defmodule TdDd.DataStructures do
   end
 
   def get_latest_version(data_structure_id, options) do
-    from(dsv in DataStructureVersion,
-      where: dsv.data_structure_id == type(^data_structure_id, :integer),
-      order_by: [desc: :version],
-      limit: 1,
-      select: dsv,
-      preload: :data_structure
-    )
+    DataStructureVersion
+    |> Paths.with_path(distinct: :data_structure_id)
+    |> where([dsv], dsv.data_structure_id == type(^data_structure_id, :integer))
+    |> preload(:data_structure)
     |> Repo.one()
     |> enrich(options)
   end
@@ -654,12 +653,11 @@ defmodule TdDd.DataStructures do
     end
   end
 
-  def get_path(%DataStructureVersion{} = dsv) do
-    dsv
-    |> get_ancestry
-    |> Enum.map(& &1.name)
-    |> Enum.reverse()
+  def get_path(%DataStructureVersion{path: %{names: [_ | names]}}) do
+    Enum.reverse(names)
   end
+
+  def get_path(_), do: []
 
   def get_ancestors(dsv, opts \\ [deleted: false]) do
     get_recursive(dsv, :parents, opts)
@@ -688,23 +686,14 @@ defmodule TdDd.DataStructures do
     end
   end
 
-  defp get_ancestry(%DataStructureVersion{} = data_structure_version) do
-    data_structure_version
-    |> get_parents(deleted: false)
-    |> get_ancestry()
-  end
-
-  defp get_ancestry([]), do: []
-
-  defp get_ancestry([parent | _t]), do: [parent | get_ancestry(parent)]
-
   def get_latest_version_by_external_id(external_id, options \\ []) do
     DataStructureVersion
     |> with_deleted(options, dynamic([dsv], is_nil(dsv.deleted_at)))
+    |> distinct(:data_structure_id)
+    |> order_by(desc: :version)
     |> join(:inner, [data_structure], ds in assoc(data_structure, :data_structure))
     |> where([_, ds], ds.external_id == ^external_id)
-    |> order_by([dsv, ds], desc: dsv.version)
-    |> limit(1)
+    |> select_merge([_, ds], %{external_id: ds.external_id})
     |> Repo.one()
     |> enrich(options[:enrich])
   end
