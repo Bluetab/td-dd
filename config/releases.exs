@@ -24,9 +24,9 @@ config :td_dq, TdDq.Scheduler,
       task: {TdDq.Search.IndexWorker, :reindex, []},
       run_strategy: Quantum.RunStrategy.Local
     ],
-    deprecater: [
-      schedule: System.get_env("DEPRECATER_SCHEDULE", "@hourly"),
-      task: {TdDq.Rules.Implementations.Loader, :deprecate, []},
+    refresh_cache: [
+      schedule: System.get_env("CACHE_REFRESH_SCHEDULE", "@hourly"),
+      task: {TdDq.Cache.ImplementationLoader, :refresh, []},
       run_strategy: Quantum.RunStrategy.Local
     ]
   ]

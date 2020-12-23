@@ -9,10 +9,13 @@ defmodule TdDq.Rules.RuleResult do
 
   alias Decimal
   alias TdDq.DateParser
+  alias TdDq.Executions.Execution
+  alias TdDq.Rules.Implementations.Implementation
 
   @scale 2
 
   schema "rule_results" do
+    belongs_to(:execution, Execution)
     field(:implementation_key, :string)
     field(:date, :utc_datetime)
     field(:result, :decimal, precision: 5, scale: @scale)
@@ -20,6 +23,13 @@ defmodule TdDq.Rules.RuleResult do
     field(:records, :integer)
     field(:params, :map, default: %{})
     field(:row_number, :integer, virtual: true)
+
+    has_one(:implementation, Implementation,
+      foreign_key: :implementation_key,
+      references: :implementation_key
+    )
+
+    has_one(:rule, through: [:implementation, :rule])
     timestamps()
   end
 
@@ -35,6 +45,7 @@ defmodule TdDq.Rules.RuleResult do
 
     rule_result
     |> cast(params, [
+      :execution_id,
       :implementation_key,
       :date,
       :result,
@@ -45,6 +56,7 @@ defmodule TdDq.Rules.RuleResult do
     ])
     |> validate_required([:implementation_key, :date, :result])
     |> validate_number(:result, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
+    |> foreign_key_constraint(:execution_id)
   end
 
   defp format_date(%{"date" => date} = params) do

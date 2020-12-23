@@ -1,11 +1,15 @@
 defmodule TdDq.Search.Query do
   @moduledoc """
-    Helper module to manipulate elastic search queries.
+  Helper module to manipulate elastic search queries.
   """
+
   alias TdDq.Search.Aggregations
 
   def create_filters(%{without: without_fields} = params, index) do
-    filters = create_filters(Map.delete(params, :without), index)
+    filters =
+      params
+      |> Map.delete(:without)
+      |> create_filters(index)
 
     without_fields
     |> Enum.map(&%{bool: %{must_not: %{exists: %{field: &1}}}})
@@ -13,7 +17,10 @@ defmodule TdDq.Search.Query do
   end
 
   def create_filters(%{with: with_fields} = params, index) do
-    filters = create_filters(Map.delete(params, :with), index)
+    filters =
+      params
+      |> Map.delete(:with)
+      |> create_filters(index)
 
     with_fields
     |> Enum.map(&%{bool: %{must: %{exists: %{field: &1}}}})

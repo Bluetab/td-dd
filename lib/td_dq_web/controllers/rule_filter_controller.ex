@@ -1,10 +1,9 @@
 defmodule TdDqWeb.RuleFilterController do
-  require Logger
   use TdDqWeb, :controller
-  use PhoenixSwagger
 
   alias TdDq.Rules.Search
-  alias TdDqWeb.SwaggerDefinitions
+
+  require Logger
 
   action_fallback(TdDqWeb.FallbackController)
 

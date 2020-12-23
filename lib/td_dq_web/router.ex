@@ -23,6 +23,10 @@ defmodule TdDqWeb.Router do
   scope "/api", TdDqWeb do
     pipe_through([:api, :api_secure])
 
+    resources "/execution_groups", ExecutionGroupController, except: [:new, :edit] do
+      resources("/executions", ExecutionController, only: [:index])
+    end
+
     post("/rule_results", RuleResultController, :upload)
     resources("/rule_results", RuleResultController, only: [:index, :delete])
 

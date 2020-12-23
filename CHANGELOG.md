@@ -2,9 +2,21 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-3103] Support for execution groups (rule implementations selected for
+  execution)
+- Rule implementation search results can now be filtered by source
+
 ### Changed
 
+- Environment variable `DEPRECATER_SCHEDULE` renamed to `CACHE_REFRESH_SCHEDULE`
 - [TD-3170] Build docker image which runs with non-root user
+
+### Removed
+
+- Removed support for migrating rules and implementations from versions earlier
+  than 3.12.0.
 
 ## [4.10.0] 2020-12-14
 

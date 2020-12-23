@@ -44,25 +44,30 @@ defmodule TdDqWeb.RuleView do
   end
 
   def render("rule.json", %{rule: rule}) do
-    %{
-      id: rule.id,
-      business_concept_id: rule.business_concept_id,
-      name: rule.name,
-      deleted_at: rule.deleted_at,
-      description: rule.description,
-      goal: rule.goal,
-      minimum: rule.minimum,
-      active: rule.active,
-      version: rule.version,
-      updated_by: rule.updated_by,
-      inserted_at: rule.inserted_at,
-      updated_at: rule.updated_at,
-      execution_result_info: Map.get(rule, :execution_result_info),
-      result_type: Map.get(rule, :result_type)
-    }
+    rule
+    |> Map.take([
+      :active,
+      :business_concept_id,
+      :deleted_at,
+      :description,
+      :execution_result_info,
+      :goal,
+      :id,
+      :inserted_at,
+      :minimum,
+      :name,
+      :result_type,
+      :updated_at,
+      :updated_by,
+      :version
+    ])
     |> add_current_version(rule)
     |> add_system_values(rule)
     |> add_dynamic_content(rule)
+  end
+
+  def render("embedded.json", %{rule: rule}) do
+    Map.take(rule, [:id, :name, :result_type, :minimum, :goal])
   end
 
   defp add_current_version(rule, %{business_concept_id: business_concept_id}) do

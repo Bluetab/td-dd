@@ -8,8 +8,6 @@ defmodule TdDqWeb.SearchControllerTest do
     :ok
   end
 
-  @user_name "Im not an admin"
-
   describe "index" do
     @tag :admin_authenticated
     test "search empty rules", %{conn: conn} do
@@ -32,11 +30,8 @@ defmodule TdDqWeb.SearchControllerTest do
       assert Enum.any?(response, fn %{"id" => id} -> id == implementation.id end)
     end
 
-    @tag authenticated_no_admin_user: @user_name
-    test "list implementations depending on permissions", %{
-      conn: conn,
-      user: %{id: user_id}
-    } do
+    @tag authenticated_user: "not_an_admin"
+    test "list implementations depending on permissions", %{conn: conn, user: %{id: user_id}} do
       concept_1 = "1"
       concept_2 = "2"
       domain1_view = 1
@@ -63,21 +58,8 @@ defmodule TdDqWeb.SearchControllerTest do
       insert(:implementation, rule: build(:rule, creation_attrs_1))
       insert(:implementation, rule: build(:rule, creation_attrs_2))
 
-      create_acl_entry(
-        user_id,
-        concept_1,
-        domain1_view,
-        [domain1_view],
-        "watch"
-      )
-
-      create_acl_entry(
-        user_id,
-        concept_2,
-        domain1_view,
-        [domain1_view],
-        "watch"
-      )
+      create_acl_entry(user_id, concept_1, domain1_view, [domain1_view], "view")
+      create_acl_entry(user_id, concept_2, domain1_view, [domain1_view], "view")
 
       conn =
         post(conn, Routes.search_path(conn, :search_implementations), %{
@@ -91,13 +73,7 @@ defmodule TdDqWeb.SearchControllerTest do
                "manage" => true
              }
 
-      create_acl_entry(
-        user_id,
-        concept_2,
-        domain2_execute,
-        [domain2_execute],
-        "execute_view"
-      )
+      create_acl_entry(user_id, concept_2, domain2_execute, [domain2_execute], "execute_view")
 
       conn =
         post(conn, Routes.search_path(conn, :search_implementations), %{

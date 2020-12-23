@@ -10,12 +10,6 @@ defmodule TdDqWeb.Authentication do
   import Plug.Conn
   @headers {"Content-type", "application/json"}
 
-  # OLD
-  # def sign_in(user_name) do
-  #   user = %{"user_name": user_name}
-  #   {:ok, _jwt, _full_claims} = Guardian.encode_and_sign(user)
-  # end
-
   def put_auth_headers(conn, jwt) do
     conn
     |> put_req_header("content-type", "application/json")
@@ -29,9 +23,15 @@ defmodule TdDqWeb.Authentication do
     {:ok, %{conn: conn, jwt: jwt, claims: full_claims, user: user}}
   end
 
-  def create_user_auth_conn(user, :not_admin) do
+  def create_user_auth_conn(user, role) do
     {:ok, resp} = create_user_auth_conn(user)
     register_token(Map.get(resp, :jwt))
+
+    case role do
+      nil -> :ok
+      _ -> create_acl_entry(user, role)
+    end
+
     {:ok, resp}
   end
 
@@ -40,9 +40,8 @@ defmodule TdDqWeb.Authentication do
   end
 
   def create_user(user_name, opts \\ []) do
-    id = Integer.mod(:binary.decode_unsigned(user_name), 100_000)
     is_admin = Keyword.get(opts, :is_admin, false)
-    %TdDq.Accounts.User{id: id, is_admin: is_admin, user_name: user_name}
+    %TdDq.Accounts.User{id: :rand.uniform(100_000), is_admin: is_admin, user_name: user_name}
   end
 
   def build_user_token(%User{} = user) do
@@ -67,5 +66,15 @@ defmodule TdDqWeb.Authentication do
     end
 
     token
+  end
+
+  defp create_acl_entry(%{id: user_id}, role_name) do
+    MockPermissionResolver.create_acl_entry(%{
+      principal_id: user_id,
+      principal_type: "user",
+      resource_id: 1,
+      resource_type: "domain",
+      role_name: role_name
+    })
   end
 end

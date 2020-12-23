@@ -119,6 +119,16 @@ defmodule TdDq.Factory do
     |> Map.new()
   end
 
+  def execution_factory do
+    %TdDq.Executions.Execution{}
+  end
+
+  def execution_group_factory do
+    %TdDq.Executions.Group{
+      created_by_id: 0
+    }
+  end
+
   def user_factory do
     %TdDq.Accounts.User{
       id: sequence(:user_id, & &1),

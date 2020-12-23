@@ -5,6 +5,7 @@ defmodule TdDq.Rules.ImplementationsTest do
   import TdDq.TestOperators
 
   alias Ecto.Changeset
+  alias TdDq.Cache.ImplementationLoader
   alias TdDq.Cache.RuleLoader
   alias TdDq.MockRelationCache
   alias TdDq.Rules.Implementations
@@ -15,6 +16,7 @@ defmodule TdDq.Rules.ImplementationsTest do
     start_supervised(MockRelationCache)
     start_supervised(IndexWorker)
     start_supervised(RuleLoader)
+    start_supervised(ImplementationLoader)
     :ok
   end
 

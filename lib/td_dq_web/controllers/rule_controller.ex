@@ -1,7 +1,6 @@
 defmodule TdDqWeb.RuleController do
   use TdHypermedia, :controller
   use TdDqWeb, :controller
-  use PhoenixSwagger
 
   import Canada, only: [can?: 2]
 
@@ -10,7 +9,6 @@ defmodule TdDqWeb.RuleController do
   alias TdDqWeb.ChangesetView
   alias TdDqWeb.ErrorView
   alias TdDqWeb.RuleView
-  alias TdDqWeb.SwaggerDefinitions
 
   require Logger
 
@@ -106,7 +104,7 @@ defmodule TdDqWeb.RuleController do
          {:ok, %{rule: rule}} <- Rules.create_rule(params, user) do
       conn
       |> put_status(:created)
-      |> put_resp_header("location", rule_path(conn, :show, rule))
+      |> put_resp_header("location", Routes.rule_path(conn, :show, rule))
       |> render("show.json", rule: rule, user_permissions: get_user_permissions(conn, rule))
     else
       {:can, false} -> {:can, false}

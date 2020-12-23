@@ -67,7 +67,7 @@ config :td_cache, :event_stream,
 
 config :td_dq, :cache_cleaner,
   clean_on_startup: true,
-  patterns: ["rule_result:*"]
+  patterns: ["rule_result:*", "TdDq.RuleImplementations.Migrations:cache_structures"]
 
 config :td_dq, TdDq.Scheduler,
   jobs: [
@@ -76,9 +76,9 @@ config :td_dq, TdDq.Scheduler,
       task: {TdDq.Search.IndexWorker, :reindex, []},
       run_strategy: Quantum.RunStrategy.Local
     ],
-    deprecater: [
+    refresh_cache: [
       schedule: "@hourly",
-      task: {TdDq.Rules.Implementations.Loader, :deprecate, []},
+      task: {TdDq.Cache.ImplementationLoader, :refresh, []},
       run_strategy: Quantum.RunStrategy.Local
     ]
   ]

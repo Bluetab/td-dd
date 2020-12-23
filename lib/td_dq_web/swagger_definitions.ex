@@ -323,4 +323,85 @@ defmodule TdDqWeb.SwaggerDefinitions do
         end
     }
   end
+
+  def execution_group_swagger_definitions do
+    %{
+      ExecutionGroup:
+        swagger_schema do
+          title("Execution Group")
+          description("An group of rule implementations")
+
+          properties do
+            executions(Schema.ref(:Executions))
+            id(:integer, "Execution Group unique identifier", required: true)
+            inserted_at(:string, "insert timestamp")
+          end
+        end,
+      Executions:
+        swagger_schema do
+          title("Executions")
+          description("A collection of Executions")
+          type(:array)
+          items(Schema.ref(:Execution))
+        end,
+      Execution:
+        swagger_schema do
+          properties do
+            id(:integer, "Execution unique identifier", required: true)
+            inserted_at(:string, "insert timestamp")
+            _embedded(Schema.ref(:ExecutionEmbeddings))
+          end
+        end,
+      ExecutionEmbeddings:
+        swagger_schema do
+          properties do
+            implementation(Schema.ref(:EmbeddedImplementation))
+            result(Schema.ref(:EmbeddedRuleResult))
+          end
+        end,
+      EmbeddedImplementation:
+        swagger_schema do
+          properties do
+            id(:integer, "Rule implementation unique identifier", required: true)
+            implementation_key(:string, "Rule implementation key", required: true)
+          end
+        end,
+      ExecutionGroups:
+        swagger_schema do
+          title("Execution Groups")
+          description("A collection of Execution Groups")
+          type(:array)
+          items(Schema.ref(:ExecutionGroup))
+        end,
+      ExecutionGroupResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:ExecutionGroup))
+          end
+        end,
+      ExecutionGroupsResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:ExecutionGroups))
+          end
+        end,
+      ExecutionsResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:Executions))
+          end
+        end,
+      EmbeddedRuleResult:
+        swagger_schema do
+          properties do
+            id(:integer, "Rule result identifier", required: true)
+            implementation_key(:string, "Implementation key", required: true)
+            date(:string, "Execution date", required: true)
+            errors(:string)
+            records(:string)
+            result(:string)
+          end
+        end
+    }
+  end
 end

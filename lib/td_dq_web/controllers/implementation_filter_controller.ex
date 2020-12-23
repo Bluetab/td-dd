@@ -1,10 +1,9 @@
 defmodule TdDqWeb.ImplementationFilterController do
-  require Logger
   use TdDqWeb, :controller
-  use PhoenixSwagger
 
   alias TdDq.Rules.Search
-  alias TdDqWeb.SwaggerDefinitions
+
+  require Logger
 
   plug :put_view, TdDqWeb.FilterView
 

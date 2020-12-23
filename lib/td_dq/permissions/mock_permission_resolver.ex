@@ -11,7 +11,7 @@ defmodule TdDq.Permissions.MockPermissionResolver do
       :manage_quality_rule,
       :view_quality_rule
     ],
-    "watch" => [
+    "view" => [
       :view_quality_rule
     ],
     "create" => [
@@ -52,6 +52,15 @@ defmodule TdDq.Permissions.MockPermissionResolver do
   end
 
   def has_permission?(_jti, _permission, _business_concept, _business_concept_id), do: true
+
+  def has_permission?(session_id, permission)
+      when permission in [:execute_quality_rule_implementations, :view_quality_rule] do
+    user_id = Agent.get(:MockSessions, &Map.get(&1, session_id))
+
+    Agent.get(:MockPermissions, & &1)
+    |> Enum.filter(&(&1.principal_id == user_id))
+    |> Enum.any?(&can?(&1.role_name, permission))
+  end
 
   def has_permission?(_jti, _permission), do: true
 

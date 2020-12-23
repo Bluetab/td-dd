@@ -20,9 +20,13 @@ defmodule TdDqWeb do
   def controller do
     quote do
       use Phoenix.Controller, namespace: TdDqWeb
+      use PhoenixSwagger
+
       import Plug.Conn
-      import TdDqWeb.Router.Helpers
       import TdDqWeb.Gettext
+
+      alias TdDqWeb.Router.Helpers, as: Routes
+      alias TdDqWeb.SwaggerDefinitions
     end
   end
 

@@ -32,4 +32,11 @@ defmodule TdDqWeb.FallbackController do
     |> put_view(TdDqWeb.ErrorView)
     |> render("404.json")
   end
+
+  def call(conn, nil) do
+    conn
+    |> put_status(:not_found)
+    |> put_view(TdDqWeb.ErrorView)
+    |> render("404.json")
+  end
 end

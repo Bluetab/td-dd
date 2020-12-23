@@ -6,9 +6,9 @@ defmodule TdDq.Rules.Implementations do
   import Ecto.Query
 
   alias Ecto.Multi
-  alias TdCache.EventStream.Publisher
   alias TdCache.StructureCache
   alias TdCache.SystemCache
+  alias TdDq.Cache.ImplementationLoader
   alias TdDq.Cache.RuleLoader
   alias TdDq.Repo
   alias TdDq.Rules.Audit
@@ -164,34 +164,17 @@ defmodule TdDq.Rules.Implementations do
   end
 
   defp on_upsert({:ok, %{implementation: implementation}} = result) do
-    add_structure_links(implementation)
-    IndexWorker.reindex_implementations(Map.get(implementation, :id))
+    id = Map.get(implementation, :id)
+    ImplementationLoader.refresh(id)
+    IndexWorker.reindex_implementations(id)
     result
   end
 
   defp on_upsert(result) do
     with {:ok, implementation} <- result do
-      add_structure_links(implementation)
       IndexWorker.reindex_implementations(Map.get(implementation, :id))
       result
     end
-  end
-
-  def add_structure_links(%Implementation{} = implementation) do
-    implementation
-    |> get_structure_ids()
-    |> Enum.uniq()
-    |> Enum.map(&add_structure_link/1)
-  end
-
-  def add_structure_link(structure_id) do
-    Publisher.publish(
-      %{
-        event: "add_rule_implementation_link",
-        structure_id: structure_id
-      },
-      "data_structure:events"
-    )
   end
 
   def get_structure_ids(%Implementation{} = implementation) do
@@ -271,6 +254,10 @@ defmodule TdDq.Rules.Implementations do
     |> Enum.reduce(dynamic, fn {field, value}, acc ->
       dynamic_filter(value, field, acc, entity)
     end)
+  end
+
+  defp dynamic_filter({:in, values}, atom_name, acc, :implementation) when is_list(values) do
+    dynamic([p, _], field(p, ^atom_name) in ^values and ^acc)
   end
 
   defp dynamic_filter(field, atom_name, acc, :implementation) when is_map(field) do
