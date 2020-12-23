@@ -7,6 +7,7 @@ defmodule TdDd.Search.Store do
 
   import Ecto.Query
 
+  alias TdDd.DataStructures.Paths
   alias TdDd.Repo
 
   @chunk_size 1000
@@ -14,15 +15,15 @@ defmodule TdDd.Search.Store do
   @impl true
   def stream(schema) do
     schema
-    |> select([dsv], dsv)
+    |> Paths.with_path(distinct: :data_structure_id)
     |> Repo.stream()
     |> Repo.stream_preload(@chunk_size, data_structure: :system)
   end
 
   def stream(schema, data_structure_ids) do
     schema
+    |> Paths.with_path(distinct: :data_structure_id)
     |> where([dsv], dsv.data_structure_id in ^data_structure_ids)
-    |> select([dsv], dsv)
     |> Repo.stream()
     |> Repo.stream_preload(@chunk_size, data_structure: :system)
   end

@@ -1,4 +1,4 @@
-defmodule TdDd.Loader.MutableMetadataLoader.Test do
+defmodule TdDd.Loader.MetadataTest do
   use TdDd.DataCase
 
   import Ecto.Query
@@ -33,10 +33,11 @@ defmodule TdDd.Loader.MutableMetadataLoader.Test do
 
       audit1 = %{ts: ~U[2020-01-01T00:00:00Z], last_change_by: 0}
       audit2 = %{ts: ~U[2020-02-02T00:00:00Z], last_change_by: 0}
-      assert {:ok, ids} = Loader.load(structures_1, [], rels, audit1, [])
-      assert length(ids) == 890
-      assert {:ok, updated_ids} = Loader.load(structures_2, [], rels, audit2, [])
-      assert length(updated_ids) == 3
+      assert {:ok, multi} = Loader.load(%{structures: structures_1, relations: rels}, audit1, [])
+      assert %{inserted_versions: {890, _inserted_versions}} = multi
+      assert {:ok, multi} = Loader.load(%{structures: structures_2, relations: rels}, audit2, [])
+      assert %{mutable_metadata: updated_ids} = multi
+      assert length(updated_ids) == 4
 
       metadata_by_external_id =
         StructureMetadata

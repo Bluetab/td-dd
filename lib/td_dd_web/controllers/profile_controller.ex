@@ -5,7 +5,7 @@ defmodule TdDdWeb.ProfileController do
   alias Plug.Upload
   alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
   alias TdDd.CSV.Reader
-  alias TdDd.Loader.LoaderWorker
+  alias TdDd.Loader.Worker
 
   require Logger
 
@@ -44,6 +44,6 @@ defmodule TdDdWeb.ProfileController do
   end
 
   defp load(recs) do
-    LoaderWorker.load(recs)
+    Worker.load(recs)
   end
 end

@@ -62,7 +62,7 @@ defmodule TdDd.Lineage.Import.Loader do
     ts = DateTime.utc_now()
 
     Repo.transaction(fn ->
-      {count, nodes} =
+      entries =
         graph
         |> Graph.vertices(labels: true)
         |> Enum.map(fn {external_id, label} ->
@@ -77,15 +77,14 @@ defmodule TdDd.Lineage.Import.Loader do
             inserted_at: ts
           }
         end)
-        |> Enum.chunk_every(10_000)
-        |> Enum.map(fn chunk ->
-          Repo.insert_all(Node, chunk,
-            conflict_target: [:external_id],
-            on_conflict: {:replace, [:external_id, :type, :label, :updated_at, :deleted_at]},
-            returning: [:id, :external_id]
-          )
-        end)
-        |> Enum.reduce(fn {c1, r1}, {c2, r2} -> {c1 + c2, r1 ++ r2} end)
+
+      {count, nodes} =
+        Repo.chunk_insert_all(Node, entries,
+          chunk_size: 10_000,
+          conflict_target: [:external_id],
+          on_conflict: {:replace, [:external_id, :type, :label, :updated_at, :deleted_at]},
+          returning: [:id, :external_id]
+        )
 
       Logger.debug("Upserted #{count} nodes")
 
@@ -97,7 +96,7 @@ defmodule TdDd.Lineage.Import.Loader do
     ts = DateTime.utc_now()
 
     Repo.transaction(fn ->
-      {count, edges} =
+      entries =
         graph
         |> Graph.get_edges()
         |> Enum.map(fn %{v1: v1, v2: v2, label: %{class: class}} ->
@@ -110,15 +109,14 @@ defmodule TdDd.Lineage.Import.Loader do
             updated_at: ts
           }
         end)
-        |> Enum.chunk_every(10_000)
-        |> Enum.map(fn chunk ->
-          Repo.insert_all(Edge, chunk,
-            conflict_target: [:unit_id, :start_id, :end_id],
-            on_conflict: {:replace, [:type, :updated_at]},
-            returning: [:id]
-          )
-        end)
-        |> Enum.reduce(fn {c1, r1}, {c2, r2} -> {c1 + c2, r1 ++ r2} end)
+
+      {count, edges} =
+        Repo.chunk_insert_all(Edge, entries,
+          chunk_size: 10_000,
+          conflict_target: [:unit_id, :start_id, :end_id],
+          on_conflict: {:replace, [:type, :updated_at]},
+          returning: [:id]
+        )
 
       Logger.debug("Upserted #{count} edges")
 
@@ -128,19 +126,18 @@ defmodule TdDd.Lineage.Import.Loader do
 
   defp upsert_unit_nodes(_repo, %{unit: %{id: unit_id}, node_map: node_map}) do
     Repo.transaction(fn ->
-      {count, node_ids} =
+      entries =
         node_map
         |> Map.values()
         |> Enum.map(fn node_id -> %{node_id: node_id, unit_id: unit_id, deleted_at: nil} end)
-        |> Enum.chunk_every(10_000)
-        |> Enum.map(fn chunk ->
-          Repo.insert_all("units_nodes", chunk,
-            conflict_target: [:unit_id, :node_id],
-            on_conflict: {:replace, [:deleted_at]},
-            returning: [:node_id]
-          )
-        end)
-        |> Enum.reduce(fn {c1, r1}, {c2, r2} -> {c1 + c2, r1 ++ r2} end)
+
+      {count, node_ids} =
+        Repo.chunk_insert_all("units_nodes", entries,
+          chunk_size: 10_000,
+          conflict_target: [:unit_id, :node_id],
+          on_conflict: {:replace, [:deleted_at]},
+          returning: [:node_id]
+        )
 
       Logger.debug("Upserted #{count} units_nodes")
 

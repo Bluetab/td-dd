@@ -8,6 +8,9 @@
 - [TD-2655] Support bulk updating of domain_id, improve performance of mutable
   metadata updates
 - [TD-3103] Changes obtaining referenced structure ids in rule implementations
+- [TD-2655] Support bulk updating of domain_id
+- [TD-2331] Return the path of deleted structures
+- Performance improvements of metadata load process
 
 ### Fixed
 

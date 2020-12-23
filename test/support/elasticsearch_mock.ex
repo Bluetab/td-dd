@@ -9,7 +9,6 @@ defmodule TdDd.ElasticsearchMock do
   alias HTTPoison.Response
   alias Jason, as: JSON
   alias TdDd.DataStructures.DataStructureVersion
-  alias TdDd.DataStructures.PathCache
   alias TdDd.Search.Store
 
   require Logger
@@ -42,8 +41,6 @@ defmodule TdDd.ElasticsearchMock do
 
   @impl true
   def request(_config, :post, "/structures/_search", data, _opts) do
-    PathCache.refresh()
-
     data
     |> do_search()
     |> search_results(data)
@@ -51,8 +48,6 @@ defmodule TdDd.ElasticsearchMock do
 
   @impl true
   def request(_config, :post, "/structures/_search?scroll=1m", data, _opts) do
-    PathCache.refresh()
-
     do_scroll(data)
   end
 
