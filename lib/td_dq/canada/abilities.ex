@@ -3,8 +3,8 @@ defmodule TdDq.Canada.Abilities do
 
   alias TdCache.ConceptCache
   alias TdDq.Accounts.User
-  alias TdDq.Canada.ImplementationAbilities
-  alias TdDq.Canada.RuleAbilities
+  alias TdDq.Canada.{ExecutionAbilities, ImplementationAbilities, RuleAbilities}
+  alias TdDq.Executions.{Execution, Group}
   alias TdDq.Permissions
   alias TdDq.Rules.Implementations.Implementation
   alias TdDq.Rules.Rule
@@ -12,6 +12,10 @@ defmodule TdDq.Canada.Abilities do
   defimpl Canada.Can, for: User do
     def can?(%User{is_admin: true}, _action, _domain) do
       true
+    end
+
+    def can?(%User{} = user, action, target) when target in [Execution, Group] do
+      ExecutionAbilities.can?(user, action, target)
     end
 
     def can?(%User{} = user, action, Implementation)

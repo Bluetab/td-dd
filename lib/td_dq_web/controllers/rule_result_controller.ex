@@ -1,6 +1,5 @@
 defmodule TdDqWeb.RuleResultController do
   use TdDqWeb, :controller
-  use PhoenixSwagger
 
   import Canada, only: [can?: 2]
 

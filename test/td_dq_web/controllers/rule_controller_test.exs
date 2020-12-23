@@ -18,8 +18,6 @@ defmodule TdDqWeb.RuleControllerTest do
     :ok
   end
 
-  @user_name "Im not an admin"
-
   setup %{conn: conn} do
     on_exit(fn -> Redix.del!(Audit.stream()) end)
 
@@ -39,13 +37,12 @@ defmodule TdDqWeb.RuleControllerTest do
                |> json_response(:ok)
     end
 
-    @tag authenticated_no_admin_user: @user_name
+    @tag authenticated_user: "not_an_admin"
     test "lists all rules depending on permissions", %{
       conn: conn,
-      user: %{id: user_id},
+      user: %{id: user_id} = user,
       swagger_schema: schema
     } do
-      user = build(:user, user_name: @user_name)
       business_concept_id_permission = "1"
       domain_id_with_permission = 1
 
@@ -75,7 +72,7 @@ defmodule TdDqWeb.RuleControllerTest do
         business_concept_id_permission,
         domain_id_with_permission,
         [domain_id_with_permission],
-        "watch"
+        "view"
       )
 
       assert %{"data" => data} =

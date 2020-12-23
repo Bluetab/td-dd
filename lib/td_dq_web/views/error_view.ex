@@ -6,7 +6,7 @@ defmodule TdDqWeb.ErrorView do
   end
 
   def render("403.json", _assigns) do
-    %{errors: %{detail: "Invalid authorization"}}
+    %{errors: %{detail: "Forbidden"}}
   end
 
   def render("404.json", _assigns) do

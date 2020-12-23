@@ -4,6 +4,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
   alias TdCache.StructureCache
   alias TdCache.SystemCache
+  alias TdDq.Cache.ImplementationLoader
   alias TdDq.Cache.RuleLoader
   alias TdDq.Search.IndexWorker
 
@@ -15,6 +16,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
   setup_all do
     start_supervised(IndexWorker)
     start_supervised(RuleLoader)
+    start_supervised(ImplementationLoader)
 
     system = %{id: 1, external_id: "sys1_ext_id", name: "sys1"}
 
@@ -489,7 +491,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
     end
   end
 
-    describe "execute_rule" do
+  describe "execute_rule" do
     setup do
       [implementation: insert(:implementation)]
     end

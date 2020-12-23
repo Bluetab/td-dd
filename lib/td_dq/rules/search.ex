@@ -1,13 +1,14 @@
 defmodule TdDq.Rules.Search do
-  require Logger
-
   @moduledoc """
-    Helper module to construct search queries.
+  The Rules Search context
   """
+
   alias TdDq.Accounts.User
   alias TdDq.Permissions
   alias TdDq.Search
   alias TdDq.Search.Query
+
+  require Logger
 
   def get_filter_values(user, params, index \\ :rules)
 

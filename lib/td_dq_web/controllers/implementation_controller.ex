@@ -1,7 +1,6 @@
 defmodule TdDqWeb.ImplementationController do
   use TdDqWeb, :controller
   use TdHypermedia, :controller
-  use PhoenixSwagger
 
   import Canada, only: [can?: 2]
   import TdDqWeb.RuleImplementationSupport, only: [decode: 1]
@@ -14,11 +13,10 @@ defmodule TdDqWeb.ImplementationController do
   alias TdDq.Rules.Implementations
   alias TdDq.Rules.Implementations.Download
   alias TdDq.Rules.Implementations.Implementation
+  alias TdDq.Rules.Implementations.Search
   alias TdDq.Rules.RuleResults
-  alias TdDq.Rules.Search
   alias TdDqWeb.ChangesetView
   alias TdDqWeb.ErrorView
-  alias TdDqWeb.SwaggerDefinitions
 
   require Logger
 
@@ -114,7 +112,7 @@ defmodule TdDqWeb.ImplementationController do
            Implementations.create_implementation(rule, implementation_params) do
       conn
       |> put_status(:created)
-      |> put_resp_header("location", implementation_path(conn, :show, implementation))
+      |> put_resp_header("location", Routes.implementation_path(conn, :show, implementation))
       |> render("show.json", implementation: implementation)
     end
   end
@@ -290,17 +288,8 @@ defmodule TdDqWeb.ImplementationController do
     user = conn.assigns[:current_resource]
     rule_id = String.to_integer(id)
 
-    with {:can, true} <- {:can, can?(user, index(Implementation))} do
-      %{
-        results: implementations
-      } =
-        params
-        |> Map.put("filters", %{rule_id: rule_id})
-        |> deleted_implementations()
-        |> Map.delete("status")
-        |> Map.drop(["page", "size"])
-        |> Search.search(user, 0, 1000, :implementations)
-
+    with {:can, true} <- {:can, can?(user, index(Implementation))},
+         implementations <- Search.search_by_rule_id(params, user, rule_id, 0, 1000) do
       render(conn, "index.json", implementations: implementations)
     end
   end
@@ -324,11 +313,7 @@ defmodule TdDqWeb.ImplementationController do
     {header_labels, params} = Map.pop(params, "header_labels", %{})
     {content_labels, params} = Map.pop(params, "content_labels", %{})
 
-    %{results: implementations} =
-      params
-      |> deleted_implementations()
-      |> Map.drop(["page", "size"])
-      |> Search.search(user, 0, 10_000, :implementations)
+    implementations = Search.search(params, user)
 
     conn
     |> put_resp_content_type("text/csv", "utf-8")
@@ -355,7 +340,7 @@ defmodule TdDqWeb.ImplementationController do
 
   def execute_implementations(conn, params) do
     user = conn.assigns[:current_resource]
-    implementations = search_executable_implementations(user, params)
+    implementations = Search.search_executable(params, user)
     keys = Enum.map(implementations, &Map.get(&1, :implementation_key))
     payload = Enum.map(implementations, &Map.take(&1, [:implementation_key, :structure_aliases]))
 
@@ -381,16 +366,6 @@ defmodule TdDqWeb.ImplementationController do
     end
   end
 
-  defp search_executable_implementations(user, params) do
-    %{results: implementations} =
-      params
-      |> Map.put(:without, ["deleted_at"])
-      |> Map.drop(["page", "size"])
-      |> Search.search(user, 0, 10_000, :implementations)
-
-    implementations
-  end
-
   defp add_last_rule_result(implementation) do
     implementation
     |> Map.put(
@@ -406,11 +381,6 @@ defmodule TdDqWeb.ImplementationController do
       RuleResults.get_implementation_results(implementation.implementation_key)
     )
   end
-
-  defp deleted_implementations(%{"status" => "deleted"} = params),
-    do: Map.put(params, :with, ["deleted_at"])
-
-  defp deleted_implementations(params), do: Map.put(params, :without, ["deleted_at"])
 
   defp with_soft_delete(%{"soft_delete" => true} = params) do
     params
