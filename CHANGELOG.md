@@ -1,12 +1,17 @@
 # Changelog
 
 ## [Unreleased] 2020-12-14
-
 ### Changed
 
+- [TD-3170] Build docker image which runs with non-root user
 - [TD-2655] Support bulk updating of domain_id, improve performance of mutable
   metadata updates
 - [TD-3103] Changes obtaining referenced structure ids in rule implementations
+
+### Fixed
+
+- [TD-3172] Return error changeset when a data structure type cannot be inserted
+  or updated
 
 ## [4.10.0] 2020-12-14
 

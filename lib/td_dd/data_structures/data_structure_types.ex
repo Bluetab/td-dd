@@ -1,6 +1,6 @@
-defmodule TdDd.DataStructures.DataStructuresTypes do
+defmodule TdDd.DataStructures.DataStructureTypes do
   @moduledoc """
-  The DataStructures context.
+  The DataStructureTypes context.
   """
 
   import Ecto.Query, warn: false
@@ -93,7 +93,7 @@ defmodule TdDd.DataStructures.DataStructuresTypes do
          {:ok, _} <- StructureTypeCache.put(data_structure_type) do
       result
     else
-      result -> result
+      result -> Repo.rollback(result)
     end
   end
 
@@ -153,18 +153,5 @@ defmodule TdDd.DataStructures.DataStructuresTypes do
     else
       result -> result
     end
-  end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking data_structure_type changes.
-
-  ## Examples
-
-      iex> change_data_structure_type(data_structure_type)
-      %Ecto.Changeset{data: %DataStructureType{}}
-
-  """
-  def change_data_structure_type(%DataStructureType{} = data_structure_type, params \\ %{}) do
-    DataStructureType.changeset(data_structure_type, params)
   end
 end

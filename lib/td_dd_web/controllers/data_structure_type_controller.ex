@@ -4,8 +4,8 @@ defmodule TdDdWeb.DataStructureTypeController do
 
   import Canada, only: [can?: 2]
 
-  alias TdDd.DataStructures.DataStructuresTypes
   alias TdDd.DataStructures.DataStructureType
+  alias TdDd.DataStructures.DataStructureTypes
   alias TdDdWeb.SwaggerDefinitions
 
   action_fallback(TdDdWeb.FallbackController)
@@ -28,8 +28,8 @@ defmodule TdDdWeb.DataStructureTypeController do
 
     if can?(user, index(%DataStructureType{})) do
       data_structure_types =
-        DataStructuresTypes.list_data_structure_types()
-        |> Enum.map(&DataStructuresTypes.enrich_template/1)
+        DataStructureTypes.list_data_structure_types()
+        |> Enum.map(&DataStructureTypes.enrich_template/1)
 
       render(conn, "index.json", data_structure_types: data_structure_types)
     else
@@ -45,7 +45,11 @@ defmodule TdDdWeb.DataStructureTypeController do
     produces("application/json")
 
     parameters do
-      data_structure_type(:body, Schema.ref(:CreateDataStructureType), "Parameters used to create a data structure type")
+      data_structure_type(
+        :body,
+        Schema.ref(:CreateDataStructureType),
+        "Parameters used to create a data structure type"
+      )
     end
 
     response(200, "OK", Schema.ref(:DataStructureTypeResponse))
@@ -58,7 +62,7 @@ defmodule TdDdWeb.DataStructureTypeController do
 
     with true <- can?(user, create(%DataStructureType{})),
          {:ok, %DataStructureType{} = data_structure_type} <-
-           DataStructuresTypes.create_data_structure_type(data_structure_type_params) do
+           DataStructureTypes.create_data_structure_type(data_structure_type_params) do
       conn
       |> put_status(:created)
       |> render("show.json", data_structure_type: data_structure_type)
@@ -82,7 +86,7 @@ defmodule TdDdWeb.DataStructureTypeController do
     user = conn.assigns[:current_user]
 
     with true <- can?(user, show(%DataStructureType{})),
-         data_structure_type <- DataStructuresTypes.get_data_structure_type!(id) do
+         data_structure_type <- DataStructureTypes.get_data_structure_type!(id) do
       render(conn, "show.json", data_structure_type: data_structure_type)
     else
       false ->
@@ -99,7 +103,12 @@ defmodule TdDdWeb.DataStructureTypeController do
 
     parameters do
       id(:path, :string, "id of Data Structure Type", required: true)
-      data_structure_type(:body, Schema.ref(:UpdateDataStructureType), "Parameters used to update a Data Structure type")
+
+      data_structure_type(
+        :body,
+        Schema.ref(:UpdateDataStructureType),
+        "Parameters used to update a Data Structure type"
+      )
     end
 
     response(200, "OK", Schema.ref(:DataStructureTypeResponse))
@@ -111,9 +120,9 @@ defmodule TdDdWeb.DataStructureTypeController do
     user = conn.assigns[:current_user]
 
     with true <- can?(user, update(%DataStructureType{})),
-         data_structure_type <- DataStructuresTypes.get_data_structure_type!(id),
+         data_structure_type <- DataStructureTypes.get_data_structure_type!(id),
          {:ok, %DataStructureType{} = data_structure_type} <-
-           DataStructuresTypes.update_data_structure_type(
+           DataStructureTypes.update_data_structure_type(
              data_structure_type,
              data_structure_type_params
            ) do
@@ -137,9 +146,9 @@ defmodule TdDdWeb.DataStructureTypeController do
     user = conn.assigns[:current_user]
 
     with true <- can?(user, delete(%DataStructureType{})),
-         data_structure_type <- DataStructuresTypes.get_data_structure_type!(id),
+         data_structure_type <- DataStructureTypes.get_data_structure_type!(id),
          {:ok, %DataStructureType{}} <-
-           DataStructuresTypes.delete_data_structure_type(data_structure_type) do
+           DataStructureTypes.delete_data_structure_type(data_structure_type) do
       send_resp(conn, :no_content, "")
     end
   end
