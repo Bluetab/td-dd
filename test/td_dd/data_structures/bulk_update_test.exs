@@ -95,20 +95,22 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
   setup_all do
     start_supervised(MockTdAuthService)
 
-    %{id: template_id, name: type} = template = build(:template)
+    %{id: template_id, name: template_name} = template = build(:template)
     TemplateCache.put(template, publish: false)
 
+    on_exit(fn -> TemplateCache.delete(template_id) end)
+
+    [template: template, type: template_name]
+  end
+
+  setup %{template: %{id: template_id}, type: type} do
     %{id: structure_type_id} =
-      structure_type = build(:data_structure_type, structure_type: type, template_id: template_id)
+      structure_type =
+      insert(:data_structure_type, structure_type: type, template_id: template_id)
 
     {:ok, _} = StructureTypeCache.put(structure_type)
 
-    on_exit(fn ->
-      TemplateCache.delete(template_id)
-      StructureTypeCache.delete(structure_type_id)
-    end)
-
-    [type: type]
+    on_exit(fn -> StructureTypeCache.delete(structure_type_id) end)
   end
 
   describe "parse_file/1" do
@@ -357,7 +359,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
   defp from_csv_templates(_) do
     %{id: id_t1, name: type} = t1 = build(:template, content: @c1)
     TemplateCache.put(t1, publish: false)
-    %{id: st1_id} = st1 = build(:data_structure_type, structure_type: type, template_id: id_t1)
+    %{id: st1_id} = st1 = insert(:data_structure_type, structure_type: type, template_id: id_t1)
     {:ok, _} = StructureTypeCache.put(st1)
 
     sts1 =
@@ -367,7 +369,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
     %{id: id_t2, name: type} = t2 = build(:template, content: @c2)
     TemplateCache.put(t2, publish: false)
-    %{id: st2_id} = st2 = build(:data_structure_type, structure_type: type, template_id: id_t2)
+    %{id: st2_id} = st2 = insert(:data_structure_type, structure_type: type, template_id: id_t2)
     {:ok, _} = StructureTypeCache.put(st2)
     sts2 = Enum.map(6..10, fn id -> valid_structure(type, external_id: "ex_id#{id}") end)
 
