@@ -51,14 +51,19 @@ defmodule TdDd.Loader.Versions do
         |> Map.put_new(:updated_at, ts)
         |> Map.put_new(:version, 0)
       end)
+      |> Enum.sort_by(& &1.external_id)
 
     ds_entries = Enum.map(entries, &Map.take(&1, @structure_fields))
 
     {_count, structures} =
-      Repo.chunk_insert_all(DataStructure, ds_entries, chunk_size: 1000, returning: [:id])
+      Repo.chunk_insert_all(DataStructure, ds_entries,
+        chunk_size: 1000,
+        returning: [:id, :external_id]
+      )
 
     dsv_entries =
       structures
+      |> Enum.sort_by(& &1.external_id)
       |> Enum.map(& &1.id)
       |> Enum.zip(entries)
       |> Enum.map(fn {id, entry} -> Map.put(entry, :data_structure_id, id) end)

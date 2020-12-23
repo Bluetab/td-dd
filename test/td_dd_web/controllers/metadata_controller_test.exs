@@ -14,7 +14,7 @@ defmodule TdDdWeb.MetadataControllerTest do
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Lineage.GraphData
-  alias TdDd.Loader.LoaderWorker
+  alias TdDd.Loader.Worker
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDd.Search.MockIndexWorker
   alias TdDdWeb.ApiServices.MockTdAuthService
@@ -24,8 +24,9 @@ defmodule TdDdWeb.MetadataControllerTest do
     start_supervised(MockTdAuthService)
     start_supervised(MockPermissionResolver)
     start_supervised(StructureLoader)
-    start_supervised(LoaderWorker)
+    start_supervised(Worker)
     start_supervised(GraphData)
+    start_supervised({Task.Supervisor, name: TdDd.TaskSupervisor})
     :ok
   end
 
@@ -69,7 +70,7 @@ defmodule TdDdWeb.MetadataControllerTest do
              |> response(:accepted)
 
       # waits for loader to complete
-      LoaderWorker.ping(20_000)
+      Worker.await(20_000)
 
       assert %{"data" => data} =
                conn
@@ -107,7 +108,7 @@ defmodule TdDdWeb.MetadataControllerTest do
              |> response(:accepted)
 
       # waits for loader to complete
-      LoaderWorker.ping(20_000)
+      Worker.await(20_000)
 
       assert %{"data" => data} =
                conn
@@ -140,7 +141,7 @@ defmodule TdDdWeb.MetadataControllerTest do
       assert response(conn, :accepted) =~ ""
 
       # waits for loader to complete
-      LoaderWorker.ping(20_000)
+      Worker.await(20_000)
 
       assert %{"data" => data} =
                conn
@@ -209,7 +210,7 @@ defmodule TdDdWeb.MetadataControllerTest do
       assert response(conn, 202) =~ ""
 
       # waits for loader to complete
-      LoaderWorker.ping(20_000)
+      Worker.await(20_000)
 
       conn = get(conn, data_structure_path(conn, :index))
       json_response = json_response(conn, 200)["data"]
@@ -247,7 +248,7 @@ defmodule TdDdWeb.MetadataControllerTest do
              |> response(:accepted)
 
       # wait for loader to complete
-      LoaderWorker.ping(20_000)
+      Worker.await(20_000)
 
       assert %DataStructure{id: id} =
                DataStructures.get_data_structure_by_external_id("td-2520.root")
@@ -261,7 +262,7 @@ defmodule TdDdWeb.MetadataControllerTest do
              )
              |> response(:ok)
 
-      LoaderWorker.ping(20_000)
+      Worker.await(20_000)
 
       assert conn
              |> post(metadata_path(conn, :upload),

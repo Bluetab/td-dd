@@ -33,9 +33,9 @@ defmodule TdDd.Loader.MetadataTest do
 
       audit1 = %{ts: ~U[2020-01-01T00:00:00Z], last_change_by: 0}
       audit2 = %{ts: ~U[2020-02-02T00:00:00Z], last_change_by: 0}
-      assert {:ok, multi} = Loader.load(structures_1, [], rels, audit1, [])
+      assert {:ok, multi} = Loader.load(%{structures: structures_1, relations: rels}, audit1, [])
       assert %{inserted_versions: {890, _inserted_versions}} = multi
-      assert {:ok, multi} = Loader.load(structures_2, [], rels, audit2, [])
+      assert {:ok, multi} = Loader.load(%{structures: structures_2, relations: rels}, audit2, [])
       assert %{mutable_metadata: updated_ids} = multi
       assert length(updated_ids) == 4
 

@@ -174,12 +174,13 @@ defmodule TdDd.LoaderTest do
       f51 = Map.merge(s5, f4)
       f61 = Map.merge(s6, f5)
 
-      structure_records = [s1, s2, s3, s4, s5, s6]
-      field_records = [f11, f12, f13, f21, f32, f41, f51, f61]
-      relation_records = [r1, r2]
+      records = %{
+        structures: [s1, s2, s3, s4, s5, s6],
+        fields: [f11, f12, f13, f21, f32, f41, f51, f61],
+        relations: [r1, r2]
+      }
 
-      assert {:ok, _context} =
-               Loader.load(structure_records, field_records, relation_records, audit())
+      assert {:ok, _context} = Loader.load(records, audit())
     end
 
     test "with structures containing an external_id" do
@@ -280,12 +281,15 @@ defmodule TdDd.LoaderTest do
       f21 = Map.merge(s2, f1)
       f32 = Map.merge(s3, f2)
 
-      structure_records = [s1, s2, s3]
-      field_records = [f11, f12, f13, f21, f32]
-      relation_records = [r1, r2]
-
       assert {:ok, _context} =
-               Loader.load(structure_records, field_records, relation_records, audit())
+               Loader.load(
+                 %{
+                   structures: [s1, s2, s3],
+                   fields: [f11, f12, f13, f21, f32],
+                   relations: [r1, r2]
+                 },
+                 audit()
+               )
     end
 
     test "with structures updates structures without generate version" do
@@ -333,12 +337,15 @@ defmodule TdDd.LoaderTest do
 
       f11 = Map.merge(s1, f1)
 
-      structure_records = [s1, s2]
-      field_records = [f11]
-      relation_records = [r1]
-
       assert {:ok, _context} =
-               Loader.load(structure_records, field_records, relation_records, audit())
+               Loader.load(
+                 %{
+                   structures: [s1, s2],
+                   fields: [f11],
+                   relations: [r1]
+                 },
+                 audit()
+               )
 
       v1 = DataStructures.get_latest_version_by_external_id(s1.external_id)
       v2 = DataStructures.get_latest_version_by_external_id(s2.external_id)
@@ -366,12 +373,15 @@ defmodule TdDd.LoaderTest do
       s2 = Map.put(s2, :mutable_metadata, %{"foo" => "bar"})
       f11 = Map.put(f11, :mutable_metadata, %{"foo" => "bar"})
 
-      structure_records = [s1, s2]
-      field_records = [f11]
-      relation_records = [r1]
-
       assert {:ok, _context} =
-               Loader.load(structure_records, field_records, relation_records, audit())
+               Loader.load(
+                 %{
+                   structures: [s1, s2],
+                   fields: [f11],
+                   relations: [r1]
+                 },
+                 audit()
+               )
 
       v1 = DataStructures.get_latest_version_by_external_id(s1.external_id)
       v2 = DataStructures.get_latest_version_by_external_id(s2.external_id)
@@ -406,13 +416,15 @@ defmodule TdDd.LoaderTest do
       structure = random_structure(system.id)
       field = structure |> random_field() |> Map.put(:metadata, %{"foo" => "bar"})
 
-      assert {:ok, %{insert_versions: {1, [%{data_structure_id: structure_id}]}}} = Loader.load([structure], [], [], audit())
+      assert {:ok, %{insert_versions: {1, [%{data_structure_id: structure_id}]}}} =
+               Loader.load(%{structures: [structure]}, audit())
 
       1..5
       |> Enum.each(fn _ ->
         foo = random_string("FOO")
         field = Map.put(field, :metadata, %{"foo" => foo})
-        assert {:ok, _} = Loader.load([structure], [field], [], audit())
+
+        assert {:ok, _} = Loader.load(%{structures: [structure], fields: [field]}, audit())
 
         %{data_fields: data_fields, children: children} =
           DataStructures.get_latest_version(structure_id, [:children, :data_fields])
@@ -430,7 +442,7 @@ defmodule TdDd.LoaderTest do
       Enum.each(1..5, fn _ ->
         class = random_string()
         structure = Map.put(structure, :class, class)
-        assert {:ok, _} = Loader.load([structure], [], [], audit())
+        assert {:ok, _} = Loader.load(%{structures: [structure]}, audit())
 
         assert [%{latest: %{class: ^class}}] =
                  DataStructures.list_data_structures(
@@ -457,7 +469,9 @@ defmodule TdDd.LoaderTest do
 
       relation = %{child_external_id: "xxx", parent_external_id: "xxx"}
 
-      assert_raise(RuntimeError, fn -> Loader.load([structure], [], [relation], audit()) end)
+      assert_raise(RuntimeError, fn ->
+        Loader.load(%{structures: [structure], relations: [relation]}, audit())
+      end)
     end
 
     test "loads changes in relations with relation type" do
@@ -521,8 +535,14 @@ defmodule TdDd.LoaderTest do
       relation_records = [r1]
       relation_records_with_type = [r1_with_type, r2_with_type]
 
-      {:ok, _} = Loader.load(structure_records, [], relation_records, audit())
-      {:ok, _} = Loader.load(structure_records, [], relation_records_with_type, audit())
+      {:ok, _} =
+        Loader.load(%{structures: structure_records, relations: relation_records}, audit())
+
+      {:ok, _} =
+        Loader.load(
+          %{structures: structure_records, relations: relation_records_with_type},
+          audit()
+        )
 
       assert %{id: dsv1_id, version: 2} =
                DataStructures.get_latest_version_by_external_id(ds1.external_id)
@@ -583,20 +603,9 @@ defmodule TdDd.LoaderTest do
         child_external_id: s4.external_id
       }
 
-      structure_records = [s1, s2, s3, s4]
-      relation_records = [r1, r2]
-
-      {:ok, _} = Loader.load(structure_records, [], relation_records, audit())
-
-      structure_records = [s1, s2]
-      relation_records = [r1]
-
-      {:ok, _} = Loader.load(structure_records, [], relation_records, audit())
-
-      structure_records = [s1, s2, s3, s4]
-      relation_records = [r1, r2]
-
-      {:ok, _} = Loader.load(structure_records, [], relation_records, audit())
+      {:ok, _} = Loader.load(%{structures: [s1, s2, s3, s4], relations: [r1, r2]}, audit())
+      {:ok, _} = Loader.load(%{structures: [s1, s2], relations: [r1]}, audit())
+      {:ok, _} = Loader.load(%{structures: [s1, s2, s3, s4], relations: [r1, r2]}, audit())
 
       assert Enum.all?([s3, s4], fn %{external_id: external_id} ->
                %{version: version, deleted_at: deleted_at} =
@@ -634,10 +643,7 @@ defmodule TdDd.LoaderTest do
         child_external_id: s2.external_id
       }
 
-      structure_records = [s1, s2]
-      relation_records = [r1]
-
-      {:ok, _} = Loader.load(structure_records, [], relation_records, audit())
+      {:ok, _} = Loader.load(%{structures: [s1, s2], relations: [r1]}, audit())
 
       assert %DataStructureVersion{children: [child | _]} =
                DataStructures.get_latest_version_by_external_id(external_id, enrich: [:children])
@@ -660,9 +666,7 @@ defmodule TdDd.LoaderTest do
         mutable_metadata: %{"foo" => "bar"}
       }
 
-      structure_records = [s1]
-
-      assert {:ok, multi} = Loader.load(structure_records, [], [], audit())
+      assert {:ok, multi} = Loader.load(%{structures: [s1]}, audit())
       assert %{insert_versions: {1, [%{id: id}]}} = multi
 
       assert %{ts: ts} = audit()
@@ -674,7 +678,7 @@ defmodule TdDd.LoaderTest do
                |> update(set: [deleted_at: ^ts])
                |> Repo.update_all([])
 
-      assert {:ok, multi} = Loader.load(structure_records, [], [], audit())
+      assert {:ok, multi} = Loader.load(%{structures: [s1]}, audit())
       assert %{restore_versions: {1, [_]}} = multi
       assert %{deleted_at: nil} = Repo.get(DataStructureVersion, id)
     end
@@ -698,7 +702,9 @@ defmodule TdDd.LoaderTest do
       r12 = %{parent_external_id: "EXT1", child_external_id: "EXT2"}
       r23 = %{parent_external_id: "EXT2", child_external_id: "EXT3"}
 
-      assert {:ok, multi} = Loader.load([s1, s2, s3], [], [r12, r23], audit())
+      assert {:ok, multi} =
+               Loader.load(%{structures: [s1, s2, s3], relations: [r12, r23]}, audit())
+
       assert %{insert_versions: {3, [%{id: id1}, %{id: id2}, %{id: id3}]}} = multi
       assert %{ghash: ghash1} = Repo.get(DataStructureVersion, id1)
 
@@ -712,7 +718,10 @@ defmodule TdDd.LoaderTest do
                |> Repo.update_all([])
 
       s3 = %{s3 | name: "CHANGED"}
-      assert {:ok, multi} = Loader.load([s1, s2, s3], [], [r12, r23], audit())
+
+      assert {:ok, multi} =
+               Loader.load(%{structures: [s1, s2, s3], relations: [r12, r23]}, audit())
+
       assert %{update_versions: {1, [%{id: ^id1}]}} = multi
       assert %{deleted_at: nil, ghash: ghash2} = Repo.get(DataStructureVersion, id1)
       refute ghash1 == ghash2

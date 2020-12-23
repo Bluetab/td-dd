@@ -9,19 +9,42 @@ defmodule TdDd.Loader do
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Loader.Context
   alias TdDd.Loader.FieldsAsStructures
+  alias TdDd.Loader.LoadGraph
+  alias TdDd.Loader.Metadata
+  alias TdDd.Loader.Relations
+  alias TdDd.Loader.Structures
+  alias TdDd.Loader.Versions
   alias TdDd.Repo
 
   require Logger
 
-  def load(structure_records, field_records, relation_records, audit, opts \\ []) do
+  def load(records, audit, opts \\ [])
+
+  def load(%{structures: structure_records, fields: field_records} = records, audit, opts) do
     structure_count = Enum.count(structure_records)
     field_count = Enum.count(field_records)
     Logger.info("Starting bulk load (#{structure_count}SR+#{field_count}FR)")
 
     {structure_records, relation_records} =
-      FieldsAsStructures.fields_as_structures(structure_records, field_records, relation_records)
+      FieldsAsStructures.fields_as_structures(
+        structure_records,
+        field_records,
+        Map.get(records, :relations, [])
+      )
 
     relation_records = RelationTypes.with_relation_types(relation_records)
+
+    multi(structure_records, relation_records, audit, opts)
+  end
+
+  def load(%{structures: structure_records} = records, audit, opts) do
+    structure_count = Enum.count(structure_records)
+    Logger.info("Starting bulk load (#{structure_count}SR)")
+
+    relation_records =
+      records
+      |> Map.get(:relations, [])
+      |> RelationTypes.with_relation_types()
 
     multi(structure_records, relation_records, audit, opts)
   end
@@ -29,12 +52,6 @@ defmodule TdDd.Loader do
   @spec multi([map], [map], %{ts: DateTime.t()}, Keyword.t()) ::
           {:ok, map} | {:error, Multi.name(), any(), %{required(Multi.name()) => any()}}
   def multi(structure_records, relation_records, %{ts: ts} = audit, opts \\ []) do
-    alias TdDd.Loader.LoadGraph
-    alias TdDd.Loader.Metadata
-    alias TdDd.Loader.Relations
-    alias TdDd.Loader.Structures
-    alias TdDd.Loader.Versions
-
     Multi.new()
     |> Multi.run(:graph, LoadGraph, :load_graph, [structure_records, relation_records, opts])
     |> Multi.run(:context, Context, :create_context, [audit])

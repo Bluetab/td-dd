@@ -38,7 +38,7 @@ defmodule TdDd.Application do
       # Worker for background indexing
       TdDd.Search.IndexWorker,
       # Worker for background bulk loading
-      TdDd.Loader.LoaderWorker,
+      TdDd.Loader.Worker,
       # Task to recalculate data structure hashes on startup
       TdDd.DataStructures.Hasher,
       # Workers for cache loading

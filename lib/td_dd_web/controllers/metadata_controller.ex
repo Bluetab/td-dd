@@ -8,7 +8,7 @@ defmodule TdDdWeb.MetadataController do
   alias TdCache.TaxonomyCache
   alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
   alias TdDd.DataStructures
-  alias TdDd.Loader.LoaderWorker
+  alias TdDd.Loader.Worker
   alias TdDd.Systems
 
   require Logger
@@ -135,7 +135,7 @@ defmodule TdDdWeb.MetadataController do
     user_id = GuardianPlug.current_resource(conn).id
     ts = DateTime.truncate(DateTime.utc_now(), :second)
     audit_fields = %{ts: ts, last_change_by: user_id}
-    LoaderWorker.load(structures_file, fields_file, relations_file, audit_fields, opts)
+    Worker.load(structures_file, fields_file, relations_file, audit_fields, opts)
   end
 
   defp can_upload?(user, %{"domain" => external_id}) do

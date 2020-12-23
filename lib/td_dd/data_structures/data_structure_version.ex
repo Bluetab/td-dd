@@ -113,7 +113,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     alias TdDfLib.Format
 
     @impl Elasticsearch.Document
-    def id(%{id: id}), do: id
+    def id(%{data_structure_id: id}), do: id
 
     @impl Elasticsearch.Document
     def routing(_), do: false
@@ -172,7 +172,9 @@ defmodule TdDd.DataStructures.DataStructureVersion do
 
     defp path(_), do: []
 
-    defp parent(%DataStructureVersion{path: %{names: [_, name | _], external_ids: [_, external_id | _]}}) do
+    defp parent(%DataStructureVersion{
+           path: %{names: [_, name | _], external_ids: [_, external_id | _]}
+         }) do
       %{name: name, external_id: external_id}
     end
 
