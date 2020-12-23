@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased] 2020-12-14
+
 ### Changed
 
 - [TD-3170] Build docker image which runs with non-root user
