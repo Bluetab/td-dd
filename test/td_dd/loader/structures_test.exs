@@ -6,7 +6,7 @@ defmodule TdDd.Loader.StructuresTest do
 
   setup %{ids: ids} do
     %{id: system_id} = insert(:system)
-    ts = DateTime.utc_now() |> DateTime.truncate(:second)
+    ts = timestamp()
 
     entries =
       ids
@@ -23,6 +23,17 @@ defmodule TdDd.Loader.StructuresTest do
     Repo.insert_all(DataStructure, entries)
 
     [ids: ids]
+  end
+
+  describe "update_domain_ids/2" do
+    @tag ids: 1..10
+    test "updates domain_id only if changed" do
+      ts = timestamp()
+      new_domain_id = 42
+      records = [%{domain_id: 1, external_id: "1"}, %{domain_id: new_domain_id, external_id: "2"}]
+      assert {:ok, {1, [structure_id]}} = Structures.update_domain_ids(records, ts)
+      assert %{domain_id: ^new_domain_id} = Repo.get!(DataStructure, structure_id)
+    end
   end
 
   describe "bulk_update_domain_id/3" do
@@ -54,4 +65,6 @@ defmodule TdDd.Loader.StructuresTest do
       assert {0, []} = Structures.bulk_update_domain_id(external_ids, nil, ts)
     end
   end
+
+  defp timestamp, do: DateTime.utc_now() |> DateTime.truncate(:second)
 end

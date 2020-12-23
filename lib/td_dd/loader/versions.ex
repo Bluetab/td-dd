@@ -193,34 +193,58 @@ defmodule TdDd.Loader.Versions do
   end
 
   @doc """
-  Logically delete data structure versions whose external_id is absent from the
-  structure records, but whose system_id and group is present.
+  Logically delete data structure versions whose external_id is not present in
+  the structure records, but whose system_id and group are present.
   """
-  def delete_missing_versions(_repo, %{} = _changes, structure_records, ts) do
-    {:ok, delete_missing_versions(structure_records, ts)}
+  def delete_missing_versions(
+        _repo,
+        %{context: %{structure_id_map: structure_id_map}} = _changes,
+        structure_records,
+        ts
+      ) do
+    {:ok, do_delete_missing_versions(structure_records, structure_id_map, ts)}
   end
 
-  defp delete_missing_versions(structure_records, ts) do
+  def delete_missing_versions(_repo, _changes, _structure_records, _ts),
+    do: {:error, :missing_context}
+
+  defp do_delete_missing_versions(structure_records, structure_id_map, ts) do
     structure_records
     |> Enum.group_by(
-      fn %{group: group, system_id: system_id} -> {system_id, group} end,
-      fn %{external_id: external_id} -> external_id end
+      fn %{system_id: system_id} -> system_id end,
+      fn %{group: group, external_id: external_id} ->
+        %{group: group, structure_id: Map.get(structure_id_map, external_id)}
+      end
     )
+    |> Enum.map(&system_groups/1)
     |> Enum.map(&delete_missing_group_structures(&1, ts))
     |> Enum.reduce(fn {count1, ids1}, {count2, ids2} -> {count1 + count2, ids1 ++ ids2} end)
   end
 
-  defp delete_missing_group_structures({{system_id, group}, external_ids}, ts) do
-    delete_structure_versions(system_id, group, external_ids, ts)
+  defp system_groups({system_id, entries}) do
+    Enum.reduce(entries, %{system_id: system_id, groups: MapSet.new(), structure_ids: []}, fn
+      %{structure_id: nil, group: group}, %{groups: groups} = acc ->
+        %{acc | groups: MapSet.put(groups, group)}
+
+      %{structure_id: id, group: group}, %{groups: groups, structure_ids: ids} = acc ->
+        %{acc | groups: MapSet.put(groups, group), structure_ids: [id | ids]}
+    end)
   end
 
-  defp delete_structure_versions(system_id, group, external_ids, ts) do
+  defp delete_missing_group_structures(
+         %{system_id: system_id, groups: groups, structure_ids: structure_ids},
+         ts
+       ) do
+    delete_structure_versions(system_id, groups, structure_ids, ts)
+  end
+
+  defp delete_structure_versions(system_id, groups, structure_ids, ts) do
     DataStructureVersion
     |> where([dsv], is_nil(dsv.deleted_at))
-    |> where(group: ^group)
+    |> where([dsv], dsv.group in ^MapSet.to_list(groups))
+    |> where([dsv], dsv.data_structure_id not in ^structure_ids)
     |> join(:inner, [dsv], ds in assoc(dsv, :data_structure))
     |> where([_, ds], ds.system_id == ^system_id)
-    |> where([_, ds], ds.external_id not in ^external_ids)
     |> select([dsv], dsv.data_structure_id)
     |> Repo.update_all(set: [deleted_at: ts])
   end

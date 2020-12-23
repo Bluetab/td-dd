@@ -22,33 +22,48 @@ defmodule TdDd.Loader.VersionsTest do
           )
         end)
 
-      [data_structure_versions: data_structure_versions]
+      structure_id_map =
+        Map.new(data_structure_versions, fn
+          %{data_structure: %{id: id, external_id: external_id}} -> {external_id, id}
+        end)
+
+      context = %{structure_id_map: structure_id_map}
+
+      [data_structure_versions: data_structure_versions, context: context]
     end
 
     test "logically deletes versions which are not present in the records", %{
-      system: %{id: system_id}
+      context: context,
+      data_structure_versions: data_structure_versions
     } do
-      structure_records = [%{group: "group1", external_id: "foo", system_id: system_id}]
+      %{data_structure: %{external_id: external_id, system_id: system_id}} =
+        Enum.find(data_structure_versions, &(&1.group == "group1"))
+
+      structure_records = [
+        %{group: "group1", external_id: "foo", system_id: system_id},
+        %{group: "group1", external_id: external_id, system_id: system_id}
+      ]
+
       ts = timestamp()
 
-      assert {:ok, {10, data_structure_ids}} =
-               Versions.delete_missing_versions(Repo, %{}, structure_records, ts)
+      assert {:ok, {9, data_structure_ids}} =
+               Versions.delete_missing_versions(Repo, %{context: context}, structure_records, ts)
 
-      assert [{^ts, 10}] =
+      assert [{^ts, 9}] =
                DataStructureVersion
                |> where([dsv], dsv.data_structure_id in ^data_structure_ids)
                |> group_by(:deleted_at)
                |> select([dsv], {dsv.deleted_at, count(dsv.id)})
                |> Repo.all()
 
-      assert [{"group1", 10}] =
+      assert [{"group1", 9}] =
                DataStructureVersion
                |> where([dsv], not is_nil(dsv.deleted_at))
                |> group_by(:group)
                |> select([dsv], {dsv.group, count(dsv.id)})
                |> Repo.all()
 
-      assert [{"group2", 10}] =
+      assert [{"group1", 1}, {"group2", 10}] =
                DataStructureVersion
                |> where([dsv], is_nil(dsv.deleted_at))
                |> group_by(:group)
