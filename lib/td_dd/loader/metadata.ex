@@ -1,4 +1,4 @@
-defmodule TdDd.Loader.MutableMetadataLoader do
+defmodule TdDd.Loader.Metadata do
   @moduledoc """
   Bulk loader support for updating mutable metadata.
   """
@@ -13,13 +13,26 @@ defmodule TdDd.Loader.MutableMetadataLoader do
 
   @chunk_size 1_000
 
-  @spec load([map()], DateTime.t()) :: {:error, any} | {:ok, [integer()]}
-  def load([], _), do: {:ok, []}
+  @doc """
+  Logically delete metadata versions whose external_id is absent from the
+  structure records, but whose group is present.
+  """
+  def delete_missing_metadata(_repo, %{delete_versions: {_, [_ | _] = ids}}, ts) do
+    {:ok, delete_metadata_versions(ids, ts)}
+  end
 
-  def load([_ | _] = records, audit_attrs) do
+  def delete_missing_metadata(_repo, _changes, _ts), do: {:ok, {0, []}}
+
+  @spec replace_metadata(atom, map, [map], DateTime.t()) :: {:error, any} | {:ok, [integer()]}
+  def replace_metadata(_repo, %{} = _changes, records, ts), do: replace_metadata(records, ts)
+
+  @spec replace_metadata([map], DateTime.t()) :: {:error, any} | {:ok, [integer()]}
+  def replace_metadata([], _), do: {:ok, []}
+
+  def replace_metadata([_ | _] = records, ts) do
     records
     |> Map.new(&mutable_metadata_entry/1)
-    |> do_load(audit_attrs)
+    |> do_update(ts)
   end
 
   defp mutable_metadata_entry(%{external_id: external_id, mutable_metadata: %{} = mm})
@@ -31,7 +44,7 @@ defmodule TdDd.Loader.MutableMetadataLoader do
     {external_id, nil}
   end
 
-  defp do_load(%{} = entries_by_external_id, ts) do
+  defp do_update(%{} = entries_by_external_id, ts) do
     entries_by_external_id
     |> Enum.chunk_every(@chunk_size)
     |> Enum.with_index()
@@ -54,9 +67,6 @@ defmodule TdDd.Loader.MutableMetadataLoader do
         {{:inserted, _chunk_id}, {_count, metadata_version}} ->
           Enum.map(metadata_version, & &1.data_structure_id)
       end)
-
-    count = Enum.count(structure_ids)
-    Logger.info("Metadata loaded (upserted=#{count})")
 
     {:ok, structure_ids}
   end
@@ -146,5 +156,13 @@ defmodule TdDd.Loader.MutableMetadataLoader do
 
   defp logical_delete_operation(structure_metadata_id) do
     %{operation: :logical_delete, id: structure_metadata_id}
+  end
+
+  defp delete_metadata_versions(ids, ts) do
+    StructureMetadata
+    |> select([sm], sm.data_structure_id)
+    |> where([sm], is_nil(sm.deleted_at))
+    |> where([sm], sm.data_structure_id in ^ids)
+    |> Repo.update_all(set: [deleted_at: ts])
   end
 end

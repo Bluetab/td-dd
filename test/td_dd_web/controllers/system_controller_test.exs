@@ -4,7 +4,6 @@ defmodule TdDdWeb.SystemControllerTest do
 
   alias TdCache.TaxonomyCache
   alias TdDd.Cache.SystemLoader
-  alias TdDd.DataStructures.PathCache
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDd.Systems.System
@@ -23,7 +22,6 @@ defmodule TdDdWeb.SystemControllerTest do
   setup_all do
     start_supervised(MockTdAuthService)
     start_supervised(MockPermissionResolver)
-    start_supervised(PathCache)
     start_supervised(SystemLoader)
     :ok
   end

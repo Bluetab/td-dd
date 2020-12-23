@@ -214,15 +214,15 @@ defmodule TdDdWeb.DataStructureVersionView do
 
   defp add_ancestry(dsv) do
     ancestry =
-      case Map.get(dsv, :ancestry) do
-        nil ->
-          []
+      case Map.get(dsv, :path) do
+      %{structure_ids: [_ | ids], names: [_ | names]} ->
+        [ids, names]
+        |> Enum.zip()
+        |> Enum.map(fn {id, name} -> %{data_structure_id: id, name: name} end)
 
-        as ->
-          as
-          |> Enum.map(&Map.take(&1, [:data_structure_id, :name]))
-          |> Enum.reverse()
-      end
+      _ ->
+        []
+    end
 
     Map.put(dsv, :ancestry, ancestry)
   end
@@ -268,10 +268,15 @@ defmodule TdDdWeb.DataStructureVersionView do
 
   defp add_metadata_versions(dsv), do: Map.put(dsv, :metadata_versions, [])
 
-  defp add_data_structure_type(%{data_structure_type: nil} = dsv), do: Map.put(dsv, :data_structure_type, %{})
+  defp add_data_structure_type(%{data_structure_type: nil} = dsv),
+    do: Map.put(dsv, :data_structure_type, %{})
 
   defp add_data_structure_type(%{data_structure_type: data_structure_type} = dsv) do
-    Map.put(dsv, :data_structure_type, Map.take(data_structure_type, [:template_id, :translation, :metadata_fields]))
+    Map.put(
+      dsv,
+      :data_structure_type,
+      Map.take(data_structure_type, [:template_id, :translation, :metadata_fields])
+    )
   end
 
   defp add_data_structure_type(dsv), do: Map.put(dsv, :data_structure_type, %{})

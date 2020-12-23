@@ -3,14 +3,15 @@ defmodule TdDdWeb.ProfileControllerTest do
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   alias TdDd.DataStructures.Profiles
-  alias TdDd.Loader.LoaderWorker
+  alias TdDd.Loader.Worker
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDdWeb.ApiServices.MockTdAuthService
 
   setup_all do
     start_supervised(MockTdAuthService)
     start_supervised(MockPermissionResolver)
-    start_supervised(LoaderWorker)
+    start_supervised(Worker)
+    start_supervised({Task.Supervisor, name: TdDd.TaskSupervisor})
     :ok
   end
 
@@ -37,7 +38,7 @@ defmodule TdDdWeb.ProfileControllerTest do
       assert response(conn, 202) =~ ""
 
       # waits for loader to complete
-      LoaderWorker.ping(20_000)
+      Worker.await(20_000)
       assert Enum.count(Profiles.list_profiles()) == 3
     end
   end

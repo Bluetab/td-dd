@@ -8,7 +8,7 @@ defmodule TdDdWeb.MetadataController do
   alias TdCache.TaxonomyCache
   alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
   alias TdDd.DataStructures
-  alias TdDd.Loader.LoaderWorker
+  alias TdDd.Loader.Worker
   alias TdDd.Systems
 
   require Logger
@@ -77,7 +77,7 @@ defmodule TdDdWeb.MetadataController do
              external_id: external_id,
              parent_external_id: parent_external_id
            ),
-         dsv <- DataStructures.get_latest_version_by_external_id(external_id, enrich: [:ancestry]) do
+         dsv <- DataStructures.get_latest_version_by_external_id(external_id) do
       render(conn, "show.json", data_structure_version: dsv)
     else
       {:can, false} -> {:can, false}
@@ -90,7 +90,7 @@ defmodule TdDdWeb.MetadataController do
 
     with {:can, true} <- {:can, can_upload?(user, params)},
          {:ok, _} <- do_upload(conn, params, external_id: external_id),
-         dsv <- DataStructures.get_latest_version_by_external_id(external_id, enrich: [:ancestry]) do
+         dsv <- DataStructures.get_latest_version_by_external_id(external_id) do
       render(conn, "show.json", data_structure_version: dsv)
     end
   end
@@ -135,7 +135,7 @@ defmodule TdDdWeb.MetadataController do
     user_id = GuardianPlug.current_resource(conn).id
     ts = DateTime.truncate(DateTime.utc_now(), :second)
     audit_fields = %{ts: ts, last_change_by: user_id}
-    LoaderWorker.load(structures_file, fields_file, relations_file, audit_fields, opts)
+    Worker.load(structures_file, fields_file, relations_file, audit_fields, opts)
   end
 
   defp can_upload?(user, %{"domain" => external_id}) do
