@@ -81,6 +81,12 @@ defmodule TdDd.Cache.StructureLoader do
     extract_structure_ids([source, target])
   end
 
+  defp read_structure_ids(%{event: "add_rule_implementation_link", structure_ids: structure_ids}) do
+    structure_ids
+    |> String.split(",")
+    |> Enum.map(&String.to_integer/1)
+  end
+
   defp read_structure_ids(%{event: "add_rule_implementation_link", structure_id: structure_id}) do
     [structure_id]
   end
