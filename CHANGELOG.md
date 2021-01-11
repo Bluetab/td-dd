@@ -1,12 +1,10 @@
 # Changelog
 
-## [Unreleased]
+## [4.11.0] 2021-01-11
 
 ### Changed
 
 - [TD-3170] Build docker image which runs with non-root user
-
-## [4.10.0] 2020-12-14
 
 ### Added
 
