@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-3187] Default pending status for jobs without events in elasticsearch
+
 ## [4.11.0] 2021-01-11
 
 ### Changed
