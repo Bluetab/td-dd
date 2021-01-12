@@ -17,11 +17,11 @@ defmodule TdDqWeb.ExecutionController do
     response(200, "OK", Schema.ref(:ExecutionGroupsResponse))
   end
 
-  def index(conn, _params) do
+  def index(conn, params) do
     user = conn.assigns[:current_resource]
 
     with {:can, true} <- {:can, can?(user, list(Execution))},
-         executions <- Executions.list_executions(%{}, preload: [:implementation, :result]) do
+         executions <- Executions.list_executions(params, preload: [:implementation, :result]) do
       render(conn, "index.json", executions: executions)
     end
   end

@@ -39,11 +39,13 @@ defmodule TdDq.Executions do
   Returns a list of executions.
   """
   def list_executions(params \\ %{}, opts \\ []) do
+    params = Map.Helpers.atomize_keys(params)
     preloads = Keyword.get(opts, :preload, [])
 
     params
     |> Enum.reduce(Execution, fn
       {:group_id, id}, q -> where(q, [e], e.group_id == ^id)
+      {:execution_group_id, id}, q -> where(q, [e], e.group_id == ^id)
     end)
     |> preload(^preloads)
     |> Repo.all()
