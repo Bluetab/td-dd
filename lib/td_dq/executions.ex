@@ -46,7 +46,9 @@ defmodule TdDq.Executions do
     |> Enum.reduce(Execution, fn
       {:group_id, id}, q -> where(q, [e], e.group_id == ^id)
       {:execution_group_id, id}, q -> where(q, [e], e.group_id == ^id)
+      _, q -> q
     end)
+    |> where_status(params)
     |> preload(^preloads)
     |> Repo.all()
   end
@@ -66,4 +68,17 @@ defmodule TdDq.Executions do
     |> Multi.run(:audit, Audit, :execution_group_created, [changeset])
     |> Repo.transaction()
   end
+
+  defp where_status(query, %{status: status}) do
+    case String.downcase(status) do
+      "pending" ->
+        query
+        |> join(:left, [e], r in assoc(e, :result))
+        |> where([_e, r], is_nil(r.execution_id))
+
+      _ -> query
+    end
+  end
+
+  defp where_status(query, _params), do: query
 end

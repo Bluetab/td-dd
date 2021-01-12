@@ -84,4 +84,23 @@ defmodule TdDq.ExecutionsTest do
              } = Jason.decode!(payload)
     end
   end
+
+  describe "list_executions/2" do
+    test "list executions" do
+      %{id: implementation_id} = insert(:implementation)
+      %{id: group_id1} = insert(:execution_group)
+      %{id: group_id2} = insert(:execution_group)
+      %{id: id1} = insert(:execution, group_id: group_id1, implementation_id: implementation_id)
+      %{id: id2} = insert(:execution, group_id: group_id2, implementation_id: implementation_id)
+
+      %{id: result_id} = insert(:rule_result, execution_id: id1)
+      assert [%{id: ^id1}, %{id: ^id2}] = Executions.list_executions()
+      assert [%{id: ^id2}] = Executions.list_executions(%{group_id: group_id2})
+
+      assert [%{id: ^id2, result: nil, implementation: %{id: ^implementation_id}}] =
+               Executions.list_executions(%{status: "PENDING"},
+                 preload: [:implementation, :result]
+               )
+    end
+  end
 end
