@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] 2021-01-11
+
+### Added
+
+- [TD-3187] Filter executions by source and `PENDING` status
+
 ## [4.11.0] 2021-01-11
 
 ### Added
