@@ -153,7 +153,7 @@ defmodule TdDq.Rules.Implementations.Implementation do
       domain_parents = Helpers.get_domain_parents(domain_ids)
       updated_by = Helpers.get_user(rule.updated_by)
       structure_ids = Implementations.get_structure_ids(implementation)
-      structure_aliases = get_aliases(structure_ids)
+      structure_aliases = Helpers.get_sources(structure_ids)
 
       implementation
       |> Implementations.enrich_implementation_structures()
@@ -264,16 +264,6 @@ defmodule TdDq.Rules.Implementations.Implementation do
 
     defp get_operator_fields(operator) do
       Map.take(operator, [:name, :value_type, :value_type_filter])
-    end
-
-    defp get_aliases(structure_ids) do
-      structure_ids
-      |> Enum.map(&Implementations.read_structure_from_cache/1)
-      |> Enum.filter(&(not Enum.empty?(&1)))
-      |> Enum.map(&Map.get(&1, :metadata, %{}))
-      |> Enum.map(&Map.get(&1, "alias"))
-      |> Enum.filter(& &1)
-      |> Enum.uniq()
     end
 
     defp with_rule(data, rule) do

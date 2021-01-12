@@ -51,6 +51,7 @@ defmodule TdDq.Executions do
     |> where_status(params)
     |> preload(^preloads)
     |> Repo.all()
+    |> filter(params)
   end
 
   @doc """
@@ -76,9 +77,35 @@ defmodule TdDq.Executions do
         |> join(:left, [e], r in assoc(e, :result))
         |> where([_e, r], is_nil(r.execution_id))
 
-      _ -> query
+      _ ->
+        query
     end
   end
 
   defp where_status(query, _params), do: query
+
+  defp filter([_ | _] = executions, %{source: source}) do
+    executions
+    |> Enum.map(
+      &Map.put(
+        &1,
+        :structure_aliases,
+        get_sources(&1)
+      )
+    )
+    |> Enum.filter(&(source in Map.get(&1, :structure_aliases)))
+  end
+
+  defp filter(executions, _params), do: executions
+
+  defp get_sources(%{implementation: implementation = %TdDq.Rules.Implementations.Implementation{}}) do
+    TdDq.Rules.Implementations.get_sources(implementation)
+  end
+
+  defp get_sources(execution) do
+    execution
+    |> Repo.preload(:implementation)
+    |> Map.get(:implementation)
+    |> TdDq.Rules.Implementations.get_sources()
+  end
 end

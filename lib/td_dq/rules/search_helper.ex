@@ -90,4 +90,14 @@ defmodule Search.Helpers do
   def with_result_text(result_map, _minimum, _goal, _type) do
     result_map
   end
+
+  def get_sources(structure_ids) do
+    structure_ids
+    |> Enum.map(&TdDq.Rules.Implementations.read_structure_from_cache/1)
+    |> Enum.filter(&(not Enum.empty?(&1)))
+    |> Enum.map(&Map.get(&1, :metadata, %{}))
+    |> Enum.map(&Map.get(&1, "alias"))
+    |> Enum.filter(& &1)
+    |> Enum.uniq()
+  end
 end
