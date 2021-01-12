@@ -6,6 +6,7 @@ defmodule Search.Helpers do
   alias TdCache.ConceptCache
   alias TdCache.TaxonomyCache
   alias TdCache.UserCache
+  alias TdDq.Rules.Implementations
 
   def get_domain_ids(%{business_concept_id: nil}), do: -1
 
@@ -93,7 +94,7 @@ defmodule Search.Helpers do
 
   def get_sources(structure_ids) do
     structure_ids
-    |> Enum.map(&TdDq.Rules.Implementations.read_structure_from_cache/1)
+    |> Enum.map(&Implementations.read_structure_from_cache/1)
     |> Enum.filter(&(not Enum.empty?(&1)))
     |> Enum.map(&Map.get(&1, :metadata, %{}))
     |> Enum.map(&Map.get(&1, "alias"))

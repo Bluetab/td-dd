@@ -9,6 +9,8 @@ defmodule TdDq.Executions do
   alias Ecto.Multi
   alias TdDq.Executions.{Audit, Execution, Group}
   alias TdDq.Repo
+  alias TdDq.Rules.Implementations
+  alias TdDq.Rules.Implementations.Implementation
 
   @doc """
   Returns an execution group.
@@ -98,14 +100,14 @@ defmodule TdDq.Executions do
 
   defp filter(executions, _params), do: executions
 
-  defp get_sources(%{implementation: implementation = %TdDq.Rules.Implementations.Implementation{}}) do
-    TdDq.Rules.Implementations.get_sources(implementation)
+  defp get_sources(%{implementation: implementation = %Implementation{}}) do
+    Implementations.get_sources(implementation)
   end
 
   defp get_sources(execution) do
     execution
     |> Repo.preload(:implementation)
     |> Map.get(:implementation)
-    |> TdDq.Rules.Implementations.get_sources()
+    |> Implementations.get_sources()
   end
 end
