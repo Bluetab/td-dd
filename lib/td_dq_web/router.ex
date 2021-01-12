@@ -26,6 +26,7 @@ defmodule TdDqWeb.Router do
     resources "/execution_groups", ExecutionGroupController, except: [:new, :edit] do
       resources("/executions", ExecutionController, only: [:index])
     end
+    resources("/executions", ExecutionController, only: [:index])
 
     post("/rule_results", RuleResultController, :upload)
     resources("/rule_results", RuleResultController, only: [:index, :delete])

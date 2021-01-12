@@ -26,7 +26,7 @@ defmodule TdDqWeb.ExecutionControllerTest do
 
   describe "GET /api/executions" do
     @tag :admin_authenticated
-    test "returns an OK response with the list of executions", %{
+    test "returns an OK response with the list of executions filtered by group", %{
       conn: conn,
       swagger_schema: schema,
       group: group
@@ -36,6 +36,23 @@ defmodule TdDqWeb.ExecutionControllerTest do
       assert %{"data" => executions} =
                conn
                |> get(Routes.execution_group_execution_path(conn, :index, group_id))
+               |> validate_resp_schema(schema, "ExecutionsResponse")
+               |> json_response(:ok)
+
+      assert length(executions) == 5
+    end
+
+    @tag :admin_authenticated
+    test "returns an OK response with the list of executions", %{
+      conn: conn,
+      swagger_schema: schema,
+      group: group
+    } do
+      assert %{id: group_id} = group
+
+      assert %{"data" => executions} =
+               conn
+               |> get(Routes.execution_path(conn, :index))
                |> validate_resp_schema(schema, "ExecutionsResponse")
                |> json_response(:ok)
 
