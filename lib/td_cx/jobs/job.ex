@@ -27,6 +27,8 @@ defmodule TdCx.Jobs.Job do
   end
 
   defimpl Elasticsearch.Document do
+    @default_status "PENDING"
+
     @impl Elasticsearch.Document
     def id(%Job{id: id}), do: id
 
@@ -41,7 +43,7 @@ defmodule TdCx.Jobs.Job do
       job
       |> Map.take([:id, :external_id, :type])
       |> Map.put(:type, type)
-      |> Map.put(:status, "")
+      |> Map.put(:status, @default_status)
       |> Map.put(:source, source)
       |> Map.merge(Jobs.metrics(events))
     end
