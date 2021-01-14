@@ -40,7 +40,7 @@ defmodule TdDqWeb.RuleControllerTest do
     @tag authenticated_user: "not_an_admin"
     test "lists all rules depending on permissions", %{
       conn: conn,
-      user: %{id: user_id} = user,
+      claims: %{user_id: user_id} = claims,
       swagger_schema: schema
     } do
       business_concept_id_permission = "1"
@@ -64,8 +64,8 @@ defmodule TdDqWeb.RuleControllerTest do
         updated_by: Integer.mod(:binary.decode_unsigned("app-admin"), 100_000)
       }
 
-      {:ok, %{rule: rule}} = Rules.create_rule(creation_attrs_1, user)
-      Rules.create_rule(creation_attrs_2, user)
+      {:ok, %{rule: rule}} = Rules.create_rule(creation_attrs_1, claims)
+      Rules.create_rule(creation_attrs_2, claims)
 
       create_acl_entry(
         user_id,

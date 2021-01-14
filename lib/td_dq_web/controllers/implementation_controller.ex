@@ -32,14 +32,14 @@ defmodule TdDqWeb.ImplementationController do
   end
 
   def index(conn, params) do
-    user = conn.assigns[:current_resource]
+    claims = conn.assigns[:current_resource]
 
     filters =
       %{}
       |> add_rule_filter(params, "rule_business_concept_id", "business_concept_id")
       |> add_rule_filter(params, "is_rule_active", "active")
 
-    with {:can, true} <- {:can, can?(user, index(Implementation))} do
+    with {:can, true} <- {:can, can?(claims, index(Implementation))} do
       implementations =
         filters
         |> Implementations.list_implementations()
@@ -95,7 +95,7 @@ defmodule TdDqWeb.ImplementationController do
   end
 
   def create(conn, %{"rule_implementation" => implementation_params}) do
-    user = conn.assigns[:current_resource]
+    claims = conn.assigns[:current_resource]
     implementation_params = decode(implementation_params)
     rule_id = implementation_params["rule_id"]
 
@@ -107,7 +107,7 @@ defmodule TdDqWeb.ImplementationController do
       "implementation_type" => Map.get(implementation_params, "implementation_type")
     }
 
-    with {:can, true} <- {:can, can?(user, create(resource_type))},
+    with {:can, true} <- {:can, can?(claims, create(resource_type))},
          {:ok, %Implementation{} = implementation} <-
            Implementations.create_implementation(rule, implementation_params) do
       conn
@@ -139,9 +139,9 @@ defmodule TdDqWeb.ImplementationController do
       |> Implementations.enrich_implementation_structures()
       |> Implementations.enrich_system()
 
-    user = conn.assigns[:current_resource]
+    claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(user, show(implementation))} do
+    with {:can, true} <- {:can, can?(claims, show(implementation))} do
       render(conn, "show.json", implementation: implementation)
     end
   end
@@ -160,7 +160,7 @@ defmodule TdDqWeb.ImplementationController do
   end
 
   def update(conn, %{"id" => id, "rule_implementation" => implementation_params}) do
-    user = conn.assigns[:current_resource]
+    claims = conn.assigns[:current_resource]
 
     update_params =
       implementation_params
@@ -186,7 +186,7 @@ defmodule TdDqWeb.ImplementationController do
       "implementation_type" => implementation.implementation_type
     }
 
-    with {:can, true} <- {:can, can?(user, update(resource_type))},
+    with {:can, true} <- {:can, can?(claims, update(resource_type))},
          {:editable, true} <-
            {:editable,
             Enum.empty?(implementation.all_rule_results) ||
@@ -196,7 +196,7 @@ defmodule TdDqWeb.ImplementationController do
            Implementations.update_implementation(
              implementation,
              with_soft_delete(update_params),
-             user
+             claims
            ) do
       render(conn, "show.json", implementation: implementation)
     else
@@ -250,13 +250,13 @@ defmodule TdDqWeb.ImplementationController do
 
   def delete(conn, %{"id" => id}) do
     implementation = Implementations.get_implementation!(id)
-    user = conn.assigns[:current_resource]
+    claims = conn.assigns[:current_resource]
     rule = Repo.preload(implementation, :rule).rule
 
     with {:can, true} <-
            {:can,
             can?(
-              user,
+              claims,
               delete(%{
                 "business_concept_id" => rule.business_concept_id,
                 "resource_type" => "implementation",
@@ -285,11 +285,11 @@ defmodule TdDqWeb.ImplementationController do
   end
 
   def search_rule_implementations(conn, %{"rule_id" => id} = params) do
-    user = conn.assigns[:current_resource]
+    claims = conn.assigns[:current_resource]
     rule_id = String.to_integer(id)
 
-    with {:can, true} <- {:can, can?(user, index(Implementation))},
-         implementations <- Search.search_by_rule_id(params, user, rule_id, 0, 1000) do
+    with {:can, true} <- {:can, can?(claims, index(Implementation))},
+         implementations <- Search.search_by_rule_id(params, claims, rule_id, 0, 1000) do
       render(conn, "index.json", implementations: implementations)
     end
   end
@@ -308,12 +308,12 @@ defmodule TdDqWeb.ImplementationController do
   end
 
   def csv(conn, params) do
-    user = conn.assigns[:current_resource]
+    claims = conn.assigns[:current_resource]
 
     {header_labels, params} = Map.pop(params, "header_labels", %{})
     {content_labels, params} = Map.pop(params, "content_labels", %{})
 
-    implementations = Search.search(params, user)
+    implementations = Search.search(params, claims)
 
     conn
     |> put_resp_content_type("text/csv", "utf-8")
@@ -339,8 +339,8 @@ defmodule TdDqWeb.ImplementationController do
   end
 
   def execute_implementations(conn, params) do
-    user = conn.assigns[:current_resource]
-    implementations = Search.search_executable(params, user)
+    claims = conn.assigns[:current_resource]
+    implementations = Search.search_executable(params, claims)
     keys = Enum.map(implementations, &Map.get(&1, :implementation_key))
     payload = Enum.map(implementations, &Map.take(&1, [:implementation_key, :structure_aliases]))
 

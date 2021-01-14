@@ -24,14 +24,14 @@ defmodule TdDqWeb.RuleController do
   end
 
   def index(conn, params) do
-    user = conn.assigns[:current_resource]
-    manage_permission = can?(user, manage(%{"resource_type" => "rule"}))
+    claims = conn.assigns[:current_resource]
+    manage_permission = can?(claims, manage(%{"resource_type" => "rule"}))
     user_permissions = %{manage_quality_rules: manage_permission}
 
     rules =
       params
       |> Rules.list_rules()
-      |> Enum.filter(&can?(user, show(&1)))
+      |> Enum.filter(&can?(claims, show(&1)))
 
     render(conn, "index.json",
       rules: rules,
@@ -50,14 +50,14 @@ defmodule TdDqWeb.RuleController do
   end
 
   def get_rules_by_concept(conn, %{"id" => id} = params) do
-    user = conn.assigns[:current_resource]
+    claims = conn.assigns[:current_resource]
 
     resource_type = %{
       "business_concept_id" => id,
       "resource_type" => "rule"
     }
 
-    with {:can, true} <- {:can, can?(user, get_rules_by_concept(resource_type))} do
+    with {:can, true} <- {:can, can?(claims, get_rules_by_concept(resource_type))} do
       params =
         params
         |> Map.put("business_concept_id", id)
@@ -66,7 +66,7 @@ defmodule TdDqWeb.RuleController do
       rules =
         params
         |> Rules.list_concept_rules()
-        |> Enum.filter(&can?(user, show(&1)))
+        |> Enum.filter(&can?(claims, show(&1)))
 
       conn
       |> put_view(RuleView)
@@ -91,23 +91,25 @@ defmodule TdDqWeb.RuleController do
   end
 
   def create(conn, %{"rule" => rule_params}) do
-    user = conn.assigns[:current_resource]
+    %{user_id: user_id} = claims = conn.assigns[:current_resource]
 
-    params = Map.put_new(rule_params, "updated_by", user.id)
+    params = Map.put_new(rule_params, "updated_by", user_id)
 
     resource_type =
       rule_params
       |> Map.take(["business_concept_id"])
       |> Map.put("resource_type", "rule")
 
-    with {:can, true} <- {:can, can?(user, create(resource_type))},
-         {:ok, %{rule: rule}} <- Rules.create_rule(params, user) do
+    with {:can, true} <- {:can, can?(claims, create(resource_type))},
+         {:ok, %{rule: rule}} <- Rules.create_rule(params, claims) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", Routes.rule_path(conn, :show, rule))
       |> render("show.json", rule: rule, user_permissions: get_user_permissions(conn, rule))
     else
-      {:can, false} -> {:can, false}
+      {:can, false} ->
+        {:can, false}
+
       {:error, :rule, %Changeset{data: %{__struct__: _}} = changeset, _} ->
         conn
         |> put_status(:unprocessable_entity)
@@ -137,12 +139,12 @@ defmodule TdDqWeb.RuleController do
   end
 
   defp get_user_permissions(conn, rule) do
-    user = conn.assigns[:current_resource]
-    manage_permission = can?(user, manage(%{"resource_type" => "rule"}))
+    claims = conn.assigns[:current_resource]
+    manage_permission = can?(claims, manage(%{"resource_type" => "rule"}))
 
     manage_rule_implementations =
       can?(
-        user,
+        claims,
         manage(%{
           "resource_type" => "implementation",
           "business_concept_id" => rule.business_concept_id
@@ -151,7 +153,7 @@ defmodule TdDqWeb.RuleController do
 
     manage_raw_rule_implementations =
       can?(
-        user,
+        claims,
         manage_raw(%{
           "resource_type" => "implementation",
           "business_concept_id" => rule.business_concept_id
@@ -178,11 +180,11 @@ defmodule TdDqWeb.RuleController do
   end
 
   def show(conn, %{"id" => id}) do
-    user = conn.assigns[:current_resource]
+    claims = conn.assigns[:current_resource]
 
     rule = Rules.get_rule!(id)
 
-    with {:can, true} <- {:can, can?(user, show(rule))} do
+    with {:can, true} <- {:can, can?(claims, show(rule))} do
       render(
         conn,
         "show.json",
@@ -211,7 +213,7 @@ defmodule TdDqWeb.RuleController do
   end
 
   def update(conn, %{"id" => id, "rule" => rule_params}) do
-    user = conn.assigns[:current_resource]
+    %{user_id: user_id} = claims = conn.assigns[:current_resource]
     rule = Rules.get_rule!(id)
 
     resource_type = %{
@@ -219,13 +221,15 @@ defmodule TdDqWeb.RuleController do
       "resource_type" => "rule"
     }
 
-    params = Map.put_new(rule_params, "updated_by", user.id)
+    params = Map.put_new(rule_params, "updated_by", user_id)
 
-    with {:can, true} <- {:can, can?(user, update(resource_type))},
-         {:ok, %{rule: rule}} <- Rules.update_rule(rule, params, user) do
+    with {:can, true} <- {:can, can?(claims, update(resource_type))},
+         {:ok, %{rule: rule}} <- Rules.update_rule(rule, params, claims) do
       render(conn, "show.json", rule: rule, user_permissions: get_user_permissions(conn, rule))
     else
-      {:can, false} -> {:can, false}
+      {:can, false} ->
+        {:can, false}
+
       {:error, :rule, %Changeset{data: %{__struct__: _}} = changeset, _} ->
         conn
         |> put_status(:unprocessable_entity)
@@ -267,7 +271,7 @@ defmodule TdDqWeb.RuleController do
   end
 
   def delete(conn, %{"id" => id}) do
-    user = conn.assigns[:current_resource]
+    claims = conn.assigns[:current_resource]
     rule = Rules.get_rule!(id)
 
     resource_type = %{
@@ -275,11 +279,13 @@ defmodule TdDqWeb.RuleController do
       "resource_type" => "rule"
     }
 
-    with {:can, true} <- {:can, can?(user, delete(resource_type))},
-         {:ok, _res} <- Rules.delete_rule(rule, user) do
+    with {:can, true} <- {:can, can?(claims, delete(resource_type))},
+         {:ok, _res} <- Rules.delete_rule(rule, claims) do
       send_resp(conn, :no_content, "")
     else
-      {:can, false} -> {:can, false}
+      {:can, false} ->
+        {:can, false}
+
       {:error, :rule, %Changeset{data: %{__struct__: _}} = changeset, _} ->
         conn
         |> put_status(:unprocessable_entity)

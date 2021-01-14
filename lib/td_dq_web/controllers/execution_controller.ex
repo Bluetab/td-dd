@@ -18,9 +18,9 @@ defmodule TdDqWeb.ExecutionController do
   end
 
   def index(conn, _params) do
-    user = conn.assigns[:current_resource]
+    claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(user, list(Execution))},
+    with {:can, true} <- {:can, can?(claims, list(Execution))},
          executions <- Executions.list_executions(%{}, preload: [:implementation, :result]) do
       render(conn, "index.json", executions: executions)
     end
