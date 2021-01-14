@@ -37,7 +37,11 @@ defmodule TdCxWeb.ConfigurationController do
     produces("application/json")
 
     parameters do
-      configuration(:body, Schema.ref(:CreateConfiguration), "Parameters used to create a configuration")
+      configuration(
+        :body,
+        Schema.ref(:CreateConfiguration),
+        "Parameters used to create a configuration"
+      )
     end
 
     response(200, "OK", Schema.ref(:ConfigurationResponse))
@@ -46,9 +50,9 @@ defmodule TdCxWeb.ConfigurationController do
   end
 
   def create(conn, %{"configuration" => configuration_params}) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(user, create(Configuration))},
+    with {:can, true} <- {:can, can?(claims, create(Configuration))},
          {:ok, %Configuration{} = configuration} <-
            Configurations.create_configuration(configuration_params) do
       conn
@@ -88,7 +92,12 @@ defmodule TdCxWeb.ConfigurationController do
 
     parameters do
       external_id(:path, :string, "external_id of content", required: true)
-      configuration(:body, Schema.ref(:UpdateConfiguration), "Parameters used to update a content")
+
+      configuration(
+        :body,
+        Schema.ref(:UpdateConfiguration),
+        "Parameters used to update a content"
+      )
     end
 
     response(200, "OK", Schema.ref(:ConfigurationResponse))
@@ -97,10 +106,10 @@ defmodule TdCxWeb.ConfigurationController do
   end
 
   def update(conn, %{"external_id" => external_id, "configuration" => configuration_params}) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
     configuration = Configurations.get_configuration_by_external_id!(external_id)
 
-    with {:can, true} <- {:can, can?(user, update(configuration))},
+    with {:can, true} <- {:can, can?(claims, update(configuration))},
          {:ok, %Configuration{} = configuration} <-
            Configurations.update_configuration(configuration, configuration_params) do
       render(conn, "show.json", configuration: configuration)
@@ -120,10 +129,10 @@ defmodule TdCxWeb.ConfigurationController do
   end
 
   def delete(conn, %{"external_id" => external_id}) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
     configuration = Configurations.get_configuration_by_external_id!(external_id)
 
-    with {:can, true} <- {:can, can?(user, delete(configuration))},
+    with {:can, true} <- {:can, can?(claims, delete(configuration))},
          {:ok, %Configuration{}} <- Configurations.delete_configuration(configuration) do
       send_resp(conn, :no_content, "")
     end

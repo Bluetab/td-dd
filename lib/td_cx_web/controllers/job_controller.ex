@@ -32,11 +32,11 @@ defmodule TdCxWeb.JobController do
   end
 
   def index(conn, %{"source_external_id" => source_id}) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
     params = %{"filters" => %{"source.external_id" => source_id}}
 
-    with true <- can?(user, index(Job)),
-         %{results: results} <- Search.search_jobs(params, user, 0, 10_000) do
+    with true <- can?(claims, index(Job)),
+         %{results: results} <- Search.search_jobs(params, claims, 0, 10_000) do
       render(conn, "search.json", jobs: results)
     else
       false ->
@@ -68,9 +68,9 @@ defmodule TdCxWeb.JobController do
   end
 
   def create(conn, %{"source_external_id" => source_external_id} = params) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
 
-    with true <- can?(user, create(Job)),
+    with true <- can?(claims, create(Job)),
          %Source{id: id} <- Sources.get_source!(source_external_id),
          {:ok, %Job{} = job} <- params |> Map.put("source_id", id) |> Jobs.create_job(),
          :ok <- Jobs.launch(job) do
@@ -112,9 +112,9 @@ defmodule TdCxWeb.JobController do
   end
 
   def show(conn, %{"external_id" => external_id}) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
 
-    with true <- can?(user, show(Job)),
+    with true <- can?(claims, show(Job)),
          %Job{} = job <- Jobs.get_job!(external_id, [:events, :source]) do
       render(conn, "show.json", job: job)
     else
@@ -143,13 +143,13 @@ defmodule TdCxWeb.JobController do
   end
 
   def search(conn, params) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
     page = Map.get(params, "page", 0)
     size = Map.get(params, "size", 50)
 
     params
     |> Map.drop(["page", "size"])
-    |> Search.search_jobs(user, page, size)
+    |> Search.search_jobs(claims, page, size)
     |> render_search(conn)
   end
 

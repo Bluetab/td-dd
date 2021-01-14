@@ -47,15 +47,17 @@ defmodule TdCxWeb.ConnCase do
 
     cond do
       tags[:admin_authenticated] ->
-        user = create_user(@admin_user_name, is_admin: true)
-        create_user_auth_conn(user)
+        @admin_user_name
+        |> create_claims(role: "admin")
+        |> create_user_auth_conn()
 
-      tags[:authenticated_no_admin_user] ->
-        user = create_user(tags[:authenticated_no_admin_user], is_admin: false)
-        create_user_auth_conn(user, :not_admin)
+      tags[:authenticated_user] ->
+        tags[:authenticated_user]
+        |> create_claims()
+        |> create_user_auth_conn()
 
       true ->
-        {:ok, conn: Phoenix.ConnTest.build_conn()}
+        [conn: Phoenix.ConnTest.build_conn()]
     end
   end
 
@@ -65,7 +67,8 @@ defmodule TdCxWeb.ConnCase do
         nil ->
           nil
 
-        pid -> Sandbox.allow(TdCx.Repo, parent, pid)
+        pid ->
+          Sandbox.allow(TdCx.Repo, parent, pid)
       end
     end)
   end
