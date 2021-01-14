@@ -148,7 +148,7 @@ defmodule TdCxWeb.SourceControllerTest do
   end
 
   describe "create source" do
-    @tag authenticated_no_admin_user: "user"
+    @tag authenticated_user: "non_admin_user"
     test "returns unauthorized for non admin user", %{conn: conn} do
       conn = post(conn, Routes.source_path(conn, :create), source: @create_attrs)
       assert %{"errors" => %{"detail" => "Forbidden"}} = json_response(conn, 403)
@@ -183,7 +183,7 @@ defmodule TdCxWeb.SourceControllerTest do
   describe "update source" do
     setup [:create_source]
 
-    @tag authenticated_no_admin_user: "user"
+    @tag authenticated_user: "non_admin_user"
     test "returns unauthorized for non admin user", %{
       conn: conn,
       source: %Source{external_id: external_id}
@@ -234,7 +234,7 @@ defmodule TdCxWeb.SourceControllerTest do
   describe "delete source" do
     setup [:create_source]
 
-    @tag authenticated_no_admin_user: "user"
+    @tag authenticated_user: "non_admin_user"
     test "returns unauthorized for non admin user", %{conn: conn, source: source} do
       conn = delete(conn, Routes.source_path(conn, :delete, source.external_id))
       assert %{"errors" => %{"detail" => "Forbidden"}} = json_response(conn, 403)

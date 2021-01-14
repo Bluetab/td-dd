@@ -6,6 +6,7 @@ defmodule TdCx.Sources do
   import Ecto.Query, warn: false
 
   alias TdCache.TemplateCache
+  alias TdCx.Auth.Claims
   alias TdCx.Cache.SourceLoader
   alias TdCx.K8s
   alias TdCx.Repo
@@ -92,8 +93,8 @@ defmodule TdCx.Sources do
     |> enrich(options)
   end
 
-  def enrich_secrets(user, %Source{} = source) do
-    case can?(user, view_secrets(source)) do
+  def enrich_secrets(%Claims{} = claims, %Source{} = source) do
+    case can?(claims, view_secrets(source)) do
       true -> enrich_secrets(source)
       _ -> source
     end
@@ -376,8 +377,8 @@ defmodule TdCx.Sources do
     Source.changeset(source, %{})
   end
 
-  def job_types(user, %Source{type: connector_type} = source) do
-    with true <- can?(user, view_job_types(source)),
+  def job_types(%Claims{} = claims, %Source{type: connector_type} = source) do
+    with true <- can?(claims, view_job_types(source)),
          {:ok, cron_jobs} <- K8s.list_cronjobs(connector: connector_type, launch_type: "manual") do
       cron_jobs
       |> Enum.map(&Kernel.get_in(&1, ["metadata", "labels", "truedat.io/connector-type"]))

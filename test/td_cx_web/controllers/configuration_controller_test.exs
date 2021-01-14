@@ -91,7 +91,7 @@ defmodule TdCxWeb.ConfigurationControllerTest do
     setup [:create_another_configuration]
     setup [:create_secret_configuration]
 
-    @tag authenticated_no_admin_user: "user"
+    @tag authenticated_user: "non_admin_user"
     test "lists all configurations", %{conn: conn} do
       conn = get(conn, Routes.configuration_path(conn, :index))
 
@@ -114,7 +114,7 @@ defmodule TdCxWeb.ConfigurationControllerTest do
              ] = json_response(conn, 200)["data"]
     end
 
-    @tag authenticated_no_admin_user: "user"
+    @tag authenticated_user: "non_admin_user"
     test "lists only configurations", %{conn: conn} do
       conn = get(conn, Routes.configuration_path(conn, :index, type: "config"))
 
@@ -132,7 +132,7 @@ defmodule TdCxWeb.ConfigurationControllerTest do
     setup [:create_configuration]
     setup [:create_secret_configuration]
 
-    @tag authenticated_no_admin_user: "user"
+    @tag authenticated_user: "non_admin_user"
     test "show configuration", %{conn: conn} do
       conn = get(conn, Routes.configuration_path(conn, :show, "external_id"))
 
@@ -174,7 +174,7 @@ defmodule TdCxWeb.ConfigurationControllerTest do
              } = json_response(conn, 200)["data"]
     end
 
-    @tag authenticated_no_admin_user: "user"
+    @tag authenticated_user: "non_admin_user"
     test "configuration creation forbidden to non admin users", %{conn: conn} do
       conn = post(conn, Routes.configuration_path(conn, :create), configuration: @create_attrs)
       assert %{"errors" => %{"detail" => "Forbidden"}} = json_response(conn, 403)
@@ -184,7 +184,7 @@ defmodule TdCxWeb.ConfigurationControllerTest do
   describe "update configuration" do
     setup [:create_configuration]
 
-    @tag authenticated_no_admin_user: "user"
+    @tag authenticated_user: "non_admin_user"
     test "returns unauthorized for non admin user", %{
       conn: conn,
       configuration: %Configuration{external_id: external_id}
@@ -237,7 +237,7 @@ defmodule TdCxWeb.ConfigurationControllerTest do
   describe "delete" do
     setup [:create_configuration]
 
-    @tag authenticated_no_admin_user: "user"
+    @tag authenticated_user: "non_admin_user"
     test "returns unauthorized for non admin user", %{conn: conn, configuration: configuration} do
       conn = delete(conn, Routes.configuration_path(conn, :delete, configuration.external_id))
       assert %{"errors" => %{"detail" => "Forbidden"}} = json_response(conn, 403)

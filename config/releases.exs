@@ -17,7 +17,8 @@ config :td_cx, :vault,
 
 config :td_cache,
   redis_host: System.fetch_env!("REDIS_HOST"),
-  port: System.get_env("REDIS_PORT", "6379") |> String.to_integer()
+  port: System.get_env("REDIS_PORT", "6379") |> String.to_integer(),
+  password: System.get_env("REDIS_PASSWORD")
 
 config :td_cx, TdCx.Scheduler,
   jobs: [

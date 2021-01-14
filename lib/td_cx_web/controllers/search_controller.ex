@@ -16,9 +16,9 @@ defmodule TdCxWeb.SearchController do
   end
 
   def reindex_all(conn, _params) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
 
-    if can?(user, reindex_all(Job)) do
+    if can?(claims, reindex_all(Job)) do
       @index_worker.reindex(:all)
       send_resp(conn, :accepted, "")
     else
