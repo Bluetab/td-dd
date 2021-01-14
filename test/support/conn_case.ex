@@ -34,8 +34,6 @@ defmodule TdDdWeb.ConnCase do
     end
   end
 
-  @admin_user_name "app-admin"
-
   setup tags do
     :ok = Sandbox.checkout(TdDd.Repo)
 
@@ -56,16 +54,14 @@ defmodule TdDdWeb.ConnCase do
 
     cond do
       tags[:admin_authenticated] ->
-        user = find_or_create_user(@admin_user_name, is_admin: true)
-        create_user_auth_conn(user)
+        "app-admin"
+        |> create_claims(role: "admin")
+        |> create_user_auth_conn()
 
       tags[:authenticated_user] ->
-        user = find_or_create_user(tags[:authenticated_user], is_admin: true)
-        create_user_auth_conn(user)
-
-      tags[:authenticated_no_admin_user] ->
-        user = find_or_create_user(tags[:authenticated_no_admin_user], is_admin: false)
-        create_user_auth_conn(user)
+        tags[:authenticated_user]
+        |> create_claims()
+        |> create_user_auth_conn()
 
       true ->
         {:ok, conn: Phoenix.ConnTest.build_conn()}

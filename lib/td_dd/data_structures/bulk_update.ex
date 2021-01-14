@@ -8,6 +8,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
   alias Codepagex
   alias Ecto.Changeset
   alias Ecto.Multi
+  alias TdDd.Auth.Claims
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
@@ -16,19 +17,19 @@ defmodule TdDd.DataStructures.BulkUpdate do
   alias TdDfLib.Format
   alias TdDfLib.Templates
 
-  def update_all(ids, %{"df_content" => content}, %{id: user_id} = user) do
+  def update_all(ids, %{"df_content" => content}, %Claims{user_id: user_id} = claims) do
     params = %{"df_content" => content, "last_change_by" => user_id}
     Logger.info("Updating #{length(ids)} data structures...")
 
     Timer.time(
-      fn -> do_update(ids, params, user) end,
+      fn -> do_update(ids, params, claims) end,
       fn ms, _ -> "Data structures updated in #{ms}ms" end
     )
   end
 
-  def from_csv(nil, _user), do: {:error, %{message: :no_csv_uploaded}}
+  def from_csv(nil, _claims), do: {:error, %{message: :no_csv_uploaded}}
 
-  def from_csv(upload, user) do
+  def from_csv(upload, %Claims{user_id: user_id}) do
     with {:ok, rows} <- parse_file(upload) do
       rows
       |> Enum.with_index()
@@ -44,7 +45,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
         end
       end)
       |> case do
-        [_ | _] = contents -> do_csv_bulk_update(contents, user.id)
+        [_ | _] = contents -> do_csv_bulk_update(contents, user_id)
         errors -> errors
       end
     end
@@ -150,7 +151,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
      })}
   end
 
-  defp do_update(ids, %{} = params, %{id: user_id}) do
+  defp do_update(ids, %{} = params, %Claims{user_id: user_id}) do
     Multi.new()
     |> Multi.run(:updates, &bulk_update(&1, &2, ids, params))
     |> Multi.run(:audit, &audit(&1, &2, user_id))

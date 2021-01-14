@@ -17,12 +17,12 @@ defmodule TdDd.Systems.AuditTest do
   setup do
     on_exit(fn -> Redix.del!(@stream) end)
 
-    user = build(:user, is_admin: true)
-    [user: user, system: insert(:system)]
+    claims = build(:claims, role: "admin")
+    [claims: claims, system: insert(:system)]
   end
 
   describe "system_created/4" do
-    test "publishes an event", %{system: %{id: system_id} = system, user: %{id: user_id}} do
+    test "publishes an event", %{system: %{id: system_id} = system, claims: %{user_id: user_id}} do
       content = %{foo: "bar"}
 
       %{external_id: external_id, name: name} =
@@ -57,7 +57,7 @@ defmodule TdDd.Systems.AuditTest do
   end
 
   describe "system_updated/4" do
-    test "publishes an event", %{user: %{id: user_id}} do
+    test "publishes an event", %{claims: %{user_id: user_id}} do
       content = %{foo: "bar"}
 
       %{id: system_id} = system = insert(:system, df_content: content)
@@ -93,7 +93,7 @@ defmodule TdDd.Systems.AuditTest do
   end
 
   describe "system_deleted/3" do
-    test "publishes an event", %{user: %{id: user_id}} do
+    test "publishes an event", %{claims: %{user_id: user_id}} do
       %{id: system_id} = system = insert(:system)
 
       assert {:ok, event_id} = Audit.system_deleted(Repo, %{system: system}, user_id)

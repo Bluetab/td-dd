@@ -7,7 +7,6 @@ defmodule TdDdWeb.SystemControllerTest do
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Permissions.MockPermissionResolver
   alias TdDd.Systems.System
-  alias TdDdWeb.ApiServices.MockTdAuthService
 
   @create_attrs %{
     external_id: "some external_id",
@@ -20,7 +19,6 @@ defmodule TdDdWeb.SystemControllerTest do
   @invalid_attrs %{external_id: nil, name: nil}
 
   setup_all do
-    start_supervised(MockTdAuthService)
     start_supervised(MockPermissionResolver)
     start_supervised(SystemLoader)
     :ok
@@ -31,10 +29,8 @@ defmodule TdDdWeb.SystemControllerTest do
     {:ok, conn: put_req_header(conn, "accept", "application/json"), system: system}
   end
 
-  @admin_user_name "app-admin"
-
   describe "index" do
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     test "lists all systems", %{conn: conn, swagger_schema: schema} do
       assert %{"data" => [_system]} =
                conn
@@ -45,7 +41,7 @@ defmodule TdDdWeb.SystemControllerTest do
   end
 
   describe "create system" do
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     test "renders system when data is valid", %{conn: conn, swagger_schema: schema} do
       assert %{"data" => %{"id" => _id}} =
                conn
@@ -54,7 +50,7 @@ defmodule TdDdWeb.SystemControllerTest do
                |> json_response(:created)
     end
 
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     test "renders errors when data is invalid", %{conn: conn} do
       assert %{"errors" => _errors} =
                conn
@@ -64,7 +60,7 @@ defmodule TdDdWeb.SystemControllerTest do
   end
 
   describe "update system" do
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     test "renders system when data is valid", %{
       conn: conn,
       swagger_schema: schema,
@@ -84,7 +80,7 @@ defmodule TdDdWeb.SystemControllerTest do
              } = data
     end
 
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     test "renders errors when data is invalid", %{conn: conn, system: system} do
       assert %{"errors" => errors} =
                conn
@@ -96,14 +92,14 @@ defmodule TdDdWeb.SystemControllerTest do
   end
 
   describe "delete system" do
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     test "deletes chosen system", %{conn: conn, system: system} do
       assert conn
              |> delete(Routes.system_path(conn, :delete, system))
              |> response(:no_content)
     end
 
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     test "returns not_found if system does not exist", %{conn: conn} do
       assert %{"errors" => _errors} =
                conn
@@ -113,7 +109,7 @@ defmodule TdDdWeb.SystemControllerTest do
   end
 
   describe "get system structures" do
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     test "will filter structures by system", %{conn: conn, system: system} do
       ds = insert(:data_structure, system_id: system.id, external_id: "struc1")
       insert(:data_structure_version, data_structure_id: ds.id, name: ds.external_id)
@@ -130,7 +126,7 @@ defmodule TdDdWeb.SystemControllerTest do
       assert [%{"name" => "struc1"}] = data
     end
 
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     test "will retrieve only root structures", %{conn: conn, system: system} do
       ds = insert(:data_structure, system_id: system.id, external_id: "parent")
       parent = insert(:data_structure_version, data_structure_id: ds.id, name: ds.external_id)
@@ -154,7 +150,7 @@ defmodule TdDdWeb.SystemControllerTest do
       assert [%{"name" => "parent"}] = data
     end
 
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     test "will retrieve only root structures with multiple versions", %{
       conn: conn,
       system: system
@@ -183,7 +179,7 @@ defmodule TdDdWeb.SystemControllerTest do
       assert length(data) == 2
     end
 
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     test "will not break when structure has no versions", %{conn: conn, system: system} do
       insert(:data_structure, system_id: system.id, external_id: "parent")
 
@@ -193,10 +189,10 @@ defmodule TdDdWeb.SystemControllerTest do
                |> json_response(:ok)
     end
 
-    @tag authenticated_no_admin_user: "user"
+    @tag authenticated_user: "non_admin_user"
     test "will filter by permissions for non admin users", %{
       conn: conn,
-      user: %{id: user_id},
+      claims: %{user_id: user_id},
       system: %{id: system_id} = system
     } do
       structure = create_data_structure_and_permissions(user_id, "no_perms", false, system_id)

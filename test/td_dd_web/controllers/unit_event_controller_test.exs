@@ -3,7 +3,6 @@ defmodule TdDdWeb.UnitEventControllerTest do
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   setup_all do
-    start_supervised!(TdDdWeb.ApiServices.MockTdAuthService)
     start_supervised!(TdDd.Permissions.MockPermissionResolver)
     :ok
   end
@@ -33,7 +32,7 @@ defmodule TdDdWeb.UnitEventControllerTest do
   end
 
   describe "Unit Event Controller for non-admin users" do
-    @tag authenticated_no_admin_user: "some_user"
+    @tag authenticated_user: "some_user"
     test "GET /api/units/:name/events returns forbidden", %{
       conn: conn,
       unit: unit

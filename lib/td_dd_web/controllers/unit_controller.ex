@@ -20,9 +20,9 @@ defmodule TdDdWeb.UnitController do
   end
 
   def index(conn, _params) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(user, list(Unit))},
+    with {:can, true} <- {:can, can?(claims, list(Unit))},
          units <- Units.list_units(status: true) do
       render(conn, "index.json", units: units)
     end
@@ -35,9 +35,9 @@ defmodule TdDdWeb.UnitController do
   end
 
   def show(conn, %{"name" => name}) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(user, show(Unit))},
+    with {:can, true} <- {:can, can?(claims, show(Unit))},
          {:ok, %Units.Unit{} = unit} <- Units.get_by(name: name, status: true) do
       render(conn, "show.json", unit: unit)
     end
@@ -50,10 +50,10 @@ defmodule TdDdWeb.UnitController do
   end
 
   def create(conn, %{} = params) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
     attrs = attributes(params)
 
-    with {:can, true} <- {:can, can?(user, create(Unit))},
+    with {:can, true} <- {:can, can?(claims, create(Unit))},
          {:ok, unit} <- Units.create_unit(attrs) do
       render(conn, "show.json", unit: unit)
     end
@@ -66,10 +66,10 @@ defmodule TdDdWeb.UnitController do
   end
 
   def update(conn, %{"nodes" => nodes, "rels" => rels} = params) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
     attrs = attributes(params)
 
-    with {:can, true} <- {:can, can?(user, update(Unit))},
+    with {:can, true} <- {:can, can?(claims, update(Unit))},
          {:ok, %Units.Unit{} = unit} <- Units.replace_unit(attrs),
          {:ok, nodes_path} <- copy(nodes),
          {:ok, rels_path} <- copy(rels) do
@@ -85,9 +85,9 @@ defmodule TdDdWeb.UnitController do
   end
 
   def delete(conn, %{"name" => name} = params) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(user, delete(Unit))},
+    with {:can, true} <- {:can, can?(claims, delete(Unit))},
          {:ok, unit} <- Units.get_by(name: name),
          {:ok, _} <- Units.delete_unit(unit, logical: params["logical"] != "false") do
       send_resp(conn, :no_content, "")

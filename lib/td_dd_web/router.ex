@@ -11,7 +11,7 @@ defmodule TdDdWeb.Router do
   end
 
   pipeline :api_authorized do
-    plug(TdDd.Auth.CurrentUser)
+    plug(TdDd.Auth.CurrentResource)
     plug(Guardian.Plug.LoadResource)
     plug(TdDdWeb.SearchPermissionPlug)
   end

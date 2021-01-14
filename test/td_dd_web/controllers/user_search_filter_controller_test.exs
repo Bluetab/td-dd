@@ -1,12 +1,8 @@
 defmodule TdDdWeb.UserSearchFilterControllerTest do
   use TdDdWeb.ConnCase
 
-  alias TdDd.Permissions.MockPermissionResolver
-  alias TdDdWeb.ApiServices.MockTdAuthService
-
   setup_all do
-    start_supervised(MockPermissionResolver)
-    start_supervised(MockTdAuthService)
+    start_supervised(TdDd.Permissions.MockPermissionResolver)
     :ok
   end
 
@@ -33,7 +29,7 @@ defmodule TdDdWeb.UserSearchFilterControllerTest do
 
   describe "index by user" do
     @tag :admin_authenticated
-    test "lists current user user_search_filters", %{conn: conn, user: %{id: user_id}} do
+    test "lists current user user_search_filters", %{conn: conn, claims: %{user_id: user_id}} do
       insert(:user_search_filter, user_id: 1)
       insert(:user_search_filter, user_id: 2)
       insert(:user_search_filter, name: "a", user_id: user_id)

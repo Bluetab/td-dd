@@ -2,8 +2,6 @@ defmodule TdDdWeb.GroupController do
   use TdDdWeb, :controller
   use PhoenixSwagger
 
-  alias Jason, as: JSON
-  alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
   alias TdDd.Groups
   alias TdDd.Systems
   alias TdDdWeb.SwaggerDefinitions
@@ -28,15 +26,15 @@ defmodule TdDdWeb.GroupController do
   end
 
   def index(conn, %{"system_id" => system_external_id}) do
-    user = GuardianPlug.current_resource(conn)
+    %{is_admin: is_admin} = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, Map.get(user, :is_admin)},
+    with {:can, true} <- {:can, is_admin},
          system when not is_nil(system) <- Systems.get_by(external_id: system_external_id) do
       groups = Groups.list_by_system(system_external_id)
 
       conn
       |> put_resp_content_type("application/json", "utf-8")
-      |> send_resp(:ok, JSON.encode!(%{data: groups}))
+      |> send_resp(:ok, Jason.encode!(%{data: groups}))
     else
       {:can, false} -> {:can, false}
       nil -> {:error, :not_found}
@@ -58,9 +56,9 @@ defmodule TdDdWeb.GroupController do
   end
 
   def delete(conn, %{"system_id" => system_external_id, "id" => group}) do
-    user = GuardianPlug.current_resource(conn)
+    %{is_admin: is_admin} = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, Map.get(user, :is_admin)},
+    with {:can, true} <- {:can, is_admin},
          system when not is_nil(system) <- Systems.get_by(external_id: system_external_id),
          :ok <- Groups.delete(system_external_id, group) do
       send_resp(conn, :no_content, "")

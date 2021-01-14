@@ -3,8 +3,6 @@ defmodule TdDdWeb.RelationTypeControllerTest do
 
   alias TdDd.DataStructures.RelationType
   alias TdDd.DataStructures.RelationTypes
-  alias TdDd.Permissions.MockPermissionResolver
-  alias TdDdWeb.ApiServices.MockTdAuthService
 
   @create_attrs %{
     description: "some description",
@@ -16,11 +14,8 @@ defmodule TdDdWeb.RelationTypeControllerTest do
   }
   @invalid_attrs %{description: nil, name: nil}
 
-  @admin_user_name "app-admin"
-
   setup_all do
-    start_supervised(MockTdAuthService)
-    start_supervised(MockPermissionResolver)
+    start_supervised(TdDd.Permissions.MockPermissionResolver)
     :ok
   end
 
@@ -29,7 +24,7 @@ defmodule TdDdWeb.RelationTypeControllerTest do
   end
 
   describe "index" do
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     test "lists all relation_types", %{conn: conn} do
       assert %{"data" => data} =
                conn
@@ -41,7 +36,7 @@ defmodule TdDdWeb.RelationTypeControllerTest do
   end
 
   describe "create relation_type" do
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     test "renders relation_type when data is valid", %{conn: conn} do
       assert %{"data" => %{"id" => id}} =
                conn
@@ -60,7 +55,7 @@ defmodule TdDdWeb.RelationTypeControllerTest do
              } = data
     end
 
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     test "renders errors when data is invalid", %{conn: conn} do
       assert %{"errors" => errors} =
                conn
@@ -75,7 +70,7 @@ defmodule TdDdWeb.RelationTypeControllerTest do
   describe "update relation_type" do
     setup [:create_relation_type]
 
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     test "renders relation_type when data is valid", %{
       conn: conn,
       relation_type: %RelationType{id: id} = relation_type
@@ -99,7 +94,7 @@ defmodule TdDdWeb.RelationTypeControllerTest do
              } = data
     end
 
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     test "renders errors when data is invalid", %{conn: conn, relation_type: relation_type} do
       assert %{"errors" => errors} =
                conn
@@ -116,7 +111,7 @@ defmodule TdDdWeb.RelationTypeControllerTest do
   describe "delete relation_type" do
     setup [:create_relation_type]
 
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     test "deletes chosen relation_type", %{conn: conn, relation_type: relation_type} do
       assert conn
              |> delete(Routes.relation_type_path(conn, :delete, relation_type))

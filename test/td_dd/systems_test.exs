@@ -17,8 +17,8 @@ defmodule TdDd.SystemsTest do
   setup do
     on_exit(fn -> Redix.del!(@stream) end)
 
-    user = build(:user, is_admin: true)
-    [user: user, system: insert(:system)]
+    claims = build(:claims, role: "admin")
+    [claims: claims, system: insert(:system)]
   end
 
   describe "list_systems/0" do
@@ -38,56 +38,60 @@ defmodule TdDd.SystemsTest do
   end
 
   describe "create_system/2" do
-    test "creates a system with valid data", %{user: user} do
+    test "creates a system with valid data", %{claims: claims} do
       %{name: name, external_id: external_id} =
         params = :system |> build() |> Map.take([:external_id, :name])
 
-      assert {:ok, %{system: system}} = Systems.create_system(params, user)
+      assert {:ok, %{system: system}} = Systems.create_system(params, claims)
       assert %{external_id: ^external_id, name: ^name} = system
     end
 
-    test "emits an audit event", %{user: user} do
+    test "emits an audit event", %{claims: claims} do
       params = :system |> build() |> Map.take([:external_id, :name])
 
-      assert {:ok, %{audit: event_id}} = Systems.create_system(params, user)
+      assert {:ok, %{audit: event_id}} = Systems.create_system(params, claims)
       assert {:ok, [%{id: ^event_id}]} = Stream.read(:redix, @stream, transform: true)
     end
 
-    test "returns error changeset with invalid data", %{user: user} do
-      assert {:error, :system, %Ecto.Changeset{}, %{}} = Systems.create_system(%{}, user)
+    test "returns error changeset with invalid data", %{claims: claims} do
+      assert {:error, :system, %Ecto.Changeset{}, %{}} = Systems.create_system(%{}, claims)
     end
   end
 
   describe "update_system/3" do
-    test "updates the system with valid data", %{system: system, user: user} do
+    test "updates the system with valid data", %{system: system, claims: claims} do
       %{name: name, external_id: external_id} =
         params = :system |> build() |> Map.take([:external_id, :name])
 
-      assert {:ok, %{system: system}} = Systems.update_system(system, params, user)
+      assert {:ok, %{system: system}} = Systems.update_system(system, params, claims)
       assert %{external_id: ^external_id, name: ^name} = system
     end
 
-    test "emits an audit event", %{system: system, user: user} do
+    test "emits an audit event", %{system: system, claims: claims} do
       params = :system |> build() |> Map.take([:external_id, :name])
-      assert {:ok, %{audit: event_id}} = Systems.update_system(system, params, user)
-      assert {:ok, [%{id: ^event_id}]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+      assert {:ok, %{audit: event_id}} = Systems.update_system(system, params, claims)
+
+      assert {:ok, [%{id: ^event_id}]} =
+               Stream.range(:redix, @stream, event_id, event_id, transform: :range)
     end
 
-    test "returns error changeset with invalid data", %{system: system, user: user} do
+    test "returns error changeset with invalid data", %{system: system, claims: claims} do
       assert {:error, :system, %Ecto.Changeset{}, _} =
-               Systems.update_system(system, %{name: nil}, user)
+               Systems.update_system(system, %{name: nil}, claims)
     end
   end
 
   describe "delete_system/2" do
-    test "deletes the system", %{system: system, user: user} do
-      assert {:ok, %{system: system}} = Systems.delete_system(system, user)
+    test "deletes the system", %{system: system, claims: claims} do
+      assert {:ok, %{system: system}} = Systems.delete_system(system, claims)
       assert %{__meta__: %{state: :deleted}} = system
     end
 
-    test "emits an audit event", %{system: system, user: user} do
-      assert {:ok, %{audit: event_id}} = Systems.delete_system(system, user)
-      assert {:ok, [%{id: ^event_id}]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+    test "emits an audit event", %{system: system, claims: claims} do
+      assert {:ok, %{audit: event_id}} = Systems.delete_system(system, claims)
+
+      assert {:ok, [%{id: ^event_id}]} =
+               Stream.range(:redix, @stream, event_id, event_id, transform: :range)
     end
   end
 

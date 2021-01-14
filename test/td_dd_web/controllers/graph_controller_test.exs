@@ -4,20 +4,15 @@ defmodule TdDdWeb.GraphControllerTest do
   use TdDd.DataCase
 
   alias TdDd.Lineage
-  alias TdDd.Permissions.MockPermissionResolver
-  alias TdDdWeb.ApiServices.MockTdAuthService
-
-  @admin_user_name "app-admin"
 
   setup_all do
-    start_supervised(MockTdAuthService)
-    start_supervised(MockPermissionResolver)
+    start_supervised(TdDd.Permissions.MockPermissionResolver)
     start_supervised(Lineage)
     :ok
   end
 
   describe "GraphController" do
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     @tag contains: %{"foo" => ["bar", "baz"]}
     @tag depends: [{"bar", "baz"}]
     test "create returns the id, show returns the graph drawing", %{conn: conn} do
@@ -38,7 +33,7 @@ defmodule TdDdWeb.GraphControllerTest do
       assert [%{"id" => "bar"}, %{"id" => "baz"}] = data["resources"]
     end
 
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     @tag contains: %{"foo" => ["bar", "baz"]}
     @tag depends: [{"bar", "baz"}]
     test "csv returns csv content of a graph by id", %{conn: conn} do

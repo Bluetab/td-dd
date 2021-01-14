@@ -4,7 +4,6 @@ defmodule TdDdWeb.RelationTypeController do
 
   import Canada, only: [can?: 2]
 
-  alias Guardian.Plug, as: GuardianPlug
   alias TdDd.DataStructures.RelationType
   alias TdDd.DataStructures.RelationTypes
   alias TdDdWeb.SwaggerDefinitions
@@ -32,7 +31,11 @@ defmodule TdDdWeb.RelationTypeController do
     produces("application/json")
 
     parameters do
-      relation_type(:body, Schema.ref(:CreateRelationType), "Parameters used to create a relation type")
+      relation_type(
+        :body,
+        Schema.ref(:CreateRelationType),
+        "Parameters used to create a relation type"
+      )
     end
 
     response(200, "OK", Schema.ref(:RelationTypeResponse))
@@ -41,8 +44,9 @@ defmodule TdDdWeb.RelationTypeController do
   end
 
   def create(conn, %{"relation_type" => relation_type_params}) do
-    user = GuardianPlug.current_resource(conn)
-    with true <- can?(user, manage_relation_type(%RelationType{})),
+    claims = conn.assigns[:current_resource]
+
+    with true <- can?(claims, manage_relation_type(%RelationType{})),
          {:ok, %RelationType{} = relation_type} <-
            RelationTypes.create_relation_type(relation_type_params) do
       conn
@@ -55,6 +59,7 @@ defmodule TdDdWeb.RelationTypeController do
         |> put_status(:forbidden)
         |> put_view(ErrorView)
         |> render("403.json")
+
       error ->
         error
     end
@@ -83,7 +88,12 @@ defmodule TdDdWeb.RelationTypeController do
 
     parameters do
       id(:path, :integer, "Relation Type ID", required: true)
-      relation_type(:body, Schema.ref(:UpdateRelationType), "Parameters used to create a relation type")
+
+      relation_type(
+        :body,
+        Schema.ref(:UpdateRelationType),
+        "Parameters used to create a relation type"
+      )
     end
 
     response(200, "OK", Schema.ref(:RelationTypeResponse))
@@ -91,9 +101,10 @@ defmodule TdDdWeb.RelationTypeController do
   end
 
   def update(conn, %{"id" => id, "relation_type" => relation_type_params}) do
+    claims = conn.assigns[:current_resource]
     relation_type = RelationTypes.get_relation_type!(id)
-    user = GuardianPlug.current_resource(conn)
-    with true <- can?(user, manage_relation_type(%RelationType{})),
+
+    with true <- can?(claims, manage_relation_type(%RelationType{})),
          {:ok, %RelationType{} = relation_type} <-
            RelationTypes.update_relation_type(relation_type, relation_type_params) do
       render(conn, "show.json", relation_type: relation_type)
@@ -103,6 +114,7 @@ defmodule TdDdWeb.RelationTypeController do
         |> put_status(:forbidden)
         |> put_view(ErrorView)
         |> render("403.json")
+
       error ->
         error
     end

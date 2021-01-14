@@ -1,7 +1,7 @@
 defmodule TdDd.Canada.Abilities do
   @moduledoc false
   alias TdCache.Link
-  alias TdDd.Accounts.User
+  alias TdDd.Auth.Claims
   alias TdDd.Canada.DataStructureAbilities
   alias TdDd.Canada.DataStructureTypeAbilities
   alias TdDd.Canada.LinkAbilities
@@ -10,40 +10,40 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.Lineage.Units.Node
 
-  defimpl Canada.Can, for: User do
+  defimpl Canada.Can, for: Claims do
     # administrator is superpowerful
-    def can?(%User{is_admin: true}, _action, _data_structure), do: true
+    def can?(%Claims{is_admin: true}, _action, _data_structure), do: true
 
-    def can?(%User{}, _action, nil), do: false
+    def can?(%Claims{}, _action, nil), do: false
 
-    def can?(%User{} = user, action, %Link{} = link) do
-      LinkAbilities.can?(user, action, link)
+    def can?(%Claims{} = claims, action, %Link{} = link) do
+      LinkAbilities.can?(claims, action, link)
     end
 
-    def can?(%User{} = user, :create_link, %{data_structure: data_structure}) do
-      LinkAbilities.can?(user, :create_link, data_structure)
+    def can?(%Claims{} = claims, :create_link, %{data_structure: data_structure}) do
+      LinkAbilities.can?(claims, :create_link, data_structure)
     end
 
-    def can?(%User{} = _user, _action, Unit), do: false
+    def can?(%Claims{}, _action, Unit), do: false
 
-    def can?(%User{} = user, action, %DataStructure{} = data_structure) do
-      DataStructureAbilities.can?(user, action, data_structure)
+    def can?(%Claims{} = claims, action, %DataStructure{} = data_structure) do
+      DataStructureAbilities.can?(claims, action, data_structure)
     end
 
-    def can?(%User{} = user, action, %{data_structure: data_structure}) do
-      DataStructureAbilities.can?(user, action, data_structure)
+    def can?(%Claims{} = claims, action, %{data_structure: data_structure}) do
+      DataStructureAbilities.can?(claims, action, data_structure)
     end
 
-    def can?(%User{} = user, action, %DataStructureType{} = data_structure_type) do
-      DataStructureTypeAbilities.can?(user, action, data_structure_type)
+    def can?(%Claims{} = claims, action, %DataStructureType{} = data_structure_type) do
+      DataStructureTypeAbilities.can?(claims, action, data_structure_type)
     end
 
-    def can?(%User{} = user, action, %Node{} = node) do
-      UnitAbilities.can?(user, action, node)
+    def can?(%Claims{} = claims, action, %Node{} = node) do
+      UnitAbilities.can?(claims, action, node)
     end
 
-    def can?(%User{} = user, action, domain_id) do
-      DataStructureAbilities.can?(user, action, domain_id)
+    def can?(%Claims{} = claims, action, domain_id) do
+      DataStructureAbilities.can?(claims, action, domain_id)
     end
   end
 end

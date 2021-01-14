@@ -8,12 +8,9 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Lineage.GraphData
-  alias TdDd.Permissions.MockPermissionResolver
-  alias TdDdWeb.ApiServices.MockTdAuthService
 
   setup_all do
-    start_supervised(MockTdAuthService)
-    start_supervised(MockPermissionResolver)
+    start_supervised(TdDd.Permissions.MockPermissionResolver)
     start_supervised(GraphData)
     :ok
   end
@@ -69,12 +66,10 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     end)
   end
 
-  @admin_user_name "app-admin"
-
   describe "show" do
     setup [:create_structure_hierarchy]
 
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     test "renders a data structure with children", %{
       conn: conn,
       structure: %DataStructure{id: id}
@@ -89,7 +84,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       assert Enum.all?(children, &(Map.get(&1, "order") == 1))
     end
 
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     test "renders a data structure with parents", %{
       conn: conn,
       structure: %DataStructure{id: id}
@@ -102,7 +97,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       assert %{"parents" => [_parent]} = data
     end
 
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     test "renders a data structure with siblings", %{
       conn: conn,
       child_structures: [%DataStructure{id: id} | _]
@@ -115,7 +110,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       assert %{"siblings" => [_, _]} = data
     end
 
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     test "renders a data structure with metadata", %{
       conn: conn,
       structure: %DataStructure{id: id}
@@ -128,7 +123,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       assert %{"foo" => "bar"} = metadata
     end
 
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     test "renders a data structure by data_structure_version_id", %{
       conn: conn,
       structure_version: %DataStructureVersion{id: id}

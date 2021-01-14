@@ -3,7 +3,7 @@ defmodule TdDd.Factory do
   use ExMachina.Ecto, repo: TdDd.Repo
   use TdDfLib.TemplateFactory
 
-  alias TdDd.Accounts.User
+  alias TdDd.Auth.Claims
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureType
@@ -15,12 +15,15 @@ defmodule TdDd.Factory do
   alias TdDd.Systems.System
   alias TdDd.UserSearchFilters.UserSearchFilter
 
-  def user_factory do
-    %User{
-      id: sequence(:user_id, & &1),
+  def claims_factory(attrs) do
+    %Claims{
+      user_id: sequence(:user_id, & &1),
       user_name: sequence("user_name"),
-      is_admin: true
+      role: "admin",
+      jti: sequence("jti"),
+      is_admin: Map.get(attrs, :role) == "admin"
     }
+    |> merge_attributes(attrs)
   end
 
   def data_structure_factory(attrs) do

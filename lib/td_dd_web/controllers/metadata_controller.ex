@@ -6,7 +6,6 @@ defmodule TdDdWeb.MetadataController do
   alias Jason, as: JSON
   alias Plug.Upload
   alias TdCache.TaxonomyCache
-  alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
   alias TdDd.DataStructures
   alias TdDd.Loader.Worker
   alias TdDd.Systems
@@ -16,9 +15,9 @@ defmodule TdDdWeb.MetadataController do
   def upload_by_system(conn, %{"system_id" => external_id} = params) do
     alias TdDd.Systems.System
 
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can_upload?(user, params)},
+    with {:can, true} <- {:can, can_upload?(claims, params)},
          %System{id: system_id} <- Systems.get_by(external_id: external_id) do
       do_upload(conn, params, system_id: system_id)
       send_resp(conn, :accepted, "")
@@ -67,9 +66,9 @@ defmodule TdDdWeb.MetadataController do
         conn,
         %{"external_id" => external_id, "parent_external_id" => parent_external_id} = params
       ) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can_upload?(user, params)},
+    with {:can, true} <- {:can, can_upload?(claims, params)},
          parent when not is_nil(parent) <-
            DataStructures.find_data_structure(%{external_id: parent_external_id}),
          {:ok, _} <-
@@ -86,9 +85,9 @@ defmodule TdDdWeb.MetadataController do
   end
 
   def upload(conn, %{"external_id" => external_id} = params) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can_upload?(user, params)},
+    with {:can, true} <- {:can, can_upload?(claims, params)},
          {:ok, _} <- do_upload(conn, params, external_id: external_id),
          dsv <- DataStructures.get_latest_version_by_external_id(external_id) do
       render(conn, "show.json", data_structure_version: dsv)
@@ -96,9 +95,9 @@ defmodule TdDdWeb.MetadataController do
   end
 
   def upload(conn, params) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
 
-    if can_upload?(user, params) do
+    if can_upload?(claims, params) do
       do_upload(conn, params)
       send_resp(conn, :accepted, "")
     else
@@ -132,18 +131,18 @@ defmodule TdDdWeb.MetadataController do
   end
 
   defp load(conn, structures_file, fields_file, relations_file, opts) do
-    user_id = GuardianPlug.current_resource(conn).id
+    %{user_id: user_id} = conn.assigns[:current_resource]
     ts = DateTime.truncate(DateTime.utc_now(), :second)
     audit_fields = %{ts: ts, last_change_by: user_id}
     Worker.load(structures_file, fields_file, relations_file, audit_fields, opts)
   end
 
-  defp can_upload?(user, %{"domain" => external_id}) do
+  defp can_upload?(claims, %{"domain" => external_id}) do
     domain_id = Map.get(TaxonomyCache.get_domain_external_id_to_id_map(), external_id)
-    can?(user, upload(domain_id))
+    can?(claims, upload(domain_id))
   end
 
-  defp can_upload?(user, _params), do: can?(user, upload(DataStructure))
+  defp can_upload?(claims, _params), do: can?(claims, upload(DataStructure))
 
   defp with_domain(opts, params) do
     domain = Map.get(params, "domain")

@@ -2,7 +2,7 @@ defmodule TdDd.DataStructures.Search do
   @moduledoc """
   Helper module to construct business concept search queries.
   """
-  alias TdDd.Accounts.User
+  alias TdDd.Auth.Claims
   alias TdDd.Permissions
   alias TdDd.Search
   alias TdDd.Search.Aggregations
@@ -10,18 +10,18 @@ defmodule TdDd.DataStructures.Search do
 
   require Logger
 
-  def get_filter_values(user, permission, params)
+  def get_filter_values(claims, permission, params)
 
-  def get_filter_values(%User{is_admin: true}, _permission, params) do
+  def get_filter_values(%Claims{is_admin: true}, _permission, params) do
     filter_clause = create_filters(params)
     query = create_query(%{}, filter_clause)
     search = %{query: query, aggs: Aggregations.aggregation_terms()}
     Search.get_filters(search)
   end
 
-  def get_filter_values(%User{} = user, permission, params) do
+  def get_filter_values(%Claims{} = claims, permission, params) do
     permissions =
-      user
+      claims
       |> Permissions.get_domain_permissions()
       |> Enum.filter(&Enum.member?(&1.permissions, permission))
 
@@ -38,7 +38,7 @@ defmodule TdDd.DataStructures.Search do
     Search.get_filters(search)
   end
 
-  def get_aggregations_values(%User{is_admin: true}, _permission, params, agg_terms) do
+  def get_aggregations_values(%Claims{is_admin: true}, _permission, params, agg_terms) do
     filter_clause = create_filters(params)
     query = create_query(%{}, filter_clause)
     search = %{size: 0, query: query, aggs: agg_terms}
@@ -48,9 +48,9 @@ defmodule TdDd.DataStructures.Search do
     |> get_aggregations_results(agg_terms)
   end
 
-  def get_aggregations_values(%User{} = user, permission, params, agg_terms) do
+  def get_aggregations_values(%Claims{} = claims, permission, params, agg_terms) do
     permissions =
-      user
+      claims
       |> Permissions.get_domain_permissions()
       |> Enum.filter(&Enum.member?(&1.permissions, permission))
 
@@ -126,9 +126,9 @@ defmodule TdDd.DataStructures.Search do
     |> transform_response()
   end
 
-  def search_data_structures(params, user, permission, page \\ 0, size \\ 50)
+  def search_data_structures(params, claims, permission, page \\ 0, size \\ 50)
 
-  def search_data_structures(params, %User{is_admin: true}, _permission, page, size) do
+  def search_data_structures(params, %Claims{is_admin: true}, _permission, page, size) do
     filters = create_filters(params)
     query = create_query(params, filters)
 
@@ -145,9 +145,9 @@ defmodule TdDd.DataStructures.Search do
   end
 
   # Non-admin search
-  def search_data_structures(params, %User{} = user, permission, page, size) do
+  def search_data_structures(params, %Claims{} = claims, permission, page, size) do
     permissions =
-      user
+      claims
       |> Permissions.get_domain_permissions()
       |> Enum.filter(&Enum.member?(&1.permissions, permission))
 
@@ -207,9 +207,10 @@ defmodule TdDd.DataStructures.Search do
   end
 
   def create_filters(%{without: without_fields} = params) do
-    filters = params
-    |> Map.delete(:without)
-    |> create_filters()
+    filters =
+      params
+      |> Map.delete(:without)
+      |> create_filters()
 
     without_fields
     |> Enum.map(&%{bool: %{must_not: %{exists: %{field: &1}}}})
