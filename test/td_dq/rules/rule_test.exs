@@ -10,7 +10,7 @@ defmodule TdDq.Rules.RuleTest do
     {:ok, _} = TemplateCache.put(template)
     on_exit(fn -> TemplateCache.delete(template_id) end)
 
-    [template_name: template_name, user: build(:user)]
+    [template_name: template_name]
   end
 
   describe "changeset/1" do

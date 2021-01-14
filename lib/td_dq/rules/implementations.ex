@@ -8,6 +8,7 @@ defmodule TdDq.Rules.Implementations do
   alias Ecto.Multi
   alias TdCache.StructureCache
   alias TdCache.SystemCache
+  alias TdDq.Auth.Claims
   alias TdDq.Cache.ImplementationLoader
   alias TdDq.Cache.RuleLoader
   alias TdDq.Repo
@@ -80,16 +81,15 @@ defmodule TdDq.Rules.Implementations do
 
   ## Examples
 
-      iex> update_implementation(implementation, %{field: new_value}, user)
+      iex> update_implementation(implementation, %{field: new_value}, claims)
       {:ok, %Implementation{}}
 
-      iex> update_implementation(implementation, %{field: bad_value}, user)
+      iex> update_implementation(implementation, %{field: bad_value}, claims)
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_implementation(%Implementation{} = implementation, params, user \\ %{}) do
+  def update_implementation(%Implementation{} = implementation, params, %Claims{user_id: user_id}) do
     changeset = Implementation.changeset(implementation, params)
-    user_id = Map.get(user, :id)
 
     Multi.new()
     |> Multi.update(:implementation, changeset)

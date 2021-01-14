@@ -250,9 +250,10 @@ defmodule TdDq.Rules.ImplementationsTest do
     end
   end
 
-  describe "update_implementation/2" do
+  describe "update_implementation/3" do
     test "with valid data updates the implementation" do
       implementation = insert(:implementation)
+      claims = build(:claims)
 
       validations = [
         %{
@@ -272,7 +273,7 @@ defmodule TdDq.Rules.ImplementationsTest do
         |> Map.Helpers.stringify_keys()
 
       assert {:ok, %{implementation: updated_implementation}} =
-               Implementations.update_implementation(implementation, update_attrs)
+               Implementations.update_implementation(implementation, update_attrs, claims)
 
       assert %Implementation{} = updated_implementation
       assert updated_implementation.rule_id == implementation.rule_id
@@ -294,10 +295,11 @@ defmodule TdDq.Rules.ImplementationsTest do
 
     test "with invalid data returns error changeset" do
       implementation = insert(:implementation)
+      claims = build(:claims)
       udpate_attrs = Map.put(%{}, :dataset, nil)
 
       assert {:error, :implementation, %Changeset{}, _} =
-               Implementations.update_implementation(implementation, udpate_attrs)
+               Implementations.update_implementation(implementation, udpate_attrs, claims)
     end
   end
 

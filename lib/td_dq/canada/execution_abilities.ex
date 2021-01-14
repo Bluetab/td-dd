@@ -3,16 +3,16 @@ defmodule TdDq.Canada.ExecutionAbilities do
   Permissions for rule executions and execution groups.
   """
 
-  alias TdDq.Accounts.User
+  alias TdDq.Auth.Claims
   alias TdDq.Executions.Execution
   alias TdDq.Executions.Group
 
   import TdDq.Permissions, only: [authorized?: 2]
 
-  def can?(%User{} = user, :list, Execution), do: authorized?(user, :view_quality_rule)
-  def can?(%User{} = user, :list, Group), do: authorized?(user, :view_quality_rule)
-  def can?(%User{} = user, :show, Group), do: authorized?(user, :view_quality_rule)
+  def can?(%Claims{} = claims, :list, Execution), do: authorized?(claims, :view_quality_rule)
+  def can?(%Claims{} = claims, :list, Group), do: authorized?(claims, :view_quality_rule)
+  def can?(%Claims{} = claims, :show, Group), do: authorized?(claims, :view_quality_rule)
 
-  def can?(%User{} = user, :create, Group),
-    do: authorized?(user, :execute_quality_rule_implementations)
+  def can?(%Claims{} = claims, :create, Group),
+    do: authorized?(claims, :execute_quality_rule_implementations)
 end

@@ -28,9 +28,9 @@ defmodule TdDqWeb.ImplementationFilterController do
   end
 
   def search(conn, params) do
-    user = conn.assigns[:current_resource]
+    claims = conn.assigns[:current_resource]
     params = Map.put(params, :without, ["deleted_at"])
-    filters = Search.get_filter_values(user, params, :implementations)
+    filters = Search.get_filter_values(claims, params, :implementations)
     render(conn, "show.json", filters: filters)
   end
 end

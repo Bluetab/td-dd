@@ -1,14 +1,13 @@
 defmodule TdDqWeb.Authentication do
   @moduledoc """
-  This module defines the functions required to
-  add auth headers to requests
+  This module defines the functions required to add auth headers to requests
   """
+  import Plug.Conn
+
   alias Phoenix.ConnTest
-  alias TdDq.Accounts.User
+  alias TdDq.Auth.Claims
   alias TdDq.Auth.Guardian
   alias TdDq.Permissions.MockPermissionResolver
-  import Plug.Conn
-  @headers {"Content-type", "application/json"}
 
   def put_auth_headers(conn, jwt) do
     conn
@@ -16,11 +15,15 @@ defmodule TdDqWeb.Authentication do
     |> put_req_header("authorization", "Bearer #{jwt}")
   end
 
-  def create_user_auth_conn(user) do
-    {:ok, jwt, full_claims} = Guardian.encode_and_sign(user)
-    conn = ConnTest.build_conn()
-    conn = put_auth_headers(conn, jwt)
-    {:ok, %{conn: conn, jwt: jwt, claims: full_claims, user: user}}
+  def create_user_auth_conn(%{role: role} = claims) do
+    {:ok, jwt, full_claims} = Guardian.encode_and_sign(claims, %{role: role})
+    {:ok, claims} = Guardian.resource_from_claims(full_claims)
+
+    conn =
+      ConnTest.build_conn()
+      |> put_auth_headers(jwt)
+
+    {:ok, %{conn: conn, jwt: jwt, claims: claims}}
   end
 
   def create_user_auth_conn(user, role) do
@@ -35,16 +38,20 @@ defmodule TdDqWeb.Authentication do
     {:ok, resp}
   end
 
-  def get_header(token) do
-    [@headers, {"authorization", "Bearer #{token}"}]
+  def create_claims(user_name, opts \\ []) do
+    user_id = :rand.uniform(100_000)
+    role = Keyword.get(opts, :role, "user")
+    is_admin = role === "admin"
+
+    %Claims{
+      user_id: user_id,
+      user_name: user_name,
+      role: role,
+      is_admin: is_admin
+    }
   end
 
-  def create_user(user_name, opts \\ []) do
-    is_admin = Keyword.get(opts, :is_admin, false)
-    %TdDq.Accounts.User{id: :rand.uniform(100_000), is_admin: is_admin, user_name: user_name}
-  end
-
-  def build_user_token(%User{} = user) do
+  def build_user_token(%Claims{} = user) do
     case Guardian.encode_and_sign(user) do
       {:ok, jwt, _full_claims} -> jwt
       _ -> raise "Problems encoding and signing a user"
@@ -52,11 +59,9 @@ defmodule TdDqWeb.Authentication do
   end
 
   def build_user_token(user_name, opts \\ []) when is_binary(user_name) do
-    build_user_token(create_user(user_name, opts))
-  end
-
-  def get_user_token(user_name) do
-    build_user_token(user_name, is_admin: user_name == "app-admin")
+    user_name
+    |> create_claims(opts)
+    |> build_user_token()
   end
 
   defp register_token(token) do
@@ -68,7 +73,7 @@ defmodule TdDqWeb.Authentication do
     token
   end
 
-  defp create_acl_entry(%{id: user_id}, role_name) do
+  defp create_acl_entry(%Claims{user_id: user_id}, role_name) do
     MockPermissionResolver.create_acl_entry(%{
       principal_id: user_id,
       principal_type: "user",

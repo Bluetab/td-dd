@@ -31,9 +31,9 @@ defmodule TdDqWeb.RuleResultController do
   end
 
   def delete(conn, %{"id" => id}) do
-    with user <- conn.assigns[:current_resource],
+    with claims <- conn.assigns[:current_resource],
          rule_result <- RuleResults.get_rule_result(id),
-         {:can, true} <- {:can, can?(user, delete(rule_result))},
+         {:can, true} <- {:can, can?(claims, delete(rule_result))},
          rule <-
            Rules.get_rule_by_implementation_key(rule_result.implementation_key, deleted: true),
          {:ok, _rule_result} <- RuleResults.delete_rule_result(rule_result, rule) do

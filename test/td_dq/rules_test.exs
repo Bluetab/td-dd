@@ -17,7 +17,7 @@ defmodule TdDq.RulesTest do
     start_supervised(MockRelationCache)
     start_supervised(IndexWorker)
     start_supervised(RuleLoader)
-    [user: build(:user)]
+    [claims: build(:claims)]
   end
 
   setup do
@@ -40,52 +40,52 @@ defmodule TdDq.RulesTest do
   end
 
   describe "create_rule/2" do
-    test "creates a rule with valid data", %{user: user} do
+    test "creates a rule with valid data", %{claims: claims} do
       params = string_params_for(:rule)
-      assert {:ok, %{rule: _rule}} = Rules.create_rule(params, user)
+      assert {:ok, %{rule: _rule}} = Rules.create_rule(params, claims)
     end
 
-    test "publishes an audit event", %{user: user} do
+    test "publishes an audit event", %{claims: claims} do
       params = string_params_for(:rule)
-      assert {:ok, %{audit: event_id}} = Rules.create_rule(params, user)
+      assert {:ok, %{audit: event_id}} = Rules.create_rule(params, claims)
 
       assert {:ok, [%{id: ^event_id}]} =
                Stream.range(:redix, @stream, event_id, event_id, transform: :range)
     end
 
-    test "returns error and changeset if changeset is invalid", %{user: user} do
+    test "returns error and changeset if changeset is invalid", %{claims: claims} do
       params = string_params_for(:rule, name: nil)
-      assert {:error, :rule, %Ecto.Changeset{}, _} = Rules.create_rule(params, user)
+      assert {:error, :rule, %Ecto.Changeset{}, _} = Rules.create_rule(params, claims)
     end
   end
 
   describe "update_rule/3" do
-    test "updates rule if changes are valid", %{user: user} do
+    test "updates rule if changes are valid", %{claims: claims} do
       rule = insert(:rule)
       params = %{"name" => "New name", "description" => %{"document" => "New description"}}
-      assert {:ok, %{rule: _rule}} = Rules.update_rule(rule, params, user)
+      assert {:ok, %{rule: _rule}} = Rules.update_rule(rule, params, claims)
     end
 
-    test "publishes an audit event", %{user: user} do
+    test "publishes an audit event", %{claims: claims} do
       rule = insert(:rule)
       params = %{"name" => "New name"}
-      assert {:ok, %{audit: event_id}} = Rules.update_rule(rule, params, user)
+      assert {:ok, %{audit: event_id}} = Rules.update_rule(rule, params, claims)
 
       assert {:ok, [%{id: ^event_id}]} =
                Stream.range(:redix, @stream, event_id, event_id, transform: :range)
     end
 
-    test "returns error and changeset if changeset is invalid", %{user: user} do
+    test "returns error and changeset if changeset is invalid", %{claims: claims} do
       rule = insert(:rule)
       params = %{name: nil}
-      assert {:error, :rule, %Ecto.Changeset{}, _} = Rules.update_rule(rule, params, user)
+      assert {:error, :rule, %Ecto.Changeset{}, _} = Rules.update_rule(rule, params, claims)
     end
   end
 
   describe "rule" do
-    test "delete_rule/1 deletes the rule", %{user: user} do
+    test "delete_rule/1 deletes the rule", %{claims: claims} do
       rule = insert(:rule)
-      assert {:ok, %{rule: rule}} = Rules.delete_rule(rule, user)
+      assert {:ok, %{rule: rule}} = Rules.delete_rule(rule, claims)
       assert %{__meta__: %{state: :deleted}} = rule
     end
 

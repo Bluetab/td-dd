@@ -3,7 +3,7 @@ defmodule TdDqWeb.SearchController do
 
   import Canada, only: [can?: 2]
 
-  alias TdDq.Accounts.User
+  alias TdDq.Auth.Claims
   alias TdDq.Rules.Implementations.Implementation
   alias TdDq.Rules.Search
   alias TdDq.Search.IndexWorker
@@ -47,8 +47,8 @@ defmodule TdDqWeb.SearchController do
   def search_rules(conn, params) do
     page = params |> Map.get("page", 0)
     size = params |> Map.get("size", 20)
-    user = conn.assigns[:current_resource]
-    manage_permission = can?(user, manage(%{"resource_type" => "rule"}))
+    claims = conn.assigns[:current_resource]
+    manage_permission = can?(claims, manage(%{"resource_type" => "rule"}))
     user_permissions = %{manage_quality_rules: manage_permission}
 
     %{
@@ -58,7 +58,7 @@ defmodule TdDqWeb.SearchController do
     } =
       params
       |> Map.drop(["page", "size"])
-      |> Search.search(user, page, size)
+      |> Search.search(claims, page, size)
 
     conn
     |> put_resp_header("x-total-count", "#{total}")
@@ -80,7 +80,7 @@ defmodule TdDqWeb.SearchController do
   def search_implementations(conn, params) do
     page = params |> Map.get("page", 0)
     size = params |> Map.get("size", 20)
-    user = conn.assigns[:current_resource]
+    claims = conn.assigns[:current_resource]
 
     %{
       results: implementations,
@@ -90,30 +90,30 @@ defmodule TdDqWeb.SearchController do
       params
       |> Map.put(:without, ["deleted_at"])
       |> Map.drop(["page", "size"])
-      |> Search.search(user, page, size, :implementations)
+      |> Search.search(claims, page, size, :implementations)
 
     conn
     |> put_resp_header("x-total-count", "#{total}")
     |> render("search.json",
       implementations: implementations,
       filters: aggregations,
-      user_permissions: get_user_permissions(user, implementations)
+      user_permissions: get_user_permissions(claims, implementations)
     )
   end
 
-  defp get_user_permissions(%User{is_admin: true}, _implementations),
+  defp get_user_permissions(%Claims{is_admin: true}, _implementations),
     do: %{manage: true, execute: true}
 
-  defp get_user_permissions(user, implementations) do
-    manage? = can?(user, manage(Implementation))
-    execute? = Enum.any?(implementations, &can_execute?(user, &1))
+  defp get_user_permissions(%Claims{} = claims, implementations) do
+    manage? = can?(claims, manage(Implementation))
+    execute? = Enum.any?(implementations, &can_execute?(claims, &1))
 
     %{manage: manage?, execute: execute?}
   end
 
-  defp can_execute?(user, implementation) do
+  defp can_execute?(%Claims{} = claims, implementation) do
     can?(
-      user,
+      claims,
       execute(%{
         "business_concept_id" => Map.get(implementation, :business_concept_id),
         "resource_type" => "implementation"

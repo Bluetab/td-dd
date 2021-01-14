@@ -3,6 +3,7 @@ defmodule TdDqWeb.ExecutionGroupController do
 
   import Canada, only: [can?: 2]
 
+  alias TdDq.Auth.Claims
   alias TdDq.Executions
   alias TdDq.Executions.Group
   alias TdDq.Rules.Implementations.Search
@@ -19,9 +20,9 @@ defmodule TdDqWeb.ExecutionGroupController do
   end
 
   def index(conn, _params) do
-    user = conn.assigns[:current_resource]
+    claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(user, list(Group))},
+    with {:can, true} <- {:can, can?(claims, list(Group))},
          groups <- Executions.list_groups() do
       render(conn, "index.json", execution_groups: groups)
     end
@@ -34,9 +35,9 @@ defmodule TdDqWeb.ExecutionGroupController do
   end
 
   def show(conn, %{} = params) do
-    user = conn.assigns[:current_resource]
+    claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(user, show(Group))},
+    with {:can, true} <- {:can, can?(claims, show(Group))},
          %Group{} = group <-
            Executions.get_group(params, preload: [executions: [:implementation, :rule, :result]]) do
       render(conn, "show.json", execution_group: group)
@@ -50,10 +51,10 @@ defmodule TdDqWeb.ExecutionGroupController do
   end
 
   def create(conn, %{} = params) do
-    user = conn.assigns[:current_resource]
+    claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(user, create(Group))},
-         %{} = creation_params <- creation_params(user, params),
+    with {:can, true} <- {:can, can?(claims, create(Group))},
+         %{} = creation_params <- creation_params(claims, params),
          {:ok, %{group: group}} <- Executions.create_group(creation_params) do
       conn
       |> put_status(:created)
@@ -62,10 +63,10 @@ defmodule TdDqWeb.ExecutionGroupController do
     end
   end
 
-  defp creation_params(%{id: user_id} = user, %{} = params) do
+  defp creation_params(%Claims{user_id: user_id} = claims, %{} = params) do
     execution_params =
       params
-      |> Search.search_executable(user)
+      |> Search.search_executable(claims)
       |> Enum.map(&Map.take(&1, [:id, :structure_aliases]))
       |> Enum.map(fn %{id: id} = params ->
         params |> Map.delete(:id) |> Map.put(:implementation_id, id)
@@ -77,7 +78,7 @@ defmodule TdDqWeb.ExecutionGroupController do
   end
 
   defp creation_params(
-         %{id: user_id} = _user,
+         %Claims{user_id: user_id},
          %{"implementation_ids" => implementation_id} = params
        ) do
     execution_params = Enum.map(implementation_id, &%{"implementation_id" => &1})
@@ -88,5 +89,5 @@ defmodule TdDqWeb.ExecutionGroupController do
     |> Map.put("created_by_id", user_id)
   end
 
-  defp creation_params(_user, %{} = params), do: params
+  defp creation_params(_claims, %{} = params), do: params
 end

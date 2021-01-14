@@ -31,7 +31,10 @@ defmodule TdDqWeb.SearchControllerTest do
     end
 
     @tag authenticated_user: "not_an_admin"
-    test "list implementations depending on permissions", %{conn: conn, user: %{id: user_id}} do
+    test "list implementations depending on permissions", %{
+      conn: conn,
+      claims: %{user_id: user_id}
+    } do
       concept_1 = "1"
       concept_2 = "2"
       domain1_view = 1

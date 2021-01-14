@@ -9,6 +9,7 @@ defmodule TdDq.Rules do
   alias TdCache.ConceptCache
   alias TdCache.TemplateCache
   alias TdDfLib.Format
+  alias TdDq.Auth.Claims
   alias TdDq.Cache.RuleLoader
   alias TdDq.Repo
   alias TdDq.Rules.Audit
@@ -130,7 +131,7 @@ defmodule TdDq.Rules do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_rule(%{} = params, %{id: user_id} = _user) do
+  def create_rule(%{} = params, %Claims{user_id: user_id}) do
     changeset = Rule.changeset(params)
 
     Multi.new()
@@ -159,7 +160,7 @@ defmodule TdDq.Rules do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_rule(%Rule{} = rule, %{} = params, %{id: user_id} = _user) do
+  def update_rule(%Rule{} = rule, %{} = params, %Claims{user_id: user_id}) do
     changeset =
       rule
       |> Repo.preload(:rule_implementations)
@@ -191,7 +192,7 @@ defmodule TdDq.Rules do
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_rule(%Rule{} = rule, %{id: user_id}) do
+  def delete_rule(%Rule{} = rule, %Claims{user_id: user_id}) do
     changeset = Rule.delete_changeset(rule)
 
     Multi.new()
