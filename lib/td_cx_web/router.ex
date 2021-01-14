@@ -12,7 +12,7 @@ defmodule TdCxWeb.Router do
   end
 
   pipeline :api_authorized do
-    plug TdCx.Auth.CurrentUser
+    plug TdCx.Auth.CurrentResource
     plug Guardian.Plug.LoadResource
   end
 
@@ -22,7 +22,7 @@ defmodule TdCxWeb.Router do
 
   scope "/api", TdCxWeb do
     pipe_through :api
-    get  "/ping", PingController, :ping
+    get "/ping", PingController, :ping
     post "/echo", EchoController, :echo
   end
 
@@ -37,7 +37,10 @@ defmodule TdCxWeb.Router do
       resources("/events", EventController, only: [:index, :create])
     end
 
-    resources "/configurations", ConfigurationController, except: [:new, :edit], param: "external_id"
+    resources "/configurations", ConfigurationController,
+      except: [:new, :edit],
+      param: "external_id"
+
     post("/jobs/search", JobController, :search)
     post("/job_filters/search", JobFilterController, :search)
     get("/jobs/search/reindex_all", SearchController, :reindex_all)
@@ -50,21 +53,18 @@ defmodule TdCxWeb.Router do
         version: Application.spec(:td_cx, :vsn),
         title: "Truedat Connector Management Service"
       },
-      securityDefinitions:
-        %{
-          bearer:
-          %{
-            type: "apiKey",
-            name: "Authorization",
-            in: "header",
-          }
+      securityDefinitions: %{
+        bearer: %{
+          type: "apiKey",
+          name: "Authorization",
+          in: "header"
+        }
       },
       security: [
         %{
-         bearer: []
+          bearer: []
         }
       ]
     }
   end
-
 end

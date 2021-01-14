@@ -3,12 +3,12 @@ defmodule TdCx.Jobs.Search do
   Helper module to construct job search queries.
   """
 
-  alias TdCx.Accounts.User
+  alias TdCx.Auth.Claims
   alias TdCx.Search
   alias TdCx.Search.Aggregations
   alias TdCx.Sources.Query
 
-  def get_filter_values(%User{is_admin: true}, params) do
+  def get_filter_values(%Claims{is_admin: true}, params) do
     filter_clause = create_filters(params)
     query = %{} |> create_query(filter_clause)
     search = %{query: query, aggs: Aggregations.aggregation_terms()}
@@ -17,10 +17,10 @@ defmodule TdCx.Jobs.Search do
 
   def get_filter_values(_, _), do: %{}
 
-  def search_jobs(params, user, page \\ 0, size \\ 50)
+  def search_jobs(params, claims, page \\ 0, size \\ 50)
 
   # Admin user search, no filters applied
-  def search_jobs(params, %User{is_admin: true}, page, size) do
+  def search_jobs(params, %Claims{is_admin: true}, page, size) do
     filter_clause = create_filters(params)
 
     query =
@@ -41,7 +41,7 @@ defmodule TdCx.Jobs.Search do
     |> do_search
   end
 
-  def search_jobs(_params, _user, _page, _size),
+  def search_jobs(_params, _claims, _page, _size),
     do: %{results: [], aggregations: %{}, total: 0}
 
   defp create_filters(%{"filters" => filters}) do

@@ -29,10 +29,10 @@ defmodule TdCxWeb.SourceController do
   end
 
   def index(conn, %{"type" => source_type} = attrs) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
     sources = Sources.list_sources_by_source_type(source_type)
 
-    case can?(user, view_secrets(attrs)) do
+    case can?(claims, view_secrets(attrs)) do
       true ->
         sources = Enum.map(sources, &Sources.enrich_secrets(&1))
         render(conn, "index.json", sources: sources)
@@ -61,9 +61,9 @@ defmodule TdCxWeb.SourceController do
   end
 
   def create(conn, %{"source" => source_params}) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(user, create(%Source{}))},
+    with {:can, true} <- {:can, can?(claims, create(%Source{}))},
          {:ok, %Source{} = source} <- Sources.create_source(source_params) do
       conn
       |> put_status(:created)
@@ -86,12 +86,12 @@ defmodule TdCxWeb.SourceController do
   end
 
   def show(conn, %{"external_id" => external_id}) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(user, show(%Source{}))},
+    with {:can, true} <- {:can, can?(claims, show(%Source{}))},
          %Source{} = source <- Sources.get_source!(external_id),
-         %Source{} = source <- Sources.enrich_secrets(user, source),
-         job_types <- Sources.job_types(user, source) do
+         %Source{} = source <- Sources.enrich_secrets(claims, source),
+         job_types <- Sources.job_types(claims, source) do
       render(conn, "show.json", source: source, job_types: job_types)
     end
   rescue
@@ -117,9 +117,9 @@ defmodule TdCxWeb.SourceController do
   end
 
   def update(conn, %{"external_id" => external_id, "source" => source_params}) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(user, update(%Source{}))},
+    with {:can, true} <- {:can, can?(claims, update(%Source{}))},
          %Source{} = source <- Sources.get_source!(external_id),
          {:ok, %Source{} = source} <- Sources.update_source(source, source_params) do
       render(conn, "show.json", source: source)
@@ -145,9 +145,9 @@ defmodule TdCxWeb.SourceController do
   end
 
   def delete(conn, %{"external_id" => external_id}) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(user, delete(%Source{}))},
+    with {:can, true} <- {:can, can?(claims, delete(%Source{}))},
          %Source{} = source <- Sources.get_source!(external_id: external_id, preload: :jobs),
          {:ok, %Source{} = _source} <- Sources.delete_source(source) do
       send_resp(conn, :no_content, "")

@@ -31,9 +31,9 @@ defmodule TdCxWeb.EventController do
   end
 
   def index(conn, %{"job_external_id" => job_id}) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
 
-    with true <- can?(user, index(%Event{})),
+    with true <- can?(claims, index(%Event{})),
          %Job{events: events} <- Jobs.get_job!(job_id, [:events]) do
       render(conn, "index.json", events: events)
     else
@@ -67,9 +67,9 @@ defmodule TdCxWeb.EventController do
   end
 
   def create(conn, %{"job_external_id" => job_external_id, "event" => event_params}) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
 
-    with true <- can?(user, create(%Event{})),
+    with true <- can?(claims, create(%Event{})),
          %Job{id: id} <- Jobs.get_job!(job_external_id),
          {:ok, %Event{} = event} <- Events.create_event(Map.put(event_params, "job_id", id)) do
       conn
