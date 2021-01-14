@@ -2,12 +2,8 @@ defmodule TdDdWeb.DataStructureFilterControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  alias TdDd.Permissions.MockPermissionResolver
-  alias TdDdWeb.ApiServices.MockTdAuthService
-
   setup_all do
-    start_supervised(MockTdAuthService)
-    start_supervised(MockPermissionResolver)
+    start_supervised(TdDd.Permissions.MockPermissionResolver)
     :ok
   end
 
@@ -22,7 +18,7 @@ defmodule TdDdWeb.DataStructureFilterControllerTest do
       assert json_response(conn, 200)["data"] == %{}
     end
 
-    @tag authenticated_no_admin_user: "user1"
+    @tag authenticated_user: "user1"
     test "lists all filters (non-admin user)", %{conn: conn} do
       conn = get(conn, Routes.data_structure_filter_path(conn, :index))
       assert json_response(conn, 200)["data"] == %{}

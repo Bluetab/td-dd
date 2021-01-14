@@ -56,51 +56,51 @@ defmodule TdDdWeb.DataStructureVersionController do
   end
 
   def show(conn, %{"data_structure_id" => data_structure_id, "id" => version}) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
 
     case DataStructures.get_data_structure!(data_structure_id) do
       %DataStructure{} = data_structure ->
-        options = filter(user, data_structure)
+        options = filter(claims, data_structure)
         dsv = get_data_structure_version(data_structure_id, version, options)
-        render_with_permissions(conn, user, dsv)
+        render_with_permissions(conn, claims, dsv)
     end
   end
 
   def show(conn, %{"id" => data_structure_version_id}) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
 
     case DataStructures.get_data_structure_version!(data_structure_version_id) do
       %DataStructureVersion{data_structure: data_structure} ->
-        options = filter(user, data_structure)
+        options = filter(claims, data_structure)
         dsv = get_data_structure_version(data_structure_version_id, options)
-        render_with_permissions(conn, user, dsv)
+        render_with_permissions(conn, claims, dsv)
     end
   end
 
-  defp filter(user, data_structure) do
-    Enum.filter(@enrich_attrs, &filter(user, data_structure, &1))
+  defp filter(claims, data_structure) do
+    Enum.filter(@enrich_attrs, &filter(claims, data_structure, &1))
   end
 
-  defp filter(user, data_structure, :profile) do
-    can?(user, view_data_structures_profile(data_structure))
+  defp filter(claims, data_structure, :profile) do
+    can?(claims, view_data_structures_profile(data_structure))
   end
 
-  defp filter(user, data_structure, :with_confidential) do
-    can?(user, manage_confidential_structures(data_structure))
+  defp filter(claims, data_structure, :with_confidential) do
+    can?(claims, manage_confidential_structures(data_structure))
   end
 
-  defp filter(_user, _data_structure, _attr), do: true
+  defp filter(_claims, _data_structure, _attr), do: true
 
-  defp render_with_permissions(conn, _user, nil) do
+  defp render_with_permissions(conn, _claims, nil) do
     render_error(conn, :not_found)
   end
 
-  defp render_with_permissions(conn, user, %{data_structure: data_structure} = dsv) do
-    if can?(user, view_data_structure(data_structure)) do
+  defp render_with_permissions(conn, claims, %{data_structure: data_structure} = dsv) do
+    if can?(claims, view_data_structure(data_structure)) do
       user_permissions = %{
-        update: can?(user, update_data_structure(data_structure)),
-        confidential: can?(user, manage_confidential_structures(data_structure)),
-        view_profiling_permission: can?(user, view_data_structures_profile(data_structure))
+        update: can?(claims, update_data_structure(data_structure)),
+        confidential: can?(claims, manage_confidential_structures(data_structure)),
+        view_profiling_permission: can?(claims, view_data_structures_profile(data_structure))
       }
 
       render(conn, "show.json",

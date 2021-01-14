@@ -4,24 +4,25 @@ defmodule TdDd.Permissions do
   """
 
   import Ecto.Query, warn: false
-  alias TdDd.Accounts.User
+
+  alias TdDd.Auth.Claims
 
   @permission_resolver Application.compile_env(:td_dd, :permission_resolver)
 
-  def get_domain_permissions(%User{jti: jti}) do
+  def get_domain_permissions(%Claims{jti: jti}) do
     @permission_resolver.get_acls_by_resource_type(jti, "domain")
   end
 
   @doc """
-  Check if user has a permission in a domain.
+  Check if authenticated user has a permission in a domain.
 
   ## Examples
 
-      iex> authorized?(%User{}, "create", 12)
+      iex> authorized?(%Claims{}, "create", 12)
       false
 
   """
-  def authorized?(%User{jti: jti}, permission, domain_id) do
+  def authorized?(%Claims{jti: jti}, permission, domain_id) do
     @permission_resolver.has_permission?(jti, permission, "domain", domain_id)
   end
 end

@@ -2,25 +2,25 @@ defmodule TdDd.Canada.UnitAbilities do
   @moduledoc """
   Canada permissions model for Unit resources
   """
-  alias TdDd.Accounts.User
+  alias TdDd.Auth.Claims
   alias TdDd.Lineage.Units.{Node, Unit}
   alias TdDd.Permissions
 
-  def can?(_user, :view_lineage, %Unit{domain_id: nil}) do
+  def can?(_claims, :view_lineage, %Unit{domain_id: nil}) do
     true
   end
 
-  def can?(%User{} = user, :view_lineage, %Unit{domain_id: domain_id}) do
-    Permissions.authorized?(user, :view_lineage, domain_id)
+  def can?(%Claims{} = claims, :view_lineage, %Unit{domain_id: domain_id}) do
+    Permissions.authorized?(claims, :view_lineage, domain_id)
   end
 
-  def can?(%User{} = user, :view_lineage, %Node{units: [_ | _] = units}) do
-    Enum.any?(units, &can?(user, :view_lineage, &1))
+  def can?(%Claims{} = claims, :view_lineage, %Node{units: [_ | _] = units}) do
+    Enum.any?(units, &can?(claims, :view_lineage, &1))
   end
 
-  def can?(_user, :view_lineage, %Node{}) do
+  def can?(_claims, :view_lineage, %Node{}) do
     true
   end
 
-  def can?(_user, _action, _entity), do: false
+  def can?(_claims, _action, _entity), do: false
 end

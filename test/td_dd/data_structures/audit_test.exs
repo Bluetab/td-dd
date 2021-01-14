@@ -25,13 +25,13 @@ defmodule TdDd.DataStructures.AuditTest do
   setup %{type: type} do
     on_exit(fn -> Redix.del!(@stream) end)
 
-    user = build(:user, is_admin: true)
+    claims = build(:claims, role: "admin")
     %{data_structure: data_structure} = insert(:data_structure_version, type: type)
-    [user: user, data_structure: data_structure]
+    [claims: claims, data_structure: data_structure]
   end
 
   describe "data_structure_updated/4" do
-    test "publishes an event", %{data_structure: data_structure, user: %{id: user_id}} do
+    test "publishes an event", %{data_structure: data_structure, claims: %{user_id: user_id}} do
       %{id: data_structure_id} = data_structure
 
       params = %{df_content: %{"list" => "two"}, confidential: true}
@@ -39,7 +39,12 @@ defmodule TdDd.DataStructures.AuditTest do
       changeset = DataStructure.update_changeset(data_structure, params)
 
       assert {:ok, event_id} =
-               Audit.data_structure_updated(Repo, %{data_structure: data_structure}, changeset, user_id)
+               Audit.data_structure_updated(
+                 Repo,
+                 %{data_structure: data_structure},
+                 changeset,
+                 user_id
+               )
 
       assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
 
@@ -64,10 +69,12 @@ defmodule TdDd.DataStructures.AuditTest do
   end
 
   describe "data_structure_deleted/3" do
-    test "publishes an event", %{user: %{id: user_id}} do
+    test "publishes an event", %{claims: %{user_id: user_id}} do
       %{id: data_structure_id} = data_structure = insert(:data_structure)
 
-      assert {:ok, event_id} = Audit.data_structure_deleted(Repo, %{data_structure: data_structure}, user_id)
+      assert {:ok, event_id} =
+               Audit.data_structure_deleted(Repo, %{data_structure: data_structure}, user_id)
+
       assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
 
       user_id = "#{user_id}"

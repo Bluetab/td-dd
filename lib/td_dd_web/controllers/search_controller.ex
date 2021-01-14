@@ -24,9 +24,9 @@ defmodule TdDdWeb.SearchController do
   end
 
   def reindex_all(conn, _params) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
 
-    if can?(user, reindex_all(DataStructure)) do
+    if can?(claims, reindex_all(DataStructure)) do
       @index_worker.reindex(:all)
       send_resp(conn, :accepted, "")
     else
@@ -35,7 +35,7 @@ defmodule TdDdWeb.SearchController do
   end
 
   def get_source_aliases(conn, _params) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
     permission = conn.assigns[:search_permission]
     params = Map.put(%{}, :without, ["deleted_at"])
 
@@ -44,14 +44,14 @@ defmodule TdDdWeb.SearchController do
         %{"agg_name" => "source_aliases", "field_name" => "source_alias.raw"}
       ])
 
-    agg_results = Search.get_aggregations_values(user, permission, params, agg_terms)
+    agg_results = Search.get_aggregations_values(claims, permission, params, agg_terms)
     source_aliases = Enum.map(agg_results, &Map.get(&1, "key"))
     body = JSON.encode!(%{data: source_aliases})
     send_resp(conn, :ok, body)
   end
 
   def get_structures_metadata_types(conn, _params) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
     permission = conn.assigns[:search_permission]
     params = Map.put(%{}, :without, ["deleted_at"])
 
@@ -60,16 +60,16 @@ defmodule TdDdWeb.SearchController do
         %{"agg_name" => "metadata_type", "field_name" => "type.raw"}
       ])
 
-    agg_results = Search.get_aggregations_values(user, permission, params, agg_terms)
+    agg_results = Search.get_aggregations_values(claims, permission, params, agg_terms)
     metadata_types = Enum.map(agg_results, &Map.get(&1, "key"))
     body = JSON.encode!(%{data: metadata_types})
     send_resp(conn, :ok, body)
   end
 
   def search_structures_metadata_fields(conn, params) do
-    user = conn.assigns[:current_user]
+    %{is_admin: is_admin} = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, user.is_admin} do
+    with {:can, true} <- {:can, is_admin} do
       metadata_fields =
         params
         |> Map.get("filters", %{})

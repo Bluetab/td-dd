@@ -18,9 +18,9 @@ defmodule TdDdWeb.DataStructureFilterController do
   end
 
   def index(conn, _params) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
     permission = conn.assigns[:search_permission]
-    filters = Search.get_filter_values(user, permission, %{})
+    filters = Search.get_filter_values(claims, permission, %{})
     render(conn, "show.json", filters: filters)
   end
 
@@ -39,10 +39,10 @@ defmodule TdDdWeb.DataStructureFilterController do
   end
 
   def search(conn, params) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
     permission = conn.assigns[:search_permission]
     params = Map.put(params, :without, ["deleted_at"])
-    filters = Search.get_filter_values(user, permission, params)
+    filters = Search.get_filter_values(claims, permission, params)
     render(conn, "show.json", filters: filters)
   end
 end

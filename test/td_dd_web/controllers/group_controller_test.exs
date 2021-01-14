@@ -2,13 +2,10 @@ defmodule TdDdWeb.GroupControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  alias TdDd.Permissions.MockPermissionResolver
   alias TdDd.Search.MockIndexWorker
-  alias TdDdWeb.ApiServices.MockTdAuthService
 
   setup_all do
-    start_supervised(MockTdAuthService)
-    start_supervised(MockPermissionResolver)
+    start_supervised(TdDd.Permissions.MockPermissionResolver)
     start_supervised(MockIndexWorker)
     :ok
   end
@@ -18,10 +15,8 @@ defmodule TdDdWeb.GroupControllerTest do
     {:ok, conn: put_req_header(conn, "accept", "application/json"), system: system}
   end
 
-  @admin_user_name "app-admin"
-
   describe "index" do
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     test "index", %{conn: conn, swagger_schema: schema, system: %{external_id: external_id}} do
       assert %{"data" => []} =
                conn
@@ -32,7 +27,7 @@ defmodule TdDdWeb.GroupControllerTest do
   end
 
   describe "delete" do
-    @tag authenticated_user: @admin_user_name
+    @tag :admin_authenticated
     test "delete", %{conn: conn, system: %{id: system_id, external_id: external_id}} do
       insert(:data_structure_version,
         data_structure: build(:data_structure, system_id: system_id),

@@ -3,7 +3,6 @@ defmodule TdDdWeb.ProfileController do
 
   alias Jason, as: JSON
   alias Plug.Upload
-  alias TdDd.Auth.Guardian.Plug, as: GuardianPlug
   alias TdDd.CSV.Reader
   alias TdDd.Loader.Worker
 
@@ -15,9 +14,9 @@ defmodule TdDdWeb.ProfileController do
   @profiling_import_schema Application.compile_env(:td_dd, :profiling)[:profiling_import_schema]
 
   def upload(conn, %{"profiling" => profiling}) do
-    user = GuardianPlug.current_resource(conn)
+    %{is_admin: is_admin} = conn.assigns[:current_resource]
 
-    if Map.get(user, :is_admin) do
+    if is_admin do
       do_upload(profiling)
       send_resp(conn, :accepted, "")
     else

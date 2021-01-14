@@ -10,7 +10,7 @@ defmodule TdDd.Lineage.GraphData.Nodes do
   Returns the context of a given external id within hierarchy graph. The context
   consists of a list of parent nodes with the siblings of the selected child.
   """
-  def query_nodes(external_id, user, %State{contains: t, roots: roots}) do
+  def query_nodes(external_id, claims, %State{contains: t, roots: roots}) do
     case path(t, external_id) do
       :not_found ->
         {:error, :not_found}
@@ -18,7 +18,7 @@ defmodule TdDd.Lineage.GraphData.Nodes do
       path ->
         res =
           [nil | path]
-          |> Enum.map(&{&1, children(t, &1, roots, user)})
+          |> Enum.map(&{&1, children(t, &1, roots, claims)})
           |> Enum.map(fn {parent, m} -> Map.put(m, :parent, parent) end)
 
         {:ok, res}
@@ -37,10 +37,10 @@ defmodule TdDd.Lineage.GraphData.Nodes do
     end
   end
 
-  defp children(%Graph{} = t, id, roots, user) do
+  defp children(%Graph{} = t, id, roots, claims) do
     t
     |> do_children(id, roots)
-    |> Enum.reject(&by_permissions(user, &1))
+    |> Enum.reject(&by_permissions(claims, &1))
     |> Enum.reject(&hidden?(t, &1))
     |> Enum.map(&Graph.vertex(t, &1))
     |> Enum.map(&node_label/1)
@@ -55,11 +55,12 @@ defmodule TdDd.Lineage.GraphData.Nodes do
     Graph.vertex(t, id, "hidden") == true
   end
 
-  defp by_permissions(user, node) do
+  defp by_permissions(claims, node) do
     import Canada, only: [can?: 2]
+
     case Units.get_node(node, preload: [:units]) do
       nil -> false
-      node -> not can?(user, view_lineage(node))
+      node -> not can?(claims, view_lineage(node))
     end
   end
 

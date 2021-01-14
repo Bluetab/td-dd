@@ -15,14 +15,11 @@ defmodule TdDdWeb.MetadataControllerTest do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Lineage.GraphData
   alias TdDd.Loader.Worker
-  alias TdDd.Permissions.MockPermissionResolver
   alias TdDd.Search.MockIndexWorker
-  alias TdDdWeb.ApiServices.MockTdAuthService
 
   setup_all do
     start_supervised(MockIndexWorker)
-    start_supervised(MockTdAuthService)
-    start_supervised(MockPermissionResolver)
+    start_supervised(TdDd.Permissions.MockPermissionResolver)
     start_supervised(StructureLoader)
     start_supervised(Worker)
     start_supervised(GraphData)

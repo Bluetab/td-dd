@@ -4,12 +4,9 @@ defmodule TdDdWeb.ProfileControllerTest do
 
   alias TdDd.DataStructures.Profiles
   alias TdDd.Loader.Worker
-  alias TdDd.Permissions.MockPermissionResolver
-  alias TdDdWeb.ApiServices.MockTdAuthService
 
   setup_all do
-    start_supervised(MockTdAuthService)
-    start_supervised(MockPermissionResolver)
+    start_supervised(TdDd.Permissions.MockPermissionResolver)
     start_supervised(Worker)
     start_supervised({Task.Supervisor, name: TdDd.TaskSupervisor})
     :ok

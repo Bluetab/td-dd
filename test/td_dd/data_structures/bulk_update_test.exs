@@ -9,7 +9,6 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
   alias TdDd.DataStructures.BulkUpdate
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Repo
-  alias TdDdWeb.ApiServices.MockTdAuthService
 
   @valid_content %{"string" => "present", "list" => "one"}
   @valid_params %{"df_content" => @valid_content}
@@ -93,8 +92,6 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
   ]
 
   setup_all do
-    start_supervised(MockTdAuthService)
-
     %{id: template_id, name: template_name} = template = build(:template)
     TemplateCache.put(template, publish: false)
 
@@ -135,14 +132,14 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
   describe "update_all/3" do
     test "update all data structures with valid data", %{type: type} do
-      user = build(:user)
+      claims = build(:claims)
 
       ids =
         1..10
         |> Enum.map(fn _ -> valid_structure(type, df_content: %{"string" => "foo"}) end)
         |> Enum.map(& &1.data_structure_id)
 
-      assert {:ok, %{updates: updates}} = BulkUpdate.update_all(ids, @valid_params, user)
+      assert {:ok, %{updates: updates}} = BulkUpdate.update_all(ids, @valid_params, claims)
       assert Map.keys(updates) <|> ids
 
       assert ids
@@ -152,7 +149,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     end
 
     test "emits audit events for updated structures", %{type: type} do
-      user = build(:user)
+      claims = build(:claims)
 
       ids =
         1..10
@@ -160,13 +157,13 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         |> Enum.map(& &1.data_structure_id)
 
       assert {:ok, %{updates: updates, audit: audit}} =
-               BulkUpdate.update_all(ids, @valid_params, user)
+               BulkUpdate.update_all(ids, @valid_params, claims)
 
       assert Enum.count(audit) == Enum.count(updates)
     end
 
     test "ignores unchanged data structures", %{type: type} do
-      %{id: user_id} = user = build(:user)
+      %{user_id: user_id} = claims = build(:claims)
 
       ids =
         1..10
@@ -176,7 +173,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         end)
         |> Enum.map(& &1.data_structure_id)
 
-      assert {:ok, %{updates: updates}} = BulkUpdate.update_all(ids, @valid_params, user)
+      assert {:ok, %{updates: updates}} = BulkUpdate.update_all(ids, @valid_params, claims)
 
       structures = Enum.map(ids, &Repo.get(DataStructure, &1))
 
@@ -193,7 +190,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     end
 
     test "returns an error if a structure has no template", %{type: type} do
-      user = build(:user)
+      claims = build(:claims)
       content = %{"string" => "foo", "list" => "bar"}
 
       ids =
@@ -205,7 +202,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         |> Enum.map(& &1.data_structure_id)
 
       assert {:error, :updates, changeset, _changes_so_far} =
-               BulkUpdate.update_all(ids, @valid_params, user)
+               BulkUpdate.update_all(ids, @valid_params, claims)
 
       assert %{data: data, errors: errors} = changeset
       assert %{external_id: "the bad one"} = data
@@ -213,7 +210,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     end
 
     test "only updates specified fields", %{type: type} do
-      user = build(:user)
+      claims = build(:claims)
 
       initial_content = Map.replace!(@valid_content, "string", "initial")
 
@@ -223,7 +220,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         |> Enum.map(& &1.data_structure_id)
 
       assert {:ok, %{updates: updates}} =
-               BulkUpdate.update_all(ids, %{"df_content" => %{"string" => "updated"}}, user)
+               BulkUpdate.update_all(ids, %{"df_content" => %{"string" => "updated"}}, claims)
 
       assert Map.keys(updates) <|> ids
 
@@ -234,7 +231,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     end
 
     test "only validates specified fields", %{type: type} do
-      user = build(:user)
+      claims = build(:claims)
 
       id =
         insert(:data_structure_version,
@@ -243,7 +240,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         ).data_structure_id
 
       assert {:ok, %{updates: _updates}} =
-               BulkUpdate.update_all([id], %{"df_content" => %{"list" => "one"}}, user)
+               BulkUpdate.update_all([id], %{"df_content" => %{"list" => "one"}}, claims)
 
       assert [id]
              |> Enum.map(&Repo.get(DataStructure, &1))
@@ -252,7 +249,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     end
 
     test "ignores empty fields", %{type: type} do
-      user = build(:user)
+      claims = build(:claims)
 
       initial_content = Map.replace!(@valid_content, "string", "initial")
 
@@ -265,7 +262,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
                BulkUpdate.update_all(
                  ids,
                  %{"df_content" => %{"string" => "", "list" => "two"}},
-                 user
+                 claims
                )
 
       assert Map.keys(updates) <|> ids
@@ -281,10 +278,10 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     setup [:from_csv_templates]
 
     test "update all data structures content", %{sts: sts} do
-      user = build(:user)
+      claims = build(:claims)
       structure_ids = Enum.map(sts, & &1.data_structure_id)
       upload = %{path: "test/fixtures/td2942/upload.csv"}
-      assert {:ok, %{updates: updates}} = BulkUpdate.from_csv(upload, user)
+      assert {:ok, %{updates: updates}} = BulkUpdate.from_csv(upload, claims)
       ids = Map.keys(updates)
       assert length(ids) == 9
       assert Enum.all?(ids, fn id -> id in structure_ids end)
@@ -327,11 +324,11 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     end
 
     test "returns error on content" do
-      user = build(:user)
+      claims = build(:claims)
       upload = %{path: "test/fixtures/td2942/upload_invalid.csv"}
 
       assert {:error, :updates, %{errors: [df_content: {_, [critical: {_, validation}]}]}, _} =
-               BulkUpdate.from_csv(upload, user)
+               BulkUpdate.from_csv(upload, claims)
 
       assert Keyword.get(validation, :validation) == :inclusion
       assert Keyword.get(validation, :enum) == ["Yes", "No"]

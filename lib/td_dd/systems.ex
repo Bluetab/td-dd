@@ -2,7 +2,9 @@ defmodule TdDd.Systems do
   @moduledoc """
   The Systems context.
   """
+
   alias Ecto.Multi
+  alias TdDd.Auth.Claims
   alias TdDd.Cache.SystemLoader
   alias TdDd.Repo
   alias TdDd.Systems.Audit
@@ -65,14 +67,14 @@ defmodule TdDd.Systems do
 
   ## Examples
 
-      iex> create_system(%{field: value}, user)
+      iex> create_system(%{field: value}, claims)
       {:ok, %System{}}
 
-      iex> create_system(%{field: bad_value}, user)
+      iex> create_system(%{field: bad_value}, claims)
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_system(%{} = params, %{id: user_id}) do
+  def create_system(%{} = params, %Claims{user_id: user_id}) do
     changeset = System.changeset(params)
 
     Multi.new()
@@ -87,14 +89,14 @@ defmodule TdDd.Systems do
 
   ## Examples
 
-      iex> update_system(system, %{field: new_value}, user)
+      iex> update_system(system, %{field: new_value}, claims)
       {:ok, %System{}}
 
-      iex> update_system(system, %{field: bad_value}, user)
+      iex> update_system(system, %{field: bad_value}, claims)
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_system(%System{} = system, %{} = params, %{id: user_id}) do
+  def update_system(%System{} = system, %{} = params, %Claims{user_id: user_id}) do
     changeset = System.changeset(system, params)
 
     Multi.new()
@@ -109,14 +111,14 @@ defmodule TdDd.Systems do
 
   ## Examples
 
-      iex> delete_system(system, user)
+      iex> delete_system(system, claims)
       {:ok, %System{}}
 
-      iex> delete_system(system, user)
+      iex> delete_system(system, claims)
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_system(%System{} = system, %{id: user_id}) do
+  def delete_system(%System{} = system, %Claims{user_id: user_id}) do
     Multi.new()
     |> Multi.delete(:system, system)
     |> Multi.run(:audit, Audit, :system_deleted, [user_id])

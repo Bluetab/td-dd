@@ -21,10 +21,10 @@ defmodule TdDdWeb.SystemController do
   end
 
   def index(conn, params) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
     permission = conn.assigns[:search_permission]
     params = deleted(params)
-    systems = SystemSearch.search_systems(user, permission, params)
+    systems = SystemSearch.search_systems(claims, permission, params)
     render(conn, "index.json", systems: systems)
   end
 
@@ -42,9 +42,9 @@ defmodule TdDdWeb.SystemController do
   end
 
   def create(conn, %{"system" => params}) do
-    with user <- conn.assigns[:current_user],
-         {:can, true} <- {:can, can?(user, create(System))},
-         {:ok, %{system: system}} <- Systems.create_system(params, user) do
+    with claims <- conn.assigns[:current_resource],
+         {:can, true} <- {:can, can?(claims, create(System))},
+         {:ok, %{system: system}} <- Systems.create_system(params, claims) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", Routes.system_path(conn, :show, system))
@@ -86,10 +86,10 @@ defmodule TdDdWeb.SystemController do
   end
 
   def update(conn, %{"id" => id, "system" => params}) do
-    with user <- conn.assigns[:current_user],
+    with claims <- conn.assigns[:current_resource],
          {:ok, system} <- Systems.get_system(id),
-         {:can, true} <- {:can, can?(user, update(system))},
-         {:ok, %{system: updated_system}} <- Systems.update_system(system, params, user) do
+         {:can, true} <- {:can, can?(claims, update(system))},
+         {:ok, %{system: updated_system}} <- Systems.update_system(system, params, claims) do
       render(conn, "show.json", system: updated_system)
     end
   end
@@ -108,10 +108,10 @@ defmodule TdDdWeb.SystemController do
   end
 
   def delete(conn, %{"id" => id}) do
-    with user <- conn.assigns[:current_user],
+    with claims <- conn.assigns[:current_resource],
          {:ok, system} <- Systems.get_system(id),
-         {:can, true} <- {:can, can?(user, delete(system))},
-         {:ok, %{system: _deleted_system}} <- Systems.delete_system(system, user) do
+         {:can, true} <- {:can, can?(claims, delete(system))},
+         {:ok, %{system: _deleted_system}} <- Systems.delete_system(system, claims) do
       send_resp(conn, :no_content, "")
     end
   end

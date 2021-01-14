@@ -24,9 +24,9 @@ defmodule TdDdWeb.DataStructureTypeController do
   end
 
   def index(conn, _params) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
 
-    if can?(user, index(%DataStructureType{})) do
+    if can?(claims, index(%DataStructureType{})) do
       data_structure_types =
         DataStructureTypes.list_data_structure_types()
         |> Enum.map(&DataStructureTypes.enrich_template/1)
@@ -58,9 +58,9 @@ defmodule TdDdWeb.DataStructureTypeController do
   end
 
   def create(conn, %{"data_structure_type" => data_structure_type_params}) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
 
-    with true <- can?(user, create(%DataStructureType{})),
+    with true <- can?(claims, create(%DataStructureType{})),
          {:ok, %DataStructureType{} = data_structure_type} <-
            DataStructureTypes.create_data_structure_type(data_structure_type_params) do
       conn
@@ -83,9 +83,9 @@ defmodule TdDdWeb.DataStructureTypeController do
   end
 
   def show(conn, %{"id" => id}) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
 
-    with true <- can?(user, show(%DataStructureType{})),
+    with true <- can?(claims, show(%DataStructureType{})),
          data_structure_type <- DataStructureTypes.get_data_structure_type!(id) do
       render(conn, "show.json", data_structure_type: data_structure_type)
     else
@@ -117,9 +117,9 @@ defmodule TdDdWeb.DataStructureTypeController do
   end
 
   def update(conn, %{"id" => id, "data_structure_type" => data_structure_type_params}) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
 
-    with true <- can?(user, update(%DataStructureType{})),
+    with true <- can?(claims, update(%DataStructureType{})),
          data_structure_type <- DataStructureTypes.get_data_structure_type!(id),
          {:ok, %DataStructureType{} = data_structure_type} <-
            DataStructureTypes.update_data_structure_type(
@@ -143,9 +143,9 @@ defmodule TdDdWeb.DataStructureTypeController do
   end
 
   def delete(conn, %{"id" => id}) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
 
-    with true <- can?(user, delete(%DataStructureType{})),
+    with true <- can?(claims, delete(%DataStructureType{})),
          data_structure_type <- DataStructureTypes.get_data_structure_type!(id),
          {:ok, %DataStructureType{}} <-
            DataStructureTypes.delete_data_structure_type(data_structure_type) do

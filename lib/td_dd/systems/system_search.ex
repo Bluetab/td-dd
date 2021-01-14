@@ -4,28 +4,28 @@ defmodule TdDd.Systems.SystemSearch do
   """
   import Ecto.Query, warn: false
 
-  alias TdDd.Accounts.User
+  alias TdDd.Auth.Claims
   alias TdDd.DataStructures.Search
   alias TdDd.Search.Aggregations
   alias TdDd.Systems
 
-  def search_systems(%User{is_admin: true} = user, permission, params) do
-    get_systems_with_count(user, permission, params)
+  def search_systems(%Claims{is_admin: true} = claims, permission, params) do
+    get_systems_with_count(claims, permission, params)
   end
 
-  def search_systems(%User{} = user, permission, params) do
-    systems_with_count = get_systems_with_count(user, permission, params)
+  def search_systems(%Claims{} = claims, permission, params) do
+    systems_with_count = get_systems_with_count(claims, permission, params)
     Enum.filter(systems_with_count, fn system -> system.structures_count.count > 0 end)
   end
 
-  defp get_systems_with_count(user, permission, params) do
+  defp get_systems_with_count(%Claims{} = claims, permission, params) do
     agg_terms =
       Aggregations.get_agg_terms([
         %{"agg_name" => "systems", "field_name" => "system.name.raw"},
         %{"agg_name" => "types", "field_name" => "type.raw"}
       ])
 
-    agg_results = Search.get_aggregations_values(user, permission, params, agg_terms)
+    agg_results = Search.get_aggregations_values(claims, permission, params, agg_terms)
     systems = Systems.list_systems()
 
     Enum.map(systems, fn system ->

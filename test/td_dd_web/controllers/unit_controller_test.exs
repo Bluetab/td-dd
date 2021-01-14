@@ -5,7 +5,6 @@ defmodule TdDdWeb.UnitControllerTest do
   @moduletag sandbox: :shared
 
   setup_all do
-    start_supervised(TdDdWeb.ApiServices.MockTdAuthService)
     start_supervised(TdDd.Permissions.MockPermissionResolver)
     start_supervised(TdDd.Lineage.Import)
     start_supervised({Task.Supervisor, name: TdDd.TaskSupervisor, max_seconds: 2})
@@ -103,28 +102,28 @@ defmodule TdDdWeb.UnitControllerTest do
   end
 
   describe "Unit Controller for non-admin users" do
-    @tag authenticated_no_admin_user: "some_user"
+    @tag authenticated_user: "some_user"
     test "GET /api/units returns forbidden", %{conn: conn} do
       assert conn
              |> get(Routes.unit_path(conn, :index))
              |> json_response(:forbidden)
     end
 
-    @tag authenticated_no_admin_user: "some_user"
+    @tag authenticated_user: "some_user"
     test "GET /api/units/:name returns forbidden", %{conn: conn} do
       assert conn
              |> get(Routes.unit_path(conn, :show, "foo"))
              |> json_response(:forbidden)
     end
 
-    @tag authenticated_no_admin_user: "some_user"
+    @tag authenticated_user: "some_user"
     test "DELETE /api/units/:name returns forbidden", %{conn: conn} do
       assert conn
              |> get(Routes.unit_path(conn, :delete, "foo"))
              |> json_response(:forbidden)
     end
 
-    @tag authenticated_no_admin_user: "some_user"
+    @tag authenticated_user: "some_user"
     test "POST /api/units returns forbidden", %{conn: conn} do
       %{name: name} = build(:unit)
 
@@ -133,7 +132,7 @@ defmodule TdDdWeb.UnitControllerTest do
              |> json_response(:forbidden)
     end
 
-    @tag authenticated_no_admin_user: "some_user"
+    @tag authenticated_user: "some_user"
     test "PUT /api/units/:name returns forbidden", %{conn: conn} do
       nodes = upload("test/fixtures/lineage/nodes.csv")
       rels = upload("test/fixtures/lineage/rels.csv")

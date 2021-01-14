@@ -59,16 +59,16 @@ defmodule TdDdWeb.DataStructureController do
     end
   end
 
-  defp do_render_data_structure(conn, _user, nil) do
+  defp do_render_data_structure(conn, _claims, nil) do
     render_error(conn, :not_found)
   end
 
-  defp do_render_data_structure(conn, user, data_structure) do
-    if can?(user, view_data_structure(data_structure)) do
+  defp do_render_data_structure(conn, claims, data_structure) do
+    if can?(claims, view_data_structure(data_structure)) do
       user_permissions = %{
-        update: can?(user, update_data_structure(data_structure)),
-        confidential: can?(user, manage_confidential_structures(data_structure)),
-        view_profiling_permission: can?(user, view_data_structures_profile(data_structure))
+        update: can?(claims, update_data_structure(data_structure)),
+        confidential: can?(claims, manage_confidential_structures(data_structure)),
+        view_profiling_permission: can?(claims, view_data_structures_profile(data_structure))
       }
 
       render(conn, "show.json", data_structure: data_structure, user_permissions: user_permissions)
@@ -93,11 +93,11 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   def update(conn, %{"id" => id, "data_structure" => attrs}) do
-    %{id: user_id} = user = conn.assigns[:current_user]
+    %{user_id: user_id} = claims = conn.assigns[:current_resource]
     data_structure_old = DataStructures.get_data_structure!(id)
 
     manage_confidential_structures =
-      can?(user, manage_confidential_structures(data_structure_old))
+      can?(claims, manage_confidential_structures(data_structure_old))
 
     external_ids = TaxonomyCache.get_domain_external_id_to_id_map()
 
@@ -107,11 +107,11 @@ defmodule TdDdWeb.DataStructureController do
       |> Map.put("last_change_by", user_id)
       |> DataStructures.put_domain_id(external_ids)
 
-    with {:can, true} <- {:can, can?(user, update_data_structure(data_structure_old))},
+    with {:can, true} <- {:can, can?(claims, update_data_structure(data_structure_old))},
          {:ok, %{data_structure: data_structure}} <-
-           DataStructures.update_data_structure(data_structure_old, update_params, user) do
+           DataStructures.update_data_structure(data_structure_old, update_params, claims) do
       data_structure = get_data_structure(data_structure.id)
-      do_render_data_structure(conn, user, data_structure)
+      do_render_data_structure(conn, claims, data_structure)
     end
   end
 
@@ -133,12 +133,12 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   def delete(conn, %{"id" => id}) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
     data_structure = DataStructures.get_data_structure!(id)
 
-    with {:can, true} <- {:can, can?(user, delete_data_structure(data_structure))},
+    with {:can, true} <- {:can, can?(claims, delete_data_structure(data_structure))},
          {:ok, %{data_structure: _deleted_data_structure}} <-
-           DataStructures.delete_data_structure(data_structure, user) do
+           DataStructures.delete_data_structure(data_structure, claims) do
       send_resp(conn, :no_content, "")
     end
   end
@@ -184,14 +184,14 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   def get_system_structures(conn, params) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
     permission = conn.assigns[:search_permission]
 
     %{results: data_structures, total: total} =
       params
       |> Map.put("filters", %{system_id: String.to_integer(Map.get(params, "system_id"))})
       |> Map.put(:without, ["path", "deleted_at"])
-      |> Search.search_data_structures(user, permission, 0, 1_000)
+      |> Search.search_data_structures(claims, permission, 0, 1_000)
 
     conn
     |> put_resp_header("x-total-count", "#{total}")
@@ -221,13 +221,13 @@ defmodule TdDdWeb.DataStructureController do
           "update_attributes" => update_params
         }
       }) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
     permission = conn.assigns[:search_permission]
 
-    with {:can, true} <- {:can, user.is_admin},
-         %{results: results} <- search_all_structures(user, permission, search_params),
+    with {:can, true} <- {:can, claims.is_admin},
+         %{results: results} <- search_all_structures(claims, permission, search_params),
          ids <- Enum.map(results, & &1.id),
-         {:ok, %{updates: updates}} <- BulkUpdate.update_all(ids, update_params, user) do
+         {:ok, %{updates: updates}} <- BulkUpdate.update_all(ids, update_params, claims) do
       body = JSON.encode!(%{data: %{message: Map.keys(updates)}})
 
       conn
@@ -237,21 +237,21 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   def bulk_update_template_content(conn, params) do
-    user = conn.assigns[:current_user]
+    %{is_admin: is_admin} = claims = conn.assigns[:current_resource]
     structures_content_upload = Map.get(params, "structures")
 
-    with {:can, true} <- {:can, user.is_admin},
-         {:ok, %{updates: updates}} <- BulkUpdate.from_csv(structures_content_upload, user),
+    with {:can, true} <- {:can, is_admin},
+         {:ok, %{updates: updates}} <- BulkUpdate.from_csv(structures_content_upload, claims),
          body <- JSON.encode!(%{data: %{message: Map.keys(updates)}}) do
       send_resp(conn, :ok, body)
     end
   end
 
-  defp search_all_structures(user, permission, params) do
+  defp search_all_structures(claims, permission, params) do
     params
     |> Map.put(:without, ["deleted_at"])
     |> Map.drop(["page", "size"])
-    |> Search.search_data_structures(user, permission, 0, 10_000)
+    |> Search.search_data_structures(claims, permission, 0, 10_000)
   end
 
   swagger_path :csv do
@@ -272,9 +272,9 @@ defmodule TdDdWeb.DataStructureController do
     params = Map.drop(params, ["header_labels", "page", "size"])
 
     permission = conn.assigns[:search_permission]
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
 
-    %{results: data_structures} = search_all_structures(user, permission, params)
+    %{results: data_structures} = search_all_structures(claims, permission, params)
 
     case data_structures do
       [] ->
@@ -295,7 +295,7 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   defp do_search(conn, search_params, page, size) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
     permission = conn.assigns[:search_permission]
 
     page = Map.get(search_params, "page", page)
@@ -304,7 +304,7 @@ defmodule TdDdWeb.DataStructureController do
     search_params
     |> deleted_structures()
     |> Map.drop(["page", "size"])
-    |> Search.search_data_structures(user, permission, page, size)
+    |> Search.search_data_structures(claims, permission, page, size)
   end
 
   defp deleted_structures(%{"filters" => %{"all" => true} = filters} = search_params) do

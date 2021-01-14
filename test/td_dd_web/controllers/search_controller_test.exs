@@ -1,14 +1,10 @@
 defmodule TdDdWeb.SearchControllerTest do
   use TdDdWeb.ConnCase
 
-  alias TdDd.Permissions.MockPermissionResolver
-  alias TdDdWeb.ApiServices.MockTdAuthService
-
   import Routes
 
   setup_all do
-    start_supervised(MockTdAuthService)
-    start_supervised(MockPermissionResolver)
+    start_supervised(TdDd.Permissions.MockPermissionResolver)
     :ok
   end
 
@@ -43,7 +39,7 @@ defmodule TdDdWeb.SearchControllerTest do
       assert Enum.all?(["foo", "bar", "Xyz"], &(&1 in fields))
     end
 
-    @tag authenticated_no_admin_user: "user1"
+    @tag authenticated_user: "user1"
     test "search_structures_metadata_fields (non-admin user)", %{conn: conn} do
       conn =
         post(conn, search_path(conn, :search_structures_metadata_fields), %{

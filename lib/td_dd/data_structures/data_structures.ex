@@ -11,6 +11,7 @@ defmodule TdDd.DataStructures do
   alias TdCache.StructureTypeCache
   alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
+  alias TdDd.Auth.Claims
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
@@ -473,14 +474,16 @@ defmodule TdDd.DataStructures do
 
   ## Examples
 
-      iex> update_data_structure(data_structure, %{field: new_value}, user)
+      iex> update_data_structure(data_structure, %{field: new_value}, claims)
       {:ok, %DataStructure{}}
 
-      iex> update_data_structure(data_structure, %{field: bad_value}, user)
+      iex> update_data_structure(data_structure, %{field: bad_value}, claims)
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_data_structure(%DataStructure{} = data_structure, %{} = params, %{id: user_id}) do
+  def update_data_structure(%DataStructure{} = data_structure, %{} = params, %Claims{
+        user_id: user_id
+      }) do
     changeset = DataStructure.update_changeset(data_structure, params)
 
     Multi.new()
@@ -505,14 +508,14 @@ defmodule TdDd.DataStructures do
 
   ## Examples
 
-      iex> delete_data_structure(data_structure, user)
+      iex> delete_data_structure(data_structure, claims)
       {:ok, %DataStructure{}}
 
-      iex> delete_data_structure(data_structure, user)
+      iex> delete_data_structure(data_structure, claims)
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_data_structure(%DataStructure{} = data_structure, %{id: user_id}) do
+  def delete_data_structure(%DataStructure{} = data_structure, %Claims{user_id: user_id}) do
     Multi.new()
     |> Multi.run(:delete_versions, fn _, _ ->
       {:ok, delete_data_structure_versions(data_structure)}

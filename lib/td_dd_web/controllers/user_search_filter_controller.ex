@@ -28,7 +28,7 @@ defmodule TdDdWeb.UserSearchFilterController do
   end
 
   swagger_path :index_by_user do
-    description("Get logged user concept search filters")
+    description("Get authenticated user concept search filters")
     produces("application/json")
 
     response(200, "OK", Schema.ref(:UserSearchFiltersResponse))
@@ -37,9 +37,9 @@ defmodule TdDdWeb.UserSearchFilterController do
   end
 
   def index_by_user(conn, _params) do
-    user = conn.assigns[:current_user]
+    %{user_id: user_id} = conn.assigns[:current_resource]
 
-    user_search_filters = UserSearchFilters.list_user_search_filters(user.id)
+    user_search_filters = UserSearchFilters.list_user_search_filters(user_id)
     render(conn, "index.json", user_search_filters: user_search_filters)
   end
 
@@ -61,11 +61,9 @@ defmodule TdDdWeb.UserSearchFilterController do
   end
 
   def create(conn, %{"user_search_filter" => user_search_filter_params}) do
-    user = conn.assigns[:current_user]
+    %{user_id: user_id} = conn.assigns[:current_resource]
 
-    create_params =
-      user_search_filter_params
-      |> Map.put("user_id", user.id)
+    create_params = Map.put(user_search_filter_params, "user_id", user_id)
 
     with {:ok, %UserSearchFilter{} = user_search_filter} <-
            UserSearchFilters.create_user_search_filter(create_params) do
@@ -116,10 +114,10 @@ defmodule TdDdWeb.UserSearchFilterController do
   end
 
   def delete(conn, %{"id" => id}) do
-    user = conn.assigns[:current_user]
+    %{user_id: user_id} = conn.assigns[:current_resource]
     user_search_filter = UserSearchFilters.get_user_search_filter!(id)
 
-    with true <- user.id == user_search_filter.user_id,
+    with true <- user_id == user_search_filter.user_id,
          {:ok, %UserSearchFilter{}} <-
            UserSearchFilters.delete_user_search_filter(user_search_filter) do
       send_resp(conn, :no_content, "")

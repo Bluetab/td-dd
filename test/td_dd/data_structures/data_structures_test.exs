@@ -30,7 +30,7 @@ defmodule TdDd.DataStructuresTest do
       Redix.del!(@stream)
     end)
 
-    [template_name: template_name, user: build(:user)]
+    [template_name: template_name, claims: build(:claims)]
   end
 
   setup %{template_name: template_name} do
@@ -85,22 +85,22 @@ defmodule TdDd.DataStructuresTest do
   describe "update_data_structure/3" do
     test "updates the data_structure with valid data", %{
       data_structure: data_structure,
-      user: user
+      claims: claims
     } do
       params = %{df_content: %{"string" => "changed", "list" => "two"}}
 
       assert {:ok, %{data_structure: data_structure}} =
-               DataStructures.update_data_structure(data_structure, params, user)
+               DataStructures.update_data_structure(data_structure, params, claims)
 
       assert %DataStructure{} = data_structure
       assert %{"list" => "two", "string" => "changed"} = data_structure.df_content
     end
 
-    test "emits an audit event", %{data_structure: data_structure, user: user} do
+    test "emits an audit event", %{data_structure: data_structure, claims: claims} do
       params = %{df_content: %{"string" => "changed", "list" => "two"}}
 
       assert {:ok, %{audit: event_id}} =
-               DataStructures.update_data_structure(data_structure, params, user)
+               DataStructures.update_data_structure(data_structure, params, claims)
 
       assert {:ok, [%{id: ^event_id}]} =
                Stream.range(:redix, @stream, event_id, event_id, transform: :range)
@@ -110,26 +110,23 @@ defmodule TdDd.DataStructuresTest do
   describe "delete_data_structure/2" do
     test "delete_data_structure/1 deletes the data_structure", %{
       data_structure: data_structure,
-      user: user
+      claims: claims
     } do
       assert {:ok, %{data_structure: data_structure}} =
-               DataStructures.delete_data_structure(data_structure, user)
+               DataStructures.delete_data_structure(data_structure, claims)
 
       assert %{__meta__: %{state: :deleted}} = data_structure
     end
 
-    test "emits an audit event", %{
-      data_structure: data_structure,
-      user: user
-    } do
+    test "emits an audit event", %{data_structure: data_structure, claims: claims} do
       assert {:ok, %{audit: event_id}} =
-               DataStructures.delete_data_structure(data_structure, user)
+               DataStructures.delete_data_structure(data_structure, claims)
 
       assert {:ok, [%{id: ^event_id}]} =
                Stream.range(:redix, @stream, event_id, event_id, transform: :range)
     end
 
-    test "deletes a data_structure with relations", %{user: user} do
+    test "deletes a data_structure with relations", %{claims: claims} do
       ds1 = insert(:data_structure, id: 51, external_id: "DS51")
       ds2 = insert(:data_structure, id: 52, external_id: "DS52")
       ds3 = insert(:data_structure, id: 53, external_id: "DS53")
@@ -152,7 +149,7 @@ defmodule TdDd.DataStructuresTest do
       )
 
       assert {:ok, %{data_structure: data_structure}} =
-               DataStructures.delete_data_structure(ds1, user)
+               DataStructures.delete_data_structure(ds1, claims)
 
       assert %{__meta__: %{state: :deleted}} = data_structure
       assert DataStructures.get_data_structure!(ds2.id) <~> ds2
@@ -328,9 +325,7 @@ defmodule TdDd.DataStructuresTest do
       assert DataStructures.get_siblings(dsv4) <|> [dsv4]
     end
 
-    test "delete_data_structure/1 deletes a data_structure with relations", %{
-      user: user
-    } do
+    test "delete_data_structure/1 deletes a data_structure with relations", %{claims: claims} do
       ds1 = insert(:data_structure, id: 51, external_id: "DS51")
       ds2 = insert(:data_structure, id: 52, external_id: "DS52")
       ds3 = insert(:data_structure, id: 53, external_id: "DS53")
@@ -352,7 +347,7 @@ defmodule TdDd.DataStructuresTest do
         relation_type_id: relation_type_id
       )
 
-      assert {:ok, %{} = reply} = DataStructures.delete_data_structure(ds1, user)
+      assert {:ok, %{} = reply} = DataStructures.delete_data_structure(ds1, claims)
       data_structure = Map.get(reply, :data_structure)
 
       assert %{__meta__: %{state: :deleted}} = data_structure

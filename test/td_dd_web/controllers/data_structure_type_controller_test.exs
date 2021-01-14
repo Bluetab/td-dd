@@ -3,8 +3,6 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
 
   alias TdCache.TemplateCache
   alias TdDd.DataStructures.DataStructureTypes
-  alias TdDd.Permissions.MockPermissionResolver
-  alias TdDdWeb.ApiServices.MockTdAuthService
 
   @create_attrs %{
     structure_type: "some structure_type",
@@ -19,8 +17,7 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
   @invalid_attrs %{structure_type: nil, template_id: nil, translation: nil}
 
   setup_all do
-    start_supervised(MockTdAuthService)
-    start_supervised(MockPermissionResolver)
+    start_supervised(TdDd.Permissions.MockPermissionResolver)
     :ok
   end
 

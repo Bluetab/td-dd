@@ -18,9 +18,9 @@ defmodule TdDdWeb.UnitEventController do
   end
 
   def index(conn, %{"unit_name" => name}) do
-    user = conn.assigns[:current_user]
+    claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, can?(user, list(Unit))},
+    with {:can, true} <- {:can, can?(claims, list(Unit))},
          {:ok, %Units.Unit{events: events}} <- Units.get_by(name: name, preload: :events) do
       render(conn, "index.json", events: events)
     end
