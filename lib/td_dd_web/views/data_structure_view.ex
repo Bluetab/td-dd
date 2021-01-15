@@ -172,6 +172,7 @@ defmodule TdDdWeb.DataStructureView do
           [ids, names]
           |> Enum.zip()
           |> Enum.map(fn {id, name} -> %{data_structure_id: id, name: name} end)
+          |> Enum.reverse()
 
         _ ->
           []

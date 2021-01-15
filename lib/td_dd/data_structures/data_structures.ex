@@ -109,7 +109,7 @@ defmodule TdDd.DataStructures do
   """
   def get_data_structure_version!(id) do
     DataStructureVersion
-    |> Paths.with_path(distinct: :id)
+    |> Paths.by_version_id(id)
     |> Repo.get!(id)
     |> Repo.preload(:data_structure)
   end
@@ -123,7 +123,7 @@ defmodule TdDd.DataStructures do
     params = %{data_structure_id: data_structure_id, version: version}
 
     DataStructureVersion
-    |> Paths.with_path(distinct: :id)
+    |> Paths.by_structure_id_and_version(data_structure_id, version)
     |> Repo.get_by!(params)
     |> Repo.preload(data_structure: :system)
     |> enrich(options)
@@ -131,7 +131,7 @@ defmodule TdDd.DataStructures do
 
   def get_data_structure_version!(data_structure_version_id, options) do
     DataStructureVersion
-    |> Paths.with_path(distinct: :id)
+    |> Paths.by_version_id(data_structure_version_id)
     |> Repo.get!(data_structure_version_id)
     |> Repo.preload(data_structure: :system)
     |> enrich(options)
@@ -563,7 +563,7 @@ defmodule TdDd.DataStructures do
 
   def get_latest_version(data_structure_id, options) do
     DataStructureVersion
-    |> Paths.with_path(distinct: :data_structure_id)
+    |> Paths.by_data_structure_id(data_structure_id)
     |> where([dsv], dsv.data_structure_id == type(^data_structure_id, :integer))
     |> preload(:data_structure)
     |> Repo.one()
