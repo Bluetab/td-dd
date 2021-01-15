@@ -215,14 +215,15 @@ defmodule TdDdWeb.DataStructureVersionView do
   defp add_ancestry(dsv) do
     ancestry =
       case Map.get(dsv, :path) do
-      %{structure_ids: [_ | ids], names: [_ | names]} ->
-        [ids, names]
-        |> Enum.zip()
-        |> Enum.map(fn {id, name} -> %{data_structure_id: id, name: name} end)
+        %{structure_ids: [_ | ids], names: [_ | names]} ->
+          [ids, names]
+          |> Enum.zip()
+          |> Enum.map(fn {id, name} -> %{data_structure_id: id, name: name} end)
+          |> Enum.reverse()
 
-      _ ->
-        []
-    end
+        _ ->
+          []
+      end
 
     Map.put(dsv, :ancestry, ancestry)
   end
