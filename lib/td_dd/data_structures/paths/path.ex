@@ -9,7 +9,7 @@ defmodule TdDd.DataStructures.Paths.Path do
 
   embedded_schema do
     field(:id, :integer)
-    field(:level, :integer)
+    field(:vid, :integer)
     field(:name, :string)
     field(:v_sum, :integer)
     field(:names, {:array, :string})

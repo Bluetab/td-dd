@@ -1,5 +1,12 @@
 # Changelog
 
+## [4.11.1] 2021-01-15
+
+### Fixed
+
+- [TD-3204] Performance regression fetching a data structure version
+- [TD-3204] Ancestry was being returned in inverse order
+
 ## [4.11.0] 2021-01-11
 
 ### Changed
