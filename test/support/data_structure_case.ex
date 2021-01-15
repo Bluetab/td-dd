@@ -15,7 +15,8 @@ defmodule TdDd.DataStructureCase do
     quote do
       use TdDd.DataCase
 
-      def create_hierarchy(names) do
+      def create_hierarchy(names, opts \\ []) do
+        version = Keyword.get(opts, :version, 0)
         %{id: system_id} = insert(:system)
 
         dsvs =
@@ -23,6 +24,7 @@ defmodule TdDd.DataStructureCase do
             names,
             &insert(:data_structure_version,
               name: &1,
+              version: version,
               data_structure: build(:data_structure, external_id: &1, system_id: system_id)
             )
           )

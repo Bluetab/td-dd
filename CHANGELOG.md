@@ -7,6 +7,13 @@
 - [TD-3163] Auth tokens now include `role` claim instead of `is_admin` flag
 - [TD-3182] Allow to use redis with password
 
+## [4.11.1] 2021-01-15
+
+### Fixed
+
+- [TD-3204] Performance regression fetching a data structure version
+- [TD-3204] Ancestry was being returned in inverse order
+
 ## [4.11.0] 2021-01-11
 
 ### Changed
