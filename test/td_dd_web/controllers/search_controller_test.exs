@@ -3,11 +3,6 @@ defmodule TdDdWeb.SearchControllerTest do
 
   import Routes
 
-  setup_all do
-    start_supervised(TdDd.Permissions.MockPermissionResolver)
-    :ok
-  end
-
   describe "search" do
     @tag :admin_authenticated
     test "search_structures_metadata_fields (admin)", %{conn: conn} do
@@ -41,12 +36,11 @@ defmodule TdDdWeb.SearchControllerTest do
 
     @tag authenticated_user: "user1"
     test "search_structures_metadata_fields (non-admin user)", %{conn: conn} do
-      conn =
-        post(conn, search_path(conn, :search_structures_metadata_fields), %{
-          "filters" => %{"type" => ["type"]}
-        })
-
-      assert response(conn, 403)
+      assert conn
+             |> post(search_path(conn, :search_structures_metadata_fields), %{
+               "filters" => %{"type" => ["type"]}
+             })
+             |> response(:forbidden)
     end
   end
 end

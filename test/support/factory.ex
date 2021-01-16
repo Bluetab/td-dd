@@ -116,6 +116,10 @@ defmodule TdDd.Factory do
     }
   end
 
+  def domain_factory do
+    %{name: sequence("domain_name"), id: sequence(:domain_id, & &1), updated_at: DateTime.utc_now()}
+  end
+
   defp default_assoc(attrs, id_key, key) do
     if Enum.any?([key, id_key], &Map.has_key?(attrs, &1)) do
       attrs

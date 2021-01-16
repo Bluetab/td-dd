@@ -25,7 +25,15 @@ defmodule TdDdWeb.DataStructureControllerTest do
   setup_all do
     start_supervised(MockPermissionResolver)
     start_supervised(GraphData)
-    :ok
+
+    %{id: domain_id} = domain = build(:domain)
+    TaxonomyCache.put_domain(domain)
+
+    on_exit(fn ->
+      TaxonomyCache.delete_domain(domain_id)
+    end)
+
+    [domain: domain]
   end
 
   setup %{conn: conn} do
@@ -44,7 +52,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       StructureTypeCache.delete(structure_type_id)
     end)
 
-    {:ok, conn: put_req_header(conn, "accept", "application/json"), system: system}
+    {:ok, %{conn: put_req_header(conn, "accept", "application/json"), system: system}}
   end
 
   describe "show" do
@@ -367,18 +375,22 @@ defmodule TdDdWeb.DataStructureControllerTest do
     end
 
     @tag authenticated_user: "non_admin_user"
+    @tag :confidential
     test "user with permission can update confidential data_structure", %{
       conn: conn,
-      claims: %{user_id: user_id}
-    } do
-      role_name = "confidential_editor"
-      confidential = true
-      data_structure = create_data_structure_and_permissions(user_id, role_name, confidential)
-      %{id: id} = data_structure
+      claims: %{user_id: user_id},
+      domain: %{id: domain_id, name: domain_name},
+      data_structure: %{id: id, confidential: true}
+      } do
+      create_acl_entry(user_id, domain_id, [
+        :view_data_structure,
+        :update_data_structure,
+        :manage_confidential_structures
+      ])
 
       assert %{"data" => %{"id" => ^id}} =
                conn
-               |> put(data_structure_path(conn, :update, data_structure),
+               |> put(data_structure_path(conn, :update, id),
                  data_structure: %{df_content: %{"string" => "foo", "list" => "one"}}
                )
                |> json_response(:ok)
@@ -390,44 +402,43 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert data["data_structure"]["id"] == id
       assert data["data_structure"]["df_content"] == %{"list" => "one", "string" => "foo"}
-      assert data["domain"]["name"] == "domain_name"
+      assert data["domain"]["name"] == domain_name
     end
 
     @tag authenticated_user: "user_without_permission"
+    @tag :confidential
     test "user without confidential permission cannot update confidential data_structure", %{
       conn: conn,
-      claims: %{user_id: user_id}
+      claims: %{user_id: user_id},
+      domain: %{id: domain_id},
+      data_structure: %{id: data_structure_id, confidential: true}
     } do
-      role_name = "editor"
-      confidential = true
-      data_structure = create_data_structure_and_permissions(user_id, role_name, confidential)
-      %{id: id} = data_structure
+      create_acl_entry(user_id, domain_id, [:view_data_structure, :update_data_structure])
 
       assert conn
-             |> put(data_structure_path(conn, :update, data_structure),
+             |> put(data_structure_path(conn, :update, data_structure_id),
                data_structure: %{df_content: %{foo: "bar"}}
              )
              |> json_response(:forbidden)
-
-      new_data_structure = DataStructures.get_data_structure!(id)
-      assert Map.get(new_data_structure, :df_content) == nil
     end
 
     @tag authenticated_user: "user_without_confidential"
     test "user without confidential permission cannot update confidentiality of data_structure",
-         %{conn: conn, claims: %{user_id: user_id}} do
-      role_name = "editor"
-      confidential = false
-      data_structure = create_data_structure_and_permissions(user_id, role_name, confidential)
-      %{id: id} = data_structure
+         %{
+           conn: conn,
+           claims: %{user_id: user_id},
+           domain: %{id: domain_id},
+           data_structure: %{id: data_structure_id, confidential: false}
+           } do
+      create_acl_entry(user_id, domain_id, [:view_data_structure, :update_data_structure])
 
       assert conn
-             |> put(data_structure_path(conn, :update, data_structure),
+             |> put(data_structure_path(conn, :update, data_structure_id),
                data_structure: %{confidential: true}
              )
              |> json_response(:ok)
 
-      new_data_structure = DataStructures.get_data_structure!(id)
+      new_data_structure = DataStructures.get_data_structure!(data_structure_id)
       assert Map.get(new_data_structure, :confidential) == false
     end
   end
@@ -462,13 +473,18 @@ defmodule TdDdWeb.DataStructureControllerTest do
     end
   end
 
-  defp create_data_structure(_) do
-    data_structure = insert(:data_structure, df_content: %{"field" => "1"})
+  defp create_data_structure(%{domain: %{id: domain_id}} = tags) do
+    data_structure =
+      insert(:data_structure,
+        df_content: %{"field" => "1"},
+        confidential: Map.get(tags, :confidential, false),
+        domain_id: domain_id
+      )
 
     data_structure_version =
       insert(:data_structure_version, data_structure_id: data_structure.id, type: @template_name)
 
-    {:ok, data_structure: data_structure, data_structure_version: data_structure_version}
+    [data_structure: data_structure, data_structure_version: data_structure_version]
   end
 
   defp create_structure_hierarchy(_) do
@@ -564,28 +580,13 @@ defmodule TdDdWeb.DataStructureControllerTest do
     {:ok, parent_structure: parent, child_structures: children}
   end
 
-  defp create_data_structure_and_permissions(user_id, role_name, confidential) do
-    domain_name = "domain_name"
-    domain_id = :random.uniform(1_000_000)
-    updated_at = DateTime.utc_now()
-    TaxonomyCache.put_domain(%{name: domain_name, id: domain_id, updated_at: updated_at})
-
+  defp create_acl_entry(user_id, domain_id, permissions) do
     MockPermissionResolver.create_acl_entry(%{
       principal_id: user_id,
       principal_type: "user",
       resource_id: domain_id,
       resource_type: "domain",
-      role_name: role_name
+      permissions: permissions
     })
-
-    data_structure = insert(:data_structure, confidential: confidential, domain_id: domain_id)
-
-    insert(:data_structure_version,
-      data_structure_id: data_structure.id,
-      name: data_structure.external_id,
-      type: @template_name
-    )
-
-    data_structure
   end
 end

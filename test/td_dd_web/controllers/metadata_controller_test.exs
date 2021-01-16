@@ -19,7 +19,6 @@ defmodule TdDdWeb.MetadataControllerTest do
 
   setup_all do
     start_supervised(MockIndexWorker)
-    start_supervised(TdDd.Permissions.MockPermissionResolver)
     start_supervised(StructureLoader)
     start_supervised(Worker)
     start_supervised(GraphData)

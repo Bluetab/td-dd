@@ -1,11 +1,6 @@
 defmodule TdDdWeb.UserSearchFilterControllerTest do
   use TdDdWeb.ConnCase
 
-  setup_all do
-    start_supervised(TdDd.Permissions.MockPermissionResolver)
-    :ok
-  end
-
   @create_attrs %{
     filters: %{country: ["Spa"]},
     name: "some name"

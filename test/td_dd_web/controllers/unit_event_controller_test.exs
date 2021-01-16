@@ -2,11 +2,6 @@ defmodule TdDdWeb.UnitEventControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  setup_all do
-    start_supervised!(TdDd.Permissions.MockPermissionResolver)
-    :ok
-  end
-
   setup do
     events = Enum.map(1..5, fn id -> build(:unit_event, event: "Event #{id}") end)
     unit = insert(:unit, events: events)

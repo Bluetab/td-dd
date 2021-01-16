@@ -6,7 +6,6 @@ defmodule TdDdWeb.GraphControllerTest do
   alias TdDd.Lineage
 
   setup_all do
-    start_supervised(TdDd.Permissions.MockPermissionResolver)
     start_supervised(Lineage)
     :ok
   end
