@@ -10,7 +10,6 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   alias TdDd.Lineage.GraphData
 
   setup_all do
-    start_supervised(TdDd.Permissions.MockPermissionResolver)
     start_supervised(GraphData)
     :ok
   end

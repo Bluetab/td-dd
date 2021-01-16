@@ -5,7 +5,6 @@ defmodule TdDdWeb.GroupControllerTest do
   alias TdDd.Search.MockIndexWorker
 
   setup_all do
-    start_supervised(TdDd.Permissions.MockPermissionResolver)
     start_supervised(MockIndexWorker)
     :ok
   end

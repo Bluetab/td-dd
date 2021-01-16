@@ -5,7 +5,6 @@ defmodule TdDdWeb.UnitControllerTest do
   @moduletag sandbox: :shared
 
   setup_all do
-    start_supervised(TdDd.Permissions.MockPermissionResolver)
     start_supervised(TdDd.Lineage.Import)
     start_supervised({Task.Supervisor, name: TdDd.TaskSupervisor, max_seconds: 2})
     :ok

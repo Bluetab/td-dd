@@ -14,11 +14,6 @@ defmodule TdDdWeb.RelationTypeControllerTest do
   }
   @invalid_attrs %{description: nil, name: nil}
 
-  setup_all do
-    start_supervised(TdDd.Permissions.MockPermissionResolver)
-    :ok
-  end
-
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end

@@ -6,7 +6,6 @@ defmodule TdDdWeb.ProfileControllerTest do
   alias TdDd.Loader.Worker
 
   setup_all do
-    start_supervised(TdDd.Permissions.MockPermissionResolver)
     start_supervised(Worker)
     start_supervised({Task.Supervisor, name: TdDd.TaskSupervisor})
     :ok

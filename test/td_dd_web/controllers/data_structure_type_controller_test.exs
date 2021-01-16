@@ -16,18 +16,10 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
   }
   @invalid_attrs %{structure_type: nil, template_id: nil, translation: nil}
 
-  setup_all do
-    start_supervised(TdDd.Permissions.MockPermissionResolver)
-    :ok
-  end
-
   setup %{conn: conn} do
     %{id: id} = template = build(:template)
     TemplateCache.put(template, publish: false)
-
-    on_exit(fn ->
-      TemplateCache.delete(id)
-    end)
+    on_exit(fn -> TemplateCache.delete(id) end)
 
     [conn: put_req_header(conn, "accept", "application/json"), template: template]
   end

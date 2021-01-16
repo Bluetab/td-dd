@@ -8,7 +8,6 @@ defmodule TdDdWeb.NodeControllerTest do
   alias TdDd.Permissions.MockPermissionResolver
 
   setup_all do
-    stop_supervised(GraphData)
     start_supervised(GraphData)
     start_supervised(MockPermissionResolver)
     :ok
@@ -63,7 +62,7 @@ defmodule TdDdWeb.NodeControllerTest do
         principal_type: "user",
         resource_id: domain_id,
         resource_type: "domain",
-        role_name: "no_perms"
+        permissions: []
       })
 
       unit = insert(:unit, domain_id: domain_id)
@@ -94,7 +93,7 @@ defmodule TdDdWeb.NodeControllerTest do
         principal_type: "user",
         resource_id: domain_id,
         resource_type: "domain",
-        role_name: "watch"
+        permissions: [:view_data_structure, :view_lineage]
       })
 
       unit = insert(:unit, domain_id: domain_id)
@@ -139,7 +138,7 @@ defmodule TdDdWeb.NodeControllerTest do
         principal_type: "user",
         resource_id: domain_id,
         resource_type: "domain",
-        role_name: "no_perms"
+        permissions: []
       })
 
       unit = insert(:unit, domain_id: domain_id)

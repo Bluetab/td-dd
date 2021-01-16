@@ -21,7 +21,12 @@ defmodule TdDdWeb.SystemControllerTest do
   setup_all do
     start_supervised(MockPermissionResolver)
     start_supervised(SystemLoader)
-    :ok
+
+    %{id: domain_id} = domain = build(:domain)
+    TaxonomyCache.put_domain(domain)
+    on_exit(fn -> TaxonomyCache.delete_domain(domain_id) end)
+
+    [domain: domain]
   end
 
   setup %{conn: conn} do
@@ -193,48 +198,31 @@ defmodule TdDdWeb.SystemControllerTest do
     test "will filter by permissions for non admin users", %{
       conn: conn,
       claims: %{user_id: user_id},
-      system: %{id: system_id} = system
+      domain: %{id: domain_id}
     } do
-      structure = create_data_structure_and_permissions(user_id, "no_perms", false, system_id)
+      create_acl_entry(user_id, domain_id, [])
+
+      %{data_structure: %{id: id, system_id: system_id}} =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, domain_id: domain_id)
+        )
 
       assert %{"data" => data} =
                conn
-               |> get(Routes.system_data_structure_path(conn, :get_system_structures, system))
+               |> get(Routes.system_data_structure_path(conn, :get_system_structures, system_id))
                |> json_response(:ok)
 
-      assert not Enum.any?(data, fn %{"id" => ds_id} -> ds_id == structure.id end)
+      refute data |> Enum.map(& &1["id"]) |> Enum.member?(id)
     end
   end
 
-  defp create_data_structure_and_permissions(user_id, role_name, confidential, system_id) do
-    domain_name = "domain_name"
-    domain_id = :random.uniform(1_000_000)
-    updated_at = DateTime.utc_now()
-
-    TaxonomyCache.put_domain(%{name: domain_name, id: domain_id, updated_at: updated_at})
-
+  defp create_acl_entry(user_id, domain_id, permissions) do
     MockPermissionResolver.create_acl_entry(%{
       principal_id: user_id,
       principal_type: "user",
       resource_id: domain_id,
       resource_type: "domain",
-      role_name: role_name
+      permissions: permissions
     })
-
-    data_structure =
-      insert(
-        :data_structure,
-        confidential: confidential,
-        external_id: "ds",
-        domain_id: domain_id,
-        system_id: system_id
-      )
-
-    insert(:data_structure_version,
-      data_structure_id: data_structure.id,
-      name: data_structure.external_id
-    )
-
-    data_structure
   end
 end
