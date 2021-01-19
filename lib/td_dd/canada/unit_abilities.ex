@@ -6,9 +6,14 @@ defmodule TdDd.Canada.UnitAbilities do
   alias TdDd.Lineage.Units.{Node, Unit}
   alias TdDd.Permissions
 
-  def can?(_claims, :view_lineage, %Unit{domain_id: nil}) do
-    true
-  end
+  # Service accounts can create, replace and view units
+  def can?(%Claims{role: "service"}, :create, Unit), do: true
+  def can?(%Claims{role: "service"}, :update, Unit), do: true
+  def can?(%Claims{role: "service"}, :show, Unit), do: true
+
+  def can?(%Claims{}, _action, Unit), do: false
+
+  def can?(_claims, :view_lineage, %Unit{domain_id: nil}), do: true
 
   def can?(%Claims{} = claims, :view_lineage, %Unit{domain_id: domain_id}) do
     Permissions.authorized?(claims, :view_lineage, domain_id)

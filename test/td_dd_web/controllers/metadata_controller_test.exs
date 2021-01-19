@@ -10,18 +10,16 @@ defmodule TdDdWeb.MetadataControllerTest do
     ]
 
   alias TdCache.TaxonomyCache
-  alias TdDd.Cache.StructureLoader
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.Lineage.GraphData
   alias TdDd.Loader.Worker
-  alias TdDd.Search.MockIndexWorker
 
   setup_all do
-    start_supervised(MockIndexWorker)
-    start_supervised(StructureLoader)
+    start_supervised(TdDd.Search.MockIndexWorker)
+    start_supervised(TdDd.Cache.StructureLoader)
     start_supervised(Worker)
-    start_supervised(GraphData)
+    start_supervised(TdDd.Lineage.GraphData)
+    start_supervised(TdDd.Permissions.MockPermissionResolver)
     start_supervised({Task.Supervisor, name: TdDd.TaskSupervisor})
     :ok
   end
@@ -49,7 +47,7 @@ defmodule TdDdWeb.MetadataControllerTest do
   end
 
   describe "upload" do
-    @tag authentication: [role: "admin"]
+    @tag authentication: [role: "service"]
     @tag fixture: "test/fixtures/metadata"
     test "uploads structure, field and relation metadata", %{
       conn: conn,
@@ -89,7 +87,7 @@ defmodule TdDdWeb.MetadataControllerTest do
       assert length(children) == 16
     end
 
-    @tag authentication: [role: "admin"]
+    @tag authentication: [role: "service"]
     @tag fixture: "test/fixtures/metadata/field_external_id"
     test "maintains field_external_id if specified", %{
       conn: conn,
@@ -117,7 +115,7 @@ defmodule TdDdWeb.MetadataControllerTest do
       assert Enum.member?(external_ids, "field_with_external_id")
     end
 
-    @tag authentication: [role: "admin"]
+    @tag authentication: [role: "service"]
     @tag fixture: "test/fixtures/metadata/relation_type"
     test "uploads structure, field and relation with relation_type_name metadata", %{
       conn: conn,
@@ -176,7 +174,7 @@ defmodule TdDdWeb.MetadataControllerTest do
       assert length(children) == 3
     end
 
-    @tag authentication: [role: "admin"]
+    @tag authentication: [role: "service"]
     @tag fixture: "test/fixtures/metadata"
     test "uploads structure, field and relation metadata when domain is specified", %{
       conn: conn,
@@ -203,13 +201,13 @@ defmodule TdDdWeb.MetadataControllerTest do
           domain: domain_external_id
         )
 
-      assert response(conn, 202) =~ ""
+      assert response(conn, :accepted) =~ ""
 
       # waits for loader to complete
       Worker.await(20_000)
 
       conn = get(conn, data_structure_path(conn, :index))
-      json_response = json_response(conn, 200)["data"]
+      json_response = json_response(conn, :ok)["data"]
       assert length(json_response) == 5 + 68
 
       assert Enum.all?(json_response, fn %{"domain_id" => id, "domain" => d} ->
@@ -224,7 +222,7 @@ defmodule TdDdWeb.MetadataControllerTest do
                |> get(
                  data_structure_data_structure_version_path(conn, :show, structure_id, "latest")
                )
-               |> json_response(200)
+               |> json_response(:ok)
 
       assert length(data["parents"]) == 1
       assert length(data["siblings"]) == 4
@@ -233,7 +231,7 @@ defmodule TdDdWeb.MetadataControllerTest do
   end
 
   describe "td-2520" do
-    @tag authentication: [role: "admin"]
+    @tag authentication: [role: "service"]
     test "synchronous load with parent_external_id and external_id", %{conn: conn} do
       insert(:system, external_id: "test1", name: "test1")
 
@@ -272,7 +270,7 @@ defmodule TdDdWeb.MetadataControllerTest do
       conn =
         get(conn, Routes.data_structure_data_structure_version_path(conn, :show, id, "latest"))
 
-      %{"children" => children} = json_response(conn, 200)["data"]
+      %{"children" => children} = json_response(conn, :ok)["data"]
       assert Enum.count(children) == 2
 
       assert Enum.all?(["Child1", "Child2"], fn name ->

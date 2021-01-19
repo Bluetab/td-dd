@@ -17,7 +17,7 @@ defmodule TdDdWeb.ProfileControllerTest do
   end
 
   describe "upload profiling" do
-    @tag authentication: [role: "admin"]
+    @tag authentication: [role: "service"]
     @tag fixture: "test/fixtures/profiling"
     test "uploads profiles for data structures", %{
       conn: conn,
@@ -29,9 +29,9 @@ defmodule TdDdWeb.ProfileControllerTest do
       insert(:data_structure, external_id: "DS2", system_id: sys1.id)
       insert(:data_structure, external_id: "DS3", system_id: sys1.id)
 
-      conn = post(conn, Routes.profile_path(conn, :upload), profiling: profiling)
-
-      assert response(conn, 202) =~ ""
+      assert conn
+             |> post(Routes.profile_path(conn, :upload), profiling: profiling)
+             |> response(:accepted)
 
       # waits for loader to complete
       Worker.await(20_000)

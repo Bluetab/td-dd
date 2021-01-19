@@ -27,19 +27,12 @@ defmodule TdDdWeb.Authentication do
 
   def create_claims(opts \\ []) do
     role = Keyword.get(opts, :role, "user")
-    is_admin = role === "admin"
-
-    user_name =
-      case Keyword.get(opts, :user_name) do
-        nil -> if is_admin, do: "app-admin", else: "user"
-        name -> name
-      end
+    user_name = Keyword.get(opts, :user_name, "joe")
 
     %Claims{
       user_id: Integer.mod(:binary.decode_unsigned(user_name), 100_000),
       user_name: user_name,
-      role: role,
-      is_admin: is_admin
+      role: role
     }
   end
 
@@ -57,13 +50,8 @@ defmodule TdDdWeb.Authentication do
   end
 
   def build_user_token(user_name) when is_binary(user_name) do
-    user_name
-    |> role_opts()
-    |> build_user_token()
+    build_user_token(user_name: user_name, role: "user")
   end
-
-  defp role_opts("app-admin"), do: [user_name: "app-admin", role: "admin"]
-  defp role_opts(user_name), do: [user_name: user_name, role: "user"]
 
   defp register_token(token) do
     case Guardian.decode_and_verify(token) do

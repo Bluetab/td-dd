@@ -4,6 +4,13 @@ defmodule TdDd.Canada.DataStructureAbilities do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Permissions
 
+  # Service accounts can view any data structure
+  def can?(%Claims{role: "service"}, :view_data_structure, _any), do: true
+  def can?(%Claims{role: "service"}, :update_data_structure, _any), do: true
+  def can?(%Claims{role: "service"}, :manage_confidential_structures, _any), do: true
+  def can?(%Claims{role: "service"}, :view_data_structures_profile, _any), do: true
+  def can?(%Claims{role: "service"}, :show, _any), do: true
+
   def can?(%Claims{}, _action, %DataStructure{domain_id: nil}), do: false
 
   def can?(%Claims{} = claims, :manage_confidential_structures, %DataStructure{

@@ -72,7 +72,7 @@ defmodule TdDdWeb.UnitControllerTest do
              |> response(:no_content)
     end
 
-    @tag authentication: [role: "admin"]
+    @tag authentication: [role: "service"]
     test "PUT /api/units/:name replaces lineage unit metadata", %{
       conn: conn,
       swagger_schema: schema

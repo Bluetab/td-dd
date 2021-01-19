@@ -7,6 +7,7 @@ defmodule TdDdWeb.UnitController do
   alias TdCache.TaxonomyCache
   alias TdDd.Lineage.Import
   alias TdDd.Lineage.Units
+  alias TdDd.Lineage.Units.Unit
 
   action_fallback(TdDdWeb.FallbackController)
 

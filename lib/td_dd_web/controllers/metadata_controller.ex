@@ -3,14 +3,14 @@ defmodule TdDdWeb.MetadataController do
 
   import Canada, only: [can?: 2]
 
+  require Logger
+
   alias Jason, as: JSON
   alias Plug.Upload
   alias TdCache.TaxonomyCache
   alias TdDd.DataStructures
   alias TdDd.Loader.Worker
   alias TdDd.Systems
-
-  require Logger
 
   def upload_by_system(conn, %{"system_id" => external_id} = params) do
     alias TdDd.Systems.System

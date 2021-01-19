@@ -4,8 +4,6 @@ defmodule TdDdWeb.SearchController do
 
   import Canada, only: [can?: 2]
 
-  alias Jason, as: JSON
-
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.Search
@@ -46,7 +44,7 @@ defmodule TdDdWeb.SearchController do
 
     agg_results = Search.get_aggregations_values(claims, permission, params, agg_terms)
     source_aliases = Enum.map(agg_results, &Map.get(&1, "key"))
-    body = JSON.encode!(%{data: source_aliases})
+    body = Jason.encode!(%{data: source_aliases})
     send_resp(conn, :ok, body)
   end
 
@@ -62,14 +60,14 @@ defmodule TdDdWeb.SearchController do
 
     agg_results = Search.get_aggregations_values(claims, permission, params, agg_terms)
     metadata_types = Enum.map(agg_results, &Map.get(&1, "key"))
-    body = JSON.encode!(%{data: metadata_types})
+    body = Jason.encode!(%{data: metadata_types})
     send_resp(conn, :ok, body)
   end
 
   def search_structures_metadata_fields(conn, params) do
-    %{is_admin: is_admin} = conn.assigns[:current_resource]
+    %{role: role} = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, is_admin} do
+    with {:can, true} <- {:can, role == "admin"} do
       metadata_fields =
         params
         |> Map.get("filters", %{})
@@ -78,7 +76,7 @@ defmodule TdDdWeb.SearchController do
 
       conn
       |> put_resp_content_type("application/json", "utf-8")
-      |> send_resp(:ok, JSON.encode!(%{data: metadata_fields}))
+      |> send_resp(:ok, Jason.encode!(%{data: metadata_fields}))
     end
   end
 end

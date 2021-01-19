@@ -4,7 +4,6 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
 
   alias TdCache.StructureTypeCache
   alias TdCache.TemplateCache
-  alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Lineage.GraphData
@@ -71,7 +70,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     @tag authentication: [role: "admin"]
     test "renders a data structure with children", %{
       conn: conn,
-      structure: %DataStructure{id: id}
+      structure: %{id: id}
     } do
       assert %{"data" => data} =
                conn
@@ -86,7 +85,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     @tag authentication: [role: "admin"]
     test "renders a data structure with parents", %{
       conn: conn,
-      structure: %DataStructure{id: id}
+      structure: %{id: id}
     } do
       assert %{"data" => data} =
                conn
@@ -99,7 +98,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     @tag authentication: [role: "admin"]
     test "renders a data structure with siblings", %{
       conn: conn,
-      child_structures: [%DataStructure{id: id} | _]
+      child_structures: [%{id: id} | _]
     } do
       assert %{"data" => data} =
                conn
@@ -112,7 +111,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     @tag authentication: [role: "admin"]
     test "renders a data structure with metadata", %{
       conn: conn,
-      structure: %DataStructure{id: id}
+      structure: %{id: id}
     } do
       assert %{"data" => %{"metadata" => metadata}} =
                conn
@@ -133,6 +132,16 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                |> json_response(:ok)
 
       assert %{"id" => ^id} = data
+    end
+
+    @tag authentication: [role: "service"]
+    test "service account can view data structure", %{conn: conn, structure: %{id: id}} do
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.data_structure_data_structure_version_path(conn, :show, id, 0))
+               |> json_response(:ok)
+
+      assert %{"data_structure" => %{"id" => ^id}} = data
     end
   end
 

@@ -181,6 +181,19 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert [%{"id" => ^id, "name" => ^name, "external_id" => ^external_id}] = data
     end
+
+    @tag authentication: [role: "service"]
+    test "service account can search all data_structures", %{conn: conn} do
+      %{name: name, data_structure: %{id: id, external_id: external_id}} =
+        insert(:data_structure_version)
+
+      assert %{"data" => data} =
+               conn
+               |> get(data_structure_path(conn, :index))
+               |> json_response(:ok)
+
+      assert [%{"id" => ^id, "name" => ^name, "external_id" => ^external_id}] = data
+    end
   end
 
   describe "search" do

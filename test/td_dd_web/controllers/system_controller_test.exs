@@ -34,9 +34,18 @@ defmodule TdDdWeb.SystemControllerTest do
     {:ok, conn: put_req_header(conn, "accept", "application/json"), system: system}
   end
 
-  describe "index" do
+  describe "GET /api/systems" do
     @tag authentication: [role: "admin"]
-    test "lists all systems", %{conn: conn, swagger_schema: schema} do
+    test "admin can lists systems", %{conn: conn, swagger_schema: schema} do
+      assert %{"data" => [_system]} =
+               conn
+               |> get(Routes.system_path(conn, :index))
+               |> validate_resp_schema(schema, "SystemsResponse")
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "service"]
+    test "service account can lists systems", %{conn: conn, swagger_schema: schema} do
       assert %{"data" => [_system]} =
                conn
                |> get(Routes.system_path(conn, :index))
