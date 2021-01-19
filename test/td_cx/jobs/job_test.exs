@@ -16,7 +16,7 @@ defmodule TdCx.Jobs.JobTest do
                  external_id: source.external_id,
                  type: source.type
                },
-               status: "",
+               status: "PENDING",
                type: "foo"
              }
     end
