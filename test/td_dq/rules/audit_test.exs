@@ -26,14 +26,14 @@ defmodule TdDq.Rules.AuditTest do
   setup %{template_name: template_name} do
     on_exit(fn -> Redix.del!(@stream) end)
 
-    user = build(:user, is_admin: true)
+    claims = build(:claims, role: "admin")
     rule = insert(:rule, df_name: template_name)
     implementation = insert(:implementation, rule: rule, deleted_at: nil)
-    [user: user, rule: rule, implementation: implementation]
+    [claims: claims, rule: rule, implementation: implementation]
   end
 
   describe "rule_updated/4" do
-    test "publishes an event", %{rule: rule, user: %{id: user_id}} do
+    test "publishes an event", %{rule: rule, claims: %{user_id: user_id}} do
       %{id: rule_id} = rule
 
       params = %{df_content: %{"list" => "two"}, name: "new name"}
@@ -65,7 +65,7 @@ defmodule TdDq.Rules.AuditTest do
   end
 
   describe "rule_deleted/3" do
-    test "publishes an event", %{user: %{id: user_id}} do
+    test "publishes an event", %{claims: %{user_id: user_id}} do
       %{id: rule_id} = rule = insert(:rule)
 
       assert {:ok, event_id} = Audit.rule_deleted(Repo, %{rule: rule}, user_id)
@@ -87,7 +87,10 @@ defmodule TdDq.Rules.AuditTest do
   end
 
   describe "implementation_updated/4" do
-    test "publishes on soft deletion", %{implementation: implementation, user: %{id: user_id}} do
+    test "publishes on soft deletion", %{
+      implementation: implementation,
+      claims: %{user_id: user_id}
+    } do
       %{id: implementation_id, implementation_key: implementation_key, rule_id: rule_id} =
         implementation
 

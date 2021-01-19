@@ -3,36 +3,36 @@ defmodule TdDq.Rules.Search do
   The Rules Search context
   """
 
-  alias TdDq.Accounts.User
+  alias TdDq.Auth.Claims
   alias TdDq.Permissions
   alias TdDq.Search
   alias TdDq.Search.Query
 
   require Logger
 
-  def get_filter_values(user, params, index \\ :rules)
+  def get_filter_values(claims, params, index \\ :rules)
 
-  def get_filter_values(%User{is_admin: true}, params, index) do
+  def get_filter_values(%Claims{is_admin: true}, params, index) do
     filter_clause = Query.create_filters(params, index)
     query = Query.create_query(%{}, filter_clause)
     search = %{query: query, aggs: Query.get_aggregation_terms(index)}
     Search.get_filters(search, index)
   end
 
-  def get_filter_values(%User{} = user, params, index) do
+  def get_filter_values(%Claims{} = claims, params, index) do
     user_defined_filters = Query.create_filters(params, index)
 
     permissions =
-      user
+      claims
       |> Permissions.get_domain_permissions()
       |> get_permissions(user_defined_filters, index)
 
     get_filters(permissions, params, index)
   end
 
-  def search(params, user, page \\ 0, size \\ 50, index \\ :rules)
+  def search(params, claims, page \\ 0, size \\ 50, index \\ :rules)
 
-  def search(params, %User{is_admin: true}, page, size, index) do
+  def search(params, %Claims{is_admin: true}, page, size, index) do
     filter_clause = Query.create_filters(params, index)
     filter_clause = filter_clause |> delete_execution_filter
     query = Query.create_query(params, filter_clause)
@@ -49,11 +49,11 @@ defmodule TdDq.Rules.Search do
     |> do_search(index)
   end
 
-  def search(params, %User{} = user, page, size, index) do
+  def search(params, %Claims{} = claims, page, size, index) do
     user_defined_filters = Query.create_filters(params, index)
 
     permissions =
-      user
+      claims
       |> Permissions.get_domain_permissions()
       |> get_permissions(user_defined_filters, index)
 
@@ -151,7 +151,10 @@ defmodule TdDq.Rules.Search do
   end
 
   defp delete_execution_filter(user_defined_filters) do
-    Enum.filter(user_defined_filters, &(!Enum.at(Map.get(get_filter(&1), "execution.raw", []), 0)))
+    Enum.filter(
+      user_defined_filters,
+      &(!Enum.at(Map.get(get_filter(&1), "execution.raw", []), 0))
+    )
   end
 
   defp get_filter(%{terms: field}), do: field

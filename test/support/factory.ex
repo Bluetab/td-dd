@@ -129,11 +129,15 @@ defmodule TdDq.Factory do
     }
   end
 
-  def user_factory do
-    %TdDq.Accounts.User{
-      id: sequence(:user_id, & &1),
-      user_name: sequence("user_name")
+  def claims_factory(attrs) do
+    %TdDq.Auth.Claims{
+      user_id: sequence(:user_id, & &1),
+      user_name: sequence("user_name"),
+      role: "admin",
+      jti: sequence("jti"),
+      is_admin: Map.get(attrs, :role) == "admin"
     }
+    |> merge_attributes(attrs)
   end
 
   defp default_assoc(attrs, id_key, key) do
