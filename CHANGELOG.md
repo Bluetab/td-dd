@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-3187] Filter executions by source and `PENDING` status
+
 ### Changed
 
 - [TD-3163] Auth tokens now include `role` claim instead of `is_admin` flag

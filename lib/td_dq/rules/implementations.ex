@@ -177,6 +177,12 @@ defmodule TdDq.Rules.Implementations do
     end
   end
 
+  def get_sources(%Implementation{} = implementation) do
+    implementation
+    |> get_structure_ids()
+    |> Search.Helpers.get_sources()
+  end
+
   def get_structure_ids(%Implementation{} = implementation) do
     implementation
     |> Map.take([:dataset, :population, :validations])

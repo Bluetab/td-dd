@@ -3,6 +3,7 @@ defmodule TdDq.ExecutionsTest do
 
   alias TdCache.Redix
   alias TdCache.Redix.Stream
+  alias TdCache.StructureCache
   alias TdDq.Executions
 
   @stream TdCache.Audit.stream()
@@ -82,6 +83,84 @@ defmodule TdDq.ExecutionsTest do
                ],
                "filters" => ^filters
              } = Jason.decode!(payload)
+    end
+  end
+
+  describe "list_executions/2" do
+    setup do
+      %{id: implementation_id} = implementation = insert(:implementation)
+      %{id: group_id1} = g1 = insert(:execution_group)
+      %{id: group_id2} = g2 = insert(:execution_group)
+
+      %{id: id} =
+        e1 = insert(:execution, group_id: group_id1, implementation_id: implementation_id)
+
+      e2 = insert(:execution, group_id: group_id2, implementation_id: implementation_id)
+      result = insert(:rule_result, execution_id: id)
+
+      structure_id =
+        implementation
+        |> Map.get(:dataset)
+        |> List.first()
+        |> Map.get(:structure)
+        |> Map.get(:id)
+
+      structure = %{
+        id: structure_id,
+        name: "name",
+        external_id: "ext_id",
+        group: "group",
+        type: "type",
+        path: ["foo", "bar"],
+        updated_at: DateTime.utc_now(),
+        metadata: %{"alias" => "source_alias"},
+        system_id: 999
+      }
+
+      {:ok, _} = StructureCache.put(structure)
+
+      on_exit(fn ->
+        StructureCache.delete(structure.id)
+      end)
+
+      [
+        implementation: implementation,
+        groups: [g1, g2],
+        executions: [e1, e2],
+        result: result,
+        structure: structure
+      ]
+    end
+
+    test "list executions", %{executions: [%{id: id1}, %{id: id2}], result: %{id: result_id}} do
+      assert [%{id: ^id1, result: %{id: ^result_id}}, %{id: ^id2, result: nil}] =
+               Executions.list_executions(%{}, preload: [:result])
+    end
+
+    test "list executions filtered by group", %{
+      groups: [_, %{id: group_id}],
+      executions: [_, %{id: id}]
+    } do
+      assert [%{id: ^id}] = Executions.list_executions(%{group_id: group_id})
+    end
+
+    test "list executions filtered by status", %{
+      implementation: %{id: implementation_id},
+      executions: [_, %{id: id}]
+    } do
+      assert [%{id: ^id, result: nil, implementation: %{id: ^implementation_id}}] =
+               Executions.list_executions(%{status: "PENDING"},
+                 preload: [:implementation, :result]
+               )
+    end
+
+    test "list executions filtered by source", %{
+      executions: [%{id: id1}, %{id: id2}],
+      structure: %{metadata: %{"alias" => source}}
+    } do
+      assert [] = Executions.list_executions(%{source: "foo"})
+      assert [%{id: ^id1}, %{id: ^id2}] = Executions.list_executions(%{source: source})
+      assert [%{id: ^id2}] = Executions.list_executions(%{source: source, status: "PENDING"})
     end
   end
 end
