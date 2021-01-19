@@ -19,7 +19,7 @@ defmodule TdDdWeb.NodeControllerTest do
   end
 
   describe "NodeController" do
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     @tag contains: %{"foo" => ["bar", "baz"]}
     @tag depends: [{"bar", "baz"}]
     test "index returns the top-level groups and parent nil", %{conn: conn} do
@@ -30,7 +30,7 @@ defmodule TdDdWeb.NodeControllerTest do
       assert %{"external_id" => "foo", "name" => "foo"} = group
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     @tag contains: %{"foo" => ["bar", "baz"]}
     @tag depends: [{"bar", "baz"}]
     test "show returns a list including the child resources of the specified group", %{conn: conn} do
@@ -47,7 +47,7 @@ defmodule TdDdWeb.NodeControllerTest do
       assert %{"foo_type" => [_bar, _baz]} = Enum.group_by(resources, & &1["type"])
     end
 
-    @tag authenticated_user: "non_admin_user"
+    @tag authentication: [user_name: "non_admin_user"]
     @tag contains: %{"foo" => ["bar", "baz"], "xyz" => ["x", "y"]}
     @tag depends: [{"bar", "baz"}, {"x", "y"}]
     test "will filter groups depending on user permissions over domains", %{
@@ -122,7 +122,7 @@ defmodule TdDdWeb.NodeControllerTest do
       assert %{"external_id" => "xyz", "name" => "xyz"} = group
     end
 
-    @tag authenticated_user: "non_admin_user"
+    @tag authentication: [user_name: "non_admin_user"]
     @tag contains: %{"foo" => ["bar", "baz"]}
     @tag depends: [{"bar", "baz"}]
     test "will filter a group if a user has not permissions over any of the group's permissions",

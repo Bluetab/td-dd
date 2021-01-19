@@ -11,7 +11,7 @@ defmodule TdDdWeb.GraphControllerTest do
   end
 
   describe "GraphController" do
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     @tag contains: %{"foo" => ["bar", "baz"]}
     @tag depends: [{"bar", "baz"}]
     test "create returns the id, show returns the graph drawing", %{conn: conn} do
@@ -32,7 +32,7 @@ defmodule TdDdWeb.GraphControllerTest do
       assert [%{"id" => "bar"}, %{"id" => "baz"}] = data["resources"]
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     @tag contains: %{"foo" => ["bar", "baz"]}
     @tag depends: [{"bar", "baz"}]
     test "csv returns csv content of a graph by id", %{conn: conn} do

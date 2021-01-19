@@ -15,10 +15,11 @@ defmodule TdDdWeb.ConnCase do
 
   use ExUnit.CaseTemplate
 
-  alias Ecto.Adapters.SQL.Sandbox
-  alias TdDdWeb.Endpoint
-
   import TdDdWeb.Authentication, only: :functions
+
+  alias Ecto.Adapters.SQL.Sandbox
+  alias Phoenix.ConnTest
+  alias TdDdWeb.Endpoint
 
   using do
     quote do
@@ -52,19 +53,14 @@ defmodule TdDdWeb.ConnCase do
       ])
     end
 
-    cond do
-      tags[:admin_authenticated] ->
-        "app-admin"
-        |> create_claims(role: "admin")
-        |> create_user_auth_conn()
+    case tags[:authentication] do
+      nil ->
+        [conn: ConnTest.build_conn()]
 
-      tags[:authenticated_user] ->
-        tags[:authenticated_user]
+      auth_opts ->
+        auth_opts
         |> create_claims()
         |> create_user_auth_conn()
-
-      true ->
-        {:ok, conn: Phoenix.ConnTest.build_conn()}
     end
   end
 

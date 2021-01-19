@@ -11,7 +11,7 @@ defmodule TdDdWeb.UnitControllerTest do
   end
 
   describe "Unit Controller" do
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "GET /api/units returns the list of units", %{conn: conn, swagger_schema: schema} do
       Enum.each(1..5, fn _ -> insert(:unit, events: [build(:unit_event)]) end)
 
@@ -25,7 +25,7 @@ defmodule TdDdWeb.UnitControllerTest do
       assert Enum.all?(units, &(&1["status"]["event"] == "EventType"))
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "GET /api/units/:name returns a unit", %{conn: conn, swagger_schema: schema} do
       %{name: name} = insert(:unit, events: [build(:unit_event, event: "LoadStarted")])
 
@@ -39,7 +39,7 @@ defmodule TdDdWeb.UnitControllerTest do
       assert %{"event" => "LoadStarted"} = status
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "POST /api/units creates a unit", %{conn: conn, swagger_schema: schema} do
       %{name: name} = build(:unit)
 
@@ -49,7 +49,7 @@ defmodule TdDdWeb.UnitControllerTest do
              |> json_response(:ok)
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "POST /api/units returns 422 if params are invalid", %{
       conn: conn,
       swagger_schema: schema
@@ -63,7 +63,7 @@ defmodule TdDdWeb.UnitControllerTest do
       assert %{"name" => ["can't be blank"]} = errors
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "DELETE /api/units/:name deletes a unit", %{conn: conn} do
       %{name: name} = insert(:unit)
 
@@ -72,7 +72,7 @@ defmodule TdDdWeb.UnitControllerTest do
              |> response(:no_content)
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "PUT /api/units/:name replaces lineage unit metadata", %{
       conn: conn,
       swagger_schema: schema
@@ -101,28 +101,28 @@ defmodule TdDdWeb.UnitControllerTest do
   end
 
   describe "Unit Controller for non-admin users" do
-    @tag authenticated_user: "some_user"
+    @tag authentication: [user_name: "non_admin_user"]
     test "GET /api/units returns forbidden", %{conn: conn} do
       assert conn
              |> get(Routes.unit_path(conn, :index))
              |> json_response(:forbidden)
     end
 
-    @tag authenticated_user: "some_user"
+    @tag authentication: [user_name: "non_admin_user"]
     test "GET /api/units/:name returns forbidden", %{conn: conn} do
       assert conn
              |> get(Routes.unit_path(conn, :show, "foo"))
              |> json_response(:forbidden)
     end
 
-    @tag authenticated_user: "some_user"
+    @tag authentication: [user_name: "non_admin_user"]
     test "DELETE /api/units/:name returns forbidden", %{conn: conn} do
       assert conn
              |> get(Routes.unit_path(conn, :delete, "foo"))
              |> json_response(:forbidden)
     end
 
-    @tag authenticated_user: "some_user"
+    @tag authentication: [user_name: "non_admin_user"]
     test "POST /api/units returns forbidden", %{conn: conn} do
       %{name: name} = build(:unit)
 
@@ -131,7 +131,7 @@ defmodule TdDdWeb.UnitControllerTest do
              |> json_response(:forbidden)
     end
 
-    @tag authenticated_user: "some_user"
+    @tag authentication: [user_name: "non_admin_user"]
     test "PUT /api/units/:name returns forbidden", %{conn: conn} do
       nodes = upload("test/fixtures/lineage/nodes.csv")
       rels = upload("test/fixtures/lineage/rels.csv")

@@ -17,7 +17,7 @@ defmodule TdDdWeb.ProfileControllerTest do
   end
 
   describe "upload profiling" do
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     @tag fixture: "test/fixtures/profiling"
     test "uploads profiles for data structures", %{
       conn: conn,

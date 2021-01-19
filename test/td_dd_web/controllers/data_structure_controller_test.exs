@@ -58,7 +58,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   describe "show" do
     setup [:create_structure_hierarchy]
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders a data structure with children", %{conn: conn, structure: %{id: child_id}} do
       assert %{"data" => %{"children" => children}} =
                conn
@@ -69,7 +69,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert Enum.all?(children, &(Map.get(&1, "order") == 1))
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders a data structure with parents", %{conn: conn, structure: %{id: child_id}} do
       assert %{"data" => %{"parents" => parents}} =
                conn
@@ -79,7 +79,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert Enum.count(parents) == 1
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders a data structure with siblings", %{
       conn: conn,
       child_structures: [%{id: id} | _]
@@ -92,7 +92,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert Enum.count(siblings) == 2
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders metadata versions when exist", %{
       conn: conn,
       parent_structure: %{id: parent_id},
@@ -115,7 +115,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   describe "show data_structure with deletions in its hierarchy" do
     setup [:create_structure_hierarchy_with_logic_deletions]
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders a data structure with children including deleted", %{
       conn: conn,
       parent_structure: %{id: parent_id}
@@ -132,7 +132,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert deleted_child["name"] == "Child_deleted"
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders a data structure with logic deleted parents", %{
       conn: conn,
       child_structures: [%{id: child_id} | _]
@@ -145,7 +145,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert parent["name"] != "Parent_deleted"
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders a data structure with logic deleted siblings", %{
       conn: conn,
       child_structures: [%{id: id} | _]
@@ -161,7 +161,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   end
 
   describe "index" do
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "lists all data_structures", %{conn: conn} do
       assert %{"data" => []} =
                conn
@@ -169,7 +169,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                |> json_response(:ok)
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "search all data_structures", %{conn: conn} do
       %{name: name, data_structure: %{id: id, external_id: external_id}} =
         insert(:data_structure_version)
@@ -186,7 +186,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   describe "search" do
     setup [:create_data_structure]
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "search_all", %{conn: conn, data_structure: %{id: id}} do
       assert %{"data" => [%{"id" => ^id}], "filters" => _filters} =
                conn
@@ -194,7 +194,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                |> json_response(:ok)
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "search with query performs ngram search on name", %{conn: conn} do
       %{data_structure_id: id} =
         insert(:data_structure_version,
@@ -208,7 +208,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                |> json_response(:ok)
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "search with query performs search on dynamic content", %{conn: conn} do
       %{data_structure_id: id} =
         insert(:data_structure_version,
@@ -233,7 +233,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       Enum.each(1..7, fn _ -> insert(:data_structure_version) end)
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "returns scroll_id and pages results", %{conn: conn} do
       assert %{"data" => data, "scroll_id" => scroll_id} =
                conn
@@ -269,7 +269,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   describe "update data_structure" do
     setup [:create_data_structure]
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders data_structure when data is valid", %{
       conn: conn,
       data_structure: %{id: id} = data_structure,
@@ -293,7 +293,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert data["data_structure"]["inserted_at"]
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders error when df_content is invalid", %{conn: conn, data_structure: data_structure} do
       assert conn
              |> put(data_structure_path(conn, :update, data_structure),
@@ -302,7 +302,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
              |> response(:unprocessable_entity)
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders data_structure when df_content is valid", %{
       conn: conn,
       data_structure: %{id: id} = data_structure
@@ -328,7 +328,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   describe "delete data_structure" do
     setup [:create_data_structure]
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "deletes chosen data_structure", %{
       conn: conn,
       data_structure: data_structure,
@@ -351,7 +351,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   describe "data_structure confidentiality" do
     setup [:create_data_structure]
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "updates data_structure confidentiality", %{
       conn: conn,
       data_structure: %{id: id} = data_structure
@@ -374,14 +374,14 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert data["data_structure"]["confidential"] == true
     end
 
-    @tag authenticated_user: "non_admin_user"
+    @tag authentication: [user_name: "non_admin_user"]
     @tag :confidential
     test "user with permission can update confidential data_structure", %{
       conn: conn,
       claims: %{user_id: user_id},
       domain: %{id: domain_id, name: domain_name},
       data_structure: %{id: id, confidential: true}
-      } do
+    } do
       create_acl_entry(user_id, domain_id, [
         :view_data_structure,
         :update_data_structure,
@@ -405,7 +405,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert data["domain"]["name"] == domain_name
     end
 
-    @tag authenticated_user: "user_without_permission"
+    @tag authentication: [user_name: "user_without_permission"]
     @tag :confidential
     test "user without confidential permission cannot update confidential data_structure", %{
       conn: conn,
@@ -422,14 +422,14 @@ defmodule TdDdWeb.DataStructureControllerTest do
              |> json_response(:forbidden)
     end
 
-    @tag authenticated_user: "user_without_confidential"
+    @tag authentication: [user_name: "user_without_confidential"]
     test "user without confidential permission cannot update confidentiality of data_structure",
          %{
            conn: conn,
            claims: %{user_id: user_id},
            domain: %{id: domain_id},
            data_structure: %{id: data_structure_id, confidential: false}
-           } do
+         } do
       create_acl_entry(user_id, domain_id, [:view_data_structure, :update_data_structure])
 
       assert conn
@@ -445,7 +445,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
   describe "csv" do
     setup [:create_data_structure]
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "gets csv content", %{
       conn: conn,
       data_structure: data_structure,

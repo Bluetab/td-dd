@@ -25,7 +25,7 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
   end
 
   describe "index" do
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "lists all data_structure_types", %{conn: conn} do
       insert(:data_structure_type, template_id: 123)
 
@@ -38,7 +38,7 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
       refute Map.has_key?(structure_type, "template")
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "enriches template", %{conn: conn, template: %{id: template_id}} do
       insert(:data_structure_type, template_id: template_id)
 
@@ -53,7 +53,7 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
   end
 
   describe "create data_structure_type" do
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders data_structure_type when data is valid", %{conn: conn} do
       assert %{"data" => %{"id" => id}} =
                conn
@@ -76,7 +76,7 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
              } = data
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders errors when data is invalid", %{conn: conn} do
       assert %{"errors" => %{} = errors} =
                conn
@@ -92,7 +92,7 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
   describe "update data_structure_type" do
     setup [:create_data_structure_type]
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders data_structure_type when data is valid", %{
       conn: conn,
       data_structure_type: %{id: id}
@@ -118,7 +118,7 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
              } = data
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders errors when data is invalid", %{
       conn: conn,
       data_structure_type: data_structure_type
@@ -137,7 +137,7 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
   describe "delete data_structure_type" do
     setup [:create_data_structure_type]
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "deletes chosen data_structure_type", %{
       conn: conn,
       data_structure_type: data_structure_type

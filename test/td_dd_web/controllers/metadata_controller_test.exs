@@ -49,7 +49,7 @@ defmodule TdDdWeb.MetadataControllerTest do
   end
 
   describe "upload" do
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     @tag fixture: "test/fixtures/metadata"
     test "uploads structure, field and relation metadata", %{
       conn: conn,
@@ -89,7 +89,7 @@ defmodule TdDdWeb.MetadataControllerTest do
       assert length(children) == 16
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     @tag fixture: "test/fixtures/metadata/field_external_id"
     test "maintains field_external_id if specified", %{
       conn: conn,
@@ -117,7 +117,7 @@ defmodule TdDdWeb.MetadataControllerTest do
       assert Enum.member?(external_ids, "field_with_external_id")
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     @tag fixture: "test/fixtures/metadata/relation_type"
     test "uploads structure, field and relation with relation_type_name metadata", %{
       conn: conn,
@@ -176,7 +176,7 @@ defmodule TdDdWeb.MetadataControllerTest do
       assert length(children) == 3
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     @tag fixture: "test/fixtures/metadata"
     test "uploads structure, field and relation metadata when domain is specified", %{
       conn: conn,
@@ -233,7 +233,7 @@ defmodule TdDdWeb.MetadataControllerTest do
   end
 
   describe "td-2520" do
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "synchronous load with parent_external_id and external_id", %{conn: conn} do
       insert(:system, external_id: "test1", name: "test1")
 
