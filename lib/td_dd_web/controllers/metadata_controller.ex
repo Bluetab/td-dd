@@ -5,7 +5,6 @@ defmodule TdDdWeb.MetadataController do
 
   require Logger
 
-  alias Jason, as: JSON
   alias Plug.Upload
   alias TdCache.TaxonomyCache
   alias TdDd.DataStructures
@@ -106,7 +105,7 @@ defmodule TdDdWeb.MetadataController do
   rescue
     e in RuntimeError ->
       Logger.error("While uploading #{e.message}")
-      send_resp(conn, :unprocessable_entity, JSON.encode!(%{error: e.message}))
+      send_resp(conn, :unprocessable_entity, Jason.encode!(%{error: e.message}))
   end
 
   defp do_upload(conn, params, opts \\ []) do
