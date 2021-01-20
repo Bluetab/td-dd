@@ -14,7 +14,6 @@ defmodule TdCx.Auth.Guardian do
 
     resource = %Claims{
       user_id: id,
-      is_admin: role == "admin",
       role: role,
       user_name: user_name,
       jti: claims["jti"]

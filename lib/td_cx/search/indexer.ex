@@ -4,7 +4,6 @@ defmodule TdCx.Search.Indexer do
   """
   alias Elasticsearch.Index
   alias Elasticsearch.Index.Bulk
-  alias Jason, as: JSON
   alias TdCache.Redix
   alias TdCx.Jobs.Job
   alias TdCx.Search.Cluster
@@ -19,7 +18,7 @@ defmodule TdCx.Search.Indexer do
   def reindex(:all) do
     Mappings.get_mappings()
     |> Map.put(:index_patterns, "#{@index}-*")
-    |> JSON.encode!()
+    |> Jason.encode!()
     |> put_template(@index)
     |> case do
       {:ok, _} ->

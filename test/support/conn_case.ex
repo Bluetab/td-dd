@@ -14,8 +14,11 @@ defmodule TdCxWeb.ConnCase do
   """
 
   use ExUnit.CaseTemplate
+
   import TdCxWeb.Authentication, only: :functions
+
   alias Ecto.Adapters.SQL.Sandbox
+  alias Phoenix.ConnTest
 
   using do
     quote do
@@ -31,9 +34,9 @@ defmodule TdCxWeb.ConnCase do
     end
   end
 
-  @admin_user_name "app-admin"
-
   setup tags do
+    start_supervised(MockPermissionResolver)
+
     :ok = Sandbox.checkout(TdCx.Repo)
 
     unless tags[:async] do
@@ -45,19 +48,14 @@ defmodule TdCxWeb.ConnCase do
       ])
     end
 
-    cond do
-      tags[:admin_authenticated] ->
-        @admin_user_name
-        |> create_claims(role: "admin")
-        |> create_user_auth_conn()
+    case tags[:authentication] do
+      nil ->
+        [conn: ConnTest.build_conn()]
 
-      tags[:authenticated_user] ->
-        tags[:authenticated_user]
+      auth_opts ->
+        auth_opts
         |> create_claims()
         |> create_user_auth_conn()
-
-      true ->
-        [conn: Phoenix.ConnTest.build_conn()]
     end
   end
 

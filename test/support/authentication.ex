@@ -8,7 +8,6 @@ defmodule TdCxWeb.Authentication do
   alias Phoenix.ConnTest
   alias TdCx.Auth.Claims
   alias TdCx.Auth.Guardian
-  alias TdCx.Permissions.MockPermissionResolver
 
   def put_auth_headers(conn, jwt) do
     conn
@@ -28,11 +27,20 @@ defmodule TdCxWeb.Authentication do
     [conn: conn, jwt: jwt, claims: claims]
   end
 
-  def create_claims(user_name, opts \\ []) do
-    user_id = Integer.mod(:binary.decode_unsigned(user_name), 100_000)
+  def create_claims(opts \\ []) do
     role = Keyword.get(opts, :role, "user")
-    is_admin = role === "admin"
-    %Claims{user_id: user_id, is_admin: is_admin, role: role, user_name: user_name}
+
+    user_name =
+      case Keyword.get(opts, :user_name) do
+        nil -> if role === "admin", do: "app-admin", else: "user"
+        name -> name
+      end
+
+    %Claims{
+      user_id: Integer.mod(:binary.decode_unsigned(user_name), 100_000),
+      user_name: user_name,
+      role: role
+    }
   end
 
   defp register_token(token) do

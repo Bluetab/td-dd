@@ -6,7 +6,6 @@ defmodule TdCx.ElasticsearchMock do
   @behaviour Elasticsearch.API
 
   alias HTTPoison.Response
-  alias Jason, as: JSON
   alias TdCx.Jobs
   alias TdCx.Repo
 
@@ -61,7 +60,7 @@ defmodule TdCx.ElasticsearchMock do
 
   @impl true
   def request(_config, method, url, data, _opts) do
-    Logger.warn("#{method} #{url} #{JSON.encode!(data)}")
+    Logger.warn("#{method} #{url} #{Jason.encode!(data)}")
     search_results([])
   end
 
@@ -69,8 +68,8 @@ defmodule TdCx.ElasticsearchMock do
     results =
       hits
       |> Enum.map(&%{_source: &1})
-      |> JSON.encode!()
-      |> JSON.decode!()
+      |> Jason.encode!()
+      |> Jason.decode!()
 
     body = %{
       "hits" => %{"hits" => results, "total" => Enum.count(results)},

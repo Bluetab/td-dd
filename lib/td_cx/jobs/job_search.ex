@@ -8,7 +8,7 @@ defmodule TdCx.Jobs.Search do
   alias TdCx.Search.Aggregations
   alias TdCx.Sources.Query
 
-  def get_filter_values(%Claims{is_admin: true}, params) do
+  def get_filter_values(%Claims{role: role}, params) when role in ["admin", "service"] do
     filter_clause = create_filters(params)
     query = %{} |> create_query(filter_clause)
     search = %{query: query, aggs: Aggregations.aggregation_terms()}
@@ -19,8 +19,8 @@ defmodule TdCx.Jobs.Search do
 
   def search_jobs(params, claims, page \\ 0, size \\ 50)
 
-  # Admin user search, no filters applied
-  def search_jobs(params, %Claims{is_admin: true}, page, size) do
+  # Admin or service account search, no filters applied
+  def search_jobs(params, %Claims{role: role}, page, size) when role in ["admin", "service"] do
     filter_clause = create_filters(params)
 
     query =

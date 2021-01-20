@@ -5,6 +5,7 @@
 ### Changed
 
 - [TD-3163] Auth tokens now include `role` claim instead of `is_admin` flag
+- [TD-3164] Service accounts can query sources, create jobs and create events
 - [TD-3182] Allow to use redis with password
 - [TD-3187] Default pending status for jobs without events in elasticsearch
 

@@ -4,6 +4,9 @@ defmodule TdCx.Sources do
   """
 
   import Ecto.Query, warn: false
+  import Canada, only: [can?: 2]
+
+  require Logger
 
   alias TdCache.TemplateCache
   alias TdCx.Auth.Claims
@@ -14,10 +17,6 @@ defmodule TdCx.Sources do
   alias TdCx.Vault
   alias TdDfLib.Format
   alias TdDfLib.Validation
-
-  import Canada, only: [can?: 2]
-
-  require Logger
 
   @doc """
   Returns the list of sources.
@@ -108,11 +107,12 @@ defmodule TdCx.Sources do
     secrets = Vault.read_secrets(source.secrets_key)
 
     case secrets do
-      {:error, msg} ->
-        {:error, msg}
+      %{} = secrets ->
+        config = Map.get(source, :config) || %{}
+        Map.put(source, :config, Map.merge(config, secrets))
 
       _ ->
-        Map.put(source, :config, Map.merge(Map.get(source, :config, %{}) || %{}, secrets || %{}))
+        source
     end
   end
 

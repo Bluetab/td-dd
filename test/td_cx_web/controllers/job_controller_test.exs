@@ -8,15 +8,11 @@ defmodule TdCxWeb.JobControllerTest do
     :ok
   end
 
-  setup %{conn: conn} do
-    {:ok, conn: put_req_header(conn, "accept", "application/json")}
-  end
-
-  describe "index" do
+  describe "GET /api/sources/:id/jobs" do
     setup [:create_job]
 
-    @tag :admin_authenticated
-    test "lists jobs of a source", %{conn: conn, job: job} do
+    @tag authentication: [role: "admin"]
+    test "admin can view jobs of a source", %{conn: conn, job: job} do
       %{source: source, external_id: external_id} = job
       %{external_id: source_external_id, type: source_type} = source
 
@@ -33,7 +29,7 @@ defmodule TdCxWeb.JobControllerTest do
              ] = data
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "search all", %{conn: conn, job: job} do
       source = Map.get(job, :source, %{})
 
@@ -52,9 +48,9 @@ defmodule TdCxWeb.JobControllerTest do
     end
   end
 
-  describe "create job" do
-    @tag :admin_authenticated
-    test "creates job for a source", %{conn: conn} do
+  describe "POST /api/sources/:id/jobs" do
+    @tag authentication: [role: "admin"]
+    test "admin can create a job for a source", %{conn: conn} do
       %{external_id: source_external_id} = insert(:source)
 
       assert %{"data" => data} =
@@ -63,25 +59,36 @@ defmodule TdCxWeb.JobControllerTest do
                |> json_response(:created)
 
       assert %{"external_id" => external_id} = data
-      assert not is_nil(external_id)
+      refute is_nil(external_id)
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "service"]
+    test "service account can create a job for a source", %{conn: conn} do
+      %{external_id: source_external_id} = insert(:source)
+
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.source_job_path(conn, :create, source_external_id))
+               |> json_response(:created)
+
+      assert %{"external_id" => external_id} = data
+      refute is_nil(external_id)
+    end
+
+    @tag authentication: [role: "admin"]
     test "renders errors when source does not exist", %{conn: conn} do
       conn = post(conn, Routes.source_job_path(conn, :create, "invented external_id"))
       assert json_response(conn, 404)["errors"] != %{}
     end
   end
 
-  describe "show" do
+  describe "GET /api/jobs/:id" do
     setup [:create_job]
 
-    @tag :admin_authenticated
-    test "show created job", %{conn: conn, job: job} do
+    @tag authentication: [role: "admin"]
+    test "admin can view created job", %{conn: conn, job: job} do
       %{external_id: external_id, source: source} = job
       %{external_id: source_external_id, type: source_type} = source
-
-      conn = get(conn, Routes.job_path(conn, :show, job.external_id))
 
       assert %{"data" => data} =
                conn
@@ -91,6 +98,18 @@ defmodule TdCxWeb.JobControllerTest do
       assert %{"external_id" => ^external_id, "_embedded" => embedded} = data
       assert %{"source" => source} = embedded
       assert %{"external_id" => ^source_external_id, "type" => ^source_type} = source
+    end
+
+    @tag authentication: [role: "service"]
+    test "service account can view created job", %{conn: conn, job: job} do
+      %{external_id: external_id} = job
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.job_path(conn, :show, job.external_id))
+               |> json_response(:ok)
+
+      assert %{"external_id" => ^external_id} = data
     end
   end
 
