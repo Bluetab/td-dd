@@ -3,14 +3,13 @@ defmodule TdDdWeb.MetadataController do
 
   import Canada, only: [can?: 2]
 
-  alias Jason, as: JSON
+  require Logger
+
   alias Plug.Upload
   alias TdCache.TaxonomyCache
   alias TdDd.DataStructures
   alias TdDd.Loader.Worker
   alias TdDd.Systems
-
-  require Logger
 
   def upload_by_system(conn, %{"system_id" => external_id} = params) do
     alias TdDd.Systems.System
@@ -106,7 +105,7 @@ defmodule TdDdWeb.MetadataController do
   rescue
     e in RuntimeError ->
       Logger.error("While uploading #{e.message}")
-      send_resp(conn, :unprocessable_entity, JSON.encode!(%{error: e.message}))
+      send_resp(conn, :unprocessable_entity, Jason.encode!(%{error: e.message}))
   end
 
   defp do_upload(conn, params, opts \\ []) do

@@ -7,7 +7,6 @@ defmodule TdDd.ElasticsearchMock do
 
   alias Elasticsearch.Document
   alias HTTPoison.Response
-  alias Jason, as: JSON
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Search.Store
 
@@ -215,16 +214,12 @@ defmodule TdDd.ElasticsearchMock do
   defp create_must_not(must_not) when is_list(must_not) do
     fns = Enum.map(must_not, &create_must_not/1)
 
-    fn el ->
-      Enum.any?(fns, fn f -> f.(el) end)
-    end
+    fn el -> Enum.any?(fns, fn f -> f.(el) end) end
   end
 
-  defp create_must_not(%{exists: exists}) do
-    create_exists_filter(exists)
-  end
+  defp create_must_not(%{exists: exists}), do: create_exists_filter(exists)
 
-  defp create_must_not(%{txerm: term}) do
+  defp create_must_not(%{term: term}) do
     create_term_filter(term)
   end
 
@@ -393,7 +388,7 @@ defmodule TdDd.ElasticsearchMock do
         |> Enum.any?(fn field ->
           structure
           |> Map.get(field)
-          |> JSON.encode!()
+          |> Jason.encode!()
           |> String.downcase()
           |> String.contains?(String.downcase(q))
         end)
@@ -415,8 +410,8 @@ defmodule TdDd.ElasticsearchMock do
     results =
       hits
       |> Enum.map(&%{_source: &1})
-      |> JSON.encode!()
-      |> JSON.decode!()
+      |> Jason.encode!()
+      |> Jason.decode!()
 
     body = %{
       "hits" => %{"hits" => results, "total" => Enum.count(results)},

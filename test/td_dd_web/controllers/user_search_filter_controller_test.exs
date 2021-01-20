@@ -13,7 +13,7 @@ defmodule TdDdWeb.UserSearchFilterControllerTest do
   end
 
   describe "index" do
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "lists all user_search_filters", %{conn: conn} do
       assert %{"data" => []} =
                conn
@@ -23,7 +23,7 @@ defmodule TdDdWeb.UserSearchFilterControllerTest do
   end
 
   describe "index by user" do
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "lists current user user_search_filters", %{conn: conn, claims: %{user_id: user_id}} do
       insert(:user_search_filter, user_id: 1)
       insert(:user_search_filter, user_id: 2)
@@ -40,7 +40,7 @@ defmodule TdDdWeb.UserSearchFilterControllerTest do
   end
 
   describe "create user_search_filter" do
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders user_search_filter when data is valid", %{conn: conn} do
       assert %{"data" => %{"id" => id}} =
                conn
@@ -62,7 +62,7 @@ defmodule TdDdWeb.UserSearchFilterControllerTest do
              } = data
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders errors when data is invalid", %{conn: conn} do
       assert %{"errors" => %{} = errors} =
                conn
@@ -76,7 +76,7 @@ defmodule TdDdWeb.UserSearchFilterControllerTest do
   end
 
   describe "delete user_search_filter" do
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "deletes chosen user_search_filter", %{
       conn: conn
     } do

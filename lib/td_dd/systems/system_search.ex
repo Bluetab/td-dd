@@ -9,7 +9,8 @@ defmodule TdDd.Systems.SystemSearch do
   alias TdDd.Search.Aggregations
   alias TdDd.Systems
 
-  def search_systems(%Claims{is_admin: true} = claims, permission, params) do
+  def search_systems(%Claims{role: role} = claims, permission, params)
+      when role in ["admin", "service"] do
     get_systems_with_count(claims, permission, params)
   end
 

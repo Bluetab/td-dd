@@ -5,7 +5,6 @@ defmodule TdDdWeb.DataStructureController do
   import Canada, only: [can?: 2]
 
   alias Ecto
-  alias Jason, as: JSON
   alias TdCache.TaxonomyCache
   alias TdDd.CSV.Download
   alias TdDd.DataStructures
@@ -224,11 +223,11 @@ defmodule TdDdWeb.DataStructureController do
     claims = conn.assigns[:current_resource]
     permission = conn.assigns[:search_permission]
 
-    with {:can, true} <- {:can, claims.is_admin},
+    with {:can, true} <- {:can, can?(claims, create(BulkUpdate))},
          %{results: results} <- search_all_structures(claims, permission, search_params),
          ids <- Enum.map(results, & &1.id),
          {:ok, %{updates: updates}} <- BulkUpdate.update_all(ids, update_params, claims) do
-      body = JSON.encode!(%{data: %{message: Map.keys(updates)}})
+      body = Jason.encode!(%{data: %{message: Map.keys(updates)}})
 
       conn
       |> put_resp_content_type("application/json", "utf-8")
@@ -237,12 +236,12 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   def bulk_update_template_content(conn, params) do
-    %{is_admin: is_admin} = claims = conn.assigns[:current_resource]
+    claims = conn.assigns[:current_resource]
     structures_content_upload = Map.get(params, "structures")
 
-    with {:can, true} <- {:can, is_admin},
+    with {:can, true} <- {:can, can?(claims, create(BulkUpdate))},
          {:ok, %{updates: updates}} <- BulkUpdate.from_csv(structures_content_upload, claims),
-         body <- JSON.encode!(%{data: %{message: Map.keys(updates)}}) do
+         body <- Jason.encode!(%{data: %{message: Map.keys(updates)}}) do
       send_resp(conn, :ok, body)
     end
   end

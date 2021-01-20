@@ -5,6 +5,7 @@ defmodule TdDdWeb.UnitEventController do
   import Canada, only: [can?: 2]
 
   alias TdDd.Lineage.Units
+  alias TdDd.Lineage.Units.Unit
 
   action_fallback(TdDdWeb.FallbackController)
 

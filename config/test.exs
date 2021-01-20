@@ -16,7 +16,7 @@ config :td_dd, TdDd.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: 1
 
-config :td_dd, permission_resolver: TdDd.Permissions.MockPermissionResolver
+config :td_dd, permission_resolver: MockPermissionResolver
 config :td_dd, index_worker: TdDd.Search.MockIndexWorker
 
 config :td_dd, TdDd.Search.Cluster, api: TdDd.ElasticsearchMock

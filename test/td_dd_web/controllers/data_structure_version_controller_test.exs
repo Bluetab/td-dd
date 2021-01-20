@@ -4,7 +4,6 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
 
   alias TdCache.StructureTypeCache
   alias TdCache.TemplateCache
-  alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Lineage.GraphData
@@ -65,13 +64,13 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     end)
   end
 
-  describe "show" do
+  describe "GET /api/data_structures/:id/versions/:version" do
     setup [:create_structure_hierarchy]
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders a data structure with children", %{
       conn: conn,
-      structure: %DataStructure{id: id}
+      structure: %{id: id}
     } do
       assert %{"data" => data} =
                conn
@@ -83,10 +82,10 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       assert Enum.all?(children, &(Map.get(&1, "order") == 1))
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders a data structure with parents", %{
       conn: conn,
-      structure: %DataStructure{id: id}
+      structure: %{id: id}
     } do
       assert %{"data" => data} =
                conn
@@ -96,10 +95,10 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       assert %{"parents" => [_parent]} = data
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders a data structure with siblings", %{
       conn: conn,
-      child_structures: [%DataStructure{id: id} | _]
+      child_structures: [%{id: id} | _]
     } do
       assert %{"data" => data} =
                conn
@@ -109,10 +108,10 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       assert %{"siblings" => [_, _]} = data
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders a data structure with metadata", %{
       conn: conn,
-      structure: %DataStructure{id: id}
+      structure: %{id: id}
     } do
       assert %{"data" => %{"metadata" => metadata}} =
                conn
@@ -122,7 +121,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       assert %{"foo" => "bar"} = metadata
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders a data structure by data_structure_version_id", %{
       conn: conn,
       structure_version: %DataStructureVersion{id: id}
@@ -134,10 +133,20 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
 
       assert %{"id" => ^id} = data
     end
+
+    @tag authentication: [role: "service"]
+    test "service account can view data structure", %{conn: conn, structure: %{id: id}} do
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.data_structure_data_structure_version_path(conn, :show, id, 0))
+               |> json_response(:ok)
+
+      assert %{"data_structure" => %{"id" => ^id}} = data
+    end
   end
 
   describe "bulk_update" do
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "bulk update of data structures", %{conn: conn} do
       %{id: structure_id} =
         insert(:data_structure,
@@ -172,7 +181,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       assert %{"message" => [^structure_id | _]} = data
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "bulk update of data structures with no filter type", %{conn: conn} do
       %{id: structure_id} = insert(:data_structure, external_id: "Structure")
       insert(:data_structure_version, data_structure_id: structure_id)

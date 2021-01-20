@@ -2,6 +2,8 @@ defmodule TdDdWeb.GroupController do
   use TdDdWeb, :controller
   use PhoenixSwagger
 
+  import Canada, only: [can?: 2]
+
   alias TdDd.Groups
   alias TdDd.Systems
   alias TdDdWeb.SwaggerDefinitions
@@ -26,10 +28,10 @@ defmodule TdDdWeb.GroupController do
   end
 
   def index(conn, %{"system_id" => system_external_id}) do
-    %{is_admin: is_admin} = conn.assigns[:current_resource]
+    claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, is_admin},
-         system when not is_nil(system) <- Systems.get_by(external_id: system_external_id) do
+    with system when not is_nil(system) <- Systems.get_by(external_id: system_external_id),
+         {:can, true} <- {:can, can?(claims, manage(system))} do
       groups = Groups.list_by_system(system_external_id)
 
       conn
@@ -56,10 +58,10 @@ defmodule TdDdWeb.GroupController do
   end
 
   def delete(conn, %{"system_id" => system_external_id, "id" => group}) do
-    %{is_admin: is_admin} = conn.assigns[:current_resource]
+    claims = conn.assigns[:current_resource]
 
-    with {:can, true} <- {:can, is_admin},
-         system when not is_nil(system) <- Systems.get_by(external_id: system_external_id),
+    with system when not is_nil(system) <- Systems.get_by(external_id: system_external_id),
+         {:can, true} <- {:can, can?(claims, manage(system))},
          :ok <- Groups.delete(system_external_id, group) do
       send_resp(conn, :no_content, "")
     else

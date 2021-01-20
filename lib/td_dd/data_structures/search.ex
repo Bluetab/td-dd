@@ -12,7 +12,8 @@ defmodule TdDd.DataStructures.Search do
 
   def get_filter_values(claims, permission, params)
 
-  def get_filter_values(%Claims{is_admin: true}, _permission, params) do
+  def get_filter_values(%Claims{role: role}, _permission, params)
+      when role in ["admin", "service"] do
     filter_clause = create_filters(params)
     query = create_query(%{}, filter_clause)
     search = %{query: query, aggs: Aggregations.aggregation_terms()}
@@ -38,7 +39,8 @@ defmodule TdDd.DataStructures.Search do
     Search.get_filters(search)
   end
 
-  def get_aggregations_values(%Claims{is_admin: true}, _permission, params, agg_terms) do
+  def get_aggregations_values(%Claims{role: role}, _permission, params, agg_terms)
+      when role in ["admin", "service"] do
     filter_clause = create_filters(params)
     query = create_query(%{}, filter_clause)
     search = %{size: 0, query: query, aggs: agg_terms}
@@ -128,7 +130,8 @@ defmodule TdDd.DataStructures.Search do
 
   def search_data_structures(params, claims, permission, page \\ 0, size \\ 50)
 
-  def search_data_structures(params, %Claims{is_admin: true}, _permission, page, size) do
+  def search_data_structures(params, %Claims{role: role}, _permission, page, size)
+      when role in ["admin", "service"] do
     filters = create_filters(params)
     query = create_query(params, filters)
 
