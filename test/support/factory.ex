@@ -11,10 +11,9 @@ defmodule TdCx.Factory do
   def source_factory do
     %Source{
       config: %{},
-      external_id: "some external_id",
-      secrets_key: "some secrets_key",
-      type: "some type",
-      deleted_at: nil
+      external_id: sequence("source_external_id"),
+      secrets_key: sequence("source_secrets_key"),
+      type: sequence("source_type")
     }
   end
 
@@ -28,9 +27,8 @@ defmodule TdCx.Factory do
   def event_factory do
     %Event{
       job: build(:job),
-      type: "init",
-      message: "Message",
-      inserted_at: DateTime.utc_now()
+      type: sequence("event_type"),
+      message: sequence("event_message")
     }
   end
 

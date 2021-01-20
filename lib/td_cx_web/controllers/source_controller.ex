@@ -43,8 +43,12 @@ defmodule TdCxWeb.SourceController do
   end
 
   def index(conn, _params) do
-    sources = Sources.list_sources(deleted: false)
-    render(conn, "index.json", sources: sources)
+    claims = conn.assigns[:current_resource]
+
+    with {:can, true} <- {:can, can?(claims, list(Source))},
+         sources <- Sources.list_sources(deleted: false) do
+      render(conn, "index.json", sources: sources)
+    end
   end
 
   swagger_path :create do

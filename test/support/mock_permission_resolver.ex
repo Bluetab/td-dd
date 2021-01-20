@@ -1,11 +1,8 @@
-defmodule TdCx.Permissions.MockPermissionResolver do
+defmodule MockPermissionResolver do
   @moduledoc """
-  A mock permissions resolver defining the default permissions for the admin, watch, create and publish
-  roles
+  A mock permissions resolver used by tests
   """
   use Agent
-
-  alias Jason, as: JSON
 
   @role_permissions %{}
 
@@ -48,7 +45,7 @@ defmodule TdCx.Permissions.MockPermissionResolver do
 
   def register_token(resource) do
     %{"sub" => sub, "jti" => jti} = resource |> Map.take(["sub", "jti"])
-    %{"id" => user_id} = sub |> JSON.decode!()
+    %{"id" => user_id} = sub |> Jason.decode!()
     Agent.update(:MockSessions, &Map.put(&1, jti, user_id))
   end
 

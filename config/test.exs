@@ -15,7 +15,7 @@ config :td_cx, TdCx.Repo,
   hostname: "postgres",
   pool: Ecto.Adapters.SQL.Sandbox
 
-config :td_cx, permission_resolver: TdCx.Permissions.MockPermissionResolver
+config :td_cx, permission_resolver: MockPermissionResolver
 
 config :td_cx, TdCx.Search.Cluster, api: TdCx.ElasticsearchMock
 

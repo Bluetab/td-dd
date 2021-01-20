@@ -3,63 +3,68 @@ defmodule TdCxWeb.EventControllerTest do
 
   alias TdCx.Search.IndexWorker
 
-  @valid_attrs %{"type" => "init", "message" => "Message"}
-
-  def fixture(:event) do
-    insert(:event)
-  end
-
   setup_all do
     start_supervised(IndexWorker)
     :ok
   end
 
-  setup %{conn: conn} do
-    {:ok, conn: put_req_header(conn, "accept", "application/json")}
+  setup do
+    %{job: job} = event = insert(:event)
+    [job: job, event: event]
   end
 
-  describe "index" do
-    setup [:create_event]
+  describe "GET /api/jobs/:id/events" do
+    @tag authentication: [role: "admin"]
+    test "admin can view events of a job", %{
+      conn: conn,
+      event: %{id: event_id},
+      job: %{external_id: job_external_id}
+    } do
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.job_event_path(conn, :index, job_external_id))
+               |> json_response(:ok)
 
-    @tag :admin_authenticated
-    test "lists events of a job", %{conn: conn, event: event} do
-      job = Map.get(event, :job, %{})
-      conn = get(conn, Routes.job_event_path(conn, :index, job.external_id))
-      events = json_response(conn, 200)["data"]
-
-      assert length(events) == 1
-      assert Enum.any?(events, &(&1["id"] == event.id))
+      assert [%{"id" => ^event_id}] = data
     end
   end
 
-  describe "create event" do
-    @tag :admin_authenticated
-    test "creates event for a job", %{conn: conn} do
-      job = insert(:job)
+  describe "POST /api/jobs/:id/events" do
+    @tag authentication: [role: "admin"]
+    test "admin can create event for a job", %{conn: conn, job: %{external_id: external_id}} do
+      %{"type" => type, "message" => message} = params = string_params_for(:event)
 
-      conn =
-        post(conn, Routes.job_event_path(conn, :index, job.external_id),
-          event: @valid_attrs
-        )
+      assert %{"data" => event} =
+               conn
+               |> post(Routes.job_event_path(conn, :index, external_id), event: params)
+               |> json_response(:created)
 
-      event = json_response(conn, 201)["data"]
-
-      assert not is_nil(event["id"])
-      assert event["type"] == @valid_attrs["type"]
-      assert event["message"] == @valid_attrs["message"]
+      assert %{"id" => _id, "type" => ^type, "message" => ^message} = event
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "service"]
+    test "service account can create event for a job", %{
+      conn: conn,
+      job: %{external_id: external_id}
+    } do
+      %{"type" => type, "message" => message} = params = string_params_for(:event)
+
+      assert %{"data" => event} =
+               conn
+               |> post(Routes.job_event_path(conn, :index, external_id), event: params)
+               |> json_response(:created)
+
+      assert %{"id" => _id, "type" => ^type, "message" => ^message} = event
+    end
+
+    @tag authentication: [role: "admin"]
     test "renders errors when job does not exist", %{conn: conn} do
-      conn =
-        post(conn, Routes.job_event_path(conn, :index, Ecto.UUID.generate()), event: %{})
+      assert %{"errors" => %{} = errors} =
+               conn
+               |> post(Routes.job_event_path(conn, :index, Ecto.UUID.generate()), event: %{})
+               |> json_response(:not_found)
 
-      assert json_response(conn, 404)["errors"] != %{}
+      refute errors == %{}
     end
-  end
-
-  defp create_event(_) do
-    event = fixture(:event)
-    {:ok, event: event}
   end
 end
