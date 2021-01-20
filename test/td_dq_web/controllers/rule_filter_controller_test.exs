@@ -7,7 +7,7 @@ defmodule TdDqWeb.RuleFilterControllerTest do
   end
 
   describe "index" do
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "search filters should return at least the informed filters", %{conn: conn} do
       filters = %{"active.raw" => [true]}
 

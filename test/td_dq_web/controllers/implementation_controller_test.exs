@@ -43,44 +43,62 @@ defmodule TdDqWeb.ImplementationControllerTest do
     [structure: structure]
   end
 
-  setup %{conn: conn} do
-    {:ok, conn: put_req_header(conn, "accept", "application/json")}
+  setup do
+    [implementation: insert(:implementation)]
   end
 
   describe "index" do
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "lists all implementations", %{conn: conn, swagger_schema: schema} do
-      conn = get(conn, Routes.implementation_path(conn, :index))
-      validate_resp_schema(conn, schema, "ImplementationsResponse")
-      assert json_response(conn, :ok)["data"] == []
+      assert %{"data" => [_]} =
+               conn
+               |> get(Routes.implementation_path(conn, :index))
+               |> validate_resp_schema(schema, "ImplementationsResponse")
+               |> json_response(:ok)
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "service"]
+    test "service account can view implementations", %{conn: conn, swagger_schema: schema} do
+      assert %{"data" => [_]} =
+               conn
+               |> get(Routes.implementation_path(conn, :index))
+               |> validate_resp_schema(schema, "ImplementationsResponse")
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
     test "lists all implementations filtered by rule business_concept_id and state", %{
       conn: conn,
       swagger_schema: schema
     } do
-      rule1 = insert(:rule, business_concept_id: "xyz", active: true)
-      rule2 = insert(:rule)
-      insert(:implementation, implementation_key: "ri1", rule: rule1)
-      insert(:implementation, implementation_key: "ri2", rule: rule1)
-      insert(:implementation, implementation_key: "ri3", rule: rule1)
-      insert(:implementation, implementation_key: "ri4", rule: rule2)
-      insert(:raw_implementation, implementation_key: "ri5", rule: rule1)
+      %{rule: rule} =
+        insert(:implementation,
+          implementation_key: "ri1",
+          rule: build(:rule, business_concept_id: "42", active: true)
+        )
 
-      conn =
-        get(conn, Routes.implementation_path(conn, :index), %{
-          is_rule_active: true,
-          rule_business_concept_id: "xyz"
-        })
+      insert(:implementation, implementation_key: "ri2", rule: rule)
+      insert(:implementation, implementation_key: "ri3", rule: rule)
+      insert(:raw_implementation, implementation_key: "ri4", rule: rule)
 
-      validate_resp_schema(conn, schema, "ImplementationsResponse")
-      assert length(json_response(conn, :ok)["data"]) == 4
+      ri5 = insert(:implementation, implementation_key: "ri5")
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.implementation_path(conn, :index), %{
+                 is_rule_active: true,
+                 rule_business_concept_id: "42"
+               })
+               |> validate_resp_schema(schema, "ImplementationsResponse")
+               |> json_response(:ok)
+
+      assert length(data) == 4
+      refute Enum.find(data, &(&1["id"] == ri5.id))
     end
   end
 
   describe "create implementation" do
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders implementation when data is valid", %{conn: conn, swagger_schema: schema} do
       rule = insert(:rule)
 
@@ -127,7 +145,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
              )
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "can create raw rule implementation with alias", %{conn: conn, swagger_schema: schema} do
       rule = insert(:rule)
 
@@ -162,7 +180,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
              } = data
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "errors trying to create raw rule implementation without system and alias", %{
       conn: conn,
       swagger_schema: schema
@@ -197,7 +215,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
              } = errors
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders errors when data is invalid", %{conn: conn} do
       rule = insert(:rule)
 
@@ -216,7 +234,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> json_response(:unprocessable_entity)
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders errors when validations is invalid", %{conn: conn} do
       rule = insert(:rule)
 
@@ -248,7 +266,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
   end
 
   describe "update implementation" do
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders implementation when data is valid", %{conn: conn, swagger_schema: schema} do
       implementation = insert(:implementation)
 
@@ -293,7 +311,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
              )
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "implementation cannot be updated if it has rule results", %{conn: conn} do
       implementation = insert(:implementation)
 
@@ -327,7 +345,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> json_response(:unprocessable_entity)
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "soft delete rule implementation", %{conn: conn, swagger_schema: schema} do
       implementation = insert(:implementation)
       insert(:rule_result, implementation_key: implementation.implementation_key)
@@ -353,7 +371,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert data["deleted_at"]
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "cannot update rule implementation implementation key", %{
       conn: conn,
       swagger_schema: schema
@@ -381,7 +399,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert data["implementation_key"] != update_attrs.implementation_key
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders errors when data is invalid", %{conn: conn} do
       implementation = insert(:implementation)
 
@@ -406,7 +424,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> json_response(:unprocessable_entity)
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "accepts base64 encoded raw_content", %{conn: conn, swagger_schema: schema} do
       %{id: id} = insert(:raw_implementation)
 
@@ -438,7 +456,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
   end
 
   describe "delete implementation" do
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "deletes chosen implementation", %{conn: conn} do
       implementation = insert(:implementation)
 
@@ -453,11 +471,13 @@ defmodule TdDqWeb.ImplementationControllerTest do
   end
 
   describe "search_rule_implementations" do
-    @tag :admin_authenticated
-    test "lists all implementations from a rule", %{conn: conn, swagger_schema: schema} do
-      %{rule_id: rule_id} = insert(:implementation)
-
-      assert %{"data" => [data]} =
+    @tag authentication: [role: "admin"]
+    test "lists all implementations from a rule", %{
+      conn: conn,
+      swagger_schema: schema,
+      implementation: %{rule_id: rule_id}
+    } do
+      assert %{"data" => data} =
                conn
                |> post(
                  Routes.rule_implementation_path(conn, :search_rule_implementations, rule_id)
@@ -465,38 +485,46 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> validate_resp_schema(schema, "ImplementationsResponse")
                |> json_response(:ok)
 
-      assert %{"rule_id" => ^rule_id} = data
+      assert [%{"rule_id" => ^rule_id}] = data
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "service"]
+    test "service account can search implementations", %{
+      conn: conn,
+      swagger_schema: schema,
+      implementation: %{rule_id: rule_id}
+    } do
+      assert %{"data" => data} =
+               conn
+               |> post(
+                 Routes.rule_implementation_path(conn, :search_rule_implementations, rule_id)
+               )
+               |> validate_resp_schema(schema, "ImplementationsResponse")
+               |> json_response(:ok)
+
+      assert [%{"rule_id" => ^rule_id}] = data
+    end
+
+    @tag authentication: [role: "admin"]
     test "lists all deleted implementations of a rule", %{conn: conn, swagger_schema: schema} do
-      rule = insert(:rule)
+      %{id: id, rule_id: rule_id} = insert(:implementation, deleted_at: DateTime.utc_now())
 
-      implementation = insert(:implementation, rule: rule, deleted_at: DateTime.utc_now())
+      assert %{"data" => data} =
+               conn
+               |> post(
+                 Routes.rule_implementation_path(conn, :search_rule_implementations, rule_id,
+                   status: "deleted"
+                 )
+               )
+               |> validate_resp_schema(schema, "ImplementationsResponse")
+               |> json_response(:ok)
 
-      conn =
-        post(
-          conn,
-          Routes.rule_implementation_path(conn, :search_rule_implementations, rule.id, %{
-            "status" => "deleted"
-          })
-        )
-
-      validate_resp_schema(conn, schema, "ImplementationsResponse")
-      json_response = List.first(json_response(conn, :ok)["data"])
-
-      assert Map.get(implementation, :rule_id) == json_response["rule_id"]
-      assert Map.get(implementation, :system_params) == json_response["system_params"]
-      assert Map.get(implementation, :system) == json_response["system"]
+      assert [%{"id" => ^id}] = data
     end
   end
 
   describe "execute_rule" do
-    setup do
-      [implementation: insert(:implementation)]
-    end
-
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "execute implementations as admin and true execution filter", %{
       conn: conn,
       implementation: implementation,
@@ -513,7 +541,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert data == [implementation.implementation_key]
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "execute implementations as admin and false execution filter", %{
       conn: conn,
       implementation: implementation,
@@ -530,7 +558,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert data == [implementation.implementation_key]
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "execute implementations as admin and no execution filter", %{
       conn: conn,
       implementation: implementation,
@@ -547,7 +575,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert data == [implementation.implementation_key]
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "execute implementations as admin with rule_ids filter", %{
       conn: conn,
       implementation: implementation,

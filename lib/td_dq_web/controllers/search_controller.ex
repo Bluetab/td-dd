@@ -45,8 +45,8 @@ defmodule TdDqWeb.SearchController do
   end
 
   def search_rules(conn, params) do
-    page = params |> Map.get("page", 0)
-    size = params |> Map.get("size", 20)
+    page = Map.get(params, "page", 0)
+    size = Map.get(params, "size", 20)
     claims = conn.assigns[:current_resource]
     manage_permission = can?(claims, manage(%{"resource_type" => "rule"}))
     user_permissions = %{manage_quality_rules: manage_permission}
@@ -78,8 +78,8 @@ defmodule TdDqWeb.SearchController do
   end
 
   def search_implementations(conn, params) do
-    page = params |> Map.get("page", 0)
-    size = params |> Map.get("size", 20)
+    page = Map.get(params, "page", 0)
+    size = Map.get(params, "size", 20)
     claims = conn.assigns[:current_resource]
 
     %{
@@ -101,8 +101,11 @@ defmodule TdDqWeb.SearchController do
     )
   end
 
-  defp get_user_permissions(%Claims{is_admin: true}, _implementations),
+  defp get_user_permissions(%Claims{role: "admin"}, _implementations),
     do: %{manage: true, execute: true}
+
+  defp get_user_permissions(%Claims{role: "service"}, _implementations),
+    do: %{manage: false, execute: true}
 
   defp get_user_permissions(%Claims{} = claims, implementations) do
     manage? = can?(claims, manage(Implementation))

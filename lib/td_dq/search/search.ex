@@ -13,7 +13,7 @@ defmodule TdDq.Search do
 
     case response do
       {:ok, %{"hits" => %{"hits" => results, "total" => total}, "aggregations" => aggregations}} ->
-        %{results: results, aggregations: format_search_aggregations(aggregations), total: total}
+        %{results: results, aggregations: format_aggregations(aggregations), total: total}
 
       {:error, %Elasticsearch.Exception{message: message} = error} ->
         Logger.warn("Error response from Elasticsearch: #{message}")
@@ -26,7 +26,7 @@ defmodule TdDq.Search do
 
     case response do
       {:ok, %{"aggregations" => aggregations}} ->
-        format_search_aggregations(aggregations)
+        format_aggregations(aggregations)
 
       {:error, %Elasticsearch.Exception{message: message} = error} ->
         Logger.warn("Error response from Elasticsearch: #{message}")
@@ -34,7 +34,7 @@ defmodule TdDq.Search do
     end
   end
 
-  defp format_search_aggregations(aggregations) do
+  defp format_aggregations(aggregations) do
     aggregations
     |> Map.to_list()
     |> Enum.into(%{}, &filter_values/1)

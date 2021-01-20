@@ -5,8 +5,9 @@ defmodule TdDqWeb.ImplementationController do
   import Canada, only: [can?: 2]
   import TdDqWeb.RuleImplementationSupport, only: [decode: 1]
 
+  require Logger
+
   alias Ecto.Changeset
-  alias Jason, as: JSON
   alias TdCache.EventStream.Publisher
   alias TdDq.Repo
   alias TdDq.Rules
@@ -17,8 +18,6 @@ defmodule TdDqWeb.ImplementationController do
   alias TdDq.Rules.RuleResults
   alias TdDqWeb.ChangesetView
   alias TdDqWeb.ErrorView
-
-  require Logger
 
   action_fallback(TdDqWeb.FallbackController)
 
@@ -346,12 +345,12 @@ defmodule TdDqWeb.ImplementationController do
 
     event = %{
       event: "execute_implementations",
-      payload: JSON.encode!(payload)
+      payload: Jason.encode!(payload)
     }
 
     case Publisher.publish(event, "cx:events") do
       {:ok, _event_id} ->
-        body = JSON.encode!(%{data: keys})
+        body = Jason.encode!(%{data: keys})
 
         conn
         |> put_resp_content_type("application/json", "utf-8")
@@ -362,7 +361,7 @@ defmodule TdDqWeb.ImplementationController do
 
         conn
         |> put_resp_content_type("application/json", "utf-8")
-        |> send_resp(:unprocessable_entity, JSON.encode!(%{error: error}))
+        |> send_resp(:unprocessable_entity, Jason.encode!(%{error: error}))
     end
   end
 
