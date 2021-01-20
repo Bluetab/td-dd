@@ -19,7 +19,6 @@ defmodule TdDdWeb.SystemControllerTest do
   @invalid_attrs %{external_id: nil, name: nil}
 
   setup_all do
-    start_supervised(MockPermissionResolver)
     start_supervised(SystemLoader)
 
     %{id: domain_id} = domain = build(:domain)

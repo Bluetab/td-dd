@@ -9,7 +9,6 @@ defmodule TdDdWeb.NodeControllerTest do
 
   setup_all do
     start_supervised(GraphData)
-    start_supervised(MockPermissionResolver)
     :ok
   end
 

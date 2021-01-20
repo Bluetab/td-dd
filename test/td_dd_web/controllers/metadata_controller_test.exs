@@ -19,7 +19,6 @@ defmodule TdDdWeb.MetadataControllerTest do
     start_supervised(TdDd.Cache.StructureLoader)
     start_supervised(Worker)
     start_supervised(TdDd.Lineage.GraphData)
-    start_supervised(TdDd.Permissions.MockPermissionResolver)
     start_supervised({Task.Supervisor, name: TdDd.TaskSupervisor})
     :ok
   end

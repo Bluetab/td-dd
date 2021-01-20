@@ -215,16 +215,12 @@ defmodule TdDd.ElasticsearchMock do
   defp create_must_not(must_not) when is_list(must_not) do
     fns = Enum.map(must_not, &create_must_not/1)
 
-    fn el ->
-      Enum.any?(fns, fn f -> f.(el) end)
-    end
+    fn el ->      Enum.any?(fns, fn f -> f.(el) end)    end
   end
 
-  defp create_must_not(%{exists: exists}) do
-    create_exists_filter(exists)
-  end
+  defp create_must_not(%{exists: exists}), do: create_exists_filter(exists)
 
-  defp create_must_not(%{txerm: term}) do
+  defp create_must_not(%{term: term}) do
     create_term_filter(term)
   end
 

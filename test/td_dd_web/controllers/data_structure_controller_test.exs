@@ -23,7 +23,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
   }
 
   setup_all do
-    start_supervised(MockPermissionResolver)
     start_supervised(GraphData)
 
     %{id: domain_id} = domain = build(:domain)

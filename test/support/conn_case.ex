@@ -36,6 +36,8 @@ defmodule TdDdWeb.ConnCase do
   end
 
   setup tags do
+    start_supervised(TdDd.Permissions.MockPermissionResolver)
+
     :ok = Sandbox.checkout(TdDd.Repo)
 
     if tags[:async] or tags[:sandbox] == :shared do
