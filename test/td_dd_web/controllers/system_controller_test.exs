@@ -5,7 +5,6 @@ defmodule TdDdWeb.SystemControllerTest do
   alias TdCache.TaxonomyCache
   alias TdDd.Cache.SystemLoader
   alias TdDd.DataStructures.RelationTypes
-  alias TdDd.Permissions.MockPermissionResolver
   alias TdDd.Systems.System
 
   @create_attrs %{

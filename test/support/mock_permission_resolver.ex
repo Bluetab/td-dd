@@ -1,4 +1,4 @@
-defmodule TdDd.Permissions.MockPermissionResolver do
+defmodule MockPermissionResolver do
   @moduledoc """
   A mock permissions resolver for tests.
   """

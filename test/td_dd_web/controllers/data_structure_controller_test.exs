@@ -10,7 +10,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
   alias TdDd.DataStructures
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Lineage.GraphData
-  alias TdDd.Permissions.MockPermissionResolver
 
   @template_name "data_structure_controller_test_template"
 

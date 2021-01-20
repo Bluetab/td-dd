@@ -5,7 +5,6 @@ defmodule TdDdWeb.NodeControllerTest do
   alias TdCache.TaxonomyCache
   alias TdDd.Lineage.GraphData
   alias TdDd.Lineage.GraphData.State
-  alias TdDd.Permissions.MockPermissionResolver
 
   setup_all do
     start_supervised(GraphData)

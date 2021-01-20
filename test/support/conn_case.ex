@@ -36,7 +36,7 @@ defmodule TdDdWeb.ConnCase do
   end
 
   setup tags do
-    start_supervised(TdDd.Permissions.MockPermissionResolver)
+    start_supervised(MockPermissionResolver)
 
     :ok = Sandbox.checkout(TdDd.Repo)
 

@@ -5,7 +5,6 @@ defmodule TdDdWeb.Authentication do
   alias Plug.Conn
   alias TdDd.Auth.Claims
   alias TdDd.Auth.Guardian
-  alias TdDd.Permissions.MockPermissionResolver
 
   def put_auth_headers(conn, jwt) do
     conn
