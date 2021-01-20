@@ -14,7 +14,7 @@ defmodule TdDq.Rules.Implementations.ConditionRow do
   embedded_schema do
     embeds_one(:structure, Structure, on_replace: :delete)
     embeds_one(:operator, Operator, on_replace: :delete)
-    field(:value, {:array, :map})
+    field(:value, {:array, :map}, default: [])
   end
 
   def changeset(%{} = params) do
@@ -30,7 +30,7 @@ defmodule TdDq.Rules.Implementations.ConditionRow do
     |> validate_value(params)
   end
 
-  defp validate_value(%{valid: false} = changeset, _params) do
+  defp validate_value(%{valid?: false} = changeset, _params) do
     changeset
   end
 
@@ -71,14 +71,10 @@ defmodule TdDq.Rules.Implementations.ConditionRow do
            "value_type" => "number"
          }
        }) do
-    case value_left <= value_right do
-      true ->
-        changeset
-
-      _ ->
-        add_error(changeset, :value, "invalid.range",
-          validation: :invalid_length_between_value_type
-        )
+    if value_left <= value_right do
+      changeset
+    else
+      add_error(changeset, :value, "invalid.range", validation: :invalid_length_between_value_type)
     end
   end
 
@@ -100,14 +96,12 @@ defmodule TdDq.Rules.Implementations.ConditionRow do
   defp valid_range_dates(value_left, value_right, changeset, date_format) do
     with {:ok, date1, _} <- TdDq.DateParser.parse(value_left, [date_format]),
          {:ok, date2, _} <- TdDq.DateParser.parse(value_right, [date_format]) do
-      case DateTime.compare(date1, date2) in [:lt, :eq] do
-        true ->
-          changeset
-
-        _ ->
-          add_error(changeset, :value, "invalid.range.dates",
-            validation: :left_value_must_be_le_than_right
-          )
+      if DateTime.compare(date1, date2) in [:lt, :eq] do
+        changeset
+      else
+        add_error(changeset, :value, "invalid.range.dates",
+          validation: :left_value_must_be_le_than_right
+        )
       end
     else
       _ ->
@@ -116,24 +110,20 @@ defmodule TdDq.Rules.Implementations.ConditionRow do
   end
 
   defp valid_range_number(value_left, value_right, changeset) do
-    case value_left <= value_right do
-      true ->
-        changeset
-
-      _ ->
-        add_error(changeset, :value, "invalid.range.dates",
-          validation: :left_value_must_be_le_than_right
-        )
+    if value_left <= value_right do
+      changeset
+    else
+      add_error(changeset, :value, "invalid.range.dates",
+        validation: :left_value_must_be_le_than_right
+      )
     end
   end
 
   defp valid_value?(value, changeset, params) do
-    case Enum.all?(value, &valid_attribute(&1, params)) do
-      true ->
-        {:ok, changeset}
-
-      false ->
-        {:invalid_value, add_error(changeset, :value, "invalid_attribute", validation: :invalid)}
+    if Enum.all?(value, &valid_attribute(&1, params)) do
+      {:ok, changeset}
+    else
+      {:invalid_value, add_error(changeset, :value, "invalid_attribute", validation: :invalid)}
     end
   end
 
