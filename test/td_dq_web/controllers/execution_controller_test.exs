@@ -4,11 +4,6 @@ defmodule TdDqWeb.ExecutionControllerTest do
 
   @moduletag sandbox: :shared
 
-  setup_all do
-    start_supervised!(TdDq.Permissions.MockPermissionResolver)
-    :ok
-  end
-
   setup do
     %{id: group_id} = group = insert(:execution_group)
 
@@ -25,7 +20,7 @@ defmodule TdDqWeb.ExecutionControllerTest do
   end
 
   describe "GET /api/executions" do
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "returns an OK response with the list of executions filtered by group", %{
       conn: conn,
       swagger_schema: schema,
@@ -42,14 +37,11 @@ defmodule TdDqWeb.ExecutionControllerTest do
       assert length(executions) == 5
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "returns an OK response with the list of executions", %{
       conn: conn,
-      swagger_schema: schema,
-      group: group
+      swagger_schema: schema
     } do
-      assert %{id: group_id} = group
-
       assert %{"data" => executions} =
                conn
                |> get(Routes.execution_path(conn, :index))

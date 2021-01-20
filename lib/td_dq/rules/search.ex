@@ -12,7 +12,7 @@ defmodule TdDq.Rules.Search do
 
   def get_filter_values(claims, params, index \\ :rules)
 
-  def get_filter_values(%Claims{is_admin: true}, params, index) do
+  def get_filter_values(%Claims{role: role}, params, index) when role in ["admin", "service"] do
     filter_clause = Query.create_filters(params, index)
     query = Query.create_query(%{}, filter_clause)
     search = %{query: query, aggs: Query.get_aggregation_terms(index)}
@@ -32,7 +32,7 @@ defmodule TdDq.Rules.Search do
 
   def search(params, claims, page \\ 0, size \\ 50, index \\ :rules)
 
-  def search(params, %Claims{is_admin: true}, page, size, index) do
+  def search(params, %Claims{role: role}, page, size, index) when role in ["admin", "service"] do
     filter_clause = Query.create_filters(params, index)
     filter_clause = filter_clause |> delete_execution_filter
     query = Query.create_query(params, filter_clause)

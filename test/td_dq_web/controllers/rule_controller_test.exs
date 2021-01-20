@@ -5,30 +5,24 @@ defmodule TdDqWeb.RuleControllerTest do
   alias TdCache.{Audit, Redix}
   alias TdDq.Cache.RuleLoader
   alias TdDq.MockRelationCache
-  alias TdDq.Permissions.MockPermissionResolver
-  alias TdDq.Rules
   alias TdDq.Rules.Rule
   alias TdDq.Search.IndexWorker
 
   setup_all do
     start_supervised(MockRelationCache)
-    start_supervised(MockPermissionResolver)
     start_supervised(IndexWorker)
     start_supervised(RuleLoader)
     :ok
   end
 
-  setup %{conn: conn} do
+  setup do
     on_exit(fn -> Redix.del!(Audit.stream()) end)
 
-    [
-      conn: put_req_header(conn, "accept", "application/json"),
-      rule: insert(:rule)
-    ]
+    [rule: insert(:rule)]
   end
 
   describe "index" do
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "lists all rules", %{conn: conn, swagger_schema: schema} do
       assert %{"data" => [_rule]} =
                conn
@@ -37,43 +31,25 @@ defmodule TdDqWeb.RuleControllerTest do
                |> json_response(:ok)
     end
 
-    @tag authenticated_user: "not_an_admin"
+    @tag authentication: [role: "service"]
+    test "service account can view all rules", %{conn: conn, swagger_schema: schema} do
+      assert %{"data" => [_rule]} =
+               conn
+               |> get(Routes.rule_path(conn, :index))
+               |> validate_resp_schema(schema, "RulesResponse")
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [user_name: "not_an_admin"]
     test "lists all rules depending on permissions", %{
       conn: conn,
-      claims: %{user_id: user_id} = claims,
+      claims: %{user_id: user_id},
       swagger_schema: schema
     } do
-      business_concept_id_permission = "1"
-      domain_id_with_permission = 1
+      %{id: id} = insert(:rule, business_concept_id: "42")
+      insert(:rule, business_concept_id: "1234")
 
-      creation_attrs_1 = %{
-        business_concept_id: business_concept_id_permission,
-        description: %{"document" => "some description"},
-        goal: 42,
-        minimum: 42,
-        name: "some name 1",
-        updated_by: Integer.mod(:binary.decode_unsigned("app-admin"), 100_000)
-      }
-
-      creation_attrs_2 = %{
-        business_concept_id: "2",
-        description: %{"document" => "some description"},
-        goal: 42,
-        minimum: 42,
-        name: "some name 2",
-        updated_by: Integer.mod(:binary.decode_unsigned("app-admin"), 100_000)
-      }
-
-      {:ok, %{rule: rule}} = Rules.create_rule(creation_attrs_1, claims)
-      Rules.create_rule(creation_attrs_2, claims)
-
-      create_acl_entry(
-        user_id,
-        business_concept_id_permission,
-        domain_id_with_permission,
-        [domain_id_with_permission],
-        "view"
-      )
+      create_acl_entry(user_id, "business_concept", "42", [:view_quality_rule])
 
       assert %{"data" => data} =
                conn
@@ -81,12 +57,12 @@ defmodule TdDqWeb.RuleControllerTest do
                |> validate_resp_schema(schema, "RulesResponse")
                |> json_response(:ok)
 
-      assert Enum.all?(data, fn %{"id" => id} -> id == rule.id end)
+      assert [%{"id" => ^id}] = data
     end
   end
 
   describe "get_rules_by_concept" do
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "lists all rules of a concept", %{conn: conn, swagger_schema: schema} do
       assert %{"data" => []} =
                conn
@@ -108,7 +84,7 @@ defmodule TdDqWeb.RuleControllerTest do
   end
 
   describe "create rule" do
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders rule when data is valid", %{conn: conn, swagger_schema: schema} do
       params = string_params_for(:rule)
 
@@ -121,7 +97,7 @@ defmodule TdDqWeb.RuleControllerTest do
       assert %{"id" => _id} = data
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders rule when data is valid without business concept", %{
       conn: conn,
       swagger_schema: schema
@@ -139,7 +115,7 @@ defmodule TdDqWeb.RuleControllerTest do
       assert %{"id" => _id, "business_concept_id" => nil} = data
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders errors when data is invalid", %{conn: conn} do
       params = string_params_for(:rule, name: nil)
 
@@ -149,7 +125,7 @@ defmodule TdDqWeb.RuleControllerTest do
                |> json_response(:unprocessable_entity)
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders errors when rule result type is numeric and goal is higher than minimum", %{
       conn: conn
     } do
@@ -163,7 +139,7 @@ defmodule TdDqWeb.RuleControllerTest do
       assert %{"minimum" => ["must.be.greater.than.or.equal.to.goal"]} = errors
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders errors when rule result type is percentage and goal is lower than minimum", %{
       conn: conn
     } do
@@ -183,7 +159,7 @@ defmodule TdDqWeb.RuleControllerTest do
       [rule: insert(:rule)]
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders rule when data is valid", %{
       conn: conn,
       rule: %Rule{id: id} = rule,
@@ -200,7 +176,7 @@ defmodule TdDqWeb.RuleControllerTest do
       assert %{"id" => ^id} = data
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders errors when data is invalid", %{conn: conn, rule: rule, swagger_schema: schema} do
       params = %{"name" => nil}
 
@@ -215,27 +191,11 @@ defmodule TdDqWeb.RuleControllerTest do
   end
 
   describe "delete rule" do
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "deletes chosen rule", %{conn: conn, rule: rule} do
       assert conn
              |> delete(Routes.rule_path(conn, :delete, rule))
              |> response(:no_content)
-
-      assert_error_sent(:not_found, fn ->
-        get(conn, Routes.rule_path(conn, :show, rule))
-      end)
     end
-  end
-
-  defp create_acl_entry(user_id, bc_id, domain_id, domain_ids, role) do
-    MockPermissionResolver.create_hierarchy(bc_id, domain_ids)
-
-    MockPermissionResolver.create_acl_entry(%{
-      principal_id: user_id,
-      principal_type: "user",
-      resource_id: domain_id,
-      resource_type: "domain",
-      role_name: role
-    })
   end
 end

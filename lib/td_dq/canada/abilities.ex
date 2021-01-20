@@ -10,7 +10,7 @@ defmodule TdDq.Canada.Abilities do
   alias TdDq.Rules.Rule
 
   defimpl Canada.Can, for: Claims do
-    def can?(%Claims{is_admin: true}, _action, _domain) do
+    def can?(%Claims{role: "admin"}, _action, _domain) do
       true
     end
 
@@ -67,6 +67,9 @@ defmodule TdDq.Canada.Abilities do
         business_concept_id
       )
     end
+
+    # Service account can view all rules
+    def can?(%Claims{role: "service"}, :show, %Rule{}), do: true
 
     def can?(%Claims{} = claims, :show, %Rule{business_concept_id: nil}) do
       RuleAbilities.can?(claims, :show, "")

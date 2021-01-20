@@ -27,6 +27,7 @@ defmodule TdDqWeb.ConnCase do
       import Plug.Conn
       import Phoenix.ConnTest
       import TdDq.Factory
+      import TdDqWeb.Authentication, only: [create_acl_entry: 4]
 
       alias TdDqWeb.Router.Helpers, as: Routes
 
@@ -35,9 +36,9 @@ defmodule TdDqWeb.ConnCase do
     end
   end
 
-  @admin_user_name "app-admin"
-
   setup tags do
+    start_supervised!(MockPermissionResolver)
+
     :ok = Sandbox.checkout(TdDq.Repo)
 
     unless tags[:async] do
@@ -56,19 +57,14 @@ defmodule TdDqWeb.ConnCase do
       end)
     end
 
-    cond do
-      tags[:admin_authenticated] ->
-        @admin_user_name
-        |> create_claims(role: "admin")
-        |> create_user_auth_conn()
+    case tags[:authentication] do
+      nil ->
+        [conn: ConnTest.build_conn()]
 
-      user_name = tags[:authenticated_user] ->
-        user_name
+      auth_opts ->
+        auth_opts
         |> create_claims()
-        |> create_user_auth_conn(tags[:role])
-
-      true ->
-        {:ok, conn: ConnTest.build_conn()}
+        |> create_user_auth_conn()
     end
   end
 end

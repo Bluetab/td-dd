@@ -10,16 +10,35 @@ defmodule TdDqWeb.RuleResultControllerTest do
     :ok
   end
 
-  setup %{fixture: fixture} do
-    rule = insert(:rule, active: true)
-    ri = insert(:implementation, implementation_key: "ri135", rule: rule)
+  setup tags do
+    case tags[:fixture] do
+      nil ->
+        :ok
 
-    rule_results = %Plug.Upload{path: fixture}
-    {:ok, rule_results_file: rule_results, implementation: ri}
+      fixture ->
+        rule = insert(:rule, active: true)
+        ri = insert(:implementation, implementation_key: "ri135", rule: rule)
+
+        rule_results = %Plug.Upload{path: fixture}
+        {:ok, rule_results_file: rule_results, implementation: ri}
+    end
+  end
+
+  describe "GET /api/rule_results" do
+    @tag authentication: [role: "service"]
+    test "service account can view rule results", %{conn: conn} do
+      %{implementation_key: key} = insert(:implementation)
+      insert(:rule_result, implementation_key: key)
+
+      assert %{"data" => [_]} =
+               conn
+               |> get(Routes.rule_result_path(conn, :index))
+               |> json_response(:ok)
+    end
   end
 
   describe "delete rule results" do
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     @tag fixture: ""
     test "Admin user correctly deletes rule result", %{conn: conn} do
       %{implementation_key: key} = insert(:implementation)
@@ -31,7 +50,7 @@ defmodule TdDqWeb.RuleResultControllerTest do
   end
 
   describe "upload rule results" do
-    @tag :admin_authenticated
+    @tag authentication: [role: "service"]
     @tag fixture: "test/fixtures/rule_results/rule_results_invalid_format.csv"
     test "rule result upload with invalid date", %{
       conn: conn,
@@ -46,7 +65,7 @@ defmodule TdDqWeb.RuleResultControllerTest do
       assert row == 2
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "service"]
     @tag fixture: "test/fixtures/rule_results/rule_results_result_only.csv"
     test "can load results specifying result", %{
       conn: conn,
@@ -66,7 +85,7 @@ defmodule TdDqWeb.RuleResultControllerTest do
       assert Enum.map(results, & &1["result"]) == ["4.00", "72.00"]
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "service"]
     @tag fixture: "test/fixtures/rule_results/rule_results_errors_records.csv"
     test "can load results specifying errors and records (result is calculated)", %{
       conn: conn,
@@ -86,7 +105,7 @@ defmodule TdDqWeb.RuleResultControllerTest do
       assert Enum.map(results, & &1["result"]) == ["0.00", "99.99"]
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "service"]
     @tag fixture: "test/fixtures/rule_results/rule_results.csv"
     test "uploads rule results with custom params in csv", %{
       conn: conn,

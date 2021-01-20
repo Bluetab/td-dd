@@ -2,15 +2,19 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
   use TdDqWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
+  alias TdCache.TaxonomyCache
+
   @moduletag sandbox: :shared
-  @username "this_is_not_important"
 
   setup_all do
-    start_supervised!(TdDq.Permissions.MockPermissionResolver)
-    :ok
+    %{id: domain_id} = domain = build(:domain)
+    TaxonomyCache.put_domain(domain)
+    on_exit(fn -> TaxonomyCache.delete_domain(domain_id) end)
+
+    [domain: domain]
   end
 
-  setup do
+  setup tags do
     groups =
       1..5
       |> Enum.map(fn _ ->
@@ -20,12 +24,20 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
         Map.put(group, :executions, [execution])
       end)
 
+    case tags do
+      %{permissions: permissions, claims: %{user_id: user_id}, domain: %{id: domain_id}} ->
+        create_acl_entry(user_id, "domain", domain_id, permissions)
+
+      _ ->
+        :ok
+    end
+
     [groups: groups]
   end
 
   describe "GET /api/execution_groups" do
-    @tag authenticated_user: @username
-    @tag role: "view"
+    @tag authentication: [user_name: "not_an_admin"]
+    @tag permissions: [:view_quality_rule]
     test "returns an OK response with the list of execution groups", %{
       conn: conn,
       swagger_schema: schema
@@ -39,7 +51,7 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
       assert length(groups) == 5
     end
 
-    @tag authenticated_user: @username
+    @tag authentication: [user_name: "not_an_admin"]
     test "returns forbidden if user doesn't have view permission", %{conn: conn} do
       assert %{"errors" => _} =
                conn
@@ -49,8 +61,8 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
   end
 
   describe "GET /api/execution_groups/:id" do
-    @tag authenticated_user: @username
-    @tag role: "view"
+    @tag authentication: [user_name: "not_an_admin"]
+    @tag permissions: [:view_quality_rule]
     test "returns an OK response with the execution group", %{
       conn: conn,
       swagger_schema: schema,
@@ -71,7 +83,7 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
                execution
     end
 
-    @tag authenticated_user: @username
+    @tag authentication: [user_name: "not_an_admin"]
     test "returns forbidden if user doesn't have view permission", %{conn: conn} do
       assert %{"errors" => _} =
                conn
@@ -81,7 +93,8 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
   end
 
   describe "POST /api/execution_groups" do
-    @tag :admin_authenticated
+    @tag authentication: [user_name: "not_an_admin"]
+    @tag permissions: [:execute_quality_rule_implementations, :view_quality_rule]
     test "returns an OK response with the created execution group", %{
       conn: conn,
       swagger_schema: schema
@@ -101,7 +114,7 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
       assert %{"id" => _, "inserted_at" => _} = data
     end
 
-    @tag authenticated_user: @username
+    @tag authentication: [user_name: "not_an_admin"]
     test "returns forbidden if user doesn't have execute permission", %{conn: conn} do
       %{id: id} = insert(:implementation)
 

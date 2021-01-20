@@ -134,10 +134,17 @@ defmodule TdDq.Factory do
       user_id: sequence(:user_id, & &1),
       user_name: sequence("user_name"),
       role: "admin",
-      jti: sequence("jti"),
-      is_admin: Map.get(attrs, :role) == "admin"
+      jti: sequence("jti")
     }
     |> merge_attributes(attrs)
+  end
+
+  def domain_factory do
+    %{
+      name: sequence("domain_name"),
+      id: sequence(:domain_id, & &1),
+      updated_at: DateTime.utc_now()
+    }
   end
 
   defp default_assoc(attrs, id_key, key) do

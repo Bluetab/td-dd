@@ -24,7 +24,7 @@ config :td_dq, :elasticsearch,
   es_port: 9200,
   type_name: "doc"
 
-config :td_dq, permission_resolver: TdDq.Permissions.MockPermissionResolver
+config :td_dq, permission_resolver: MockPermissionResolver
 config :td_dq, relation_cache: TdDq.MockRelationCache
 config :td_dq, TdDq.Search.Cluster, api: TdDq.ElasticsearchMock
 

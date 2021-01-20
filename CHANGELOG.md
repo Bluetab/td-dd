@@ -5,6 +5,8 @@
 ### Added
 
 - [TD-3187] Filter executions by source and `PENDING` status
+- [TD-3164] Service accounts can view rules, view implementations and create
+  results
 
 ### Changed
 
