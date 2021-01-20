@@ -319,7 +319,8 @@ defmodule TdDq.Rules.ImplementationsTest do
       creation_attrs = %{
         dataset: [
           %{structure: %{id: 1}},
-          %{clauses: [%{left: %{id: 2}, right: %{id: 3}}], structure: %{id: 4}}
+          %{clauses: [%{left: %{id: 2}, right: %{id: 3}}], structure: %{id: 4}},
+          %{clauses: nil, structure: %{id: 5}}
         ],
         population: [
           %{
@@ -327,7 +328,7 @@ defmodule TdDq.Rules.ImplementationsTest do
               name: "timestamp_gt_timestamp",
               value_type: "timestamp"
             },
-            structure: %{id: 5},
+            structure: %{id: 6},
             value: [%{raw: "2019-12-02 05:35:00"}]
           }
         ],
@@ -335,10 +336,18 @@ defmodule TdDq.Rules.ImplementationsTest do
           %{
             operator: %{
               name: "timestamp_gt_timestamp",
-              value_type: "timestamp"
+              value_type: "timestamp",
+              value_type_filter: "timestamp"
             },
-            structure: %{id: 6},
+            structure: %{id: 7},
             value: [%{raw: "2019-12-02 05:35:00"}]
+          },
+          %{
+            operator: %{
+              name: "not_empty"
+            },
+            structure: %{id: 8},
+            value: nil
           }
         ]
       }
@@ -356,7 +365,7 @@ defmodule TdDq.Rules.ImplementationsTest do
 
       structures_ids = Implementations.get_structure_ids(rule_implementaton)
 
-      assert Enum.sort(structures_ids) == [1, 2, 3, 4, 5, 6]
+      assert Enum.sort(structures_ids) == [1, 2, 3, 4, 5, 6, 7, 8]
     end
   end
 
