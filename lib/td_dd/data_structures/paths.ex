@@ -14,7 +14,7 @@ defmodule TdDd.DataStructures.Paths do
   LEFT OUTER JOIN data_structure_relations AS r ON r.child_id = v.id
   LEFT OUTER JOIN relation_types t ON t.id = r.relation_type_id AND t.name = 'default'
   WHERE r.id IS NULL
-  UNION ALL (
+  UNION (
     SELECT v.id AS id, v.id AS vid, v.name AS name, ARRAY_PREPEND(v.name, p0.names)::varchar(255)[] AS names, ARRAY_PREPEND(v.data_structure_id, p0.structure_ids)::bigint[] AS structure_ids, ARRAY_PREPEND(ds.external_id, p0.external_ids)::text[] AS external_ids, p0.v_sum + v.version + 1 AS v_sum
     FROM data_structure_versions v
     INNER JOIN data_structures AS ds ON ds.id = v.data_structure_id

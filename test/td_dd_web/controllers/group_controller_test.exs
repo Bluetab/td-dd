@@ -15,7 +15,7 @@ defmodule TdDdWeb.GroupControllerTest do
   end
 
   describe "index" do
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "index", %{conn: conn, swagger_schema: schema, system: %{external_id: external_id}} do
       assert %{"data" => []} =
                conn
@@ -26,7 +26,7 @@ defmodule TdDdWeb.GroupControllerTest do
   end
 
   describe "delete" do
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "delete", %{conn: conn, system: %{id: system_id, external_id: external_id}} do
       insert(:data_structure_version,
         data_structure: build(:data_structure, system_id: system_id),

@@ -6,8 +6,6 @@ defmodule TdDdWeb.FallbackController do
   """
   use TdDdWeb, :controller
 
-  alias Jason, as: JSON
-
   require Logger
 
   def call(conn, {:error, %Ecto.Changeset{} = changeset}) do
@@ -28,7 +26,7 @@ defmodule TdDdWeb.FallbackController do
   def call(conn, {:error, error}) do
     conn
     |> put_resp_content_type("application/json", "utf-8")
-    |> send_resp(:unprocessable_entity, JSON.encode!(%{error: error}))
+    |> send_resp(:unprocessable_entity, Jason.encode!(%{error: error}))
   end
 
   def call(conn, {:can, false}) do

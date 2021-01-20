@@ -10,7 +10,7 @@ defmodule TdDdWeb.UnitEventControllerTest do
   end
 
   describe "Unit Event Controller" do
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "GET /api/units/:name/events returns the list of events", %{
       conn: conn,
       swagger_schema: schema,
@@ -27,7 +27,7 @@ defmodule TdDdWeb.UnitEventControllerTest do
   end
 
   describe "Unit Event Controller for non-admin users" do
-    @tag authenticated_user: "some_user"
+    @tag authentication: [user_name: "non_admin_user"]
     test "GET /api/units/:name/events returns forbidden", %{
       conn: conn,
       unit: unit

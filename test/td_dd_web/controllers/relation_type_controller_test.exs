@@ -19,7 +19,7 @@ defmodule TdDdWeb.RelationTypeControllerTest do
   end
 
   describe "index" do
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "lists all relation_types", %{conn: conn} do
       assert %{"data" => data} =
                conn
@@ -31,7 +31,7 @@ defmodule TdDdWeb.RelationTypeControllerTest do
   end
 
   describe "create relation_type" do
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders relation_type when data is valid", %{conn: conn} do
       assert %{"data" => %{"id" => id}} =
                conn
@@ -50,7 +50,7 @@ defmodule TdDdWeb.RelationTypeControllerTest do
              } = data
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders errors when data is invalid", %{conn: conn} do
       assert %{"errors" => errors} =
                conn
@@ -65,7 +65,7 @@ defmodule TdDdWeb.RelationTypeControllerTest do
   describe "update relation_type" do
     setup [:create_relation_type]
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders relation_type when data is valid", %{
       conn: conn,
       relation_type: %RelationType{id: id} = relation_type
@@ -89,7 +89,7 @@ defmodule TdDdWeb.RelationTypeControllerTest do
              } = data
     end
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "renders errors when data is invalid", %{conn: conn, relation_type: relation_type} do
       assert %{"errors" => errors} =
                conn
@@ -106,7 +106,7 @@ defmodule TdDdWeb.RelationTypeControllerTest do
   describe "delete relation_type" do
     setup [:create_relation_type]
 
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "deletes chosen relation_type", %{conn: conn, relation_type: relation_type} do
       assert conn
              |> delete(Routes.relation_type_path(conn, :delete, relation_type))

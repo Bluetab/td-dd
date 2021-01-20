@@ -4,7 +4,7 @@ defmodule TdDdWeb.SearchControllerTest do
   import Routes
 
   describe "search" do
-    @tag :admin_authenticated
+    @tag authentication: [role: "admin"]
     test "search_structures_metadata_fields (admin)", %{conn: conn} do
       insert(:data_structure_version,
         name: "foo",
@@ -34,7 +34,7 @@ defmodule TdDdWeb.SearchControllerTest do
       assert Enum.all?(["foo", "bar", "Xyz"], &(&1 in fields))
     end
 
-    @tag authenticated_user: "user1"
+    @tag authentication: [user_name: "non_admin_user"]
     test "search_structures_metadata_fields (non-admin user)", %{conn: conn} do
       assert conn
              |> post(search_path(conn, :search_structures_metadata_fields), %{

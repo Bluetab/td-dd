@@ -1,12 +1,14 @@
 defmodule TdDdWeb.ProfileController do
   use TdDdWeb, :controller
 
-  alias Jason, as: JSON
-  alias Plug.Upload
-  alias TdDd.CSV.Reader
-  alias TdDd.Loader.Worker
+  import Canada, only: [can?: 2]
 
   require Logger
+
+  alias Plug.Upload
+  alias TdDd.CSV.Reader
+  alias TdDd.DataStructures.Profile
+  alias TdDd.Loader.Worker
 
   @profiling_import_required Application.compile_env(:td_dd, :profiling)[
                                :profiling_import_required
@@ -14,18 +16,11 @@ defmodule TdDdWeb.ProfileController do
   @profiling_import_schema Application.compile_env(:td_dd, :profiling)[:profiling_import_schema]
 
   def upload(conn, %{"profiling" => profiling}) do
-    %{is_admin: is_admin} = conn.assigns[:current_resource]
-
-    if is_admin do
+    with claims <- conn.assigns[:current_resource],
+         {:can, true} <- {:can, can?(claims, upload(Profile))} do
       do_upload(profiling)
       send_resp(conn, :accepted, "")
-    else
-      render_error(conn, :forbidden)
     end
-  rescue
-    e in RuntimeError ->
-      Logger.error("While uploading profiling #{e.message}")
-      send_resp(conn, :unprocessable_entity, JSON.encode!(%{error: e.message}))
   end
 
   defp do_upload(profiling) do

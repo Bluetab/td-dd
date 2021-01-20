@@ -5,7 +5,6 @@ defmodule TdDdWeb.Authentication do
   alias Plug.Conn
   alias TdDd.Auth.Claims
   alias TdDd.Auth.Guardian
-  alias TdDd.Permissions.MockPermissionResolver
 
   def put_auth_headers(conn, jwt) do
     conn
@@ -25,30 +24,32 @@ defmodule TdDdWeb.Authentication do
     {:ok, %{conn: conn, jwt: jwt, claims: claims}}
   end
 
-  def create_claims(user_name, opts \\ []) do
-    user_id = Integer.mod(:binary.decode_unsigned(user_name), 100_000)
+  def create_claims(opts \\ []) do
     role = Keyword.get(opts, :role, "user")
-    is_admin = role === "admin"
+    user_name = Keyword.get(opts, :user_name, "joe")
 
     %Claims{
-      user_id: user_id,
+      user_id: Integer.mod(:binary.decode_unsigned(user_name), 100_000),
       user_name: user_name,
-      role: role,
-      is_admin: is_admin
+      role: role
     }
   end
 
-  def build_user_token(%Claims{} = claims) do
-    case Guardian.encode_and_sign(claims) do
+  def build_user_token(%Claims{role: role} = claims) do
+    case Guardian.encode_and_sign(claims, %{role: role}) do
       {:ok, jwt, _full_claims} -> register_token(jwt)
-      _ -> raise "Problems encoding and signing a user"
+      _ -> raise "Problems encoding and signing a claims"
     end
   end
 
-  def build_user_token(user_name, opts \\ []) when is_binary(user_name) do
-    user_name
-    |> create_claims(opts)
+  def build_user_token(opts) when is_list(opts) do
+    opts
+    |> create_claims()
     |> build_user_token()
+  end
+
+  def build_user_token(user_name) when is_binary(user_name) do
+    build_user_token(user_name: user_name, role: "user")
   end
 
   defp register_token(token) do

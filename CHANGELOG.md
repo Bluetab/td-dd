@@ -5,6 +5,8 @@
 ### Changed
 
 - [TD-3163] Auth tokens now include `role` claim instead of `is_admin` flag
+- [TD-3164] Service accounts can view systems, view data structures and load
+  metadata
 - [TD-3182] Allow to use redis with password
 
 ## [4.11.1] 2021-01-15
