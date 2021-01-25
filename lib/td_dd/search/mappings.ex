@@ -45,7 +45,7 @@ defmodule TdDd.Search.Mappings do
       field_type: %{type: "text", fields: @raw_sort},
       confidential: %{type: "boolean", fields: @raw},
       with_content: %{type: "boolean", fields: @raw},
-      description: %{type: "text", fields: @raw_sort},
+      description: %{type: "text", fields: @raw},
       external_id: %{type: "keyword", index: false},
       domain_ids: %{type: "long"},
       deleted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},

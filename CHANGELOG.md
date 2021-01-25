@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- [TD-3203] Truncate `field_type` to 32766 bytes when indexing (maximum sortable
+  field length in elasticsearch)
+
 ### Changed
 
 - [TD-3163] Auth tokens now include `role` claim instead of `is_admin` flag

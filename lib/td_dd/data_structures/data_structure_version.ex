@@ -112,6 +112,8 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     alias TdDd.DataStructures.DataStructureVersion
     alias TdDfLib.Format
 
+    @max_sortable_length 32_766
+
     @impl Elasticsearch.Document
     def id(%{data_structure_id: id}), do: id
 
@@ -228,6 +230,11 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     end
 
     defp format_content(_, _), do: nil
+
+    defp get_field_type(%DataStructureVersion{metadata: %{"type" => type}})
+         when byte_size(type) > @max_sortable_length do
+      binary_part(type, 0, @max_sortable_length)
+    end
 
     defp get_field_type(%DataStructureVersion{metadata: metadata}), do: Map.get(metadata, "type")
 
