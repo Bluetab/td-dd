@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [4.12.0] 2021-01-25
+
 ### Added
 
 - [TD-3187] Filter executions by source and `PENDING` status
