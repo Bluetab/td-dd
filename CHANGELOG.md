@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [4.12.0] 2021-01-25
+
 ### Changed
 
 - [TD-3163] Auth tokens now include `role` claim instead of `is_admin` flag
