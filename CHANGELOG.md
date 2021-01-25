@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [4.12.0] 2021-01-25
+
 ### Fixed
 
 - [TD-3203] Truncate `field_type` to 32766 bytes when indexing (maximum sortable
