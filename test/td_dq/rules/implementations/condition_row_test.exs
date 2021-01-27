@@ -48,4 +48,10 @@ defmodule TdDq.Rules.Implementations.ConditionRowTest do
       assert {"can't be blank", [validation: :required]} = errors[:operator]
     end
   end
+
+  test "validates empty value" do
+    params = string_params_for(:condition_row, value: [])
+
+    assert %{valid?: true} = ConditionRow.changeset(params)
+  end
 end
