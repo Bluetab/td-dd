@@ -1,6 +1,10 @@
 # Changelog
 
-## [Unreleased]
+## [4.12.1] 2021-01-27
+
+### Fixed
+
+- [TD-3216] Fix implementation condition row empty values
 
 ## [4.12.0] 2021-01-25
 
