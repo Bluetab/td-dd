@@ -1,6 +1,11 @@
 # Changelog
 
-## [Unreleased]
+## [4.12.1] 2021-01-28
+
+### Fixed
+
+- [TD-3248] Referenced structure ids were not being obtained correctly from
+  cache
 
 ## [4.12.0] 2021-01-25
 
