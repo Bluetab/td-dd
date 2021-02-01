@@ -163,5 +163,26 @@ defmodule TdCx.SourcesTest do
       source = source_fixture()
       assert %Ecto.Changeset{} = Sources.change_source(source)
     end
+
+    test "create_or_update_source/1 with valid data creates a source or updates it if deleted" do
+      attrs = Map.put(@valid_attrs, "external_id", "ex1")
+      assert {:ok, %Source{} = source} = Sources.create_or_update_source(attrs)
+      assert source.config == Map.get(attrs, "config")
+      assert source.external_id == Map.get(attrs, "external_id")
+      assert source.secrets_key == Map.get(attrs, "secrets_key")
+      assert source.type == Map.get(attrs, "type")
+      attrs = Map.merge(attrs, @update_attrs)
+
+      assert {:error, %Ecto.Changeset{errors: [external_id: {"has already been taken", _}]}} =
+               Sources.create_or_update_source(attrs)
+
+      {:ok, %Source{}} = Sources.update_source(source, %{deleted_at: DateTime.utc_now()})
+      assert {:ok, %Source{} = source} = Sources.create_or_update_source(attrs)
+      assert source.config == Map.get(attrs, "config")
+      assert source.external_id == Map.get(attrs, "external_id")
+      # Empty secrets in config
+      assert source.secrets_key == nil
+      assert source.type == Map.get(attrs, "type")
+    end
   end
 end

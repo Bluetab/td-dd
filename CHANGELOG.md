@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Changed
+
+- [TD-3179] On source creation, replace existing deleted source if it has the
+  same `external_id`
+
 ## [4.12.0] 2021-01-25
 
 ### Changed

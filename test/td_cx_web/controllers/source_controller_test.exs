@@ -28,6 +28,7 @@ defmodule TdCxWeb.SourceControllerTest do
 
   alias K8s.Client.DynamicHTTPProvider
   alias TdCx.Cache.SourceLoader
+  alias TdCx.Repo
   alias TdCx.Sources
   alias TdCx.Sources.Source
 
@@ -160,17 +161,49 @@ defmodule TdCxWeb.SourceControllerTest do
 
     @tag authentication: [role: "admin"]
     test "renders source when data is valid", %{conn: conn} do
+      external_id = "exid"
+      attrs = Map.put(@create_attrs, "external_id", external_id)
+
       assert %{"data" => data} =
                conn
-               |> post(Routes.source_path(conn, :create), source: @create_attrs)
+               |> post(Routes.source_path(conn, :create), source: attrs)
                |> json_response(:created)
 
       assert %{
-               "id" => _id,
+               "id" => id,
                "config" => %{"a" => "1"},
-               "external_id" => "some external_id",
+               "external_id" => ^external_id,
                "type" => "foo_type",
                "active" => true
+             } = data
+
+      attrs =
+        attrs
+        |> Map.merge(@update_attrs)
+        |> Map.put("external_id", external_id)
+        |> Map.put("type", "foo_type")
+
+      assert %{"errors" => %{"external_id" => ["has already been taken"]}} =
+               conn
+               |> post(Routes.source_path(conn, :create), source: attrs)
+               |> json_response(:unprocessable_entity)
+
+      Source
+      |> Repo.get(id)
+      |> Source.changeset(%{deleted_at: DateTime.utc_now()})
+      |> Repo.update()
+
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.source_path(conn, :create), source: attrs)
+               |> json_response(:created)
+
+      assert %{
+               "id" => ^id,
+               "config" => %{"a" => "3"},
+               "external_id" => ^external_id,
+               "type" => "foo_type",
+               "active" => false
              } = data
     end
 
@@ -204,11 +237,13 @@ defmodule TdCxWeb.SourceControllerTest do
     @tag authentication: [role: "admin"]
     test "renders source when data is valid", %{
       conn: conn,
-      source: %Source{external_id: external_id}
+      source: %Source{external_id: external_id, type: type}
     } do
+      source = Map.put(@update_attrs, "type", type)
+
       assert %{"data" => data} =
                conn
-               |> put(Routes.source_path(conn, :update, external_id), source: @update_attrs)
+               |> put(Routes.source_path(conn, :update, external_id), source: source)
                |> json_response(:ok)
 
       assert %{
@@ -223,10 +258,10 @@ defmodule TdCxWeb.SourceControllerTest do
     @tag authentication: [role: "admin"]
     test "renders errors when template content is invalid", %{
       conn: conn,
-      source: %Source{external_id: external_id}
+      source: %Source{external_id: external_id, type: type}
     } do
-      conn =
-        put(conn, Routes.source_path(conn, :update, external_id), source: @invalid_update_attrs)
+      source = Map.put(@invalid_update_attrs, "type", type)
+      conn = put(conn, Routes.source_path(conn, :update, external_id), source: source)
 
       assert json_response(conn, 422)["errors"] == %{"a" => ["can't be blank"]}
     end

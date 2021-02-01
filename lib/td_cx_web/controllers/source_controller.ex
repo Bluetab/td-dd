@@ -68,7 +68,7 @@ defmodule TdCxWeb.SourceController do
     claims = conn.assigns[:current_resource]
 
     with {:can, true} <- {:can, can?(claims, create(%Source{}))},
-         {:ok, %Source{} = source} <- Sources.create_source(source_params) do
+         {:ok, %Source{} = source} <- Sources.create_or_update_source(source_params) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", Routes.source_path(conn, :show, source))
@@ -96,7 +96,7 @@ defmodule TdCxWeb.SourceController do
          %Source{} = source <- Sources.get_source!(external_id),
          %Source{} = source <- Sources.enrich_secrets(claims, source),
          job_types <- Sources.job_types(claims, source) do
-      render(conn, "show.json", source: source, job_types: job_types)
+        render(conn, "show.json", source: source, job_types: job_types)
     end
   rescue
     _e in Ecto.NoResultsError ->

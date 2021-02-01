@@ -66,31 +66,33 @@ defmodule TdCx.Sources do
       ** (Ecto.NoResultsError)
 
   """
-  def get_source!(params_or_identifier)
-
   def get_source!(params_or_identifier) do
+    params_or_identifier
+    |> source_query()
+    |> Repo.one!()
+  end
+
+  def get_source(params_or_identifier) do
+    params_or_identifier
+    |> source_query()
+    |> Repo.one()
+  end
+
+  defp source_query(params_or_identifier) do
     params_or_identifier
     |> source_params()
     |> Enum.reduce(Source, fn
       {:external_id, external_id}, q -> where(q, [s], s.external_id == ^external_id)
       {:id, id}, q -> where(q, [s], s.id == ^id)
       {:preload, preloads}, q -> preload(q, ^preloads)
+      {:deleted, true}, q -> where(q, [s], not is_nil(s.deleted_at))
     end)
-    |> Repo.one!()
   end
 
   defp source_params(%{} = params), do: params
   defp source_params(external_id) when is_binary(external_id), do: %{external_id: external_id}
   defp source_params(id) when is_integer(id), do: %{id: id}
   defp source_params(list) when is_list(list), do: Map.new(list)
-
-  def old_get_source!(external_id, options \\ []) do
-    Source
-    |> where([s], s.external_id == ^external_id)
-    |> where([s], is_nil(s.deleted_at))
-    |> Repo.one!()
-    |> enrich(options)
-  end
 
   def enrich_secrets(%Claims{} = claims, %Source{} = source) do
     case can?(claims, view_secrets(source)) do
@@ -116,10 +118,11 @@ defmodule TdCx.Sources do
     end
   end
 
-  defp enrich(%Source{} = source, []), do: source
-
-  defp enrich(%Source{} = source, options) do
-    Repo.preload(source, options)
+  def create_or_update_source(%{"external_id" => external_id} = params) do
+    case get_source(external_id: external_id, deleted: true) do
+      nil -> create_source(params)
+      %Source{} = source -> update_source(source, Map.put_new(params, "deleted_at", nil))
+    end
   end
 
   @doc """
@@ -135,8 +138,8 @@ defmodule TdCx.Sources do
 
   """
   def create_source(attrs \\ %{}) do
-    with {:ok} <- check_base_changeset(attrs),
-         {:ok} <- is_valid_template_content(attrs) do
+    with :ok <- check_base_changeset(attrs),
+         :ok <- check_valid_template_content(attrs) do
       %{"secrets" => secrets, "config" => config} = separate_config(attrs)
 
       attrs
@@ -201,19 +204,19 @@ defmodule TdCx.Sources do
     changeset = Source.changeset(source, attrs)
 
     case changeset.valid? do
-      true -> {:ok}
+      true -> :ok
       false -> {:error, changeset}
     end
   end
 
-  defp is_valid_template_content(%{"type" => type, "config" => config} = _attrs)
+  defp check_valid_template_content(%{"type" => type, "config" => config})
        when not is_nil(type) do
     %{:content => content_schema} = TemplateCache.get_by_name!(type)
     content_schema = Format.flatten_content_fields(content_schema)
     content_changeset = Validation.build_changeset(config, content_schema)
 
     case content_changeset.valid? do
-      true -> {:ok}
+      true -> :ok
       false -> {:error, content_changeset}
     end
   end
@@ -235,14 +238,12 @@ defmodule TdCx.Sources do
 
   """
   def update_source(%Source{} = source, %{"config" => config} = attrs) do
-    with {:ok} <- check_base_changeset(attrs, source),
-         {:ok} <-
-           is_valid_template_content(%{
-             "type" => Map.get(source, :type),
-             "config" => config
-           }) do
+    type = Map.get(attrs, "type") || Map.get(source, :type)
+
+    with :ok <- check_base_changeset(attrs, source),
+         :ok <- check_valid_template_content(%{"type" => type, "config" => config}) do
       %{"secrets" => secrets, "config" => config} =
-        separate_config(%{"type" => Map.get(source, :type), "config" => config})
+        separate_config(%{"type" => type, "config" => config})
 
       attrs =
         attrs
@@ -253,8 +254,7 @@ defmodule TdCx.Sources do
       |> do_update_source(attrs)
       |> on_upsert()
     else
-      error ->
-        error
+      error -> error
     end
   end
 
@@ -265,12 +265,14 @@ defmodule TdCx.Sources do
     |> on_upsert()
   end
 
-  defp do_update_source(%Source{} = source, %{"secrets" => secrets} = attrs)
+  defp do_update_source(%Source{secrets_key: secrets_key} = source, %{"secrets" => secrets} = attrs)
        when secrets == %{} do
-    updateable_attrs = Map.drop(attrs, ["secrets", "type", "external_id"])
-    updateable_attrs = Map.put(updateable_attrs, "secrets_key", nil)
+    updateable_attrs =
+      attrs
+      |> Map.drop(["secrets", "external_id"])
+      |> Map.put("secrets_key", nil)
 
-    case Vault.delete_secrets(source.secrets_key) do
+    case Vault.delete_secrets(secrets_key) do
       :ok ->
         source
         |> Source.changeset(updateable_attrs)
@@ -282,9 +284,10 @@ defmodule TdCx.Sources do
   end
 
   defp do_update_source(
-         %Source{type: type, external_id: external_id} = source,
+         %Source{external_id: external_id} = source,
          %{"secrets" => secrets} = attrs
        ) do
+    type = Map.get(attrs, "type") || Map.get(source, :type)
     secrets_key = build_secret_key(type, external_id)
 
     case Vault.write_secrets(secrets_key, secrets) do
@@ -292,7 +295,7 @@ defmodule TdCx.Sources do
         attrs =
           attrs
           |> Map.put("secrets_key", secrets_key)
-          |> Map.drop(["secrets", "type", "external_id"])
+          |> Map.drop(["secrets", "external_id"])
 
         source
         |> Source.changeset(attrs)
