@@ -78,7 +78,8 @@ config :td_dd, :cache_cleaner,
   patterns: [
     "structures:external_ids:*",
     "data_fields:external_ids",
-    "TdDd.DataStructures.Migrations:td-2979"
+    "TdDd.DataStructures.Migrations:td-2979",
+    "TdDd.DataStructures.Migrations:TD-2774"
   ]
 
 config :td_dd, TdDd.Scheduler,
