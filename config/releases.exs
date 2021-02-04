@@ -31,8 +31,8 @@ config :td_dd, TdDd.Scheduler,
 
 config :td_dd, TdDd.Search.Cluster, url: System.fetch_env!("ES_URL")
 
-with username when not is_nil(username) <- System.get_env("ELASTIC_USERNAME"),
-     password when not is_nil(password) <- System.get_env("ELASTIC_PASSWORD") do
+with username when not is_nil(username) <- System.get_env("ES_USERNAME"),
+     password when not is_nil(password) <- System.get_env("ES_PASSWORD") do
   config :td_dd, TdDd.Search.Cluster,
     username: username,
     password: password
