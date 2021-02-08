@@ -21,7 +21,7 @@ config :td_cache, :event_stream, consumer_id: System.fetch_env!("HOSTNAME")
 config :td_dq, TdDq.Scheduler,
   jobs: [
     reindexer: [
-      schedule: System.get_env("ELASTIC_REFRESH_SCHEDULE", "@daily"),
+      schedule: System.get_env("ES_REFRESH_SCHEDULE", "@daily"),
       task: {TdDq.Search.IndexWorker, :reindex, []},
       run_strategy: Quantum.RunStrategy.Local
     ],
@@ -31,3 +31,10 @@ config :td_dq, TdDq.Scheduler,
       run_strategy: Quantum.RunStrategy.Local
     ]
   ]
+
+with username when not is_nil(username) <- System.get_env("ES_USERNAME"),
+     password when not is_nil(password) <- System.get_env("ES_PASSWORD") do
+  config :td_dq, TdDq.Search.Cluster,
+    username: username,
+    password: password
+end
