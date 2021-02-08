@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-3263] Use HTTP Basic authentication for Elasticsearch if environment
+  variables `ES_USERNAME` and `ES_PASSWORD` are present
+
 ### Changed
 
 - [TD-3179] On source creation, replace existing deleted source if it has the
