@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-3263] Use HTTP Basic authentication for Elasticsearch if environment
+  variables `ES_USERNAME` and `ES_PASSWORD` are present
+  
 ### Fixed
 
 - [TD-3264] Data structure type migration task was preventing application from
