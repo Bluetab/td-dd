@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-3263] Use HTTP Basic authentication for Elasticsearch if environment
+  variables `ES_USERNAME` and `ES_PASSWORD` are present
+
 ## [4.12.1] 2021-01-27
 
 ### Fixed
