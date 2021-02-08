@@ -46,8 +46,6 @@ defmodule TdDd.Application do
       TdDd.Cache.StructureLoader,
       TdDd.Cache.StructureTypeLoader,
       TdDd.Cache.DomainEventConsumer,
-      # Worker for DataStructureType migration
-      TdDd.DataStructures.DataStructureTypeMigrator,
       # Lineage workers
       TdDd.Lineage.Import,
       TdDd.Lineage.GraphData,

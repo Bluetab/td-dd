@@ -6,6 +6,12 @@
 
 - [TD-3263] Use HTTP Basic authentication for Elasticsearch if environment
   variables `ES_USERNAME` and `ES_PASSWORD` are present
+  
+### Fixed
+
+- [TD-3264] Data structure type migration task was preventing application from
+  starting up under certain data-dependent conditions. The task has now been
+  removed as it is no longer needed.
 
 ## [4.12.1] 2021-01-28
 
@@ -165,6 +171,7 @@
 - [TD-911] Allow to limit lineage/impact levels
 - [TD-2322] Allow to search all data structures versions without 10_000 limit
   using ES scroll API
+- [TD-2774] Startup task to create data structure types
 
 ### Fixed
 
