@@ -51,7 +51,6 @@ defmodule TdDqWeb.Router do
     resources("/rule_implementations", ImplementationController, except: [:new, :edit])
     post("/rule_implementations/csv", ImplementationController, :csv)
     post("/rule_implementations/search", SearchController, :search_implementations)
-    post("/rule_implementations/execute", ImplementationController, :execute_implementations)
   end
 
   def swagger_info do
