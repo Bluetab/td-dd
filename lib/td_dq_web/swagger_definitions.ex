@@ -175,25 +175,6 @@ defmodule TdDqWeb.SwaggerDefinitions do
             structure(Schema.ref(:Structure), "Structure", required: true)
           end
         end,
-      ImplementationsExecuteRequest:
-        swagger_schema do
-          properties do
-            search_params(:object, "Search params")
-          end
-        end,
-      ImplementationKeys:
-        swagger_schema do
-          title("Implementation external ids")
-          description("Implementation external ids to execute")
-          type(:array)
-          items(%{type: :string})
-        end,
-      ImplementationsExecuteResponse:
-        swagger_schema do
-          properties do
-            data(Schema.ref(:ImplementationKeys))
-          end
-        end,
       Dataset:
         swagger_schema do
           properties do

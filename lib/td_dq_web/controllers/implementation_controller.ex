@@ -8,7 +8,6 @@ defmodule TdDqWeb.ImplementationController do
   require Logger
 
   alias Ecto.Changeset
-  alias TdCache.EventStream.Publisher
   alias TdDq.Repo
   alias TdDq.Rules
   alias TdDq.Rules.Implementations
@@ -318,51 +317,6 @@ defmodule TdDqWeb.ImplementationController do
     |> put_resp_content_type("text/csv", "utf-8")
     |> put_resp_header("content-disposition", "attachment; filename=\"implementations.zip\"")
     |> send_resp(:ok, Download.to_csv(implementations, header_labels, content_labels))
-  end
-
-  swagger_path :execute_implementations do
-    description("Execute implementations")
-    produces("application/json")
-
-    parameters do
-      search_params(
-        :body,
-        Schema.ref(:ImplementationsExecuteRequest),
-        "Implementation search params"
-      )
-    end
-
-    response(200, "OK", Schema.ref(:ImplementationsExecuteResponse))
-    response(403, "User is not authorized to perform this action")
-    response(422, "Error while executing implementations")
-  end
-
-  def execute_implementations(conn, params) do
-    claims = conn.assigns[:current_resource]
-    implementations = Search.search_executable(params, claims)
-    keys = Enum.map(implementations, &Map.get(&1, :implementation_key))
-    payload = Enum.map(implementations, &Map.take(&1, [:implementation_key, :structure_aliases]))
-
-    event = %{
-      event: "execute_implementations",
-      payload: Jason.encode!(payload)
-    }
-
-    case Publisher.publish(event, "cx:events") do
-      {:ok, _event_id} ->
-        body = Jason.encode!(%{data: keys})
-
-        conn
-        |> put_resp_content_type("application/json", "utf-8")
-        |> send_resp(:ok, body)
-
-      {:error, error} ->
-        Logger.info("While executing implementations... #{inspect(error)}")
-
-        conn
-        |> put_resp_content_type("application/json", "utf-8")
-        |> send_resp(:unprocessable_entity, Jason.encode!(%{error: error}))
-    end
   end
 
   defp add_last_rule_result(implementation) do

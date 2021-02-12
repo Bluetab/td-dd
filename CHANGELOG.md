@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Removed
+
+- [TD-3171] Removed deprecated route `/api/rule_implementations/execute`
+
 ## [4.13.0] 2021-02-08
 
 ### Added
