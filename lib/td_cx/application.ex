@@ -41,8 +41,7 @@ defmodule TdCx.Application do
     [
       TdCx.Search.IndexWorker,
       TdCx.Cache.SourceLoader,
-      TdCx.Scheduler,
-      {TdCx.K8s, Application.get_env(:td_cx, TdCx.K8s, [])}
+      TdCx.Scheduler
     ]
   end
 end

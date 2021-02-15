@@ -27,8 +27,6 @@ config :td_cx, TdCx.Scheduler,
     ]
   ]
 
-config :td_cx, TdCx.K8s, namespace: System.get_env("K8S_NAMESPACE", "default")
-
 config :td_cx, TdCx.Search.Cluster, url: System.fetch_env!("ES_URL")
 
 with username when not is_nil(username) <- System.get_env("ES_USERNAME"),

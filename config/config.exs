@@ -59,10 +59,6 @@ config :td_cx, TdCx.Scheduler,
     ]
   ]
 
-# Kubernetes configuration
-config :td_cx, TdCx.K8s, namespace: "default"
-config :k8s, clusters: %{}
-
 # Import Elasticsearch config
 import_config "elastic.exs"
 

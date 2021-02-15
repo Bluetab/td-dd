@@ -3,6 +3,7 @@ defmodule TdCx.Factory do
 
   use ExMachina.Ecto, repo: TdCx.Repo
 
+  alias TdCx.Auth.Claims
   alias TdCx.Configurations.Configuration
   alias TdCx.Events.Event
   alias TdCx.Jobs.Job
@@ -37,6 +38,15 @@ defmodule TdCx.Factory do
       type: "config",
       content: %{},
       external_id: "external_id"
+    }
+  end
+
+  def claims_factory do
+    %Claims{
+      user_id: sequence(:user_id, & &1),
+      user_name: sequence("user_name"),
+      role: "admin",
+      jti: sequence("jti")
     }
   end
 end

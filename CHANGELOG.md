@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Removed
+
+- [TD-3207] K8s in the execution of jobs
+
 ### Changed
 
 - [TD-3245] Tested compatibility with PostgreSQL 9.6, 10.15, 11.10, 12.5 and

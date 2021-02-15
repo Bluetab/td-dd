@@ -72,8 +72,7 @@ defmodule TdCxWeb.JobController do
 
     with true <- can?(claims, create(Job)),
          %Source{id: id} <- Sources.get_source!(source_external_id),
-         {:ok, %Job{} = job} <- params |> Map.put("source_id", id) |> Jobs.create_job(),
-         :ok <- Jobs.launch(job) do
+         {:ok, %Job{} = job} <- params |> Map.put("source_id", id) |> Jobs.create_job() do
       conn
       |> put_status(:created)
       |> render("show.json", job: job)
