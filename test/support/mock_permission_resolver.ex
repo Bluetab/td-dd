@@ -5,7 +5,6 @@ defmodule MockPermissionResolver do
 
   use Agent
 
-  alias Jason
   alias TdCache.TaxonomyCache
 
   @initial_state %{sessions: Map.new(), acls: []}

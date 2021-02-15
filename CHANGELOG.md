@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Changed
+
+- [TD-3245] Tested compatibility with PostgreSQL 9.6, 10.15, 11.10, 12.5 and
+  13.1. CI pipeline changed to use `postgres:12.5-alpine`.
+  
 ### Removed
 
 - [TD-3171] Removed deprecated route `/api/rule_implementations/execute`
