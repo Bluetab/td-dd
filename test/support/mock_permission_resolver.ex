@@ -5,7 +5,6 @@ defmodule MockPermissionResolver do
 
   use Agent
 
-  alias Jason
   alias TdCache.TaxonomyCache
 
   ## Public API

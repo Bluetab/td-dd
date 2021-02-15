@@ -23,7 +23,9 @@ services:
       start_period: 10s
 
   postgres:
-    image: postgres:9.6.10-alpine
+    image: postgres:12.5-alpine
+    environment:
+      POSTGRES_PASSWORD: postgres
     restart: always
     healthcheck:
       test: echo "SELECT 1" | psql --username postgres --quiet --no-align --tuples-only | grep -q 1 || exit 1
