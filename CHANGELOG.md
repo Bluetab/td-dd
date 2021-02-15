@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-3245] Tested compatibility with PostgreSQL 9.6, 10.15, 11.10, 12.5 and
+  13.1. CI pipeline changed to use `postgres:12.5-alpine`.
+
 ## [4.13.0] 2021-02-08
 
 ### Added
