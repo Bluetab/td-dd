@@ -5,7 +5,6 @@ defmodule TdCx.Jobs do
   import Ecto.Query, warn: false
 
   alias TdCx.Jobs.Job
-  alias TdCx.K8s
   alias TdCx.Repo
   alias TdCx.Search.IndexWorker
 
@@ -97,7 +96,4 @@ defmodule TdCx.Jobs do
     Repo.preload(job, options)
   end
 
-  def launch(%Job{} = job) do
-    K8s.launch(job)
-  end
 end

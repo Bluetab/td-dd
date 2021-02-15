@@ -11,7 +11,6 @@ defmodule TdCx.Sources do
   alias TdCache.TemplateCache
   alias TdCx.Auth.Claims
   alias TdCx.Cache.SourceLoader
-  alias TdCx.K8s
   alias TdCx.Repo
   alias TdCx.Sources.Source
   alias TdCx.Vault
@@ -265,7 +264,10 @@ defmodule TdCx.Sources do
     |> on_upsert()
   end
 
-  defp do_update_source(%Source{secrets_key: secrets_key} = source, %{"secrets" => secrets} = attrs)
+  defp do_update_source(
+         %Source{secrets_key: secrets_key} = source,
+         %{"secrets" => secrets} = attrs
+       )
        when secrets == %{} do
     updateable_attrs =
       attrs
@@ -380,15 +382,16 @@ defmodule TdCx.Sources do
     Source.changeset(source, %{})
   end
 
-  def job_types(%Claims{} = claims, %Source{type: connector_type} = source) do
-    with true <- can?(claims, view_job_types(source)),
-         {:ok, cron_jobs} <- K8s.list_cronjobs(connector: connector_type, launch_type: "manual") do
-      cron_jobs
-      |> Enum.map(&Kernel.get_in(&1, ["metadata", "labels", "truedat.io/connector-type"]))
-      |> Enum.reject(&is_nil/1)
+  def job_types(%Claims{} = claims, %Source{} = source) do
+    with true <- can?(claims, view_job_types(source)) do
+      source
+      |> Map.get(:config)
+      |> Map.get("job_types", [])
+      |> case do
+        nil -> []
+        job_types -> job_types
+      end
       |> Enum.uniq()
-    else
-      _ -> nil
     end
   end
 end

@@ -34,11 +34,3 @@ config :td_cx, :vault,
   secrets_path: "secret/data/cx/"
 
 config :vaultex, vault_addr: "http://0.0.0.0:8200"
-
-config :k8s,
-  clusters: %{
-    default: %{
-      conn: "~/.kube/config",
-      conn_opts: [context: "truedat"]
-    }
-  }

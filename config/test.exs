@@ -27,12 +27,3 @@ config :td_cx, :vault,
 
 config :vaultex, vault_addr: "http://vault:8200"
 
-config :k8s,
-  discovery_driver: K8s.Discovery.Driver.File,
-  discovery_opts: [config: "test/support/k8s/discovery.json"],
-  http_provider: K8s.Client.DynamicHTTPProvider,
-  clusters: %{
-    default: %{
-      conn: "test/support/k8s/kube-config.yaml"
-    }
-  }
