@@ -6,7 +6,6 @@ defmodule TdDd.Search.Aggregations do
   alias TdDfLib.Format
 
   def aggregation_terms do
-    # TODO: Config aggregations
     static_keywords = [
       {"system.name.raw", %{terms: %{field: "system.name.raw", size: 50}}},
       {"domain.name.raw", %{terms: %{field: "domain.name.raw", size: 50}}},
