@@ -9,6 +9,8 @@ defmodule TdDdWeb.MetadataControllerTest do
       metadata_path: 2
     ]
 
+  alias TdCache.Redix
+  alias TdCache.SourceCache
   alias TdCache.TaxonomyCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
@@ -175,6 +177,8 @@ defmodule TdDdWeb.MetadataControllerTest do
 
     @tag authentication: [role: "service"]
     @tag fixture: "test/fixtures/metadata"
+    setup [:source]
+
     test "uploads structure, field and relation metadata when domain is specified", %{
       conn: conn,
       structures: structures,
@@ -227,6 +231,35 @@ defmodule TdDdWeb.MetadataControllerTest do
       assert length(data["siblings"]) == 4
       assert length(data["children"]) == 16
     end
+
+    @tag authentication: [role: "service"]
+    @tag fixture: "test/fixtures/metadata"
+    test "uploads structure, field and relation metadata when source external id is specified", %{
+      conn: conn,
+      structures: structures,
+      fields: fields,
+      relations: relations,
+      source: source
+    } do
+      source_id = Map.get(source, :id)
+      conn =
+        post(conn, metadata_path(conn, :upload),
+          data_structures: Map.put(structures, :filename, "structures"),
+          data_fields: Map.put(fields, :filename, "fields"),
+          data_structure_relations: Map.put(relations, :filename, "relations"),
+          source: source.external_id
+        )
+
+      assert response(conn, :accepted) =~ ""
+
+      # waits for loader to complete
+      Worker.await(20_000)
+
+      conn = get(conn, data_structure_path(conn, :index))
+      json_response = json_response(conn, :ok)["data"]
+      assert length(json_response) == 5 + 68
+      assert Enum.all?(json_response, &(Map.get(&1, "source_id") == source_id))
+    end
   end
 
   describe "td-2520" do
@@ -276,6 +309,18 @@ defmodule TdDdWeb.MetadataControllerTest do
                Enum.any?(children, &(&1["name"] == name))
              end)
     end
+  end
+
+  defp source(_) do
+    source = %{id: :rand.uniform(100_000_000), external_id: "foo", config: %{}}
+    SourceCache.put(source)
+
+    on_exit(fn ->
+      SourceCache.delete(source.id)
+      Redix.command(["DEL", "sources:ids_external_ids"])
+    end)
+
+    {:ok, source: source}
   end
 
   defp upload(path) do

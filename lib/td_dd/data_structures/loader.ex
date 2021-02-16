@@ -62,6 +62,7 @@ defmodule TdDd.Loader do
     |> Multi.run(:replace_versions, Versions, :replace_changed_versions, [ts])
     |> Multi.run(:insert_relations, Relations, :insert_new_relations, [ts])
     |> Multi.run(:update_domain_ids, Structures, :update_domain_ids, [structure_records, ts])
+    |> Multi.run(:update_source_ids, Structures, :update_source_ids, [structure_records, opts[:source], ts])
     |> Multi.run(:delete_metadata, Metadata, :delete_missing_metadata, [ts])
     |> Multi.run(:replace_metadata, Metadata, :replace_metadata, [structure_records, ts])
     |> Multi.run(:structure_ids, __MODULE__, :structure_ids, [])
@@ -81,6 +82,7 @@ defmodule TdDd.Loader do
   defp structure_ids({:delete_versions, {_, ids}}), do: ids
   defp structure_ids({:restore_versions, {_, ids}}), do: ids
   defp structure_ids({:update_domain_ids, {_, ids}}), do: ids
+  defp structure_ids({:update_source_ids, {_, ids}}), do: ids
   defp structure_ids({:delete_metadata, {_, ids}}), do: ids
   defp structure_ids({:replace_metadata, ids}), do: ids
   defp structure_ids({:insert_versions, {_, dsvs}}), do: Enum.map(dsvs, & &1.data_structure_id)

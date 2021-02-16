@@ -114,7 +114,9 @@ defmodule TdDdWeb.MetadataController do
       |> Enum.map(&Map.get(params, &1))
       |> Enum.map(&copy_file/1)
 
-    load(conn, structures, fields, relations, with_domain(opts, params))
+    opts = extra_opts(opts, params)
+
+    load(conn, structures, fields, relations, opts)
   end
 
   defp copy_file(nil), do: nil
@@ -143,8 +145,13 @@ defmodule TdDdWeb.MetadataController do
 
   defp can_upload?(claims, _params), do: can?(claims, upload(DataStructure))
 
-  defp with_domain(opts, params) do
-    domain = Map.get(params, "domain")
-    Keyword.put(opts, :domain, domain)
+  defp extra_opts(opts, params) do
+    params
+    |> Map.take(["domain", "source"])
+    |> Enum.reduce(opts, fn
+      {"domain", domain}, acc -> Keyword.put(acc, :domain, domain)
+      {"source", source}, acc -> Keyword.put(acc, :source, source)
+      _, acc -> acc
+    end)
   end
 end

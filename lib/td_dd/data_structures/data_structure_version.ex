@@ -104,6 +104,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
   end
 
   defimpl Elasticsearch.Document do
+    alias TdCache.SourceCache
     alias TdCache.StructureTypeCache
     alias TdCache.TaxonomyCache
     alias TdCache.TemplateCache
@@ -126,6 +127,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       parent = parent(dsv)
       path_sort = Enum.join(path, "~")
       domain = TaxonomyCache.get_domain(structure.domain_id) || %{}
+      source = get_source(structure.source_id)
       linked_concept_count = linked_concept_count(dsv)
       df_content = format_content(structure, type)
       with_content = not Enum.empty?(df_content || %{})
@@ -137,7 +139,8 @@ defmodule TdDd.DataStructures.DataStructureVersion do
         :external_id,
         :system_id,
         :inserted_at,
-        :confidential
+        :confidential,
+        :source_id
       ])
       |> Map.put(:data_fields, get_data_fields(dsv))
       |> Map.put(:path, path)
@@ -153,6 +156,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       |> Map.put_new(:field_type, get_field_type(dsv))
       |> Map.put(:source_alias, get_source_alias(dsv))
       |> Map.put_new(:domain, Map.take(domain, [:id, :name, :external_id]))
+      |> Map.put_new(:source, Map.take(source, [:id, :external_id, :type, :config]))
       |> Map.merge(
         Map.take(dsv, [
           :class,
@@ -259,6 +263,13 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       dsv
       |> DataStructures.get_structure_links(:business_concept)
       |> Enum.count()
+    end
+
+    defp get_source(source_id) do
+      case SourceCache.get(source_id) do
+        {:ok, %{} = source} -> source
+        _ -> %{}
+      end
     end
   end
 end

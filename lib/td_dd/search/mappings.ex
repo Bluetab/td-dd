@@ -15,7 +15,7 @@ defmodule TdDd.Search.Mappings do
   }
 
   def get_mappings do
-    content_mappings = %{type: "object", properties: get_dynamic_mappings()}
+    content_mappings = %{type: "object", properties: get_dynamic_mappings("dd")}
 
     properties = %{
       id: %{type: "long", index: false},
@@ -66,7 +66,15 @@ defmodule TdDd.Search.Mappings do
       status: %{type: "keyword", null_value: ""},
       class: %{type: "text", fields: %{raw: %{type: "keyword", null_value: ""}}},
       source_alias: %{type: "keyword", fields: @raw_sort},
-      version: %{type: "short"}
+      version: %{type: "short"},
+      source: %{
+        properties: %{
+          id: %{type: "long"},
+          type: %{type: "text", fields: @raw},
+          external_id: %{type: "text", fields: @raw},
+          config: %{type: "object", properties: get_dynamic_mappings("cx")}
+        }
+      }
     }
 
     settings = %{
@@ -95,8 +103,9 @@ defmodule TdDd.Search.Mappings do
     %{mappings: %{_doc: %{properties: properties}}, settings: settings}
   end
 
-  def get_dynamic_mappings do
-    TemplateCache.list_by_scope!("dd")
+  def get_dynamic_mappings(scope) do
+    scope
+    |> TemplateCache.list_by_scope!()
     |> Enum.flat_map(&get_mappings/1)
     |> Enum.into(%{})
   end

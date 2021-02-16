@@ -4,6 +4,7 @@ defmodule TdDd.Loader.Structures do
   """
   import Ecto.Query
 
+  alias TdCache.SourceCache
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Repo
 
@@ -40,10 +41,28 @@ defmodule TdDd.Loader.Structures do
     end)
   end
 
+  def update_source_ids(_repo, %{} = _changes, records, source, ts) do
+    source_id = Map.get(SourceCache.get_source_external_id_to_id_map(), source)
+    res = update_source_ids(records, source_id, ts)
+    {:ok, res}
+  end
+
+  def update_source_ids(_records, nil, _ts), do: {0, []}
+
+  def update_source_ids(records, source_id, ts) do
+    records
+    |> Enum.map(&Map.get(&1, :external_id))
+    |> Enum.filter(& &1)
+    |> Enum.chunk_every(@chunk_size)
+    |> Enum.map(&do_bulk_update_source_ids(&1, source_id, ts))
+    |> Enum.reduce({0, []}, fn {count1, ids1}, {count2, ids2} ->
+      {count1 + count2, ids1 ++ ids2}
+    end)
+  end
+
   defp do_bulk_update_domain_id(external_ids, domain_id, ts) do
-    DataStructure
-    |> select([ds], ds.id)
-    |> where([ds], ds.external_id in ^external_ids)
+    external_ids
+    |> structures_by_external_ids()
     |> where_domain_id_not(domain_id)
     |> Repo.update_all(set: [domain_id: domain_id, updated_at: ts])
   end
@@ -54,5 +73,19 @@ defmodule TdDd.Loader.Structures do
 
   defp where_domain_id_not(query, domain_id) do
     where(query, [ds], ds.domain_id != ^domain_id)
+  end
+
+  defp do_bulk_update_source_ids(external_ids, source_id, ts) do
+    external_ids
+    |> structures_by_external_ids()
+    |> where([ds], ds.source_id != ^source_id)
+    |> or_where([ds], is_nil(ds.source_id))
+    |> Repo.update_all(set: [source_id: source_id, updated_at: ts])
+  end
+
+  defp structures_by_external_ids(external_ids) do
+    DataStructure
+    |> select([ds], ds.id)
+    |> where([ds], ds.external_id in ^external_ids)
   end
 end

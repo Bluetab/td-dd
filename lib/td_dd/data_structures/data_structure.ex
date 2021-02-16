@@ -28,6 +28,7 @@ defmodule TdDd.DataStructures.DataStructure do
     field(:domain_id, :integer)
     field(:external_id, :string)
     field(:last_change_by, :integer)
+    field(:source_id, :integer)
     field(:row, :integer, virtual: true)
     field(:latest_metadata, :map, virtual: true)
 
@@ -45,6 +46,7 @@ defmodule TdDd.DataStructures.DataStructure do
       :df_content,
       :domain_id,
       :external_id,
+      :source_id,
       :system_id
     ])
     |> put_audit(params)

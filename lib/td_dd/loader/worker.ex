@@ -5,7 +5,6 @@ defmodule TdDd.Loader.Worker do
 
   use GenServer
 
-  alias TdDd.CSV.Reader
   alias TdDd.DataStructures.Ancestry
   alias TdDd.Loader
   alias TdDd.Loader.Reader
