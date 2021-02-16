@@ -295,7 +295,7 @@ defmodule TdDd.LoaderTest do
     end
 
     setup [:source]
-    test "with structures updates structures without generate version", %{source: source} do
+    test "update structures without generate version", %{source: source} do
       system = insert(:system, external_id: "SYS1", name: "SYS1")
 
       s1 = %{
