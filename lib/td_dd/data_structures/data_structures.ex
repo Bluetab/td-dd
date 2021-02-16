@@ -8,6 +8,7 @@ defmodule TdDd.DataStructures do
   alias Ecto.Association.NotLoaded
   alias Ecto.Multi
   alias TdCache.LinkCache
+  alias TdCache.SourceCache
   alias TdCache.StructureTypeCache
   alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
@@ -159,6 +160,7 @@ defmodule TdDd.DataStructures do
     |> enrich(options, :versions, &Repo.preload(&1, :versions))
     |> enrich(options, :latest, &get_latest_version/1)
     |> enrich(options, :domain, &get_domain/1)
+    |> enrich(options, :source, &get_source/1)
     |> enrich(options, :metadata_versions, &get_metadata_versions/1)
   end
 
@@ -206,6 +208,7 @@ defmodule TdDd.DataStructures do
     |> enrich(options, :profile, &get_profile/1)
     |> enrich(options, :links, &get_structure_links/1)
     |> enrich(options, :domain, &get_domain/1)
+    |> enrich(options, :source, &get_source/1)
     |> enrich(options, :metadata_versions, &get_metadata_versions/1)
     |> enrich(options, :data_structure_type, &get_data_structure_type/1)
   end
@@ -454,6 +457,29 @@ defmodule TdDd.DataStructures do
 
   defp get_domain(%DataStructure{domain_id: domain_id}) do
     TaxonomyCache.get_domain(domain_id) || %{}
+  end
+
+  defp get_source(%DataStructureVersion{data_structure: %NotLoaded{}} = version) do
+    version
+    |> Repo.preload(:data_structure)
+    |> get_source()
+  end
+
+  defp get_source(%DataStructureVersion{data_structure: %{source_id: source_id}}) do
+    get_source(source_id)
+  end
+
+  defp get_source(%DataStructure{source_id: nil}), do: %{}
+
+  defp get_source(%DataStructure{source_id: source_id}) do
+    get_source(source_id)
+  end
+
+  defp get_source(source_id) do
+    case SourceCache.get(source_id) do
+      {:ok, %{} = source} -> source
+      _ -> %{}
+    end
   end
 
   defp get_metadata_versions(%DataStructure{} = data_structure) do
