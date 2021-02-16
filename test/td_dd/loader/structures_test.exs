@@ -51,7 +51,11 @@ defmodule TdDd.Loader.StructuresTest do
 
       external_ids = Enum.map(records, & &1.external_id)
       structures = DataStructures.list_data_structures(%{external_id: external_ids})
-      ids = Enum.map(structures, & &1.id)
+      ids = 
+        structures 
+        |> Enum.map(& &1.id)
+        |> Enum.sort()
+        
       assert {0, []} = Structures.update_source_ids(records, nil, ts)
       assert {10, ^ids} = Structures.update_source_ids(records, 1, ts)
       assert {0, []} = Structures.update_source_ids(records, 1, ts)
