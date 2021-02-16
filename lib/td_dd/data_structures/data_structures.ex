@@ -459,23 +459,23 @@ defmodule TdDd.DataStructures do
     TaxonomyCache.get_domain(domain_id) || %{}
   end
 
-  defp get_source(%DataStructureVersion{data_structure: %NotLoaded{}} = version) do
+  def get_source(%DataStructureVersion{data_structure: %NotLoaded{}} = version) do
     version
     |> Repo.preload(:data_structure)
     |> get_source()
   end
 
-  defp get_source(%DataStructureVersion{data_structure: %{source_id: source_id}}) do
+  def get_source(%DataStructureVersion{data_structure: %{source_id: source_id}}) do
     get_source(source_id)
   end
 
-  defp get_source(%DataStructure{source_id: nil}), do: %{}
+  def get_source(%DataStructure{source_id: nil}), do: %{}
 
-  defp get_source(%DataStructure{source_id: source_id}) do
+  def get_source(%DataStructure{source_id: source_id}) do
     get_source(source_id)
   end
 
-  defp get_source(source_id) do
+  def get_source(source_id) do
     case SourceCache.get(source_id) do
       {:ok, %{} = source} -> source
       _ -> %{}

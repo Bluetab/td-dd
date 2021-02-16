@@ -104,7 +104,6 @@ defmodule TdDd.DataStructures.DataStructureVersion do
   end
 
   defimpl Elasticsearch.Document do
-    alias TdCache.SourceCache
     alias TdCache.StructureTypeCache
     alias TdCache.TaxonomyCache
     alias TdCache.TemplateCache
@@ -127,7 +126,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       parent = parent(dsv)
       path_sort = Enum.join(path, "~")
       domain = TaxonomyCache.get_domain(structure.domain_id) || %{}
-      source = get_source(structure.source_id)
+      source = DataStructures.get_source(structure)
       linked_concept_count = linked_concept_count(dsv)
       df_content = format_content(structure, type)
       with_content = not Enum.empty?(df_content || %{})
@@ -263,13 +262,6 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       dsv
       |> DataStructures.get_structure_links(:business_concept)
       |> Enum.count()
-    end
-
-    defp get_source(source_id) do
-      case SourceCache.get(source_id) do
-        {:ok, %{} = source} -> source
-        _ -> %{}
-      end
     end
   end
 end
