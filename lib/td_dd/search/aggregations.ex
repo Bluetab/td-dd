@@ -62,6 +62,7 @@ defmodule TdDd.Search.Aggregations do
     |> Format.flatten_content_fields()
     |> Enum.filter(&filter_content_term/1)
     |> Enum.map(&Map.take(&1, ["name", "type"]))
+    |> Enum.reject(&(scope == "cx" and &1["type"] in ["domain", "system"]))
     |> Enum.map(&content_term(&1, scope))
   end
 
