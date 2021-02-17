@@ -2,6 +2,8 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
+  alias TdCache.Redix
+  alias TdCache.SourceCache
   alias TdCache.StructureTypeCache
   alias TdCache.TemplateCache
   alias TdDd.DataStructures.DataStructureVersion
@@ -122,6 +124,19 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     end
 
     @tag authentication: [role: "admin"]
+    test "renders a data structure with source", %{
+      conn: conn,
+      structure: %{id: id}
+    } do
+      assert %{"data" => %{"source" => metadata}} =
+               conn
+               |> get(Routes.data_structure_data_structure_version_path(conn, :show, id, 0))
+               |> json_response(:ok)
+
+      assert %{"external_id" => "foo"} = metadata
+    end
+
+    @tag authentication: [role: "admin"]
     test "renders a data structure by data_structure_version_id", %{
       conn: conn,
       structure_version: %DataStructureVersion{id: id}
@@ -213,12 +228,20 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   end
 
   defp create_structure_hierarchy(_) do
-    parent_structure = insert(:data_structure, external_id: "Parent")
-    structure = insert(:data_structure, external_id: "Structure")
+    source = %{id: :rand.uniform(100_000_000), external_id: "foo", config: %{}}
+    SourceCache.put(source)
+
+    on_exit(fn ->
+      SourceCache.delete(source.id)
+      Redix.command(["DEL", "sources:ids_external_ids"])
+    end)
+
+    parent_structure = insert(:data_structure, external_id: "Parent", source_id: source.id)
+    structure = insert(:data_structure, external_id: "Structure", source_id: source.id)
 
     child_structures = [
-      insert(:data_structure, external_id: "Child1"),
-      insert(:data_structure, external_id: "Child2")
+      insert(:data_structure, external_id: "Child1", source_id: source.id),
+      insert(:data_structure, external_id: "Child2", source_id: source.id)
     ]
 
     parent_version = insert(:data_structure_version, data_structure_id: parent_structure.id)

@@ -84,6 +84,7 @@ defmodule TdDdWeb.DataStructureView do
       :parent,
       :path,
       :source_id,
+      :source,
       :system_id,
       :type,
       :updated_at,
