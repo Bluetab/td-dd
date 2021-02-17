@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-3268] Source in data structure
+
 ### Changed
 
 - [TD-3245] Tested compatibility with PostgreSQL 9.6, 10.15, 11.10, 12.5 and
