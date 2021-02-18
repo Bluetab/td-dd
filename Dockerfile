@@ -22,6 +22,9 @@ RUN apk --no-cache update && \
     adduser -h /app -D app && \
     chown -R app: /app
 
+COPY ./custom_certs/nickel.crt /usr/local/share/ca-certificates/
+RUN update-ca-certificates
+
 USER app
 
 ENV APP_NAME ${APP_NAME}
