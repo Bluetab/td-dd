@@ -19,11 +19,9 @@ defmodule TdDd.Search.Aggregations do
        %{terms: %{script: "doc['linked_concepts_count'].value > 0 ? 'linked' : 'unlinked'"}}}
     ]
 
-    dynamic_keywords =
-      TemplateCache.list_by_scope!("dd")
-      |> Enum.flat_map(&template_terms/1)
-
-    (static_keywords ++ dynamic_keywords)
+    ["dd", "cx"]
+    |> Enum.flat_map(&template_terms/1)
+    |> Enum.concat(static_keywords)
     |> Enum.into(%{})
   end
 
@@ -52,12 +50,20 @@ defmodule TdDd.Search.Aggregations do
     Map.put(%{}, agg_name, %{terms: %{field: field_name}})
   end
 
-  def template_terms(%{content: content}) do
+  defp template_terms(scope) do
+    scope
+    |> TemplateCache.list_by_scope!()
+    |> Enum.flat_map(&template_terms(&1, scope))
+    |> Enum.uniq()
+  end
+
+  def template_terms(%{content: content}, scope) do
     content
     |> Format.flatten_content_fields()
     |> Enum.filter(&filter_content_term/1)
     |> Enum.map(&Map.take(&1, ["name", "type"]))
-    |> Enum.map(&content_term/1)
+    |> Enum.reject(&(scope == "cx" and &1["type"] in ["domain", "system"]))
+    |> Enum.map(&content_term(&1, scope))
   end
 
   defp filter_content_term(%{"name" => "_confidential"}), do: true
@@ -66,11 +72,11 @@ defmodule TdDd.Search.Aggregations do
   defp filter_content_term(%{"values" => values}) when is_map(values), do: true
   defp filter_content_term(_), do: false
 
-  defp content_term(%{"name" => field, "type" => "user"}) do
+  defp content_term(%{"name" => field, "type" => "user"}, "dd") do
     {field, %{terms: %{field: "df_content.#{field}.raw", size: 50}}}
   end
 
-  defp content_term(%{"name" => field, "type" => type}) when type in ["domain", "system"] do
+  defp content_term(%{"name" => field, "type" => type}, "dd") when type in ["domain", "system"] do
     {field,
      %{
        nested: %{path: "df_content.#{field}"},
@@ -80,7 +86,25 @@ defmodule TdDd.Search.Aggregations do
      }}
   end
 
-  defp content_term(%{"name" => field}) do
+  defp content_term(%{"name" => field}, "dd") do
     {field, %{terms: %{field: "df_content.#{field}.raw"}}}
+  end
+
+  defp content_term(%{"name" => field, "type" => "user"}, "cx") do
+    {field, %{terms: %{field: "source.config.#{field}.raw", size: 50}}}
+  end
+
+  defp content_term(%{"name" => field, "type" => type}, "cx") when type in ["domain", "system"] do
+    {field,
+     %{
+       nested: %{path: "source.config.#{field}"},
+       aggs: %{
+         distinct_search: %{terms: %{field: "source.config.#{field}.external_id.raw", size: 50}}
+       }
+     }}
+  end
+
+  defp content_term(%{"name" => field}, "cx") do
+    {field, %{terms: %{field: "source.config.#{field}.raw"}}}
   end
 end

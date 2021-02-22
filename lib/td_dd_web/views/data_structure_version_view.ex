@@ -54,6 +54,7 @@ defmodule TdDdWeb.DataStructureVersionView do
           :name,
           :parents,
           :siblings,
+          :source,
           :system,
           :type,
           :version,
@@ -82,6 +83,8 @@ defmodule TdDdWeb.DataStructureVersionView do
       :external_id,
       :inserted_at,
       :updated_at,
+      :source_id,
+      :source,
       :system_id,
       :df_content
     ])

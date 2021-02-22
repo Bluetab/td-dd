@@ -4,6 +4,8 @@ defmodule TdDd.LoaderTest do
   import Ecto.Query
   import TdDd.TestOperators
 
+  alias TdCache.Redix
+  alias TdCache.SourceCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
@@ -292,7 +294,8 @@ defmodule TdDd.LoaderTest do
                )
     end
 
-    test "with structures updates structures without generate version" do
+    setup [:source]
+    test "update structures without generate version", %{source: source} do
       system = insert(:system, external_id: "SYS1", name: "SYS1")
 
       s1 = %{
@@ -380,7 +383,8 @@ defmodule TdDd.LoaderTest do
                    fields: [f11],
                    relations: [r1]
                  },
-                 audit()
+                 audit(),
+                 source: source.external_id
                )
 
       v1 = DataStructures.get_latest_version_by_external_id(s1.external_id)
@@ -392,21 +396,25 @@ defmodule TdDd.LoaderTest do
       m1_deleted = m1
 
       [m1, m2, m3] = Enum.map([v1, v2, v3], &DataStructures.get_metadata_version/1)
+      [s1, s2, s3] = Enum.map([v1, v2, v3], &DataStructures.get_data_structure!(&1.data_structure_id))
 
       assert v1.version == 1
       assert m1.version == 1
       assert m1.fields == %{"foo" => "bar2"}
+      assert s1.source_id == source.id
       assert is_nil(m1.deleted_at)
       refute is_nil(DataStructures.get_structure_metadata!(m1_deleted.id).deleted_at)
 
       assert v2.version == 0
       assert m2.version == 0
       assert m2.fields == %{"foo" => "bar"}
+      assert s2.source_id == source.id
       assert is_nil(m2.deleted_at)
 
       assert v3.version == 0
       assert m3.version == 0
       assert m3.fields == %{"foo" => "bar"}
+      assert s3.source_id == source.id
       assert is_nil(m3.deleted_at)
     end
 
@@ -732,6 +740,18 @@ defmodule TdDd.LoaderTest do
     ts = DateTime.truncate(DateTime.utc_now(), :second)
 
     %{last_change_by: 0, ts: ts}
+  end
+
+  defp source(_) do
+    source = %{id: :rand.uniform(100_000_000), external_id: "foo", config: %{}}
+    SourceCache.put(source)
+
+    on_exit(fn ->
+      SourceCache.delete(source.id)
+      Redix.command(["DEL", "sources:ids_external_ids"])
+    end)
+
+    {:ok, source: source}
   end
 
   defp random_structure(system_id) do

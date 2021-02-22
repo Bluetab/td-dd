@@ -35,6 +35,7 @@ defmodule TdDdWeb.DataStructureController do
     :data_field_links,
     :data_fields,
     :domain,
+    :source,
     :links,
     :parents,
     :relations,

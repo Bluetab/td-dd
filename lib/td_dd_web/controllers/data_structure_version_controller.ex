@@ -35,6 +35,7 @@ defmodule TdDdWeb.DataStructureVersionController do
     :relations,
     :relation_links,
     :domain,
+    :source,
     :metadata_versions,
     :data_structure_type,
     :with_confidential
