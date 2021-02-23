@@ -15,6 +15,7 @@ config :td_dd, TdDd.Search.Cluster,
 
   default_options: [
     recv_timeout: 40_000,
+    ssl: [cacertfile: "/etc/ssl/certs/ca-certificates.crt"]
   ],
 
   # You should configure each index which you maintain in Elasticsearch here.
