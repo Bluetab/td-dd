@@ -1,5 +1,29 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- [TD-3329] Elasticsearch index settings are now configurable using environment
+  variables:
+  - `ES_TIMEOUT`: Connection timeout in milliseconds (default `5000`)
+  - `ES_RECV_TIMEOUT`: Response timeout in milliseconds (default `40000`)
+  - `ES_SHARDS`: Number of shards (default `1`)
+  - `ES_REPLICAS`: Number of replicas (default `1`)
+  - `ES_REFRESH_INTERVAL`: Index refresh interval (default `30s`)
+  - `ES_INDEXING_SLOWLOG_THRESHOLD_WARN`: Indexing slowlog warning threshold
+    (default `10s`)
+  - `ES_INDEXING_SLOWLOG_THRESHOLD_INFO`: Indexing slowlog info threshold
+    (default `5s`)
+  - `ES_INDEXING_SLOWLOG_THRESHOLD_DEBUG`: Indexing slowlog debug threshold
+    (default `2s`)
+  - `ES_INDEXING_SLOWLOG_THRESHOLD_TRACE`: Indexing slowlog trace threshold
+    (default `500ms`)
+  - `ES_INDEXING_SLOWLOG_LEVEL`: Indexing slowlog level (default `info`)
+  - `ES_INDEXING_SLOWLOG_SOURCE`: Indexing slowlog source limit (default `1000`)
+- [TD-3322] `structures` index alias can now be configured using the
+  `ES_ALIAS_STRUCTURES` environment variable
+
 ## [4.14.0] 2021-2-22
 
 ### Added
@@ -17,7 +41,7 @@
 
 - [TD-3263] Use HTTP Basic authentication for Elasticsearch if environment
   variables `ES_USERNAME` and `ES_PASSWORD` are present
-  
+
 ### Fixed
 
 - [TD-3264] Data structure type migration task was preventing application from
