@@ -3,6 +3,7 @@ defmodule TdDd.Search.Mappings do
   Manages elasticsearch mappings
   """
   alias TdCache.TemplateCache
+  alias TdDd.Search.Cluster
   alias TdDfLib.Format
 
   @raw %{raw: %{type: "keyword"}}
@@ -77,28 +78,7 @@ defmodule TdDd.Search.Mappings do
       }
     }
 
-    settings = %{
-      analysis: %{
-        analyzer: %{
-          ngram: %{
-            filter: ["lowercase", "asciifolding"],
-            tokenizer: "ngram"
-          }
-        },
-        normalizer: %{
-          sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}
-        },
-        tokenizer: %{
-          ngram: %{
-            type: "ngram",
-            min_gram: 3,
-            max_gram: 3,
-            token_chars: ["letter", "digit"]
-          }
-        }
-      },
-      number_of_shards: 1
-    }
+    settings = Cluster.setting(:structures)
 
     %{mappings: %{_doc: %{properties: properties}}, settings: settings}
   end
