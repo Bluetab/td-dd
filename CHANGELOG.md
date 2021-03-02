@@ -21,7 +21,7 @@
     (default `500ms`)
   - `ES_INDEXING_SLOWLOG_LEVEL`: Indexing slowlog level (default `info`)
   - `ES_INDEXING_SLOWLOG_SOURCE`: Indexing slowlog source limit (default `1000`)
-- [TD-3322] `structures` index alias can now be configured using the
+- [TD-3222] `structures` index alias can now be configured using the
   `ES_ALIAS_STRUCTURES` environment variable
 
 ## [4.14.0] 2021-2-22
