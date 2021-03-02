@@ -47,7 +47,6 @@ config :td_cx, :phoenix_swagger,
   }
 
 config :td_cx, permission_resolver: TdCache.Permissions
-config :td_cx, acl_cache: TdCache.AclCache
 config :td_cx, index_worker: TdCx.Search.IndexWorker
 
 config :td_cx, TdCx.Scheduler,

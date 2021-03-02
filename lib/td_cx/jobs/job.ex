@@ -8,7 +8,6 @@ defmodule TdCx.Jobs.Job do
   import Ecto.Changeset
 
   alias TdCx.Events.Event
-  alias TdCx.Jobs
   alias TdCx.Jobs.Job
   alias TdCx.Sources.Source
 
@@ -27,7 +26,10 @@ defmodule TdCx.Jobs.Job do
   end
 
   defimpl Elasticsearch.Document do
+    alias TdCx.Jobs
+
     @default_status "PENDING"
+    @max_message_length 1_000
 
     @impl Elasticsearch.Document
     def id(%Job{id: id}), do: id
@@ -45,7 +47,7 @@ defmodule TdCx.Jobs.Job do
       |> Map.put(:type, type)
       |> Map.put(:status, @default_status)
       |> Map.put(:source, source)
-      |> Map.merge(Jobs.metrics(events))
+      |> Map.merge(Jobs.metrics(events, max_length: @max_message_length))
     end
   end
 end
