@@ -12,45 +12,49 @@ config :td_dd, TdDd.Search.Cluster,
 
   # The library used for JSON encoding/decoding.
   json_library: Jason,
-
   default_options: [
-    recv_timeout: 40_000,
+    timeout: 5_000,
+    recv_timeout: 40_000
   ],
-
-  # You should configure each index which you maintain in Elasticsearch here.
-  # This configuration will be read by the `mix elasticsearch.build` task,
-  # described below.
+  aliases: %{structures: "structures"},
+  default_settings: %{
+    "number_of_shards" => 5,
+    "number_of_replicas" => 1,
+    "refresh_interval" => "30s",
+    "index.indexing.slowlog.threshold.index.warn" => "10s",
+    "index.indexing.slowlog.threshold.index.info" => "5s",
+    "index.indexing.slowlog.threshold.index.debug" => "2s",
+    "index.indexing.slowlog.threshold.index.trace" => "500ms",
+    "index.indexing.slowlog.level" => "info",
+    "index.indexing.slowlog.source" => "1000"
+  },
   indexes: %{
-    # This is the base name of the Elasticsearch index. Each index will be
-    # built with a timestamp included in the name, like "posts-5902341238".
-    # It will then be aliased to "posts" for easy querying.
     structures: %{
-      # This map describes the mappings and settings for your index. It will
-      # be posted as-is to Elasticsearch when you create your index, and
-      # therefore allows all the settings you could post directly.
-      settings: %{},
-
-      # This store module must implement a store behaviour. It will be used to
-      # fetch data for each source in each indexes' `sources` list, below:
       store: TdDd.Search.Store,
-
-      # This is the list of data sources that should be used to populate this
-      # index. The `:store` module above will be passed each one of these
-      # sources for fetching.
-      #
-      # Each piece of data that is returned by the store must implement the
-      # Elasticsearch.Document protocol.
       sources: [TdDd.DataStructures.DataStructureVersion],
-
-      # Controls the data ingestion rate by raising or lowering the number
-      # of items to send in each bulk request.
       bulk_page_size: 1000,
-
-      # Likewise, wait a given period between posting pages to give
-      # Elasticsearch time to catch up.
       bulk_wait_interval: 0,
-
-      # Support create or replace
-      bulk_action: "index"
+      bulk_action: "index",
+      settings: %{
+        analysis: %{
+          analyzer: %{
+            ngram: %{
+              filter: ["lowercase", "asciifolding"],
+              tokenizer: "ngram"
+            }
+          },
+          normalizer: %{
+            sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}
+          },
+          tokenizer: %{
+            ngram: %{
+              type: "ngram",
+              min_gram: 3,
+              max_gram: 3,
+              token_chars: ["letter", "digit"]
+            }
+          }
+        }
+      }
     }
   }

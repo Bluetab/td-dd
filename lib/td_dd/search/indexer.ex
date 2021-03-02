@@ -13,30 +13,33 @@ defmodule TdDd.Search.Indexer do
 
   require Logger
 
-  @index :structures
   @action "index"
 
   def reindex(:all) do
+    alias_name = Cluster.alias_name(:structures)
+
     Mappings.get_mappings()
-    |> Map.put(:index_patterns, "#{@index}-*")
+    |> Map.put(:index_patterns, "#{alias_name}-*")
     |> Jason.encode!()
-    |> put_template(@index)
+    |> put_template(alias_name)
     |> case do
       {:ok, _} ->
         Cluster
-        |> Index.hot_swap(@index)
+        |> Index.hot_swap(alias_name)
         |> log_errors()
     end
   end
 
   def reindex(ids) when is_list(ids) do
+    alias_name = Cluster.alias_name(:structures)
+
     Store.transaction(fn ->
       DataStructureVersion
       |> Store.stream(ids)
-      |> Stream.map(&Bulk.encode!(Cluster, &1, @index, @action))
-      |> Stream.chunk_every(bulk_page_size(@index))
+      |> Stream.map(&Bulk.encode!(Cluster, &1, alias_name, @action))
+      |> Stream.chunk_every(Cluster.setting(:structures, :bulk_page_size))
       |> Stream.map(&Enum.join(&1, ""))
-      |> Stream.map(&Elasticsearch.post(Cluster, "/#{@index}/_doc/_bulk", &1))
+      |> Stream.map(&Elasticsearch.post(Cluster, "/#{alias_name}/_doc/_bulk", &1))
       |> Stream.map(&log(&1, @action))
       |> Stream.run()
     end)
@@ -45,7 +48,8 @@ defmodule TdDd.Search.Indexer do
   def reindex(id), do: reindex([id])
 
   def delete(ids) when is_list(ids) do
-    Enum.each(ids, &Elasticsearch.delete_document(Cluster, &1, "#{@index}"))
+    alias_name = Cluster.alias_name(:structures)
+    Enum.each(ids, &Elasticsearch.delete_document(Cluster, &1, alias_name))
   end
 
   def delete(id), do: delete([id])
@@ -53,24 +57,17 @@ defmodule TdDd.Search.Indexer do
   def migrate do
     if acquire_lock?("TD-2589") do
       Logger.info("Reindexing all data structures...")
+      alias_name = Cluster.alias_name(:structures)
 
       Timer.time(
         fn -> reindex(:all) end,
-        fn millis, _ -> Logger.info("Reindexed #{@index} in #{millis}ms") end
+        fn millis, _ -> Logger.info("Reindexed #{alias_name} in #{millis}ms") end
       )
     end
   end
 
   defp put_template(template, name) do
     Elasticsearch.put(Cluster, "/_template/#{name}", template)
-  end
-
-  defp bulk_page_size(index) do
-    :td_dd
-    |> Application.get_env(Cluster)
-    |> Keyword.get(:indexes)
-    |> Map.get(index)
-    |> Map.get(:bulk_page_size)
   end
 
   defp log({:ok, %{"errors" => false, "items" => items, "took" => took}}, _action) do
