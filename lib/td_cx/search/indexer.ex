@@ -12,18 +12,19 @@ defmodule TdCx.Search.Indexer do
 
   require Logger
 
-  @index :jobs
   @action "index"
 
   def reindex(:all) do
+    alias_name = Cluster.alias_name(:jobs)
+
     Mappings.get_mappings()
-    |> Map.put(:index_patterns, "#{@index}-*")
+    |> Map.put(:index_patterns, "#{alias_name}-*")
     |> Jason.encode!()
-    |> put_template(@index)
+    |> put_template(alias_name)
     |> case do
       {:ok, _} ->
         Cluster
-        |> Index.hot_swap(@index)
+        |> Index.hot_swap(alias_name)
         |> log_errors()
 
       error ->
@@ -32,13 +33,15 @@ defmodule TdCx.Search.Indexer do
   end
 
   def reindex(ids) do
+    alias_name = Cluster.alias_name(:jobs)
+
     Store.transaction(fn ->
       Job
       |> Store.stream(ids)
-      |> Stream.map(&Bulk.encode!(Cluster, &1, @index, "index"))
-      |> Stream.chunk_every(bulk_page_size(@index))
+      |> Stream.map(&Bulk.encode!(Cluster, &1, alias_name, @action))
+      |> Stream.chunk_every(Cluster.setting(:jobs, :bulk_page_size))
       |> Stream.map(&Enum.join(&1, ""))
-      |> Stream.map(&Elasticsearch.post(Cluster, "/#{@index}/_doc/_bulk", &1))
+      |> Stream.map(&Elasticsearch.post(Cluster, "/#{alias_name}/_doc/_bulk", &1))
       |> Stream.map(&log(&1, @action))
       |> Stream.run()
     end)
@@ -49,30 +52,25 @@ defmodule TdCx.Search.Indexer do
   end
 
   def delete(job) do
-    Elasticsearch.delete_document(Cluster, job, "#{@index}")
+    alias_name = Cluster.alias_name(:jobs)
+    Elasticsearch.delete_document(Cluster, job, "#{alias_name}")
   end
 
   def migrate do
-    unless alias_exists?(@index) do
+    alias_name = Cluster.alias_name(:jobs)
+
+    unless alias_exists?(alias_name) do
       if can_migrate?() do
-        delete_existing_index("jobs")
+        delete_existing_index(alias_name)
 
         Timer.time(
           fn -> reindex(:all) end,
-          fn millis, _ -> Logger.info("Created index #{@index} in #{millis}ms") end
+          fn millis, _ -> Logger.info("Created index #{alias_name} in #{millis}ms") end
         )
       else
         Logger.warn("Another process is migrating")
       end
     end
-  end
-
-  defp bulk_page_size(index) do
-    :td_cx
-    |> Application.get_env(Cluster)
-    |> Keyword.get(:indexes)
-    |> Map.get(index)
-    |> Map.get(:bulk_page_size)
   end
 
   defp put_template(template, name) do
