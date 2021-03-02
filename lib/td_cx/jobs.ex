@@ -75,19 +75,30 @@ defmodule TdCx.Jobs do
 
   def with_metrics(job), do: job
 
-  def metrics([] = _events), do: Map.new()
+  def metrics(events, opts \\ [])
 
-  def metrics(events) do
+  def metrics([] = _events, _opts), do: Map.new()
+
+  def metrics(events, opts) do
     {min, max} =
       Enum.min_max_by(events, fn %{inserted_at: inserted_at} ->
         DateTime.to_unix(inserted_at, :millisecond)
       end)
 
+    message = Map.get(max, :message)
+
+    message =
+      case opts[:max_length] do
+        nil -> message
+        length when length < byte_size(message) -> binary_part(message, 0, length)
+        _ -> message
+      end
+
     Map.new()
     |> Map.put(:start_date, Map.get(min, :inserted_at))
     |> Map.put(:end_date, Map.get(max, :inserted_at))
     |> Map.put(:status, Map.get(max, :type))
-    |> Map.put(:message, Map.get(max, :message))
+    |> Map.put(:message, message)
   end
 
   defp enrich(%Job{} = job, []), do: job
@@ -95,5 +106,4 @@ defmodule TdCx.Jobs do
   defp enrich(%Job{} = job, options) do
     Repo.preload(job, options)
   end
-
 end

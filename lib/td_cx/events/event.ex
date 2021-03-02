@@ -2,6 +2,7 @@ defmodule TdCx.Events.Event do
   @moduledoc "Event entity"
 
   use Ecto.Schema
+
   import Ecto.Changeset
 
   alias TdCx.Jobs.Job
@@ -14,10 +15,14 @@ defmodule TdCx.Events.Event do
     timestamps(type: :utc_datetime_usec, updated_at: false)
   end
 
-  @doc false
-  def changeset(event, attrs) do
-    event
-    |> cast(attrs, [:type, :message, :job_id])
+  def changeset(%{} = params) do
+    changeset(%__MODULE__{}, params)
+  end
+
+  def changeset(%__MODULE__{} = struct, %{} = params) do
+    struct
+    |> cast(params, [:type, :message, :job_id])
     |> validate_required([:job_id])
+    |> validate_length(:message, max: 1_000)
   end
 end

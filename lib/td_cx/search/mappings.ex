@@ -5,6 +5,8 @@ defmodule TdCx.Search.Mappings do
 
   @raw_sort %{raw: %{type: "keyword"}, sort: %{type: "keyword", normalizer: "sortable"}}
 
+  alias TdCx.Search.Cluster
+
   def get_mappings do
     mapping_type = %{
       id: %{type: "long"},
@@ -22,14 +24,7 @@ defmodule TdCx.Search.Mappings do
       message: %{type: "text"}
     }
 
-    settings = %{
-      number_of_shards: 1,
-      analysis: %{
-        normalizer: %{
-          sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}
-        }
-      }
-    }
+    settings = Cluster.setting(:jobs)
 
     %{mappings: %{_doc: %{properties: mapping_type}}, settings: settings}
   end
