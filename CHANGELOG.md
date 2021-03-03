@@ -6,8 +6,8 @@
 
 - [TD-3344] New routes:
   - `POST /api/executions/search` searches executions
-  - `POST /api/executions/:id/results` creates a rule result associated with an
-    execution
+  - `POST /api/rule_implementations/:id/results` creates a rule result
+    associated with an implementation
   - `GET /api/rule_results/:id` queries a specific rule result by id
 
 ## [4.14.0] 2021-2-22
