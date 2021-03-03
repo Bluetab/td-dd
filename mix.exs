@@ -73,7 +73,7 @@ defmodule TdDd.Mixfile do
        git: "https://github.com/Bluetab/elasticsearch-elixir.git",
        branch: "feature/bulk-index-action"},
       {:td_hypermedia, git: "https://github.com/Bluetab/td-hypermedia.git", tag: "4.0.0"},
-      {:td_cache, git: "https://github.com/Bluetab/td-cache.git", override: true, tag: "4.14.0"},
+      {:td_cache, git: "https://github.com/Bluetab/td-cache.git", branch: "feature/td-2951", override: true},
       {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "4.12.0"},
       {:graph, git: "https://github.com/Bluetab/graph.git", tag: "1.0.0"}
     ]

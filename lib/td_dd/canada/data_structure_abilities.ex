@@ -4,6 +4,9 @@ defmodule TdDd.Canada.DataStructureAbilities do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Permissions
 
+  # Admin accounts can do anything with data structures
+  def can?(%Claims{role: "admin"}, _action, _resource), do: true
+
   # Service accounts can view any data structure
   def can?(%Claims{role: "service"}, :view_data_structure, _any), do: true
   def can?(%Claims{role: "service"}, :update_data_structure, _any), do: true

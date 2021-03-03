@@ -5,6 +5,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   alias TdCache.Redix
   alias TdCache.SourceCache
   alias TdCache.StructureTypeCache
+  alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.RelationTypes
@@ -66,35 +67,32 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     end)
   end
 
-  describe "GET /api/data_structures/:id/versions/:version" do
+  describe "GET /api/data_structures/:id/versions/:version structure hierarchy" do
     setup [:create_structure_hierarchy]
 
     @tag authentication: [role: "admin"]
-    test "renders a data structure with children", %{
-      conn: conn,
-      structure: %{id: id}
-    } do
-      assert %{"data" => data} =
+    test "renders a data structure with children", %{conn: conn, structure: %{id: id}} do
+      assert %{"data" => %{"children" => children}} =
                conn
-               |> get(Routes.data_structure_data_structure_version_path(conn, :show, id, 0))
+               |> get(
+                 Routes.data_structure_data_structure_version_path(conn, :show, id, "latest")
+               )
                |> json_response(:ok)
 
-      assert %{"children" => children} = data
-      assert [_, _] = children
+      assert Enum.count(children) == 2
       assert Enum.all?(children, &(Map.get(&1, "order") == 1))
     end
 
     @tag authentication: [role: "admin"]
-    test "renders a data structure with parents", %{
-      conn: conn,
-      structure: %{id: id}
-    } do
-      assert %{"data" => data} =
+    test "renders a data structure with parents", %{conn: conn, structure: %{id: id}} do
+      assert %{"data" => %{"parents" => parents}} =
                conn
-               |> get(Routes.data_structure_data_structure_version_path(conn, :show, id, 0))
+               |> get(
+                 Routes.data_structure_data_structure_version_path(conn, :show, id, "latest")
+               )
                |> json_response(:ok)
 
-      assert %{"parents" => [_parent]} = data
+      assert Enum.count(parents) == 1
     end
 
     @tag authentication: [role: "admin"]
@@ -102,12 +100,14 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       conn: conn,
       child_structures: [%{id: id} | _]
     } do
-      assert %{"data" => data} =
+      assert %{"data" => %{"siblings" => siblings}} =
                conn
-               |> get(Routes.data_structure_data_structure_version_path(conn, :show, id, 0))
+               |> get(
+                 Routes.data_structure_data_structure_version_path(conn, :show, id, "latest")
+               )
                |> json_response(:ok)
 
-      assert %{"siblings" => [_, _]} = data
+      assert Enum.count(siblings) == 2
     end
 
     @tag authentication: [role: "admin"]
@@ -121,6 +121,37 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                |> json_response(:ok)
 
       assert %{"foo" => "bar"} = metadata
+    end
+
+    @tag authentication: [role: "admin"]
+    test "renders metadata versions when exist", %{
+      conn: conn,
+      parent_structure: %{id: parent_id},
+      structure: %{id: child_id}
+    } do
+      assert %{"data" => %{"metadata_versions" => []}} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(
+                   conn,
+                   :show,
+                   parent_id,
+                   "latest"
+                 )
+               )
+               |> json_response(:ok)
+
+      assert %{"data" => %{"metadata_versions" => [_v1]}} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(
+                   conn,
+                   :show,
+                   child_id,
+                   "latest"
+                 )
+               )
+               |> json_response(:ok)
     end
 
     @tag authentication: [role: "admin"]
@@ -157,6 +188,102 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                |> json_response(:ok)
 
       assert %{"data_structure" => %{"id" => ^id}} = data
+    end
+  end
+
+  describe "show data_structure with deletions in its hierarchy" do
+    setup [:create_structure_hierarchy_with_logic_deletions]
+
+    @tag authentication: [role: "admin"]
+    test "renders a data structure with children including deleted", %{
+      conn: conn,
+      parent_structure: %{id: parent_id}
+    } do
+      assert %{"data" => %{"children" => children}} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(
+                   conn,
+                   :show,
+                   parent_id,
+                   "latest"
+                 )
+               )
+               |> json_response(:ok)
+
+      assert Enum.count(children) == 3
+      assert [deleted_child] = Enum.filter(children, & &1["deleted_at"])
+      assert deleted_child["name"] == "Child_deleted"
+    end
+
+    @tag authentication: [role: "admin"]
+    test "renders a data structure with logic deleted parents", %{
+      conn: conn,
+      child_structures: [%{id: child_id} | _]
+    } do
+      assert %{"data" => %{"parents" => [parent]}} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(
+                   conn,
+                   :show,
+                   child_id,
+                   "latest"
+                 )
+               )
+               |> json_response(:ok)
+
+      assert parent["name"] != "Parent_deleted"
+    end
+
+    @tag authentication: [role: "admin"]
+    test "renders a data structure with logic deleted siblings", %{
+      conn: conn,
+      child_structures: [%{id: id} | _]
+    } do
+      assert %{"data" => %{"siblings" => siblings}} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(conn, :show, id, "latest")
+               )
+               |> json_response(:ok)
+
+      assert Enum.count(siblings) == 2
+      assert Enum.find(siblings, [], &(Map.get(&1, "name") == "Child_deleted" == []))
+    end
+  end
+
+  describe "GET /api/data_structures/:id/versions/:version field structures" do
+    setup [:create_field_structure]
+
+    @tag authentication: [role: "user"]
+    test "user needs permission to profile structure", %{
+      conn: conn,
+      claims: %{user_id: user_id},
+      data_structure: %{id: id},
+      domain: %{id: domain_id}
+    } do
+      create_acl_entry(user_id, domain_id, [:view_data_structure])
+
+      assert %{"user_permissions" => permissions} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(conn, :show, id, "latest")
+               )
+               |> json_response(:ok)
+
+      assert %{"profile_permission" => false} = permissions
+
+      create_acl_entry(user_id, domain_id, [:profile_structures])
+
+      assert %{"user_permissions" => permissions} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(conn, :show, id, "latest")
+               )
+               |> json_response(:ok)
+
+      assert %{"profile_permission" => true} = permissions
     end
   end
 
@@ -228,7 +355,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   end
 
   defp create_structure_hierarchy(_) do
-    source = %{id: :rand.uniform(100_000_000), external_id: "foo", config: %{}}
+    source = %{id: System.unique_integer([:positive]), external_id: "foo", config: %{}}
     SourceCache.put(source)
 
     on_exit(fn ->
@@ -238,6 +365,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
 
     parent_structure = insert(:data_structure, external_id: "Parent", source_id: source.id)
     structure = insert(:data_structure, external_id: "Structure", source_id: source.id)
+    insert(:structure_metadata, data_structure_id: structure.id)
 
     child_structures = [
       insert(:data_structure, external_id: "Child1", source_id: source.id),
@@ -277,5 +405,91 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
      structure_version: structure_version,
      structure: structure,
      child_structures: child_structures}
+  end
+
+  defp create_structure_hierarchy_with_logic_deletions(_) do
+    deleted_at = "2019-06-14 11:00:00Z"
+    parent = insert(:data_structure, external_id: "Parent")
+    parent_deleted = insert(:data_structure, external_id: "Parent_deleted")
+
+    children = [
+      insert(:data_structure, external_id: "Child1"),
+      insert(:data_structure, external_id: "Child2"),
+      insert(:data_structure, external_id: "Child_deleted")
+    ]
+
+    parent_version =
+      insert(:data_structure_version,
+        data_structure_id: parent.id,
+        name: parent.external_id,
+        deleted_at: deleted_at
+      )
+
+    parent_version_deleted = insert(:data_structure_version, data_structure_id: parent_deleted.id)
+
+    child_versions =
+      Enum.map(
+        children,
+        &insert(:data_structure_version,
+          data_structure_id: &1.id,
+          name: &1.external_id,
+          deleted_at: if(&1.external_id == "Child_deleted", do: deleted_at, else: nil)
+        )
+      )
+
+    %{id: relation_type_id} = RelationTypes.get_default()
+
+    Enum.each(
+      child_versions,
+      &insert(:data_structure_relation,
+        parent_id: parent_version.id,
+        child_id: &1.id,
+        relation_type_id: relation_type_id
+      )
+    )
+
+    Enum.each(
+      child_versions,
+      &insert(:data_structure_relation,
+        parent_id: parent_version_deleted.id,
+        child_id: &1.id,
+        relation_type_id: relation_type_id
+      )
+    )
+
+    {:ok, parent_structure: parent, child_structures: children}
+  end
+
+  defp create_field_structure(_) do
+    domain = build(:domain)
+    data_structure = insert(:data_structure, domain_id: domain.id)
+
+    TaxonomyCache.put_domain(domain)
+
+    on_exit(fn ->
+      TaxonomyCache.delete_domain(domain.id)
+    end)
+
+    data_structure_version =
+      insert(:data_structure_version,
+        data_structure_id: data_structure.id,
+        type: "Column",
+        class: "field"
+      )
+
+    {:ok,
+     domain: domain,
+     data_structure: data_structure,
+     data_structure_version: data_structure_version}
+  end
+
+  defp create_acl_entry(user_id, domain_id, permissions) do
+    MockPermissionResolver.create_acl_entry(%{
+      principal_id: user_id,
+      principal_type: "user",
+      resource_id: domain_id,
+      resource_type: "domain",
+      permissions: permissions
+    })
   end
 end
