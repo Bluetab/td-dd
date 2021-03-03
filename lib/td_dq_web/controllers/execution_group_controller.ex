@@ -55,7 +55,11 @@ defmodule TdDqWeb.ExecutionGroupController do
 
     with {:can, true} <- {:can, can?(claims, create(Group))},
          %{} = creation_params <- creation_params(claims, params),
-         {:ok, %{group: group}} <- Executions.create_group(creation_params) do
+         {:ok, %{group: %{id: id}}} <- Executions.create_group(creation_params),
+         %Group{} = group <-
+           Executions.get_group(%{"id" => id},
+             preload: [executions: [:implementation, :rule, :result]]
+           ) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", Routes.execution_group_path(conn, :show, group))

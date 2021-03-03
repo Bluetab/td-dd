@@ -15,7 +15,7 @@ defmodule TdDq.Rules.RuleResult do
   @scale 2
 
   schema "rule_results" do
-    belongs_to(:execution, Execution)
+    has_many(:execution, Execution, foreign_key: :result_id)
     field(:implementation_key, :string)
     field(:date, :utc_datetime)
     field(:result, :decimal, precision: 5, scale: @scale)
@@ -37,43 +37,53 @@ defmodule TdDq.Rules.RuleResult do
     changeset(%__MODULE__{}, params)
   end
 
-  def changeset(%__MODULE__{} = rule_result, params) do
-    params =
-      params
-      |> format_date()
-      |> format_result()
-
-    rule_result
+  def changeset(%__MODULE__{} = struct, params) do
+    struct
     |> cast(params, [
-      :execution_id,
       :implementation_key,
-      :date,
       :result,
       :errors,
       :records,
       :params,
       :row_number
     ])
+    |> put_date()
+    |> put_result()
+    |> update_change(:result, &Decimal.round(&1, @scale, :floor))
     |> validate_required([:implementation_key, :date, :result])
+    |> validate_number(:records, greater_than_or_equal_to: 0)
+    |> validate_number(:errors, greater_than_or_equal_to: 0)
     |> validate_number(:result, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
-    |> foreign_key_constraint(:execution_id)
   end
 
-  defp format_date(%{"date" => date} = params) do
-    # Standard datetime formats will be handled by Ecto, we only need to
+  defp put_date(%{params: %{"date" => value}} = changeset) do
+    # Standard datetime formats will be cast correctly by Ecto, we only need to
     # transform non-standard formats (YYYY-MM-DD or YYYY-MM-DD-HH-MM-SS).
-    case DateParser.parse(date, [:utc_date, :legacy]) do
-      {:ok, datetime, _} -> Map.put(params, "date", datetime)
-      _ -> params
+    case DateParser.parse(value, [:utc_date, :legacy]) do
+      {:ok, datetime, _} -> put_change(changeset, :date, datetime)
+      _ -> cast(changeset, %{date: value}, [:date])
     end
   end
 
-  defp format_date(params), do: params
+  defp put_date(changeset), do: changeset
 
-  defp format_result(%{"result" => result} = params) when is_float(result) do
-    result = Decimal.round(Decimal.from_float(result), @scale, :floor)
-    Map.put(params, "result", result)
+  defp put_result(%{} = changeset) do
+    with records when is_integer(records) <- get_change(changeset, :records),
+         errors when is_integer(errors) <- get_change(changeset, :errors) do
+      result = calculate_quality(records, errors)
+      put_change(changeset, :result, result)
+    else
+      _result -> changeset
+    end
   end
 
-  defp format_result(params), do: params
+  defp calculate_quality(0, _errors), do: 0
+
+  defp calculate_quality(records, errors) do
+    records
+    |> Decimal.sub(errors)
+    |> Decimal.abs()
+    |> Decimal.mult(100)
+    |> Decimal.div(records)
+  end
 end

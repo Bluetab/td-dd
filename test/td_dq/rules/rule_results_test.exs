@@ -10,7 +10,6 @@ defmodule TdDq.RuleResultsTest do
   alias TdCache.RuleCache
   alias TdDq.Cache.RuleLoader
   alias TdDq.MockRelationCache
-  alias TdDq.Rules.RuleResult
   alias TdDq.Rules.RuleResults
   alias TdDq.Search.IndexWorker
 
@@ -148,11 +147,35 @@ defmodule TdDq.RuleResultsTest do
         "result" => result
       }
 
-      assert {:ok, %RuleResult{} = rr} = RuleResults.create_rule_result(params)
+      assert {:ok, %{result: rr}} = RuleResults.create_rule_result(params)
       assert rr.implementation_key == implementation_key
       assert rr.errors == errors
       assert rr.records == records
       assert rr.result == Decimal.new("99.99")
+    end
+
+    test "updates related executions" do
+      %{id: implementation_id, implementation_key: key} = insert(:implementation)
+
+      insert(:execution,
+        implementation_id: implementation_id,
+        group: build(:execution_group),
+        result: build(:rule_result)
+      )
+
+      %{id: id2} =
+        insert(:execution, implementation_id: implementation_id, group: build(:execution_group))
+
+      params = %{
+        "date" => "2020-01-31",
+        "errors" => 2,
+        "implementation_key" => key,
+        "records" => 5
+      }
+
+      assert {:ok, %{} = multi} = RuleResults.create_rule_result(params)
+      assert %{executions: {1, executions}} = multi
+      assert [%{id: ^id2}] = executions
     end
   end
 

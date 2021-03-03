@@ -4,6 +4,9 @@ defmodule TdDq.Canada.ImplementationAbilities do
   alias TdDq.Permissions
   alias TdDq.Rules.Implementations.Implementation
 
+  # Service accounts can do anything with Implementations
+  def can?(%Claims{role: "service"}, _action, _target), do: true
+
   def can?(%Claims{}, action, Implementation) when action in [:index], do: true
 
   def can?(%Claims{}, action, %Implementation{}) when action in [:show],
@@ -62,6 +65,9 @@ defmodule TdDq.Canada.ImplementationAbilities do
       business_concept_id
     )
   end
+
+  # Service accounts can execute rule implementations
+  def can?(%Claims{role: "service"}, :execute, _), do: true
 
   def can?(%Claims{} = claims, :execute, "") do
     Permissions.authorized?(claims, :execute_quality_rule_implementations)

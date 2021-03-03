@@ -23,8 +23,13 @@ defmodule TdDq.ExecutionsTest do
     test "preloads implementations, executions and rule results" do
       %{id: implementation_id} = insert(:implementation)
       %{id: id} = insert(:execution_group)
-      %{id: execution_id} = insert(:execution, group_id: id, implementation_id: implementation_id)
-      %{id: result_id} = insert(:rule_result, execution_id: execution_id)
+
+      %{id: execution_id, result_id: result_id} =
+        insert(:execution,
+          group_id: id,
+          implementation_id: implementation_id,
+          result: build(:rule_result)
+        )
 
       assert %{implementations: [%{id: ^implementation_id}]} =
                Executions.get_group(%{"id" => id}, preload: :implementations)
@@ -92,11 +97,15 @@ defmodule TdDq.ExecutionsTest do
       %{id: group_id1} = g1 = insert(:execution_group)
       %{id: group_id2} = g2 = insert(:execution_group)
 
-      %{id: id} =
-        e1 = insert(:execution, group_id: group_id1, implementation_id: implementation_id)
+      e1 = insert(:execution, group_id: group_id1, implementation_id: implementation_id)
 
-      e2 = insert(:execution, group_id: group_id2, implementation_id: implementation_id)
-      result = insert(:rule_result, execution_id: id)
+      %{result: result} =
+        e2 =
+        insert(:execution,
+          group_id: group_id2,
+          implementation_id: implementation_id,
+          result: build(:rule_result)
+        )
 
       structure_id =
         implementation
@@ -133,7 +142,7 @@ defmodule TdDq.ExecutionsTest do
     end
 
     test "list executions", %{executions: [%{id: id1}, %{id: id2}], result: %{id: result_id}} do
-      assert [%{id: ^id1, result: %{id: ^result_id}}, %{id: ^id2, result: nil}] =
+      assert [%{id: ^id1, result: nil}, %{id: ^id2, result: %{id: ^result_id}}] =
                Executions.list_executions(%{}, preload: [:result])
     end
 
@@ -146,7 +155,7 @@ defmodule TdDq.ExecutionsTest do
 
     test "list executions filtered by status", %{
       implementation: %{id: implementation_id},
-      executions: [_, %{id: id}]
+      executions: [%{id: id}, _]
     } do
       assert [%{id: ^id, result: nil, implementation: %{id: ^implementation_id}}] =
                Executions.list_executions(%{status: "PENDING"},
@@ -160,7 +169,14 @@ defmodule TdDq.ExecutionsTest do
     } do
       assert [] = Executions.list_executions(%{source: "foo"})
       assert [%{id: ^id1}, %{id: ^id2}] = Executions.list_executions(%{source: source})
-      assert [%{id: ^id2}] = Executions.list_executions(%{source: source, status: "PENDING"})
+      assert [%{id: ^id1}] = Executions.list_executions(%{source: source, status: "PENDING"})
+    end
+
+    test "list executions filtered by sources", %{
+      executions: [%{id: id1}, %{id: id2}],
+      structure: %{metadata: %{"alias" => source}}
+    } do
+      assert [%{id: ^id1}, %{id: ^id2}] = Executions.list_executions(%{sources: [source]})
     end
   end
 end

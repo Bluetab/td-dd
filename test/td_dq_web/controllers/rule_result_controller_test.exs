@@ -49,7 +49,7 @@ defmodule TdDqWeb.RuleResultControllerTest do
     end
   end
 
-  describe "upload rule results" do
+  describe "POST /api/rule_results" do
     @tag authentication: [role: "service"]
     @tag fixture: "test/fixtures/rule_results/rule_results_invalid_format.csv"
     test "rule result upload with invalid date", %{
@@ -58,7 +58,7 @@ defmodule TdDqWeb.RuleResultControllerTest do
     } do
       assert %{"errors" => errors, "row" => row} =
                conn
-               |> post(Routes.rule_result_path(conn, :upload), rule_results: rule_results_file)
+               |> post(Routes.rule_result_path(conn, :create), rule_results: rule_results_file)
                |> json_response(:unprocessable_entity)
 
       assert errors == %{"date" => ["is invalid"]}
@@ -73,7 +73,7 @@ defmodule TdDqWeb.RuleResultControllerTest do
       implementation: implementation
     } do
       assert conn
-             |> post(Routes.rule_result_path(conn, :upload), rule_results: rule_results_file)
+             |> post(Routes.rule_result_path(conn, :create), rule_results: rule_results_file)
              |> response(:ok)
 
       assert %{"data" => data} =
@@ -93,7 +93,7 @@ defmodule TdDqWeb.RuleResultControllerTest do
       implementation: implementation
     } do
       assert conn
-             |> post(Routes.rule_result_path(conn, :upload), rule_results: rule_results_file)
+             |> post(Routes.rule_result_path(conn, :create), rule_results: rule_results_file)
              |> response(:ok)
 
       assert %{"data" => data} =
@@ -113,7 +113,7 @@ defmodule TdDqWeb.RuleResultControllerTest do
       implementation: implementation
     } do
       assert conn
-             |> post(Routes.rule_result_path(conn, :upload), rule_results: rule_results_file)
+             |> post(Routes.rule_result_path(conn, :create), rule_results: rule_results_file)
              |> response(:ok)
 
       assert %{"data" => data} =

@@ -75,5 +75,48 @@ defmodule TdDq.Rules.RuleResultTest do
 
       assert %{errors: ^errors, records: ^records} = Repo.get!(RuleResult, id)
     end
+
+    test "puts calculated result if not present in changeset" do
+      {errors, records} = {123_456, 456_123}
+
+      assert "72.93" =
+               %{
+                 "records" => records,
+                 "errors" => errors,
+                 "implementation_key" => "foo",
+                 "date" => "2020-01-01"
+               }
+               |> RuleResult.changeset()
+               |> Changeset.get_change(:result)
+               |> Decimal.to_string()
+    end
+
+    test "accepts string values for errors and records" do
+      params = %{"errors" => "123456", "records" => "654321"}
+      changeset = RuleResult.changeset(params)
+      assert Changeset.fetch_change!(changeset, :errors) == 123_456
+      assert Changeset.fetch_change!(changeset, :records) == 654_321
+    end
+
+    test "validates errors and records are non-negative if present" do
+      params = %{"errors" => -1, "records" => -2}
+      assert %{errors: errors} = RuleResult.changeset(params)
+
+      assert {_, [validation: :number, kind: :greater_than_or_equal_to, number: 0]} =
+               errors[:errors]
+
+      assert {_, [validation: :number, kind: :greater_than_or_equal_to, number: 0]} =
+               errors[:records]
+    end
+
+    test "rounds result to two decimal places" do
+      params = %{"result" => 123.456_789}
+
+      assert "123.45" ==
+               params
+               |> RuleResult.changeset()
+               |> Changeset.get_change(:result)
+               |> Decimal.to_string()
+    end
   end
 end

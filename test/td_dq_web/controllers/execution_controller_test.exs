@@ -12,10 +12,6 @@ defmodule TdDqWeb.ExecutionControllerTest do
         insert(:execution, group_id: group_id, implementation: build(:implementation))
       end)
 
-    executions
-    |> Enum.take_random(2)
-    |> Enum.map(fn %{id: execution_id} -> insert(:rule_result, execution_id: execution_id) end)
-
     [group: group, executions: executions]
   end
 
@@ -37,7 +33,7 @@ defmodule TdDqWeb.ExecutionControllerTest do
       assert length(executions) == 5
     end
 
-    @tag authentication: [role: "admin"]
+    @tag authentication: [role: "service"]
     test "returns an OK response with the list of executions", %{
       conn: conn,
       swagger_schema: schema

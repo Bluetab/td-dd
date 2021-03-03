@@ -13,6 +13,17 @@ defmodule TdDq.Executions do
   alias TdDq.Rules.Implementations.Implementation
 
   @doc """
+  Fetches the `Execution` with the given id.
+  """
+  def get(id, opts \\ []) do
+    preloads = Keyword.get(opts, :preload, [])
+
+    Execution
+    |> preload(^preloads)
+    |> Repo.get(id)
+  end
+
+  @doc """
   Returns an execution group.
   """
   def get_group(%{"id" => id} = _params, opts \\ []) do
@@ -41,19 +52,44 @@ defmodule TdDq.Executions do
   Returns a list of executions.
   """
   def list_executions(params \\ %{}, opts \\ []) do
-    params = Map.Helpers.atomize_keys(params)
     preloads = Keyword.get(opts, :preload, [])
 
     params
+    |> cast()
     |> Enum.reduce(Execution, fn
-      {:group_id, id}, q -> where(q, [e], e.group_id == ^id)
-      {:execution_group_id, id}, q -> where(q, [e], e.group_id == ^id)
-      _, q -> q
+      {:group_id, id}, q ->
+        where(q, [e], e.group_id == ^id)
+
+      {:execution_group_id, id}, q ->
+        where(q, [e], e.group_id == ^id)
+
+      {:status, "pending"}, q ->
+        q
+        |> join(:left, [e], r in assoc(e, :result))
+        |> where([_e, r], is_nil(r.id))
+
+      _, q ->
+        q
     end)
-    |> where_status(params)
+    |> order_by(:id)
     |> preload(^preloads)
     |> Repo.all()
     |> filter(params)
+  end
+
+  defp cast(%{} = params) do
+    types = %{
+      group_id: :integer,
+      execution_group_id: :integer,
+      status: :string,
+      source: :string,
+      sources: {:array, :string}
+    }
+
+    {%{}, types}
+    |> Changeset.cast(params, Map.keys(types))
+    |> Changeset.update_change(:status, &String.downcase/1)
+    |> Changeset.apply_changes()
   end
 
   @doc """
@@ -72,30 +108,22 @@ defmodule TdDq.Executions do
     |> Repo.transaction()
   end
 
-  defp where_status(query, %{status: status}) do
-    case String.downcase(status) do
-      "pending" ->
-        query
-        |> join(:left, [e], r in assoc(e, :result))
-        |> where([_e, r], is_nil(r.execution_id))
-
-      _ ->
-        query
-    end
+  defp filter([_ | _] = executions, %{source: source}) do
+    filter(executions, %{sources: [source]})
   end
 
-  defp where_status(query, _params), do: query
+  defp filter([_ | _] = executions, %{sources: sources}) do
+    sorted_sources = Enum.sort(sources)
 
-  defp filter([_ | _] = executions, %{source: source}) do
     executions
-    |> Enum.map(
-      &Map.put(
-        &1,
-        :structure_aliases,
-        get_sources(&1)
-      )
-    )
-    |> Enum.filter(&(source in Map.get(&1, :structure_aliases)))
+    |> Enum.group_by(&get_sources/1, & &1)
+    |> Enum.filter(fn
+      {[source], _} -> source in sources
+      {sources, _} -> Enum.sort(sources) == sorted_sources
+    end)
+    |> Enum.flat_map(fn
+      {sources, executions} -> Enum.map(executions, &Map.put(&1, :structure_aliases, sources))
+    end)
   end
 
   defp filter(executions, _params), do: executions

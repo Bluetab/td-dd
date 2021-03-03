@@ -17,9 +17,9 @@ defmodule TdDq.Executions.Execution do
     field(:structure_aliases, {:array, :string}, virtual: true)
     belongs_to(:group, Group)
     belongs_to(:implementation, Implementation)
+    belongs_to(:result, RuleResult)
     has_one(:rule, through: [:implementation, :rule])
-    has_one(:result, RuleResult)
-    timestamps(type: :utc_datetime_usec, updated_at: false)
+    timestamps(type: :utc_datetime_usec)
   end
 
   def changeset(%{} = params) do
@@ -28,9 +28,10 @@ defmodule TdDq.Executions.Execution do
 
   def changeset(%__MODULE__{} = struct, %{} = params) do
     struct
-    |> cast(params, [:group_id, :implementation_id, :structure_aliases])
+    |> cast(params, [:group_id, :implementation_id, :result_id, :structure_aliases])
     |> validate_required([:implementation_id])
     |> foreign_key_constraint(:group_id)
     |> foreign_key_constraint(:implementation_id)
+    |> foreign_key_constraint(:result_id)
   end
 end
