@@ -26,10 +26,11 @@ defmodule TdDqWeb.Router do
     resources "/execution_groups", ExecutionGroupController, except: [:new, :edit] do
       resources("/executions", ExecutionController, only: [:index])
     end
-    resources("/executions", ExecutionController, only: [:index])
 
-    post("/rule_results", RuleResultController, :upload)
-    resources("/rule_results", RuleResultController, only: [:index, :delete])
+    resources("/executions", ExecutionController, only: [:index])
+    resources("/executions/search", ExecutionSearchController, only: [:create], singleton: true)
+
+    resources("/rule_results", RuleResultController, only: [:index, :delete, :create, :show])
 
     get("/rules/concept/:id", RuleController, :get_rules_by_concept)
 
@@ -48,9 +49,18 @@ defmodule TdDqWeb.Router do
 
     post("/rule_filters/search", RuleFilterController, :search)
     post("/rule_implementation_filters/search", ImplementationFilterController, :search)
-    resources("/rule_implementations", ImplementationController, except: [:new, :edit])
+
+    resources("/rule_implementations", ImplementationController, except: [:new, :edit]) do
+      resources("/results", ImplementationResultController, only: [:create])
+    end
+
+    resources("/rule_implementations/search", ImplementationSearchController,
+      only: [:create],
+      singleton: true
+    )
+
     post("/rule_implementations/csv", ImplementationController, :csv)
-    post("/rule_implementations/search", SearchController, :search_implementations)
+    post("/rule_implementations/search_old", SearchController, :search_implementations)
   end
 
   def swagger_info do

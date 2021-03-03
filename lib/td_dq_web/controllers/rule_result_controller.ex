@@ -10,7 +10,7 @@ defmodule TdDqWeb.RuleResultController do
 
   action_fallback(TdDqWeb.FallbackController)
 
-  def upload(conn, params) do
+  def create(conn, params) do
     with %{"rule_results" => rule_results_file} <- params,
          rule_results_data <- rule_results_from_csv(rule_results_file),
          {:ok, _} <- RuleResults.bulk_load(rule_results_data) do
@@ -41,25 +41,20 @@ defmodule TdDqWeb.RuleResultController do
     end
   end
 
+  def show(conn, %{"id" => id} = _params) do
+    with claims <- conn.assigns[:current_resource],
+         rule_result <- RuleResults.get_rule_result(id),
+         {:can, true} <- {:can, can?(claims, view(rule_result))} do
+      render(conn, "show.json", rule_result: rule_result)
+    end
+  end
+
   defp rule_results_from_csv(%{path: path}) do
     path
     |> File.stream!()
     |> CSV.decode!(separator: ?;, headers: true)
     |> Enum.to_list()
-    |> Enum.map(&set_quality_data/1)
     |> Enum.map(&set_quality_params/1)
-  end
-
-  defp set_quality_data(%{"records" => records, "errors" => errors} = rule_result) do
-    Map.put(
-      rule_result,
-      "result",
-      calculate_quality(String.to_integer(records), String.to_integer(errors))
-    )
-  end
-
-  defp set_quality_data(rule_result) do
-    rule_result
   end
 
   defp set_quality_params(rule_result) do
@@ -81,14 +76,6 @@ defmodule TdDqWeb.RuleResultController do
   defp put_params({k, v}, acc) do
     k_suffix = String.replace_leading(k, "m:", "")
     Map.put(acc, k_suffix, v)
-  end
-
-  defp calculate_quality(0, _errors) do
-    0
-  end
-
-  defp calculate_quality(records, errors) do
-    abs((records - errors) / records) * 100
   end
 
   def index(conn, _params) do

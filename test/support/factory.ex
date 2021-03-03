@@ -119,6 +119,17 @@ defmodule TdDq.Factory do
     |> Map.new()
   end
 
+  def implementation_result_record_factory(attrs) do
+    %{
+      date: "2020-02-02T00:00:00Z",
+      records: nil,
+      errors: nil
+    }
+    |> merge_attributes(attrs)
+    |> Enum.reject(fn {_k, v} -> is_nil(v) end)
+    |> Map.new()
+  end
+
   def execution_factory do
     %TdDq.Executions.Execution{}
   end

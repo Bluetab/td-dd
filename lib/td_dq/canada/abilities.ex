@@ -18,13 +18,17 @@ defmodule TdDq.Canada.Abilities do
       ExecutionAbilities.can?(claims, action, target)
     end
 
+    def can?(%Claims{} = claims, action, %Execution{} = target) do
+      ExecutionAbilities.can?(claims, action, target)
+    end
+
     def can?(%Claims{} = claims, action, Implementation)
         when action in [:index] do
       ImplementationAbilities.can?(claims, action, Implementation)
     end
 
     def can?(%Claims{} = claims, action, %Implementation{} = implementation)
-        when action in [:update, :delete, :show] do
+        when action in [:update, :delete, :show, :execute] do
       ImplementationAbilities.can?(claims, action, implementation)
     end
 

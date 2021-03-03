@@ -1,12 +1,22 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-3344] New routes:
+  - `POST /api/executions/search` searches executions
+  - `POST /api/executions/:id/results` creates a rule result associated with an
+    execution
+  - `GET /api/rule_results/:id` queries a specific rule result by id
+
 ## [4.14.0] 2021-2-22
 
 ### Changed
 
 - [TD-3245] Tested compatibility with PostgreSQL 9.6, 10.15, 11.10, 12.5 and
   13.1. CI pipeline changed to use `postgres:12.5-alpine`.
-  
+
 ### Removed
 
 - [TD-3171] Removed deprecated route `/api/rule_implementations/execute`

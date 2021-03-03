@@ -26,14 +26,14 @@ defmodule TdDqWeb.FallbackController do
     call(conn, {:error, changeset})
   end
 
-  def call(conn, {:error, :not_found}) do
+  def call(conn, nil) do
     conn
     |> put_status(:not_found)
     |> put_view(TdDqWeb.ErrorView)
     |> render("404.json")
   end
 
-  def call(conn, nil) do
+  def call(conn, {:error, :not_found}) do
     conn
     |> put_status(:not_found)
     |> put_view(TdDqWeb.ErrorView)

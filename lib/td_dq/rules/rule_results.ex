@@ -7,6 +7,7 @@ defmodule TdDq.Rules.RuleResults do
 
   alias Ecto.Multi
   alias TdDq.Cache.RuleLoader
+  alias TdDq.Executions.Execution
   alias TdDq.Repo
   alias TdDq.Rules.Audit
   alias TdDq.Rules.Implementations.Implementation
@@ -36,16 +37,32 @@ defmodule TdDq.Rules.RuleResults do
   ## Examples
 
       iex> create_rule_result(%{field: value})
-      {:ok, %RuleResult{}}
+      {:ok, %{result: RuleResult{}}}
 
       iex> create_rule_result(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
+      {:error, failed_operation, failed_value, changes_so_far}
 
   """
   def create_rule_result(params \\ %{}) do
-    %RuleResult{}
-    |> RuleResult.changeset(params)
-    |> Repo.insert()
+    changeset = RuleResult.changeset(params)
+
+    Multi.new()
+    |> Multi.insert(:result, changeset)
+    |> Multi.run(:executions, fn _repo, %{result: result} ->
+      res = update_executions(result)
+      {:ok, res}
+    end)
+    |> Repo.transaction()
+  end
+
+  defp update_executions(%{id: id, implementation_key: key, inserted_at: ts} = _result) do
+    Execution
+    |> select([e], e)
+    |> where([e], is_nil(e.result_id))
+    |> join(:inner, [e], i in assoc(e, :implementation))
+    |> where([e, i], i.implementation_key == ^key)
+    |> update(set: [result_id: ^id, updated_at: ^ts])
+    |> Repo.update_all([])
   end
 
   @doc """

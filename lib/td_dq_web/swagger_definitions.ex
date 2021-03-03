@@ -385,4 +385,37 @@ defmodule TdDqWeb.SwaggerDefinitions do
         end
     }
   end
+
+  def rule_result_swagger_definitions do
+    %{
+      RuleResult:
+        swagger_schema do
+          title("Rule Result")
+          description("The result of a quality rule execution")
+
+          properties do
+            id(:integer, "Rule Result unique identifier", required: true)
+            date(:string, "datetime")
+            result(:string, "The result (decimal)")
+            errors(:integer, "The error count")
+            records(:integer, "The record count")
+            params(:object, "Execution parameters")
+            inserted_at(:string, "insert timestamp")
+            updated_at(:string, "update timestamp")
+          end
+        end,
+      RuleResultCreate:
+        swagger_schema do
+          properties do
+            rule_result(Schema.ref(:RuleResult))
+          end
+        end,
+      RuleResultResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:RuleResult))
+          end
+        end
+    }
+  end
 end
