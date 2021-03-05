@@ -355,13 +355,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   end
 
   defp create_structure_hierarchy(_) do
-    source = %{id: System.unique_integer([:positive]), external_id: "foo", config: %{}}
-    SourceCache.put(source)
-
-    on_exit(fn ->
-      SourceCache.delete(source.id)
-      Redix.command(["DEL", "sources:ids_external_ids"])
-    end)
+    source = create_source()
 
     parent_structure = insert(:data_structure, external_id: "Parent", source_id: source.id)
     structure = insert(:data_structure, external_id: "Structure", source_id: source.id)
@@ -462,7 +456,9 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
 
   defp create_field_structure(_) do
     domain = build(:domain)
-    data_structure = insert(:data_structure, domain_id: domain.id)
+    source = create_source()
+
+    data_structure = insert(:data_structure, domain_id: domain.id, source_id: source.id)
 
     TaxonomyCache.put_domain(domain)
 
@@ -481,6 +477,23 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
      domain: domain,
      data_structure: data_structure,
      data_structure_version: data_structure_version}
+  end
+
+  defp create_source do
+    source = %{
+      id: System.unique_integer([:positive]),
+      external_id: "foo",
+      config: %{"job_types" => ["catalog", "profile"]}
+    }
+
+    SourceCache.put(source)
+
+    on_exit(fn ->
+      SourceCache.delete(source.id)
+      Redix.command(["DEL", "sources:ids_external_ids"])
+    end)
+
+    source
   end
 
   defp create_acl_entry(user_id, domain_id, permissions) do

@@ -4,13 +4,20 @@ defmodule TdDd.Canada.DataStructureVersionAbilities do
   alias TdDd.Canada.DataStructureAbilities
   alias TdDd.Permissions
 
-  def can?(%Claims{role: "admin"}, :profile_structures, %{class: "field"}), do: true
+  def can?(%Claims{role: "admin"}, :profile_structures, %{
+        class: "field",
+        source: %{config: %{"job_types" => job_types}}
+      }) do
+    Enum.member?(job_types, "profile")
+  end
 
   def can?(%Claims{} = claims, :profile_structures, %{
         class: "field",
+        source: %{config: %{"job_types" => job_types}},
         data_structure: %{domain_id: domain_id}
       }) do
-    Permissions.authorized?(claims, :profile_structures, domain_id)
+    Enum.member?(job_types, "profile") &&
+      Permissions.authorized?(claims, :profile_structures, domain_id)
   end
 
   # Only field structures can be manually profiled
