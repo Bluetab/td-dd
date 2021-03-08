@@ -25,7 +25,7 @@
 - [TD-3222] `structures` index alias can now be configured using the
   `ES_ALIAS_STRUCTURES` environment variable
 
-## [4.14.0] 2021-2-22
+## [4.14.0] 2021-02-22
 
 ### Added
 
