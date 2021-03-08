@@ -14,4 +14,4 @@ priv/static/swagger.json
 .iex.exs
 local
 data/
-config/local.exs
+.vscode
