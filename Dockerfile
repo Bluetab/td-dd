@@ -1,5 +1,5 @@
-### Minimal runtime image based on alpine:3.11
-ARG RUNTIME_BASE=alpine:3.11
+### Minimal runtime image based on alpine:3.13
+ARG RUNTIME_BASE=alpine:3.13
 
 FROM ${RUNTIME_BASE}
 
