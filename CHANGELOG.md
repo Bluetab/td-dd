@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [4.15.0] 2021-03-08
 
 ### Fixed
 
@@ -9,6 +9,7 @@
 
 ### Changed
 
+- [TD-3341] Build with `elixir:1.11.3-alpine`, runtime `alpine:3.13`
 - [TD-3329] Elasticsearch index settings are now configurable using environment
   variables:
   - `ES_TIMEOUT`: Connection timeout in milliseconds (default `5000`)
@@ -29,7 +30,7 @@
 - [TD-3222] `jobs` index alias can now be configured using the `ES_ALIAS_JOBS`
   environment variable
 
-## [4.14.0] 2021-2-22
+## [4.14.0] 2021-02-22
 
 ### Removed
 
