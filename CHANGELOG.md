@@ -1,9 +1,10 @@
 # Changelog
 
-## Unreleased
+## [4.15.0] 2021-03-08
 
-### Added
+### Changed
 
+- [TD-3341] Build with `elixir:1.11.3-alpine`, runtime `alpine:3.13`
 - [TD-3329] Elasticsearch index settings are now configurable using environment
   variables:
   - `ES_TIMEOUT`: Connection timeout in milliseconds (default `5000`)

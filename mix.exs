@@ -56,7 +56,7 @@ defmodule TdDd.Mixfile do
       {:jason, "~> 1.0"},
       {:postgrex, "~> 0.15.0"},
       {:gettext, "~> 0.11"},
-      {:httpoison, "~> 1.6.2"},
+      {:httpoison, "~> 1.6"},
       {:credo, "~> 1.4", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
       {:guardian, "~> 2.0"},
@@ -64,8 +64,8 @@ defmodule TdDd.Mixfile do
       {:quantum, "~> 3.0"},
       {:ex_machina, "~> 2.3", only: [:test]},
       {:cors_plug, "~> 2.0"},
-      {:csv, "~> 2.3"},
-      {:phoenix_swagger, "~> 0.8.2"},
+      {:csv, "~> 2.4"},
+      {:phoenix_swagger, "~> 0.8.3"},
       {:ex_json_schema, "~> 0.7.3"},
       {:codepagex, "~> 0.1.4"},
       {:bimap, "~> 1.1"},
@@ -75,7 +75,7 @@ defmodule TdDd.Mixfile do
       {:td_hypermedia, git: "https://github.com/Bluetab/td-hypermedia.git", tag: "4.0.0"},
       {:td_cache, git: "https://github.com/Bluetab/td-cache.git", override: true, tag: "4.14.0"},
       {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "4.12.0"},
-      {:graph, git: "https://github.com/Bluetab/graph.git", tag: "1.0.0"}
+      {:graph, git: "https://github.com/Bluetab/graph.git", tag: "1.1.0"}
     ]
   end
 
