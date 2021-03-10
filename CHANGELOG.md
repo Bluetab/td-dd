@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased] 
+
+- [TD-2951] `profile_structure` permission
+
 ## [4.15.0] 2021-03-08
 
 ### Changed
@@ -24,7 +28,6 @@
   - `ES_INDEXING_SLOWLOG_SOURCE`: Indexing slowlog source limit (default `1000`)
 - [TD-3222] `structures` index alias can now be configured using the
   `ES_ALIAS_STRUCTURES` environment variable
-- [TD-2951] `profile_structure` permission
 
 ## [4.14.0] 2021-02-22
 
