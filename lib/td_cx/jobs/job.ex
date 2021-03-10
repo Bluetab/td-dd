@@ -14,6 +14,7 @@ defmodule TdCx.Jobs.Job do
   schema "jobs" do
     field(:external_id, Ecto.UUID, autogenerate: true)
     field(:type, :string)
+    field(:parameters, :map, default: %{})
     belongs_to(:source, Source)
     has_many(:events, Event)
     timestamps()
@@ -21,7 +22,7 @@ defmodule TdCx.Jobs.Job do
 
   def changeset(job, attrs) do
     job
-    |> cast(attrs, [:source_id, :type])
+    |> cast(attrs, [:source_id, :type, :parameters])
     |> validate_required([:source_id])
   end
 

@@ -44,8 +44,7 @@ defmodule TdCxWeb.Authentication do
   end
 
   defp register_token(token) do
-    with {:ok, resource} <- Guardian.decode_and_verify(token),
-         pid when is_pid(pid) <- Process.whereis(MockPermissionResolver) do
+    with {:ok, resource} <- Guardian.decode_and_verify(token) do
       MockPermissionResolver.register_token(resource)
     end
 
