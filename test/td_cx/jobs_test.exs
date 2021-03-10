@@ -14,8 +14,10 @@ defmodule TdCx.Sources.JobsTest do
 
     test "create_job/1 with valid data creates a job" do
       source = insert(:source)
-      assert {:ok, %Job{} = job} = Jobs.create_job(%{source_id: source.id})
+      attrs = %{source_id: source.id, parameters: %{foo: "bar"}}
+      assert {:ok, %Job{} = job} = Jobs.create_job(attrs)
       assert job.source_id == source.id
+      assert %{foo: "bar"} = job.parameters
       assert not is_nil(job.external_id)
     end
 
