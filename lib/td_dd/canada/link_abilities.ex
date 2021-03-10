@@ -5,6 +5,9 @@ defmodule TdDd.Canada.LinkAbilities do
   alias TdDd.Auth.Claims
   alias TdDd.Permissions
 
+  # Admin accounts can do anything with links
+  def can?(%Claims{role: "admin"}, _action, _resource), do: true
+
   def can?(_, :create_link, %{domain_id: nil}), do: false
 
   def can?(%Claims{} = claims, :create_link, %{domain_id: domain_id}) do

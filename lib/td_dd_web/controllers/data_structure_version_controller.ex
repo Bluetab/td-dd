@@ -7,8 +7,6 @@ defmodule TdDdWeb.DataStructureVersionController do
 
   alias Ecto
   alias TdDd.DataStructures
-  alias TdDd.DataStructures.DataStructure
-  alias TdDd.DataStructures.DataStructureVersion
   alias TdDdWeb.SwaggerDefinitions
 
   require Logger
@@ -58,24 +56,18 @@ defmodule TdDdWeb.DataStructureVersionController do
 
   def show(conn, %{"data_structure_id" => data_structure_id, "id" => version}) do
     claims = conn.assigns[:current_resource]
-
-    case DataStructures.get_data_structure!(data_structure_id) do
-      %DataStructure{} = data_structure ->
-        options = filter(claims, data_structure)
-        dsv = get_data_structure_version(data_structure_id, version, options)
-        render_with_permissions(conn, claims, dsv)
-    end
+    data_structure = DataStructures.get_data_structure!(data_structure_id)
+    options = filter(claims, data_structure)
+    dsv = get_data_structure_version(data_structure_id, version, options)
+    render_with_permissions(conn, claims, dsv)
   end
 
   def show(conn, %{"id" => data_structure_version_id}) do
     claims = conn.assigns[:current_resource]
-
-    case DataStructures.get_data_structure_version!(data_structure_version_id) do
-      %DataStructureVersion{data_structure: data_structure} ->
-        options = filter(claims, data_structure)
-        dsv = get_data_structure_version(data_structure_version_id, options)
-        render_with_permissions(conn, claims, dsv)
-    end
+    dsv = DataStructures.get_data_structure_version!(data_structure_version_id)
+    options = filter(claims, dsv.data_structure)
+    dsv = get_data_structure_version(data_structure_version_id, options)
+    render_with_permissions(conn, claims, dsv)
   end
 
   defp filter(claims, data_structure) do
@@ -101,7 +93,8 @@ defmodule TdDdWeb.DataStructureVersionController do
       user_permissions = %{
         update: can?(claims, update_data_structure(data_structure)),
         confidential: can?(claims, manage_confidential_structures(data_structure)),
-        view_profiling_permission: can?(claims, view_data_structures_profile(data_structure))
+        view_profiling_permission: can?(claims, view_data_structures_profile(data_structure)),
+        profile_permission: can?(claims, profile_structures(dsv))
       }
 
       render(conn, "show.json",

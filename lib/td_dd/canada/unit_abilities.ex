@@ -6,6 +6,9 @@ defmodule TdDd.Canada.UnitAbilities do
   alias TdDd.Lineage.Units.{Node, Unit}
   alias TdDd.Permissions
 
+  # Admin accounts can do anything with units
+  def can?(%Claims{role: "admin"}, _action, _resource), do: true
+
   # Service accounts can create, replace and view units
   def can?(%Claims{role: "service"}, :create, Unit), do: true
   def can?(%Claims{role: "service"}, :update, Unit), do: true

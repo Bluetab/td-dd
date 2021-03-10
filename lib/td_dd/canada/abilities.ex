@@ -4,17 +4,16 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.Auth.Claims
   alias TdDd.Canada.DataStructureAbilities
   alias TdDd.Canada.DataStructureTypeAbilities
+  alias TdDd.Canada.DataStructureVersionAbilities
   alias TdDd.Canada.LinkAbilities
   alias TdDd.Canada.UnitAbilities
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureType
+  alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Lineage.Units.Node
   alias TdDd.Lineage.Units.Unit
 
   defimpl Canada.Can, for: Claims do
-    # administrator is superpowerful
-    def can?(%Claims{role: "admin"}, _action, _resource), do: true
-
     # service accounts can upload metadata and profiling
     def can?(%Claims{role: "service"}, :upload, _resource), do: true
 
@@ -36,8 +35,8 @@ defmodule TdDd.Canada.Abilities do
       DataStructureAbilities.can?(claims, action, data_structure)
     end
 
-    def can?(%Claims{} = claims, action, %{data_structure: data_structure}) do
-      DataStructureAbilities.can?(claims, action, data_structure)
+    def can?(%Claims{} = claims, action, %DataStructureVersion{} = data_structure_version) do
+      DataStructureVersionAbilities.can?(claims, action, data_structure_version)
     end
 
     def can?(%Claims{} = claims, action, %DataStructureType{} = data_structure_type) do
