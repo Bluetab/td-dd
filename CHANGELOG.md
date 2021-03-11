@@ -4,6 +4,9 @@
 
 - [TD-2951] `profile_structure` permission
 
+### Fixed
+
+- [TD-3235] Fallback of uncontroller responses on metadata controller
 ## [4.15.0] 2021-03-08
 
 ### Changed
