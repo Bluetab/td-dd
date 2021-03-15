@@ -54,6 +54,6 @@ defmodule MockPermissionResolver do
 
     Agent.get(:MockPermissions, & &1)
     |> Enum.filter(&(&1.principal_id == user_id && &1.resource_type == resource_type))
-    |> Enum.map(&Map.take(&1, [:resource_type, :resource_id, :permissions]))
+    |> Enum.map(&Map.take(&1, [:resource_type, :resource_id, :permissions, :role_name]))
   end
 end

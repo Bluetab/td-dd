@@ -79,6 +79,20 @@ defmodule TdCxWeb.SourceControllerTest do
                |> get(Routes.source_path(conn, :index))
                |> json_response(:ok)
     end
+
+    @tag authentication: [role: "user"]
+    test "user account with manage_raw_quality_rule_implementations permission can list all sources",
+        %{conn: conn, claims: %{user_id: user_id}} do
+      create_acl_entry(user_id, "domain_id", [:manage_raw_quality_rule_implementations])
+
+      insert(:source, type: "foo_type")
+      insert(:source, type: "bar_type")
+
+      assert %{"data" => [_, _]} =
+               conn
+               |> get(Routes.source_path(conn, :index))
+               |> json_response(:ok)
+    end
   end
 
   describe "show" do
