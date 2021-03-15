@@ -12,28 +12,16 @@ defmodule TdDq.Rules.Implementations.RawContent do
     field(:dataset, :string)
     field(:population, :string)
     field(:validations, :string)
-    field(:system, :integer)
     field(:structure_alias, :string)
+    field(:database, :string)
+    field(:source_id, :integer)
   end
 
   def changeset(%__MODULE__{} = struct, params) do
     struct
-    |> cast(params, [:dataset, :population, :validations, :system, :structure_alias])
+    |> cast(params, [:dataset, :population, :validations, :structure_alias, :source_id, :database])
     |> valid_content?([:dataset, :population, :validations])
-    |> validate_required([:dataset, :validations])
-    |> validate_required_inclusion([:system, :structure_alias])
-  end
-
-  def validate_required_inclusion(changeset, fields) do
-    if Enum.any?(fields, &present?(changeset, &1)) do
-      changeset
-    else
-      add_error(
-        changeset,
-        hd(fields),
-        "One of these fields must be present: [system, structure_alias]"
-      )
-    end
+    |> validate_required([:dataset, :validations, :structure_alias, :source_id])
   end
 
   def present?(changeset, field) do

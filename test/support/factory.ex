@@ -34,7 +34,9 @@ defmodule TdDq.Factory do
     %TdDq.Rules.Implementations.RawContent{
       dataset: "clientes c join address a on c.address_id=a.id",
       population: "a.country = 'SPAIN'",
-      system: 1,
+      structure_alias: "alias",
+      source_id: 1,
+      database: "raw_database",
       validations: "a.city is null"
     }
   end

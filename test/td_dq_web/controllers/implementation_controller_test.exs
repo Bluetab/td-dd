@@ -158,6 +158,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
             dataset: "cliente c join address a on c.address_id=a.id",
             population: nil,
             structure_alias: "str_alias",
+            source_id: 88,
             validations: "c.city = 'MADRID'"
           }
         }
@@ -181,7 +182,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "errors trying to create raw rule implementation without system and alias", %{
+    test "errors trying to create raw rule implementation without source_id", %{
       conn: conn,
       swagger_schema: schema
     } do
@@ -210,7 +211,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       assert %{
                "raw_content" => %{
-                 "system" => ["One of these fields must be present: [system, structure_alias]"]
+                "source_id" => ["can't be blank"],
+                "structure_alias" => ["can't be blank"]
                }
              } = errors
     end
@@ -431,7 +433,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
       params = %{
         "rule_implementation" => %{
           "raw_content" => %{
-            "system" => 123,
+            "structure_alias" => "alias",
+            "source_id" => 123,
             "dataset" => Base.encode64("Some dataset"),
             "population" => "Not encoded",
             "validations" => Base.encode64("Encoded population")
@@ -484,7 +487,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
                )
                |> validate_resp_schema(schema, "ImplementationsResponse")
                |> json_response(:ok)
-
       assert [%{"rule_id" => ^rule_id}] = data
     end
 
@@ -494,6 +496,23 @@ defmodule TdDqWeb.ImplementationControllerTest do
       swagger_schema: schema,
       implementation: %{rule_id: rule_id}
     } do
+      assert %{"data" => data} =
+               conn
+               |> post(
+                 Routes.rule_implementation_path(conn, :search_rule_implementations, rule_id)
+               )
+               |> validate_resp_schema(schema, "ImplementationsResponse")
+               |> json_response(:ok)
+
+      assert [%{"rule_id" => ^rule_id}] = data
+    end
+
+    @tag authentication: [role: "admin"]
+    test "search implementations with raw_content", %{
+      conn: conn,
+      swagger_schema: schema,
+    } do
+      %{rule_id: rule_id} = insert(:raw_implementation)
       assert %{"data" => data} =
                conn
                |> post(

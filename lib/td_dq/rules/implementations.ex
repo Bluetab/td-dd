@@ -7,7 +7,6 @@ defmodule TdDq.Rules.Implementations do
 
   alias Ecto.Multi
   alias TdCache.StructureCache
-  alias TdCache.SystemCache
   alias TdDq.Auth.Claims
   alias TdDq.Cache.ImplementationLoader
   alias TdDq.Cache.RuleLoader
@@ -296,20 +295,6 @@ defmodule TdDq.Rules.Implementations do
 
   defp without_deleted(query, :implementations) do
     where(query, [ri, _r], is_nil(ri.deleted_at))
-  end
-
-  def enrich_system(
-        %Implementation{
-          implementation_type: "raw",
-          raw_content: %{system: system_id} = raw_content
-        } = implementation
-      ) do
-    {:ok, system_info} = SystemCache.get(system_id)
-    Map.put(implementation, :raw_content, Map.put(raw_content, :system, system_info))
-  end
-
-  def enrich_system(%Implementation{} = implementation) do
-    implementation
   end
 
   def enrich_implementation_structures(%Implementation{} = implementation) do

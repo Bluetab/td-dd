@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-3421] Changes raw_content schema to:
+  - add: source_id and database
+  - remove: system
+
 ## [4.15.0] 2021-03-08
 
 ### Added

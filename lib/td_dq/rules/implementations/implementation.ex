@@ -106,7 +106,6 @@ defmodule TdDq.Rules.Implementations.Implementation do
 
   defimpl Elasticsearch.Document do
     alias Search.Helpers
-    alias TdCache.SystemCache
     alias TdCache.TemplateCache
     alias TdDfLib.Format
     alias TdDq.Rules.Rule
@@ -206,16 +205,8 @@ defmodule TdDq.Rules.Implementations.Implementation do
       raw_content = Map.get(implementation, :raw_content) || %{}
 
       raw_content
-      |> Map.take([:dataset, :population, :validations, :structure_alias, :system])
-      |> enrich_system()
+      |> Map.take([:dataset, :population, :validations, :structure_alias, :source_id, :database])
     end
-
-    def enrich_system(%{system: system} = content) do
-      {:ok, data} = SystemCache.get(system)
-      Map.put(content, :system, data)
-    end
-
-    def enrich_system(content), do: content
 
     defp transform_dataset(%{dataset: dataset = [_ | _]} = data) do
       Map.put(data, :dataset, Enum.map(dataset, &dataset_row/1))
