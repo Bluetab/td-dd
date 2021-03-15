@@ -43,7 +43,6 @@ defmodule TdDqWeb.ImplementationController do
         |> Implementations.list_implementations()
         |> Enum.map(&Repo.preload(&1, [:rule]))
         |> Enum.map(&Implementations.enrich_implementation_structures/1)
-        |> Enum.map(&Implementations.enrich_system/1)
 
       render(conn, "index.json", implementations: implementations)
     end
@@ -135,7 +134,6 @@ defmodule TdDqWeb.ImplementationController do
       |> add_rule_results()
       |> add_last_rule_result()
       |> Implementations.enrich_implementation_structures()
-      |> Implementations.enrich_system()
 
     claims = conn.assigns[:current_resource]
 

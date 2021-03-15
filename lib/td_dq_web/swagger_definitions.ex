@@ -35,6 +35,9 @@ defmodule TdDqWeb.SwaggerDefinitions do
             dataset(Schema.ref(:DatasetArray), required: false)
             population(Schema.ref(:ConditionArray), required: false)
             validations(Schema.ref(:ConditionArray), required: false)
+            raw_content(Schema.ref(:RawContent), "Raw content for raw implementation type",
+              required: false
+            )
           end
         end,
       DatasetArray:
@@ -201,9 +204,11 @@ defmodule TdDqWeb.SwaggerDefinitions do
         swagger_schema do
           properties do
             dataset(:string, "dataset raw text", required: true)
+            source_id([:integer], "source id", required: true)
+            structure_alias([:string], "source alias", required: true)
+            database([:string, nil], "source database", required: false)
             population([:string, nil], "population raw text", required: false)
             validations(:string, "validations raw text", required: true)
-            system([:object, :integer, nil], "system id, external id and name", required: true)
           end
         end,
       ImplementationCreateProps:
