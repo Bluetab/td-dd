@@ -6,6 +6,10 @@
 
 - [TD-2951] Parameters to jobs.
 
+### Changed
+
+- [TD-3421] Allow users with `manage_raw_quality_rule_implementations` permission to :index sources
+
 ## [4.15.0] 2021-03-08
 
 ### Fixed
