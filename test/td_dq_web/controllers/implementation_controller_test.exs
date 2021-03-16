@@ -398,7 +398,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> json_response(:ok)
 
       assert implementation.rule_id == data["rule_id"]
-      assert data["implementation_key"] != update_attrs.implementation_key
     end
 
     @tag authentication: [role: "admin"]

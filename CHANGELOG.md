@@ -7,6 +7,7 @@
 - [TD-3421] Changes raw_content schema to:
   - add: source_id and database
   - remove: system
+- [TD-3185] Implementation key is updated when an implementation is modified
 
 ## [4.15.0] 2021-03-08
 

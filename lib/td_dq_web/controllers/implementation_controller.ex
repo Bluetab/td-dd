@@ -162,8 +162,6 @@ defmodule TdDqWeb.ImplementationController do
       implementation_params
       |> decode()
       |> Map.drop([
-        :implementation_key,
-        "implementation_key",
         :implementation_type,
         "implementation_type"
       ])
@@ -222,13 +220,16 @@ defmodule TdDqWeb.ImplementationController do
           prefix: "rule.implementation.system_params.error"
         )
 
-      error ->
-        Logger.error("While updating rule implementation... #{inspect(error)}")
-
+      {:editable, false} ->
         conn
         |> put_status(:unprocessable_entity)
         |> put_view(ErrorView)
         |> render("422.json")
+
+      error ->
+        Logger.error("While updating rule implementation... #{inspect(error)}")
+
+        error
     end
   end
 
