@@ -54,8 +54,9 @@ defmodule TdDq.Executions do
   def list_executions(params \\ %{}, opts \\ []) do
     preloads = Keyword.get(opts, :preload, [])
 
+    params = cast(params)
+
     params
-    |> cast()
     |> Enum.reduce(Execution, fn
       {:group_id, id}, q ->
         where(q, [e], e.group_id == ^id)
