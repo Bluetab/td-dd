@@ -63,7 +63,6 @@ defmodule TdDdWeb.Router do
     end
 
     get("/data_structures/search/reindex_all", SearchController, :reindex_all)
-    get("/data_structures/search/source_alias", SearchController, :get_source_aliases)
 
     get(
       "/data_structures/search/metadata_types",

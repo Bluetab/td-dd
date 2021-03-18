@@ -32,22 +32,6 @@ defmodule TdDdWeb.SearchController do
     end
   end
 
-  def get_source_aliases(conn, _params) do
-    claims = conn.assigns[:current_resource]
-    permission = conn.assigns[:search_permission]
-    params = Map.put(%{}, :without, ["deleted_at"])
-
-    agg_terms =
-      Aggregations.get_agg_terms([
-        %{"agg_name" => "source_aliases", "field_name" => "source_alias.raw"}
-      ])
-
-    agg_results = Search.get_aggregations_values(claims, permission, params, agg_terms)
-    source_aliases = Enum.map(agg_results, &Map.get(&1, "key"))
-    body = Jason.encode!(%{data: source_aliases})
-    send_resp(conn, :ok, body)
-  end
-
   def get_structures_metadata_types(conn, _params) do
     claims = conn.assigns[:current_resource]
     permission = conn.assigns[:search_permission]
