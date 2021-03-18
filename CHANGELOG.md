@@ -9,6 +9,10 @@
   - remove: system
 - [TD-3185] Implementation key is updated when an implementation is modified
 
+### Fixed
+
+- [TD-3239] Fix execution search filter by source alias
+
 ## [4.15.0] 2021-03-08
 
 ### Added
