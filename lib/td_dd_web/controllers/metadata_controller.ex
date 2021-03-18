@@ -11,6 +11,8 @@ defmodule TdDdWeb.MetadataController do
   alias TdDd.Loader.Worker
   alias TdDd.Systems
 
+  action_fallback(TdDdWeb.FallbackController)
+
   def upload_by_system(conn, %{"system_id" => external_id} = params) do
     alias TdDd.Systems.System
 
