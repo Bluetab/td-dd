@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-3445] Postgres port configurable through `DB_HOST` environment variable
+
 ## [4.16.0] 2021-03-22
 
 ### Added
