@@ -4,7 +4,7 @@
 
 ### Changed
 
-- [TD-3445] Postgres port configurable through `DB_HOST` environment variable
+- [TD-3445] Postgres port configurable through `DB_PORT` environment variable
 
 ## [4.16.0] 2021-03-22
 
