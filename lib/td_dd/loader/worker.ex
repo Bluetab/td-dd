@@ -1,7 +1,13 @@
+defmodule TdDd.Loader.Worker.Behaviour do
+  @callback load(binary, binary, binary, map, keyword) :: :ok
+end
+
 defmodule TdDd.Loader.Worker do
   @moduledoc """
   GenServer to handle bulk loading data dictionary
   """
+
+  @behaviour TdDd.Loader.Worker.Behaviour
 
   use GenServer
 
@@ -18,6 +24,7 @@ defmodule TdDd.Loader.Worker do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
 
+  @impl TdDd.Loader.Worker.Behaviour
   def load(structures_file, fields_file, relations_file, audit, opts \\ []) do
     system_id = opts[:system_id]
     domain = opts[:domain]

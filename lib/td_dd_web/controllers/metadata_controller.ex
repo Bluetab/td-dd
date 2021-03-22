@@ -8,25 +8,10 @@ defmodule TdDdWeb.MetadataController do
   alias Plug.Upload
   alias TdCache.TaxonomyCache
   alias TdDd.DataStructures
-  alias TdDd.Loader.Worker
-  alias TdDd.Systems
+
+  @worker Application.compile_env!(:td_dd, :loader_worker)
 
   action_fallback(TdDdWeb.FallbackController)
-
-  def upload_by_system(conn, %{"system_id" => external_id} = params) do
-    alias TdDd.Systems.System
-
-    claims = conn.assigns[:current_resource]
-
-    with {:can, true} <- {:can, can_upload?(claims, params)},
-         %System{id: system_id} <- Systems.get_by(external_id: external_id) do
-      do_upload(conn, params, system_id: system_id)
-      send_resp(conn, :accepted, "")
-    else
-      {:can, false} -> {:can, false}
-      nil -> {:error, :not_found}
-    end
-  end
 
   @doc """
     Upload metadata:
@@ -110,7 +95,7 @@ defmodule TdDdWeb.MetadataController do
       send_resp(conn, :unprocessable_entity, Jason.encode!(%{error: e.message}))
   end
 
-  defp do_upload(conn, params, opts \\ []) do
+  def do_upload(conn, params, opts \\ []) do
     [fields, structures, relations] =
       ["data_fields", "data_structures", "data_structure_relations"]
       |> Enum.map(&Map.get(params, &1))
@@ -137,15 +122,16 @@ defmodule TdDdWeb.MetadataController do
     %{user_id: user_id} = conn.assigns[:current_resource]
     ts = DateTime.truncate(DateTime.utc_now(), :second)
     audit_fields = %{ts: ts, last_change_by: user_id}
-    Worker.load(structures_file, fields_file, relations_file, audit_fields, opts)
+    worker = Keyword.get(opts, :worker, @worker)
+    worker.load(structures_file, fields_file, relations_file, audit_fields, opts)
   end
 
-  defp can_upload?(claims, %{"domain" => external_id}) do
+  def can_upload?(claims, %{"domain" => external_id}) do
     domain_id = Map.get(TaxonomyCache.get_domain_external_id_to_id_map(), external_id)
     can?(claims, upload(domain_id))
   end
 
-  defp can_upload?(claims, _params), do: can?(claims, upload(DataStructure))
+  def can_upload?(claims, _params), do: can?(claims, upload(DataStructure))
 
   defp extra_opts(opts, params) do
     params
