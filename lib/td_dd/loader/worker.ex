@@ -1,4 +1,6 @@
 defmodule TdDd.Loader.Worker.Behaviour do
+  @moduledoc "Loader worker behaviour, useful for mocking"
+
   @callback load(binary, binary, binary, map, keyword) :: :ok
 end
 
