@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-3497] Allow system metadata to be uploaded using a JSON request body
+
 ## [4.16.0] 2021-03-22
 
 ### Added
