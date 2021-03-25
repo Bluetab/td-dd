@@ -3,23 +3,24 @@ defmodule TdDdWeb.SystemMetadataControllerTest do
 
   import Mox
 
-  setup do
+  setup_all do
     Application.put_env(:td_dd, :loader_worker, TdDd.Loader.MockWorker)
     Mox.defmock(TdDd.Loader.MockWorker, for: TdDd.Loader.Worker.Behaviour)
-    Mox.verify_on_exit!()
     :ok
   end
 
+  setup :verify_on_exit!
+
   describe "upload by system" do
     @tag authentication: [role: "service"]
-    test "calls worker with files and options for multipart create request", %{conn: conn} do
+    test "calls worker with csv files and options for multipart create request", %{conn: conn} do
       %{id: system_id, external_id: system_external_id} = insert(:system)
 
       params = %{
-        data_structures: upload(".gitignore"),
-        data_structure_relations: upload(".gitignore"),
-        domain: "domain",
-        source: "source"
+        "data_structures" => upload(".gitignore"),
+        "data_structure_relations" => upload(".gitignore"),
+        "domain" => "domain",
+        "source" => "source"
       }
 
       expect(TdDd.Loader.MockWorker, :load, fn structures_file,
@@ -30,18 +31,47 @@ defmodule TdDdWeb.SystemMetadataControllerTest do
         assert String.ends_with?(structures_file, ".gitignore")
         assert String.ends_with?(relations_file, ".gitignore")
         assert %{last_change_by: _, ts: _} = audit
-        assert [source: "source", domain: "domain", system_id: ^system_id, worker: _worker] = opts
+        assert opts[:domain] == "domain"
+        assert opts[:source] == "source"
+        assert opts[:system_id] == system_id
         :ok
       end)
 
       assert conn
-             |> Plug.Conn.put_req_header("content-type", "multipart/form-data")
+             |> Plug.Conn.put_req_header("content-type", "multipart/form-data; boundary=boundary")
              |> post(Routes.system_metadata_path(conn, :create, system_external_id), params)
+             |> response(:accepted)
+    end
+
+    @tag authentication: [role: "service"]
+    test "calls worker with valid json data", %{conn: conn} do
+      %{id: system_id, external_id: system_external_id} = insert(:system)
+
+      body = %{
+        "data_structures" => %{"foo" => "bar"},
+        "data_structure_relations" => %{"bar" => "baz"},
+        "domain" => "domain",
+        "source" => "source"
+      }
+
+      expect(TdDd.Loader.MockWorker, :load, fn %{id: ^system_id},
+                                               %{"system_id" => _} = params,
+                                               audit,
+                                               opts ->
+        assert body == Map.delete(params, "system_id")
+        assert %{ts: _, last_change_by: _} = audit
+        assert opts[:domain] == "domain"
+        assert opts[:source] == "source"
+        :ok
+      end)
+
+      assert conn
+             |> post(Routes.system_metadata_path(conn, :create, system_external_id, body))
              |> response(:accepted)
     end
   end
 
   defp upload(path) do
-    %Plug.Upload{path: path, filename: Path.basename(path)}
+    %Plug.Upload{path: path, filename: Path.basename(path), content_type: "text/csv"}
   end
 end

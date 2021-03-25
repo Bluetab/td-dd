@@ -5,7 +5,6 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   alias TdCache.Redix
   alias TdCache.SourceCache
   alias TdCache.StructureTypeCache
-  alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.RelationTypes
@@ -455,16 +454,10 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   end
 
   defp create_field_structure(_) do
-    domain = build(:domain)
+    domain = DomainHelper.insert_domain()
     source = create_source()
 
     data_structure = insert(:data_structure, domain_id: domain.id, source_id: source.id)
-
-    TaxonomyCache.put_domain(domain)
-
-    on_exit(fn ->
-      TaxonomyCache.delete_domain(domain.id)
-    end)
 
     data_structure_version =
       insert(:data_structure_version,

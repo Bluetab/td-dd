@@ -3,9 +3,12 @@ defmodule TdDd.Loader.Reader do
   Reads data structure, data fields and relation records from CSV files
   """
 
+  alias Ecto.Changeset
   alias TdCache.TaxonomyCache
   alias TdDd.CSV.Reader
   alias TdDd.Systems
+
+  @type system :: Systems.System.t()
 
   @structure_import_schema Application.compile_env(:td_dd, :metadata)[:structure_import_schema]
   @structure_import_required Application.compile_env(:td_dd, :metadata)[
@@ -25,6 +28,36 @@ defmodule TdDd.Loader.Reader do
     else
       _ -> {:error, :invalid}
     end
+  end
+
+  @spec enrich_data_structures!(system, binary | nil, [map]) :: [map]
+  def enrich_data_structures!(system, domain_external_id, data_structures) do
+    domain_id =
+      TaxonomyCache.get_domain_external_id_to_id_map()
+      |> Map.get(domain_external_id)
+
+    Enum.map(data_structures, fn data_structure ->
+      {%{}, @structure_import_schema}
+      |> Changeset.cast(data_structure, Map.keys(@structure_import_schema))
+      |> Changeset.put_change(:domain_id, domain_id)
+      |> Changeset.put_change(:system_id, system.id)
+      |> Changeset.validate_required(@structure_import_required)
+      |> case do
+        %{valid?: true, changes: changes} -> changes
+      end
+    end)
+  end
+
+  @spec cast_data_structure_relations!([map]) :: [map]
+  def cast_data_structure_relations!(relations) do
+    Enum.map(relations, fn relation ->
+      {%{}, @relation_import_schema}
+      |> Changeset.cast(relation, Map.keys(@structure_import_schema))
+      |> Changeset.validate_required(@relation_import_required)
+      |> case do
+        %{valid?: true, changes: changes} -> changes
+      end
+    end)
   end
 
   defp parse_data_structures(nil, _, _), do: {:ok, []}

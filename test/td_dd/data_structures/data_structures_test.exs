@@ -4,7 +4,6 @@ defmodule TdDd.DataStructuresTest do
   alias TdCache.Redix
   alias TdCache.Redix.Stream
   alias TdCache.StructureTypeCache
-  alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
@@ -707,7 +706,7 @@ defmodule TdDd.DataStructuresTest do
     end
 
     test "get_data_structure_version!/2 enriches with domain" do
-      domain = domain_fixture()
+      domain = DomainHelper.insert_domain()
       ds = insert(:data_structure, domain_id: domain.id)
       dsv = insert(:data_structure_version, data_structure_id: ds.id)
       assert %{domain: d} = DataStructures.get_data_structure_version!(dsv.id, [:domain])
@@ -827,15 +826,6 @@ defmodule TdDd.DataStructuresTest do
         |> DataStructures.get_path()
 
       assert path == ["dsv1", "dsv2"]
-    end
-
-    defp domain_fixture do
-      domain_name = "domain_name"
-      domain_id = :random.uniform(1_000_000)
-      updated_at = DateTime.utc_now()
-      TaxonomyCache.put_domain(%{name: domain_name, id: domain_id, updated_at: updated_at})
-
-      %{id: domain_id, name: domain_name}
     end
   end
 

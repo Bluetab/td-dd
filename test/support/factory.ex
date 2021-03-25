@@ -118,7 +118,8 @@ defmodule TdDd.Factory do
   def domain_factory do
     %{
       name: sequence("domain_name"),
-      id: sequence(:domain_id, & &1),
+      id: sequence(:domain_id, &(&1 + 1000)),
+      external_id: sequence("domain_external_id"),
       updated_at: DateTime.utc_now()
     }
   end

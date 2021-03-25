@@ -1,6 +1,9 @@
 defmodule TdDd.Loader.Worker.Behaviour do
   @moduledoc "Loader worker behaviour, useful for mocking"
 
+  @type system :: TdDd.Systems.System.t()
+
+  @callback load(system, map, map, keyword) :: :ok
   @callback load(binary, binary, binary, map, keyword) :: :ok
 end
 
@@ -24,6 +27,11 @@ defmodule TdDd.Loader.Worker do
 
   def start_link(_opts) do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
+  end
+
+  @impl TdDd.Loader.Worker.Behaviour
+  def load(system, %{} = params, audit, opts) do
+    GenServer.cast(__MODULE__, {:load, system, params, audit, opts})
   end
 
   @impl TdDd.Loader.Worker.Behaviour
@@ -135,6 +143,24 @@ defmodule TdDd.Loader.Worker do
         {:ok, %{} = records} -> do_load(records, audit, opts)
         error -> error
       end
+    end)
+  end
+
+  defp start_task(
+         {:load, system,
+          %{"domain" => domain_external_id, "data_structures" => data_structures} = params, audit,
+          opts}
+       ) do
+    Task.Supervisor.async_nolink(TdDd.TaskSupervisor, fn ->
+      structures = Reader.enrich_data_structures!(system, domain_external_id, data_structures)
+
+      relations =
+        params
+        |> Map.get("data_structure_relations", [])
+        |> Reader.cast_data_structure_relations!()
+
+      records = %{relations: relations, structures: structures}
+      do_load(records, audit, opts)
     end)
   end
 
