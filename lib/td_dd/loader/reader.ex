@@ -52,7 +52,7 @@ defmodule TdDd.Loader.Reader do
   def cast_data_structure_relations!(relations) do
     Enum.map(relations, fn relation ->
       {%{}, @relation_import_schema}
-      |> Changeset.cast(relation, Map.keys(@structure_import_schema))
+      |> Changeset.cast(relation, Map.keys(@relation_import_schema))
       |> Changeset.validate_required(@relation_import_required)
       |> case do
         %{valid?: true, changes: changes} -> changes
