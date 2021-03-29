@@ -23,10 +23,6 @@ defmodule TdDq.Search.IndexWorker do
     GenServer.cast(__MODULE__, :reindex)
   end
 
-  def reindex(:all) do
-    GenServer.cast(__MODULE__, {:reindex, :all})
-  end
-
   def reindex_implementations(:all) do
     GenServer.cast(__MODULE__, {:reindex_implementations, :all})
   end
@@ -84,30 +80,12 @@ defmodule TdDq.Search.IndexWorker do
   def init(state) do
     name = String.replace_prefix("#{__MODULE__}", "Elixir.", "")
     Logger.info("Running #{name}")
-
-    unless Application.get_env(:td_dq, :env) == :test do
-      Process.send_after(self(), :migrate, 0)
-    end
-
     {:ok, state}
   end
 
   @impl GenServer
-  def handle_info(:migrate, state) do
-    Indexer.migrate()
-    {:noreply, state}
-  end
-
-  @impl GenServer
   def handle_cast(:reindex, state) do
-    do_reindex(:all)
-
-    {:noreply, state}
-  end
-
-  @impl GenServer
-  def handle_cast({:reindex, :all}, state) do
-    do_reindex(:all)
+    do_reindex()
     {:noreply, state}
   end
 
@@ -131,7 +109,7 @@ defmodule TdDq.Search.IndexWorker do
       |> Enum.uniq()
 
     if Enum.member?(rule_ids, :all) do
-      do_reindex(:all)
+      do_reindex()
     else
       do_reindex_rules(rule_ids)
 
@@ -184,7 +162,7 @@ defmodule TdDq.Search.IndexWorker do
   end
 
   ## Private functions
-  defp do_reindex(:all) do
+  defp do_reindex do
     do_reindex_rules(:all)
     do_reindex_implementations(:all)
   end
