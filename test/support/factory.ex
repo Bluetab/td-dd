@@ -123,6 +123,12 @@ defmodule TdDd.Factory do
     }
   end
 
+  def execution_group_factory do
+    %TdDd.Executions.Group{
+      created_by_id: 0
+    }
+  end
+
   defp default_assoc(attrs, id_key, key) do
     if Enum.any?([key, id_key], &Map.has_key?(attrs, &1)) do
       attrs
