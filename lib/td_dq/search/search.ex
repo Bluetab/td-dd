@@ -8,8 +8,8 @@ defmodule TdDq.Search do
 
   def search(query, index) do
     Logger.debug(fn -> "Query: #{inspect(query)}" end)
-
-    response = Elasticsearch.post(Cluster, "/#{index}/_search", query)
+    alias_name = Cluster.alias_name(index)
+    response = Elasticsearch.post(Cluster, "/#{alias_name}/_search", query)
 
     case response do
       {:ok, %{"hits" => %{"hits" => results, "total" => total}, "aggregations" => aggregations}} ->
@@ -22,7 +22,8 @@ defmodule TdDq.Search do
   end
 
   def get_filters(query, index) do
-    response = Elasticsearch.post(Cluster, "/#{index}/_search", query)
+    alias_name = Cluster.alias_name(index)
+    response = Elasticsearch.post(Cluster, "/#{alias_name}/_search", query)
 
     case response do
       {:ok, %{"aggregations" => aggregations}} ->

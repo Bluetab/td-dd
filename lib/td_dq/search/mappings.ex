@@ -4,6 +4,7 @@ defmodule TdDq.Search.Mappings do
   """
   alias TdCache.TemplateCache
   alias TdDfLib.Format
+  alias TdDq.Search.Cluster
 
   @raw %{raw: %{type: "keyword"}}
   @raw_sort %{raw: %{type: "keyword"}, sort: %{type: "keyword", normalizer: "sortable"}}
@@ -11,7 +12,7 @@ defmodule TdDq.Search.Mappings do
   def get_rule_mappings do
     content_mappings = %{properties: get_dynamic_mappings("dq")}
 
-    mapping_type = %{
+    properties = %{
       id: %{type: "long"},
       business_concept_id: %{type: "text"},
       domain_ids: %{type: "long", null_value: -1},
@@ -67,19 +68,13 @@ defmodule TdDq.Search.Mappings do
       df_content: content_mappings
     }
 
-    settings = %{
-      analysis: %{
-        normalizer: %{
-          sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}
-        }
-      }
-    }
+    settings = Cluster.setting(:rules)
 
-    %{mappings: %{_doc: %{properties: mapping_type}}, settings: settings}
+    %{mappings: %{_doc: %{properties: properties}}, settings: settings}
   end
 
   def get_implementation_mappings do
-    mapping_type = %{
+    properties = %{
       id: %{type: "long"},
       business_concept_id: %{type: "text"},
       rule_id: %{type: "long"},
@@ -162,15 +157,9 @@ defmodule TdDq.Search.Mappings do
       validations: get_condition_mappings()
     }
 
-    settings = %{
-      analysis: %{
-        normalizer: %{
-          sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}
-        }
-      }
-    }
+    settings = Cluster.setting(:implementations)
 
-    %{mappings: %{_doc: %{properties: mapping_type}}, settings: settings}
+    %{mappings: %{_doc: %{properties: properties}}, settings: settings}
   end
 
   def get_dynamic_mappings(scope, type \\ nil) do

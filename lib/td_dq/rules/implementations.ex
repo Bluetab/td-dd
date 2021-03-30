@@ -162,19 +162,18 @@ defmodule TdDq.Rules.Implementations do
     reply
   end
 
-  defp on_upsert({:ok, %{implementation: implementation}} = result) do
-    id = Map.get(implementation, :id)
+  defp on_upsert({:ok, %{implementation: %{id: id}}} = result) do
     ImplementationLoader.refresh(id)
     IndexWorker.reindex_implementations(id)
     result
   end
 
-  defp on_upsert(result) do
-    with {:ok, implementation} <- result do
-      IndexWorker.reindex_implementations(Map.get(implementation, :id))
-      result
-    end
+  defp on_upsert({:ok, %{id: id} = _implementation} = result) do
+    IndexWorker.reindex_implementations(id)
+    result
   end
+
+  defp on_upsert(result), do: result
 
   def get_sources(%Implementation{} = implementation) do
     implementation
