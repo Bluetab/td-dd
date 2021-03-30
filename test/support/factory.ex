@@ -123,6 +123,10 @@ defmodule TdDd.Factory do
     }
   end
 
+  def execution_factory do
+    %TdDd.Executions.Execution{}
+  end
+
   def execution_group_factory do
     %TdDd.Executions.Group{
       created_by_id: 0

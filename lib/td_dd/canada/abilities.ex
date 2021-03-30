@@ -2,14 +2,20 @@ defmodule TdDd.Canada.Abilities do
   @moduledoc false
   alias TdCache.Link
   alias TdDd.Auth.Claims
-  alias TdDd.Canada.DataStructureAbilities
-  alias TdDd.Canada.DataStructureTypeAbilities
-  alias TdDd.Canada.DataStructureVersionAbilities
-  alias TdDd.Canada.LinkAbilities
-  alias TdDd.Canada.UnitAbilities
+
+  alias TdDd.Canada.{
+    DataStructureAbilities,
+    DataStructureTypeAbilities,
+    DataStructureVersionAbilities,
+    ExecutionAbilities,
+    LinkAbilities,
+    UnitAbilities
+  }
+
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.Executions.{Execution, Group}
   alias TdDd.Lineage.Units.Node
   alias TdDd.Lineage.Units.Unit
 
@@ -18,6 +24,14 @@ defmodule TdDd.Canada.Abilities do
     def can?(%Claims{role: "service"}, :upload, _resource), do: true
 
     def can?(%Claims{}, _action, nil), do: false
+
+    def can?(%Claims{} = claims, action, target) when target in [Execution, Group] do
+      ExecutionAbilities.can?(claims, action, target)
+    end
+
+    def can?(%Claims{} = claims, action, %Execution{} = target) do
+      ExecutionAbilities.can?(claims, action, target)
+    end
 
     def can?(%Claims{} = claims, action, %Link{} = link) do
       LinkAbilities.can?(claims, action, link)

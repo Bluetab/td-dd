@@ -641,4 +641,82 @@ defmodule TdDdWeb.SwaggerDefinitions do
         end
     }
   end
+
+  def execution_group_swagger_definitions do
+    %{
+      ExecutionGroup:
+        swagger_schema do
+          title("Execution Group")
+          description("A group of structure executions")
+
+          properties do
+            executions(Schema.ref(:Executions))
+            id(:integer, "Execution Group unique identifier", required: true)
+            inserted_at(:string, "insert timestamp")
+          end
+        end,
+      Executions:
+        swagger_schema do
+          title("Executions")
+          description("A collection of Executions")
+          type(:array)
+          items(Schema.ref(:Execution))
+        end,
+      Execution:
+        swagger_schema do
+          properties do
+            id(:integer, "Execution unique identifier", required: true)
+            inserted_at(:string, "insert timestamp")
+            _embedded(Schema.ref(:ExecutionEmbeddings))
+          end
+        end,
+      ExecutionEmbeddings:
+        swagger_schema do
+          properties do
+            data_structure(Schema.ref(:EmbeddedStructure))
+            result(Schema.ref(:EmbeddedProfile))
+          end
+        end,
+      EmbeddedStructure:
+        swagger_schema do
+          properties do
+            id(:integer, "Structure unique identifier", required: true)
+            external_id(:string, "Structure external id", required: true)
+          end
+        end,
+      ExecutionGroups:
+        swagger_schema do
+          title("Execution Groups")
+          description("A collection of Execution Groups")
+          type(:array)
+          items(Schema.ref(:ExecutionGroup))
+        end,
+      ExecutionGroupResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:ExecutionGroup))
+          end
+        end,
+      ExecutionGroupsResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:ExecutionGroups))
+          end
+        end,
+      ExecutionsResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:Executions))
+          end
+        end,
+      EmbeddedProfile:
+        swagger_schema do
+          properties do
+            id(:integer, "Profile identifier", required: true)
+            data_structure_id(:integer, "Data structure id", required: true)
+            value(:object, "Execution date", required: false)
+          end
+        end
+    }
+  end
 end
