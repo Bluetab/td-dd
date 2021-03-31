@@ -18,12 +18,7 @@ defmodule TdDd.Executions.Audit do
     user_id = Map.get(changes, :created_by_id, 0)
 
     executions = Enum.map(executions, &Map.take(&1, [:id, :data_structure_id]))
-
-    payload =
-      changes
-      |> Map.take([:filters])
-      |> Map.put(:executions, executions)
-
+    payload = %{executions: executions}
     publish("execution_group_created", "execution_group", id, user_id, payload)
   end
 
