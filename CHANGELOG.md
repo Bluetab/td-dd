@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-3108] add `profile_structure` permission to structures with `data_fields`
+
 ### Changed
 
 - [TD-3445] Postgres port configurable through `DB_PORT` environment variable
