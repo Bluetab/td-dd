@@ -41,6 +41,12 @@ defmodule TdDdWeb.ExecutionGroupController do
     with {:can, true} <- {:can, can?(claims, show(Group))},
          %Group{} = group <-
            Executions.get_group(params, preload: [executions: [:data_structure, :profile]]) do
+      executions =
+        group
+        |> Map.get(:executions)
+        |> Enum.filter(&can?(claims, show(&1)))
+
+      group = Map.put(group, :executions, executions)
       render(conn, "show.json", execution_group: group)
     end
   end

@@ -11,7 +11,7 @@ defmodule TdDdWeb.ExecutionSearchControllerTest do
     [execution: execution]
   end
 
-  describe "POST /api/executions/search" do
+  describe "POST /api/data_structures/executions/search" do
     @tag authentication: [role: "service"]
     test "service account can search executions", %{conn: conn} do
       params = %{"foo" => "bar"}

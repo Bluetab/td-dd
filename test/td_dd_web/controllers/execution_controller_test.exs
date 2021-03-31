@@ -15,7 +15,7 @@ defmodule TdDdWeb.ExecutionControllerTest do
     [group: group, executions: executions]
   end
 
-  describe "GET /api/executions" do
+  describe "GET /api/data_structures/executions" do
     @tag authentication: [role: "admin"]
     test "returns an OK response with the list of executions filtered by group", %{
       conn: conn,

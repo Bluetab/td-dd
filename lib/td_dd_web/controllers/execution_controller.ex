@@ -23,7 +23,10 @@ defmodule TdDdWeb.ExecutionController do
     claims = conn.assigns[:current_resource]
 
     with {:can, true} <- {:can, can?(claims, list(Execution))},
-         executions <- Executions.list_executions(params, preload: [:data_structure, :profile]) do
+         executions <-
+           params
+           |> Executions.list_executions(preload: [:data_structure, :profile])
+           |> Enum.filter(&can?(claims, show(&1))) do
       render(conn, "index.json", executions: executions)
     end
   end

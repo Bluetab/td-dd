@@ -15,10 +15,19 @@ defmodule TdDdWeb.ExecutionGroupControllerTest do
   end
 
   setup tags do
+    domain_id =
+      case tags do
+        %{domain: %{id: id}} -> id
+        _ -> nil
+      end
+
     groups =
       1..5
       |> Enum.map(fn _ ->
-        insert(:execution, group: build(:execution_group), data_structure: build(:data_structure))
+        insert(:execution,
+          group: build(:execution_group),
+          data_structure: build(:data_structure, domain_id: domain_id)
+        )
       end)
       |> Enum.map(fn %{group: group} = execution ->
         Map.put(group, :executions, [execution])
@@ -62,7 +71,7 @@ defmodule TdDdWeb.ExecutionGroupControllerTest do
 
   describe "GET /api/data_structures/execution_groups/:id" do
     @tag authentication: [user_name: "not_an_admin"]
-    @tag permissions: [:view_data_structures_profile]
+    @tag permissions: [:view_data_structure, :view_data_structures_profile]
     test "returns an OK response with the execution group", %{
       conn: conn,
       swagger_schema: schema,
@@ -79,8 +88,7 @@ defmodule TdDdWeb.ExecutionGroupControllerTest do
       assert %{"id" => ^id, "inserted_at" => _, "_embedded" => embedded} = data
       assert %{"executions" => [execution]} = embedded
 
-      assert %{"_embedded" => %{"data_structure" => %{"id" => _, "external_id" => _}}} =
-               execution
+      assert %{"_embedded" => %{"data_structure" => %{"id" => _, "external_id" => _}}} = execution
     end
 
     @tag authentication: [user_name: "not_an_admin"]
