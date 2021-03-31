@@ -185,10 +185,7 @@ defmodule TdDd.DataStructures.Search do
   end
 
   defp create_filter_clause(permissions, user_defined_filters) do
-    should_clause =
-      permissions
-      |> Enum.map(&entry_to_filter_clause(&1, user_defined_filters))
-
+    should_clause = Enum.map(permissions, &entry_to_filter_clause(&1, user_defined_filters))
     %{bool: %{should: should_clause}}
   end
 

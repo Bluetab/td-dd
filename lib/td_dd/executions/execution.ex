@@ -14,7 +14,7 @@ defmodule TdDd.Executions.Execution do
   alias TdDd.Executions.Group
 
   schema "executions" do
-    field(:structure_aliases, {:array, :string}, virtual: true)
+    field(:source_alias, :string, virtual: true)
     belongs_to(:data_structure, DataStructure)
     belongs_to(:group, Group)
     belongs_to(:profile, Profile)
@@ -27,7 +27,7 @@ defmodule TdDd.Executions.Execution do
 
   def changeset(%__MODULE__{} = struct, %{} = params) do
     struct
-    |> cast(params, [:group_id, :data_structure_id, :profile_id, :structure_aliases])
+    |> cast(params, [:group_id, :data_structure_id, :profile_id, :source_alias])
     |> validate_required([:data_structure_id])
     |> foreign_key_constraint(:group_id)
     |> foreign_key_constraint(:data_structure_id)

@@ -9,6 +9,8 @@ defmodule TdDd.Canada.ExecutionAbilities do
 
   import TdDd.Permissions, only: [authorized?: 2]
 
+  def can?(%Claims{role: "admin"}, _action, _target), do: true
+
   # Service accounts can do anything with executions and execution groups
   def can?(%Claims{role: "service"}, _action, _target), do: true
 

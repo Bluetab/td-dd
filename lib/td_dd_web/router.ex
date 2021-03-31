@@ -45,6 +45,13 @@ defmodule TdDdWeb.Router do
       post("/links", DataStructureLinkController, :create_link)
     end
 
+    resources "/data_structures/execution_groups", ExecutionGroupController, except: [:new, :edit] do
+      resources("/executions", ExecutionController, only: [:index])
+    end
+
+    resources("/data_structures/executions", ExecutionController, only: [:index])
+    resources("/data_structures/executions/search", ExecutionSearchController, only: [:create], singleton: true)
+
     post("/graphs/csv", GraphController, :csv)
     resources("/graphs", GraphController, only: [:create, :show])
 
