@@ -4,28 +4,26 @@ defmodule TdDd.Canada.DataStructureVersionAbilities do
   alias TdDd.Canada.DataStructureAbilities
   alias TdDd.Permissions
 
-  def can?(%Claims{role: "admin"}, :profile_structures, %{
-        class: "field",
-        source: %{config: %{"job_types" => job_types}}
-      }) do
-    Enum.member?(job_types, "profile")
-  end
-
-  def can?(%Claims{} = claims, :profile_structures, %{
-        class: "field",
+  # Only field structures or structures containing fields can be profiled
+  def can?(%Claims{} = claims, :profile, %{
+        class: class,
+        data_fields: fields,
         source: %{config: %{"job_types" => job_types}},
-        data_structure: %{domain_id: domain_id}
-      }) do
-    Enum.member?(job_types, "profile") &&
-      Permissions.authorized?(claims, :profile_structures, domain_id)
+        data_structure: data_structure
+      }) when fields != [] or class == "field" do
+    Enum.member?(job_types, "profile") && can_profile(claims, data_structure)
   end
 
-  # Only field structures can be manually profiled
-  def can?(%Claims{}, :profile_structures, _resource), do: false
+  def can?(%Claims{}, :profile, _resource), do: false
 
   def can?(%Claims{} = claims, action, %{data_structure: data_structure}) do
     DataStructureAbilities.can?(claims, action, data_structure)
   end
 
   def can?(%Claims{}, _action, _resource), do: false
+
+  defp can_profile(%Claims{role: "admin"}, _), do: true
+  defp can_profile(%Claims{} = claims, %{domain_id: domain_id} = _data_structure) do
+    Permissions.authorized?(claims, :profile_structures, domain_id)
+  end
 end

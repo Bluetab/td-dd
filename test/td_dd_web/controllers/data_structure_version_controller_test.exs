@@ -253,11 +253,11 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     end
   end
 
-  describe "GET /api/data_structures/:id/versions/:version field structures" do
-    setup [:create_field_structure]
+  describe "GET /api/data_structures/:id/versions/:version data_field structures" do
+    setup [:create_data_field_structure]
 
     @tag authentication: [role: "user"]
-    test "user needs permission to profile structure", %{
+    test "user whithout permission can not profile structure", %{
       conn: conn,
       claims: %{user_id: user_id},
       data_structure: %{id: id},
@@ -273,8 +273,58 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                |> json_response(:ok)
 
       assert %{"profile_permission" => false} = permissions
+    end
 
-      create_acl_entry(user_id, domain_id, [:profile_structures])
+    @tag authentication: [role: "user"]
+    test "user with permission can profile structure", %{
+      conn: conn,
+      claims: %{user_id: user_id},
+      data_structure: %{id: id},
+      domain: %{id: domain_id}
+    } do
+      create_acl_entry(user_id, domain_id, [:view_data_structure, :profile_structures])
+
+      assert %{"user_permissions" => permissions} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(conn, :show, id, "latest")
+               )
+               |> json_response(:ok)
+
+      assert %{"profile_permission" => true} = permissions
+    end
+  end
+
+  describe "GET /api/data_structures/:id/versions/:version field structures" do
+    setup [:create_field_structure]
+
+    @tag authentication: [role: "user"]
+    test "user whithout permission can not profile structure", %{
+      conn: conn,
+      claims: %{user_id: user_id},
+      data_structure: %{id: id},
+      domain: %{id: domain_id}
+    } do
+      create_acl_entry(user_id, domain_id, [:view_data_structure])
+
+      assert %{"user_permissions" => permissions} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(conn, :show, id, "latest")
+               )
+               |> json_response(:ok)
+
+      assert %{"profile_permission" => false} = permissions
+    end
+
+    @tag authentication: [role: "user"]
+    test "user with permission can profile structure", %{
+      conn: conn,
+      claims: %{user_id: user_id},
+      data_structure: %{id: id},
+      domain: %{id: domain_id}
+    } do
+      create_acl_entry(user_id, domain_id, [:view_data_structure, :profile_structures])
 
       assert %{"user_permissions" => permissions} =
                conn
@@ -472,6 +522,40 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
         type: "Column",
         class: "field"
       )
+
+    {:ok,
+     domain: domain,
+     data_structure: data_structure,
+     data_structure_version: data_structure_version}
+  end
+
+  defp create_data_field_structure(_) do
+    domain = build(:domain)
+    source = create_source()
+
+    data_structure = insert(:data_structure, domain_id: domain.id, source_id: source.id)
+    TaxonomyCache.put_domain(domain)
+
+    on_exit(fn ->
+      TaxonomyCache.delete_domain(domain.id)
+    end)
+
+    data_structure_version =
+      insert(:data_structure_version,
+        data_structure_id: data_structure.id,
+        type: "Table"
+      )
+
+    {:ok, field_data} = create_field_structure([])
+    field = Keyword.get(field_data, :data_structure_version)
+
+    %{id: relation_type_id} = RelationTypes.get_default()
+
+    insert(:data_structure_relation,
+      parent_id: data_structure_version.id,
+      child_id: field.id,
+      relation_type_id: relation_type_id
+    )
 
     {:ok,
      domain: domain,
