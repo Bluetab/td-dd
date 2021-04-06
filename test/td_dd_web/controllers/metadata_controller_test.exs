@@ -185,7 +185,7 @@ defmodule TdDdWeb.MetadataControllerTest do
       fields: fields,
       relations: relations
     } do
-      domain_id = :random.uniform(1_000_000)
+      domain_id = :rand.uniform(1_000_000)
       domain_name = "domain_name#{domain_id}"
       domain_external_id = "domain_exid#{domain_id}"
 
