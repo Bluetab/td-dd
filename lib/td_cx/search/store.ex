@@ -7,7 +7,7 @@ defmodule TdCx.Search.Store do
 
   import Ecto.Query
 
-  alias TdCx.Repo
+  alias TdDd.Repo
 
   @impl true
   def stream(schema) do

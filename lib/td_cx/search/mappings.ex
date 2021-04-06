@@ -5,7 +5,7 @@ defmodule TdCx.Search.Mappings do
 
   @raw_sort %{raw: %{type: "keyword"}, sort: %{type: "keyword", normalizer: "sortable"}}
 
-  alias TdCx.Search.Cluster
+  alias TdDd.Search.Cluster
 
   def get_mappings do
     mapping_type = %{

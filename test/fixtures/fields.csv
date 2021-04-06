@@ -1,0 +1,3 @@
+external_id;field_name;type;nullable;field_external_id
+1;Field1;Column;on;987
+2;Field2;Column;No;

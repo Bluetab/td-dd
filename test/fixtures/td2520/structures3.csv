@@ -1,0 +1,3 @@
+group;name;description;type;ou;external_id;class;system
+TD-25202;Child2;Child2 used to view issue td-2520;Structure;Truedat;td-2520.child2;;test1
+TD-25202;FieldChild2;FieldChild2 used to view issue td-2520;Structure;Truedat;td-2520.fieldchild2;field;test1

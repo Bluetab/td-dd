@@ -1,8 +1,8 @@
 defmodule TdCx.Jobs.JobTest do
-  use TdCx.DataCase
+  use TdDd.DataCase
 
   alias Elasticsearch.Document
-  alias TdCx.Repo
+  alias TdDd.Repo
 
   describe "Job" do
     test "encode/1 without events" do

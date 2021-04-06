@@ -1,5 +1,5 @@
 defmodule TdCx.Sources.EventsTest do
-  use TdCx.DataCase
+  use TdDd.DataCase
 
   alias TdCx.Events
   alias TdCx.Search.IndexWorker

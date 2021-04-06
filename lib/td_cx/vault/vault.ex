@@ -6,7 +6,7 @@ defmodule TdCx.Vault do
   require Logger
 
   def write_secrets(secrets_key, secrets) do
-    vault_config = Application.get_env(:td_cx, :vault)
+    vault_config = Application.get_env(:td_dd, :vault)
     token = vault_config[:token]
     secrets_path = vault_config[:secrets_path]
 
@@ -39,7 +39,7 @@ defmodule TdCx.Vault do
   end
 
   def read_secrets(secrets_key) do
-    vault_config = Application.get_env(:td_cx, :vault)
+    vault_config = Application.get_env(:td_dd, :vault)
     token = vault_config[:token]
     secrets_path = vault_config[:secrets_path]
 
@@ -63,7 +63,7 @@ defmodule TdCx.Vault do
   end
 
   def delete_secrets(secrets_key) do
-    vault_config = Application.get_env(:td_cx, :vault)
+    vault_config = Application.get_env(:td_dd, :vault)
     token = vault_config[:token]
     secrets_path = vault_config[:secrets_path]
 

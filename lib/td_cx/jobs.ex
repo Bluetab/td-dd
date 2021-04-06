@@ -5,8 +5,8 @@ defmodule TdCx.Jobs do
   import Ecto.Query, warn: false
 
   alias TdCx.Jobs.Job
-  alias TdCx.Repo
   alias TdCx.Search.IndexWorker
+  alias TdDd.Repo
 
   @doc """
   Returns the list of jobs.

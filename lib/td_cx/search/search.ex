@@ -3,7 +3,7 @@ defmodule TdCx.Search do
   Search Engine calls
   """
 
-  alias TdCx.Search.Cluster
+  alias TdDd.Search.Cluster
 
   require Logger
 

@@ -1,5 +1,5 @@
 defmodule TdCx.Sources.JobsTest do
-  use TdCx.DataCase
+  use TdDd.DataCase
 
   alias TdCx.Jobs
   alias TdCx.Search.IndexWorker

@@ -1,0 +1,62 @@
+defmodule TdDdWeb.Endpoint do
+  use Phoenix.Endpoint, otp_app: :td_dd
+
+  # Serve at "/" the static files from "priv/static" directory.
+  #
+  # You should set gzip to true if you are running phoenix.digest
+  # when deploying your static files in production.
+  plug(Plug.Static, at: "/", from: :td_dd, gzip: false, only: ~w(swagger.json))
+
+  # Code reloading can be explicitly enabled under the
+  # :code_reloader configuration of your endpoint.
+  if code_reloading? do
+    plug(Phoenix.CodeReloader)
+  end
+
+  plug(Plug.RequestId)
+  plug(Plug.Logger)
+
+  plug(
+    Plug.Parsers,
+    parsers: [
+      :urlencoded,
+      # 100M. # Increased for metadata upload. 1000 data structures, 50 data fields
+      {:multipart, length: 100_000_000},
+      :json
+    ],
+    pass: ["*/*"],
+    json_decoder: Jason
+  )
+
+  plug(Plug.MethodOverride)
+  plug(Plug.Head)
+
+  # The session will be stored in the cookie and signed,
+  # this means its contents can be read but not tampered with.
+  # Set :encryption_salt if you would also like to encrypt it.
+  plug(
+    Plug.Session,
+    store: :cookie,
+    key: "_td_dd_key",
+    signing_salt: "GHD3gj8B"
+  )
+
+  plug(CORSPlug, origin: ["*"])
+
+  plug(TdDdWeb.Router)
+
+  @doc """
+  Callback invoked for dynamically configuring the endpoint.
+
+  It receives the endpoint configuration and checks if
+  configuration should be loaded from the system environment.
+  """
+  def init(_key, config) do
+    if config[:load_from_system_env] do
+      port = System.get_env("PORT") || raise "expected the PORT environment variable to be set"
+      {:ok, Keyword.put(config, :http, [:inet6, port: port])}
+    else
+      {:ok, config}
+    end
+  end
+end

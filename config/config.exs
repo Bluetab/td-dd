@@ -3,25 +3,32 @@
 #
 # This configuration file is loaded before any dependency and
 # is restricted to this project.
-
 # General application configuration
 use Mix.Config
 
 # Environment
-config :td_cx, :env, Mix.env()
+config :td_dd, :env, Mix.env()
 
-config :td_cx,
-  ecto_repos: [TdCx.Repo]
+# General application configuration
+config :td_dd,
+  ecto_repos: [TdDd.Repo]
 
-# Configures the endpoint
-config :td_cx, TdCxWeb.Endpoint,
+# Configures the dd endpoint
+config :td_dd, TdDdWeb.Endpoint,
+  http: [port: 4005],
+  url: [host: "localhost"],
+  render_errors: [view: TdDdWeb.ErrorView, accepts: ~w(json)]
+
+# Configures the cx endpoint
+config :td_dd, TdCxWeb.Endpoint,
   http: [port: 4008],
   url: [host: "localhost"],
   render_errors: [view: TdCxWeb.ErrorView, accepts: ~w(json)]
 
-config :td_cx, TdCx.Repo, pool_size: 4
-
 # Configures Elixir's Logger
+# set EX_LOGGER_FORMAT environment variable to override Elixir's Logger format
+# (without the 'end of line' character)
+# EX_LOGGER_FORMAT='$date $time [$level] $message'
 config :logger, :console,
   format:
     (System.get_env("EX_LOGGER_FORMAT") || "$date\T$time\Z [$level]$levelpad $metadata$message") <>
@@ -30,33 +37,84 @@ config :logger, :console,
   metadata: [:pid, :module],
   utc_log: true
 
-# Use Jason for JSON parsing in Phoenix
+# Configuration for Phoenix
 config :phoenix, :json_library, Jason
-config :phoenix_swagger, :json_library, Jason
+config :phoenix_swagger, json_library: Jason
 
-config :td_cx, TdCx.Auth.Guardian,
+config :td_dd, TdDd.Auth.Guardian,
   # optional
   allowed_algos: ["HS512"],
   issuer: "tdauth",
   ttl: {1, :hours},
   secret_key: "SuperSecretTruedat"
 
-config :td_cx, :phoenix_swagger,
+config :td_dd, TdCx.Auth.Guardian,
+  # optional
+  allowed_algos: ["HS512"],
+  issuer: "tdauth",
+  ttl: {1, :hours},
+  secret_key: "SuperSecretTruedat"
+
+config :td_dd, :phoenix_swagger,
   swagger_files: %{
-    "priv/static/swagger.json" => [router: TdCxWeb.Router]
+    "priv/static/swagger.json" => [router: TdDdWeb.Router],
+    "priv/static/swagger_cx.json" => [router: TdCxWeb.Router]
   }
 
-config :td_cx, permission_resolver: TdCache.Permissions
-config :td_cx, index_worker: TdCx.Search.IndexWorker
+config :codepagex, :encodings, [
+    :ascii,
+    ~r[iso8859]i,
+    "VENDORS/MICSFT/WINDOWS/CP1252"
+]
 
-config :td_cx, TdCx.Scheduler,
+config :td_dd, permission_resolver: TdCache.Permissions
+config :td_dd, index_worker: TdDd.Search.IndexWorker
+config :td_dd, cx_index_worker: TdCx.Search.IndexWorker
+
+# Default timeout increased for bulk metadata upload
+config :td_dd, TdDd.Repo,
+  pool_size: 10,
+  timeout: 600_000
+
+config :td_cache, :audit,
+  service: "td_dd",
+  stream: "audit:events"
+
+config :td_cache, :event_stream,
+  consumer_id: "default",
+  consumer_group: "dd",
+  streams: [
+    [key: "data_structure:events", consumer: TdDd.Cache.StructureLoader],
+    [key: "template:events", consumer: TdDd.Search.IndexWorker],
+    [key: "domain:events", consumer: TdDd.Cache.DomainEventConsumer]
+  ]
+
+config :td_dd, :cache_cleaner,
+  clean_on_startup: true,
+  patterns: [
+    "structures:external_ids:*",
+    "data_fields:external_ids",
+    "TdDd.DataStructures.Migrations:td-2979",
+    "TdDd.DataStructures.Migrations:TD-2774"
+  ]
+
+config :td_dd, TdDd.Scheduler,
   jobs: [
-    [
+    cache_refresher: [
+      schedule: "@hourly",
+      task: {TdDd.Cache.StructureLoader, :refresh, []},
+      run_strategy: Quantum.RunStrategy.Local
+    ],
+    job_indexer: [
       schedule: "@daily",
       task: {TdCx.Search.IndexWorker, :reindex, []},
       run_strategy: Quantum.RunStrategy.Local
     ]
   ]
+
+
+import_config "metadata.exs"
+import_config "profiling.exs"
 
 # Import Elasticsearch config
 import_config "elastic.exs"

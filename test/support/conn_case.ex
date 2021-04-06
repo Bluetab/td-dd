@@ -1,4 +1,4 @@
-defmodule TdCxWeb.ConnCase do
+defmodule TdDdWeb.ConnCase do
   @moduledoc """
   This module defines the test case to be used by
   tests that require setting up a connection.
@@ -15,37 +15,47 @@ defmodule TdCxWeb.ConnCase do
 
   use ExUnit.CaseTemplate
 
-  import TdCxWeb.Authentication, only: :functions
+  import TdDdWeb.Authentication, only: :functions
 
   alias Ecto.Adapters.SQL.Sandbox
   alias Phoenix.ConnTest
+  alias TdDdWeb.Endpoint
 
   using do
     quote do
       # Import conveniences for testing with connections
       import Plug.Conn
       import Phoenix.ConnTest
-      import TdCx.Factory
-      import TdCxWeb.Authentication, only: [create_acl_entry: 3]
+      import TdDd.Factory
 
-      alias TdCxWeb.Router.Helpers, as: Routes
+      import TdDdWeb.Authentication, only: [create_acl_entry: 3]
+
+      alias TdCxWeb.Router.Helpers, as: CxRoutes
+      alias TdDdWeb.Router.Helpers, as: Routes
 
       # The default endpoint for testing
-      @endpoint TdCxWeb.Endpoint
+      @endpoint Endpoint
     end
   end
 
   setup tags do
     start_supervised(MockPermissionResolver)
 
-    :ok = Sandbox.checkout(TdCx.Repo)
+    :ok = Sandbox.checkout(TdDd.Repo)
 
-    unless tags[:async] do
-      Sandbox.mode(TdCx.Repo, {:shared, self()})
+    if tags[:async] or tags[:sandbox] == :shared do
+      Sandbox.mode(TdDd.Repo, {:shared, self()})
+    else
       parent = self()
 
       allow(parent, [
-        TdCx.Cache.SourceLoader
+        TdCx.Cache.SourceLoader,
+        TdDd.Cache.SystemLoader,
+        TdDd.Loader.Worker,
+        TdDd.Search.IndexWorker,
+        TdDd.Cache.StructureLoader,
+        TdDd.Lineage,
+        TdDd.Lineage.GraphData
       ])
     end
 
@@ -63,11 +73,8 @@ defmodule TdCxWeb.ConnCase do
   defp allow(parent, workers) do
     Enum.each(workers, fn worker ->
       case Process.whereis(worker) do
-        nil ->
-          nil
-
-        pid ->
-          Sandbox.allow(TdCx.Repo, parent, pid)
+        nil -> nil
+        pid -> Sandbox.allow(TdDd.Repo, parent, pid)
       end
     end)
   end

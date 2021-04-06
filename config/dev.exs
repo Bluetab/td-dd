@@ -6,8 +6,13 @@ use Mix.Config
 # The watchers configuration can be used to run external
 # watchers to your application. For example, we use it
 # with webpack to recompile .js and .css sources.
-config :td_cx, TdCxWeb.Endpoint,
-  http: [port: 4008],
+config :td_dd, TdDdWeb.Endpoint,
+  debug_errors: true,
+  code_reloader: true,
+  check_origin: false,
+  watchers: []
+
+config :td_dd, TdCxWeb.Endpoint,
   debug_errors: true,
   code_reloader: true,
   check_origin: false,
@@ -21,15 +26,15 @@ config :phoenix, :stacktrace_depth, 20
 config :phoenix, :plug_init_mode, :runtime
 
 # Configure your database
-config :td_cx, TdCx.Repo,
+config :td_dd, TdDd.Repo,
   username: "postgres",
   password: "postgres",
-  database: "td_cx_dev",
+  database: "td_dd_dev",
   hostname: "localhost"
 
 config :td_cache, redis_host: "localhost"
 
-config :td_cx, :vault,
+config :td_dd, :vault,
   token: "vault_secret_token1234",
   secrets_path: "secret/data/cx/"
 

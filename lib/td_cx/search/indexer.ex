@@ -6,9 +6,9 @@ defmodule TdCx.Search.Indexer do
   alias Elasticsearch.Index.Bulk
   alias TdCache.Redix
   alias TdCx.Jobs.Job
-  alias TdCx.Search.Cluster
   alias TdCx.Search.Mappings
   alias TdCx.Search.Store
+  alias TdDd.Search.Cluster
 
   require Logger
 
@@ -104,7 +104,7 @@ defmodule TdCx.Search.Indexer do
     end
   end
 
-  # Ensure only one instance of dq is reindexing by creating a lock in Redis
+  # Ensure only one instance of cx is reindexing by creating a lock in Redis
   defp can_migrate? do
     Redix.command!(["SET", "TdCx.Search.Indexer:LOCK", node(), "NX", "EX", 3600]) == "OK"
   end

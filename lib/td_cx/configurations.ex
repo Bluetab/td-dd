@@ -8,8 +8,8 @@ defmodule TdCx.Configurations do
   alias Ecto.Multi
   alias TdCache.TemplateCache
   alias TdCx.Configurations.Configuration
-  alias TdCx.Repo
   alias TdCx.Vault
+  alias TdDd.Repo
 
   @doc """
   Returns the list of configurations.

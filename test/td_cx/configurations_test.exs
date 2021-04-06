@@ -1,5 +1,5 @@
 defmodule TdCx.ConfigurationsTest do
-  use TdCx.DataCase
+  use TdDd.DataCase
 
   alias TdCx.Configurations
   alias TdCx.Vault

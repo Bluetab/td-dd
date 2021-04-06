@@ -73,7 +73,6 @@ services:
     user: ${CURRENT_UID-0:0}
     volumes:
       - "${CI_PROJECT_DIR}:/code"
-      - "${CI_PROJECT_DIR}/ci/.kube:/tmp/.kube"
     depends_on:
       - postgres
       - redis
@@ -88,6 +87,7 @@ services:
       DB_USER: postgres
       ES_URL: http://elastic:9200
       GUARDIAN_SECRET_KEY: topsecret
+      IMPORT_DIR: /import
       REDIS_HOST: redis
       REDIS_PORT: "6380"
       VAULT_ADDR: http://vault:8200/
@@ -107,6 +107,6 @@ services:
 
   acceptance:
     image: bluetab/wait-for:20190507133127
-    command: service:4008 -t 30 -- curl --silent service:4008/api/ping
+    command: service:4005 -t 30 -- curl --silent service:4005/api/ping
     depends_on:
       - service

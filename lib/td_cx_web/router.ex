@@ -17,7 +17,7 @@ defmodule TdCxWeb.Router do
   end
 
   scope "/api/swagger" do
-    forward "/", PhoenixSwagger.Plug.SwaggerUI, otp_app: :td_cx, swagger_file: "swagger.json"
+    forward "/", PhoenixSwagger.Plug.SwaggerUI, otp_app: :td_dd, swagger_file: "swagger_cx.json"
   end
 
   scope "/api", TdCxWeb do
@@ -50,7 +50,7 @@ defmodule TdCxWeb.Router do
     %{
       schemes: ["http", "https"],
       info: %{
-        version: Application.spec(:td_cx, :vsn),
+        version: Application.spec(:td_dd, :vsn),
         title: "Truedat Connector Management Service"
       },
       securityDefinitions: %{

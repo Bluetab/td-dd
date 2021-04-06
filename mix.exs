@@ -1,9 +1,9 @@
-defmodule TdCx.MixProject do
+defmodule TdDd.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :td_cx,
+      app: :td_dd,
       version:
         case System.get_env("APP_VERSION") do
           nil -> "4.17.0-local"
@@ -16,7 +16,7 @@ defmodule TdCx.MixProject do
       aliases: aliases(),
       deps: deps(),
       releases: [
-        td_cx: [
+        td_dd: [
           include_executables_for: [:unix],
           applications: [runtime_tools: :permanent],
           steps: [:assemble, &copy_bin_files/1, :tar]
@@ -30,8 +30,8 @@ defmodule TdCx.MixProject do
   # Type `mix help compile.app` for more information.
   def application do
     [
-      mod: {TdCx.Application, []},
-      extra_applications: [:logger, :runtime_tools, :vaultex]
+      mod: {TdDd.Application, []},
+      extra_applications: [:logger, :runtime_tools, :td_cache]
     ]
   end
 
@@ -53,23 +53,30 @@ defmodule TdCx.MixProject do
       {:plug_cowboy, "~> 2.1"},
       {:phoenix_ecto, "~> 4.0"},
       {:ecto_sql, "~> 3.0"},
+      {:jason, "~> 1.1"},
       {:postgrex, "~> 0.15.0"},
       {:gettext, "~> 0.11"},
-      {:jason, "~> 1.1"},
-      {:httpoison, "~> 1.0"},
+      {:httpoison, "~> 1.6"},
       {:credo, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
       {:guardian, "~> 2.0"},
-      {:quantum, "~> 3.0"},
       {:canada, "~> 2.0"},
+      {:quantum, "~> 3.0"},
       {:ex_machina, "~> 2.4", only: :test},
-      {:phoenix_swagger, "~> 0.8.0"},
-      {:ex_json_schema, "~> 0.5"},
-      {:vaultex, "~> 1.0"},
+      {:cors_plug, "~> 2.0"},
+      {:csv, "~> 2.4"},
+      {:phoenix_swagger, "~> 0.8.3"},
+      {:ex_json_schema, "~> 0.7.3"},
+      {:codepagex, "~> 0.1.4"},
+      {:bimap, "~> 1.1"},
       {:elasticsearch,
        git: "https://github.com/Bluetab/elasticsearch-elixir.git",
        branch: "feature/bulk-index-action"},
+      {:td_hypermedia, git: "https://github.com/Bluetab/td-hypermedia.git", tag: "4.0.0"},
       {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "4.16.0", override: true},
-      {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "4.12.0"}
+      {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "4.12.0"},
+      {:graph, git: "https://github.com/Bluetab/graph.git", tag: "1.1.0"},
+      {:vaultex, "~> 1.0"},
     ]
   end
 

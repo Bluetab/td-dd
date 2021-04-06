@@ -2,9 +2,9 @@ defmodule TdCxWeb.SourceControllerTest do
   use TdCxWeb.ConnCase
 
   alias TdCx.Cache.SourceLoader
-  alias TdCx.Repo
   alias TdCx.Sources
   alias TdCx.Sources.Source
+  alias TdDd.Repo
 
   @template %{
     id: 1,

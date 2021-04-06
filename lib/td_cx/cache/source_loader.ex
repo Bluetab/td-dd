@@ -35,7 +35,7 @@ defmodule TdCx.Cache.SourceLoader do
     name = String.replace_prefix("#{__MODULE__}", "Elixir.", "")
     Logger.info("Running #{name}")
 
-    unless Application.get_env(:td_cx, :env) == :test do
+    unless Application.get_env(:td_dd, :env) == :test do
       Process.send_after(self(), :load_cache, 0)
     end
 

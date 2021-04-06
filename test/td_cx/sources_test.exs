@@ -1,5 +1,5 @@
 defmodule TdCx.SourcesTest do
-  use TdCx.DataCase
+  use TdDd.DataCase
 
   alias TdCx.Cache.SourceLoader
   alias TdCx.Sources
@@ -186,7 +186,7 @@ defmodule TdCx.SourcesTest do
     end
 
     test "job_types/0 with valid an invalid data" do
-      claim = build(:claims)
+      claim = build(:cx_claims)
       source = insert(:source, config: %{"job_types" => ["catalog"]})
       assert ["catalog"] = Sources.job_types(claim, source)
 

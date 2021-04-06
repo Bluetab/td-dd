@@ -1,0 +1,5 @@
+name;external_id;type;system;ou;group;description
+Table 1;external_id_1;Table;System 1;Truedat;Group 1;first table
+Record 2;external_id_2;Record;System 1;Truedat;Group 1;
+Table 3;external_id_3;Table;System 1;Truedat;Group 2;third table
+Measure 4;external_id_4;Measure;System 1;Truedat;Group 2;

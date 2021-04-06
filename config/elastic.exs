@@ -1,6 +1,6 @@
 use Mix.Config
 
-config :td_cx, TdCx.Search.Cluster,
+config :td_dd, TdDd.Search.Cluster,
   # The default URL where Elasticsearch is hosted on your system.
   # Will be overridden by the `ES_URL` environment variable if set.
   url: "http://elastic:9200",
@@ -16,11 +16,11 @@ config :td_cx, TdCx.Search.Cluster,
     timeout: 5_000,
     recv_timeout: 40_000
   ],
-  aliases: %{jobs: "jobs"},
+  aliases: %{jobs: "jobs", structures: "structures"},
   default_settings: %{
     "number_of_shards" => 5,
     "number_of_replicas" => 1,
-    "refresh_interval" => "1s",
+    "refresh_interval" => "5s",
     "index.indexing.slowlog.threshold.index.warn" => "10s",
     "index.indexing.slowlog.threshold.index.info" => "5s",
     "index.indexing.slowlog.threshold.index.debug" => "2s",
@@ -39,6 +39,34 @@ config :td_cx, TdCx.Search.Cluster,
         analysis: %{
           normalizer: %{
             sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}
+          }
+        }
+      }
+    },
+    structures: %{
+      store: TdDd.Search.Store,
+      sources: [TdDd.DataStructures.DataStructureVersion],
+      bulk_page_size: 1000,
+      bulk_wait_interval: 0,
+      bulk_action: "index",
+      settings: %{
+        analysis: %{
+          analyzer: %{
+            ngram: %{
+              filter: ["lowercase", "asciifolding"],
+              tokenizer: "ngram"
+            }
+          },
+          normalizer: %{
+            sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}
+          },
+          tokenizer: %{
+            ngram: %{
+              type: "ngram",
+              min_gram: 3,
+              max_gram: 3,
+              token_chars: ["letter", "digit"]
+            }
           }
         }
       }

@@ -1,4 +1,4 @@
-defmodule TdCx.DataCase do
+defmodule TdDd.DataCase do
   @moduledoc """
   This module defines the setup for tests requiring
   access to the application's data layer.
@@ -13,31 +13,36 @@ defmodule TdCx.DataCase do
   """
 
   use ExUnit.CaseTemplate
+
   alias Ecto.Adapters.SQL.Sandbox
+  alias Ecto.Changeset
 
   using do
     quote do
-      alias TdCx.Repo
+      alias TdDd.Repo
 
       import Ecto
       import Ecto.Changeset
       import Ecto.Query
-      import TdCx.DataCase
-      import TdCx.Factory
+      import TdDd.DataCase
+      import TdDd.Factory
     end
   end
 
   setup tags do
-    :ok = Sandbox.checkout(TdCx.Repo)
+    case Sandbox.checkout(TdDd.Repo) do
+      :ok ->
+        unless tags[:async] do
+          Sandbox.mode(TdDd.Repo, {:shared, self()})
+          parent = self()
 
-    unless tags[:async] do
-      Sandbox.mode(TdCx.Repo, {:shared, self()})
-      parent = self()
+          allow(parent, [
+            TdCx.Cache.SourceLoader,
+            TdCx.Search.IndexWorker
+          ])
+        end
 
-      allow(parent, [
-        TdCx.Cache.SourceLoader,
-        TdCx.Search.IndexWorker
-      ])
+      {:already, :owner} -> :ok
     end
 
     :ok
@@ -52,7 +57,7 @@ defmodule TdCx.DataCase do
 
   """
   def errors_on(changeset) do
-    Ecto.Changeset.traverse_errors(changeset, fn {message, opts} ->
+    Changeset.traverse_errors(changeset, fn {message, opts} ->
       Enum.reduce(opts, message, fn {key, value}, acc ->
         String.replace(acc, "%{#{key}}", to_string(value))
       end)
@@ -62,10 +67,8 @@ defmodule TdCx.DataCase do
   defp allow(parent, workers) do
     Enum.each(workers, fn worker ->
       case Process.whereis(worker) do
-        nil ->
-          nil
-
-        pid -> Sandbox.allow(TdCx.Repo, parent, pid)
+        nil -> nil
+        pid -> Sandbox.allow(TdDd.Repo, parent, pid)
       end
     end)
   end

@@ -8,7 +8,7 @@ defmodule TdCx.Permissions do
   alias TdCx.Auth.Claims
   alias TdCx.Taxonomies.Domain
 
-  @permission_resolver Application.compile_env(:td_cx, :permission_resolver)
+  @permission_resolver Application.compile_env(:td_dd, :permission_resolver)
 
   def get_domain_permissions(%Claims{jti: jti}) do
     @permission_resolver.get_acls_by_resource_type(jti, "domain")

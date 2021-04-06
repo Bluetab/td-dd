@@ -5,7 +5,7 @@ defmodule TdCxWeb.SearchController do
   alias TdCx.Jobs.Job
   alias TdCxWeb.ErrorView
 
-  @index_worker Application.compile_env(:td_cx, :index_worker)
+  @index_worker Application.compile_env(:td_dd, :cx_index_worker)
 
   swagger_path :reindex_all do
     description("Reindex all ES indexes with DB content")

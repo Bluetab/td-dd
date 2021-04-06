@@ -11,9 +11,9 @@ defmodule TdCx.Sources do
   alias TdCache.TemplateCache
   alias TdCx.Auth.Claims
   alias TdCx.Cache.SourceLoader
-  alias TdCx.Repo
   alias TdCx.Sources.Source
   alias TdCx.Vault
+  alias TdDd.Repo
   alias TdDfLib.Format
   alias TdDfLib.Validation
 

@@ -20,5 +20,5 @@ defmodule TdCxWeb.Gettext do
 
   See the [Gettext Docs](https://hexdocs.pm/gettext) for detailed usage.
   """
-  use Gettext, otp_app: :td_cx
+  use Gettext, otp_app: :td_dd
 end
