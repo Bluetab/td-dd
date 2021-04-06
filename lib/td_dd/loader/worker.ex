@@ -93,6 +93,7 @@ defmodule TdDd.Loader.Worker do
 
     with {{:value, {request, from}}, queue} <- :queue.out(queue),
          %Task{ref: ref} = task <- start_task(request) do
+      # FIXME: don't inspect request
       Logger.info("Started task #{inspect(ref)} #{inspect(request)}")
       {:noreply, %{queue: queue, task: task, from: from}}
     else

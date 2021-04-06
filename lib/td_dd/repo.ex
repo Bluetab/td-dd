@@ -6,14 +6,6 @@ defmodule TdDd.Repo do
   alias TdDd.Repo
 
   @doc """
-  Dynamically loads the repository url from the
-  DATABASE_URL environment variable.
-  """
-  def init(_, opts) do
-    {:ok, Keyword.put(opts, :url, System.get_env("DATABASE_URL"))}
-  end
-
-  @doc """
   Perform preloading on chunks of a stream.
   """
   def stream_preload(stream, size, preloads, opts \\ []) do

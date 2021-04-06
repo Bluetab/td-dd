@@ -42,10 +42,18 @@ defmodule TdDd.Loader.Reader do
       |> Changeset.put_change(:domain_id, domain_id)
       |> Changeset.put_change(:system_id, system.id)
       |> Changeset.validate_required(@structure_import_required)
+      |> put_default_metadata()
       |> case do
         %{valid?: true, changes: changes} -> changes
       end
     end)
+  end
+
+  @spec put_default_metadata(Changeset.t) :: Changeset.t
+  defp put_default_metadata(%Changeset{changes: %{metadata: _}} = changeset), do: changeset
+
+  defp put_default_metadata(%Changeset{} = changeset) do
+    Changeset.put_change(changeset, :metadata, %{})
   end
 
   @spec cast_data_structure_relations!([map]) :: [map]
