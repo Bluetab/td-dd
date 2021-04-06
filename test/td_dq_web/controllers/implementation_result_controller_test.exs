@@ -2,6 +2,13 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
   use TdDqWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
+  alias TdDq.Search.IndexWorker
+
+  setup_all do
+    start_supervised(IndexWorker)
+    :ok
+  end
+
   setup _ do
     %{id: id} = implementation = insert(:implementation)
 
