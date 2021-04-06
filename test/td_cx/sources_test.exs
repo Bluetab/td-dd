@@ -2,51 +2,43 @@ defmodule TdCx.SourcesTest do
   use TdDd.DataCase
 
   alias TdCx.Sources
+  alias TdCx.Sources.Source
+
+  @valid_attrs %{
+    "config" => %{"a" => "1"},
+    "external_id" => "some external_id",
+    "secrets_key" => "some secrets_key",
+    "type" => "template_type",
+    "active" => true
+  }
+  @update_attrs %{"config" => %{"a" => "2"}, "active" => false}
+  @invalid_attrs %{"config" => 2, "external_id" => nil, "secrets_key" => nil, "type" => nil}
+  @template %{
+    id: 1,
+    name: "template_type",
+    label: "template_type",
+    scope: "cx",
+    content: [
+      %{
+        "name" => "New Group 1",
+        "fields" => [
+          %{
+            "name" => "a",
+            "type" => "string",
+            "label" => "a",
+            "widget" => "string",
+            "cardinality" => "1"
+          }
+        ]
+      }
+    ]
+  }
+
+  setup do
+    [template: Templates.create_template(@template)]
+  end
 
   describe "sources" do
-    alias TdCx.Sources.Source
-
-    @valid_attrs %{
-      "config" => %{"a" => "1"},
-      "external_id" => "some external_id",
-      "secrets_key" => "some secrets_key",
-      "type" => "app-admin",
-      "active" => true
-    }
-    @update_attrs %{"config" => %{"a" => "2"}, "active" => false}
-    @invalid_attrs %{"config" => 2, "external_id" => nil, "secrets_key" => nil, "type" => nil}
-    @app_admin_template %{
-      id: 1,
-      name: "app-admin",
-      label: "app-admin",
-      scope: "cx",
-      content: [
-        %{
-          "name" => "New Group 1",
-          "fields" => [
-            %{
-              "name" => "a",
-              "type" => "string",
-              "label" => "a",
-              "widget" => "string",
-              "cardinality" => "1"
-            }
-          ]
-        }
-      ]
-    }
-
-    def source_fixture(attrs \\ %{}) do
-      Templates.create_template(@app_admin_template)
-
-      {:ok, source} =
-        attrs
-        |> Enum.into(@valid_attrs)
-        |> Sources.create_source()
-
-      source
-    end
-
     test "list_sources/0 returns all sources" do
       source = source_fixture()
       assert Sources.list_sources() == [source]
@@ -128,7 +120,7 @@ defmodule TdCx.SourcesTest do
       assert source.config == %{"a" => "1"}
       assert source.external_id == "some external_id"
       # assert source.secrets_key == "some secrets_key"
-      assert source.type == "app-admin"
+      assert source.type == "template_type"
     end
 
     test "create_source/1 with invalid data returns error changeset" do
@@ -180,15 +172,24 @@ defmodule TdCx.SourcesTest do
     end
 
     test "job_types/0 with valid an invalid data" do
-      claim = build(:cx_claims)
+      claims = build(:cx_claims)
       source = insert(:source, config: %{"job_types" => ["catalog"]})
-      assert ["catalog"] = Sources.job_types(claim, source)
+      assert ["catalog"] = Sources.job_types(claims, source)
 
       source = insert(:source, config: %{"a" => "1"})
-      assert [] = Sources.job_types(claim, source)
+      assert [] = Sources.job_types(claims, source)
 
       source = insert(:source, config: %{"job_types" => nil})
-      assert [] = Sources.job_types(claim, source)
+      assert [] = Sources.job_types(claims, source)
     end
+  end
+
+  defp source_fixture(attrs \\ %{}) do
+    {:ok, source} =
+      attrs
+      |> Enum.into(@valid_attrs)
+      |> Sources.create_source()
+
+    source
   end
 end

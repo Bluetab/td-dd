@@ -37,8 +37,9 @@ defmodule Templates do
     TemplateCache.delete(id)
   end
 
-  defp put_template(%{updated_at: _updated_at} = attrs) do
-    TemplateCache.put(attrs)
+  defp put_template(%{updated_at: _updated_at, id: id} = attrs) do
+    {:ok, _} = TemplateCache.put(attrs, publish: false)
+    ExUnit.Callbacks.on_exit fn -> TemplateCache.delete(id) end
     Map.delete(attrs, :updated_at)
   end
 

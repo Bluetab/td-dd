@@ -144,9 +144,6 @@ defmodule TdCx.Sources do
       |> Map.put("secrets", secrets)
       |> Map.put("config", config)
       |> do_create_source()
-    else
-      error ->
-        error
     end
   end
 
