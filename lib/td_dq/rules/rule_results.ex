@@ -13,6 +13,7 @@ defmodule TdDq.Rules.RuleResults do
   alias TdDq.Rules.Implementations.Implementation
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleResult
+  alias TdDq.Search.IndexWorker
 
   require Logger
 
@@ -53,6 +54,7 @@ defmodule TdDq.Rules.RuleResults do
       {:ok, res}
     end)
     |> Repo.transaction()
+    |> on_create()
   end
 
   defp update_executions(%{id: id, implementation_key: key, inserted_at: ts} = _result) do
@@ -63,6 +65,18 @@ defmodule TdDq.Rules.RuleResults do
     |> where([e, i], i.implementation_key == ^key)
     |> update(set: [result_id: ^id, updated_at: ^ts])
     |> Repo.update_all([])
+  end
+
+  defp on_create({:ok, %{result: rule_result}} = result) do
+    %{
+      rule: %{id: rule_id},
+      implementation: %{id: implementation_id}
+    } = Repo.preload(rule_result, [:implementation, :rule])
+
+    IndexWorker.reindex_rules(rule_id)
+    IndexWorker.reindex_implementations(implementation_id)
+
+    result
   end
 
   @doc """

@@ -134,10 +134,10 @@ defmodule TdDq.RuleResultsTest do
 
   describe "create_rule_result/1" do
     test "creates a rule result with valid result" do
+      %{implementation_key: implementation_key} = insert(:implementation)
       errors = 2
       records = 1_000_000
       result = abs((records - errors) / records) * 100
-      implementation_key = "IMPL4"
 
       params = %{
         "date" => "2019-01-31-00-00-00",
