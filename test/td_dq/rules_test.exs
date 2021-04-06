@@ -9,13 +9,13 @@ defmodule TdDq.RulesTest do
   alias TdDq.MockRelationCache
   alias TdDq.Rules
   alias TdDq.Rules.Rule
-  alias TdDq.Search.IndexWorker
+  alias TdDq.Search.MockIndexWorker
 
   @stream TdCache.Audit.stream()
 
   setup_all do
     start_supervised(MockRelationCache)
-    start_supervised(IndexWorker)
+    start_supervised(MockIndexWorker)
     start_supervised(RuleLoader)
     [claims: build(:claims)]
   end

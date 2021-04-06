@@ -4,9 +4,10 @@ defmodule TdDqWeb.SearchController do
   import Canada, only: [can?: 2]
 
   alias TdDq.Rules.Search
-  alias TdDq.Search.IndexWorker
 
   plug :put_view, TdDqWeb.SearchView
+
+  @index_worker Application.compile_env(:td_dq, :index_worker)
 
   swagger_path :reindex_all_rules do
     description("Reindex rule index with DB content")
@@ -17,7 +18,7 @@ defmodule TdDqWeb.SearchController do
   end
 
   def reindex_all_rules(conn, _params) do
-    IndexWorker.reindex_rules(:all)
+    @index_worker.reindex_rules(:all)
     send_resp(conn, :accepted, "")
   end
 
@@ -30,7 +31,7 @@ defmodule TdDqWeb.SearchController do
   end
 
   def reindex_all_implementations(conn, _params) do
-    IndexWorker.reindex_implementations(:all)
+    @index_worker.reindex_implementations(:all)
     send_resp(conn, :accepted, "")
   end
 

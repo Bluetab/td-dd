@@ -6,11 +6,11 @@ defmodule TdDqWeb.RuleControllerTest do
   alias TdDq.Cache.RuleLoader
   alias TdDq.MockRelationCache
   alias TdDq.Rules.Rule
-  alias TdDq.Search.IndexWorker
+  alias TdDq.Search.MockIndexWorker
 
   setup_all do
     start_supervised(MockRelationCache)
-    start_supervised(IndexWorker)
+    start_supervised(MockIndexWorker)
     start_supervised(RuleLoader)
     :ok
   end

@@ -10,11 +10,11 @@ defmodule TdDq.Rules.ImplementationsTest do
   alias TdDq.MockRelationCache
   alias TdDq.Rules.Implementations
   alias TdDq.Rules.Implementations.Implementation
-  alias TdDq.Search.IndexWorker
+  alias TdDq.Search.MockIndexWorker
 
   setup_all do
     start_supervised(MockRelationCache)
-    start_supervised(IndexWorker)
+    start_supervised(MockIndexWorker)
     start_supervised(RuleLoader)
     start_supervised(ImplementationLoader)
     :ok

@@ -21,6 +21,8 @@ defmodule TdDqWeb.ConnCase do
   alias Phoenix.ConnTest
   alias TdDqWeb.Endpoint
 
+  @index_worker Application.compile_env(:td_dq, :index_worker)
+
   using do
     quote do
       # Import conveniences for testing with connections
@@ -45,7 +47,7 @@ defmodule TdDqWeb.ConnCase do
       Sandbox.mode(TdDq.Repo, {:shared, self()})
       parent = self()
 
-      Enum.each([TdDq.Search.IndexWorker, TdDq.Cache.RuleLoader], fn worker ->
+      Enum.each([@index_worker, TdDq.Cache.RuleLoader], fn worker ->
         case Process.whereis(worker) do
           nil ->
             nil
