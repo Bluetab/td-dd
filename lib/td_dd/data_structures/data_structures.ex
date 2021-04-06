@@ -253,10 +253,10 @@ defmodule TdDd.DataStructures do
     |> join(:inner, [child], child in assoc(child, :data_structure))
     |> with_confidential(
       Keyword.get(options, :with_confidential),
-      dynamic([_child, _parent, child_ds], child_ds.confidential == false)
+      dynamic([_child, _parent, _rel, child_ds], child_ds.confidential == false)
     )
-    |> with_deleted(options, dynamic([child, _parent, _child_ds], is_nil(child.deleted_at)))
-    |> select([child, _parent, _child_ds], child)
+    |> with_deleted(options, dynamic([child], is_nil(child.deleted_at)))
+    |> select([child], child)
     |> Repo.all()
     |> Repo.preload(options[:preload] || [])
   end
