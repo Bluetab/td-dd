@@ -10,7 +10,6 @@ defmodule TdCx.Sources do
 
   alias TdCache.TemplateCache
   alias TdCx.Auth.Claims
-  alias TdCx.Cache.SourceLoader
   alias TdCx.Sources.Source
   alias TdCx.Vault
   alias TdDd.Repo
@@ -145,7 +144,6 @@ defmodule TdCx.Sources do
       |> Map.put("secrets", secrets)
       |> Map.put("config", config)
       |> do_create_source()
-      |> on_upsert()
     else
       error ->
         error
@@ -249,9 +247,7 @@ defmodule TdCx.Sources do
         |> Map.put("secrets", secrets)
         |> Map.put("config", config)
 
-      source
-      |> do_update_source(attrs)
-      |> on_upsert()
+      do_update_source(source, attrs)
     else
       error -> error
     end
@@ -261,7 +257,6 @@ defmodule TdCx.Sources do
     source
     |> Source.changeset(attrs)
     |> Repo.update()
-    |> on_upsert()
   end
 
   defp do_update_source(
@@ -314,19 +309,6 @@ defmodule TdCx.Sources do
     |> Repo.update()
   end
 
-  defp on_upsert({:ok, %Source{id: id, deleted_at: deleted_at}} = result)
-       when not is_nil(deleted_at) do
-    SourceLoader.delete(id)
-    result
-  end
-
-  defp on_upsert({:ok, %Source{external_id: external_id}} = result) do
-    SourceLoader.refresh(external_id)
-    result
-  end
-
-  defp on_upsert(result), do: result
-
   @doc """
   Deletes a Source.
 
@@ -340,9 +322,13 @@ defmodule TdCx.Sources do
 
   """
   def delete_source(%Source{secrets_key: secrets_key} = source) do
-    with {:ok, source} <- do_delete_source(source),
-         _v <- Vault.delete_secrets(secrets_key) do
-      on_delete({:ok, source})
+    case do_delete_source(source) do
+      {:ok, source} ->
+        Vault.delete_secrets(secrets_key)
+        {:ok, source}
+
+      error ->
+        error
     end
   end
 
@@ -360,13 +346,6 @@ defmodule TdCx.Sources do
 
   defp do_delete_source(%Source{jobs: jobs} = source) when length(jobs) > 0 do
     update_source(source, %{deleted_at: DateTime.utc_now()})
-  end
-
-  defp on_delete(res) do
-    with {:ok, %Source{id: id} = _} <- res do
-      SourceLoader.delete(id)
-      res
-    end
   end
 
   @doc """

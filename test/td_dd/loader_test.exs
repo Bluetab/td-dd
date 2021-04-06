@@ -4,8 +4,6 @@ defmodule TdDd.LoaderTest do
   import Ecto.Query
   import TdDd.TestOperators
 
-  alias TdCache.Redix
-  alias TdCache.SourceCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
@@ -295,6 +293,7 @@ defmodule TdDd.LoaderTest do
     end
 
     setup [:source]
+
     test "update structures without generate version", %{source: source} do
       system = insert(:system, external_id: "SYS1", name: "SYS1")
 
@@ -396,7 +395,9 @@ defmodule TdDd.LoaderTest do
       m1_deleted = m1
 
       [m1, m2, m3] = Enum.map([v1, v2, v3], &DataStructures.get_metadata_version/1)
-      [s1, s2, s3] = Enum.map([v1, v2, v3], &DataStructures.get_data_structure!(&1.data_structure_id))
+
+      [s1, s2, s3] =
+        Enum.map([v1, v2, v3], &DataStructures.get_data_structure!(&1.data_structure_id))
 
       assert v1.version == 1
       assert m1.version == 1
@@ -743,15 +744,7 @@ defmodule TdDd.LoaderTest do
   end
 
   defp source(_) do
-    source = %{id: :rand.uniform(100_000_000), external_id: "foo", config: %{}}
-    SourceCache.put(source)
-
-    on_exit(fn ->
-      SourceCache.delete(source.id)
-      Redix.command(["DEL", "sources:ids_external_ids"])
-    end)
-
-    {:ok, source: source}
+    {:ok, source: insert(:source)}
   end
 
   defp random_structure(system_id) do

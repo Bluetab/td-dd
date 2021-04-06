@@ -1,7 +1,6 @@
 defmodule TdCxWeb.SourceControllerTest do
   use TdCxWeb.ConnCase
 
-  alias TdCx.Cache.SourceLoader
   alias TdCx.Sources
   alias TdCx.Sources.Source
   alias TdDd.Repo
@@ -52,7 +51,6 @@ defmodule TdCxWeb.SourceControllerTest do
   }
 
   setup_all do
-    {:ok, _pid} = start_supervised(SourceLoader)
     Templates.create_template(@template)
     :ok
   end
@@ -82,7 +80,7 @@ defmodule TdCxWeb.SourceControllerTest do
 
     @tag authentication: [role: "user"]
     test "user account with manage_raw_quality_rule_implementations permission can list all sources",
-        %{conn: conn, claims: %{user_id: user_id}} do
+         %{conn: conn, claims: %{user_id: user_id}} do
       create_acl_entry(user_id, "domain_id", [:manage_raw_quality_rule_implementations])
 
       insert(:source, type: "foo_type")

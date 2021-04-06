@@ -40,7 +40,6 @@ defmodule TdCx.Application do
   defp workers(_env) do
     [
       TdCx.Search.IndexWorker,
-      TdCx.Cache.SourceLoader,
       TdCx.Scheduler
     ]
   end

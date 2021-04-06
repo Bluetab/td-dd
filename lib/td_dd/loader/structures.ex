@@ -4,7 +4,7 @@ defmodule TdDd.Loader.Structures do
   """
   import Ecto.Query
 
-  alias TdCache.SourceCache
+  alias TdCx.Sources
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Repo
 
@@ -42,7 +42,11 @@ defmodule TdDd.Loader.Structures do
   end
 
   def update_source_ids(_repo, %{} = _changes, records, source, ts) do
-    source_id = Map.get(SourceCache.get_source_external_id_to_id_map(), source)
+    external_id_map =
+      Sources.list_sources()
+      |> Map.new(fn %{id: id, external_id: external_id} -> {external_id, id} end)
+
+    source_id = Map.get(external_id_map, source)
     res = update_source_ids(records, source_id, ts)
     {:ok, res}
   end

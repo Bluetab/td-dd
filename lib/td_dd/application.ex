@@ -54,7 +54,6 @@ defmodule TdDd.Application do
       {TdCache.CacheCleaner, Application.get_env(:td_dd, :cache_cleaner, [])},
       # CX Workers
       TdCx.Search.IndexWorker,
-      TdCx.Cache.SourceLoader,
       # Scheduler for periodic tasks
       TdDd.Scheduler
     ]

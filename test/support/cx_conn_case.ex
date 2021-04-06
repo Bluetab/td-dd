@@ -42,11 +42,6 @@ defmodule TdCxWeb.ConnCase do
 
     unless tags[:async] do
       Sandbox.mode(TdDd.Repo, {:shared, self()})
-      parent = self()
-
-      allow(parent, [
-        TdCx.Cache.SourceLoader
-      ])
     end
 
     case tags[:authentication] do
@@ -58,14 +53,5 @@ defmodule TdCxWeb.ConnCase do
         |> create_claims()
         |> create_user_auth_conn()
     end
-  end
-
-  defp allow(parent, workers) do
-    Enum.each(workers, fn worker ->
-      case Process.whereis(worker) do
-        nil -> nil
-        pid -> Sandbox.allow(TdDd.Repo, parent, pid)
-      end
-    end)
   end
 end

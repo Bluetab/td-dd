@@ -2,12 +2,9 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  alias TdCache.Redix
-  alias TdCache.SourceCache
   alias TdCache.StructureTypeCache
   alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
-  alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Lineage.GraphData
 
@@ -155,22 +152,19 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "renders a data structure with source", %{
-      conn: conn,
-      structure: %{id: id}
-    } do
+    test "renders a data structure with source", %{conn: conn, structure: %{id: id}} do
       assert %{"data" => %{"source" => metadata}} =
                conn
                |> get(Routes.data_structure_data_structure_version_path(conn, :show, id, 0))
                |> json_response(:ok)
 
-      assert %{"external_id" => "foo"} = metadata
+      assert %{"external_id" => _, "id" => _} = metadata
     end
 
     @tag authentication: [role: "admin"]
     test "renders a data structure by data_structure_version_id", %{
       conn: conn,
-      structure_version: %DataStructureVersion{id: id}
+      structure_version: %{id: id}
     } do
       assert %{"data" => data} =
                conn
@@ -405,15 +399,15 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   end
 
   defp create_structure_hierarchy(_) do
-    source = create_source()
+    %{id: source_id} = create_source()
 
-    parent_structure = insert(:data_structure, external_id: "Parent", source_id: source.id)
-    structure = insert(:data_structure, external_id: "Structure", source_id: source.id)
+    parent_structure = insert(:data_structure, external_id: "Parent", source_id: source_id)
+    structure = insert(:data_structure, external_id: "Structure", source_id: source_id)
     insert(:structure_metadata, data_structure_id: structure.id)
 
     child_structures = [
-      insert(:data_structure, external_id: "Child1", source_id: source.id),
-      insert(:data_structure, external_id: "Child2", source_id: source.id)
+      insert(:data_structure, external_id: "Child1", source_id: source_id),
+      insert(:data_structure, external_id: "Child2", source_id: source_id)
     ]
 
     parent_version = insert(:data_structure_version, data_structure_id: parent_structure.id)
@@ -506,15 +500,12 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
 
   defp create_field_structure(_) do
     domain = build(:domain)
-    source = create_source()
+    %{id: source_id} = create_source()
 
-    data_structure = insert(:data_structure, domain_id: domain.id, source_id: source.id)
+    data_structure = insert(:data_structure, domain_id: domain.id, source_id: source_id)
 
     TaxonomyCache.put_domain(domain)
-
-    on_exit(fn ->
-      TaxonomyCache.delete_domain(domain.id)
-    end)
+    on_exit(fn -> TaxonomyCache.delete_domain(domain.id) end)
 
     data_structure_version =
       insert(:data_structure_version,
@@ -531,14 +522,12 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
 
   defp create_data_field_structure(_) do
     domain = build(:domain)
-    source = create_source()
+    %{id: source_id} = create_source()
 
-    data_structure = insert(:data_structure, domain_id: domain.id, source_id: source.id)
+    data_structure = insert(:data_structure, domain_id: domain.id, source_id: source_id)
+
     TaxonomyCache.put_domain(domain)
-
-    on_exit(fn ->
-      TaxonomyCache.delete_domain(domain.id)
-    end)
+    on_exit(fn -> TaxonomyCache.delete_domain(domain.id) end)
 
     data_structure_version =
       insert(:data_structure_version,
@@ -564,19 +553,6 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   end
 
   defp create_source do
-    source = %{
-      id: System.unique_integer([:positive]),
-      external_id: "foo",
-      config: %{"job_types" => ["catalog", "profile"]}
-    }
-
-    SourceCache.put(source)
-
-    on_exit(fn ->
-      SourceCache.delete(source.id)
-      Redix.command(["DEL", "sources:ids_external_ids"])
-    end)
-
-    source
+    insert(:source, config: %{"job_types" => ["catalog", "profile"]})
   end
 end

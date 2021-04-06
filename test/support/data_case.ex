@@ -37,12 +37,12 @@ defmodule TdDd.DataCase do
           parent = self()
 
           allow(parent, [
-            TdCx.Cache.SourceLoader,
             TdCx.Search.IndexWorker
           ])
         end
 
-      {:already, :owner} -> :ok
+      {:already, :owner} ->
+        :ok
     end
 
     :ok
