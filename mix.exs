@@ -31,7 +31,7 @@ defmodule TdDd.MixProject do
   def application do
     [
       mod: {TdDd.Application, []},
-      extra_applications: [:logger, :runtime_tools, :td_cache]
+      extra_applications: [:logger, :runtime_tools, :td_cache, :vaultex]
     ]
   end
 

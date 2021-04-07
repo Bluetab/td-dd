@@ -7,7 +7,7 @@ config :td_dd, TdDd.Repo,
   database: System.fetch_env!("DB_NAME"),
   hostname: System.fetch_env!("DB_HOST"),
   port: System.get_env("DB_PORT", "5432") |> String.to_integer(),
-  pool_size: System.get_env("DB_POOL_SIZE", "8") |> String.to_integer(),
+  pool_size: System.get_env("DB_POOL_SIZE", "12") |> String.to_integer(),
   timeout: System.get_env("DB_TIMEOUT_MILLIS", "600000") |> String.to_integer()
 
 config :td_dd, TdDd.Auth.Guardian, secret_key: System.fetch_env!("GUARDIAN_SECRET_KEY")

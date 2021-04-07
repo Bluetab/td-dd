@@ -153,12 +153,12 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
 
     @tag authentication: [role: "admin"]
     test "renders a data structure with source", %{conn: conn, structure: %{id: id}} do
-      assert %{"data" => %{"source" => metadata}} =
+      assert %{"data" => %{"source" => source}} =
                conn
                |> get(Routes.data_structure_data_structure_version_path(conn, :show, id, 0))
                |> json_response(:ok)
 
-      assert %{"external_id" => _, "id" => _} = metadata
+      assert %{"external_id" => _, "id" => _} = source
     end
 
     @tag authentication: [role: "admin"]

@@ -73,7 +73,7 @@ config :td_dd, cx_index_worker: TdCx.Search.IndexWorker
 
 # Default timeout increased for bulk metadata upload
 config :td_dd, TdDd.Repo,
-  pool_size: 10,
+  pool_size: 12,
   timeout: 600_000
 
 config :td_cache, :audit,

@@ -355,7 +355,7 @@
   },
   "info": {
     "title": "Truedat Connector Management Service",
-    "version": ""
+    "version": "4.17.0-local"
   },
   "paths": {
     "/api/configurations": {
