@@ -11,14 +11,14 @@ defmodule TdDq.RuleResultsTest do
   alias TdDq.Cache.RuleLoader
   alias TdDq.MockRelationCache
   alias TdDq.Rules.RuleResults
-  alias TdDq.Search.IndexWorker
+  alias TdDq.Search.MockIndexWorker
 
   @stream TdCache.Audit.stream()
   @concept_id 987_654_321
 
   setup_all do
     start_supervised(MockRelationCache)
-    start_supervised(IndexWorker)
+    start_supervised(MockIndexWorker)
     start_supervised(RuleLoader)
 
     ConceptCache.put(%{id: @concept_id, domain_id: 42})

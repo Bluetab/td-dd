@@ -13,9 +13,10 @@ defmodule TdDq.Rules.RuleResults do
   alias TdDq.Rules.Implementations.Implementation
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleResult
-  alias TdDq.Search.IndexWorker
 
   require Logger
+
+  @index_worker Application.compile_env(:td_dq, :index_worker)
 
   def get_rule_result(id) do
     Repo.get_by(RuleResult, id: id)
@@ -73,11 +74,13 @@ defmodule TdDq.Rules.RuleResults do
       implementation: %{id: implementation_id}
     } = Repo.preload(rule_result, [:implementation, :rule])
 
-    IndexWorker.reindex_rules(rule_id)
-    IndexWorker.reindex_implementations(implementation_id)
+    @index_worker.reindex_rules(rule_id)
+    @index_worker.reindex_implementations(implementation_id)
 
     result
   end
+
+  defp on_create(result), do: result
 
   @doc """
   Returns last rule_result for each active implementation of rule

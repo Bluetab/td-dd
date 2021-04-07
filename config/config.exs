@@ -9,6 +9,7 @@ use Mix.Config
 config :td_dq, :env, Mix.env()
 
 config :td_dq, permission_resolver: TdCache.Permissions
+config :td_dq, index_worker: TdDq.Search.IndexWorker
 
 config :td_dq, rule_removal: true
 config :td_dq, rule_removal_frequency: 60 * 60 * 1000
