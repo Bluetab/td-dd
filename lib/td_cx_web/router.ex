@@ -50,7 +50,7 @@ defmodule TdCxWeb.Router do
     %{
       schemes: ["http", "https"],
       info: %{
-        version: Application.spec(:td_dd, :vsn),
+        version: :td_dd |> Application.spec(:vsn) |> to_string(),
         title: "Truedat Connector Management Service"
       },
       securityDefinitions: %{
