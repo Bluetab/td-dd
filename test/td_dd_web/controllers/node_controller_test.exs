@@ -52,7 +52,7 @@ defmodule TdDdWeb.NodeControllerTest do
       conn: conn,
       claims: %{user_id: user_id}
     } do
-      domain_id = :random.uniform(1_000_000)
+      domain_id = :rand.uniform(1_000_000)
       TaxonomyCache.put_domain(%{name: "domain", id: domain_id, updated_at: DateTime.utc_now()})
 
       MockPermissionResolver.create_acl_entry(%{
@@ -83,7 +83,7 @@ defmodule TdDdWeb.NodeControllerTest do
         units: [unit]
       )
 
-      domain_id = :random.uniform(1_000_000)
+      domain_id = :rand.uniform(1_000_000)
       TaxonomyCache.put_domain(%{name: "domain1", id: domain_id, updated_at: DateTime.utc_now()})
 
       MockPermissionResolver.create_acl_entry(%{
@@ -128,7 +128,7 @@ defmodule TdDdWeb.NodeControllerTest do
            conn: conn,
            claims: %{user_id: user_id}
          } do
-      domain_id = :random.uniform(1_000_000)
+      domain_id = :rand.uniform(1_000_000)
       TaxonomyCache.put_domain(%{name: "domain", id: domain_id, updated_at: DateTime.utc_now()})
 
       MockPermissionResolver.create_acl_entry(%{

@@ -34,6 +34,11 @@ defmodule TdDd.DataCase do
       :ok ->
         unless tags[:async] do
           Sandbox.mode(TdDd.Repo, {:shared, self()})
+          parent = self()
+
+          allow(parent, [
+            TdCx.Search.IndexWorker
+          ])
         end
 
       {:already, :owner} ->
@@ -44,7 +49,7 @@ defmodule TdDd.DataCase do
   end
 
   @doc """
-  A helper that transform changeset errors to a map of messages.
+  A helper that transforms changeset errors into a map of messages.
 
       assert {:error, changeset} = Accounts.create_user(%{password: "short"})
       assert "password is too short" in errors_on(changeset).password
@@ -56,6 +61,15 @@ defmodule TdDd.DataCase do
       Enum.reduce(opts, message, fn {key, value}, acc ->
         String.replace(acc, "%{#{key}}", to_string(value))
       end)
+    end)
+  end
+
+  defp allow(parent, workers) do
+    Enum.each(workers, fn worker ->
+      case Process.whereis(worker) do
+        nil -> nil
+        pid -> Sandbox.allow(TdDd.Repo, parent, pid)
+      end
     end)
   end
 end

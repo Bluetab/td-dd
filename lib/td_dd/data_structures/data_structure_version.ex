@@ -126,7 +126,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       parent = parent(dsv)
       path_sort = Enum.join(path, "~")
       domain = TaxonomyCache.get_domain(structure.domain_id) || %{}
-      source = DataStructures.get_source(structure)
+      source = DataStructures.get_source(structure) || %{}
       linked_concept_count = linked_concept_count(dsv)
       df_content = format_content(structure, type)
       with_content = not Enum.empty?(df_content || %{})

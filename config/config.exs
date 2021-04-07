@@ -3,6 +3,7 @@
 #
 # This configuration file is loaded before any dependency and
 # is restricted to this project.
+# General application configuration
 use Mix.Config
 
 # Environment
@@ -12,11 +13,17 @@ config :td_dd, :env, Mix.env()
 config :td_dd,
   ecto_repos: [TdDd.Repo]
 
-# Configures the endpoint
+# Configures the dd endpoint
 config :td_dd, TdDdWeb.Endpoint,
   http: [port: 4005],
   url: [host: "localhost"],
   render_errors: [view: TdDdWeb.ErrorView, accepts: ~w(json)]
+
+# Configures the cx endpoint
+config :td_dd, TdCxWeb.Endpoint,
+  http: [port: 4008],
+  url: [host: "localhost"],
+  render_errors: [view: TdCxWeb.ErrorView, accepts: ~w(json)]
 
 # Configures Elixir's Logger
 # set EX_LOGGER_FORMAT environment variable to override Elixir's Logger format
@@ -41,9 +48,17 @@ config :td_dd, TdDd.Auth.Guardian,
   ttl: {1, :hours},
   secret_key: "SuperSecretTruedat"
 
+config :td_dd, TdCx.Auth.Guardian,
+  # optional
+  allowed_algos: ["HS512"],
+  issuer: "tdauth",
+  ttl: {1, :hours},
+  secret_key: "SuperSecretTruedat"
+
 config :td_dd, :phoenix_swagger,
   swagger_files: %{
-    "priv/static/swagger.json" => [router: TdDdWeb.Router]
+    "priv/static/swagger.json" => [router: TdDdWeb.Router],
+    "priv/static/swagger_cx.json" => [router: TdCxWeb.Router]
   }
 
 config :codepagex, :encodings, [
@@ -54,10 +69,11 @@ config :codepagex, :encodings, [
 
 config :td_dd, permission_resolver: TdCache.Permissions
 config :td_dd, index_worker: TdDd.Search.IndexWorker
+config :td_dd, cx_index_worker: TdCx.Search.IndexWorker
 
 # Default timeout increased for bulk metadata upload
 config :td_dd, TdDd.Repo,
-  pool_size: 6,
+  pool_size: 12,
   timeout: 600_000
 
 config :td_cache, :audit,
@@ -79,7 +95,9 @@ config :td_dd, :cache_cleaner,
     "structures:external_ids:*",
     "data_fields:external_ids",
     "TdDd.DataStructures.Migrations:td-2979",
-    "TdDd.DataStructures.Migrations:TD-2774"
+    "TdDd.DataStructures.Migrations:TD-2774",
+    "sources:ids_external_ids",
+    "source:*"
   ]
 
 config :td_dd, TdDd.Scheduler,
@@ -88,8 +106,14 @@ config :td_dd, TdDd.Scheduler,
       schedule: "@hourly",
       task: {TdDd.Cache.StructureLoader, :refresh, []},
       run_strategy: Quantum.RunStrategy.Local
+    ],
+    job_indexer: [
+      schedule: "@daily",
+      task: {TdCx.Search.IndexWorker, :reindex, []},
+      run_strategy: Quantum.RunStrategy.Local
     ]
   ]
+
 
 import_config "metadata.exs"
 import_config "profiling.exs"

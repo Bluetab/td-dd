@@ -60,6 +60,7 @@ acceptance:
     - docker-compose run --rm wait_for_elastic
     - docker-compose run --rm acceptance
   after_script:
+    - docker-compose logs elastic
     - docker-compose logs service
     - docker-compose down -v
 

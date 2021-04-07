@@ -32,6 +32,7 @@ defmodule TdDdWeb.DataStructureVersionView do
         |> add_children
         |> add_versions
         |> add_system
+        |> add_source
         |> add_ancestry
         |> add_profile
         |> add_embedded_relations(dsv)
@@ -89,6 +90,7 @@ defmodule TdDdWeb.DataStructureVersionView do
       :df_content
     ])
     |> add_system(data_structure)
+    |> add_source()
   end
 
   defp add_system(json, data_structure) do
@@ -213,6 +215,16 @@ defmodule TdDdWeb.DataStructureVersionView do
       end
 
     Map.put(dsv, :system, system)
+  end
+
+  defp add_source(dsv) do
+    source =
+      case Map.get(dsv, :source) do
+        nil -> nil
+        s -> Map.take(s, [:id, :external_id])
+      end
+
+    Map.put(dsv, :source, source)
   end
 
   defp add_ancestry(dsv) do

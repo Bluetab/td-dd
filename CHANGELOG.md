@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- [TD-3498] Merged `td-cx` with `td-dd`. See `CHANGELOG-cx.md` for changes in
+  `td-cx` previous to this merge.
+
 ## [4.17.0] 2021-04-05
 
 ### Added
