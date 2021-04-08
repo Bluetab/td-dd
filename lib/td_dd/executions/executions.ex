@@ -9,16 +9,16 @@ defmodule TdDd.Executions do
   alias Ecto.Multi
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.Executions.{Audit, Execution, Group}
+  alias TdDd.Executions.{Audit, ProfileExecution, ProfileGroup}
   alias TdDd.Repo
 
   @doc """
   Fetches the `Execution` with the given id.
   """
-  def get(id, opts \\ []) do
+  def get_profile_execution(id, opts \\ []) do
     preloads = Keyword.get(opts, :preload, [])
 
-    Execution
+    ProfileExecution
     |> preload(^preloads)
     |> Repo.get(id)
   end
@@ -26,10 +26,10 @@ defmodule TdDd.Executions do
   @doc """
   Returns an execution group.
   """
-  def get_group(%{"id" => id} = _params, opts \\ []) do
+  def get_profile_group(%{"id" => id} = _params, opts \\ []) do
     preloads = Keyword.get(opts, :preload, [])
 
-    Group
+    ProfileGroup
     |> preload(^preloads)
     |> Repo.get(id)
   end
@@ -37,11 +37,11 @@ defmodule TdDd.Executions do
   @doc """
   Returns a list of execution groups.
   """
-  def list_groups(params \\ %{}, opts \\ []) do
+  def list_profile_groups(params \\ %{}, opts \\ []) do
     preloads = Keyword.get(opts, :preload, [])
 
     params
-    |> Enum.reduce(Group, fn
+    |> Enum.reduce(ProfileGroup, fn
       {:created_by_id, id}, q -> where(q, [g], g.created_by_id == ^id)
     end)
     |> preload(^preloads)
@@ -51,18 +51,18 @@ defmodule TdDd.Executions do
   @doc """
   Returns a list of executions.
   """
-  def list_executions(params \\ %{}, opts \\ []) do
+  def list_profile_executions(params \\ %{}, opts \\ []) do
     preloads = Keyword.get(opts, :preload, [])
 
     params = cast(params)
 
     params
-    |> Enum.reduce(Execution, fn
-      {:group_id, id}, q ->
-        where(q, [e], e.group_id == ^id)
+    |> Enum.reduce(ProfileExecution, fn
+      {:profile_group_id, id}, q ->
+        where(q, [e], e.profile_group_id == ^id)
 
       {:execution_group_id, id}, q ->
-        where(q, [e], e.group_id == ^id)
+        where(q, [e], e.profile_group_id == ^id)
 
       {:status, "pending"}, q ->
         q
@@ -80,7 +80,7 @@ defmodule TdDd.Executions do
 
   defp cast(%{} = params) do
     types = %{
-      group_id: :integer,
+      profile_group_id: :integer,
       execution_group_id: :integer,
       status: :string,
       source: :string,
@@ -96,15 +96,15 @@ defmodule TdDd.Executions do
   @doc """
   Create an execution group.
   """
-  def create_group(%{} = params) do
+  def create_profile_group(%{} = params) do
     params
-    |> Group.changeset()
-    |> do_create_group()
+    |> ProfileGroup.changeset()
+    |> do_create_profile_group()
   end
 
-  defp do_create_group(%Changeset{} = changeset) do
+  defp do_create_profile_group(%Changeset{} = changeset) do
     Multi.new()
-    |> Multi.insert(:group, changeset)
+    |> Multi.insert(:profile_group, changeset)
     |> Multi.run(:audit, Audit, :execution_group_created, [changeset])
     |> Repo.transaction()
   end

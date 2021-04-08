@@ -5,17 +5,20 @@ defmodule TdDdWeb.ExecutionControllerTest do
   @moduletag sandbox: :shared
 
   setup do
-    %{id: group_id} = group = insert(:execution_group)
+    %{id: group_id} = group = insert(:profile_execution_group)
 
     executions =
       Enum.map(1..5, fn _ ->
-        insert(:execution, group_id: group_id, data_structure: build(:data_structure))
+        insert(:profile_execution,
+          profile_group_id: group_id,
+          data_structure: build(:data_structure)
+        )
       end)
 
     [group: group, executions: executions]
   end
 
-  describe "GET /api/data_structures/executions" do
+  describe "GET /api/profile_executions" do
     @tag authentication: [role: "admin"]
     test "returns an OK response with the list of executions filtered by group", %{
       conn: conn,
@@ -26,8 +29,10 @@ defmodule TdDdWeb.ExecutionControllerTest do
 
       assert %{"data" => executions} =
                conn
-               |> get(Routes.execution_group_execution_path(conn, :index, group_id))
-               |> validate_resp_schema(schema, "ExecutionsResponse")
+               |> get(
+                 Routes.profile_execution_group_profile_execution_path(conn, :index, group_id)
+               )
+               |> validate_resp_schema(schema, "ProfileExecutionsResponse")
                |> json_response(:ok)
 
       assert length(executions) == 5
@@ -40,8 +45,8 @@ defmodule TdDdWeb.ExecutionControllerTest do
     } do
       assert %{"data" => executions} =
                conn
-               |> get(Routes.execution_path(conn, :index))
-               |> validate_resp_schema(schema, "ExecutionsResponse")
+               |> get(Routes.profile_execution_path(conn, :index))
+               |> validate_resp_schema(schema, "ProfileExecutionsResponse")
                |> json_response(:ok)
 
       assert length(executions) == 5

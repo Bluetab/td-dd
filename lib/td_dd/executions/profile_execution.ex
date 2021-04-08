@@ -1,4 +1,4 @@
-defmodule TdDd.Executions.Execution do
+defmodule TdDd.Executions.ProfileExecution do
   @moduledoc """
   Ecto Schema module for executions. An execution represents the relationship
   between an `Strcuture`, a `Group` and a `Profile`. If the execution has completed, it
@@ -11,12 +11,12 @@ defmodule TdDd.Executions.Execution do
 
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.Profile
-  alias TdDd.Executions.Group
+  alias TdDd.Executions.ProfileGroup
 
-  schema "executions" do
+  schema "profile_executions" do
     field(:source_alias, :string, virtual: true)
     belongs_to(:data_structure, DataStructure)
-    belongs_to(:group, Group)
+    belongs_to(:profile_group, ProfileGroup)
     belongs_to(:profile, Profile)
     timestamps(type: :utc_datetime_usec)
   end
@@ -27,9 +27,9 @@ defmodule TdDd.Executions.Execution do
 
   def changeset(%__MODULE__{} = struct, %{} = params) do
     struct
-    |> cast(params, [:group_id, :data_structure_id, :profile_id, :source_alias])
+    |> cast(params, [:profile_group_id, :data_structure_id, :profile_id, :source_alias])
     |> validate_required([:data_structure_id])
-    |> foreign_key_constraint(:group_id)
+    |> foreign_key_constraint(:profile_group_id)
     |> foreign_key_constraint(:data_structure_id)
     |> foreign_key_constraint(:profile_id)
   end

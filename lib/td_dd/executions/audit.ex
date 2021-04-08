@@ -10,7 +10,7 @@ defmodule TdDd.Executions.Audit do
   @doc """
   Publishes an `:execution_group_created` event. Should be called using `Ecto.Multi.run/5`.
   """
-  def execution_group_created(_repo, %{group: group}, %{changes: changes} = _changeset) do
+  def execution_group_created(_repo, %{profile_group: group}, %{changes: changes} = _changeset) do
     execution_group_created(group, changes)
   end
 
@@ -19,7 +19,7 @@ defmodule TdDd.Executions.Audit do
 
     executions = Enum.map(executions, &Map.take(&1, [:id, :data_structure_id]))
     payload = %{executions: executions}
-    publish("execution_group_created", "execution_group", id, user_id, payload)
+    publish("execution_group_created", "profile_execution_group", id, user_id, payload)
   end
 
   defp execution_group_created(_, _), do: {:error, :invalid}

@@ -1,15 +1,15 @@
-defmodule TdDdWeb.ExecutionView do
+defmodule TdDdWeb.ProfileExecutionView do
   use TdDdWeb, :view
 
-  def render("index.json", %{executions: executions}) do
-    %{data: render_many(executions, __MODULE__, "execution.json")}
+  def render("index.json", %{profile_executions: executions}) do
+    %{data: render_many(executions, __MODULE__, "profile_execution.json")}
   end
 
-  def render("show.json", %{execution: execution}) do
-    %{data: render_one(execution, __MODULE__, "execution.json")}
+  def render("show.json", %{profile_execution: execution}) do
+    %{data: render_one(execution, __MODULE__, "profile_execution.json")}
   end
 
-  def render("execution.json", %{execution: execution}) do
+  def render("profile_execution.json", %{profile_execution: execution}) do
     json = Map.take(execution, [:id, :inserted_at])
 
     case embeddings(execution) do

@@ -1,4 +1,4 @@
-defmodule TdDd.Executions.Group do
+defmodule TdDd.Executions.ProfileGroup do
   @moduledoc """
   Ecto Schema module for execution groups. An `ExecutionGroup` consists of a
   group of executions.
@@ -9,13 +9,13 @@ defmodule TdDd.Executions.Group do
   import Ecto.Changeset
 
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.Executions.Execution
+  alias TdDd.Executions.ProfileExecution
 
-  schema "execution_groups" do
+  schema "profile_execution_groups" do
     field(:filters, :map, virtual: true)
     field(:created_by_id, :integer)
-    has_many(:executions, Execution)
-    many_to_many(:structures, DataStructure, join_through: Execution)
+    has_many(:executions, ProfileExecution)
+    many_to_many(:structures, DataStructure, join_through: ProfileExecution)
     timestamps(updated_at: false)
   end
 
@@ -27,6 +27,6 @@ defmodule TdDd.Executions.Group do
     struct
     |> cast(params, [:created_by_id, :filters])
     |> validate_required([:created_by_id])
-    |> cast_assoc(:executions, with: &Execution.changeset/2, required: true)
+    |> cast_assoc(:executions, with: &ProfileExecution.changeset/2, required: true)
   end
 end

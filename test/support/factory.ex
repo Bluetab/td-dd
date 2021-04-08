@@ -123,12 +123,12 @@ defmodule TdDd.Factory do
     }
   end
 
-  def execution_factory do
-    %TdDd.Executions.Execution{}
+  def profile_execution_factory do
+    %TdDd.Executions.ProfileExecution{}
   end
 
-  def execution_group_factory do
-    %TdDd.Executions.Group{
+  def profile_execution_group_factory do
+    %TdDd.Executions.ProfileGroup{
       created_by_id: 0
     }
   end

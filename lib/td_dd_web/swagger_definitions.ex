@@ -642,35 +642,35 @@ defmodule TdDdWeb.SwaggerDefinitions do
     }
   end
 
-  def execution_group_swagger_definitions do
+  def profile_execution_group_swagger_definitions do
     %{
-      ExecutionGroup:
+      ProfileExecutionGroup:
         swagger_schema do
           title("Execution Group")
           description("A group of structure executions")
 
           properties do
-            executions(Schema.ref(:Executions))
+            executions(Schema.ref(:ProfileExecutions))
             id(:integer, "Execution Group unique identifier", required: true)
             inserted_at(:string, "insert timestamp")
           end
         end,
-      Executions:
+      ProfileExecutions:
         swagger_schema do
           title("Executions")
           description("A collection of Executions")
           type(:array)
-          items(Schema.ref(:Execution))
+          items(Schema.ref(:ProfileExecution))
         end,
-      Execution:
+      ProfileExecution:
         swagger_schema do
           properties do
             id(:integer, "Execution unique identifier", required: true)
             inserted_at(:string, "insert timestamp")
-            _embedded(Schema.ref(:ExecutionEmbeddings))
+            _embedded(Schema.ref(:ProfileExecutionEmbeddings))
           end
         end,
-      ExecutionEmbeddings:
+      ProfileExecutionEmbeddings:
         swagger_schema do
           properties do
             data_structure(Schema.ref(:EmbeddedStructure))
@@ -684,29 +684,29 @@ defmodule TdDdWeb.SwaggerDefinitions do
             external_id(:string, "Structure external id", required: true)
           end
         end,
-      ExecutionGroups:
+      ProfileExecutionGroups:
         swagger_schema do
           title("Execution Groups")
           description("A collection of Execution Groups")
           type(:array)
-          items(Schema.ref(:ExecutionGroup))
+          items(Schema.ref(:ProfileExecutionGroup))
         end,
-      ExecutionGroupResponse:
+      ProfileExecutionGroupResponse:
         swagger_schema do
           properties do
-            data(Schema.ref(:ExecutionGroup))
+            data(Schema.ref(:ProfileExecutionGroup))
           end
         end,
-      ExecutionGroupsResponse:
+      ProfileExecutionGroupsResponse:
         swagger_schema do
           properties do
-            data(Schema.ref(:ExecutionGroups))
+            data(Schema.ref(:ProfileExecutionGroups))
           end
         end,
-      ExecutionsResponse:
+      ProfileExecutionsResponse:
         swagger_schema do
           properties do
-            data(Schema.ref(:Executions))
+            data(Schema.ref(:ProfileExecutions))
           end
         end,
       EmbeddedProfile:
@@ -714,7 +714,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
           properties do
             id(:integer, "Profile identifier", required: true)
             data_structure_id(:integer, "Data structure id", required: true)
-            value(:object, "Execution date", required: false)
+            value(:object, "Profile", required: false)
           end
         end
     }

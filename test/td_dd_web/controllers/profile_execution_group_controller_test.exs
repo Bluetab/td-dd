@@ -24,12 +24,13 @@ defmodule TdDdWeb.ExecutionGroupControllerTest do
     groups =
       1..5
       |> Enum.map(fn _ ->
-        insert(:execution,
-          group: build(:execution_group),
-          data_structure: build(:data_structure, domain_id: domain_id)
+        insert(:profile_execution,
+          profile_group: build(:profile_execution_group),
+          data_structure: build(:data_structure, domain_id: domain_id),
+          profile: build(:profile)
         )
       end)
-      |> Enum.map(fn %{group: group} = execution ->
+      |> Enum.map(fn %{profile_group: group} = execution ->
         Map.put(group, :executions, [execution])
       end)
 
@@ -44,7 +45,7 @@ defmodule TdDdWeb.ExecutionGroupControllerTest do
     [groups: groups]
   end
 
-  describe "GET /api/data_structures/execution_groups" do
+  describe "GET /api/profile_execution_groups" do
     @tag authentication: [user_name: "not_an_admin"]
     @tag permissions: [:view_data_structures_profile]
     test "returns an OK response with the list of execution groups", %{
@@ -53,8 +54,8 @@ defmodule TdDdWeb.ExecutionGroupControllerTest do
     } do
       assert %{"data" => groups} =
                conn
-               |> get(Routes.execution_group_path(conn, :index))
-               |> validate_resp_schema(schema, "ExecutionGroupsResponse")
+               |> get(Routes.profile_execution_group_path(conn, :index))
+               |> validate_resp_schema(schema, "ProfileExecutionGroupsResponse")
                |> json_response(:ok)
 
       assert length(groups) == 5
@@ -64,12 +65,12 @@ defmodule TdDdWeb.ExecutionGroupControllerTest do
     test "returns forbidden if user doesn't have view permission", %{conn: conn} do
       assert %{"errors" => _} =
                conn
-               |> get(Routes.execution_group_path(conn, :index))
+               |> get(Routes.profile_execution_group_path(conn, :index))
                |> json_response(:forbidden)
     end
   end
 
-  describe "GET /api/data_structures/execution_groups/:id" do
+  describe "GET /api/profile_execution_groups/:id" do
     @tag authentication: [user_name: "not_an_admin"]
     @tag permissions: [:view_data_structure, :view_data_structures_profile]
     test "returns an OK response with the execution group", %{
@@ -81,8 +82,8 @@ defmodule TdDdWeb.ExecutionGroupControllerTest do
 
       assert %{"data" => data} =
                conn
-               |> get(Routes.execution_group_path(conn, :show, id))
-               |> validate_resp_schema(schema, "ExecutionGroupResponse")
+               |> get(Routes.profile_execution_group_path(conn, :show, id))
+               |> validate_resp_schema(schema, "ProfileExecutionGroupResponse")
                |> json_response(:ok)
 
       assert %{"id" => ^id, "inserted_at" => _, "_embedded" => embedded} = data
@@ -95,12 +96,12 @@ defmodule TdDdWeb.ExecutionGroupControllerTest do
     test "returns forbidden if user doesn't have view permission", %{conn: conn} do
       assert %{"errors" => _} =
                conn
-               |> get(Routes.execution_group_path(conn, :show, 123))
+               |> get(Routes.profile_execution_group_path(conn, :show, 123))
                |> json_response(:forbidden)
     end
   end
 
-  describe "POST /api/data_structures/execution_groups" do
+  describe "POST /api/profile_execution_groups" do
     @tag authentication: [user_name: "not_an_admin"]
     @tag permissions: [:profile_structures, :view_data_structures_profile]
     test "returns an OK response with the created execution group", %{
@@ -114,8 +115,8 @@ defmodule TdDdWeb.ExecutionGroupControllerTest do
 
       assert %{"data" => data} =
                conn
-               |> post(Routes.execution_group_path(conn, :create, params))
-               |> validate_resp_schema(schema, "ExecutionGroupResponse")
+               |> post(Routes.profile_execution_group_path(conn, :create, params))
+               |> validate_resp_schema(schema, "ProfileExecutionGroupResponse")
                |> json_response(:created)
 
       assert %{"id" => _, "inserted_at" => _} = data
@@ -129,7 +130,7 @@ defmodule TdDdWeb.ExecutionGroupControllerTest do
 
       assert %{"errors" => _} =
                conn
-               |> post(Routes.execution_group_path(conn, :index, params))
+               |> post(Routes.profile_execution_group_path(conn, :index, params))
                |> json_response(:forbidden)
     end
   end

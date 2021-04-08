@@ -13,69 +13,66 @@ defmodule TdDd.ExecutionsTest do
     end)
   end
 
-  describe "get_group/2" do
+  describe "get_profile_group/2" do
     test "returns a group by id" do
-      %{id: id} = insert(:execution_group)
-      assert %{id: ^id} = Executions.get_group(%{"id" => id})
+      %{id: id} = insert(:profile_execution_group)
+      assert %{id: ^id} = Executions.get_profile_group(%{"id" => id})
     end
 
     test "preloads data_structure, executions and profile" do
       %{id: structure_id} = insert(:data_structure)
-      %{id: id} = insert(:execution_group)
+      %{id: id} = insert(:profile_execution_group)
 
       %{id: execution_id, profile_id: profile_id} =
-        insert(:execution,
-          group_id: id,
+        insert(:profile_execution,
+          profile_group_id: id,
           data_structure_id: structure_id,
           profile: build(:profile)
         )
 
       assert %{structures: [%{id: ^structure_id}]} =
-               Executions.get_group(%{"id" => id}, preload: :structures)
+               Executions.get_profile_group(%{"id" => id}, preload: :structures)
 
       assert %{executions: [%{id: ^execution_id, profile: %{id: ^profile_id}}]} =
-               Executions.get_group(%{"id" => id}, preload: [executions: :profile])
+               Executions.get_profile_group(%{"id" => id}, preload: [executions: :profile])
     end
   end
 
-  describe "list_groups/2" do
+  describe "list_profile_groups/2" do
     test "lists all groups" do
-      %{id: id} = insert(:execution_group)
-      assert [%{id: ^id}] = Executions.list_groups()
+      %{id: id} = insert(:profile_execution_group)
+      assert [%{id: ^id}] = Executions.list_profile_groups()
     end
 
     test "filters by created_by_id" do
-      insert(:execution_group)
-      %{id: id} = insert(:execution_group, created_by_id: 123)
-      assert [%{id: ^id}] = Executions.list_groups(%{created_by_id: 123})
+      insert(:profile_execution_group)
+      %{id: id} = insert(:profile_execution_group, created_by_id: 123)
+      assert [%{id: ^id}] = Executions.list_profile_groups(%{created_by_id: 123})
     end
   end
 
-  describe "create_group/1" do
+  describe "create_profile_group/1" do
     test "inserts a group and publishes an audit event" do
       %{id: id1} = insert(:data_structure)
       %{id: id2} = insert(:data_structure)
 
-      filters = %{"id" => [id1, id2]}
-
       params = %{
         "created_by_id" => 0,
-        "filters" => filters,
         "executions" => [
           %{"data_structure_id" => id1},
           %{"data_structure_id" => id2}
         ]
       }
 
-      assert {:ok, multi} = Executions.create_group(params)
-      assert %{group: %{id: group_id}, audit: event_id} = multi
+      assert {:ok, multi} = Executions.create_profile_group(params)
+      assert %{profile_group: %{id: group_id}, audit: event_id} = multi
       assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
 
       resource_id = "#{group_id}"
 
       assert %{
                event: "execution_group_created",
-               resource_type: "execution_group",
+               resource_type: "profile_execution_group",
                resource_id: ^resource_id,
                payload: payload
              } = event
@@ -84,13 +81,12 @@ defmodule TdDd.ExecutionsTest do
                "executions" => [
                  %{"id" => _, "data_structure_id" => ^id1},
                  %{"id" => _, "data_structure_id" => ^id2}
-               ],
-               "filters" => ^filters
+               ]
              } = Jason.decode!(payload)
     end
   end
 
-  describe "list_executions/2" do
+  describe "list_profile_executions/2" do
     setup do
       source = "foo"
 
@@ -101,15 +97,19 @@ defmodule TdDd.ExecutionsTest do
         metadata: %{"alias" => source}
       )
 
-      %{id: group_id1} = g1 = insert(:execution_group)
-      %{id: group_id2} = g2 = insert(:execution_group)
+      %{id: group_id1} = g1 = insert(:profile_execution_group)
+      %{id: group_id2} = g2 = insert(:profile_execution_group)
 
-      e1 = insert(:execution, group_id: group_id1, data_structure_id: data_structure_id)
+      e1 =
+        insert(:profile_execution,
+          profile_group_id: group_id1,
+          data_structure_id: data_structure_id
+        )
 
       %{profile: profile} =
         e2 =
-        insert(:execution,
-          group_id: group_id2,
+        insert(:profile_execution,
+          profile_group_id: group_id2,
           data_structure_id: data_structure_id,
           profile: build(:profile)
         )
@@ -125,14 +125,14 @@ defmodule TdDd.ExecutionsTest do
 
     test "list executions", %{executions: [%{id: id1}, %{id: id2}], profile: %{id: profile_id}} do
       assert [%{id: ^id1, profile: nil}, %{id: ^id2, profile: %{id: ^profile_id}}] =
-               Executions.list_executions(%{}, preload: [:profile])
+               Executions.list_profile_executions(%{}, preload: [:profile])
     end
 
     test "list executions filtered by group", %{
       groups: [_, %{id: group_id}],
       executions: [_, %{id: id}]
     } do
-      assert [%{id: ^id}] = Executions.list_executions(%{group_id: group_id})
+      assert [%{id: ^id}] = Executions.list_profile_executions(%{profile_group_id: group_id})
     end
 
     test "list executions filtered by status", %{
@@ -140,7 +140,7 @@ defmodule TdDd.ExecutionsTest do
       executions: [%{id: id}, _]
     } do
       assert [%{id: ^id, profile: nil, data_structure: %{id: ^data_structure_id}}] =
-               Executions.list_executions(%{status: "PENDING"},
+               Executions.list_profile_executions(%{status: "PENDING"},
                  preload: [:data_structure, :profile]
                )
     end
@@ -149,16 +149,18 @@ defmodule TdDd.ExecutionsTest do
       executions: [%{id: id1}, %{id: id2}],
       source: source
     } do
-      assert [] = Executions.list_executions(%{source: "bar"})
-      assert [%{id: ^id1}, %{id: ^id2}] = Executions.list_executions(%{source: source})
-      assert [%{id: ^id1}] = Executions.list_executions(%{source: source, status: "PENDING"})
+      assert [] = Executions.list_profile_executions(%{source: "bar"})
+      assert [%{id: ^id1}, %{id: ^id2}] = Executions.list_profile_executions(%{source: source})
+
+      assert [%{id: ^id1}] =
+               Executions.list_profile_executions(%{source: source, status: "PENDING"})
     end
 
     test "list executions filtered by sources", %{
       executions: [%{id: id1}, %{id: id2}],
       source: source
     } do
-      assert [%{id: ^id1}, %{id: ^id2}] = Executions.list_executions(%{sources: [source]})
+      assert [%{id: ^id1}, %{id: ^id2}] = Executions.list_profile_executions(%{sources: [source]})
     end
   end
 end
