@@ -2,12 +2,9 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  alias TdCache.Redix
-  alias TdCache.SourceCache
   alias TdCache.StructureTypeCache
   alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
-  alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Lineage.GraphData
 
@@ -155,22 +152,19 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "renders a data structure with source", %{
-      conn: conn,
-      structure: %{id: id}
-    } do
-      assert %{"data" => %{"source" => metadata}} =
+    test "renders a data structure with source", %{conn: conn, structure: %{id: id}} do
+      assert %{"data" => %{"source" => source}} =
                conn
                |> get(Routes.data_structure_data_structure_version_path(conn, :show, id, 0))
                |> json_response(:ok)
 
-      assert %{"external_id" => "foo"} = metadata
+      assert %{"external_id" => _, "id" => _} = source
     end
 
     @tag authentication: [role: "admin"]
     test "renders a data structure by data_structure_version_id", %{
       conn: conn,
-      structure_version: %DataStructureVersion{id: id}
+      structure_version: %{id: id}
     } do
       assert %{"data" => data} =
                conn
@@ -253,11 +247,11 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     end
   end
 
-  describe "GET /api/data_structures/:id/versions/:version field structures" do
-    setup [:create_field_structure]
+  describe "GET /api/data_structures/:id/versions/:version data_field structures" do
+    setup [:create_data_field_structure]
 
     @tag authentication: [role: "user"]
-    test "user needs permission to profile structure", %{
+    test "user whithout permission can not profile structure", %{
       conn: conn,
       claims: %{user_id: user_id},
       data_structure: %{id: id},
@@ -273,8 +267,58 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                |> json_response(:ok)
 
       assert %{"profile_permission" => false} = permissions
+    end
 
-      create_acl_entry(user_id, domain_id, [:profile_structures])
+    @tag authentication: [role: "user"]
+    test "user with permission can profile structure", %{
+      conn: conn,
+      claims: %{user_id: user_id},
+      data_structure: %{id: id},
+      domain: %{id: domain_id}
+    } do
+      create_acl_entry(user_id, domain_id, [:view_data_structure, :profile_structures])
+
+      assert %{"user_permissions" => permissions} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(conn, :show, id, "latest")
+               )
+               |> json_response(:ok)
+
+      assert %{"profile_permission" => true} = permissions
+    end
+  end
+
+  describe "GET /api/data_structures/:id/versions/:version field structures" do
+    setup [:create_field_structure]
+
+    @tag authentication: [role: "user"]
+    test "user whithout permission can not profile structure", %{
+      conn: conn,
+      claims: %{user_id: user_id},
+      data_structure: %{id: id},
+      domain: %{id: domain_id}
+    } do
+      create_acl_entry(user_id, domain_id, [:view_data_structure])
+
+      assert %{"user_permissions" => permissions} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(conn, :show, id, "latest")
+               )
+               |> json_response(:ok)
+
+      assert %{"profile_permission" => false} = permissions
+    end
+
+    @tag authentication: [role: "user"]
+    test "user with permission can profile structure", %{
+      conn: conn,
+      claims: %{user_id: user_id},
+      data_structure: %{id: id},
+      domain: %{id: domain_id}
+    } do
+      create_acl_entry(user_id, domain_id, [:view_data_structure, :profile_structures])
 
       assert %{"user_permissions" => permissions} =
                conn
@@ -355,15 +399,15 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   end
 
   defp create_structure_hierarchy(_) do
-    source = create_source()
+    %{id: source_id} = create_source()
 
-    parent_structure = insert(:data_structure, external_id: "Parent", source_id: source.id)
-    structure = insert(:data_structure, external_id: "Structure", source_id: source.id)
+    parent_structure = insert(:data_structure, external_id: "Parent", source_id: source_id)
+    structure = insert(:data_structure, external_id: "Structure", source_id: source_id)
     insert(:structure_metadata, data_structure_id: structure.id)
 
     child_structures = [
-      insert(:data_structure, external_id: "Child1", source_id: source.id),
-      insert(:data_structure, external_id: "Child2", source_id: source.id)
+      insert(:data_structure, external_id: "Child1", source_id: source_id),
+      insert(:data_structure, external_id: "Child2", source_id: source_id)
     ]
 
     parent_version = insert(:data_structure_version, data_structure_id: parent_structure.id)
@@ -456,15 +500,12 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
 
   defp create_field_structure(_) do
     domain = build(:domain)
-    source = create_source()
+    %{id: source_id} = create_source()
 
-    data_structure = insert(:data_structure, domain_id: domain.id, source_id: source.id)
+    data_structure = insert(:data_structure, domain_id: domain.id, source_id: source_id)
 
     TaxonomyCache.put_domain(domain)
-
-    on_exit(fn ->
-      TaxonomyCache.delete_domain(domain.id)
-    end)
+    on_exit(fn -> TaxonomyCache.delete_domain(domain.id) end)
 
     data_structure_version =
       insert(:data_structure_version,
@@ -479,30 +520,39 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
      data_structure_version: data_structure_version}
   end
 
-  defp create_source do
-    source = %{
-      id: System.unique_integer([:positive]),
-      external_id: "foo",
-      config: %{"job_types" => ["catalog", "profile"]}
-    }
+  defp create_data_field_structure(_) do
+    domain = build(:domain)
+    %{id: source_id} = create_source()
 
-    SourceCache.put(source)
+    data_structure = insert(:data_structure, domain_id: domain.id, source_id: source_id)
 
-    on_exit(fn ->
-      SourceCache.delete(source.id)
-      Redix.command(["DEL", "sources:ids_external_ids"])
-    end)
+    TaxonomyCache.put_domain(domain)
+    on_exit(fn -> TaxonomyCache.delete_domain(domain.id) end)
 
-    source
+    data_structure_version =
+      insert(:data_structure_version,
+        data_structure_id: data_structure.id,
+        type: "Table"
+      )
+
+    {:ok, field_data} = create_field_structure([])
+    field = Keyword.get(field_data, :data_structure_version)
+
+    %{id: relation_type_id} = RelationTypes.get_default()
+
+    insert(:data_structure_relation,
+      parent_id: data_structure_version.id,
+      child_id: field.id,
+      relation_type_id: relation_type_id
+    )
+
+    {:ok,
+     domain: domain,
+     data_structure: data_structure,
+     data_structure_version: data_structure_version}
   end
 
-  defp create_acl_entry(user_id, domain_id, permissions) do
-    MockPermissionResolver.create_acl_entry(%{
-      principal_id: user_id,
-      principal_type: "user",
-      resource_id: domain_id,
-      resource_type: "domain",
-      permissions: permissions
-    })
+  defp create_source do
+    insert(:source, config: %{"job_types" => ["catalog", "profile"]})
   end
 end

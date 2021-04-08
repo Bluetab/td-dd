@@ -16,11 +16,11 @@ config :td_dd, TdDd.Search.Cluster,
     timeout: 5_000,
     recv_timeout: 40_000
   ],
-  aliases: %{structures: "structures"},
+  aliases: %{jobs: "jobs", structures: "structures"},
   default_settings: %{
     "number_of_shards" => 5,
     "number_of_replicas" => 1,
-    "refresh_interval" => "30s",
+    "refresh_interval" => "5s",
     "index.indexing.slowlog.threshold.index.warn" => "10s",
     "index.indexing.slowlog.threshold.index.info" => "5s",
     "index.indexing.slowlog.threshold.index.debug" => "2s",
@@ -29,6 +29,20 @@ config :td_dd, TdDd.Search.Cluster,
     "index.indexing.slowlog.source" => "1000"
   },
   indexes: %{
+    jobs: %{
+      store: TdCx.Search.Store,
+      sources: [TdCx.Jobs.Job],
+      bulk_page_size: 100,
+      bulk_wait_interval: 0,
+      bulk_action: "index",
+      settings: %{
+        analysis: %{
+          normalizer: %{
+            sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}
+          }
+        }
+      }
+    },
     structures: %{
       store: TdDd.Search.Store,
       sources: [TdDd.DataStructures.DataStructureVersion],

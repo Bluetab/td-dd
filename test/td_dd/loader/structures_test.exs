@@ -40,6 +40,9 @@ defmodule TdDd.Loader.StructuresTest do
   describe "update_source_ids/2" do
     @tag ids: 1..10
     test "updates source_id only if changed and source_id not nil" do
+      %{id: id1} = insert(:source)
+      %{id: id2} = insert(:source)
+
       ts = timestamp()
 
       records =
@@ -58,14 +61,14 @@ defmodule TdDd.Loader.StructuresTest do
         |> Enum.sort()
 
       assert {0, []} = Structures.update_source_ids(records, nil, ts)
-      assert {10, ^ids} = Structures.update_source_ids(records, 1, ts)
-      assert {0, []} = Structures.update_source_ids(records, 1, ts)
+      assert {10, ^ids} = Structures.update_source_ids(records, id1, ts)
+      assert {0, []} = Structures.update_source_ids(records, id1, ts)
       updated_ids = Enum.take(ids, 5)
-      assert {5, ^updated_ids} = Structures.update_source_ids(Enum.take(records, 5), 2, ts)
+      assert {5, ^updated_ids} = Structures.update_source_ids(Enum.take(records, 5), id2, ts)
       updated_ids = Enum.take(ids, -5)
-      assert {5, ^updated_ids} = Structures.update_source_ids(records, 2, ts)
+      assert {5, ^updated_ids} = Structures.update_source_ids(records, id2, ts)
       structures = DataStructures.list_data_structures(%{external_id: external_ids})
-      assert Enum.all?(structures, &(&1.source_id == 2))
+      assert Enum.all?(structures, &(&1.source_id == id2))
     end
   end
 

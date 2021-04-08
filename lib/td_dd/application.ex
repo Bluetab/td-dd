@@ -1,7 +1,6 @@
 defmodule TdDd.Application do
   @moduledoc false
   use Application
-  alias TdDdWeb.Endpoint
 
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
@@ -12,6 +11,7 @@ defmodule TdDd.Application do
     children =
       [
         TdDd.Repo,
+        TdCxWeb.Endpoint,
         TdDdWeb.Endpoint,
         TdDd.Search.Cluster
       ] ++ workers(env)
@@ -25,7 +25,8 @@ defmodule TdDd.Application do
   # Tell Phoenix to update the endpoint configuration
   # whenever the application is updated.
   def config_change(changed, _new, removed) do
-    Endpoint.config_change(changed, removed)
+    TdCxWeb.Endpoint.config_change(changed, removed)
+    TdDdWeb.Endpoint.config_change(changed, removed)
     :ok
   end
 
@@ -51,6 +52,8 @@ defmodule TdDd.Application do
       TdDd.Lineage.GraphData,
       TdDd.Lineage,
       {TdCache.CacheCleaner, Application.get_env(:td_dd, :cache_cleaner, [])},
+      # CX Workers
+      TdCx.Search.IndexWorker,
       # Scheduler for periodic tasks
       TdDd.Scheduler
     ]

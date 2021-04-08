@@ -1,0 +1,1084 @@
+{
+  "definitions": {
+    "Configuration": {
+      "description": "Representation of a configuration",
+      "properties": {
+        "content": {
+          "description": "Configuration dynamic content",
+          "type": "object"
+        },
+        "id": {
+          "description": "Configuration Id",
+          "type": "integer"
+        },
+        "secrets_key": {
+          "description": "Secrets Key",
+          "type": "string"
+        },
+        "type": {
+          "description": "Configuration type that matches with a template in scope ca",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "id"
+      ],
+      "title": "Configuration",
+      "type": "object"
+    },
+    "ConfigurationResponse": {
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/Configuration"
+        }
+      },
+      "type": "object"
+    },
+    "Configurations": {
+      "description": "A collection of configurations",
+      "items": {
+        "$ref": "#/definitions/Configuration"
+      },
+      "title": "Configurations",
+      "type": "array"
+    },
+    "ConfigurationsResponse": {
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/Configurations"
+        }
+      },
+      "type": "object"
+    },
+    "CreateConfiguration": {
+      "properties": {
+        "configuration": {
+          "properties": {
+            "content": {
+              "description": "Configuration dynamic content",
+              "type": "object"
+            },
+            "external_id": {
+              "description": "External id of the configuration",
+              "type": "string"
+            },
+            "type": {
+              "description": "Configuration type that matches with a template in scope ca",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "external_id"
+          ],
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "CreateEvent": {
+      "properties": {
+        "event": {
+          "properties": {
+            "message": {
+              "description": "Event message",
+              "type": "string"
+            },
+            "type": {
+              "description": "Event type",
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "CreateSource": {
+      "properties": {
+        "source": {
+          "properties": {
+            "config": {
+              "description": "Source configuration",
+              "type": "object"
+            },
+            "external_id": {
+              "description": "External id of the source",
+              "type": "string"
+            },
+            "type": {
+              "description": "Source type that matches with a template in scope cx",
+              "type": "string"
+            }
+          },
+          "required": [
+            "type",
+            "external_id"
+          ],
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "Event": {
+      "description": "Representation of a event",
+      "properties": {
+        "id": {
+          "description": "Event Id",
+          "type": "integer"
+        },
+        "inserted_at": {
+          "description": "Event insertion date",
+          "type": "string"
+        },
+        "message": {
+          "description": "Event message",
+          "type": "string"
+        },
+        "type": {
+          "description": "Event type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "title": "Event",
+      "type": "object"
+    },
+    "EventResponse": {
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/Event"
+        }
+      },
+      "type": "object"
+    },
+    "Events": {
+      "description": "A collection of events",
+      "items": {
+        "$ref": "#/definitions/Event"
+      },
+      "title": "Events",
+      "type": "array"
+    },
+    "EventsResponse": {
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/Events"
+        }
+      },
+      "type": "object"
+    },
+    "FilterResponse": {
+      "description": "An object whose keys are filter names and values are arrays of filterable values",
+      "example": {
+        "data": {
+          "status": [
+            "init",
+            "end"
+          ]
+        }
+      },
+      "properties": {
+        "data": {
+          "description": "Filter values",
+          "type": "object"
+        }
+      },
+      "required": [
+        "data"
+      ],
+      "title": "Filters",
+      "type": "object"
+    },
+    "Job": {
+      "description": "Representation of a job",
+      "properties": {
+        "end_date": {
+          "description": "End date of a job",
+          "type": "string"
+        },
+        "external_id": {
+          "description": "Job external id",
+          "type": "string"
+        },
+        "id": {
+          "description": "Job Id",
+          "type": "integer"
+        },
+        "message": {
+          "description": "Last job message",
+          "type": "string"
+        },
+        "source": {
+          "description": "Source of a job",
+          "type": "object"
+        },
+        "start_date": {
+          "description": "Start date of a job",
+          "type": "string"
+        },
+        "status": {
+          "description": "Job status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "external_id",
+        "id"
+      ],
+      "title": "Job",
+      "type": "object"
+    },
+    "JobFilterRequest": {
+      "example": {
+        "filters": {
+          "status": [
+            "init"
+          ]
+        },
+        "query": "searchterm"
+      },
+      "properties": {
+        "filters": {
+          "description": "Filters",
+          "type": "object"
+        },
+        "query": {
+          "description": "Query string",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "JobResponse": {
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/Job"
+        }
+      },
+      "type": "object"
+    },
+    "Jobs": {
+      "description": "A collection of jobs",
+      "items": {
+        "$ref": "#/definitions/Job"
+      },
+      "title": "Jobs",
+      "type": "array"
+    },
+    "JobsResponse": {
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/Jobs"
+        }
+      },
+      "type": "object"
+    },
+    "Source": {
+      "description": "Representation of a source",
+      "properties": {
+        "config": {
+          "description": "Source configuration",
+          "type": "object"
+        },
+        "id": {
+          "description": "Source Id",
+          "type": "integer"
+        },
+        "type": {
+          "description": "Source type that matches with a template in scope cx",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "id"
+      ],
+      "title": "Source",
+      "type": "object"
+    },
+    "SourceResponse": {
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/Source"
+        }
+      },
+      "type": "object"
+    },
+    "Sources": {
+      "description": "A collection of sources",
+      "items": {
+        "$ref": "#/definitions/Source"
+      },
+      "title": "Sources",
+      "type": "array"
+    },
+    "SourcesResponse": {
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/Sources"
+        }
+      },
+      "type": "object"
+    },
+    "UpdateConfiguration": {
+      "properties": {
+        "configuration": {
+          "properties": {
+            "content": {
+              "description": "Configuration dynamic content",
+              "type": "object"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "UpdateSource": {
+      "properties": {
+        "source": {
+          "properties": {
+            "config": {
+              "description": "Source configuration",
+              "type": "object"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "info": {
+    "title": "Truedat Connector Management Service",
+    "version": ""
+  },
+  "paths": {
+    "/api/configurations": {
+      "get": {
+        "description": "Get configurations",
+        "operationId": "TdCxWeb.ConfigurationController.index",
+        "parameters": [
+          {
+            "description": "query string",
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ConfigurationsResponse"
+            }
+          },
+          "422": {
+            "description": "Client Error"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Configuration"
+        ]
+      },
+      "post": {
+        "description": "Creates a new configuration",
+        "operationId": "TdCxWeb.ConfigurationController.create",
+        "parameters": [
+          {
+            "description": "Parameters used to create a configuration",
+            "in": "body",
+            "name": "configuration",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/CreateConfiguration"
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ConfigurationResponse"
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "422": {
+            "description": "Client Error"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Configuration"
+        ]
+      }
+    },
+    "/api/configurations/{external_id}": {
+      "delete": {
+        "description": "Deletes a configuration",
+        "operationId": "TdCxWeb.ConfigurationController.delete",
+        "parameters": [
+          {
+            "description": "Configuration external id",
+            "in": "path",
+            "name": "external_id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "422": {
+            "description": "Client Error"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Configuration"
+        ]
+      },
+      "get": {
+        "description": "Get configuration with the given external_id",
+        "operationId": "TdCxWeb.ConfigurationController.show",
+        "parameters": [
+          {
+            "description": "external id of configuration",
+            "in": "path",
+            "name": "external_id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ConfigurationResponse"
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "422": {
+            "description": "Client Error"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Configuration"
+        ]
+      },
+      "patch": {
+        "description": "Updates content",
+        "operationId": "TdCxWeb.ConfigurationController.update",
+        "parameters": [
+          {
+            "description": "external_id of content",
+            "in": "path",
+            "name": "external_id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Parameters used to update a content",
+            "in": "body",
+            "name": "configuration",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/UpdateConfiguration"
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ConfigurationResponse"
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "422": {
+            "description": "Client Error"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Configuration"
+        ]
+      },
+      "put": {
+        "description": "Updates content",
+        "operationId": "TdCxWeb.ConfigurationController.update",
+        "parameters": [
+          {
+            "description": "external_id of content",
+            "in": "path",
+            "name": "external_id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Parameters used to update a content",
+            "in": "body",
+            "name": "configuration",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/UpdateConfiguration"
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ConfigurationResponse"
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "422": {
+            "description": "Client Error"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Configuration"
+        ]
+      }
+    },
+    "/api/job_filters/search": {
+      "post": {
+        "description": "List Jobs Filters",
+        "operationId": "TdCxWeb.JobFilterController.search",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/FilterResponse"
+            }
+          }
+        },
+        "summary": "",
+        "tags": [
+          "JobFilter"
+        ]
+      }
+    },
+    "/api/jobs/search": {
+      "post": {
+        "description": "Search jobs",
+        "operationId": "TdCxWeb.JobController.search",
+        "parameters": [
+          {
+            "description": "Search query and filter parameters",
+            "in": "body",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/JobFilterRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/JobsResponse"
+            }
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Job"
+        ]
+      }
+    },
+    "/api/jobs/search/reindex_all": {
+      "get": {
+        "description": "Reindex all ES indexes with DB content",
+        "operationId": "TdCxWeb.SearchController.reindex_all",
+        "parameters": [],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted"
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Client Error"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Search"
+        ]
+      }
+    },
+    "/api/jobs/{external_id}": {
+      "get": {
+        "description": "Get job with the given external_id",
+        "operationId": "TdCxWeb.JobController.show",
+        "parameters": [
+          {
+            "description": "external id of job",
+            "in": "path",
+            "name": "external_id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/JobResponse"
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "422": {
+            "description": "Client Error"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Job"
+        ]
+      }
+    },
+    "/api/jobs/{job_external_id}/events": {
+      "get": {
+        "description": "Get events of a given job",
+        "operationId": "TdCxWeb.EventController.index",
+        "parameters": [
+          {
+            "description": "job external id",
+            "in": "path",
+            "name": "job_external_id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/EventsResponse"
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Event"
+        ]
+      },
+      "post": {
+        "description": "Creates event for a given job",
+        "operationId": "TdCxWeb.EventController.create",
+        "parameters": [
+          {
+            "description": "job external id",
+            "in": "path",
+            "name": "job_external_id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Parameters used to create a event",
+            "in": "body",
+            "name": "event",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/CreateEvent"
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/EventResponse"
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "422": {
+            "description": "Client Error"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Event"
+        ]
+      }
+    },
+    "/api/sources": {
+      "get": {
+        "description": "Get sources of the given type",
+        "operationId": "TdCxWeb.SourceController.index",
+        "parameters": [
+          {
+            "description": "type of source",
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/SourcesResponse"
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "422": {
+            "description": "Client Error"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Source"
+        ]
+      },
+      "post": {
+        "description": "Creates a new source",
+        "operationId": "TdCxWeb.SourceController.create",
+        "parameters": [
+          {
+            "description": "Parameters used to create a source",
+            "in": "body",
+            "name": "source",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/CreateSource"
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/SourceResponse"
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "422": {
+            "description": "Client Error"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Source"
+        ]
+      }
+    },
+    "/api/sources/{external_id}": {
+      "delete": {
+        "description": "Deletes a source",
+        "operationId": "TdCxWeb.SourceController.delete",
+        "parameters": [
+          {
+            "description": "Source external id",
+            "in": "path",
+            "name": "external_id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "422": {
+            "description": "Client Error"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Source"
+        ]
+      },
+      "get": {
+        "description": "Get source with the given external_id",
+        "operationId": "TdCxWeb.SourceController.show",
+        "parameters": [
+          {
+            "description": "external id of source",
+            "in": "path",
+            "name": "external_id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/SourceResponse"
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "422": {
+            "description": "Client Error"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Source"
+        ]
+      },
+      "patch": {
+        "description": "Updates config or secrets of source",
+        "operationId": "TdCxWeb.SourceController.update",
+        "parameters": [
+          {
+            "description": "external_id of source",
+            "in": "path",
+            "name": "external_id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Parameters used to update a source",
+            "in": "body",
+            "name": "source",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/UpdateSource"
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/SourceResponse"
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "422": {
+            "description": "Client Error"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Source"
+        ]
+      },
+      "put": {
+        "description": "Updates config or secrets of source",
+        "operationId": "TdCxWeb.SourceController.update",
+        "parameters": [
+          {
+            "description": "external_id of source",
+            "in": "path",
+            "name": "external_id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Parameters used to update a source",
+            "in": "body",
+            "name": "source",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/UpdateSource"
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/SourceResponse"
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "422": {
+            "description": "Client Error"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Source"
+        ]
+      }
+    },
+    "/api/sources/{source_external_id}/jobs": {
+      "get": {
+        "description": "Get jobs of a given source",
+        "operationId": "TdCxWeb.JobController.index",
+        "parameters": [
+          {
+            "description": "source external id",
+            "in": "path",
+            "name": "source_external_id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/JobsResponse"
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Job"
+        ]
+      },
+      "post": {
+        "description": "Creates job of a given source",
+        "operationId": "TdCxWeb.JobController.create",
+        "parameters": [
+          {
+            "description": "source external id",
+            "in": "path",
+            "name": "source_external_id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/JobResponse"
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "422": {
+            "description": "Client Error"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Job"
+        ]
+      }
+    }
+  },
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "security": [
+    {
+      "bearer": []
+    }
+  ],
+  "securityDefinitions": {
+    "bearer": {
+      "in": "header",
+      "name": "Authorization",
+      "type": "apiKey"
+    }
+  },
+  "swagger": "2.0"
+}
