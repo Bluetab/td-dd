@@ -147,7 +147,7 @@ defmodule TdDd.Factory do
       created_by_id: 0
     }
   end
-  
+
   def source_factory do
     %Source{
       config: %{},
