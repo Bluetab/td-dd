@@ -6,6 +6,22 @@
 
 - [TD-3497] Allow system metadata to be uploaded using a JSON request body
 
+### Changed
+
+- [TD-3498] Merged `td-cx` with `td-dd`. See `CHANGELOG-cx.md` for changes in
+  `td-cx` previous to this merge.
+
+## [4.17.0] 2021-04-05
+
+### Added
+
+- [TD-3108] add `profile_structure` permission to structures with `data_fields`
+
+### Changed
+
+- [TD-3445] Postgres port configurable through `DB_PORT` environment variable
+  > > > > > > > master
+
 ## [4.16.0] 2021-03-22
 
 ### Added

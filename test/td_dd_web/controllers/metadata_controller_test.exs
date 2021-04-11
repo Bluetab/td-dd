@@ -9,8 +9,6 @@ defmodule TdDdWeb.MetadataControllerTest do
       metadata_path: 2
     ]
 
-  alias TdCache.Redix
-  alias TdCache.SourceCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Loader.Worker
@@ -230,16 +228,14 @@ defmodule TdDdWeb.MetadataControllerTest do
       structures: structures,
       fields: fields,
       relations: relations,
-      source: source
+      source: %{id: source_id, external_id: source_external_id}
     } do
-      source_id = Map.get(source, :id)
-
       conn =
         post(conn, metadata_path(conn, :upload),
           data_structures: structures,
           data_fields: fields,
           data_structure_relations: relations,
-          source: source.external_id
+          source: source_external_id
         )
 
       assert response(conn, :accepted) =~ ""
@@ -304,15 +300,7 @@ defmodule TdDdWeb.MetadataControllerTest do
   end
 
   defp source(_) do
-    source = %{id: :rand.uniform(100_000_000), external_id: "foo", config: %{}}
-    SourceCache.put(source)
-
-    on_exit(fn ->
-      SourceCache.delete(source.id)
-      Redix.command(["DEL", "sources:ids_external_ids"])
-    end)
-
-    {:ok, source: source}
+    {:ok, source: insert(:source)}
   end
 
   defp upload(path) do

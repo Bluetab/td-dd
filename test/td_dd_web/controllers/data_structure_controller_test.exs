@@ -383,14 +383,4 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
     [data_structure: data_structure, data_structure_version: data_structure_version]
   end
-
-  defp create_acl_entry(user_id, domain_id, permissions) do
-    MockPermissionResolver.create_acl_entry(%{
-      principal_id: user_id,
-      principal_type: "user",
-      resource_id: domain_id,
-      resource_type: "domain",
-      permissions: permissions
-    })
-  end
 end

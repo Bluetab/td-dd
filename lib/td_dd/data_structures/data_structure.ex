@@ -7,6 +7,7 @@ defmodule TdDd.DataStructures.DataStructure do
 
   import Ecto.Changeset
 
+  alias TdCx.Sources.Source
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Profile
   alias TdDd.DataStructures.StructureMetadata
@@ -19,6 +20,8 @@ defmodule TdDd.DataStructures.DataStructure do
 
   schema "data_structures" do
     belongs_to(:system, System, on_replace: :update)
+    belongs_to(:source, Source)
+
     has_many(:versions, DataStructureVersion)
     has_many(:metadata_versions, StructureMetadata)
     has_one(:profile, Profile)
@@ -28,7 +31,6 @@ defmodule TdDd.DataStructures.DataStructure do
     field(:domain_id, :integer)
     field(:external_id, :string)
     field(:last_change_by, :integer)
-    field(:source_id, :integer)
     field(:row, :integer, virtual: true)
     field(:latest_metadata, :map, virtual: true)
 

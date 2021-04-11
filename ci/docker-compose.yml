@@ -44,6 +44,11 @@ services:
       retries: 3
       start_period: 10s
 
+  vault:
+    image: vault
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=vault_secret_token1234
+
   build:
     image: bluetab/elixir:1.11.3-alpine-20210223122217
     command: ci/build.sh
@@ -71,6 +76,7 @@ services:
     depends_on:
       - postgres
       - redis
+      - vault
 
   service:
     image: ${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${APP_VERSION}
@@ -84,14 +90,18 @@ services:
       IMPORT_DIR: /import
       REDIS_HOST: redis
       REDIS_PORT: "6380"
+      VAULT_ADDR: http://vault:8200/
+      VAULT_SECRETS_PATH: secret/data/cx/
+      VAULT_TOKEN: vault_secret_token1234
     depends_on:
       - postgres
       - redis
+      - vault
       - elastic
-
+  
   wait_for_elastic:
     image: bluetab/wait-for:20190507133127
-    command: elastic:9200 -t 60 -- curl --silent elastic:9200
+    command: elastic:9200 -t 30 -- curl --silent elastic:9200
     depends_on:
       - elastic
 

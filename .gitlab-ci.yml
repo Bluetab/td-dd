@@ -1,5 +1,5 @@
 variables:
-  VERSION: "4.16.1" # used for alpha builds
+  VERSION: "4.17.1" # used for alpha builds
   APP_NAME: "td_dd"
   COMPOSE_FILE: "ci/docker-compose.yml"
   COMPOSE_PROJECT_NAME: "${APP_NAME}_${CI_JOB_ID}"
@@ -60,6 +60,7 @@ acceptance:
     - docker-compose run --rm wait_for_elastic
     - docker-compose run --rm acceptance
   after_script:
+    - docker-compose logs elastic
     - docker-compose logs service
     - docker-compose down -v
 

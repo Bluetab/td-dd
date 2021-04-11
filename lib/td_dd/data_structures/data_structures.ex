@@ -8,7 +8,6 @@ defmodule TdDd.DataStructures do
   alias Ecto.Association.NotLoaded
   alias Ecto.Multi
   alias TdCache.LinkCache
-  alias TdCache.SourceCache
   alias TdCache.StructureTypeCache
   alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
@@ -250,14 +249,14 @@ defmodule TdDd.DataStructures do
   def get_field_structures(data_structure_version, options) do
     data_structure_version
     |> Ecto.assoc(:children)
-    |> join(:inner, [child, _parent, _rel, child_ds], child in assoc(child, :data_structure))
-    |> where([child, _parent, _rel, _child_ds], child.class == "field")
+    |> where([child], child.class == "field")
+    |> join(:inner, [child], child in assoc(child, :data_structure))
     |> with_confidential(
       Keyword.get(options, :with_confidential),
       dynamic([_child, _parent, _rel, child_ds], child_ds.confidential == false)
     )
-    |> with_deleted(options, dynamic([child, _parent, _rel, _child_ds], is_nil(child.deleted_at)))
-    |> select([child, _parent, _rel, _child_ds], child)
+    |> with_deleted(options, dynamic([child], is_nil(child.deleted_at)))
+    |> select([child], child)
     |> Repo.all()
     |> Repo.preload(options[:preload] || [])
   end
@@ -459,28 +458,23 @@ defmodule TdDd.DataStructures do
     TaxonomyCache.get_domain(domain_id) || %{}
   end
 
-  def get_source(%DataStructureVersion{data_structure: %NotLoaded{}} = version) do
+  def get_source(%DataStructureVersion{data_structure: %DataStructure{} = data_structure}) do
+    get_source(data_structure)
+  end
+
+  def get_source(%DataStructureVersion{} = version) do
     version
-    |> Repo.preload(:data_structure)
-    |> get_source()
+    |> Repo.preload(data_structure: :source)
+    |> Kernel.get_in([:data_structure, :source])
   end
 
-  def get_source(%DataStructureVersion{data_structure: %{source_id: source_id}}) do
-    get_source(source_id)
+  def get_source(%DataStructure{source: %NotLoaded{}} = data_structure) do
+    data_structure
+    |> Repo.preload(:source)
+    |> Map.get(:source)
   end
 
-  def get_source(%DataStructure{source_id: nil}), do: %{}
-
-  def get_source(%DataStructure{source_id: source_id}) do
-    get_source(source_id)
-  end
-
-  def get_source(source_id) do
-    case SourceCache.get(source_id) do
-      {:ok, %{} = source} -> source
-      _ -> %{}
-    end
-  end
+  def get_source(%DataStructure{source: source}), do: source
 
   defp get_metadata_versions(%DataStructure{} = data_structure) do
     data_structure
@@ -594,7 +588,7 @@ defmodule TdDd.DataStructures do
     DataStructureVersion
     |> Paths.by_data_structure_id(data_structure_id)
     |> where([dsv], dsv.data_structure_id == type(^data_structure_id, :integer))
-    |> preload(:data_structure)
+    |> preload(data_structure: :source)
     |> Repo.one()
     |> enrich(options)
   end

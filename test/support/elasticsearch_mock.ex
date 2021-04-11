@@ -7,10 +7,17 @@ defmodule TdDd.ElasticsearchMock do
 
   alias Elasticsearch.Document
   alias HTTPoison.Response
+  alias TdCx.Jobs
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.Repo
   alias TdDd.Search.Store
 
   require Logger
+
+  @impl true
+  def request(_config, :head, "/_alias/jobs", _data, _opts) do
+    {:ok, %Response{status_code: 200, body: []}}
+  end
 
   @impl true
   def request(_config, :get, "/_cat/indices?format=json", _data, _opts) do
@@ -18,7 +25,7 @@ defmodule TdDd.ElasticsearchMock do
   end
 
   @impl true
-  def request(_config, :put, "/_template/structures", _data, _opts) do
+  def request(_config, :put, "/_template/" <> _, _data, _opts) do
     {:ok, %Response{status_code: 200, body: %{}}}
   end
 
@@ -28,8 +35,19 @@ defmodule TdDd.ElasticsearchMock do
   end
 
   @impl true
+  def request(_config, _method, "/jobs-" <> _suffix, _data, _opts) do
+    {:ok, %Response{status_code: 200, body: %{}}}
+  end
+
+  @impl true
   def request(_config, _method, "/structures-" <> _suffix, _data, _opts) do
     {:ok, %Response{status_code: 200, body: %{}}}
+  end
+
+  @impl true
+  def request(_config, :post, "/jobs/_doc/_bulk", _data, _opts) do
+    body = %{"took" => 10, "items" => [], "errors" => false}
+    {:ok, %Response{status_code: 200, body: body}}
   end
 
   @impl true
@@ -39,6 +57,21 @@ defmodule TdDd.ElasticsearchMock do
   end
 
   @impl true
+  def request(_config, :post, "/jobs/_search", _data, _opts) do
+    Jobs.list_jobs()
+    |> Repo.preload([:source, :events])
+    |> Enum.map(&with_source/1)
+    |> Enum.map(&Jobs.with_metrics/1)
+    |> Enum.map(&Map.delete(&1, :__meta__))
+    |> Enum.map(&Map.from_struct/1)
+    |> search_results()
+  end
+
+  @impl true
+  def request(_config, :delete, "/jobs/_doc/" <> _id, _data, _opts) do
+    {:ok, %Response{status_code: 200, body: %{result: "deleted"}}}
+  end
+
   def request(_config, :post, "/structures/_search", data, _opts) do
     data
     |> do_search()
@@ -420,6 +453,10 @@ defmodule TdDd.ElasticsearchMock do
     }
 
     {:ok, %Response{status_code: 200, body: body}}
+  end
+
+  defp with_source(%{source: source} = job) do
+    Map.put(job, :source, Map.take(source, [:external_id, :type]))
   end
 
   defp encode_scroll_id(%{from: from, size: size} = params) do

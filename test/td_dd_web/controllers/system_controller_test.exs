@@ -216,14 +216,4 @@ defmodule TdDdWeb.SystemControllerTest do
       refute data |> Enum.map(& &1["id"]) |> Enum.member?(id)
     end
   end
-
-  defp create_acl_entry(user_id, domain_id, permissions) do
-    MockPermissionResolver.create_acl_entry(%{
-      principal_id: user_id,
-      principal_type: "user",
-      resource_id: domain_id,
-      resource_type: "domain",
-      permissions: permissions
-    })
-  end
 end
