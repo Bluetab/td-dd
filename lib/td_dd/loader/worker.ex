@@ -93,8 +93,7 @@ defmodule TdDd.Loader.Worker do
 
     with {{:value, {request, from}}, queue} <- :queue.out(queue),
          %Task{ref: ref} = task <- start_task(request) do
-      # FIXME: don't inspect request
-      Logger.info("Started task #{inspect(ref)} #{inspect(request)}")
+      log_request(ref, request)
       {:noreply, %{queue: queue, task: task, from: from}}
     else
       _ -> {:noreply, state}
@@ -122,6 +121,33 @@ defmodule TdDd.Loader.Worker do
   def handle_info({:DOWN, ref, :process, _pid, _error}, %{task: _} = state) do
     Logger.warn("Task #{inspect(ref)} failed")
     {:noreply, Map.delete(state, :task)}
+  end
+
+  defp log_request(_, :await), do: :ok
+
+  defp log_request(
+         ref,
+         {:load, structures_file, fields_file, relations_file, system_id, _domain, audit, _opts}
+       ) do
+    params =
+      Enum.reject([structures_file, fields_file, relations_file, system_id, audit], &is_nil/1)
+
+    Logger.info("Started task #{inspect(ref)} #{inspect(params)}")
+  end
+
+  defp log_request(ref, {:load, %{id: system_id} = _system, _params, audit, _opts}) do
+    params = Enum.reject([system_id, audit], &is_nil/1)
+    Logger.info("Started task #{inspect(ref)} #{inspect(params)}")
+  end
+
+  defp log_request(ref, {:profiles, profiles}) do
+    params =
+      case profiles do
+        [%{external_id: external_id} | _] -> external_id
+        _ -> "no external_ids"
+      end
+
+    Logger.info("Started task #{inspect(ref)} #{params}...")
   end
 
   defp schedule_work(action, millis) do
