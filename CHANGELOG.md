@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fixed
+
+- [TD-3566] `data_structure_relation` `parent_id` and `child_id` must not be null`
+
 ### Changed
 
 - [TD-3498] Merged `td-cx` with `td-dd`. See `CHANGELOG-cx.md` for changes in
