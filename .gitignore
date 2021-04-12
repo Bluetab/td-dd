@@ -7,7 +7,7 @@
 erl_crash.dump
 
 # Generated code
-priv/static/swagger.json
+priv/static/swagger*.json
 
 # User-specific local stuff
 .DS_Store
