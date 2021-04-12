@@ -1,15 +1,20 @@
 defmodule TdDd.DataStructures.DataStructureRelation do
-  @moduledoc false
+  @moduledoc """
+  Ecto Schema module for Data Structure Relations
+  """
+
   use Ecto.Schema
+
   import Ecto.Changeset
+
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.RelationType
 
   schema "data_structure_relations" do
-    belongs_to(:parent, DataStructureVersion)
-    belongs_to(:child, DataStructureVersion)
-    belongs_to(:relation_type, RelationType)
+    belongs_to :parent, DataStructureVersion
+    belongs_to :child, DataStructureVersion
+    belongs_to :relation_type, RelationType
     timestamps(type: :utc_datetime)
   end
 
