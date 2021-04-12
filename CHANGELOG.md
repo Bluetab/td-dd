@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- [TD-3472] Deletion of implementations linked to executions
+
 ### Changed
 
 - [TD-3494] Reindex rule and implementation when creating an implementation_result
