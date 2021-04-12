@@ -11,6 +11,7 @@ defmodule TdDd.DataStructures do
   alias TdCache.StructureTypeCache
   alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
+  alias TdCx.Sources
   alias TdDd.Auth.Claims
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
@@ -878,4 +879,33 @@ defmodule TdDd.DataStructures do
     |> distinct(:data_structure_id)
     |> order_by(asc: :data_structure_id, desc: :version)
   end
+
+  def profile_source(
+        %{data_structure: %{source: %{config: %{"job_types" => job_types}} = source}} = dsv
+      ) do
+    if Enum.member?(job_types, "profile") do
+      Map.put(dsv, :profile_source, source)
+    else
+      do_profile_source(dsv, source)
+    end
+  end
+
+  def profile_source(dsv), do: dsv
+
+  defp do_profile_source(dsv, %{config: %{"alias" => source_alias}})
+       when not is_nil(source_alias) do
+    case Sources.get_source(%{external_id: source_alias}) do
+      %{config: %{"job_types" => job_types}} = source ->
+        if Enum.member?(job_types, "profile") do
+          Map.put(dsv, :profile_source, source)
+        else
+          dsv
+        end
+
+      _ ->
+        dsv
+    end
+  end
+
+  defp do_profile_source(dsv, _source), do: dsv
 end

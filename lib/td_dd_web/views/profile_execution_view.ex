@@ -35,6 +35,7 @@ defmodule TdDdWeb.ProfileExecutionView do
       |> Map.get(:value)
       |> Enum.reject(fn {_, v} -> is_nil(v) end)
       |> Map.new(fn {k, v} -> {String.to_atom(k), v} end)
+      |> Map.put(:inserted_at, Map.get(profile, :inserted_at))
 
     Map.put(acc, :profile, profile)
   end
