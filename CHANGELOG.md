@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## [Unreleased]
+
+### Added
+
+- [TD-3497] Allow system metadata to be uploaded using a JSON request body
 
 ### Fixed
 
@@ -20,6 +24,7 @@
 ### Changed
 
 - [TD-3445] Postgres port configurable through `DB_PORT` environment variable
+  > > > > > > > master
 
 ## [4.16.0] 2021-03-22
 

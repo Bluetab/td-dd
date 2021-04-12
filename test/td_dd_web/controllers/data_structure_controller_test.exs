@@ -5,7 +5,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
   import Routes
 
   alias TdCache.StructureTypeCache
-  alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.RelationTypes
@@ -23,15 +22,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
   setup_all do
     start_supervised(GraphData)
-
-    %{id: domain_id} = domain = build(:domain)
-    TaxonomyCache.put_domain(domain)
-
-    on_exit(fn ->
-      TaxonomyCache.delete_domain(domain_id)
-    end)
-
-    [domain: domain]
+    [domain: DomainHelper.insert_domain()]
   end
 
   setup %{conn: conn} do

@@ -549,13 +549,13 @@ defmodule TdDd.DataStructures do
   defp delete_data_structure_versions(%DataStructure{id: data_structure_id}) do
     DataStructureVersion
     |> where([dsv], dsv.data_structure_id == ^data_structure_id)
-    |> select([dsv], dsv.id)
+    |> select([dsv], dsv.data_structure_id)
     |> Repo.delete_all()
   end
 
   defp on_delete({:ok, %{} = res}) do
-    with %{delete_versions: {_count, dsv_ids}} <- res do
-      IndexWorker.delete(dsv_ids)
+    with %{delete_versions: {_count, data_structure_ids}} <- res do
+      IndexWorker.delete(data_structure_ids)
     end
 
     {:ok, res}

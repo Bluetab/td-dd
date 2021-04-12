@@ -63,6 +63,15 @@ defmodule TdDd.Systems do
   end
 
   @doc """
+  Fetches a single system matching the specified clauses, raising an not found
+  exception if not found.
+  See `Repo.get_by!/3`.
+  """
+  def get_by!(clauses) do
+    Repo.get_by!(System, clauses)
+  end
+
+  @doc """
   Creates a system.
 
   ## Examples

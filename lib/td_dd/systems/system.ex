@@ -9,6 +9,9 @@ defmodule TdDd.Systems.System do
 
   alias TdDd.DataStructures.DataStructure
 
+  @type t :: %__MODULE__{}
+  @typep changeset :: Ecto.Changeset.t()
+
   schema "systems" do
     field(:external_id, :string)
     field(:name, :string)
@@ -18,10 +21,12 @@ defmodule TdDd.Systems.System do
     timestamps()
   end
 
+  @spec changeset(map) :: changeset
   def changeset(params) do
     changeset(%__MODULE__{}, params)
   end
 
+  @spec changeset(t, map) :: changeset
   def changeset(%__MODULE__{} = system, params) do
     system
     |> cast(params, [:name, :external_id, :df_content])

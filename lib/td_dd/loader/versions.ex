@@ -223,7 +223,9 @@ defmodule TdDd.Loader.Versions do
     )
     |> Enum.map(&system_groups/1)
     |> Enum.map(&delete_missing_group_structures(&1, ts))
-    |> Enum.reduce(fn {count1, ids1}, {count2, ids2} -> {count1 + count2, ids1 ++ ids2} end)
+    |> Enum.reduce({0, []}, fn {count1, ids1}, {count2, ids2} ->
+      {count1 + count2, ids1 ++ ids2}
+    end)
   end
 
   defp system_groups({system_id, entries}) do

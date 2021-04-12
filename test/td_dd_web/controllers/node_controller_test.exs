@@ -2,7 +2,6 @@ defmodule TdDdWeb.NodeControllerTest do
   use TdDdWeb.ConnCase
   use TdDd.GraphDataCase
 
-  alias TdCache.TaxonomyCache
   alias TdDd.Lineage.GraphData
   alias TdDd.Lineage.GraphData.State
 
@@ -13,7 +12,7 @@ defmodule TdDdWeb.NodeControllerTest do
 
   setup %{conn: conn} = tags do
     GraphData.state(state: setup_state(tags))
-    {:ok, conn: put_req_header(conn, "accept", "application/json")}
+    [conn: put_req_header(conn, "accept", "application/json")]
   end
 
   describe "NodeController" do
@@ -52,8 +51,7 @@ defmodule TdDdWeb.NodeControllerTest do
       conn: conn,
       claims: %{user_id: user_id}
     } do
-      domain_id = :rand.uniform(1_000_000)
-      TaxonomyCache.put_domain(%{name: "domain", id: domain_id, updated_at: DateTime.utc_now()})
+      %{id: domain_id} = DomainHelper.insert_domain()
 
       MockPermissionResolver.create_acl_entry(%{
         principal_id: user_id,
@@ -83,8 +81,7 @@ defmodule TdDdWeb.NodeControllerTest do
         units: [unit]
       )
 
-      domain_id = :rand.uniform(1_000_000)
-      TaxonomyCache.put_domain(%{name: "domain1", id: domain_id, updated_at: DateTime.utc_now()})
+      %{id: domain_id} = DomainHelper.insert_domain()
 
       MockPermissionResolver.create_acl_entry(%{
         principal_id: user_id,
@@ -128,8 +125,7 @@ defmodule TdDdWeb.NodeControllerTest do
            conn: conn,
            claims: %{user_id: user_id}
          } do
-      domain_id = :rand.uniform(1_000_000)
-      TaxonomyCache.put_domain(%{name: "domain", id: domain_id, updated_at: DateTime.utc_now()})
+      %{id: domain_id} = DomainHelper.insert_domain()
 
       MockPermissionResolver.create_acl_entry(%{
         principal_id: user_id,

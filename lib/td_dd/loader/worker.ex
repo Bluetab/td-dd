@@ -1,7 +1,18 @@
+defmodule TdDd.Loader.Worker.Behaviour do
+  @moduledoc "Loader worker behaviour, useful for mocking"
+
+  @type system :: TdDd.Systems.System.t()
+
+  @callback load(system, map, map, keyword) :: :ok
+  @callback load(binary, binary, binary, map, keyword) :: :ok
+end
+
 defmodule TdDd.Loader.Worker do
   @moduledoc """
   GenServer to handle bulk loading data dictionary
   """
+
+  @behaviour TdDd.Loader.Worker.Behaviour
 
   use GenServer
 
@@ -18,6 +29,12 @@ defmodule TdDd.Loader.Worker do
     GenServer.start_link(__MODULE__, nil, name: __MODULE__)
   end
 
+  @impl TdDd.Loader.Worker.Behaviour
+  def load(system, %{} = params, audit, opts) do
+    GenServer.cast(__MODULE__, {:load, system, params, audit, opts})
+  end
+
+  @impl TdDd.Loader.Worker.Behaviour
   def load(structures_file, fields_file, relations_file, audit, opts \\ []) do
     system_id = opts[:system_id]
     domain = opts[:domain]
@@ -76,7 +93,7 @@ defmodule TdDd.Loader.Worker do
 
     with {{:value, {request, from}}, queue} <- :queue.out(queue),
          %Task{ref: ref} = task <- start_task(request) do
-      Logger.info("Started task #{inspect(ref)} #{inspect(request)}")
+      log_request(ref, request)
       {:noreply, %{queue: queue, task: task, from: from}}
     else
       _ -> {:noreply, state}
@@ -106,6 +123,33 @@ defmodule TdDd.Loader.Worker do
     {:noreply, Map.delete(state, :task)}
   end
 
+  defp log_request(_, :await), do: :ok
+
+  defp log_request(
+         ref,
+         {:load, structures_file, fields_file, relations_file, system_id, _domain, audit, _opts}
+       ) do
+    params =
+      Enum.reject([structures_file, fields_file, relations_file, system_id, audit], &is_nil/1)
+
+    Logger.info("Started task #{inspect(ref)} #{inspect(params)}")
+  end
+
+  defp log_request(ref, {:load, %{id: system_id} = _system, _params, audit, _opts}) do
+    params = Enum.reject([system_id, audit], &is_nil/1)
+    Logger.info("Started task #{inspect(ref)} #{inspect(params)}")
+  end
+
+  defp log_request(ref, {:profiles, profiles}) do
+    params =
+      case profiles do
+        [%{external_id: external_id} | _] -> external_id
+        _ -> "no external_ids"
+      end
+
+    Logger.info("Started task #{inspect(ref)} #{params}...")
+  end
+
   defp schedule_work(action, millis) do
     Process.send_after(self(), action, millis)
   end
@@ -126,6 +170,24 @@ defmodule TdDd.Loader.Worker do
         {:ok, %{} = records} -> do_load(records, audit, opts)
         error -> error
       end
+    end)
+  end
+
+  defp start_task(
+         {:load, system,
+          %{"domain" => domain_external_id, "data_structures" => data_structures} = params, audit,
+          opts}
+       ) do
+    Task.Supervisor.async_nolink(TdDd.TaskSupervisor, fn ->
+      structures = Reader.enrich_data_structures!(system, domain_external_id, data_structures)
+
+      relations =
+        params
+        |> Map.get("data_structure_relations", [])
+        |> Reader.cast_data_structure_relations!()
+
+      records = %{relations: relations, structures: structures}
+      do_load(records, audit, opts)
     end)
   end
 
