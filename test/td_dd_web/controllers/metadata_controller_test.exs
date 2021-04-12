@@ -9,7 +9,6 @@ defmodule TdDdWeb.MetadataControllerTest do
       metadata_path: 2
     ]
 
-  alias TdCache.TaxonomyCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Loader.Worker
@@ -56,9 +55,9 @@ defmodule TdDdWeb.MetadataControllerTest do
     } do
       assert conn
              |> post(metadata_path(conn, :upload),
-               data_structures: Map.put(structures, :filename, "structures"),
-               data_fields: Map.put(fields, :filename, "fields"),
-               data_structure_relations: Map.put(relations, :filename, "relations")
+               data_structures: structures,
+               data_fields: fields,
+               data_structure_relations: relations
              )
              |> response(:accepted)
 
@@ -95,8 +94,8 @@ defmodule TdDdWeb.MetadataControllerTest do
     } do
       assert conn
              |> post(metadata_path(conn, :upload),
-               data_structures: Map.put(structures, :filename, "structures"),
-               data_fields: Map.put(fields, :filename, "fields")
+               data_structures: structures,
+               data_fields: fields
              )
              |> response(:accepted)
 
@@ -126,9 +125,9 @@ defmodule TdDdWeb.MetadataControllerTest do
 
       conn =
         post(conn, metadata_path(conn, :upload),
-          data_structures: Map.put(structures, :filename, "structures"),
-          data_fields: Map.put(fields, :filename, "fields"),
-          data_structure_relations: Map.put(relations, :filename, "relations")
+          data_structures: structures,
+          data_fields: fields,
+          data_structure_relations: relations
         )
 
       assert response(conn, :accepted) =~ ""
@@ -183,22 +182,14 @@ defmodule TdDdWeb.MetadataControllerTest do
       fields: fields,
       relations: relations
     } do
-      domain_id = :rand.uniform(1_000_000)
-      domain_name = "domain_name#{domain_id}"
-      domain_external_id = "domain_exid#{domain_id}"
-
-      TaxonomyCache.put_domain(%{
-        external_id: domain_external_id,
-        name: domain_name,
-        id: domain_id,
-        updated_at: DateTime.utc_now()
-      })
+      %{id: domain_id, name: domain_name, external_id: domain_external_id} =
+        DomainHelper.insert_domain()
 
       conn =
         post(conn, metadata_path(conn, :upload),
-          data_structures: Map.put(structures, :filename, "structures"),
-          data_fields: Map.put(fields, :filename, "fields"),
-          data_structure_relations: Map.put(relations, :filename, "relations"),
+          data_structures: structures,
+          data_fields: fields,
+          data_structure_relations: relations,
           domain: domain_external_id
         )
 
@@ -241,9 +232,9 @@ defmodule TdDdWeb.MetadataControllerTest do
     } do
       conn =
         post(conn, metadata_path(conn, :upload),
-          data_structures: Map.put(structures, :filename, "structures"),
-          data_fields: Map.put(fields, :filename, "fields"),
-          data_structure_relations: Map.put(relations, :filename, "relations"),
+          data_structures: structures,
+          data_fields: fields,
+          data_structure_relations: relations,
           source: source_external_id
         )
 

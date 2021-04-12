@@ -8,25 +8,10 @@ defmodule TdDdWeb.MetadataController do
   alias Plug.Upload
   alias TdCache.TaxonomyCache
   alias TdDd.DataStructures
-  alias TdDd.Loader.Worker
-  alias TdDd.Systems
+
+  @worker Application.compile_env!(:td_dd, :loader_worker)
 
   action_fallback(TdDdWeb.FallbackController)
-
-  def upload_by_system(conn, %{"system_id" => external_id} = params) do
-    alias TdDd.Systems.System
-
-    claims = conn.assigns[:current_resource]
-
-    with {:can, true} <- {:can, can_upload?(claims, params)},
-         %System{id: system_id} <- Systems.get_by(external_id: external_id) do
-      do_upload(conn, params, system_id: system_id)
-      send_resp(conn, :accepted, "")
-    else
-      {:can, false} -> {:can, false}
-      nil -> {:error, :not_found}
-    end
-  end
 
   @doc """
     Upload metadata:
@@ -73,10 +58,7 @@ defmodule TdDdWeb.MetadataController do
          parent when not is_nil(parent) <-
            DataStructures.find_data_structure(%{external_id: parent_external_id}),
          {:ok, _} <-
-           do_upload(conn, params,
-             external_id: external_id,
-             parent_external_id: parent_external_id
-           ),
+           do_upload(conn, params),
          dsv <- DataStructures.get_latest_version_by_external_id(external_id) do
       render(conn, "show.json", data_structure_version: dsv)
     else
@@ -89,7 +71,7 @@ defmodule TdDdWeb.MetadataController do
     claims = conn.assigns[:current_resource]
 
     with {:can, true} <- {:can, can_upload?(claims, params)},
-         {:ok, _} <- do_upload(conn, params, external_id: external_id),
+         {:ok, _} <- do_upload(conn, params),
          dsv <- DataStructures.get_latest_version_by_external_id(external_id) do
       render(conn, "show.json", data_structure_version: dsv)
     end
@@ -110,15 +92,24 @@ defmodule TdDdWeb.MetadataController do
       send_resp(conn, :unprocessable_entity, Jason.encode!(%{error: e.message}))
   end
 
-  defp do_upload(conn, params, opts \\ []) do
+  def do_upload(conn, params, opts \\ []) do
     [fields, structures, relations] =
       ["data_fields", "data_structures", "data_structure_relations"]
       |> Enum.map(&Map.get(params, &1))
       |> Enum.map(&copy_file/1)
 
-    opts = extra_opts(opts, params)
+    opts =
+      params
+      |> loader_opts()
+      |> Keyword.merge(opts)
 
     load(conn, structures, fields, relations, opts)
+  end
+
+  def audit_params(conn) do
+    %{user_id: user_id} = conn.assigns[:current_resource]
+    ts = DateTime.truncate(DateTime.utc_now(), :second)
+    %{ts: ts, last_change_by: user_id}
   end
 
   defp copy_file(nil), do: nil
@@ -134,26 +125,22 @@ defmodule TdDdWeb.MetadataController do
   end
 
   defp load(conn, structures_file, fields_file, relations_file, opts) do
-    %{user_id: user_id} = conn.assigns[:current_resource]
-    ts = DateTime.truncate(DateTime.utc_now(), :second)
-    audit_fields = %{ts: ts, last_change_by: user_id}
-    Worker.load(structures_file, fields_file, relations_file, audit_fields, opts)
+    audit = audit_params(conn)
+    worker = Keyword.get(opts, :worker, @worker)
+    worker.load(structures_file, fields_file, relations_file, audit, opts)
   end
 
-  defp can_upload?(claims, %{"domain" => external_id}) do
+  def can_upload?(claims, %{"domain" => external_id}) do
     domain_id = Map.get(TaxonomyCache.get_domain_external_id_to_id_map(), external_id)
     can?(claims, upload(domain_id))
   end
 
-  defp can_upload?(claims, _params), do: can?(claims, upload(DataStructure))
+  def can_upload?(claims, _params), do: can?(claims, upload(DataStructure))
 
-  defp extra_opts(opts, params) do
+  @spec loader_opts(map) :: keyword()
+  def loader_opts(%{} = params) do
     params
-    |> Map.take(["domain", "source"])
-    |> Enum.reduce(opts, fn
-      {"domain", domain}, acc -> Keyword.put(acc, :domain, domain)
-      {"source", source}, acc -> Keyword.put(acc, :source, source)
-      _, acc -> acc
-    end)
+    |> Map.take(["domain", "source", "external_id", "parent_external_id"])
+    |> Keyword.new(fn {k, v} -> {String.to_atom(k), v} end)
   end
 end

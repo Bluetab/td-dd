@@ -59,11 +59,11 @@ defmodule TdDd.Search.IndexWorker do
   end
 
   @impl true
-  def handle_cast({:delete, data_structure_version_ids}, state) do
+  def handle_cast({:delete, data_structure_ids}, state) do
     Timer.time(
-      fn -> Indexer.delete(data_structure_version_ids) end,
+      fn -> Indexer.delete(data_structure_ids) end,
       fn ms, _ ->
-        Logger.info("Deleted #{Enum.count(data_structure_version_ids)} documents in #{ms}ms")
+        Logger.info("Deleted #{Enum.count(data_structure_ids)} documents in #{ms}ms")
       end
     )
 

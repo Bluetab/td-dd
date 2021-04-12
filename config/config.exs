@@ -70,6 +70,7 @@ config :codepagex, :encodings, [
 config :td_dd, permission_resolver: TdCache.Permissions
 config :td_dd, index_worker: TdDd.Search.IndexWorker
 config :td_dd, cx_index_worker: TdCx.Search.IndexWorker
+config :td_dd, loader_worker: TdDd.Loader.Worker
 
 # Default timeout increased for bulk metadata upload
 config :td_dd, TdDd.Repo,
