@@ -36,6 +36,36 @@ defmodule TdDd.ExecutionsTest do
       assert %{executions: [%{id: ^execution_id, profile: %{id: ^profile_id}}]} =
                Executions.get_profile_group(%{"id" => id}, preload: [executions: :profile])
     end
+
+    test "enriches latest data structure version" do
+      %{id: structure_id} = data_structure = insert(:data_structure)
+
+      %{id: version_id, name: name} =
+        insert(:data_structure_version, data_structure: data_structure)
+
+      %{id: id} = insert(:profile_execution_group)
+
+      %{id: execution_id, profile_id: profile_id} =
+        insert(:profile_execution,
+          profile_group_id: id,
+          data_structure_id: structure_id,
+          profile: build(:profile)
+        )
+
+      assert %{
+               executions: [
+                 %{
+                   id: ^execution_id,
+                   profile: %{id: ^profile_id},
+                   latest: %{name: ^name, id: ^version_id}
+                 }
+               ]
+             } =
+               Executions.get_profile_group(%{"id" => id},
+                 preload: [executions: [:data_structure, :profile]],
+                 enrich: [:latest]
+               )
+    end
   end
 
   describe "list_profile_groups/2" do

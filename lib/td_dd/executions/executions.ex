@@ -32,6 +32,7 @@ defmodule TdDd.Executions do
     ProfileGroup
     |> preload(^preloads)
     |> Repo.get(id)
+    |> enrich(opts[:enrich])
   end
 
   @doc """
@@ -141,5 +142,31 @@ defmodule TdDd.Executions do
     execution
     |> Repo.preload(:data_structure)
     |> get_source()
+  end
+
+  defp enrich(group, nil), do: group
+
+  defp enrich(nil, _opts), do: nil
+
+  defp enrich(%ProfileGroup{executions: executions} = group, opts) when is_list(executions) do
+    executions = Enum.map(executions, &enrich(&1, opts))
+    Map.put(group, :executions, executions)
+  end
+
+  defp enrich(%ProfileExecution{} = execution, opts) do
+    enrich(execution, opts, :latest, &get_latest_version/1)
+  end
+
+  defp get_latest_version(%ProfileExecution{data_structure: structure = %{}}) do
+    DataStructures.get_latest_version(structure)
+  end
+
+  defp get_latest_version(_execution), do: nil
+
+  defp enrich(%{} = target, options, key, fun) do
+    case Enum.member?(options, key) do
+      false -> target
+      true -> Map.put(target, key, fun.(target))
+    end
   end
 end

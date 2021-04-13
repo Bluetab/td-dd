@@ -25,7 +25,11 @@ defmodule TdDdWeb.ProfileExecutionView do
   end
 
   defp put_embedding({:data_structure, %{} = data_structure}, %{} = acc) do
-    data_structure = Map.take(data_structure, [:id, :external_id])
+    data_structure =
+      data_structure
+      |> with_structure_name()
+      |> Map.take([:id, :external_id])
+
     Map.put(acc, :data_structure, data_structure)
   end
 
@@ -41,4 +45,9 @@ defmodule TdDdWeb.ProfileExecutionView do
   end
 
   defp put_embedding(_, acc), do: acc
+
+  defp with_structure_name(%{latest: %{name: name}} = data_structure),
+    do: Map.put(data_structure, :name, name)
+
+  defp with_structure_name(data_structure), do: data_structure
 end

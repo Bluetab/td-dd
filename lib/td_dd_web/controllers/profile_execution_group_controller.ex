@@ -40,7 +40,10 @@ defmodule TdDdWeb.ProfileExecutionGroupController do
 
     with {:can, true} <- {:can, can?(claims, show(ProfileGroup))},
          %ProfileGroup{} = group <-
-           Executions.get_profile_group(params, preload: [executions: [:data_structure, :profile]]) do
+           Executions.get_profile_group(params,
+             preload: [executions: [:data_structure, :profile]],
+             enrich: [:latest]
+           ) do
       executions =
         group
         |> Map.get(:executions)
@@ -65,7 +68,8 @@ defmodule TdDdWeb.ProfileExecutionGroupController do
          {:ok, %{profile_group: %{id: id}}} <- Executions.create_profile_group(creation_params),
          %ProfileGroup{} = group <-
            Executions.get_profile_group(%{"id" => id},
-             preload: [executions: [:data_structure, :profile]]
+             preload: [executions: [:data_structure, :profile]],
+             enrich: [:latest]
            ) do
       conn
       |> put_status(:created)
