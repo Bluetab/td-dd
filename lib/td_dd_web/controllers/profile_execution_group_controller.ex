@@ -82,7 +82,11 @@ defmodule TdDdWeb.ProfileExecutionGroupController do
          %Claims{user_id: user_id},
          %{"data_structure_ids" => data_structure_ids} = params
        ) do
-    execution_params = Enum.map(data_structure_ids, &%{"data_structure_id" => &1})
+    execution_params =
+      Enum.map(
+        data_structure_ids,
+        &%{"data_structure_id" => &1, "profile_events" => [%{"type" => "PENDING"}]}
+      )
 
     params
     |> Map.delete("data_structure_ids")

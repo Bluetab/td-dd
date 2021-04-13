@@ -11,6 +11,20 @@ defmodule TdDd.Executions.ProfileExecutionTest do
       assert {_, [validation: :required]} = errors[:data_structure_id]
     end
 
+    test "returns changeset when fields are valid" do
+      %{id: id} = insert(:data_structure)
+      %{id: group_id} = insert(:profile_execution_group)
+
+      assert {:ok,
+              %{
+                data_structure_id: ^id,
+                profile_group_id: ^group_id
+              } = execution} =
+               %{profile_group_id: group_id, data_structure_id: id}
+               |> ProfileExecution.changeset()
+               |> Repo.insert()
+    end
+
     test "captures foreign key constraint on profile_group_id" do
       %{id: id} = insert(:data_structure)
 
@@ -35,6 +49,25 @@ defmodule TdDd.Executions.ProfileExecutionTest do
       assert {_,
               [constraint: :foreign, constraint_name: "profile_executions_data_structure_id_fkey"]} =
                errors[:data_structure_id]
+    end
+
+    test "manages profile events" do
+      %{id: group_id} = insert(:profile_execution_group)
+      %{id: id} = insert(:data_structure)
+
+      assert {:ok, %{id: id}} =
+               %{
+                 "data_structure_id" => id,
+                 "profile_group_id" => group_id,
+                 "profile_events" => [%{"type" => "PENDING"}]
+               }
+               |> ProfileExecution.changeset()
+               |> Repo.insert()
+
+      assert %{profile_events: [%{type: "PENDING"}]} =
+               ProfileExecution
+               |> Repo.get(id)
+               |> Repo.preload(:profile_events)
     end
   end
 end

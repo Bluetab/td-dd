@@ -8,7 +8,8 @@ defmodule TdDd.Executions do
   alias Ecto.Changeset
   alias Ecto.Multi
   alias TdDd.DataStructures
-  alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.{DataStructure, DataStructureVersion}
+  alias TdDd.Events.ProfileEvent
   alias TdDd.Executions.{Audit, ProfileExecution, ProfileGroup}
   alias TdDd.Repo
 
@@ -66,9 +67,15 @@ defmodule TdDd.Executions do
         where(q, [e], e.profile_group_id == ^id)
 
       {:status, "pending"}, q ->
+        subset =
+          ProfileEvent
+          |> where([p], p.type != "PENDING")
+          |> select([p], p.profile_execution_id)
+
         q
         |> join(:left, [e], p in assoc(e, :profile))
-        |> where([_e, p], is_nil(p.id))
+        |> where([_e, p, _ev], is_nil(p.id))
+        |> where([e, _p], e.id not in subquery(subset))
 
       _, q ->
         q
@@ -127,22 +134,33 @@ defmodule TdDd.Executions do
 
   defp filter(executions, _params), do: executions
 
-  defp get_source(%{data_structure: %DataStructure{} = structure}) do
+  defp get_source(%ProfileExecution{data_structure: %DataStructure{} = structure}) do
     get_source(structure)
+  end
+
+  defp get_source(%ProfileExecution{} = execution) do
+    execution
+    |> Repo.preload(:data_structure)
+    |> Map.get(:data_structure)
+    |> get_source()
   end
 
   defp get_source(%DataStructure{} = structure) do
     structure
     |> DataStructures.get_latest_version()
-    |> Map.get(:metadata)
-    |> Map.get("alias")
-  end
-
-  defp get_source(execution) do
-    execution
-    |> Repo.preload(:data_structure)
     |> get_source()
   end
+
+  defp get_source(%DataStructureVersion{} = version) do
+    version
+    |> Map.get(:metadata)
+    |> case do
+      %{"alias" => source_alias} -> source_alias
+      _ -> nil
+    end
+  end
+
+  defp get_source(_), do: nil
 
   defp enrich(group, nil), do: group
 

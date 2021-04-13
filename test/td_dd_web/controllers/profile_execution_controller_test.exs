@@ -5,12 +5,12 @@ defmodule TdDdWeb.ExecutionControllerTest do
   @moduletag sandbox: :shared
 
   setup do
-    %{id: group_id} = group = insert(:profile_execution_group)
+    group = insert(:profile_execution_group)
 
     executions =
       Enum.map(1..5, fn _ ->
         insert(:profile_execution,
-          profile_group_id: group_id,
+          profile_group: group,
           data_structure: build(:data_structure)
         )
       end)

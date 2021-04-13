@@ -20,7 +20,7 @@ defmodule TdDdWeb.ProfileExecutionView do
 
   defp embeddings(%{} = execution) do
     execution
-    |> Map.take([:data_structure, :profile])
+    |> Map.take([:data_structure, :profile, :latest])
     |> Enum.reduce(%{}, &put_embedding/2)
   end
 
@@ -42,6 +42,10 @@ defmodule TdDdWeb.ProfileExecutionView do
       |> Map.put(:inserted_at, Map.get(profile, :inserted_at))
 
     Map.put(acc, :profile, profile)
+  end
+
+  defp put_embedding({:latest, %{} = latest}, %{} = acc) do
+    Map.put(acc, :latest, Map.take(latest, [:name]))
   end
 
   defp put_embedding(_, acc), do: acc

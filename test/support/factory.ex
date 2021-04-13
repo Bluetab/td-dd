@@ -139,12 +139,21 @@ defmodule TdDd.Factory do
   end
 
   def profile_execution_factory do
-    %TdDd.Executions.ProfileExecution{}
+    %TdDd.Executions.ProfileExecution{
+      profile_group: build(:profile_execution_group),
+      data_structure: build(:data_structure)
+    }
   end
 
   def profile_execution_group_factory do
     %TdDd.Executions.ProfileGroup{
       created_by_id: 0
+    }
+  end
+
+  def profile_event_factory do
+    %TdDd.Events.ProfileEvent{
+      type: "PENDING"
     }
   end
 

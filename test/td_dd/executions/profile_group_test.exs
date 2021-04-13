@@ -34,8 +34,16 @@ defmodule TdDd.Executions.ProfileGroupTest do
                |> Repo.insert()
 
       assert %{id: group_id, executions: [execution1, execution2]} = group
-      assert %{profile_group_id: ^group_id, data_structure_id: ^id1} = execution1
-      assert %{profile_group_id: ^group_id, data_structure_id: ^id2} = execution2
+
+      assert %{
+               profile_group_id: ^group_id,
+               data_structure_id: ^id1
+             } = execution1
+
+      assert %{
+               profile_group_id: ^group_id,
+               data_structure_id: ^id2
+             } = execution2
     end
   end
 end
