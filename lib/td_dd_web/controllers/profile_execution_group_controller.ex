@@ -41,7 +41,7 @@ defmodule TdDdWeb.ProfileExecutionGroupController do
     with {:can, true} <- {:can, can?(claims, show(ProfileGroup))},
          %ProfileGroup{} = group <-
            Executions.get_profile_group(params,
-             preload: [executions: [:data_structure, :profile]],
+             preload: [executions: [:data_structure, :profile, :profile_events]],
              enrich: [:latest]
            ) do
       executions =

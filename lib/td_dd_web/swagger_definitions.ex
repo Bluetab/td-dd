@@ -674,7 +674,8 @@ defmodule TdDdWeb.SwaggerDefinitions do
         swagger_schema do
           properties do
             data_structure(Schema.ref(:EmbeddedStructure))
-            result(Schema.ref(:EmbeddedProfile))
+            profile(Schema.ref(:EmbeddedProfile))
+            profile_events(Schema.ref(:EmbeddedProfileEvents))
           end
         end,
       EmbeddedStructure:
@@ -709,6 +710,12 @@ defmodule TdDdWeb.SwaggerDefinitions do
             data(Schema.ref(:ProfileExecutions))
           end
         end,
+      ProfileExecutionResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:ProfileExecution))
+          end
+        end,
       EmbeddedProfile:
         swagger_schema do
           properties do
@@ -716,6 +723,37 @@ defmodule TdDdWeb.SwaggerDefinitions do
             data_structure_id(:integer, "Data structure id", required: true)
             value(:object, "Profile", required: false)
           end
+        end
+    }
+  end
+
+  def profile_event_swagger_definitions do
+    %{
+      ProfileEvent:
+        swagger_schema do
+          title("Profile Event")
+          description("Representation of a event")
+
+          properties do
+            id(:integer, "Event Id", required: true)
+            profile_execution_id(:integer, "Execution Id", required: true)
+            inserted_at(:string, "Event insertion date")
+            type([:string, :null], "Event type")
+            message([:string, :null], "Event message")
+          end
+        end,
+      ProfileEventResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:ProfileEvent))
+          end
+        end,
+      EmbeddedProfileEvents:
+        swagger_schema do
+          title("Profile Events")
+          description("A collection of events")
+          type(:array)
+          items(Schema.ref(:ProfileEvent))
         end
     }
   end

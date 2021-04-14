@@ -16,7 +16,7 @@ defmodule TdDdWeb.ProfileExecutionController do
 
   swagger_path :index do
     description("List Executions")
-    response(200, "OK", Schema.ref(:ProfileExecutionGroupsResponse))
+    response(200, "OK", Schema.ref(:ProfileExecutionsResponse))
   end
 
   def index(conn, params) do
@@ -25,9 +25,32 @@ defmodule TdDdWeb.ProfileExecutionController do
     with {:can, true} <- {:can, can?(claims, list(ProfileExecution))},
          executions <-
            params
-           |> Executions.list_profile_executions(preload: [:data_structure, :profile])
+           |> Executions.list_profile_executions(
+             preload: [:data_structure, :profile, :profile_events]
+           )
            |> Enum.filter(&can?(claims, show(&1))) do
       render(conn, "index.json", profile_executions: executions)
+    end
+  end
+
+  swagger_path :show do
+    description("Show Execution")
+    response(200, "OK", Schema.ref(:ProfileExecutionsResponse))
+    response(400, "Client Error")
+  end
+
+  def show(conn, %{"id" => id}) do
+    claims = conn.assigns[:current_resource]
+
+    with %ProfileExecution{} = execution <-
+           Executions.get_profile_execution(id,
+             preload: [:data_structure, :profile, :profile_events]
+           ),
+         {:can, true} <- {:can, can?(claims, show(execution))} do
+      render(conn, "show.json", profile_execution: execution)
+    else
+      nil -> {:error, :not_found}
+      error -> error
     end
   end
 end

@@ -15,6 +15,7 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.Events.ProfileEvent
   alias TdDd.Executions.{ProfileExecution, ProfileGroup}
   alias TdDd.Lineage.Units.Node
   alias TdDd.Lineage.Units.Unit
@@ -26,7 +27,7 @@ defmodule TdDd.Canada.Abilities do
     def can?(%Claims{}, _action, nil), do: false
 
     def can?(%Claims{} = claims, action, target)
-        when target in [ProfileExecution, ProfileGroup] do
+        when target in [ProfileEvent, ProfileExecution, ProfileGroup] do
       ExecutionAbilities.can?(claims, action, target)
     end
 
