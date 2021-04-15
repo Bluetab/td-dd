@@ -3,6 +3,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   alias TdCache.StructureTypeCache
+  alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Lineage.GraphData
