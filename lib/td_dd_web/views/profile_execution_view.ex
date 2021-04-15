@@ -43,6 +43,7 @@ defmodule TdDdWeb.ProfileExecutionView do
       |> Map.new(fn {k, v} -> {String.to_atom(k), v} end)
       |> Map.put(:id, Map.get(profile, :id))
       |> Map.put(:inserted_at, Map.get(profile, :inserted_at))
+      |> Map.put(:updated_at, Map.get(profile, :updated_at))
       |> Map.put(:data_structure_id, Map.get(profile, :data_structure_id))
 
     Map.put(acc, :profile, profile)

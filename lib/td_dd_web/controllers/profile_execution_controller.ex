@@ -44,7 +44,8 @@ defmodule TdDdWeb.ProfileExecutionController do
 
     with %ProfileExecution{} = execution <-
            Executions.get_profile_execution(id,
-             preload: [:data_structure, :profile, :profile_events]
+             preload: [:data_structure, :profile, :profile_events],
+             enrich: [:latest]
            ),
          {:can, true} <- {:can, can?(claims, show(execution))} do
       render(conn, "show.json", profile_execution: execution)

@@ -22,6 +22,7 @@ defmodule TdDd.Executions do
     ProfileExecution
     |> preload(^preloads)
     |> Repo.get(id)
+    |> enrich(opts[:enrich])
   end
 
   @doc """
