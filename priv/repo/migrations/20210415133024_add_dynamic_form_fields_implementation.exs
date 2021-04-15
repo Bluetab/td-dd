@@ -1,4 +1,4 @@
-defmodule TdDq.Repo.Migrations.AddDynamicFormFields do
+defmodule TdDq.Repo.Migrations.AddDynamicFormFieldsImplementation do
   use Ecto.Migration
 
   def change do
