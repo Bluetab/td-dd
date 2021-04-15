@@ -235,12 +235,16 @@ defmodule TdDd.DataStructures.DataStructureVersion do
 
     defp format_content(_, _), do: nil
 
+    defp get_field_type(%DataStructureVersion{metadata: nil}), do: nil
+
     defp get_field_type(%DataStructureVersion{metadata: %{"type" => type}})
          when byte_size(type) > @max_sortable_length do
       binary_part(type, 0, @max_sortable_length)
     end
 
-    defp get_field_type(%DataStructureVersion{metadata: metadata}), do: Map.get(metadata, "type")
+    defp get_field_type(%DataStructureVersion{metadata: metadata}) when is_map(metadata) do
+      Map.get(metadata, "type")
+    end
 
     defp get_source_alias(%DataStructureVersion{metadata: metadata}),
       do: Map.get(metadata, "alias")

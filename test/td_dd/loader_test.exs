@@ -17,6 +17,11 @@ defmodule TdDd.LoaderTest do
   end
 
   describe "load/1" do
+    test "handles empty list of structures" do
+      records = %{structures: []}
+      assert {:ok, _context} = Loader.load(records, audit())
+    end
+
     test "loads changes in data structures, fields and relations" do
       sys1 = insert(:system, external_id: "SYS1", name: "SYS1")
       sys2 = insert(:system, external_id: "SYS2", name: "SYS2")

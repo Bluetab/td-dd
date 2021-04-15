@@ -2,7 +2,6 @@ defmodule TdDdWeb.SystemControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  alias TdCache.TaxonomyCache
   alias TdDd.Cache.SystemLoader
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Systems.System
@@ -19,12 +18,7 @@ defmodule TdDdWeb.SystemControllerTest do
 
   setup_all do
     start_supervised(SystemLoader)
-
-    %{id: domain_id} = domain = build(:domain)
-    TaxonomyCache.put_domain(domain)
-    on_exit(fn -> TaxonomyCache.delete_domain(domain_id) end)
-
-    [domain: domain]
+    [domain: DomainHelper.insert_domain()]
   end
 
   setup %{conn: conn} do
