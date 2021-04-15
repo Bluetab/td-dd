@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-3497] Allow system metadata to be uploaded using a JSON request body
+- [TD-3517] Profile executions and events
 
 ### Fixed
 
