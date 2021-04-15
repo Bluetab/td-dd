@@ -6,7 +6,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
   alias TdCache.SystemCache
   alias TdDq.Cache.ImplementationLoader
   alias TdDq.Cache.RuleLoader
-  alias TdDq.Search.IndexWorker
+  alias TdDq.Search.MockIndexWorker
 
   @valid_dataset [
     %{structure: %{id: 14_080}},
@@ -14,7 +14,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
   ]
 
   setup_all do
-    start_supervised(IndexWorker)
+    start_supervised(MockIndexWorker)
     start_supervised(RuleLoader)
     start_supervised(ImplementationLoader)
 

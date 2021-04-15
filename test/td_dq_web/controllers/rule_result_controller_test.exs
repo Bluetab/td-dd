@@ -2,11 +2,11 @@ defmodule TdDqWeb.RuleResultControllerTest do
   use TdDqWeb.ConnCase
 
   alias TdDq.Cache.RuleLoader
-  alias TdDq.Search.IndexWorker
+  alias TdDq.Search.MockIndexWorker
 
   setup_all do
     start_supervised(RuleLoader)
-    start_supervised(IndexWorker)
+    start_supervised(MockIndexWorker)
     :ok
   end
 

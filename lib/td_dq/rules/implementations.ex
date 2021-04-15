@@ -17,7 +17,8 @@ defmodule TdDq.Rules.Implementations do
   alias TdDq.Rules.Implementations.Implementation
   alias TdDq.Rules.Implementations.Structure
   alias TdDq.Rules.Rule
-  alias TdDq.Search.IndexWorker
+
+  @index_worker Application.compile_env(:td_dq, :index_worker)
 
   @doc """
   Gets a single implementation.
@@ -134,7 +135,7 @@ defmodule TdDq.Rules.Implementations do
       {:ok, %{deprecated: {_, [_ | _] = impls}}} ->
         impls
         |> Enum.map(& &1.id)
-        |> IndexWorker.reindex_implementations()
+        |> @index_worker.reindex_implementations()
 
         result
 
@@ -158,23 +159,22 @@ defmodule TdDq.Rules.Implementations do
   def delete_implementation(%Implementation{id: id} = implementation) do
     reply = Repo.delete(implementation)
     RuleLoader.refresh(Map.get(implementation, :rule_id))
-    IndexWorker.delete_implementations(id)
+    @index_worker.delete_implementations(id)
     reply
   end
 
-  defp on_upsert({:ok, %{implementation: implementation}} = result) do
-    id = Map.get(implementation, :id)
+  defp on_upsert({:ok, %{implementation: %{id: id}}} = result) do
     ImplementationLoader.refresh(id)
-    IndexWorker.reindex_implementations(id)
+    @index_worker.reindex_implementations(id)
     result
   end
 
-  defp on_upsert(result) do
-    with {:ok, implementation} <- result do
-      IndexWorker.reindex_implementations(Map.get(implementation, :id))
-      result
-    end
+  defp on_upsert({:ok, %{id: id} = _implementation} = result) do
+    @index_worker.reindex_implementations(id)
+    result
   end
+
+  defp on_upsert(result), do: result
 
   def get_sources(%Implementation{} = implementation) do
     implementation

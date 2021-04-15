@@ -2,6 +2,13 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
   use TdDqWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
+  alias TdDq.Search.MockIndexWorker
+
+  setup_all do
+    start_supervised(MockIndexWorker)
+    :ok
+  end
+
   setup _ do
     %{id: id} = implementation = insert(:implementation)
 
@@ -75,6 +82,28 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
                  rule_result: params
                )
                |> json_response(:not_found)
+    end
+
+    @tag authentication: [role: "service"]
+    test "reindexes rule and implementation after creation", %{conn: conn} do
+      MockIndexWorker.clear()
+
+      %{id: rule_id} = rule = insert(:rule)
+      %{
+        id: implementation_id,
+        implementation_key: implementation_key
+      } = insert(:implementation, rule: rule)
+      params = string_params_for(:rule_result_record, implementation_key: implementation_key)
+
+      post(conn,
+        Routes.implementation_implementation_result_path(conn, :create, implementation_key),
+        rule_result: params
+      )
+
+      assert MockIndexWorker.calls == [
+        {:reindex_rules, rule_id},
+        {:reindex_implementations, implementation_id}
+      ]
     end
   end
 end

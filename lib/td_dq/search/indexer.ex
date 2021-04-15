@@ -5,7 +5,6 @@ defmodule TdDq.Search.Indexer do
 
   alias Elasticsearch.Index
   alias Elasticsearch.Index.Bulk
-  alias TdCache.Redix
   alias TdDq.Rules.Implementations.Implementation
   alias TdDq.Rules.Rule
   alias TdDq.Search.Cluster
@@ -35,13 +34,18 @@ defmodule TdDq.Search.Indexer do
   end
 
   defp do_reindex_all(mappings, index) do
-    {:ok, _} =
-      mappings
-      |> Map.put(:index_patterns, "#{index}-*")
-      |> Jason.encode!()
-      |> put_template(index)
+    alias_name = Cluster.alias_name(index)
 
-    Index.hot_swap(Cluster, index)
+    mappings
+    |> Map.put(:index_patterns, "#{alias_name}-*")
+    |> Jason.encode!()
+    |> put_template(index)
+    |> case do
+      {:ok, _} ->
+        Cluster
+        |> Index.hot_swap(alias_name)
+        |> log_errors()
+    end
   end
 
   defp do_reindex(schema, index, ids) do
@@ -49,7 +53,7 @@ defmodule TdDq.Search.Indexer do
       schema
       |> Store.stream(ids)
       |> Stream.map(&Bulk.encode!(Cluster, &1, index, "index"))
-      |> Stream.chunk_every(bulk_page_size(index))
+      |> Stream.chunk_every(Cluster.setting(index, :bulk_page_size))
       |> Stream.map(&Enum.join(&1, ""))
       |> Stream.map(&Elasticsearch.post(Cluster, "/#{index}/_doc/_bulk", &1))
       |> Stream.map(&log(&1, @action))
@@ -65,72 +69,12 @@ defmodule TdDq.Search.Indexer do
     delete(ids, @implementation_index)
   end
 
-  def migrate do
-    if can_migrate?() do
-      migrate_rules()
-      migrate_implementations()
-    end
-  end
-
-  defp migrate_rules do
-    unless alias_exists?(@rule_index) do
-      delete_existing_index("quality_rule")
-
-      Timer.time(
-        fn -> reindex_rules(:all) end,
-        fn millis, _ -> Logger.info("Created index #{@rule_index} in #{millis}ms") end
-      )
-    end
-  end
-
-  defp migrate_implementations do
-    unless alias_exists?(@implementation_index) do
-      Timer.time(
-        fn -> reindex_implementations(:all) end,
-        fn millis, _ -> Logger.info("Created index #{@implementation_index} in #{millis}ms") end
-      )
-    end
-  end
-
-  defp bulk_page_size(index) do
-    :td_dq
-    |> Application.get_env(Cluster)
-    |> Keyword.get(:indexes)
-    |> Map.get(index)
-    |> Map.get(:bulk_page_size)
-  end
-
   defp put_template(template, name) do
     Elasticsearch.put(Cluster, "/_template/#{name}", template)
   end
 
-  defp alias_exists?(name) do
-    case Elasticsearch.head(Cluster, "/_alias/#{name}") do
-      {:ok, _} -> true
-      {:error, _} -> false
-    end
-  end
-
   defp delete(ids, index) do
     Enum.map(ids, &Elasticsearch.delete_document(Cluster, &1, index))
-  end
-
-  defp delete_existing_index(name) do
-    case Elasticsearch.delete(Cluster, "/#{name}") do
-      {:ok, _} ->
-        Logger.info("Deleted index #{name}")
-
-      {:error, %{status: 404}} ->
-        :ok
-
-      error ->
-        error
-    end
-  end
-
-  # Ensure only one instance of dq is reindexing by creating a lock in Redis
-  defp can_migrate? do
-    Redix.command!(["SET", "TdDq.Search.Indexer:LOCK", node(), "NX", "EX", 3600]) == "OK"
   end
 
   defp log({:ok, %{"errors" => false, "items" => items, "took" => took}}, _action) do
@@ -148,5 +92,27 @@ defmodule TdDq.Search.Indexer do
 
   defp log(error, _action) do
     Logger.warn("Bulk indexing encountered errors #{inspect(error)}")
+  end
+
+  defp log_errors(:ok), do: :ok
+  defp log_errors({:error, [e | _] = es}), do: log_errors(e, length(es))
+  defp log_errors({:error, e}), do: log_errors(e, 1)
+
+  defp log_errors(e, 1) do
+    message = message(e)
+    Logger.warn("Reindexing finished with error: #{message}")
+  end
+
+  defp log_errors(e, count) do
+    message = message(e)
+    Logger.warn("Reindexing finished with #{count} errors including: #{message}")
+  end
+
+  defp message(e) do
+    if Exception.exception?(e) do
+      Exception.message(e)
+    else
+      "#{inspect(e)}"
+    end
   end
 end

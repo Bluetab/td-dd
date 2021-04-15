@@ -10,11 +10,11 @@ defmodule TdDq.Rules.ImplementationsTest do
   alias TdDq.MockRelationCache
   alias TdDq.Rules.Implementations
   alias TdDq.Rules.Implementations.Implementation
-  alias TdDq.Search.IndexWorker
+  alias TdDq.Search.MockIndexWorker
 
   setup_all do
     start_supervised(MockRelationCache)
-    start_supervised(IndexWorker)
+    start_supervised(MockIndexWorker)
     start_supervised(RuleLoader)
     start_supervised(ImplementationLoader)
     :ok
@@ -311,6 +311,24 @@ defmodule TdDq.Rules.ImplementationsTest do
                Implementations.delete_implementation(implementation)
 
       assert %{state: :deleted} = meta
+    end
+
+    test "deletes the implementation linked to executions" do
+      %{id: id} = insert(:execution_group)
+      implementation = %{id: implementation_id} = insert(:implementation)
+
+      %{id: execution_id} =
+        insert(:execution,
+          group_id: id,
+          implementation_id: implementation_id,
+          result: insert(:rule_result)
+        )
+
+      assert {:ok, %Implementation{__meta__: meta}} =
+               Implementations.delete_implementation(implementation)
+
+      assert %{state: :deleted} = meta
+      assert is_nil(Repo.get(TdDq.Executions.Execution, execution_id))
     end
   end
 

@@ -6,9 +6,42 @@
 
 - [TD-3189] add templates in the creation of implementations
 
+### Fixed
+
+- [TD-3472] Deletion of implementations linked to executions
+
+### Changed
+
+- [TD-3494] Reindex rule and implementation when creating an implementation_result
+
+## [4.17.0] 2021-04-05
+
+### Fixed
+
+- [TD-3410] Reindexing fails with timeout
+
 ### Changed
 
 - [TD-3445] Postgres port configurable through `DB_PORT` environment variable
+- [TD-3329] Elasticsearch index settings are now configurable using environment
+  variables:
+  - `ES_TIMEOUT`: Connection timeout in milliseconds (default `5000`)
+  - `ES_RECV_TIMEOUT`: Response timeout in milliseconds (default `40000`)
+  - `ES_SHARDS`: Number of shards (default `1`)
+  - `ES_REPLICAS`: Number of replicas (default `1`)
+  - `ES_REFRESH_INTERVAL`: Index refresh interval (default `30s`)
+  - `ES_INDEXING_SLOWLOG_THRESHOLD_WARN`: Indexing slowlog warning threshold
+    (default `10s`)
+  - `ES_INDEXING_SLOWLOG_THRESHOLD_INFO`: Indexing slowlog info threshold
+    (default `5s`)
+  - `ES_INDEXING_SLOWLOG_THRESHOLD_DEBUG`: Indexing slowlog debug threshold
+    (default `2s`)
+  - `ES_INDEXING_SLOWLOG_THRESHOLD_TRACE`: Indexing slowlog trace threshold
+    (default `500ms`)
+  - `ES_INDEXING_SLOWLOG_LEVEL`: Indexing slowlog level (default `info`)
+  - `ES_INDEXING_SLOWLOG_SOURCE`: Indexing slowlog source limit (default `1000`)
+- [TD-3222] `structures` index alias can now be configured using the
+  `ES_ALIAS_RULES` and `ES_ALIAS_IMPLEMENTATIONS` environment variable
 
 ## [4.16.0] 2021-03-22
 

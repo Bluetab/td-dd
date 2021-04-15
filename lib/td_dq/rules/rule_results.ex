@@ -16,6 +16,8 @@ defmodule TdDq.Rules.RuleResults do
 
   require Logger
 
+  @index_worker Application.compile_env(:td_dq, :index_worker)
+
   def get_rule_result(id) do
     Repo.get_by(RuleResult, id: id)
   end
@@ -53,6 +55,7 @@ defmodule TdDq.Rules.RuleResults do
       {:ok, res}
     end)
     |> Repo.transaction()
+    |> on_create()
   end
 
   defp update_executions(%{id: id, implementation_key: key, inserted_at: ts} = _result) do
@@ -64,6 +67,20 @@ defmodule TdDq.Rules.RuleResults do
     |> update(set: [result_id: ^id, updated_at: ^ts])
     |> Repo.update_all([])
   end
+
+  defp on_create({:ok, %{result: rule_result}} = result) do
+    %{
+      rule: %{id: rule_id},
+      implementation: %{id: implementation_id}
+    } = Repo.preload(rule_result, [:implementation, :rule])
+
+    @index_worker.reindex_rules(rule_id)
+    @index_worker.reindex_implementations(implementation_id)
+
+    result
+  end
+
+  defp on_create(result), do: result
 
   @doc """
   Returns last rule_result for each active implementation of rule
