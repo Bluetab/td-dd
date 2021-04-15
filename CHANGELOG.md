@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-3189] add templates in the creation of implementations
+
 ### Changed
 
 - [TD-3445] Postgres port configurable through `DB_PORT` environment variable

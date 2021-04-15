@@ -27,6 +27,10 @@ defmodule TdDq.Rules.Implementations.Implementation do
     belongs_to(:rule, Rule)
 
     field(:deleted_at, :utc_datetime)
+
+    field(:df_name, :string)
+    field(:df_content, :map)
+
     timestamps()
   end
 
@@ -40,7 +44,9 @@ defmodule TdDq.Rules.Implementations.Implementation do
       :deleted_at,
       :rule_id,
       :implementation_key,
-      :implementation_type
+      :implementation_type,
+      :df_name,
+      :df_content
     ])
     |> validate_required([:implementation_type, :rule_id])
     |> validate_inclusion(:implementation_type, ["default", "raw"])
@@ -121,7 +127,9 @@ defmodule TdDq.Rules.Implementations.Implementation do
       :rule_id,
       :inserted_at,
       :updated_at,
-      :validations
+      :validations,
+      :df_name,
+      :df_content
     ]
     @rule_keys [
       :active,
