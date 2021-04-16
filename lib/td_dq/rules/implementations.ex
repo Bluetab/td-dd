@@ -176,6 +176,13 @@ defmodule TdDq.Rules.Implementations do
 
   defp on_upsert(result), do: result
 
+  def get_sources(%Implementation{
+        implementation_type: "raw",
+        raw_content: %{source: source}
+      }) do
+    get_aliases(source)
+  end
+
   def get_sources(%Implementation{} = implementation) do
     implementation
     |> get_structure_ids()
@@ -248,6 +255,16 @@ defmodule TdDq.Rules.Implementations do
     |> where([ri], ri.rule_id in ^rule_ids)
     |> Repo.all()
   end
+
+  defp get_aliases(%{"config" => %{"alias" => source_alias}}) do
+    [source_alias]
+  end
+
+  defp get_aliases(%{"config" => %{"aliases" => source_aliases}}) do
+    source_aliases
+  end
+
+  defp get_aliases(_), do: []
 
   defp dynamic_params(entity, params, fields, dynamic) do
     params

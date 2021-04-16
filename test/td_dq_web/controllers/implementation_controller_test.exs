@@ -157,7 +157,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
           raw_content: %{
             dataset: "cliente c join address a on c.address_id=a.id",
             population: nil,
-            structure_alias: "str_alias",
             source_id: 88,
             validations: "c.city = 'MADRID'"
           }
@@ -211,8 +210,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       assert %{
                "raw_content" => %{
-                "source_id" => ["can't be blank"],
-                "structure_alias" => ["can't be blank"]
+                 "source_id" => ["can't be blank"]
                }
              } = errors
     end
@@ -432,7 +430,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
       params = %{
         "rule_implementation" => %{
           "raw_content" => %{
-            "structure_alias" => "alias",
             "source_id" => 123,
             "dataset" => Base.encode64("Some dataset"),
             "population" => "Not encoded",
@@ -486,6 +483,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
                )
                |> validate_resp_schema(schema, "ImplementationsResponse")
                |> json_response(:ok)
+
       assert [%{"rule_id" => ^rule_id}] = data
     end
 
@@ -509,9 +507,10 @@ defmodule TdDqWeb.ImplementationControllerTest do
     @tag authentication: [role: "admin"]
     test "search implementations with raw_content", %{
       conn: conn,
-      swagger_schema: schema,
+      swagger_schema: schema
     } do
       %{rule_id: rule_id} = insert(:raw_implementation)
+
       assert %{"data" => data} =
                conn
                |> post(

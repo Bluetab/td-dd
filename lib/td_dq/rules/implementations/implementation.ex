@@ -152,7 +152,7 @@ defmodule TdDq.Rules.Implementations.Implementation do
       domain_parents = Helpers.get_domain_parents(domain_ids)
       updated_by = Helpers.get_user(rule.updated_by)
       structure_ids = Implementations.get_structure_ids(implementation)
-      structure_aliases = Helpers.get_sources(structure_ids)
+      structure_aliases = Implementations.get_sources(implementation)
 
       implementation
       |> Implementations.enrich_implementation_structures()
@@ -204,8 +204,13 @@ defmodule TdDq.Rules.Implementations.Implementation do
     defp get_raw_content(implementation) do
       raw_content = Map.get(implementation, :raw_content) || %{}
 
-      raw_content
-      |> Map.take([:dataset, :population, :validations, :structure_alias, :source_id, :database])
+      Map.take(raw_content, [
+        :dataset,
+        :population,
+        :validations,
+        :source_id,
+        :database
+      ])
     end
 
     defp transform_dataset(%{dataset: dataset = [_ | _]} = data) do
