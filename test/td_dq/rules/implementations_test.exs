@@ -5,6 +5,7 @@ defmodule TdDq.Rules.ImplementationsTest do
   import TdDq.TestOperators
 
   alias Ecto.Changeset
+  alias TdCache.StructureCache
   alias TdDq.Cache.ImplementationLoader
   alias TdDq.Cache.RuleLoader
   alias TdDq.MockRelationCache
@@ -431,6 +432,115 @@ defmodule TdDq.Rules.ImplementationsTest do
       TdCache.StructureCache.delete(structure_id)
       assert {:ok, %{deprecated: deprecated}} = Implementations.deprecate_implementations()
       assert {1, [%{id: ^id1}]} = deprecated
+    end
+  end
+
+  describe "get_sources/1" do
+    setup do
+      %{structure: %{id: stid1}} = dataset_row = build(:dataset_row)
+      %{structure: %{id: stid2}} = condition_row = build(:condition_row)
+
+      sid1 = System.unique_integer([:positive])
+      sid2 = System.unique_integer([:positive])
+
+      source1 = %{"id" => sid1, "config" => %{"alias" => "foo"}, "external_id" => "eid1"}
+      source2 = %{"id" => sid2, "config" => %{"aliases" => ["bar", "foo"]}, "external_id" => "eid2"}
+
+      raw_content1 = build(:raw_content, source_id: sid1, source: source1)
+      raw_content2 = build(:raw_content, source_id: sid2, source: source2)
+
+      structure1 = %{
+        id: stid1,
+        name: "name",
+        external_id: "ex1",
+        group: "group",
+        type: "type",
+        path: ["foo", "bar"],
+        updated_at: DateTime.utc_now(),
+        metadata: %{"alias" => "foo"},
+        system_id: 999
+      }
+
+      structure2 = %{
+        id: stid2,
+        name: "name",
+        external_id: "ex2",
+        group: "group",
+        type: "type",
+        path: ["foo", "bar"],
+        updated_at: DateTime.utc_now(),
+        metadata: %{"alias" => "bar"},
+        system_id: 999
+      }
+
+      StructureCache.put(structure1)
+      StructureCache.put(structure2)
+
+      implementation1 =
+        insert(:implementation, dataset: [dataset_row], validations: [condition_row])
+
+      implementation2 = insert(:raw_implementation, raw_content: raw_content1)
+      implementation3 = insert(:raw_implementation, raw_content: raw_content2)
+
+      on_exit(fn ->
+        StructureCache.delete(stid1)
+        StructureCache.delete(stid2)
+      end)
+
+      [
+        sources: [source1, source2],
+        structures: [structure1, structure2],
+        implementations: [implementation1, implementation2, implementation3]
+      ]
+    end
+
+    test "get sources of default implementation", %{
+      implementations: [impl | _],
+      structures: structures
+    } do
+      aliases =
+        structures
+        |> Enum.map(&Map.get(&1, :metadata))
+        |> Enum.map(&Map.get(&1, "alias"))
+        |> Enum.uniq()
+        |> Enum.sort()
+
+      results =
+        impl
+        |> Implementations.get_sources()
+        |> Enum.sort()
+
+      assert aliases == results
+    end
+
+    test "get sources of raw implementation", %{
+      implementations: [_, impl1, impl2],
+      sources: [s1, s2]
+    } do
+      als =
+        s1
+        |> Map.get("config")
+        |> Map.get("alias")
+
+      results =
+        impl1
+        |> Implementations.get_sources()
+        |> Enum.sort()
+
+      assert [als] == results
+
+      aliases =
+        s2
+        |> Map.get("config")
+        |> Map.get("aliases")
+        |> Enum.sort()
+
+      results =
+        impl2
+        |> Implementations.get_sources()
+        |> Enum.sort()
+
+      assert aliases == results
     end
   end
 end
