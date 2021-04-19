@@ -144,34 +144,5 @@ defmodule TdDq.RulesTest do
              |> Rules.list_rules()
              |> Enum.map(&Map.get(&1, :id)) == [rule_3.id]
     end
-
-    test "get_rule_by_implementation_key/1 retrieves a rule" do
-      implementation_key = "rik1"
-      rule = insert(:rule, name: "Active Rule")
-      insert(:implementation, implementation_key: implementation_key, rule: rule)
-
-      %{id: result_id} = Rules.get_rule_by_implementation_key(implementation_key)
-
-      assert result_id == Map.get(rule, :id)
-    end
-
-    test "get_rule_by_implementation_key/2 with deleted option retrieves a deleted rule by implementation key" do
-      implementation_key = "rik1"
-      rule = insert(:rule, name: "Deleted Rule", deleted_at: DateTime.utc_now())
-      insert(:implementation, implementation_key: implementation_key, rule: rule)
-
-      %{id: result_id} = Rules.get_rule_by_implementation_key(implementation_key, deleted: true)
-
-      assert result_id == Map.get(rule, :id)
-    end
-
-    test "get_rule_by_implementation_key/2 without deleted option or false value does not retrieve a deleted rule by implementation key" do
-      implementation_key = "rik1"
-      rule = insert(:rule, name: "Deleted Rule", deleted_at: DateTime.utc_now())
-      insert(:implementation, implementation_key: implementation_key, rule: rule)
-
-      assert nil == Rules.get_rule_by_implementation_key(implementation_key, deleted: false)
-      assert nil == Rules.get_rule_by_implementation_key(implementation_key)
-    end
   end
 end

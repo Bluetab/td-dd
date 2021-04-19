@@ -9,7 +9,6 @@ defmodule TdDq.Rules.RuleResults do
   alias TdDq.Cache.RuleLoader
   alias TdDq.Executions.Execution
   alias TdDq.Repo
-  alias TdDq.Rules.Audit
   alias TdDq.Rules.Implementations.Implementation
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleResult
@@ -45,8 +44,11 @@ defmodule TdDq.Rules.RuleResults do
       {:error, failed_operation, failed_value, changes_so_far}
 
   """
-  def create_rule_result(params \\ %{}) do
-    changeset = RuleResult.changeset(params)
+  def create_rule_result(%Implementation{implementation_key: key} = impl, params \\ %{}) do
+    %{rule: %{result_type: result_type}} = Repo.preload(impl, :rule)
+
+    changeset =
+      RuleResult.changeset(%RuleResult{implementation_key: key, result_type: result_type}, params)
 
     Multi.new()
     |> Multi.insert(:result, changeset)
@@ -112,7 +114,9 @@ defmodule TdDq.Rules.RuleResults do
     |> Repo.all()
   end
 
-  def delete_rule_result(%RuleResult{} = rule_result, rule) do
+  def delete_rule_result(%RuleResult{} = rule_result) do
+    %{rule: rule} = Repo.preload(rule_result, :rule)
+
     rule_result
     |> Repo.delete()
     |> refresh_on_delete(rule)
@@ -126,95 +130,4 @@ defmodule TdDq.Rules.RuleResults do
   end
 
   defp refresh_on_delete(res, _), do: res
-
-  def bulk_load(records) do
-    Logger.info("Loading rule results...")
-
-    Timer.time(
-      fn -> do_bulk_load(records) end,
-      fn millis, _ -> Logger.info("Rule results loaded in #{millis}ms") end
-    )
-  end
-
-  defp do_bulk_load(records) do
-    Multi.new()
-    |> Multi.run(:ids, fn _, _ -> bulk_insert(records) end)
-    |> Multi.run(:results, &select_results/2)
-    |> Multi.run(:audit, Audit, :rule_results_created, [0])
-    |> Repo.transaction()
-    |> bulk_refresh()
-  end
-
-  defp bulk_refresh(res) do
-    with {:ok, %{results: results}} <- res,
-         rule_ids <- rule_ids_from_results(results) do
-      RuleLoader.refresh(rule_ids)
-      res
-    end
-  end
-
-  defp rule_ids_from_results(results) do
-    results
-    |> Enum.map(&Map.get(&1, :rule_id))
-    |> Enum.reject(&is_nil/1)
-    |> Enum.uniq()
-  end
-
-  defp bulk_insert(records) do
-    records
-    |> Enum.with_index(2)
-    |> Enum.map(fn {params, row_number} -> Map.put(params, "row_number", row_number) end)
-    |> Enum.map(&RuleResult.changeset/1)
-    |> Enum.reduce_while([], &reduce_changesets/2)
-    |> case do
-      ids when is_list(ids) -> {:ok, ids}
-      error -> error
-    end
-  end
-
-  defp reduce_changesets(%{} = changeset, acc) do
-    case Repo.insert(changeset) do
-      {:ok, %{id: id}} -> {:cont, [id | acc]}
-      error -> {:halt, error}
-    end
-  end
-
-  defp select_results(_repo, %{ids: ids}) do
-    results =
-      RuleResult
-      |> join(:inner, [r], i in Implementation, on: r.implementation_key == i.implementation_key)
-      |> join(:inner, [res, i], rule in assoc(i, :rule))
-      |> select([res], %{})
-      |> select_merge(
-        [res, _, _],
-        map(res, ^~w(id implementation_key date result errors records params inserted_at)a)
-      )
-      |> select_merge([_, i, _], %{implementation_id: i.id, rule_id: i.rule_id})
-      |> select_merge(
-        [_, _, rule],
-        map(rule, ^~w(business_concept_id goal name minimum result_type)a)
-      )
-      |> where([res], res.id in ^ids)
-      |> order_by([res], res.id)
-      |> Repo.all()
-      |> Enum.map(&Map.put(&1, :status, status(&1)))
-
-    {:ok, results}
-  end
-
-  defp status(%{result_type: "errors_number", errors: errors, minimum: threshold, goal: target}) do
-    cond do
-      Decimal.compare(errors, threshold) == :gt -> "fail"
-      Decimal.compare(errors, target) == :gt -> "warn"
-      true -> "success"
-    end
-  end
-
-  defp status(%{result_type: "percentage", result: result, minimum: threshold, goal: target}) do
-    cond do
-      Decimal.compare(result, threshold) == :lt -> "fail"
-      Decimal.compare(result, target) == :lt -> "warn"
-      true -> "success"
-    end
-  end
 end

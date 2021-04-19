@@ -11,6 +11,8 @@ defmodule TdDq.Rules.Rule do
   alias TdDq.Rules.Implementations.Implementation
   alias TdDq.Rules.Rule
 
+  @valid_result_types ~w(percentage errors_number)
+
   schema "rules" do
     field(:business_concept_id, :string)
     field(:active, :boolean, default: false)
@@ -30,6 +32,8 @@ defmodule TdDq.Rules.Rule do
 
     timestamps()
   end
+
+  def valid_result_types, do: @valid_result_types
 
   def changeset(%{} = params) do
     changeset(%__MODULE__{}, params)
@@ -57,7 +61,7 @@ defmodule TdDq.Rules.Rule do
       :minimum,
       :result_type
     ])
-    |> validate_inclusion(:result_type, ["percentage", "errors_number"])
+    |> validate_inclusion(:result_type, @valid_result_types)
     |> validate_goal()
     |> validate_content()
     |> unique_constraint(
@@ -186,38 +190,31 @@ defmodule TdDq.Rules.Rule do
 
     defp get_execution_result_info(%Rule{} = rule) do
       case RuleResults.get_latest_rule_results(rule) do
-        [] ->
-          %{result_text: "quality_result.no_execution"}
-
-        results ->
-          get_execution_result_info(rule, results)
+        [] -> nil
+        results -> get_execution_result_info(rule, results)
       end
     end
 
     defp get_execution_result_info(
            %Rule{minimum: minimum, goal: goal, result_type: result_type},
-           rule_results
+           results
          ) do
       Map.new()
-      |> with_result(rule_results)
-      |> with_last_execution_at(rule_results)
+      |> with_result(results)
+      |> with_last_execution_at(results)
       |> Helpers.with_result_text(minimum, goal, result_type)
     end
 
-    defp with_result(result_map, rule_results) do
-      result =
-        rule_results
-        |> Enum.min_by(fn rule_result -> rule_result.result end)
-
-      result_map
-      |> Map.put(:result, Map.get(result, :result))
-      |> Map.put(:errors, Map.get(result, :errors))
-      |> Map.put(:records, Map.get(result, :records))
+    defp with_result(result_map, results) do
+      results
+      |> Enum.min_by(& &1.result, fn -> %{} end)
+      |> Map.take([:result, :errors, :records])
+      |> Map.merge(result_map, fn _k, v1, _v2 -> v1 end)
     end
 
-    defp with_last_execution_at(result_map, rule_results) do
+    defp with_last_execution_at(result_map, results) do
       last_execution_at =
-        rule_results
+        results
         |> Enum.map(& &1.date)
         |> Enum.max()
 

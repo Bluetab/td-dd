@@ -8,6 +8,7 @@
 
 ### Changed
 
+- [TD-3509] Rule result now includes the result type
 - [TD-3494] Reindex rule and implementation when creating an implementation_result
 
 ## [4.17.0] 2021-04-05

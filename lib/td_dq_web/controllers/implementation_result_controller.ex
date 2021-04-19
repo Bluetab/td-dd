@@ -25,14 +25,12 @@ defmodule TdDqWeb.ImplementationResultController do
     response(400, "Client Error")
   end
 
-  def create(conn, %{"implementation_id" => key, "rule_result" => result_params}) do
+  def create(conn, %{"implementation_id" => key, "rule_result" => params}) do
     claims = conn.assigns[:current_resource]
 
-    with implementation when not is_nil(implementation) <-
-           Implementations.get_implementation_by_key(key),
+    with implementation <- Implementations.get_implementation_by_key!(key),
          {:can, true} <- {:can, can?(claims, execute(implementation))},
-         params <- Map.put_new(result_params, "implementation_key", key),
-         {:ok, %{result: %{id: id} = result}} <- RuleResults.create_rule_result(params) do
+         {:ok, %{result: %{id: id} = result}} <- RuleResults.create_rule_result(implementation, params) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", Routes.rule_result_path(conn, :show, id))

@@ -72,16 +72,16 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
     end
 
     @tag authentication: [role: "service"]
-    test "returns 404 Not Found if implementation doesn't exist", %{conn: conn} do
+    test "raises if implementation doesn't exist", %{conn: conn} do
       params = string_params_for(:implementation_result_record, records: 100, errors: 2)
 
-      assert %{"errors" => _} =
-               conn
-               |> post(
-                 Routes.implementation_implementation_result_path(conn, :create, "dontexist"),
-                 rule_result: params
-               )
-               |> json_response(:not_found)
+      assert_raise Ecto.NoResultsError, fn ->
+        post(
+          conn,
+          Routes.implementation_implementation_result_path(conn, :create, "dontexist"),
+          rule_result: params
+        )
+      end
     end
 
     @tag authentication: [role: "service"]

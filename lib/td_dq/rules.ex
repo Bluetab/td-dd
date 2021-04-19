@@ -13,7 +13,6 @@ defmodule TdDq.Rules do
   alias TdDq.Cache.RuleLoader
   alias TdDq.Repo
   alias TdDq.Rules.Audit
-  alias TdDq.Rules.Implementations
   alias TdDq.Rules.Implementations.Implementation
   alias TdDq.Rules.Rule
 
@@ -67,6 +66,7 @@ defmodule TdDq.Rules do
     |> Enum.map(&preload_bc_version/1)
   end
 
+  # TODO: REFACTOR preload_bc_version
   defp preload_bc_version(%{business_concept_id: nil} = rule), do: rule
 
   defp preload_bc_version(%{business_concept_id: business_concept_id} = rule) do
@@ -258,18 +258,6 @@ defmodule TdDq.Rules do
       order_by: [desc: :business_concept_id]
     )
     |> Repo.all()
-  end
-
-  def get_rule_by_implementation_key(implementation_key, opts \\ []) do
-    implementation_rule =
-      implementation_key
-      |> Implementations.get_implementation_by_key(opts[:deleted])
-      |> Repo.preload(:rule)
-
-    case implementation_rule do
-      nil -> nil
-      _rule -> Map.get(implementation_rule, :rule)
-    end
   end
 
   def get_rule_or_nil(id) when is_nil(id) or id == "", do: nil

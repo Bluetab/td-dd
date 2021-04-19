@@ -39,4 +39,11 @@ defmodule TdDqWeb.FallbackController do
     |> put_view(TdDqWeb.ErrorView)
     |> render("404.json")
   end
+
+  def call(conn, {:editable, false}) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> put_view(ErrorView)
+    |> render("422.json")
+  end
 end
