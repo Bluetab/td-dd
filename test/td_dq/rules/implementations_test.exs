@@ -163,18 +163,20 @@ defmodule TdDq.Rules.ImplementationsTest do
       %{implementation_key: implementation_key} =
         implementation = insert(:implementation, implementation_key: "My implementation key")
 
-      assert Implementations.get_implementation_by_key(implementation_key)
+      assert Implementations.get_implementation_by_key!(implementation_key)
              <~> implementation
     end
 
-    test "returns nil if the implementation with given implementation key has been soft deleted" do
+    test "raises if the implementation with given implementation key has been soft deleted" do
       %{implementation_key: implementation_key} =
         insert(:implementation,
           implementation_key: "My implementation key",
           deleted_at: DateTime.utc_now()
         )
 
-      assert Implementations.get_implementation_by_key(implementation_key) == nil
+      assert_raise Ecto.NoResultsError, fn ->
+        Implementations.get_implementation_by_key!(implementation_key)
+      end
     end
   end
 

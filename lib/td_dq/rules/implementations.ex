@@ -41,20 +41,20 @@ defmodule TdDq.Rules.Implementations do
     |> Repo.get!(id)
   end
 
-  def get_implementation_by_key(implementation_key, deleted \\ nil)
+  def get_implementation_by_key!(implementation_key, deleted \\ nil)
 
-  def get_implementation_by_key(implementation_key, true) do
+  def get_implementation_by_key!(implementation_key, true) do
     Implementation
     |> join(:inner, [ri], r in assoc(ri, :rule))
-    |> Repo.get_by(implementation_key: implementation_key)
+    |> Repo.get_by!(implementation_key: implementation_key)
   end
 
-  def get_implementation_by_key(implementation_key, _deleted) do
+  def get_implementation_by_key!(implementation_key, _deleted) do
     Implementation
     |> join(:inner, [ri], r in assoc(ri, :rule))
     |> where([_, r], is_nil(r.deleted_at))
     |> where([ri, _], is_nil(ri.deleted_at))
-    |> Repo.get_by(implementation_key: implementation_key)
+    |> Repo.get_by!(implementation_key: implementation_key)
   end
 
   @doc """

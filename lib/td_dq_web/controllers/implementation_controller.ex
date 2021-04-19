@@ -5,9 +5,6 @@ defmodule TdDqWeb.ImplementationController do
   import Canada, only: [can?: 2]
   import TdDqWeb.RuleImplementationSupport, only: [decode: 1]
 
-  require Logger
-
-  alias Ecto.Changeset
   alias TdDq.Repo
   alias TdDq.Rules
   alias TdDq.Rules.Implementations
@@ -15,7 +12,6 @@ defmodule TdDqWeb.ImplementationController do
   alias TdDq.Rules.Implementations.Implementation
   alias TdDq.Rules.Implementations.Search
   alias TdDq.Rules.RuleResults
-  alias TdDqWeb.ChangesetView
   alias TdDqWeb.ErrorView
 
   action_fallback(TdDqWeb.FallbackController)
@@ -180,6 +176,7 @@ defmodule TdDqWeb.ImplementationController do
       "implementation_type" => implementation.implementation_type
     }
 
+    # TODO: Refactor this (and remove {:editable, false} from fallback controller)
     with {:can, true} <- {:can, can?(claims, update(resource_type))},
          {:editable, true} <-
            {:editable,
@@ -193,43 +190,6 @@ defmodule TdDqWeb.ImplementationController do
              claims
            ) do
       render(conn, "show.json", implementation: implementation)
-    else
-      {:can, false} ->
-        conn
-        |> put_status(:forbidden)
-        |> put_view(ErrorView)
-        |> render("403.json")
-
-      {:error, %Changeset{data: %{__struct__: _}} = changeset} ->
-        Logger.error("While updating rule implementation... #{inspect(changeset)}")
-
-        conn
-        |> put_status(:unprocessable_entity)
-        |> put_view(ChangesetView)
-        |> render("error.json",
-          changeset: changeset,
-          prefix: "rule.implementation.error"
-        )
-
-      {:error, %Changeset{} = changeset} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> put_view(ChangesetView)
-        |> render("error.json",
-          changeset: changeset,
-          prefix: "rule.implementation.system_params.error"
-        )
-
-      {:editable, false} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> put_view(ErrorView)
-        |> render("422.json")
-
-      error ->
-        Logger.error("While updating rule implementation... #{inspect(error)}")
-
-        error
     end
   end
 
