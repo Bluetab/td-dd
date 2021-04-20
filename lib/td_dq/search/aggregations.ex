@@ -41,7 +41,7 @@ defmodule TdDq.Search.Aggregations do
       {"source_external_id", %{terms: %{field: "structure_aliases.raw", size: 50}}}
     ]
 
-    ["dq", "bg"]
+    ["dq", "bg", "ri"]
     |> Enum.flat_map(&template_terms/1)
     |> Enum.concat(static_keywords)
     |> Enum.into(%{})
@@ -81,6 +81,10 @@ defmodule TdDq.Search.Aggregations do
   end
 
   defp content_term(%{"name" => field}, "dq") do
+    {field, %{terms: %{field: "df_content.#{field}.raw"}}}
+  end
+
+  defp content_term(%{"name" => field}, "ri") do
     {field, %{terms: %{field: "df_content.#{field}.raw"}}}
   end
 

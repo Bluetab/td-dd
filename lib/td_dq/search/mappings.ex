@@ -74,6 +74,8 @@ defmodule TdDq.Search.Mappings do
   end
 
   def get_implementation_mappings do
+    content_mappings = %{properties: get_dynamic_mappings("ri")}
+
     properties = %{
       id: %{type: "long"},
       business_concept_id: %{type: "text"},
@@ -154,7 +156,9 @@ defmodule TdDq.Search.Mappings do
         }
       },
       population: get_condition_mappings(),
-      validations: get_condition_mappings()
+      validations: get_condition_mappings(),
+      df_name: %{type: "text", fields: %{raw: %{type: "keyword"}}},
+      df_content: content_mappings
     }
 
     settings = Cluster.setting(:implementations)
