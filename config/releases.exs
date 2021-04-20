@@ -1,6 +1,5 @@
 import Config
 
-# Configure your database
 config :td_dd, TdDd.Repo,
   username: System.fetch_env!("DB_USER"),
   password: System.fetch_env!("DB_PASSWORD"),
@@ -13,6 +12,8 @@ config :td_dd, TdDd.Repo,
 config :td_dd, TdDd.Auth.Guardian, secret_key: System.fetch_env!("GUARDIAN_SECRET_KEY")
 
 config :td_dd, TdCx.Auth.Guardian, secret_key: System.fetch_env!("GUARDIAN_SECRET_KEY")
+
+config :td_dd, TdDq.Auth.Guardian, secret_key: System.fetch_env!("GUARDIAN_SECRET_KEY")
 
 config :td_dd, :vault,
   token: System.fetch_env!("VAULT_TOKEN"),
@@ -38,7 +39,17 @@ config :td_dd, TdDd.Scheduler,
       schedule: System.get_env("ES_REFRESH_SCHEDULE", "@daily"),
       task: {TdCx.Search.IndexWorker, :reindex, []},
       run_strategy: Quantum.RunStrategy.Local
-    ]
+    ],
+    rule_cache_refresher: [
+      schedule: System.get_env("CACHE_REFRESH_SCHEDULE", "@hourly"),
+      task: {TdDq.Cache.ImplementationLoader, :refresh, []},
+      run_strategy: Quantum.RunStrategy.Local
+    ],
+    rule_indexer: [
+      schedule: System.get_env("ES_REFRESH_SCHEDULE", "@daily"),
+      task: {TdDq.Search.IndexWorker, :reindex, []},
+      run_strategy: Quantum.RunStrategy.Local
+    ],
   ]
 
 config :td_dd, TdDd.Search.Cluster, url: System.fetch_env!("ES_URL")
@@ -53,7 +64,9 @@ end
 config :td_dd, TdDd.Search.Cluster,
   aliases: %{
     jobs: System.get_env("ES_ALIAS_JOBS", "jobs"),
-    structures: System.get_env("ES_ALIAS_STRUCTURES", "structures")
+    structures: System.get_env("ES_ALIAS_STRUCTURES", "structures"),
+    implementations: System.get_env("ES_ALIAS_IMPLEMENTATIONS", "implementations"),
+    rules: System.get_env("ES_ALIAS_RULES", "rules")
   },
   default_options: [
     timeout: System.get_env("ES_TIMEOUT", "5000") |> String.to_integer(),

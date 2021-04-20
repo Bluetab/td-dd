@@ -3,11 +3,14 @@
 #
 # This configuration file is loaded before any dependency and
 # is restricted to this project.
-# General application configuration
+
 use Mix.Config
 
 # Environment
 config :td_dd, :env, Mix.env()
+
+config :td_dd, rule_removal: true
+config :td_dd, rule_removal_frequency: 60 * 60 * 1000
 
 # General application configuration
 config :td_dd,
@@ -24,6 +27,12 @@ config :td_dd, TdCxWeb.Endpoint,
   http: [port: 4008],
   url: [host: "localhost"],
   render_errors: [view: TdCxWeb.ErrorView, accepts: ~w(json)]
+
+# Configures the dq endpoint
+config :td_dd, TdDqWeb.Endpoint,
+  http: [port: 4004],
+  url: [host: "localhost"],
+  render_errors: [view: TdDqWeb.ErrorView, accepts: ~w(json)]
 
 # Configures Elixir's Logger
 # set EX_LOGGER_FORMAT environment variable to override Elixir's Logger format
@@ -55,21 +64,30 @@ config :td_dd, TdCx.Auth.Guardian,
   ttl: {1, :hours},
   secret_key: "SuperSecretTruedat"
 
+config :td_dd, TdDq.Auth.Guardian,
+  # optional
+  allowed_algos: ["HS512"],
+  issuer: "tdauth",
+  ttl: {1, :hours},
+  secret_key: "SuperSecretTruedat"
+
 config :td_dd, :phoenix_swagger,
   swagger_files: %{
     "priv/static/swagger.json" => [router: TdDdWeb.Router],
-    "priv/static/swagger_cx.json" => [router: TdCxWeb.Router]
+    "priv/static/swagger_cx.json" => [router: TdCxWeb.Router],
+    "priv/static/swagger_dq.json" => [router: TdDqWeb.Router]
   }
 
 config :codepagex, :encodings, [
-    :ascii,
-    ~r[iso8859]i,
-    "VENDORS/MICSFT/WINDOWS/CP1252"
+  :ascii,
+  ~r[iso8859]i,
+  "VENDORS/MICSFT/WINDOWS/CP1252"
 ]
 
 config :td_dd, permission_resolver: TdCache.Permissions
 config :td_dd, index_worker: TdDd.Search.IndexWorker
 config :td_dd, cx_index_worker: TdCx.Search.IndexWorker
+config :td_dd, dq_index_worker: TdDq.Search.IndexWorker
 config :td_dd, loader_worker: TdDd.Loader.Worker
 
 # Default timeout increased for bulk metadata upload
@@ -85,20 +103,25 @@ config :td_cache, :event_stream,
   consumer_id: "default",
   consumer_group: "dd",
   streams: [
-    [key: "data_structure:events", consumer: TdDd.Cache.StructureLoader],
-    [key: "template:events", consumer: TdDd.Search.IndexWorker],
-    [key: "domain:events", consumer: TdDd.Cache.DomainEventConsumer]
+    [group: "dd", key: "data_structure:events", consumer: TdDd.Cache.StructureLoader],
+    [group: "dd", key: "domain:events", consumer: TdDd.Cache.DomainEventConsumer],
+    [group: "dd", key: "template:events", consumer: TdDd.Search.IndexWorker],
+    [group: "dq", key: "business_concept:events", consumer: TdDq.Search.IndexWorker],
+    [group: "dq", key: "domain:events", consumer: TdDq.Cache.DomainEventConsumer],
+    [group: "dq", key: "template:events", consumer: TdDq.Search.IndexWorker],
   ]
 
 config :td_dd, :cache_cleaner,
   clean_on_startup: true,
   patterns: [
-    "structures:external_ids:*",
-    "data_fields:external_ids",
-    "TdDd.DataStructures.Migrations:td-2979",
     "TdDd.DataStructures.Migrations:TD-2774",
+    "TdDd.DataStructures.Migrations:td-2979",
+    "TdDq.RuleImplementations.Migrations:cache_structures",
+    "data_fields:external_ids",
+    "rule_result:*",
+    "source:*",
     "sources:ids_external_ids",
-    "source:*"
+    "structures:external_ids:*"
   ]
 
 config :td_dd, TdDd.Scheduler,
@@ -108,13 +131,22 @@ config :td_dd, TdDd.Scheduler,
       task: {TdDd.Cache.StructureLoader, :refresh, []},
       run_strategy: Quantum.RunStrategy.Local
     ],
+    rule_indexer: [
+      schedule: "@daily",
+      task: {TdDq.Search.IndexWorker, :reindex, []},
+      run_strategy: Quantum.RunStrategy.Local
+    ],
+    rule_cache_refresher: [
+      schedule: "@hourly",
+      task: {TdDq.Cache.ImplementationLoader, :refresh, []},
+      run_strategy: Quantum.RunStrategy.Local
+    ],
     job_indexer: [
       schedule: "@daily",
       task: {TdCx.Search.IndexWorker, :reindex, []},
       run_strategy: Quantum.RunStrategy.Local
     ]
   ]
-
 
 import_config "metadata.exs"
 import_config "profiling.exs"

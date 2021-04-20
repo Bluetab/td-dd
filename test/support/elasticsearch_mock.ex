@@ -11,6 +11,8 @@ defmodule TdDd.ElasticsearchMock do
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Repo
   alias TdDd.Search.Store
+  alias TdDq.Rules.Implementations.Implementation
+  alias TdDq.Rules.Rule
 
   require Logger
 
@@ -45,13 +47,30 @@ defmodule TdDd.ElasticsearchMock do
   end
 
   @impl true
+  def request(_config, _method, "/rules-" <> _suffix, _data, _opts) do
+    {:ok, %Response{status_code: 200, body: %{}}}
+  end
+
+  @impl true
   def request(_config, :post, "/jobs/_doc/_bulk", _data, _opts) do
     body = %{"took" => 10, "items" => [], "errors" => false}
     {:ok, %Response{status_code: 200, body: body}}
   end
 
   @impl true
+  def request(_config, :post, "/rules/_doc/_bulk", _data, _opts) do
+    body = %{"took" => 10, "items" => [], "errors" => false}
+    {:ok, %Response{status_code: 200, body: body}}
+  end
+
+  @impl true
   def request(_config, :post, "/structures/_doc/_bulk", _data, _opts) do
+    body = %{"took" => 10, "items" => [], "errors" => false}
+    {:ok, %Response{status_code: 200, body: body}}
+  end
+
+  @impl true
+  def request(_config, :post, "/implementations/_doc/_bulk", _data, _opts) do
     body = %{"took" => 10, "items" => [], "errors" => false}
     {:ok, %Response{status_code: 200, body: body}}
   end
@@ -64,7 +83,7 @@ defmodule TdDd.ElasticsearchMock do
     |> Enum.map(&Jobs.with_metrics/1)
     |> Enum.map(&Map.delete(&1, :__meta__))
     |> Enum.map(&Map.from_struct/1)
-    |> search_results()
+    |> search_results(%{})
   end
 
   @impl true
@@ -72,22 +91,23 @@ defmodule TdDd.ElasticsearchMock do
     {:ok, %Response{status_code: 200, body: %{result: "deleted"}}}
   end
 
+  @impl true
   def request(_config, :post, "/structures/_search", data, _opts) do
     data
-    |> do_search()
+    |> do_search(DataStructureVersion)
     |> search_results(data)
   end
 
   @impl true
   def request(_config, :post, "/structures/_search?scroll=1m", data, _opts) do
-    do_scroll(data)
+    do_scroll(data, DataStructureVersion)
   end
 
   @impl true
   def request(_config, :post, "/_search/scroll", data, _opts) do
     data
     |> decode_scroll_id()
-    |> do_scroll()
+    |> do_scroll(DataStructureVersion)
   end
 
   @impl true
@@ -96,14 +116,59 @@ defmodule TdDd.ElasticsearchMock do
   end
 
   @impl true
-  def request(_config, method, url, data, _opts) do
-    Logger.warn("#{method} #{url} #{Jason.encode!(data)}")
-    search_results([])
+  def request(
+        _config,
+        :post,
+        "/implementations/_search",
+        %{query: %{bool: %{filter: filter}}} = params,
+        _opts
+      ) do
+    aggregations = get_aggregations(filter)
+    params |> do_search(Implementation) |> search_results(params, aggregations)
   end
 
-  defp do_scroll(scroll_params) do
+  @impl true
+  def request(
+        _config,
+        :post,
+        "/rules/_search",
+        %{query: %{bool: %{filter: filter}}} = params,
+        _opts
+      ) do
+    aggregations = get_aggregations(filter)
+    params |> do_search(Rule) |> search_results(params, aggregations)
+  end
+
+  @impl true
+  def request(
+        _config,
+        :post,
+        "/rules/_search",
+        %{} = params,
+        _opts
+      ) do
+    params |> do_search(Rule) |> search_results(params)
+  end
+
+  @impl true
+  def request(_config, :delete, "/rules/_doc/" <> _id, _data, _opts) do
+    {:ok, %Response{status_code: 200, body: Jason.encode!(%{result: "deleted"})}}
+  end
+
+  @impl true
+  def request(_config, :delete, "/implementations/_doc/" <> _id, _data, _opts) do
+    {:ok, %Response{status_code: 200, body: Jason.encode!(%{result: "deleted"})}}
+  end
+
+  @impl true
+  def request(_config, method, url, data, _opts) do
+    Logger.warn("#{method} #{url} #{Jason.encode!(data)}")
+    search_results([], data)
+  end
+
+  defp do_scroll(scroll_params, schema) do
     scroll_params
-    |> do_search()
+    |> do_search(schema)
     |> search_results(scroll_params)
     |> case do
       {:ok, %Response{status_code: 200, body: body}} ->
@@ -112,134 +177,198 @@ defmodule TdDd.ElasticsearchMock do
     end
   end
 
-  defp do_search(%{query: query} = params) do
+  def get_aggregations(%{bool: %{should: should}}) do
+    should
+    |> hd
+    |> Map.get(:bool, %{})
+    |> Map.get(:filter, [])
+    |> get_aggregations()
+  end
+
+  def get_aggregations([]), do: %{}
+
+  def get_aggregations(filters) do
+    filters
+    |> Enum.map(&Map.get(&1, :terms))
+    |> Enum.filter(&(not is_nil(&1)))
+    |> Enum.reduce(%{}, fn x, acc ->
+      format =
+        Enum.into(x, %{}, fn {k, v} -> {k, %{"buckets" => Enum.map(v, &%{"key" => &1})}} end)
+
+      Map.merge(acc, format)
+    end)
+  end
+
+  defp do_search(%{query: query} = params, schema) do
     from = Map.get(params, :from, 0)
     size = Map.get(params, :size, 10)
 
     query
-    |> do_query()
+    |> do_query(schema)
     |> Enum.drop(from)
     |> Enum.take(size)
   end
 
-  defp do_query(%{bool: bool}) do
-    do_bool_query(bool)
+  defp do_query(%{bool: bool}, schema) do
+    do_bool_query(bool, schema)
   end
 
-  defp do_query(%{term: term}) do
-    do_term_query(term)
+  defp do_query(%{term: term}, schema) do
+    do_term_query(term, schema)
   end
 
-  defp do_bool_query(bool) do
-    f = create_bool_filter(bool)
+  defp do_bool_query(bool, schema) do
+    f = create_bool_filter(bool, schema)
     f.([])
   end
 
-  defp do_term_query(term) do
+  defp do_term_query(term, schema) do
     f = create_term_filter(term)
 
-    list_documents()
+    schema
+    |> list_documents()
     |> Enum.filter(fn doc -> f.(doc) end)
   end
 
-  defp create_must([]), do: fn x -> x end
+  defp create_must([], _schema), do: fn x -> x end
 
-  defp create_must(must) when is_list(must) do
-    fns = Enum.map(must, &create_must/1)
+  defp create_must(must, schema) when is_list(must) do
+    fns = Enum.map(must, &create_must(&1, schema))
 
     fn acc ->
       Enum.reduce(fns, acc, fn f, acc -> f.(acc) end)
     end
   end
 
-  defp create_must(%{match_all: _}) do
+  defp create_must(%{match_all: _}, schema) do
+    fn _acc -> list_documents(schema) end
+  end
+
+  defp create_must(%{exists: %{field: field}}, schema) do
     fn _acc ->
-      list_documents()
+      schema
+      |> list_documents()
+      |> Enum.reject(&is_nil(Map.get(&1, field)))
     end
   end
 
-  defp create_must(%{query_string: query_string}) do
+  defp create_must(%{query_string: query_string}, schema) do
     f = create_query_string_query(query_string)
 
     fn _acc ->
-      list_documents()
+      schema
+      |> list_documents()
       |> Enum.filter(&f.(&1))
     end
   end
 
-  defp create_must(%{multi_match: multi_match}) do
+  defp create_must(%{multi_match: multi_match}, schema) do
     f = create_multi_match(multi_match)
 
     fn _acc ->
-      list_documents()
+      schema
+      |> list_documents()
       |> Enum.filter(&f.(&1))
     end
   end
 
-  defp create_filter([]), do: fn _ -> true end
+  defp create_filter([], _schema), do: fn _ -> true end
 
-  defp create_filter(filters) when is_list(filters) do
-    fns = Enum.map(filters, &create_filter/1)
-
-    fn el ->
-      Enum.all?(fns, fn f -> f.(el) end)
-    end
+  defp create_filter(filters, schema) when is_list(filters) do
+    fns = Enum.map(filters, &create_filter(&1, schema))
+    fn el -> Enum.all?(fns, fn f -> f.(el) end) end
   end
 
-  defp create_filter(%{bool: bool}) do
-    create_bool_filter(bool)
+  defp create_filter(%{bool: bool}, schema) do
+    create_bool_filter(bool, schema)
   end
 
-  defp create_filter(%{term: term}) do
+  defp create_filter(%{term: term}, _schema) do
     create_term_filter(term)
   end
 
-  defp create_filter(%{terms: terms}) do
+  defp create_filter(%{terms: terms}, _schema) do
     create_terms_filter(terms)
   end
 
   defp create_term_filter(%{system_id: system_id}) do
-    fn doc -> doc.system_id == system_id end
+    fn doc -> Map.get(doc, "system_id") == system_id end
   end
 
   defp create_term_filter(%{domain_ids: domain_id}) do
     fn doc ->
-      domain_ids =
-        doc
-        |> Map.get(:domain_ids, [])
-
+      domain_ids = Map.get(doc, "domain_ids", [])
       Enum.member?(domain_ids, domain_id)
     end
   end
 
+  defp create_term_filter(%{} = term) when is_map(term) do
+    term
+    |> Map.to_list()
+    |> create_term_filter()
+  end
+
+  defp create_term_filter([{key, value}]) do
+    fn doc -> Map.get(doc, key) == value end
+  end
+
   defp create_terms_filter(%{"system.name.raw" => values}) do
     fn doc ->
-      value =
-        doc
-        |> Map.get(:system)
-
+      value = Map.get(doc, "system")
       Enum.member?(values, value)
     end
   end
 
   defp create_terms_filter(%{"type.raw" => values}) do
     fn doc ->
-      value =
-        doc
-        |> Map.get(:type)
-
+      value = Map.get(doc, "type")
       Enum.member?(values, value)
     end
   end
 
-  defp create_terms_filter(%{confidential: values}) do
-    fn doc ->
-      value =
-        doc
-        |> Map.get(:confidential)
+  defp create_terms_filter(%{"execution.raw" => [false]}) do
+    fn doc -> doc end
+  end
 
+  defp create_terms_filter(%{"confidential" => values}) do
+    fn doc ->
+      value = Map.get(doc, "confidential")
       Enum.member?(values, value)
     end
+  end
+
+  defp create_terms_filter(%{} = terms) when is_map(terms) do
+    terms
+    |> Map.to_list()
+    |> create_terms_filter()
+  end
+
+  defp create_terms_filter([{key, values}]) do
+    fn doc ->
+      case Map.get(doc, to_string(key)) do
+        nil -> false
+        value when is_integer(value) -> value in values or to_string(value) in values
+        value -> value in values
+      end
+    end
+  end
+
+  defp list_documents(schema) do
+    Store.transaction(fn ->
+      schema
+      |> stream()
+      |> Enum.map(&Document.encode/1)
+      |> Enum.map(&Jason.encode!/1)
+      |> Enum.map(&Jason.decode!/1)
+    end)
+  end
+
+  defp stream(schema) when schema in [TdDq.Rules.Implementations.Implementation, TdDq.Rules.Rule] do
+    TdDq.Search.Store.stream(schema)
+  end
+
+  defp stream(schema) when schema in [TdDd.DataStructures.DataStructureVersion] do
+    TdDd.Search.Store.stream(schema)
   end
 
   defp create_must_not([]), do: fn _ -> false end
@@ -256,18 +385,18 @@ defmodule TdDd.ElasticsearchMock do
     create_term_filter(term)
   end
 
-  defp create_should([]), do: fn _ -> true end
+  defp create_should([], _schema), do: fn _ -> true end
 
-  defp create_should(should) when is_list(should) do
-    fns = Enum.map(should, &create_should/1)
+  defp create_should(should, schema) when is_list(should) do
+    fns = Enum.map(should, &create_should(&1, schema))
 
     fn el ->
       Enum.any?(fns, fn f -> f.(el) end)
     end
   end
 
-  defp create_should(%{bool: bool}) do
-    create_bool_filter(bool)
+  defp create_should(%{bool: bool}, schema) do
+    create_bool_filter(bool, schema)
   end
 
   defp create_multi_match(%{fields: fields, query: query, type: type}) do
@@ -281,7 +410,7 @@ defmodule TdDd.ElasticsearchMock do
   defp create_field_match("name^2", query, "phrase_prefix") do
     fn doc ->
       doc
-      |> Map.get(:name, "")
+      |> Map.get("name", "")
       |> String.downcase()
       |> String.starts_with?(String.downcase(query))
     end
@@ -290,8 +419,8 @@ defmodule TdDd.ElasticsearchMock do
   defp create_field_match("system.name", query, "phrase_prefix") do
     fn doc ->
       doc
-      |> Map.get(:system, %{})
-      |> Map.get(:name, "")
+      |> Map.get("system", %{})
+      |> Map.get("name", "")
       |> String.starts_with?(String.downcase(query))
     end
   end
@@ -299,8 +428,8 @@ defmodule TdDd.ElasticsearchMock do
   defp create_field_match("data_fields.name", query, "phrase_prefix") do
     fn doc ->
       doc
-      |> Map.get(:data_fields, [])
-      |> Enum.map(&Map.get(&1, :name))
+      |> Map.get("data_fields", [])
+      |> Enum.map(&Map.get(&1, "name"))
       |> Enum.map(&String.downcase/1)
       |> Enum.any?(&String.starts_with?(&1, String.downcase(query)))
     end
@@ -309,7 +438,7 @@ defmodule TdDd.ElasticsearchMock do
   defp create_field_match("path.text", query, "phrase_prefix") do
     fn doc ->
       doc
-      |> Map.get(:path, [])
+      |> Map.get("path", [])
       |> Enum.any?(&String.starts_with?(&1, query))
     end
   end
@@ -317,7 +446,7 @@ defmodule TdDd.ElasticsearchMock do
   defp create_field_match("description", query, "phrase_prefix") do
     fn doc ->
       doc
-      |> Map.get(:description, "")
+      |> Map.get("description", "")
       |> String.starts_with?(String.downcase(query))
     end
   end
@@ -325,7 +454,7 @@ defmodule TdDd.ElasticsearchMock do
   defp create_field_match("df_content.*", query, "phrase_prefix") do
     fn doc ->
       doc
-      |> Map.get(:df_content, %{})
+      |> Map.get("df_content", %{})
       |> Map.values()
       |> Enum.any?(&String.starts_with?(&1, String.downcase(query)))
     end
@@ -336,7 +465,7 @@ defmodule TdDd.ElasticsearchMock do
 
     fn doc ->
       doc
-      |> Map.get(:name, "")
+      |> Map.get("name", "")
       |> ngrams(3)
       |> Enum.any?(fn ngram -> Enum.member?(ngrams, ngram) end)
     end
@@ -351,15 +480,15 @@ defmodule TdDd.ElasticsearchMock do
     |> Enum.map(&to_string/1)
   end
 
-  defp create_bool_filter(bool) do
+  defp create_bool_filter(bool, schema) do
     [filters, must, must_not, should] =
       [:filter, :must, :must_not, :should]
       |> Enum.map(&get_bool_clauses(bool, &1))
 
-    filter = create_filter(filters)
+    filter = create_filter(filters, schema)
     must_not = create_must_not(must_not)
-    should = create_should(should)
-    must = create_must(must)
+    should = create_should(should, schema)
+    must = create_must(must, schema)
 
     fn acc ->
       acc
@@ -390,7 +519,7 @@ defmodule TdDd.ElasticsearchMock do
   defp create_exists_filter(%{field: field}) do
     fn doc ->
       doc
-      |> Map.get(String.to_atom(field))
+      |> Map.get(field)
       |> exists?()
     end
   end
@@ -431,15 +560,7 @@ defmodule TdDd.ElasticsearchMock do
     end
   end
 
-  defp list_documents do
-    Store.transaction(fn ->
-      DataStructureVersion
-      |> Store.stream()
-      |> Enum.map(&Document.encode/1)
-    end)
-  end
-
-  defp search_results(hits, query \\ %{}) do
+  defp search_results(hits, query, aggregations \\ %{}) do
     results =
       hits
       |> Enum.map(&%{_source: &1})
@@ -448,7 +569,7 @@ defmodule TdDd.ElasticsearchMock do
 
     body = %{
       "hits" => %{"hits" => results, "total" => Enum.count(results)},
-      "aggregations" => %{},
+      "aggregations" => aggregations,
       "query" => query
     }
 

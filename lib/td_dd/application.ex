@@ -13,6 +13,7 @@ defmodule TdDd.Application do
         TdDd.Repo,
         TdCxWeb.Endpoint,
         TdDdWeb.Endpoint,
+        TdDqWeb.Endpoint,
         TdDd.Search.Cluster
       ] ++ workers(env)
 
@@ -27,6 +28,7 @@ defmodule TdDd.Application do
   def config_change(changed, _new, removed) do
     TdCxWeb.Endpoint.config_change(changed, removed)
     TdDdWeb.Endpoint.config_change(changed, removed)
+    TdDqWeb.Endpoint.config_change(changed, removed)
     :ok
   end
 
@@ -54,6 +56,12 @@ defmodule TdDd.Application do
       {TdCache.CacheCleaner, Application.get_env(:td_dd, :cache_cleaner, [])},
       # CX Workers
       TdCx.Search.IndexWorker,
+      # DQ Workers
+      TdDq.Cache.RuleLoader,
+      TdDq.Cache.ImplementationLoader,
+      TdDq.Search.IndexWorker,
+      TdDq.Rules.RuleRemover,
+      TdDq.Cache.DomainEventConsumer,
       # Scheduler for periodic tasks
       TdDd.Scheduler
     ]

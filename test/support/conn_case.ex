@@ -21,6 +21,8 @@ defmodule TdDdWeb.ConnCase do
   alias Phoenix.ConnTest
   alias TdDdWeb.Endpoint
 
+  @index_worker_dq Application.compile_env(:td_dd, :dq_index_worker)
+
   using do
     quote do
       # Import conveniences for testing with connections
@@ -28,10 +30,11 @@ defmodule TdDdWeb.ConnCase do
       import Phoenix.ConnTest
       import TdDd.Factory
 
-      import TdDdWeb.Authentication, only: [create_acl_entry: 3]
+      import TdDdWeb.Authentication, only: [create_acl_entry: 3, create_acl_entry: 4]
 
       alias TdCxWeb.Router.Helpers, as: CxRoutes
       alias TdDdWeb.Router.Helpers, as: Routes
+      alias TdDqWeb.Router.Helpers, as: DqRoutes
 
       # The default endpoint for testing
       @endpoint Endpoint
@@ -54,7 +57,9 @@ defmodule TdDdWeb.ConnCase do
         TdDd.Search.IndexWorker,
         TdDd.Cache.StructureLoader,
         TdDd.Lineage,
-        TdDd.Lineage.GraphData
+        TdDd.Lineage.GraphData,
+        TdDq.Cache.RuleLoader,
+        @index_worker_dq
       ])
     end
 
