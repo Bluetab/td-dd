@@ -9,9 +9,6 @@ use Mix.Config
 # Environment
 config :td_dd, :env, Mix.env()
 
-config :td_dd, rule_removal: true
-config :td_dd, rule_removal_frequency: 60 * 60 * 1000
-
 # General application configuration
 config :td_dd,
   ecto_repos: [TdDd.Repo]
@@ -131,9 +128,9 @@ config :td_dd, TdDd.Scheduler,
       task: {TdDd.Cache.StructureLoader, :refresh, []},
       run_strategy: Quantum.RunStrategy.Local
     ],
-    rule_indexer: [
+    job_indexer: [
       schedule: "@daily",
-      task: {TdDq.Search.IndexWorker, :reindex, []},
+      task: {TdCx.Search.IndexWorker, :reindex, []},
       run_strategy: Quantum.RunStrategy.Local
     ],
     rule_cache_refresher: [
@@ -141,9 +138,14 @@ config :td_dd, TdDd.Scheduler,
       task: {TdDq.Cache.ImplementationLoader, :refresh, []},
       run_strategy: Quantum.RunStrategy.Local
     ],
-    job_indexer: [
+    rule_indexer: [
       schedule: "@daily",
-      task: {TdCx.Search.IndexWorker, :reindex, []},
+      task: {TdDq.Search.IndexWorker, :reindex, []},
+      run_strategy: Quantum.RunStrategy.Local
+    ],
+    rule_remover: [
+      schedule: "@hourly",
+      task: {TdDq.Rules.RuleRemover, :archive_inactive_rules, []},
       run_strategy: Quantum.RunStrategy.Local
     ]
   ]

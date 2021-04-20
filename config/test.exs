@@ -6,8 +6,6 @@ config :td_dd, TdDdWeb.Endpoint, server: false
 config :td_dd, TdCxWeb.Endpoint, server: false
 config :td_dd, TdDqWeb.Endpoint, server: false
 
-config :td_dd, rule_removal: false
-
 # Print only warnings and errors during test
 config :logger, level: :warn
 
