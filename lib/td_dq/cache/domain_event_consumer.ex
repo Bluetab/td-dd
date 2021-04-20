@@ -9,7 +9,7 @@ defmodule TdDq.Cache.DomainEventConsumer do
 
   require Logger
 
-  @index_worker Application.compile_env(:td_dq, :index_worker)
+  @index_worker Application.compile_env(:td_dd, :index_worker)
 
   ## Client API
 

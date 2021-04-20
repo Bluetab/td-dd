@@ -2,17 +2,17 @@ use Mix.Config
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
-config :td_dq, TdDqWeb.Endpoint,
+config :td_dd, TdDqWeb.Endpoint,
   http: [port: 4104],
   server: true
 
-config :td_dq, rule_removal: false
+config :td_dd, rule_removal: false
 
 # Print only warnings and errors during test
 config :logger, level: :warn
 
 # Configure your database
-config :td_dq, TdDq.Repo,
+config :td_dd, TdDd.Repo,
   adapter: Ecto.Adapters.Postgres,
   username: "postgres",
   password: "postgres",
@@ -20,16 +20,16 @@ config :td_dq, TdDq.Repo,
   hostname: "postgres",
   pool: Ecto.Adapters.SQL.Sandbox
 
-config :td_dq, :elasticsearch,
+config :td_dd, :elasticsearch,
   search_service: TdDq.Search.MockSearch,
   es_host: "localhost",
   es_port: 9200,
   type_name: "doc"
 
-config :td_dq, permission_resolver: MockPermissionResolver
-config :td_dq, relation_cache: TdDq.MockRelationCache
-config :td_dq, TdDq.Search.Cluster, api: TdDq.ElasticsearchMock
-config :td_dq, index_worker: TdDq.Search.MockIndexWorker
+config :td_dd, permission_resolver: MockPermissionResolver
+config :td_dd, relation_cache: TdDq.MockRelationCache
+config :td_dd, TdDq.Search.Cluster, api: TdDq.ElasticsearchMock
+config :td_dd, index_worker: TdDq.Search.MockIndexWorker
 
 config :td_cache, redis_host: "redis", port: 6380
 

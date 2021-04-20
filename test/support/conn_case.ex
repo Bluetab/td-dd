@@ -21,7 +21,7 @@ defmodule TdDqWeb.ConnCase do
   alias Phoenix.ConnTest
   alias TdDqWeb.Endpoint
 
-  @index_worker Application.compile_env(:td_dq, :index_worker)
+  @index_worker Application.compile_env(:td_dd, :index_worker)
 
   using do
     quote do
@@ -41,10 +41,10 @@ defmodule TdDqWeb.ConnCase do
   setup tags do
     start_supervised!(MockPermissionResolver)
 
-    :ok = Sandbox.checkout(TdDq.Repo)
+    :ok = Sandbox.checkout(TdDd.Repo)
 
     unless tags[:async] do
-      Sandbox.mode(TdDq.Repo, {:shared, self()})
+      Sandbox.mode(TdDd.Repo, {:shared, self()})
       parent = self()
 
       Enum.each([@index_worker, TdDq.Cache.RuleLoader], fn worker ->
@@ -54,7 +54,7 @@ defmodule TdDqWeb.ConnCase do
 
           pid ->
             on_exit(fn -> worker.ping(20_000) end)
-            Sandbox.allow(TdDq.Repo, parent, pid)
+            Sandbox.allow(TdDd.Repo, parent, pid)
         end
       end)
     end

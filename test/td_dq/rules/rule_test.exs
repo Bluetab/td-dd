@@ -2,7 +2,7 @@ defmodule TdDq.Rules.RuleTest do
   use TdDq.DataCase
 
   alias TdCache.TemplateCache
-  alias TdDq.Repo
+  alias TdDd.Repo
   alias TdDq.Rules.Rule
 
   setup_all do

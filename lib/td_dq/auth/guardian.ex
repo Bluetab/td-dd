@@ -1,7 +1,7 @@
 defmodule TdDq.Auth.Guardian do
   @moduledoc "Guardian implementation module"
 
-  use Guardian, otp_app: :td_dq
+  use Guardian, otp_app: :td_dd
 
   alias TdDq.Auth.Claims
 

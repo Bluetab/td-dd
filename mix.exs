@@ -3,7 +3,7 @@ defmodule TdDq.Mixfile do
 
   def project do
     [
-      app: :td_dq,
+      app: :td_dd,
       version:
         case System.get_env("APP_VERSION") do
           nil -> "4.18.0-local"
@@ -16,7 +16,7 @@ defmodule TdDq.Mixfile do
       aliases: aliases(),
       deps: deps(),
       releases: [
-        td_dq: [
+        td_dd: [
           include_executables_for: [:unix],
           applications: [runtime_tools: :permanent],
           steps: [:assemble, &copy_bin_files/1, :tar]

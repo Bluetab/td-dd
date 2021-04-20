@@ -3,7 +3,7 @@ defmodule TdDq.Factory do
   An `ExMachina` factory for data quality tests.
   """
 
-  use ExMachina.Ecto, repo: TdDq.Repo
+  use ExMachina.Ecto, repo: TdDd.Repo
   use TdDfLib.TemplateFactory
 
   def rule_factory do

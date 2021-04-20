@@ -8,10 +8,10 @@ defmodule TdDq.Rules do
   alias Ecto.Multi
   alias TdCache.ConceptCache
   alias TdCache.TemplateCache
+  alias TdDd.Repo
   alias TdDfLib.Format
   alias TdDq.Auth.Claims
   alias TdDq.Cache.RuleLoader
-  alias TdDq.Repo
   alias TdDq.Rules.Audit
   alias TdDq.Rules.Implementations.Implementation
   alias TdDq.Rules.Rule

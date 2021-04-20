@@ -1,7 +1,7 @@
 defmodule TdDq.Repo.Migrations.ChangeResultRounding do
   use Ecto.Migration
   import Ecto.Query
-  alias TdDq.Repo
+  alias TdDd.Repo
 
   def change do
     from(rr in "rule_results")

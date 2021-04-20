@@ -6,7 +6,7 @@ defmodule TdDq.Repo.Migrations.ModifyStatusFieldInRulesTable do
 
   use Ecto.Migration
   import Ecto.Query
-  alias TdDq.Repo
+  alias TdDd.Repo
 
   defp parse_status("selectedToExecute"), do: true
 

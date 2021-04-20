@@ -7,7 +7,7 @@ defmodule TdDq.Search.Store do
 
   import Ecto.Query
 
-  alias TdDq.Repo
+  alias TdDd.Repo
   alias TdDq.Rules.Implementations.Implementation
   alias TdDq.Rules.Rule
 

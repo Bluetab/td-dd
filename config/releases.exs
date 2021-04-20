@@ -1,6 +1,6 @@
 import Config
 
-config :td_dq, TdDq.Repo,
+config :td_dd, TdDd.Repo,
   username: System.fetch_env!("DB_USER"),
   password: System.fetch_env!("DB_PASSWORD"),
   database: System.fetch_env!("DB_NAME"),
@@ -8,9 +8,9 @@ config :td_dq, TdDq.Repo,
   port: System.get_env("DB_PORT", "5432") |> String.to_integer(),
   pool_size: System.get_env("DB_POOL_SIZE", "4") |> String.to_integer()
 
-config :td_dq, TdDq.Auth.Guardian, secret_key: System.fetch_env!("GUARDIAN_SECRET_KEY")
+config :td_dd, TdDq.Auth.Guardian, secret_key: System.fetch_env!("GUARDIAN_SECRET_KEY")
 
-config :td_dq, TdDq.Search.Cluster, url: System.fetch_env!("ES_URL")
+config :td_dd, TdDq.Search.Cluster, url: System.fetch_env!("ES_URL")
 
 config :td_cache,
   redis_host: System.fetch_env!("REDIS_HOST"),
@@ -19,7 +19,7 @@ config :td_cache,
 
 config :td_cache, :event_stream, consumer_id: System.fetch_env!("HOSTNAME")
 
-config :td_dq, TdDq.Scheduler,
+config :td_dd, TdDq.Scheduler,
   jobs: [
     reindexer: [
       schedule: System.get_env("ES_REFRESH_SCHEDULE", "@daily"),
@@ -35,12 +35,12 @@ config :td_dq, TdDq.Scheduler,
 
 with username when not is_nil(username) <- System.get_env("ES_USERNAME"),
      password when not is_nil(password) <- System.get_env("ES_PASSWORD") do
-  config :td_dq, TdDq.Search.Cluster,
+  config :td_dd, TdDq.Search.Cluster,
     username: username,
     password: password
 end
 
-config :td_dq, TdDq.Search.Cluster,
+config :td_dd, TdDq.Search.Cluster,
   aliases: %{
     implementations: System.get_env("ES_ALIAS_IMPLEMENTATIONS", "implementations"),
     rules: System.get_env("ES_ALIAS_RULES", "rules")

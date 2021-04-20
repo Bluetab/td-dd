@@ -3,7 +3,7 @@ defmodule TdDq.Release do
   Release tasks to run Ecto migrations
   """
 
-  @app :td_dq
+  @app :td_dd
 
   alias Ecto.Migrator
 

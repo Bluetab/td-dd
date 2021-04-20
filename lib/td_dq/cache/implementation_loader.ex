@@ -39,7 +39,7 @@ defmodule TdDq.Cache.ImplementationLoader do
     name = String.replace_prefix("#{__MODULE__}", "Elixir.", "")
     Logger.info("Running #{name}")
 
-    unless Application.get_env(:td_dq, :env) == :test do
+    unless Application.get_env(:td_dd, :env) == :test do
       Process.send_after(self(), :refresh, 0)
     end
 

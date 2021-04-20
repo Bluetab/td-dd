@@ -6,16 +6,16 @@ defmodule TdDq.Rules.RuleResults do
   import Ecto.Query
 
   alias Ecto.Multi
+  alias TdDd.Repo
   alias TdDq.Cache.RuleLoader
   alias TdDq.Executions.Execution
-  alias TdDq.Repo
   alias TdDq.Rules.Implementations.Implementation
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleResult
 
   require Logger
 
-  @index_worker Application.compile_env(:td_dq, :index_worker)
+  @index_worker Application.compile_env(:td_dd, :index_worker)
 
   def get_rule_result(id) do
     Repo.get_by(RuleResult, id: id)

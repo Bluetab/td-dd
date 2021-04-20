@@ -7,7 +7,7 @@ defmodule TdDqWeb.SearchController do
 
   plug :put_view, TdDqWeb.SearchView
 
-  @index_worker Application.compile_env(:td_dq, :index_worker)
+  @index_worker Application.compile_env(:td_dd, :index_worker)
 
   swagger_path :reindex_all_rules do
     description("Reindex rule index with DB content")

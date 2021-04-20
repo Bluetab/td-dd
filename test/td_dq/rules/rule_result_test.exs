@@ -2,7 +2,7 @@ defmodule TdDq.Rules.RuleResultTest do
   use TdDq.DataCase
 
   alias Ecto.Changeset
-  alias TdDq.Repo
+  alias TdDd.Repo
   alias TdDq.Rules.RuleResult
 
   @date DateTime.from_naive!(~N[2015-01-23 00:00:00], "Etc/UTC")

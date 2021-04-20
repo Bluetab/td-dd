@@ -1,6 +1,6 @@
 use Mix.Config
 
-config :td_dq, TdDq.Search.Cluster,
+config :td_dd, TdDq.Search.Cluster,
   # The default URL where Elasticsearch is hosted on your system.
   # Will be overridden by the `ES_URL` environment variable if set.
   url: "http://elastic:9200",

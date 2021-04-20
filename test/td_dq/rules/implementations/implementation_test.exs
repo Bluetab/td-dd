@@ -1,7 +1,7 @@
 defmodule TdDq.Rules.Implementations.ImplementationTest do
   use TdDq.DataCase
 
-  alias TdDq.Repo
+  alias TdDd.Repo
   alias TdDq.Rules.Implementations.Implementation
 
   describe "changeset/2" do

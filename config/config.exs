@@ -6,26 +6,26 @@
 use Mix.Config
 
 # Environment
-config :td_dq, :env, Mix.env()
+config :td_dd, :env, Mix.env()
 
-config :td_dq, permission_resolver: TdCache.Permissions
-config :td_dq, index_worker: TdDq.Search.IndexWorker
+config :td_dd, permission_resolver: TdCache.Permissions
+config :td_dd, index_worker: TdDq.Search.IndexWorker
 
-config :td_dq, rule_removal: true
-config :td_dq, rule_removal_frequency: 60 * 60 * 1000
+config :td_dd, rule_removal: true
+config :td_dd, rule_removal_frequency: 60 * 60 * 1000
 
 # General application configuration
-config :td_dq,
-  ecto_repos: [TdDq.Repo]
+config :td_dd,
+  ecto_repos: [TdDd.Repo]
 
 # Configures the endpoint
-config :td_dq, TdDqWeb.Endpoint,
+config :td_dd, TdDqWeb.Endpoint,
   http: [port: 4004],
   url: [host: "localhost"],
   render_errors: [view: TdDqWeb.ErrorView, accepts: ~w(json)]
 
 # Configures Auth module Guardian
-config :td_dq, TdDq.Auth.Guardian,
+config :td_dd, TdDq.Auth.Guardian,
   # optional
   allowed_algos: ["HS512"],
   issuer: "tdauth",
@@ -48,13 +48,13 @@ config :logger, :console,
 config :phoenix, :json_library, Jason
 config :phoenix_swagger, :json_library, Jason
 
-config :td_dq, :phoenix_swagger,
+config :td_dd, :phoenix_swagger,
   swagger_files: %{
     "priv/static/swagger.json" => [router: TdDqWeb.Router]
   }
 
 config :td_cache, :audit,
-  service: "td_dq",
+  service: "td_dd",
   stream: "audit:events"
 
 config :td_cache, :event_stream,
@@ -66,11 +66,11 @@ config :td_cache, :event_stream,
     [key: "domain:events", consumer: TdDq.Cache.DomainEventConsumer]
   ]
 
-config :td_dq, :cache_cleaner,
+config :td_dd, :cache_cleaner,
   clean_on_startup: true,
   patterns: ["rule_result:*", "TdDq.RuleImplementations.Migrations:cache_structures"]
 
-config :td_dq, TdDq.Scheduler,
+config :td_dd, TdDq.Scheduler,
   jobs: [
     reindexer: [
       schedule: "@daily",

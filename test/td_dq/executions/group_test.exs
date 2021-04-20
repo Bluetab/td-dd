@@ -1,8 +1,8 @@
 defmodule TdDq.Executions.GroupTest do
   use TdDq.DataCase
 
+  alias TdDd.Repo
   alias TdDq.Executions.Group
-  alias TdDq.Repo
 
   describe "changeset/2" do
     test "validates required fields" do

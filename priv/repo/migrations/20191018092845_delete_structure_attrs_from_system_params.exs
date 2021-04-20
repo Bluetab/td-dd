@@ -3,7 +3,7 @@ defmodule TdDq.Repo.Migrations.DeleteStructureAttrsFromSystemParams do
 
   import Ecto.Query
 
-  alias TdDq.Repo
+  alias TdDd.Repo
 
   def change do
     rule_types =

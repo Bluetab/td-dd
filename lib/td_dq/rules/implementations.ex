@@ -7,10 +7,10 @@ defmodule TdDq.Rules.Implementations do
 
   alias Ecto.Multi
   alias TdCache.StructureCache
+  alias TdDd.Repo
   alias TdDq.Auth.Claims
   alias TdDq.Cache.ImplementationLoader
   alias TdDq.Cache.RuleLoader
-  alias TdDq.Repo
   alias TdDq.Rules.Audit
   alias TdDq.Rules.Implementations.ConditionRow
   alias TdDq.Rules.Implementations.DatasetRow
@@ -18,7 +18,7 @@ defmodule TdDq.Rules.Implementations do
   alias TdDq.Rules.Implementations.Structure
   alias TdDq.Rules.Rule
 
-  @index_worker Application.compile_env(:td_dq, :index_worker)
+  @index_worker Application.compile_env(:td_dd, :index_worker)
 
   @doc """
   Gets a single implementation.

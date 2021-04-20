@@ -1,7 +1,7 @@
 defmodule TdDq.Repo.Migrations.RenameColumnAndModifyTypeRuleResult do
   use Ecto.Migration
   alias Ecto.Adapters.SQL
-  alias TdDq.Repo
+  alias TdDd.Repo
 
   @update_implementation_key ~S"""
   UPDATE rule_results

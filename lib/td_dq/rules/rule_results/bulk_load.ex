@@ -6,8 +6,8 @@ defmodule TdDq.Rules.RuleResults.BulkLoad do
   import Ecto.Query
 
   alias Ecto.Multi
+  alias TdDd.Repo
   alias TdDq.Cache.RuleLoader
-  alias TdDq.Repo
   alias TdDq.Rules.Audit
   alias TdDq.Rules.Implementations.Implementation
   alias TdDq.Rules.RuleResult

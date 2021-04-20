@@ -10,8 +10,8 @@ defmodule TdDq.Rules.RuleRemover do
 
   require Logger
 
-  @rule_removal Application.compile_env(:td_dq, :rule_removal)
-  @rule_removal_frequency Application.compile_env(:td_dq, :rule_removal_frequency)
+  @rule_removal Application.compile_env(:td_dd, :rule_removal)
+  @rule_removal_frequency Application.compile_env(:td_dd, :rule_removal_frequency)
 
   ## Client API
 

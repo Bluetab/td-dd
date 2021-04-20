@@ -6,13 +6,13 @@ defmodule TdDq.Application do
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
   def start(_type, _args) do
-    env = Application.get_env(:td_dq, :env)
+    env = Application.get_env(:td_dd, :env)
 
     # Define workers and child supervisors to be supervised
     children =
       [
         # Start the Ecto repository
-        TdDq.Repo,
+        TdDd.Repo,
         # Start the endpoint when the application starts
         TdDqWeb.Endpoint,
         # Elasticsearch worker
@@ -42,7 +42,7 @@ defmodule TdDq.Application do
       # Worker to remove stale rules
       TdDq.Rules.RuleRemover,
       TdDq.Cache.DomainEventConsumer,
-      {TdCache.CacheCleaner, Application.get_env(:td_dq, :cache_cleaner, [])},
+      {TdCache.CacheCleaner, Application.get_env(:td_dd, :cache_cleaner, [])},
       TdDq.Scheduler
     ]
   end

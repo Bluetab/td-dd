@@ -4,7 +4,7 @@ defmodule TdDq.Rules.AuditTest do
   alias TdCache.Redix
   alias TdCache.Redix.Stream
   alias TdCache.TemplateCache
-  alias TdDq.Repo
+  alias TdDd.Repo
   alias TdDq.Rules.Audit
   alias TdDq.Rules.Implementations.Implementation
   alias TdDq.Rules.Rule
@@ -52,7 +52,7 @@ defmodule TdDq.Rules.AuditTest do
                payload: payload,
                resource_id: ^resource_id,
                resource_type: "rule",
-               service: "td_dq",
+               service: "td_dd",
                ts: _ts,
                user_id: ^user_id
              } = event
@@ -79,7 +79,7 @@ defmodule TdDq.Rules.AuditTest do
                payload: "{}",
                resource_id: ^resource_id,
                resource_type: "rule",
-               service: "td_dq",
+               service: "td_dd",
                ts: _ts,
                user_id: ^user_id
              } = event
@@ -116,7 +116,7 @@ defmodule TdDq.Rules.AuditTest do
                payload: payload,
                resource_id: ^resource_id,
                resource_type: "implementation",
-               service: "td_dq",
+               service: "td_dd",
                ts: _ts,
                user_id: ^user_id
              } = event
@@ -145,7 +145,7 @@ defmodule TdDq.Rules.AuditTest do
                payload: payload,
                resource_id: ^resource_id,
                resource_type: "implementation",
-               service: "td_dq",
+               service: "td_dd",
                ts: _ts,
                user_id: ""
              } = event
