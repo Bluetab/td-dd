@@ -92,26 +92,45 @@ defmodule TdCx.ConfigurationsTest do
   describe "configurations" do
     alias TdCx.Configurations.Configuration
 
-    test "list_configurations/0 returns all configurations" do
+    test "list_configurations/2 returns filtered configurations" do
+      claims = build(:cx_claims)
       configuration = insert(:configuration)
-      assert Configurations.list_configurations() == [configuration]
-    end
 
-    test "list_configurations/1 returns filtered configurations" do
-      configuration = insert(:configuration)
-      assert Configurations.list_configurations(%{type: configuration.type}) == [configuration]
-      assert Configurations.list_configurations(%{type: "made_up"}) == []
-    end
+      assert Configurations.list_configurations(claims, %{type: configuration.type}) == [
+               configuration
+             ]
 
-    test "get_configuration!/1 returns the configuration with given id" do
-      configuration = insert(:configuration)
-      assert Configurations.get_configuration!(configuration.id) == configuration
+      assert Configurations.list_configurations(claims, %{type: "made_up"}) == []
     end
 
     test "get_configuration_by_external_id!/1 returns the configuration with given external_id" do
       external_id = "my_ext_id"
       configuration = insert(:configuration, external_id: external_id)
       assert Configurations.get_configuration_by_external_id!(external_id) == configuration
+    end
+
+    test "get_configuration_by_external_id!/2 returns the configuration with secrets if whe hace permissions" do
+      claims = build(:cx_claims, user_name: @valid_secret_attrs.type, role: "admin")
+
+      {:ok, %Configuration{} = configuration} =
+        Configurations.create_configuration(@valid_secret_attrs)
+
+      assert %{content: %{"public_field" => "public_value", "secret_field" => "secret_value"}} =
+               Configurations.get_configuration_by_external_id!(claims, configuration.external_id)
+
+      claims = build(:cx_claims, user_name: @valid_secret_attrs.type, role: "user")
+
+      content =
+        Configurations.get_configuration_by_external_id!(claims, configuration.external_id).content
+
+      assert is_nil(Map.get(content, "secret_field"))
+
+      claims = build(:cx_claims, user_name: "foo", role: "admin")
+
+      content =
+        Configurations.get_configuration_by_external_id!(claims, configuration.external_id).content
+
+      assert is_nil(Map.get(content, "secret_field"))
     end
 
     test "create_configuration/1 with valid data creates a configuration" do
@@ -126,20 +145,18 @@ defmodule TdCx.ConfigurationsTest do
     end
 
     test "create_configuration/1 with valid data creates a configuration with secrets" do
+      claims = build(:cx_claims, user_name: @valid_secret_attrs.type, role: "admin")
+
       assert {:ok, %Configuration{} = configuration} =
                Configurations.create_configuration(@valid_secret_attrs)
 
       assert configuration.content == %{"public_field" => "public_value"}
-
       assert configuration.external_id == "some secret external_id"
       assert configuration.type == "secret_config"
       refute is_nil(configuration.secrets_key)
 
-      assert %{"public_field" => "public_value", "secret_field" => "secret_value"} ==
-               configuration
-               |> Map.get(:id)
-               |> Configurations.get_configuration!([:secrets])
-               |> Map.get(:content)
+      assert %{content: %{"public_field" => "public_value", "secret_field" => "secret_value"}} =
+               Configurations.get_configuration_by_external_id!(claims, configuration.external_id)
     end
 
     test "create_configuration/1 with repeated external_id returns error changeset" do
@@ -165,6 +182,8 @@ defmodule TdCx.ConfigurationsTest do
     end
 
     test "update_configuration/2 with valid data updates the configuration with secrets" do
+      claims = build(:cx_claims, user_name: @valid_secret_attrs.type, role: "admin")
+
       {:ok, %Configuration{} = configuration} =
         Configurations.create_configuration(@valid_secret_attrs)
 
@@ -178,11 +197,8 @@ defmodule TdCx.ConfigurationsTest do
 
       assert configuration.content == %{"public_field" => "updated public_value"}
 
-      assert updated_content ==
-               configuration
-               |> Map.get(:id)
-               |> Configurations.get_configuration!([:secrets])
-               |> Map.get(:content)
+      assert %{content: ^updated_content} =
+               Configurations.get_configuration_by_external_id!(claims, configuration.external_id)
     end
 
     test "update_configuration/2 with invalid data returns error changeset" do
@@ -191,7 +207,8 @@ defmodule TdCx.ConfigurationsTest do
       assert {:error, %Ecto.Changeset{}} =
                Configurations.update_configuration(configuration, @invalid_attrs)
 
-      assert configuration == Configurations.get_configuration!(configuration.id)
+      assert configuration ==
+               Configurations.get_configuration_by_external_id!(configuration.external_id)
     end
 
     test "delete_configuration/1 deletes the configuration" do
@@ -199,7 +216,7 @@ defmodule TdCx.ConfigurationsTest do
       assert {:ok, %Configuration{}} = Configurations.delete_configuration(configuration)
 
       assert_raise Ecto.NoResultsError, fn ->
-        Configurations.get_configuration!(configuration.id)
+        Configurations.get_configuration_by_external_id!(configuration.external_id)
       end
     end
 

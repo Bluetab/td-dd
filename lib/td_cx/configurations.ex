@@ -16,38 +16,40 @@ defmodule TdCx.Configurations do
 
   ## Examples
 
-      iex> list_configurations()
+      iex> list_configurations(%Claims{})
       [%Configuration{}, ...]
 
   """
-  def list_configurations(clauses \\ %{}, opts \\ []) do
+  def list_configurations(claims, clauses \\ %{}) do
     clauses
-    |> Map.Helpers.atomize_keys
     |> Enum.reduce(Configuration, fn
       {:type, type}, q -> where(q, [c], c.type == ^type)
+      {"type", type}, q -> where(q, [c], c.type == ^type)
+      _, q -> q
     end)
     |> Repo.all()
-    |> enrich(opts)
+    |> enrich_secrets(claims)
   end
 
   @doc """
-  Gets a single configuration.
+  Gets a single configuration by external_id and enrichs it with 
+  secrets stored un vault.
 
   Raises `Ecto.NoResultsError` if the Configuration does not exist.
 
   ## Examples
 
-      iex> get_configuration!(123)
+      iex> get_configuration_by_external_id!(%Claims{}, 123)
       %Configuration{}
 
-      iex> get_configuration!(456)
+      iex> get_configuration_by_external_id!(%Claims{}, 456)
       ** (Ecto.NoResultsError)
 
   """
-  def get_configuration!(id, opts \\ []) do
-    Configuration
-    |> Repo.get!(id)
-    |> enrich(opts)
+  def get_configuration_by_external_id!(claims, external_id) do
+    external_id
+    |> get_configuration_by_external_id!()
+    |> enrich_secrets(claims)
   end
 
   @doc """
@@ -64,10 +66,8 @@ defmodule TdCx.Configurations do
       ** (Ecto.NoResultsError)
 
   """
-  def get_configuration_by_external_id!(external_id, opts \\ []) do
-    Configuration
-    |> Repo.get_by!(external_id: external_id)
-    |> enrich(opts)
+  def get_configuration_by_external_id!(external_id) do
+    Repo.get_by!(Configuration, external_id: external_id)
   end
 
   @doc """
@@ -154,25 +154,31 @@ defmodule TdCx.Configurations do
     Configuration.changeset(configuration, attrs)
   end
 
-  defp enrich([_ | _] = configurations, [_ | _] = opts) do
-    Enum.map(configurations, &enrich(&1, opts))
+  defp enrich_secrets([_ | _] = configurations, claims) do
+    Enum.map(configurations, &enrich_secrets(&1, claims))
   end
 
-  defp enrich(%Configuration{} = configuration, [_ | _] = opts) do
-    Enum.reduce(opts, configuration, &with_attr/2)
+  defp enrich_secrets(%Configuration{secrets_key: nil} = configuration, _claims),
+    do: configuration
+
+  defp enrich_secrets(
+         %Configuration{} = configuration,
+         claims
+       ) do
+    import Canada, only: [can?: 2]
+
+    case can?(claims, view_secrets(configuration)) do
+      true -> do_enrich_secrets(configuration)
+      _ -> configuration
+    end
   end
 
-  defp enrich(configuration, _opts), do: configuration
+  defp enrich_secrets(configuration, _claims), do: configuration
 
-  defp with_attr(:secrets, %Configuration{secrets_key: nil} = configuration), do: configuration
-
-  defp with_attr(
-         :secrets,
+  defp do_enrich_secrets(
          %Configuration{secrets_key: secrets_key, content: content} = configuration
        ) do
-
     secrets = Vault.read_secrets(secrets_key)
-    content = content || %{}
 
     case secrets do
       {:error, msg} ->
@@ -180,11 +186,9 @@ defmodule TdCx.Configurations do
 
       _ ->
         secrets = secrets || %{}
-        Map.put(configuration, :content, Map.merge(content, secrets))
+        Map.put(configuration, :content, Map.merge(content || %{}, secrets))
     end
   end
-
-  defp with_attr(_attr, configuration), do: configuration
 
   defp changeset(attrs) do
     changeset = Configuration.changeset(attrs)
@@ -204,10 +208,10 @@ defmodule TdCx.Configurations do
     end
   end
 
-  defp create_secrets(
-         %{base: %{changes: %{type: type, external_id: external_id, content: content}}}
-       ) do
-      persist_secrets(external_id, type, content)
+  defp create_secrets(%{
+         base: %{changes: %{type: type, external_id: external_id, content: content}}
+       }) do
+    persist_secrets(external_id, type, content)
   end
 
   defp create_secrets(_changes), do: {:ok, []}
@@ -216,7 +220,7 @@ defmodule TdCx.Configurations do
          %{type: type, external_id: external_id},
          %{base: %{changes: %{content: content}}}
        ) do
-      persist_secrets(external_id, type, content)
+    persist_secrets(external_id, type, content)
   end
 
   defp update_secrets(_config, _changes), do: {:ok, []}
