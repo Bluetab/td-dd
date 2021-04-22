@@ -159,8 +159,15 @@ defmodule TdCx.Configurations do
   def sign(%Configuration{} = configuration, payload) do
     configuration
     |> do_enrich_secrets()
-    |> Map.get(:content)
-    |> do_sign(payload)
+    |> case do
+      {:vault_error, _} = error ->
+        error
+
+      configuration ->
+        configuration
+        |> Map.get(:content)
+        |> do_sign(payload)
+    end
   end
 
   defp enrich_secrets([_ | _] = configurations, claims) do
@@ -191,7 +198,7 @@ defmodule TdCx.Configurations do
 
     case secrets do
       {:error, msg} ->
-        {:error, msg}
+        {:vault_error, msg}
 
       _ ->
         secrets = secrets || %{}
