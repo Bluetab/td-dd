@@ -154,6 +154,15 @@ defmodule TdCx.Configurations do
     Configuration.changeset(configuration, attrs)
   end
 
+  def sign(%Configuration{secrets_key: nil}, _payload), do: {:error, :unauthorized}
+
+  def sign(%Configuration{} = configuration, payload) do
+    configuration
+    |> do_enrich_secrets()
+    |> Map.get(:content)
+    |> do_sign(payload)
+  end
+
   defp enrich_secrets([_ | _] = configurations, claims) do
     Enum.map(configurations, &enrich_secrets(&1, claims))
   end
@@ -189,6 +198,21 @@ defmodule TdCx.Configurations do
         Map.put(configuration, :content, Map.merge(content || %{}, secrets))
     end
   end
+
+  defp do_sign(%{"secret_key" => key}, %{} = jwt) when is_binary(key) do
+    jws = %{"alg" => "HS256", "typ" => "JWT"}
+    k = Base.encode64(key)
+
+    token =
+      %{"k" => k, "kty" => "oct"}
+      |> JOSE.JWT.sign(jws, jwt)
+      |> JOSE.JWS.compact()
+      |> elem(1)
+
+    {:ok, token}
+  end
+
+  defp do_sign(_, _), do: {:error, :unauthorized}
 
   defp changeset(attrs) do
     changeset = Configuration.changeset(attrs)

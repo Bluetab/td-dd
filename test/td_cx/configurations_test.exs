@@ -19,7 +19,7 @@ defmodule TdCx.ConfigurationsTest do
   }
   @invalid_attrs %{content: %{"field3" => "foo"}}
   @app_admin_template %{
-    id: 1,
+    id: System.unique_integer([:positive]),
     name: "config",
     label: "app-admin",
     scope: "ca",
@@ -46,7 +46,7 @@ defmodule TdCx.ConfigurationsTest do
     ]
   }
   @secret_template %{
-    id: 2,
+    id: System.unique_integer([:positive]),
     name: "secret_config",
     label: "secret_config",
     scope: "ca",
@@ -229,6 +229,107 @@ defmodule TdCx.ConfigurationsTest do
       assert {:ok, %Configuration{}} = Configurations.delete_configuration(configuration)
 
       assert %{} == Vault.read_secrets(secrets_key)
+    end
+  end
+
+  describe "sign/2" do
+    setup do
+      with_key = %{
+        id: System.unique_integer([:positive]),
+        name: "foo",
+        label: "Foo",
+        scope: "ca",
+        content: [
+          %{
+            "name" => "Secret Group",
+            "is_secret" => true,
+            "fields" => [
+              %{
+                "name" => "secret_key",
+                "type" => "string",
+                "label" => "Secret Field",
+                "widget" => "password",
+                "values" => nil,
+                "cardinality" => "?"
+              }
+            ]
+          }
+        ]
+      }
+
+      without_key = %{
+        id: System.unique_integer([:positive]),
+        name: "bar",
+        label: "Bar",
+        scope: "ca",
+        content: [
+          %{
+            "name" => "Secret Group",
+            "is_secret" => true,
+            "fields" => [
+              %{
+                "name" => "bar_key",
+                "type" => "string",
+                "label" => "Secret Field",
+                "widget" => "password",
+                "values" => nil,
+                "cardinality" => "?"
+              }
+            ]
+          }
+        ]
+      }
+
+      with_key = Templates.create_template(with_key)
+      without_key = Templates.create_template(without_key)
+
+      on_exit(fn ->
+        Templates.delete(with_key)
+        Templates.delete(without_key)
+      end)
+
+      [with_key: with_key, without_key: without_key]
+    end
+
+    test "returns unauthorized if configuration has not secrets" do
+      configuration = insert(:configuration)
+      assert {:error, :unauthorized} = Configurations.sign(configuration, %{})
+    end
+
+    test "returns unauthorized if configuration has not secret key to sign", %{
+      with_key: with_key,
+      without_key: without_key
+    } do
+      c1 = build(:configuration, type: without_key.name)
+      c2 = build(:configuration, type: with_key.name, content: %{"secret_key" => nil})
+
+      {:ok, c1} = Configurations.create_configuration(Map.from_struct(c1))
+      {:ok, c2} = Configurations.create_configuration(Map.from_struct(c2))
+
+      assert {:error, :unauthorized} = Configurations.sign(c1, %{})
+      assert {:error, :unauthorized} = Configurations.sign(c2, %{})
+    end
+
+    test "returns token when payload is signed", %{
+      with_key: with_key
+    } do
+      secret_key = "foo"
+      k = Base.encode64(secret_key)
+      now = DateTime.utc_now()
+      exp = now |> DateTime.add(10 * 60) |> DateTime.to_unix()
+
+      payload = %{
+        "exp" => exp,
+        "params" => %{"domain_ids" => [1, 3]},
+        "resource" => %{"dashboard" => 1}
+      }
+
+      c1 = build(:configuration, type: with_key.name, content: %{"secret_key" => "foo"})
+      assert {:ok, c1} = Configurations.create_configuration(Map.from_struct(c1))
+      assert {:ok, token} = Configurations.sign(c1, payload)
+
+      assert {true, %{fields: ^payload}, _} =
+               JOSE.JWT.verify_strict(%{"kty" => "oct", "k" => k}, ["HS256"], token)
     end
   end
 end

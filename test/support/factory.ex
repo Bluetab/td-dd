@@ -167,7 +167,7 @@ defmodule TdDd.Factory do
     %Configuration{
       type: "config",
       content: %{},
-      external_id: "external_id"
+      external_id: sequence("external_id")
     }
   end
 

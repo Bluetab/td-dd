@@ -249,7 +249,7 @@ defmodule TdCxWeb.ConfigurationControllerTest do
 
   defp create_configuration(_) do
     create_template(nil)
-    configuration = insert(:configuration, content: %{"field1" => "value"})
+    configuration = insert(:configuration, content: %{"field1" => "value"}, external_id: "external_id")
     {:ok, configuration: configuration}
   end
 
