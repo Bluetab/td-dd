@@ -12,8 +12,8 @@ defmodule TdDq.Rules do
   alias TdDfLib.Format
   alias TdDq.Auth.Claims
   alias TdDq.Cache.RuleLoader
+  alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Audit
-  alias TdDq.Rules.Implementations.Implementation
   alias TdDq.Rules.Rule
 
   require Logger

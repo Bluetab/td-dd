@@ -5,7 +5,7 @@ defmodule TdDq.DownloadTest do
   use TdDd.DataCase
 
   alias TdCache.TemplateCache
-  alias TdDq.Rules.Implementations.Download
+  alias TdDq.Implementations.Download
 
   defp create_template(_) do
     template = %{

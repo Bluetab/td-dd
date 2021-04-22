@@ -1,10 +1,10 @@
-defmodule TdDq.Rules.Implementations.DatasetRow do
+defmodule TdDq.Implementations.DatasetRow do
   @moduledoc false
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias TdDq.Rules.Implementations.JoinClause
-  alias TdDq.Rules.Implementations.Structure
+  alias TdDq.Implementations.JoinClause
+  alias TdDq.Implementations.Structure
 
   @primary_key false
   embedded_schema do

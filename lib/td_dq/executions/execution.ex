@@ -10,7 +10,7 @@ defmodule TdDq.Executions.Execution do
   import Ecto.Changeset
 
   alias TdDq.Executions.Group
-  alias TdDq.Rules.Implementations.Implementation
+  alias TdDq.Implementations.Implementation
   alias TdDq.Rules.RuleResult
 
   schema "executions" do

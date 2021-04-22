@@ -8,7 +8,7 @@ defmodule TdDq.Rules.Rule do
   import Ecto.Changeset
 
   alias TdDfLib.Validation
-  alias TdDq.Rules.Implementations.Implementation
+  alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Rule
 
   @valid_result_types ~w(percentage errors_number)

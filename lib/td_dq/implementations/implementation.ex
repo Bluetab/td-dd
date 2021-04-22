@@ -1,4 +1,4 @@
-defmodule TdDq.Rules.Implementations.Implementation do
+defmodule TdDq.Implementations.Implementation do
   @moduledoc """
   Ecto Schema module for Quality Rule Implementations
   """
@@ -7,11 +7,11 @@ defmodule TdDq.Rules.Implementations.Implementation do
   import Ecto.Changeset
 
   alias Ecto.Changeset
-  alias TdDq.Rules.Implementations
-  alias TdDq.Rules.Implementations.ConditionRow
-  alias TdDq.Rules.Implementations.DatasetRow
-  alias TdDq.Rules.Implementations.Implementation
-  alias TdDq.Rules.Implementations.RawContent
+  alias TdDq.Implementations
+  alias TdDq.Implementations.ConditionRow
+  alias TdDq.Implementations.DatasetRow
+  alias TdDq.Implementations.Implementation
+  alias TdDq.Implementations.RawContent
   alias TdDq.Rules.Rule
 
   @typedoc "A quality rule implementation"

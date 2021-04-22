@@ -1,8 +1,8 @@
 defmodule TdDq.Canada.ImplementationAbilities do
   @moduledoc false
   alias TdDq.Auth.Claims
+  alias TdDq.Implementations.Implementation
   alias TdDq.Permissions
-  alias TdDq.Rules.Implementations.Implementation
 
   # Service accounts can do anything with Implementations
   def can?(%Claims{role: "service"}, _action, _target), do: true

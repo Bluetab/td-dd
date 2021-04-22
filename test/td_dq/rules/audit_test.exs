@@ -5,8 +5,8 @@ defmodule TdDq.Rules.AuditTest do
   alias TdCache.Redix.Stream
   alias TdCache.TemplateCache
   alias TdDd.Repo
+  alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Audit
-  alias TdDq.Rules.Implementations.Implementation
   alias TdDq.Rules.Rule
 
   @stream TdCache.Audit.stream()

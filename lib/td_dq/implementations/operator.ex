@@ -1,4 +1,4 @@
-defmodule TdDq.Rules.Implementations.Operator do
+defmodule TdDq.Implementations.Operator do
   @moduledoc """
   Ecto Schema module for Operators in rule implementations
   """

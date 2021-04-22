@@ -1,4 +1,4 @@
-defmodule TdDq.Rules.Implementations.Structure do
+defmodule TdDq.Implementations.Structure do
   @moduledoc """
   Ecto Schema module for DataStructure references in rule implementations
   """

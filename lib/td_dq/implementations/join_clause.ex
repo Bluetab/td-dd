@@ -1,4 +1,4 @@
-defmodule TdDq.Rules.Implementations.JoinClause do
+defmodule TdDq.Implementations.JoinClause do
   @moduledoc """
   Ecto Schema module for Join clauses in rule implementations
   """
@@ -6,7 +6,7 @@ defmodule TdDq.Rules.Implementations.JoinClause do
 
   import Ecto.Changeset
 
-  alias TdDq.Rules.Implementations.Structure
+  alias TdDq.Implementations.Structure
 
   @primary_key false
   embedded_schema do

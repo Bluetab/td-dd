@@ -9,7 +9,7 @@ defmodule TdDq.Rules.RuleResults do
   alias TdDd.Repo
   alias TdDq.Cache.RuleLoader
   alias TdDq.Executions.Execution
-  alias TdDq.Rules.Implementations.Implementation
+  alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleResult
 

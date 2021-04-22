@@ -11,7 +11,7 @@ defmodule TdDd.ElasticsearchMock do
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Repo
   alias TdDd.Search.Store
-  alias TdDq.Rules.Implementations.Implementation
+  alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Rule
 
   require Logger
@@ -363,7 +363,7 @@ defmodule TdDd.ElasticsearchMock do
     end)
   end
 
-  defp stream(schema) when schema in [TdDq.Rules.Implementations.Implementation, TdDq.Rules.Rule] do
+  defp stream(schema) when schema in [TdDq.Implementations.Implementation, TdDq.Rules.Rule] do
     TdDq.Search.Store.stream(schema)
   end
 

@@ -8,8 +8,8 @@ defmodule TdDq.Rules.RuleResults.BulkLoad do
   alias Ecto.Multi
   alias TdDd.Repo
   alias TdDq.Cache.RuleLoader
+  alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Audit
-  alias TdDq.Rules.Implementations.Implementation
   alias TdDq.Rules.RuleResult
 
   require Logger

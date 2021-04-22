@@ -1,8 +1,8 @@
-defmodule TdDq.Rules.Implementations.ImplementationTest do
+defmodule TdDq.Implementations.ImplementationTest do
   use TdDd.DataCase
 
   alias TdDd.Repo
-  alias TdDq.Rules.Implementations.Implementation
+  alias TdDq.Implementations.Implementation
 
   describe "changeset/2" do
     test "validates existence of rule on insert" do

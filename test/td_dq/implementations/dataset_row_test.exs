@@ -1,8 +1,8 @@
-defmodule TdDq.Rules.Implementations.DatasetRowTest do
+defmodule TdDq.Implementations.DatasetRowTest do
   use TdDd.DataCase
 
   alias Ecto.Changeset
-  alias TdDq.Rules.Implementations.DatasetRow
+  alias TdDq.Implementations.DatasetRow
 
   describe "changeset/2" do
     test "validates clauses is non-empty if join_type is specified" do

@@ -1,4 +1,4 @@
-defmodule TdDq.Rules.Implementations do
+defmodule TdDq.Implementations do
   @moduledoc """
   The Rule Implementations context.
   """
@@ -12,11 +12,11 @@ defmodule TdDq.Rules.Implementations do
   alias TdDd.Repo
   alias TdDq.Auth.Claims
   alias TdDq.Cache.RuleLoader
+  alias TdDq.Implementations.ConditionRow
+  alias TdDq.Implementations.DatasetRow
+  alias TdDq.Implementations.Implementation
+  alias TdDq.Implementations.Structure
   alias TdDq.Rules.Audit
-  alias TdDq.Rules.Implementations.ConditionRow
-  alias TdDq.Rules.Implementations.DatasetRow
-  alias TdDq.Rules.Implementations.Implementation
-  alias TdDq.Rules.Implementations.Structure
   alias TdDq.Rules.Rule
 
   @index_worker Application.compile_env(:td_dd, :dq_index_worker)

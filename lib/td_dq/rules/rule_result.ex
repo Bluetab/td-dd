@@ -10,7 +10,7 @@ defmodule TdDq.Rules.RuleResult do
   alias Decimal
   alias TdDq.DateParser
   alias TdDq.Executions.Execution
-  alias TdDq.Rules.Implementations.Implementation
+  alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Rule
 
   @scale 2

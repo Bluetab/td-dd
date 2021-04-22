@@ -36,7 +36,7 @@ config :td_dd, TdDd.Search.Cluster,
   indexes: %{
     implementations: %{
       store: TdDq.Search.Store,
-      sources: [TdDq.Rules.Implementations.Implementation],
+      sources: [TdDq.Implementations.Implementation],
       bulk_page_size: 100,
       bulk_wait_interval: 0,
       bulk_action: "index",

@@ -79,7 +79,7 @@ defmodule TdDd.Factory do
   end
 
   def raw_implementation_factory do
-    %TdDq.Rules.Implementations.Implementation{
+    %TdDq.Implementations.Implementation{
       rule: build(:rule),
       implementation_key: sequence("ri"),
       implementation_type: "raw",
@@ -89,7 +89,7 @@ defmodule TdDd.Factory do
   end
 
   def raw_content_factory do
-    %TdDq.Rules.Implementations.RawContent{
+    %TdDq.Implementations.RawContent{
       dataset: "clientes c join address a on c.address_id=a.id",
       population: "a.country = 'SPAIN'",
       source_id: 1,
@@ -101,7 +101,7 @@ defmodule TdDd.Factory do
   def implementation_factory(attrs) do
     attrs = default_assoc(attrs, :rule_id, :rule)
 
-    %TdDq.Rules.Implementations.Implementation{
+    %TdDq.Implementations.Implementation{
       implementation_key: sequence("implementation_key"),
       implementation_type: "default",
       dataset: build(:dataset),
@@ -225,19 +225,19 @@ defmodule TdDd.Factory do
   end
 
   def dataset_row_factory do
-    %TdDq.Rules.Implementations.DatasetRow{
+    %TdDq.Implementations.DatasetRow{
       structure: build(:dataset_structure)
     }
   end
 
   def dataset_structure_factory do
-    %TdDq.Rules.Implementations.Structure{
+    %TdDq.Implementations.Structure{
       id: sequence(:dataset_structure_id, &(&1 + 14_080))
     }
   end
 
   def dataset_clause_factory do
-    %TdDq.Rules.Implementations.JoinClause{
+    %TdDq.Implementations.JoinClause{
       left: build(:dataset_structure),
       right: build(:dataset_structure)
     }
@@ -252,7 +252,7 @@ defmodule TdDd.Factory do
   end
 
   def condition_row_factory do
-    %TdDq.Rules.Implementations.ConditionRow{
+    %TdDq.Implementations.ConditionRow{
       value: [%{"raw" => 8}],
       operator: build(:operator),
       structure: build(:dataset_structure)
@@ -260,7 +260,7 @@ defmodule TdDd.Factory do
   end
 
   def operator_factory do
-    %TdDq.Rules.Implementations.Operator{name: "eq", value_type: "number"}
+    %TdDq.Implementations.Operator{name: "eq", value_type: "number"}
   end
 
   def rule_result_factory do

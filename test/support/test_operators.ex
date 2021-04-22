@@ -5,7 +5,7 @@ defmodule TdDd.TestOperators do
 
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
-  alias TdDq.Rules.Implementations.Implementation
+  alias TdDq.Implementations.Implementation
 
   def a <~> b, do: approximately_equal(a, b)
   def a <|> b, do: approximately_equal(Enum.sort(a), Enum.sort(b))

@@ -1,7 +1,7 @@
-defmodule TdDq.Rules.Implementations.ConditionRowTest do
+defmodule TdDq.Implementations.ConditionRowTest do
   use TdDd.DataCase
 
-  alias TdDq.Rules.Implementations.ConditionRow
+  alias TdDq.Implementations.ConditionRow
 
   describe "changeset/2" do
     test "validates value is a valid attribute" do

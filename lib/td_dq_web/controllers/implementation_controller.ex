@@ -5,11 +5,11 @@ defmodule TdDqWeb.ImplementationController do
   import Canada, only: [can?: 2]
   import TdDqWeb.RuleImplementationSupport, only: [decode: 1]
 
+  alias TdDq.Implementations
+  alias TdDq.Implementations.Download
+  alias TdDq.Implementations.Implementation
+  alias TdDq.Implementations.Search
   alias TdDq.Rules
-  alias TdDq.Rules.Implementations
-  alias TdDq.Rules.Implementations.Download
-  alias TdDq.Rules.Implementations.Implementation
-  alias TdDq.Rules.Implementations.Search
   alias TdDq.Rules.RuleResults
   alias TdDqWeb.ErrorView
 

@@ -1,9 +1,9 @@
-defmodule TdDq.Rules.Implementations.Tasks do
+defmodule TdDq.Implementations.Tasks do
   @moduledoc """
   Module providing periodic tasks relating to rule implementations
   """
 
-  alias TdDq.Rules.Implementations
+  alias TdDq.Implementations
 
   require Logger
 

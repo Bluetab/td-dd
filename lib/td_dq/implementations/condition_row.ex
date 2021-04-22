@@ -1,4 +1,4 @@
-defmodule TdDq.Rules.Implementations.ConditionRow do
+defmodule TdDq.Implementations.ConditionRow do
   @moduledoc """
   Ecto Schema module for conditions in rule implementations.
   """
@@ -7,8 +7,8 @@ defmodule TdDq.Rules.Implementations.ConditionRow do
 
   import Ecto.Changeset
 
-  alias TdDq.Rules.Implementations.Operator
-  alias TdDq.Rules.Implementations.Structure
+  alias TdDq.Implementations.Operator
+  alias TdDq.Implementations.Structure
 
   @primary_key false
   embedded_schema do

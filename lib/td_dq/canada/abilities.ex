@@ -5,8 +5,8 @@ defmodule TdDq.Canada.Abilities do
   alias TdDq.Auth.Claims
   alias TdDq.Canada.{ExecutionAbilities, ImplementationAbilities, RuleAbilities}
   alias TdDq.Executions.{Execution, Group}
+  alias TdDq.Implementations.Implementation
   alias TdDq.Permissions
-  alias TdDq.Rules.Implementations.Implementation
   alias TdDq.Rules.Rule
 
   defimpl Canada.Can, for: Claims do

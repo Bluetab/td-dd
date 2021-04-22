@@ -3,7 +3,7 @@ defmodule TdDqWeb.ImplementationResultController do
 
   import Canada, only: [can?: 2]
 
-  alias TdDq.Rules.Implementations
+  alias TdDq.Implementations
   alias TdDq.Rules.RuleResults
   alias TdDqWeb.RuleResultView
 

@@ -6,7 +6,7 @@ defmodule TdDq.Search.Indexer do
   alias Elasticsearch.Index
   alias Elasticsearch.Index.Bulk
   alias TdDd.Search.Cluster
-  alias TdDq.Rules.Implementations.Implementation
+  alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Rule
   alias TdDq.Search.Mappings
   alias TdDq.Search.Store

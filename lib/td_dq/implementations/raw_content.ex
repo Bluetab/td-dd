@@ -1,4 +1,4 @@
-defmodule TdDq.Rules.Implementations.RawContent do
+defmodule TdDq.Implementations.RawContent do
   @moduledoc """
   Ecto Schema module for "native" rule content.
   """

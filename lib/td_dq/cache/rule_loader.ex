@@ -6,8 +6,8 @@ defmodule TdDq.Cache.RuleLoader do
   use GenServer
 
   alias TdCache.RuleCache
+  alias TdDq.Implementations
   alias TdDq.Rules
-  alias TdDq.Rules.Implementations
 
   require Logger
 

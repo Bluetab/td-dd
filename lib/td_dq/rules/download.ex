@@ -1,4 +1,4 @@
-defmodule TdDq.Rules.Implementations.Download do
+defmodule TdDq.Implementations.Download do
   @moduledoc """
   Helper module to download implementations.
   """

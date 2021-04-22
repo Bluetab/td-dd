@@ -9,7 +9,7 @@ defmodule TdDq.Executions.Group do
   import Ecto.Changeset
 
   alias TdDq.Executions.Execution
-  alias TdDq.Rules.Implementations.Implementation
+  alias TdDq.Implementations.Implementation
 
   schema "execution_groups" do
     field(:filters, :map, virtual: true)

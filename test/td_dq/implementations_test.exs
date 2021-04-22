@@ -5,8 +5,8 @@ defmodule TdDq.ImplementationsTest do
   import TdDd.TestOperators
 
   alias Ecto.Changeset
-  alias TdDq.Rules.Implementations
-  alias TdDq.Rules.Implementations.Implementation
+  alias TdDq.Implementations
+  alias TdDq.Implementations.Implementation
 
   setup_all do
     start_supervised(TdDq.MockRelationCache)
@@ -309,12 +309,12 @@ defmodule TdDq.ImplementationsTest do
                implementation.implementation_key
 
       assert updated_implementation.validations == [
-               %TdDq.Rules.Implementations.ConditionRow{
-                 operator: %TdDq.Rules.Implementations.Operator{
+               %TdDq.Implementations.ConditionRow{
+                 operator: %TdDq.Implementations.Operator{
                    name: "gt",
                    value_type: "timestamp"
                  },
-                 structure: %TdDq.Rules.Implementations.Structure{id: 12_554},
+                 structure: %TdDq.Implementations.Structure{id: 12_554},
                  value: [%{"raw" => "2019-12-30 05:35:00"}]
                }
              ]

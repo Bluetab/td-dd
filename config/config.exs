@@ -136,7 +136,7 @@ config :td_dd, TdDd.Scheduler,
     ],
     rule_cache_refresher: [
       schedule: "@hourly",
-      task: {TdDq.Rules.Implementations.Tasks, :deprecate_implementations, []},
+      task: {TdDq.Implementations.Tasks, :deprecate_implementations, []},
       run_strategy: Quantum.RunStrategy.Local
     ],
     rule_indexer: [

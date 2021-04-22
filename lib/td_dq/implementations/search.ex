@@ -1,4 +1,4 @@
-defmodule TdDq.Rules.Implementations.Search do
+defmodule TdDq.Implementations.Search do
   @moduledoc """
   The Rule Implementations Search context
   """
