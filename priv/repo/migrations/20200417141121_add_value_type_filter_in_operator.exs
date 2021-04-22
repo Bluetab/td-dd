@@ -4,7 +4,6 @@ defmodule TdDq.Repo.Migrations.AddValueTypeFilterInOperator do
 
   alias Ecto.Adapters.SQL
   alias TdDd.Repo
-  alias TdDq.Rules.Implementations.Implementation
 
   @update_statement """
     UPDATE rule_implementations
