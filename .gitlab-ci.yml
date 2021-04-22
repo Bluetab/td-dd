@@ -56,7 +56,7 @@ acceptance:
     - docker-compose
   dependencies: []
   script:
-    - docker-compose up -d redis postgres elastic
+    - docker-compose up -d redis postgres elastic vault
     - docker-compose run --rm wait_for_elastic
     - docker-compose run --rm acceptance
   after_script:
@@ -72,7 +72,7 @@ acceptance:branches:
   tags:
     - docker-compose
   script:
-    - docker-compose up -d redis postgres elastic
+    - docker-compose up -d redis postgres elastic vault
     - docker build --build-arg APP_NAME=${APP_NAME} --build-arg APP_VERSION=${APP_VERSION} -t ${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${CI_COMMIT_SHA} .
     - docker tag ${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${CI_COMMIT_SHA} ${ECR}/${ECR_NAMESPACE}/${CI_PROJECT_NAME}:${APP_VERSION}
     - docker-compose run --rm wait_for_elastic
