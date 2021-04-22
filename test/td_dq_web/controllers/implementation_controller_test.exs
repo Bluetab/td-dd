@@ -2,9 +2,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
   use TdDqWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger_dq.json"
 
-  alias TdCache.StructureCache
-  alias TdCache.SystemCache
-
   @valid_dataset [
     %{structure: %{id: 14_080}},
     %{clauses: [%{left: %{id: 14_863}, right: %{id: 4028}}], structure: %{id: 3233}}
@@ -13,35 +10,31 @@ defmodule TdDqWeb.ImplementationControllerTest do
   setup_all do
     start_supervised(TdDd.Search.MockIndexWorker)
     start_supervised(TdDq.Cache.RuleLoader)
-    start_supervised(TdDq.Cache.ImplementationLoader)
-
-    system = %{id: 1, external_id: "sys1_ext_id", name: "sys1"}
-
-    structure = %{
-      id: 14_080,
-      name: "name",
-      external_id: "ext_id",
-      group: "group",
-      type: "type",
-      path: ["foo", "bar"],
-      updated_at: DateTime.utc_now(),
-      metadata: %{"alias" => "source_alias"},
-      system_id: system.id
-    }
-
-    {:ok, _} = SystemCache.put(system)
-    {:ok, _} = StructureCache.put(structure)
-
-    on_exit(fn ->
-      SystemCache.delete(system.id)
-      StructureCache.delete(structure.id)
-    end)
-
-    [structure: structure]
+    :ok
   end
 
   setup do
     [implementation: insert(:implementation)]
+  end
+
+  describe "GET /api/implementations/:id" do
+    @tag authentication: [role: "admin"]
+    test "includes the source external_id in the response", %{conn: conn, swagger_schema: schema} do
+      %{id: source_id, external_id: source_external_id} = insert(:source)
+
+      %{id: id} =
+        insert(:raw_implementation, raw_content: build(:raw_content, source_id: source_id))
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:ok)
+
+      assert %{"raw_content" => content} = data
+      assert %{"source" => source} = content
+      assert %{"external_id" => ^source_external_id} = source
+    end
   end
 
   describe "index" do

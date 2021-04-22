@@ -1,11 +1,10 @@
-defmodule TdDq.Rules.ImplementationsTest do
+defmodule TdDq.ImplementationsTest do
   use TdDd.DataCase
 
   import Ecto.Query, warn: false
   import TdDd.TestOperators
 
   alias Ecto.Changeset
-  alias TdCache.StructureCache
   alias TdDq.Rules.Implementations
   alias TdDq.Rules.Implementations.Implementation
 
@@ -13,7 +12,6 @@ defmodule TdDq.Rules.ImplementationsTest do
     start_supervised(TdDq.MockRelationCache)
     start_supervised(TdDd.Search.MockIndexWorker)
     start_supervised(TdDq.Cache.RuleLoader)
-    start_supervised(TdDq.Cache.ImplementationLoader)
     :ok
   end
 
@@ -136,14 +134,28 @@ defmodule TdDq.Rules.ImplementationsTest do
       assert length(Implementations.list_implementations(%{"structure_id" => structure_id_2})) ==
                2
     end
+
+    test "preloads rule" do
+      %{rule_id: rule_id} = insert(:implementation)
+      assert [%{rule: rule}] = Implementations.list_implementations(%{}, preload: :rule)
+      assert %{id: ^rule_id} = rule
+    end
+
+    test "enriches source" do
+      %{id: source_id} = source = insert(:source)
+      insert(:raw_implementation, raw_content: build(:raw_content, source_id: source_id))
+
+      assert [%{raw_content: content}] =
+               Implementations.list_implementations(%{}, enrich: :source)
+
+      assert %{source: ^source} = content
+    end
   end
 
   describe "get_implementation!/1" do
     test "returns the implementation with given id" do
-      implementation = insert(:implementation)
-
-      assert Implementations.get_implementation!(implementation.id)
-             <~> implementation
+      %{id: id} = implementation = insert(:implementation)
+      assert Implementations.get_implementation!(id) <~> implementation
     end
 
     test "returns the implementation with given id even if it is soft deleted" do
@@ -151,6 +163,22 @@ defmodule TdDq.Rules.ImplementationsTest do
 
       assert Implementations.get_implementation!(implementation.id)
              <~> implementation
+    end
+
+    test "preloads the rule" do
+      %{id: id, rule_id: rule_id} = insert(:implementation)
+      assert %{rule: rule} = Implementations.get_implementation!(id, preload: :rule)
+      assert %{id: ^rule_id} = rule
+    end
+
+    test "enriches source" do
+      %{id: source_id} = source = insert(:source)
+
+      %{id: id} =
+        insert(:raw_implementation, raw_content: build(:raw_content, source_id: source_id))
+
+      assert %{raw_content: content} = Implementations.get_implementation!(id, enrich: :source)
+      assert %{source: ^source} = content
     end
   end
 
@@ -424,55 +452,61 @@ defmodule TdDq.Rules.ImplementationsTest do
   end
 
   describe "deprecate_implementations/1" do
-    test "deprecates implementations referencing deleted structure ids" do
-      %{id: id1} = ri1 = insert(:implementation, rule: build(:rule))
-      [structure_id | _] = Implementations.get_structure_ids(ri1)
-      TdCache.StructureCache.delete(structure_id)
+    test "deprecates implementations which don't reference existing structure ids" do
+      %{data_structure_id: structure_id1} = insert(:data_structure_version)
+
+      %{data_structure_id: structure_id2} =
+        insert(:data_structure_version, deleted_at: DateTime.utc_now())
+
+      insert(:implementation,
+        dataset: [build(:dataset_row, structure: build(:dataset_structure, id: structure_id1))],
+        population: [],
+        validations: []
+      )
+
+      assert :ok = Implementations.deprecate_implementations()
+
+      %{id: id2} =
+        insert(:implementation,
+          dataset: [build(:dataset_row, structure: build(:dataset_structure, id: structure_id2))],
+          population: [],
+          validations: []
+        )
+
+      %{id: id3} = insert(:implementation)
+
       assert {:ok, %{deprecated: deprecated}} = Implementations.deprecate_implementations()
-      assert {1, [%{id: ^id1}]} = deprecated
+      assert {2, implementations} = deprecated
+      assert ids = Enum.map(implementations, & &1.id)
+      assert id2 in ids
+      assert id3 in ids
     end
   end
 
   describe "get_sources/1" do
     setup do
-      %{structure: %{id: stid1}} = dataset_row = build(:dataset_row)
-      %{structure: %{id: stid2}} = condition_row = build(:condition_row)
+      %{id: sid1} = source1 = insert(:source, config: %{"alias" => "foo"})
+      %{id: sid2} = source2 = insert(:source, config: %{"aliases" => ["bar", "baz"]})
 
-      sid1 = System.unique_integer([:positive])
-      sid2 = System.unique_integer([:positive])
+      %{data_structure_id: structure_id1, data_structure: s1} =
+        insert(:data_structure_version,
+          metadata: %{"alias" => "foo"},
+          data_structure: build(:data_structure, source_id: sid1)
+        )
 
-      source1 = %{"id" => sid1, "config" => %{"alias" => "foo"}, "external_id" => "eid1"}
-      source2 = %{"id" => sid2, "config" => %{"aliases" => ["bar", "foo"]}, "external_id" => "eid2"}
+      %{data_structure_id: structure_id2, data_structure: s2} =
+        insert(:data_structure_version,
+          metadata: %{"alias" => "bar"},
+          data_structure: build(:data_structure, source_id: sid2)
+        )
 
-      raw_content1 = build(:raw_content, source_id: sid1, source: source1)
-      raw_content2 = build(:raw_content, source_id: sid2, source: source2)
+      dataset_row = build(:dataset_row, structure: build(:dataset_structure, id: structure_id1))
 
-      structure1 = %{
-        id: stid1,
-        name: "name",
-        external_id: "ex1",
-        group: "group",
-        type: "type",
-        path: ["foo", "bar"],
-        updated_at: DateTime.utc_now(),
-        metadata: %{"alias" => "foo"},
-        system_id: 999
-      }
+      condition_row =
+        build(:condition_row, structure: build(:dataset_structure, id: structure_id2))
 
-      structure2 = %{
-        id: stid2,
-        name: "name",
-        external_id: "ex2",
-        group: "group",
-        type: "type",
-        path: ["foo", "bar"],
-        updated_at: DateTime.utc_now(),
-        metadata: %{"alias" => "bar"},
-        system_id: 999
-      }
-
-      StructureCache.put(structure1)
-      StructureCache.put(structure2)
+      raw_content1 = build(:raw_content, source_id: sid1)
+      raw_content2 = build(:raw_content, source_id: sid2)
 
       implementation1 =
         insert(:implementation, dataset: [dataset_row], validations: [condition_row])
@@ -480,65 +514,20 @@ defmodule TdDq.Rules.ImplementationsTest do
       implementation2 = insert(:raw_implementation, raw_content: raw_content1)
       implementation3 = insert(:raw_implementation, raw_content: raw_content2)
 
-      on_exit(fn ->
-        StructureCache.delete(stid1)
-        StructureCache.delete(stid2)
-      end)
-
       [
         sources: [source1, source2],
-        structures: [structure1, structure2],
+        structures: [s1, s2],
         implementations: [implementation1, implementation2, implementation3]
       ]
     end
 
-    test "get sources of default implementation", %{
-      implementations: [impl | _],
-      structures: structures
-    } do
-      aliases =
-        structures
-        |> Enum.map(&Map.get(&1, :metadata))
-        |> Enum.map(&Map.get(&1, "alias"))
-        |> Enum.uniq()
-        |> Enum.sort()
-
-      results =
-        impl
-        |> Implementations.get_sources()
-        |> Enum.sort()
-
-      assert aliases == results
+    test "get sources of default implementation", %{implementations: [impl | _]} do
+      assert Implementations.get_sources(impl) == ["foo", "bar"]
     end
 
-    test "get sources of raw implementation", %{
-      implementations: [_, impl1, impl2],
-      sources: [s1, s2]
-    } do
-      als =
-        s1
-        |> Map.get("config")
-        |> Map.get("alias")
-
-      results =
-        impl1
-        |> Implementations.get_sources()
-        |> Enum.sort()
-
-      assert [als] == results
-
-      aliases =
-        s2
-        |> Map.get("config")
-        |> Map.get("aliases")
-        |> Enum.sort()
-
-      results =
-        impl2
-        |> Implementations.get_sources()
-        |> Enum.sort()
-
-      assert aliases == results
+    test "get sources of raw implementation", %{implementations: [_, impl1, impl2]} do
+      assert Implementations.get_sources(impl1) == ["foo"]
+      assert Implementations.get_sources(impl2) == ["bar", "baz"]
     end
   end
 end

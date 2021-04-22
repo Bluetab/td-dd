@@ -136,12 +136,12 @@ defmodule TdDq.Rules.Rule do
   end
 
   defimpl Elasticsearch.Document do
-    alias Search.Helpers
     alias TdCache.TemplateCache
     alias TdDfLib.Format
     alias TdDfLib.RichText
     alias TdDq.Rules.Rule
     alias TdDq.Rules.RuleResults
+    alias TdDq.Search.Helpers
 
     @impl Elasticsearch.Document
     def id(%Rule{id: id}), do: id

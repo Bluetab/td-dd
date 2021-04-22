@@ -1,4 +1,4 @@
-defmodule Search.Helpers do
+defmodule TdDq.Search.Helpers do
   @moduledoc """
   Functions to fetch data to index
   """
@@ -6,7 +6,7 @@ defmodule Search.Helpers do
   alias TdCache.ConceptCache
   alias TdCache.TaxonomyCache
   alias TdCache.UserCache
-  alias TdDq.Rules.Implementations
+  alias TdDd.Cache.StructureEntry
 
   def get_domain_ids(%{business_concept_id: nil}), do: -1
 
@@ -92,13 +92,15 @@ defmodule Search.Helpers do
     result_map
   end
 
+  @spec get_sources([non_neg_integer()]) :: [binary()]
   def get_sources(structure_ids) do
     structure_ids
-    |> Enum.map(&Implementations.read_structure_from_cache/1)
-    |> Enum.filter(&(not Enum.empty?(&1)))
-    |> Enum.map(&Map.get(&1, :metadata, %{}))
-    |> Enum.map(&Map.get(&1, "alias"))
-    |> Enum.filter(& &1)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.map(&StructureEntry.cache_entry/1)
+    |> Enum.flat_map(fn
+      %{metadata: %{"alias" => alias}} -> [alias]
+      _ -> []
+    end)
     |> Enum.uniq()
   end
 end

@@ -87,13 +87,7 @@ defmodule TdDq.DownloadTest do
       assert csv ==
                """
                implementation_key;implementation_type;rule;Template Label;goal;minimum;business_concept;last_execution_at;result;execution;inserted_at;Info;System\r
-               #{impl.implementation_key};#{impl.implementation_type};#{impl.rule.name};#{
-                 impl.rule.df_name
-               };#{impl.rule.goal};#{impl.rule.minimum};#{
-                 impl.current_business_concept_version.name
-               };#{impl.execution_result_info.date};#{impl.execution_result_info.result};Under Goal;#{
-                 impl.inserted_at
-               };field_value;system, system1\r
+               #{impl.implementation_key};#{impl.implementation_type};#{impl.rule.name};#{impl.rule.df_name};#{impl.rule.goal};#{impl.rule.minimum};#{impl.current_business_concept_version.name};#{impl.execution_result_info.date};#{impl.execution_result_info.result};Under Goal;#{impl.inserted_at};field_value;system, system1\r
                """
     end
   end

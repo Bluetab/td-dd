@@ -184,6 +184,23 @@ defmodule TdCx.SourcesTest do
     end
   end
 
+  describe "Source.get_aliases/1" do
+    test "returns an empty list if the source_id has no aliases" do
+      %{id: source_id} = insert(:source, config: %{})
+      assert Sources.get_aliases(source_id) == []
+    end
+
+    test "obtains the alias of a source specified by id" do
+      %{id: source_id} = insert(:source, config: %{"alias" => "foo"})
+      assert Sources.get_aliases(source_id) == ["foo"]
+    end
+
+    test "obtains the aliases of a source specified by id" do
+      %{id: source_id} = insert(:source, config: %{"aliases" => ["foo", "bar"]})
+      assert Sources.get_aliases(source_id) == ["foo", "bar"]
+    end
+  end
+
   defp source_fixture(attrs \\ %{}) do
     {:ok, source} =
       attrs

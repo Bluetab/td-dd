@@ -14,14 +14,14 @@ defmodule TdDq.Rules.Implementations.RawContent do
     field(:validations, :string)
     field(:database, :string)
     field(:source_id, :integer)
-    field(:source, :map, default: %{})
+    field(:source, :map, virtual: true)
   end
 
   def changeset(%__MODULE__{} = struct, params) do
     struct
-    |> cast(params, [:dataset, :population, :validations, :source_id, :source, :database])
+    |> cast(params, [:dataset, :population, :validations, :source_id, :database])
     |> valid_content?([:dataset, :population, :validations])
-    |> validate_required([:dataset, :validations, :source_id, :source])
+    |> validate_required([:dataset, :validations, :source_id])
   end
 
   def present?(changeset, field) do

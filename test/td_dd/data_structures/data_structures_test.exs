@@ -33,7 +33,7 @@ defmodule TdDd.DataStructuresTest do
   end
 
   setup %{template_name: template_name} do
-    alias TdCache.{ConceptCache, LinkCache, StructureCache, SystemCache}
+    alias TdCache.{ConceptCache, LinkCache}
 
     concept = %{id: "LINKED_CONCEPT", name: "concept"}
     system = insert(:system, external_id: "test_system")
@@ -44,8 +44,6 @@ defmodule TdDd.DataStructuresTest do
       insert(:data_structure_version, data_structure_id: data_structure.id, type: template_name)
 
     {:ok, _} = ConceptCache.put(concept)
-    {:ok, _} = SystemCache.put(system)
-    {:ok, _} = StructureCache.put(data_structure)
     %{id: template_id, name: template_name} = template = build(:template, name: template_name)
     {:ok, _} = TemplateCache.put(template)
 
@@ -67,8 +65,6 @@ defmodule TdDd.DataStructuresTest do
 
     on_exit(fn ->
       LinkCache.delete(123_456_789)
-      StructureCache.delete(data_structure.id)
-      SystemCache.delete(system.id)
       ConceptCache.delete(concept.id)
       TemplateCache.delete(template_id)
       StructureTypeCache.delete(structure_type_id)
@@ -187,6 +183,25 @@ defmodule TdDd.DataStructuresTest do
       assert DataStructures.get_metadata_version(dsv1) == nil
       assert DataStructures.get_metadata_version(dsv2) == sm1
       assert DataStructures.get_metadata_version(dsv3) == sm3
+    end
+  end
+
+  describe "get_latest_versions/1" do
+    test "returns the latest version of each structure_id" do
+      %{id: id1} = insert(:data_structure)
+      %{id: id2} = insert(:data_structure)
+
+      for v <- Enum.shuffle(1..10) do
+        insert(:data_structure_version, data_structure_id: id1, version: v)
+        insert(:data_structure_version, data_structure_id: id2, version: v)
+      end
+
+      assert [%{version: 10}, %{version: 10}] =
+               structures = DataStructures.get_latest_versions([id1, id2])
+
+      assert [_, _] = structure_ids = Enum.map(structures, & &1.data_structure_id)
+      assert id1 in structure_ids
+      assert id2 in structure_ids
     end
   end
 

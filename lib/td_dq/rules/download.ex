@@ -124,7 +124,8 @@ defmodule TdDq.Rules.Implementations.Download do
     |> Enum.join(", ")
   end
 
-  defp get_content_field(%{"type" => type, "name" => name}, content) when type in ["domain", "system"] do
+  defp get_content_field(%{"type" => type, "name" => name}, content)
+       when type in ["domain", "system"] do
     content
     |> Map.get(String.to_atom(name), [])
     |> content_to_list()

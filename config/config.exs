@@ -89,7 +89,7 @@ config :td_dd, loader_worker: TdDd.Loader.Worker
 
 # Default timeout increased for bulk metadata upload
 config :td_dd, TdDd.Repo,
-  pool_size: 12,
+  pool_size: 16,
   timeout: 600_000
 
 config :td_cache, :audit,
@@ -105,7 +105,7 @@ config :td_cache, :event_stream,
     [group: "dd", key: "template:events", consumer: TdDd.Search.IndexWorker],
     [group: "dq", key: "business_concept:events", consumer: TdDq.Search.IndexWorker],
     [group: "dq", key: "domain:events", consumer: TdDq.Cache.DomainEventConsumer],
-    [group: "dq", key: "template:events", consumer: TdDq.Search.IndexWorker],
+    [group: "dq", key: "template:events", consumer: TdDq.Search.IndexWorker]
   ]
 
 config :td_dd, :cache_cleaner,
@@ -115,6 +115,7 @@ config :td_dd, :cache_cleaner,
     "TdDd.DataStructures.Migrations:td-2979",
     "TdDq.RuleImplementations.Migrations:cache_structures",
     "data_fields:external_ids",
+    "implementation:*",
     "rule_result:*",
     "source:*",
     "sources:ids_external_ids",
@@ -135,7 +136,7 @@ config :td_dd, TdDd.Scheduler,
     ],
     rule_cache_refresher: [
       schedule: "@hourly",
-      task: {TdDq.Cache.ImplementationLoader, :refresh, []},
+      task: {TdDq.Rules.Implementations.Tasks, :deprecate_implementations, []},
       run_strategy: Quantum.RunStrategy.Local
     ],
     rule_indexer: [

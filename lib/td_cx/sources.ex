@@ -370,4 +370,15 @@ defmodule TdCx.Sources do
       |> Enum.uniq()
     end
   end
+
+  @spec get_aliases(non_neg_integer) :: [binary]
+  def get_aliases(source_id) do
+    source_id
+    |> get_source()
+    |> case do
+      %{config: %{"alias" => al}} -> [al]
+      %{config: %{"aliases" => aliases}} -> aliases
+      _ -> []
+    end
+  end
 end

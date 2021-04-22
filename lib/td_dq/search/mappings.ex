@@ -135,7 +135,8 @@ defmodule TdDq.Search.Mappings do
           dataset: %{type: "text", fields: @raw},
           population: %{type: "text", fields: @raw},
           validations: %{type: "text", fields: @raw},
-          system: %{properties: get_system_mappings()}
+          system: %{properties: get_system_mappings()},
+          source_id: %{type: "long"}
         }
       },
       dataset: %{

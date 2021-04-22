@@ -107,6 +107,7 @@ defmodule TdDq.Rules.RuleResults do
     |> Repo.one()
   end
 
+  @spec get_implementation_results(binary) :: [RuleResult.t]
   def get_implementation_results(implementation_key) do
     RuleResult
     |> where([r], r.implementation_key == ^implementation_key)

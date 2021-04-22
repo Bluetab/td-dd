@@ -14,6 +14,9 @@ defmodule TdDq.Rules.Implementations.Implementation do
   alias TdDq.Rules.Implementations.RawContent
   alias TdDq.Rules.Rule
 
+  @typedoc "A quality rule implementation"
+  @type t :: %__MODULE__{}
+
   schema "rule_implementations" do
     field(:implementation_key, :string)
     field(:implementation_type, :string, default: "default")
@@ -105,11 +108,11 @@ defmodule TdDq.Rules.Implementations.Implementation do
   end
 
   defimpl Elasticsearch.Document do
-    alias Search.Helpers
     alias TdCache.TemplateCache
     alias TdDfLib.Format
     alias TdDq.Rules.Rule
     alias TdDq.Rules.RuleResults
+    alias TdDq.Search.Helpers
 
     @implementation_keys [
       :dataset,

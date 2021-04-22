@@ -58,7 +58,6 @@ defmodule TdDd.Application do
       TdCx.Search.IndexWorker,
       # DQ Workers
       TdDq.Cache.RuleLoader,
-      TdDq.Cache.ImplementationLoader,
       TdDq.Search.IndexWorker,
       TdDq.Cache.DomainEventConsumer,
       # Scheduler for periodic tasks

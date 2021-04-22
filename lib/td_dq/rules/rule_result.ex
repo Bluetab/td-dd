@@ -16,6 +16,9 @@ defmodule TdDq.Rules.RuleResult do
   @scale 2
   @valid_result_types Rule.valid_result_types()
 
+  @typedoc "The result of a quality rule execution"
+  @type t :: %__MODULE__{}
+
   schema "rule_results" do
     field(:implementation_key, :string)
     field(:date, :utc_datetime)

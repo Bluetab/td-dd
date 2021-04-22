@@ -6,10 +6,11 @@ defmodule TdDq.Rules.Implementations do
   import Ecto.Query
 
   alias Ecto.Multi
-  alias TdCache.StructureCache
+  alias TdCx.Sources
+  alias TdDd.Cache.StructureEntry
+  alias TdDd.DataStructures
   alias TdDd.Repo
   alias TdDq.Auth.Claims
-  alias TdDq.Cache.ImplementationLoader
   alias TdDq.Cache.RuleLoader
   alias TdDq.Rules.Audit
   alias TdDq.Rules.Implementations.ConditionRow
@@ -34,11 +35,16 @@ defmodule TdDq.Rules.Implementations do
       ** (Ecto.NoResultsError)
 
   """
-  def get_implementation!(id) do
+  @spec get_implementation!(integer, Keyword.t()) :: Implementation.t()
+  def get_implementation!(id, opts \\ []) do
+    preloads = Keyword.get(opts, :preload, [])
+
     Implementation
+    |> preload(^preloads)
     |> join(:inner, [ri], r in assoc(ri, :rule))
     |> where([_, r], is_nil(r.deleted_at))
     |> Repo.get!(id)
+    |> enrich(Keyword.get(opts, :enrich, []))
   end
 
   def get_implementation_by_key!(implementation_key, deleted \\ nil)
@@ -101,12 +107,23 @@ defmodule TdDq.Rules.Implementations do
   @spec deprecate_implementations ::
           :ok | {:ok, map} | {:error, Multi.name(), any, %{required(Multi.name()) => any}}
   def deprecate_implementations do
-    deleted_structure_ids = StructureCache.deleted_ids() |> MapSet.new()
+    implementation_ids_by_structure_id =
+      list_implementations()
+      |> Enum.map(fn %{id: id} = impl -> {get_structure_ids(impl), id} end)
+      |> Enum.flat_map(fn {structure_ids, id} -> Enum.map(structure_ids, &{&1, id}) end)
+      |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
 
-    list_implementations()
-    |> Enum.map(fn impl -> {impl, get_structure_ids(impl)} end)
-    |> Enum.reject(fn {_, ids} -> MapSet.disjoint?(deleted_structure_ids, MapSet.new(ids)) end)
-    |> Enum.map(fn {%{id: id}, _} -> id end)
+    existing_structure_ids =
+      implementation_ids_by_structure_id
+      |> Map.keys()
+      |> DataStructures.get_latest_versions()
+      |> Enum.filter(&is_nil(&1.deleted_at))
+      |> Enum.map(& &1.data_structure_id)
+
+    implementation_ids_by_structure_id
+    |> Map.drop(existing_structure_ids)
+    |> Enum.flat_map(fn {_, impl_ids} -> impl_ids end)
+    |> Enum.uniq()
     |> deprecate()
   end
 
@@ -164,7 +181,6 @@ defmodule TdDq.Rules.Implementations do
   end
 
   defp on_upsert({:ok, %{implementation: %{id: id}}} = result) do
-    ImplementationLoader.refresh(id)
     @index_worker.reindex_implementations(id)
     result
   end
@@ -178,15 +194,15 @@ defmodule TdDq.Rules.Implementations do
 
   def get_sources(%Implementation{
         implementation_type: "raw",
-        raw_content: %{source: source}
+        raw_content: %{source_id: source_id}
       }) do
-    get_aliases(source)
+    Sources.get_aliases(source_id)
   end
 
   def get_sources(%Implementation{} = implementation) do
     implementation
     |> get_structure_ids()
-    |> Search.Helpers.get_sources()
+    |> TdDq.Search.Helpers.get_sources()
   end
 
   def get_structure_ids(%Implementation{} = implementation) do
@@ -233,6 +249,7 @@ defmodule TdDq.Rules.Implementations do
   def list_implementations(params \\ %{}, opts \\ [])
 
   def list_implementations(params, opts) do
+    preloads = Keyword.get(opts, :preload, [])
     rule_params = Map.get(params, :rule) || Map.get(params, "rule", %{})
     rule_fields = Rule.__schema__(:fields)
     implementation_fields = Implementation.__schema__(:fields)
@@ -245,7 +262,9 @@ defmodule TdDq.Rules.Implementations do
     |> where(^dynamic)
     |> where([_ri, r], is_nil(r.deleted_at))
     |> deleted_implementations(opts, :implementations)
+    |> preload(^preloads)
     |> Repo.all()
+    |> enrich(Keyword.get(opts, :enrich))
   end
 
   def get_rule_implementations([]), do: []
@@ -255,16 +274,6 @@ defmodule TdDq.Rules.Implementations do
     |> where([ri], ri.rule_id in ^rule_ids)
     |> Repo.all()
   end
-
-  defp get_aliases(%{"config" => %{"alias" => source_alias}}) do
-    [source_alias]
-  end
-
-  defp get_aliases(%{"config" => %{"aliases" => source_aliases}}) do
-    source_aliases
-  end
-
-  defp get_aliases(_), do: []
 
   defp dynamic_params(entity, params, fields, dynamic) do
     params
@@ -322,7 +331,7 @@ defmodule TdDq.Rules.Implementations do
             dataset_row
 
           id ->
-            cached_structure = read_structure_from_cache(id)
+            cached_structure = StructureEntry.cache_entry(id, system: true)
 
             dataset_row
             |> Map.put(
@@ -340,7 +349,7 @@ defmodule TdDq.Rules.Implementations do
             population_row
 
           structure ->
-            cached_structure = read_structure_from_cache(Map.get(structure, :id))
+            cached_structure = StructureEntry.cache_entry(Map.get(structure, :id), system: true)
 
             enriched_info =
               population_row
@@ -360,7 +369,7 @@ defmodule TdDq.Rules.Implementations do
             validations_row
 
           structure ->
-            cached_structure = read_structure_from_cache(Map.get(structure, :id))
+            cached_structure = StructureEntry.cache_entry(Map.get(structure, :id), system: true)
 
             enriched_info =
               validations_row
@@ -379,15 +388,6 @@ defmodule TdDq.Rules.Implementations do
     |> Map.put(:validations, enriched_validations)
   end
 
-  def read_structure_from_cache(structure_id) do
-    {:ok, structure} = StructureCache.get(structure_id)
-
-    case structure do
-      nil -> %{}
-      _ -> structure
-    end
-  end
-
   defp enrich_joined_structures(%{clauses: clauses} = structure_map) when is_list(clauses) do
     clauses = Enum.map(clauses, &enrich_clause_structures/1)
     Map.put(structure_map, :clauses, clauses)
@@ -401,16 +401,22 @@ defmodule TdDq.Rules.Implementations do
     structure_map
     |> Map.put(
       :left,
-      put_structure_cached_attributes(%{id: left_id}, read_structure_from_cache(left_id))
+      put_structure_cached_attributes(
+        %{id: left_id},
+        StructureEntry.cache_entry(left_id, system: true)
+      )
     )
     |> Map.put(
       :right,
-      put_structure_cached_attributes(%{id: right_id}, read_structure_from_cache(right_id))
+      put_structure_cached_attributes(
+        %{id: right_id},
+        StructureEntry.cache_entry(right_id, system: true)
+      )
     )
   end
 
   defp enrich_value_structure(%{"id" => id} = value_map) do
-    cached_structure = read_structure_from_cache(id)
+    cached_structure = StructureEntry.cache_entry(id, system: true)
     put_structure_cached_attributes(value_map, cached_structure)
   end
 
@@ -467,4 +473,36 @@ defmodule TdDq.Rules.Implementations do
   defp structure_ids(%{value: value}), do: structure_ids(value)
   defp structure_ids(%{"id" => id}), do: [id]
   defp structure_ids(_any), do: []
+
+  @spec enrich(Implementation.t() | [Implementation.t()], nil | atom | [atom]) ::
+          Implementation.t() | [Implementation.t()]
+  defp enrich(target, nil), do: target
+
+  defp enrich(target, opts) when is_list(target) do
+    Enum.map(target, &enrich(&1, opts))
+  end
+
+  defp enrich(target, opts) when is_list(opts) do
+    Enum.reduce(opts, target, &enrich(&2, &1))
+  end
+
+  defp enrich(
+         %Implementation{
+           implementation_type: "raw",
+           raw_content: %{source_id: source_id} = content
+         } = implementation,
+         :source
+       )
+       when is_integer(source_id) do
+    case Sources.get_source(source_id) do
+      nil ->
+        implementation
+
+      source ->
+        content = %{content | source: source}
+        %{implementation | raw_content: content}
+    end
+  end
+
+  defp enrich(target, _), do: target
 end

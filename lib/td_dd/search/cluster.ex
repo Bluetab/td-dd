@@ -19,6 +19,7 @@ defmodule TdDd.Search.Cluster do
     {:ok, %{config | indexes: indexes}}
   end
 
+  @spec alias_name(atom) :: binary
   def alias_name(name) do
     __MODULE__
     |> Config.get()
