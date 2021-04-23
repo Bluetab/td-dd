@@ -1,16 +1,41 @@
 defmodule TdDd.Search.MockIndexWorker do
   @moduledoc false
+
   use Agent
 
-  alias TdDd.Search.MockIndexWorker
-
   def start_link(_) do
-    Agent.start_link(fn -> 0 end, name: MockIndexWorker)
+    Agent.start_link(fn -> [] end, name: __MODULE__)
   end
 
-  def reindex_count, do: Agent.get(MockIndexWorker, & &1)
+  def calls, do: Agent.get(__MODULE__, &Enum.reverse(&1))
 
-  def reindex(_) do
-    Agent.update(MockIndexWorker, &(&1 + 1))
+  def clear, do: Agent.update(__MODULE__, fn _ -> [] end)
+
+  def reindex do
+    Agent.update(__MODULE__, &[:reindex | &1])
+  end
+
+  def reindex(params) do
+    Agent.update(__MODULE__, &[{:reindex, params} | &1])
+  end
+
+  def reindex_rules(param) do
+    Agent.update(__MODULE__, &[{:reindex_rules, param} | &1])
+  end
+
+  def reindex_implementations(param) do
+    Agent.update(__MODULE__, &[{:reindex_implementations, param} | &1])
+  end
+
+  def delete_rules(param) do
+    Agent.update(__MODULE__, &[{:delete_rules, param} | &1])
+  end
+
+  def delete_implementations(param) do
+    Agent.update(__MODULE__, &[{:delete_implementations, param} | &1])
+  end
+
+  def ping(param) do
+    Agent.update(__MODULE__, &[{:ping, param} | &1])
   end
 end

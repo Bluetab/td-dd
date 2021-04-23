@@ -6,6 +6,7 @@ API's for the following functionality:
 - Data Catalog
 - Data Lineage
 - Connector Management
+- Data Quality
 
 ## Getting Started
 

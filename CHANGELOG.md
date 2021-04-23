@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-3526] Merged `td-dq` with `td-dd`. See `CHANGELOG-dq.md` for changes in
+  `td-dq` previous to this merge.
+
 ## [4.18.0] 2021-04-19
 
 ### Added
@@ -24,7 +31,6 @@
 ### Changed
 
 - [TD-3445] Postgres port configurable through `DB_PORT` environment variable
-  > > > > > > > master
 
 ## [4.16.0] 2021-03-22
 

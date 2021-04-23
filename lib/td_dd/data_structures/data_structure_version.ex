@@ -11,6 +11,9 @@ defmodule TdDd.DataStructures.DataStructureVersion do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
 
+  @typedoc "A data structure version"
+  @type t :: %__MODULE__{}
+
   schema "data_structure_versions" do
     field(:version, :integer, default: 0)
     field(:class, :string)

@@ -9,8 +9,8 @@ defmodule TdDd.Cache.StructureLoader do
 
   alias TdCache.Redix
   alias TdCache.StructureCache
+  alias TdDd.Cache.StructureEntry
   alias TdDd.DataStructures
-  alias TdDd.DataStructures.DataStructureVersion
 
   require Logger
 
@@ -105,29 +105,9 @@ defmodule TdDd.Cache.StructureLoader do
   def cache_structures(structure_ids, opts \\ []) do
     structure_ids
     |> Enum.map(&DataStructures.get_latest_version(&1, [:parents]))
-    |> Enum.filter(& &1)
-    |> Enum.map(&to_cache_entry/1)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.map(&StructureEntry.cache_entry/1)
     |> Enum.map(&StructureCache.put(&1, opts))
-  end
-
-  defp to_cache_entry(%DataStructureVersion{data_structure_id: id, data_structure: ds} = dsv) do
-    %{external_id: external_id, system_id: system_id} = ds
-
-    dsv
-    |> Map.take([:group, :name, :type, :metadata, :updated_at, :deleted_at])
-    |> Map.put(:id, id)
-    |> Map.put(:path, DataStructures.get_path(dsv))
-    |> Map.put(:external_id, external_id)
-    |> Map.put(:system_id, system_id)
-    |> Map.put(:parent_id, get_first_parent_id(dsv))
-  end
-
-  defp get_first_parent_id(dsv) do
-    case dsv.parents do
-      nil -> nil
-      [] -> nil
-      [parent_dsv | _o] -> parent_dsv.data_structure_id
-    end
   end
 
   defp do_refresh(opts \\ []) do
