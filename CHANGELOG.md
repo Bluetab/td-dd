@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-3500] Sign configuration secrets
+
 ## [4.18.0] 2021-04-19
 
 ### Added
