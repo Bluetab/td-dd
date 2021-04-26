@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.18.1] 2021-04-26
+
+### Changed
+
+- [TD-3621] Increase maximum length of JSON payloads
+
 ## [4.18.0] 2021-04-19
 
 ### Added
