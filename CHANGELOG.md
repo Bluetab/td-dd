@@ -7,6 +7,10 @@
 - [TD-3526] Merged `td-dq` with `td-dd`. See `CHANGELOG-dq.md` for changes in
   `td-dq` previous to this merge.
 
+### Added
+
+- [TD-3517] Profile executions and events
+
 ## [4.18.0] 2021-04-19
 
 ### Added

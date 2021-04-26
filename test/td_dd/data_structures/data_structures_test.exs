@@ -897,4 +897,46 @@ defmodule TdDd.DataStructuresTest do
       assert @update_attrs.version == version
     end
   end
+
+  describe "profile_source/1" do
+    setup do
+      s1 = insert(:source, config: %{"job_types" => ["catalog", "quality", "profile"]})
+      s2 = insert(:source)
+      s3 = insert(:source, config: %{"job_types" => ["catalog"], "alias" => "foo"})
+      s4 = insert(:source, external_id: "foo", config: %{"job_types" => ["profile"]})
+
+      v1 = insert(:data_structure_version, data_structure: insert(:data_structure, source: s1))
+      v2 = insert(:data_structure_version, data_structure: insert(:data_structure, source: s2))
+      v3 = insert(:data_structure_version, data_structure: insert(:data_structure, source: s3))
+
+      [sources: [s1, s2, s3, s4], versions: [v1, v2, v3]]
+    end
+
+    test "profile_source/1 when there are not related sources with profile", %{
+      versions: [_, v, _]
+    } do
+      assert %{profile_source: nil} = DataStructures.profile_source(v)
+    end
+
+    test "profile_source/1 get profile source when is directly related to the data structure", %{
+      versions: [v, _, _],
+      sources: [%{external_id: external_id}, _, _, _]
+    } do
+      assert %{profile_source: %{external_id: ^external_id}} = DataStructures.profile_source(v)
+    end
+
+    test "profile_source/1 get profile source when is related to the data structure by source alias",
+         %{
+           versions: [_, _, v],
+           sources: [_, _, s3, s4]
+         } do
+      %{external_id: s3_external_id} = s3
+      %{external_id: s4_external_id} = s4
+
+      assert %{
+               data_structure: %{source: %{external_id: ^s3_external_id}},
+               profile_source: %{external_id: ^s4_external_id}
+             } = DataStructures.profile_source(v)
+    end
+  end
 end
