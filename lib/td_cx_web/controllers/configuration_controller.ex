@@ -28,7 +28,7 @@ defmodule TdCxWeb.ConfigurationController do
   end
 
   def index(conn, params) do
-    configurations = Configurations.list_configurations(params, [:secrets])
+    configurations = []
     render(conn, "index.json", configurations: configurations)
   end
 

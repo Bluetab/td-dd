@@ -27,11 +27,7 @@ defmodule TdDdWeb.ProfileExecutionView do
   end
 
   defp put_embedding({:data_structure, %{} = data_structure}, %{} = acc) do
-    data_structure =
-      data_structure
-      |> with_structure_name()
-      |> Map.take([:id, :external_id])
-
+    data_structure = Map.take(data_structure, [:id, :external_id])
     Map.put(acc, :data_structure, data_structure)
   end
 
@@ -50,7 +46,12 @@ defmodule TdDdWeb.ProfileExecutionView do
   end
 
   defp put_embedding({:latest, %{} = latest}, %{} = acc) do
-    Map.put(acc, :latest, Map.take(latest, [:name]))
+    latest =
+      latest
+      |> with_ancestry()
+      |> Map.take([:name, :ancestry])
+
+    Map.put(acc, :latest, Map.take(latest, [:name, :ancestry]))
   end
 
   defp put_embedding({:profile_events, events}, %{} = acc) when is_list(events) do
@@ -60,8 +61,21 @@ defmodule TdDdWeb.ProfileExecutionView do
 
   defp put_embedding(_, acc), do: acc
 
-  defp with_structure_name(%{latest: %{name: name}} = data_structure),
-    do: Map.put(data_structure, :name, name)
+  defp with_ancestry(%{path: path} = latest) do
+    ancestry =
+      case path do
+        %{structure_ids: [_ | ids], names: [_ | names]} ->
+          [ids, names]
+          |> Enum.zip()
+          |> Enum.map(fn {id, name} -> %{data_structure_id: id, name: name} end)
+          |> Enum.reverse()
 
-  defp with_structure_name(data_structure), do: data_structure
+        _ ->
+          []
+      end
+
+    Map.put(latest, :ancestry, ancestry)
+  end
+
+  defp with_ancestry(latest), do: latest
 end
