@@ -28,6 +28,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     field(:lhash, :binary)
     field(:path, :map, virtual: true)
     field(:external_id, :string, virtual: true)
+    field(:profile_source, :map, virtual: true)
 
     belongs_to(:data_structure, DataStructure)
 
