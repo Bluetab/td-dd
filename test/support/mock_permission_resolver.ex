@@ -42,6 +42,10 @@ defmodule MockPermissionResolver do
     |> has_resource_permission?("domain", session_id, permission)
   end
 
+  def has_permission?(session_id, permission, resource_type, resource_id) do
+    has_resource_permission?([resource_id], resource_type, session_id, permission)
+  end
+
   def get_acls_by_resource_type(session_id, resource_type) do
     Agent.get(__MODULE__, fn %{sessions: sessions, acls: acls} ->
       case Map.get(sessions, session_id) do

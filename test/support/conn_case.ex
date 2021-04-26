@@ -32,6 +32,7 @@ defmodule TdDdWeb.ConnCase do
 
       alias TdCxWeb.Router.Helpers, as: CxRoutes
       alias TdDdWeb.Router.Helpers, as: Routes
+      alias TdDqWeb.Router.Helpers, as: DqRoutes
 
       # The default endpoint for testing
       @endpoint Endpoint

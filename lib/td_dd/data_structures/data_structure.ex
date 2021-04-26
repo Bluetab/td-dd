@@ -18,6 +18,9 @@ defmodule TdDd.DataStructures.DataStructure do
 
   @audit_fields [:last_change_by]
 
+  @typedoc "A data structure"
+  @type t :: %__MODULE__{}
+
   schema "data_structures" do
     belongs_to(:system, System, on_replace: :update)
     belongs_to(:source, Source)

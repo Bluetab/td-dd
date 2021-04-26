@@ -37,7 +37,7 @@ defmodule TdDd.DataCase do
           parent = self()
 
           allow(parent, [
-            TdCx.Search.IndexWorker
+            TdCx.Search.IndexWorker, TdDq.Search.IndexWorker
           ])
         end
 

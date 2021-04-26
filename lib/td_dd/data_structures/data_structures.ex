@@ -722,6 +722,15 @@ defmodule TdDd.DataStructures do
     |> enrich(options[:enrich])
   end
 
+  @spec get_latest_versions([non_neg_integer]) :: [DataStructureVersion.t()]
+  def get_latest_versions(structure_ids) when is_list(structure_ids) do
+    DataStructureVersion
+    |> distinct(:data_structure_id)
+    |> order_by(desc: :version)
+    |> where([dsv], dsv.data_structure_id in ^structure_ids)
+    |> Repo.all()
+  end
+
   defp with_deleted(query, options, dynamic) when is_list(options) do
     include_deleted = Keyword.get(options, :deleted, true)
     with_deleted(query, include_deleted, dynamic)

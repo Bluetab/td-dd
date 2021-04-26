@@ -45,12 +45,7 @@ defmodule TdDd.Loader.StructuresTest do
 
       ts = timestamp()
 
-      records =
-        Enum.map(1..10, fn id ->
-          %{
-            external_id: "#{id}"
-          }
-        end)
+      records = Enum.map(1..10, fn id -> %{external_id: "#{id}"} end)
 
       external_ids = Enum.map(records, & &1.external_id)
       structures = DataStructures.list_data_structures(%{external_id: external_ids})

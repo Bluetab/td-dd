@@ -62,11 +62,15 @@ defmodule TdDdWeb.Authentication do
   end
 
   def create_acl_entry(user_id, domain_id, permissions) do
+    create_acl_entry(user_id, "domain", domain_id, permissions)
+  end
+
+  def create_acl_entry(user_id, resource_type, resource_id, permissions) do
     MockPermissionResolver.create_acl_entry(%{
-      principal_id: user_id,
       principal_type: "user",
-      resource_id: domain_id,
-      resource_type: "domain",
+      principal_id: user_id,
+      resource_type: resource_type,
+      resource_id: resource_id,
       permissions: permissions
     })
   end
