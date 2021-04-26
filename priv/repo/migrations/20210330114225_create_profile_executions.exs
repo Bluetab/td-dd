@@ -1,4 +1,4 @@
-defmodule TdDd.Repo.Migrations.CreateExecutions do
+defmodule TdDd.Repo.Migrations.CreateProfileExecutions do
   use Ecto.Migration
 
   def change do
