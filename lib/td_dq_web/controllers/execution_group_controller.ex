@@ -6,7 +6,7 @@ defmodule TdDqWeb.ExecutionGroupController do
   alias TdDq.Auth.Claims
   alias TdDq.Executions
   alias TdDq.Executions.Group
-  alias TdDq.Rules.Implementations.Search
+  alias TdDq.Implementations.Search
 
   action_fallback(TdDqWeb.FallbackController)
 

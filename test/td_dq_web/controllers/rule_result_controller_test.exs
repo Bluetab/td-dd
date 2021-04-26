@@ -1,12 +1,9 @@
 defmodule TdDqWeb.RuleResultControllerTest do
   use TdDqWeb.ConnCase
 
-  alias TdDq.Cache.RuleLoader
-  alias TdDq.Search.MockIndexWorker
-
   setup_all do
-    start_supervised(RuleLoader)
-    start_supervised(MockIndexWorker)
+    start_supervised(TdDq.Cache.RuleLoader)
+    start_supervised(TdDd.Search.MockIndexWorker)
     :ok
   end
 
@@ -131,6 +128,7 @@ defmodule TdDqWeb.RuleResultControllerTest do
                  "implementation_key" => "ri135",
                  "params" => %{"param3" => "5"},
                  "records" => 4,
+                 "result_type" => "percentage",
                  "result" => "0.00"
                },
                %{
@@ -139,6 +137,7 @@ defmodule TdDqWeb.RuleResultControllerTest do
                  "implementation_key" => "ri135",
                  "params" => %{"param1" => "valor", "param2" => "valor2", "param3" => "4"},
                  "records" => 1_000_000,
+                 "result_type" => "percentage",
                  "result" => "99.99"
                }
              ]

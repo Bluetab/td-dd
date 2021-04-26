@@ -4,7 +4,7 @@ defmodule TdDqWeb.ImplementationSearchController do
   import Canada, only: [can?: 2]
 
   alias TdDq.Auth.Claims
-  alias TdDq.Rules.Implementations.Implementation
+  alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Search
 
   action_fallback(TdDqWeb.FallbackController)

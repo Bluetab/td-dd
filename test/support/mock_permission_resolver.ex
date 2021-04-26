@@ -7,13 +7,11 @@ defmodule MockPermissionResolver do
 
   alias TdCache.TaxonomyCache
 
-  @initial_state %{sessions: Map.new(), acls: []}
-
   ## Public API
 
   def start_link(_init_arg) do
     Agent.start_link(
-      fn -> @initial_state end,
+      fn -> %{sessions: Map.new(), acls: []} end,
       name: __MODULE__
     )
   end

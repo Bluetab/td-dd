@@ -126,15 +126,16 @@ end
 defmodule TdDqWeb.Implementation.RawContent do
   use TdDqWeb, :view
 
-  def render("raw_content.json", %{raw_content: raw_content}) do
-    %{
-      source_id: Map.get(raw_content, :source_id),
-      structure_alias: Map.get(raw_content, :structure_alias),
-      database: Map.get(raw_content, :database),
-      dataset: Map.get(raw_content, :dataset),
-      population: Map.get(raw_content, :population),
-      validations: Map.get(raw_content, :validations)
-    }
+  def render("raw_content.json", %{raw_content: %{} = raw_content}) do
+    source =
+      case Map.get(raw_content, :source) do
+        %{external_id: external_id} -> %{external_id: external_id}
+        _ -> %{}
+      end
+
+    raw_content
+    |> Map.take([:source_id, :database, :dataset, :population, :validations])
+    |> Map.put(:source, source)
   end
 end
 

@@ -2,7 +2,7 @@ defmodule TdDq.Search do
   @moduledoc """
   Search Engine calls
   """
-  alias TdDq.Search.Cluster
+  alias TdDd.Search.Cluster
 
   require Logger
 

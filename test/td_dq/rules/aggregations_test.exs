@@ -1,5 +1,5 @@
 defmodule TdDq.Search.AggregationsTest do
-  use TdDq.DataCase
+  use TdDd.DataCase
   alias TdCache.TemplateCache
   alias TdDq.Search.Aggregations
 

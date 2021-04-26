@@ -1,6 +1,6 @@
 defmodule TdDqWeb.RuleFilterControllerTest do
   use TdDqWeb.ConnCase
-  use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
+  use PhoenixSwagger.SchemaTest, "priv/static/swagger_dq.json"
 
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}

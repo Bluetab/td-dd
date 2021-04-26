@@ -3,8 +3,8 @@ ALPHA_VERSION="${VERSION}-alpha.${CI_PIPELINE_ID}" # used if CI_COMMIT_TAG is no
 export APP_VERSION="${CI_COMMIT_TAG:-${ALPHA_VERSION}}"
 export CURRENT_UID="$(id -u):$(id -g)"
 export ECR_NAMESPACE="truedat"
-export K8S_DEPLOYMENT="dq"
-export K8S_CONTAINER="dq"
+export K8S_DEPLOYMENT="dd"
+export K8S_CONTAINER="dd"
 
 subcommand=$1
 case "$subcommand" in

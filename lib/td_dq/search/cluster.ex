@@ -1,7 +1,7 @@
 defmodule TdDq.Search.Cluster do
   @moduledoc "Elasticsearch cluster configuration for TdDq"
 
-  use Elasticsearch.Cluster, otp_app: :td_dq
+  use Elasticsearch.Cluster, otp_app: :td_dd
 
   @impl GenServer
   def init(%{aliases: aliases, indexes: indexes, default_settings: defaults} = config) do

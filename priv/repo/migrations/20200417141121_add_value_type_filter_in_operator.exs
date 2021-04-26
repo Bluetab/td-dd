@@ -3,8 +3,7 @@ defmodule TdDq.Repo.Migrations.AddValueTypeFilterInOperator do
   import Ecto.Query, warn: false
 
   alias Ecto.Adapters.SQL
-  alias TdDq.Repo
-  alias TdDq.Rules.Implementations.Implementation
+  alias TdDd.Repo
 
   @update_statement """
     UPDATE rule_implementations

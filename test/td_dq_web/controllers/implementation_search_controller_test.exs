@@ -1,6 +1,7 @@
 defmodule TdDqWeb.ImplementationSearchControllerTest do
   use TdDqWeb.ConnCase
 
+  alias TdCache.ConceptCache
   alias TdCache.TaxonomyCache
 
   @business_concept_id "42"
@@ -8,7 +9,12 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
   setup_all do
     %{id: domain_id} = domain = build(:domain)
     TaxonomyCache.put_domain(domain)
-    on_exit(fn -> TaxonomyCache.delete_domain(domain_id) end)
+    ConceptCache.put(%{id: @business_concept_id, name: "Concept", domain_id: domain_id})
+
+    on_exit(fn ->
+      {:ok, _} = ConceptCache.delete(@business_concept_id)
+      TaxonomyCache.delete_domain(domain_id)
+    end)
 
     [domain: domain]
   end

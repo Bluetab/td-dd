@@ -11,7 +11,7 @@ defmodule TdDqWeb.Router do
   end
 
   scope "/api/swagger" do
-    forward("/", PhoenixSwagger.Plug.SwaggerUI, otp_app: :td_dq, swagger_file: "swagger.json")
+    forward("/", PhoenixSwagger.Plug.SwaggerUI, otp_app: :td_dd, swagger_file: "swagger_dq.json")
   end
 
   scope "/api", TdDqWeb do
@@ -67,7 +67,7 @@ defmodule TdDqWeb.Router do
     %{
       schemes: ["http", "https"],
       info: %{
-        version: Application.spec(:td_dq, :vsn),
+        version: Application.spec(:td_dd, :vsn),
         title: "Truedat Data Quality Service"
       },
       basePath: "/",

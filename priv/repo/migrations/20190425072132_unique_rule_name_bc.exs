@@ -2,7 +2,7 @@ defmodule TdDq.Repo.Migrations.UniqueRuleNameBc do
   use Ecto.Migration
   import Ecto.Query, warn: false
 
-  alias TdDq.Repo
+  alias TdDd.Repo
   alias TdDq.Rules.Rule
 
   def change do

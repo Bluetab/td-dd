@@ -1,4 +1,4 @@
-defmodule TdDq.DataCase do
+defmodule TdDd.DataCase do
   @moduledoc """
   This module defines the setup for tests requiring
   access to the application's data layer.
@@ -19,38 +19,57 @@ defmodule TdDq.DataCase do
 
   using do
     quote do
-      alias TdDq.Repo
+      alias TdDd.Repo
 
       import Ecto
       import Ecto.Changeset
       import Ecto.Query
-      import TdDq.DataCase
-      import TdDq.Factory
+      import TdDd.DataCase
+      import TdDd.Factory
     end
   end
 
   setup tags do
-    :ok = Sandbox.checkout(TdDq.Repo)
+    case Sandbox.checkout(TdDd.Repo) do
+      :ok ->
+        unless tags[:async] do
+          Sandbox.mode(TdDd.Repo, {:shared, self()})
+          parent = self()
 
-    unless tags[:async] do
-      Sandbox.mode(TdDq.Repo, {:shared, self()})
+          allow(parent, [
+            TdCx.Search.IndexWorker, TdDq.Search.IndexWorker
+          ])
+        end
+
+      {:already, :owner} ->
+        :ok
     end
 
     :ok
   end
 
-  @doc ~S"""
-  A helper that transform changeset errors to a map of messages.
+  @doc """
+  A helper that transforms changeset errors into a map of messages.
 
-  assert {:error, changeset} = Accounts.create_user(%{password: "short"})
-  assert "password is too short" in errors_on(changeset).password
-  assert %{password: ["password is too short"]} = errors_on(changeset)
+      assert {:error, changeset} = Accounts.create_user(%{password: "short"})
+      assert "password is too short" in errors_on(changeset).password
+      assert %{password: ["password is too short"]} = errors_on(changeset)
+
   """
   def errors_on(changeset) do
     Changeset.traverse_errors(changeset, fn {message, opts} ->
       Enum.reduce(opts, message, fn {key, value}, acc ->
         String.replace(acc, "%{#{key}}", to_string(value))
       end)
+    end)
+  end
+
+  defp allow(parent, workers) do
+    Enum.each(workers, fn worker ->
+      case Process.whereis(worker) do
+        nil -> nil
+        pid -> Sandbox.allow(TdDd.Repo, parent, pid)
+      end
     end)
   end
 end

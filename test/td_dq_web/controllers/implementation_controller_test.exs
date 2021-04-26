@@ -1,12 +1,6 @@
 defmodule TdDqWeb.ImplementationControllerTest do
   use TdDqWeb.ConnCase
-  use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
-
-  alias TdCache.StructureCache
-  alias TdCache.SystemCache
-  alias TdDq.Cache.ImplementationLoader
-  alias TdDq.Cache.RuleLoader
-  alias TdDq.Search.MockIndexWorker
+  use PhoenixSwagger.SchemaTest, "priv/static/swagger_dq.json"
 
   @valid_dataset [
     %{structure: %{id: 14_080}},
@@ -14,37 +8,33 @@ defmodule TdDqWeb.ImplementationControllerTest do
   ]
 
   setup_all do
-    start_supervised(MockIndexWorker)
-    start_supervised(RuleLoader)
-    start_supervised(ImplementationLoader)
-
-    system = %{id: 1, external_id: "sys1_ext_id", name: "sys1"}
-
-    structure = %{
-      id: 14_080,
-      name: "name",
-      external_id: "ext_id",
-      group: "group",
-      type: "type",
-      path: ["foo", "bar"],
-      updated_at: DateTime.utc_now(),
-      metadata: %{"alias" => "source_alias"},
-      system_id: system.id
-    }
-
-    {:ok, _} = SystemCache.put(system)
-    {:ok, _} = StructureCache.put(structure)
-
-    on_exit(fn ->
-      SystemCache.delete(system.id)
-      StructureCache.delete(structure.id)
-    end)
-
-    [structure: structure]
+    start_supervised(TdDd.Search.MockIndexWorker)
+    start_supervised(TdDq.Cache.RuleLoader)
+    :ok
   end
 
   setup do
     [implementation: insert(:implementation)]
+  end
+
+  describe "GET /api/implementations/:id" do
+    @tag authentication: [role: "admin"]
+    test "includes the source external_id in the response", %{conn: conn, swagger_schema: schema} do
+      %{id: source_id, external_id: source_external_id} = insert(:source)
+
+      %{id: id} =
+        insert(:raw_implementation, raw_content: build(:raw_content, source_id: source_id))
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:ok)
+
+      assert %{"raw_content" => content} = data
+      assert %{"source" => source} = content
+      assert %{"external_id" => ^source_external_id} = source
+    end
   end
 
   describe "index" do
@@ -157,7 +147,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
           raw_content: %{
             dataset: "cliente c join address a on c.address_id=a.id",
             population: nil,
-            structure_alias: "str_alias",
             source_id: 88,
             validations: "c.city = 'MADRID'"
           }
@@ -211,8 +200,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       assert %{
                "raw_content" => %{
-                "source_id" => ["can't be blank"],
-                "structure_alias" => ["can't be blank"]
+                 "source_id" => ["can't be blank"]
                }
              } = errors
     end
@@ -432,7 +420,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
       params = %{
         "rule_implementation" => %{
           "raw_content" => %{
-            "structure_alias" => "alias",
             "source_id" => 123,
             "dataset" => Base.encode64("Some dataset"),
             "population" => "Not encoded",
@@ -486,6 +473,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
                )
                |> validate_resp_schema(schema, "ImplementationsResponse")
                |> json_response(:ok)
+
       assert [%{"rule_id" => ^rule_id}] = data
     end
 
@@ -509,9 +497,10 @@ defmodule TdDqWeb.ImplementationControllerTest do
     @tag authentication: [role: "admin"]
     test "search implementations with raw_content", %{
       conn: conn,
-      swagger_schema: schema,
+      swagger_schema: schema
     } do
       %{rule_id: rule_id} = insert(:raw_implementation)
+
       assert %{"data" => data} =
                conn
                |> post(

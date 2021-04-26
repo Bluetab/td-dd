@@ -1,7 +1,8 @@
 defmodule TdDqWeb.ExecutionGroupControllerTest do
   use TdDqWeb.ConnCase
-  use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
+  use PhoenixSwagger.SchemaTest, "priv/static/swagger_dq.json"
 
+  alias TdCache.ConceptCache
   alias TdCache.TaxonomyCache
 
   @moduletag sandbox: :shared
@@ -9,7 +10,12 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
   setup_all do
     %{id: domain_id} = domain = build(:domain)
     TaxonomyCache.put_domain(domain)
-    on_exit(fn -> TaxonomyCache.delete_domain(domain_id) end)
+    ConceptCache.put(%{id: 42, name: "Concept", domain_id: domain_id})
+
+    on_exit(fn ->
+      {:ok, _} = ConceptCache.delete(42)
+      TaxonomyCache.delete_domain(domain_id)
+    end)
 
     [domain: domain]
   end
@@ -99,8 +105,9 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
       conn: conn,
       swagger_schema: schema
     } do
-      %{id: id1} = insert(:implementation)
-      %{id: id2} = insert(:implementation)
+      %{id: rule_id} = insert(:rule, business_concept_id: "42")
+      %{id: id1} = insert(:implementation, rule_id: rule_id)
+      %{id: id2} = insert(:implementation, rule_id: rule_id)
 
       filters = %{"id" => [id1, id2]}
       params = %{"filters" => filters}

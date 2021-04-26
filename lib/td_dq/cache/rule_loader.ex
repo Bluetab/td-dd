@@ -6,12 +6,12 @@ defmodule TdDq.Cache.RuleLoader do
   use GenServer
 
   alias TdCache.RuleCache
+  alias TdDq.Implementations
   alias TdDq.Rules
-  alias TdDq.Rules.Implementations
 
   require Logger
 
-  @index_worker Application.compile_env(:td_dq, :index_worker)
+  @index_worker Application.compile_env(:td_dd, :dq_index_worker)
 
   ## Client API
 
@@ -46,7 +46,7 @@ defmodule TdDq.Cache.RuleLoader do
     name = String.replace_prefix("#{__MODULE__}", "Elixir.", "")
     Logger.info("Running #{name}")
 
-    unless Application.get_env(:td_dq, :env) == :test do
+    unless Application.get_env(:td_dd, :env) == :test do
       Process.send_after(self(), :clean, 0)
       Process.send_after(self(), :load, 0)
     end

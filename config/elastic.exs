@@ -1,6 +1,6 @@
 use Mix.Config
 
-config :td_dq, TdDq.Search.Cluster,
+config :td_dd, TdDd.Search.Cluster,
   # The default URL where Elasticsearch is hosted on your system.
   # Will be overridden by the `ES_URL` environment variable if set.
   url: "http://elastic:9200",
@@ -16,11 +16,16 @@ config :td_dq, TdDq.Search.Cluster,
     timeout: 5_000,
     recv_timeout: 40_000
   ],
-  aliases: %{implementations: "implementations", rules: "rules"},
+  aliases: %{
+    implementations: "implementations",
+    jobs: "jobs",
+    rules: "rules",
+    structures: "structures"
+  },
   default_settings: %{
     "number_of_shards" => 5,
     "number_of_replicas" => 1,
-    "refresh_interval" => "1s",
+    "refresh_interval" => "5s",
     "index.indexing.slowlog.threshold.index.warn" => "10s",
     "index.indexing.slowlog.threshold.index.info" => "5s",
     "index.indexing.slowlog.threshold.index.debug" => "2s",
@@ -29,6 +34,34 @@ config :td_dq, TdDq.Search.Cluster,
     "index.indexing.slowlog.source" => "1000"
   },
   indexes: %{
+    implementations: %{
+      store: TdDq.Search.Store,
+      sources: [TdDq.Implementations.Implementation],
+      bulk_page_size: 100,
+      bulk_wait_interval: 0,
+      bulk_action: "index",
+      settings: %{
+        analysis: %{
+          normalizer: %{
+            sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}
+          }
+        }
+      }
+    },
+    jobs: %{
+      store: TdCx.Search.Store,
+      sources: [TdCx.Jobs.Job],
+      bulk_page_size: 100,
+      bulk_wait_interval: 0,
+      bulk_action: "index",
+      settings: %{
+        analysis: %{
+          normalizer: %{
+            sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}
+          }
+        }
+      }
+    },
     rules: %{
       store: TdDq.Search.Store,
       sources: [TdDq.Rules.Rule],
@@ -43,16 +76,30 @@ config :td_dq, TdDq.Search.Cluster,
         }
       }
     },
-    implementations: %{
-      store: TdDq.Search.Store,
-      sources: [TdDq.Rules.Implementations.Implementation],
-      bulk_page_size: 100,
+    structures: %{
+      store: TdDd.Search.Store,
+      sources: [TdDd.DataStructures.DataStructureVersion],
+      bulk_page_size: 1000,
       bulk_wait_interval: 0,
       bulk_action: "index",
       settings: %{
         analysis: %{
+          analyzer: %{
+            ngram: %{
+              filter: ["lowercase", "asciifolding"],
+              tokenizer: "ngram"
+            }
+          },
           normalizer: %{
             sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}
+          },
+          tokenizer: %{
+            ngram: %{
+              type: "ngram",
+              min_gram: 3,
+              max_gram: 3,
+              token_chars: ["letter", "digit"]
+            }
           }
         }
       }

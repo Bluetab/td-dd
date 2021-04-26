@@ -1,0 +1,711 @@
+system;group;name;description;type;ou
+Microstrategy;C.R. Analitica (S.M.);Actividades;;Documento;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Analisis Agencias_pdf;;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Analisis Agencias_Sin tradicional_pdf;;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Costes Unitarios_pdf;;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);CRSM-01.00 Análisis Genérico Acumulado;;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);CRSM-01.10 Análisis Genérico Mensual;;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);CRSM-02.00 Análisis de Recursos Consumidos;;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);CRSM-03.00 Análisis Ratios de Actividades;;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);CRSM-04.00. Análisis de Márgenes y Resultados;;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);CRSM-05.00. Análisis del Consumo del Margen Bruto;;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);CU_Tendencia Costes Unitarios_pdf;;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Cuenta de Resultados (Conceptos - Coste por Ventas);;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Cuenta de Resultados (Conceptos - Coste por Ventas) - Mensual;;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Cuenta de Resultados (Conceptos - Coste por Ventas)_pdf;;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Cuenta de Resultados (Conceptos);;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Cuenta de Resultados (Conceptos) - Mensual;;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Cuenta de Resultados (Conceptos)_pdf;;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Cuenta de Resultados (Conceptos_TOTAL)_pdf;;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Cuenta de Resultados (Epígrafes);;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Cuenta de Resultados (Epígrafes) - Mensual;;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Cuenta de Resultados (Epígrafes)_pdf;;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Cuenta de Resultados (Epígrafes_TOTAL)_pdf;;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Cuenta de Resultados Analítica;;Documento;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Cuenta de Resultados Analítica (Mensual);;Documento;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Cuenta de Resultados Analítica pdf;;Documento;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Documento de Ayuda;;Documento;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Informe CR analítica por Concepto (% s/ Ingresos);;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Informe CR analítica por Concepto (absoluto);;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Informe CR analítica por Epígrafe N2 (% s/ Ingresos);;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Informe CR analítica por Epígrafe N2 (absoluto);;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Informe Validación CR Analítica;;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Márgenes;;Documento;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Matriz Ramo Actividades;;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Mes Selección;;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Objetos públicos;Carpeta con todos los objetos públicos;Carpeta;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Objetos públicos/Informes;;Carpeta;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Objetos públicos/Informes/Cuadro de seguimiento;;Carpeta;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Objetos públicos/Informes/Informes Auditoría GIH;;Carpeta;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Objetos públicos/Informes/Informes de análisis;;Carpeta;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Objetos públicos/Informes/Resumen ejecutivo;;Carpeta;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Objetos públicos/Informes/Seguimiento de Presupuestos;;Carpeta;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Objetos públicos/Informes/Validación;;Carpeta;Santalucía
+Microstrategy;C.R. Analitica (S.M.);PPTO_Cuenta de Resultados (Conceptos);;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);PPTO_Cuenta de Resultados (Epígrafes)_pdf;;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Seguimiento Actividad;;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Seguimiento Actividad_pdf;;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Seguimiento Agencias (Costes Estructura Empresa);;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Seguimiento Agencias (Margen Bruto);;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Seguimiento Agencias (Margen Bruto)_pdf;;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Seguimiento Agencias (Margen Contribución);;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Seguimiento Presupuestario;;Documento;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Seguimiento Presupuestario Comisiones (acumulado);;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Seguimiento Presupuestario Comisiones (mensual);;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Seguimiento Presupuestario Conceptos (acumulado);;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Seguimiento Presupuestario Conceptos (mensual);;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Seguimiento Presupuestario Epígrafes (acumulado);;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Seguimiento Presupuestario Epígrafes (mensual);;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Tendencia Costes Unitarios_pdf;;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Tendencia margen bruto;;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Tendencia seguimiento actividad;;Informe;Santalucía
+Microstrategy;C.R. Analitica (S.M.);Totales Matriz Ramo Actividades;;Informe;Santalucía
+Microstrategy;CMC;0. 0 Meses;;Informe;Santalucía
+Microstrategy;CMC;1. 1 Cuenta Resultados Técnica;;Informe;Santalucía
+Microstrategy;CMC;1. 10. 1 Inversiones;;Informe;Santalucía
+Microstrategy;CMC;1. 10. 2 Inversiones;;Informe;Santalucía
+Microstrategy;CMC;1. 11 Empleados;;Informe;Santalucía
+Microstrategy;CMC;1. 11. 2 Rango Edades por Empresas;;Informe;Santalucía
+Microstrategy;CMC;1. 11. 3 Media Edad por Empresa;;Informe;Santalucía
+Microstrategy;CMC;1. 11. 4 Empleados por tipo de puesto y sexo;;Informe;Santalucía
+Microstrategy;CMC;1. 11. 5 Empleados Empresa y Sexo;;Informe;Santalucía
+Microstrategy;CMC;1. 12 Solvencia;;Informe;Santalucía
+Microstrategy;CMC;1. 2 Cuenta Resultados No Técnica;;Informe;Santalucía
+Microstrategy;CMC;1. 3 Evolucion Resultados Antes de Impuestos;;Informe;Santalucía
+Microstrategy;CMC;1. 4. 1 Primas por Linea Negocio;;Informe;Santalucía
+Microstrategy;CMC;1. 4. 2 Primas de Cartera (grafico);;Informe;Santalucía
+Microstrategy;CMC;1. 4. 3 Primas Produccion (grafico);;Informe;Santalucía
+Microstrategy;CMC;1. 4. 4 Primas Bajas (grafico);;Informe;Santalucía
+Microstrategy;CMC;1. 4. 5 Primas Fuera Balance (grafico);;Informe;Santalucía
+Microstrategy;CMC;1. 5. 1 Primas por Canal_Cartera;;Informe;Santalucía
+Microstrategy;CMC;1. 5. 2 Primas por Canal_Fuera Balance;;Informe;Santalucía
+Microstrategy;CMC;1. 5. 3 Primas por Canal_Presupuesto 2;;Informe;Santalucía
+Microstrategy;CMC;1. 6. 1 Siniestros_Vida;;Informe;Santalucía
+Microstrategy;CMC;1. 6. 2 Siniestros_No Vida;;Informe;Santalucía
+Microstrategy;CMC;1. 6. 3 Siniestros_Total;;Informe;Santalucía
+Microstrategy;CMC;1. 7 Gastos Generales;;Informe;Santalucía
+Microstrategy;CMC;1. 8 Clientes;;Informe;Santalucía
+Microstrategy;CMC;1. 9. 1 Cuota de Mercado;;Informe;Santalucía
+Microstrategy;CMC;1. 9. 2 Evolución Negocio;;Informe;Santalucía
+Microstrategy;CMC;2. 1 Primas por Canal_Linea Negocio;;Informe;Santalucía
+Microstrategy;CMC;2. 2 Primas Medias;;Informe;Santalucía
+Microstrategy;CMC;2.4 Evolucion Cartera Asegurados Decesos - Tabla;;Informe;Santalucía
+Microstrategy;CMC;2.4 Evolucion Cartera Asegurados Decesos por Semestre mostrando Mes;;Informe;Santalucía
+Microstrategy;CMC;3.3 Ratio combinado NoVida;;Informe;Santalucía
+Microstrategy;CMC;4. 2 Ahorro Gestionado;;Informe;Santalucía
+Microstrategy;CMC;4. 3 Ratio combinado Vida Riesgo;;Informe;Santalucía
+Microstrategy;CMC;4.11 Ahorro Gestionado;;Informe;Santalucía
+Microstrategy;CMC;5. 1 Balance y Posicion relativa por Clase Activo;;Informe;Santalucía
+Microstrategy;CMC;5. 2 Balance por Grupo Rating Medio;;Informe;Santalucía
+Microstrategy;CMC;5. 3 Balance por Pais Riesgo;;Informe;Santalucía
+Microstrategy;CMC;5. 4 Balance por Subgrupo Activo;;Informe;Santalucía
+Microstrategy;CMC;6. 1 KPIS;;Informe;Santalucía
+Microstrategy;CMC;6. 2 KPIS_graficos;;Informe;Santalucía
+Microstrategy;CMC;6. 3 KPIS_rotacion;;Informe;Santalucía
+Microstrategy;CMC;Cuadro de Mando Integral;;Documento;Santalucía
+Microstrategy;CMC;Mes Selección;;Informe;Santalucía
+Microstrategy;CMC;Mes Selección Semestres;;Informe;Santalucía
+Microstrategy;CMC;Objetos públicos;Carpeta con todos los objetos públicos;Carpeta;Santalucía
+Microstrategy;CMC;Objetos públicos/Informes;;Carpeta;Santalucía
+Microstrategy;CMC;PRIMAACTUA- 1. 4. 6 Primas Siniestros (grafico);;Informe;Santalucía
+Microstrategy;CRM;ACGC - 01.00 Análisis General Compañía;;Informe;Santalucía
+Microstrategy;CRM;ACPD - 01.00 Perfil de Cliente Demográfico y Socioeconómico por Capacidad Económica;;Informe;Santalucía
+Microstrategy;CRM;ACPD - 02.00 Perfil de Cliente Demográfico y Socioeconómico por Nacionalidad;;Informe;Santalucía
+Microstrategy;CRM;ACPD - 03.00 Perfil de Cliente Demográfico y Socioeconómico por Profesión;;Informe;Santalucía
+Microstrategy;CRM;ACPD - 04.00 Perfil de Cliente Demográfico y Socioeconómico por Sexo;;Informe;Santalucía
+Microstrategy;CRM;ACPD - 05.00 Perfil de Cliente Demográfico y Socioeconómico por Tipo de Población;;Informe;Santalucía
+Microstrategy;CRM;ACPD - 06.00 Perfil de Cliente Demográfico y Socioeconómico por Tramos de Edad;;Informe;Santalucía
+Microstrategy;CRM;ACPS - 01.00 Perfil de Cliente Santalucía por Antigüedad;;Informe;Santalucía
+Microstrategy;CRM;ACPS - 02.00 Perfil de Cliente Santalucía por Producto de Entrada;;Informe;Santalucía
+Microstrategy;CRM;ACPS - 03.00 Perfil de Cliente Santalucía por Red de Venta de Entrada;;Informe;Santalucía
+Microstrategy;CRM;ACPS - 04.00 Perfil de Cliente Santalucía por Nº de Productos en vigor;;Informe;Santalucía
+Microstrategy;CRM;ACPS - 05.00 Perfil de Cliente Santalucía por Combinación de Productos;;Informe;Santalucía
+Microstrategy;CRM;ACPS - 06.00 Perfil de Cliente Santalucía por Nº Pólizas en vigor;;Informe;Santalucía
+Microstrategy;CRM;ACPS - 07.00 Perfil de Cliente Santalucía por Nº Pólizas anuladas;;Informe;Santalucía
+Microstrategy;CRM;ACPS - 08.00 Perfil de Cliente Santalucía por Valor de Cliente;;Informe;Santalucía
+Microstrategy;CRM;Anotaciones comerciales;;Informe;Santalucía
+Microstrategy;CRM;Documentos de Ayuda;;Documento;Santalucía
+Microstrategy;CRM;GTF.1.0. Analisis de correcciones de pólizas de clientes tomadores fallecidos;;Informe;Santalucía
+Microstrategy;CRM;GTF.2.0. Analisis de correccion de clientes tomadores fallecidos;;Informe;Santalucía
+Microstrategy;CRM;Objetos Públicos;Carpeta con todos los objetos públicos;Carpeta;Santalucía
+Microstrategy;CRM;Objetos Públicos/Informes;;Carpeta;Santalucía
+Microstrategy;CRM;Objetos Públicos/Informes/Acceso Comercial;;Carpeta;Santalucía
+Microstrategy;CRM;Objetos Públicos/Informes/Análisis de Clientes;;Carpeta;Santalucía
+Microstrategy;CRM;Objetos Públicos/Informes/Análisis de Clientes/6. Perfiles de Clientes;;Carpeta;Santalucía
+Microstrategy;CRM;Objetos Públicos/Informes/Análisis de Clientes/6. Perfiles de Clientes/Demográfico y socioeconómico;;Carpeta;Santalucía
+Microstrategy;CRM;Objetos Públicos/Informes/Análisis de Clientes/6. Perfiles de Clientes/Santalucía;;Carpeta;Santalucía
+Microstrategy;CRM;Objetos Públicos/Informes/Anotaciones Comerciales;;Carpeta;Santalucía
+Microstrategy;CRM;Objetos Públicos/Informes/Campañas;;Carpeta;Santalucía
+Microstrategy;CRM;Objetos Públicos/Informes/Gestión de Tomadores Fallecidos;;Carpeta;Santalucía
+Microstrategy;CRM;Objetos Públicos/Informes/Reclamación de Fichas Comerciales de Clientes;;Carpeta;Santalucía
+Microstrategy;CRM;Objetos Públicos/Informes/Validación;;Carpeta;Santalucía
+Microstrategy;CRM;Reparto de Clientes por Disponibilidad Bloqueo;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;Aclaraciones sobre Indicadores;;Documento;Santalucía
+Microstrategy;Cuadro de Mando;Año Actual Cartera;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMBA 01 - Bajas;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMBA 01b - Bajas (total);;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMBA 02 - Evolución de las Bajas mes a mes;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMBA 03 - Evolución de las Bajas Acumuladas por ejercicios;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMCA 01 - Cartera y Crecimiento;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMCA 01.02 - Comparativa de la Cartera por agrupación de ramos;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMCA 03.01 - Evolución Cartera Pólizas por meses;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMCA 04.01 - Evolución de la Prima de Tarifa Cartera por meses;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMCL - Evolución cartera de Tomadores;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMCL - Información de Clientes por Concepto;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMCL - Información Mensual de Satisfacción de Clientes;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMCL - Información Trimestral de Clientes por Concepto;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMPA 01 - Cartera Asistencia Decesos;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMPA 02 - Evolución Histórica de la Cartera de Asegurados mes a mes;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMPA 04 - Pirámide Humana de la Cartera de Asegurados;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMPP 01 - Evolución de la Cartera Hogar;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMPP 03 - Evolución de la Cartera Ramos Patrimoniales;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMPR 01 - Producción;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMPR 02 - Evolución de la Producción mes a mes;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMPR 03 - Evolución de la Producción Acumulada;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMPR 04 - Prima de Tarifa;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMPR 05 - Evolución de la Prima Acumulada;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMPV 01 - Evolución de la Cartera de Vida;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMPV 01A - Distribución por Tipo de Prima;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMPV 02 - Sinisestralidad Interanual Vida Ahorro;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMPV 02A - Gráfico Siniestralidad Vida Ahorro;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMPV 02B - Gráfico Siniestralidad Vida Riesgo;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMPV 03 - Modalidades de Vida Ahorro y Previsión;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMSI 01 - Siniestralidad SSGG;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMSI 02 - Siniestralidad Decesos;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMSI 03 - Tasa Mortalidad Santalucia;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMSI 04 - Tasa Siniestralidad Multirriesgos;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;CMSI 06 - Velocidad Liquidación Multirriesgos;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;G.1. Cartera y Crecimiento;Información mas relevante de Cartera y gráficos que muestran su evolución en número de pólizas y primas;Documento;Santalucía
+Microstrategy;Cuadro de Mando;G.2. Producción;Información de altas y porcentaje de formalización de pólizas comercializadas por las distintas redes de venta;Documento;Santalucía
+Microstrategy;Cuadro de Mando;G.3. Bajas;Información de bajas y caída de cartera y gráficos que muestran su evolución por causas en los principales productos;Documento;Santalucía
+Microstrategy;Cuadro de Mando;G.4. Siniestros;Información de Siniestralidad, Velocidad de Liquidación, Tasa de Siniestralidad y Tasa de Mortalidad;Documento;Santalucía
+Microstrategy;Cuadro de Mando;G.5. Clientes;Información de Cartera de Clientes (Tomadores y Asegurados) con distintos análisis como Venta Cruzada, Distribución por Valor o Grado de Vinculación;Documento;Santalucía
+Microstrategy;Cuadro de Mando;G.6. Productos de Vida;Información específica de productos de Vida, incluyendo provisiones matemáticas y distribución de la tasa siniestral según ICEA;Documento;Santalucía
+Microstrategy;Cuadro de Mando;G.7. Productos de Decesos y Asistencias;Información específica de productos de Asistencia Decesos;Documento;Santalucía
+Microstrategy;Cuadro de Mando;G.8. Productos Patrimoniales;Información específica de productos de Patrimoniales (Hogar, Responsabilidad Civil y Otros Multirriesgos);Documento;Santalucía
+Microstrategy;Cuadro de Mando;Mes - Mes Anterior;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;Mes - Mes Año Ant Siniestros;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;Mes - Mes año anterior;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;Mes - Mes año anterior productos vida;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;Mes 2 Año Anterior Selección Cartera;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;Mes 2 Años Anterior Cartera;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;Mes 3 Año Anterior Selección Cartera;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;Mes 3 Años Anterior Cartera;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;Mes Actual Cartera;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;Mes Actual Cartera Seleccion;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;Mes Año Anterior Cartera;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;Mes Seleccionado;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;Objetos Públicos;Carpeta con todos los objetos públicos;Carpeta;Santalucía
+Microstrategy;Cuadro de Mando;Objetos Públicos/Informes;;Carpeta;Santalucía
+Microstrategy;Cuadro de Mando;Objetos Públicos/Informes/Validación;;Carpeta;Santalucía
+Microstrategy;Cuadro de Mando;Portada;;Documento;Santalucía
+Microstrategy;Cuadro de Mando;Seleccion Mes Clientes;;Informe;Santalucía
+Microstrategy;Cuadro de Mando;Seleccion Mes Siniestros SSGG y Pr. Devengadas;;Informe;Santalucía
+Microstrategy;Datamart de Auditoria Interna;Cuadro de Mando Auditoria Agencia;;Documento;Santalucía
+Microstrategy;Datamart de Auditoria Interna;Cuadro de Mandos Agencia;;Informe;Santalucía
+Microstrategy;Datamart de Auditoria Interna;Detalle de Recibos Gestionados en el Mes con DB;;Informe;Santalucía
+Microstrategy;Datamart de Auditoria Interna;Detalle Pólizas Gestionados en el Mes con DB;;Informe;Santalucía
+Microstrategy;Datamart de Auditoria Interna;Gestión de Envíos-Reenvíos por Agencia;;Informe;Santalucía
+Microstrategy;Datamart de Auditoria Interna;Gestión de Recibos DB por Agencia;;Informe;Santalucía
+Microstrategy;Datamart de Auditoria Interna;Gestión Impagados por Agencia;;Informe;Santalucía
+Microstrategy;Datamart de Auditoria Interna;Objetos públicos;Carpeta con todos los objetos públicos;Carpeta;Santalucía
+Microstrategy;Datamart de Auditoria Interna;Objetos públicos/Informes;;Carpeta;Santalucía
+Microstrategy;Datamart de Auditoria Interna;Objetos públicos/Informes/Gestión Bancaria;Informes relacionados con el circuito bancario.;Carpeta;Santalucía
+Microstrategy;Datamart de Auditoria Interna;Objetos públicos/Informes/Indicadores de Gestión;Carpeta con informes / gráficos de agencia;Carpeta;Santalucía
+Microstrategy;Datamart de Auditoria Interna;Objetos públicos/Informes/Modificaciones Cartera;Informes relativos a la cartera;Carpeta;Santalucía
+Microstrategy;Datamart de Auditoria Interna;Objetos públicos/Informes/Pendiente Emisión Física;Informes de recibos pendientes  de emision física;Carpeta;Santalucía
+Microstrategy;Datamart de Auditoria Interna;Pendiente Descentralizado por Agencia;;Informe;Santalucía
+Microstrategy;Datamart de Auditoria Interna;Pólizas con Recibos Pendientes;;Informe;Santalucía
+Microstrategy;Datamart de Auditoria Interna;Recibos Devueltos por MC;;Informe;Santalucía
+Microstrategy;Datamart de Auditoria Interna;Recibos Pendientes;;Informe;Santalucía
+Microstrategy;Datamart de Auditoria Interna;Recibos pendientes por auxiliar;;Informe;Santalucía
+Microstrategy;Datamart de Auditoria Interna;Recibos, Incidencias y Poliza PDTES por Grupo Ramo;;Informe;Santalucía
+Microstrategy;Datamart de Auditoria Interna;Seguimiento de Agencias;;Informe;Santalucía
+Microstrategy;Datamart de Auditoria Interna;Seguimiento de Agencias por Producto;;Informe;Santalucía
+Microstrategy;Datamart de Auditoria Interna;Seguimiento de Auxiliares;;Informe;Santalucía
+Microstrategy;Datamart de Auditoria Interna;Solicitudes de Envío;;Informe;Santalucía
+Microstrategy;Datamart de Auditoria Interna;Visión Global de Agencias vs Estrato;;Informe;Santalucía
+Microstrategy;Seguimiento CRC;Informe Incidencias - Pólizas;;Informe;Santalucía
+Microstrategy;Seguimiento CRC;Mes Selección;;Informe;Santalucía
+Microstrategy;Seguimiento CRC;Objetos públicos;Carpeta con todos los objetos públicos;Carpeta;Santalucía
+Microstrategy;Seguimiento CRC;Objetos públicos/Informes;;Carpeta;Santalucía
+Microstrategy;Seguimiento CRC;Objetos públicos/Informes/Informes;;Carpeta;Santalucía
+Microstrategy;Seguimiento CRC;Objetos públicos/Informes/Informes/Seguimiento;;Carpeta;Santalucía
+Microstrategy;Seguimiento CRC;Resumen de pólizas con incidencia;;Documento;Santalucía
+Microstrategy;Seguimiento CRC;SCRC-01.00.Seguimiento Incidencias de Baja;;Informe;Santalucía
+Microstrategy;Seguimiento CRC;SCRC-02.00.Seguimiento Incidencias Causas de Retención;;Informe;Santalucía
+Microstrategy;Seguimiento CRC;SCRC-03.00.Seguimiento Incidencias Causas de No Retención;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;0. Portada;;Documento;Santalucía
+Microstrategy;Seguimiento de Agencia ;0. Portada Ag;;Documento;Santalucía
+Microstrategy;Seguimiento de Agencia ;1. Descripción de Agencia;Estructura de recursos de la agencia, de la cartera de clientes y evolución de la cartera de pólizas;Documento;Santalucía
+Microstrategy;Seguimiento de Agencia ;1. Descripción General Ag;Estructura de recursos de la agencia, de la cartera de clientes y evolución de la cartera de pólizas;Documento;Santalucía
+Microstrategy;Seguimiento de Agencia ;2. Seguimiento de Objetivos;Detalle de crecimiento de la cartera y nivel de seguimiento de los objetivos comerciales.;Documento;Santalucía
+Microstrategy;Seguimiento de Agencia ;2. Seguimiento de Objetivos Ag;Detalle de crecimiento de la cartera y nivel de seguimiento de los objetivos comerciales.;Documento;Santalucía
+Microstrategy;Seguimiento de Agencia ;3. Cartera y Crecimiento;Detalle de crecimiento de la cartera y nivel de seguimiento de los objetivos comerciales.;Documento;Santalucía
+Microstrategy;Seguimiento de Agencia ;3. Cartera y Crecimiento Ag;Detalle de crecimiento de la cartera y nivel de seguimiento de los objetivos comerciales.;Documento;Santalucía
+Microstrategy;Seguimiento de Agencia ;4. Desglose de Producción y Bajas;Desgloses de la producción efectuada por red de venta y de los tipos y causas de Bajas.;Documento;Santalucía
+Microstrategy;Seguimiento de Agencia ;4. Desglose de Producción y Bajas Ag;Desgloses de la producción efectuada por red de venta y de los tipos y causas de Bajas.;Documento;Santalucía
+Microstrategy;Seguimiento de Agencia ;5. Seguimiento Específico de Ramos;Detalle de los indicadores particulares de los principales productos de la Compañía.;Documento;Santalucía
+Microstrategy;Seguimiento de Agencia ;5. Seguimiento específico de ramos Ag;Detalle de los indicadores particulares de los principales productos de la Compañía.;Documento;Santalucía
+Microstrategy;Seguimiento de Agencia ;6. Gestión de Cobro;Evolución de los parámetros de gestión del cobro de primas.;Documento;Santalucía
+Microstrategy;Seguimiento de Agencia ;6. Gestión de Cobro Ag;Evolución de los parámetros de gestión del cobro de primas.;Documento;Santalucía
+Microstrategy;Seguimiento de Agencia ;7. Siniestralidad;Información de seguimiento de la siniestralidad.;Documento;Santalucía
+Microstrategy;Seguimiento de Agencia ;7. Siniestralidad Ag;Información de seguimiento de la siniestralidad.;Documento;Santalucía
+Microstrategy;Seguimiento de Agencia ;Agencia;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;Agencia (Objetivos);;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;Año Siniestros;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;Detalle;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;Detalle - Seguimiento de Objetivos;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;Detalle Siniestros;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;Guía de Uso;;Documento;Santalucía
+Microstrategy;Seguimiento de Agencia ;Mes Selección Cartera;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;Mes Selección Siniestros;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;Objetos Públicos;Carpeta con todos los objetos públicos;Carpeta;Santalucía
+Microstrategy;Seguimiento de Agencia ;Objetos Públicos/Informes;;Carpeta;Santalucía
+Microstrategy;Seguimiento de Agencia ;Objetos Públicos/Informes/Agregación de agencias;;Carpeta;Santalucía
+Microstrategy;Seguimiento de Agencia ;SACC 01 - Cartera y Producción;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SACC 01 - Cartera y Producción Ag;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SADA 02 - Analisis gral clientes perspectiva 1 CMA;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SADA 02 - Analisis gral clientes perspectiva 1 CMA Ag;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SADA 02A - Seleccion Mes Clientes;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SADA 04 - Evolución historica cartera V2;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SADA 04 - Evolución historica cartera V2 Ag;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SADA 05 - Evolución Cartera de Pólizas Últimos 5 años;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SADA 05 - Evolución Cartera de Pólizas Últimos 5 años Ag;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SADA 06 - Evolución historica de la Producción y Bajas;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SADA 06 - Evolución historica de la Producción y Bajas Ag;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SADN 01 - Cartera de Asistencias;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SADN 01 - Cartera de Asistencias Ag;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SADN 01.01 -Evolución histórica Cartera de Asegurados;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SADN 01.01 -Evolución histórica Cartera de Asegurados Ag;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SADN 02 -Nueva Producción Asistencia-Decesos;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SADN 02 -Nueva Producción Asistencia-Decesos Ag;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SADN 11 -Producción Agrarios;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SADN 11 -Producción Agrarios Ag.;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SADN 13 - Modalidades Vida Ahorro;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SADN 13 - Modalidades Vida Ahorro Ag.;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SADN 13.01 -Evolución Histórica Cartera Pólizas Vida Ahorro;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SADN 13.01 -Evolución Histórica Cartera Pólizas Vida Ahorro Ag.;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SAGC 01 - Desglose de formas de pago y Tipo domicilio cobro;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SAGC 01 - Desglose de formas de pago y Tipo domicilio cobro Ag;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SAGC 02 - Gestión cobro primas;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SAGC 02 - Gestión cobro primas Ag;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SAOB 01 - Seguimiento de objetivos Comerciales;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SAOB 01 - Seguimiento de objetivos Comerciales Ag;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SAPB 01 - Desglose de Producción;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SAPB 01 - Desglose de Producción Ag;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SAPB 02 - Total Bajas;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SAPB 02 - Total Bajas Ag;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SAPB 03 - Bajas por Causa Estado Póliza;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SAPB 03 - Bajas por Causa Estado Póliza Ag;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SASI 01 - Siniestralidad SSGG;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SASI 01 - Siniestralidad SSGG Ag;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SASI 02 - Tasa Mortalidad;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SASI 02 - Tasa Mortalidad Ag;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SASI 03 - Siniestralidad Asistencias;;Informe;Santalucía
+Microstrategy;Seguimiento de Agencia ;SASI 03 - Siniestralidad Asistencias Ag;;Informe;Santalucía
+Microstrategy;SUI;% volumenes para mapa;;Informe;Santalucía
+Microstrategy;SUI;0. Informe para Mes Selección;;Informe;Santalucía
+Microstrategy;SUI;Bajas acumuladas mensuales y anuales (Pólizas) Ag;;Informe;Santalucía
+Microstrategy;SUI;Bajas acumuladas mensuales y anuales (Primas) Ag;;Informe;Santalucía
+Microstrategy;SUI;Bajas Decesos;;Informe;Santalucía
+Microstrategy;SUI;Bajas por fecha de registro (Pólizas) Ag;;Informe;Santalucía
+Microstrategy;SUI;Bajas por fecha de registro (Primas) Ag;;Informe;Santalucía
+Microstrategy;SUI;Bajas, Decesos, Líquido, Cartera y Diferencias;;Informe;Santalucía
+Microstrategy;SUI;CADM-01.01. Estadística de la Cartera de Decesos por Ramo y Partida;;Informe;Santalucía
+Microstrategy;SUI;CADM-02-03. Distribución de la Pólizas por Causas de Estado;;Informe;Santalucía
+Microstrategy;SUI;CADM-04-05. Distribución de la Pólizas por Competencia;;Informe;Santalucía
+Microstrategy;SUI;CADM-06.10. Piramide Humana de la Cartera;;Informe;Santalucía
+Microstrategy;SUI;CADM-07.10. Estadística de Asegurados;;Informe;Santalucía
+Microstrategy;SUI;CADM-08.00. Evolutivo Caida de Cartera de Nueva Producción;;Informe;Santalucía
+Microstrategy;SUI;CADM-10.00. Media de Edad de la Producción Emitida;;Informe;Santalucía
+Microstrategy;SUI;CADM-14.00. Pirámide Humana de Fallecidos;;Informe;Santalucía
+Microstrategy;SUI;CADM-15.00. Movimiento de Asegurados de Asistencias;;Informe;Santalucía
+Microstrategy;SUI;CADM-15.01. Bajas de Asegurados por Causas;;Informe;Santalucía
+Microstrategy;SUI;CARA-20.20. Información acumulada de Cartera Genérico;;Informe;Santalucía
+Microstrategy;SUI;CARM-05.10. Distribución de Partidas (excepto ramos 11 y 25);;Informe;Santalucía
+Microstrategy;SUI;CARM-07.01. Estadística Pólizas de Vida;;Informe;Santalucía
+Microstrategy;SUI;CARM-07.11. Estadística por Periodo Pólizas de Vida;;Informe;Santalucía
+Microstrategy;SUI;CARM-07.21. Estadística Primas y Capitales de Vida;;Informe;Santalucía
+Microstrategy;SUI;CARM-07.31. Estadística por Periodo Primas y Capitales de Vida;;Informe;Santalucía
+Microstrategy;SUI;CARM-07.41. Estadística de Pólizas Reducidas de Vida;;Informe;Santalucía
+Microstrategy;SUI;CARM-07.50. Primas Únicas y Aportaciones Extraordinarias;;Informe;Santalucía
+Microstrategy;SUI;CARM-07.70. Estadísticas Mi Primer Ahorro;;Informe;Santalucía
+Microstrategy;SUI;CARM-15. Evolución de la Cartera (Actual y Regularizada);;Informe;Santalucía
+Microstrategy;SUI;CARM-16.01. Resumen de Aumentos por Revalorización (Excepto Ramos 11 y 25);;Informe;Santalucía
+Microstrategy;SUI;CARM-16.11. Resumen de Aumentos/Disminución por Suplementos (Excepto Ramos 11 y 25);;Informe;Santalucía
+Microstrategy;SUI;CARM-16.21. Resumen de Aumentos/Disminución por Suplementos de Aport. Extr.;;Informe;Santalucía
+Microstrategy;SUI;CARM-18.00 Estadística de Altas, Bajas y Cartera;;Documento;Santalucía
+Microstrategy;SUI;CARM-18.00. Estadística de Altas, Bajas y Cartera;;Informe;Santalucía
+Microstrategy;SUI;CARM-18.01. Estadística de Altas, Bajas y Cartera;;Informe;Santalucía
+Microstrategy;SUI;CARM-18.10. Estadística de Altas, Bajas y Cartera (Por Ramo Contable);;Informe;Santalucía
+Microstrategy;SUI;CARM-20.00 Distribución Cartera de Pólizas por Forma de Pago y Promedios por Pólizas;;Documento;Santalucía
+Microstrategy;SUI;CARM-20.00. Distribución Cartera de Pólizas por Formas de Pago y Promedios por Pólizas;;Informe;Santalucía
+Microstrategy;SUI;CARM-20.10. Información mensual de Cartera Genérico;;Informe;Santalucía
+Microstrategy;SUI;CARM-22.00. Informe de Cartera y Movimientos de la red Web;;Informe;Santalucía
+Microstrategy;SUI;CARM-24.01. Tasa de Caida de Cartera de Pólizas (Interanual);;Informe;Santalucía
+Microstrategy;SUI;CARM-24.11. Tasa de Caida de Cartera Prima Tarifa- sin P. Unica ni V. Riesgo (Interanual);;Informe;Santalucía
+Microstrategy;SUI;CARM-25.01. Tasa de Bajas de Producción (Interanual);;Informe;Santalucía
+Microstrategy;SUI;CARM-26.00. Información de Cartera (Mediadores);;Informe;Santalucía
+Microstrategy;SUI;CARM-27.00. Control Suplementos Infraseguro;;Informe;Santalucía
+Microstrategy;SUI;Cartera Decesos;;Informe;Santalucía
+Microstrategy;SUI;CARX-08. Resumen de Bajas;;Informe;Santalucía
+Microstrategy;SUI;CARX-21. Informes Reparto de Bajas;;Informe;Santalucía
+Microstrategy;SUI;CARX-21. Informes Reparto de Bajas (Estructura);;Informe;Santalucía
+Microstrategy;SUI;CARX-29.00. Informe de Gestión de Cobro (Prima de Recibos);;Informe;Santalucía
+Microstrategy;SUI;CASM-01.00. Estadística de Asegurados de Salud;;Informe;Santalucía
+Microstrategy;SUI;CASM-02.00. Estructura de Cartera de Asegurados de Salud;;Informe;Santalucía
+Microstrategy;SUI;CASM-03.00. Número de Asegurados de Salud por Sexo y Actividad;;Informe;Santalucía
+Microstrategy;SUI;CASM-04.00. Pirámide Humana Cartera de Salud;;Informe;Santalucía
+Microstrategy;SUI;Coste medio cerrados int;;Informe;Santalucía
+Microstrategy;SUI;Cuadro de mando de Prestaciones Patrimoniales;;Documento;Santalucía
+Microstrategy;SUI;Cuadro de Seguimiento Canal Agencial;Detalle de crecimiento de la cartera y nivel de seguimiento de los objetivos comerciales.;Documento;Santalucía
+Microstrategy;SUI;Cuadro de Seguimiento Comercial;Detalle de crecimiento de la cartera y nivel de seguimiento de los objetivos comerciales.;Documento;Santalucía
+Microstrategy;SUI;Desglose de Bajas Decesos por Causas;;Informe;Santalucía
+Microstrategy;SUI;Desglose de Producción Decesos por Causas;;Informe;Santalucía
+Microstrategy;SUI;DESI-01.00. Seguimiento semanal de Bolsa;;Informe;Santalucía
+Microstrategy;SUI;DESI-02.00 Seguimiento diario de producción bonificada sobre emitida;;Informe;Santalucía
+Microstrategy;SUI;DGST-01.00. Resumen de Siniestros: Número de Siniestros en el Ejercicio;;Informe;Santalucía
+Microstrategy;SUI;DGST-02.00. Resumen de Importes y Provisiones (no Decesos y Asistencia);;Informe;Santalucía
+Microstrategy;SUI;DGST-03.00. Resumen de Siniestros Pendientes de Liquidación y/o Pago (no Decesos y Asistencia);;Informe;Santalucía
+Microstrategy;SUI;DGST-08.00. Siniestros Ocurridos en el Periodo Anterior y Declarados en el Actual (no Decesos y Asistencia);;Informe;Santalucía
+Microstrategy;SUI;Documentación de ayuda;;Documento;Santalucía
+Microstrategy;SUI;Documento de Ayuda DESI;;Documento;Santalucía
+Microstrategy;SUI;Documento de Ayuda PDF;;Documento;Santalucía
+Microstrategy;SUI;Documento de Ayuda SEDI;;Documento;Santalucía
+Microstrategy;SUI;Documento de Ayuda SERO;;Documento;Santalucía
+Microstrategy;SUI;Documento de Ayuda SEUL;;Documento;Santalucía
+Microstrategy;SUI;Documento de Ayuda SEZO;;Documento;Santalucía
+Microstrategy;SUI;Emitidas acumuladas mensuales y anuales (Pólizas) Ag;;Informe;Santalucía
+Microstrategy;SUI;Emitidas acumuladas mensuales y anuales (Primas) Ag;;Informe;Santalucía
+Microstrategy;SUI;Emitidas por fecha de registro (Pólizas) Ag;;Informe;Santalucía
+Microstrategy;SUI;Emitidas por fecha de registro (Primas) Ag;;Informe;Santalucía
+Microstrategy;SUI;Estado de Datos. Último Periodo Cargado;;Documento;Santalucía
+Microstrategy;SUI;Fecha Selección Ag;;Informe;Santalucía
+Microstrategy;SUI;GEDI-01.00. Seguimiento de Cartera, Crecimiento (Acumulado);;Informe;Santalucía
+Microstrategy;SUI;GEDI-02.00. Resumen de Bajas por Causas de Estado (Acumulado);;Informe;Santalucía
+Microstrategy;SUI;GEDI-03.00. Informe de Gestión de Cobro (Prima de Recibos);;Informe;Santalucía
+Microstrategy;SUI;GEDI-04.00. Seguimiento de Produccion y Baja (Mensual);;Informe;Santalucía
+Microstrategy;SUI;Gestion de reservas;;Informe;Santalucía
+Microstrategy;SUI;Gráfico Pirámide de Edad Asegurados;;Informe;Santalucía
+Microstrategy;SUI;Gráfico Pirámide de Fallecidos;;Informe;Santalucía
+Microstrategy;SUI;Gráfico Prima Tarifa Altas y Bajas;;Informe;Santalucía
+Microstrategy;SUI;Gráfico Prima Tarifa Cartera;;Informe;Santalucía
+Microstrategy;SUI;ICEA. 0. Información ICEA;;Informe;Santalucía
+Microstrategy;SUI;ICEA. 3. Información Siniestralidad Por Provincias Agencia;;Informe;Santalucía
+Microstrategy;SUI;ICEA. 4. Fichero Txt Vida;;Informe;Santalucía
+Microstrategy;SUI;ICEA. 6. Mercado de Seguros por Provincias;;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comercio. Continente, Contenido y Resp. Civil;;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comercio. Daños por Robo (Siniestros Declarados);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comercio. Daños por Robo (Volumen de Negocio);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comercio. Siniestros Rechazados;;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comercio. Siniestros. Daños por Robo. Distribución por Actividades Económicas;;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comercio. Siniestros. Distribución de los siniestros por garantías;;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comercio. Siniestros. Primas Periodificadas (C. BancaSeguros);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comercio. Siniestros. Primas Periodificadas (C. Mediador);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comercio. Siniestros. Primas Periodificadas (C. Otros);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comercio. Siniestros. Primas Periodificadas Totales;;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comercio. Volumen de Negocio Anulaciones Año Actual y Año Ant;;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comercio. Volumen de Negocio y Nueva Producción (Pólizas Canal Bancaseguros);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comercio. Volumen de Negocio y Nueva Producción (Pólizas Canal Mediador);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comercio. Volumen de Negocio y Nueva Producción (Pólizas Otros Canales);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comercio. Volumen de Negocio y Nueva Producción (Primas Canal Bancaseguros);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comercio. Volumen de Negocio y Nueva Producción (Primas Canal Mediador);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comercio. Volumen de Negocio y Nueva Producción (Primas Otros Canales);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comercio. Volumen de Negocio y Nueva Producción (Prov. Primas y Prov Riesgos);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comercio. Volumen de Negocio y Nueva Producción (Total Pólizas);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comercio. Volumen de Negocio y Nueva Producción (Total Primas);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comunidades. Daños Por Agua Partes Comunes;;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comunidades. Daños Por Agua Partes Comunes y Privativas;;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comunidades. Estudio en Función de la Antigüedad del Edificio;;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comunidades. Estudio en Función de las Sumas Aseguradas;;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comunidades. Siniestros Rechazados;;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comunidades. Siniestros. Daños Por Agua. Estudio en Función de la Antigüedad del Edificio;;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comunidades. Siniestros. Distribución de los siniestros por garantías;;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comunidades. Siniestros. Estudio en Función de la Antigüedad del Edificio Año Act;;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comunidades. Siniestros. Estudio en Función de la Antigüedad del Edificio Año Ant;;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comunidades. Siniestros. Estudio en Función de las Sumas Aseguradas Año Act;;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comunidades. Siniestros. Estudio en Función de las Sumas Aseguradas Año Ant;;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comunidades. Siniestros. Primas Periodificadas (C. BancaSeguros);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comunidades. Siniestros. Primas Periodificadas (C. Mediador);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comunidades. Siniestros. Primas Periodificadas (C. Otros);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comunidades. Siniestros. Primas Periodificadas Totales;;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comunidades. Volumen de Negocio Anulaciones Año Actual y Año Anterior;;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comunidades. Volumen de Negocio y Nueva Producción (Capitales Canal Bancaseguros);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comunidades. Volumen de Negocio y Nueva Producción (Capitales Canal Mediador);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comunidades. Volumen de Negocio y Nueva Producción (Capitales Otros Canales);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comunidades. Volumen de Negocio y Nueva Producción (Pólizas Canal Bancaseguros);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comunidades. Volumen de Negocio y Nueva Producción (Pólizas Canal Mediador);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comunidades. Volumen de Negocio y Nueva Producción (Pólizas Otros Canales);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comunidades. Volumen de Negocio y Nueva Producción (Primas Canal Bancaseguros);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comunidades. Volumen de Negocio y Nueva Producción (Primas Canal Mediador);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comunidades. Volumen de Negocio y Nueva Producción (Primas Otros Canales);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comunidades. Volumen de Negocio y Nueva Producción (Total Capitales);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comunidades. Volumen de Negocio y Nueva Producción (Total Pólizas);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Comunidades. Volumen de Negocio y Nueva Producción (Total Primas);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Hogar. Continente, Contenido y Resp. Civil;;Informe;Santalucía
+Microstrategy;SUI;ICEA. Hogar. Nueva Prod. Solo Continente, Solo Contenido y Continente y Contenido (Capital Asegurado);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Hogar. Nueva Prod. Solo Continente, Solo Contenido y Continente y Contenido (Pólizas y Primas);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Hogar. Siniestros Declarados en el año.;;Informe;Santalucía
+Microstrategy;SUI;ICEA. Hogar. Siniestros Rechazados;;Informe;Santalucía
+Microstrategy;SUI;ICEA. Hogar. Siniestros. Distribución de los siniestros por garantías;;Informe;Santalucía
+Microstrategy;SUI;ICEA. Hogar. Siniestros. Primas Periodificadas (C. BancaSeguros);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Hogar. Siniestros. Primas Periodificadas (C. Mediador);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Hogar. Siniestros. Primas Periodificadas (C. Otros);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Hogar. Siniestros. Primas Periodificadas Totales;;Informe;Santalucía
+Microstrategy;SUI;ICEA. Hogar. Vol. Negocio Solo Continente, Solo Contenido y Continente y Contenido (Capital Asegurado);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Hogar. Vol. Negocio Solo Continente, Solo Contenido y Continente y Contenido (Pólizas y Primas);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Hogar. Volumen de Negocio Anulaciones Año Actual y Año Ant;;Informe;Santalucía
+Microstrategy;SUI;ICEA. Hogar. Volumen de Negocio y Nueva Producción (Pólizas Canal Bancaseguros);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Hogar. Volumen de Negocio y Nueva Producción (Pólizas Canal Mediador);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Hogar. Volumen de Negocio y Nueva Producción (Pólizas Otros Canales);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Hogar. Volumen de Negocio y Nueva Producción (Primas Canal Bancaseguros);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Hogar. Volumen de Negocio y Nueva Producción (Primas Canal Mediador);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Hogar. Volumen de Negocio y Nueva Producción (Primas Otros Canales);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Hogar. Volumen de Negocio y Nueva Producción (Prov. Primas y Prov Riesgos);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Hogar. Volumen de Negocio y Nueva Producción (Total Pólizas);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Hogar. Volumen de Negocio y Nueva Producción (Total Primas);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Hogar. Volumen de Negocio y Nueva Producción (Vvdas. Principales y Secundarias);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Hogar. Volumen de Negocio y Nueva Producción (Vvdas. Unifamiliares o No);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Industrial. Siniestros Rechazados;;Informe;Santalucía
+Microstrategy;SUI;ICEA. Industrial. Siniestros. Distribución de los siniestros por garantías;;Informe;Santalucía
+Microstrategy;SUI;ICEA. Industrial. Siniestros. Primas Periodificadas (C. BancaSeguros);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Industrial. Siniestros. Primas Periodificadas (C. Mediador);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Industrial. Siniestros. Primas Periodificadas (C. Otras);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Industrial. Siniestros. Primas Periodificadas Totales;;Informe;Santalucía
+Microstrategy;SUI;ICEA. Industrial. Volumen de Negocio Anulaciones Año Actual y Año Anterior;;Informe;Santalucía
+Microstrategy;SUI;ICEA. Industrial. Volumen de Negocio y Nueva Producción (Pólizas Canal Bancaseguros);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Industrial. Volumen de Negocio y Nueva Producción (Pólizas Canal Mediador);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Industrial. Volumen de Negocio y Nueva Producción (Pólizas Otros Canales);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Industrial. Volumen de Negocio y Nueva Producción (Primas Canal Bancaseguros);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Industrial. Volumen de Negocio y Nueva Producción (Primas Canal Mediador);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Industrial. Volumen de Negocio y Nueva Producción (Primas Otros Canales);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Industrial. Volumen de Negocio y Nueva Producción (Total Pólizas);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Industrial. Volumen de Negocio y Nueva Producción (Total Primas);;Informe;Santalucía
+Microstrategy;SUI;ICEA. Seguros Multirriesgo Comercio;;Documento;Santalucía
+Microstrategy;SUI;ICEA. Seguros Multirriesgo Comunidades;;Documento;Santalucía
+Microstrategy;SUI;ICEA. Seguros Multirriesgo Hogar;;Documento;Santalucía
+Microstrategy;SUI;ICEA. Seguros Multirriesgo Industrial;;Documento;Santalucía
+Microstrategy;SUI;Importe de siniestros;;Informe;Santalucía
+Microstrategy;SUI;Importes de siniestros;;Informe;Santalucía
+Microstrategy;SUI;Indicadores principales siniestros;;Informe;Santalucía
+Microstrategy;SUI;Informe de Cartera y Movimientos Mensual;;Informe;Santalucía
+Microstrategy;SUI;Informe de coste medio de cerrados;;Informe;Santalucía
+Microstrategy;SUI;Informe de gestión de provisiones;;Informe;Santalucía
+Microstrategy;SUI;Informe de Primas Devengadas;;Informe;Santalucía
+Microstrategy;SUI;Informe de Provisiones Matématicas;;Informe;Santalucía
+Microstrategy;SUI;Informe de reservas;;Informe;Santalucía
+Microstrategy;SUI;Informe de volumen de siniestros acum;;Informe;Santalucía
+Microstrategy;SUI;Informe de volumen de siniestros mes;;Informe;Santalucía
+Microstrategy;SUI;KPI SSGG;;Informe;Santalucía
+Microstrategy;SUI;LOCM-01.00. Cartera en Localidades Concedidas con % de Población Asegurada;;Informe;Santalucía
+Microstrategy;SUI;Mejor Día Año Actual Ag;;Informe;Santalucía
+Microstrategy;SUI;Mejor Día Año Anterior Ag;;Informe;Santalucía
+Microstrategy;SUI;Mejor Día Mes Actual Ag;;Informe;Santalucía
+Microstrategy;SUI;Mejor Día Mes Año Anterior Ag;;Informe;Santalucía
+Microstrategy;SUI;Mes Decesos Cartera;;Informe;Santalucía
+Microstrategy;SUI;Mes Siniestros;;Informe;Santalucía
+Microstrategy;SUI;meses cm prestaciones patrimoniales;;Informe;Santalucía
+Microstrategy;SUI;Mix de Producción Asistencia Decesos;;Informe;Santalucía
+Microstrategy;SUI;Mix de Producción Decesos;;Informe;Santalucía
+Microstrategy;SUI;MOD-07.50. Siniestralidad en el Año (no Vida, no Decesos y Asistencia);;Informe;Santalucía
+Microstrategy;SUI;MOD-18.2. Detalle por Modalidades del Número de Pólizas (Vida);;Informe;Santalucía
+Microstrategy;SUI;MOD-22.1. Distribución Territorial del Negocio;;Informe;Santalucía
+Microstrategy;SUI;Objetos Públicos;Carpeta con todos los objetos públicos;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Acceso Agencias;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Acceso Coordinaciones;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Acceso Estructura Mediadores;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Acceso Gestión Directa;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Cartera;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Cartera/Decesos;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Cartera/Localidades;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Cartera/Patrimoniales;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Cartera/Salud;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Cartera/Vida;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Cuadro de Mando de Prestaciones Patrimoniales;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Cuadro de Mando Prestaciones Recobros;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Organismos y Técnico;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Organismos y Técnico/Área Técnica;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Organismos y Técnico/Área Técnica/Otros Estudios Técnicos;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Organismos y Técnico/DGS;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Organismos y Técnico/DGS/Modelo 7;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Organismos y Técnico/DGS/Modelo M18;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Organismos y Técnico/DGS/Modelo M22;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Organismos y Técnico/DGS/Resto Informes DGS;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Organismos y Técnico/ICEA;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Seguimiento Comercial;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Seguimiento Comercial/Descuentos Sistemáticos;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Seguimiento Comercial/Email y Movil;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Seguimiento Comercial/Productividad / Rotación;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Seguimiento Comercial/Santalucía Vida y Pensiones;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Seguimiento Comercial/Santalucía Vida y Pensiones/MaxiPlan Inversión Personalizada;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Seguimiento Comercial/Santander - Generales;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Seguimiento Comercial/Seguimiento Diario;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Seguimiento Comercial/Zonas de Gestión de Cartera;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Siniestros;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Siniestros/Decesos;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Siniestros/Decesos/Ramo Asistencia - Decesos;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Siniestros/Seguros Generales;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Siniestros/Seguros Generales/Estudios específicos;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Siniestros/Seguros Generales/Estudios específicos/SSGG-37. Distribución de la cartera y los siniestros por partida;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Siniestros/Seguros Generales/Estudios específicos/SSGG-44. Balance de gestión de recobros;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Siniestros/Seguros Generales/SSGG-01. Estudio de situación de siniestros pendientes;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Siniestros/Seguros Generales/SSGG-02. Pólizas con siniestros en el primer trimestre de vigencia;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Siniestros/Seguros Generales/SSGG-03. Distribución de siniestros por tramos;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Siniestros/Seguros Generales/SSGG-07. Desglose resumido de los pagos;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Siniestros/Seguros Generales/SSGG-09. Evolución de pagos y provisiones;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Siniestros/Seguros Generales/SSGG-12. Siniestralidad interanual;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Siniestros/Seguros Generales/SSGG-26. Control de siniestros;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Siniestros/Seguros Generales/SSGG-31. Siniestralidad por antigüedad de las pólizas;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Siniestros/Seguros Generales/SSGG-34. Desglose de pagos por tipo de siniestro;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Siniestros/Seguros Generales/SSGG-36. Desglose de pagos por garantías unitarias;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Siniestros/Seguros Generales/SSGG-38. Desglose de pagos por subgarantías;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Siniestros/Seguros Generales/SSGG-39. Evolución de pagos a peritos;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Siniestros/Seguros Generales/SSGG-48. Reclamaciones y recobros a otras compañías;;Carpeta;Santalucía
+Microstrategy;SUI;Objetos Públicos/Informes/Validacion;;Carpeta;Santalucía
+Microstrategy;SUI;Pirámides de Edad;;Informe;Santalucía
+Microstrategy;SUI;Producción Decesos;;Informe;Santalucía
+Microstrategy;SUI;PRPS-01.00. Parte Semanal de Producción (Solicitudes);;Informe;Santalucía
+Microstrategy;SUI;PRRE-01.00. Cuadro de Mando Prestaciones Recobros (Datos Generales);;Informe;Santalucía
+Microstrategy;SUI;PRRE-02.00. Cuadro de Mando Prestaciones Recobros (Solvance y 8108);;Informe;Santalucía
+Microstrategy;SUI;Reservas;;Informe;Santalucía
+Microstrategy;SUI;Resumen de Actividad Asistencias y Decesos (Cartera);;Documento;Santalucía
+Microstrategy;SUI;Resumen de Actividad Asistencias y Decesos (Siniestros);;Documento;Santalucía
+Microstrategy;SUI;SANT-01.00. Seguimiento Cartera y Producción (Mes);;Informe;Santalucía
+Microstrategy;SUI;SANT-02.00. Seguimiento Cartera y Producción (Acumulado);;Informe;Santalucía
+Microstrategy;SUI;SANT-03.00. Seguimiento de Bajas por Causa;;Informe;Santalucía
+Microstrategy;SUI;SANT-04.00. Resumen de Altas y Bajas Asegurados;;Informe;Santalucía
+Microstrategy;SUI;SANT-05.00. Pirámide de Edad de Asegurados;;Informe;Santalucía
+Microstrategy;SUI;SAPA-10.04. Evolución de la Cartera por Modalidad y Partida;;Informe;Santalucía
+Microstrategy;SUI;SDCA-12.00 Siniestralidad de Asistencia-Decesos Acumulado;;Informe;Santalucía
+Microstrategy;SUI;SDCA-15.00 Tasa de Siniestralidad de Asistencia-Decesos (Modalidades);;Informe;Santalucía
+Microstrategy;SUI;SDCM-01.00. Tasa de Mortalidad;;Informe;Santalucía
+Microstrategy;SUI;SDCM-03.00. Tasa de Siniestralidad;;Informe;Santalucía
+Microstrategy;SUI;SDCM-04.00. Prestaciones por Tipo de Siniestro;;Informe;Santalucía
+Microstrategy;SUI;SDCM-13.00 Siniestralidad de Asistencia-Decesos Mensual;;Informe;Santalucía
+Microstrategy;SUI;SDCU-14.00 Siniestralidad de Asistencia-Decesos Interanual;;Informe;Santalucía
+Microstrategy;SUI;SDCX-08.00. Evolución Siniestralidad de Decesos;;Informe;Santalucía
+Microstrategy;SUI;SECA. Seguimiento de Objetivos Comerciales de las Agencias;;Informe;Santalucía
+Microstrategy;SUI;SECA. Seguimiento de Objetivos Comerciales del Canal Agencial;;Informe;Santalucía
+Microstrategy;SUI;SECO. Año Cartera;;Informe;Santalucía
+Microstrategy;SUI;SECO. Seguimiento de Objetivos Bajas (Canales) Ac;;Informe;Santalucía
+Microstrategy;SUI;SECO. Seguimiento de Objetivos Bajas (Canales) Mes;;Informe;Santalucía
+Microstrategy;SUI;SECO. Seguimiento de Objetivos Bajas (Grupo Ramo) Ac;;Informe;Santalucía
+Microstrategy;SUI;SECO. Seguimiento de Objetivos Bajas (Grupo Ramo) Mes;;Informe;Santalucía
+Microstrategy;SUI;SECO. Seguimiento de Objetivos Comerciales (Canales);;Informe;Santalucía
+Microstrategy;SUI;SECO. Seguimiento de Objetivos Comerciales (Evolución de la Prima);;Informe;Santalucía
+Microstrategy;SUI;SECO. Seguimiento de Objetivos Comerciales (Grupo Ramo);;Informe;Santalucía
+Microstrategy;SUI;SECO. Seguimiento de Objetivos Producción (Canales) Ac;;Informe;Santalucía
+Microstrategy;SUI;SECO. Seguimiento de Objetivos Producción (Canales) Mes;;Informe;Santalucía
+Microstrategy;SUI;SECO. Seguimiento de Objetivos Producción (Grupo Ramo) Ac;;Informe;Santalucía
+Microstrategy;SUI;SECO. Seguimiento de Objetivos Producción (Grupo Ramo) Mes;;Informe;Santalucía
+Microstrategy;SUI;SECO. Seguimiento de Objetivos Productividad;;Informe;Santalucía
+Microstrategy;SUI;SEDI-01.00 Seguimiento Diario de Altas y Bajas;;Informe;Santalucía
+Microstrategy;SUI;SEDI-01.00 Seguimiento Diario de Altas y Bajas (Mediadores);;Informe;Santalucía
+Microstrategy;SUI;SEDI-02.00 Seguimiento Diario de Altas;;Informe;Santalucía
+Microstrategy;SUI;Seguimiento diario de la producción emitida y bajas pdtes. de anular;;Documento;Santalucía
+Microstrategy;SUI;Seguimiento emitidas acumuladas mensuales y anuales (Santander - Generales) Ag;;Informe;Santalucía
+Microstrategy;SUI;Seguimiento emitidas y pdtes. de anulación por fecha de registro Ag (Santander - Generales);;Informe;Santalucía
+Microstrategy;SUI;Seguimiento primas emitidas acumuladas mensuales y anuales (Santander - Generales) Ag;;Informe;Santalucía
+Microstrategy;SUI;Selección Mes Cartera (Comercial);;Informe;Santalucía
+Microstrategy;SUI;SEOB-01.00 Seguimiento de objetivos nueva producción (emails y teléfonos);;Informe;Santalucía
+Microstrategy;SUI;SEOB-02.00 Seguimiento de objetivos nueva producción (cláusulas comerciales);;Informe;Santalucía
+Microstrategy;SUI;SEOB-03.00 Seguimiento email y móvil en cartera;;Informe;Santalucía
+Microstrategy;SUI;SEPR-01.00. Productividad global (Canal agencial);;Informe;Santalucía
+Microstrategy;SUI;SEPR-02.00. Productividad a nivel Agencia;;Informe;Santalucía
+Microstrategy;SUI;SERO-01.00. Rotación global (Canal agencial);;Informe;Santalucía
+Microstrategy;SUI;SERO-02.00. Rotación a nivel Agencia;;Informe;Santalucía
+Microstrategy;SUI;SEUL-01.00. Seguimiento mensual de la cartera;;Informe;Santalucía
+Microstrategy;SUI;SEUL-02.00. Seguimiento diario de altas;;Informe;Santalucía
+Microstrategy;SUI;SEUL-03.00. Seguimiento diario de altas acumuladas en el ejercicio;;Informe;Santalucía
+Microstrategy;SUI;SEUL-04.00. Seguimiento diario de bajas;;Informe;Santalucía
+Microstrategy;SUI;SEUL-05.00. Seguimiento mensual rescates;;Informe;Santalucía
+Microstrategy;SUI;SEZO-01.00. Cartera Agr. Zona de Gestión;;Informe;Santalucía
+Microstrategy;SUI;SEZO-02.00. Producción Agr. Zona de Gestión;;Informe;Santalucía
+Microstrategy;SUI;SEZO-03.00. Anulación Agr. Zona de Gestión;;Informe;Santalucía
+Microstrategy;SUI;SEZO-04.00. Traslados Agr. Zona de Gestión;;Informe;Santalucía
+Microstrategy;SUI;SEZO-05.00. Gestión de Cobro Agr. Zona de Gestión;;Informe;Santalucía
+Microstrategy;SUI;SRCO-01.00. Parte Semanal de Producción (Solicitudes);;Informe;Santalucía
+Microstrategy;SUI;SRCO-02.00. Detalle de Parte Semanal en el ejercicio (Solicitudes);;Informe;Santalucía
+Microstrategy;SUI;SRCO-03.00. Resultados de Producción y Formalización (Acumulado);;Informe;Santalucía
+Microstrategy;SUI;SRCO-04.00. Resultados de Producción y Formalización (Períodos Mensuales);;Informe;Santalucía
+Microstrategy;SUI;SRCO-05.00. Seguimiento de Cartera, Crecimiento (Mensual);;Informe;Santalucía
+Microstrategy;SUI;SRCO-06.00. Seguimiento de Cartera, Crecimiento (Acumulado);;Informe;Santalucía
+Microstrategy;SUI;SRCO-07.00. Desglose de Bajas (Acumulado);;Informe;Santalucía
+Microstrategy;SUI;SRCO-08.00. Evolución Cartera 5 años;;Informe;Santalucía
+Microstrategy;SUI;SRCO-09.00. Evolución de Seguimiento Comercial 5 años;;Informe;Santalucía
+Microstrategy;SUI;SRCO-10.00. Seguimiento de la Formalización y Primas Contabilizadas por Objetivos y Asignación garantizada (Períodos Mensuales);;Informe;Santalucía
+Microstrategy;SUI;SRCO-11.00. Seguimiento de Objetivos de Agencias (Ejercicio);;Informe;Santalucía
+Microstrategy;SUI;SRCO-12.00. Seguimiento de Objetivos de Canales (Ejercicio);;Informe;Santalucía
+Microstrategy;SUI;SRCO-13.00. Seguimiento de la Formalización (Períodos Mensuales de Alta);;Informe;Santalucía
+Microstrategy;SUI;SRCO-14.00 Seguimiento Producción Agrarios (Período Mensual);;Informe;Santalucía
+Microstrategy;SUI;SRCO-15.00 Seguimiento de Cartera con características del momento de producción;;Informe;Santalucía
+Microstrategy;SUI;SSGA-03.01. Distribución siniestros cerrados por tramos de prima y partida (Acumulado);;Informe;Santalucía
+Microstrategy;SUI;SSGA-03.02. Distribución siniestros cerrados por tramos de prima y forma de pago (Acumulado);;Informe;Santalucía
+Microstrategy;SUI;SSGA-03.03. (Hogar) Distribución siniestros cerrados por tramos de prima y tipo de vivienda (Acumulado);;Informe;Santalucía
+Microstrategy;SUI;SSGA-07.01. Desglose de pagos (Acumulado);;Informe;Santalucía
+Microstrategy;SUI;SSGA-07.03. Desglose de pagos de siniestros cerrados (Acumulado);;Informe;Santalucía
+Microstrategy;SUI;SSGA-09.01. Evolución provisión prestaciones de años ant. (Acumulado);;Informe;Santalucía
+Microstrategy;SUI;SSGA-26.01. Control de siniestros numerados en el año actual y posteriores (Acumulado);;Informe;Santalucía
+Microstrategy;SUI;SSGA-26.02. Control de siniestros numerados en años anteriores (Acumulado);;Informe;Santalucía
+Microstrategy;SUI;SSGA-26.03. Control de siniestros. Resumen (Acumulado);;Informe;Santalucía
+Microstrategy;SUI;SSGA-31.01. Nº de siniestros declarados. Cartera (Acumulado);;Informe;Santalucía
+Microstrategy;SUI;SSGA-31.02. Nº de siniestros declarados. Producción (Acumulado);;Informe;Santalucía
+Microstrategy;SUI;SSGA-31.03. Nº de siniestros declarados. Pólizas anuladas (Acumulado);;Informe;Santalucía
+Microstrategy;SUI;SSGA-31.04. Siniestralidad por antigüedad de la póliza. Cartera (Acumulado);;Informe;Santalucía
+Microstrategy;SUI;SSGA-31.05. Siniestralidad por antigüedad de la póliza. Producción (Acumulado);;Informe;Santalucía
+Microstrategy;SUI;SSGA-31.06. Siniestralidad por antigüedad de la póliza. Pólizas Anuladas (Acumulado);;Informe;Santalucía
+Microstrategy;SUI;SSGA-34.00. Desgloses de Pagos Acumulados;;Documento;Santalucía
+Microstrategy;SUI;SSGA-34.01. Desglose de pagos (Acumulado);;Informe;Santalucía
+Microstrategy;SUI;SSGA-34.03. Desglose de pagos de siniestros cerrados (Acumulado);;Informe;Santalucía
+Microstrategy;SUI;SSGA-36.01. Desglose de pagos por garantías (Acumulado);;Informe;Santalucía
+Microstrategy;SUI;SSGA-39.01. Evolución de pagos a peritos (Acumulado);;Informe;Santalucía
+Microstrategy;SUI;SSGA-44.01. Balance de gestión de recobros durante un año (Acumulado);;Informe;Santalucía
+Microstrategy;SUI;SSGA-48.01. Reclamaciones y recobros gestionados con otras compañías de seguros (Acumulado);;Informe;Santalucía
+Microstrategy;SUI;SSGA-48.02. Balance de reclamaciones y recobros gestionados con otras compañías de seguros (Acumulado);;Informe;Santalucía
+Microstrategy;SUI;SSGC-12.09. Siniestralidad. No Vida (comparativo);;Informe;Santalucía
+Microstrategy;SUI;SSGC-34.09. Desglose de pagos (comparativo);;Informe;Santalucía
+Microstrategy;SUI;SSGI-03.05. Distribución siniestros cerrados por tramos de prima y forma de pago (Interanual);;Informe;Santalucía
+Microstrategy;SUI;SSGI-03.06. (Hogar) Distribución siniestros cerrados por tramos de prima y tipo de vivienda (Interanual);;Informe;Santalucía
+Microstrategy;SUI;SSGI-03.07. Distribución siniestros cerrados (pagados) por tramos de indemnización (Comercios, Comunidades, Talleres y Pymes) (interanual);;Informe;Santalucía
+Microstrategy;SUI;SSGI-03.08. Distribución siniestros cerrados (pagados) por tramos de indemnización (Resto Ramos) (interanual);;Informe;Santalucía
+Microstrategy;SUI;SSGI-07.04. Desglose de pagos (Interanual);;Informe;Santalucía
+Microstrategy;SUI;SSGI-07.05. Desglose de pagos de siniestros cerrados (Interanual);;Informe;Santalucía
+Microstrategy;SUI;SSGI-12.01. Siniestralidad (Interanual);;Informe;Santalucía
+Microstrategy;SUI;SSGI-12.02. Siniestralidad. No vida (Interanual);;Informe;Santalucía
+Microstrategy;SUI;SSGI-12.03. Siniestralidad. No vida. Agencia tramitadora (Interanual);;Informe;Santalucía
+Microstrategy;SUI;SSGI-12.04. Siniestralidad. Vida (Interanual);;Informe;Santalucía
+Microstrategy;SUI;SSGI-12.05. Siniestralidad. Vida. Agencia tramitadora (Interanual);;Informe;Santalucía
+Microstrategy;SUI;SSGI-36.02. Desglose de pagos por garantías. Siniestros cerrados (Interanual);;Informe;Santalucía
+Microstrategy;SUI;SSGI-37.01. Distribución de la cartera y los siniestros cerrados por partida (Interanual);;Informe;Santalucía
+Microstrategy;SUI;SSGI-37.02. Distribución de la cartera y los siniestros por partida (Interanual);;Informe;Santalucía
+Microstrategy;SUI;SSGI-38.01. Desglose de pagos por subgarantías. Siniestros cerrados (Interanual);;Informe;Santalucía
+Microstrategy;SUI;SSGI-39.02. Evolución de pagos a peritos. Siniestros cerrados (Interanual);;Informe;Santalucía
+Microstrategy;SUI;SSGI-48.01. Reclamaciones y recobros gestionados con otras compañías de seguros (Interanual);;Informe;Santalucía
+Microstrategy;SUI;SSGI-48.02. Balance de reclamaciones y recobros gestionados con otras compañías de seguros (Interanual);;Informe;Santalucía
+Microstrategy;SUI;SSGM-03.11. Distribución cartera de pólizas por tramos de prima y partida;;Informe;Santalucía
+Microstrategy;SUI;SSGM-03.12. Distribución cartera de pólizas por tramos de prima y forma de pago;;Informe;Santalucía
+Microstrategy;SUI;SSGM-03.13. (Hogar) Distribución cartera de pólizas por tramos de prima y tipo de vivienda;;Informe;Santalucía
+Microstrategy;SUI;SSGM-07.06. Desglose de pagos de siniestros cerrados (Mensual);;Informe;Santalucía
+Microstrategy;SUI;SSGM-26.04. Control de siniestros. Ejercicio actual (Mensual);;Informe;Santalucía
+Microstrategy;SUI;SSGM-34.04. Desglose de pagos de siniestros cerrados (Mensual);;Informe;Santalucía
+Microstrategy;SUI;SSGM-36.03. Desglose de pagos por garantías (Mensual);;Informe;Santalucía
+Microstrategy;SUI;SSGM-36.05. Desglose de pagos por garantías. Siniestros cerrados (Mensual);;Informe;Santalucía
+Microstrategy;SUI;SSGM-39.03. Evolución de pagos a peritos (Mensual);;Informe;Santalucía
+Microstrategy;SUI;SSGM-48.01. Reclamaciones y recobros gestionados con otras compañías de seguros (Mensual);;Informe;Santalucía
+Microstrategy;SUI;SSGM-48.02. Balance de reclamaciones y recobros gestionados con otras compañías de seguros (Mensual);;Informe;Santalucía
+Microstrategy;SUI;SSGU-12.00. Siniestralidad Interanual;;Documento;Santalucía
+Microstrategy;SUI;SSGU-12.00. Siniestralidad Interanual (plantilla);;Informe;Santalucía
+Microstrategy;SUI;SSGX-01.01. Situación de siniestros pendientes ejercicios anteriores;;Informe;Santalucía
+Microstrategy;SUI;SSGX-01.02. Situación de siniestros pendientes ejercicio actual;;Informe;Santalucía
+Microstrategy;SUI;SSGX-02.01. Pólizas con siniestros en primer trimestre vigencia;;Informe;Santalucía
+Microstrategy;SUI;SSGX-02.02. Pólizas con siniestros en primer trimestre vigencia s/ prod. líquida;;Informe;Santalucía
+Microstrategy;SUI;SSGX-02.03. Pólizas con siniestros antes de su fecha de efecto;;Informe;Santalucía
+Microstrategy;SUI;Tasa de Mortalidad Decesos;;Informe;Santalucía
+Microstrategy;SUI;Tasa de Siniestralidad Decesos;;Informe;Santalucía
+Microstrategy;SUI;Última Semana Cargada;;Informe;Santalucía
+Microstrategy;SUI;Último Mes Cargado;;Informe;Santalucía
+Microstrategy;SUI;Validación Producción, Bajas y Líquido;;Informe;Santalucía
+Microstrategy;SUI;Volumen siniestros acum;;Informe;Santalucía
+Microstrategy;SUI;Volumen siniestros mes;;Informe;Santalucía

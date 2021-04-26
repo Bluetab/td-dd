@@ -1,7 +1,7 @@
 defmodule TdDq.Repo.Migrations.ChangeDescriptionType do
   use Ecto.Migration
   import Ecto.Query
-  alias TdDq.Repo
+  alias TdDd.Repo
 
   def change do
     rename(table(:rules), :description, to: :description_backup)

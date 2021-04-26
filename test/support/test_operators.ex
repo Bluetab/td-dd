@@ -1,12 +1,26 @@
-defmodule TdDq.TestOperators do
+defmodule TdDd.TestOperators do
   @moduledoc """
   Equality operators for tests
   """
 
-  alias TdDq.Rules.Implementations.Implementation
+  alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureVersion
+  alias TdDq.Implementations.Implementation
 
   def a <~> b, do: approximately_equal(a, b)
   def a <|> b, do: approximately_equal(Enum.sort(a), Enum.sort(b))
+
+  ## Equality test for data structures without comparing Ecto associations.
+  defp approximately_equal(%DataStructure{} = a, %DataStructure{} = b) do
+    Map.drop(a, [:versions, :system]) ==
+      Map.drop(b, [:versions, :system])
+  end
+
+  ## Equality test for data structure versions without comparing Ecto associations.
+  defp approximately_equal(%DataStructureVersion{} = a, %DataStructureVersion{} = b) do
+    Map.drop(a, [:children, :parents, :data_structure, :external_id, :path]) ==
+      Map.drop(b, [:children, :parents, :data_structure, :external_id, :path])
+  end
 
   ## Equality test for rule implementation without comparing Ecto associations.
   defp approximately_equal(%Implementation{} = a, %Implementation{} = b) do

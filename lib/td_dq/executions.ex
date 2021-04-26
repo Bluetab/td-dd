@@ -7,10 +7,10 @@ defmodule TdDq.Executions do
 
   alias Ecto.Changeset
   alias Ecto.Multi
+  alias TdDd.Repo
   alias TdDq.Executions.{Audit, Execution, Group}
-  alias TdDq.Repo
-  alias TdDq.Rules.Implementations
-  alias TdDq.Rules.Implementations.Implementation
+  alias TdDq.Implementations
+  alias TdDq.Implementations.Implementation
 
   @doc """
   Fetches the `Execution` with the given id.

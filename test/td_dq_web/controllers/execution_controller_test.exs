@@ -1,6 +1,6 @@
 defmodule TdDqWeb.ExecutionControllerTest do
   use TdDqWeb.ConnCase
-  use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
+  use PhoenixSwagger.SchemaTest, "priv/static/swagger_dq.json"
 
   @moduletag sandbox: :shared
 

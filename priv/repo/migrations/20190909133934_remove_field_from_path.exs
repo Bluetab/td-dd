@@ -3,7 +3,7 @@ defmodule TdDq.Repo.Migrations.RemoveFieldFromPath do
 
   import Ecto.Query
 
-  alias TdDq.Repo
+  alias TdDd.Repo
 
   def change do
     from(ri in "rule_implementations")

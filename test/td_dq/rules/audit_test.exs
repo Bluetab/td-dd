@@ -1,12 +1,12 @@
 defmodule TdDq.Rules.AuditTest do
-  use TdDq.DataCase
+  use TdDd.DataCase
 
   alias TdCache.Redix
   alias TdCache.Redix.Stream
   alias TdCache.TemplateCache
-  alias TdDq.Repo
+  alias TdDd.Repo
+  alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Audit
-  alias TdDq.Rules.Implementations.Implementation
   alias TdDq.Rules.Rule
 
   @stream TdCache.Audit.stream()
@@ -26,7 +26,7 @@ defmodule TdDq.Rules.AuditTest do
   setup %{template_name: template_name} do
     on_exit(fn -> Redix.del!(@stream) end)
 
-    claims = build(:claims, role: "admin")
+    claims = build(:dq_claims, role: "admin")
     rule = insert(:rule, df_name: template_name)
     implementation = insert(:implementation, rule: rule, deleted_at: nil)
     [claims: claims, rule: rule, implementation: implementation]
@@ -52,7 +52,7 @@ defmodule TdDq.Rules.AuditTest do
                payload: payload,
                resource_id: ^resource_id,
                resource_type: "rule",
-               service: "td_dq",
+               service: "td_dd",
                ts: _ts,
                user_id: ^user_id
              } = event
@@ -79,7 +79,7 @@ defmodule TdDq.Rules.AuditTest do
                payload: "{}",
                resource_id: ^resource_id,
                resource_type: "rule",
-               service: "td_dq",
+               service: "td_dd",
                ts: _ts,
                user_id: ^user_id
              } = event
@@ -116,7 +116,7 @@ defmodule TdDq.Rules.AuditTest do
                payload: payload,
                resource_id: ^resource_id,
                resource_type: "implementation",
-               service: "td_dq",
+               service: "td_dd",
                ts: _ts,
                user_id: ^user_id
              } = event
@@ -145,7 +145,7 @@ defmodule TdDq.Rules.AuditTest do
                payload: payload,
                resource_id: ^resource_id,
                resource_type: "implementation",
-               service: "td_dq",
+               service: "td_dd",
                ts: _ts,
                user_id: ""
              } = event

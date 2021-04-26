@@ -1,8 +1,8 @@
 defmodule TdDq.Rules.RuleResultTest do
-  use TdDq.DataCase
+  use TdDd.DataCase
 
   alias Ecto.Changeset
-  alias TdDq.Repo
+  alias TdDd.Repo
   alias TdDq.Rules.RuleResult
 
   @date DateTime.from_naive!(~N[2015-01-23 00:00:00], "Etc/UTC")
@@ -69,7 +69,7 @@ defmodule TdDq.Rules.RuleResultTest do
 
       assert {:ok, %{id: id}} =
                :rule_result
-               |> string_params_for(records: records, errors: errors, result: 0)
+               |> string_params_for(records: records, result_type: "percentage", errors: errors, result: 0)
                |> RuleResult.changeset()
                |> Repo.insert()
 

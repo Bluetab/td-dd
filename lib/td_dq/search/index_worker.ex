@@ -7,8 +7,8 @@ defmodule TdDq.Search.IndexWorker do
 
   use GenServer
 
+  alias TdDq.Implementations
   alias TdDq.Rules
-  alias TdDq.Rules.Implementations
   alias TdDq.Search.Indexer
 
   require Logger

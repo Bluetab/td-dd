@@ -1,17 +1,14 @@
 defmodule TdDqWeb.RuleControllerTest do
   use TdDqWeb.ConnCase
-  use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
+  use PhoenixSwagger.SchemaTest, "priv/static/swagger_dq.json"
 
   alias TdCache.{Audit, Redix}
-  alias TdDq.Cache.RuleLoader
-  alias TdDq.MockRelationCache
   alias TdDq.Rules.Rule
-  alias TdDq.Search.MockIndexWorker
 
   setup_all do
-    start_supervised(MockRelationCache)
-    start_supervised(MockIndexWorker)
-    start_supervised(RuleLoader)
+    start_supervised(TdDq.MockRelationCache)
+    start_supervised(TdDd.Search.MockIndexWorker)
+    start_supervised(TdDq.Cache.RuleLoader)
     :ok
   end
 

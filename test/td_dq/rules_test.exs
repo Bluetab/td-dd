@@ -1,23 +1,20 @@
 defmodule TdDq.RulesTest do
-  use TdDq.DataCase
+  use TdDd.DataCase
 
   import Ecto.Query, warn: false
 
   alias TdCache.Redix
   alias TdCache.Redix.Stream
-  alias TdDq.Cache.RuleLoader
-  alias TdDq.MockRelationCache
   alias TdDq.Rules
   alias TdDq.Rules.Rule
-  alias TdDq.Search.MockIndexWorker
 
   @stream TdCache.Audit.stream()
 
   setup_all do
-    start_supervised(MockRelationCache)
-    start_supervised(MockIndexWorker)
-    start_supervised(RuleLoader)
-    [claims: build(:claims)]
+    start_supervised(TdDq.MockRelationCache)
+    start_supervised(TdDd.Search.MockIndexWorker)
+    start_supervised(TdDq.Cache.RuleLoader)
+    [claims: build(:dq_claims)]
   end
 
   setup do
@@ -143,35 +140,6 @@ defmodule TdDq.RulesTest do
       assert [rule.id, rule_3.id]
              |> Rules.list_rules()
              |> Enum.map(&Map.get(&1, :id)) == [rule_3.id]
-    end
-
-    test "get_rule_by_implementation_key/1 retrieves a rule" do
-      implementation_key = "rik1"
-      rule = insert(:rule, name: "Active Rule")
-      insert(:implementation, implementation_key: implementation_key, rule: rule)
-
-      %{id: result_id} = Rules.get_rule_by_implementation_key(implementation_key)
-
-      assert result_id == Map.get(rule, :id)
-    end
-
-    test "get_rule_by_implementation_key/2 with deleted option retrieves a deleted rule by implementation key" do
-      implementation_key = "rik1"
-      rule = insert(:rule, name: "Deleted Rule", deleted_at: DateTime.utc_now())
-      insert(:implementation, implementation_key: implementation_key, rule: rule)
-
-      %{id: result_id} = Rules.get_rule_by_implementation_key(implementation_key, deleted: true)
-
-      assert result_id == Map.get(rule, :id)
-    end
-
-    test "get_rule_by_implementation_key/2 without deleted option or false value does not retrieve a deleted rule by implementation key" do
-      implementation_key = "rik1"
-      rule = insert(:rule, name: "Deleted Rule", deleted_at: DateTime.utc_now())
-      insert(:implementation, implementation_key: implementation_key, rule: rule)
-
-      assert nil == Rules.get_rule_by_implementation_key(implementation_key, deleted: false)
-      assert nil == Rules.get_rule_by_implementation_key(implementation_key)
     end
   end
 end

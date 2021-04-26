@@ -1,11 +1,11 @@
-defmodule TdDqWeb.ConnCase do
+defmodule TdDdWeb.ConnCase do
   @moduledoc """
   This module defines the test case to be used by
   tests that require setting up a connection.
 
   Such tests rely on `Phoenix.ConnTest` and also
   import other functionality to make it easier
-  to build common datastructures and query the data layer.
+  to build common data structures and query the data layer.
 
   Finally, if the test case interacts with the database,
   it cannot be async. For this reason, every test runs
@@ -15,23 +15,24 @@ defmodule TdDqWeb.ConnCase do
 
   use ExUnit.CaseTemplate
 
-  import TdDqWeb.Authentication, only: :functions
+  import TdDdWeb.Authentication, only: :functions
 
   alias Ecto.Adapters.SQL.Sandbox
   alias Phoenix.ConnTest
-  alias TdDqWeb.Endpoint
-
-  @index_worker Application.compile_env(:td_dq, :index_worker)
+  alias TdDdWeb.Endpoint
 
   using do
     quote do
       # Import conveniences for testing with connections
       import Plug.Conn
       import Phoenix.ConnTest
-      import TdDq.Factory
-      import TdDqWeb.Authentication, only: [create_acl_entry: 4]
+      import TdDd.Factory
 
-      alias TdDqWeb.Router.Helpers, as: Routes
+      import TdDdWeb.Authentication, only: [create_acl_entry: 3]
+
+      alias TdCxWeb.Router.Helpers, as: CxRoutes
+      alias TdDdWeb.Router.Helpers, as: Routes
+      alias TdDqWeb.Router.Helpers, as: DqRoutes
 
       # The default endpoint for testing
       @endpoint Endpoint
@@ -39,24 +40,23 @@ defmodule TdDqWeb.ConnCase do
   end
 
   setup tags do
-    start_supervised!(MockPermissionResolver)
+    start_supervised(MockPermissionResolver)
 
-    :ok = Sandbox.checkout(TdDq.Repo)
+    :ok = Sandbox.checkout(TdDd.Repo)
 
-    unless tags[:async] do
-      Sandbox.mode(TdDq.Repo, {:shared, self()})
+    if tags[:async] or tags[:sandbox] == :shared do
+      Sandbox.mode(TdDd.Repo, {:shared, self()})
+    else
       parent = self()
 
-      Enum.each([@index_worker, TdDq.Cache.RuleLoader], fn worker ->
-        case Process.whereis(worker) do
-          nil ->
-            nil
-
-          pid ->
-            on_exit(fn -> worker.ping(20_000) end)
-            Sandbox.allow(TdDq.Repo, parent, pid)
-        end
-      end)
+      allow(parent, [
+        TdDd.Cache.SystemLoader,
+        TdDd.Loader.Worker,
+        TdDd.Search.IndexWorker,
+        TdDd.Cache.StructureLoader,
+        TdDd.Lineage,
+        TdDd.Lineage.GraphData
+      ])
     end
 
     case tags[:authentication] do
@@ -68,5 +68,14 @@ defmodule TdDqWeb.ConnCase do
         |> create_claims()
         |> create_user_auth_conn()
     end
+  end
+
+  defp allow(parent, workers) do
+    Enum.each(workers, fn worker ->
+      case Process.whereis(worker) do
+        nil -> nil
+        pid -> Sandbox.allow(TdDd.Repo, parent, pid)
+      end
+    end)
   end
 end

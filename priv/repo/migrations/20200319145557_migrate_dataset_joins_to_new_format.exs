@@ -3,7 +3,7 @@ defmodule TdDq.Repo.Migrations.MigrateDatasetJoinsToNewFormat do
   import Ecto.Query, only: [from: 2]
 
   alias Ecto.Adapters.SQL
-  alias TdDq.Repo
+  alias TdDd.Repo
 
   @update_statement """
     UPDATE rule_implementations

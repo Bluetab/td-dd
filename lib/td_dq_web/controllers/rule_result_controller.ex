@@ -3,8 +3,8 @@ defmodule TdDqWeb.RuleResultController do
 
   import Canada, only: [can?: 2]
 
-  alias TdDq.Rules
   alias TdDq.Rules.RuleResults
+  alias TdDq.Rules.RuleResults.BulkLoad
 
   require Logger
 
@@ -13,7 +13,7 @@ defmodule TdDqWeb.RuleResultController do
   def create(conn, params) do
     with %{"rule_results" => rule_results_file} <- params,
          rule_results_data <- rule_results_from_csv(rule_results_file),
-         {:ok, _} <- RuleResults.bulk_load(rule_results_data) do
+         {:ok, _} <- BulkLoad.bulk_load(rule_results_data) do
       send_resp(conn, :ok, "")
     end
   end
@@ -34,9 +34,7 @@ defmodule TdDqWeb.RuleResultController do
     with claims <- conn.assigns[:current_resource],
          rule_result <- RuleResults.get_rule_result(id),
          {:can, true} <- {:can, can?(claims, delete(rule_result))},
-         rule <-
-           Rules.get_rule_by_implementation_key(rule_result.implementation_key, deleted: true),
-         {:ok, _rule_result} <- RuleResults.delete_rule_result(rule_result, rule) do
+         {:ok, _rule_result} <- RuleResults.delete_rule_result(rule_result) do
       send_resp(conn, :no_content, "")
     end
   end

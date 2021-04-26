@@ -1,0 +1,5 @@
+ou;name;description;m:foo;m:bar.baz.spqr;m:bar.baz.xyzzy;m:bool
+;name;description;foo1;;;YeS
+;name;;;spqr;xyzzy;off
+;;description;foo1;;;YeS
+domain1;name;description;;;;

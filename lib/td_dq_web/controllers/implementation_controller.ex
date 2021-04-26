@@ -5,17 +5,12 @@ defmodule TdDqWeb.ImplementationController do
   import Canada, only: [can?: 2]
   import TdDqWeb.RuleImplementationSupport, only: [decode: 1]
 
-  require Logger
-
-  alias Ecto.Changeset
-  alias TdDq.Repo
+  alias TdDq.Implementations
+  alias TdDq.Implementations.Download
+  alias TdDq.Implementations.Implementation
+  alias TdDq.Implementations.Search
   alias TdDq.Rules
-  alias TdDq.Rules.Implementations
-  alias TdDq.Rules.Implementations.Download
-  alias TdDq.Rules.Implementations.Implementation
-  alias TdDq.Rules.Implementations.Search
   alias TdDq.Rules.RuleResults
-  alias TdDqWeb.ChangesetView
   alias TdDqWeb.ErrorView
 
   action_fallback(TdDqWeb.FallbackController)
@@ -40,8 +35,7 @@ defmodule TdDqWeb.ImplementationController do
     with {:can, true} <- {:can, can?(claims, index(Implementation))} do
       implementations =
         filters
-        |> Implementations.list_implementations()
-        |> Enum.map(&Repo.preload(&1, [:rule]))
+        |> Implementations.list_implementations(preload: :rule, enrich: :source)
         |> Enum.map(&Implementations.enrich_implementation_structures/1)
 
       render(conn, "index.json", implementations: implementations)
@@ -129,8 +123,7 @@ defmodule TdDqWeb.ImplementationController do
   def show(conn, %{"id" => id}) do
     implementation =
       id
-      |> Implementations.get_implementation!()
-      |> Repo.preload([:rule])
+      |> Implementations.get_implementation!(preload: :rule, enrich: :source)
       |> add_rule_results()
       |> add_last_rule_result()
       |> Implementations.enrich_implementation_structures()
@@ -161,15 +154,11 @@ defmodule TdDqWeb.ImplementationController do
     update_params =
       implementation_params
       |> decode()
-      |> Map.drop([
-        :implementation_type,
-        "implementation_type"
-      ])
+      |> Map.drop([:implementation_type, "implementation_type"])
 
     implementation =
       id
-      |> Implementations.get_implementation!()
-      |> Repo.preload([:rule])
+      |> Implementations.get_implementation!(preload: :rule)
       |> add_rule_results()
 
     rule = implementation.rule
@@ -180,6 +169,7 @@ defmodule TdDqWeb.ImplementationController do
       "implementation_type" => implementation.implementation_type
     }
 
+    # TODO: Refactor this (and remove {:editable, false} from fallback controller)
     with {:can, true} <- {:can, can?(claims, update(resource_type))},
          {:editable, true} <-
            {:editable,
@@ -193,43 +183,6 @@ defmodule TdDqWeb.ImplementationController do
              claims
            ) do
       render(conn, "show.json", implementation: implementation)
-    else
-      {:can, false} ->
-        conn
-        |> put_status(:forbidden)
-        |> put_view(ErrorView)
-        |> render("403.json")
-
-      {:error, %Changeset{data: %{__struct__: _}} = changeset} ->
-        Logger.error("While updating rule implementation... #{inspect(changeset)}")
-
-        conn
-        |> put_status(:unprocessable_entity)
-        |> put_view(ChangesetView)
-        |> render("error.json",
-          changeset: changeset,
-          prefix: "rule.implementation.error"
-        )
-
-      {:error, %Changeset{} = changeset} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> put_view(ChangesetView)
-        |> render("error.json",
-          changeset: changeset,
-          prefix: "rule.implementation.system_params.error"
-        )
-
-      {:editable, false} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> put_view(ErrorView)
-        |> render("422.json")
-
-      error ->
-        Logger.error("While updating rule implementation... #{inspect(error)}")
-
-        error
     end
   end
 
@@ -246,9 +199,8 @@ defmodule TdDqWeb.ImplementationController do
   end
 
   def delete(conn, %{"id" => id}) do
-    implementation = Implementations.get_implementation!(id)
+    %{rule: rule} = implementation = Implementations.get_implementation!(id, preload: :rule)
     claims = conn.assigns[:current_resource]
-    rule = Repo.preload(implementation, :rule).rule
 
     with {:can, true} <-
            {:can,

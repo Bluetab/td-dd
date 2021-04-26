@@ -5,9 +5,9 @@ defmodule TdDq.Search.Indexer do
 
   alias Elasticsearch.Index
   alias Elasticsearch.Index.Bulk
-  alias TdDq.Rules.Implementations.Implementation
+  alias TdDd.Search.Cluster
+  alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Rule
-  alias TdDq.Search.Cluster
   alias TdDq.Search.Mappings
   alias TdDq.Search.Store
 
@@ -74,7 +74,8 @@ defmodule TdDq.Search.Indexer do
   end
 
   defp delete(ids, index) do
-    Enum.map(ids, &Elasticsearch.delete_document(Cluster, &1, index))
+    alias_name = Cluster.alias_name(index)
+    Enum.map(ids, &Elasticsearch.delete_document(Cluster, &1, alias_name))
   end
 
   defp log({:ok, %{"errors" => false, "items" => items, "took" => took}}, _action) do

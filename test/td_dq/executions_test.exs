@@ -1,17 +1,14 @@
 defmodule TdDq.ExecutionsTest do
-  use TdDq.DataCase
+  use TdDd.DataCase
 
   alias TdCache.Redix
   alias TdCache.Redix.Stream
-  alias TdCache.StructureCache
   alias TdDq.Executions
 
   @stream TdCache.Audit.stream()
 
   setup_all do
-    on_exit(fn ->
-      Redix.del!(@stream)
-    end)
+    on_exit(fn -> Redix.del!(@stream) end)
   end
 
   describe "get_group/2" do
@@ -93,7 +90,28 @@ defmodule TdDq.ExecutionsTest do
 
   describe "list_executions/2" do
     setup do
-      %{id: implementation_id} = implementation = insert(:implementation)
+      %{data_structure_id: structure_id1} =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure),
+          metadata: %{"alias" => "bar"}
+        )
+
+      %{data_structure_id: structure_id2} =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure),
+          metadata: %{"alias" => "bar"}
+        )
+
+      dataset = [
+        build(:dataset_row, structure: build(:dataset_structure, id: structure_id1)),
+        build(:dataset_row,
+          structure: build(:dataset_structure, id: structure_id2),
+          clauses: [build(:dataset_clause)],
+          join_type: "inner"
+        )
+      ]
+
+      %{id: implementation_id} = implementation = insert(:implementation, dataset: dataset)
       %{id: group_id1} = g1 = insert(:execution_group)
       %{id: group_id2} = g2 = insert(:execution_group)
 
@@ -107,38 +125,7 @@ defmodule TdDq.ExecutionsTest do
           result: build(:rule_result)
         )
 
-      structure_id =
-        implementation
-        |> Map.get(:dataset)
-        |> List.first()
-        |> Map.get(:structure)
-        |> Map.get(:id)
-
-      structure = %{
-        id: structure_id,
-        name: "name",
-        external_id: "ext_id",
-        group: "group",
-        type: "type",
-        path: ["foo", "bar"],
-        updated_at: DateTime.utc_now(),
-        metadata: %{"alias" => "source_alias"},
-        system_id: 999
-      }
-
-      {:ok, _} = StructureCache.put(structure)
-
-      on_exit(fn ->
-        StructureCache.delete(structure.id)
-      end)
-
-      [
-        implementation: implementation,
-        groups: [g1, g2],
-        executions: [e1, e2],
-        result: result,
-        structure: structure
-      ]
+      [implementation: implementation, groups: [g1, g2], executions: [e1, e2], result: result]
     end
 
     test "list executions", %{executions: [%{id: id1}, %{id: id2}], result: %{id: result_id}} do
@@ -163,20 +150,14 @@ defmodule TdDq.ExecutionsTest do
                )
     end
 
-    test "list executions filtered by source", %{
-      executions: [%{id: id1}, %{id: id2}],
-      structure: %{metadata: %{"alias" => source}}
-    } do
+    test "list executions filtered by source", %{executions: [%{id: id1}, %{id: id2}]} do
       assert [] = Executions.list_executions(%{source: "foo"})
-      assert [%{id: ^id1}, %{id: ^id2}] = Executions.list_executions(%{source: source})
-      assert [%{id: ^id1}] = Executions.list_executions(%{source: source, status: "PENDING"})
+      assert [%{id: ^id1}, %{id: ^id2}] = Executions.list_executions(%{source: "bar"})
+      assert [%{id: ^id1}] = Executions.list_executions(%{source: "bar", status: "PENDING"})
     end
 
-    test "list executions filtered by sources", %{
-      executions: [%{id: id1}, %{id: id2}],
-      structure: %{metadata: %{"alias" => source}}
-    } do
-      assert [%{id: ^id1}, %{id: ^id2}] = Executions.list_executions(%{sources: [source]})
+    test "list executions filtered by sources", %{executions: [%{id: id1}, %{id: id2}]} do
+      assert [%{id: ^id1}, %{id: ^id2}] = Executions.list_executions(%{sources: ["bar"]})
     end
   end
 end

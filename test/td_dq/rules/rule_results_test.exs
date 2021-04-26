@@ -1,25 +1,21 @@
 defmodule TdDq.RuleResultsTest do
-  use TdDq.DataCase
+  use TdDd.DataCase
 
   import Ecto.Query, warn: false
 
   alias Elasticsearch.Document
   alias TdCache.ConceptCache
   alias TdCache.Redix
-  alias TdCache.Redix.Stream
   alias TdCache.RuleCache
-  alias TdDq.Cache.RuleLoader
-  alias TdDq.MockRelationCache
   alias TdDq.Rules.RuleResults
-  alias TdDq.Search.MockIndexWorker
 
   @stream TdCache.Audit.stream()
   @concept_id 987_654_321
 
   setup_all do
-    start_supervised(MockRelationCache)
-    start_supervised(MockIndexWorker)
-    start_supervised(RuleLoader)
+    start_supervised(TdDq.MockRelationCache)
+    start_supervised(TdDd.Search.MockIndexWorker)
+    start_supervised(TdDq.Cache.RuleLoader)
 
     ConceptCache.put(%{id: @concept_id, domain_id: 42})
 
@@ -39,20 +35,20 @@ defmodule TdDq.RuleResultsTest do
     end
   end
 
-  describe "delete_rule_result/2" do
+  describe "delete_rule_result/1" do
     test "deletes the rule result" do
       %{implementation_key: key} = insert(:implementation)
       rule_result = insert(:rule_result, implementation_key: key)
 
-      assert {:ok, %{__meta__: meta}} = RuleResults.delete_rule_result(rule_result, nil)
+      assert {:ok, %{__meta__: meta}} = RuleResults.delete_rule_result(rule_result)
       assert %{state: :deleted} = meta
     end
 
     test "refreshes the rule cache" do
-      %{id: rule_id, name: name} = rule = insert(:rule)
-      rule_result = insert(:rule_result)
+      %{rule: %{id: rule_id, name: name}, implementation_key: key} = insert(:implementation)
+      rule_result = insert(:rule_result, implementation_key: key)
 
-      assert {:ok, _result} = RuleResults.delete_rule_result(rule_result, rule)
+      assert {:ok, _result} = RuleResults.delete_rule_result(rule_result)
       assert {:ok, %{name: ^name}} = RuleCache.get(rule_id)
 
       on_exit(fn -> RuleCache.delete(rule_id) end)
@@ -134,7 +130,7 @@ defmodule TdDq.RuleResultsTest do
 
   describe "create_rule_result/1" do
     test "creates a rule result with valid result" do
-      %{implementation_key: implementation_key} = insert(:implementation)
+      %{implementation_key: implementation_key} = implementation = insert(:implementation)
       errors = 2
       records = 1_000_000
       result = abs((records - errors) / records) * 100
@@ -142,12 +138,12 @@ defmodule TdDq.RuleResultsTest do
       params = %{
         "date" => "2019-01-31-00-00-00",
         "errors" => errors,
-        "implementation_key" => implementation_key,
         "records" => records,
-        "result" => result
+        "result" => result,
+        "result_type" => "percentage"
       }
 
-      assert {:ok, %{result: rr}} = RuleResults.create_rule_result(params)
+      assert {:ok, %{result: rr}} = RuleResults.create_rule_result(implementation, params)
       assert rr.implementation_key == implementation_key
       assert rr.errors == errors
       assert rr.records == records
@@ -155,7 +151,7 @@ defmodule TdDq.RuleResultsTest do
     end
 
     test "updates related executions" do
-      %{id: implementation_id, implementation_key: key} = insert(:implementation)
+      %{id: implementation_id, implementation_key: key} = implementation = insert(:implementation)
 
       insert(:execution,
         implementation_id: implementation_id,
@@ -170,101 +166,13 @@ defmodule TdDq.RuleResultsTest do
         "date" => "2020-01-31",
         "errors" => 2,
         "implementation_key" => key,
-        "records" => 5
+        "records" => 5,
+        "result_type" => "percentage"
       }
 
-      assert {:ok, %{} = multi} = RuleResults.create_rule_result(params)
+      assert {:ok, %{} = multi} = RuleResults.create_rule_result(implementation, params)
       assert %{executions: {1, executions}} = multi
       assert [%{id: ^id2}] = executions
-    end
-  end
-
-  describe "bulk_load/1" do
-    test "loads rule results and calculates status (number of errors)" do
-      rule = build(:rule, result_type: "errors_number", goal: 10, minimum: 20)
-
-      %{implementation_key: key} = insert(:implementation, rule: rule)
-
-      assert {:ok, res} =
-               ["1", "15", "30"]
-               |> Enum.map(
-                 &string_params_for(:rule_result_record, implementation_key: key, errors: &1)
-               )
-               |> RuleResults.bulk_load()
-
-      assert %{results: results} = res
-
-      assert Enum.group_by(results, & &1.errors, & &1.status) ==
-               %{
-                 1 => ["success"],
-                 15 => ["warn"],
-                 30 => ["fail"]
-               }
-    end
-
-    test "loads rule results and calculates status (percentage)" do
-      rule = build(:rule, result_type: "percentage", goal: 100, minimum: 80)
-
-      %{implementation_key: key} = insert(:implementation, rule: rule)
-
-      assert {:ok, res} =
-               ["100", "90", "50"]
-               |> Enum.map(
-                 &string_params_for(:rule_result_record, implementation_key: key, result: &1)
-               )
-               |> RuleResults.bulk_load()
-
-      assert %{results: results} = res
-
-      assert Enum.group_by(results, &Decimal.to_integer(&1.result), & &1.status) ==
-               %{
-                 50 => ["fail"],
-                 90 => ["warn"],
-                 100 => ["success"]
-               }
-    end
-
-    test "publishes audit events with domain_ids" do
-      rule =
-        build(:rule,
-          result_type: "percentage",
-          goal: 100,
-          minimum: 80,
-          business_concept_id: "#{@concept_id}"
-        )
-
-      %{implementation_key: key} = insert(:implementation, rule: rule)
-      params = %{"foo" => "bar"}
-
-      assert {:ok, %{audit: [_, event_id, _]}} =
-               ["100", "90", "50"]
-               |> Enum.map(
-                 &string_params_for(:rule_result_record, implementation_key: key, result: &1)
-               )
-               |> Enum.map(&Map.put(&1, "params", params))
-               |> RuleResults.bulk_load()
-
-      assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
-      assert %{event: "rule_result_created", payload: payload} = event
-
-      assert %{"result" => "90.00", "status" => "warn", "params" => ^params, "domain_ids" => _} =
-               Jason.decode!(payload)
-    end
-
-    test "refreshes rule cache" do
-      %{id: rule_id, name: name} = rule = insert(:rule)
-      %{implementation_key: key} = insert(:implementation, rule: rule)
-
-      assert {:ok, _} =
-               ["100", "90", "50"]
-               |> Enum.map(
-                 &string_params_for(:rule_result_record, implementation_key: key, result: &1)
-               )
-               |> RuleResults.bulk_load()
-
-      assert {:ok, %{name: ^name}} = RuleCache.get(rule_id)
-
-      on_exit(fn -> RuleCache.delete(rule_id) end)
     end
   end
 end

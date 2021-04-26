@@ -1,10 +1,10 @@
-defmodule TdDqWeb.Authentication do
+defmodule TdDdWeb.Authentication do
   @moduledoc """
   This module defines the functions required to add auth headers to requests
   """
   alias Plug.Conn
-  alias TdDq.Auth.Claims
-  alias TdDq.Auth.Guardian
+  alias TdDd.Auth.Claims
+  alias TdDd.Auth.Guardian
 
   def put_auth_headers(conn, jwt) do
     conn
@@ -59,6 +59,10 @@ defmodule TdDqWeb.Authentication do
     end
 
     token
+  end
+
+  def create_acl_entry(user_id, domain_id, permissions) do
+    create_acl_entry(user_id, "domain", domain_id, permissions)
   end
 
   def create_acl_entry(user_id, resource_type, resource_id, permissions) do
