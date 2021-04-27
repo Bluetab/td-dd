@@ -8,7 +8,7 @@ defmodule TdDd.Executions do
   alias Ecto.Changeset
   alias Ecto.Multi
   alias TdDd.DataStructures
-  alias TdDd.DataStructures.{DataStructure, DataStructureVersion}
+  alias TdDd.DataStructures.DataStructure
   alias TdDd.Events.ProfileEvent
   alias TdDd.Executions.{Audit, ProfileExecution, ProfileGroup}
   alias TdDd.Repo
@@ -126,7 +126,8 @@ defmodule TdDd.Executions do
     executions
     |> Enum.group_by(&get_source/1, & &1)
     |> Enum.filter(fn
-      {source, _} -> source in sources
+      {source, _} ->
+        source in sources
     end)
     |> Enum.flat_map(fn
       {_source, executions} -> executions
@@ -146,17 +147,15 @@ defmodule TdDd.Executions do
     |> get_source()
   end
 
-  defp get_source(%DataStructure{} = structure) do
-    structure
-    |> DataStructures.get_latest_version()
-    |> get_source()
+  defp get_source(%DataStructure{source: %{external_id: external_id}}) do
+    external_id
   end
 
-  defp get_source(%DataStructureVersion{} = version) do
-    version
-    |> Map.get(:metadata)
+  defp get_source(%DataStructure{} = structure) do
+    structure
+    |> Repo.preload(:source)
     |> case do
-      %{"alias" => source_alias} -> source_alias
+      %{source: %{external_id: external_id}} -> external_id
       _ -> nil
     end
   end

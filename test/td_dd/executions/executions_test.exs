@@ -140,12 +140,7 @@ defmodule TdDd.ExecutionsTest do
     setup do
       source = "foo"
 
-      data_structure = insert(:data_structure)
-
-      insert(:data_structure_version,
-        data_structure: data_structure,
-        metadata: %{"alias" => source, "foo" => "bar"}
-      )
+      data_structure = insert(:data_structure, source: build(:source, external_id: source))
 
       g1 = insert(:profile_execution_group)
       g2 = insert(:profile_execution_group)
