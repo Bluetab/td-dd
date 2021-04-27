@@ -6,6 +6,9 @@
 
 - [TD-3526] Merged `td-dq` with `td-dd`. See `CHANGELOG-dq.md` for changes in
   `td-dq` previous to this merge.
+- [TD-3621] Increase maximum length for JSON request bodies. The value for JSON
+  request bodies can now be configured using the `MAX_PAYLOAD_LENGTH`
+  environment variable.
 
 ## [4.18.0] 2021-04-19
 

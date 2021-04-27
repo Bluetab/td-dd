@@ -13,6 +13,9 @@ config :td_dd, :env, Mix.env()
 config :td_dd,
   ecto_repos: [TdDd.Repo]
 
+# Configures the maximum payload length for metadata loading
+config :td_dd, TdDdWeb.BodyReader, max_payload_length: 100_000_000
+
 # Configures the dd endpoint
 config :td_dd, TdDdWeb.Endpoint,
   http: [port: 4005],

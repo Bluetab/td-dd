@@ -18,12 +18,8 @@ defmodule TdDdWeb.Endpoint do
 
   plug(
     Plug.Parsers,
-    parsers: [
-      :urlencoded,
-      # 100M. # Increased for metadata upload. 1000 data structures, 50 data fields
-      {:multipart, length: 100_000_000},
-      :json
-    ],
+    parsers: [:urlencoded, {:multipart, length: 100_000_000}, :json],
+    body_reader: {TdDdWeb.BodyReader, :read_body, []},
     pass: ["*/*"],
     json_decoder: Jason
   )
