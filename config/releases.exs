@@ -92,3 +92,5 @@ config :td_dd, TdDd.Search.Cluster,
     "index.indexing.slowlog.level" => System.get_env("ES_INDEXING_SLOWLOG_LEVEL", "info"),
     "index.indexing.slowlog.source" => System.get_env("ES_INDEXING_SLOWLOG_SOURCE", "1000")
   }
+
+config :td_dd, TdDdWeb.BodyReader, max_payload_length: System.get_env("MAX_PAYLOAD_LENGTH", "100000000") |> String.to_integer()
