@@ -71,6 +71,7 @@ defmodule TdDd.Executions do
         subset =
           ProfileEvent
           |> where([p], p.type != "PENDING")
+          |> or_where([p], is_nil(p.type))
           |> select([p], p.profile_execution_id)
 
         q

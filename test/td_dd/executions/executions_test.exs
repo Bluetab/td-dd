@@ -125,8 +125,7 @@ defmodule TdDd.ExecutionsTest do
         ]
       }
 
-      assert {:ok, %{profile_group: %{id: id}}} =
-               Executions.create_profile_group(params)
+      assert {:ok, %{profile_group: %{id: id}}} = Executions.create_profile_group(params)
 
       %{
         executions: [
@@ -166,33 +165,42 @@ defmodule TdDd.ExecutionsTest do
           data_structure: build(:data_structure)
         )
 
+      e4 =
+        insert(:profile_execution,
+          profile_events: [build(:profile_event), build(:profile_event, type: "STARTED")]
+        )
+
       [
         data_structure: data_structure,
         groups: [g1, g2],
-        executions: [e1, e2, e3],
+        executions: [e1, e2, e3, e4],
         profile: profile,
         source: source
       ]
     end
 
     test "list executions", %{
-      executions: [%{id: id1}, %{id: id2}, %{id: id3}],
+      executions: [%{id: id1}, %{id: id2}, %{id: id3}, %{id: id4}],
       profile: %{id: profile_id}
     } do
-      assert [%{id: ^id1, profile: nil}, %{id: ^id2, profile: %{id: ^profile_id}}, %{id: ^id3}] =
-               Executions.list_profile_executions(%{}, preload: [:profile])
+      assert [
+               %{id: ^id1, profile: nil},
+               %{id: ^id2, profile: %{id: ^profile_id}},
+               %{id: ^id3},
+               %{id: ^id4}
+             ] = Executions.list_profile_executions(%{}, preload: [:profile])
     end
 
     test "list executions filtered by group", %{
       groups: [_, %{id: group_id}],
-      executions: [_, %{id: id}, _]
+      executions: [_, %{id: id}, _, _]
     } do
       assert [%{id: ^id}] = Executions.list_profile_executions(%{profile_group_id: group_id})
     end
 
     test "list executions filtered by status", %{
       data_structure: %{id: data_structure_id},
-      executions: [%{id: id1}, _, %{id: id3}]
+      executions: [%{id: id1}, _, %{id: id3}, _]
     } do
       assert [
                %{id: ^id1, profile: nil, data_structure: %{id: ^data_structure_id}},
@@ -204,7 +212,7 @@ defmodule TdDd.ExecutionsTest do
     end
 
     test "list executions filtered by source", %{
-      executions: [%{id: id1}, %{id: id2}, _],
+      executions: [%{id: id1}, %{id: id2}, _, _],
       source: source
     } do
       assert [] = Executions.list_profile_executions(%{source: "bar"})
@@ -215,7 +223,7 @@ defmodule TdDd.ExecutionsTest do
     end
 
     test "list executions filtered by sources", %{
-      executions: [%{id: id1}, %{id: id2}, _],
+      executions: [%{id: id1}, %{id: id2}, _, _],
       source: source
     } do
       assert [%{id: ^id1}, %{id: ^id2}] = Executions.list_profile_executions(%{sources: [source]})
