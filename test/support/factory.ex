@@ -13,6 +13,7 @@ defmodule TdDd.Factory do
 
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
+  alias TdDd.DataStructures.DataStructureTag
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Profile
@@ -113,6 +114,12 @@ defmodule TdDd.Factory do
 
   def data_structure_relation_factory do
     %DataStructureRelation{}
+  end
+
+  def data_structure_tag_factory do
+    %DataStructureTag{
+      name: sequence("structure_tag_name")
+    }
   end
 
   def data_structure_type_factory do

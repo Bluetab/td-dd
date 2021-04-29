@@ -19,7 +19,7 @@ defmodule TdDd.Executions.ProfileExecutionTest do
               %{
                 data_structure_id: ^id,
                 profile_group_id: ^group_id
-              } = execution} =
+              }} =
                %{profile_group_id: group_id, data_structure_id: id}
                |> ProfileExecution.changeset()
                |> Repo.insert()
