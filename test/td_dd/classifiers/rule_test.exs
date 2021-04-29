@@ -8,20 +8,20 @@ defmodule TdDd.Classifiers.RuleTest do
     test "validates required fields" do
       assert %{valid?: false, errors: errors} = Rule.changeset(%{})
       assert {_, [validation: :required]} = errors[:class]
-      assert {_, [validation: :required]} = errors[:property]
+      assert {_, [validation: :required]} = errors[:path]
       refute Keyword.has_key?(errors, :priority)
     end
 
     test "casts and validates parameters" do
       %{id: classifier_id} = insert(:classifier)
-      params = %{classifier_id: classifier_id, property: "foo", regex: "foo", class: "foo"}
+      params = %{classifier_id: classifier_id, path: ["foo"], regex: "foo", class: "foo"}
       assert %{valid?: true, changes: changes} = Rule.changeset(params)
-      assert %{regex: ~r/foo/, property: "foo", classifier_id: ^classifier_id} = changes
+      assert %{regex: ~r/foo/, path: ["foo"], classifier_id: ^classifier_id} = changes
     end
 
     test "validates values is not empty" do
       %{id: classifier_id} = insert(:classifier)
-      params = %{classifier_id: classifier_id, class: "bar", property: "bar", values: []}
+      params = %{classifier_id: classifier_id, class: "bar", path: ["bar"], values: []}
       assert %{valid?: false, errors: errors} = Rule.changeset(params)
       assert {_, [count: 1, validation: :length, kind: :min, type: :list]} = errors[:values]
     end
@@ -32,17 +32,17 @@ defmodule TdDd.Classifiers.RuleTest do
       params = %{
         classifier_id: classifier_id,
         class: "baz",
-        property: "baz",
+        path: ["baz"],
         values: ["1", "2", "1"]
       }
 
       assert %{valid?: true, changes: changes} = Rule.changeset(params)
-      assert %{values: ["1", "2"], property: "baz", classifier_id: ^classifier_id} = changes
+      assert %{values: ["1", "2"], path: ["baz"], classifier_id: ^classifier_id} = changes
     end
 
     test "captures foreign key constraint on classifier_id" do
       assert {:error, %{errors: errors} = changeset} =
-               %{classifier_id: 1, property: "foo", regex: "foo", class: "class"}
+               %{classifier_id: 1, path: ["foo"], regex: "foo", class: "class"}
                |> Rule.changeset()
                |> Repo.insert()
 
@@ -59,7 +59,7 @@ defmodule TdDd.Classifiers.RuleTest do
                %{
                  class: "class",
                  classifier_id: classifier_id,
-                 property: "foo",
+                 path: ["foo"],
                  regex: "foo",
                  values: ["bar"]
                }

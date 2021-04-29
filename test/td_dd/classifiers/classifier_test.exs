@@ -20,14 +20,14 @@ defmodule TdDd.Classifiers.ClassifierTest do
                %{
                  name: "foo",
                  system_id: system_id,
-                 rules: [%{property: "foo", regex: "foo", class: "class"}],
-                 filters: [%{property: "bar", regex: "bar"}]
+                 rules: [%{path: ["foo"], regex: "foo", class: "class"}],
+                 filters: [%{path: ["bar"], regex: "bar"}]
                }
                |> Classifier.changeset()
                |> Repo.insert()
 
       assert %{filters: [filter]} = classifier
-      assert %{property: "bar", regex: ~r/bar/} = filter
+      assert %{path: ["bar"], regex: ~r/bar/} = filter
     end
 
     test "casts the rules association" do
@@ -37,13 +37,13 @@ defmodule TdDd.Classifiers.ClassifierTest do
                %{
                  name: "foo",
                  system_id: system_id,
-                 rules: [%{property: "foo", regex: "foo", class: "class"}]
+                 rules: [%{path: ["foo"], regex: "foo", class: "class"}]
                }
                |> Classifier.changeset()
                |> Repo.insert()
 
       assert %{rules: [rule]} = classifier
-      assert %{class: "class", property: "foo", regex: ~r/foo/} = rule
+      assert %{class: "class", path: ["foo"], regex: ~r/foo/} = rule
     end
 
     test "captures unique constraint on name and system_id" do
@@ -53,7 +53,7 @@ defmodule TdDd.Classifiers.ClassifierTest do
                %{
                  name: name,
                  system_id: system_id,
-                 rules: [%{property: "foo", regex: "foo", class: "foo"}]
+                 rules: [%{path: ["foo"], regex: "foo", class: "foo"}]
                }
                |> Classifier.changeset()
                |> Repo.insert()

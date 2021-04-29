@@ -5,7 +5,7 @@ defmodule TdDd.Repo.Migrations.CreateClassifierRules do
     create table("classifier_rules") do
       add :classifier_id, references("classifiers", on_delete: :delete_all), null: false
       add :priority, :integer, null: false
-      add :property, :string, null: false
+      add :path, {:array, :string}, null: false
       add :class, :string, null: false
       add :regex, :string
       add :values, {:array, :string}

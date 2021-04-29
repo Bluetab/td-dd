@@ -8,6 +8,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
   import Ecto.Changeset
 
   alias TdDd.DataStructures
+  alias TdDd.DataStructures.Classification
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
 
@@ -32,6 +33,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
 
     belongs_to(:data_structure, DataStructure)
 
+    has_many(:classifications, Classification)
     has_many(:child_relations, DataStructureRelation, foreign_key: :parent_id)
     has_many(:parent_relations, DataStructureRelation, foreign_key: :child_id)
 

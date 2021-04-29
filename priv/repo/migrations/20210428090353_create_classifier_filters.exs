@@ -4,7 +4,7 @@ defmodule TdDd.Repo.Migrations.CreateClassifierFilters do
   def change do
     create table("classifier_filters") do
       add :classifier_id, references("classifiers", on_delete: :delete_all), null: false
-      add :property, :string, null: false
+      add :path, {:array, :string}, null: false
       add :regex, :string
       add :values, {:array, :string}
 

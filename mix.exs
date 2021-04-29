@@ -52,9 +52,7 @@ defmodule TdDd.MixProject do
       {:phoenix, "~> 1.5.0"},
       {:plug_cowboy, "~> 2.1"},
       {:phoenix_ecto, "~> 4.0"},
-      {:ecto_sql, "~> 3.5.0"},
-      # see https://github.com/elixir-ecto/ecto/issues/3606
-      {:ecto, "~> 3.5.5"},
+      {:ecto_sql, "~> 3.6.0"},
       {:jason, "~> 1.1"},
       {:postgrex, "~> 0.15.0"},
       {:gettext, "~> 0.11"},

@@ -254,7 +254,8 @@ defmodule TdDd.DataStructures do
     |> join(:inner, [child], child in assoc(child, :data_structure))
     |> with_confidential(
       Keyword.get(options, :with_confidential),
-      dynamic([_child, _parent, _rel, child_ds], child_ds.confidential == false)
+      # FIXME: Compatibility with Ecto 3.6?
+      dynamic([_child, _parent, child_ds], child_ds.confidential == false)
     )
     |> with_deleted(options, dynamic([child], is_nil(child.deleted_at)))
     |> select([child], child)
@@ -274,6 +275,7 @@ defmodule TdDd.DataStructures do
     )
     |> with_confidential(
       Keyword.get(options, :with_confidential),
+      # FIXME: Compatibility with Ecto 3.6?
       dynamic([_, _child, _, ds_child], ds_child.confidential == false)
     )
     |> relation_type_condition(
@@ -293,6 +295,7 @@ defmodule TdDd.DataStructures do
   end
 
   defp get_parents(%DataStructureVersion{id: id}, options) do
+    # FIXME: Compatibility with Ecto 3.6?
     DataStructureRelation
     |> where([r], r.child_id == ^id)
     |> join(:inner, [r], parent in assoc(r, :parent))
@@ -323,6 +326,7 @@ defmodule TdDd.DataStructures do
   end
 
   def get_siblings(%DataStructureVersion{id: id}, options \\ []) do
+    # FIXME: Compatibility with Ecto 3.6?
     DataStructureRelation
     |> where([r], r.child_id == ^id)
     |> join(:inner, [r], parent in assoc(r, :parent))

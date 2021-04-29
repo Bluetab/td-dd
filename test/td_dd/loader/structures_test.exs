@@ -1,6 +1,8 @@
 defmodule TdDd.Loader.StructuresTest do
   use TdDd.DataCase
 
+  import TdDd.TestOperators
+
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Loader.Structures
@@ -56,12 +58,13 @@ defmodule TdDd.Loader.StructuresTest do
         |> Enum.sort()
 
       assert {0, []} = Structures.update_source_ids(records, nil, ts)
-      assert {10, ^ids} = Structures.update_source_ids(records, id1, ts)
+      assert {10, actual_ids} = Structures.update_source_ids(records, id1, ts)
+      assert actual_ids <|> ids
       assert {0, []} = Structures.update_source_ids(records, id1, ts)
-      updated_ids = Enum.take(ids, 5)
-      assert {5, ^updated_ids} = Structures.update_source_ids(Enum.take(records, 5), id2, ts)
-      updated_ids = Enum.take(ids, -5)
-      assert {5, ^updated_ids} = Structures.update_source_ids(records, id2, ts)
+      assert {5, updated_ids} = Structures.update_source_ids(Enum.take(records, 5), id2, ts)
+      assert updated_ids <|> Enum.take(ids, 5)
+      assert {5, updated_ids} = Structures.update_source_ids(records, id2, ts)
+      assert updated_ids <|> Enum.take(ids, -5)
       structures = DataStructures.list_data_structures(%{external_id: external_ids})
       assert Enum.all?(structures, &(&1.source_id == id2))
     end

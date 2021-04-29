@@ -7,33 +7,33 @@ defmodule TdDd.Classifiers.FilterTest do
   describe "Filter.changeset/2" do
     test "validates required fields" do
       assert %{valid?: false, errors: errors} = Filter.changeset(%{})
-      assert {_, [validation: :required]} = errors[:property]
+      assert {_, [validation: :required]} = errors[:path]
     end
 
     test "casts and validates parameters" do
       %{id: classifier_id} = insert(:classifier)
-      params = %{classifier_id: classifier_id, property: "foo", regex: "foo"}
+      params = %{classifier_id: classifier_id, path: ["foo"], regex: "foo"}
       assert %{valid?: true, changes: changes} = Filter.changeset(params)
-      assert %{regex: ~r/foo/, property: "foo", classifier_id: ^classifier_id} = changes
+      assert %{regex: ~r/foo/, path: ["foo"], classifier_id: ^classifier_id} = changes
     end
 
     test "validates values is not empty" do
       %{id: classifier_id} = insert(:classifier)
-      params = %{classifier_id: classifier_id, property: "bar", values: []}
+      params = %{classifier_id: classifier_id, path: ["bar"], values: []}
       assert %{valid?: false, errors: errors} = Filter.changeset(params)
       assert {_, [count: 1, validation: :length, kind: :min, type: :list]} = errors[:values]
     end
 
     test "removes duplicate values" do
       %{id: classifier_id} = insert(:classifier)
-      params = %{classifier_id: classifier_id, property: "bar", values: ["bar", "baz", "bar"]}
+      params = %{classifier_id: classifier_id, path: ["bar"], values: ["bar", "baz", "bar"]}
       assert %{valid?: true, changes: changes} = Filter.changeset(params)
-      assert %{values: ["bar", "baz"], property: "bar", classifier_id: ^classifier_id} = changes
+      assert %{values: ["bar", "baz"], path: ["bar"], classifier_id: ^classifier_id} = changes
     end
 
     test "captures foreign key constraint on classifier_id" do
       assert {:error, %{errors: errors} = changeset} =
-               %{classifier_id: 1, property: "foo", regex: "foo"}
+               %{classifier_id: 1, path: ["foo"], regex: "foo"}
                |> Filter.changeset()
                |> Repo.insert()
 
@@ -47,7 +47,7 @@ defmodule TdDd.Classifiers.FilterTest do
       %{id: classifier_id} = insert(:classifier)
 
       assert {:error, %{errors: errors} = changeset} =
-               %{classifier_id: classifier_id, property: "foo", regex: "foo", values: ["bar"]}
+               %{classifier_id: classifier_id, path: ["foo"], regex: "foo", values: ["bar"]}
                |> Filter.changeset()
                |> Repo.insert()
 
