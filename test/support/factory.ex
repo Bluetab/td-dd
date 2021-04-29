@@ -324,6 +324,47 @@ defmodule TdDd.Factory do
     }
   end
 
+  def classifier_factory(attrs) do
+    attrs = default_assoc(attrs, :system_id, :system)
+
+    %TdDd.Classifiers.Classifier{
+      name: sequence("classification")
+    }
+    |> merge_attributes(attrs)
+  end
+
+  def classifier_filter_factory(attrs) do
+    attrs = default_assoc(attrs, :classifier_id, :classifier)
+
+    %TdDd.Classifiers.Filter{
+      property: sequence("property"),
+      regex: ~r/foo/
+    }
+    |> merge_attributes(attrs)
+  end
+
+  def regex_rule_factory(attrs) do
+    attrs = default_assoc(attrs, :classifier_id, :classifier)
+
+    %TdDd.Classifiers.Rule{
+      class: sequence("class"),
+      property: sequence("property"),
+      regex: ~r/foo/
+    }
+    |> merge_attributes(attrs)
+  end
+
+  def values_rule_factory(attrs) do
+    attrs = default_assoc(attrs, :classifier_id, :classifier)
+
+    %TdDd.Classifiers.Rule{
+      class: sequence("class"),
+      property: sequence("property"),
+      values: ["foo"]
+    }
+    |> merge_attributes(attrs)
+  end
+
   defp default_assoc(attrs, id_key, key) do
     if Enum.any?([key, id_key], &Map.has_key?(attrs, &1)) do
       attrs
