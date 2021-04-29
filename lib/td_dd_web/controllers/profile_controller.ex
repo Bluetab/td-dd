@@ -25,7 +25,9 @@ defmodule TdDdWeb.ProfileController do
            DataStructures.get_data_structure_by_external_id(data_structure_id),
          {:ok, profile} <-
            Profiles.create_or_update_profile(%{data_structure_id: id, value: profile}) do
-      render(conn, "show.json", profile: profile)
+      conn
+      |> put_status(:created)
+      |> render("show.json", profile: profile)
     else
       nil -> {:error, :not_found}
       error -> error

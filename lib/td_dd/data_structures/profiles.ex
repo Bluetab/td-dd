@@ -3,6 +3,7 @@ defmodule TdDd.DataStructures.Profiles do
   The DataStructure Profiles context.
   """
 
+  alias Ecto.Changeset
   alias Ecto.Multi
   alias TdDd.DataStructures.Profile
   alias TdDd.Events.ProfileEvents
@@ -103,10 +104,10 @@ defmodule TdDd.DataStructures.Profiles do
     |> Repo.update()
   end
 
-  defp do_create_or_update_profile(%{changes: %{data_structure_id: id}} = changeset) do
+  defp do_create_or_update_profile(%{changes: %{data_structure_id: id} = changes} = changeset) do
     case Repo.get_by(Profile, data_structure_id: id) do
       nil -> Repo.insert(changeset)
-      _ -> Repo.update(changeset)
+      %Profile{} = profile -> Repo.update(Profile.changeset(profile, changes))
     end
   end
 

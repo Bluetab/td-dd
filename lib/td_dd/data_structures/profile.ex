@@ -20,5 +20,6 @@ defmodule TdDd.DataStructures.Profile do
     profile
     |> cast(params, [:value, :data_structure_id])
     |> validate_required([:value, :data_structure_id])
+    |> foreign_key_constraint(:data_structure_id)
   end
 end
