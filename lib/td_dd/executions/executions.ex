@@ -112,6 +112,14 @@ defmodule TdDd.Executions do
     |> do_create_profile_group()
   end
 
+  def update_all(structure_id, profile_id) do
+    ProfileExecution
+    |> where([p], is_nil(p.profile_id))
+    |> where([p], p.data_structure_id == ^structure_id)
+    |> select([p], p.id)
+    |> Repo.update_all(set: [profile_id: profile_id])
+  end
+
   defp do_create_profile_group(%Changeset{} = changeset) do
     Multi.new()
     |> Multi.insert(:profile_group, changeset)

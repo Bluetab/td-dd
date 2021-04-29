@@ -3,7 +3,10 @@ defmodule TdDd.DataStructures.Profiles do
   The DataStructure Profiles context.
   """
 
+  alias Ecto.Multi
   alias TdDd.DataStructures.Profile
+  alias TdDd.Events.ProfileEvents
+  alias TdDd.Executions
   alias TdDd.Repo
 
   @doc """
@@ -34,6 +37,35 @@ defmodule TdDd.DataStructures.Profiles do
 
   """
   def get_profile!(id), do: Repo.get!(Profile, id)
+
+  @doc """
+  Creates or updates a profile.
+
+  ## Examples
+
+      iex> create_or_update_profile(%{field: value})
+      {:ok, %Profile{}}
+
+      iex> create_or_update_profile(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_or_update_profile(params) do
+    changeset = Profile.changeset(params)
+
+    Multi.new()
+    |> Multi.run(:profile, fn _, _ -> do_create_or_update_profile(changeset) end)
+    |> Multi.run(:executions, fn _, changes -> update_executions(changes) end)
+    |> Multi.run(:events, fn _, %{executions: executions} ->
+      {_, events} = ProfileEvents.complete(executions)
+      {:ok, events}
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{profile: profile}} -> {:ok, profile}
+      {:error, _, changeset, _} -> {:error, changeset}
+    end
+  end
 
   @doc """
   Creates a profile.
@@ -71,4 +103,15 @@ defmodule TdDd.DataStructures.Profiles do
     |> Repo.update()
   end
 
+  defp do_create_or_update_profile(%{changes: %{data_structure_id: id}} = changeset) do
+    case Repo.get_by(Profile, data_structure_id: id) do
+      nil -> Repo.insert(changeset)
+      _ -> Repo.update(changeset)
+    end
+  end
+
+  defp update_executions(%{profile: %{id: profile_id, data_structure_id: structure_id}}) do
+    {_, executions} = Executions.update_all(structure_id, profile_id)
+    {:ok, executions}
+  end
 end

@@ -7,13 +7,30 @@ defmodule TdDdWeb.ProfileController do
 
   alias Plug.Upload
   alias TdDd.CSV.Reader
+  alias TdDd.DataStructures
+  alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.Profile
+  alias TdDd.DataStructures.Profiles
   alias TdDd.Loader.Worker
 
   @profiling_import_required Application.compile_env(:td_dd, :profiling)[
                                :profiling_import_required
                              ]
   @profiling_import_schema Application.compile_env(:td_dd, :profiling)[:profiling_import_schema]
+
+  def create(conn, %{"data_structure_id" => data_structure_id, "profile" => profile}) do
+    with claims <- conn.assigns[:current_resource],
+         {:can, true} <- {:can, can?(claims, upload(Profile))},
+         %DataStructure{id: id} <-
+           DataStructures.get_data_structure_by_external_id(data_structure_id),
+         {:ok, profile} <-
+           Profiles.create_or_update_profile(%{data_structure_id: id, value: profile}) do
+      render(conn, "show.json", profile: profile)
+    else
+      nil -> {:error, :not_found}
+      error -> error
+    end
+  end
 
   def upload(conn, %{"profiling" => profiling}) do
     with claims <- conn.assigns[:current_resource],
