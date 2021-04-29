@@ -229,4 +229,24 @@ defmodule TdDd.ExecutionsTest do
       assert [%{id: ^id1}, %{id: ^id2}] = Executions.list_profile_executions(%{sources: [source]})
     end
   end
+
+  describe "update_all/2" do
+    setup do
+      d = insert(:data_structure)
+      insert(:profile_execution, profile: build(:profile), data_structure: d)
+      e2 = insert(:profile_execution, profile: nil, data_structure: d)
+      e3 = insert(:profile_execution, profile: nil, data_structure: d)
+      insert(:profile_execution, profile: nil, data_structure: build(:data_structure))
+
+      [data_structure: d, executions: [e2, e3]]
+    end
+
+    test "updates all executions which do not have profile", %{
+      data_structure: data_structure,
+      executions: [%{id: id1}, %{id: id2}]
+    } do
+      profile = insert(:profile)
+      assert {2, [^id1, ^id2]} = Executions.update_all(data_structure.id, profile.id)
+    end
+  end
 end

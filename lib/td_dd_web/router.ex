@@ -39,6 +39,7 @@ defmodule TdDdWeb.Router do
 
     resources "/data_structures", DataStructureController, except: [:new, :edit, :show] do
       resources("/versions", DataStructureVersionController, only: [:show])
+      resources("/profile_results", ProfileController, only: [:create])
     end
 
     resources("/data_structure_versions", DataStructureVersionController, only: [:show]) do
