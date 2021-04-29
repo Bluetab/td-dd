@@ -1,6 +1,8 @@
 defmodule TdDdWeb.ProfileView do
   use TdDdWeb, :view
 
+  alias TdDdWeb.ProfileView
+
   def render("show.json", %{profile: profile}) do
     %{data: render_one(profile, ProfileView, "profile.json")}
   end
