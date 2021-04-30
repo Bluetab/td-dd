@@ -22,16 +22,19 @@ defmodule TdDdWeb.ProfileController do
     with claims <- conn.assigns[:current_resource],
          {:can, true} <- {:can, can?(claims, upload(Profile))},
          %DataStructure{id: id} <-
-           DataStructures.get_data_structure_by_external_id(data_structure_id),
+           DataStructures.get_data_structure!(data_structure_id),
          {:ok, profile} <-
            Profiles.create_or_update_profile(%{data_structure_id: id, value: profile}) do
       conn
       |> put_status(:created)
       |> render("show.json", profile: profile)
-    else
-      nil -> {:error, :not_found}
-      error -> error
     end
+  rescue
+    _e in Ecto.NoResultsError ->
+      conn
+      |> put_status(:not_found)
+      |> put_view(ErrorView)
+      |> render("404.json")
   end
 
   def upload(conn, %{"profiling" => profiling}) do
