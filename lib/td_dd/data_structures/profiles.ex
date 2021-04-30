@@ -3,7 +3,6 @@ defmodule TdDd.DataStructures.Profiles do
   The DataStructure Profiles context.
   """
 
-  alias Ecto.Changeset
   alias Ecto.Multi
   alias TdDd.DataStructures.Profile
   alias TdDd.Events.ProfileEvents
