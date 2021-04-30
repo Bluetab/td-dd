@@ -42,15 +42,27 @@ defmodule TdDdWeb.ProfileControllerTest do
   describe "create profiling" do
     @tag authentication: [role: "service"]
     test "creates profiling", %{conn: conn} do
-      %{id: id, external_id: external_id} = insert(:data_structure)
+      %{id: id} = insert(:data_structure)
       profile = %{"foo" => "bar"}
 
       assert %{"data" => %{"data_structure_id" => ^id, "value" => ^profile}} =
                conn
-               |> post(Routes.data_structure_profile_path(conn, :create, external_id),
+               |> post(Routes.data_structure_profile_path(conn, :create, id),
                  profile: profile
                )
                |> json_response(:created)
+    end
+
+    @tag authentication: [role: "service"]
+    test "not found when structure does not exist", %{conn: conn} do
+      id = System.unique_integer([:positive])
+      profile = %{"foo" => "bar"}
+
+      assert conn
+             |> post(Routes.data_structure_profile_path(conn, :create, id),
+               profile: profile
+             )
+             |> response(:not_found)
     end
   end
 end

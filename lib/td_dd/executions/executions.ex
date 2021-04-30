@@ -9,7 +9,6 @@ defmodule TdDd.Executions do
   alias Ecto.Multi
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.Events.ProfileEvent
   alias TdDd.Executions.{Audit, ProfileExecution, ProfileGroup}
   alias TdDd.Repo
 
@@ -68,16 +67,11 @@ defmodule TdDd.Executions do
         where(q, [e], e.profile_group_id == ^id)
 
       {:status, "pending"}, q ->
-        subset =
-          ProfileEvent
-          |> where([p], p.type != "PENDING")
-          |> or_where([p], is_nil(p.type))
-          |> select([p], p.profile_execution_id)
-
         q
         |> join(:left, [e], p in assoc(e, :profile))
-        |> where([_e, p, _ev], is_nil(p.id))
-        |> where([e, _p], e.id not in subquery(subset))
+        |> join(:left, [e, _p], pe in assoc(e, :profile_events))
+        |> where([_e, p, _pe], is_nil(p.id))
+        |> where([e, _p, pe], is_nil(pe.profile_execution_id))
 
       _, q ->
         q

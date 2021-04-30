@@ -121,7 +121,7 @@ defmodule TdDd.ExecutionsTest do
       params = %{
         "created_by_id" => 0,
         "executions" => [
-          %{"data_structure_id" => id, "profile_events" => [%{"type" => "PENDING"}]}
+          %{"data_structure_id" => id}
         ]
       }
 
@@ -129,7 +129,7 @@ defmodule TdDd.ExecutionsTest do
 
       %{
         executions: [
-          %{profile_events: [%{type: "PENDING"}]}
+          %{profile_events: []}
         ]
       } = Executions.get_profile_group(%{"id" => id}, preload: [executions: :profile_events])
     end
@@ -160,7 +160,6 @@ defmodule TdDd.ExecutionsTest do
 
       e3 =
         insert(:profile_execution,
-          profile_events: [build(:profile_event)],
           profile_group: build(:profile_execution_group),
           data_structure: build(:data_structure)
         )
