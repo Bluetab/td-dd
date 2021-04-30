@@ -1,8 +1,17 @@
 defmodule TdDq.Implementations.ImplementationTest do
   use TdDd.DataCase
 
+  alias TdCache.TemplateCache
   alias TdDd.Repo
   alias TdDq.Implementations.Implementation
+
+  setup_all do
+    %{id: template_id, name: template_name} = template = build(:template)
+    {:ok, _} = TemplateCache.put(template)
+    on_exit(fn -> TemplateCache.delete(template_id) end)
+
+    [template_name: template_name]
+  end
 
   describe "changeset/2" do
     test "validates existence of rule on insert" do
@@ -43,6 +52,19 @@ defmodule TdDq.Implementations.ImplementationTest do
 
       assert %{changes: changes, valid?: false} = Implementation.changeset(params)
       refute Map.has_key?(changes, :implementation_key)
+    end
+
+    test "validates df_content is required if df_name is present", %{template_name: template_name} do
+      params = params_for(:implementation, df_name: template_name, df_content: nil)
+      assert %{valid?: false, errors: errors} = Implementation.changeset(params)
+      assert errors[:df_content] == {"can't be blank", [validation: :required]}
+    end
+
+    test "validates df_content is valid", %{template_name: template_name} do
+      invalid_content = %{"list" => "foo", "string" => "whatever"}
+      params = params_for(:rule, df_name: template_name, df_content: invalid_content)
+      assert %{valid?: false, errors: errors} = Implementation.changeset(params)
+      assert {"invalid content", _detail} = errors[:df_content]
     end
   end
 end

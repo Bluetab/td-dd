@@ -27,7 +27,9 @@ defmodule TdDqWeb.ImplementationView do
       :implementation_type,
       :deleted_at,
       :execution_result_info,
-      :structure_aliases
+      :structure_aliases,
+      :df_name,
+      :df_content
     ])
     |> Map.put(
       :raw_content,
@@ -48,7 +50,9 @@ defmodule TdDqWeb.ImplementationView do
       :implementation_type,
       :deleted_at,
       :execution_result_info,
-      :structure_aliases
+      :structure_aliases,
+      :df_name,
+      :df_content
     ])
     |> Map.put(:dataset, render_many(implementation.dataset, DatasetView, "dataset_row.json"))
     |> Map.put(
