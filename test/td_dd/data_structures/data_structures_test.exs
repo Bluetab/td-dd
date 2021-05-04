@@ -939,4 +939,57 @@ defmodule TdDd.DataStructuresTest do
              } = DataStructures.profile_source(v)
     end
   end
+
+  describe "get_field_structures/2" do
+    test "generates a valid query" do
+      %{parent: parent} = create_relation()
+      assert [_] = DataStructures.get_field_structures(parent, with_confidential: false)
+    end
+  end
+
+  describe "get_children/2" do
+    test "generates a valid query" do
+      %{parent: parent} = create_relation()
+      assert [_] = DataStructures.get_children(parent, with_confidential: false)
+      assert [] = DataStructures.get_children(parent, with_confidential: false, default: false)
+    end
+  end
+
+  describe "get_parents/2" do
+    test "generates a valid query" do
+      %{child: child} = create_relation()
+      assert [_] = DataStructures.get_parents(child, with_confidential: false)
+      assert [] = DataStructures.get_parents(child, with_confidential: false, default: false)
+    end
+  end
+
+  describe "get_siblings/2" do
+    test "generates a valid query" do
+      %{parent_id: parent_id, child: child, relation_type_id: type_id} = create_relation()
+
+      insert(:data_structure_relation,
+        relation_type_id: type_id,
+        parent_id: parent_id,
+        child: build(:data_structure_version)
+      )
+
+      assert [_, _] = DataStructures.get_siblings(child, with_confidential: false)
+      assert [] = DataStructures.get_siblings(child, with_confidential: false, default: false)
+    end
+  end
+
+  defp create_relation do
+    %{id: relation_type_id} = RelationTypes.get_default()
+
+    insert(:data_structure_relation,
+      relation_type_id: relation_type_id,
+      parent: build(:data_structure_version),
+      child:
+        build(
+          :data_structure_version,
+          class: "field",
+          data_structure: build(:data_structure, confidential: false)
+        )
+    )
+  end
 end
