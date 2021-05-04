@@ -30,10 +30,20 @@ defmodule MockPermissionResolver do
     end)
   end
 
+  def has_permission?(session_id, permission) do
+    case TdCache.DomainCache.domains() do
+      {:ok, domain_ids} -> has_resource_permission?(domain_ids, "domain", session_id, permission)
+    end
+  end
+
   def has_permission?(session_id, permission, "domain", domain_id) do
     domain_id
     |> TaxonomyCache.get_parent_ids()
     |> has_resource_permission?("domain", session_id, permission)
+  end
+
+  def has_permission?(session_id, permission, resource_type, resource_id) do
+    has_resource_permission?([resource_id], resource_type, session_id, permission)
   end
 
   def get_acls_by_resource_type(session_id, resource_type) do

@@ -33,7 +33,7 @@ defmodule TdDd.DataStructuresTest do
   end
 
   setup %{template_name: template_name} do
-    alias TdCache.{ConceptCache, LinkCache, StructureCache, SystemCache}
+    alias TdCache.{ConceptCache, LinkCache}
 
     concept = %{id: "LINKED_CONCEPT", name: "concept"}
     system = insert(:system, external_id: "test_system")
@@ -44,8 +44,6 @@ defmodule TdDd.DataStructuresTest do
       insert(:data_structure_version, data_structure_id: data_structure.id, type: template_name)
 
     {:ok, _} = ConceptCache.put(concept)
-    {:ok, _} = SystemCache.put(system)
-    {:ok, _} = StructureCache.put(data_structure)
     %{id: template_id, name: template_name} = template = build(:template, name: template_name)
     {:ok, _} = TemplateCache.put(template)
 
@@ -67,8 +65,6 @@ defmodule TdDd.DataStructuresTest do
 
     on_exit(fn ->
       LinkCache.delete(123_456_789)
-      StructureCache.delete(data_structure.id)
-      SystemCache.delete(system.id)
       ConceptCache.delete(concept.id)
       TemplateCache.delete(template_id)
       StructureTypeCache.delete(structure_type_id)
@@ -187,6 +183,25 @@ defmodule TdDd.DataStructuresTest do
       assert DataStructures.get_metadata_version(dsv1) == nil
       assert DataStructures.get_metadata_version(dsv2) == sm1
       assert DataStructures.get_metadata_version(dsv3) == sm3
+    end
+  end
+
+  describe "get_latest_versions/1" do
+    test "returns the latest version of each structure_id" do
+      %{id: id1} = insert(:data_structure)
+      %{id: id2} = insert(:data_structure)
+
+      for v <- Enum.shuffle(1..10) do
+        insert(:data_structure_version, data_structure_id: id1, version: v)
+        insert(:data_structure_version, data_structure_id: id2, version: v)
+      end
+
+      assert [%{version: 10}, %{version: 10}] =
+               structures = DataStructures.get_latest_versions([id1, id2])
+
+      assert [_, _] = structure_ids = Enum.map(structures, & &1.data_structure_id)
+      assert id1 in structure_ids
+      assert id2 in structure_ids
     end
   end
 
@@ -880,6 +895,116 @@ defmodule TdDd.DataStructuresTest do
       assert ds.id == ds_id
       assert @update_attrs.fields == fields
       assert @update_attrs.version == version
+    end
+  end
+
+  describe "profile_source/1" do
+    setup do
+      s1 = insert(:source, config: %{"job_types" => ["catalog", "quality", "profile"]})
+      s2 = insert(:source)
+      s3 = insert(:source, config: %{"job_types" => ["catalog"], "alias" => "foo"})
+      s4 = insert(:source, external_id: "foo", config: %{"job_types" => ["profile"]})
+
+      v1 = insert(:data_structure_version, data_structure: insert(:data_structure, source: s1))
+      v2 = insert(:data_structure_version, data_structure: insert(:data_structure, source: s2))
+      v3 = insert(:data_structure_version, data_structure: insert(:data_structure, source: s3))
+
+      [sources: [s1, s2, s3, s4], versions: [v1, v2, v3]]
+    end
+
+    test "profile_source/1 when there are not related sources with profile", %{
+      versions: [_, v, _]
+    } do
+      assert %{profile_source: nil} = DataStructures.profile_source(v)
+    end
+
+    test "profile_source/1 get profile source when is directly related to the data structure", %{
+      versions: [v, _, _],
+      sources: [%{external_id: external_id}, _, _, _]
+    } do
+      assert %{profile_source: %{external_id: ^external_id}} = DataStructures.profile_source(v)
+    end
+
+    test "profile_source/1 get profile source when is related to the data structure by source alias",
+         %{
+           versions: [_, _, v],
+           sources: [_, _, s3, s4]
+         } do
+      %{external_id: s3_external_id} = s3
+      %{external_id: s4_external_id} = s4
+
+      assert %{
+               data_structure: %{source: %{external_id: ^s3_external_id}},
+               profile_source: %{external_id: ^s4_external_id}
+             } = DataStructures.profile_source(v)
+    end
+  end
+
+  describe "data_structure_tags" do
+    alias TdDd.DataStructures.DataStructureTag
+
+    @valid_attrs %{name: "some name"}
+    @update_attrs %{name: "some updated name"}
+    @invalid_attrs %{name: nil}
+
+    def data_structure_tag_fixture(attrs \\ %{}) do
+      {:ok, data_structure_tag} =
+        attrs
+        |> Enum.into(@valid_attrs)
+        |> DataStructures.create_data_structure_tag()
+
+      data_structure_tag
+    end
+
+    test "list_data_structure_tags/0 returns all data_structure_tags" do
+      data_structure_tag = data_structure_tag_fixture()
+      assert DataStructures.list_data_structure_tags() == [data_structure_tag]
+    end
+
+    test "get_data_structure_tag!/1 returns the data_structure_tag with given id" do
+      data_structure_tag = data_structure_tag_fixture()
+      assert DataStructures.get_data_structure_tag!(data_structure_tag.id) == data_structure_tag
+    end
+
+    test "create_data_structure_tag/1 with valid data creates a data_structure_tag" do
+      assert {:ok, %DataStructureTag{} = data_structure_tag} =
+               DataStructures.create_data_structure_tag(@valid_attrs)
+
+      assert data_structure_tag.name == "some name"
+    end
+
+    test "create_data_structure_tag/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} =
+               DataStructures.create_data_structure_tag(@invalid_attrs)
+    end
+
+    test "update_data_structure_tag/2 with valid data updates the data_structure_tag" do
+      data_structure_tag = data_structure_tag_fixture()
+
+      assert {:ok, %DataStructureTag{} = data_structure_tag} =
+               DataStructures.update_data_structure_tag(data_structure_tag, @update_attrs)
+
+      assert data_structure_tag.name == "some updated name"
+    end
+
+    test "update_data_structure_tag/2 with invalid data returns error changeset" do
+      data_structure_tag = data_structure_tag_fixture()
+
+      assert {:error, %Ecto.Changeset{}} =
+               DataStructures.update_data_structure_tag(data_structure_tag, @invalid_attrs)
+
+      assert data_structure_tag == DataStructures.get_data_structure_tag!(data_structure_tag.id)
+    end
+
+    test "delete_data_structure_tag/1 deletes the data_structure_tag" do
+      data_structure_tag = data_structure_tag_fixture()
+
+      assert {:ok, %DataStructureTag{}} =
+               DataStructures.delete_data_structure_tag(data_structure_tag)
+
+      assert_raise Ecto.NoResultsError, fn ->
+        DataStructures.get_data_structure_tag!(data_structure_tag.id)
+      end
     end
   end
 end

@@ -45,6 +45,17 @@ defmodule TdDdWeb.Router do
       post("/links", DataStructureLinkController, :create_link)
     end
 
+    resources("/profile_execution_groups", ProfileExecutionGroupController, except: [:new, :edit])
+
+    resources "/profile_executions", ProfileExecutionController, only: [:index, :show] do
+      resources("/profile_events", ProfileEventController, only: [:create])
+    end
+
+    resources("/profile_executions/search", ProfileExecutionSearchController,
+      only: [:create],
+      singleton: true
+    )
+
     post("/graphs/csv", GraphController, :csv)
     resources("/graphs", GraphController, only: [:create, :show])
 
@@ -85,6 +96,7 @@ defmodule TdDdWeb.Router do
     resources "/relation_types", RelationTypeController, except: [:new, :edit]
 
     resources "/data_structure_types", DataStructureTypeController
+    resources "/data_structure_tags", DataStructureTagController, except: [:new, :edit]
   end
 
   scope "/api/swagger" do

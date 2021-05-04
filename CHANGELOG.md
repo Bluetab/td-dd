@@ -6,6 +6,25 @@
 
 - [TD-3500] Sign configuration secrets
 
+## [Unreleased]
+
+### Changed
+
+- [TD-3526] Merged `td-dq` with `td-dd`. See `CHANGELOG-dq.md` for changes in
+  `td-dq` previous to this merge.
+- [TD-3621] Increase maximum length for JSON request bodies. The value for JSON
+  request bodies can now be configured using the `MAX_PAYLOAD_LENGTH`
+  environment variable.
+- [TD-3596] Creates Data Structure Tags
+
+### Added
+
+- [TD-3517] Profile executions and events
+
+### Added
+
+- [TD-3189] add templates in the creation of implementations
+
 ## [4.18.0] 2021-04-19
 
 ### Added
@@ -30,7 +49,6 @@
 ### Changed
 
 - [TD-3445] Postgres port configurable through `DB_PORT` environment variable
-  > > > > > > > master
 
 ## [4.16.0] 2021-03-22
 

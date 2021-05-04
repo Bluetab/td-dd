@@ -3,6 +3,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   alias TdCache.StructureTypeCache
+  alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Lineage.GraphData
@@ -286,6 +287,31 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
 
       assert %{"profile_permission" => true} = permissions
     end
+
+    setup [:profile_source]
+    @tag authentication: [role: "user"]
+    test "user with permission can profile structure with indirect profile source", %{
+      conn: conn,
+      claims: %{user_id: user_id},
+      profile_domain: %{id: domain_id},
+      structure: structure
+    } do
+      create_acl_entry(user_id, domain_id, [:view_data_structure, :profile_structures])
+
+      assert %{"user_permissions" => permissions} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(
+                   conn,
+                   :show,
+                   structure.id,
+                   "latest"
+                 )
+               )
+               |> json_response(:ok)
+
+      assert %{"profile_permission" => true} = permissions
+    end
   end
 
   describe "GET /api/data_structures/:id/versions/:version field structures" do
@@ -547,5 +573,23 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
 
   defp create_source do
     insert(:source, config: %{"job_types" => ["catalog", "profile"]})
+  end
+
+  defp profile_source(_) do
+    domain = build(:domain)
+    TaxonomyCache.put_domain(domain)
+    on_exit(fn -> TaxonomyCache.delete_domain(domain.id) end)
+
+    s1 = insert(:source, config: %{"job_types" => ["catalog"], "alias" => "foo"})
+    insert(:source, external_id: "foo", config: %{"job_types" => ["profile"]})
+    structure = insert(:data_structure, domain_id: domain.id, source_id: s1.id)
+
+    insert(:data_structure_version,
+      data_structure_id: structure.id,
+      type: "Column",
+      class: "field"
+    )
+
+    {:ok, structure: structure, profile_domain: domain}
   end
 end

@@ -112,6 +112,69 @@ defmodule TdDdWeb.SwaggerDefinitions do
     }
   end
 
+  def data_structure_tag_definitions do
+    %{
+      DataStructureTag:
+        swagger_schema do
+          title("Data Structure Tag")
+          description("A Data Structure Tag")
+
+          properties do
+            id(:integer, "Data Structure Tag unique identifier", required: true)
+            name(:string, "Tag name")
+          end
+
+          example(%{
+            id: 88,
+            name: "Tag1",
+          })
+        end,
+      DataStructureTags:
+        swagger_schema do
+          title("DataStructureTags")
+          description("A collection of data structure tags")
+          type(:array)
+          items(Schema.ref(:DataStructureTag))
+        end,
+      CreateDataStructureTag:
+        swagger_schema do
+          properties do
+            data_structure_type(
+              Schema.new do
+                properties do
+                  name(:string, "Data Structure name", required: true)
+                end
+              end
+            )
+          end
+        end,
+      UpdateDataStructureTag:
+        swagger_schema do
+          properties do
+            data_structure_type(
+              Schema.new do
+                properties do
+                  name(:string, "Data Structure name", required: true)
+                end
+              end
+            )
+          end
+        end,
+      DataStructureTagResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:DataStructureTag))
+          end
+        end,
+      DataStructureTagsResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:DataStructureTags))
+          end
+        end
+    }
+  end
+
   def data_structure_type_definitions do
     %{
       DataStructureType:
@@ -638,6 +701,122 @@ defmodule TdDdWeb.SwaggerDefinitions do
           properties do
             data(Schema.ref(:UserSearchFilters))
           end
+        end
+    }
+  end
+
+  def profile_execution_group_swagger_definitions do
+    %{
+      ProfileExecutionGroup:
+        swagger_schema do
+          title("Execution Group")
+          description("A group of structure executions")
+
+          properties do
+            executions(Schema.ref(:ProfileExecutions))
+            id(:integer, "Execution Group unique identifier", required: true)
+            inserted_at(:string, "insert timestamp")
+          end
+        end,
+      ProfileExecutions:
+        swagger_schema do
+          title("Executions")
+          description("A collection of Executions")
+          type(:array)
+          items(Schema.ref(:ProfileExecution))
+        end,
+      ProfileExecution:
+        swagger_schema do
+          properties do
+            id(:integer, "Execution unique identifier", required: true)
+            inserted_at(:string, "insert timestamp")
+            _embedded(Schema.ref(:ProfileExecutionEmbeddings))
+          end
+        end,
+      ProfileExecutionEmbeddings:
+        swagger_schema do
+          properties do
+            data_structure(Schema.ref(:EmbeddedStructure))
+            profile(Schema.ref(:EmbeddedProfile))
+            profile_events(Schema.ref(:EmbeddedProfileEvents))
+          end
+        end,
+      EmbeddedStructure:
+        swagger_schema do
+          properties do
+            id(:integer, "Structure unique identifier", required: true)
+            external_id(:string, "Structure external id", required: true)
+          end
+        end,
+      ProfileExecutionGroups:
+        swagger_schema do
+          title("Execution Groups")
+          description("A collection of Execution Groups")
+          type(:array)
+          items(Schema.ref(:ProfileExecutionGroup))
+        end,
+      ProfileExecutionGroupResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:ProfileExecutionGroup))
+          end
+        end,
+      ProfileExecutionGroupsResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:ProfileExecutionGroups))
+          end
+        end,
+      ProfileExecutionsResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:ProfileExecutions))
+          end
+        end,
+      ProfileExecutionResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:ProfileExecution))
+          end
+        end,
+      EmbeddedProfile:
+        swagger_schema do
+          properties do
+            id(:integer, "Profile identifier", required: true)
+            data_structure_id(:integer, "Data structure id", required: true)
+            value(:object, "Profile", required: false)
+          end
+        end
+    }
+  end
+
+  def profile_event_swagger_definitions do
+    %{
+      ProfileEvent:
+        swagger_schema do
+          title("Profile Event")
+          description("Representation of a event")
+
+          properties do
+            id(:integer, "Event Id", required: true)
+            profile_execution_id(:integer, "Execution Id", required: true)
+            inserted_at(:string, "Event insertion date")
+            type([:string, :null], "Event type")
+            message([:string, :null], "Event message")
+          end
+        end,
+      ProfileEventResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:ProfileEvent))
+          end
+        end,
+      EmbeddedProfileEvents:
+        swagger_schema do
+          title("Profile Events")
+          description("A collection of events")
+          type(:array)
+          items(Schema.ref(:ProfileEvent))
         end
     }
   end

@@ -11,10 +11,12 @@ defmodule TdDd.DataStructures do
   alias TdCache.StructureTypeCache
   alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
+  alias TdCx.Sources
   alias TdDd.Auth.Claims
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
+  alias TdDd.DataStructures.DataStructureTag
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Paths
@@ -721,6 +723,15 @@ defmodule TdDd.DataStructures do
     |> enrich(options[:enrich])
   end
 
+  @spec get_latest_versions([non_neg_integer]) :: [DataStructureVersion.t()]
+  def get_latest_versions(structure_ids) when is_list(structure_ids) do
+    DataStructureVersion
+    |> distinct(:data_structure_id)
+    |> order_by(desc: :version)
+    |> where([dsv], dsv.data_structure_id in ^structure_ids)
+    |> Repo.all()
+  end
+
   defp with_deleted(query, options, dynamic) when is_list(options) do
     include_deleted = Keyword.get(options, :deleted, true)
     with_deleted(query, include_deleted, dynamic)
@@ -877,5 +888,115 @@ defmodule TdDd.DataStructures do
     StructureMetadata
     |> distinct(:data_structure_id)
     |> order_by(asc: :data_structure_id, desc: :version)
+  end
+
+  def profile_source(
+        %{data_structure: %{source: %{config: %{"job_types" => job_types}} = source}} = dsv
+      ) do
+    if Enum.member?(job_types, "profile") do
+      Map.put(dsv, :profile_source, source)
+    else
+      do_profile_source(dsv, source)
+    end
+  end
+
+  def profile_source(dsv), do: dsv
+
+  defp do_profile_source(dsv, %{config: %{"alias" => source_alias}})
+       when not is_nil(source_alias) do
+    case Sources.get_source(%{external_id: source_alias}) do
+      %{config: %{"job_types" => job_types}} = source ->
+        if Enum.member?(job_types, "profile") do
+          Map.put(dsv, :profile_source, source)
+        else
+          dsv
+        end
+
+      _ ->
+        dsv
+    end
+  end
+
+  defp do_profile_source(dsv, _source), do: dsv
+
+  @doc """
+  Returns the list of data_structure_tags.
+
+  ## Examples
+
+      iex> list_data_structure_tags()
+      [%DataStructureTag{}, ...]
+
+  """
+  def list_data_structure_tags do
+    Repo.all(DataStructureTag)
+  end
+
+  @doc """
+  Gets a single data_structure_tag.
+
+  Raises `Ecto.NoResultsError` if the Data structure tag does not exist.
+
+  ## Examples
+
+      iex> get_data_structure_tag!(123)
+      %DataStructureTag{}
+
+      iex> get_data_structure_tag!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_data_structure_tag!(id), do: Repo.get!(DataStructureTag, id)
+
+  @doc """
+  Creates a data_structure_tag.
+
+  ## Examples
+
+      iex> create_data_structure_tag(%{field: value})
+      {:ok, %DataStructureTag{}}
+
+      iex> create_data_structure_tag(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_data_structure_tag(attrs \\ %{}) do
+    %DataStructureTag{}
+    |> DataStructureTag.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a data_structure_tag.
+
+  ## Examples
+
+      iex> update_data_structure_tag(data_structure_tag, %{field: new_value})
+      {:ok, %DataStructureTag{}}
+
+      iex> update_data_structure_tag(data_structure_tag, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_data_structure_tag(%DataStructureTag{} = data_structure_tag, attrs) do
+    data_structure_tag
+    |> DataStructureTag.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a data_structure_tag.
+
+  ## Examples
+
+      iex> delete_data_structure_tag(data_structure_tag)
+      {:ok, %DataStructureTag{}}
+
+      iex> delete_data_structure_tag(data_structure_tag)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_data_structure_tag(%DataStructureTag{} = data_structure_tag) do
+    Repo.delete(data_structure_tag)
   end
 end

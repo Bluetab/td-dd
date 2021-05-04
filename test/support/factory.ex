@@ -1,5 +1,8 @@
 defmodule TdDd.Factory do
-  @moduledoc false
+  @moduledoc """
+  An `ExMachina` factory for data quality tests.
+  """
+
   use ExMachina.Ecto, repo: TdDd.Repo
   use TdDfLib.TemplateFactory
 
@@ -8,9 +11,9 @@ defmodule TdDd.Factory do
   alias TdCx.Jobs.Job
   alias TdCx.Sources.Source
 
-  alias TdDd.Auth.Claims
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
+  alias TdDd.DataStructures.DataStructureTag
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Profile
@@ -20,23 +23,20 @@ defmodule TdDd.Factory do
   alias TdDd.Systems.System
   alias TdDd.UserSearchFilters.UserSearchFilter
 
-  def claims_factory(attrs) do
-    %Claims{
-      user_id: sequence(:user_id, & &1),
-      user_name: sequence("user_name"),
-      role: "admin",
-      jti: sequence("jti")
-    }
-    |> merge_attributes(attrs)
-  end
+  def claims_factory(attrs), do: do_claims(attrs, TdDd.Auth.Claims)
 
-  def cx_claims_factory(attrs) do
-    %TdCx.Auth.Claims{
+  def cx_claims_factory(attrs), do: do_claims(attrs, TdCx.Auth.Claims)
+
+  def dq_claims_factory(attrs), do: do_claims(attrs, TdDq.Auth.Claims)
+
+  defp do_claims(attrs, module) do
+    module
+    |> Kernel.struct(
       user_id: sequence(:user_id, & &1),
       user_name: sequence("user_name"),
       role: "admin",
       jti: sequence("jti")
-    }
+    )
     |> merge_attributes(attrs)
   end
 
@@ -65,8 +65,61 @@ defmodule TdDd.Factory do
     |> merge_attributes(attrs)
   end
 
+  def rule_factory do
+    %TdDq.Rules.Rule{
+      business_concept_id: sequence(:business_concept_id, &"#{&1}"),
+      description: %{"document" => "Rule Description"},
+      goal: 30,
+      minimum: 12,
+      name: sequence("rule_name"),
+      active: false,
+      version: 1,
+      updated_by: sequence(:updated_by, & &1),
+      result_type: "percentage"
+    }
+  end
+
+  def raw_implementation_factory do
+    %TdDq.Implementations.Implementation{
+      rule: build(:rule),
+      implementation_key: sequence("ri"),
+      implementation_type: "raw",
+      raw_content: build(:raw_content),
+      deleted_at: nil
+    }
+  end
+
+  def raw_content_factory do
+    %TdDq.Implementations.RawContent{
+      dataset: "clientes c join address a on c.address_id=a.id",
+      population: "a.country = 'SPAIN'",
+      source_id: 1,
+      database: "raw_database",
+      validations: "a.city is null"
+    }
+  end
+
+  def implementation_factory(attrs) do
+    attrs = default_assoc(attrs, :rule_id, :rule)
+
+    %TdDq.Implementations.Implementation{
+      implementation_key: sequence("implementation_key"),
+      implementation_type: "default",
+      dataset: build(:dataset),
+      population: build(:population),
+      validations: build(:validations)
+    }
+    |> merge_attributes(attrs)
+  end
+
   def data_structure_relation_factory do
     %DataStructureRelation{}
+  end
+
+  def data_structure_tag_factory do
+    %DataStructureTag{
+      name: sequence("structure_tag_name")
+    }
   end
 
   def data_structure_type_factory do
@@ -139,6 +192,25 @@ defmodule TdDd.Factory do
     }
   end
 
+  def profile_execution_factory do
+    %TdDd.Executions.ProfileExecution{
+      profile_group: build(:profile_execution_group),
+      data_structure: build(:data_structure)
+    }
+  end
+
+  def profile_execution_group_factory do
+    %TdDd.Executions.ProfileGroup{
+      created_by_id: 0
+    }
+  end
+
+  def profile_event_factory do
+    %TdDd.Events.ProfileEvent{
+      type: "PENDING"
+    }
+  end
+
   def source_factory do
     %Source{
       config: %{},
@@ -168,6 +240,94 @@ defmodule TdDd.Factory do
       type: "config",
       content: %{},
       external_id: sequence("external_id")
+    }
+  end
+
+  def dataset_factory(_attrs) do
+    [
+      build(:dataset_row),
+      build(:dataset_row, clauses: [build(:dataset_clause)], join_type: "inner")
+    ]
+  end
+
+  def dataset_row_factory do
+    %TdDq.Implementations.DatasetRow{
+      structure: build(:dataset_structure)
+    }
+  end
+
+  def dataset_structure_factory do
+    %TdDq.Implementations.Structure{
+      id: sequence(:dataset_structure_id, &(&1 + 14_080))
+    }
+  end
+
+  def dataset_clause_factory do
+    %TdDq.Implementations.JoinClause{
+      left: build(:dataset_structure),
+      right: build(:dataset_structure)
+    }
+  end
+
+  def population_factory(_attrs) do
+    [build(:condition_row)]
+  end
+
+  def validations_factory(_attrs) do
+    [build(:condition_row)]
+  end
+
+  def condition_row_factory do
+    %TdDq.Implementations.ConditionRow{
+      value: [%{"raw" => 8}],
+      operator: build(:operator),
+      structure: build(:dataset_structure)
+    }
+  end
+
+  def operator_factory do
+    %TdDq.Implementations.Operator{name: "eq", value_type: "number"}
+  end
+
+  def rule_result_factory do
+    %TdDq.Rules.RuleResult{
+      implementation_key: sequence("ri"),
+      result: "#{Decimal.round(50, 2)}",
+      date: "#{DateTime.utc_now()}"
+    }
+  end
+
+  def rule_result_record_factory(attrs) do
+    %{
+      implementation_key: sequence("ri"),
+      date: "2020-02-02T00:00:00Z",
+      result: "0",
+      records: "",
+      errors: ""
+    }
+    |> merge_attributes(attrs)
+    |> Enum.reject(fn {_k, v} -> v == "" end)
+    |> Map.new()
+  end
+
+  def implementation_result_record_factory(attrs) do
+    %{
+      date: "2020-02-02T00:00:00Z",
+      records: nil,
+      errors: nil
+    }
+    |> merge_attributes(attrs)
+    |> Enum.reject(fn {_k, v} -> is_nil(v) end)
+    |> Map.new()
+  end
+
+  def execution_factory do
+    %TdDq.Executions.Execution{}
+  end
+
+  def execution_group_factory do
+    %TdDq.Executions.Group{
+      created_by_id: 0
     }
   end
 

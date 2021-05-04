@@ -4,6 +4,7 @@ use Mix.Config
 # you can enable the server option below.
 config :td_dd, TdDdWeb.Endpoint, server: false
 config :td_dd, TdCxWeb.Endpoint, server: false
+config :td_dd, TdDqWeb.Endpoint, server: false
 
 # Print only warnings and errors during test
 config :logger, level: :warn
@@ -22,6 +23,10 @@ config :td_dd, permission_resolver: MockPermissionResolver
 config :td_dd, index_worker: TdDd.Search.MockIndexWorker
 
 config :td_dd, cx_index_worker: TdDd.Search.MockIndexWorker
+
+config :td_dd, dq_index_worker: TdDd.Search.MockIndexWorker
+
+config :td_dd, relation_cache: TdDq.MockRelationCache
 
 config :td_dd, TdDd.Search.Cluster, api: TdDd.ElasticsearchMock
 

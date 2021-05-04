@@ -2,14 +2,23 @@ defmodule TdDd.Canada.Abilities do
   @moduledoc false
   alias TdCache.Link
   alias TdDd.Auth.Claims
-  alias TdDd.Canada.DataStructureAbilities
-  alias TdDd.Canada.DataStructureTypeAbilities
-  alias TdDd.Canada.DataStructureVersionAbilities
-  alias TdDd.Canada.LinkAbilities
-  alias TdDd.Canada.UnitAbilities
+
+  alias TdDd.Canada.{
+    DataStructureAbilities,
+    DataStructureTagAbilities,
+    DataStructureTypeAbilities,
+    DataStructureVersionAbilities,
+    ExecutionAbilities,
+    LinkAbilities,
+    UnitAbilities
+  }
+
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureTag
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.Events.ProfileEvent
+  alias TdDd.Executions.{ProfileExecution, ProfileGroup}
   alias TdDd.Lineage.Units.Node
   alias TdDd.Lineage.Units.Unit
 
@@ -18,6 +27,15 @@ defmodule TdDd.Canada.Abilities do
     def can?(%Claims{role: "service"}, :upload, _resource), do: true
 
     def can?(%Claims{}, _action, nil), do: false
+
+    def can?(%Claims{} = claims, action, target)
+        when target in [ProfileEvent, ProfileExecution, ProfileGroup] do
+      ExecutionAbilities.can?(claims, action, target)
+    end
+
+    def can?(%Claims{} = claims, action, %ProfileExecution{} = target) do
+      ExecutionAbilities.can?(claims, action, target)
+    end
 
     def can?(%Claims{} = claims, action, %Link{} = link) do
       LinkAbilities.can?(claims, action, link)
@@ -37,6 +55,14 @@ defmodule TdDd.Canada.Abilities do
 
     def can?(%Claims{} = claims, action, %DataStructureVersion{} = data_structure_version) do
       DataStructureVersionAbilities.can?(claims, action, data_structure_version)
+    end
+
+    def can?(%Claims{} = claims, action, DataStructureTag) do
+      DataStructureTagAbilities.can?(claims, action, DataStructureTag)
+    end
+
+    def can?(%Claims{} = claims, action, %DataStructureTag{} = data_structure_tag) do
+      DataStructureTagAbilities.can?(claims, action, data_structure_tag)
     end
 
     def can?(%Claims{} = claims, action, %DataStructureType{} = data_structure_type) do
