@@ -13,6 +13,8 @@ defmodule TdDd.Classifiers.Filter do
   @type t :: %__MODULE__{}
   @typep changeset :: Ecto.Changeset.t()
 
+  @valid_prop ["class", "description", "group", "name", "type", "external_id"]
+
   schema "classifier_filters" do
     field :path, {:array, :string}
     field :values, {:array, :string}
@@ -33,8 +35,13 @@ defmodule TdDd.Classifiers.Filter do
     |> validate_required(:path)
     |> validate_length(:values, min: 1)
     |> validate_length(:path, min: 1)
+    |> validate_change(:path, &path_validator/2)
     |> update_change(:values, &Enum.uniq/1)
     |> foreign_key_constraint(:classifier_id)
     |> check_constraint(:values, name: :values_xor_regex)
   end
+
+  def path_validator(:path, ["metadata", _ | _]), do: []
+  def path_validator(:path, [p]) when p in @valid_prop, do: []
+  def path_validator(:path, [p | _]), do: [path: {"invalid value", value: p}]
 end

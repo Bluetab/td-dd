@@ -12,28 +12,28 @@ defmodule TdDd.Classifiers.FilterTest do
 
     test "casts and validates parameters" do
       %{id: classifier_id} = insert(:classifier)
-      params = %{classifier_id: classifier_id, path: ["foo"], regex: "foo"}
+      params = %{classifier_id: classifier_id, path: ["type"], regex: "foo"}
       assert %{valid?: true, changes: changes} = Filter.changeset(params)
-      assert %{regex: ~r/foo/, path: ["foo"], classifier_id: ^classifier_id} = changes
+      assert %{regex: ~r/foo/, path: ["type"], classifier_id: ^classifier_id} = changes
     end
 
     test "validates values is not empty" do
       %{id: classifier_id} = insert(:classifier)
-      params = %{classifier_id: classifier_id, path: ["bar"], values: []}
+      params = %{classifier_id: classifier_id, path: ["type"], values: []}
       assert %{valid?: false, errors: errors} = Filter.changeset(params)
       assert {_, [count: 1, validation: :length, kind: :min, type: :list]} = errors[:values]
     end
 
     test "removes duplicate values" do
       %{id: classifier_id} = insert(:classifier)
-      params = %{classifier_id: classifier_id, path: ["bar"], values: ["bar", "baz", "bar"]}
+      params = %{classifier_id: classifier_id, path: ["type"], values: ["bar", "baz", "bar"]}
       assert %{valid?: true, changes: changes} = Filter.changeset(params)
-      assert %{values: ["bar", "baz"], path: ["bar"], classifier_id: ^classifier_id} = changes
+      assert %{values: ["bar", "baz"], path: ["type"], classifier_id: ^classifier_id} = changes
     end
 
     test "captures foreign key constraint on classifier_id" do
       assert {:error, %{errors: errors} = changeset} =
-               %{classifier_id: 1, path: ["foo"], regex: "foo"}
+               %{classifier_id: 1, path: ["type"], regex: "foo"}
                |> Filter.changeset()
                |> Repo.insert()
 
@@ -47,7 +47,7 @@ defmodule TdDd.Classifiers.FilterTest do
       %{id: classifier_id} = insert(:classifier)
 
       assert {:error, %{errors: errors} = changeset} =
-               %{classifier_id: classifier_id, path: ["foo"], regex: "foo", values: ["bar"]}
+               %{classifier_id: classifier_id, path: ["type"], regex: "foo", values: ["bar"]}
                |> Filter.changeset()
                |> Repo.insert()
 

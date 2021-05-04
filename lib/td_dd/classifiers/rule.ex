@@ -6,6 +6,7 @@ defmodule TdDd.Classifiers.Rule do
   use Ecto.Schema
 
   alias TdDd.Classifiers.Classifier
+  alias TdDd.Classifiers.Filter
 
   import Ecto.Changeset
 
@@ -33,10 +34,13 @@ defmodule TdDd.Classifiers.Rule do
     struct
     |> cast(params, [:class, :classifier_id, :priority, :values, :regex, :path])
     |> validate_required([:class, :path, :priority])
-    |> validate_length(:path, min: 1)
     |> validate_length(:values, min: 1)
+    |> validate_length(:path, min: 1)
+    |> validate_change(:path, &path_validator/2)
     |> update_change(:values, &Enum.uniq/1)
     |> foreign_key_constraint(:classifier_id)
     |> check_constraint(:values, name: :values_xor_regex)
   end
+
+  defdelegate path_validator(field, changeset), to: Filter
 end

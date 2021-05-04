@@ -18,25 +18,10 @@ defmodule TdDd.Classifiers do
   @doc "Creates a `Classifier` using the specified parameters"
   @spec create_classifier(map) :: {:ok, Classifier.t()} | {:error, changeset}
   def create_classifier(%{} = params) do
-    params
-    |> Classifier.changeset()
-    |> Repo.insert()
-  end
-
-  @doc "Creates a `Filter` using the specified parameters"
-  @spec create_filter(Classifier.t(), map) :: {:ok, Filter.t()} | {:error, changeset}
-  def create_filter(%Classifier{id: classifier_id}, %{} = params) do
-    %Filter{classifier_id: classifier_id}
-    |> Filter.changeset(params)
-    |> Repo.insert()
-  end
-
-  @doc "Creates a `Rule` using the specified parameters"
-  @spec create_rule(Classifier.t(), map) :: {:ok, Rule.t()} | {:error, changeset}
-  def create_rule(%Classifier{id: classifier_id}, %{} = params) do
-    %Rule{classifier_id: classifier_id}
-    |> Rule.changeset(params)
-    |> Repo.insert()
+    Multi.new()
+    |> Multi.insert(:classifier, Classifier.changeset(params))
+    |> Multi.run(:classifications, &classify/2)
+    |> Repo.transaction()
   end
 
   @doc "Deletes the specified `Classifier`"
@@ -45,45 +30,26 @@ defmodule TdDd.Classifiers do
     Repo.delete(classifier)
   end
 
-  @doc "Deletes the specified `Filter`"
-  @spec delete_filter(Filter.t()) :: {:ok, Filter.t()} | {:error, changeset}
-  def delete_filter(%Filter{} = filter) do
-    Repo.delete(filter)
+  @spec classify(Ecto.Repo.t(), %{required(Multi.name()) => any()}) ::
+          {:ok, map} | {:error, Multi.name(), any, %{required(Multi.name()) => any()}}
+  def classify(_repo, %{classifier: classifier}) do
+    classify(classifier)
   end
 
-  @doc "Deletes the specified `Rule`"
-  @spec delete_rule(Rule.t()) :: {:ok, Rule.t()} | {:error, changeset}
-  def delete_rule(%Rule{} = rule) do
-    Repo.delete(rule)
-  end
-
+  @spec classify(Classifier.t()) ::
+          {:ok, map} | {:error, Multi.name(), any, %{required(Multi.name()) => any()}}
   def classify(%Classifier{} = classifier) do
-    # Query  structures matching classifier filter
     query = structure_query(classifier)
 
-    # Group by matching rule
     %{rules: rules} = Repo.preload(classifier, :rules)
 
     rules
     |> Enum.sort_by(& &1.priority)
-    |> Enum.reduce(multi(classifier), &apply_rule(&1, &2, query))
+    |> Enum.reduce(Multi.new(), &apply_rule(&1, &2, query))
     |> Repo.transaction()
-
-    # insert_all / on_conflict
-
-    # remove where rule_id is null
   end
 
-  defp multi(%Classifier{id: id}) do
-    query =
-      Classification
-      |> where(classifier_id: ^id)
-      |> where([c], is_nil(c.rule_id))
-
-    Multi.new()
-    |> Multi.delete_all(:delete_existing, query)
-  end
-
+  @spec apply_rule(Rule.t(), Multi.t(), Ecto.Queryable.t()) :: Multi.t()
   defp apply_rule(%Rule{class: class, classifier_id: classifier_id, id: id} = rule, multi, query) do
     Multi.run(multi, class, fn repo, %{} ->
       source =
@@ -113,16 +79,20 @@ defmodule TdDd.Classifiers do
   Build a query for data structure versions matching the classifier's system and
   filters.
   """
+  @spec structure_query(Classifier.t()) :: Ecto.Queryable.t()
   def structure_query(%Classifier{system_id: system_id} = classifier) do
     %{filters: filters} = Repo.preload(classifier, :filters)
 
-    q =
+    query =
       DataStructureVersion
       |> join(:inner, [dsv], ds in assoc(dsv, :data_structure))
       |> where([_, ds], ds.system_id == ^system_id)
 
-    Enum.reduce(filters, q, &do_filter/2)
+    Enum.reduce(filters, query, &do_filter/2)
   end
+
+  @spec do_filter(Rule.t() | Filter.t(), Ecto.Queryable.t()) :: Ecto.Queryable.t()
+  defp do_filter(rule_or_filter, query)
 
   defp do_filter(%{path: ["metadata" | path], values: [_ | _] = values}, q) do
     where(

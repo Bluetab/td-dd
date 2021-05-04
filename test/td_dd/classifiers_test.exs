@@ -33,7 +33,7 @@ defmodule TdDd.ClassifiersTest do
         ]
       }
 
-      assert {:ok, %Classifier{} = classifier} = Classifiers.create_classifier(params)
+      assert {:ok, %{classifier: classifier}} = Classifiers.create_classifier(params)
 
       assert %{
                filters: [filter],
@@ -59,24 +59,22 @@ defmodule TdDd.ClassifiersTest do
                values: ["whatever"]
              } = r2
     end
-  end
 
-  describe "Classifiers.create_filter/2" do
-    test "creates a filter" do
-      %{id: classifier_id} = classifier = insert(:classifier)
-      params = %{"path" => ["bar"], "regex" => "baz"}
-      assert {:ok, filter} = Classifiers.create_filter(classifier, params)
-      assert %{classifier_id: ^classifier_id, path: ["bar"], regex: ~r/baz/} = filter
-    end
-  end
+    test "classifies existing data structures" do
+      %{id: dsv_id, data_structure: %{system_id: system_id}} =
+        insert(:data_structure_version, type: "foo")
 
-  describe "Classifiers.create_rule/2" do
-    test "creates a rule" do
-      %{id: classifier_id} = classifier = insert(:classifier)
-      params = %{"class" => "foo", "path" => ["bar"], "regex" => "baz"}
-      assert {:ok, rule} = Classifiers.create_rule(classifier, params)
+      params = %{
+        "system_id" => system_id,
+        "name" => "environment",
+        "rules" => [
+          %{"class" => "foo", "path" => ["type"], "regex" => "^foo$"}
+        ]
+      }
 
-      assert %{classifier_id: ^classifier_id, class: "foo", path: ["bar"], regex: ~r/baz/} = rule
+      assert {:ok, %{classifications: classifications}} = Classifiers.create_classifier(params)
+      assert %{"foo" => {_, [classification]}} = classifications
+      assert %{data_structure_version_id: ^dsv_id} = classification
     end
   end
 
@@ -84,22 +82,6 @@ defmodule TdDd.ClassifiersTest do
     test "deletes a classifier" do
       classifier = insert(:classifier)
       assert {:ok, %{__meta__: meta}} = Classifiers.delete_classifier(classifier)
-      assert %{state: :deleted} = meta
-    end
-  end
-
-  describe "Classifiers.delete_filter/2" do
-    test "deletes a filter" do
-      filter = insert(:regex_filter)
-      assert {:ok, %{__meta__: meta}} = Classifiers.delete_filter(filter)
-      assert %{state: :deleted} = meta
-    end
-  end
-
-  describe "Classifiers.delete_rule/2" do
-    test "deletes a rule" do
-      rule = insert(:regex_rule)
-      assert {:ok, %{__meta__: meta}} = Classifiers.delete_rule(rule)
       assert %{state: :deleted} = meta
     end
   end
