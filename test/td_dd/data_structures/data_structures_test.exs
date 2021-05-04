@@ -939,4 +939,72 @@ defmodule TdDd.DataStructuresTest do
              } = DataStructures.profile_source(v)
     end
   end
+
+  describe "data_structure_tags" do
+    alias TdDd.DataStructures.DataStructureTag
+
+    @valid_attrs %{name: "some name"}
+    @update_attrs %{name: "some updated name"}
+    @invalid_attrs %{name: nil}
+
+    def data_structure_tag_fixture(attrs \\ %{}) do
+      {:ok, data_structure_tag} =
+        attrs
+        |> Enum.into(@valid_attrs)
+        |> DataStructures.create_data_structure_tag()
+
+      data_structure_tag
+    end
+
+    test "list_data_structure_tags/0 returns all data_structure_tags" do
+      data_structure_tag = data_structure_tag_fixture()
+      assert DataStructures.list_data_structure_tags() == [data_structure_tag]
+    end
+
+    test "get_data_structure_tag!/1 returns the data_structure_tag with given id" do
+      data_structure_tag = data_structure_tag_fixture()
+      assert DataStructures.get_data_structure_tag!(data_structure_tag.id) == data_structure_tag
+    end
+
+    test "create_data_structure_tag/1 with valid data creates a data_structure_tag" do
+      assert {:ok, %DataStructureTag{} = data_structure_tag} =
+               DataStructures.create_data_structure_tag(@valid_attrs)
+
+      assert data_structure_tag.name == "some name"
+    end
+
+    test "create_data_structure_tag/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} =
+               DataStructures.create_data_structure_tag(@invalid_attrs)
+    end
+
+    test "update_data_structure_tag/2 with valid data updates the data_structure_tag" do
+      data_structure_tag = data_structure_tag_fixture()
+
+      assert {:ok, %DataStructureTag{} = data_structure_tag} =
+               DataStructures.update_data_structure_tag(data_structure_tag, @update_attrs)
+
+      assert data_structure_tag.name == "some updated name"
+    end
+
+    test "update_data_structure_tag/2 with invalid data returns error changeset" do
+      data_structure_tag = data_structure_tag_fixture()
+
+      assert {:error, %Ecto.Changeset{}} =
+               DataStructures.update_data_structure_tag(data_structure_tag, @invalid_attrs)
+
+      assert data_structure_tag == DataStructures.get_data_structure_tag!(data_structure_tag.id)
+    end
+
+    test "delete_data_structure_tag/1 deletes the data_structure_tag" do
+      data_structure_tag = data_structure_tag_fixture()
+
+      assert {:ok, %DataStructureTag{}} =
+               DataStructures.delete_data_structure_tag(data_structure_tag)
+
+      assert_raise Ecto.NoResultsError, fn ->
+        DataStructures.get_data_structure_tag!(data_structure_tag.id)
+      end
+    end
+  end
 end

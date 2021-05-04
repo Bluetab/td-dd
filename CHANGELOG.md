@@ -9,6 +9,7 @@
 - [TD-3621] Increase maximum length for JSON request bodies. The value for JSON
   request bodies can now be configured using the `MAX_PAYLOAD_LENGTH`
   environment variable.
+- [TD-3596] Creates Data Structure Tags
 
 ### Added
 
