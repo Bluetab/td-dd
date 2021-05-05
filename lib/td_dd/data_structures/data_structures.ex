@@ -844,7 +844,7 @@ defmodule TdDd.DataStructures do
     |> where(
       [sm],
       fragment(
-        "(?, COALESCE(?, NOW())) OVERLAPS (?, COALESCE(?, NOW()))",
+        "(?, COALESCE(?, statement_timestamp())) OVERLAPS (?, COALESCE(?, statement_timestamp()))",
         ^inserted_at,
         ^deleted_at,
         sm.inserted_at,

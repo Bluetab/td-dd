@@ -9,7 +9,7 @@ defmodule TdDd.Loader.StructuresTest do
 
   setup %{ids: ids} do
     %{id: system_id} = insert(:system)
-    ts = timestamp()
+    ts = DateTime.utc_now()
 
     entries =
       ids
@@ -31,7 +31,7 @@ defmodule TdDd.Loader.StructuresTest do
   describe "update_domain_ids/2" do
     @tag ids: 1..10
     test "updates domain_id only if changed" do
-      ts = timestamp()
+      ts = DateTime.utc_now()
       new_domain_id = 42
       records = [%{domain_id: 1, external_id: "1"}, %{domain_id: new_domain_id, external_id: "2"}]
       assert {:ok, {1, [structure_id]}} = Structures.update_domain_ids(records, ts)
@@ -45,7 +45,7 @@ defmodule TdDd.Loader.StructuresTest do
       %{id: id1} = insert(:source)
       %{id: id2} = insert(:source)
 
-      ts = timestamp()
+      ts = DateTime.utc_now()
 
       records = Enum.map(1..10, fn id -> %{external_id: "#{id}"} end)
 
@@ -73,7 +73,7 @@ defmodule TdDd.Loader.StructuresTest do
   describe "bulk_update_domain_id/3" do
     @tag ids: 1..5_000
     test "bulk-updates domain_id if changed, returns count and affected ids", %{ids: ids} do
-      ts = DateTime.utc_now() |> DateTime.truncate(:second)
+      ts = DateTime.utc_now()
 
       assert {0, []} = Structures.bulk_update_domain_id([], 1, ts)
 
@@ -92,13 +92,11 @@ defmodule TdDd.Loader.StructuresTest do
 
     @tag ids: 1..10
     test "handles nil correctly", %{ids: ids} do
-      ts = DateTime.utc_now() |> DateTime.truncate(:second)
+      ts = DateTime.utc_now()
       external_ids = Enum.map(ids, &Integer.to_string/1)
 
       assert {10, _} = Structures.bulk_update_domain_id(external_ids, nil, ts)
       assert {0, []} = Structures.bulk_update_domain_id(external_ids, nil, ts)
     end
   end
-
-  defp timestamp, do: DateTime.utc_now() |> DateTime.truncate(:second)
 end

@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- Timestamps on `DataStructureVersion` are now `utc_datetime_usec`.
+
 ## [4.19.0] 2021-05-04
 
 ### Changed

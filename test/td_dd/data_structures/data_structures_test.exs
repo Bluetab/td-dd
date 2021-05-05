@@ -158,9 +158,9 @@ defmodule TdDd.DataStructuresTest do
 
       [dsv1, dsv2, dsv3] =
         [
-          [inserted_at: ~U[2020-01-01 00:00:00Z], deleted_at: ~U[2020-02-01 00:00:00Z]],
-          [inserted_at: ~U[2020-02-01 00:00:00Z], deleted_at: ~U[2020-03-01 00:00:00Z]],
-          [inserted_at: ~U[2020-04-01 00:00:00Z]]
+          [inserted_at: ~U[2020-01-01 00:00:00.123456Z], deleted_at: ~U[2020-02-01 00:00:00.123456Z]],
+          [inserted_at: ~U[2020-02-01 00:00:00.123456Z], deleted_at: ~U[2020-03-01 00:00:00.123456Z]],
+          [inserted_at: ~U[2020-04-01 00:00:00.123456Z]]
         ]
         |> Enum.with_index()
         |> Enum.map(fn {params, v} ->
@@ -170,9 +170,9 @@ defmodule TdDd.DataStructuresTest do
 
       [sm1, _sm2, sm3] =
         [
-          [inserted_at: ~U[2020-02-02 00:00:00Z], deleted_at: ~U[2020-02-03 00:00:00Z]],
-          [inserted_at: ~U[2020-03-02 00:00:00Z], deleted_at: ~U[2020-04-05 00:00:00Z]],
-          [inserted_at: ~U[2020-05-01 00:00:00Z]]
+          [inserted_at: ~U[2020-02-02 00:00:00.123456Z], deleted_at: ~U[2020-02-03 00:00:00.123456Z]],
+          [inserted_at: ~U[2020-03-02 00:00:00.123456Z], deleted_at: ~U[2020-04-05 00:00:00.123456Z]],
+          [inserted_at: ~U[2020-05-01 00:00:00.123456Z]]
         ]
         |> Enum.with_index()
         |> Enum.map(fn {params, v} ->

@@ -23,7 +23,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     field(:group, :string)
     field(:name, :string)
     field(:type, :string)
-    field(:deleted_at, :utc_datetime)
+    field(:deleted_at, :utc_datetime_usec)
     field(:hash, :binary)
     field(:ghash, :binary)
     field(:lhash, :binary)
@@ -47,7 +47,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       join_keys: [child_id: :id, parent_id: :id]
     )
 
-    timestamps(type: :utc_datetime)
+    timestamps(type: :utc_datetime_usec)
   end
 
   def update_changeset(%__MODULE__{} = data_structure_version, params) do
