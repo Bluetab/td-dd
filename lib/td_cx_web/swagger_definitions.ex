@@ -133,6 +133,12 @@ defmodule TdCxWeb.SwaggerDefinitions do
           properties do
             data(Schema.ref(:Configurations))
           end
+        end,
+      SignResponse:
+        swagger_schema do
+          properties do
+            token(:string, "Signed token for configuration")
+          end
         end
     }
   end

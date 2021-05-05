@@ -32,7 +32,7 @@ defmodule TdCx.Configurations.Configuration do
   @doc false
   def update_changeset(configuration, attrs) do
     configuration
-    |> cast(attrs, [:content])
+    |> cast(attrs, [:content, :type])
     |> validate_template(configuration)
   end
 

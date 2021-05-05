@@ -1,6 +1,7 @@
 defmodule TdCxWeb.ConfigurationControllerTest do
   use TdCxWeb.ConnCase
 
+  alias TdCx.Configurations
   alias TdCx.Configurations.Configuration
 
   @test_template %{
@@ -247,9 +248,125 @@ defmodule TdCxWeb.ConfigurationControllerTest do
     end
   end
 
+  describe "sign" do
+    setup do
+      secret_key = "foo"
+
+      with_key = %{
+        id: System.unique_integer([:positive]),
+        name: "foo",
+        label: "Foo",
+        scope: "ca",
+        content: [
+          %{
+            "name" => "Secret Group",
+            "is_secret" => true,
+            "fields" => [
+              %{
+                "name" => "secret_key",
+                "type" => "string",
+                "label" => "Secret Field",
+                "widget" => "password",
+                "values" => nil,
+                "cardinality" => "?"
+              }
+            ]
+          }
+        ]
+      }
+
+      without_key = %{
+        id: System.unique_integer([:positive]),
+        name: "bar",
+        label: "Bar",
+        scope: "ca",
+        content: [
+          %{
+            "name" => "Secret Group",
+            "is_secret" => true,
+            "fields" => [
+              %{
+                "name" => "bar_key",
+                "type" => "string",
+                "label" => "Secret Field",
+                "widget" => "password",
+                "values" => nil,
+                "cardinality" => "?"
+              }
+            ]
+          }
+        ]
+      }
+
+      with_key = Templates.create_template(with_key)
+      without_key = Templates.create_template(without_key)
+
+      on_exit(fn ->
+        Templates.delete(with_key)
+        Templates.delete(without_key)
+      end)
+
+      c1 = build(:configuration, type: with_key.name, content: %{"secret_key" => secret_key})
+      c2 = build(:configuration, type: without_key.name)
+
+      {:ok, c1} = Configurations.create_configuration(Map.from_struct(c1))
+      {:ok, c2} = Configurations.create_configuration(Map.from_struct(c2))
+
+      [c1: c1, c2: c2, secret_key: secret_key]
+    end
+
+    @tag authentication: [role: "user"]
+    test "returns signed secret key", %{conn: conn, c1: c1, secret_key: secret_key} do
+      now = DateTime.utc_now()
+      exp = now |> DateTime.add(10 * 60) |> DateTime.to_unix()
+
+      payload = %{
+        "exp" => exp,
+        "params" => %{"domain_ids" => [1, 3]},
+        "resource" => %{"dashboard" => 1}
+      }
+
+      conn =
+        post(conn, Routes.configuration_configuration_signer_path(conn, :create, c1.external_id),
+          payload: payload
+        )
+
+      assert %{"token" => token} = json_response(conn, 201)
+
+      assert {true, %{fields: ^payload}, _} =
+               JOSE.JWT.verify_strict(
+                 %{"kty" => "oct", "k" => Base.encode64(secret_key)},
+                 ["HS256"],
+                 token
+               )
+    end
+
+    @tag authentication: [role: "user"]
+    test "returns unauthorized when secrets can not be signed", %{conn: conn, c2: c2} do
+      now = DateTime.utc_now()
+      exp = now |> DateTime.add(10 * 60) |> DateTime.to_unix()
+
+      payload = %{
+        "exp" => exp,
+        "params" => %{"domain_ids" => [1, 3]},
+        "resource" => %{"dashboard" => 1}
+      }
+
+      conn =
+        post(conn, Routes.configuration_configuration_signer_path(conn, :create, c2.external_id),
+          payload: payload
+        )
+
+      assert %{"errors" => %{"detail" => "Unauthorized"}} = json_response(conn, 401)
+    end
+  end
+
   defp create_configuration(_) do
     create_template(nil)
-    configuration = insert(:configuration, content: %{"field1" => "value"})
+
+    configuration =
+      insert(:configuration, content: %{"field1" => "value"}, external_id: "external_id")
+
     {:ok, configuration: configuration}
   end
 
