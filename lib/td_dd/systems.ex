@@ -3,6 +3,8 @@ defmodule TdDd.Systems do
   The Systems context.
   """
 
+  import Ecto.Query
+
   alias Ecto.Multi
   alias TdDd.Auth.Claims
   alias TdDd.Cache.SystemLoader
@@ -28,21 +30,23 @@ defmodule TdDd.Systems do
 
   Returns the tuple `{:ok, system}` if the system exists, or `{:error,
   :not_found}` if it doesn't.
-
-  ## Examples
-
-      iex> get_system(123)
-      {:ok, %System{}}
-
-      iex> get_system(456)
-      {:error, :not_found}
-
   """
   def get_system(id) do
     case Repo.get(System, id) do
       nil -> {:error, :not_found}
       system -> {:ok, system}
     end
+  end
+
+  @doc """
+  Gets a single system, throwing an exception if not found.
+  """
+  def get_system!(id, opts \\ []) do
+    preloads = Keyword.get(opts, :preload, [])
+
+    System
+    |> preload(^preloads)
+    |> Repo.get!(id)
   end
 
   @doc """

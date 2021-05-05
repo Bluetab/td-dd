@@ -10,10 +10,22 @@ defmodule TdDd.ClassifiersTest do
     [system: system, system_id: system_id]
   end
 
+  describe "Classifiers.get_classifier!/2" do
+    test "gets classifier by system and classifier id", %{system: system} do
+      %Classifier{id: id} = insert(:classifier, system: system)
+      assert %{id: ^id} = Classifiers.get_classifier!(system, id)
+    end
+
+    test "raises exception when no classifier found", %{system: system} do
+      assert_raise Ecto.NoResultsError, fn ->
+        Classifiers.get_classifier!(system, -1)
+      end
+    end
+  end
+
   describe "Classifiers.create_classifier/1" do
-    test "creates a classifier", %{system_id: system_id} do
+    test "creates a classifier", %{system: system} do
       params = %{
-        "system_id" => system_id,
         "name" => "environment",
         "filters" => [
           %{"path" => ["type"], "values" => ["schema"]}
@@ -33,7 +45,7 @@ defmodule TdDd.ClassifiersTest do
         ]
       }
 
-      assert {:ok, %{classifier: classifier}} = Classifiers.create_classifier(params)
+      assert {:ok, %{classifier: classifier}} = Classifiers.create_classifier(system, params)
 
       assert %{
                filters: [filter],
@@ -48,7 +60,7 @@ defmodule TdDd.ClassifiersTest do
                priority: 0,
                class: "prod",
                path: ["external_id"],
-               regex: ~r/glue:\/\/.*/
+               regex: "glue://.*"
              } = r1
 
       assert %{
@@ -61,18 +73,20 @@ defmodule TdDd.ClassifiersTest do
     end
 
     test "classifies existing data structures" do
-      %{id: dsv_id, data_structure: %{system_id: system_id}} =
+      %{id: dsv_id, data_structure: %{system: system}} =
         insert(:data_structure_version, type: "foo")
 
       params = %{
-        "system_id" => system_id,
+        "system_id" => system.id,
         "name" => "environment",
         "rules" => [
           %{"class" => "foo", "path" => ["type"], "regex" => "^foo$"}
         ]
       }
 
-      assert {:ok, %{classifications: classifications}} = Classifiers.create_classifier(params, returning: true)
+      assert {:ok, %{classifications: classifications}} =
+               Classifiers.create_classifier(system, params, returning: true)
+
       assert %{"foo" => {_, [classification]}} = classifications
       assert %{data_structure_version_id: ^dsv_id} = classification
     end
@@ -152,7 +166,8 @@ defmodule TdDd.ClassifiersTest do
         assert %{"foo" => {5, nil}, "bar" => {5, nil}} = value
       end)
 
-      assert {:ok, %{} = res} = Classifiers.classify_many([system_id, 69], updated_at: DateTime.utc_now())
+      assert {:ok, %{} = res} =
+               Classifiers.classify_many([system_id, 69], updated_at: DateTime.utc_now())
 
       Enum.each(res, fn {key, value} ->
         assert key in classifier_names

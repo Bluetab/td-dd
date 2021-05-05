@@ -16,7 +16,7 @@ defmodule TdDd.Classifiers.RuleTest do
       %{id: classifier_id} = insert(:classifier)
       params = %{classifier_id: classifier_id, path: ["type"], regex: "foo", class: "foo"}
       assert %{valid?: true, changes: changes} = Rule.changeset(params)
-      assert %{regex: ~r/foo/, path: ["type"], classifier_id: ^classifier_id} = changes
+      assert %{regex: "foo", path: ["type"], classifier_id: ^classifier_id} = changes
     end
 
     test "validates values is not empty" do

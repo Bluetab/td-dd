@@ -27,7 +27,7 @@ defmodule TdDd.Classifiers.ClassifierTest do
                |> Repo.insert()
 
       assert %{filters: [filter]} = classifier
-      assert %{path: ["type"], regex: ~r/bar/} = filter
+      assert %{path: ["type"], regex: "bar"} = filter
     end
 
     test "casts the rules association" do
@@ -43,7 +43,7 @@ defmodule TdDd.Classifiers.ClassifierTest do
                |> Repo.insert()
 
       assert %{rules: [rule]} = classifier
-      assert %{class: "class", path: ["type"], regex: ~r/foo/} = rule
+      assert %{class: "class", path: ["type"], regex: "foo"} = rule
     end
 
     test "captures unique constraint on name and system_id" do

@@ -18,7 +18,7 @@ defmodule TdDd.Classifiers.Filter do
   schema "classifier_filters" do
     field :path, {:array, :string}
     field :values, {:array, :string}
-    field :regex, EctoRegex
+    field :regex, :string
     belongs_to :classifier, Classifier
     timestamps(type: :utc_datetime_usec)
   end
@@ -36,6 +36,7 @@ defmodule TdDd.Classifiers.Filter do
     |> validate_length(:values, min: 1)
     |> validate_length(:path, min: 1)
     |> validate_change(:path, &path_validator/2)
+    |> validate_change(:regex, &regex_validator/2)
     |> update_change(:values, &Enum.uniq/1)
     |> foreign_key_constraint(:classifier_id)
     |> check_constraint(:values, name: :values_xor_regex)
@@ -44,4 +45,13 @@ defmodule TdDd.Classifiers.Filter do
   def path_validator(:path, ["metadata", _ | _]), do: []
   def path_validator(:path, [p]) when p in @valid_prop, do: []
   def path_validator(:path, [p | _]), do: [path: {"invalid value", value: p}]
+
+  def regex_validator(:regex, value) when is_binary(value) do
+    case Regex.compile(value) do
+      {:ok, _} -> []
+      _ -> [regex: "has invalid format"]
+    end
+  end
+
+  def regex_validator(:regex, _value), do: [regex: "has invalid format"]
 end

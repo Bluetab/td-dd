@@ -37,6 +37,23 @@ defmodule TdDd.SystemsTest do
     end
   end
 
+  describe "get_system!/1" do
+    test "returns the system with given id", %{system: %{id: id}} do
+      assert %{id: ^id} = Systems.get_system!(id)
+    end
+
+    test "preloads classifier", %{system: %{id: id}} do
+      insert(:classifier, system_id: id)
+      assert %{classifiers: [_]} = Systems.get_system!(id, preload: [classifiers: :filters])
+    end
+
+    test "raises exception if not found" do
+      assert_raise Ecto.NoResultsError, fn ->
+        Systems.get_system!(-1)
+      end
+    end
+  end
+
   describe "create_system/2" do
     test "creates a system with valid data", %{claims: claims} do
       %{name: name, external_id: external_id} =

@@ -18,7 +18,7 @@ defmodule TdDd.Classifiers.Rule do
     field :path, {:array, :string}
     field :priority, :integer, default: 0
     field :values, {:array, :string}
-    field :regex, EctoRegex
+    field :regex, :string
     field :class, :string
     belongs_to :classifier, Classifier
     timestamps(type: :utc_datetime_usec)
@@ -37,10 +37,13 @@ defmodule TdDd.Classifiers.Rule do
     |> validate_length(:values, min: 1)
     |> validate_length(:path, min: 1)
     |> validate_change(:path, &path_validator/2)
+    |> validate_change(:regex, &regex_validator/2)
     |> update_change(:values, &Enum.uniq/1)
     |> foreign_key_constraint(:classifier_id)
     |> check_constraint(:values, name: :values_xor_regex)
   end
 
   defdelegate path_validator(field, changeset), to: Filter
+
+  defdelegate regex_validator(field, changeset), to: Filter
 end

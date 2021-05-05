@@ -14,7 +14,14 @@ defmodule TdDd.Classifiers.FilterTest do
       %{id: classifier_id} = insert(:classifier)
       params = %{classifier_id: classifier_id, path: ["type"], regex: "foo"}
       assert %{valid?: true, changes: changes} = Filter.changeset(params)
-      assert %{regex: ~r/foo/, path: ["type"], classifier_id: ^classifier_id} = changes
+      assert %{regex: "foo", path: ["type"], classifier_id: ^classifier_id} = changes
+    end
+
+    test "validates regex" do
+      %{id: classifier_id} = insert(:classifier)
+      params = %{classifier_id: classifier_id, path: ["type"], regex: "[["}
+      assert %{valid?: false, errors: errors} = Filter.changeset(params)
+      assert errors[:regex] == {"has invalid format", []}
     end
 
     test "validates values is not empty" do

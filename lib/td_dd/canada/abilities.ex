@@ -3,30 +3,43 @@ defmodule TdDd.Canada.Abilities do
   alias TdCache.Link
   alias TdDd.Auth.Claims
 
-  alias TdDd.Canada.{
-    DataStructureAbilities,
-    DataStructureTagAbilities,
-    DataStructureTypeAbilities,
-    DataStructureVersionAbilities,
-    ExecutionAbilities,
-    LinkAbilities,
-    UnitAbilities
-  }
-
+  alias TdDd.Canada.DataStructureAbilities
+  alias TdDd.Canada.DataStructureTagAbilities
+  alias TdDd.Canada.DataStructureTypeAbilities
+  alias TdDd.Canada.DataStructureVersionAbilities
+  alias TdDd.Canada.ExecutionAbilities
+  alias TdDd.Canada.LinkAbilities
+  alias TdDd.Canada.SystemAbilities
+  alias TdDd.Canada.UnitAbilities
+  alias TdDd.Classifiers.Classifier
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureTag
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Events.ProfileEvent
-  alias TdDd.Executions.{ProfileExecution, ProfileGroup}
+  alias TdDd.Executions.ProfileExecution
+  alias TdDd.Executions.ProfileGroup
   alias TdDd.Lineage.Units.Node
   alias TdDd.Lineage.Units.Unit
+  alias TdDd.Systems.System
 
   defimpl Canada.Can, for: Claims do
     # service accounts can upload metadata and profiling
     def can?(%Claims{role: "service"}, :upload, _resource), do: true
 
     def can?(%Claims{}, _action, nil), do: false
+
+    def can?(%Claims{} = claims, action, System) do
+      SystemAbilities.can?(claims, action, System)
+    end
+
+    def can?(%Claims{} = claims, action, %System{} = system) do
+      SystemAbilities.can?(claims, action, system)
+    end
+
+    def can?(%Claims{} = claims, action, %Classifier{} = classifier) do
+      SystemAbilities.can?(claims, action, classifier)
+    end
 
     def can?(%Claims{} = claims, action, target)
         when target in [ProfileEvent, ProfileExecution, ProfileGroup] do

@@ -344,8 +344,8 @@ defmodule TdDd.Factory do
     attrs = default_assoc(attrs, :classifier_id, :classifier)
 
     %TdDd.Classifiers.Filter{
-      path: [sequence("path")],
-      regex: ~r/foo/
+      path: ["type"],
+      regex: "foo"
     }
     |> merge_attributes(attrs)
   end
@@ -354,7 +354,7 @@ defmodule TdDd.Factory do
     attrs = default_assoc(attrs, :classifier_id, :classifier)
 
     %TdDd.Classifiers.Filter{
-      path: [sequence("path")],
+      path: ["type"],
       values: [sequence("value")]
     }
     |> merge_attributes(attrs)
@@ -365,8 +365,8 @@ defmodule TdDd.Factory do
 
     %TdDd.Classifiers.Rule{
       class: sequence("class"),
-      path: [sequence("path")],
-      regex: ~r/foo/
+      path: ["metadata", "foo", "bar"],
+      regex: "foo"
     }
     |> merge_attributes(attrs)
   end
@@ -376,6 +376,7 @@ defmodule TdDd.Factory do
 
     %TdDd.Classifiers.Rule{
       class: sequence("class"),
+      path: ["metadata", "foo", "bar"],
       values: ["foo"]
     }
     |> merge_attributes(attrs)

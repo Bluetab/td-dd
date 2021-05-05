@@ -12,6 +12,7 @@ defmodule TdDd.Classifiers do
   alias TdDd.DataStructures.Classification
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Repo
+  alias TdDd.Systems.System
 
   @typep changeset :: Ecto.Changeset.t()
 
@@ -20,11 +21,20 @@ defmodule TdDd.Classifiers do
     on_conflict: {:replace, [:class, :rule_id, :updated_at]}
   ]
 
+  @doc "Gets a `Classifier` by system and id, throwing exception if not found"
+  @spec get_classifier!(System.t(), binary | integer) :: Classifier.t()
+  def get_classifier!(system, id) do
+    system
+    |> Ecto.assoc(:classifiers)
+    |> Repo.get!(id)
+  end
+
   @doc "Creates a `Classifier` using the specified parameters"
-  @spec create_classifier(map) :: {:ok, Classifier.t()} | {:error, changeset}
-  def create_classifier(%{} = params, opts \\ []) do
+  @spec create_classifier(System.t(), map) ::
+          {:ok, map} | {:error, Multi.name(), any(), %{required(Multi.name()) => any()}}
+  def create_classifier(%System{id: system_id}, %{} = params, opts \\ []) do
     Multi.new()
-    |> Multi.insert(:classifier, Classifier.changeset(params))
+    |> Multi.insert(:classifier, Classifier.changeset(%Classifier{system_id: system_id}, params))
     |> Multi.run(:classifications, fn _, %{classifier: classifier} ->
       classify(classifier, opts)
     end)
@@ -133,20 +143,20 @@ defmodule TdDd.Classifiers do
     where(q, [dsv], field(dsv, ^prop) in ^values)
   end
 
-  defp do_filter(%{path: ["metadata" | path], regex: %{source: source}}, q) do
+  defp do_filter(%{path: ["metadata" | path], regex: regex}, q) when is_binary(regex) do
     where(
       q,
       [dsv],
-      fragment("jsonb_extract_path_text(?, variadic ?) ~ ?", dsv.metadata, ^path, ^source)
+      fragment("jsonb_extract_path_text(?, variadic ?) ~ ?", dsv.metadata, ^path, ^regex)
     )
   end
 
-  defp do_filter(%{path: ["external_id"], regex: %{source: source}}, q) do
-    where(q, [_dsv, ds], fragment("? ~ ?", ds.external_id, ^source))
+  defp do_filter(%{path: ["external_id"], regex: regex}, q) when is_binary(regex) do
+    where(q, [_dsv, ds], fragment("? ~ ?", ds.external_id, ^regex))
   end
 
-  defp do_filter(%{path: [property], regex: %{source: source}}, q) do
+  defp do_filter(%{path: [property], regex: regex}, q) when is_binary(regex) do
     prop = String.to_existing_atom(property)
-    where(q, [dsv], fragment("? ~ ?", field(dsv, ^prop), ^source))
+    where(q, [dsv], fragment("? ~ ?", field(dsv, ^prop), ^regex))
   end
 end
