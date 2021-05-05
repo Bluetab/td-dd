@@ -201,6 +201,48 @@ defmodule TdCx.ConfigurationsTest do
                Configurations.get_configuration_by_external_id!(claims, configuration.external_id)
     end
 
+    test "update_configuration/2 updates secrets key when template changes" do
+      type = @valid_secret_attrs.type
+      claims = build(:cx_claims, user_name: type, role: "admin")
+
+      {:ok, %Configuration{external_id: external_id, secrets_key: nil} = configuration} =
+        Configurations.create_configuration(@valid_attrs)
+
+      updated_content = %{
+        "field2" => "updated field2"
+      }
+
+      assert {:ok, %Configuration{content: ^updated_content} = configuration} =
+               Configurations.update_configuration(configuration, %{content: updated_content})
+
+      updated_content = %{
+        "public_field" => "updated public_value"
+      }
+
+      assert {:ok,
+              %Configuration{content: ^updated_content, type: ^type, secrets_key: nil} =
+                configuration} =
+               Configurations.update_configuration(configuration, %{
+                 content: updated_content,
+                 type: type
+               })
+
+      updated_content = %{
+        "secret_field" => "updated secret_value",
+        "public_field" => "updated public_value"
+      }
+
+      secrets_key = "config/#{type}/#{external_id}"
+
+      assert {:ok, %Configuration{type: ^type, secrets_key: ^secrets_key}} =
+               Configurations.update_configuration(configuration, %{
+                 content: updated_content
+               })
+
+      assert %{content: ^updated_content} =
+               Configurations.get_configuration_by_external_id!(claims, external_id)
+    end
+
     test "update_configuration/2 with invalid data returns error changeset" do
       configuration = insert(:configuration)
 

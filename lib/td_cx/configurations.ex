@@ -301,8 +301,15 @@ defmodule TdCx.Configurations do
          base: %{changes: %{content: content}} = changeset,
          secrets: [_ | _] = secrets
        }) do
+    import Ecto.Changeset, only: [get_field: 2]
+    external_id = get_field(changeset, :external_id)
+    type = get_field(changeset, :type)
+
     {_secrets, content} = Map.split(content, secrets)
-    Configuration.update_config(changeset, content)
+
+    changeset
+    |> Configuration.update_config(content)
+    |> Configuration.update_secrets_key(secrets_key(type, external_id))
   end
 
   defp do_update(%{base: changeset}), do: changeset
