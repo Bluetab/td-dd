@@ -15,12 +15,19 @@ defmodule TdDd.Classifiers do
 
   @typep changeset :: Ecto.Changeset.t()
 
+  @default_opts [
+    conflict_target: [:data_structure_version_id, :classifier_id],
+    on_conflict: {:replace, [:class, :rule_id, :updated_at]}
+  ]
+
   @doc "Creates a `Classifier` using the specified parameters"
   @spec create_classifier(map) :: {:ok, Classifier.t()} | {:error, changeset}
-  def create_classifier(%{} = params) do
+  def create_classifier(%{} = params, opts \\ []) do
     Multi.new()
     |> Multi.insert(:classifier, Classifier.changeset(params))
-    |> Multi.run(:classifications, &classify/2)
+    |> Multi.run(:classifications, fn _, %{classifier: classifier} ->
+      classify(classifier, opts)
+    end)
     |> Repo.transaction()
   end
 
@@ -30,28 +37,43 @@ defmodule TdDd.Classifiers do
     Repo.delete(classifier)
   end
 
-  @spec classify(Ecto.Repo.t(), %{required(Multi.name()) => any()}) ::
-          {:ok, map} | {:error, Multi.name(), any, %{required(Multi.name()) => any()}}
-  def classify(_repo, %{classifier: classifier}) do
-    classify(classifier)
+  @spec classify_many([non_neg_integer()], Keyword.t()) :: {:ok, map()} | {:error, any()}
+  def classify_many(system_ids, opts) do
+    Classifier
+    |> where([c], c.system_id in ^system_ids)
+    |> Repo.all()
+    |> Enum.reduce_while({:ok, %{}}, fn classifier, {:ok, acc} ->
+      case classify(%{name: name} = classifier, opts) do
+        {:ok, classifications} -> {:cont, {:ok, Map.put(acc, name, classifications)}}
+        {:error, _, _, _} = error -> {:halt, {:error, error}}
+      end
+    end)
   end
 
-  @spec classify(Classifier.t()) ::
+  @spec classify(Classifier.t(), Keyword.t()) ::
           {:ok, map} | {:error, Multi.name(), any, %{required(Multi.name()) => any()}}
-  def classify(%Classifier{} = classifier) do
-    query = structure_query(classifier)
+  def classify(%Classifier{} = classifier, opts \\ []) do
+    {updated_at, opts} = Keyword.pop(opts, :updated_at)
+    query = structure_query(classifier, updated_at)
 
     %{rules: rules} = Repo.preload(classifier, :rules)
 
     rules
     |> Enum.sort_by(& &1.priority)
-    |> Enum.reduce(Multi.new(), &apply_rule(&1, &2, query))
+    |> Enum.reduce(Multi.new(), &apply_rule(&1, &2, query, opts))
     |> Repo.transaction()
   end
 
-  @spec apply_rule(Rule.t(), Multi.t(), Ecto.Queryable.t()) :: Multi.t()
-  defp apply_rule(%Rule{class: class, classifier_id: classifier_id, id: id} = rule, multi, query) do
-    Multi.run(multi, class, fn repo, %{} ->
+  @spec apply_rule(Rule.t(), Multi.t(), Ecto.Queryable.t(), Keyword.t()) :: Multi.t()
+  defp apply_rule(
+         %Rule{class: class, classifier_id: classifier_id, id: id} = rule,
+         multi,
+         query,
+         opts
+       ) do
+    opts = Keyword.merge(@default_opts, opts)
+
+    Multi.run(multi, class, fn _, %{} ->
       source =
         rule
         |> do_filter(query)
@@ -64,12 +86,7 @@ defmodule TdDd.Classifiers do
           updated_at: fragment("now()")
         })
 
-      res =
-        repo.insert_all(Classification, source,
-          conflict_target: [:data_structure_version_id, :classifier_id],
-          on_conflict: {:replace, [:class, :rule_id, :updated_at]},
-          returning: true
-        )
+      res = Repo.insert_all(Classification, source, opts)
 
       {:ok, res}
     end)
@@ -79,17 +96,22 @@ defmodule TdDd.Classifiers do
   Build a query for data structure versions matching the classifier's system and
   filters.
   """
-  @spec structure_query(Classifier.t()) :: Ecto.Queryable.t()
-  def structure_query(%Classifier{system_id: system_id} = classifier) do
+  @spec structure_query(Classifier.t(), nil | DateTime.t()) :: Ecto.Queryable.t()
+  def structure_query(%Classifier{system_id: system_id} = classifier, updated_at \\ nil) do
     %{filters: filters} = Repo.preload(classifier, :filters)
 
     query =
       DataStructureVersion
       |> join(:inner, [dsv], ds in assoc(dsv, :data_structure))
       |> where([_, ds], ds.system_id == ^system_id)
+      |> where_updated(updated_at)
 
     Enum.reduce(filters, query, &do_filter/2)
   end
+
+  @spec where_updated(Ecto.Queryable.t(), nil | DateTime.t()) :: Ecto.Queryable.t()
+  defp where_updated(query, nil), do: query
+  defp where_updated(query, updated_at), do: where(query, [dsv], dsv.updated_at == ^updated_at)
 
   @spec do_filter(Rule.t() | Filter.t(), Ecto.Queryable.t()) :: Ecto.Queryable.t()
   defp do_filter(rule_or_filter, query)

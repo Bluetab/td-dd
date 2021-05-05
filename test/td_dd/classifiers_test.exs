@@ -72,7 +72,7 @@ defmodule TdDd.ClassifiersTest do
         ]
       }
 
-      assert {:ok, %{classifications: classifications}} = Classifiers.create_classifier(params)
+      assert {:ok, %{classifications: classifications}} = Classifiers.create_classifier(params, returning: true)
       assert %{"foo" => {_, [classification]}} = classifications
       assert %{data_structure_version_id: ^dsv_id} = classification
     end
@@ -125,11 +125,60 @@ defmodule TdDd.ClassifiersTest do
           type: "bar_type"
         )
 
-      assert {:ok, %{} = multi} = Classifiers.classify(classifier)
+      assert {:ok, %{} = multi} = Classifiers.classify(classifier, returning: true)
 
       assert %{"foo" => {1, [%{data_structure_version_id: ^id1}]}} = multi
       assert %{"bar" => {1, [%{data_structure_version_id: ^id2}]}} = multi
     end
+  end
+
+  describe "Classifiers.classify_many/2" do
+    setup :create_structures
+
+    test "applies multiple classifications",
+         %{system_id: system_id, updated_at: updated_at} = context do
+      classifier_names =
+        1..5
+        |> Enum.map(fn _ -> create_classifier(context) end)
+        |> Enum.map(&Keyword.get(&1, :classifier))
+        |> Enum.map(& &1.name)
+
+      assert {:ok, %{} = res} = Classifiers.classify_many([system_id, 69], updated_at: updated_at)
+
+      assert Enum.count(res) == 5
+
+      Enum.each(res, fn {key, value} ->
+        assert key in classifier_names
+        assert %{"foo" => {5, nil}, "bar" => {5, nil}} = value
+      end)
+
+      assert {:ok, %{} = res} = Classifiers.classify_many([system_id, 69], updated_at: DateTime.utc_now())
+
+      Enum.each(res, fn {key, value} ->
+        assert key in classifier_names
+        assert %{"foo" => {0, nil}, "bar" => {0, nil}} = value
+      end)
+    end
+  end
+
+  defp create_structures(%{system_id: system_id}) do
+    require Integer
+
+    ts = DateTime.utc_now()
+
+    dsvs =
+      Enum.map(1..10, fn x ->
+        type = if Integer.is_even(x), do: "foo_type", else: "bar_type"
+
+        insert(:data_structure_version,
+          type: type,
+          metadata: %{"foo" => %{"bar" => "baz"}},
+          data_structure: build(:data_structure, system_id: system_id),
+          updated_at: ts
+        )
+      end)
+
+    [data_structure_versions: dsvs, updated_at: ts]
   end
 
   defp create_classifier(%{system_id: system_id}) do

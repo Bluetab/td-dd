@@ -5,9 +5,9 @@ defmodule TdDd.DataStructures.Classification do
 
   use Ecto.Schema
 
-  alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Classifiers.Classifier
   alias TdDd.Classifiers.Rule
+  alias TdDd.DataStructures.DataStructureVersion
 
   @typedoc "A data structure classification"
   @type t :: %__MODULE__{}
