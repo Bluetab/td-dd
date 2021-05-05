@@ -28,7 +28,9 @@ defmodule TdCxWeb.ConfigurationController do
   end
 
   def index(conn, params) do
-    configurations = Configurations.list_configurations(params, [:secrets])
+    claims = conn.assigns[:current_resource]
+
+    configurations = Configurations.list_configurations(claims, params)
     render(conn, "index.json", configurations: configurations)
   end
 
@@ -76,7 +78,9 @@ defmodule TdCxWeb.ConfigurationController do
   end
 
   def show(conn, %{"external_id" => external_id}) do
-    configuration = Configurations.get_configuration_by_external_id!(external_id, [:secrets])
+    claims = conn.assigns[:current_resource]
+
+    configuration = Configurations.get_configuration_by_external_id!(claims, external_id)
     render(conn, "show.json", configuration: configuration)
   rescue
     _e in Ecto.NoResultsError ->
