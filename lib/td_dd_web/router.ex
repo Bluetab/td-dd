@@ -96,6 +96,7 @@ defmodule TdDdWeb.Router do
     resources "/relation_types", RelationTypeController, except: [:new, :edit]
 
     resources "/data_structure_types", DataStructureTypeController
+    resources "/data_structure_tags", DataStructureTagController, except: [:new, :edit]
   end
 
   scope "/api/swagger" do

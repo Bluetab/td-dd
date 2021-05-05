@@ -7,6 +7,7 @@ defmodule TdDq.Implementations.Implementation do
   import Ecto.Changeset
 
   alias Ecto.Changeset
+  alias TdDfLib.Validation
   alias TdDq.Implementations
   alias TdDq.Implementations.ConditionRow
   alias TdDq.Implementations.DatasetRow
@@ -30,6 +31,10 @@ defmodule TdDq.Implementations.Implementation do
     belongs_to(:rule, Rule)
 
     field(:deleted_at, :utc_datetime)
+
+    field(:df_name, :string)
+    field(:df_content, :map)
+
     timestamps()
   end
 
@@ -43,11 +48,14 @@ defmodule TdDq.Implementations.Implementation do
       :deleted_at,
       :rule_id,
       :implementation_key,
-      :implementation_type
+      :implementation_type,
+      :df_name,
+      :df_content
     ])
     |> validate_required([:implementation_type, :rule_id])
     |> validate_inclusion(:implementation_type, ["default", "raw"])
     |> validate_or_put_implementation_key()
+    |> validate_content()
     |> foreign_key_constraint(:rule_id)
     |> custom_changeset(implementation)
   end
@@ -70,6 +78,26 @@ defmodule TdDq.Implementations.Implementation do
   end
 
   defp validate_or_put_implementation_key(%Changeset{} = changeset), do: changeset
+
+  defp validate_content(%{} = changeset) do
+    case get_field(changeset, :df_name) do
+      nil ->
+        validate_change(changeset, :df_content, empty_content_validator())
+
+      template_name ->
+        changeset
+        |> validate_required(:df_content)
+        |> validate_change(:df_content, Validation.validator(template_name))
+    end
+  end
+
+  defp empty_content_validator do
+    fn
+      _, nil -> []
+      _, value when value == %{} -> []
+      field, _ -> [{field, :missing_type}]
+    end
+  end
 
   defp custom_changeset(
          %Changeset{changes: %{implementation_type: "raw"}} = changeset,
@@ -124,7 +152,8 @@ defmodule TdDq.Implementations.Implementation do
       :rule_id,
       :inserted_at,
       :updated_at,
-      :validations
+      :validations,
+      :df_name
     ]
     @rule_keys [
       :active,
@@ -157,6 +186,12 @@ defmodule TdDq.Implementations.Implementation do
       structure_ids = Implementations.get_structure_ids(implementation)
       structure_aliases = Implementations.get_sources(implementation)
 
+      template = TemplateCache.get_by_name!(implementation.df_name) || %{content: []}
+      df_content =
+        implementation
+        |> Map.get(:df_content)
+        |> Format.search_values(template)
+
       implementation
       |> Implementations.enrich_implementation_structures()
       |> Map.take(@implementation_keys)
@@ -175,6 +210,7 @@ defmodule TdDq.Implementations.Implementation do
       |> Map.put(:current_business_concept_version, bcv)
       |> Map.put(:_confidential, confidential)
       |> Map.put(:business_concept_id, Map.get(rule, :business_concept_id))
+      |> Map.put(:df_content, df_content)
     end
 
     defp get_execution_result_info(%Rule{} = rule, implementation_key) do

@@ -112,6 +112,69 @@ defmodule TdDdWeb.SwaggerDefinitions do
     }
   end
 
+  def data_structure_tag_definitions do
+    %{
+      DataStructureTag:
+        swagger_schema do
+          title("Data Structure Tag")
+          description("A Data Structure Tag")
+
+          properties do
+            id(:integer, "Data Structure Tag unique identifier", required: true)
+            name(:string, "Tag name")
+          end
+
+          example(%{
+            id: 88,
+            name: "Tag1",
+          })
+        end,
+      DataStructureTags:
+        swagger_schema do
+          title("DataStructureTags")
+          description("A collection of data structure tags")
+          type(:array)
+          items(Schema.ref(:DataStructureTag))
+        end,
+      CreateDataStructureTag:
+        swagger_schema do
+          properties do
+            data_structure_type(
+              Schema.new do
+                properties do
+                  name(:string, "Data Structure name", required: true)
+                end
+              end
+            )
+          end
+        end,
+      UpdateDataStructureTag:
+        swagger_schema do
+          properties do
+            data_structure_type(
+              Schema.new do
+                properties do
+                  name(:string, "Data Structure name", required: true)
+                end
+              end
+            )
+          end
+        end,
+      DataStructureTagResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:DataStructureTag))
+          end
+        end,
+      DataStructureTagsResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:DataStructureTags))
+          end
+        end
+    }
+  end
+
   def data_structure_type_definitions do
     %{
       DataStructureType:

@@ -16,6 +16,7 @@ defmodule TdDd.DataStructures do
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
+  alias TdDd.DataStructures.DataStructureTag
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Paths
@@ -917,4 +918,85 @@ defmodule TdDd.DataStructures do
   end
 
   defp do_profile_source(dsv, _source), do: dsv
+
+  @doc """
+  Returns the list of data_structure_tags.
+
+  ## Examples
+
+      iex> list_data_structure_tags()
+      [%DataStructureTag{}, ...]
+
+  """
+  def list_data_structure_tags do
+    Repo.all(DataStructureTag)
+  end
+
+  @doc """
+  Gets a single data_structure_tag.
+
+  Raises `Ecto.NoResultsError` if the Data structure tag does not exist.
+
+  ## Examples
+
+      iex> get_data_structure_tag!(123)
+      %DataStructureTag{}
+
+      iex> get_data_structure_tag!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_data_structure_tag!(id), do: Repo.get!(DataStructureTag, id)
+
+  @doc """
+  Creates a data_structure_tag.
+
+  ## Examples
+
+      iex> create_data_structure_tag(%{field: value})
+      {:ok, %DataStructureTag{}}
+
+      iex> create_data_structure_tag(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_data_structure_tag(attrs \\ %{}) do
+    %DataStructureTag{}
+    |> DataStructureTag.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a data_structure_tag.
+
+  ## Examples
+
+      iex> update_data_structure_tag(data_structure_tag, %{field: new_value})
+      {:ok, %DataStructureTag{}}
+
+      iex> update_data_structure_tag(data_structure_tag, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_data_structure_tag(%DataStructureTag{} = data_structure_tag, attrs) do
+    data_structure_tag
+    |> DataStructureTag.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a data_structure_tag.
+
+  ## Examples
+
+      iex> delete_data_structure_tag(data_structure_tag)
+      {:ok, %DataStructureTag{}}
+
+      iex> delete_data_structure_tag(data_structure_tag)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_data_structure_tag(%DataStructureTag{} = data_structure_tag) do
+    Repo.delete(data_structure_tag)
+  end
 end
