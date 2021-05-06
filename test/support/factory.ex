@@ -382,11 +382,26 @@ defmodule TdDd.Factory do
     |> merge_attributes(attrs)
   end
 
-  defp default_assoc(attrs, id_key, key) do
+  def structure_classification_factory(attrs) do
+    attrs =
+      attrs
+      |> default_assoc(:rule_id, :rule, :regex_rule)
+      |> default_assoc(:classifier_id, :classifier)
+      |> default_assoc(:data_structure_version_id, :data_structure_version)
+
+    %TdDd.DataStructures.Classification{
+      class: sequence("class_value"),
+      name: sequence("class_name")
+    }
+    |> merge_attributes(attrs)
+  end
+
+  defp default_assoc(attrs, id_key, key, build_key \\ nil) do
     if Enum.any?([key, id_key], &Map.has_key?(attrs, &1)) do
       attrs
     else
-      Map.put(attrs, key, build(key))
+      build_key = if build_key, do: build_key, else: key
+      Map.put(attrs, key, build(build_key))
     end
   end
 end

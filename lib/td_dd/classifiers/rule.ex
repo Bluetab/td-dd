@@ -7,6 +7,7 @@ defmodule TdDd.Classifiers.Rule do
 
   alias TdDd.Classifiers.Classifier
   alias TdDd.Classifiers.Filter
+  alias TdDd.DataStructures.Classification
 
   import Ecto.Changeset
 
@@ -21,6 +22,7 @@ defmodule TdDd.Classifiers.Rule do
     field :regex, :string
     field :class, :string
     belongs_to :classifier, Classifier
+    has_many :classifications, Classification
     timestamps(type: :utc_datetime_usec)
   end
 

@@ -176,6 +176,19 @@ defmodule TdDd.ClassifiersTest do
     end
   end
 
+  describe "Classifiers.classes/0" do
+    test "generates a query that returns rows with data_structure_version_id and classes" do
+      %{name: name, class: class, data_structure_version_id: id} =
+        insert(:structure_classification)
+
+      assert [%{classes: %{} = classes, data_structure_version_id: ^id}] =
+               Classifiers.classes()
+               |> Repo.all()
+
+      assert classes == %{name => class}
+    end
+  end
+
   defp create_structures(%{system_id: system_id}) do
     require Integer
 

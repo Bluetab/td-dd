@@ -20,6 +20,7 @@ defmodule TdDd.Classifiers.Classifier do
     belongs_to :system, System
     has_many :filters, Filter
     has_many :rules, Rule
+    has_many :classifications, through: [:rules, :classifications]
     timestamps(type: :utc_datetime_usec)
   end
 

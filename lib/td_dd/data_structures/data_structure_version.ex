@@ -30,6 +30,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     field(:path, :map, virtual: true)
     field(:external_id, :string, virtual: true)
     field(:profile_source, :map, virtual: true)
+    field(:classes, :map, virtual: true)
 
     belongs_to(:data_structure, DataStructure)
 
@@ -165,6 +166,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       |> Map.merge(
         Map.take(dsv, [
           :class,
+          :classes,
           :description,
           :deleted_at,
           :updated_at,

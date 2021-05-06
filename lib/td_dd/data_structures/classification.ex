@@ -14,6 +14,7 @@ defmodule TdDd.DataStructures.Classification do
 
   schema "structure_classifications" do
     field :class, :string
+    field :name, :string
     belongs_to :data_structure_version, DataStructureVersion
     belongs_to :classifier, Classifier
     belongs_to :rule, Rule

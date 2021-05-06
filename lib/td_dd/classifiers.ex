@@ -62,7 +62,7 @@ defmodule TdDd.Classifiers do
 
   @spec classify(Classifier.t(), Keyword.t()) ::
           {:ok, map} | {:error, Multi.name(), any, %{required(Multi.name()) => any()}}
-  def classify(%Classifier{} = classifier, opts \\ []) do
+  def classify(%Classifier{name: name} = classifier, opts \\ []) do
     {updated_at, opts} = Keyword.pop(opts, :updated_at)
     query = structure_query(classifier, updated_at)
 
@@ -70,14 +70,15 @@ defmodule TdDd.Classifiers do
 
     rules
     |> Enum.sort_by(& &1.priority)
-    |> Enum.reduce(Multi.new(), &apply_rule(&1, &2, query, opts))
+    |> Enum.reduce(Multi.new(), &apply_rule(&2, name, &1, query, opts))
     |> Repo.transaction()
   end
 
-  @spec apply_rule(Rule.t(), Multi.t(), Ecto.Queryable.t(), Keyword.t()) :: Multi.t()
+  @spec apply_rule(Multi.t(), binary(), Rule.t(), Ecto.Queryable.t(), Keyword.t()) :: Multi.t()
   defp apply_rule(
-         %Rule{class: class, classifier_id: classifier_id, id: id} = rule,
          multi,
+         name,
+         %Rule{class: class, classifier_id: classifier_id, id: id} = rule,
          query,
          opts
        ) do
@@ -88,6 +89,7 @@ defmodule TdDd.Classifiers do
         rule
         |> do_filter(query)
         |> select([dsv, ds], %{
+          name: ^name,
           class: ^class,
           data_structure_version_id: dsv.id,
           classifier_id: ^classifier_id,
@@ -158,5 +160,15 @@ defmodule TdDd.Classifiers do
   defp do_filter(%{path: [property], regex: regex}, q) when is_binary(regex) do
     prop = String.to_existing_atom(property)
     where(q, [dsv], fragment("? ~ ?", field(dsv, ^prop), ^regex))
+  end
+
+  @spec classes :: Ecto.Query.t()
+  def classes do
+    Classification
+    |> group_by([c], c.data_structure_version_id)
+    |> select([c], %{
+      data_structure_version_id: c.data_structure_version_id,
+      classes: fragment("json_object_agg(?, ?)", c.name, c.class)
+    })
   end
 end

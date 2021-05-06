@@ -26,6 +26,23 @@ defmodule TdDd.DataStructures.PathsTest do
       assert ["xyzzy", "baz", "bar", "foo"] in paths
       assert ["spqr", "xyzzy", "baz", "bar", "foo"] in paths
     end
+
+    test "includes classifications", %{hierarchy: [%{id: id} | _]} do
+      %{name: name1, class: class1} =
+        insert(:structure_classification, data_structure_version_id: id)
+
+      %{name: name2, class: class2} =
+        insert(:structure_classification, data_structure_version_id: id)
+
+      assert [classes] =
+               DataStructureVersion
+               |> Paths.with_path(distinct: :data_structure_id)
+               |> Repo.all()
+               |> Enum.map(& &1.classes)
+               |> Enum.reject(&is_nil/1)
+
+      assert classes == %{name1 => class1, name2 => class2}
+    end
   end
 
   describe "Paths.by_data_structure_id/2" do

@@ -26,15 +26,9 @@ defmodule TdDd.DataStructures do
   alias TdDd.Search.IndexWorker
   alias TdDfLib.Format
 
-  @doc """
-  Returns the list of data_structures.
+  # Data structure version associations preloaded for some views
+  @preload_dsv_assocs [:classifications, data_structure: :system]
 
-  ## Examples
-
-      iex> list_data_structures()
-      [%DataStructure{}, ...]
-
-  """
   def list_data_structures(clauses \\ %{}, options \\ []) do
     clauses
     |> Enum.reduce(DataStructure, fn
@@ -58,58 +52,18 @@ defmodule TdDd.DataStructures do
     |> Enum.map(&enrich(&1, options))
   end
 
-  @doc """
-  Gets a single data_structure.
-
-  Raises `Ecto.NoResultsError` if the Data structure does not exist.
-
-  ## Examples
-
-      iex> get_data_structure!(123)
-      %DataStructure{}
-
-      iex> get_data_structure!(456)
-      ** (Ecto.NoResultsError)
-
-  """
   def get_data_structure!(id) do
     DataStructure
     |> Repo.get!(id)
     |> Repo.preload(:system)
   end
 
-  @doc """
-  Gets a single data_structure by external_id.
-
-  Returns nil if the Data structure does not exist.
-
-  ## Examples
-
-      iex> get_data_structure_by_external_id!(123)
-      %DataStructure{}
-
-      iex> get_data_structure_by_external_id(456)
-      ** nil
-
-  """
+  @doc "Gets a single data_structure by external_id"
   def get_data_structure_by_external_id(external_id) do
     Repo.get_by(DataStructure, external_id: external_id)
   end
 
-  @doc """
-  Gets a single data_structure_version.
-
-  Raises `Ecto.NoResultsError` if the Data structure version does not exist.
-
-  ## Examples
-
-      iex> get_data_structure!(123)
-      %DataStructureVersion{}
-
-      iex> get_data_structure!(456)
-      ** (Ecto.NoResultsError)
-
-  """
+  @doc "Gets a single data_structure_version"
   def get_data_structure_version!(id) do
     DataStructureVersion
     |> Paths.by_version_id(id)
@@ -388,6 +342,7 @@ defmodule TdDd.DataStructures do
     |> distinct([_r, _parent, _parent_rt, _r_c, _child_rt, sibling, _sibling_ds], sibling)
     |> select([_r, _parent, _parent_rt, _r_c, _child_rt, sibling, _sibling_ds], sibling)
     |> Repo.all()
+    |> Repo.preload(@preload_dsv_assocs)
     |> Enum.uniq_by(& &1.data_structure_id)
   end
 
@@ -425,18 +380,19 @@ defmodule TdDd.DataStructures do
   defp select_structures(versions, false) do
     versions
     |> Enum.uniq_by(& &1.version.data_structure_id)
-    |> Enum.map(&preload_system/1)
+    |> Enum.map(&preload_assocs/1)
   end
 
   defp select_structures(versions, _not_false) do
     versions
     |> Enum.map(& &1.version)
     |> Enum.uniq_by(& &1.data_structure_id)
-    |> Repo.preload(data_structure: :system)
+    |> Repo.preload(@preload_dsv_assocs)
   end
 
-  defp preload_system(%{version: v} = version) do
-    Map.put(version, :version, Repo.preload(v, data_structure: :system))
+  # These are preloaded as they are needed in views
+  defp preload_assocs(%{version: v} = version, preloads \\ @preload_dsv_assocs) do
+    Map.put(version, :version, Repo.preload(v, preloads))
   end
 
   defp get_domain(%DataStructureVersion{data_structure: %NotLoaded{}} = version) do
@@ -491,18 +447,6 @@ defmodule TdDd.DataStructures do
     |> Map.get(:metadata_versions)
   end
 
-  @doc """
-  Updates a data_structure.
-
-  ## Examples
-
-      iex> update_data_structure(data_structure, %{field: new_value}, claims)
-      {:ok, %DataStructure{}}
-
-      iex> update_data_structure(data_structure, %{field: bad_value}, claims)
-      {:error, %Ecto.Changeset{}}
-
-  """
   def update_data_structure(%DataStructure{} = data_structure, %{} = params, %Claims{
         user_id: user_id
       }) do
@@ -525,18 +469,6 @@ defmodule TdDd.DataStructures do
 
   defp on_update(res), do: res
 
-  @doc """
-  Deletes a DataStructure.
-
-  ## Examples
-
-      iex> delete_data_structure(data_structure, claims)
-      {:ok, %DataStructure{}}
-
-      iex> delete_data_structure(data_structure, claims)
-      {:error, %Ecto.Changeset{}}
-
-  """
   def delete_data_structure(%DataStructure{} = data_structure, %Claims{user_id: user_id}) do
     Multi.new()
     |> Multi.run(:delete_versions, fn _, _ ->
@@ -565,15 +497,6 @@ defmodule TdDd.DataStructures do
 
   defp on_delete(res), do: res
 
-  @doc """
-  Returns the latest data structure version for a given data structure id;
-
-  ## Examples
-
-      iex> get_latest_version(1)
-      %DataStructureVersion{}
-
-  """
   def get_latest_version(target, options \\ [])
 
   def get_latest_version(%DataStructure{versions: versions}, options) when is_list(versions) do
@@ -782,52 +705,14 @@ defmodule TdDd.DataStructures do
     |> Repo.all()
   end
 
-  @doc """
-  Creates mutable metadata.
-
-  ## Examples
-
-      iex> create_structure_metadata(%{field: value})
-      {:ok, %StructureMetadata{}}
-
-      iex> create_structure_metadata(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
   def create_structure_metadata(params) do
     %StructureMetadata{}
     |> StructureMetadata.changeset(params)
     |> Repo.insert()
   end
 
-  @doc """
-  Gets a single metadata.
-
-  Raises `Ecto.NoResultsError` if the metadata does not exist.
-
-  ## Examples
-
-      iex> get_structure_metadata!(123)
-      %StructureMetadata{}
-
-      iex> get_structure_metadata!(456)
-      ** (Ecto.NoResultsError)
-
-  """
   def get_structure_metadata!(id), do: Repo.get!(StructureMetadata, id)
 
-  @doc """
-  Updates metadata.
-
-  ## Examples
-
-      iex> update_structure_metadata(structure_metadata, %{field: new_value})
-      {:ok, %StructureMetadata{}}
-
-      iex> update_structure_metadata(structure_metadata, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
   def update_structure_metadata(%StructureMetadata{} = structure_metadata, params) do
     structure_metadata
     |> StructureMetadata.changeset(params)
@@ -919,83 +804,24 @@ defmodule TdDd.DataStructures do
 
   defp do_profile_source(dsv, _source), do: dsv
 
-  @doc """
-  Returns the list of data_structure_tags.
-
-  ## Examples
-
-      iex> list_data_structure_tags()
-      [%DataStructureTag{}, ...]
-
-  """
   def list_data_structure_tags do
     Repo.all(DataStructureTag)
   end
 
-  @doc """
-  Gets a single data_structure_tag.
-
-  Raises `Ecto.NoResultsError` if the Data structure tag does not exist.
-
-  ## Examples
-
-      iex> get_data_structure_tag!(123)
-      %DataStructureTag{}
-
-      iex> get_data_structure_tag!(456)
-      ** (Ecto.NoResultsError)
-
-  """
   def get_data_structure_tag!(id), do: Repo.get!(DataStructureTag, id)
 
-  @doc """
-  Creates a data_structure_tag.
-
-  ## Examples
-
-      iex> create_data_structure_tag(%{field: value})
-      {:ok, %DataStructureTag{}}
-
-      iex> create_data_structure_tag(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
   def create_data_structure_tag(attrs \\ %{}) do
     %DataStructureTag{}
     |> DataStructureTag.changeset(attrs)
     |> Repo.insert()
   end
 
-  @doc """
-  Updates a data_structure_tag.
-
-  ## Examples
-
-      iex> update_data_structure_tag(data_structure_tag, %{field: new_value})
-      {:ok, %DataStructureTag{}}
-
-      iex> update_data_structure_tag(data_structure_tag, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
   def update_data_structure_tag(%DataStructureTag{} = data_structure_tag, attrs) do
     data_structure_tag
     |> DataStructureTag.changeset(attrs)
     |> Repo.update()
   end
 
-  @doc """
-  Deletes a data_structure_tag.
-
-  ## Examples
-
-      iex> delete_data_structure_tag(data_structure_tag)
-      {:ok, %DataStructureTag{}}
-
-      iex> delete_data_structure_tag(data_structure_tag)
-      {:error, %Ecto.Changeset{}}
-
-  """
   def delete_data_structure_tag(%DataStructureTag{} = data_structure_tag) do
     Repo.delete(data_structure_tag)
   end
