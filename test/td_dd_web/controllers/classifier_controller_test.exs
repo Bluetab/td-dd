@@ -1,7 +1,6 @@
 defmodule TdDdWeb.ClassifierControllerTest do
   use TdDdWeb.ConnCase
-
-  # alias TdDd.Systems.System
+  use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   setup do
     system = insert(:system)
@@ -14,12 +13,14 @@ defmodule TdDdWeb.ClassifierControllerTest do
     @tag authentication: [role: "user"]
     test "admin can lists system classifiers", %{
       conn: conn,
+      swagger_schema: schema,
       system: system,
       classifier: %{id: id, name: name}
     } do
       assert %{"data" => [classifier]} =
                conn
                |> get(Routes.system_classifier_path(conn, :index, system))
+               |> validate_resp_schema(schema, "ClassifiersResponse")
                |> json_response(:ok)
 
       assert %{"id" => ^id, "name" => ^name, "filters" => [_filter], "rules" => [_rules]} =
@@ -29,7 +30,11 @@ defmodule TdDdWeb.ClassifierControllerTest do
 
   describe "POST /api/systems/:system_id/classifiers" do
     @tag authentication: [role: "admin"]
-    test "renders classifier when data is valid", %{conn: conn, system: system} do
+    test "renders classifier when data is valid", %{
+      conn: conn,
+      system: system,
+      swagger_schema: schema
+    } do
       params =
         string_params_for(:classifier,
           filters: [build(:values_filter, classifier: nil)],
@@ -39,7 +44,7 @@ defmodule TdDdWeb.ClassifierControllerTest do
       assert %{"data" => classifier} =
                conn
                |> post(Routes.system_classifier_path(conn, :create, system), classifier: params)
-               #  |> validate_resp_schema(schema, "SystemResponse")
+               |> validate_resp_schema(schema, "ClassifierResponse")
                |> json_response(:created)
 
       assert %{"id" => _, "name" => _, "filters" => [_], "rules" => [_]} = classifier
