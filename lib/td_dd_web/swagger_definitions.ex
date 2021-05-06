@@ -126,7 +126,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
 
           example(%{
             id: 88,
-            name: "Tag1",
+            name: "Tag1"
           })
         end,
       DataStructureTags:
@@ -139,7 +139,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
       CreateDataStructureTag:
         swagger_schema do
           properties do
-            data_structure_type(
+            data_structure_tag(
               Schema.new do
                 properties do
                   name(:string, "Data Structure name", required: true)
@@ -151,7 +151,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
       UpdateDataStructureTag:
         swagger_schema do
           properties do
-            data_structure_type(
+            data_structure_tag(
               Schema.new do
                 properties do
                   name(:string, "Data Structure name", required: true)
@@ -170,6 +170,46 @@ defmodule TdDdWeb.SwaggerDefinitions do
         swagger_schema do
           properties do
             data(Schema.ref(:DataStructureTags))
+          end
+        end,
+      UpdateLinkDataStructureTag:
+        swagger_schema do
+          properties do
+            tag(
+              Schema.new do
+                properties do
+                  description(:string, "Tag description", required: true)
+                end
+              end
+            )
+          end
+        end,
+      LinkDataStructureTagResponse:
+        swagger_schema do
+          properties do
+            data(
+              Schema.new do
+                properties do
+                  id(:integer, "Id link")
+                  description(:string, "Tag description")
+                  _embedded(Schema.ref(:LinkDataStructureTagEmbeddings))
+                end
+              end
+            )
+          end
+        end,
+      LinkDataStructureTagEmbeddings:
+        swagger_schema do
+          properties do
+            data_structure(Schema.ref(:EmbeddedLinkedDataStructure))
+            data_structure_tag(Schema.ref(:DataStructureTag))
+          end
+        end,
+      EmbeddedLinkedDataStructure:
+        swagger_schema do
+          properties do
+            id(:integer, "Data structure id")
+            external_id(:string, "Data structure external id")
           end
         end
     }

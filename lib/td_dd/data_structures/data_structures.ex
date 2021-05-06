@@ -16,6 +16,7 @@ defmodule TdDd.DataStructures do
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
+  alias TdDd.DataStructures.DataStructuresTags
   alias TdDd.DataStructures.DataStructureTag
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
@@ -212,6 +213,7 @@ defmodule TdDd.DataStructures do
     |> enrich(options, :source, &get_source/1)
     |> enrich(options, :metadata_versions, &get_metadata_versions/1)
     |> enrich(options, :data_structure_type, &get_data_structure_type/1)
+    |> enrich(options, :tags, &get_tags/1)
   end
 
   defp enrich(%{} = target, options, key, fun) do
@@ -489,6 +491,23 @@ defmodule TdDd.DataStructures do
     |> Repo.preload(data_structure: :metadata_versions)
     |> Map.get(:data_structure)
     |> Map.get(:metadata_versions)
+  end
+
+  defp get_tags(%DataStructureVersion{data_structure: %DataStructure{} = data_structure}) do
+    get_tags(data_structure)
+  end
+
+  defp get_tags(%DataStructureVersion{} = version) do
+    version
+    |> Repo.preload(:data_structure)
+    |> Map.get(:data_structure)
+    |> get_tags()
+  end
+
+  defp get_tags(%DataStructure{} = data_structure) do
+    data_structure
+    |> Repo.preload(data_structures_tags: :data_structure_tag)
+    |> Map.get(:data_structures_tags)
   end
 
   @doc """
@@ -999,4 +1018,49 @@ defmodule TdDd.DataStructures do
   def delete_data_structure_tag(%DataStructureTag{} = data_structure_tag) do
     Repo.delete(data_structure_tag)
   end
+
+  @doc """
+  links a tag to an structure.
+
+  ## Examples
+
+      iex> link_tag(data_structure, data_structure_tag, params)
+      {:ok, %DataStructureTag{}}
+
+      iex> link_tag(data_structure, data_structure_tag, params)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def link_tag(
+        %DataStructure{id: data_structure_id} = data_structure,
+        %DataStructureTag{id: tag_id} = data_structure_tag,
+        params
+      ) do
+    DataStructuresTags
+    |> Repo.get_by(data_structure_tag_id: tag_id, data_structure_id: data_structure_id)
+    |> case do
+      nil -> create_link(data_structure, data_structure_tag, params)
+      %DataStructuresTags{} = tag_link -> update_link(tag_link, params)
+    end
+  end
+
+  defp create_link(data_structure, data_structure_tag, params) do
+    params
+    |> DataStructuresTags.changeset()
+    |> DataStructuresTags.put_data_structure(data_structure)
+    |> DataStructuresTags.put_data_structure_tag(data_structure_tag)
+    |> Repo.insert()
+  end
+
+  defp update_link(link, params) do
+    link
+    |> DataStructuresTags.changeset(params)
+    |> Repo.update()
+    |> on_link_update()
+  end
+
+  defp on_link_update({:ok, link}),
+    do: {:ok, Repo.preload(link, [:data_structure_tag, :data_structure])}
+
+  defp on_link_update(reply), do: reply
 end

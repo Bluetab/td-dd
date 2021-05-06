@@ -533,6 +533,25 @@ defmodule TdDd.DataStructuresTest do
              <~> r_child_confidential
     end
 
+    test "get_data_structure_version!/2 with options: tags" do
+      d = insert(:data_structure)
+
+      %{id: id1, description: d1, data_structure_tag: %{name: n1}} =
+        insert(:data_structures_tags, data_structure: d, description: "foo")
+
+      %{id: id2, description: d2, data_structure_tag: %{name: n2}} =
+        insert(:data_structures_tags, data_structure: d, description: "bar")
+
+      version = insert(:data_structure_version, data_structure: d)
+
+      assert %{
+               tags: [
+                 %{id: ^id1, description: ^d1, data_structure_tag: %{name: ^n1}},
+                 %{id: ^id2, description: ^d2, data_structure_tag: %{name: ^n2}}
+               ]
+             } = DataStructures.get_data_structure_version!(version.id, [:tags])
+    end
+
     test "get_data_structure_version!/1 returns the data_structure with given id", %{
       data_structure_version: data_structure_version
     } do
@@ -1005,6 +1024,71 @@ defmodule TdDd.DataStructuresTest do
       assert_raise Ecto.NoResultsError, fn ->
         DataStructures.get_data_structure_tag!(data_structure_tag.id)
       end
+    end
+  end
+
+  describe "link_tag/3" do
+    test "links tag to a given structure" do
+      description = "foo"
+      structure = %{id: data_structure_id} = insert(:data_structure)
+      tag = %{id: tag_id} = insert(:data_structure_tag)
+      params = %{description: description}
+
+      {:ok,
+       %{
+         description: ^description,
+         data_structure: %{id: ^data_structure_id},
+         data_structure_tag: %{id: ^tag_id}
+       }} = DataStructures.link_tag(structure, tag, params)
+    end
+
+    test "updates link information when it already exists" do
+      description = "bar"
+      structure = %{id: data_structure_id} = insert(:data_structure)
+      tag = %{id: tag_id} = insert(:data_structure_tag)
+
+      insert(:data_structures_tags,
+        data_structure_tag: tag,
+        data_structure: structure,
+        description: "foo"
+      )
+
+      params = %{description: description}
+
+      {:ok,
+       %{
+         description: ^description,
+         data_structure: %{id: ^data_structure_id},
+         data_structure_tag: %{id: ^tag_id}
+       }} = DataStructures.link_tag(structure, tag, params)
+    end
+
+    test "gets error when description is invalid" do
+      structure = insert(:data_structure)
+      tag = insert(:data_structure_tag)
+      params = %{}
+
+      {:error,
+       %{errors: [description: {"can't be blank", [validation: :required]}], valid?: false}} =
+        DataStructures.link_tag(structure, tag, params)
+
+      params = %{description: nil}
+
+      {:error,
+       %{errors: [description: {"can't be blank", [validation: :required]}], valid?: false}} =
+        DataStructures.link_tag(structure, tag, params)
+
+      params = %{description: String.duplicate("foo", 334)}
+
+      {:error,
+       %{
+         errors: [
+           description:
+             {"should be at most %{count} character(s)",
+              [count: 1000, validation: :length, kind: :max, type: :string]}
+         ],
+         valid?: false
+       }} = DataStructures.link_tag(structure, tag, params)
     end
   end
 end

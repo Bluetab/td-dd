@@ -8,10 +8,16 @@ defmodule TdDd.DataStructures.DataStructure do
   import Ecto.Changeset
 
   alias TdCx.Sources.Source
-  alias TdDd.DataStructures.DataStructureVersion
-  alias TdDd.DataStructures.Profile
-  alias TdDd.DataStructures.StructureMetadata
-  alias TdDd.DataStructures.Validation
+
+  alias TdDd.DataStructures.{
+    DataStructuresTags,
+    DataStructureTag,
+    DataStructureVersion,
+    Profile,
+    StructureMetadata,
+    Validation
+  }
+
   alias TdDd.Systems.System
   alias TdDd.Utils.CollectionUtils
   alias TdDfLib.Content
@@ -28,6 +34,8 @@ defmodule TdDd.DataStructures.DataStructure do
     has_many(:versions, DataStructureVersion)
     has_many(:metadata_versions, StructureMetadata)
     has_one(:profile, Profile)
+    has_many(:data_structures_tags, DataStructuresTags)
+    many_to_many(:tags, DataStructureTag, join_through: DataStructuresTags)
 
     field(:confidential, :boolean)
     field(:df_content, :map)

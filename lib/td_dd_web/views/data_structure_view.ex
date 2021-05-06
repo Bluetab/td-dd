@@ -95,6 +95,7 @@ defmodule TdDdWeb.DataStructureView do
     |> Map.merge(dsv_attrs)
     |> Map.put_new(:metadata, %{})
     |> Map.put_new(:path, [])
+    |> add_source()
   end
 
   defp add_system_with_keys(json, data_structure, keys) do
@@ -265,4 +266,14 @@ defmodule TdDdWeb.DataStructureView do
   end
 
   defp add_metadata_versions(data_structure_json, _), do: data_structure_json
+
+  defp add_source(ds) do
+    source =
+      case Map.get(ds, :source) do
+        nil -> nil
+        s -> Map.take(s, [:id, :external_id])
+      end
+
+    Map.put(ds, :source, source)
+  end
 end

@@ -36,7 +36,11 @@ defmodule TdDdWeb.DataStructureTagController do
     produces("application/json")
 
     parameters do
-      data_structure_tag(:body, Schema.ref(:CreateDataStructureTag), "DataStructureTag create attrs")
+      data_structure_tag(
+        :body,
+        Schema.ref(:CreateDataStructureTag),
+        "DataStructureTag create attrs"
+      )
     end
 
     response(201, "OK", Schema.ref(:DataStructureTagResponse))
@@ -48,7 +52,7 @@ defmodule TdDdWeb.DataStructureTagController do
     with claims <- conn.assigns[:current_resource],
          {:can, true} <- {:can, can?(claims, create(DataStructureTag))},
          {:ok, %DataStructureTag{} = data_structure_tag} <-
-          DataStructures.create_data_structure_tag(params) do
+           DataStructures.create_data_structure_tag(params) do
       conn
       |> put_status(:created)
       |> put_resp_header(
@@ -85,8 +89,14 @@ defmodule TdDdWeb.DataStructureTagController do
     produces("application/json")
 
     parameters do
+      data_structure_id(:path, :integer, "Data Structure ID")
       id(:path, :integer, "Data Structure Tag ID", required: true)
-      data_structure_tag(:body, Schema.ref(:UpdateDataStructureTag), "DataStructureTag update attrs")
+
+      data_structure_tag(
+        :body,
+        Schema.ref(:UpdateDataStructureTag),
+        "DataStructureTag update attrs"
+      )
     end
 
     response(201, "OK", Schema.ref(:DataStructureTagResponse))
