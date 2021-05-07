@@ -192,6 +192,10 @@ defmodule TdDq.Implementations do
 
   defp on_upsert(result), do: result
 
+  def get_sources(%Implementation{implementation_type: "raw", raw_content: %{source_id: nil}}) do
+    []
+  end
+
   def get_sources(%Implementation{
         implementation_type: "raw",
         raw_content: %{source_id: source_id}
