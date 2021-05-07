@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- [TD-3630] Issue querying executions when some implementations have no source
+
 ### Added
 
 - [TD-3500] Sign configuration secrets
