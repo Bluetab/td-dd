@@ -6,7 +6,7 @@
 
 - [TD-3500] Sign configuration secrets
 
-## [4.19.1] 2021-05-07
+## [4.19.2] 2021-05-07
 
 ### Fixed
 
