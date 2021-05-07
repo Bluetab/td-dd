@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.19.1] 2021-05-07
+
+### Fixed
+
+- [TD-3630] Issue querying executions when some implementations have no source
+
 ## [4.19.0] 2021-05-04
 
 ### Changed
