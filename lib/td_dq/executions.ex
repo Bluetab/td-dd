@@ -117,7 +117,7 @@ defmodule TdDq.Executions do
     sorted_sources = Enum.sort(sources)
 
     executions
-    |> Enum.group_by(&get_sources/1, & &1)
+    |> Enum.group_by(&get_sources/1)
     |> Enum.filter(fn
       {[source], _} -> source in sources
       {sources, _} -> Enum.sort(sources) == sorted_sources
@@ -129,7 +129,7 @@ defmodule TdDq.Executions do
 
   defp filter(executions, _params), do: executions
 
-  defp get_sources(%{implementation: implementation = %Implementation{}}) do
+  defp get_sources(%{implementation: %Implementation{} = implementation}) do
     Implementations.get_sources(implementation)
   end
 
