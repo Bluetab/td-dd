@@ -36,7 +36,8 @@ defmodule TdDdWeb.DataStructureVersionController do
     :source,
     :metadata_versions,
     :data_structure_type,
-    :with_confidential
+    :with_confidential,
+    :tags
   ]
 
   swagger_path :show do

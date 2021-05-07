@@ -43,7 +43,8 @@ defmodule TdDdWeb.DataStructureController do
     :system,
     :versions,
     :metadata_versions,
-    :data_structure_type
+    :data_structure_type,
+    :tags
   ]
 
   defp get_data_structure(id) do

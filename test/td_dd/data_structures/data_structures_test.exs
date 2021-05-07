@@ -1091,4 +1091,28 @@ defmodule TdDd.DataStructuresTest do
        }} = DataStructures.link_tag(structure, tag, params)
     end
   end
+
+  describe "delete_link_tag/2" do
+    test "deletes link between tag and structure" do
+      structure = %{id: data_structure_id} = insert(:data_structure)
+      tag = %{id: data_structure_tag_id} = insert(:data_structure_tag)
+      insert(:data_structures_tags, data_structure: structure, data_structure_tag: tag)
+
+      assert {:ok,
+              %{
+                data_structure_id: ^data_structure_id,
+                data_structure_tag_id: ^data_structure_tag_id
+              }} = DataStructures.delete_link_tag(structure, tag)
+
+      assert is_nil(DataStructures.get_link_tag_by(data_structure_id, data_structure_tag_id))
+    end
+
+    test "not_found if link does not exist" do
+      structure = %{id: data_structure_id} = insert(:data_structure)
+      tag = %{id: data_structure_tag_id} = insert(:data_structure_tag)
+
+      assert {:error, :not_found} = DataStructures.delete_link_tag(structure, tag)
+      assert is_nil(DataStructures.get_link_tag_by(data_structure_id, data_structure_tag_id))
+    end
+  end
 end

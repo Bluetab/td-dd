@@ -2,6 +2,7 @@ defmodule TdDdWeb.DataStructureView do
   use TdDdWeb, :view
 
   alias TdDd.DataStructures
+  alias TdDdWeb.DataStructuresTagsView
   alias TdDdWeb.DataStructureView
 
   require Logger
@@ -86,6 +87,7 @@ defmodule TdDdWeb.DataStructureView do
       :source_id,
       :source,
       :system_id,
+      :tags,
       :type,
       :updated_at,
       :mutable_metadata,
@@ -96,6 +98,7 @@ defmodule TdDdWeb.DataStructureView do
     |> Map.put_new(:metadata, %{})
     |> Map.put_new(:path, [])
     |> add_source()
+    |> add_tags()
   end
 
   defp add_system_with_keys(json, data_structure, keys) do
@@ -275,5 +278,15 @@ defmodule TdDdWeb.DataStructureView do
       end
 
     Map.put(ds, :source, source)
+  end
+
+  defp add_tags(ds) do
+    tags =
+      case Map.get(ds, :tags) do
+        nil -> nil
+        tags -> render_many(tags, DataStructuresTagsView, "data_structures_tags.json")
+      end
+
+    Map.put(ds, :tags, tags)
   end
 end

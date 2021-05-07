@@ -54,4 +54,34 @@ defmodule TdDdWeb.DataStructuresTagsController do
       |> put_view(ErrorView)
       |> render("404.json")
   end
+
+  swagger_path :delete do
+    description("Delete Link between data structure and tag")
+    produces("application/json")
+
+    parameters do
+      data_structure_id(:path, :integer, "Data Structure ID", required: true)
+      id(:path, :integer, "Data Structure Tag ID", required: true)
+    end
+
+    response(202, "Accepted")
+    response(403, "Forbidden")
+    response(422, "Unprocessable Entity")
+  end
+
+  def delete(conn, %{"data_structure_id" => data_structure_id, "id" => tag_id}) do
+    with claims <- conn.assigns[:current_resource],
+         %DataStructure{} = structure <- DataStructures.get_data_structure!(data_structure_id),
+         %DataStructureTag{} = tag <- DataStructures.get_data_structure_tag!(tag_id),
+         {:can, true} <- {:can, can?(claims, delete_link_data_structure_tag(structure))},
+         {:ok, %{id: id}} <- DataStructures.delete_link_tag(structure, tag) do
+      send_resp(conn, :accepted, Jason.encode!(%{data: %{id: id}}))
+    end
+  rescue
+    _e in Ecto.NoResultsError ->
+      conn
+      |> put_status(:not_found)
+      |> put_view(ErrorView)
+      |> render("404.json")
+  end
 end

@@ -39,7 +39,7 @@ defmodule TdDdWeb.Router do
 
     resources "/data_structures", DataStructureController, except: [:new, :edit, :show] do
       resources("/versions", DataStructureVersionController, only: [:show])
-      resources("/tags", DataStructuresTagsController, only: [:update], name: "tags")
+      resources("/tags", DataStructuresTagsController, only: [:delete, :update], name: "tags")
     end
 
     resources("/data_structure_versions", DataStructureVersionController, only: [:show]) do

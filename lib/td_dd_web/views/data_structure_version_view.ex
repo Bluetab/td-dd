@@ -3,6 +3,7 @@ defmodule TdDdWeb.DataStructureVersionView do
   use TdHypermedia, :view
 
   alias TdDd.DataStructures
+  alias TdDdWeb.DataStructuresTagsView
   alias TdDdWeb.DataStructureVersionView
 
   def render(
@@ -39,6 +40,7 @@ defmodule TdDdWeb.DataStructureVersionView do
         |> add_metadata_versions
         |> add_data_structure_type
         |> add_cached_content
+        |> add_tags
         |> Map.take([
           :ancestry,
           :children,
@@ -65,7 +67,8 @@ defmodule TdDdWeb.DataStructureVersionView do
           :relations,
           :domain,
           :metadata_versions,
-          :data_structure_type
+          :data_structure_type,
+          :tags
         ])
     }
   end
@@ -307,5 +310,15 @@ defmodule TdDdWeb.DataStructureVersionView do
 
     structure = Map.put(structure, :df_content, df_content)
     Map.put(dsv, :data_structure, structure)
+  end
+
+  defp add_tags(ds) do
+    tags =
+      case Map.get(ds, :tags) do
+        nil -> nil
+        tags -> render_many(tags, DataStructuresTagsView, "data_structures_tags.json")
+      end
+
+    Map.put(ds, :tags, tags)
   end
 end

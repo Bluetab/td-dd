@@ -506,7 +506,7 @@ defmodule TdDd.DataStructures do
 
   defp get_tags(%DataStructure{} = data_structure) do
     data_structure
-    |> Repo.preload(data_structures_tags: :data_structure_tag)
+    |> Repo.preload(data_structures_tags: [:data_structure_tag, :data_structure])
     |> Map.get(:data_structures_tags)
   end
 
@@ -1036,12 +1036,43 @@ defmodule TdDd.DataStructures do
         %DataStructureTag{id: tag_id} = data_structure_tag,
         params
       ) do
-    DataStructuresTags
-    |> Repo.get_by(data_structure_tag_id: tag_id, data_structure_id: data_structure_id)
+    data_structure_id
+    |> get_link_tag_by(tag_id)
     |> case do
       nil -> create_link(data_structure, data_structure_tag, params)
       %DataStructuresTags{} = tag_link -> update_link(tag_link, params)
     end
+  end
+
+  @doc """
+  deletes a link between a tag to an structure.
+
+  ## Examples
+
+      iex> delete_link_tag(data_structure, data_structure_tag)
+      {:ok, %DataStructuresTags{}}
+
+      iex> delete_link_tag(data_structure, data_structure_tag)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_link_tag(
+        %DataStructure{id: data_structure_id},
+        %DataStructureTag{id: tag_id}
+      ) do
+    data_structure_id
+    |> get_link_tag_by(tag_id)
+    |> case do
+      nil -> {:error, :not_found}
+      %DataStructuresTags{} = tag_link -> Repo.delete(tag_link)
+    end
+  end
+
+  def get_link_tag_by(data_structure_id, tag_id) do
+    Repo.get_by(DataStructuresTags,
+      data_structure_tag_id: tag_id,
+      data_structure_id: data_structure_id
+    )
   end
 
   defp create_link(data_structure, data_structure_tag, params) do
