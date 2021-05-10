@@ -184,18 +184,34 @@ defmodule TdDdWeb.SwaggerDefinitions do
             )
           end
         end,
+      LinksDataStructureTagResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:LinksDataStructureTag))
+          end
+        end,
+      LinksDataStructureTag:
+        swagger_schema do
+          title("LinksDataStructureTagResponse")
+          description("Links between a structure and its tags")
+          type(:array)
+          items(Schema.ref(:LinkDataStructureTag))
+        end,
+      LinkDataStructureTag:
+        swagger_schema do
+          title("LinkDataStructureTag")
+          description("Link between a structure and its tags")
+
+          properties do
+            id(:integer, "Id link")
+            description(:string, "Tag description")
+            _embedded(Schema.ref(:LinkDataStructureTagEmbeddings))
+          end
+        end,
       LinkDataStructureTagResponse:
         swagger_schema do
           properties do
-            data(
-              Schema.new do
-                properties do
-                  id(:integer, "Id link")
-                  description(:string, "Tag description")
-                  _embedded(Schema.ref(:LinkDataStructureTagEmbeddings))
-                end
-              end
-            )
+            data(Schema.ref(:LinkDataStructureTag))
           end
         end,
       LinkDataStructureTagEmbeddings:

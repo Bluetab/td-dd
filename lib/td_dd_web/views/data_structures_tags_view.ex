@@ -9,6 +9,10 @@ defmodule TdDdWeb.DataStructuresTagsView do
     }
   end
 
+  def render("index.json", %{links: links}) do
+    %{data: render_many(links, DataStructuresTagsView, "data_structures_tags.json")}
+  end
+
   def render("data_structures_tags.json", %{data_structures_tags: data_structures_tags}) do
     %{
       id: data_structures_tags.id,

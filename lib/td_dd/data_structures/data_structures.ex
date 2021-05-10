@@ -1020,7 +1020,28 @@ defmodule TdDd.DataStructures do
   end
 
   @doc """
-  links a tag to an structure.
+  Returns the links between a data structure and its tags.
+
+  ## Examples
+
+      iex> get_links_tag(%DataStructure{})
+      [%DataStructuresTags{}, ...]
+
+  """
+
+  def get_links_tag(%DataStructure{data_structures_tags: tags})
+      when is_list(tags) do
+    tags
+  end
+
+  def get_links_tag(%DataStructure{} = data_structure) do
+    data_structure
+    |> Repo.preload(data_structures_tags: [:data_structure, :data_structure_tag])
+    |> Map.get(:data_structures_tags)
+  end
+
+  @doc """
+  links a tag to a structure.
 
   ## Examples
 
@@ -1045,7 +1066,7 @@ defmodule TdDd.DataStructures do
   end
 
   @doc """
-  deletes a link between a tag to an structure.
+  deletes a link between a tag to a structure.
 
   ## Examples
 

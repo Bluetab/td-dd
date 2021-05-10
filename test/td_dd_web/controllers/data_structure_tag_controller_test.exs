@@ -85,9 +85,9 @@ defmodule TdDdWeb.DataStructureTagControllerTest do
                |> json_response(:ok)
 
       assert %{
-                "id" => ^id,
-                "name" => "some name"
-              } = data
+               "id" => ^id,
+               "name" => "some name"
+             } = data
     end
 
     @tag authentication: [role: "admin"]

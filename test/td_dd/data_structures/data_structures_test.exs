@@ -1092,6 +1092,25 @@ defmodule TdDd.DataStructuresTest do
     end
   end
 
+  describe "get_links_tag/2" do
+    test "gets a list of links between a structure and its tags" do
+      structure = %{id: data_structure_id} = insert(:data_structure)
+      tag = %{id: data_structure_tag_id, name: name} = insert(:data_structure_tag)
+
+      %{id: link_id, description: description} =
+        insert(:data_structures_tags, data_structure: structure, data_structure_tag: tag)
+
+      assert [
+               %{
+                 id: ^link_id,
+                 data_structure: %{id: ^data_structure_id},
+                 data_structure_tag: %{id: ^data_structure_tag_id, name: ^name},
+                 description: ^description
+               }
+             ] = DataStructures.get_links_tag(structure)
+    end
+  end
+
   describe "delete_link_tag/2" do
     test "deletes link between tag and structure" do
       structure = %{id: data_structure_id} = insert(:data_structure)
