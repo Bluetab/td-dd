@@ -185,6 +185,24 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     end
   end
 
+  describe "GET /api/data_structures/:id/versions/latest with classes" do
+    @tag authentication: [role: "admin"]
+    test "includes classes in the response", %{conn: conn} do
+      %{data_structure_version: %{data_structure_id: id}, name: name, class: class} =
+        insert(:structure_classification)
+
+      assert %{"data" => data} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(conn, :show, id, "latest")
+               )
+               |> json_response(:ok)
+
+      assert %{"classes" => classes} = data
+      assert classes == %{name => class}
+    end
+  end
+
   describe "show data_structure with deletions in its hierarchy" do
     setup [:create_structure_hierarchy_with_logic_deletions]
 
