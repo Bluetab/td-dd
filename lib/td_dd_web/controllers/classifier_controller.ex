@@ -69,7 +69,7 @@ defmodule TdDdWeb.ClassifierController do
     with claims <- conn.assigns[:current_resource],
          classifier <- Classifiers.get_classifier!(system, id),
          {:can, true} <- {:can, can?(claims, delete(classifier))},
-         {:ok, _classifier} <- Classifiers.delete_classifier(classifier) do
+         {:ok, _multi_result} <- Classifiers.delete_classifier(classifier) do
       send_resp(conn, :no_content, "")
     end
   end

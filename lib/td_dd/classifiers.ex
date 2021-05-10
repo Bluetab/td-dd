@@ -14,7 +14,10 @@ defmodule TdDd.Classifiers do
   alias TdDd.Repo
   alias TdDd.Systems.System
 
-  @typep changeset :: Ecto.Changeset.t()
+  @index_worker Application.compile_env(:td_dd, :index_worker)
+
+  @typep multi_result ::
+           {:ok, map} | {:error, Multi.name(), any(), %{required(Multi.name()) => any()}}
 
   @default_opts [
     conflict_target: [:data_structure_version_id, :classifier_id],
@@ -30,8 +33,7 @@ defmodule TdDd.Classifiers do
   end
 
   @doc "Creates a `Classifier` using the specified parameters"
-  @spec create_classifier(System.t(), map) ::
-          {:ok, map} | {:error, Multi.name(), any(), %{required(Multi.name()) => any()}}
+  @spec create_classifier(System.t(), map) :: multi_result
   def create_classifier(%System{id: system_id}, %{} = params, opts \\ []) do
     Multi.new()
     |> Multi.insert(:classifier, Classifier.changeset(%Classifier{system_id: system_id}, params))
@@ -42,10 +44,11 @@ defmodule TdDd.Classifiers do
       {:ok, structure_ids(classifier)}
     end)
     |> Repo.transaction()
+    |> reindex()
   end
 
   @doc "Deletes the specified `Classifier`"
-  @spec delete_classifier(Classifier.t()) :: {:ok, Classifier.t()} | {:error, changeset}
+  @spec delete_classifier(Classifier.t()) :: multi_result
   def delete_classifier(%Classifier{} = classifier) do
     Multi.new()
     |> Multi.run(:structure_ids, fn _, _ ->
@@ -53,6 +56,7 @@ defmodule TdDd.Classifiers do
     end)
     |> Multi.delete(:classifier, classifier)
     |> Repo.transaction()
+    |> reindex()
   end
 
   @spec classify_many([non_neg_integer()], Keyword.t()) :: {:ok, map()} | {:error, any()}
@@ -68,8 +72,7 @@ defmodule TdDd.Classifiers do
     end)
   end
 
-  @spec classify(Classifier.t(), Keyword.t()) ::
-          {:ok, map} | {:error, Multi.name(), any, %{required(Multi.name()) => any()}}
+  @spec classify(Classifier.t(), Keyword.t()) :: multi_result
   def classify(%Classifier{name: name} = classifier, opts \\ []) do
     {updated_at, opts} = Keyword.pop(opts, :updated_at)
     query = structure_query(classifier, updated_at)
@@ -189,4 +192,14 @@ defmodule TdDd.Classifiers do
     |> distinct(true)
     |> Repo.all()
   end
+
+  @spec reindex(multi_result) :: multi_result
+  def reindex(result)
+
+  def reindex({:ok, %{structure_ids: structure_ids}} = result) do
+    @index_worker.reindex(structure_ids)
+    result
+  end
+
+  def reindex(result), do: result
 end

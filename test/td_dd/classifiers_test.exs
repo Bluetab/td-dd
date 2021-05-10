@@ -4,8 +4,10 @@ defmodule TdDd.ClassifiersTest do
   alias TdDd.Classifiers
   alias TdDd.Classifiers.Classifier
   alias TdDd.Repo
+  alias TdDd.Search.MockIndexWorker
 
   setup do
+    start_supervised(MockIndexWorker)
     %{id: system_id} = system = insert(:system)
     [system: system, system_id: system_id]
   end
@@ -72,7 +74,7 @@ defmodule TdDd.ClassifiersTest do
              } = r2
     end
 
-    test "classifies existing data structures" do
+    test "classifies and reindexes existing data structures" do
       %{id: data_structure_version_id, data_structure: %{id: data_structure_id, system: system}} =
         insert(:data_structure_version, type: "foo")
 
@@ -90,6 +92,7 @@ defmodule TdDd.ClassifiersTest do
       assert %{"foo" => {_, [classification]}} = classifications
       assert %{data_structure_version_id: ^data_structure_version_id} = classification
       assert structure_ids == [data_structure_id]
+      assert MockIndexWorker.calls() == [{:reindex, [data_structure_id]}]
     end
   end
 
@@ -102,12 +105,13 @@ defmodule TdDd.ClassifiersTest do
       assert %{state: :deleted} = meta
     end
 
-    test "returns structure ids" do
+    test "returns and reindexes structure ids" do
       %{data_structure_version: %{data_structure_id: id}, classifier: classifier} =
         insert(:structure_classification)
 
       assert {:ok, %{structure_ids: structure_ids}} = Classifiers.delete_classifier(classifier)
       assert structure_ids == [id]
+      assert MockIndexWorker.calls() == [{:reindex, structure_ids}]
     end
   end
 
