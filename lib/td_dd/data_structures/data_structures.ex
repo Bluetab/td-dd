@@ -82,7 +82,7 @@ defmodule TdDd.DataStructures do
     DataStructureVersion
     |> Paths.by_structure_id_and_version(data_structure_id, version)
     |> Repo.get_by!(params)
-    |> Repo.preload(data_structure: :system)
+    |> Repo.preload(@preload_dsv_assocs)
     |> enrich(options)
   end
 
