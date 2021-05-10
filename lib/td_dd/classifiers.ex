@@ -38,13 +38,21 @@ defmodule TdDd.Classifiers do
     |> Multi.run(:classifications, fn _, %{classifier: classifier} ->
       classify(classifier, opts)
     end)
+    |> Multi.run(:structure_ids, fn _, %{classifier: classifier} ->
+      {:ok, structure_ids(classifier)}
+    end)
     |> Repo.transaction()
   end
 
   @doc "Deletes the specified `Classifier`"
   @spec delete_classifier(Classifier.t()) :: {:ok, Classifier.t()} | {:error, changeset}
   def delete_classifier(%Classifier{} = classifier) do
-    Repo.delete(classifier)
+    Multi.new()
+    |> Multi.run(:structure_ids, fn _, _ ->
+      {:ok, structure_ids(classifier)}
+    end)
+    |> Multi.delete(:classifier, classifier)
+    |> Repo.transaction()
   end
 
   @spec classify_many([non_neg_integer()], Keyword.t()) :: {:ok, map()} | {:error, any()}
@@ -170,5 +178,15 @@ defmodule TdDd.Classifiers do
       data_structure_version_id: c.data_structure_version_id,
       classes: fragment("json_object_agg(?, ?)", c.name, c.class)
     })
+  end
+
+  @spec structure_ids(Classifier.t()) :: [integer]
+  def structure_ids(%Classifier{id: id}) do
+    Classification
+    |> where([c], c.classifier_id == ^id)
+    |> join(:left, [c], dsv in assoc(c, :data_structure_version))
+    |> select([_, dsv], dsv.data_structure_id)
+    |> distinct(true)
+    |> Repo.all()
   end
 end

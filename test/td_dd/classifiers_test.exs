@@ -73,7 +73,7 @@ defmodule TdDd.ClassifiersTest do
     end
 
     test "classifies existing data structures" do
-      %{id: dsv_id, data_structure: %{system: system}} =
+      %{id: data_structure_version_id, data_structure: %{id: data_structure_id, system: system}} =
         insert(:data_structure_version, type: "foo")
 
       params = %{
@@ -84,19 +84,30 @@ defmodule TdDd.ClassifiersTest do
         ]
       }
 
-      assert {:ok, %{classifications: classifications}} =
+      assert {:ok, %{classifications: classifications, structure_ids: structure_ids}} =
                Classifiers.create_classifier(system, params, returning: true)
 
       assert %{"foo" => {_, [classification]}} = classifications
-      assert %{data_structure_version_id: ^dsv_id} = classification
+      assert %{data_structure_version_id: ^data_structure_version_id} = classification
+      assert structure_ids == [data_structure_id]
     end
   end
 
   describe "Classifiers.delete_classifier/2" do
     test "deletes a classifier" do
-      classifier = insert(:classifier)
-      assert {:ok, %{__meta__: meta}} = Classifiers.delete_classifier(classifier)
+      assert {:ok, %{classifier: classifier}} =
+               :classifier |> insert() |> Classifiers.delete_classifier()
+
+      assert %{__meta__: meta} = classifier
       assert %{state: :deleted} = meta
+    end
+
+    test "returns structure ids" do
+      %{data_structure_version: %{data_structure_id: id}, classifier: classifier} =
+        insert(:structure_classification)
+
+      assert {:ok, %{structure_ids: structure_ids}} = Classifiers.delete_classifier(classifier)
+      assert structure_ids == [id]
     end
   end
 
@@ -186,6 +197,15 @@ defmodule TdDd.ClassifiersTest do
                |> Repo.all()
 
       assert classes == %{name => class}
+    end
+  end
+
+  describe "Classifiers.structure_ids/0" do
+    test "returns the classified structure_ids" do
+      %{data_structure_version: %{data_structure_id: id}, classifier: classifier} =
+        insert(:structure_classification)
+
+      assert Classifiers.structure_ids(classifier) == [id]
     end
   end
 
