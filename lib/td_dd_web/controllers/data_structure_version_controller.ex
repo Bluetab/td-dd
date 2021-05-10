@@ -96,7 +96,8 @@ defmodule TdDdWeb.DataStructureVersionController do
         update: can?(claims, update_data_structure(data_structure)),
         confidential: can?(claims, manage_confidential_structures(data_structure)),
         view_profiling_permission: can?(claims, view_data_structures_profile(data_structure)),
-        profile_permission: can?(claims, profile(dsv))
+        profile_permission: can?(claims, profile(dsv)),
+        manage_tags: can?(claims, link_data_structure_tag(data_structure))
       }
 
       render(conn, "show.json",
