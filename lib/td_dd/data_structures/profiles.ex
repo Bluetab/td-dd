@@ -70,5 +70,4 @@ defmodule TdDd.DataStructures.Profiles do
     |> Profile.changeset(params)
     |> Repo.update()
   end
-
 end

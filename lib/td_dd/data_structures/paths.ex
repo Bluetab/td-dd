@@ -3,6 +3,7 @@ defmodule TdDd.DataStructures.Paths do
   Use a recursive CTE to resolve data structure paths.
   """
 
+  alias TdDd.Classifiers
   alias TdDd.DataStructures.Paths.Path
 
   import Ecto.Query
@@ -77,6 +78,7 @@ defmodule TdDd.DataStructures.Paths do
     |> join(:inner, [dsv], p in {"paths", Path}, on: p.vid == dsv.id)
     |> select_merge([dsv, p], %{path: p})
     |> distinct_by(:data_structure_id)
+    |> with_classes(true)
   end
 
   def by_version_id(query, id) do
@@ -111,7 +113,18 @@ defmodule TdDd.DataStructures.Paths do
     |> join(:left, [dsv], p in {"paths", Path}, on: p.id == dsv.id)
     |> select_merge([dsv, p], %{path: p})
     |> distinct_by(opts[:distinct])
+    |> with_classes(Keyword.get(opts, :classes, true))
   end
+
+  defp with_classes(query, true) do
+    query
+    |> join(:left, [dsv], c in subquery(Classifiers.classes()),
+      on: dsv.id == c.data_structure_version_id
+    )
+    |> select_merge([_, _, c], %{classes: c.classes})
+  end
+
+  defp with_classes(query, _), do: query
 
   defp distinct_by(query, nil), do: query
 

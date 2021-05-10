@@ -7,6 +7,7 @@ defmodule TdDd.Systems.System do
 
   import Ecto.Changeset
 
+  alias TdDd.Classifiers.Classifier
   alias TdDd.DataStructures.DataStructure
 
   @type t :: %__MODULE__{}
@@ -18,6 +19,7 @@ defmodule TdDd.Systems.System do
     field(:df_content, :map)
 
     has_many(:data_structures, DataStructure)
+    has_many(:classifiers, Classifier)
     timestamps()
   end
 

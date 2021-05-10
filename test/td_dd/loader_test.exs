@@ -742,10 +742,15 @@ defmodule TdDd.LoaderTest do
     end
   end
 
-  defp audit do
-    ts = DateTime.truncate(DateTime.utc_now(), :second)
+  describe "system_ids/1" do
+    test "returns a unique list of system ids" do
+      records = 1..15 |> Enum.map(fn id -> %{system_id: Integer.mod(id, 10)} end)
+      assert Loader.system_ids(records) <|> 0..9
+    end
+  end
 
-    %{last_change_by: 0, ts: ts}
+  defp audit do
+    %{last_change_by: 0, ts: DateTime.utc_now()}
   end
 
   defp source(_) do

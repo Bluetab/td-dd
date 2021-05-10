@@ -108,8 +108,7 @@ defmodule TdDdWeb.MetadataController do
 
   def audit_params(conn) do
     %{user_id: user_id} = conn.assigns[:current_resource]
-    ts = DateTime.truncate(DateTime.utc_now(), :second)
-    %{ts: ts, last_change_by: user_id}
+    %{ts: DateTime.utc_now(), last_change_by: user_id}
   end
 
   defp copy_file(nil), do: nil

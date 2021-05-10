@@ -91,6 +91,7 @@ defmodule TdDdWeb.DataStructureVersionController do
   defp render_with_permissions(conn, claims, %{data_structure: data_structure} = dsv) do
     if can?(claims, view_data_structure(data_structure)) do
       dsv = DataStructures.profile_source(dsv)
+
       user_permissions = %{
         update: can?(claims, update_data_structure(data_structure)),
         confidential: can?(claims, manage_confidential_structures(data_structure)),

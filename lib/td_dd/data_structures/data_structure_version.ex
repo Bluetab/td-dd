@@ -8,6 +8,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
   import Ecto.Changeset
 
   alias TdDd.DataStructures
+  alias TdDd.DataStructures.Classification
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
 
@@ -22,16 +23,18 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     field(:group, :string)
     field(:name, :string)
     field(:type, :string)
-    field(:deleted_at, :utc_datetime)
+    field(:deleted_at, :utc_datetime_usec)
     field(:hash, :binary)
     field(:ghash, :binary)
     field(:lhash, :binary)
     field(:path, :map, virtual: true)
     field(:external_id, :string, virtual: true)
     field(:profile_source, :map, virtual: true)
+    field(:classes, :map, virtual: true)
 
     belongs_to(:data_structure, DataStructure)
 
+    has_many(:classifications, Classification)
     has_many(:child_relations, DataStructureRelation, foreign_key: :parent_id)
     has_many(:parent_relations, DataStructureRelation, foreign_key: :child_id)
 
@@ -45,7 +48,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       join_keys: [child_id: :id, parent_id: :id]
     )
 
-    timestamps(type: :utc_datetime)
+    timestamps(type: :utc_datetime_usec)
   end
 
   def update_changeset(%__MODULE__{} = data_structure_version, params) do
@@ -163,6 +166,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       |> Map.merge(
         Map.take(dsv, [
           :class,
+          :classes,
           :description,
           :deleted_at,
           :updated_at,

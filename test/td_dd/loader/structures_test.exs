@@ -1,13 +1,15 @@
 defmodule TdDd.Loader.StructuresTest do
   use TdDd.DataCase
 
+  import TdDd.TestOperators
+
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Loader.Structures
 
   setup %{ids: ids} do
     %{id: system_id} = insert(:system)
-    ts = timestamp()
+    ts = DateTime.utc_now()
 
     entries =
       ids
@@ -29,7 +31,7 @@ defmodule TdDd.Loader.StructuresTest do
   describe "update_domain_ids/2" do
     @tag ids: 1..10
     test "updates domain_id only if changed" do
-      ts = timestamp()
+      ts = DateTime.utc_now()
       new_domain_id = 42
       records = [%{domain_id: 1, external_id: "1"}, %{domain_id: new_domain_id, external_id: "2"}]
       assert {:ok, {1, [structure_id]}} = Structures.update_domain_ids(records, ts)
@@ -43,7 +45,7 @@ defmodule TdDd.Loader.StructuresTest do
       %{id: id1} = insert(:source)
       %{id: id2} = insert(:source)
 
-      ts = timestamp()
+      ts = DateTime.utc_now()
 
       records = Enum.map(1..10, fn id -> %{external_id: "#{id}"} end)
 
@@ -56,12 +58,13 @@ defmodule TdDd.Loader.StructuresTest do
         |> Enum.sort()
 
       assert {0, []} = Structures.update_source_ids(records, nil, ts)
-      assert {10, ^ids} = Structures.update_source_ids(records, id1, ts)
+      assert {10, actual_ids} = Structures.update_source_ids(records, id1, ts)
+      assert actual_ids <|> ids
       assert {0, []} = Structures.update_source_ids(records, id1, ts)
-      updated_ids = Enum.take(ids, 5)
-      assert {5, ^updated_ids} = Structures.update_source_ids(Enum.take(records, 5), id2, ts)
-      updated_ids = Enum.take(ids, -5)
-      assert {5, ^updated_ids} = Structures.update_source_ids(records, id2, ts)
+      assert {5, updated_ids} = Structures.update_source_ids(Enum.take(records, 5), id2, ts)
+      assert updated_ids <|> Enum.take(ids, 5)
+      assert {5, updated_ids} = Structures.update_source_ids(records, id2, ts)
+      assert updated_ids <|> Enum.take(ids, -5)
       structures = DataStructures.list_data_structures(%{external_id: external_ids})
       assert Enum.all?(structures, &(&1.source_id == id2))
     end
@@ -70,7 +73,7 @@ defmodule TdDd.Loader.StructuresTest do
   describe "bulk_update_domain_id/3" do
     @tag ids: 1..5_000
     test "bulk-updates domain_id if changed, returns count and affected ids", %{ids: ids} do
-      ts = DateTime.utc_now() |> DateTime.truncate(:second)
+      ts = DateTime.utc_now()
 
       assert {0, []} = Structures.bulk_update_domain_id([], 1, ts)
 
@@ -89,13 +92,11 @@ defmodule TdDd.Loader.StructuresTest do
 
     @tag ids: 1..10
     test "handles nil correctly", %{ids: ids} do
-      ts = DateTime.utc_now() |> DateTime.truncate(:second)
+      ts = DateTime.utc_now()
       external_ids = Enum.map(ids, &Integer.to_string/1)
 
       assert {10, _} = Structures.bulk_update_domain_id(external_ids, nil, ts)
       assert {0, []} = Structures.bulk_update_domain_id(external_ids, nil, ts)
     end
   end
-
-  defp timestamp, do: DateTime.utc_now() |> DateTime.truncate(:second)
 end

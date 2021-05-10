@@ -68,11 +68,11 @@ defmodule TdDd.Loader.FieldsAsStructures do
   end
 
   def as_relations({parent, fields}) do
-     Enum.map(fields, &as_relation(parent, &1))
+    Enum.map(fields, &as_relation(parent, &1))
   end
 
   def as_relations(fields_by_parent) do
-     Enum.flat_map(fields_by_parent, &as_relations/1)
+    Enum.flat_map(fields_by_parent, &as_relations/1)
   end
 
   defp as_relation(%{external_id: external_id} = parent, field) do
