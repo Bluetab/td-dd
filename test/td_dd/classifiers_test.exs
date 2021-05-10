@@ -74,6 +74,16 @@ defmodule TdDd.ClassifiersTest do
              } = r2
     end
 
+    test "returns an empty list if no filters specified", %{system: system} do
+      params =
+        :classifier
+        |> params_for(rules: [build(:regex_rule)])
+        |> Map.delete("filters")
+
+      assert {:ok, %{classifier: classifier}} = Classifiers.create_classifier(system, params)
+      assert %{filters: []} = classifier
+    end
+
     test "classifies and reindexes existing data structures" do
       %{id: data_structure_version_id, data_structure: %{id: data_structure_id, system: system}} =
         insert(:data_structure_version, type: "foo")
