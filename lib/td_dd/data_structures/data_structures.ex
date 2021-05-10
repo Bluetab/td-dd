@@ -1084,10 +1084,12 @@ defmodule TdDd.DataStructures do
     data_structure_id
     |> get_link_tag_by(tag_id)
     |> case do
-      nil -> {:error, :not_found}
-      %DataStructuresTags{} = tag_link -> 
+      nil ->
+        {:error, :not_found}
+
+      %DataStructuresTags{} = tag_link ->
         tag_link
-        |> Repo.delete() 
+        |> Repo.delete()
         |> on_link_delete()
     end
   end
