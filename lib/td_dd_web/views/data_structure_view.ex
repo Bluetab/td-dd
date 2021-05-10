@@ -2,7 +2,6 @@ defmodule TdDdWeb.DataStructureView do
   use TdDdWeb, :view
 
   alias TdDd.DataStructures
-  alias TdDdWeb.DataStructureView
 
   require Logger
 
@@ -14,13 +13,13 @@ defmodule TdDdWeb.DataStructureView do
 
   def render("index.json", %{data_structures: data_structures, filters: filters}) do
     %{
-      data: render_many(data_structures, DataStructureView, "data_structure.json"),
+      data: render_many(data_structures, __MODULE__, "data_structure.json"),
       filters: filters
     }
   end
 
   def render("index.json", %{data_structures: data_structures}) do
-    %{data: render_many(data_structures, DataStructureView, "data_structure.json")}
+    %{data: render_many(data_structures, __MODULE__, "data_structure.json")}
   end
 
   def render("show.json", %{
@@ -68,6 +67,7 @@ defmodule TdDdWeb.DataStructureView do
     data_structure
     |> Map.take([
       :class,
+      :classes,
       :confidential,
       :deleted_at,
       :description,

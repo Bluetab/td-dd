@@ -15,7 +15,7 @@ defmodule TdDd.DataStructures.DataStructureRelation do
     belongs_to :parent, DataStructureVersion
     belongs_to :child, DataStructureVersion
     belongs_to :relation_type, RelationType
-    timestamps(type: :utc_datetime)
+    timestamps(type: :utc_datetime_usec)
   end
 
   def changeset(%DataStructureRelation{} = data_structure_relation, params) do
