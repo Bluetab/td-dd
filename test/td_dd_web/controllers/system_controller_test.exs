@@ -215,5 +215,24 @@ defmodule TdDdWeb.SystemControllerTest do
 
       refute data |> Enum.map(& &1["id"]) |> Enum.member?(id)
     end
+
+    @tag authentication: [role: "admin"]
+    test "includes classes in response", %{conn: conn, system: %{id: system_id}} do
+      %{name: name, class: class} =
+        insert(:structure_classification,
+          data_structure_version:
+            build(:data_structure_version,
+              data_structure: build(:data_structure, system_id: system_id)
+            )
+        )
+
+      assert %{"data" => [data]} =
+               conn
+               |> get(Routes.system_data_structure_path(conn, :get_system_structures, system_id))
+               |> json_response(:ok)
+
+      assert %{"classes" => classes} = data
+      assert classes == %{name => class}
+    end
   end
 end

@@ -5,6 +5,7 @@ defmodule TdDd.Classifiers.Classifier do
 
   use Ecto.Schema
 
+  alias Ecto.Changeset
   alias TdDd.Classifiers.Filter
   alias TdDd.Classifiers.Rule
   alias TdDd.Systems.System
@@ -33,9 +34,14 @@ defmodule TdDd.Classifiers.Classifier do
   def changeset(%__MODULE__{} = struct, %{} = params) do
     struct
     |> cast(params, [:name, :system_id])
+    |> put_defaults(%{"filters" => []})
     |> validate_required([:name, :system_id])
     |> cast_assoc(:filters)
     |> cast_assoc(:rules, required: true)
     |> unique_constraint([:system_id, :name])
+  end
+
+  defp put_defaults(%Changeset{params: params} = changeset, %{} = defaults) do
+    %{changeset | params: Map.merge(defaults, params)}
   end
 end
