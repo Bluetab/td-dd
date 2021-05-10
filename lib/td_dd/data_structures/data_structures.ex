@@ -1085,7 +1085,10 @@ defmodule TdDd.DataStructures do
     |> get_link_tag_by(tag_id)
     |> case do
       nil -> {:error, :not_found}
-      %DataStructuresTags{} = tag_link -> Repo.delete(tag_link)
+      %DataStructuresTags{} = tag_link -> 
+        tag_link
+        |> Repo.delete() 
+        |> on_link_delete()
     end
   end
 
@@ -1102,6 +1105,7 @@ defmodule TdDd.DataStructures do
     |> DataStructuresTags.put_data_structure(data_structure)
     |> DataStructuresTags.put_data_structure_tag(data_structure_tag)
     |> Repo.insert()
+    |> on_link_insert()
   end
 
   defp update_link(link, params) do
@@ -1110,6 +1114,20 @@ defmodule TdDd.DataStructures do
     |> Repo.update()
     |> on_link_update()
   end
+
+  defp on_link_insert({:ok, link}) do
+    IndexWorker.reindex(link.data_structure_id)
+    {:ok, link}
+  end
+
+  defp on_link_insert(reply), do: reply
+
+  defp on_link_delete({:ok, link}) do
+    IndexWorker.reindex(link.data_structure_id)
+    {:ok, link}
+  end
+
+  defp on_link_delete(reply), do: reply
 
   defp on_link_update({:ok, link}),
     do: {:ok, Repo.preload(link, [:data_structure_tag, :data_structure])}
