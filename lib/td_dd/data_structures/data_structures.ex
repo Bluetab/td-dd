@@ -1103,7 +1103,7 @@ defmodule TdDd.DataStructures do
         |> Multi.delete(:deleted_link_tag, tag_link)
         |> Multi.run(:audit, Audit, :tag_link_deleted, [user_id])
         |> Repo.transaction()
-        |> on_link_delete()        
+        |> on_link_delete()
     end
   end
 
