@@ -6,6 +6,7 @@
 
 - [TD-3398] Support classification of data structures
 - [TD-3500] Support for signing configuration using a secret key
+- [TD-3597] Link between structures and tags
 
 ### Changed
 
