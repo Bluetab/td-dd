@@ -1158,21 +1158,23 @@ defmodule TdDd.DataStructures do
     |> on_link_update()
   end
 
-  defp on_link_insert({:ok, %{linked_tag: link}}) do
+  defp on_link_insert({:ok, %{linked_tag: link} = multi}) do
     IndexWorker.reindex(link.data_structure_id)
-    {:ok, link}
+    {:ok, multi}
   end
 
   defp on_link_insert(reply), do: reply
 
-  defp on_link_update({:ok, %{linked_tag: link}}),
-    do: {:ok, Repo.preload(link, [:data_structure_tag, :data_structure])}
+  defp on_link_update({:ok, %{linked_tag: link} = multi}) do
+    link = Repo.preload(link, [:data_structure_tag, :data_structure])
+    {:ok, Map.put(multi, :linked_tag, link)}
+  end
 
   defp on_link_update(reply), do: reply
 
-  defp on_link_delete({:ok, %{deleted_link_tag: link}}) do
+  defp on_link_delete({:ok, %{deleted_link_tag: link} = multi}) do
     IndexWorker.reindex(link.data_structure_id)
-    {:ok, link}
+    {:ok, multi}
   end
 
   defp on_link_delete(reply), do: reply

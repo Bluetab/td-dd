@@ -1062,10 +1062,15 @@ defmodule TdDd.DataStructuresTest do
 
       {:ok,
        %{
-         description: ^description,
-         data_structure: %{id: ^data_structure_id},
-         data_structure_tag: %{id: ^tag_id}
+         audit: event_id,
+         linked_tag: %{
+           description: ^description,
+           data_structure: %{id: ^data_structure_id},
+           data_structure_tag: %{id: ^tag_id}
+         }
        }} = DataStructures.link_tag(structure, tag, params, claims)
+       assert {:ok, [%{id: ^event_id}]} =
+               Stream.range(:redix, @stream, event_id, event_id, transform: :range)
     end
 
     test "updates link information when it already exists", %{claims: claims} do
@@ -1083,10 +1088,15 @@ defmodule TdDd.DataStructuresTest do
 
       {:ok,
        %{
-         description: ^description,
-         data_structure: %{id: ^data_structure_id},
-         data_structure_tag: %{id: ^tag_id}
+         audit: event_id,
+         linked_tag: %{
+           description: ^description,
+           data_structure: %{id: ^data_structure_id},
+           data_structure_tag: %{id: ^tag_id}
+         }
        }} = DataStructures.link_tag(structure, tag, params, claims)
+       assert {:ok, [%{id: ^event_id}]} =
+               Stream.range(:redix, @stream, event_id, event_id, transform: :range)
     end
 
     test "gets error when description is invalid", %{claims: claims} do
@@ -1110,8 +1120,7 @@ defmodule TdDd.DataStructuresTest do
        %{
          errors: [
            description:
-             {"max.length.1000",
-              [count: 1000, validation: :length, kind: :max, type: :string]}
+             {"max.length.1000", [count: 1000, validation: :length, kind: :max, type: :string]}
          ],
          valid?: false
        }, _} = DataStructures.link_tag(structure, tag, params, claims)
@@ -1145,10 +1154,14 @@ defmodule TdDd.DataStructuresTest do
 
       assert {:ok,
               %{
-                data_structure_id: ^data_structure_id,
-                data_structure_tag_id: ^data_structure_tag_id
+                audit: event_id,
+                deleted_link_tag: %{
+                  data_structure_id: ^data_structure_id,
+                  data_structure_tag_id: ^data_structure_tag_id
+                }
               }} = DataStructures.delete_link_tag(structure, tag, claims)
-
+      assert {:ok, [%{id: ^event_id}]} =
+              Stream.range(:redix, @stream, event_id, event_id, transform: :range)
       assert is_nil(DataStructures.get_link_tag_by(data_structure_id, data_structure_tag_id))
     end
 
