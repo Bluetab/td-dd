@@ -26,7 +26,7 @@ defmodule TdDdWeb.DataStructureTagController do
   def index(conn, _params) do
     with claims <- conn.assigns[:current_resource],
          {:can, true} <- {:can, can?(claims, index(DataStructureTag))},
-         data_structure_tags <- DataStructures.list_data_structure_tags() do
+         data_structure_tags <- DataStructures.list_data_structure_tags(preload: [:tagged_structures]) do
       render(conn, "index.json", data_structure_tags: data_structure_tags)
     end
   end

@@ -122,6 +122,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
           properties do
             id(:integer, "Data Structure Tag unique identifier", required: true)
             name(:string, "Tag name")
+            structure_count(:integer, "Linked structures count")
           end
 
           example(%{

@@ -943,12 +943,14 @@ defmodule TdDd.DataStructures do
 
   ## Examples
 
-      iex> list_data_structure_tags()
+      iex> list_data_structure_tags(options)
       [%DataStructureTag{}, ...]
 
   """
-  def list_data_structure_tags do
-    Repo.all(DataStructureTag)
+  def list_data_structure_tags(options \\ []) do
+    DataStructureTag
+    |> Repo.all() 
+    |> Repo.preload(options[:preload] || [])
   end
 
   @doc """
