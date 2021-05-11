@@ -999,6 +999,18 @@ defmodule TdDd.DataStructuresTest do
       assert DataStructures.get_data_structure_tag!(data_structure_tag.id) == data_structure_tag
     end
 
+    test "get_data_structure_tag!/1 returns the data_structure_tag with specified preloads by given id" do
+      %{id: structure_id, external_id: external_id} = structure = insert(:data_structure)
+      %{id: id, name: name} = structure_tag = insert(:data_structure_tag)
+      insert(:data_structures_tags, data_structure: structure, data_structure_tag: structure_tag)
+
+      assert %{
+               id: ^id,
+               name: ^name,
+               tagged_structures: [%{id: ^structure_id, external_id: ^external_id}]
+             } = DataStructures.get_data_structure_tag!(id, preload: [:tagged_structures])
+    end
+
     test "create_data_structure_tag/1 with valid data creates a data_structure_tag" do
       assert {:ok, %DataStructureTag{} = data_structure_tag} =
                DataStructures.create_data_structure_tag(@valid_attrs)

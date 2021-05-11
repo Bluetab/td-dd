@@ -105,7 +105,7 @@ defmodule TdDdWeb.DataStructureTagController do
   end
 
   def update(conn, %{"id" => id, "data_structure_tag" => params}) do
-    data_structure_tag = DataStructures.get_data_structure_tag!(id)
+    data_structure_tag = DataStructures.get_data_structure_tag!(id, preload: [:tagged_structures])
 
     with claims <- conn.assigns[:current_resource],
          {:can, true} <- {:can, can?(claims, update(DataStructureTag))},
@@ -129,7 +129,7 @@ defmodule TdDdWeb.DataStructureTagController do
   end
 
   def delete(conn, %{"id" => id}) do
-    data_structure_tag = DataStructures.get_data_structure_tag!(id)
+    data_structure_tag = DataStructures.get_data_structure_tag!(id, preload: [:tagged_structures])
 
     with claims <- conn.assigns[:current_resource],
          {:can, true} <- {:can, can?(claims, delete(DataStructureTag))},

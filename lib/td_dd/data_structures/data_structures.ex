@@ -967,7 +967,11 @@ defmodule TdDd.DataStructures do
       ** (Ecto.NoResultsError)
 
   """
-  def get_data_structure_tag!(id), do: Repo.get!(DataStructureTag, id)
+  def get_data_structure_tag!(id, options \\ []) do 
+    DataStructureTag
+    |> Repo.get!(id)
+    |> Repo.preload(options[:preload] || [])
+  end
 
   @doc """
   Creates a data_structure_tag.
@@ -1003,6 +1007,7 @@ defmodule TdDd.DataStructures do
     data_structure_tag
     |> DataStructureTag.changeset(attrs)
     |> Repo.update()
+    |> on_tag_update()
   end
 
   @doc """
@@ -1018,7 +1023,9 @@ defmodule TdDd.DataStructures do
 
   """
   def delete_data_structure_tag(%DataStructureTag{} = data_structure_tag) do
-    Repo.delete(data_structure_tag)
+    data_structure_tag
+    |> Repo.delete()
+    |> on_tag_delete(Map.get(data_structure_tag, :tagged_structures))
   end
 
   @doc """
@@ -1103,6 +1110,26 @@ defmodule TdDd.DataStructures do
     )
   end
 
+  defp on_tag_update({:ok, %{tagged_structures: [_ | _] = structures} = tag}) do
+    structures
+    |> Enum.map(& &1.id)
+    |> IndexWorker.reindex()
+
+    {:ok, tag}
+  end
+
+  defp on_tag_update(reply), do: reply
+
+  defp on_tag_delete({:ok, tag}, structures = [_ | _]) do
+    structures
+    |> Enum.map(& &1.id)
+    |> IndexWorker.reindex()
+
+    {:ok, tag}
+  end
+
+  defp on_tag_delete(reply, _), do: reply
+  
   defp create_link(data_structure, data_structure_tag, params) do
     params
     |> DataStructuresTags.changeset()
