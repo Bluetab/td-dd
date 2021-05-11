@@ -25,7 +25,7 @@ defmodule TdDd.DataStructures.DataStructuresTags do
     tag_link
     |> cast(attrs, [:description])
     |> validate_required([:description])
-    |> validate_length(:description, max: 1_000)
+    |> validate_length(:description, max: 1_000, message: "max.length.1000")
   end
 
   def put_data_structure(changeset, data_structure) do

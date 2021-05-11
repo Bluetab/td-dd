@@ -1110,7 +1110,7 @@ defmodule TdDd.DataStructuresTest do
        %{
          errors: [
            description:
-             {"should be at most %{count} character(s)",
+             {"max.length.1000",
               [count: 1000, validation: :length, kind: :max, type: :string]}
          ],
          valid?: false
