@@ -37,7 +37,10 @@ defmodule TdDdWeb.DataStructureTagControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "lists all data_structure_tags with the count of its structures", %{conn: conn, swagger_schema: schema} do
+    test "lists all data_structure_tags with the count of its structures", %{
+      conn: conn,
+      swagger_schema: schema
+    } do
       structure = insert(:data_structure)
       %{id: id, name: name} = structure_tag = insert(:data_structure_tag)
       insert(:data_structures_tags, data_structure: structure, data_structure_tag: structure_tag)

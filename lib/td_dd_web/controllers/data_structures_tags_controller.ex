@@ -72,7 +72,7 @@ defmodule TdDdWeb.DataStructuresTagsController do
          %DataStructureTag{} = tag <- DataStructures.get_data_structure_tag!(tag_id),
          {:can, true} <- {:can, can?(claims, link_data_structure_tag(structure))},
          {:ok, %DataStructuresTags{} = link} <-
-           DataStructures.link_tag(structure, tag, tag_params) do
+           DataStructures.link_tag(structure, tag, tag_params, claims) do
       render(conn, "show.json", link: link)
     end
   rescue
@@ -102,7 +102,7 @@ defmodule TdDdWeb.DataStructuresTagsController do
          %DataStructure{} = structure <- DataStructures.get_data_structure!(data_structure_id),
          %DataStructureTag{} = tag <- DataStructures.get_data_structure_tag!(tag_id),
          {:can, true} <- {:can, can?(claims, delete_link_data_structure_tag(structure))},
-         {:ok, %{id: id}} <- DataStructures.delete_link_tag(structure, tag) do
+         {:ok, %{id: id}} <- DataStructures.delete_link_tag(structure, tag, claims) do
       conn
       |> put_resp_content_type("application/json", "utf-8")
       |> send_resp(:accepted, Jason.encode!(%{data: %{id: id}}))

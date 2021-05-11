@@ -1054,7 +1054,7 @@ defmodule TdDd.DataStructuresTest do
   end
 
   describe "link_tag/3" do
-    test "links tag to a given structure" do
+    test "links tag to a given structure", %{claims: claims} do
       description = "foo"
       structure = %{id: data_structure_id} = insert(:data_structure)
       tag = %{id: tag_id} = insert(:data_structure_tag)
@@ -1065,10 +1065,10 @@ defmodule TdDd.DataStructuresTest do
          description: ^description,
          data_structure: %{id: ^data_structure_id},
          data_structure_tag: %{id: ^tag_id}
-       }} = DataStructures.link_tag(structure, tag, params)
+       }} = DataStructures.link_tag(structure, tag, params, claims)
     end
 
-    test "updates link information when it already exists" do
+    test "updates link information when it already exists", %{claims: claims} do
       description = "bar"
       structure = %{id: data_structure_id} = insert(:data_structure)
       tag = %{id: tag_id} = insert(:data_structure_tag)
@@ -1086,27 +1086,27 @@ defmodule TdDd.DataStructuresTest do
          description: ^description,
          data_structure: %{id: ^data_structure_id},
          data_structure_tag: %{id: ^tag_id}
-       }} = DataStructures.link_tag(structure, tag, params)
+       }} = DataStructures.link_tag(structure, tag, params, claims)
     end
 
-    test "gets error when description is invalid" do
+    test "gets error when description is invalid", %{claims: claims} do
       structure = insert(:data_structure)
       tag = insert(:data_structure_tag)
       params = %{}
 
-      {:error,
-       %{errors: [description: {"can't be blank", [validation: :required]}], valid?: false}} =
-        DataStructures.link_tag(structure, tag, params)
+      {:error, _,
+       %{errors: [description: {"can't be blank", [validation: :required]}], valid?: false},
+       _} = DataStructures.link_tag(structure, tag, params, claims)
 
       params = %{description: nil}
 
-      {:error,
-       %{errors: [description: {"can't be blank", [validation: :required]}], valid?: false}} =
-        DataStructures.link_tag(structure, tag, params)
+      {:error, _,
+       %{errors: [description: {"can't be blank", [validation: :required]}], valid?: false},
+       _} = DataStructures.link_tag(structure, tag, params, claims)
 
       params = %{description: String.duplicate("foo", 334)}
 
-      {:error,
+      {:error, _,
        %{
          errors: [
            description:
@@ -1114,7 +1114,7 @@ defmodule TdDd.DataStructuresTest do
               [count: 1000, validation: :length, kind: :max, type: :string]}
          ],
          valid?: false
-       }} = DataStructures.link_tag(structure, tag, params)
+       }, _} = DataStructures.link_tag(structure, tag, params, claims)
     end
   end
 
@@ -1138,7 +1138,7 @@ defmodule TdDd.DataStructuresTest do
   end
 
   describe "delete_link_tag/2" do
-    test "deletes link between tag and structure" do
+    test "deletes link between tag and structure", %{claims: claims} do
       structure = %{id: data_structure_id} = insert(:data_structure)
       tag = %{id: data_structure_tag_id} = insert(:data_structure_tag)
       insert(:data_structures_tags, data_structure: structure, data_structure_tag: tag)
@@ -1147,16 +1147,16 @@ defmodule TdDd.DataStructuresTest do
               %{
                 data_structure_id: ^data_structure_id,
                 data_structure_tag_id: ^data_structure_tag_id
-              }} = DataStructures.delete_link_tag(structure, tag)
+              }} = DataStructures.delete_link_tag(structure, tag, claims)
 
       assert is_nil(DataStructures.get_link_tag_by(data_structure_id, data_structure_tag_id))
     end
 
-    test "not_found if link does not exist" do
+    test "not_found if link does not exist", %{claims: claims} do
       structure = %{id: data_structure_id} = insert(:data_structure)
       tag = %{id: data_structure_tag_id} = insert(:data_structure_tag)
 
-      assert {:error, :not_found} = DataStructures.delete_link_tag(structure, tag)
+      assert {:error, :not_found} = DataStructures.delete_link_tag(structure, tag, claims)
       assert is_nil(DataStructures.get_link_tag_by(data_structure_id, data_structure_tag_id))
     end
   end

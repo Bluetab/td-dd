@@ -14,7 +14,8 @@ defmodule TdDdWeb.DataStructureTagView do
     %{
       id: data_structure_tag.id,
       name: data_structure_tag.name
-    } |> with_structure_count(data_structure_tag)
+    }
+    |> with_structure_count(data_structure_tag)
   end
 
   defp with_structure_count(json, %{tagged_structures: structures}) when is_list(structures) do

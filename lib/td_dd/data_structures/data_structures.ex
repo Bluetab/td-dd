@@ -949,7 +949,7 @@ defmodule TdDd.DataStructures do
   """
   def list_data_structure_tags(options \\ []) do
     DataStructureTag
-    |> Repo.all() 
+    |> Repo.all()
     |> Repo.preload(options[:preload] || [])
   end
 
@@ -967,7 +967,7 @@ defmodule TdDd.DataStructures do
       ** (Ecto.NoResultsError)
 
   """
-  def get_data_structure_tag!(id, options \\ []) do 
+  def get_data_structure_tag!(id, options \\ []) do
     DataStructureTag
     |> Repo.get!(id)
     |> Repo.preload(options[:preload] || [])
@@ -1054,23 +1054,24 @@ defmodule TdDd.DataStructures do
 
   ## Examples
 
-      iex> link_tag(data_structure, data_structure_tag, params)
+      iex> link_tag(data_structure, data_structure_tag, params, claims)
       {:ok, %DataStructureTag{}}
 
-      iex> link_tag(data_structure, data_structure_tag, params)
-      {:error, %Ecto.Changeset{}}
+      iex> link_tag(data_structure, data_structure_tag, params, claims)
+      {:error, field, %Ecto.Changeset{}, changes_so_far}
 
   """
   def link_tag(
         %DataStructure{id: data_structure_id} = data_structure,
         %DataStructureTag{id: tag_id} = data_structure_tag,
-        params
+        params,
+        claims
       ) do
     data_structure_id
     |> get_link_tag_by(tag_id)
     |> case do
-      nil -> create_link(data_structure, data_structure_tag, params)
-      %DataStructuresTags{} = tag_link -> update_link(tag_link, params)
+      nil -> create_link(data_structure, data_structure_tag, params, claims)
+      %DataStructuresTags{} = tag_link -> update_link(tag_link, params, claims)
     end
   end
 
@@ -1079,16 +1080,17 @@ defmodule TdDd.DataStructures do
 
   ## Examples
 
-      iex> delete_link_tag(data_structure, data_structure_tag)
+      iex> delete_link_tag(data_structure, data_structure_tag, claims)
       {:ok, %DataStructuresTags{}}
 
       iex> delete_link_tag(data_structure, data_structure_tag)
-      {:error, %Ecto.Changeset{}}
+      {:error, field, %Ecto.Changeset{}, changes_so_far}
 
   """
   def delete_link_tag(
         %DataStructure{id: data_structure_id},
-        %DataStructureTag{id: tag_id}
+        %DataStructureTag{id: tag_id},
+        %Claims{user_id: user_id}
       ) do
     data_structure_id
     |> get_link_tag_by(tag_id)
@@ -1097,9 +1099,11 @@ defmodule TdDd.DataStructures do
         {:error, :not_found}
 
       %DataStructuresTags{} = tag_link ->
-        tag_link
-        |> Repo.delete()
-        |> on_link_delete()
+        Multi.new()
+        |> Multi.delete(:deleted_link_tag, tag_link)
+        |> Multi.run(:audit, Audit, :tag_link_deleted, [user_id])
+        |> Repo.transaction()
+        |> on_link_delete()        
     end
   end
 
@@ -1120,7 +1124,7 @@ defmodule TdDd.DataStructures do
 
   defp on_tag_update(reply), do: reply
 
-  defp on_tag_delete({:ok, tag}, structures = [_ | _]) do
+  defp on_tag_delete({:ok, tag}, [_ | _] = structures) do
     structures
     |> Enum.map(& &1.id)
     |> IndexWorker.reindex()
@@ -1129,39 +1133,47 @@ defmodule TdDd.DataStructures do
   end
 
   defp on_tag_delete(reply, _), do: reply
-  
-  defp create_link(data_structure, data_structure_tag, params) do
-    params
-    |> DataStructuresTags.changeset()
-    |> DataStructuresTags.put_data_structure(data_structure)
-    |> DataStructuresTags.put_data_structure_tag(data_structure_tag)
-    |> Repo.insert()
+
+  defp create_link(data_structure, data_structure_tag, params, %Claims{user_id: user_id}) do
+    changeset =
+      params
+      |> DataStructuresTags.changeset()
+      |> DataStructuresTags.put_data_structure(data_structure)
+      |> DataStructuresTags.put_data_structure_tag(data_structure_tag)
+
+    Multi.new()
+    |> Multi.insert(:linked_tag, changeset)
+    |> Multi.run(:audit, Audit, :tag_linked, [user_id])
+    |> Repo.transaction()
     |> on_link_insert()
   end
 
-  defp update_link(link, params) do
-    link
-    |> DataStructuresTags.changeset(params)
-    |> Repo.update()
+  defp update_link(link, params, %Claims{user_id: user_id}) do
+    changeset = DataStructuresTags.changeset(link, params)
+
+    Multi.new()
+    |> Multi.update(:linked_tag, changeset)
+    |> Multi.run(:audit, Audit, :tag_link_updated, [changeset, user_id])
+    |> Repo.transaction()
     |> on_link_update()
   end
 
-  defp on_link_insert({:ok, link}) do
+  defp on_link_insert({:ok, %{linked_tag: link}}) do
     IndexWorker.reindex(link.data_structure_id)
     {:ok, link}
   end
 
   defp on_link_insert(reply), do: reply
 
-  defp on_link_delete({:ok, link}) do
+  defp on_link_update({:ok, %{linked_tag: link}}),
+    do: {:ok, Repo.preload(link, [:data_structure_tag, :data_structure])}
+
+  defp on_link_update(reply), do: reply
+
+  defp on_link_delete({:ok, %{deleted_link_tag: link}}) do
     IndexWorker.reindex(link.data_structure_id)
     {:ok, link}
   end
 
   defp on_link_delete(reply), do: reply
-
-  defp on_link_update({:ok, link}),
-    do: {:ok, Repo.preload(link, [:data_structure_tag, :data_structure])}
-
-  defp on_link_update(reply), do: reply
 end
