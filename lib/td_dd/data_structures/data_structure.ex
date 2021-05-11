@@ -45,7 +45,7 @@ defmodule TdDd.DataStructures.DataStructure do
     field(:row, :integer, virtual: true)
     field(:latest_metadata, :map, virtual: true)
 
-    timestamps(type: :utc_datetime)
+    timestamps(type: :utc_datetime_usec)
   end
 
   def changeset(%{} = params) do

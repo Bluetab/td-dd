@@ -877,4 +877,84 @@ defmodule TdDdWeb.SwaggerDefinitions do
         end
     }
   end
+
+  def classifier_swagger_definitions do
+    %{
+      Classifier:
+        swagger_schema do
+          title("Classifier")
+          description("A classifier for data structures")
+
+          properties do
+            id(:integer, "Id", required: true)
+            name(:string, "Name", required: true)
+            filters(Schema.ref(:ClassifierFilters))
+            rules(Schema.ref(:ClassifierRules))
+          end
+        end,
+      Classifiers:
+        swagger_schema do
+          title("Classifiers")
+          description("A collection of classifiers")
+          type(:array)
+          items(Schema.ref(:Classifier))
+        end,
+      ClassifierRequest:
+        swagger_schema do
+          properties do
+            classifier(Schema.ref(:Classifier))
+          end
+        end,
+      ClassifierResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:Classifier))
+          end
+        end,
+      ClassifiersResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:Classifiers))
+          end
+        end,
+      ClassifierFilters:
+        swagger_schema do
+          title("Classifier filters")
+          description("A collection of filters")
+          type(:array)
+          items(Schema.ref(:ClassifierFilter))
+        end,
+      ClassifierFilter:
+        swagger_schema do
+          title("A classifier filter for matching data structures")
+          description("Either regex or values must be present")
+
+          properties do
+            path(:array, "The path", required: true)
+            regex(:string, "Regex")
+            values(:array, "Values")
+          end
+        end,
+      ClassifierRules:
+        swagger_schema do
+          title("Classifier rules")
+          description("A collection of rules")
+          type(:array)
+          items(Schema.ref(:ClassifierRule))
+        end,
+      ClassifierRule:
+        swagger_schema do
+          title("A classifier rule for matching data structures")
+          description("Either regex or values must be present")
+
+          properties do
+            path(:array, "The path", required: true)
+            priority(:integer)
+            class(:string, "Classification class", required: true)
+            values(:array, "Values")
+            regex(:string, "Regex")
+          end
+        end
+    }
+  end
 end

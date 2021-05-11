@@ -44,7 +44,7 @@ defmodule TdDd.Loader.VersionsTest do
         %{group: "group1", external_id: external_id, system_id: system_id}
       ]
 
-      ts = timestamp()
+      ts = DateTime.utc_now()
 
       assert {:ok, {9, data_structure_ids}} =
                Versions.delete_missing_versions(Repo, %{context: context}, structure_records, ts)
@@ -80,7 +80,7 @@ defmodule TdDd.Loader.VersionsTest do
         %{external_id: "baz", system_id: system_id}
       ]
 
-      ts = timestamp()
+      ts = DateTime.utc_now()
       context = %{entries: entries, structure_id_map: %{"bar" => 22}}
 
       assert {:ok, {2, versions}} = Versions.insert_new_versions(Repo, %{context: context}, ts)
@@ -98,7 +98,7 @@ defmodule TdDd.Loader.VersionsTest do
 
   describe "restore_deleted_versions/2" do
     test "restores logically deleted versions whose ghash is unchanged" do
-      deleted_at = ~U[2001-01-01T01:23:45Z]
+      deleted_at = ~U[2001-01-01T01:23:45.123456Z]
 
       %{id: foo_id, data_structure_id: structure_id} =
         insert(:data_structure_version, ghash: "foog", deleted_at: deleted_at)
@@ -121,9 +121,9 @@ defmodule TdDd.Loader.VersionsTest do
 
   describe "update_existing_versions/3" do
     test "updates existing versions whose lhash is unchanged" do
-      inserted_at = ~U[2000-01-01T01:23:45Z]
-      deleted_at = ~U[2001-01-01T01:23:45Z]
-      ts = timestamp()
+      inserted_at = ~U[2000-01-01T01:23:45.123456Z]
+      deleted_at = ~U[2001-01-01T01:23:45.123456Z]
+      ts = DateTime.utc_now()
 
       %{id: foo_id} =
         insert(:data_structure_version,
@@ -180,8 +180,8 @@ defmodule TdDd.Loader.VersionsTest do
 
   describe "replace_changed_versions/3" do
     test "replaces existing versions whose hash has unchanged" do
-      ts1 = ~U[2000-01-01T01:23:45Z]
-      ts = timestamp()
+      ts1 = ~U[2000-01-01T01:23:45.123456Z]
+      ts = DateTime.utc_now()
 
       %{id: foo_id, data_structure_id: foo_structure_id} =
         insert(:data_structure_version, inserted_at: ts1, updated_at: ts1)
@@ -239,6 +239,4 @@ defmodule TdDd.Loader.VersionsTest do
                |> Repo.all()
     end
   end
-
-  defp timestamp, do: DateTime.utc_now() |> DateTime.truncate(:second)
 end

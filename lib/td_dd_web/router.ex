@@ -76,6 +76,7 @@ defmodule TdDdWeb.Router do
       resources("/metadata", SystemMetadataController, only: [:create], as: :metadata)
       get("/structures", DataStructureController, :get_system_structures)
       resources("/groups", GroupController, only: [:index, :delete])
+      resources("/classifiers", ClassifierController, only: [:index, :show, :create, :delete])
     end
 
     get("/data_structures/search/reindex_all", SearchController, :reindex_all)

@@ -7,7 +7,7 @@ defmodule TdDd.MockTaxonomyCache do
   end
 
   def create_domain(%{name: name, id: id}) do
-    Agent.update(MockTaxonomyCache, &(Map.put(&1, name, id)))
+    Agent.update(MockTaxonomyCache, &Map.put(&1, name, id))
   end
 
   def get_parent_ids(domain_id), do: [domain_id]

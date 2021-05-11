@@ -12,10 +12,10 @@ defmodule TdDd.DataStructures.StructureMetadata do
   schema "structure_metadata" do
     field(:version, :integer, default: 0)
     field(:fields, :map)
-    field(:deleted_at, :utc_datetime)
+    field(:deleted_at, :utc_datetime_usec)
     belongs_to(:data_structure, DataStructure)
 
-    timestamps(type: :utc_datetime)
+    timestamps(type: :utc_datetime_usec)
   end
 
   def changeset(%{} = params) do

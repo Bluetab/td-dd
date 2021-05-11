@@ -4,7 +4,6 @@ defmodule TdDdWeb.DataStructureVersionView do
 
   alias TdDd.DataStructures
   alias TdDdWeb.DataStructuresTagsView
-  alias TdDdWeb.DataStructureVersionView
 
   def render(
         "show.json",
@@ -14,7 +13,7 @@ defmodule TdDdWeb.DataStructureVersionView do
     dsv
     |> render_one_hypermedia(
       hypermedia,
-      DataStructureVersionView,
+      __MODULE__,
       "show.json",
       Map.drop(assigns, [:hypermedia, :data_structure_version, :user_permissions])
     )
@@ -26,6 +25,7 @@ defmodule TdDdWeb.DataStructureVersionView do
     %{
       data:
         dsv
+        |> add_classes
         |> add_data_structure
         |> add_data_fields
         |> add_parents
@@ -45,6 +45,7 @@ defmodule TdDdWeb.DataStructureVersionView do
           :ancestry,
           :children,
           :class,
+          :classes,
           :data_fields,
           :data_structure,
           :deleted_at,
@@ -72,6 +73,13 @@ defmodule TdDdWeb.DataStructureVersionView do
         ])
     }
   end
+
+  defp add_classes(%{classifications: [_ | _] = classifications} = struct) do
+    classes = Map.new(classifications, fn %{name: name, class: class} -> {name, class} end)
+    Map.put(struct, :classes, classes)
+  end
+
+  defp add_classes(dsv), do: dsv
 
   defp add_data_structure(%{data_structure: data_structure} = dsv) do
     Map.put(dsv, :data_structure, data_structure_json(data_structure))
@@ -107,7 +115,7 @@ defmodule TdDdWeb.DataStructureVersionView do
 
   defp data_structure_version_embedded(dsv) do
     dsv
-    |> Map.take([:data_structure_id, :id, :name, :type, :deleted_at, :metadata])
+    |> Map.take([:data_structure_id, :id, :name, :type, :deleted_at, :metadata, :classes])
     |> lift_metadata()
   end
 
