@@ -49,7 +49,7 @@ defmodule TdDd.Loader.Reader do
     end)
   end
 
-  @spec put_default_metadata(Changeset.t) :: Changeset.t
+  @spec put_default_metadata(Changeset.t()) :: Changeset.t()
   defp put_default_metadata(%Changeset{changes: %{metadata: _}} = changeset), do: changeset
 
   defp put_default_metadata(%Changeset{} = changeset) do

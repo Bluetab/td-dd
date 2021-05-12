@@ -4,7 +4,13 @@
 
 ### Added
 
-- [TD-3500] Sign configuration secrets
+- [TD-3398] Support classification of data structures
+- [TD-3500] Support for signing configuration using a secret key
+
+### Changed
+
+- Timestamps on `DataStructure`, `DataStructureVersion`, `DataStructureRelation`
+  and `StructureMetadata` are now `utc_datetime_usec`.
 
 ## [4.19.2] 2021-05-07
 
@@ -17,11 +23,11 @@
 ### Changed
 
 - [TD-3526] Merged `td-dq` with `td-dd`. See `CHANGELOG-dq.md` for changes in
-  `td-dq` previous to this merge.
+  `td-dq` previous to this merge
 - [TD-3621] Increase maximum length for JSON request bodies. The value for JSON
   request bodies can now be configured using the `MAX_PAYLOAD_LENGTH`
   environment variable.
-- [TD-3596] Creates Data Structure Tags
+- [TD-3596] Support tagging of data structures
 
 ### Added
 

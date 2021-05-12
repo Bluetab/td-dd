@@ -31,8 +31,8 @@ defmodule TdDd.Loader.MetadataTest do
       assert {:ok, rels} =
                parse_relations("test/fixtures/loader/mutable_metadata/relations.csv", system_id)
 
-      audit1 = %{ts: ~U[2020-01-01T00:00:00Z], last_change_by: 0}
-      audit2 = %{ts: ~U[2020-02-02T00:00:00Z], last_change_by: 0}
+      audit1 = %{ts: ~U[2020-01-01T00:00:00.123456Z], last_change_by: 0}
+      audit2 = %{ts: ~U[2020-02-02T00:00:00.123456Z], last_change_by: 0}
       assert {:ok, multi} = Loader.load(%{structures: structures_1, relations: rels}, audit1, [])
       assert %{insert_versions: {890, _inserted_versions}} = multi
       assert {:ok, multi} = Loader.load(%{structures: structures_2, relations: rels}, audit2, [])
@@ -53,32 +53,32 @@ defmodule TdDd.Loader.MetadataTest do
       assert metadata_by_external_id["foo://foo_db/bank_capital/should_insert_metadata"] == [
                %{
                  deleted_at: nil,
-                 inserted_at: ~U[2020-02-02 00:00:00Z],
-                 updated_at: ~U[2020-02-02 00:00:00Z],
+                 inserted_at: ~U[2020-02-02 00:00:00.123456Z],
+                 updated_at: ~U[2020-02-02 00:00:00.123456Z],
                  version: 0
                }
              ]
 
       assert metadata_by_external_id["foo://foo_db/should_delete_metadata"] == [
                %{
-                 deleted_at: ~U[2020-02-02 00:00:00Z],
-                 inserted_at: ~U[2020-01-01 00:00:00Z],
-                 updated_at: ~U[2020-01-01 00:00:00Z],
+                 deleted_at: ~U[2020-02-02 00:00:00.123456Z],
+                 inserted_at: ~U[2020-01-01 00:00:00.123456Z],
+                 updated_at: ~U[2020-01-01 00:00:00.123456Z],
                  version: 0
                }
              ]
 
       assert metadata_by_external_id["foo://foo_db/should_replace_metadata"] == [
                %{
-                 deleted_at: ~U[2020-02-02 00:00:00Z],
-                 inserted_at: ~U[2020-01-01 00:00:00Z],
-                 updated_at: ~U[2020-01-01 00:00:00Z],
+                 deleted_at: ~U[2020-02-02 00:00:00.123456Z],
+                 inserted_at: ~U[2020-01-01 00:00:00.123456Z],
+                 updated_at: ~U[2020-01-01 00:00:00.123456Z],
                  version: 0
                },
                %{
                  deleted_at: nil,
-                 inserted_at: ~U[2020-02-02 00:00:00Z],
-                 updated_at: ~U[2020-02-02 00:00:00Z],
+                 inserted_at: ~U[2020-02-02 00:00:00.123456Z],
+                 updated_at: ~U[2020-02-02 00:00:00.123456Z],
                  version: 1
                }
              ]
