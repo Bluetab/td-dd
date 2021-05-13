@@ -65,12 +65,11 @@ defmodule TdDq.Implementations.Download do
         rule.df_name,
         rule.goal,
         rule.minimum,
-        implementation |> Map.get(:current_business_concept_version, %{}) |> Map.get(:name),
-        implementation |> Map.get(:execution_result_info, %{}) |> Map.get(:date),
-        implementation |> Map.get(:execution_result_info, %{}) |> Map.get(:result),
+        get_in(implementation, [:current_business_concept_version, :name]),
+        get_in(implementation, [:execution_result_info, :date]),
+        get_in(implementation, [:execution_result_info, :result]),
         implementation
-        |> Map.get(:execution_result_info, %{})
-        |> Map.get(:result_text)
+        |> get_in([:execution_result_info, :result_text])
         |> translate(content_labels),
         implementation.inserted_at
       ]
