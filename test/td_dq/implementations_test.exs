@@ -1,7 +1,7 @@
 defmodule TdDq.ImplementationsTest do
   use TdDd.DataCase
 
-  import Ecto.Query, warn: false
+  import Ecto.Query
   import TdDd.TestOperators
 
   alias Ecto.Changeset

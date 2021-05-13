@@ -1,7 +1,7 @@
 defmodule TdDq.RuleResults.BulkLoadTest do
   use TdDd.DataCase
 
-  import Ecto.Query, warn: false
+  import Ecto.Query
 
   alias TdCache.ConceptCache
   alias TdCache.Redix

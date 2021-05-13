@@ -1,7 +1,7 @@
 defmodule TdDq.RuleResultsTest do
   use TdDd.DataCase
 
-  import Ecto.Query, warn: false
+  import Ecto.Query
 
   alias Elasticsearch.Document
   alias TdCache.ConceptCache

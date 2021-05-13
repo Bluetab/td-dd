@@ -3,8 +3,6 @@ defmodule TdDq.Permissions do
   The Permissions context.
   """
 
-  import Ecto.Query, warn: false
-
   alias TdDq.Auth.Claims
 
   @permission_resolver Application.compile_env(:td_dd, :permission_resolver)

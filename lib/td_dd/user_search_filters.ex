@@ -3,7 +3,7 @@ defmodule TdDd.UserSearchFilters do
   The UserSearchFilters context.
   """
 
-  import Ecto.Query, warn: false
+  import Ecto.Query
   alias TdDd.Repo
 
   alias TdDd.UserSearchFilters.UserSearchFilter

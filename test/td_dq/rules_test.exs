@@ -1,7 +1,7 @@
 defmodule TdDq.RulesTest do
   use TdDd.DataCase
 
-  import Ecto.Query, warn: false
+  import Ecto.Query
 
   alias TdCache.Redix
   alias TdCache.Redix.Stream

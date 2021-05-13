@@ -1,6 +1,6 @@
 defmodule TdDq.Repo.Migrations.AddValueTypeFilterInOperator do
   use Ecto.Migration
-  import Ecto.Query, warn: false
+  import Ecto.Query
 
   alias Ecto.Adapters.SQL
   alias TdDd.Repo

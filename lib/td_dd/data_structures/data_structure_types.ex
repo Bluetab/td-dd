@@ -3,8 +3,6 @@ defmodule TdDd.DataStructures.DataStructureTypes do
   The DataStructureTypes context.
   """
 
-  import Ecto.Query, warn: false
-
   alias TdCache.StructureTypeCache
   alias TdCache.TemplateCache
   alias TdDd.DataStructures.DataStructureType
