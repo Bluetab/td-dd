@@ -5,8 +5,12 @@ defmodule TdDd.DataStructures.DataStructureTag do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructuresTags
+
   schema "data_structure_tags" do
     field :name, :string
+    many_to_many(:tagged_structures, DataStructure, join_through: DataStructuresTags)
 
     timestamps()
   end

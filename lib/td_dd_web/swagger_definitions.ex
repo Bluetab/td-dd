@@ -122,6 +122,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
           properties do
             id(:integer, "Data Structure Tag unique identifier", required: true)
             name(:string, "Tag name")
+            structure_count(:integer, "Linked structures count")
           end
 
           example(%{
@@ -139,7 +140,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
       CreateDataStructureTag:
         swagger_schema do
           properties do
-            data_structure_type(
+            data_structure_tag(
               Schema.new do
                 properties do
                   name(:string, "Data Structure name", required: true)
@@ -151,7 +152,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
       UpdateDataStructureTag:
         swagger_schema do
           properties do
-            data_structure_type(
+            data_structure_tag(
               Schema.new do
                 properties do
                   name(:string, "Data Structure name", required: true)
@@ -170,6 +171,62 @@ defmodule TdDdWeb.SwaggerDefinitions do
         swagger_schema do
           properties do
             data(Schema.ref(:DataStructureTags))
+          end
+        end,
+      UpdateLinkDataStructureTag:
+        swagger_schema do
+          properties do
+            tag(
+              Schema.new do
+                properties do
+                  description(:string, "Tag description", required: true)
+                end
+              end
+            )
+          end
+        end,
+      LinksDataStructureTagResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:LinksDataStructureTag))
+          end
+        end,
+      LinksDataStructureTag:
+        swagger_schema do
+          title("LinksDataStructureTagResponse")
+          description("Links between a structure and its tags")
+          type(:array)
+          items(Schema.ref(:LinkDataStructureTag))
+        end,
+      LinkDataStructureTag:
+        swagger_schema do
+          title("LinkDataStructureTag")
+          description("Link between a structure and its tags")
+
+          properties do
+            id(:integer, "Id link")
+            description(:string, "Tag description")
+            _embedded(Schema.ref(:LinkDataStructureTagEmbeddings))
+          end
+        end,
+      LinkDataStructureTagResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:LinkDataStructureTag))
+          end
+        end,
+      LinkDataStructureTagEmbeddings:
+        swagger_schema do
+          properties do
+            data_structure(Schema.ref(:EmbeddedLinkedDataStructure))
+            data_structure_tag(Schema.ref(:DataStructureTag))
+          end
+        end,
+      EmbeddedLinkedDataStructure:
+        swagger_schema do
+          properties do
+            id(:integer, "Data structure id")
+            external_id(:string, "Data structure external id")
           end
         end
     }

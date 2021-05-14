@@ -331,6 +331,14 @@ defmodule TdDd.Factory do
     }
   end
 
+  def data_structures_tags_factory do
+    %TdDd.DataStructures.DataStructuresTags{
+      data_structure: build(:data_structure),
+      data_structure_tag: build(:data_structure_tag),
+      description: "foo"
+    }
+  end
+
   def classifier_factory(attrs) do
     attrs = default_assoc(attrs, :system_id, :system)
 

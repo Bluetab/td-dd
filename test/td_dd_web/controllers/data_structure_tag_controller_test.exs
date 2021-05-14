@@ -33,7 +33,25 @@ defmodule TdDdWeb.DataStructureTagControllerTest do
                |> validate_resp_schema(schema, "DataStructureTagsResponse")
                |> json_response(:ok)
 
-      assert %{"id" => ^id, "name" => ^name} = structure_tag
+      assert %{"id" => ^id, "name" => ^name, "structure_count" => 0} = structure_tag
+    end
+
+    @tag authentication: [role: "admin"]
+    test "lists all data_structure_tags with the count of its structures", %{
+      conn: conn,
+      swagger_schema: schema
+    } do
+      structure = insert(:data_structure)
+      %{id: id, name: name} = structure_tag = insert(:data_structure_tag)
+      insert(:data_structures_tags, data_structure: structure, data_structure_tag: structure_tag)
+
+      assert %{"data" => [structure_tag]} =
+               conn
+               |> get(Routes.data_structure_tag_path(conn, :index))
+               |> validate_resp_schema(schema, "DataStructureTagsResponse")
+               |> json_response(:ok)
+
+      assert %{"id" => ^id, "name" => ^name, "structure_count" => 1} = structure_tag
     end
 
     @tag authentication: [user_name: "non_admin_user"]
@@ -85,9 +103,9 @@ defmodule TdDdWeb.DataStructureTagControllerTest do
                |> json_response(:ok)
 
       assert %{
-                "id" => ^id,
-                "name" => "some name"
-              } = data
+               "id" => ^id,
+               "name" => "some name"
+             } = data
     end
 
     @tag authentication: [role: "admin"]

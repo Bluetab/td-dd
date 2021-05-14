@@ -44,4 +44,50 @@ defmodule TdDd.DataStructures.Audit do
       %{ok: ids} -> {:ok, ids}
     end
   end
+
+  @doc """
+  Publishes `:tag_linked` events for all created links 
+  between a structure and its tags.
+  """
+  def tag_linked(_repo, %{linked_tag: %{id: id} = payload}, user_id) do
+    payload =
+      payload
+      |> with_structure(payload)
+      |> with_tag(payload)
+      |> Map.take([
+        :id,
+        :data_structure,
+        :data_structure_id,
+        :data_structure_tag,
+        :data_structure_tag_id,
+        :description,
+        :inserted_at,
+        :updated_at
+      ])
+
+    publish("tag_linked", "tag", id, user_id, payload)
+  end
+
+  @doc """
+  Publishes `:tag_link_updated` events for all changed links 
+  between a structure and its tags.
+  """
+  def tag_link_updated(_repo, %{linked_tag: %{id: id}}, %{} = changeset, user_id) do
+    publish("tag_link_updated", "tag", id, user_id, changeset)
+  end
+
+  @doc """
+  Publishes a `:tag_link_deleted` event. Should be called using `Ecto.Multi.run/5`.
+  """
+  def tag_link_deleted(_repo, %{deleted_link_tag: %{id: id}}, user_id) do
+    publish("tag_link_deleted", "tag", id, user_id)
+  end
+
+  defp with_structure(payload, %{data_structure: data_structure}) do
+    Map.put(payload, :data_structure, Map.take(data_structure, [:id, :external_id]))
+  end
+
+  defp with_tag(payload, %{data_structure_tag: data_structure_tag}) do
+    Map.put(payload, :data_structure_tag, Map.take(data_structure_tag, [:id, :name]))
+  end
 end
