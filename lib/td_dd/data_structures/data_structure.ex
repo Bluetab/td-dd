@@ -8,16 +8,12 @@ defmodule TdDd.DataStructures.DataStructure do
   import Ecto.Changeset
 
   alias TdCx.Sources.Source
-
-  alias TdDd.DataStructures.{
-    DataStructuresTags,
-    DataStructureTag,
-    DataStructureVersion,
-    Profile,
-    StructureMetadata,
-    Validation
-  }
-
+  alias TdDd.DataStructures.DataStructuresTags
+  alias TdDd.DataStructures.DataStructureTag
+  alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.Profile
+  alias TdDd.DataStructures.StructureMetadata
+  alias TdDd.DataStructures.Validation
   alias TdDd.Systems.System
   alias TdDd.Utils.CollectionUtils
   alias TdDfLib.Content

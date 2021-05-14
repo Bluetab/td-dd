@@ -42,7 +42,7 @@ defmodule TdDdWeb.Router do
 
       resources("/tags", DataStructuresTagsController,
         only: [:delete, :index, :update],
-        name: "tags"
+        name: :tags
       )
     end
 
