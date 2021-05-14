@@ -75,7 +75,7 @@ defmodule TdDd.MixProject do
        branch: "feature/bulk-index-action"},
       {:td_hypermedia, git: "https://github.com/Bluetab/td-hypermedia.git", tag: "4.0.0"},
       {:td_cache,
-       git: "https://github.com/Bluetab/td-cache.git", branch: "feature/td-3597", override: true},
+       git: "https://github.com/Bluetab/td-cache.git", tag: "4.20.1", override: true},
       {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "4.12.0"},
       {:graph, git: "https://github.com/Bluetab/graph.git", tag: "1.1.1"},
       {:vaultex, "~> 1.0.1"}
