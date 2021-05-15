@@ -984,10 +984,6 @@ defmodule TdDd.DataStructures do
     |> Map.new()
     |> DataStructureQueries.enriched_structure_versions()
     |> Repo.all()
-    |> Enum.map(fn
-      %{path: nil} = dsv -> %{dsv | path: []}
-      dsv -> dsv
-    end)
     |> Enum.map(fn %{data_structure: structure, type: type} = dsv ->
       %{dsv | data_structure: StructureEnricher.enrich(structure, type, content_opt)}
     end)

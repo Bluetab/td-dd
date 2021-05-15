@@ -110,38 +110,49 @@ defmodule TdDd.Cache.StructureLoader do
   end
 
   defp refresh_cached_structures(opts) do
-    with [_ | _] = keep_ids <- StructureCache.referenced_ids(),
-         remove_count <- clean_cached_structures(keep_ids),
-         updates <- cache_structures(keep_ids, opts),
-         update_count <-
-           Enum.count(updates, fn
-             {:ok, ["OK" | _]} -> true
-             _ -> false
-           end) do
-      {update_count, remove_count}
-    end
+    keep_ids = StructureCache.referenced_ids()
+    remove_count = clean_cached_structures(keep_ids)
+    updates = cache_structures(keep_ids, opts)
+
+    update_count =
+      Enum.count(updates, fn
+        {:ok, ["OK" | _]} -> true
+        _ -> false
+      end)
+
+    {update_count, remove_count}
   end
 
   defp clean_cached_structures(keep_ids) do
+    keep_key = "_data_structure:keys:keep:#{System.os_time(:millisecond)}"
+
     ids_to_delete =
       ["SMEMBERS", "data_structure:keys"]
       |> Redix.command!()
       |> Enum.map(fn "data_structure:" <> id -> String.to_integer(id) end)
       |> Enum.reject(&(&1 in keep_ids))
 
-    keep_ids
-    |> Enum.map(&"data_structure:#{&1}")
-    |> Enum.chunk_every(1000)
-    |> Enum.map(&["SADD", "data_structure:keys:keep" | &1])
-    |> Redix.transaction_pipeline!()
+    keep_cmds =
+      keep_ids
+      |> Enum.map(&"data_structure:#{&1}")
+      |> Enum.chunk_every(1000)
+      |> Enum.map(&["SADD", keep_key | &1])
 
-    ids_to_delete
-    |> Enum.flat_map(&["data_structure:#{&1}", "data_structure:#{&1}:path"])
-    |> Enum.chunk_every(1000)
-    |> Enum.map(&["DEL" | &1])
-    |> Enum.concat([
-      ["SINTERSTORE", "data_structure:keys", "data_structure:keys", "data_structure:keys:keep"]
-    ])
+    del_cmds =
+      ids_to_delete
+      |> Enum.flat_map(&["data_structure:#{&1}", "data_structure:#{&1}:path"])
+      |> Enum.chunk_every(1000)
+      |> Enum.map(&["DEL" | &1])
+
+    [
+      keep_cmds,
+      del_cmds,
+      [
+        ["SINTERSTORE", "data_structure:keys", "data_structure:keys", keep_key],
+        ["DEL", keep_key]
+      ]
+    ]
+    |> Enum.concat()
     |> Redix.transaction_pipeline!()
 
     Enum.count(ids_to_delete)

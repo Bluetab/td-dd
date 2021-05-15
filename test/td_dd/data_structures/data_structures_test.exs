@@ -311,10 +311,7 @@ defmodule TdDd.DataStructuresTest do
 
       assert df_content == %{"list" => "one", "string" => "initial"}
 
-      assert [
-               %{"data_structure_id" => _, "name" => "yayo"},
-               %{"data_structure_id" => _, "name" => "papa"}
-             ] = path
+      assert ["yayo", "papa"] = path
     end
   end
 

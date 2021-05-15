@@ -26,7 +26,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     field(:hash, :binary)
     field(:ghash, :binary)
     field(:lhash, :binary)
-    field(:path, {:array, :map}, virtual: true)
+    field(:path, {:array, :map}, virtual: true, default: [])
     field(:external_id, :string, virtual: true)
     field(:profile_source, :map, virtual: true)
     field(:classes, :map, virtual: true)
@@ -131,6 +131,9 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       # IMPORTANT: Avoid enriching structs one-by-one in this function.
       # Instead, enrichment should be performed as efficiently as possible on
       # chunked data using `TdDd.DataStructures.enriched_structure_versions/1`.
+
+      name_path = Enum.map(path, & &1["name"])
+
       data_structure
       |> Map.take([
         :id,
@@ -142,7 +145,8 @@ defmodule TdDd.DataStructures.DataStructureVersion do
         :source_id,
         :linked_concepts_count
       ])
-      |> Map.put(:path_sort, path_sort(path))
+      |> Map.put(:path, name_path)
+      |> Map.put(:path_sort, path_sort(name_path))
       |> Map.put(:domain_ids, domain_ids(data_structure))
       |> Map.put(:system, system(data_structure))
       |> Map.put(:df_content, content)
@@ -159,7 +163,6 @@ defmodule TdDd.DataStructures.DataStructureVersion do
           :updated_at,
           :group,
           :name,
-          :path,
           :type,
           :metadata,
           :mutable_metadata,
@@ -170,8 +173,8 @@ defmodule TdDd.DataStructures.DataStructureVersion do
 
     defp path_sort(nil), do: ""
 
-    defp path_sort(path) when is_list(path) do
-      path |> Enum.map(&Map.get(&1, "name", "")) |> Enum.join("~")
+    defp path_sort(name_path) when is_list(name_path) do
+      Enum.join(name_path, "~")
     end
 
     defp domain(%{domain: %{} = domain}), do: Map.take(domain, [:id, :external_id, :name])

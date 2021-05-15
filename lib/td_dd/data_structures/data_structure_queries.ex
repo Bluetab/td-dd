@@ -107,16 +107,24 @@ defmodule TdDd.DataStructures.DataStructureQueries do
       {:relation_type_id, _}, q -> q
     end)
     |> join(:left, [dsv], sm in StructureMetadata,
-      on: sm.data_structure_id == dsv.data_structure_id
+      on:
+        sm.data_structure_id == dsv.data_structure_id and
+          fragment(
+            "(?, COALESCE(?, CURRENT_TIMESTAMP)) OVERLAPS (?, COALESCE(?, CURRENT_TIMESTAMP))",
+            dsv.inserted_at,
+            dsv.deleted_at,
+            sm.inserted_at,
+            sm.deleted_at
+          )
     )
-    |> where([_, sm], is_nil(sm.deleted_at))
+    |> order_by([_, sm], desc: sm.version)
     |> select_merge([_, sm], %{mutable_metadata: sm.fields})
     |> join(:left, [dsv], c in subquery(Classifiers.classes()),
       on: dsv.id == c.data_structure_version_id
     )
     |> select_merge([_, _, c], %{classes: c.classes})
     |> join(:left, [dsv], p in subquery(paths(params)), on: p.id == dsv.data_structure_id)
-    |> select_merge([_, _, _, p], %{path: p.path})
+    |> select_merge([_, _, _, p], %{path: fragment("COALESCE(?, ARRAY[]::json[])", p.path)})
   end
 
   @spec distinct_by(Ecto.Query.t(), :id | :data_structure_id) :: Ecto.Query.t()
@@ -127,6 +135,6 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   defp distinct_by(query, :data_structure_id) do
     query
     |> distinct(:data_structure_id)
-    |> order_by(asc: :data_structure_id, desc: :version)
+    |> order_by(desc: :version)
   end
 end
