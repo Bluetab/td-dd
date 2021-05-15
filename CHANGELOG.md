@@ -6,11 +6,18 @@
 
 - [TD-3398] Support classification of data structures
 - [TD-3500] Support for signing configuration using a secret key
+- [TD-3597] Link between structures and tags
 
 ### Changed
 
 - Timestamps on `DataStructure`, `DataStructureVersion`, `DataStructureRelation`
   and `StructureMetadata` are now `utc_datetime_usec`.
+
+## [4.19.2] 2021-05-07
+
+### Fixed
+
+- [TD-3630] Issue querying executions when some implementations have no source
 
 ## [4.19.0] 2021-05-04
 

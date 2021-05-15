@@ -6,7 +6,7 @@ defmodule TdDd.MixProject do
       app: :td_dd,
       version:
         case System.get_env("APP_VERSION") do
-          nil -> "4.19.0-local"
+          nil -> "4.19.2-local"
           v -> v
         end,
       elixir: "~> 1.10",
@@ -74,7 +74,7 @@ defmodule TdDd.MixProject do
        git: "https://github.com/Bluetab/elasticsearch-elixir.git",
        branch: "feature/bulk-index-action"},
       {:td_hypermedia, git: "https://github.com/Bluetab/td-hypermedia.git", tag: "4.0.0"},
-      {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "4.20.0", override: true},
+      {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "4.20.1", override: true},
       {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "4.12.0"},
       {:graph, git: "https://github.com/Bluetab/graph.git", tag: "1.1.1"},
       {:vaultex, "~> 1.0.1"}

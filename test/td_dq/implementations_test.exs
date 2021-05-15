@@ -527,5 +527,12 @@ defmodule TdDq.ImplementationsTest do
       assert Implementations.get_sources(impl1) == ["foo"]
       assert Implementations.get_sources(impl2) == ["bar", "baz"]
     end
+
+    test "get sources of a raw implementation without source_id" do
+      implementation =
+        insert(:raw_implementation, raw_content: build(:raw_content, source_id: nil))
+
+      assert Implementations.get_sources(implementation) == []
+    end
   end
 end

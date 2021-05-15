@@ -658,6 +658,25 @@ defmodule TdDd.DataStructuresTest do
              <~> r_child_confidential
     end
 
+    test "get_data_structure_version!/2 with options: tags" do
+      d = insert(:data_structure)
+
+      %{id: id1, description: d1, data_structure_tag: %{name: n1}} =
+        insert(:data_structures_tags, data_structure: d, description: "foo")
+
+      %{id: id2, description: d2, data_structure_tag: %{name: n2}} =
+        insert(:data_structures_tags, data_structure: d, description: "bar")
+
+      version = insert(:data_structure_version, data_structure: d)
+
+      assert %{
+               tags: [
+                 %{id: ^id1, description: ^d1, data_structure_tag: %{name: ^n1}},
+                 %{id: ^id2, description: ^d2, data_structure_tag: %{name: ^n2}}
+               ]
+             } = DataStructures.get_data_structure_version!(version.id, [:tags])
+    end
+
     test "get_data_structure_version!/1 returns the data_structure with given id", %{
       data_structure_version: data_structure_version
     } do
@@ -1089,9 +1108,35 @@ defmodule TdDd.DataStructuresTest do
       assert DataStructures.list_data_structure_tags() == [data_structure_tag]
     end
 
+    test "list_data_structure_tags/1 returns all data_structure_tags with preloaded structures" do
+      %{id: structure_id, external_id: external_id} = structure = insert(:data_structure)
+      %{id: id, name: name} = structure_tag = insert(:data_structure_tag)
+      insert(:data_structures_tags, data_structure: structure, data_structure_tag: structure_tag)
+
+      assert [
+               %{
+                 id: ^id,
+                 name: ^name,
+                 tagged_structures: [%{id: ^structure_id, external_id: ^external_id}]
+               }
+             ] = DataStructures.list_data_structure_tags(preload: [:tagged_structures])
+    end
+
     test "get_data_structure_tag!/1 returns the data_structure_tag with given id" do
       data_structure_tag = data_structure_tag_fixture()
       assert DataStructures.get_data_structure_tag!(data_structure_tag.id) == data_structure_tag
+    end
+
+    test "get_data_structure_tag!/1 returns the data_structure_tag with specified preloads by given id" do
+      %{id: structure_id, external_id: external_id} = structure = insert(:data_structure)
+      %{id: id, name: name} = structure_tag = insert(:data_structure_tag)
+      insert(:data_structures_tags, data_structure: structure, data_structure_tag: structure_tag)
+
+      assert %{
+               id: ^id,
+               name: ^name,
+               tagged_structures: [%{id: ^structure_id, external_id: ^external_id}]
+             } = DataStructures.get_data_structure_tag!(id, preload: [:tagged_structures])
     end
 
     test "create_data_structure_tag/1 with valid data creates a data_structure_tag" do
@@ -1133,6 +1178,131 @@ defmodule TdDd.DataStructuresTest do
       assert_raise Ecto.NoResultsError, fn ->
         DataStructures.get_data_structure_tag!(data_structure_tag.id)
       end
+    end
+  end
+
+  describe "link_tag/3" do
+    test "links tag to a given structure", %{claims: claims} do
+      description = "foo"
+      structure = %{id: data_structure_id} = insert(:data_structure)
+      tag = %{id: tag_id} = insert(:data_structure_tag)
+      params = %{description: description}
+
+      {:ok,
+       %{
+         audit: event_id,
+         linked_tag: %{
+           description: ^description,
+           data_structure: %{id: ^data_structure_id},
+           data_structure_tag: %{id: ^tag_id}
+         }
+       }} = DataStructures.link_tag(structure, tag, params, claims)
+
+      assert {:ok, [%{id: ^event_id}]} =
+               Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+    end
+
+    test "updates link information when it already exists", %{claims: claims} do
+      description = "bar"
+      structure = %{id: data_structure_id} = insert(:data_structure)
+      tag = %{id: tag_id} = insert(:data_structure_tag)
+
+      insert(:data_structures_tags,
+        data_structure_tag: tag,
+        data_structure: structure,
+        description: "foo"
+      )
+
+      params = %{description: description}
+
+      {:ok,
+       %{
+         audit: event_id,
+         linked_tag: %{
+           description: ^description,
+           data_structure: %{id: ^data_structure_id},
+           data_structure_tag: %{id: ^tag_id}
+         }
+       }} = DataStructures.link_tag(structure, tag, params, claims)
+
+      assert {:ok, [%{id: ^event_id}]} =
+               Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+    end
+
+    test "gets error when description is invalid", %{claims: claims} do
+      structure = insert(:data_structure)
+      tag = insert(:data_structure_tag)
+      params = %{}
+
+      {:error, _,
+       %{errors: [description: {"can't be blank", [validation: :required]}], valid?: false},
+       _} = DataStructures.link_tag(structure, tag, params, claims)
+
+      params = %{description: nil}
+
+      {:error, _,
+       %{errors: [description: {"can't be blank", [validation: :required]}], valid?: false},
+       _} = DataStructures.link_tag(structure, tag, params, claims)
+
+      params = %{description: String.duplicate("foo", 334)}
+
+      {:error, _,
+       %{
+         errors: [
+           description:
+             {"max.length.1000", [count: 1000, validation: :length, kind: :max, type: :string]}
+         ],
+         valid?: false
+       }, _} = DataStructures.link_tag(structure, tag, params, claims)
+    end
+  end
+
+  describe "get_links_tag/2" do
+    test "gets a list of links between a structure and its tags" do
+      structure = %{id: data_structure_id} = insert(:data_structure)
+      tag = %{id: data_structure_tag_id, name: name} = insert(:data_structure_tag)
+
+      %{id: link_id, description: description} =
+        insert(:data_structures_tags, data_structure: structure, data_structure_tag: tag)
+
+      assert [
+               %{
+                 id: ^link_id,
+                 data_structure: %{id: ^data_structure_id},
+                 data_structure_tag: %{id: ^data_structure_tag_id, name: ^name},
+                 description: ^description
+               }
+             ] = DataStructures.get_links_tag(structure)
+    end
+  end
+
+  describe "delete_link_tag/2" do
+    test "deletes link between tag and structure", %{claims: claims} do
+      structure = %{id: data_structure_id} = insert(:data_structure)
+      tag = %{id: data_structure_tag_id} = insert(:data_structure_tag)
+      insert(:data_structures_tags, data_structure: structure, data_structure_tag: tag)
+
+      assert {:ok,
+              %{
+                audit: event_id,
+                deleted_link_tag: %{
+                  data_structure_id: ^data_structure_id,
+                  data_structure_tag_id: ^data_structure_tag_id
+                }
+              }} = DataStructures.delete_link_tag(structure, tag, claims)
+
+      assert {:ok, [%{id: ^event_id}]} =
+               Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+
+      assert is_nil(DataStructures.get_link_tag_by(data_structure_id, data_structure_tag_id))
+    end
+
+    test "not_found if link does not exist", %{claims: claims} do
+      structure = %{id: data_structure_id} = insert(:data_structure)
+      tag = %{id: data_structure_tag_id} = insert(:data_structure_tag)
+
+      assert {:error, :not_found} = DataStructures.delete_link_tag(structure, tag, claims)
+      assert is_nil(DataStructures.get_link_tag_by(data_structure_id, data_structure_tag_id))
     end
   end
 

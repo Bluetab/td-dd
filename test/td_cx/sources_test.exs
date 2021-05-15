@@ -38,6 +38,12 @@ defmodule TdCx.SourcesTest do
     [template: Templates.create_template(@template)]
   end
 
+  describe "Sources.get_source/1" do
+    test "returns nil if params is nil" do
+      assert Sources.get_source(nil) == nil
+    end
+  end
+
   describe "sources" do
     test "list_sources/0 returns all sources" do
       source = source_fixture()
