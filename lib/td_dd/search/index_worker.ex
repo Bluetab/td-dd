@@ -1,6 +1,6 @@
 defmodule TdDd.Search.IndexWorker do
   @moduledoc """
-  GenServer to for data dictionary bulk indexing.
+  GenServer for data dictionary bulk indexing.
   """
 
   @behaviour TdCache.EventStream.Consumer
