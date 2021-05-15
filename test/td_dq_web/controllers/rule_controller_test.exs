@@ -5,14 +5,10 @@ defmodule TdDqWeb.RuleControllerTest do
   alias TdCache.{Audit, Redix}
   alias TdDq.Rules.Rule
 
-  setup_all do
-    start_supervised(TdDq.MockRelationCache)
-    start_supervised(TdDd.Search.MockIndexWorker)
-    start_supervised(TdDq.Cache.RuleLoader)
-    :ok
-  end
-
   setup do
+    start_supervised!(TdDq.MockRelationCache)
+    start_supervised!(TdDd.Search.MockIndexWorker)
+    start_supervised!(TdDq.Cache.RuleLoader)
     on_exit(fn -> Redix.del!(Audit.stream()) end)
 
     [rule: insert(:rule)]

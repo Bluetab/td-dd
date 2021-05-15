@@ -5,9 +5,11 @@ defmodule TdDq.ExecutionsTest do
   alias TdCache.Redix.Stream
   alias TdDq.Executions
 
+  @moduletag sandbox: :shared
   @stream TdCache.Audit.stream()
 
-  setup_all do
+  setup do
+    start_supervised!(TdDd.Search.StructureEnricher)
     on_exit(fn -> Redix.del!(@stream) end)
   end
 

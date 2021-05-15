@@ -4,9 +4,15 @@ defmodule TdDd.Cache.StructureEntryTest do
   alias TdDd.Cache.StructureEntry
   alias TdDd.DataStructures.RelationTypes
 
+  @moduletag sandbox: :shared
   @dsv_keys [:deleted_at, :group, :metadata, :name, :type, :updated_at]
   @ds_keys [:external_id, :system_id]
   @system_keys [:external_id, :id, :name]
+
+  setup do
+    start_supervised!(TdDd.Search.StructureEnricher)
+    :ok
+  end
 
   describe "StructureEntry.cache_entry/1" do
     test "returns an empty map for nil" do
@@ -20,7 +26,17 @@ defmodule TdDd.Cache.StructureEntryTest do
       assert Map.take(entry, @ds_keys) == Map.take(ds, @ds_keys)
     end
 
-    test "returns the system if the system option is true" do
+    test "includes the path" do
+      %{
+        child: %{data_structure_id: id},
+        parent: %{data_structure_id: parent_id, name: parent_name}
+      } = insert(:data_structure_relation, relation_type_id: RelationTypes.default_id!())
+
+      assert %{path: []} = StructureEntry.cache_entry(parent_id)
+      assert %{path: [^parent_name]} = StructureEntry.cache_entry(id)
+    end
+
+    test "includes the system if the system option is true" do
       %{data_structure_id: id, data_structure: %{system: system}} =
         insert(:data_structure_version)
 
@@ -28,15 +44,14 @@ defmodule TdDd.Cache.StructureEntryTest do
       assert Map.take(actual, @system_keys) == Map.take(system, @system_keys)
     end
 
-    test "returns the first parent if present" do
-      %{id: relation_type_id} = RelationTypes.get_default()
+    test "includes the first parent if present" do
       %{id: parent_id, data_structure_id: parent_structure_id} = insert(:data_structure_version)
       %{id: child_id, data_structure_id: id} = insert(:data_structure_version)
 
       insert(:data_structure_relation,
         child_id: child_id,
         parent_id: parent_id,
-        relation_type_id: relation_type_id
+        relation_type_id: RelationTypes.default_id!()
       )
 
       assert %{parent_id: ^parent_structure_id} = StructureEntry.cache_entry(id)

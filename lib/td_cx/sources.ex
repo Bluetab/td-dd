@@ -3,7 +3,7 @@ defmodule TdCx.Sources do
   The Sources context.
   """
 
-  import Ecto.Query, warn: false
+  import Ecto.Query
   import Canada, only: [can?: 2]
 
   require Logger

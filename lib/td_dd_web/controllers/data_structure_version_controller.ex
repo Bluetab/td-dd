@@ -18,26 +18,27 @@ defmodule TdDdWeb.DataStructureVersionController do
   end
 
   @enrich_attrs [
-    :external_id,
-    :parents,
     :children,
-    :siblings,
-    :data_fields,
+    :classifications,
     :data_field_degree,
     :data_field_links,
-    :versions,
-    :system,
-    :links,
-    :profile,
-    :degree,
-    :relations,
-    :relation_links,
-    :domain,
-    :source,
-    :metadata_versions,
+    :data_fields,
     :data_structure_type,
-    :with_confidential,
-    :tags
+    :degree,
+    :domain,
+    :external_id,
+    :links,
+    :metadata_versions,
+    :parents,
+    :profile,
+    :relation_links,
+    :relations,
+    :siblings,
+    :source,
+    :system,
+    :tags,
+    :versions,
+    :with_confidential
   ]
 
   swagger_path :show do

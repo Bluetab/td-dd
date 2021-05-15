@@ -66,7 +66,6 @@ defmodule TdDdWeb.DataStructureVersionView do
           :profile,
           :degree,
           :relations,
-          :domain,
           :metadata_versions,
           :data_structure_type,
           :tags
@@ -238,21 +237,8 @@ defmodule TdDdWeb.DataStructureVersionView do
     Map.put(dsv, :source, source)
   end
 
-  defp add_ancestry(dsv) do
-    ancestry =
-      case Map.get(dsv, :path) do
-        %{structure_ids: [_ | ids], names: [_ | names]} ->
-          [ids, names]
-          |> Enum.zip()
-          |> Enum.map(fn {id, name} -> %{data_structure_id: id, name: name} end)
-          |> Enum.reverse()
-
-        _ ->
-          []
-      end
-
-    Map.put(dsv, :ancestry, ancestry)
-  end
+  defp add_ancestry(%{path: [_ | _] = path} = dsv), do: Map.put(dsv, :ancestry, path)
+  defp add_ancestry(dsv), do: Map.put(dsv, :ancestry, [])
 
   defp lift_metadata(%{metadata: metadata} = dsv) do
     metadata =

@@ -3,8 +3,6 @@ defmodule TdDd.Events.ProfileEvents do
   The Events context.
   """
 
-  import Ecto.Query, warn: false
-
   alias TdDd.Events.ProfileEvent
   alias TdDd.Repo
 

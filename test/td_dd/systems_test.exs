@@ -6,6 +6,7 @@ defmodule TdDd.SystemsTest do
   alias TdDd.Cache.SystemLoader
   alias TdDd.Systems
 
+  @moduletag sandbox: :shared
   @stream TdCache.Audit.stream()
 
   setup_all do
@@ -15,6 +16,7 @@ defmodule TdDd.SystemsTest do
   end
 
   setup do
+    start_supervised!(TdDd.Search.StructureEnricher)
     on_exit(fn -> Redix.del!(@stream) end)
 
     claims = build(:claims, role: "admin")

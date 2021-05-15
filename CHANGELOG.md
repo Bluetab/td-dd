@@ -10,6 +10,7 @@
 
 ### Changed
 
+- [TD-3680] Improve data catalog bulk indexing performance
 - Timestamps on `DataStructure`, `DataStructureVersion`, `DataStructureRelation`
   and `StructureMetadata` are now `utc_datetime_usec`.
 
