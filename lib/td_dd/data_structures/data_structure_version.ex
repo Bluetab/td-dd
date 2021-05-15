@@ -136,36 +136,36 @@ defmodule TdDd.DataStructures.DataStructureVersion do
 
       data_structure
       |> Map.take([
-        :id,
+        :confidential,
         :domain_id,
         :external_id,
-        :system_id,
+        :id,
         :inserted_at,
-        :confidential,
+        :linked_concepts_count,
         :source_id,
-        :linked_concepts_count
+        :system_id,
       ])
-      |> Map.put(:path, name_path)
-      |> Map.put(:path_sort, path_sort(name_path))
-      |> Map.put(:domain_ids, domain_ids(data_structure))
-      |> Map.put(:system, system(data_structure))
       |> Map.put(:df_content, content)
-      |> Map.put(:with_content, is_map(content) and map_size(content) > 0)
-      |> Map.put(:field_type, field_type(dsv))
-      |> Map.put(:source_alias, source_alias(dsv))
+      |> Map.put(:domain_ids, domain_ids(data_structure))
       |> Map.put(:domain, domain(data_structure))
+      |> Map.put(:field_type, field_type(dsv))
+      |> Map.put(:path_sort, path_sort(name_path))
+      |> Map.put(:path, name_path)
+      |> Map.put(:source_alias, source_alias(dsv))
+      |> Map.put(:system, system(data_structure))
+      |> Map.put(:with_content, is_map(content) and map_size(content) > 0)
       |> Map.merge(
         Map.take(dsv, [
           :class,
           :classes,
-          :description,
           :deleted_at,
-          :updated_at,
+          :description,
           :group,
-          :name,
-          :type,
           :metadata,
           :mutable_metadata,
+          :name,
+          :type,
+          :updated_at,
           :version
         ])
       )
