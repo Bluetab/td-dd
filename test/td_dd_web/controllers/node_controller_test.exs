@@ -51,7 +51,7 @@ defmodule TdDdWeb.NodeControllerTest do
       conn: conn,
       claims: %{user_id: user_id}
     } do
-      %{id: domain_id} = DomainHelper.insert_domain()
+      %{id: domain_id} = CacheHelpers.insert_domain()
 
       MockPermissionResolver.create_acl_entry(%{
         principal_id: user_id,
@@ -81,7 +81,7 @@ defmodule TdDdWeb.NodeControllerTest do
         units: [unit]
       )
 
-      %{id: domain_id} = DomainHelper.insert_domain()
+      %{id: domain_id} = CacheHelpers.insert_domain()
 
       MockPermissionResolver.create_acl_entry(%{
         principal_id: user_id,
@@ -125,7 +125,7 @@ defmodule TdDdWeb.NodeControllerTest do
            conn: conn,
            claims: %{user_id: user_id}
          } do
-      %{id: domain_id} = DomainHelper.insert_domain()
+      %{id: domain_id} = CacheHelpers.insert_domain()
 
       MockPermissionResolver.create_acl_entry(%{
         principal_id: user_id,

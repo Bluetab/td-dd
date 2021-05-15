@@ -10,12 +10,16 @@ defmodule TdDd.Search.Indexer do
   alias TdDd.Search.Cluster
   alias TdDd.Search.Mappings
   alias TdDd.Search.Store
+  alias TdDd.Search.StructureEnricher
 
   require Logger
 
   @action "index"
 
   def reindex(:all) do
+    :ok = StructureEnricher.refresh()
+
+    Store.vacuum()
     alias_name = Cluster.alias_name(:structures)
 
     Mappings.get_mappings()
@@ -31,6 +35,7 @@ defmodule TdDd.Search.Indexer do
   end
 
   def reindex(ids) when is_list(ids) do
+    StructureEnricher.refresh()
     alias_name = Cluster.alias_name(:structures)
 
     Store.transaction(fn ->

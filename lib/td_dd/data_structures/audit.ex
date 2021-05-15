@@ -46,7 +46,7 @@ defmodule TdDd.DataStructures.Audit do
   end
 
   @doc """
-  Publishes `:tag_linked` events for all created links 
+  Publishes `:tag_linked` events for all created links
   between a structure and its tags.
   """
   def tag_linked(_repo, %{linked_tag: %{id: id} = payload}, user_id) do
@@ -69,7 +69,7 @@ defmodule TdDd.DataStructures.Audit do
   end
 
   @doc """
-  Publishes `:tag_link_updated` events for all changed links 
+  Publishes `:tag_link_updated` events for all changed links
   between a structure and its tags.
   """
   def tag_link_updated(_repo, %{linked_tag: %{id: id}}, %{} = changeset, user_id) do

@@ -2,11 +2,12 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  alias TdCache.StructureTypeCache
   alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Lineage.GraphData
+
+  @moduletag sandbox: :shared
 
   setup_all do
     start_supervised(GraphData)
@@ -14,6 +15,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   end
 
   setup %{conn: conn} do
+    start_supervised!(TdDd.Search.StructureEnricher)
     insert(:system, id: 1)
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
 
@@ -52,16 +54,9 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
         updated_at: DateTime.utc_now()
       })
 
-    %{id: structure_type_id} =
-      structure_type =
-      insert(:data_structure_type, template_id: template_id, structure_type: type)
+    CacheHelpers.insert_structure_type(template_id: template_id, structure_type: type)
 
-    {:ok, _} = StructureTypeCache.put(structure_type)
-
-    on_exit(fn ->
-      TemplateCache.delete(template_id)
-      StructureTypeCache.delete(structure_type_id)
-    end)
+    on_exit(fn -> TemplateCache.delete(template_id) end)
   end
 
   describe "GET /api/data_structures/:id/versions/:version structure hierarchy" do
@@ -467,7 +462,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
         &insert(:data_structure_version, data_structure_id: &1.id, metadata: %{"order" => 1})
       )
 
-    %{id: relation_type_id} = RelationTypes.get_default()
+    relation_type_id = RelationTypes.default_id!()
 
     insert(:data_structure_relation,
       parent_id: parent_version.id,
@@ -521,7 +516,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
         )
       )
 
-    %{id: relation_type_id} = RelationTypes.get_default()
+    relation_type_id = RelationTypes.default_id!()
 
     Enum.each(
       child_versions,
@@ -545,7 +540,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   end
 
   defp create_field_structure(_) do
-    domain = DomainHelper.insert_domain()
+    domain = CacheHelpers.insert_domain()
     %{id: source_id} = create_source()
 
     data_structure = insert(:data_structure, domain_id: domain.id, source_id: source_id)
@@ -564,7 +559,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   end
 
   defp create_data_field_structure(_) do
-    domain = DomainHelper.insert_domain()
+    domain = CacheHelpers.insert_domain()
     %{id: source_id} = create_source()
 
     data_structure = insert(:data_structure, domain_id: domain.id, source_id: source_id)
@@ -578,12 +573,10 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     {:ok, field_data} = create_field_structure([])
     field = Keyword.get(field_data, :data_structure_version)
 
-    %{id: relation_type_id} = RelationTypes.get_default()
-
     insert(:data_structure_relation,
       parent_id: data_structure_version.id,
       child_id: field.id,
-      relation_type_id: relation_type_id
+      relation_type_id: RelationTypes.default_id!()
     )
 
     {:ok,

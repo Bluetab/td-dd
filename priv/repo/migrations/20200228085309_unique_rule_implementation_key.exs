@@ -1,6 +1,6 @@
 defmodule TdDq.Repo.Migrations.UniqueRuleImplementationKey do
   use Ecto.Migration
-  import Ecto.Query, warn: false
+  import Ecto.Query
 
   alias TdDd.Repo
 

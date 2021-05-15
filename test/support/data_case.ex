@@ -32,8 +32,9 @@ defmodule TdDd.DataCase do
   setup tags do
     case Sandbox.checkout(TdDd.Repo) do
       :ok ->
-        unless tags[:async] do
+        if tags[:async] or tags[:sandbox] == :shared do
           Sandbox.mode(TdDd.Repo, {:shared, self()})
+        else
           parent = self()
 
           allow(parent, [

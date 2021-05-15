@@ -1,6 +1,6 @@
 defmodule TdDd.Search.IndexWorker do
   @moduledoc """
-  GenServer to reindex data dictionary
+  GenServer for data dictionary bulk indexing.
   """
 
   @behaviour TdCache.EventStream.Consumer
@@ -41,15 +41,14 @@ defmodule TdDd.Search.IndexWorker do
   ## GenServer Callbacks
 
   @impl true
-  def init(state) do
-    name = String.replace_prefix("#{__MODULE__}", "Elixir.", "")
-    Logger.info("Running #{name}")
-
+  def init(_init_arg) do
     unless Application.get_env(:td_dd, :env) == :test do
       Process.send_after(self(), :migrate, 0)
     end
 
-    {:ok, state}
+    Logger.info("started")
+
+    {:ok, :no_state}
   end
 
   @impl GenServer

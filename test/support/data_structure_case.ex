@@ -29,7 +29,7 @@ defmodule TdDd.DataStructureCase do
             )
           )
 
-        %{id: relation_type_id} = RelationTypes.get_default()
+        relation_type_id = RelationTypes.default_id!()
 
         dsvs
         |> Enum.chunk_every(2, 1, :discard)

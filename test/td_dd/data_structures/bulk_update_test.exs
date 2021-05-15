@@ -10,6 +10,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Repo
 
+  @moduletag sandbox: :shared
   @valid_content %{"string" => "present", "list" => "one"}
   @valid_params %{"df_content" => @valid_content}
   @c1 [
@@ -101,13 +102,10 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
   end
 
   setup %{template: %{id: template_id}, type: type} do
-    %{id: structure_type_id} =
-      structure_type =
-      insert(:data_structure_type, structure_type: type, template_id: template_id)
+    CacheHelpers.insert_structure_type(structure_type: type, template_id: template_id)
 
-    {:ok, _} = StructureTypeCache.put(structure_type)
-
-    on_exit(fn -> StructureTypeCache.delete(structure_type_id) end)
+    start_supervised!(TdDd.Search.StructureEnricher)
+    :ok
   end
 
   describe "parse_file/1" do

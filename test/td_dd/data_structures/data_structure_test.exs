@@ -2,10 +2,10 @@ defmodule TdDd.DataStructures.DataStructureTest do
   use TdDd.DataCase
 
   alias Ecto.Changeset
-  alias TdCache.StructureTypeCache
   alias TdCache.TemplateCache
   alias TdDd.DataStructures.DataStructure
 
+  @moduletag sandbox: :shared
   @invalid_content %{"string" => nil, "list" => "four"}
   @valid_content %{"string" => "present", "list" => "one"}
 
@@ -19,13 +19,9 @@ defmodule TdDd.DataStructures.DataStructureTest do
   end
 
   setup %{template: %{id: template_id}, type: type} do
-    %{id: data_structure_type_id} =
-      data_structure_type =
-      insert(:data_structure_type, structure_type: type, template_id: template_id)
+    CacheHelpers.insert_structure_type(structure_type: type, template_id: template_id)
 
-    {:ok, _} = StructureTypeCache.put(data_structure_type)
-
-    on_exit(fn -> StructureTypeCache.delete(data_structure_type_id) end)
+    start_supervised!(TdDd.Search.StructureEnricher)
 
     %{data_structure: structure} =
       insert(:data_structure_version,

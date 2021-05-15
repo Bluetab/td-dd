@@ -42,21 +42,25 @@ defmodule TdDdWeb.ConnCase do
   setup tags do
     start_supervised(MockPermissionResolver)
 
-    :ok = Sandbox.checkout(TdDd.Repo)
+    case Sandbox.checkout(TdDd.Repo) do
+      :ok ->
+        if tags[:async] or tags[:sandbox] == :shared do
+          Sandbox.mode(TdDd.Repo, {:shared, self()})
+        else
+          parent = self()
 
-    if tags[:async] or tags[:sandbox] == :shared do
-      Sandbox.mode(TdDd.Repo, {:shared, self()})
-    else
-      parent = self()
+          allow(parent, [
+            TdDd.Cache.SystemLoader,
+            TdDd.Loader.Worker,
+            TdDd.Search.IndexWorker,
+            TdDd.Cache.StructureLoader,
+            TdDd.Lineage,
+            TdDd.Lineage.GraphData
+          ])
+        end
 
-      allow(parent, [
-        TdDd.Cache.SystemLoader,
-        TdDd.Loader.Worker,
-        TdDd.Search.IndexWorker,
-        TdDd.Cache.StructureLoader,
-        TdDd.Lineage,
-        TdDd.Lineage.GraphData
-      ])
+      {:already, :owner} ->
+        :ok
     end
 
     case tags[:authentication] do

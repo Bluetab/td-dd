@@ -1,21 +1,19 @@
 defmodule TdDq.ImplementationsTest do
   use TdDd.DataCase
 
-  import Ecto.Query, warn: false
   import TdDd.TestOperators
 
   alias Ecto.Changeset
   alias TdDq.Implementations
   alias TdDq.Implementations.Implementation
 
-  setup_all do
-    start_supervised(TdDq.MockRelationCache)
-    start_supervised(TdDd.Search.MockIndexWorker)
-    start_supervised(TdDq.Cache.RuleLoader)
-    :ok
-  end
+  @moduletag sandbox: :shared
 
   setup do
+    start_supervised!(TdDq.MockRelationCache)
+    start_supervised!(TdDd.Search.MockIndexWorker)
+    start_supervised!(TdDq.Cache.RuleLoader)
+    start_supervised!(TdDd.Search.StructureEnricher)
     [rule: insert(:rule)]
   end
 

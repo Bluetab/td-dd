@@ -3,8 +3,6 @@ defmodule TdDd.Loader do
   Bulk loader for data structure metadata
   """
 
-  import Ecto.Query, warn: false
-
   alias Ecto.Multi
   alias TdDd.Classifiers
   alias TdDd.DataStructures.RelationTypes

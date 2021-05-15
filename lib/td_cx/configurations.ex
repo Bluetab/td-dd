@@ -3,7 +3,7 @@ defmodule TdCx.Configurations do
   The Configurations context.
   """
 
-  import Ecto.Query, warn: false
+  import Ecto.Query
 
   alias Ecto.Multi
   alias TdCache.TemplateCache
@@ -32,7 +32,7 @@ defmodule TdCx.Configurations do
   end
 
   @doc """
-  Gets a single configuration by external_id and enrichs it with 
+  Gets a single configuration by external_id and enriches it with
   secrets stored un vault.
 
   Raises `Ecto.NoResultsError` if the Configuration does not exist.

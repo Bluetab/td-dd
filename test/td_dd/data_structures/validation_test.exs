@@ -1,29 +1,23 @@
 defmodule TdDd.DataStructures.ValidationTest do
   use TdDd.DataStructureCase
 
-  alias TdCache.StructureTypeCache
   alias TdCache.TemplateCache
   alias TdDd.DataStructures.Validation
 
+  @moduletag sandbox: :shared
+
+  setup do
+    %{id: template_id, name: template_name} = template = build(:template)
+    TemplateCache.put(template, publish: false)
+    on_exit(fn -> TemplateCache.delete(template_id) end)
+
+    CacheHelpers.insert_structure_type(structure_type: template_name, template_id: template_id)
+
+    start_supervised!(TdDd.Search.StructureEnricher)
+    [template: template]
+  end
+
   describe "validator/1" do
-    setup do
-      %{id: template_id, name: template_name} = template = build(:template)
-      TemplateCache.put(template, publish: false)
-
-      %{id: structure_type_id} =
-        structure_type =
-        insert(:data_structure_type, structure_type: template_name, template_id: template_id)
-
-      {:ok, _} = StructureTypeCache.put(structure_type)
-
-      on_exit(fn ->
-        TemplateCache.delete(template_id)
-        StructureTypeCache.delete(structure_type_id)
-      end)
-
-      [template: template]
-    end
-
     test "returns an empty content validator if structure has no type" do
       structure = build(:data_structure)
       validator = Validation.validator(structure)

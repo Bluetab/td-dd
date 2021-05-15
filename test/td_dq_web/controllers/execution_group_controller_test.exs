@@ -3,19 +3,14 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
   use PhoenixSwagger.SchemaTest, "priv/static/swagger_dq.json"
 
   alias TdCache.ConceptCache
-  alias TdCache.TaxonomyCache
 
   @moduletag sandbox: :shared
 
   setup_all do
-    %{id: domain_id} = domain = build(:domain)
-    TaxonomyCache.put_domain(domain)
-    ConceptCache.put(%{id: 42, name: "Concept", domain_id: domain_id})
+    %{id: domain_id} = domain = CacheHelpers.insert_domain()
 
-    on_exit(fn ->
-      {:ok, _} = ConceptCache.delete(42)
-      TaxonomyCache.delete_domain(domain_id)
-    end)
+    ConceptCache.put(%{id: 42, name: "Concept", domain_id: domain_id})
+    on_exit(fn -> {:ok, _} = ConceptCache.delete(42) end)
 
     [domain: domain]
   end

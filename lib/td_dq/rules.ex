@@ -3,7 +3,7 @@ defmodule TdDq.Rules do
   The Rules context.
   """
 
-  import Ecto.Query, warn: false
+  import Ecto.Query
 
   alias Ecto.Multi
   alias TdCache.ConceptCache

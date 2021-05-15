@@ -8,6 +8,7 @@ defmodule TdDd.DataStructures.AuditTest do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Repo
 
+  @moduletag sandbox: :shared
   @stream TdCache.Audit.stream()
 
   setup_all do
@@ -23,6 +24,7 @@ defmodule TdDd.DataStructures.AuditTest do
   end
 
   setup %{type: type} do
+    start_supervised!(TdDd.Search.StructureEnricher)
     on_exit(fn -> Redix.del!(@stream) end)
 
     claims = build(:claims, role: "admin")

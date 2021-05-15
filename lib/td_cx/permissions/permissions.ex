@@ -3,8 +3,6 @@ defmodule TdCx.Permissions do
   The Permissions context.
   """
 
-  import Ecto.Query, warn: false
-
   alias TdCx.Auth.Claims
   alias TdCx.Taxonomies.Domain
 

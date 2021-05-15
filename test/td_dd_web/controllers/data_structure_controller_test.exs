@@ -4,12 +4,12 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
   import Routes
 
-  alias TdCache.StructureTypeCache
   alias TdCache.TemplateCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Lineage.GraphData
 
+  @moduletag sandbox: :shared
   @template_name "data_structure_controller_test_template"
 
   @update_attrs %{
@@ -21,27 +21,20 @@ defmodule TdDdWeb.DataStructureControllerTest do
   }
 
   setup_all do
-    start_supervised(GraphData)
-    [domain: DomainHelper.insert_domain()]
+    start_supervised!(GraphData)
+    :ok
   end
 
   setup %{conn: conn} do
     %{id: template_id, name: template_name} = template = build(:template, name: @template_name)
     {:ok, _} = TemplateCache.put(template, publish: false)
     system = insert(:system)
+    domain =  CacheHelpers.insert_domain()
+    CacheHelpers.insert_structure_type(structure_type: template_name, template_id: template_id)
+    on_exit(fn -> TemplateCache.delete(template_id) end)
 
-    %{id: structure_type_id} =
-      structure_type =
-      insert(:data_structure_type, structure_type: template_name, template_id: template_id)
-
-    StructureTypeCache.put(structure_type)
-
-    on_exit(fn ->
-      TemplateCache.delete(template_id)
-      StructureTypeCache.delete(structure_type_id)
-    end)
-
-    {:ok, %{conn: put_req_header(conn, "accept", "application/json"), system: system}}
+    start_supervised!(TdDd.Search.StructureEnricher)
+    {:ok, %{conn: put_req_header(conn, "accept", "application/json"), system: system, domain: domain}}
   end
 
   describe "index" do
@@ -299,7 +292,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert data["data_structure"]["id"] == id
       assert data["data_structure"]["df_content"] == %{"list" => "one", "string" => "foo"}
-      assert data["domain"]["name"] == domain_name
+      assert data["data_structure"]["domain"]["name"] == domain_name
     end
 
     @tag authentication: [user_name: "user_without_permission"]
@@ -356,12 +349,10 @@ defmodule TdDdWeb.DataStructureControllerTest do
           deleted_at: DateTime.utc_now()
         )
 
-      %{id: relation_type_id} = RelationTypes.get_default()
-
       insert(:data_structure_relation,
         parent_id: data_structure_version.id,
         child_id: child_version.id,
-        relation_type_id: relation_type_id
+        relation_type_id: RelationTypes.default_id!()
       )
 
       assert %{resp_body: resp_body} = post(conn, data_structure_path(conn, :csv, %{}))
