@@ -3,27 +3,28 @@ defmodule TdDd.DataStructures do
   The DataStructures context.
   """
 
-  import Ecto.Query, warn: false
+  import Ecto.Query
 
   alias Ecto.Association.NotLoaded
   alias Ecto.Multi
   alias TdCache.LinkCache
   alias TdCache.StructureTypeCache
-  alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
   alias TdCx.Sources
   alias TdDd.Auth.Claims
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureQueries
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureTag
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
-  alias TdDd.DataStructures.Paths
+  alias TdDd.DataStructures.RelationTypes
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.Lineage.GraphData
   alias TdDd.Repo
   alias TdDd.Search.IndexWorker
+  alias TdDd.Search.StructureEnricher
   alias TdDfLib.Format
 
   # Data structure version associations preloaded for some views
@@ -63,34 +64,27 @@ defmodule TdDd.DataStructures do
     Repo.get_by(DataStructure, external_id: external_id)
   end
 
-  @doc "Gets a single data_structure_version"
-  def get_data_structure_version!(id) do
-    DataStructureVersion
-    |> Paths.by_version_id(id)
-    |> Repo.get!(id)
-    |> Repo.preload(:data_structure)
-  end
-
   def get_data_structures(ids, preload \\ :system) do
     from(ds in DataStructure, where: ds.id in ^ids, preload: ^preload, select: ds)
     |> Repo.all()
   end
 
-  def get_data_structure_version!(data_structure_id, version, options) do
-    params = %{data_structure_id: data_structure_id, version: version}
-
-    DataStructureVersion
-    |> Paths.by_structure_id_and_version(data_structure_id, version)
-    |> Repo.get_by!(params)
-    |> Repo.preload(@preload_dsv_assocs)
-    |> enrich(options)
+  @doc "Gets a single data_structure_version"
+  def get_data_structure_version!(id) do
+    enriched_structure_version!(id)
   end
 
   def get_data_structure_version!(data_structure_version_id, options) do
+    data_structure_version_id
+    |> get_data_structure_version!()
+    |> enrich(options)
+  end
+
+  def get_data_structure_version!(data_structure_id, version, options) do
     DataStructureVersion
-    |> Paths.by_version_id(data_structure_version_id)
-    |> Repo.get!(data_structure_version_id)
-    |> Repo.preload(data_structure: :system)
+    |> Repo.get_by!(data_structure_id: data_structure_id, version: version)
+    |> Map.get(:id)
+    |> enriched_structure_version!(preload: @preload_dsv_assocs)
     |> enrich(options)
   end
 
@@ -112,19 +106,24 @@ defmodule TdDd.DataStructures do
 
   defp enrich(%DataStructure{} = ds, options) do
     ds
+    |> StructureEnricher.enrich()
     |> enrich(options, :versions, &Repo.preload(&1, :versions))
     |> enrich(options, :latest, &get_latest_version/1)
-    |> enrich(options, :domain, &get_domain/1)
     |> enrich(options, :source, &get_source/1)
     |> enrich(options, :metadata_versions, &get_metadata_versions/1)
   end
 
+  defp enrich(%DataStructureVersion{id: id} = _data_structure_version, :defaults) do
+    enriched_structure_version!(id, preload: [data_structure: :source])
+  end
+
   defp enrich(%DataStructureVersion{} = dsv, options) do
     deleted = not is_nil(Map.get(dsv, :deleted_at))
-    preload = if Enum.member?(options, :profile), do: [data_structure: :profile], else: []
     with_confidential = Enum.member?(options, :with_confidential)
 
     dsv
+    |> enrich(:defaults)
+    |> enrich(options, :classifications, &get_classifications/1)
     |> enrich(options, :system, &get_system/1)
     |> enrich(
       options,
@@ -146,7 +145,7 @@ defmodule TdDd.DataStructures do
       :data_fields,
       &get_field_structures(&1,
         deleted: deleted,
-        preload: preload,
+        preload: if(Enum.member?(options, :profile), do: [data_structure: :profile], else: []),
         with_confidential: with_confidential
       )
     )
@@ -162,7 +161,6 @@ defmodule TdDd.DataStructures do
     |> enrich(options, :degree, &get_degree/1)
     |> enrich(options, :profile, &get_profile/1)
     |> enrich(options, :links, &get_structure_links/1)
-    |> enrich(options, :domain, &get_domain/1)
     |> enrich(options, :source, &get_source/1)
     |> enrich(options, :metadata_versions, &get_metadata_versions/1)
     |> enrich(options, :data_structure_type, &get_data_structure_type/1)
@@ -187,6 +185,12 @@ defmodule TdDd.DataStructures do
     |> Repo.preload(data_structure: :system)
     |> Map.get(:data_structure)
     |> Map.get(:system)
+  end
+
+  defp get_classifications(%DataStructureVersion{} = dsv) do
+    dsv
+    |> Repo.preload(:classifications)
+    |> Map.get(:classifications)
   end
 
   defp get_profile(%DataStructureVersion{} = dsv) do
@@ -395,27 +399,6 @@ defmodule TdDd.DataStructures do
     Map.put(version, :version, Repo.preload(v, preloads))
   end
 
-  defp get_domain(%DataStructureVersion{data_structure: %NotLoaded{}} = version) do
-    version
-    |> Repo.preload(:data_structure)
-    |> get_domain()
-  end
-
-  defp get_domain(%DataStructureVersion{data_structure: data_structure}) do
-    domain_id = Map.get(data_structure, :domain_id)
-
-    case domain_id do
-      nil -> %{}
-      domain_id -> TaxonomyCache.get_domain(domain_id) || %{}
-    end
-  end
-
-  defp get_domain(%DataStructure{domain_id: nil}), do: %{}
-
-  defp get_domain(%DataStructure{domain_id: domain_id}) do
-    TaxonomyCache.get_domain(domain_id) || %{}
-  end
-
   def get_source(%DataStructureVersion{data_structure: %DataStructure{} = data_structure}) do
     get_source(data_structure)
   end
@@ -499,11 +482,7 @@ defmodule TdDd.DataStructures do
 
   def get_latest_version(target, options \\ [])
 
-  def get_latest_version(%DataStructure{versions: versions}, options) when is_list(versions) do
-    versions
-    |> Enum.max_by(& &1.version)
-    |> enrich(options)
-  end
+  def get_latest_version(nil, _), do: nil
 
   def get_latest_version(%DataStructure{id: id}, options) do
     get_latest_version(id, options)
@@ -511,8 +490,9 @@ defmodule TdDd.DataStructures do
 
   def get_latest_version(data_structure_id, options) do
     DataStructureVersion
-    |> Paths.by_data_structure_id(data_structure_id)
-    |> where([dsv], dsv.data_structure_id == type(^data_structure_id, :integer))
+    |> where(data_structure_id: ^data_structure_id)
+    |> distinct(:data_structure_id)
+    |> order_by(desc: :version)
     |> preload(data_structure: :source)
     |> Repo.one()
     |> enrich(options)
@@ -600,12 +580,6 @@ defmodule TdDd.DataStructures do
       {:ok, links} -> links
     end
   end
-
-  def get_path(%DataStructureVersion{path: %{names: [_ | names]}}) do
-    Enum.reverse(names)
-  end
-
-  def get_path(_), do: []
 
   def get_ancestors(dsv, opts \\ [deleted: false]) do
     get_recursive(dsv, :parents, opts)
@@ -824,5 +798,41 @@ defmodule TdDd.DataStructures do
 
   def delete_data_structure_tag(%DataStructureTag{} = data_structure_tag) do
     Repo.delete(data_structure_tag)
+  end
+
+  # Returns a data structure version enriched for indexing or rendering
+  @spec enriched_structure_version!(binary() | integer(), keyword) ::
+          DataStructureVersion.t()
+  defp enriched_structure_version!(id, opts \\ [])
+
+  defp enriched_structure_version!(id, opts) when is_binary(id) do
+    id
+    |> String.to_integer()
+    |> enriched_structure_version!(opts)
+  end
+
+  defp enriched_structure_version!(id, opts) do
+    opts
+    |> Keyword.put(:ids, [id])
+    |> Keyword.put(:relation_type_id, RelationTypes.default_id!())
+    |> enriched_structure_versions()
+    |> hd()
+  end
+
+  @spec enriched_structure_versions(keyword) :: [DataStructureVersion.t()]
+  def enriched_structure_versions(opts \\ []) do
+    {content_opt, opts} = Keyword.pop(opts, :content)
+
+    opts
+    |> Map.new()
+    |> DataStructureQueries.enriched_structure_versions()
+    |> Repo.all()
+    |> Enum.map(fn
+      %{path: nil} = dsv -> %{dsv | path: []}
+      dsv -> dsv
+    end)
+    |> Enum.map(fn %{data_structure: structure, type: type} = dsv ->
+      %{dsv | data_structure: StructureEnricher.enrich(structure, type, content_opt)}
+    end)
   end
 end

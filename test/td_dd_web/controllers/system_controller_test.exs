@@ -6,6 +6,7 @@ defmodule TdDdWeb.SystemControllerTest do
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Systems.System
 
+  @moduletag sandbox: :shared
   @create_attrs %{
     external_id: "some external_id",
     name: "some name"
@@ -18,12 +19,16 @@ defmodule TdDdWeb.SystemControllerTest do
 
   setup_all do
     start_supervised(SystemLoader)
-    [domain: DomainHelper.insert_domain()]
+    :ok
   end
 
   setup %{conn: conn} do
+    start_supervised!(TdDd.Search.StructureEnricher)
     system = insert(:system)
-    {:ok, conn: put_req_header(conn, "accept", "application/json"), system: system}
+    domain = CacheHelpers.insert_domain()
+
+    {:ok,
+     conn: put_req_header(conn, "accept", "application/json"), system: system, domain: domain}
   end
 
   describe "GET /api/systems" do
@@ -140,12 +145,10 @@ defmodule TdDdWeb.SystemControllerTest do
       ds = insert(:data_structure, system_id: system.id, external_id: "child")
       child = insert(:data_structure_version, data_structure_id: ds.id, name: ds.external_id)
 
-      %{id: relation_type_id} = RelationTypes.get_default()
-
       insert(:data_structure_relation,
         parent_id: parent.id,
         child_id: child.id,
-        relation_type_id: relation_type_id
+        relation_type_id: RelationTypes.default_id!()
       )
 
       assert %{"data" => data} =
@@ -154,35 +157,6 @@ defmodule TdDdWeb.SystemControllerTest do
                |> json_response(:ok)
 
       assert [%{"name" => "parent"}] = data
-    end
-
-    @tag authentication: [role: "admin"]
-    test "will retrieve only root structures with multiple versions", %{
-      conn: conn,
-      system: system
-    } do
-      ds = insert(:data_structure, system_id: system.id, external_id: "parent")
-      parent = insert(:data_structure_version, data_structure_id: ds.id, name: ds.external_id)
-
-      ds = insert(:data_structure, system_id: system.id, external_id: "child")
-      child = insert(:data_structure_version, data_structure_id: ds.id, name: ds.external_id)
-
-      %{id: relation_type_id} = RelationTypes.get_default()
-
-      insert(:data_structure_relation,
-        parent_id: parent.id,
-        child_id: child.id,
-        relation_type_id: relation_type_id
-      )
-
-      insert(:data_structure_version, data_structure_id: ds.id, version: 2)
-
-      assert %{"data" => data} =
-               conn
-               |> get(Routes.system_data_structure_path(conn, :get_system_structures, system))
-               |> json_response(:ok)
-
-      assert length(data) == 2
     end
 
     @tag authentication: [role: "admin"]

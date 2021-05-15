@@ -5,12 +5,16 @@ defmodule TdDd.ExecutionsTest do
   alias TdCache.Redix.Stream
   alias TdDd.Executions
 
+  @moduletag sandbox: :shared
   @stream TdCache.Audit.stream()
 
   setup_all do
-    on_exit(fn ->
-      Redix.del!(@stream)
-    end)
+    on_exit(fn -> Redix.del!(@stream) end)
+  end
+
+  setup do
+    start_supervised!(TdDd.Search.StructureEnricher)
+    :ok
   end
 
   describe "get_profile_group/2" do

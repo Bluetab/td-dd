@@ -11,6 +11,7 @@ defmodule TdDd.Cache.StructureLoader do
   alias TdCache.StructureCache
   alias TdDd.Cache.StructureEntry
   alias TdDd.DataStructures
+  alias TdDd.DataStructures.RelationTypes
 
   require Logger
 
@@ -36,25 +37,9 @@ defmodule TdDd.Cache.StructureLoader do
   ## GenServer callbacks
 
   @impl GenServer
-  def init(config) do
-    name = String.replace_prefix("#{__MODULE__}", "Elixir.", "")
-    Logger.info("Running #{name}")
-
-    unless Application.get_env(:td_dd, :env) == :test do
-      Process.send_after(self(), :migrate, 0)
-    end
-
-    {:ok, config}
-  end
-
-  @impl GenServer
-  def handle_info(:migrate, state) do
-    if Redix.acquire_lock?("TdDd.Structures.Migrations:TD-3066") do
-      # Force cache refresh to populate set of deleted referenced structures
-      do_refresh(force: true)
-    end
-
-    {:noreply, state}
+  def init(_init_arg) do
+    Logger.info("started")
+    {:ok, %{}}
   end
 
   @impl GenServer
@@ -103,9 +88,10 @@ defmodule TdDd.Cache.StructureLoader do
   end
 
   def cache_structures(structure_ids, opts \\ []) do
-    structure_ids
-    |> Enum.map(&DataStructures.get_latest_version(&1, [:parents]))
-    |> Enum.reject(&is_nil/1)
+    DataStructures.enriched_structure_versions(
+      data_structure_ids: structure_ids,
+      relation_type_id: RelationTypes.default_id!()
+    )
     |> Enum.map(&StructureEntry.cache_entry/1)
     |> Enum.map(&StructureCache.put(&1, opts))
   end

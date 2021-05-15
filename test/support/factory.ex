@@ -112,8 +112,15 @@ defmodule TdDd.Factory do
     |> merge_attributes(attrs)
   end
 
-  def data_structure_relation_factory do
+  def data_structure_relation_factory(attrs) do
+    attrs =
+      attrs
+      |> default_assoc(:child_id, :child, :data_structure_version)
+      |> default_assoc(:parent_id, :parent, :data_structure_version)
+      |> default_assoc(:relation_type_id, :relation_type)
+
     %DataStructureRelation{}
+    |> merge_attributes(attrs)
   end
 
   def data_structure_tag_factory do

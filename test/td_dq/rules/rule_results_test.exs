@@ -1,14 +1,13 @@
 defmodule TdDq.RuleResultsTest do
   use TdDd.DataCase
 
-  import Ecto.Query
-
   alias Elasticsearch.Document
   alias TdCache.ConceptCache
   alias TdCache.Redix
   alias TdCache.RuleCache
   alias TdDq.Rules.RuleResults
 
+  @moduletag sandbox: :shared
   @stream TdCache.Audit.stream()
   @concept_id 987_654_321
 
@@ -23,6 +22,11 @@ defmodule TdDq.RuleResultsTest do
       ConceptCache.delete(@concept_id)
       Redix.del!(@stream)
     end)
+  end
+
+  setup do
+    start_supervised!(TdDd.Search.StructureEnricher)
+    :ok
   end
 
   describe "get_rule_result/1" do

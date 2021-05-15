@@ -38,8 +38,9 @@ defmodule TdDd.Application do
     [
       # Task supervisor
       {Task.Supervisor, name: TdDd.TaskSupervisor},
-      # Worker for background indexing
+      # Workers for indexing
       TdDd.Search.IndexWorker,
+      TdDd.Search.StructureEnricher,
       # Worker for background bulk loading
       TdDd.Loader.Worker,
       # Task to recalculate data structure hashes on startup

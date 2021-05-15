@@ -1,79 +1,50 @@
 defmodule TdDd.DataStructuresTest do
   use TdDd.DataStructureCase
 
+  alias Elasticsearch.Document
   alias TdCache.Redix
   alias TdCache.Redix.Stream
-  alias TdCache.StructureTypeCache
-  alias TdCache.TemplateCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.RelationTypes
 
   import TdDd.TestOperators
 
+  @moduletag sandbox: :shared
   @stream TdCache.Audit.stream()
 
   setup_all do
-    %{id: template_id, name: template_name} = template = build(:template)
-    {:ok, _} = TemplateCache.put(template)
-
-    %{id: structure_type_id} =
-      structure_type =
-      build(:data_structure_type, structure_type: template_name, template_id: template_id)
-
-    {:ok, _} = StructureTypeCache.put(structure_type)
-
-    on_exit(fn ->
-      TemplateCache.delete(template_id)
-      StructureTypeCache.delete(structure_type_id)
-      Redix.del!(@stream)
-    end)
-
-    [template_name: template_name, claims: build(:claims)]
+    on_exit(fn -> Redix.del!(@stream) end)
+    [claims: build(:claims)]
   end
 
-  setup %{template_name: template_name} do
-    alias TdCache.{ConceptCache, LinkCache}
+  setup do
+    domain = CacheHelpers.insert_domain()
+    %{id: template_id, name: template_name} = template = CacheHelpers.insert_template()
 
-    concept = %{id: "LINKED_CONCEPT", name: "concept"}
-    system = insert(:system, external_id: "test_system")
+    CacheHelpers.insert_structure_type(structure_type: template_name, template_id: template_id)
+
+    %{id: system_id} = system = insert(:system, external_id: "test_system")
     valid_content = %{"string" => "initial", "list" => "one"}
-    data_structure = insert(:data_structure, system_id: system.id, df_content: valid_content)
+
+    %{id: data_structure_id} =
+      data_structure = insert(:data_structure, system_id: system_id, df_content: valid_content)
 
     data_structure_version =
-      insert(:data_structure_version, data_structure_id: data_structure.id, type: template_name)
+      insert(:data_structure_version, data_structure_id: data_structure_id, type: template_name)
 
-    {:ok, _} = ConceptCache.put(concept)
-    %{id: template_id, name: template_name} = template = build(:template, name: template_name)
-    {:ok, _} = TemplateCache.put(template)
+    %{id: concept_id} = concept = CacheHelpers.insert_concept()
+    CacheHelpers.insert_link(data_structure_id, concept_id)
 
-    %{id: structure_type_id} =
-      structure_type =
-      insert(:data_structure_type, structure_type: template_name, template_id: template_id)
-
-    {:ok, _} = StructureTypeCache.put(structure_type)
-
-    {:ok, _} =
-      LinkCache.put(%{
-        id: 123_456_789,
-        updated_at: DateTime.utc_now(),
-        source_type: "data_structure",
-        source_id: data_structure.id,
-        target_type: "business_concept",
-        target_id: concept.id
-      })
-
-    on_exit(fn ->
-      LinkCache.delete(123_456_789)
-      ConceptCache.delete(concept.id)
-      TemplateCache.delete(template_id)
-      StructureTypeCache.delete(structure_type_id)
-    end)
+    start_supervised!(TdDd.Search.StructureEnricher)
 
     [
+      domain: domain,
       data_structure: data_structure,
       data_structure_version: data_structure_version,
-      system: system
+      system: system,
+      template: template,
+      concept: concept
     ]
   end
 
@@ -129,7 +100,7 @@ defmodule TdDd.DataStructuresTest do
       dsv2 = insert(:data_structure_version, data_structure_id: ds2.id, name: ds1.external_id)
       dsv3 = insert(:data_structure_version, data_structure_id: ds3.id, name: ds1.external_id)
 
-      %{id: relation_type_id} = RelationTypes.get_default()
+      relation_type_id = RelationTypes.default_id!()
 
       insert(:data_structure_relation,
         parent_id: dsv1.id,
@@ -158,8 +129,14 @@ defmodule TdDd.DataStructuresTest do
 
       [dsv1, dsv2, dsv3] =
         [
-          [inserted_at: ~U[2020-01-01 00:00:00.123456Z], deleted_at: ~U[2020-02-01 00:00:00.123456Z]],
-          [inserted_at: ~U[2020-02-01 00:00:00.123456Z], deleted_at: ~U[2020-03-01 00:00:00.123456Z]],
+          [
+            inserted_at: ~U[2020-01-01 00:00:00.123456Z],
+            deleted_at: ~U[2020-02-01 00:00:00.123456Z]
+          ],
+          [
+            inserted_at: ~U[2020-02-01 00:00:00.123456Z],
+            deleted_at: ~U[2020-03-01 00:00:00.123456Z]
+          ],
           [inserted_at: ~U[2020-04-01 00:00:00.123456Z]]
         ]
         |> Enum.with_index()
@@ -170,8 +147,14 @@ defmodule TdDd.DataStructuresTest do
 
       [sm1, _sm2, sm3] =
         [
-          [inserted_at: ~U[2020-02-02 00:00:00.123456Z], deleted_at: ~U[2020-02-03 00:00:00.123456Z]],
-          [inserted_at: ~U[2020-03-02 00:00:00.123456Z], deleted_at: ~U[2020-04-05 00:00:00.123456Z]],
+          [
+            inserted_at: ~U[2020-02-02 00:00:00.123456Z],
+            deleted_at: ~U[2020-02-03 00:00:00.123456Z]
+          ],
+          [
+            inserted_at: ~U[2020-03-02 00:00:00.123456Z],
+            deleted_at: ~U[2020-04-05 00:00:00.123456Z]
+          ],
           [inserted_at: ~U[2020-05-01 00:00:00.123456Z]]
         ]
         |> Enum.with_index()
@@ -202,6 +185,136 @@ defmodule TdDd.DataStructuresTest do
       assert [_, _] = structure_ids = Enum.map(structures, & &1.data_structure_id)
       assert id1 in structure_ids
       assert id2 in structure_ids
+    end
+  end
+
+  describe "get_latest_version/1" do
+    test "returns nil if first arg is nil" do
+      assert DataStructures.get_latest_version(nil) == nil
+    end
+
+    test "enriches with path", %{
+      data_structure_version: %{
+        id: parent_id,
+        data_structure_id: data_structure_id,
+        name: parent_name
+      }
+    } do
+      assert %{path: []} = DataStructures.get_latest_version(data_structure_id)
+
+      %{child: %{data_structure_id: id}} =
+        insert(:data_structure_relation,
+          parent_id: parent_id,
+          relation_type_id: RelationTypes.default_id!()
+        )
+
+      assert %{path: path} = DataStructures.get_latest_version(id)
+
+      assert path == [%{"data_structure_id" => data_structure_id, "name" => parent_name}]
+    end
+
+    test "enriches data_structure with domain", %{
+      domain: %{id: domain_id, name: domain_name, external_id: domain_external_id}
+    } do
+      %{data_structure_id: id} =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, domain_id: domain_id)
+        )
+
+      assert %{data_structure: data_structure} = DataStructures.get_latest_version(id)
+      assert %{domain: %{} = domain} = data_structure
+      assert %{id: ^domain_id, name: ^domain_name, external_id: ^domain_external_id} = domain
+    end
+
+    test "enriches with mutable_metadata" do
+      %{data_structure_id: id} = insert(:data_structure_version)
+      %{fields: fields} = insert(:structure_metadata, data_structure_id: id)
+
+      assert %{mutable_metadata: ^fields} = DataStructures.get_latest_version(id)
+    end
+  end
+
+  describe "enriched_structure_versions/1" do
+    setup %{template: %{name: template_name}, domain: %{id: domain_id}} do
+      %{id: id, data_structure_id: data_structure_id} =
+        data_structure_version =
+        insert(:data_structure_version,
+          data_structure:
+            build(:data_structure,
+              df_content: %{"string" => "initial", "list" => "one", "foo" => "bar"},
+              domain_id: domain_id
+            ),
+          type: template_name
+        )
+
+      insert(:structure_metadata, data_structure_id: data_structure_id)
+
+      %{parent_id: parent_id} =
+        insert(:data_structure_relation,
+          child_id: id,
+          relation_type_id: RelationTypes.default_id!(),
+          parent: build(:data_structure_version, name: "papa")
+        )
+
+      insert(:data_structure_relation,
+        child_id: parent_id,
+        relation_type_id: RelationTypes.default_id!(),
+        parent: build(:data_structure_version, name: "yayo")
+      )
+
+      insert(:structure_classification, data_structure_version_id: id, class: "bar", name: "foo")
+
+      [data_structure_version: data_structure_version]
+    end
+
+    test "formats data_structure search_content and preserves df_content", %{
+      data_structure_version: %{id: id}
+    } do
+      assert [dsv] =
+               DataStructures.enriched_structure_versions(
+                 ids: [id],
+                 relation_type_id: RelationTypes.default_id!(),
+                 content: :searchable
+               )
+
+      assert %{data_structure: data_structure} = dsv
+      assert %{search_content: search_content, df_content: df_content} = data_structure
+      assert search_content == %{"string" => "initial", "list" => "one"}
+      assert df_content == %{"string" => "initial", "list" => "one", "foo" => "bar"}
+    end
+
+    test "returns values suitable for bulk-indexing encoding", %{
+      data_structure_version: %{id: id},
+      domain: %{id: domain_id, name: domain_name, external_id: domain_external_id}
+    } do
+      assert %{} =
+               document =
+               DataStructures.enriched_structure_versions(
+                 ids: [id],
+                 relation_type_id: RelationTypes.default_id!(),
+                 content: :searchable
+               )
+               |> hd()
+               |> Document.encode()
+
+      assert %{
+               with_content: true,
+               classes: %{"foo" => "bar"},
+               df_content: df_content,
+               domain_ids: [^domain_id],
+               mutable_metadata: %{"foo" => "bar"},
+               domain: %{id: ^domain_id, name: ^domain_name, external_id: ^domain_external_id},
+               path: path,
+               path_sort: "yayo~papa",
+               system: %{external_id: _, id: _, name: _}
+             } = document
+
+      assert df_content == %{"list" => "one", "string" => "initial"}
+
+      assert [
+               %{"data_structure_id" => _, "name" => "yayo"},
+               %{"data_structure_id" => _, "name" => "papa"}
+             ] = path
     end
   end
 
@@ -322,7 +435,7 @@ defmodule TdDd.DataStructuresTest do
           &insert(:data_structure_version, data_structure_id: &1.id, name: &1.external_id)
         )
 
-      %{id: relation_type_id} = RelationTypes.get_default()
+      relation_type_id = RelationTypes.default_id!()
 
       [{dsv1, dsv2}, {dsv1, dsv3}, {dsv2, dsv4}, {dsv3, dsv4}]
       |> Enum.map(fn {parent, child} ->
@@ -347,7 +460,7 @@ defmodule TdDd.DataStructuresTest do
       dsv2 = insert(:data_structure_version, data_structure_id: ds2.id, name: ds1.external_id)
       dsv3 = insert(:data_structure_version, data_structure_id: ds3.id, name: ds1.external_id)
 
-      %{id: relation_type_id} = RelationTypes.get_default()
+      relation_type_id = RelationTypes.default_id!()
 
       insert(:data_structure_relation,
         parent_id: dsv1.id,
@@ -380,7 +493,7 @@ defmodule TdDd.DataStructuresTest do
         |> Enum.map(&insert(:data_structure, external_id: &1))
         |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id))
 
-      %{id: relation_type_id} = RelationTypes.get_default()
+      relation_type_id = RelationTypes.default_id!()
 
       insert(:data_structure_relation,
         parent_id: parent.id,
@@ -418,6 +531,18 @@ defmodule TdDd.DataStructuresTest do
       assert relations.children == []
     end
 
+    test "get_data_structure_version!/2 enriches with classifications" do
+      %{data_structure_version_id: data_structure_version_id, id: id, name: name, class: class} =
+        insert(:structure_classification)
+
+      assert %{classifications: classifications} =
+               DataStructures.get_data_structure_version!(data_structure_version_id, [
+                 :classifications
+               ])
+
+      assert [%{id: ^id, name: ^name, class: ^class}] = classifications
+    end
+
     test "get_data_structure_version!/2 with options: parents, children, siblings, with_confidential enriches including confidential" do
       [dsv, parent, child, sibling, r_child] =
         ["structure", "parent", "child", "sibling", "r_child"]
@@ -439,8 +564,8 @@ defmodule TdDd.DataStructuresTest do
         |> Enum.map(&insert(:data_structure, external_id: &1, confidential: true))
         |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id, class: "field"))
 
-      %{id: relation_type_id} = RelationTypes.get_default()
       %{id: custom_relation_id} = insert(:relation_type, name: "relation_type_1")
+      relation_type_id = RelationTypes.default_id!()
 
       Enum.map(
         fields ++ field_confidential,
@@ -540,6 +665,16 @@ defmodule TdDd.DataStructuresTest do
              <~> data_structure_version
     end
 
+    test "get_data_structure_version!/1 enriches with path" do
+      %{id: id} =
+        ["foo", "bar", "baz", "xyzzy", "spqr"]
+        |> create_hierarchy()
+        |> Enum.at(4)
+
+      assert %{path: path} = DataStructures.get_data_structure_version!(id)
+      assert Enum.map(path, & &1["name"]) == ["foo", "bar", "baz", "xyzzy"]
+    end
+
     test "get_data_structure_version!/2 excludes deleted children if structure is not deleted" do
       %{id: system_id} = insert(:system)
 
@@ -550,7 +685,7 @@ defmodule TdDd.DataStructuresTest do
           &insert(:data_structure_version, data_structure_id: &1.id, deleted_at: deleted_at(&1))
         )
 
-      %{id: relation_type_id} = RelationTypes.get_default()
+      relation_type_id = RelationTypes.default_id!()
 
       insert(:data_structure_relation,
         parent_id: dsv.id,
@@ -571,7 +706,8 @@ defmodule TdDd.DataStructuresTest do
     end
 
     test "get_data_structure_version!/2 gets custom relations", %{
-      data_structure_version: child_custom_relation
+      data_structure_version: child_custom_relation,
+      concept: %{id: concept_id}
     } do
       [
         dsv,
@@ -591,7 +727,7 @@ defmodule TdDd.DataStructuresTest do
         |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id))
 
       %{id: custom_id} = insert(:relation_type, name: "relation_type_1")
-      %{id: default_id} = RelationTypes.get_default()
+      default_id = RelationTypes.default_id!()
 
       insert(:data_structure_relation,
         parent_id: parent.id,
@@ -641,7 +777,7 @@ defmodule TdDd.DataStructuresTest do
       assert parent_relation.version <~> parent_custom_relation
       assert child_relation.version <~> child_custom_relation
       assert [link] = child_relation.links
-      assert %{resource_type: :concept, resource_id: "LINKED_CONCEPT"} = link
+      assert %{resource_type: :concept, resource_id: ^concept_id} = link
     end
 
     defp deleted_at(%{external_id: "deleted_child"}), do: DateTime.utc_now()
@@ -658,10 +794,10 @@ defmodule TdDd.DataStructuresTest do
           )
         )
 
-      %{id: relation_type_id} = RelationTypes.get_default()
+      relation_type_id = RelationTypes.default_id!()
 
-      deleted_children
-      |> Enum.each(
+      Enum.each(
+        deleted_children,
         &insert(:data_structure_relation,
           parent_id: dsv.id,
           child_id: &1.id,
@@ -681,7 +817,7 @@ defmodule TdDd.DataStructuresTest do
         |> Enum.map(&insert(:data_structure, external_id: "get_data_structure_version!/2 " <> &1))
         |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id, class: "field"))
 
-      %{id: relation_type_id} = RelationTypes.get_default()
+      relation_type_id = RelationTypes.default_id!()
 
       Enum.map(
         fields,
@@ -720,33 +856,49 @@ defmodule TdDd.DataStructuresTest do
       assert system == sys
     end
 
-    test "get_data_structure_version!/2 enriches with domain" do
-      domain = DomainHelper.insert_domain()
-      ds = insert(:data_structure, domain_id: domain.id)
-      dsv = insert(:data_structure_version, data_structure_id: ds.id)
-      assert %{domain: d} = DataStructures.get_data_structure_version!(dsv.id, [:domain])
+    test "get_data_structure_version!/1 enriches data structure with domain", %{
+      domain: %{id: domain_id, name: domain_name, external_id: domain_external_id}
+    } do
+      %{id: id} =
+        insert(:data_structure_version,
+          data_structure: insert(:data_structure, domain_id: domain_id)
+        )
 
-      assert domain.id == d.id
-      assert domain.name == d.name
+      assert %{data_structure: data_structure} = DataStructures.get_data_structure_version!(id)
+      assert %{domain: domain} = data_structure
+      assert %{id: ^domain_id, name: ^domain_name, external_id: ^domain_external_id} = domain
     end
 
-    test "get_data_structure_version!/2 enriches with empty domain when there is not domain id",
-         %{data_structure_version: dsv} do
-      assert %{domain: %{}} = DataStructures.get_data_structure_version!(dsv.id, [:domain])
+    test "get_data_structure_version!/1 enriches with empty map when there is no domain",
+         %{data_structure_version: %{id: id}} do
+      assert %{data_structure: data_structure} = DataStructures.get_data_structure_version!(id)
+      assert %{domain: domain} = data_structure
+      assert domain == %{}
     end
 
-    test "get_path!/1 returns the names of the structures default ancestors" do
-      [child | _] =
-        ["foo", "bar", "baz", "xyzzy"]
-        |> create_hierarchy()
-        |> Enum.reverse()
+    test "get_data_structure_version!/3 enriches specified version" do
+      %{
+        child: %{id: id1, data_structure_id: id, version: version},
+        parent: %{data_structure_id: parent_id1}
+      } =
+        insert(:data_structure_relation,
+          relation_type_id: RelationTypes.default_id!(),
+          child: build(:data_structure_version, deleted_at: DateTime.utc_now())
+        )
 
-      path =
-        child.id
-        |> DataStructures.get_data_structure_version!()
-        |> DataStructures.get_path()
+      %{child: %{id: id2}, parent: %{data_structure_id: parent_id2}} =
+        insert(:data_structure_relation,
+          relation_type_id: RelationTypes.default_id!(),
+          child: build(:data_structure_version, data_structure_id: id, version: version + 1)
+        )
 
-      assert path == ["foo", "bar", "baz"]
+      assert %{id: ^id1, path: path} = DataStructures.get_data_structure_version!(id, version, [])
+      assert [%{"data_structure_id" => ^parent_id1}] = path
+
+      assert %{id: ^id2, path: path} =
+               DataStructures.get_data_structure_version!(id, version + 1, [])
+
+      assert [%{"data_structure_id" => ^parent_id2}] = path
     end
 
     test "get_latest_version_by_external_id/2 obtains the latest version of a structure" do
@@ -779,68 +931,6 @@ defmodule TdDd.DataStructuresTest do
         |> create_hierarchy()
 
       assert DataStructures.get_descendents(parent) <~> descendents
-    end
-
-    test "get_path/2 obtains all descendents of a data structure version" do
-      %{id: system_id} = insert(:system)
-
-      p =
-        insert(:data_structure_version,
-          name: "dsv1",
-          data_structure: build(:data_structure, external_id: "dsv1", system_id: system_id)
-        )
-
-      p1 =
-        insert(:data_structure_version,
-          name: "dsv2",
-          data_structure: build(:data_structure, external_id: "dsv2", system_id: system_id)
-        )
-
-      c1 =
-        insert(:data_structure_version,
-          name: "c1",
-          data_structure: build(:data_structure, external_id: "c1", system_id: system_id)
-        )
-
-      versions =
-        Enum.map(
-          2..50,
-          &insert(:data_structure_version,
-            name: "c#{&1}",
-            data_structure: build(:data_structure, external_id: "c#{&1}", system_id: system_id)
-          )
-        )
-
-      %{id: default_type_id} = RelationTypes.get_default()
-      %{id: custom_id} = insert(:relation_type, name: "relation_type_1")
-
-      Enum.each(
-        versions,
-        &insert(:data_structure_relation,
-          parent_id: &1.id,
-          child_id: c1.id,
-          relation_type_id: custom_id
-        )
-      )
-
-      insert(:data_structure_relation,
-        parent_id: p.id,
-        child_id: p1.id,
-        relation_type_id: default_type_id
-      )
-
-      insert(:data_structure_relation,
-        parent_id: p1.id,
-        child_id: c1.id,
-        relation_type_id: default_type_id
-      )
-
-      path =
-        c1.id
-        |> DataStructures.get_data_structure_version!()
-        |> DataStructures.get_path()
-
-      assert path == ["dsv1", "dsv2"]
     end
   end
 
@@ -1047,10 +1137,8 @@ defmodule TdDd.DataStructuresTest do
   end
 
   defp create_relation do
-    %{id: relation_type_id} = RelationTypes.get_default()
-
     insert(:data_structure_relation,
-      relation_type_id: relation_type_id,
+      relation_type_id: RelationTypes.default_id!(),
       parent: build(:data_structure_version),
       child:
         build(

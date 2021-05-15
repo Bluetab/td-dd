@@ -40,7 +40,13 @@ defmodule TdDd.Loader.StructuresTest do
   end
 
   describe "update_source_ids/2" do
+    setup do
+      start_supervised!(TdDd.Search.StructureEnricher)
+      :ok
+    end
+
     @tag ids: 1..10
+    @tag sandbox: :shared
     test "updates source_id only if changed and source_id not nil" do
       %{id: id1} = insert(:source)
       %{id: id2} = insert(:source)

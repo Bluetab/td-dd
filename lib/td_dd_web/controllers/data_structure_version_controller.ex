@@ -36,6 +36,7 @@ defmodule TdDdWeb.DataStructureVersionController do
     :source,
     :metadata_versions,
     :data_structure_type,
+    :classifications,
     :with_confidential
   ]
 

@@ -116,6 +116,7 @@ config :td_dd, :cache_cleaner,
   patterns: [
     "TdDd.DataStructures.Migrations:TD-2774",
     "TdDd.DataStructures.Migrations:td-2979",
+    "TdDd.Structures.Migrations:TD-3066",
     "TdDq.RuleImplementations.Migrations:cache_structures",
     "data_fields:external_ids",
     "implementation:*",

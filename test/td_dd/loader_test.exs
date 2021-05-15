@@ -9,10 +9,12 @@ defmodule TdDd.LoaderTest do
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Loader
   alias TdDd.Repo
-  alias TdDd.Search.MockIndexWorker
 
-  setup_all do
-    start_supervised!(MockIndexWorker)
+  @moduletag sandbox: :shared
+
+  setup do
+    start_supervised!(TdDd.Search.StructureEnricher)
+    start_supervised!(TdDd.Search.MockIndexWorker)
     :ok
   end
 

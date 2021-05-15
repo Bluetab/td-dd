@@ -36,6 +36,9 @@ defmodule TdDd.DataStructures.DataStructure do
     field(:last_change_by, :integer)
     field(:row, :integer, virtual: true)
     field(:latest_metadata, :map, virtual: true)
+    field(:domain, :map, virtual: true)
+    field(:linked_concepts_count, :integer, virtual: true)
+    field(:search_content, :map, virtual: true)
 
     timestamps(type: :utc_datetime_usec)
   end

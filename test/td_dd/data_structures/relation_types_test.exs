@@ -18,10 +18,14 @@ defmodule TdDd.DataStructures.RelationTypesTest do
       relation_type
     end
 
+    test "default_id!/0 returns the default relation type id" do
+      assert %{id: id} = Repo.get_by!(RelationType, name: "default")
+      assert ^id = RelationTypes.default_id!()
+    end
+
     test "list_relation_types/0 returns all relation_types" do
       relation_type = relation_type_fixture()
-      default_relation_type = RelationTypes.get_default()
-      assert RelationTypes.list_relation_types() == [default_relation_type, relation_type]
+      assert [%{name: "default"}, ^relation_type] = RelationTypes.list_relation_types()
     end
 
     test "get_relation_type!/1 returns the relation_type with given id" do

@@ -3,10 +3,10 @@ defmodule TdDd.DataStructures.RelationTypes do
   The RelationTypes context.
   """
 
-  import Ecto.Query, warn: false
-  alias TdDd.Repo
+  import Ecto.Query
 
   alias TdDd.DataStructures.RelationType
+  alias TdDd.Repo
 
   @doc """
   Returns the list of relation_types.
@@ -37,8 +37,11 @@ defmodule TdDd.DataStructures.RelationTypes do
   """
   def get_relation_type!(id), do: Repo.get!(RelationType, id)
 
-  def get_default do
-    Repo.get_by(RelationType, name: "default")
+  def default_id! do
+    RelationType
+    |> where(name: "default")
+    |> select([t], t.id)
+    |> Repo.one!()
   end
 
   @doc """
@@ -94,7 +97,7 @@ defmodule TdDd.DataStructures.RelationTypes do
   end
 
   def with_relation_types(records) do
-    default_relation_type = get_default()
+    default_relation_type = Repo.get_by!(RelationType, name: "default")
 
     name_to_id_map =
       list_relation_types()
