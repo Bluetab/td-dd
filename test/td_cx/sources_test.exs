@@ -225,6 +225,10 @@ defmodule TdCx.SourcesTest do
       assert [%{id: ^id, config: ^config}] =
                Sources.query_sources(%{alias: "bar", job_types: "profile"})
 
+      %{id: id, config: config} = insert(:source, config: %{"aliases" => ["foo"]})
+
+      assert [%{id: ^id, config: ^config}] = Sources.query_sources(%{aliases: "foo"})
+
       assert [] = Sources.query_sources(%{alias: "baz"})
     end
   end
