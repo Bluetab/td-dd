@@ -42,6 +42,13 @@ defmodule TdCx.SourcesTest do
     test "returns nil if params is nil" do
       assert Sources.get_source(nil) == nil
     end
+
+    test "gets source by content alias if exists" do
+      insert(:source)
+      insert(:source, config: %{alias: "foo"})
+      %{id: id, config: config} = insert(:source, config: %{"alias" => "bar"})
+      assert %{id: ^id, config: ^config} = Sources.get_source(%{alias: "bar"})
+    end
   end
 
   describe "sources" do
@@ -204,6 +211,21 @@ defmodule TdCx.SourcesTest do
     test "obtains the aliases of a source specified by id" do
       %{id: source_id} = insert(:source, config: %{"aliases" => ["foo", "bar"]})
       assert Sources.get_aliases(source_id) == ["foo", "bar"]
+    end
+  end
+
+  describe "Sources.query_sources/1" do
+    test "returns a list of sources" do
+      insert(:source)
+      insert(:source, config: %{alias: "foo"})
+
+      %{id: id, config: config} =
+        insert(:source, config: %{"alias" => "bar", "job_types" => ["profile"]})
+
+      assert [%{id: ^id, config: ^config}] =
+               Sources.query_sources(%{alias: "bar", job_types: "profile"})
+
+      assert [] = Sources.query_sources(%{alias: "baz"})
     end
   end
 

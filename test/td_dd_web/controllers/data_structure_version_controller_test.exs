@@ -594,8 +594,8 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     TaxonomyCache.put_domain(domain)
     on_exit(fn -> TaxonomyCache.delete_domain(domain.id) end)
 
-    s1 = insert(:source, config: %{"job_types" => ["catalog"], "alias" => "foo"})
-    insert(:source, external_id: "foo", config: %{"job_types" => ["profile"]})
+    s1 = insert(:source, external_id: "foo", config: %{"job_types" => ["catalog"], "alias" => "foo"})
+    insert(:source, external_id: "bar", config: %{"job_types" => ["profile"], "alias" => "foo"})
     structure = insert(:data_structure, domain_id: domain.id, source_id: s1.id)
 
     insert(:data_structure_version,
