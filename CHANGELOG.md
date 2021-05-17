@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [4.20.0] 2021-05-17
 
 ### Added
 
@@ -10,6 +10,8 @@
 
 ### Changed
 
+- Security patches from `alpine:3.13`
+- Update dependencies
 - [TD-3680] Improve data catalog bulk indexing performance
 - Timestamps on `DataStructure`, `DataStructureVersion`, `DataStructureRelation`
   and `StructureMetadata` are now `utc_datetime_usec`.
