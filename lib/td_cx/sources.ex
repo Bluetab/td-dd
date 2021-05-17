@@ -110,6 +110,9 @@ defmodule TdCx.Sources do
       {:alias, source_alias}, q ->
         where(q, [s], fragment("(?) @> ?::jsonb", s.config, ^%{alias: source_alias}))
 
+      {:aliases, source_alias}, q ->
+        where(q, [s], fragment("(?) @> ?::jsonb", s.config, ^%{aliases: [source_alias]}))
+
       {:job_types, type}, q ->
         where(q, [s], fragment("(?) @> ?::jsonb", s.config, ^%{job_types: [type]}))
     end)

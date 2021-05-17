@@ -793,10 +793,17 @@ defmodule TdDd.DataStructures do
 
   def profile_source(dsv), do: dsv
 
-  defp do_profile_source(dsv, %{external_id: external_id}) do
-    case Sources.query_sources(%{alias: external_id, job_types: "profile"}) do
+  defp do_profile_source(dsv, %{external_id: external_id}) when is_binary(external_id) do
+    sources =
+      case Sources.query_sources(%{aliases: external_id, job_types: "profile"}) do
+        [_ | _] = sources -> sources
+        _ -> Sources.query_sources(%{alias: external_id, job_types: "profile"})
+      end
+
+    case sources do
       [%Source{} = source | _] ->
         Map.put(dsv, :profile_source, source)
+
       _ ->
         dsv
     end
