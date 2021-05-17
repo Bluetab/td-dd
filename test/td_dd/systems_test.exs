@@ -6,6 +6,7 @@ defmodule TdDd.SystemsTest do
   alias TdDd.Cache.SystemLoader
   alias TdDd.Systems
 
+  @moduletag sandbox: :shared
   @stream TdCache.Audit.stream()
 
   setup_all do
@@ -15,6 +16,7 @@ defmodule TdDd.SystemsTest do
   end
 
   setup do
+    start_supervised!(TdDd.Search.StructureEnricher)
     on_exit(fn -> Redix.del!(@stream) end)
 
     claims = build(:claims, role: "admin")
@@ -34,6 +36,23 @@ defmodule TdDd.SystemsTest do
 
     test "returns error if system is not found" do
       assert Systems.get_system(-1) == {:error, :not_found}
+    end
+  end
+
+  describe "get_system!/1" do
+    test "returns the system with given id", %{system: %{id: id}} do
+      assert %{id: ^id} = Systems.get_system!(id)
+    end
+
+    test "preloads classifier", %{system: %{id: id}} do
+      insert(:classifier, system_id: id)
+      assert %{classifiers: [_]} = Systems.get_system!(id, preload: [classifiers: :filters])
+    end
+
+    test "raises exception if not found" do
+      assert_raise Ecto.NoResultsError, fn ->
+        Systems.get_system!(-1)
+      end
     end
   end
 

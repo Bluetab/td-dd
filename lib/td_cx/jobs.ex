@@ -2,8 +2,6 @@ defmodule TdCx.Jobs do
   @moduledoc """
   The Jobs context.
   """
-  import Ecto.Query, warn: false
-
   alias TdCx.Jobs.Job
   alias TdCx.Search.IndexWorker
   alias TdDd.Repo

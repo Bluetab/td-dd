@@ -11,6 +11,7 @@ defmodule TdDd.Cache.StructureLoader do
   alias TdCache.StructureCache
   alias TdDd.Cache.StructureEntry
   alias TdDd.DataStructures
+  alias TdDd.DataStructures.RelationTypes
 
   require Logger
 
@@ -36,25 +37,9 @@ defmodule TdDd.Cache.StructureLoader do
   ## GenServer callbacks
 
   @impl GenServer
-  def init(config) do
-    name = String.replace_prefix("#{__MODULE__}", "Elixir.", "")
-    Logger.info("Running #{name}")
-
-    unless Application.get_env(:td_dd, :env) == :test do
-      Process.send_after(self(), :migrate, 0)
-    end
-
-    {:ok, config}
-  end
-
-  @impl GenServer
-  def handle_info(:migrate, state) do
-    if Redix.acquire_lock?("TdDd.Structures.Migrations:TD-3066") do
-      # Force cache refresh to populate set of deleted referenced structures
-      do_refresh(force: true)
-    end
-
-    {:noreply, state}
+  def init(_init_arg) do
+    Logger.info("started")
+    {:ok, %{}}
   end
 
   @impl GenServer
@@ -103,9 +88,10 @@ defmodule TdDd.Cache.StructureLoader do
   end
 
   def cache_structures(structure_ids, opts \\ []) do
-    structure_ids
-    |> Enum.map(&DataStructures.get_latest_version(&1, [:parents]))
-    |> Enum.reject(&is_nil/1)
+    DataStructures.enriched_structure_versions(
+      data_structure_ids: structure_ids,
+      relation_type_id: RelationTypes.default_id!()
+    )
     |> Enum.map(&StructureEntry.cache_entry/1)
     |> Enum.map(&StructureCache.put(&1, opts))
   end
@@ -124,38 +110,49 @@ defmodule TdDd.Cache.StructureLoader do
   end
 
   defp refresh_cached_structures(opts) do
-    with [_ | _] = keep_ids <- StructureCache.referenced_ids(),
-         remove_count <- clean_cached_structures(keep_ids),
-         updates <- cache_structures(keep_ids, opts),
-         update_count <-
-           Enum.count(updates, fn
-             {:ok, ["OK" | _]} -> true
-             _ -> false
-           end) do
-      {update_count, remove_count}
-    end
+    keep_ids = StructureCache.referenced_ids()
+    remove_count = clean_cached_structures(keep_ids)
+    updates = cache_structures(keep_ids, opts)
+
+    update_count =
+      Enum.count(updates, fn
+        {:ok, ["OK" | _]} -> true
+        _ -> false
+      end)
+
+    {update_count, remove_count}
   end
 
   defp clean_cached_structures(keep_ids) do
+    keep_key = "_data_structure:keys:keep:#{System.os_time(:millisecond)}"
+
     ids_to_delete =
       ["SMEMBERS", "data_structure:keys"]
       |> Redix.command!()
       |> Enum.map(fn "data_structure:" <> id -> String.to_integer(id) end)
       |> Enum.reject(&(&1 in keep_ids))
 
-    keep_ids
-    |> Enum.map(&"data_structure:#{&1}")
-    |> Enum.chunk_every(1000)
-    |> Enum.map(&["SADD", "data_structure:keys:keep" | &1])
-    |> Redix.transaction_pipeline!()
+    keep_cmds =
+      keep_ids
+      |> Enum.map(&"data_structure:#{&1}")
+      |> Enum.chunk_every(1000)
+      |> Enum.map(&["SADD", keep_key | &1])
 
-    ids_to_delete
-    |> Enum.flat_map(&["data_structure:#{&1}", "data_structure:#{&1}:path"])
-    |> Enum.chunk_every(1000)
-    |> Enum.map(&["DEL" | &1])
-    |> Enum.concat([
-      ["SINTERSTORE", "data_structure:keys", "data_structure:keys", "data_structure:keys:keep"]
-    ])
+    del_cmds =
+      ids_to_delete
+      |> Enum.flat_map(&["data_structure:#{&1}", "data_structure:#{&1}:path"])
+      |> Enum.chunk_every(1000)
+      |> Enum.map(&["DEL" | &1])
+
+    [
+      keep_cmds,
+      del_cmds,
+      [
+        ["SINTERSTORE", "data_structure:keys", "data_structure:keys", keep_key],
+        ["DEL", keep_key]
+      ]
+    ]
+    |> Enum.concat()
     |> Redix.transaction_pipeline!()
 
     Enum.count(ids_to_delete)

@@ -3,8 +3,6 @@ defmodule TdCx.Events do
   The Events context.
   """
 
-  import Ecto.Query, warn: false
-
   alias TdCx.Events.Event
   alias TdCx.Search.IndexWorker
   alias TdDd.Repo

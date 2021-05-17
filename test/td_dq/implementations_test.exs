@@ -1,21 +1,19 @@
 defmodule TdDq.ImplementationsTest do
   use TdDd.DataCase
 
-  import Ecto.Query, warn: false
   import TdDd.TestOperators
 
   alias Ecto.Changeset
   alias TdDq.Implementations
   alias TdDq.Implementations.Implementation
 
-  setup_all do
-    start_supervised(TdDq.MockRelationCache)
-    start_supervised(TdDd.Search.MockIndexWorker)
-    start_supervised(TdDq.Cache.RuleLoader)
-    :ok
-  end
+  @moduletag sandbox: :shared
 
   setup do
+    start_supervised!(TdDq.MockRelationCache)
+    start_supervised!(TdDd.Search.MockIndexWorker)
+    start_supervised!(TdDq.Cache.RuleLoader)
+    start_supervised!(TdDd.Search.StructureEnricher)
     [rule: insert(:rule)]
   end
 
@@ -528,6 +526,13 @@ defmodule TdDq.ImplementationsTest do
     test "get sources of raw implementation", %{implementations: [_, impl1, impl2]} do
       assert Implementations.get_sources(impl1) == ["foo"]
       assert Implementations.get_sources(impl2) == ["bar", "baz"]
+    end
+
+    test "get sources of a raw implementation without source_id" do
+      implementation =
+        insert(:raw_implementation, raw_content: build(:raw_content, source_id: nil))
+
+      assert Implementations.get_sources(implementation) == []
     end
   end
 end

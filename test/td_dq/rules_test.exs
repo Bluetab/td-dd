@@ -1,25 +1,21 @@
 defmodule TdDq.RulesTest do
   use TdDd.DataCase
 
-  import Ecto.Query, warn: false
-
   alias TdCache.Redix
   alias TdCache.Redix.Stream
   alias TdDq.Rules
   alias TdDq.Rules.Rule
 
+  @moduletag sandbox: :shared
   @stream TdCache.Audit.stream()
 
-  setup_all do
+  setup do
+    on_exit(fn -> Redix.del!(@stream) end)
+    start_supervised!(TdDd.Search.StructureEnricher)
     start_supervised(TdDq.MockRelationCache)
     start_supervised(TdDd.Search.MockIndexWorker)
     start_supervised(TdDq.Cache.RuleLoader)
     [claims: build(:dq_claims)]
-  end
-
-  setup do
-    on_exit(fn -> Redix.del!(@stream) end)
-    :ok
   end
 
   describe "list_rules/0" do

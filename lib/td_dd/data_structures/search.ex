@@ -293,7 +293,6 @@ defmodule TdDd.DataStructures.Search do
           "name^2",
           "name.ngram",
           "system.name",
-          "data_fields.name",
           "path.text",
           "description",
           "df_content.*"

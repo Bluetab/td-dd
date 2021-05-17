@@ -13,6 +13,8 @@ defmodule TdDdWeb.MetadataControllerTest do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Loader.Worker
 
+  @moduletag sandbox: :shared
+
   setup_all do
     start_supervised(TdDd.Search.MockIndexWorker)
     start_supervised(TdDd.Cache.StructureLoader)
@@ -22,7 +24,8 @@ defmodule TdDdWeb.MetadataControllerTest do
     :ok
   end
 
-  setup %{} = tags do
+  setup tags do
+    start_supervised!(TdDd.Search.StructureEnricher)
     insert(:system, name: "Power BI", external_id: "pbi")
 
     case tags[:fixture] do
@@ -183,7 +186,7 @@ defmodule TdDdWeb.MetadataControllerTest do
       relations: relations
     } do
       %{id: domain_id, name: domain_name, external_id: domain_external_id} =
-        DomainHelper.insert_domain()
+        CacheHelpers.insert_domain()
 
       conn =
         post(conn, metadata_path(conn, :upload),
@@ -202,10 +205,10 @@ defmodule TdDdWeb.MetadataControllerTest do
       json_response = json_response(conn, :ok)["data"]
       assert length(json_response) == 5 + 68
 
-      assert Enum.all?(json_response, fn %{"domain_id" => id, "domain" => d} ->
-               id == domain_id and domain_name == Map.get(d, "name") and
-                 Map.get(d, "external_id") == domain_external_id
-             end)
+      for %{"domain_id" => id, "domain" => d} <- json_response do
+        assert id == domain_id
+        assert d == %{"external_id" => domain_external_id, "id" => id, "name" => domain_name}
+      end
 
       structure_id = get_id(json_response, "Calidad")
 

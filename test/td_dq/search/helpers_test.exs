@@ -3,6 +3,13 @@ defmodule TdDq.Search.HelpersTest do
 
   alias TdDq.Search.Helpers
 
+  @moduletag sandbox: :shared
+
+  setup do
+    start_supervised!(TdDd.Search.StructureEnricher)
+    :ok
+  end
+
   describe "get_sources/1" do
     test "extracts aliases from structure metadata" do
       ids =

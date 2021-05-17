@@ -40,6 +40,10 @@ defmodule TdDdWeb.Router do
     resources "/data_structures", DataStructureController, except: [:new, :edit, :show] do
       resources("/versions", DataStructureVersionController, only: [:show])
       resources("/profile_results", ProfileController, only: [:create])
+      resources("/tags", DataStructuresTagsController,
+        only: [:delete, :index, :update],
+        name: :tags
+      )
     end
 
     resources("/data_structure_versions", DataStructureVersionController, only: [:show]) do
@@ -72,6 +76,7 @@ defmodule TdDdWeb.Router do
       resources("/metadata", SystemMetadataController, only: [:create], as: :metadata)
       get("/structures", DataStructureController, :get_system_structures)
       resources("/groups", GroupController, only: [:index, :delete])
+      resources("/classifiers", ClassifierController, only: [:index, :show, :create, :delete])
     end
 
     get("/data_structures/search/reindex_all", SearchController, :reindex_all)
@@ -97,6 +102,7 @@ defmodule TdDdWeb.Router do
     resources "/relation_types", RelationTypeController, except: [:new, :edit]
 
     resources "/data_structure_types", DataStructureTypeController
+    resources "/data_structure_tags", DataStructureTagController, except: [:new, :edit]
   end
 
   scope "/api/swagger" do

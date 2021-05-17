@@ -3,7 +3,43 @@ defmodule TdDd.Repo do
     otp_app: :td_dd,
     adapter: Ecto.Adapters.Postgres
 
-  alias TdDd.Repo
+  alias Ecto.Adapters.SQL
+
+  require Logger
+
+  @owned_relations [
+    "classifier_filters",
+    "classifier_rules",
+    "classifiers",
+    "configurations",
+    "data_structure_relations",
+    "data_structure_tags",
+    "data_structure_types",
+    "data_structure_versions",
+    "data_structures",
+    "edges",
+    "events",
+    "execution_groups",
+    "executions",
+    "graphs",
+    "jobs",
+    "nodes",
+    "profile_events",
+    "profile_execution_groups",
+    "profile_executions",
+    "profiles",
+    "relation_types",
+    "rule_implementations",
+    "rule_results",
+    "rules",
+    "sources",
+    "structure_classifications",
+    "structure_metadata",
+    "systems",
+    "unit_events",
+    "units",
+    "user_search_filters"
+  ]
 
   @doc """
   Perform preloading on chunks of a stream.
@@ -11,7 +47,7 @@ defmodule TdDd.Repo do
   def stream_preload(stream, size, preloads, opts \\ []) do
     stream
     |> Stream.chunk_every(size)
-    |> Stream.flat_map(&Repo.preload(&1, preloads, opts))
+    |> Stream.flat_map(&__MODULE__.preload(&1, preloads, opts))
   end
 
   @doc """
@@ -41,4 +77,55 @@ defmodule TdDd.Repo do
       {c1, r1}, {c2, r2} -> {c1 + c2, r1 ++ r2}
     end)
   end
+
+  def vacuum(target) when is_binary(target) do
+    target
+    |> String.split()
+    |> vacuum()
+  end
+
+  def vacuum([_ | _] = table_names) do
+    table_names
+    |> Enum.uniq()
+    |> Enum.split_with(&valid_name?/1)
+    |> case do
+      {[_ | _] = good, []} ->
+        good
+        |> Enum.join(", ")
+        |> do_vacuum()
+
+      _ ->
+        {:error, :invalid_name}
+    end
+  end
+
+  defp do_vacuum(targets) when is_binary(targets) do
+    sql = "VACUUM (VERBOSE, ANALYZE) " <> targets
+
+    __MODULE__
+    |> SQL.query(sql)
+    |> log_messages()
+  end
+
+  defp log_messages({:ok, %{messages: messages}}) when is_list(messages) do
+    Enum.each(messages, fn
+      %{severity: "WARNING", message: message} -> Logger.warning("#{message}")
+      %{severity: severity, message: message} -> Logger.info("#{severity} #{message}")
+      _ -> :ok
+    end)
+  end
+
+  defp log_messages({:error, %{postgres: %{message: message}}}) when is_binary(message) do
+    Logger.warning(message)
+  end
+
+  defp log_messages({:error, %{message: message}}) when is_binary(message) do
+    Logger.error(message)
+  end
+
+  defp log_messages(error) do
+    Logger.error("Unexpected result #{inspect(error)}")
+  end
+
+  defp valid_name?(value), do: value in @owned_relations
 end

@@ -2,7 +2,7 @@ defmodule TdDdWeb.DataStructureView do
   use TdDdWeb, :view
 
   alias TdDd.DataStructures
-  alias TdDdWeb.DataStructureView
+  alias TdDdWeb.DataStructuresTagsView
 
   require Logger
 
@@ -14,13 +14,13 @@ defmodule TdDdWeb.DataStructureView do
 
   def render("index.json", %{data_structures: data_structures, filters: filters}) do
     %{
-      data: render_many(data_structures, DataStructureView, "data_structure.json"),
+      data: render_many(data_structures, __MODULE__, "data_structure.json"),
       filters: filters
     }
   end
 
   def render("index.json", %{data_structures: data_structures}) do
-    %{data: render_many(data_structures, DataStructureView, "data_structure.json")}
+    %{data: render_many(data_structures, __MODULE__, "data_structure.json")}
   end
 
   def render("show.json", %{
@@ -68,6 +68,7 @@ defmodule TdDdWeb.DataStructureView do
     data_structure
     |> Map.take([
       :class,
+      :classes,
       :confidential,
       :deleted_at,
       :description,
@@ -86,6 +87,7 @@ defmodule TdDdWeb.DataStructureView do
       :source_id,
       :source,
       :system_id,
+      :tags,
       :type,
       :updated_at,
       :mutable_metadata,
@@ -95,6 +97,8 @@ defmodule TdDdWeb.DataStructureView do
     |> Map.merge(dsv_attrs)
     |> Map.put_new(:metadata, %{})
     |> Map.put_new(:path, [])
+    |> add_source()
+    |> add_tags()
   end
 
   defp add_system_with_keys(json, data_structure, keys) do
@@ -265,4 +269,24 @@ defmodule TdDdWeb.DataStructureView do
   end
 
   defp add_metadata_versions(data_structure_json, _), do: data_structure_json
+
+  defp add_source(ds) do
+    source =
+      case Map.get(ds, :source) do
+        nil -> nil
+        s -> Map.take(s, [:id, :external_id])
+      end
+
+    Map.put(ds, :source, source)
+  end
+
+  defp add_tags(ds) do
+    tags =
+      case Map.get(ds, :tags) do
+        nil -> nil
+        tags -> render_many(tags, DataStructuresTagsView, "data_structures_tags.json")
+      end
+
+    Map.put(ds, :tags, tags)
+  end
 end

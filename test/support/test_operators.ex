@@ -8,18 +8,41 @@ defmodule TdDd.TestOperators do
   alias TdDq.Implementations.Implementation
 
   def a <~> b, do: approximately_equal(a, b)
-  def a <|> b, do: approximately_equal(Enum.sort(a), Enum.sort(b))
+  def a <|> b, do: approximately_equal(sorted(a), sorted(b))
+
+  ## Sort by id if present
+  defp sorted([%{id: _} | _] = list) do
+    Enum.sort_by(list, & &1.id)
+  end
+
+  defp sorted(list), do: Enum.sort(list)
 
   ## Equality test for data structures without comparing Ecto associations.
   defp approximately_equal(%DataStructure{} = a, %DataStructure{} = b) do
-    Map.drop(a, [:versions, :system]) ==
-      Map.drop(b, [:versions, :system])
+    Map.drop(a, [:versions, :system, :domain, :linked_concepts_count]) ==
+      Map.drop(b, [:versions, :system, :domain, :linked_concepts_count])
   end
 
   ## Equality test for data structure versions without comparing Ecto associations.
   defp approximately_equal(%DataStructureVersion{} = a, %DataStructureVersion{} = b) do
-    Map.drop(a, [:children, :parents, :data_structure, :external_id, :path]) ==
-      Map.drop(b, [:children, :parents, :data_structure, :external_id, :path])
+    Map.drop(a, [
+      :children,
+      :parents,
+      :data_structure,
+      :external_id,
+      :path,
+      :classifications,
+      :classes
+    ]) ==
+      Map.drop(b, [
+        :children,
+        :parents,
+        :data_structure,
+        :external_id,
+        :path,
+        :classifications,
+        :classes
+      ])
   end
 
   ## Equality test for rule implementation without comparing Ecto associations.

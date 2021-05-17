@@ -5,7 +5,7 @@ defmodule TdDd.Loader.ReaderTest do
 
   describe "Reader.enrich_data_structures!/3" do
     setup do
-      [domain: DomainHelper.insert_domain()]
+      [domain: CacheHelpers.insert_domain()]
     end
 
     test "casts and puts system_id and domain_id", %{

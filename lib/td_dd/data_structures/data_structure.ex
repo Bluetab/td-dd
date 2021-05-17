@@ -8,6 +8,8 @@ defmodule TdDd.DataStructures.DataStructure do
   import Ecto.Changeset
 
   alias TdCx.Sources.Source
+  alias TdDd.DataStructures.DataStructuresTags
+  alias TdDd.DataStructures.DataStructureTag
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Profile
   alias TdDd.DataStructures.StructureMetadata
@@ -28,6 +30,8 @@ defmodule TdDd.DataStructures.DataStructure do
     has_many(:versions, DataStructureVersion)
     has_many(:metadata_versions, StructureMetadata)
     has_one(:profile, Profile)
+    has_many(:data_structures_tags, DataStructuresTags)
+    many_to_many(:tags, DataStructureTag, join_through: DataStructuresTags)
 
     field(:confidential, :boolean)
     field(:df_content, :map)
@@ -36,8 +40,11 @@ defmodule TdDd.DataStructures.DataStructure do
     field(:last_change_by, :integer)
     field(:row, :integer, virtual: true)
     field(:latest_metadata, :map, virtual: true)
+    field(:domain, :map, virtual: true)
+    field(:linked_concepts_count, :integer, virtual: true)
+    field(:search_content, :map, virtual: true)
 
-    timestamps(type: :utc_datetime)
+    timestamps(type: :utc_datetime_usec)
   end
 
   def changeset(%{} = params) do

@@ -3,37 +3,34 @@ defmodule TdDd.DataStructures do
   The DataStructures context.
   """
 
-  import Ecto.Query, warn: false
+  import Ecto.Query
 
   alias Ecto.Association.NotLoaded
   alias Ecto.Multi
   alias TdCache.LinkCache
   alias TdCache.StructureTypeCache
-  alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
   alias TdCx.Sources
   alias TdDd.Auth.Claims
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureQueries
   alias TdDd.DataStructures.DataStructureRelation
+  alias TdDd.DataStructures.DataStructuresTags
+  alias TdDd.DataStructures.DataStructureTag
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
-  alias TdDd.DataStructures.Paths
+  alias TdDd.DataStructures.RelationTypes
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.Lineage.GraphData
   alias TdDd.Repo
   alias TdDd.Search.IndexWorker
+  alias TdDd.Search.StructureEnricher
   alias TdDfLib.Format
 
-  @doc """
-  Returns the list of data_structures.
+  # Data structure version associations preloaded for some views
+  @preload_dsv_assocs [:classifications, data_structure: :system]
 
-  ## Examples
-
-      iex> list_data_structures()
-      [%DataStructure{}, ...]
-
-  """
   def list_data_structures(clauses \\ %{}, options \\ []) do
     clauses
     |> Enum.reduce(DataStructure, fn
@@ -57,63 +54,15 @@ defmodule TdDd.DataStructures do
     |> Enum.map(&enrich(&1, options))
   end
 
-  @doc """
-  Gets a single data_structure.
-
-  Raises `Ecto.NoResultsError` if the Data structure does not exist.
-
-  ## Examples
-
-      iex> get_data_structure!(123)
-      %DataStructure{}
-
-      iex> get_data_structure!(456)
-      ** (Ecto.NoResultsError)
-
-  """
   def get_data_structure!(id) do
     DataStructure
     |> Repo.get!(id)
     |> Repo.preload(:system)
   end
 
-  @doc """
-  Gets a single data_structure by external_id.
-
-  Returns nil if the Data structure does not exist.
-
-  ## Examples
-
-      iex> get_data_structure_by_external_id!(123)
-      %DataStructure{}
-
-      iex> get_data_structure_by_external_id(456)
-      ** nil
-
-  """
+  @doc "Gets a single data_structure by external_id"
   def get_data_structure_by_external_id(external_id) do
     Repo.get_by(DataStructure, external_id: external_id)
-  end
-
-  @doc """
-  Gets a single data_structure_version.
-
-  Raises `Ecto.NoResultsError` if the Data structure version does not exist.
-
-  ## Examples
-
-      iex> get_data_structure!(123)
-      %DataStructureVersion{}
-
-      iex> get_data_structure!(456)
-      ** (Ecto.NoResultsError)
-
-  """
-  def get_data_structure_version!(id) do
-    DataStructureVersion
-    |> Paths.by_version_id(id)
-    |> Repo.get!(id)
-    |> Repo.preload(:data_structure)
   end
 
   def get_data_structures(ids, preload \\ :system) do
@@ -121,21 +70,22 @@ defmodule TdDd.DataStructures do
     |> Repo.all()
   end
 
-  def get_data_structure_version!(data_structure_id, version, options) do
-    params = %{data_structure_id: data_structure_id, version: version}
-
-    DataStructureVersion
-    |> Paths.by_structure_id_and_version(data_structure_id, version)
-    |> Repo.get_by!(params)
-    |> Repo.preload(data_structure: :system)
-    |> enrich(options)
+  @doc "Gets a single data_structure_version"
+  def get_data_structure_version!(id) do
+    enriched_structure_version!(id)
   end
 
   def get_data_structure_version!(data_structure_version_id, options) do
+    data_structure_version_id
+    |> get_data_structure_version!()
+    |> enrich(options)
+  end
+
+  def get_data_structure_version!(data_structure_id, version, options) do
     DataStructureVersion
-    |> Paths.by_version_id(data_structure_version_id)
-    |> Repo.get!(data_structure_version_id)
-    |> Repo.preload(data_structure: :system)
+    |> Repo.get_by!(data_structure_id: data_structure_id, version: version)
+    |> Map.get(:id)
+    |> enriched_structure_version!(preload: @preload_dsv_assocs)
     |> enrich(options)
   end
 
@@ -157,19 +107,24 @@ defmodule TdDd.DataStructures do
 
   defp enrich(%DataStructure{} = ds, options) do
     ds
+    |> StructureEnricher.enrich()
     |> enrich(options, :versions, &Repo.preload(&1, :versions))
     |> enrich(options, :latest, &get_latest_version/1)
-    |> enrich(options, :domain, &get_domain/1)
     |> enrich(options, :source, &get_source/1)
     |> enrich(options, :metadata_versions, &get_metadata_versions/1)
   end
 
+  defp enrich(%DataStructureVersion{id: id} = _data_structure_version, :defaults) do
+    enriched_structure_version!(id, preload: [data_structure: :source])
+  end
+
   defp enrich(%DataStructureVersion{} = dsv, options) do
     deleted = not is_nil(Map.get(dsv, :deleted_at))
-    preload = if Enum.member?(options, :profile), do: [data_structure: :profile], else: []
     with_confidential = Enum.member?(options, :with_confidential)
 
     dsv
+    |> enrich(:defaults)
+    |> enrich(options, :classifications, &get_classifications/1)
     |> enrich(options, :system, &get_system/1)
     |> enrich(
       options,
@@ -191,7 +146,7 @@ defmodule TdDd.DataStructures do
       :data_fields,
       &get_field_structures(&1,
         deleted: deleted,
-        preload: preload,
+        preload: if(Enum.member?(options, :profile), do: [data_structure: :profile], else: []),
         with_confidential: with_confidential
       )
     )
@@ -207,10 +162,10 @@ defmodule TdDd.DataStructures do
     |> enrich(options, :degree, &get_degree/1)
     |> enrich(options, :profile, &get_profile/1)
     |> enrich(options, :links, &get_structure_links/1)
-    |> enrich(options, :domain, &get_domain/1)
     |> enrich(options, :source, &get_source/1)
     |> enrich(options, :metadata_versions, &get_metadata_versions/1)
     |> enrich(options, :data_structure_type, &get_data_structure_type/1)
+    |> enrich(options, :tags, &get_tags/1)
   end
 
   defp enrich(%{} = target, options, key, fun) do
@@ -234,6 +189,12 @@ defmodule TdDd.DataStructures do
     |> Map.get(:system)
   end
 
+  defp get_classifications(%DataStructureVersion{} = dsv) do
+    dsv
+    |> Repo.preload(:classifications)
+    |> Map.get(:classifications)
+  end
+
   defp get_profile(%DataStructureVersion{} = dsv) do
     dsv
     |> Repo.preload(data_structure: :profile)
@@ -254,7 +215,7 @@ defmodule TdDd.DataStructures do
     |> join(:inner, [child], child in assoc(child, :data_structure))
     |> with_confidential(
       Keyword.get(options, :with_confidential),
-      dynamic([_child, _parent, _rel, child_ds], child_ds.confidential == false)
+      dynamic([_child, _parent, child_ds], child_ds.confidential == false)
     )
     |> with_deleted(options, dynamic([child], is_nil(child.deleted_at)))
     |> select([child], child)
@@ -292,7 +253,7 @@ defmodule TdDd.DataStructures do
     |> select_structures(Keyword.get(options, :default))
   end
 
-  defp get_parents(%DataStructureVersion{id: id}, options) do
+  def get_parents(%DataStructureVersion{id: id}, options) do
     DataStructureRelation
     |> where([r], r.child_id == ^id)
     |> join(:inner, [r], parent in assoc(r, :parent))
@@ -387,6 +348,7 @@ defmodule TdDd.DataStructures do
     |> distinct([_r, _parent, _parent_rt, _r_c, _child_rt, sibling, _sibling_ds], sibling)
     |> select([_r, _parent, _parent_rt, _r_c, _child_rt, sibling, _sibling_ds], sibling)
     |> Repo.all()
+    |> Repo.preload(@preload_dsv_assocs)
     |> Enum.uniq_by(& &1.data_structure_id)
   end
 
@@ -424,39 +386,19 @@ defmodule TdDd.DataStructures do
   defp select_structures(versions, false) do
     versions
     |> Enum.uniq_by(& &1.version.data_structure_id)
-    |> Enum.map(&preload_system/1)
+    |> Enum.map(&preload_assocs/1)
   end
 
   defp select_structures(versions, _not_false) do
     versions
     |> Enum.map(& &1.version)
     |> Enum.uniq_by(& &1.data_structure_id)
-    |> Repo.preload(data_structure: :system)
+    |> Repo.preload(@preload_dsv_assocs)
   end
 
-  defp preload_system(%{version: v} = version) do
-    Map.put(version, :version, Repo.preload(v, data_structure: :system))
-  end
-
-  defp get_domain(%DataStructureVersion{data_structure: %NotLoaded{}} = version) do
-    version
-    |> Repo.preload(:data_structure)
-    |> get_domain()
-  end
-
-  defp get_domain(%DataStructureVersion{data_structure: data_structure}) do
-    domain_id = Map.get(data_structure, :domain_id)
-
-    case domain_id do
-      nil -> %{}
-      domain_id -> TaxonomyCache.get_domain(domain_id) || %{}
-    end
-  end
-
-  defp get_domain(%DataStructure{domain_id: nil}), do: %{}
-
-  defp get_domain(%DataStructure{domain_id: domain_id}) do
-    TaxonomyCache.get_domain(domain_id) || %{}
+  # These are preloaded as they are needed in views
+  defp preload_assocs(%{version: v} = version, preloads \\ @preload_dsv_assocs) do
+    Map.put(version, :version, Repo.preload(v, preloads))
   end
 
   def get_source(%DataStructureVersion{data_structure: %DataStructure{} = data_structure}) do
@@ -488,6 +430,23 @@ defmodule TdDd.DataStructures do
     |> Repo.preload(data_structure: :metadata_versions)
     |> Map.get(:data_structure)
     |> Map.get(:metadata_versions)
+  end
+
+  defp get_tags(%DataStructureVersion{data_structure: %DataStructure{} = data_structure}) do
+    get_tags(data_structure)
+  end
+
+  defp get_tags(%DataStructureVersion{} = version) do
+    version
+    |> Repo.preload(:data_structure)
+    |> Map.get(:data_structure)
+    |> get_tags()
+  end
+
+  defp get_tags(%DataStructure{} = data_structure) do
+    data_structure
+    |> Repo.preload(data_structures_tags: [:data_structure_tag, :data_structure])
+    |> Map.get(:data_structures_tags)
   end
 
   @doc """
@@ -524,18 +483,6 @@ defmodule TdDd.DataStructures do
 
   defp on_update(res), do: res
 
-  @doc """
-  Deletes a DataStructure.
-
-  ## Examples
-
-      iex> delete_data_structure(data_structure, claims)
-      {:ok, %DataStructure{}}
-
-      iex> delete_data_structure(data_structure, claims)
-      {:error, %Ecto.Changeset{}}
-
-  """
   def delete_data_structure(%DataStructure{} = data_structure, %Claims{user_id: user_id}) do
     Multi.new()
     |> Multi.run(:delete_versions, fn _, _ ->
@@ -564,22 +511,9 @@ defmodule TdDd.DataStructures do
 
   defp on_delete(res), do: res
 
-  @doc """
-  Returns the latest data structure version for a given data structure id;
-
-  ## Examples
-
-      iex> get_latest_version(1)
-      %DataStructureVersion{}
-
-  """
   def get_latest_version(target, options \\ [])
 
-  def get_latest_version(%DataStructure{versions: versions}, options) when is_list(versions) do
-    versions
-    |> Enum.max_by(& &1.version)
-    |> enrich(options)
-  end
+  def get_latest_version(nil, _), do: nil
 
   def get_latest_version(%DataStructure{id: id}, options) do
     get_latest_version(id, options)
@@ -587,8 +521,9 @@ defmodule TdDd.DataStructures do
 
   def get_latest_version(data_structure_id, options) do
     DataStructureVersion
-    |> Paths.by_data_structure_id(data_structure_id)
-    |> where([dsv], dsv.data_structure_id == type(^data_structure_id, :integer))
+    |> where(data_structure_id: ^data_structure_id)
+    |> distinct(:data_structure_id)
+    |> order_by(desc: :version)
     |> preload(data_structure: :source)
     |> Repo.one()
     |> enrich(options)
@@ -676,12 +611,6 @@ defmodule TdDd.DataStructures do
       {:ok, links} -> links
     end
   end
-
-  def get_path(%DataStructureVersion{path: %{names: [_ | names]}}) do
-    Enum.reverse(names)
-  end
-
-  def get_path(_), do: []
 
   def get_ancestors(dsv, opts \\ [deleted: false]) do
     get_recursive(dsv, :parents, opts)
@@ -781,52 +710,14 @@ defmodule TdDd.DataStructures do
     |> Repo.all()
   end
 
-  @doc """
-  Creates mutable metadata.
-
-  ## Examples
-
-      iex> create_structure_metadata(%{field: value})
-      {:ok, %StructureMetadata{}}
-
-      iex> create_structure_metadata(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
   def create_structure_metadata(params) do
     %StructureMetadata{}
     |> StructureMetadata.changeset(params)
     |> Repo.insert()
   end
 
-  @doc """
-  Gets a single metadata.
-
-  Raises `Ecto.NoResultsError` if the metadata does not exist.
-
-  ## Examples
-
-      iex> get_structure_metadata!(123)
-      %StructureMetadata{}
-
-      iex> get_structure_metadata!(456)
-      ** (Ecto.NoResultsError)
-
-  """
   def get_structure_metadata!(id), do: Repo.get!(StructureMetadata, id)
 
-  @doc """
-  Updates metadata.
-
-  ## Examples
-
-      iex> update_structure_metadata(structure_metadata, %{field: new_value})
-      {:ok, %StructureMetadata{}}
-
-      iex> update_structure_metadata(structure_metadata, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
   def update_structure_metadata(%StructureMetadata{} = structure_metadata, params) do
     structure_metadata
     |> StructureMetadata.changeset(params)
@@ -843,7 +734,7 @@ defmodule TdDd.DataStructures do
     |> where(
       [sm],
       fragment(
-        "(?, COALESCE(?, NOW())) OVERLAPS (?, COALESCE(?, NOW()))",
+        "(?, COALESCE(?, statement_timestamp())) OVERLAPS (?, COALESCE(?, statement_timestamp()))",
         ^inserted_at,
         ^deleted_at,
         sm.inserted_at,
@@ -917,4 +808,184 @@ defmodule TdDd.DataStructures do
   end
 
   defp do_profile_source(dsv, _source), do: dsv
+
+  def list_data_structure_tags(options \\ []) do
+    DataStructureTag
+    |> Repo.all()
+    |> Repo.preload(options[:preload] || [])
+  end
+
+  def get_data_structure_tag!(id, options \\ []) do
+    DataStructureTag
+    |> Repo.get!(id)
+    |> Repo.preload(options[:preload] || [])
+  end
+
+  def create_data_structure_tag(attrs \\ %{}) do
+    %DataStructureTag{}
+    |> DataStructureTag.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def update_data_structure_tag(%DataStructureTag{} = data_structure_tag, attrs) do
+    data_structure_tag
+    |> DataStructureTag.changeset(attrs)
+    |> Repo.update()
+    |> on_tag_update()
+  end
+
+  def delete_data_structure_tag(%DataStructureTag{} = data_structure_tag) do
+    data_structure_tag
+    |> Repo.delete()
+    |> on_tag_delete(Map.get(data_structure_tag, :tagged_structures))
+  end
+
+  def get_links_tag(%DataStructure{data_structures_tags: tags})
+      when is_list(tags) do
+    tags
+  end
+
+  def get_links_tag(%DataStructure{} = data_structure) do
+    data_structure
+    |> Repo.preload(data_structures_tags: [:data_structure, :data_structure_tag])
+    |> Map.get(:data_structures_tags)
+  end
+
+  def link_tag(
+        %DataStructure{id: data_structure_id} = data_structure,
+        %DataStructureTag{id: tag_id} = data_structure_tag,
+        params,
+        claims
+      ) do
+    data_structure_id
+    |> get_link_tag_by(tag_id)
+    |> case do
+      nil -> create_link(data_structure, data_structure_tag, params, claims)
+      %DataStructuresTags{} = tag_link -> update_link(tag_link, params, claims)
+    end
+  end
+
+  def delete_link_tag(
+        %DataStructure{id: data_structure_id},
+        %DataStructureTag{id: tag_id},
+        %Claims{user_id: user_id}
+      ) do
+    data_structure_id
+    |> get_link_tag_by(tag_id)
+    |> case do
+      nil ->
+        {:error, :not_found}
+
+      %DataStructuresTags{} = tag_link ->
+        Multi.new()
+        |> Multi.delete(:deleted_link_tag, tag_link)
+        |> Multi.run(:audit, Audit, :tag_link_deleted, [user_id])
+        |> Repo.transaction()
+        |> on_link_delete()
+    end
+  end
+
+  def get_link_tag_by(data_structure_id, tag_id) do
+    Repo.get_by(DataStructuresTags,
+      data_structure_tag_id: tag_id,
+      data_structure_id: data_structure_id
+    )
+  end
+
+  defp on_tag_update({:ok, %{tagged_structures: [_ | _] = structures} = tag}) do
+    structures
+    |> Enum.map(& &1.id)
+    |> IndexWorker.reindex()
+
+    {:ok, tag}
+  end
+
+  defp on_tag_update(reply), do: reply
+
+  defp on_tag_delete({:ok, tag}, [_ | _] = structures) do
+    structures
+    |> Enum.map(& &1.id)
+    |> IndexWorker.reindex()
+
+    {:ok, tag}
+  end
+
+  defp on_tag_delete(reply, _), do: reply
+
+  defp create_link(data_structure, data_structure_tag, params, %Claims{user_id: user_id}) do
+    changeset =
+      params
+      |> DataStructuresTags.changeset()
+      |> DataStructuresTags.put_data_structure(data_structure)
+      |> DataStructuresTags.put_data_structure_tag(data_structure_tag)
+
+    Multi.new()
+    |> Multi.insert(:linked_tag, changeset)
+    |> Multi.run(:audit, Audit, :tag_linked, [user_id])
+    |> Repo.transaction()
+    |> on_link_insert()
+  end
+
+  defp update_link(link, params, %Claims{user_id: user_id}) do
+    changeset = DataStructuresTags.changeset(link, params)
+
+    Multi.new()
+    |> Multi.update(:linked_tag, changeset)
+    |> Multi.run(:audit, Audit, :tag_link_updated, [changeset, user_id])
+    |> Repo.transaction()
+    |> on_link_update()
+  end
+
+  defp on_link_insert({:ok, %{linked_tag: link} = multi}) do
+    IndexWorker.reindex(link.data_structure_id)
+    {:ok, multi}
+  end
+
+  defp on_link_insert(reply), do: reply
+
+  defp on_link_update({:ok, %{linked_tag: link} = multi}) do
+    link = Repo.preload(link, [:data_structure_tag, :data_structure])
+    {:ok, Map.put(multi, :linked_tag, link)}
+  end
+
+  defp on_link_update(reply), do: reply
+
+  defp on_link_delete({:ok, %{deleted_link_tag: link} = multi}) do
+    IndexWorker.reindex(link.data_structure_id)
+    {:ok, multi}
+  end
+
+  defp on_link_delete(reply), do: reply
+
+  # Returns a data structure version enriched for indexing or rendering
+  @spec enriched_structure_version!(binary() | integer(), keyword) ::
+          DataStructureVersion.t()
+  defp enriched_structure_version!(id, opts \\ [])
+
+  defp enriched_structure_version!(id, opts) when is_binary(id) do
+    id
+    |> String.to_integer()
+    |> enriched_structure_version!(opts)
+  end
+
+  defp enriched_structure_version!(id, opts) do
+    opts
+    |> Keyword.put(:ids, [id])
+    |> Keyword.put(:relation_type_id, RelationTypes.default_id!())
+    |> enriched_structure_versions()
+    |> hd()
+  end
+
+  @spec enriched_structure_versions(keyword) :: [DataStructureVersion.t()]
+  def enriched_structure_versions(opts \\ []) do
+    {content_opt, opts} = Keyword.pop(opts, :content)
+
+    opts
+    |> Map.new()
+    |> DataStructureQueries.enriched_structure_versions()
+    |> Repo.all()
+    |> Enum.map(fn %{data_structure: structure, type: type} = dsv ->
+      %{dsv | data_structure: StructureEnricher.enrich(structure, type, content_opt)}
+    end)
+  end
 end

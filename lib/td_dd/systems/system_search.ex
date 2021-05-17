@@ -2,8 +2,6 @@ defmodule TdDd.Systems.SystemSearch do
   @moduledoc """
   The Systems context.
   """
-  import Ecto.Query, warn: false
-
   alias TdDd.Auth.Claims
   alias TdDd.DataStructures.Search
   alias TdDd.Search.Aggregations

@@ -15,11 +15,7 @@ defmodule TdDd.Executions.ProfileExecutionTest do
       %{id: id} = insert(:data_structure)
       %{id: group_id} = insert(:profile_execution_group)
 
-      assert {:ok,
-              %{
-                data_structure_id: ^id,
-                profile_group_id: ^group_id
-              }} =
+      assert {:ok, %{data_structure_id: ^id, profile_group_id: ^group_id}} =
                %{profile_group_id: group_id, data_structure_id: id}
                |> ProfileExecution.changeset()
                |> Repo.insert()

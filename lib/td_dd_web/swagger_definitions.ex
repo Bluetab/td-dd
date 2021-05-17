@@ -112,6 +112,126 @@ defmodule TdDdWeb.SwaggerDefinitions do
     }
   end
 
+  def data_structure_tag_definitions do
+    %{
+      DataStructureTag:
+        swagger_schema do
+          title("Data Structure Tag")
+          description("A Data Structure Tag")
+
+          properties do
+            id(:integer, "Data Structure Tag unique identifier", required: true)
+            name(:string, "Tag name")
+            structure_count(:integer, "Linked structures count")
+          end
+
+          example(%{
+            id: 88,
+            name: "Tag1"
+          })
+        end,
+      DataStructureTags:
+        swagger_schema do
+          title("DataStructureTags")
+          description("A collection of data structure tags")
+          type(:array)
+          items(Schema.ref(:DataStructureTag))
+        end,
+      CreateDataStructureTag:
+        swagger_schema do
+          properties do
+            data_structure_tag(
+              Schema.new do
+                properties do
+                  name(:string, "Data Structure name", required: true)
+                end
+              end
+            )
+          end
+        end,
+      UpdateDataStructureTag:
+        swagger_schema do
+          properties do
+            data_structure_tag(
+              Schema.new do
+                properties do
+                  name(:string, "Data Structure name", required: true)
+                end
+              end
+            )
+          end
+        end,
+      DataStructureTagResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:DataStructureTag))
+          end
+        end,
+      DataStructureTagsResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:DataStructureTags))
+          end
+        end,
+      UpdateLinkDataStructureTag:
+        swagger_schema do
+          properties do
+            tag(
+              Schema.new do
+                properties do
+                  description(:string, "Tag description", required: true)
+                end
+              end
+            )
+          end
+        end,
+      LinksDataStructureTagResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:LinksDataStructureTag))
+          end
+        end,
+      LinksDataStructureTag:
+        swagger_schema do
+          title("LinksDataStructureTagResponse")
+          description("Links between a structure and its tags")
+          type(:array)
+          items(Schema.ref(:LinkDataStructureTag))
+        end,
+      LinkDataStructureTag:
+        swagger_schema do
+          title("LinkDataStructureTag")
+          description("Link between a structure and its tags")
+
+          properties do
+            id(:integer, "Id link")
+            description(:string, "Tag description")
+            _embedded(Schema.ref(:LinkDataStructureTagEmbeddings))
+          end
+        end,
+      LinkDataStructureTagResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:LinkDataStructureTag))
+          end
+        end,
+      LinkDataStructureTagEmbeddings:
+        swagger_schema do
+          properties do
+            data_structure(Schema.ref(:EmbeddedLinkedDataStructure))
+            data_structure_tag(Schema.ref(:DataStructureTag))
+          end
+        end,
+      EmbeddedLinkedDataStructure:
+        swagger_schema do
+          properties do
+            id(:integer, "Data structure id")
+            external_id(:string, "Data structure external id")
+          end
+        end
+    }
+  end
+
   def data_structure_type_definitions do
     %{
       DataStructureType:
@@ -754,6 +874,86 @@ defmodule TdDdWeb.SwaggerDefinitions do
           description("A collection of events")
           type(:array)
           items(Schema.ref(:ProfileEvent))
+        end
+    }
+  end
+
+  def classifier_swagger_definitions do
+    %{
+      Classifier:
+        swagger_schema do
+          title("Classifier")
+          description("A classifier for data structures")
+
+          properties do
+            id(:integer, "Id", required: true)
+            name(:string, "Name", required: true)
+            filters(Schema.ref(:ClassifierFilters))
+            rules(Schema.ref(:ClassifierRules))
+          end
+        end,
+      Classifiers:
+        swagger_schema do
+          title("Classifiers")
+          description("A collection of classifiers")
+          type(:array)
+          items(Schema.ref(:Classifier))
+        end,
+      ClassifierRequest:
+        swagger_schema do
+          properties do
+            classifier(Schema.ref(:Classifier))
+          end
+        end,
+      ClassifierResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:Classifier))
+          end
+        end,
+      ClassifiersResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:Classifiers))
+          end
+        end,
+      ClassifierFilters:
+        swagger_schema do
+          title("Classifier filters")
+          description("A collection of filters")
+          type(:array)
+          items(Schema.ref(:ClassifierFilter))
+        end,
+      ClassifierFilter:
+        swagger_schema do
+          title("A classifier filter for matching data structures")
+          description("Either regex or values must be present")
+
+          properties do
+            path(:array, "The path", required: true)
+            regex(:string, "Regex")
+            values(:array, "Values")
+          end
+        end,
+      ClassifierRules:
+        swagger_schema do
+          title("Classifier rules")
+          description("A collection of rules")
+          type(:array)
+          items(Schema.ref(:ClassifierRule))
+        end,
+      ClassifierRule:
+        swagger_schema do
+          title("A classifier rule for matching data structures")
+          description("Either regex or values must be present")
+
+          properties do
+            path(:array, "The path", required: true)
+            priority(:integer)
+            class(:string, "Classification class", required: true)
+            values(:array, "Values")
+            regex(:string, "Regex")
+          end
         end
     }
   end

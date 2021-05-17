@@ -3,9 +3,8 @@ defmodule TdDd.Loader do
   Bulk loader for data structure metadata
   """
 
-  import Ecto.Query, warn: false
-
   alias Ecto.Multi
+  alias TdDd.Classifiers
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Loader.Context
   alias TdDd.Loader.FieldsAsStructures
@@ -62,11 +61,25 @@ defmodule TdDd.Loader do
     |> Multi.run(:replace_versions, Versions, :replace_changed_versions, [ts])
     |> Multi.run(:insert_relations, Relations, :insert_new_relations, [ts])
     |> Multi.run(:update_domain_ids, Structures, :update_domain_ids, [structure_records, ts])
-    |> Multi.run(:update_source_ids, Structures, :update_source_ids, [structure_records, opts[:source], ts])
+    |> Multi.run(:update_source_ids, Structures, :update_source_ids, [
+      structure_records,
+      opts[:source],
+      ts
+    ])
     |> Multi.run(:delete_metadata, Metadata, :delete_missing_metadata, [ts])
     |> Multi.run(:replace_metadata, Metadata, :replace_metadata, [structure_records, ts])
     |> Multi.run(:structure_ids, __MODULE__, :structure_ids, [])
+    |> Multi.run(:system_ids, fn _, _ -> {:ok, system_ids(structure_records)} end)
+    |> Multi.run(:classification, fn _, %{system_ids: ids} ->
+      Classifiers.classify_many(ids, ts)
+    end)
     |> Repo.transaction()
+  end
+
+  def system_ids(structure_records) do
+    structure_records
+    |> MapSet.new(& &1.system_id)
+    |> MapSet.to_list()
   end
 
   def structure_ids(_repo, %{} = changes) do

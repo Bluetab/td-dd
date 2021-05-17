@@ -3,7 +3,7 @@ defmodule TdCx.Sources do
   The Sources context.
   """
 
-  import Ecto.Query, warn: false
+  import Ecto.Query
   import Canada, only: [can?: 2]
 
   require Logger
@@ -87,6 +87,7 @@ defmodule TdCx.Sources do
     end)
   end
 
+  defp source_params(nil), do: %{}
   defp source_params(%{} = params), do: params
   defp source_params(external_id) when is_binary(external_id), do: %{external_id: external_id}
   defp source_params(id) when is_integer(id), do: %{id: id}
