@@ -3,6 +3,7 @@ defmodule TdDd.DataStructures.ProfilesTest do
 
   alias TdDd.DataStructures.Profile
   alias TdDd.DataStructures.Profiles
+  alias TdDd.Executions
 
   describe "TdDd.DataStructures.Profiles" do
     @valid_attrs %{value: %{}, data_structure_id: 0}
@@ -36,6 +37,78 @@ defmodule TdDd.DataStructures.ProfilesTest do
     test "update_profile/1 with valid attrs updates the profile", %{profile: profile} do
       assert {:ok, %Profile{value: value}} = Profiles.update_profile(profile, @update_attrs)
       assert @update_attrs.value == value
+    end
+  end
+
+  describe "create_or_update_profile" do
+    setup do
+      d1 = insert(:data_structure)
+      e1 = insert(:profile_execution, data_structure: d1)
+      [data_structure: d1, execution: e1]
+    end
+
+    test "creates profile when it does not exist", %{
+      data_structure: %{id: data_structure_id},
+      execution: execution
+    } do
+      value = %{"foo" => "bar"}
+
+      assert {:ok, %{id: id, data_structure_id: ^data_structure_id, value: ^value}} =
+               Profiles.create_or_update_profile(%{
+                 data_structure_id: data_structure_id,
+                 value: value
+               })
+
+      assert %{
+               profile_id: ^id,
+               profile_events: [%{type: "SUCCEEDED", message: "Profile Uploaded."}]
+             } = Executions.get_profile_execution(execution.id, preload: [:profile_events])
+    end
+
+    test "updates profile when it does not exist", %{
+      data_structure: %{id: data_structure_id} = data_structure,
+      execution: execution
+    } do
+      %{id: id} = insert(:profile, data_structure: data_structure, value: %{"bar" => "baz"})
+      value = %{"foo" => "bar"}
+
+      assert {:ok, %{id: ^id, data_structure_id: ^data_structure_id, value: ^value}} =
+               Profiles.create_or_update_profile(%{
+                 data_structure_id: data_structure_id,
+                 value: value
+               })
+
+      assert %{
+               profile_id: ^id,
+               profile_events: [%{type: "SUCCEEDED", message: "Profile Uploaded."}]
+             } = Executions.get_profile_execution(execution.id, preload: [:profile_events])
+    end
+
+    test "returns error when value is nil", %{
+      data_structure: %{id: data_structure_id}
+    } do
+      assert {:error, %{errors: [value: {"can't be blank", [validation: :required]}]}} =
+               Profiles.create_or_update_profile(%{
+                 data_structure_id: data_structure_id,
+                 value: nil
+               })
+    end
+
+    test "returns error when data structure does not exist" do
+      data_structure_id = System.unique_integer([:positive])
+
+      assert {:error,
+              %{
+                errors: [
+                  data_structure_id:
+                    {"does not exist",
+                     [constraint: :foreign, constraint_name: "profiles_data_structure_id_fkey"]}
+                ]
+              }} =
+               Profiles.create_or_update_profile(%{
+                 data_structure_id: data_structure_id,
+                 value: %{"foo" => "bar"}
+               })
     end
   end
 end

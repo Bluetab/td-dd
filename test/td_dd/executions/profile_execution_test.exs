@@ -55,12 +55,12 @@ defmodule TdDd.Executions.ProfileExecutionTest do
                %{
                  "data_structure_id" => id,
                  "profile_group_id" => group_id,
-                 "profile_events" => [%{"type" => "PENDING"}]
+                 "profile_events" => [%{"type" => "STARTED"}]
                }
                |> ProfileExecution.changeset()
                |> Repo.insert()
 
-      assert %{profile_events: [%{type: "PENDING"}]} =
+      assert %{profile_events: [%{type: "STARTED"}]} =
                ProfileExecution
                |> Repo.get(id)
                |> Repo.preload(:profile_events)

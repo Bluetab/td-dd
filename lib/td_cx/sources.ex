@@ -31,6 +31,21 @@ defmodule TdCx.Sources do
     |> Repo.all()
   end
 
+  @doc """
+  Returns the list of sources.
+
+  ## Examples
+
+      iex> query_sources(%{alias: "foo"})
+      [%Source{}, ...]
+
+  """
+  def query_sources(params_or_identifier) do
+    params_or_identifier
+    |> source_query()
+    |> Repo.all()
+  end
+
   defp with_deleted(query, options, dynamic) when is_list(options) do
     include_deleted = Keyword.get(options, :deleted, true)
     with_deleted(query, include_deleted, dynamic)
@@ -80,10 +95,26 @@ defmodule TdCx.Sources do
     params_or_identifier
     |> source_params()
     |> Enum.reduce(Source, fn
-      {:external_id, external_id}, q -> where(q, [s], s.external_id == ^external_id)
-      {:id, id}, q -> where(q, [s], s.id == ^id)
-      {:preload, preloads}, q -> preload(q, ^preloads)
-      {:deleted, true}, q -> where(q, [s], not is_nil(s.deleted_at))
+      {:external_id, external_id}, q ->
+        where(q, [s], s.external_id == ^external_id)
+
+      {:id, id}, q ->
+        where(q, [s], s.id == ^id)
+
+      {:preload, preloads}, q ->
+        preload(q, ^preloads)
+
+      {:deleted, true}, q ->
+        where(q, [s], not is_nil(s.deleted_at))
+
+      {:alias, source_alias}, q ->
+        where(q, [s], fragment("(?) @> ?::jsonb", s.config, ^%{alias: source_alias}))
+
+      {:aliases, source_alias}, q ->
+        where(q, [s], fragment("(?) @> ?::jsonb", s.config, ^%{aliases: [source_alias]}))
+
+      {:job_types, type}, q ->
+        where(q, [s], fragment("(?) @> ?::jsonb", s.config, ^%{job_types: [type]}))
     end)
   end
 

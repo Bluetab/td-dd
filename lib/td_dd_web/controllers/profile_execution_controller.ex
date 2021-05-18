@@ -26,7 +26,7 @@ defmodule TdDdWeb.ProfileExecutionController do
          executions <-
            params
            |> Executions.list_profile_executions(
-             preload: [:data_structure, :profile, :profile_events]
+             preload: [{:data_structure, :source}, :profile, :profile_events]
            )
            |> Enum.filter(&can?(claims, show(&1))) do
       render(conn, "index.json", profile_executions: executions)

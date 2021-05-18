@@ -11,12 +11,12 @@ defmodule TdDdWeb.ProfileControllerTest do
     :ok
   end
 
-  setup %{fixture: fixture} do
-    profiling = %Plug.Upload{path: fixture <> "/profiles.csv"}
-    {:ok, profiling: profiling}
-  end
-
   describe "upload profiling" do
+    setup %{fixture: fixture} do
+      profiling = %Plug.Upload{path: fixture <> "/profiles.csv"}
+      {:ok, profiling: profiling}
+    end
+
     @tag authentication: [role: "service"]
     @tag fixture: "test/fixtures/profiling"
     test "uploads profiles for data structures", %{
@@ -36,6 +36,33 @@ defmodule TdDdWeb.ProfileControllerTest do
       # waits for loader to complete
       Worker.await(20_000)
       assert Enum.count(Profiles.list_profiles()) == 3
+    end
+  end
+
+  describe "create profiling" do
+    @tag authentication: [role: "service"]
+    test "creates profiling", %{conn: conn} do
+      %{id: id} = insert(:data_structure)
+      profile = %{"foo" => "bar"}
+
+      assert %{"data" => %{"data_structure_id" => ^id, "value" => ^profile}} =
+               conn
+               |> post(Routes.data_structure_profile_path(conn, :create, id),
+                 profile: profile
+               )
+               |> json_response(:created)
+    end
+
+    @tag authentication: [role: "service"]
+    test "not found when structure does not exist", %{conn: conn} do
+      id = System.unique_integer([:positive])
+      profile = %{"foo" => "bar"}
+
+      assert conn
+             |> post(Routes.data_structure_profile_path(conn, :create, id),
+               profile: profile
+             )
+             |> response(:not_found)
     end
   end
 end

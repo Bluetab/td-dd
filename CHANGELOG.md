@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.20.1] 2021-05-18
+
+### Added
+
+- [TD-3236] Upload json profile
+
 ## [4.20.0] 2021-05-17
 
 ### Added
@@ -36,9 +42,6 @@
 ### Added
 
 - [TD-3517] Profile executions and events
-
-### Added
-
 - [TD-3189] add templates in the creation of implementations
 
 ## [4.18.0] 2021-04-19

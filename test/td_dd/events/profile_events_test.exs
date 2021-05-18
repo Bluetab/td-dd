@@ -33,4 +33,14 @@ defmodule TdDd.Events.ProfileEventsTest do
                })
     end
   end
+
+  describe "complete/1" do
+    test "sets to succeeded a group executions" do
+      %{id: id1} = insert(:profile_execution)
+      %{id: id2} = insert(:profile_execution)
+
+      assert {2, [%{profile_execution_id: ^id1}, %{profile_execution_id: ^id2}]} =
+               ProfileEvents.complete([id1, id2])
+    end
+  end
 end

@@ -125,16 +125,15 @@ defmodule TdDd.ExecutionsTest do
       params = %{
         "created_by_id" => 0,
         "executions" => [
-          %{"data_structure_id" => id, "profile_events" => [%{"type" => "PENDING"}]}
+          %{"data_structure_id" => id}
         ]
       }
 
-      assert {:ok, %{profile_group: %{id: id}}} =
-               Executions.create_profile_group(params)
+      assert {:ok, %{profile_group: %{id: id}}} = Executions.create_profile_group(params)
 
       %{
         executions: [
-          %{profile_events: [%{type: "PENDING"}]}
+          %{profile_events: []}
         ]
       } = Executions.get_profile_group(%{"id" => id}, preload: [executions: :profile_events])
     end
@@ -144,12 +143,7 @@ defmodule TdDd.ExecutionsTest do
     setup do
       source = "foo"
 
-      data_structure = insert(:data_structure)
-
-      insert(:data_structure_version,
-        data_structure: data_structure,
-        metadata: %{"alias" => source, "foo" => "bar"}
-      )
+      data_structure = insert(:data_structure, source: build(:source, external_id: source))
 
       g1 = insert(:profile_execution_group)
       g2 = insert(:profile_execution_group)
@@ -170,38 +164,46 @@ defmodule TdDd.ExecutionsTest do
 
       e3 =
         insert(:profile_execution,
-          profile_events: [build(:profile_event)],
           profile_group: build(:profile_execution_group),
           data_structure: build(:data_structure)
+        )
+
+      e4 =
+        insert(:profile_execution,
+          profile_events: [build(:profile_event), build(:profile_event, type: "STARTED")]
         )
 
       [
         data_structure: data_structure,
         groups: [g1, g2],
-        executions: [e1, e2, e3],
+        executions: [e1, e2, e3, e4],
         profile: profile,
         source: source
       ]
     end
 
     test "list executions", %{
-      executions: [%{id: id1}, %{id: id2}, %{id: id3}],
+      executions: [%{id: id1}, %{id: id2}, %{id: id3}, %{id: id4}],
       profile: %{id: profile_id}
     } do
-      assert [%{id: ^id1, profile: nil}, %{id: ^id2, profile: %{id: ^profile_id}}, %{id: ^id3}] =
-               Executions.list_profile_executions(%{}, preload: [:profile])
+      assert [
+               %{id: ^id1, profile: nil},
+               %{id: ^id2, profile: %{id: ^profile_id}},
+               %{id: ^id3},
+               %{id: ^id4}
+             ] = Executions.list_profile_executions(%{}, preload: [:profile])
     end
 
     test "list executions filtered by group", %{
       groups: [_, %{id: group_id}],
-      executions: [_, %{id: id}, _]
+      executions: [_, %{id: id}, _, _]
     } do
       assert [%{id: ^id}] = Executions.list_profile_executions(%{profile_group_id: group_id})
     end
 
     test "list executions filtered by status", %{
       data_structure: %{id: data_structure_id},
-      executions: [%{id: id1}, _, %{id: id3}]
+      executions: [%{id: id1}, _, %{id: id3}, _]
     } do
       assert [
                %{id: ^id1, profile: nil, data_structure: %{id: ^data_structure_id}},
@@ -213,7 +215,7 @@ defmodule TdDd.ExecutionsTest do
     end
 
     test "list executions filtered by source", %{
-      executions: [%{id: id1}, %{id: id2}, _],
+      executions: [%{id: id1}, %{id: id2}, _, _],
       source: source
     } do
       assert [] = Executions.list_profile_executions(%{source: "bar"})
@@ -224,10 +226,30 @@ defmodule TdDd.ExecutionsTest do
     end
 
     test "list executions filtered by sources", %{
-      executions: [%{id: id1}, %{id: id2}, _],
+      executions: [%{id: id1}, %{id: id2}, _, _],
       source: source
     } do
       assert [%{id: ^id1}, %{id: ^id2}] = Executions.list_profile_executions(%{sources: [source]})
+    end
+  end
+
+  describe "update_all/2" do
+    setup do
+      d = insert(:data_structure)
+      insert(:profile_execution, profile: build(:profile), data_structure: d)
+      e2 = insert(:profile_execution, profile: nil, data_structure: d)
+      e3 = insert(:profile_execution, profile: nil, data_structure: d)
+      insert(:profile_execution, profile: nil, data_structure: build(:data_structure))
+
+      [data_structure: d, executions: [e2, e3]]
+    end
+
+    test "updates all executions which do not have profile", %{
+      data_structure: data_structure,
+      executions: [%{id: id1}, %{id: id2}]
+    } do
+      profile = insert(:profile)
+      assert {2, [^id1, ^id2]} = Executions.update_all(data_structure.id, profile.id)
     end
   end
 end

@@ -8,8 +8,7 @@ defmodule TdDd.Executions do
   alias Ecto.Changeset
   alias Ecto.Multi
   alias TdDd.DataStructures
-  alias TdDd.DataStructures.{DataStructure, DataStructureVersion}
-  alias TdDd.Events.ProfileEvent
+  alias TdDd.DataStructures.DataStructure
   alias TdDd.Executions.{Audit, ProfileExecution, ProfileGroup}
   alias TdDd.Repo
 
@@ -68,15 +67,11 @@ defmodule TdDd.Executions do
         where(q, [e], e.profile_group_id == ^id)
 
       {:status, "pending"}, q ->
-        subset =
-          ProfileEvent
-          |> where([p], p.type != "PENDING")
-          |> select([p], p.profile_execution_id)
-
         q
         |> join(:left, [e], p in assoc(e, :profile))
-        |> where([_e, p, _ev], is_nil(p.id))
-        |> where([e, _p], e.id not in subquery(subset))
+        |> join(:left, [e, _p], pe in assoc(e, :profile_events))
+        |> where([_e, p, _pe], is_nil(p.id))
+        |> where([e, _p, pe], is_nil(pe.profile_execution_id))
 
       _, q ->
         q
@@ -111,6 +106,14 @@ defmodule TdDd.Executions do
     |> do_create_profile_group()
   end
 
+  def update_all(structure_id, profile_id) do
+    ProfileExecution
+    |> where([p], is_nil(p.profile_id))
+    |> where([p], p.data_structure_id == ^structure_id)
+    |> select([p], p.id)
+    |> Repo.update_all(set: [profile_id: profile_id])
+  end
+
   defp do_create_profile_group(%Changeset{} = changeset) do
     Multi.new()
     |> Multi.insert(:profile_group, changeset)
@@ -126,7 +129,8 @@ defmodule TdDd.Executions do
     executions
     |> Enum.group_by(&get_source/1, & &1)
     |> Enum.filter(fn
-      {source, _} -> source in sources
+      {source, _} ->
+        source in sources
     end)
     |> Enum.flat_map(fn
       {_source, executions} -> executions
@@ -146,17 +150,15 @@ defmodule TdDd.Executions do
     |> get_source()
   end
 
-  defp get_source(%DataStructure{} = structure) do
-    structure
-    |> DataStructures.get_latest_version()
-    |> get_source()
+  defp get_source(%DataStructure{source: %{external_id: external_id}}) do
+    external_id
   end
 
-  defp get_source(%DataStructureVersion{} = version) do
-    version
-    |> Map.get(:metadata)
+  defp get_source(%DataStructure{} = structure) do
+    structure
+    |> Repo.preload(:source)
     |> case do
-      %{"alias" => source_alias} -> source_alias
+      %{source: %{external_id: external_id}} -> external_id
       _ -> nil
     end
   end

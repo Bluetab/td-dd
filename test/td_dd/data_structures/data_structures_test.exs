@@ -1008,8 +1008,8 @@ defmodule TdDd.DataStructuresTest do
     setup do
       s1 = insert(:source, config: %{"job_types" => ["catalog", "quality", "profile"]})
       s2 = insert(:source)
-      s3 = insert(:source, config: %{"job_types" => ["catalog"], "alias" => "foo"})
-      s4 = insert(:source, external_id: "foo", config: %{"job_types" => ["profile"]})
+      s3 = insert(:source, external_id: "foo", config: %{"job_types" => ["catalog"], "alias" => "foo"})
+      s4 = insert(:source, config: %{"job_types" => ["profile"], "alias" => "foo"})
 
       v1 = insert(:data_structure_version, data_structure: insert(:data_structure, source: s1))
       v2 = insert(:data_structure_version, data_structure: insert(:data_structure, source: s2))

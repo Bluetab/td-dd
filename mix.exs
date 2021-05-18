@@ -6,7 +6,7 @@ defmodule TdDd.MixProject do
       app: :td_dd,
       version:
         case System.get_env("APP_VERSION") do
-          nil -> "4.20.0-local"
+          nil -> "4.20.1-local"
           v -> v
         end,
       elixir: "~> 1.10",

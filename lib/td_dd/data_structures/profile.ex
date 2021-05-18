@@ -12,9 +12,14 @@ defmodule TdDd.DataStructures.Profile do
     timestamps()
   end
 
+  def changeset(%{} = params) do
+    changeset(%__MODULE__{}, params)
+  end
+
   def changeset(profile, params) do
     profile
     |> cast(params, [:value, :data_structure_id])
     |> validate_required([:value, :data_structure_id])
+    |> foreign_key_constraint(:data_structure_id)
   end
 end
