@@ -68,6 +68,7 @@ defmodule TdDd.Factory do
   def rule_factory do
     %TdDq.Rules.Rule{
       business_concept_id: sequence(:business_concept_id, &"#{&1}"),
+      domain_id: sequence(:domain_id, &"#{&1}"),
       description: %{"document" => "Rule Description"},
       goal: 30,
       minimum: 12,

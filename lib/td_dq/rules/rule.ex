@@ -24,6 +24,7 @@ defmodule TdDq.Rules.Rule do
     field(:version, :integer, default: 1)
     field(:updated_by, :integer)
     field(:result_type, :string, default: "percentage")
+    field(:domain_id, :integer)
 
     has_many(:rule_implementations, Implementation)
 
@@ -53,13 +54,15 @@ defmodule TdDq.Rules.Rule do
       :updated_by,
       :df_name,
       :df_content,
-      :result_type
+      :result_type,
+      :domain_id
     ])
     |> validate_required([
       :name,
       :goal,
       :minimum,
-      :result_type
+      :result_type,
+      :domain_id
     ])
     |> validate_inclusion(:result_type, @valid_result_types)
     |> validate_goal()
