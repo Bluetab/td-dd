@@ -3,6 +3,7 @@ defmodule TdDq.RulesTest do
 
   alias TdCache.Redix
   alias TdCache.Redix.Stream
+  alias TdCache.TaxonomyCache
   alias TdDq.Rules
   alias TdDq.Rules.Rule
 
@@ -50,6 +51,14 @@ defmodule TdDq.RulesTest do
       params = string_params_for(:rule, name: nil)
       assert {:error, :rule, %Ecto.Changeset{}, _} = Rules.create_rule(params, claims)
     end
+
+    test "returns error and changeset if domain id is not provided", %{claims: claims} do
+      params = string_params_for(:rule, domain_id: nil)
+
+      assert {:error, :rule,
+              %Ecto.Changeset{errors: [domain_id: {"can't be blank", [validation: :required]}]},
+              _} = Rules.create_rule(params, claims)
+    end
   end
 
   describe "update_rule/3" do
@@ -57,6 +66,24 @@ defmodule TdDq.RulesTest do
       rule = insert(:rule)
       params = %{"name" => "New name", "description" => %{"document" => "New description"}}
       assert {:ok, %{rule: _rule}} = Rules.update_rule(rule, params, claims)
+    end
+
+    test "updates domain id if its valid", %{claims: claims} do
+      %{id: domain_id} = domain = build(:domain)
+      TaxonomyCache.put_domain(domain)
+
+      on_exit(fn ->
+        TaxonomyCache.delete_domain(domain.id)
+      end)
+
+      rule = insert(:rule)
+      params = %{"domain_id" => domain_id}
+      assert {:ok, %{rule: %{domain_id: ^domain_id}}} = Rules.update_rule(rule, params, claims)
+      params = %{"domain_id" => nil}
+
+      assert {:error, :rule,
+              %Ecto.Changeset{errors: [domain_id: {"can't be blank", [validation: :required]}]},
+              _} = Rules.update_rule(rule, params, claims)
     end
 
     test "publishes an audit event", %{claims: claims} do
