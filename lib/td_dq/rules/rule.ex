@@ -159,8 +159,9 @@ defmodule TdDq.Rules.Rule do
       execution_result_info = get_execution_result_info(rule)
       confidential = Helpers.confidential?(rule)
       bcv = Helpers.get_business_concept_version(rule)
-      domain_ids = Helpers.get_domain_ids(rule)
-      domain_parents = Helpers.get_domain_parents(domain_ids)
+      domain = Helpers.get_domain(rule)
+      domain_ids = Helpers.get_domain_ids(domain)
+      domain_parents = Helpers.get_domain_parents(domain)
 
       df_content =
         rule
@@ -171,6 +172,7 @@ defmodule TdDq.Rules.Rule do
         id: rule.id,
         business_concept_id: rule.business_concept_id,
         _confidential: confidential,
+        domain: Map.take(domain, [:id, :external_id, :name]),
         domain_ids: domain_ids,
         domain_parents: domain_parents,
         current_business_concept_version: bcv,
