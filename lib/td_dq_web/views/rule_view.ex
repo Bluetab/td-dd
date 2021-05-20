@@ -50,6 +50,8 @@ defmodule TdDqWeb.RuleView do
       :business_concept_id,
       :deleted_at,
       :description,
+      :domain_id,
+      :domain,
       :execution_result_info,
       :goal,
       :id,
