@@ -5,10 +5,14 @@ defmodule TdDq.Cache.RuleMigrator do
   
     use GenServer
   
+    import Ecto.Query, only: [where: 3]
+
     alias TdCache.Redix
     alias TdCache.ConceptCache
+    alias TdDd.Repo
     alias TdDq.Auth.Claims
     alias TdDq.Rules
+    alias TdDq.Rules.Rule
   
     require Logger
     
@@ -34,10 +38,11 @@ defmodule TdDq.Cache.RuleMigrator do
   
     @impl true
     def handle_info(:migrate_domains, state) do
-      if acquire_lock?("TdDq.Cache.RuleLoader:TD-3446") do
+      if acquire_lock?("TdDq.Cache.RuleMigrator:TD-3446") do
         {oks, errors} =
-          Rules.list_rules()
-          |> Enum.filter(& &1.business_concept_id)
+          Rule
+          |> where([r], not is_nil(r.business_concept_id))
+          |> Repo.all()
           |> Enum.map(&fetch_domain/1)
           |> Enum.filter(&elem(&1, 1))
           |> Enum.map(&update_rule/1)
@@ -45,7 +50,7 @@ defmodule TdDq.Cache.RuleMigrator do
   
         case errors do
           [] ->
-            Logger.info("RuleLoader: Linked #{Enum.count(oks)} rules to domain id")
+            Logger.info("RuleMigrator: Linked #{Enum.count(oks)} rules to domain id")
   
           _ ->
             ids =
@@ -54,7 +59,7 @@ defmodule TdDq.Cache.RuleMigrator do
               |> Enum.map(&get_in(&1, [:data, :id]))
               |> Enum.join(",")
   
-            Logger.error("RuleLoader: Error while linking the following ids to a domain id: #{ids}")
+            Logger.error("RuleMigrator: Error while linking the following ids to a domain id: #{ids}")
         end
       end
   

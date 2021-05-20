@@ -31,6 +31,22 @@ defmodule TdDq.RulesTest do
       rule = insert(:rule)
       assert Rules.get_rule!(rule.id) == rule
     end
+
+    test "returns the rule with enriched attributes" do
+      %{id: domain_id} = domain = build(:domain)
+      TaxonomyCache.put_domain(domain)
+
+      on_exit(fn ->
+        TaxonomyCache.delete_domain(domain.id)
+      end)
+
+      rule = insert(:rule, domain_id: domain_id)
+
+      assert Rules.get_rule!(rule.id, enrich: [:domain]) == %{
+               rule
+               | domain: Map.take(domain, [:id, :name, :external_id])
+             }
+    end
   end
 
   describe "create_rule/2" do
@@ -145,14 +161,6 @@ defmodule TdDq.RulesTest do
       assert Enum.all?(active_rules, &is_nil(&1.deleted_at))
       assert Enum.all?(deleted_rules, &(&1.deleted_at == ts))
       assert Enum.map(deleted_rules, & &1.business_concept_id) == ["2", "4", "6", "8"]
-    end
-
-    test "list_all_rules retrieves rules which are not deleted" do
-      insert(:rule, deleted_at: DateTime.utc_now(), name: "Deleted Rule")
-      not_deleted_rule = insert(:rule, name: "Not Deleted Rule")
-
-      assert Rules.list_all_rules()
-             |> Enum.map(&Map.get(&1, :id)) == [not_deleted_rule.id]
     end
 
     test "list_rules/1 retrieves all rules filtered by ids" do

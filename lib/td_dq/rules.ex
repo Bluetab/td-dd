@@ -6,8 +6,7 @@ defmodule TdDq.Rules do
   import Ecto.Query
 
   alias Ecto.Multi
-  alias TdCache.ConceptCache
-  alias TdCache.TemplateCache
+  alias TdCache.{ConceptCache, TaxonomyCache, TemplateCache}
   alias TdDd.Repo
   alias TdDfLib.Format
   alias TdDq.Auth.Claims
@@ -59,13 +58,6 @@ defmodule TdDq.Rules do
     |> Enum.map(&preload_bc_version/1)
   end
 
-  def list_all_rules do
-    Rule
-    |> where([r], is_nil(r.deleted_at))
-    |> Repo.all()
-    |> Enum.map(&preload_bc_version/1)
-  end
-
   # TODO: REFACTOR preload_bc_version
   defp preload_bc_version(%{business_concept_id: nil} = rule), do: rule
 
@@ -95,10 +87,11 @@ defmodule TdDq.Rules do
       ** (Ecto.NoResultsError)
 
   """
-  def get_rule!(id) do
+  def get_rule!(id, options \\ []) do
     Rule
     |> where([r], is_nil(r.deleted_at))
     |> Repo.get!(id)
+    |> enrich(Keyword.get(options, :enrich))
   end
 
   @doc """
@@ -287,4 +280,28 @@ defmodule TdDq.Rules do
       dynamic([p], field(p, ^field) == ^value and ^acc)
     end)
   end
+
+  @spec enrich(Rule.t() | [Rule.t()], nil | atom | [atom]) ::
+          Rule.t() | [Rule.t()]
+  defp enrich(target, nil), do: target
+
+  defp enrich(target, opts) when is_list(target) do
+    Enum.map(target, &enrich(&1, opts))
+  end
+
+  defp enrich(target, opts) when is_list(opts) do
+    Enum.reduce(opts, target, &enrich(&2, &1))
+  end
+
+  defp enrich(%Rule{domain_id: domain_id} = rule, :domain) when is_integer(domain_id) do
+    case TaxonomyCache.get_domain(domain_id) do
+      %{} = domain ->
+        %{rule | domain: Map.take(domain, [:id, :name, :external_id])}
+
+      _ ->
+        rule
+    end
+  end
+
+  defp enrich(target, _), do: target
 end

@@ -182,7 +182,7 @@ defmodule TdDqWeb.RuleController do
   def show(conn, %{"id" => id}) do
     claims = conn.assigns[:current_resource]
 
-    rule = Rules.get_rule!(id)
+    rule = Rules.get_rule!(id, preload: [:domain])
 
     with {:can, true} <- {:can, can?(claims, show(rule))} do
       render(
