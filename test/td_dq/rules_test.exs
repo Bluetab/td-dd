@@ -3,12 +3,16 @@ defmodule TdDq.RulesTest do
 
   alias TdCache.Redix
   alias TdCache.Redix.Stream
-  alias TdCache.TaxonomyCache
   alias TdDq.Rules
   alias TdDq.Rules.Rule
 
   @moduletag sandbox: :shared
   @stream TdCache.Audit.stream()
+
+  setup_all do
+    domain = CacheHelpers.insert_domain()
+    [domain: domain]
+  end
 
   setup do
     on_exit(fn -> Redix.del!(@stream) end)
@@ -24,6 +28,14 @@ defmodule TdDq.RulesTest do
       rule = insert(:rule)
       assert Rules.list_rules() == [rule]
     end
+
+    test "returns all rules with preloaded domain", %{domain: domain} do
+      rule = insert(:rule, domain_id: domain.id)
+
+      assert Rules.list_rules(%{}, enrich: [:domain]) == [
+               %{rule | domain: Map.take(domain, [:id, :external_id, :name])}
+             ]
+    end
   end
 
   describe "get_rule/1" do
@@ -32,14 +44,7 @@ defmodule TdDq.RulesTest do
       assert Rules.get_rule!(rule.id) == rule
     end
 
-    test "returns the rule with enriched attributes" do
-      %{id: domain_id} = domain = build(:domain)
-      TaxonomyCache.put_domain(domain)
-
-      on_exit(fn ->
-        TaxonomyCache.delete_domain(domain.id)
-      end)
-
+    test "returns the rule with enriched attributes", %{domain: %{id: domain_id} = domain} do
       rule = insert(:rule, domain_id: domain_id)
 
       assert Rules.get_rule!(rule.id, enrich: [:domain]) == %{
@@ -84,14 +89,7 @@ defmodule TdDq.RulesTest do
       assert {:ok, %{rule: _rule}} = Rules.update_rule(rule, params, claims)
     end
 
-    test "updates domain id if its valid", %{claims: claims} do
-      %{id: domain_id} = domain = build(:domain)
-      TaxonomyCache.put_domain(domain)
-
-      on_exit(fn ->
-        TaxonomyCache.delete_domain(domain.id)
-      end)
-
+    test "updates domain id if its valid", %{claims: claims, domain: %{id: domain_id}} do
       rule = insert(:rule)
       params = %{"domain_id" => domain_id}
       assert {:ok, %{rule: %{domain_id: ^domain_id}}} = Rules.update_rule(rule, params, claims)

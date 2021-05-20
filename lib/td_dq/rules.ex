@@ -26,16 +26,17 @@ defmodule TdDq.Rules do
       [%Rule{}, ...]
 
   """
-  def list_rules(params \\ %{})
+  def list_rules(params \\ %{}, options \\ [])
 
-  def list_rules(rule_ids) when is_list(rule_ids) do
+  def list_rules(rule_ids, options) when is_list(rule_ids) do
     Rule
     |> where([r], is_nil(r.deleted_at))
     |> where([r], r.id in ^rule_ids)
     |> Repo.all()
+    |> enrich(Keyword.get(options, :enrich))
   end
 
-  def list_rules(params) do
+  def list_rules(params, options) do
     fields = Rule.__schema__(:fields)
     dynamic = filter(params, fields)
 
@@ -48,6 +49,7 @@ defmodule TdDq.Rules do
 
     query
     |> Repo.all()
+    |> enrich(Keyword.get(options, :enrich))
   end
 
   def list_rules_with_bc_id do
