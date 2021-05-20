@@ -242,19 +242,6 @@ defmodule TdDq.Rules do
     |> Repo.transaction()
   end
 
-  def list_concept_rules(params) do
-    fields = Rule.__schema__(:fields)
-    dynamic = filter(params, fields)
-
-    from(
-      p in Rule,
-      where: ^dynamic,
-      where: is_nil(p.deleted_at),
-      order_by: [desc: :business_concept_id]
-    )
-    |> Repo.all()
-  end
-
   def get_rule_or_nil(id) when is_nil(id) or id == "", do: nil
   def get_rule_or_nil(id), do: get_rule(id)
 
