@@ -136,11 +136,13 @@ defmodule TdDqWeb.RuleControllerTest do
                |> json_response(:forbidden)
     end
 
-    @tag authentication: [role: "user"]
+    @tag authentication: [user_name: "not_an_admin"]
     test "gets rule when user has permissions", %{
-      conn: conn
+      conn: conn,
+      claims: %{user_id: user_id},
+      swagger_schema: schema
     } do
-      business_concept_id = System.unique_integer([:positive])
+      business_concept_id = Integer.to_string(System.unique_integer([:positive]))
       %{id: id, name: name} = insert(:rule, business_concept_id: business_concept_id)
       create_acl_entry(user_id, "business_concept", business_concept_id, [:view_quality_rule])
 
