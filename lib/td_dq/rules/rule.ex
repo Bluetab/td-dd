@@ -64,7 +64,7 @@ defmodule TdDq.Rules.Rule do
       :minimum,
       :result_type,
       :domain_id
-    ])
+    ], message: "required")
     |> validate_inclusion(:result_type, @valid_result_types)
     |> validate_goal()
     |> validate_content()

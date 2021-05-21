@@ -77,7 +77,7 @@ defmodule TdDq.RulesTest do
       params = string_params_for(:rule, domain_id: nil)
 
       assert {:error, :rule,
-              %Ecto.Changeset{errors: [domain_id: {"can't be blank", [validation: :required]}]},
+              %Ecto.Changeset{errors: [domain_id: {"required", [validation: :required]}]},
               _} = Rules.create_rule(params, claims)
     end
   end
@@ -96,7 +96,7 @@ defmodule TdDq.RulesTest do
       params = %{"domain_id" => nil}
 
       assert {:error, :rule,
-              %Ecto.Changeset{errors: [domain_id: {"can't be blank", [validation: :required]}]},
+              %Ecto.Changeset{errors: [domain_id: {"required", [validation: :required]}]},
               _} = Rules.update_rule(rule, params, claims)
     end
 
