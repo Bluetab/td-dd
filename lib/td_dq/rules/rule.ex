@@ -7,6 +7,7 @@ defmodule TdDq.Rules.Rule do
 
   import Ecto.Changeset
 
+  alias TdCache.TaxonomyCache
   alias TdDfLib.Validation
   alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Rule
@@ -58,15 +59,19 @@ defmodule TdDq.Rules.Rule do
       :result_type,
       :domain_id
     ])
-    |> validate_required([
-      :name,
-      :goal,
-      :minimum,
-      :result_type,
-      :domain_id
-    ], message: "required")
+    |> validate_required(
+      [
+        :name,
+        :goal,
+        :minimum,
+        :result_type,
+        :domain_id
+      ],
+      message: "required"
+    )
     |> validate_inclusion(:result_type, @valid_result_types)
     |> validate_goal()
+    |> validate_domain()
     |> validate_content()
     |> unique_constraint(
       :rule_name_bc_id,
@@ -116,6 +121,30 @@ defmodule TdDq.Rules.Rule do
     case minimum >= goal do
       true -> changeset
       false -> add_error(changeset, :minimum, "must.be.greater.than.or.equal.to.goal")
+    end
+  end
+
+  defp validate_domain(%{valid?: true} = changeset) do
+    case get_field(changeset, :domain_id) do
+      nil ->
+        ids = TaxonomyCache.get_domain_ids()
+
+        validate_change(changeset, :domain_id, fn :domain_id, domain_id ->
+          do_validate_domain(domain_id, ids)
+        end)
+
+      _ ->
+        changeset
+    end
+  end
+
+  defp validate_domain(changeset), do: changeset
+
+  defp do_validate_domain(domain_id, ids) do
+    if Enum.member?(ids, domain_id) do
+      []
+    else
+      [domain_id: "not_exists"]
     end
   end
 

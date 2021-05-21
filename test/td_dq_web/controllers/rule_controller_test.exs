@@ -227,8 +227,8 @@ defmodule TdDqWeb.RuleControllerTest do
 
   describe "create rule" do
     @tag authentication: [role: "admin"]
-    test "renders rule when data is valid", %{conn: conn, swagger_schema: schema} do
-      params = string_params_for(:rule)
+    test "renders rule when data is valid", %{conn: conn, swagger_schema: schema, domain: domain} do
+      params = string_params_for(:rule, domain_id: domain.id)
 
       assert %{"data" => data} =
                conn
@@ -242,10 +242,11 @@ defmodule TdDqWeb.RuleControllerTest do
     @tag authentication: [role: "admin"]
     test "renders rule when data is valid without business concept", %{
       conn: conn,
+      domain: domain,
       swagger_schema: schema
     } do
       rule_params =
-        string_params_for(:rule)
+        string_params_for(:rule, domain_id: domain.id)
         |> Map.delete("business_concept_id")
 
       assert %{"data" => data} =
@@ -297,8 +298,9 @@ defmodule TdDqWeb.RuleControllerTest do
   end
 
   describe "update rule" do
-    setup do
-      [rule: insert(:rule)]
+    setup tags do
+      domain_id = get_in(tags, [:domain, :id])
+      [rule: insert(:rule, domain_id: domain_id)]
     end
 
     @tag authentication: [role: "admin"]
