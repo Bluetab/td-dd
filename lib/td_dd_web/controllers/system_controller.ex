@@ -44,6 +44,7 @@ defmodule TdDdWeb.SystemController do
   def create(conn, %{"system" => params}) do
     with claims <- conn.assigns[:current_resource],
          {:can, true} <- {:can, can?(claims, create(System))},
+         {:ok, true} <- check_image_df(params),
          {:ok, %{system: system}} <- Systems.create_system(params, claims) do
       conn
       |> put_status(:created)
@@ -89,6 +90,7 @@ defmodule TdDdWeb.SystemController do
     with claims <- conn.assigns[:current_resource],
          {:ok, system} <- Systems.get_system(id),
          {:can, true} <- {:can, can?(claims, update(system))},
+         {:ok, true} <- check_image_df(params),
          {:ok, %{system: updated_system}} <- Systems.update_system(system, params, claims) do
       render(conn, "show.json", system: updated_system)
     end
@@ -122,5 +124,24 @@ defmodule TdDdWeb.SystemController do
 
   defp deleted(_params) do
     Map.put(%{}, :without, ["deleted_at"])
+  end
+
+  defp check_image_df(%{"df_content" => df_content}) do
+    if check_image_type(Map.get(df_content, "image")) &&
+         check_image_type(Map.get(df_content, "logo")) do
+      {:ok, true}
+    else
+      {:error, "Invalid File"}
+    end
+  end
+
+  defp check_image_df(_), do: {:ok, true}
+
+  defp check_image_type(nil), do: true
+
+  defp check_image_type(image_base64) do
+    {start, _length} = :binary.match(image_base64, ";base64,")
+    type = :binary.part(image_base64, 0, start)
+    Regex.match?(~r/(jpg|jpeg|png|gif)/, type)
   end
 end

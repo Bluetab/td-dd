@@ -1,5 +1,9 @@
 # Changelog
 
+### Unrelease
+
+- [TD-3502] Avoid uploading files that are not images
+
 ## [4.20.1] 2021-05-18
 
 ### Added
