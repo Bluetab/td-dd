@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-3446] Domain in rule
+
+### Fixed
+
+- [TD-3236] Show path in profile execution
 ## [4.20.1] 2021-05-18
 
 ### Added
