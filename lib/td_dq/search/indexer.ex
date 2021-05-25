@@ -5,6 +5,7 @@ defmodule TdDq.Search.Indexer do
 
   alias Elasticsearch.Index
   alias Elasticsearch.Index.Bulk
+  alias TdCache.Redix
   alias TdDd.Search.Cluster
   alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Rule
@@ -76,6 +77,55 @@ defmodule TdDq.Search.Indexer do
   defp delete(ids, index) do
     alias_name = Cluster.alias_name(index)
     Enum.map(ids, &Elasticsearch.delete_document(Cluster, &1, alias_name))
+  end
+
+  def migrate do
+    alias_rule = Cluster.alias_name(@rule_index)
+    alias_implementation = Cluster.alias_name(@implementation_index)
+
+    unless alias_exists?(alias_rule) and alias_exists?(alias_implementation) do
+      if can_migrate?() do
+        delete_existing_index(alias_rule)
+        delete_existing_index(alias_implementation)
+
+        Timer.time(
+          fn -> reindex_rules(:all) end,
+          fn millis, _ -> Logger.info("Created index #{alias_rule} in #{millis}ms") end
+        )
+        Timer.time(
+          fn -> reindex_implementations(:all) end,
+          fn millis, _ -> Logger.info("Created index #{alias_implementation} in #{millis}ms") end
+        )
+
+      else
+        Logger.warn("Another process is migrating")
+      end
+    end
+  end
+
+  defp alias_exists?(name) do
+    case Elasticsearch.head(Cluster, "/_alias/#{name}") do
+      {:ok, _} -> true
+      {:error, _} -> false
+    end
+  end
+
+  defp delete_existing_index(name) do
+    case Elasticsearch.delete(Cluster, "/#{name}") do
+      {:ok, _} ->
+        Logger.info("Deleted index #{name}")
+
+      {:error, %{status: 404}} ->
+        :ok
+
+      error ->
+        error
+    end
+  end
+
+  # Ensure only one instance of dq is reindexing by creating a lock in Redis
+  defp can_migrate? do
+    Redix.command!(["SET", "TdDq.Search.Indexer:LOCK", node(), "NX", "EX", 3600]) == "OK"
   end
 
   defp log({:ok, %{"errors" => false, "items" => items, "took" => took}}, _action) do

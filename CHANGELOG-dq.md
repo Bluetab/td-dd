@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-3642] On startup ensures rules and implementations elasticsearch indices are created
+
 ## [4.18.0] 2021-04-19
 
 ### Fixed
