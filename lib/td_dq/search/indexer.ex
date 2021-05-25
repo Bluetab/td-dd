@@ -79,12 +79,12 @@ defmodule TdDq.Search.Indexer do
     Enum.map(ids, &Elasticsearch.delete_document(Cluster, &1, alias_name))
   end
 
-  def migrate do
+  def verify_indices do
     alias_rule = Cluster.alias_name(@rule_index)
     alias_implementation = Cluster.alias_name(@implementation_index)
 
     unless alias_exists?(alias_rule) and alias_exists?(alias_implementation) do
-      if can_migrate?() do
+      if can_reindex?() do
         delete_existing_index(alias_rule)
         delete_existing_index(alias_implementation)
 
@@ -124,7 +124,7 @@ defmodule TdDq.Search.Indexer do
   end
 
   # Ensure only one instance of dq is reindexing by creating a lock in Redis
-  defp can_migrate? do
+  defp can_reindex? do
     Redix.command!(["SET", "TdDq.Search.Indexer:LOCK", node(), "NX", "EX", 3600]) == "OK"
   end
 
