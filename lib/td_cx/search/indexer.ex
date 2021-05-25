@@ -56,11 +56,11 @@ defmodule TdCx.Search.Indexer do
     Elasticsearch.delete_document(Cluster, job, "#{alias_name}")
   end
 
-  def migrate do
+  def verify_indices do
     alias_name = Cluster.alias_name(:jobs)
 
     unless alias_exists?(alias_name) do
-      if can_migrate?() do
+      if can_reindex?() do
         delete_existing_index(alias_name)
 
         Timer.time(
@@ -105,7 +105,7 @@ defmodule TdCx.Search.Indexer do
   end
 
   # Ensure only one instance of cx is reindexing by creating a lock in Redis
-  defp can_migrate? do
+  defp can_reindex? do
     Redix.command!(["SET", "TdCx.Search.Indexer:LOCK", node(), "NX", "EX", 3600]) == "OK"
   end
 
