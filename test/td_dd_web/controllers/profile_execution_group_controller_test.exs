@@ -15,18 +15,25 @@ defmodule TdDdWeb.ExecutionGroupControllerTest do
   end
 
   setup tags do
+    start_supervised!(TdDd.Search.StructureEnricher)
+
     domain_id =
       case tags do
         %{domain: %{id: id}} -> id
         _ -> nil
       end
 
+    %{data_structure: data_structure} =
+      insert(:data_structure_version,
+        data_structure: insert(:data_structure, domain_id: domain_id)
+      )
+
     groups =
       1..5
       |> Enum.map(fn _ ->
         insert(:profile_execution,
           profile_group: build(:profile_execution_group),
-          data_structure: build(:data_structure, domain_id: domain_id),
+          data_structure: data_structure,
           profile: build(:profile)
         )
       end)

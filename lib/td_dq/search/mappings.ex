@@ -15,6 +15,13 @@ defmodule TdDq.Search.Mappings do
     properties = %{
       id: %{type: "long"},
       business_concept_id: %{type: "text"},
+      domain: %{
+        properties: %{
+          id: %{type: "long"},
+          name: %{type: "text", fields: @raw_sort},
+          external_id: %{type: "text", fields: @raw}
+        }
+      },
       domain_ids: %{type: "long", null_value: -1},
       domain_parents: %{
         type: "nested",

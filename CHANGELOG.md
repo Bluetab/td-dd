@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-3446] Domain in rule
+
+### Fixed
+
+- [TD-3236] Show path in profile execution
+
 ### Changed
 
 - [TD-3642] On startup ensures rules and implementations elasticsearch indices are created

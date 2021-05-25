@@ -52,7 +52,6 @@ defmodule TdDqWeb.ExecutionGroupController do
 
   def create(conn, %{} = params) do
     claims = conn.assigns[:current_resource]
-
     with {:can, true} <- {:can, can?(claims, create(Group))},
          %{} = creation_params <- creation_params(claims, params),
          {:ok, %{group: %{id: id}}} <- Executions.create_group(creation_params),
