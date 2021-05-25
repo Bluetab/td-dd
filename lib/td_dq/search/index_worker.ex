@@ -80,7 +80,20 @@ defmodule TdDq.Search.IndexWorker do
   def init(state) do
     name = String.replace_prefix("#{__MODULE__}", "Elixir.", "")
     Logger.info("Running #{name}")
+
+    env = Application.get_env(:td_dd, :env)
+
+    unless env == :test do
+      Process.send_after(self(), :verify_indices, 0)
+    end
+
     {:ok, state}
+  end
+
+  @impl GenServer
+  def handle_info(:verify_indices, state) do
+    Indexer.verify_indices()
+    {:noreply, state}
   end
 
   @impl GenServer

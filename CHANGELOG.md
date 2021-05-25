@@ -9,6 +9,11 @@
 ### Fixed
 
 - [TD-3236] Show path in profile execution
+
+### Changed
+
+- [TD-3642] On startup ensures rules and implementations elasticsearch indices are created
+
 ## [4.20.1] 2021-05-18
 
 ### Added
