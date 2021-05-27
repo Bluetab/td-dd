@@ -9,6 +9,7 @@
 ### Fixed
 
 - [TD-3236] Show path in profile execution
+- [TD-3794] Metadata load fails when classifying structures
 
 ### Changed
 
