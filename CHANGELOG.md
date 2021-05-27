@@ -12,6 +12,7 @@
 
 ### Changed
 
+- [TD-3753] Build using Elixir 1.12 and Erlang/OTP 24
 - [TD-3642] On startup ensures rules and implementations elasticsearch indices are created
 
 ## [4.20.1] 2021-05-18
