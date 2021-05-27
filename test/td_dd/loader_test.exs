@@ -190,6 +190,40 @@ defmodule TdDd.LoaderTest do
       assert {:ok, _context} = Loader.load(records, audit())
     end
 
+    test "loads works with classifier" do
+      sys1 = insert(:system, external_id: "SYS1", name: "SYS1")
+
+      insert(:classifier, system_id: sys1.id)
+
+      ds1 = insert(:data_structure, system_id: sys1.id)
+
+      insert(:data_structure_version,
+        data_structure_id: ds1.id,
+        group: "GROUP1",
+        name: "NAME1",
+        type: "USER_TABLE",
+        version: 0
+      )
+
+      s1 = %{
+        description: "D1",
+        external_id: ds1.external_id,
+        group: "GROUP1",
+        name: "NAME1",
+        system_id: sys1.id,
+        type: "USER_TABLE",
+        version: 0
+      }
+
+      records = %{
+        structures: [s1],
+        fields: [],
+        relations: []
+      }
+
+      assert {:ok, _context} = Loader.load(records, audit())
+    end
+
     test "with structures containing an external_id" do
       system = insert(:system, external_id: "SYS1", name: "SYS1")
       insert(:system, external_id: "SYS2", external_id: "SYS2")

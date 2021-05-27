@@ -71,7 +71,7 @@ defmodule TdDd.Loader do
     |> Multi.run(:structure_ids, __MODULE__, :structure_ids, [])
     |> Multi.run(:system_ids, fn _, _ -> {:ok, system_ids(structure_records)} end)
     |> Multi.run(:classification, fn _, %{system_ids: ids} ->
-      Classifiers.classify_many(ids, ts)
+      Classifiers.classify_many(ids, updated_at: ts)
     end)
     |> Repo.transaction()
   end
