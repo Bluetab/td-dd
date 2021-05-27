@@ -71,7 +71,7 @@ defmodule TdDd.Factory do
 
     %StructureNote{
       status: :draft,
-      version: 0,
+      version: 1,
       df_content: %{}
     }
     |> merge_attributes(attrs)

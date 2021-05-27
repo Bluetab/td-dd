@@ -1329,21 +1329,13 @@ defmodule TdDd.DataStructuresTest do
     @update_attrs %{df_content: %{}, status: :published}
     @invalid_attrs %{df_content: nil, status: nil, version: nil}
 
-    def structure_note_fixture(attrs \\ %{}) do
-      data_structure = insert(:data_structure)
-      attrs = Enum.into(attrs, @valid_attrs)
-      {:ok, structure_note} = DataStructures.create_structure_note(data_structure, attrs)
-
-      structure_note
-    end
-
     test "list_structure_notes/0 returns all structure_notes" do
-      structure_note = structure_note_fixture()
+      structure_note = insert(:structure_note)
       assert DataStructures.list_structure_notes() <|> [structure_note]
     end
 
     test "get_structure_note!/1 returns the structure_note with given id" do
-      structure_note = structure_note_fixture()
+      structure_note = insert(:structure_note)
       assert DataStructures.get_structure_note!(structure_note.id) <~> structure_note
     end
 
@@ -1366,7 +1358,7 @@ defmodule TdDd.DataStructuresTest do
     end
 
     test "update_structure_note/2 with valid data updates the structure_note" do
-      structure_note = structure_note_fixture()
+      structure_note = insert(:structure_note)
 
       assert {:ok, %StructureNote{} = structure_note} =
                DataStructures.update_structure_note(structure_note, @update_attrs)
@@ -1376,7 +1368,7 @@ defmodule TdDd.DataStructuresTest do
     end
 
     test "update_structure_note/2 with invalid data returns error changeset" do
-      structure_note = structure_note_fixture()
+      structure_note = insert(:structure_note)
 
       assert {:error, %Ecto.Changeset{}} =
                DataStructures.update_structure_note(structure_note, @invalid_attrs)
@@ -1385,7 +1377,7 @@ defmodule TdDd.DataStructuresTest do
     end
 
     test "delete_structure_note/1 deletes the structure_note" do
-      structure_note = structure_note_fixture()
+      structure_note = insert(:structure_note)
       assert {:ok, %StructureNote{}} = DataStructures.delete_structure_note(structure_note)
 
       assert_raise Ecto.NoResultsError, fn ->
@@ -1394,7 +1386,7 @@ defmodule TdDd.DataStructuresTest do
     end
 
     test "change_structure_note/1 returns a structure_note changeset" do
-      structure_note = structure_note_fixture()
+      structure_note = insert(:structure_note)
       assert %Ecto.Changeset{} = DataStructures.change_structure_note(structure_note)
     end
   end
