@@ -141,7 +141,8 @@ defmodule TdDd.Factory do
   def system_factory do
     %System{
       name: sequence("system_name"),
-      external_id: sequence("system_external_id")
+      external_id: sequence("system_external_id"),
+      df_content: %{}
     }
   end
 

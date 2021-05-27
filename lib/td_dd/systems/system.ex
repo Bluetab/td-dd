@@ -9,6 +9,7 @@ defmodule TdDd.Systems.System do
 
   alias TdDd.Classifiers.Classifier
   alias TdDd.DataStructures.DataStructure
+  alias TdDfLib.Validation
 
   @type t :: %__MODULE__{}
   @typep changeset :: Ecto.Changeset.t()
@@ -33,6 +34,13 @@ defmodule TdDd.Systems.System do
     system
     |> cast(params, [:name, :external_id, :df_content])
     |> validate_required([:name, :external_id])
+    |> validate_content()
     |> unique_constraint(:external_id)
   end
+
+  defp validate_content(%Ecto.Changeset{valid?: true} = changeset) do
+    validate_change(changeset, :df_content, Validation.validator("System"))
+  end
+
+  defp validate_content(changeset), do: changeset
 end
