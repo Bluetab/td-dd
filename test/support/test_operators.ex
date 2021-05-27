@@ -5,6 +5,7 @@ defmodule TdDd.TestOperators do
 
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.StructureNote
   alias TdDq.Implementations.Implementation
 
   def a <~> b, do: approximately_equal(a, b)
@@ -43,6 +44,10 @@ defmodule TdDd.TestOperators do
         :classifications,
         :classes
       ])
+  end
+
+  defp approximately_equal(%StructureNote{} = a, %StructureNote{} = b) do
+    Map.drop(a, [:data_structure]) == Map.drop(b, [:data_structure])
   end
 
   ## Equality test for rule implementation without comparing Ecto associations.

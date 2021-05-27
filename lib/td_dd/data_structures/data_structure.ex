@@ -13,6 +13,7 @@ defmodule TdDd.DataStructures.DataStructure do
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Profile
   alias TdDd.DataStructures.StructureMetadata
+  alias TdDd.DataStructures.StructureNote
   alias TdDd.DataStructures.Validation
   alias TdDd.Systems.System
   alias TdDd.Utils.CollectionUtils
@@ -29,6 +30,7 @@ defmodule TdDd.DataStructures.DataStructure do
 
     has_many(:versions, DataStructureVersion)
     has_many(:metadata_versions, StructureMetadata)
+    has_many(:note_versions, StructureNote)
     has_one(:profile, Profile)
     has_many(:data_structures_tags, DataStructuresTags)
     many_to_many(:tags, DataStructureTag, join_through: DataStructuresTags)

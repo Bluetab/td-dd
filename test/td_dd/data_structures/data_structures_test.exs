@@ -1008,7 +1008,13 @@ defmodule TdDd.DataStructuresTest do
     setup do
       s1 = insert(:source, config: %{"job_types" => ["catalog", "quality", "profile"]})
       s2 = insert(:source)
-      s3 = insert(:source, external_id: "foo", config: %{"job_types" => ["catalog"], "alias" => "foo"})
+
+      s3 =
+        insert(:source,
+          external_id: "foo",
+          config: %{"job_types" => ["catalog"], "alias" => "foo"}
+        )
+
       s4 = insert(:source, config: %{"job_types" => ["profile"], "alias" => "foo"})
 
       v1 = insert(:data_structure_version, data_structure: insert(:data_structure, source: s1))
@@ -1314,5 +1320,82 @@ defmodule TdDd.DataStructuresTest do
           data_structure: build(:data_structure, confidential: false)
         )
     )
+  end
+
+  describe "structure_notes" do
+    alias TdDd.DataStructures.StructureNote
+
+    @valid_attrs %{df_content: %{}, status: :draft, version: 42}
+    @update_attrs %{df_content: %{}, status: :published}
+    @invalid_attrs %{df_content: nil, status: nil, version: nil}
+
+    def structure_note_fixture(attrs \\ %{}) do
+      data_structure = insert(:data_structure)
+      attrs = Enum.into(attrs, @valid_attrs)
+      {:ok, structure_note} = DataStructures.create_structure_note(data_structure, attrs)
+
+      structure_note
+    end
+
+    test "list_structure_notes/0 returns all structure_notes" do
+      structure_note = structure_note_fixture()
+      assert DataStructures.list_structure_notes() <|> [structure_note]
+    end
+
+    test "get_structure_note!/1 returns the structure_note with given id" do
+      structure_note = structure_note_fixture()
+      assert DataStructures.get_structure_note!(structure_note.id) <~> structure_note
+    end
+
+    test "create_structure_note/1 with valid data creates a structure_note" do
+      data_structure = insert(:data_structure)
+
+      assert {:ok, %StructureNote{} = structure_note} =
+               DataStructures.create_structure_note(data_structure, @valid_attrs)
+
+      assert structure_note.df_content == %{}
+      assert structure_note.status == :draft
+      assert structure_note.version == 42
+    end
+
+    test "create_structure_note/1 with invalid data returns error changeset" do
+      data_structure = insert(:data_structure)
+
+      assert {:error, %Ecto.Changeset{}} =
+               DataStructures.create_structure_note(data_structure, @invalid_attrs)
+    end
+
+    test "update_structure_note/2 with valid data updates the structure_note" do
+      structure_note = structure_note_fixture()
+
+      assert {:ok, %StructureNote{} = structure_note} =
+               DataStructures.update_structure_note(structure_note, @update_attrs)
+
+      assert structure_note.df_content == %{}
+      assert structure_note.status == :published
+    end
+
+    test "update_structure_note/2 with invalid data returns error changeset" do
+      structure_note = structure_note_fixture()
+
+      assert {:error, %Ecto.Changeset{}} =
+               DataStructures.update_structure_note(structure_note, @invalid_attrs)
+
+      assert structure_note <~> DataStructures.get_structure_note!(structure_note.id)
+    end
+
+    test "delete_structure_note/1 deletes the structure_note" do
+      structure_note = structure_note_fixture()
+      assert {:ok, %StructureNote{}} = DataStructures.delete_structure_note(structure_note)
+
+      assert_raise Ecto.NoResultsError, fn ->
+        DataStructures.get_structure_note!(structure_note.id)
+      end
+    end
+
+    test "change_structure_note/1 returns a structure_note changeset" do
+      structure_note = structure_note_fixture()
+      assert %Ecto.Changeset{} = DataStructures.change_structure_note(structure_note)
+    end
   end
 end

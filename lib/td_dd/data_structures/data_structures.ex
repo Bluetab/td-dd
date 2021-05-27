@@ -990,4 +990,103 @@ defmodule TdDd.DataStructures do
       %{dsv | data_structure: StructureEnricher.enrich(structure, type, content_opt)}
     end)
   end
+
+  import Ecto.Query, warn: false
+  alias TdDd.Repo
+
+  alias TdDd.DataStructures.StructureNote
+
+  @doc """
+  Returns the list of structure_notes.
+
+  ## Examples
+
+      iex> list_structure_notes()
+      [%StructureNote{}, ...]
+
+  """
+  def list_structure_notes do
+    Repo.all(StructureNote)
+  end
+
+  @doc """
+  Gets a single structure_note.
+
+  Raises `Ecto.NoResultsError` if the Structure note does not exist.
+
+  ## Examples
+
+      iex> get_structure_note!(123)
+      %StructureNote{}
+
+      iex> get_structure_note!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_structure_note!(id), do: Repo.get!(StructureNote, id)
+
+  @doc """
+  Creates a structure_note.
+
+  ## Examples
+
+      iex> create_structure_note(%{field: value})
+      {:ok, %StructureNote{}}
+
+      iex> create_structure_note(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_structure_note(data_structure, attrs \\ %{}) do
+    %StructureNote{}
+    |> StructureNote.create_changeset(data_structure, attrs)
+    |> Repo.insert()
+  end
+
+  @doc """
+  Updates a structure_note.
+
+  ## Examples
+
+      iex> update_structure_note(structure_note, %{field: new_value})
+      {:ok, %StructureNote{}}
+
+      iex> update_structure_note(structure_note, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def update_structure_note(%StructureNote{} = structure_note, attrs) do
+    structure_note
+    |> StructureNote.changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Deletes a structure_note.
+
+  ## Examples
+
+      iex> delete_structure_note(structure_note)
+      {:ok, %StructureNote{}}
+
+      iex> delete_structure_note(structure_note)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_structure_note(%StructureNote{} = structure_note) do
+    Repo.delete(structure_note)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking structure_note changes.
+
+  ## Examples
+
+      iex> change_structure_note(structure_note)
+      %Ecto.Changeset{data: %StructureNote{}}
+
+  """
+  def change_structure_note(%StructureNote{} = structure_note, attrs \\ %{}) do
+    StructureNote.changeset(structure_note, attrs)
+  end
 end
