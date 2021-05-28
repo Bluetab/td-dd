@@ -19,8 +19,9 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
     [domain: domain]
   end
 
-  setup do
-    rule = insert(:rule, business_concept_id: @business_concept_id)
+  setup tags do
+    domain_id = get_in(tags, [:domain, :id])
+    rule = insert(:rule, business_concept_id: @business_concept_id, domain_id: domain_id)
     implementation = insert(:implementation, rule: rule)
     [implementation: implementation, rule: rule]
   end

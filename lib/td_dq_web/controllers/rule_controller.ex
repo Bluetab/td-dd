@@ -30,7 +30,7 @@ defmodule TdDqWeb.RuleController do
 
     rules =
       params
-      |> Rules.list_rules()
+      |> Rules.list_rules(enrich: [:domain])
       |> Enum.filter(&can?(claims, show(&1)))
 
     render(conn, "index.json",
@@ -65,7 +65,7 @@ defmodule TdDqWeb.RuleController do
 
       rules =
         params
-        |> Rules.list_concept_rules()
+        |> Rules.list_rules(enrich: [:domain])
         |> Enum.filter(&can?(claims, show(&1)))
 
       conn
@@ -182,7 +182,7 @@ defmodule TdDqWeb.RuleController do
   def show(conn, %{"id" => id}) do
     claims = conn.assigns[:current_resource]
 
-    rule = Rules.get_rule!(id)
+    rule = Rules.get_rule!(id, enrich: [:domain])
 
     with {:can, true} <- {:can, can?(claims, show(rule))} do
       render(

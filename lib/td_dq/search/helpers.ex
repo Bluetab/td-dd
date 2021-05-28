@@ -8,12 +8,33 @@ defmodule TdDq.Search.Helpers do
   alias TdCache.UserCache
   alias TdDd.Cache.StructureEntry
 
-  def get_domain_ids(%{business_concept_id: nil}), do: -1
-
-  def get_domain_ids(%{business_concept_id: business_concept_id}) do
-    {:ok, domain_ids} = ConceptCache.get(business_concept_id, :domain_ids, refresh: true)
-    domain_ids
+  def get_domain(%{domain_id: domain_id}) when is_integer(domain_id) do
+    get_domain(domain_id)
   end
+
+  def get_domain(domain_id) when is_integer(domain_id) do
+    case TaxonomyCache.get_domain(domain_id) do
+      domain = %{} -> domain
+      _ -> %{}
+    end
+  end
+
+  def get_domain(_), do: %{}
+
+  def get_domain_ids(%{id: id, parent_ids: parent_ids}), do: [id | parent_ids]
+
+  def get_domain_ids(_), do: -1
+
+  def get_domain_parents(%{parent_ids: parent_ids} = domain) do
+    parents =
+      parent_ids
+      |> Enum.map(&get_domain/1)
+      |> Enum.map(&Map.take(&1, [:id, :name]))
+
+    [domain | parents]
+  end
+
+  def get_domain_parents(_), do: []
 
   def confidential?(%{business_concept_id: nil}), do: false
 
@@ -44,13 +65,6 @@ defmodule TdDq.Search.Helpers do
 
       _ ->
         %{name: ""}
-    end
-  end
-
-  def get_domain_parents(domain_ids) do
-    case domain_ids do
-      -1 -> []
-      _ -> Enum.map(domain_ids, &%{id: &1, name: TaxonomyCache.get_name(&1)})
     end
   end
 

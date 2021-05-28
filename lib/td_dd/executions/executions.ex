@@ -178,8 +178,25 @@ defmodule TdDd.Executions do
     enrich(execution, opts, :latest, &get_latest_version/1)
   end
 
-  defp get_latest_version(%ProfileExecution{data_structure: structure = %{}}) do
-    DataStructures.get_latest_version(structure)
+  defp get_latest_version(%ProfileExecution{data_structure: structure = %{id: id}}) do
+    structure
+    |> DataStructures.get_latest_version()
+    |> case do
+      nil ->
+        nil
+
+      dsv ->
+        parents =
+          dsv
+          |> DataStructures.get_ancestors()
+          |> Enum.map(fn %{id: data_structure_id, name: name} ->
+            %{data_structure_id: data_structure_id, name: name}
+          end)
+
+        path = parents ++ [%{data_structure_id: id, name: dsv.name}]
+
+        %{dsv | path: path}
+    end
   end
 
   defp get_latest_version(_execution), do: nil

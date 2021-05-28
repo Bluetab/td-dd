@@ -9,6 +9,11 @@ defmodule TdDq.RulesTest do
   @moduletag sandbox: :shared
   @stream TdCache.Audit.stream()
 
+  setup_all do
+    domain = CacheHelpers.insert_domain()
+    [domain: domain]
+  end
+
   setup do
     on_exit(fn -> Redix.del!(@stream) end)
     start_supervised!(TdDd.Search.StructureEnricher)
@@ -23,6 +28,14 @@ defmodule TdDq.RulesTest do
       rule = insert(:rule)
       assert Rules.list_rules() == [rule]
     end
+
+    test "returns all rules with preloaded domain", %{domain: domain} do
+      rule = insert(:rule, domain_id: domain.id)
+
+      assert Rules.list_rules(%{}, enrich: [:domain]) == [
+               %{rule | domain: Map.take(domain, [:id, :external_id, :name])}
+             ]
+    end
   end
 
   describe "get_rule/1" do
@@ -30,33 +43,61 @@ defmodule TdDq.RulesTest do
       rule = insert(:rule)
       assert Rules.get_rule!(rule.id) == rule
     end
+
+    test "returns the rule with enriched attributes", %{domain: %{id: domain_id} = domain} do
+      rule = insert(:rule, domain_id: domain_id)
+
+      assert Rules.get_rule!(rule.id, enrich: [:domain]) == %{
+               rule
+               | domain: Map.take(domain, [:id, :name, :external_id])
+             }
+    end
   end
 
   describe "create_rule/2" do
-    test "creates a rule with valid data", %{claims: claims} do
-      params = string_params_for(:rule)
+    test "creates a rule with valid data", %{claims: claims, domain: domain} do
+      params = string_params_for(:rule, domain_id: domain.id)
       assert {:ok, %{rule: _rule}} = Rules.create_rule(params, claims)
     end
 
-    test "publishes an audit event", %{claims: claims} do
-      params = string_params_for(:rule)
+    test "publishes an audit event", %{claims: claims, domain: domain} do
+      params = string_params_for(:rule, domain_id: domain.id)
       assert {:ok, %{audit: event_id}} = Rules.create_rule(params, claims)
 
       assert {:ok, [%{id: ^event_id}]} =
                Stream.range(:redix, @stream, event_id, event_id, transform: :range)
     end
 
-    test "returns error and changeset if changeset is invalid", %{claims: claims} do
-      params = string_params_for(:rule, name: nil)
+    test "returns error and changeset if changeset is invalid", %{claims: claims, domain: domain} do
+      params = string_params_for(:rule, name: nil, domain_id: domain.id)
       assert {:error, :rule, %Ecto.Changeset{}, _} = Rules.create_rule(params, claims)
+    end
+
+    test "returns error and changeset if domain id is not provided", %{claims: claims} do
+      params = string_params_for(:rule, domain_id: nil)
+
+      assert {:error, :rule,
+              %Ecto.Changeset{errors: [domain_id: {"required", [validation: :required]}]},
+              _} = Rules.create_rule(params, claims)
     end
   end
 
   describe "update_rule/3" do
-    test "updates rule if changes are valid", %{claims: claims} do
-      rule = insert(:rule)
+    test "updates rule if changes are valid", %{claims: claims, domain: domain} do
+      rule = insert(:rule, domain_id: domain.id)
       params = %{"name" => "New name", "description" => %{"document" => "New description"}}
       assert {:ok, %{rule: _rule}} = Rules.update_rule(rule, params, claims)
+    end
+
+    test "updates domain id if its valid", %{claims: claims, domain: %{id: domain_id}} do
+      rule = insert(:rule)
+      params = %{"domain_id" => domain_id}
+      assert {:ok, %{rule: %{domain_id: ^domain_id}}} = Rules.update_rule(rule, params, claims)
+      params = %{"domain_id" => nil}
+
+      assert {:error, :rule,
+              %Ecto.Changeset{errors: [domain_id: {"required", [validation: :required]}]},
+              _} = Rules.update_rule(rule, params, claims)
     end
 
     test "publishes an audit event", %{claims: claims} do
@@ -118,14 +159,6 @@ defmodule TdDq.RulesTest do
       assert Enum.all?(active_rules, &is_nil(&1.deleted_at))
       assert Enum.all?(deleted_rules, &(&1.deleted_at == ts))
       assert Enum.map(deleted_rules, & &1.business_concept_id) == ["2", "4", "6", "8"]
-    end
-
-    test "list_all_rules retrieves rules which are not deleted" do
-      insert(:rule, deleted_at: DateTime.utc_now(), name: "Deleted Rule")
-      not_deleted_rule = insert(:rule, name: "Not Deleted Rule")
-
-      assert Rules.list_all_rules()
-             |> Enum.map(&Map.get(&1, :id)) == [not_deleted_rule.id]
     end
 
     test "list_rules/1 retrieves all rules filtered by ids" do

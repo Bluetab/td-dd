@@ -6,8 +6,7 @@ defmodule TdDq.Rules do
   import Ecto.Query
 
   alias Ecto.Multi
-  alias TdCache.ConceptCache
-  alias TdCache.TemplateCache
+  alias TdCache.{ConceptCache, TaxonomyCache, TemplateCache}
   alias TdDd.Repo
   alias TdDfLib.Format
   alias TdDq.Auth.Claims
@@ -27,16 +26,17 @@ defmodule TdDq.Rules do
       [%Rule{}, ...]
 
   """
-  def list_rules(params \\ %{})
+  def list_rules(params \\ %{}, options \\ [])
 
-  def list_rules(rule_ids) when is_list(rule_ids) do
+  def list_rules(rule_ids, options) when is_list(rule_ids) do
     Rule
     |> where([r], is_nil(r.deleted_at))
     |> where([r], r.id in ^rule_ids)
     |> Repo.all()
+    |> enrich(Keyword.get(options, :enrich))
   end
 
-  def list_rules(params) do
+  def list_rules(params, options) do
     fields = Rule.__schema__(:fields)
     dynamic = filter(params, fields)
 
@@ -49,19 +49,13 @@ defmodule TdDq.Rules do
 
     query
     |> Repo.all()
+    |> enrich(Keyword.get(options, :enrich))
   end
 
   def list_rules_with_bc_id do
     Rule
     |> where([r], is_nil(r.deleted_at))
     |> where([r], not is_nil(r.business_concept_id))
-    |> Repo.all()
-    |> Enum.map(&preload_bc_version/1)
-  end
-
-  def list_all_rules do
-    Rule
-    |> where([r], is_nil(r.deleted_at))
     |> Repo.all()
     |> Enum.map(&preload_bc_version/1)
   end
@@ -95,10 +89,11 @@ defmodule TdDq.Rules do
       ** (Ecto.NoResultsError)
 
   """
-  def get_rule!(id) do
+  def get_rule!(id, options \\ []) do
     Rule
     |> where([r], is_nil(r.deleted_at))
     |> Repo.get!(id)
+    |> enrich(Keyword.get(options, :enrich))
   end
 
   @doc """
@@ -247,19 +242,6 @@ defmodule TdDq.Rules do
     |> Repo.transaction()
   end
 
-  def list_concept_rules(params) do
-    fields = Rule.__schema__(:fields)
-    dynamic = filter(params, fields)
-
-    from(
-      p in Rule,
-      where: ^dynamic,
-      where: is_nil(p.deleted_at),
-      order_by: [desc: :business_concept_id]
-    )
-    |> Repo.all()
-  end
-
   def get_rule_or_nil(id) when is_nil(id) or id == "", do: nil
   def get_rule_or_nil(id), do: get_rule(id)
 
@@ -287,4 +269,28 @@ defmodule TdDq.Rules do
       dynamic([p], field(p, ^field) == ^value and ^acc)
     end)
   end
+
+  @spec enrich(Rule.t() | [Rule.t()], nil | atom | [atom]) ::
+          Rule.t() | [Rule.t()]
+  defp enrich(target, nil), do: target
+
+  defp enrich(target, opts) when is_list(target) do
+    Enum.map(target, &enrich(&1, opts))
+  end
+
+  defp enrich(target, opts) when is_list(opts) do
+    Enum.reduce(opts, target, &enrich(&2, &1))
+  end
+
+  defp enrich(%Rule{domain_id: domain_id} = rule, :domain) when is_integer(domain_id) do
+    case TaxonomyCache.get_domain(domain_id) do
+      %{} = domain ->
+        %{rule | domain: Map.take(domain, [:id, :name, :external_id])}
+
+      _ ->
+        rule
+    end
+  end
+
+  defp enrich(target, _), do: target
 end
