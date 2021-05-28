@@ -38,7 +38,10 @@ defmodule TdDd.Systems.System do
     |> unique_constraint(:external_id)
   end
 
-  defp validate_content(%Ecto.Changeset{valid?: true} = changeset) do
+  defp validate_content(
+         %Ecto.Changeset{valid?: true, changes: %{df_content: df_content}} = changeset
+       )
+       when map_size(df_content) !== 0 do
     validate_change(changeset, :df_content, Validation.validator("System"))
   end
 

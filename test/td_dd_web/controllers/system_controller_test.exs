@@ -9,13 +9,11 @@ defmodule TdDdWeb.SystemControllerTest do
   @moduletag sandbox: :shared
   @create_attrs %{
     external_id: "some external_id",
-    name: "some name",
-    df_content: %{}
+    name: "some name"
   }
   @update_attrs %{
     external_id: "some updated external_id",
-    name: "some updated name",
-    df_content: %{}
+    name: "some updated name"
   }
   @invalid_attrs %{external_id: nil, name: nil}
   @valid_image <<"data:image/jpeg;base64,/888j/4QAYRXhXXXX">>
@@ -140,15 +138,14 @@ defmodule TdDdWeb.SystemControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "renders errors when template not exists", %{conn: conn, template: template} do
+    test "renders system when template not exists", %{conn: conn, swagger_schema: schema, template: template} do
       Templates.delete(template)
 
-      assert %{"errors" => errors} =
+      assert %{"data" => %{"id" => _id}} =
                conn
                |> post(Routes.system_path(conn, :create), system: @create_attrs)
-               |> json_response(:unprocessable_entity)
-
-      assert errors == %{"df_content" => ["invalid template"]}
+               |> validate_resp_schema(schema, "SystemResponse")
+               |> json_response(:created)
     end
   end
 
@@ -169,7 +166,7 @@ defmodule TdDdWeb.SystemControllerTest do
                "id" => ^id,
                "external_id" => "some updated external_id",
                "name" => "some updated name",
-               "df_content" => %{}
+               "df_content" => nil
              } = data
     end
 
