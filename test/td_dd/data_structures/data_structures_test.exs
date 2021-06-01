@@ -1334,6 +1334,12 @@ defmodule TdDd.DataStructuresTest do
       assert DataStructures.list_structure_notes() <|> [structure_note]
     end
 
+    test "list_structure_notes/1 returns all structure_notes for a data_structure" do
+      %{data_structure_id: data_structure_id} = structure_note = insert(:structure_note)
+      insert(:structure_note)
+      assert DataStructures.list_structure_notes(data_structure_id) <|> [structure_note]
+    end
+
     test "get_structure_note!/1 returns the structure_note with given id" do
       structure_note = insert(:structure_note)
       assert DataStructures.get_structure_note!(structure_note.id) <~> structure_note

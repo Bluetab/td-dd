@@ -1009,6 +1009,21 @@ defmodule TdDd.DataStructures do
     Repo.all(StructureNote)
   end
 
+  def list_structure_notes(data_structure_id) do
+    StructureNote
+    |> where(data_structure_id: ^data_structure_id)
+    |> order_by(asc: :version)
+    |> Repo.all()
+  end
+
+  def list_structure_notes(data_structure_id, status) do
+    StructureNote
+    |> where(data_structure_id: ^data_structure_id)
+    |> where(status: ^status)
+    |> order_by(asc: :version)
+    |> Repo.all()
+  end
+
   @doc """
   Gets a single structure_note.
 

@@ -9,6 +9,7 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.Canada.DataStructureVersionAbilities
   alias TdDd.Canada.ExecutionAbilities
   alias TdDd.Canada.LinkAbilities
+  alias TdDd.Canada.StructureNoteAbilities
   alias TdDd.Canada.SystemAbilities
   alias TdDd.Canada.UnitAbilities
   alias TdDd.Classifiers.Classifier
@@ -16,6 +17,7 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.DataStructures.DataStructureTag
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.StructureNote
   alias TdDd.Events.ProfileEvent
   alias TdDd.Executions.ProfileExecution
   alias TdDd.Executions.ProfileGroup
@@ -68,6 +70,10 @@ defmodule TdDd.Canada.Abilities do
 
     def can?(%Claims{} = claims, action, %DataStructureVersion{} = data_structure_version) do
       DataStructureVersionAbilities.can?(claims, action, data_structure_version)
+    end
+
+    def can?(%Claims{} = claims, action, StructureNote) do
+      StructureNoteAbilities.can?(claims, action)
     end
 
     def can?(%Claims{} = claims, action, DataStructureTag) do

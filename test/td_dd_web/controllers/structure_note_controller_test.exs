@@ -42,15 +42,40 @@ defmodule TdDdWeb.StructureNoteControllerTest do
               |> Map.get("data")
     end
 
+    @tag authentication: [user_name: "non_admin_user"]
+    test "non admin user cannot create structure_note", %{conn: conn} do
+      %{id: data_structure_id} = insert(:data_structure)
+      create_attrs = string_params_for(:structure_note)
+
+      assert conn
+               |> post(Routes.data_structure_note_path(conn, :create, data_structure_id),
+                 structure_note: create_attrs
+               )
+               |> response(:forbidden)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "renders error when creating note with existing draft", %{conn: conn} do
+      %{id: data_structure_id} = insert(:data_structure)
+      create_attrs = string_params_for(:structure_note)
+      assert conn
+       |> post(Routes.data_structure_note_path(conn, :create, data_structure_id),
+          structure_note: create_attrs
+        )
+        |> json_response(:created)
+
+      assert conn
+        |> post(Routes.data_structure_note_path(conn, :create, data_structure_id),
+           structure_note: create_attrs
+         )
+        |> json_response(:conflict)
+    end
+
     @tag authentication: [role: "admin"]
     test "renders errors when data is invalid", %{conn: conn} do
       %{id: data_structure_id} = insert(:data_structure)
 
-      assert %{
-               "df_content" => ["can't be blank"],
-               "status" => ["can't be blank"],
-               "version" => ["can't be blank"]
-             } =
+      assert %{"df_content" => ["can't be blank"]} =
                conn
                |> post(Routes.data_structure_note_path(conn, :create, data_structure_id),
                  structure_note: %{}
@@ -110,6 +135,40 @@ defmodule TdDdWeb.StructureNoteControllerTest do
         "df_content" => ["can't be blank"],
         "status" => ["can't be blank"]
       } = errors
+    end
+
+    @tag authentication: [user_name: "non_admin_user"]
+    test "non admin user can not publish a draft note", %{conn: conn} do
+      %StructureNote{
+        data_structure_id: data_structure_id
+      } = structure_note = insert(:structure_note)
+
+      update_attrs =
+        string_params_for(:structure_note, status: :published, df_content: %{"foo" => "bar"})
+
+      conn
+        |> put(
+          Routes.data_structure_note_path(conn, :update, data_structure_id, structure_note),
+          structure_note: update_attrs
+        )
+        |> json_response(:forbidden)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "can publish a draft note when the user has the right permissions", %{conn: conn} do
+      %StructureNote{
+        data_structure_id: data_structure_id
+      } = structure_note = insert(:structure_note)
+
+      update_attrs =
+        string_params_for(:structure_note, status: :published, df_content: %{"foo" => "bar"})
+
+      conn
+        |> put(
+          Routes.data_structure_note_path(conn, :update, data_structure_id, structure_note),
+          structure_note: update_attrs
+        )
+        |> json_response(:ok)
     end
   end
 

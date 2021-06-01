@@ -13,6 +13,10 @@ defmodule TdDdWeb.ErrorView do
     %{errors: %{detail: "Not found"}}
   end
 
+  def render("409.json", _assigns) do
+    %{errors: %{detail: "Conflict"}}
+  end
+
   def render("422.json", _assigns) do
     %{errors: %{detail: "Unprocessable Entity"}}
   end

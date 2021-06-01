@@ -1,8 +1,11 @@
 defmodule TdDdWeb.StructureNoteController do
   use TdDdWeb, :controller
 
+  import Canada, only: [can?: 2]
+
   alias TdDd.DataStructures
   alias TdDd.DataStructures.StructureNote
+  alias TdDd.DataStructures.StructureNotesWorkflow
 
   action_fallback TdDdWeb.FallbackController
 
@@ -17,9 +20,11 @@ defmodule TdDdWeb.StructureNoteController do
         "data_structure_id" => data_structure_id,
         "structure_note" => structure_note_params
       }) do
-    with data_structure <- DataStructures.get_data_structure!(data_structure_id),
+    with claims <- conn.assigns[:current_resource],
+         {:can, true} <- {:can, can?(claims, create(StructureNote))},
+         data_structure <- DataStructures.get_data_structure!(data_structure_id),
          {:ok, %StructureNote{} = structure_note} <-
-           DataStructures.create_structure_note(data_structure, structure_note_params) do
+           StructureNotesWorkflow.create(data_structure, structure_note_params) do
       conn
       |> put_status(:created)
       |> put_resp_header(
@@ -36,9 +41,10 @@ defmodule TdDdWeb.StructureNoteController do
   end
 
   def update(conn, %{"id" => id, "structure_note" => structure_note_params}) do
-    structure_note = DataStructures.get_structure_note!(id)
-
-    with {:ok, %StructureNote{} = structure_note} <-
+    with claims <- conn.assigns[:current_resource],
+         {:can, true} <- {:can, can?(claims, publish_from_draft(StructureNote))},
+         structure_note = DataStructures.get_structure_note!(id),
+         {:ok, %StructureNote{} = structure_note} <-
            DataStructures.update_structure_note(structure_note, structure_note_params) do
       render(conn, "show.json", structure_note: structure_note)
     end
