@@ -75,7 +75,7 @@ defmodule TdDd.Search.StructureEnricher do
       count: 0,
       types: type_map(),
       domains: TaxonomyCache.domain_map(),
-      links: LinkCache.link_source_ids("data_structure", "business_concept")
+      links: LinkCache.linked_source_ids("data_structure", "business_concept")
     }
   end
 
@@ -93,7 +93,12 @@ defmodule TdDd.Search.StructureEnricher do
   defp enrich_domain(%DataStructure{} = structure, _),
     do: %{structure | domain: %{}}
 
-  defp search_content(%DataStructure{df_content: %{} = content} = structure, :searchable, %{} = types, type)
+  defp search_content(
+         %DataStructure{df_content: %{} = content} = structure,
+         :searchable,
+         %{} = types,
+         type
+       )
        when map_size(content) > 0 do
     case Map.get(types, type) do
       %{} = template ->
