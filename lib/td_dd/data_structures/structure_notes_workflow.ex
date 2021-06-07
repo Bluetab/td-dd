@@ -21,18 +21,6 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
     end
   end
 
-  def update(%StructureNote{status: from_status} = structure_note, %{"status" => desired_status}) do
-    case {from_status, String.to_atom(desired_status)} do
-      {:draft, :pending_approval} -> send_for_approval(structure_note)
-      {:draft, :published} -> publish(structure_note)
-      {:pending_approval, :published} -> publish(structure_note)
-      {:pending_approval, :rejected} -> reject(structure_note)
-      {:rejected, :draft} -> dereject(structure_note)
-      {:published, :deprecated} -> deprecate(structure_note)
-      _ -> {:error, :invalid_transition}
-    end
-  end
-
   def update(
         %StructureNote{status: :draft} = structure_note,
         %{"df_content" => df_content} = attrs
@@ -41,6 +29,17 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
       %{"status" => "draft"} -> update_content(structure_note, df_content)
       %{"status" => _other_status} -> {:error, :only_draft_are_editable}
       _ -> update_content(structure_note, df_content)
+    end
+  end
+
+  def update(structure_note, %{"status" => status}) do
+    case String.to_atom(status) do
+      :pending_approval -> send_for_approval(structure_note)
+      :published -> publish(structure_note)
+      :rejected -> reject(structure_note)
+      :draft -> unreject(structure_note)
+      :deprecated -> deprecate(structure_note)
+      _ -> {:error, :invalid_transition}
     end
   end
 
@@ -61,41 +60,62 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
     DataStructures.update_structure_note(structure_note, %{"df_content" => df_content})
   end
 
-  defp send_for_approval(structure_note) do
-    DataStructures.update_structure_note(structure_note, %{"status" => :pending_approval})
-  end
+  defp send_for_approval(structure_note), do: simple_transition(structure_note, :pending_approval)
+  defp reject(structure_note), do: simple_transition(structure_note, :rejected)
+  defp unreject(structure_note), do: simple_transition(structure_note, :draft)
 
   defp publish(structure_note) do
-    case get_latest_structure_note(structure_note.data_structure_id, :published) do
-      %StructureNote{} = previous_published ->
-        DataStructures.update_structure_note(previous_published, %{"status" => "versioned"})
-        DataStructures.update_structure_note(structure_note, %{"status" => "published"})
+    with {:ok, _} <- structure_note |> can_transit_to(:published) do
+      case get_latest_structure_note(structure_note.data_structure_id, :published) do
+        %StructureNote{} = previous_published ->
+          transit_to(previous_published, "versioned")
+          transit_to(structure_note, "published")
 
-      nil ->
-        DataStructures.update_structure_note(structure_note, %{"status" => "published"})
+        nil ->
+          transit_to(structure_note, "published")
+      end
     end
-  end
-
-  defp reject(structure_note) do
-    DataStructures.update_structure_note(structure_note, %{"status" => "rejected"})
-  end
-
-  defp dereject(structure_note) do
-    DataStructures.update_structure_note(structure_note, %{"status" => "draft"})
   end
 
   defp deprecate(
          %StructureNote{version: version, data_structure_id: data_structure_id} = structure_note
        ) do
-    get_latest_structure_note(data_structure_id)
-    %{version: latest_version} = get_latest_structure_note(data_structure_id)
+    with {:ok, _} <- structure_note |> can_transit_to(:deprecated) do
+      get_latest_structure_note(data_structure_id)
+      %{version: latest_version} = get_latest_structure_note(data_structure_id)
 
-    case latest_version do
-      ^version ->
-        DataStructures.update_structure_note(structure_note, %{"status" => "deprecated"})
+      if latest_version == version do
+          transit_to(structure_note, "deprecated")
+      else
+          {:error, :a_new_version_exists}
+      end
+    end
+  end
 
-      _ ->
-        {:error, :a_new_version_exists}
+  defp simple_transition(structure_note, status) do
+    with {:ok, _} <- structure_note |> can_transit_to(status) do
+      transit_to(structure_note, Atom.to_string(status))
+    end
+  end
+
+  defp transit_to(structure_note, status) do
+    DataStructures.update_structure_note(structure_note, %{"status" => status})
+  end
+
+  defp can_transit_to(structure_note, status) do
+    case status in available_actions(structure_note) do
+      true -> {:ok, status}
+      false -> {:error, :invalid_transition}
+    end
+  end
+
+  def available_actions(%StructureNote{status: status}) do
+    case status do
+      :draft -> [:pending_approval, :published, :deleted, :edited]
+      :pending_approval -> [:published, :rejected]
+      :rejected -> [:draft, :deleted]
+      :published -> [:deprecated]
+      _ -> []
     end
   end
 

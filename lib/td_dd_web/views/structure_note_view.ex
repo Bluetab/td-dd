@@ -6,6 +6,11 @@ defmodule TdDdWeb.StructureNoteView do
     %{data: render_many(structure_notes, StructureNoteView, "structure_note.json")}
   end
 
+  def render("show.json", %{structure_note: structure_note, actions: _actions} = assigns) do
+    %{data: render_one(structure_note, StructureNoteView, "structure_note.json"),
+      _actions: render_one(assigns, __MODULE__, "actions.json")}
+  end
+
   def render("show.json", %{structure_note: structure_note}) do
     %{data: render_one(structure_note, StructureNoteView, "structure_note.json")}
   end
@@ -15,5 +20,25 @@ defmodule TdDdWeb.StructureNoteView do
       status: structure_note.status,
       version: structure_note.version,
       df_content: structure_note.df_content}
+  end
+
+  def render("actions.json", %{structure_note: %{actions: actions, conn: conn}}) do
+    {"location", location} = conn.resp_headers
+    |> Enum.find(fn(header) ->
+      case header do
+        {"location", location} -> true
+        _ -> false
+      end
+    end)
+
+    # [{"location", location}] = conn.resp_headers
+
+    algo = actions
+    |> Enum.reduce(%{}, fn action, acc -> Map.put(acc, action,
+      %{href: location,
+        input: %{status: action},
+        method: "PUT"
+      }
+    )end)
   end
 end
