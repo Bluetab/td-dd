@@ -57,7 +57,7 @@ defmodule TdDd.MixProject do
       {:postgrex, "~> 0.15.0"},
       {:gettext, "~> 0.11"},
       {:httpoison, "~> 1.6"},
-      {:credo, "~> 1.4", only: [:dev, :test], runtime: false},
+      {:credo, "~> 1.5", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.0", only: :dev, runtime: false},
       {:guardian, "~> 2.0"},
       {:canada, "~> 2.0"},
@@ -74,7 +74,7 @@ defmodule TdDd.MixProject do
        git: "https://github.com/Bluetab/elasticsearch-elixir.git",
        branch: "feature/bulk-index-action"},
       {:td_hypermedia, git: "https://github.com/Bluetab/td-hypermedia.git", tag: "4.0.0"},
-      {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "4.20.1"},
+      {:td_cache, git: "https://github.com/Bluetab/td-cache.git", branch: "feature/td-3837", override: true},
       {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "4.21.0"},
       {:graph, git: "https://github.com/Bluetab/graph.git", tag: "1.1.1"},
       {:vaultex, "~> 1.0.1"}

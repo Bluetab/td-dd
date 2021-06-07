@@ -75,7 +75,7 @@ defmodule TdDd.Search.StructureEnricher do
       count: 0,
       types: type_map(),
       domains: TaxonomyCache.domain_map(),
-      links: LinkCache.link_count_map("data_structure", "business_concept")
+      links: LinkCache.link_source_ids("data_structure", "business_concept")
     }
   end
 
@@ -108,7 +108,8 @@ defmodule TdDd.Search.StructureEnricher do
 
   defp search_content(content, template), do: Format.search_values(content, template)
 
-  defp enrich_link_count(%{id: id} = structure, %{} = links) do
-    %{structure | linked_concepts_count: Map.get(links, id, 0)}
+  defp enrich_link_count(%{id: id} = structure, links) do
+    value = if Enum.member?(links, id), do: 1, else: 0
+    %{structure | linked_concepts_count: value}
   end
 end

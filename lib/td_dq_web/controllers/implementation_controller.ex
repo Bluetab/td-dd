@@ -174,8 +174,7 @@ defmodule TdDqWeb.ImplementationController do
          {:editable, true} <-
            {:editable,
             Enum.empty?(implementation.all_rule_results) ||
-              (Map.keys(implementation_params) == ["soft_delete"] &&
-                 Map.get(implementation_params, "soft_delete") == true)},
+              implementation_params == %{"soft_delete" => true}},
          {:ok, %{implementation: %Implementation{} = implementation}} <-
            Implementations.update_implementation(
              implementation,
