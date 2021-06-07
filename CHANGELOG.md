@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-3447] Filter concept rules but do not check permissions over resource 
+
 ## [4.21.0] 2021-05-31
 
 ### Added
