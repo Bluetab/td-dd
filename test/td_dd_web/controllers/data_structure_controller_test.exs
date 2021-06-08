@@ -12,14 +12,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
   @moduletag sandbox: :shared
   @template_name "data_structure_controller_test_template"
 
-  @update_attrs %{
-    description: "some updated description",
-    group: "some updated group",
-    last_change_by: 43,
-    name: "some updated name",
-    type: "table"
-  }
-
   setup_all do
     start_supervised!(GraphData)
     :ok
@@ -29,12 +21,14 @@ defmodule TdDdWeb.DataStructureControllerTest do
     %{id: template_id, name: template_name} = template = build(:template, name: @template_name)
     {:ok, _} = TemplateCache.put(template, publish: false)
     system = insert(:system)
-    domain =  CacheHelpers.insert_domain()
+    domain = CacheHelpers.insert_domain()
     CacheHelpers.insert_structure_type(structure_type: template_name, template_id: template_id)
     on_exit(fn -> TemplateCache.delete(template_id) end)
 
     start_supervised!(TdDd.Search.StructureEnricher)
-    {:ok, %{conn: put_req_header(conn, "accept", "application/json"), system: system, domain: domain}}
+
+    {:ok,
+     %{conn: put_req_header(conn, "accept", "application/json"), system: system, domain: domain}}
   end
 
   describe "index" do
@@ -165,22 +159,15 @@ defmodule TdDdWeb.DataStructureControllerTest do
       data_structure: %{id: id} = data_structure,
       swagger_schema: schema
     } do
+      attrs = %{domain_id: 42, confidential: true}
+
       assert %{"data" => %{"id" => ^id}} =
                conn
-               |> put(data_structure_path(conn, :update, data_structure),
-                 data_structure: @update_attrs
-               )
+               |> put(data_structure_path(conn, :update, data_structure), data_structure: attrs)
+               |> validate_resp_schema(schema, "DataStructureResponse")
                |> json_response(:ok)
 
-      assert %{"data" => data} =
-               conn
-               |> get(data_structure_data_structure_version_path(conn, :show, id, "latest"))
-               |> validate_resp_schema(schema, "DataStructureVersionResponse")
-               |> json_response(:ok)
-
-      assert data["data_structure"]["id"] == id
-      assert data["description"] == "some description"
-      assert data["data_structure"]["inserted_at"]
+      assert %{domain_id: 42, confidential: true} = DataStructures.get_data_structure!(id)
     end
 
     @tag authentication: [role: "admin"]

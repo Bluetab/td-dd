@@ -53,17 +53,19 @@ defmodule TdDd.DataStructuresTest do
       data_structure: data_structure,
       claims: claims
     } do
-      params = %{df_content: %{"string" => "changed", "list" => "two"}}
+      params = %{df_content: %{"string" => "changed", "list" => "two", "domain_id" => 42}}
 
       assert {:ok, %{data_structure: data_structure}} =
                DataStructures.update_data_structure(data_structure, params, claims)
 
       assert %DataStructure{} = data_structure
-      assert %{"list" => "two", "string" => "changed"} = data_structure.df_content
+
+      assert %{"list" => "two", "string" => "changed", "domain_id" => 42} =
+               data_structure.df_content
     end
 
     test "emits an audit event", %{data_structure: data_structure, claims: claims} do
-      params = %{df_content: %{"string" => "changed", "list" => "two"}}
+      params = %{df_content: %{"string" => "changed", "list" => "two", "domain_id" => 42}}
 
       assert {:ok, %{audit: event_id}} =
                DataStructures.update_data_structure(data_structure, params, claims)
@@ -1008,7 +1010,13 @@ defmodule TdDd.DataStructuresTest do
     setup do
       s1 = insert(:source, config: %{"job_types" => ["catalog", "quality", "profile"]})
       s2 = insert(:source)
-      s3 = insert(:source, external_id: "foo", config: %{"job_types" => ["catalog"], "alias" => "foo"})
+
+      s3 =
+        insert(:source,
+          external_id: "foo",
+          config: %{"job_types" => ["catalog"], "alias" => "foo"}
+        )
+
       s4 = insert(:source, config: %{"job_types" => ["profile"], "alias" => "foo"})
 
       v1 = insert(:data_structure_version, data_structure: insert(:data_structure, source: s1))
