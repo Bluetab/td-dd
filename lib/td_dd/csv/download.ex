@@ -3,7 +3,7 @@ defmodule TdDd.CSV.Download do
   Helper module to download structures.
   """
 
-  alias TdCache.TemplateCache
+  alias TdDd.DataStructures.DataStructureTypes
   alias TdDfLib.Format
 
   @headers [
@@ -32,7 +32,7 @@ defmodule TdDd.CSV.Download do
     structures_by_type = Enum.group_by(structures, &Map.get(&1, :type))
     types = Map.keys(structures_by_type)
 
-    templates_by_type = Enum.reduce(types, %{}, &Map.put(&2, &1, TemplateCache.get_by_name!(&1)))
+    templates_by_type = Enum.reduce(types, %{}, &Map.put(&2, &1, get_template_by_type(&1)))
 
     list =
       Enum.reduce(types, [], fn type, acc ->
@@ -67,7 +67,7 @@ defmodule TdDd.CSV.Download do
   end
 
   defp template_structures_to_csv(template, structures, header_labels, add_separation) do
-    content = Format.flatten_content_fields(template.content)
+    content = Format.flatten_content_fields(template.template.content)
     content_fields = Enum.reduce(content, [], &(&2 ++ [Map.take(&1, ["name", "values", "type"])]))
     content_labels = Enum.reduce(content, [], &(&2 ++ [Map.get(&1, "label")]))
     headers = build_headers(header_labels)
@@ -141,9 +141,7 @@ defmodule TdDd.CSV.Download do
     Enum.map(headers, fn h -> Map.get(header_labels, h, h) end)
   end
 
-  defp get_content_field(_template, nil) do
-    ""
-  end
+  defp get_content_field(_template, nil), do: ""
 
   defp get_content_field(%{"type" => "url", "name" => name}, content) do
     content
@@ -186,6 +184,18 @@ defmodule TdDd.CSV.Download do
 
   defp get_content_field(%{"name" => name}, content) do
     Map.get(content, name, "")
+  end
+
+  defp get_template_by_type(type) do
+    type
+    |> DataStructureTypes.get_data_structure_type_by_type!()
+    |> case do
+      nil ->
+        nil
+
+      structure_type ->
+        DataStructureTypes.enrich_template(structure_type)
+    end
   end
 
   defp content_to_list(nil), do: []
