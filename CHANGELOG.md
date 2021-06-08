@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-3837] Perfomance issue iterating over Redis keys to obtain linked concept
+  count. The actual link count is only used in a comparison with 0 (to filter
+  structures with or without concept links), so instead of counting links for
+  each structure, assume 1 if structure has any linked concepts and 0 otherwise.
+
 ## [4.21.0] 2021-05-31
 
 ### Added
