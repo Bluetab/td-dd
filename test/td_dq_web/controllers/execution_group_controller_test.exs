@@ -98,9 +98,10 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
     @tag permissions: [:execute_quality_rule_implementations, :view_quality_rule]
     test "returns an OK response with the created execution group", %{
       conn: conn,
-      swagger_schema: schema
+      swagger_schema: schema,
+      domain: domain
     } do
-      %{id: rule_id} = insert(:rule, business_concept_id: "42")
+      %{id: rule_id} = insert(:rule, business_concept_id: "42", domain_id: domain.id)
       %{id: id1} = insert(:implementation, rule_id: rule_id)
       %{id: id2} = insert(:implementation, rule_id: rule_id)
 

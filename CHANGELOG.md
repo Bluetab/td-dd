@@ -1,5 +1,31 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-3837] Perfomance issue iterating over Redis keys to obtain linked concept
+  count. The actual link count is only used in a comparison with 0 (to filter
+  structures with or without concept links), so instead of counting links for
+  each structure, assume 1 if structure has any linked concepts and 0 otherwise.
+
+## [4.21.0] 2021-05-31
+
+### Added
+
+- [TD-3446] Domain in rule
+
+### Fixed
+
+- [TD-3236] Show path in profile execution
+- [TD-3794] Metadata load fails when classifying structures
+- [TD-3502] Avoid uploading files that are not images
+
+### Changed
+
+- [TD-3753] Build using Elixir 1.12 and Erlang/OTP 24
+- [TD-3642] On startup ensures rules and implementations elasticsearch indices are created
+
 ## [4.20.1] 2021-05-18
 
 ### Added

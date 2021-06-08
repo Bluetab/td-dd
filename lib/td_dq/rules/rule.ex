@@ -7,6 +7,7 @@ defmodule TdDq.Rules.Rule do
 
   import Ecto.Changeset
 
+  alias TdCache.TaxonomyCache
   alias TdDfLib.Validation
   alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Rule
@@ -24,6 +25,8 @@ defmodule TdDq.Rules.Rule do
     field(:version, :integer, default: 1)
     field(:updated_by, :integer)
     field(:result_type, :string, default: "percentage")
+    field(:domain_id, :integer)
+    field(:domain, :map, virtual: true, default: %{})
 
     has_many(:rule_implementations, Implementation)
 
@@ -53,16 +56,22 @@ defmodule TdDq.Rules.Rule do
       :updated_by,
       :df_name,
       :df_content,
-      :result_type
+      :result_type,
+      :domain_id
     ])
-    |> validate_required([
-      :name,
-      :goal,
-      :minimum,
-      :result_type
-    ])
+    |> validate_required(
+      [
+        :name,
+        :goal,
+        :minimum,
+        :result_type,
+        :domain_id
+      ],
+      message: "required"
+    )
     |> validate_inclusion(:result_type, @valid_result_types)
     |> validate_goal()
+    |> validate_domain()
     |> validate_content()
     |> unique_constraint(
       :rule_name_bc_id,
@@ -115,6 +124,30 @@ defmodule TdDq.Rules.Rule do
     end
   end
 
+  defp validate_domain(%{valid?: true} = changeset) do
+    case get_field(changeset, :domain_id) do
+      nil ->
+        ids = TaxonomyCache.get_domain_ids()
+
+        validate_change(changeset, :domain_id, fn :domain_id, domain_id ->
+          do_validate_domain(domain_id, ids)
+        end)
+
+      _ ->
+        changeset
+    end
+  end
+
+  defp validate_domain(changeset), do: changeset
+
+  defp do_validate_domain(domain_id, ids) do
+    if Enum.member?(ids, domain_id) do
+      []
+    else
+      [domain_id: "not_exists"]
+    end
+  end
+
   defp validate_content(%{} = changeset) do
     case get_field(changeset, :df_name) do
       nil ->
@@ -156,8 +189,9 @@ defmodule TdDq.Rules.Rule do
       execution_result_info = get_execution_result_info(rule)
       confidential = Helpers.confidential?(rule)
       bcv = Helpers.get_business_concept_version(rule)
-      domain_ids = Helpers.get_domain_ids(rule)
-      domain_parents = Helpers.get_domain_parents(domain_ids)
+      domain = Helpers.get_domain(rule)
+      domain_ids = Helpers.get_domain_ids(domain)
+      domain_parents = Helpers.get_domain_parents(domain)
 
       df_content =
         rule
@@ -168,6 +202,7 @@ defmodule TdDq.Rules.Rule do
         id: rule.id,
         business_concept_id: rule.business_concept_id,
         _confidential: confidential,
+        domain: Map.take(domain, [:id, :external_id, :name]),
         domain_ids: domain_ids,
         domain_parents: domain_parents,
         current_business_concept_version: bcv,

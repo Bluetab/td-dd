@@ -80,6 +80,7 @@ defmodule TdDd.Factory do
   def rule_factory do
     %TdDq.Rules.Rule{
       business_concept_id: sequence(:business_concept_id, &"#{&1}"),
+      domain_id: sequence(:domain_id, &"#{&1}"),
       description: %{"document" => "Rule Description"},
       goal: 30,
       minimum: 12,
@@ -153,7 +154,7 @@ defmodule TdDd.Factory do
   def system_factory do
     %System{
       name: sequence("system_name"),
-      external_id: sequence("system_external_id")
+      external_id: sequence("system_external_id"),
     }
   end
 

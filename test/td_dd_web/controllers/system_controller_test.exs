@@ -4,7 +4,7 @@ defmodule TdDdWeb.SystemControllerTest do
 
   alias TdDd.Cache.SystemLoader
   alias TdDd.DataStructures.RelationTypes
-  alias TdDd.Systems.System
+  alias TdDd.Systems.System, as: TdDdSystem
 
   @moduletag sandbox: :shared
   @create_attrs %{
@@ -16,6 +16,38 @@ defmodule TdDdWeb.SystemControllerTest do
     name: "some updated name"
   }
   @invalid_attrs %{external_id: nil, name: nil}
+  @valid_image <<"data:image/jpeg;base64,/888j/4QAYRXhXXXX">>
+  @invalid_image <<"data:application/pdf;base64,JVBERi0xLjUNJeLj">>
+
+  @system_template %{
+    id: System.unique_integer([:positive]),
+    label: "system",
+    name: "System",
+    scope: "dd",
+    content: [
+      %{
+        "name" => "System Template",
+        "fields" => [
+          %{
+            "cardinality" => "?",
+            "label" => "Description",
+            "name" => "system_description",
+            "type" => "enriched_text",
+            "widget" => "enriched_text"
+          },
+          %{
+            "cardinality" => "?",
+            "default" => "",
+            "label" => "image_label",
+            "name" => "image_name",
+            "type" => "image",
+            "values" => nil,
+            "widget" => "image"
+          }
+        ]
+      }
+    ]
+  }
 
   setup_all do
     start_supervised(SystemLoader)
@@ -26,9 +58,17 @@ defmodule TdDdWeb.SystemControllerTest do
     start_supervised!(TdDd.Search.StructureEnricher)
     system = insert(:system)
     domain = CacheHelpers.insert_domain()
+    template = Templates.create_template(@system_template)
+
+    on_exit(fn ->
+      Templates.delete(template)
+    end)
 
     {:ok,
-     conn: put_req_header(conn, "accept", "application/json"), system: system, domain: domain}
+     conn: put_req_header(conn, "accept", "application/json"),
+     system: system,
+     domain: domain,
+     template: template}
   end
 
   describe "GET /api/systems" do
@@ -62,11 +102,50 @@ defmodule TdDdWeb.SystemControllerTest do
     end
 
     @tag authentication: [role: "admin"]
+    test "renders system when image file is valid", %{conn: conn, swagger_schema: schema} do
+      valid_attr =
+        @create_attrs
+        |> new_attr_external_id()
+        |> Map.put("df_content", %{"image_name" => @valid_image})
+
+      assert %{"data" => %{"id" => _id}} =
+               conn
+               |> post(Routes.system_path(conn, :create), system: valid_attr)
+               |> validate_resp_schema(schema, "SystemResponse")
+               |> json_response(:created)
+    end
+
+    @tag authentication: [role: "admin"]
     test "renders errors when data is invalid", %{conn: conn} do
       assert %{"errors" => _errors} =
                conn
                |> post(Routes.system_path(conn, :create), system: @invalid_attrs)
                |> json_response(:unprocessable_entity)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "renders errors when image file is invalid", %{conn: conn} do
+      invalid_attr =
+        @create_attrs
+        |> Map.put("df_content", %{"image_name" => @invalid_image})
+
+      assert %{"errors" => errors} =
+               conn
+               |> post(Routes.system_path(conn, :create), system: invalid_attr)
+               |> json_response(:unprocessable_entity)
+
+      assert errors != %{}
+    end
+
+    @tag authentication: [role: "admin"]
+    test "renders system when template not exists", %{conn: conn, swagger_schema: schema, template: template} do
+      Templates.delete(template)
+
+      assert %{"data" => %{"id" => _id}} =
+               conn
+               |> post(Routes.system_path(conn, :create), system: @create_attrs)
+               |> validate_resp_schema(schema, "SystemResponse")
+               |> json_response(:created)
     end
   end
 
@@ -75,7 +154,7 @@ defmodule TdDdWeb.SystemControllerTest do
     test "renders system when data is valid", %{
       conn: conn,
       swagger_schema: schema,
-      system: %System{id: id} = system
+      system: %TdDdSystem{id: id} = system
     } do
       assert %{"data" => data} =
                conn
@@ -96,6 +175,55 @@ defmodule TdDdWeb.SystemControllerTest do
       assert %{"errors" => errors} =
                conn
                |> put(Routes.system_path(conn, :update, system), system: @invalid_attrs)
+               |> json_response(:unprocessable_entity)
+
+      assert errors != %{}
+    end
+
+    @tag authentication: [role: "admin"]
+    test "renders system when image file is valid", %{
+      conn: conn,
+      swagger_schema: schema,
+      system: %TdDdSystem{id: id} = system
+    } do
+      valid_attr = @update_attrs |> Map.put("df_content", %{"image_name" => @valid_image})
+
+      assert %{"data" => data} =
+               conn
+               |> put(Routes.system_path(conn, :update, system), system: valid_attr)
+               |> validate_resp_schema(schema, "SystemResponse")
+               |> json_response(:ok)
+
+      assert %{
+               "id" => ^id,
+               "external_id" => "some updated external_id",
+               "name" => "some updated name",
+               "df_content" => %{"image_name" => @valid_image}
+             } = data
+
+      valid_attr = @update_attrs |> Map.put("df_content", %{"image_name" => nil})
+
+      assert %{"data" => data} =
+               conn
+               |> put(Routes.system_path(conn, :update, system), system: valid_attr)
+               |> validate_resp_schema(schema, "SystemResponse")
+               |> json_response(:ok)
+
+      assert %{
+               "id" => ^id,
+               "external_id" => "some updated external_id",
+               "name" => "some updated name",
+               "df_content" => %{"image_name" => nil}
+             } = data
+    end
+
+    @tag authentication: [role: "admin"]
+    test "renders errors when image file is invalid", %{conn: conn, system: system} do
+      invalid_attr = @update_attrs |> Map.put("df_content", %{"image_name" => @invalid_image})
+
+      assert %{"errors" => errors} =
+               conn
+               |> put(Routes.system_path(conn, :update, system), system: invalid_attr)
                |> json_response(:unprocessable_entity)
 
       assert errors != %{}
@@ -208,5 +336,9 @@ defmodule TdDdWeb.SystemControllerTest do
       assert %{"classes" => classes} = data
       assert classes == %{name => class}
     end
+  end
+
+  defp new_attr_external_id(attrs) do
+    attrs |> Map.put(:external_id, Integer.to_string(System.unique_integer([:positive])))
   end
 end
