@@ -1,10 +1,20 @@
 defmodule TdDdWeb.StructureNoteControllerTest do
   use TdDdWeb.ConnCase
 
+  alias TdCache.TemplateCache
   alias TdDd.DataStructures.StructureNote
 
+  @moduletag sandbox: :shared
+  @template_name "structure_note_controller_test_template"
+
   setup %{conn: conn} do
-    {:ok, conn: put_req_header(conn, "accept", "application/json")}
+    %{id: template_id, name: template_name} = template = build(:template, name: @template_name)
+    {:ok, _} = TemplateCache.put(template, publish: false)
+    CacheHelpers.insert_structure_type(structure_type: template_name, template_id: template_id)
+    on_exit(fn -> TemplateCache.delete(template_id) end)
+
+    start_supervised!(TdDd.Search.StructureEnricher)
+    {:ok, %{conn: put_req_header(conn, "accept", "application/json")}}
   end
 
   @tag authentication: [role: "admin"]
@@ -89,16 +99,19 @@ defmodule TdDdWeb.StructureNoteControllerTest do
   describe "update structure_note" do
     @tag authentication: [role: "admin"]
     test "renders structure_note when data is valid", %{conn: conn} do
-      %StructureNote{
-        id: id,
-        data_structure_id: data_structure_id
-      } = structure_note = insert(:structure_note)
+      data_structure = insert(:data_structure)
+      %StructureNote{id: id} = structure_note = insert(:structure_note, data_structure: data_structure)
 
-      update_attrs = %{df_content: %{"foo" => "bar"}}
+      insert(:data_structure_version,
+        data_structure: data_structure,
+        type: @template_name
+      )
+
+      update_attrs = %{df_content: %{"string" => "value", "list" => "two"}}
 
       assert %{"id" => ^id} = conn
         |> put(
-          Routes.data_structure_note_path(conn, :update, data_structure_id, structure_note),
+          Routes.data_structure_note_path(conn, :update, data_structure.id, structure_note),
           structure_note: update_attrs
         )
         |> json_response(:ok)
@@ -106,10 +119,10 @@ defmodule TdDdWeb.StructureNoteControllerTest do
 
       assert %{
         "id" => ^id,
-        "df_content" => %{"foo" => "bar"},
+        "df_content" => %{"string" => "value", "list" => "two"},
         "status" => "draft"
       } = conn
-      |> get(Routes.data_structure_note_path(conn, :show, data_structure_id, id))
+      |> get(Routes.data_structure_note_path(conn, :show, data_structure.id, id))
       |> json_response(:ok)
       |> Map.get("data")
     end

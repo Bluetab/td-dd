@@ -6,6 +6,15 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.StructureNote
 
+  def create_or_update(%DataStructure{id: data_structure_id} = data_structure, params) do
+    latest_note = get_latest_structure_note(data_structure_id)
+
+    case can_create_new_draft(latest_note) do
+      :ok -> create(data_structure, params)
+      _error -> update(latest_note, params)
+    end
+  end
+
   def create(%DataStructure{id: data_structure_id} = data_structure, params) do
     latest_note = get_latest_structure_note(data_structure_id)
 
@@ -43,6 +52,10 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
     end
   end
 
+  def update(%StructureNote{status: _status}, %{"df_content" => _df_content}) do
+    {:error, :only_draft_are_editable}
+  end
+
   def update(_structure_note, _attrs) do
     {:error, :unknown_error}
   end
@@ -56,8 +69,8 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
   end
 
   # Lifecycle actions for structure notes
-  defp update_content(structure_note, df_content) do
-    DataStructures.update_structure_note(structure_note, %{"df_content" => df_content})
+  defp update_content(structure_note, new_df_content) do
+    DataStructures.update_structure_note(structure_note, %{"df_content" => new_df_content})
   end
 
   defp send_for_approval(structure_note), do: simple_transition(structure_note, :pending_approval)
@@ -85,9 +98,9 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
       %{version: latest_version} = get_latest_structure_note(data_structure_id)
 
       if latest_version == version do
-          transit_to(structure_note, "deprecated")
+        transit_to(structure_note, "deprecated")
       else
-          {:error, :a_new_version_exists}
+        {:error, :a_new_version_exists}
       end
     end
   end
@@ -139,7 +152,7 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
   defp next_version(nil), do: 1
   defp next_version(%{version: version}), do: version + 1
 
-  defp draft_df_content(nil, %{"df_content" => df_content}), do: df_content
+  defp draft_df_content(_, %{"df_content" => df_content}), do: df_content
   defp draft_df_content(nil, %{}), do: nil
   defp draft_df_content(%{df_content: df_content}, _), do: df_content
 end

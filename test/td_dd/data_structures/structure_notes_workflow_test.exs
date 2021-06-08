@@ -1,13 +1,38 @@
 defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
   use TdDd.DataCase
 
+  alias TdCache.TemplateCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.StructureNote
   alias TdDd.DataStructures.StructureNotesWorkflow
 
+  @moduletag sandbox: :shared
+  @template_name "structure_note_workflow_test_template"
+
+  setup do
+    content = [
+      build(:template_group,
+        fields: [
+          build(:template_field, name: "foo"),
+          build(:template_field, name: "baz", cardinality: "?")
+        ]
+      )
+    ]
+
+    %{id: template_id, name: template_name} =
+      template = build(:template, name: @template_name, content: content)
+
+    {:ok, _} = TemplateCache.put(template, publish: false)
+    CacheHelpers.insert_structure_type(structure_type: template_name, template_id: template_id)
+    on_exit(fn -> TemplateCache.delete(template_id) end)
+
+    start_supervised!(TdDd.Search.StructureEnricher)
+    :ok
+  end
+
   describe "create" do
     test "create the first structure note with draft status and version 1" do
-      %{id: data_structure_id} = data_structure = insert(:data_structure)
+      %{id: data_structure_id} = data_structure = create_data_structure_with_version()
 
       create_attrs = %{
         "df_content" => %{"foo" => "bar"},
@@ -50,13 +75,17 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
               }} = StructureNotesWorkflow.create(data_structure, %{})
     end
 
-    test "when create a new version from a published note, the new draft must have the same df_content" do
-      df_content = %{"foo" => "bar"}
+    test "when create a new version from a published note without df_content, will use the previous published" do
+      df_content = %{"foo" => "value"}
 
-      %{data_structure_id: data_structure_id, data_structure: data_structure} =
-        insert(:structure_note, status: :published, df_content: df_content)
+      data_structure = create_data_structure_with_version()
 
-      create_attrs = %{"df_content" => %{"new" => "content"}}
+      %{data_structure_id: data_structure_id} =
+        insert(:structure_note,
+          status: :published,
+          df_content: df_content,
+          data_structure: data_structure
+        )
 
       assert {:ok,
               %StructureNote{
@@ -64,30 +93,58 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
                 status: :draft,
                 df_content: ^df_content,
                 data_structure_id: ^data_structure_id
+              }} = StructureNotesWorkflow.create(data_structure, %{})
+    end
+
+    test "when create a new version from a published note with df_content, will use the new one" do
+      df_content = %{"foo" => "value_old"}
+
+      data_structure = create_data_structure_with_version()
+
+      %{data_structure_id: data_structure_id} =
+        insert(:structure_note,
+          status: :published,
+          df_content: df_content,
+          data_structure: data_structure
+        )
+
+      new_df_content = %{"foo" => "value_new", "baz" => "new_value"}
+      create_attrs = %{"df_content" => new_df_content}
+
+      assert {:ok,
+              %StructureNote{
+                version: 2,
+                status: :draft,
+                df_content: ^new_df_content,
+                data_structure_id: ^data_structure_id
               }} = StructureNotesWorkflow.create(data_structure, create_attrs)
     end
   end
 
   describe "update" do
     test "save content only for draft notes" do
-      df_content = %{"new" => "content"}
+      df_content = %{"foo" => "content"}
       attrs = %{"df_content" => df_content}
 
       # updateable content statuses
       [:draft]
       |> Enum.each(fn status ->
+        data_structure = create_data_structure_with_version()
+
         assert {:ok, %{df_content: ^df_content}} =
                  :structure_note
-                 |> insert(status: status)
+                 |> insert(status: status, data_structure: data_structure)
                  |> StructureNotesWorkflow.update(attrs)
       end)
 
       # not updateable content statuses
       [:pending_approval, :published, :deprecated, :versioned, :rejected]
       |> Enum.each(fn status ->
+        data_structure = create_data_structure_with_version()
+
         assert {:error, _} =
                  :structure_note
-                 |> insert(status: status)
+                 |> insert(status: status, data_structure: data_structure)
                  |> StructureNotesWorkflow.update(attrs)
       end)
     end
@@ -309,5 +366,18 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
                  |> StructureNotesWorkflow.delete()
       end)
     end
+  end
+
+  defp create_data_structure_with_version do
+    data_structure = insert(:data_structure)
+    create_version_with_template(data_structure)
+    data_structure
+  end
+
+  defp create_version_with_template(data_structure) do
+    insert(:data_structure_version,
+      data_structure: data_structure,
+      type: @template_name
+    )
   end
 end

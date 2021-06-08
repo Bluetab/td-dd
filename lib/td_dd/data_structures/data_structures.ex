@@ -23,6 +23,7 @@ defmodule TdDd.DataStructures do
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.DataStructures.StructureMetadata
+  alias TdDd.DataStructures.StructureNote
   alias TdDd.Lineage.GraphData
   alias TdDd.Repo
   alias TdDd.Search.IndexWorker
@@ -747,6 +748,11 @@ defmodule TdDd.DataStructures do
     |> Repo.one()
   end
 
+  def template_name(%StructureNote{data_structure_id: data_structure_id}) do
+    data_structure = get_data_structure!(data_structure_id)
+    template_name(data_structure)
+  end
+
   def template_name(%DataStructure{} = data_structure) do
     data_structure
     |> get_latest_version()
@@ -1070,6 +1076,11 @@ defmodule TdDd.DataStructures do
       {:error, %Ecto.Changeset{}}
 
   """
+  def update_structure_note(%StructureNote{} = structure_note, %{"df_content" => _} = attrs) do
+    structure_note
+    |> StructureNote.df_content_changeset(attrs)
+    |> Repo.update()
+  end
   def update_structure_note(%StructureNote{} = structure_note, attrs) do
     structure_note
     |> StructureNote.changeset(attrs)
