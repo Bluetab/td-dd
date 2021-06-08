@@ -13,6 +13,7 @@ defmodule TdDd.DataStructures do
   alias TdCx.Sources
   alias TdCx.Sources.Source
   alias TdDd.Auth.Claims
+  alias TdDd.DataStructures.Ancestry
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureQueries
@@ -470,8 +471,25 @@ defmodule TdDd.DataStructures do
     Multi.new()
     |> Multi.update(:data_structure, changeset)
     |> Multi.run(:audit, Audit, :data_structure_updated, [changeset, user_id])
+    |> Multi.run(:updated_children_count, fn _repo, %{data_structure: updated_data_structure} ->
+      maybe_update_children_domain_ids(updated_data_structure, data_structure)
+    end)
     |> Repo.transaction()
     |> on_update()
+  end
+
+  defp maybe_update_children_domain_ids(%{domain_id: new_domain_id, external_id: parent_external_id}, %{domain_id: old_domain_id}) when old_domain_id != new_domain_id do
+    children_ids = Ancestry.get_descendent_ids(parent_external_id)
+
+    {count, _} =
+      from(ds in DataStructure, where: ds.id in ^children_ids, update: [set: [domain_id: ^new_domain_id]])
+      |> Repo.update_all([])
+
+    {:ok, count}
+  end
+
+  defp maybe_update_children_domain_ids(_updated, _new) do
+    {:ok, 0}
   end
 
   defp on_update({:ok, %{} = res}) do
