@@ -8,10 +8,11 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
 
   def create_or_update(%DataStructure{id: data_structure_id} = data_structure, params) do
     latest_note = get_latest_structure_note(data_structure_id)
+    is_strict_update = false
 
     case can_create_new_draft(latest_note) do
       :ok -> create(data_structure, params)
-      _error -> update(latest_note, params)
+      _cannot_create -> update(latest_note, params, is_strict_update)
     end
   end
 
@@ -30,18 +31,21 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
     end
   end
 
+  def update(structure_note, attrs, is_strict \\ true)
+
   def update(
         %StructureNote{status: :draft} = structure_note,
-        %{"df_content" => df_content} = attrs
+        %{"df_content" => df_content} = attrs,
+        is_strict
       ) do
     case attrs do
-      %{"status" => "draft"} -> update_content(structure_note, df_content)
+      %{"status" => "draft"} -> update_content(structure_note, df_content, is_strict)
       %{"status" => _other_status} -> {:error, :only_draft_are_editable}
-      _ -> update_content(structure_note, df_content)
+      _ -> update_content(structure_note, df_content, is_strict)
     end
   end
 
-  def update(structure_note, %{"status" => status}) do
+  def update(structure_note, %{"status" => status}, _) do
     case String.to_atom(status) do
       :pending_approval -> send_for_approval(structure_note)
       :published -> publish(structure_note)
@@ -52,11 +56,11 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
     end
   end
 
-  def update(%StructureNote{status: _status}, %{"df_content" => _df_content}) do
+  def update(%StructureNote{status: _status}, %{"df_content" => _df_content}, _) do
     {:error, :only_draft_are_editable}
   end
 
-  def update(_structure_note, _attrs) do
+  def update(_structure_note, _attrs, _) do
     {:error, :unknown_error}
   end
 
@@ -69,8 +73,11 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
   end
 
   # Lifecycle actions for structure notes
-  defp update_content(structure_note, new_df_content) do
+  defp update_content(structure_note, new_df_content, true = _is_strict) do
     DataStructures.update_structure_note(structure_note, %{"df_content" => new_df_content})
+  end
+  defp update_content(structure_note, new_df_content, false = _is_strict) do
+    DataStructures.bulk_update_structure_note(structure_note, %{"df_content" => new_df_content})
   end
 
   defp send_for_approval(structure_note), do: simple_transition(structure_note, :pending_approval)

@@ -50,6 +50,18 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
               }} = StructureNotesWorkflow.create(data_structure, create_attrs)
     end
 
+    test "fail to create structure when df_content is invalid" do
+      data_structure = create_data_structure_with_version()
+
+      create_attrs = %{
+        "df_content" => %{"baz" => "bar"},
+        "version" => 3
+      }
+
+      assert {:error, %{errors: [df_content: {"invalid content", _}]}} =
+               StructureNotesWorkflow.create(data_structure, create_attrs)
+    end
+
     test "error when creating note with existing draft" do
       data_structure = insert(:data_structure)
 
@@ -345,6 +357,18 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
 
       assert %{status: :versioned} =
                DataStructures.get_structure_note!(previous_structure_note_id)
+    end
+
+    test "return error when update structure note content is invalid" do
+      df_content = %{"baz" => "content"}
+      attrs = %{"df_content" => df_content}
+
+      data_structure = create_data_structure_with_version()
+
+      assert {:error, %{errors: [df_content: {"invalid content", _}]}} =
+               :structure_note
+               |> insert(status: :draft, data_structure: data_structure)
+               |> StructureNotesWorkflow.update(attrs)
     end
   end
 

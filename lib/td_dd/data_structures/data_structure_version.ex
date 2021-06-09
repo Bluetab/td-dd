@@ -31,6 +31,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     field(:profile_source, :map, virtual: true)
     field(:classes, :map, virtual: true)
     field(:mutable_metadata, :map, virtual: true)
+    field(:latest_note, :map, virtual: true)
 
     belongs_to(:data_structure, DataStructure)
 

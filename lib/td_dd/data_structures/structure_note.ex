@@ -22,19 +22,20 @@ defmodule TdDd.DataStructures.StructureNote do
   end
 
   @doc false
-  def df_content_changeset(%{df_content: current_content} = structure_note, attrs) do
+  def bulk_update_changeset(%{df_content: current_content} = structure_note, attrs) do
     structure_note
-    |> cast(attrs, [:df_content])
+    |> cast(attrs, [:df_content, :status])
     |> update_change(:df_content, &Content.merge(&1, current_content))
     |> validate_content(structure_note, attrs)
-    |> validate_required([:df_content])
+    |> validate_required([:df_content, :status])
   end
 
   @doc false
   def changeset(structure_note, attrs) do
     structure_note
-    |> cast(attrs, [:status])
-    |> validate_required([:status])
+    |> cast(attrs, [:status, :df_content])
+    |> validate_required([:status, :df_content])
+    |> validate_change(:df_content, Validation.validator(structure_note)) #Validation.validator(structure_note))
   end
 
   @doc false

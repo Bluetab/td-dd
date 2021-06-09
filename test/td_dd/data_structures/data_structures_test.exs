@@ -18,6 +18,8 @@ defmodule TdDd.DataStructuresTest do
     [claims: build(:claims)]
   end
 
+  @valid_df_content %{"string" => "initial", "list" => "one"}
+
   setup do
     domain = CacheHelpers.insert_domain()
     %{id: template_id, name: template_name} = template = CacheHelpers.insert_template()
@@ -25,13 +27,17 @@ defmodule TdDd.DataStructuresTest do
     CacheHelpers.insert_structure_type(structure_type: template_name, template_id: template_id)
 
     %{id: system_id} = system = insert(:system, external_id: "test_system")
-    valid_content = %{"string" => "initial", "list" => "one"}
 
     %{id: data_structure_id} =
-      data_structure = insert(:data_structure, system_id: system_id, df_content: valid_content)
+      data_structure = insert(:data_structure, system_id: system_id)
+    structure_note = insert(:structure_note,
+      data_structure: data_structure,
+      df_content: @valid_df_content,
+      status: :published
+    )
 
     data_structure_version =
-      insert(:data_structure_version, data_structure_id: data_structure_id, type: template_name)
+      insert(:data_structure_version, data_structure: data_structure, type: template_name)
 
     %{id: concept_id} = concept = CacheHelpers.insert_concept()
     CacheHelpers.insert_link(data_structure_id, concept_id)
@@ -44,7 +50,8 @@ defmodule TdDd.DataStructuresTest do
       data_structure_version: data_structure_version,
       system: system,
       template: template,
-      concept: concept
+      concept: concept,
+      structure_note: structure_note
     ]
   end
 
@@ -53,17 +60,17 @@ defmodule TdDd.DataStructuresTest do
       data_structure: data_structure,
       claims: claims
     } do
-      params = %{df_content: %{"string" => "changed", "list" => "two"}}
+      params = %{confidential: true}
 
       assert {:ok, %{data_structure: data_structure}} =
                DataStructures.update_data_structure(data_structure, params, claims)
 
       assert %DataStructure{} = data_structure
-      assert %{"list" => "two", "string" => "changed"} = data_structure.df_content
+      assert true == data_structure.confidential
     end
 
     test "emits an audit event", %{data_structure: data_structure, claims: claims} do
-      params = %{df_content: %{"string" => "changed", "list" => "two"}}
+      params = %{confidential: true}
 
       assert {:ok, %{audit: event_id}} =
                DataStructures.update_data_structure(data_structure, params, claims)
@@ -236,16 +243,18 @@ defmodule TdDd.DataStructuresTest do
 
   describe "enriched_structure_versions/1" do
     setup %{template: %{name: template_name}, domain: %{id: domain_id}} do
+      data_structure = insert(:data_structure, domain_id: domain_id)
       %{id: id, data_structure_id: data_structure_id} =
         data_structure_version =
         insert(:data_structure_version,
-          data_structure:
-            build(:data_structure,
-              df_content: %{"string" => "initial", "list" => "one", "foo" => "bar"},
-              domain_id: domain_id
-            ),
+          data_structure: data_structure,
           type: template_name
         )
+      insert(:structure_note,
+        data_structure: data_structure,
+        df_content: %{"string" => "initial", "list" => "one", "foo" => "bar"},
+        status: :published
+      )
 
       insert(:structure_metadata, data_structure_id: data_structure_id)
 
@@ -278,9 +287,9 @@ defmodule TdDd.DataStructuresTest do
                )
 
       assert %{data_structure: data_structure} = dsv
-      assert %{search_content: search_content, df_content: df_content} = data_structure
+      assert %{search_content: search_content, latest_note: latest_note} = data_structure
       assert search_content == %{"string" => "initial", "list" => "one"}
-      assert df_content == %{"string" => "initial", "list" => "one", "foo" => "bar"}
+      assert latest_note == %{"string" => "initial", "list" => "one", "foo" => "bar"}
     end
 
     test "returns values suitable for bulk-indexing encoding", %{
@@ -337,6 +346,12 @@ defmodule TdDd.DataStructuresTest do
       search_params = %{external_id: [data_structure.external_id]}
 
       assert DataStructures.list_data_structures(search_params), [data_structure]
+    end
+
+    test "list_data_structures/1 with enrich latest_note" do
+      assert [%DataStructure{
+        latest_note: @valid_df_content
+      }] = DataStructures.list_data_structures()
     end
 
     test "get_data_structure!/1 returns the data_structure with given id", %{
@@ -1329,9 +1344,9 @@ defmodule TdDd.DataStructuresTest do
     @update_attrs %{df_content: %{}, status: :published}
     @invalid_attrs %{df_content: nil, status: nil, version: nil}
 
-    test "list_structure_notes/0 returns all structure_notes" do
+    test "list_structure_notes/0 returns all structure_notes", %{structure_note: setup_structure_note} do
       structure_note = insert(:structure_note)
-      assert DataStructures.list_structure_notes() <|> [structure_note]
+      assert DataStructures.list_structure_notes() <|> [setup_structure_note, structure_note]
     end
 
     test "list_structure_notes/1 returns all structure_notes for a data_structure" do
@@ -1343,6 +1358,14 @@ defmodule TdDd.DataStructuresTest do
     test "get_structure_note!/1 returns the structure_note with given id" do
       structure_note = insert(:structure_note)
       assert DataStructures.get_structure_note!(structure_note.id) <~> structure_note
+    end
+
+    test "get_latest_structure_note/1 returns the latest structure_note for a data_structure" do
+      %{data_structure: data_structure} = insert(:structure_note, version: 1)
+      insert(:structure_note, version: 2, data_structure: data_structure)
+      lastest_structure_note = insert(:structure_note, version: 3, data_structure: data_structure)
+      insert(:structure_note)
+      assert DataStructures.get_latest_structure_note(data_structure.id) <~> lastest_structure_note
     end
 
     test "create_structure_note/1 with valid data creates a structure_note" do

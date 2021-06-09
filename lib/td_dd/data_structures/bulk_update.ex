@@ -81,6 +81,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
 
   defp do_csv_bulk_update(rows, user_id) do
     Multi.new()
+    |> Multi.run(:update_notes, &csv_bulk_update_notes(&1, &2, rows))
     |> Multi.run(:updates, &csv_bulk_update(&1, &2, rows))
     |> Multi.run(:audit, &audit(&1, &2, user_id))
     |> Repo.transaction()
@@ -94,6 +95,18 @@ defmodule TdDd.DataStructures.BulkUpdate do
     end)
     |> Enum.reject(fn {changeset, _row_index} -> changeset.changes == %{} end)
     |> Enum.reduce_while(%{}, &reduce_changesets/2)
+    |> case do
+      %{} = res -> {:ok, res}
+      error -> error
+    end
+  end
+
+  defp csv_bulk_update_notes(_repo, _changes_so_far, rows) do
+    rows
+    |> Enum.map(fn {content, %{data_structure: data_structure, row_index: row_index}} ->
+      {update_structure_notes(data_structure, content), row_index}
+    end)
+    |> Enum.reduce_while(%{}, &csv_reduce_notes_results/2)
     |> case do
       %{} = res -> {:ok, res}
       error -> error
@@ -117,7 +130,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
         content_schema = Enum.filter(template_fields, &(Map.get(&1, "name") in fields))
         content = format_content(%{content: content, content_schema: content_schema})
 
-        {%{df_content: content}, %{data_structure: data_structure, row_index: row_index}}
+        {%{"df_content" => content}, %{data_structure: data_structure, row_index: row_index}}
     end
   end
 
@@ -188,6 +201,16 @@ defmodule TdDd.DataStructures.BulkUpdate do
     case StructureNotesWorkflow.create_or_update(data_structure, params) do
       {:ok, structure_note} -> {:ok, structure_note}
       error -> {error, data_structure}
+    end
+  end
+
+  defp csv_reduce_notes_results({result, row_index}, acc) do
+    case result do
+      {:ok, %{data_structure_id: id} = structure_note} ->
+        {:cont, Map.put(acc, id, structure_note)}
+
+      {{:error, error}, data_structure} ->
+        {:halt, {:error, {error, Map.put(data_structure, :row, row_index)}}}
     end
   end
 

@@ -100,16 +100,18 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
     @tag authentication: [role: "admin"]
     test "search with query performs search on dynamic content", %{conn: conn} do
+      data_structure = insert(:data_structure, external_id: "boofarfaz")
       %{data_structure_id: id} =
         insert(:data_structure_version,
           name: "boofarfaz",
           type: @template_name,
-          data_structure:
-            build(:data_structure,
-              external_id: "boofarfaz",
-              df_content: %{"string" => "xyzzy"}
-            )
+          data_structure: data_structure
         )
+      insert(:structure_note,
+        data_structure: data_structure,
+        df_content: %{"string" => "xyzzy"},
+        status: :published
+      )
 
       assert %{"data" => [%{"id" => ^id}]} =
                conn
@@ -182,37 +184,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert data["description"] == "some description"
       assert data["data_structure"]["inserted_at"]
     end
-
-    @tag authentication: [role: "admin"]
-    test "renders error when df_content is invalid", %{conn: conn, data_structure: data_structure} do
-      assert conn
-             |> put(data_structure_path(conn, :update, data_structure),
-               data_structure: %{df_content: %{}}
-             )
-             |> response(:unprocessable_entity)
-    end
-
-    @tag authentication: [role: "admin"]
-    test "renders data_structure when df_content is valid", %{
-      conn: conn,
-      data_structure: %{id: id} = data_structure
-    } do
-      content = %{"field" => "1"}
-
-      assert %{"data" => %{"id" => ^id}} =
-               conn
-               |> put(data_structure_path(conn, :update, data_structure),
-                 data_structure: %{df_content: content}
-               )
-               |> json_response(:ok)
-
-      assert %{"data" => data} =
-               conn
-               |> get(data_structure_data_structure_version_path(conn, :show, id, "latest"))
-               |> json_response(:ok)
-
-      assert data["data_structure"]["df_content"] == content
-    end
   end
 
   describe "delete data_structure" do
@@ -281,7 +252,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert %{"data" => %{"id" => ^id}} =
                conn
                |> put(data_structure_path(conn, :update, id),
-                 data_structure: %{df_content: %{"string" => "foo", "list" => "one"}}
+                 data_structure: %{confidential: false}
                )
                |> json_response(:ok)
 
@@ -291,7 +262,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                |> json_response(:ok)
 
       assert data["data_structure"]["id"] == id
-      assert data["data_structure"]["df_content"] == %{"list" => "one", "string" => "foo"}
+      assert data["data_structure"]["confidential"] == false
       assert data["data_structure"]["domain"]["name"] == domain_name
     end
 
@@ -307,7 +278,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert conn
              |> put(data_structure_path(conn, :update, data_structure_id),
-               data_structure: %{df_content: %{foo: "bar"}}
+               data_structure: %{confidential: false}
              )
              |> json_response(:forbidden)
     end
@@ -364,7 +335,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
   defp create_data_structure(%{domain: %{id: domain_id}} = tags) do
     data_structure =
       insert(:data_structure,
-        df_content: %{"field" => "1"},
         confidential: Map.get(tags, :confidential, false),
         domain_id: domain_id
       )

@@ -14,10 +14,7 @@ defmodule TdDd.DataStructures.DataStructure do
   alias TdDd.DataStructures.Profile
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.DataStructures.StructureNote
-  alias TdDd.DataStructures.Validation
   alias TdDd.Systems.System
-  alias TdDd.Utils.CollectionUtils
-  alias TdDfLib.Content
 
   @audit_fields [:last_change_by]
 
@@ -36,12 +33,12 @@ defmodule TdDd.DataStructures.DataStructure do
     many_to_many(:tags, DataStructureTag, join_through: DataStructuresTags)
 
     field(:confidential, :boolean)
-    field(:df_content, :map)
     field(:domain_id, :integer)
     field(:external_id, :string)
     field(:last_change_by, :integer)
     field(:row, :integer, virtual: true)
     field(:latest_metadata, :map, virtual: true)
+    field(:latest_note, :map, virtual: true)
     field(:domain, :map, virtual: true)
     # Note, the value of this field is 1 (has linked concepts) or 0 (no linked concepts)
     field(:linked_concepts_count, :integer, virtual: true)
@@ -58,7 +55,6 @@ defmodule TdDd.DataStructures.DataStructure do
     data_structure
     |> cast(params, [
       :confidential,
-      :df_content,
       :domain_id,
       :external_id,
       :source_id,
@@ -70,22 +66,18 @@ defmodule TdDd.DataStructures.DataStructure do
       :last_change_by,
       :system_id
     ])
-    |> validate_change(:df_content, Validation.validator(data_structure))
   end
 
   def update_changeset(%__MODULE__{} = data_structure, params) do
     data_structure
-    |> cast(params, [:confidential, :df_content, :domain_id])
+    |> cast(params, [:confidential, :domain_id])
     |> put_audit(params)
-    |> validate_change(:df_content, Validation.validator(data_structure))
   end
 
-  def merge_changeset(%__MODULE__{df_content: current_content} = data_structure, params) do
+  def merge_changeset(%__MODULE__{} = data_structure, params) do
     data_structure
-    |> cast(params, [:confidential, :df_content])
-    |> update_change(:df_content, &Content.merge(&1, current_content))
+    |> cast(params, [:confidential])
     |> put_audit(params)
-    |> validate_content(data_structure, params)
   end
 
   defp put_audit(%{changes: changes} = changeset, _params)
@@ -96,30 +88,4 @@ defmodule TdDd.DataStructures.DataStructure do
   defp put_audit(changeset, %{} = params) do
     cast(changeset, params, @audit_fields)
   end
-
-  defp validate_content(
-         %{valid?: true, changes: %{df_content: df_content}} = changeset,
-         data_structure,
-         params
-       )
-       when is_map(df_content) do
-    fields =
-      params
-      |> CollectionUtils.atomize_keys()
-      |> Map.get(:df_content, %{})
-      |> Map.keys()
-
-    case Validation.validator(data_structure, df_content, fields) do
-      {:error, error} ->
-        add_error(changeset, :df_content, "invalid_template", reason: error)
-
-      %{valid?: false, errors: [_ | _] = errors} ->
-        add_error(changeset, :df_content, "invalid_content", errors)
-
-      _ ->
-        changeset
-    end
-  end
-
-  defp validate_content(changeset, _data_structure, _params), do: changeset
 end

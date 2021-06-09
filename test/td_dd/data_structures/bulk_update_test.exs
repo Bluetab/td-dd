@@ -8,7 +8,6 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
   alias TdDd.DataStructures
   alias TdDd.DataStructures.BulkUpdate
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.Repo
 
   @moduletag sandbox: :shared
   @valid_content %{"string" => "present", "list" => "one"}
@@ -134,16 +133,16 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       ids =
         1..10
-        |> Enum.map(fn _ -> valid_structure(type, df_content: %{"string" => "foo"}) end)
+        |> Enum.map(fn _ -> valid_structure_note(type, df_content: %{"string" => "foo"}) end)
         |> Enum.map(& &1.data_structure_id)
 
-      assert {:ok, %{updates: updates}} = BulkUpdate.update_all(ids, @valid_params, claims)
-      assert Map.keys(updates) <|> ids
+      assert {:ok, %{update_notes: update_notes}} = BulkUpdate.update_all(ids, @valid_params, claims)
+      assert Map.keys(update_notes) <|> ids
 
       assert ids
-             |> Enum.map(&Repo.get(DataStructure, &1))
-             |> Enum.map(& &1.df_content)
-             |> Enum.all?(&(&1 == @valid_content))
+            |> Enum.map(&DataStructures.get_latest_structure_note/1)
+            |> Enum.map(& &1.df_content)
+            |> Enum.all?(&(&1 == @valid_content))
     end
 
     test "emits audit events for updated structures", %{type: type} do
@@ -161,30 +160,33 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     end
 
     test "ignores unchanged data structures", %{type: type} do
-      %{user_id: user_id} = claims = build(:claims)
+      claims = build(:claims)
+      fixed_datetime = ~N[2020-01-01 00:00:00]
+      timestamps = [inserted_at: fixed_datetime, updated_at: fixed_datetime]
 
-      ids =
-        1..10
-        |> Enum.map(fn
-          n when n > 5 -> valid_structure(type, df_content: @valid_content, last_change_by: 99)
-          _ -> valid_structure(type, df_content: %{"string" => "foo", "list" => "bar"})
-        end)
+      changed_ids = 1..5
+        |> Enum.map(fn _ -> valid_structure_note(type, [df_content: %{"string" => "foo", "list" => "bar"}] ++ timestamps) end)
         |> Enum.map(& &1.data_structure_id)
 
-      assert {:ok, %{updates: updates}} = BulkUpdate.update_all(ids, @valid_params, claims)
+      unchanged_ids = 1..5
+        |> Enum.map(fn _ -> valid_structure_note(type, [df_content: @valid_content] ++ timestamps) end)
+        |> Enum.map(& &1.data_structure_id)
 
-      structures = Enum.map(ids, &Repo.get(DataStructure, &1))
+      ids = unchanged_ids ++ changed_ids
+      assert {:ok, _} = BulkUpdate.update_all(ids, @valid_params, claims)
 
-      assert structures
+      notes = ids |> Enum.map(&DataStructures.list_structure_notes/1) |> Enum.map(&Enum.at(&1, -1))
+
+      changed_notes_ds_ids = notes
+        |> Enum.reject(&(&1.updated_at == &1.inserted_at))
+        |> Enum.map(&(&1.data_structure_id))
+
+      assert notes
              |> Enum.map(& &1.df_content)
              |> Enum.all?(&(&1 == @valid_content))
 
-      assert %{99 => unchanged_ids, ^user_id => changed_ids} =
-               Enum.group_by(structures, & &1.last_change_by, & &1.id)
-
-      assert Enum.count(unchanged_ids) == 5
-      assert Enum.count(changed_ids) == 5
-      assert Map.keys(updates) <|> changed_ids
+      assert Enum.count(changed_notes_ds_ids) == 5
+      assert changed_notes_ds_ids <|> changed_ids
     end
 
     test "returns an error if a structure has no template", %{type: type} do
@@ -255,9 +257,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         |> DataStructures.list_structure_notes()
         |> Enum.at(-1)
 
-      # TODO Check with Juan
-      assert %{"list" => "one"} = df_content
-      # assert df_content == %{"list" => "one"}
+      assert df_content == %{"list" => "one"}
     end
 
     test "ignores empty fields", %{type: type} do
@@ -298,64 +298,68 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
   describe "from_csv/2" do
     setup [:from_csv_templates]
 
+    defp get_df_content_from_ext_id(ext_id) do
+      ext_id
+      |> DataStructures.get_data_structure_by_external_id
+      |> Map.get(:id)
+      |> DataStructures.get_latest_structure_note
+      |> Map.get(:df_content)
+    end
+
     test "update all data structures content", %{sts: sts} do
       claims = build(:claims)
       structure_ids = Enum.map(sts, & &1.data_structure_id)
       upload = %{path: "test/fixtures/td2942/upload.csv"}
-      assert {:ok, %{updates: updates}} = BulkUpdate.from_csv(upload, claims)
-      ids = Map.keys(updates)
+      assert {:ok, %{update_notes: update_notes}} = BulkUpdate.from_csv(upload, claims)
+      ids = Map.keys(update_notes)
       assert length(ids) == 9
       assert Enum.all?(ids, fn id -> id in structure_ids end)
 
       assert %{"text" => "text", "critical" => "Yes", "role" => ["Role"], "key_value" => ["1"]} =
-               DataStructures.get_data_structure_by_external_id("ex_id1").df_content
+               get_df_content_from_ext_id("ex_id1")
 
       assert %{"text" => "text2", "critical" => "Yes", "role" => ["Role"]} =
-               DataStructures.get_data_structure_by_external_id("ex_id2").df_content
+               get_df_content_from_ext_id("ex_id2")
 
       assert %{"text" => "foo", "critical" => "No", "role" => ["Role"]} =
-               DataStructures.get_data_structure_by_external_id("ex_id3").df_content
+               get_df_content_from_ext_id("ex_id3")
 
       assert %{"text" => "foo", "critical" => "No", "role" => ["Role 1"]} =
-               DataStructures.get_data_structure_by_external_id("ex_id4").df_content
+               get_df_content_from_ext_id("ex_id4")
 
       assert %{"text" => "foo", "critical" => "No", "role" => ["Role 2"], "key_value" => ["2"]} =
-               DataStructures.get_data_structure_by_external_id("ex_id5").df_content
+               get_df_content_from_ext_id("ex_id5")
 
       text = to_enriched_text("I’m 6")
 
-      assert %{"enriched_text" => ^text} =
-               DataStructures.get_data_structure_by_external_id("ex_id6").df_content
+      assert %{"enriched_text" => ^text} = get_df_content_from_ext_id("ex_id6")
 
       text = to_enriched_text("Enriched text")
       url = to_content_url("https://www.google.es")
 
       assert %{"enriched_text" => ^text, "urls_one_or_none" => ^url, "integer" => 3} =
-               DataStructures.get_data_structure_by_external_id("ex_id7").df_content
+               get_df_content_from_ext_id("ex_id7")
 
-      assert %{"urls_one_or_none" => ^url, "integer" => 2} =
-               DataStructures.get_data_structure_by_external_id("ex_id8").df_content
+      assert %{"urls_one_or_none" => ^url, "integer" => 2} = get_df_content_from_ext_id("ex_id8")
 
       text = to_enriched_text("I’m 9")
 
-      assert %{"enriched_text" => ^text, "integer" => 9} =
-               DataStructures.get_data_structure_by_external_id("ex_id9").df_content
+      assert %{"enriched_text" => ^text, "integer" => 9} = get_df_content_from_ext_id("ex_id9")
 
-      assert %{} = DataStructures.get_data_structure_by_external_id("ex_id9").df_content
+      assert %{} = get_df_content_from_ext_id("ex_id9")
     end
 
     test "returns error on content" do
       claims = build(:claims)
       upload = %{path: "test/fixtures/td2942/upload_invalid.csv"}
 
-      assert {:error, :updates, %{errors: [df_content: {_, [critical: {_, validation}]}]}, _} =
+      assert {:error, :update_notes, {%{errors: [df_content: {_, [critical: {_, validation}]}]}, _}, _} =
                BulkUpdate.from_csv(upload, claims)
 
       assert Keyword.get(validation, :validation) == :inclusion
       assert Keyword.get(validation, :enum) == ["Yes", "No"]
 
-      assert %{"text" => "foo"} =
-               DataStructures.get_data_structure_by_external_id("ex_id1").df_content
+      assert %{"text" => "foo"} = get_df_content_from_ext_id("ex_id1")
     end
   end
 
@@ -461,7 +465,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     insert(:data_structure_version,
       type: "missing_type",
       data_structure:
-        build(:data_structure, external_id: "the bad one", df_content: %{"foo" => "bar"})
+        build(:data_structure, external_id: "the bad one")
     )
   end
 
@@ -474,7 +478,9 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
   defp valid_structure_note(type, sn_opts) do
     data_structure = insert(:data_structure)
-
+    valid_structure_note(type, data_structure, sn_opts)
+  end
+  defp valid_structure_note(type, data_structure, sn_opts) do
     insert(:data_structure_version,
       type: type,
       data_structure: data_structure
@@ -488,17 +494,19 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     TemplateCache.put(t1, publish: false)
     %{id: st1_id} = st1 = insert(:data_structure_type, structure_type: type, template_id: id_t1)
     {:ok, _} = StructureTypeCache.put(st1)
-
-    sts1 =
-      Enum.map(1..5, fn id ->
-        valid_structure(type, external_id: "ex_id#{id}", df_content: %{"text" => "foo"})
-      end)
+    sts1 = Enum.map(1..5, fn id ->
+      data_structure = insert(:data_structure, external_id: "ex_id#{id}")
+      valid_structure_note(type, data_structure, df_content: %{"text" => "foo"})
+    end)
 
     %{id: id_t2, name: type} = t2 = build(:template, content: @c2)
     TemplateCache.put(t2, publish: false)
     %{id: st2_id} = st2 = insert(:data_structure_type, structure_type: type, template_id: id_t2)
     {:ok, _} = StructureTypeCache.put(st2)
-    sts2 = Enum.map(6..10, fn id -> valid_structure(type, external_id: "ex_id#{id}") end)
+    sts2 = Enum.map(6..10, fn id ->
+      data_structure = insert(:data_structure, external_id: "ex_id#{id}")
+      valid_structure_note(type, data_structure, [])
+    end)
 
     on_exit(fn ->
       TemplateCache.delete(id_t1)

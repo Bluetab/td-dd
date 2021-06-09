@@ -51,6 +51,9 @@ defmodule TdDd.DataStructures do
       {:id, {:in, ids}}, q ->
         where(q, [ds], ds.id in ^ids)
     end)
+    |> join(:left, [ds], sn in StructureNote,
+       on: sn.data_structure_id == ds.id and sn.status == :published)
+    |> select_merge([_, sn], %{latest_note: sn.df_content})
     |> preload(:system)
     |> Repo.all()
     |> Enum.map(&enrich(&1, options))
@@ -992,8 +995,8 @@ defmodule TdDd.DataStructures do
     |> Map.new()
     |> DataStructureQueries.enriched_structure_versions()
     |> Repo.all()
-    |> Enum.map(fn %{data_structure: structure, type: type} = dsv ->
-      %{dsv | data_structure: StructureEnricher.enrich(structure, type, content_opt)}
+    |> Enum.map(fn %{data_structure: structure, type: type, latest_note: latest_note} = dsv ->
+      %{dsv | data_structure: StructureEnricher.enrich(Map.put(structure, :latest_note, latest_note), type, content_opt)}
     end)
   end
 
@@ -1046,6 +1049,14 @@ defmodule TdDd.DataStructures do
   """
   def get_structure_note!(id), do: Repo.get!(StructureNote, id)
 
+  def get_latest_structure_note(data_structure_id) do
+    StructureNote
+    |> where(data_structure_id: ^data_structure_id)
+    |> order_by(desc: :version)
+    |> limit(1)
+    |> Repo.one()
+  end
+
   @doc """
   Creates a structure_note.
 
@@ -1065,6 +1076,28 @@ defmodule TdDd.DataStructures do
   end
 
   @doc """
+  Updates a structure_note with bulk_update behaviour.
+
+  ## Examples
+
+      iex> bulk_update_structure_note(structure_note, %{field: new_value})
+      {:ok, %StructureNote{}}
+
+      iex> bulk_update_structure_note(structure_note, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+
+  def bulk_update_structure_note(%StructureNote{} = structure_note, attrs) do
+    changeset = StructureNote.bulk_update_changeset(structure_note, attrs)
+    if changeset.changes == %{} do
+      {:ok, structure_note}
+    else
+      Repo.update(changeset)
+    end
+  end
+
+  @doc """
   Updates a structure_note.
 
   ## Examples
@@ -1076,17 +1109,12 @@ defmodule TdDd.DataStructures do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_structure_note(%StructureNote{} = structure_note, %{"df_content" => _} = attrs) do
-    structure_note
-    |> StructureNote.df_content_changeset(attrs)
-    |> Repo.update()
-  end
+
   def update_structure_note(%StructureNote{} = structure_note, attrs) do
     structure_note
     |> StructureNote.changeset(attrs)
     |> Repo.update()
   end
-
   @doc """
   Deletes a structure_note.
 
