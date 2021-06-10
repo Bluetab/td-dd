@@ -881,7 +881,7 @@ defmodule TdDd.DataStructures do
       %DataStructuresTags{} = tag_link ->
         Multi.new()
         |> Multi.run(:latest, fn _, _ ->
-          {:ok, get_latest_version(structure)}
+          {:ok, get_latest_version(structure, [:path])}
         end)
         |> Multi.delete(:deleted_link_tag, tag_link)
         |> Multi.run(:audit, Audit, :tag_link_deleted, [user_id])
@@ -928,7 +928,7 @@ defmodule TdDd.DataStructures do
 
     Multi.new()
     |> Multi.run(:latest, fn _, _ ->
-      {:ok, get_latest_version(data_structure)}
+      {:ok, get_latest_version(data_structure, [:path])}
     end)
     |> Multi.insert(:linked_tag, changeset)
     |> Multi.run(:audit, Audit, :tag_linked, [user_id])
@@ -942,7 +942,7 @@ defmodule TdDd.DataStructures do
 
     Multi.new()
     |> Multi.run(:latest, fn _, _ ->
-      {:ok, get_latest_version(link.data_structure)}
+      {:ok, get_latest_version(link.data_structure, [:path])}
     end)
     |> Multi.update(:linked_tag, changeset)
     |> Multi.run(:audit, Audit, :tag_link_updated, [changeset, user_id])

@@ -70,6 +70,7 @@ defmodule TdDd.DataStructures.Audit do
         :data_structure_id,
         :data_structure_tag_id,
         :description,
+        :domain_ids,
         :inserted_at,
         :updated_at,
         :resource,
@@ -122,6 +123,7 @@ defmodule TdDd.DataStructures.Audit do
         :data_structure_id,
         :data_structure_tag_id,
         :description,
+        :domain_ids,
         :inserted_at,
         :updated_at,
         :resource,
@@ -160,9 +162,12 @@ defmodule TdDd.DataStructures.Audit do
   end
 
   defp build_resource(%{data_structure: data_structure}, %{} = latest) do
+    path = Enum.map(latest.path, fn %{"name" => name} -> name end)
+
     %{}
     |> Map.put(:external_id, data_structure.external_id)
     |> Map.put(:name, latest.name)
+    |> Map.put(:path, path)
   end
 
   defp build_resource(_tag, _latest), do: %{}

@@ -1208,7 +1208,11 @@ defmodule TdDd.DataStructuresTest do
       assert %{
                "description" => ^description,
                "tag" => ^tag_name,
-               "resource" => %{"external_id" => ^external_id, "name" => ^version_name}
+               "resource" => %{
+                 "external_id" => ^external_id,
+                 "name" => ^version_name,
+                 "path" => []
+               }
              } = Jason.decode!(payload)
     end
 
@@ -1242,7 +1246,11 @@ defmodule TdDd.DataStructuresTest do
       assert %{
                "description" => ^description,
                "tag" => ^tag_name,
-               "resource" => %{"external_id" => ^external_id, "name" => ^version_name}
+               "resource" => %{
+                 "external_id" => ^external_id,
+                 "name" => ^version_name,
+                 "path" => []
+               }
              } = Jason.decode!(payload)
     end
 
@@ -1317,7 +1325,11 @@ defmodule TdDd.DataStructuresTest do
       assert %{
                "description" => ^description,
                "tag" => ^tag_name,
-               "resource" => %{"external_id" => ^external_id, "name" => ^version_name}
+               "resource" => %{
+                 "external_id" => ^external_id,
+                 "name" => ^version_name,
+                 "path" => []
+               }
              } = Jason.decode!(payload)
 
       assert is_nil(DataStructures.get_link_tag_by(data_structure_id, data_structure_tag_id))
