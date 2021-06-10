@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- [TD-3735] Include extra information in tag related events
+
 ### Fixed
 
 - [TD-3837] Perfomance issue iterating over Redis keys to obtain linked concept
