@@ -7,6 +7,9 @@ defmodule TdDd.DataStructures.Audit do
 
   import TdDd.Audit.AuditSupport, only: [publish: 4, publish: 5]
 
+  alias Ecto.Changeset
+  alias TdCache.TaxonomyCache
+
   @doc """
   Publishes a `:data_structure_updated` event. Should be called using `Ecto.Multi.run/5`.
   """
@@ -49,45 +52,118 @@ defmodule TdDd.DataStructures.Audit do
   Publishes `:tag_linked` events for all created links
   between a structure and its tags.
   """
-  def tag_linked(_repo, %{linked_tag: %{id: id} = payload}, user_id) do
+  def tag_linked(
+        _repo,
+        %{
+          linked_tag: %{data_structure_id: id, data_structure_tag: %{name: name}} = tag,
+          latest: latest
+        },
+        user_id
+      ) do
     payload =
-      payload
-      |> with_structure(payload)
-      |> with_tag(payload)
+      tag
+      |> with_resource(latest)
+      |> with_domain_ids(tag)
+      |> Map.put(:tag, name)
       |> Map.take([
         :id,
-        :data_structure,
         :data_structure_id,
-        :data_structure_tag,
         :data_structure_tag_id,
         :description,
         :inserted_at,
-        :updated_at
+        :updated_at,
+        :resource,
+        :tag
       ])
 
-    publish("tag_linked", "tag", id, user_id, payload)
+    publish("structure_tag_linked", "data_structure", id, user_id, payload)
   end
 
   @doc """
   Publishes `:tag_link_updated` events for all changed links
   between a structure and its tags.
   """
-  def tag_link_updated(_repo, %{linked_tag: %{id: id}}, %{} = changeset, user_id) do
-    publish("tag_link_updated", "tag", id, user_id, changeset)
+  def tag_link_updated(
+        _repo,
+        %{
+          linked_tag: %{data_structure_id: id, data_structure_tag: %{name: name}} = tag,
+          latest: latest
+        },
+        %{} = changeset,
+        user_id
+      ) do
+    changeset =
+      changeset
+      |> with_resource(tag, latest)
+      |> with_domain_ids(tag)
+      |> Changeset.put_change(:tag, name)
+
+    publish("structure_tag_link_updated", "data_structure", id, user_id, changeset)
   end
 
   @doc """
   Publishes a `:tag_link_deleted` event. Should be called using `Ecto.Multi.run/5`.
   """
-  def tag_link_deleted(_repo, %{deleted_link_tag: %{id: id}}, user_id) do
-    publish("tag_link_deleted", "tag", id, user_id)
+  def tag_link_deleted(
+        _repo,
+        %{
+          deleted_link_tag: %{data_structure_id: id, data_structure_tag: %{name: name}} = tag,
+          latest: latest
+        },
+        user_id
+      ) do
+    payload =
+      tag
+      |> with_resource(latest)
+      |> with_domain_ids(tag)
+      |> Map.put(:tag, name)
+      |> Map.take([
+        :id,
+        :data_structure_id,
+        :data_structure_tag_id,
+        :description,
+        :inserted_at,
+        :updated_at,
+        :resource,
+        :tag
+      ])
+
+    publish("structure_tag_link_deleted", "data_structure", id, user_id, payload)
   end
 
-  defp with_structure(payload, %{data_structure: data_structure}) do
-    Map.put(payload, :data_structure, Map.take(data_structure, [:id, :external_id]))
+  defp with_domain_ids(%Changeset{} = changeset, %{data_structure: %{domain_id: domain_id}}) do
+    domain_ids =
+      domain_id
+      |> TaxonomyCache.get_parent_ids()
+      |> Enum.filter(& &1)
+
+    Changeset.put_change(changeset, :domain_ids, domain_ids)
   end
 
-  defp with_tag(payload, %{data_structure_tag: data_structure_tag}) do
-    Map.put(payload, :data_structure_tag, Map.take(data_structure_tag, [:id, :name]))
+  defp with_domain_ids(%{} = payload, %{data_structure: %{domain_id: domain_id}}) do
+    domain_ids =
+      domain_id
+      |> TaxonomyCache.get_parent_ids()
+      |> Enum.filter(& &1)
+
+    Map.put(payload, :domain_ids, domain_ids)
   end
+
+  defp with_resource(%{} = payload, latest) do
+    resource = build_resource(payload, latest)
+    Map.put(payload, :resource, resource)
+  end
+
+  defp with_resource(%Changeset{} = changeset, structure, latest) do
+    resource = build_resource(structure, latest)
+    Changeset.put_change(changeset, :resource, resource)
+  end
+
+  defp build_resource(%{data_structure: data_structure}, %{} = latest) do
+    %{}
+    |> Map.put(:external_id, data_structure.external_id)
+    |> Map.put(:name, latest.name)
+  end
+
+  defp build_resource(_tag, _latest), do: %{}
 end
