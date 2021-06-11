@@ -60,19 +60,24 @@ defmodule TdDd.CSV.Download do
     |> List.to_string()
   end
 
-  defp template_structures_to_csv(nil, structures, header_labels, add_separation) do
-    headers = build_headers(header_labels)
-    structures_list = structures_to_list(structures)
-    export_to_csv(headers, structures_list, add_separation)
-  end
-
-  defp template_structures_to_csv(structure_type, structures, header_labels, add_separation) do
-    content = Format.flatten_content_fields(structure_type.template.content)
+  defp template_structures_to_csv(
+         %{template: %{content: content = [_ | _]}},
+         structures,
+         header_labels,
+         add_separation
+       ) do
+    content = Format.flatten_content_fields(content)
     content_fields = Enum.reduce(content, [], &(&2 ++ [Map.take(&1, ["name", "values", "type"])]))
     content_labels = Enum.reduce(content, [], &(&2 ++ [Map.get(&1, "label")]))
     headers = build_headers(header_labels)
     headers = headers ++ content_labels
     structures_list = structures_to_list(structures, content_fields)
+    export_to_csv(headers, structures_list, add_separation)
+  end
+
+  defp template_structures_to_csv(_structure_type, structures, header_labels, add_separation) do
+    headers = build_headers(header_labels)
+    structures_list = structures_to_list(structures)
     export_to_csv(headers, structures_list, add_separation)
   end
 
