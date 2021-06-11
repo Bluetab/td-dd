@@ -32,15 +32,15 @@ defmodule TdDd.CSV.Download do
     structures_by_type = Enum.group_by(structures, &Map.get(&1, :type))
     types = Map.keys(structures_by_type)
 
-    templates_by_type = Enum.reduce(types, %{}, &Map.put(&2, &1, get_template_by_type(&1)))
+    structure_types = Enum.reduce(types, %{}, &Map.put(&2, &1, enrich_template(&1)))
 
     list =
       Enum.reduce(types, [], fn type, acc ->
         structures = Map.get(structures_by_type, type)
-        template = Map.get(templates_by_type, type)
+        structure_type = Map.get(structure_types, type)
 
         csv_list =
-          template_structures_to_csv(template, structures, header_labels, !Enum.empty?(acc))
+          template_structures_to_csv(structure_type, structures, header_labels, !Enum.empty?(acc))
 
         acc ++ csv_list
       end)
@@ -66,8 +66,8 @@ defmodule TdDd.CSV.Download do
     export_to_csv(headers, structures_list, add_separation)
   end
 
-  defp template_structures_to_csv(template, structures, header_labels, add_separation) do
-    content = Format.flatten_content_fields(template.template.content)
+  defp template_structures_to_csv(structure_type, structures, header_labels, add_separation) do
+    content = Format.flatten_content_fields(structure_type.template.content)
     content_fields = Enum.reduce(content, [], &(&2 ++ [Map.take(&1, ["name", "values", "type"])]))
     content_labels = Enum.reduce(content, [], &(&2 ++ [Map.get(&1, "label")]))
     headers = build_headers(header_labels)
@@ -186,7 +186,7 @@ defmodule TdDd.CSV.Download do
     Map.get(content, name, "")
   end
 
-  defp get_template_by_type(type) do
+  defp enrich_template(type) do
     type
     |> DataStructureTypes.get_data_structure_type_by_type!()
     |> case do
