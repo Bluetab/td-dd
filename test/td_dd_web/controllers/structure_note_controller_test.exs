@@ -4,6 +4,8 @@ defmodule TdDdWeb.StructureNoteControllerTest do
   alias TdCache.TemplateCache
   alias TdDd.DataStructures.StructureNote
 
+  import TdDd.TestOperators
+
   @moduletag sandbox: :shared
   @template_name "structure_note_controller_test_template"
 
@@ -17,14 +19,68 @@ defmodule TdDdWeb.StructureNoteControllerTest do
     {:ok, %{conn: put_req_header(conn, "accept", "application/json")}}
   end
 
-  @tag authentication: [role: "admin"]
   describe "index" do
+    @tag authentication: [role: "admin"]
     test "lists all structure_notes", %{conn: conn} do
       %{id: data_structure_id} = insert(:data_structure)
       assert [] == conn
       |> get(Routes.data_structure_note_path(conn, :index, data_structure_id))
       |> json_response(:ok)
       |> Map.get("data")
+    end
+
+    @tag authentication: [
+      user_name: "non_admin_user",
+      permissions: [:view_old_structure_note_versions]
+    ]
+    test "lists all structure_notes if user has the view_old_structure_note_versions permission", %{conn: conn, domain: domain} do
+      %{id: data_structure_id} = insert(:data_structure, domain_id: domain.id)
+      assert [] == conn
+      |> get(Routes.data_structure_note_path(conn, :index, data_structure_id))
+      |> json_response(:ok)
+      |> Map.get("data")
+    end
+
+    @tag authentication: [
+      user_name: "non_admin_user",
+      permissions: [:some_permission]
+    ]
+    test "can't lists all structure_notes if user hasn't the correct permission", %{conn: conn, domain: domain} do
+      %{id: data_structure_id} = insert(:data_structure, domain_id: domain.id)
+      conn
+      |> get(Routes.data_structure_note_path(conn, :index, data_structure_id))
+      |> json_response(:forbidden)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "only list structure notes of its data structure", %{conn: conn} do
+      %{id: first_data_structure_id} = first_data_structure = insert(:data_structure)
+      %{id: second_data_structure_id} = second_data_structure = insert(:data_structure)
+
+      first_structure_notes = [
+        insert(:structure_note, data_structure: first_data_structure, status: :rejected, version: 1),
+        insert(:structure_note, data_structure: first_data_structure, status: :published, version: 2),
+        insert(:structure_note, data_structure: first_data_structure, status: :draft, version: 3)
+      ]
+      |> Enum.map(fn(sn) -> sn.id end)
+
+      second_structure_notes = [
+        insert(:structure_note, data_structure: second_data_structure, status: :draft, version: 2),
+        insert(:structure_note, data_structure: second_data_structure, status: :rejected, version: 1)
+      ]
+      |> Enum.map(fn(sn) -> sn.id end)
+
+      assert first_structure_notes <|> (conn
+      |> get(Routes.data_structure_note_path(conn, :index, first_data_structure_id))
+      |> json_response(:ok)
+      |> Map.get("data")
+      |> Enum.map(fn(sn) -> Map.get(sn, "id") end))
+
+      assert second_structure_notes <|> (conn
+      |> get(Routes.data_structure_note_path(conn, :index, second_data_structure_id))
+      |> json_response(:ok)
+      |> Map.get("data")
+      |> Enum.map(fn(sn) -> Map.get(sn, "id") end))
     end
   end
 

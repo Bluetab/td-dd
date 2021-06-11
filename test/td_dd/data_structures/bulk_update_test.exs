@@ -254,8 +254,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       %{df_content: df_content} =
         id
-        |> DataStructures.list_structure_notes()
-        |> Enum.at(-1)
+        |> DataStructures.get_latest_structure_note()
 
       assert df_content == %{"list" => "one"}
     end

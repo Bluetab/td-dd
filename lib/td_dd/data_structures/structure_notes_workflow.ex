@@ -142,14 +142,12 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
   # Workflow utilities
   defp get_latest_structure_note(data_structure_id, status) do
     data_structure_id
-    |> DataStructures.list_structure_notes(status)
-    |> Enum.at(-1)
+    |> DataStructures.get_latest_structure_note(status)
   end
 
   defp get_latest_structure_note(data_structure_id) do
     data_structure_id
-    |> DataStructures.list_structure_notes()
-    |> Enum.at(-1)
+    |> DataStructures.get_latest_structure_note()
   end
 
   defp can_create_new_draft(nil), do: :ok

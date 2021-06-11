@@ -1049,11 +1049,23 @@ defmodule TdDd.DataStructures do
   """
   def get_structure_note!(id), do: Repo.get!(StructureNote, id)
 
-  def get_latest_structure_note(data_structure_id) do
-    StructureNote
+  def latest_structure_note_query(query, data_structure_id) do
+    query
     |> where(data_structure_id: ^data_structure_id)
     |> order_by(desc: :version)
     |> limit(1)
+  end
+
+  def get_latest_structure_note(data_structure_id, status) do
+    StructureNote
+    |> where(status: ^status)
+    |> latest_structure_note_query(data_structure_id)
+    |> Repo.one()
+  end
+
+  def get_latest_structure_note(data_structure_id) do
+    StructureNote
+    |> latest_structure_note_query(data_structure_id)
     |> Repo.one()
   end
 

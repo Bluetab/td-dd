@@ -43,7 +43,7 @@ defmodule TdDd.Search.StructureEnricherTest do
       valid_content = %{"string" => "initial", "list" => "one"}
 
       data_structure = insert(:data_structure, latest_note: Map.put(valid_content, "foo", "bar"))
-      insert(:data_structure_version, type: template_name, data_structure: data_structure )
+      insert(:data_structure_version, type: template_name, data_structure: data_structure)
 
       assert %{search_content: search_content} =
                StructureEnricher.enrich(data_structure, template_name, :searchable)
