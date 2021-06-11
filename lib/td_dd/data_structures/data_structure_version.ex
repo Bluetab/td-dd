@@ -124,7 +124,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     @impl Elasticsearch.Document
     def encode(
           %DataStructureVersion{
-            data_structure: %{search_content: content} = data_structure,
+            data_structure: %{search_content: content, tags: tags} = data_structure,
             path: path
           } = dsv
         ) do
@@ -133,6 +133,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       # chunked data using `TdDd.DataStructures.enriched_structure_versions/1`.
 
       name_path = Enum.map(path, & &1["name"])
+      tags = tags(tags)
 
       data_structure
       |> Map.take([
@@ -143,7 +144,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
         :inserted_at,
         :linked_concepts_count,
         :source_id,
-        :system_id,
+        :system_id
       ])
       |> Map.put(:df_content, content)
       |> Map.put(:domain_ids, domain_ids(data_structure))
@@ -154,6 +155,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       |> Map.put(:source_alias, source_alias(dsv))
       |> Map.put(:system, system(data_structure))
       |> Map.put(:with_content, is_map(content) and map_size(content) > 0)
+      |> Map.put(:tags, tags)
       |> Map.merge(
         Map.take(dsv, [
           :class,
@@ -195,5 +197,8 @@ defmodule TdDd.DataStructures.DataStructureVersion do
 
     defp source_alias(%{metadata: %{"alias" => value}}), do: value
     defp source_alias(_), do: nil
+
+    defp tags([_ | _] = tags), do: Enum.map(tags, & &1.name)
+    defp tags(_tags), do: nil
   end
 end
