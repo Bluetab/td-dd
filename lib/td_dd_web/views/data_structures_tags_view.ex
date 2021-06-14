@@ -13,7 +13,7 @@ defmodule TdDdWeb.DataStructuresTagsView do
     %{data: render_many(links, DataStructuresTagsView, "data_structures_tags.json")}
   end
 
-  def render("data_structures_tags.json", %{data_structures_tags: data_structures_tags}) do
+  def render("data_structures_tags.json", %{data_structures_tags: data_structures_tags = %{}}) do
     %{
       id: data_structures_tags.id,
       description: data_structures_tags.description,
@@ -29,6 +29,11 @@ defmodule TdDdWeb.DataStructuresTagsView do
           )
       }
     }
+  end
+
+  def render("data_structures_tags.json", %{data_structures_tags: data_structures_tags})
+      when is_binary(data_structures_tags) do
+    data_structures_tags
   end
 
   defp structure_json(data_structure) do
