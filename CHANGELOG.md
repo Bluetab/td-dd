@@ -4,6 +4,7 @@
 
 ### Changed
 
+- [TD-3735] Include extra information in tag related events
 - [TD-3447] Filter concept rules but do not check permissions over resource
 
 ### Fixed
