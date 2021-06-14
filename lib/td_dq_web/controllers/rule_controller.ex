@@ -57,25 +57,23 @@ defmodule TdDqWeb.RuleController do
       "resource_type" => "rule"
     }
 
-    with {:can, true} <- {:can, can?(claims, get_rules_by_concept(resource_type))} do
-      params =
-        params
-        |> Map.put("business_concept_id", id)
-        |> Map.delete("id")
+    params =
+      params
+      |> Map.put("business_concept_id", id)
+      |> Map.delete("id")
 
-      rules =
-        params
-        |> Rules.list_rules(enrich: [:domain])
-        |> Enum.filter(&can?(claims, show(&1)))
+    rules =
+      params
+      |> Rules.list_rules(enrich: [:domain])
+      |> Enum.filter(&can?(claims, show(&1)))
 
-      conn
-      |> put_view(RuleView)
-      |> render(
-        "index.json",
-        hypermedia: collection_hypermedia("rule", conn, rules, resource_type),
-        rules: rules
-      )
-    end
+    conn
+    |> put_view(RuleView)
+    |> render(
+      "index.json",
+      hypermedia: collection_hypermedia("rule", conn, rules, resource_type),
+      rules: rules
+    )
   end
 
   swagger_path :create do
