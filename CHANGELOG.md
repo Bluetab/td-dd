@@ -9,6 +9,8 @@
   structures with or without concept links), so instead of counting links for
   each structure, assume 1 if structure has any linked concepts and 0 otherwise.
 
+- [TD-3718] Get the extra information when structures are downloaded
+
 ## [4.21.0] 2021-05-31
 
 ### Added
