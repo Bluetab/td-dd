@@ -1008,7 +1008,13 @@ defmodule TdDd.DataStructuresTest do
     setup do
       s1 = insert(:source, config: %{"job_types" => ["catalog", "quality", "profile"]})
       s2 = insert(:source)
-      s3 = insert(:source, external_id: "foo", config: %{"job_types" => ["catalog"], "alias" => "foo"})
+
+      s3 =
+        insert(:source,
+          external_id: "foo",
+          config: %{"job_types" => ["catalog"], "alias" => "foo"}
+        )
+
       s4 = insert(:source, config: %{"job_types" => ["profile"], "alias" => "foo"})
 
       v1 = insert(:data_structure_version, data_structure: insert(:data_structure, source: s1))
@@ -1181,8 +1187,9 @@ defmodule TdDd.DataStructuresTest do
   describe "link_tag/3" do
     test "links tag to a given structure", %{claims: claims} do
       description = "foo"
-      structure = %{id: data_structure_id} = insert(:data_structure)
-      tag = %{id: tag_id} = insert(:data_structure_tag)
+      structure = %{id: data_structure_id, external_id: external_id} = insert(:data_structure)
+      %{name: version_name} = insert(:data_structure_version, data_structure: structure)
+      tag = %{id: tag_id, name: tag_name} = insert(:data_structure_tag)
       params = %{description: description}
 
       {:ok,
@@ -1195,14 +1202,25 @@ defmodule TdDd.DataStructuresTest do
          }
        }} = DataStructures.link_tag(structure, tag, params, claims)
 
-      assert {:ok, [%{id: ^event_id}]} =
+      assert {:ok, [%{id: ^event_id, payload: payload}]} =
                Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+
+      assert %{
+               "description" => ^description,
+               "tag" => ^tag_name,
+               "resource" => %{
+                 "external_id" => ^external_id,
+                 "name" => ^version_name,
+                 "path" => []
+               }
+             } = Jason.decode!(payload)
     end
 
     test "updates link information when it already exists", %{claims: claims} do
       description = "bar"
-      structure = %{id: data_structure_id} = insert(:data_structure)
-      tag = %{id: tag_id} = insert(:data_structure_tag)
+      structure = %{id: data_structure_id, external_id: external_id} = insert(:data_structure)
+      tag = %{id: tag_id, name: tag_name} = insert(:data_structure_tag)
+      %{name: version_name} = insert(:data_structure_version, data_structure: structure)
 
       insert(:data_structures_tags,
         data_structure_tag: tag,
@@ -1222,8 +1240,18 @@ defmodule TdDd.DataStructuresTest do
          }
        }} = DataStructures.link_tag(structure, tag, params, claims)
 
-      assert {:ok, [%{id: ^event_id}]} =
+      assert {:ok, [%{id: ^event_id, payload: payload}]} =
                Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+
+      assert %{
+               "description" => ^description,
+               "tag" => ^tag_name,
+               "resource" => %{
+                 "external_id" => ^external_id,
+                 "name" => ^version_name,
+                 "path" => []
+               }
+             } = Jason.decode!(payload)
     end
 
     test "gets error when description is invalid", %{claims: claims} do
@@ -1275,9 +1303,12 @@ defmodule TdDd.DataStructuresTest do
 
   describe "delete_link_tag/2" do
     test "deletes link between tag and structure", %{claims: claims} do
-      structure = %{id: data_structure_id} = insert(:data_structure)
-      tag = %{id: data_structure_tag_id} = insert(:data_structure_tag)
-      insert(:data_structures_tags, data_structure: structure, data_structure_tag: tag)
+      structure = %{id: data_structure_id, external_id: external_id} = insert(:data_structure)
+      tag = %{id: data_structure_tag_id, name: tag_name} = insert(:data_structure_tag)
+      %{name: version_name} = insert(:data_structure_version, data_structure: structure)
+
+      %{description: description} =
+        insert(:data_structures_tags, data_structure: structure, data_structure_tag: tag)
 
       assert {:ok,
               %{
@@ -1288,8 +1319,18 @@ defmodule TdDd.DataStructuresTest do
                 }
               }} = DataStructures.delete_link_tag(structure, tag, claims)
 
-      assert {:ok, [%{id: ^event_id}]} =
+      assert {:ok, [%{id: ^event_id, payload: payload}]} =
                Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+
+      assert %{
+               "description" => ^description,
+               "tag" => ^tag_name,
+               "resource" => %{
+                 "external_id" => ^external_id,
+                 "name" => ^version_name,
+                 "path" => []
+               }
+             } = Jason.decode!(payload)
 
       assert is_nil(DataStructures.get_link_tag_by(data_structure_id, data_structure_tag_id))
     end
