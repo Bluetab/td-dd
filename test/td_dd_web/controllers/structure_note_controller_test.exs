@@ -32,9 +32,9 @@ defmodule TdDdWeb.StructureNoteControllerTest do
 
     @tag authentication: [
       user_name: "non_admin_user",
-      permissions: [:view_old_structure_note_versions]
+      permissions: [:view_structure_note_history]
     ]
-    test "lists all structure_notes if user has the view_old_structure_note_versions permission", %{conn: conn, domain: domain} do
+    test "lists all structure_notes if user has the view_structure_note_history permission", %{conn: conn, domain: domain} do
       %{id: data_structure_id} = insert(:data_structure, domain_id: domain.id)
       assert [] == conn
       |> get(Routes.data_structure_note_path(conn, :index, data_structure_id))

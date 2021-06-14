@@ -33,7 +33,7 @@ defmodule TdDdWeb.StructureNoteController do
       }) do
     with claims <- conn.assigns[:current_resource],
       %{domain_id: domain_id} <- DataStructures.get_data_structure!(data_structure_id),
-      {:can, true} <- {:can, can?(claims, view_old_structure_note_versions({StructureNote, domain_id}))} do
+      {:can, true} <- {:can, can?(claims, view_structure_note_history({StructureNote, domain_id}))} do
         structure_notes = DataStructures.list_structure_notes(data_structure_id)
         render(conn, "index.json", structure_notes: structure_notes)
       end
