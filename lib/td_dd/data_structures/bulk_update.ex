@@ -177,7 +177,6 @@ defmodule TdDd.DataStructures.BulkUpdate do
 
   defp bulk_update(_repo, _changes_so_far, data_structures, params) do
     data_structures
-    |> Enum.filter(&Map.get(&1, :df_content))
     |> Enum.map(&DataStructure.merge_changeset(&1, params))
     |> Enum.reject(&(&1.changes == %{}))
     |> Enum.reduce_while(%{}, &reduce_changesets/2)

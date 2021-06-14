@@ -295,7 +295,7 @@ defmodule TdDd.DataStructures.Search do
           "system.name",
           "path.text",
           "description",
-          "df_content.*"
+          "latest_note.*"
         ]
       }
     }

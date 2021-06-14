@@ -83,7 +83,7 @@ defmodule TdDd.CSV.Download do
 
   defp structures_to_list(structures, content_fields \\ []) do
     Enum.map(structures, fn structure ->
-      content = structure.df_content
+      content = structure.latest_note
 
       values = [
         structure.type,

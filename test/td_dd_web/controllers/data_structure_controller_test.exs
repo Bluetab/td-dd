@@ -312,6 +312,12 @@ defmodule TdDdWeb.DataStructureControllerTest do
       data_structure: data_structure,
       data_structure_version: data_structure_version
     } do
+      insert(:structure_note,
+        data_structure: data_structure,
+        df_content: %{"string" => "foo_latest_note", "list" => "two"},
+        status: :published
+      )
+
       child_structure = insert(:data_structure, external_id: "Child1")
 
       child_version =
@@ -328,6 +334,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert %{resp_body: resp_body} = post(conn, data_structure_path(conn, :csv, %{}))
       assert String.contains?(resp_body, data_structure.external_id)
+      assert String.contains?(resp_body, "foo_latest_note")
       assert not String.contains?(resp_body, child_structure.external_id)
     end
   end

@@ -441,14 +441,14 @@ defmodule TdDd.ElasticsearchMock do
     end
   end
 
-  defp create_field_match("df_content.*", query, "phrase_prefix") do
+  defp create_field_match("latest_note.*", query, "phrase_prefix") do
     fn doc ->
       doc
-      |> Map.update("df_content", %{}, fn
+      |> Map.update("latest_note", %{}, fn
         nil -> %{}
         v -> v
       end)
-      |> Map.get("df_content", %{})
+      |> Map.get("latest_note", %{})
       |> Map.values()
       |> Enum.any?(&String.starts_with?(&1, String.downcase(query)))
     end

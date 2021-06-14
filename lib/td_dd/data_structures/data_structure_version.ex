@@ -146,7 +146,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
         :source_id,
         :system_id,
       ])
-      |> Map.put(:df_content, content)
+      |> Map.put(:latest_note, content)
       |> Map.put(:domain_ids, domain_ids(data_structure))
       |> Map.put(:domain, domain(data_structure))
       |> Map.put(:field_type, field_type(dsv))

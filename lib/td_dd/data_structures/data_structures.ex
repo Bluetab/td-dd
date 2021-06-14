@@ -478,6 +478,13 @@ defmodule TdDd.DataStructures do
     |> on_update()
   end
 
+  defp on_update({:ok, %StructureNote{status: :published, data_structure: %{id: id}}} = res) do
+    IndexWorker.reindex(id)
+    res
+  end
+
+  defp on_update({:ok, %StructureNote{}} = res), do: res
+
   defp on_update({:ok, %{} = res}) do
     with %{data_structure: %{id: id}} <- res do
       IndexWorker.reindex(id)
@@ -1085,6 +1092,7 @@ defmodule TdDd.DataStructures do
     %StructureNote{}
     |> StructureNote.create_changeset(data_structure, attrs)
     |> Repo.insert()
+    |> on_update()
   end
 
   @doc """
@@ -1105,7 +1113,9 @@ defmodule TdDd.DataStructures do
     if changeset.changes == %{} do
       {:ok, structure_note}
     else
-      Repo.update(changeset)
+      changeset
+      |> Repo.update()
+      |> on_update()
     end
   end
 
@@ -1126,6 +1136,7 @@ defmodule TdDd.DataStructures do
     structure_note
     |> StructureNote.changeset(attrs)
     |> Repo.update()
+    |> on_update()
   end
   @doc """
   Deletes a structure_note.

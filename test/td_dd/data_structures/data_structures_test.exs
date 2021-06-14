@@ -309,7 +309,7 @@ defmodule TdDd.DataStructuresTest do
       assert %{
                with_content: true,
                classes: %{"foo" => "bar"},
-               df_content: df_content,
+               latest_note: latest_note,
                domain_ids: [^domain_id],
                mutable_metadata: %{"foo" => "bar"},
                domain: %{id: ^domain_id, name: ^domain_name, external_id: ^domain_external_id},
@@ -318,7 +318,7 @@ defmodule TdDd.DataStructuresTest do
                system: %{external_id: _, id: _, name: _}
              } = document
 
-      assert df_content == %{"list" => "one", "string" => "initial"}
+      assert latest_note == %{"list" => "one", "string" => "initial"}
 
       assert ["yayo", "papa"] = path
     end
