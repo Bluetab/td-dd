@@ -11,6 +11,10 @@
 
 - [TD-3718] Get the extra information when structures are downloaded
 
+### Added
+
+- [TD-3736] Tags in data structure version document
+
 ## [4.21.0] 2021-05-31
 
 ### Added
