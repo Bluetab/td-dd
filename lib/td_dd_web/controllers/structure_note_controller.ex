@@ -1,23 +1,60 @@
 defmodule TdDdWeb.StructureNoteController do
   use TdDdWeb, :controller
+  use PhoenixSwagger
 
   import Canada, only: [can?: 2]
 
   alias TdDd.DataStructures
   alias TdDd.DataStructures.StructureNote
   alias TdDd.DataStructures.StructureNotesWorkflow
+  alias TdDdWeb.SwaggerDefinitions
 
-  action_fallback TdDdWeb.FallbackController
+  action_fallback(TdDdWeb.FallbackController)
+
+  def swagger_definitions do
+    SwaggerDefinitions.structure_note_swagger_definitions()
+  end
+
+  swagger_path :index do
+    description("List StructureNotes of a DataStructure")
+    produces("application/json")
+
+    parameters do
+      data_structure_id(:path, :string, "Data Structure Id", required: true)
+    end
+
+    response(200, "OK", Schema.ref(:StructureNotesResponse))
+    response(403, "Forbidden")
+    response(404, "Not Found")
+  end
 
   def index(conn, %{
         "data_structure_id" => data_structure_id
       }) do
     with claims <- conn.assigns[:current_resource],
-      %{domain_id: domain_id} = data_structure <- DataStructures.get_data_structure!(data_structure_id),
+      %{domain_id: domain_id} <- DataStructures.get_data_structure!(data_structure_id),
       {:can, true} <- {:can, can?(claims, view_old_structure_note_versions({StructureNote, domain_id}))} do
         structure_notes = DataStructures.list_structure_notes(data_structure_id)
         render(conn, "index.json", structure_notes: structure_notes)
       end
+  end
+
+  swagger_path :create do
+    description("Creates Structure Note")
+    produces("application/json")
+
+    parameters do
+      data_structure_id(:path, :string, "Data Structure Id", required: true)
+      structure_note(
+        :body,
+        Schema.ref(:CreateStructureNote),
+        "StructureNote create attrs"
+      )
+    end
+
+    response(201, "OK", Schema.ref(:StructureNoteResponse))
+    response(403, "Forbidden")
+    response(422, "Unprocessable Entity")
   end
 
   def create(conn, %{
@@ -39,9 +76,43 @@ defmodule TdDdWeb.StructureNoteController do
     end
   end
 
+  swagger_path :show do
+    description("Shows Structure Note")
+    produces("application/json")
+
+    parameters do
+      data_structure_id(:path, :integer, "Data Structure ID", required: true)
+      id(:path, :string, "Structure Note Id", required: true)
+    end
+
+    response(200, "OK", Schema.ref(:StructureNoteResponse))
+    response(403, "Forbidden")
+    response(404, "Not Found")
+  end
+
   def show(conn, %{"id" => id}) do
     structure_note = DataStructures.get_structure_note!(id)
     render(conn, "show.json", structure_note: structure_note)
+  end
+
+
+  swagger_path :update do
+    description("Updates Structure Note")
+    produces("application/json")
+
+    parameters do
+      data_structure_id(:path, :string, "Data Structure Id", required: true)
+      id(:path, :string, "Structure Note Id", required: true)
+      structure_note(
+        :body,
+        Schema.ref(:UpdateStructureNote),
+        "StructureNote update attrs"
+      )
+    end
+
+    response(201, "OK", Schema.ref(:StructureNoteResponse))
+    response(403, "Forbidden")
+    response(422, "Unprocessable Entity")
   end
 
   def update(conn, %{
@@ -62,6 +133,20 @@ defmodule TdDdWeb.StructureNoteController do
       )
       |> render("show.json", structure_note: structure_note, actions: available_actions(structure_note, claims, domain_id))
     end
+  end
+
+  swagger_path :delete do
+    description("Deletes Structure Note")
+    produces("application/json")
+
+    parameters do
+      data_structure_id(:path, :integer, "Data Structure ID", required: true)
+      id(:path, :integer, "Data Structure Note ID", required: true)
+    end
+
+    response(202, "Accepted")
+    response(403, "Forbidden")
+    response(422, "Unprocessable Entity")
   end
 
   def delete(conn, %{"id" => id}) do

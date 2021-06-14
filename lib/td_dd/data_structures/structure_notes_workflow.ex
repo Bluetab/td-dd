@@ -61,7 +61,7 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
   end
 
   def update(_structure_note, _attrs, _) do
-    {:error, :unknown_error}
+    {:error, :bad_request}
   end
 
   def delete(%StructureNote{status: status} = structure_note) do

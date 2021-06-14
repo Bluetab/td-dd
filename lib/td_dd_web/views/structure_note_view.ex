@@ -26,14 +26,14 @@ defmodule TdDdWeb.StructureNoteView do
     {"location", location} = conn.resp_headers
     |> Enum.find(fn(header) ->
       case header do
-        {"location", location} -> true
+        {"location", _location} -> true
         _ -> false
       end
     end)
 
     # [{"location", location}] = conn.resp_headers
 
-    algo = actions
+    actions
     |> Enum.reduce(%{}, fn action, acc -> Map.put(acc, action,
       %{href: location,
         input: %{status: action},
