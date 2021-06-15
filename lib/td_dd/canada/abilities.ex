@@ -72,8 +72,8 @@ defmodule TdDd.Canada.Abilities do
       DataStructureVersionAbilities.can?(claims, action, data_structure_version)
     end
 
-    def can?(%Claims{} = claims, action, {StructureNote, domain_id}) do
-      StructureNoteAbilities.can?(claims, action, domain_id)
+    def can?(%Claims{} = claims, action, {StructureNote, data_structure}) do
+      StructureNoteAbilities.can?(claims, action, data_structure)
     end
 
     def can?(%Claims{} = claims, action, DataStructureTag) do

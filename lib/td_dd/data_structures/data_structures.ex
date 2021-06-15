@@ -1032,13 +1032,15 @@ defmodule TdDd.DataStructures do
     |> Repo.all()
   end
 
-  def list_structure_notes(data_structure_id, status) do
+  def list_structure_notes(data_structure_id, statuses) when is_list(statuses) do
     StructureNote
     |> where(data_structure_id: ^data_structure_id)
-    |> where(status: ^status)
+    |> where([sn], sn.status in ^statuses)
     |> order_by(asc: :version)
     |> Repo.all()
   end
+
+  def list_structure_notes(data_structure_id, status), do: list_structure_notes(data_structure_id, [status])
 
   @doc """
   Gets a single structure_note.
