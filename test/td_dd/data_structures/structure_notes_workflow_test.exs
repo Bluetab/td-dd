@@ -263,7 +263,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
                  |> StructureNotesWorkflow.update(attrs)
       end)
 
-      # statuses that cant be sent to rejected
+      # statuses that cant be sent to draft
       [:pending_approval, :draft, :published, :deprecated, :versioned]
       |> Enum.each(fn status ->
         assert {:error, _} =

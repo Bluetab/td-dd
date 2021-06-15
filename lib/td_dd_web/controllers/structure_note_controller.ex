@@ -35,8 +35,17 @@ defmodule TdDdWeb.StructureNoteController do
          data_structure <- DataStructures.get_data_structure!(data_structure_id),
          {:can, true} <- {:can, can?(claims, view_data_structure(data_structure))},
          statuses <- listable_statuses(claims, data_structure) do
-      structure_notes = DataStructures.list_structure_notes(data_structure_id, statuses)
-      render(conn, "index.json", structure_notes: structure_notes)
+      structure_notes =
+        data_structure_id
+        |> DataStructures.list_structure_notes(statuses)
+        |> Enum.map(fn sn ->
+          Map.put(sn, :actions, available_actions(conn, sn, claims, data_structure))
+        end)
+
+      render(conn, "index.json",
+        structure_notes: structure_notes,
+        actions: available_actions(conn, nil, claims, data_structure)
+      )
     end
   end
 
@@ -77,7 +86,7 @@ defmodule TdDdWeb.StructureNoteController do
       )
       |> render("show.json",
         structure_note: structure_note,
-        actions: available_actions(structure_note, claims, data_structure)
+        actions: available_actions(conn, structure_note, claims, data_structure)
       )
     end
   end
@@ -139,7 +148,7 @@ defmodule TdDdWeb.StructureNoteController do
       )
       |> render("show.json",
         structure_note: structure_note,
-        actions: available_actions(structure_note, claims, data_structure)
+        actions: available_actions(conn, structure_note, claims, data_structure)
       )
     end
   end
@@ -180,7 +189,58 @@ defmodule TdDdWeb.StructureNoteController do
     {:can, can?(claims, edit_structure_note({StructureNote, data_structure}))}
   end
 
-  defp available_actions(%{status: status} = structure_note, claims, data_structure) do
+  defp available_actions(conn, structure_note, claims, data_structure) do
+    structure_note
+    |> available_statutes(claims, data_structure)
+    |> Enum.reduce(%{}, fn action, acc ->
+      Map.put(acc, action, get_action_location(conn, action, data_structure.id, structure_note))
+    end)
+  end
+
+  defp get_action_location(conn, :draft, data_structure_id, _) do
+    %{
+      href: Routes.data_structure_note_path(conn, :create, data_structure_id),
+      input: %{df_content: %{}},
+      method: "POST"
+    }
+  end
+
+  defp get_action_location(conn, :edited, data_structure_id, structure_note) do
+    %{
+      id: structure_note.id,
+      href: Routes.data_structure_note_path(conn, :show, data_structure_id, structure_note),
+      input: %{df_content: %{}},
+      method: "PATCH"
+    }
+  end
+
+  defp get_action_location(conn, :deleted, data_structure_id, structure_note) do
+    %{
+      id: structure_note.id,
+      href: Routes.data_structure_note_path(conn, :show, data_structure_id, structure_note),
+      input: %{},
+      method: "DELETE"
+    }
+  end
+
+  defp get_action_location(conn, action, data_structure_id, structure_note) do
+    %{
+      id: structure_note.id,
+      href: Routes.data_structure_note_path(conn, :show, data_structure_id, structure_note),
+      input: %{status: action},
+      method: "PATCH"
+    }
+  end
+
+  defp available_statutes(nil, claims, data_structure) do
+    data_structure
+    |> StructureNotesWorkflow.available_actions()
+    |> Enum.filter(fn action ->
+      is_available(nil, action, claims, data_structure)
+    end)
+  end
+
+  defp available_statutes(%{status: status} = structure_note, claims, data_structure) do
     structure_note
     |> StructureNotesWorkflow.available_actions()
     |> Enum.filter(fn action ->
@@ -188,37 +248,34 @@ defmodule TdDdWeb.StructureNoteController do
     end)
   end
 
-  defp is_available(:draft, :published, claims, data_structure) do
-    can?(claims, publish_structure_note_from_draft({StructureNote, data_structure}))
-  end
+  defp is_available(:draft, :published, claims, data_structure),
+    do: can?(claims, publish_structure_note_from_draft({StructureNote, data_structure}))
 
-  defp is_available(status, action, claims, data_structure) do
-    case {status, action} do
-      {:draft, :edited} ->
-        can?(claims, edit_structure_note({StructureNote, data_structure}))
+  defp is_available(nil, :draft, claims, data_structure),
+    do: can?(claims, edit_structure_note({StructureNote, data_structure}))
 
-      {_, :pending_approval} ->
-        can?(claims, send_structure_note_to_approval({StructureNote, data_structure}))
+  defp is_available(:draft, :edited, claims, data_structure),
+    do: can?(claims, edit_structure_note({StructureNote, data_structure}))
 
-      {_, :rejected} ->
-        can?(claims, reject_structure_note({StructureNote, data_structure}))
+  defp is_available(_, :pending_approval, claims, data_structure),
+    do: can?(claims, send_structure_note_to_approval({StructureNote, data_structure}))
 
-      {_, :draft} ->
-        can?(claims, unreject_structure_note({StructureNote, data_structure}))
+  defp is_available(_, :rejected, claims, data_structure),
+    do: can?(claims, reject_structure_note({StructureNote, data_structure}))
 
-      {_, :deprecated} ->
-        can?(claims, deprecate_structure_note({StructureNote, data_structure}))
+  defp is_available(_, :draft, claims, data_structure),
+    do: can?(claims, unreject_structure_note({StructureNote, data_structure}))
 
-      {_, :published} ->
-        can?(claims, publish_structure_note({StructureNote, data_structure}))
+  defp is_available(_, :deprecated, claims, data_structure),
+    do: can?(claims, deprecate_structure_note({StructureNote, data_structure}))
 
-      {_, :deleted} ->
-        can?(claims, delete_structure_note({StructureNote, data_structure}))
+  defp is_available(_, :published, claims, data_structure),
+    do: can?(claims, publish_structure_note({StructureNote, data_structure}))
 
-      {_, _} ->
-        true
-    end
-  end
+  defp is_available(_, :deleted, claims, data_structure),
+    do: can?(claims, delete_structure_note({StructureNote, data_structure}))
+
+  defp is_available(_, _, _claims, _data_structure), do: false
 
   defp listable_statuses(claims, data_structure) do
     [

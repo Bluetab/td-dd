@@ -49,6 +49,94 @@ defmodule TdDdWeb.StructureNoteControllerTest do
                |> Map.get("data")
     end
 
+    @tag authentication: [role: "admin"]
+    test "actions from a structure with a published note", %{conn: conn} do
+      %{id: data_structure_id} = data_structure = insert(:data_structure)
+      insert(:structure_note, data_structure: data_structure, status: :published )
+
+      %{
+        "data" => [%{"_actions" => sn_actions, "status" => "published"}],
+        "_actions" => actions
+      } = conn
+        |> get(Routes.data_structure_note_path(conn, :index, data_structure_id))
+        |> json_response(:ok)
+
+      assert ["draft"] == Map.keys(actions)
+      assert ["deprecated"] == Map.keys(sn_actions)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "actions from a structure with a published and draft note", %{conn: conn} do
+      %{id: data_structure_id} = data_structure = insert(:data_structure)
+      insert(:structure_note, data_structure: data_structure, status: :published, version: 1 )
+      insert(:structure_note, data_structure: data_structure, status: :draft, version: 2 )
+
+      %{
+        "data" => [
+          %{"_actions" => v1_actions, "status" => "published", "version" => 1},
+          %{"_actions" => v2_actions, "status" => "draft", "version" => 2}
+        ],
+        "_actions" => actions
+      } = conn
+        |> get(Routes.data_structure_note_path(conn, :index, data_structure_id))
+        |> json_response(:ok)
+
+      assert [] == Map.keys(actions)
+      assert [] == Map.keys(v1_actions)
+      assert ["deleted", "edited", "pending_approval", "published"] <|> Map.keys(v2_actions)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "actions from a structure with a versioned, a published and pending_approval note", %{conn: conn} do
+      %{id: data_structure_id} = data_structure = insert(:data_structure)
+      insert(:structure_note, data_structure: data_structure, status: :versioned, version: 1 )
+      insert(:structure_note, data_structure: data_structure, status: :published, version: 2 )
+      insert(:structure_note, data_structure: data_structure, status: :pending_approval, version: 3 )
+
+      %{
+        "data" => [
+          %{"_actions" => v1_actions, "status" => "versioned", "version" => 1},
+          %{"_actions" => v2_actions, "status" => "published", "version" => 2},
+          %{"_actions" => v3_actions, "status" => "pending_approval", "version" => 3}
+        ],
+        "_actions" => actions
+      } = conn
+        |> get(Routes.data_structure_note_path(conn, :index, data_structure_id))
+        |> json_response(:ok)
+
+      assert [] == Map.keys(actions)
+      assert [] == Map.keys(v1_actions)
+      assert [] == Map.keys(v2_actions)
+      assert ["rejected", "published"] <|> Map.keys(v3_actions)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "actions from a structure without notes", %{conn: conn} do
+      %{id: data_structure_id} = insert(:data_structure)
+
+      %{
+        "data" => [],
+        "_actions" => actions
+      } = conn
+        |> get(Routes.data_structure_note_path(conn, :index, data_structure_id))
+        |> json_response(:ok)
+
+      assert ["draft"] == Map.keys(actions)
+    end
+
+    @tag authentication: [
+      user_name: "non_admin_user",
+      permissions: [:view_data_structure]
+    ]
+    test "a user without permission cannot have draft action", %{conn: conn, domain: domain} do
+      %{id: data_structure_id} = insert(:data_structure, domain_id: domain.id)
+
+      assert %{} == conn
+        |> get(Routes.data_structure_note_path(conn, :index, data_structure_id))
+        |> json_response(:ok)
+        |> Map.get("_actions")
+    end
+
     @tag authentication: [
            user_name: "non_admin_user",
            permissions: [:some_permission]

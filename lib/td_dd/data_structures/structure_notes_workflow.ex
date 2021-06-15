@@ -76,6 +76,7 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
   defp update_content(structure_note, new_df_content, true = _is_strict) do
     DataStructures.update_structure_note(structure_note, %{"df_content" => new_df_content})
   end
+
   defp update_content(structure_note, new_df_content, false = _is_strict) do
     DataStructures.bulk_update_structure_note(structure_note, %{"df_content" => new_df_content})
   end
@@ -101,7 +102,6 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
          %StructureNote{version: version, data_structure_id: data_structure_id} = structure_note
        ) do
     with {:ok, _} <- structure_note |> can_transit_to(:deprecated) do
-      get_latest_structure_note(data_structure_id)
       %{version: latest_version} = get_latest_structure_note(data_structure_id)
 
       if latest_version == version do
@@ -129,15 +129,31 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
     end
   end
 
-  def available_actions(%StructureNote{status: status}) do
-    case status do
-      :draft -> [:pending_approval, :published, :deleted, :edited]
-      :pending_approval -> [:published, :rejected]
-      :rejected -> [:draft, :deleted]
-      :published -> [:deprecated]
+  def available_actions(%DataStructure{id: id}) do
+    latest = get_latest_structure_note(id)
+
+    case can_create_new_draft(latest) do
+      :ok -> [:draft]
       _ -> []
     end
   end
+
+  def available_actions(%StructureNote{
+        status: status,
+        data_structure_id: data_structure_id,
+        id: id
+      }) do
+    %{id: latest_id} = get_latest_structure_note(data_structure_id)
+    available_actions(status, latest_id, id)
+  end
+
+  def available_actions(:draft, _latest_id, _id),
+    do: [:pending_approval, :published, :deleted, :edited]
+
+  def available_actions(:pending_approval, _latest_id, _id), do: [:published, :rejected]
+  def available_actions(:rejected, _latest_id, _id), do: [:draft, :deleted]
+  def available_actions(:published, latest_id, id) when latest_id == id, do: [:deprecated]
+  def available_actions(_status, _latest_id, _id), do: []
 
   # Workflow utilities
   defp get_latest_structure_note(data_structure_id, status) do
