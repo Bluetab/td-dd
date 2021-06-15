@@ -69,6 +69,7 @@ defmodule TdDd.Search.Mappings do
       classes: %{enabled: false},
       source_alias: %{type: "keyword", fields: @raw_sort},
       version: %{type: "short"},
+      tags: %{type: "text", fields: %{raw: %{type: "keyword", null_value: ""}}},
       source: %{
         properties: %{
           id: %{type: "long"},

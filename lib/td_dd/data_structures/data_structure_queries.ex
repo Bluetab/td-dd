@@ -96,7 +96,7 @@ defmodule TdDd.DataStructures.DataStructureQueries do
       when is_map_key(params, :ids) or is_map_key(params, :data_structure_ids) do
     %{
       distinct: :data_structure_id,
-      preload: [data_structure: :system]
+      preload: [data_structure: [:system, :tags]]
     }
     |> Map.merge(params)
     |> Enum.reduce(DataStructureVersion, fn

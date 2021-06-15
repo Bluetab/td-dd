@@ -1,6 +1,11 @@
 # Changelog
 
-## [Unreleased]
+## [4.22.0] 2021-06-15
+
+### Changed
+
+- [TD-3735] Include extra information in tag related events
+- [TD-3447] Filter concept rules but do not check permissions over resource
 
 ### Fixed
 
@@ -8,8 +13,11 @@
   count. The actual link count is only used in a comparison with 0 (to filter
   structures with or without concept links), so instead of counting links for
   each structure, assume 1 if structure has any linked concepts and 0 otherwise.
-
 - [TD-3718] Get the extra information when structures are downloaded
+- [TD-3864] Issue serializing certain lineage graphs as JSON
+### Added
+
+- [TD-3736] Tags in data structure version document
 
 ## [4.21.0] 2021-05-31
 

@@ -13,6 +13,9 @@ defmodule TdDd.DataStructures.DataStructuresTags do
     belongs_to(:data_structure, DataStructure)
     belongs_to(:data_structure_tag, DataStructureTag)
     field(:description, :string)
+    field(:resource, :map, virtual: true, default: %{})
+    field(:tag, :string, virtual: true)
+    field(:domain_ids, {:array, :integer}, virtual: true, default: [])
 
     timestamps(type: :utc_datetime_usec)
   end
