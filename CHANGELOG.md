@@ -14,7 +14,7 @@
   structures with or without concept links), so instead of counting links for
   each structure, assume 1 if structure has any linked concepts and 0 otherwise.
 - [TD-3718] Get the extra information when structures are downloaded
-
+- [TD-3864] Issue serializing certain lineage graphs as JSON
 ### Added
 
 - [TD-3736] Tags in data structure version document
