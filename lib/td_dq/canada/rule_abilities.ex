@@ -3,8 +3,6 @@ defmodule TdDq.Canada.RuleAbilities do
   alias TdDq.Auth.Claims
   alias TdDq.Permissions
 
-  def can?(%Claims{}, :index_rule, _business_concept_id), do: true
-
   def can?(%Claims{} = claims, :show, "") do
     Permissions.authorized?(claims, :view_quality_rule)
   end

@@ -220,14 +220,6 @@ defmodule TdDq.Canada.Abilities do
       RuleAbilities.can?(claims, :manage_rules, "")
     end
 
-    def can?(%Claims{} = claims, :get_rules_by_concept, %{
-          "business_concept_id" => business_concept_id,
-          "resource_type" => "rule"
-        }) do
-      RuleAbilities.can?(claims, :index_rule, business_concept_id) &&
-        authorized?(claims, business_concept_id)
-    end
-
     def can?(%Claims{} = claims, :create, %{
           "business_concept_id" => nil,
           "resource_type" => "rule"
