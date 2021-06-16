@@ -197,6 +197,15 @@ defmodule TdDdWeb.StructureNoteController do
     end)
   end
 
+  defp get_action_location(conn, :draft, data_structure_id, %{status: :rejected} = structure_note) do
+    %{
+      id: structure_note.id,
+      href: Routes.data_structure_note_path(conn, :show, data_structure_id, structure_note),
+      input: %{status: :draft},
+      method: "PATCH"
+    }
+  end
+
   defp get_action_location(conn, :draft, data_structure_id, _) do
     %{
       href: Routes.data_structure_note_path(conn, :create, data_structure_id),
@@ -262,6 +271,9 @@ defmodule TdDdWeb.StructureNoteController do
 
   defp is_available(_, :rejected, claims, data_structure),
     do: can?(claims, reject_structure_note({StructureNote, data_structure}))
+
+  defp is_available(:rejected, :draft, claims, data_structure),
+    do: can?(claims, unreject_structure_note({StructureNote, data_structure}))
 
   defp is_available(_, :draft, claims, data_structure),
     do: can?(claims, unreject_structure_note({StructureNote, data_structure}))
