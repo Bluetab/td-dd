@@ -33,6 +33,7 @@ defmodule TdDdWeb.StructureNoteView do
       status: structure_note.status,
       version: structure_note.version,
       df_content: structure_note.df_content,
+      updated_at: structure_note.updated_at,
       _actions: Map.get(structure_note, :actions, %{})
     }
   end
