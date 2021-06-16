@@ -165,7 +165,8 @@ defmodule TdDq.Search.Mappings do
       population: get_condition_mappings(),
       validations: get_condition_mappings(),
       df_name: %{type: "text", fields: %{raw: %{type: "keyword"}}},
-      df_content: content_mappings
+      df_content: content_mappings,
+      executable: %{type: "boolean"}
     }
 
     settings = Cluster.setting(:implementations)

@@ -21,6 +21,7 @@ defmodule TdDq.Implementations.Implementation do
   schema "rule_implementations" do
     field(:implementation_key, :string)
     field(:implementation_type, :string, default: "default")
+    field(:executable, :boolean, default: true)
 
     embeds_many(:dataset, DatasetRow, on_replace: :delete)
     embeds_many(:population, ConditionRow, on_replace: :delete)
@@ -50,9 +51,10 @@ defmodule TdDq.Implementations.Implementation do
       :implementation_key,
       :implementation_type,
       :df_name,
-      :df_content
+      :df_content,
+      :executable
     ])
-    |> validate_required([:implementation_type, :rule_id])
+    |> validate_required([:executable, :implementation_type, :rule_id])
     |> validate_inclusion(:implementation_type, ["default", "raw"])
     |> validate_or_put_implementation_key()
     |> validate_content()
@@ -153,7 +155,8 @@ defmodule TdDq.Implementations.Implementation do
       :inserted_at,
       :updated_at,
       :validations,
-      :df_name
+      :df_name,
+      :executable
     ]
     @rule_keys [
       :active,
