@@ -36,7 +36,7 @@ defmodule TdDd.DataStructures.AuditTest do
     test "publishes an event", %{data_structure: data_structure, claims: %{user_id: user_id}} do
       %{id: data_structure_id} = data_structure
 
-      params = %{df_content: %{"list" => "two"}, confidential: true}
+      params = %{confidential: true}
 
       changeset = DataStructure.update_changeset(data_structure, params)
 
@@ -65,7 +65,6 @@ defmodule TdDd.DataStructures.AuditTest do
 
       assert %{
                "confidential" => true,
-               "content" => _content
              } = Jason.decode!(payload)
     end
   end

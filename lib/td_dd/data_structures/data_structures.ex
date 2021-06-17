@@ -24,6 +24,7 @@ defmodule TdDd.DataStructures do
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.DataStructures.StructureMetadata
+  alias TdDd.DataStructures.StructureNote
   alias TdDd.Lineage.GraphData
   alias TdDd.Repo
   alias TdDd.Search.IndexWorker
@@ -51,6 +52,9 @@ defmodule TdDd.DataStructures do
       {:id, {:in, ids}}, q ->
         where(q, [ds], ds.id in ^ids)
     end)
+    |> join(:left, [ds], sn in StructureNote,
+       on: sn.data_structure_id == ds.id and sn.status == :published)
+    |> select_merge([_, sn], %{latest_note: sn.df_content})
     |> preload(:system)
     |> Repo.all()
     |> Enum.map(&enrich(&1, options))
@@ -492,6 +496,13 @@ defmodule TdDd.DataStructures do
     {:ok, 0}
   end
 
+  defp on_update({:ok, %StructureNote{status: :published, data_structure: %{id: id}}} = res) do
+    IndexWorker.reindex(id)
+    res
+  end
+
+  defp on_update({:ok, %StructureNote{}} = res), do: res
+
   defp on_update({:ok, %{} = res}) do
     with %{data_structure: %{id: id}} <- res do
       IndexWorker.reindex(id)
@@ -765,6 +776,11 @@ defmodule TdDd.DataStructures do
     |> Repo.one()
   end
 
+  def template_name(%StructureNote{data_structure_id: data_structure_id}) do
+    data_structure = get_data_structure!(data_structure_id)
+    template_name(data_structure)
+  end
+
   def template_name(%DataStructure{} = data_structure) do
     data_structure
     |> get_latest_version()
@@ -1008,8 +1024,170 @@ defmodule TdDd.DataStructures do
     |> Map.new()
     |> DataStructureQueries.enriched_structure_versions()
     |> Repo.all()
-    |> Enum.map(fn %{data_structure: structure, type: type} = dsv ->
-      %{dsv | data_structure: StructureEnricher.enrich(structure, type, content_opt)}
+    |> Enum.map(fn %{data_structure: structure, type: type, latest_note: latest_note} = dsv ->
+      %{dsv | data_structure: StructureEnricher.enrich(Map.put(structure, :latest_note, latest_note), type, content_opt)}
     end)
+  end
+
+  import Ecto.Query, warn: false
+  alias TdDd.Repo
+
+  alias TdDd.DataStructures.StructureNote
+
+  @doc """
+  Returns the list of structure_notes.
+
+  ## Examples
+
+      iex> list_structure_notes()
+      [%StructureNote{}, ...]
+
+  """
+  def list_structure_notes do
+    Repo.all(StructureNote)
+  end
+
+  def list_structure_notes(data_structure_id) do
+    StructureNote
+    |> where(data_structure_id: ^data_structure_id)
+    |> order_by(asc: :version)
+    |> Repo.all()
+  end
+
+  def list_structure_notes(data_structure_id, statuses) when is_list(statuses) do
+    StructureNote
+    |> where(data_structure_id: ^data_structure_id)
+    |> where([sn], sn.status in ^statuses)
+    |> order_by(asc: :version)
+    |> Repo.all()
+  end
+
+  def list_structure_notes(data_structure_id, status), do: list_structure_notes(data_structure_id, [status])
+
+  @doc """
+  Gets a single structure_note.
+
+  Raises `Ecto.NoResultsError` if the Structure note does not exist.
+
+  ## Examples
+
+      iex> get_structure_note!(123)
+      %StructureNote{}
+
+      iex> get_structure_note!(456)
+      ** (Ecto.NoResultsError)
+
+  """
+  def get_structure_note!(id), do: Repo.get!(StructureNote, id)
+
+  def latest_structure_note_query(query, data_structure_id) do
+    query
+    |> where(data_structure_id: ^data_structure_id)
+    |> order_by(desc: :version)
+    |> limit(1)
+  end
+
+  def get_latest_structure_note(data_structure_id, status) do
+    StructureNote
+    |> where(status: ^status)
+    |> latest_structure_note_query(data_structure_id)
+    |> Repo.one()
+  end
+
+  def get_latest_structure_note(data_structure_id) do
+    StructureNote
+    |> latest_structure_note_query(data_structure_id)
+    |> Repo.one()
+  end
+
+  @doc """
+  Creates a structure_note.
+
+  ## Examples
+
+      iex> create_structure_note(%{field: value})
+      {:ok, %StructureNote{}}
+
+      iex> create_structure_note(%{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def create_structure_note(data_structure, attrs \\ %{}) do
+    %StructureNote{}
+    |> StructureNote.create_changeset(data_structure, attrs)
+    |> Repo.insert()
+    |> on_update()
+  end
+
+  @doc """
+  Updates a structure_note with bulk_update behaviour.
+
+  ## Examples
+
+      iex> bulk_update_structure_note(structure_note, %{field: new_value})
+      {:ok, %StructureNote{}}
+
+      iex> bulk_update_structure_note(structure_note, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+
+  def bulk_update_structure_note(%StructureNote{} = structure_note, attrs) do
+    changeset = StructureNote.bulk_update_changeset(structure_note, attrs)
+    if changeset.changes == %{} do
+      {:ok, structure_note}
+    else
+      changeset
+      |> Repo.update()
+      |> on_update()
+    end
+  end
+
+  @doc """
+  Updates a structure_note.
+
+  ## Examples
+
+      iex> update_structure_note(structure_note, %{field: new_value})
+      {:ok, %StructureNote{}}
+
+      iex> update_structure_note(structure_note, %{field: bad_value})
+      {:error, %Ecto.Changeset{}}
+
+  """
+
+  def update_structure_note(%StructureNote{} = structure_note, attrs) do
+    structure_note
+    |> StructureNote.changeset(attrs)
+    |> Repo.update()
+    |> on_update()
+  end
+  @doc """
+  Deletes a structure_note.
+
+  ## Examples
+
+      iex> delete_structure_note(structure_note)
+      {:ok, %StructureNote{}}
+
+      iex> delete_structure_note(structure_note)
+      {:error, %Ecto.Changeset{}}
+
+  """
+  def delete_structure_note(%StructureNote{} = structure_note) do
+    Repo.delete(structure_note)
+  end
+
+  @doc """
+  Returns an `%Ecto.Changeset{}` for tracking structure_note changes.
+
+  ## Examples
+
+      iex> change_structure_note(structure_note)
+      %Ecto.Changeset{data: %StructureNote{}}
+
+  """
+  def change_structure_note(%StructureNote{} = structure_note, attrs \\ %{}) do
+    StructureNote.changeset(structure_note, attrs)
   end
 end

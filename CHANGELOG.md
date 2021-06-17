@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-3720] Update structure domain (with children)
+- [TD-3522] Support for StructureNote management with workflow
 
 ## [4.22.0] 2021-06-15
 

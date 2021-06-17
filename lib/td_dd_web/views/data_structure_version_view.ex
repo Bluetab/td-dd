@@ -97,7 +97,7 @@ defmodule TdDdWeb.DataStructureVersionView do
       :source_id,
       :source,
       :system_id,
-      :df_content
+      :latest_note
     ])
     |> add_system(data_structure)
     |> add_source()
@@ -183,7 +183,7 @@ defmodule TdDdWeb.DataStructureVersionView do
   defp add_profile(dsv), do: dsv
 
   defp field_structure_json(
-         %{class: "field", data_structure: %{df_content: df_content, profile: profile}} = dsv
+         %{class: "field", data_structure: %{latest_note: latest_note, profile: profile}} = dsv
        ) do
     dsv
     |> Map.take([
@@ -199,7 +199,7 @@ defmodule TdDdWeb.DataStructureVersionView do
     ])
     |> lift_metadata()
     |> with_profile_attrs(profile)
-    |> Map.put(:has_df_content, not is_nil(df_content))
+    |> Map.put(:has_note, not is_nil(latest_note))
   end
 
   defp add_versions(dsv) do
@@ -297,12 +297,12 @@ defmodule TdDdWeb.DataStructureVersionView do
   defp add_cached_content(dsv) do
     structure = Map.get(dsv, :data_structure)
 
-    df_content =
+    latest_note =
       structure
-      |> Map.get(:df_content, %{})
+      |> Map.get(:latest_note, %{})
       |> DataStructures.get_cached_content(dsv)
 
-    structure = Map.put(structure, :df_content, df_content)
+    structure = Map.put(structure, :latest_note, latest_note)
     Map.put(dsv, :data_structure, structure)
   end
 

@@ -58,6 +58,75 @@ defmodule TdDdWeb.SwaggerDefinitions do
     }
   end
 
+  def structure_note_swagger_definitions do
+    %{
+      StructureNote:
+        swagger_schema do
+          title("Structure Note")
+          description("A Structure Note")
+
+          properties do
+            id(:integer, "Structure Note unique identifier", required: true)
+            data_structure(Schema.ref(:DataStructure))
+            status(:string, "Status", required: true)
+            version(:integer, "Version", required: true)
+            df_content(:object, "Note Content", required: true)
+          end
+
+          example(%{
+            id: 34,
+            status: :draft,
+            version: 1,
+            df_content: %{"foo" => "bar"}
+          })
+        end,
+      StructureNotes:
+        swagger_schema do
+          title("Structure Notes")
+          description("A collection of structure notes")
+          type(:array)
+          items(Schema.ref(:StructureNote))
+        end,
+      StructureNotesResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:StructureNotes))
+          end
+        end,
+      CreateStructureNote:
+        swagger_schema do
+          properties do
+            structure_note(
+              Schema.new do
+                properties do
+                  df_content(:object, "Note Content", required: false)
+                end
+              end
+            )
+          end
+        end,
+      UpdateStructureNote:
+        swagger_schema do
+          properties do
+            structure_note(
+              Schema.new do
+                properties do
+                  status(:string, "Status", required: false)
+                  df_content(:object, "Note Content", required: false)
+                end
+              end
+            )
+          end
+        end,
+      StructureNoteResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:StructureNote))
+          end
+        end,
+    }
+  end
+
   def data_structure_version_swagger_definitions do
     %{
       DataStructureVersionResponse:

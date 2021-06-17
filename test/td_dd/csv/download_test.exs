@@ -54,7 +54,7 @@ defmodule TdDd.DownloadTest do
         name: "1. 4. 4 Primas Bajas (grafico)",
         description: "Gráfico de evolución mensual de la prima",
         template: %{"name" => template_name},
-        df_content: %{
+        latest_note: %{
           field_name => ["field_value"]
         },
         domain: %{"external_id" => "ex_id_1", "name" => domain_name},

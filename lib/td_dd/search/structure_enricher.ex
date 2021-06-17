@@ -94,7 +94,7 @@ defmodule TdDd.Search.StructureEnricher do
     do: %{structure | domain: %{}}
 
   defp search_content(
-         %DataStructure{df_content: %{} = content} = structure,
+         %DataStructure{latest_note: %{} = content} = structure,
          :searchable,
          %{} = types,
          type

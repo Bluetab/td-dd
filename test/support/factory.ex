@@ -19,6 +19,7 @@ defmodule TdDd.Factory do
   alias TdDd.DataStructures.Profile
   alias TdDd.DataStructures.RelationType
   alias TdDd.DataStructures.StructureMetadata
+  alias TdDd.DataStructures.StructureNote
   alias TdDd.Lineage.Units
   alias TdDd.Systems.System
   alias TdDd.UserSearchFilters.UserSearchFilter
@@ -61,6 +62,17 @@ defmodule TdDd.Factory do
       metadata: %{"description" => "some description"},
       version: 0,
       type: "Table"
+    }
+    |> merge_attributes(attrs)
+  end
+
+  def structure_note_factory(attrs) do
+    attrs = default_assoc(attrs, :data_structure_id, :data_structure)
+
+    %StructureNote{
+      status: :draft,
+      version: 1,
+      df_content: %{}
     }
     |> merge_attributes(attrs)
   end
