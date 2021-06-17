@@ -252,13 +252,14 @@ defmodule TdDdWeb.StructureNoteControllerTest do
         :published,
         :versioned,
         :pending_approval,
-        :draft
+        :draft,
+        :deprecated
       ]
 
-      {[_, published_note, versioned_note, _, _], index_result} =
+      {[_, published_note, versioned_note, _, _, deprecated_note], index_result} =
         permissions_test_builder(conn, domain, statuses)
 
-      assert [published_note, versioned_note] <|> index_result
+      assert [published_note, versioned_note, deprecated_note] <|> index_result
     end
 
     defp permissions_test_builder(conn, domain, statuses) do

@@ -331,7 +331,7 @@ defmodule TdDdWeb.StructureNoteController do
       {can?(claims, delete_structure_note({StructureNote, data_structure})), [:draft, :rejected]},
       {can?(claims, publish_structure_note_from_draft({StructureNote, data_structure})),
        [:draft]},
-      {can?(claims, view_structure_note_history({StructureNote, data_structure})), [:versioned]},
+      {can?(claims, view_structure_note_history({StructureNote, data_structure})), [:versioned, :deprecated]},
       {can?(claims, view_data_structure(data_structure)), [:published]}
     ]
     |> Enum.filter(fn {permission, _} -> permission end)
