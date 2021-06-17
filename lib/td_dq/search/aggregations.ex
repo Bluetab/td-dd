@@ -37,7 +37,6 @@ defmodule TdDq.Search.Aggregations do
       {"execution_result_info.result_text",
        %{terms: %{field: "execution_result_info.result_text.raw", size: 50}}},
       {"rule", %{terms: %{field: "rule.name.raw", size: 50}}},
-      {"executable", %{terms: %{field: "executable"}}},
       {"source_external_id", %{terms: %{field: "structure_aliases.raw", size: 50}}}
     ]
 
