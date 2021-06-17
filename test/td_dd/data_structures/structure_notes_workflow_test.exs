@@ -146,6 +146,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
 
       new_df_content = %{"foo" => "value_new", "baz" => "new_value"}
       create_attrs = %{"df_content" => new_df_content}
+      user_id = 1
 
       assert {:ok,
               %StructureNote{
@@ -153,7 +154,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
                 status: :draft,
                 df_content: ^new_df_content,
                 data_structure_id: ^data_structure_id
-              }} = StructureNotesWorkflow.create(data_structure, create_attrs, true)
+              }} = StructureNotesWorkflow.create(data_structure, create_attrs, true, user_id)
     end
   end
 

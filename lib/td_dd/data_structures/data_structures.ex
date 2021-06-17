@@ -1112,10 +1112,17 @@ defmodule TdDd.DataStructures do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_structure_note(data_structure, attrs \\ %{}) do
-    %StructureNote{}
-    |> StructureNote.create_changeset(data_structure, attrs)
-    |> Repo.insert()
+  def create_structure_note(data_structure, attrs \\ %{}, user_id \\ nil) do
+    changeset = StructureNote.create_changeset(%StructureNote{}, data_structure, attrs)
+    Multi.new()
+    |> Multi.insert(:structure_note, changeset)
+    |> Multi.run(:audit, Audit, :structure_note_updated, [changeset, user_id])
+    |> Repo.transaction()
+    |> case do
+      {:ok, res} -> {:ok, Map.get(res, :structure_note)}
+      {:error, :structure_note, err, _} -> {:error, err}
+      err -> err
+    end
     |> on_update()
   end
 

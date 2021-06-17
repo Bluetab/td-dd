@@ -6,24 +6,33 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.StructureNote
 
-  def create_or_update(%DataStructure{id: data_structure_id} = data_structure, params) do
+  def create_or_update(
+    %DataStructure{id: data_structure_id} = data_structure,
+    params,
+    user_id
+  ) do
     latest_note = get_latest_structure_note(data_structure_id)
     is_strict_update = false
 
     case can_create_new_draft(latest_note) do
-      :ok -> create(data_structure, params)
-      _cannot_create -> update(latest_note, params, is_strict_update)
+      :ok -> create(data_structure, params, true, user_id)
+      _cannot_create -> update(latest_note, params, is_strict_update, user_id)
     end
   end
 
-  def create(%DataStructure{} = data_structure, params, false = _force_creation), do: create(data_structure, params)
-  def create(%DataStructure{id: data_structure_id} = data_structure, params, true = _force_creation) do
+  def create(%DataStructure{} = data_structure, params, false = _force_creation, user_id), do: create(data_structure, params, user_id)
+  def create(
+    %DataStructure{id: data_structure_id} = data_structure,
+    params,
+    true = _force_creation,
+    user_id
+  ) do
     latest_note = get_latest_structure_note(data_structure_id)
     if can_create_new_draft(latest_note) != :ok, do: DataStructures.delete_structure_note(latest_note)
-    create(data_structure, params)
+    create(data_structure, params, user_id)
   end
 
-  def create(%DataStructure{id: data_structure_id} = data_structure, params) do
+  def create(%DataStructure{id: data_structure_id} = data_structure, params, user_id \\ nil) do
     latest_note = get_latest_structure_note(data_structure_id)
 
     structure_note_params =
@@ -33,7 +42,7 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
       |> Map.put("df_content", draft_df_content(latest_note, params))
 
     case can_create_new_draft(latest_note) do
-      :ok -> DataStructures.create_structure_note(data_structure, structure_note_params)
+      :ok -> DataStructures.create_structure_note(data_structure, structure_note_params, user_id)
       error -> {:error, error}
     end
   end
