@@ -1114,13 +1114,20 @@ defmodule TdDd.DataStructures do
 
   """
 
-  def bulk_update_structure_note(%StructureNote{} = structure_note, attrs) do
+  def bulk_update_structure_note(%StructureNote{} = structure_note, attrs, user_id \\ nil) do
     changeset = StructureNote.bulk_update_changeset(structure_note, attrs)
     if changeset.changes == %{} do
       {:ok, structure_note}
     else
-      changeset
-      |> Repo.update()
+      Multi.new()
+      |> Multi.update(:structure_note, changeset)
+      |> Multi.run(:audit, Audit, :structure_note_updated, [changeset, user_id])
+      |> Repo.transaction()
+      |> case do
+        {:ok, res} -> {:ok, Map.get(res, :structure_note)}
+        {:error, :structure_note, err, _} -> {:error, err}
+        err -> err
+      end
       |> on_update()
     end
   end
@@ -1138,10 +1145,18 @@ defmodule TdDd.DataStructures do
 
   """
 
-  def update_structure_note(%StructureNote{} = structure_note, attrs) do
-    structure_note
-    |> StructureNote.changeset(attrs)
-    |> Repo.update()
+  def update_structure_note(%StructureNote{} = structure_note, attrs, user_id \\ nil) do
+    changeset = StructureNote.changeset(structure_note, attrs)
+
+    Multi.new()
+    |> Multi.update(:structure_note, changeset)
+    |> Multi.run(:audit, Audit, :structure_note_updated, [changeset, user_id])
+    |> Repo.transaction()
+    |> case do
+      {:ok, res} -> {:ok, Map.get(res, :structure_note)}
+      {:error, :structure_note, err, _} -> {:error, err}
+      err -> err
+    end
     |> on_update()
   end
   @doc """
