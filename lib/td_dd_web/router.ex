@@ -44,6 +44,7 @@ defmodule TdDdWeb.Router do
         only: [:delete, :index, :update],
         name: :tags
       )
+      resources "/notes", StructureNoteController, except: [:new, :edit], name: :note
     end
 
     resources("/data_structure_versions", DataStructureVersionController, only: [:show]) do

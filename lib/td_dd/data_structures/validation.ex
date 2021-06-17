@@ -4,6 +4,7 @@ defmodule TdDd.DataStructures.Validation do
   """
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.StructureNote
   alias TdDfLib.Templates
   alias TdDfLib.Validation
 
@@ -21,7 +22,27 @@ defmodule TdDd.DataStructures.Validation do
     end
   end
 
-  def validator(%DataStructure{} = structure, df_content, fields) do
+  def validator(%StructureNote{} = structure) do
+    case DataStructures.template_name(structure) do
+      nil ->
+        empty_content_validator()
+
+      template ->
+        Validation.validator(template)
+    end
+  end
+
+  def validator(%DataStructure{} = data_structure, df_content, fields) do
+    data_structure
+    |> DataStructures.template_name()
+    |> Templates.content_schema()
+    |> case do
+      {:error, error} -> {:error, error}
+      schema -> validate(schema, df_content, fields)
+    end
+  end
+
+  def validator(%StructureNote{} = structure, df_content, fields) do
     structure
     |> DataStructures.template_name()
     |> Templates.content_schema()

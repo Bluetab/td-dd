@@ -23,6 +23,10 @@ defmodule TdDdWeb.FallbackController do
     render_error(conn, :not_found)
   end
 
+  def call(conn, {:error, :conflict}) do
+    render_error(conn, :conflict)
+  end
+
   def call(conn, {:error, error}) do
     conn
     |> put_resp_content_type("application/json", "utf-8")

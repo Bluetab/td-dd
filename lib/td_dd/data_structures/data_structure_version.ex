@@ -31,6 +31,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     field(:profile_source, :map, virtual: true)
     field(:classes, :map, virtual: true)
     field(:mutable_metadata, :map, virtual: true)
+    field(:latest_note, :map, virtual: true)
 
     belongs_to(:data_structure, DataStructure)
 
@@ -146,7 +147,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
         :source_id,
         :system_id
       ])
-      |> Map.put(:df_content, content)
+      |> Map.put(:latest_note, content)
       |> Map.put(:domain_ids, domain_ids(data_structure))
       |> Map.put(:domain, domain(data_structure))
       |> Map.put(:field_type, field_type(dsv))
