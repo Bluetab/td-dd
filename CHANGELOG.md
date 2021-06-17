@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-3522] Support for StructureNote management with workflow
+
 ## [4.22.0] 2021-06-15
 
 ### Changed
