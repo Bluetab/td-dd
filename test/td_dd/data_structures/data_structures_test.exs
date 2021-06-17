@@ -60,13 +60,12 @@ defmodule TdDd.DataStructuresTest do
       data_structure: data_structure,
       claims: claims
     } do
-      params = %{confidential: true}
+      params = %{confidential: true, domain_id: 42}
 
       assert {:ok, %{data_structure: data_structure}} =
                DataStructures.update_data_structure(data_structure, params, claims)
 
-      assert %DataStructure{} = data_structure
-      assert true == data_structure.confidential
+      assert %DataStructure{confidential: true, domain_id: 42} = data_structure
     end
 
     test "emits an audit event", %{data_structure: data_structure, claims: claims} do
@@ -77,6 +76,46 @@ defmodule TdDd.DataStructuresTest do
 
       assert {:ok, [%{id: ^event_id}]} =
                Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+    end
+
+    test "updates children domain id when it changes", %{
+      data_structure: parent,
+      data_structure_version: %{id: parent_version_id},
+      claims: claims
+    } do
+      %{id: child1_id, external_id: child1_external_id} =
+        insert(:data_structure, id: 51, external_id: "CHILD1")
+
+      %{id: child2_id, external_id: child2_external_id} =
+        insert(:data_structure, id: 52, external_id: "CHILD2")
+
+      %{id: child1_version_id} =
+        insert(:data_structure_version, data_structure_id: child1_id, name: child1_external_id)
+
+      %{id: child2_version_id} =
+        insert(:data_structure_version, data_structure_id: child2_id, name: child2_external_id)
+
+      relation_type_id = RelationTypes.default_id!()
+
+      insert(:data_structure_relation,
+        parent_id: parent_version_id,
+        child_id: child1_version_id,
+        relation_type_id: relation_type_id
+      )
+
+      insert(:data_structure_relation,
+        parent_id: parent_version_id,
+        child_id: child2_version_id,
+        relation_type_id: relation_type_id
+      )
+
+      %{id: new_domain_id} = CacheHelpers.insert_domain()
+
+      assert {:ok, %{data_structure: %DataStructure{domain_id: ^new_domain_id}, updated_children_count: 3}} =
+               DataStructures.update_data_structure(parent, %{domain_id: new_domain_id}, claims)
+
+      assert %DataStructure{domain_id: ^new_domain_id} = Repo.get!(DataStructure, child1_id)
+      assert %DataStructure{domain_id: ^new_domain_id} = Repo.get!(DataStructure, child2_id)
     end
   end
 

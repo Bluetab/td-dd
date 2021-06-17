@@ -12,14 +12,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
   @moduletag sandbox: :shared
   @template_name "data_structure_controller_test_template"
 
-  @update_attrs %{
-    description: "some updated description",
-    group: "some updated group",
-    last_change_by: 43,
-    name: "some updated name",
-    type: "table"
-  }
-
   setup_all do
     start_supervised!(GraphData)
     :ok
@@ -29,12 +21,14 @@ defmodule TdDdWeb.DataStructureControllerTest do
     %{id: template_id, name: template_name} = template = build(:template, name: @template_name)
     {:ok, _} = TemplateCache.put(template, publish: false)
     system = insert(:system)
-    domain =  CacheHelpers.insert_domain()
+    domain = CacheHelpers.insert_domain()
     CacheHelpers.insert_structure_type(structure_type: template_name, template_id: template_id)
     on_exit(fn -> TemplateCache.delete(template_id) end)
 
     start_supervised!(TdDd.Search.StructureEnricher)
-    {:ok, %{conn: put_req_header(conn, "accept", "application/json"), system: system, domain: domain}}
+
+    {:ok,
+     %{conn: put_req_header(conn, "accept", "application/json"), system: system, domain: domain}}
   end
 
   describe "index" do
@@ -161,28 +155,98 @@ defmodule TdDdWeb.DataStructureControllerTest do
   describe "update data_structure" do
     setup [:create_data_structure]
 
-    @tag authentication: [role: "admin"]
+    @tag authentication: [role: "user"]
     test "renders data_structure when data is valid", %{
       conn: conn,
-      data_structure: %{id: id} = data_structure,
+      claims: %{user_id: user_id},
+      data_structure: %{id: id, domain_id: domain_id} = data_structure,
       swagger_schema: schema
     } do
+      attrs = %{domain_id: 42, confidential: true}
+
+      create_acl_entry(user_id, domain_id, [
+        :update_data_structure,
+        :manage_confidential_structures,
+        :manage_structures_domain
+      ])
+
+      create_acl_entry(user_id, 42, [
+        :view_data_structure,
+        :manage_confidential_structures,
+        :manage_structures_domain
+      ])
+
       assert %{"data" => %{"id" => ^id}} =
                conn
-               |> put(data_structure_path(conn, :update, data_structure),
-                 data_structure: @update_attrs
-               )
+               |> put(data_structure_path(conn, :update, data_structure), data_structure: attrs)
+               |> validate_resp_schema(schema, "DataStructureResponse")
                |> json_response(:ok)
 
-      assert %{"data" => data} =
-               conn
-               |> get(data_structure_data_structure_version_path(conn, :show, id, "latest"))
-               |> validate_resp_schema(schema, "DataStructureVersionResponse")
-               |> json_response(:ok)
+      assert %{domain_id: 42, confidential: true} = DataStructures.get_data_structure!(id)
+    end
 
-      assert data["data_structure"]["id"] == id
-      assert data["description"] == "some description"
-      assert data["data_structure"]["inserted_at"]
+    @tag authentication: [role: "user"]
+    test "needs manage_confidential_structures permission", %{
+      conn: conn,
+      claims: %{user_id: user_id},
+      data_structure: %{domain_id: domain_id} = data_structure,
+      swagger_schema: schema
+    } do
+      attrs = %{confidential: true}
+
+      # NO , :manage_confidential_structures,])
+      create_acl_entry(user_id, domain_id, [:view_data_structure, :update_data_structure])
+
+      assert conn
+             |> put(data_structure_path(conn, :update, data_structure), data_structure: attrs)
+             |> validate_resp_schema(schema, "DataStructureResponse")
+             |> json_response(:forbidden)
+    end
+
+    @tag authentication: [role: "user"]
+    test "needs manage_structures_domain permission", %{
+      conn: conn,
+      claims: %{user_id: user_id},
+      data_structure: %{domain_id: domain_id} = data_structure,
+      swagger_schema: schema
+    } do
+      attrs = %{domain_id: 42}
+
+      # NO #, :manage_structures_domain])
+      create_acl_entry(user_id, domain_id, [:update_data_structure])
+
+      create_acl_entry(user_id, 42, [
+        :view_data_structure,
+        :manage_structures_domain,
+        :manage_confidential_structures
+      ])
+
+      assert conn
+             |> put(data_structure_path(conn, :update, data_structure), data_structure: attrs)
+             |> validate_resp_schema(schema, "DataStructureResponse")
+             |> json_response(:forbidden)
+    end
+
+    @tag authentication: [role: "user"]
+    test "needs access to new domain", %{
+      conn: conn,
+      claims: %{user_id: user_id},
+      data_structure: %{domain_id: domain_id} = data_structure,
+      swagger_schema: schema
+    } do
+      attrs = %{domain_id: 42}
+
+      create_acl_entry(user_id, domain_id, [
+        :update_data_structure,
+        :manage_structures_domain
+      ])
+
+      create_acl_entry(user_id, 42, [:view_data_structure, :manage_confidential_structures])
+
+      assert conn
+             |> put(data_structure_path(conn, :update, data_structure), data_structure: attrs)
+             |> validate_resp_schema(schema, "DataStructureResponse")
+             |> json_response(:forbidden)
     end
   end
 
@@ -289,7 +353,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
            conn: conn,
            claims: %{user_id: user_id},
            domain: %{id: domain_id},
-           data_structure: %{id: data_structure_id, confidential: false}
+           data_structure: %{id: data_structure_id}
          } do
       create_acl_entry(user_id, domain_id, [:view_data_structure, :update_data_structure])
 
@@ -297,10 +361,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
              |> put(data_structure_path(conn, :update, data_structure_id),
                data_structure: %{confidential: true}
              )
-             |> json_response(:ok)
-
-      new_data_structure = DataStructures.get_data_structure!(data_structure_id)
-      assert Map.get(new_data_structure, :confidential) == false
+             |> json_response(:forbidden)
     end
   end
 
