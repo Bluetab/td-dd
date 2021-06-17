@@ -153,13 +153,26 @@ defmodule TdDdWeb.DataStructureControllerTest do
   describe "update data_structure" do
     setup [:create_data_structure]
 
-    @tag authentication: [role: "admin"]
+    @tag authentication: [role: "user"]
     test "renders data_structure when data is valid", %{
       conn: conn,
-      data_structure: %{id: id} = data_structure,
+      claims: %{user_id: user_id},
+      data_structure: %{id: id, domain_id: domain_id} = data_structure,
       swagger_schema: schema
     } do
       attrs = %{domain_id: 42, confidential: true}
+
+      create_acl_entry(user_id, domain_id, [
+        :update_data_structure,
+        :manage_confidential_structures,
+        :manage_structures_domain
+      ])
+
+      create_acl_entry(user_id, 42, [
+        :view_data_structure,
+        :manage_confidential_structures,
+        :manage_structures_domain
+      ])
 
       assert %{"data" => %{"id" => ^id}} =
                conn
@@ -168,6 +181,70 @@ defmodule TdDdWeb.DataStructureControllerTest do
                |> json_response(:ok)
 
       assert %{domain_id: 42, confidential: true} = DataStructures.get_data_structure!(id)
+    end
+
+    @tag authentication: [role: "user"]
+    test "needs manage_confidential_structures permission", %{
+      conn: conn,
+      claims: %{user_id: user_id},
+      data_structure: %{domain_id: domain_id} = data_structure,
+      swagger_schema: schema
+    } do
+      attrs = %{confidential: true}
+
+      # NO , :manage_confidential_structures,])
+      create_acl_entry(user_id, domain_id, [:view_data_structure, :update_data_structure])
+
+      assert conn
+             |> put(data_structure_path(conn, :update, data_structure), data_structure: attrs)
+             |> validate_resp_schema(schema, "DataStructureResponse")
+             |> json_response(:forbidden)
+    end
+
+    @tag authentication: [role: "user"]
+    test "needs manage_structures_domain permission", %{
+      conn: conn,
+      claims: %{user_id: user_id},
+      data_structure: %{domain_id: domain_id} = data_structure,
+      swagger_schema: schema
+    } do
+      attrs = %{domain_id: 42}
+
+      # NO #, :manage_structures_domain])
+      create_acl_entry(user_id, domain_id, [:update_data_structure])
+
+      create_acl_entry(user_id, 42, [
+        :view_data_structure,
+        :manage_structures_domain,
+        :manage_confidential_structures
+      ])
+
+      assert conn
+             |> put(data_structure_path(conn, :update, data_structure), data_structure: attrs)
+             |> validate_resp_schema(schema, "DataStructureResponse")
+             |> json_response(:forbidden)
+    end
+
+    @tag authentication: [role: "user"]
+    test "needs access to new domain", %{
+      conn: conn,
+      claims: %{user_id: user_id},
+      data_structure: %{domain_id: domain_id} = data_structure,
+      swagger_schema: schema
+    } do
+      attrs = %{domain_id: 42}
+
+      create_acl_entry(user_id, domain_id, [
+        :update_data_structure,
+        :manage_structures_domain
+      ])
+
+      create_acl_entry(user_id, 42, [:view_data_structure, :manage_confidential_structures])
+
+      assert conn
+             |> put(data_structure_path(conn, :update, data_structure), data_structure: attrs)
+             |> validate_resp_schema(schema, "DataStructureResponse")
+             |> json_response(:forbidden)
     end
 
     @tag authentication: [role: "admin"]
@@ -305,7 +382,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
            conn: conn,
            claims: %{user_id: user_id},
            domain: %{id: domain_id},
-           data_structure: %{id: data_structure_id, confidential: false}
+           data_structure: %{id: data_structure_id}
          } do
       create_acl_entry(user_id, domain_id, [:view_data_structure, :update_data_structure])
 
@@ -313,10 +390,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
              |> put(data_structure_path(conn, :update, data_structure_id),
                data_structure: %{confidential: true}
              )
-             |> json_response(:ok)
-
-      new_data_structure = DataStructures.get_data_structure!(data_structure_id)
-      assert Map.get(new_data_structure, :confidential) == false
+             |> json_response(:forbidden)
     end
   end
 

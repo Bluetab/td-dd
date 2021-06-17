@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-3720] Update structure domain (with children)
+
 ## [4.22.0] 2021-06-15
 
 ### Changed

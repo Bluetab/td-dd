@@ -97,19 +97,17 @@ defmodule TdDdWeb.DataStructureController do
   def update(conn, %{"id" => id, "data_structure" => attrs}) do
     %{user_id: user_id} = claims = conn.assigns[:current_resource]
     data_structure_old = DataStructures.get_data_structure!(id)
-
-    manage_confidential_structures =
-      can?(claims, manage_confidential_structures(data_structure_old))
-
     external_ids = TaxonomyCache.get_domain_external_id_to_id_map()
 
     update_params =
       attrs
-      |> check_confidential_field(manage_confidential_structures)
       |> Map.put("last_change_by", user_id)
       |> DataStructures.put_domain_id(external_ids)
 
     with {:can, true} <- {:can, can?(claims, update_data_structure(data_structure_old))},
+         {:can, true} <- check_confidential(claims, data_structure_old, attrs),
+         {:can, true} <- check_domain_id(claims, data_structure_old, attrs),
+         {:can, true} <- check_new_domain_id(claims, attrs),
          {:ok, %{data_structure: data_structure}} <-
            DataStructures.update_data_structure(data_structure_old, update_params, claims) do
       data_structure = get_data_structure(data_structure.id)
@@ -117,8 +115,23 @@ defmodule TdDdWeb.DataStructureController do
     end
   end
 
-  defp check_confidential_field(params, true), do: params
-  defp check_confidential_field(params, false), do: Map.drop(params, ["confidential"])
+  defp check_confidential(claims, data_structure, %{"confidential" => _}) do
+    {:can, can?(claims, manage_confidential_structures(data_structure))}
+  end
+
+  defp check_confidential(_claims, _data_structure, _attrs), do: {:can, true}
+
+  defp check_domain_id(claims, data_structure, %{"domain_id" => _}) do
+    {:can, can?(claims, manage_structures_domain(data_structure))}
+  end
+
+  defp check_domain_id(_claims, _data_structure, _attrs), do: {:can, true}
+
+  defp check_new_domain_id(claims, %{"domain_id" => new_domain_id}) do
+    {:can, can?(claims, manage_structures_domain(new_domain_id))}
+  end
+
+  defp check_new_domain_id(_claims, _attrs), do: {:can, true}
 
   swagger_path :delete do
     description("Delete Data Structure")
