@@ -96,7 +96,8 @@ defmodule TdDdWeb.DataStructureVersionController do
 
       user_permissions = %{
         update: can?(claims, update_data_structure(data_structure)),
-        confidential: false,#can?(claims, manage_confidential_structures(data_structure)),
+        confidential: can?(claims, manage_confidential_structures(data_structure)),
+        update_domain: can?(claims, manage_structures_domain(data_structure)),
         view_profiling_permission: can?(claims, view_data_structures_profile(data_structure)),
         profile_permission: can?(claims, profile(dsv)),
         manage_tags: can?(claims, link_data_structure_tag(data_structure))
