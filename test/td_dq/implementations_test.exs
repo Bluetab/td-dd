@@ -163,6 +163,11 @@ defmodule TdDq.ImplementationsTest do
              <~> implementation
     end
 
+    test "returns the implementation with executable flag" do
+      implementation = insert(:implementation)
+      assert %{executable: true} = Implementations.get_implementation!(implementation.id)
+    end
+
     test "preloads the rule" do
       %{id: id, rule_id: rule_id} = insert(:implementation)
       assert %{rule: rule} = Implementations.get_implementation!(id, preload: :rule)
@@ -187,6 +192,11 @@ defmodule TdDq.ImplementationsTest do
 
       assert Implementations.get_implementation_by_key!(implementation_key)
              <~> implementation
+    end
+
+    test "returns the implementation with executable flag" do
+      %{implementation_key: implementation_key} = insert(:implementation)
+      assert %{executable: true} = Implementations.get_implementation_by_key!(implementation_key)
     end
 
     test "raises if the implementation with given implementation key has been soft deleted" do
