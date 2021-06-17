@@ -515,6 +515,53 @@ defmodule TdDdWeb.StructureNoteControllerTest do
     end
 
     @tag authentication: [
+      user_name: "non_admin_user",
+      permissions: [
+        :create_structure_note,
+        :edit_structure_note,
+        :publish_structure_note_from_draft,
+        :deprecate_structure_note,
+        :view_data_structure
+      ]
+    ]
+      test "can create notes when the latest note is deprecated, and show the action in hypermedia", %{conn: conn, domain: domain} do
+      %{id: data_structure_id} = insert(:data_structure, domain_id: domain.id)
+      create_attrs = string_params_for(:structure_note)
+
+      %{"data" => %{"id" => id}} = conn
+        |> post(Routes.data_structure_note_path(conn, :create, data_structure_id),
+          structure_note: create_attrs
+        )
+        |> json_response(:created)
+
+      conn
+        |> put(Routes.data_structure_note_path(conn, :update, data_structure_id, id),
+          structure_note: %{"status" => "published"}
+        )
+        |> json_response(:ok)
+
+      conn
+        |> put(Routes.data_structure_note_path(conn, :update, data_structure_id, id),
+          structure_note: %{"status" => "deprecated"}
+        )
+        |> json_response(:ok)
+
+      %{"_actions" => actions} = conn
+        |> get(Routes.data_structure_note_path(conn, :index, data_structure_id))
+        |> json_response(:ok)
+
+      assert %{"draft" => %{"method" => "POST"}} = actions
+
+      %{"data" => %{"id" => new_id}} = conn
+        |> post(Routes.data_structure_note_path(conn, :create, data_structure_id),
+          structure_note: create_attrs
+        )
+        |> json_response(:created)
+
+      assert new_id != id
+    end
+
+    @tag authentication: [
            user_name: "non_admin_user",
            permissions: [:view_structure_note, :view_data_structure]
          ]

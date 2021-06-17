@@ -168,6 +168,7 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
 
   defp can_create_new_draft(nil), do: :ok
   defp can_create_new_draft(%{status: :published}), do: :ok
+  defp can_create_new_draft(%{status: :deprecated}), do: :ok
   defp can_create_new_draft(_), do: :conflict
 
   defp next_version(nil), do: 1

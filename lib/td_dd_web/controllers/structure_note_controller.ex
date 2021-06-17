@@ -189,6 +189,14 @@ defmodule TdDdWeb.StructureNoteController do
     {:can, can?(claims, edit_structure_note({StructureNote, data_structure}))}
   end
 
+  defp available_actions(conn, nil = structure_note, claims, data_structure) do
+    structure_note
+    |> available_statutes(claims, data_structure)
+    |> Enum.reduce(%{}, fn action, acc ->
+      Map.put(acc, action, get_action_location(conn, action, data_structure.id, structure_note))
+    end)
+  end
+
   defp available_actions(conn, structure_note, claims, data_structure) do
     structure_note
     |> available_statutes(claims, data_structure)
