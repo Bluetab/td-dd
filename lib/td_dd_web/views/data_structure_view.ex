@@ -117,12 +117,12 @@ defmodule TdDdWeb.DataStructureView do
   end
 
   defp add_dynamic_content(json, data_structure) do
-    df_content =
+    lastest_note =
       data_structure
-      |> Map.get(:df_content, %{})
+      |> Map.get(:lastest_note, %{})
       |> DataStructures.get_cached_content(data_structure)
 
-    %{df_content: df_content}
+    %{lastest_note: lastest_note}
     |> Map.merge(json)
   end
 
@@ -231,7 +231,7 @@ defmodule TdDdWeb.DataStructureView do
          %{
            data_structure_id: data_structure_id,
            class: "field",
-           data_structure: %{df_content: df_content, external_id: external_id}
+           data_structure: %{latest_note: latest_note, external_id: external_id}
          } = dsv
        ) do
     dsv
@@ -249,7 +249,7 @@ defmodule TdDdWeb.DataStructureView do
     |> lift_metadata()
     |> Map.put(:id, data_structure_id)
     |> Map.put(:external_id, external_id)
-    |> Map.put(:has_df_content, not is_nil(df_content))
+    |> Map.put(:has_note, not is_nil(latest_note))
   end
 
   defp lift_metadata(%{metadata: metadata} = dsv) do

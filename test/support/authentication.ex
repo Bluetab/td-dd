@@ -27,13 +27,21 @@ defmodule TdDdWeb.Authentication do
   def create_claims(opts \\ []) do
     role = Keyword.get(opts, :role, "user")
     user_name = Keyword.get(opts, :user_name, "joe")
+    user_id = Integer.mod(:binary.decode_unsigned(user_name), 100_000)
 
     %Claims{
-      user_id: Integer.mod(:binary.decode_unsigned(user_name), 100_000),
+      user_id: user_id,
       user_name: user_name,
       role: role
     }
   end
+
+  def assign_permissions({:ok, %{claims: %{user_id: user_id}} = state}, [_|_] = permissions) do
+    domain = CacheHelpers.insert_domain()
+    create_acl_entry(user_id, domain.id, permissions)
+    {:ok, Map.put(state, :domain, domain)}
+  end
+  def assign_permissions(state, _), do: state
 
   def build_user_token(%Claims{role: role} = claims) do
     case Guardian.encode_and_sign(claims, %{role: role}) do

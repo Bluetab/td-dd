@@ -19,7 +19,7 @@ defmodule TdDd.DataStructures.ValidationTest do
 
   describe "validator/1" do
     test "returns an empty content validator if structure has no type" do
-      structure = build(:data_structure)
+      structure = insert(:structure_note)
       validator = Validation.validator(structure)
       assert is_function(validator, 2)
       assert validator.(:content, nil) == []
@@ -29,7 +29,8 @@ defmodule TdDd.DataStructures.ValidationTest do
 
     test "returns a validator that returns error if template is missing" do
       %{data_structure: structure} = insert(:data_structure_version, type: "missing")
-      validator = Validation.validator(structure)
+      structure_note = insert(:structure_note, data_structure: structure)
+      validator = Validation.validator(structure_note)
       assert is_function(validator, 2)
 
       assert validator.(:content, nil) == [
@@ -43,7 +44,8 @@ defmodule TdDd.DataStructures.ValidationTest do
 
     test "returns a validator that validates dynamic content", %{template: %{name: type}} do
       %{data_structure: structure} = insert(:data_structure_version, type: type)
-      validator = Validation.validator(structure)
+      structure_note = insert(:structure_note, data_structure: structure)
+      validator = Validation.validator(structure_note)
       assert is_function(validator, 2)
 
       assert [{:content, {"invalid content", _errors}}] =

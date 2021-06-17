@@ -8,6 +8,7 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   alias TdDd.Classifiers
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.StructureMetadata
+  alias TdDd.DataStructures.StructureNote
 
   @paths_by_child_id """
   SELECT child_id, c.data_structure_id as ds_id, v.data_structure_id, parent_id, 0 as level, v.name, v.version
@@ -125,6 +126,9 @@ defmodule TdDd.DataStructures.DataStructureQueries do
     |> select_merge([_, _, c], %{classes: c.classes})
     |> join(:left, [dsv], p in subquery(paths(params)), on: p.id == dsv.data_structure_id)
     |> select_merge([_, _, _, p], %{path: fragment("COALESCE(?, ARRAY[]::json[])", p.path)})
+    |> join(:left, [dsv], sn in StructureNote,
+    on: sn.data_structure_id == dsv.data_structure_id and sn.status == :published)
+    |> select_merge([_, _, _, _, sn], %{latest_note: sn.df_content})
   end
 
   @spec distinct_by(Ecto.Query.t(), :id | :data_structure_id) :: Ecto.Query.t()
