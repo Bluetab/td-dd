@@ -69,15 +69,34 @@ defmodule TdDdWeb.StructureNoteController do
   end
 
   def create(conn, %{
+    "data_structure_id" => data_structure_id,
+    "structure_note" => _structure_note_params,
+    "force" => true
+  } = params) do
+    with claims <- conn.assigns[:current_resource],
+    data_structure <- DataStructures.get_data_structure!(data_structure_id),
+    {:can, true} <- {:can, can?(claims, force_create_structure_note({StructureNote, data_structure}))} do
+      create(conn, params, true)
+    end
+  end
+
+  def create(conn, %{
+    "data_structure_id" => _data_structure_id,
+    "structure_note" => _structure_note_params
+  } = params) do
+      create(conn, params, false)
+  end
+
+  defp create(conn, %{
         "data_structure_id" => data_structure_id,
         "structure_note" => structure_note_params
-      }) do
+      }, force_creation) do
     with claims <- conn.assigns[:current_resource],
          data_structure <- DataStructures.get_data_structure!(data_structure_id),
          {:can, true} <-
            {:can, can?(claims, create_structure_note({StructureNote, data_structure}))},
          {:ok, %StructureNote{} = structure_note} <-
-           StructureNotesWorkflow.create(data_structure, structure_note_params) do
+           StructureNotesWorkflow.create(data_structure, structure_note_params, force_creation) do
       conn
       |> put_status(:created)
       |> put_resp_header(

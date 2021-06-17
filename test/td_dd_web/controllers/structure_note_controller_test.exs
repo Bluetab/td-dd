@@ -514,6 +514,69 @@ defmodule TdDdWeb.StructureNoteControllerTest do
       |> json_response(:created)
     end
 
+    @tag authentication: [role: "admin"]
+      test "only admins can create a note with force", %{conn: conn} do
+      %{id: data_structure_id} = insert(:data_structure)
+      create_attrs = string_params_for(:structure_note)
+
+      %{"data" => %{"id" => id}} = conn
+        |> post(Routes.data_structure_note_path(conn, :create, data_structure_id),
+          structure_note: create_attrs
+        )
+        |> json_response(:created)
+
+      conn
+        |> put(Routes.data_structure_note_path(conn, :update, data_structure_id, id),
+          structure_note: %{"status" => "pending_approval"}
+        )
+        |> json_response(:ok)
+
+      %{"data" => %{"id" => new_id, "version" => version}} = conn
+        |> post(Routes.data_structure_note_path(conn, :create, data_structure_id),
+          structure_note: create_attrs,
+          force: true
+        )
+        |> json_response(:created)
+
+      assert new_id != id
+      assert version == 1
+    end
+
+    @tag authentication: [
+      user_name: "non_admin_user",
+      permissions: [
+        :create_structure_note,
+        :edit_structure_note,
+        :send_structure_note_to_approval,
+        :publish_structure_note_from_draft,
+        :deprecate_structure_note,
+        :view_data_structure
+      ]
+    ]
+    test "common users with a lot of permissions can't create a note with force", %{conn: conn, domain: domain} do
+      %{id: data_structure_id} = insert(:data_structure, domain_id: domain.id)
+      create_attrs = string_params_for(:structure_note)
+
+      %{"data" => %{"id" => id}} = conn
+        |> post(Routes.data_structure_note_path(conn, :create, data_structure_id),
+          structure_note: create_attrs
+        )
+        |> json_response(:created)
+
+      conn
+        |> put(Routes.data_structure_note_path(conn, :update, data_structure_id, id),
+          structure_note: %{"status" => "pending_approval"}
+        )
+        |> json_response(:ok)
+
+      conn
+        |> post(Routes.data_structure_note_path(conn, :create, data_structure_id),
+          structure_note: create_attrs,
+          force: true
+        )
+        |> json_response(:forbidden)
+    end
+
     @tag authentication: [
       user_name: "non_admin_user",
       permissions: [

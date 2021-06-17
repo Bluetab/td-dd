@@ -16,6 +16,13 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
     end
   end
 
+  def create(%DataStructure{} = data_structure, params, false = _force_creation), do: create(data_structure, params)
+  def create(%DataStructure{id: data_structure_id} = data_structure, params, true = _force_creation) do
+    latest_note = get_latest_structure_note(data_structure_id)
+    if can_create_new_draft(latest_note) != :ok, do: DataStructures.delete_structure_note(latest_note)
+    create(data_structure, params)
+  end
+
   def create(%DataStructure{id: data_structure_id} = data_structure, params) do
     latest_note = get_latest_structure_note(data_structure_id)
 
