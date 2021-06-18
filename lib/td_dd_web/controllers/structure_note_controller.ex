@@ -49,6 +49,16 @@ defmodule TdDdWeb.StructureNoteController do
     end
   end
 
+  def search(conn, filter) do
+    with claims <- conn.assigns[:current_resource],
+      {:can, true} <- {:can, can?(claims, search_structure_notes({StructureNote, nil}))} do
+
+      structure_notes = DataStructures.list_structure_notes(filter)
+
+      render(conn, "search.json", structure_notes: structure_notes)
+    end
+  end
+
   swagger_path :create do
     description("Creates Structure Note")
     produces("application/json")
@@ -123,6 +133,18 @@ defmodule TdDdWeb.StructureNoteController do
         structure_note: structure_note,
         actions: available_actions(conn, structure_note, claims, data_structure)
       )
+    end
+  end
+
+  def create_by_external_id(
+      conn,
+      %{"structure_note" => %{"data_structure_external_id" => external_id}} = params
+    ) do
+      with claims <- conn.assigns[:current_resource],
+      data_structure <- DataStructures.get_data_structure_by_external_id(external_id),
+      {:can, true} <- {:can, can?(claims, force_create_structure_note({StructureNote, data_structure}))} do
+        creation_params = Map.put(params, "data_structure_id", data_structure.id)
+        create(conn, creation_params, true)
     end
   end
 

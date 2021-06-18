@@ -284,6 +284,51 @@ defmodule TdDdWeb.StructureNoteControllerTest do
     end
   end
 
+  describe "search" do
+    @tag authentication: [role: "admin"]
+    test "search structure_notes by status and updated_at", %{conn: conn} do
+      n1 = insert(:structure_note, status: :published, updated_at: "2021-01-10T11:00:00")
+      n2 = insert(:structure_note, status: :published, updated_at: "2021-01-10T11:00:00")
+      insert(:structure_note, status: :published, updated_at: "2021-01-01T11:00:00")
+      insert(:structure_note, status: :draft, updated_at: "2021-01-10T11:00:00")
+
+      response = [n1, n2]
+      |> Enum.map(fn(sn) ->
+        %{
+          "status" => sn.status |> Atom.to_string,
+          "df_content" => sn.df_content,
+          "data_structure_id" => sn.data_structure_id,
+          "data_structure_external_id" => sn.data_structure.external_id,
+          "updated_at" => NaiveDateTime.to_iso8601(sn.updated_at)
+        }
+      end)
+
+      assert response <|>
+               (conn
+               |> post(Routes.structure_note_path(conn, :search),
+                    status: "published",
+                    updated_at: "2021-01-02 10:00:00"
+                  )
+               |> json_response(:ok)
+               |> Map.get("data"))
+    end
+
+    @tag authentication: [user_name: "no_admin_user"]
+    test "only admins can search structure_notes by status and updated_at", %{conn: conn} do
+      insert(:structure_note, status: :published, updated_at: "2021-01-10T11:00:00")
+      insert(:structure_note, status: :published, updated_at: "2021-01-10T11:00:00")
+      insert(:structure_note, status: :published, updated_at: "2021-01-01T11:00:00")
+      insert(:structure_note, status: :draft, updated_at: "2021-01-10T11:00:00")
+
+      conn
+      |> post(Routes.structure_note_path(conn, :search),
+          status: "published",
+          updated_at: "2021-01-02 10:00:00"
+        )
+      |> json_response(:forbidden)
+    end
+  end
+
   describe "create structure_note" do
     @tag authentication: [role: "admin"]
     test "renders structure_note when data is valid", %{conn: conn, swagger_schema: schema} do
@@ -536,6 +581,36 @@ defmodule TdDdWeb.StructureNoteControllerTest do
         |> post(Routes.data_structure_note_path(conn, :create, data_structure_id),
           structure_note: create_attrs,
           force: true
+        )
+        |> json_response(:created)
+
+      assert new_id != id
+      assert version == 1
+    end
+
+    @tag authentication: [role: "admin"]
+      test "admins can create a note with force by external id", %{conn: conn} do
+      %{id: data_structure_id, external_id: data_structure_external_id} = insert(:data_structure)
+      create_attrs = string_params_for(:structure_note)
+
+      %{"data" => %{"id" => id}} = conn
+        |> post(Routes.data_structure_note_path(conn, :create, data_structure_id),
+          structure_note: create_attrs
+        )
+        |> json_response(:created)
+
+      conn
+        |> put(Routes.data_structure_note_path(conn, :update, data_structure_id, id),
+          structure_note: %{"status" => "pending_approval"}
+        )
+        |> json_response(:ok)
+
+      force_create_attrs = create_attrs
+      |> Map.put("data_structure_external_id", data_structure_external_id)
+
+      %{"data" => %{"id" => new_id, "version" => version}} = conn
+        |> post(Routes.structure_note_path(conn, :create_by_external_id),
+          structure_note: force_create_attrs
         )
         |> json_response(:created)
 
