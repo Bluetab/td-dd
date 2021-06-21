@@ -1072,7 +1072,7 @@ defmodule TdDd.DataStructures do
   def list_structure_notes(data_structure_id, status), do: list_structure_notes(data_structure_id, [status])
 
   defp add_filter({"status", status}, query), do: where(query, status: ^status)
-  defp add_filter({"updated_at", updated_at}, query), do: where(query, [sn], sn.updated_at > ^updated_at)
+  defp add_filter({"updated_at", updated_at}, query), do: where(query, [sn], sn.updated_at >= ^updated_at)
   defp add_filter(_, query), do: query
 
   @doc """
