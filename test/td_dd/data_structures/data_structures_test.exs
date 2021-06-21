@@ -30,11 +30,6 @@ defmodule TdDd.DataStructuresTest do
 
     %{id: data_structure_id} =
       data_structure = insert(:data_structure, system_id: system_id)
-    structure_note = insert(:structure_note,
-      data_structure: data_structure,
-      df_content: @valid_df_content,
-      status: :published
-    )
 
     data_structure_version =
       insert(:data_structure_version, data_structure: data_structure, type: template_name)
@@ -50,8 +45,7 @@ defmodule TdDd.DataStructuresTest do
       data_structure_version: data_structure_version,
       system: system,
       template: template,
-      concept: concept,
-      structure_note: structure_note
+      concept: concept
     ]
   end
 
@@ -60,13 +54,12 @@ defmodule TdDd.DataStructuresTest do
       data_structure: data_structure,
       claims: claims
     } do
-      params = %{confidential: true}
+      params = %{confidential: true, domain_id: 42}
 
       assert {:ok, %{data_structure: data_structure}} =
                DataStructures.update_data_structure(data_structure, params, claims)
 
-      assert %DataStructure{} = data_structure
-      assert true == data_structure.confidential
+      assert %DataStructure{confidential: true, domain_id: 42} = data_structure
     end
 
     test "emits an audit event", %{data_structure: data_structure, claims: claims} do
@@ -77,6 +70,46 @@ defmodule TdDd.DataStructuresTest do
 
       assert {:ok, [%{id: ^event_id}]} =
                Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+    end
+
+    test "updates children domain id when it changes", %{
+      data_structure: parent,
+      data_structure_version: %{id: parent_version_id},
+      claims: claims
+    } do
+      %{id: child1_id, external_id: child1_external_id} =
+        insert(:data_structure, id: 51, external_id: "CHILD1")
+
+      %{id: child2_id, external_id: child2_external_id} =
+        insert(:data_structure, id: 52, external_id: "CHILD2")
+
+      %{id: child1_version_id} =
+        insert(:data_structure_version, data_structure_id: child1_id, name: child1_external_id)
+
+      %{id: child2_version_id} =
+        insert(:data_structure_version, data_structure_id: child2_id, name: child2_external_id)
+
+      relation_type_id = RelationTypes.default_id!()
+
+      insert(:data_structure_relation,
+        parent_id: parent_version_id,
+        child_id: child1_version_id,
+        relation_type_id: relation_type_id
+      )
+
+      insert(:data_structure_relation,
+        parent_id: parent_version_id,
+        child_id: child2_version_id,
+        relation_type_id: relation_type_id
+      )
+
+      %{id: new_domain_id} = CacheHelpers.insert_domain()
+
+      assert {:ok, %{data_structure: %DataStructure{domain_id: ^new_domain_id}, updated_children_count: 3}} =
+               DataStructures.update_data_structure(parent, %{domain_id: new_domain_id}, claims)
+
+      assert %DataStructure{domain_id: ^new_domain_id} = Repo.get!(DataStructure, child1_id)
+      assert %DataStructure{domain_id: ^new_domain_id} = Repo.get!(DataStructure, child2_id)
     end
   end
 
@@ -348,7 +381,13 @@ defmodule TdDd.DataStructuresTest do
       assert DataStructures.list_data_structures(search_params), [data_structure]
     end
 
-    test "list_data_structures/1 with enrich latest_note" do
+    test "list_data_structures/1 with enrich latest_note", %{data_structure: data_structure} do
+      insert(:structure_note,
+        data_structure: data_structure,
+        df_content: @valid_df_content,
+        status: :published
+      )
+
       assert [%DataStructure{
         latest_note: @valid_df_content
       }] = DataStructures.list_data_structures()
@@ -1379,15 +1418,30 @@ defmodule TdDd.DataStructuresTest do
     @update_attrs %{df_content: %{}, status: :published}
     @invalid_attrs %{df_content: nil, status: nil, version: nil}
 
-    test "list_structure_notes/0 returns all structure_notes", %{structure_note: setup_structure_note} do
+    test "list_structure_notes/0 returns all structure_notes" do
       structure_note = insert(:structure_note)
-      assert DataStructures.list_structure_notes() <|> [setup_structure_note, structure_note]
+      assert DataStructures.list_structure_notes() <|> [structure_note]
     end
 
     test "list_structure_notes/1 returns all structure_notes for a data_structure" do
       %{data_structure_id: data_structure_id} = structure_note = insert(:structure_note)
       insert(:structure_note)
       assert DataStructures.list_structure_notes(data_structure_id) <|> [structure_note]
+    end
+
+    test "list_structure_notes/1 returns all structure_notes filtered by params" do
+      n1 = insert(:structure_note, status: :versioned, updated_at: ~N[2021-01-10 10:00:00])
+      n2 = insert(:structure_note, status: :versioned, updated_at: ~N[2021-01-10 11:00:00])
+      n3 = insert(:structure_note, status: :versioned, updated_at: ~N[2021-01-01 10:00:00])
+      n4 = insert(:structure_note, status: :draft, updated_at: ~N[2021-01-10 10:00:00])
+
+      filters = %{
+        "updated_at" => "2021-01-02 10:00:00",
+        "status" => "versioned"
+      }
+      assert DataStructures.list_structure_notes(filters) <|> [n1, n2]
+      assert DataStructures.list_structure_notes(%{}) <|> [n1, n2, n3, n4]
+      assert DataStructures.list_structure_notes(%{"status" => :draft}) <|> [n4]
     end
 
     test "get_structure_note!/1 returns the structure_note with given id" do

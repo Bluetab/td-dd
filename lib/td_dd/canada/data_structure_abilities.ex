@@ -11,6 +11,7 @@ defmodule TdDd.Canada.DataStructureAbilities do
   def can?(%Claims{role: "service"}, :view_data_structure, _any), do: true
   def can?(%Claims{role: "service"}, :update_data_structure, _any), do: true
   def can?(%Claims{role: "service"}, :manage_confidential_structures, _any), do: true
+  def can?(%Claims{role: "service"}, :manage_structures_domain, _any), do: false
   def can?(%Claims{role: "service"}, :view_data_structures_profile, _any), do: true
   def can?(%Claims{role: "service"}, :show, _any), do: true
 
@@ -70,6 +71,16 @@ defmodule TdDd.Canada.DataStructureAbilities do
         domain_id: domain_id
       }) do
     Permissions.authorized?(claims, :view_data_structures_profile, domain_id)
+  end
+
+  def can?(%Claims{} = claims, :manage_structures_domain, %DataStructure{
+        domain_id: domain_id
+      }) do
+    Permissions.authorized?(claims, :manage_structures_domain, domain_id)
+  end
+
+  def can?(%Claims{} = claims, :manage_structures_domain, domain_id) do
+    Permissions.authorized?(claims, :manage_structures_domain, domain_id)
   end
 
   def can?(%Claims{} = claims, :upload, domain_id) do

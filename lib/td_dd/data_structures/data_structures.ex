@@ -13,6 +13,7 @@ defmodule TdDd.DataStructures do
   alias TdCx.Sources
   alias TdCx.Sources.Source
   alias TdDd.Auth.Claims
+  alias TdDd.DataStructures.Ancestry
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureQueries
@@ -474,8 +475,25 @@ defmodule TdDd.DataStructures do
     Multi.new()
     |> Multi.update(:data_structure, changeset)
     |> Multi.run(:audit, Audit, :data_structure_updated, [changeset, user_id])
+    |> Multi.run(:updated_children_count, fn _repo, %{data_structure: updated_data_structure} ->
+      maybe_update_children_domain_ids(updated_data_structure, data_structure)
+    end)
     |> Repo.transaction()
     |> on_update()
+  end
+
+  defp maybe_update_children_domain_ids(%{domain_id: new_domain_id, external_id: parent_external_id}, %{domain_id: old_domain_id}) when old_domain_id != new_domain_id do
+    children_ids = Ancestry.get_descendent_ids(parent_external_id)
+
+    {count, _} =
+      from(ds in DataStructure, where: ds.id in ^children_ids, update: [set: [domain_id: ^new_domain_id]])
+      |> Repo.update_all([])
+
+    {:ok, count}
+  end
+
+  defp maybe_update_children_domain_ids(_updated, _new) do
+    {:ok, 0}
   end
 
   defp on_update({:ok, %StructureNote{status: :published, data_structure: %{id: id}}} = res) do
@@ -1029,6 +1047,13 @@ defmodule TdDd.DataStructures do
     Repo.all(StructureNote)
   end
 
+  def list_structure_notes(%{} = filters) do
+    filters
+    |> Enum.reduce(StructureNote, &add_filter/2)
+    |> Repo.all()
+    |> Repo.preload(:data_structure)
+  end
+
   def list_structure_notes(data_structure_id) do
     StructureNote
     |> where(data_structure_id: ^data_structure_id)
@@ -1045,6 +1070,10 @@ defmodule TdDd.DataStructures do
   end
 
   def list_structure_notes(data_structure_id, status), do: list_structure_notes(data_structure_id, [status])
+
+  defp add_filter({"status", status}, query), do: where(query, status: ^status)
+  defp add_filter({"updated_at", updated_at}, query), do: where(query, [sn], sn.updated_at >= ^updated_at)
+  defp add_filter(_, query), do: query
 
   @doc """
   Gets a single structure_note.
@@ -1094,10 +1123,17 @@ defmodule TdDd.DataStructures do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_structure_note(data_structure, attrs \\ %{}) do
-    %StructureNote{}
-    |> StructureNote.create_changeset(data_structure, attrs)
-    |> Repo.insert()
+  def create_structure_note(data_structure, attrs \\ %{}, user_id \\ nil) do
+    changeset = StructureNote.create_changeset(%StructureNote{}, data_structure, attrs)
+    Multi.new()
+    |> Multi.insert(:structure_note, changeset)
+    |> Multi.run(:audit, Audit, :structure_note_updated, [changeset, user_id])
+    |> Repo.transaction()
+    |> case do
+      {:ok, res} -> {:ok, Map.get(res, :structure_note)}
+      {:error, :structure_note, err, _} -> {:error, err}
+      err -> err
+    end
     |> on_update()
   end
 
@@ -1114,13 +1150,20 @@ defmodule TdDd.DataStructures do
 
   """
 
-  def bulk_update_structure_note(%StructureNote{} = structure_note, attrs) do
+  def bulk_update_structure_note(%StructureNote{} = structure_note, attrs, user_id \\ nil) do
     changeset = StructureNote.bulk_update_changeset(structure_note, attrs)
     if changeset.changes == %{} do
       {:ok, structure_note}
     else
-      changeset
-      |> Repo.update()
+      Multi.new()
+      |> Multi.update(:structure_note, changeset)
+      |> Multi.run(:audit, Audit, :structure_note_updated, [changeset, user_id])
+      |> Repo.transaction()
+      |> case do
+        {:ok, res} -> {:ok, Map.get(res, :structure_note)}
+        {:error, :structure_note, err, _} -> {:error, err}
+        err -> err
+      end
       |> on_update()
     end
   end
@@ -1138,10 +1181,18 @@ defmodule TdDd.DataStructures do
 
   """
 
-  def update_structure_note(%StructureNote{} = structure_note, attrs) do
-    structure_note
-    |> StructureNote.changeset(attrs)
-    |> Repo.update()
+  def update_structure_note(%StructureNote{} = structure_note, attrs, user_id \\ nil) do
+    changeset = StructureNote.changeset(structure_note, attrs)
+
+    Multi.new()
+    |> Multi.update(:structure_note, changeset)
+    |> Multi.run(:audit, Audit, :structure_note_updated, [changeset, user_id])
+    |> Repo.transaction()
+    |> case do
+      {:ok, res} -> {:ok, Map.get(res, :structure_note)}
+      {:error, :structure_note, err, _} -> {:error, err}
+      err -> err
+    end
     |> on_update()
   end
   @doc """
