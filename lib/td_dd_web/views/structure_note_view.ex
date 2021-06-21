@@ -16,6 +16,10 @@ defmodule TdDdWeb.StructureNoteView do
     %{data: render_many(structure_notes, StructureNoteView, "structure_note.json")}
   end
 
+  def render("search.json", %{structure_notes: structure_notes}) do
+    %{data: render_many(structure_notes, StructureNoteView, "search_structure_note.json")}
+  end
+
   def render("show.json", %{structure_note: structure_note, actions: actions}) do
     %{
       data: render_one(structure_note, StructureNoteView, "structure_note.json"),
@@ -35,6 +39,16 @@ defmodule TdDdWeb.StructureNoteView do
       df_content: structure_note.df_content,
       updated_at: structure_note.updated_at,
       _actions: Map.get(structure_note, :actions, %{})
+    }
+  end
+
+  def render("search_structure_note.json", %{structure_note: structure_note}) do
+    %{
+      status: structure_note.status,
+      df_content: structure_note.df_content,
+      updated_at: structure_note.updated_at,
+      data_structure_id: structure_note.data_structure_id,
+      data_structure_external_id: Map.get(structure_note.data_structure, :external_id)
     }
   end
 end

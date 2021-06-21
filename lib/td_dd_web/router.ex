@@ -37,6 +37,8 @@ defmodule TdDdWeb.Router do
       :bulk_update_template_content
     )
 
+    post("/data_structure_notes/search", StructureNoteController, :search)
+    post("/data_structure_notes", StructureNoteController, :create_by_external_id)
     resources "/data_structures", DataStructureController, except: [:new, :edit, :show] do
       resources("/versions", DataStructureVersionController, only: [:show])
       resources("/profile_results", ProfileController, only: [:create])

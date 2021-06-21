@@ -81,7 +81,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
 
   defp do_csv_bulk_update(rows, user_id) do
     Multi.new()
-    |> Multi.run(:update_notes, &csv_bulk_update_notes(&1, &2, rows))
+    |> Multi.run(:update_notes, &csv_bulk_update_notes(&1, &2, rows, user_id))
     |> Multi.run(:updates, &csv_bulk_update(&1, &2, rows))
     |> Multi.run(:audit, &audit(&1, &2, user_id))
     |> Repo.transaction()
@@ -101,10 +101,10 @@ defmodule TdDd.DataStructures.BulkUpdate do
     end
   end
 
-  defp csv_bulk_update_notes(_repo, _changes_so_far, rows) do
+  defp csv_bulk_update_notes(_repo, _changes_so_far, rows, user_id) do
     rows
     |> Enum.map(fn {content, %{data_structure: data_structure, row_index: row_index}} ->
-      {update_structure_notes(data_structure, content), row_index}
+      {update_structure_notes(data_structure, content, user_id), row_index}
     end)
     |> Enum.reduce_while(%{}, &csv_reduce_notes_results/2)
     |> case do
@@ -168,7 +168,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
   defp do_update(ids, %{} = params, %Claims{user_id: user_id}) do
     data_structures = DataStructures.list_data_structures([id: {:in, ids}])
     Multi.new()
-    |> Multi.run(:update_notes, &bulk_update_notes(&1, &2, data_structures, params))
+    |> Multi.run(:update_notes, &bulk_update_notes(&1, &2, data_structures, params, user_id))
     |> Multi.run(:updates, &bulk_update(&1, &2, data_structures, params))
     |> Multi.run(:audit, &audit(&1, &2, user_id))
     |> Repo.transaction()
@@ -186,9 +186,9 @@ defmodule TdDd.DataStructures.BulkUpdate do
     end
   end
 
-  defp bulk_update_notes(_repo, _changes_so_far, data_structures, params) do
+  defp bulk_update_notes(_repo, _changes_so_far, data_structures, params, user_id) do
     data_structures
-    |> Enum.map(&update_structure_notes(&1, params))
+    |> Enum.map(&update_structure_notes(&1, params, user_id))
     |> Enum.reduce_while(%{}, &reduce_notes_results/2)
     |> case do
       %{} = res -> {:ok, res}
@@ -196,8 +196,8 @@ defmodule TdDd.DataStructures.BulkUpdate do
     end
   end
 
-  defp update_structure_notes(data_structure, params) do
-    case StructureNotesWorkflow.create_or_update(data_structure, params) do
+  defp update_structure_notes(data_structure, params, user_id) do
+    case StructureNotesWorkflow.create_or_update(data_structure, params, user_id) do
       {:ok, structure_note} -> {:ok, structure_note}
       error -> {error, data_structure}
     end
