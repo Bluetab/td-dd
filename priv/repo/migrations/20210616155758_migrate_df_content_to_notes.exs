@@ -6,22 +6,18 @@ defmodule TdDd.Repo.Migrations.MigrateDfContentToNotes do
 
   def up do
     now = DateTime.utc_now()
-    structure_notes = "data_structures"
+    structure_notes_query = "data_structures"
       |> where([s], not is_nil(s.df_content) )
-      |> select( [:df_content, :id] )
-      |> Repo.all
-      |> Enum.map(fn %{df_content: df_content, id: id} ->
-        %{
-          version: 1,
-          status: "published",
-          df_content: df_content,
-          data_structure_id: id,
-          inserted_at: now,
-          updated_at: now
-        }
-      end)
-    Repo.insert_all "structure_notes", structure_notes
+      |> select([s], %{
+        df_content: s.df_content,
+        data_structure_id: s.id,
+        version: ^1,
+        status: ^"published",
+        inserted_at: ^now,
+        updated_at: ^now
+      })
 
+    Repo.insert_all( "structure_notes", structure_notes_query)
     alter table(:data_structures) do
       remove :df_content
     end
@@ -34,22 +30,13 @@ defmodule TdDd.Repo.Migrations.MigrateDfContentToNotes do
 
     flush()
 
-    "structure_notes"
-    |> where([s], s.status == "published")
-    |> select( [:df_content, :data_structure_id] )
-    |> Repo.all
-    |> Enum.map(fn %{df_content: df_content, data_structure_id: id} ->
-      %{
-        id: id,
-        df_content: df_content
-      }
-    end)
-    |> Enum.each(fn %{id: id, df_content: df_content} ->
-      from(p in "data_structures")
-      |> where([d], d.id == ^id)
-      |> update([_], set: [df_content: ^df_content])
-      |> Repo.update_all([])
-    end)
+    update_query = from(
+      ds in "data_structures",
+      join: sn in "structure_notes",
+      on: [data_structure_id: ds.id, status: "published"],
+      update: [set: [df_content: sn.df_content]]
+    )
+    Repo.update_all(update_query, [])
 
     Repo.delete_all("structure_notes")
   end

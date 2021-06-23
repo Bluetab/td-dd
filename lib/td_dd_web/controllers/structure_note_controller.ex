@@ -49,6 +49,16 @@ defmodule TdDdWeb.StructureNoteController do
     end
   end
 
+  def search(conn, filter) do
+    with claims <- conn.assigns[:current_resource],
+      {:can, true} <- {:can, can?(claims, search_structure_notes({StructureNote, nil}))} do
+
+      structure_notes = DataStructures.list_structure_notes(filter)
+
+      render(conn, "search.json", structure_notes: structure_notes)
+    end
+  end
+
   swagger_path :create do
     description("Creates Structure Note")
     produces("application/json")
@@ -68,16 +78,51 @@ defmodule TdDdWeb.StructureNoteController do
     response(422, "Unprocessable Entity")
   end
 
-  def create(conn, %{
-        "data_structure_id" => data_structure_id,
-        "structure_note" => structure_note_params
-      }) do
+  def create(
+        conn,
+        %{
+          "data_structure_id" => data_structure_id,
+          "structure_note" => _structure_note_params,
+          "force" => true
+        } = params
+      ) do
     with claims <- conn.assigns[:current_resource],
+         data_structure <- DataStructures.get_data_structure!(data_structure_id),
+         {:can, true} <-
+           {:can, can?(claims, force_create_structure_note({StructureNote, data_structure}))} do
+      create(conn, params, true)
+    end
+  end
+
+  def create(
+        conn,
+        %{
+          "data_structure_id" => _data_structure_id,
+          "structure_note" => _structure_note_params
+        } = params
+      ) do
+    create(conn, params, false)
+  end
+
+  defp create(
+         conn,
+         %{
+           "data_structure_id" => data_structure_id,
+           "structure_note" => structure_note_params
+         },
+         force_creation
+       ) do
+    with %{user_id: user_id} = claims <- conn.assigns[:current_resource],
          data_structure <- DataStructures.get_data_structure!(data_structure_id),
          {:can, true} <-
            {:can, can?(claims, create_structure_note({StructureNote, data_structure}))},
          {:ok, %StructureNote{} = structure_note} <-
-           StructureNotesWorkflow.create(data_structure, structure_note_params) do
+           StructureNotesWorkflow.create(
+             data_structure,
+             structure_note_params,
+             force_creation,
+             user_id
+           ) do
       conn
       |> put_status(:created)
       |> put_resp_header(
@@ -88,6 +133,18 @@ defmodule TdDdWeb.StructureNoteController do
         structure_note: structure_note,
         actions: available_actions(conn, structure_note, claims, data_structure)
       )
+    end
+  end
+
+  def create_by_external_id(
+      conn,
+      %{"structure_note" => %{"data_structure_external_id" => external_id}} = params
+    ) do
+      with claims <- conn.assigns[:current_resource],
+      data_structure <- DataStructures.get_data_structure_by_external_id(external_id),
+      {:can, true} <- {:can, can?(claims, force_create_structure_note({StructureNote, data_structure}))} do
+        creation_params = Map.put(params, "data_structure_id", data_structure.id)
+        create(conn, creation_params, true)
     end
   end
 
@@ -135,12 +192,12 @@ defmodule TdDdWeb.StructureNoteController do
         "id" => id,
         "structure_note" => structure_note_params
       }) do
-    with claims <- conn.assigns[:current_resource],
+    with %{user_id: user_id} = claims <- conn.assigns[:current_resource],
          data_structure <- DataStructures.get_data_structure!(data_structure_id),
          structure_note = DataStructures.get_structure_note!(id),
          {:can, true} <- can(structure_note, structure_note_params, claims, data_structure),
          {:ok, %StructureNote{} = structure_note} <-
-           StructureNotesWorkflow.update(structure_note, structure_note_params) do
+           StructureNotesWorkflow.update(structure_note, structure_note_params, true, user_id) do
       conn
       |> put_resp_header(
         "location",
@@ -187,6 +244,14 @@ defmodule TdDdWeb.StructureNoteController do
 
   defp can(%{status: :draft}, %{"df_content" => _df_content}, claims, data_structure) do
     {:can, can?(claims, edit_structure_note({StructureNote, data_structure}))}
+  end
+
+  defp available_actions(conn, nil = structure_note, claims, data_structure) do
+    structure_note
+    |> available_statutes(claims, data_structure)
+    |> Enum.reduce(%{}, fn action, acc ->
+      Map.put(acc, action, get_action_location(conn, action, data_structure.id, structure_note))
+    end)
   end
 
   defp available_actions(conn, structure_note, claims, data_structure) do
@@ -304,7 +369,8 @@ defmodule TdDdWeb.StructureNoteController do
       {can?(claims, delete_structure_note({StructureNote, data_structure})), [:draft, :rejected]},
       {can?(claims, publish_structure_note_from_draft({StructureNote, data_structure})),
        [:draft]},
-      {can?(claims, view_structure_note_history({StructureNote, data_structure})), [:versioned]},
+      {can?(claims, view_structure_note_history({StructureNote, data_structure})),
+       [:versioned, :deprecated]},
       {can?(claims, view_data_structure(data_structure)), [:published]}
     ]
     |> Enum.filter(fn {permission, _} -> permission end)
