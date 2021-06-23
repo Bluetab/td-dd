@@ -61,6 +61,7 @@ defmodule TdDq.Implementations.Download do
       values = [
         implementation.implementation_key,
         implementation.implementation_type,
+        translate("executable.#{implementation.executable}", content_labels),
         rule.name,
         rule.df_name,
         rule.goal,
@@ -97,6 +98,7 @@ defmodule TdDq.Implementations.Download do
     [
       "implementation_key",
       "implementation_type",
+      "executable",
       "rule",
       "template",
       "goal",

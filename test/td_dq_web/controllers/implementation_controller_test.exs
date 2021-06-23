@@ -35,6 +35,17 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert %{"source" => source} = content
       assert %{"external_id" => ^source_external_id} = source
     end
+
+    @tag authentication: [role: "admin"]
+    test "includes executable in response", %{conn: conn, swagger_schema: schema} do
+      %{id: id} = insert(:implementation)
+
+      assert %{"data" => %{"executable" => true}} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:ok)
+    end
   end
 
   describe "index" do
