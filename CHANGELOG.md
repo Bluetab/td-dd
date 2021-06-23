@@ -5,6 +5,7 @@
 ### Fixed
 
 - [TD-3893] Children classifications
+- [TD-3905] Fix bug with StructureNote aggregation
 
 ### Added
 

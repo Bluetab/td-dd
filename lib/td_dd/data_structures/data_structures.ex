@@ -53,7 +53,8 @@ defmodule TdDd.DataStructures do
         where(q, [ds], ds.id in ^ids)
     end)
     |> join(:left, [ds], sn in StructureNote,
-       on: sn.data_structure_id == ds.id and sn.status == :published)
+      on: sn.data_structure_id == ds.id and sn.status == :published
+    )
     |> select_merge([_, sn], %{latest_note: sn.df_content})
     |> preload(:system)
     |> Repo.all()
@@ -482,11 +483,18 @@ defmodule TdDd.DataStructures do
     |> on_update()
   end
 
-  defp maybe_update_children_domain_ids(%{domain_id: new_domain_id, external_id: parent_external_id}, %{domain_id: old_domain_id}) when old_domain_id != new_domain_id do
+  defp maybe_update_children_domain_ids(
+         %{domain_id: new_domain_id, external_id: parent_external_id},
+         %{domain_id: old_domain_id}
+       )
+       when old_domain_id != new_domain_id do
     children_ids = Ancestry.get_descendent_ids(parent_external_id)
 
     {count, _} =
-      from(ds in DataStructure, where: ds.id in ^children_ids, update: [set: [domain_id: ^new_domain_id]])
+      from(ds in DataStructure,
+        where: ds.id in ^children_ids,
+        update: [set: [domain_id: ^new_domain_id]]
+      )
       |> Repo.update_all([])
 
     {:ok, count}
@@ -496,7 +504,7 @@ defmodule TdDd.DataStructures do
     {:ok, 0}
   end
 
-  defp on_update({:ok, %StructureNote{status: :published, data_structure: %{id: id}}} = res) do
+  defp on_update({:ok, %StructureNote{status: :published, data_structure_id: id}} = res) do
     IndexWorker.reindex(id)
     res
   end
@@ -1025,7 +1033,15 @@ defmodule TdDd.DataStructures do
     |> DataStructureQueries.enriched_structure_versions()
     |> Repo.all()
     |> Enum.map(fn %{data_structure: structure, type: type, latest_note: latest_note} = dsv ->
-      %{dsv | data_structure: StructureEnricher.enrich(Map.put(structure, :latest_note, latest_note), type, content_opt)}
+      %{
+        dsv
+        | data_structure:
+            StructureEnricher.enrich(
+              Map.put(structure, :latest_note, latest_note),
+              type,
+              content_opt
+            )
+      }
     end)
   end
 
@@ -1069,10 +1085,14 @@ defmodule TdDd.DataStructures do
     |> Repo.all()
   end
 
-  def list_structure_notes(data_structure_id, status), do: list_structure_notes(data_structure_id, [status])
+  def list_structure_notes(data_structure_id, status),
+    do: list_structure_notes(data_structure_id, [status])
 
   defp add_filter({"status", status}, query), do: where(query, status: ^status)
-  defp add_filter({"updated_at", updated_at}, query), do: where(query, [sn], sn.updated_at >= ^updated_at)
+
+  defp add_filter({"updated_at", updated_at}, query),
+    do: where(query, [sn], sn.updated_at >= ^updated_at)
+
   defp add_filter(_, query), do: query
 
   @doc """
@@ -1125,6 +1145,7 @@ defmodule TdDd.DataStructures do
   """
   def create_structure_note(data_structure, attrs \\ %{}, user_id \\ nil) do
     changeset = StructureNote.create_changeset(%StructureNote{}, data_structure, attrs)
+
     Multi.new()
     |> Multi.insert(:structure_note, changeset)
     |> Multi.run(:audit, Audit, :structure_note_updated, [changeset, user_id])
@@ -1152,6 +1173,7 @@ defmodule TdDd.DataStructures do
 
   def bulk_update_structure_note(%StructureNote{} = structure_note, attrs, user_id \\ nil) do
     changeset = StructureNote.bulk_update_changeset(structure_note, attrs)
+
     if changeset.changes == %{} do
       {:ok, structure_note}
     else
@@ -1195,6 +1217,7 @@ defmodule TdDd.DataStructures do
     end
     |> on_update()
   end
+
   @doc """
   Deletes a structure_note.
 
