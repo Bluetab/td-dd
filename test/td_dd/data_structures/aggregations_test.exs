@@ -21,13 +21,15 @@ defmodule TdDd.Search.AggregationsTest do
 
   describe "aggregation_terms" do
     test "aggregation_terms/0 returns aggregation terms of type user with size 50" do
-      template_content = [%{
-        "name" => "group",
-        "fields" => [
-          %{name: "fieldname", type: "string", cardinality: "?", values: %{}},
-          %{name: "userfield", type: "user", cardinality: "?", values: %{}}
-        ]
-      }]
+      template_content = [
+        %{
+          "name" => "group",
+          "fields" => [
+            %{name: "fieldname", type: "string", cardinality: "?", values: %{}},
+            %{name: "userfield", type: "user", cardinality: "?", values: %{}}
+          ]
+        }
+      ]
 
       create_template(%{
         id: 0,
@@ -46,7 +48,7 @@ defmodule TdDd.Search.AggregationsTest do
         |> Map.take([:field, :size])
 
       assert size == 50
-      assert field == "df_content.userfield.raw"
+      assert field == "latest_note.userfield.raw"
     end
 
     test "aggregation_terms/0 returns aggregations of static fields" do
