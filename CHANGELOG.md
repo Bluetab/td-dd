@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- [TD-3893] Children classifications
+
 ### Added
 
 - [TD-3720] Update structure domain (with children)
