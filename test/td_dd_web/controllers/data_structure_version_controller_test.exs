@@ -199,6 +199,35 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
         assert classes == %{name => class}
       end)
     end
+
+    @tag authentication: [role: "admin"]
+    test "includes children classes in the response", %{conn: conn} do
+      %{id: parent_version_id, data_structure_id: parent_id, version: version} =
+        insert(:data_structure_version)
+
+      %{data_structure_version: %{id: child_version_id}, name: name, class: class} =
+        insert(:structure_classification)
+
+      relation_type_id = RelationTypes.default_id!()
+
+      insert(:data_structure_relation,
+        parent_id: parent_version_id,
+        child_id: child_version_id,
+        relation_type_id: relation_type_id
+      )
+
+      Enum.each(["latest", version], fn v ->
+        assert %{"data" => data} =
+                 conn
+                 |> get(
+                   Routes.data_structure_data_structure_version_path(conn, :show, parent_id, v)
+                 )
+                 |> json_response(:ok)
+
+        assert %{"children" => [%{"classes" => classes}]} = data
+        assert classes == %{name => class}
+      end)
+    end
   end
 
   describe "show data_structure with deletions in its hierarchy" do
@@ -376,7 +405,12 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     @tag authentication: [role: "admin"]
     test "bulk update of data structures", %{conn: conn} do
       %{id: structure_id} = insert(:data_structure, external_id: "Structure")
-      insert(:structure_note, data_structure_id: structure_id, df_content: %{"Field1" => "foo", "Field2" => "bar"})
+
+      insert(:structure_note,
+        data_structure_id: structure_id,
+        df_content: %{"Field1" => "foo", "Field2" => "bar"}
+      )
+
       insert(:data_structure_version, data_structure_id: structure_id)
 
       assert %{"data" => data} =
@@ -590,7 +624,9 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     TaxonomyCache.put_domain(domain)
     on_exit(fn -> TaxonomyCache.delete_domain(domain.id) end)
 
-    s1 = insert(:source, external_id: "foo", config: %{"job_types" => ["catalog"], "alias" => "foo"})
+    s1 =
+      insert(:source, external_id: "foo", config: %{"job_types" => ["catalog"], "alias" => "foo"})
+
     insert(:source, external_id: "bar", config: %{"job_types" => ["profile"], "alias" => "foo"})
     structure = insert(:data_structure, domain_id: domain.id, source_id: s1.id)
 
