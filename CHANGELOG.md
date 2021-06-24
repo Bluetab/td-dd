@@ -6,6 +6,7 @@
 
 - [TD-3893] Children classifications
 - [TD-3905] Fix bug with StructureNote aggregation
+- [TD-3907] Fix metadata index failure
 
 ### Added
 
