@@ -34,9 +34,7 @@ defmodule TdDq.Rules.Search do
 
   def search(params, %Claims{role: role}, page, size, index) when role in ["admin", "service"] do
     filter_clause = Query.create_filters(params, index)
-    filter_clause = filter_clause |> delete_execution_filter
     query = Query.create_query(params, filter_clause)
-
     sort = Map.get(params, "sort", default_sort(index))
 
     %{
@@ -64,7 +62,6 @@ defmodule TdDq.Rules.Search do
 
   defp get_filters(permissions, params, index) do
     user_defined_filters = Query.create_filters(params, index)
-    user_defined_filters = user_defined_filters |> delete_execution_filter
     filter = Query.create_filter_clause(permissions, user_defined_filters)
     query = Query.create_query(params, filter)
     search = %{query: query, aggs: Query.get_aggregation_terms(index)}
@@ -115,11 +112,8 @@ defmodule TdDq.Rules.Search do
 
   defp filter(params, [_h | _t] = permissions, page, size, index) do
     user_defined_filters = Query.create_filters(params, index)
-    user_defined_filters = user_defined_filters |> delete_execution_filter
     filter = Query.create_filter_clause(permissions, user_defined_filters)
-
     query = Query.create_query(params, filter)
-
     sort = Map.get(params, "sort", default_sort(index))
 
     %{
@@ -145,16 +139,9 @@ defmodule TdDq.Rules.Search do
 
   defp do_rules_execution(user_defined_filters) do
     user_defined_filters
-    |> Enum.filter(&Enum.at(Map.get(get_filter(&1), "execution.raw", []), 0))
+    |> Enum.filter(&Enum.at(Map.get(get_filter(&1), "executable", []), 0))
     |> Enum.empty?()
     |> Kernel.!()
-  end
-
-  defp delete_execution_filter(user_defined_filters) do
-    Enum.filter(
-      user_defined_filters,
-      &(!Enum.at(Map.get(get_filter(&1), "execution.raw", []), 0))
-    )
   end
 
   defp get_filter(%{terms: field}), do: field

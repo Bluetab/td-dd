@@ -117,12 +117,12 @@ defmodule TdDdWeb.DataStructureView do
   end
 
   defp add_dynamic_content(json, data_structure) do
-    lastest_note =
+    latest_note =
       data_structure
-      |> Map.get(:lastest_note, %{})
+      |> Map.get(:latest_note, %{})
       |> DataStructures.get_cached_content(data_structure)
 
-    %{lastest_note: lastest_note}
+    %{latest_note: latest_note}
     |> Map.merge(json)
   end
 

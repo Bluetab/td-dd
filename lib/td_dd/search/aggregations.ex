@@ -74,21 +74,21 @@ defmodule TdDd.Search.Aggregations do
   defp filter_content_term(_), do: false
 
   defp content_term(%{"name" => field, "type" => "user"}, "dd") do
-    {field, %{terms: %{field: "df_content.#{field}.raw", size: 50}}}
+    {field, %{terms: %{field: "latest_note.#{field}.raw", size: 50}}}
   end
 
   defp content_term(%{"name" => field, "type" => type}, "dd") when type in ["domain", "system"] do
     {field,
      %{
-       nested: %{path: "df_content.#{field}"},
+       nested: %{path: "latest_note.#{field}"},
        aggs: %{
-         distinct_search: %{terms: %{field: "df_content.#{field}.external_id.raw", size: 50}}
+         distinct_search: %{terms: %{field: "latest_note.#{field}.external_id.raw", size: 50}}
        }
      }}
   end
 
   defp content_term(%{"name" => field}, "dd") do
-    {field, %{terms: %{field: "df_content.#{field}.raw"}}}
+    {field, %{terms: %{field: "latest_note.#{field}.raw"}}}
   end
 
   defp content_term(%{"name" => field, "type" => "user"}, "cx") do

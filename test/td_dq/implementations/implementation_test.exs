@@ -1,6 +1,7 @@
 defmodule TdDq.Implementations.ImplementationTest do
   use TdDd.DataCase
 
+  alias Ecto.Changeset
   alias TdCache.TemplateCache
   alias TdDd.Repo
   alias TdDq.Implementations.Implementation
@@ -65,6 +66,13 @@ defmodule TdDq.Implementations.ImplementationTest do
       params = params_for(:rule, df_name: template_name, df_content: invalid_content)
       assert %{valid?: false, errors: errors} = Implementation.changeset(params)
       assert {"invalid content", _detail} = errors[:df_content]
+    end
+
+    test "executable default true field" do
+      %{id: rule_id} = insert(:rule)
+      params = string_params_for(:implementation, rule_id: rule_id, implementation_key: "foo")
+      assert %{valid?: true} = changeset = Implementation.changeset(params)
+      assert Changeset.get_field(changeset, :executable)
     end
   end
 end

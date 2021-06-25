@@ -131,6 +131,31 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
                 data_structure_id: ^data_structure_id
               }} = StructureNotesWorkflow.create(data_structure, create_attrs)
     end
+
+    test "when admin force a creation, delete the latest note if can't create a new one due to it" do
+      df_content = %{"foo" => "value_old"}
+
+      data_structure = create_data_structure_with_version()
+
+      %{data_structure_id: data_structure_id} =
+        insert(:structure_note,
+          status: :pending_approval,
+          df_content: df_content,
+          data_structure: data_structure
+        )
+
+      new_df_content = %{"foo" => "value_new", "baz" => "new_value"}
+      create_attrs = %{"df_content" => new_df_content}
+      user_id = 1
+
+      assert {:ok,
+              %StructureNote{
+                version: 1,
+                status: :draft,
+                df_content: ^new_df_content,
+                data_structure_id: ^data_structure_id
+              }} = StructureNotesWorkflow.create(data_structure, create_attrs, true, user_id)
+    end
   end
 
   describe "update" do

@@ -252,13 +252,14 @@ defmodule TdDdWeb.StructureNoteControllerTest do
         :published,
         :versioned,
         :pending_approval,
-        :draft
+        :draft,
+        :deprecated
       ]
 
-      {[_, published_note, versioned_note, _, _], index_result} =
+      {[_, published_note, versioned_note, _, _, deprecated_note], index_result} =
         permissions_test_builder(conn, domain, statuses)
 
-      assert [published_note, versioned_note] <|> index_result
+      assert [published_note, versioned_note, deprecated_note] <|> index_result
     end
 
     defp permissions_test_builder(conn, domain, statuses) do
@@ -280,6 +281,51 @@ defmodule TdDdWeb.StructureNoteControllerTest do
         |> Enum.map(fn sn -> Map.get(sn, "id") end)
 
       {structure_notes, index_result}
+    end
+  end
+
+  describe "search" do
+    @tag authentication: [role: "admin"]
+    test "search structure_notes by status and updated_at", %{conn: conn} do
+      n1 = insert(:structure_note, status: :published, updated_at: "2021-01-10T11:00:00")
+      n2 = insert(:structure_note, status: :published, updated_at: "2021-01-10T11:00:00")
+      insert(:structure_note, status: :published, updated_at: "2021-01-01T11:00:00")
+      insert(:structure_note, status: :draft, updated_at: "2021-01-10T11:00:00")
+
+      response = [n1, n2]
+      |> Enum.map(fn(sn) ->
+        %{
+          "status" => sn.status |> Atom.to_string,
+          "df_content" => sn.df_content,
+          "data_structure_id" => sn.data_structure_id,
+          "data_structure_external_id" => sn.data_structure.external_id,
+          "updated_at" => NaiveDateTime.to_iso8601(sn.updated_at)
+        }
+      end)
+
+      assert response <|>
+               (conn
+               |> post(Routes.structure_note_path(conn, :search),
+                    status: "published",
+                    updated_at: "2021-01-02 10:00:00"
+                  )
+               |> json_response(:ok)
+               |> Map.get("data"))
+    end
+
+    @tag authentication: [user_name: "no_admin_user"]
+    test "only admins can search structure_notes by status and updated_at", %{conn: conn} do
+      insert(:structure_note, status: :published, updated_at: "2021-01-10T11:00:00")
+      insert(:structure_note, status: :published, updated_at: "2021-01-10T11:00:00")
+      insert(:structure_note, status: :published, updated_at: "2021-01-01T11:00:00")
+      insert(:structure_note, status: :draft, updated_at: "2021-01-10T11:00:00")
+
+      conn
+      |> post(Routes.structure_note_path(conn, :search),
+          status: "published",
+          updated_at: "2021-01-02 10:00:00"
+        )
+      |> json_response(:forbidden)
     end
   end
 
@@ -512,6 +558,146 @@ defmodule TdDdWeb.StructureNoteControllerTest do
         structure_note: create_attrs
       )
       |> json_response(:created)
+    end
+
+    @tag authentication: [role: "admin"]
+      test "only admins can create a note with force", %{conn: conn} do
+      %{id: data_structure_id} = insert(:data_structure)
+      create_attrs = string_params_for(:structure_note)
+
+      %{"data" => %{"id" => id}} = conn
+        |> post(Routes.data_structure_note_path(conn, :create, data_structure_id),
+          structure_note: create_attrs
+        )
+        |> json_response(:created)
+
+      conn
+        |> put(Routes.data_structure_note_path(conn, :update, data_structure_id, id),
+          structure_note: %{"status" => "pending_approval"}
+        )
+        |> json_response(:ok)
+
+      %{"data" => %{"id" => new_id, "version" => version}} = conn
+        |> post(Routes.data_structure_note_path(conn, :create, data_structure_id),
+          structure_note: create_attrs,
+          force: true
+        )
+        |> json_response(:created)
+
+      assert new_id != id
+      assert version == 1
+    end
+
+    @tag authentication: [role: "admin"]
+      test "admins can create a note with force by external id", %{conn: conn} do
+      %{id: data_structure_id, external_id: data_structure_external_id} = insert(:data_structure)
+      create_attrs = string_params_for(:structure_note)
+
+      %{"data" => %{"id" => id}} = conn
+        |> post(Routes.data_structure_note_path(conn, :create, data_structure_id),
+          structure_note: create_attrs
+        )
+        |> json_response(:created)
+
+      conn
+        |> put(Routes.data_structure_note_path(conn, :update, data_structure_id, id),
+          structure_note: %{"status" => "pending_approval"}
+        )
+        |> json_response(:ok)
+
+      force_create_attrs = create_attrs
+      |> Map.put("data_structure_external_id", data_structure_external_id)
+
+      %{"data" => %{"id" => new_id, "version" => version}} = conn
+        |> post(Routes.structure_note_path(conn, :create_by_external_id),
+          structure_note: force_create_attrs
+        )
+        |> json_response(:created)
+
+      assert new_id != id
+      assert version == 1
+    end
+
+    @tag authentication: [
+      user_name: "non_admin_user",
+      permissions: [
+        :create_structure_note,
+        :edit_structure_note,
+        :send_structure_note_to_approval,
+        :publish_structure_note_from_draft,
+        :deprecate_structure_note,
+        :view_data_structure
+      ]
+    ]
+    test "common users with a lot of permissions can't create a note with force", %{conn: conn, domain: domain} do
+      %{id: data_structure_id} = insert(:data_structure, domain_id: domain.id)
+      create_attrs = string_params_for(:structure_note)
+
+      %{"data" => %{"id" => id}} = conn
+        |> post(Routes.data_structure_note_path(conn, :create, data_structure_id),
+          structure_note: create_attrs
+        )
+        |> json_response(:created)
+
+      conn
+        |> put(Routes.data_structure_note_path(conn, :update, data_structure_id, id),
+          structure_note: %{"status" => "pending_approval"}
+        )
+        |> json_response(:ok)
+
+      conn
+        |> post(Routes.data_structure_note_path(conn, :create, data_structure_id),
+          structure_note: create_attrs,
+          force: true
+        )
+        |> json_response(:forbidden)
+    end
+
+    @tag authentication: [
+      user_name: "non_admin_user",
+      permissions: [
+        :create_structure_note,
+        :edit_structure_note,
+        :publish_structure_note_from_draft,
+        :deprecate_structure_note,
+        :view_data_structure
+      ]
+    ]
+      test "can create notes when the latest note is deprecated, and show the action in hypermedia", %{conn: conn, domain: domain} do
+      %{id: data_structure_id} = insert(:data_structure, domain_id: domain.id)
+      create_attrs = string_params_for(:structure_note)
+
+      %{"data" => %{"id" => id}} = conn
+        |> post(Routes.data_structure_note_path(conn, :create, data_structure_id),
+          structure_note: create_attrs
+        )
+        |> json_response(:created)
+
+      conn
+        |> put(Routes.data_structure_note_path(conn, :update, data_structure_id, id),
+          structure_note: %{"status" => "published"}
+        )
+        |> json_response(:ok)
+
+      conn
+        |> put(Routes.data_structure_note_path(conn, :update, data_structure_id, id),
+          structure_note: %{"status" => "deprecated"}
+        )
+        |> json_response(:ok)
+
+      %{"_actions" => actions} = conn
+        |> get(Routes.data_structure_note_path(conn, :index, data_structure_id))
+        |> json_response(:ok)
+
+      assert %{"draft" => %{"method" => "POST"}} = actions
+
+      %{"data" => %{"id" => new_id}} = conn
+        |> post(Routes.data_structure_note_path(conn, :create, data_structure_id),
+          structure_note: create_attrs
+        )
+        |> json_response(:created)
+
+      assert new_id != id
     end
 
     @tag authentication: [

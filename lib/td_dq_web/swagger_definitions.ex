@@ -31,6 +31,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
           properties do
             id(:integer, "Rule Implementation unique identifier", required: true)
             implementation_key(:string, "Rule Implementation implementation_key", required: true)
+            executable(:boolean, "Rule Implementation executable property")
             rule_id(:integer, "Belongs to rule", required: true)
             dataset(Schema.ref(:DatasetArray), required: false)
             population(Schema.ref(:ConditionArray), required: false)
