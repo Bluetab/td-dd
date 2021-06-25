@@ -30,12 +30,10 @@ defmodule TdDd.Loader.StructuresTest do
 
   describe "update_domain_ids/2" do
     @tag ids: 1..10
-    test "updates domain_id only if changed" do
+    test "updates domain_id only if nil" do
       ts = DateTime.utc_now()
-      new_domain_id = 42
-      records = [%{domain_id: 1, external_id: "1"}, %{domain_id: new_domain_id, external_id: "2"}]
-      assert {:ok, {1, [structure_id]}} = Structures.update_domain_ids(records, ts)
-      assert %{domain_id: ^new_domain_id} = Repo.get!(DataStructure, structure_id)
+      records = [%{domain_id: 1, external_id: "1"}, %{domain_id: 42, external_id: "2"}]
+      assert {:ok, {0, []}} = Structures.update_domain_ids(records, ts)
     end
   end
 
@@ -78,31 +76,23 @@ defmodule TdDd.Loader.StructuresTest do
 
   describe "bulk_update_domain_id/3" do
     @tag ids: 1..5_000
-    test "bulk-updates domain_id if changed, returns count and affected ids", %{ids: ids} do
+    test "bulk-updates domain_id only if nil, returns count and affected ids", %{ids: ids} do
       ts = DateTime.utc_now()
 
       assert {0, []} = Structures.bulk_update_domain_id([], 1, ts)
 
-      assert {2_500, updated_ids} =
-               ids
-               |> Enum.map(&Integer.to_string/1)
-               |> Structures.bulk_update_domain_id(1, ts)
+      %{id: id} =
+        DataStructure
+        |> Repo.get_by!(external_id: "42")
+        |> Ecto.Changeset.change(domain_id: nil)
+        |> Repo.update!()
 
-      assert length(updated_ids) == 2_500
+      assert {1, [^id]} = Structures.bulk_update_domain_id(["42"], 1, ts)
 
-      assert {0, []} =
-               updated_ids
-               |> Enum.map(&Integer.to_string/1)
-               |> Structures.bulk_update_domain_id(1, ts)
-    end
+      string_ids = Enum.map(ids, &Integer.to_string/1)
 
-    @tag ids: 1..10
-    test "handles nil correctly", %{ids: ids} do
-      ts = DateTime.utc_now()
-      external_ids = Enum.map(ids, &Integer.to_string/1)
-
-      assert {10, _} = Structures.bulk_update_domain_id(external_ids, nil, ts)
-      assert {0, []} = Structures.bulk_update_domain_id(external_ids, nil, ts)
+      assert {0, []} = Structures.bulk_update_domain_id(string_ids, nil, ts)
+      assert {0, []} = Structures.bulk_update_domain_id(string_ids, 1, ts)
     end
   end
 end
