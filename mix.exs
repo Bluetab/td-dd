@@ -76,7 +76,7 @@ defmodule TdDd.MixProject do
       {:td_hypermedia, git: "https://github.com/Bluetab/td-hypermedia.git", tag: "4.0.0"},
       {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "4.23.1", override: true},
       {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "4.21.0"},
-      {:graph, git: "https://github.com/Bluetab/graph.git", tag: "1.1.1"},
+      {:graph, git: "https://github.com/Bluetab/graph.git", branch: "feature/td-3867"},
       {:vaultex, "~> 1.0.1"}
     ]
   end
