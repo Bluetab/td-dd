@@ -67,16 +67,8 @@ defmodule TdDd.Loader.Structures do
   defp do_bulk_update_domain_id(external_ids, domain_id, ts) do
     external_ids
     |> structures_by_external_ids()
-    |> where_domain_id_not(domain_id)
+    |> where([ds], is_nil(ds.domain_id))
     |> Repo.update_all(set: [domain_id: domain_id, updated_at: ts])
-  end
-
-  defp where_domain_id_not(query, nil) do
-    where(query, [ds], not is_nil(ds.domain_id))
-  end
-
-  defp where_domain_id_not(query, domain_id) do
-    where(query, [ds], ds.domain_id != ^domain_id)
   end
 
   defp do_bulk_update_source_ids(external_ids, source_id, ts) do
