@@ -6,6 +6,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
   alias TdCache.TemplateCache
   alias TdDd.DataStructures
+  alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Lineage.GraphData
 
@@ -17,11 +18,17 @@ defmodule TdDdWeb.DataStructureControllerTest do
     :ok
   end
 
-  setup %{conn: conn} do
+  setup %{conn: conn} = state do
     %{id: template_id, name: template_name} = template = build(:template, name: @template_name)
     {:ok, _} = TemplateCache.put(template, publish: false)
     system = insert(:system)
-    domain = CacheHelpers.insert_domain()
+
+    domain =
+      case state do
+        %{domain: domain} -> domain
+        _ -> CacheHelpers.insert_domain()
+      end
+
     CacheHelpers.insert_structure_type(structure_type: template_name, template_id: template_id)
     on_exit(fn -> TemplateCache.delete(template_id) end)
 
@@ -95,12 +102,14 @@ defmodule TdDdWeb.DataStructureControllerTest do
     @tag authentication: [role: "admin"]
     test "search with query performs search on dynamic content", %{conn: conn} do
       data_structure = insert(:data_structure, external_id: "boofarfaz")
+
       %{data_structure_id: id} =
         insert(:data_structure_version,
           name: "boofarfaz",
           type: @template_name,
           data_structure: data_structure
         )
+
       insert(:structure_note,
         data_structure: data_structure,
         df_content: %{"string" => "xyzzy"},
@@ -398,6 +407,209 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert String.contains?(resp_body, "foo_latest_note")
       assert not String.contains?(resp_body, child_structure.external_id)
     end
+
+    @tag authentication: [role: "admin"]
+    test "upload, throw error with invalid csv", %{conn: conn} do
+      conn
+      |> post(data_structure_path(conn, :bulk_update_template_content),
+        structures: %Plug.Upload{path: "test/fixtures/td3787/upload.csv"}
+      )
+      |> json_response(:unprocessable_entity)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "upload, valid csv", %{conn: conn, domain: %{id: domain_id}} do
+      data_structure =
+        insert(:data_structure,
+          domain_id: domain_id,
+          external_id: "some_external_id_1"
+        )
+
+      create_data_structure(data_structure)
+
+      conn
+      |> post(data_structure_path(conn, :bulk_update_template_content),
+        structures: %Plug.Upload{path: "test/fixtures/td3787/upload.csv"}
+      )
+      |> response(:ok)
+    end
+
+    @tag authentication: [user_name: "non_admin_user"]
+    test "upload, can not update without permissions", %{conn: conn, domain: %{id: domain_id}} do
+      data_structure =
+        insert(:data_structure,
+          domain_id: domain_id,
+          external_id: "some_external_id_1"
+        )
+
+      create_data_structure(data_structure)
+
+      conn
+      |> post(data_structure_path(conn, :bulk_update_template_content),
+        structures: %Plug.Upload{path: "test/fixtures/td3787/upload.csv"}
+      )
+      |> response(:forbidden)
+    end
+
+    @tag authentication: [
+           user_name: "non_admin_user",
+           permissions: [
+             :create_structure_note,
+             :view_data_structure
+           ]
+         ]
+    test "upload, can create structure_notes", %{conn: conn, domain: %{id: domain_id}} do
+      data_structure =
+        insert(:data_structure,
+          domain_id: domain_id,
+          external_id: "some_external_id_1"
+        )
+
+      create_data_structure(data_structure)
+
+      conn
+      |> post(data_structure_path(conn, :bulk_update_template_content),
+        structures: %Plug.Upload{path: "test/fixtures/td3787/upload.csv"}
+      )
+      |> response(:ok)
+    end
+
+    @tag authentication: [
+           user_name: "non_admin_user",
+           permissions: [
+             :edit_structure_note,
+             :view_data_structure
+           ]
+         ]
+    test "upload, can edit structure_notes", %{conn: conn, domain: %{id: domain_id}} do
+      data_structure =
+        insert(:data_structure,
+          domain_id: domain_id,
+          external_id: "some_external_id_1"
+        )
+
+      create_data_structure(data_structure)
+
+      insert(:structure_note,
+        data_structure: data_structure,
+        df_content: %{"string" => "xyzzy", "list" => "two"},
+        status: :draft
+      )
+
+      conn
+      |> post(data_structure_path(conn, :bulk_update_template_content),
+        structures: %Plug.Upload{path: "test/fixtures/td3787/upload.csv"}
+      )
+      |> response(:ok)
+    end
+
+    @tag authentication: [
+           user_name: "non_admin_user",
+           permissions: [
+             :create_structure_note,
+             :view_data_structure
+           ]
+         ]
+    test "upload, can create structure_notes with a previous published note", %{
+      conn: conn,
+      domain: %{id: domain_id}
+    } do
+      data_structure =
+        insert(:data_structure,
+          domain_id: domain_id,
+          external_id: "some_external_id_1"
+        )
+
+      create_data_structure(data_structure)
+
+      insert(:structure_note,
+        data_structure: data_structure,
+        df_content: %{"string" => "xyzzy", "list" => "two"},
+        status: :published
+      )
+
+      conn
+      |> post(data_structure_path(conn, :bulk_update_template_content),
+        structures: %Plug.Upload{path: "test/fixtures/td3787/upload.csv"}
+      )
+      |> response(:ok)
+
+      latest_note = DataStructures.get_latest_structure_note(data_structure.id)
+      assert latest_note.status == :draft
+      assert latest_note.df_content == %{"string" => "the new content from csv", "list" => "one"}
+    end
+
+    @tag authentication: [
+           user_name: "non_admin_user",
+           permissions: [
+             :create_structure_note,
+             :view_data_structure,
+             :publish_structure_note_from_draft
+           ]
+         ]
+    test "upload, can create and auto-publish structure_notes", %{
+      conn: conn,
+      domain: %{id: domain_id}
+    } do
+      data_structure =
+        insert(:data_structure,
+          domain_id: domain_id,
+          external_id: "some_external_id_1"
+        )
+
+      create_data_structure(data_structure)
+
+      insert(:structure_note,
+        data_structure: data_structure,
+        df_content: %{"string" => "xyzzy", "list" => "two"},
+        status: :published
+      )
+
+      conn
+      |> post(data_structure_path(conn, :bulk_update_template_content),
+        structures: %Plug.Upload{path: "test/fixtures/td3787/upload.csv"},
+        auto_publish: true
+      )
+      |> response(:ok)
+
+      latest_note = DataStructures.get_latest_structure_note(data_structure.id)
+      assert latest_note.status == :published
+      assert latest_note.df_content == %{"string" => "the new content from csv", "list" => "one"}
+
+      assert data_structure.id |> DataStructures.list_structure_notes(:versioned) |> Enum.count() ==
+               1
+    end
+
+    @tag authentication: [
+           user_name: "non_admin_user",
+           permissions: [
+             :create_structure_note,
+             :view_data_structure
+           ]
+         ]
+    test "upload, can not create and auto-publish structure_notes without draft_to_publish permission",
+         %{conn: conn, domain: %{id: domain_id}} do
+      data_structure =
+        insert(:data_structure,
+          domain_id: domain_id,
+          external_id: "some_external_id_1"
+        )
+
+      create_data_structure(data_structure)
+
+      insert(:structure_note,
+        data_structure: data_structure,
+        df_content: %{"string" => "xyzzy", "list" => "two"},
+        status: :published
+      )
+
+      conn
+      |> post(data_structure_path(conn, :bulk_update_template_content),
+        structures: %Plug.Upload{path: "test/fixtures/td3787/upload.csv"},
+        auto_publish: true
+      )
+      |> response(:forbidden)
+    end
   end
 
   defp create_data_structure(%{domain: %{id: domain_id}} = tags) do
@@ -407,6 +619,10 @@ defmodule TdDdWeb.DataStructureControllerTest do
         domain_id: domain_id
       )
 
+    create_data_structure(data_structure)
+  end
+
+  defp create_data_structure(%DataStructure{} = data_structure) do
     data_structure_version =
       insert(:data_structure_version, data_structure_id: data_structure.id, type: @template_name)
 

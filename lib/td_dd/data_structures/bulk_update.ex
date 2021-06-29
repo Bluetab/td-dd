@@ -28,9 +28,9 @@ defmodule TdDd.DataStructures.BulkUpdate do
     )
   end
 
-  def from_csv(nil, _claims), do: {:error, %{message: :no_csv_uploaded}}
+  def from_csv(nil), do: {:error, %{message: :no_csv_uploaded}}
 
-  def from_csv(upload, %Claims{user_id: user_id}) do
+  def from_csv(upload) do
     with {:ok, rows} <- parse_file(upload) do
       rows
       |> Enum.with_index()
@@ -46,8 +46,8 @@ defmodule TdDd.DataStructures.BulkUpdate do
         end
       end)
       |> case do
-        [_ | _] = contents -> do_csv_bulk_update(contents, user_id)
-        errors -> errors
+        [_ | _] = contents -> contents
+        errors -> {:error, errors}
       end
     end
   end
@@ -79,9 +79,11 @@ defmodule TdDd.DataStructures.BulkUpdate do
     end
   end
 
-  defp do_csv_bulk_update(rows, user_id) do
+  def do_csv_bulk_update(rows, user_id), do: do_csv_bulk_update(rows, user_id, false)
+
+  def do_csv_bulk_update(rows, user_id, auto_publish) do
     Multi.new()
-    |> Multi.run(:update_notes, &csv_bulk_update_notes(&1, &2, rows, user_id))
+    |> Multi.run(:update_notes, &csv_bulk_update_notes(&1, &2, rows, user_id, auto_publish))
     |> Multi.run(:updates, &csv_bulk_update(&1, &2, rows))
     |> Multi.run(:audit, &audit(&1, &2, user_id))
     |> Repo.transaction()
@@ -101,10 +103,10 @@ defmodule TdDd.DataStructures.BulkUpdate do
     end
   end
 
-  defp csv_bulk_update_notes(_repo, _changes_so_far, rows, user_id) do
+  defp csv_bulk_update_notes(_repo, _changes_so_far, rows, user_id, auto_publish) do
     rows
     |> Enum.map(fn {content, %{data_structure: data_structure, row_index: row_index}} ->
-      {update_structure_notes(data_structure, content, user_id), row_index}
+      {update_structure_notes(data_structure, content, user_id, auto_publish), row_index}
     end)
     |> Enum.reduce_while(%{}, &csv_reduce_notes_results/2)
     |> case do
@@ -166,7 +168,8 @@ defmodule TdDd.DataStructures.BulkUpdate do
   end
 
   defp do_update(ids, %{} = params, %Claims{user_id: user_id}) do
-    data_structures = DataStructures.list_data_structures([id: {:in, ids}])
+    data_structures = DataStructures.list_data_structures(id: {:in, ids})
+
     Multi.new()
     |> Multi.run(:update_notes, &bulk_update_notes(&1, &2, data_structures, params, user_id))
     |> Multi.run(:updates, &bulk_update(&1, &2, data_structures, params))
@@ -196,8 +199,11 @@ defmodule TdDd.DataStructures.BulkUpdate do
     end
   end
 
-  defp update_structure_notes(data_structure, params, user_id) do
-    case StructureNotesWorkflow.create_or_update(data_structure, params, user_id) do
+  defp update_structure_notes(data_structure, params, user_id),
+    do: update_structure_notes(data_structure, params, user_id, false)
+
+  defp update_structure_notes(data_structure, params, user_id, auto_publish) do
+    case StructureNotesWorkflow.create_or_update(data_structure, params, user_id, auto_publish) do
       {:ok, structure_note} -> {:ok, structure_note}
       error -> {error, data_structure}
     end
