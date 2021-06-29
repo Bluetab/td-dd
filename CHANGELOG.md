@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- [TD-3787] Allow CSV bulk load of structure notes with autopublish capability
+  for non admin users.
+
 ## [4.23.0] 2021-06-28
 
 ### Fixed
