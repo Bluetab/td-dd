@@ -21,6 +21,7 @@ defmodule TdDd.TestOperators do
   ## Equality test for data structures without comparing Ecto associations.
   defp approximately_equal(%DataStructure{} = a, %DataStructure{} = b) do
     Map.drop(a, [
+      :domain_parents,
       :versions,
       :system,
       :domain,
@@ -28,6 +29,7 @@ defmodule TdDd.TestOperators do
       :latest_note
     ]) ==
     Map.drop(b, [
+      :domain_parents,
       :versions,
       :system,
       :domain,

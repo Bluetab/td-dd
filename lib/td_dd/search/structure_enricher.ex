@@ -64,6 +64,7 @@ defmodule TdDd.Search.StructureEnricher do
     reply =
       data_structure
       |> enrich_domain(domains)
+      |> enrich_domain_parents(domains)
       |> enrich_link_count(links)
       |> search_content(content_opt, types, type)
 
@@ -92,6 +93,22 @@ defmodule TdDd.Search.StructureEnricher do
 
   defp enrich_domain(%DataStructure{} = structure, _),
     do: %{structure | domain: %{}}
+
+  defp enrich_domain_parents(%DataStructure{domain_id: domain_id} = structure, %{} = domains)
+       when is_integer(domain_id) do
+    parents =
+      domains
+      |> get_in([domain_id, :parent_ids])
+      |> case do
+        nil -> []
+        ids -> Enum.map(ids, &Map.get(domains, &1, %{}))
+      end
+
+    %{structure | domain_parents: parents}
+  end
+
+  defp enrich_domain_parents(%DataStructure{} = structure, _),
+    do: %{structure | domain_parents: []}
 
   defp search_content(
          %DataStructure{latest_note: %{} = content} = structure,

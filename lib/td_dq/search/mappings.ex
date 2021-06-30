@@ -91,7 +91,7 @@ defmodule TdDq.Search.Mappings do
       domain_parents: %{
         type: "nested",
         properties: %{
-          id: %{type: "long", index: false},
+          id: %{type: "long"},
           name: %{type: "text", fields: @raw}
         }
       },
