@@ -568,7 +568,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
         structures: %Plug.Upload{path: "test/fixtures/td3787/upload.csv"},
-        auto_publish: true
+        auto_publish: "true"
       )
       |> response(:ok)
 
@@ -576,8 +576,9 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert latest_note.status == :published
       assert latest_note.df_content == %{"string" => "the new content from csv", "list" => "one"}
 
-      assert data_structure.id |> DataStructures.list_structure_notes(:versioned) |> Enum.count() ==
-               1
+      assert data_structure.id
+             |> DataStructures.list_structure_notes(:versioned)
+             |> Enum.count() == 1
     end
 
     @tag authentication: [
@@ -606,7 +607,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
         structures: %Plug.Upload{path: "test/fixtures/td3787/upload.csv"},
-        auto_publish: true
+        auto_publish: "true"
       )
       |> response(:forbidden)
     end

@@ -41,4 +41,30 @@ defmodule TdDdWeb.FallbackController do
     Logger.warn("File copy operation failed with error #{inspect(error)}")
     render_error(conn, :insufficient_storage)
   end
+
+  def call(conn, {:error, :update_notes, {action, data_structure}, _struct}) do
+    error = %{
+      errors: %{
+        row: data_structure.row,
+        note: [action]
+      }
+    }
+
+    conn
+    |> put_resp_content_type("application/json", "utf-8")
+    |> send_resp(:unprocessable_entity, Jason.encode!(error))
+  end
+
+  def call(conn, {:forbidden, [{_, %{row_index: row_index}} | _]}) do
+    error = %{
+      errors: %{
+        row: row_index,
+        note: [:insufficient_permissions]
+      }
+    }
+
+    conn
+    |> put_resp_content_type("application/json", "utf-8")
+    |> send_resp(:forbidden, Jason.encode!(error))
+  end
 end

@@ -256,14 +256,12 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   def bulk_update_template_content(conn, params) do
-    # IO.inspect(conn)
-    # IO.inspect(params)
     %{user_id: user_id} = claims = conn.assigns[:current_resource]
     structures_content_upload = Map.get(params, "structures")
-    auto_publish = Map.get(params, "auto_publish", false)
+    auto_publish = params |> Map.get("auto_publish", "false") |> String.to_existing_atom()
 
     with [_ | _] = contents <- BulkUpdate.from_csv(structures_content_upload),
-         {:can, true} <- {:can, can_bulk_actions(contents, auto_publish, claims)},
+         {:forbidden, []} <- {:forbidden, can_bulk_actions(contents, auto_publish, claims)},
          {:ok, %{updates: updates}} <-
            BulkUpdate.do_csv_bulk_update(contents, user_id, auto_publish),
          body <- Jason.encode!(%{data: %{message: Map.keys(updates)}}) do
@@ -273,14 +271,14 @@ defmodule TdDdWeb.DataStructureController do
 
   defp can_bulk_actions(contents, auto_publish, claims) do
     contents
-    |> Enum.map(fn {_content, %{data_structure: data_structure}} ->
+    |> Enum.reject(fn {_content, %{data_structure: data_structure}} ->
       action = StructureNotesWorkflow.get_action_editable_action(data_structure)
 
       can_edit =
         case action do
           :create -> can?(claims, create_structure_note({StructureNote, data_structure}))
           :edit -> can?(claims, edit_structure_note({StructureNote, data_structure}))
-          _ -> false
+          _ -> true
         end
 
       case auto_publish do
@@ -292,7 +290,6 @@ defmodule TdDdWeb.DataStructureController do
           can_edit
       end
     end)
-    |> Enum.reduce(true, fn x, acc -> x and acc end)
   end
 
   defp search_all_structures(claims, permission, params) do
