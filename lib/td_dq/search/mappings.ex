@@ -135,7 +135,10 @@ defmodule TdDq.Search.Mappings do
           errors: %{type: "long"},
           records: %{type: "long"},
           date: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-          result_text: %{type: "text", fields: @raw}
+          result_text: %{
+            type: "text",
+            fields: %{raw: %{type: "keyword", null_value: "quality_result.no_execution"}}
+          }
         }
       },
       _confidential: %{type: "boolean"},
