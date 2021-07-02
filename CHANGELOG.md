@@ -3,8 +3,9 @@
 ## [Unreleased]
 
 ### Added
+
 - [TD-3787] Allow CSV bulk load of structure notes with autopublish capability
-  for non admin users.
+  for non admin users. These updates must follow new structure notes' workflow.
 ### Fixed
 
 - [TD-3867] Exception calculating some lineage graphs (graph 1.2.0)
