@@ -6,6 +6,9 @@
 
 - [TD-3867] Exception calculating some lineage graphs (graph 1.2.0)
 
+### Added
+
+- [TD-3230] Taxonomy aggregations with enriched information
 ## [4.23.0] 2021-06-28
 
 ### Fixed
