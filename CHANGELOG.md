@@ -9,6 +9,7 @@
 ### Added
 
 - [TD-3230] Taxonomy aggregations with enriched information
+
 ## [4.23.0] 2021-06-28
 
 ### Fixed
