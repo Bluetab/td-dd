@@ -262,9 +262,9 @@ defmodule TdDdWeb.DataStructureController do
 
     with [_ | _] = contents <- BulkUpdate.from_csv(structures_content_upload),
          {:forbidden, []} <- {:forbidden, can_bulk_actions(contents, auto_publish, claims)},
-         {:ok, %{updates: updates}} <-
+         {:ok, %{updates: updates, update_notes: update_notes}} <-
            BulkUpdate.do_csv_bulk_update(contents, user_id, auto_publish),
-         body <- Jason.encode!(%{data: %{message: Map.keys(updates)}}) do
+         body <- Jason.encode!(%{data: %{message: Enum.uniq(Map.keys(updates) ++ Map.keys(update_notes))}}) do
       send_resp(conn, :ok, body)
     end
   end
