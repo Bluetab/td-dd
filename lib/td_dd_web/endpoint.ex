@@ -1,8 +1,6 @@
 defmodule TdDdWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :td_dd
 
-  alias TdDdWeb.BodyReader
-
   # Serve at "/" the static files from "priv/static" directory.
   #
   # You should set gzip to true if you are running phoenix.digest
@@ -20,10 +18,11 @@ defmodule TdDdWeb.Endpoint do
 
   plug(
     Plug.Parsers,
-    parsers: [:urlencoded, {:multipart, length: BodyReader.max_payload_length()}, :json],
-    body_reader: {BodyReader, :read_body, [length: BodyReader.max_payload_length()]},
+    parsers: [:urlencoded, :multipart, :json],
     pass: ["*/*"],
-    json_decoder: Jason
+    json_decoder: Jason,
+    length:
+      Application.get_env(:td_dd, __MODULE__) |> Keyword.get(:max_payload_length, 100_000_000)
   )
 
   plug(Plug.MethodOverride)
