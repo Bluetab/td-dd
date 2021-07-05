@@ -5,7 +5,6 @@ defmodule TdDdWeb.BodyReader do
   """
 
   def read_body(conn, opts) do
-    opts = Keyword.put(opts, :length, max_payload_length())
     Plug.Conn.read_body(conn, opts)
   end
 

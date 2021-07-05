@@ -21,7 +21,7 @@ defmodule TdDdWeb.Endpoint do
   plug(
     Plug.Parsers,
     parsers: [:urlencoded, {:multipart, length: BodyReader.max_payload_length()}, :json],
-    body_reader: {BodyReader, :read_body, []},
+    body_reader: {BodyReader, :read_body, [length: BodyReader.max_payload_length()]},
     pass: ["*/*"],
     json_decoder: Jason
   )
