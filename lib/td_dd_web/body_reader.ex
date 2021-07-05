@@ -9,7 +9,7 @@ defmodule TdDdWeb.BodyReader do
     Plug.Conn.read_body(conn, opts)
   end
 
-  defp max_payload_length do
+  def max_payload_length do
     :td_dd
     |> Application.get_env(__MODULE__)
     |> Keyword.get(:max_payload_length, 100_000_000)
