@@ -2,9 +2,14 @@
 
 ## [Unreleased]
 
+### Changed
+
+- [TD-3933] Maximum size of payload for metadata upload using multipart data can
+  now be configured using the `MAX_PAYLOAD_LENGTH` environment variable
+
 ### Fixed
 
-- [TD-3752] Show execution implementation filter with no result data.
+- [TD-3752] Show execution implementation filter with no result data
 - [TD-3867] Exception calculating some lineage graphs (graph 1.2.0)
 
 ## [4.23.0] 2021-06-28
