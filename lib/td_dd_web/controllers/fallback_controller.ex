@@ -42,6 +42,30 @@ defmodule TdDdWeb.FallbackController do
     render_error(conn, :insufficient_storage)
   end
 
+  def call(conn, {:error, :update_notes, {%Ecto.Changeset{errors: errors}, %{row: row}}, _}) do
+    {field, error_message} =
+      errors
+      |> Enum.map(fn {k, v} ->
+        case v do
+          {_error, [{field, {_, [{_, e} | _]}} | _]} -> {field, "#{k}.#{e}"}
+          _ -> {nil, "#{k}.default"}
+        end
+      end)
+      |> Enum.at(0, {nil, "default"})
+
+    error = %{
+      errors: %{
+        row: row,
+        field: field,
+        note: [error_message]
+      }
+    }
+
+    conn
+    |> put_resp_content_type("application/json", "utf-8")
+    |> send_resp(:unprocessable_entity, Jason.encode!(error))
+  end
+
   def call(conn, {:error, :update_notes, {action, data_structure}, _struct}) do
     error = %{
       errors: %{
