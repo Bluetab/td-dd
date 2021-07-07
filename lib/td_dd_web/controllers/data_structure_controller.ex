@@ -10,6 +10,8 @@ defmodule TdDdWeb.DataStructureController do
   alias TdDd.DataStructures
   alias TdDd.DataStructures.BulkUpdate
   alias TdDd.DataStructures.Search
+  alias TdDd.DataStructures.StructureNote
+  alias TdDd.DataStructures.StructureNotesWorkflow
   alias TdDdWeb.SwaggerDefinitions
 
   action_fallback(TdDdWeb.FallbackController)
@@ -242,8 +244,10 @@ defmodule TdDdWeb.DataStructureController do
     with {:can, true} <- {:can, can?(claims, create(BulkUpdate))},
          %{results: results} <- search_all_structures(claims, permission, search_params),
          ids <- Enum.map(results, & &1.id),
-         {:ok, %{updates: updates, update_notes: update_notes}} <- BulkUpdate.update_all(ids, update_params, claims) do
-      body = Jason.encode!(%{data: %{message: Enum.uniq(Map.keys(updates) ++ Map.keys(update_notes))}})
+         {:ok, %{updates: updates, update_notes: update_notes}} <-
+           BulkUpdate.update_all(ids, update_params, claims) do
+      body =
+        Jason.encode!(%{data: %{message: Enum.uniq(Map.keys(updates) ++ Map.keys(update_notes))}})
 
       conn
       |> put_resp_content_type("application/json", "utf-8")
@@ -252,14 +256,40 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   def bulk_update_template_content(conn, params) do
-    claims = conn.assigns[:current_resource]
+    %{user_id: user_id} = claims = conn.assigns[:current_resource]
     structures_content_upload = Map.get(params, "structures")
+    auto_publish = params |> Map.get("auto_publish", "false") |> String.to_existing_atom()
 
-    with {:can, true} <- {:can, can?(claims, create(BulkUpdate))},
-         {:ok, %{updates: updates}} <- BulkUpdate.from_csv(structures_content_upload, claims),
-         body <- Jason.encode!(%{data: %{message: Map.keys(updates)}}) do
+    with [_ | _] = contents <- BulkUpdate.from_csv(structures_content_upload),
+         {:forbidden, []} <- {:forbidden, can_bulk_actions(contents, auto_publish, claims)},
+         {:ok, %{updates: updates, update_notes: update_notes}} <-
+           BulkUpdate.do_csv_bulk_update(contents, user_id, auto_publish),
+         body <- Jason.encode!(%{data: %{message: Enum.uniq(Map.keys(updates) ++ Map.keys(update_notes))}}) do
       send_resp(conn, :ok, body)
     end
+  end
+
+  defp can_bulk_actions(contents, auto_publish, claims) do
+    contents
+    |> Enum.reject(fn {_content, %{data_structure: data_structure}} ->
+      action = StructureNotesWorkflow.get_action_editable_action(data_structure)
+
+      can_edit =
+        case action do
+          :create -> can?(claims, create_structure_note({StructureNote, data_structure}))
+          :edit -> can?(claims, edit_structure_note({StructureNote, data_structure}))
+          _ -> true
+        end
+
+      case auto_publish do
+        true ->
+          can_edit and
+            can?(claims, publish_structure_note_from_draft({StructureNote, data_structure}))
+
+        _ ->
+          can_edit
+      end
+    end)
   end
 
   defp search_all_structures(claims, permission, params) do
