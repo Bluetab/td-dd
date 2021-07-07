@@ -6,29 +6,44 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.StructureNote
 
+  def create_or_update(%DataStructure{id: _data_structure_id} = data_structure, params, user_id),
+    do: create_or_update(data_structure, params, user_id, false)
+
   def create_or_update(
-    %DataStructure{id: data_structure_id} = data_structure,
-    params,
-    user_id
-  ) do
+        %DataStructure{id: data_structure_id} = data_structure,
+        params,
+        user_id,
+        auto_publish
+      ) do
     latest_note = get_latest_structure_note(data_structure_id)
     is_strict_update = false
 
-    case can_create_new_draft(latest_note) do
-      :ok -> create(data_structure, params, true, user_id)
-      _cannot_create -> update(latest_note, params, is_strict_update, user_id)
+    structure_note =
+      case can_create_new_draft(latest_note) do
+        :ok -> create(data_structure, params, true, user_id)
+        _cannot_create -> update(latest_note, params, is_strict_update, user_id)
+      end
+
+    case {structure_note, auto_publish} do
+      {{:ok, %StructureNote{} = note_to_publish}, true} -> publish(note_to_publish)
+      _ -> structure_note
     end
   end
 
-  def create(%DataStructure{} = data_structure, params, false = _force_creation, user_id), do: create(data_structure, params, user_id)
+  def create(%DataStructure{} = data_structure, params, false = _force_creation, user_id),
+    do: create(data_structure, params, user_id)
+
   def create(
-    %DataStructure{id: data_structure_id} = data_structure,
-    params,
-    true = _force_creation,
-    user_id
-  ) do
+        %DataStructure{id: data_structure_id} = data_structure,
+        params,
+        true = _force_creation,
+        user_id
+      ) do
     latest_note = get_latest_structure_note(data_structure_id)
-    if can_create_new_draft(latest_note) != :ok, do: DataStructures.delete_structure_note(latest_note)
+
+    if can_create_new_draft(latest_note) != :ok,
+      do: DataStructures.delete_structure_note(latest_note)
+
     create(data_structure, params, user_id)
   end
 
@@ -91,11 +106,19 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
 
   # Lifecycle actions for structure notes
   defp update_content(structure_note, new_df_content, user_id, true = _is_strict) do
-    DataStructures.update_structure_note(structure_note, %{"df_content" => new_df_content}, user_id)
+    DataStructures.update_structure_note(
+      structure_note,
+      %{"df_content" => new_df_content},
+      user_id
+    )
   end
 
   defp update_content(structure_note, new_df_content, user_id, false = _is_strict) do
-    DataStructures.bulk_update_structure_note(structure_note, %{"df_content" => new_df_content}, user_id)
+    DataStructures.bulk_update_structure_note(
+      structure_note,
+      %{"df_content" => new_df_content},
+      user_id
+    )
   end
 
   defp send_for_approval(structure_note), do: simple_transition(structure_note, :pending_approval)
@@ -181,6 +204,22 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
   defp get_latest_structure_note(data_structure_id) do
     data_structure_id
     |> DataStructures.get_latest_structure_note()
+  end
+
+  def get_action_editable_action(%DataStructure{id: id}) do
+    id
+    |> DataStructures.get_latest_structure_note()
+    |> get_action_editable_action()
+  end
+
+  def get_action_editable_action(nil), do: :create
+
+  def get_action_editable_action(%{status: status} = structure_note) do
+    case {can_create_new_draft(structure_note), status} do
+      {:ok, _status} -> :create
+      {:conflict, :draft} -> :edit
+      _ -> :conflict
+    end
   end
 
   defp can_create_new_draft(nil), do: :ok
