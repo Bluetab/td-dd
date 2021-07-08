@@ -18,10 +18,11 @@ defmodule TdDdWeb.Endpoint do
 
   plug(
     Plug.Parsers,
-    parsers: [:urlencoded, {:multipart, length: 100_000_000}, :json],
-    body_reader: {TdDdWeb.BodyReader, :read_body, []},
+    parsers: [:urlencoded, :multipart, :json],
     pass: ["*/*"],
-    json_decoder: Jason
+    json_decoder: Jason,
+    length:
+      Application.get_env(:td_dd, __MODULE__) |> Keyword.get(:max_payload_length, 100_000_000)
   )
 
   plug(Plug.MethodOverride)

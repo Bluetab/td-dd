@@ -397,6 +397,31 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
     end
   end
 
+  describe "create or update" do
+    test "can only be done if it does not have a note or if it has one with draft, published or deprecated status" do
+      attrs = %{"df_content" => %{"foo" => "value_new", "baz" => "new_value"}}
+
+      data_structure_without_notes = create_data_structure_with_version()
+
+      assert {:ok, _} =
+               StructureNotesWorkflow.create_or_update(data_structure_without_notes, attrs, nil)
+
+      [:draft, :published, :deprecated]
+      |> Enum.each(fn status ->
+        data_structure = create_data_structure_with_version()
+        insert(:structure_note, status: status, data_structure_id: data_structure.id)
+        assert {:ok, _} = StructureNotesWorkflow.create_or_update(data_structure, attrs, nil)
+      end)
+
+      [:pending_approval, :versioned, :rejected]
+      |> Enum.each(fn status ->
+        data_structure = create_data_structure_with_version()
+        insert(:structure_note, status: status, data_structure_id: data_structure.id)
+        assert {:error, _} = StructureNotesWorkflow.create_or_update(data_structure, attrs, nil)
+      end)
+    end
+  end
+
   describe "delete" do
     test "can only delete a rejected or draft note" do
       [:rejected, :draft]
@@ -413,6 +438,39 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
                  :structure_note
                  |> insert(status: status)
                  |> StructureNotesWorkflow.delete()
+      end)
+    end
+  end
+
+  describe "editable actions" do
+    test "get the needed action to create or udpate the df_content" do
+      assert :create = StructureNotesWorkflow.get_action_editable_action(nil)
+
+      [:draft]
+      |> Enum.each(fn status ->
+        data_structure = create_data_structure_with_version()
+
+        assert :edit ==
+                 insert(:structure_note, status: status, data_structure_id: data_structure.id)
+                 |> StructureNotesWorkflow.get_action_editable_action()
+      end)
+
+      [:published, :deprecated]
+      |> Enum.each(fn status ->
+        data_structure = create_data_structure_with_version()
+
+        assert :create ==
+                 insert(:structure_note, status: status, data_structure_id: data_structure.id)
+                 |> StructureNotesWorkflow.get_action_editable_action()
+      end)
+
+      [:pending_approval, :versioned, :rejected]
+      |> Enum.each(fn status ->
+        data_structure = create_data_structure_with_version()
+
+        assert :conflict ==
+                 insert(:structure_note, status: status, data_structure_id: data_structure.id)
+                 |> StructureNotesWorkflow.get_action_editable_action()
       end)
     end
   end

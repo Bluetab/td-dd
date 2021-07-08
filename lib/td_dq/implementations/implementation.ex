@@ -219,7 +219,7 @@ defmodule TdDq.Implementations.Implementation do
 
     defp get_execution_result_info(%Rule{} = rule, implementation_key) do
       case RuleResults.get_latest_rule_result(implementation_key) do
-        nil -> nil
+        nil -> %{result_text: nil}
         result -> build_result_info(rule, result)
       end
     end
