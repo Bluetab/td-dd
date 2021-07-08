@@ -8,7 +8,6 @@ defmodule TdDd.Search.Aggregations do
   def aggregation_terms do
     static_keywords = [
       {"system.name.raw", %{terms: %{field: "system.name.raw", size: 50}}},
-      {"domain.name.raw", %{terms: %{field: "domain.name.raw", size: 50}}},
       {"group.raw", %{terms: %{field: "group.raw", size: 50}}},
       {"type.raw", %{terms: %{field: "type.raw", size: 50}}},
       {"confidential.raw", %{terms: %{field: "confidential.raw"}}},
@@ -17,7 +16,12 @@ defmodule TdDd.Search.Aggregations do
       {"with_content.raw", %{terms: %{field: "with_content.raw"}}},
       {"tags.raw", %{terms: %{field: "tags.raw", size: 50}}},
       {"linked_concepts_count",
-       %{terms: %{script: "doc['linked_concepts_count'].value > 0 ? 'linked' : 'unlinked'"}}}
+       %{terms: %{script: "doc['linked_concepts_count'].value > 0 ? 'linked' : 'unlinked'"}}},
+      {"taxonomy",
+       %{
+         nested: %{path: "domain_parents"},
+         aggs: %{distinct_search: %{terms: %{field: "domain_parents.id", size: 50}}}
+       }}
     ]
 
     ["dd", "cx"]
