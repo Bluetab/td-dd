@@ -1,5 +1,26 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-3787] Allow CSV bulk load of structure notes with autopublish capability
+  for non admin users. These updates must follow new structure notes' workflow.
+  
+### Changed
+
+- [TD-3933] Maximum size of payload for metadata upload using multipart data can
+  now be configured using the `MAX_PAYLOAD_LENGTH` environment variable
+
+### Fixed
+
+- [TD-3752] Show execution implementation filter with no result data
+- [TD-3867] Exception calculating some lineage graphs (graph 1.2.0)
+
+### Added
+
+- [TD-3230] Taxonomy aggregations with enriched information
+
 ## [4.23.0] 2021-06-28
 
 ### Fixed
@@ -29,6 +50,7 @@
   each structure, assume 1 if structure has any linked concepts and 0 otherwise.
 - [TD-3718] Get the extra information when structures are downloaded
 - [TD-3864] Issue serializing certain lineage graphs as JSON
+
 ### Added
 
 - [TD-3736] Tags in data structure version document

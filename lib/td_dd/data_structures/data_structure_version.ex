@@ -150,6 +150,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       |> Map.put(:latest_note, content)
       |> Map.put(:domain_ids, domain_ids(data_structure))
       |> Map.put(:domain, domain(data_structure))
+      |> Map.put(:domain_parents, domains(data_structure))
       |> Map.put(:field_type, field_type(dsv))
       |> Map.put(:path_sort, path_sort(name_path))
       |> Map.put(:path, name_path)
@@ -182,6 +183,9 @@ defmodule TdDd.DataStructures.DataStructureVersion do
 
     defp domain(%{domain: %{} = domain}), do: Map.take(domain, [:id, :external_id, :name])
     defp domain(_), do: %{}
+
+    defp domains(%{domain_parents: [_ | _] = domains}), do: Enum.map(domains, &domain(%{domain: &1}))
+    defp domains(_), do: []
 
     defp system(%{system: %{} = system}), do: Map.take(system, [:id, :external_id, :name])
 

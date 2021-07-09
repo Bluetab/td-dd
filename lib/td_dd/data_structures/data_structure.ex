@@ -40,6 +40,7 @@ defmodule TdDd.DataStructures.DataStructure do
     field(:latest_metadata, :map, virtual: true)
     field(:latest_note, :map, virtual: true)
     field(:domain, :map, virtual: true)
+    field(:domain_parents, {:array, :map}, virtual: true)
     # Note, the value of this field is 1 (has linked concepts) or 0 (no linked concepts)
     field(:linked_concepts_count, :integer, virtual: true)
     field(:search_content, :map, virtual: true)

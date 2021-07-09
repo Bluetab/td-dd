@@ -225,7 +225,7 @@ defmodule TdDq.Rules.Rule do
 
     defp get_execution_result_info(%Rule{} = rule) do
       case RuleResults.get_latest_rule_results(rule) do
-        [] -> nil
+        [] -> %{result_text: nil}
         results -> get_execution_result_info(rule, results)
       end
     end

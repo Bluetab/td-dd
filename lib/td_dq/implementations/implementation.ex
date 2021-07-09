@@ -197,6 +197,7 @@ defmodule TdDq.Implementations.Implementation do
       structure_aliases = Implementations.get_sources(implementation)
 
       template = TemplateCache.get_by_name!(implementation.df_name) || %{content: []}
+
       df_content =
         implementation
         |> Map.get(:df_content)
@@ -229,7 +230,7 @@ defmodule TdDq.Implementations.Implementation do
         nil ->
           case quality_event do
             %{type: "FAILED"} -> build_result_info(nil, nil, quality_event)
-            _ -> nil
+            _ -> %{result_text: nil}
           end
 
         result ->

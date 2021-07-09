@@ -2,6 +2,8 @@ defmodule TdDq.Search do
   @moduledoc """
   Search Engine calls
   """
+
+  alias TdCache.TaxonomyCache
   alias TdDd.Search.Cluster
 
   require Logger
@@ -39,6 +41,15 @@ defmodule TdDq.Search do
     aggregations
     |> Map.to_list()
     |> Enum.into(%{}, &filter_values/1)
+  end
+
+  defp filter_values({"taxonomy", %{"buckets" => buckets}}) do
+    domains =
+      buckets
+      |> Enum.map(& &1["key"])
+      |> Enum.map(&TaxonomyCache.get_domain/1)
+
+    {"taxonomy", domains}
   end
 
   defp filter_values({name, %{"buckets" => buckets}}) do

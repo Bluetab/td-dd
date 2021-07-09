@@ -3,6 +3,7 @@ defmodule TdDd.Search do
   Search Engine calls
   """
 
+  alias TdCache.TaxonomyCache
   alias TdDd.Search.Cluster
 
   require Logger
@@ -69,6 +70,15 @@ defmodule TdDd.Search do
         Logger.warn("Error response from Elasticsearch: #{message}")
         error
     end
+  end
+
+  defp filter_values({"taxonomy", %{"buckets" => buckets}}) do
+    domains =
+      buckets
+      |> Enum.map(& &1["key"])
+      |> Enum.map(&TaxonomyCache.get_domain/1)
+
+    {"taxonomy", domains}
   end
 
   defp filter_values({name, %{"buckets" => buckets}}) do
