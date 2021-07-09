@@ -154,7 +154,7 @@ defmodule TdDd.Factory do
   def system_factory do
     %System{
       name: sequence("system_name"),
-      external_id: sequence("system_external_id"),
+      external_id: sequence("system_external_id")
     }
   end
 
@@ -348,6 +348,12 @@ defmodule TdDd.Factory do
   def execution_group_factory do
     %TdDq.Executions.Group{
       created_by_id: 0
+    }
+  end
+
+  def quality_event_factory do
+    %TdDq.Events.QualityEvent{
+      type: "PENDING"
     }
   end
 

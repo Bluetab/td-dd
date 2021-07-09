@@ -9,6 +9,7 @@ defmodule TdDq.Executions.Execution do
 
   import Ecto.Changeset
 
+  alias TdDq.Events.QualityEvent
   alias TdDq.Executions.Group
   alias TdDq.Implementations.Implementation
   alias TdDq.Rules.RuleResult
@@ -18,6 +19,7 @@ defmodule TdDq.Executions.Execution do
     belongs_to(:group, Group)
     belongs_to(:implementation, Implementation)
     belongs_to(:result, RuleResult)
+    has_many(:quality_events, QualityEvent)
     has_one(:rule, through: [:implementation, :rule])
     timestamps(type: :utc_datetime_usec)
   end
@@ -33,5 +35,6 @@ defmodule TdDq.Executions.Execution do
     |> foreign_key_constraint(:group_id)
     |> foreign_key_constraint(:implementation_id)
     |> foreign_key_constraint(:result_id)
+    |> cast_assoc(:quality_events, with: &QualityEvent.changeset/2, required: false)
   end
 end

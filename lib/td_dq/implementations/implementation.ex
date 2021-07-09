@@ -8,6 +8,7 @@ defmodule TdDq.Implementations.Implementation do
 
   alias Ecto.Changeset
   alias TdDfLib.Validation
+  alias TdDq.Events.QualityEvents
   alias TdDq.Implementations
   alias TdDq.Implementations.ConditionRow
   alias TdDq.Implementations.DatasetRow
@@ -178,11 +179,16 @@ defmodule TdDq.Implementations.Implementation do
 
     @impl Elasticsearch.Document
     def encode(
-          %Implementation{implementation_key: implementation_key, rule: rule} = implementation
+          %Implementation{
+            implementation_key: implementation_key,
+            rule: rule,
+            id: implementation_id
+          } = implementation
         ) do
+      quality_event = QualityEvents.get_event_by_imp(implementation_id)
       confidential = Helpers.confidential?(rule)
       bcv = Helpers.get_business_concept_version(rule)
-      execution_result_info = get_execution_result_info(rule, implementation_key)
+      execution_result_info = get_execution_result_info(rule, implementation_key, quality_event)
       domain = Helpers.get_domain(rule)
       domain_ids = Helpers.get_domain_ids(domain)
       domain_parents = Helpers.get_domain_parents(domain)
@@ -203,6 +209,7 @@ defmodule TdDq.Implementations.Implementation do
       |> transform_population()
       |> transform_validations()
       |> with_rule(rule)
+      |> with_quality_event(quality_event)
       |> Map.put(:raw_content, get_raw_content(implementation))
       |> Map.put(:rule, Map.take(rule, @rule_keys))
       |> Map.put(:structure_aliases, structure_aliases)
@@ -217,16 +224,30 @@ defmodule TdDq.Implementations.Implementation do
       |> Map.put(:df_content, df_content)
     end
 
-    defp get_execution_result_info(%Rule{} = rule, implementation_key) do
+    defp get_execution_result_info(%Rule{} = rule, implementation_key, quality_event) do
       case RuleResults.get_latest_rule_result(implementation_key) do
-        nil -> nil
-        result -> build_result_info(rule, result)
+        nil ->
+          case quality_event do
+            %{type: "FAILED"} -> build_result_info(nil, nil, quality_event)
+            _ -> nil
+          end
+
+        result ->
+          build_result_info(rule, result, quality_event)
       end
     end
 
     defp build_result_info(
+           _rule,
+           _rule_result,
+           %{type: "FAILED" = qe_type}
+         ),
+         do: Helpers.with_result_text(%{}, nil, nil, qe_type)
+
+    defp build_result_info(
            %Rule{minimum: minimum, goal: goal, result_type: result_type},
-           rule_result
+           rule_result,
+           _quality_event
          ) do
       Map.new()
       |> with_result(rule_result)
@@ -242,6 +263,14 @@ defmodule TdDq.Implementations.Implementation do
 
     defp with_date(result_map, rule_result) do
       Map.put(result_map, :date, Map.get(rule_result, :date))
+    end
+
+    defp with_quality_event(result_map, nil), do: result_map
+
+    defp with_quality_event(result_map, %{type: type, inserted_at: inserted_at}) do
+      result_map
+      |> Map.put(:qe_type, type)
+      |> Map.put(:qe_inserted_at, inserted_at)
     end
 
     defp get_raw_content(implementation) do
