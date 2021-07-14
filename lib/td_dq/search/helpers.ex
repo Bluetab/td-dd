@@ -102,9 +102,6 @@ defmodule TdDq.Search.Helpers do
     Map.put(result_map, :result_text, result_text)
   end
 
-  def with_result_text(result_map, _minimum, _goal, "FAILED"),
-    do: Map.put(result_map, :result_text, "quality_result.failed")
-
   def with_result_text(result_map, _minimum, _goal, _type) do
     result_map
   end

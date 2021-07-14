@@ -229,26 +229,21 @@ defmodule TdDq.Implementations.Implementation do
       case RuleResults.get_latest_rule_result(implementation_key) do
         nil ->
           case quality_event do
-            %{type: "FAILED"} -> build_result_info(nil, nil, quality_event)
-            _ -> %{result_text: nil}
+            %{type: "FAILED"} ->
+              %{result_text: "quality_result.failed", date: quality_event.inserted_at}
+
+            _ ->
+              %{result_text: nil}
           end
 
         result ->
-          build_result_info(rule, result, quality_event)
+          build_result_info(rule, result)
       end
     end
 
     defp build_result_info(
-           _rule,
-           _rule_result,
-           %{type: "FAILED" = qe_type}
-         ),
-         do: Helpers.with_result_text(%{}, nil, nil, qe_type)
-
-    defp build_result_info(
            %Rule{minimum: minimum, goal: goal, result_type: result_type},
-           rule_result,
-           _quality_event
+           rule_result
          ) do
       Map.new()
       |> with_result(rule_result)
@@ -270,8 +265,8 @@ defmodule TdDq.Implementations.Implementation do
 
     defp with_quality_event(result_map, %{type: type, inserted_at: inserted_at}) do
       result_map
-      |> Map.put(:qe_type, type)
-      |> Map.put(:qe_inserted_at, inserted_at)
+      |> Map.put(:event_type, type)
+      |> Map.put(:event_inserted_at, inserted_at)
     end
 
     defp get_raw_content(implementation) do

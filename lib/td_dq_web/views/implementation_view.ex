@@ -31,8 +31,8 @@ defmodule TdDqWeb.ImplementationView do
       :df_name,
       :df_content,
       :executable,
-      :qe_type,
-      :qe_inserted_at
+      :event_type,
+      :event_inserted_at
     ])
     |> Map.put(
       :raw_content,
@@ -58,8 +58,8 @@ defmodule TdDqWeb.ImplementationView do
       :df_name,
       :df_content,
       :executable,
-      :qe_type,
-      :qe_inserted_at
+      :event_type,
+      :event_inserted_at
     ])
     |> Map.put(:dataset, render_many(implementation.dataset, DatasetView, "dataset_row.json"))
     |> Map.put(
@@ -125,9 +125,9 @@ defmodule TdDqWeb.ImplementationView do
 
       quality_event ->
         implementation_mapping
-        |> Map.put(:qe_type, quality_event.type)
-        |> Map.put(:qe_message, quality_event.message)
-        |> Map.put(:qe_inserted_at, quality_event.inserted_at)
+        |> Map.put(:event_type, quality_event.type)
+        |> Map.put(:event_message, quality_event.message)
+        |> Map.put(:event_inserted_at, quality_event.inserted_at)
     end
   end
 
