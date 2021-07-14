@@ -155,6 +155,7 @@ defmodule TdDqWeb.ImplementationController do
       implementation_params
       |> decode()
       |> Map.drop([:implementation_type, "implementation_type"])
+      |> with_deleted_at()
 
     implementation =
       id
@@ -171,16 +172,9 @@ defmodule TdDqWeb.ImplementationController do
 
     # TODO: Refactor this (and remove {:editable, false} from fallback controller)
     with {:can, true} <- {:can, can?(claims, update(resource_type))},
-         {:editable, true} <-
-           {:editable,
-            Enum.empty?(implementation.all_rule_results) ||
-              implementation_params == %{"soft_delete" => true}},
+         {:editable, true} <- {:editable, editable?(implementation, implementation_params)},
          {:ok, %{implementation: %Implementation{} = implementation}} <-
-           Implementations.update_implementation(
-             implementation,
-             with_soft_delete(update_params),
-             claims
-           ) do
+           Implementations.update_implementation(implementation, update_params, claims) do
       render(conn, "show.json", implementation: implementation)
     end
   end
@@ -285,11 +279,25 @@ defmodule TdDqWeb.ImplementationController do
     )
   end
 
-  defp with_soft_delete(%{"soft_delete" => true} = params) do
-    params
-    |> Map.delete("soft_delete")
-    |> Map.put("deleted_at", DateTime.utc_now())
-  end
+  defp editable?(%{all_rule_results: []}, _params), do: true
+  defp editable?(_implementation, %{"soft_delete" => true}), do: true
+  defp editable?(_implementation, %{"restore" => true}), do: true
+  defp editable?(_implementation, _parmas), do: false
 
-  defp with_soft_delete(params), do: params
+  defp with_deleted_at(params) do
+    case params do
+      %{"soft_delete" => true} ->
+        params
+        |> Map.delete("soft_delete")
+        |> Map.put("deleted_at", DateTime.utc_now())
+
+      %{"restore" => true} ->
+        params
+        |> Map.delete("restore")
+        |> Map.put("deleted_at", nil)
+
+      _ ->
+        params
+    end
+  end
 end
