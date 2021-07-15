@@ -274,18 +274,17 @@ defmodule TdDqWeb.ImplementationController do
   end
 
   defp add_rule_results(implementation) do
-    implementation
-    |> Map.put(
+    Map.put(
+      implementation,
       :all_rule_results,
       RuleResults.get_implementation_results(implementation.implementation_key)
     )
   end
 
   defp add_quality_event(%{id: id} = implementation) do
-    implementation
-    |> Map.put(:quality_event, QualityEvents.get_event_by_imp(id))
+    Map.put(implementation, :quality_event, QualityEvents.get_event_by_imp(id))
   end
-  
+
   defp editable?(%{all_rule_results: []}, _params), do: true
   defp editable?(_implementation, %{"soft_delete" => true}), do: true
   defp editable?(_implementation, %{"restore" => true}), do: true
