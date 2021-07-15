@@ -6,6 +6,7 @@
 
 - [TD-3787] Allow CSV bulk load of structure notes with autopublish capability
   for non admin users. These updates must follow new structure notes' workflow.
+- [TD-3878] domain id to structures cache
   
 ### Changed
 
