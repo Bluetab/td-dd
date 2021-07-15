@@ -30,7 +30,9 @@ defmodule TdDqWeb.ImplementationView do
       :structure_aliases,
       :df_name,
       :df_content,
-      :executable
+      :executable,
+      :event_type,
+      :event_inserted_at
     ])
     |> Map.put(
       :raw_content,
@@ -38,6 +40,7 @@ defmodule TdDqWeb.ImplementationView do
     )
     |> add_rule(implementation)
     |> add_last_rule_results(implementation)
+    |> add_quality_event_info(implementation)
     |> add_rule_results(implementation)
   end
 
@@ -54,7 +57,9 @@ defmodule TdDqWeb.ImplementationView do
       :structure_aliases,
       :df_name,
       :df_content,
-      :executable
+      :executable,
+      :event_type,
+      :event_inserted_at
     ])
     |> Map.put(:dataset, render_many(implementation.dataset, DatasetView, "dataset_row.json"))
     |> Map.put(
@@ -66,6 +71,7 @@ defmodule TdDqWeb.ImplementationView do
       render_many(implementation.validations, ConditionView, "condition_row.json")
     )
     |> add_rule(implementation)
+    |> add_quality_event_info(implementation)
     |> add_last_rule_results(implementation)
     |> add_rule_results(implementation)
   end
@@ -110,6 +116,19 @@ defmodule TdDqWeb.ImplementationView do
 
     implementation_mapping
     |> Map.put(:rule_results, rule_results_mappings)
+  end
+
+  defp add_quality_event_info(implementation_mapping, implementation) do
+    case Map.get(implementation, :quality_event, nil) do
+      nil ->
+        implementation_mapping
+
+      quality_event ->
+        implementation_mapping
+        |> Map.put(:event_type, quality_event.type)
+        |> Map.put(:event_message, quality_event.message)
+        |> Map.put(:event_inserted_at, quality_event.inserted_at)
+    end
   end
 
   defp add_rule_results(implementation_mapping, implementation) do
