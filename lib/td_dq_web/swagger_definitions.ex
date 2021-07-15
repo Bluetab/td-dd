@@ -426,4 +426,35 @@ defmodule TdDqWeb.SwaggerDefinitions do
         end
     }
   end
+
+  def quality_event_swagger_definitions do
+    %{
+      QualityEvent:
+        swagger_schema do
+          title("Quality Event")
+          description("Representation of event")
+
+          properties do
+            id(:integer, "Event Id", required: true)
+            execution_id(:integer, "Execution Id", required: true)
+            inserted_at(:string, "Event insertion date")
+            type([:string, :null], "Event type")
+            message([:string, :null], "Event message")
+          end
+        end,
+      QualityEventResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:QualityEvent))
+          end
+        end,
+      EmbeddedQualityEvents:
+        swagger_schema do
+          title("Quality Events")
+          description("A collection of events")
+          type(:array)
+          items(Schema.ref(:QualityEvent))
+        end
+    }
+  end
 end
