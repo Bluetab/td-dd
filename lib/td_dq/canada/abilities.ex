@@ -21,7 +21,7 @@ defmodule TdDq.Canada.Abilities do
     end
 
     def can?(%Claims{} = claims, action, %Execution{} = target) do
-      -ExecutionAbilities.can?(claims, action, target)
+      ExecutionAbilities.can?(claims, action, target)
     end
 
     def can?(%Claims{} = claims, action, Implementation)
