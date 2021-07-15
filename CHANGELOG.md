@@ -6,7 +6,8 @@
 
 - [TD-3787] Allow CSV bulk load of structure notes with autopublish capability
   for non admin users. These updates must follow new structure notes' workflow.
-  
+- [TD-3050] Show quality errors
+
 ### Changed
 
 - [TD-3933] Maximum size of payload for metadata upload using multipart data can
