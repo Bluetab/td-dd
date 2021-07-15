@@ -172,9 +172,7 @@ defmodule TdDq.Search.Mappings do
       validations: get_condition_mappings(),
       df_name: %{type: "text", fields: %{raw: %{type: "keyword"}}},
       df_content: content_mappings,
-      executable: %{type: "boolean"},
-      event_type: %{type: "text", fields: @raw_sort},
-      event_inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"}
+      executable: %{type: "boolean"}
     }
 
     settings = Cluster.setting(:implementations)
