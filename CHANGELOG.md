@@ -1,12 +1,17 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-3050] Show quality errors
+
 ## [4.24.0] 2021-07-13
 
 ### Added
 
 - [TD-3787] Allow CSV bulk load of structure notes with autopublish capability
   for non admin users. These updates must follow new structure notes' workflow.
-- [TD-3050] Show quality errors
 
 ### Changed
 
