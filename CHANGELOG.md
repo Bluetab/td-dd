@@ -3,7 +3,7 @@
 ## [Unreleased]
 
 ### Added
-
+- [TD-3453] Purge logically deleted structures
 - [TD-3050] Show quality errors
 
 ## [4.24.0] 2021-07-13
