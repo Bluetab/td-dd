@@ -4,7 +4,7 @@
 
 ### Fixed
 
-- [TD-3929] Reindex the children of the  structure domain when modifying
+- [TD-3929] Reindex the children of the structure domain when modifying
 
 ### Added
 
