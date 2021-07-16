@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- [TD-3929] Reindex the children of the  structure domain when modifying
+
 ### Added
 
 - [TD-3050] Show quality errors
