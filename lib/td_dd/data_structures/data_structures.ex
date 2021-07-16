@@ -553,7 +553,7 @@ defmodule TdDd.DataStructures do
     DataStructureVersion
     |> where(
       [dvs],
-      dvs.deleted_at <= fragment("CURRENT_DATE  - interval '1 MONTH' * ? ", ^period_time)
+      dvs.deleted_at <= fragment("CURRENT_DATE  - interval '1 DAY' * ? ", ^period_time)
     )
     |> Repo.delete_all()
   end

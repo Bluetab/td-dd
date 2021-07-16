@@ -22,7 +22,7 @@ defmodule TdDd.DataStructurePurgeTest do
       data_structure: %{id: id}
     } do
       now = DateTime.utc_now()
-      seconds = 24 * 3600
+      seconds = - 24 * 3600
 
       [
         [
@@ -30,19 +30,19 @@ defmodule TdDd.DataStructurePurgeTest do
         ],
         [
           inserted_at: ~U[2020-01-01 00:00:00.123456Z],
-          deleted_at: DateTime.add(now, -30 * seconds)
+          deleted_at: DateTime.add(now, 1 * seconds)
         ],
         [
           inserted_at: ~U[2020-02-01 00:00:00.123456Z],
-          deleted_at: DateTime.add(now, -60 * seconds)
+          deleted_at: DateTime.add(now, 4 * seconds)
         ],
         [
           inserted_at: ~U[2020-04-01 00:00:00.123456Z],
-          deleted_at: DateTime.add(now, -90 * seconds)
+          deleted_at: DateTime.add(now, 6 * seconds)
         ],
         [
           inserted_at: ~U[2020-04-01 00:00:00.123456Z],
-          deleted_at: DateTime.add(now, -100 * seconds)
+          deleted_at: DateTime.add(now, 10 * seconds)
         ]
       ]
       |> Enum.with_index()
@@ -51,9 +51,9 @@ defmodule TdDd.DataStructurePurgeTest do
       end)
       |> Enum.map(&insert(:data_structure_version, &1))
 
-      assert {:ok, 2} = DataStructurePurge.purge_structure_versions(2)
-      assert {:ok, 1} = DataStructurePurge.purge_structure_versions(1)
-      assert {:ok, 0} = DataStructurePurge.purge_structure_versions(1)
+      assert {:ok, 2} = DataStructurePurge.purge_structure_versions(4)
+      assert {:ok, 1} = DataStructurePurge.purge_structure_versions(2)
+      assert {:ok, 0} = DataStructurePurge.purge_structure_versions(2)
 
       assert {:ok, 0} = DataStructurePurge.purge_structure_versions(nil)
       assert {:ok, 0} = DataStructurePurge.purge_structure_versions(:foo)

@@ -9,7 +9,7 @@ defmodule TdDd.DataStructures.DataStructurePurge do
 
   def purge_structure_versions do
     config = Application.get_env(:td_dd, __MODULE__)
-    purge_structure_versions(config[:period_of_time])
+    purge_structure_versions(config[:period_of_time_days])
   end
 
   def purge_structure_versions(nil), do: {:ok, 0}
