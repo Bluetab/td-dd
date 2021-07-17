@@ -4,6 +4,7 @@ defmodule TdDq.Canada.Abilities do
   alias TdCache.ConceptCache
   alias TdDq.Auth.Claims
   alias TdDq.Canada.{ExecutionAbilities, ImplementationAbilities, RuleAbilities}
+  alias TdDq.Events.QualityEvent
   alias TdDq.Executions.{Execution, Group}
   alias TdDq.Implementations.Implementation
   alias TdDq.Permissions
@@ -14,7 +15,8 @@ defmodule TdDq.Canada.Abilities do
       true
     end
 
-    def can?(%Claims{} = claims, action, target) when target in [Execution, Group] do
+    def can?(%Claims{} = claims, action, target)
+        when target in [Execution, Group, QualityEvent] do
       ExecutionAbilities.can?(claims, action, target)
     end
 

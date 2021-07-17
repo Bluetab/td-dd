@@ -8,6 +8,7 @@ defmodule TdDq.Rules.RuleResults do
   alias Ecto.Multi
   alias TdDd.Repo
   alias TdDq.Cache.RuleLoader
+  alias TdDq.Events.QualityEvents
   alias TdDq.Executions.Execution
   alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Rule
@@ -55,6 +56,10 @@ defmodule TdDq.Rules.RuleResults do
     |> Multi.run(:executions, fn _repo, %{result: result} ->
       res = update_executions(result)
       {:ok, res}
+    end)
+    |> Multi.run(:events, fn _, %{executions: {_, executions}} ->
+      {_, events} = QualityEvents.complete(executions)
+      {:ok, events}
     end)
     |> Repo.transaction()
     |> on_create()
@@ -107,7 +112,7 @@ defmodule TdDq.Rules.RuleResults do
     |> Repo.one()
   end
 
-  @spec get_implementation_results(binary) :: [RuleResult.t]
+  @spec get_implementation_results(binary) :: [RuleResult.t()]
   def get_implementation_results(implementation_key) do
     RuleResult
     |> where([r], r.implementation_key == ^implementation_key)

@@ -27,7 +27,10 @@ defmodule TdDqWeb.Router do
       resources("/executions", ExecutionController, only: [:index])
     end
 
-    resources("/executions", ExecutionController, only: [:index])
+    resources "/executions", ExecutionController, only: [:index] do
+      resources("/quality_events", QualityEventController, only: [:create])
+    end
+
     resources("/executions/search", ExecutionSearchController, only: [:create], singleton: true)
 
     resources("/rule_results", RuleResultController, only: [:index, :delete, :create, :show])

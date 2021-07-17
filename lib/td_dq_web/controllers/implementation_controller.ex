@@ -5,6 +5,7 @@ defmodule TdDqWeb.ImplementationController do
   import Canada, only: [can?: 2]
   import TdDqWeb.RuleImplementationSupport, only: [decode: 1]
 
+  alias TdDq.Events.QualityEvents
   alias TdDq.Implementations
   alias TdDq.Implementations.Download
   alias TdDq.Implementations.Implementation
@@ -126,6 +127,7 @@ defmodule TdDqWeb.ImplementationController do
       |> Implementations.get_implementation!(preload: :rule, enrich: :source)
       |> add_rule_results()
       |> add_last_rule_result()
+      |> add_quality_event()
       |> Implementations.enrich_implementation_structures()
 
     claims = conn.assigns[:current_resource]
@@ -283,6 +285,11 @@ defmodule TdDqWeb.ImplementationController do
       :all_rule_results,
       RuleResults.get_implementation_results(implementation.implementation_key)
     )
+  end
+
+  defp add_quality_event(%{id: id} = implementation) do
+    implementation
+    |> Map.put(:quality_event, QualityEvents.get_event_by_imp(id))
   end
 
   defp with_soft_delete(%{"soft_delete" => true} = params) do
