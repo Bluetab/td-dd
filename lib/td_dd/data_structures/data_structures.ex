@@ -1195,10 +1195,10 @@ defmodule TdDd.DataStructures do
 
   ## Examples
 
-      iex> update_structure_note(structure_note, %{field: new_value})
+      iex> update_structure_note(structure_note, %{field: new_value}, user_id)
       {:ok, %StructureNote{}}
 
-      iex> update_structure_note(structure_note, %{field: bad_value})
+      iex> update_structure_note(structure_note, %{field: bad_value}, user_id)
       {:error, %Ecto.Changeset{}}
 
   """
