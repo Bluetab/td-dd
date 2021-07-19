@@ -496,15 +496,8 @@ defmodule TdDd.DataStructures do
         update: [set: [domain_id: ^new_domain_id]]
       )
       |> Repo.update_all([])
-      |> case do
-        {0, _} = none ->
-          none
 
-        result ->
-          IndexWorker.reindex(children_ids)
-          result
-      end
-
+    IndexWorker.reindex(children_ids)
     {:ok, count}
   end
 
