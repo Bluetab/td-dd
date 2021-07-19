@@ -1,5 +1,6 @@
 defmodule TdDdWeb.GrantControllerTest do
   use TdDdWeb.ConnCase
+  use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   alias TdDd.Grants.Grant
 
@@ -35,7 +36,8 @@ defmodule TdDdWeb.GrantControllerTest do
     @tag authentication: [role: "admin"]
     test "renders grant when data is valid", %{
       conn: conn,
-      data_structure: %{external_id: data_structure_external_id}
+      data_structure: %{external_id: data_structure_external_id},
+      swagger_schema: schema
     } do
       conn =
         post(conn, Routes.data_structure_grant_path(conn, :create, data_structure_external_id),
@@ -44,15 +46,18 @@ defmodule TdDdWeb.GrantControllerTest do
 
       assert %{"id" => id} = json_response(conn, 201)["data"]
 
-      conn = get(conn, Routes.grant_path(conn, :show, id))
-
       assert %{
                "id" => ^id,
                "detail" => %{},
                "end_date" => "2010-04-17T14:00:00.000000Z",
                "start_date" => "2010-04-17T14:00:00.000000Z",
                "user_id" => 42
-             } = json_response(conn, 200)["data"]
+             } =
+               conn
+               |> get(Routes.grant_path(conn, :show, id))
+               |> validate_resp_schema(schema, "GrantResponse")
+               |> json_response(200)
+               |> Map.get("data")
     end
 
     @tag authentication: [role: "non_admin", permissions: [:manage_grants]]
@@ -125,10 +130,13 @@ defmodule TdDdWeb.GrantControllerTest do
     setup [:create_grant]
 
     @tag authentication: [role: "admin"]
-    test "can show grant", %{conn: conn, grant: %{id: id}} do
-      conn = get(conn, Routes.grant_path(conn, :show, id))
-
-      assert %{"id" => ^id} = json_response(conn, 200)["data"]
+    test "can show grant", %{conn: conn, grant: %{id: id}, swagger_schema: schema} do
+      assert %{"id" => ^id} =
+               conn
+               |> get(Routes.grant_path(conn, :show, id))
+               |> validate_resp_schema(schema, "GrantResponse")
+               |> json_response(200)
+               |> Map.get("data")
     end
 
     @tag authentication: [role: "non_admin", permissions: [:view_grants]]
@@ -171,12 +179,11 @@ defmodule TdDdWeb.GrantControllerTest do
     @tag authentication: [role: "admin"]
     test "renders grant when data is valid", %{
       conn: conn,
-      grant: %Grant{id: id, user_id: user_id} = grant
+      grant: %Grant{id: id, user_id: user_id} = grant,
+      swagger_schema: schema
     } do
       conn = put(conn, Routes.grant_path(conn, :update, grant), grant: @update_attrs)
       assert %{"id" => ^id} = json_response(conn, 200)["data"]
-
-      conn = get(conn, Routes.grant_path(conn, :show, id))
 
       assert %{
                "id" => ^id,
@@ -184,7 +191,12 @@ defmodule TdDdWeb.GrantControllerTest do
                "end_date" => "2011-05-18T15:01:01.000000Z",
                "start_date" => "2011-05-18T15:01:01.000000Z",
                "user_id" => ^user_id
-             } = json_response(conn, 200)["data"]
+             } =
+               conn
+               |> get(Routes.grant_path(conn, :show, id))
+               |> validate_resp_schema(schema, "GrantResponse")
+               |> json_response(200)
+               |> Map.get("data")
     end
 
     @tag authentication: [role: "non_admin", permissions: [:manage_grants]]

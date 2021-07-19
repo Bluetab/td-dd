@@ -123,7 +123,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
           properties do
             data(Schema.ref(:StructureNote))
           end
-        end,
+        end
     }
   end
 
@@ -1022,6 +1022,59 @@ defmodule TdDdWeb.SwaggerDefinitions do
             class(:string, "Classification class", required: true)
             values(:array, "Values")
             regex(:string, "Regex")
+          end
+        end
+    }
+  end
+
+  def grant_swagger_definitions do
+    %{
+      Grant:
+        swagger_schema do
+          title("Grant")
+          description("A grant")
+
+          properties do
+            id(:integer, "Id", required: true)
+            detail(:object, "Grant details")
+            start_date(:string, "Start date")
+            end_date(:string, "End date")
+            data_structure(Schema.ref(:DataStructure))
+          end
+        end,
+      GrantCreate:
+        swagger_schema do
+          properties do
+            grant(
+              Schema.new do
+                properties do
+                  user_id(:string, "User id", required: true)
+                  detail(:object, "Grant details")
+                  start_date(:string, "Start date")
+                  end_date(:string, "End date")
+                end
+              end
+            )
+          end
+        end,
+      GrantUpdate:
+        swagger_schema do
+          properties do
+            grant(
+              Schema.new do
+                properties do
+                  detail(:object, "Grant details")
+                  start_date(:string, "Start date")
+                  end_date(:string, "End date")
+                end
+              end
+            )
+          end
+        end,
+      GrantResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:Grant))
           end
         end
     }

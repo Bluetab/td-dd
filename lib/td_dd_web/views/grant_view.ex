@@ -1,5 +1,6 @@
 defmodule TdDdWeb.GrantView do
   use TdDdWeb, :view
+  alias TdDdWeb.DataStructureView
   alias TdDdWeb.GrantView
 
   def render("index.json", %{grants: grants}) do
@@ -18,5 +19,13 @@ defmodule TdDdWeb.GrantView do
       end_date: grant.end_date,
       user_id: grant.user_id
     }
+    |> add_structure(grant)
   end
+
+  defp add_structure(response, %{data_structure: %{} = structure}) do
+    structure = render_one(structure, DataStructureView, "data_structure.json")
+    Map.put(response, :data_structure, structure)
+  end
+
+  defp add_structure(response, _), do: response
 end
