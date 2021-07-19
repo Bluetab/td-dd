@@ -4,6 +4,9 @@ defmodule TdDd.Grants do
   """
 
   import Ecto.Query, warn: false
+  alias Ecto.Multi
+  alias TdDd.Auth.Claims
+  alias TdDd.DataStructures.Audit
   alias TdDd.Repo
 
   alias TdDd.Grants.Grant
@@ -40,24 +43,31 @@ defmodule TdDd.Grants do
       ** (Ecto.NoResultsError)
 
   """
-  def get_grant!(id), do: Repo.get!(Grant, id)
+  def get_grant!(id, opts \\ []) do
+    Grant
+    |> Repo.get!(id)
+    |> Repo.preload(opts[:preload] || [])
+  end
 
   @doc """
   Creates a grant.
 
   ## Examples
 
-      iex> create_grant(%{field: value})
+      iex> create_grant(%{field: value}, %DataStructure{}, %Claims{user_id: user_id})
       {:ok, %Grant{}}
 
       iex> create_grant(%{field: bad_value})
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_grant(attrs, data_structure) do
-    %Grant{}
-    |> Grant.changeset(attrs, data_structure)
-    |> Repo.insert()
+  def create_grant(attrs, data_structure, %Claims{user_id: user_id}) do
+    changeset = Grant.changeset(attrs, data_structure)
+
+    Multi.new()
+    |> Multi.insert(:grant, changeset)
+    |> Multi.run(:audit, Audit, :grant_created, [changeset, user_id])
+    |> Repo.transaction()
   end
 
   @doc """
@@ -72,10 +82,13 @@ defmodule TdDd.Grants do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_grant(%Grant{} = grant, attrs) do
-    grant
-    |> Grant.update_changeset(attrs)
-    |> Repo.update()
+  def update_grant(%Grant{} = grant, attrs, %Claims{user_id: user_id}) do
+    changeset = Grant.update_changeset(grant, attrs)
+
+    Multi.new()
+    |> Multi.update(:grant, changeset)
+    |> Multi.run(:audit, Audit, :grant_updated, [changeset, user_id])
+    |> Repo.transaction()
   end
 
   @doc """
@@ -90,7 +103,10 @@ defmodule TdDd.Grants do
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_grant(%Grant{} = grant) do
-    Repo.delete(grant)
+  def delete_grant(%Grant{} = grant, %Claims{user_id: user_id}) do
+    Multi.new()
+    |> Multi.delete(:grant, grant)
+    |> Multi.run(:audit, Audit, :grant_deleted, [user_id])
+    |> Repo.transaction()
   end
 end

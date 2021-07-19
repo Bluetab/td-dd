@@ -15,7 +15,8 @@ defmodule TdDdWeb.GrantController do
          %DataStructure{} = data_structure <-
            DataStructures.get_data_structure_by_external_id(data_structure_external_id),
          {:can, true} <- {:can, can?(claims, create_grant(data_structure))},
-         {:ok, %Grant{} = grant} <- Grants.create_grant(grant_params, data_structure) do
+         {:ok, %{grant: %Grant{} = grant}} <-
+           Grants.create_grant(grant_params, data_structure, claims) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", Routes.grant_path(conn, :show, grant))
@@ -27,22 +28,27 @@ defmodule TdDdWeb.GrantController do
   end
 
   def show(conn, %{"id" => id}) do
-    grant = Grants.get_grant!(id)
-    render(conn, "show.json", grant: grant)
+    with claims <- conn.assigns[:current_resource],
+         %Grant{} = grant <- Grants.get_grant!(id, preload: [:data_structure]),
+         {:can, true} <- {:can, can?(claims, show(grant))} do
+      render(conn, "show.json", grant: grant)
+    end
   end
 
   def update(conn, %{"id" => id, "grant" => grant_params}) do
-    grant = Grants.get_grant!(id)
-
-    with {:ok, %Grant{} = grant} <- Grants.update_grant(grant, grant_params) do
+    with claims <- conn.assigns[:current_resource],
+         %Grant{} = grant <- Grants.get_grant!(id, preload: [:data_structure]),
+         {:can, true} <- {:can, can?(claims, update(grant))},
+         {:ok, %{grant: %Grant{} = grant}} <- Grants.update_grant(grant, grant_params, claims) do
       render(conn, "show.json", grant: grant)
     end
   end
 
   def delete(conn, %{"id" => id}) do
-    grant = Grants.get_grant!(id)
-
-    with {:ok, %Grant{}} <- Grants.delete_grant(grant) do
+    with claims <- conn.assigns[:current_resource],
+         %Grant{} = grant <- Grants.get_grant!(id, preload: [:data_structure]),
+         {:can, true} <- {:can, can?(claims, delete(grant))},
+         {:ok, %{grant: %Grant{}}} <- Grants.delete_grant(grant, claims) do
       send_resp(conn, :no_content, "")
     end
   end

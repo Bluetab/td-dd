@@ -25,6 +25,7 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.Events.ProfileEvent
   alias TdDd.Executions.ProfileExecution
   alias TdDd.Executions.ProfileGroup
+  alias TdDd.Grants.Grant
   alias TdDd.Lineage.Units.Node
   alias TdDd.Lineage.Units.Unit
   alias TdDd.Systems.System
@@ -70,6 +71,10 @@ defmodule TdDd.Canada.Abilities do
 
     def can?(%Claims{} = claims, :create_grant, %DataStructure{} = data_structure) do
       GrantAbilities.can?(claims, :create_grant, data_structure)
+    end
+
+    def can?(%Claims{} = claims, action, %Grant{} = grant) do
+      GrantAbilities.can?(claims, action, grant)
     end
 
     def can?(%Claims{} = claims, action, %DataStructure{} = data_structure) do

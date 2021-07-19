@@ -19,8 +19,8 @@ defmodule TdDd.Grants.Grant do
   end
 
   @doc false
-  def changeset(grant, attrs, data_structure) do
-    grant
+  def changeset(attrs, data_structure) do
+    %__MODULE__{}
     |> cast(attrs, [:detail, :start_date, :end_date, :user_id])
     |> validate_required([:detail, :start_date, :end_date, :user_id])
     |> put_assoc(:data_structure, data_structure)
