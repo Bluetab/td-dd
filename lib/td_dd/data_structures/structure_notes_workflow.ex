@@ -62,8 +62,6 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
     end
   end
 
-  #def update(structure_note, attrs, is_strict \\ true, user_id \\ nil)
-
   def update(
         %StructureNote{status: :draft} = structure_note,
         %{"df_content" => df_content} = attrs,
