@@ -497,6 +497,7 @@ defmodule TdDd.DataStructures do
       )
       |> Repo.update_all([])
 
+    IndexWorker.reindex(children_ids)
     {:ok, count}
   end
 
