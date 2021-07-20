@@ -2,9 +2,14 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- [TD-3929] Reindex the children of the structure domain when modifying
+
 ### Added
 - [TD-3906] Notes audit now includes status changes
 - [TD-3050] Show quality errors
+- [TD-3945] Created Grant entity
 
 ## [4.24.0] 2021-07-13
 
