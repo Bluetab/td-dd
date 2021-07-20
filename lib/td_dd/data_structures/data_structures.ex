@@ -1137,14 +1137,14 @@ defmodule TdDd.DataStructures do
 
   ## Examples
 
-      iex> create_structure_note(%{field: value})
+      iex> create_structure_note(%{field: value}, %{}, user_id)
       {:ok, %StructureNote{}}
 
-      iex> create_structure_note(%{field: bad_value})
+      iex> create_structure_note(%{field: bad_value}, %{}, user_id)
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_structure_note(data_structure, attrs \\ %{}, user_id \\ nil) do
+  def create_structure_note(data_structure, attrs, user_id) do
     changeset = StructureNote.create_changeset(%StructureNote{}, data_structure, attrs)
 
     Multi.new()
@@ -1164,15 +1164,15 @@ defmodule TdDd.DataStructures do
 
   ## Examples
 
-      iex> bulk_update_structure_note(structure_note, %{field: new_value})
+      iex> bulk_update_structure_note(structure_note, %{field: new_value}, user_id)
       {:ok, %StructureNote{}}
 
-      iex> bulk_update_structure_note(structure_note, %{field: bad_value})
+      iex> bulk_update_structure_note(structure_note, %{field: bad_value}, user_id)
       {:error, %Ecto.Changeset{}}
 
   """
 
-  def bulk_update_structure_note(%StructureNote{} = structure_note, attrs, user_id \\ nil) do
+  def bulk_update_structure_note(%StructureNote{} = structure_note, attrs, user_id) do
     changeset = StructureNote.bulk_update_changeset(structure_note, attrs)
 
     if changeset.changes == %{} do
@@ -1196,15 +1196,15 @@ defmodule TdDd.DataStructures do
 
   ## Examples
 
-      iex> update_structure_note(structure_note, %{field: new_value})
+      iex> update_structure_note(structure_note, %{field: new_value}, user_id)
       {:ok, %StructureNote{}}
 
-      iex> update_structure_note(structure_note, %{field: bad_value})
+      iex> update_structure_note(structure_note, %{field: bad_value}, user_id)
       {:error, %Ecto.Changeset{}}
 
   """
 
-  def update_structure_note(%StructureNote{} = structure_note, attrs, user_id \\ nil) do
+  def update_structure_note(%StructureNote{} = structure_note, attrs, user_id) do
     changeset = StructureNote.changeset(structure_note, attrs)
 
     Multi.new()
