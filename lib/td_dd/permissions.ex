@@ -36,4 +36,17 @@ defmodule TdDd.Permissions do
   def authorized?(%Claims{jti: jti}, permission, domain_id) do
     @permission_resolver.has_permission?(jti, permission, "domain", domain_id)
   end
+
+  @doc """
+  Check if authenticated user has a any permission in a domain.
+
+  ## Examples
+
+      iex> authorized_any?(%Claims{}, [:create, :delete], "business_concept", 12)
+      false
+
+  """
+  def authorized_any?(%Claims{jti: jti}, permissions, domain_id) do
+    @permission_resolver.has_any_permission?(jti, permissions, "domain", domain_id)
+  end
 end
