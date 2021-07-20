@@ -3,7 +3,7 @@
 ## [Unreleased]
 
 ### Added
-= [TD-3906] Notes audit is not including status changes
+- [TD-3906] Notes audit now includes status changes
 - [TD-3050] Show quality errors
 
 ## [4.24.0] 2021-07-13
