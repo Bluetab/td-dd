@@ -2,13 +2,17 @@ defmodule TdDdWeb.GrantControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
+  alias TdCache.UserCache
   alias TdDd.Grants.Grant
+
+  @cache_user_id 42
+  @cache_user_name "test_user_name"
 
   @create_attrs %{
     detail: %{},
     end_date: "2010-04-17T14:00:00.000000Z",
     start_date: "2010-04-17T14:00:00.000000Z",
-    user_id: 42
+    user_id: @cache_user_id
   }
   @update_attrs %{
     detail: %{},
@@ -16,7 +20,7 @@ defmodule TdDdWeb.GrantControllerTest do
     start_date: "2011-05-18T15:01:01.000000Z",
     user_id: 43
   }
-  @invalid_attrs %{detail: nil, end_date: nil, start_date: nil, user_id: nil}
+  @invalid_attrs %{detail: nil, end_date: nil, start_date: nil, user_id: @cache_user_id}
 
   setup %{conn: conn} do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
@@ -24,6 +28,16 @@ defmodule TdDdWeb.GrantControllerTest do
 
   describe "create grant" do
     setup assigns do
+      UserCache.put(%{
+        id: @cache_user_id,
+        user_name: @cache_user_name,
+        full_name: "foo"
+      })
+
+      on_exit(fn ->
+        UserCache.delete(@create_attrs.user_id)
+      end)
+
       case assigns do
         %{domain: %{id: domain_id}} ->
           [data_structure: insert(:data_structure, domain_id: domain_id)]
@@ -51,7 +65,7 @@ defmodule TdDdWeb.GrantControllerTest do
                "detail" => %{},
                "end_date" => "2010-04-17T14:00:00.000000Z",
                "start_date" => "2010-04-17T14:00:00.000000Z",
-               "user_id" => 42
+               "user_id" => @cache_user_id
              } =
                conn
                |> get(Routes.grant_path(conn, :show, id))
@@ -79,7 +93,7 @@ defmodule TdDdWeb.GrantControllerTest do
                "detail" => %{},
                "end_date" => "2010-04-17T14:00:00.000000Z",
                "start_date" => "2010-04-17T14:00:00.000000Z",
-               "user_id" => 42
+               "user_id" => @cache_user_id
              } = json_response(conn, 200)["data"]
     end
 
@@ -110,6 +124,59 @@ defmodule TdDdWeb.GrantControllerTest do
         )
 
       assert json_response(conn, :forbidden)["errors"] != %{}
+    end
+
+    @tag authentication: [role: "admin"]
+    test "grant will not be created with invalid structure", %{conn: conn} do
+      conn =
+        post(conn, Routes.data_structure_grant_path(conn, :create, "invalid_external_id"),
+          grant: @create_attrs
+        )
+
+      assert json_response(conn, :not_found)["message"] == "DataStructure"
+    end
+
+    @tag authentication: [role: "admin"]
+    test "grant will not be created with invalid user", %{
+      conn: conn,
+      data_structure: %{external_id: data_structure_external_id}
+    } do
+      attrs = Map.put(@create_attrs, :user_id, 888)
+
+      conn =
+        post(conn, Routes.data_structure_grant_path(conn, :create, data_structure_external_id),
+          grant: attrs
+        )
+
+      assert json_response(conn, :not_found)["message"] == "User"
+    end
+
+    @tag authentication: [role: "admin"]
+    test "it is possible to create a grant using the user's user_name", %{
+      conn: conn,
+      data_structure: %{external_id: data_structure_external_id}
+    } do
+      attrs =
+        @create_attrs
+        |> Map.delete(:user_id)
+        |> Map.put(:user_name, @cache_user_name)
+
+      conn =
+        post(conn, Routes.data_structure_grant_path(conn, :create, data_structure_external_id),
+          grant: attrs
+        )
+
+      assert %{"id" => id} = json_response(conn, 201)["data"]
+
+      conn = get(conn, Routes.grant_path(conn, :show, id))
+
+      assert %{
+               "id" => ^id,
+               "detail" => %{},
+               "end_date" => "2010-04-17T14:00:00.000000Z",
+               "start_date" => "2010-04-17T14:00:00.000000Z",
+               "user_id" => @cache_user_id
+             } = json_response(conn, 200)["data"]
     end
 
     @tag authentication: [role: "admin"]
