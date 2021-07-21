@@ -4,6 +4,7 @@ defmodule TdDdWeb.DataStructureVersionView do
 
   alias TdDd.DataStructures
   alias TdDdWeb.DataStructuresTagsView
+  alias TdDdWeb.GrantView
 
   def render(
         "show.json",
@@ -41,6 +42,7 @@ defmodule TdDdWeb.DataStructureVersionView do
         |> add_data_structure_type
         |> add_cached_content
         |> add_tags
+        |> add_grant
         |> Map.take([
           :ancestry,
           :children,
@@ -68,7 +70,8 @@ defmodule TdDdWeb.DataStructureVersionView do
           :relations,
           :metadata_versions,
           :data_structure_type,
-          :tags
+          :tags,
+          :grant
         ])
     }
   end
@@ -315,5 +318,15 @@ defmodule TdDdWeb.DataStructureVersionView do
       end
 
     Map.put(ds, :tags, tags)
+  end
+
+  defp add_grant(ds) do
+    grant =
+      case Map.get(ds, :grant) do
+        nil -> nil
+        grant -> render_one(grant, GrantView, "grant.json")
+      end
+
+    Map.put(ds, :grant, grant)
   end
 end

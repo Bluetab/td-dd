@@ -178,6 +178,118 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
 
       assert %{"data_structure" => %{"id" => ^id}} = data
     end
+
+    @tag authentication: [role: "admin"]
+    test "renders a data structure with related user grant", %{
+      conn: conn,
+      structure: structure,
+      claims: %{user_id: user_id}
+    } do
+      start_date = DateTime.utc_now() |> DateTime.add(-60 * 60 * 24, :second)
+      end_date = DateTime.utc_now() |> DateTime.add(60 * 60 * 24, :second)
+
+      %{id: id, detail: detail} =
+        insert(:grant,
+          data_structure: structure,
+          user_id: user_id,
+          start_date: start_date,
+          end_date: end_date
+        )
+
+      assert %{"data" => %{"grant" => grant}} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(
+                   conn,
+                   :show,
+                   structure.id,
+                   "latest"
+                 )
+               )
+               |> json_response(:ok)
+
+      start_date_string = DateTime.to_iso8601(start_date)
+      end_date_string = DateTime.to_iso8601(end_date)
+
+      assert %{
+               "id" => ^id,
+               "end_date" => ^end_date_string,
+               "start_date" => ^start_date_string,
+               "detail" => ^detail,
+               "user_id" => ^user_id
+             } = grant
+    end
+
+    @tag authentication: [role: "admin"]
+    test "renders a data structure with grant from parent", %{
+      conn: conn,
+      structure: structure,
+      parent_structure: parent_structure,
+      claims: %{user_id: user_id}
+    } do
+      start_date = DateTime.utc_now() |> DateTime.add(-60 * 60 * 24, :second)
+      end_date = DateTime.utc_now() |> DateTime.add(60 * 60 * 24, :second)
+
+      %{id: id, detail: detail} =
+        insert(:grant,
+          data_structure: parent_structure,
+          user_id: user_id,
+          start_date: start_date,
+          end_date: end_date
+        )
+
+      assert %{"data" => %{"grant" => grant}} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(
+                   conn,
+                   :show,
+                   structure.id,
+                   "latest"
+                 )
+               )
+               |> json_response(:ok)
+
+      start_date_string = DateTime.to_iso8601(start_date)
+      end_date_string = DateTime.to_iso8601(end_date)
+
+      assert %{
+               "id" => ^id,
+               "end_date" => ^end_date_string,
+               "start_date" => ^start_date_string,
+               "detail" => ^detail,
+               "user_id" => ^user_id
+             } = grant
+    end
+
+    @tag authentication: [role: "admin"]
+    test "renders a data structure without expired grant", %{
+      conn: conn,
+      structure: structure,
+      claims: %{user_id: user_id}
+    } do
+      start_date = DateTime.utc_now() |> DateTime.add(60 * 60 * 24, :second)
+      end_date = DateTime.utc_now() |> DateTime.add(60 * 60 * 24 * 2, :second)
+
+      insert(:grant,
+        data_structure: structure,
+        user_id: user_id,
+        start_date: start_date,
+        end_date: end_date
+      )
+
+      assert %{"data" => %{"grant" => nil}} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(
+                   conn,
+                   :show,
+                   structure.id,
+                   "latest"
+                 )
+               )
+               |> json_response(:ok)
+    end
   end
 
   describe "GET /api/data_structures/:id/versions/latest with classes" do
