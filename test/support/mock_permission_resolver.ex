@@ -46,6 +46,11 @@ defmodule MockPermissionResolver do
     has_resource_permission?([resource_id], resource_type, session_id, permission)
   end
 
+  def has_any_permission?(session_id, permissions, resource_type, resource_id) do
+    permissions
+    |> Enum.any?(&has_permission?(session_id, &1, resource_type, resource_id))
+  end
+
   def get_acls_by_resource_type(session_id, resource_type) do
     Agent.get(__MODULE__, fn %{sessions: sessions, acls: acls} ->
       case Map.get(sessions, session_id) do

@@ -31,6 +31,9 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
   end
 
   describe "create" do
+
+    @user_id 1
+
     test "create the first structure note with draft status and version 1" do
       %{id: data_structure_id} = data_structure = create_data_structure_with_version()
 
@@ -47,7 +50,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
                   "foo" => "bar"
                 },
                 data_structure_id: ^data_structure_id
-              }} = StructureNotesWorkflow.create(data_structure, create_attrs)
+              }} = StructureNotesWorkflow.create(data_structure, create_attrs, @user_id)
     end
 
     test "fail to create structure when df_content is invalid" do
@@ -59,7 +62,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
       }
 
       assert {:error, %{errors: [df_content: {"invalid content", _}]}} =
-               StructureNotesWorkflow.create(data_structure, create_attrs)
+               StructureNotesWorkflow.create(data_structure, create_attrs, @user_id)
     end
 
     test "error when creating note with existing draft" do
@@ -72,7 +75,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
 
       create_attrs = %{"df_content" => %{"foo" => "bar"}}
 
-      assert {:error, :conflict} = StructureNotesWorkflow.create(data_structure, create_attrs)
+      assert {:error, :conflict} = StructureNotesWorkflow.create(data_structure, create_attrs, @user_id)
     end
 
     test "create a new structure note version when the previous has published status" do
@@ -84,7 +87,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
                 version: 2,
                 status: :draft,
                 data_structure_id: ^data_structure_id
-              }} = StructureNotesWorkflow.create(data_structure, %{})
+              }} = StructureNotesWorkflow.create(data_structure, %{}, @user_id)
     end
 
     test "when create a new version from a published note without df_content, will use the previous published" do
@@ -105,7 +108,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
                 status: :draft,
                 df_content: ^df_content,
                 data_structure_id: ^data_structure_id
-              }} = StructureNotesWorkflow.create(data_structure, %{})
+              }} = StructureNotesWorkflow.create(data_structure, %{}, @user_id)
     end
 
     test "when create a new version from a published note with df_content, will use the new one" do
@@ -129,7 +132,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
                 status: :draft,
                 df_content: ^new_df_content,
                 data_structure_id: ^data_structure_id
-              }} = StructureNotesWorkflow.create(data_structure, create_attrs)
+              }} = StructureNotesWorkflow.create(data_structure, create_attrs, @user_id)
     end
 
     test "when admin force a creation, delete the latest note if can't create a new one due to it" do
@@ -146,7 +149,6 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
 
       new_df_content = %{"foo" => "value_new", "baz" => "new_value"}
       create_attrs = %{"df_content" => new_df_content}
-      user_id = 1
 
       assert {:ok,
               %StructureNote{
@@ -154,11 +156,14 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
                 status: :draft,
                 df_content: ^new_df_content,
                 data_structure_id: ^data_structure_id
-              }} = StructureNotesWorkflow.create(data_structure, create_attrs, true, user_id)
+              }} = StructureNotesWorkflow.create(data_structure, create_attrs, true, @user_id)
     end
   end
 
   describe "update" do
+    @is_strict true
+    @user_id 1
+
     test "save content only for draft notes" do
       df_content = %{"foo" => "content"}
       attrs = %{"df_content" => df_content}
@@ -171,7 +176,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
         assert {:ok, %{df_content: ^df_content}} =
                  :structure_note
                  |> insert(status: status, data_structure: data_structure)
-                 |> StructureNotesWorkflow.update(attrs)
+                 |> StructureNotesWorkflow.update(attrs, @is_strict, @user_id)
       end)
 
       # not updateable content statuses
@@ -182,7 +187,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
         assert {:error, _} =
                  :structure_note
                  |> insert(status: status, data_structure: data_structure)
-                 |> StructureNotesWorkflow.update(attrs)
+                 |> StructureNotesWorkflow.update(attrs, @is_strict, @user_id)
       end)
     end
 
@@ -195,7 +200,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
         assert {:ok, %{status: :pending_approval}} =
                  :structure_note
                  |> insert(status: status)
-                 |> StructureNotesWorkflow.update(attrs)
+                 |> StructureNotesWorkflow.update(attrs, @is_strict, @user_id)
       end)
 
       # statuses that cant be sent to pending_approval
@@ -204,7 +209,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
         assert {:error, _} =
                  :structure_note
                  |> insert(status: status)
-                 |> StructureNotesWorkflow.update(attrs)
+                 |> StructureNotesWorkflow.update(attrs, @is_strict, @user_id)
       end)
     end
 
@@ -217,7 +222,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
         assert {:ok, %{status: :published}} =
                  :structure_note
                  |> insert(status: status)
-                 |> StructureNotesWorkflow.update(attrs)
+                 |> StructureNotesWorkflow.update(attrs, @is_strict, @user_id)
       end)
 
       # statuses that cant be sent to published
@@ -226,7 +231,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
         assert {:error, _} =
                  :structure_note
                  |> insert(status: status)
-                 |> StructureNotesWorkflow.update(attrs)
+                 |> StructureNotesWorkflow.update(attrs, @is_strict, @user_id)
       end)
     end
 
@@ -248,7 +253,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
         )
 
       assert {:ok, %{status: :published}} =
-               StructureNotesWorkflow.update(structure_note, %{"status" => "published"})
+               StructureNotesWorkflow.update(structure_note, %{"status" => "published"}, @is_strict, @user_id)
 
       assert %{status: :published} = DataStructures.get_structure_note!(structure_note.id)
 
@@ -264,7 +269,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
         assert {:ok, %{status: :rejected}} =
                  :structure_note
                  |> insert(status: status)
-                 |> StructureNotesWorkflow.update(attrs)
+                 |> StructureNotesWorkflow.update(attrs, @is_strict, @user_id)
       end)
 
       # statuses that cant be sent to rejected
@@ -273,7 +278,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
         assert {:error, _} =
                  :structure_note
                  |> insert(status: status)
-                 |> StructureNotesWorkflow.update(attrs)
+                 |> StructureNotesWorkflow.update(attrs, @is_strict, @user_id)
       end)
     end
 
@@ -285,7 +290,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
         assert {:ok, %{status: :draft}} =
                  :structure_note
                  |> insert(status: status)
-                 |> StructureNotesWorkflow.update(attrs)
+                 |> StructureNotesWorkflow.update(attrs, @is_strict, @user_id)
       end)
 
       # statuses that cant be sent to draft
@@ -294,7 +299,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
         assert {:error, _} =
                  :structure_note
                  |> insert(status: status)
-                 |> StructureNotesWorkflow.update(attrs)
+                 |> StructureNotesWorkflow.update(attrs, @is_strict, @user_id)
       end)
     end
 
@@ -307,13 +312,13 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
         assert {:error, _} =
                  :structure_note
                  |> insert(status: status)
-                 |> StructureNotesWorkflow.update(attrs)
+                 |> StructureNotesWorkflow.update(attrs, @is_strict, @user_id)
       end)
 
       assert {:ok, %{status: :deprecated}} =
                :structure_note
                |> insert(status: :published)
-               |> StructureNotesWorkflow.update(attrs)
+               |> StructureNotesWorkflow.update(attrs, @is_strict, @user_id)
 
       data_structure = insert(:data_structure)
 
@@ -321,8 +326,8 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
         :structure_note
         |> insert(status: :published, data_structure_id: data_structure.id)
 
-      StructureNotesWorkflow.create(data_structure, %{})
-      assert {:error, _} = StructureNotesWorkflow.update(structure_note, attrs)
+      StructureNotesWorkflow.create(data_structure, %{}, @user_id)
+      assert {:error, _} = StructureNotesWorkflow.update(structure_note, attrs, @is_strict, @user_id)
     end
 
     test "does not modify the content when the status changes" do
@@ -348,7 +353,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
           update_output =
             :structure_note
             |> insert(status: from_status, df_content: initial_content)
-            |> StructureNotesWorkflow.update(attrs)
+            |> StructureNotesWorkflow.update(attrs, @is_strict, @user_id)
 
           case update_output do
             {:ok, %{df_content: content}} -> assert initial_content == content
@@ -376,7 +381,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
         )
 
       assert {:ok, %{status: :published}} =
-               StructureNotesWorkflow.update(structure_note, %{"status" => "published"})
+               StructureNotesWorkflow.update(structure_note, %{"status" => "published"}, @is_strict, @user_id)
 
       assert %{status: :published} = DataStructures.get_structure_note!(structure_note.id)
 
@@ -393,7 +398,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
       assert {:error, %{errors: [df_content: {"invalid content", _}]}} =
                :structure_note
                |> insert(status: :draft, data_structure: data_structure)
-               |> StructureNotesWorkflow.update(attrs)
+               |> StructureNotesWorkflow.update(attrs, @is_strict, @user_id)
     end
   end
 

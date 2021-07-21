@@ -6,6 +6,7 @@ defmodule TdDd.TestOperators do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.StructureNote
+  alias TdDd.Grants.Grant
   alias TdDq.Implementations.Implementation
 
   def a <~> b, do: approximately_equal(a, b)
@@ -28,14 +29,14 @@ defmodule TdDd.TestOperators do
       :linked_concepts_count,
       :latest_note
     ]) ==
-    Map.drop(b, [
-      :domain_parents,
-      :versions,
-      :system,
-      :domain,
-      :linked_concepts_count,
-      :latest_note
-    ])
+      Map.drop(b, [
+        :domain_parents,
+        :versions,
+        :system,
+        :domain,
+        :linked_concepts_count,
+        :latest_note
+      ])
   end
 
   ## Equality test for data structure versions without comparing Ecto associations.
@@ -69,6 +70,10 @@ defmodule TdDd.TestOperators do
   ## Equality test for rule implementation without comparing Ecto associations.
   defp approximately_equal(%Implementation{} = a, %Implementation{} = b) do
     Map.drop(a, [:rule]) == Map.drop(b, [:rule])
+  end
+
+  defp approximately_equal(%Grant{} = a, %Grant{} = b) do
+    Map.drop(a, [:data_structure]) == Map.drop(b, [:data_structure])
   end
 
   defp approximately_equal([h | t], [h2 | t2]) do

@@ -62,8 +62,15 @@ defmodule TdDdWeb.DataStructureView do
     dsv_attrs =
       data_structure
       |> Map.get(:versions, [])
-      |> Enum.max_by(& &1.version, fn -> %{} end)
-      |> Map.take([:class, :description, :metadata, :group, :name, :type, :deleted_at])
+      |> case do
+        [_ | _] = versions ->
+          versions
+          |> Enum.max_by(& &1.version, fn -> %{} end)
+          |> Map.take([:class, :description, :metadata, :group, :name, :type, :deleted_at])
+
+        _ ->
+          %{}
+      end
 
     data_structure
     |> Map.take([
@@ -283,8 +290,8 @@ defmodule TdDdWeb.DataStructureView do
   defp add_tags(ds) do
     tags =
       case Map.get(ds, :tags) do
-        nil -> nil
-        tags -> render_many(tags, DataStructuresTagsView, "data_structures_tags.json")
+        [_ | _] = tags -> render_many(tags, DataStructuresTagsView, "data_structures_tags.json")
+        _ -> []
       end
 
     Map.put(ds, :tags, tags)

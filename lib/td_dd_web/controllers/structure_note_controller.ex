@@ -197,7 +197,9 @@ defmodule TdDdWeb.StructureNoteController do
          structure_note = DataStructures.get_structure_note!(id),
          {:can, true} <- can(structure_note, structure_note_params, claims, data_structure),
          {:ok, %StructureNote{} = structure_note} <-
-           StructureNotesWorkflow.update(structure_note, structure_note_params, true, user_id) do
+           StructureNotesWorkflow.update(structure_note, structure_note_params, true, user_id)
+      do
+
       conn
       |> put_resp_header(
         "location",
