@@ -67,7 +67,9 @@ defmodule TdDq.Executions do
       {:status, "pending"}, q ->
         q
         |> join(:left, [e], r in assoc(e, :result))
+        |> join(:left, [e, _r], qe in assoc(e, :quality_events))
         |> where([_e, r], is_nil(r.id))
+        |> where([e, _r, qe], is_nil(qe.execution_id))
 
       _, q ->
         q

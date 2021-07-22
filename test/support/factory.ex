@@ -154,7 +154,7 @@ defmodule TdDd.Factory do
   def system_factory do
     %System{
       name: sequence("system_name"),
-      external_id: sequence("system_external_id"),
+      external_id: sequence("system_external_id")
     }
   end
 
@@ -351,6 +351,12 @@ defmodule TdDd.Factory do
     }
   end
 
+  def quality_event_factory do
+    %TdDq.Events.QualityEvent{
+      type: "PENDING"
+    }
+  end
+
   def data_structures_tags_factory do
     %TdDd.DataStructures.DataStructuresTags{
       data_structure: build(:data_structure),
@@ -366,6 +372,16 @@ defmodule TdDd.Factory do
       name: sequence("classification")
     }
     |> merge_attributes(attrs)
+  end
+
+  def grant_factory do
+    %TdDd.Grants.Grant{
+      data_structure: build(:data_structure),
+      user_id: sequence(:user_id, &"#{&1}"),
+      detail: %{"foo" => "bar"},
+      start_date: DateTime.utc_now(),
+      end_date: DateTime.utc_now()
+    }
   end
 
   def regex_filter_factory(attrs) do
