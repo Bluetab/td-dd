@@ -40,7 +40,7 @@ defmodule TdDd.Grants.Grant do
     end_date = get_field(changeset, :end_date)
 
     validate_change(changeset, :start_date, fn :start_date, start_date ->
-      if is_nil(end_date) or end_date >= start_date do
+      if is_nil(end_date) or DateTime.compare(end_date, start_date) in [:gt, :eq] do
         []
       else
         [start_date: "should be less than end_date"]
