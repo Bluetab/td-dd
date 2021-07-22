@@ -411,7 +411,7 @@ defmodule TdDd.DataStructures do
         |> get_parent_grant(user_id)
 
       grant ->
-        grant
+        Repo.preload(grant, data_structure: :versions)
     end
   end
 

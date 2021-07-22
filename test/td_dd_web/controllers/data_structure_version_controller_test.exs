@@ -182,7 +182,8 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     @tag authentication: [role: "admin"]
     test "renders a data structure with related user grant", %{
       conn: conn,
-      structure: structure,
+      structure: %{id: data_structure_id, external_id: data_structure_external_id} = structure,
+      structure_version: %{name: data_structure_name},
       claims: %{user_id: user_id}
     } do
       start_date = DateTime.utc_now() |> DateTime.add(-60 * 60 * 24, :second)
@@ -216,7 +217,12 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                "end_date" => ^end_date_string,
                "start_date" => ^start_date_string,
                "detail" => ^detail,
-               "user_id" => ^user_id
+               "user_id" => ^user_id,
+               "data_structure" => %{
+                 "id" => ^data_structure_id,
+                 "external_id" => ^data_structure_external_id,
+                 "name" => ^data_structure_name
+               }
              } = grant
     end
 

@@ -50,9 +50,11 @@ defmodule TdDdWeb.GrantControllerTest do
     @tag authentication: [role: "admin"]
     test "renders grant when data is valid", %{
       conn: conn,
-      data_structure: %{external_id: data_structure_external_id},
+      data_structure: %{id: data_structure_id, external_id: data_structure_external_id},
       swagger_schema: schema
     } do
+      %{name: dsv_name} = insert(:data_structure_version, data_structure_id: data_structure_id)
+
       conn =
         post(conn, Routes.data_structure_grant_path(conn, :create, data_structure_external_id),
           grant: @create_attrs
@@ -65,7 +67,12 @@ defmodule TdDdWeb.GrantControllerTest do
                "detail" => %{},
                "end_date" => "2010-04-17T14:00:00.000000Z",
                "start_date" => "2010-04-17T14:00:00.000000Z",
-               "user_id" => @cache_user_id
+               "user_id" => @cache_user_id,
+               "data_structure" => %{
+                 "id" => ^data_structure_id,
+                 "name" => ^dsv_name,
+                 "external_id" => ^data_structure_external_id
+               }
              } =
                conn
                |> get(Routes.grant_path(conn, :show, id))

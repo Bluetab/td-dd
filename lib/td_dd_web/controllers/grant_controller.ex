@@ -90,7 +90,7 @@ defmodule TdDdWeb.GrantController do
 
   def show(conn, %{"id" => id}) do
     with claims <- conn.assigns[:current_resource],
-         %Grant{} = grant <- Grants.get_grant!(id, preload: [:data_structure]),
+         %Grant{} = grant <- Grants.get_grant!(id, preload: [data_structure: :versions]),
          {:can, true} <- {:can, can?(claims, show(grant))} do
       render(conn, "show.json", grant: grant)
     end
