@@ -10,6 +10,7 @@
 
 - [TD-3050] Show quality errors
 - [TD-3945] Created Grant entity
+- [TD-3947] Display user grant in data structure
 
 ## [4.24.0] 2021-07-13
 
