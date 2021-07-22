@@ -32,7 +32,6 @@ defmodule TdDd.Cache.StructureEntry do
       |> Map.put(:system_id, system_id)
       |> Map.put(:domain_id, domain_id)
       |> Map.put(:parent_id, get_first_parent_id(dsv))
-      |> IO.inspect
 
     Enum.reduce(opts, acc, &put_cache_opt(ds, &1, &2))
   end
