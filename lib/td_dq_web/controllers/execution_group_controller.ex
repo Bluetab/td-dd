@@ -39,7 +39,7 @@ defmodule TdDqWeb.ExecutionGroupController do
 
     with {:can, true} <- {:can, can?(claims, show(Group))},
          %Group{} = group <-
-           Executions.get_group(params, preload: [executions: [:implementation, :rule, :result]]) do
+           Executions.get_group(params, preload: [executions: [:implementation, :rule, :result, :quality_events]]) do
       render(conn, "show.json", execution_group: group)
     end
   end
