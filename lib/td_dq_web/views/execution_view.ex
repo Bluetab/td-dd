@@ -1,7 +1,7 @@
 defmodule TdDqWeb.ExecutionView do
   use TdDqWeb, :view
 
-  alias TdDqWeb.{RuleResultView, RuleView}
+  alias TdDqWeb.{QualityEventView, RuleResultView, RuleView}
 
   def render("index.json", %{executions: executions}) do
     %{data: render_many(executions, __MODULE__, "execution.json")}
@@ -22,7 +22,7 @@ defmodule TdDqWeb.ExecutionView do
 
   defp embeddings(%{} = execution) do
     execution
-    |> Map.take([:rule, :implementation, :result])
+    |> Map.take([:rule, :implementation, :result, :quality_events])
     |> Enum.sort_by(&rule_first/1)
     |> Enum.reduce(%{}, &put_embedding/2)
   end
@@ -61,6 +61,11 @@ defmodule TdDqWeb.ExecutionView do
       |> Map.new()
 
     Map.put(acc, :rule, rule)
+  end
+
+  defp put_embedding({:quality_events, events}, %{} = acc) when is_list(events) do
+    events = render_many(events, QualityEventView, "quality_event.json")
+    Map.put(acc, :quality_events, events)
   end
 
   defp put_embedding(_, acc), do: acc

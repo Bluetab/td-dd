@@ -37,7 +37,7 @@ defmodule TdDq.Events.QualityEvents do
       |> Enum.map(fn %{id: id} ->
         %{
           execution_id: id,
-          type: "SUCCEDDED",
+          type: "SUCCEEDED",
           message: "Quality Completed",
           inserted_at: inserted_at
         }
