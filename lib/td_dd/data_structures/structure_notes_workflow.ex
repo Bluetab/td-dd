@@ -77,14 +77,26 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
 
   def update(structure_note, %{"status" => status}, _is_strict, user_id) do
     case String.to_atom(status) do
-      :pending_approval -> send_for_approval(structure_note, user_id)
-      :published -> publish(structure_note, user_id)
-      :rejected -> reject(structure_note, user_id)
-      :draft -> unreject(structure_note, user_id)
-      :deprecated -> deprecate(
-        structure_note, user_id
-      )
-      _ -> {:error, :invalid_transition}
+      :pending_approval ->
+        send_for_approval(structure_note, user_id)
+
+      :published ->
+        publish(structure_note, user_id)
+
+      :rejected ->
+        reject(structure_note, user_id)
+
+      :draft ->
+        unreject(structure_note, user_id)
+
+      :deprecated ->
+        deprecate(
+          structure_note,
+          user_id
+        )
+
+      _ ->
+        {:error, :invalid_transition}
     end
   end
 
@@ -121,7 +133,9 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
     )
   end
 
-  defp send_for_approval(structure_note, user_id), do: simple_transition(structure_note, :pending_approval, user_id)
+  defp send_for_approval(structure_note, user_id),
+    do: simple_transition(structure_note, :pending_approval, user_id)
+
   defp reject(structure_note, user_id), do: simple_transition(structure_note, :rejected, user_id)
   defp unreject(structure_note, user_id), do: simple_transition(structure_note, :draft, user_id)
 

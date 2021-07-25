@@ -51,8 +51,7 @@ defmodule TdDdWeb.StructureNoteController do
 
   def search(conn, filter) do
     with claims <- conn.assigns[:current_resource],
-      {:can, true} <- {:can, can?(claims, search_structure_notes({StructureNote, nil}))} do
-
+         {:can, true} <- {:can, can?(claims, search_structure_notes({StructureNote, nil}))} do
       structure_notes = DataStructures.list_structure_notes(filter)
 
       render(conn, "search.json", structure_notes: structure_notes)
@@ -137,14 +136,15 @@ defmodule TdDdWeb.StructureNoteController do
   end
 
   def create_by_external_id(
-      conn,
-      %{"structure_note" => %{"data_structure_external_id" => external_id}} = params
-    ) do
-      with claims <- conn.assigns[:current_resource],
-      data_structure <- DataStructures.get_data_structure_by_external_id(external_id),
-      {:can, true} <- {:can, can?(claims, force_create_structure_note({StructureNote, data_structure}))} do
-        creation_params = Map.put(params, "data_structure_id", data_structure.id)
-        create(conn, creation_params, true)
+        conn,
+        %{"structure_note" => %{"data_structure_external_id" => external_id}} = params
+      ) do
+    with claims <- conn.assigns[:current_resource],
+         data_structure <- DataStructures.get_data_structure_by_external_id(external_id),
+         {:can, true} <-
+           {:can, can?(claims, force_create_structure_note({StructureNote, data_structure}))} do
+      creation_params = Map.put(params, "data_structure_id", data_structure.id)
+      create(conn, creation_params, true)
     end
   end
 
@@ -197,9 +197,7 @@ defmodule TdDdWeb.StructureNoteController do
          structure_note = DataStructures.get_structure_note!(id),
          {:can, true} <- can(structure_note, structure_note_params, claims, data_structure),
          {:ok, %StructureNote{} = structure_note} <-
-           StructureNotesWorkflow.update(structure_note, structure_note_params, true, user_id)
-      do
-
+           StructureNotesWorkflow.update(structure_note, structure_note_params, true, user_id) do
       conn
       |> put_resp_header(
         "location",

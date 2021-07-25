@@ -54,6 +54,11 @@ config :td_dd, TdDd.Scheduler,
       schedule: System.get_env("RULE_REMOVAL_SCHEDULE", "@hourly"),
       task: {TdDq.Rules.RuleRemover, :archive_inactive_rules, []},
       run_strategy: Quantum.RunStrategy.Local
+    ],
+    catalog_history_purger: [
+      schedule: System.get_env("CATALOG_HISTORY_PURGE_SCHEDULE", "@daily"),
+      task: {TdDd.DataStructures.HistoryManager, :purge_history, []},
+      run_strategy: Quantum.RunStrategy.Local
     ]
   ]
 
@@ -95,3 +100,12 @@ config :td_dd, TdDd.Search.Cluster,
 
 config :td_dd, TdDdWeb.Endpoint,
   max_payload_length: System.get_env("MAX_PAYLOAD_LENGTH", "100000000") |> String.to_integer()
+
+config :td_dd, TdDd.DataStructures.HistoryManager,
+  history_depth_days:
+    System.get_env("CATALOG_HISTORY_DEPTH_DAYS", "")
+    |> Integer.parse()
+    |> (case do
+          {days, ""} when days > 0 -> days
+          _ -> nil
+        end)
