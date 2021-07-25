@@ -549,15 +549,6 @@ defmodule TdDd.DataStructures do
 
   defp on_delete(res), do: res
 
-  def purge_data_structure_versions(period_time) do
-    DataStructureVersion
-    |> where(
-      [dvs],
-      dvs.deleted_at <= fragment("CURRENT_DATE  - interval '1 DAY' * ? ", ^period_time)
-    )
-    |> Repo.delete_all()
-  end
-
   def get_latest_version(target, options \\ [])
 
   def get_latest_version(nil, _), do: nil

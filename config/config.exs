@@ -151,9 +151,9 @@ config :td_dd, TdDd.Scheduler,
       task: {TdDq.Rules.RuleRemover, :archive_inactive_rules, []},
       run_strategy: Quantum.RunStrategy.Local
     ],
-    structure_version_purge: [
+    catalog_history_purger: [
       schedule: "@daily",
-      task: {TdDd.DataStructures.DataStructurePurge, :purge_structure_versions, []},
+      task: {TdDd.DataStructures.HistoryManager, :purge_history, []},
       run_strategy: Quantum.RunStrategy.Local
     ]
   ]

@@ -171,11 +171,14 @@ defmodule TdDd.Factory do
     |> merge_attributes(attrs)
   end
 
-  def structure_metadata_factory do
+  def structure_metadata_factory(attrs) do
+    attrs = default_assoc(attrs, :data_structure_id, :data_structure)
+
     %StructureMetadata{
       fields: %{"foo" => "bar"},
       version: 0
     }
+    |> merge_attributes(attrs)
   end
 
   def unit_factory do
