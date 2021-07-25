@@ -56,10 +56,17 @@ defmodule TdDq.Rules.Audit do
         %{implementation: %{id: id} = implementation},
         %{changes: %{deleted_at: deleted_at}},
         user_id
-      )
-      when not is_nil(deleted_at) do
+      ) do
     payload = Map.take(implementation, [:implementation_key, :rule_id])
-    publish("implementation_deprecated", "implementation", id, user_id, payload)
+
+    event =
+      if is_nil(deleted_at) do
+        "implementation_restored"
+      else
+        "implementation_deprecated"
+      end
+
+    publish(event, "implementation", id, user_id, payload)
   end
 
   # TODO: Publish implementation create and update events

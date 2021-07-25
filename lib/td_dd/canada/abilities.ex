@@ -3,15 +3,19 @@ defmodule TdDd.Canada.Abilities do
   alias TdCache.Link
   alias TdDd.Auth.Claims
 
-  alias TdDd.Canada.DataStructureAbilities
-  alias TdDd.Canada.DataStructureTagAbilities
-  alias TdDd.Canada.DataStructureTypeAbilities
-  alias TdDd.Canada.DataStructureVersionAbilities
-  alias TdDd.Canada.ExecutionAbilities
-  alias TdDd.Canada.LinkAbilities
-  alias TdDd.Canada.StructureNoteAbilities
-  alias TdDd.Canada.SystemAbilities
-  alias TdDd.Canada.UnitAbilities
+  alias TdDd.Canada.{
+    DataStructureAbilities,
+    DataStructureTagAbilities,
+    DataStructureTypeAbilities,
+    DataStructureVersionAbilities,
+    ExecutionAbilities,
+    GrantAbilities,
+    LinkAbilities,
+    StructureNoteAbilities,
+    SystemAbilities,
+    UnitAbilities
+  }
+
   alias TdDd.Classifiers.Classifier
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureTag
@@ -21,6 +25,7 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.Events.ProfileEvent
   alias TdDd.Executions.ProfileExecution
   alias TdDd.Executions.ProfileGroup
+  alias TdDd.Grants.Grant
   alias TdDd.Lineage.Units.Node
   alias TdDd.Lineage.Units.Unit
   alias TdDd.Systems.System
@@ -62,6 +67,14 @@ defmodule TdDd.Canada.Abilities do
 
     def can?(%Claims{} = claims, action, Unit) do
       UnitAbilities.can?(claims, action, Unit)
+    end
+
+    def can?(%Claims{} = claims, :create_grant, %DataStructure{} = data_structure) do
+      GrantAbilities.can?(claims, :create_grant, data_structure)
+    end
+
+    def can?(%Claims{} = claims, action, %Grant{} = grant) do
+      GrantAbilities.can?(claims, action, grant)
     end
 
     def can?(%Claims{} = claims, action, %DataStructure{} = data_structure) do

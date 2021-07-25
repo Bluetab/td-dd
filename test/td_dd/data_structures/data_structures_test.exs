@@ -1421,6 +1421,7 @@ defmodule TdDd.DataStructuresTest do
   describe "structure_notes" do
     alias TdDd.DataStructures.StructureNote
 
+    @user_id 1
     @valid_attrs %{df_content: %{}, status: :draft, version: 42}
     @update_attrs %{df_content: %{}, status: :published}
     @invalid_attrs %{df_content: nil, status: nil, version: nil}
@@ -1465,39 +1466,39 @@ defmodule TdDd.DataStructuresTest do
       assert DataStructures.get_latest_structure_note(data_structure.id) <~> latest_structure_note
     end
 
-    test "create_structure_note/1 with valid data creates a structure_note" do
+    test "create_structure_note/3 with valid data creates a structure_note" do
       data_structure = insert(:data_structure)
 
       assert {:ok, %StructureNote{} = structure_note} =
-               DataStructures.create_structure_note(data_structure, @valid_attrs)
+               DataStructures.create_structure_note(data_structure, @valid_attrs, @user_id)
 
       assert structure_note.df_content == %{}
       assert structure_note.status == :draft
       assert structure_note.version == 42
     end
 
-    test "create_structure_note/1 with invalid data returns error changeset" do
+    test "create_structure_note/3 with invalid data returns error changeset" do
       data_structure = insert(:data_structure)
 
       assert {:error, %Ecto.Changeset{}} =
-               DataStructures.create_structure_note(data_structure, @invalid_attrs)
+               DataStructures.create_structure_note(data_structure, @invalid_attrs, @user_id)
     end
 
-    test "update_structure_note/2 with valid data updates the structure_note" do
+    test "update_structure_note/3 with valid data updates the structure_note" do
       structure_note = insert(:structure_note)
 
       assert {:ok, %StructureNote{} = structure_note} =
-               DataStructures.update_structure_note(structure_note, @update_attrs)
+               DataStructures.update_structure_note(structure_note, @update_attrs, @user_id)
 
       assert structure_note.df_content == %{}
       assert structure_note.status == :published
     end
 
-    test "update_structure_note/2 with invalid data returns error changeset" do
+    test "update_structure_note/3 with invalid data returns error changeset" do
       structure_note = insert(:structure_note)
 
       assert {:error, %Ecto.Changeset{}} =
-               DataStructures.update_structure_note(structure_note, @invalid_attrs)
+               DataStructures.update_structure_note(structure_note, @invalid_attrs, @user_id)
 
       assert structure_note <~> DataStructures.get_structure_note!(structure_note.id)
     end

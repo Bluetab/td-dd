@@ -10,10 +10,15 @@ defmodule TdDd.DataStructures.Audit do
   alias Ecto.Changeset
   alias TdCache.TaxonomyCache
 
-    @doc """
+  @doc """
   Publishes a `:data_structure_updated` event when modifying a StructureNote. Should be called using `Ecto.Multi.run/5`.
   """
-  def structure_note_updated(_repo, %{structure_note: %{data_structure_id: id}}, %{} = changeset, user_id) do
+  def structure_note_updated(
+        _repo,
+        %{structure_note: %{data_structure_id: id}},
+        %{} = changeset,
+        user_id
+      ) do
     publish("data_structure_updated", "data_structure", id, user_id, changeset)
   end
 
@@ -138,6 +143,27 @@ defmodule TdDd.DataStructures.Audit do
       ])
 
     publish("structure_tag_link_deleted", "data_structure", id, user_id, payload)
+  end
+
+  @doc """
+  Publishes a `:grant_created` event when creating a Grant. Should be called using `Ecto.Multi.run/5`.
+  """
+  def grant_created(_repo, %{grant: %{id: id}}, %{} = changeset, user_id) do
+    publish("grant_created", "grant", id, user_id, changeset)
+  end
+
+  @doc """
+  Publishes a `:grant_updated` event when updating a Grant. Should be called using `Ecto.Multi.run/5`.
+  """
+  def grant_updated(_repo, %{grant: %{id: id}}, %{} = changeset, user_id) do
+    publish("grant_updated", "grant", id, user_id, changeset)
+  end
+
+  @doc """
+  Publishes a `:grant_deleted` event when deleting a Grant. Should be called using `Ecto.Multi.run/5`.
+  """
+  def grant_deleted(_repo, %{grant: %{id: id}}, user_id) do
+    publish("grant_deleted", "grant", id, user_id)
   end
 
   defp with_domain_ids(%Changeset{} = changeset, %{data_structure: %{domain_id: domain_id}}) do
