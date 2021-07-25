@@ -34,6 +34,8 @@ config :td_dd, :vault,
   token: "vault_secret_token1234",
   secrets_path: "secret/data/cx/"
 
+config :td_dd, TdDd.DataStructures.HistoryManager, history_depth_days: 5
+
 config :vaultex, vault_addr: "http://vault:8200"
 
 config :td_cache, :audit, stream: "audit:events:test"

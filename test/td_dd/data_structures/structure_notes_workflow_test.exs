@@ -31,7 +31,6 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
   end
 
   describe "create" do
-
     @user_id 1
 
     test "create the first structure note with draft status and version 1" do
@@ -75,7 +74,8 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
 
       create_attrs = %{"df_content" => %{"foo" => "bar"}}
 
-      assert {:error, :conflict} = StructureNotesWorkflow.create(data_structure, create_attrs, @user_id)
+      assert {:error, :conflict} =
+               StructureNotesWorkflow.create(data_structure, create_attrs, @user_id)
     end
 
     test "create a new structure note version when the previous has published status" do
@@ -253,7 +253,12 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
         )
 
       assert {:ok, %{status: :published}} =
-               StructureNotesWorkflow.update(structure_note, %{"status" => "published"}, @is_strict, @user_id)
+               StructureNotesWorkflow.update(
+                 structure_note,
+                 %{"status" => "published"},
+                 @is_strict,
+                 @user_id
+               )
 
       assert %{status: :published} = DataStructures.get_structure_note!(structure_note.id)
 
@@ -327,7 +332,9 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
         |> insert(status: :published, data_structure_id: data_structure.id)
 
       StructureNotesWorkflow.create(data_structure, %{}, @user_id)
-      assert {:error, _} = StructureNotesWorkflow.update(structure_note, attrs, @is_strict, @user_id)
+
+      assert {:error, _} =
+               StructureNotesWorkflow.update(structure_note, attrs, @is_strict, @user_id)
     end
 
     test "does not modify the content when the status changes" do
@@ -381,7 +388,12 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
         )
 
       assert {:ok, %{status: :published}} =
-               StructureNotesWorkflow.update(structure_note, %{"status" => "published"}, @is_strict, @user_id)
+               StructureNotesWorkflow.update(
+                 structure_note,
+                 %{"status" => "published"},
+                 @is_strict,
+                 @user_id
+               )
 
       assert %{status: :published} = DataStructures.get_structure_note!(structure_note.id)
 
