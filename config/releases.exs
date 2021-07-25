@@ -56,7 +56,7 @@ config :td_dd, TdDd.Scheduler,
       run_strategy: Quantum.RunStrategy.Local
     ],
     catalog_history_purger: [
-      schedule: System.get_env("CATALOG_PURGE_SCHEDULE", "@daily"),
+      schedule: System.get_env("CATALOG_HISTORY_PURGE_SCHEDULE", "@daily"),
       task: {TdDd.DataStructures.HistoryManager, :purge_history, []},
       run_strategy: Quantum.RunStrategy.Local
     ]
