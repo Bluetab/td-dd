@@ -4,6 +4,7 @@ defmodule TdDd.Grants do
   """
 
   import Ecto.Query, warn: false
+  alias Ecto.Changeset
   alias Ecto.Multi
   alias TdDd.Auth.Claims
   alias TdDd.DataStructures.Audit
@@ -25,6 +26,20 @@ defmodule TdDd.Grants do
     |> Enum.reduce(Grant, fn
       {:user_id, user_id}, q ->
         where(q, [g], g.user_id == ^user_id)
+
+      {:data_structure_id, data_structure_id}, q ->
+        where(q, [g], g.data_structure_id == ^data_structure_id)
+
+      {:overlaps, %{start_date: start_date, end_date: nil}}, q ->
+        where(q, [g], g.end_date >= ^start_date or is_nil(g.end_date))
+
+      {:overlaps, %{start_date: start_date, end_date: end_date}}, q ->
+        where(
+          q,
+          [g],
+          (g.end_date >= ^start_date or is_nil(g.end_date)) and
+            g.start_date <= ^end_date
+        )
     end)
     |> Repo.all()
   end
@@ -65,10 +80,32 @@ defmodule TdDd.Grants do
     changeset = Grant.changeset(attrs, data_structure)
 
     Multi.new()
+    |> Multi.run(:overlap, fn _, _ -> date_range_overlap?(changeset) end)
     |> Multi.insert(:grant, changeset)
     |> Multi.run(:audit, Audit, :grant_created, [changeset, user_id])
     |> Repo.transaction()
   end
+
+  defp date_range_overlap?(%{valid?: true} = changeset) do
+    %{id: data_structure_id} = Changeset.get_field(changeset, :data_structure)
+    user_id = Changeset.get_field(changeset, :user_id)
+    start_date = Changeset.get_field(changeset, :start_date)
+    end_date = Changeset.get_field(changeset, :end_date)
+
+    %{
+      data_structure_id: data_structure_id,
+      user_id: user_id,
+      overlaps: %{start_date: start_date, end_date: end_date}
+    }
+    |> list_grants()
+    |> Enum.empty?()
+    |> case do
+      true -> {:ok, nil}
+      false -> {:error, Changeset.add_error(changeset, :date_range, "overlaps")}
+    end
+  end
+
+  defp date_range_overlap?(_), do: {:ok, nil}
 
   @doc """
   Updates a grant.

@@ -14,6 +14,7 @@ defmodule TdDd.DataStructures.DataStructure do
   alias TdDd.DataStructures.Profile
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.DataStructures.StructureNote
+  alias TdDd.Grants.Grant
   alias TdDd.Systems.System
 
   @audit_fields [:last_change_by]
@@ -30,6 +31,7 @@ defmodule TdDd.DataStructures.DataStructure do
     has_many(:note_versions, StructureNote)
     has_one(:profile, Profile)
     has_many(:data_structures_tags, DataStructuresTags)
+    has_many(:grants, Grant)
     many_to_many(:tags, DataStructureTag, join_through: DataStructuresTags)
 
     field(:confidential, :boolean)

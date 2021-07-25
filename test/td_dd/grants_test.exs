@@ -76,6 +76,75 @@ defmodule TdDd.GrantsTest do
              } = Jason.decode!(payload)
     end
 
+    test "create_grant/3 will not allow a start date to be greater than the end_date" do
+      claims = build(:claims)
+      data_structure = insert(:data_structure)
+
+      attrs = %{
+        end_date: "2010-04-10T00:00:00.000000Z",
+        start_date: "2010-04-20T00:00:00.000000Z",
+        user_id: 42
+      }
+
+      assert {:error, :grant, %Ecto.Changeset{}, _} =
+               Grants.create_grant(attrs, data_structure, claims)
+    end
+
+    test "create_grant/3 will not allow two grants of same structure and user on the same period" do
+      claims = build(:claims)
+      data_structure = insert(:data_structure)
+
+      attrs = %{
+        end_date: "2010-04-20T00:00:00.000000Z",
+        start_date: "2010-04-16T00:00:00.000000Z",
+        user_id: 42
+      }
+
+      assert {:ok, _} = Grants.create_grant(attrs, data_structure, claims)
+
+      attrs = %{
+        start_date: "2010-04-18T00:00:00.000000Z",
+        user_id: 42
+      }
+
+      assert {:error, :overlap, %Ecto.Changeset{} = error, _} =
+               Grants.create_grant(attrs, data_structure, claims)
+
+      assert %{errors: [date_range: {"overlaps", []}]} = error
+
+      attrs = %{
+        start_date: "2010-04-15T00:00:00.000000Z",
+        end_date: "2010-04-19T00:00:00.000000Z",
+        user_id: 42
+      }
+
+      assert {:error, :overlap, %Ecto.Changeset{} = error, _} =
+               Grants.create_grant(attrs, data_structure, claims)
+
+      assert %{errors: [date_range: {"overlaps", []}]} = error
+    end
+
+    test "create_grant/3 will allow two grants of same structure and user on different periods" do
+      claims = build(:claims)
+      data_structure = insert(:data_structure)
+
+      attrs = %{
+        end_date: "2010-04-20T00:00:00.000000Z",
+        start_date: "2010-04-16T00:00:00.000000Z",
+        user_id: 42
+      }
+
+      assert {:ok, _} = Grants.create_grant(attrs, data_structure, claims)
+
+      attrs = %{
+        start_date: "2010-04-21T00:00:00.000000Z",
+        end_date: "2010-04-26T00:00:00.000000Z",
+        user_id: 42
+      }
+
+      assert {:ok, _} = Grants.create_grant(attrs, data_structure, claims)
+    end
+
     test "create_grant/3 with invalid data returns error changeset" do
       claims = build(:claims)
       data_structure = insert(:data_structure)

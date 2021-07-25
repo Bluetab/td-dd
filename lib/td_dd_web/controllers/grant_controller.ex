@@ -3,6 +3,7 @@ defmodule TdDdWeb.GrantController do
   use PhoenixSwagger
   import Canada, only: [can?: 2]
 
+  alias TdCache.UserCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
 
@@ -37,9 +38,11 @@ defmodule TdDdWeb.GrantController do
 
   def create(conn, %{"grant" => grant_params, "data_structure_id" => data_structure_external_id}) do
     with claims <- conn.assigns[:current_resource],
-         %DataStructure{} = data_structure <-
-           DataStructures.get_data_structure_by_external_id(data_structure_external_id),
+         {:data_structure, %DataStructure{} = data_structure} <-
+           {:data_structure,
+            DataStructures.get_data_structure_by_external_id(data_structure_external_id)},
          {:can, true} <- {:can, can?(claims, create_grant(data_structure))},
+         {:ok, grant_params} <- with_user_id(grant_params),
          {:ok, %{grant: %Grant{} = grant}} <-
            Grants.create_grant(grant_params, data_structure, claims) do
       conn
@@ -47,8 +50,28 @@ defmodule TdDdWeb.GrantController do
       |> put_resp_header("location", Routes.grant_path(conn, :show, grant))
       |> render("show.json", grant: grant)
     else
-      nil -> {:error, :not_found}
+      {:data_structure, nil} -> {:error, :not_found, "DataStructure"}
       error -> error
+    end
+  end
+
+  defp with_user_id(%{"user_id" => user_id} = grant_params) do
+    case UserCache.get(user_id) do
+      {:ok, nil} ->
+        {:error, :not_found, "User"}
+
+      {:ok, user} ->
+        {:ok, Map.put(grant_params, "user_id", user.id)}
+    end
+  end
+
+  defp with_user_id(%{"user_name" => user_name} = grant_params) do
+    case UserCache.get_by_user_name(user_name) do
+      {:ok, nil} ->
+        {:error, :not_found, "User"}
+
+      {:ok, user} ->
+        {:ok, Map.put(grant_params, "user_id", user.id)}
     end
   end
 
@@ -67,7 +90,7 @@ defmodule TdDdWeb.GrantController do
 
   def show(conn, %{"id" => id}) do
     with claims <- conn.assigns[:current_resource],
-         %Grant{} = grant <- Grants.get_grant!(id, preload: [:data_structure]),
+         %Grant{} = grant <- Grants.get_grant!(id, preload: [data_structure: :versions]),
          {:can, true} <- {:can, can?(claims, show(grant))} do
       render(conn, "show.json", grant: grant)
     end
