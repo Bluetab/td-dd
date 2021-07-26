@@ -38,6 +38,7 @@ defmodule TdDdWeb do
 
       def render_error(conn, :unprocessable_entity),
         do: render_error(conn, :unprocessable_entity, "422.json")
+
       def render_error(conn, :conflict), do: render_error(conn, :conflict, "409.json")
 
       defp render_error(conn, status, template) do

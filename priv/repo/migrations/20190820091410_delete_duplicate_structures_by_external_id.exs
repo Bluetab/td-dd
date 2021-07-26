@@ -1,5 +1,4 @@
 defmodule TdDd.Repo.Migrations.DeleteDuplicateStructuresByExternalId do
-
   use Ecto.Migration
 
   import Ecto.Query

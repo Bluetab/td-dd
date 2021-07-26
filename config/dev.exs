@@ -36,6 +36,7 @@ config :td_dd, TdDd.Repo,
   username: "postgres",
   password: "postgres",
   database: "td_dd_dev",
+  # database: "funding_dd_3",
   hostname: "localhost"
 
 config :td_cache, redis_host: "localhost"

@@ -177,7 +177,7 @@ defmodule TdDdWeb.MetadataControllerTest do
 
     @tag authentication: [role: "service"]
     @tag fixture: "test/fixtures/metadata"
-    setup [:source]
+    setup :source
 
     test "uploads structure, field and relation metadata when domain is specified", %{
       conn: conn,

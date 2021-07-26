@@ -6,8 +6,10 @@ defmodule TdDd.Repo.Migrations.MigrateDfContentToNotes do
 
   def up do
     now = DateTime.utc_now()
-    structure_notes_query = "data_structures"
-      |> where([s], not is_nil(s.df_content) )
+
+    structure_notes_query =
+      "data_structures"
+      |> where([s], not is_nil(s.df_content))
       |> select([s], %{
         df_content: s.df_content,
         data_structure_id: s.id,
@@ -17,7 +19,8 @@ defmodule TdDd.Repo.Migrations.MigrateDfContentToNotes do
         updated_at: ^now
       })
 
-    Repo.insert_all( "structure_notes", structure_notes_query)
+    Repo.insert_all("structure_notes", structure_notes_query)
+
     alter table(:data_structures) do
       remove :df_content
     end
@@ -30,12 +33,14 @@ defmodule TdDd.Repo.Migrations.MigrateDfContentToNotes do
 
     flush()
 
-    update_query = from(
-      ds in "data_structures",
-      join: sn in "structure_notes",
-      on: [data_structure_id: ds.id, status: "published"],
-      update: [set: [df_content: sn.df_content]]
-    )
+    update_query =
+      from(
+        ds in "data_structures",
+        join: sn in "structure_notes",
+        on: [data_structure_id: ds.id, status: "published"],
+        update: [set: [df_content: sn.df_content]]
+      )
+
     Repo.update_all(update_query, [])
 
     Repo.delete_all("structure_notes")

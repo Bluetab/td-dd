@@ -90,7 +90,7 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
   end
 
   describe "update data_structure_type" do
-    setup [:create_data_structure_type]
+    setup :create_data_structure_type
 
     @tag authentication: [role: "admin"]
     test "renders data_structure_type when data is valid", %{
@@ -135,7 +135,7 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
   end
 
   describe "delete data_structure_type" do
-    setup [:create_data_structure_type]
+    setup :create_data_structure_type
 
     @tag authentication: [role: "admin"]
     test "deletes chosen data_structure_type", %{

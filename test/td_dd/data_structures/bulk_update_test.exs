@@ -308,7 +308,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
   end
 
   describe "from_csv/2" do
-    setup [:from_csv_templates]
+    setup :from_csv_templates
 
     defp get_df_content_from_ext_id(ext_id) do
       ext_id

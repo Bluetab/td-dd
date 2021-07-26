@@ -6,8 +6,10 @@ defmodule TdDd.Repo.Migrations.LinkStructuresToSystems do
   alias TdDd.Repo
 
   def up do
-    query = from "systems",
-      select: [:name, :id]
+    query =
+      from("systems",
+        select: [:name, :id]
+      )
 
     query
     |> Repo.all()
