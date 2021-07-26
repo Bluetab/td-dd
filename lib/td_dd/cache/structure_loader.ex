@@ -23,8 +23,8 @@ defmodule TdDd.Cache.StructureLoader do
     GenServer.start_link(__MODULE__, config, name: __MODULE__)
   end
 
-  def refresh do
-    GenServer.cast(__MODULE__, :refresh)
+  def refresh(opts \\ []) do
+    GenServer.cast(__MODULE__, {:refresh, opts})
   end
 
   ## EventStream.Consumer Callbacks
@@ -43,8 +43,8 @@ defmodule TdDd.Cache.StructureLoader do
   end
 
   @impl GenServer
-  def handle_cast(:refresh, state) do
-    do_refresh()
+  def handle_cast({:refresh, opts}, state) do
+    do_refresh(opts)
     {:noreply, state}
   end
 
@@ -96,7 +96,7 @@ defmodule TdDd.Cache.StructureLoader do
     |> Enum.map(&StructureCache.put(&1, opts))
   end
 
-  defp do_refresh(opts \\ []) do
+  defp do_refresh(opts) do
     Timer.time(
       fn -> refresh_cached_structures(opts) end,
       fn ms, {updated, removed} ->
