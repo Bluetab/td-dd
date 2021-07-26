@@ -75,7 +75,7 @@ defmodule TdDdWeb.GrantController do
     end
   end
 
-  defp with_user_id(_params), do: grant_params
+  defp with_user_id(params), do: params
 
   swagger_path :show do
     description("Shows Grant")
