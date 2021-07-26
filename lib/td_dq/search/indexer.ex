@@ -92,11 +92,11 @@ defmodule TdDq.Search.Indexer do
           fn -> reindex_rules(:all) end,
           fn millis, _ -> Logger.info("Created index #{alias_rule} in #{millis}ms") end
         )
+
         Timer.time(
           fn -> reindex_implementations(:all) end,
           fn millis, _ -> Logger.info("Created index #{alias_implementation} in #{millis}ms") end
         )
-
       else
         Logger.warn("Another process is migrating")
       end

@@ -12,7 +12,9 @@ defmodule TdDd.Repo.Migrations.AlterDataStructureVersions do
   end
 
   def down do
-    execute("ALTER TABLE data_structure_versions DROP CONSTRAINT data_structure_versions_data_structure_id_fkey")
+    execute(
+      "ALTER TABLE data_structure_versions DROP CONSTRAINT data_structure_versions_data_structure_id_fkey"
+    )
 
     alter table("data_structure_versions") do
       modify(:data_structure_id, references(:data_structures, on_delete: :nothing))

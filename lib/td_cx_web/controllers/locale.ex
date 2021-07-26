@@ -9,9 +9,12 @@ defmodule TdCxWeb.Locale do
 
   def call(conn, _opts) do
     case conn.params["locale"] || conn |> fetch_session |> get_session(:locale) do
-      nil     -> conn
-      locale  ->
+      nil ->
+        conn
+
+      locale ->
         Gettext.put_locale(TdCxWeb.Gettext, locale)
+
         conn
         |> fetch_session
         |> put_session(:locale, locale)

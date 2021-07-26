@@ -127,7 +127,8 @@ defmodule TdDd.DataStructures.DataStructureQueries do
     |> join(:left, [dsv], p in subquery(paths(params)), on: p.id == dsv.data_structure_id)
     |> select_merge([_, _, _, p], %{path: fragment("COALESCE(?, ARRAY[]::json[])", p.path)})
     |> join(:left, [dsv], sn in StructureNote,
-    on: sn.data_structure_id == dsv.data_structure_id and sn.status == :published)
+      on: sn.data_structure_id == dsv.data_structure_id and sn.status == :published
+    )
     |> select_merge([_, _, _, _, sn], %{latest_note: sn.df_content})
   end
 

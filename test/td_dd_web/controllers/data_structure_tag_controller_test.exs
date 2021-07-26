@@ -131,7 +131,7 @@ defmodule TdDdWeb.DataStructureTagControllerTest do
   end
 
   describe "update data_structure_tag" do
-    setup [:create_data_structure_tag]
+    setup :create_data_structure_tag
 
     @tag authentication: [role: "admin"]
     test "renders data_structure_tag when data is valid", %{
@@ -187,7 +187,7 @@ defmodule TdDdWeb.DataStructureTagControllerTest do
   end
 
   describe "delete data_structure_tag" do
-    setup [:create_data_structure_tag]
+    setup :create_data_structure_tag
 
     @tag authentication: [role: "admin"]
     test "deletes chosen data_structure_tag", %{

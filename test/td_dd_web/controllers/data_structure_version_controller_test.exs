@@ -60,7 +60,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   end
 
   describe "GET /api/data_structures/:id/versions/:version structure hierarchy" do
-    setup [:create_structure_hierarchy]
+    setup :create_structure_hierarchy
 
     @tag authentication: [role: "admin"]
     test "renders a data structure with children", %{conn: conn, structure: %{id: id}} do
@@ -349,7 +349,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   end
 
   describe "show data_structure with deletions in its hierarchy" do
-    setup [:create_structure_hierarchy_with_logic_deletions]
+    setup :create_structure_hierarchy_with_logic_deletions
 
     @tag authentication: [role: "admin"]
     test "renders a data structure with children including deleted", %{
@@ -411,7 +411,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   end
 
   describe "GET /api/data_structures/:id/versions/:version data_field structures" do
-    setup [:create_data_field_structure]
+    setup :create_data_field_structure
 
     @tag authentication: [role: "user"]
     test "user whithout permission can not profile structure", %{
@@ -451,7 +451,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       assert %{"profile_permission" => true} = permissions
     end
 
-    setup [:profile_source]
+    setup :profile_source
     @tag authentication: [role: "user"]
     test "user with permission can profile structure with indirect profile source", %{
       conn: conn,
@@ -478,7 +478,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   end
 
   describe "GET /api/data_structures/:id/versions/:version field structures" do
-    setup [:create_field_structure]
+    setup :create_field_structure
 
     @tag authentication: [role: "user"]
     test "user whithout permission can not profile structure", %{

@@ -333,7 +333,7 @@ defmodule TdDd.LoaderTest do
                )
     end
 
-    setup [:source]
+    setup :source
 
     test "update structures without generate version", %{source: source} do
       system = insert(:system, external_id: "SYS1", name: "SYS1")
@@ -815,7 +815,7 @@ defmodule TdDd.LoaderTest do
   end
 
   defp random_string(prefix \\ "") do
-    id = :rand.uniform(100_000_000)
+    id = System.unique_integer([:positive])
     "#{prefix}#{id}"
   end
 end

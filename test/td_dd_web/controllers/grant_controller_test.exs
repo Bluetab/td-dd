@@ -201,7 +201,7 @@ defmodule TdDdWeb.GrantControllerTest do
   end
 
   describe "show grant" do
-    setup [:create_grant]
+    setup :create_grant
 
     @tag authentication: [role: "admin"]
     test "can show grant", %{conn: conn, grant: %{id: id}, swagger_schema: schema} do
@@ -248,7 +248,7 @@ defmodule TdDdWeb.GrantControllerTest do
   end
 
   describe "update grant" do
-    setup [:create_grant]
+    setup :create_grant
 
     @tag authentication: [role: "admin"]
     test "renders grant when data is valid", %{
@@ -319,7 +319,7 @@ defmodule TdDdWeb.GrantControllerTest do
   end
 
   describe "delete grant" do
-    setup [:create_grant]
+    setup :create_grant
 
     @tag authentication: [role: "admin"]
     test "deletes chosen grant", %{conn: conn, grant: grant} do

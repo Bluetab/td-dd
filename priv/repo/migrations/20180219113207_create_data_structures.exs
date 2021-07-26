@@ -12,6 +12,5 @@ defmodule TdDd.Repo.Migrations.CreateDataStructures do
 
       timestamps(type: :utc_datetime)
     end
-
   end
 end

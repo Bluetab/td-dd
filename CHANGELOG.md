@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [4.25.0] 2021-07-26
 
 ### Fixed
 
@@ -87,7 +87,8 @@
 ### Changed
 
 - [TD-3753] Build using Elixir 1.12 and Erlang/OTP 24
-- [TD-3642] On startup ensures rules and implementations elasticsearch indices are created
+- [TD-3642] On startup ensures rules and implementations elasticsearch indices
+  are created
 
 ## [4.20.1] 2021-05-18
 
@@ -109,7 +110,7 @@
 - Update dependencies
 - [TD-3680] Improve data catalog bulk indexing performance
 - Timestamps on `DataStructure`, `DataStructureVersion`, `DataStructureRelation`
-  and `StructureMetadata` are now `utc_datetime_usec`.
+  and `StructureMetadata` are now `utc_datetime_usec`
 
 ## [4.19.2] 2021-05-07
 
@@ -131,7 +132,7 @@
 ### Added
 
 - [TD-3517] Profile executions and events
-- [TD-3189] add templates in the creation of implementations
+- [TD-3189] Add templates in the creation of implementations
 
 ## [4.18.0] 2021-04-19
 
@@ -141,7 +142,8 @@
 
 ### Fixed
 
-- [TD-3566] `data_structure_relation` `parent_id` and `child_id` must not be null`
+- [TD-3566] `data_structure_relation` `parent_id` and `child_id` must not be
+  `nil`
 
 ### Changed
 

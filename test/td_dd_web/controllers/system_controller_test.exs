@@ -138,7 +138,11 @@ defmodule TdDdWeb.SystemControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "renders system when template not exists", %{conn: conn, swagger_schema: schema, template: template} do
+    test "renders system when template not exists", %{
+      conn: conn,
+      swagger_schema: schema,
+      template: template
+    } do
       Templates.delete(template)
 
       assert %{"data" => %{"id" => _id}} =

@@ -9,7 +9,7 @@ defmodule TdCxWeb.JobControllerTest do
   end
 
   describe "GET /api/sources/:id/jobs" do
-    setup [:create_job]
+    setup :create_job
 
     @tag authentication: [role: "admin"]
     test "admin can view jobs of a source", %{conn: conn, job: job} do
@@ -97,7 +97,7 @@ defmodule TdCxWeb.JobControllerTest do
   end
 
   describe "GET /api/jobs/:id" do
-    setup [:create_job]
+    setup :create_job
 
     @tag authentication: [role: "admin"]
     test "admin can view created job", %{conn: conn, job: job} do

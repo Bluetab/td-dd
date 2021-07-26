@@ -10,6 +10,5 @@ defmodule TdCx.Repo.Migrations.CreateEvents do
 
       timestamps()
     end
-
   end
 end
