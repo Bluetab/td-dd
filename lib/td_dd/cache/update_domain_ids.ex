@@ -1,4 +1,8 @@
 defmodule TdDd.Cache.UpdateDomainIds do
+  @moduledoc """
+  Task to force refresh structure cache to include domain id.
+  """
+
   alias TdCache.Redix
   alias TdDd.Cache.StructureLoader
 

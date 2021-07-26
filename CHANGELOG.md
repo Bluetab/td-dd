@@ -5,9 +5,11 @@
 ### Fixed
 
 - [TD-3929] Reindex the children of the structure domain when modifying
+- [TD-3975] Exclude `mutable_metadata` from elasticsearch analysis
 
 ### Added
 
+- [TD-3878] Include `domain_id` in structure cache
 - [TD-3453] Purge logically deleted structures
 - [TD-3906] Notes audit now includes status changes
 - [TD-3050] Show quality errors
@@ -21,8 +23,6 @@
 
 - [TD-3787] Allow CSV bulk load of structure notes with autopublish capability
   for non admin users. These updates must follow new structure notes' workflow.
-
-- [TD-3878] domain id to structures cache
 
 ### Changed
 
