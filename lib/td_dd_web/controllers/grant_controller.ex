@@ -75,6 +75,8 @@ defmodule TdDdWeb.GrantController do
     end
   end
 
+  defp with_user_id(params), do: {:ok, params}
+
   swagger_path :show do
     description("Shows Grant")
     produces("application/json")
