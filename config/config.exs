@@ -151,6 +151,11 @@ config :td_dd, TdDd.Scheduler,
       task: {TdDq.Rules.RuleRemover, :archive_inactive_rules, []},
       run_strategy: Quantum.RunStrategy.Local
     ],
+    catalog_history_purger: [
+      schedule: "@daily",
+      task: {TdDd.DataStructures.HistoryManager, :purge_history, []},
+      run_strategy: Quantum.RunStrategy.Local
+    ],
     update_domain_ids_in_cache: [
       schedule: "@reboot",
       task: {TdDd.Cache.UpdateDomainIds, :migrate, []},

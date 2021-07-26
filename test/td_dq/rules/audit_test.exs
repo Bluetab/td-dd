@@ -132,6 +132,7 @@ defmodule TdDq.Rules.AuditTest do
       claims: %{user_id: user_id}
     } do
       implementation = insert(:implementation, rule: rule, deleted_at: DateTime.utc_now())
+
       %{id: implementation_id, implementation_key: implementation_key, rule_id: rule_id} =
         implementation
 

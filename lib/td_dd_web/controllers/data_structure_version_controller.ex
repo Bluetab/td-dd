@@ -38,7 +38,8 @@ defmodule TdDdWeb.DataStructureVersionController do
     :system,
     :tags,
     :versions,
-    :with_confidential
+    :with_confidential,
+    :grant
   ]
 
   swagger_path :show do
@@ -58,8 +59,9 @@ defmodule TdDdWeb.DataStructureVersionController do
 
   def show(conn, %{"data_structure_id" => data_structure_id, "id" => version}) do
     claims = conn.assigns[:current_resource]
+
     data_structure = DataStructures.get_data_structure!(data_structure_id)
-    options = filter(claims, data_structure)
+    options = filter(claims, data_structure) ++ [user_id: claims.user_id]
     dsv = get_data_structure_version(data_structure_id, version, options)
     render_with_permissions(conn, claims, dsv)
   end
@@ -67,7 +69,7 @@ defmodule TdDdWeb.DataStructureVersionController do
   def show(conn, %{"id" => data_structure_version_id}) do
     claims = conn.assigns[:current_resource]
     dsv = DataStructures.get_data_structure_version!(data_structure_version_id)
-    options = filter(claims, dsv.data_structure)
+    options = filter(claims, dsv.data_structure) ++ [user_id: claims.user_id]
     dsv = get_data_structure_version(data_structure_version_id, options)
     render_with_permissions(conn, claims, dsv)
   end

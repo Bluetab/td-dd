@@ -1048,10 +1048,11 @@ defmodule TdDdWeb.SwaggerDefinitions do
             grant(
               Schema.new do
                 properties do
-                  user_id(:string, "User id", required: true)
-                  detail(:object, "Grant details")
-                  start_date(:string, "Start date")
+                  user_id(:integer, "User id")
+                  user_name(:string, "User name")
+                  start_date(:string, "Start date", required: true)
                   end_date(:string, "End date")
+                  detail(:object, "Grant details")
                 end
               end
             )

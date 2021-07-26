@@ -173,6 +173,7 @@ defmodule TdDd.DataStructures do
     |> enrich(options, :metadata_versions, &get_metadata_versions/1)
     |> enrich(options, :data_structure_type, &get_data_structure_type/1)
     |> enrich(options, :tags, &get_tags/1)
+    |> enrich(options, :grant, &get_grant(&1, options[:user_id]))
   end
 
   defp enrich(%{} = target, options, key, fun) do
@@ -260,7 +261,7 @@ defmodule TdDd.DataStructures do
     |> select_structures(Keyword.get(options, :default))
   end
 
-  def get_parents(%DataStructureVersion{id: id}, options) do
+  def get_parents(%DataStructureVersion{id: id}, options \\ []) do
     DataStructureRelation
     |> where([r], r.child_id == ^id)
     |> join(:inner, [r], parent in assoc(r, :parent))
@@ -389,6 +390,39 @@ defmodule TdDd.DataStructures do
     |> Ecto.assoc([:data_structure, :versions])
     |> Repo.all()
   end
+
+  defp get_grant(
+         %DataStructureVersion{data_structure: %DataStructure{} = data_structure} = dsv,
+         user_id
+       ) do
+    today = DateTime.utc_now()
+
+    data_structure
+    |> Repo.preload(:grants)
+    |> Map.get(:grants)
+    |> Enum.find(fn %{start_date: start_date, end_date: end_date, user_id: id} ->
+      DateTime.compare(start_date, today) == :lt and DateTime.compare(today, end_date) == :lt and
+        id == user_id
+    end)
+    |> case do
+      nil ->
+        dsv
+        |> get_parents()
+        |> get_parent_grant(user_id)
+
+      grant ->
+        Repo.preload(grant, data_structure: :versions)
+    end
+  end
+
+  defp get_grant(%DataStructureVersion{} = dsv, user_id) do
+    dsv
+    |> Repo.preload(:data_structure)
+    |> get_grant(user_id)
+  end
+
+  defp get_parent_grant([], _user_id), do: nil
+  defp get_parent_grant([parent | _], user_id), do: get_grant(parent, user_id)
 
   defp select_structures(versions, false) do
     versions
