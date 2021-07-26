@@ -33,7 +33,11 @@ defmodule TdCx.Canada.Abilities do
     end
 
     def can?(%Claims{role: "user"} = claims, :list, Source) do
-      Permissions.has_any_permission_on_resource_type?(claims, [:manage_raw_quality_rule_implementations], Domain)
+      Permissions.has_any_permission_on_resource_type?(
+        claims,
+        [:manage_raw_quality_rule_implementations],
+        Domain
+      )
     end
 
     def can?(%Claims{}, _action, _domain), do: false

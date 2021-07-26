@@ -63,7 +63,7 @@ defmodule TdDdWeb.RelationTypeControllerTest do
   end
 
   describe "update relation_type" do
-    setup [:create_relation_type]
+    setup :create_relation_type
 
     @tag authentication: [role: "admin"]
     test "renders relation_type when data is valid", %{
@@ -104,7 +104,7 @@ defmodule TdDdWeb.RelationTypeControllerTest do
   end
 
   describe "delete relation_type" do
-    setup [:create_relation_type]
+    setup :create_relation_type
 
     @tag authentication: [role: "admin"]
     test "deletes chosen relation_type", %{conn: conn, relation_type: relation_type} do

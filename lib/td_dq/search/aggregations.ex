@@ -12,7 +12,7 @@ defmodule TdDq.Search.Aggregations do
        %{terms: %{field: "current_business_concept_version.name.raw", size: 50}}},
       {"execution_result_info.result_text",
        %{terms: %{field: "execution_result_info.result_text.raw", size: 50}}},
-       {"taxonomy",
+      {"taxonomy",
        %{
          nested: %{path: "domain_parents"},
          aggs: %{distinct_search: %{terms: %{field: "domain_parents.id", size: 50}}}
@@ -75,7 +75,9 @@ defmodule TdDq.Search.Aggregations do
     {field,
      %{
        nested: %{path: "df_content.#{field}"},
-       aggs: %{distinct_search: %{terms: %{field: "df_content.#{field}.external_id.raw", size: 50}}}
+       aggs: %{
+         distinct_search: %{terms: %{field: "df_content.#{field}.external_id.raw", size: 50}}
+       }
      }}
   end
 

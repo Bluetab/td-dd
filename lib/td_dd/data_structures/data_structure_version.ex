@@ -184,7 +184,9 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     defp domain(%{domain: %{} = domain}), do: Map.take(domain, [:id, :external_id, :name])
     defp domain(_), do: %{}
 
-    defp domains(%{domain_parents: [_ | _] = domains}), do: Enum.map(domains, &domain(%{domain: &1}))
+    defp domains(%{domain_parents: [_ | _] = domains}),
+      do: Enum.map(domains, &domain(%{domain: &1}))
+
     defp domains(_), do: []
 
     defp system(%{system: %{} = system}), do: Map.take(system, [:id, :external_id, :name])

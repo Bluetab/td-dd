@@ -89,21 +89,24 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
       MockIndexWorker.clear()
 
       %{id: rule_id} = rule = insert(:rule)
+
       %{
         id: implementation_id,
         implementation_key: implementation_key
       } = insert(:implementation, rule: rule)
+
       params = string_params_for(:rule_result_record, implementation_key: implementation_key)
 
-      post(conn,
+      post(
+        conn,
         Routes.implementation_implementation_result_path(conn, :create, implementation_key),
         rule_result: params
       )
 
-      assert MockIndexWorker.calls == [
-        {:reindex_rules, rule_id},
-        {:reindex_implementations, implementation_id}
-      ]
+      assert MockIndexWorker.calls() == [
+               {:reindex_rules, rule_id},
+               {:reindex_implementations, implementation_id}
+             ]
     end
   end
 end

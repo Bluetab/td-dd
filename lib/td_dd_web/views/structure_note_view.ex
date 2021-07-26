@@ -3,9 +3,9 @@ defmodule TdDdWeb.StructureNoteView do
   alias TdDdWeb.StructureNoteView
 
   def render("index.json", %{
-    structure_notes: structure_notes,
-    actions: actions
-  }) do
+        structure_notes: structure_notes,
+        actions: actions
+      }) do
     %{
       data: render_many(structure_notes, StructureNoteView, "structure_note.json"),
       _actions: actions

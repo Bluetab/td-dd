@@ -8,6 +8,7 @@ defmodule TdDd.Repo.Migrations.CreateRelationTypes do
 
       timestamps()
     end
+
     create unique_index(:relation_types, [:name], name: :index_relation_types_name)
 
     alter table("data_structure_relations") do
@@ -19,6 +20,7 @@ defmodule TdDd.Repo.Migrations.CreateRelationTypes do
     alter table("data_structure_relations") do
       remove :relation_type_id
     end
+
     drop table(:relation_types)
   end
 end

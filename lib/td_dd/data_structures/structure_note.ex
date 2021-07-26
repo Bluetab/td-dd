@@ -35,7 +35,7 @@ defmodule TdDd.DataStructures.StructureNote do
     structure_note
     |> cast(attrs, [:status, :df_content])
     |> validate_required([:status, :df_content])
-    |> validate_change(:df_content, Validation.validator(structure_note)) #Validation.validator(structure_note))
+    |> validate_change(:df_content, Validation.validator(structure_note))
   end
 
   @doc false
