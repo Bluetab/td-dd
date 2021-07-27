@@ -10,6 +10,7 @@ defmodule TdCx.Repo.Migrations.CreateSources do
 
       timestamps(type: :utc_datetime_usec)
     end
+
     create unique_index(:sources, [:external_id])
   end
 end

@@ -39,8 +39,8 @@ defmodule TdDd.DataStructures.HasherTest do
         |> Enum.flat_map(&Map.values(&1))
 
       assert hashes
-      |> Enum.filter(&is_nil/1)
-      |> Enum.empty?()
+             |> Enum.filter(&is_nil/1)
+             |> Enum.empty?()
     end
 
     test "run/1 with rehash option recalculates the hashes of a data structure and it's ancestors" do

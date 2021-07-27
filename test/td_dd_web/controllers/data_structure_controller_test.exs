@@ -75,7 +75,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   end
 
   describe "search" do
-    setup [:create_data_structure]
+    setup :create_data_structure
 
     @tag authentication: [role: "admin"]
     test "search_all", %{conn: conn, data_structure: %{id: id}} do
@@ -162,7 +162,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   end
 
   describe "update data_structure" do
-    setup [:create_data_structure]
+    setup :create_data_structure
 
     @tag authentication: [role: "user"]
     test "renders data_structure when data is valid", %{
@@ -260,7 +260,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   end
 
   describe "delete data_structure" do
-    setup [:create_data_structure]
+    setup :create_data_structure
 
     @tag authentication: [role: "admin"]
     test "deletes chosen data_structure", %{
@@ -283,7 +283,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   end
 
   describe "data_structure confidentiality" do
-    setup [:create_data_structure]
+    setup :create_data_structure
 
     @tag authentication: [role: "admin"]
     test "updates data_structure confidentiality", %{
@@ -375,7 +375,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   end
 
   describe "csv" do
-    setup [:create_data_structure]
+    setup :create_data_structure
     @tag authentication: [role: "admin"]
     test "gets csv content", %{
       conn: conn,

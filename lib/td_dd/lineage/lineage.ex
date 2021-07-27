@@ -133,7 +133,7 @@ defmodule TdDd.Lineage do
         drawing =
           r
           |> Map.put(:source_ids, source_ids)
-          |> Map.put(:hash, "#{:rand.uniform(1_000_000)}")
+          |> Map.put(:hash, "#{System.unique_integer([:positive])}")
           |> drawing(type: type)
 
         {:reply, drawing, state}

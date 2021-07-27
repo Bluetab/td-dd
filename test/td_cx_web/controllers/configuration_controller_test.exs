@@ -82,9 +82,7 @@ defmodule TdCxWeb.ConfigurationControllerTest do
   }
 
   describe "index" do
-    setup [:create_configuration]
-    setup [:create_another_configuration]
-    setup [:create_secret_configuration]
+    setup [:create_configuration, :create_another_configuration, :create_secret_configuration]
 
     @tag authentication: [role: "user"]
     test "lists all configurations", %{conn: conn} do
@@ -124,8 +122,7 @@ defmodule TdCxWeb.ConfigurationControllerTest do
   end
 
   describe "show" do
-    setup [:create_configuration]
-    setup [:create_secret_configuration]
+    setup [:create_configuration, :create_secret_configuration]
 
     @tag authentication: [role: "user"]
     test "show configuration", %{conn: conn} do
@@ -151,7 +148,7 @@ defmodule TdCxWeb.ConfigurationControllerTest do
   end
 
   describe "create" do
-    setup [:create_template]
+    setup :create_template
 
     @tag authentication: [role: "admin"]
     test "creates a new configuration", %{conn: conn} do
@@ -177,7 +174,7 @@ defmodule TdCxWeb.ConfigurationControllerTest do
   end
 
   describe "update configuration" do
-    setup [:create_configuration]
+    setup :create_configuration
 
     @tag authentication: [role: "user"]
     test "returns unauthorized for non admin user", %{
@@ -230,7 +227,7 @@ defmodule TdCxWeb.ConfigurationControllerTest do
   end
 
   describe "delete" do
-    setup [:create_configuration]
+    setup :create_configuration
 
     @tag authentication: [role: "user"]
     test "returns unauthorized for non admin user", %{conn: conn, configuration: configuration} do

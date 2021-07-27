@@ -11,8 +11,6 @@ defmodule TdDdWeb.RelationTypeView do
   end
 
   def render("relation_type.json", %{relation_type: relation_type}) do
-    %{id: relation_type.id,
-      name: relation_type.name,
-      description: relation_type.description}
+    %{id: relation_type.id, name: relation_type.name, description: relation_type.description}
   end
 end

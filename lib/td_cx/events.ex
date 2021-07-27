@@ -61,5 +61,4 @@ defmodule TdCx.Events do
         error
     end
   end
-
 end

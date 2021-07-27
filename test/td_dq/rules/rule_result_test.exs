@@ -69,7 +69,12 @@ defmodule TdDq.Rules.RuleResultTest do
 
       assert {:ok, %{id: id}} =
                :rule_result
-               |> string_params_for(records: records, result_type: "percentage", errors: errors, result: 0)
+               |> string_params_for(
+                 records: records,
+                 result_type: "percentage",
+                 errors: errors,
+                 result: 0
+               )
                |> RuleResult.changeset()
                |> Repo.insert()
 

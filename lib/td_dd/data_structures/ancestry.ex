@@ -50,7 +50,9 @@ defmodule TdDd.DataStructures.Ancestry do
       dsv
       |> DataStructures.get_ancestors()
       |> Repo.preload(:data_structure)
-      |> Enum.map(fn %{data_structure: %{external_id: external_id}} = dsv -> %{dsv | external_id: external_id} end)
+      |> Enum.map(fn %{data_structure: %{external_id: external_id}} = dsv ->
+        %{dsv | external_id: external_id}
+      end)
 
     ancestors
     |> Enum.map(&get_children(&1, excludes))
@@ -70,7 +72,9 @@ defmodule TdDd.DataStructures.Ancestry do
   defp get_children(parent, []) do
     parent
     |> DataStructures.get_children(deleted: false)
-    |> Enum.map(fn %{data_structure: %{external_id: external_id}} = dsv -> %{dsv | external_id: external_id} end)
+    |> Enum.map(fn %{data_structure: %{external_id: external_id}} = dsv ->
+      %{dsv | external_id: external_id}
+    end)
   end
 
   defp get_children(parent, excludes) do

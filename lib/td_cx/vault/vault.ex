@@ -53,7 +53,7 @@ defmodule TdCx.Vault do
         %{}
 
       {:error, [error]} ->
-        Logger.error "Error reading secret. #{error}"
+        Logger.error("Error reading secret. #{error}")
         {:error, error}
     end
   end
