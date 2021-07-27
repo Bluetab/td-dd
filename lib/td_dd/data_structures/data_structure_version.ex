@@ -175,8 +175,6 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       )
     end
 
-    defp path_sort(nil), do: ""
-
     defp path_sort(name_path) when is_list(name_path) do
       Enum.join(name_path, "~")
     end
