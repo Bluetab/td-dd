@@ -17,6 +17,10 @@ defmodule TdDd.Loader do
 
   require Logger
 
+  @typep multi_error :: {:error, Multi.name(), any(), %{required(Multi.name()) => any()}}
+  @typep multi_success :: {:ok, map()}
+  @typep multi_result :: multi_success() | multi_error()
+
   def load(records, audit, opts \\ [])
 
   def load(%{structures: structure_records, fields: field_records} = records, audit, opts) do
@@ -48,8 +52,14 @@ defmodule TdDd.Loader do
     multi(structure_records, relation_records, audit, opts)
   end
 
-  @spec multi([map], [map], %{ts: DateTime.t()}, Keyword.t()) ::
-          {:ok, map} | {:error, Multi.name(), any(), %{required(Multi.name()) => any()}}
+  @spec replace_mutable_metadata([map], TdDd.Systems.System.t(), map) :: multi_result()
+  def replace_mutable_metadata(records, system, audit) do
+    count = Enum.count(records)
+    Logger.info("Starting mutable metadata bulk replace (#{count} records)")
+    metadata_multi(records, system, audit)
+  end
+
+  @spec multi([map], [map], %{ts: DateTime.t()}, Keyword.t()) :: multi_result()
   def multi(structure_records, relation_records, %{ts: ts} = audit, opts \\ []) do
     Multi.new()
     |> Multi.run(:graph, LoadGraph, :load_graph, [structure_records, relation_records, opts])
@@ -73,6 +83,15 @@ defmodule TdDd.Loader do
     |> Multi.run(:classification, fn _, %{system_ids: ids} ->
       Classifiers.classify_many(ids, updated_at: ts)
     end)
+    |> Repo.transaction()
+  end
+
+  @spec metadata_multi([map], TdDd.Systems.System.t(), map) :: multi_result()
+  def metadata_multi(records, system, %{ts: ts} = _audit) do
+    Multi.new()
+    |> Multi.run(:missing_external_ids, Metadata, :missing_external_ids, [records, system])
+    |> Multi.run(:replace_metadata, Metadata, :replace_metadata, [records, ts])
+    |> Multi.run(:structure_ids, __MODULE__, :structure_ids, [])
     |> Repo.transaction()
   end
 
@@ -101,4 +120,5 @@ defmodule TdDd.Loader do
   defp structure_ids({:insert_versions, {_, dsvs}}), do: Enum.map(dsvs, & &1.data_structure_id)
   defp structure_ids({:update_versions, {_, dsvs}}), do: Enum.map(dsvs, & &1.data_structure_id)
   defp structure_ids({:replace_versions, {_, dsvs}}), do: Enum.map(dsvs, & &1.data_structure_id)
+  defp structure_ids({:missing_external_ids, _}), do: []
 end

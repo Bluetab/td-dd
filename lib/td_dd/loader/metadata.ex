@@ -6,12 +6,38 @@ defmodule TdDd.Loader.Metadata do
 
   alias Ecto.Multi
   alias TdDd.DataStructures
+  alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.Repo
 
   require Logger
 
   @chunk_size 1_000
+
+  @doc """
+  Identifies external_ids which do not exist in the specified system
+  """
+  def missing_external_ids(_repo, _changes, records, %{id: system_id} = _system) do
+    records
+    |> Enum.map(& &1.external_id)
+    |> Enum.chunk_every(10_000)
+    |> Enum.flat_map(fn external_ids ->
+      DataStructure
+      |> with_cte("external_ids",
+        as: fragment("select external_id from unnest(?::text[]) t (external_id)", ^external_ids)
+      )
+      |> join(:right, [ds], id in "external_ids",
+        on: ds.external_id == id.external_id and ds.system_id == ^system_id
+      )
+      |> where([ds, _], is_nil(ds.id))
+      |> select([_, i], i.external_id)
+      |> Repo.all()
+    end)
+    |> case do
+      [] -> {:ok, []}
+      ids -> {:error, ids}
+    end
+  end
 
   @doc """
   Logically delete metadata versions whose external_id is absent from the
@@ -72,7 +98,7 @@ defmodule TdDd.Loader.Metadata do
   end
 
   defp bulk_operations({chunk, chunk_id}, multi, ts) do
-    structures_by_external_id =
+    metadata_by_external_id =
       chunk
       |> Enum.map(&elem(&1, 0))
       |> DataStructures.get_latest_metadata_by_external_ids()
@@ -80,8 +106,9 @@ defmodule TdDd.Loader.Metadata do
 
     chunk
     |> Enum.flat_map(fn {external_id, entry} ->
-      current_structure = Map.get(structures_by_external_id, external_id)
-      operations(current_structure, entry, ts)
+      metadata_by_external_id
+      |> Map.get(external_id)
+      |> operations(entry, ts)
     end)
     |> Enum.group_by(& &1.operation, &Map.delete(&1, :operation))
     |> Enum.reduce(multi, &reduce_multi(&1, &2, chunk_id, ts))

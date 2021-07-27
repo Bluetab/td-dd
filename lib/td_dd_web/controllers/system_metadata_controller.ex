@@ -33,5 +33,16 @@ defmodule TdDdWeb.SystemMetadataController do
     end
   end
 
+  def update(conn, %{"system_id" => external_id, "op" => _, "values" => _} = params) do
+    claims = conn.assigns[:current_resource]
+
+    with {:can, true} <- {:can, can_upload?(claims, params)} do
+      system = Systems.get_by!(external_id: external_id)
+      audit = audit_params(conn)
+      worker().load(system, params, audit, [])
+      send_resp(conn, :accepted, "")
+    end
+  end
+
   defp worker, do: Application.get_env(:td_dd, :loader_worker)
 end

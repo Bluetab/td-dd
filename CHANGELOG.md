@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased] 2021-07-27
+
+### Added
+
+- [TD-3917] `PATCH /api/systems/:external_id/metadata` allows mutable metadata
+  to be replaced.
+
 ## [4.25.0] 2021-07-26
 
 ### Fixed

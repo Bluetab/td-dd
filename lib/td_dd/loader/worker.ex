@@ -191,6 +191,14 @@ defmodule TdDd.Loader.Worker do
     end)
   end
 
+  defp start_task({:load, system, %{"op" => "replace", "values" => records}, audit, opts}) do
+    Task.Supervisor.async_nolink(TdDd.TaskSupervisor, fn ->
+      records
+      |> Reader.read_metadata_records()
+      |> do_load_metadata(system, audit, opts)
+    end)
+  end
+
   defp do_load(%{} = records, audit, opts) do
     Timer.time(
       fn -> Loader.load(records, audit, opts) end,
@@ -203,6 +211,34 @@ defmodule TdDd.Loader.Worker do
 
           e ->
             Logger.warn("Bulk load failed after #{ms}ms (#{inspect(e)})")
+            e
+        end
+      end
+    )
+  end
+
+  defp do_load_metadata({:error, errors}, _system, _audit, _opts) do
+    pos = errors |> Enum.take(3) |> Enum.join(", ")
+
+    case Enum.count(errors) do
+      1 -> Logger.warn("Metadata load failed with one invalid record (#{pos})")
+      n when n <= 3 -> Logger.warn("Metadata load failed with #{n} invalid records (#{pos})")
+      n when n > 3 -> Logger.warn("Metadata load failed with #{n} invalid records (#{pos}...)")
+    end
+  end
+
+  defp do_load_metadata({:ok, records}, system, audit, opts) do
+    Timer.time(
+      fn -> Loader.replace_mutable_metadata(records, system, audit) end,
+      fn ms, res ->
+        case res do
+          {:ok, %{structure_ids: structure_ids}} ->
+            count = Enum.count(structure_ids)
+            Logger.info("Bulk replace process completed in #{ms}ms (#{count} structures updated)")
+            post_process(structure_ids, opts)
+
+          e ->
+            Logger.warn("Bulk replace failed after #{ms}ms (#{inspect(e)})")
             e
         end
       end
