@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unrelelased]
+
+### Fixed
+
+- [TD-3908] Timeout on node retrieval 
+
 ## [4.25.0] 2021-07-26
 
 ### Fixed
