@@ -9,8 +9,7 @@ defmodule TdDq.Rules.RuleResults.BulkLoad do
   alias TdDd.Repo
   alias TdDq.Cache.RuleLoader
   alias TdDq.Implementations.Implementation
-  alias TdDq.Rules.Audit
-  alias TdDq.Rules.RuleResult
+  alias TdDq.Rules.{Audit, RuleResult, RuleResults}
 
   require Logger
 
@@ -26,7 +25,7 @@ defmodule TdDq.Rules.RuleResults.BulkLoad do
   defp do_bulk_load(records) do
     Multi.new()
     |> Multi.run(:ids, fn _, _ -> bulk_insert(records) end)
-    |> Multi.run(:results, &select_results/2)
+    |> Multi.run(:results, fn _, %{ids: ids} -> RuleResults.select_results(ids) end)
     |> Multi.run(:audit, Audit, :rule_results_created, [0])
     |> Repo.transaction()
     |> bulk_refresh()
@@ -91,45 +90,6 @@ defmodule TdDq.Rules.RuleResults.BulkLoad do
     case Repo.insert(changeset) do
       {:ok, %{id: id}} -> {:cont, [id | acc]}
       error -> {:halt, error}
-    end
-  end
-
-  defp select_results(_repo, %{ids: ids}) do
-    results =
-      RuleResult
-      |> join(:inner, [r], i in Implementation, on: r.implementation_key == i.implementation_key)
-      |> join(:inner, [res, i], rule in assoc(i, :rule))
-      |> select([res], %{})
-      |> select_merge(
-        [res, _, _],
-        map(res, ^~w(id implementation_key date result errors records params inserted_at)a)
-      )
-      |> select_merge([_, i, _], %{implementation_id: i.id, rule_id: i.rule_id})
-      |> select_merge(
-        [_, _, rule],
-        map(rule, ^~w(business_concept_id goal name minimum result_type)a)
-      )
-      |> where([res], res.id in ^ids)
-      |> order_by([res], res.id)
-      |> Repo.all()
-      |> Enum.map(&Map.put(&1, :status, status(&1)))
-
-    {:ok, results}
-  end
-
-  defp status(%{result_type: "errors_number", errors: errors, minimum: threshold, goal: target}) do
-    cond do
-      Decimal.compare(errors, threshold) == :gt -> "fail"
-      Decimal.compare(errors, target) == :gt -> "warn"
-      true -> "success"
-    end
-  end
-
-  defp status(%{result_type: "percentage", result: result, minimum: threshold, goal: target}) do
-    cond do
-      Decimal.compare(result, threshold) == :lt -> "fail"
-      Decimal.compare(result, target) == :lt -> "warn"
-      true -> "success"
     end
   end
 end
