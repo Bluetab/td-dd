@@ -76,14 +76,15 @@ defmodule TdDdWeb.SystemMetadataControllerTest do
     test "calls worker with valid metadata json data", %{conn: conn} do
       %{id: system_id, external_id: system_external_id} = insert(:system)
 
-      body = %{"op" => "replace", "values" => [%{"foo" => "bar"}]}
+      body = %{"op" => "merge", "values" => [%{"foo" => "bar"}]}
 
       expect(TdDd.Loader.MockWorker, :load, fn %{id: ^system_id},
                                                %{"system_id" => _} = params,
                                                audit,
-                                               _opts ->
+                                               opts ->
         assert body == Map.delete(params, "system_id")
         assert %{ts: _, last_change_by: _} = audit
+        assert opts == [operation: "merge"]
         :ok
       end)
 

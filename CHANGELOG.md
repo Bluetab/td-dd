@@ -5,7 +5,7 @@
 ### Added
 
 - [TD-3917] `PATCH /api/systems/:external_id/metadata` allows mutable metadata
-  to be replaced.
+  to be replaced or merged
 
 ## [4.25.0] 2021-07-26
 

@@ -2,6 +2,7 @@ defmodule TdDd.Loader.MetadataTest do
   use TdDd.DataCase
 
   import Ecto.Query
+  import TdDd.TestOperators
 
   alias TdDd.CSV.Reader
   alias TdDd.DataStructures.StructureMetadata
@@ -38,7 +39,7 @@ defmodule TdDd.Loader.MetadataTest do
       assert %{insert_versions: {890, _inserted_versions}} = multi
       assert {:ok, multi} = Loader.load(%{structures: structures_2, relations: rels}, audit2, [])
       assert %{replace_metadata: updated_ids} = multi
-      assert length(updated_ids) == 4
+      assert length(updated_ids) == 3
 
       metadata_by_external_id =
         StructureMetadata
@@ -106,6 +107,55 @@ defmodule TdDd.Loader.MetadataTest do
 
       records = [%{external_id: external_id1}]
       assert {:ok, []} = Metadata.missing_external_ids(Repo, %{}, records, system)
+    end
+  end
+
+  describe "merge_existing_fields/1" do
+    test "merges fields into existing metadata" do
+      %{fields: fields, data_structure: %{external_id: external_id1}} =
+        insert(:structure_metadata)
+
+      %{data_structure: %{external_id: external_id2}} = insert(:structure_metadata)
+      %{data_structure: %{external_id: external_id3}} = insert(:structure_metadata)
+      %{data_structure: %{external_id: external_id4}} = insert(:structure_metadata)
+
+      records = [
+        %{external_id: external_id1, mutable_metadata: fields},
+        %{external_id: external_id2, mutable_metadata: %{"xyzzy" => "xyzzy", "foo" => [1, 2, 3]}},
+        %{external_id: external_id3, mutable_metadata: %{"xyzzy" => "xyzzy"}},
+        %{external_id: external_id4, mutable_metadata: %{"foo" => "foo"}}
+      ]
+
+      assert Metadata.merge_existing_fields(records) == %{
+               external_id2 => %{"foo" => [1, 2, 3], "xyzzy" => "xyzzy"},
+               external_id3 => %{"foo" => "bar", "xyzzy" => "xyzzy"},
+               external_id4 => %{"foo" => "foo"}
+             }
+    end
+  end
+
+  describe "merge_metadata/2" do
+    test "returns ok and empty list if no records are merged" do
+      assert Metadata.merge_metadata([], DateTime.utc_now()) == {:ok, []}
+    end
+
+    test "returns ok and list of updated structure ids if records are merged" do
+      %{fields: fields, data_structure: %{external_id: external_id1}} =
+        insert(:structure_metadata)
+
+      %{data_structure: %{id: id2, external_id: external_id2}} = insert(:structure_metadata)
+      %{data_structure: %{id: id3, external_id: external_id3}} = insert(:structure_metadata)
+      %{data_structure: %{id: id4, external_id: external_id4}} = insert(:structure_metadata)
+
+      records = [
+        %{external_id: external_id1, mutable_metadata: fields},
+        %{external_id: external_id2, mutable_metadata: %{"xyzzy" => "xyzzy", "foo" => [1, 2, 3]}},
+        %{external_id: external_id3, mutable_metadata: %{"xyzzy" => "xyzzy"}},
+        %{external_id: external_id4, mutable_metadata: %{"foo" => "foo"}}
+      ]
+
+      assert {:ok, updated_ids} = Metadata.merge_metadata(records, DateTime.utc_now())
+      assert updated_ids <~> [id2, id3, id4]
     end
   end
 

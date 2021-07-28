@@ -52,11 +52,12 @@ defmodule TdDd.Loader do
     multi(structure_records, relation_records, audit, opts)
   end
 
-  @spec replace_mutable_metadata([map], TdDd.Systems.System.t(), map) :: multi_result()
-  def replace_mutable_metadata(records, system, audit) do
+  @spec replace_mutable_metadata([map], TdDd.Systems.System.t(), map, Keyword.t()) ::
+          multi_result()
+  def replace_mutable_metadata(records, system, audit, opts) do
     count = Enum.count(records)
     Logger.info("Starting mutable metadata bulk replace (#{count} records)")
-    metadata_multi(records, system, audit)
+    metadata_multi(records, system, audit, opts[:operation])
   end
 
   @spec multi([map], [map], %{ts: DateTime.t()}, Keyword.t()) :: multi_result()
@@ -76,8 +77,7 @@ defmodule TdDd.Loader do
       opts[:source],
       ts
     ])
-    |> Multi.run(:delete_metadata, Metadata, :delete_missing_metadata, [ts])
-    |> Multi.run(:replace_metadata, Metadata, :replace_metadata, [structure_records, ts])
+    |> replace_or_merge_metadata(structure_records, ts, opts[:operation])
     |> Multi.run(:structure_ids, __MODULE__, :structure_ids, [])
     |> Multi.run(:system_ids, fn _, _ -> {:ok, system_ids(structure_records)} end)
     |> Multi.run(:classification, fn _, %{system_ids: ids} ->
@@ -86,13 +86,23 @@ defmodule TdDd.Loader do
     |> Repo.transaction()
   end
 
-  @spec metadata_multi([map], TdDd.Systems.System.t(), map) :: multi_result()
-  def metadata_multi(records, system, %{ts: ts} = _audit) do
+  @spec metadata_multi([map], TdDd.Systems.System.t(), map, binary()) :: multi_result()
+  def metadata_multi(records, system, %{ts: ts} = _audit, operation \\ "replace") do
     Multi.new()
     |> Multi.run(:missing_external_ids, Metadata, :missing_external_ids, [records, system])
-    |> Multi.run(:replace_metadata, Metadata, :replace_metadata, [records, ts])
+    |> replace_or_merge_metadata(records, ts, operation)
     |> Multi.run(:structure_ids, __MODULE__, :structure_ids, [])
     |> Repo.transaction()
+  end
+
+  defp replace_or_merge_metadata(multi, structure_records, ts, "merge") do
+    Multi.run(multi, :merge_metadata, Metadata, :merge_metadata, [structure_records, ts])
+  end
+
+  defp replace_or_merge_metadata(multi, structure_records, ts, _replace) do
+    multi
+    |> Multi.run(:delete_metadata, Metadata, :delete_missing_metadata, [ts])
+    |> Multi.run(:replace_metadata, Metadata, :replace_metadata, [structure_records, ts])
   end
 
   def system_ids(structure_records) do
@@ -117,6 +127,7 @@ defmodule TdDd.Loader do
   defp structure_ids({:update_source_ids, {_, ids}}), do: ids
   defp structure_ids({:delete_metadata, {_, ids}}), do: ids
   defp structure_ids({:replace_metadata, ids}), do: ids
+  defp structure_ids({:merge_metadata, ids}), do: ids
   defp structure_ids({:insert_versions, {_, dsvs}}), do: Enum.map(dsvs, & &1.data_structure_id)
   defp structure_ids({:update_versions, {_, dsvs}}), do: Enum.map(dsvs, & &1.data_structure_id)
   defp structure_ids({:replace_versions, {_, dsvs}}), do: Enum.map(dsvs, & &1.data_structure_id)

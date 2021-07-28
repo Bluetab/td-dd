@@ -39,7 +39,8 @@ defmodule TdDdWeb.SystemMetadataController do
     with {:can, true} <- {:can, can_upload?(claims, params)} do
       system = Systems.get_by!(external_id: external_id)
       audit = audit_params(conn)
-      worker().load(system, params, audit, [])
+      opts = loader_opts(params)
+      worker().load(system, params, audit, opts)
       send_resp(conn, :accepted, "")
     end
   end
