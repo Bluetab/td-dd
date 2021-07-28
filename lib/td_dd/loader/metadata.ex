@@ -13,6 +13,7 @@ defmodule TdDd.Loader.Metadata do
   require Logger
 
   @chunk_size 1_000
+  @unnest_external_ids "select external_id from unnest(?::text[]) t (external_id)"
 
   @doc """
   Identifies external_ids which do not exist in the specified system
@@ -21,18 +22,7 @@ defmodule TdDd.Loader.Metadata do
     records
     |> Enum.map(& &1.external_id)
     |> Enum.chunk_every(10_000)
-    |> Enum.flat_map(fn external_ids ->
-      DataStructure
-      |> with_cte("external_ids",
-        as: fragment("select external_id from unnest(?::text[]) t (external_id)", ^external_ids)
-      )
-      |> join(:right, [ds], id in "external_ids",
-        on: ds.external_id == id.external_id and ds.system_id == ^system_id
-      )
-      |> where([ds, _], is_nil(ds.id))
-      |> select([_, i], i.external_id)
-      |> Repo.all()
-    end)
+    |> Enum.flat_map(&select_missing_external_ids(system_id, &1))
     |> case do
       [] -> {:ok, []}
       ids -> {:error, ids}
@@ -191,5 +181,17 @@ defmodule TdDd.Loader.Metadata do
     |> where([sm], is_nil(sm.deleted_at))
     |> where([sm], sm.data_structure_id in ^ids)
     |> Repo.update_all(set: [deleted_at: ts])
+  end
+
+  defp select_missing_external_ids(system_id, external_ids) do
+    DataStructure
+    |> where(system_id: ^system_id)
+    |> select([ds], [:id, :external_id])
+    |> subquery()
+    |> with_cte("external_ids", as: fragment(@unnest_external_ids, ^external_ids))
+    |> join(:right, [ds], id in "external_ids", on: ds.external_id == id.external_id)
+    |> where([ds, _], is_nil(ds.id))
+    |> select([_, i], i.external_id)
+    |> Repo.all()
   end
 end
