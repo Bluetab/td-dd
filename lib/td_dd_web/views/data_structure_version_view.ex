@@ -24,56 +24,61 @@ defmodule TdDdWeb.DataStructureVersionView do
 
   def render("show.json", %{data_structure_version: dsv}) do
     %{
-      data:
-        dsv
-        |> add_classes
-        |> add_data_structure
-        |> add_data_fields
-        |> add_parents
-        |> add_siblings
-        |> add_children
-        |> add_versions
-        |> add_system
-        |> add_source
-        |> add_ancestry
-        |> add_profile
-        |> add_embedded_relations(dsv)
-        |> add_metadata_versions
-        |> add_data_structure_type
-        |> add_cached_content
-        |> add_tags
-        |> add_grant
-        |> Map.take([
-          :ancestry,
-          :children,
-          :class,
-          :classes,
-          :data_fields,
-          :data_structure,
-          :deleted_at,
-          :description,
-          :external_id,
-          :group,
-          :id,
-          :links,
-          :metadata,
-          :name,
-          :parents,
-          :siblings,
-          :source,
-          :system,
-          :type,
-          :version,
-          :versions,
-          :profile,
-          :degree,
-          :relations,
-          :metadata_versions,
-          :data_structure_type,
-          :tags,
-          :grant
-        ])
+      data: render("version.json", %{data_structure_version: dsv})
     }
+  end
+
+  def render("version.json", %{data_structure_version: dsv}) do
+    dsv
+    |> add_classes
+    |> add_data_structure
+    |> add_data_fields
+    |> add_parents
+    |> add_siblings
+    |> add_children
+    |> add_versions
+    |> add_system
+    |> add_source
+    |> add_ancestry
+    |> add_profile
+    |> add_embedded_relations(dsv)
+    |> add_metadata_versions
+    |> add_data_structure_type
+    |> add_cached_content
+    |> add_tags
+    |> add_grant
+    |> add_grants
+    |> Map.take([
+      :ancestry,
+      :children,
+      :class,
+      :classes,
+      :data_fields,
+      :data_structure,
+      :deleted_at,
+      :description,
+      :external_id,
+      :group,
+      :id,
+      :links,
+      :metadata,
+      :name,
+      :parents,
+      :siblings,
+      :source,
+      :system,
+      :type,
+      :version,
+      :versions,
+      :profile,
+      :degree,
+      :relations,
+      :metadata_versions,
+      :data_structure_type,
+      :tags,
+      :grant,
+      :grants
+    ])
   end
 
   defp add_classes(%{classifications: [_ | _] = classifications} = struct) do
@@ -163,6 +168,9 @@ defmodule TdDdWeb.DataStructureVersionView do
   defp add_relations(data_structure_version, type) do
     case Map.get(data_structure_version, type) do
       nil ->
+        data_structure_version
+
+      %Ecto.Association.NotLoaded{} ->
         data_structure_version
 
       rs ->
@@ -329,4 +337,10 @@ defmodule TdDdWeb.DataStructureVersionView do
 
     Map.put(ds, :grant, grant)
   end
+
+  defp add_grants(%{grants: grants} = ds) when is_list(grants) do
+    Map.put(ds, :grants, render_many(grants, GrantView, "grant.json"))
+  end
+
+  defp add_grants(ds), do: ds
 end

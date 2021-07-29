@@ -411,7 +411,8 @@ defmodule TdDd.DataStructures do
            data_structure: %DataStructure{grants: [_ | _] = grants} = structure
          } = dsv
        ) do
-    dsv = enrich(dsv, [:path])
+    dsv = dsv |> Map.delete(:grants) |> enrich([:path])
+    structure = Map.delete(structure, :grant)
 
     grants
     |> Enum.map(&%{&1 | data_structure_version: dsv})

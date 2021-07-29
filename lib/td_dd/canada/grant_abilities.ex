@@ -16,10 +16,10 @@ defmodule TdDd.Canada.GrantAbilities do
     authorized?(claims, :manage_grants, domain_id)
   end
 
-  def can?(%Claims{} = claims, :view_grant, %DataStructure{
+  def can?(%Claims{} = claims, :view_grants, %DataStructure{
         domain_id: domain_id
       }) do
-    authorized?(claims, :view_grant, domain_id)
+    authorized?(claims, :view_grants, domain_id)
   end
 
   def can?(%Claims{user_id: user_id} = claims, :show, %Grant{
