@@ -1,11 +1,11 @@
 defmodule TdDd.DataStructures.ProfilesTest do
   use TdDd.DataStructureCase
 
-  alias TdDd.DataStructures.Profile
-  alias TdDd.DataStructures.Profiles
   alias TdDd.Executions
+  alias TdDd.Profiles
+  alias TdDd.Profiles.Profile
 
-  describe "TdDd.DataStructures.Profiles" do
+  describe "TdDd.Profiles" do
     @valid_attrs %{value: %{}, data_structure_id: 0}
     @update_attrs %{value: %{"foo" => "bar"}}
     @invalid_attrs %{value: nil, data_structure_id: nil}

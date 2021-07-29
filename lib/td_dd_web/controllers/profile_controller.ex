@@ -9,9 +9,9 @@ defmodule TdDdWeb.ProfileController do
   alias TdDd.CSV.Reader
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.DataStructures.Profile
-  alias TdDd.DataStructures.Profiles
   alias TdDd.Loader.Worker
+  alias TdDd.Profiles
+  alias TdDd.Profiles.Profile
 
   @profiling_import_required Application.compile_env(:td_dd, :profiling)[
                                :profiling_import_required

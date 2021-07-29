@@ -1,12 +1,12 @@
-defmodule TdDd.DataStructures.Profiles do
+defmodule TdDd.Profiles do
   @moduledoc """
   The DataStructure Profiles context.
   """
 
   alias Ecto.Multi
-  alias TdDd.DataStructures.Profile
   alias TdDd.Events.ProfileEvents
   alias TdDd.Executions
+  alias TdDd.Profiles.Profile
   alias TdDd.Repo
 
   @doc """
@@ -113,5 +113,13 @@ defmodule TdDd.DataStructures.Profiles do
   defp update_executions(%{profile: %{id: profile_id, data_structure_id: structure_id}}) do
     {_, executions} = Executions.update_all(structure_id, profile_id)
     {:ok, executions}
+  end
+
+  def expand_profile_values do
+    Profile
+    |> Repo.all()
+    |> Enum.map(fn %{value: value} = profile -> Profile.changeset(profile, %{value: value}) end)
+    |> Enum.filter(& &1.valid?)
+    |> Enum.map(&Repo.update/1)
   end
 end

@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-3957] Structure profiles are now validated and expanded
+
 ## [4.25.0] 2021-07-26
 
 ### Fixed

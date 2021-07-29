@@ -10,9 +10,9 @@ defmodule TdDd.Executions.ProfileExecution do
   import Ecto.Changeset
 
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.DataStructures.Profile
   alias TdDd.Events.ProfileEvent
   alias TdDd.Executions.ProfileGroup
+  alias TdDd.Profiles.Profile
 
   schema "profile_executions" do
     field(:source_alias, :string, virtual: true)

@@ -160,6 +160,11 @@ config :td_dd, TdDd.Scheduler,
       schedule: "@reboot",
       task: {TdDd.Cache.UpdateDomainIds, :migrate, []},
       run_strategy: Quantum.RunStrategy.Local
+    ],
+    expand_profile_values: [
+      schedule: "@reboot",
+      task: {TdDd.Profiles, :expand_profile_values, []},
+      run_strategy: Quantum.RunStrategy.Local
     ]
   ]
 

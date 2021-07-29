@@ -1,7 +1,7 @@
 defmodule TdDd.ProfilingLoaderTest do
   use TdDd.DataCase
 
-  alias TdDd.DataStructures.Profiles
+  alias TdDd.Profiles
   alias TdDd.ProfilingLoader
 
   describe "TdDd.ProfilingLoader" do
