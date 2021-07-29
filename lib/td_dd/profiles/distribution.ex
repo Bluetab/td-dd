@@ -1,6 +1,6 @@
-defmodule TdDd.Profiles.Histogram do
+defmodule TdDd.Profiles.Distribution do
   @moduledoc """
-  Custom `Ecto.Type` to represent a histogram.
+  Custom `Ecto.Type` to represent a frequency distribution.
   """
 
   use Ecto.Type

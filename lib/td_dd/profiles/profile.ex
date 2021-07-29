@@ -6,16 +6,16 @@ defmodule TdDd.Profiles.Profile do
 
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Profiles.Count
-  alias TdDd.Profiles.Histogram
+  alias TdDd.Profiles.Distribution
 
   @value_fields [:max, :min, :most_frequent, :null_count, :patterns, :total_count, :unique_count]
 
   schema "profiles" do
     field(:max, :string)
     field(:min, :string)
-    field(:most_frequent, Histogram)
+    field(:most_frequent, Distribution)
     field(:null_count, Count)
-    field(:patterns, Histogram)
+    field(:patterns, Distribution)
     field(:total_count, Count)
     field(:unique_count, Count)
     field(:value, :map)
