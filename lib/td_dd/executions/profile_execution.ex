@@ -10,7 +10,7 @@ defmodule TdDd.Executions.ProfileExecution do
   import Ecto.Changeset
 
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.Events.ProfileEvent
+  alias TdDd.Executions.ProfileEvent
   alias TdDd.Executions.ProfileGroup
   alias TdDd.Profiles.Profile
 

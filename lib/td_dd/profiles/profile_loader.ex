@@ -1,4 +1,4 @@
-defmodule TdDd.ProfilingLoader do
+defmodule TdDd.Profiles.ProfileLoader do
   @moduledoc """
   Bulk loader for profiles
   """

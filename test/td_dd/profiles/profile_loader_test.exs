@@ -1,10 +1,10 @@
-defmodule TdDd.ProfilingLoaderTest do
+defmodule TdDd.Profiles.ProfileLoaderTest do
   use TdDd.DataCase
 
   alias TdDd.Profiles
-  alias TdDd.ProfilingLoader
+  alias TdDd.Profiles.ProfileLoader
 
-  describe "TdDd.ProfilingLoader" do
+  describe "TdDd.Profiles.ProfileLoader" do
     test "load/1 loads changes in data profiles" do
       sys1 = insert(:system, external_id: "SYS1", name: "SYS1")
 
@@ -16,7 +16,7 @@ defmodule TdDd.ProfilingLoaderTest do
       attrs1 = %{external_id: "DS1", value: %{"null" => "0.01", "mode" => "foo"}}
       attrs2 = %{external_id: "DS2", value: %{"null" => "0.02", "mode" => "bar"}}
 
-      assert {:ok, profile_ids} = ProfilingLoader.load([attrs1, attrs2])
+      assert {:ok, profile_ids} = ProfileLoader.load([attrs1, attrs2])
 
       profiles = Enum.map(profile_ids, &Profiles.get_profile!(&1))
 
@@ -32,7 +32,7 @@ defmodule TdDd.ProfilingLoaderTest do
     test "load/1 error when data structure does not exist" do
       external_id = "DS1"
       attrs1 = %{external_id: external_id, nullable: true, mode: "bar"}
-      assert {:error, _error} = ProfilingLoader.load([attrs1])
+      assert {:error, _error} = ProfileLoader.load([attrs1])
     end
 
     test "load/1 error when missing params" do
@@ -40,7 +40,7 @@ defmodule TdDd.ProfilingLoaderTest do
       sys1 = insert(:system, external_id: "SYS1", name: "SYS1")
       insert(:data_structure, external_id: external_id, system_id: sys1.id)
       attrs1 = %{external_id: external_id}
-      assert {:error, _error} = ProfilingLoader.load([attrs1])
+      assert {:error, _error} = ProfileLoader.load([attrs1])
     end
   end
 end

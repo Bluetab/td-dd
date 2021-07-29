@@ -4,8 +4,8 @@ defmodule TdDd.Profiles do
   """
 
   alias Ecto.Multi
-  alias TdDd.Events.ProfileEvents
   alias TdDd.Executions
+  alias TdDd.Executions.ProfileEvents
   alias TdDd.Profiles.Profile
   alias TdDd.Repo
 

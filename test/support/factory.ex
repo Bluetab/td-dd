@@ -229,7 +229,7 @@ defmodule TdDd.Factory do
   end
 
   def profile_event_factory do
-    %TdDd.Events.ProfileEvent{
+    %TdDd.Executions.ProfileEvent{
       type: "PENDING"
     }
   end
