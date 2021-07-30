@@ -1,8 +1,8 @@
-defmodule TdDd.Events.ProfileEventsTest do
+defmodule TdDd.Executions.ProfileEventsTest do
   @moduledoc false
   use TdDd.DataCase
 
-  alias TdDd.Events.ProfileEvents
+  alias TdDd.Executions.ProfileEvents
 
   describe "create_event/1" do
     test "validates required fields" do

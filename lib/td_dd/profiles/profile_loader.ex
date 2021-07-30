@@ -1,11 +1,11 @@
-defmodule TdDd.ProfilingLoader do
+defmodule TdDd.Profiles.ProfileLoader do
   @moduledoc """
   Bulk loader for profiles
   """
 
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.DataStructures.Profiles
+  alias TdDd.Profiles
   alias TdDd.Repo
 
   require Logger
