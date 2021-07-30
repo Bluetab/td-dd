@@ -16,11 +16,11 @@ defmodule TdDd.Factory do
   alias TdDd.DataStructures.DataStructureTag
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
-  alias TdDd.DataStructures.Profile
   alias TdDd.DataStructures.RelationType
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.DataStructures.StructureNote
   alias TdDd.Lineage.Units
+  alias TdDd.Profiles.Profile
   alias TdDd.Systems.System
   alias TdDd.UserSearchFilters.UserSearchFilter
 
@@ -229,7 +229,7 @@ defmodule TdDd.Factory do
   end
 
   def profile_event_factory do
-    %TdDd.Events.ProfileEvent{
+    %TdDd.Executions.ProfileEvent{
       type: "PENDING"
     }
   end

@@ -2,8 +2,8 @@ defmodule TdDdWeb.ProfileControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  alias TdDd.DataStructures.Profiles
   alias TdDd.Loader.Worker
+  alias TdDd.Profiles
 
   setup_all do
     start_supervised(Worker)

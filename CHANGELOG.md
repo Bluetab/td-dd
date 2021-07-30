@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Changed
+
+- [TD-3957] Structure profiles are now validated and expanded
 ### Fixed
 
 - [TD-3959] Report `rule_result_created` when result is created

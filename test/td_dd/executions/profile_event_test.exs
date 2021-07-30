@@ -1,8 +1,8 @@
-defmodule TdDd.Events.ProfileEventTest do
+defmodule TdDd.Executions.ProfileEventTest do
   @moduledoc false
   use TdDd.DataCase
 
-  alias TdDd.Events.ProfileEvent
+  alias TdDd.Executions.ProfileEvent
   alias TdDd.Repo
 
   describe "create_changeset/1" do
