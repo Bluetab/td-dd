@@ -4,8 +4,9 @@ defmodule TdDdWeb.ProfileEventController do
 
   import Canada, only: [can?: 2]
 
-  alias TdDd.Events.{ProfileEvent, ProfileEvents}
   alias TdDd.Executions
+  alias TdDd.Executions.ProfileEvent
+  alias TdDd.Executions.ProfileEvents
   alias TdDd.Executions.ProfileExecution
   alias TdDdWeb.SwaggerDefinitions
 

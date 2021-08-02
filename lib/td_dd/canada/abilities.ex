@@ -22,7 +22,7 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.StructureNote
-  alias TdDd.Events.ProfileEvent
+  alias TdDd.Executions.ProfileEvent
   alias TdDd.Executions.ProfileExecution
   alias TdDd.Executions.ProfileGroup
   alias TdDd.Grants.Grant

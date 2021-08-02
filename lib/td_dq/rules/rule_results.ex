@@ -11,8 +11,7 @@ defmodule TdDq.Rules.RuleResults do
   alias TdDq.Events.QualityEvents
   alias TdDq.Executions.Execution
   alias TdDq.Implementations.Implementation
-  alias TdDq.Rules.Rule
-  alias TdDq.Rules.RuleResult
+  alias TdDq.Rules.{Audit, Rule, RuleResult}
 
   require Logger
 
@@ -61,6 +60,8 @@ defmodule TdDq.Rules.RuleResults do
       {_, events} = QualityEvents.complete(executions)
       {:ok, events}
     end)
+    |> Multi.run(:results, fn _, %{result: %{id: id}} -> select_results([id]) end)
+    |> Multi.run(:audit, Audit, :rule_results_created, [0])
     |> Repo.transaction()
     |> on_create()
   end
@@ -128,6 +129,45 @@ defmodule TdDq.Rules.RuleResults do
     |> refresh_on_delete(rule)
 
     # TODO: Audit event?
+  end
+
+  def select_results(ids) do
+    results =
+      RuleResult
+      |> join(:inner, [r], i in Implementation, on: r.implementation_key == i.implementation_key)
+      |> join(:inner, [res, i], rule in assoc(i, :rule))
+      |> select([res], %{})
+      |> select_merge(
+        [res, _, _],
+        map(res, ^~w(id implementation_key date result errors records params inserted_at)a)
+      )
+      |> select_merge([_, i, _], %{implementation_id: i.id, rule_id: i.rule_id})
+      |> select_merge(
+        [_, _, rule],
+        map(rule, ^~w(business_concept_id goal name minimum result_type)a)
+      )
+      |> where([res], res.id in ^ids)
+      |> order_by([res], res.id)
+      |> Repo.all()
+      |> Enum.map(&Map.put(&1, :status, status(&1)))
+
+    {:ok, results}
+  end
+
+  defp status(%{result_type: "errors_number", errors: errors, minimum: threshold, goal: target}) do
+    cond do
+      Decimal.compare(errors, threshold) == :gt -> "fail"
+      Decimal.compare(errors, target) == :gt -> "warn"
+      true -> "success"
+    end
+  end
+
+  defp status(%{result_type: "percentage", result: result, minimum: threshold, goal: target}) do
+    cond do
+      Decimal.compare(result, threshold) == :lt -> "fail"
+      Decimal.compare(result, target) == :lt -> "warn"
+      true -> "success"
+    end
   end
 
   defp refresh_on_delete({:ok, _} = res, %{id: rule_id}) do
