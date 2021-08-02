@@ -7,6 +7,8 @@ defmodule TdDdWeb.DataStructureVersionController do
 
   alias Ecto
   alias TdDd.DataStructures
+  alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureVersion
   alias TdDdWeb.SwaggerDefinitions
 
   require Logger
@@ -125,5 +127,36 @@ defmodule TdDdWeb.DataStructureVersionController do
 
   defp get_data_structure_version(data_structure_id, version, options) do
     DataStructures.get_data_structure_version!(data_structure_id, version, options)
+  end
+
+  swagger_path :delete do
+    description("Logical Delete Data Structure")
+    produces("application/json")
+
+    parameters do
+      id(:path, :integer, "Data Structure ID", required: true)
+    end
+
+    response(204, "No Content")
+    response(400, "Client Error")
+    response(403, "Forbidden")
+    response(422, "Unprocessable Entity")
+  end
+
+  def delete(conn, %{"data_structure_id" => data_structure_id, "id" => _version}) do
+    claims = conn.assigns[:current_resource]
+
+    with %DataStructure{} = data_structure <-
+           DataStructures.get_data_structure!(data_structure_id),
+         {:can, true} <- {:can, can?(claims, delete_data_structure(data_structure))},
+         %DataStructureVersion{} = data_structure_version <-
+           DataStructures.get_latest_version(data_structure),
+         {:ok, _} <-
+           DataStructures.logical_delete_data_structure(
+             data_structure_version,
+             claims
+           ) do
+      send_resp(conn, :no_content, "")
+    end
   end
 end

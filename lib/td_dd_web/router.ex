@@ -41,7 +41,7 @@ defmodule TdDdWeb.Router do
     post("/data_structure_notes", StructureNoteController, :create_by_external_id)
 
     resources "/data_structures", DataStructureController, except: [:new, :edit, :show] do
-      resources("/versions", DataStructureVersionController, only: [:show])
+      resources("/versions", DataStructureVersionController, only: [:show, :delete])
       resources("/profile_results", ProfileController, only: [:create])
 
       resources("/tags", DataStructuresTagsController,
@@ -49,8 +49,8 @@ defmodule TdDdWeb.Router do
         name: :tags
       )
 
-      resources "/notes", StructureNoteController, except: [:new, :edit], name: :note
-      resources "/grants", GrantController, only: [:create]
+      resources("/notes", StructureNoteController, except: [:new, :edit], name: :note)
+      resources("/grants", GrantController, only: [:create])
     end
 
     resources("/data_structure_versions", DataStructureVersionController, only: [:show]) do
@@ -106,12 +106,12 @@ defmodule TdDdWeb.Router do
     get("/data_structure_user_filters/user/me", UserSearchFilterController, :index_by_user)
     resources("/data_structure_user_filters", UserSearchFilterController, except: [:new, :edit])
 
-    resources "/relation_types", RelationTypeController, except: [:new, :edit]
+    resources("/relation_types", RelationTypeController, except: [:new, :edit])
 
-    resources "/data_structure_types", DataStructureTypeController
-    resources "/data_structure_tags", DataStructureTagController, except: [:new, :edit]
+    resources("/data_structure_types", DataStructureTypeController)
+    resources("/data_structure_tags", DataStructureTagController, except: [:new, :edit])
 
-    resources "/grants", GrantController, except: [:create, :new, :edit, :index]
+    resources("/grants", GrantController, except: [:create, :new, :edit, :index])
   end
 
   scope "/api/swagger" do

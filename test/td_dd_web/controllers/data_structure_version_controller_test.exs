@@ -519,6 +519,43 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     end
   end
 
+  describe "DELETE /api/data_structures/:id/versions/:version" do
+    setup :create_field_structure
+
+    @tag authentication: [role: "user"]
+    test "user without permission can not delete structure versions", %{
+      conn: conn,
+      data_structure: %{id: id}
+    } do
+      assert(
+        %{"errors" => error} =
+          conn
+          |> delete(
+            Routes.data_structure_data_structure_version_path(conn, :delete, id, "latest")
+          )
+          |> json_response(:forbidden)
+      )
+
+      assert(%{"detail" => "Invalid authorization"} = error)
+    end
+
+    @tag authentication: [role: "user"]
+    test "user with permissions can delete the structure", %{
+      conn: conn,
+      claims: %{user_id: user_id},
+      data_structure: %{id: id},
+      domain: %{id: domain_id}
+    } do
+      create_acl_entry(user_id, domain_id, [:delete_data_structure, :view_data_structure])
+
+      assert(
+        conn
+        |> delete(Routes.data_structure_data_structure_version_path(conn, :delete, id, "latest"))
+        |> response(:no_content)
+      )
+    end
+  end
+
   describe "bulk_update" do
     @tag authentication: [role: "admin"]
     test "bulk update of data structures", %{conn: conn} do
