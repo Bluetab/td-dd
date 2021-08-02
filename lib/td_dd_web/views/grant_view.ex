@@ -51,8 +51,8 @@ defmodule TdDdWeb.GrantView do
   defp add_user(response, %{user: %{} = user}) do
     Map.put(
       response,
-      :data_structure_version,
-      Map.take(user, [:full_name, :user_name])
+      :user,
+      Map.take(user, [:email, :full_name, :user_name])
     )
   end
 
