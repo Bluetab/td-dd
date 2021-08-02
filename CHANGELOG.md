@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-3948] Grants in data structure version visualization
+
 ### Changed
 
 - [TD-3957] Structure profiles are now validated and expanded
