@@ -1133,11 +1133,6 @@ defmodule TdDd.DataStructures do
     end)
   end
 
-  import Ecto.Query, warn: false
-  alias TdDd.Repo
-
-  alias TdDd.DataStructures.StructureNote
-
   @doc """
   Returns the list of structure_notes.
 

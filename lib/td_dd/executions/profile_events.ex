@@ -1,9 +1,9 @@
-defmodule TdDd.Events.ProfileEvents do
+defmodule TdDd.Executions.ProfileEvents do
   @moduledoc """
   The Events context.
   """
 
-  alias TdDd.Events.ProfileEvent
+  alias TdDd.Executions.ProfileEvent
   alias TdDd.Repo
 
   def create_event(attrs \\ %{}) do
