@@ -11,10 +11,10 @@ defmodule TdDd.DataStructures.DataStructure do
   alias TdDd.DataStructures.DataStructuresTags
   alias TdDd.DataStructures.DataStructureTag
   alias TdDd.DataStructures.DataStructureVersion
-  alias TdDd.DataStructures.Profile
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.DataStructures.StructureNote
   alias TdDd.Grants.Grant
+  alias TdDd.Profiles.Profile
   alias TdDd.Systems.System
 
   @audit_fields [:last_change_by]

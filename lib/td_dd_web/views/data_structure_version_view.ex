@@ -189,7 +189,7 @@ defmodule TdDdWeb.DataStructureVersionView do
   end
 
   defp add_profile(%{class: "field", profile: profile} = dsv) do
-    dsv |> with_profile_attrs(profile)
+    with_profile_attrs(dsv, profile)
   end
 
   defp add_profile(dsv), do: dsv
@@ -262,15 +262,29 @@ defmodule TdDdWeb.DataStructureVersionView do
     |> Map.merge(metadata)
   end
 
-  defp with_profile_attrs(dsv, %{value: value}) do
+  defp with_profile_attrs(dsv, %{} = profile) do
     profile =
-      value
-      |> Map.new(fn {k, v} -> {String.to_atom(k), v} end)
+      profile
+      |> Map.take([
+        :max,
+        :min,
+        :most_frequent,
+        :null_count,
+        :patterns,
+        :total_count,
+        :unique_count
+      ])
+      |> Enum.reject(fn {_k, v} -> is_nil(v) end)
+      |> Map.new()
 
-    Map.put(dsv, :profile, profile)
+    if profile != %{} do
+      Map.put(dsv, :profile, profile)
+    else
+      Map.delete(dsv, :profile)
+    end
   end
 
-  defp with_profile_attrs(dsv, _), do: dsv
+  defp with_profile_attrs(dsv, _), do: Map.delete(dsv, :profile)
 
   defp lift_data(%{"data" => data} = attrs) when is_map(data) do
     case Map.get(data, :data) do
