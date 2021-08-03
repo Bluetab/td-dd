@@ -539,15 +539,11 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       assert(%{"detail" => "Invalid authorization"} = error)
     end
 
-    @tag authentication: [role: "user"]
-    test "user with permissions can delete the structure", %{
+    @tag authentication: [role: "admin"]
+    test "admin can delete the structure", %{
       conn: conn,
-      claims: %{user_id: user_id},
-      data_structure: %{id: id},
-      domain: %{id: domain_id}
+      data_structure: %{id: id}
     } do
-      create_acl_entry(user_id, domain_id, [:delete_data_structure, :view_data_structure])
-
       assert(
         conn
         |> delete(Routes.data_structure_data_structure_version_path(conn, :delete, id, "latest"))

@@ -148,7 +148,7 @@ defmodule TdDdWeb.DataStructureVersionController do
 
     with %DataStructure{} = data_structure <-
            DataStructures.get_data_structure!(data_structure_id),
-         {:can, true} <- {:can, can?(claims, delete_data_structure(data_structure))},
+         {:can, true} <- {:can, can?(claims, delete_structure(data_structure))},
          %DataStructureVersion{} = data_structure_version <-
            DataStructures.get_latest_version(data_structure),
          {:ok, _} <-
