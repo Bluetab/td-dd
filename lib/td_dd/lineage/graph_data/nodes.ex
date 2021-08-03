@@ -38,10 +38,16 @@ defmodule TdDd.Lineage.GraphData.Nodes do
   end
 
   defp children(%Graph{} = t, id, roots, claims) do
-    t
-    |> do_children(id, roots)
+    children =
+      t
+      |> do_children(id, roots)
+      |> Enum.reject(&hidden?(t, &1))
+
+    %{external_id: children}
+    |> Units.list_nodes(preload: :units)
+    |> Enum.map(&domain_ids/1)
     |> Enum.reject(&by_permissions(claims, &1))
-    |> Enum.reject(&hidden?(t, &1))
+    |> Enum.map(& &1.external_id)
     |> Enum.map(&Graph.vertex(t, &1))
     |> Enum.map(&node_label/1)
     |> Enum.sort_by(&sortable/1)
@@ -55,13 +61,18 @@ defmodule TdDd.Lineage.GraphData.Nodes do
     Graph.vertex(t, id, "hidden") == true
   end
 
+  defp domain_ids(%{units: units} = node) do
+    domain_ids =
+      units
+      |> Enum.map(& &1.domain_id)
+      |> Enum.filter(& &1)
+
+    Map.put(node, :domain_ids, domain_ids)
+  end
+
   defp by_permissions(claims, node) do
     import Canada, only: [can?: 2]
-
-    case Units.get_node(node, preload: [:units]) do
-      nil -> false
-      node -> not can?(claims, view_lineage(node))
-    end
+    not can?(claims, view_lineage(node))
   end
 
   defp class(%{class: "Group"}), do: :groups
