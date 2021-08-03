@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-2635] Admin can manually delete structures and all its children
+
 ### Changed
 
 - [TD-3957] Structure profiles are now validated and expanded
