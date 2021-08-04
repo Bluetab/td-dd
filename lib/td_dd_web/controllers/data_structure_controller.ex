@@ -169,7 +169,7 @@ defmodule TdDdWeb.DataStructureController do
     end
   end
 
-  def delete(conn, %{"id" => id} = params) do
+  def delete(conn, %{"id" => id}) do
     claims = conn.assigns[:current_resource]
     data_structure = DataStructures.get_data_structure!(id)
 
