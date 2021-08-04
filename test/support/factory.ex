@@ -148,7 +148,7 @@ defmodule TdDd.Factory do
       name: sequence("structure_type_name"),
       template_id: sequence(:template_id, & &1),
       translation: sequence("translation"),
-      metadata_views: [%{"name" => "foo", "fields" => ["bar"]}]
+      metadata_views: [%MetadataView{name: "foo", fields: ["bar"]}]
     }
   end
 

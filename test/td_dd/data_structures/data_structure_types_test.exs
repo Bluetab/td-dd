@@ -44,7 +44,7 @@ defmodule TdDd.DataStructures.DataStructureTypesTest do
         name: name,
         template_id: template_id,
         translation: translation,
-        metadata_views: metadata_views
+        metadata_views: [metadata_view]
       } = params = params_for(:data_structure_type)
 
       assert {:ok, %DataStructureType{} = data_structure_type} =
@@ -54,8 +54,10 @@ defmodule TdDd.DataStructures.DataStructureTypesTest do
                name: ^name,
                template_id: ^template_id,
                translation: ^translation,
-               metadata_views: ^metadata_views
+               metadata_views: [view]
              } = data_structure_type
+
+      assert Map.from_struct(view) == metadata_view
     end
 
     test "with invalid data returns error changeset", %{data_structure_type: type} do
