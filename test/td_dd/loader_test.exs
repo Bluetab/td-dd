@@ -785,6 +785,65 @@ defmodule TdDd.LoaderTest do
     end
   end
 
+  describe "metadata_multi/4" do
+    test "identifies missing external_ids" do
+      system1 = insert(:system)
+      %{system: _not_system1} = insert(:data_structure, external_id: "exists_in_another_system")
+      records = [%{external_id: "doesnt_exist"}, %{external_id: "exists_in_another_system"}]
+
+      assert {:error, :missing_external_ids, [_, _], %{}} =
+               Loader.metadata_multi(records, system1, audit())
+    end
+
+    test "replaces metadata with nil" do
+      %{data_structure: %{id: id, system: system, external_id: external_id}} =
+        insert(:structure_metadata)
+
+      records = [%{external_id: external_id, mutable_metadata: nil}]
+
+      assert {:ok, %{replace_metadata: [_], structure_ids: [^id]}} =
+               Loader.metadata_multi(records, system, audit())
+    end
+
+    test "replaces metadata with new value" do
+      %{data_structure: %{id: id, system: system, external_id: external_id}} =
+        insert(:structure_metadata)
+
+      records = [%{external_id: external_id, mutable_metadata: %{"xyzzy" => "spqr"}}]
+
+      assert {:ok, %{replace_metadata: [^id], structure_ids: [^id]}} =
+               Loader.metadata_multi(records, system, audit())
+    end
+
+    test "retains metadata with same value" do
+      fields = %{"foo" => "bar", "bar" => ["baz"]}
+
+      %{data_structure: %{system: system, external_id: external_id}} =
+        insert(:structure_metadata, fields: fields)
+
+      records = [%{external_id: external_id, mutable_metadata: fields}]
+
+      assert {:ok, %{replace_metadata: [], structure_ids: []}} =
+               Loader.metadata_multi(records, system, audit())
+    end
+
+    test "merges new metadata with existing value" do
+      %{data_structure: %{id: id, system: system, external_id: external_id}} =
+        insert(:structure_metadata)
+
+      %{data_structure: %{external_id: external_id2}, fields: existing_metadata} =
+        insert(:structure_metadata, data_structure: build(:data_structure, system: system))
+
+      records = [
+        %{external_id: external_id, mutable_metadata: %{"xyzzy" => "spqr"}},
+        %{external_id: external_id2, mutable_metadata: existing_metadata}
+      ]
+
+      assert {:ok, %{merge_metadata: [^id], structure_ids: [^id]}} =
+               Loader.metadata_multi(records, system, audit(), "merge")
+    end
+  end
+
   defp audit do
     %{last_change_by: 0, ts: DateTime.utc_now()}
   end
