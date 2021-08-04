@@ -80,6 +80,12 @@ defmodule TdDdWeb.Router do
     post("/profiles/upload", ProfileController, :upload)
 
     resources("/systems", SystemController, except: [:new, :edit]) do
+      resources("/metadata", SystemMetadataController,
+        only: [:update],
+        as: :metadata,
+        singleton: true
+      )
+
       resources("/metadata", SystemMetadataController, only: [:create], as: :metadata)
       get("/structures", DataStructureController, :get_system_structures)
       resources("/groups", GroupController, only: [:index, :delete])
