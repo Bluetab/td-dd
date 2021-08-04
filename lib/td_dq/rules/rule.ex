@@ -12,6 +12,8 @@ defmodule TdDq.Rules.Rule do
   alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Rule
 
+  @type t :: %__MODULE__{}
+
   @valid_result_types ~w(percentage errors_number)
 
   schema "rules" do

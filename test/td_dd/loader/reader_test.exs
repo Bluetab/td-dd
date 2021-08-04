@@ -76,4 +76,33 @@ defmodule TdDd.Loader.ReaderTest do
       end
     end
   end
+
+  describe "Reader.read_metadata_records/1" do
+    test "returns an error with the position of the invalid records" do
+      records = [
+        %{"external_id" => "foo", "mutable_metadata" => ["a list is not valid"]},
+        %{"external_id" => "bar", "mutable_metadata" => "a string is not valid"},
+        %{"external_id" => "baz", "mutable_metadata" => %{"baz" => "a map is valid"}},
+        %{"external_id" => "nil_is_invalid", "mutable_metadata" => nil},
+        %{"external_id" => "empty_is_valid", "mutable_metadata" => %{}}
+      ]
+
+      assert {:error, [1, 2, 4]} = Reader.read_metadata_records(records)
+    end
+
+    test "casts and validates valid records, includes index" do
+      metadata = %{"foo" => "bar"}
+
+      records = [
+        %{
+          "external_id" => "baz",
+          "mutable_metadata" => metadata,
+          "whatever" => "discarded"
+        }
+      ]
+
+      assert {:ok, [record]} = Reader.read_metadata_records(records)
+      assert record == %{external_id: "baz", mutable_metadata: metadata, pos: 1}
+    end
+  end
 end

@@ -1,10 +1,11 @@
 # Changelog
-
 ## [Unreleased]
 
 ### Added
 
 - [TD-2635] Admin can manually delete structures and all its children
+- [TD-3917] `PATCH /api/systems/:external_id/metadata` allows mutable metadata
+  to be replaced or merged
 
 ### Changed
 
