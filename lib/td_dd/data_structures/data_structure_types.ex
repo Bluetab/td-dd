@@ -2,101 +2,45 @@ defmodule TdDd.DataStructures.DataStructureTypes do
   @moduledoc """
   The DataStructureTypes context.
   """
+  import Ecto.Query
 
-  alias TdCache.StructureTypeCache
   alias TdCache.TemplateCache
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.Repo
 
   @doc """
-  Returns the list of data_structure_types.
-
-  ## Examples
-
-      iex> list_data_structure_types()
-      [%DataStructureType{}, ...]
-
+  Returns the list of `DataStructureType` structs.
   """
   def list_data_structure_types do
-    Repo.all(DataStructureType)
-  end
-
-  def enrich_template(%DataStructureType{template_id: template_id} = structure_type) do
-    case TemplateCache.get(template_id) do
-      {:ok, template} -> %{structure_type | template: template}
-      _ -> structure_type
-    end
+    data_structure_types_query()
+    |> Repo.all()
+    |> Enum.map(&enrich_template/1)
   end
 
   @doc """
-  Gets a single data_structure_type.
+  Gets a single `DataStructureType` by id.
 
   Raises `Ecto.NoResultsError` if the Data structure type does not exist.
-
-  ## Examples
-
-      iex> get_data_structure_type!(123)
-      %DataStructureType{}
-
-      iex> get_data_structure_type!(456)
-      ** (Ecto.NoResultsError)
-
   """
-  def get_data_structure_type!(id), do: Repo.get!(DataStructureType, id)
-
-  @doc """
-  Gets a single data_structure_type by name.
-
-  Raises `Ecto.NoResultsError` if the Data structure type does not exist.
-
-  ## Examples
-
-      iex> get_data_structure_type_by_type("doc")
-      %DataStructureType{}
-
-      iex> get_data_structure_type_by_type("non_existing")
-      ** (Ecto.NoResultsError)
-
-  """
-  def get_data_structure_type_by_type!(type),
-    do: Repo.get_by(DataStructureType, structure_type: type)
-
-  @doc """
-  Creates a data_structure_type.
-
-  ## Examples
-
-      iex> create_data_structure_type(%{field: value})
-      {:ok, %DataStructureType{}}
-
-      iex> create_data_structure_type(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_data_structure_type(params \\ %{}) do
-    Repo.transaction(fn ->
-      %DataStructureType{}
-      |> DataStructureType.changeset(params)
-      |> Repo.insert()
-      |> on_upsert()
-    end)
-    |> case do
-      {:ok, result} -> result
-      {:error, error} -> error
-    end
-  end
-
-  defp on_upsert(result) do
-    with {:ok, data_structure_type} <- result,
-         {:ok, _} <- StructureTypeCache.put(data_structure_type) do
-      result
-    else
-      result -> Repo.rollback(result)
-    end
+  def get!(id) do
+    data_structure_types_query()
+    |> Repo.get!(id)
+    |> enrich_template()
   end
 
   @doc """
-  Updates a data_structure_type.
+  Gets a single `DataStructureType` by specified clauses.
+
+  Returns nil if no result was found. Raises if more than one entry.
+  """
+  def get_by(clauses) do
+    data_structure_types_query()
+    |> Repo.get_by(clauses)
+    |> enrich_template()
+  end
+
+  @doc """
+  Updates a `DataStructureType`.
 
   ## Examples
 
@@ -108,48 +52,39 @@ defmodule TdDd.DataStructures.DataStructureTypes do
 
   """
   def update_data_structure_type(%DataStructureType{} = data_structure_type, params) do
-    Repo.transaction(fn ->
-      data_structure_type
-      |> DataStructureType.changeset(params)
-      |> Repo.update()
-      |> on_upsert()
-    end)
-    |> case do
-      {:ok, result} -> result
-      {:error, error} -> error
+    data_structure_type
+    |> DataStructureType.changeset(params)
+    |> Repo.update()
+  end
+
+  defp data_structure_types_query do
+    sq = metadata_fields_query()
+
+    DataStructureType
+    |> join(:left, [dst], t in subquery(sq), on: t.type == dst.name)
+    |> select_merge([dst, t], %{metadata_fields: t.fields})
+  end
+
+  defp metadata_fields_query do
+    "data_structure_versions"
+    |> where([dsv], is_nil(dsv.deleted_at))
+    |> select([dsv], %{type: dsv.type, field: fragment("jsonb_object_keys(?)", dsv.metadata)})
+    |> distinct(true)
+    |> subquery()
+    |> select([t], %{type: t.type, fields: fragment("array_agg(?)", t.field)})
+    |> group_by([t], t.type)
+  end
+
+  @spec enrich_template(DataStructureType.t() | nil) :: DataStructureType.t() | nil
+  defp enrich_template(structure_type_or_nil)
+
+  defp enrich_template(%DataStructureType{template_id: template_id} = structure_type)
+       when is_integer(template_id) do
+    case TemplateCache.get(template_id) do
+      {:ok, template} -> %{structure_type | template: template}
+      _ -> structure_type
     end
   end
 
-  @doc """
-  Deletes a data_structure_type.
-
-  ## Examples
-
-      iex> delete_data_structure_type(data_structure_type)
-      {:ok, %DataStructureType{}}
-
-      iex> delete_data_structure_type(data_structure_type)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_data_structure_type(%DataStructureType{} = data_structure_type) do
-    Repo.transaction(fn ->
-      data_structure_type
-      |> Repo.delete()
-      |> on_delete()
-    end)
-    |> case do
-      {:ok, result} -> result
-      {:error, error} -> error
-    end
-  end
-
-  defp on_delete(result) do
-    with {:ok, data_structure_type} <- result,
-         {:ok, _} <- StructureTypeCache.delete(Map.get(data_structure_type, :id)) do
-      result
-    else
-      result -> result
-    end
-  end
+  defp enrich_template(structure_type_or_nil), do: structure_type_or_nil
 end

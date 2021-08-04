@@ -13,7 +13,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
   setup %{conn: conn} do
     %{id: template_id, name: template_name} = template = build(:template, name: @template_name)
     {:ok, _} = TemplateCache.put(template, publish: false)
-    CacheHelpers.insert_structure_type(structure_type: template_name, template_id: template_id)
+    CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
     on_exit(fn -> TemplateCache.delete(template_id) end)
 
     start_supervised!(TdDd.Search.StructureEnricher)

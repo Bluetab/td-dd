@@ -2,6 +2,23 @@ defmodule TdDd.DataStructures.DataStructureVersionTest do
   use TdDd.DataCase
 
   alias Elasticsearch.Document
+  alias TdDd.Repo
+
+  describe "DataStructureVersion" do
+    test "uses type as foreign key" do
+      assert %{structure_type: nil, type: type} =
+               :data_structure_version
+               |> insert()
+               |> Repo.preload(:structure_type)
+
+      %{id: id} = insert(:data_structure_type, name: type)
+
+      assert %{structure_type: %{id: ^id}} =
+               :data_structure_version
+               |> insert(type: type)
+               |> Repo.preload(:structure_type)
+    end
+  end
 
   describe "Document.encode/1" do
     test "truncates field_type to 32766 bytes" do
