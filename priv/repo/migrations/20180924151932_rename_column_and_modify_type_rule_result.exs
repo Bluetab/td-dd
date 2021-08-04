@@ -1,7 +1,5 @@
 defmodule TdDq.Repo.Migrations.RenameColumnAndModifyTypeRuleResult do
   use Ecto.Migration
-  alias Ecto.Adapters.SQL
-  alias TdDd.Repo
 
   @update_implementation_key ~S"""
   UPDATE rule_results
@@ -11,14 +9,12 @@ defmodule TdDq.Repo.Migrations.RenameColumnAndModifyTypeRuleResult do
   """
 
   def change do
-    drop(constraint(:rule_results, "rule_results_rule_implementation_id_fkey"))
-    alter(table(:rule_results), do: modify(:rule_implementation_id, :string))
+    drop constraint("rule_results", "rule_results_rule_implementation_id_fkey")
+    alter table("rule_results"), do: modify(:rule_implementation_id, :string)
 
-    flush()
+    execute(@update_implementation_key, "")
 
-    SQL.query!(Repo, @update_implementation_key)
-
-    rename(table(:rule_results), :rule_implementation_id, to: :implementation_key)
-    create(unique_index(:rule_implementations, [:implementation_key]))
+    rename table("rule_results"), :rule_implementation_id, to: :implementation_key
+    create unique_index("rule_implementations", [:implementation_key])
   end
 end
