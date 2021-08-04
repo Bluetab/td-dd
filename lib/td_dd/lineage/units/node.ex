@@ -14,6 +14,7 @@ defmodule TdDd.Lineage.Units.Node do
     field(:type, :string)
     field(:label, :map, default: %{})
     field(:deleted_at, :utc_datetime_usec)
+    field(:domain_ids, {:array, :integer}, virtual: true)
 
     belongs_to(:structure, DataStructure)
 

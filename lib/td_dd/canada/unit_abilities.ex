@@ -16,14 +16,8 @@ defmodule TdDd.Canada.UnitAbilities do
 
   def can?(%Claims{}, _action, Unit), do: false
 
-  def can?(_claims, :view_lineage, %Unit{domain_id: nil}), do: true
-
-  def can?(%Claims{} = claims, :view_lineage, %Unit{domain_id: domain_id}) do
-    Permissions.authorized?(claims, :view_lineage, domain_id)
-  end
-
-  def can?(%Claims{} = claims, :view_lineage, %Node{units: [_ | _] = units}) do
-    Enum.any?(units, &can?(claims, :view_lineage, &1))
+  def can?(%Claims{} = claims, :view_lineage, %Node{domain_ids: domain_ids = [_ | _]}) do
+    Permissions.authorized?(claims, :view_lineage, domain_ids)
   end
 
   def can?(_claims, :view_lineage, %Node{}) do

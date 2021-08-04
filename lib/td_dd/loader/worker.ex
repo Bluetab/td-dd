@@ -19,7 +19,7 @@ defmodule TdDd.Loader.Worker do
   alias TdDd.DataStructures.Ancestry
   alias TdDd.Loader
   alias TdDd.Loader.Reader
-  alias TdDd.ProfilingLoader
+  alias TdDd.Profiles.ProfileLoader
 
   require Logger
 
@@ -255,7 +255,7 @@ defmodule TdDd.Loader.Worker do
     Logger.info("Bulk loading profiles")
 
     Timer.time(
-      fn -> ProfilingLoader.load(profiles) end,
+      fn -> ProfileLoader.load(profiles) end,
       fn ms, res ->
         case res do
           {:ok, ids} ->

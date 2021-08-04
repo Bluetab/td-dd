@@ -1,11 +1,19 @@
 # Changelog
-
-## [Unreleased] 2021-07-27
+## [Unreleased]
 
 ### Added
 
 - [TD-3917] `PATCH /api/systems/:external_id/metadata` allows mutable metadata
   to be replaced or merged
+
+### Changed
+
+- [TD-3957] Structure profiles are now validated and expanded
+
+### Fixed
+
+- [TD-3959] Report `rule_result_created` when result is created
+- [TD-3908] Timeout on node retrieval 
 
 ## [4.25.0] 2021-07-26
 

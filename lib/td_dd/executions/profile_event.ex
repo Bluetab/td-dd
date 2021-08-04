@@ -1,4 +1,4 @@
-defmodule TdDd.Events.ProfileEvent do
+defmodule TdDd.Executions.ProfileEvent do
   @moduledoc "Event entity"
 
   use Ecto.Schema
