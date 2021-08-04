@@ -6,6 +6,7 @@ defmodule TdDd.DataStructuresTest do
   alias TdCache.Redix.Stream
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.RelationTypes
 
   import TdDd.TestOperators
@@ -163,6 +164,28 @@ defmodule TdDd.DataStructuresTest do
       assert %{__meta__: %{state: :deleted}} = data_structure
       assert DataStructures.get_data_structure!(ds2.id) <~> ds2
       assert DataStructures.get_data_structure!(ds3.id) <~> ds3
+    end
+  end
+
+  describe "logical_delete_data_structure/2" do
+    test "logical_delete_data_structure/2 delete the logical data_structure version", %{
+      data_structure_version: %{id: parent_version_id} = data_structure_version,
+      data_structure: %{id: id},
+      claims: claims
+    } do
+      insert(:structure_metadata, data_structure_id: id, version: parent_version_id)
+
+      {:ok, result} = DataStructures.logical_delete_data_structure(data_structure_version, claims)
+
+      assert %{delete_dsv_descendents: {1, nil}} = result
+      assert %{delete_metadata_descendents: {1, nil}} = result
+      assert %{data_structure_version_descendents: [parent_version_id]} = result.descendents
+      assert %{data_structures_ids: [id]} = result.descendents
+    end
+
+    test "emits an audit event", %{data_structure_version: data_structure_version, claims: claims} do
+      assert {:ok, %{audit: event_id}} =
+               DataStructures.logical_delete_data_structure(data_structure_version, claims)
     end
   end
 

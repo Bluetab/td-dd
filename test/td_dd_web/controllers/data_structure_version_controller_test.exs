@@ -519,39 +519,6 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     end
   end
 
-  describe "DELETE /api/data_structures/:id/versions/:version" do
-    setup :create_field_structure
-
-    @tag authentication: [role: "user"]
-    test "user without permission can not delete structure versions", %{
-      conn: conn,
-      data_structure: %{id: id}
-    } do
-      assert(
-        %{"errors" => error} =
-          conn
-          |> delete(
-            Routes.data_structure_data_structure_version_path(conn, :delete, id, "latest")
-          )
-          |> json_response(:forbidden)
-      )
-
-      assert(%{"detail" => "Invalid authorization"} = error)
-    end
-
-    @tag authentication: [role: "admin"]
-    test "admin can delete the structure", %{
-      conn: conn,
-      data_structure: %{id: id}
-    } do
-      assert(
-        conn
-        |> delete(Routes.data_structure_data_structure_version_path(conn, :delete, id, "latest"))
-        |> response(:no_content)
-      )
-    end
-  end
-
   describe "bulk_update" do
     @tag authentication: [role: "admin"]
     test "bulk update of data structures", %{conn: conn} do

@@ -41,7 +41,7 @@ defmodule TdDdWeb.Router do
     post("/data_structure_notes", StructureNoteController, :create_by_external_id)
 
     resources "/data_structures", DataStructureController, except: [:new, :edit, :show] do
-      resources("/versions", DataStructureVersionController, only: [:show, :delete])
+      resources("/versions", DataStructureVersionController, only: [:show])
       resources("/profile_results", ProfileController, only: [:create])
 
       resources("/tags", DataStructuresTagsController,

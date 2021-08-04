@@ -9,6 +9,8 @@ defmodule TdDdWeb.DataStructureController do
   alias TdDd.CSV.Download
   alias TdDd.DataStructures
   alias TdDd.DataStructures.BulkUpdate
+  alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Search
   alias TdDd.DataStructures.StructureNote
   alias TdDd.DataStructures.StructureNotesWorkflow
@@ -141,6 +143,7 @@ defmodule TdDdWeb.DataStructureController do
 
     parameters do
       id(:path, :integer, "Data Structure ID", required: true)
+      logical(:query, :boolean, "Logical delete flag")
     end
 
     response(204, "No Content")
@@ -149,7 +152,24 @@ defmodule TdDdWeb.DataStructureController do
     response(422, "Unprocessable Entity")
   end
 
-  def delete(conn, %{"id" => id}) do
+  def delete(conn, %{"id" => id, "logical" => "true"}) do
+    claims = conn.assigns[:current_resource]
+
+    with %DataStructure{} = data_structure <-
+           DataStructures.get_data_structure!(id),
+         {:can, true} <- {:can, can?(claims, delete_structure(data_structure))},
+         %DataStructureVersion{} = data_structure_version <-
+           DataStructures.get_latest_version(data_structure),
+         {:ok, _} <-
+           DataStructures.logical_delete_data_structure(
+             data_structure_version,
+             claims
+           ) do
+      send_resp(conn, :no_content, "")
+    end
+  end
+
+  def delete(conn, %{"id" => id} = params) do
     claims = conn.assigns[:current_resource]
     data_structure = DataStructures.get_data_structure!(id)
 
