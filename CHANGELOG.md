@@ -7,6 +7,7 @@
 - [TD-3929] Reindex the children of the structure domain when modifying
 
 ### Added
+- [TD-3549] Add new quality rule result type: "deviation"
 - [TD-3906] Notes audit now includes status changes
 - [TD-3050] Show quality errors
 - [TD-3551] Restore rule implementations

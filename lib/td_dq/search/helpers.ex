@@ -69,41 +69,52 @@ defmodule TdDq.Search.Helpers do
   end
 
   def with_result_text(%{result: result} = result_map, minimum, goal, "percentage") do
-    result = Decimal.to_float(result)
-
-    result_text =
-      cond do
-        result < minimum ->
-          "quality_result.under_minimum"
-
-        result >= minimum and result < goal ->
-          "quality_result.under_goal"
-
-        result >= goal ->
-          "quality_result.over_goal"
-      end
-
+    result_text = status(result, minimum, goal, "percentage")
     Map.put(result_map, :result_text, result_text)
   end
 
-  def with_result_text(%{errors: errors} = result_map, minimum, goal, "errors_number") do
-    result_text =
-      cond do
-        errors > minimum ->
-          "quality_result.under_minimum"
-
-        errors <= minimum and errors > goal ->
-          "quality_result.under_goal"
-
-        errors <= goal ->
-          "quality_result.over_goal"
-      end
-
+  def with_result_text(%{errors: errors} = result_map, minimum, goal, result_type) when result_type in ["errors_number", "deviation"] do
+    result_text = status(errors, minimum, goal, result_type)
     Map.put(result_map, :result_text, result_text)
   end
 
   def with_result_text(result_map, _minimum, _goal, _type) do
     result_map
+  end
+
+  def status(result, minimum, goal, "percentage") do
+    result = Decimal.to_float(result)
+    cond do
+      # goal >= minimum. Intervals:
+      #   [0, minimum) => error
+      #   [minimum, goal) => warning
+      #   [goal, max => error
+      result < minimum ->
+        "quality_result.under_minimum"
+
+      result >= minimum and result < goal ->
+        "quality_result.under_goal"
+
+      result >= goal ->
+        "quality_result.over_goal"
+    end
+  end
+
+  def status(errors_absolute_or_perc, minimum, goal, result_type) when result_type in ["errors_number", "deviation"] do
+    cond do
+      # goal <= minimum. Intervals:
+      #   [0, goal] => OK
+      #   (goal, minimum] => warning
+      #   (minimum, max => error
+      errors_absolute_or_perc > minimum ->
+        "quality_result.under_minimum"
+
+      errors_absolute_or_perc <= minimum and errors_absolute_or_perc > goal ->
+        "quality_result.under_goal"
+
+      errors_absolute_or_perc <= goal ->
+        "quality_result.over_goal"
+    end
   end
 
   @spec get_sources([non_neg_integer()]) :: [binary()]

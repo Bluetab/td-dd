@@ -76,7 +76,7 @@ defmodule TdDq.Rules.RuleResultTest do
       assert %{errors: ^errors, records: ^records} = Repo.get!(RuleResult, id)
     end
 
-    test "puts calculated result if not present in changeset" do
+    test "result_type percentage: puts calculated result if not present in changeset" do
       {errors, records} = {123_456, 456_123}
 
       assert "72.93" =
@@ -84,12 +84,30 @@ defmodule TdDq.Rules.RuleResultTest do
                  "records" => records,
                  "errors" => errors,
                  "implementation_key" => "foo",
-                 "date" => "2020-01-01"
+                 "date" => "2020-01-01",
+                 "result_type" => "percentage"
                }
                |> RuleResult.changeset()
                |> Changeset.get_change(:result)
                |> Decimal.to_string()
     end
+
+    test "result_type deviation: puts calculated result if not present in changeset" do
+      {errors, records} = {123_456, 456_123}
+
+      assert "27.06" =
+               %{
+                 "records" => records,
+                 "errors" => errors,
+                 "implementation_key" => "foo",
+                 "date" => "2020-01-01",
+                 "result_type" => "deviation"
+               }
+               |> RuleResult.changeset()
+               |> Changeset.get_change(:result)
+               |> Decimal.to_string()
+    end
+
 
     test "accepts string values for errors and records" do
       params = %{"errors" => "123456", "records" => "654321"}
