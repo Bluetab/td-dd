@@ -113,7 +113,6 @@ defmodule TdDq.Rules.RuleResultTest do
                |> Decimal.to_string()
     end
 
-
     test "accepts string values for errors and records" do
       params = %{"errors" => "123456", "records" => "654321"}
       changeset = RuleResult.changeset(params)
