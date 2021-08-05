@@ -16,6 +16,7 @@ defmodule TdDd.Factory do
   alias TdDd.DataStructures.DataStructureTag
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.MetadataView
   alias TdDd.DataStructures.RelationType
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.DataStructures.StructureNote
@@ -144,10 +145,17 @@ defmodule TdDd.Factory do
 
   def data_structure_type_factory do
     %DataStructureType{
-      structure_type: sequence("structure_type"),
+      name: sequence("structure_type_name"),
       template_id: sequence(:template_id, & &1),
-      translation: sequence("system_name"),
-      metadata_fields: %{"foo" => "bar"}
+      translation: sequence("translation"),
+      metadata_views: [%MetadataView{name: "foo", fields: ["bar"]}]
+    }
+  end
+
+  def metadata_view_factory do
+    %MetadataView{
+      name: sequence("metadata_view_name"),
+      fields: [sequence("metadata_field")]
     }
   end
 

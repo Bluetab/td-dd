@@ -26,7 +26,7 @@ defmodule TdDd.DownloadTest do
       field_name = "add_info1"
       field_label = "Add Info 1"
       template_id = 1
-      structure_type = "Columna"
+      type = "Columna"
 
       create_template(%{
         id: template_id,
@@ -47,7 +47,7 @@ defmodule TdDd.DownloadTest do
         ]
       })
 
-      insert(:data_structure_type, structure_type: structure_type, template_id: template_id)
+      insert(:data_structure_type, name: type, template_id: template_id)
       domain_name = "domain_1"
 
       structure_1 = %{
@@ -62,7 +62,7 @@ defmodule TdDd.DownloadTest do
         external_id: "myext_292929",
         group: "gr",
         path: ["CMC", "Objetos Públicos", "Informes", "Cuadro de Mando Integral"],
-        type: structure_type,
+        type: type,
         system: %{"external_id" => "sys", "name" => "sys_name"}
       }
 

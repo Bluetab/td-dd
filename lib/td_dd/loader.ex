@@ -12,6 +12,7 @@ defmodule TdDd.Loader do
   alias TdDd.Loader.Metadata
   alias TdDd.Loader.Relations
   alias TdDd.Loader.Structures
+  alias TdDd.Loader.Types
   alias TdDd.Loader.Versions
   alias TdDd.Repo
 
@@ -65,6 +66,7 @@ defmodule TdDd.Loader do
     Multi.new()
     |> Multi.run(:graph, LoadGraph, :load_graph, [structure_records, relation_records, opts])
     |> Multi.run(:context, Context, :create_context, [audit])
+    |> Multi.run(:insert_types, Types, :insert_missing_types, [structure_records, ts])
     |> Multi.run(:delete_versions, Versions, :delete_missing_versions, [structure_records, ts])
     |> Multi.run(:insert_versions, Versions, :insert_new_versions, [ts])
     |> Multi.run(:restore_versions, Versions, :restore_deleted_versions, [])
@@ -132,4 +134,5 @@ defmodule TdDd.Loader do
   defp structure_ids({:update_versions, {_, dsvs}}), do: Enum.map(dsvs, & &1.data_structure_id)
   defp structure_ids({:replace_versions, {_, dsvs}}), do: Enum.map(dsvs, & &1.data_structure_id)
   defp structure_ids({:missing_external_ids, _}), do: []
+  defp structure_ids({:insert_types, _}), do: []
 end
