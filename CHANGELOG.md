@@ -5,6 +5,7 @@
 
 - [TD-3917] `PATCH /api/systems/:external_id/metadata` allows mutable metadata
   to be replaced or merged
+- [TD-3917] Get nodes filtered by domain id
 
 ### Changed
 
