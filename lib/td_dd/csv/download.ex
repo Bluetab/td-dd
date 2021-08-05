@@ -32,7 +32,8 @@ defmodule TdDd.CSV.Download do
     structures_by_type = Enum.group_by(structures, &Map.get(&1, :type))
     types = Map.keys(structures_by_type)
 
-    structure_types = Enum.reduce(types, %{}, &Map.put(&2, &1, enrich_template(&1)))
+    structure_types =
+      Enum.reduce(types, %{}, &Map.put(&2, &1, DataStructureTypes.get_by(name: &1)))
 
     list =
       Enum.reduce(types, [], fn type, acc ->
@@ -189,18 +190,6 @@ defmodule TdDd.CSV.Download do
 
   defp get_content_field(%{"name" => name}, content) do
     Map.get(content, name, "")
-  end
-
-  defp enrich_template(type) do
-    type
-    |> DataStructureTypes.get_data_structure_type_by_type!()
-    |> case do
-      nil ->
-        nil
-
-      structure_type ->
-        DataStructureTypes.enrich_template(structure_type)
-    end
   end
 
   defp content_to_list(nil), do: []

@@ -29,7 +29,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
         _ -> CacheHelpers.insert_domain()
       end
 
-    CacheHelpers.insert_structure_type(structure_type: template_name, template_id: template_id)
+    CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
     on_exit(fn -> TemplateCache.delete(template_id) end)
 
     start_supervised!(TdDd.Search.StructureEnricher)
