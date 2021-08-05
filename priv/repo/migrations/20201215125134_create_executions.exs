@@ -9,7 +9,12 @@ defmodule TdDq.Repo.Migrations.CreateExecutions do
 
     create table("executions") do
       add(:group_id, references("execution_groups"), on_delete: :delete_all, null: false)
-      add(:implementation_id, references("rule_implementations"), on_delete: :delete_all, null: false)
+
+      add(:implementation_id, references("rule_implementations"),
+        on_delete: :delete_all,
+        null: false
+      )
+
       timestamps(updated_at: false, type: :utc_datetime_usec)
     end
 

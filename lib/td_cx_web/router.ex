@@ -40,7 +40,7 @@ defmodule TdCxWeb.Router do
     resources "/configurations", ConfigurationController,
       except: [:new, :edit],
       param: "external_id" do
-        resources("/sign", ConfigurationSignerController, only: [:create])
+      resources("/sign", ConfigurationSignerController, only: [:create])
     end
 
     post("/jobs/search", JobController, :search)

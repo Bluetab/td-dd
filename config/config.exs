@@ -111,17 +111,19 @@ config :td_cache, :event_stream,
 config :td_dd, :cache_cleaner,
   clean_on_startup: true,
   patterns: [
+    "TdDd.DataStructures.Migrations:TD-2774",
+    "TdDd.DataStructures.Migrations:td-2979",
+    "TdDd.Structures.Migrations:TD-3066",
+    "TdDq.RuleImplementations.Migrations:cache_structures",
     "data_fields:external_ids",
     "data_structure:keys:keep",
     "implementation:*",
     "rule_result:*",
     "source:*",
     "sources:ids_external_ids",
-    "structures:external_ids:*",
-    "TdDd.DataStructures.Migrations:TD-2774",
-    "TdDd.DataStructures.Migrations:td-2979",
-    "TdDd.Structures.Migrations:TD-3066",
-    "TdDq.RuleImplementations.Migrations:cache_structures"
+    "structure_type:*",
+    "structure_types:*",
+    "structures:external_ids:*"
   ]
 
 config :td_dd, TdDd.Scheduler,
@@ -149,6 +151,21 @@ config :td_dd, TdDd.Scheduler,
     rule_remover: [
       schedule: "@hourly",
       task: {TdDq.Rules.RuleRemover, :archive_inactive_rules, []},
+      run_strategy: Quantum.RunStrategy.Local
+    ],
+    catalog_history_purger: [
+      schedule: "@daily",
+      task: {TdDd.DataStructures.HistoryManager, :purge_history, []},
+      run_strategy: Quantum.RunStrategy.Local
+    ],
+    update_domain_ids_in_cache: [
+      schedule: "@reboot",
+      task: {TdDd.Cache.UpdateDomainIds, :migrate, []},
+      run_strategy: Quantum.RunStrategy.Local
+    ],
+    expand_profile_values: [
+      schedule: "@reboot",
+      task: {TdDd.Profiles, :expand_profile_values, []},
       run_strategy: Quantum.RunStrategy.Local
     ]
   ]

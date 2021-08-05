@@ -9,9 +9,8 @@ defmodule TdDd.Canada.StructureNoteAbilities do
   end
 
   def can?(%Claims{} = claims, action, %{domain_id: domain_id} = data_structure) do
-    (DataStructureAbilities.can?(claims, :view_data_structure, data_structure)
-    and
-    Permissions.authorized?(claims, action, domain_id))
+    DataStructureAbilities.can?(claims, :view_data_structure, data_structure) and
+      Permissions.authorized?(claims, action, domain_id)
   end
 
   def can?(_claims, _action, _domain_id) do

@@ -11,8 +11,28 @@ defmodule TdDdWeb.NodeControllerTest do
   end
 
   setup %{conn: conn} = tags do
+    nodes =
+      case tags do
+        %{contains: contains, depends: depends} ->
+          groups =
+            Enum.map(contains, fn {parent, _chidren} ->
+              insert(:node, external_id: parent, type: "Group")
+            end)
+
+          resources =
+            depends
+            |> Enum.flat_map(fn {from, to} -> [from, to] end)
+            |> Enum.uniq()
+            |> Enum.map(&insert(:node, external_id: &1, type: "Resource"))
+
+          [nodes: groups ++ resources]
+
+        _ ->
+          []
+      end
+
     GraphData.state(state: setup_state(tags))
-    [conn: put_req_header(conn, "accept", "application/json")]
+    [conn: put_req_header(conn, "accept", "application/json")] ++ nodes
   end
 
   describe "NodeController" do
@@ -49,7 +69,8 @@ defmodule TdDdWeb.NodeControllerTest do
     @tag depends: [{"bar", "baz"}, {"x", "y"}]
     test "will filter groups depending on user permissions over domains", %{
       conn: conn,
-      claims: %{user_id: user_id}
+      claims: %{user_id: user_id},
+      nodes: nodes
     } do
       %{id: domain_id} = CacheHelpers.insert_domain()
 
@@ -61,24 +82,9 @@ defmodule TdDdWeb.NodeControllerTest do
         permissions: []
       })
 
-      unit = insert(:unit, domain_id: domain_id)
-
-      insert(
-        :node,
-        external_id: "foo",
-        units: [unit]
-      )
-
-      insert(
-        :node,
-        external_id: "bar",
-        units: [unit]
-      )
-
-      insert(
-        :node,
-        external_id: "baz",
-        units: [unit]
+      insert(:unit,
+        domain_id: domain_id,
+        nodes: Enum.filter(nodes, &(&1.external_id in ["foo", "bar", "baz"]))
       )
 
       %{id: domain_id} = CacheHelpers.insert_domain()
@@ -91,24 +97,9 @@ defmodule TdDdWeb.NodeControllerTest do
         permissions: [:view_data_structure, :view_lineage]
       })
 
-      unit = insert(:unit, domain_id: domain_id)
-
-      insert(
-        :node,
-        external_id: "xyz",
-        units: [unit]
-      )
-
-      insert(
-        :node,
-        external_id: "x",
-        units: [unit]
-      )
-
-      insert(
-        :node,
-        external_id: "y",
-        units: [unit]
+      insert(:unit,
+        domain_id: domain_id,
+        nodes: Enum.filter(nodes, &(&1.external_id in ["xyz", "x", "y"]))
       )
 
       conn = get(conn, Routes.node_path(conn, :index))
@@ -123,7 +114,8 @@ defmodule TdDdWeb.NodeControllerTest do
     test "will filter a group if a user has not permissions over any of the group's permissions",
          %{
            conn: conn,
-           claims: %{user_id: user_id}
+           claims: %{user_id: user_id},
+           nodes: nodes
          } do
       %{id: domain_id} = CacheHelpers.insert_domain()
 
@@ -135,24 +127,9 @@ defmodule TdDdWeb.NodeControllerTest do
         permissions: []
       })
 
-      unit = insert(:unit, domain_id: domain_id)
-
-      insert(
-        :node,
-        external_id: "foo",
-        units: [unit]
-      )
-
-      insert(
-        :node,
-        external_id: "bar",
-        units: [unit]
-      )
-
-      insert(
-        :node,
-        external_id: "baz",
-        units: [unit]
+      insert(:unit,
+        domain_id: domain_id,
+        nodes: Enum.filter(nodes, &(&1.external_id in ["foo", "bar", "baz"]))
       )
 
       conn = get(conn, Routes.node_path(conn, :index))

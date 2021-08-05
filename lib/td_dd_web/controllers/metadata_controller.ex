@@ -139,7 +139,10 @@ defmodule TdDdWeb.MetadataController do
   @spec loader_opts(map) :: keyword()
   def loader_opts(%{} = params) do
     params
-    |> Map.take(["domain", "source", "external_id", "parent_external_id"])
-    |> Keyword.new(fn {k, v} -> {String.to_atom(k), v} end)
+    |> Map.take(["domain", "source", "external_id", "parent_external_id", "op"])
+    |> Keyword.new(fn
+      {"op", v} -> {:operation, v}
+      {k, v} -> {String.to_atom(k), v}
+    end)
   end
 end

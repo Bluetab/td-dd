@@ -9,7 +9,7 @@ defmodule TdDd.Repo.Migrations.CreateDataStructureTypes do
 
       timestamps()
     end
-    create unique_index(:data_structure_types, [:structure_type])
 
+    create unique_index(:data_structure_types, [:structure_type])
   end
 end

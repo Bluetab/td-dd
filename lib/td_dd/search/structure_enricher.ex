@@ -82,8 +82,7 @@ defmodule TdDd.Search.StructureEnricher do
 
   defp type_map do
     DataStructureTypes.list_data_structure_types()
-    |> Enum.map(&DataStructureTypes.enrich_template/1)
-    |> Map.new(fn %{structure_type: type, template: template} -> {type, template} end)
+    |> Map.new(fn %{name: type, template: template} -> {type, template} end)
   end
 
   defp enrich_domain(%DataStructure{domain_id: domain_id} = structure, %{} = domains)

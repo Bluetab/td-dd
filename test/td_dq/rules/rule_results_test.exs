@@ -4,6 +4,7 @@ defmodule TdDq.RuleResultsTest do
   alias Elasticsearch.Document
   alias TdCache.ConceptCache
   alias TdCache.Redix
+  alias TdCache.Redix.Stream
   alias TdCache.RuleCache
   alias TdDq.Rules.RuleResults
 
@@ -177,6 +178,46 @@ defmodule TdDq.RuleResultsTest do
       assert {:ok, %{} = multi} = RuleResults.create_rule_result(implementation, params)
       assert %{executions: {1, executions}} = multi
       assert [%{id: ^id2}] = executions
+    end
+
+    test "publishes rule_result_created event" do
+      %{id: domain_id} = CacheHelpers.insert_domain()
+      %{id: business_concept_id} = CacheHelpers.insert_concept(%{domain_id: domain_id})
+
+      implementation =
+        insert(:implementation,
+          rule: build(:rule, domain_id: domain_id, business_concept_id: business_concept_id)
+        )
+
+      errors = 2
+      records = 1_000_000
+      result = abs((records - errors) / records) * 100
+
+      params = %{"foo" => "bar"}
+
+      attrs = %{
+        "date" => "2019-01-31-00-00-00",
+        "errors" => errors,
+        "records" => records,
+        "result" => result,
+        "result_type" => "percentage",
+        "params" => params
+      }
+
+      assert {:ok, %{audit: event_id}} = RuleResults.create_rule_result(implementation, attrs)
+      assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+      assert %{event: "rule_result_created", payload: payload} = event
+
+      string_result = result |> Float.floor(2) |> Float.to_string()
+      domain_ids = [domain_id]
+
+      assert %{
+               "result" => ^string_result,
+               "status" => "success",
+               "params" => ^params,
+               "domain_ids" => ^domain_ids,
+               "result_type" => "percentage"
+             } = Jason.decode!(payload)
     end
   end
 end

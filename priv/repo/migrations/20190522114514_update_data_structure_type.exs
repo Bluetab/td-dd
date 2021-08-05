@@ -9,8 +9,10 @@ defmodule TdDd.Repo.Migrations.UpdateDataStructureType do
   end
 
   defp update_ds_type_with_metadata_type(metadata_types) do
-    metadata_types_str = Enum.map(metadata_types, &("'#{&1}'")) |> Enum.join(",")
-    execute("update data_structures set \"type\"=metadata->>'type' where metadata->>'type' in (#{metadata_types_str}) and \"type\" <> metadata->>'type' ;")
-  end
+    metadata_types_str = Enum.map(metadata_types, &"'#{&1}'") |> Enum.join(",")
 
+    execute(
+      "update data_structures set \"type\"=metadata->>'type' where metadata->>'type' in (#{metadata_types_str}) and \"type\" <> metadata->>'type' ;"
+    )
+  end
 end

@@ -8,6 +8,5 @@ defmodule TdDd.Repo.Migrations.DeleteDuplicateFields do
   end
 
   def down do
-    
   end
 end

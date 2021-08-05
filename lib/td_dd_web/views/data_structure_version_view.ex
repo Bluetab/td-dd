@@ -4,6 +4,7 @@ defmodule TdDdWeb.DataStructureVersionView do
 
   alias TdDd.DataStructures
   alias TdDdWeb.DataStructuresTagsView
+  alias TdDdWeb.GrantView
 
   def render(
         "show.json",
@@ -41,6 +42,7 @@ defmodule TdDdWeb.DataStructureVersionView do
         |> add_data_structure_type
         |> add_cached_content
         |> add_tags
+        |> add_grant
         |> Map.take([
           :ancestry,
           :children,
@@ -68,7 +70,8 @@ defmodule TdDdWeb.DataStructureVersionView do
           :relations,
           :metadata_versions,
           :data_structure_type,
-          :tags
+          :tags,
+          :grant
         ])
     }
   end
@@ -178,7 +181,7 @@ defmodule TdDdWeb.DataStructureVersionView do
   end
 
   defp add_profile(%{class: "field", profile: profile} = dsv) do
-    dsv |> with_profile_attrs(profile)
+    with_profile_attrs(dsv, profile)
   end
 
   defp add_profile(dsv), do: dsv
@@ -251,15 +254,29 @@ defmodule TdDdWeb.DataStructureVersionView do
     |> Map.merge(metadata)
   end
 
-  defp with_profile_attrs(dsv, %{value: value}) do
+  defp with_profile_attrs(dsv, %{} = profile) do
     profile =
-      value
-      |> Map.new(fn {k, v} -> {String.to_atom(k), v} end)
+      profile
+      |> Map.take([
+        :max,
+        :min,
+        :most_frequent,
+        :null_count,
+        :patterns,
+        :total_count,
+        :unique_count
+      ])
+      |> Enum.reject(fn {_k, v} -> is_nil(v) end)
+      |> Map.new()
 
-    Map.put(dsv, :profile, profile)
+    if profile != %{} do
+      Map.put(dsv, :profile, profile)
+    else
+      Map.delete(dsv, :profile)
+    end
   end
 
-  defp with_profile_attrs(dsv, _), do: dsv
+  defp with_profile_attrs(dsv, _), do: Map.delete(dsv, :profile)
 
   defp lift_data(%{"data" => data} = attrs) when is_map(data) do
     case Map.get(data, :data) do
@@ -285,12 +302,11 @@ defmodule TdDdWeb.DataStructureVersionView do
   defp add_data_structure_type(%{data_structure_type: nil} = dsv),
     do: Map.put(dsv, :data_structure_type, %{})
 
-  defp add_data_structure_type(%{data_structure_type: data_structure_type} = dsv) do
-    Map.put(
-      dsv,
-      :data_structure_type,
-      Map.take(data_structure_type, [:template_id, :translation, :metadata_fields])
-    )
+  defp add_data_structure_type(%{data_structure_type: %{} = data_structure_type} = dsv) do
+    data_structure_type =
+      Map.take(data_structure_type, [:template_id, :translation, :metadata_views])
+
+    Map.put(dsv, :data_structure_type, data_structure_type)
   end
 
   defp add_data_structure_type(dsv), do: Map.put(dsv, :data_structure_type, %{})
@@ -315,5 +331,15 @@ defmodule TdDdWeb.DataStructureVersionView do
       end
 
     Map.put(ds, :tags, tags)
+  end
+
+  defp add_grant(ds) do
+    grant =
+      case Map.get(ds, :grant) do
+        nil -> nil
+        grant -> render_one(grant, GrantView, "grant.json")
+      end
+
+    Map.put(ds, :grant, grant)
   end
 end

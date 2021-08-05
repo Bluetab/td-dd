@@ -13,6 +13,7 @@ defmodule TdDq.Rules.Rule do
   alias TdDq.Rules.Rule
 
   @valid_result_types ~w(percentage errors_number deviation)
+  @type t :: %__MODULE__{}
 
   schema "rules" do
     field(:business_concept_id, :string)

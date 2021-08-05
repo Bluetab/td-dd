@@ -60,6 +60,7 @@ defmodule TdDd.Search.Mappings do
       deleted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       last_change_by: %{enabled: false},
       metadata: %{enabled: false},
+      mutable_metadata: %{enabled: false},
       linked_concepts_count: %{type: "short"},
       inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},

@@ -94,7 +94,7 @@ defmodule TdCxWeb.SourceControllerTest do
   end
 
   describe "show" do
-    setup [:create_source]
+    setup :create_source
 
     @tag authentication: [role: "admin"]
     test "show source", %{conn: conn} do
@@ -196,7 +196,7 @@ defmodule TdCxWeb.SourceControllerTest do
   end
 
   describe "update source" do
-    setup [:create_source]
+    setup :create_source
 
     @tag authentication: [role: "user"]
     test "returns unauthorized for non admin user", %{
@@ -253,7 +253,7 @@ defmodule TdCxWeb.SourceControllerTest do
   end
 
   describe "delete source" do
-    setup [:create_source]
+    setup :create_source
 
     @tag authentication: [role: "user"]
     test "returns unauthorized for non admin user", %{conn: conn, source: source} do

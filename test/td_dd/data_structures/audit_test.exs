@@ -64,7 +64,7 @@ defmodule TdDd.DataStructures.AuditTest do
              } = event
 
       assert %{
-               "confidential" => true,
+               "confidential" => true
              } = Jason.decode!(payload)
     end
   end

@@ -9,7 +9,7 @@ defmodule TdDq.DownloadTest do
 
   defp create_template(_) do
     template = %{
-      id: :rand.uniform(100_000_000),
+      id: System.unique_integer([:positive]),
       name: "download",
       label: "label",
       scope: "dq",
@@ -43,7 +43,7 @@ defmodule TdDq.DownloadTest do
   end
 
   describe "Implementations download" do
-    setup [:create_template]
+    setup :create_template
 
     test "download empty csv" do
       csv = Download.to_csv([], %{}, %{})

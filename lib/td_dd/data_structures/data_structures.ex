@@ -8,7 +8,6 @@ defmodule TdDd.DataStructures do
   alias Ecto.Association.NotLoaded
   alias Ecto.Multi
   alias TdCache.LinkCache
-  alias TdCache.StructureTypeCache
   alias TdCache.TemplateCache
   alias TdCx.Sources
   alias TdCx.Sources.Source
@@ -173,6 +172,7 @@ defmodule TdDd.DataStructures do
     |> enrich(options, :metadata_versions, &get_metadata_versions/1)
     |> enrich(options, :data_structure_type, &get_data_structure_type/1)
     |> enrich(options, :tags, &get_tags/1)
+    |> enrich(options, :grant, &get_grant(&1, options[:user_id]))
   end
 
   defp enrich(%{} = target, options, key, fun) do
@@ -211,7 +211,7 @@ defmodule TdDd.DataStructures do
 
   def get_data_structure_type(%DataStructureVersion{} = dsv) do
     DataStructureType
-    |> where([ds_type], ds_type.structure_type == ^dsv.type)
+    |> where([ds_type], ds_type.name == ^dsv.type)
     |> Repo.one()
   end
 
@@ -260,7 +260,7 @@ defmodule TdDd.DataStructures do
     |> select_structures(Keyword.get(options, :default))
   end
 
-  def get_parents(%DataStructureVersion{id: id}, options) do
+  def get_parents(%DataStructureVersion{id: id}, options \\ []) do
     DataStructureRelation
     |> where([r], r.child_id == ^id)
     |> join(:inner, [r], parent in assoc(r, :parent))
@@ -389,6 +389,39 @@ defmodule TdDd.DataStructures do
     |> Ecto.assoc([:data_structure, :versions])
     |> Repo.all()
   end
+
+  defp get_grant(
+         %DataStructureVersion{data_structure: %DataStructure{} = data_structure} = dsv,
+         user_id
+       ) do
+    today = DateTime.utc_now()
+
+    data_structure
+    |> Repo.preload(:grants)
+    |> Map.get(:grants)
+    |> Enum.find(fn %{start_date: start_date, end_date: end_date, user_id: id} ->
+      DateTime.compare(start_date, today) == :lt and DateTime.compare(today, end_date) == :lt and
+        id == user_id
+    end)
+    |> case do
+      nil ->
+        dsv
+        |> get_parents()
+        |> get_parent_grant(user_id)
+
+      grant ->
+        Repo.preload(grant, data_structure: :versions)
+    end
+  end
+
+  defp get_grant(%DataStructureVersion{} = dsv, user_id) do
+    dsv
+    |> Repo.preload(:data_structure)
+    |> get_grant(user_id)
+  end
+
+  defp get_parent_grant([], _user_id), do: nil
+  defp get_parent_grant([parent | _], user_id), do: get_grant(parent, user_id)
 
   defp select_structures(versions, false) do
     versions
@@ -731,24 +764,6 @@ defmodule TdDd.DataStructures do
     |> Map.new()
   end
 
-  def get_structures_metadata_fields(clauses \\ %{}) do
-    clauses
-    |> Enum.reduce(DataStructureVersion, fn
-      {:type, types}, q when is_list(types) ->
-        where(q, [dsv], dsv.type in ^types)
-
-      {:type, type}, q ->
-        where(q, [dsv], dsv.type == ^type)
-
-      _, q ->
-        q
-    end)
-    |> where([dsv], is_nil(dsv.deleted_at))
-    |> select([_dsv], fragment("jsonb_object_keys(metadata)"))
-    |> distinct(true)
-    |> Repo.all()
-  end
-
   def create_structure_metadata(params) do
     %StructureMetadata{}
     |> StructureMetadata.changeset(params)
@@ -796,8 +811,9 @@ defmodule TdDd.DataStructures do
     |> template_name()
   end
 
-  def template_name(%DataStructureVersion{type: type}) do
-    with {:ok, %{template_id: template_id}} <- StructureTypeCache.get_by_type(type),
+  def template_name(%DataStructureVersion{} = dsv) do
+    with %{structure_type: %{template_id: template_id}} when is_integer(template_id) <-
+           Repo.preload(dsv, :structure_type),
          {:ok, %{name: name}} <- TemplateCache.get(template_id) do
       name
     else
@@ -1045,11 +1061,6 @@ defmodule TdDd.DataStructures do
       }
     end)
   end
-
-  import Ecto.Query, warn: false
-  alias TdDd.Repo
-
-  alias TdDd.DataStructures.StructureNote
 
   @doc """
   Returns the list of structure_notes.

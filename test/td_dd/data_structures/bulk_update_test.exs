@@ -3,7 +3,6 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
   import TdDd.TestOperators
 
-  alias TdCache.StructureTypeCache
   alias TdCache.TemplateCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.BulkUpdate
@@ -101,7 +100,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
   end
 
   setup %{template: %{id: template_id}, type: type} do
-    CacheHelpers.insert_structure_type(structure_type: type, template_id: template_id)
+    CacheHelpers.insert_structure_type(name: type, template_id: template_id)
 
     start_supervised!(TdDd.Search.StructureEnricher)
     :ok
@@ -308,7 +307,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
   end
 
   describe "from_csv/2" do
-    setup [:from_csv_templates]
+    setup :from_csv_templates
 
     defp get_df_content_from_ext_id(ext_id) do
       ext_id
@@ -523,8 +522,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
   defp from_csv_templates(_) do
     %{id: id_t1, name: type} = t1 = build(:template, content: @c1)
     TemplateCache.put(t1, publish: false)
-    %{id: st1_id} = st1 = insert(:data_structure_type, structure_type: type, template_id: id_t1)
-    {:ok, _} = StructureTypeCache.put(st1)
+    insert(:data_structure_type, name: type, template_id: id_t1)
 
     sts1 =
       Enum.map(1..5, fn id ->
@@ -534,8 +532,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
     %{id: id_t2, name: type} = t2 = build(:template, content: @c2)
     TemplateCache.put(t2, publish: false)
-    %{id: st2_id} = st2 = insert(:data_structure_type, structure_type: type, template_id: id_t2)
-    {:ok, _} = StructureTypeCache.put(st2)
+    insert(:data_structure_type, name: type, template_id: id_t2)
 
     sts2 =
       Enum.map(6..10, fn id ->
@@ -546,9 +543,6 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     on_exit(fn ->
       TemplateCache.delete(id_t1)
       TemplateCache.delete(id_t2)
-
-      StructureTypeCache.delete(st1_id)
-      StructureTypeCache.delete(st2_id)
     end)
 
     [sts: sts1 ++ sts2]

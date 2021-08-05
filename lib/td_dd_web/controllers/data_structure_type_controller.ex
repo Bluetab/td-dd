@@ -15,7 +15,7 @@ defmodule TdDdWeb.DataStructureTypeController do
   end
 
   swagger_path :index do
-    description("Get sources of the given type")
+    description("Get data structure types")
     produces("application/json")
 
     response(200, "OK", Schema.ref(:DataStructureTypesResponse))
@@ -27,9 +27,7 @@ defmodule TdDdWeb.DataStructureTypeController do
     claims = conn.assigns[:current_resource]
 
     if can?(claims, index(%DataStructureType{})) do
-      data_structure_types =
-        DataStructureTypes.list_data_structure_types()
-        |> Enum.map(&DataStructureTypes.enrich_template/1)
+      data_structure_types = DataStructureTypes.list_data_structure_types()
 
       render(conn, "index.json", data_structure_types: data_structure_types)
     else
@@ -37,35 +35,6 @@ defmodule TdDdWeb.DataStructureTypeController do
       |> put_status(:forbidden)
       |> put_view(ErrorView)
       |> render("403.json")
-    end
-  end
-
-  swagger_path :create do
-    description("Creates a new data structure type")
-    produces("application/json")
-
-    parameters do
-      data_structure_type(
-        :body,
-        Schema.ref(:CreateDataStructureType),
-        "Parameters used to create a data structure type"
-      )
-    end
-
-    response(200, "OK", Schema.ref(:DataStructureTypeResponse))
-    response(403, "Forbidden")
-    response(422, "Client Error")
-  end
-
-  def create(conn, %{"data_structure_type" => data_structure_type_params}) do
-    claims = conn.assigns[:current_resource]
-
-    with true <- can?(claims, create(%DataStructureType{})),
-         {:ok, %DataStructureType{} = data_structure_type} <-
-           DataStructureTypes.create_data_structure_type(data_structure_type_params) do
-      conn
-      |> put_status(:created)
-      |> render("show.json", data_structure_type: data_structure_type)
     end
   end
 
@@ -86,7 +55,7 @@ defmodule TdDdWeb.DataStructureTypeController do
     claims = conn.assigns[:current_resource]
 
     with true <- can?(claims, show(%DataStructureType{})),
-         data_structure_type <- DataStructureTypes.get_data_structure_type!(id) do
+         data_structure_type <- DataStructureTypes.get!(id) do
       render(conn, "show.json", data_structure_type: data_structure_type)
     else
       false ->
@@ -120,36 +89,13 @@ defmodule TdDdWeb.DataStructureTypeController do
     claims = conn.assigns[:current_resource]
 
     with true <- can?(claims, update(%DataStructureType{})),
-         data_structure_type <- DataStructureTypes.get_data_structure_type!(id),
+         data_structure_type <- DataStructureTypes.get!(id),
          {:ok, %DataStructureType{} = data_structure_type} <-
            DataStructureTypes.update_data_structure_type(
              data_structure_type,
              data_structure_type_params
            ) do
       render(conn, "show.json", data_structure_type: data_structure_type)
-    end
-  end
-
-  swagger_path :delete do
-    description("Deletes a Data Structure Type")
-
-    parameters do
-      id(:path, :string, "Data Structure id", required: true)
-    end
-
-    response(204, "No Content")
-    response(403, "Forbidden")
-    response(422, "Client Error")
-  end
-
-  def delete(conn, %{"id" => id}) do
-    claims = conn.assigns[:current_resource]
-
-    with true <- can?(claims, delete(%DataStructureType{})),
-         data_structure_type <- DataStructureTypes.get_data_structure_type!(id),
-         {:ok, %DataStructureType{}} <-
-           DataStructureTypes.delete_data_structure_type(data_structure_type) do
-      send_resp(conn, :no_content, "")
     end
   end
 end

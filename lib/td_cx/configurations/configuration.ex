@@ -45,7 +45,11 @@ defmodule TdCx.Configurations.Configuration do
   end
 
   defp validate_template(%Ecto.Changeset{valid?: true} = changeset, configuration) do
-    validate_change(changeset, :content, Validation.validator(template_name(configuration, changeset)))
+    validate_change(
+      changeset,
+      :content,
+      Validation.validator(template_name(configuration, changeset))
+    )
   end
 
   defp validate_template(changeset, _attrs), do: changeset

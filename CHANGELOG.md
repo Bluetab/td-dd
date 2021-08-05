@@ -2,16 +2,38 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-3549] Add new quality rule result type: "deviation"
+- [TD-3917] `PATCH /api/systems/:external_id/metadata` allows mutable metadata
+  to be replaced or merged
+
+### Changed
+
+- [TD-3957] Structure profiles are now validated and expanded
+- [TD-3952] Data structure types now support multiple metadata views
+
+### Fixed
+
+- [TD-3959] Report `rule_result_created` when result is created
+- [TD-3908] Timeout on node retrieval
+
+## [4.25.0] 2021-07-26
+
 ### Fixed
 
 - [TD-3929] Reindex the children of the structure domain when modifying
+- [TD-3975] Exclude `mutable_metadata` from elasticsearch analysis
 
 ### Added
-- [TD-3549] Add new quality rule result type: "deviation"
+
+- [TD-3878] Include `domain_id` in structure cache
+- [TD-3453] Purge logically deleted structures
 - [TD-3906] Notes audit now includes status changes
 - [TD-3050] Show quality errors
-- [TD-3551] Restore rule implementations
 - [TD-3945] Created Grant entity
+- [TD-3947] Display user grant in data structure
+- [TD-3551] Restore rule implementations
 
 ## [4.24.0] 2021-07-13
 
@@ -83,7 +105,8 @@
 ### Changed
 
 - [TD-3753] Build using Elixir 1.12 and Erlang/OTP 24
-- [TD-3642] On startup ensures rules and implementations elasticsearch indices are created
+- [TD-3642] On startup ensures rules and implementations elasticsearch indices
+  are created
 
 ## [4.20.1] 2021-05-18
 
@@ -105,7 +128,7 @@
 - Update dependencies
 - [TD-3680] Improve data catalog bulk indexing performance
 - Timestamps on `DataStructure`, `DataStructureVersion`, `DataStructureRelation`
-  and `StructureMetadata` are now `utc_datetime_usec`.
+  and `StructureMetadata` are now `utc_datetime_usec`
 
 ## [4.19.2] 2021-05-07
 
@@ -127,7 +150,7 @@
 ### Added
 
 - [TD-3517] Profile executions and events
-- [TD-3189] add templates in the creation of implementations
+- [TD-3189] Add templates in the creation of implementations
 
 ## [4.18.0] 2021-04-19
 
@@ -137,7 +160,8 @@
 
 ### Fixed
 
-- [TD-3566] `data_structure_relation` `parent_id` and `child_id` must not be null`
+- [TD-3566] `data_structure_relation` `parent_id` and `child_id` must not be
+  `nil`
 
 ### Changed
 

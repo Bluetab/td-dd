@@ -11,18 +11,19 @@ defmodule TdDd.DataStructures.StructureNoteTest do
   @template_name "structure_note_test_template"
 
   setup do
-    %{id: template_id, name: template_name} =
-      template = build(:template, name: @template_name)
+    %{id: template_id, name: template_name} = template = build(:template, name: @template_name)
 
     {:ok, _} = TemplateCache.put(template, publish: false)
-    CacheHelpers.insert_structure_type(structure_type: template_name, template_id: template_id)
+    CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
     on_exit(fn -> TemplateCache.delete(template_id) end)
 
     start_supervised!(TdDd.Search.StructureEnricher)
 
     data_structure = insert(:data_structure)
     insert(:data_structure_version, data_structure: data_structure, type: @template_name)
-    structure_note = insert(:structure_note, data_structure: data_structure, df_content: %{"foo" => "old"})
+
+    structure_note =
+      insert(:structure_note, data_structure: data_structure, df_content: %{"foo" => "old"})
 
     [structure_note: structure_note]
   end
@@ -30,7 +31,7 @@ defmodule TdDd.DataStructures.StructureNoteTest do
   describe "bulk_update_changeset/2" do
     test "validates invalid content when template exists", %{structure_note: structure_note} do
       assert %Changeset{valid?: false, errors: errors} =
-        StructureNote.bulk_update_changeset(structure_note, %{df_content: @invalid_content})
+               StructureNote.bulk_update_changeset(structure_note, %{df_content: @invalid_content})
 
       assert length(errors) == 1
       assert {"invalid_content", details} = errors[:df_content]
@@ -40,7 +41,7 @@ defmodule TdDd.DataStructures.StructureNoteTest do
 
     test "merges dynamic content replacing existing field", %{structure_note: structure_note} do
       assert %Changeset{changes: changes} =
-          StructureNote.bulk_update_changeset(structure_note, %{
+               StructureNote.bulk_update_changeset(structure_note, %{
                  df_content: %{"bar" => "bar", "foo" => "new"}
                })
 
@@ -50,7 +51,9 @@ defmodule TdDd.DataStructures.StructureNoteTest do
 
     test "merges dynamic content preserving existing field", %{structure_note: structure_note} do
       assert %Changeset{changes: changes} =
-          StructureNote.bulk_update_changeset(structure_note, %{df_content: %{"bar" => "bar"}})
+               StructureNote.bulk_update_changeset(structure_note, %{
+                 df_content: %{"bar" => "bar"}
+               })
 
       assert %{df_content: new_content} = changes
       assert new_content == %{"bar" => "bar", "foo" => "old"}
@@ -69,13 +72,17 @@ defmodule TdDd.DataStructures.StructureNoteTest do
       structure_note = insert(:structure_note, data_structure: data_structure)
 
       assert %Changeset{valid?: false, errors: errors} =
-               StructureNote.bulk_update_changeset(structure_note, %{df_content: %{"foo" => "bar"}})
+               StructureNote.bulk_update_changeset(structure_note, %{
+                 df_content: %{"foo" => "bar"}
+               })
 
       assert length(errors) == 1
       assert {"invalid_template", [reason: :template_not_found]} = errors[:df_content]
     end
 
-    test "identifies unchanged dynamic content (existing field value)", %{structure_note: structure_note} do
+    test "identifies unchanged dynamic content (existing field value)", %{
+      structure_note: structure_note
+    } do
       assert %Changeset{changes: changes} =
                StructureNote.bulk_update_changeset(structure_note, %{
                  df_content: %{"foo" => "old"}
@@ -84,7 +91,9 @@ defmodule TdDd.DataStructures.StructureNoteTest do
       refute Map.has_key?(changes, :df_content)
     end
 
-    test "identifies unchanged dynamic content (new content empty)", %{structure_note: structure_note} do
+    test "identifies unchanged dynamic content (new content empty)", %{
+      structure_note: structure_note
+    } do
       assert %Changeset{changes: changes} =
                StructureNote.bulk_update_changeset(structure_note, %{df_content: %{}})
 
@@ -118,7 +127,9 @@ defmodule TdDd.DataStructures.StructureNoteTest do
       assert new_content == %{"bar" => "bar"}
     end
 
-    test "identifies unchanged dynamic content (new content identical)", %{structure_note: structure_note} do
+    test "identifies unchanged dynamic content (new content identical)", %{
+      structure_note: structure_note
+    } do
       assert %Changeset{changes: changes} =
                StructureNote.changeset(structure_note, %{
                  df_content: %{"foo" => "old"},
