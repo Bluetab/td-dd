@@ -302,12 +302,11 @@ defmodule TdDdWeb.DataStructureVersionView do
   defp add_data_structure_type(%{data_structure_type: nil} = dsv),
     do: Map.put(dsv, :data_structure_type, %{})
 
-  defp add_data_structure_type(%{data_structure_type: data_structure_type} = dsv) do
-    Map.put(
-      dsv,
-      :data_structure_type,
-      Map.take(data_structure_type, [:template_id, :translation, :metadata_fields])
-    )
+  defp add_data_structure_type(%{data_structure_type: %{} = data_structure_type} = dsv) do
+    data_structure_type =
+      Map.take(data_structure_type, [:template_id, :translation, :metadata_views])
+
+    Map.put(dsv, :data_structure_type, data_structure_type)
   end
 
   defp add_data_structure_type(dsv), do: Map.put(dsv, :data_structure_type, %{})

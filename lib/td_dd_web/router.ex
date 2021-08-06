@@ -94,18 +94,6 @@ defmodule TdDdWeb.Router do
 
     get("/data_structures/search/reindex_all", SearchController, :reindex_all)
 
-    get(
-      "/data_structures/search/metadata_types",
-      SearchController,
-      :get_structures_metadata_types
-    )
-
-    post(
-      "/data_structures/search/metadata_fields",
-      SearchController,
-      :search_structures_metadata_fields
-    )
-
     get("/data_structure_filters", DataStructureFilterController, :index)
     post("/data_structure_filters/search", DataStructureFilterController, :search)
 
@@ -114,7 +102,7 @@ defmodule TdDdWeb.Router do
 
     resources "/relation_types", RelationTypeController, except: [:new, :edit]
 
-    resources "/data_structure_types", DataStructureTypeController
+    resources "/data_structure_types", DataStructureTypeController, only: [:index, :show, :update]
     resources "/data_structure_tags", DataStructureTagController, except: [:new, :edit]
 
     resources "/grants", GrantController, except: [:create, :new, :edit, :index]
