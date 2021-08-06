@@ -6,7 +6,6 @@ defmodule TdDd.DataStructuresTest do
   alias TdCache.Redix.Stream
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.RelationTypes
 
   import TdDd.TestOperators
@@ -179,13 +178,16 @@ defmodule TdDd.DataStructuresTest do
 
       assert %{delete_dsv_descendents: {1, nil}} = result
       assert %{delete_metadata_descendents: {1, nil}} = result
-      assert %{data_structure_version_descendents: [parent_version_id]} = result.descendents
-      assert %{data_structures_ids: [id]} = result.descendents
+      assert %{data_structure_version_descendents: [^parent_version_id]} = result.descendents
+      assert %{data_structures_ids: [^id]} = result.descendents
     end
 
     test "emits an audit event", %{data_structure_version: data_structure_version, claims: claims} do
-      assert {:ok, %{audit: event_id}} =
+      assert {:ok, %{audit: [event_id | _]}} =
                DataStructures.logical_delete_data_structure(data_structure_version, claims)
+
+      assert {:ok, [%{id: ^event_id}]} =
+               Stream.range(:redix, @stream, event_id, event_id, transform: :range)
     end
   end
 
