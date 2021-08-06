@@ -4,6 +4,7 @@ defmodule TdDd.Lineage.Units do
   """
 
   alias Ecto.Multi
+  alias TdCache.TaxonomyCache
   alias TdDd.Lineage.Units.{Edge, Event, Node, Unit}
   alias TdDd.Repo
 
@@ -25,6 +26,25 @@ defmodule TdDd.Lineage.Units do
     |> Repo.all()
   end
 
+  def list_domains() do
+    domains =
+      %{domain: true}
+      |> list_units()
+      |> Enum.map(fn %{id: id, domain_id: domain_id} ->
+        %{id: domain_id, unit: id, hint: :domain}
+      end)
+      |> Enum.map(fn %{id: id} = domain ->
+        case TaxonomyCache.get_domain(id) do
+          cached_domain = %{} -> Map.merge(cached_domain, domain)
+          _ -> nil
+        end
+      end)
+      |> Enum.filter(& &1)
+
+    parents = Enum.flat_map(domains, &parent_domains/1)
+    Enum.uniq_by(domains ++ parents, fn %{id: id} -> id end)
+  end
+
   defp reduce_clauses(q, clauses) do
     Enum.reduce(clauses, q, fn
       {:name, name}, q ->
@@ -40,10 +60,22 @@ defmodule TdDd.Lineage.Units do
         |> distinct([u, e], asc: u.id)
         |> select_merge([u, e], %{status: e})
 
+      {:domain, true}, q ->
+        where(q, [u], not is_nil(u.domain_id))
+
       {:preload, preloads}, q ->
         preload(q, ^preloads)
     end)
   end
+
+  defp parent_domains(%{parent_ids: parent_ids}) do
+    parent_ids
+    |> Enum.map(&TaxonomyCache.get_domain/1)
+    |> Enum.filter(& &1)
+    |> Enum.map(&Map.put(&1, :hint, :domain))
+  end
+
+  defp parent_domains(_), do: []
 
   def insert_event(%Unit{id: unit_id}, event, info \\ nil) do
     %{unit_id: unit_id, event: event, info: info}
