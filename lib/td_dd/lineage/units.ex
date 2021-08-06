@@ -26,7 +26,7 @@ defmodule TdDd.Lineage.Units do
     |> Repo.all()
   end
 
-  def list_domains() do
+  def list_domains do
     domains =
       %{domain: true}
       |> list_units()

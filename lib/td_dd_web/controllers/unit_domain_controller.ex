@@ -31,11 +31,11 @@ defmodule TdDdWeb.UnitDomainController do
     case get_actions(params) do
       [] ->
         domains = Enum.filter(domains, &can?(claims, view_domain(&1)))
-        render(conn, "index.json", domains: domains)
+        render(conn, "index.json", unit_domains: domains)
 
       actions ->
         filtered_domains = filter_domains(claims, domains, actions, params)
-        render(conn, "index.json", domains: filtered_domains)
+        render(conn, "index.json", unit_domains: filtered_domains)
     end
   end
 
