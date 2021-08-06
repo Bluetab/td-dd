@@ -284,8 +284,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     @tag authentication: [role: "user"]
     test "user without permission can not delete logical data structure", %{
       conn: conn,
-      data_structure: %{id: id},
-      swagger_schema: schema
+      data_structure: %{id: id}
     } do
       assert(
         %{"errors" => error} =
@@ -300,8 +299,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     @tag authentication: [role: "admin"]
     test "admin can delete logical data structure", %{
       conn: conn,
-      data_structure: %{id: id},
-      swagger_schema: schema
+      data_structure: %{id: id}
     } do
       assert(
         conn
@@ -309,7 +307,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
         |> response(:no_content)
       )
 
-      assert %{"data" => %{"deleted_at" => deleted_at} = data} =
+      assert %{"data" => %{"deleted_at" => deleted_at}} =
                conn
                |> get(data_structure_data_structure_version_path(conn, :show, id, "latest"))
                |> json_response(:ok)
