@@ -6,6 +6,7 @@ defmodule TdDd.Lineage.Import do
   use GenServer
 
   alias TdDd.Lineage.Import.Loader
+  alias TdDd.Lineage.Units
 
   require Logger
 
@@ -15,8 +16,8 @@ defmodule TdDd.Lineage.Import do
     GenServer.start_link(__MODULE__, init_arg, name: __MODULE__)
   end
 
-  def load(unit, nodes_path, rels_path, opts \\ []) do
-    GenServer.cast(__MODULE__, {:load, unit, nodes_path, rels_path, opts})
+  def load(nodes_path, rels_path, attrs, opts \\ []) do
+    GenServer.cast(__MODULE__, {:load, nodes_path, rels_path, attrs, opts})
   end
 
   def busy? do
@@ -39,15 +40,16 @@ defmodule TdDd.Lineage.Import do
   end
 
   @impl true
-  def handle_cast({:load, unit, nodes_path, rels_path, opts}, state) do
-    Logger.info("Load started for unit #{unit.name}")
-
+  def handle_cast({:load, nodes_path, rels_path, attrs, opts}, state) do
     %{ref: ref} =
       Task.Supervisor.async_nolink(TdDd.TaskSupervisor, fn ->
-        Loader.load(unit, nodes_path, rels_path, Keyword.take(opts, [:timeout]))
+        with {:ok, %Units.Unit{} = unit} <- Units.replace_unit(attrs) do
+          Logger.info("Load started for unit #{unit.name}")
+          Loader.load(unit, nodes_path, rels_path, Keyword.take(opts, [:timeout]))
+        end
       end)
 
-    {:noreply, Map.put(state, ref, unit.name)}
+    {:noreply, Map.put(state, ref, attrs.name)}
   end
 
   @impl true

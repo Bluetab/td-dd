@@ -71,10 +71,9 @@ defmodule TdDdWeb.UnitController do
     attrs = attributes(params)
 
     with {:can, true} <- {:can, can?(claims, update(Unit))},
-         {:ok, %Units.Unit{} = unit} <- Units.replace_unit(attrs),
          {:ok, nodes_path} <- copy(nodes),
          {:ok, rels_path} <- copy(rels) do
-      Import.load(unit, nodes_path, rels_path)
+      Import.load(nodes_path, rels_path, attrs)
       send_resp(conn, :accepted, "")
     end
   end
