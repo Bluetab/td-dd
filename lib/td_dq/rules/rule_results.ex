@@ -158,18 +158,26 @@ defmodule TdDq.Rules.RuleResults do
     {:ok, results}
   end
 
-  defp status(%{result_type: "errors_number", errors: errors, minimum: threshold, goal: target}) do
-    cond do
-      Decimal.compare(errors, threshold) == :gt -> "fail"
-      Decimal.compare(errors, target) == :gt -> "warn"
-      true -> "success"
-    end
-  end
-
   defp status(%{result_type: "percentage", result: result, minimum: threshold, goal: target}) do
     cond do
       Decimal.compare(result, threshold) == :lt -> "fail"
       Decimal.compare(result, target) == :lt -> "warn"
+      true -> "success"
+    end
+  end
+
+  defp status(%{result_type: "deviation", result: result, minimum: threshold, goal: target}) do
+    cond do
+      Decimal.compare(result, threshold) == :gt -> "fail"
+      Decimal.compare(result, target) == :gt -> "warn"
+      true -> "success"
+    end
+  end
+
+  defp status(%{result_type: "errors_number", errors: errors, minimum: threshold, goal: target}) do
+    cond do
+      Decimal.compare(errors, threshold) == :gt -> "fail"
+      Decimal.compare(errors, target) == :gt -> "warn"
       true -> "success"
     end
   end
