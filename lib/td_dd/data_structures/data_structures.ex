@@ -578,6 +578,10 @@ defmodule TdDd.DataStructures do
       IndexWorker.delete(data_structure_ids)
     end
 
+    with %{descendents: %{data_structures_ids: structures_ids}} <- res do
+      IndexWorker.delete(structures_ids)
+    end
+
     {:ok, res}
   end
 
