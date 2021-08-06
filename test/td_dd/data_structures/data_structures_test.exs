@@ -166,6 +166,31 @@ defmodule TdDd.DataStructuresTest do
     end
   end
 
+  describe "logical_delete_data_structure/2" do
+    test "logical_delete_data_structure/2 delete the logical data_structure version", %{
+      data_structure_version: %{id: parent_version_id} = data_structure_version,
+      data_structure: %{id: id},
+      claims: claims
+    } do
+      insert(:structure_metadata, data_structure_id: id, version: parent_version_id)
+
+      {:ok, result} = DataStructures.logical_delete_data_structure(data_structure_version, claims)
+
+      assert %{delete_dsv_descendents: {1, nil}} = result
+      assert %{delete_metadata_descendents: {1, nil}} = result
+      assert %{data_structure_version_descendents: [^parent_version_id]} = result.descendents
+      assert %{data_structures_ids: [^id]} = result.descendents
+    end
+
+    test "emits an audit event", %{data_structure_version: data_structure_version, claims: claims} do
+      assert {:ok, %{audit: [event_id | _]}} =
+               DataStructures.logical_delete_data_structure(data_structure_version, claims)
+
+      assert {:ok, [%{id: ^event_id}]} =
+               Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+    end
+  end
+
   describe "get_metadata_version/1" do
     test "returns the latest version of the metadata overlapping with the data structure version" do
       %{id: id} = insert(:data_structure)
