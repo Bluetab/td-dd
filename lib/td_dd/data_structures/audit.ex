@@ -5,7 +5,7 @@ defmodule TdDd.DataStructures.Audit do
   not currently used.
   """
 
-  import TdDd.Audit.AuditSupport, only: [publish: 4, publish: 5]
+  import TdDd.Audit.AuditSupport, only: [publish: 1, publish: 4, publish: 5]
 
   alias Ecto.Changeset
   alias TdCache.TaxonomyCache
@@ -34,6 +34,26 @@ defmodule TdDd.DataStructures.Audit do
   """
   def data_structure_deleted(_repo, %{data_structure: %{id: id}}, user_id) do
     publish("data_structure_deleted", "data_structure", id, user_id)
+  end
+
+  def data_structure_deleted(
+        _repo,
+        %{descendents: %{data_structures_ids: structures_ids}},
+        user_id
+      ) do
+    structures_ids
+    |> Enum.map(&data_structure_deleted(&1, user_id))
+    |> publish()
+  end
+
+  defp data_structure_deleted(id, user_id) when is_number(id) do
+    %{
+      event: "data_structure_deleted",
+      resource_type: "data_structure",
+      resource_id: id,
+      user_id: user_id,
+      payload: %{}
+    }
   end
 
   @doc """

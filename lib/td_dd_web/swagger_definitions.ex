@@ -310,39 +310,22 @@ defmodule TdDdWeb.SwaggerDefinitions do
 
           properties do
             id(:integer, "Data Structure Type unique identifier", required: true)
-            structure_type(:string, "Structure type", required: true)
+            name(:string, "Structure type name", required: true)
             template_id(:integer, "Template Id", required: true)
+            template(:object, "Template Id and Name")
             translation(:string, "Default translation message")
             metadata_fields(:array, "Available metadata fields for this type")
+            metadata_views(:array, "Metadata views defined for this type")
           end
 
           example(%{
             id: 88,
-            structure_type: "Table",
+            name: "Table",
             template_id: 3,
-            translation: "Tabla",
-            metadata_fields: ["field_1", "field_2"]
-          })
-        end,
-      DataStructureTypeWithTemplate:
-        swagger_schema do
-          title("Data Structure Type With template info")
-          description("A Data Structure Type with template info")
-
-          properties do
-            id(:integer, "Data Structure Type unique identifier", required: true)
-            structure_type(:string, "Structure type", required: true)
-            template(:object, "Template Id and Name", required: true)
-            translation(:string, "Default translation message")
-            metadata_fields(:array, "Available metadata fields for this type")
-          end
-
-          example(%{
-            id: 88,
-            structure_type: "Table",
             template: %{id: 3, name: "TableTemplate"},
             translation: "Tabla",
-            metadata_fields: ["field_1", "field_2"]
+            metadata_fields: ["field_1", "field_2"],
+            metadata_views: [%{"name" => "view1", "fields" => ["field_1"]}]
           })
         end,
       DataStructureTypes:
@@ -350,22 +333,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
           title("DataStructureTypes")
           description("A collection of data structure types")
           type(:array)
-          items(Schema.ref(:DataStructureTypeWithTemplate))
-        end,
-      CreateDataStructureType:
-        swagger_schema do
-          properties do
-            data_structure_type(
-              Schema.new do
-                properties do
-                  structure_type(:string, "Data Structure type", required: true)
-                  template_id(:integer, "Template Id", required: true)
-                  translation(:string, "Default translation message")
-                  metadata_fields(:array, "Available metadata fields for this type")
-                end
-              end
-            )
-          end
+          items(Schema.ref(:DataStructureType))
         end,
       UpdateDataStructureType:
         swagger_schema do
@@ -375,7 +343,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
                 properties do
                   template_id(:integer, "Template Id", required: true)
                   translation(:string, "Default translation message")
-                  metadata_fields(:array, "Available metadata fields for this type")
+                  metadata_views(:array, "Metadata views for this type")
                 end
               end
             )

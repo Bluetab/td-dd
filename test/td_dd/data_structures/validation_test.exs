@@ -11,7 +11,7 @@ defmodule TdDd.DataStructures.ValidationTest do
     TemplateCache.put(template, publish: false)
     on_exit(fn -> TemplateCache.delete(template_id) end)
 
-    CacheHelpers.insert_structure_type(structure_type: template_name, template_id: template_id)
+    CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
 
     start_supervised!(TdDd.Search.StructureEnricher)
     [template: template]

@@ -9,7 +9,7 @@ defmodule TdDd.Search.StructureEnricherTest do
     domain = CacheHelpers.insert_domain()
     %{id: template_id, name: template_name} = template = CacheHelpers.insert_template()
 
-    CacheHelpers.insert_structure_type(structure_type: template_name, template_id: template_id)
+    CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
 
     # insert template and structure type
     start_supervised!(StructureEnricher)

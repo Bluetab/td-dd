@@ -17,7 +17,7 @@ defmodule TdDd.DataStructures.DataStructureTest do
   end
 
   setup %{template: %{id: template_id}, type: type} do
-    CacheHelpers.insert_structure_type(structure_type: type, template_id: template_id)
+    CacheHelpers.insert_structure_type(name: type, template_id: template_id)
 
     start_supervised!(TdDd.Search.StructureEnricher)
 
