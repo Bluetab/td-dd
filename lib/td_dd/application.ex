@@ -48,7 +48,6 @@ defmodule TdDd.Application do
       # Workers for cache loading
       TdDd.Cache.SystemLoader,
       TdDd.Cache.StructureLoader,
-      TdDd.Cache.StructureTypeLoader,
       TdDd.Cache.DomainEventConsumer,
       # Lineage workers
       TdDd.Lineage.Import,

@@ -8,7 +8,6 @@ defmodule TdDd.DataStructures do
   alias Ecto.Association.NotLoaded
   alias Ecto.Multi
   alias TdCache.LinkCache
-  alias TdCache.StructureTypeCache
   alias TdCache.TemplateCache
   alias TdCx.Sources
   alias TdCx.Sources.Source
@@ -212,7 +211,7 @@ defmodule TdDd.DataStructures do
 
   def get_data_structure_type(%DataStructureVersion{} = dsv) do
     DataStructureType
-    |> where([ds_type], ds_type.structure_type == ^dsv.type)
+    |> where([ds_type], ds_type.name == ^dsv.type)
     |> Repo.one()
   end
 
@@ -818,24 +817,6 @@ defmodule TdDd.DataStructures do
     |> Map.new()
   end
 
-  def get_structures_metadata_fields(clauses \\ %{}) do
-    clauses
-    |> Enum.reduce(DataStructureVersion, fn
-      {:type, types}, q when is_list(types) ->
-        where(q, [dsv], dsv.type in ^types)
-
-      {:type, type}, q ->
-        where(q, [dsv], dsv.type == ^type)
-
-      _, q ->
-        q
-    end)
-    |> where([dsv], is_nil(dsv.deleted_at))
-    |> select([_dsv], fragment("jsonb_object_keys(metadata)"))
-    |> distinct(true)
-    |> Repo.all()
-  end
-
   def create_structure_metadata(params) do
     %StructureMetadata{}
     |> StructureMetadata.changeset(params)
@@ -883,8 +864,9 @@ defmodule TdDd.DataStructures do
     |> template_name()
   end
 
-  def template_name(%DataStructureVersion{type: type}) do
-    with {:ok, %{template_id: template_id}} <- StructureTypeCache.get_by_type(type),
+  def template_name(%DataStructureVersion{} = dsv) do
+    with %{structure_type: %{template_id: template_id}} when is_integer(template_id) <-
+           Repo.preload(dsv, :structure_type),
          {:ok, %{name: name}} <- TemplateCache.get(template_id) do
       name
     else

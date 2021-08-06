@@ -25,7 +25,7 @@ defmodule TdDd.DataStructuresTest do
     domain = CacheHelpers.insert_domain()
     %{id: template_id, name: template_name} = template = CacheHelpers.insert_template()
 
-    CacheHelpers.insert_structure_type(structure_type: template_name, template_id: template_id)
+    CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
 
     %{id: system_id} = system = insert(:system, external_id: "test_system")
 
@@ -385,6 +385,24 @@ defmodule TdDd.DataStructuresTest do
     end
   end
 
+  describe "template_name/1" do
+    test "returns an empty string if no template or type exists" do
+      %{name: type} = insert(:data_structure_type)
+      dsv = insert(:data_structure_version, type: type)
+      assert DataStructures.template_name(dsv) == ""
+
+      dsv = insert(:data_structure_version)
+      assert DataStructures.template_name(dsv) == ""
+    end
+
+    test "returns the name of the corresponding template" do
+      %{id: template_id, name: name} = CacheHelpers.insert_template()
+      %{name: type} = insert(:data_structure_type, template_id: template_id)
+      dsv = insert(:data_structure_version, type: type)
+      assert DataStructures.template_name(dsv) == name
+    end
+  end
+
   describe "data_structures" do
     @update_attrs %{
       # description: "some updated description",
@@ -475,24 +493,6 @@ defmodule TdDd.DataStructuresTest do
       refute %{"domain_external_id" => "baz", "ou" => "baz"}
              |> put_domain_id(ids)
              |> Map.has_key?("domain_id")
-    end
-
-    test "get_structures_metadata_fields/1 will retrieve all metada fields of the filtered structures" do
-      insert(:data_structure_version, type: "foo", metadata: %{"foo" => "value"})
-      insert(:data_structure_version, type: "foo", metadata: %{"Foo" => "value"})
-      insert(:data_structure_version, type: "foo", metadata: %{"bar" => "value"})
-      insert(:data_structure_version, type: "bar", metadata: %{"xyz" => "value"})
-
-      insert(:data_structure_version,
-        type: "bar",
-        metadata: %{"baz" => "value"},
-        deleted_at: DateTime.utc_now()
-      )
-
-      assert [_ | _] =
-               fields = DataStructures.get_structures_metadata_fields(%{type: ["foo", "bar"]})
-
-      assert Enum.all?(["xyz", "Foo", "bar", "foo"], &(&1 in fields))
     end
   end
 
