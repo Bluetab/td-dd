@@ -280,6 +280,40 @@ defmodule TdDdWeb.DataStructureControllerTest do
         |> validate_resp_schema(schema, "DataStructureResponse")
       end)
     end
+
+    @tag authentication: [role: "user"]
+    test "user without permission can not delete logical data structure", %{
+      conn: conn,
+      data_structure: %{id: id}
+    } do
+      assert(
+        %{"errors" => error} =
+          conn
+          |> delete(data_structure_path(conn, :delete, id, %{"logical" => true}))
+          |> json_response(:forbidden)
+      )
+
+      assert(%{"detail" => "Invalid authorization"} = error)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "admin can delete logical data structure", %{
+      conn: conn,
+      data_structure: %{id: id}
+    } do
+      assert(
+        conn
+        |> delete(data_structure_path(conn, :delete, id, %{"logical" => true}))
+        |> response(:no_content)
+      )
+
+      assert %{"data" => %{"deleted_at" => deleted_at}} =
+               conn
+               |> get(data_structure_data_structure_version_path(conn, :show, id, "latest"))
+               |> json_response(:ok)
+
+      refute is_nil(deleted_at)
+    end
   end
 
   describe "data_structure confidentiality" do

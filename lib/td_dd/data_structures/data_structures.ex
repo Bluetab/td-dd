@@ -578,10 +578,67 @@ defmodule TdDd.DataStructures do
       IndexWorker.delete(data_structure_ids)
     end
 
+    with %{descendents: %{data_structures_ids: structures_ids}} <- res do
+      IndexWorker.delete(structures_ids)
+    end
+
     {:ok, res}
   end
 
   defp on_delete(res), do: res
+
+  def logical_delete_data_structure(
+        %DataStructureVersion{} = data_structure_version,
+        %Claims{
+          user_id: user_id
+        }
+      ) do
+    now = DateTime.utc_now()
+
+    Multi.new()
+    |> Multi.run(:descendents, fn _, _ -> get_structure_descendents(data_structure_version) end)
+    |> Multi.update_all(
+      :delete_dsv_descendents,
+      fn changes -> delete_dsv_descendents(changes) end,
+      set: [deleted_at: now]
+    )
+    |> Multi.update_all(
+      :delete_metadata_descendents,
+      fn changes -> delete_metadata_descendents(changes) end,
+      set: [deleted_at: now]
+    )
+    |> Multi.run(:audit, Audit, :data_structure_deleted, [user_id])
+    |> Repo.transaction()
+    |> on_delete()
+  end
+
+  def delete_dsv_descendents(%{
+        descendents: %{data_structure_version_descendents: descendents_ids}
+      }) do
+    DataStructureVersion
+    |> where([dsv], dsv.id in ^descendents_ids)
+  end
+
+  def delete_metadata_descendents(%{descendents: %{data_structures_ids: structures_ids}}) do
+    StructureMetadata
+    |> where([sm], sm.data_structure_id in ^structures_ids)
+    |> where([sm], is_nil(sm.deleted_at))
+  end
+
+  def get_structure_descendents(data_structure_version) do
+    {data_structure_version_descendents, data_structures_ids} =
+      data_structure_version
+      |> get_descendents()
+      |> List.insert_at(0, data_structure_version)
+      |> Enum.map(fn %{id: dsv_id, data_structure_id: ds_id} -> {dsv_id, ds_id} end)
+      |> Enum.unzip()
+
+    {:ok,
+     %{
+       data_structure_version_descendents: data_structure_version_descendents,
+       data_structures_ids: data_structures_ids
+     }}
+  end
 
   def get_latest_version(target, options \\ [])
 
