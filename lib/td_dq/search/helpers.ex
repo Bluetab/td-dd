@@ -68,13 +68,14 @@ defmodule TdDq.Search.Helpers do
     end
   end
 
-  def with_result_text(%{result: result} = result_map, minimum, goal, "percentage") do
-    result_text = status(result, minimum, goal, "percentage")
+  def with_result_text(%{result: result} = result_map, minimum, goal, result_type)
+      when result_type in ["percentage", "deviation"] do
+    result_text = status(Decimal.to_float(result), minimum, goal, result_type)
     Map.put(result_map, :result_text, result_text)
   end
 
-  def with_result_text(%{errors: errors} = result_map, minimum, goal, result_type) when result_type in ["errors_number", "deviation"] do
-    result_text = status(errors, minimum, goal, result_type)
+  def with_result_text(%{errors: errors} = result_map, minimum, goal, "errors_number") do
+    result_text = status(errors, minimum, goal, "errors_number")
     Map.put(result_map, :result_text, result_text)
   end
 
@@ -83,7 +84,6 @@ defmodule TdDq.Search.Helpers do
   end
 
   def status(result, minimum, goal, "percentage") do
-    result = Decimal.to_float(result)
     cond do
       # goal >= minimum. Intervals:
       #   [0, minimum) => error
@@ -100,7 +100,8 @@ defmodule TdDq.Search.Helpers do
     end
   end
 
-  def status(errors_absolute_or_perc, minimum, goal, result_type) when result_type in ["errors_number", "deviation"] do
+  def status(errors_absolute_or_perc, minimum, goal, result_type)
+      when result_type in ["errors_number", "deviation"] do
     cond do
       # goal <= minimum. Intervals:
       #   [0, goal] => OK
