@@ -19,6 +19,12 @@ defmodule TdDdWeb.FallbackController do
     call(conn, {:error, changeset})
   end
 
+  def call(conn, {:error, :unprocessable_entity, message}) do
+    conn
+    |> put_resp_content_type("application/json", "utf-8")
+    |> send_resp(:unprocessable_entity, Jason.encode!(%{message: message}))
+  end
+
   def call(conn, {:error, :not_found, message}) do
     conn
     |> put_resp_content_type("application/json", "utf-8")

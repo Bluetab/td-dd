@@ -106,6 +106,15 @@ defmodule TdDdWeb.Router do
     resources("/data_structure_tags", DataStructureTagController, except: [:new, :edit])
 
     resources("/grants", GrantController, except: [:create, :new, :edit, :index])
+
+    resources("/grant_request_groups", GrantRequestGroupController, except: [:new, :edit]) do
+      resources("/grant_requests", GrantRequestController,
+        only: [:create, :index],
+        name: "request"
+      )
+    end
+
+    resources("/grant_requests", GrantRequestController, except: [:create, :new, :edit, :index])
   end
 
   scope "/api/swagger" do

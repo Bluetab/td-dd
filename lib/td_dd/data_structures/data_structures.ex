@@ -66,6 +66,8 @@ defmodule TdDd.DataStructures do
     |> Repo.preload(:system)
   end
 
+  def get_data_structure(id), do: Repo.get(DataStructure, id)
+
   @doc "Gets a single data_structure by external_id"
   def get_data_structure_by_external_id(external_id) do
     Repo.get_by(DataStructure, external_id: external_id)
