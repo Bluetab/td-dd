@@ -6,7 +6,7 @@ defmodule TdDdWeb.MetadataController do
   require Logger
 
   alias Plug.Upload
-  alias TdCache.TaxonomyCache
+  alias TdCache.DomainCache
   alias TdDd.DataStructures
 
   @worker Application.compile_env!(:td_dd, :loader_worker)
@@ -130,8 +130,10 @@ defmodule TdDdWeb.MetadataController do
   end
 
   def can_upload?(claims, %{"domain" => external_id}) do
-    domain_id = Map.get(TaxonomyCache.get_domain_external_id_to_id_map(), external_id)
-    can?(claims, upload(domain_id))
+    case DomainCache.external_id_to_id(external_id) do
+      {:ok, domain_id} -> can?(claims, upload(domain_id))
+      _ -> can?(claims, upload(:no_domain))
+    end
   end
 
   def can_upload?(claims, _params), do: can?(claims, upload(DataStructure))
