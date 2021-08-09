@@ -205,28 +205,11 @@ defmodule TdDd.Lineage.Units do
         |> where([un], is_nil(un.deleted_at))
         |> select([un], un.node_id)
         |> distinct(true)
-        |> Repo.all()
-        |> MapSet.new()
 
-      prev_ids =
-        Node
-        |> select([n], n.id)
-        |> Repo.all()
-        |> MapSet.new()
-
-      deleted_ids = MapSet.difference(prev_ids, current_ids)
-
-      count =
-        deleted_ids
-        |> Enum.chunk_every(500)
-        |> Enum.map(fn chunk ->
-          Node
-          |> where([n], n.id in ^chunk)
-          |> do_delete(Keyword.get(opts, :logical, false))
-        end)
-        |> Enum.reduce(0, fn {count, _}, acc -> count + acc end)
-
-      {count, deleted_ids}
+      Node
+      |> where([n], n.id not in subquery(current_ids))
+      |> select([n], n.id)
+      |> do_delete(Keyword.get(opts, :logical, false))
     end)
   end
 

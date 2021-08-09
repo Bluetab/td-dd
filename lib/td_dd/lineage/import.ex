@@ -40,16 +40,13 @@ defmodule TdDd.Lineage.Import do
   end
 
   @impl true
-  def handle_cast({:load, nodes_path, rels_path, attrs, opts}, state) do
+  def handle_cast({:load, nodes_path, rels_path, %{name: name} = params, opts}, state) do
     %{ref: ref} =
       Task.Supervisor.async_nolink(TdDd.TaskSupervisor, fn ->
-        with {:ok, %Units.Unit{} = unit} <- Units.replace_unit(attrs) do
-          Logger.info("Load started for unit #{unit.name}")
-          Loader.load(unit, nodes_path, rels_path, Keyword.take(opts, [:timeout]))
-        end
+        do_load(params, nodes_path, rels_path, opts)
       end)
 
-    {:noreply, Map.put(state, ref, attrs.name)}
+    {:noreply, Map.put(state, ref, name)}
   end
 
   @impl true
@@ -68,5 +65,17 @@ defmodule TdDd.Lineage.Import do
     {unit_name, state} = Map.pop(state, ref)
     Logger.warn("Load failed for unit=#{unit_name}")
     {:noreply, state}
+  end
+
+  defp do_load(%{name: name} = params, nodes_path, rels_path, opts) do
+    Logger.info("Load started for unit #{name}")
+
+    case Units.replace_unit(params) do
+      {:ok, %Units.Unit{} = unit} ->
+        Loader.load(unit, nodes_path, rels_path, Keyword.take(opts, [:timeout]))
+
+      error ->
+        error
+    end
   end
 end
