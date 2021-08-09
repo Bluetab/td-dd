@@ -1,34 +1,28 @@
 defmodule TdDd.GrantsTest do
   use TdDd.DataCase
+
   import TdDd.TestOperators
 
   alias TdCache.Redix
   alias TdCache.Redix.Stream
   alias TdDd.Grants
+  alias TdDd.Grants.Grant
+  alias TdDd.Grants.GrantRequest
+  alias TdDd.Grants.GrantRequestGroup
 
   @stream TdCache.Audit.stream()
+  @template_name "grant_request_test_template"
+  @valid_metadata %{"list" => "one", "string" => "bar"}
 
   setup_all do
     on_exit(fn -> Redix.del!(@stream) end)
   end
 
+  setup do
+    [template: CacheHelpers.insert_template(name: @template_name)]
+  end
+
   describe "grants" do
-    alias TdDd.Grants.Grant
-
-    @valid_attrs %{
-      detail: %{},
-      end_date: "2010-04-17T14:00:00.000000Z",
-      start_date: "2010-04-17T14:00:00.000000Z",
-      user_id: 42
-    }
-    @update_attrs %{
-      detail: %{},
-      end_date: "2011-05-18T15:01:01.000000Z",
-      start_date: "2011-05-18T15:01:01.000000Z",
-      user_id: 43
-    }
-    @invalid_attrs %{detail: nil, end_date: nil, start_date: nil, user_id: nil}
-
     test "list_grants/0 returns all grants" do
       grant = insert(:grant)
       assert Grants.list_grants() <|> [grant]
@@ -46,33 +40,38 @@ defmodule TdDd.GrantsTest do
     end
 
     test "create_grant/3 with valid data creates a grant" do
-      claims = build(:claims)
+      %{user_id: user_id} = claims = build(:claims)
       %{id: data_structure_id} = data_structure = insert(:data_structure)
+
+      params = %{
+        detail: %{},
+        end_date: "2010-04-17T14:00:00.000000Z",
+        start_date: "2010-04-17T14:00:00.000000Z"
+      }
 
       assert {:ok,
               %{
                 audit: event_id,
                 grant: %Grant{} = grant
-              }} = Grants.create_grant(@valid_attrs, data_structure, claims)
+              }} = Grants.create_grant(params, data_structure, claims)
 
-      date_value = DateTime.from_naive!(~N[2010-04-17T14:00:00.000000Z], "Etc/UTC")
-      assert grant.detail == %{}
-      assert grant.end_date == date_value
-      assert grant.start_date == date_value
-      assert grant.user_id == 42
-      assert grant.data_structure_id == data_structure_id
+      assert %{
+               detail: %{},
+               end_date: ~U[2010-04-17T14:00:00.000000Z],
+               start_date: ~U[2010-04-17T14:00:00.000000Z],
+               user_id: ^user_id,
+               data_structure_id: ^data_structure_id
+             } = grant
 
-      assert {:ok, [%{id: ^event_id, payload: payload}]} =
+      assert {:ok, [%{id: ^event_id, payload: payload, user_id: audit_user_id}]} =
                Stream.range(:redix, @stream, event_id, event_id, transform: :range)
 
-      date_string_value = Map.get(@valid_attrs, :end_date)
+      assert audit_user_id == to_string(user_id)
 
       assert %{
                "detail" => %{},
-               "end_date" => ^date_string_value,
-               "start_date" => ^date_string_value,
-               "user_id" => 42,
-               "data_structure_id" => ^data_structure_id
+               "end_date" => "2010-04-17T14:00:00.000000Z",
+               "start_date" => "2010-04-17T14:00:00.000000Z"
              } = Jason.decode!(payload)
     end
 
@@ -80,46 +79,42 @@ defmodule TdDd.GrantsTest do
       claims = build(:claims)
       data_structure = insert(:data_structure)
 
-      attrs = %{
+      params = %{
         end_date: "2010-04-10T00:00:00.000000Z",
-        start_date: "2010-04-20T00:00:00.000000Z",
-        user_id: 42
+        start_date: "2010-04-20T00:00:00.000000Z"
       }
 
       assert {:error, :grant, %Ecto.Changeset{}, _} =
-               Grants.create_grant(attrs, data_structure, claims)
+               Grants.create_grant(params, data_structure, claims)
     end
 
     test "create_grant/3 will not allow two grants of same structure and user on the same period" do
       claims = build(:claims)
       data_structure = insert(:data_structure)
 
-      attrs = %{
+      params = %{
         end_date: "2010-04-20T00:00:00.000000Z",
-        start_date: "2010-04-16T00:00:00.000000Z",
-        user_id: 42
+        start_date: "2010-04-16T00:00:00.000000Z"
       }
 
-      assert {:ok, _} = Grants.create_grant(attrs, data_structure, claims)
+      assert {:ok, _} = Grants.create_grant(params, data_structure, claims)
 
-      attrs = %{
-        start_date: "2010-04-18T00:00:00.000000Z",
-        user_id: 42
+      params = %{
+        start_date: "2010-04-18T00:00:00.000000Z"
       }
 
       assert {:error, :overlap, %Ecto.Changeset{} = error, _} =
-               Grants.create_grant(attrs, data_structure, claims)
+               Grants.create_grant(params, data_structure, claims)
 
       assert %{errors: [date_range: {"overlaps", []}]} = error
 
-      attrs = %{
+      params = %{
         start_date: "2010-04-15T00:00:00.000000Z",
-        end_date: "2010-04-19T00:00:00.000000Z",
-        user_id: 42
+        end_date: "2010-04-19T00:00:00.000000Z"
       }
 
       assert {:error, :overlap, %Ecto.Changeset{} = error, _} =
-               Grants.create_grant(attrs, data_structure, claims)
+               Grants.create_grant(params, data_structure, claims)
 
       assert %{errors: [date_range: {"overlaps", []}]} = error
     end
@@ -128,64 +123,68 @@ defmodule TdDd.GrantsTest do
       claims = build(:claims)
       data_structure = insert(:data_structure)
 
-      attrs = %{
+      params = %{
         end_date: "2010-04-20T00:00:00.000000Z",
-        start_date: "2010-04-16T00:00:00.000000Z",
-        user_id: 42
+        start_date: "2010-04-16T00:00:00.000000Z"
       }
 
-      assert {:ok, _} = Grants.create_grant(attrs, data_structure, claims)
+      assert {:ok, _} = Grants.create_grant(params, data_structure, claims)
 
-      attrs = %{
+      params = %{
         start_date: "2010-04-21T00:00:00.000000Z",
-        end_date: "2010-04-26T00:00:00.000000Z",
-        user_id: 42
+        end_date: "2010-04-26T00:00:00.000000Z"
       }
 
-      assert {:ok, _} = Grants.create_grant(attrs, data_structure, claims)
+      assert {:ok, _} = Grants.create_grant(params, data_structure, claims)
     end
 
     test "create_grant/3 with invalid data returns error changeset" do
       claims = build(:claims)
       data_structure = insert(:data_structure)
+      invalid_params = %{detail: nil, end_date: nil, start_date: nil, user_id: nil}
 
       assert {:error, :grant, %Ecto.Changeset{}, _} =
-               Grants.create_grant(@invalid_attrs, data_structure, claims)
+               Grants.create_grant(invalid_params, data_structure, claims)
     end
 
-    test "update_grant/2 with valid data updates the grant" do
+    test "update_grant/3 with valid data updates the grant" do
       claims = build(:claims)
       %{user_id: previous_user_id} = grant = insert(:grant)
 
-      assert {:ok,
-              %{
-                audit: event_id,
-                grant: %Grant{} = grant
-              }} = Grants.update_grant(grant, @update_attrs, claims)
+      params = %{
+        detail: %{},
+        end_date: "2011-05-18T15:01:01.000000Z",
+        start_date: "2011-05-18T15:01:01.000000Z",
+        user_id: 43
+      }
 
-      assert grant.detail == %{}
-      assert grant.end_date == DateTime.from_naive!(~N[2011-05-18T15:01:01.000000Z], "Etc/UTC")
-      assert grant.start_date == DateTime.from_naive!(~N[2011-05-18T15:01:01.000000Z], "Etc/UTC")
-      assert grant.user_id == previous_user_id
+      assert {:ok, %{audit: event_id, grant: grant}} = Grants.update_grant(grant, params, claims)
+
+      assert %{
+               detail: %{},
+               end_date: ~U[2011-05-18T15:01:01.000000Z],
+               start_date: ~U[2011-05-18T15:01:01.000000Z],
+               user_id: ^previous_user_id
+             } = grant
 
       assert {:ok, [%{id: ^event_id, payload: payload}]} =
                Stream.range(:redix, @stream, event_id, event_id, transform: :range)
 
-      date_string_value = Map.get(@update_attrs, :end_date)
-
       assert %{
                "detail" => %{},
-               "end_date" => ^date_string_value,
-               "start_date" => ^date_string_value
+               "end_date" => "2011-05-18T15:01:01.000000Z",
+               "start_date" => "2011-05-18T15:01:01.000000Z"
              } = Jason.decode!(payload)
     end
 
-    test "update_grant/2 with invalid data returns error changeset" do
+    test "update_grant/3 with invalid data returns error changeset" do
       claims = build(:claims)
       grant = insert(:grant)
 
+      invalid_params = %{detail: nil, end_date: nil, start_date: nil, user_id: nil}
+
       assert {:error, :grant, %Ecto.Changeset{}, _} =
-               Grants.update_grant(grant, @invalid_attrs, claims)
+               Grants.update_grant(grant, invalid_params, claims)
 
       assert grant <~> Grants.get_grant!(grant.id)
     end
@@ -208,17 +207,6 @@ defmodule TdDd.GrantsTest do
   end
 
   describe "grant_request_groups" do
-    alias TdDd.Grants.GrantRequest
-    alias TdDd.Grants.GrantRequestGroup
-
-    @valid_attrs %{request_date: "2010-04-17T14:00:00.000000Z", type: "some type", user_id: 42}
-    @update_attrs %{
-      request_date: "2011-05-18T15:01:01.000000Z",
-      type: "some updated type",
-      user_id: 43
-    }
-    @invalid_attrs %{request_date: nil, type: nil, user_id: nil}
-
     test "list_grant_request_groups/0 returns all grant_request_groups" do
       grant_request_group = insert(:grant_request_group)
       assert Grants.list_grant_request_groups() <|> [grant_request_group]
@@ -229,15 +217,24 @@ defmodule TdDd.GrantsTest do
       assert Grants.get_grant_request_group!(grant_request_group.id) <~> grant_request_group
     end
 
-    test "create_grant_request_group/1 with valid data creates a grant_request_group" do
+    test "create_grant_request_group/2 with valid data creates a grant_request_group" do
+      %{id: data_structure_id} = insert(:data_structure)
+      %{user_id: user_id} = claims = build(:claims)
+
+      params = %{
+        request_date: "2010-04-17T14:00:00.000000Z",
+        type: @template_name,
+        requests: [%{data_structure_id: data_structure_id, metadata: @valid_metadata}]
+      }
+
       assert {:ok, %GrantRequestGroup{} = grant_request_group} =
-               Grants.create_grant_request_group(@valid_attrs)
+               Grants.create_grant_request_group(params, claims)
 
-      assert grant_request_group.request_date ==
-               DateTime.from_naive!(~N[2010-04-17T14:00:00.000000Z], "Etc/UTC")
-
-      assert grant_request_group.type == "some type"
-      assert grant_request_group.user_id == 42
+      assert %{
+               request_date: ~U[2010-04-17 14:00:00.000000Z],
+               type: @template_name,
+               user_id: ^user_id
+             } = grant_request_group
     end
 
     test "creates grant_request_group child requests" do
@@ -248,49 +245,57 @@ defmodule TdDd.GrantsTest do
         %{
           data_structure_id: ds_id_1,
           filters: %{"foo" => "bar"},
-          metadata: %{"bar" => "foo"}
+          metadata: @valid_metadata
         },
-        %{data_structure_id: ds_id_2}
+        %{data_structure_id: ds_id_2, metadata: @valid_metadata}
       ]
 
-      attrs = Map.put(@valid_attrs, :requests, requests)
+      params = %{
+        request_date: "2010-04-17T14:00:00.000000Z",
+        type: @template_name,
+        requests: requests
+      }
 
-      assert {:ok, %GrantRequestGroup{id: id}} = Grants.create_grant_request_group(attrs)
+      assert {:ok, %GrantRequestGroup{id: id}} =
+               Grants.create_grant_request_group(params, build(:claims))
 
       assert [
                %{
                  data_structure_id: ^ds_id_1,
                  filters: %{"foo" => "bar"},
-                 metadata: %{"bar" => "foo"}
+                 metadata: @valid_metadata
                },
                %{data_structure_id: ^ds_id_2}
              ] = Grants.list_grant_requests(id)
     end
 
     test "create_grant_request_group/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} = Grants.create_grant_request_group(@invalid_attrs)
+      invalid_params = %{request_date: nil, type: nil, user_id: nil}
+
+      assert {:error, %Ecto.Changeset{}} =
+               Grants.create_grant_request_group(invalid_params, build(:claims))
     end
 
     test "update_grant_request_group/2 with valid data updates the grant_request_group" do
-      %{user_id: user_id} = grant_request_group = insert(:grant_request_group)
+      %{grant_request_group: grant_request_group} = insert(:grant_request)
+
+      params = %{request_date: "2011-05-18T15:01:01.000000Z", type: "some updated type"}
 
       assert {:ok, %GrantRequestGroup{} = grant_request_group} =
-               Grants.update_grant_request_group(grant_request_group, @update_attrs)
+               Grants.update_grant_request_group(grant_request_group, params)
 
-      assert grant_request_group.request_date ==
-               DateTime.from_naive!(~N[2011-05-18T15:01:01.000000Z], "Etc/UTC")
-
-      assert grant_request_group.type == "some updated type"
-      assert grant_request_group.user_id == user_id
+      assert %{
+               type: "some updated type",
+               request_date: ~U[2011-05-18T15:01:01.000000Z]
+             } = grant_request_group
     end
 
     test "update_grant_request_group/2 with invalid data returns error changeset" do
-      grant_request_group = insert(:grant_request_group)
+      %{grant_request_group: grant_request_group} = insert(:grant_request)
+      invalid_params = %{requests: nil}
 
       assert {:error, %Ecto.Changeset{}} =
-               Grants.update_grant_request_group(grant_request_group, @invalid_attrs)
-
-      assert grant_request_group <~> Grants.get_grant_request_group!(grant_request_group.id)
+               Grants.update_grant_request_group(grant_request_group, invalid_params)
     end
 
     test "delete_grant_request_group/1 deletes the grant_request_group" do
@@ -304,20 +309,6 @@ defmodule TdDd.GrantsTest do
   end
 
   describe "grant_requests" do
-    alias TdCache.TemplateCache
-    alias TdDd.Grants.GrantRequest
-
-    @valid_attrs %{filters: %{"foo" => "bar"}, metadata: %{"foo" => "bar"}}
-    @update_attrs %{filters: %{}, metadata: %{}}
-
-    @template_name "grant_request_test_template"
-
-    setup _ do
-      %{id: template_id} = template = build(:template, name: @template_name)
-      {:ok, _} = TemplateCache.put(template, publish: false)
-      on_exit(fn -> TemplateCache.delete(template_id) end)
-    end
-
     test "list_grant_requests/0 returns all grant_requests" do
       _other_group_request = insert(:grant_request)
       %{grant_request_group_id: grant_request_group_id} = grant_request = insert(:grant_request)
@@ -333,44 +324,39 @@ defmodule TdDd.GrantsTest do
       grant_request_group = insert(:grant_request_group, type: @template_name)
       data_structure = insert(:data_structure)
 
-      metadata = %{
-        "list" => "one",
-        "string" => "bar"
-      }
-
-      attrs = Map.put(@valid_attrs, :metadata, metadata)
+      filters = %{"foo" => "bar"}
+      metadata = @valid_metadata
+      params = %{"filters" => filters, "metadata" => metadata}
 
       assert {:ok, %GrantRequest{} = grant_request} =
-               Grants.create_grant_request(attrs, grant_request_group, data_structure)
+               Grants.create_grant_request(params, grant_request_group, data_structure)
 
-      assert grant_request.filters == %{"foo" => "bar"}
-      assert grant_request.metadata == metadata
+      assert %{filters: ^filters, metadata: ^metadata} = grant_request
     end
 
     test "create_grant_request/1 fails if metadata is invalid" do
       grant_request_group = insert(:grant_request_group, type: @template_name)
       data_structure = insert(:data_structure)
 
-      attrs = Map.put(@valid_attrs, :metadata, %{"invalid" => "metadata"})
+      params = %{"filters" => %{"foo" => "bar"}, "metadata" => %{"invalid" => "metadata"}}
 
-      assert {:error,
-              %{
-                errors: [
-                  metadata:
-                    {"invalid content",
-                     [
-                       list: {"can't be blank", [validation: :required]},
-                       string: {"can't be blank", [validation: :required]}
-                     ]}
-                ]
-              }} = Grants.create_grant_request(attrs, grant_request_group, data_structure)
+      assert {:error, %{errors: errors}} =
+               Grants.create_grant_request(params, grant_request_group, data_structure)
+
+      assert {_,
+              [
+                list: {_, [validation: :required]},
+                string: {_, [validation: :required]}
+              ]} = errors[:metadata]
     end
 
     test "update_grant_request/2 with valid data updates the grant_request" do
       grant_request = insert(:grant_request)
 
+      params = %{"filters" => %{}, "metadata" => %{}}
+
       assert {:ok, %GrantRequest{} = grant_request} =
-               Grants.update_grant_request(grant_request, @update_attrs)
+               Grants.update_grant_request(grant_request, params)
 
       assert grant_request.filters == %{}
       assert grant_request.metadata == %{}

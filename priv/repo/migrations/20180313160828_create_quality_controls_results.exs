@@ -2,7 +2,7 @@ defmodule TdDq.Repo.Migrations.CreateQualityControlsResults do
   use Ecto.Migration
 
   def change do
-    create table(:quality_controls_results) do
+    create table("quality_controls_results") do
       add(:business_concept_id, :string)
       add(:quality_control_name, :string)
       add(:system, :string)

@@ -1,7 +1,6 @@
 defmodule TdDdWeb.GrantRequestControllerTest do
   use TdDdWeb.ConnCase
 
-  alias TdCache.TemplateCache
   alias TdDd.Grants.GrantRequest
 
   @create_attrs %{
@@ -15,11 +14,8 @@ defmodule TdDdWeb.GrantRequestControllerTest do
   @template_name "grant_request_controller_test_template"
 
   setup %{conn: conn} do
-    %{id: template_id} = template = build(:template, name: @template_name)
-    {:ok, _} = TemplateCache.put(template, publish: false)
-    on_exit(fn -> TemplateCache.delete(template_id) end)
-
-    {:ok, conn: put_req_header(conn, "accept", "application/json")}
+    CacheHelpers.insert_template(name: @template_name)
+    [conn: put_req_header(conn, "accept", "application/json")]
   end
 
   describe "index" do

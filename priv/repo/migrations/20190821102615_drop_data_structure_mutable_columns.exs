@@ -2,7 +2,7 @@ defmodule TdDd.Repo.Migrations.DropDataStructureMutableColumns do
   use Ecto.Migration
 
   def up do
-    alter table(:data_structures) do
+    alter table("data_structures") do
       remove(:class)
       remove(:deleted_at)
       remove(:description)
@@ -14,7 +14,7 @@ defmodule TdDd.Repo.Migrations.DropDataStructureMutableColumns do
   end
 
   def down do
-    alter table(:data_structures) do
+    alter table("data_structures") do
       add(:class, :string)
       add(:deleted_at, :utc_datetime)
       add(:description, :text)

@@ -2,7 +2,6 @@ defmodule TdDd.DataStructures.StructureNoteTest do
   use TdDd.DataCase
 
   alias Ecto.Changeset
-  alias TdCache.TemplateCache
   alias TdDd.DataStructures.StructureNote
 
   @moduletag sandbox: :shared
@@ -11,11 +10,9 @@ defmodule TdDd.DataStructures.StructureNoteTest do
   @template_name "structure_note_test_template"
 
   setup do
-    %{id: template_id, name: template_name} = template = build(:template, name: @template_name)
+    %{id: template_id, name: template_name} = CacheHelpers.insert_template(name: @template_name)
 
-    {:ok, _} = TemplateCache.put(template, publish: false)
     CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
-    on_exit(fn -> TemplateCache.delete(template_id) end)
 
     start_supervised!(TdDd.Search.StructureEnricher)
 

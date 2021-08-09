@@ -2,15 +2,11 @@ defmodule TdDq.Implementations.ImplementationTest do
   use TdDd.DataCase
 
   alias Ecto.Changeset
-  alias TdCache.TemplateCache
   alias TdDd.Repo
   alias TdDq.Implementations.Implementation
 
-  setup_all do
-    %{id: template_id, name: template_name} = template = build(:template)
-    {:ok, _} = TemplateCache.put(template)
-    on_exit(fn -> TemplateCache.delete(template_id) end)
-
+  setup do
+    %{name: template_name} = CacheHelpers.insert_template(scope: "dq")
     [template_name: template_name]
   end
 

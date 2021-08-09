@@ -46,10 +46,6 @@ defmodule TdDd.Canada.GrantAbilities do
     authorized?(claims, :create_grant_request, domain_id)
   end
 
-  def can?(%Claims{user_id: user_id}, :create_grant_request_group, %{"user_id" => params_user_id}) do
-    user_id == params_user_id
-  end
-
   def can?(%Claims{user_id: user_id}, :show, %GrantRequestGroup{user_id: params_user_id}) do
     user_id == params_user_id
   end

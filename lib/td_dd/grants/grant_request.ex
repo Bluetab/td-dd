@@ -3,6 +3,7 @@ defmodule TdDd.Grants.GrantRequest do
   Ecto Schema module for Grant Request.
   """
   use Ecto.Schema
+
   import Ecto.Changeset
 
   alias TdDd.DataStructures.DataStructure
@@ -16,46 +17,21 @@ defmodule TdDd.Grants.GrantRequest do
     belongs_to(:grant_request_group, GrantRequestGroup)
     belongs_to(:data_structure, DataStructure)
 
-    timestamps()
+    timestamps(type: :utc_datetime_usec)
   end
 
-  @doc false
-  def changeset(grant_request, attrs) do
-    type = Map.get(attrs, "group_type")
-
-    grant_request
-    |> cast(attrs, [
-      :grant_request_group_id,
-      :data_structure_id,
-      :filters,
-      :metadata
-    ])
-    |> validate_content(%{type: type})
+  def changeset(%__MODULE__{} = struct, params, template_name) do
+    struct
+    |> cast(params, [:filters, :metadata, :data_structure_id])
+    |> validate_content(template_name)
+    |> foreign_key_constraint(:data_structure_id)
   end
 
-  @doc false
-  def changeset(attrs, grant_request_group, data_structure) do
-    %__MODULE__{}
-    |> cast(attrs, [:filters, :metadata])
-    |> put_assoc(:data_structure, data_structure)
-    |> put_assoc(:grant_request_group, grant_request_group)
-    |> validate_content(grant_request_group)
-    |> validate_required([:grant_request_group, :data_structure])
-  end
-
-  defp validate_content(%{} = changeset, %{type: nil}), do: changeset
-
-  defp validate_content(%{} = changeset, %{type: template_name}) when is_binary(template_name) do
+  defp validate_content(%{} = changeset, template_name) when is_binary(template_name) do
     changeset
     |> validate_required(:metadata)
     |> validate_change(:metadata, Validation.validator(template_name))
   end
 
-  defp validate_content(%{} = changeset, _), do: changeset
-
-  @doc false
-  def update_changeset(grant_request, attrs) do
-    grant_request
-    |> cast(attrs, [:filters, :metadata])
-  end
+  defp validate_content(%{} = changeset, nil = _no_template_name), do: changeset
 end

@@ -4,42 +4,34 @@ defmodule TdDq.DownloadTest do
   """
   use TdDd.DataCase
 
-  alias TdCache.TemplateCache
   alias TdDq.Implementations.Download
 
   defp create_template(_) do
-    template = %{
-      id: System.unique_integer([:positive]),
-      name: "download",
-      label: "label",
-      scope: "dq",
-      updated_at: DateTime.utc_now(),
-      content: [
-        %{
-          "name" => "group",
-          "fields" => [
-            %{
-              "name" => "add_info1",
-              "type" => "list",
-              "label" => "Info"
-            },
-            %{
-              "name" => "system",
-              "type" => "system",
-              "label" => "System"
-            }
-          ]
-        }
-      ]
-    }
+    template =
+      CacheHelpers.insert_template(
+        name: "download",
+        label: "label",
+        scope: "dq",
+        content: [
+          %{
+            "name" => "group",
+            "fields" => [
+              %{
+                "name" => "add_info1",
+                "type" => "list",
+                "label" => "Info"
+              },
+              %{
+                "name" => "system",
+                "type" => "system",
+                "label" => "System"
+              }
+            ]
+          }
+        ]
+      )
 
-    TemplateCache.put(template)
-
-    on_exit(fn ->
-      TemplateCache.delete(template.id)
-    end)
-
-    {:ok, template: template}
+    [template: template]
   end
 
   describe "Implementations download" do

@@ -14,21 +14,27 @@ defmodule TdDd.Grants.GrantRequestGroup do
 
     has_many(:requests, GrantRequest)
 
-    timestamps()
+    timestamps(type: :utc_datetime_usec)
   end
 
-  @doc false
-  def changeset(grant_request_group, attrs) do
-    grant_request_group
-    |> cast(attrs, [:request_date, :user_id, :type])
-    |> cast_assoc(:requests)
-    |> validate_required([:request_date, :user_id])
+  def changeset(%__MODULE__{} = struct, params) do
+    struct
+    |> cast(params, [:request_date, :type])
+    |> put_default(:request_date, DateTime.utc_now())
+    |> cast_requests()
   end
 
-  @doc false
-  def update_changeset(grant_request_group, attrs) do
-    grant_request_group
-    |> cast(attrs, [:request_date, :type])
-    |> validate_required([:request_date])
+  defp cast_requests(changeset) do
+    cast_assoc(changeset, :requests,
+      required: true,
+      with: {GrantRequest, :changeset, [fetch_field!(changeset, :type)]}
+    )
+  end
+
+  defp put_default(changeset, field, default_value) do
+    case fetch_field!(changeset, field) do
+      nil -> put_change(changeset, field, default_value)
+      _ -> changeset
+    end
   end
 end

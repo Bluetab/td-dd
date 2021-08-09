@@ -3,7 +3,7 @@ defmodule TdDq.Repo.Migrations.AddExecutionsResultId do
 
   def change do
     alter table("executions") do
-      add(:result_id, references(:rule_results, on_delete: :nilify_all))
+      add(:result_id, references("rule_results", on_delete: :nilify_all))
       add(:updated_at, :utc_datetime_usec)
     end
 

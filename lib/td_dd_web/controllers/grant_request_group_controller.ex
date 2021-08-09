@@ -2,7 +2,6 @@ defmodule TdDdWeb.GrantRequestGroupController do
   use TdDdWeb, :controller
   import Canada, only: [can?: 2]
 
-  alias TdCache.UserCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Grants
@@ -11,30 +10,21 @@ defmodule TdDdWeb.GrantRequestGroupController do
   action_fallback TdDdWeb.FallbackController
 
   def index(conn, _params) do
-    claims = conn.assigns[:current_resource]
-    do_index(conn, claims)
-  end
+    grant_request_groups =
+      case conn.assigns[:current_resource] do
+        %{role: "admin"} -> Grants.list_grant_request_groups()
+        %{user_id: user_id} -> Grants.list_grant_request_groups_by_user_id(user_id)
+      end
 
-  defp do_index(conn, %{role: "admin"}) do
-    grant_request_groups = Grants.list_grant_request_groups()
     render(conn, "index.json", grant_request_groups: grant_request_groups)
   end
 
-  defp do_index(conn, %{user_id: user_id}) do
-    grant_request_groups = Grants.list_grant_request_groups_by_user_id(user_id)
-    render(conn, "index.json", grant_request_groups: grant_request_groups)
-  end
-
-  def create(conn, %{"grant_request_group" => grant_request_group_params}) do
-    params = with_default_request_date(grant_request_group_params)
-
+  def create(conn, %{"grant_request_group" => params}) do
     with claims <- conn.assigns[:current_resource],
-         {:ok, params} <- with_user_id(params, claims),
          {:ok, params} <- with_valid_requests(params),
          {:ok, _} <- can_create_on_structures(claims, params),
-         {:can, true} <- {:can, can?(claims, create_grant_request_group(params))},
          {:ok, %GrantRequestGroup{} = grant_request_group} <-
-           Grants.create_grant_request_group(params) do
+           Grants.create_grant_request_group(params, claims) do
       conn
       |> put_status(:created)
       |> put_resp_header(
@@ -44,35 +34,6 @@ defmodule TdDdWeb.GrantRequestGroupController do
       |> render("show.json", grant_request_group: grant_request_group)
     end
   end
-
-  defp with_default_request_date(%{"request_date" => request_date} = params)
-       when not is_nil(request_date),
-       do: params
-
-  defp with_default_request_date(params),
-    do: Map.put(params, "request_date", DateTime.utc_now())
-
-  defp with_user_id(%{"user_id" => user_id} = params, _) do
-    case UserCache.get(user_id) do
-      {:ok, nil} ->
-        {:error, :not_found, "User"}
-
-      {:ok, user} ->
-        {:ok, Map.put(params, "user_id", user.id)}
-    end
-  end
-
-  defp with_user_id(%{"user_name" => user_name} = params, _) do
-    case UserCache.get_by_user_name(user_name) do
-      {:ok, nil} ->
-        {:error, :not_found, "User"}
-
-      {:ok, user} ->
-        {:ok, Map.put(params, "user_id", user.id)}
-    end
-  end
-
-  defp with_user_id(params, %{user_id: user_id}), do: {:ok, Map.put(params, "user_id", user_id)}
 
   defp with_valid_requests(%{"requests" => [_ | _] = requests, "type" => type} = params)
        when is_list(requests) do
