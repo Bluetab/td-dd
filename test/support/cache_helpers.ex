@@ -7,7 +7,6 @@ defmodule CacheHelpers do
 
   alias TdCache.ConceptCache
   alias TdCache.LinkCache
-  alias TdCache.StructureTypeCache
   alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
   alias TdCache.UserCache
@@ -22,10 +21,7 @@ defmodule CacheHelpers do
   end
 
   def insert_structure_type(params \\ []) do
-    %{id: id} = structure_type = insert(:data_structure_type, params)
-    {:ok, _} = StructureTypeCache.put(structure_type)
-
-    ExUnit.Callbacks.on_exit(fn -> StructureTypeCache.delete(id) end)
+    structure_type = insert(:data_structure_type, params)
     _maybe_error = StructureEnricher.refresh()
     structure_type
   end

@@ -54,7 +54,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
         updated_at: DateTime.utc_now()
       })
 
-    CacheHelpers.insert_structure_type(template_id: template_id, structure_type: type)
+    CacheHelpers.insert_structure_type(template_id: template_id, name: type)
 
     on_exit(fn -> TemplateCache.delete(template_id) end)
   end

@@ -7,7 +7,8 @@ defmodule TdDd.DataStructures do
 
   alias Ecto.Association.NotLoaded
   alias Ecto.Multi
-  alias TdCache.{LinkCache, StructureTypeCache, TemplateCache, UserCache}
+
+  alias TdCache.{LinkCache, TemplateCache, UserCache}
   alias TdCx.Sources
   alias TdCx.Sources.Source
   alias TdDd.Auth.Claims
@@ -215,7 +216,7 @@ defmodule TdDd.DataStructures do
 
   def get_data_structure_type(%DataStructureVersion{} = dsv) do
     DataStructureType
-    |> where([ds_type], ds_type.structure_type == ^dsv.type)
+    |> where([ds_type], ds_type.name == ^dsv.type)
     |> Repo.one()
   end
 
@@ -626,10 +627,67 @@ defmodule TdDd.DataStructures do
       IndexWorker.delete(data_structure_ids)
     end
 
+    with %{descendents: %{data_structures_ids: structures_ids}} <- res do
+      IndexWorker.delete(structures_ids)
+    end
+
     {:ok, res}
   end
 
   defp on_delete(res), do: res
+
+  def logical_delete_data_structure(
+        %DataStructureVersion{} = data_structure_version,
+        %Claims{
+          user_id: user_id
+        }
+      ) do
+    now = DateTime.utc_now()
+
+    Multi.new()
+    |> Multi.run(:descendents, fn _, _ -> get_structure_descendents(data_structure_version) end)
+    |> Multi.update_all(
+      :delete_dsv_descendents,
+      fn changes -> delete_dsv_descendents(changes) end,
+      set: [deleted_at: now]
+    )
+    |> Multi.update_all(
+      :delete_metadata_descendents,
+      fn changes -> delete_metadata_descendents(changes) end,
+      set: [deleted_at: now]
+    )
+    |> Multi.run(:audit, Audit, :data_structure_deleted, [user_id])
+    |> Repo.transaction()
+    |> on_delete()
+  end
+
+  def delete_dsv_descendents(%{
+        descendents: %{data_structure_version_descendents: descendents_ids}
+      }) do
+    DataStructureVersion
+    |> where([dsv], dsv.id in ^descendents_ids)
+  end
+
+  def delete_metadata_descendents(%{descendents: %{data_structures_ids: structures_ids}}) do
+    StructureMetadata
+    |> where([sm], sm.data_structure_id in ^structures_ids)
+    |> where([sm], is_nil(sm.deleted_at))
+  end
+
+  def get_structure_descendents(data_structure_version) do
+    {data_structure_version_descendents, data_structures_ids} =
+      data_structure_version
+      |> get_descendents()
+      |> List.insert_at(0, data_structure_version)
+      |> Enum.map(fn %{id: dsv_id, data_structure_id: ds_id} -> {dsv_id, ds_id} end)
+      |> Enum.unzip()
+
+    {:ok,
+     %{
+       data_structure_version_descendents: data_structure_version_descendents,
+       data_structures_ids: data_structures_ids
+     }}
+  end
 
   def get_latest_version(target, options \\ [])
 
@@ -812,24 +870,6 @@ defmodule TdDd.DataStructures do
     |> Map.new()
   end
 
-  def get_structures_metadata_fields(clauses \\ %{}) do
-    clauses
-    |> Enum.reduce(DataStructureVersion, fn
-      {:type, types}, q when is_list(types) ->
-        where(q, [dsv], dsv.type in ^types)
-
-      {:type, type}, q ->
-        where(q, [dsv], dsv.type == ^type)
-
-      _, q ->
-        q
-    end)
-    |> where([dsv], is_nil(dsv.deleted_at))
-    |> select([_dsv], fragment("jsonb_object_keys(metadata)"))
-    |> distinct(true)
-    |> Repo.all()
-  end
-
   def create_structure_metadata(params) do
     %StructureMetadata{}
     |> StructureMetadata.changeset(params)
@@ -877,8 +917,9 @@ defmodule TdDd.DataStructures do
     |> template_name()
   end
 
-  def template_name(%DataStructureVersion{type: type}) do
-    with {:ok, %{template_id: template_id}} <- StructureTypeCache.get_by_type(type),
+  def template_name(%DataStructureVersion{} = dsv) do
+    with %{structure_type: %{template_id: template_id}} when is_integer(template_id) <-
+           Repo.preload(dsv, :structure_type),
          {:ok, %{name: name}} <- TemplateCache.get(template_id) do
       name
     else

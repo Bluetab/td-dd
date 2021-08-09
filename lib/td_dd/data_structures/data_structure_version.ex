@@ -10,6 +10,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
   alias TdDd.DataStructures.Classification
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
+  alias TdDd.DataStructures.DataStructureType
 
   @typedoc "A data structure version"
   @type t :: %__MODULE__{}
@@ -36,6 +37,12 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     field(:grant, :map, virtual: true)
 
     belongs_to(:data_structure, DataStructure)
+
+    belongs_to(:structure_type, DataStructureType,
+      foreign_key: :type,
+      references: :name,
+      define_field: false
+    )
 
     has_many(:classifications, Classification)
     has_many(:child_relations, DataStructureRelation, foreign_key: :parent_id)
@@ -176,8 +183,6 @@ defmodule TdDd.DataStructures.DataStructureVersion do
         ])
       )
     end
-
-    defp path_sort(nil), do: ""
 
     defp path_sort(name_path) when is_list(name_path) do
       Enum.join(name_path, "~")

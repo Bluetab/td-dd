@@ -5,15 +5,19 @@
 ### Added
 
 - [TD-3948] Grants in data structure version visualization
+- [TD-2635] Admin can manually delete structures and all its children
+- [TD-3917] `PATCH /api/systems/:external_id/metadata` allows mutable metadata
+  to be replaced or merged
 
 ### Changed
 
 - [TD-3957] Structure profiles are now validated and expanded
+- [TD-3952] Data structure types now support multiple metadata views
 
 ### Fixed
 
 - [TD-3959] Report `rule_result_created` when result is created
-- [TD-3908] Timeout on node retrieval 
+- [TD-3908] Timeout on node retrieval
 
 ## [4.25.0] 2021-07-26
 

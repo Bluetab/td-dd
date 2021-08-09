@@ -49,8 +49,8 @@ defmodule TdDdWeb.Router do
         name: :tags
       )
 
-      resources "/notes", StructureNoteController, except: [:new, :edit], name: :note
-      resources "/grants", GrantController, only: [:create]
+      resources("/notes", StructureNoteController, except: [:new, :edit], name: :note)
+      resources("/grants", GrantController, only: [:create])
     end
 
     resources("/data_structure_versions", DataStructureVersionController, only: [:show]) do
@@ -80,6 +80,12 @@ defmodule TdDdWeb.Router do
     post("/profiles/upload", ProfileController, :upload)
 
     resources("/systems", SystemController, except: [:new, :edit]) do
+      resources("/metadata", SystemMetadataController,
+        only: [:update],
+        as: :metadata,
+        singleton: true
+      )
+
       resources("/metadata", SystemMetadataController, only: [:create], as: :metadata)
       get("/structures", DataStructureController, :get_system_structures)
       resources("/groups", GroupController, only: [:index, :delete])
@@ -88,30 +94,18 @@ defmodule TdDdWeb.Router do
 
     get("/data_structures/search/reindex_all", SearchController, :reindex_all)
 
-    get(
-      "/data_structures/search/metadata_types",
-      SearchController,
-      :get_structures_metadata_types
-    )
-
-    post(
-      "/data_structures/search/metadata_fields",
-      SearchController,
-      :search_structures_metadata_fields
-    )
-
     get("/data_structure_filters", DataStructureFilterController, :index)
     post("/data_structure_filters/search", DataStructureFilterController, :search)
 
     get("/data_structure_user_filters/user/me", UserSearchFilterController, :index_by_user)
     resources("/data_structure_user_filters", UserSearchFilterController, except: [:new, :edit])
 
-    resources "/relation_types", RelationTypeController, except: [:new, :edit]
+    resources("/relation_types", RelationTypeController, except: [:new, :edit])
 
-    resources "/data_structure_types", DataStructureTypeController
-    resources "/data_structure_tags", DataStructureTagController, except: [:new, :edit]
+    resources("/data_structure_types", DataStructureTypeController, only: [:index, :show, :update])
+    resources("/data_structure_tags", DataStructureTagController, except: [:new, :edit])
 
-    resources "/grants", GrantController, except: [:create, :new, :edit, :index]
+    resources("/grants", GrantController, except: [:create, :new, :edit, :index])
   end
 
   scope "/api/swagger" do

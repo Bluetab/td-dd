@@ -19,6 +19,7 @@ defmodule TdDd.Loader.Reader do
   @field_import_required Application.compile_env(:td_dd, :metadata)[:field_import_required]
   @relation_import_schema Application.compile_env(:td_dd, :metadata)[:relation_import_schema]
   @relation_import_required Application.compile_env(:td_dd, :metadata)[:relation_import_required]
+  @metadata_import_schema %{external_id: :string, mutable_metadata: :map}
 
   def read(structures_file, fields_file, relations_file, domain, system_id) do
     with {:ok, fields} <- parse_data_fields(fields_file, system_id),
@@ -47,6 +48,24 @@ defmodule TdDd.Loader.Reader do
         %{valid?: true, changes: changes} -> changes
       end
     end)
+  end
+
+  def read_metadata_records(records) do
+    records
+    |> Enum.with_index(1)
+    |> Enum.map(&validate_metadata_record/1)
+    |> Enum.group_by(fn {res, _} -> res end, fn {_, value} -> value end)
+    |> case do
+      %{error: changesets} -> {:error, Enum.map(changesets, &Changeset.get_field(&1, :pos))}
+      %{ok: records} -> {:ok, records}
+    end
+  end
+
+  defp validate_metadata_record({%{} = params, pos}) do
+    {%{pos: pos}, @metadata_import_schema}
+    |> Changeset.cast(params, [:external_id, :mutable_metadata])
+    |> Changeset.validate_required([:external_id, :mutable_metadata])
+    |> Changeset.apply_action(:insert)
   end
 
   @spec put_default_metadata(Changeset.t()) :: Changeset.t()

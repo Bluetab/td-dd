@@ -15,16 +15,17 @@ defmodule TdDdWeb.DataStructureTypeView do
         data_structure_type: %{template: %{} = template} = data_structure_type
       }) do
     data_structure_type
-    |> Map.take([:id, :structure_type, :translation, :metadata_fields])
+    |> Map.take([:id, :name, :translation, :metadata_fields, :metadata_views])
     |> Map.put(:template, Map.take(template, [:id, :name]))
   end
 
   def render("data_structure_type.json", %{data_structure_type: %{} = data_structure_type}) do
     Map.take(data_structure_type, [
       :id,
-      :structure_type,
+      :name,
       :translation,
       :metadata_fields,
+      :metadata_views,
       :template_id
     ])
   end
