@@ -147,7 +147,7 @@ defmodule TdDd.Lineage.Units do
     |> Repo.update()
   end
 
-  def replace_unit(%{name: name} = params) do
+  def replace_unit(%{"name" => name} = params) do
     case Repo.get_by(Unit, name: name) do
       nil ->
         create_unit(params)

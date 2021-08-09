@@ -16,10 +16,12 @@ defmodule TdDd.Lineage.Import do
     GenServer.start_link(__MODULE__, init_arg, name: __MODULE__)
   end
 
-  def load(nodes_path, rels_path, attrs, opts \\ []) do
-    GenServer.cast(__MODULE__, {:load, nodes_path, rels_path, attrs, opts})
+  @spec load(binary(), binary(), map(), Keyword.t()) :: :ok
+  def load(nodes_path, rels_path, %{"name" => _} = params, opts \\ []) do
+    GenServer.cast(__MODULE__, {:load, nodes_path, rels_path, params, opts})
   end
 
+  @spec busy? :: boolean()
   def busy? do
     GenServer.call(__MODULE__, :busy?)
   end
@@ -40,10 +42,10 @@ defmodule TdDd.Lineage.Import do
   end
 
   @impl true
-  def handle_cast({:load, nodes_path, rels_path, %{name: name} = params, opts}, state) do
+  def handle_cast({:load, nodes_path, rels_path, %{"name" => name} = params, opts}, state) do
     %{ref: ref} =
       Task.Supervisor.async_nolink(TdDd.TaskSupervisor, fn ->
-        do_load(params, nodes_path, rels_path, opts)
+        do_load(nodes_path, rels_path, params, opts)
       end)
 
     {:noreply, Map.put(state, ref, name)}
@@ -67,7 +69,7 @@ defmodule TdDd.Lineage.Import do
     {:noreply, state}
   end
 
-  defp do_load(%{name: name} = params, nodes_path, rels_path, opts) do
+  defp do_load(nodes_path, rels_path, %{"name" => name} = params, opts) do
     Logger.info("Load started for unit #{name}")
 
     case Units.replace_unit(params) do

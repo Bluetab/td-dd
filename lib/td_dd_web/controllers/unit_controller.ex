@@ -4,7 +4,6 @@ defmodule TdDdWeb.UnitController do
 
   import Canada, only: [can?: 2]
 
-  alias TdCache.TaxonomyCache
   alias TdDd.Lineage.Import
   alias TdDd.Lineage.Units
   alias TdDd.Lineage.Units.Unit
@@ -52,10 +51,9 @@ defmodule TdDdWeb.UnitController do
 
   def create(conn, %{} = params) do
     claims = conn.assigns[:current_resource]
-    attrs = attributes(params)
 
     with {:can, true} <- {:can, can?(claims, create(Unit))},
-         {:ok, unit} <- Units.create_unit(attrs) do
+         {:ok, unit} <- Units.create_unit(params) do
       render(conn, "show.json", unit: unit)
     end
   end
@@ -68,12 +66,11 @@ defmodule TdDdWeb.UnitController do
 
   def update(conn, %{"nodes" => nodes, "rels" => rels} = params) do
     claims = conn.assigns[:current_resource]
-    attrs = attributes(params)
 
     with {:can, true} <- {:can, can?(claims, update(Unit))},
          {:ok, nodes_path} <- copy(nodes),
          {:ok, rels_path} <- copy(rels) do
-      Import.load(nodes_path, rels_path, attrs)
+      Import.load(nodes_path, rels_path, params)
       send_resp(conn, :accepted, "")
     end
   end
@@ -109,20 +106,4 @@ defmodule TdDdWeb.UnitController do
       dir -> dir
     end
   end
-
-  defp attributes(params) do
-    Map.new()
-    |> with_name(params)
-    |> with_domain_id(params)
-  end
-
-  defp with_name(acc, %{"name" => name}), do: Map.put(acc, :name, name)
-  defp with_name(acc, _attrs), do: acc
-
-  defp with_domain_id(acc, %{"domain" => domain}) do
-    domain_id = Map.get(TaxonomyCache.get_domain_external_id_to_id_map(), domain)
-    Map.put(acc, :domain_id, domain_id)
-  end
-
-  defp with_domain_id(acc, _attrs), do: acc
 end

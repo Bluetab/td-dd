@@ -4,7 +4,7 @@ defmodule TdDd.Loader.Reader do
   """
 
   alias Ecto.Changeset
-  alias TdCache.TaxonomyCache
+  alias TdCache.DomainCache
   alias TdDd.CSV.Reader
   alias TdDd.Systems
 
@@ -33,14 +33,12 @@ defmodule TdDd.Loader.Reader do
 
   @spec enrich_data_structures!(system, binary | nil, [map]) :: [map]
   def enrich_data_structures!(system, domain_external_id, data_structures) do
-    domain_id =
-      TaxonomyCache.get_domain_external_id_to_id_map()
-      |> Map.get(domain_external_id)
+    {:ok, domain_map} = DomainCache.external_id_to_id_map()
 
     Enum.map(data_structures, fn data_structure ->
       {%{}, @structure_import_schema}
       |> Changeset.cast(data_structure, Map.keys(@structure_import_schema))
-      |> Changeset.put_change(:domain_id, domain_id)
+      |> put_domain_id(domain_external_id, domain_map)
       |> Changeset.put_change(:system_id, system.id)
       |> Changeset.validate_required(@structure_import_required)
       |> put_default_metadata()
@@ -48,6 +46,18 @@ defmodule TdDd.Loader.Reader do
         %{valid?: true, changes: changes} -> changes
       end
     end)
+  end
+
+  defp put_domain_id(changeset, nil = _domain_external_id, _domain_map) do
+    Changeset.put_change(changeset, :domain_id, nil)
+  end
+
+  defp put_domain_id(changeset, domain_external_id, domain_map)
+       when is_binary(domain_external_id) do
+    case Map.fetch(domain_map, domain_external_id) do
+      {:ok, domain_id} -> Changeset.put_change(changeset, :domain_id, domain_id)
+      :error -> Changeset.add_error(changeset, :domain_id, "Domain not found")
+    end
   end
 
   def read_metadata_records(records) do
@@ -90,7 +100,7 @@ defmodule TdDd.Loader.Reader do
   defp parse_data_structures(nil, _, _), do: {:ok, []}
 
   defp parse_data_structures(path, system_id, domain) do
-    domain_external_ids = TaxonomyCache.get_domain_external_id_to_id_map()
+    {:ok, domain_external_ids} = DomainCache.external_id_to_id_map()
     system_map = get_system_map(system_id)
 
     defaults =
