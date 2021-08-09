@@ -9,6 +9,10 @@ defmodule TdDd.Lineage.Units do
 
   import Ecto.Query
 
+  @typep multi_error :: {:error, Multi.name(), any(), %{required(Multi.name()) => any()}}
+  @typep multi_success :: {:ok, map()}
+  @typep multi_result :: multi_success() | multi_error()
+
   def get_by(clauses) do
     Unit
     |> reduce_clauses(clauses)
@@ -147,14 +151,19 @@ defmodule TdDd.Lineage.Units do
     |> Repo.update()
   end
 
-  def replace_unit(%{name: name} = params) do
+  @spec replace_unit(map) :: multi_result()
+  def replace_unit(%{"name" => name} = params) do
     case Repo.get_by(Unit, name: name) do
       nil ->
-        create_unit(params)
+        Multi.new()
+        |> Multi.run(:create, fn _, _ -> create_unit(params) end)
+        |> Repo.transaction()
 
       unit ->
-        delete_unit(unit, logical: false)
-        create_unit(params)
+        Multi.new()
+        |> Multi.run(:delete, fn _, _ -> delete_unit(unit, logical: false) end)
+        |> Multi.run(:create, fn _, _ -> create_unit(params) end)
+        |> Repo.transaction()
     end
   end
 
@@ -205,28 +214,11 @@ defmodule TdDd.Lineage.Units do
         |> where([un], is_nil(un.deleted_at))
         |> select([un], un.node_id)
         |> distinct(true)
-        |> Repo.all()
-        |> MapSet.new()
 
-      prev_ids =
-        Node
-        |> select([n], n.id)
-        |> Repo.all()
-        |> MapSet.new()
-
-      deleted_ids = MapSet.difference(prev_ids, current_ids)
-
-      count =
-        deleted_ids
-        |> Enum.chunk_every(500)
-        |> Enum.map(fn chunk ->
-          Node
-          |> where([n], n.id in ^chunk)
-          |> do_delete(Keyword.get(opts, :logical, false))
-        end)
-        |> Enum.reduce(0, fn {count, _}, acc -> count + acc end)
-
-      {count, deleted_ids}
+      Node
+      |> where([n], n.id not in subquery(current_ids))
+      |> select([n], n.id)
+      |> do_delete(Keyword.get(opts, :logical, false))
     end)
   end
 

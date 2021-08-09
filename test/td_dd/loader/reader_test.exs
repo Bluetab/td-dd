@@ -39,6 +39,15 @@ defmodule TdDd.Loader.ReaderTest do
              } = result
     end
 
+    test "throws an exception when domain does not exist" do
+      system = %{id: 42}
+      data_structures = [%{}]
+
+      assert_raise CaseClauseError, ~r/:error$/, fn ->
+        Reader.enrich_data_structures!(system, "inexistent_domain_external_id", data_structures)
+      end
+    end
+
     test "throws exception when data is not valid", %{domain: %{external_id: domain_external_id}} do
       system = %{id: 42}
       data_structures = [%{}]

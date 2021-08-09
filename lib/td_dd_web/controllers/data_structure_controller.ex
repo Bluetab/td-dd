@@ -5,7 +5,7 @@ defmodule TdDdWeb.DataStructureController do
   import Canada, only: [can?: 2]
 
   alias Ecto
-  alias TdCache.TaxonomyCache
+  alias TdCache.DomainCache
   alias TdDd.CSV.Download
   alias TdDd.DataStructures
   alias TdDd.DataStructures.BulkUpdate
@@ -101,7 +101,7 @@ defmodule TdDdWeb.DataStructureController do
   def update(conn, %{"id" => id, "data_structure" => attrs}) do
     %{user_id: user_id} = claims = conn.assigns[:current_resource]
     data_structure_old = DataStructures.get_data_structure!(id)
-    external_ids = TaxonomyCache.get_domain_external_id_to_id_map()
+    {:ok, external_ids} = DomainCache.external_id_to_id_map()
 
     update_params =
       attrs

@@ -4,7 +4,7 @@ defmodule TdDd.Loader.Reader do
   """
 
   alias Ecto.Changeset
-  alias TdCache.TaxonomyCache
+  alias TdCache.DomainCache
   alias TdDd.CSV.Reader
   alias TdDd.Systems
 
@@ -32,11 +32,20 @@ defmodule TdDd.Loader.Reader do
   end
 
   @spec enrich_data_structures!(system, binary | nil, [map]) :: [map]
-  def enrich_data_structures!(system, domain_external_id, data_structures) do
-    domain_id =
-      TaxonomyCache.get_domain_external_id_to_id_map()
-      |> Map.get(domain_external_id)
+  def enrich_data_structures!(system, maybe_domain_external_id, data_structures)
 
+  def enrich_data_structures!(system, nil, data_structures) do
+    do_enrich_data_structures!(system, nil, data_structures)
+  end
+
+  def enrich_data_structures!(system, domain_external_id, data_structures) do
+    case DomainCache.external_id_to_id(domain_external_id) do
+      {:ok, domain_id} -> do_enrich_data_structures!(system, domain_id, data_structures)
+    end
+  end
+
+  @spec do_enrich_data_structures!(system, integer | nil, [map]) :: [map]
+  defp do_enrich_data_structures!(system, domain_id, data_structures) do
     Enum.map(data_structures, fn data_structure ->
       {%{}, @structure_import_schema}
       |> Changeset.cast(data_structure, Map.keys(@structure_import_schema))
@@ -90,7 +99,7 @@ defmodule TdDd.Loader.Reader do
   defp parse_data_structures(nil, _, _), do: {:ok, []}
 
   defp parse_data_structures(path, system_id, domain) do
-    domain_external_ids = TaxonomyCache.get_domain_external_id_to_id_map()
+    {:ok, domain_external_ids} = DomainCache.external_id_to_id_map()
     system_map = get_system_map(system_id)
 
     defaults =
