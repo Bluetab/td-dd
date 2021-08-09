@@ -45,12 +45,17 @@ defmodule TdDd.Lineage.Units.Unit do
     end
   end
 
-  defp put_domain_id(%{params: params} = changeset) do
-    with {:ok, external_id} <- Map.fetch(params, "domain"),
-         {:ok, domain_id} <- DomainCache.external_id_to_id(external_id) do
-      put_change(changeset, :domain_id, domain_id)
-    else
-      _ -> changeset
+  defp put_domain_id(%{params: %{"domain" => nil}} = changeset) do
+    put_change(changeset, :domain_id, nil)
+  end
+
+  defp put_domain_id(%{params: %{"domain" => external_id}} = changeset)
+       when is_binary(external_id) do
+    case DomainCache.external_id_to_id(external_id) do
+      {:ok, domain_id} -> put_change(changeset, :domain_id, domain_id)
+      :error -> add_error(changeset, :domain_id, "domain not found")
     end
   end
+
+  defp put_domain_id(%{} = changeset), do: changeset
 end

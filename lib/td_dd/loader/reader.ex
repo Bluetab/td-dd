@@ -32,13 +32,24 @@ defmodule TdDd.Loader.Reader do
   end
 
   @spec enrich_data_structures!(system, binary | nil, [map]) :: [map]
-  def enrich_data_structures!(system, domain_external_id, data_structures) do
-    {:ok, domain_map} = DomainCache.external_id_to_id_map()
+  def enrich_data_structures!(system, maybe_domain_external_id, data_structures)
 
+  def enrich_data_structures!(system, nil, data_structures) do
+    do_enrich_data_structures!(system, nil, data_structures)
+  end
+
+  def enrich_data_structures!(system, domain_external_id, data_structures) do
+    case DomainCache.external_id_to_id(domain_external_id) do
+      {:ok, domain_id} -> do_enrich_data_structures!(system, domain_id, data_structures)
+    end
+  end
+
+  @spec do_enrich_data_structures!(system, integer | nil, [map]) :: [map]
+  defp do_enrich_data_structures!(system, domain_id, data_structures) do
     Enum.map(data_structures, fn data_structure ->
       {%{}, @structure_import_schema}
       |> Changeset.cast(data_structure, Map.keys(@structure_import_schema))
-      |> put_domain_id(domain_external_id, domain_map)
+      |> Changeset.put_change(:domain_id, domain_id)
       |> Changeset.put_change(:system_id, system.id)
       |> Changeset.validate_required(@structure_import_required)
       |> put_default_metadata()
@@ -46,18 +57,6 @@ defmodule TdDd.Loader.Reader do
         %{valid?: true, changes: changes} -> changes
       end
     end)
-  end
-
-  defp put_domain_id(changeset, nil = _domain_external_id, _domain_map) do
-    Changeset.put_change(changeset, :domain_id, nil)
-  end
-
-  defp put_domain_id(changeset, domain_external_id, domain_map)
-       when is_binary(domain_external_id) do
-    case Map.fetch(domain_map, domain_external_id) do
-      {:ok, domain_id} -> Changeset.put_change(changeset, :domain_id, domain_id)
-      :error -> Changeset.add_error(changeset, :domain_id, "Domain not found")
-    end
   end
 
   def read_metadata_records(records) do

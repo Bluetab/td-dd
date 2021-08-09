@@ -9,6 +9,10 @@ defmodule TdDd.Lineage.Units do
 
   import Ecto.Query
 
+  @typep multi_error :: {:error, Multi.name(), any(), %{required(Multi.name()) => any()}}
+  @typep multi_success :: {:ok, map()}
+  @typep multi_result :: multi_success() | multi_error()
+
   def get_by(clauses) do
     Unit
     |> reduce_clauses(clauses)
@@ -147,14 +151,19 @@ defmodule TdDd.Lineage.Units do
     |> Repo.update()
   end
 
+  @spec replace_unit(map) :: multi_result()
   def replace_unit(%{"name" => name} = params) do
     case Repo.get_by(Unit, name: name) do
       nil ->
-        create_unit(params)
+        Multi.new()
+        |> Multi.run(:create, fn _, _ -> create_unit(params) end)
+        |> Repo.transaction()
 
       unit ->
-        delete_unit(unit, logical: false)
-        create_unit(params)
+        Multi.new()
+        |> Multi.run(:delete, fn _, _ -> delete_unit(unit, logical: false) end)
+        |> Multi.run(:create, fn _, _ -> create_unit(params) end)
+        |> Repo.transaction()
     end
   end
 

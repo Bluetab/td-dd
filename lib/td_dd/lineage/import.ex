@@ -73,10 +73,11 @@ defmodule TdDd.Lineage.Import do
     Logger.info("Load started for unit #{name}")
 
     case Units.replace_unit(params) do
-      {:ok, %Units.Unit{} = unit} ->
+      {:ok, %{create: %Units.Unit{} = unit}} ->
         Loader.load(unit, nodes_path, rels_path, Keyword.take(opts, [:timeout]))
 
-      error ->
+      {:error, failed_operation, _failed_value, _changes} = error ->
+        Logger.warn("Failed loading unit #{name} - operation #{failed_operation}")
         error
     end
   end
