@@ -2,6 +2,7 @@ defmodule TdDd.Lineage.UnitsTest do
   use TdDd.DataCase
 
   alias TdDd.Lineage.Units
+  alias TdDd.Repo
 
   setup do
     events = Enum.map(1..5, fn id -> build(:unit_event, event: "Event #{id}") end)
@@ -110,13 +111,15 @@ defmodule TdDd.Lineage.UnitsTest do
   describe "Units.replace_unit/1" do
     test "inserts a unit if it doesn't exist" do
       ts = DateTime.utc_now()
-      assert {:ok, %Units.Unit{inserted_at: inserted_at}} = Units.replace_unit(%{name: "foo"})
+      assert {:ok, multi} = Units.replace_unit(%{"name" => "foo"})
+      assert %{create: %Units.Unit{inserted_at: inserted_at}} = multi
       assert DateTime.compare(ts, inserted_at) == :lt
     end
 
     test "refreshes a unit if it exists" do
       assert %{id: prev_id, name: name} = insert(:unit)
-      assert {:ok, %Units.Unit{name: ^name, id: id}} = Units.replace_unit(%{name: name})
+      assert {:ok, multi} = Units.replace_unit(%{"name" => name})
+      assert %{create: %Units.Unit{name: ^name, id: id}} = multi
       refute id == prev_id
     end
   end
@@ -164,15 +167,17 @@ defmodule TdDd.Lineage.UnitsTest do
       assert %Units.Unit{id: ^unit_id, deleted_at: nil} = delete_unit
       assert {2, _} = delete_unit_nodes
 
-      node_ids = MapSet.new(nodes, & &1.id)
-      edge_ids = MapSet.new(edges, & &1.id)
+      assert MapSet.new(nodes, & &1.id) == MapSet.new(deleted_ids)
 
-      assert MapSet.equal?(deleted_ids, node_ids)
+      refute Repo.get(Units.Unit, unit_id)
 
-      refute TdDd.Repo.get(Units.Unit, unit_id)
+      for %{id: id} <- nodes do
+        refute Repo.get(Units.Node, id)
+      end
 
-      Enum.each(node_ids, fn id -> refute TdDd.Repo.get(Units.Node, id) end)
-      Enum.each(edge_ids, fn id -> refute TdDd.Repo.get(Units.Edge, id) end)
+      for %{id: id} <- edges do
+        refute Repo.get(Units.Edge, id)
+      end
     end
 
     test "performs logical deletion of a unit and it's nodes", %{
@@ -193,14 +198,16 @@ defmodule TdDd.Lineage.UnitsTest do
       assert {2, _} = delete_unit_nodes
       assert deleted_at
 
-      node_ids = MapSet.new(nodes, & &1.id)
-      edge_ids = MapSet.new(edges, & &1.id)
+      assert Repo.get(Units.Unit, unit_id)
+      assert MapSet.new(nodes, & &1.id) == MapSet.new(deleted_ids)
 
-      assert TdDd.Repo.get(Units.Unit, unit_id)
-      assert MapSet.equal?(deleted_ids, node_ids)
+      for %{id: id} <- nodes do
+        assert Repo.get(Units.Node, id)
+      end
 
-      Enum.each(node_ids, fn id -> assert TdDd.Repo.get(Units.Node, id) end)
-      Enum.each(edge_ids, fn id -> assert TdDd.Repo.get(Units.Edge, id) end)
+      for %{id: id} <- edges do
+        assert Repo.get(Units.Edge, id)
+      end
     end
 
     test "does not delete nodes which belong to other units", %{
@@ -222,14 +229,17 @@ defmodule TdDd.Lineage.UnitsTest do
       assert %Units.Unit{id: ^unit_id, deleted_at: _deleted_at} = delete_unit
       assert {2, _} = delete_unit_nodes
 
-      refute MapSet.member?(deleted_ids, n1.id)
+      refute Enum.member?(deleted_ids, n1.id)
 
-      node_ids = MapSet.new(nodes, & &1.id)
-      edge_ids = MapSet.new(edges, & &1.id)
+      assert %{deleted_at: nil} = Repo.get(Units.Node, n1.id)
 
-      assert %{deleted_at: nil} = TdDd.Repo.get(Units.Node, n1.id)
-      Enum.each(node_ids, fn id -> refute TdDd.Repo.get(Units.Node, id) end)
-      Enum.each(edge_ids, fn id -> refute TdDd.Repo.get(Units.Edge, id) end)
+      for %{id: id} <- nodes do
+        refute Repo.get(Units.Node, id)
+      end
+
+      for %{id: id} <- edges do
+        refute Repo.get(Units.Edge, id)
+      end
     end
   end
 end
