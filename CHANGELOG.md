@@ -7,7 +7,7 @@
 - [TD-2635] Admin can manually delete structures and all its children
 - [TD-3917] `PATCH /api/systems/:external_id/metadata` allows mutable metadata
   to be replaced or merged
-- [TD-3917]: 
+- [TD-3767]: 
   - Get nodes filtered by domain id
   - Get unit domain ids
 
