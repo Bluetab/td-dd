@@ -1,8 +1,6 @@
 defmodule TdDdWeb.GrantRequestGroupControllerTest do
   use TdDdWeb.ConnCase
 
-  alias TdDd.Grants.GrantRequestGroup
-
   @valid_metadata %{"list" => "one", "string" => "foo"}
   @template_name "grant_request_group_controller_test_template"
 
@@ -146,10 +144,7 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "adds inserted_at timestamp", %{
-      conn: conn,
-      create_params: params
-    } do
+    test "adds inserted_at timestamp", %{conn: conn, create_params: params} do
       assert %{"data" => data} =
                conn
                |> post(Routes.grant_request_group_path(conn, :create),
@@ -296,71 +291,6 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
                |> json_response(:unprocessable_entity)
 
       assert %{"requests" => [%{"metadata" => ["invalid content"]}]} = errors
-    end
-  end
-
-  describe "update grant_request_group" do
-    setup [:create_grant_request_group]
-
-    @tag authentication: [role: "admin"]
-    test "renders grant_request_group when data is valid", %{
-      conn: conn,
-      grant_request_group: %GrantRequestGroup{id: id, user_id: user_id} = grant_request_group
-    } do
-      params = %{"type" => "some updated type"}
-
-      assert %{"data" => data} =
-               conn
-               |> put(Routes.grant_request_group_path(conn, :update, grant_request_group),
-                 grant_request_group: params
-               )
-               |> json_response(:ok)
-
-      assert %{"id" => ^id} = data
-
-      assert %{"data" => data} =
-               conn
-               |> get(Routes.grant_request_group_path(conn, :show, id))
-               |> json_response(:ok)
-
-      assert %{
-               "id" => ^id,
-               "inserted_at" => _,
-               "type" => "some updated type",
-               "user_id" => ^user_id
-             } = data
-    end
-
-    @tag authentication: [user_name: "non_admin"]
-    test "non admin cannot update grant_request_group", %{
-      conn: conn,
-      grant_request_group: %GrantRequestGroup{} = grant_request_group
-    } do
-      params = %{"type" => "some updated type"}
-
-      assert conn
-             |> put(Routes.grant_request_group_path(conn, :update, grant_request_group),
-               grant_request_group: params
-             )
-             |> response(:forbidden)
-    end
-
-    @tag authentication: [role: "admin"]
-    test "renders errors when data is invalid", %{
-      conn: conn,
-      grant_request_group: grant_request_group
-    } do
-      params = %{"requests" => nil}
-
-      assert %{"errors" => errors} =
-               conn
-               |> put(Routes.grant_request_group_path(conn, :update, grant_request_group),
-                 grant_request_group: params
-               )
-               |> json_response(:unprocessable_entity)
-
-      assert %{} = errors
-      refute errors == %{}
     end
   end
 

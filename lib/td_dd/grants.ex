@@ -116,13 +116,6 @@ defmodule TdDd.Grants do
     |> Repo.insert()
   end
 
-  def update_grant_request_group(%GrantRequestGroup{} = grant_request_group, params) do
-    grant_request_group
-    |> Repo.preload(:requests)
-    |> GrantRequestGroup.changeset(params)
-    |> Repo.update()
-  end
-
   def delete_grant_request_group(%GrantRequestGroup{} = grant_request_group) do
     Repo.delete(grant_request_group)
   end

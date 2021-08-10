@@ -99,17 +99,6 @@ defmodule TdDdWeb.GrantRequestGroupController do
     end
   end
 
-  def update(conn, %{"id" => id, "grant_request_group" => grant_request_group_params}) do
-    grant_request_group = Grants.get_grant_request_group!(id)
-
-    with claims <- conn.assigns[:current_resource],
-         {:can, true} <- {:can, can?(claims, update(GrantRequestGroup))},
-         {:ok, %GrantRequestGroup{} = grant_request_group} <-
-           Grants.update_grant_request_group(grant_request_group, grant_request_group_params) do
-      render(conn, "show.json", grant_request_group: grant_request_group)
-    end
-  end
-
   def delete(conn, %{"id" => id}) do
     grant_request_group = Grants.get_grant_request_group!(id)
 

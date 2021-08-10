@@ -273,25 +273,6 @@ defmodule TdDd.GrantsTest do
                Grants.create_grant_request_group(invalid_params, build(:claims))
     end
 
-    test "update_grant_request_group/2 with valid data updates the grant_request_group" do
-      %{grant_request_group: grant_request_group} = insert(:grant_request)
-
-      params = %{type: "some updated type"}
-
-      assert {:ok, %GrantRequestGroup{} = grant_request_group} =
-               Grants.update_grant_request_group(grant_request_group, params)
-
-      assert %{type: "some updated type"} = grant_request_group
-    end
-
-    test "update_grant_request_group/2 with invalid data returns error changeset" do
-      %{grant_request_group: grant_request_group} = insert(:grant_request)
-      invalid_params = %{requests: nil}
-
-      assert {:error, %Ecto.Changeset{}} =
-               Grants.update_grant_request_group(grant_request_group, invalid_params)
-    end
-
     test "delete_grant_request_group/1 deletes the grant_request_group" do
       grant_request_group = insert(:grant_request_group)
       assert {:ok, %GrantRequestGroup{}} = Grants.delete_grant_request_group(grant_request_group)
