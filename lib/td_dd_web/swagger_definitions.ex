@@ -1034,6 +1034,8 @@ defmodule TdDdWeb.SwaggerDefinitions do
             start_date(:string, "Start date")
             end_date(:string, "End date")
             data_structure(Schema.ref(:DataStructure))
+            data_structure_version(Schema.ref(:DataStructureVersion))
+            user(:object, "Grant user")
           end
         end,
       GrantCreate:
