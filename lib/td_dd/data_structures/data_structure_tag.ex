@@ -15,7 +15,6 @@ defmodule TdDd.DataStructures.DataStructureTag do
     timestamps()
   end
 
-  @doc false
   def changeset(data_structure_tag, attrs) do
     data_structure_tag
     |> cast(attrs, [:name])

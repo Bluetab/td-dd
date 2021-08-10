@@ -1,15 +1,12 @@
 defmodule TdDq.Rules.RuleTest do
   use TdDd.DataCase
 
-  alias TdCache.TemplateCache
   alias TdDd.Repo
   alias TdDq.Rules.Rule
 
-  setup_all do
-    %{id: template_id, name: template_name} = template = build(:template)
+  setup do
+    %{name: template_name} = CacheHelpers.insert_template(scope: "dq")
     domain = CacheHelpers.insert_domain()
-    {:ok, _} = TemplateCache.put(template)
-    on_exit(fn -> TemplateCache.delete(template_id) end)
 
     [domain: domain, template_name: template_name]
   end

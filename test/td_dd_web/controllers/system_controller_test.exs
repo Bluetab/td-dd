@@ -58,11 +58,7 @@ defmodule TdDdWeb.SystemControllerTest do
     start_supervised!(TdDd.Search.StructureEnricher)
     system = insert(:system)
     domain = CacheHelpers.insert_domain()
-    template = Templates.create_template(@system_template)
-
-    on_exit(fn ->
-      Templates.delete(template)
-    end)
+    template = CacheHelpers.insert_template(@system_template)
 
     {:ok,
      conn: put_req_header(conn, "accept", "application/json"),
@@ -141,9 +137,9 @@ defmodule TdDdWeb.SystemControllerTest do
     test "renders system when template not exists", %{
       conn: conn,
       swagger_schema: schema,
-      template: template
+      template: %{id: template_id}
     } do
-      Templates.delete(template)
+      TdCache.TemplateCache.delete(template_id)
 
       assert %{"data" => %{"id" => _id}} =
                conn

@@ -13,10 +13,10 @@ defmodule TdDd.Repo.Migrations.CreateProfileExecutions do
       )
 
       add(:data_structure_id, references("data_structures", on_delete: :delete_all), null: false)
-      add(:profile_id, references(:profiles, on_delete: :nilify_all))
+      add(:profile_id, references("profiles", on_delete: :nilify_all))
       timestamps(type: :utc_datetime_usec)
     end
 
-    create(unique_index("profile_executions", [:profile_group_id, :data_structure_id]))
+    create unique_index("profile_executions", [:profile_group_id, :data_structure_id])
   end
 end

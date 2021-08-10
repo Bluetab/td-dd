@@ -1,8 +1,6 @@
 defmodule TdDdWeb.DataStructureTypeControllerTest do
   use TdDdWeb.ConnCase
 
-  alias TdCache.TemplateCache
-
   @create_attrs %{
     name: "some structure_type",
     template_id: 42,
@@ -17,11 +15,10 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
   @invalid_attrs %{name: nil, template_id: nil, translation: nil}
 
   setup %{conn: conn} do
-    %{id: id} = template = build(:template)
-    TemplateCache.put(template, publish: false)
-    on_exit(fn -> TemplateCache.delete(id) end)
-
-    [conn: put_req_header(conn, "accept", "application/json"), template: template]
+    [
+      conn: put_req_header(conn, "accept", "application/json"),
+      template: CacheHelpers.insert_template()
+    ]
   end
 
   describe "index" do

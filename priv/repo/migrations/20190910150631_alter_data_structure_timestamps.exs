@@ -2,7 +2,7 @@ defmodule TdDd.Repo.Migrations.AlterDataStructureTimestamps do
   use Ecto.Migration
 
   def up do
-    alter table(:data_structures) do
+    alter table("data_structures") do
       modify(:inserted_at, :utc_datetime)
       modify(:updated_at, :utc_datetime)
       remove(:last_change_at)
@@ -10,7 +10,7 @@ defmodule TdDd.Repo.Migrations.AlterDataStructureTimestamps do
   end
 
   def down do
-    alter table(:data_structures) do
+    alter table("data_structures") do
       add(:last_change_at, :utc_datetime)
     end
 

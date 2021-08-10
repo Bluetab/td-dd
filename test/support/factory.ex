@@ -398,6 +398,22 @@ defmodule TdDd.Factory do
     |> merge_attributes(attrs)
   end
 
+  def grant_request_group_factory do
+    %TdDd.Grants.GrantRequestGroup{
+      user_id: sequence(:user_id, &"#{&1}"),
+      type: nil
+    }
+  end
+
+  def grant_request_factory do
+    %TdDd.Grants.GrantRequest{
+      grant_request_group: build(:grant_request_group),
+      data_structure: build(:data_structure),
+      filters: %{"foo" => "bar"},
+      metadata: %{"foo" => "bar"}
+    }
+  end
+
   def regex_filter_factory(attrs) do
     attrs = default_assoc(attrs, :classifier_id, :classifier)
 

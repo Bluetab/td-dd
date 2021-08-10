@@ -21,13 +21,13 @@ defmodule TdDd.Repo.Migrations.MigrateDfContentToNotes do
 
     Repo.insert_all("structure_notes", structure_notes_query)
 
-    alter table(:data_structures) do
+    alter table("data_structures") do
       remove :df_content
     end
   end
 
   def down do
-    alter table(:data_structures) do
+    alter table("data_structures") do
       add :df_content, :map
     end
 
