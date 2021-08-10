@@ -7,23 +7,27 @@ defmodule TdDd.DataStructures do
 
   alias Ecto.Association.NotLoaded
   alias Ecto.Multi
-  alias TdCache.LinkCache
-  alias TdCache.TemplateCache
+
+  alias TdCache.{LinkCache, TemplateCache, UserCache}
   alias TdCx.Sources
   alias TdCx.Sources.Source
   alias TdDd.Auth.Claims
-  alias TdDd.DataStructures.Ancestry
-  alias TdDd.DataStructures.Audit
-  alias TdDd.DataStructures.DataStructure
-  alias TdDd.DataStructures.DataStructureQueries
-  alias TdDd.DataStructures.DataStructureRelation
-  alias TdDd.DataStructures.DataStructuresTags
-  alias TdDd.DataStructures.DataStructureTag
-  alias TdDd.DataStructures.DataStructureType
-  alias TdDd.DataStructures.DataStructureVersion
-  alias TdDd.DataStructures.RelationTypes
-  alias TdDd.DataStructures.StructureMetadata
-  alias TdDd.DataStructures.StructureNote
+
+  alias TdDd.DataStructures.{
+    Ancestry,
+    Audit,
+    DataStructure,
+    DataStructureQueries,
+    DataStructureRelation,
+    DataStructuresTags,
+    DataStructureTag,
+    DataStructureType,
+    DataStructureVersion,
+    RelationTypes,
+    StructureMetadata,
+    StructureNote
+  }
+
   alias TdDd.Lineage.GraphData
   alias TdDd.Repo
   alias TdDd.Search.IndexWorker
@@ -172,6 +176,7 @@ defmodule TdDd.DataStructures do
     |> enrich(options, :metadata_versions, &get_metadata_versions/1)
     |> enrich(options, :data_structure_type, &get_data_structure_type/1)
     |> enrich(options, :tags, &get_tags/1)
+    |> enrich(options, :grants, &get_grants/1)
     |> enrich(options, :grant, &get_grant(&1, options[:user_id]))
   end
 
@@ -390,20 +395,64 @@ defmodule TdDd.DataStructures do
     |> Repo.all()
   end
 
+  defp get_grants(%DataStructureVersion{} = dsv) do
+    now = DateTime.utc_now()
+    versions = [dsv | get_ancestors(dsv)]
+
+    versions
+    |> Repo.preload(data_structure: [:grants, :versions])
+    |> Enum.flat_map(&data_structure_version_grants/1)
+    |> Enum.filter(fn %{start_date: start_date, end_date: end_date} ->
+      DateTime.compare(start_date, now) == :lt and DateTime.compare(now, end_date) == :lt
+    end)
+  end
+
+  defp data_structure_version_grants(
+         %DataStructureVersion{
+           data_structure: %DataStructure{grants: [_ | _] = grants} = structure
+         } = dsv
+       ) do
+    dsv = dsv |> Map.delete(:grants) |> enrich([:path])
+    structure = Map.delete(structure, :grant)
+
+    grants
+    |> Enum.map(&%{&1 | data_structure_version: dsv})
+    |> Enum.map(&%{&1 | data_structure: structure})
+    |> Enum.map(fn %{user_id: user_id} = grant ->
+      case UserCache.get(user_id) do
+        {:ok, %{} = user} -> %{grant | user: user}
+        _ -> grant
+      end
+    end)
+  end
+
+  defp data_structure_version_grants(_), do: []
+
+  defp get_grant(%DataStructureVersion{grants: [_ | _] = grants}, user_id) do
+    now = DateTime.utc_now()
+
+    Enum.find(grants, fn %{start_date: start_date, end_date: end_date, user_id: id} ->
+      DateTime.compare(start_date, now) == :lt and DateTime.compare(now, end_date) == :lt and
+        id == user_id
+    end)
+  end
+
   defp get_grant(
          %DataStructureVersion{data_structure: %DataStructure{} = data_structure} = dsv,
          user_id
        ) do
-    today = DateTime.utc_now()
+    now = DateTime.utc_now()
 
-    data_structure
-    |> Repo.preload(:grants)
-    |> Map.get(:grants)
-    |> Enum.find(fn %{start_date: start_date, end_date: end_date, user_id: id} ->
-      DateTime.compare(start_date, today) == :lt and DateTime.compare(today, end_date) == :lt and
-        id == user_id
-    end)
-    |> case do
+    grant =
+      data_structure
+      |> Repo.preload(:grants)
+      |> Map.get(:grants)
+      |> Enum.find(fn %{start_date: start_date, end_date: end_date, user_id: id} ->
+        DateTime.compare(start_date, now) == :lt and DateTime.compare(now, end_date) == :lt and
+          id == user_id
+      end)
+
+    case grant do
       nil ->
         dsv
         |> get_parents()

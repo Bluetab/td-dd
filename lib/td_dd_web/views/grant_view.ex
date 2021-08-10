@@ -1,8 +1,7 @@
 defmodule TdDdWeb.GrantView do
   use TdDdWeb, :view
-  alias TdDd.DataStructures.DataStructure
-  alias TdDdWeb.DataStructureView
-  alias TdDdWeb.GrantView
+  alias TdDd.DataStructures.{DataStructure, DataStructureVersion}
+  alias TdDdWeb.{DataStructureVersionView, DataStructureView, GrantView}
 
   def render("index.json", %{grants: grants}) do
     %{data: render_many(grants, GrantView, "grant.json")}
@@ -21,6 +20,8 @@ defmodule TdDdWeb.GrantView do
       user_id: grant.user_id
     }
     |> add_structure(grant)
+    |> add_structure_version(grant)
+    |> add_user(grant)
   end
 
   defp add_structure(response, %{data_structure: %DataStructure{} = structure}) do
@@ -34,4 +35,26 @@ defmodule TdDdWeb.GrantView do
   end
 
   defp add_structure(response, _), do: response
+
+  defp add_structure_version(response, %{data_structure_version: %DataStructureVersion{} = dsv}) do
+    version = render_one(dsv, DataStructureVersionView, "version.json")
+
+    Map.put(
+      response,
+      :data_structure_version,
+      Map.take(version, [:name, :ancestry])
+    )
+  end
+
+  defp add_structure_version(response, _), do: response
+
+  defp add_user(response, %{user: %{} = user}) do
+    Map.put(
+      response,
+      :user,
+      Map.take(user, [:email, :full_name, :user_name])
+    )
+  end
+
+  defp add_user(response, _), do: response
 end

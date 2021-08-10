@@ -386,14 +386,16 @@ defmodule TdDd.Factory do
     |> merge_attributes(attrs)
   end
 
-  def grant_factory do
+  def grant_factory(attrs) do
+    attrs = default_assoc(attrs, :data_structure_id, :data_structure)
+
     %TdDd.Grants.Grant{
-      data_structure: build(:data_structure),
       user_id: sequence(:user_id, &"#{&1}"),
       detail: %{"foo" => "bar"},
       start_date: DateTime.utc_now(),
       end_date: DateTime.utc_now()
     }
+    |> merge_attributes(attrs)
   end
 
   def regex_filter_factory(attrs) do
