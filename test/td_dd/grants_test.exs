@@ -222,7 +222,6 @@ defmodule TdDd.GrantsTest do
       %{user_id: user_id} = claims = build(:claims)
 
       params = %{
-        request_date: "2010-04-17T14:00:00.000000Z",
         type: @template_name,
         requests: [%{data_structure_id: data_structure_id, metadata: @valid_metadata}]
       }
@@ -231,7 +230,6 @@ defmodule TdDd.GrantsTest do
                Grants.create_grant_request_group(params, claims)
 
       assert %{
-               request_date: ~U[2010-04-17 14:00:00.000000Z],
                type: @template_name,
                user_id: ^user_id
              } = grant_request_group
@@ -251,7 +249,6 @@ defmodule TdDd.GrantsTest do
       ]
 
       params = %{
-        request_date: "2010-04-17T14:00:00.000000Z",
         type: @template_name,
         requests: requests
       }
@@ -270,7 +267,7 @@ defmodule TdDd.GrantsTest do
     end
 
     test "create_grant_request_group/1 with invalid data returns error changeset" do
-      invalid_params = %{request_date: nil, type: nil, user_id: nil}
+      invalid_params = %{type: nil}
 
       assert {:error, %Ecto.Changeset{}} =
                Grants.create_grant_request_group(invalid_params, build(:claims))
@@ -279,15 +276,12 @@ defmodule TdDd.GrantsTest do
     test "update_grant_request_group/2 with valid data updates the grant_request_group" do
       %{grant_request_group: grant_request_group} = insert(:grant_request)
 
-      params = %{request_date: "2011-05-18T15:01:01.000000Z", type: "some updated type"}
+      params = %{type: "some updated type"}
 
       assert {:ok, %GrantRequestGroup{} = grant_request_group} =
                Grants.update_grant_request_group(grant_request_group, params)
 
-      assert %{
-               type: "some updated type",
-               request_date: ~U[2011-05-18T15:01:01.000000Z]
-             } = grant_request_group
+      assert %{type: "some updated type"} = grant_request_group
     end
 
     test "update_grant_request_group/2 with invalid data returns error changeset" do

@@ -398,8 +398,7 @@ defmodule TdDd.Factory do
   def grant_request_group_factory do
     %TdDd.Grants.GrantRequestGroup{
       user_id: sequence(:user_id, &"#{&1}"),
-      type: nil,
-      request_date: DateTime.utc_now()
+      type: nil
     }
   end
 

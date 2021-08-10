@@ -15,7 +15,7 @@ defmodule TdDdWeb.GrantRequestGroupView do
   def render("grant_request_group.json", %{grant_request_group: grant_request_group}) do
     %{
       id: grant_request_group.id,
-      request_date: grant_request_group.request_date,
+      inserted_at: grant_request_group.inserted_at,
       user_id: grant_request_group.user_id,
       type: grant_request_group.type
     }

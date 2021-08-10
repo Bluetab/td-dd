@@ -8,7 +8,6 @@ defmodule TdDd.Grants.GrantRequestGroup do
   alias TdDd.Grants.GrantRequest
 
   schema "grant_request_groups" do
-    field :request_date, :utc_datetime_usec
     field :type, :string
     field :user_id, :integer
 
@@ -19,8 +18,7 @@ defmodule TdDd.Grants.GrantRequestGroup do
 
   def changeset(%__MODULE__{} = struct, params) do
     struct
-    |> cast(params, [:request_date, :type])
-    |> put_default(:request_date, DateTime.utc_now())
+    |> cast(params, [:type])
     |> cast_requests()
   end
 
@@ -29,12 +27,5 @@ defmodule TdDd.Grants.GrantRequestGroup do
       required: true,
       with: {GrantRequest, :changeset, [fetch_field!(changeset, :type)]}
     )
-  end
-
-  defp put_default(changeset, field, default_value) do
-    case fetch_field!(changeset, field) do
-      nil -> put_change(changeset, field, default_value)
-      _ -> changeset
-    end
   end
 end

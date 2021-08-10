@@ -11,7 +11,6 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
     %{id: data_structure_id} = data_structure = insert(:data_structure)
 
     create_params = %{
-      "request_date" => "2010-04-17T14:00:00.000000Z",
       "requests" => [
         %{
           "data_structure_id" => data_structure_id,
@@ -99,7 +98,6 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
 
       assert %{
                "id" => ^id,
-               "request_date" => "2010-04-17T14:00:00.000000Z",
                "user_id" => 123
              } = data
     end
@@ -125,7 +123,6 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
       %{id: ds_id} = insert(:data_structure, domain_id: domain_id)
 
       params = %{
-        "request_date" => "2010-04-17T14:00:00.000000Z",
         "requests" => [%{"data_structure_id" => ds_id}],
         "type" => nil
       }
@@ -144,18 +141,15 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
 
       assert %{
                "id" => ^id,
-               "request_date" => "2010-04-17T14:00:00.000000Z",
                "user_id" => ^user_id
              } = data
     end
 
     @tag authentication: [role: "admin"]
-    test "adds defaults values when missing request_date params", %{
+    test "adds inserted_at timestamp", %{
       conn: conn,
-      create_params: create_params
+      create_params: params
     } do
-      params = Map.delete(create_params, :request_date)
-
       assert %{"data" => data} =
                conn
                |> post(Routes.grant_request_group_path(conn, :create),
@@ -170,16 +164,13 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
                |> get(Routes.grant_request_group_path(conn, :show, id))
                |> json_response(:ok)
 
-      assert %{"request_date" => request_date} = data
-      assert is_binary(request_date)
+      assert %{"inserted_at" => inserted_at} = data
+      assert is_binary(inserted_at)
     end
 
     @tag authentication: [role: "admin"]
     test "fails to create grant_request_group with invalid requests format", %{conn: conn} do
-      params = %{
-        "request_date" => "2010-04-17T14:00:00.000000Z",
-        "requests" => []
-      }
+      params = %{"requests" => []}
 
       assert %{"message" => "at least one request is required"} =
                conn
@@ -193,7 +184,6 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
       data_structure: %{id: ds_id}
     } do
       params = %{
-        "request_date" => "2010-04-17T14:00:00.000000Z",
         "type" => @template_name,
         "requests" => [
           %{
@@ -236,7 +226,6 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
       }
     } do
       params = %{
-        "request_date" => "2010-04-17T14:00:00.000000Z",
         "type" => @template_name,
         "requests" => [
           %{
@@ -266,7 +255,6 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
     @tag authentication: [role: "admin"]
     test "fails to create grant_request_group if child requests are invalid", %{conn: conn} do
       params = %{
-        "request_date" => "2010-04-17T14:00:00.000000Z",
         "requests" => [%{"data_structure_id" => 888}],
         "type" => @template_name
       }
@@ -277,7 +265,6 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
                |> json_response(:not_found)
 
       params = %{
-        "request_date" => "2010-04-17T14:00:00.000000Z",
         "requests" => [%{}],
         "type" => @template_name
       }
@@ -294,7 +281,6 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
       data_structure: %{id: ds_id}
     } do
       params = %{
-        "request_date" => "2010-04-17T14:00:00.000000Z",
         "type" => @template_name,
         "requests" => [
           %{
@@ -321,10 +307,7 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
       conn: conn,
       grant_request_group: %GrantRequestGroup{id: id, user_id: user_id} = grant_request_group
     } do
-      params = %{
-        "request_date" => "2011-05-18T15:01:01.000000Z",
-        "type" => "some updated type"
-      }
+      params = %{"type" => "some updated type"}
 
       assert %{"data" => data} =
                conn
@@ -342,7 +325,7 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
 
       assert %{
                "id" => ^id,
-               "request_date" => "2011-05-18T15:01:01.000000Z",
+               "inserted_at" => _,
                "type" => "some updated type",
                "user_id" => ^user_id
              } = data
