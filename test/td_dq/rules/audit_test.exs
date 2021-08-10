@@ -3,7 +3,6 @@ defmodule TdDq.Rules.AuditTest do
 
   alias TdCache.Redix
   alias TdCache.Redix.Stream
-  alias TdCache.TemplateCache
   alias TdDd.Repo
   alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Audit
@@ -11,25 +10,13 @@ defmodule TdDq.Rules.AuditTest do
 
   @stream TdCache.Audit.stream()
 
-  setup_all do
-    %{id: template_id, name: template_name} = template = build(:template)
-    TemplateCache.put(template, publish: false)
-
-    on_exit(fn ->
-      TemplateCache.delete(template_id)
-      Redix.del!(@stream)
-    end)
-
-    [template_name: template_name]
-  end
-
-  setup %{template_name: template_name} do
+  setup do
     on_exit(fn -> Redix.del!(@stream) end)
-
+    %{name: template_name} = CacheHelpers.insert_template(scope: "dq")
     claims = build(:dq_claims, role: "admin")
     rule = insert(:rule, df_name: template_name)
     implementation = insert(:implementation, rule: rule, deleted_at: nil)
-    [claims: claims, rule: rule, implementation: implementation]
+    [claims: claims, rule: rule, implementation: implementation, template_name: template_name]
   end
 
   describe "rule_updated/4" do

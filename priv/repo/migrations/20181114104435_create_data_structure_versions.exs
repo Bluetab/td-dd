@@ -2,9 +2,9 @@ defmodule TdDd.Repo.Migrations.CreateDataStructureVersions do
   use Ecto.Migration
 
   def up do
-    create table(:data_structure_versions) do
+    create table("data_structure_versions") do
       add(:version, :integer, null: false, default: 0)
-      add(:data_structure_id, references(:data_structures, on_delete: :nothing))
+      add(:data_structure_id, references("data_structures", on_delete: :nothing))
 
       timestamps(type: :utc_datetime)
     end
@@ -16,6 +16,6 @@ defmodule TdDd.Repo.Migrations.CreateDataStructureVersions do
   end
 
   def down do
-    drop(table(:data_structure_versions))
+    drop table("data_structure_versions")
   end
 end

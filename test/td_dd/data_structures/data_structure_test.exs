@@ -2,32 +2,23 @@ defmodule TdDd.DataStructures.DataStructureTest do
   use TdDd.DataCase
 
   alias Ecto.Changeset
-  alias TdCache.TemplateCache
   alias TdDd.DataStructures.DataStructure
 
   @moduletag sandbox: :shared
 
-  setup_all do
-    %{id: template_id, name: template_name} = template = build(:template)
-    TemplateCache.put(template, publish: false)
-
-    on_exit(fn -> TemplateCache.delete(template_id) end)
-
-    [template: template, type: template_name]
-  end
-
-  setup %{template: %{id: template_id}, type: type} do
-    CacheHelpers.insert_structure_type(name: type, template_id: template_id)
+  setup do
+    %{id: template_id, name: template_name} = template = CacheHelpers.insert_template()
+    CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
 
     start_supervised!(TdDd.Search.StructureEnricher)
 
     %{data_structure: structure} =
       insert(:data_structure_version,
-        type: type,
+        type: template_name,
         data_structure: build(:data_structure)
       )
 
-    [structure: structure]
+    [template: template, type: template_name, structure: structure]
   end
 
   describe "changeset/2" do

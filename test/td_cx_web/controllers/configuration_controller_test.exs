@@ -295,13 +295,8 @@ defmodule TdCxWeb.ConfigurationControllerTest do
         ]
       }
 
-      with_key = Templates.create_template(with_key)
-      without_key = Templates.create_template(without_key)
-
-      on_exit(fn ->
-        Templates.delete(with_key)
-        Templates.delete(without_key)
-      end)
+      with_key = CacheHelpers.insert_template(with_key)
+      without_key = CacheHelpers.insert_template(without_key)
 
       c1 = build(:configuration, type: with_key.name, content: %{"secret_key" => secret_key})
       c2 = build(:configuration, type: without_key.name)
@@ -394,17 +389,17 @@ defmodule TdCxWeb.ConfigurationControllerTest do
   end
 
   defp create_template(_) do
-    template = Templates.create_template(@test_template)
+    template = CacheHelpers.insert_template(@test_template)
     {:ok, template: template}
   end
 
   defp create_secret_template(_) do
-    template = Templates.create_template(@secret_template)
+    template = CacheHelpers.insert_template(@secret_template)
     {:ok, template: template}
   end
 
   defp create_another_template(_) do
-    template = Templates.create_template(@another_template)
+    template = CacheHelpers.insert_template(@another_template)
     {:ok, template: template}
   end
 end

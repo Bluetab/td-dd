@@ -4,13 +4,13 @@ defmodule TdDq.Repo.Migrations.ChangeDescriptionType do
   alias TdDd.Repo
 
   def change do
-    rename(table(:rules), :description, to: :description_backup)
-    alter(table(:rules), do: add(:description, :map))
+    rename table("rules"), :description, to: :description_backup
+    alter table("rules"), do: add(:description, :map)
 
     flush()
 
     migrate_descriptions()
-    alter(table(:rules), do: remove(:description_backup))
+    alter table("rules"), do: remove(:description_backup)
   end
 
   defp migrate_descriptions do

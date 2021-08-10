@@ -3,7 +3,6 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
   import TdDd.TestOperators
 
-  alias TdCache.TemplateCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.BulkUpdate
   alias TdDd.DataStructures.DataStructure
@@ -90,20 +89,12 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     }
   ]
 
-  setup_all do
-    %{id: template_id, name: template_name} = template = build(:template)
-    TemplateCache.put(template, publish: false)
-
-    on_exit(fn -> TemplateCache.delete(template_id) end)
-
-    [template: template, type: template_name]
-  end
-
-  setup %{template: %{id: template_id}, type: type} do
-    CacheHelpers.insert_structure_type(name: type, template_id: template_id)
+  setup do
+    %{id: template_id, name: template_name} = template = CacheHelpers.insert_template()
+    CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
 
     start_supervised!(TdDd.Search.StructureEnricher)
-    :ok
+    [template: template, type: template_name]
   end
 
   describe "parse_file/1" do
@@ -520,30 +511,23 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
   end
 
   defp from_csv_templates(_) do
-    %{id: id_t1, name: type} = t1 = build(:template, content: @c1)
-    TemplateCache.put(t1, publish: false)
-    insert(:data_structure_type, name: type, template_id: id_t1)
+    %{id: id_t1, name: type1} = CacheHelpers.insert_template(content: @c1)
+    %{id: id_t2, name: type2} = CacheHelpers.insert_template(content: @c2)
+
+    insert(:data_structure_type, name: type1, template_id: id_t1)
+    insert(:data_structure_type, name: type2, template_id: id_t2)
 
     sts1 =
       Enum.map(1..5, fn id ->
         data_structure = insert(:data_structure, external_id: "ex_id#{id}")
-        valid_structure_note(type, data_structure, df_content: %{"text" => "foo"})
+        valid_structure_note(type1, data_structure, df_content: %{"text" => "foo"})
       end)
-
-    %{id: id_t2, name: type} = t2 = build(:template, content: @c2)
-    TemplateCache.put(t2, publish: false)
-    insert(:data_structure_type, name: type, template_id: id_t2)
 
     sts2 =
       Enum.map(6..10, fn id ->
         data_structure = insert(:data_structure, external_id: "ex_id#{id}")
-        valid_structure_note(type, data_structure, [])
+        valid_structure_note(type2, data_structure, [])
       end)
-
-    on_exit(fn ->
-      TemplateCache.delete(id_t1)
-      TemplateCache.delete(id_t2)
-    end)
 
     [sts: sts1 ++ sts2]
   end

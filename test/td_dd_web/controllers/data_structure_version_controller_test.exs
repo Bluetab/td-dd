@@ -3,7 +3,6 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   alias TdCache.TaxonomyCache
-  alias TdCache.TemplateCache
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Lineage.GraphData
 
@@ -20,10 +19,10 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
 
     type = "Table"
-    template_id = "999"
 
-    {:ok, _} =
-      TemplateCache.put(%{
+    %{id: template_id} =
+      template =
+      CacheHelpers.insert_template(
         name: type,
         content: [
           %{
@@ -49,14 +48,12 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
           }
         ],
         scope: "test",
-        label: "template_label",
-        id: template_id,
-        updated_at: DateTime.utc_now()
-      })
+        label: "template_label"
+      )
 
     CacheHelpers.insert_structure_type(template_id: template_id, name: type)
 
-    on_exit(fn -> TemplateCache.delete(template_id) end)
+    [template: template]
   end
 
   describe "GET /api/data_structures/:id/versions/:version structure hierarchy" do

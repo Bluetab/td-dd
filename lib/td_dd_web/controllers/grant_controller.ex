@@ -1,12 +1,11 @@
 defmodule TdDdWeb.GrantController do
   use TdDdWeb, :controller
   use PhoenixSwagger
+
   import Canada, only: [can?: 2]
 
-  alias TdCache.UserCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
-
   alias TdDd.Grants
   alias TdDd.Grants.Grant
   alias TdDdWeb.SwaggerDefinitions
@@ -42,7 +41,6 @@ defmodule TdDdWeb.GrantController do
            {:data_structure,
             DataStructures.get_data_structure_by_external_id(data_structure_external_id)},
          {:can, true} <- {:can, can?(claims, create_grant(data_structure))},
-         {:ok, grant_params} <- with_user_id(grant_params),
          {:ok, %{grant: %Grant{} = grant}} <-
            Grants.create_grant(grant_params, data_structure, claims) do
       conn
@@ -54,28 +52,6 @@ defmodule TdDdWeb.GrantController do
       error -> error
     end
   end
-
-  defp with_user_id(%{"user_id" => user_id} = grant_params) do
-    case UserCache.get(user_id) do
-      {:ok, nil} ->
-        {:error, :not_found, "User"}
-
-      {:ok, user} ->
-        {:ok, Map.put(grant_params, "user_id", user.id)}
-    end
-  end
-
-  defp with_user_id(%{"user_name" => user_name} = grant_params) do
-    case UserCache.get_by_user_name(user_name) do
-      {:ok, nil} ->
-        {:error, :not_found, "User"}
-
-      {:ok, user} ->
-        {:ok, Map.put(grant_params, "user_id", user.id)}
-    end
-  end
-
-  defp with_user_id(params), do: {:ok, params}
 
   swagger_path :show do
     description("Shows Grant")

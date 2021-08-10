@@ -15,12 +15,10 @@ defmodule TdCx.Configurations.Configuration do
     timestamps()
   end
 
-  @doc false
   def changeset(attrs) do
     changeset(%__MODULE__{}, attrs)
   end
 
-  @doc false
   def changeset(configuration, attrs) do
     configuration
     |> cast(attrs, [:content, :external_id, :type])
@@ -29,7 +27,6 @@ defmodule TdCx.Configurations.Configuration do
     |> validate_template(configuration)
   end
 
-  @doc false
   def update_changeset(configuration, attrs) do
     configuration
     |> cast(attrs, [:content, :type])

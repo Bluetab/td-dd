@@ -2,7 +2,7 @@ defmodule TdDd.Repo.Migrations.CreateDataStructures do
   use Ecto.Migration
 
   def change do
-    create table(:data_structures) do
+    create table("data_structures") do
       add :system, :string
       add :group, :string
       add :name, :string

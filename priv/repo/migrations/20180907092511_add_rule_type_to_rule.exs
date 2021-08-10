@@ -2,7 +2,7 @@ defmodule TdDq.Repo.Migrations.AddRuleTypeToRule do
   use Ecto.Migration
 
   def up do
-    alter table("rules"), do: add(:rule_type_id, references(:rule_types), null: true)
+    alter table("rules"), do: add(:rule_type_id, references("rule_types"), null: true)
 
     execute(
       "update rules set rule_type_id = (select id from rule_types as rt where rt.name = type)"

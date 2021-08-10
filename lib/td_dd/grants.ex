@@ -4,23 +4,17 @@ defmodule TdDd.Grants do
   """
 
   import Ecto.Query, warn: false
+
   alias Ecto.Changeset
   alias Ecto.Multi
   alias TdDd.Auth.Claims
   alias TdDd.DataStructures.Audit
+  alias TdDd.DataStructures.DataStructure
+  alias TdDd.Grants.Grant
+  alias TdDd.Grants.GrantRequest
+  alias TdDd.Grants.GrantRequestGroup
   alias TdDd.Repo
 
-  alias TdDd.Grants.Grant
-
-  @doc """
-  Returns the list of grants.
-
-  ## Examples
-
-      iex> list_grants(%{user_id: 1})
-      [%Grant{}, ...]
-
-  """
   def list_grants(params \\ %{}) do
     params
     |> Enum.reduce(Grant, fn
@@ -44,40 +38,15 @@ defmodule TdDd.Grants do
     |> Repo.all()
   end
 
-  @doc """
-  Gets a single grant.
-
-  Raises `Ecto.NoResultsError` if the Grant does not exist.
-
-  ## Examples
-
-      iex> get_grant!(123)
-      %Grant{}
-
-      iex> get_grant!(456)
-      ** (Ecto.NoResultsError)
-
-  """
   def get_grant!(id, opts \\ []) do
     Grant
     |> Repo.get!(id)
     |> Repo.preload(opts[:preload] || [])
   end
 
-  @doc """
-  Creates a grant.
-
-  ## Examples
-
-      iex> create_grant(%{field: value}, %DataStructure{}, %Claims{user_id: user_id})
-      {:ok, %Grant{}}
-
-      iex> create_grant(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_grant(attrs, data_structure, %Claims{user_id: user_id}) do
-    changeset = Grant.changeset(attrs, data_structure)
+  def create_grant(params, %{id: data_structure_id} = _data_structure, %Claims{user_id: user_id}) do
+    changeset =
+      Grant.changeset(%Grant{data_structure_id: data_structure_id, user_id: user_id}, params)
 
     Multi.new()
     |> Multi.run(:overlap, fn _, _ -> date_range_overlap?(changeset) end)
@@ -87,8 +56,8 @@ defmodule TdDd.Grants do
   end
 
   defp date_range_overlap?(%{valid?: true} = changeset) do
-    %{id: data_structure_id} = Changeset.get_field(changeset, :data_structure)
-    user_id = Changeset.get_field(changeset, :user_id)
+    data_structure_id = Changeset.fetch_field!(changeset, :data_structure_id)
+    user_id = Changeset.fetch_field!(changeset, :user_id)
     start_date = Changeset.get_field(changeset, :start_date)
     end_date = Changeset.get_field(changeset, :end_date)
 
@@ -107,20 +76,8 @@ defmodule TdDd.Grants do
 
   defp date_range_overlap?(_), do: {:ok, nil}
 
-  @doc """
-  Updates a grant.
-
-  ## Examples
-
-      iex> update_grant(grant, %{field: new_value})
-      {:ok, %Grant{}}
-
-      iex> update_grant(grant, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_grant(%Grant{} = grant, attrs, %Claims{user_id: user_id}) do
-    changeset = Grant.update_changeset(grant, attrs)
+  def update_grant(%Grant{} = grant, params, %Claims{user_id: user_id}) do
+    changeset = Grant.changeset(grant, params)
 
     Multi.new()
     |> Multi.update(:grant, changeset)
@@ -128,22 +85,75 @@ defmodule TdDd.Grants do
     |> Repo.transaction()
   end
 
-  @doc """
-  Deletes a grant.
-
-  ## Examples
-
-      iex> delete_grant(grant)
-      {:ok, %Grant{}}
-
-      iex> delete_grant(grant)
-      {:error, %Ecto.Changeset{}}
-
-  """
   def delete_grant(%Grant{} = grant, %Claims{user_id: user_id}) do
     Multi.new()
     |> Multi.delete(:grant, grant)
     |> Multi.run(:audit, Audit, :grant_deleted, [user_id])
     |> Repo.transaction()
+  end
+
+  def list_grant_request_groups do
+    Repo.all(GrantRequestGroup)
+  end
+
+  def list_grant_request_groups_by_user_id(user_id) do
+    GrantRequestGroup
+    |> where(user_id: ^user_id)
+    |> Repo.all()
+  end
+
+  def get_grant_request_group!(id) do
+    GrantRequestGroup
+    |> Repo.get!(id)
+    |> Repo.preload(:requests)
+  end
+
+  def get_grant_request_group(id), do: Repo.get(GrantRequestGroup, id)
+
+  def create_grant_request_group(%{} = params, %Claims{user_id: user_id}) do
+    %GrantRequestGroup{user_id: user_id}
+    |> GrantRequestGroup.changeset(params)
+    |> Repo.insert()
+  end
+
+  def delete_grant_request_group(%GrantRequestGroup{} = grant_request_group) do
+    Repo.delete(grant_request_group)
+  end
+
+  def list_grant_requests(grant_request_group_id) do
+    GrantRequest
+    |> where(grant_request_group_id: ^grant_request_group_id)
+    |> Repo.all()
+  end
+
+  def get_grant_request!(id), do: Repo.get!(GrantRequest, id)
+
+  def create_grant_request(
+        params,
+        %GrantRequestGroup{id: group_id, type: group_type},
+        %DataStructure{id: data_structure_id}
+      ) do
+    %GrantRequest{
+      grant_request_group_id: group_id,
+      data_structure_id: data_structure_id
+    }
+    |> GrantRequest.changeset(params, group_type)
+    |> Repo.insert()
+  end
+
+  def update_grant_request(%GrantRequest{} = grant_request, params) do
+    group_type =
+      case Repo.preload(grant_request, :grant_request_group) do
+        %{grant_request_group: %{type: group_type}} -> group_type
+        _ -> nil
+      end
+
+    grant_request
+    |> GrantRequest.changeset(params, group_type)
+    |> Repo.update()
+  end
+
+  def delete_grant_request(%GrantRequest{} = grant_request) do
+    Repo.delete(grant_request)
   end
 end
