@@ -219,7 +219,8 @@ defmodule TdDd.Factory do
       name: sequence("domain_name"),
       id: sequence(:domain_id, &(&1 + 1000)),
       external_id: sequence("domain_external_id"),
-      updated_at: DateTime.utc_now()
+      updated_at: DateTime.utc_now(),
+      parent_ids: []
     }
   end
 

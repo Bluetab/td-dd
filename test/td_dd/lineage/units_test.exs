@@ -83,6 +83,35 @@ defmodule TdDd.Lineage.UnitsTest do
     end
   end
 
+  describe "Units.list_domains/" do
+    test "returns empty units have not domains" do
+      insert(:unit)
+      assert [] = Units.list_domains()
+    end
+
+    test "return units taxonomy" do
+      %{id: parent_domain_id} = CacheHelpers.insert_domain()
+      %{id: domain_id} = CacheHelpers.insert_domain(%{parent_ids: [parent_domain_id]})
+      %{id: sibling_domain_id} = CacheHelpers.insert_domain(%{parent_ids: [parent_domain_id]})
+      insert(:unit)
+      %{id: unit_id} = insert(:unit, domain_id: domain_id)
+      %{id: sibling_unit_id} = insert(:unit, domain_id: sibling_domain_id)
+
+      assert [_, _, _] = domains = Units.list_domains()
+
+      assert %{unit: ^unit_id, parent_ids: parent_ids, hint: :domain} =
+               Enum.find(domains, &(&1.id == domain_id))
+
+      assert parent_ids == [parent_domain_id]
+
+      assert %{unit: ^sibling_unit_id, parent_ids: parent_ids, hint: :domain} =
+               Enum.find(domains, &(&1.id == sibling_domain_id))
+
+      assert parent_ids == [parent_domain_id]
+      assert %{parent_ids: [], hint: :domain} = Enum.find(domains, &(&1.id == parent_domain_id))
+    end
+  end
+
   describe "Units.list_relations/1" do
     test "returns the list of edges by type", %{unit: unit} do
       %{id: id, type: type} = insert(:edge, start: build(:node), end: build(:node), unit: unit)
