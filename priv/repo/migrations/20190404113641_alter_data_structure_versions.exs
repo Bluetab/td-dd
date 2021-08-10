@@ -7,7 +7,7 @@ defmodule TdDd.Repo.Migrations.AlterDataStructureVersions do
     )
 
     alter table("data_structure_versions") do
-      modify(:data_structure_id, references(:data_structures, on_delete: :delete_all))
+      modify(:data_structure_id, references("data_structures", on_delete: :delete_all))
     end
   end
 
@@ -17,7 +17,7 @@ defmodule TdDd.Repo.Migrations.AlterDataStructureVersions do
     )
 
     alter table("data_structure_versions") do
-      modify(:data_structure_id, references(:data_structures, on_delete: :nothing))
+      modify(:data_structure_id, references("data_structures", on_delete: :nothing))
     end
   end
 end

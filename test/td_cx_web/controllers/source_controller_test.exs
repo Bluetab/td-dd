@@ -50,9 +50,8 @@ defmodule TdCxWeb.SourceControllerTest do
     "type" => nil
   }
 
-  setup_all do
-    Templates.create_template(@template)
-    :ok
+  setup do
+    [template: CacheHelpers.insert_template(@template)]
   end
 
   describe "GET /api/sources" do

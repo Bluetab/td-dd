@@ -9,10 +9,13 @@ defmodule CacheHelpers do
   alias TdCache.LinkCache
   alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
+  alias TdCache.UserCache
   alias TdDd.Search.StructureEnricher
 
-  def insert_domain do
+  def insert_domain(params \\ %{}) do
+    parent_ids = Map.get(params, :parent_ids)
     %{id: domain_id} = domain = build(:domain)
+    domain = if is_nil(parent_ids), do: domain, else: Map.put(domain, :parent_ids, parent_ids)
     TaxonomyCache.put_domain(domain)
     ExUnit.Callbacks.on_exit(fn -> TaxonomyCache.delete_domain(domain_id) end)
     _maybe_error = StructureEnricher.refresh()
@@ -65,5 +68,19 @@ defmodule CacheHelpers do
     {:ok, _} = ConceptCache.put(concept)
     ExUnit.Callbacks.on_exit(fn -> ConceptCache.delete(id) end)
     concept
+  end
+
+  def insert_user(%{} = params \\ %{}) do
+    %{id: id} =
+      user =
+      params
+      |> Map.put_new(:id, System.unique_integer([:positive]))
+      |> Map.put_new(:user_name, "user name")
+      |> Map.put_new(:full_name, "full name")
+      |> Map.put_new(:email, "foo@bar.xyz")
+
+    {:ok, _} = UserCache.put(user)
+    ExUnit.Callbacks.on_exit(fn -> UserCache.delete(id) end)
+    user
   end
 end

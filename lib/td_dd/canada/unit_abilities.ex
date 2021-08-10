@@ -24,5 +24,13 @@ defmodule TdDd.Canada.UnitAbilities do
     true
   end
 
+  def can?(%Claims{} = claims, :view_lineage, %{id: id, hint: :domain}) do
+    Permissions.authorized?(claims, :view_lineage, id)
+  end
+
+  def can?(%Claims{} = claims, :view_domain, %{id: id, hint: :domain}) do
+    Permissions.authorized?(claims, :view_domain, id)
+  end
+
   def can?(_claims, _action, _entity), do: false
 end

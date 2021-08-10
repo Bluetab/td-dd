@@ -1,7 +1,6 @@
 defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
   use TdDd.DataCase
 
-  alias TdCache.TemplateCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.StructureNote
   alias TdDd.DataStructures.StructureNotesWorkflow
@@ -20,11 +19,9 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
     ]
 
     %{id: template_id, name: template_name} =
-      template = build(:template, name: @template_name, content: content)
+      CacheHelpers.insert_template(name: @template_name, content: content)
 
-    {:ok, _} = TemplateCache.put(template, publish: false)
     CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
-    on_exit(fn -> TemplateCache.delete(template_id) end)
 
     start_supervised!(TdDd.Search.StructureEnricher)
     :ok

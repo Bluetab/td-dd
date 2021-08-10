@@ -5,9 +5,14 @@
 ### Added
 
 - [TD-3549] Add new quality rule result type: "deviation"
+- [TD-3982] Initial support for grant requests
+- [TD-3948] Grants in data structure version visualization
 - [TD-2635] Admin can manually delete structures and all its children
 - [TD-3917] `PATCH /api/systems/:external_id/metadata` allows mutable metadata
   to be replaced or merged
+- [TD-3767]: 
+  - Get nodes filtered by domain id
+  - Get unit domain ids
 
 ### Changed
 
@@ -18,6 +23,7 @@
 
 - [TD-3959] Report `rule_result_created` when result is created
 - [TD-3908] Timeout on node retrieval
+- [TD-3859] added `replace and delete unit` in process asynchronously
 
 ## [4.25.0] 2021-07-26
 

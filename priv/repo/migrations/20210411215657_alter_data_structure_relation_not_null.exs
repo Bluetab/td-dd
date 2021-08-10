@@ -9,8 +9,10 @@ defmodule TdDd.Repo.Migrations.AlterDataStructureRelationNotNull do
     execute "ALTER TABLE data_structure_relations DROP CONSTRAINT data_structure_relations_parent_id_fkey"
 
     alter table("data_structure_relations") do
-      modify :child_id, references(:data_structure_versions, on_delete: :delete_all), null: false
-      modify :parent_id, references(:data_structure_versions, on_delete: :delete_all), null: false
+      modify :child_id, references("data_structure_versions", on_delete: :delete_all), null: false
+
+      modify :parent_id, references("data_structure_versions", on_delete: :delete_all),
+        null: false
     end
   end
 
@@ -20,8 +22,8 @@ defmodule TdDd.Repo.Migrations.AlterDataStructureRelationNotNull do
     execute "ALTER TABLE data_structure_relations DROP CONSTRAINT data_structure_relations_parent_id_fkey"
 
     alter table("data_structure_relations") do
-      modify :child_id, references(:data_structure_versions, on_delete: :delete_all)
-      modify :parent_id, references(:data_structure_versions, on_delete: :delete_all)
+      modify :child_id, references("data_structure_versions", on_delete: :delete_all)
+      modify :parent_id, references("data_structure_versions", on_delete: :delete_all)
     end
   end
 end

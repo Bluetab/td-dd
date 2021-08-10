@@ -19,7 +19,6 @@ defmodule TdCx.ConfigurationsTest do
   }
   @invalid_attrs %{content: %{"field3" => "foo"}}
   @app_admin_template %{
-    id: System.unique_integer([:positive]),
     name: "config",
     label: "app-admin",
     scope: "ca",
@@ -46,7 +45,6 @@ defmodule TdCx.ConfigurationsTest do
     ]
   }
   @secret_template %{
-    id: System.unique_integer([:positive]),
     name: "secret_config",
     label: "secret_config",
     scope: "ca",
@@ -79,14 +77,10 @@ defmodule TdCx.ConfigurationsTest do
     ]
   }
 
-  setup_all do
-    template = Templates.create_template(@app_admin_template)
-    secret_template = Templates.create_template(@secret_template)
-
-    on_exit(fn ->
-      Templates.delete(template)
-      Templates.delete(secret_template)
-    end)
+  setup do
+    CacheHelpers.insert_template(@app_admin_template)
+    CacheHelpers.insert_template(@secret_template)
+    :ok
   end
 
   describe "configurations" do
@@ -277,7 +271,6 @@ defmodule TdCx.ConfigurationsTest do
   describe "sign/2" do
     setup do
       with_key = %{
-        id: System.unique_integer([:positive]),
         name: "foo",
         label: "Foo",
         scope: "ca",
@@ -300,7 +293,6 @@ defmodule TdCx.ConfigurationsTest do
       }
 
       without_key = %{
-        id: System.unique_integer([:positive]),
         name: "bar",
         label: "Bar",
         scope: "ca",
@@ -322,13 +314,8 @@ defmodule TdCx.ConfigurationsTest do
         ]
       }
 
-      with_key = Templates.create_template(with_key)
-      without_key = Templates.create_template(without_key)
-
-      on_exit(fn ->
-        Templates.delete(with_key)
-        Templates.delete(without_key)
-      end)
+      with_key = CacheHelpers.insert_template(with_key)
+      without_key = CacheHelpers.insert_template(without_key)
 
       [with_key: with_key, without_key: without_key]
     end

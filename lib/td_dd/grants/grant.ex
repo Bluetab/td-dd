@@ -8,31 +8,22 @@ defmodule TdDd.Grants.Grant do
   alias TdDd.DataStructures.DataStructure
 
   schema "grants" do
-    field :detail, :map
-    field :end_date, :utc_datetime_usec
-    field :start_date, :utc_datetime_usec
-    field :user_id, :integer
+    field(:detail, :map)
+    field(:end_date, :utc_datetime_usec)
+    field(:start_date, :utc_datetime_usec)
+    field(:user_id, :integer)
+    field(:data_structure_version, :map, virtual: true)
+    field(:user, :map, virtual: true)
 
     belongs_to(:data_structure, DataStructure)
 
-    timestamps()
+    timestamps(type: :utc_datetime_usec)
   end
 
-  @doc false
-  def changeset(attrs, data_structure) do
-    %__MODULE__{}
-    |> cast(attrs, [:detail, :start_date, :end_date, :user_id])
-    |> validate_required([:start_date, :user_id])
-    |> put_assoc(:data_structure, data_structure)
-    |> validate_required([:data_structure])
-    |> validate_range()
-  end
-
-  @doc false
-  def update_changeset(grant, attrs) do
-    grant
-    |> cast(attrs, [:detail, :start_date, :end_date])
-    |> validate_required([:start_date])
+  def changeset(%__MODULE__{} = struct, %{} = params) do
+    struct
+    |> cast(params, [:detail, :start_date, :end_date])
+    |> validate_required(:start_date)
     |> validate_range()
   end
 
@@ -40,10 +31,10 @@ defmodule TdDd.Grants.Grant do
     end_date = get_field(changeset, :end_date)
 
     validate_change(changeset, :start_date, fn :start_date, start_date ->
-      if is_nil(end_date) or DateTime.compare(end_date, start_date) in [:gt, :eq] do
+      if is_nil(end_date) or DateTime.compare(end_date, start_date) != :lt do
         []
       else
-        [start_date: "should be less than end_date"]
+        [start_date: "should be before end_date"]
       end
     end)
   end

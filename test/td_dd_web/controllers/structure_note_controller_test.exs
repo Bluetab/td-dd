@@ -2,7 +2,6 @@ defmodule TdDdWeb.StructureNoteControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  alias TdCache.TemplateCache
   alias TdDd.DataStructures.StructureNote
 
   import TdDd.TestOperators
@@ -11,13 +10,11 @@ defmodule TdDdWeb.StructureNoteControllerTest do
   @template_name "structure_note_controller_test_template"
 
   setup %{conn: conn} do
-    %{id: template_id, name: template_name} = template = build(:template, name: @template_name)
-    {:ok, _} = TemplateCache.put(template, publish: false)
+    %{id: template_id, name: template_name} = CacheHelpers.insert_template(name: @template_name)
     CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
-    on_exit(fn -> TemplateCache.delete(template_id) end)
 
     start_supervised!(TdDd.Search.StructureEnricher)
-    {:ok, %{conn: put_req_header(conn, "accept", "application/json")}}
+    [conn: put_req_header(conn, "accept", "application/json")]
   end
 
   describe "index" do

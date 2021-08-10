@@ -4,10 +4,15 @@ defmodule TdDd.Lineage.Units do
   """
 
   alias Ecto.Multi
+  alias TdCache.TaxonomyCache
   alias TdDd.Lineage.Units.{Edge, Event, Node, Unit}
   alias TdDd.Repo
 
   import Ecto.Query
+
+  @typep multi_error :: {:error, Multi.name(), any(), %{required(Multi.name()) => any()}}
+  @typep multi_success :: {:ok, map()}
+  @typep multi_result :: multi_success() | multi_error()
 
   def get_by(clauses) do
     Unit
@@ -25,6 +30,25 @@ defmodule TdDd.Lineage.Units do
     |> Repo.all()
   end
 
+  def list_domains do
+    domains =
+      %{domain: true}
+      |> list_units()
+      |> Enum.map(fn %{id: id, domain_id: domain_id} ->
+        %{id: domain_id, unit: id, hint: :domain}
+      end)
+      |> Enum.map(fn %{id: id} = domain ->
+        case TaxonomyCache.get_domain(id) do
+          cached_domain = %{} -> Map.merge(cached_domain, domain)
+          _ -> nil
+        end
+      end)
+      |> Enum.filter(& &1)
+
+    parents = Enum.flat_map(domains, &parent_domains/1)
+    Enum.uniq_by(domains ++ parents, fn %{id: id} -> id end)
+  end
+
   defp reduce_clauses(q, clauses) do
     Enum.reduce(clauses, q, fn
       {:name, name}, q ->
@@ -40,10 +64,22 @@ defmodule TdDd.Lineage.Units do
         |> distinct([u, e], asc: u.id)
         |> select_merge([u, e], %{status: e})
 
+      {:domain, true}, q ->
+        where(q, [u], not is_nil(u.domain_id))
+
       {:preload, preloads}, q ->
         preload(q, ^preloads)
     end)
   end
+
+  defp parent_domains(%{parent_ids: parent_ids}) do
+    parent_ids
+    |> Enum.map(&TaxonomyCache.get_domain/1)
+    |> Enum.filter(& &1)
+    |> Enum.map(&Map.put(&1, :hint, :domain))
+  end
+
+  defp parent_domains(_), do: []
 
   def insert_event(%Unit{id: unit_id}, event, info \\ nil) do
     %{unit_id: unit_id, event: event, info: info}
@@ -147,14 +183,19 @@ defmodule TdDd.Lineage.Units do
     |> Repo.update()
   end
 
-  def replace_unit(%{name: name} = params) do
+  @spec replace_unit(map) :: multi_result()
+  def replace_unit(%{"name" => name} = params) do
     case Repo.get_by(Unit, name: name) do
       nil ->
-        create_unit(params)
+        Multi.new()
+        |> Multi.run(:create, fn _, _ -> create_unit(params) end)
+        |> Repo.transaction()
 
       unit ->
-        delete_unit(unit, logical: false)
-        create_unit(params)
+        Multi.new()
+        |> Multi.run(:delete, fn _, _ -> delete_unit(unit, logical: false) end)
+        |> Multi.run(:create, fn _, _ -> create_unit(params) end)
+        |> Repo.transaction()
     end
   end
 
@@ -205,28 +246,11 @@ defmodule TdDd.Lineage.Units do
         |> where([un], is_nil(un.deleted_at))
         |> select([un], un.node_id)
         |> distinct(true)
-        |> Repo.all()
-        |> MapSet.new()
 
-      prev_ids =
-        Node
-        |> select([n], n.id)
-        |> Repo.all()
-        |> MapSet.new()
-
-      deleted_ids = MapSet.difference(prev_ids, current_ids)
-
-      count =
-        deleted_ids
-        |> Enum.chunk_every(500)
-        |> Enum.map(fn chunk ->
-          Node
-          |> where([n], n.id in ^chunk)
-          |> do_delete(Keyword.get(opts, :logical, false))
-        end)
-        |> Enum.reduce(0, fn {count, _}, acc -> count + acc end)
-
-      {count, deleted_ids}
+      Node
+      |> where([n], n.id not in subquery(current_ids))
+      |> select([n], n.id)
+      |> do_delete(Keyword.get(opts, :logical, false))
     end)
   end
 

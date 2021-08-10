@@ -4,7 +4,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
   import Routes
 
-  alias TdCache.TemplateCache
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.RelationTypes
@@ -19,8 +18,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
   end
 
   setup %{conn: conn} = state do
-    %{id: template_id, name: template_name} = template = build(:template, name: @template_name)
-    {:ok, _} = TemplateCache.put(template, publish: false)
+    %{id: template_id, name: template_name} = CacheHelpers.insert_template(name: @template_name)
+
     system = insert(:system)
 
     domain =
@@ -30,7 +29,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
       end
 
     CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
-    on_exit(fn -> TemplateCache.delete(template_id) end)
 
     start_supervised!(TdDd.Search.StructureEnricher)
 
