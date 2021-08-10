@@ -12,8 +12,10 @@ defmodule CacheHelpers do
   alias TdCache.UserCache
   alias TdDd.Search.StructureEnricher
 
-  def insert_domain do
+  def insert_domain(params \\ %{}) do
+    parent_ids = Map.get(params, :parent_ids)
     %{id: domain_id} = domain = build(:domain)
+    domain = if is_nil(parent_ids), do: domain, else: Map.put(domain, :parent_ids, parent_ids)
     TaxonomyCache.put_domain(domain)
     ExUnit.Callbacks.on_exit(fn -> TaxonomyCache.delete_domain(domain_id) end)
     _maybe_error = StructureEnricher.refresh()
