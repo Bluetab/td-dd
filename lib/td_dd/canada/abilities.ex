@@ -2,20 +2,16 @@ defmodule TdDd.Canada.Abilities do
   @moduledoc false
   alias TdCache.Link
   alias TdDd.Auth.Claims
-
-  alias TdDd.Canada.{
-    DataStructureAbilities,
-    DataStructureTagAbilities,
-    DataStructureTypeAbilities,
-    DataStructureVersionAbilities,
-    ExecutionAbilities,
-    GrantAbilities,
-    LinkAbilities,
-    StructureNoteAbilities,
-    SystemAbilities,
-    UnitAbilities
-  }
-
+  alias TdDd.Canada.DataStructureAbilities
+  alias TdDd.Canada.DataStructureTagAbilities
+  alias TdDd.Canada.DataStructureTypeAbilities
+  alias TdDd.Canada.DataStructureVersionAbilities
+  alias TdDd.Canada.ExecutionAbilities
+  alias TdDd.Canada.GrantAbilities
+  alias TdDd.Canada.LinkAbilities
+  alias TdDd.Canada.StructureNoteAbilities
+  alias TdDd.Canada.SystemAbilities
+  alias TdDd.Canada.UnitAbilities
   alias TdDd.Classifiers.Classifier
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureTag
