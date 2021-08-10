@@ -67,6 +67,7 @@ defmodule TdDd.Canada.Abilities do
 
     def can?(%Claims{} = claims, :view_grants, %DataStructure{} = data_structure) do
       GrantAbilities.can?(claims, :view_grants, data_structure)
+    end
 
     def can?(%Claims{} = claims, action, %{hint: :domain} = domain) do
       UnitAbilities.can?(claims, action, domain)
