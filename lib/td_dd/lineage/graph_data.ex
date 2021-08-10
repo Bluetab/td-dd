@@ -33,8 +33,8 @@ defmodule TdDd.Lineage.GraphData do
   end
 
   @doc "Returns nodes in the graph"
-  def nodes(id \\ nil, claims) do
-    GenServer.call(__MODULE__, {:nodes, id, claims})
+  def nodes(id \\ nil, opts \\ [], claims) do
+    GenServer.call(__MODULE__, {:nodes, id, opts, claims})
   end
 
   @doc """
@@ -163,8 +163,8 @@ defmodule TdDd.Lineage.GraphData do
   end
 
   @impl true
-  def handle_call({:nodes, id, claims}, _from, state) do
-    reply = Nodes.query_nodes(id, claims, state)
+  def handle_call({:nodes, id, opts, claims}, _from, state) do
+    reply = Nodes.query_nodes(id, opts, claims, state)
     {:reply, reply, state}
   end
 

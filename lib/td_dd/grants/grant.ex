@@ -8,10 +8,12 @@ defmodule TdDd.Grants.Grant do
   alias TdDd.DataStructures.DataStructure
 
   schema "grants" do
-    field :detail, :map
-    field :end_date, :utc_datetime_usec
-    field :start_date, :utc_datetime_usec
-    field :user_id, :integer
+    field(:detail, :map)
+    field(:end_date, :utc_datetime_usec)
+    field(:start_date, :utc_datetime_usec)
+    field(:user_id, :integer)
+    field(:data_structure_version, :map, virtual: true)
+    field(:user, :map, virtual: true)
 
     belongs_to(:data_structure, DataStructure)
 

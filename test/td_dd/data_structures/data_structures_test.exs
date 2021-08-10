@@ -5,8 +5,7 @@ defmodule TdDd.DataStructuresTest do
   alias TdCache.Redix
   alias TdCache.Redix.Stream
   alias TdDd.DataStructures
-  alias TdDd.DataStructures.DataStructure
-  alias TdDd.DataStructures.RelationTypes
+  alias TdDd.DataStructures.{DataStructure, DataStructureVersion, RelationTypes}
 
   import TdDd.TestOperators
 
@@ -1016,6 +1015,176 @@ defmodule TdDd.DataStructuresTest do
 
       assert DataStructures.get_latest_version_by_external_id(external_id) <~> v3
       assert DataStructures.get_latest_version_by_external_id(external_id, deleted: false) <~> v2
+    end
+
+    test "get_data_structure_version!/2 with options: grants" do
+      %{id: user_id, user_name: user_name} = CacheHelpers.insert_user()
+
+      [dsv, parent, child] =
+        ["structure", "parent", "child"]
+        |> Enum.map(&insert(:data_structure, external_id: &1))
+        |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id))
+
+      [field | _] =
+        fields =
+        ["field1", "field2", "field3"]
+        |> Enum.map(&insert(:data_structure, external_id: &1))
+        |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id, class: "field"))
+
+      relation_type_id = RelationTypes.default_id!()
+
+      Enum.map(
+        fields,
+        &insert(:data_structure_relation,
+          parent_id: child.id,
+          child_id: &1.id,
+          relation_type_id: relation_type_id
+        )
+      )
+
+      insert(:data_structure_relation,
+        parent_id: parent.id,
+        child_id: dsv.id,
+        relation_type_id: relation_type_id
+      )
+
+      insert(:data_structure_relation,
+        parent_id: dsv.id,
+        child_id: child.id,
+        relation_type_id: relation_type_id
+      )
+
+      start_date = DateTime.utc_now() |> DateTime.add(-60 * 60 * 24, :second)
+      end_date = DateTime.utc_now() |> DateTime.add(60 * 60 * 24 * 2, :second)
+
+      %{id: grant_id1, detail: detail1} =
+        insert(:grant,
+          data_structure_id: parent.data_structure_id,
+          user_id: user_id,
+          start_date: start_date,
+          end_date: end_date
+        )
+
+      %{id: grant_id2, detail: detail2} =
+        insert(:grant,
+          data_structure_id: dsv.data_structure_id,
+          detail: %{"bar" => "baz"},
+          user_id: user_id,
+          start_date: start_date,
+          end_date: end_date
+        )
+
+      %{id: grant_id3, detail: detail3} =
+        insert(:grant,
+          data_structure_id: field.data_structure_id,
+          detail: %{"xyz" => "x"},
+          user_id: user_id,
+          start_date: start_date,
+          end_date: end_date
+        )
+
+      start_date = DateTime.utc_now() |> DateTime.add(-60 * 60 * 24 * 2, :second)
+      end_date = DateTime.utc_now() |> DateTime.add(-60 * 60 * 24, :second)
+
+      insert(:grant,
+        data_structure_id: field.data_structure_id,
+        detail: %{"xyz" => "y"},
+        user_id: user_id,
+        start_date: start_date,
+        end_date: end_date
+      )
+
+      assert %DataStructureVersion{
+               grants: [
+                 %{
+                   id: ^grant_id3,
+                   detail: ^detail3,
+                   user: %{id: ^user_id, user_name: ^user_name}
+                 },
+                 %{
+                   id: ^grant_id2,
+                   detail: ^detail2,
+                   user: %{id: ^user_id, user_name: ^user_name}
+                 },
+                 %{id: ^grant_id1, detail: ^detail1, user: %{id: ^user_id, user_name: ^user_name}}
+               ]
+             } = DataStructures.get_data_structure_version!(field.id, [:grants])
+    end
+
+    test "get_data_structure_version!/2 with options: grants and grant" do
+      %{id: user_id} = CacheHelpers.insert_user()
+
+      [dsv, parent] =
+        ["structure", "parent"]
+        |> Enum.map(&insert(:data_structure, external_id: &1))
+        |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id))
+
+      relation_type_id = RelationTypes.default_id!()
+
+      insert(:data_structure_relation,
+        parent_id: parent.id,
+        child_id: dsv.id,
+        relation_type_id: relation_type_id
+      )
+
+      start_date = DateTime.utc_now() |> DateTime.add(-60 * 60 * 24, :second)
+      end_date = DateTime.utc_now() |> DateTime.add(60 * 60 * 24 * 2, :second)
+
+      %{id: grant_id, detail: detail} =
+        insert(:grant,
+          data_structure_id: parent.data_structure_id,
+          user_id: user_id,
+          start_date: start_date,
+          end_date: end_date
+        )
+
+      assert %DataStructureVersion{
+               grants: [
+                 %{id: ^grant_id, detail: ^detail}
+               ],
+               grant: %{id: ^grant_id, detail: ^detail}
+             } =
+               DataStructures.get_data_structure_version!(dsv.id, [
+                 :grants,
+                 :grant,
+                 user_id: user_id
+               ])
+    end
+
+    test "get_data_structure_version!/2 with options: grant" do
+      %{id: user_id} = CacheHelpers.insert_user()
+
+      [dsv, parent] =
+        ["structure", "parent"]
+        |> Enum.map(&insert(:data_structure, external_id: &1))
+        |> Enum.map(&insert(:data_structure_version, data_structure_id: &1.id))
+
+      relation_type_id = RelationTypes.default_id!()
+
+      insert(:data_structure_relation,
+        parent_id: parent.id,
+        child_id: dsv.id,
+        relation_type_id: relation_type_id
+      )
+
+      start_date = DateTime.utc_now() |> DateTime.add(-60 * 60 * 24, :second)
+      end_date = DateTime.utc_now() |> DateTime.add(60 * 60 * 24 * 2, :second)
+
+      %{id: grant_id, detail: detail} =
+        insert(:grant,
+          data_structure_id: parent.data_structure_id,
+          user_id: user_id,
+          start_date: start_date,
+          end_date: end_date
+        )
+
+      assert %DataStructureVersion{
+               grant: %{id: ^grant_id, detail: ^detail}
+             } =
+               DataStructures.get_data_structure_version!(dsv.id, [
+                 :grant,
+                 user_id: user_id
+               ])
     end
 
     test "get_ancestors/2 obtains all ancestors of a data structure version" do
