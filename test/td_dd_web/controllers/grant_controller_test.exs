@@ -4,19 +4,22 @@ defmodule TdDdWeb.GrantControllerTest do
 
   alias TdDd.Grants.Grant
 
+  @user_id 123_456
   @create_attrs %{
     detail: %{},
-    end_date: "2010-04-17T14:00:00.000000Z",
-    start_date: "2010-04-17T14:00:00.000000Z"
+    end_date: "2010-04-17",
+    start_date: "2010-04-17",
+    user_id: @user_id
   }
   @update_attrs %{
     detail: %{},
-    end_date: "2011-05-18T15:01:01.000000Z",
-    start_date: "2011-05-18T15:01:01.000000Z"
+    end_date: "2011-05-18",
+    start_date: "2011-05-18"
   }
   @invalid_attrs %{detail: nil, end_date: nil, start_date: nil}
 
   setup %{conn: conn} do
+    CacheHelpers.insert_user(id: @user_id)
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
 
@@ -31,7 +34,7 @@ defmodule TdDdWeb.GrantControllerTest do
       end
     end
 
-    @tag authentication: [role: "admin", user_id: 123]
+    @tag authentication: [role: "admin"]
     test "renders grant when data is valid", %{
       conn: conn,
       data_structure: %{id: data_structure_id, external_id: data_structure_external_id},
@@ -49,9 +52,9 @@ defmodule TdDdWeb.GrantControllerTest do
       assert %{
                "id" => ^id,
                "detail" => %{},
-               "end_date" => "2010-04-17T14:00:00.000000Z",
-               "start_date" => "2010-04-17T14:00:00.000000Z",
-               "user_id" => 123,
+               "end_date" => "2010-04-17",
+               "start_date" => "2010-04-17",
+               "user_id" => @user_id,
                "data_structure" => %{
                  "id" => ^data_structure_id,
                  "name" => ^dsv_name,
@@ -65,7 +68,7 @@ defmodule TdDdWeb.GrantControllerTest do
                |> Map.get("data")
     end
 
-    @tag authentication: [role: "non_admin", permissions: [:manage_grants], user_id: 987]
+    @tag authentication: [role: "non_admin", permissions: [:manage_grants]]
     test "user with permissions can create a grant", %{
       conn: conn,
       data_structure: %{external_id: data_structure_external_id}
@@ -82,9 +85,9 @@ defmodule TdDdWeb.GrantControllerTest do
       assert %{
                "id" => ^id,
                "detail" => %{},
-               "end_date" => "2010-04-17T14:00:00.000000Z",
-               "start_date" => "2010-04-17T14:00:00.000000Z",
-               "user_id" => 987
+               "end_date" => "2010-04-17",
+               "start_date" => "2010-04-17",
+               "user_id" => @user_id
              } = json_response(conn, 200)["data"]
     end
 
@@ -203,8 +206,8 @@ defmodule TdDdWeb.GrantControllerTest do
       assert %{
                "id" => ^id,
                "detail" => %{},
-               "end_date" => "2011-05-18T15:01:01.000000Z",
-               "start_date" => "2011-05-18T15:01:01.000000Z",
+               "end_date" => "2011-05-18",
+               "start_date" => "2011-05-18",
                "user_id" => ^user_id
              } =
                conn
@@ -227,8 +230,8 @@ defmodule TdDdWeb.GrantControllerTest do
       assert %{
                "id" => ^id,
                "detail" => %{},
-               "end_date" => "2011-05-18T15:01:01.000000Z",
-               "start_date" => "2011-05-18T15:01:01.000000Z"
+               "end_date" => "2011-05-18",
+               "start_date" => "2011-05-18"
              } = json_response(conn, 200)["data"]
     end
 

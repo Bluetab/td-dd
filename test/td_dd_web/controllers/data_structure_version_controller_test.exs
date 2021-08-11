@@ -187,8 +187,8 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       structure_version: %{name: data_structure_name},
       claims: %{user_id: user_id}
     } do
-      start_date = DateTime.utc_now() |> DateTime.add(-60 * 60 * 24, :second)
-      end_date = DateTime.utc_now() |> DateTime.add(60 * 60 * 24, :second)
+      start_date = Date.utc_today() |> Date.add(-1)
+      end_date = Date.utc_today() |> Date.add(1)
 
       %{id: id, detail: detail} =
         insert(:grant,
@@ -210,8 +210,8 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                )
                |> json_response(:ok)
 
-      start_date_string = DateTime.to_iso8601(start_date)
-      end_date_string = DateTime.to_iso8601(end_date)
+      start_date_string = Date.to_iso8601(start_date)
+      end_date_string = Date.to_iso8601(end_date)
 
       assert %{
                "id" => ^id,
@@ -234,8 +234,8 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       parent_structure: parent_structure,
       claims: %{user_id: user_id}
     } do
-      start_date = DateTime.utc_now() |> DateTime.add(-60 * 60 * 24, :second)
-      end_date = DateTime.utc_now() |> DateTime.add(60 * 60 * 24, :second)
+      start_date = Date.utc_today() |> Date.add(-1)
+      end_date = Date.utc_today() |> Date.add(1)
 
       %{id: id, detail: detail} =
         insert(:grant,
@@ -257,8 +257,8 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                )
                |> json_response(:ok)
 
-      start_date_string = DateTime.to_iso8601(start_date)
-      end_date_string = DateTime.to_iso8601(end_date)
+      start_date_string = Date.to_iso8601(start_date)
+      end_date_string = Date.to_iso8601(end_date)
 
       assert %{
                "id" => ^id,
@@ -304,8 +304,8 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       structure: %{id: data_structure_id, external_id: data_structure_external_id} = structure,
       structure_version: %{name: data_structure_name}
     } do
-      start_date = DateTime.utc_now() |> DateTime.add(-60 * 60 * 24, :second)
-      end_date = DateTime.utc_now() |> DateTime.add(60 * 60 * 24, :second)
+      start_date = Date.utc_today() |> Date.add(-1)
+      end_date = Date.utc_today() |> Date.add(1)
 
       %{id: id, detail: detail} =
         insert(:grant,
@@ -326,8 +326,8 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                )
                |> json_response(:ok)
 
-      start_date_string = DateTime.to_iso8601(start_date)
-      end_date_string = DateTime.to_iso8601(end_date)
+      start_date_string = Date.to_iso8601(start_date)
+      end_date_string = Date.to_iso8601(end_date)
 
       assert %{
                "id" => ^id,
@@ -401,8 +401,8 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
         relation_type_id: relation_type_id
       )
 
-      start_date = DateTime.utc_now() |> DateTime.add(-60 * 60 * 24, :second)
-      end_date = DateTime.utc_now() |> DateTime.add(60 * 60 * 24, :second)
+      start_date = Date.utc_today() |> Date.add(-1)
+      end_date = Date.utc_today() |> Date.add(1)
 
       %{id: id, detail: detail} =
         insert(:grant,
@@ -423,8 +423,8 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                )
                |> json_response(:ok)
 
-      start_date_string = DateTime.to_iso8601(start_date)
-      end_date_string = DateTime.to_iso8601(end_date)
+      start_date_string = Date.to_iso8601(start_date)
+      end_date_string = Date.to_iso8601(end_date)
 
       assert %{
                "id" => ^id,

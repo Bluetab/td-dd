@@ -70,10 +70,11 @@ defmodule CacheHelpers do
     concept
   end
 
-  def insert_user(%{} = params \\ %{}) do
+  def insert_user(params \\ %{}) do
     %{id: id} =
       user =
       params
+      |> Map.new()
       |> Map.put_new(:id, System.unique_integer([:positive]))
       |> Map.put_new(:user_name, "user name")
       |> Map.put_new(:full_name, "full name")

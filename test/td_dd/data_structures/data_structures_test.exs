@@ -1054,8 +1054,8 @@ defmodule TdDd.DataStructuresTest do
         relation_type_id: relation_type_id
       )
 
-      start_date = DateTime.utc_now() |> DateTime.add(-60 * 60 * 24, :second)
-      end_date = DateTime.utc_now() |> DateTime.add(60 * 60 * 24 * 2, :second)
+      start_date = Date.utc_today() |> Date.add(-1)
+      end_date = Date.utc_today() |> Date.add(2)
 
       %{id: grant_id1, detail: detail1} =
         insert(:grant,
@@ -1083,8 +1083,8 @@ defmodule TdDd.DataStructuresTest do
           end_date: end_date
         )
 
-      start_date = DateTime.utc_now() |> DateTime.add(-60 * 60 * 24 * 2, :second)
-      end_date = DateTime.utc_now() |> DateTime.add(-60 * 60 * 24, :second)
+      start_date = Date.utc_today() |> Date.add(-3)
+      end_date = Date.utc_today() |> Date.add(-2)
 
       insert(:grant,
         data_structure_id: field.data_structure_id,
@@ -1167,8 +1167,8 @@ defmodule TdDd.DataStructuresTest do
         relation_type_id: relation_type_id
       )
 
-      start_date = DateTime.utc_now() |> DateTime.add(-60 * 60 * 24, :second)
-      end_date = DateTime.utc_now() |> DateTime.add(60 * 60 * 24 * 2, :second)
+      start_date = Date.utc_today() |> Date.add(-1)
+      end_date = Date.utc_today() |> Date.add(2)
 
       %{id: grant_id, detail: detail} =
         insert(:grant,

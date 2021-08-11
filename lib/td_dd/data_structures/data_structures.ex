@@ -398,14 +398,14 @@ defmodule TdDd.DataStructures do
   end
 
   defp get_grants(%DataStructureVersion{} = dsv) do
-    now = DateTime.utc_now()
+    today = Date.utc_today()
     versions = [dsv | get_ancestors(dsv)]
 
     versions
     |> Repo.preload(data_structure: [:grants, :versions])
     |> Enum.flat_map(&data_structure_version_grants/1)
     |> Enum.filter(fn %{start_date: start_date, end_date: end_date} ->
-      DateTime.compare(start_date, now) == :lt and DateTime.compare(now, end_date) == :lt
+      Date.compare(start_date, today) != :gt and Date.compare(today, end_date) != :gt
     end)
   end
 
@@ -431,10 +431,10 @@ defmodule TdDd.DataStructures do
   defp data_structure_version_grants(_), do: []
 
   defp get_grant(%DataStructureVersion{grants: [_ | _] = grants}, user_id) do
-    now = DateTime.utc_now()
+    today = Date.utc_today()
 
     Enum.find(grants, fn %{start_date: start_date, end_date: end_date, user_id: id} ->
-      DateTime.compare(start_date, now) == :lt and DateTime.compare(now, end_date) == :lt and
+      Date.compare(start_date, today) != :gt and Date.compare(today, end_date) != :gt and
         id == user_id
     end)
   end
@@ -443,14 +443,14 @@ defmodule TdDd.DataStructures do
          %DataStructureVersion{data_structure: %DataStructure{} = data_structure} = dsv,
          user_id
        ) do
-    now = DateTime.utc_now()
+    today = Date.utc_today()
 
     grant =
       data_structure
       |> Repo.preload(:grants)
       |> Map.get(:grants)
       |> Enum.find(fn %{start_date: start_date, end_date: end_date, user_id: id} ->
-        DateTime.compare(start_date, now) == :lt and DateTime.compare(now, end_date) == :lt and
+        Date.compare(start_date, today) != :gt and Date.compare(end_date, today) != :lt and
           id == user_id
       end)
 
