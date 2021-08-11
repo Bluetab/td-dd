@@ -17,6 +17,6 @@ defmodule TdDd.Repo.Migrations.CreateStructureNotes do
     end
 
     create index("structure_notes", [:data_structure_id])
-    create unique_index(:structure_notes, [:data_structure_id, :version])
+    create unique_index("structure_notes", [:data_structure_id, :version])
   end
 end
