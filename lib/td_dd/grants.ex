@@ -3,7 +3,7 @@ defmodule TdDd.Grants do
   The Grants context.
   """
 
-  import Ecto.Query, warn: false
+  import Ecto.Query
 
   alias Ecto.Multi
   alias TdDd.Auth.Claims
@@ -108,5 +108,26 @@ defmodule TdDd.Grants do
 
   def delete_grant_request(%GrantRequest{} = grant_request) do
     Repo.delete(grant_request)
+  end
+
+  def list_grants(clauses) do
+    clauses
+    |> Map.new()
+    |> Map.put_new(:date, Date.utc_today())
+    |> Enum.reduce(Grant, fn
+      {:data_structure_ids, ids}, q ->
+        where(q, [g], g.data_structure_id in ^ids)
+
+      {:user_id, user_id}, q ->
+        where(q, [g], g.user_id == ^user_id)
+
+      {:date, date}, q ->
+        where(
+          q,
+          [g],
+          fragment("daterange(?, ?, '[]') @> ?::date", g.start_date, g.end_date, ^date)
+        )
+    end)
+    |> Repo.all()
   end
 end

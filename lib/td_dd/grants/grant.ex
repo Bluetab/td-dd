@@ -19,6 +19,7 @@ defmodule TdDd.Grants.Grant do
     field(:user, :map, virtual: true)
 
     belongs_to(:data_structure, DataStructure)
+    has_one(:system, through: [:data_structure, :system])
 
     timestamps(type: :utc_datetime_usec)
   end

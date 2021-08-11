@@ -249,8 +249,8 @@ defmodule TdDdWeb.DataStructureVersionView do
     Map.put(dsv, :source, source)
   end
 
-  defp add_ancestry(%{path: [_ | _] = path} = dsv), do: Map.put(dsv, :ancestry, path)
-  defp add_ancestry(dsv), do: Map.put(dsv, :ancestry, [])
+  def add_ancestry(%{path: [_ | _] = path} = dsv), do: Map.put(dsv, :ancestry, path)
+  def add_ancestry(dsv), do: Map.put(dsv, :ancestry, [])
 
   defp lift_metadata(%{metadata: metadata} = dsv) do
     metadata =

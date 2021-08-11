@@ -22,9 +22,11 @@
 
 ### Fixed
 
-- [TD-3959] Report `rule_result_created` when result is created
+- [TD-3959] Publish `rule_result_created` event when result is created
 - [TD-3908] Timeout on node retrieval
 - [TD-4010] Grants were being created with the incorrect `user_id`
+- [TD-4013] Internal server error fetching structures with grant having
+  `end_date` `nil`
 
 ## [4.25.0] 2021-07-26
 

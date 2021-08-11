@@ -7,27 +7,24 @@ defmodule TdDd.DataStructures do
 
   alias Ecto.Association.NotLoaded
   alias Ecto.Multi
-
-  alias TdCache.{LinkCache, TemplateCache, UserCache}
+  alias TdCache.LinkCache
+  alias TdCache.TemplateCache
+  alias TdCache.UserCache
   alias TdCx.Sources
   alias TdCx.Sources.Source
   alias TdDd.Auth.Claims
-
-  alias TdDd.DataStructures.{
-    Ancestry,
-    Audit,
-    DataStructure,
-    DataStructureQueries,
-    DataStructureRelation,
-    DataStructuresTags,
-    DataStructureTag,
-    DataStructureType,
-    DataStructureVersion,
-    RelationTypes,
-    StructureMetadata,
-    StructureNote
-  }
-
+  alias TdDd.DataStructures.Ancestry
+  alias TdDd.DataStructures.Audit
+  alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureQueries
+  alias TdDd.DataStructures.DataStructureRelation
+  alias TdDd.DataStructures.DataStructureTag
+  alias TdDd.DataStructures.DataStructureType
+  alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.DataStructuresTags
+  alias TdDd.DataStructures.StructureMetadata
+  alias TdDd.DataStructures.StructureNote
+  alias TdDd.Grants
   alias TdDd.Lineage.GraphData
   alias TdDd.Repo
   alias TdDd.Search.IndexWorker
@@ -397,82 +394,29 @@ defmodule TdDd.DataStructures do
     |> Repo.all()
   end
 
-  defp get_grants(%DataStructureVersion{} = dsv) do
-    today = Date.utc_today()
-    versions = [dsv | get_ancestors(dsv)]
+  defp get_grants(%DataStructureVersion{data_structure_id: id, path: path} = dsv, clauses \\ %{}) do
+    ids = Enum.reduce(path, [id], fn %{"data_structure_id" => id}, acc -> [id | acc] end)
 
-    versions
-    |> Repo.preload(data_structure: [:grants, :versions])
-    |> Enum.flat_map(&data_structure_version_grants/1)
-    |> Enum.filter(fn %{start_date: start_date, end_date: end_date} ->
-      Date.compare(start_date, today) != :gt and Date.compare(today, end_date) != :gt
-    end)
-  end
-
-  defp data_structure_version_grants(
-         %DataStructureVersion{
-           data_structure: %DataStructure{grants: [_ | _] = grants} = structure
-         } = dsv
-       ) do
-    dsv = dsv |> Map.delete(:grants) |> enrich([:path])
-    structure = Map.delete(structure, :grant)
-
-    grants
+    clauses
+    |> Map.put(:data_structure_ids, ids)
+    |> Grants.list_grants()
+    |> Repo.preload([:data_structure, :system])
     |> Enum.map(&%{&1 | data_structure_version: dsv})
-    |> Enum.map(&%{&1 | data_structure: structure})
     |> Enum.map(fn %{user_id: user_id} = grant ->
       case UserCache.get(user_id) do
         {:ok, %{} = user} -> %{grant | user: user}
         _ -> grant
       end
     end)
-  end
-
-  defp data_structure_version_grants(_), do: []
-
-  defp get_grant(%DataStructureVersion{grants: [_ | _] = grants}, user_id) do
-    today = Date.utc_today()
-
-    Enum.find(grants, fn %{start_date: start_date, end_date: end_date, user_id: id} ->
-      Date.compare(start_date, today) != :gt and Date.compare(today, end_date) != :gt and
-        id == user_id
-    end)
-  end
-
-  defp get_grant(
-         %DataStructureVersion{data_structure: %DataStructure{} = data_structure} = dsv,
-         user_id
-       ) do
-    today = Date.utc_today()
-
-    grant =
-      data_structure
-      |> Repo.preload(:grants)
-      |> Map.get(:grants)
-      |> Enum.find(fn %{start_date: start_date, end_date: end_date, user_id: id} ->
-        Date.compare(start_date, today) != :gt and Date.compare(end_date, today) != :lt and
-          id == user_id
-      end)
-
-    case grant do
-      nil ->
-        dsv
-        |> get_parents()
-        |> get_parent_grant(user_id)
-
-      grant ->
-        Repo.preload(grant, data_structure: :versions)
-    end
+    |> Enum.sort_by(& &1.id)
   end
 
   defp get_grant(%DataStructureVersion{} = dsv, user_id) do
     dsv
-    |> Repo.preload(:data_structure)
-    |> get_grant(user_id)
+    |> get_grants(%{user_id: user_id})
+    # TODO: This assumes a child's external_id is longer than the parent's external_id
+    |> Enum.max_by(&String.length(&1.data_structure.external_id), fn -> nil end)
   end
-
-  defp get_parent_grant([], _user_id), do: nil
-  defp get_parent_grant([parent | _], user_id), do: get_grant(parent, user_id)
 
   defp select_structures(versions, false) do
     versions
@@ -1144,7 +1088,6 @@ defmodule TdDd.DataStructures do
   defp enriched_structure_version!(id, opts) do
     opts
     |> Keyword.put(:ids, [id])
-    |> Keyword.put(:relation_type_id, RelationTypes.default_id!())
     |> enriched_structure_versions()
     |> hd()
   end
