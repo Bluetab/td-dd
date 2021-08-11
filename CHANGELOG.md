@@ -9,20 +9,20 @@
 - [TD-2635] Admin can manually delete structures and all its children
 - [TD-3917] `PATCH /api/systems/:external_id/metadata` allows mutable metadata
   to be replaced or merged
-- [TD-3767]: 
-  - Get nodes filtered by domain id
-  - Get unit domain ids
+- [TD-3767] Support for filtering lineage nodes by domain id
 
 ### Changed
 
 - [TD-3957] Structure profiles are now validated and expanded
 - [TD-3952] Data structure types now support multiple metadata views
+- [TD-3859] `PUT /api/units/:name` is now asynchronous when replacing an
+  existing unit (fixes timeout issue for large units)
 
 ### Fixed
 
 - [TD-3959] Report `rule_result_created` when result is created
 - [TD-3908] Timeout on node retrieval
-- [TD-3859] added `replace and delete unit` in process asynchronously
+- [TD-4010] Grants were being created with the incorrect `user_id`
 
 ## [4.25.0] 2021-07-26
 
