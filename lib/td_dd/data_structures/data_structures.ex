@@ -18,10 +18,10 @@ defmodule TdDd.DataStructures do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureQueries
   alias TdDd.DataStructures.DataStructureRelation
+  alias TdDd.DataStructures.DataStructuresTags
   alias TdDd.DataStructures.DataStructureTag
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
-  alias TdDd.DataStructures.DataStructuresTags
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.DataStructures.StructureNote
   alias TdDd.Grants
