@@ -17,6 +17,8 @@
 - [TD-3952] Data structure types now support multiple metadata views
 - [TD-3859] `PUT /api/units/:name` is now asynchronous when replacing an
   existing unit (fixes timeout issue for large units)
+- [TD-4010] Grant `start_date` and `end_date` are now `Date` instead of
+  `DateTime`
 
 ### Fixed
 
