@@ -762,7 +762,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
             external_id(:string, "domain external id")
             unit([:integer, :null], "unit belonging to domain")
           end
-        end,
+        end
     }
   end
 
@@ -1033,9 +1033,33 @@ defmodule TdDdWeb.SwaggerDefinitions do
             detail(:object, "Grant details")
             start_date(:string, "Start date")
             end_date(:string, "End date")
-            data_structure(Schema.ref(:DataStructure))
-            data_structure_version(Schema.ref(:DataStructureVersion))
+            data_structure(Schema.ref(:GrantDataStructure))
+            data_structure_version(Schema.ref(:GrantDataStructureVersion))
+            system(Schema.ref(:GrantSystem))
             user(:object, "Grant user")
+          end
+        end,
+      GrantDataStructure:
+        swagger_schema do
+          properties do
+            id(:integer, "Id", required: true)
+            external_id(:string, "External Id", required: true)
+            system_id(:integer, "System Id", required: true)
+          end
+        end,
+      GrantDataStructureVersion:
+        swagger_schema do
+          properties do
+            name(:string, "Name", required: true)
+            ancestry(Schema.ref(:DataStructuresEmbedded))
+          end
+        end,
+      GrantSystem:
+        swagger_schema do
+          properties do
+            id(:integer, "Id", required: true)
+            external_id(:string, "External Id", required: true)
+            name(:string, "Name", required: true)
           end
         end,
       GrantCreate:

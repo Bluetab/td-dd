@@ -2,7 +2,8 @@ defmodule TdDqWeb.RuleControllerTest do
   use TdDqWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger_dq.json"
 
-  alias TdCache.{Audit, Redix}
+  alias TdCache.Audit
+  alias TdCache.Redix
   alias TdDq.Rules.Rule
 
   setup_all do

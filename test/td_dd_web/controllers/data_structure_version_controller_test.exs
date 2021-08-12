@@ -187,8 +187,8 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       structure_version: %{name: data_structure_name},
       claims: %{user_id: user_id}
     } do
-      start_date = DateTime.utc_now() |> DateTime.add(-60 * 60 * 24, :second)
-      end_date = DateTime.utc_now() |> DateTime.add(60 * 60 * 24, :second)
+      start_date = Date.utc_today() |> Date.add(-1)
+      end_date = Date.utc_today() |> Date.add(1)
 
       %{id: id, detail: detail} =
         insert(:grant,
@@ -210,8 +210,8 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                )
                |> json_response(:ok)
 
-      start_date_string = DateTime.to_iso8601(start_date)
-      end_date_string = DateTime.to_iso8601(end_date)
+      start_date_string = Date.to_iso8601(start_date)
+      end_date_string = Date.to_iso8601(end_date)
 
       assert %{
                "id" => ^id,
@@ -221,9 +221,10 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                "user_id" => ^user_id,
                "data_structure" => %{
                  "id" => ^data_structure_id,
-                 "external_id" => ^data_structure_external_id,
-                 "name" => ^data_structure_name
-               }
+                 "external_id" => ^data_structure_external_id
+               },
+               "data_structure_version" => %{"name" => ^data_structure_name, "ancestry" => _},
+               "system" => %{"external_id" => _, "id" => _, "name" => _}
              } = grant
     end
 
@@ -234,8 +235,8 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       parent_structure: parent_structure,
       claims: %{user_id: user_id}
     } do
-      start_date = DateTime.utc_now() |> DateTime.add(-60 * 60 * 24, :second)
-      end_date = DateTime.utc_now() |> DateTime.add(60 * 60 * 24, :second)
+      start_date = Date.utc_today() |> Date.add(-1)
+      end_date = Date.utc_today() |> Date.add(1)
 
       %{id: id, detail: detail} =
         insert(:grant,
@@ -257,26 +258,29 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                )
                |> json_response(:ok)
 
-      start_date_string = DateTime.to_iso8601(start_date)
-      end_date_string = DateTime.to_iso8601(end_date)
+      start_date_string = Date.to_iso8601(start_date)
+      end_date_string = Date.to_iso8601(end_date)
 
       assert %{
                "id" => ^id,
                "end_date" => ^end_date_string,
                "start_date" => ^start_date_string,
                "detail" => ^detail,
-               "user_id" => ^user_id
+               "user_id" => ^user_id,
+               "data_structure" => %{"id" => _, "external_id" => _},
+               "data_structure_version" => %{"name" => _, "ancestry" => _},
+               "system" => %{"external_id" => _, "id" => _, "name" => _}
              } = grant
     end
 
     @tag authentication: [role: "admin"]
-    test "renders a data structure without expired grant", %{
+    test "renders a data structure without future grant", %{
       conn: conn,
       structure: structure,
       claims: %{user_id: user_id}
     } do
-      start_date = DateTime.utc_now() |> DateTime.add(60 * 60 * 24, :second)
-      end_date = DateTime.utc_now() |> DateTime.add(60 * 60 * 24 * 2, :second)
+      start_date = Date.utc_today() |> Date.add(1)
+      end_date = Date.utc_today() |> Date.add(2)
 
       insert(:grant,
         data_structure: structure,
@@ -304,8 +308,8 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       structure: %{id: data_structure_id, external_id: data_structure_external_id} = structure,
       structure_version: %{name: data_structure_name}
     } do
-      start_date = DateTime.utc_now() |> DateTime.add(-60 * 60 * 24, :second)
-      end_date = DateTime.utc_now() |> DateTime.add(60 * 60 * 24, :second)
+      start_date = Date.utc_today() |> Date.add(-1)
+      end_date = Date.utc_today() |> Date.add(1)
 
       %{id: id, detail: detail} =
         insert(:grant,
@@ -326,8 +330,8 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                )
                |> json_response(:ok)
 
-      start_date_string = DateTime.to_iso8601(start_date)
-      end_date_string = DateTime.to_iso8601(end_date)
+      start_date_string = Date.to_iso8601(start_date)
+      end_date_string = Date.to_iso8601(end_date)
 
       assert %{
                "id" => ^id,
@@ -336,13 +340,13 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                "detail" => ^detail,
                "data_structure" => %{
                  "id" => ^data_structure_id,
-                 "external_id" => ^data_structure_external_id,
-                 "name" => ^data_structure_name
+                 "external_id" => ^data_structure_external_id
                },
                "data_structure_version" => %{
                  "name" => ^data_structure_name,
                  "ancestry" => [_ | _]
-               }
+               },
+               "system" => %{"external_id" => _, "id" => _, "name" => _}
              } = grant
     end
 
@@ -401,8 +405,8 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
         relation_type_id: relation_type_id
       )
 
-      start_date = DateTime.utc_now() |> DateTime.add(-60 * 60 * 24, :second)
-      end_date = DateTime.utc_now() |> DateTime.add(60 * 60 * 24, :second)
+      start_date = Date.utc_today() |> Date.add(-1)
+      end_date = Date.utc_today() |> Date.add(1)
 
       %{id: id, detail: detail} =
         insert(:grant,
@@ -423,8 +427,8 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                )
                |> json_response(:ok)
 
-      start_date_string = DateTime.to_iso8601(start_date)
-      end_date_string = DateTime.to_iso8601(end_date)
+      start_date_string = Date.to_iso8601(start_date)
+      end_date_string = Date.to_iso8601(end_date)
 
       assert %{
                "id" => ^id,
@@ -433,13 +437,13 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                "detail" => ^detail,
                "data_structure" => %{
                  "id" => ^data_structure_id,
-                 "external_id" => ^data_structure_external_id,
-                 "name" => ^data_structure_name
+                 "external_id" => ^data_structure_external_id
                },
                "data_structure_version" => %{
                  "name" => ^data_structure_name,
                  "ancestry" => [_ | _]
-               }
+               },
+               "system" => %{"external_id" => _, "id" => _, "name" => _}
              } = grant
 
       assert %{"data" => %{"grants" => []}} =

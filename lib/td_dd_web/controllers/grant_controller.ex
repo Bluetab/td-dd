@@ -41,8 +41,8 @@ defmodule TdDdWeb.GrantController do
            {:data_structure,
             DataStructures.get_data_structure_by_external_id(data_structure_external_id)},
          {:can, true} <- {:can, can?(claims, create_grant(data_structure))},
-         {:ok, %{grant: %Grant{} = grant}} <-
-           Grants.create_grant(grant_params, data_structure, claims) do
+         {:ok, %{grant: %{id: id}}} <- Grants.create_grant(grant_params, data_structure, claims),
+         %Grant{} = grant <- Grants.get_grant!(id, preload: [:data_structure, :system]) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", Routes.grant_path(conn, :show, grant))
@@ -68,7 +68,7 @@ defmodule TdDdWeb.GrantController do
 
   def show(conn, %{"id" => id}) do
     with claims <- conn.assigns[:current_resource],
-         %Grant{} = grant <- Grants.get_grant!(id, preload: [data_structure: :versions]),
+         %Grant{} = grant <- Grants.get_grant!(id, preload: [:data_structure, :system]),
          {:can, true} <- {:can, can?(claims, show(grant))} do
       render(conn, "show.json", grant: grant)
     end
@@ -95,9 +95,10 @@ defmodule TdDdWeb.GrantController do
 
   def update(conn, %{"id" => id, "grant" => grant_params}) do
     with claims <- conn.assigns[:current_resource],
-         %Grant{} = grant <- Grants.get_grant!(id, preload: [:data_structure]),
+         %Grant{} = grant <- Grants.get_grant!(id, preload: :data_structure),
          {:can, true} <- {:can, can?(claims, update(grant))},
-         {:ok, %{grant: %Grant{} = grant}} <- Grants.update_grant(grant, grant_params, claims) do
+         {:ok, %{grant: _}} <- Grants.update_grant(grant, grant_params, claims),
+         %Grant{} = grant <- Grants.get_grant!(id, preload: [:data_structure, :system]) do
       render(conn, "show.json", grant: grant)
     end
   end
@@ -117,7 +118,7 @@ defmodule TdDdWeb.GrantController do
 
   def delete(conn, %{"id" => id}) do
     with claims <- conn.assigns[:current_resource],
-         %Grant{} = grant <- Grants.get_grant!(id, preload: [:data_structure]),
+         %Grant{} = grant <- Grants.get_grant!(id, preload: [:data_structure, :system]),
          {:can, true} <- {:can, can?(claims, delete(grant))},
          {:ok, %{grant: %Grant{}}} <- Grants.delete_grant(grant, claims) do
       send_resp(conn, :no_content, "")
