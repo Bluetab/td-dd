@@ -19,190 +19,278 @@ defmodule TdDd.GrantsTest do
   end
 
   setup do
-    [template: CacheHelpers.insert_template(name: @template_name)]
+    %{id: user_id, user_name: user_name} = user = CacheHelpers.insert_user()
+    %{id: data_structure_id} = data_structure = insert(:data_structure)
+
+    [
+      user: user,
+      user_id: user_id,
+      user_name: user_name,
+      claims: build(:claims),
+      template: CacheHelpers.insert_template(name: @template_name),
+      data_structure: data_structure,
+      data_structure_id: data_structure_id
+    ]
   end
 
-  describe "grants" do
-    test "list_grants/0 returns all grants" do
-      grant = insert(:grant)
-      assert Grants.list_grants() <|> [grant]
+  describe "get_grant!/1" do
+    test "returns the grant with given id" do
+      %{id: id} = grant = insert(:grant)
+      assert Grants.get_grant!(id) <~> grant
     end
 
-    test "get_grant!/1 returns the grant with given id" do
-      grant = insert(:grant)
-      assert Grants.get_grant!(grant.id) <~> grant
+    test "returns the grant preloaded structure" do
+      %{id: id} = insert(:grant)
+
+      assert %{data_structure: %{system: %{id: _}}, id: ^id} =
+               Grants.get_grant!(id, preload: [data_structure: :system])
     end
+  end
 
-    test "get_grant!/1 returns the grant preloaded structure" do
-      grant = insert(:grant)
-      refute Grants.get_grant!(grant.id) == grant
-      assert Grants.get_grant!(grant.id, preload: [data_structure: [:system]]) == grant
-    end
-
-    test "create_grant/3 with valid data creates a grant" do
-      %{user_id: user_id} = claims = build(:claims)
-      %{id: data_structure_id} = data_structure = insert(:data_structure)
-
+  describe "create_grant/3" do
+    test "with valid data creates a grant", %{
+      claims: claims,
+      user_id: user_id,
+      user_name: user_name,
+      data_structure: data_structure,
+      data_structure_id: data_structure_id
+    } do
       params = %{
         detail: %{},
-        end_date: "2010-04-17T14:00:00.000000Z",
-        start_date: "2010-04-17T14:00:00.000000Z"
+        end_date: "2010-04-17",
+        start_date: "2010-04-17",
+        user_name: user_name
       }
 
-      assert {:ok,
-              %{
-                audit: event_id,
-                grant: %Grant{} = grant
-              }} = Grants.create_grant(params, data_structure, claims)
+      assert {:ok, %{grant: %Grant{} = grant}} =
+               Grants.create_grant(params, data_structure, claims)
 
       assert %{
                detail: %{},
-               end_date: ~U[2010-04-17T14:00:00.000000Z],
-               start_date: ~U[2010-04-17T14:00:00.000000Z],
+               end_date: ~D[2010-04-17],
+               start_date: ~D[2010-04-17],
                user_id: ^user_id,
                data_structure_id: ^data_structure_id
              } = grant
+    end
 
-      assert {:ok, [%{id: ^event_id, payload: payload, user_id: audit_user_id}]} =
-               Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+    test "publishes an audit event", %{
+      claims: claims,
+      user_id: user_id,
+      data_structure: data_structure
+    } do
+      params = %{
+        detail: %{},
+        end_date: "2010-04-17",
+        start_date: "2010-04-17",
+        user_id: user_id
+      }
 
-      assert audit_user_id == to_string(user_id)
+      assert {:ok, %{audit: event_id, grant: grant}} =
+               Grants.create_grant(params, data_structure, claims)
+
+      assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+
+      assert %{
+               event: "grant_created",
+               id: ^event_id,
+               payload: payload,
+               resource_id: resource_id,
+               resource_type: "grant",
+               user_id: audit_user_id
+             } = event
+
+      assert resource_id == to_string(grant.id)
+      assert audit_user_id == to_string(claims.user_id)
 
       assert %{
                "detail" => %{},
-               "end_date" => "2010-04-17T14:00:00.000000Z",
-               "start_date" => "2010-04-17T14:00:00.000000Z"
+               "end_date" => "2010-04-17",
+               "start_date" => "2010-04-17",
+               "user_id" => ^user_id
              } = Jason.decode!(payload)
     end
 
-    test "create_grant/3 will not allow a start date to be greater than the end_date" do
-      claims = build(:claims)
-      data_structure = insert(:data_structure)
-
+    test "will not allow a start date to be greater than the end_date", %{
+      claims: claims,
+      data_structure: data_structure,
+      user_id: user_id
+    } do
       params = %{
-        end_date: "2010-04-10T00:00:00.000000Z",
-        start_date: "2010-04-20T00:00:00.000000Z"
+        end_date: "2010-04-10",
+        start_date: "2010-04-20",
+        user_id: user_id
       }
 
-      assert {:error, :grant, %Ecto.Changeset{}, _} =
+      assert {:error, :grant, %{errors: errors}, _} =
                Grants.create_grant(params, data_structure, claims)
+
+      assert {_, [constraint: :check, constraint_name: "date_range"]} = errors[:end_date]
     end
 
-    test "create_grant/3 will not allow two grants of same structure and user on the same period" do
-      claims = build(:claims)
-      data_structure = insert(:data_structure)
-
+    test "will not allow two grants of same structure and user on the same period",
+         %{user_id: user_id, data_structure: data_structure, claims: claims} do
       params = %{
-        end_date: "2010-04-20T00:00:00.000000Z",
-        start_date: "2010-04-16T00:00:00.000000Z"
+        end_date: "2010-04-20",
+        start_date: "2010-04-16",
+        user_id: user_id
       }
 
       assert {:ok, _} = Grants.create_grant(params, data_structure, claims)
 
       params = %{
-        start_date: "2010-04-18T00:00:00.000000Z"
+        start_date: "2010-04-18",
+        user_id: user_id
       }
 
-      assert {:error, :overlap, %Ecto.Changeset{} = error, _} =
+      assert {:error, :grant, %{errors: errors}, _} =
                Grants.create_grant(params, data_structure, claims)
 
-      assert %{errors: [date_range: {"overlaps", []}]} = error
+      assert {_, [{:constraint, :exclusion}, {:constraint_name, "no_overlap"}]} = errors[:user_id]
 
       params = %{
-        start_date: "2010-04-15T00:00:00.000000Z",
-        end_date: "2010-04-19T00:00:00.000000Z"
+        start_date: "2010-04-15",
+        end_date: "2010-04-19",
+        user_id: user_id
       }
 
-      assert {:error, :overlap, %Ecto.Changeset{} = error, _} =
+      assert {:error, :grant, %{errors: errors}, _} =
                Grants.create_grant(params, data_structure, claims)
 
-      assert %{errors: [date_range: {"overlaps", []}]} = error
+      assert {_, [{:constraint, :exclusion}, {:constraint_name, "no_overlap"}]} = errors[:user_id]
     end
 
-    test "create_grant/3 will allow two grants of same structure and user on different periods" do
-      claims = build(:claims)
-      data_structure = insert(:data_structure)
-
+    test "will allow two grants of same structure and user on different periods",
+         %{claims: claims, data_structure: data_structure, user_id: user_id} do
       params = %{
-        end_date: "2010-04-20T00:00:00.000000Z",
-        start_date: "2010-04-16T00:00:00.000000Z"
+        end_date: "2010-04-20",
+        start_date: "2010-04-16",
+        user_id: user_id
       }
 
       assert {:ok, _} = Grants.create_grant(params, data_structure, claims)
 
       params = %{
-        start_date: "2010-04-21T00:00:00.000000Z",
-        end_date: "2010-04-26T00:00:00.000000Z"
+        start_date: "2010-04-21",
+        end_date: "2010-04-26",
+        user_id: user_id
       }
 
       assert {:ok, _} = Grants.create_grant(params, data_structure, claims)
     end
 
-    test "create_grant/3 with invalid data returns error changeset" do
-      claims = build(:claims)
-      data_structure = insert(:data_structure)
-      invalid_params = %{detail: nil, end_date: nil, start_date: nil, user_id: nil}
+    test "with invalid data returns error changeset", %{
+      claims: claims,
+      data_structure: data_structure
+    } do
+      invalid_params = %{start_date: nil, user_id: nil}
 
-      assert {:error, :grant, %Ecto.Changeset{}, _} =
+      assert {:error, :grant, %{errors: errors}, _} =
                Grants.create_grant(invalid_params, data_structure, claims)
-    end
 
-    test "update_grant/3 with valid data updates the grant" do
-      claims = build(:claims)
-      %{user_id: previous_user_id} = grant = insert(:grant)
+      assert {_, [validation: :required]} = errors[:user_id]
+      assert {_, [validation: :required]} = errors[:start_date]
+    end
+  end
+
+  describe "update_grant/3" do
+    test "with valid data updates the grant", %{claims: claims} do
+      grant = insert(:grant)
 
       params = %{
         detail: %{},
-        end_date: "2011-05-18T15:01:01.000000Z",
-        start_date: "2011-05-18T15:01:01.000000Z",
-        user_id: 43
+        end_date: "2011-05-18",
+        start_date: "2011-05-18"
       }
 
-      assert {:ok, %{audit: event_id, grant: grant}} = Grants.update_grant(grant, params, claims)
+      assert {:ok, %{grant: grant}} = Grants.update_grant(grant, params, claims)
 
       assert %{
-               detail: %{},
-               end_date: ~U[2011-05-18T15:01:01.000000Z],
-               start_date: ~U[2011-05-18T15:01:01.000000Z],
-               user_id: ^previous_user_id
+               detail: detail,
+               end_date: ~D[2011-05-18],
+               start_date: ~D[2011-05-18]
              } = grant
 
-      assert {:ok, [%{id: ^event_id, payload: payload}]} =
-               Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+      assert detail == %{}
+    end
+
+    test "does not change user_id", %{claims: claims, user_id: new_user_id} do
+      %{user_id: user_id} = grant = insert(:grant)
+      params = %{user_id: new_user_id}
+      assert new_user_id != user_id
+      assert {:ok, %{grant: grant}} = Grants.update_grant(grant, params, claims)
+      assert %{user_id: ^user_id} = grant
+    end
+
+    test "publishes an audit event", %{claims: claims, user_id: user_id} do
+      %{id: id} = grant = insert(:grant)
+
+      params = %{
+        detail: %{},
+        end_date: "2011-05-18",
+        start_date: "2011-05-18",
+        user_id: user_id
+      }
+
+      assert {:ok, %{audit: event_id}} = Grants.update_grant(grant, params, claims)
+      assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
 
       assert %{
+               event: "grant_updated",
+               id: ^event_id,
+               payload: payload,
+               resource_id: resource_id,
+               resource_type: "grant",
+               user_id: audit_user_id
+             } = event
+
+      assert audit_user_id == to_string(claims.user_id)
+      assert resource_id == to_string(id)
+
+      assert Jason.decode!(payload) == %{
                "detail" => %{},
-               "end_date" => "2011-05-18T15:01:01.000000Z",
-               "start_date" => "2011-05-18T15:01:01.000000Z"
-             } = Jason.decode!(payload)
+               "end_date" => "2011-05-18",
+               "start_date" => "2011-05-18"
+             }
     end
 
-    test "update_grant/3 with invalid data returns error changeset" do
-      claims = build(:claims)
+    test "with invalid data returns error changeset", %{claims: claims} do
       grant = insert(:grant)
 
-      invalid_params = %{detail: nil, end_date: nil, start_date: nil, user_id: nil}
+      invalid_params = %{start_date: nil, user_id: nil}
 
-      assert {:error, :grant, %Ecto.Changeset{}, _} =
+      assert {:error, :grant, %{errors: errors}, _} =
                Grants.update_grant(grant, invalid_params, claims)
 
-      assert grant <~> Grants.get_grant!(grant.id)
+      assert {_, [validation: :required]} = errors[:start_date]
+    end
+  end
+
+  describe "delete_grant/1" do
+    test "deletes the grant", %{claims: claims} do
+      %{id: id} = grant = insert(:grant)
+
+      assert {:ok, %{grant: %Grant{}}} = Grants.delete_grant(grant, claims)
+
+      assert_raise Ecto.NoResultsError, fn -> Grants.get_grant!(id) end
     end
 
-    test "delete_grant/1 deletes the grant" do
-      claims = build(:claims)
-      grant = insert(:grant)
+    test "publishes an audit event", %{claims: claims} do
+      %{id: id} = grant = insert(:grant)
+      assert {:ok, %{audit: event_id}} = Grants.delete_grant(grant, claims)
+      assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
 
-      assert {:ok,
-              %{
-                audit: event_id,
-                grant: %Grant{}
-              }} = Grants.delete_grant(grant, claims)
+      assert %{
+               event: "grant_deleted",
+               id: ^event_id,
+               payload: "{}",
+               resource_id: resource_id,
+               resource_type: "grant",
+               user_id: audit_user_id
+             } = event
 
-      assert {:ok, [%{id: ^event_id, payload: "{}"}]} =
-               Stream.range(:redix, @stream, event_id, event_id, transform: :range)
-
-      assert_raise Ecto.NoResultsError, fn -> Grants.get_grant!(grant.id) end
+      assert audit_user_id == to_string(claims.user_id)
+      assert resource_id == to_string(id)
     end
   end
 

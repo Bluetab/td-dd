@@ -7,6 +7,7 @@ defmodule TdDd.DataStructures.DataStructureQueries do
 
   alias TdDd.Classifiers
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.RelationTypes
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.DataStructures.StructureNote
 
@@ -56,7 +57,7 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   end
 
   @spec paths(map) :: Ecto.Query.t()
-  def paths(%{relation_type_id: _} = params)
+  def paths(%{} = params)
       when is_map_key(params, :ids) or is_map_key(params, :data_structure_ids) do
     path_cte_params = Map.take(params, [:ids, :data_structure_ids, :relation_type_id])
 
@@ -91,8 +92,13 @@ defmodule TdDd.DataStructures.DataStructureQueries do
     with_cte(query, ^name, as: fragment(@paths_by_child_structure_id, ^rt_id, ^ids, ^rt_id))
   end
 
+  defp with_path_cte(query, name, %{} = params) do
+    params = Map.put(params, :relation_type_id, RelationTypes.default_id!())
+    with_path_cte(query, name, params)
+  end
+
   @spec enriched_structure_versions(map) :: Ecto.Query.t()
-  def enriched_structure_versions(%{relation_type_id: _} = params)
+  def enriched_structure_versions(%{} = params)
       when is_map_key(params, :ids) or is_map_key(params, :data_structure_ids) do
     %{
       distinct: :data_structure_id,

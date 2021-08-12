@@ -10,7 +10,7 @@ defmodule TdDd.Repo.Migrations.CreateStructuresConstraint do
     |> Repo.delete_all()
 
     create(
-      constraint(:data_structure_relations, :avoid_structure_relation_itself,
+      constraint("data_structure_relations", :avoid_structure_relation_itself,
         check: "parent_id != child_id"
       )
     )
