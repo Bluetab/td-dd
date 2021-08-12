@@ -12,9 +12,8 @@ defmodule TdDq.Rules.Rule do
   alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Rule
 
+  @valid_result_types ~w(percentage errors_number deviation)
   @type t :: %__MODULE__{}
-
-  @valid_result_types ~w(percentage errors_number)
 
   schema "rules" do
     field(:business_concept_id, :string)
@@ -102,24 +101,28 @@ defmodule TdDq.Rules.Rule do
 
   defp validate_goal(changeset), do: changeset
 
-  defp do_validate_goal(changeset, minimum, goal, "percentage") do
-    changeset =
-      changeset
-      |> validate_number(:goal, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
-      |> validate_number(:minimum, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
+  defp do_validate_goal(changeset, minimum, goal, result_type) when result_type in ["percentage", "deviation"] do
+    changeset
+    |> validate_number(:goal, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
+    |> validate_number(:minimum, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
+    |> minimum_goal_check(minimum, goal, result_type)
+  end
 
+  defp do_validate_goal(changeset, minimum, goal, "errors_number") do
+    changeset
+    |> validate_number(:goal, greater_than_or_equal_to: 0)
+    |> validate_number(:minimum, greater_than_or_equal_to: 0)
+    |> minimum_goal_check(minimum, goal, "errors_number")
+  end
+
+  def minimum_goal_check(changeset, minimum, goal, "percentage") do
     case minimum <= goal do
       true -> changeset
       false -> add_error(changeset, :goal, "must.be.greater.than.or.equal.to.minimum")
     end
   end
 
-  defp do_validate_goal(changeset, minimum, goal, "errors_number") do
-    changeset =
-      changeset
-      |> validate_number(:goal, greater_than_or_equal_to: 0)
-      |> validate_number(:minimum, greater_than_or_equal_to: 0)
-
+  def minimum_goal_check(changeset, minimum, goal, result_type) when result_type in ["errors_number", "deviation"] do
     case minimum >= goal do
       true -> changeset
       false -> add_error(changeset, :minimum, "must.be.greater.than.or.equal.to.goal")

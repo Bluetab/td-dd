@@ -134,7 +134,7 @@ defmodule TdDq.RuleResultsTest do
   end
 
   describe "create_rule_result/1" do
-    test "creates a rule result with valid result" do
+    test "creates a (result_type percentage) rule result with valid result" do
       %{implementation_key: implementation_key} = implementation = insert(:implementation)
       errors = 2
       records = 1_000_000
@@ -153,6 +153,50 @@ defmodule TdDq.RuleResultsTest do
       assert rr.errors == errors
       assert rr.records == records
       assert rr.result == Decimal.new("99.99")
+    end
+
+    test "creates a (result_type errors_number) rule result with valid result" do
+      rule = insert(:rule, result_type: "errors_number")
+      %{implementation_key: implementation_key} = implementation = insert(:implementation, rule: rule)
+      errors = 123
+      records = 1000
+      result = abs((records - errors) * 100 / records)
+
+      params = %{
+        "date" => "2020-08-06-08-28-00",
+        "errors" => errors,
+        "records" => records,
+        "result" => result,
+        "result_type" => "errors_number"
+      }
+
+      assert {:ok, %{result: rr}} = RuleResults.create_rule_result(implementation, params)
+      assert rr.implementation_key == implementation_key
+      assert rr.errors == errors
+      assert rr.records == records
+      assert rr.result == Decimal.new("87.70")
+    end
+
+    test "creates a (result_type deviation) rule result with valid result" do
+      rule = insert(:rule, result_type: "deviation")
+      %{implementation_key: implementation_key} = implementation = insert(:implementation, rule: rule)
+      errors = 210
+      records = 1000
+      result = abs(errors * 100 / records)
+
+      params = %{
+        "date" => "2020-08-06-08-28-00",
+        "errors" => errors,
+        "records" => records,
+        "result" => result,
+        "result_type" => "deviation"
+      }
+
+      assert {:ok, %{result: rr}} = RuleResults.create_rule_result(implementation, params)
+      assert rr.implementation_key == implementation_key
+      assert rr.errors == errors
+      assert rr.records == records
+      assert rr.result == Decimal.new("21.00")
     end
 
     test "updates related executions" do

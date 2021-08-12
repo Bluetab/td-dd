@@ -79,17 +79,24 @@ defmodule TdDq.Rules.RuleResult do
 
   defp put_result(%{} = changeset) do
     with records when is_integer(records) <- get_change(changeset, :records),
-         errors when is_integer(errors) <- get_change(changeset, :errors) do
-      result = calculate_quality(records, errors)
+         errors when is_integer(errors) <- get_change(changeset, :errors),
+         result_type when result_type != nil <- changeset.data.result_type || get_change(changeset, :result_type) do
+      result = calculate_quality(records, errors, result_type)
       put_change(changeset, :result, result)
     else
       _result -> changeset
     end
   end
 
-  defp calculate_quality(0, _errors), do: 0
+  defp calculate_quality(0, _errors, _result_type), do: 0
 
-  defp calculate_quality(records, errors) do
+  defp calculate_quality(records, errors, "deviation") do
+    errors
+    |> Decimal.mult(100)
+    |> Decimal.div(records)
+  end
+
+  defp calculate_quality(records, errors, result_type) when result_type in ["errors_number", "percentage"] do
     records
     |> Decimal.sub(errors)
     |> Decimal.abs()
