@@ -32,10 +32,6 @@ defmodule TdDq.Rules.RuleResults do
     |> Repo.all()
   end
 
-  def get_related_rule(rule_result) do
-    Repo.preload(rule_result, [:rule]).rule
-  end
-
   @doc """
   Creates a rule_result.
 
@@ -49,7 +45,7 @@ defmodule TdDq.Rules.RuleResults do
 
   """
   def create_rule_result(%Implementation{implementation_key: key} = impl, params \\ %{}) do
-    %{rule: %{result_type: result_type} = _rule} = Repo.preload(impl, :rule)
+    %{rule: %{result_type: result_type}} = Repo.preload(impl, :rule)
 
     changeset =
       RuleResult.changeset(%RuleResult{implementation_key: key, result_type: result_type}, params)
