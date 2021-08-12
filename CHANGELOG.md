@@ -4,6 +4,7 @@
 
 ### Added
 
+- [TD-3549] Add new quality rule result type: "deviation"
 - [TD-3982] Initial support for grant requests
 - [TD-3948] Grants in data structure version visualization
 - [TD-2635] Admin can manually delete structures and all its children
