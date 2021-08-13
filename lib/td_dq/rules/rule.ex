@@ -242,16 +242,25 @@ defmodule TdDq.Rules.Rule do
            results
          ) do
       Map.new()
-      |> with_result(results)
+      |> with_result(results, result_type)
       |> with_last_execution_at(results)
       |> Helpers.with_result_text(minimum, goal, result_type)
     end
 
-    defp with_result(result_map, results) do
+    defp with_result(result_map, results, result_type) do
       results
-      |> Enum.min_by(& &1.result, fn -> %{} end)
+      |> worst_by_result_type(result_type)
       |> Map.take([:result, :errors, :records])
       |> Map.merge(result_map, fn _k, v1, _v2 -> v1 end)
+    end
+
+    # See TdDq.Rules.RuleResult.calculate_quality
+    defp worst_by_result_type(results, result_type) when result_type in ["percentage", "errors_number"] do
+      Enum.min_by(results, & &1.result, fn -> %{} end)
+    end
+
+    defp worst_by_result_type(results, "deviation") do
+      Enum.max_by(results, & &1.result, fn -> %{} end)
     end
 
     defp with_last_execution_at(result_map, results) do
