@@ -71,10 +71,16 @@ defmodule TdDq.Rules.RuleTest do
                errors[:minimum]
     end
 
-    test "validates goal and minimum are between 0 and 100 if result_type is deviation", %{domain: domain} do
-      params = params_for(:rule, result_type: "deviation", goal: -1, minimum: 101, domain_id: domain.id)
+    test "validates goal and minimum are between 0 and 100 if result_type is deviation", %{
+      domain: domain
+    } do
+      params =
+        params_for(:rule, result_type: "deviation", goal: -1, minimum: 101, domain_id: domain.id)
+
       assert %{valid?: false, errors: errors} = Rule.changeset(params)
-      assert {_, [validation: :number, kind: :less_than_or_equal_to, number: 100]} = errors[:minimum]
+
+      assert {_, [validation: :number, kind: :less_than_or_equal_to, number: 100]} =
+               errors[:minimum]
 
       assert {_, [validation: :number, kind: :greater_than_or_equal_to, number: 0]} =
                errors[:goal]
@@ -107,7 +113,9 @@ defmodule TdDq.Rules.RuleTest do
     end
 
     test "validates minimum >= goal if result_type is deviation", %{domain: domain} do
-      params = params_for(:rule, result_type: "deviation", goal: 80, minimum: 70, domain_id: domain.id)
+      params =
+        params_for(:rule, result_type: "deviation", goal: 80, minimum: 70, domain_id: domain.id)
+
       assert %{valid?: false, errors: errors} = Rule.changeset(params)
       assert errors[:minimum] == {"must.be.greater.than.or.equal.to.goal", []}
     end
