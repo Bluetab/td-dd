@@ -80,7 +80,8 @@ defmodule TdDq.Rules.RuleResult do
   defp put_result(%{} = changeset) do
     with records when is_integer(records) <- get_change(changeset, :records),
          errors when is_integer(errors) <- get_change(changeset, :errors),
-         result_type when result_type != nil <- changeset.data.result_type || get_change(changeset, :result_type) do
+         result_type when result_type != nil <-
+           changeset.data.result_type || get_change(changeset, :result_type) do
       result = calculate_quality(records, errors, result_type)
       put_change(changeset, :result, result)
     else
@@ -100,7 +101,8 @@ defmodule TdDq.Rules.RuleResult do
   # percentage:    percentage of good records
   # errors number: could be either percentage of good or bad records. Keeping
   #                percentage of good records to maintain compatibility.
-  defp calculate_quality(records, errors, result_type) when result_type in ["errors_number", "percentage"] do
+  defp calculate_quality(records, errors, result_type)
+       when result_type in ["errors_number", "percentage"] do
     records
     |> Decimal.sub(errors)
     |> Decimal.abs()

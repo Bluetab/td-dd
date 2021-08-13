@@ -39,7 +39,8 @@ defmodule TdDdWeb.DataStructureVersionController do
     :tags,
     :versions,
     :with_confidential,
-    :grant
+    :grant,
+    :grants
   ]
 
   swagger_path :show do
@@ -84,6 +85,10 @@ defmodule TdDdWeb.DataStructureVersionController do
 
   defp filter(claims, data_structure, :with_confidential) do
     can?(claims, manage_confidential_structures(data_structure))
+  end
+
+  defp filter(claims, data_structure, :grants) do
+    can?(claims, view_grants(data_structure))
   end
 
   defp filter(_claims, _data_structure, _attr), do: true

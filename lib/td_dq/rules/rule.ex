@@ -101,7 +101,8 @@ defmodule TdDq.Rules.Rule do
 
   defp validate_goal(changeset), do: changeset
 
-  defp do_validate_goal(changeset, minimum, goal, result_type) when result_type in ["percentage", "deviation"] do
+  defp do_validate_goal(changeset, minimum, goal, result_type)
+       when result_type in ["percentage", "deviation"] do
     changeset
     |> validate_number(:goal, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
     |> validate_number(:minimum, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
@@ -122,7 +123,8 @@ defmodule TdDq.Rules.Rule do
     end
   end
 
-  def minimum_goal_check(changeset, minimum, goal, result_type) when result_type in ["errors_number", "deviation"] do
+  def minimum_goal_check(changeset, minimum, goal, result_type)
+      when result_type in ["errors_number", "deviation"] do
     case minimum >= goal do
       true -> changeset
       false -> add_error(changeset, :minimum, "must.be.greater.than.or.equal.to.goal")

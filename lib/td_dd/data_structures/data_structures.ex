@@ -9,6 +9,7 @@ defmodule TdDd.DataStructures do
   alias Ecto.Multi
   alias TdCache.LinkCache
   alias TdCache.TemplateCache
+  alias TdCache.UserCache
   alias TdCx.Sources
   alias TdCx.Sources.Source
   alias TdDd.Auth.Claims
@@ -21,9 +22,9 @@ defmodule TdDd.DataStructures do
   alias TdDd.DataStructures.DataStructureTag
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
-  alias TdDd.DataStructures.RelationTypes
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.DataStructures.StructureNote
+  alias TdDd.Grants
   alias TdDd.Lineage.GraphData
   alias TdDd.Repo
   alias TdDd.Search.IndexWorker
@@ -65,6 +66,8 @@ defmodule TdDd.DataStructures do
     |> Repo.get!(id)
     |> Repo.preload(:system)
   end
+
+  def get_data_structure(id), do: Repo.get(DataStructure, id)
 
   @doc "Gets a single data_structure by external_id"
   def get_data_structure_by_external_id(external_id) do
@@ -172,6 +175,7 @@ defmodule TdDd.DataStructures do
     |> enrich(options, :metadata_versions, &get_metadata_versions/1)
     |> enrich(options, :data_structure_type, &get_data_structure_type/1)
     |> enrich(options, :tags, &get_tags/1)
+    |> enrich(options, :grants, &get_grants/1)
     |> enrich(options, :grant, &get_grant(&1, options[:user_id]))
   end
 
@@ -390,38 +394,30 @@ defmodule TdDd.DataStructures do
     |> Repo.all()
   end
 
-  defp get_grant(
-         %DataStructureVersion{data_structure: %DataStructure{} = data_structure} = dsv,
-         user_id
-       ) do
-    today = DateTime.utc_now()
+  defp get_grants(%DataStructureVersion{data_structure_id: id, path: path}, clauses \\ %{}) do
+    ids = Enum.reduce(path, [id], fn %{"data_structure_id" => id}, acc -> [id | acc] end)
 
-    data_structure
-    |> Repo.preload(:grants)
-    |> Map.get(:grants)
-    |> Enum.find(fn %{start_date: start_date, end_date: end_date, user_id: id} ->
-      DateTime.compare(start_date, today) == :lt and DateTime.compare(today, end_date) == :lt and
-        id == user_id
+    dsv_preloader = &enriched_structure_versions(data_structure_ids: &1)
+
+    clauses
+    |> Map.put(:data_structure_ids, ids)
+    |> Map.put(:preload, [:system, :data_structure, data_structure_version: dsv_preloader])
+    |> Grants.list_grants()
+    |> Enum.map(fn %{user_id: user_id} = grant ->
+      case UserCache.get(user_id) do
+        {:ok, %{} = user} -> %{grant | user: user}
+        _ -> grant
+      end
     end)
-    |> case do
-      nil ->
-        dsv
-        |> get_parents()
-        |> get_parent_grant(user_id)
-
-      grant ->
-        Repo.preload(grant, data_structure: :versions)
-    end
+    |> Enum.sort_by(& &1.id)
   end
 
   defp get_grant(%DataStructureVersion{} = dsv, user_id) do
     dsv
-    |> Repo.preload(:data_structure)
-    |> get_grant(user_id)
+    |> get_grants(%{user_id: user_id})
+    # TODO: This assumes a child's external_id is longer than the parent's external_id
+    |> Enum.max_by(&String.length(&1.data_structure.external_id), fn -> nil end)
   end
-
-  defp get_parent_grant([], _user_id), do: nil
-  defp get_parent_grant([parent | _], user_id), do: get_grant(parent, user_id)
 
   defp select_structures(versions, false) do
     versions
@@ -1093,7 +1089,6 @@ defmodule TdDd.DataStructures do
   defp enriched_structure_version!(id, opts) do
     opts
     |> Keyword.put(:ids, [id])
-    |> Keyword.put(:relation_type_id, RelationTypes.default_id!())
     |> enriched_structure_versions()
     |> hd()
   end

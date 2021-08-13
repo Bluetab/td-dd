@@ -27,7 +27,9 @@ defmodule TdDdWeb.Authentication do
   def create_claims(opts \\ []) do
     role = Keyword.get(opts, :role, "user")
     user_name = Keyword.get(opts, :user_name, "joe")
-    user_id = Integer.mod(:binary.decode_unsigned(user_name), 100_000)
+
+    user_id =
+      Keyword.get(opts, :user_id, Integer.mod(:binary.decode_unsigned(user_name), 100_000))
 
     %Claims{
       user_id: user_id,

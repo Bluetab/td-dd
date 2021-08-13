@@ -2,7 +2,7 @@ defmodule TdDd.Repo.Migrations.DropComments do
   use Ecto.Migration
 
   def up do
-    drop(table("comments"))
+    drop table("comments")
   end
 
   def down do

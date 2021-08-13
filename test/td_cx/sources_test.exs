@@ -14,7 +14,6 @@ defmodule TdCx.SourcesTest do
   @update_attrs %{"config" => %{"a" => "2"}, "active" => false}
   @invalid_attrs %{"config" => 2, "external_id" => nil, "secrets_key" => nil, "type" => nil}
   @template %{
-    id: 1,
     name: "template_type",
     label: "template_type",
     scope: "cx",
@@ -35,7 +34,7 @@ defmodule TdCx.SourcesTest do
   }
 
   setup do
-    [template: Templates.create_template(@template)]
+    [template: CacheHelpers.insert_template(@template)]
   end
 
   describe "Sources.get_source/1" do
@@ -65,49 +64,29 @@ defmodule TdCx.SourcesTest do
     end
 
     test "list_sources_by_source_type/1 returns only sources of a type" do
-      Templates.create_template(%{name: "type1", id: 2, content: [], scope: "cx"})
-      Templates.create_template(%{name: "type2", id: 3, content: [], scope: "cx"})
+      %{name: type1} = CacheHelpers.insert_template(scope: "cx", content: [])
+      %{name: type2} = CacheHelpers.insert_template(scope: "cx", content: [])
 
-      type = "type1"
-
-      {:ok, src1} =
-        Sources.create_source(%{
-          "external_id" => "ext1",
-          "type" => type,
-          "secrets_key" => "s",
-          "config" => %{}
-        })
-
-      Sources.create_source(%{
-        "external_id" => "ext2",
-        "type" => "type2",
-        "secrets_key" => "s",
-        "config" => %{}
-      })
+      src1 = insert(:source, external_id: "ext1", type: type1, secrets_key: "s", config: %{})
+      src2 = insert(:source, external_id: "ext2", type: type2, secrets_key: "s", config: %{})
 
       assert length(Sources.list_sources()) == 2
-      assert [^src1] = Sources.list_sources_by_source_type(type)
+      assert [^src1] = Sources.list_sources_by_source_type(type1)
+      assert [^src2] = Sources.list_sources_by_source_type(type2)
     end
 
     test "list_sources_by_source_type/1 returns only active sources" do
-      type = "type1"
-      Templates.create_template(%{name: type, id: 2, content: [], scope: "cx"})
+      %{name: type} = CacheHelpers.insert_template(content: [], scope: "cx")
 
-      {:ok, src1} =
-        Sources.create_source(%{
-          "external_id" => "ext1",
-          "type" => type,
-          "secrets_key" => "s",
-          "config" => %{}
-        })
+      src1 = insert(:source, external_id: "ext1", type: type, secrets_key: "s", config: %{})
 
-      Sources.create_source(%{
-        "external_id" => "ext2",
-        "type" => type,
-        "secrets_key" => "s",
-        "config" => %{},
-        "active" => false
-      })
+      insert(:source,
+        external_id: "ext2",
+        type: type,
+        secrets_key: "s",
+        config: %{},
+        active: false
+      )
 
       assert length(Sources.list_sources()) == 2
       assert [^src1] = Sources.list_sources_by_source_type(type)

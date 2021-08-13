@@ -157,7 +157,10 @@ defmodule TdDq.RuleResultsTest do
 
     test "creates a (result_type errors_number) rule result with valid result" do
       rule = insert(:rule, result_type: "errors_number")
-      %{implementation_key: implementation_key} = implementation = insert(:implementation, rule: rule)
+
+      %{implementation_key: implementation_key} =
+        implementation = insert(:implementation, rule: rule)
+
       errors = 123
       records = 1000
       result = abs((records - errors) * 100 / records)
@@ -179,7 +182,10 @@ defmodule TdDq.RuleResultsTest do
 
     test "creates a (result_type deviation) rule result with valid result" do
       rule = insert(:rule, result_type: "deviation")
-      %{implementation_key: implementation_key} = implementation = insert(:implementation, rule: rule)
+
+      %{implementation_key: implementation_key} =
+        implementation = insert(:implementation, rule: rule)
+
       errors = 210
       records = 1000
       result = abs(errors * 100 / records)

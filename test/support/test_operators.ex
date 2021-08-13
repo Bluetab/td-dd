@@ -7,6 +7,8 @@ defmodule TdDd.TestOperators do
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.StructureNote
   alias TdDd.Grants.Grant
+  alias TdDd.Grants.GrantRequest
+  alias TdDd.Grants.GrantRequestGroup
   alias TdDq.Implementations.Implementation
 
   def a <~> b, do: approximately_equal(a, b)
@@ -74,6 +76,19 @@ defmodule TdDd.TestOperators do
 
   defp approximately_equal(%Grant{} = a, %Grant{} = b) do
     Map.drop(a, [:data_structure]) == Map.drop(b, [:data_structure])
+  end
+
+  defp approximately_equal(%GrantRequest{} = a, %GrantRequest{} = b) do
+    drop_fields = [
+      :data_structure,
+      :grant_request_group
+    ]
+
+    Map.drop(a, drop_fields) == Map.drop(b, drop_fields)
+  end
+
+  defp approximately_equal(%GrantRequestGroup{} = a, %GrantRequestGroup{} = b) do
+    Map.drop(a, [:requests]) == Map.drop(b, [:requests])
   end
 
   defp approximately_equal([h | t], [h2 | t2]) do

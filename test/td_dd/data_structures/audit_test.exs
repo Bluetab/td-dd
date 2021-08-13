@@ -3,7 +3,6 @@ defmodule TdDd.DataStructures.AuditTest do
 
   alias TdCache.Redix
   alias TdCache.Redix.Stream
-  alias TdCache.TemplateCache
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Repo
@@ -11,25 +10,14 @@ defmodule TdDd.DataStructures.AuditTest do
   @moduletag sandbox: :shared
   @stream TdCache.Audit.stream()
 
-  setup_all do
-    %{id: template_id, name: type} = template = build(:template)
-    TemplateCache.put(template, publish: false)
-
-    on_exit(fn ->
-      TemplateCache.delete(template_id)
-      Redix.del!(@stream)
-    end)
-
-    [type: type]
-  end
-
-  setup %{type: type} do
+  setup do
+    %{name: type} = CacheHelpers.insert_template()
     start_supervised!(TdDd.Search.StructureEnricher)
     on_exit(fn -> Redix.del!(@stream) end)
 
     claims = build(:claims, role: "admin")
     %{data_structure: data_structure} = insert(:data_structure_version, type: type)
-    [claims: claims, data_structure: data_structure]
+    [claims: claims, data_structure: data_structure, type: type]
   end
 
   describe "data_structure_updated/4" do

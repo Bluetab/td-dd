@@ -1,9 +1,9 @@
 defmodule TdDdWeb.DataStructureVersionControllerTest do
+  use TdDd.DataStructureCase
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   alias TdCache.TaxonomyCache
-  alias TdCache.TemplateCache
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Lineage.GraphData
 
@@ -20,10 +20,10 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
 
     type = "Table"
-    template_id = "999"
 
-    {:ok, _} =
-      TemplateCache.put(%{
+    %{id: template_id} =
+      template =
+      CacheHelpers.insert_template(
         name: type,
         content: [
           %{
@@ -49,14 +49,12 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
           }
         ],
         scope: "test",
-        label: "template_label",
-        id: template_id,
-        updated_at: DateTime.utc_now()
-      })
+        label: "template_label"
+      )
 
     CacheHelpers.insert_structure_type(template_id: template_id, name: type)
 
-    on_exit(fn -> TemplateCache.delete(template_id) end)
+    [template: template]
   end
 
   describe "GET /api/data_structures/:id/versions/:version structure hierarchy" do
@@ -178,6 +176,10 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
 
       assert %{"data_structure" => %{"id" => ^id}} = data
     end
+  end
+
+  describe "GET /api/data_structures/:id/versions/:version grants" do
+    setup :create_structure_hierarchy
 
     @tag authentication: [role: "admin"]
     test "renders a data structure with related user grant", %{
@@ -186,8 +188,8 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       structure_version: %{name: data_structure_name},
       claims: %{user_id: user_id}
     } do
-      start_date = DateTime.utc_now() |> DateTime.add(-60 * 60 * 24, :second)
-      end_date = DateTime.utc_now() |> DateTime.add(60 * 60 * 24, :second)
+      start_date = Date.utc_today() |> Date.add(-1)
+      end_date = Date.utc_today() |> Date.add(1)
 
       %{id: id, detail: detail} =
         insert(:grant,
@@ -209,8 +211,8 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                )
                |> json_response(:ok)
 
-      start_date_string = DateTime.to_iso8601(start_date)
-      end_date_string = DateTime.to_iso8601(end_date)
+      start_date_string = Date.to_iso8601(start_date)
+      end_date_string = Date.to_iso8601(end_date)
 
       assert %{
                "id" => ^id,
@@ -220,9 +222,10 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                "user_id" => ^user_id,
                "data_structure" => %{
                  "id" => ^data_structure_id,
-                 "external_id" => ^data_structure_external_id,
-                 "name" => ^data_structure_name
-               }
+                 "external_id" => ^data_structure_external_id
+               },
+               "data_structure_version" => %{"name" => ^data_structure_name, "ancestry" => _},
+               "system" => %{"external_id" => _, "id" => _, "name" => _}
              } = grant
     end
 
@@ -233,8 +236,8 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       parent_structure: parent_structure,
       claims: %{user_id: user_id}
     } do
-      start_date = DateTime.utc_now() |> DateTime.add(-60 * 60 * 24, :second)
-      end_date = DateTime.utc_now() |> DateTime.add(60 * 60 * 24, :second)
+      start_date = Date.utc_today() |> Date.add(-1)
+      end_date = Date.utc_today() |> Date.add(1)
 
       %{id: id, detail: detail} =
         insert(:grant,
@@ -256,26 +259,29 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                )
                |> json_response(:ok)
 
-      start_date_string = DateTime.to_iso8601(start_date)
-      end_date_string = DateTime.to_iso8601(end_date)
+      start_date_string = Date.to_iso8601(start_date)
+      end_date_string = Date.to_iso8601(end_date)
 
       assert %{
                "id" => ^id,
                "end_date" => ^end_date_string,
                "start_date" => ^start_date_string,
                "detail" => ^detail,
-               "user_id" => ^user_id
+               "user_id" => ^user_id,
+               "data_structure" => %{"id" => _, "external_id" => _},
+               "data_structure_version" => %{"name" => _, "ancestry" => _},
+               "system" => %{"external_id" => _, "id" => _, "name" => _}
              } = grant
     end
 
     @tag authentication: [role: "admin"]
-    test "renders a data structure without expired grant", %{
+    test "renders a data structure without future grant", %{
       conn: conn,
       structure: structure,
       claims: %{user_id: user_id}
     } do
-      start_date = DateTime.utc_now() |> DateTime.add(60 * 60 * 24, :second)
-      end_date = DateTime.utc_now() |> DateTime.add(60 * 60 * 24 * 2, :second)
+      start_date = Date.utc_today() |> Date.add(1)
+      end_date = Date.utc_today() |> Date.add(2)
 
       insert(:grant,
         data_structure: structure,
@@ -293,6 +299,139 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                    structure.id,
                    "latest"
                  )
+               )
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "renders a data structure grants applying over structure", %{
+      conn: conn,
+      structure: %{id: data_structure_id, external_id: data_structure_external_id} = structure,
+      structure_version: %{name: data_structure_name}
+    } do
+      start_date = Date.utc_today() |> Date.add(-1)
+      end_date = Date.utc_today() |> Date.add(1)
+
+      %{id: id, detail: detail} =
+        insert(:grant,
+          data_structure: structure,
+          start_date: start_date,
+          end_date: end_date
+        )
+
+      assert %{"data" => %{"grants" => [grant]}} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(
+                   conn,
+                   :show,
+                   structure.id,
+                   "latest"
+                 )
+               )
+               |> json_response(:ok)
+
+      start_date_string = Date.to_iso8601(start_date)
+      end_date_string = Date.to_iso8601(end_date)
+
+      assert %{
+               "id" => ^id,
+               "end_date" => ^end_date_string,
+               "start_date" => ^start_date_string,
+               "detail" => ^detail,
+               "data_structure" => %{
+                 "id" => ^data_structure_id,
+                 "external_id" => ^data_structure_external_id
+               },
+               "data_structure_version" => %{
+                 "name" => ^data_structure_name,
+                 "ancestry" => [_ | _]
+               },
+               "system" => %{"external_id" => _, "id" => _, "name" => _}
+             } = grant
+    end
+
+    @tag authentication: [role: "non_admin", permissions: [:view_data_structure]]
+    test "renders a data structure without grants when user has not permissions", %{
+      conn: conn,
+      domain: %{id: domain_id}
+    } do
+      structure = insert(:data_structure, domain_id: domain_id)
+      insert(:data_structure_version, data_structure_id: structure.id)
+
+      start_date = DateTime.utc_now() |> DateTime.add(-60 * 60 * 24, :second)
+      end_date = DateTime.utc_now() |> DateTime.add(60 * 60 * 24, :second)
+
+      insert(:grant,
+        data_structure: structure,
+        start_date: start_date,
+        end_date: end_date
+      )
+
+      assert %{"data" => %{"grants" => nil}} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(
+                   conn,
+                   :show,
+                   structure.id,
+                   "latest"
+                 )
+               )
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "non_admin", permissions: [:view_data_structure, :view_grants]]
+    test "renders a data structure with grants when user has permissions", %{
+      conn: conn,
+      domain: %{id: domain_id}
+    } do
+      [
+        %{data_structure_id: foo_id},
+        %{data_structure_id: bar_id},
+        _baz,
+        %{data_structure_id: qux_id}
+      ] = create_hierarchy(["foo", "bar", "baz", "qux"], domain_id: domain_id)
+
+      start_date = Date.utc_today() |> Date.add(-1) |> Date.to_iso8601()
+      end_date = Date.utc_today() |> Date.add(1) |> Date.to_iso8601()
+
+      %{id: id, detail: detail} =
+        insert(:grant,
+          data_structure_id: bar_id,
+          start_date: Date.from_iso8601!(start_date),
+          end_date: Date.from_iso8601!(end_date)
+        )
+
+      assert %{"data" => %{"grants" => [grant]}} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(conn, :show, qux_id, "latest")
+               )
+               |> json_response(:ok)
+
+      assert %{
+               "id" => ^id,
+               "end_date" => ^end_date,
+               "start_date" => ^start_date,
+               "detail" => ^detail,
+               "data_structure" => %{
+                 "id" => ^bar_id,
+                 "external_id" => _
+               },
+               "data_structure_version" => %{
+                 "name" => "bar",
+                 "ancestry" => ancestry = [_ | _]
+               },
+               "system" => %{"external_id" => _, "id" => _, "name" => _}
+             } = grant
+
+      assert [%{"data_structure_id" => ^foo_id, "name" => "foo"}] = ancestry
+
+      assert %{"data" => %{"grants" => []}} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(conn, :show, foo_id, "latest")
                )
                |> json_response(:ok)
     end

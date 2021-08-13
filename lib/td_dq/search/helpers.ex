@@ -83,12 +83,12 @@ defmodule TdDq.Search.Helpers do
     result_map
   end
 
-  def status(result, minimum, goal, "percentage") do
+  defp status(result, minimum, goal, "percentage") do
     cond do
       # goal >= minimum. Intervals:
       #   [0, minimum) => error
       #   [minimum, goal) => warning
-      #   [goal, max => error
+      #   [goal, max => OK
       result < minimum ->
         "quality_result.under_minimum"
 
@@ -100,8 +100,8 @@ defmodule TdDq.Search.Helpers do
     end
   end
 
-  def status(errors_absolute_or_perc, minimum, goal, result_type)
-      when result_type in ["errors_number", "deviation"] do
+  defp status(errors_absolute_or_perc, minimum, goal, result_type)
+       when result_type in ["errors_number", "deviation"] do
     cond do
       # goal <= minimum. Intervals:
       #   [0, goal] => OK

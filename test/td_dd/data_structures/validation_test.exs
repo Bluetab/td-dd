@@ -1,16 +1,12 @@
 defmodule TdDd.DataStructures.ValidationTest do
   use TdDd.DataStructureCase
 
-  alias TdCache.TemplateCache
   alias TdDd.DataStructures.Validation
 
   @moduletag sandbox: :shared
 
   setup do
-    %{id: template_id, name: template_name} = template = build(:template)
-    TemplateCache.put(template, publish: false)
-    on_exit(fn -> TemplateCache.delete(template_id) end)
-
+    %{id: template_id, name: template_name} = template = CacheHelpers.insert_template()
     CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
 
     start_supervised!(TdDd.Search.StructureEnricher)

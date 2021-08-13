@@ -7,6 +7,7 @@ defmodule TdDd.Canada.GrantAbilities do
   alias TdDd.Auth.Claims
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Grants.Grant
+  alias TdDd.Grants.GrantRequestGroup
 
   def can?(%Claims{role: "admin"}, _action, _target), do: true
 
@@ -14,6 +15,12 @@ defmodule TdDd.Canada.GrantAbilities do
         domain_id: domain_id
       }) do
     authorized?(claims, :manage_grants, domain_id)
+  end
+
+  def can?(%Claims{} = claims, :view_grants, %DataStructure{
+        domain_id: domain_id
+      }) do
+    authorized?(claims, :view_grants, domain_id)
   end
 
   def can?(%Claims{user_id: user_id} = claims, :show, %Grant{
@@ -39,6 +46,14 @@ defmodule TdDd.Canada.GrantAbilities do
         }
       }) do
     authorized?(claims, :manage_grants, domain_id)
+  end
+
+  def can?(%Claims{} = claims, :create_grant_request, domain_id) do
+    authorized?(claims, :create_grant_request, domain_id)
+  end
+
+  def can?(%Claims{user_id: user_id}, :show, %GrantRequestGroup{user_id: params_user_id}) do
+    user_id == params_user_id
   end
 
   def can?(_claims, _action, _target), do: false

@@ -5,19 +5,31 @@
 ### Added
 
 - [TD-3549] Add new quality rule result type: "deviation"
+- [TD-3982] Initial support for grant requests
+- [TD-3948] Grants in data structure version visualization
 - [TD-2635] Admin can manually delete structures and all its children
 - [TD-3917] `PATCH /api/systems/:external_id/metadata` allows mutable metadata
   to be replaced or merged
+- [TD-3767] Support for filtering lineage nodes by domain id
 
 ### Changed
 
 - [TD-3957] Structure profiles are now validated and expanded
 - [TD-3952] Data structure types now support multiple metadata views
+- [TD-3859] `PUT /api/units/:name` is now asynchronous when replacing an
+  existing unit (fixes timeout issue for large units)
+- [TD-4010] Grant `start_date` and `end_date` are now `Date` instead of
+  `DateTime`
 
 ### Fixed
 
-- [TD-3959] Report `rule_result_created` when result is created
+- [TD-3959] Publish `rule_result_created` event when result is created
 - [TD-3908] Timeout on node retrieval
+- [TD-4010] Grants were being created with the incorrect `user_id`
+- [TD-4013] Internal server error fetching structures with grant having
+  `end_date` `nil`
+- [TD-4016] `GET /api/data_structures/:id/latest`: grants were being returned
+  with the incorrect `data_structure_version`
 
 ## [4.25.0] 2021-07-26
 

@@ -11,8 +11,8 @@ defmodule TdDd.Repo.Migrations.AlterDataStructureRelations do
     )
 
     alter table("data_structure_relations") do
-      modify(:child_id, references(:data_structure_versions, on_delete: :delete_all))
-      modify(:parent_id, references(:data_structure_versions, on_delete: :delete_all))
+      modify(:child_id, references("data_structure_versions", on_delete: :delete_all))
+      modify(:parent_id, references("data_structure_versions", on_delete: :delete_all))
     end
   end
 
@@ -26,8 +26,8 @@ defmodule TdDd.Repo.Migrations.AlterDataStructureRelations do
     )
 
     alter table("data_structure_relations") do
-      modify(:child_id, references(:data_structure_versions, on_delete: :nothing))
-      modify(:parent_id, references(:data_structure_versions, on_delete: :nothing))
+      modify(:child_id, references("data_structure_versions", on_delete: :nothing))
+      modify(:parent_id, references("data_structure_versions", on_delete: :nothing))
     end
   end
 end

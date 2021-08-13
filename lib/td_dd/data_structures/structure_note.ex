@@ -21,7 +21,6 @@ defmodule TdDd.DataStructures.StructureNote do
     timestamps()
   end
 
-  @doc false
   def bulk_update_changeset(%{df_content: current_content} = structure_note, attrs) do
     structure_note
     |> cast(attrs, [:df_content, :status])
@@ -30,7 +29,6 @@ defmodule TdDd.DataStructures.StructureNote do
     |> validate_required([:df_content, :status])
   end
 
-  @doc false
   def changeset(structure_note, attrs) do
     structure_note
     |> cast(attrs, [:status, :df_content])
@@ -38,7 +36,6 @@ defmodule TdDd.DataStructures.StructureNote do
     |> validate_change(:df_content, Validation.validator(structure_note))
   end
 
-  @doc false
   def create_changeset(structure_note, data_structure, attrs) do
     structure_note
     |> cast(attrs, [:status, :version, :df_content])

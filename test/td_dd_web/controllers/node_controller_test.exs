@@ -48,6 +48,73 @@ defmodule TdDdWeb.NodeControllerTest do
     end
 
     @tag authentication: [role: "admin"]
+    @tag contains: %{"foo" => ["bar", "baz"], "xyz" => ["x", "y"]}
+    @tag depends: [{"bar", "baz"}, {"x", "y"}]
+    test "index returns the top-level groups and parent nil filtered by domain id", %{
+      conn: conn,
+      nodes: nodes
+    } do
+      %{id: parent_domain_id} = CacheHelpers.insert_domain()
+      %{id: domain_id} = CacheHelpers.insert_domain(%{parent_ids: [parent_domain_id]})
+
+      insert(:unit,
+        domain_id: domain_id,
+        nodes: Enum.filter(nodes, &(&1.external_id in ["foo", "bar", "baz"]))
+      )
+
+      conn = get(conn, Routes.node_path(conn, :index, domain_id: parent_domain_id))
+      assert [%{"parent" => nil, "groups" => [group]}] = json_response(conn, 200)["data"]
+      assert %{"external_id" => "foo", "name" => "foo"} = group
+
+      conn = get(conn, Routes.node_path(conn, :index, domain_id: domain_id))
+      assert [%{"parent" => nil, "groups" => [group]}] = json_response(conn, 200)["data"]
+      assert %{"external_id" => "foo", "name" => "foo"} = group
+
+      conn = get(conn, Routes.node_path(conn, :index))
+      assert [%{"parent" => nil, "groups" => groups}] = json_response(conn, 200)["data"]
+      for %{"external_id" => external_id} <- groups, do: assert(external_id in ["foo", "xyz"])
+    end
+
+    @tag authentication: [user_name: "non_admin_user", permissions: [:view_lineage]]
+    @tag contains: %{"foo" => ["bar", "baz"], "xyz" => ["x", "y"]}
+    @tag depends: [{"bar", "baz"}, {"x", "y"}]
+    test "index returns the top-level groups and parent nil filtered by domain id depending on user permissions",
+         %{
+           conn: conn,
+           nodes: nodes,
+           domain: %{id: parent_domain_id}
+         } do
+      %{id: domain_id} = CacheHelpers.insert_domain(%{parent_ids: [parent_domain_id]})
+
+      insert(:unit,
+        domain_id: domain_id,
+        nodes: Enum.filter(nodes, &(&1.external_id in ["foo", "bar", "baz"]))
+      )
+
+      conn = get(conn, Routes.node_path(conn, :index, domain_id: parent_domain_id))
+      assert [%{"parent" => nil, "groups" => [group]}] = json_response(conn, 200)["data"]
+      assert %{"external_id" => "foo", "name" => "foo"} = group
+
+      conn = get(conn, Routes.node_path(conn, :index, domain_id: domain_id))
+      assert [%{"parent" => nil, "groups" => [group]}] = json_response(conn, 200)["data"]
+      assert %{"external_id" => "foo", "name" => "foo"} = group
+
+      %{id: domain_id} = CacheHelpers.insert_domain()
+
+      insert(:unit,
+        domain_id: domain_id,
+        nodes: Enum.filter(nodes, &(&1.external_id in ["xyz", "x", "y"]))
+      )
+
+      conn = get(conn, Routes.node_path(conn, :index, domain_id: domain_id))
+      assert [%{"parent" => nil}] = json_response(conn, 200)["data"]
+
+      conn = get(conn, Routes.node_path(conn, :index))
+      assert [%{"parent" => nil, "groups" => [group]}] = json_response(conn, 200)["data"]
+      assert %{"external_id" => "foo", "name" => "foo"} = group
+    end
+
+    @tag authentication: [role: "admin"]
     @tag contains: %{"foo" => ["bar", "baz"]}
     @tag depends: [{"bar", "baz"}]
     test "show returns a list including the child resources of the specified group", %{conn: conn} do

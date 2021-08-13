@@ -219,7 +219,8 @@ defmodule TdDd.Factory do
       name: sequence("domain_name"),
       id: sequence(:domain_id, &(&1 + 1000)),
       external_id: sequence("domain_external_id"),
-      updated_at: DateTime.utc_now()
+      updated_at: DateTime.utc_now(),
+      parent_ids: []
     }
   end
 
@@ -385,13 +386,31 @@ defmodule TdDd.Factory do
     |> merge_attributes(attrs)
   end
 
-  def grant_factory do
+  def grant_factory(attrs) do
+    attrs = default_assoc(attrs, :data_structure_id, :data_structure)
+
     %TdDd.Grants.Grant{
-      data_structure: build(:data_structure),
-      user_id: sequence(:user_id, &"#{&1}"),
+      user_id: sequence(:user_id, & &1),
       detail: %{"foo" => "bar"},
-      start_date: DateTime.utc_now(),
-      end_date: DateTime.utc_now()
+      start_date: "2020-01-02",
+      end_date: "2021-02-03"
+    }
+    |> merge_attributes(attrs)
+  end
+
+  def grant_request_group_factory do
+    %TdDd.Grants.GrantRequestGroup{
+      user_id: sequence(:user_id, &"#{&1}"),
+      type: nil
+    }
+  end
+
+  def grant_request_factory do
+    %TdDd.Grants.GrantRequest{
+      grant_request_group: build(:grant_request_group),
+      data_structure: build(:data_structure),
+      filters: %{"foo" => "bar"},
+      metadata: %{"foo" => "bar"}
     }
   end
 
