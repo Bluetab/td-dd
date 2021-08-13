@@ -27,8 +27,10 @@ defmodule TdDq.Search.HelpersTest do
         date: ~U[2021-08-06 01:34:00Z],
         result: Decimal.new(79)
       }
-      result_text = Helpers.with_result_text(result_map, 80, 90, "percentage")
-      |> Map.get(:result_text)
+
+      result_text =
+        Helpers.with_result_text(result_map, 80, 90, "percentage")
+        |> Map.get(:result_text)
 
       assert result_text == "quality_result.under_minimum"
     end
@@ -38,8 +40,10 @@ defmodule TdDq.Search.HelpersTest do
         date: ~U[2021-08-06 01:34:00Z],
         result: Decimal.new(80)
       }
-      result_text = Helpers.with_result_text(result_map, 80, 90, "percentage")
-      |> Map.get(:result_text)
+
+      result_text =
+        Helpers.with_result_text(result_map, 80, 90, "percentage")
+        |> Map.get(:result_text)
 
       assert result_text == "quality_result.under_goal"
     end
@@ -49,8 +53,10 @@ defmodule TdDq.Search.HelpersTest do
         date: ~U[2021-08-06 01:34:00Z],
         result: Decimal.new(85)
       }
-      result_text = Helpers.with_result_text(result_map, 80, 90, "percentage")
-      |> Map.get(:result_text)
+
+      result_text =
+        Helpers.with_result_text(result_map, 80, 90, "percentage")
+        |> Map.get(:result_text)
 
       assert result_text == "quality_result.under_goal"
     end
@@ -60,8 +66,10 @@ defmodule TdDq.Search.HelpersTest do
         date: ~U[2021-08-06 01:34:00Z],
         result: Decimal.new(90)
       }
-      result_text = Helpers.with_result_text(result_map, 80, 90, "percentage")
-      |> Map.get(:result_text)
+
+      result_text =
+        Helpers.with_result_text(result_map, 80, 90, "percentage")
+        |> Map.get(:result_text)
 
       assert result_text == "quality_result.over_goal"
     end
@@ -71,8 +79,10 @@ defmodule TdDq.Search.HelpersTest do
         date: ~U[2021-08-06 01:34:00Z],
         result: Decimal.new(91)
       }
-      result_text = Helpers.with_result_text(result_map, 80, 90, "percentage")
-      |> Map.get(:result_text)
+
+      result_text =
+        Helpers.with_result_text(result_map, 80, 90, "percentage")
+        |> Map.get(:result_text)
 
       assert result_text == "quality_result.over_goal"
     end
@@ -82,8 +92,10 @@ defmodule TdDq.Search.HelpersTest do
         date: ~U[2021-08-06 01:34:00Z],
         result: Decimal.new(21)
       }
-      result_text = Helpers.with_result_text(result_map, 20, 10, "deviation")
-      |> Map.get(:result_text)
+
+      result_text =
+        Helpers.with_result_text(result_map, 20, 10, "deviation")
+        |> Map.get(:result_text)
 
       assert result_text == "quality_result.under_minimum"
     end
@@ -93,8 +105,10 @@ defmodule TdDq.Search.HelpersTest do
         date: ~U[2021-08-06 01:34:00Z],
         result: Decimal.new(20)
       }
-      result_text = Helpers.with_result_text(result_map, 20, 10, "deviation")
-      |> Map.get(:result_text)
+
+      result_text =
+        Helpers.with_result_text(result_map, 20, 10, "deviation")
+        |> Map.get(:result_text)
 
       assert result_text == "quality_result.under_goal"
     end
@@ -104,8 +118,10 @@ defmodule TdDq.Search.HelpersTest do
         date: ~U[2021-08-06 01:34:00Z],
         result: Decimal.new(15)
       }
-      result_text = Helpers.with_result_text(result_map, 20, 10, "deviation")
-      |> Map.get(:result_text)
+
+      result_text =
+        Helpers.with_result_text(result_map, 20, 10, "deviation")
+        |> Map.get(:result_text)
 
       assert result_text == "quality_result.under_goal"
     end
@@ -115,8 +131,10 @@ defmodule TdDq.Search.HelpersTest do
         date: ~U[2021-08-06 01:34:00Z],
         result: Decimal.new(10)
       }
-      result_text = Helpers.with_result_text(result_map, 20, 10, "deviation")
-      |> Map.get(:result_text)
+
+      result_text =
+        Helpers.with_result_text(result_map, 20, 10, "deviation")
+        |> Map.get(:result_text)
 
       assert result_text == "quality_result.over_goal"
     end
@@ -126,8 +144,10 @@ defmodule TdDq.Search.HelpersTest do
         date: ~U[2021-08-06 01:34:00Z],
         result: Decimal.new(9)
       }
-      result_text = Helpers.with_result_text(result_map, 20, 10, "deviation")
-      |> Map.get(:result_text)
+
+      result_text =
+        Helpers.with_result_text(result_map, 20, 10, "deviation")
+        |> Map.get(:result_text)
 
       assert result_text == "quality_result.over_goal"
     end
@@ -137,8 +157,10 @@ defmodule TdDq.Search.HelpersTest do
         date: ~U[2021-08-06 01:34:00Z],
         errors: 131
       }
-      result_text = Helpers.with_result_text(result_map, 130, 120, "errors_number")
-      |> Map.get(:result_text)
+
+      result_text =
+        Helpers.with_result_text(result_map, 130, 120, "errors_number")
+        |> Map.get(:result_text)
 
       assert result_text == "quality_result.under_minimum"
     end
@@ -148,8 +170,10 @@ defmodule TdDq.Search.HelpersTest do
         date: ~U[2021-08-06 01:34:00Z],
         errors: 130
       }
-      result_text = Helpers.with_result_text(result_map, 130, 120, "errors_number")
-      |> Map.get(:result_text)
+
+      result_text =
+        Helpers.with_result_text(result_map, 130, 120, "errors_number")
+        |> Map.get(:result_text)
 
       assert result_text == "quality_result.under_goal"
     end
@@ -159,8 +183,10 @@ defmodule TdDq.Search.HelpersTest do
         date: ~U[2021-08-06 01:34:00Z],
         errors: 125
       }
-      result_text = Helpers.with_result_text(result_map, 130, 120, "errors_number")
-      |> Map.get(:result_text)
+
+      result_text =
+        Helpers.with_result_text(result_map, 130, 120, "errors_number")
+        |> Map.get(:result_text)
 
       assert result_text == "quality_result.under_goal"
     end
@@ -170,8 +196,10 @@ defmodule TdDq.Search.HelpersTest do
         date: ~U[2021-08-06 01:34:00Z],
         errors: 120
       }
-      result_text = Helpers.with_result_text(result_map, 130, 120, "errors_number")
-      |> Map.get(:result_text)
+
+      result_text =
+        Helpers.with_result_text(result_map, 130, 120, "errors_number")
+        |> Map.get(:result_text)
 
       assert result_text == "quality_result.over_goal"
     end
@@ -181,8 +209,10 @@ defmodule TdDq.Search.HelpersTest do
         date: ~U[2021-08-06 01:34:00Z],
         errors: 119
       }
-      result_text = Helpers.with_result_text(result_map, 130, 120, "errors_number")
-      |> Map.get(:result_text)
+
+      result_text =
+        Helpers.with_result_text(result_map, 130, 120, "errors_number")
+        |> Map.get(:result_text)
 
       assert result_text == "quality_result.over_goal"
     end

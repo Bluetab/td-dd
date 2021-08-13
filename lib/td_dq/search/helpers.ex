@@ -101,7 +101,7 @@ defmodule TdDq.Search.Helpers do
   end
 
   defp status(errors_absolute_or_perc, minimum, goal, result_type)
-      when result_type in ["errors_number", "deviation"] do
+       when result_type in ["errors_number", "deviation"] do
     cond do
       # goal <= minimum. Intervals:
       #   [0 to goal] => OK

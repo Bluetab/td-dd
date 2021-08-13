@@ -1,4 +1,5 @@
 defmodule TdDdWeb.DataStructureVersionControllerTest do
+  use TdDd.DataStructureCase
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
@@ -385,76 +386,52 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       conn: conn,
       domain: %{id: domain_id}
     } do
-      parent = insert(:data_structure, domain_id: domain_id)
+      [
+        %{data_structure_id: foo_id},
+        %{data_structure_id: bar_id},
+        _baz,
+        %{data_structure_id: qux_id}
+      ] = create_hierarchy(["foo", "bar", "baz", "qux"], domain_id: domain_id)
 
-      structure =
-        %{id: data_structure_id, external_id: data_structure_external_id} =
-        insert(:data_structure, domain_id: domain_id)
-
-      parent_version = insert(:data_structure_version, data_structure_id: parent.id)
-
-      structure_version =
-        %{name: data_structure_name} =
-        insert(:data_structure_version, data_structure_id: data_structure_id)
-
-      relation_type_id = RelationTypes.default_id!()
-
-      insert(:data_structure_relation,
-        parent_id: parent_version.id,
-        child_id: structure_version.id,
-        relation_type_id: relation_type_id
-      )
-
-      start_date = Date.utc_today() |> Date.add(-1)
-      end_date = Date.utc_today() |> Date.add(1)
+      start_date = Date.utc_today() |> Date.add(-1) |> Date.to_iso8601()
+      end_date = Date.utc_today() |> Date.add(1) |> Date.to_iso8601()
 
       %{id: id, detail: detail} =
         insert(:grant,
-          data_structure: structure,
-          start_date: start_date,
-          end_date: end_date
+          data_structure_id: bar_id,
+          start_date: Date.from_iso8601!(start_date),
+          end_date: Date.from_iso8601!(end_date)
         )
 
       assert %{"data" => %{"grants" => [grant]}} =
                conn
                |> get(
-                 Routes.data_structure_data_structure_version_path(
-                   conn,
-                   :show,
-                   data_structure_id,
-                   "latest"
-                 )
+                 Routes.data_structure_data_structure_version_path(conn, :show, qux_id, "latest")
                )
                |> json_response(:ok)
 
-      start_date_string = Date.to_iso8601(start_date)
-      end_date_string = Date.to_iso8601(end_date)
-
       assert %{
                "id" => ^id,
-               "end_date" => ^end_date_string,
-               "start_date" => ^start_date_string,
+               "end_date" => ^end_date,
+               "start_date" => ^start_date,
                "detail" => ^detail,
                "data_structure" => %{
-                 "id" => ^data_structure_id,
-                 "external_id" => ^data_structure_external_id
+                 "id" => ^bar_id,
+                 "external_id" => _
                },
                "data_structure_version" => %{
-                 "name" => ^data_structure_name,
-                 "ancestry" => [_ | _]
+                 "name" => "bar",
+                 "ancestry" => ancestry = [_ | _]
                },
                "system" => %{"external_id" => _, "id" => _, "name" => _}
              } = grant
 
+      assert [%{"data_structure_id" => ^foo_id, "name" => "foo"}] = ancestry
+
       assert %{"data" => %{"grants" => []}} =
                conn
                |> get(
-                 Routes.data_structure_data_structure_version_path(
-                   conn,
-                   :show,
-                   parent.id,
-                   "latest"
-                 )
+                 Routes.data_structure_data_structure_version_path(conn, :show, foo_id, "latest")
                )
                |> json_response(:ok)
     end
