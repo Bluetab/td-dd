@@ -33,6 +33,7 @@ defmodule TdDd.DataStructures.DataStructure do
     has_many(:data_structures_tags, DataStructuresTags)
     has_many(:grants, Grant)
     many_to_many(:tags, DataStructureTag, join_through: DataStructuresTags)
+    has_one(:current_version, DataStructureVersion, where: [deleted_at: nil])
 
     field(:confidential, :boolean)
     field(:domain_id, :integer)

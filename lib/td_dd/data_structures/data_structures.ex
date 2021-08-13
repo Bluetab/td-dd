@@ -394,14 +394,15 @@ defmodule TdDd.DataStructures do
     |> Repo.all()
   end
 
-  defp get_grants(%DataStructureVersion{data_structure_id: id, path: path} = dsv, clauses \\ %{}) do
+  defp get_grants(%DataStructureVersion{data_structure_id: id, path: path}, clauses \\ %{}) do
     ids = Enum.reduce(path, [id], fn %{"data_structure_id" => id}, acc -> [id | acc] end)
+
+    dsv_preloader = &enriched_structure_versions(data_structure_ids: &1)
 
     clauses
     |> Map.put(:data_structure_ids, ids)
+    |> Map.put(:preload, [:system, :data_structure, data_structure_version: dsv_preloader])
     |> Grants.list_grants()
-    |> Repo.preload([:data_structure, :system])
-    |> Enum.map(&%{&1 | data_structure_version: dsv})
     |> Enum.map(fn %{user_id: user_id} = grant ->
       case UserCache.get(user_id) do
         {:ok, %{} = user} -> %{grant | user: user}

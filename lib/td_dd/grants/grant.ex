@@ -15,11 +15,11 @@ defmodule TdDd.Grants.Grant do
     field(:start_date, :date)
     field(:user_id, :integer)
     field(:user_name, :string, virtual: true)
-    field(:data_structure_version, :map, virtual: true)
     field(:user, :map, virtual: true)
 
     belongs_to(:data_structure, DataStructure)
     has_one(:system, through: [:data_structure, :system])
+    has_one(:data_structure_version, through: [:data_structure, :current_version])
 
     timestamps(type: :utc_datetime_usec)
   end
