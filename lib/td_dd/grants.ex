@@ -127,6 +127,9 @@ defmodule TdDd.Grants do
           [g],
           fragment("daterange(?, ?, '[]') @> ?::date", g.start_date, g.end_date, ^date)
         )
+
+      {:preload, preloads}, q ->
+        preload(q, ^preloads)
     end)
     |> Repo.all()
   end

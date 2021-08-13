@@ -28,6 +28,8 @@
 - [TD-4010] Grants were being created with the incorrect `user_id`
 - [TD-4013] Internal server error fetching structures with grant having
   `end_date` `nil`
+- [TD-4016] `GET /api/data_structures/:id/latest`: grants were being returned
+  with the incorrect `data_structure_version`
 
 ## [4.25.0] 2021-07-26
 
