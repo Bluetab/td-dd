@@ -90,12 +90,16 @@ defmodule TdDq.Rules.RuleResult do
 
   defp calculate_quality(0, _errors, _result_type), do: 0
 
+  # deviation: percentage of errored records
   defp calculate_quality(records, errors, "deviation") do
     errors
     |> Decimal.mult(100)
     |> Decimal.div(records)
   end
 
+  # percentage:    percentage of good records
+  # errors number: could be either percentage of good or bad records. Keeping
+  #                percentage of good records to maintain compatibility.
   defp calculate_quality(records, errors, result_type) when result_type in ["errors_number", "percentage"] do
     records
     |> Decimal.sub(errors)
