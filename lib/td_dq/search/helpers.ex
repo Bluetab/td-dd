@@ -104,9 +104,9 @@ defmodule TdDq.Search.Helpers do
       when result_type in ["errors_number", "deviation"] do
     cond do
       # goal <= minimum. Intervals:
-      #   [0 to goal] => OK
-      #   [goal to minimum] => warning
-      #   [minimum to max] => error
+      #   [0, goal] => OK
+      #   (goal, minimum] => warning
+      #   (minimum, max => error
       errors_absolute_or_perc > minimum ->
         "quality_result.under_minimum"
 
