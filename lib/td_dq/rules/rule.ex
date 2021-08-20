@@ -255,7 +255,8 @@ defmodule TdDq.Rules.Rule do
     end
 
     # See TdDq.Rules.RuleResult.calculate_quality
-    defp worst_by_result_type(results, result_type) when result_type in ["percentage", "errors_number"] do
+    defp worst_by_result_type(results, result_type)
+         when result_type in ["percentage", "errors_number"] do
       Enum.min_by(results, & &1.result, fn -> %{} end)
     end
 
