@@ -323,7 +323,7 @@ defmodule TdDq.Implementations.Implementation do
       Map.take(operator, [:name, :value_type, :value_type_filter])
     end
 
-    defp with_population(data, %{population: population} = condition) when is_list(population) do
+    defp with_population(data, %{population: population}) when is_list(population) do
       Map.put(data, :population, population)
     end
 
