@@ -169,7 +169,7 @@ defmodule TdDq.Search.Mappings do
         }
       },
       population: get_condition_mappings(),
-      validations: get_condition_mappings(),
+      validations: get_condition_mappings([:operator, :structure, :value, :population]),
       df_name: %{type: "text", fields: %{raw: %{type: "keyword"}}},
       df_content: content_mappings,
       executable: %{type: "boolean"}
@@ -265,25 +265,28 @@ defmodule TdDq.Search.Mappings do
     }
   end
 
-  defp get_condition_mappings do
+  defp get_condition_mappings(opts \\ [:operator, :structure, :value]) do
+    properties = %{
+      operator: %{
+        properties: %{
+          name: %{type: "text", fields: @raw},
+          value_type: %{type: "text", fields: @raw},
+          value_type_filter: %{type: "text", fields: @raw}
+        }
+      },
+      structure: %{
+        properties: get_structure_mappings()
+      },
+      value: %{
+        type: "object",
+        enabled: false
+      },
+      population: get_condition_mappings()
+    }
+
     %{
       type: "nested",
-      properties: %{
-        operator: %{
-          properties: %{
-            name: %{type: "text", fields: @raw},
-            value_type: %{type: "text", fields: @raw},
-            value_type_filter: %{type: "text", fields: @raw}
-          }
-        },
-        structure: %{
-          properties: get_structure_mappings()
-        },
-        value: %{
-          type: "object",
-          enabled: false
-        }
-      }
+      properties: Map.take(properties, opts)
     }
   end
 end
