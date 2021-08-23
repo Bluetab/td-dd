@@ -266,27 +266,39 @@ defmodule TdDq.Search.Mappings do
   end
 
   defp get_condition_mappings(opts \\ [:operator, :structure, :value]) do
-    properties = %{
-      operator: %{
-        properties: %{
-          name: %{type: "text", fields: @raw},
-          value_type: %{type: "text", fields: @raw},
-          value_type_filter: %{type: "text", fields: @raw}
+    properties =
+      %{
+        operator: %{
+          properties: %{
+            name: %{type: "text", fields: @raw},
+            value_type: %{type: "text", fields: @raw},
+            value_type_filter: %{type: "text", fields: @raw}
+          }
+        },
+        structure: %{
+          properties: get_structure_mappings()
+        },
+        value: %{
+          type: "object",
+          enabled: false
         }
-      },
-      structure: %{
-        properties: get_structure_mappings()
-      },
-      value: %{
-        type: "object",
-        enabled: false
-      },
-      population: get_condition_mappings()
-    }
+      }
+      |> put_population(opts)
+      |> Map.take(opts)
 
     %{
       type: "nested",
-      properties: Map.take(properties, opts)
+      properties: properties
     }
+  end
+
+  defp put_population(mappings, opts) do
+    case :population in opts do
+      true ->
+        Map.put(mappings, :population, get_condition_mappings())
+
+      _ ->
+        mappings
+    end
   end
 end

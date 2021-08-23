@@ -223,14 +223,14 @@ defmodule TdDqWeb.Implementation.ConditionView do
       operator: render_one(row.operator, OperatorView, "operator.json"),
       value: row.value
     }
-    |> with_population()
+    |> with_population(row)
   end
 
-  defp with_population(%{population: population} = condition) do
-    %{condition | population: render_many(population, __MODULE__, "condition_row.json")}
+  defp with_population(condition, %{population: population = [_ | _]}) do
+    Map.put(condition, :population, render_many(population, __MODULE__, "condition_row.json"))
   end
 
-  defp with_population(condition), do: condition
+  defp with_population(condition, _row), do: condition
 end
 
 defmodule TdDqWeb.Implementation.OperatorView do
