@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-3951] Include additional information for grant events
+
 ## [4.26.0] 2021-08-16
 
 ### Added
