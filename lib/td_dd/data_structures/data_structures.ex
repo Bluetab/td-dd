@@ -61,6 +61,17 @@ defmodule TdDd.DataStructures do
     |> Enum.map(&enrich(&1, options))
   end
 
+  def list_data_structure_versions(clauses \\ %{}) do
+    clauses
+    |> Enum.reduce(DataStructureVersion, fn
+      {:since, since}, q -> where(q, [dsv], dsv.updated_at >= ^since or dsv.deleted_at >= ^since)
+      {:min_id, id}, q -> where(q, [dsv], dsv.id >= ^id)
+      {:order_by, "id"}, q -> order_by(q, :id)
+      {:limit, limit}, q -> limit(q, ^limit)
+    end)
+    |> Repo.all()
+  end
+
   def get_data_structure!(id) do
     DataStructure
     |> Repo.get!(id)
@@ -1309,5 +1320,15 @@ defmodule TdDd.DataStructures do
   """
   def change_structure_note(%StructureNote{} = structure_note, attrs \\ %{}) do
     StructureNote.changeset(structure_note, attrs)
+  end
+
+  ## Dataloader
+
+  def datasource do
+    Dataloader.Ecto.new(TdDd.Repo, query: &query/2, timeout: Dataloader.default_timeout())
+  end
+
+  defp query(queryable, _params) do
+    queryable
   end
 end

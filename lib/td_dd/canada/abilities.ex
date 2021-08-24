@@ -32,6 +32,10 @@ defmodule TdDd.Canada.Abilities do
     # service accounts can upload metadata and profiling
     def can?(%Claims{role: "service"}, :upload, _resource), do: true
 
+    # service and admin accounts can perform GraphQL queries
+    def can?(%Claims{role: "service"}, :query, _resource), do: true
+    def can?(%Claims{role: "admin"}, :query, _resource), do: true
+
     def can?(%Claims{}, _action, nil), do: false
 
     def can?(%Claims{} = claims, action, System) do

@@ -8,7 +8,10 @@ defmodule TdDd.Auth.CurrentResource do
   def init(opts), do: opts
 
   def call(conn, _opts) do
-    current_resource = current_resource(conn)
-    Conn.assign(conn, :current_resource, current_resource)
+    claims = current_resource(conn)
+
+    conn
+    |> Absinthe.Plug.put_options(context: %{claims: claims})
+    |> Conn.assign(:current_resource, claims)
   end
 end
