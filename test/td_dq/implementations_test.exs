@@ -231,8 +231,9 @@ defmodule TdDq.ImplementationsTest do
 
       claims = build(:dq_claims)
 
-      assert {:error, :implementation, %{valid?: false, errors: [implementation_key: {"duplicated", _}]}, _} =
-               Implementations.create_implementation(rule, params, claims)
+      assert {:error, :implementation,
+              %{valid?: false, errors: [implementation_key: {"duplicated", _}]},
+              _} = Implementations.create_implementation(rule, params, claims)
     end
 
     test "with invalid keywords in raw content of raw implementation returns error", %{rule: rule} do

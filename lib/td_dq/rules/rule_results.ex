@@ -127,6 +127,7 @@ defmodule TdDq.Rules.RuleResults do
     rule_result
     |> Repo.delete()
     |> refresh_on_delete(rule)
+
     # TODO: audit result deletion?
   end
 
