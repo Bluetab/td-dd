@@ -127,7 +127,7 @@ defmodule TdDq.Implementations.Implementation do
   defp raw_changeset(changeset) do
     changeset
     |> cast_embed(:raw_content, with: &RawContent.changeset/2, required: true)
-    |> validate_required([:raw_content])
+    |> validate_required(:raw_content)
   end
 
   def default_changeset(changeset) do
@@ -168,7 +168,8 @@ defmodule TdDq.Implementations.Implementation do
       :version,
       :df_name,
       :df_content,
-      :result_type
+      :result_type,
+      :domain_id
     ]
 
     @impl Elasticsearch.Document

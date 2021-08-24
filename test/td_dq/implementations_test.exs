@@ -62,17 +62,14 @@ defmodule TdDq.ImplementationsTest do
     end
 
     test "returns all implementations by business_concept_id" do
-      rule = insert(:rule, business_concept_id: "xyz")
+      rule = insert(:rule, business_concept_id: 123)
 
       insert(:implementation, implementation_key: "ri1", rule: rule)
       insert(:implementation, implementation_key: "ri2", rule: rule)
       insert(:implementation, implementation_key: "ri3", rule: rule)
 
-      assert length(
-               Implementations.list_implementations(%{
-                 rule: %{business_concept_id: "xyz"}
-               })
-             ) == 3
+      assert length(Implementations.list_implementations(%{rule: %{business_concept_id: 123}})) ==
+               3
     end
 
     test "returns all implementations by status" do
@@ -170,7 +167,7 @@ defmodule TdDq.ImplementationsTest do
 
     test "preloads the rule" do
       %{id: id, rule_id: rule_id} = insert(:implementation)
-      assert %{rule: rule} = Implementations.get_implementation!(id, preload: :rule)
+      assert %{rule: rule} = Implementations.get_implementation!(id)
       assert %{id: ^rule_id} = rule
     end
 
@@ -212,12 +209,13 @@ defmodule TdDq.ImplementationsTest do
     end
   end
 
-  describe "create_implementation/2" do
+  describe "create_implementation/3" do
     test "with valid data creates a implementation", %{rule: rule} do
       params = string_params_for(:implementation, rule_id: rule.id)
+      claims = build(:dq_claims)
 
-      assert {:ok, %Implementation{} = implementation} =
-               Implementations.create_implementation(rule, params)
+      assert {:ok, %{implementation: implementation}} =
+               Implementations.create_implementation(rule, params, claims)
 
       assert implementation.rule_id == params["rule_id"]
     end
@@ -231,16 +229,19 @@ defmodule TdDq.ImplementationsTest do
           implementation_key: impl.implementation_key
         )
 
-      assert {:error, %{valid?: false, errors: [implementation_key: {"duplicated", _}]}} =
-               Implementations.create_implementation(rule, params)
+      claims = build(:dq_claims)
+
+      assert {:error, :implementation, %{valid?: false, errors: [implementation_key: {"duplicated", _}]}, _} =
+               Implementations.create_implementation(rule, params, claims)
     end
 
     test "with invalid keywords in raw content of raw implementation returns error", %{rule: rule} do
       raw_content = build(:raw_content, validations: "drop cliente")
       params = string_params_for(:raw_implementation, raw_content: raw_content)
+      claims = build(:dq_claims)
 
-      assert {:error, %Changeset{valid?: false} = changeset} =
-               Implementations.create_implementation(rule, params)
+      assert {:error, :implementation, %Changeset{valid?: false} = changeset, _} =
+               Implementations.create_implementation(rule, params, claims)
 
       assert %{
                raw_content: %{
@@ -253,9 +254,10 @@ defmodule TdDq.ImplementationsTest do
       %{id: rule_id} = rule
 
       params = string_params_for(:raw_implementation, rule_id: rule_id)
+      claims = build(:dq_claims, role: "admin")
 
-      assert {:ok, %Implementation{} = implementation} =
-               Implementations.create_implementation(rule, params)
+      assert {:ok, %{implementation: implementation}} =
+               Implementations.create_implementation(rule, params, claims)
 
       assert %{rule_id: ^rule_id} = implementation
     end
@@ -264,8 +266,10 @@ defmodule TdDq.ImplementationsTest do
       params =
         string_params_for(:implementation, dataset: [build(:dataset_row)], rule_id: rule.id)
 
-      assert {:ok, %Implementation{} = implementation} =
-               Implementations.create_implementation(rule, params)
+      claims = build(:dq_claims, role: "admin")
+
+      assert {:ok, %{implementation: implementation}} =
+               Implementations.create_implementation(rule, params, claims)
 
       assert implementation.rule_id == params["rule_id"]
     end
@@ -277,9 +281,10 @@ defmodule TdDq.ImplementationsTest do
         build(:condition_row, value: [%{raw: "2019-12-02 05:35:00"}], operator: operator)
 
       params = string_params_for(:implementation, validations: [validation], rule_id: rule.id)
+      claims = build(:dq_claims)
 
-      assert {:ok, %Implementation{} = implementation} =
-               Implementations.create_implementation(rule, params)
+      assert {:ok, %{implementation: implementation}} =
+               Implementations.create_implementation(rule, params, claims)
 
       assert implementation.rule_id == params["rule_id"]
     end
@@ -338,12 +343,13 @@ defmodule TdDq.ImplementationsTest do
     end
   end
 
-  describe "delete_implementation/1" do
+  describe "delete_implementation/2" do
     test "deletes the implementation" do
       implementation = insert(:implementation)
+      claims = build(:dq_claims)
 
-      assert {:ok, %Implementation{__meta__: meta}} =
-               Implementations.delete_implementation(implementation)
+      assert {:ok, %{implementation: %{__meta__: meta}}} =
+               Implementations.delete_implementation(implementation, claims)
 
       assert %{state: :deleted} = meta
     end
@@ -359,8 +365,10 @@ defmodule TdDq.ImplementationsTest do
           result: insert(:rule_result)
         )
 
-      assert {:ok, %Implementation{__meta__: meta}} =
-               Implementations.delete_implementation(implementation)
+      claims = build(:dq_claims)
+
+      assert {:ok, %{implementation: %{__meta__: meta}}} =
+               Implementations.delete_implementation(implementation, claims)
 
       assert %{state: :deleted} = meta
       assert is_nil(Repo.get(TdDq.Executions.Execution, execution_id))

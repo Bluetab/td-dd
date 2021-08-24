@@ -50,10 +50,7 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
 
       create_acl_entry(user_id, "domain", domain_id, [
         :view_quality_rule,
-        :manage_quality_rule_implementations
-      ])
-
-      create_acl_entry(user_id, "business_concept", @business_concept_id, [
+        :manage_quality_rule_implementations,
         :execute_quality_rule_implementations
       ])
 

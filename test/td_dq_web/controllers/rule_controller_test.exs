@@ -71,11 +71,11 @@ defmodule TdDqWeb.RuleControllerTest do
       claims: %{user_id: user_id},
       swagger_schema: schema
     } do
-      business_concept_id = Integer.to_string(System.unique_integer([:positive]))
-      %{id: id} = insert(:rule, business_concept_id: business_concept_id)
+      business_concept_id = System.unique_integer([:positive])
+      %{id: id, domain_id: domain_id} = insert(:rule, business_concept_id: business_concept_id)
       insert(:rule, business_concept_id: "1234")
 
-      create_acl_entry(user_id, "business_concept", business_concept_id, [:view_quality_rule])
+      create_acl_entry(user_id, "domain", domain_id, [:view_quality_rule])
 
       assert %{"data" => data} =
                conn
@@ -143,9 +143,12 @@ defmodule TdDqWeb.RuleControllerTest do
       claims: %{user_id: user_id},
       swagger_schema: schema
     } do
-      business_concept_id = Integer.to_string(System.unique_integer([:positive]))
-      %{id: id, name: name} = insert(:rule, business_concept_id: business_concept_id)
-      create_acl_entry(user_id, "business_concept", business_concept_id, [:view_quality_rule])
+      business_concept_id = System.unique_integer([:positive])
+
+      %{id: id, name: name, domain_id: domain_id} =
+        insert(:rule, business_concept_id: business_concept_id)
+
+      create_acl_entry(user_id, "domain", domain_id, [:view_quality_rule])
 
       %{"data" => %{"id" => ^id, "name" => ^name}} =
         conn
@@ -158,23 +161,23 @@ defmodule TdDqWeb.RuleControllerTest do
   describe "get_rules_by_concept" do
     @tag authentication: [role: "admin"]
     test "lists all rules of a concept", %{conn: conn, swagger_schema: schema} do
-      business_concept_id = Integer.to_string(System.unique_integer([:positive]))
+      business_concept_id = System.unique_integer([:positive])
 
       %{id: id1, business_concept_id: business_concept_id} =
         insert(:rule, business_concept_id: business_concept_id)
 
       %{id: id2} = insert(:rule, business_concept_id: business_concept_id)
 
-      assert %{
-               "data" => [
-                 %{"id" => ^id1, "business_concept_id" => ^business_concept_id},
-                 %{"id" => ^id2, "business_concept_id" => ^business_concept_id}
-               ]
-             } =
+      assert %{"data" => data} =
                conn
                |> get(Routes.rule_path(conn, :get_rules_by_concept, business_concept_id))
                |> validate_resp_schema(schema, "RulesResponse")
                |> json_response(:ok)
+
+      assert [
+               %{"id" => ^id1, "business_concept_id" => ^business_concept_id},
+               %{"id" => ^id2, "business_concept_id" => ^business_concept_id}
+             ] = Enum.sort_by(data, & &1["id"])
     end
 
     @tag authentication: [role: "admin"]
@@ -183,7 +186,7 @@ defmodule TdDqWeb.RuleControllerTest do
       domain: %{id: domain_id, external_id: external_id, name: name},
       swagger_schema: schema
     } do
-      business_concept_id = Integer.to_string(System.unique_integer([:positive]))
+      business_concept_id = System.unique_integer([:positive])
       %{id: id1} = insert(:rule, domain_id: domain_id, business_concept_id: business_concept_id)
 
       %{id: id2} = insert(:rule, domain_id: domain_id, business_concept_id: business_concept_id)

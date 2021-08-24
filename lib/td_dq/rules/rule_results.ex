@@ -127,8 +127,7 @@ defmodule TdDq.Rules.RuleResults do
     rule_result
     |> Repo.delete()
     |> refresh_on_delete(rule)
-
-    # TODO: Audit event?
+    # TODO: audit result deletion?
   end
 
   def select_results(ids) do

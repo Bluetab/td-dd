@@ -6,6 +6,11 @@
 
 - [TD-3484] GraphQL API on `/api/v2`
 
+### Changed
+
+- [TD-3826] Data quality permissions now uses `domain_id` instead of
+  `business_concept_id`
+
 ## [4.26.0] 2021-08-16
 
 ### Added

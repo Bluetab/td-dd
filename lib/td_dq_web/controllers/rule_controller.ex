@@ -4,10 +4,9 @@ defmodule TdDqWeb.RuleController do
 
   import Canada, only: [can?: 2]
 
-  alias Ecto.Changeset
+  alias TdDq.Implementations.Implementation
   alias TdDq.Rules
-  alias TdDqWeb.ChangesetView
-  alias TdDqWeb.ErrorView
+  alias TdDq.Rules.Rule
   alias TdDqWeb.RuleView
 
   require Logger
@@ -25,7 +24,7 @@ defmodule TdDqWeb.RuleController do
 
   def index(conn, params) do
     claims = conn.assigns[:current_resource]
-    manage_permission = can?(claims, manage(%{"resource_type" => "rule"}))
+    manage_permission = can?(claims, manage(Rule))
     user_permissions = %{manage_quality_rules: manage_permission}
 
     rules =
@@ -43,24 +42,14 @@ defmodule TdDqWeb.RuleController do
     description("List Rules of a Business Concept")
 
     parameters do
-      id(:path, :string, "Business Concept ID", required: true)
+      business_concept_id(:path, :string, "Business Concept ID", required: true)
     end
 
     response(200, "OK", Schema.ref(:RulesResponse))
   end
 
-  def get_rules_by_concept(conn, %{"id" => id} = params) do
+  def get_rules_by_concept(conn, %{"business_concept_id" => _id} = params) do
     claims = conn.assigns[:current_resource]
-
-    resource_type = %{
-      "business_concept_id" => id,
-      "resource_type" => "rule"
-    }
-
-    params =
-      params
-      |> Map.put("business_concept_id", id)
-      |> Map.delete("id")
 
     rules =
       params
@@ -68,12 +57,17 @@ defmodule TdDqWeb.RuleController do
       |> Enum.filter(&can?(claims, show(&1)))
 
     conn
+    |> assign_actions(claims)
     |> put_view(RuleView)
-    |> render(
-      "index.json",
-      hypermedia: collection_hypermedia("rule", conn, rules, resource_type),
-      rules: rules
-    )
+    |> render("index.json", rules: rules)
+  end
+
+  defp assign_actions(conn, claims) do
+    if can?(claims, manage(Rule)) do
+      assign(conn, :actions, %{"create" => Routes.rule_path(conn, :create)})
+    else
+      conn
+    end
   end
 
   swagger_path :create do
@@ -88,80 +82,23 @@ defmodule TdDqWeb.RuleController do
     response(400, "Client Error")
   end
 
-  def create(conn, %{"rule" => rule_params}) do
-    %{user_id: user_id} = claims = conn.assigns[:current_resource]
+  def create(conn, %{"rule" => params}) do
+    claims = conn.assigns[:current_resource]
 
-    params = Map.put_new(rule_params, "updated_by", user_id)
-
-    resource_type =
-      rule_params
-      |> Map.take(["business_concept_id"])
-      |> Map.put("resource_type", "rule")
-
-    with {:can, true} <- {:can, can?(claims, create(resource_type))},
-         {:ok, %{rule: rule}} <- Rules.create_rule(params, claims) do
+    with {:ok, %{rule: rule}} <- Rules.create_rule(params, claims) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", Routes.rule_path(conn, :show, rule))
-      |> render("show.json", rule: rule, user_permissions: get_user_permissions(conn, rule))
-    else
-      {:can, false} ->
-        {:can, false}
-
-      {:error, :rule, %Changeset{data: %{__struct__: _}} = changeset, _} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> put_view(ChangesetView)
-        |> render("error.json",
-          changeset: changeset,
-          prefix: "rule.error"
-        )
-
-      {:error, :rule, %Changeset{} = changeset, _} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> put_view(ChangesetView)
-        |> render("error.json",
-          changeset: changeset,
-          prefix: "rule.type_params.error"
-        )
-
-      error ->
-        Logger.error("While creating rule... #{inspect(error)}")
-
-        conn
-        |> put_status(:unprocessable_entity)
-        |> put_view(ErrorView)
-        |> render("422.json")
+      |> render("show.json", rule: rule, user_permissions: get_user_permissions(claims, rule))
     end
   end
 
-  defp get_user_permissions(conn, rule) do
-    claims = conn.assigns[:current_resource]
-    manage_permission = can?(claims, manage(%{"resource_type" => "rule"}))
-
-    manage_rule_implementations =
-      can?(
-        claims,
-        manage(%{
-          "resource_type" => "implementation",
-          "business_concept_id" => rule.business_concept_id
-        })
-      )
-
-    manage_raw_rule_implementations =
-      can?(
-        claims,
-        manage_raw(%{
-          "resource_type" => "implementation",
-          "business_concept_id" => rule.business_concept_id
-        })
-      )
-
+  defp get_user_permissions(claims, rule) do
     %{
-      manage_quality_rules: manage_permission,
-      manage_quality_rule_implementations: manage_rule_implementations,
-      manage_raw_quality_rule_implementations: manage_raw_rule_implementations
+      manage_quality_rules: can?(claims, manage(Rule)),
+      manage_quality_rule_implementations: can?(claims, manage(%Implementation{rule: rule})),
+      manage_raw_quality_rule_implementations:
+        can?(claims, manage(%Implementation{rule: rule, implementation_type: "raw"}))
     }
   end
 
@@ -179,20 +116,15 @@ defmodule TdDqWeb.RuleController do
 
   def show(conn, %{"id" => id}) do
     claims = conn.assigns[:current_resource]
-
     rule = Rules.get_rule!(id, enrich: [:domain])
 
     with {:can, true} <- {:can, can?(claims, show(rule))} do
       render(
         conn,
         "show.json",
-        hypermedia:
-          hypermedia("rule", conn, %{
-            "business_concept_id" => rule.business_concept_id,
-            "resource_type" => "rule"
-          }),
+        hypermedia: hypermedia("rule", conn, rule),
         rule: rule,
-        user_permissions: get_user_permissions(conn, rule)
+        user_permissions: get_user_permissions(claims, rule)
       )
     end
   end
@@ -210,49 +142,12 @@ defmodule TdDqWeb.RuleController do
     response(400, "Client Error")
   end
 
-  def update(conn, %{"id" => id, "rule" => rule_params}) do
-    %{user_id: user_id} = claims = conn.assigns[:current_resource]
+  def update(conn, %{"id" => id, "rule" => params}) do
+    claims = conn.assigns[:current_resource]
     rule = Rules.get_rule!(id)
 
-    resource_type = %{
-      "business_concept_id" => rule.business_concept_id,
-      "resource_type" => "rule"
-    }
-
-    params = Map.put_new(rule_params, "updated_by", user_id)
-
-    with {:can, true} <- {:can, can?(claims, update(resource_type))},
-         {:ok, %{rule: rule}} <- Rules.update_rule(rule, params, claims) do
-      render(conn, "show.json", rule: rule, user_permissions: get_user_permissions(conn, rule))
-    else
-      {:can, false} ->
-        {:can, false}
-
-      {:error, :rule, %Changeset{data: %{__struct__: _}} = changeset, _} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> put_view(ChangesetView)
-        |> render("error.json",
-          changeset: changeset,
-          prefix: "rule.error"
-        )
-
-      {:error, :rule, %Changeset{} = changeset, _} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> put_view(ChangesetView)
-        |> render("error.json",
-          changeset: changeset,
-          prefix: "rule.type_params.error"
-        )
-
-      error ->
-        Logger.error("While updating rule... #{inspect(error)}")
-
-        conn
-        |> put_status(:unprocessable_entity)
-        |> put_view(ErrorView)
-        |> render("422.json")
+    with {:ok, %{rule: rule}} <- Rules.update_rule(rule, params, claims) do
+      render(conn, "show.json", rule: rule, user_permissions: get_user_permissions(claims, rule))
     end
   end
 
@@ -272,26 +167,8 @@ defmodule TdDqWeb.RuleController do
     claims = conn.assigns[:current_resource]
     rule = Rules.get_rule!(id)
 
-    resource_type = %{
-      "business_concept_id" => rule.business_concept_id,
-      "resource_type" => "rule"
-    }
-
-    with {:can, true} <- {:can, can?(claims, delete(resource_type))},
-         {:ok, _res} <- Rules.delete_rule(rule, claims) do
+    with {:ok, _res} <- Rules.delete_rule(rule, claims) do
       send_resp(conn, :no_content, "")
-    else
-      {:can, false} ->
-        {:can, false}
-
-      {:error, :rule, %Changeset{data: %{__struct__: _}} = changeset, _} ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> put_view(ChangesetView)
-        |> render("error.json",
-          changeset: changeset,
-          prefix: "rule.error"
-        )
     end
   end
 end

@@ -54,18 +54,8 @@ defmodule TdDqWeb.ImplementationSearchController do
 
   defp get_user_permissions(%Claims{} = claims, implementations) do
     manage? = can?(claims, manage(Implementation))
-    execute? = Enum.any?(implementations, &can_execute?(claims, &1))
+    execute? = Enum.any?(implementations, &can?(claims, execute(&1)))
 
     %{manage: manage?, execute: execute?}
-  end
-
-  defp can_execute?(%Claims{} = claims, implementation) do
-    can?(
-      claims,
-      execute(%{
-        "business_concept_id" => Map.get(implementation, :business_concept_id),
-        "resource_type" => "implementation"
-      })
-    )
   end
 end
