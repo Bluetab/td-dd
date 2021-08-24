@@ -6,6 +6,8 @@ defmodule TdDdWeb.DataStructureFilterController do
   alias TdDd.DataStructures.Search
   alias TdDdWeb.SwaggerDefinitions
 
+  plug(TdDdWeb.SearchPermissionPlug)
+
   action_fallback(TdDdWeb.FallbackController)
 
   def swagger_definitions do

@@ -16,6 +16,8 @@ defmodule TdDdWeb.DataStructureController do
   alias TdDd.DataStructures.StructureNotesWorkflow
   alias TdDdWeb.SwaggerDefinitions
 
+  plug(TdDdWeb.SearchPermissionPlug)
+
   action_fallback(TdDdWeb.FallbackController)
 
   def swagger_definitions do

@@ -13,13 +13,18 @@ defmodule TdDdWeb.Router do
   pipeline :api_authorized do
     plug(TdDd.Auth.CurrentResource)
     plug(Guardian.Plug.LoadResource)
-    plug(TdDdWeb.SearchPermissionPlug)
   end
 
   scope "/api", TdDdWeb do
     pipe_through(:api)
     get("/ping", PingController, :ping)
     post("/echo", EchoController, :echo)
+  end
+
+  scope "/api" do
+    pipe_through([:api, :api_secure, :api_authorized])
+
+    forward("/v2", Absinthe.Plug, schema: TdDdWeb.Schema)
   end
 
   scope "/api", TdDdWeb do

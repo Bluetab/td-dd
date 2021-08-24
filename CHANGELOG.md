@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- [TD-3484] GraphQL API on `/api/v2`
+
 ## [4.26.0] 2021-08-16
 
 ### Added
