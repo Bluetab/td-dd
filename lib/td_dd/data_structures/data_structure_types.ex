@@ -73,6 +73,7 @@ defmodule TdDd.DataStructures.DataStructureTypes do
     DataStructureVersion
     |> where([dsv], is_nil(dsv.deleted_at))
     |> select([dsv], %{type: dsv.type, field: fragment("jsonb_object_keys(?)", dsv.metadata)})
+    |> distinct(true)
     |> union(^sq)
     |> subquery()
     |> select([t], %{type: t.type, fields: fragment("array_agg(?)", t.field)})
@@ -86,6 +87,7 @@ defmodule TdDd.DataStructures.DataStructureTypes do
       on: sm.data_structure_id == dsv.data_structure_id and is_nil(sm.deleted_at)
     )
     |> select([dsv, sm], %{type: dsv.type, field: fragment("jsonb_object_keys(?)", sm.fields)})
+    |> distinct(true)
   end
 
   @spec enrich_template(DataStructureType.t() | nil) :: DataStructureType.t() | nil
