@@ -6,6 +6,8 @@ defmodule TdDd.DataStructures.DataStructureTypes do
 
   alias TdCache.TemplateCache
   alias TdDd.DataStructures.DataStructureType
+  alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.StructureMetadata
   alias TdDd.Repo
 
   @doc """
@@ -66,13 +68,24 @@ defmodule TdDd.DataStructures.DataStructureTypes do
   end
 
   defp metadata_fields_query do
-    "data_structure_versions"
+    sq = subquery(mutable_metadata_fields_query())
+
+    DataStructureVersion
     |> where([dsv], is_nil(dsv.deleted_at))
     |> select([dsv], %{type: dsv.type, field: fragment("jsonb_object_keys(?)", dsv.metadata)})
-    |> distinct(true)
+    |> union(^sq)
     |> subquery()
     |> select([t], %{type: t.type, fields: fragment("array_agg(?)", t.field)})
     |> group_by([t], t.type)
+  end
+
+  defp mutable_metadata_fields_query do
+    DataStructureVersion
+    |> where([dsv], is_nil(dsv.deleted_at))
+    |> join(:inner, [dsv], sm in StructureMetadata,
+      on: sm.data_structure_id == dsv.data_structure_id and is_nil(sm.deleted_at)
+    )
+    |> select([dsv, sm], %{type: dsv.type, field: fragment("jsonb_object_keys(?)", sm.fields)})
   end
 
   @spec enrich_template(DataStructureType.t() | nil) :: DataStructureType.t() | nil

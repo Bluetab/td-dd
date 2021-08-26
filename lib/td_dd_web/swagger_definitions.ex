@@ -151,7 +151,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
             system(:object, "Data Structure system", required: true)
             version(:integer, "Version number", required: true)
             versions(:array, "Versions", items: Schema.ref(:Version))
-            metadata_versions(:array, "Metadata Versions", items: Schema.ref(:MetadataVersion))
+            metadata(:object, "Data Structure metadata")
           end
         end,
       Version:
