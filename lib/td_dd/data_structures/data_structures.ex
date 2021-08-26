@@ -20,7 +20,6 @@ defmodule TdDd.DataStructures do
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructuresTags
   alias TdDd.DataStructures.DataStructureTag
-  alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.DataStructures.StructureNote
@@ -34,7 +33,7 @@ defmodule TdDd.DataStructures do
   # Data structure version associations preloaded for some views
   @preload_dsv_assocs [:classifications, data_structure: :system]
 
-  def list_data_structures(clauses \\ %{}, opts \\ []) do
+  def list_data_structures(clauses \\ %{}) do
     clauses
     |> Enum.reduce(DataStructure, fn
       {:external_id, external_ids}, q when is_list(external_ids) ->
@@ -58,7 +57,6 @@ defmodule TdDd.DataStructures do
     |> select_merge([_, sn], %{latest_note: sn.df_content})
     |> preload(:system)
     |> Repo.all()
-    |> Enum.map(&enrich(&1, opts))
   end
 
   def list_data_structure_versions(clauses \\ %{}) do
@@ -125,15 +123,6 @@ defmodule TdDd.DataStructures do
 
   defp enrich(target, nil = _opts), do: target
 
-  defp enrich(%DataStructure{} = ds, opts) do
-    ds
-    |> StructureEnricher.enrich()
-    |> enrich(opts, :versions, &Repo.preload(&1, :versions))
-    |> enrich(opts, :latest, &get_latest_version/1)
-    |> enrich(opts, :source, &get_source/1)
-    |> enrich(opts, :metadata_versions, &get_metadata_versions/1)
-  end
-
   defp enrich(%DataStructureVersion{id: id} = _data_structure_version, :defaults) do
     enriched_structure_version!(id, preload: [data_structure: :source])
   end
@@ -144,8 +133,8 @@ defmodule TdDd.DataStructures do
 
     dsv
     |> enrich(:defaults)
-    |> enrich(opts, :classifications, &get_classifications/1)
-    |> enrich(opts, :system, &get_system/1)
+    |> enrich(opts, :classifications, &get_classifications!/1)
+    |> enrich(opts, :system, &get_system!/1)
     |> enrich(
       opts,
       :parents,
@@ -178,14 +167,14 @@ defmodule TdDd.DataStructures do
       &get_relations(&1, deleted: deleted, default: false, with_confidential: with_confidential)
     )
     |> enrich(opts, :relation_links, &get_relation_links/1)
-    |> enrich(opts, :versions, &get_versions/1)
+    |> enrich(opts, :versions, &get_versions!/1)
     |> enrich(opts, :degree, &get_degree/1)
-    |> enrich(opts, :profile, &get_profile/1)
+    |> enrich(opts, :profile, &get_profile!/1)
     |> enrich(opts, :links, &get_structure_links/1)
-    |> enrich(opts, :source, &get_source/1)
-    |> enrich(opts, :metadata_versions, &get_metadata_versions/1)
-    |> enrich(opts, :data_structure_type, &get_data_structure_type/1)
-    |> enrich(opts, :tags, &get_tags/1)
+    |> enrich(opts, :source, &get_source!/1)
+    |> enrich(opts, :metadata_versions, &get_metadata_versions!/1)
+    |> enrich(opts, :data_structure_type, &get_data_structure_type!/1)
+    |> enrich(opts, :tags, &get_tags!/1)
     |> enrich(opts, :grants, &get_grants/1)
     |> enrich(opts, :grant, &get_grant(&1, opts[:user_id]))
   end
@@ -204,30 +193,28 @@ defmodule TdDd.DataStructures do
   defp get_target_key(:relation_links), do: :relations
   defp get_target_key(key), do: key
 
-  defp get_system(%DataStructureVersion{} = dsv) do
-    dsv
-    |> Repo.preload(data_structure: :system)
-    |> Map.get(:data_structure)
-    |> Map.get(:system)
+  defp get_system!(%DataStructureVersion{} = dsv) do
+    case Repo.preload(dsv, data_structure: :system) do
+      %{data_structure: %{system: system}} -> system
+    end
   end
 
-  defp get_classifications(%DataStructureVersion{} = dsv) do
-    dsv
-    |> Repo.preload(:classifications)
-    |> Map.get(:classifications)
+  defp get_classifications!(%DataStructureVersion{} = dsv) do
+    case Repo.preload(dsv, :classifications) do
+      %{classifications: classifications} -> classifications
+    end
   end
 
-  defp get_profile(%DataStructureVersion{} = dsv) do
-    dsv
-    |> Repo.preload(data_structure: :profile)
-    |> Map.get(:data_structure)
-    |> Map.get(:profile)
+  defp get_profile!(%DataStructureVersion{} = dsv) do
+    case Repo.preload(dsv, data_structure: :profile) do
+      %{data_structure: %{profile: profile}} -> profile
+    end
   end
 
-  def get_data_structure_type(%DataStructureVersion{} = dsv) do
-    DataStructureType
-    |> where([ds_type], ds_type.name == ^dsv.type)
-    |> Repo.one()
+  def get_data_structure_type!(%DataStructureVersion{} = dsv) do
+    case Repo.preload(dsv, :structure_type) do
+      %{structure_type: structure_type} -> structure_type
+    end
   end
 
   def get_field_structures(data_structure_version, opts) do
@@ -399,10 +386,10 @@ defmodule TdDd.DataStructures do
     |> Map.put(:parents, parents)
   end
 
-  defp get_versions(%DataStructureVersion{} = dsv) do
-    dsv
-    |> Ecto.assoc([:data_structure, :versions])
-    |> Repo.all()
+  defp get_versions!(%DataStructureVersion{} = dsv) do
+    case Repo.preload(dsv, data_structure: :versions) do
+      %{data_structure: %{versions: versions}} -> versions
+    end
   end
 
   defp get_grants(%DataStructureVersion{data_structure_id: id, path: path}, clauses \\ %{}) do
@@ -448,52 +435,24 @@ defmodule TdDd.DataStructures do
     Map.put(version, :version, Repo.preload(v, preloads))
   end
 
-  def get_source(%DataStructureVersion{data_structure: %DataStructure{} = data_structure}) do
-    get_source(data_structure)
+  defp get_source!(%DataStructureVersion{} = dsv) do
+    case Repo.preload(dsv, data_structure: :source) do
+      %{data_structure: %{source: source}} -> source
+    end
   end
 
-  def get_source(%DataStructureVersion{} = version) do
-    version
-    |> Repo.preload(data_structure: :source)
-    |> Kernel.get_in([:data_structure, :source])
+  defp get_metadata_versions!(%DataStructureVersion{} = dsv) do
+    case Repo.preload(dsv, data_structure: :metadata_versions) do
+      %{data_structure: %{metadata_versions: metadata_versions}} -> metadata_versions
+    end
   end
 
-  def get_source(%DataStructure{source: %NotLoaded{}} = data_structure) do
-    data_structure
-    |> Repo.preload(:source)
-    |> Map.get(:source)
-  end
-
-  def get_source(%DataStructure{source: source}), do: source
-
-  defp get_metadata_versions(%DataStructure{} = data_structure) do
-    data_structure
-    |> Repo.preload(:metadata_versions)
-    |> Map.get(:metadata_versions)
-  end
-
-  defp get_metadata_versions(%DataStructureVersion{} = version) do
-    version
-    |> Repo.preload(data_structure: :metadata_versions)
-    |> Map.get(:data_structure)
-    |> Map.get(:metadata_versions)
-  end
-
-  defp get_tags(%DataStructureVersion{data_structure: %DataStructure{} = data_structure}) do
-    get_tags(data_structure)
-  end
-
-  defp get_tags(%DataStructureVersion{} = version) do
-    version
-    |> Repo.preload(:data_structure)
-    |> Map.get(:data_structure)
-    |> get_tags()
-  end
-
-  defp get_tags(%DataStructure{} = data_structure) do
-    data_structure
-    |> Repo.preload(data_structures_tags: [:data_structure_tag, :data_structure])
-    |> Map.get(:data_structures_tags)
+  defp get_tags!(%DataStructureVersion{} = dsv) do
+    case Repo.preload(dsv,
+           data_structure: [data_structures_tags: [:data_structure_tag, :data_structure]]
+         ) do
+      %{data_structure: %{data_structures_tags: data_structures_tags}} -> data_structures_tags
+    end
   end
 
   @doc """

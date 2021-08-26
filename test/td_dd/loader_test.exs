@@ -489,17 +489,11 @@ defmodule TdDd.LoaderTest do
 
       structure = random_structure(system.id)
 
-      Enum.each(1..5, fn _ ->
-        class = random_string()
+      for class <- Enum.map(1..5, fn _ -> random_string() end) do
         structure = Map.put(structure, :class, class)
-        assert {:ok, _} = Loader.load(%{structures: [structure]}, audit())
-
-        assert [%{latest: %{class: ^class}}] =
-                 DataStructures.list_data_structures(
-                   %{external_id: structure.external_id},
-                   [:latest]
-                 )
-      end)
+        assert {:ok, %{structure_ids: [id]}} = Loader.load(%{structures: [structure]}, audit())
+        assert %{class: ^class} = DataStructures.get_latest_version(id)
+      end
     end
 
     test "loads fails when structure has relation with itself" do
