@@ -300,9 +300,10 @@ defmodule TdDq.ImplementationsTest do
       validations = [string_params_for(:condition_row, population: [condition])]
 
       params = string_params_for(:implementation, rule_id: rule.id, validations: validations)
+      claims = build(:dq_claims, role: "admin")
 
-      assert {:ok, %Implementation{validations: [%{population: [clause]}]}} =
-               Implementations.create_implementation(rule, params)
+      assert {:ok, %{implementation: %Implementation{validations: [%{population: [clause]}]}}} =
+               Implementations.create_implementation(rule, params, claims)
 
       assert %{
                operator: %{name: ^name, value_type: ^type},
