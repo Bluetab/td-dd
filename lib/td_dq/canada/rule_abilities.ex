@@ -17,8 +17,16 @@ defmodule TdDq.Canada.RuleAbilities do
       authorized?(claims, business_concept_id)
   end
 
+  def can?(%Claims{} = claims, :update, %Changeset{} = changeset) do
+    domain_ids = fetch_values(changeset, :domain_id)
+    business_concept_ids = fetch_values(changeset, :business_concept_id)
+
+    Enum.all?(domain_ids, &Permissions.authorized?(claims, :manage_quality_rule, &1)) &&
+      Enum.all?(business_concept_ids, &authorized?(claims, &1))
+  end
+
   def can?(%Claims{} = claims, action, %Changeset{} = changeset)
-      when action in [:create, :delete, :update] do
+      when action in [:create, :delete] do
     domain_id = Changeset.fetch_field!(changeset, :domain_id)
     business_concept_id = Changeset.fetch_field!(changeset, :business_concept_id)
 
@@ -31,6 +39,14 @@ defmodule TdDq.Canada.RuleAbilities do
   end
 
   def can?(%Claims{}, _action, _entity), do: false
+
+  defp fetch_values(%Changeset{data: %Rule{} = data} = changeset, field)
+       when field in [:domain_id, :business_concept_id] do
+    case Changeset.fetch_field(changeset, field) do
+      {:data, value} -> [value]
+      {:changes, value} -> [Map.get(data, field), value]
+    end
+  end
 
   defp authorized?(_claims, nil), do: true
 
