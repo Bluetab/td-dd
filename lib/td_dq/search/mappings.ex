@@ -18,7 +18,6 @@ defmodule TdDq.Search.Mappings do
       domain: %{
         properties: %{
           id: %{type: "long"},
-          domain_id: %{type: "long"},
           name: %{type: "text", fields: @raw_sort},
           external_id: %{type: "text", fields: @raw}
         }
