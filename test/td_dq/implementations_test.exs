@@ -289,6 +289,27 @@ defmodule TdDq.ImplementationsTest do
 
       assert implementation.rule_id == params["rule_id"]
     end
+
+    test "with population in validations", %{rule: rule} do
+      %{
+        "operator" => %{"name" => name, "value_type" => type},
+        "structure" => %{"id" => id},
+        "value" => value
+      } = condition = string_params_for(:condition_row)
+
+      validations = [string_params_for(:condition_row, population: [condition])]
+
+      params = string_params_for(:implementation, rule_id: rule.id, validations: validations)
+
+      assert {:ok, %Implementation{validations: [%{population: [clause]}]}} =
+               Implementations.create_implementation(rule, params)
+
+      assert %{
+               operator: %{name: ^name, value_type: ^type},
+               structure: %{id: ^id},
+               value: ^value
+             } = clause
+    end
   end
 
   describe "update_implementation/3" do
@@ -332,6 +353,29 @@ defmodule TdDq.ImplementationsTest do
                  value: [%{"raw" => "2019-12-30 05:35:00"}]
                }
              ]
+    end
+
+    test "with population in validations updates data" do
+      implementation = insert(:implementation)
+      claims = build(:dq_claims)
+
+      %{
+        "operator" => %{"name" => name, "value_type" => type},
+        "structure" => %{"id" => id},
+        "value" => value
+      } = condition = string_params_for(:condition_row)
+
+      validations = [string_params_for(:condition_row, population: [condition])]
+      update_attrs = %{"validations" => validations}
+
+      assert {:ok, %{implementation: %Implementation{validations: [%{population: [clause]}]}}} =
+               Implementations.update_implementation(implementation, update_attrs, claims)
+
+      assert %{
+               operator: %{name: ^name, value_type: ^type},
+               structure: %{id: ^id},
+               value: ^value
+             } = clause
     end
 
     test "with invalid data returns error changeset" do
