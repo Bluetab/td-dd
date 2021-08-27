@@ -6,6 +6,7 @@
 
 - [TD-3951] Include additional information for grant events
 - [TD-3484] GraphQL API on `/api/v2`
+- [TD-3972] Nested population in validations
 
 ## [4.26.0] 2021-08-16
 

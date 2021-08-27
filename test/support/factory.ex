@@ -313,7 +313,8 @@ defmodule TdDd.Factory do
     %TdDq.Implementations.ConditionRow{
       value: [%{"raw" => 8}],
       operator: build(:operator),
-      structure: build(:dataset_structure)
+      structure: build(:dataset_structure),
+      population: []
     }
   end
 

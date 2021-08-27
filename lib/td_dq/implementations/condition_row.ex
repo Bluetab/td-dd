@@ -14,6 +14,7 @@ defmodule TdDq.Implementations.ConditionRow do
   embedded_schema do
     embeds_one(:structure, Structure, on_replace: :delete)
     embeds_one(:operator, Operator, on_replace: :delete)
+    embeds_many(:population, __MODULE__, on_replace: :delete)
     field(:value, {:array, :map})
   end
 
@@ -26,6 +27,7 @@ defmodule TdDq.Implementations.ConditionRow do
     |> cast(params, [:value])
     |> cast_embed(:structure, with: &Structure.changeset/2, required: true)
     |> cast_embed(:operator, with: &Operator.changeset/2, required: true)
+    |> cast_embed(:population, with: &__MODULE__.changeset/2)
     |> validate_required([:value])
     |> validate_value(params)
   end
