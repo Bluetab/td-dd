@@ -6,18 +6,19 @@ defmodule TdDqWeb.RuleControllerTest do
   alias TdCache.Redix
   alias TdDq.Rules.Rule
 
-  setup_all do
-    domain = CacheHelpers.insert_domain()
-    [domain: domain]
-  end
-
   setup tags do
     start_supervised!(TdDq.MockRelationCache)
     start_supervised!(TdDd.Search.MockIndexWorker)
     start_supervised!(TdDq.Cache.RuleLoader)
     on_exit(fn -> Redix.del!(Audit.stream()) end)
-    domain_id = get_in(tags, [:domain, :id])
-    [rule: insert(:rule, domain_id: domain_id)]
+
+    domain =
+      case tags do
+        %{domain: domain} -> domain
+        _ -> CacheHelpers.insert_domain()
+      end
+
+    [rule: insert(:rule, domain_id: domain.id), domain: domain]
   end
 
   describe "index" do
@@ -243,6 +244,27 @@ defmodule TdDqWeb.RuleControllerTest do
       assert %{"id" => _id} = data
     end
 
+    @tag authentication: [user_name: "non_admin"]
+    test "user without permissions cannot create rule", %{conn: conn} do
+      params = string_params_for(:rule)
+
+      assert conn
+             |> post(Routes.rule_path(conn, :create), rule: params)
+             |> json_response(:forbidden)
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions: [:manage_quality_rule]
+         ]
+    test "user with permissions can create rule", %{conn: conn, domain: domain} do
+      params = string_params_for(:rule, domain_id: domain.id)
+
+      assert conn
+             |> post(Routes.rule_path(conn, :create), rule: params)
+             |> json_response(:created)
+    end
+
     @tag authentication: [role: "admin"]
     test "renders rule when data is valid without business concept", %{
       conn: conn,
@@ -324,6 +346,41 @@ defmodule TdDqWeb.RuleControllerTest do
       assert %{"id" => ^id} = data
     end
 
+    @tag authentication: [user_name: "non_admin"]
+    test "user without permissions cannot update rule", %{
+      conn: conn,
+      rule: %Rule{} = rule
+    } do
+      params = string_params_for(:rule)
+
+      assert conn
+             |> put(Routes.rule_path(conn, :update, rule), rule: params)
+             |> json_response(:forbidden)
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions: [:manage_quality_rule]
+         ]
+    test "user with permissions can only update rule of its domain", %{
+      conn: conn,
+      rule: %Rule{} = rule,
+      domain: domain
+    } do
+      params = string_params_for(:rule, domain_id: domain.id)
+
+      assert conn
+             |> put(Routes.rule_path(conn, :update, rule), rule: params)
+             |> json_response(:ok)
+
+      forbidden_rule = insert(:rule)
+      params = string_params_for(:rule, domain_id: domain.id)
+
+      assert conn
+             |> put(Routes.rule_path(conn, :update, forbidden_rule), rule: params)
+             |> json_response(:forbidden)
+    end
+
     @tag authentication: [role: "admin"]
     test "renders errors when data is invalid", %{conn: conn, rule: rule, swagger_schema: schema} do
       params = %{"name" => nil}
@@ -341,6 +398,23 @@ defmodule TdDqWeb.RuleControllerTest do
   describe "delete rule" do
     @tag authentication: [role: "admin"]
     test "deletes chosen rule", %{conn: conn, rule: rule} do
+      assert conn
+             |> delete(Routes.rule_path(conn, :delete, rule))
+             |> response(:no_content)
+    end
+
+    @tag authentication: [user_name: "non_admin"]
+    test "user without permissions cannot delete rule", %{conn: conn, rule: rule} do
+      assert conn
+             |> delete(Routes.rule_path(conn, :delete, rule))
+             |> response(:forbidden)
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions: [:manage_quality_rule]
+         ]
+    test "user with permissions can delete rule", %{conn: conn, rule: rule} do
       assert conn
              |> delete(Routes.rule_path(conn, :delete, rule))
              |> response(:no_content)
