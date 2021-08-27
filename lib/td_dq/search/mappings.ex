@@ -169,7 +169,7 @@ defmodule TdDq.Search.Mappings do
         }
       },
       population: get_condition_mappings(),
-      validations: get_condition_mappings(),
+      validations: get_condition_mappings([:operator, :structure, :value, :population]),
       df_name: %{type: "text", fields: %{raw: %{type: "keyword"}}},
       df_content: content_mappings,
       executable: %{type: "boolean"}
@@ -265,10 +265,9 @@ defmodule TdDq.Search.Mappings do
     }
   end
 
-  defp get_condition_mappings do
-    %{
-      type: "nested",
-      properties: %{
+  defp get_condition_mappings(opts \\ [:operator, :structure, :value]) do
+    properties =
+      %{
         operator: %{
           properties: %{
             name: %{type: "text", fields: @raw},
@@ -284,6 +283,22 @@ defmodule TdDq.Search.Mappings do
           enabled: false
         }
       }
+      |> put_population(opts)
+      |> Map.take(opts)
+
+    %{
+      type: "nested",
+      properties: properties
     }
+  end
+
+  defp put_population(mappings, opts) do
+    case :population in opts do
+      true ->
+        Map.put(mappings, :population, get_condition_mappings())
+
+      _ ->
+        mappings
+    end
   end
 end

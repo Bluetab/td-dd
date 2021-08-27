@@ -346,51 +346,30 @@ defmodule TdDq.Implementations do
         end
       end)
 
-    enriched_population =
-      Enum.map(implementation.population, fn population_row ->
-        case Map.get(population_row, :structure) do
-          nil ->
-            population_row
-
-          structure ->
-            cached_structure = StructureEntry.cache_entry(Map.get(structure, :id), system: true)
-
-            enriched_info =
-              population_row
-              |> Map.get(:structure)
-              |> put_structure_cached_attributes(cached_structure)
-
-            population_row
-            |> Map.put(:structure, enriched_info)
-            |> enrich_value_structures()
-        end
-      end)
-
-    enriched_validations =
-      Enum.map(implementation.validations, fn validations_row ->
-        case Map.get(validations_row, :structure) do
-          nil ->
-            validations_row
-
-          structure ->
-            cached_structure = StructureEntry.cache_entry(Map.get(structure, :id), system: true)
-
-            enriched_info =
-              validations_row
-              |> Map.get(:structure)
-              |> put_structure_cached_attributes(cached_structure)
-
-            validations_row
-            |> Map.put(:structure, enriched_info)
-            |> enrich_value_structures()
-        end
-      end)
+    enriched_population = Enum.map(implementation.population, &enrich_condition/1)
+    enriched_validations = Enum.map(implementation.validations, &enrich_condition/1)
 
     implementation
     |> Map.put(:dataset, enriched_dataset)
     |> Map.put(:population, enriched_population)
     |> Map.put(:validations, enriched_validations)
   end
+
+  defp enrich_condition(%{structure: structure = %{}} = condition) do
+    cached_structure = StructureEntry.cache_entry(Map.get(structure, :id), system: true)
+
+    enriched_info =
+      condition
+      |> Map.get(:structure)
+      |> put_structure_cached_attributes(cached_structure)
+
+    condition
+    |> Map.put(:structure, enriched_info)
+    |> enrich_value_structures()
+    |> with_population()
+  end
+
+  defp enrich_condition(condition), do: condition
 
   defp enrich_joined_structures(%{clauses: clauses} = structure_map) when is_list(clauses) do
     clauses = Enum.map(clauses, &enrich_clause_structures/1)
@@ -441,6 +420,12 @@ defmodule TdDq.Implementations do
         Map.put(row, :value, values)
     end
   end
+
+  defp with_population(%{population: population} = condition) when is_list(population) do
+    %{condition | population: Enum.map(population, &enrich_condition/1)}
+  end
+
+  defp with_population(condition), do: condition
 
   defp put_structure_cached_attributes(structure_map, cached_info) do
     structure_map =
