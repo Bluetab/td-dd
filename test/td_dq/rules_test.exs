@@ -124,7 +124,7 @@ defmodule TdDq.RulesTest do
     end
 
     test "soft_deletion modifies field deleted_at of rule and associated implementations with the current timestamp" do
-      concept_ids = 1..8 |> Enum.to_list() |> Enum.map(&"#{&1}")
+      concept_ids = Enum.to_list(1..8)
 
       rules =
         ([nil, nil] ++ concept_ids)
@@ -132,11 +132,12 @@ defmodule TdDq.RulesTest do
         |> Enum.map(fn {id, idx} -> [business_concept_id: id, name: "Rule Name #{idx}"] end)
         |> Enum.map(&insert(:rule, &1))
 
-      rules
-      |> Enum.map(&insert(:implementation, rule_id: &1.id, implementation_key: "ri_of_#{&1.id}"))
+      for %{id: id} <- rules do
+        insert(:implementation, rule_id: id, implementation_key: "ri_of_#{id}")
+      end
 
       # 2,4,6,8 are deleted
-      active_ids = ["1", "3", "5", "7"]
+      active_ids = [1, 3, 5, 7]
 
       ts = DateTime.utc_now() |> DateTime.truncate(:second)
 
@@ -158,7 +159,7 @@ defmodule TdDq.RulesTest do
 
       assert Enum.all?(active_rules, &is_nil(&1.deleted_at))
       assert Enum.all?(deleted_rules, &(&1.deleted_at == ts))
-      assert Enum.map(deleted_rules, & &1.business_concept_id) == ["2", "4", "6", "8"]
+      assert Enum.map(deleted_rules, & &1.business_concept_id) == [2, 4, 6, 8]
     end
 
     test "list_rules/1 retrieves all rules filtered by ids" do

@@ -16,8 +16,8 @@ defmodule TdDq.Permissions do
       false
 
   """
-  def authorized?(%Claims{jti: jti}, permission, business_concept_id) do
-    @permission_resolver.has_permission?(jti, permission, "business_concept", business_concept_id)
+  def authorized?(%Claims{jti: jti}, permission, domain_id) do
+    @permission_resolver.has_permission?(jti, permission, "domain", domain_id)
   end
 
   def authorized?(%Claims{jti: jti}, permission) do

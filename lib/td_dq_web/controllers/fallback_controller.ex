@@ -22,6 +22,10 @@ defmodule TdDqWeb.FallbackController do
     |> render("error.json", changeset: changeset)
   end
 
+  def call(conn, {:error, :can, false, _}) do
+    call(conn, {:can, false})
+  end
+
   def call(conn, {:error, _, %Ecto.Changeset{} = changeset, _}) do
     call(conn, {:error, changeset})
   end

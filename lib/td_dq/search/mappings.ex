@@ -14,7 +14,7 @@ defmodule TdDq.Search.Mappings do
 
     properties = %{
       id: %{type: "long"},
-      business_concept_id: %{type: "text"},
+      business_concept_id: %{type: "long"},
       domain: %{
         properties: %{
           id: %{type: "long"},

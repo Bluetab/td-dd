@@ -52,6 +52,7 @@ defmodule TdDqWeb.ConnCase do
         auth_opts
         |> create_claims()
         |> create_user_auth_conn()
+        |> assign_permissions(auth_opts[:permissions])
     end
   end
 end
