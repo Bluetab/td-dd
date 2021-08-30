@@ -12,11 +12,8 @@
 
 - [TD-3826] Data quality permissions now uses `domain_id` instead of
   `business_concept_id`
+- [TD-3973] Update td-df-lib for default values in swith fields
 
-### Changed
-
-- [TD-3826] Data quality permissions now uses `domain_id` instead of
-  `business_concept_id`
 
 ## [4.26.0] 2021-08-16
 
