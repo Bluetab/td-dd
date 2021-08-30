@@ -35,7 +35,7 @@ defmodule TdDqWeb.Router do
 
     resources("/rule_results", RuleResultController, only: [:index, :delete, :create, :show])
 
-    get("/rules/concept/:id", RuleController, :get_rules_by_concept)
+    get("/rules/concept/:business_concept_id", RuleController, :get_rules_by_concept)
 
     resources "/rules", RuleController, except: [:new, :edit] do
       post("/rule_implementations", ImplementationController, :search_rule_implementations)
@@ -63,7 +63,6 @@ defmodule TdDqWeb.Router do
     )
 
     post("/rule_implementations/csv", ImplementationController, :csv)
-    post("/rule_implementations/search_old", SearchController, :search_implementations)
   end
 
   def swagger_info do

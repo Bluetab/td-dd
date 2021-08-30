@@ -181,6 +181,62 @@ defmodule TdDqWeb.ImplementationControllerTest do
              } = data
     end
 
+    @tag authentication: [user_name: "non_admin"]
+    test "non admin without permission cannot create implementation", %{conn: conn} do
+      rule = insert(:rule)
+
+      creation_attrs =
+        %{
+          implementation_key: "a1",
+          implementation_type: "raw",
+          rule_id: rule.id,
+          raw_content: %{
+            dataset: "cliente c join address a on c.address_id=a.id",
+            population: nil,
+            source_id: 88,
+            validations: "c.city = 'MADRID'"
+          }
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert conn
+             |> post(Routes.implementation_path(conn, :create),
+               rule_implementation: creation_attrs
+             )
+             |> json_response(:forbidden)
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions: [:manage_raw_quality_rule_implementations]
+         ]
+    test "non admin with permission can create implementation", %{
+      conn: conn,
+      domain: %{id: domain_id}
+    } do
+      rule = insert(:rule, domain_id: domain_id)
+
+      creation_attrs =
+        %{
+          implementation_key: "a1",
+          implementation_type: "raw",
+          rule_id: rule.id,
+          raw_content: %{
+            dataset: "cliente c join address a on c.address_id=a.id",
+            population: nil,
+            source_id: 88,
+            validations: "c.city = 'MADRID'"
+          }
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert conn
+             |> post(Routes.implementation_path(conn, :create),
+               rule_implementation: creation_attrs
+             )
+             |> json_response(:created)
+    end
+
     @tag authentication: [role: "admin"]
     test "errors trying to create raw rule implementation without source_id", %{
       conn: conn,
@@ -310,6 +366,61 @@ defmodule TdDqWeb.ImplementationControllerTest do
                Map.get(data, "population"),
                Map.get(params, "population")
              )
+    end
+
+    @tag authentication: [user_name: "non_admin"]
+    test "user without permissions cannot update", %{conn: conn} do
+      implementation = insert(:implementation)
+
+      params =
+        %{
+          population: [
+            %{
+              value: [%{id: 11}],
+              operator: %{
+                name: "eq",
+                value_type: "number"
+              },
+              structure: %{id: 60_311}
+            }
+          ]
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert conn
+             |> put(Routes.implementation_path(conn, :update, implementation),
+               rule_implementation: params
+             )
+             |> json_response(:forbidden)
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions: [:manage_quality_rule_implementations]
+         ]
+    test "user with permissions can update", %{conn: conn, domain: %{id: domain_id}} do
+      implementation = insert(:implementation, rule: insert(:rule, domain_id: domain_id))
+
+      params =
+        %{
+          population: [
+            %{
+              value: [%{id: 11}],
+              operator: %{
+                name: "eq",
+                value_type: "number"
+              },
+              structure: %{id: 60_311}
+            }
+          ]
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert conn
+             |> put(Routes.implementation_path(conn, :update, implementation),
+               rule_implementation: params
+             )
+             |> json_response(:ok)
     end
 
     @tag authentication: [role: "admin"]
@@ -459,6 +570,34 @@ defmodule TdDqWeb.ImplementationControllerTest do
     @tag authentication: [role: "admin"]
     test "deletes chosen implementation", %{conn: conn} do
       implementation = insert(:implementation)
+
+      assert conn
+             |> delete(Routes.implementation_path(conn, :delete, implementation))
+             |> response(:no_content)
+
+      assert_error_sent(:not_found, fn ->
+        get(conn, Routes.implementation_path(conn, :show, implementation))
+      end)
+    end
+
+    @tag authentication: [user_name: "non_admin"]
+    test "user without permissions cannot delete implementation", %{conn: conn} do
+      implementation = insert(:implementation)
+
+      assert conn
+             |> delete(Routes.implementation_path(conn, :delete, implementation))
+             |> response(:forbidden)
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions: [:manage_quality_rule_implementations]
+         ]
+    test "user with permissions can delete implementation", %{
+      conn: conn,
+      domain: %{id: domain_id}
+    } do
+      implementation = insert(:implementation, rule: insert(:rule, domain_id: domain_id))
 
       assert conn
              |> delete(Routes.implementation_path(conn, :delete, implementation))

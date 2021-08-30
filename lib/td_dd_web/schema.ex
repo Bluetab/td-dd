@@ -17,8 +17,9 @@ defmodule TdDdWeb.Schema do
   end
 
   def context(ctx) do
-    loader = Dataloader.new()
-    |> Dataloader.add_source(TdDd.DataStructures, TdDd.DataStructures.datasource())
+    loader =
+      Dataloader.new()
+      |> Dataloader.add_source(TdDd.DataStructures, TdDd.DataStructures.datasource())
 
     Map.put(ctx, :loader, loader)
   end

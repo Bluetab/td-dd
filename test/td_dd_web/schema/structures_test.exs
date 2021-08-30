@@ -49,7 +49,10 @@ defmodule TdDdWeb.Schema.StructuresTest do
 
       assert response["errors"] == nil
       assert %{"dataStructureVersions" => data_structure_versions} = data
-      assert [%{"id" => id, "dataStructure" => data_structure, "metadata" => @metadata}] = data_structure_versions
+
+      assert [%{"id" => id, "dataStructure" => data_structure, "metadata" => @metadata}] =
+               data_structure_versions
+
       assert id == to_string(expected_id)
       assert %{"id" => _, "externalId" => _, "system" => system} = data_structure
       assert %{"id" => _, "externalId" => _} = system
