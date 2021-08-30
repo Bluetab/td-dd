@@ -8,8 +8,8 @@ defmodule TdDd.Grants.GrantRequestGroup do
   alias TdDd.Grants.GrantRequest
 
   schema "grant_request_groups" do
-    field :type, :string
-    field :user_id, :integer
+    field(:type, :string)
+    field(:user_id, :integer)
 
     has_many(:requests, GrantRequest)
 

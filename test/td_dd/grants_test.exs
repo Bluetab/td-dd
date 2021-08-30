@@ -275,15 +275,18 @@ defmodule TdDd.GrantsTest do
       assert_raise Ecto.NoResultsError, fn -> Grants.get_grant!(id) end
     end
 
-    test "publishes an audit event", %{claims: claims} do
-      %{id: id} = grant = insert(:grant)
+    test "publishes an audit event", %{
+      claims: claims
+    } do
+      %{id: id, data_structure_id: data_structure_id, user_id: user_id} = grant = insert(:grant)
+
       assert {:ok, %{audit: event_id}} = Grants.delete_grant(grant, claims)
       assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
 
       assert %{
                event: "grant_deleted",
                id: ^event_id,
-               payload: "{}",
+               payload: payload,
                resource_id: resource_id,
                resource_type: "grant",
                user_id: audit_user_id
@@ -291,6 +294,15 @@ defmodule TdDd.GrantsTest do
 
       assert audit_user_id == to_string(claims.user_id)
       assert resource_id == to_string(id)
+
+      assert %{
+               "data_structure_id" => ^data_structure_id,
+               "domain_ids" => [],
+               "end_date" => "2021-02-03",
+               "resource" => %{},
+               "start_date" => "2020-01-02",
+               "user_id" => ^user_id
+             } = Jason.decode!(payload)
     end
   end
 

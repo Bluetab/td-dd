@@ -14,14 +14,16 @@ defmodule TdDq.Search.Helpers do
 
   def get_domain(domain_id) when is_integer(domain_id) do
     case TaxonomyCache.get_domain(domain_id) do
-      domain = %{} -> domain
-      _ -> %{}
+      %{} = domain -> domain
+      _ -> %{id: domain_id}
     end
   end
 
   def get_domain(_), do: %{}
 
   def get_domain_ids(%{id: id, parent_ids: parent_ids}), do: [id | parent_ids]
+
+  def get_domain_ids(%{id: id}), do: [id]
 
   def get_domain_ids(_), do: -1
 
@@ -101,7 +103,7 @@ defmodule TdDq.Search.Helpers do
   end
 
   defp status(errors_absolute_or_perc, minimum, goal, result_type)
-      when result_type in ["errors_number", "deviation"] do
+       when result_type in ["errors_number", "deviation"] do
     cond do
       # goal <= minimum. Intervals:
       #   [0, goal] => OK

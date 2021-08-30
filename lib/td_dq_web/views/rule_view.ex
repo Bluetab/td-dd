@@ -6,15 +6,20 @@ defmodule TdDqWeb.RuleView do
   alias TdDq.Rules
   alias TdDqWeb.RuleView
 
-  def render("index.json", %{hypermedia: hypermedia}) do
-    render_many_hypermedia(hypermedia, RuleView, "rule.json")
+  def render("index.json", %{actions: actions} = assigns) do
+    "index.json"
+    |> render(Map.delete(assigns, :actions))
+    |> Map.put(:_actions, actions)
   end
 
-  def render("index.json", %{rules: rules, user_permissions: user_permissions}) do
-    %{
-      user_permissions: user_permissions,
-      data: render_many(rules, RuleView, "rule.json")
-    }
+  def render("index.json", %{user_permissions: user_permissions} = assigns) do
+    "index.json"
+    |> render(Map.delete(assigns, :user_permissions))
+    |> Map.put(:user_permissions, user_permissions)
+  end
+
+  def render("index.json", %{rules: rules}) do
+    %{data: render_many(rules, RuleView, "rule.json")}
   end
 
   def render("show.json", %{
