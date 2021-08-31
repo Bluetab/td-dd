@@ -78,7 +78,7 @@ defmodule TdDqWeb.RuleResultControllerTest do
                |> get(Routes.implementation_path(conn, :show, implementation.id))
                |> json_response(:ok)
 
-      assert %{"all_rule_results" => results} = data
+      assert %{"results" => results} = data
       assert Enum.map(results, & &1["result"]) == ["4.00", "72.00"]
     end
 
@@ -98,7 +98,7 @@ defmodule TdDqWeb.RuleResultControllerTest do
                |> get(Routes.implementation_path(conn, :show, implementation.id))
                |> json_response(:ok)
 
-      assert %{"all_rule_results" => results} = data
+      assert %{"results" => results} = data
       assert Enum.map(results, & &1["result"]) == ["0.00", "99.99"]
     end
 
@@ -118,7 +118,7 @@ defmodule TdDqWeb.RuleResultControllerTest do
                |> get(Routes.implementation_path(conn, :show, implementation.id))
                |> json_response(:ok)
 
-      assert %{"all_rule_results" => results} = data
+      assert %{"results" => results} = data
       results = Enum.map(results, &Map.drop(&1, ["id"]))
 
       assert results == [

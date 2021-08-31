@@ -11,7 +11,9 @@ defmodule TdDq.Rules.RuleResults do
   alias TdDq.Events.QualityEvents
   alias TdDq.Executions.Execution
   alias TdDq.Implementations.Implementation
-  alias TdDq.Rules.{Audit, Rule, RuleResult}
+  alias TdDq.Rules.Audit
+  alias TdDq.Rules.Rule
+  alias TdDq.Rules.RuleResult
 
   require Logger
 
@@ -44,11 +46,17 @@ defmodule TdDq.Rules.RuleResults do
       {:error, failed_operation, failed_value, changes_so_far}
 
   """
-  def create_rule_result(%Implementation{implementation_key: key} = impl, params \\ %{}) do
+  def create_rule_result(
+        %Implementation{implementation_key: key, rule_id: rule_id} = impl,
+        params \\ %{}
+      ) do
     %{rule: %{result_type: result_type}} = Repo.preload(impl, :rule)
 
     changeset =
-      RuleResult.changeset(%RuleResult{implementation_key: key, result_type: result_type}, params)
+      RuleResult.changeset(
+        %RuleResult{implementation_key: key, result_type: result_type, rule_id: rule_id},
+        params
+      )
 
     Multi.new()
     |> Multi.insert(:result, changeset)
@@ -111,14 +119,6 @@ defmodule TdDq.Rules.RuleResults do
     |> order_by(desc: :date)
     |> limit(1)
     |> Repo.one()
-  end
-
-  @spec get_implementation_results(binary) :: [RuleResult.t()]
-  def get_implementation_results(implementation_key) do
-    RuleResult
-    |> where([r], r.implementation_key == ^implementation_key)
-    |> order_by(desc: :date)
-    |> Repo.all()
   end
 
   def delete_rule_result(%RuleResult{} = rule_result) do

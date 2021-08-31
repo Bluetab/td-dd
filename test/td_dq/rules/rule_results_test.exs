@@ -51,7 +51,7 @@ defmodule TdDq.RuleResultsTest do
 
     test "refreshes the rule cache" do
       %{rule: %{id: rule_id, name: name}, implementation_key: key} = insert(:implementation)
-      rule_result = insert(:rule_result, implementation_key: key)
+      rule_result = insert(:rule_result, implementation_key: key, rule_id: rule_id)
 
       assert {:ok, _result} = RuleResults.delete_rule_result(rule_result)
       assert {:ok, %{name: ^name}} = RuleCache.get(rule_id)

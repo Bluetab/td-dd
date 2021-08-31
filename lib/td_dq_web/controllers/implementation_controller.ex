@@ -34,7 +34,7 @@ defmodule TdDqWeb.ImplementationController do
     with {:can, true} <- {:can, can?(claims, list(Implementation))} do
       implementations =
         filters
-        |> Implementations.list_implementations(preload: :rule, enrich: :source)
+        |> Implementations.list_implementations(preload: [:rule, :results], enrich: :source)
         |> Enum.map(&Implementations.enrich_implementation_structures/1)
 
       render(conn, "index.json", implementations: implementations)
@@ -90,8 +90,10 @@ defmodule TdDqWeb.ImplementationController do
 
     rule = Rules.get_rule_or_nil(rule_id)
 
-    with {:ok, %{implementation: implementation}} <-
-           Implementations.create_implementation(rule, implementation_params, claims) do
+    with {:ok, %{implementation: %{id: id}}} <-
+           Implementations.create_implementation(rule, implementation_params, claims),
+         implementation <-
+           Implementations.get_implementation!(id, enrich: :source, preload: [:rule, :results]) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", Routes.implementation_path(conn, :show, implementation))
@@ -114,8 +116,7 @@ defmodule TdDqWeb.ImplementationController do
   def show(conn, %{"id" => id}) do
     implementation =
       id
-      |> Implementations.get_implementation!(enrich: :source)
-      |> add_rule_results()
+      |> Implementations.get_implementation!(enrich: :source, preload: [:rule, :results])
       |> add_last_rule_result()
       |> add_quality_event()
       |> Implementations.enrich_implementation_structures()
@@ -145,18 +146,15 @@ defmodule TdDqWeb.ImplementationController do
 
     update_params =
       implementation_params
-      |> Map.drop([:implementation_type, "implementation_type"])
+      |> Map.delete("implementation_type")
       |> with_deleted_at()
 
-    implementation =
-      id
-      |> Implementations.get_implementation!()
-      |> add_rule_results()
+    implementation = Implementations.get_implementation!(id)
 
-    # TODO: Refactor this (and remove {:editable, false} from fallback controller)
-    with {:editable, true} <- {:editable, editable?(implementation, implementation_params)},
-         {:ok, %{implementation: %Implementation{} = implementation}} <-
-           Implementations.update_implementation(implementation, update_params, claims) do
+    with {:can, true} <- {:can, can?(claims, manage(implementation))},
+         {:ok, _} <- Implementations.update_implementation(implementation, update_params, claims),
+         implementation <-
+           Implementations.get_implementation!(id, enrich: :source, preload: [:rule, :results]) do
       render(conn, "show.json", implementation: implementation)
     end
   end
@@ -238,22 +236,9 @@ defmodule TdDqWeb.ImplementationController do
     )
   end
 
-  defp add_rule_results(implementation) do
-    Map.put(
-      implementation,
-      :all_rule_results,
-      RuleResults.get_implementation_results(implementation.implementation_key)
-    )
-  end
-
   defp add_quality_event(%{id: id} = implementation) do
     Map.put(implementation, :quality_event, QualityEvents.get_event_by_imp(id))
   end
-
-  defp editable?(%{all_rule_results: []}, _params), do: true
-  defp editable?(_implementation, %{"soft_delete" => true}), do: true
-  defp editable?(_implementation, %{"restore" => true}), do: true
-  defp editable?(_implementation, _parmas), do: false
 
   defp with_deleted_at(params) do
     case params do

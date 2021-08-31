@@ -15,6 +15,7 @@ defmodule TdDq.Implementations.Implementation do
   alias TdDq.Implementations.Implementation
   alias TdDq.Implementations.RawContent
   alias TdDq.Rules.Rule
+  alias TdDq.Rules.RuleResult
 
   @typedoc "A quality rule implementation"
   @type t :: %__MODULE__{}
@@ -23,19 +24,21 @@ defmodule TdDq.Implementations.Implementation do
     field(:implementation_key, :string)
     field(:implementation_type, :string, default: "default")
     field(:executable, :boolean, default: true)
+    field(:deleted_at, :utc_datetime)
+    field(:df_name, :string)
+    field(:df_content, :map)
 
+    embeds_one(:raw_content, RawContent, on_replace: :delete)
     embeds_many(:dataset, DatasetRow, on_replace: :delete)
     embeds_many(:population, ConditionRow, on_replace: :delete)
     embeds_many(:validations, ConditionRow, on_replace: :delete)
 
-    embeds_one(:raw_content, RawContent, on_replace: :delete)
-
     belongs_to(:rule, Rule)
 
-    field(:deleted_at, :utc_datetime)
-
-    field(:df_name, :string)
-    field(:df_content, :map)
+    has_many(:results, RuleResult,
+      foreign_key: :implementation_key,
+      references: :implementation_key
+    )
 
     timestamps()
   end

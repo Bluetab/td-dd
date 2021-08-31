@@ -4,7 +4,7 @@ defmodule TdDqWeb.ImplementationView do
   alias TdDq.Rules
   alias TdDqWeb.Implementation.ConditionView
   alias TdDqWeb.Implementation.DatasetView
-  alias TdDqWeb.Implementation.RawContent
+  alias TdDqWeb.Implementation.RawContentView
   alias TdDqWeb.RuleResultView
 
   def render("index.json", %{implementations: implementations}) do
@@ -36,7 +36,7 @@ defmodule TdDqWeb.ImplementationView do
     ])
     |> Map.put(
       :raw_content,
-      render_one(implementation.raw_content, RawContent, "raw_content.json")
+      render_one(implementation.raw_content, RawContentView, "raw_content.json")
     )
     |> add_rule(implementation)
     |> add_last_rule_results(implementation)
@@ -134,17 +134,18 @@ defmodule TdDqWeb.ImplementationView do
   defp add_rule_results(implementation_mapping, implementation) do
     all_rule_results_mappings =
       implementation
-      |> Map.get(:all_rule_results, [])
+      |> Map.get(:results, [])
+      |> Enum.sort_by(& &1.date, {:desc, DateTime})
       |> Enum.map(&render_one(&1, RuleResultView, "rule_result.json"))
 
     case all_rule_results_mappings do
       [] -> implementation_mapping
-      _ -> Map.put(implementation_mapping, :all_rule_results, all_rule_results_mappings)
+      _ -> Map.put(implementation_mapping, :results, all_rule_results_mappings)
     end
   end
 end
 
-defmodule TdDqWeb.Implementation.RawContent do
+defmodule TdDqWeb.Implementation.RawContentView do
   use TdDqWeb, :view
 
   def render("raw_content.json", %{raw_content: %{} = raw_content}) do

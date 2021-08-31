@@ -4,7 +4,8 @@ defmodule TdDqWeb.QualityEventController do
 
   import Canada, only: [can?: 2]
 
-  alias TdDq.Events.{QualityEvent, QualityEvents}
+  alias TdDq.Events.QualityEvent
+  alias TdDq.Events.QualityEvents
   alias TdDq.Executions
   alias TdDq.Executions.Execution
   alias TdDqWeb.SwaggerDefinitions

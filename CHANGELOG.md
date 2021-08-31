@@ -12,6 +12,8 @@
 
 - [TD-3826] Data quality permissions now uses `domain_id` instead of
   `business_concept_id`
+- [TD-3824] Data quality rule implementations can now be modified, regardless of
+  whether they have associated results or not
 
 ### Changed
 
