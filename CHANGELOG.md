@@ -19,6 +19,8 @@
   includes mutable metadata in the `metadata` field. The `metadata_versions`
   field is no longer included in the response. The `metadata_fields` field in
   the data structure type responses now include mutable metadata fields.
+- [TD-3826] Data quality permissions now uses `domain_id` instead of
+  `business_concept_id`
 
 ## [4.26.0] 2021-08-16
 
