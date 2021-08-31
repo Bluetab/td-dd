@@ -6,7 +6,10 @@ defmodule TdDd.DataStructures.DataStructureTypes do
 
   alias TdCache.TemplateCache
   alias TdDd.DataStructures.DataStructureType
+  alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Repo
+
+  @typep clauses :: map() | Keyword.t()
 
   @doc """
   Returns the list of `DataStructureType` structs.
@@ -23,7 +26,9 @@ defmodule TdDd.DataStructures.DataStructureTypes do
   Raises `Ecto.NoResultsError` if the Data structure type does not exist.
   """
   def get!(id) do
-    data_structure_types_query()
+    %{name: name} = Repo.get!(DataStructureType, id)
+
+    data_structure_types_query(name: name)
     |> Repo.get!(id)
     |> enrich_template()
   end
@@ -34,7 +39,7 @@ defmodule TdDd.DataStructures.DataStructureTypes do
   Returns nil if no result was found. Raises if more than one entry.
   """
   def get_by(clauses) do
-    data_structure_types_query()
+    data_structure_types_query(clauses)
     |> Repo.get_by(clauses)
     |> enrich_template()
   end
@@ -57,22 +62,49 @@ defmodule TdDd.DataStructures.DataStructureTypes do
     |> Repo.update()
   end
 
-  defp data_structure_types_query do
-    sq = metadata_fields_query()
+  @spec data_structure_types_query(clauses()) :: Ecto.Queryable.t()
+  defp data_structure_types_query(clauses \\ %{}) do
+    sq = metadata_fields_query(clauses)
 
     DataStructureType
     |> join(:left, [dst], t in subquery(sq), on: t.type == dst.name)
     |> select_merge([dst, t], %{metadata_fields: t.fields})
   end
 
-  defp metadata_fields_query do
-    "data_structure_versions"
-    |> where([dsv], is_nil(dsv.deleted_at))
+  @spec metadata_fields_query(clauses()) :: Ecto.Queryable.t()
+  defp metadata_fields_query(clauses) do
+    sq =
+      clauses
+      |> mutable_metadata_fields_query()
+      |> subquery()
+
+    clauses
+    |> data_structure_version_query()
     |> select([dsv], %{type: dsv.type, field: fragment("jsonb_object_keys(?)", dsv.metadata)})
     |> distinct(true)
+    |> union(^sq)
     |> subquery()
     |> select([t], %{type: t.type, fields: fragment("array_agg(?)", t.field)})
     |> group_by([t], t.type)
+  end
+
+  @spec mutable_metadata_fields_query(clauses()) :: Ecto.Queryable.t()
+  defp mutable_metadata_fields_query(clauses) do
+    clauses
+    |> data_structure_version_query()
+    |> join(:inner, [dsv], sm in assoc(dsv, :current_metadata))
+    |> select([dsv, sm], %{type: dsv.type, field: fragment("jsonb_object_keys(?)", sm.fields)})
+    |> distinct(true)
+  end
+
+  @spec data_structure_version_query(clauses()) :: Ecto.Queryable.t()
+  defp data_structure_version_query(clauses) do
+    clauses
+    |> Enum.reduce(DataStructureVersion, fn
+      {:name, type}, q -> where(q, [dsv], dsv.type == ^type)
+      _, q -> q
+    end)
+    |> where([dsv], is_nil(dsv.deleted_at))
   end
 
   @spec enrich_template(DataStructureType.t() | nil) :: DataStructureType.t() | nil
