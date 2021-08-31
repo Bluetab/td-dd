@@ -23,10 +23,7 @@ defmodule TdDdWeb.DataStructureView do
     %{data: render_many(data_structures, __MODULE__, "data_structure.json")}
   end
 
-  def render("show.json", %{
-        data_structure: data_structure,
-        user_permissions: user_permissions
-      }) do
+  def render("show.json", %{data_structure: data_structure, user_permissions: user_permissions}) do
     "show.json"
     |> render(%{data_structure: data_structure})
     |> Map.put(:user_permissions, user_permissions)

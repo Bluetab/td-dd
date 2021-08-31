@@ -101,47 +101,18 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "renders a data structure with metadata", %{
+    test "renders a data structure with merged metadata", %{
       conn: conn,
-      structure: %{id: id}
+      structure: %{id: id},
+      structure_version: %{metadata: metadata},
+      mutable_metadata: mutable_metadata
     } do
-      assert %{"data" => %{"metadata" => metadata}} =
+      assert %{"data" => %{"metadata" => merged_metadata}} =
                conn
-               |> get(Routes.data_structure_data_structure_version_path(conn, :show, id, 0))
+               |> get(Routes.data_structure_data_structure_version_path(conn, :show, id, "latest"))
                |> json_response(:ok)
 
-      assert %{"foo" => "bar"} = metadata
-    end
-
-    @tag authentication: [role: "admin"]
-    test "renders metadata versions when exist", %{
-      conn: conn,
-      parent_structure: %{id: parent_id},
-      structure: %{id: child_id}
-    } do
-      assert %{"data" => %{"metadata_versions" => []}} =
-               conn
-               |> get(
-                 Routes.data_structure_data_structure_version_path(
-                   conn,
-                   :show,
-                   parent_id,
-                   "latest"
-                 )
-               )
-               |> json_response(:ok)
-
-      assert %{"data" => %{"metadata_versions" => [_v1]}} =
-               conn
-               |> get(
-                 Routes.data_structure_data_structure_version_path(
-                   conn,
-                   :show,
-                   child_id,
-                   "latest"
-                 )
-               )
-               |> json_response(:ok)
+      assert merged_metadata == Map.merge(metadata, mutable_metadata)
     end
 
     @tag authentication: [role: "admin"]
@@ -768,19 +739,29 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   defp create_structure_hierarchy(_) do
     %{id: source_id} = create_source()
 
-    parent_structure = insert(:data_structure, external_id: "Parent", source_id: source_id)
-    structure = insert(:data_structure, external_id: "Structure", source_id: source_id)
-    insert(:structure_metadata, data_structure_id: structure.id)
+    %{data_structure: parent_structure} =
+      parent_version =
+      insert(
+        :data_structure_version,
+        metadata: %{"foo" => "foo"},
+        data_structure: build(:data_structure, external_id: "Parent", source_id: source_id)
+      )
+
+    %{data_structure: structure} =
+      structure_version =
+      insert(
+        :data_structure_version,
+        metadata: %{"bar" => "bar"},
+        data_structure: build(:data_structure, external_id: "Structure", source_id: source_id)
+      )
+
+    mutable_metadata = %{"xyzzy" => "xyzzy"}
+    insert(:structure_metadata, data_structure_id: structure.id, fields: mutable_metadata)
 
     child_structures = [
       insert(:data_structure, external_id: "Child1", source_id: source_id),
       insert(:data_structure, external_id: "Child2", source_id: source_id)
     ]
-
-    parent_version = insert(:data_structure_version, data_structure_id: parent_structure.id)
-
-    structure_version =
-      insert(:data_structure_version, data_structure_id: structure.id, metadata: %{foo: "bar"})
 
     child_versions =
       Enum.map(
@@ -805,11 +786,14 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       )
     )
 
-    {:ok,
-     parent_structure: parent_structure,
-     structure_version: structure_version,
-     structure: structure,
-     child_structures: child_structures}
+    [
+      child_structures: child_structures,
+      mutable_metadata: mutable_metadata,
+      parent_structure: parent_structure,
+      parent_version: parent_version,
+      structure_version: structure_version,
+      structure: structure
+    ]
   end
 
   defp create_structure_hierarchy_with_logic_deletions(_) do

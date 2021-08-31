@@ -30,24 +30,24 @@ defmodule TdDdWeb.DataStructureVersionView do
 
   def render("version.json", %{data_structure_version: dsv}) do
     dsv
-    |> add_classes
-    |> add_data_structure
-    |> add_data_fields
-    |> add_parents
-    |> add_siblings
-    |> add_children
-    |> add_versions
-    |> add_system
-    |> add_source
-    |> add_ancestry
-    |> add_profile
+    |> add_classes()
+    |> add_data_structure()
+    |> add_data_fields()
+    |> add_parents()
+    |> add_siblings()
+    |> add_children()
+    |> add_versions()
+    |> add_system()
+    |> add_source()
+    |> add_ancestry()
+    |> add_profile()
     |> add_embedded_relations(dsv)
-    |> add_metadata_versions
-    |> add_data_structure_type
-    |> add_cached_content
-    |> add_tags
-    |> add_grant
-    |> add_grants
+    |> merge_metadata()
+    |> add_data_structure_type()
+    |> add_cached_content()
+    |> add_tags()
+    |> add_grant()
+    |> add_grants()
     |> Map.take([
       :ancestry,
       :children,
@@ -73,7 +73,6 @@ defmodule TdDdWeb.DataStructureVersionView do
       :profile,
       :degree,
       :relations,
-      :metadata_versions,
       :data_structure_type,
       :tags,
       :grant,
@@ -298,14 +297,16 @@ defmodule TdDdWeb.DataStructureVersionView do
 
   defp lift_data(attrs), do: attrs
 
-  defp add_metadata_versions(%{metadata_versions: versions} = dsv) when is_list(versions) do
-    versions =
-      Enum.map(versions, &Map.take(&1, [:fields, :version, :id, :deleted_at, :data_structure_id]))
+  defp merge_metadata(%{metadata_versions: [_ | _] = metadata_versions} = dsv) do
+    %{fields: mutable_metadata} = Enum.max_by(metadata_versions, & &1.version)
 
-    Map.put(dsv, :metadata_versions, versions)
+    Map.update(dsv, :metadata, mutable_metadata, fn
+      nil -> mutable_metadata
+      %{} = metadata -> Map.merge(metadata, mutable_metadata)
+    end)
   end
 
-  defp add_metadata_versions(dsv), do: Map.put(dsv, :metadata_versions, [])
+  defp merge_metadata(dsv), do: dsv
 
   defp add_data_structure_type(%{data_structure_type: nil} = dsv),
     do: Map.put(dsv, :data_structure_type, %{})

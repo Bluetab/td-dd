@@ -18,6 +18,18 @@ defmodule TdDd.DataStructures.DataStructureTypesTest do
       CacheHelpers.insert_template(id: template_id)
       assert [%{template: %{id: ^template_id}}] = DataStructureTypes.list_data_structure_types()
     end
+
+    test "includes metadata fields", %{data_structure_type: %{name: name}} do
+      assert [%{metadata_fields: nil}] = DataStructureTypes.list_data_structure_types()
+
+      %{data_structure_id: id} =
+        insert(:data_structure_version, type: name, metadata: %{"foo" => 1})
+
+      assert [%{metadata_fields: ["foo"]}] = DataStructureTypes.list_data_structure_types()
+
+      insert(:structure_metadata, data_structure_id: id, fields: %{"bar" => "bar"})
+      assert [%{metadata_fields: [_foo, _bar]}] = DataStructureTypes.list_data_structure_types()
+    end
   end
 
   describe "get!/1" do
@@ -28,6 +40,21 @@ defmodule TdDd.DataStructures.DataStructureTypesTest do
     test "enriches with template", %{data_structure_type: %{id: id, template_id: template_id}} do
       CacheHelpers.insert_template(id: template_id)
       assert %{template: %{id: ^template_id}} = DataStructureTypes.get!(id)
+    end
+
+    test "includes metadata fields when present", %{
+      data_structure_type: %{id: type_id, name: name}
+    } do
+      assert %{metadata_fields: nil} = DataStructureTypes.get!(type_id)
+
+      %{data_structure_id: id} = insert(:data_structure_version, metadata: nil, type: name)
+      assert %{metadata_fields: nil} = DataStructureTypes.get!(type_id)
+
+      insert(:structure_metadata, data_structure_id: id, fields: %{"bar" => "bar"})
+      assert %{metadata_fields: ["bar"]} = DataStructureTypes.get!(type_id)
+
+      insert(:data_structure_version, metadata: %{"baz" => "baz"}, type: name)
+      assert %{metadata_fields: [_bar, _baz]} = DataStructureTypes.get!(type_id)
     end
   end
 
