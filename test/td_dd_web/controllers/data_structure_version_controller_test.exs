@@ -607,7 +607,6 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       assert %{"request_grant" => true} = permissions
     end
 
-
     @tag authentication: [role: "user"]
     test "user without permission can not request grant", %{
       conn: conn,
