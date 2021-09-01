@@ -23,6 +23,47 @@ defmodule TdDd.DataStructures.Audit do
   end
 
   @doc """
+  Publishes a `:structure_note_status_updated` event when modifying status StructureNote. Should be called using `Ecto.Multi.run/5`.
+  """
+  def structure_note_status_updated(
+        _repo,
+        %{structure_note: %{data_structure_id: id} = structure_note, latest: latest},
+        status,
+        user_id
+      ) do
+    payload =
+      structure_note
+      |> with_resource(latest)
+      |> with_domain_ids(structure_note)
+      |> Map.take([
+        :domain_ids,
+        :resource
+      ])
+
+    publish("structure_note_" <> status, "data_structure_note", id, user_id, payload)
+  end
+
+  @doc """
+  Publishes a `:structure_note_deleted` event when deleted StructureNote. Should be called using `Ecto.Multi.run/5`.
+  """
+  def structure_note_deleted(
+        _repo,
+        %{structure_note: %{data_structure_id: id} = structure_note, latest: latest},
+        user_id
+      ) do
+    payload =
+      structure_note
+      |> with_resource(latest)
+      |> with_domain_ids(structure_note)
+      |> Map.take([
+        :domain_ids,
+        :resource
+      ])
+
+    publish("structure_note_deleted", "data_structure_note", id, user_id, payload)
+  end
+
+  @doc """
   Publishes a `:data_structure_updated` event. Should be called using `Ecto.Multi.run/5`.
   """
   def data_structure_updated(_repo, %{data_structure: %{id: id}}, %{} = changeset, user_id) do
