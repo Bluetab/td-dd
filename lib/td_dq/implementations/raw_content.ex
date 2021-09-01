@@ -20,6 +20,9 @@ defmodule TdDq.Implementations.RawContent do
   def changeset(%__MODULE__{} = struct, params) do
     struct
     |> cast(params, [:dataset, :population, :validations, :source_id, :database])
+    |> update_change(:dataset, &maybe_decode/1)
+    |> update_change(:population, &maybe_decode/1)
+    |> update_change(:validations, &maybe_decode/1)
     |> valid_content?([:dataset, :population, :validations])
     |> validate_required([:dataset, :validations, :source_id])
   end
@@ -54,5 +57,12 @@ defmodule TdDq.Implementations.RawContent do
       Regex.run(~r/(?i)(\b(DROP|DELETE|INSERT|UPDATE|CALL|EXEC|EXECUTE|ALTER)\b|;|--|#)/, text)
 
     result != nil && length(result) > 0
+  end
+
+  defp maybe_decode(value) do
+    case Base.decode64(value) do
+      {:ok, decoded} -> decoded
+      :error -> value
+    end
   end
 end

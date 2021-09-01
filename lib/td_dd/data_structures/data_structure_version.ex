@@ -47,6 +47,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     has_many(:classifications, Classification)
     has_many(:child_relations, DataStructureRelation, foreign_key: :parent_id)
     has_many(:parent_relations, DataStructureRelation, foreign_key: :child_id)
+    has_one(:current_metadata, through: [:data_structure, :current_metadata])
 
     many_to_many(:children, __MODULE__,
       join_through: DataStructureRelation,

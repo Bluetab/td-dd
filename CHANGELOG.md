@@ -1,10 +1,26 @@
 # Changelog
 
-## Unreleased
+## [Unreleased]
 
 ### Added
 
+- [TD-3951] Include additional information for grant events
 - [TD-3484] GraphQL API on `/api/v2`
+- [TD-3972] Nested population in validations
+
+### Changed
+
+- [TD-3826] Data quality permissions now uses `domain_id` instead of
+  `business_concept_id`
+
+### Changed
+
+- [TD-3039] `GET /api/data_structures/:data_structure_id/versions/:id` now
+  includes mutable metadata in the `metadata` field. The `metadata_versions`
+  field is no longer included in the response. The `metadata_fields` field in
+  the data structure type responses now include mutable metadata fields.
+- [TD-3826] Data quality permissions now uses `domain_id` instead of
+  `business_concept_id`
 
 ## [4.26.0] 2021-08-16
 

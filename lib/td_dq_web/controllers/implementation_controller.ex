@@ -3,7 +3,6 @@ defmodule TdDqWeb.ImplementationController do
   use TdHypermedia, :controller
 
   import Canada, only: [can?: 2]
-  import TdDqWeb.RuleImplementationSupport, only: [decode: 1]
 
   alias TdDq.Events.QualityEvents
   alias TdDq.Implementations
@@ -12,7 +11,6 @@ defmodule TdDqWeb.ImplementationController do
   alias TdDq.Implementations.Search
   alias TdDq.Rules
   alias TdDq.Rules.RuleResults
-  alias TdDqWeb.ErrorView
 
   action_fallback(TdDqWeb.FallbackController)
 
@@ -33,7 +31,7 @@ defmodule TdDqWeb.ImplementationController do
       |> add_rule_filter(params, "rule_business_concept_id", "business_concept_id")
       |> add_rule_filter(params, "is_rule_active", "active")
 
-    with {:can, true} <- {:can, can?(claims, index(Implementation))} do
+    with {:can, true} <- {:can, can?(claims, list(Implementation))} do
       implementations =
         filters
         |> Implementations.list_implementations(preload: :rule, enrich: :source)
@@ -88,20 +86,12 @@ defmodule TdDqWeb.ImplementationController do
 
   def create(conn, %{"rule_implementation" => implementation_params}) do
     claims = conn.assigns[:current_resource]
-    implementation_params = decode(implementation_params)
     rule_id = implementation_params["rule_id"]
 
     rule = Rules.get_rule_or_nil(rule_id)
 
-    resource_type = %{
-      "business_concept_id" => rule.business_concept_id,
-      "resource_type" => "implementation",
-      "implementation_type" => Map.get(implementation_params, "implementation_type")
-    }
-
-    with {:can, true} <- {:can, can?(claims, create(resource_type))},
-         {:ok, %Implementation{} = implementation} <-
-           Implementations.create_implementation(rule, implementation_params) do
+    with {:ok, %{implementation: implementation}} <-
+           Implementations.create_implementation(rule, implementation_params, claims) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", Routes.implementation_path(conn, :show, implementation))
@@ -124,7 +114,7 @@ defmodule TdDqWeb.ImplementationController do
   def show(conn, %{"id" => id}) do
     implementation =
       id
-      |> Implementations.get_implementation!(preload: :rule, enrich: :source)
+      |> Implementations.get_implementation!(enrich: :source)
       |> add_rule_results()
       |> add_last_rule_result()
       |> add_quality_event()
@@ -155,26 +145,16 @@ defmodule TdDqWeb.ImplementationController do
 
     update_params =
       implementation_params
-      |> decode()
       |> Map.drop([:implementation_type, "implementation_type"])
       |> with_deleted_at()
 
     implementation =
       id
-      |> Implementations.get_implementation!(preload: :rule)
+      |> Implementations.get_implementation!()
       |> add_rule_results()
 
-    rule = implementation.rule
-
-    resource_type = %{
-      "business_concept_id" => rule.business_concept_id,
-      "resource_type" => "implementation",
-      "implementation_type" => implementation.implementation_type
-    }
-
     # TODO: Refactor this (and remove {:editable, false} from fallback controller)
-    with {:can, true} <- {:can, can?(claims, update(resource_type))},
-         {:editable, true} <- {:editable, editable?(implementation, implementation_params)},
+    with {:editable, true} <- {:editable, editable?(implementation, implementation_params)},
          {:ok, %{implementation: %Implementation{} = implementation}} <-
            Implementations.update_implementation(implementation, update_params, claims) do
       render(conn, "show.json", implementation: implementation)
@@ -194,27 +174,12 @@ defmodule TdDqWeb.ImplementationController do
   end
 
   def delete(conn, %{"id" => id}) do
-    %{rule: rule} = implementation = Implementations.get_implementation!(id, preload: :rule)
     claims = conn.assigns[:current_resource]
+    implementation = Implementations.get_implementation!(id)
 
-    with {:can, true} <-
-           {:can,
-            can?(
-              claims,
-              delete(%{
-                "business_concept_id" => rule.business_concept_id,
-                "resource_type" => "implementation",
-                "implementation_type" => implementation.implementation_type
-              })
-            )},
-         {:ok, %Implementation{}} <- Implementations.delete_implementation(implementation) do
+    with {:ok, %{implementation: _}} <-
+           Implementations.delete_implementation(implementation, claims) do
       send_resp(conn, :no_content, "")
-    else
-      _error ->
-        conn
-        |> put_status(:unprocessable_entity)
-        |> put_view(ErrorView)
-        |> render("422.json")
     end
   end
 

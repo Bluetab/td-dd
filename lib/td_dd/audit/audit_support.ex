@@ -6,7 +6,6 @@ defmodule TdDd.Audit.AuditSupport do
   alias Ecto.Changeset
   alias TdCache.Audit
   alias TdDd.DataStructures.StructureNote
-  alias TdDd.Grants.Grant
   alias TdDfLib.{MapDiff, Masks}
 
   def publish(events) when is_list(events) do
@@ -50,14 +49,6 @@ defmodule TdDd.Audit.AuditSupport do
     changes
     |> Map.delete(:df_content)
     |> Map.put(:content, diff)
-  end
-
-  defp payload(%{data_structure: data_structure} = changes, %Grant{}) do
-    data_structure_id = Changeset.get_field(data_structure, :id)
-
-    changes
-    |> Map.delete(:data_structure)
-    |> Map.put(:data_structure_id, data_structure_id)
   end
 
   defp payload(changes, _data), do: changes

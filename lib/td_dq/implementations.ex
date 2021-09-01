@@ -3,8 +3,10 @@ defmodule TdDq.Implementations do
   The Rule Implementations context.
   """
 
+  import Canada, only: [can?: 2]
   import Ecto.Query
 
+  alias Ecto.Changeset
   alias Ecto.Multi
   alias TdCx.Sources
   alias TdDd.Cache.StructureEntry
@@ -37,7 +39,7 @@ defmodule TdDq.Implementations do
   """
   @spec get_implementation!(integer, Keyword.t()) :: Implementation.t()
   def get_implementation!(id, opts \\ []) do
-    preloads = Keyword.get(opts, :preload, [])
+    preloads = Keyword.get(opts, :preload, :rule)
 
     Implementation
     |> preload(^preloads)
@@ -53,6 +55,7 @@ defmodule TdDq.Implementations do
     Implementation
     |> join(:inner, [ri], r in assoc(ri, :rule))
     |> Repo.get_by!(implementation_key: implementation_key)
+    |> Repo.preload(:rule)
   end
 
   def get_implementation_by_key!(implementation_key, _deleted) do
@@ -61,43 +64,31 @@ defmodule TdDq.Implementations do
     |> where([_, r], is_nil(r.deleted_at))
     |> where([ri, _], is_nil(ri.deleted_at))
     |> Repo.get_by!(implementation_key: implementation_key)
+    |> Repo.preload(:rule)
   end
 
-  @doc """
-  Creates an implementation.
+  def create_implementation(%Rule{id: rule_id} = rule, %{} = params, %Claims{} = claims) do
+    changeset = Implementation.changeset(%Implementation{rule_id: rule_id, rule: rule}, params)
 
-  ## Examples
-
-      iex> create_implementation(rule, %{field: value})
-      {:ok, %Implementation{}}
-
-      iex> create_implementation(rule, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_implementation(%{id: rule_id} = _rule, params \\ %{}) do
-    %Implementation{rule_id: rule_id}
-    |> Implementation.changeset(params)
-    |> Repo.insert()
+    Multi.new()
+    |> Multi.run(:can, fn _, _ -> multi_can(can?(claims, create(changeset))) end)
+    |> Multi.insert(:implementation, changeset)
+    |> Repo.transaction()
     |> on_upsert()
   end
 
-  @doc """
-  Updates an implementation.
+  defp multi_can(true), do: {:ok, nil}
+  defp multi_can(false), do: {:error, false}
 
-  ## Examples
-
-      iex> update_implementation(implementation, %{field: new_value}, claims)
-      {:ok, %Implementation{}}
-
-      iex> update_implementation(implementation, %{field: bad_value}, claims)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_implementation(%Implementation{} = implementation, params, %Claims{user_id: user_id}) do
+  def update_implementation(
+        %Implementation{} = implementation,
+        params,
+        %Claims{user_id: user_id} = claims
+      ) do
     changeset = Implementation.changeset(implementation, params)
 
     Multi.new()
+    |> Multi.run(:can, fn _, _ -> multi_can(can?(claims, update(changeset))) end)
     |> Multi.update(:implementation, changeset)
     |> Multi.run(:audit, Audit, :implementation_updated, [changeset, user_id])
     |> Repo.transaction()
@@ -161,31 +152,29 @@ defmodule TdDq.Implementations do
     end
   end
 
-  @doc """
-  Deletes an implementation.
+  def delete_implementation(%Implementation{} = implementation, %Claims{} = claims) do
+    changeset =
+      implementation
+      |> Repo.preload(:rule)
+      |> Changeset.change()
 
-  ## Examples
-
-      iex> delete_implementation(implementation, opts)
-      {:ok, %Implementation{}}
-
-      iex> delete_implementation(implementation, opts)
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def delete_implementation(%Implementation{id: id} = implementation) do
-    reply = Repo.delete(implementation)
-    RuleLoader.refresh(Map.get(implementation, :rule_id))
-    @index_worker.delete_implementations(id)
-    reply
+    Multi.new()
+    |> Multi.run(:can, fn _, _ -> multi_can(can?(claims, delete(changeset))) end)
+    |> Multi.delete(:implementation, changeset)
+    # TODO: audit implementation deletion?
+    |> Repo.transaction()
+    |> on_delete()
   end
 
-  defp on_upsert({:ok, %{implementation: %{id: id}}} = result) do
-    @index_worker.reindex_implementations(id)
+  defp on_delete({:ok, %{implementation: %{id: id, rule_id: rule_id}}} = result) do
+    RuleLoader.refresh(rule_id)
+    @index_worker.delete_implementations(id)
     result
   end
 
-  defp on_upsert({:ok, %{id: id} = _implementation} = result) do
+  defp on_delete(result), do: result
+
+  defp on_upsert({:ok, %{implementation: %{id: id}}} = result) do
     @index_worker.reindex_implementations(id)
     result
   end
@@ -346,51 +335,30 @@ defmodule TdDq.Implementations do
         end
       end)
 
-    enriched_population =
-      Enum.map(implementation.population, fn population_row ->
-        case Map.get(population_row, :structure) do
-          nil ->
-            population_row
-
-          structure ->
-            cached_structure = StructureEntry.cache_entry(Map.get(structure, :id), system: true)
-
-            enriched_info =
-              population_row
-              |> Map.get(:structure)
-              |> put_structure_cached_attributes(cached_structure)
-
-            population_row
-            |> Map.put(:structure, enriched_info)
-            |> enrich_value_structures()
-        end
-      end)
-
-    enriched_validations =
-      Enum.map(implementation.validations, fn validations_row ->
-        case Map.get(validations_row, :structure) do
-          nil ->
-            validations_row
-
-          structure ->
-            cached_structure = StructureEntry.cache_entry(Map.get(structure, :id), system: true)
-
-            enriched_info =
-              validations_row
-              |> Map.get(:structure)
-              |> put_structure_cached_attributes(cached_structure)
-
-            validations_row
-            |> Map.put(:structure, enriched_info)
-            |> enrich_value_structures()
-        end
-      end)
+    enriched_population = Enum.map(implementation.population, &enrich_condition/1)
+    enriched_validations = Enum.map(implementation.validations, &enrich_condition/1)
 
     implementation
     |> Map.put(:dataset, enriched_dataset)
     |> Map.put(:population, enriched_population)
     |> Map.put(:validations, enriched_validations)
   end
+
+  defp enrich_condition(%{structure: structure = %{}} = condition) do
+    cached_structure = StructureEntry.cache_entry(Map.get(structure, :id), system: true)
+
+    enriched_info =
+      condition
+      |> Map.get(:structure)
+      |> put_structure_cached_attributes(cached_structure)
+
+    condition
+    |> Map.put(:structure, enriched_info)
+    |> enrich_value_structures()
+    |> with_population()
+  end
+
+  defp enrich_condition(condition), do: condition
 
   defp enrich_joined_structures(%{clauses: clauses} = structure_map) when is_list(clauses) do
     clauses = Enum.map(clauses, &enrich_clause_structures/1)
@@ -441,6 +409,12 @@ defmodule TdDq.Implementations do
         Map.put(row, :value, values)
     end
   end
+
+  defp with_population(%{population: population} = condition) when is_list(population) do
+    %{condition | population: Enum.map(population, &enrich_condition/1)}
+  end
+
+  defp with_population(condition), do: condition
 
   defp put_structure_cached_attributes(structure_map, cached_info) do
     structure_map =

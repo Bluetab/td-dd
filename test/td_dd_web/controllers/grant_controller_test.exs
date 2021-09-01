@@ -4,6 +4,8 @@ defmodule TdDdWeb.GrantControllerTest do
 
   alias TdDd.Grants.Grant
 
+  @moduletag sandbox: :shared
+
   @user_id 123_456
   @create_attrs %{
     detail: %{},
@@ -19,6 +21,7 @@ defmodule TdDdWeb.GrantControllerTest do
   @invalid_attrs %{detail: nil, end_date: nil, start_date: nil}
 
   setup %{conn: conn} do
+    start_supervised!(TdDd.Search.StructureEnricher)
     CacheHelpers.insert_user(id: @user_id)
     {:ok, conn: put_req_header(conn, "accept", "application/json")}
   end
@@ -297,9 +300,9 @@ defmodule TdDdWeb.GrantControllerTest do
              |> delete(Routes.grant_path(conn, :delete, grant))
              |> response(:no_content)
 
-      assert_error_sent 404, fn ->
+      assert_error_sent(404, fn ->
         get(conn, Routes.grant_path(conn, :show, grant))
-      end
+      end)
     end
 
     @tag authentication: [role: "non_admin", permissions: [:manage_grants]]
@@ -308,9 +311,9 @@ defmodule TdDdWeb.GrantControllerTest do
              |> delete(Routes.grant_path(conn, :delete, grant))
              |> response(:no_content)
 
-      assert_error_sent 404, fn ->
+      assert_error_sent(404, fn ->
         get(conn, Routes.grant_path(conn, :show, grant))
-      end
+      end)
     end
 
     @tag authentication: [role: "non_admin", permissions: [:manage_grants]]
