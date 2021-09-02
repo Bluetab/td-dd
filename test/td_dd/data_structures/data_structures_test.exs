@@ -424,9 +424,9 @@ defmodule TdDd.DataStructuresTest do
           content: :searchable
         )
 
-      assert %{profile: true} = Enum.find(versions, &(&1.id == id))
-      assert %{profile: true} = Enum.find(versions, &(&1.id == parent_id))
-      assert %{profile: false} = Enum.find(versions, &(&1.id == ancestor_id))
+      assert %{with_profiling: true} = Enum.find(versions, &(&1.id == id))
+      assert %{with_profiling: true} = Enum.find(versions, &(&1.id == parent_id))
+      assert %{with_profiling: false} = Enum.find(versions, &(&1.id == ancestor_id))
     end
   end
 

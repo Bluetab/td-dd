@@ -81,7 +81,7 @@ defmodule TdDd.DataStructures.DataStructureQueries do
     |> union(^direct_profile_versions)
     |> subquery()
     |> where_ids(profile_params)
-    |> select([dsv], %{id: dsv.id, profile: true})
+    |> select([dsv], %{id: dsv.id, with_profiling: true})
   end
 
   @spec paths(map) :: Ecto.Query.t()
@@ -178,7 +178,9 @@ defmodule TdDd.DataStructures.DataStructureQueries do
     )
     |> select_merge([_, _, _, _, sn], %{latest_note: sn.df_content})
     |> join(:left, [dsv], pv in subquery(profile(params)), on: dsv.id == pv.id)
-    |> select_merge([_, _, _, _, _, pv], %{profile: fragment("COALESCE(?, false)", pv.profile)})
+    |> select_merge([_, _, _, _, _, pv], %{
+      with_profiling: fragment("COALESCE(?, false)", pv.with_profiling)
+    })
   end
 
   @spec distinct_by(Ecto.Query.t(), :id | :data_structure_id) :: Ecto.Query.t()

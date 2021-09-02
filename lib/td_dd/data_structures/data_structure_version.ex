@@ -35,7 +35,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     field(:latest_note, :map, virtual: true)
     field(:grants, {:array, :map}, virtual: true)
     field(:grant, :map, virtual: true)
-    field(:profile, :boolean, virtual: true)
+    field(:with_profiling, :boolean, virtual: true)
 
     belongs_to(:data_structure, DataStructure)
 
@@ -181,7 +181,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
           :type,
           :updated_at,
           :version,
-          :profile
+          :with_profiling
         ])
       )
     end
