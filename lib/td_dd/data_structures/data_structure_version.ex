@@ -35,6 +35,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     field(:latest_note, :map, virtual: true)
     field(:grants, {:array, :map}, virtual: true)
     field(:grant, :map, virtual: true)
+    field(:profile, :boolean, virtual: true)
 
     belongs_to(:data_structure, DataStructure)
 
@@ -142,7 +143,6 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       # IMPORTANT: Avoid enriching structs one-by-one in this function.
       # Instead, enrichment should be performed as efficiently as possible on
       # chunked data using `TdDd.DataStructures.enriched_structure_versions/1`.
-
       name_path = Enum.map(path, & &1["name"])
       tags = tags(tags)
 
@@ -180,7 +180,8 @@ defmodule TdDd.DataStructures.DataStructureVersion do
           :name,
           :type,
           :updated_at,
-          :version
+          :version,
+          :profile
         ])
       )
     end

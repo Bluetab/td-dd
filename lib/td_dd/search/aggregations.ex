@@ -14,6 +14,7 @@ defmodule TdDd.Search.Aggregations do
       {"class.raw", %{terms: %{field: "class.raw"}}},
       {"field_type.raw", %{terms: %{field: "field_type.raw", size: 50}}},
       {"with_content.raw", %{terms: %{field: "with_content.raw"}}},
+      {"profile.raw", %{terms: %{field: "profile.raw"}}},
       {"tags.raw", %{terms: %{field: "tags.raw", size: 50}}},
       {"linked_concepts_count",
        %{terms: %{script: "doc['linked_concepts_count'].value > 0 ? 'linked' : 'unlinked'"}}},

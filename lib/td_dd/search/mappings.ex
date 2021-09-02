@@ -53,6 +53,7 @@ defmodule TdDd.Search.Mappings do
       type: %{type: "text", fields: @raw_sort},
       field_type: %{type: "text", fields: @raw_sort},
       confidential: %{type: "boolean", fields: @raw},
+      profile: %{type: "boolean", fields: @raw},
       with_content: %{type: "boolean", fields: @raw},
       description: %{type: "text", fields: @raw},
       external_id: %{type: "keyword", index: false},
