@@ -301,6 +301,22 @@ defmodule TdDd.DataStructuresTest do
 
       assert %{mutable_metadata: ^fields} = DataStructures.get_latest_version(id)
     end
+
+    test "enriches with parents", %{
+      data_structure_version: %{
+        id: parent_id,
+        name: parent_name
+      }
+    } do
+      %{child: %{data_structure_id: id}} =
+        insert(:data_structure_relation,
+          parent_id: parent_id,
+          relation_type_id: RelationTypes.default_id!()
+        )
+
+      assert %{parents: [%{id: ^parent_id, name: ^parent_name}]} =
+               DataStructures.get_latest_version(id, [:parents])
+    end
   end
 
   describe "enriched_structure_versions/1" do
@@ -311,8 +327,11 @@ defmodule TdDd.DataStructuresTest do
         data_structure_version =
         insert(:data_structure_version,
           data_structure: data_structure,
-          type: template_name
+          type: template_name,
+          class: "field"
         )
+
+      profile = insert(:profile, data_structure_id: data_structure_id)
 
       insert(:structure_note,
         data_structure: data_structure,
@@ -322,22 +341,28 @@ defmodule TdDd.DataStructuresTest do
 
       insert(:structure_metadata, data_structure_id: data_structure_id)
 
-      %{parent_id: parent_id} =
+      %{parent_id: parent_id, parent: parent} =
         insert(:data_structure_relation,
           child_id: id,
           relation_type_id: RelationTypes.default_id!(),
           parent: build(:data_structure_version, name: "papa")
         )
 
-      insert(:data_structure_relation,
-        child_id: parent_id,
-        relation_type_id: RelationTypes.default_id!(),
-        parent: build(:data_structure_version, name: "yayo")
-      )
+      %{parent: ancestor} =
+        insert(:data_structure_relation,
+          child_id: parent_id,
+          relation_type_id: RelationTypes.default_id!(),
+          parent: build(:data_structure_version, name: "yayo")
+        )
 
       insert(:structure_classification, data_structure_version_id: id, class: "bar", name: "foo")
 
-      [data_structure_version: data_structure_version]
+      [
+        data_structure_version: data_structure_version,
+        parent: parent,
+        ancestor: ancestor,
+        profile: profile
+      ]
     end
 
     test "formats data_structure search_content and preserves df_content", %{
@@ -385,6 +410,23 @@ defmodule TdDd.DataStructuresTest do
       assert latest_note == %{"list" => "one", "string" => "initial"}
 
       assert ["yayo", "papa"] = path
+    end
+
+    test "returns profile flag", %{
+      data_structure_version: %{id: id},
+      parent: %{id: parent_id},
+      ancestor: %{id: ancestor_id}
+    } do
+      versions =
+        DataStructures.enriched_structure_versions(
+          ids: [id, parent_id, ancestor_id],
+          relation_type_id: RelationTypes.default_id!(),
+          content: :searchable
+        )
+
+      assert %{profile: true} = Enum.find(versions, &(&1.id == id))
+      assert %{profile: true} = Enum.find(versions, &(&1.id == parent_id))
+      assert %{profile: false} = Enum.find(versions, &(&1.id == ancestor_id))
     end
   end
 

@@ -109,7 +109,9 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     } do
       assert %{"data" => %{"metadata" => merged_metadata}} =
                conn
-               |> get(Routes.data_structure_data_structure_version_path(conn, :show, id, "latest"))
+               |> get(
+                 Routes.data_structure_data_structure_version_path(conn, :show, id, "latest")
+               )
                |> json_response(:ok)
 
       assert merged_metadata == Map.merge(metadata, mutable_metadata)
