@@ -1,9 +1,9 @@
-defmodule TdDdWeb.DataStructureFilterController do
+defmodule TdDdWeb.GrantFilterController do
   require Logger
   use TdDdWeb, :controller
   use PhoenixSwagger
 
-  alias TdDd.DataStructures.Search
+  alias TdDd.Grants.Search
   alias TdDdWeb.SwaggerDefinitions
 
   action_fallback(TdDdWeb.FallbackController)
@@ -13,19 +13,19 @@ defmodule TdDdWeb.DataStructureFilterController do
   end
 
   swagger_path :index do
-    description("List Data Structure Filters")
+    description("List Grant Filters")
     response(200, "OK", Schema.ref(:FilterResponse))
   end
 
   def index(conn, _params) do
     claims = conn.assigns[:current_resource]
     permission = conn.assigns[:search_permission]
-    filters = Search.get_filter_values(claims, permission, %{})
+    filters = Search.get_filter_values(claims, permission, :grants)
     render(conn, "show.json", filters: filters)
   end
 
   swagger_path :search do
-    description("List Data Structure Filters")
+    description("List Grant Filters")
 
     parameters do
       search(

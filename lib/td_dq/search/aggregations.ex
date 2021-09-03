@@ -50,7 +50,7 @@ defmodule TdDq.Search.Aggregations do
     scope
     |> TemplateCache.list_by_scope!()
     |> Enum.flat_map(&template_terms(&1, scope))
-    |> Enum.uniq()
+    |> Enum.uniq()#|> IO.inspect(label: "template_terms")
   end
 
   defp template_terms(%{content: content}, scope) do

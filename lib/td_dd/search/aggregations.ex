@@ -30,6 +30,24 @@ defmodule TdDd.Search.Aggregations do
     |> Enum.into(%{})
   end
 
+  def grant_aggregation_terms do
+    static_keywords = [
+      {"data_structure_version.name.raw", %{terms: %{field: "data_structure_version.name.raw", size: 50}}},
+      {"user_name", %{terms: %{field: "user.user_name.raw", size: 50}}},
+      {"taxonomy",
+       %{
+         nested: %{path: "data_structure_version.domain_parents"},
+         aggs: %{distinct_search: %{terms: %{field: "data_structure_version.domain_parents.id", size: 50}}}
+       }}
+    ]
+
+    #["dd"]
+    #|> Enum.flat_map(&template_terms/1)
+    #|> Enum.concat(static_keywords)
+    static_keywords
+    |> Enum.into(%{})
+  end
+
   def get_agg_terms([]) do
     nil
   end

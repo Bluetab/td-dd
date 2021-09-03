@@ -33,8 +33,11 @@ defmodule TdDq.Rules.Search do
   def search(params, claims, page \\ 0, size \\ 50, index \\ :rules)
 
   def search(params, %Claims{role: role}, page, size, index) when role in ["admin", "service"] do
-    filter_clause = Query.create_filters(params, index)
-    query = Query.create_query(params, filter_clause)
+    IO.puts("search")
+    #IO.inspect(params, label: "params")
+    #IO.inspect(index, label: "index")
+    filter_clause = Query.create_filters(params, index)# |> IO.inspect(label: "create_filter")
+    query = Query.create_query(params, filter_clause)# |> IO.inspect(label: "create_query")
     sort = Map.get(params, "sort", default_sort(index))
 
     %{
@@ -42,8 +45,9 @@ defmodule TdDq.Rules.Search do
       size: size,
       query: query,
       sort: sort,
-      aggs: Query.get_aggregation_terms(index)
+      aggs: Query.get_aggregation_terms(index)# |> IO.inspect(label: "get_aggregation_terms")
     }
+    #|> IO.inspect(label: "search_before")
     |> do_search(index)
   end
 
@@ -123,10 +127,12 @@ defmodule TdDq.Rules.Search do
       sort: sort,
       aggs: Query.get_aggregation_terms(index)
     }
+    #|> IO.inspect(label: "get_aggregation_terms")
     |> do_search(index)
   end
 
   defp do_search(search, index) do
+
     %{results: results, aggregations: aggregations, total: total} = Search.search(search, index)
 
     results =

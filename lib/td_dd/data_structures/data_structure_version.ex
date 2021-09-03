@@ -11,6 +11,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureType
+  import Ecto.Query
 
   @typedoc "A data structure version"
   @type t :: %__MODULE__{}
@@ -120,8 +121,13 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     |> validate_length(:type, max: 255)
   end
 
+  def with_data_structure() do
+    from  __MODULE__, preload: :data_structure
+  end
+
   defimpl Elasticsearch.Document do
     alias TdDd.DataStructures.DataStructureVersion
+    alias TdDq.Search.Helpers
 
     @max_sortable_length 32_766
 
@@ -138,12 +144,23 @@ defmodule TdDd.DataStructures.DataStructureVersion do
             path: path
           } = dsv
         ) do
+
+      #IO.inspect(Process.info(self(), :current_stacktrace), label: "STACKTRACE")
+
       # IMPORTANT: Avoid enriching structs one-by-one in this function.
       # Instead, enrichment should be performed as efficiently as possible on
       # chunked data using `TdDd.DataStructures.enriched_structure_versions/1`.
 
+      #IO.inspect(path, label: "path")
+
+      #IO.inspect(data_structure, label: "data_structure")
+      #IO.inspect(domain(data_structure), label: "domain")
+      #IO.inspect(dsv, label: "**********************************************************************************DSV")
+
       name_path = Enum.map(path, & &1["name"])
       tags = tags(tags)
+
+
 
       data_structure
       |> Map.take([
@@ -154,7 +171,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
         :inserted_at,
         :linked_concepts_count,
         :source_id,
-        :system_id
+        :system_id,
       ])
       |> Map.put(:latest_note, content)
       |> Map.put(:domain_ids, domain_ids(data_structure))
@@ -169,6 +186,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       |> Map.put(:tags, tags)
       |> Map.merge(
         Map.take(dsv, [
+          :data_structure_id,
           :class,
           :classes,
           :deleted_at,
@@ -188,8 +206,13 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       Enum.join(name_path, "~")
     end
 
-    defp domain(%{domain: %{} = domain}), do: Map.take(domain, [:id, :external_id, :name])
-    defp domain(_), do: %{}
+    defp domain(%{domain: %{} = domain}) do
+      #IO.puts("*****************************DOMAIN")
+      Map.take(domain, [:id, :external_id, :name])
+    end
+    defp domain(data_structure) do
+      Map.take(Helpers.get_domain(data_structure), [:id, :external_id, :name])
+    end
 
     defp domains(%{domain_parents: [_ | _] = domains}),
       do: Enum.map(domains, &domain(%{domain: &1}))
@@ -214,5 +237,8 @@ defmodule TdDd.DataStructures.DataStructureVersion do
 
     defp tags([_ | _] = tags), do: Enum.map(tags, & &1.name)
     defp tags(_tags), do: nil
+
+
+
   end
 end

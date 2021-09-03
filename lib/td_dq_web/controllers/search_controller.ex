@@ -44,6 +44,8 @@ defmodule TdDqWeb.SearchController do
   end
 
   def search_rules(conn, params) do
+
+    IO.puts("search_rules")
     page = Map.get(params, "page", 0)
     size = Map.get(params, "size", 20)
     claims = conn.assigns[:current_resource]

@@ -1,9 +1,9 @@
-defmodule TdDq.Search.Query do
+defmodule TdDd.Search.Query do
   @moduledoc """
   Helper module to manipulate elastic search queries.
   """
 
-  alias TdDq.Search.Aggregations
+  alias TdDd.Search.Aggregations
 
   def create_filters(%{without: without_fields} = params, index) do
     IO.puts("CREATE_FILTERS WITHOUT")
@@ -30,10 +30,10 @@ defmodule TdDq.Search.Query do
   end
 
   def create_filters(%{"filters" => filters}, index) do
-    IO.puts("CREATE_FILTERS FILTERS TdDq.Search.Query")
+    IO.puts("CREATE_FILTERS FILTERS TdDd.Search.Query")
     filters
     |> Map.to_list()
-    |> Enum.map(&to_terms_query(&1, index)) |> IO.inspect(label: "create_filter")
+    |> Enum.map(&to_terms_query(&1, index))
   end
 
   def create_filters(_, _), do: []
@@ -80,15 +80,22 @@ defmodule TdDq.Search.Query do
       ]
   end
 
-  defp to_terms_query({"structure_ids", ids}, _index) do
-    get_filter(nil, ids, :structure_ids)
-  end
+  # defp to_terms_query({"structure_ids", ids}, _index) do
+  #   get_filter(nil, ids, :structure_ids)
+  # end
 
-  defp to_terms_query({:rule_id, rule_id}, _index) do
-    get_filter(nil, rule_id, :rule_id)
+  # defp to_terms_query({:rule_id, rule_id}, _index) do
+  #   get_filter(nil, rule_id, :rule_id)
+  # end
+
+  defp to_terms_query({filter, value}, _index) when filter in ["updated_at", "start_date", "end_date"] do
+    %{range: %{String.to_atom(filter) => value}}# |> IO.inspect(label: "TO_FILTER_QUERY")
   end
 
   defp to_terms_query({filter, values}, index) do
+    IO.puts("TO_TERMS_QUERY")
+    #IO.inspect(filter, label: "filter")
+    #IO.inspect(values, label: "values")
     index
     |> get_aggregation_terms()
     |> Map.get(filter)
@@ -96,6 +103,7 @@ defmodule TdDq.Search.Query do
   end
 
   defp get_filter(%{terms: %{field: field}}, values, _filter) do
+    IO.puts("GET_FILTER TERMS FIELD VALUE")
     %{terms: %{field => values}}
   end
 
@@ -104,15 +112,17 @@ defmodule TdDq.Search.Query do
          values,
          _filter
        ) do
-    IO.puts("GET_FILTER NESTED")
+    IO.puts("GET_FILTER nested")
     %{nested: %{path: path, query: build_nested_query(distinct_search, values)}}
   end
 
   defp get_filter(nil, values, filter) when is_list(values) do
+    IO.puts("GET_FILTER (nil, value, filter when is_list(values)")
     %{terms: %{filter => values}}
   end
 
   defp get_filter(nil, value, filter) do
+    IO.puts("GET_FILTER (nil, value, filter")
     %{term: %{filter => value}}
   end
 
@@ -146,7 +156,8 @@ defmodule TdDq.Search.Query do
     end
   end
 
-  def get_aggregation_terms(:rules), do: Aggregations.rule_aggregation_terms()
-  def get_aggregation_terms(:implementations), do: Aggregations.implementation_aggregation_terms()
-  def get_aggregation_terms(:grants), do: TdDd.Search.Aggregations.grant_aggregation_terms()
+  # def get_aggregation_terms(:rules), do: Aggregations.rule_aggregation_terms()
+  # def get_aggregation_terms(:implementations), do: Aggregations.implementation_aggregation_terms()
+  def get_aggregation_terms(:structures), do: Aggregations.aggregation_terms()
+  def get_aggregation_terms(:grants), do: Aggregations.grant_aggregation_terms()
 end

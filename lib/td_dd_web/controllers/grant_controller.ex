@@ -16,6 +16,29 @@ defmodule TdDdWeb.GrantController do
     SwaggerDefinitions.grant_swagger_definitions()
   end
 
+  swagger_path :index do
+    description("Get grants")
+    produces("application/json")
+
+    # parameters do
+    #   type(:query, :string, "query string", required: false)
+    # end
+
+    response(200, "OK", Schema.ref(:GrantResponse))
+    response(422, "Client Error")
+  end
+
+  def index(conn, _params) do
+    claims = conn.assigns[:current_resource]
+
+    with true <- can?(claims, index(%Grant{})),
+         grants <- Grants.list_grants([]) do
+      render(conn, "index.json", grants: grants)
+    end
+
+
+  end
+
   swagger_path :create do
     description("Creates a Grant")
     produces("application/json")
@@ -124,4 +147,10 @@ defmodule TdDdWeb.GrantController do
       send_resp(conn, :no_content, "")
     end
   end
+
+
+
+
+
+
 end

@@ -20,6 +20,7 @@ defmodule TdDd.Search.Mappings do
 
     properties = %{
       id: %{type: "long", index: false},
+      data_structure_id: %{type: "long"},
       name: %{type: "text", fields: @raw_sort_ngram},
       system: %{
         properties: %{
@@ -92,6 +93,40 @@ defmodule TdDd.Search.Mappings do
 
     settings = Cluster.setting(:structures)
 
+    %{mappings: %{_doc: %{properties: properties}}, settings: settings}
+  end
+
+  defp get_structure_mappings do
+    %{
+      external_id: %{type: "text"},
+      id: %{type: "long"},
+      name: %{type: "text"},
+      type: %{type: "text", fields: @raw},
+      metadata: %{enabled: false}
+    }
+  end
+
+  def get_grant_mappings do
+
+    %{mappings: %{_doc: %{properties: dsv_properties}}, settings: _settings} = get_mappings()
+
+    properties = %{
+      data_structure_id: %{type: "long"},
+      detail: %{type: "object"},
+      user_id: %{type: "long"},
+      start_date: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
+      end_date: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
+      data_structure_version: %{type: "object", properties: dsv_properties},
+      user: %{
+        type: "object",
+        properties: %{
+          id: %{type: "long", index: false},
+          user_name: %{type: "text", fields: @raw},
+          full_name: %{type: "text", fields: @raw}
+        }
+      }
+    }
+    settings = Cluster.setting(:grants)
     %{mappings: %{_doc: %{properties: properties}}, settings: settings}
   end
 

@@ -39,6 +39,7 @@ defmodule TdDd.DataStructures.Search do
     Search.get_filters(search)
   end
 
+  @spec get_aggregations_values(TdDd.Auth.Claims.t(), any, any, any) :: list
   def get_aggregations_values(%Claims{role: role}, _permission, params, agg_terms)
       when role in ["admin", "service"] do
     filter_clause = create_filters(params)
@@ -230,8 +231,8 @@ defmodule TdDd.DataStructures.Search do
     get_filter(nil, system_id, :system_id)
   end
 
-  defp to_filter_query({"updated_at", value}) do
-    %{range: %{updated_at: value}}
+  defp to_filter_query({filter, value}) when filter in ["updated_at", "start_date", "end_date"] do
+    %{range: %{String.to_atom(filter) => value}}# |> IO.inspect(label: "TO_FILTER_QUERY")
   end
 
   defp to_filter_query({filter, values}) do
@@ -327,6 +328,7 @@ defmodule TdDd.DataStructures.Search do
   end
 
   defp do_search(search, params) do
+    IO.puts("TdDd.DataStructures.Search")
     params
     |> Map.take(["scroll"])
     |> case do

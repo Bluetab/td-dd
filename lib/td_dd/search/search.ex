@@ -10,14 +10,21 @@ defmodule TdDd.Search do
 
   @index "structures"
 
-  def search(query) do
+  def search(query), do: search(query, :structures)
+
+  def search(query, index) when index in [:structures, :grants] do
     Logger.debug(fn -> "Query: #{inspect(query)}" end)
-    response = Elasticsearch.post(Cluster, "/#{@index}/_search", query)
+    #IO.inspect(index, label: "SEARCH/2 index")
+    #IO.inspect(query, label: "SEARCH/2 query", limit: :infinity)
+    alias_name = Cluster.alias_name(index)# |> IO.inspect(label: "alias_name")
+    response = Elasticsearch.post(Cluster, "/#{alias_name}/_search", query)
 
     case response do
       {:ok, %{"hits" => %{"hits" => results, "total" => total}} = res} ->
+        IO.puts("*******************************************************************************OK")
+        #IO.inspect(res, label: "RES")
         aggregations = Map.get(res, "aggregations", %{})
-        %{results: results, total: total, aggregations: aggregations}
+        %{results: results, total: total, aggregations: maybe_format_aggregations(aggregations, index)}
 
       {:error, %Elasticsearch.Exception{message: message} = error} ->
         Logger.warn("Error response from Elasticsearch: #{message}")
@@ -57,19 +64,34 @@ defmodule TdDd.Search do
     end
   end
 
-  def get_filters(query) do
-    response = Elasticsearch.post(Cluster, "/#{@index}/_search", query)
+  def get_filters(query), do: get_filters(query, :structures)
+
+  def get_filters(query, index) do
+    alias_name = Cluster.alias_name(index)
+    response = Elasticsearch.post(Cluster, "/#{alias_name}/_search", query)
 
     case response do
       {:ok, %{"aggregations" => aggregations}} ->
-        aggregations
-        |> Map.to_list()
-        |> Enum.into(%{}, &filter_values/1)
+        format_aggregations(aggregations)
 
       {:error, %Elasticsearch.Exception{message: message} = error} ->
         Logger.warn("Error response from Elasticsearch: #{message}")
         error
     end
+  end
+
+  defp maybe_format_aggregations(aggregations, :grants) do
+    format_aggregations(aggregations)
+  end
+
+  defp maybe_format_aggregations(aggregations, _) do
+    aggregations
+  end
+
+  defp format_aggregations(aggregations) do
+    aggregations
+    |> Map.to_list()
+    |> Enum.into(%{}, &filter_values/1)
   end
 
   defp filter_values({"taxonomy", %{"buckets" => buckets}}) do
