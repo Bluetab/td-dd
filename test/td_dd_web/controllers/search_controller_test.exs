@@ -43,9 +43,7 @@ defmodule TdDdWeb.SearchControllerTest do
 
     @tag authentication: [role: "user"]
     test "user without permissions cannot search grants", %{
-      conn: conn,
-      claims: %{user_id: user_id},
-      domain: %{id: domain_id}
+      conn: conn
     } do
       assert %{"data" => []} =
                conn

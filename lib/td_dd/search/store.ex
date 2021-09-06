@@ -29,7 +29,6 @@ defmodule TdDd.Search.Store do
 
   @impl true
   def stream(Grant) do
-    relation_type_id = RelationTypes.default_id!()
     Grant
     |> Repo.stream()
     |> Repo.stream_preload(1000, [data_structure_version: [:data_structure]])

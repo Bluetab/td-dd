@@ -70,14 +70,6 @@ defmodule TdDd.Grants.Search do
     filter(params, permissions, page, size, index)
   end
 
-  defp get_filters(permissions, params, index) do
-    user_defined_filters = Query.create_filters(params, index)
-    filter = Query.create_filter_clause(permissions, user_defined_filters)
-    query = Query.create_query(params, filter)
-    search = %{query: query, aggs: Query.get_aggregation_terms(index)}
-    Search.get_filters(search, index)
-  end
-
   def default_sort(:grants), do: ["_id"]
 
   defp get_permissions(domain_permissions) do
