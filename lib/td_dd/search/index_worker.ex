@@ -171,7 +171,6 @@ defmodule TdDd.Search.IndexWorker do
   defp do_reindex_grants([]), do: :ok
 
   defp do_reindex_grants(grant_ids) when is_list(grant_ids) do
-    IO.puts("do_reindex_grants")
     count = Enum.count(grant_ids)
     Logger.info("Reindexing #{count} grants")
 

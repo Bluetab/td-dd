@@ -69,8 +69,6 @@ defmodule TdDd.Grants.Grant do
 
     @impl Elasticsearch.Document
     def encode(%Grant{} = grant) do
-      IO.puts("ENCODE")
-
       dsv = Elasticsearch.Document.encode(grant.data_structure_version)
       domain = Helpers.get_domain(grant.data_structure_version.data_structure)
       domain_ids = Helpers.get_domain_ids(domain)

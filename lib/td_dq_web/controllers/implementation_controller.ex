@@ -229,7 +229,6 @@ defmodule TdDqWeb.ImplementationController do
   end
 
   def search_rule_implementations(conn, %{"rule_id" => id} = params) do
-    IO.puts("SEARCH_RULE_IMPLEMENTATIONS")
     claims = conn.assigns[:current_resource]
     rule_id = String.to_integer(id)
 

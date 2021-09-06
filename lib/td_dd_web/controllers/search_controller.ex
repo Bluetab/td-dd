@@ -41,8 +41,6 @@ defmodule TdDdWeb.SearchController do
   end
 
   def search_grants(conn, params) do
-
-    IO.puts("SEARCH_GRANTS")
     page = Map.get(params, "page", 0)
     size = Map.get(params, "size", 20)
     claims = conn.assigns[:current_resource]

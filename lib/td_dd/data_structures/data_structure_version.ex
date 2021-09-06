@@ -198,7 +198,6 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     end
 
     defp domain(%{domain: %{} = domain}) do
-      #IO.puts("*****************************DOMAIN")
       Map.take(domain, [:id, :external_id, :name])
     end
     defp domain(data_structure) do

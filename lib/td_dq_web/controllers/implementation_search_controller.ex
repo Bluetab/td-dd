@@ -22,7 +22,6 @@ defmodule TdDqWeb.ImplementationSearchController do
   end
 
   def create(conn, %{} = params) do
-    IO.puts("ImplementationSearchController create")
     claims = conn.assigns[:current_resource]
     page = Map.get(params, "page", 0)
     size = Map.get(params, "size", 20)

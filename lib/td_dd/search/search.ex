@@ -20,7 +20,6 @@ defmodule TdDd.Search do
 
     case response do
       {:ok, %{"hits" => %{"hits" => results, "total" => total}} = res} ->
-        IO.puts("*******************************************************************************OK")
         aggregations = Map.get(res, "aggregations", %{})
         %{results: results, total: total, aggregations: maybe_format_aggregations(aggregations, index)}
 

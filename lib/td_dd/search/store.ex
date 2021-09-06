@@ -30,7 +30,6 @@ defmodule TdDd.Search.Store do
   @impl true
   def stream(Grant) do
     relation_type_id = RelationTypes.default_id!()
-    IO.puts("STREAM/1")
     Grant
     |> Repo.stream()
     |> Repo.stream_preload(1000, [data_structure_version: [:data_structure]])
@@ -38,7 +37,6 @@ defmodule TdDd.Search.Store do
 
 
   def stream(Grant, ids) do
-    IO.puts("STREAM/2")
     grants = from(grant in Grant)
 
     grants

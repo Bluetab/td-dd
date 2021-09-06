@@ -9,7 +9,6 @@ defmodule TdDq.Search do
   require Logger
 
   def search(query, index) do
-    IO.puts("SEARCH")
     Logger.debug(fn -> "Query: #{inspect(query)}" end)
     alias_name = Cluster.alias_name(index)
     response = Elasticsearch.post(Cluster, "/#{alias_name}/_search", query)

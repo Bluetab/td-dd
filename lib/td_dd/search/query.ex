@@ -6,7 +6,6 @@ defmodule TdDd.Search.Query do
   alias TdDd.Search.Aggregations
 
   def create_filters(%{without: without_fields} = params, index) do
-    IO.puts("CREATE_FILTERS WITHOUT")
     filters =
       params
       |> Map.delete(:without)
@@ -18,7 +17,6 @@ defmodule TdDd.Search.Query do
   end
 
   def create_filters(%{with: with_fields} = params, index) do
-    IO.puts("CREATE_FILTERS WITH")
     filters =
       params
       |> Map.delete(:with)
@@ -30,7 +28,6 @@ defmodule TdDd.Search.Query do
   end
 
   def create_filters(%{"filters" => filters}, index) do
-    IO.puts("CREATE_FILTERS FILTERS TdDd.Search.Query")
     filters
     |> Map.to_list()
     |> Enum.map(&to_terms_query(&1, index))
@@ -39,7 +36,6 @@ defmodule TdDd.Search.Query do
   def create_filters(_, _), do: []
 
   def create_filter_clause(permissions, user_defined_filters) do
-    IO.puts("TdDd.Search.Query create_filter_clause")
     should_clause =
       permissions
       |> Enum.map(&entry_to_filter_clause(&1, user_defined_filters))
@@ -66,7 +62,6 @@ defmodule TdDd.Search.Query do
   end
 
   defp with_default_clause(filter_clauses, user_defined_filters) do
-    IO.puts("TdDd.Search.Query with_default_clause")
     filter_clauses ++
       [
         %{
@@ -95,7 +90,6 @@ defmodule TdDd.Search.Query do
   end
 
   defp to_terms_query({filter, values}, index) do
-    IO.puts("TO_TERMS_QUERY")
     index
     |> get_aggregation_terms()
     |> Map.get(filter)
@@ -103,7 +97,6 @@ defmodule TdDd.Search.Query do
   end
 
   defp get_filter(%{terms: %{field: field}}, values, _filter) do
-    IO.puts("GET_FILTER TERMS FIELD VALUE")
     %{terms: %{field => values}}
   end
 
@@ -112,17 +105,14 @@ defmodule TdDd.Search.Query do
          values,
          _filter
        ) do
-    IO.puts("GET_FILTER nested")
     %{nested: %{path: path, query: build_nested_query(distinct_search, values)}}
   end
 
   defp get_filter(nil, values, filter) when is_list(values) do
-    IO.puts("GET_FILTER (nil, value, filter when is_list(values)")
     %{terms: %{filter => values}}
   end
 
   defp get_filter(nil, value, filter) do
-    IO.puts("GET_FILTER (nil, value, filter")
     %{term: %{filter => value}}
   end
 
@@ -131,7 +121,6 @@ defmodule TdDd.Search.Query do
   end
 
   def create_query(%{"query" => query}, filter) do
-    IO.puts("create_query")
     equery = add_query_wildcard(query)
 
     %{simple_query_string: %{query: equery}}

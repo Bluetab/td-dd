@@ -6,7 +6,6 @@ defmodule TdDq.Search.Query do
   alias TdDq.Search.Aggregations
 
   def create_filters(%{without: without_fields} = params, index) do
-    IO.puts("CREATE_FILTERS WITHOUT")
     filters =
       params
       |> Map.delete(:without)
@@ -18,7 +17,6 @@ defmodule TdDq.Search.Query do
   end
 
   def create_filters(%{with: with_fields} = params, index) do
-    IO.puts("CREATE_FILTERS WITH")
     filters =
       params
       |> Map.delete(:with)
@@ -30,7 +28,6 @@ defmodule TdDq.Search.Query do
   end
 
   def create_filters(%{"filters" => filters}, index) do
-    IO.puts("CREATE_FILTERS FILTERS TdDq.Search.Query")
     filters
     |> Map.to_list()
     |> Enum.map(&to_terms_query(&1, index))
@@ -104,7 +101,6 @@ defmodule TdDq.Search.Query do
          values,
          _filter
        ) do
-    IO.puts("GET_FILTER NESTED")
     %{nested: %{path: path, query: build_nested_query(distinct_search, values)}}
   end
 
@@ -121,7 +117,6 @@ defmodule TdDq.Search.Query do
   end
 
   def create_query(%{"query" => query}, filter) do
-    IO.puts("create_query")
     equery = add_query_wildcard(query)
 
     %{simple_query_string: %{query: equery}}

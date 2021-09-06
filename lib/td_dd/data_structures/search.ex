@@ -328,7 +328,6 @@ defmodule TdDd.DataStructures.Search do
   end
 
   defp do_search(search, params) do
-    IO.puts("TdDd.DataStructures.Search")
     params
     |> Map.take(["scroll"])
     |> case do

@@ -17,7 +17,6 @@ defmodule TdDd.Grants.Search do
 
   def get_filter_values(%Claims{role: role}, _permission, params)
       when role in ["admin", "service"] do
-    IO.puts("GET_FILTER_VALUES (%Claims{role: role}, _permission, params) when role in")
     filter_clause = Query.create_filters(params, @index)
     query = Query.create_query(%{}, filter_clause)
     search = %{query: query, aggs: Query.get_aggregation_terms(@index)}
@@ -25,7 +24,6 @@ defmodule TdDd.Grants.Search do
   end
 
   def get_filter_values(%Claims{} = claims, permission, params) do
-    IO.puts("GET_FILTER_VALUES(%Claims{} = claims, permission, params)")
     permissions =
       claims
       |> Permissions.get_domain_permissions()
@@ -37,7 +35,6 @@ defmodule TdDd.Grants.Search do
   def get_filter_values([], _params), do: %{}
 
   def get_filter_values(permissions, params) do
-    IO.puts("GET_FILTER_VALUES(permissions, params)")
     user_defined_filters = Query.create_filters(params, @index)
     filter = permissions |> Query.create_filter_clause(user_defined_filters)
     query = Query.create_query(%{}, filter)
@@ -48,7 +45,6 @@ defmodule TdDd.Grants.Search do
   def search(params, claims, page \\ 0, size \\ 50, index \\ :grants)
 
   def search(params, %Claims{role: role}, page, size, index) when role in ["admin", "service"] do
-    IO.puts("SEARCH ADMIN TdDd.Grants.Search")
     filter_clause = Query.create_filters(params, index)
     query = Query.create_query(params, filter_clause)
     sort = Map.get(params, "sort", default_sort(index))
@@ -65,18 +61,16 @@ defmodule TdDd.Grants.Search do
 
   def search(params, %Claims{} = claims, page, size, index) do
     # user_defined_filters = Query.create_filters(params, index)
-    IO.puts("SEARCH USER TdDd.Grants.Search")
 
     permissions =
       claims
-      |> Permissions.get_domain_permissions() |> IO.inspect(label: "permissions")
-      |> get_permissions() |> IO.inspect(label: "get_permissions")
+      |> Permissions.get_domain_permissions()
+      |> get_permissions()
 
     filter(params, permissions, page, size, index)
   end
 
   defp get_filters(permissions, params, index) do
-    IO.puts("GET_FILTERS TdDd.Grants.Search")
     user_defined_filters = Query.create_filters(params, index)
     filter = Query.create_filter_clause(permissions, user_defined_filters)
     query = Query.create_query(params, filter)
@@ -101,10 +95,9 @@ defmodule TdDd.Grants.Search do
     do: %{results: [], aggregations: %{}, total: 0}
 
   defp filter(params, [_h | _t] = permissions, page, size, index) do
-    IO.puts("FILTER TdDd.Grants.Search")
-    user_defined_filters = Query.create_filters(params |> IO.inspect(label: "params"), index) |> IO.inspect(label: "user_defined_filters")
+    user_defined_filters = Query.create_filters(params, index)
     filter = Query.create_filter_clause(permissions, user_defined_filters)
-    query = Query.create_query(params, filter) |> IO.inspect(label: "query")
+    query = Query.create_query(params, filter)
     sort = Map.get(params, "sort", default_sort(index))
 
     %{
@@ -118,8 +111,6 @@ defmodule TdDd.Grants.Search do
   end
 
   defp do_search(search, index) do
-
-    IO.puts("DO_SEARCH")
     %{results: results, aggregations: aggregations, total: total} = Search.search(search, index)
 
     results =

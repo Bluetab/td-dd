@@ -32,19 +32,16 @@ defmodule TdDd.Search.Indexer do
   def reindex(id), do: reindex([id])
 
   def reindex_grants(:all) do
-    IO.puts("REINDEX_GRANTS ALL")
     reindex_all(Mappings.get_grant_mappings(), @grant_index)
   end
 
   def reindex_grants(ids) when is_list(ids) do
-    IO.puts("REINDEX_GRANTS IDS")
     reindex(Grant, @grant_index, ids)
   end
 
   def reindex_grants(id), do: reindex_grants([id])
 
   defp reindex_all(mappings, index) do
-    IO.puts("REINDEX/2")
     Store.vacuum()
     alias_name = Cluster.alias_name(index)
 
@@ -61,7 +58,6 @@ defmodule TdDd.Search.Indexer do
   end
 
   defp reindex(schema, index, ids) when is_list(ids) do
-    IO.puts("REINDEX/3")
     alias_name = Cluster.alias_name(index)
 
     Store.transaction(fn ->
@@ -102,7 +98,6 @@ defmodule TdDd.Search.Indexer do
   end
 
   def put_template(template, name) do
-    IO.puts("put_template")
     Elasticsearch.put(Cluster, "/_template/#{name}", template)
   end
 

@@ -32,7 +32,6 @@ defmodule TdDd.Grants do
   end
 
   defp reindex_grants({:ok, %{grant: %Grant{id: id}} = multi}) do
-    IO.puts("REINDEX")
     IndexWorker.reindex_grants(id)
     {:ok, multi}
   end
@@ -40,7 +39,6 @@ defmodule TdDd.Grants do
   defp reindex_grants(error), do: error
 
   defp on_delete({:ok, %{grant: %Grant{id: id}} = multi}) do
-    IO.puts("ON_DELETE")
     IndexWorker.delete_grants(id)
     {:ok, multi}
   end

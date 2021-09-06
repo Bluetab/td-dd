@@ -9,7 +9,6 @@ defmodule TdDdWeb.SearchView do
         filters: filters,
         user_permissions: user_permissions
       }) do
-    IO.puts("RENDER SEARCH.JSON")
     %{
       filters: filters,
       data: render_many(grants, GrantView, "grant.json"),
