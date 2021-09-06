@@ -46,8 +46,8 @@ defmodule TdDdWeb.SearchController do
     page = Map.get(params, "page", 0)
     size = Map.get(params, "size", 20)
     claims = conn.assigns[:current_resource]
-    #manage_permission = can?(claims, manage(%{"resource_type" => "grant"}))
-    #user_permissions = %{manage_quality_rules: manage_permission}
+    manage_permission = can?(claims, manage(%{"resource_type" => "grant"}))
+    user_permissions = %{manage_grants: manage_permission}
 
     %{
       results: grants,
@@ -58,15 +58,13 @@ defmodule TdDdWeb.SearchController do
       |> Map.drop(["page", "size"])
       |> Search.search(claims, page, size)
 
-    #IO.inspect(grants, label: "grants")
-    #IO.puts("AQUI**************************************************************")
-    IO.inspect(grants, label: "grants search_grants", limit: :infinity)
+
     conn
     |> put_resp_header("x-total-count", "#{total}")
     |> render("search.json",
       grants: grants,
       filters: aggregations,
-      user_permissions: []
+      user_permissions: [user_permissions]
     )
   end
 

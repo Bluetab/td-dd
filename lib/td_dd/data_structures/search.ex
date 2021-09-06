@@ -232,7 +232,7 @@ defmodule TdDd.DataStructures.Search do
   end
 
   defp to_filter_query({filter, value}) when filter in ["updated_at", "start_date", "end_date"] do
-    %{range: %{String.to_atom(filter) => value}}# |> IO.inspect(label: "TO_FILTER_QUERY")
+    %{range: %{String.to_atom(filter) => value}}
   end
 
   defp to_filter_query({filter, values}) do

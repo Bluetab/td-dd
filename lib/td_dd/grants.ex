@@ -33,7 +33,6 @@ defmodule TdDd.Grants do
 
   defp reindex_grants({:ok, %{grant: %Grant{id: id}} = multi}) do
     IO.puts("REINDEX")
-    #IO.inspect(id, label: "grant id")
     IndexWorker.reindex_grants(id)
     {:ok, multi}
   end

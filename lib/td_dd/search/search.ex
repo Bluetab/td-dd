@@ -14,15 +14,13 @@ defmodule TdDd.Search do
 
   def search(query, index) when index in [:structures, :grants] do
     Logger.debug(fn -> "Query: #{inspect(query)}" end)
-    #IO.inspect(index, label: "SEARCH/2 index")
-    #IO.inspect(query, label: "SEARCH/2 query", limit: :infinity)
-    alias_name = Cluster.alias_name(index)# |> IO.inspect(label: "alias_name")
+
+    alias_name = Cluster.alias_name(index)
     response = Elasticsearch.post(Cluster, "/#{alias_name}/_search", query)
 
     case response do
       {:ok, %{"hits" => %{"hits" => results, "total" => total}} = res} ->
         IO.puts("*******************************************************************************OK")
-        #IO.inspect(res, label: "RES")
         aggregations = Map.get(res, "aggregations", %{})
         %{results: results, total: total, aggregations: maybe_format_aggregations(aggregations, index)}
 
@@ -72,7 +70,7 @@ defmodule TdDd.Search do
 
     case response do
       {:ok, %{"aggregations" => aggregations}} ->
-        format_aggregations(aggregations)
+        maybe_format_aggregations(aggregations, index)
 
       {:error, %Elasticsearch.Exception{message: message} = error} ->
         Logger.warn("Error response from Elasticsearch: #{message}")

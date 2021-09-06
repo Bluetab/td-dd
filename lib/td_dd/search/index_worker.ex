@@ -172,7 +172,6 @@ defmodule TdDd.Search.IndexWorker do
 
   defp do_reindex_grants(grant_ids) when is_list(grant_ids) do
     IO.puts("do_reindex_grants")
-    #IO.inspect(grant_ids, label: "do_reindex_grants grant_ids")
     count = Enum.count(grant_ids)
     Logger.info("Reindexing #{count} grants")
 

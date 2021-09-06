@@ -16,9 +16,6 @@ defmodule TdDdWeb.GrantView do
 
   def render("grant.json", %{grant: grant}) do
     IO.puts("RENDER GRANT.JSON")
-    #IO.inspect(grant, label: "GRANT")
-    #IO.inspect(struct(DataStructureVersion, grant.data_structure_version), label: "grant.data_structure_version")
-    #IO.inspect(%DataStructureVersion{grant.data_structure_version}, label: "GRANT")
     %{
       id: grant.id,
       detail: grant.detail,
@@ -58,13 +55,11 @@ defmodule TdDdWeb.GrantView do
 
   defp add_structure_version(grant, %{data_structure_version: %{data_structure_id: _data_structure_id} = dsv}) do
     IO.puts("ADD_STRUCTURE_VERSION MAP")
-    IO.inspect(dsv, label: "data_structure_version dsv")
-    #add_structure_version(grant, %{data_structure_version: struct(DataStructureVersion, dsv)})
     Map.put(grant, :data_structure_version, struct(DataStructureVersion, dsv))
 
 
     version =
-      struct(DataStructureVersion, dsv) |> IO.inspect(label: "to_struct")
+      struct(DataStructureVersion, dsv)
       |> Map.take([:data_structure_id, :name, :description, :external_id, :metadata, :mutable_metadata])
       |> Map.put(:domain, dsv.domain)
 

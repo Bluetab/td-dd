@@ -50,7 +50,7 @@ defmodule TdDd.Search.Indexer do
 
     mappings
     |> Map.put(:index_patterns, "#{alias_name}-*")
-    |> Jason.encode!()# |> IO.inspect(label: "put_template")
+    |> Jason.encode!()
     |> put_template(alias_name)
     |> case do
       {:ok, _} ->
@@ -103,8 +103,6 @@ defmodule TdDd.Search.Indexer do
 
   def put_template(template, name) do
     IO.puts("put_template")
-    #IO.inspect(template, label: "template")
-    #IO.inspect(name, label: "name")
     Elasticsearch.put(Cluster, "/_template/#{name}", template)
   end
 

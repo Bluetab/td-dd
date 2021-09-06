@@ -9,6 +9,7 @@ defmodule TdDd.ElasticsearchMock do
   alias HTTPoison.Response
   alias TdCx.Jobs
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.Grants.Grant
   alias TdDd.Repo
   alias TdDd.Search.Store
   alias TdDq.Implementations.Implementation
@@ -150,6 +151,32 @@ defmodule TdDd.ElasticsearchMock do
     params |> do_search(Rule) |> search_results(params)
   end
 
+
+  @impl true
+  def request(
+        _config,
+        :post,
+        "/grants/_search",
+        %{query: %{bool: %{filter: filter}}} = params,
+        _opts
+      ) do
+    aggregations = get_aggregations(filter)
+    params |> do_search(Grant) |> search_results(params, aggregations)
+  end
+
+  @impl true
+  def request(
+        _config,
+        :post,
+        "/grants/_search",
+        %{} = params,
+        _opts
+      ) do
+    params |> do_search(Grant) |> search_results(params)
+  end
+
+
+
   @impl true
   def request(_config, :delete, "/rules/_doc/" <> _id, _data, _opts) do
     {:ok, %Response{status_code: 200, body: Jason.encode!(%{result: "deleted"})}}
@@ -200,6 +227,7 @@ defmodule TdDd.ElasticsearchMock do
   end
 
   defp do_search(%{query: query} = params, schema) do
+    IO.puts("TdDd.ElasticsearchMock do_search")
     from = Map.get(params, :from, 0)
     size = Map.get(params, :size, 10)
 
@@ -218,11 +246,15 @@ defmodule TdDd.ElasticsearchMock do
   end
 
   defp do_bool_query(bool, schema) do
+    IO.puts("DO_BOOL_QUERY")
     f = create_bool_filter(bool, schema)
+    IO.puts("DO_BOOL_QUERY ANTES DE EJECUTAR")
     f.([])
+
   end
 
   defp do_term_query(term, schema) do
+    IO.puts("**************************************************************************************************************do_term_query")
     f = create_term_filter(term)
 
     schema
@@ -241,10 +273,12 @@ defmodule TdDd.ElasticsearchMock do
   end
 
   defp create_must(%{match_all: _}, schema) do
+    IO.puts("CREATE_MUST %{match_all: _}")
     fn _acc -> list_documents(schema) end
   end
 
   defp create_must(%{exists: %{field: field}}, schema) do
+    IO.puts("CREATE_MUST %{exists: %{field: field}}")
     fn _acc ->
       schema
       |> list_documents()
@@ -253,6 +287,7 @@ defmodule TdDd.ElasticsearchMock do
   end
 
   defp create_must(%{query_string: query_string}, schema) do
+    IO.puts("CREATE_MUST %{query_string: query_string}")
     f = create_query_string_query(query_string)
 
     fn _acc ->
@@ -263,6 +298,7 @@ defmodule TdDd.ElasticsearchMock do
   end
 
   defp create_must(%{multi_match: multi_match}, schema) do
+    IO.puts("CREATE_MUST %{multi_match: multi_match}")
     f = create_multi_match(multi_match)
 
     fn _acc ->
@@ -275,19 +311,31 @@ defmodule TdDd.ElasticsearchMock do
   defp create_filter([], _schema), do: fn _ -> true end
 
   defp create_filter(filters, schema) when is_list(filters) do
+    IO.puts("CREATE_FILTER (filters, schema) when is_list(filters)")
     fns = Enum.map(filters, &create_filter(&1, schema))
-    fn el -> Enum.all?(fns, fn f -> f.(el) end) end
+    fn el ->
+      IO.puts("ANTES DE JUNTAR")
+      Enum.all?(
+        fns,
+        fn f ->
+          IO.puts("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&& FN DENTRO")
+          f.(el)
+        end)
+    end
   end
 
   defp create_filter(%{bool: bool}, schema) do
+    IO.puts("CREATE_FILTER (%{bool: bool}, schema)")
     create_bool_filter(bool, schema)
   end
 
   defp create_filter(%{term: term}, _schema) do
+    IO.puts("CREATE_FILTER (%{term: term}, _schema)")
     create_term_filter(term)
   end
 
   defp create_filter(%{terms: terms}, _schema) do
+    IO.puts("CREATE_FILTER (%{terms: terms}, _schema)")
     create_terms_filter(terms)
   end
 
@@ -302,13 +350,24 @@ defmodule TdDd.ElasticsearchMock do
     end
   end
 
+  # Grant
+  defp create_term_filter(%{"data_structure_version.domain_ids": domain_id}) do
+    IO.puts("create_term_filter(%{data_structure_version.domain_ids: domain_id})")
+    fn doc ->
+      domain_ids = get_in(doc, ["data_structure_version", "domain_ids"]) || []
+      Enum.member?(domain_ids, domain_id)
+    end
+  end
+
   defp create_term_filter(%{} = term) when is_map(term) do
+    IO.puts("create_term_filter(%{} = term) when is_map(term)")
     term
     |> Map.to_list()
     |> create_term_filter()
   end
 
   defp create_term_filter([{key, value}]) do
+    IO.puts("create_term_filter([{key, value}])")
     fn doc -> Map.get(doc, key) == value end
   end
 
@@ -331,19 +390,42 @@ defmodule TdDd.ElasticsearchMock do
   end
 
   defp create_terms_filter(%{"confidential" => values}) do
+    IO.puts("create_terms_filter(%{confidential => values})")
     fn doc ->
+      IO.puts("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ DENTRO DE FN DOC")
       value = Map.get(doc, "confidential")
       Enum.member?(values, value)
     end
   end
 
+  # TdDd.Search.Query.entry_to_filter_clause
+  defp create_terms_filter(%{"data_structure_version.confidential": values}) do
+    IO.puts("create_terms_filter(%{confidential => values})")
+    fn doc ->
+      IO.puts("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ DENTRO DE FN DOC")
+      value = get_in(doc, ["data_structure_version", "confidential"])
+      Enum.member?(values, value)
+    end
+  end
+
+  defp create_terms_filter(%{"data_structure_version.domain_ids" => values}) do
+    IO.puts("create_terms_filter(%{data_structure_version.domain_ids => values})")
+    fn doc ->
+      IO.puts("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ DENTRO DE FN DOC")
+      value = get_in(doc, ["data_structure_version", "domain_ids"])
+      Enum.member?(values, value)
+    end
+  end
+
   defp create_terms_filter(%{} = terms) when is_map(terms) do
+    IO.puts("create_terms_filter(%{} = terms) when is_map(terms)")
     terms
     |> Map.to_list()
     |> create_terms_filter()
   end
 
   defp create_terms_filter([{key, values}]) do
+    IO.puts("create_terms_filter([{key, values}])")
     fn doc ->
       case Map.get(doc, to_string(key)) do
         nil -> false
@@ -354,6 +436,7 @@ defmodule TdDd.ElasticsearchMock do
   end
 
   defp list_documents(schema) do
+    IO.puts("******************************************************************************************LIST_DOCUMENTS")
     Store.transaction(fn ->
       schema
       |> stream()
@@ -367,7 +450,8 @@ defmodule TdDd.ElasticsearchMock do
     TdDq.Search.Store.stream(schema)
   end
 
-  defp stream(schema) when schema in [TdDd.DataStructures.DataStructureVersion] do
+  defp stream(schema) when schema in [TdDd.DataStructures.DataStructureVersion, TdDd.Grants.Grant] do
+    IO.puts("TdDd.ElasticsearchMock stream")
     TdDd.Search.Store.stream(schema)
   end
 
@@ -475,6 +559,7 @@ defmodule TdDd.ElasticsearchMock do
   end
 
   defp create_bool_filter(bool, schema) do
+    IO.puts("CREATE_BOOL_FILTER")
     [filters, must, must_not, should] =
       [:filter, :must, :must_not, :should]
       |> Enum.map(&get_bool_clauses(bool, &1))
@@ -485,6 +570,7 @@ defmodule TdDd.ElasticsearchMock do
     must = create_must(must, schema)
 
     fn acc ->
+      IO.puts("################################## DENTRO DE FUNCIÓN FILTRO")
       acc
       |> wrap()
       |> must.()

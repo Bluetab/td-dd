@@ -145,22 +145,13 @@ defmodule TdDd.DataStructures.DataStructureVersion do
           } = dsv
         ) do
 
-      #IO.inspect(Process.info(self(), :current_stacktrace), label: "STACKTRACE")
 
       # IMPORTANT: Avoid enriching structs one-by-one in this function.
       # Instead, enrichment should be performed as efficiently as possible on
       # chunked data using `TdDd.DataStructures.enriched_structure_versions/1`.
 
-      #IO.inspect(path, label: "path")
-
-      #IO.inspect(data_structure, label: "data_structure")
-      #IO.inspect(domain(data_structure), label: "domain")
-      #IO.inspect(dsv, label: "**********************************************************************************DSV")
-
       name_path = Enum.map(path, & &1["name"])
       tags = tags(tags)
-
-
 
       data_structure
       |> Map.take([

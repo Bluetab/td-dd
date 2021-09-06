@@ -33,7 +33,7 @@ defmodule TdDq.Search.Query do
     IO.puts("CREATE_FILTERS FILTERS TdDq.Search.Query")
     filters
     |> Map.to_list()
-    |> Enum.map(&to_terms_query(&1, index)) |> IO.inspect(label: "create_filter")
+    |> Enum.map(&to_terms_query(&1, index))
   end
 
   def create_filters(_, _), do: []

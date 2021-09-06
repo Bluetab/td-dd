@@ -18,6 +18,7 @@ defmodule TdDdWeb.GrantFilterController do
   end
 
   def index(conn, _params) do
+    IO.puts("TdDdWeb.GrantFilterController index")
     claims = conn.assigns[:current_resource]
     permission = conn.assigns[:search_permission]
     filters = Search.get_filter_values(claims, permission, :grants)
@@ -39,10 +40,11 @@ defmodule TdDdWeb.GrantFilterController do
   end
 
   def search(conn, params) do
+    IO.puts("TdDdWeb.GrantFilterController search")
     claims = conn.assigns[:current_resource]
     permission = conn.assigns[:search_permission]
     params = Map.put(params, :without, ["deleted_at"])
-    filters = Search.get_filter_values(claims, permission, params)# |> IO.inspect(label: "******FILTERS")
+    filters = Search.get_filter_values(claims, permission, params |> IO.inspect(label: "params") ) |> IO.inspect(label: "filters es: ")
     render(conn, "show.json", filters: filters)
   end
 end

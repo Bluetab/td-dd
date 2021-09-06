@@ -101,7 +101,6 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   def enriched_structure_versions(%{} = params)
       when is_map_key(params, :ids) or is_map_key(params, :data_structure_ids) do
 
-    #IO.inspect(params, label: "enriched_structure_versions PARAMS")
     result =
     %{
       distinct: :data_structure_id,
@@ -139,7 +138,6 @@ defmodule TdDd.DataStructures.DataStructureQueries do
       on: sn.data_structure_id == dsv.data_structure_id and sn.status == :published
     )
     |> select_merge([_, _, _, _, sn], %{latest_note: sn.df_content})
-    #IO.inspect(Ecto.Query.first(result) |> TdDd.Repo.one, label: "enriched_structure_versions FINAL", limit: :infinity)
     result
   end
 

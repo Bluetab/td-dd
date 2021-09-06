@@ -39,6 +39,7 @@ defmodule TdDd.Search.Query do
   def create_filters(_, _), do: []
 
   def create_filter_clause(permissions, user_defined_filters) do
+    IO.puts("TdDd.Search.Query create_filter_clause")
     should_clause =
       permissions
       |> Enum.map(&entry_to_filter_clause(&1, user_defined_filters))
@@ -51,12 +52,12 @@ defmodule TdDd.Search.Query do
          %{resource_id: resource_id, permissions: permissions},
          user_defined_filters
        ) do
-    domain_clause = %{term: %{domain_ids: resource_id}}
+    domain_clause = %{term: %{"data_structure_version.domain_ids": resource_id}}
 
     confidential_clause =
       case Enum.member?(permissions, :manage_confidential_business_concepts) do
-        true -> %{terms: %{_confidential: [true, false]}}
-        false -> %{terms: %{_confidential: [false]}}
+        true -> %{terms: %{:"data_structure_version.confidential" => [true, false]}}
+        false -> %{terms: %{:"data_structure_version.confidential" => [false]}}
       end
 
     %{
@@ -65,6 +66,7 @@ defmodule TdDd.Search.Query do
   end
 
   defp with_default_clause(filter_clauses, user_defined_filters) do
+    IO.puts("TdDd.Search.Query with_default_clause")
     filter_clauses ++
       [
         %{
@@ -72,7 +74,7 @@ defmodule TdDd.Search.Query do
             filter:
               user_defined_filters ++
                 [
-                  %{terms: %{_confidential: [false]}},
+                  %{terms: %{confidential: [false]}},
                   %{term: %{domain_ids: -1}}
                 ]
           }
@@ -89,13 +91,11 @@ defmodule TdDd.Search.Query do
   # end
 
   defp to_terms_query({filter, value}, _index) when filter in ["updated_at", "start_date", "end_date"] do
-    %{range: %{String.to_atom(filter) => value}}# |> IO.inspect(label: "TO_FILTER_QUERY")
+    %{range: %{String.to_atom(filter) => value}}
   end
 
   defp to_terms_query({filter, values}, index) do
     IO.puts("TO_TERMS_QUERY")
-    #IO.inspect(filter, label: "filter")
-    #IO.inspect(values, label: "values")
     index
     |> get_aggregation_terms()
     |> Map.get(filter)
