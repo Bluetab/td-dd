@@ -1178,7 +1178,12 @@ defmodule TdDd.DataStructures do
 
   """
   def create_structure_note(data_structure, attrs, user_id) do
-    changeset = StructureNote.create_changeset(%StructureNote{}, data_structure, attrs)
+    changeset =
+      StructureNote.create_changeset(
+        %StructureNote{},
+        data_structure,
+        attrs
+      )
 
     Multi.new()
     |> Multi.insert(:structure_note, changeset)
@@ -1237,6 +1242,45 @@ defmodule TdDd.DataStructures do
 
   """
 
+  def update_structure_note(
+        %StructureNote{} = structure_note,
+        %{"status" => status} = attrs,
+        user_id
+      )
+      when status in [
+             "published",
+             "pending_approval",
+             "rejected",
+             "published",
+             "versioned",
+             "draft",
+             "deprecated"
+           ] do
+    changeset = StructureNote.changeset(structure_note, attrs)
+
+    %{data_structure: data_structure} =
+      structure_note =
+      structure_note
+      |> Repo.preload(:data_structure)
+
+    Multi.new()
+    |> Multi.run(:latest, fn _, _ ->
+      {:ok, get_latest_version(data_structure, [:path])}
+    end)
+    |> Multi.run(:structure_note, fn _, _ ->
+      {:ok, structure_note}
+    end)
+    |> Multi.update(:structure_note_update, changeset)
+    |> Multi.run(:audit, Audit, :structure_note_status_updated, [status, user_id])
+    |> Repo.transaction()
+    |> case do
+      {:ok, res} -> {:ok, Map.get(res, :structure_note_update)}
+      {:error, :structure_note_update, err, _} -> {:error, err}
+      err -> err
+    end
+    |> on_update()
+  end
+
   def update_structure_note(%StructureNote{} = structure_note, attrs, user_id) do
     changeset = StructureNote.changeset(structure_note, attrs)
 
@@ -1257,15 +1301,36 @@ defmodule TdDd.DataStructures do
 
   ## Examples
 
-      iex> delete_structure_note(structure_note)
+      iex> delete_structure_note(structure_note, user_id)
       {:ok, %StructureNote{}}
 
-      iex> delete_structure_note(structure_note)
+      iex> delete_structure_note(structure_note, user_id)
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_structure_note(%StructureNote{} = structure_note) do
-    Repo.delete(structure_note)
+  def delete_structure_note(
+        %StructureNote{} = structure_note,
+        user_id
+      ) do
+    %{data_structure: data_structure} =
+      structure_note =
+      structure_note
+      |> Repo.preload(:data_structure)
+
+    Multi.new()
+    |> Multi.run(:latest, fn _, _ ->
+      {:ok, get_latest_version(data_structure, [:path])}
+    end)
+    |> Multi.delete(:structure_note, structure_note)
+    |> Multi.run(:audit, Audit, :structure_note_deleted, [user_id])
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{structure_note: structure_note}} ->
+        {:ok, structure_note}
+
+      {:error, _, changeset, _} ->
+        {:error, changeset}
+    end
   end
 
   @doc """
