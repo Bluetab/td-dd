@@ -1744,8 +1744,11 @@ defmodule TdDd.DataStructuresTest do
     end
 
     test "delete_structure_note/1 deletes the structure_note" do
+      %{user_id: user_id} = build(:claims)
       structure_note = insert(:structure_note)
-      assert {:ok, %StructureNote{}} = DataStructures.delete_structure_note(structure_note)
+
+      assert {:ok, %StructureNote{}} =
+               DataStructures.delete_structure_note(structure_note, user_id)
 
       assert_raise Ecto.NoResultsError, fn ->
         DataStructures.get_structure_note!(structure_note.id)
