@@ -97,16 +97,6 @@ defmodule TdDd.Search.Mappings do
     %{mappings: %{_doc: %{properties: properties}}, settings: settings}
   end
 
-  defp get_structure_mappings do
-    %{
-      external_id: %{type: "text"},
-      id: %{type: "long"},
-      name: %{type: "text"},
-      type: %{type: "text", fields: @raw},
-      metadata: %{enabled: false}
-    }
-  end
-
   def get_grant_mappings do
 
     %{mappings: %{_doc: %{properties: dsv_properties}}, settings: _settings} = get_mappings()
