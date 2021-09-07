@@ -98,26 +98,12 @@ defmodule TdDq.Rules.RuleResults do
 
   defp on_create(result), do: result
 
-  @doc """
-  Returns last rule_result for each active implementation of rule
-  """
-  def get_latest_rule_results(%Rule{} = rule) do
-    rule
-    |> Repo.preload(:rule_implementations)
-    |> Map.get(:rule_implementations)
-    |> Enum.filter(&is_nil(Map.get(&1, :deleted_at)))
-    |> Enum.map(&get_latest_rule_result(&1.implementation_key))
-    |> Enum.filter(& &1)
-  end
-
-  def get_latest_rule_result(implementation_key) do
+  @spec get_latest_rule_result(Implementation.t()) :: RuleResult.t() | nil
+  def get_latest_rule_result(%Implementation{implementation_key: key}) do
     RuleResult
-    |> where([r], r.implementation_key == ^implementation_key)
-    |> join(:inner, [r, ri], ri in Implementation,
-      on: r.implementation_key == ri.implementation_key
-    )
-    |> order_by(desc: :date)
+    |> where([rr], rr.implementation_key == ^key)
     |> limit(1)
+    |> order_by([rr], desc: rr.date)
     |> Repo.one()
   end
 

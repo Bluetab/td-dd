@@ -228,11 +228,11 @@ defmodule TdDqWeb.ImplementationController do
     |> send_resp(:ok, Download.to_csv(implementations, header_labels, content_labels))
   end
 
-  defp add_last_rule_result(implementation) do
+  defp add_last_rule_result(%Implementation{} = implementation) do
     implementation
     |> Map.put(
       :_last_rule_result_,
-      RuleResults.get_latest_rule_result(implementation.implementation_key)
+      RuleResults.get_latest_rule_result(implementation)
     )
   end
 

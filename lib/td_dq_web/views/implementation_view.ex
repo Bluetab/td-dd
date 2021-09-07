@@ -115,7 +115,7 @@ defmodule TdDqWeb.ImplementationView do
       end
 
     implementation_mapping
-    |> Map.put(:rule_results, rule_results_mappings)
+    |> Map.put(:results, rule_results_mappings)
   end
 
   defp add_quality_event_info(implementation_mapping, implementation) do
@@ -132,15 +132,15 @@ defmodule TdDqWeb.ImplementationView do
   end
 
   defp add_rule_results(implementation_mapping, implementation) do
-    all_rule_results_mappings =
+    rule_results =
       implementation
       |> Map.get(:results, [])
       |> Enum.sort_by(& &1.date, {:desc, DateTime})
       |> Enum.map(&render_one(&1, RuleResultView, "rule_result.json"))
 
-    case all_rule_results_mappings do
+    case rule_results do
       [] -> implementation_mapping
-      _ -> Map.put(implementation_mapping, :results, all_rule_results_mappings)
+      _ -> Map.put(implementation_mapping, :results, rule_results)
     end
   end
 end

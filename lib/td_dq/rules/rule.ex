@@ -11,6 +11,7 @@ defmodule TdDq.Rules.Rule do
   alias TdDfLib.Validation
   alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Rule
+  alias TdDq.Rules.RuleResult
 
   @valid_result_types ~w(percentage errors_number deviation)
   @type t :: %__MODULE__{}
@@ -30,6 +31,7 @@ defmodule TdDq.Rules.Rule do
     field(:domain, :map, virtual: true, default: %{})
 
     has_many(:rule_implementations, Implementation)
+    has_many(:rule_results, RuleResult)
 
     field(:df_name, :string)
     field(:df_content, :map)
@@ -185,7 +187,6 @@ defmodule TdDq.Rules.Rule do
     alias TdDfLib.Format
     alias TdDfLib.RichText
     alias TdDq.Rules.Rule
-    alias TdDq.Rules.RuleResults
     alias TdDq.Search.Helpers
 
     @impl Elasticsearch.Document
@@ -198,7 +199,6 @@ defmodule TdDq.Rules.Rule do
     def encode(%Rule{} = rule) do
       template = TemplateCache.get_by_name!(rule.df_name) || %{content: []}
       updated_by = Helpers.get_user(rule.updated_by)
-      execution_result_info = get_execution_result_info(rule)
       confidential = Helpers.confidential?(rule)
       bcv = Helpers.get_business_concept_version(rule)
       domain = Helpers.get_domain(rule)
@@ -224,7 +224,6 @@ defmodule TdDq.Rules.Rule do
         active: rule.active,
         description: RichText.to_plain_text(rule.description),
         deleted_at: rule.deleted_at,
-        execution_result_info: execution_result_info,
         updated_by: updated_by,
         updated_at: rule.updated_at,
         inserted_at: rule.inserted_at,
@@ -233,49 +232,6 @@ defmodule TdDq.Rules.Rule do
         df_name: rule.df_name,
         df_content: df_content
       }
-    end
-
-    defp get_execution_result_info(%Rule{} = rule) do
-      case RuleResults.get_latest_rule_results(rule) do
-        [] -> %{result_text: nil}
-        results -> get_execution_result_info(rule, results)
-      end
-    end
-
-    defp get_execution_result_info(
-           %Rule{minimum: minimum, goal: goal, result_type: result_type},
-           results
-         ) do
-      Map.new()
-      |> with_result(results, result_type)
-      |> with_last_execution_at(results)
-      |> Helpers.with_result_text(minimum, goal, result_type)
-    end
-
-    defp with_result(result_map, results, result_type) do
-      results
-      |> worst_by_result_type(result_type)
-      |> Map.take([:result, :errors, :records])
-      |> Map.merge(result_map, fn _k, v1, _v2 -> v1 end)
-    end
-
-    # See TdDq.Rules.RuleResult.calculate_quality
-    defp worst_by_result_type(results, result_type)
-         when result_type in ["percentage", "errors_number"] do
-      Enum.min_by(results, & &1.result, fn -> %{} end)
-    end
-
-    defp worst_by_result_type(results, "deviation") do
-      Enum.max_by(results, & &1.result, fn -> %{} end)
-    end
-
-    defp with_last_execution_at(result_map, results) do
-      last_execution_at =
-        results
-        |> Enum.map(& &1.date)
-        |> Enum.max()
-
-      Map.put(result_map, :last_execution_at, last_execution_at)
     end
   end
 end
