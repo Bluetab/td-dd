@@ -318,7 +318,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         |> DataStructures.get_data_structure_by_external_id()
         |> Map.get(:id)
         |> DataStructures.get_latest_structure_note()
-        |> DataStructures.delete_structure_note()
+        |> DataStructures.delete_structure_note(user_id)
       end)
 
       upload = %{path: "test/fixtures/td2942/upload.csv"}

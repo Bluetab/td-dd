@@ -438,12 +438,14 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
 
   describe "delete" do
     test "can only delete a rejected or draft note" do
+      %{user_id: user_id} = build(:claims)
+
       [:rejected, :draft]
       |> Enum.each(fn status ->
         assert {:ok, _} =
                  :structure_note
                  |> insert(status: status)
-                 |> StructureNotesWorkflow.delete()
+                 |> StructureNotesWorkflow.delete(user_id)
       end)
 
       [:pending_approval, :versioned, :published, :deprecated]
@@ -451,7 +453,7 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
         assert {:error, _} =
                  :structure_note
                  |> insert(status: status)
-                 |> StructureNotesWorkflow.delete()
+                 |> StructureNotesWorkflow.delete(user_id)
       end)
     end
   end

@@ -10,12 +10,15 @@ defmodule TdDd.DataStructures.StructureNote do
   alias TdDfLib.Content
 
   schema "structure_notes" do
-    field :df_content, :map
+    field(:df_content, :map)
 
-    field :status, Ecto.Enum,
+    field(:status, Ecto.Enum,
       values: [:draft, :pending_approval, :rejected, :published, :versioned, :deprecated]
+    )
 
-    field :version, :integer
+    field(:version, :integer)
+    field(:resource, :map, virtual: true, deafult: %{})
+    field(:domains_ids, {:array, :integer}, virtual: true, default: [])
     belongs_to(:data_structure, DataStructure)
 
     timestamps()

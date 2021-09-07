@@ -4,10 +4,12 @@ defmodule TdDd.Profiles do
   """
 
   alias Ecto.Multi
+  alias TdDd.DataStructures
   alias TdDd.Executions
   alias TdDd.Executions.ProfileEvents
   alias TdDd.Profiles.Profile
   alias TdDd.Repo
+  alias TdDd.Search.IndexWorker
 
   @doc """
   Returns the list of profiles.
@@ -62,8 +64,11 @@ defmodule TdDd.Profiles do
     end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{profile: profile}} -> {:ok, profile}
-      {:error, _, changeset, _} -> {:error, changeset}
+      {:ok, %{profile: profile}} ->
+        on_upsert({:ok, profile})
+
+      {:error, _, changeset, _} ->
+        {:error, changeset}
     end
   end
 
@@ -83,6 +88,7 @@ defmodule TdDd.Profiles do
     %Profile{}
     |> Profile.changeset(params)
     |> Repo.insert()
+    |> on_upsert()
   end
 
   @doc """
@@ -101,6 +107,7 @@ defmodule TdDd.Profiles do
     profile
     |> Profile.changeset(params)
     |> Repo.update()
+    |> on_upsert()
   end
 
   defp do_create_or_update_profile(%{changes: %{data_structure_id: id} = changes} = changeset) do
@@ -122,4 +129,21 @@ defmodule TdDd.Profiles do
     |> Enum.filter(& &1.valid?)
     |> Enum.map(&Repo.update/1)
   end
+
+  defp on_upsert({:ok, %Profile{data_structure_id: data_structure_id}} = reply) do
+    version = DataStructures.get_latest_version(data_structure_id, [:parents])
+
+    case version do
+      %{parents: [_ | _] = parents} ->
+        data_structure_ids = Enum.map(parents, & &1.data_structure_id) ++ [data_structure_id]
+        IndexWorker.reindex(data_structure_ids)
+
+      _ ->
+        IndexWorker.reindex(data_structure_id)
+    end
+
+    reply
+  end
+
+  defp on_upsert(reply), do: reply
 end
