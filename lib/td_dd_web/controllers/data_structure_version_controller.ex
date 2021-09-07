@@ -60,9 +60,8 @@ defmodule TdDdWeb.DataStructureVersionController do
 
   def show(conn, %{"data_structure_id" => data_structure_id, "id" => version}) do
     claims = conn.assigns[:current_resource]
-
     data_structure = DataStructures.get_data_structure!(data_structure_id)
-    options = filter(claims, data_structure) ++ [user_id: claims.user_id]
+    options = enrich_opts(claims, data_structure)
     dsv = get_data_structure_version(data_structure_id, version, options)
     render_with_permissions(conn, claims, dsv)
   end
@@ -70,28 +69,19 @@ defmodule TdDdWeb.DataStructureVersionController do
   def show(conn, %{"id" => data_structure_version_id}) do
     claims = conn.assigns[:current_resource]
     dsv = DataStructures.get_data_structure_version!(data_structure_version_id)
-    options = filter(claims, dsv.data_structure) ++ [user_id: claims.user_id]
+    options = enrich_opts(claims, dsv.data_structure)
     dsv = get_data_structure_version(data_structure_version_id, options)
     render_with_permissions(conn, claims, dsv)
   end
 
-  defp filter(claims, data_structure) do
-    Enum.filter(@enrich_attrs, &filter(claims, data_structure, &1))
+  defp enrich_opts(%{user_id: user_id} = claims, data_structure) do
+    Enum.filter(@enrich_attrs, fn
+      :profile -> can?(claims, view_data_structures_profile(data_structure))
+      :with_confidential -> can?(claims, manage_confidential_structures(data_structure))
+      :grants -> can?(claims, view_grants(data_structure))
+      _ -> true
+    end) ++ [user_id: user_id]
   end
-
-  defp filter(claims, data_structure, :profile) do
-    can?(claims, view_data_structures_profile(data_structure))
-  end
-
-  defp filter(claims, data_structure, :with_confidential) do
-    can?(claims, manage_confidential_structures(data_structure))
-  end
-
-  defp filter(claims, data_structure, :grants) do
-    can?(claims, view_grants(data_structure))
-  end
-
-  defp filter(_claims, _data_structure, _attr), do: true
 
   defp render_with_permissions(conn, _claims, nil) do
     render_error(conn, :not_found)
@@ -107,7 +97,8 @@ defmodule TdDdWeb.DataStructureVersionController do
         update_domain: can?(claims, manage_structures_domain(data_structure)),
         view_profiling_permission: can?(claims, view_data_structures_profile(data_structure)),
         profile_permission: can?(claims, profile(dsv)),
-        manage_tags: can?(claims, link_data_structure_tag(data_structure))
+        manage_tags: can?(claims, link_data_structure_tag(data_structure)),
+        request_grant: can?(claims, create_grant_request(data_structure)),
       }
 
       render(conn, "show.json",
@@ -120,15 +111,15 @@ defmodule TdDdWeb.DataStructureVersionController do
     end
   end
 
-  defp get_data_structure_version(data_structure_version_id, options) do
-    DataStructures.get_data_structure_version!(data_structure_version_id, options)
+  defp get_data_structure_version(data_structure_version_id, opts) do
+    DataStructures.get_data_structure_version!(data_structure_version_id, opts)
   end
 
-  defp get_data_structure_version(data_structure_id, "latest", options) do
-    DataStructures.get_latest_version(data_structure_id, options)
+  defp get_data_structure_version(data_structure_id, "latest", opts) do
+    DataStructures.get_latest_version(data_structure_id, opts)
   end
 
-  defp get_data_structure_version(data_structure_id, version, options) do
-    DataStructures.get_data_structure_version!(data_structure_id, version, options)
+  defp get_data_structure_version(data_structure_id, version, opts) do
+    DataStructures.get_data_structure_version!(data_structure_id, version, opts)
   end
 end

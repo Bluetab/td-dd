@@ -23,6 +23,47 @@ defmodule TdDd.DataStructures.Audit do
   end
 
   @doc """
+  Publishes a `:structure_note_status_updated` event when modifying status StructureNote. Should be called using `Ecto.Multi.run/5`.
+  """
+  def structure_note_status_updated(
+        _repo,
+        %{structure_note: %{data_structure_id: id} = structure_note, latest: latest},
+        status,
+        user_id
+      ) do
+    payload =
+      structure_note
+      |> with_resource(latest)
+      |> with_domain_ids(structure_note)
+      |> Map.take([
+        :domain_ids,
+        :resource
+      ])
+
+    publish("structure_note_" <> status, "data_structure_note", id, user_id, payload)
+  end
+
+  @doc """
+  Publishes a `:structure_note_deleted` event when deleted StructureNote. Should be called using `Ecto.Multi.run/5`.
+  """
+  def structure_note_deleted(
+        _repo,
+        %{structure_note: %{data_structure_id: id} = structure_note, latest: latest},
+        user_id
+      ) do
+    payload =
+      structure_note
+      |> with_resource(latest)
+      |> with_domain_ids(structure_note)
+      |> Map.take([
+        :domain_ids,
+        :resource
+      ])
+
+    publish("structure_note_deleted", "data_structure_note", id, user_id, payload)
+  end
+
+  @doc """
   Publishes a `:data_structure_updated` event. Should be called using `Ecto.Multi.run/5`.
   """
   def data_structure_updated(_repo, %{data_structure: %{id: id}}, %{} = changeset, user_id) do
@@ -168,8 +209,22 @@ defmodule TdDd.DataStructures.Audit do
   @doc """
   Publishes a `:grant_created` event when creating a Grant. Should be called using `Ecto.Multi.run/5`.
   """
-  def grant_created(_repo, %{grant: %{id: id}}, %{} = changeset, user_id) do
-    publish("grant_created", "grant", id, user_id, changeset)
+  def grant_created(_repo, %{grant: %{id: id} = grant, latest: latest}, user_id) do
+    payload =
+      grant
+      |> with_resource(latest)
+      |> with_domain_ids(grant)
+      |> Map.take([
+        :detail,
+        :user_id,
+        :end_date,
+        :domain_ids,
+        :start_date,
+        :data_structure_id,
+        :resource
+      ])
+
+    publish("grant_created", "grant", id, user_id, payload)
   end
 
   @doc """
@@ -182,8 +237,21 @@ defmodule TdDd.DataStructures.Audit do
   @doc """
   Publishes a `:grant_deleted` event when deleting a Grant. Should be called using `Ecto.Multi.run/5`.
   """
-  def grant_deleted(_repo, %{grant: %{id: id}}, user_id) do
-    publish("grant_deleted", "grant", id, user_id)
+  def grant_deleted(_repo, %{grant: %{id: id} = grant, latest: latest}, user_id) do
+    payload =
+      grant
+      |> with_resource(latest)
+      |> with_domain_ids(grant)
+      |> Map.take([
+        :user_id,
+        :end_date,
+        :domain_ids,
+        :start_date,
+        :data_structure_id,
+        :resource
+      ])
+
+    publish("grant_deleted", "grant", id, user_id, payload)
   end
 
   defp with_domain_ids(%Changeset{} = changeset, %{data_structure: %{domain_id: domain_id}}) do

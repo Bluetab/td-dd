@@ -7,6 +7,7 @@ defmodule TdDd.Grants do
 
   alias Ecto.Multi
   alias TdDd.Auth.Claims
+  alias TdDd.DataStructures
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Grants.Grant
@@ -21,12 +22,18 @@ defmodule TdDd.Grants do
     |> Repo.preload(opts[:preload] || [])
   end
 
-  def create_grant(params, %{id: data_structure_id} = _data_structure, %Claims{user_id: user_id}) do
-    changeset = Grant.changeset(%Grant{data_structure_id: data_structure_id}, params)
+  def create_grant(params, %{id: data_structure_id} = data_structure, %Claims{user_id: user_id}) do
+    changeset =
+      %Grant{data_structure_id: data_structure_id}
+      |> Grant.changeset(params)
+      |> Grant.put_data_structure(data_structure)
 
     Multi.new()
+    |> Multi.run(:latest, fn _, _ ->
+      {:ok, DataStructures.get_latest_version(data_structure, [:path])}
+    end)
     |> Multi.insert(:grant, changeset)
-    |> Multi.run(:audit, Audit, :grant_created, [changeset, user_id])
+    |> Multi.run(:audit, Audit, :grant_created, [user_id])
     |> Repo.transaction()
     |> reindex_grants()
   end
@@ -53,8 +60,11 @@ defmodule TdDd.Grants do
     |> reindex_grants()
   end
 
-  def delete_grant(%Grant{} = grant, %Claims{user_id: user_id}) do
+  def delete_grant(%Grant{data_structure: data_structure} = grant, %Claims{user_id: user_id}) do
     Multi.new()
+    |> Multi.run(:latest, fn _, _ ->
+      {:ok, DataStructures.get_latest_version(data_structure, [:path])}
+    end)
     |> Multi.delete(:grant, grant)
     |> Multi.run(:audit, Audit, :grant_deleted, [user_id])
     |> Repo.transaction()

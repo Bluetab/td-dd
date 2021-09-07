@@ -9,6 +9,8 @@ defmodule TdDdWeb.SystemController do
   alias TdDd.Systems.SystemSearch
   alias TdDdWeb.SwaggerDefinitions
 
+  plug(TdDdWeb.SearchPermissionPlug)
+
   action_fallback(TdDdWeb.FallbackController)
 
   def swagger_definitions do

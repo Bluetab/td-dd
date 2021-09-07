@@ -3,10 +3,13 @@ defmodule TdDq.Rules do
   The Rules context.
   """
 
+  import Canada, only: [can?: 2]
   import Ecto.Query
 
   alias Ecto.Multi
-  alias TdCache.{ConceptCache, TaxonomyCache, TemplateCache}
+  alias TdCache.ConceptCache
+  alias TdCache.TaxonomyCache
+  alias TdCache.TemplateCache
   alias TdDd.Repo
   alias TdDfLib.Format
   alias TdDq.Auth.Claims
@@ -60,7 +63,6 @@ defmodule TdDq.Rules do
     |> Enum.map(&preload_bc_version/1)
   end
 
-  # TODO: REFACTOR preload_bc_version
   defp preload_bc_version(%{business_concept_id: nil} = rule), do: rule
 
   defp preload_bc_version(%{business_concept_id: business_concept_id} = rule) do
@@ -126,10 +128,11 @@ defmodule TdDq.Rules do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_rule(%{} = params, %Claims{user_id: user_id}) do
-    changeset = Rule.changeset(params)
+  def create_rule(%{} = params, %Claims{user_id: user_id} = claims) do
+    changeset = Rule.changeset(%Rule{updated_by: user_id}, params)
 
     Multi.new()
+    |> Multi.run(:can, fn _, _ -> multi_can(can?(claims, create(changeset))) end)
     |> Multi.insert(:rule, changeset)
     |> Multi.run(:audit, Audit, :rule_created, [changeset, user_id])
     |> Repo.transaction()
@@ -155,18 +158,19 @@ defmodule TdDq.Rules do
       {:error, %Ecto.Changeset{}}
 
   """
-  def update_rule(%Rule{} = rule, %{} = params, %Claims{user_id: user_id}) do
-    changeset =
-      rule
-      |> Repo.preload(:rule_implementations)
-      |> Rule.changeset(params)
+  def update_rule(%Rule{} = rule, %{} = params, %Claims{user_id: user_id} = claims) do
+    changeset = Rule.changeset(rule, params, user_id)
 
     Multi.new()
+    |> Multi.run(:can, fn _, _ -> multi_can(can?(claims, update(changeset))) end)
     |> Multi.update(:rule, changeset)
     |> Multi.run(:audit, Audit, :rule_updated, [changeset, user_id])
     |> Repo.transaction()
     |> on_update()
   end
+
+  defp multi_can(true), do: {:ok, nil}
+  defp multi_can(false), do: {:error, false}
 
   defp on_update(res) do
     with {:ok, %{rule: %{id: rule_id}}} <- res do
@@ -187,10 +191,11 @@ defmodule TdDq.Rules do
       {:error, %Ecto.Changeset{}}
 
   """
-  def delete_rule(%Rule{} = rule, %Claims{user_id: user_id}) do
+  def delete_rule(%Rule{} = rule, %Claims{user_id: user_id} = claims) do
     changeset = Rule.delete_changeset(rule)
 
     Multi.new()
+    |> Multi.run(:can, fn _, _ -> multi_can(can?(claims, delete(changeset))) end)
     |> Multi.delete(:rule, changeset)
     |> Multi.run(:audit, Audit, :rule_deleted, [user_id])
     |> Repo.transaction()

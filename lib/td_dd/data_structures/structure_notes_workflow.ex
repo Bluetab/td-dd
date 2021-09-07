@@ -42,7 +42,7 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
     latest_note = get_latest_structure_note(data_structure_id)
 
     if can_create_new_draft(latest_note) != :ok,
-      do: DataStructures.delete_structure_note(latest_note)
+      do: DataStructures.delete_structure_note(latest_note, user_id)
 
     create(data_structure, params, user_id)
   end
@@ -108,10 +108,10 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
     {:error, :bad_request}
   end
 
-  def delete(%StructureNote{status: status} = structure_note) do
+  def delete(%StructureNote{status: status} = structure_note, user_id) do
     case status do
-      :rejected -> DataStructures.delete_structure_note(structure_note)
-      :draft -> DataStructures.delete_structure_note(structure_note)
+      :rejected -> DataStructures.delete_structure_note(structure_note, user_id)
+      :draft -> DataStructures.delete_structure_note(structure_note, user_id)
       _ -> {:error, :undeletable_status}
     end
   end

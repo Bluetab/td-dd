@@ -231,7 +231,7 @@ defmodule TdDdWeb.StructureNoteController do
          data_structure <- DataStructures.get_data_structure!(structure_note.data_structure_id),
          {:can, true} <-
            {:can, can?(claims, delete_structure_note({StructureNote, data_structure}))},
-         {:ok, %StructureNote{}} <- StructureNotesWorkflow.delete(structure_note) do
+         {:ok, %StructureNote{}} <- StructureNotesWorkflow.delete(structure_note, claims.user_id) do
       send_resp(conn, :no_content, "")
     end
   end

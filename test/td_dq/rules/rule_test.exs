@@ -11,7 +11,7 @@ defmodule TdDq.Rules.RuleTest do
     [domain: domain, template_name: template_name]
   end
 
-  describe "changeset/1" do
+  describe "changeset/2" do
     test "validates required fields" do
       rule = insert(:rule)
 

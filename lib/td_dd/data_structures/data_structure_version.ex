@@ -36,6 +36,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     field(:latest_note, :map, virtual: true)
     field(:grants, {:array, :map}, virtual: true)
     field(:grant, :map, virtual: true)
+    field(:with_profiling, :boolean, virtual: true)
 
     belongs_to(:data_structure, DataStructure)
 
@@ -48,6 +49,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     has_many(:classifications, Classification)
     has_many(:child_relations, DataStructureRelation, foreign_key: :parent_id)
     has_many(:parent_relations, DataStructureRelation, foreign_key: :child_id)
+    has_one(:current_metadata, through: [:data_structure, :current_metadata])
 
     many_to_many(:children, __MODULE__,
       join_through: DataStructureRelation,
@@ -149,7 +151,6 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       # IMPORTANT: Avoid enriching structs one-by-one in this function.
       # Instead, enrichment should be performed as efficiently as possible on
       # chunked data using `TdDd.DataStructures.enriched_structure_versions/1`.
-
       name_path = Enum.map(path, & &1["name"])
       tags = tags(tags)
 
@@ -188,7 +189,8 @@ defmodule TdDd.DataStructures.DataStructureVersion do
           :name,
           :type,
           :updated_at,
-          :version
+          :version,
+          :with_profiling
         ])
       )
     end

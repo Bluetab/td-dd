@@ -16,7 +16,7 @@ defmodule TdDq.Rules.Rule do
   @type t :: %__MODULE__{}
 
   schema "rules" do
-    field(:business_concept_id, :string)
+    field(:business_concept_id, :integer)
     field(:active, :boolean, default: false)
     field(:deleted_at, :utc_datetime)
     field(:description, :map)
@@ -43,7 +43,7 @@ defmodule TdDq.Rules.Rule do
     changeset(%__MODULE__{}, params)
   end
 
-  def changeset(%__MODULE__{} = rule, params) do
+  def changeset(%__MODULE__{} = rule, %{} = params) do
     rule
     |> cast(params, [
       :business_concept_id,
@@ -54,7 +54,6 @@ defmodule TdDq.Rules.Rule do
       :goal,
       :minimum,
       :version,
-      :updated_by,
       :df_name,
       :df_content,
       :result_type,
@@ -84,6 +83,12 @@ defmodule TdDq.Rules.Rule do
       name: :rules_name_index,
       message: "unique_constraint"
     )
+  end
+
+  def changeset(%__MODULE__{} = rule, params, updated_by) do
+    rule
+    |> changeset(params)
+    |> put_change(:updated_by, updated_by)
   end
 
   def delete_changeset(%__MODULE__{} = rule) do
@@ -255,7 +260,8 @@ defmodule TdDq.Rules.Rule do
     end
 
     # See TdDq.Rules.RuleResult.calculate_quality
-    defp worst_by_result_type(results, result_type) when result_type in ["percentage", "errors_number"] do
+    defp worst_by_result_type(results, result_type)
+         when result_type in ["percentage", "errors_number"] do
       Enum.min_by(results, & &1.result, fn -> %{} end)
     end
 

@@ -18,6 +18,8 @@ defmodule TdDd.Grants.Grant do
     field(:user_id, :integer)
     field(:user_name, :string, virtual: true)
     field(:user, :map, virtual: true)
+    field(:resource, :map, virtual: true, default: %{})
+    field(:domain_ids, {:array, :integer}, virtual: true, default: [])
 
     belongs_to(:data_structure, DataStructure)
     has_one(:system, through: [:data_structure, :system])
@@ -91,4 +93,7 @@ defmodule TdDd.Grants.Grant do
     end
   end
 
+  def put_data_structure(changeset, data_structure) do
+    put_assoc(changeset, :data_structure, data_structure)
+  end
 end

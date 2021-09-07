@@ -21,7 +21,8 @@ defmodule TdDd.Search.Aggregations do
        %{
          nested: %{path: "domain_parents"},
          aggs: %{distinct_search: %{terms: %{field: "domain_parents.id", size: 50}}}
-       }}
+       }},
+      {"with_profiling.raw", %{terms: %{field: "with_profiling.raw"}}}
     ]
 
     ["dd", "cx"]

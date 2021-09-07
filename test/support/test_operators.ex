@@ -51,7 +51,8 @@ defmodule TdDd.TestOperators do
       :path,
       :classifications,
       :classes,
-      :latest_note
+      :latest_note,
+      :with_profiling
     ]) ==
       Map.drop(b, [
         :children,
@@ -61,7 +62,8 @@ defmodule TdDd.TestOperators do
         :path,
         :classifications,
         :classes,
-        :latest_note
+        :latest_note,
+        :with_profiling
       ])
   end
 

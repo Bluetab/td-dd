@@ -11,8 +11,8 @@ defmodule TdDd.Grants.GrantRequest do
   alias TdDfLib.Validation
 
   schema "grant_requests" do
-    field :filters, :map
-    field :metadata, :map
+    field(:filters, :map)
+    field(:metadata, :map)
 
     belongs_to(:grant_request_group, GrantRequestGroup)
     belongs_to(:data_structure, DataStructure)

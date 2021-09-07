@@ -6,10 +6,12 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   import Ecto.Query
 
   alias TdDd.Classifiers
+  alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.DataStructures.StructureNote
+  alias TdDd.Profiles.Profile
 
   @paths_by_child_id """
   SELECT child_id, c.data_structure_id as ds_id, v.data_structure_id, parent_id, 0 as level, v.name, v.version
@@ -56,6 +58,32 @@ defmodule TdDd.DataStructures.DataStructureQueries do
     |> select([dsv], dsv.id)
   end
 
+  @spec profile(map) :: Ecto.Query.t()
+  def profile(%{} = params)
+      when is_map_key(params, :ids) or is_map_key(params, :data_structure_ids) do
+    profile_params = Map.take(params, [:ids, :data_structure_ids, :relation_type_id])
+
+    direct_profile_versions =
+      Profile
+      |> join(:inner, [p], dsv in DataStructureVersion,
+        on: p.data_structure_id == dsv.data_structure_id
+      )
+      |> where([_p, dsv], is_nil(dsv.deleted_at))
+      |> where([_p, dsv], dsv.class == "field")
+      |> select([_p, dsv], dsv)
+
+    DataStructureRelation
+    |> where_relation_type(profile_params)
+    |> join(:inner, [r], child in subquery(direct_profile_versions), on: r.child_id == child.id)
+    |> join(:inner, [r, _child], parent in DataStructureVersion, on: r.parent_id == parent.id)
+    |> where([_r, _child, parent], is_nil(parent.deleted_at))
+    |> select([_r, _child, parent], parent)
+    |> union(^direct_profile_versions)
+    |> subquery()
+    |> where_ids(profile_params)
+    |> select([dsv], %{id: dsv.id, with_profiling: true})
+  end
+
   @spec paths(map) :: Ecto.Query.t()
   def paths(%{} = params)
       when is_map_key(params, :ids) or is_map_key(params, :data_structure_ids) do
@@ -95,6 +123,19 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   defp with_path_cte(query, name, %{} = params) do
     params = Map.put(params, :relation_type_id, RelationTypes.default_id!())
     with_path_cte(query, name, params)
+  end
+
+  defp where_relation_type(query, %{} = params) do
+    relation_type_id = Map.get(params, :relation_type_id, RelationTypes.default_id!())
+    where(query, [r], r.relation_type_id == ^relation_type_id)
+  end
+
+  defp where_ids(query, %{data_structure_ids: ids}) do
+    where(query, [dsv], dsv.data_structure_id in ^ids)
+  end
+
+  defp where_ids(query, %{ids: ids}) do
+    where(query, [dsv], dsv.id in ^ids)
   end
 
   @spec enriched_structure_versions(map) :: Ecto.Query.t()
@@ -138,7 +179,10 @@ defmodule TdDd.DataStructures.DataStructureQueries do
       on: sn.data_structure_id == dsv.data_structure_id and sn.status == :published
     )
     |> select_merge([_, _, _, _, sn], %{latest_note: sn.df_content})
-    result
+    |> join(:left, [dsv], pv in subquery(profile(params)), on: dsv.id == pv.id)
+    |> select_merge([_, _, _, _, _, pv], %{
+      with_profiling: fragment("COALESCE(?, false)", pv.with_profiling)
+    })
   end
 
   @spec distinct_by(Ecto.Query.t(), :id | :data_structure_id) :: Ecto.Query.t()

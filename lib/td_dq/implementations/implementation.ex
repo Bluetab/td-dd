@@ -127,7 +127,7 @@ defmodule TdDq.Implementations.Implementation do
   defp raw_changeset(changeset) do
     changeset
     |> cast_embed(:raw_content, with: &RawContent.changeset/2, required: true)
-    |> validate_required([:raw_content])
+    |> validate_required(:raw_content)
   end
 
   def default_changeset(changeset) do
@@ -168,7 +168,8 @@ defmodule TdDq.Implementations.Implementation do
       :version,
       :df_name,
       :df_content,
-      :result_type
+      :result_type,
+      :domain_id
     ]
 
     @impl Elasticsearch.Document
@@ -303,6 +304,7 @@ defmodule TdDq.Implementations.Implementation do
       |> Map.put(:operator, get_operator_fields(Map.get(row, :operator, %{})))
       |> Map.put(:structure, get_structure_fields(Map.get(row, :structure, %{})))
       |> Map.put(:value, Map.get(row, :value, []))
+      |> with_population(row)
     end
 
     defp get_clause(row) do
@@ -321,6 +323,12 @@ defmodule TdDq.Implementations.Implementation do
     defp get_operator_fields(operator) do
       Map.take(operator, [:name, :value_type, :value_type_filter])
     end
+
+    defp with_population(data, %{population: population = [_ | _]}) do
+      Map.put(data, :population, Enum.map(population, &condition_row/1))
+    end
+
+    defp with_population(data, _condition), do: data
 
     defp with_rule(data, rule) do
       template = TemplateCache.get_by_name!(rule.df_name) || %{content: []}
