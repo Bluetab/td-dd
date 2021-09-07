@@ -151,7 +151,6 @@ defmodule TdDd.ElasticsearchMock do
     params |> do_search(Rule) |> search_results(params)
   end
 
-
   @impl true
   def request(
         _config,
@@ -174,8 +173,6 @@ defmodule TdDd.ElasticsearchMock do
       ) do
     params |> do_search(Grant) |> search_results(params)
   end
-
-
 
   @impl true
   def request(_config, :delete, "/rules/_doc/" <> _id, _data, _opts) do

@@ -7,11 +7,11 @@ defmodule TdDd.Search.Indexer do
   alias Elasticsearch.Index.Bulk
   alias TdCache.Redix
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.Grants.Grant
   alias TdDd.Search.Cluster
   alias TdDd.Search.Mappings
   alias TdDd.Search.Store
   alias TdDd.Search.StructureEnricher
-  alias TdDd.Grants.Grant
 
   require Logger
 

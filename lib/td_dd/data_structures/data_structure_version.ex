@@ -123,7 +123,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     |> validate_length(:type, max: 255)
   end
 
-  def with_data_structure() do
+  def with_data_structure do
     from  __MODULE__, preload: :data_structure
   end
 
@@ -146,7 +146,6 @@ defmodule TdDd.DataStructures.DataStructureVersion do
             path: path
           } = dsv
         ) do
-
 
       # IMPORTANT: Avoid enriching structs one-by-one in this function.
       # Instead, enrichment should be performed as efficiently as possible on
@@ -229,8 +228,5 @@ defmodule TdDd.DataStructures.DataStructureVersion do
 
     defp tags([_ | _] = tags), do: Enum.map(tags, & &1.name)
     defp tags(_tags), do: nil
-
-
-
   end
 end

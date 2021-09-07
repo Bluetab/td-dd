@@ -40,7 +40,6 @@ defmodule TdDdWeb.SearchControllerTest do
                |> json_response(:ok)
     end
 
-
     @tag authentication: [role: "user"]
     test "user without permissions cannot search grants", %{
       conn: conn

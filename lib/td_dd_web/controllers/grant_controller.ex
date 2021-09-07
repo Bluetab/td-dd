@@ -35,8 +35,6 @@ defmodule TdDdWeb.GrantController do
          grants <- Grants.list_grants([]) do
       render(conn, "index.json", grants: grants)
     end
-
-
   end
 
   swagger_path :create do
@@ -147,10 +145,4 @@ defmodule TdDdWeb.GrantController do
       send_resp(conn, :no_content, "")
     end
   end
-
-
-
-
-
-
 end

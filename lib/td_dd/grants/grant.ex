@@ -6,9 +6,9 @@ defmodule TdDd.Grants.Grant do
 
   import Ecto.Changeset
 
-  alias TdDd.Grants.Grant
   alias TdCache.UserCache
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.Grants.Grant
   alias TdDq.Search.Helpers
 
   schema "grants" do

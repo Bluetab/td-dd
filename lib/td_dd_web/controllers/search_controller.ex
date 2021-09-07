@@ -29,9 +29,6 @@ defmodule TdDdWeb.SearchController do
     end
   end
 
-
-
-
   swagger_path :search_grants do
     description("Search for grants")
     produces("application/json")
@@ -56,7 +53,6 @@ defmodule TdDdWeb.SearchController do
       |> Map.drop(["page", "size"])
       |> Search.search(claims, page, size)
 
-
     conn
     |> put_resp_header("x-total-count", "#{total}")
     |> render("search.json",
@@ -65,17 +61,4 @@ defmodule TdDdWeb.SearchController do
       user_permissions: [user_permissions]
     )
   end
-
-
-
-
-
-
-
-
-
-
-
-
-
 end

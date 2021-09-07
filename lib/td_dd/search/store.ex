@@ -34,7 +34,6 @@ defmodule TdDd.Search.Store do
     |> Repo.stream_preload(1000, [data_structure_version: [:data_structure]])
   end
 
-
   def stream(Grant, ids) do
     grants = from(grant in Grant)
 

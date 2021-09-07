@@ -12,7 +12,6 @@ defmodule TdDd.Grants.Search do
 
   @index :grants
 
-
   def get_filter_values(claims, permission, params)
 
   def get_filter_values(%Claims{role: role}, _permission, params)
