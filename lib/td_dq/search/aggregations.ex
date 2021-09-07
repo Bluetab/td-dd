@@ -8,10 +8,9 @@ defmodule TdDq.Search.Aggregations do
   def rule_aggregation_terms do
     static_keywords = [
       {"active.raw", %{terms: %{field: "active.raw"}}},
+      {"result_type.raw", %{terms: %{field: "result_type.raw"}}},
       {"current_business_concept_version",
        %{terms: %{field: "current_business_concept_version.name.raw", size: 50}}},
-      {"execution_result_info.result_text",
-       %{terms: %{field: "execution_result_info.result_text.raw", size: 50}}},
       {"taxonomy",
        %{
          nested: %{path: "domain_parents"},

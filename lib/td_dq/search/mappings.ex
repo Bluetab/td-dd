@@ -56,7 +56,7 @@ defmodule TdDq.Search.Mappings do
       goal: %{type: "long"},
       minimum: %{type: "long"},
       df_name: %{type: "text", fields: %{raw: %{type: "keyword"}}},
-      result_type: %{type: "text"},
+      result_type: %{type: "text", fields: %{raw: %{type: "keyword"}}},
       type_params: %{
         properties: %{
           name: %{fields: @raw, type: "text"}
