@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-4065] Allow Implementation keys with spaces, points, etc.
+
 ## [4.27.0] 2021-09-07
 
 ### Added
