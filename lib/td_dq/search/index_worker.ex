@@ -28,7 +28,7 @@ defmodule TdDq.Search.IndexWorker do
   end
 
   def reindex_implementations(ids) when is_list(ids) do
-    GenServer.call(__MODULE__, {:reindex_implementations, ids})
+    GenServer.cast(__MODULE__, {:reindex_implementations, ids})
   end
 
   def reindex_implementations(id) do
@@ -40,7 +40,7 @@ defmodule TdDq.Search.IndexWorker do
   end
 
   def reindex_rules(ids) when is_list(ids) do
-    GenServer.call(__MODULE__, {:reindex_rules, ids})
+    GenServer.cast(__MODULE__, {:reindex_rules, ids})
   end
 
   def reindex_rules(id) do
