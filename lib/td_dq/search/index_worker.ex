@@ -136,15 +136,15 @@ defmodule TdDq.Search.IndexWorker do
   end
 
   @impl GenServer
-  def handle_call({:reindex_rules, ids}, _from, state) do
-    reply = do_reindex_rules(ids)
-    {:reply, reply, state}
+  def handle_cast({:reindex_implementations, ids}, state) do
+    do_reindex_implementations(ids)
+    {:noreply, state}
   end
 
   @impl GenServer
-  def handle_call({:reindex_implementations, ids}, _from, state) do
-    reply = do_reindex_implementations(ids)
-    {:reply, reply, state}
+  def handle_cast({:reindex_rules, ids}, state) do
+    do_reindex_rules(ids)
+    {:noreply, state}
   end
 
   @impl GenServer
