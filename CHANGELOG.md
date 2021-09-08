@@ -1,13 +1,13 @@
 # Changelog
 
-## [4.27.0] 2021-09-07
+## [Unreleased]
 
 ### Changed
 
 - [TD-3824] Data quality rule implementations can now be modified, regardless of
   whether they have associated results or not
 
-## [Unreleased]
+## [4.27.0] 2021-09-07
 
 ### Added
 
