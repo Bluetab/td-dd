@@ -103,13 +103,13 @@ defmodule TdDd.Search.IndexWorker do
 
   @impl true
   def handle_cast({:reindex, :all}, state) do
-    do_reindex(:all)
+    do_reindex_structures(:all)
     {:noreply, state}
   end
 
   @impl true
   def handle_cast({:reindex, data_structure_ids}, state) do
-    do_reindex(data_structure_ids)
+    do_reindex_structures(data_structure_ids)
     {:noreply, state}
   end
 
@@ -127,14 +127,14 @@ defmodule TdDd.Search.IndexWorker do
   @impl true
   def handle_cast({:consume, events}, state) do
     case Enum.any?(events, &reindex_event?/1) do
-      true -> do_reindex(:all)
+      true -> do_reindex_structures(:all)
       _ -> :ok
     end
 
     {:noreply, state}
   end
 
-  defp do_reindex(:all) do
+  defp do_reindex_structures(:all) do
     Logger.info("Reindexing all data structures")
 
     Timer.time(
@@ -143,7 +143,7 @@ defmodule TdDd.Search.IndexWorker do
     )
   end
 
-  defp do_reindex(data_structure_ids) when is_list(data_structure_ids) do
+  defp do_reindex_structures(data_structure_ids) when is_list(data_structure_ids) do
     count = Enum.count(data_structure_ids)
     Logger.info("Reindexing #{count} data structures")
 
@@ -153,7 +153,7 @@ defmodule TdDd.Search.IndexWorker do
     )
   end
 
-  defp do_reindex(data_structure_id), do: do_reindex([data_structure_id])
+  defp do_reindex_structures(data_structure_id), do: do_reindex_structures([data_structure_id])
 
   defp reindex_event?(%{event: "template_updated", scope: "dd"}), do: true
 
