@@ -194,24 +194,6 @@ defmodule TdDd.Grants do
   end
 
   @doc """
-  Updates a grant_approver.
-
-  ## Examples
-
-      iex> update_grant_approver(grant_approver, %{field: new_value})
-      {:ok, %GrantApprover{}}
-
-      iex> update_grant_approver(grant_approver, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_grant_approver(%GrantApprover{} = grant_approver, attrs) do
-    grant_approver
-    |> GrantApprover.changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
   Deletes a grant_approver.
 
   ## Examples
