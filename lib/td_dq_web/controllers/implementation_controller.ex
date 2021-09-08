@@ -195,7 +195,7 @@ defmodule TdDqWeb.ImplementationController do
     claims = conn.assigns[:current_resource]
     rule_id = String.to_integer(id)
 
-    with {:can, true} <- {:can, can?(claims, index(Implementation))},
+    with {:can, true} <- {:can, can?(claims, list(Implementation))},
          implementations <- Search.search_by_rule_id(params, claims, rule_id, 0, 1000) do
       render(conn, "index.json", implementations: implementations)
     end

@@ -28,7 +28,7 @@ defmodule TdDq.Rules.Rule do
     field(:updated_by, :integer)
     field(:result_type, :string, default: "percentage")
     field(:domain_id, :integer)
-    field(:domain, :map, virtual: true, default: %{})
+    field(:domain, :map, virtual: true)
 
     has_many(:rule_implementations, Implementation)
     has_many(:rule_results, RuleResult)
