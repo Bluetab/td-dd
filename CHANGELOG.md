@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [4.27.0] 2021-09-07
 
 ### Changed
 
@@ -14,7 +14,9 @@
 - [TD-3951] Include additional information for grant events
 - [TD-3484] GraphQL API on `/api/v2`
 - [TD-3972] Nested population in validations
+- [TD-3910] Notifications included for structures notes status changes
 - [TD-3546] `with_profiling` filter in data structure version
+- [TD-3983] renders request_grant permission on structure_version
 
 ### Changed
 
