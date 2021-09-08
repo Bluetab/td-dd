@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+- [TD-3950] Index and search grants
+  - `POST /api/grants/search` searches grants
+  - `POST /api/grant_filters/search` searches grant filters
+
 ## [4.27.0] 2021-09-07
 
 ### Added
