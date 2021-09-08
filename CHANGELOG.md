@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased] 
+
+### Added
+
+- [TD-3971] Template mandatory dependent field
+
 ## [4.27.0] 2021-09-07
 
 ### Added
