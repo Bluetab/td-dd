@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+### Added
+
 - [TD-3950] Index and search grants
   - `POST /api/grants/search` searches grants
   - `POST /api/grant_filters/search` searches grant filters
