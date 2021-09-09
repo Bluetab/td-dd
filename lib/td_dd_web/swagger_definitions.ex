@@ -1097,6 +1097,47 @@ defmodule TdDdWeb.SwaggerDefinitions do
           properties do
             data(Schema.ref(:Grant))
           end
+        end,
+      GrantApprover:
+        swagger_schema do
+          title("GrantApprover")
+          description("A GrantApprover")
+
+          properties do
+            id(:integer, "Id", required: true)
+            name(:string, "Grant approver name", required: true)
+          end
+        end,
+      GrantApprovers:
+        swagger_schema do
+          title("GrantApprovers response")
+          description("A collection of Grant approvers")
+          type(:array)
+          items(Schema.ref(:GrantApprover))
+        end,
+      GrantApproverCreate:
+        swagger_schema do
+          properties do
+            grant_approver(
+              Schema.new do
+                properties do
+                  name(:string, "Approver name", required: true)
+                end
+              end
+            )
+          end
+        end,
+      GrantApproverResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:GrantApprover))
+          end
+        end,
+      GrantApproversResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:GrantApprovers))
+          end
         end
     }
   end
