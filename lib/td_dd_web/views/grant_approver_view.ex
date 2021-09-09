@@ -9,10 +9,7 @@ defmodule TdDdWeb.GrantApproverView do
     %{data: render_one(grant_approver, __MODULE__, "grant_approver.json")}
   end
 
-  def render("grant_approver.json", %{grant_approver: grant_approver}) do
-    %{
-      id: grant_approver.id,
-      name: grant_approver.name
-    }
+  def render("grant_approver.json", %{grant_approver: %{id: id, name: name}}) do
+    %{id: id, name: name}
   end
 end

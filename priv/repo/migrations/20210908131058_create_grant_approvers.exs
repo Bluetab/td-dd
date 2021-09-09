@@ -5,7 +5,7 @@ defmodule TdDd.Repo.Migrations.CreateGrantApprovers do
     create table("grant_approvers") do
       add :name, :string, null: false
 
-      timestamps()
+      timestamps(type: :utc_datetime_usec)
     end
 
     create unique_index("grant_approvers", [:name])

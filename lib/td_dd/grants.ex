@@ -145,65 +145,18 @@ defmodule TdDd.Grants do
     |> Repo.all()
   end
 
-  @doc """
-  Returns the list of grant_approvers.
-
-  ## Examples
-
-      iex> list_grant_approvers()
-      [%GrantApprover{}, ...]
-
-  """
   def list_grant_approvers do
     Repo.all(GrantApprover)
   end
 
-  @doc """
-  Gets a single grant_approver.
-
-  Raises `Ecto.NoResultsError` if the Grant approver does not exist.
-
-  ## Examples
-
-      iex> get_grant_approver!(123)
-      %GrantApprover{}
-
-      iex> get_grant_approver!(456)
-      ** (Ecto.NoResultsError)
-
-  """
   def get_grant_approver!(id), do: Repo.get!(GrantApprover, id)
 
-  @doc """
-  Creates a grant_approver.
-
-  ## Examples
-
-      iex> create_grant_approver(%{field: value})
-      {:ok, %GrantApprover{}}
-
-      iex> create_grant_approver(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_grant_approver(attrs \\ %{}) do
-    %GrantApprover{}
-    |> GrantApprover.changeset(attrs)
+  def create_grant_approver(params \\ %{}) do
+    params
+    |> GrantApprover.changeset()
     |> Repo.insert()
   end
 
-  @doc """
-  Deletes a grant_approver.
-
-  ## Examples
-
-      iex> delete_grant_approver(grant_approver)
-      {:ok, %GrantApprover{}}
-
-      iex> delete_grant_approver(grant_approver)
-      {:error, %Ecto.Changeset{}}
-
-  """
   def delete_grant_approver(%GrantApprover{} = grant_approver) do
     Repo.delete(grant_approver)
   end

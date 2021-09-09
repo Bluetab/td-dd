@@ -1,7 +1,6 @@
 defmodule TdDdWeb.GrantApproverController do
-  @moduledoc """
-  Controller for the subscribers of the system
-  """
+  @moduledoc false
+
   use TdDdWeb, :controller
   use PhoenixSwagger
 
