@@ -11,6 +11,7 @@ defmodule TdDd.Grants do
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Grants.Grant
+  alias TdDd.Grants.GrantApprover
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestGroup
   alias TdDd.Repo
@@ -143,8 +144,6 @@ defmodule TdDd.Grants do
     end)
     |> Repo.all()
   end
-
-  alias TdDd.Grants.GrantApprover
 
   @doc """
   Returns the list of grant_approvers.
