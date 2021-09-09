@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-4075] Grant approval api 
+
 ### Changed
 
 - [TD-4065] Allow Implementation keys with spaces, points, etc.
