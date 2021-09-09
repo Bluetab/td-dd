@@ -55,7 +55,7 @@ defmodule TdDdWeb.GrantApproverControllerTest do
     test "renders error if name duplicated", %{conn: conn} do
       %{name: name} = insert(:grant_approver)
 
-      assert %{"errors" => %{"name" => ["required"]}} =
+      assert %{"errors" => %{"name" => ["unique"]}} =
                conn
                |> post(Routes.grant_approver_path(conn, :create),
                  grant_approver: %{name: name}

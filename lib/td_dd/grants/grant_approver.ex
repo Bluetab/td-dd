@@ -14,6 +14,6 @@ defmodule TdDd.Grants.GrantApprover do
     grant_approver
     |> cast(attrs, [:name])
     |> validate_required([:name], message: "required")
-    |> unique_constraint(:name, message: "required")
+    |> unique_constraint(:name, message: "unique")
   end
 end
