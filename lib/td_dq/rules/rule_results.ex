@@ -144,7 +144,7 @@ defmodule TdDq.Rules.RuleResults do
       |> select_merge([_, i, _], %{implementation_id: i.id, rule_id: i.rule_id})
       |> select_merge(
         [_, _, rule],
-        map(rule, ^~w(business_concept_id goal name minimum result_type)a)
+        map(rule, ^~w(domain_id business_concept_id goal name minimum result_type)a)
       )
       |> where([res], res.id in ^ids)
       |> order_by([res], res.id)

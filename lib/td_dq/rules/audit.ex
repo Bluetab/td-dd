@@ -8,6 +8,7 @@ defmodule TdDq.Rules.Audit do
   import TdDq.Audit.AuditSupport, only: [publish: 1, publish: 4, publish: 5]
 
   alias TdCache.ConceptCache
+  alias TdCache.TaxonomyCache
 
   @doc """
   Publishes a `:rule_created` event. Should be called using `Ecto.Multi.run/5`.
@@ -99,6 +100,10 @@ defmodule TdDq.Rules.Audit do
       user_id: user_id,
       payload: payload
     }
+  end
+
+  defp domain_ids(%{domain_id: domain_id}) do
+    TaxonomyCache.get_parent_ids(domain_id)
   end
 
   defp domain_ids(%{business_concept_id: business_concept_id}) do
