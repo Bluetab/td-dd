@@ -4,7 +4,7 @@
 
 ### Added
 
-- [TD-4075] Grant approval api 
+- [TD-4075] Grant approver api 
 
 ### Changed
 
