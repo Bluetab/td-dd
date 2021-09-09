@@ -21,7 +21,10 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.Executions.ProfileEvent
   alias TdDd.Executions.ProfileExecution
   alias TdDd.Executions.ProfileGroup
-  alias TdDd.Grants.{Grant, GrantApprover, GrantRequest, GrantRequestGroup}
+  alias TdDd.Grants.Grant
+  alias TdDd.Grants.GrantApprover
+  alias TdDd.Grants.GrantRequest
+  alias TdDd.Grants.GrantRequestGroup
   alias TdDd.Lineage.Units.Node
   alias TdDd.Lineage.Units.Unit
   alias TdDd.Systems.System
