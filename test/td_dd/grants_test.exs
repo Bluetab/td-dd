@@ -478,7 +478,7 @@ defmodule TdDd.GrantsTest do
               %Ecto.Changeset{
                 errors: [
                   name:
-                    {"has already been taken",
+                    {"unique",
                      [constraint: :unique, constraint_name: "grant_approvers_name_index"]}
                 ]
               }} = Grants.create_grant_approver(%{name: name})
@@ -487,12 +487,6 @@ defmodule TdDd.GrantsTest do
     test "delete_grant_approver/1 deletes the grant_approver", %{grant_approver: grant_approver} do
       assert {:ok, %GrantApprover{}} = Grants.delete_grant_approver(grant_approver)
       assert_raise Ecto.NoResultsError, fn -> Grants.get_grant_approver!(grant_approver.id) end
-    end
-
-    test "change_grant_approver/1 returns a grant_approver changeset", %{
-      grant_approver: grant_approver
-    } do
-      assert %Ecto.Changeset{} = Grants.change_grant_approver(grant_approver)
     end
   end
 end

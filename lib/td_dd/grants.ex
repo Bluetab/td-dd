@@ -208,17 +208,4 @@ defmodule TdDd.Grants do
   def delete_grant_approver(%GrantApprover{} = grant_approver) do
     Repo.delete(grant_approver)
   end
-
-  @doc """
-  Returns an `%Ecto.Changeset{}` for tracking grant_approver changes.
-
-  ## Examples
-
-      iex> change_grant_approver(grant_approver)
-      %Ecto.Changeset{data: %GrantApprover{}}
-
-  """
-  def change_grant_approver(%GrantApprover{} = grant_approver, attrs \\ %{}) do
-    GrantApprover.changeset(grant_approver, attrs)
-  end
 end
