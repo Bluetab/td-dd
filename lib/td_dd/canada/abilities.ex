@@ -22,6 +22,7 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.Executions.ProfileExecution
   alias TdDd.Executions.ProfileGroup
   alias TdDd.Grants.Grant
+  alias TdDd.Grants.GrantApprover
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestGroup
   alias TdDd.Lineage.Units.Node
@@ -89,6 +90,9 @@ defmodule TdDd.Canada.Abilities do
 
     def can?(%Claims{role: "admin"}, _, GrantRequest), do: true
     def can?(%Claims{}, _, GrantRequest), do: false
+
+    def can?(%Claims{role: "admin"}, _, GrantApprover), do: true
+    def can?(%Claims{}, _, GrantApprover), do: false
 
     def can?(%Claims{role: "admin"}, :create_grant_request, %DataStructure{}), do: true
 
