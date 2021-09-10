@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-4075] API routes for managing grant approvers:
+  - `GET /api/grant_approvers`
+  - `GET /api/grant_approvers/:id`
+  - `POST /api/grant_approvers`
+  - `DELETE /api/grant_approvers/:id`
+
 ### Changed
 
 - [TD-4065] Allow Implementation keys with spaces, points, etc.
