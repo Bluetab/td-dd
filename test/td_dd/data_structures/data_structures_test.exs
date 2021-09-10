@@ -1707,9 +1707,7 @@ defmodule TdDd.DataStructuresTest do
     end
 
     test "create_structure_note/3 with valid data creates a structure_note and publishes event" do
-      %{id: domain_id} = CacheHelpers.insert_domain()
-      domain_ids = [domain_id]
-      data_structure = insert(:data_structure, domain_id: domain_id)
+      data_structure = insert(:data_structure)
 
       assert {:ok, %StructureNote{} = structure_note} =
                DataStructures.create_structure_note(data_structure, @valid_attrs, @user_id)
@@ -1717,9 +1715,6 @@ defmodule TdDd.DataStructuresTest do
       assert structure_note.df_content == %{}
       assert structure_note.status == :draft
       assert structure_note.version == 42
-
-      {:ok, [%{payload: payload}]} = Stream.read(:redix, @stream, transform: true)
-      assert %{"domain_ids" => ^domain_ids} = Jason.decode!(payload)
     end
 
     test "create_structure_note/3 with invalid data returns error changeset" do
@@ -1730,19 +1725,13 @@ defmodule TdDd.DataStructuresTest do
     end
 
     test "update_structure_note/3 with valid data updates the structure_note" do
-      %{id: domain_id} = CacheHelpers.insert_domain()
-      domain_ids = [domain_id]
-      data_structure = insert(:data_structure, domain_id: domain_id)
-      structure_note = insert(:structure_note, data_structure: data_structure)
+      structure_note = insert(:structure_note)
 
       assert {:ok, %StructureNote{} = structure_note} =
                DataStructures.update_structure_note(structure_note, @update_attrs, @user_id)
 
       assert structure_note.df_content == %{}
       assert structure_note.status == :published
-
-      {:ok, [%{payload: payload}]} = Stream.read(:redix, @stream, transform: true)
-      assert %{"domain_ids" => ^domain_ids} = Jason.decode!(payload)
     end
 
     test "update_structure_note/3 with invalid data returns error changeset" do
