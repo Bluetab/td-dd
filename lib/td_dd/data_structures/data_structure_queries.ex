@@ -79,8 +79,6 @@ defmodule TdDd.DataStructures.DataStructureQueries do
     where(query, [g], g.id in ^grant_ids)
   end
 
-
-
   @spec data_structure_version_ids(keyword) :: Ecto.Query.t()
   def data_structure_version_ids(opts \\ []) do
     [deleted: false]
