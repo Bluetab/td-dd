@@ -8,8 +8,6 @@ defmodule TdDd.Grants.Grant do
 
   alias TdCache.UserCache
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.Grants.Grant
-  alias TdDq.Search.Helpers
 
   schema "grants" do
     field(:detail, :map)
@@ -59,37 +57,6 @@ defmodule TdDd.Grants.Grant do
       []
     else
       [user_id: "does not exist"]
-    end
-  end
-
-  defimpl Elasticsearch.Document do
-    @impl Elasticsearch.Document
-    def id(%Grant{id: id}), do: id
-
-    @impl Elasticsearch.Document
-    def routing(_), do: false
-
-    @impl Elasticsearch.Document
-    def encode(%Grant{} = grant) do
-      dsv = Elasticsearch.Document.encode(grant.data_structure_version)
-      domain = Helpers.get_domain(grant.data_structure_version.data_structure)
-      domain_ids = Helpers.get_domain_ids(domain)
-      domain_parents = Helpers.get_domain_parents(domain)
-
-      %{
-        id: grant.id,
-        detail: grant.detail,
-        start_date: grant.start_date,
-        end_date: grant.end_date,
-        user_id: grant.user_id,
-        user: Helpers.get_user(grant.user_id),
-        data_structure_version:
-        dsv
-        |> Map.put(:domain, domain)
-        |> Map.put(:domain_ids, domain_ids)
-        |> Map.put(:domain_parents, domain_parents)
-      }
-
     end
   end
 

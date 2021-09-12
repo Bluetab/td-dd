@@ -45,6 +45,42 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   )
   """
 
+  @dsv_children """
+  (WITH RECURSIVE "paths" AS (SELECT v.id AS id, ds.id as dsid, v.id AS vid, v.name AS name, ARRAY[v.id] AS structure_ids
+  FROM data_structure_versions v
+  INNER JOIN data_structures AS ds ON ds.id = v.data_structure_id
+  UNION ALL
+  SELECT v.id AS id, ds.id as dsid, p0.vid AS vid, v.name AS name, ARRAY_APPEND(p0.structure_ids, v.id)::bigint[] AS structure_ids
+  FROM data_structure_versions v
+  INNER JOIN data_structures AS ds ON ds.id = v.data_structure_id
+  INNER JOIN data_structure_relations AS r ON r.parent_id = v.id
+  INNER JOIN relation_types AS t ON t.id = r.relation_type_id AND t.name = 'default'
+  INNER JOIN paths AS p0 ON p0.id = r.child_id
+  ) SELECT dsid, count(*), array_agg(structure_ids)
+  FROM  (select distinct dsid, unnest(structure_ids) as structure_ids from "paths") t
+  group by dsid
+  )
+  """
+
+  def children(opts \\ []) do
+    opts_map = Enum.into(opts, %{grant_ids: []})
+    TdDd.Grants.Grant
+    |> with_cte("children", as: fragment(@dsv_children))
+    |> join(:inner, [g], c in "children", on: c.dsid == g.data_structure_id)
+    |> select([g, c], %{grant: g, dsv_children: c.array_agg})
+    |> where_grant_ids(opts_map)
+  end
+
+  defp where_grant_ids(query, %{grant_ids: []}) do
+    query
+  end
+
+  defp where_grant_ids(query, %{grant_ids: grant_ids}) do
+    where(query, [g], g.id in ^grant_ids)
+  end
+
+
+
   @spec data_structure_version_ids(keyword) :: Ecto.Query.t()
   def data_structure_version_ids(opts \\ []) do
     [deleted: false]

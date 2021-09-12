@@ -93,8 +93,13 @@ defmodule TdDd.Search.IndexWorker do
   def handle_cast({:delete_grants, grant_ids}, state) do
     Timer.time(
       fn -> Indexer.delete_grants(grant_ids) end,
-      fn ms, _ ->
-        Logger.info("Deleted #{Enum.count(grant_ids)} documents in #{ms}ms")
+      fn ms, value ->
+        case value do
+          {:ok, %{"deleted" => deleted}} ->
+            Logger.info("Deleted #{deleted} grant documents in #{ms}ms")
+          {:error, %Elasticsearch.Exception{message: message}} ->
+            Logger.info("Failed to delete grant documents (#{ms}ms): #{message}")
+        end
       end
     )
 

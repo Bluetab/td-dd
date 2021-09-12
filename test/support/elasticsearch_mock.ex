@@ -9,7 +9,7 @@ defmodule TdDd.ElasticsearchMock do
   alias HTTPoison.Response
   alias TdCx.Jobs
   alias TdDd.DataStructures.DataStructureVersion
-  alias TdDd.Grants.Grant
+  alias TdDd.Grants.GrantStructure
   alias TdDd.Repo
   alias TdDd.Search.Store
   alias TdDq.Implementations.Implementation
@@ -160,7 +160,7 @@ defmodule TdDd.ElasticsearchMock do
         _opts
       ) do
     aggregations = get_aggregations(filter)
-    params |> do_search(Grant) |> search_results(params, aggregations)
+    params |> do_search(GrantStructure) |> search_results(params, aggregations)
   end
 
   @impl true
@@ -171,7 +171,7 @@ defmodule TdDd.ElasticsearchMock do
         %{} = params,
         _opts
       ) do
-    params |> do_search(Grant) |> search_results(params)
+    params |> do_search(GrantStructure) |> search_results(params)
   end
 
   @impl true
@@ -420,7 +420,7 @@ defmodule TdDd.ElasticsearchMock do
     TdDq.Search.Store.stream(schema)
   end
 
-  defp stream(schema) when schema in [TdDd.DataStructures.DataStructureVersion, TdDd.Grants.Grant] do
+  defp stream(schema) when schema in [TdDd.DataStructures.DataStructureVersion, TdDd.Grants.GrantStructure] do
     TdDd.Search.Store.stream(schema)
   end
 

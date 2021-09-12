@@ -37,7 +37,7 @@ config :td_dd, TdDd.Search.Cluster,
   indexes: %{
     grants: %{
       store: TdDd.Search.Store,
-      sources: [TdDd.Grants.Grant],
+      sources: [TdDd.Grants.GrantStructure],
       bulk_page_size: 1000,
       bulk_wait_interval: 0,
       bulk_action: "index",

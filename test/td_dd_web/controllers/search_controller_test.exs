@@ -3,6 +3,8 @@ defmodule TdDdWeb.SearchControllerTest do
 
   alias TdCache.TaxonomyCache
 
+  @moduletag sandbox: :shared
+
   setup_all do
     %{id: domain_id} = domain = build(:domain)
     TaxonomyCache.put_domain(domain)
@@ -12,6 +14,11 @@ defmodule TdDdWeb.SearchControllerTest do
     end)
 
     [domain: domain]
+  end
+
+  setup do
+    start_supervised!(TdDd.Search.StructureEnricher)
+    :ok
   end
 
   describe "index" do
