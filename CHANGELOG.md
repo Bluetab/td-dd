@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-3971] Template mandatory dependent field
+
 ### Changed
 
 - [TD-4065] Allow Implementation keys with spaces, points, etc.
