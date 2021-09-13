@@ -5,6 +5,7 @@ defmodule CacheHelpers do
 
   import TdDd.Factory
 
+  alias TdCache.AclCache
   alias TdCache.ConceptCache
   alias TdCache.LinkCache
   alias TdCache.TaxonomyCache
@@ -83,5 +84,11 @@ defmodule CacheHelpers do
     {:ok, _} = UserCache.put(user)
     ExUnit.Callbacks.on_exit(fn -> UserCache.delete(id) end)
     user
+  end
+
+  def insert_acl(domain_id, role, user_ids) do
+    AclCache.set_acl_role_users("domain", domain_id, role, user_ids)
+    ExUnit.Callbacks.on_exit(fn -> AclCache.delete_acl_roles("domain", domain_id) end)
+    :ok
   end
 end

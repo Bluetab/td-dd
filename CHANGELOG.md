@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-3971] Template mandatory dependent field
+- [TD-4076] Support for grant request approval
 
 ### Changed
 
