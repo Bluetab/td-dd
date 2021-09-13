@@ -9,7 +9,10 @@ defmodule TdDq.Rules.RuleResults.BulkLoad do
   alias TdDd.Repo
   alias TdDq.Cache.RuleLoader
   alias TdDq.Implementations.Implementation
-  alias TdDq.Rules.{Audit, RuleResult, RuleResults}
+  alias TdDq.Rules.Audit
+  alias TdDq.Rules.Rule
+  alias TdDq.Rules.RuleResult
+  alias TdDq.Rules.RuleResults
 
   require Logger
 
@@ -47,12 +50,12 @@ defmodule TdDq.Rules.RuleResults.BulkLoad do
   end
 
   defp bulk_insert(records) do
-    result_type_map = result_type_map(records)
+    rules_by_implementation_key = rules_by_implementation_key(records)
 
     records
     |> Enum.with_index(2)
     |> Enum.map(fn {params, row_number} -> Map.put(params, "row_number", row_number) end)
-    |> Enum.map(&changeset(&1, result_type_map))
+    |> Enum.map(&changeset(&1, rules_by_implementation_key))
     |> Enum.reduce_while([], &reduce_changesets/2)
     |> case do
       ids when is_list(ids) -> {:ok, ids}
@@ -60,7 +63,7 @@ defmodule TdDq.Rules.RuleResults.BulkLoad do
     end
   end
 
-  defp result_type_map(records) do
+  defp rules_by_implementation_key(records) do
     keys =
       records
       |> Enum.map(&Map.get(&1, "implementation_key"))
@@ -70,17 +73,15 @@ defmodule TdDq.Rules.RuleResults.BulkLoad do
     Implementation
     |> where([ri], ri.implementation_key in ^keys)
     |> join(:inner, [ri], rule in assoc(ri, :rule))
-    |> select([ri, r], {ri.implementation_key, r.result_type})
+    |> select([ri, r], {ri.implementation_key, r})
     |> Repo.all()
     |> Map.new()
   end
 
-  defp changeset(%{} = params, %{} = result_type_map) do
+  defp changeset(%{} = params, %{} = rules_by_implementation_key) do
     with %{"implementation_key" => key} <- params,
-         type when is_binary(type) <- Map.get(result_type_map, key) do
-      params
-      |> Map.put("result_type", type)
-      |> RuleResult.changeset()
+         %Rule{result_type: type, id: rule_id} <- Map.get(rules_by_implementation_key, key) do
+      RuleResult.changeset(%RuleResult{result_type: type, rule_id: rule_id}, params)
     else
       _ -> RuleResult.changeset(params)
     end

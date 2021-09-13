@@ -34,7 +34,7 @@ defmodule TdDq.Rules.RuleResult do
       references: :implementation_key
     )
 
-    has_one(:rule, through: [:implementation, :rule])
+    belongs_to(:rule, Rule)
 
     has_many(:execution, Execution, foreign_key: :result_id)
 
@@ -60,10 +60,11 @@ defmodule TdDq.Rules.RuleResult do
     |> put_result()
     |> validate_inclusion(:result_type, @valid_result_types)
     |> update_change(:result, &Decimal.round(&1, @scale, :floor))
-    |> validate_required([:implementation_key, :date, :result, :result_type])
+    |> validate_required([:implementation_key, :date, :result, :result_type, :rule_id])
     |> validate_number(:records, greater_than_or_equal_to: 0)
     |> validate_number(:errors, greater_than_or_equal_to: 0)
     |> validate_number(:result, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
+    |> foreign_key_constraint(:rule_id)
   end
 
   defp put_date(%{params: %{"date" => value}} = changeset) do
