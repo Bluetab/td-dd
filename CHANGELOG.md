@@ -1,10 +1,18 @@
 # Changelog
 
-## [Unreleased] 
+## [Unreleased]
 
 ### Added
 
 - [TD-3971] Template mandatory dependent field
+
+### Changed
+
+- [TD-4065] Allow Implementation keys with spaces, points, etc.
+
+### Fixed
+
+- [TD-4048] `PUT /api/rules/:id` timeout if a rule has many implementations
 
 ## [4.27.0] 2021-09-07
 
