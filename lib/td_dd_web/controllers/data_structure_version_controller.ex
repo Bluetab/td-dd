@@ -98,7 +98,7 @@ defmodule TdDdWeb.DataStructureVersionController do
         view_profiling_permission: can?(claims, view_data_structures_profile(data_structure)),
         profile_permission: can?(claims, profile(dsv)),
         manage_tags: can?(claims, link_data_structure_tag(data_structure)),
-        request_grant: can?(claims, create_grant_request(data_structure))
+        request_grant: can?(claims, create_grant_request(data_structure)),
       }
 
       render(conn, "show.json",
