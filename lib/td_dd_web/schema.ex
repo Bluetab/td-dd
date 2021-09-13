@@ -9,10 +9,13 @@ defmodule TdDdWeb.Schema do
 
   import_types(Absinthe.Plug.Types)
   import_types(Absinthe.Type.Custom)
+  import_types(TdDdWeb.Schema.Domains)
+  import_types(TdDdWeb.Schema.Rules)
   import_types(TdDdWeb.Schema.Structures)
   import_types(TdDdWeb.Schema.Types.Custom.JSON)
 
   query do
+    import_fields(:rule_queries)
     import_fields(:structure_queries)
   end
 

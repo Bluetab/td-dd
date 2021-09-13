@@ -66,16 +66,19 @@ defmodule TdDq.Rules.RuleResultTest do
 
     test "accepts large values in errors and records fields" do
       {errors, records} = {4_715_670_290, 9_223_372_036_854_775_807}
+      %{id: rule_id} = insert(:rule)
+
+      params =
+        string_params_for(:rule_result,
+          records: records,
+          result_type: "percentage",
+          errors: errors,
+          result: 0
+        )
 
       assert {:ok, %{id: id}} =
-               :rule_result
-               |> string_params_for(
-                 records: records,
-                 result_type: "percentage",
-                 errors: errors,
-                 result: 0
-               )
-               |> RuleResult.changeset()
+               %RuleResult{rule_id: rule_id}
+               |> RuleResult.changeset(params)
                |> Repo.insert()
 
       assert %{errors: ^errors, records: ^records} = Repo.get!(RuleResult, id)

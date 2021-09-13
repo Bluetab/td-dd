@@ -8,7 +8,9 @@ defmodule TdDq.Executions do
   alias Ecto.Changeset
   alias Ecto.Multi
   alias TdDd.Repo
-  alias TdDq.Executions.{Audit, Execution, Group}
+  alias TdDq.Executions.Audit
+  alias TdDq.Executions.Execution
+  alias TdDq.Executions.Group
   alias TdDq.Implementations
   alias TdDq.Implementations.Implementation
 
@@ -107,6 +109,16 @@ defmodule TdDq.Executions do
   defp do_create_group(%Changeset{} = changeset) do
     Multi.new()
     |> Multi.insert(:group, changeset)
+    |> Multi.update_all(
+      :executions,
+      fn %{group: %{id: group_id}} ->
+        Execution
+        |> where([e], e.group_id == ^group_id)
+        |> join(:inner, [e], i in assoc(e, :implementation))
+        |> update([e, i], set: [rule_id: fragment("?", i.rule_id)])
+      end,
+      []
+    )
     |> Multi.run(:audit, Audit, :execution_group_created, [changeset])
     |> Repo.transaction()
   end

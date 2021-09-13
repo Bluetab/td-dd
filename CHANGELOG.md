@@ -16,6 +16,13 @@
 
 ## [4.27.0] 2021-09-07
 
+### Changed
+
+- [TD-3824] Data quality rule implementations can now be modified, regardless of
+  whether they have associated results or not
+
+## [4.27.0] 2021-09-07
+
 ### Added
 
 - [TD-3951] Include additional information for grant events

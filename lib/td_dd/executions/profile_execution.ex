@@ -1,8 +1,7 @@
 defmodule TdDd.Executions.ProfileExecution do
   @moduledoc """
-  Ecto Schema module for executions. An execution represents the relationship
-  between an `Strcuture`, a `Group` and a `Profile`. If the execution has completed, it
-  will also have an associated `RuleResult`.
+  Ecto Schema module for profile executions. A `ProfileExecution` represents the
+  relationship between an `Structure`, a `ProfileGroup` and a `Profile`.
   """
 
   use Ecto.Schema

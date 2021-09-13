@@ -15,6 +15,7 @@ defmodule TdDq.Implementations.Implementation do
   alias TdDq.Implementations.Implementation
   alias TdDq.Implementations.RawContent
   alias TdDq.Rules.Rule
+  alias TdDq.Rules.RuleResult
 
   @typedoc "A quality rule implementation"
   @type t :: %__MODULE__{}
@@ -23,19 +24,21 @@ defmodule TdDq.Implementations.Implementation do
     field(:implementation_key, :string)
     field(:implementation_type, :string, default: "default")
     field(:executable, :boolean, default: true)
+    field(:deleted_at, :utc_datetime)
+    field(:df_name, :string)
+    field(:df_content, :map)
 
+    embeds_one(:raw_content, RawContent, on_replace: :delete)
     embeds_many(:dataset, DatasetRow, on_replace: :delete)
     embeds_many(:population, ConditionRow, on_replace: :delete)
     embeds_many(:validations, ConditionRow, on_replace: :delete)
 
-    embeds_one(:raw_content, RawContent, on_replace: :delete)
-
     belongs_to(:rule, Rule)
 
-    field(:deleted_at, :utc_datetime)
-
-    field(:df_name, :string)
-    field(:df_content, :map)
+    has_many(:results, RuleResult,
+      foreign_key: :implementation_key,
+      references: :implementation_key
+    )
 
     timestamps()
   end
@@ -178,17 +181,11 @@ defmodule TdDq.Implementations.Implementation do
     def routing(_), do: false
 
     @impl Elasticsearch.Document
-    def encode(
-          %Implementation{
-            implementation_key: implementation_key,
-            rule: rule,
-            id: implementation_id
-          } = implementation
-        ) do
+    def encode(%Implementation{rule: rule, id: implementation_id} = implementation) do
       quality_event = QualityEvents.get_event_by_imp(implementation_id)
       confidential = Helpers.confidential?(rule)
       bcv = Helpers.get_business_concept_version(rule)
-      execution_result_info = get_execution_result_info(rule, implementation_key, quality_event)
+      execution_result_info = get_execution_result_info(implementation, quality_event)
       domain = Helpers.get_domain(rule)
       domain_ids = Helpers.get_domain_ids(domain)
       domain_parents = Helpers.get_domain_parents(domain)
@@ -224,20 +221,14 @@ defmodule TdDq.Implementations.Implementation do
       |> Map.put(:df_content, df_content)
     end
 
-    defp get_execution_result_info(_rule, _implementation_key, %{
-           type: "FAILED",
-           inserted_at: inserted_at
-         }) do
+    defp get_execution_result_info(_implementation, %{type: "FAILED", inserted_at: inserted_at}) do
       %{result_text: "quality_result.failed", date: inserted_at}
     end
 
-    defp get_execution_result_info(%Rule{} = rule, implementation_key, _quality_event) do
-      case RuleResults.get_latest_rule_result(implementation_key) do
-        nil ->
-          %{result_text: nil}
-
-        result ->
-          build_result_info(rule, result)
+    defp get_execution_result_info(%Implementation{rule: rule} = implementation, _quality_event) do
+      case RuleResults.get_latest_rule_result(implementation) do
+        nil -> %{result_text: nil}
+        result -> build_result_info(rule, result)
       end
     end
 

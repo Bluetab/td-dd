@@ -56,22 +56,10 @@ defmodule TdDq.Search.Mappings do
       goal: %{type: "long"},
       minimum: %{type: "long"},
       df_name: %{type: "text", fields: %{raw: %{type: "keyword"}}},
-      result_type: %{type: "text"},
+      result_type: %{type: "text", fields: %{raw: %{type: "keyword"}}},
       type_params: %{
         properties: %{
           name: %{fields: @raw, type: "text"}
-        }
-      },
-      execution_result_info: %{
-        properties: %{
-          result: %{type: "float"},
-          errors: %{type: "long"},
-          records: %{type: "long"},
-          last_execution_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-          result_text: %{
-            type: "text",
-            fields: %{raw: %{type: "keyword", null_value: "quality_result.no_execution"}}
-          }
         }
       },
       _confidential: %{type: "boolean"},
