@@ -11,6 +11,7 @@ defmodule TdDd.Grants do
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Grants.Grant
+  alias TdDd.Grants.GrantApprover
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestGroup
   alias TdDd.Repo
@@ -158,5 +159,21 @@ defmodule TdDd.Grants do
         preload(q, ^preloads)
     end)
     |> Repo.all()
+  end
+
+  def list_grant_approvers do
+    Repo.all(GrantApprover)
+  end
+
+  def get_grant_approver!(id), do: Repo.get!(GrantApprover, id)
+
+  def create_grant_approver(params \\ %{}) do
+    params
+    |> GrantApprover.changeset()
+    |> Repo.insert()
+  end
+
+  def delete_grant_approver(%GrantApprover{} = grant_approver) do
+    Repo.delete(grant_approver)
   end
 end

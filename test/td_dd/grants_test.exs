@@ -443,4 +443,50 @@ defmodule TdDd.GrantsTest do
       assert_raise Ecto.NoResultsError, fn -> Grants.get_grant_request!(grant_request.id) end
     end
   end
+
+  describe "grant_approvers" do
+    alias TdDd.Grants.GrantApprover
+
+    setup do
+      grant_approver = insert(:grant_approver)
+      [grant_approver: grant_approver]
+    end
+
+    test "list_grant_approvers/0 returns all grant_approvers", %{grant_approver: grant_approver} do
+      assert Grants.list_grant_approvers() == [grant_approver]
+    end
+
+    test "get_grant_approver!/1 returns the grant_approver with given id", %{
+      grant_approver: %{id: id} = grant_approver
+    } do
+      assert Grants.get_grant_approver!(id) == grant_approver
+    end
+
+    test "create_grant_approver/1 with valid data creates a grant_approver" do
+      %{name: name} = grant_approver = params_for(:grant_approver)
+      assert {:ok, %GrantApprover{name: ^name}} = Grants.create_grant_approver(grant_approver)
+    end
+
+    test "create_grant_approver/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} = Grants.create_grant_approver(%{name: nil})
+    end
+
+    test "create_grant_approver/1 with duplicated name returns error changeset", %{
+      grant_approver: %{name: name}
+    } do
+      assert {:error,
+              %Ecto.Changeset{
+                errors: [
+                  name:
+                    {"unique",
+                     [constraint: :unique, constraint_name: "grant_approvers_name_index"]}
+                ]
+              }} = Grants.create_grant_approver(%{name: name})
+    end
+
+    test "delete_grant_approver/1 deletes the grant_approver", %{grant_approver: grant_approver} do
+      assert {:ok, %GrantApprover{}} = Grants.delete_grant_approver(grant_approver)
+      assert_raise Ecto.NoResultsError, fn -> Grants.get_grant_approver!(grant_approver.id) end
+    end
+  end
 end

@@ -4,9 +4,25 @@
 
 ### Added
 
+<<<<<<< HEAD
 - [TD-3950] Index and search grants
   - `POST /api/grants/search` searches grants
   - `POST /api/grant_filters/search` searches grant filters
+=======
+- [TD-4075] API routes for managing grant approvers:
+  - `GET /api/grant_approvers`
+  - `GET /api/grant_approvers/:id`
+  - `POST /api/grant_approvers`
+  - `DELETE /api/grant_approvers/:id`
+
+### Changed
+
+- [TD-4065] Allow Implementation keys with spaces, points, etc.
+
+### Fixed
+
+- [TD-4048] `PUT /api/rules/:id` timeout if a rule has many implementations
+>>>>>>> e823d8198242a90999b0160f358e8c280b9875a3
 
 ## [4.27.0] 2021-09-07
 
