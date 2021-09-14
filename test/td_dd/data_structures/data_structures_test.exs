@@ -1706,7 +1706,7 @@ defmodule TdDd.DataStructuresTest do
       assert DataStructures.get_latest_structure_note(data_structure.id) <~> latest_structure_note
     end
 
-    test "create_structure_note/3 with valid data creates a structure_note" do
+    test "create_structure_note/3 with valid data creates a structure_note and publishes event" do
       data_structure = insert(:data_structure)
 
       assert {:ok, %StructureNote{} = structure_note} =

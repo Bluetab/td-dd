@@ -15,10 +15,11 @@ defmodule TdDd.DataStructures.Audit do
   """
   def structure_note_updated(
         _repo,
-        %{structure_note: %{data_structure_id: id}},
+        %{structure_note: %{data_structure_id: id} = structure_note},
         %{} = changeset,
         user_id
       ) do
+    changeset = with_domain_ids(changeset, structure_note)
     publish("data_structure_updated", "data_structure", id, user_id, changeset)
   end
 
@@ -255,21 +256,19 @@ defmodule TdDd.DataStructures.Audit do
   end
 
   defp with_domain_ids(%Changeset{} = changeset, %{data_structure: %{domain_id: domain_id}}) do
-    domain_ids =
-      domain_id
-      |> TaxonomyCache.get_parent_ids()
-      |> Enum.filter(& &1)
-
-    Changeset.put_change(changeset, :domain_ids, domain_ids)
+    Changeset.put_change(changeset, :domain_ids, get_domain_ids(domain_id))
   end
 
   defp with_domain_ids(%{} = payload, %{data_structure: %{domain_id: domain_id}}) do
-    domain_ids =
-      domain_id
-      |> TaxonomyCache.get_parent_ids()
-      |> Enum.filter(& &1)
+    Map.put(payload, :domain_ids, get_domain_ids(domain_id))
+  end
 
-    Map.put(payload, :domain_ids, domain_ids)
+  defp with_domain_ids(payload, _), do: payload
+
+  defp get_domain_ids(domain_id) do
+    domain_id
+    |> TaxonomyCache.get_parent_ids()
+    |> Enum.filter(& &1)
   end
 
   defp with_resource(%{} = payload, latest) do

@@ -13,6 +13,7 @@
 ### Fixed
 
 - [TD-4048] `PUT /api/rules/:id` timeout if a rule has many implementations
+- [TD-3780] Missing `domain_ids` in Audit events 
 
 ## [4.27.0] 2021-09-07
 
