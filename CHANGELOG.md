@@ -4,11 +4,7 @@
 
 ### Added
 
-- [TD-4075] API routes for managing grant approvers:
-  - `GET /api/grant_approvers`
-  - `GET /api/grant_approvers/:id`
-  - `POST /api/grant_approvers`
-  - `DELETE /api/grant_approvers/:id`
+- [TD-3971] Template mandatory dependent field
 
 ### Changed
 
@@ -18,6 +14,13 @@
 
 - [TD-4048] `PUT /api/rules/:id` timeout if a rule has many implementations
 - [TD-3780] Missing `domain_ids` in Audit events 
+
+## [4.27.0] 2021-09-07
+
+### Changed
+
+- [TD-3824] Data quality rule implementations can now be modified, regardless of
+  whether they have associated results or not
 
 ## [4.27.0] 2021-09-07
 

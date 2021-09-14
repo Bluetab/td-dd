@@ -471,12 +471,6 @@ defmodule TdDd.Factory do
     |> merge_attributes(attrs)
   end
 
-  def grant_approver_factory do
-    %TdDd.Grants.GrantApprover{
-      name: sequence("foo")
-    }
-  end
-
   defp default_assoc(attrs, id_key, key, build_key \\ nil) do
     if Enum.any?([key, id_key], &Map.has_key?(attrs, &1)) do
       attrs

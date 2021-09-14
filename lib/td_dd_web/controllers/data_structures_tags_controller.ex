@@ -5,7 +5,9 @@ defmodule TdDdWeb.DataStructuresTagsController do
   import Canada, only: [can?: 2]
 
   alias TdDd.DataStructures
-  alias TdDd.DataStructures.{DataStructure, DataStructuresTags, DataStructureTag}
+  alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructuresTags
+  alias TdDd.DataStructures.DataStructureTag
   alias TdDdWeb.SwaggerDefinitions
 
   action_fallback TdDdWeb.FallbackController

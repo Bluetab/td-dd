@@ -3,7 +3,8 @@ defmodule TdDd.Canada.UnitAbilities do
   Canada permissions model for Unit resources
   """
   alias TdDd.Auth.Claims
-  alias TdDd.Lineage.Units.{Node, Unit}
+  alias TdDd.Lineage.Units.Node
+  alias TdDd.Lineage.Units.Unit
   alias TdDd.Permissions
 
   # Admin accounts can do anything with units

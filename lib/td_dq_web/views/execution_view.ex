@@ -1,7 +1,9 @@
 defmodule TdDqWeb.ExecutionView do
   use TdDqWeb, :view
 
-  alias TdDqWeb.{QualityEventView, RuleResultView, RuleView}
+  alias TdDqWeb.QualityEventView
+  alias TdDqWeb.RuleResultView
+  alias TdDqWeb.RuleView
 
   def render("index.json", %{executions: executions}) do
     %{data: render_many(executions, __MODULE__, "execution.json")}

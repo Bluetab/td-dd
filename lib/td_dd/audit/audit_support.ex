@@ -6,7 +6,8 @@ defmodule TdDd.Audit.AuditSupport do
   alias Ecto.Changeset
   alias TdCache.Audit
   alias TdDd.DataStructures.StructureNote
-  alias TdDfLib.{MapDiff, Masks}
+  alias TdDfLib.MapDiff
+  alias TdDfLib.Masks
 
   def publish(events) when is_list(events) do
     Audit.publish_all(events)
