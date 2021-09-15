@@ -17,6 +17,7 @@ config :td_dd, TdDd.Search.Cluster,
     recv_timeout: 40_000
   ],
   aliases: %{
+    grants: "grants",
     implementations: "implementations",
     jobs: "jobs",
     rules: "rules",
@@ -34,6 +35,34 @@ config :td_dd, TdDd.Search.Cluster,
     "index.indexing.slowlog.source" => "1000"
   },
   indexes: %{
+    grants: %{
+      store: TdDd.Search.Store,
+      sources: [TdDd.Grants.GrantStructure],
+      bulk_page_size: 1000,
+      bulk_wait_interval: 0,
+      bulk_action: "index",
+      settings: %{
+        analysis: %{
+          analyzer: %{
+            ngram: %{
+              filter: ["lowercase", "asciifolding"],
+              tokenizer: "ngram"
+            }
+          },
+          normalizer: %{
+            sortable: %{type: "custom", char_filter: [], filter: ["lowercase", "asciifolding"]}
+          },
+          tokenizer: %{
+            ngram: %{
+              type: "ngram",
+              min_gram: 3,
+              max_gram: 3,
+              token_chars: ["letter", "digit"]
+            }
+          }
+        }
+      }
+    },
     implementations: %{
       store: TdDq.Search.Store,
       sources: [TdDq.Implementations.Implementation],

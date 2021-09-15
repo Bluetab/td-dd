@@ -14,6 +14,7 @@ defmodule TdDd.Grants do
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestGroup
   alias TdDd.Repo
+  alias TdDd.Search.IndexWorker
 
   def get_grant!(id, opts \\ []) do
     Grant
@@ -34,6 +35,19 @@ defmodule TdDd.Grants do
     |> Multi.insert(:grant, changeset)
     |> Multi.run(:audit, Audit, :grant_created, [user_id])
     |> Repo.transaction()
+    |> reindex_grants()
+  end
+
+  defp reindex_grants({:ok, %{grant: %Grant{id: id}} = multi}) do
+    IndexWorker.reindex_grants(id)
+    {:ok, multi}
+  end
+
+  defp reindex_grants(error), do: error
+
+  defp on_delete({:ok, %{grant: %Grant{id: id}} = multi}) do
+    IndexWorker.delete_grants(id)
+    {:ok, multi}
   end
 
   def update_grant(%Grant{} = grant, params, %Claims{user_id: user_id}) do
@@ -43,6 +57,7 @@ defmodule TdDd.Grants do
     |> Multi.update(:grant, changeset)
     |> Multi.run(:audit, Audit, :grant_updated, [changeset, user_id])
     |> Repo.transaction()
+    |> reindex_grants()
   end
 
   def delete_grant(%Grant{data_structure: data_structure} = grant, %Claims{user_id: user_id}) do
@@ -53,6 +68,7 @@ defmodule TdDd.Grants do
     |> Multi.delete(:grant, grant)
     |> Multi.run(:audit, Audit, :grant_deleted, [user_id])
     |> Repo.transaction()
+    |> on_delete
   end
 
   def list_grant_request_groups do

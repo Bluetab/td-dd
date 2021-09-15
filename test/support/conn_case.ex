@@ -28,7 +28,7 @@ defmodule TdDdWeb.ConnCase do
       import Phoenix.ConnTest
       import TdDd.Factory
 
-      import TdDdWeb.Authentication, only: [create_acl_entry: 3]
+      import TdDdWeb.Authentication, only: [create_acl_entry: 3, create_acl_entry: 4]
 
       alias TdCxWeb.Router.Helpers, as: CxRoutes
       alias TdDdWeb.Router.Helpers, as: Routes
