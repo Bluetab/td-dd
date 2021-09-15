@@ -10,10 +10,18 @@ defmodule TdDdWeb.GrantRequestController do
 
   action_fallback TdDdWeb.FallbackController
 
-  def index(conn, %{"grant_request_group_id" => grant_request_group_id}) do
+  def index(conn, %{"grant_request_group_id" => id}) do
     with claims <- conn.assigns[:current_resource],
-         {:can, true} <- {:can, can?(claims, index(GrantRequest))} do
-      grant_requests = Grants.list_grant_requests(grant_request_group_id)
+         {:can, true} <- {:can, can?(claims, index(GrantRequest))},
+         %{requests: requests} <- Grants.get_grant_request_group!(id) do
+      render(conn, "index.json", grant_requests: requests)
+    end
+  end
+
+  def index(conn, %{} = params) do
+    with claims <- conn.assigns[:current_resource],
+         {:can, true} <- {:can, can?(claims, index(GrantRequest))},
+         {:ok, grant_requests} <- Grants.list_grant_requests(params) do
       render(conn, "index.json", grant_requests: grant_requests)
     end
   end

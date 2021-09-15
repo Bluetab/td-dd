@@ -353,7 +353,7 @@ defmodule TdDd.GrantsTest do
         requests: requests
       }
 
-      assert {:ok, %GrantRequestGroup{id: id}} =
+      assert {:ok, %GrantRequestGroup{requests: requests}} =
                Grants.create_grant_request_group(params, build(:claims))
 
       assert [
@@ -363,7 +363,7 @@ defmodule TdDd.GrantsTest do
                  metadata: @valid_metadata
                },
                %{data_structure_id: ^ds_id_2}
-             ] = Grants.list_grant_requests(id)
+             ] = requests
     end
 
     test "create_grant_request_group/1 with invalid data returns error changeset" do
@@ -383,13 +383,28 @@ defmodule TdDd.GrantsTest do
     end
   end
 
-  describe "grant_requests" do
-    test "list_grant_requests/0 returns all grant_requests" do
-      _other_group_request = insert(:grant_request)
-      %{grant_request_group_id: grant_request_group_id} = grant_request = insert(:grant_request)
-      assert Grants.list_grant_requests(grant_request_group_id) <|> [grant_request]
-    end
+  describe "list_grant_requests/1 " do
+    test "includes current status and filters by status" do
+      %{id: id} = insert(:grant_request)
 
+      assert {:ok, grant_requests} = Grants.list_grant_requests()
+      assert [%{current_status: nil}] = grant_requests
+
+      insert(:grant_request_status, grant_request_id: id, status: "earliest")
+
+      assert {:ok, grant_requests} = Grants.list_grant_requests()
+      assert [%{current_status: "earliest"}] = grant_requests
+
+      insert(:grant_request_status, grant_request_id: id, status: "latest")
+
+      assert {:ok, grant_requests} = Grants.list_grant_requests(%{status: "latest"})
+      assert [%{current_status: "latest"}] = grant_requests
+
+      assert {:ok, []} = Grants.list_grant_requests(%{status: "earliest"})
+    end
+  end
+
+  describe "grant_requests" do
     test "get_grant_request!/1 returns the grant_request with given id" do
       grant_request = insert(:grant_request)
       assert Grants.get_grant_request!(grant_request.id) <~> grant_request

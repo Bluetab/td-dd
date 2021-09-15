@@ -8,14 +8,20 @@ defmodule TdDd.Grants.GrantRequest do
 
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Grants.GrantRequestGroup
+  alias TdDd.Grants.GrantRequestStatus
   alias TdDfLib.Validation
+
+  @type t :: %__MODULE__{}
 
   schema "grant_requests" do
     field(:filters, :map)
     field(:metadata, :map)
+    field(:current_status, :string, virtual: true)
 
     belongs_to(:grant_request_group, GrantRequestGroup)
     belongs_to(:data_structure, DataStructure)
+
+    has_many(:status, GrantRequestStatus)
 
     timestamps(type: :utc_datetime_usec)
   end

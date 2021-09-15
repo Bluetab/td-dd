@@ -5,6 +5,7 @@ defmodule TdDd.Grants do
 
   import Ecto.Query
 
+  alias Ecto.Changeset
   alias Ecto.Multi
   alias TdDd.Auth.Claims
   alias TdDd.DataStructures
@@ -13,6 +14,7 @@ defmodule TdDd.Grants do
   alias TdDd.Grants.Grant
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestGroup
+  alias TdDd.Grants.GrantRequestStatus
   alias TdDd.Repo
 
   def get_grant!(id, opts \\ []) do
@@ -83,11 +85,37 @@ defmodule TdDd.Grants do
     Repo.delete(grant_request_group)
   end
 
-  def list_grant_requests(grant_request_group_id) do
-    GrantRequest
-    |> where(grant_request_group_id: ^grant_request_group_id)
-    |> Repo.all()
+  @spec list_grant_requests(map) :: {:error, Changeset.t()} | {:ok, [GrantRequest.t()]}
+  def list_grant_requests(%{} = params \\ %{}) do
+    {_data = %{}, _types = %{status: :string}}
+    |> Changeset.cast(params, [:status])
+    |> Changeset.apply_action(:update)
+    |> do_list_grant_requests()
   end
+
+  defp do_list_grant_requests({:ok, %{} = params}) do
+    status_subquery =
+      GrantRequestStatus
+      |> distinct([s], s.grant_request_id)
+      |> order_by([s], desc: s.inserted_at)
+      |> subquery()
+
+    query =
+      GrantRequest
+      |> join(:left, [gr], s in ^status_subquery, on: s.grant_request_id == gr.id)
+      |> select_merge([gr, status], %{current_status: status.status})
+
+    grant_requests =
+      params
+      |> Enum.reduce(query, fn
+        {:status, status}, q -> where(q, [gr, s], s.status == ^status)
+      end)
+      |> Repo.all()
+
+    {:ok, grant_requests}
+  end
+
+  defp do_list_grant_requests(error), do: error
 
   def get_grant_request!(id), do: Repo.get!(GrantRequest, id)
 

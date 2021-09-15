@@ -415,6 +415,15 @@ defmodule TdDd.Factory do
     }
   end
 
+  def grant_request_status_factory(attrs) do
+    attrs = default_assoc(attrs, :grant_request_id, :grant_request)
+
+    %TdDd.Grants.GrantRequestStatus{
+      status: "pending"
+    }
+    |> merge_attributes(attrs)
+  end
+
   def regex_filter_factory(attrs) do
     attrs = default_assoc(attrs, :classifier_id, :classifier)
 
