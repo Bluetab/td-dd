@@ -100,6 +100,7 @@ defmodule TdDdWeb.Router do
     end
 
     get("/data_structures/search/reindex_all", SearchController, :reindex_all)
+    get("/grants/search/reindex_all", SearchController, :reindex_all_grants)
 
     get("/data_structure_filters", DataStructureFilterController, :index)
     post("/data_structure_filters/search", DataStructureFilterController, :search)

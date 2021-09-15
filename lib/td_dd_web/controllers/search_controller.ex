@@ -5,6 +5,7 @@ defmodule TdDdWeb.SearchController do
   import Canada, only: [can?: 2]
 
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.Grants.Grant
   alias TdDd.Grants.Search
 
   action_fallback(TdDdWeb.FallbackController)
@@ -23,6 +24,24 @@ defmodule TdDdWeb.SearchController do
 
     if can?(claims, reindex_all(DataStructure)) do
       @index_worker.reindex(:all)
+      send_resp(conn, :accepted, "")
+    else
+      render_error(conn, :forbidden)
+    end
+  end
+
+  swagger_path :reindex_all_grants do
+    description("Reindex all grants ES indexes with DB content")
+    produces("application/json")
+    response(202, "Accepted")
+    response(500, "Client Error")
+  end
+
+  def reindex_all_grants(conn, _params) do
+    claims = conn.assigns[:current_resource]
+
+    if can?(claims, reindex_all(Grant)) do
+      @index_worker.reindex_grants(:all)
       send_resp(conn, :accepted, "")
     else
       render_error(conn, :forbidden)
