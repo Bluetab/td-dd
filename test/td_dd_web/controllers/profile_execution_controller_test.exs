@@ -180,14 +180,4 @@ defmodule TdDdWeb.ExecutionControllerTest do
                |> json_response(:forbidden)
     end
   end
-
-  defp create_acl_entry(user_id, resource_type, resource_id, permissions) do
-    MockPermissionResolver.create_acl_entry(%{
-      principal_id: user_id,
-      principal_type: "user",
-      resource_id: resource_id,
-      resource_type: resource_type,
-      permissions: permissions
-    })
-  end
 end

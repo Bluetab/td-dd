@@ -4,6 +4,14 @@
 
 ### Added
 
+- [TD-3950] Index and search grants
+  - `POST /api/grants/search` searches grants
+  - `POST /api/grant_filters/search` searches grant filters
+- [TD-4075] API routes for managing grant approvers:
+  - `GET /api/grant_approvers`
+  - `GET /api/grant_approvers/:id`
+  - `POST /api/grant_approvers`
+  - `DELETE /api/grant_approvers/:id`
 - [TD-3971] Template mandatory dependent field
 
 ### Changed

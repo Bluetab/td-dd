@@ -50,6 +50,11 @@ config :td_dd, TdDd.Scheduler,
       task: {TdDq.Search.IndexWorker, :reindex, []},
       run_strategy: Quantum.RunStrategy.Local
     ],
+    grant_indexer: [
+      schedule: System.get_env("ES_REFRESH_SCHEDULE", "@daily"),
+      task: {TdDd.Search.IndexWorker, :reindex_grants, [:all]},
+      run_strategy: Quantum.RunStrategy.Local
+    ],
     rule_remover: [
       schedule: System.get_env("RULE_REMOVAL_SCHEDULE", "@hourly"),
       task: {TdDq.Rules.RuleRemover, :archive_inactive_rules, []},
