@@ -48,7 +48,7 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   @dsv_children """
   (WITH RECURSIVE "paths" AS (SELECT v.id AS id, ds.id as dsid, v.id AS vid, v.name AS name, ARRAY[v.id] AS structure_ids
   FROM data_structure_versions v
-  INNER JOIN data_structures AS ds ON ds.id = v.data_structure_id
+  INNER JOIN data_structures AS ds ON ds.id = v.data_structure_id where v.deleted_at is null
   UNION ALL
   SELECT v.id AS id, ds.id as dsid, p0.vid AS vid, v.name AS name, ARRAY_APPEND(p0.structure_ids, v.id)::bigint[] AS structure_ids
   FROM data_structure_versions v
