@@ -198,12 +198,8 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       Enum.join(name_path, "~")
     end
 
-    defp domain(%{domain: %{} = domain}) do
-      Map.take(domain, [:id, :external_id, :name])
-    end
-    defp domain(data_structure) do
-      Map.take(Helpers.get_domain(data_structure), [:id, :external_id, :name])
-    end
+    defp domain(%{domain: %{} = domain}), do: Map.take(domain, [:id, :external_id, :name])
+    defp domain(_), do: %{}
 
     defp domains(%{domain_parents: [_ | _] = domains}),
       do: Enum.map(domains, &domain(%{domain: &1}))
