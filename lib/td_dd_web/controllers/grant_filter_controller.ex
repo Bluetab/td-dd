@@ -6,6 +6,8 @@ defmodule TdDdWeb.GrantFilterController do
   alias TdDd.Grants.Search
   alias TdDdWeb.SwaggerDefinitions
 
+  plug(TdDdWeb.SearchPermissionPlug)
+
   action_fallback(TdDdWeb.FallbackController)
 
   def swagger_definitions do
