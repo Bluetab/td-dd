@@ -42,7 +42,7 @@ defmodule TdDd.Search.Indexer do
   def reindex_grants(id), do: reindex_grants([id])
 
   defp reindex_all(mappings, index) do
-    #Store.vacuum()
+    Store.vacuum()
     alias_name = Cluster.alias_name(index)
 
     mappings

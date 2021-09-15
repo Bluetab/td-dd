@@ -78,6 +78,7 @@ end
 
 config :td_dd, TdDd.Search.Cluster,
   aliases: %{
+    grants: System.get_env("ES_ALIAS_GRANTS", "grants"),
     jobs: System.get_env("ES_ALIAS_JOBS", "jobs"),
     structures: System.get_env("ES_ALIAS_STRUCTURES", "structures"),
     implementations: System.get_env("ES_ALIAS_IMPLEMENTATIONS", "implementations"),
