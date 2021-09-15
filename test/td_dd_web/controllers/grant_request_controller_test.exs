@@ -20,6 +20,27 @@ defmodule TdDdWeb.GrantRequestControllerTest do
                |> get(Routes.grant_request_group_request_path(conn, :index, grant_request_group))
                |> json_response(:ok)
     end
+
+    @tag authentication: [role: "admin"]
+    test "filters by status", %{conn: conn} do
+      %{grant_request_id: id} = insert(:grant_request_status, status: "pending")
+      insert(:grant_request_status, status: "approved", grant_request_id: id)
+
+      params = %{"status" => "approved"}
+
+      assert %{"data" => [%{"id" => ^id}]} =
+               conn
+               |> get(Routes.grant_request_path(conn, :index, params))
+               |> json_response(:ok)
+
+      %{grant_request_id: id} = insert(:grant_request_status, status: "pending")
+      params = %{"status" => "pending"}
+
+      assert %{"data" => [%{"id" => ^id}]} =
+               conn
+               |> get(Routes.grant_request_path(conn, :index, params))
+               |> json_response(:ok)
+    end
   end
 
   describe "create grant_request" do
