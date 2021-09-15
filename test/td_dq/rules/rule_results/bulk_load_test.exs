@@ -77,12 +77,16 @@ defmodule TdDq.RuleResults.BulkLoadTest do
     end
 
     test "publishes audit events with domain_ids" do
+      domain_id = System.unique_integer([:positive])
+      domain_ids = [domain_id]
+
       rule =
         build(:rule,
           result_type: "percentage",
           goal: 100,
           minimum: 80,
-          business_concept_id: "#{@concept_id}"
+          business_concept_id: "#{@concept_id}",
+          domain_id: domain_id
         )
 
       %{implementation_key: key} = insert(:implementation, rule: rule)
@@ -99,8 +103,12 @@ defmodule TdDq.RuleResults.BulkLoadTest do
       assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
       assert %{event: "rule_result_created", payload: payload} = event
 
-      assert %{"result" => "90.00", "status" => "warn", "params" => ^params, "domain_ids" => _} =
-               Jason.decode!(payload)
+      assert %{
+               "result" => "90.00",
+               "status" => "warn",
+               "params" => ^params,
+               "domain_ids" => ^domain_ids
+             } = Jason.decode!(payload)
     end
 
     test "refreshes rule cache" do

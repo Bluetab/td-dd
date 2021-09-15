@@ -2,9 +2,12 @@ defmodule TdDq.Canada.Abilities do
   @moduledoc false
 
   alias TdDq.Auth.Claims
-  alias TdDq.Canada.{ExecutionAbilities, ImplementationAbilities, RuleAbilities}
+  alias TdDq.Canada.ExecutionAbilities
+  alias TdDq.Canada.ImplementationAbilities
+  alias TdDq.Canada.RuleAbilities
   alias TdDq.Events.QualityEvent
-  alias TdDq.Executions.{Execution, Group}
+  alias TdDq.Executions.Execution
+  alias TdDq.Executions.Group
   alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Rule
 

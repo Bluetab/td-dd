@@ -9,7 +9,9 @@ defmodule TdDd.Executions do
   alias Ecto.Multi
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.Executions.{Audit, ProfileExecution, ProfileGroup}
+  alias TdDd.Executions.Audit
+  alias TdDd.Executions.ProfileExecution
+  alias TdDd.Executions.ProfileGroup
   alias TdDd.Repo
 
   @doc """

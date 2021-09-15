@@ -8,7 +8,8 @@ defmodule TdDd.Lineage.Import.Loader do
   alias TdDd.Lineage.Import.Reader
   alias TdDd.Lineage.Import.Validations
   alias TdDd.Lineage.Units
-  alias TdDd.Lineage.Units.{Edge, Node}
+  alias TdDd.Lineage.Units.Edge
+  alias TdDd.Lineage.Units.Node
   alias TdDd.Repo
 
   require Logger

@@ -289,7 +289,7 @@ defmodule TdDq.Rules do
 
   defp enrich(%Rule{domain_id: domain_id} = rule, :domain) when is_integer(domain_id) do
     case TaxonomyCache.get_domain(domain_id) do
-      %{} = domain ->
+      %{id: ^domain_id} = domain ->
         %{rule | domain: Map.take(domain, [:id, :name, :external_id])}
 
       _ ->

@@ -11,7 +11,9 @@ defmodule TdDq.Rules.RuleResults do
   alias TdDq.Events.QualityEvents
   alias TdDq.Executions.Execution
   alias TdDq.Implementations.Implementation
-  alias TdDq.Rules.{Audit, Rule, RuleResult}
+  alias TdDq.Rules.Audit
+  alias TdDq.Rules.Rule
+  alias TdDq.Rules.RuleResult
 
   require Logger
 
@@ -44,11 +46,17 @@ defmodule TdDq.Rules.RuleResults do
       {:error, failed_operation, failed_value, changes_so_far}
 
   """
-  def create_rule_result(%Implementation{implementation_key: key} = impl, params \\ %{}) do
+  def create_rule_result(
+        %Implementation{implementation_key: key, rule_id: rule_id} = impl,
+        params \\ %{}
+      ) do
     %{rule: %{result_type: result_type}} = Repo.preload(impl, :rule)
 
     changeset =
-      RuleResult.changeset(%RuleResult{implementation_key: key, result_type: result_type}, params)
+      RuleResult.changeset(
+        %RuleResult{implementation_key: key, result_type: result_type, rule_id: rule_id},
+        params
+      )
 
     Multi.new()
     |> Multi.insert(:result, changeset)
@@ -90,35 +98,13 @@ defmodule TdDq.Rules.RuleResults do
 
   defp on_create(result), do: result
 
-  @doc """
-  Returns last rule_result for each active implementation of rule
-  """
-  def get_latest_rule_results(%Rule{} = rule) do
-    rule
-    |> Repo.preload(:rule_implementations)
-    |> Map.get(:rule_implementations)
-    |> Enum.filter(&is_nil(Map.get(&1, :deleted_at)))
-    |> Enum.map(&get_latest_rule_result(&1.implementation_key))
-    |> Enum.filter(& &1)
-  end
-
-  def get_latest_rule_result(implementation_key) do
+  @spec get_latest_rule_result(Implementation.t()) :: RuleResult.t() | nil
+  def get_latest_rule_result(%Implementation{implementation_key: key}) do
     RuleResult
-    |> where([r], r.implementation_key == ^implementation_key)
-    |> join(:inner, [r, ri], ri in Implementation,
-      on: r.implementation_key == ri.implementation_key
-    )
-    |> order_by(desc: :date)
+    |> where([rr], rr.implementation_key == ^key)
     |> limit(1)
+    |> order_by([rr], desc: rr.date)
     |> Repo.one()
-  end
-
-  @spec get_implementation_results(binary) :: [RuleResult.t()]
-  def get_implementation_results(implementation_key) do
-    RuleResult
-    |> where([r], r.implementation_key == ^implementation_key)
-    |> order_by(desc: :date)
-    |> Repo.all()
   end
 
   def delete_rule_result(%RuleResult{} = rule_result) do
@@ -144,7 +130,7 @@ defmodule TdDq.Rules.RuleResults do
       |> select_merge([_, i, _], %{implementation_id: i.id, rule_id: i.rule_id})
       |> select_merge(
         [_, _, rule],
-        map(rule, ^~w(business_concept_id goal name minimum result_type)a)
+        map(rule, ^~w(domain_id business_concept_id goal name minimum result_type)a)
       )
       |> where([res], res.id in ^ids)
       |> order_by([res], res.id)

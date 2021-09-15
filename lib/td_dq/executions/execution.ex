@@ -12,6 +12,7 @@ defmodule TdDq.Executions.Execution do
   alias TdDq.Events.QualityEvent
   alias TdDq.Executions.Group
   alias TdDq.Implementations.Implementation
+  alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleResult
 
   schema "executions" do
@@ -19,8 +20,8 @@ defmodule TdDq.Executions.Execution do
     belongs_to(:group, Group)
     belongs_to(:implementation, Implementation)
     belongs_to(:result, RuleResult)
+    belongs_to(:rule, Rule)
     has_many(:quality_events, QualityEvent)
-    has_one(:rule, through: [:implementation, :rule])
     timestamps(type: :utc_datetime_usec)
   end
 

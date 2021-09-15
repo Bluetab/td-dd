@@ -5,7 +5,10 @@ defmodule TdDd.Lineage.Units do
 
   alias Ecto.Multi
   alias TdCache.TaxonomyCache
-  alias TdDd.Lineage.Units.{Edge, Event, Node, Unit}
+  alias TdDd.Lineage.Units.Edge
+  alias TdDd.Lineage.Units.Event
+  alias TdDd.Lineage.Units.Node
+  alias TdDd.Lineage.Units.Unit
   alias TdDd.Repo
 
   import Ecto.Query
