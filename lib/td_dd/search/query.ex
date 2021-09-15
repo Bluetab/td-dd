@@ -77,14 +77,6 @@ defmodule TdDd.Search.Query do
       ]
   end
 
-  # defp to_terms_query({"structure_ids", ids}, _index) do
-  #   get_filter(nil, ids, :structure_ids)
-  # end
-
-  # defp to_terms_query({:rule_id, rule_id}, _index) do
-  #   get_filter(nil, rule_id, :rule_id)
-  # end
-
   defp to_terms_query({filter, value}, _index) when filter in ["updated_at", "start_date", "end_date"] do
     %{range: %{String.to_atom(filter) => value}}
   end
@@ -145,8 +137,6 @@ defmodule TdDd.Search.Query do
     end
   end
 
-  # def get_aggregation_terms(:rules), do: Aggregations.rule_aggregation_terms()
-  # def get_aggregation_terms(:implementations), do: Aggregations.implementation_aggregation_terms()
   def get_aggregation_terms(:structures), do: Aggregations.aggregation_terms()
   def get_aggregation_terms(:grants), do: Aggregations.grant_aggregation_terms()
 end
