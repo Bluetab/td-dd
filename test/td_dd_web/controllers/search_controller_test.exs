@@ -21,7 +21,7 @@ defmodule TdDdWeb.SearchControllerTest do
     :ok
   end
 
-  describe "index" do
+  describe "search" do
     setup :create_grant
 
     @tag authentication: [role: "admin"]
@@ -58,6 +58,28 @@ defmodule TdDdWeb.SearchControllerTest do
     end
   end
 
+  describe "search_my_grants" do
+
+    @tag authentication: [role: "user"]
+    test "user without permissions can only view owned grants", %{
+      conn: conn,
+      claims: claims,
+      domain: domain
+    } do
+      %{user_id: user_id} = claims
+      data_structure = insert(:data_structure, domain_id: domain.id, domain: domain)
+      data_structure_version =
+        insert(:data_structure_version, data_structure: data_structure)
+      %{id: owned_grant_id} = create_grant(data_structure_version, data_structure, user_id)
+      _not_owned_grant = create_grant(data_structure_version, data_structure, user_id + 1)
+
+      assert %{"data" => [%{"id" => ^owned_grant_id}]} =
+        conn
+        |> post(Routes.search_path(conn, :search_my_grants))
+        |> json_response(:ok)
+    end
+  end
+
   defp create_grant(context) do
     grant =
       case context do
@@ -70,5 +92,13 @@ defmodule TdDdWeb.SearchControllerTest do
       end
 
     [grant: grant]
+  end
+
+  defp create_grant(data_structure_version, data_structure, user_id) do
+    insert(:grant,
+      data_structure_version: data_structure_version,
+      data_structure: data_structure,
+      user_id: user_id
+    )
   end
 end

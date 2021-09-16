@@ -340,6 +340,10 @@ defmodule TdDd.ElasticsearchMock do
     end
   end
 
+  defp create_term_filter(%{user_id: user_id}) do
+    fn doc -> Map.get(doc, "user_id") == user_id end
+  end
+
   defp create_term_filter(%{} = term) when is_map(term) do
     term
     |> Map.to_list()
