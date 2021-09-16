@@ -1127,6 +1127,12 @@ defmodule TdDd.DataStructures do
   defp add_filter({"updated_at", updated_at}, query),
     do: where(query, [sn], sn.updated_at >= ^updated_at)
 
+  defp add_filter({"system_id", system_id}, query) do
+    query
+    |> join(:inner, [sn], ds in assoc(sn, :data_structure))
+    |> where([sn, ds], ds.system_id == ^system_id)
+  end
+
   defp add_filter(_, query), do: query
 
   @doc """
