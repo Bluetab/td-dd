@@ -44,6 +44,7 @@ defmodule TdDdWeb.StructureNoteView do
 
   def render("search_structure_note.json", %{structure_note: structure_note}) do
     %{
+      id: structure_note.id,
       status: structure_note.status,
       df_content: structure_note.df_content,
       updated_at: structure_note.updated_at,
