@@ -13,6 +13,7 @@
   - `POST /api/grant_approvers`
   - `DELETE /api/grant_approvers/:id`
 - [TD-3971] Template mandatory dependent field
+- [TD-4107] Adds `system_id` filter to structure_notes/search endpoint 
 
 ### Changed
 
