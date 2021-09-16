@@ -129,7 +129,6 @@ defmodule TdDd.DataStructures.DataStructureVersion do
 
   defimpl Elasticsearch.Document do
     alias TdDd.DataStructures.DataStructureVersion
-    alias TdDq.Search.Helpers
 
     @max_sortable_length 32_766
 
