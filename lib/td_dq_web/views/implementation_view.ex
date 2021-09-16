@@ -222,7 +222,8 @@ defmodule TdDqWeb.Implementation.ConditionView do
     %{
       structure: render_one(row.structure, StructureView, "structure.json"),
       operator: render_one(row.operator, OperatorView, "operator.json"),
-      value: row.value
+      value: row.value,
+      modifier: Map.get(row, :modifier)
     }
     |> with_population(row)
   end
