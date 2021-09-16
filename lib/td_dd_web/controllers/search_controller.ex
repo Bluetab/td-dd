@@ -5,6 +5,8 @@ defmodule TdDdWeb.SearchController do
   import Canada, only: [can?: 2]
 
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.Grants.Grant
+  alias TdDd.Grants.Search
 
   action_fallback(TdDdWeb.FallbackController)
 
@@ -26,5 +28,56 @@ defmodule TdDdWeb.SearchController do
     else
       render_error(conn, :forbidden)
     end
+  end
+
+  swagger_path :reindex_all_grants do
+    description("Reindex all grants ES indexes with DB content")
+    produces("application/json")
+    response(202, "Accepted")
+    response(500, "Client Error")
+  end
+
+  def reindex_all_grants(conn, _params) do
+    claims = conn.assigns[:current_resource]
+
+    if can?(claims, reindex_all(Grant)) do
+      @index_worker.reindex_grants(:all)
+      send_resp(conn, :accepted, "")
+    else
+      render_error(conn, :forbidden)
+    end
+  end
+
+  swagger_path :search_grants do
+    description("Search for grants")
+    produces("application/json")
+
+    response(200, "Accepted")
+    response(500, "Client Error")
+  end
+
+  def search_grants(conn, params) do
+    page = Map.get(params, "page", 0)
+    size = Map.get(params, "size", 20)
+    claims = conn.assigns[:current_resource]
+    manage_permission = can?(claims, manage(%{"resource_type" => "grant"}))
+    user_permissions = %{manage_grants: manage_permission}
+
+    %{
+      results: grants,
+      aggregations: aggregations,
+      total: total
+    } =
+      params
+      |> Map.drop(["page", "size"])
+      |> Search.search(claims, page, size)
+
+    conn
+    |> put_resp_header("x-total-count", "#{total}")
+    |> render("search.json",
+      grants: grants,
+      filters: aggregations,
+      user_permissions: [user_permissions]
+    )
   end
 end

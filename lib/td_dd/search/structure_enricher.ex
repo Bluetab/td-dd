@@ -34,6 +34,10 @@ defmodule TdDd.Search.StructureEnricher do
     GenServer.call(__MODULE__, {:enrich, structure, type, content_opt})
   end
 
+  def enrich_with_domain(structure) do
+    GenServer.call(__MODULE__, {:enrich_with_domain, structure})
+  end
+
   def count, do: GenServer.call(__MODULE__, :count)
 
   ## GenServer Callbacks
@@ -53,6 +57,19 @@ defmodule TdDd.Search.StructureEnricher do
   @impl true
   def handle_call(:count, _from, %{count: count} = state) do
     {:reply, count, state}
+  end
+
+  @impl true
+  def handle_call(
+        {:enrich_with_domain, data_structure},
+        _from,
+        %{domains: domains, count: count} = state
+      ) do
+    reply =
+      data_structure
+      |> enrich_domain(domains)
+
+    {:reply, reply, %{state | count: count + 1}}
   end
 
   @impl true

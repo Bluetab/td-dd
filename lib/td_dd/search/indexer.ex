@@ -7,6 +7,7 @@ defmodule TdDd.Search.Indexer do
   alias Elasticsearch.Index.Bulk
   alias TdCache.Redix
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.Grants.GrantStructure
   alias TdDd.Search.Cluster
   alias TdDd.Search.Mappings
   alias TdDd.Search.Store
@@ -14,15 +15,37 @@ defmodule TdDd.Search.Indexer do
 
   require Logger
 
+  @dsv_index :structures
+  @grant_index :grants
   @action "index"
 
   def reindex(:all) do
     :ok = StructureEnricher.refresh()
+    reindex_all(Mappings.get_mappings(), @dsv_index)
+  end
 
+  def reindex(ids) when is_list(ids) do
+    StructureEnricher.refresh()
+    reindex(DataStructureVersion, @dsv_index, ids)
+  end
+
+  def reindex(id), do: reindex([id])
+
+  def reindex_grants(:all) do
+    reindex_all(Mappings.get_grant_mappings(), @grant_index)
+  end
+
+  def reindex_grants(ids) when is_list(ids) do
+    reindex(GrantStructure, @grant_index, ids)
+  end
+
+  def reindex_grants(id), do: reindex_grants([id])
+
+  defp reindex_all(mappings, index) do
     Store.vacuum()
-    alias_name = Cluster.alias_name(:structures)
+    alias_name = Cluster.alias_name(index)
 
-    Mappings.get_mappings()
+    mappings
     |> Map.put(:index_patterns, "#{alias_name}-*")
     |> Jason.encode!()
     |> put_template(alias_name)
@@ -34,15 +57,14 @@ defmodule TdDd.Search.Indexer do
     end
   end
 
-  def reindex(ids) when is_list(ids) do
-    StructureEnricher.refresh()
-    alias_name = Cluster.alias_name(:structures)
+  defp reindex(schema, index, ids) when is_list(ids) do
+    alias_name = Cluster.alias_name(index)
 
     Store.transaction(fn ->
-      DataStructureVersion
+      schema
       |> Store.stream(ids)
       |> Stream.map(&Bulk.encode!(Cluster, &1, alias_name, @action))
-      |> Stream.chunk_every(Cluster.setting(:structures, :bulk_page_size))
+      |> Stream.chunk_every(Cluster.setting(index, :bulk_page_size))
       |> Stream.map(&Enum.join(&1, ""))
       |> Stream.map(&Elasticsearch.post(Cluster, "/#{alias_name}/_doc/_bulk", &1))
       |> Stream.map(&log(&1, @action))
@@ -50,14 +72,33 @@ defmodule TdDd.Search.Indexer do
     end)
   end
 
-  def reindex(id), do: reindex([id])
-
   def delete(ids) when is_list(ids) do
-    alias_name = Cluster.alias_name(:structures)
-    Enum.each(ids, &Elasticsearch.delete_document(Cluster, &1, alias_name))
+    delete(ids, @dsv_index)
   end
 
-  def delete(id), do: delete([id])
+  def delete_grants(ids) when is_list(ids) do
+    ids_encoded_array = Jason.encode!(Enum.map(ids, &(Integer.to_string(&1))))
+    query = """
+    {
+      "query": {
+        "terms": {
+          "id": #{ids_encoded_array}
+        }
+      }
+    }
+    """
+    delete_by_query(query, @grant_index)
+  end
+
+  defp delete_by_query(query, index) do
+    alias_name = Cluster.alias_name(index)
+    Elasticsearch.post(Cluster, "/#{alias_name}/_delete_by_query?conflicts=proceed", query)
+  end
+
+  defp delete(ids, index) do
+    alias_name = Cluster.alias_name(index)
+    Enum.map(ids, &Elasticsearch.delete_document(Cluster, &1, alias_name))
+  end
 
   def migrate do
     if acquire_lock?("TD-2589") do
@@ -71,7 +112,7 @@ defmodule TdDd.Search.Indexer do
     end
   end
 
-  defp put_template(template, name) do
+  def put_template(template, name) do
     Elasticsearch.put(Cluster, "/_template/#{name}", template)
   end
 

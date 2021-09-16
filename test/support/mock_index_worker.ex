@@ -19,6 +19,14 @@ defmodule TdDd.Search.MockIndexWorker do
     Agent.update(__MODULE__, &[{:reindex, params} | &1])
   end
 
+  def reindex_grants do
+    Agent.update(__MODULE__, &[:reindex_grants | &1])
+  end
+
+  def reindex_grants(params) do
+    Agent.update(__MODULE__, &[{:reindex_grants, params} | &1])
+  end
+
   def reindex_rules(param) do
     Agent.update(__MODULE__, &[{:reindex_rules, param} | &1])
   end

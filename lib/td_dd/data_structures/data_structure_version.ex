@@ -11,6 +11,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureType
+  import Ecto.Query
 
   @typedoc "A data structure version"
   @type t :: %__MODULE__{}
@@ -122,6 +123,10 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     |> validate_length(:type, max: 255)
   end
 
+  def with_data_structure do
+    from  __MODULE__, preload: :data_structure
+  end
+
   defimpl Elasticsearch.Document do
     alias TdDd.DataStructures.DataStructureVersion
 
@@ -140,6 +145,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
             path: path
           } = dsv
         ) do
+
       # IMPORTANT: Avoid enriching structs one-by-one in this function.
       # Instead, enrichment should be performed as efficiently as possible on
       # chunked data using `TdDd.DataStructures.enriched_structure_versions/1`.
@@ -155,7 +161,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
         :inserted_at,
         :linked_concepts_count,
         :source_id,
-        :system_id
+        :system_id,
       ])
       |> Map.put(:latest_note, content)
       |> Map.put(:domain_ids, domain_ids(data_structure))
@@ -170,6 +176,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       |> Map.put(:tags, tags)
       |> Map.merge(
         Map.take(dsv, [
+          :data_structure_id,
           :class,
           :classes,
           :deleted_at,
