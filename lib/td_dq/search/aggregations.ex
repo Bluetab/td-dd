@@ -38,7 +38,9 @@ defmodule TdDq.Search.Aggregations do
       {"taxonomy",
        %{
          nested: %{path: "domain_parents"},
-         aggs: %{distinct_search: %{terms: %{field: "domain_parents.id", size: 50}}}
+         aggs: %{
+           distinct_search: %{terms: %{field: "domain_parents.id", size: get_domains_count()}}
+         }
        }}
     ]
 
