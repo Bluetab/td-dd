@@ -595,6 +595,13 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       data_structure: %{id: id},
       domain: %{id: domain_id}
     } do
+      CacheHelpers.insert_template(%{
+        name: "foo",
+        label: "foo",
+        scope: "gr",
+        content: []
+      })
+
       create_acl_entry(user_id, domain_id, [:view_data_structure, :create_grant_request])
 
       assert %{"user_permissions" => permissions} =
