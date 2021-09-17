@@ -44,17 +44,13 @@ defmodule TdDd.Search.Aggregations do
          nested: %{path: "data_structure_version.domain_parents"},
          aggs: %{
            distinct_search: %{
-             terms: %{field: "data_structure_version.domain_parents.id", size: 50}
+             terms: %{field: "data_structure_version.domain_parents.id", size: get_domains_count()}
            }
          }
        }}
     ]
 
-    # ["dd"]
-    # |> Enum.flat_map(&template_terms/1)
-    # |> Enum.concat(static_keywords)
-    static_keywords
-    |> Enum.into(%{})
+    Enum.into(static_keywords, %{})
   end
 
   def get_agg_terms([]) do
