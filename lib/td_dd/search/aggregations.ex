@@ -2,6 +2,7 @@ defmodule TdDd.Search.Aggregations do
   @moduledoc """
   Aggregations for elasticsearch
   """
+  alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
   alias TdDfLib.Format
 
@@ -20,7 +21,9 @@ defmodule TdDd.Search.Aggregations do
       {"taxonomy",
        %{
          nested: %{path: "domain_parents"},
-         aggs: %{distinct_search: %{terms: %{field: "domain_parents.id", size: 50}}}
+         aggs: %{
+           distinct_search: %{terms: %{field: "domain_parents.id", size: get_domains_count()}}
+         }
        }},
       {"with_profiling.raw", %{terms: %{field: "with_profiling.raw"}}}
     ]
@@ -130,5 +133,12 @@ defmodule TdDd.Search.Aggregations do
 
   defp content_term(%{"name" => field}, "cx") do
     {field, %{terms: %{field: "source.config.#{field}.raw"}}}
+  end
+
+  defp get_domains_count do
+    case Enum.count(TaxonomyCache.get_domain_ids()) do
+      0 -> 10
+      count -> count
+    end
   end
 end
