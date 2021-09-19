@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-4037] change the limit on the taxonomy in aggregations
+
 ## [4.18.0] 2021-04-19
 
 ### Fixed
