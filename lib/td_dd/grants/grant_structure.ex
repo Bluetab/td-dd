@@ -27,7 +27,9 @@ defmodule TdDd.Grants.GrantStructure do
         start_date: grant.start_date,
         end_date: grant.end_date,
         user_id: grant.user_id,
-        user: grant.user,
+        user: %{
+          full_name: grant.user.full_name
+        },
         data_structure_version: Elasticsearch.Document.encode(dsv)
       }
     end
