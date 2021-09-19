@@ -6,7 +6,6 @@ defmodule TdDdWeb.SearchControllerTest do
   @moduletag sandbox: :shared
 
   setup_all do
-    #%{id: user_id, user_name: user_name} = user = CacheHelpers.insert_user()
     %{id: domain_id} = domain = build(:domain)
     TaxonomyCache.put_domain(domain)
 
