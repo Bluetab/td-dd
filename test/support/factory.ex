@@ -395,7 +395,7 @@ defmodule TdDd.Factory do
     attrs = default_assoc(attrs, :data_structure_id, :data_structure)
 
     %TdDd.Grants.Grant{
-      user_id: sequence(:user_id, & &1),
+      user_id: sequence(:user_id, & &1, start_at: 1),
       detail: %{"foo" => "bar"},
       start_date: "2020-01-02",
       end_date: "2021-02-03"
