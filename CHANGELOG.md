@@ -7,6 +7,8 @@
 - [TD-3950] Index and search grants
   - `POST /api/grants/search` searches grants
   - `POST /api/grant_filters/search` searches grant filters
+  - `POST /api/grants/search/mine` searches "my grants" (granted to me)
+  - `POST /api/grant_filters/search/mine` searches "my grants" filters 
 - [TD-4075] API routes for managing grant approvers:
   - `GET /api/grant_approvers`
   - `GET /api/grant_approvers/:id`

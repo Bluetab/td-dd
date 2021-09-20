@@ -57,6 +57,14 @@ defmodule TdDdWeb.SearchController do
   end
 
   def search_grants(conn, params) do
+    search(conn, params, :by_permissions)
+  end
+
+  def search_my_grants(conn, params) do
+    search(conn, params, :by_user)
+  end
+
+  defp search(conn, params, by) do
     page = Map.get(params, "page", 0)
     size = Map.get(params, "size", 20)
     claims = conn.assigns[:current_resource]
@@ -70,7 +78,7 @@ defmodule TdDdWeb.SearchController do
     } =
       params
       |> Map.drop(["page", "size"])
-      |> Search.search(claims, page, size)
+      |> search(claims, page, size, by)
 
     conn
     |> put_resp_header("x-total-count", "#{total}")
@@ -79,5 +87,11 @@ defmodule TdDdWeb.SearchController do
       filters: aggregations,
       user_permissions: [user_permissions]
     )
+  end
+  defp search(params, %{user_id: user_id} = _claims, page, size, :by_user) do
+    Search.search_by_user(params, user_id, page, size)
+  end
+  defp search(params, claims, page, size, :by_permissions) do
+    Search.search(params, claims, page, size)
   end
 end
