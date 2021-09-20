@@ -7,6 +7,7 @@ defmodule TdDq.Implementations.ConditionRow do
 
   import Ecto.Changeset
 
+  alias TdDq.Implementations.Modifier
   alias TdDq.Implementations.Operator
   alias TdDq.Implementations.Structure
 
@@ -14,8 +15,10 @@ defmodule TdDq.Implementations.ConditionRow do
   embedded_schema do
     embeds_one(:structure, Structure, on_replace: :delete)
     embeds_one(:operator, Operator, on_replace: :delete)
+    embeds_one(:modifier, Modifier, on_replace: :delete)
     embeds_many(:population, __MODULE__, on_replace: :delete)
     field(:value, {:array, :map})
+    embeds_many(:value_modifier, Modifier, on_replace: :delete)
   end
 
   def changeset(%{} = params) do
@@ -26,8 +29,10 @@ defmodule TdDq.Implementations.ConditionRow do
     struct
     |> cast(params, [:value])
     |> cast_embed(:structure, with: &Structure.changeset/2, required: true)
+    |> cast_embed(:modifier, with: &Modifier.changeset/2)
     |> cast_embed(:operator, with: &Operator.changeset/2, required: true)
     |> cast_embed(:population, with: &__MODULE__.changeset/2)
+    |> cast_embed(:value_modifier, with: &Modifier.changeset/2)
     |> validate_required([:value])
     |> validate_value(params)
   end
