@@ -47,4 +47,12 @@ defmodule TdDdWeb.GrantFilterController do
     filters = Search.get_filter_values(claims, permission, params)
     render(conn, "show.json", filters: filters)
   end
+
+  def search_mine(conn, params) do
+    %{user_id: user_id} = conn.assigns[:current_resource]
+    params = Map.put(params, :without, ["deleted_at"])
+    filters = Search.get_filter_values(user_id, params)
+    render(conn, "show.json", filters: filters)
+  end
+
 end

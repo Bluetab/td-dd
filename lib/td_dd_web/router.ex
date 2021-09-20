@@ -107,6 +107,7 @@ defmodule TdDdWeb.Router do
 
     get("/grant_filters", GrantFilterController, :index)
     post("/grant_filters/search", GrantFilterController, :search)
+    post("/grant_filters/search/mine", GrantFilterController, :search_mine)
 
     get("/data_structure_user_filters/user/me", UserSearchFilterController, :index_by_user)
     resources("/data_structure_user_filters", UserSearchFilterController, except: [:new, :edit])
@@ -119,6 +120,7 @@ defmodule TdDdWeb.Router do
 
     resources("/grants", GrantController, except: [:create, :new, :edit])
     post("/grants/search", SearchController, :search_grants)
+    post("/grants/search/mine", SearchController, :search_my_grants)
 
     resources("/grant_request_groups", GrantRequestGroupController,
       only: [:index, :show, :create, :delete]
