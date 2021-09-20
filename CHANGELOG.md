@@ -20,6 +20,7 @@
 ### Changed
 
 - [TD-4065] Allow Implementation keys with spaces, points, etc.
+- [TD-4079] Give grant permission only if we have `gr` templates 
 
 ### Fixed
 
