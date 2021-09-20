@@ -47,6 +47,30 @@ defmodule TdDq.Implementations.ConditionRowTest do
       assert %{valid?: false, errors: errors} = ConditionRow.changeset(params)
       assert {"can't be blank", [validation: :required]} = errors[:operator]
     end
+
+    test "validates modifier is cast" do
+      params =
+        :condition_row
+        |> string_params_for()
+        |> Map.put("modifier", string_params_for(:modifier))
+
+      assert %{
+               valid?: true,
+               changes: %{modifier: %{valid?: true}}
+             } = ConditionRow.changeset(params)
+    end
+
+    test "validates value_modifier is cast" do
+      params =
+        :condition_row
+        |> string_params_for()
+        |> Map.put("value_modifier", [string_params_for(:modifier)])
+
+      assert %{
+               valid?: true,
+               changes: %{value_modifier: [%{valid?: true}]}
+             } = ConditionRow.changeset(params)
+    end
   end
 
   test "validates empty value" do
