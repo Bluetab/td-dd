@@ -215,6 +215,7 @@ end
 defmodule TdDqWeb.Implementation.ConditionView do
   use TdDqWeb, :view
 
+  alias TdDqWeb.Implementation.ModifierView
   alias TdDqWeb.Implementation.OperatorView
   alias TdDqWeb.Implementation.StructureView
 
@@ -222,10 +223,11 @@ defmodule TdDqWeb.Implementation.ConditionView do
     %{
       structure: render_one(row.structure, StructureView, "structure.json"),
       operator: render_one(row.operator, OperatorView, "operator.json"),
-      value: row.value,
-      modifier: Map.get(row, :modifier)
+      value: row.value
     }
     |> with_population(row)
+    |> with_modifier(row)
+    |> with_value_modifier(row)
   end
 
   defp with_population(condition, %{population: population = [_ | _]}) do
@@ -233,6 +235,22 @@ defmodule TdDqWeb.Implementation.ConditionView do
   end
 
   defp with_population(condition, _row), do: condition
+
+  defp with_modifier(condition, %{modifier: modifier = %{}}) do
+    Map.put(condition, :modifier, render_one(modifier, ModifierView, "modifier.json"))
+  end
+
+  defp with_modifier(condition, _row), do: condition
+
+  defp with_value_modifier(condition, %{value_modifier: value_modifier = [_ | _]}) do
+    Map.put(
+      condition,
+      :value_modifier,
+      render_many(value_modifier, ModifierView, "modifier.json")
+    )
+  end
+
+  defp with_value_modifier(condition, _row), do: condition
 end
 
 defmodule TdDqWeb.Implementation.OperatorView do
@@ -250,6 +268,17 @@ defmodule TdDqWeb.Implementation.OperatorView do
       name: operator.name,
       value_type: operator.value_type,
       value_type_filter: operator.value_type_filter
+    }
+  end
+end
+
+defmodule TdDqWeb.Implementation.ModifierView do
+  use TdDqWeb, :view
+
+  def render("modifier.json", %{modifier: modifier}) do
+    %{
+      name: modifier.name,
+      params: modifier.params
     }
   end
 end

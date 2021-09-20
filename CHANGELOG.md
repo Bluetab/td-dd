@@ -14,6 +14,8 @@
   - `DELETE /api/grant_approvers/:id`
 - [TD-3971] Template mandatory dependent field
 - [TD-4107] Adds `system_id` filter to structure_notes/search endpoint 
+- [TD-4037] change the limit on the taxonomy in aggregations
+- [TD-3970] Adds `modifier` and `value_modifier` embbeds to `ConditionRow`
 
 ### Changed
 
