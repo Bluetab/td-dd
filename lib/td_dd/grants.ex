@@ -108,34 +108,42 @@ defmodule TdDd.Grants do
       |> order_by([s], desc: s.inserted_at)
       |> subquery()
 
-    query =
-      GrantRequest
-      |> join(:left, [gr], s in ^status_subquery, on: s.grant_request_id == gr.id)
-      |> join(:inner, [gr], ds in assoc(gr, :data_structure))
-      |> join(:inner, [gr], grg in assoc(gr, :grant_request_group))
-      |> select_merge([gr, status], %{current_status: status.status})
-      |> select_merge([gr, status, ds], %{domain_id: ds.domain_id})
-
     grant_requests =
-      params
-      |> Map.delete(:action)
-      |> Map.put_new(:domain_ids, visible_domain_ids(claims, action))
-      |> Enum.reduce(query, fn
-        {:status, status}, q -> where(q, [gr, s], s.status == ^status)
-        {:domain_ids, :all}, q -> q
-        {:domain_ids, domain_ids}, q -> where(q, [gr, _, ds], ds.domain_id in ^domain_ids)
-        {:user_id, user_id}, q -> where(q, [..., grg], grg.user_id == ^user_id)
-      end)
-      |> Repo.all()
+      case visible_domain_ids(claims, action) do
+        :none ->
+          []
+
+        domain_ids ->
+          query =
+            GrantRequest
+            |> join(:left, [gr], s in ^status_subquery, on: s.grant_request_id == gr.id)
+            |> join(:inner, [gr], ds in assoc(gr, :data_structure))
+            |> join(:inner, [gr], grg in assoc(gr, :grant_request_group))
+            |> select_merge([gr, status], %{current_status: status.status})
+            |> select_merge([gr, status, ds], %{domain_id: ds.domain_id})
+
+          params
+          |> Map.delete(:action)
+          |> Map.put_new(:domain_ids, domain_ids)
+          |> Enum.reduce(query, fn
+            {:status, status}, q -> where(q, [gr, s], s.status == ^status)
+            {:domain_ids, :all}, q -> q
+            {:domain_ids, domain_ids}, q -> where(q, [gr, _, ds], ds.domain_id in ^domain_ids)
+            {:user_id, user_id}, q -> where(q, [..., grg], grg.user_id == ^user_id)
+          end)
+          |> Repo.all()
+      end
 
     {:ok, grant_requests}
   end
 
   defp do_list_grant_requests(error, _claims), do: error
 
-  defp visible_domain_ids(_claims, nil), do: :all
-
   defp visible_domain_ids(%{role: "admin"}, _), do: :all
+
+  defp visible_domain_ids(%{role: "service"}, _), do: :all
+
+  defp visible_domain_ids(_claims, nil), do: :none
 
   defp visible_domain_ids(%{user_id: user_id}, "approve") do
     Permissions.permitted_domain_ids(user_id, :approve_grant_request)

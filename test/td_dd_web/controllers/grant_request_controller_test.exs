@@ -41,6 +41,36 @@ defmodule TdDdWeb.GrantRequestControllerTest do
                |> get(Routes.grant_request_path(conn, :index, params))
                |> json_response(:ok)
     end
+
+    @tag authentication: [role: "user"]
+    test "returns forbidden if user is not authorized", %{conn: conn} do
+      assert %{"errors" => _errors} =
+               conn
+               |> get(Routes.grant_request_path(conn, :index, %{}))
+               |> json_response(:forbidden)
+    end
+
+    @tag authentication: [role: "user"]
+    test "filters by domain permissions of an approver", %{
+      conn: conn,
+      claims: %{user_id: user_id}
+    } do
+      %{id: domain_id} = CacheHelpers.insert_domain()
+      create_acl_entry(user_id, domain_id, [:approve_grant_request])
+      CacheHelpers.insert_grant_request_approver(user_id, domain_id)
+
+      %{id: id} =
+        insert(:grant_request, data_structure: build(:data_structure, domain_id: domain_id))
+
+      insert(:grant_request, data_structure: build(:data_structure), domain_id: domain_id + 1)
+
+      params = %{"action" => "approve"}
+
+      assert %{"data" => [%{"id" => ^id}]} =
+               conn
+               |> get(Routes.grant_request_path(conn, :index, params))
+               |> json_response(:ok)
+    end
   end
 
   describe "create grant_request" do

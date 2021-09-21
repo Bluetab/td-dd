@@ -12,16 +12,16 @@ defmodule TdDdWeb.GrantRequestController do
 
   def index(conn, %{"grant_request_group_id" => id}) do
     with claims <- conn.assigns[:current_resource],
-         {:can, true} <- {:can, can?(claims, index(GrantRequest))},
-         %{requests: requests} <- Grants.get_grant_request_group!(id) do
+         %{requests: requests} = grant_request_group <- Grants.get_grant_request_group!(id),
+         {:can, true} <- {:can, can?(claims, show(grant_request_group))} do
       render(conn, "index.json", grant_requests: requests)
     end
   end
 
   def index(conn, %{} = params) do
     with claims <- conn.assigns[:current_resource],
-         {:can, true} <- {:can, can?(claims, index(GrantRequest))},
-         {:ok, grant_requests} <- Grants.list_grant_requests(params) do
+         {:can, true} <- {:can, can?(claims, list(GrantRequest))},
+         {:ok, grant_requests} <- Grants.list_grant_requests(claims, params) do
       render(conn, "index.json", grant_requests: grant_requests)
     end
   end

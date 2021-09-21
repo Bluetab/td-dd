@@ -99,6 +99,8 @@ defmodule CacheHelpers do
       UserCache.delete(user_id)
       Redix.command!(["SREM", "permission:approve_grant_request:roles", "grant_approver"])
     end)
+    insert_user(id: user_id)
+    insert_acl(domain_id, "grant_approver", [user_id])
     UserCache.put_roles(user_id, %{"grant_approver" => [domain_id]})
     Permissions.put_permission_roles(%{"approve_grant_request" => ["grant_approver"]})
   end

@@ -71,12 +71,12 @@ defmodule TdDd.Canada.Abilities do
       UnitAbilities.can?(claims, action, Unit)
     end
 
-    def can?(%Claims{} = claims, :view_grants, %DataStructure{} = data_structure) do
-      GrantAbilities.can?(claims, :view_grants, data_structure)
-    end
-
     def can?(%Claims{} = claims, action, %{hint: :domain} = domain) do
       UnitAbilities.can?(claims, action, domain)
+    end
+
+    def can?(%Claims{} = claims, :view_grants, %DataStructure{} = data_structure) do
+      GrantAbilities.can?(claims, :view_grants, data_structure)
     end
 
     def can?(%Claims{} = claims, :create_grant, %DataStructure{} = data_structure) do
@@ -87,8 +87,9 @@ defmodule TdDd.Canada.Abilities do
       GrantAbilities.can?(claims, action, grant)
     end
 
-    def can?(%Claims{role: "admin"}, _, GrantRequest), do: true
-    def can?(%Claims{}, _, GrantRequest), do: false
+    def can?(%Claims{} = claims, action, GrantRequest) do
+      GrantAbilities.can?(claims, action, GrantRequest)
+    end
 
     def can?(%Claims{role: "admin"}, :create_grant_request, %DataStructure{}), do: true
 

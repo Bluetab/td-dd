@@ -425,7 +425,7 @@ defmodule TdDd.GrantsTest do
     end
 
     test "filters by user_id" do
-      %{user_id: user_id} = claims = build(:claims)
+      %{user_id: user_id} = claims = build(:claims, role: "admin")
 
       %{id: id} =
         insert(:grant_request, grant_request_group: build(:grant_request_group, user_id: user_id))
