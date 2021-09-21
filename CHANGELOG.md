@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-4079] Give grant permission only if we have `gr` templates 
+
 ## [4.28.0] 2021-09-20
 
 ### Added
@@ -22,7 +28,6 @@
 ### Changed
 
 - [TD-4065] Allow Implementation keys with spaces, points, etc.
-- [TD-4079] Give grant permission only if we have `gr` templates 
 
 ### Fixed
 
