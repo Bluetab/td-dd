@@ -54,14 +54,13 @@ defmodule TdDdWeb.SystemControllerTest do
     :ok
   end
 
-  setup %{conn: conn} do
+  setup do
     start_supervised!(TdDd.Search.StructureEnricher)
     system = insert(:system)
     domain = CacheHelpers.insert_domain()
     template = CacheHelpers.insert_template(@system_template)
 
     {:ok,
-     conn: put_req_header(conn, "accept", "application/json"),
      system: system,
      domain: domain,
      template: template}

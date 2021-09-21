@@ -14,11 +14,8 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
   }
   @invalid_attrs %{name: nil, template_id: nil, translation: nil}
 
-  setup %{conn: conn} do
-    [
-      conn: put_req_header(conn, "accept", "application/json"),
-      template: CacheHelpers.insert_template()
-    ]
+  setup _ do
+    [template: CacheHelpers.insert_template()]
   end
 
   describe "index" do
