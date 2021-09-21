@@ -15,6 +15,7 @@ defmodule TdDdWeb.SearchView do
     }
     |> with_user_permissions(assigns)
     |> with_scroll_id(assigns)
+    |> with_filters(assigns)
   end
 
   defp with_user_permissions(payload, %{user_permissions: user_permissions}) do
