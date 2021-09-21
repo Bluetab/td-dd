@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [4.28.0] 2021-09-20
 
 ### Added
 
