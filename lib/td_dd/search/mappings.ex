@@ -98,7 +98,6 @@ defmodule TdDd.Search.Mappings do
   end
 
   def get_grant_mappings do
-
     %{mappings: %{_doc: %{properties: dsv_properties}}, settings: _settings} = get_mappings()
 
     properties = %{
@@ -107,6 +106,7 @@ defmodule TdDd.Search.Mappings do
       user_id: %{type: "long"},
       start_date: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       end_date: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
+      updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       data_structure_version: %{type: "object", properties: dsv_properties},
       user: %{
         type: "object",
@@ -117,6 +117,7 @@ defmodule TdDd.Search.Mappings do
         }
       }
     }
+
     settings = Cluster.setting(:grants)
     %{mappings: %{_doc: %{properties: properties}}, settings: settings}
   end
