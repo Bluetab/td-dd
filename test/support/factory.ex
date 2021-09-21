@@ -322,6 +322,10 @@ defmodule TdDd.Factory do
     %TdDq.Implementations.Operator{name: "eq", value_type: "number"}
   end
 
+  def modifier_factory do
+    %TdDq.Implementations.Modifier{name: "cast_as_date", params: %{"format" => "YYYYMMDD"}}
+  end
+
   def rule_result_factory do
     %TdDq.Rules.RuleResult{
       implementation_key: sequence("ri"),
