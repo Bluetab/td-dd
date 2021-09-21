@@ -632,6 +632,25 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
 
       assert %{"request_grant" => false} = permissions
     end
+
+    @tag authentication: [role: "user"]
+    test "cannot request grant without template", %{
+      conn: conn,
+      claims: %{user_id: user_id},
+      data_structure: %{id: id},
+      domain: %{id: domain_id}
+    } do
+      create_acl_entry(user_id, domain_id, [:view_data_structure, :create_grant_request])
+
+      assert %{"user_permissions" => permissions} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(conn, :show, id, "latest")
+               )
+               |> json_response(:ok)
+
+      assert %{"request_grant" => false} = permissions
+    end
   end
 
   describe "GET /api/data_structures/:id/versions/:version field structures" do
