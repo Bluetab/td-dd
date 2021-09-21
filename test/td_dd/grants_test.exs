@@ -383,24 +383,73 @@ defmodule TdDd.GrantsTest do
     end
   end
 
-  describe "list_grant_requests/1 " do
+  describe "list_grant_requests/2" do
     test "includes current status and filters by status" do
+      claims = build(:claims, role: "service")
       %{id: id} = insert(:grant_request)
 
-      assert {:ok, grant_requests} = Grants.list_grant_requests()
+      assert {:ok, grant_requests} = Grants.list_grant_requests(claims)
       assert [%{current_status: nil}] = grant_requests
 
       insert(:grant_request_status, grant_request_id: id, status: "earliest")
 
-      assert {:ok, grant_requests} = Grants.list_grant_requests()
+      assert {:ok, grant_requests} = Grants.list_grant_requests(claims)
       assert [%{current_status: "earliest"}] = grant_requests
 
       insert(:grant_request_status, grant_request_id: id, status: "latest")
 
-      assert {:ok, grant_requests} = Grants.list_grant_requests(%{status: "latest"})
+      assert {:ok, grant_requests} = Grants.list_grant_requests(claims, %{status: "latest"})
       assert [%{current_status: "latest"}] = grant_requests
 
-      assert {:ok, []} = Grants.list_grant_requests(%{status: "earliest"})
+      assert {:ok, []} = Grants.list_grant_requests(claims, %{status: "earliest"})
+    end
+
+    test "includes domain_id and filters by domain_ids" do
+      claims = build(:claims, role: "service")
+      %{id: domain_id} = CacheHelpers.insert_domain()
+      %{id: data_structure_id} = insert(:data_structure, domain_id: domain_id)
+      %{id: id} = insert(:grant_request, data_structure_id: data_structure_id)
+
+      assert {:ok, grant_requests} = Grants.list_grant_requests(claims)
+      assert [%{id: ^id, domain_id: ^domain_id}] = grant_requests
+
+      assert {:ok, grant_requests} =
+               Grants.list_grant_requests(claims, %{domain_ids: [domain_id]})
+
+      assert [%{id: ^id}] = grant_requests
+
+      assert {:ok, grant_requests} =
+               Grants.list_grant_requests(claims, %{domain_ids: [domain_id + 1]})
+
+      assert [] = grant_requests
+    end
+
+    test "filters by user_id" do
+      %{user_id: user_id} = claims = build(:claims)
+
+      %{id: id} =
+        insert(:grant_request, grant_request_group: build(:grant_request_group, user_id: user_id))
+
+      insert(:grant_request)
+
+      assert {:ok, [%{id: ^id}]} = Grants.list_grant_requests(claims, %{user_id: user_id})
+    end
+
+    test "filters by domain_ids if action is 'approve'" do
+      %{id: domain_id} = CacheHelpers.insert_domain()
+      %{user_id: user_id} = claims = build(:claims, role: "user")
+
+      %{id: id} =
+        insert(:grant_request,
+          grant_request_group: build(:grant_request_group, user_id: user_id),
+          data_structure: build(:data_structure, domain_id: domain_id)
+        )
+
+      assert {:ok, []} = Grants.list_grant_requests(claims, %{action: "approve"})
+
+      CacheHelpers.insert_grant_request_approver(user_id, domain_id)
+
+      assert {:ok, [%{id: ^id}]} = Grants.list_grant_requests(claims, %{action: "approve"})
     end
   end
 

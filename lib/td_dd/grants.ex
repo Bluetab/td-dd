@@ -7,6 +7,7 @@ defmodule TdDd.Grants do
 
   alias Ecto.Changeset
   alias Ecto.Multi
+  alias TdCache.Permissions
   alias TdDd.Auth.Claims
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Audit
@@ -85,15 +86,22 @@ defmodule TdDd.Grants do
     Repo.delete(grant_request_group)
   end
 
-  @spec list_grant_requests(map) :: {:error, Changeset.t()} | {:ok, [GrantRequest.t()]}
-  def list_grant_requests(%{} = params \\ %{}) do
-    {_data = %{}, _types = %{status: :string}}
-    |> Changeset.cast(params, [:status])
+  @spec list_grant_requests(Claims.t(), map) ::
+          {:error, Changeset.t()} | {:ok, [GrantRequest.t()]}
+  def list_grant_requests(%Claims{} = claims, %{} = params \\ %{}) do
+    {_data = %{action: nil},
+     _types = %{
+       action: :string,
+       status: :string,
+       domain_ids: {:array, :integer},
+       user_id: :integer
+     }}
+    |> Changeset.cast(params, [:action, :domain_ids, :status, :user_id])
     |> Changeset.apply_action(:update)
-    |> do_list_grant_requests()
+    |> do_list_grant_requests(claims)
   end
 
-  defp do_list_grant_requests({:ok, %{} = params}) do
+  defp do_list_grant_requests({:ok, %{action: action} = params}, claims) do
     status_subquery =
       GrantRequestStatus
       |> distinct([s], s.grant_request_id)
@@ -103,19 +111,35 @@ defmodule TdDd.Grants do
     query =
       GrantRequest
       |> join(:left, [gr], s in ^status_subquery, on: s.grant_request_id == gr.id)
+      |> join(:inner, [gr], ds in assoc(gr, :data_structure))
+      |> join(:inner, [gr], grg in assoc(gr, :grant_request_group))
       |> select_merge([gr, status], %{current_status: status.status})
+      |> select_merge([gr, status, ds], %{domain_id: ds.domain_id})
 
     grant_requests =
       params
+      |> Map.delete(:action)
+      |> Map.put_new(:domain_ids, visible_domain_ids(claims, action))
       |> Enum.reduce(query, fn
         {:status, status}, q -> where(q, [gr, s], s.status == ^status)
+        {:domain_ids, :all}, q -> q
+        {:domain_ids, domain_ids}, q -> where(q, [gr, _, ds], ds.domain_id in ^domain_ids)
+        {:user_id, user_id}, q -> where(q, [..., grg], grg.user_id == ^user_id)
       end)
       |> Repo.all()
 
     {:ok, grant_requests}
   end
 
-  defp do_list_grant_requests(error), do: error
+  defp do_list_grant_requests(error, _claims), do: error
+
+  defp visible_domain_ids(_claims, nil), do: :all
+
+  defp visible_domain_ids(%{role: "admin"}, _), do: :all
+
+  defp visible_domain_ids(%{user_id: user_id}, "approve") do
+    Permissions.permitted_domain_ids(user_id, :approve_grant_request)
+  end
 
   def get_grant_request!(id), do: Repo.get!(GrantRequest, id)
 

@@ -17,6 +17,7 @@ defmodule TdDd.Grants.GrantRequest do
     field(:filters, :map)
     field(:metadata, :map)
     field(:current_status, :string, virtual: true)
+    field(:domain_id, :integer, virtual: true)
 
     belongs_to(:grant_request_group, GrantRequestGroup)
     belongs_to(:data_structure, DataStructure)

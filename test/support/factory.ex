@@ -406,13 +406,17 @@ defmodule TdDd.Factory do
     }
   end
 
-  def grant_request_factory do
+  def grant_request_factory(attrs) do
+    attrs =
+      attrs
+      |> default_assoc(:data_structure_id, :data_structure)
+      |> default_assoc(:grant_request_group_id, :grant_request_group)
+
     %TdDd.Grants.GrantRequest{
-      grant_request_group: build(:grant_request_group),
-      data_structure: build(:data_structure),
       filters: %{"foo" => "bar"},
       metadata: %{"foo" => "bar"}
     }
+    |> merge_attributes(attrs)
   end
 
   def grant_request_status_factory(attrs) do
