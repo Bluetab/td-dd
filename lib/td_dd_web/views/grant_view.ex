@@ -20,7 +20,9 @@ defmodule TdDdWeb.GrantView do
       detail: grant.detail,
       start_date: grant.start_date,
       end_date: grant.end_date,
-      user_id: grant.user_id
+      user_id: grant.user_id,
+      inserted_at: grant.inserted_at,
+      updated_at: grant.updated_at
     }
     |> add_structure(grant)
     |> add_structure_version(grant)

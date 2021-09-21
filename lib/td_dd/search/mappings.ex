@@ -107,6 +107,7 @@ defmodule TdDd.Search.Mappings do
       start_date: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       end_date: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
+      inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       data_structure_version: %{type: "object", properties: dsv_properties},
       user: %{
         type: "object",
