@@ -26,6 +26,7 @@ defmodule TdDdWeb.SearchControllerTest do
       %{claims: %{user_id: user_id, user_name: user_name}} ->
         user = CacheHelpers.insert_user(id: user_id, user_name: user_name)
         [user: user]
+
       _ ->
         :ok
     end
@@ -40,7 +41,6 @@ defmodule TdDdWeb.SearchControllerTest do
                conn
                |> post(Routes.search_path(conn, :search_grants))
                |> json_response(:ok)
-
     end
 
     @tag authentication: [user_name: "non_admin_user", permissions: [:view_grants]]
@@ -63,7 +63,6 @@ defmodule TdDdWeb.SearchControllerTest do
   end
 
   describe "search_my_grants" do
-
     setup do
       %{id: other_user_id} = CacheHelpers.insert_user()
       [other_user_id: other_user_id]
@@ -81,9 +80,46 @@ defmodule TdDdWeb.SearchControllerTest do
       _not_owned_grant = create_grant(other_user_id, domain.id)
 
       assert %{"data" => [%{"id" => ^owned_grant_id}]} =
-        conn
-        |> post(Routes.search_path(conn, :search_my_grants))
-        |> json_response(:ok)
+               conn
+               |> post(Routes.search_path(conn, :search_my_grants))
+               |> json_response(:ok)
+    end
+  end
+
+  describe "search grants by scroll" do
+    setup context do
+      Enum.each(1..7, fn _ -> create_grant(context) end)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "returns scroll_id and pages results", %{conn: conn} do
+      assert %{"data" => data, "scroll_id" => scroll_id} =
+               conn
+               |> post(Routes.search_path(conn, :search_grants), %{
+                 "size" => 5,
+                 "scroll" => "1m"
+               })
+               |> json_response(:ok)
+
+      assert length(data) == 5
+
+      assert %{"data" => data, "scroll_id" => scroll_id} =
+               conn
+               |> post(Routes.search_path(conn, :search_grants), %{
+                 "scroll_id" => scroll_id,
+                 "scroll" => "1m"
+               })
+               |> json_response(:ok)
+
+      assert length(data) == 2
+
+      assert %{"data" => [], "scroll_id" => _scroll_id} =
+               conn
+               |> post(Routes.search_path(conn, :search_grants), %{
+                 "scroll_id" => scroll_id,
+                 "scroll" => "1m"
+               })
+               |> json_response(:ok)
     end
   end
 
@@ -92,6 +128,7 @@ defmodule TdDdWeb.SearchControllerTest do
       case context do
         %{domain: domain, user: user} ->
           create_grant(user.id, domain.id)
+
         _ ->
           insert(:grant)
       end
@@ -102,6 +139,11 @@ defmodule TdDdWeb.SearchControllerTest do
   defp create_grant(user_id, domain_id) do
     data_structure = insert(:data_structure, domain_id: domain_id)
     data_structure_version = insert(:data_structure_version, data_structure: data_structure)
-    insert(:grant, data_structure_version: data_structure_version, data_structure: data_structure, user_id: user_id)
+
+    insert(:grant,
+      data_structure_version: data_structure_version,
+      data_structure: data_structure,
+      user_id: user_id
+    )
   end
 end

@@ -8,8 +8,6 @@ defmodule TdDd.Search do
 
   require Logger
 
-  @index "structures"
-
   def search(query), do: search(query, :structures)
 
   def search(query, index) when index in [:structures, :grants] do
@@ -21,7 +19,12 @@ defmodule TdDd.Search do
     case response do
       {:ok, %{"hits" => %{"hits" => results, "total" => total}} = res} ->
         aggregations = Map.get(res, "aggregations", %{})
-        %{results: results, total: total, aggregations: maybe_format_aggregations(aggregations, index)}
+
+        %{
+          results: results,
+          total: total,
+          aggregations: maybe_format_aggregations(aggregations, index)
+        }
 
       {:error, %Elasticsearch.Exception{message: message} = error} ->
         Logger.warn("Error response from Elasticsearch: #{message}")
@@ -29,11 +32,17 @@ defmodule TdDd.Search do
     end
   end
 
-  def search(body, query_params) do
+  def search(body, query_params, index \\ :structures) do
     Logger.debug(fn -> "Query: #{inspect(body)} #{inspect(query_params)}" end)
 
+    alias_name = Cluster.alias_name(index)
+
     response =
-      Elasticsearch.post(Cluster, "/#{@index}/_search?" <> URI.encode_query(query_params), body)
+      Elasticsearch.post(
+        Cluster,
+        "/#{alias_name}/_search?" <> URI.encode_query(query_params),
+        body
+      )
 
     case response do
       {:ok, %{"_scroll_id" => scroll_id, "hits" => %{"hits" => results, "total" => total}} = res} ->
@@ -46,9 +55,11 @@ defmodule TdDd.Search do
     end
   end
 
-  def scroll(scroll_params) do
+  def scroll(scroll_params, index \\ :structures) do
     Logger.debug(fn -> "Scroll: #{inspect(scroll_params)}" end)
-    response = Elasticsearch.post(Cluster, "/_search/scroll", scroll_params)
+
+    alias_name = Cluster.alias_name(index)
+    response = Elasticsearch.post(Cluster, "/#{alias_name}/_search/scroll", scroll_params)
 
     case response do
       {:ok, %{"_scroll_id" => scroll_id, "hits" => %{"hits" => results, "total" => total}} = res} ->
@@ -61,7 +72,7 @@ defmodule TdDd.Search do
     end
   end
 
-  def get_filters(query), do: get_filters(query, :structures)
+  def get_filters(query, index \\ :structures)
 
   def get_filters(query, index) do
     alias_name = Cluster.alias_name(index)

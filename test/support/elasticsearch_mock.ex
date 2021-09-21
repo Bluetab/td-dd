@@ -105,7 +105,7 @@ defmodule TdDd.ElasticsearchMock do
   end
 
   @impl true
-  def request(_config, :post, "/_search/scroll", data, _opts) do
+  def request(_config, :post, "/structures/_search/scroll", data, _opts) do
     data
     |> decode_scroll_id()
     |> do_scroll(DataStructureVersion)
@@ -172,6 +172,18 @@ defmodule TdDd.ElasticsearchMock do
         _opts
       ) do
     params |> do_search(GrantStructure) |> search_results(params)
+  end
+
+  @impl true
+  def request(_config, :post, "/grants/_search?scroll=1m", data, _opts) do
+    do_scroll(data, GrantStructure)
+  end
+
+  @impl true
+  def request(_config, :post, "/grants/_search/scroll", data, _opts) do
+    data
+    |> decode_scroll_id()
+    |> do_scroll(GrantStructure)
   end
 
   @impl true
@@ -300,12 +312,14 @@ defmodule TdDd.ElasticsearchMock do
 
   defp create_filter(filters, schema) when is_list(filters) do
     fns = Enum.map(filters, &create_filter(&1, schema))
+
     fn el ->
       Enum.all?(
         fns,
         fn f ->
           f.(el)
-        end)
+        end
+      )
     end
   end
 
@@ -424,7 +438,8 @@ defmodule TdDd.ElasticsearchMock do
     TdDq.Search.Store.stream(schema)
   end
 
-  defp stream(schema) when schema in [TdDd.DataStructures.DataStructureVersion, TdDd.Grants.GrantStructure] do
+  defp stream(schema)
+       when schema in [TdDd.DataStructures.DataStructureVersion, TdDd.Grants.GrantStructure] do
     TdDd.Search.Store.stream(schema)
   end
 
