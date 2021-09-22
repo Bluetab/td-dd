@@ -14,10 +14,14 @@ defmodule TdDdWeb.GrantRequestControllerTest do
       %{id: user_id} = CacheHelpers.insert_user()
       %{data_structure_id: data_structure_id} = insert(:data_structure_version)
 
-      %{id: id} =
-        insert(:grant_request,
-          group: build(:grant_request_group, user_id: user_id),
-          data_structure_id: data_structure_id
+      %{grant_request_id: id} =
+        insert(:grant_request_status,
+          grant_request:
+            build(:grant_request,
+              group: build(:grant_request_group, user_id: user_id),
+              data_structure_id: data_structure_id
+            ),
+          status: "approved"
         )
 
       assert %{"data" => data} =
@@ -31,6 +35,7 @@ defmodule TdDdWeb.GrantRequestControllerTest do
                  "metadata" => _,
                  "filters" => _,
                  "inserted_at" => _,
+                 "status" => "approved",
                  "_embedded" => embedded
                }
              ] = data
