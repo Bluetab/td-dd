@@ -54,5 +54,4 @@ defmodule TdDdWeb.GrantFilterController do
     filters = Search.get_filter_values(user_id, params)
     render(conn, "show.json", filters: filters)
   end
-
 end

@@ -12,7 +12,10 @@ defmodule TdDd.Grants.GrantStructure do
 
   defimpl Elasticsearch.Document do
     @impl Elasticsearch.Document
-    def id(%GrantStructure{grant: %Grant{} = grant, data_structure_version: %DataStructureVersion{} = dsv}) do
+    def id(%GrantStructure{
+          grant: %Grant{} = grant,
+          data_structure_version: %DataStructureVersion{} = dsv
+        }) do
       "#{grant.id}-#{grant.user_id}-#{dsv.id}"
     end
 
@@ -20,7 +23,10 @@ defmodule TdDd.Grants.GrantStructure do
     def routing(_), do: false
 
     @impl Elasticsearch.Document
-    def encode(%GrantStructure{grant: %Grant{} = grant, data_structure_version: %DataStructureVersion{} = dsv}) do
+    def encode(%GrantStructure{
+          grant: %Grant{} = grant,
+          data_structure_version: %DataStructureVersion{} = dsv
+        }) do
       %{
         id: grant.id,
         detail: grant.detail,

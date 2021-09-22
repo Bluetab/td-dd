@@ -33,17 +33,14 @@ defmodule TdDdWeb.MetadataControllerTest do
         :ok
 
       fixture ->
-        params =
-          %{
-            structures: "structures.csv",
-            fields: "fields.csv",
-            relations: "relations.csv"
-          }
-          |> Enum.map(fn {k, v} -> {k, Path.join([fixture, v])} end)
-          |> Enum.filter(fn {_, v} -> File.exists?(v) end)
-          |> Map.new(fn {k, v} -> {k, upload(v)} end)
-
-        {:ok, params}
+        %{
+          structures: "structures.csv",
+          fields: "fields.csv",
+          relations: "relations.csv"
+        }
+        |> Enum.map(fn {k, v} -> {k, Path.join([fixture, v])} end)
+        |> Enum.filter(fn {_, v} -> File.exists?(v) end)
+        |> Map.new(fn {k, v} -> {k, upload(v)} end)
     end
   end
 
@@ -177,7 +174,7 @@ defmodule TdDdWeb.MetadataControllerTest do
 
     @tag authentication: [role: "service"]
     @tag fixture: "test/fixtures/metadata"
-    setup :source
+    setup :create_source
 
     test "uploads structure, field and relation metadata when domain is specified", %{
       conn: conn,
@@ -302,8 +299,8 @@ defmodule TdDdWeb.MetadataControllerTest do
     end
   end
 
-  defp source(_) do
-    {:ok, source: insert(:source)}
+  defp create_source(_) do
+    [source: insert(:source)]
   end
 
   defp upload(path) do

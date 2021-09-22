@@ -116,6 +116,6 @@ defmodule TdDdWeb.RelationTypeControllerTest do
 
   defp create_relation_type(_) do
     {:ok, relation_type} = RelationTypes.create_relation_type(@create_attrs)
-    {:ok, relation_type: relation_type}
+    [relation_type: relation_type]
   end
 end

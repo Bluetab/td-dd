@@ -98,7 +98,6 @@ defmodule TdDd.Search.Mappings do
   end
 
   def get_grant_mappings do
-
     %{mappings: %{_doc: %{properties: dsv_properties}}, settings: _settings} = get_mappings()
 
     properties = %{
@@ -117,6 +116,7 @@ defmodule TdDd.Search.Mappings do
         }
       }
     }
+
     settings = Cluster.setting(:grants)
     %{mappings: %{_doc: %{properties: properties}}, settings: settings}
   end

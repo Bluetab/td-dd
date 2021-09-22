@@ -10,9 +10,8 @@ defmodule TdDd.GroupsTest do
     :ok
   end
 
-  setup _context do
-    system = insert(:system)
-    {:ok, system: system}
+  setup do
+    [system: insert(:system)]
   end
 
   describe "TdDd.Group" do

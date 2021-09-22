@@ -300,12 +300,14 @@ defmodule TdDd.ElasticsearchMock do
 
   defp create_filter(filters, schema) when is_list(filters) do
     fns = Enum.map(filters, &create_filter(&1, schema))
+
     fn el ->
       Enum.all?(
         fns,
         fn f ->
           f.(el)
-        end)
+        end
+      )
     end
   end
 
@@ -424,7 +426,8 @@ defmodule TdDd.ElasticsearchMock do
     TdDq.Search.Store.stream(schema)
   end
 
-  defp stream(schema) when schema in [TdDd.DataStructures.DataStructureVersion, TdDd.Grants.GrantStructure] do
+  defp stream(schema)
+       when schema in [TdDd.DataStructures.DataStructureVersion, TdDd.Grants.GrantStructure] do
     TdDd.Search.Store.stream(schema)
   end
 

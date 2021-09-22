@@ -97,6 +97,7 @@ defmodule TdDd.Search.IndexWorker do
         case value do
           {:ok, %{"deleted" => deleted}} ->
             Logger.info("Deleted #{deleted} grant documents in #{ms}ms")
+
           {:error, %Elasticsearch.Exception{message: message}} ->
             Logger.info("Failed to delete grant documents (#{ms}ms): #{message}")
         end
@@ -184,5 +185,4 @@ defmodule TdDd.Search.IndexWorker do
       fn ms, _ -> Logger.info("Reindexed #{count} grants in #{ms}ms") end
     )
   end
-
 end

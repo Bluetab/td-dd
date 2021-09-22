@@ -85,13 +85,7 @@ defmodule TdDq.DownloadTest do
       assert csv ==
                """
                implementation_key;implementation_type;Executable;rule;Template Label;goal;minimum;business_concept;last_execution_at;result;execution;inserted_at;Info;System\r
-               #{impl.implementation_key};#{impl.implementation_type};Executable;#{impl.rule.name};#{
-                 impl.rule.df_name
-               };#{impl.rule.goal};#{impl.rule.minimum};#{
-                 impl.current_business_concept_version.name
-               };#{impl.execution_result_info.date};#{impl.execution_result_info.result};Under Goal;#{
-                 impl.inserted_at
-               };field_value;system, system1\r
+               #{impl.implementation_key};#{impl.implementation_type};Executable;#{impl.rule.name};#{impl.rule.df_name};#{impl.rule.goal};#{impl.rule.minimum};#{impl.current_business_concept_version.name};#{impl.execution_result_info.date};#{impl.execution_result_info.result};Under Goal;#{impl.inserted_at};field_value;system, system1\r
                """
     end
 
@@ -160,18 +154,8 @@ defmodule TdDq.DownloadTest do
       assert csv ==
                """
                implementation_key;implementation_type;Executable;rule;Template Label;goal;minimum;business_concept;last_execution_at;result;execution;inserted_at;Info;System\r
-               #{impl.implementation_key};#{impl.implementation_type};Executable;#{impl.rule.name};#{
-                 impl.rule.df_name
-               };#{impl.rule.goal};#{impl.rule.minimum};#{
-                 impl.current_business_concept_version.name
-               };;;;#{impl.inserted_at};field_value;system, system1\r
-               #{impl1.implementation_key};#{impl1.implementation_type};Internal;#{
-                 impl1.rule.name
-               };#{impl1.rule.df_name};#{impl1.rule.goal};#{impl1.rule.minimum};#{
-                 impl1.current_business_concept_version.name
-               };#{impl1.execution_result_info.date};#{impl1.execution_result_info.result};;#{
-                 impl1.inserted_at
-               };field_value;system, system1\r
+               #{impl.implementation_key};#{impl.implementation_type};Executable;#{impl.rule.name};#{impl.rule.df_name};#{impl.rule.goal};#{impl.rule.minimum};#{impl.current_business_concept_version.name};;;;#{impl.inserted_at};field_value;system, system1\r
+               #{impl1.implementation_key};#{impl1.implementation_type};Internal;#{impl1.rule.name};#{impl1.rule.df_name};#{impl1.rule.goal};#{impl1.rule.minimum};#{impl1.current_business_concept_version.name};#{impl1.execution_result_info.date};#{impl1.execution_result_info.result};;#{impl1.inserted_at};field_value;system, system1\r
                """
     end
   end
