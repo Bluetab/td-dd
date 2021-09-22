@@ -39,9 +39,14 @@ defmodule TdDd.Audit.AuditSupport do
     )
   end
 
-  defp payload(%{df_content: new_content}, %StructureNote{df_content: old_content} = _data) do
+  defp payload(
+         %{df_content: new_content} = changes,
+         %StructureNote{df_content: old_content} = _data
+       ) do
     diff = MapDiff.diff(old_content, new_content, mask: &Masks.mask/1)
-    %{content: diff}
+    domain_ids = Map.get(changes, :domain_ids, [])
+
+    %{content: diff, domain_ids: domain_ids}
   end
 
   defp payload(%{df_content: new_content} = changes, %{df_content: old_content} = _data) do

@@ -6,6 +6,7 @@ defmodule TdDdWeb.DataStructureVersionController do
   import Canada, only: [can?: 2]
 
   alias Ecto
+  alias TdCache.TemplateCache
   alias TdDd.DataStructures
   alias TdDdWeb.SwaggerDefinitions
 
@@ -98,7 +99,7 @@ defmodule TdDdWeb.DataStructureVersionController do
         view_profiling_permission: can?(claims, view_data_structures_profile(data_structure)),
         profile_permission: can?(claims, profile(dsv)),
         manage_tags: can?(claims, link_data_structure_tag(data_structure)),
-        request_grant: can?(claims, create_grant_request(data_structure))
+        request_grant: can_request_grant?(claims, data_structure)
       }
 
       render(conn, "show.json",
@@ -109,6 +110,11 @@ defmodule TdDdWeb.DataStructureVersionController do
     else
       render_error(conn, :forbidden)
     end
+  end
+
+  defp can_request_grant?(claims, data_structure) do
+    {:ok, templates} = TemplateCache.list_by_scope("gr")
+    can?(claims, create_grant_request(data_structure)) and not Enum.empty?(templates)
   end
 
   defp get_data_structure_version(data_structure_version_id, opts) do

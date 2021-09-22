@@ -305,6 +305,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
         [n1, n2]
         |> Enum.map(fn sn ->
           %{
+            "id" => sn.id,
             "status" => sn.status |> Atom.to_string(),
             "df_content" => sn.df_content,
             "data_structure_id" => sn.data_structure_id,
@@ -321,6 +322,22 @@ defmodule TdDdWeb.StructureNoteControllerTest do
                   )
                   |> json_response(:ok)
                   |> Map.get("data"))
+    end
+
+    @tag authentication: [role: "admin"]
+    test "search structure_notes by data_struture system_id", %{conn: conn} do
+      %{system_id: system_id} = ds1 = insert(:data_structure)
+      ds2 = insert(:data_structure)
+      %{id: note_id} = insert(:structure_note, data_structure: ds1)
+      insert(:structure_note, data_structure: ds2)
+
+      assert [%{"id" => ^note_id}] =
+               conn
+               |> post(Routes.structure_note_path(conn, :search),
+                 system_id: system_id
+               )
+               |> json_response(:ok)
+               |> Map.get("data")
     end
 
     @tag authentication: [user_name: "no_admin_user"]

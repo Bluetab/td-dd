@@ -1,9 +1,9 @@
-defmodule TdDq.Search.Query do
+defmodule TdDd.Search.Query do
   @moduledoc """
   Helper module to manipulate elastic search queries.
   """
 
-  alias TdDq.Search.Aggregations
+  alias TdDd.Search.Aggregations
 
   def create_filters(%{without: without_fields} = params, index) do
     filters =
@@ -48,17 +48,22 @@ defmodule TdDq.Search.Query do
          %{resource_id: resource_id, permissions: permissions},
          user_defined_filters
        ) do
-    domain_clause = %{term: %{domain_ids: resource_id}}
+    domain_clause = %{term: %{"data_structure_version.domain_ids": resource_id}}
 
     confidential_clause =
       case Enum.member?(permissions, :manage_confidential_business_concepts) do
-        true -> %{terms: %{_confidential: [true, false]}}
-        false -> %{terms: %{_confidential: [false]}}
+        true -> %{terms: %{:"data_structure_version.confidential" => [true, false]}}
+        false -> %{terms: %{:"data_structure_version.confidential" => [false]}}
       end
 
     %{
       bool: %{filter: user_defined_filters ++ [domain_clause, confidential_clause]}
     }
+  end
+
+  def create_filter_clause_by(user_id, user_defined_filters) do
+    should_clause = [%{bool: %{filter: user_defined_filters ++ [%{term: %{:user_id => user_id}}]}}]
+    %{bool: %{should: should_clause}}
   end
 
   defp with_default_clause(filter_clauses, user_defined_filters) do
@@ -69,7 +74,7 @@ defmodule TdDq.Search.Query do
             filter:
               user_defined_filters ++
                 [
-                  %{terms: %{_confidential: [false]}},
+                  %{terms: %{confidential: [false]}},
                   %{term: %{domain_ids: -1}}
                 ]
           }
@@ -77,12 +82,8 @@ defmodule TdDq.Search.Query do
       ]
   end
 
-  defp to_terms_query({"structure_ids", ids}, _index) do
-    get_filter(nil, ids, :structure_ids)
-  end
-
-  defp to_terms_query({:rule_id, rule_id}, _index) do
-    get_filter(nil, rule_id, :rule_id)
+  defp to_terms_query({filter, value}, _index) when filter in ["updated_at", "start_date", "end_date"] do
+    %{range: %{String.to_atom(filter) => value}}
   end
 
   defp to_terms_query({filter, values}, index) do
@@ -141,7 +142,6 @@ defmodule TdDq.Search.Query do
     end
   end
 
-  def get_aggregation_terms(:rules), do: Aggregations.rule_aggregation_terms()
-  def get_aggregation_terms(:implementations), do: Aggregations.implementation_aggregation_terms()
-  def get_aggregation_terms(:grants), do: TdDd.Search.Aggregations.grant_aggregation_terms()
+  def get_aggregation_terms(:structures), do: Aggregations.aggregation_terms()
+  def get_aggregation_terms(:grants), do: Aggregations.grant_aggregation_terms()
 end

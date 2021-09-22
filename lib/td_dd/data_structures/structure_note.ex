@@ -18,7 +18,7 @@ defmodule TdDd.DataStructures.StructureNote do
 
     field(:version, :integer)
     field(:resource, :map, virtual: true, deafult: %{})
-    field(:domains_ids, {:array, :integer}, virtual: true, default: [])
+    field(:domain_ids, {:array, :integer}, virtual: true, default: [])
     belongs_to(:data_structure, DataStructure)
 
     timestamps()

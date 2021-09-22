@@ -4,8 +4,30 @@
 
 ### Added
 
-- [TD-3971] Template mandatory dependent field
 - [TD-4076] Support for grant request approval
+
+### Changed
+
+- [TD-4079] Give grant permission only if we have `gr` templates 
+
+## [4.28.0] 2021-09-20
+
+### Added
+
+- [TD-3950] Index and search grants
+  - `POST /api/grants/search` searches grants
+  - `POST /api/grant_filters/search` searches grant filters
+  - `POST /api/grants/search/mine` searches "my grants" (granted to me)
+  - `POST /api/grant_filters/search/mine` searches "my grants" filters 
+- [TD-4075] API routes for managing grant approvers:
+  - `GET /api/grant_approvers`
+  - `GET /api/grant_approvers/:id`
+  - `POST /api/grant_approvers`
+  - `DELETE /api/grant_approvers/:id`
+- [TD-3971] Template mandatory dependent field
+- [TD-4107] Adds `system_id` filter to structure_notes/search endpoint 
+- [TD-4037] change the limit on the taxonomy in aggregations
+- [TD-3970] Adds `modifier` and `value_modifier` embbeds to `ConditionRow`
 
 ### Changed
 
@@ -14,6 +36,8 @@
 ### Fixed
 
 - [TD-4048] `PUT /api/rules/:id` timeout if a rule has many implementations
+- [TD-3780] Missing `domain_ids` in Audit events
+- [TD-4037] change the limit on the taxonomy in aggregations
 
 ## [4.27.0] 2021-09-07
 

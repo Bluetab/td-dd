@@ -86,6 +86,7 @@ config :td_dd, index_worker: TdDd.Search.IndexWorker
 config :td_dd, cx_index_worker: TdCx.Search.IndexWorker
 config :td_dd, dq_index_worker: TdDq.Search.IndexWorker
 config :td_dd, loader_worker: TdDd.Loader.Worker
+config :td_dd, loader_worker: TdDd.Loader.Worker
 
 # Default timeout increased for bulk metadata upload
 config :td_dd, TdDd.Repo,
@@ -146,6 +147,11 @@ config :td_dd, TdDd.Scheduler,
     rule_indexer: [
       schedule: "@daily",
       task: {TdDq.Search.IndexWorker, :reindex, []},
+      run_strategy: Quantum.RunStrategy.Local
+    ],
+    grant_indexer: [
+      schedule: "@daily",
+      task: {TdDd.Search.IndexWorker, :reindex_grants, [:all]},
       run_strategy: Quantum.RunStrategy.Local
     ],
     rule_remover: [
