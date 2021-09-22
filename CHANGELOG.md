@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+- [TD-4113] Jobs change status is included in Audit Events
+
 ## [4.28.0] 2021-09-20
 
 ### Added
