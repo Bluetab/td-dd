@@ -60,10 +60,7 @@ defmodule TdDdWeb.SystemControllerTest do
     domain = CacheHelpers.insert_domain()
     template = CacheHelpers.insert_template(@system_template)
 
-    {:ok,
-     system: system,
-     domain: domain,
-     template: template}
+    [system: system, domain: domain, template: template]
   end
 
   describe "GET /api/systems" do

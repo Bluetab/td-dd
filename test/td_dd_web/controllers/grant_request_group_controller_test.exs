@@ -27,10 +27,14 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
   describe "index" do
     @tag authentication: [role: "admin"]
     test "lists all grant_request_groups", %{conn: conn} do
-      assert %{"data" => []} =
+      %{id: id} = insert(:grant_request_group)
+
+      assert %{"data" => data} =
                conn
                |> get(Routes.grant_request_group_path(conn, :index))
                |> json_response(:ok)
+
+      assert [%{"id" => ^id}] = data
     end
 
     @tag authentication: [user_name: "non_admin"]
@@ -200,15 +204,17 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
                |> get(Routes.grant_request_group_path(conn, :show, id))
                |> json_response(:ok)
 
+      assert %{"_embedded" => embedded} = data
+
       assert %{
                "requests" => [
                  %{
-                   "data_structure_id" => ^ds_id,
+                   "_embedded" => %{"data_structure" => %{"id" => ^ds_id, "external_id" => _}},
                    "metadata" => @valid_metadata,
                    "filters" => %{"foo" => "bar"}
                  }
                ]
-             } = data
+             } = embedded
     end
 
     @tag authentication: [role: "admin"]
@@ -242,8 +248,16 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
                |> get(Routes.grant_request_group_path(conn, :show, id))
                |> json_response(:ok)
 
-      assert %{"requests" => [%{"data_structure_id" => ^ds_id, "filters" => %{"foo" => "bar"}}]} =
-               data
+      assert %{"_embedded" => embedded} = data
+
+      assert %{
+               "requests" => [
+                 %{
+                   "_embedded" => %{"data_structure" => %{"id" => ^ds_id, "external_id" => _}},
+                   "filters" => %{"foo" => "bar"}
+                 }
+               ]
+             } = embedded
     end
 
     @tag authentication: [role: "admin"]

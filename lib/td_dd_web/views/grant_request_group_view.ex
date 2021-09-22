@@ -3,6 +3,7 @@ defmodule TdDdWeb.GrantRequestGroupView do
 
   alias TdDdWeb.GrantRequestGroupView
   alias TdDdWeb.GrantRequestView
+  alias TdDdWeb.UserView
 
   def render("index.json", %{grant_request_groups: grant_request_groups}) do
     %{data: render_many(grant_request_groups, GrantRequestGroupView, "grant_request_group.json")}
@@ -19,11 +20,38 @@ defmodule TdDdWeb.GrantRequestGroupView do
       user_id: grant_request_group.user_id,
       type: grant_request_group.type
     }
-    |> with_requests(grant_request_group)
+    |> put_embeddings(grant_request_group)
   end
 
-  defp with_requests(json, %{requests: requests}) when is_list(requests),
-    do: Map.put(json, :requests, render_many(requests, GrantRequestView, "grant_request.json"))
+  def render("embedded.json", %{grant_request_group: group}) do
+    group
+    |> Map.take([:id, :type])
+    |> put_embeddings(group)
+  end
 
-  defp with_requests(json, _), do: json
+  defp put_embeddings(%{} = resp, grant_request_group) do
+    case embeddings(grant_request_group) do
+      map when map == %{} -> resp
+      embeddings -> Map.put(resp, :_embedded, embeddings)
+    end
+  end
+
+  defp embeddings(%{} = grant_request_group) do
+    grant_request_group
+    |> Map.take([:user, :requests])
+    |> Enum.reduce(%{}, fn
+      {:user, %{} = user}, acc ->
+        Map.put(acc, :user, render_one(user, UserView, "embedded.json"))
+
+      {:requests, requests}, acc when is_list(requests) ->
+        Map.put(
+          acc,
+          :requests,
+          render_many(requests, GrantRequestView, "embedded.json", %{embed: [:data_structure]})
+        )
+
+      _, acc ->
+        acc
+    end)
+  end
 end

@@ -19,9 +19,9 @@ defmodule TdDdWeb.ApprovalControllerTest do
       create_acl_entry(user_id, domain_id, [:approve_grant_request])
 
       assert %{"data" => data} =
-        conn
-        |> post(path, approval: params)
-        |> json_response(:created)
+               conn
+               |> post(path, approval: params)
+               |> json_response(:created)
 
       assert %{"is_rejection" => false, "comment" => "foo", "_embedded" => embedded} = data
       assert %{"user" => %{"id" => ^user_id}, "domain" => %{"id" => ^domain_id}} = embedded

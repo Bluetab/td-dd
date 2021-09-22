@@ -1,5 +1,6 @@
 defmodule TdDdWeb.GrantRequestGroupController do
   use TdDdWeb, :controller
+
   import Canada, only: [can?: 2]
 
   alias TdDd.DataStructures
@@ -23,14 +24,15 @@ defmodule TdDdWeb.GrantRequestGroupController do
     with claims <- conn.assigns[:current_resource],
          {:ok, params} <- with_valid_requests(params),
          {:ok, _} <- can_create_on_structures(claims, params),
-         {:ok, %{group: grant_request_group}} <- Grants.create_grant_request_group(params, claims) do
+         {:ok, %{group: %{id: id}}} <- Grants.create_grant_request_group(params, claims),
+         %{} = group <- Grants.get_grant_request_group!(id) do
       conn
       |> put_status(:created)
       |> put_resp_header(
         "location",
-        Routes.grant_request_group_path(conn, :show, grant_request_group)
+        Routes.grant_request_group_path(conn, :show, group)
       )
-      |> render("show.json", grant_request_group: grant_request_group)
+      |> render("show.json", grant_request_group: group)
     end
   end
 

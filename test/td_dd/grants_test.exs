@@ -463,48 +463,6 @@ defmodule TdDd.GrantsTest do
       assert Grants.get_grant_request!(grant_request.id) <~> grant_request
     end
 
-    test "create_grant_request/1 with valid data creates a grant_request" do
-      grant_request_group = insert(:grant_request_group, type: @template_name)
-      data_structure = insert(:data_structure)
-
-      filters = %{"foo" => "bar"}
-      metadata = @valid_metadata
-      params = %{"filters" => filters, "metadata" => metadata}
-
-      assert {:ok, %GrantRequest{} = grant_request} =
-               Grants.create_grant_request(params, grant_request_group, data_structure)
-
-      assert %{filters: ^filters, metadata: ^metadata} = grant_request
-    end
-
-    test "create_grant_request/1 fails if metadata is invalid" do
-      grant_request_group = insert(:grant_request_group, type: @template_name)
-      data_structure = insert(:data_structure)
-
-      params = %{"filters" => %{"foo" => "bar"}, "metadata" => %{"invalid" => "metadata"}}
-
-      assert {:error, %{errors: errors}} =
-               Grants.create_grant_request(params, grant_request_group, data_structure)
-
-      assert {_,
-              [
-                list: {_, [validation: :required]},
-                string: {_, [validation: :required]}
-              ]} = errors[:metadata]
-    end
-
-    test "update_grant_request/2 with valid data updates the grant_request" do
-      grant_request = insert(:grant_request)
-
-      params = %{"filters" => %{}, "metadata" => %{}}
-
-      assert {:ok, %GrantRequest{} = grant_request} =
-               Grants.update_grant_request(grant_request, params)
-
-      assert grant_request.filters == %{}
-      assert grant_request.metadata == %{}
-    end
-
     test "delete_grant_request/1 deletes the grant_request" do
       grant_request = insert(:grant_request)
       assert {:ok, %GrantRequest{}} = Grants.delete_grant_request(grant_request)

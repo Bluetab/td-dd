@@ -13,7 +13,6 @@ defmodule TdDd.Grants do
   alias TdDd.Auth.Claims
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Audit
-  alias TdDd.DataStructures.DataStructure
   alias TdDd.Grants.Approval
   alias TdDd.Grants.Grant
   alias TdDd.Grants.GrantRequest
@@ -71,13 +70,13 @@ defmodule TdDd.Grants do
     |> Repo.all()
   end
 
-  def get_grant_request_group!(id) do
-    GrantRequestGroup
-    |> Repo.get!(id)
-    |> Repo.preload(:requests)
-  end
+  def get_grant_request_group!(id, opts \\ []) do
+    preloads = Keyword.get(opts, :preload, requests: [data_structure: :current_version])
 
-  def get_grant_request_group(id), do: Repo.get(GrantRequestGroup, id)
+    GrantRequestGroup
+    |> preload(^preloads)
+    |> Repo.get!(id)
+  end
 
   def create_grant_request_group(%{} = params, %Claims{user_id: user_id}) do
     changeset = GrantRequestGroup.changeset(%GrantRequestGroup{user_id: user_id}, params)
@@ -108,9 +107,10 @@ defmodule TdDd.Grants do
        action: :string,
        status: :string,
        domain_ids: {:array, :integer},
-       user_id: :integer
+       user_id: :integer,
+       group_id: :integer
      }}
-    |> Changeset.cast(params, [:action, :domain_ids, :status, :user_id])
+    |> Changeset.cast(params, [:action, :domain_ids, :status, :user_id, :group_id])
     |> Changeset.apply_action(:update)
     |> do_list_grant_requests(claims)
   end
@@ -133,6 +133,7 @@ defmodule TdDd.Grants do
             |> join(:left, [gr], s in ^status_subquery, on: s.grant_request_id == gr.id)
             |> join(:inner, [gr], grg in assoc(gr, :grant_request_group))
             |> select_merge([gr, status], %{current_status: status.status})
+            |> preload([:grant_request_group, data_structure: :current_version])
 
           params
           |> Map.delete(:action)
@@ -142,8 +143,10 @@ defmodule TdDd.Grants do
             {:domain_ids, :all}, q -> q
             {:domain_ids, domain_ids}, q -> where(q, [gr], gr.domain_id in ^domain_ids)
             {:user_id, user_id}, q -> where(q, [..., grg], grg.user_id == ^user_id)
+            {:group_id, group_id}, q -> where(q, [g], g.grant_request_group_id == ^group_id)
           end)
           |> Repo.all()
+          |> Enum.map(&enrich/1)
       end
 
     {:ok, grant_requests}
@@ -161,32 +164,13 @@ defmodule TdDd.Grants do
     Permissions.permitted_domain_ids(user_id, :approve_grant_request)
   end
 
-  def get_grant_request!(id), do: Repo.get!(GrantRequest, id)
+  def get_grant_request!(id, opts \\ []) do
+    preloads =
+      Keyword.get(opts, :preload, [:grant_request_group, data_structure: :current_version])
 
-  def create_grant_request(
-        params,
-        %GrantRequestGroup{id: group_id, type: group_type},
-        %DataStructure{id: data_structure_id, domain_id: domain_id}
-      ) do
-    %GrantRequest{
-      grant_request_group_id: group_id,
-      data_structure_id: data_structure_id,
-      domain_id: domain_id
-    }
-    |> GrantRequest.changeset(params, group_type)
-    |> Repo.insert()
-  end
-
-  def update_grant_request(%GrantRequest{} = grant_request, params) do
-    group_type =
-      case Repo.preload(grant_request, :grant_request_group) do
-        %{grant_request_group: %{type: group_type}} -> group_type
-        _ -> nil
-      end
-
-    grant_request
-    |> GrantRequest.changeset(params, group_type)
-    |> Repo.update()
+    GrantRequest
+    |> preload(^preloads)
+    |> Repo.get!(id)
   end
 
   def delete_grant_request(%GrantRequest{} = grant_request) do
@@ -221,17 +205,32 @@ defmodule TdDd.Grants do
     %Approval{grant_request_id: id, user_id: user_id}
     |> Approval.changeset(params)
     |> Repo.insert()
-    |> enrich_approval()
+    |> enrich()
   end
 
-  defp enrich_approval({:ok, %{user_id: user_id, domain_id: domain_id} = approval}) do
+  defp enrich({:ok, target}) do
+    {:ok, enrich(target)}
+  end
+
+  defp enrich(%Approval{user_id: user_id, domain_id: domain_id} = approval) do
     with {:ok, user} <- UserCache.get(user_id),
          {:ok, domain} <- DomainCache.get(domain_id) do
-      {:ok, %{approval | user: user, domain: domain}}
+      %{approval | user: user, domain: domain}
     else
-      _ -> {:ok, approval}
+      _ -> approval
     end
   end
 
-  defp enrich_approval(error), do: error
+  defp enrich(%GrantRequest{grant_request_group: group} = request) do
+    %{request | grant_request_group: enrich(group)}
+  end
+
+  defp enrich(%GrantRequestGroup{user_id: user_id} = group) do
+    case UserCache.get(user_id) do
+      {:ok, user} -> %{group | user: user}
+      _ -> group
+    end
+  end
+
+  defp enrich(other), do: other
 end

@@ -10,6 +10,7 @@ defmodule TdDd.Grants.GrantRequestGroup do
   schema "grant_request_groups" do
     field(:type, :string)
     field(:user_id, :integer)
+    field(:user, :map, virtual: true)
 
     has_many(:requests, GrantRequest)
 
