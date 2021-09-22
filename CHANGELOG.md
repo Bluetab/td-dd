@@ -2,8 +2,14 @@
 
 ## [Unreleased]
 
+<<<<<<< HEAD
 ### Added
 - [TD-4113] Jobs change status is included in Audit Events
+=======
+### Changed
+
+- [TD-4079] Give grant permission only if we have `gr` templates 
+>>>>>>> c5f9c7bf14c232bfae0144774c7710097de04581
 
 ## [4.28.0] 2021-09-20
 

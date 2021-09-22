@@ -595,6 +595,13 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       data_structure: %{id: id},
       domain: %{id: domain_id}
     } do
+      CacheHelpers.insert_template(%{
+        name: "foo",
+        label: "foo",
+        scope: "gr",
+        content: []
+      })
+
       create_acl_entry(user_id, domain_id, [:view_data_structure, :create_grant_request])
 
       assert %{"user_permissions" => permissions} =
@@ -615,6 +622,25 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       domain: %{id: domain_id}
     } do
       create_acl_entry(user_id, domain_id, [:view_data_structure])
+
+      assert %{"user_permissions" => permissions} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(conn, :show, id, "latest")
+               )
+               |> json_response(:ok)
+
+      assert %{"request_grant" => false} = permissions
+    end
+
+    @tag authentication: [role: "user"]
+    test "cannot request grant without template", %{
+      conn: conn,
+      claims: %{user_id: user_id},
+      data_structure: %{id: id},
+      domain: %{id: domain_id}
+    } do
+      create_acl_entry(user_id, domain_id, [:view_data_structure, :create_grant_request])
 
       assert %{"user_permissions" => permissions} =
                conn
