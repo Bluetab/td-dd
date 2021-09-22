@@ -5,9 +5,9 @@ defmodule TdDdWeb.GrantRequestControllerTest do
 
   @template_name "grant_request_controller_test_template"
 
-  setup %{conn: conn} do
+  setup do
     CacheHelpers.insert_template(name: @template_name)
-    [conn: put_req_header(conn, "accept", "application/json")]
+    :ok
   end
 
   describe "index" do

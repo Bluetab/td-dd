@@ -4,7 +4,7 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
   @valid_metadata %{"list" => "one", "string" => "foo"}
   @template_name "grant_request_group_controller_test_template"
 
-  setup %{conn: conn} do
+  setup do
     CacheHelpers.insert_template(name: @template_name)
     %{id: data_structure_id} = data_structure = insert(:data_structure)
 
@@ -19,7 +19,6 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
     }
 
     [
-      conn: put_req_header(conn, "accept", "application/json"),
       data_structure: data_structure,
       create_params: create_params
     ]
