@@ -414,7 +414,8 @@ defmodule TdDd.Factory do
 
     %TdDd.Grants.GrantRequest{
       filters: %{"foo" => "bar"},
-      metadata: %{"foo" => "bar"}
+      metadata: %{"foo" => "bar"},
+      domain_id: 123
     }
     |> merge_attributes(attrs)
   end

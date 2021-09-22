@@ -60,7 +60,7 @@ defmodule TdDdWeb.GrantRequestControllerTest do
       CacheHelpers.insert_grant_request_approver(user_id, domain_id)
 
       %{id: id} =
-        insert(:grant_request, data_structure: build(:data_structure, domain_id: domain_id))
+        insert(:grant_request, data_structure: build(:data_structure), domain_id: domain_id)
 
       insert(:grant_request, data_structure: build(:data_structure), domain_id: domain_id + 1)
 

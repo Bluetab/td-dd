@@ -91,6 +91,10 @@ defmodule TdDd.Canada.Abilities do
       GrantAbilities.can?(claims, action, GrantRequest)
     end
 
+    def can?(%Claims{} = claims, action, %GrantRequest{} = target) do
+      GrantAbilities.can?(claims, action, target)
+    end
+
     def can?(%Claims{role: "admin"}, :create_grant_request, %DataStructure{}), do: true
 
     def can?(%Claims{} = claims, :create_grant_request, %DataStructure{domain_id: domain_id}) do

@@ -94,14 +94,15 @@ defmodule CacheHelpers do
     :ok
   end
 
-  def insert_grant_request_approver(user_id, domain_id) do
+  def insert_grant_request_approver(user_id, domain_id, role_name \\ "grant_approver") do
     ExUnit.Callbacks.on_exit(fn ->
       UserCache.delete(user_id)
-      Redix.command!(["SREM", "permission:approve_grant_request:roles", "grant_approver"])
+      Redix.command!(["SREM", "permission:approve_grant_request:roles", role_name])
     end)
+
     insert_user(id: user_id)
-    insert_acl(domain_id, "grant_approver", [user_id])
-    UserCache.put_roles(user_id, %{"grant_approver" => [domain_id]})
-    Permissions.put_permission_roles(%{"approve_grant_request" => ["grant_approver"]})
+    insert_acl(domain_id, role_name, [user_id])
+    UserCache.put_roles(user_id, %{role_name => [domain_id]})
+    Permissions.put_permission_roles(%{"approve_grant_request" => [role_name]})
   end
 end

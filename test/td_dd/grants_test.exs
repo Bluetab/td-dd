@@ -6,6 +6,7 @@ defmodule TdDd.GrantsTest do
   alias TdCache.Redix
   alias TdCache.Redix.Stream
   alias TdDd.Grants
+  alias TdDd.Grants.Approval
   alias TdDd.Grants.Grant
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestGroup
@@ -326,7 +327,7 @@ defmodule TdDd.GrantsTest do
         requests: [%{data_structure_id: data_structure_id, metadata: @valid_metadata}]
       }
 
-      assert {:ok, %GrantRequestGroup{} = grant_request_group} =
+      assert {:ok, %{group: %{} = grant_request_group}} =
                Grants.create_grant_request_group(params, claims)
 
       assert %{
@@ -353,7 +354,7 @@ defmodule TdDd.GrantsTest do
         requests: requests
       }
 
-      assert {:ok, %GrantRequestGroup{requests: requests}} =
+      assert {:ok, %{group: %{requests: requests}}} =
                Grants.create_grant_request_group(params, build(:claims))
 
       assert [
@@ -369,7 +370,7 @@ defmodule TdDd.GrantsTest do
     test "create_grant_request_group/1 with invalid data returns error changeset" do
       invalid_params = %{type: nil}
 
-      assert {:error, %Ecto.Changeset{}} =
+      assert {:error, :group, %Ecto.Changeset{}, _} =
                Grants.create_grant_request_group(invalid_params, build(:claims))
     end
 
@@ -407,8 +408,10 @@ defmodule TdDd.GrantsTest do
     test "includes domain_id and filters by domain_ids" do
       claims = build(:claims, role: "service")
       %{id: domain_id} = CacheHelpers.insert_domain()
-      %{id: data_structure_id} = insert(:data_structure, domain_id: domain_id)
-      %{id: id} = insert(:grant_request, data_structure_id: data_structure_id)
+      %{id: data_structure_id} = insert(:data_structure)
+
+      %{id: id} =
+        insert(:grant_request, data_structure_id: data_structure_id, domain_id: domain_id)
 
       assert {:ok, grant_requests} = Grants.list_grant_requests(claims)
       assert [%{id: ^id, domain_id: ^domain_id}] = grant_requests
@@ -442,7 +445,8 @@ defmodule TdDd.GrantsTest do
       %{id: id} =
         insert(:grant_request,
           grant_request_group: build(:grant_request_group, user_id: user_id),
-          data_structure: build(:data_structure, domain_id: domain_id)
+          data_structure: build(:data_structure),
+          domain_id: domain_id
         )
 
       assert {:ok, []} = Grants.list_grant_requests(claims, %{action: "approve"})
@@ -506,5 +510,43 @@ defmodule TdDd.GrantsTest do
       assert {:ok, %GrantRequest{}} = Grants.delete_grant_request(grant_request)
       assert_raise Ecto.NoResultsError, fn -> Grants.get_grant_request!(grant_request.id) end
     end
+  end
+
+  describe "Grants.create_approval/2" do
+    setup :setup_grant_request
+
+    test "approves grant request", %{
+      claims: %{user_id: user_id} = claims,
+      domain_id: domain_id,
+      request: request
+    } do
+      params = %{domain_id: domain_id, role: "grant_approver"}
+
+      assert {:ok, %Approval{is_rejection: false, user: user, domain: domain}} =
+               Grants.create_approval(claims, request, params)
+
+      assert %{id: ^user_id, user_name: _} = user
+      assert %{id: ^domain_id, name: _} = domain
+    end
+
+    test "rejects grant request", %{claims: claims, domain_id: domain_id, request: request} do
+      params = %{
+        domain_id: domain_id,
+        role: "grant_approver",
+        is_rejection: true,
+        comment: "foo"
+      }
+
+      assert {:ok, %Approval{is_rejection: true, comment: "foo"}} =
+               Grants.create_approval(claims, request, params)
+    end
+  end
+
+  defp setup_grant_request(%{claims: %{user_id: user_id}}) do
+    %{id: parent_id} = CacheHelpers.insert_domain()
+    %{id: domain_id} = CacheHelpers.insert_domain(%{parent_ids: [parent_id]})
+    CacheHelpers.insert_user(%{user_id: user_id})
+    CacheHelpers.insert_grant_request_approver(user_id, domain_id)
+    [domain_id: domain_id, request: insert(:grant_request)]
   end
 end

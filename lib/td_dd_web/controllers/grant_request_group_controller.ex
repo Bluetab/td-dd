@@ -23,8 +23,7 @@ defmodule TdDdWeb.GrantRequestGroupController do
     with claims <- conn.assigns[:current_resource],
          {:ok, params} <- with_valid_requests(params),
          {:ok, _} <- can_create_on_structures(claims, params),
-         {:ok, %GrantRequestGroup{} = grant_request_group} <-
-           Grants.create_grant_request_group(params, claims) do
+         {:ok, %{group: grant_request_group}} <- Grants.create_grant_request_group(params, claims) do
       conn
       |> put_status(:created)
       |> put_resp_header(

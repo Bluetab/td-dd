@@ -15,6 +15,8 @@ defmodule TdDd.Grants.Approval do
     field :role, :string
     field :is_rejection, :boolean, default: false
     field :comment, :string
+    field :user, :map, virtual: true
+    field :domain, :map, virtual: true
 
     belongs_to :grant_request, GrantRequest
 
@@ -27,7 +29,7 @@ defmodule TdDd.Grants.Approval do
 
   def changeset(%__MODULE__{} = struct, %{} = params) do
     struct
-    |> cast(params, [:user_id, :domain_id, :role, :is_rejection, :comment])
+    |> cast(params, [:domain_id, :role, :is_rejection, :comment])
     |> validate_required([:user_id, :domain_id, :role, :is_rejection, :grant_request_id])
     |> maybe_validate_approver()
     |> foreign_key_constraint(:grant_request_id)

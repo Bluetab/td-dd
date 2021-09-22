@@ -124,7 +124,9 @@ defmodule TdDdWeb.Router do
       )
     end
 
-    resources("/grant_requests", GrantRequestController, only: [:show, :update, :delete])
+    resources("/grant_requests", GrantRequestController, only: [:index, :show, :update, :delete]) do
+      resources("/approvals", ApprovalController, only: [:create])
+    end
   end
 
   scope "/api/swagger" do
