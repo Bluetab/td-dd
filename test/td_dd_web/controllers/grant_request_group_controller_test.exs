@@ -311,34 +311,27 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
     setup [:create_grant_request_group]
 
     @tag authentication: [role: "admin"]
-    test "deletes chosen grant_request_group", %{
-      conn: conn,
-      grant_request_group: grant_request_group
-    } do
+    test "deletes chosen grant_request_group", %{conn: conn, group: group} do
       assert conn
-             |> delete(Routes.grant_request_group_path(conn, :delete, grant_request_group))
+             |> delete(Routes.grant_request_group_path(conn, :delete, group))
              |> response(:no_content)
 
       assert_error_sent 404, fn ->
-        get(conn, Routes.grant_request_group_path(conn, :show, grant_request_group))
+        get(conn, Routes.grant_request_group_path(conn, :show, group))
       end
     end
 
     @tag authentication: [user_name: "non_admin"]
-    test "non admin cannot delete grant_request_group", %{
-      conn: conn,
-      grant_request_group: grant_request_group
-    } do
+    test "non admin cannot delete grant_request_group", %{conn: conn, group: group} do
       assert conn
-             |> delete(Routes.grant_request_group_path(conn, :delete, grant_request_group))
+             |> delete(Routes.grant_request_group_path(conn, :delete, group))
              |> response(:forbidden)
     end
   end
 
   defp create_grant_request_group(_) do
-    %{grant_request_group: grant_request_group} =
-      insert(:grant_request, grant_request_group: build(:grant_request_group))
+    %{group: group} = insert(:grant_request, group: build(:grant_request_group))
 
-    [grant_request_group: grant_request_group]
+    [group: group]
   end
 end

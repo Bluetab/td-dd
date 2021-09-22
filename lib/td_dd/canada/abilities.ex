@@ -107,8 +107,8 @@ defmodule TdDd.Canada.Abilities do
       GrantAbilities.can?(claims, :create_grant_request_group, params)
     end
 
-    def can?(%Claims{} = claims, action, %GrantRequestGroup{} = grant_request_group) do
-      GrantAbilities.can?(claims, action, grant_request_group)
+    def can?(%Claims{} = claims, action, %GrantRequestGroup{} = group) do
+      GrantAbilities.can?(claims, action, group)
     end
 
     def can?(%Claims{} = claims, action, %DataStructure{} = data_structure) do

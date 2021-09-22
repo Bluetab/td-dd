@@ -90,13 +90,13 @@ defmodule TdDd.Grants do
   defp update_domain_ids(%{group: %{id: id}}) do
     GrantRequest
     |> select([gr], gr.id)
-    |> where([gr], gr.grant_request_group_id == ^id)
+    |> where([gr], gr.group_id == ^id)
     |> join(:inner, [gr], ds in assoc(gr, :data_structure))
     |> update([gr, ds], set: [domain_id: ds.domain_id])
   end
 
-  def delete_grant_request_group(%GrantRequestGroup{} = grant_request_group) do
-    Repo.delete(grant_request_group)
+  def delete_grant_request_group(%GrantRequestGroup{} = group) do
+    Repo.delete(group)
   end
 
   @spec list_grant_requests(Claims.t(), map) ::
@@ -131,9 +131,9 @@ defmodule TdDd.Grants do
           query =
             GrantRequest
             |> join(:left, [gr], s in ^status_subquery, on: s.grant_request_id == gr.id)
-            |> join(:inner, [gr], grg in assoc(gr, :grant_request_group))
+            |> join(:inner, [gr], grg in assoc(gr, :group))
             |> select_merge([gr, status], %{current_status: status.status})
-            |> preload([:grant_request_group, data_structure: :current_version])
+            |> preload([:group, data_structure: :current_version])
 
           params
           |> Map.delete(:action)
@@ -143,7 +143,7 @@ defmodule TdDd.Grants do
             {:domain_ids, :all}, q -> q
             {:domain_ids, domain_ids}, q -> where(q, [gr], gr.domain_id in ^domain_ids)
             {:user_id, user_id}, q -> where(q, [..., grg], grg.user_id == ^user_id)
-            {:group_id, group_id}, q -> where(q, [g], g.grant_request_group_id == ^group_id)
+            {:group_id, group_id}, q -> where(q, [g], g.group_id == ^group_id)
           end)
           |> Repo.all()
           |> Enum.map(&enrich/1)
@@ -165,8 +165,7 @@ defmodule TdDd.Grants do
   end
 
   def get_grant_request!(id, opts \\ []) do
-    preloads =
-      Keyword.get(opts, :preload, [:grant_request_group, data_structure: :current_version])
+    preloads = Keyword.get(opts, :preload, [:group, data_structure: :current_version])
 
     GrantRequest
     |> preload(^preloads)
@@ -221,8 +220,8 @@ defmodule TdDd.Grants do
     end
   end
 
-  defp enrich(%GrantRequest{grant_request_group: group} = request) do
-    %{request | grant_request_group: enrich(group)}
+  defp enrich(%GrantRequest{group: group} = request) do
+    %{request | group: enrich(group)}
   end
 
   defp enrich(%GrantRequestGroup{user_id: user_id} = group) do

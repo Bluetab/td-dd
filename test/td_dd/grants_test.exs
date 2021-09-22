@@ -327,16 +327,15 @@ defmodule TdDd.GrantsTest do
         requests: [%{data_structure_id: data_structure_id, metadata: @valid_metadata}]
       }
 
-      assert {:ok, %{group: %{} = grant_request_group}} =
-               Grants.create_grant_request_group(params, claims)
+      assert {:ok, %{group: %{} = group}} = Grants.create_grant_request_group(params, claims)
 
       assert %{
                type: @template_name,
                user_id: ^user_id
-             } = grant_request_group
+             } = group
     end
 
-    test "creates grant_request_group child requests" do
+    test "creates grant_request_group requests" do
       %{id: ds_id_1} = insert(:data_structure)
       %{id: ds_id_2} = insert(:data_structure)
 
@@ -430,9 +429,7 @@ defmodule TdDd.GrantsTest do
     test "filters by user_id" do
       %{user_id: user_id} = claims = build(:claims, role: "admin")
 
-      %{id: id} =
-        insert(:grant_request, grant_request_group: build(:grant_request_group, user_id: user_id))
-
+      %{id: id} = insert(:grant_request, group: build(:grant_request_group, user_id: user_id))
       insert(:grant_request)
 
       assert {:ok, [%{id: ^id}]} = Grants.list_grant_requests(claims, %{user_id: user_id})
@@ -444,7 +441,7 @@ defmodule TdDd.GrantsTest do
 
       %{id: id} =
         insert(:grant_request,
-          grant_request_group: build(:grant_request_group, user_id: user_id),
+          group: build(:grant_request_group, user_id: user_id),
           data_structure: build(:data_structure),
           domain_id: domain_id
         )

@@ -5,7 +5,7 @@ defmodule TdDdWeb.GrantRequestView do
   alias TdDdWeb.GrantRequestGroupView
   alias TdDdWeb.GrantRequestView
 
-  @default_embeddings [:data_structure, :grant_request_group]
+  @default_embeddings [:data_structure, :group]
 
   def render("index.json", %{grant_requests: grant_requests}) do
     %{data: render_many(grant_requests, GrantRequestView, "grant_request.json")}
@@ -43,7 +43,7 @@ defmodule TdDdWeb.GrantRequestView do
           render_one(data_structure, DataStructureView, "embedded.json")
         )
 
-      {:grant_request_group, %{} = group}, acc ->
+      {:group, %{} = group}, acc ->
         Map.put(acc, :group, render_one(group, GrantRequestGroupView, "embedded.json"))
 
       _, acc ->

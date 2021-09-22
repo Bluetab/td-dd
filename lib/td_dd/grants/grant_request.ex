@@ -19,7 +19,7 @@ defmodule TdDd.Grants.GrantRequest do
     field(:current_status, :string, virtual: true)
     field(:domain_id, :integer)
 
-    belongs_to(:grant_request_group, GrantRequestGroup)
+    belongs_to(:group, GrantRequestGroup)
     belongs_to(:data_structure, DataStructure)
 
     has_many(:status, GrantRequestStatus)

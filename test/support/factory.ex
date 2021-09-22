@@ -410,7 +410,7 @@ defmodule TdDd.Factory do
     attrs =
       attrs
       |> default_assoc(:data_structure_id, :data_structure)
-      |> default_assoc(:grant_request_group_id, :grant_request_group)
+      |> default_assoc(:group_id, :group, :grant_request_group)
 
     %TdDd.Grants.GrantRequest{
       filters: %{"foo" => "bar"},

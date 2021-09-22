@@ -92,20 +92,20 @@ defmodule TdDdWeb.GrantRequestGroupController do
   end
 
   def show(conn, %{"id" => id}) do
-    grant_request_group = Grants.get_grant_request_group!(id)
+    group = Grants.get_grant_request_group!(id)
 
     with claims <- conn.assigns[:current_resource],
-         {:can, true} <- {:can, can?(claims, show(grant_request_group))} do
-      render(conn, "show.json", grant_request_group: grant_request_group)
+         {:can, true} <- {:can, can?(claims, show(group))} do
+      render(conn, "show.json", grant_request_group: group)
     end
   end
 
   def delete(conn, %{"id" => id}) do
-    grant_request_group = Grants.get_grant_request_group!(id)
+    group = Grants.get_grant_request_group!(id)
 
     with claims <- conn.assigns[:current_resource],
          {:can, true} <- {:can, can?(claims, delete(GrantRequestGroup))},
-         {:ok, %GrantRequestGroup{}} <- Grants.delete_grant_request_group(grant_request_group) do
+         {:ok, %GrantRequestGroup{}} <- Grants.delete_grant_request_group(group) do
       send_resp(conn, :no_content, "")
     end
   end

@@ -16,7 +16,7 @@ defmodule TdDdWeb.GrantRequestControllerTest do
 
       %{id: id} =
         insert(:grant_request,
-          grant_request_group: build(:grant_request_group, user_id: user_id),
+          group: build(:grant_request_group, user_id: user_id),
           data_structure_id: data_structure_id
         )
 
@@ -43,18 +43,18 @@ defmodule TdDdWeb.GrantRequestControllerTest do
 
     @tag authentication: [role: "admin"]
     test "lists grant requests of a given group", %{conn: conn} do
-      grant_request_group = insert(:grant_request_group)
+      group = insert(:grant_request_group)
 
       assert %{"data" => []} =
                conn
-               |> get(Routes.grant_request_group_request_path(conn, :index, grant_request_group))
+               |> get(Routes.grant_request_group_request_path(conn, :index, group))
                |> json_response(:ok)
 
-      %{grant_request_group: grant_request_group} = insert(:grant_request)
+      %{group: group} = insert(:grant_request)
 
       assert %{"data" => [_]} =
                conn
-               |> get(Routes.grant_request_group_request_path(conn, :index, grant_request_group))
+               |> get(Routes.grant_request_group_request_path(conn, :index, group))
                |> json_response(:ok)
     end
 
