@@ -12,7 +12,6 @@ defmodule TdDd.Search do
 
   def search(query, index) when index in [:structures, :grants] do
     Logger.debug(fn -> "Query: #{inspect(query)}" end)
-
     alias_name = Cluster.alias_name(index)
     response = Elasticsearch.post(Cluster, "/#{alias_name}/_search", query)
 
@@ -34,7 +33,6 @@ defmodule TdDd.Search do
 
   def search(body, query_params, index \\ :structures) do
     Logger.debug(fn -> "Query: #{inspect(body)} #{inspect(query_params)}" end)
-
     alias_name = Cluster.alias_name(index)
 
     response =
@@ -55,11 +53,9 @@ defmodule TdDd.Search do
     end
   end
 
-  def scroll(scroll_params, index \\ :structures) do
+  def scroll(scroll_params) do
     Logger.debug(fn -> "Scroll: #{inspect(scroll_params)}" end)
-
-    alias_name = Cluster.alias_name(index)
-    response = Elasticsearch.post(Cluster, "/#{alias_name}/_search/scroll", scroll_params)
+    response = Elasticsearch.post(Cluster, "_search/scroll", scroll_params)
 
     case response do
       {:ok, %{"_scroll_id" => scroll_id, "hits" => %{"hits" => results, "total" => total}} = res} ->

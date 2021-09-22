@@ -50,7 +50,7 @@ defmodule TdDd.Grants.Search do
   def scroll_grants(%{"scroll_id" => _, "scroll" => _} = scroll_params) do
     scroll_params
     |> Map.take(["scroll_id", "scroll"])
-    |> Search.scroll(@index)
+    |> Search.scroll()
     |> transform_response()
   end
 

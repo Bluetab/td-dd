@@ -15,15 +15,8 @@ defmodule TdDdWeb.GrantView do
   end
 
   def render("grant.json", %{grant: grant}) do
-    %{
-      id: grant.id,
-      detail: grant.detail,
-      start_date: grant.start_date,
-      end_date: grant.end_date,
-      user_id: grant.user_id,
-      inserted_at: grant.inserted_at,
-      updated_at: grant.updated_at
-    }
+    grant
+    |> Map.take([:id, :detail, :start_date, :end_date, :user_id, :inserted_at, :updated_at])
     |> add_structure(grant)
     |> add_structure_version(grant)
     |> add_system(grant)
@@ -53,11 +46,19 @@ defmodule TdDdWeb.GrantView do
     Map.put(grant, :data_structure_version, version)
   end
 
-  defp add_structure_version(grant, %{data_structure_version: %{data_structure_id: _data_structure_id} = dsv}) do
-
+  defp add_structure_version(grant, %{
+         data_structure_version: %{data_structure_id: _data_structure_id} = dsv
+       }) do
     version =
       struct(DataStructureVersion, dsv)
-      |> Map.take([:data_structure_id, :name, :description, :external_id, :metadata, :mutable_metadata])
+      |> Map.take([
+        :data_structure_id,
+        :name,
+        :description,
+        :external_id,
+        :metadata,
+        :mutable_metadata
+      ])
       |> Map.put(:domain, dsv.domain)
 
     Map.put(grant, :data_structure_version, version)
