@@ -59,8 +59,11 @@ defmodule TdDdWeb.DataStructureView do
         data_structure: %{id: id, external_id: external_id, current_version: current_version}
       }) do
     case current_version do
-      %{name: name, type: type} -> %{id: id, external_id: external_id, name: name, type: type}
-      _ -> %{id: id, external_id: external_id}
+      %{name: name, type: type, metadata: metadata} ->
+        %{id: id, external_id: external_id, name: name, type: type, metadata: metadata}
+
+      _ ->
+        %{id: id, external_id: external_id}
     end
   end
 

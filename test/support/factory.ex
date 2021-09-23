@@ -417,8 +417,8 @@ defmodule TdDd.Factory do
       |> default_assoc(:group_id, :group, :grant_request_group)
 
     %TdDd.Grants.GrantRequest{
-      filters: %{"foo" => "bar"},
-      metadata: %{"foo" => "bar"},
+      filters: %{"grant_filters" => "bar"},
+      metadata: %{"grant_meta" => "bar"},
       domain_id: 123
     }
     |> merge_attributes(attrs)

@@ -12,9 +12,16 @@ defmodule TdDdWeb.GrantRequestControllerTest do
     @tag authentication: [role: "admin"]
     test "lists all grant requests", %{conn: conn} do
       %{id: user_id} = CacheHelpers.insert_user()
-      %{data_structure_id: data_structure_id} = insert(:data_structure_version)
 
-      %{grant_request_id: id} =
+      %{
+        data_structure_id: data_structure_id,
+        data_structure: %{external_id: external_id},
+        metadata: structure_metadata,
+        type: type,
+        name: name
+      } = insert(:data_structure_version)
+
+      %{grant_request: %{id: id, metadata: request_metadata}} =
         insert(:grant_request_status,
           grant_request:
             build(:grant_request,
@@ -32,7 +39,7 @@ defmodule TdDdWeb.GrantRequestControllerTest do
       assert [
                %{
                  "id" => ^id,
-                 "metadata" => _,
+                 "metadata" => ^request_metadata,
                  "filters" => _,
                  "inserted_at" => _,
                  "status" => "approved",
@@ -41,7 +48,15 @@ defmodule TdDdWeb.GrantRequestControllerTest do
              ] = data
 
       assert %{"data_structure" => data_structure, "group" => group} = embedded
-      assert %{"id" => _, "external_id" => _, "name" => _, "type" => _} = data_structure
+
+      assert %{
+               "id" => ^data_structure_id,
+               "external_id" => ^external_id,
+               "name" => ^name,
+               "type" => ^type,
+               "metadata" => ^structure_metadata
+             } = data_structure
+
       assert %{"type" => _, "id" => _, "_embedded" => embedded} = group
       assert %{"user" => %{"id" => ^user_id, "user_name" => _, "full_name" => _}} = embedded
     end
