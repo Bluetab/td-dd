@@ -216,15 +216,60 @@ defmodule TdDd.Grants do
     |> Repo.all()
   end
 
-  def create_approval(%{user_id: user_id} = _claims, %{id: id} = _grant_request, params) do
-    %Approval{grant_request_id: id, user_id: user_id}
-    |> Approval.changeset(params)
-    |> Repo.insert()
+  def create_approval(%{user_id: user_id} = _claims, %{id: id} = grant_request, params) do
+    changeset = Approval.changeset(%Approval{grant_request_id: id, user_id: user_id}, params)
+
+    Multi.new()
+    |> Multi.insert(:approval, changeset)
+    |> maybe_insert_status(grant_request, Changeset.fetch_field!(changeset, :is_rejection))
+    |> Repo.transaction()
     |> enrich()
+  end
+
+  defp maybe_insert_status(multi, %{id: grant_request_id} = _grant_request, true = _is_rejection) do
+    Multi.insert(multi, :status, %GrantRequestStatus{
+      status: "rejected",
+      grant_request_id: grant_request_id
+    })
+  end
+
+  defp maybe_insert_status(multi, %{id: grant_request_id} = grant_request, false = _is_rejection) do
+    Multi.run(multi, :status, fn _, _ ->
+      required = required_approvals()
+      approvals = list_approvals(grant_request)
+
+      if MapSet.subset?(required, approvals) do
+        Repo.insert(%GrantRequestStatus{
+          status: "approved",
+          grant_request_id: grant_request_id
+        })
+      else
+        {:ok, nil}
+      end
+    end)
+  end
+
+  defp required_approvals do
+    case Permissions.get_permission_roles(:approve_grant_request) do
+      {:ok, roles} when is_list(roles) -> MapSet.new(roles)
+    end
+  end
+
+  defp list_approvals(%{id: grant_request_id}) do
+    Approval
+    |> where(grant_request_id: ^grant_request_id)
+    |> where([a], not a.is_rejection)
+    |> select([a], a.role)
+    |> Repo.all()
+    |> MapSet.new()
   end
 
   defp enrich({:ok, target}) do
     {:ok, enrich(target)}
+  end
+
+  defp enrich(%{approval: approval} = multi) do
+    %{multi | approval: enrich(approval)}
   end
 
   defp enrich(%Approval{user_id: user_id, domain_id: domain_id} = approval) do

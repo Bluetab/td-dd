@@ -11,7 +11,7 @@ defmodule TdDdWeb.ApprovalController do
     with claims <- conn.assigns[:current_resource],
          request <- Grants.get_grant_request!(id),
          {:can, true} <- {:can, can?(claims, approve(request))},
-         {:ok, approval} <- Grants.create_approval(claims, request, params) do
+         {:ok, %{approval: approval}} <- Grants.create_approval(claims, request, params) do
       conn
       |> put_status(:created)
       # |> put_resp_header("location", Routes.grant_request_approval_path(conn, :show, approval))

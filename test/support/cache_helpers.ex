@@ -90,7 +90,12 @@ defmodule CacheHelpers do
 
   def insert_acl(domain_id, role, user_ids) do
     AclCache.set_acl_role_users("domain", domain_id, role, user_ids)
-    ExUnit.Callbacks.on_exit(fn -> AclCache.delete_acl_roles("domain", domain_id) end)
+
+    ExUnit.Callbacks.on_exit(fn ->
+      AclCache.delete_acl_roles("domain", domain_id)
+      AclCache.delete_acl_role_users("domain", domain_id, role)
+    end)
+
     :ok
   end
 

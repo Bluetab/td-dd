@@ -10,6 +10,7 @@ defmodule TdDd.GrantsTest do
   alias TdDd.Grants.Grant
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestGroup
+  alias TdDd.Grants.GrantRequestStatus
 
   @stream TdCache.Audit.stream()
   @template_name "grant_request_test_template"
@@ -475,25 +476,50 @@ defmodule TdDd.GrantsTest do
       domain_id: domain_id,
       request: request
     } do
-      params = %{domain_id: domain_id, role: "grant_approver"}
+      CacheHelpers.insert_grant_request_approver(user_id, domain_id, "approver")
+      params = %{domain_id: domain_id, role: "approver"}
 
-      assert {:ok, %Approval{is_rejection: false, user: user, domain: domain}} =
-               Grants.create_approval(claims, request, params)
-
+      assert {:ok, %{approval: approval}} = Grants.create_approval(claims, request, params)
+      assert %Approval{is_rejection: false, user: user, domain: domain} = approval
       assert %{id: ^user_id, user_name: _} = user
       assert %{id: ^domain_id, name: _} = domain
     end
 
-    test "rejects grant request", %{claims: claims, domain_id: domain_id, request: request} do
-      params = %{
-        domain_id: domain_id,
-        role: "grant_approver",
-        is_rejection: true,
-        comment: "foo"
-      }
+    test "returns error if user is not an approver", %{
+      claims: claims,
+      domain_id: domain_id,
+      request: request
+    } do
+      params = %{domain_id: domain_id, role: "not_approver"}
+      assert {:error, :approval, _, _} = Grants.create_approval(claims, request, params)
+    end
 
-      assert {:ok, %Approval{is_rejection: true, comment: "foo"}} =
-               Grants.create_approval(claims, request, params)
+    test "inserts a rejected status the approval is rejected", %{
+      claims: %{user_id: user_id} = claims,
+      domain_id: domain_id,
+      request: request
+    } do
+      CacheHelpers.insert_grant_request_approver(user_id, domain_id, "rejector")
+      params = %{domain_id: domain_id, role: "rejector", is_rejection: true, comment: "foo"}
+
+      assert {:ok, %{status: status}} = Grants.create_approval(claims, request, params)
+      assert %GrantRequestStatus{status: "rejected"} = status
+    end
+
+    test "inserts a approved status the approval is approved", %{
+      claims: %{user_id: user_id} = claims,
+      domain_id: domain_id,
+      request: request
+    } do
+      CacheHelpers.insert_grant_request_approver(user_id, domain_id, "approver1")
+      CacheHelpers.insert_grant_request_approver(user_id, domain_id, "approver2")
+
+      params = %{domain_id: domain_id, role: "approver1"}
+      assert {:ok, %{status: nil}} = Grants.create_approval(claims, request, params)
+
+      params = %{domain_id: domain_id, role: "approver2"}
+      assert {:ok, %{status: status}} = Grants.create_approval(claims, request, params)
+      assert %GrantRequestStatus{status: "approved"} = status
     end
   end
 
@@ -501,7 +527,7 @@ defmodule TdDd.GrantsTest do
     %{id: parent_id} = CacheHelpers.insert_domain()
     %{id: domain_id} = CacheHelpers.insert_domain(%{parent_ids: [parent_id]})
     CacheHelpers.insert_user(%{user_id: user_id})
-    CacheHelpers.insert_grant_request_approver(user_id, domain_id)
+
     [domain_id: domain_id, request: insert(:grant_request)]
   end
 end
