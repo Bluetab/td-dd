@@ -9,12 +9,8 @@ defmodule TdDdWeb.ApprovalView do
   end
 
   def render("approval.json", %{approval: approval}) do
-    %{
-      id: approval.id,
-      role: approval.role,
-      is_rejection: approval.is_rejection,
-      comment: approval.comment
-    }
+    approval
+    |> Map.take([:id, :role, :is_rejection, :comment])
     |> put_embeddings(approval)
   end
 

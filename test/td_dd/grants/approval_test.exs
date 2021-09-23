@@ -29,11 +29,25 @@ defmodule TdDd.Grants.ApprovalTest do
       refute errors[:is_rejection]
     end
 
+    test "validates current status is pending", %{user_id: user_id, domain_id: domain_id} do
+      approval = %Approval{
+        current_status: "approved",
+        user_id: user_id,
+        domain_id: domain_id,
+        role: "approver",
+        grant_request_id: 123
+      }
+
+      assert %{errors: errors} = Approval.changeset(approval, %{})
+
+      assert {"is invalid", [validation: :inclusion, enum: ["pending"]]} = errors[:current_status]
+    end
+
     test "validates user has role in domain", %{user_id: user_id} do
       params = %{"domain_id" => 0, "role" => @role}
 
       assert %{errors: errors} =
-               %Approval{grant_request_id: 123, user_id: user_id}
+               %Approval{grant_request_id: 123, user_id: user_id, current_status: "pending"}
                |> Approval.changeset(params)
 
       assert {"invalid role", []} = errors[:user_id]
@@ -46,7 +60,7 @@ defmodule TdDd.Grants.ApprovalTest do
       params = %{"domain_id" => domain_id, "role" => @role}
 
       assert {:error, %{errors: errors}} =
-               %Approval{grant_request_id: 123, user_id: user_id}
+               %Approval{grant_request_id: 123, user_id: user_id, current_status: "pending"}
                |> Approval.changeset(params)
                |> Repo.insert()
 
@@ -65,7 +79,11 @@ defmodule TdDd.Grants.ApprovalTest do
       params = %{"domain_id" => domain_id, "role" => @role}
 
       assert {:ok, approval} =
-               %Approval{grant_request_id: grant_request_id, user_id: user_id}
+               %Approval{
+                 grant_request_id: grant_request_id,
+                 user_id: user_id,
+                 current_status: "pending"
+               }
                |> Approval.changeset(params)
                |> Repo.insert()
 

@@ -17,6 +17,7 @@ defmodule TdDd.Grants.Approval do
     field :comment, :string
     field :user, :map, virtual: true
     field :domain, :map, virtual: true
+    field :current_status, :string, virtual: true
 
     belongs_to :grant_request, GrantRequest
 
@@ -29,11 +30,30 @@ defmodule TdDd.Grants.Approval do
 
   def changeset(%__MODULE__{} = struct, %{} = params) do
     struct
-    |> cast(params, [:domain_id, :role, :is_rejection, :comment])
-    |> validate_required([:user_id, :domain_id, :role, :is_rejection, :grant_request_id])
+    |> cast(params, [:comment, :domain_id, :is_rejection, :role])
+    |> validate_required([
+      :current_status,
+      :domain_id,
+      :grant_request_id,
+      :is_rejection,
+      :role,
+      :user_id
+    ])
+    # validate_inclusion won't work here, current_status is not cast in the params
+    |> validate_field(:current_status, "pending")
     |> maybe_validate_approver()
     |> foreign_key_constraint(:grant_request_id)
     |> unique_constraint([:grant_request_id, :role])
+  end
+
+  defp validate_field(changeset, field, expected_value) do
+    case fetch_field!(changeset, field) do
+      ^expected_value ->
+        changeset
+
+      _ ->
+        add_error(changeset, field, "is invalid", validation: :inclusion, enum: [expected_value])
+    end
   end
 
   defp maybe_validate_approver(%{valid?: false} = changeset), do: changeset

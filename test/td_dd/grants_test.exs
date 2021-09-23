@@ -533,6 +533,6 @@ defmodule TdDd.GrantsTest do
     %{id: domain_id} = CacheHelpers.insert_domain(%{parent_ids: [parent_id]})
     CacheHelpers.insert_user(%{user_id: user_id})
 
-    [domain_id: domain_id, request: insert(:grant_request)]
+    [domain_id: domain_id, request: insert(:grant_request, current_status: "pending")]
   end
 end

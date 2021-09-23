@@ -138,35 +138,16 @@ defmodule TdDd.Grants do
   end
 
   defp do_list_grant_requests({:ok, %{action: action} = params}, claims) do
-    status_subquery =
-      GrantRequestStatus
-      |> distinct([s], s.grant_request_id)
-      |> order_by([s], desc: s.inserted_at)
-      |> subquery()
-
     grant_requests =
       case visible_domain_ids(claims, action) do
         :none ->
           []
 
         domain_ids ->
-          query =
-            GrantRequest
-            |> join(:left, [gr], s in ^status_subquery, on: s.grant_request_id == gr.id)
-            |> join(:inner, [gr], grg in assoc(gr, :group))
-            |> select_merge([gr, status], %{current_status: status.status})
-            |> preload([:group, data_structure: :current_version])
-
           params
           |> Map.delete(:action)
           |> Map.put_new(:domain_ids, domain_ids)
-          |> Enum.reduce(query, fn
-            {:status, status}, q -> where(q, [gr, s], s.status == ^status)
-            {:domain_ids, :all}, q -> q
-            {:domain_ids, domain_ids}, q -> where(q, [gr], gr.domain_id in ^domain_ids)
-            {:user_id, user_id}, q -> where(q, [..., grg], grg.user_id == ^user_id)
-            {:group_id, group_id}, q -> where(q, [g], g.group_id == ^group_id)
-          end)
+          |> grant_request_query()
           |> Repo.all()
           |> Enum.map(&enrich/1)
       end
@@ -187,11 +168,35 @@ defmodule TdDd.Grants do
   end
 
   def get_grant_request!(id, opts \\ []) do
-    preloads = Keyword.get(opts, :preload, [:group, data_structure: :current_version])
-
-    GrantRequest
-    |> preload(^preloads)
+    opts
+    |> Map.new()
+    |> grant_request_query()
     |> Repo.get!(id)
+  end
+
+  defp grant_request_query(%{} = clauses) do
+    status_subquery =
+      GrantRequestStatus
+      |> distinct([s], s.grant_request_id)
+      |> order_by([s], desc: s.inserted_at)
+      |> subquery()
+
+    query =
+      GrantRequest
+      |> join(:left, [gr], s in ^status_subquery, on: s.grant_request_id == gr.id)
+      |> join(:left, [gr], grg in assoc(gr, :group))
+      |> select_merge([gr, s], %{current_status: s.status})
+
+    clauses
+    |> Map.put_new(:preload, [:group, data_structure: :current_version])
+    |> Enum.reduce(query, fn
+      {:preload, preloads}, q -> preload(q, ^preloads)
+      {:status, status}, q -> where(q, [gr, s], s.status == ^status)
+      {:domain_ids, :all}, q -> q
+      {:domain_ids, domain_ids}, q -> where(q, [gr], gr.domain_id in ^domain_ids)
+      {:user_id, user_id}, q -> where(q, [..., grg], grg.user_id == ^user_id)
+      {:group_id, group_id}, q -> where(q, [g], g.group_id == ^group_id)
+    end)
   end
 
   def delete_grant_request(%GrantRequest{} = grant_request) do
@@ -222,8 +227,16 @@ defmodule TdDd.Grants do
     |> Repo.all()
   end
 
-  def create_approval(%{user_id: user_id} = _claims, %{id: id} = grant_request, params) do
-    changeset = Approval.changeset(%Approval{grant_request_id: id, user_id: user_id}, params)
+  def create_approval(
+        %{user_id: user_id} = _claims,
+        %{id: id, current_status: status} = grant_request,
+        params
+      ) do
+    changeset =
+      Approval.changeset(
+        %Approval{grant_request_id: id, user_id: user_id, current_status: status},
+        params
+      )
 
     Multi.new()
     |> Multi.insert(:approval, changeset)
