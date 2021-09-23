@@ -15,11 +15,11 @@ defmodule TdCx.Sources.EventsTest do
     alias TdCx.Events.Event
 
     test "create_event/0 creates an event" do
-      job = insert(:job)
-      attrs = Map.put(@valid_attrs, :job_id, job.id)
-
-      assert {:ok, %Event{} = event} = Events.create_event(attrs)
-      assert event.job_id == job.id
+      %{id: id} = insert(:job)
+      attrs = Map.put(@valid_attrs, :job_id, id)
+      claims = build(:cx_claims, role: "admin")
+      assert {:ok, %Event{} = event} = Events.create_event(attrs, claims)
+      assert event.job_id == id
       assert event.type == @valid_attrs.type
       assert event.message == @valid_attrs.message
     end

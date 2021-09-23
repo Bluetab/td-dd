@@ -11,7 +11,7 @@ defmodule TdCxWeb.EventController do
   alias TdCxWeb.ErrorView
   alias TdCxWeb.SwaggerDefinitions
 
-  action_fallback TdCxWeb.FallbackController
+  action_fallback(TdCxWeb.FallbackController)
 
   def swagger_definitions do
     SwaggerDefinitions.event_definitions()
@@ -71,7 +71,8 @@ defmodule TdCxWeb.EventController do
 
     with true <- can?(claims, create(%Event{})),
          %Job{id: id} <- Jobs.get_job!(job_external_id),
-         {:ok, %Event{} = event} <- Events.create_event(Map.put(event_params, "job_id", id)) do
+         {:ok, %Event{} = event} <-
+           Events.create_event(Map.put(event_params, "job_id", id), claims) do
       conn
       |> put_status(:created)
       |> render("show.json", event: event)
