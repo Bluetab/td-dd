@@ -100,6 +100,12 @@ defmodule TdDd.Grants do
     Multi.new()
     |> Multi.insert(:group, changeset)
     |> Multi.update_all(:requests, &update_domain_ids/1, [])
+    |> Multi.insert_all(:statuses, GrantRequestStatus, fn %{requests: {_count, request_ids}} ->
+      Enum.map(
+        request_ids,
+        &%{grant_request_id: &1, status: "pending", inserted_at: DateTime.utc_now()}
+      )
+    end)
     |> Repo.transaction()
   end
 

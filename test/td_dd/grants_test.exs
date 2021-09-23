@@ -328,12 +328,17 @@ defmodule TdDd.GrantsTest do
         requests: [%{data_structure_id: data_structure_id, metadata: @valid_metadata}]
       }
 
-      assert {:ok, %{group: %{} = group}} = Grants.create_grant_request_group(params, claims)
+      assert {:ok, %{group: group, statuses: statuses, requests: {_count, [request_id]}}} =
+               Grants.create_grant_request_group(params, claims)
 
       assert %{
                type: @template_name,
                user_id: ^user_id
              } = group
+
+      assert {1, nil} = statuses
+
+      assert %{status: "pending"} = Repo.get_by!(GrantRequestStatus, grant_request_id: request_id)
     end
 
     test "creates grant_request_group requests" do
