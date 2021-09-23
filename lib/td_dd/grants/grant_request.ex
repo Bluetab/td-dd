@@ -18,13 +18,15 @@ defmodule TdDd.Grants.GrantRequest do
     field(:metadata, :map)
     field(:current_status, :string, virtual: true)
     field(:domain_id, :integer)
+    # updated_at is derived from most recent status
+    field(:updated_at, :utc_datetime_usec, virtual: true)
 
     belongs_to(:group, GrantRequestGroup)
     belongs_to(:data_structure, DataStructure)
 
     has_many(:status, GrantRequestStatus)
 
-    timestamps(type: :utc_datetime_usec)
+    timestamps(type: :utc_datetime_usec, updated_at: false)
   end
 
   def changeset(%__MODULE__{} = struct, params, template_name) do

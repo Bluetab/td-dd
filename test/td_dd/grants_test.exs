@@ -458,6 +458,30 @@ defmodule TdDd.GrantsTest do
 
       assert {:ok, [%{id: ^id}]} = Grants.list_grant_requests(claims, %{action: "approve"})
     end
+
+    test "filters by updated_since (status.inserted_at)", %{claims: claims} do
+      ts = ~U[2021-02-03 04:05:06.123456Z]
+
+      %{grant_request_id: id} = insert(:grant_request_status, inserted_at: ts)
+
+      assert {:ok, []} =
+               Grants.list_grant_requests(claims, %{updated_since: "2021-03-01T00:00:00Z"})
+
+      assert {:ok, [%{id: ^id}]} =
+               Grants.list_grant_requests(claims, %{updated_since: "2021-01-01T00:00:00Z"})
+    end
+
+    test "limits results", %{claims: claims} do
+      for _ <- 1..3 do
+        insert(:grant_request_status)
+      end
+
+      assert {:ok, res} = Grants.list_grant_requests(claims, %{})
+      assert Enum.count(res) == 3
+
+      assert {:ok, res} = Grants.list_grant_requests(claims, %{limit: 2})
+      assert Enum.count(res) == 2
+    end
   end
 
   describe "grant_requests" do

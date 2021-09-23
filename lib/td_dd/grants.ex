@@ -124,15 +124,25 @@ defmodule TdDd.Grants do
   @spec list_grant_requests(Claims.t(), map) ::
           {:error, Changeset.t()} | {:ok, [GrantRequest.t()]}
   def list_grant_requests(%Claims{} = claims, %{} = params \\ %{}) do
-    {_data = %{action: nil},
+    {_data = %{action: nil, limit: 1000},
      _types = %{
        action: :string,
-       status: :string,
        domain_ids: {:array, :integer},
-       user_id: :integer,
-       group_id: :integer
+       group_id: :integer,
+       limit: :integer,
+       status: :string,
+       updated_since: :utc_datetime_usec,
+       user_id: :integer
      }}
-    |> Changeset.cast(params, [:action, :domain_ids, :status, :user_id, :group_id])
+    |> Changeset.cast(params, [
+      :action,
+      :domain_ids,
+      :group_id,
+      :limit,
+      :status,
+      :updated_since,
+      :user_id
+    ])
     |> Changeset.apply_action(:update)
     |> do_list_grant_requests(claims)
   end
@@ -185,17 +195,19 @@ defmodule TdDd.Grants do
       GrantRequest
       |> join(:left, [gr], s in ^status_subquery, on: s.grant_request_id == gr.id)
       |> join(:left, [gr], grg in assoc(gr, :group))
-      |> select_merge([gr, s], %{current_status: s.status})
+      |> select_merge([gr, s], %{current_status: s.status, updated_at: s.inserted_at})
 
     clauses
     |> Map.put_new(:preload, [:group, data_structure: :current_version])
     |> Enum.reduce(query, fn
       {:preload, preloads}, q -> preload(q, ^preloads)
-      {:status, status}, q -> where(q, [gr, s], s.status == ^status)
+      {:status, status}, q -> where(q, [_gr, s], s.status == ^status)
+      {:updated_since, ts}, q -> where(q, [_gr, s], s.inserted_at > ^ts)
       {:domain_ids, :all}, q -> q
       {:domain_ids, domain_ids}, q -> where(q, [gr], gr.domain_id in ^domain_ids)
       {:user_id, user_id}, q -> where(q, [..., grg], grg.user_id == ^user_id)
       {:group_id, group_id}, q -> where(q, [g], g.group_id == ^group_id)
+      {:limit, lim}, q -> limit(q, ^lim)
     end)
   end
 
