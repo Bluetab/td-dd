@@ -333,7 +333,7 @@ defmodule TdDd.LoaderTest do
                )
     end
 
-    setup :source
+    setup :create_source
 
     test "update structures without generate version", %{source: source} do
       system = insert(:system, external_id: "SYS1", name: "SYS1")
@@ -842,8 +842,8 @@ defmodule TdDd.LoaderTest do
     %{last_change_by: 0, ts: DateTime.utc_now()}
   end
 
-  defp source(_) do
-    {:ok, source: insert(:source)}
+  defp create_source(_) do
+    [source: insert(:source)]
   end
 
   defp random_structure(system_id) do

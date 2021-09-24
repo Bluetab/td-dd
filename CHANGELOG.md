@@ -4,6 +4,7 @@
 
 ### Added
 
+- [TD-4076] Support for grant request approval
 - [TD-4113] Jobs change status is included in Audit Events
 
 ### Changed

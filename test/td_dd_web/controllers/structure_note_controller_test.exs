@@ -9,12 +9,12 @@ defmodule TdDdWeb.StructureNoteControllerTest do
   @moduletag sandbox: :shared
   @template_name "structure_note_controller_test_template"
 
-  setup %{conn: conn} do
+  setup do
     %{id: template_id, name: template_name} = CacheHelpers.insert_template(name: @template_name)
     CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
 
     start_supervised!(TdDd.Search.StructureEnricher)
-    [conn: put_req_header(conn, "accept", "application/json")]
+    :ok
   end
 
   describe "index" do

@@ -39,7 +39,11 @@ defmodule TdDd.Search.Aggregations do
       {"taxonomy",
        %{
          nested: %{path: "data_structure_version.domain_parents"},
-         aggs: %{distinct_search: %{terms: %{field: "data_structure_version.domain_parents.id", size: 50}}}
+         aggs: %{
+           distinct_search: %{
+             terms: %{field: "data_structure_version.domain_parents.id", size: 50}
+           }
+         }
        }},
       {"type.raw", %{terms: %{field: "data_structure_version.type.raw", size: 50}}}
     ]

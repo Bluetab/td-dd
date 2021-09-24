@@ -1,155 +1,132 @@
 defmodule TdDdWeb.GrantRequestControllerTest do
   use TdDdWeb.ConnCase
 
-  alias TdDd.Grants.GrantRequest
-
-  @create_attrs %{
-    filters: %{},
-    metadata: %{}
-  }
-  @update_attrs %{
-    filters: %{},
-    metadata: %{}
-  }
   @template_name "grant_request_controller_test_template"
 
-  setup %{conn: conn} do
+  setup do
     CacheHelpers.insert_template(name: @template_name)
-    [conn: put_req_header(conn, "accept", "application/json")]
+    :ok
   end
 
   describe "index" do
     @tag authentication: [role: "admin"]
-    test "lists all grant_requests", %{conn: conn} do
-      _other_group_request = insert(:grant_request)
-      grant_request_group = insert(:grant_request_group)
-      conn = get(conn, Routes.grant_request_group_request_path(conn, :index, grant_request_group))
-      assert json_response(conn, 200)["data"] == []
-    end
-  end
+    test "lists all grant requests", %{conn: conn} do
+      %{id: user_id} = CacheHelpers.insert_user()
 
-  describe "create grant_request" do
-    @tag authentication: [role: "admin"]
-    test "renders grant_request when data is valid", %{conn: conn} do
-      grant_request_group = insert(:grant_request_group, type: @template_name)
-      %{id: data_structure_id} = insert(:data_structure)
+      %{
+        data_structure_id: data_structure_id,
+        data_structure: %{external_id: external_id},
+        metadata: structure_metadata,
+        type: type,
+        name: name
+      } = insert(:data_structure_version)
 
-      metadata = %{
-        "list" => "one",
-        "string" => "bar"
-      }
-
-      attrs =
-        @create_attrs
-        |> Map.put(:data_structure_id, data_structure_id)
-        |> Map.put(:metadata, metadata)
-
-      conn =
-        post(conn, Routes.grant_request_group_request_path(conn, :create, grant_request_group),
-          grant_request: attrs
+      %{grant_request: %{id: id, metadata: request_metadata}} =
+        insert(:grant_request_status,
+          grant_request:
+            build(:grant_request,
+              group: build(:grant_request_group, user_id: user_id),
+              data_structure_id: data_structure_id
+            ),
+          status: "approved"
         )
 
-      assert %{"id" => id} = json_response(conn, 201)["data"]
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.grant_request_path(conn, :index))
+               |> json_response(:ok)
 
-      conn = get(conn, Routes.grant_request_path(conn, :show, id))
+      assert [
+               %{
+                 "id" => ^id,
+                 "metadata" => ^request_metadata,
+                 "filters" => _,
+                 "inserted_at" => _,
+                 "status" => "approved",
+                 "_embedded" => embedded
+               }
+             ] = data
+
+      assert %{"data_structure" => data_structure, "group" => group} = embedded
 
       assert %{
-               "id" => ^id,
-               "filters" => %{},
-               "metadata" => ^metadata
-             } = json_response(conn, 200)["data"]
-    end
+               "id" => ^data_structure_id,
+               "external_id" => ^external_id,
+               "name" => ^name,
+               "type" => ^type,
+               "metadata" => ^structure_metadata
+             } = data_structure
 
-    @tag authentication: [user_name: "not_an_admin"]
-    test "non-admin cannot create grant_request", %{conn: conn} do
-      grant_request_group = insert(:grant_request_group)
-      %{id: data_structure_id} = insert(:data_structure)
-
-      attrs = Map.put(@create_attrs, :data_structure_id, data_structure_id)
-
-      conn =
-        post(conn, Routes.grant_request_group_request_path(conn, :create, grant_request_group),
-          grant_request: attrs
-        )
-
-      assert response(conn, :forbidden)
+      assert %{"type" => _, "id" => _, "_embedded" => embedded} = group
+      assert %{"user" => %{"id" => ^user_id, "user_name" => _, "full_name" => _}} = embedded
     end
 
     @tag authentication: [role: "admin"]
-    test "fails to create grant with invalid metadata", %{conn: conn} do
-      grant_request_group = insert(:grant_request_group, type: @template_name)
-      %{id: data_structure_id} = insert(:data_structure)
-      attrs = Map.put(@create_attrs, :data_structure_id, data_structure_id)
+    test "lists grant requests of a given group", %{conn: conn} do
+      group = insert(:grant_request_group)
 
-      conn =
-        post(conn, Routes.grant_request_group_request_path(conn, :create, grant_request_group),
-          grant_request: attrs
-        )
+      assert %{"data" => []} =
+               conn
+               |> get(Routes.grant_request_group_request_path(conn, :index, group))
+               |> json_response(:ok)
 
-      assert %{"errors" => %{"metadata" => ["invalid content"]}} = json_response(conn, 422)
+      %{group: group} = insert(:grant_request)
+
+      assert %{"data" => [_]} =
+               conn
+               |> get(Routes.grant_request_group_request_path(conn, :index, group))
+               |> json_response(:ok)
     end
 
     @tag authentication: [role: "admin"]
-    test "fails on invalid grant_request_group_id", %{conn: conn} do
-      %{id: data_structure_id} = insert(:data_structure)
-      attrs = Map.put(@create_attrs, :data_structure_id, data_structure_id)
+    test "filters by status", %{conn: conn} do
+      %{grant_request_id: id} = insert(:grant_request_status, status: "pending")
+      insert(:grant_request_status, status: "approved", grant_request_id: id)
 
-      conn =
-        post(conn, Routes.grant_request_group_request_path(conn, :create, 888),
-          grant_request: attrs
-        )
+      params = %{"status" => "approved"}
 
-      assert json_response(conn, :not_found)["message"] == "GrantRequestGroup"
+      assert %{"data" => [%{"id" => ^id}]} =
+               conn
+               |> get(Routes.grant_request_path(conn, :index, params))
+               |> json_response(:ok)
+
+      %{grant_request_id: id} = insert(:grant_request_status, status: "pending")
+      params = %{"status" => "pending"}
+
+      assert %{"data" => [%{"id" => ^id}]} =
+               conn
+               |> get(Routes.grant_request_path(conn, :index, params))
+               |> json_response(:ok)
     end
-  end
 
-  describe "update grant_request" do
-    setup [:create_grant_request]
+    @tag authentication: [role: "user"]
+    test "returns forbidden if user is not authorized", %{conn: conn} do
+      assert %{"errors" => _errors} =
+               conn
+               |> get(Routes.grant_request_path(conn, :index, %{}))
+               |> json_response(:forbidden)
+    end
 
-    @tag authentication: [role: "admin"]
-    test "renders grant_request when data is valid", %{
+    @tag authentication: [role: "user"]
+    test "filters by domain permissions of an approver", %{
       conn: conn,
-      grant_request: %GrantRequest{id: id} = grant_request
+      claims: %{user_id: user_id}
     } do
-      conn =
-        put(
-          conn,
-          Routes.grant_request_path(
-            conn,
-            :update,
-            grant_request
-          ),
-          grant_request: @update_attrs
-        )
+      %{id: domain_id} = CacheHelpers.insert_domain()
+      create_acl_entry(user_id, domain_id, [:approve_grant_request])
+      CacheHelpers.insert_grant_request_approver(user_id, domain_id)
 
-      assert %{"id" => ^id} = json_response(conn, 200)["data"]
+      %{id: id} =
+        insert(:grant_request, data_structure: build(:data_structure), domain_id: domain_id)
 
-      conn = get(conn, Routes.grant_request_path(conn, :show, id))
+      insert(:grant_request, data_structure: build(:data_structure), domain_id: domain_id + 1)
 
-      assert %{
-               "id" => ^id,
-               "filters" => %{},
-               "metadata" => %{}
-             } = json_response(conn, 200)["data"]
-    end
+      params = %{"action" => "approve"}
 
-    @tag authentication: [user_name: "non_admin"]
-    test "non admin user cannot update grant_request", %{
-      conn: conn,
-      grant_request: %GrantRequest{} = grant_request
-    } do
-      conn =
-        put(
-          conn,
-          Routes.grant_request_path(
-            conn,
-            :update,
-            grant_request
-          ),
-          grant_request: @update_attrs
-        )
-
-      assert response(conn, :forbidden)
+      assert %{"data" => [%{"id" => ^id}]} =
+               conn
+               |> get(Routes.grant_request_path(conn, :index, params))
+               |> json_response(:ok)
     end
   end
 
@@ -158,43 +135,20 @@ defmodule TdDdWeb.GrantRequestControllerTest do
 
     @tag authentication: [role: "admin"]
     test "deletes chosen grant_request", %{conn: conn, grant_request: grant_request} do
-      conn =
-        delete(
-          conn,
-          Routes.grant_request_path(
-            conn,
-            :delete,
-            grant_request
-          )
-        )
+      assert conn
+             |> delete(Routes.grant_request_path(conn, :delete, grant_request))
+             |> response(:no_content)
 
-      assert response(conn, 204)
-
-      assert_error_sent 404, fn ->
-        get(
-          conn,
-          Routes.grant_request_path(
-            conn,
-            :show,
-            grant_request
-          )
-        )
+      assert_error_sent :not_found, fn ->
+        get(conn, Routes.grant_request_path(conn, :show, grant_request))
       end
     end
 
     @tag authentication: [user_name: "non_admin"]
     test "non admin user cannot delete grant_request", %{conn: conn, grant_request: grant_request} do
-      conn =
-        delete(
-          conn,
-          Routes.grant_request_path(
-            conn,
-            :delete,
-            grant_request
-          )
-        )
-
-      assert response(conn, :forbidden)
+      assert conn
+             |> delete(Routes.grant_request_path(conn, :delete, grant_request))
+             |> response(:forbidden)
     end
   end
 

@@ -51,11 +51,19 @@ defmodule TdDdWeb.GrantView do
     Map.put(grant, :data_structure_version, version)
   end
 
-  defp add_structure_version(grant, %{data_structure_version: %{data_structure_id: _data_structure_id} = dsv}) do
-
+  defp add_structure_version(grant, %{
+         data_structure_version: %{data_structure_id: _data_structure_id} = dsv
+       }) do
     version =
       struct(DataStructureVersion, dsv)
-      |> Map.take([:data_structure_id, :name, :description, :external_id, :metadata, :mutable_metadata])
+      |> Map.take([
+        :data_structure_id,
+        :name,
+        :description,
+        :external_id,
+        :metadata,
+        :mutable_metadata
+      ])
       |> Map.put(:domain, dsv.domain)
 
     Map.put(grant, :data_structure_version, version)

@@ -9,7 +9,7 @@ defmodule TdDd.CSV.ReaderTest do
   setup context do
     if path = context[:fixture] do
       stream = File.stream!("test/fixtures/" <> path)
-      {:ok, stream: stream}
+      [stream: stream]
     else
       :ok
     end

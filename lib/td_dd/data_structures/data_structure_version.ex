@@ -124,7 +124,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
   end
 
   def with_data_structure do
-    from  __MODULE__, preload: :data_structure
+    from __MODULE__, preload: :data_structure
   end
 
   defimpl Elasticsearch.Document do
@@ -145,7 +145,6 @@ defmodule TdDd.DataStructures.DataStructureVersion do
             path: path
           } = dsv
         ) do
-
       # IMPORTANT: Avoid enriching structs one-by-one in this function.
       # Instead, enrichment should be performed as efficiently as possible on
       # chunked data using `TdDd.DataStructures.enriched_structure_versions/1`.
@@ -161,7 +160,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
         :inserted_at,
         :linked_concepts_count,
         :source_id,
-        :system_id,
+        :system_id
       ])
       |> Map.put(:latest_note, content)
       |> Map.put(:domain_ids, domain_ids(data_structure))

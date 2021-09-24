@@ -1,11 +1,11 @@
 defmodule TdCx.Jobs.Audit do
   @moduledoc """
-  The Systems Audit context. The public functions in this module are designed to
+  The Jobs Audit context. The public functions in this module are designed to
   be called using `Ecto.Multi.run/5`, although the first argument (`repo`) is
   not currently used.
   """
 
-  import TdCx.Audit.AuditSupport, only: [publish: 4, publish: 5]
+  import TdCx.Audit.AuditSupport, only: [publish: 5]
 
   @doc """
   Publishes an `:job_status` event. Should be called using `Ecto.Multi.run/5`.

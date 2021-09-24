@@ -55,6 +55,18 @@ defmodule TdDdWeb.DataStructureView do
     |> add_dynamic_content(data_structure)
   end
 
+  def render("embedded.json", %{
+        data_structure: %{id: id, external_id: external_id, current_version: current_version}
+      }) do
+    case current_version do
+      %{name: name, type: type, metadata: metadata} ->
+        %{id: id, external_id: external_id, name: name, type: type, metadata: metadata}
+
+      _ ->
+        %{id: id, external_id: external_id}
+    end
+  end
+
   defp data_structure_json(data_structure) do
     dsv_attrs =
       data_structure

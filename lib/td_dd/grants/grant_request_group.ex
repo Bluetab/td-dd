@@ -10,8 +10,9 @@ defmodule TdDd.Grants.GrantRequestGroup do
   schema "grant_request_groups" do
     field(:type, :string)
     field(:user_id, :integer)
+    field(:user, :map, virtual: true)
 
-    has_many(:requests, GrantRequest)
+    has_many(:requests, GrantRequest, foreign_key: :group_id)
 
     timestamps(type: :utc_datetime_usec)
   end
