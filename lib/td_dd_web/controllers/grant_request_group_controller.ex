@@ -1,19 +1,20 @@
 defmodule TdDdWeb.GrantRequestGroupController do
   use TdDdWeb, :controller
+
   import Canada, only: [can?: 2]
 
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.Grants
   alias TdDd.Grants.GrantRequestGroup
+  alias TdDd.Grants.Requests
 
   action_fallback TdDdWeb.FallbackController
 
   def index(conn, _params) do
     grant_request_groups =
       case conn.assigns[:current_resource] do
-        %{role: "admin"} -> Grants.list_grant_request_groups()
-        %{user_id: user_id} -> Grants.list_grant_request_groups_by_user_id(user_id)
+        %{role: "admin"} -> Requests.list_grant_request_groups()
+        %{user_id: user_id} -> Requests.list_grant_request_groups_by_user_id(user_id)
       end
 
     render(conn, "index.json", grant_request_groups: grant_request_groups)
@@ -23,15 +24,15 @@ defmodule TdDdWeb.GrantRequestGroupController do
     with claims <- conn.assigns[:current_resource],
          {:ok, params} <- with_valid_requests(params),
          {:ok, _} <- can_create_on_structures(claims, params),
-         {:ok, %GrantRequestGroup{} = grant_request_group} <-
-           Grants.create_grant_request_group(params, claims) do
+         {:ok, %{group: %{id: id}}} <- Requests.create_grant_request_group(params, claims),
+         %{} = group <- Requests.get_grant_request_group!(id) do
       conn
       |> put_status(:created)
       |> put_resp_header(
         "location",
-        Routes.grant_request_group_path(conn, :show, grant_request_group)
+        Routes.grant_request_group_path(conn, :show, group)
       )
-      |> render("show.json", grant_request_group: grant_request_group)
+      |> render("show.json", grant_request_group: group)
     end
   end
 
@@ -91,20 +92,20 @@ defmodule TdDdWeb.GrantRequestGroupController do
   end
 
   def show(conn, %{"id" => id}) do
-    grant_request_group = Grants.get_grant_request_group!(id)
+    group = Requests.get_grant_request_group!(id)
 
     with claims <- conn.assigns[:current_resource],
-         {:can, true} <- {:can, can?(claims, show(grant_request_group))} do
-      render(conn, "show.json", grant_request_group: grant_request_group)
+         {:can, true} <- {:can, can?(claims, show(group))} do
+      render(conn, "show.json", grant_request_group: group)
     end
   end
 
   def delete(conn, %{"id" => id}) do
-    grant_request_group = Grants.get_grant_request_group!(id)
+    group = Requests.get_grant_request_group!(id)
 
     with claims <- conn.assigns[:current_resource],
          {:can, true} <- {:can, can?(claims, delete(GrantRequestGroup))},
-         {:ok, %GrantRequestGroup{}} <- Grants.delete_grant_request_group(grant_request_group) do
+         {:ok, %GrantRequestGroup{}} <- Requests.delete_grant_request_group(group) do
       send_resp(conn, :no_content, "")
     end
   end

@@ -7,12 +7,8 @@ defmodule TdDd.GrantsTest do
   alias TdCache.Redix.Stream
   alias TdDd.Grants
   alias TdDd.Grants.Grant
-  alias TdDd.Grants.GrantRequest
-  alias TdDd.Grants.GrantRequestGroup
 
   @stream TdCache.Audit.stream()
-  @template_name "grant_request_test_template"
-  @valid_metadata %{"list" => "one", "string" => "bar"}
 
   setup_all do
     on_exit(fn -> Redix.del!(@stream) end)
@@ -27,7 +23,6 @@ defmodule TdDd.GrantsTest do
       user_id: user_id,
       user_name: user_name,
       claims: build(:claims),
-      template: CacheHelpers.insert_template(name: @template_name),
       data_structure: data_structure,
       data_structure_id: data_structure_id
     ]
@@ -303,144 +298,6 @@ defmodule TdDd.GrantsTest do
                "start_date" => "2020-01-02",
                "user_id" => ^user_id
              } = Jason.decode!(payload)
-    end
-  end
-
-  describe "grant_request_groups" do
-    test "list_grant_request_groups/0 returns all grant_request_groups" do
-      grant_request_group = insert(:grant_request_group)
-      assert Grants.list_grant_request_groups() <|> [grant_request_group]
-    end
-
-    test "get_grant_request_group!/1 returns the grant_request_group with given id" do
-      grant_request_group = insert(:grant_request_group)
-      assert Grants.get_grant_request_group!(grant_request_group.id) <~> grant_request_group
-    end
-
-    test "create_grant_request_group/2 with valid data creates a grant_request_group" do
-      %{id: data_structure_id} = insert(:data_structure)
-      %{user_id: user_id} = claims = build(:claims)
-
-      params = %{
-        type: @template_name,
-        requests: [%{data_structure_id: data_structure_id, metadata: @valid_metadata}]
-      }
-
-      assert {:ok, %GrantRequestGroup{} = grant_request_group} =
-               Grants.create_grant_request_group(params, claims)
-
-      assert %{
-               type: @template_name,
-               user_id: ^user_id
-             } = grant_request_group
-    end
-
-    test "creates grant_request_group child requests" do
-      %{id: ds_id_1} = insert(:data_structure)
-      %{id: ds_id_2} = insert(:data_structure)
-
-      requests = [
-        %{
-          data_structure_id: ds_id_1,
-          filters: %{"foo" => "bar"},
-          metadata: @valid_metadata
-        },
-        %{data_structure_id: ds_id_2, metadata: @valid_metadata}
-      ]
-
-      params = %{
-        type: @template_name,
-        requests: requests
-      }
-
-      assert {:ok, %GrantRequestGroup{id: id}} =
-               Grants.create_grant_request_group(params, build(:claims))
-
-      assert [
-               %{
-                 data_structure_id: ^ds_id_1,
-                 filters: %{"foo" => "bar"},
-                 metadata: @valid_metadata
-               },
-               %{data_structure_id: ^ds_id_2}
-             ] = Grants.list_grant_requests(id)
-    end
-
-    test "create_grant_request_group/1 with invalid data returns error changeset" do
-      invalid_params = %{type: nil}
-
-      assert {:error, %Ecto.Changeset{}} =
-               Grants.create_grant_request_group(invalid_params, build(:claims))
-    end
-
-    test "delete_grant_request_group/1 deletes the grant_request_group" do
-      grant_request_group = insert(:grant_request_group)
-      assert {:ok, %GrantRequestGroup{}} = Grants.delete_grant_request_group(grant_request_group)
-
-      assert_raise Ecto.NoResultsError, fn ->
-        Grants.get_grant_request_group!(grant_request_group.id)
-      end
-    end
-  end
-
-  describe "grant_requests" do
-    test "list_grant_requests/0 returns all grant_requests" do
-      _other_group_request = insert(:grant_request)
-      %{grant_request_group_id: grant_request_group_id} = grant_request = insert(:grant_request)
-      assert Grants.list_grant_requests(grant_request_group_id) <|> [grant_request]
-    end
-
-    test "get_grant_request!/1 returns the grant_request with given id" do
-      grant_request = insert(:grant_request)
-      assert Grants.get_grant_request!(grant_request.id) <~> grant_request
-    end
-
-    test "create_grant_request/1 with valid data creates a grant_request" do
-      grant_request_group = insert(:grant_request_group, type: @template_name)
-      data_structure = insert(:data_structure)
-
-      filters = %{"foo" => "bar"}
-      metadata = @valid_metadata
-      params = %{"filters" => filters, "metadata" => metadata}
-
-      assert {:ok, %GrantRequest{} = grant_request} =
-               Grants.create_grant_request(params, grant_request_group, data_structure)
-
-      assert %{filters: ^filters, metadata: ^metadata} = grant_request
-    end
-
-    test "create_grant_request/1 fails if metadata is invalid" do
-      grant_request_group = insert(:grant_request_group, type: @template_name)
-      data_structure = insert(:data_structure)
-
-      params = %{"filters" => %{"foo" => "bar"}, "metadata" => %{"invalid" => "metadata"}}
-
-      assert {:error, %{errors: errors}} =
-               Grants.create_grant_request(params, grant_request_group, data_structure)
-
-      assert {_,
-              [
-                list: {_, [validation: :required]},
-                string: {_, [validation: :required]}
-              ]} = errors[:metadata]
-    end
-
-    test "update_grant_request/2 with valid data updates the grant_request" do
-      grant_request = insert(:grant_request)
-
-      params = %{"filters" => %{}, "metadata" => %{}}
-
-      assert {:ok, %GrantRequest{} = grant_request} =
-               Grants.update_grant_request(grant_request, params)
-
-      assert grant_request.filters == %{}
-      assert grant_request.metadata == %{}
-    end
-
-    test "delete_grant_request/1 deletes the grant_request" do
-      grant_request = insert(:grant_request)
-      assert {:ok, %GrantRequest{}} = Grants.delete_grant_request(grant_request)
-      assert_raise Ecto.NoResultsError, fn -> Grants.get_grant_request!(grant_request.id) end
     end
   end
 end

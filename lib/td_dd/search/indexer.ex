@@ -77,7 +77,8 @@ defmodule TdDd.Search.Indexer do
   end
 
   def delete_grants(ids) when is_list(ids) do
-    ids_encoded_array = Jason.encode!(Enum.map(ids, &(Integer.to_string(&1))))
+    ids_encoded_array = Jason.encode!(Enum.map(ids, &Integer.to_string(&1)))
+
     query = """
     {
       "query": {
@@ -87,6 +88,7 @@ defmodule TdDd.Search.Indexer do
       }
     }
     """
+
     delete_by_query(query, @grant_index)
   end
 

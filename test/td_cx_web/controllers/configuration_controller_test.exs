@@ -354,52 +354,40 @@ defmodule TdCxWeb.ConfigurationControllerTest do
   end
 
   defp create_configuration(_) do
-    create_template(nil)
+    CacheHelpers.insert_template(@test_template)
 
-    configuration =
-      insert(:configuration, content: %{"field1" => "value"}, external_id: "external_id")
-
-    {:ok, configuration: configuration}
+    [
+      configuration:
+        insert(:configuration, content: %{"field1" => "value"}, external_id: "external_id")
+    ]
   end
 
   defp create_secret_configuration(_) do
-    create_secret_template(nil)
+    CacheHelpers.insert_template(@secret_template)
 
-    configuration =
-      insert(:configuration,
-        content: %{"field1" => "value", "secret_field" => "secret value"},
-        external_id: "secret_external_id",
-        type: "secret_config"
-      )
+    insert(:configuration,
+      content: %{"field1" => "value", "secret_field" => "secret value"},
+      external_id: "secret_external_id",
+      type: "secret_config"
+    )
 
-    {:ok, configuration: configuration}
+    :ok
   end
 
   defp create_another_configuration(_) do
-    create_another_template(nil)
+    CacheHelpers.insert_template(@another_template)
 
-    configuration =
-      insert(:configuration,
-        content: %{},
-        external_id: "another_external_id",
-        type: "another_config"
-      )
+    insert(:configuration,
+      content: %{},
+      external_id: "another_external_id",
+      type: "another_config"
+    )
 
-    {:ok, configuration: configuration}
+    :ok
   end
 
   defp create_template(_) do
-    template = CacheHelpers.insert_template(@test_template)
-    {:ok, template: template}
-  end
-
-  defp create_secret_template(_) do
-    template = CacheHelpers.insert_template(@secret_template)
-    {:ok, template: template}
-  end
-
-  defp create_another_template(_) do
-    template = CacheHelpers.insert_template(@another_template)
-    {:ok, template: template}
+    CacheHelpers.insert_template(@test_template)
+    :ok
   end
 end

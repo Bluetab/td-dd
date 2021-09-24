@@ -146,7 +146,6 @@ defmodule TdCxWeb.JobControllerTest do
   end
 
   defp create_job(_) do
-    job = insert(:job)
-    {:ok, job: job}
+    [job: insert(:job)]
   end
 end

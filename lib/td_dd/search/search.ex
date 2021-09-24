@@ -21,7 +21,12 @@ defmodule TdDd.Search do
     case response do
       {:ok, %{"hits" => %{"hits" => results, "total" => total}} = res} ->
         aggregations = Map.get(res, "aggregations", %{})
-        %{results: results, total: total, aggregations: maybe_format_aggregations(aggregations, index)}
+
+        %{
+          results: results,
+          total: total,
+          aggregations: maybe_format_aggregations(aggregations, index)
+        }
 
       {:error, %Elasticsearch.Exception{message: message} = error} ->
         Logger.warn("Error response from Elasticsearch: #{message}")

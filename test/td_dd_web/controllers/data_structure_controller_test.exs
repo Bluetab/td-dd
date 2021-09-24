@@ -17,7 +17,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     :ok
   end
 
-  setup %{conn: conn} = state do
+  setup state do
     %{id: template_id, name: template_name} = CacheHelpers.insert_template(name: @template_name)
 
     system = insert(:system)
@@ -32,8 +32,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
     start_supervised!(TdDd.Search.StructureEnricher)
 
-    {:ok,
-     %{conn: put_req_header(conn, "accept", "application/json"), system: system, domain: domain}}
+    [system: system, domain: domain]
   end
 
   describe "index" do

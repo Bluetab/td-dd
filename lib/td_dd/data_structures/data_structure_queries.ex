@@ -64,6 +64,7 @@ defmodule TdDd.DataStructures.DataStructureQueries do
 
   def children(opts \\ []) do
     opts_map = Enum.into(opts, %{grant_ids: []})
+
     TdDd.Grants.Grant
     |> with_cte("children", as: fragment(@dsv_children))
     |> join(:inner, [g], c in "children", on: c.dsid == g.data_structure_id)

@@ -10,7 +10,7 @@ defmodule TdDdWeb.NodeControllerTest do
     :ok
   end
 
-  setup %{conn: conn} = tags do
+  setup tags do
     nodes =
       case tags do
         %{contains: contains, depends: depends} ->
@@ -32,7 +32,7 @@ defmodule TdDdWeb.NodeControllerTest do
       end
 
     GraphData.state(state: setup_state(tags))
-    [conn: put_req_header(conn, "accept", "application/json")] ++ nodes
+    nodes
   end
 
   describe "NodeController" do

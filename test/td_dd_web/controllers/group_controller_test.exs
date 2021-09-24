@@ -9,9 +9,8 @@ defmodule TdDdWeb.GroupControllerTest do
     :ok
   end
 
-  setup %{conn: conn} do
-    system = insert(:system)
-    {:ok, conn: put_req_header(conn, "accept", "application/json"), system: system}
+  setup do
+    [system: insert(:system)]
   end
 
   describe "index" do

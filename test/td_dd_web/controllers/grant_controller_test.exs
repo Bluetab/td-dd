@@ -20,10 +20,10 @@ defmodule TdDdWeb.GrantControllerTest do
   }
   @invalid_attrs %{detail: nil, end_date: nil, start_date: nil}
 
-  setup %{conn: conn} do
+  setup do
     start_supervised!(TdDd.Search.StructureEnricher)
     CacheHelpers.insert_user(id: @user_id)
-    {:ok, conn: put_req_header(conn, "accept", "application/json")}
+    :ok
   end
 
   describe "create grant" do

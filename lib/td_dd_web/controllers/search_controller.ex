@@ -88,9 +88,11 @@ defmodule TdDdWeb.SearchController do
       user_permissions: [user_permissions]
     )
   end
+
   defp search(params, %{user_id: user_id} = _claims, page, size, :by_user) do
     Search.search_by_user(params, user_id, page, size)
   end
+
   defp search(params, claims, page, size, :by_permissions) do
     Search.search(params, claims, page, size)
   end
