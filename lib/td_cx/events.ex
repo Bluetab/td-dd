@@ -4,7 +4,6 @@ defmodule TdCx.Events do
   """
 
   alias Ecto.Multi
-  alias TdCx.Auth.Claims
   alias TdCx.Events.Event
   alias TdCx.Jobs.Audit
   alias TdCx.Search.IndexWorker
@@ -44,14 +43,14 @@ defmodule TdCx.Events do
 
   ## Examples
 
-      iex> create_event(%{field: value}, %Claims{})
+      iex> create_event(%{field: value}, %{})
       {:ok, %Event{}}
 
-      iex> create_event(%{field: bad_value}, %Claims{})
+      iex> create_event(%{field: bad_value}, %{})
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_event(attrs, %Claims{user_id: user_id}) do
+  def create_event(attrs, %{user_id: user_id}) do
     changeset = Event.changeset(%Event{}, attrs)
 
     Multi.new()

@@ -93,6 +93,8 @@ defmodule TdDdWeb.MetadataController do
   end
 
   def do_upload(conn, params, opts \\ []) do
+    claims = conn.assigns[:current_resource]
+
     [fields, structures, relations] =
       ["data_fields", "data_structures", "data_structure_relations"]
       |> Enum.map(&Map.get(params, &1))
@@ -103,7 +105,7 @@ defmodule TdDdWeb.MetadataController do
       |> loader_opts()
       |> Keyword.merge(opts)
 
-    load(conn, structures, fields, relations, opts)
+    load(conn, structures, fields, relations, opts ++ [claims: claims])
   end
 
   def audit_params(conn) do
@@ -141,7 +143,7 @@ defmodule TdDdWeb.MetadataController do
   @spec loader_opts(map) :: keyword()
   def loader_opts(%{} = params) do
     params
-    |> Map.take(["domain", "source", "external_id", "parent_external_id", "op"])
+    |> Map.take(["domain", "source", "external_id", "parent_external_id", "op", "job_id"])
     |> Keyword.new(fn
       {"op", v} -> {:operation, v}
       {k, v} -> {String.to_atom(k), v}

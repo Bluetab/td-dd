@@ -27,7 +27,7 @@ defmodule TdDd.Loader.Reader do
          {:ok, relations} <- parse_data_structure_relations(relations_file, system_id) do
       {:ok, %{fields: fields, relations: relations, structures: structures}}
     else
-      _ -> {:error, :invalid}
+      error -> error
     end
   end
 
