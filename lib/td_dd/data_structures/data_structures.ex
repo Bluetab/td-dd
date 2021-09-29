@@ -707,6 +707,7 @@ defmodule TdDd.DataStructures do
     end
   end
 
+  ## This function gets the ancestors in reverse order
   def get_ancestors(dsv, opts \\ [deleted: false]) do
     get_recursive(dsv, :parents, opts)
   end
