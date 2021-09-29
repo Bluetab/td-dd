@@ -130,6 +130,7 @@ defmodule TdDdWeb.Router do
 
     resources("/grant_requests", GrantRequestController, only: [:index, :show, :delete]) do
       resources("/approvals", GrantRequestApprovalController, only: [:create], name: "approval")
+      resources("/status", GrantRequestStatusController, only: [:create], name: "status")
     end
   end
 
