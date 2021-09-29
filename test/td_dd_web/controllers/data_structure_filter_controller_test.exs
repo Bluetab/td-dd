@@ -2,10 +2,6 @@ defmodule TdDdWeb.DataStructureFilterControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  setup %{conn: conn} do
-    {:ok, conn: put_req_header(conn, "accept", "application/json")}
-  end
-
   describe "index" do
     @tag authentication: [role: "admin"]
     test "lists all filters (admin user)", %{conn: conn} do

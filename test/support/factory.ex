@@ -410,13 +410,27 @@ defmodule TdDd.Factory do
     }
   end
 
-  def grant_request_factory do
+  def grant_request_factory(attrs) do
+    attrs =
+      attrs
+      |> default_assoc(:data_structure_id, :data_structure)
+      |> default_assoc(:group_id, :group, :grant_request_group)
+
     %TdDd.Grants.GrantRequest{
-      grant_request_group: build(:grant_request_group),
-      data_structure: build(:data_structure),
-      filters: %{"foo" => "bar"},
-      metadata: %{"foo" => "bar"}
+      filters: %{"grant_filters" => "bar"},
+      metadata: %{"grant_meta" => "bar"},
+      domain_id: 123
     }
+    |> merge_attributes(attrs)
+  end
+
+  def grant_request_status_factory(attrs) do
+    attrs = default_assoc(attrs, :grant_request_id, :grant_request)
+
+    %TdDd.Grants.GrantRequestStatus{
+      status: "pending"
+    }
+    |> merge_attributes(attrs)
   end
 
   def regex_filter_factory(attrs) do

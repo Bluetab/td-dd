@@ -4,7 +4,7 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
   @valid_metadata %{"list" => "one", "string" => "foo"}
   @template_name "grant_request_group_controller_test_template"
 
-  setup %{conn: conn} do
+  setup do
     CacheHelpers.insert_template(name: @template_name)
     %{id: data_structure_id} = data_structure = insert(:data_structure)
 
@@ -19,7 +19,6 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
     }
 
     [
-      conn: put_req_header(conn, "accept", "application/json"),
       data_structure: data_structure,
       create_params: create_params
     ]
@@ -28,10 +27,14 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
   describe "index" do
     @tag authentication: [role: "admin"]
     test "lists all grant_request_groups", %{conn: conn} do
-      assert %{"data" => []} =
+      %{id: id} = insert(:grant_request_group)
+
+      assert %{"data" => data} =
                conn
                |> get(Routes.grant_request_group_path(conn, :index))
                |> json_response(:ok)
+
+      assert [%{"id" => ^id}] = data
     end
 
     @tag authentication: [user_name: "non_admin"]
@@ -201,15 +204,17 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
                |> get(Routes.grant_request_group_path(conn, :show, id))
                |> json_response(:ok)
 
+      assert %{"_embedded" => embedded} = data
+
       assert %{
                "requests" => [
                  %{
-                   "data_structure_id" => ^ds_id,
+                   "_embedded" => %{"data_structure" => %{"id" => ^ds_id, "external_id" => _}},
                    "metadata" => @valid_metadata,
                    "filters" => %{"foo" => "bar"}
                  }
                ]
-             } = data
+             } = embedded
     end
 
     @tag authentication: [role: "admin"]
@@ -243,8 +248,16 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
                |> get(Routes.grant_request_group_path(conn, :show, id))
                |> json_response(:ok)
 
-      assert %{"requests" => [%{"data_structure_id" => ^ds_id, "filters" => %{"foo" => "bar"}}]} =
-               data
+      assert %{"_embedded" => embedded} = data
+
+      assert %{
+               "requests" => [
+                 %{
+                   "_embedded" => %{"data_structure" => %{"id" => ^ds_id, "external_id" => _}},
+                   "filters" => %{"foo" => "bar"}
+                 }
+               ]
+             } = embedded
     end
 
     @tag authentication: [role: "admin"]
@@ -298,34 +311,27 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
     setup [:create_grant_request_group]
 
     @tag authentication: [role: "admin"]
-    test "deletes chosen grant_request_group", %{
-      conn: conn,
-      grant_request_group: grant_request_group
-    } do
+    test "deletes chosen grant_request_group", %{conn: conn, group: group} do
       assert conn
-             |> delete(Routes.grant_request_group_path(conn, :delete, grant_request_group))
+             |> delete(Routes.grant_request_group_path(conn, :delete, group))
              |> response(:no_content)
 
       assert_error_sent 404, fn ->
-        get(conn, Routes.grant_request_group_path(conn, :show, grant_request_group))
+        get(conn, Routes.grant_request_group_path(conn, :show, group))
       end
     end
 
     @tag authentication: [user_name: "non_admin"]
-    test "non admin cannot delete grant_request_group", %{
-      conn: conn,
-      grant_request_group: grant_request_group
-    } do
+    test "non admin cannot delete grant_request_group", %{conn: conn, group: group} do
       assert conn
-             |> delete(Routes.grant_request_group_path(conn, :delete, grant_request_group))
+             |> delete(Routes.grant_request_group_path(conn, :delete, group))
              |> response(:forbidden)
     end
   end
 
   defp create_grant_request_group(_) do
-    %{grant_request_group: grant_request_group} =
-      insert(:grant_request, grant_request_group: build(:grant_request_group))
+    %{group: group} = insert(:grant_request, group: build(:grant_request_group))
 
-    [grant_request_group: grant_request_group]
+    [group: group]
   end
 end

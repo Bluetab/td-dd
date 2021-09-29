@@ -18,10 +18,6 @@ defmodule TdDdWeb.DataStructureTagControllerTest do
     data_structure_tag
   end
 
-  setup %{conn: conn} do
-    {:ok, conn: put_req_header(conn, "accept", "application/json")}
-  end
-
   describe "index" do
     @tag authentication: [role: "admin"]
     test "lists all data_structure_tags", %{conn: conn, swagger_schema: schema} do

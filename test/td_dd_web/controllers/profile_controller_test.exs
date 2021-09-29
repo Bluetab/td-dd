@@ -14,7 +14,7 @@ defmodule TdDdWeb.ProfileControllerTest do
   describe "upload profiling" do
     setup %{fixture: fixture} do
       profiling = %Plug.Upload{path: fixture <> "/profiles.csv"}
-      {:ok, profiling: profiling}
+      [profiling: profiling]
     end
 
     @tag authentication: [role: "service"]

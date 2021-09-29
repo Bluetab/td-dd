@@ -8,10 +8,6 @@ defmodule TdDdWeb.UserSearchFilterControllerTest do
 
   @invalid_attrs %{filters: nil, name: nil, user_id: nil}
 
-  setup %{conn: conn} do
-    {:ok, conn: put_req_header(conn, "accept", "application/json")}
-  end
-
   describe "index" do
     @tag authentication: [role: "admin"]
     test "lists all user_search_filters", %{conn: conn} do

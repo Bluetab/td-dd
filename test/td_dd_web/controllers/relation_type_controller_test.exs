@@ -14,10 +14,6 @@ defmodule TdDdWeb.RelationTypeControllerTest do
   }
   @invalid_attrs %{description: nil, name: nil}
 
-  setup %{conn: conn} do
-    {:ok, conn: put_req_header(conn, "accept", "application/json")}
-  end
-
   describe "index" do
     @tag authentication: [role: "admin"]
     test "lists all relation_types", %{conn: conn} do
@@ -120,6 +116,6 @@ defmodule TdDdWeb.RelationTypeControllerTest do
 
   defp create_relation_type(_) do
     {:ok, relation_type} = RelationTypes.create_relation_type(@create_attrs)
-    {:ok, relation_type: relation_type}
+    [relation_type: relation_type]
   end
 end

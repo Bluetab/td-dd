@@ -34,10 +34,6 @@ defmodule TdDd.Search.StructureEnricher do
     GenServer.call(__MODULE__, {:enrich, structure, type, content_opt})
   end
 
-  def enrich_with_domain(structure) do
-    GenServer.call(__MODULE__, {:enrich_with_domain, structure})
-  end
-
   def count, do: GenServer.call(__MODULE__, :count)
 
   ## GenServer Callbacks
@@ -61,27 +57,20 @@ defmodule TdDd.Search.StructureEnricher do
 
   @impl true
   def handle_call(
-        {:enrich_with_domain, data_structure},
-        _from,
-        %{domains: domains, count: count} = state
-      ) do
-    reply =
-      data_structure
-      |> enrich_domain(domains)
-
-    {:reply, reply, %{state | count: count + 1}}
-  end
-
-  @impl true
-  def handle_call(
         {:enrich, data_structure, type, content_opt},
         _from,
-        %{domains: domains, types: types, links: links, count: count} = state
+        %{
+          domains: domains,
+          types: types,
+          links: links,
+          count: count,
+          domain_parents: domain_parents
+        } = state
       ) do
     reply =
       data_structure
       |> enrich_domain(domains)
-      |> enrich_domain_parents(domains)
+      |> enrich_domain_parents(domain_parents)
       |> enrich_link_count(links)
       |> search_content(content_opt, types, type)
 
@@ -89,12 +78,28 @@ defmodule TdDd.Search.StructureEnricher do
   end
 
   defp initial_state do
+    domains = TaxonomyCache.domain_map()
+
     %{
       count: 0,
       types: type_map(),
-      domains: TaxonomyCache.domain_map(),
+      domains: domains,
+      domain_parents: domain_parents(domains),
       links: LinkCache.linked_source_ids("data_structure", "business_concept")
     }
+  end
+
+  defp domain_parents(domains) do
+    Map.new(domains, fn {id, domain} ->
+      case Map.get(domain, :parent_ids) do
+        nil ->
+          {id, []}
+
+        ids ->
+          {id,
+           Enum.map(ids, &(Map.get(domains, &1, %{}) |> Map.take([:id, :external_id, :name])))}
+      end
+    end)
   end
 
   defp type_map do
@@ -110,17 +115,12 @@ defmodule TdDd.Search.StructureEnricher do
   defp enrich_domain(%DataStructure{} = structure, _),
     do: %{structure | domain: %{}}
 
-  defp enrich_domain_parents(%DataStructure{domain_id: domain_id} = structure, %{} = domains)
+  defp enrich_domain_parents(
+         %DataStructure{domain_id: domain_id} = structure,
+         %{} = domain_parents
+       )
        when is_integer(domain_id) do
-    parents =
-      domains
-      |> get_in([domain_id, :parent_ids])
-      |> case do
-        nil -> []
-        ids -> Enum.map(ids, &Map.get(domains, &1, %{}))
-      end
-
-    %{structure | domain_parents: parents}
+    %{structure | domain_parents: Map.get(domain_parents, domain_id, [])}
   end
 
   defp enrich_domain_parents(%DataStructure{} = structure, _),

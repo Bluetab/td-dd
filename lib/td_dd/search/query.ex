@@ -62,7 +62,10 @@ defmodule TdDd.Search.Query do
   end
 
   def create_filter_clause_by(user_id, user_defined_filters) do
-    should_clause = [%{bool: %{filter: user_defined_filters ++ [%{term: %{:user_id => user_id}}]}}]
+    should_clause = [
+      %{bool: %{filter: user_defined_filters ++ [%{term: %{:user_id => user_id}}]}}
+    ]
+
     %{bool: %{should: should_clause}}
   end
 
@@ -82,7 +85,8 @@ defmodule TdDd.Search.Query do
       ]
   end
 
-  defp to_terms_query({filter, value}, _index) when filter in ["updated_at", "start_date", "end_date"] do
+  defp to_terms_query({filter, value}, _index)
+       when filter in ["updated_at", "start_date", "end_date"] do
     %{range: %{String.to_atom(filter) => value}}
   end
 

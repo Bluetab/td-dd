@@ -9,10 +9,7 @@ defmodule TdDd.Grants do
   alias TdDd.Auth.Claims
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Audit
-  alias TdDd.DataStructures.DataStructure
   alias TdDd.Grants.Grant
-  alias TdDd.Grants.GrantRequest
-  alias TdDd.Grants.GrantRequestGroup
   alias TdDd.Repo
   alias TdDd.Search.IndexWorker
 
@@ -69,71 +66,6 @@ defmodule TdDd.Grants do
     |> Multi.run(:audit, Audit, :grant_deleted, [user_id])
     |> Repo.transaction()
     |> on_delete
-  end
-
-  def list_grant_request_groups do
-    Repo.all(GrantRequestGroup)
-  end
-
-  def list_grant_request_groups_by_user_id(user_id) do
-    GrantRequestGroup
-    |> where(user_id: ^user_id)
-    |> Repo.all()
-  end
-
-  def get_grant_request_group!(id) do
-    GrantRequestGroup
-    |> Repo.get!(id)
-    |> Repo.preload(:requests)
-  end
-
-  def get_grant_request_group(id), do: Repo.get(GrantRequestGroup, id)
-
-  def create_grant_request_group(%{} = params, %Claims{user_id: user_id}) do
-    %GrantRequestGroup{user_id: user_id}
-    |> GrantRequestGroup.changeset(params)
-    |> Repo.insert()
-  end
-
-  def delete_grant_request_group(%GrantRequestGroup{} = grant_request_group) do
-    Repo.delete(grant_request_group)
-  end
-
-  def list_grant_requests(grant_request_group_id) do
-    GrantRequest
-    |> where(grant_request_group_id: ^grant_request_group_id)
-    |> Repo.all()
-  end
-
-  def get_grant_request!(id), do: Repo.get!(GrantRequest, id)
-
-  def create_grant_request(
-        params,
-        %GrantRequestGroup{id: group_id, type: group_type},
-        %DataStructure{id: data_structure_id}
-      ) do
-    %GrantRequest{
-      grant_request_group_id: group_id,
-      data_structure_id: data_structure_id
-    }
-    |> GrantRequest.changeset(params, group_type)
-    |> Repo.insert()
-  end
-
-  def update_grant_request(%GrantRequest{} = grant_request, params) do
-    group_type =
-      case Repo.preload(grant_request, :grant_request_group) do
-        %{grant_request_group: %{type: group_type}} -> group_type
-        _ -> nil
-      end
-
-    grant_request
-    |> GrantRequest.changeset(params, group_type)
-    |> Repo.update()
-  end
-
-  def delete_grant_request(%GrantRequest{} = grant_request) do
-    Repo.delete(grant_request)
   end
 
   def list_grants(clauses) do

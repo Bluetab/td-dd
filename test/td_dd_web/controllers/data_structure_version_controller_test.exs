@@ -14,10 +14,9 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     :ok
   end
 
-  setup %{conn: conn} do
+  setup do
     start_supervised!(TdDd.Search.StructureEnricher)
     insert(:system, id: 1)
-    {:ok, conn: put_req_header(conn, "accept", "application/json")}
 
     type = "Table"
 
