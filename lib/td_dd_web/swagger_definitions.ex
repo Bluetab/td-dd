@@ -1102,7 +1102,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
         swagger_schema do
           properties do
             search_by(:string, "Search by permissions (grants) or user (my grants)", required: true)
-            header_labels(:header_labels, "header labels", required: true)
+            header_labels(:object, "header labels", required: true)
           end
 
           example(%{
