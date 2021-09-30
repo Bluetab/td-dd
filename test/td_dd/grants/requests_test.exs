@@ -3,8 +3,8 @@ defmodule TdDd.Grants.RequestsTest do
 
   import TdDd.TestOperators
 
-  alias TdDd.Grants.Approval
   alias TdDd.Grants.GrantRequest
+  alias TdDd.Grants.GrantRequestApproval
   alias TdDd.Grants.GrantRequestGroup
   alias TdDd.Grants.GrantRequestStatus
   alias TdDd.Grants.Requests
@@ -223,7 +223,7 @@ defmodule TdDd.Grants.RequestsTest do
       params = %{domain_id: domain_id, role: "approver"}
 
       assert {:ok, %{approval: approval}} = Requests.create_approval(claims, request, params)
-      assert %Approval{is_rejection: false, user: user, domain: domain} = approval
+      assert %GrantRequestApproval{is_rejection: false, user: user, domain: domain} = approval
       assert %{id: ^user_id, user_name: _} = user
       assert %{id: ^domain_id, name: _} = domain
     end
