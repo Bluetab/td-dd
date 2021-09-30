@@ -11,6 +11,8 @@ defmodule TdDd.Grants.Requests do
   alias TdCache.Permissions
   alias TdCache.UserCache
   alias TdDd.Auth.Claims
+  alias TdDd.DataStructures
+  alias TdDd.DataStructures.DataStructure
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestApproval
   alias TdDd.Grants.GrantRequestGroup
@@ -229,6 +231,12 @@ defmodule TdDd.Grants.Requests do
     end
   end
 
+  defp enrich(%GrantRequest{group: group, data_structure: %DataStructure{} = data_structure} = request) do
+    request
+    |> Map.put(:group, enrich(group))
+    |> Map.put(:data_structure, enrich(data_structure))
+  end
+
   defp enrich(%GrantRequest{group: group} = request) do
     %{request | group: enrich(group)}
   end
@@ -238,6 +246,11 @@ defmodule TdDd.Grants.Requests do
       {:ok, user} -> %{group | user: user}
       _ -> group
     end
+  end
+
+  defp enrich(%DataStructure{current_version: %{id: id}} = ds) do
+    current_version = DataStructures.enriched_structure_versions(ids: [id]) |> hd()
+    %{ds | current_version: current_version}
   end
 
   defp enrich(other), do: other

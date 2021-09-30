@@ -1,9 +1,11 @@
 defmodule TdDdWeb.GrantRequestControllerTest do
   use TdDdWeb.ConnCase
 
+  @moduletag sandbox: :shared
   @template_name "grant_request_controller_test_template"
 
   setup do
+    start_supervised!(TdDd.Search.StructureEnricher)
     CacheHelpers.insert_template(name: @template_name)
     :ok
   end
