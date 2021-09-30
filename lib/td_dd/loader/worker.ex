@@ -174,7 +174,7 @@ defmodule TdDd.Loader.Worker do
         {:error, errors} ->
           num_errors = Enum.count(errors)
 
-          send_event(
+          create_event(
             %{
               "message" => "Metadata load failed with #{num_errors} invalid records",
               "type" => "FAILED"
@@ -222,7 +222,7 @@ defmodule TdDd.Loader.Worker do
             count = Enum.count(structure_ids)
             Logger.info("Bulk load process completed in #{ms}ms (#{count} structures upserted)")
 
-            send_event(
+            create_event(
               %{
                 "message" =>
                   "Bulk load process completed in #{ms}ms (#{count} structures upserted)",
@@ -236,7 +236,7 @@ defmodule TdDd.Loader.Worker do
           e ->
             Logger.warn("Bulk load failed after #{ms}ms (#{inspect(e)})")
 
-            send_event(
+            create_event(
               %{
                 "message" => "Bulk load failed after #{ms}ms (#{inspect(e)})",
                 "type" => "FAILED"
@@ -324,14 +324,14 @@ defmodule TdDd.Loader.Worker do
     |> do_post_process(nil)
   end
 
-  defp send_event(event, opts) do
-    case List.keyfind(opts, :job_id, 0) do
+  defp create_event(event, opts) do
+    case opts[:job_id] do
       nil ->
         :ok
 
-      {:job_id, id} ->
-        {:claims, claims} = List.keyfind(opts, :claims, 0)
-        Events.create_event(Map.put(event, "job_id", id), claims)
+      job_id ->
+        attrs = Map.put(event, "job_id", job_id)
+        Events.create_event(attrs, opts[:claims])
     end
   end
 end
