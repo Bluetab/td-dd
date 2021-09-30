@@ -19,7 +19,7 @@ defmodule TdDdWeb.GrantController do
   swagger_path :index do
     description("Get grants")
     produces("application/json")
-    
+
     response(200, "OK", Schema.ref(:GrantResponse))
     response(422, "Client Error")
   end
