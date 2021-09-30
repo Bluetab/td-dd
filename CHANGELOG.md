@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- [TD-4018] Fix path of profile execution
+
 ### Added
 
 - [TD-4076] Support for grant request approval
