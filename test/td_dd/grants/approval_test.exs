@@ -1,7 +1,7 @@
 defmodule TdDd.Grants.ApprovalTest do
   use TdDd.DataCase
 
-  alias TdDd.Grants.Approval
+  alias TdDd.Grants.GrantRequestApproval
   alias TdDd.Repo
 
   @role "test role"
@@ -20,9 +20,9 @@ defmodule TdDd.Grants.ApprovalTest do
     ]
   end
 
-  describe "Approval.changeset/2" do
+  describe "GrantRequestApproval.changeset/2" do
     test "validates required fields" do
-      assert %{errors: errors} = Approval.changeset(%{})
+      assert %{errors: errors} = GrantRequestApproval.changeset(%{})
       assert {_, [validation: :required]} = errors[:user_id]
       assert {_, [validation: :required]} = errors[:domain_id]
       assert {_, [validation: :required]} = errors[:grant_request_id]
@@ -30,7 +30,7 @@ defmodule TdDd.Grants.ApprovalTest do
     end
 
     test "validates current status is pending", %{user_id: user_id, domain_id: domain_id} do
-      approval = %Approval{
+      approval = %GrantRequestApproval{
         current_status: "approved",
         user_id: user_id,
         domain_id: domain_id,
@@ -38,7 +38,7 @@ defmodule TdDd.Grants.ApprovalTest do
         grant_request_id: 123
       }
 
-      assert %{errors: errors} = Approval.changeset(approval, %{})
+      assert %{errors: errors} = GrantRequestApproval.changeset(approval, %{})
 
       assert {"is invalid", [validation: :inclusion, enum: ["pending"]]} = errors[:current_status]
     end
@@ -47,8 +47,12 @@ defmodule TdDd.Grants.ApprovalTest do
       params = %{"domain_id" => 0, "role" => @role}
 
       assert %{errors: errors} =
-               %Approval{grant_request_id: 123, user_id: user_id, current_status: "pending"}
-               |> Approval.changeset(params)
+               %GrantRequestApproval{
+                 grant_request_id: 123,
+                 user_id: user_id,
+                 current_status: "pending"
+               }
+               |> GrantRequestApproval.changeset(params)
 
       assert {"invalid role", []} = errors[:user_id]
     end
@@ -60,8 +64,12 @@ defmodule TdDd.Grants.ApprovalTest do
       params = %{"domain_id" => domain_id, "role" => @role}
 
       assert {:error, %{errors: errors}} =
-               %Approval{grant_request_id: 123, user_id: user_id, current_status: "pending"}
-               |> Approval.changeset(params)
+               %GrantRequestApproval{
+                 grant_request_id: 123,
+                 user_id: user_id,
+                 current_status: "pending"
+               }
+               |> GrantRequestApproval.changeset(params)
                |> Repo.insert()
 
       assert {_,
@@ -79,12 +87,12 @@ defmodule TdDd.Grants.ApprovalTest do
       params = %{"domain_id" => domain_id, "role" => @role}
 
       assert {:ok, approval} =
-               %Approval{
+               %GrantRequestApproval{
                  grant_request_id: grant_request_id,
                  user_id: user_id,
                  current_status: "pending"
                }
-               |> Approval.changeset(params)
+               |> GrantRequestApproval.changeset(params)
                |> Repo.insert()
 
       assert %{

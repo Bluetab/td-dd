@@ -1,4 +1,4 @@
-defmodule TdDd.Grants.Approval do
+defmodule TdDd.Grants.GrantRequestApproval do
   @moduledoc """
   Ecto Schema module for Grant Request approvals.
   """
