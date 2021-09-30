@@ -11,8 +11,8 @@ defmodule TdDd.Grants.Requests do
   alias TdCache.Permissions
   alias TdCache.UserCache
   alias TdDd.Auth.Claims
-  alias TdDd.Grants.Approval
   alias TdDd.Grants.GrantRequest
+  alias TdDd.Grants.GrantRequestApproval
   alias TdDd.Grants.GrantRequestGroup
   alias TdDd.Grants.GrantRequestStatus
   alias TdDd.Repo
@@ -162,8 +162,8 @@ defmodule TdDd.Grants.Requests do
         params
       ) do
     changeset =
-      Approval.changeset(
-        %Approval{grant_request_id: id, user_id: user_id, current_status: status},
+      GrantRequestApproval.changeset(
+        %GrantRequestApproval{grant_request_id: id, user_id: user_id, current_status: status},
         params
       )
 
@@ -204,7 +204,7 @@ defmodule TdDd.Grants.Requests do
   end
 
   defp list_approvals(%{id: grant_request_id}) do
-    Approval
+    GrantRequestApproval
     |> where(grant_request_id: ^grant_request_id)
     |> where([a], not a.is_rejection)
     |> select([a], a.role)
@@ -220,7 +220,7 @@ defmodule TdDd.Grants.Requests do
     %{multi | approval: enrich(approval)}
   end
 
-  defp enrich(%Approval{user_id: user_id, domain_id: domain_id} = approval) do
+  defp enrich(%GrantRequestApproval{user_id: user_id, domain_id: domain_id} = approval) do
     with {:ok, user} <- UserCache.get(user_id),
          {:ok, domain} <- DomainCache.get(domain_id) do
       %{approval | user: user, domain: domain}

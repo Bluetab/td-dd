@@ -10,11 +10,15 @@ defmodule TdDd.Grants.GrantRequestStatus do
 
   schema "grant_request_status" do
     field(:status, :string)
+    field(:previous_status, :string, virtual: true)
 
     belongs_to(:grant_request, GrantRequest)
 
     timestamps(type: :utc_datetime_usec, updated_at: false)
   end
+
+  @valid_statuses ["pending", "approved", "rejected", "processing", "processed"]
+  @valid_status_changes [{"approved", "processing"}, {"processing", "processed"}]
 
   def changeset(%{} = params) do
     changeset(%__MODULE__{}, params)
@@ -22,7 +26,25 @@ defmodule TdDd.Grants.GrantRequestStatus do
 
   def changeset(%__MODULE__{} = struct, %{} = params) do
     struct
-    |> cast(params, [:status])
-    |> validate_inclusion(:status, ["pending", "approved", "rejected", "processing", "processed"])
+    |> cast(params, [])
+    |> validate_inclusion(:status, @valid_statuses)
+    |> validate_status()
+  end
+
+  defp validate_status(changeset) do
+    previous_status = get_field(changeset, :previous_status)
+    status = get_field(changeset, :status)
+
+    if validate_status_change(previous_status, status) do
+      changeset
+    else
+      add_error(changeset, :status, "invalid status change")
+    end
+  end
+
+  defp validate_status_change(nil = _previous_status, _status), do: true
+
+  defp validate_status_change(previous_status, status) do
+    {previous_status, status} in @valid_status_changes
   end
 end
