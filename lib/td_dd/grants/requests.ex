@@ -144,7 +144,7 @@ defmodule TdDd.Grants.Requests do
     |> Map.put_new(:preload, [:group, data_structure: :current_version])
     |> Enum.reduce(query, fn
       {:preload, preloads}, q -> preload(q, ^preloads)
-      {:status, status}, q -> where(q, [_gr, s], s.status == ^status)
+      {:status, status}, q -> where_status(q, status)
       {:updated_since, ts}, q -> where(q, [_gr, s], s.inserted_at > ^ts)
       {:domain_ids, :all}, q -> q
       {:domain_ids, domain_ids}, q -> where(q, [gr], gr.domain_id in ^domain_ids)
@@ -174,6 +174,29 @@ defmodule TdDd.Grants.Requests do
     |> maybe_insert_status(grant_request, Changeset.fetch_field!(changeset, :is_rejection))
     |> Repo.transaction()
     |> enrich()
+  end
+
+  defp where_status(query, status) when is_binary(status) do
+    case String.split(status, ",") do
+      ["empty"] -> where(query, [_gr, s], is_nil(s.status))
+      [status] -> where(query, [_gr, s], s.status == ^status)
+      [_ | _] = status -> multiple_status(query, status)
+      [] -> query
+    end
+  end
+
+  defp where_status(query, _status), do: query
+
+  defp multiple_status(query, status) do
+    if "empty" in status do
+      status = List.delete(status, "empty")
+
+      query
+      |> where([_gr, s], s.status in ^status)
+      |> or_where([_gr, s], is_nil(s.status))
+    else
+      where(query, [_gr, s], s.status in ^status)
+    end
   end
 
   defp maybe_insert_status(multi, %{id: grant_request_id} = _grant_request, true = _is_rejection) do
@@ -231,7 +254,9 @@ defmodule TdDd.Grants.Requests do
     end
   end
 
-  defp enrich(%GrantRequest{group: group, data_structure: %DataStructure{} = data_structure} = request) do
+  defp enrich(
+         %GrantRequest{group: group, data_structure: %DataStructure{} = data_structure} = request
+       ) do
     request
     |> Map.put(:group, enrich(group))
     |> Map.put(:data_structure, enrich(data_structure))
