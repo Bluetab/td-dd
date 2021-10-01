@@ -194,6 +194,7 @@ defmodule TdDd.Executions do
           |> Enum.map(fn %{id: data_structure_id, name: name} ->
             %{data_structure_id: data_structure_id, name: name}
           end)
+          |> Enum.reverse()
 
         path = parents ++ [%{data_structure_id: id, name: dsv.name}]
 
