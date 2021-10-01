@@ -196,6 +196,63 @@ defmodule TdDd.Grants.RequestsTest do
       assert {:ok, res} = Requests.list_grant_requests(claims, %{limit: 2})
       assert Enum.count(res) == 2
     end
+
+    test "enriches missing_approve_roles when status is pendind", _ do
+      %{id: d1} = CacheHelpers.insert_domain()
+      %{id: d2} = CacheHelpers.insert_domain()
+      %{id: d3} = CacheHelpers.insert_domain()
+      %{user_id: default_approver} = build(:claims, role: "user")
+      %{user_id: user_id} = claims = build(:claims, role: "user")
+
+      CacheHelpers.insert_grant_request_approver(default_approver, d1, "approver1")
+      CacheHelpers.insert_grant_request_approver(default_approver, d2, "approver2")
+      CacheHelpers.insert_grant_request_approver(user_id, [d1, d2, d3], "approver2")
+
+      %{grant_request: d1_gr} =
+        insert(:grant_request_status,
+          status: "approved",
+          grant_request: build(:grant_request, domain_id: d1)
+        )
+
+      %{grant_request: %{id: pending_request_id} = d2_gr} =
+        insert(:grant_request_status,
+          status: "pending",
+          grant_request: build(:grant_request, domain_id: d2)
+        )
+
+      %{grant_request: d2_gr_approved} =
+        insert(:grant_request_status,
+          status: "pending",
+          grant_request: build(:grant_request, domain_id: d2)
+        )
+
+      %{grant_request: d3_gr} =
+        insert(:grant_request_status,
+          status: "rejected",
+          grant_request: build(:grant_request, domain_id: d3)
+        )
+
+      insert(:grant_request_approval, domain_id: d1, role: "approver1", grant_request: d1_gr)
+      insert(:grant_request_approval, domain_id: d2, role: "approver1", grant_request: d2_gr)
+
+      insert(:grant_request_approval,
+        domain_id: d2,
+        role: "approver2",
+        grant_request: d2_gr_approved
+      )
+
+      insert(:grant_request_approval,
+        domain_id: d3,
+        role: "approver1",
+        is_rejection: true,
+        grant_request: d3_gr
+      )
+
+      {:ok, grants} =
+        Requests.list_grant_requests(claims, %{action: "approve", status: "pending"})
+
+      assert [%GrantRequest{id: ^pending_request_id}] = grants
+    end
   end
 
   describe "grant_requests" do

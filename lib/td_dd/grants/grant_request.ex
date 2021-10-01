@@ -7,6 +7,7 @@ defmodule TdDd.Grants.GrantRequest do
   import Ecto.Changeset
 
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.Grants.GrantRequestApproval
   alias TdDd.Grants.GrantRequestGroup
   alias TdDd.Grants.GrantRequestStatus
   alias TdDfLib.Validation
@@ -25,6 +26,8 @@ defmodule TdDd.Grants.GrantRequest do
     belongs_to(:data_structure, DataStructure)
 
     has_many(:status, GrantRequestStatus)
+    has_many(:approvals, GrantRequestApproval)
+    field(:pending_roles, {:array, :string}, virtual: true)
 
     timestamps(type: :utc_datetime_usec, updated_at: false)
   end
