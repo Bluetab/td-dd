@@ -1,4 +1,4 @@
-defmodule TdDdWeb.ApprovalControllerTest do
+defmodule TdDdWeb.GrantRequestApprovalControllerTest do
   use TdDdWeb.ConnCase
 
   describe "create" do

@@ -2,11 +2,16 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- [TD-4018] Fix path of profile execution
+
 ### Added
 
 - [TD-4076] Support for grant request approval
 - [TD-4113] Jobs change status is included in Audit Events
 - [TD-4114] Update job status after metadata load process
+- [TD-4077] Grant request processing workflow support
 
 ### Changed
 
