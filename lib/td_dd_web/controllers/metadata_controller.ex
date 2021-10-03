@@ -93,8 +93,6 @@ defmodule TdDdWeb.MetadataController do
   end
 
   def do_upload(conn, params, opts \\ []) do
-    claims = conn.assigns[:current_resource]
-
     [fields, structures, relations] =
       ["data_fields", "data_structures", "data_structure_relations"]
       |> Enum.map(&Map.get(params, &1))
@@ -105,7 +103,7 @@ defmodule TdDdWeb.MetadataController do
       |> loader_opts()
       |> Keyword.merge(opts)
 
-    load(conn, structures, fields, relations, opts ++ [claims: claims])
+    load(conn, structures, fields, relations, opts)
   end
 
   def audit_params(conn) do
@@ -126,9 +124,10 @@ defmodule TdDdWeb.MetadataController do
   end
 
   defp load(conn, structures_file, fields_file, relations_file, opts) do
+    claims = conn.assigns[:current_resource]
     audit = audit_params(conn)
     worker = Keyword.get(opts, :worker, @worker)
-    worker.load(structures_file, fields_file, relations_file, audit, opts)
+    worker.load(structures_file, fields_file, relations_file, audit, opts  ++ [claims: claims])
   end
 
   def can_upload?(claims, %{"domain" => external_id}) do

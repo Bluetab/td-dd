@@ -166,6 +166,7 @@ defmodule TdDd.Loader.Worker do
   defp start_task(
          {:load, structures_file, fields_file, relations_file, system_id, domain, audit, opts}
        ) do
+
     Task.Supervisor.async_nolink(TdDd.TaskSupervisor, fn ->
       case Reader.read(structures_file, fields_file, relations_file, domain, system_id) do
         {:ok, %{} = records} ->
@@ -174,7 +175,7 @@ defmodule TdDd.Loader.Worker do
         {:error, errors} ->
           num_errors = Enum.count(errors)
 
-          create_event(
+          maybe_create_event(
             %{
               "message" => "Metadata load failed with #{num_errors} invalid records",
               "type" => "FAILED"
@@ -222,7 +223,7 @@ defmodule TdDd.Loader.Worker do
             count = Enum.count(structure_ids)
             Logger.info("Bulk load process completed in #{ms}ms (#{count} structures upserted)")
 
-            create_event(
+            maybe_create_event(
               %{
                 "message" =>
                   "Bulk load process completed in #{ms}ms (#{count} structures upserted)",
@@ -236,7 +237,7 @@ defmodule TdDd.Loader.Worker do
           e ->
             Logger.warn("Bulk load failed after #{ms}ms (#{inspect(e)})")
 
-            create_event(
+            maybe_create_event(
               %{
                 "message" => "Bulk load failed after #{ms}ms (#{inspect(e)})",
                 "type" => "FAILED"
@@ -324,7 +325,7 @@ defmodule TdDd.Loader.Worker do
     |> do_post_process(nil)
   end
 
-  defp create_event(event, opts) do
+  defp maybe_create_event(event, opts) do
     case opts[:job_id] do
       nil ->
         :ok

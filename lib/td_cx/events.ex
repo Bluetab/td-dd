@@ -43,14 +43,16 @@ defmodule TdCx.Events do
 
   ## Examples
 
-      iex> create_event(%{field: value}, %{})
+      iex> create_event(%Claims{field: value}, %{})
       {:ok, %Event{}}
 
-      iex> create_event(%{field: bad_value}, %{})
+      iex> create_event(%Claims{field: bad_value}, %{})
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_event(attrs, %{user_id: user_id}) do
+  # TODO: unify TdCx.Auth.Claims and TdDd.Auth.Claims
+  def create_event(attrs, %{:__struct__ => type, user_id: user_id})
+    when type in [TdCx.Auth.Claims, TdDd.Auth.Claims] do
     changeset = Event.changeset(%Event{}, attrs)
 
     Multi.new()
