@@ -4,10 +4,12 @@ defmodule TdDdWeb.GrantController do
 
   import Canada, only: [can?: 2]
 
+  alias TdDd.CSV.Download
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Grants
   alias TdDd.Grants.Grant
+  alias TdDd.Grants.Search
   alias TdDdWeb.SwaggerDefinitions
 
   action_fallback(TdDdWeb.FallbackController)
@@ -139,6 +141,44 @@ defmodule TdDdWeb.GrantController do
          {:can, true} <- {:can, can?(claims, delete(grant))},
          {:ok, %{grant: %Grant{}}} <- Grants.delete_grant(grant, claims) do
       send_resp(conn, :no_content, "")
+    end
+  end
+
+  swagger_path :csv do
+    description("Download CSV of grants")
+    produces("application/json")
+
+    parameters do
+      search(:body, Schema.ref(:GrantCSVRequest), "Search query parameter")
+    end
+
+    response(200, "OK")
+    response(403, "User is not authorized to perform this action")
+    response(422, "Error during CSV download")
+  end
+
+  @spec csv(Plug.Conn.t(), map) :: Plug.Conn.t()
+  def csv(conn, %{"search_by" => search_by, "header_labels" => header_labels} = params) do
+    params = Map.drop(params, ["header_labels", "page", "size"])
+    claims = conn.assigns[:current_resource]
+
+    %{results: grants} =
+      case search_by do
+        "permissions" ->
+          Search.search(params, claims, 0, 10_000)
+        "user" ->
+          Search.search_by_user(params, claims, 0, 10_000)
+      end
+
+    case grants do
+      [] ->
+        send_resp(conn, :no_content, "")
+
+      _ ->
+        conn
+        |> put_resp_content_type("text/csv", "utf-8")
+        |> put_resp_header("content-disposition", "attachment; filename=\"structures.zip\"")
+        |> send_resp(:ok, Download.to_csv_grants(grants, header_labels))
     end
   end
 end

@@ -62,11 +62,7 @@ defmodule TdDd.Search.Query do
   end
 
   def create_filter_clause_by(user_id, user_defined_filters) do
-    should_clause = [
-      %{bool: %{filter: user_defined_filters ++ [%{term: %{:user_id => user_id}}]}}
-    ]
-
-    %{bool: %{should: should_clause}}
+    user_defined_filters ++ [%{term: %{:user_id => user_id}}]
   end
 
   defp with_default_clause(filter_clauses, user_defined_filters) do

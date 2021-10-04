@@ -33,18 +33,25 @@ defmodule TdDd.Grants.Search do
 
   def get_filter_values([], _params), do: %{}
 
-  def get_filter_values(user_or_permissions, params) do
+  def get_filter_values(claims_or_permissions, params) do
     user_defined_filters = Query.create_filters(params, @index)
 
     filter =
-      case user_or_permissions do
+      case claims_or_permissions do
         [_h | _t] = permissions -> Query.create_filter_clause(permissions, user_defined_filters)
-        user_id -> Query.create_filter_clause_by(user_id, user_defined_filters)
+        %Claims{user_id: user_id} -> Query.create_filter_clause_by(user_id, user_defined_filters)
       end
 
     query = Query.create_query(%{}, filter)
     search = %{query: query, aggs: Query.get_aggregation_terms(@index)}
     Search.get_filters(search, @index)
+  end
+
+  def scroll_grants(%{"scroll_id" => _, "scroll" => _} = scroll_params) do
+    scroll_params
+    |> Map.take(["scroll_id", "scroll"])
+    |> Search.scroll()
+    |> transform_response()
   end
 
   def search(params, claims, page \\ 0, size \\ 50, index \\ :grants)
@@ -58,10 +65,10 @@ defmodule TdDd.Grants.Search do
       from: page * size,
       size: size,
       query: query,
-      sort: sort,
-      aggs: Query.get_aggregation_terms(index)
+      sort: sort
     }
-    |> do_search(index)
+    |> aggs(params, index)
+    |> do_search(params, index)
   end
 
   def search(params, %Claims{} = claims, page, size, index) do
@@ -73,10 +80,10 @@ defmodule TdDd.Grants.Search do
     filter(params, permissions, page, size, index)
   end
 
-  def search_by_user(params, user_name, page \\ 0, size \\ 50, index \\ :grants)
+  def search_by_user(params, claims, page \\ 0, size \\ 50, index \\ :grants)
 
-  def search_by_user(params, user_name, page, size, index) do
-    filter(params, user_name, page, size, index)
+  def search_by_user(params, claims, page, size, index) do
+    filter(params, claims, page, size, index)
   end
 
   def default_sort(:grants), do: ["_id"]
@@ -95,13 +102,13 @@ defmodule TdDd.Grants.Search do
   defp filter(_params, [], _page, _size, _index),
     do: %{results: [], aggregations: %{}, total: 0}
 
-  defp filter(params, user_or_permissions, page, size, index) do
+  defp filter(params, claims_or_permissions, page, size, index) do
     user_defined_filters = Query.create_filters(params, index)
 
     filter =
-      case user_or_permissions do
+      case claims_or_permissions do
         [_h | _t] = permissions -> Query.create_filter_clause(permissions, user_defined_filters)
-        user_id -> Query.create_filter_clause_by(user_id, user_defined_filters)
+        %Claims{user_id: user_id} -> Query.create_filter_clause_by(user_id, user_defined_filters)
       end
 
     query = Query.create_query(params, filter)
@@ -111,20 +118,35 @@ defmodule TdDd.Grants.Search do
       from: page * size,
       size: size,
       query: query,
-      sort: sort,
-      aggs: Query.get_aggregation_terms(index)
+      sort: sort
     }
-    |> do_search(index)
+    |> aggs(params, index)
+    |> do_search(params, index)
   end
 
-  defp do_search(search, index) do
-    %{results: results, aggregations: aggregations, total: total} = Search.search(search, index)
+  # Don't request aggregations if we're scrolling
+  defp aggs(%{} = search, %{"scroll" => _}, _index), do: search
 
+  defp aggs(%{} = search, %{} = _params, index) do
+    Map.put(search, :aggs, Query.get_aggregation_terms(index))
+  end
+
+  defp do_search(search, params, index) do
+    params
+    |> Map.take(["scroll"])
+    |> case do
+      %{"scroll" => _scroll} = query_params -> Search.search(search, query_params, index)
+      _ -> Search.search(search, index)
+    end
+    |> transform_response()
+  end
+
+  defp transform_response(%{results: results} = response) do
     results =
       results
       |> Enum.map(&Map.get(&1, "_source"))
       |> Enum.map(&Map.Helpers.atomize_keys/1)
 
-    %{results: results, aggregations: aggregations, total: total}
+    Map.put(response, :results, results)
   end
 end
