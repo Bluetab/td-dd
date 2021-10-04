@@ -16,6 +16,7 @@ defmodule TdDd.Loader.Worker do
 
   use GenServer
 
+  alias TdCx.Events
   alias TdDd.DataStructures.Ancestry
   alias TdDd.Loader
   alias TdDd.Loader.Reader
@@ -165,10 +166,24 @@ defmodule TdDd.Loader.Worker do
   defp start_task(
          {:load, structures_file, fields_file, relations_file, system_id, domain, audit, opts}
        ) do
+
     Task.Supervisor.async_nolink(TdDd.TaskSupervisor, fn ->
       case Reader.read(structures_file, fields_file, relations_file, domain, system_id) do
-        {:ok, %{} = records} -> do_load(records, audit, opts)
-        error -> error
+        {:ok, %{} = records} ->
+          do_load(records, audit, opts)
+
+        {:error, errors} ->
+          num_errors = Enum.count(errors)
+
+          maybe_create_event(
+            %{
+              "message" => "Metadata load failed with #{num_errors} invalid records",
+              "type" => "FAILED"
+            },
+            opts
+          )
+
+          {:error, errors}
       end
     end)
   end
@@ -207,10 +222,29 @@ defmodule TdDd.Loader.Worker do
           {:ok, %{structure_ids: structure_ids}} ->
             count = Enum.count(structure_ids)
             Logger.info("Bulk load process completed in #{ms}ms (#{count} structures upserted)")
+
+            maybe_create_event(
+              %{
+                "message" =>
+                  "Bulk load process completed in #{ms}ms (#{count} structures upserted)",
+                "type" => "SUCCEEDED"
+              },
+              opts
+            )
+
             post_process(structure_ids, opts)
 
           e ->
             Logger.warn("Bulk load failed after #{ms}ms (#{inspect(e)})")
+
+            maybe_create_event(
+              %{
+                "message" => "Bulk load failed after #{ms}ms (#{inspect(e)})",
+                "type" => "FAILED"
+              },
+              opts
+            )
+
             e
         end
       end
@@ -289,5 +323,16 @@ defmodule TdDd.Loader.Worker do
     |> Enum.concat(structure_ids)
     |> Enum.uniq()
     |> do_post_process(nil)
+  end
+
+  defp maybe_create_event(event, opts) do
+    case opts[:job_id] do
+      nil ->
+        :ok
+
+      job_id ->
+        attrs = Map.put(event, "job_id", job_id)
+        Events.create_event(attrs, opts[:claims])
+    end
   end
 end

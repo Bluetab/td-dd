@@ -121,6 +121,7 @@ defmodule TdDdWeb.Router do
     resources("/grants", GrantController, except: [:create, :new, :edit])
     post("/grants/search", SearchController, :search_grants)
     post("/grants/search/mine", SearchController, :search_my_grants)
+    post("/grants/csv", GrantController, :csv)
 
     resources("/grant_request_groups", GrantRequestGroupController,
       only: [:index, :show, :create, :delete]
@@ -129,7 +130,8 @@ defmodule TdDdWeb.Router do
     end
 
     resources("/grant_requests", GrantRequestController, only: [:index, :show, :delete]) do
-      resources("/approvals", ApprovalController, only: [:create])
+      resources("/approvals", GrantRequestApprovalController, only: [:create], name: "approval")
+      resources("/status", GrantRequestStatusController, only: [:create], name: "status")
     end
   end
 

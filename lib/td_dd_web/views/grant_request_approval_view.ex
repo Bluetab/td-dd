@@ -1,14 +1,14 @@
-defmodule TdDdWeb.ApprovalView do
+defmodule TdDdWeb.GrantRequestApprovalView do
   use TdDdWeb, :view
 
   alias TdDdWeb.DomainView
   alias TdDdWeb.UserView
 
-  def render("show.json", %{approval: approval}) do
-    %{data: render_one(approval, __MODULE__, "approval.json")}
+  def render("show.json", %{grant_request_approval: approval}) do
+    %{data: render_one(approval, __MODULE__, "grant_request_approval.json")}
   end
 
-  def render("approval.json", %{approval: approval}) do
+  def render("grant_request_approval.json", %{grant_request_approval: approval}) do
     approval
     |> Map.take([:id, :role, :is_rejection, :comment])
     |> put_embeddings(approval)
