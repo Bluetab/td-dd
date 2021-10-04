@@ -99,7 +99,9 @@ defmodule CacheHelpers do
     :ok
   end
 
-  def insert_grant_request_approver(user_id, domain_ids, role_name \\ "grant_approver")
+  def insert_grant_request_approver(user_id, domain_id, role_name \\ "grant_approver")
+
+  def insert_grant_request_approver(user_id, domain_ids, role_name)
       when is_list(domain_ids) do
     ExUnit.Callbacks.on_exit(fn ->
       UserCache.delete(user_id)
@@ -107,7 +109,7 @@ defmodule CacheHelpers do
     end)
 
     insert_user(id: user_id)
-    Enum.map(domain_ids, &insert_acl(&1, role_name, [user_id]))
+    Enum.each(domain_ids, &insert_acl(&1, role_name, [user_id]))
     UserCache.put_roles(user_id, %{role_name => domain_ids})
     Permissions.put_permission_roles(%{"approve_grant_request" => [role_name]})
   end

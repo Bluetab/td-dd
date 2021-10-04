@@ -106,7 +106,7 @@ defmodule TdDd.Grants.Requests do
           case action do
             "approve" ->
               required = required_approvals()
-              user_roles = user_roles_by_domain(claims.user_id)
+              user_roles = get_user_roles(claims)
 
               grant_requests
               |> Repo.preload([:approvals])
@@ -242,38 +242,43 @@ defmodule TdDd.Grants.Requests do
     |> MapSet.new()
   end
 
-  defp user_roles_by_domain(user_id) do
+  defp get_user_roles(%{role: "admin"}), do: :all
+
+  defp get_user_roles(%{role: "service"}), do: :all
+
+  defp get_user_roles(%{user_id: user_id}) do
     {:ok, roles} = TdCache.UserCache.get_roles(user_id)
+    get_roles_by_domain_map(roles)
+  end
 
-    # roles = %{"role1" => [1, 2, 3], "role2" => [3]}
+  defp get_roles_by_domain_map(nil), do: %{}
 
-    # si domain_id 1 tiene los hijos [7, 8]
+  defp get_roles_by_domain_map(roles) do
     roles
-    |> Enum.flat_map(fn {role, domains} ->
-      Enum.flat_map(domains, fn domain_id ->
-        child =
-          domain_id
-          |> TdCache.DomainCache.get!()
-          |> Map.get(:descendent_ids)
-          |> String.split(",")
-          |> Enum.reject(&(&1 == ""))
-          |> Enum.map(fn str_id ->
-            {d_id, _} = Integer.parse(str_id)
-            {role, d_id}
-          end)
-
-        child ++ [{role, domain_id}]
-      end)
-    end)
-
-    # [{"role1", 1}, {"role1", 7}, {"role1", 8}, {"role1", 2}, {"role1", 3}, {"role2", 3}]
+    |> Enum.flat_map(&get_role_domain_tuple/1)
     |> Enum.group_by(
       fn {_, domain_id} -> domain_id end,
       fn {role, _} -> role end
     )
     |> Enum.map(fn {domain_id, roles} -> {domain_id, MapSet.new(roles)} end)
-    # %{3 => MapSet<["role1", "role2"]>, 1 => MapSet<["role1"]>, ...}
     |> Map.new()
+  end
+
+  defp get_role_domain_tuple({role, domains}) do
+    Enum.flat_map(domains, fn domain_id ->
+      child =
+        domain_id
+        |> TdCache.DomainCache.get!()
+        |> Map.get(:descendent_ids)
+        |> String.split(",")
+        |> Enum.reject(&(&1 == ""))
+        |> Enum.map(fn str_id ->
+          {d_id, _} = Integer.parse(str_id)
+          {role, d_id}
+        end)
+
+      child ++ [{role, domain_id}]
+    end)
   end
 
   defp enrich({:ok, target}) do
@@ -305,6 +310,25 @@ defmodule TdDd.Grants.Requests do
   end
 
   defp enrich(other), do: other
+
+  defp with_missing_roles(
+         %{approvals: approvals} = grant_request,
+         required,
+         :all
+       )
+       when is_list(approvals) do
+    current_approved =
+      approvals
+      |> Enum.map(& &1.role)
+      |> MapSet.new()
+
+    pending_roles =
+      required
+      |> MapSet.difference(current_approved)
+      |> MapSet.to_list()
+
+    %{grant_request | pending_roles: pending_roles}
+  end
 
   defp with_missing_roles(
          %{approvals: approvals, domain_id: domain_id} = grant_request,

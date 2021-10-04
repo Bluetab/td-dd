@@ -197,7 +197,7 @@ defmodule TdDd.Grants.RequestsTest do
       assert Enum.count(res) == 2
     end
 
-    test "enriches missing_approve_roles when status is pendind", _ do
+    test "enriches pending_roles when actino is approve", _ do
       %{id: d1} = CacheHelpers.insert_domain()
       %{id: d2} = CacheHelpers.insert_domain()
       %{id: d3} = CacheHelpers.insert_domain()
@@ -251,7 +251,39 @@ defmodule TdDd.Grants.RequestsTest do
       {:ok, grants} =
         Requests.list_grant_requests(claims, %{action: "approve", status: "pending"})
 
-      assert [%GrantRequest{id: ^pending_request_id}] = grants
+      assert [%GrantRequest{id: ^pending_request_id, pending_roles: ["approver2"]}] = grants
+    end
+
+    test "admin user sees all pending_roles with action approve", _ do
+      %{id: d1} = CacheHelpers.insert_domain()
+      %{id: d2} = CacheHelpers.insert_domain()
+      %{user_id: default_approver} = build(:claims, role: "user")
+      claims = build(:claims, role: "admin")
+
+      CacheHelpers.insert_grant_request_approver(default_approver, d1, "approver1")
+      CacheHelpers.insert_grant_request_approver(default_approver, d2, "approver2")
+
+      %{grant_request: %{id: gr_id_1} = d1_gr} =
+        insert(:grant_request_status,
+          status: "pending",
+          grant_request: build(:grant_request, domain_id: d1)
+        )
+
+      %{grant_request: %{id: gr_id_2}} =
+        insert(:grant_request_status,
+          status: "pending",
+          grant_request: build(:grant_request, domain_id: d2)
+        )
+
+      insert(:grant_request_approval, domain_id: d1, role: "approver1", grant_request: d1_gr)
+
+      {:ok, grants} =
+        Requests.list_grant_requests(claims, %{action: "approve", status: "pending"})
+
+      assert [
+               %GrantRequest{id: ^gr_id_1, pending_roles: ["approver2"]},
+               %GrantRequest{id: ^gr_id_2, pending_roles: ["approver1", "approver2"]}
+             ] = grants
     end
   end
 
