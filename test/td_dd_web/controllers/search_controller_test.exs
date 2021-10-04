@@ -86,6 +86,43 @@ defmodule TdDdWeb.SearchControllerTest do
     end
   end
 
+  describe "search grants by scroll" do
+    setup context do
+      Enum.each(1..7, fn _ -> create_grant(context) end)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "returns scroll_id and pages results", %{conn: conn} do
+      assert %{"data" => data, "scroll_id" => scroll_id} =
+               conn
+               |> post(Routes.search_path(conn, :search_grants), %{
+                 "size" => 5,
+                 "scroll" => "1m"
+               })
+               |> json_response(:ok)
+
+      assert length(data) == 5
+
+      assert %{"data" => data, "scroll_id" => scroll_id} =
+               conn
+               |> post(Routes.search_path(conn, :search_grants), %{
+                 "scroll_id" => scroll_id,
+                 "scroll" => "1m"
+               })
+               |> json_response(:ok)
+
+      assert length(data) == 2
+
+      assert %{"data" => [], "scroll_id" => _scroll_id} =
+               conn
+               |> post(Routes.search_path(conn, :search_grants), %{
+                 "scroll_id" => scroll_id,
+                 "scroll" => "1m"
+               })
+               |> json_response(:ok)
+    end
+  end
+
   defp create_grant(context) do
     grant =
       case context do

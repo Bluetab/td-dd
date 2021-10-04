@@ -21,7 +21,7 @@ defmodule TdDd.DownloadTest do
       assert csv == ""
     end
 
-    test "to_csv/1 return cvs content to download" do
+    test "to_csv/1 return csv content to download" do
       template_name = "Table"
       field_name = "add_info1"
       field_label = "Add Info 1"
@@ -109,6 +109,72 @@ defmodule TdDd.DownloadTest do
                #{contains_row[:source].external_id};#{contains_row[:source].name};Group;#{contains_row[:target].external_id};#{contains_row[:target].name};Group;CONTAINS\r
                #{depends_row[:source].external_id};#{depends_row[:source].name};Resource;#{depends_row[:target].external_id};#{depends_row[:target].name};Resource;DEPENDS\r
                """
+    end
+  end
+
+  describe "Grant download" do
+    test "to_csv_grant/3 return csv content" do
+      grant_1 =   %{
+        data_structure_version: %{
+          class: "field",
+          classes: nil,
+          confidential: false,
+          data_structure_id: 4_160_488,
+          deleted_at: nil,
+          description: "Embalaje de tipo bulto único por EM (optimiz.área carga)",
+          domain: %{external_id: "Demo Truedat", id: 3, name: "Demo Truedat"},
+          domain_id: 3,
+          domain_ids: [3],
+          domain_parents: [
+            %{external_id: "Demo Truedat", id: 3, name: "Demo Truedat"}
+          ],
+          external_id: "Clientes/KNA1//VSO/R_ONE_SORT",
+          field_type: "CHAR",
+          group: "Clientes",
+          id: 4_160_488,
+          inserted_at: "2019-04-16T16:12:48.000000Z",
+          latest_note: nil,
+          linked_concepts_count: 0,
+          metadata: %{nullable: false, precision: "1,0", type: "CHAR"},
+          mutable_metadata: nil,
+          name: "/VSO/R_ONE_SORT",
+          path: ["KNA1"],
+          path_sort: "KNA1",
+          source_alias: nil,
+          source_id: 132,
+          system: %{external_id: "sap", id: 1, name: "SAP"},
+          system_id: 1,
+          tags: nil,
+          type: "Column",
+          updated_at: "2019-04-16T16:13:55.000000Z",
+          version: 0,
+          with_content: false,
+          with_profiling: false
+        },
+        detail: %{},
+        end_date: "2023-05-16",
+        id: 6,
+        start_date: "2020-05-17",
+        user: %{full_name: "Euclydes Netto"},
+        user_id: 23
+      }
+
+      grants = [grant_1]
+
+      header_labels = %{
+        "user_name" => "User",
+        "data_structure_name" => "Structure",
+        "start_date" => "Start date",
+        "end_date" => "End date",
+        "metadata" => "Metadata",
+        "mutable_metadata" => "Mutable metadata"
+      }
+
+      assert Download.to_csv_grants(grants, header_labels) ==
+        """
+        User;Structure;Start date;End date;Metadata;Mutable metadata\r
+        #{grant_1.user.full_name};#{grant_1.data_structure_version.name};#{grant_1.start_date};#{grant_1.end_date};\"{\"\"nullable\"\":false,\"\"precision\"\":\"\"1,0\"\",\"\"type\"\":\"\"CHAR\"\"}\";null\r
+        """
     end
   end
 end
