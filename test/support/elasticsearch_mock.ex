@@ -105,7 +105,7 @@ defmodule TdDd.ElasticsearchMock do
   end
 
   @impl true
-  def request(_config, :post, "/_search/scroll", data, _opts) do
+  def request(_config, :post, "_search/scroll", data, _opts) do
     data
     |> decode_scroll_id()
     |> do_scroll(DataStructureVersion)
@@ -172,6 +172,20 @@ defmodule TdDd.ElasticsearchMock do
         _opts
       ) do
     params |> do_search(GrantStructure) |> search_results(params)
+  end
+
+  @impl true
+  def request(_config, :post, "/grants/_search?scroll=1m", data, _opts) do
+    data
+    |> Map.put(:index, "grants")
+    |> do_scroll(GrantStructure)
+  end
+
+  @impl true
+  def request(_config, :post, "_search/scroll", %{index: "grants"} = data, _opts) do
+    data
+    |> decode_scroll_id()
+    |> do_scroll(GrantStructure)
   end
 
   @impl true

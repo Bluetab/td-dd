@@ -47,6 +47,13 @@ defmodule TdDd.Grants.Search do
     Search.get_filters(search, @index)
   end
 
+  def scroll_grants(%{"scroll_id" => _, "scroll" => _} = scroll_params) do
+    scroll_params
+    |> Map.take(["scroll_id", "scroll"])
+    |> Search.scroll()
+    |> transform_response()
+  end
+
   def search(params, claims, page \\ 0, size \\ 50, index \\ :grants)
 
   def search(params, %Claims{role: role}, page, size, index) when role in ["admin", "service"] do
@@ -58,10 +65,10 @@ defmodule TdDd.Grants.Search do
       from: page * size,
       size: size,
       query: query,
-      sort: sort,
-      aggs: Query.get_aggregation_terms(index)
+      sort: sort
     }
-    |> do_search(index)
+    |> aggs(params, index)
+    |> do_search(params, index)
   end
 
   def search(params, %Claims{} = claims, page, size, index) do
@@ -111,20 +118,35 @@ defmodule TdDd.Grants.Search do
       from: page * size,
       size: size,
       query: query,
-      sort: sort,
-      aggs: Query.get_aggregation_terms(index)
+      sort: sort
     }
-    |> do_search(index)
+    |> aggs(params, index)
+    |> do_search(params, index)
   end
 
-  defp do_search(search, index) do
-    %{results: results, aggregations: aggregations, total: total} = Search.search(search, index)
+  # Don't request aggregations if we're scrolling
+  defp aggs(%{} = search, %{"scroll" => _}, _index), do: search
 
+  defp aggs(%{} = search, %{} = _params, index) do
+    Map.put(search, :aggs, Query.get_aggregation_terms(index))
+  end
+
+  defp do_search(search, params, index) do
+    params
+    |> Map.take(["scroll"])
+    |> case do
+      %{"scroll" => _scroll} = query_params -> Search.search(search, query_params, index)
+      _ -> Search.search(search, index)
+    end
+    |> transform_response()
+  end
+
+  defp transform_response(%{results: results} = response) do
     results =
       results
       |> Enum.map(&Map.get(&1, "_source"))
       |> Enum.map(&Map.Helpers.atomize_keys/1)
 
-    %{results: results, aggregations: aggregations, total: total}
+    Map.put(response, :results, results)
   end
 end
