@@ -12,6 +12,7 @@
 - [TD-4113] Jobs change status is included in Audit Events
 - [TD-4114] Update job status after metadata load process
 - [TD-4077] Grant request processing workflow support
+- [TD-4111] GrantRequest params for getting own grant requests
 
 ### Changed
 

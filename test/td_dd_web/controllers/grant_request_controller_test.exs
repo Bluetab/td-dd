@@ -152,6 +152,33 @@ defmodule TdDdWeb.GrantRequestControllerTest do
     end
   end
 
+  describe "show grant_request" do
+    @tag authentication: [role: "user"]
+    test "user without permission can show its own grant_request", %{
+      conn: conn,
+      claims: %{user_id: user_id}
+    } do
+      %{id: id} =
+        insert(:grant_request,
+          group: insert(:grant_request_group, user_id: user_id)
+        )
+
+      assert %{"data" => %{"id" => ^id}} =
+               conn
+               |> get(Routes.grant_request_path(conn, :show, id))
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "user"]
+    test "user without permission cannot show grant_request of other user", %{conn: conn} do
+      %{id: id} = insert(:grant_request)
+
+      assert conn
+             |> get(Routes.grant_request_path(conn, :show, id))
+             |> json_response(:forbidden)
+    end
+  end
+
   describe "delete grant_request" do
     setup [:create_grant_request]
 

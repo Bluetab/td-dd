@@ -34,8 +34,8 @@ defmodule TdDdWeb.GrantRequestController do
 
   def show(conn, %{"id" => id}) do
     with claims <- conn.assigns[:current_resource],
-         {:can, true} <- {:can, can?(claims, show(GrantRequest))} do
-      grant_request = Requests.get_grant_request!(id)
+         grant_request <- Requests.get_grant_request!(id),
+         {:can, true} <- {:can, can?(claims, show(grant_request))} do
       render(conn, "show.json", grant_request: grant_request)
     end
   end
