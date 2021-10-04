@@ -124,9 +124,10 @@ defmodule TdDdWeb.MetadataController do
   end
 
   defp load(conn, structures_file, fields_file, relations_file, opts) do
+    claims = conn.assigns[:current_resource]
     audit = audit_params(conn)
     worker = Keyword.get(opts, :worker, @worker)
-    worker.load(structures_file, fields_file, relations_file, audit, opts)
+    worker.load(structures_file, fields_file, relations_file, audit, opts  ++ [claims: claims])
   end
 
   def can_upload?(claims, %{"domain" => external_id}) do
@@ -141,7 +142,7 @@ defmodule TdDdWeb.MetadataController do
   @spec loader_opts(map) :: keyword()
   def loader_opts(%{} = params) do
     params
-    |> Map.take(["domain", "source", "external_id", "parent_external_id", "op"])
+    |> Map.take(["domain", "source", "external_id", "parent_external_id", "op", "job_id"])
     |> Keyword.new(fn
       {"op", v} -> {:operation, v}
       {k, v} -> {String.to_atom(k), v}
