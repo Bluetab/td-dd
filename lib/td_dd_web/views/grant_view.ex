@@ -15,13 +15,8 @@ defmodule TdDdWeb.GrantView do
   end
 
   def render("grant.json", %{grant: grant}) do
-    %{
-      id: grant.id,
-      detail: grant.detail,
-      start_date: grant.start_date,
-      end_date: grant.end_date,
-      user_id: grant.user_id
-    }
+    grant
+    |> Map.take([:id, :detail, :start_date, :end_date, :user_id, :inserted_at, :updated_at])
     |> add_structure(grant)
     |> add_structure_version(grant)
     |> add_system(grant)

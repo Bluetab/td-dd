@@ -32,6 +32,8 @@ defmodule TdDd.Grants.GrantStructure do
         detail: grant.detail,
         start_date: grant.start_date,
         end_date: grant.end_date,
+        inserted_at: grant.inserted_at,
+        updated_at: grant.updated_at,
         user_id: grant.user_id,
         user: %{
           full_name: grant.user.full_name

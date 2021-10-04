@@ -1097,6 +1097,25 @@ defmodule TdDdWeb.SwaggerDefinitions do
           properties do
             data(Schema.ref(:Grant))
           end
+        end,
+      GrantCSVRequest:
+        swagger_schema do
+          properties do
+            search_by(:string, "Search by permissions (grants) or user (my grants)", required: true)
+            header_labels(:object, "header labels", required: true)
+          end
+
+          example(%{
+            search_by: "permissions",
+            header_labels: %{
+              user_name: "User",
+              data_structure_name: "Structure",
+              start_date: "Start date",
+              end_date: "End date",
+              metadata: "Metadata",
+              mutable_metadata: "Mutable metadata"
+            }
+          })
         end
     }
   end
