@@ -23,6 +23,10 @@ defmodule TdDd.Canada.GrantAbilities do
     Permissions.authorized?(claims, :approve_grant_request, domain_id)
   end
 
+  def can?(%Claims{user_id: user_id}, :show, %GrantRequest{group: %{user_id: user_id}}) do
+    true
+  end
+
   def can?(%Claims{} = claims, :create_grant, %DataStructure{domain_id: domain_id}) do
     Permissions.authorized?(claims, :manage_grants, domain_id)
   end

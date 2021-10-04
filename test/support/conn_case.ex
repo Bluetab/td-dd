@@ -53,6 +53,7 @@ defmodule TdDdWeb.ConnCase do
             TdDd.Cache.SystemLoader,
             TdDd.Loader.Worker,
             TdDd.Search.IndexWorker,
+            TdDd.Search.StructureEnricher,
             TdDd.Cache.StructureLoader,
             TdDd.Lineage,
             TdDd.Lineage.GraphData

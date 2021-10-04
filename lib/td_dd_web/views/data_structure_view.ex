@@ -69,6 +69,9 @@ defmodule TdDdWeb.DataStructureView do
           path: path
         }
 
+      %{name: name, type: type, metadata: metadata} ->
+        %{id: id, external_id: external_id, name: name, type: type, metadata: metadata}
+
       _ ->
         %{id: id, external_id: external_id}
     end

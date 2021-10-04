@@ -1,9 +1,11 @@
 defmodule TdDdWeb.GrantRequestControllerTest do
   use TdDdWeb.ConnCase
 
+  @moduletag sandbox: :shared
   @template_name "grant_request_controller_test_template"
 
   setup do
+    start_supervised!(TdDd.Search.StructureEnricher)
     CacheHelpers.insert_template(name: @template_name)
     :ok
   end
@@ -127,6 +129,53 @@ defmodule TdDdWeb.GrantRequestControllerTest do
                conn
                |> get(Routes.grant_request_path(conn, :index, params))
                |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "user"]
+    test "lists current user own requests with parameter user => me", %{
+      conn: conn,
+      claims: %{user_id: user_id}
+    } do
+      %{id: id} =
+        insert(:grant_request,
+          group: insert(:grant_request_group, user_id: user_id)
+        )
+
+      insert(:grant_request)
+
+      params = %{"user" => "me"}
+
+      assert %{"data" => [%{"id" => ^id}]} =
+               conn
+               |> get(Routes.grant_request_path(conn, :index, params))
+               |> json_response(:ok)
+    end
+  end
+
+  describe "show grant_request" do
+    @tag authentication: [role: "user"]
+    test "user without permission can show its own grant_request", %{
+      conn: conn,
+      claims: %{user_id: user_id}
+    } do
+      %{id: id} =
+        insert(:grant_request,
+          group: insert(:grant_request_group, user_id: user_id)
+        )
+
+      assert %{"data" => %{"id" => ^id}} =
+               conn
+               |> get(Routes.grant_request_path(conn, :show, id))
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "user"]
+    test "user without permission cannot show grant_request of other user", %{conn: conn} do
+      %{id: id} = insert(:grant_request)
+
+      assert conn
+             |> get(Routes.grant_request_path(conn, :show, id))
+             |> json_response(:forbidden)
     end
   end
 

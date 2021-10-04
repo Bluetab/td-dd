@@ -16,6 +16,7 @@
 - [TD-3953] Cursor in grants search
 - [TD-4114] Update job status after metadata load process
 - [TD-4077] Grant request processing workflow support
+- [TD-4111] GrantRequest params for getting own grant requests
 
 ### Changed
 
