@@ -125,7 +125,8 @@ defmodule TdDd.Grants.Requests do
     |> Map.new()
     |> grant_request_query()
     |> Repo.get!(id)
-  end
+    |> enrich()
+    end
 
   defp grant_request_query(%{} = clauses) do
     status_subquery =
@@ -178,26 +179,13 @@ defmodule TdDd.Grants.Requests do
 
   defp where_status(query, status) when is_binary(status) do
     case String.split(status, ",") do
-      ["empty"] -> where(query, [_gr, s], is_nil(s.status))
       [status] -> where(query, [_gr, s], s.status == ^status)
-      [_ | _] = status -> multiple_status(query, status)
+      [_ | _] = status -> where(query, [_gr, s], s.status in ^status)
       [] -> query
     end
   end
 
   defp where_status(query, _status), do: query
-
-  defp multiple_status(query, status) do
-    if "empty" in status do
-      status = List.delete(status, "empty")
-
-      query
-      |> where([_gr, s], s.status in ^status)
-      |> or_where([_gr, s], is_nil(s.status))
-    else
-      where(query, [_gr, s], s.status in ^status)
-    end
-  end
 
   defp maybe_insert_status(multi, %{id: grant_request_id} = _grant_request, true = _is_rejection) do
     Multi.insert(multi, :status, %GrantRequestStatus{
