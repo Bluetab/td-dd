@@ -433,6 +433,18 @@ defmodule TdDd.Factory do
     |> merge_attributes(attrs)
   end
 
+  def grant_request_approval_factory(attrs) do
+    attrs = default_assoc(attrs, :grant_request_id, :grant_request)
+
+    %TdDd.Grants.GrantRequestApproval{
+      user_id: sequence(:user_id, &"#{&1}"),
+      domain_id: 123,
+      role: "role1",
+      is_rejection: false
+    }
+    |> merge_attributes(attrs)
+  end
+
   def regex_filter_factory(attrs) do
     attrs = default_assoc(attrs, :classifier_id, :classifier)
 

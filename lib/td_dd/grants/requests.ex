@@ -99,12 +99,28 @@ defmodule TdDd.Grants.Requests do
           []
 
         domain_ids ->
-          params
-          |> Map.drop([:action, :user])
-          |> Map.put_new(:domain_ids, domain_ids)
-          |> grant_request_query()
-          |> Repo.all()
-          |> Enum.map(&enrich/1)
+
+          grant_requests =
+            params
+            |> Map.drop([:action, :user])
+            |> Map.put_new(:domain_ids, domain_ids)
+            |> grant_request_query()
+            |> Repo.all()
+            |> Enum.map(&enrich/1)
+
+          case action do
+            "approve" ->
+              required = required_approvals()
+              user_roles = get_user_roles(claims)
+
+              grant_requests
+              |> Repo.preload([:approvals])
+              |> Enum.map(&with_missing_roles(&1, required, user_roles))
+              |> Enum.reject(&Enum.empty?(Map.get(&1, :pending_roles, [])))
+
+            _ ->
+              grant_requests
+          end
       end
 
     {:ok, grant_requests}
@@ -148,14 +164,29 @@ defmodule TdDd.Grants.Requests do
     clauses
     |> Map.put_new(:preload, [:group, data_structure: :current_version])
     |> Enum.reduce(query, fn
-      {:preload, preloads}, q -> preload(q, ^preloads)
-      {:status, status}, q -> where_status(q, status)
-      {:updated_since, ts}, q -> where(q, [_gr, s], s.inserted_at > ^ts)
-      {:domain_ids, :all}, q -> q
-      {:domain_ids, domain_ids}, q -> where(q, [gr], gr.domain_id in ^domain_ids)
-      {:user_id, user_id}, q -> where(q, [..., grg], grg.user_id == ^user_id)
-      {:group_id, group_id}, q -> where(q, [g], g.group_id == ^group_id)
-      {:limit, lim}, q -> limit(q, ^lim)
+      {:preload, preloads}, q ->
+        preload(q, ^preloads)
+
+      {:status, status}, q ->
+        where(q, [_gr, s], s.status == ^status)
+
+      {:updated_since, ts}, q ->
+        where(q, [_gr, s], s.inserted_at > ^ts)
+
+      {:domain_ids, :all}, q ->
+        q
+
+      {:domain_ids, domain_ids}, q ->
+        where(q, [gr], gr.domain_id in ^domain_ids)
+
+      {:user_id, user_id}, q ->
+        where(q, [..., grg], grg.user_id == ^user_id)
+
+      {:group_id, group_id}, q ->
+        where(q, [g], g.group_id == ^group_id)
+
+      {:limit, lim}, q ->
+        limit(q, ^lim)
     end)
   end
 
@@ -229,6 +260,45 @@ defmodule TdDd.Grants.Requests do
     |> MapSet.new()
   end
 
+  defp get_user_roles(%{role: "admin"}), do: :all
+
+  defp get_user_roles(%{role: "service"}), do: :all
+
+  defp get_user_roles(%{user_id: user_id}) do
+    {:ok, roles} = TdCache.UserCache.get_roles(user_id)
+    get_roles_by_domain_map(roles)
+  end
+
+  defp get_roles_by_domain_map(nil), do: %{}
+
+  defp get_roles_by_domain_map(roles) do
+    roles
+    |> Enum.flat_map(&get_role_domain_tuple/1)
+    |> Enum.group_by(
+      fn {_, domain_id} -> domain_id end,
+      fn {role, _} -> role end
+    )
+    |> Enum.map(fn {domain_id, roles} -> {domain_id, MapSet.new(roles)} end)
+    |> Map.new()
+  end
+
+  defp get_role_domain_tuple({role, domains}) do
+    Enum.flat_map(domains, fn domain_id ->
+      child =
+        domain_id
+        |> TdCache.DomainCache.get!()
+        |> Map.get(:descendent_ids)
+        |> String.split(",")
+        |> Enum.reject(&(&1 == ""))
+        |> Enum.map(fn str_id ->
+          {d_id, _} = Integer.parse(str_id)
+          {role, d_id}
+        end)
+
+      child ++ [{role, domain_id}]
+    end)
+  end
+
   defp enrich({:ok, target}) do
     {:ok, enrich(target)}
   end
@@ -271,4 +341,47 @@ defmodule TdDd.Grants.Requests do
   end
 
   defp enrich(other), do: other
+
+  defp with_missing_roles(
+         %{approvals: approvals} = grant_request,
+         required,
+         :all
+       )
+       when is_list(approvals) do
+    current_approved =
+      approvals
+      |> Enum.map(& &1.role)
+      |> MapSet.new()
+
+    pending_roles =
+      required
+      |> MapSet.difference(current_approved)
+      |> MapSet.to_list()
+
+    %{grant_request | pending_roles: pending_roles}
+  end
+
+  defp with_missing_roles(
+         %{approvals: approvals, domain_id: domain_id} = grant_request,
+         required,
+         user_roles
+       )
+       when is_list(approvals) do
+    user_roles_on_domain = Map.get(user_roles, domain_id, MapSet.new([]))
+
+    current_approved =
+      approvals
+      |> Enum.map(& &1.role)
+      |> MapSet.new()
+
+    pending_roles =
+      required
+      |> MapSet.difference(current_approved)
+      |> MapSet.intersection(user_roles_on_domain)
+      |> MapSet.to_list()
+
+    %{grant_request | pending_roles: pending_roles}
+  end
+
+  defp with_missing_roles(grant_request, _, _), do: grant_request
 end
