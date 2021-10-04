@@ -5,6 +5,7 @@
 ### Fixed
 
 - [TD-4018] Fix path of profile execution
+- [TD-4166] GrantRequest index must filter pending_roles for approve action
 
 ### Added
 
