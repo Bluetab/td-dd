@@ -11,6 +11,8 @@ defmodule TdDd.Grants.Requests do
   alias TdCache.Permissions
   alias TdCache.UserCache
   alias TdDd.Auth.Claims
+  alias TdDd.DataStructures
+  alias TdDd.DataStructures.DataStructure
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestApproval
   alias TdDd.Grants.GrantRequestGroup
@@ -65,7 +67,7 @@ defmodule TdDd.Grants.Requests do
   @spec list_grant_requests(Claims.t(), map) ::
           {:error, Changeset.t()} | {:ok, [GrantRequest.t()]}
   def list_grant_requests(%Claims{} = claims, %{} = params \\ %{}) do
-    {_data = %{action: nil, limit: 1000},
+    {_data = %{action: nil, user: nil, limit: 1000},
      _types = %{
        action: :string,
        domain_ids: {:array, :integer},
@@ -73,7 +75,8 @@ defmodule TdDd.Grants.Requests do
        limit: :integer,
        status: :string,
        updated_since: :utc_datetime_usec,
-       user_id: :integer
+       user_id: :integer,
+       user: :string
      }}
     |> Changeset.cast(params, [
       :action,
@@ -82,21 +85,22 @@ defmodule TdDd.Grants.Requests do
       :limit,
       :status,
       :updated_since,
-      :user_id
+      :user_id,
+      :user
     ])
     |> Changeset.apply_action(:update)
     |> do_list_grant_requests(claims)
   end
 
-  defp do_list_grant_requests({:ok, %{action: action} = params}, claims) do
+  defp do_list_grant_requests({:ok, %{action: action, user: user_param} = params}, claims) do
     grant_requests =
-      case visible_domain_ids(claims, action) do
+      case visible_domain_ids(claims, action, user_param) do
         :none ->
           []
 
         domain_ids ->
           params
-          |> Map.delete(:action)
+          |> Map.drop([:action, :user])
           |> Map.put_new(:domain_ids, domain_ids)
           |> grant_request_query()
           |> Repo.all()
@@ -108,13 +112,15 @@ defmodule TdDd.Grants.Requests do
 
   defp do_list_grant_requests(error, _claims), do: error
 
-  defp visible_domain_ids(%{role: "admin"}, _), do: :all
+  defp visible_domain_ids(%{role: "admin"}, _, _), do: :all
 
-  defp visible_domain_ids(%{role: "service"}, _), do: :all
+  defp visible_domain_ids(%{role: "service"}, _, _), do: :all
 
-  defp visible_domain_ids(_claims, nil), do: :none
+  defp visible_domain_ids(_claims, _action, "me"), do: :all
 
-  defp visible_domain_ids(%{user_id: user_id}, "approve") do
+  defp visible_domain_ids(_claims, nil, _), do: :none
+
+  defp visible_domain_ids(%{user_id: user_id}, "approve", _) do
     Permissions.permitted_domain_ids(user_id, :approve_grant_request)
   end
 
@@ -123,6 +129,7 @@ defmodule TdDd.Grants.Requests do
     |> Map.new()
     |> grant_request_query()
     |> Repo.get!(id)
+    |> enrich()
   end
 
   defp grant_request_query(%{} = clauses) do
@@ -142,7 +149,7 @@ defmodule TdDd.Grants.Requests do
     |> Map.put_new(:preload, [:group, data_structure: :current_version])
     |> Enum.reduce(query, fn
       {:preload, preloads}, q -> preload(q, ^preloads)
-      {:status, status}, q -> where(q, [_gr, s], s.status == ^status)
+      {:status, status}, q -> where_status(q, status)
       {:updated_since, ts}, q -> where(q, [_gr, s], s.inserted_at > ^ts)
       {:domain_ids, :all}, q -> q
       {:domain_ids, domain_ids}, q -> where(q, [gr], gr.domain_id in ^domain_ids)
@@ -173,6 +180,16 @@ defmodule TdDd.Grants.Requests do
     |> Repo.transaction()
     |> enrich()
   end
+
+  defp where_status(query, status) when is_binary(status) do
+    case String.split(status, ",") do
+      [status] -> where(query, [_gr, s], s.status == ^status)
+      [_ | _] = status -> where(query, [_gr, s], s.status in ^status)
+      [] -> query
+    end
+  end
+
+  defp where_status(query, _status), do: query
 
   defp maybe_insert_status(multi, %{id: grant_request_id} = _grant_request, true = _is_rejection) do
     Multi.insert(multi, :status, %GrantRequestStatus{
@@ -229,6 +246,14 @@ defmodule TdDd.Grants.Requests do
     end
   end
 
+  defp enrich(
+         %GrantRequest{group: group, data_structure: %DataStructure{} = data_structure} = request
+       ) do
+    request
+    |> Map.put(:group, enrich(group))
+    |> Map.put(:data_structure, enrich(data_structure))
+  end
+
   defp enrich(%GrantRequest{group: group} = request) do
     %{request | group: enrich(group)}
   end
@@ -238,6 +263,11 @@ defmodule TdDd.Grants.Requests do
       {:ok, user} -> %{group | user: user}
       _ -> group
     end
+  end
+
+  defp enrich(%DataStructure{current_version: %{id: id}} = ds) do
+    current_version = DataStructures.enriched_structure_versions(ids: [id]) |> hd()
+    %{ds | current_version: current_version}
   end
 
   defp enrich(other), do: other

@@ -22,10 +22,6 @@ defmodule TdDdWeb.GrantController do
     description("Get grants")
     produces("application/json")
 
-    # parameters do
-    #   type(:query, :string, "query string", required: false)
-    # end
-
     response(200, "OK", Schema.ref(:GrantResponse))
     response(422, "Client Error")
   end
