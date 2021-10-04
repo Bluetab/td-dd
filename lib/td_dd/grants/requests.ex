@@ -67,7 +67,7 @@ defmodule TdDd.Grants.Requests do
   @spec list_grant_requests(Claims.t(), map) ::
           {:error, Changeset.t()} | {:ok, [GrantRequest.t()]}
   def list_grant_requests(%Claims{} = claims, %{} = params \\ %{}) do
-    {_data = %{action: nil, limit: 1000},
+    {_data = %{action: nil, user: nil, limit: 1000},
      _types = %{
        action: :string,
        domain_ids: {:array, :integer},
@@ -75,7 +75,8 @@ defmodule TdDd.Grants.Requests do
        limit: :integer,
        status: :string,
        updated_since: :utc_datetime_usec,
-       user_id: :integer
+       user_id: :integer,
+       user: :string
      }}
     |> Changeset.cast(params, [
       :action,
@@ -84,21 +85,22 @@ defmodule TdDd.Grants.Requests do
       :limit,
       :status,
       :updated_since,
-      :user_id
+      :user_id,
+      :user
     ])
     |> Changeset.apply_action(:update)
     |> do_list_grant_requests(claims)
   end
 
-  defp do_list_grant_requests({:ok, %{action: action} = params}, claims) do
+  defp do_list_grant_requests({:ok, %{action: action, user: user_param} = params}, claims) do
     grant_requests =
-      case visible_domain_ids(claims, action) do
+      case visible_domain_ids(claims, action, user_param) do
         :none ->
           []
 
         domain_ids ->
           params
-          |> Map.delete(:action)
+          |> Map.drop([:action, :user])
           |> Map.put_new(:domain_ids, domain_ids)
           |> grant_request_query()
           |> Repo.all()
@@ -110,13 +112,15 @@ defmodule TdDd.Grants.Requests do
 
   defp do_list_grant_requests(error, _claims), do: error
 
-  defp visible_domain_ids(%{role: "admin"}, _), do: :all
+  defp visible_domain_ids(%{role: "admin"}, _, _), do: :all
 
-  defp visible_domain_ids(%{role: "service"}, _), do: :all
+  defp visible_domain_ids(%{role: "service"}, _, _), do: :all
 
-  defp visible_domain_ids(_claims, nil), do: :none
+  defp visible_domain_ids(_claims, _action, "me"), do: :all
 
-  defp visible_domain_ids(%{user_id: user_id}, "approve") do
+  defp visible_domain_ids(_claims, nil, _), do: :none
+
+  defp visible_domain_ids(%{user_id: user_id}, "approve", _) do
     Permissions.permitted_domain_ids(user_id, :approve_grant_request)
   end
 
@@ -126,7 +130,7 @@ defmodule TdDd.Grants.Requests do
     |> grant_request_query()
     |> Repo.get!(id)
     |> enrich()
-    end
+  end
 
   defp grant_request_query(%{} = clauses) do
     status_subquery =

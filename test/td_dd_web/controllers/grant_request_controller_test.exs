@@ -130,6 +130,26 @@ defmodule TdDdWeb.GrantRequestControllerTest do
                |> get(Routes.grant_request_path(conn, :index, params))
                |> json_response(:ok)
     end
+
+    @tag authentication: [role: "user"]
+    test "lists current user own requests with parameter user => me", %{
+      conn: conn,
+      claims: %{user_id: user_id}
+    } do
+      %{id: id} =
+        insert(:grant_request,
+          group: insert(:grant_request_group, user_id: user_id)
+        )
+
+      insert(:grant_request)
+
+      params = %{"user" => "me"}
+
+      assert %{"data" => [%{"id" => ^id}]} =
+               conn
+               |> get(Routes.grant_request_path(conn, :index, params))
+               |> json_response(:ok)
+    end
   end
 
   describe "delete grant_request" do
