@@ -99,7 +99,6 @@ defmodule TdDd.Grants.Requests do
           []
 
         domain_ids ->
-
           grant_requests =
             params
             |> Map.drop([:action, :user])
@@ -168,7 +167,7 @@ defmodule TdDd.Grants.Requests do
         preload(q, ^preloads)
 
       {:status, status}, q ->
-        where(q, [_gr, s], s.status == ^status)
+        where_status(q, status)
 
       {:updated_since, ts}, q ->
         where(q, [_gr, s], s.inserted_at > ^ts)
