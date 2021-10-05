@@ -53,5 +53,39 @@ defmodule TdDqWeb.SearchControllerTest do
                |> post(Routes.search_path(conn, :search_rules))
                |> json_response(:ok)
     end
+
+    @tag authentication: [role: "user"]
+    test "user with permissions to create rules has manage_quality_rules equals true", %{
+      conn: conn,
+      claims: %{user_id: user_id},
+      domain: %{id: domain_id}
+    } do
+      assert %{"data" => []} =
+               conn
+               |> post(Routes.search_path(conn, :search_rules))
+               |> json_response(:ok)
+
+      create_acl_entry(user_id, "domain", domain_id, [:manage_quality_rule])
+
+      assert %{"user_permissions" => %{"manage_quality_rules" => true}} =
+               conn
+               |> post(Routes.search_path(conn, :search_rules))
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "user"]
+    test "user without permissions to create rules has manage_quality_rules equals false", %{
+      conn: conn
+    } do
+      assert %{"data" => []} =
+               conn
+               |> post(Routes.search_path(conn, :search_rules))
+               |> json_response(:ok)
+
+      assert %{"user_permissions" => %{"manage_quality_rules" => false}} =
+               conn
+               |> post(Routes.search_path(conn, :search_rules))
+               |> json_response(:ok)
+    end
   end
 end
