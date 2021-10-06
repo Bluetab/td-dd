@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.29.1] 2021-10-06
+
+### Fixed
+
+- [TD-4186] Error on grants reindex
+
 ## [4.29.0] 2021-10-05
 
 ### Fixed
