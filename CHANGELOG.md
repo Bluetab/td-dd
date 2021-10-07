@@ -6,6 +6,18 @@
 
 - [TD-3874] Fix manage_quality_rule permission check when searching rules
 
+## [4.29.2] 2021-10-07
+
+### Fixed
+
+- [TD-4044] Permissions for admin creating a GrantRequestApproval
+
+## [4.29.1] 2021-10-06
+
+### Fixed
+
+- [TD-4186] Error on grants reindex
+
 ## [4.29.0] 2021-10-05
 
 ### Fixed

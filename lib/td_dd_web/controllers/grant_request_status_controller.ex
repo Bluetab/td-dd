@@ -11,10 +11,10 @@ defmodule TdDdWeb.GrantRequestStatusController do
 
   def create(conn, %{"grant_request_id" => id, "status" => status}) do
     with claims <- conn.assigns[:current_resource],
-         request <- Requests.get_grant_request!(id),
+         request <- Requests.get_grant_request!(id, claims),
          {:can, true} <- {:can, can?(claims, approve(request))},
          {:ok, _grant_request_status} <- Statuses.create_grant_request_status(request, status),
-         updated_request <- Requests.get_grant_request!(id) do
+         updated_request <- Requests.get_grant_request!(id, claims) do
       conn
       |> put_status(:created)
       |> put_view(GrantRequestView)
