@@ -23,7 +23,15 @@ defmodule TdDdWeb.GrantRequestView do
     status = Map.get(grant_request, :current_status)
 
     grant_request
-    |> Map.take([:id, :filters, :metadata, :inserted_at, :updated_at])
+    |> Map.take([
+      :id,
+      :filters,
+      :metadata,
+      :inserted_at,
+      :updated_at,
+      :pending_roles,
+      :domain_id
+    ])
     |> Map.put(:status, status)
     |> put_embeddings(grant_request, Map.get(assigns, :embed, @default_embeddings))
   end

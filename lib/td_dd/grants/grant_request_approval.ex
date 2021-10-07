@@ -28,7 +28,7 @@ defmodule TdDd.Grants.GrantRequestApproval do
     changeset(%__MODULE__{}, params)
   end
 
-  def changeset(%__MODULE__{} = struct, %{} = params) do
+  def changeset(%__MODULE__{} = struct, %{} = params, claims \\ nil) do
     struct
     |> cast(params, [:comment, :domain_id, :is_rejection, :role])
     |> validate_required([
@@ -41,7 +41,7 @@ defmodule TdDd.Grants.GrantRequestApproval do
     ])
     # validate_inclusion won't work here, current_status is not cast in the params
     |> validate_field(:current_status, "pending")
-    |> maybe_validate_approver()
+    |> maybe_validate_approver(claims)
     |> foreign_key_constraint(:grant_request_id)
     |> unique_constraint([:grant_request_id, :role])
   end
@@ -56,9 +56,13 @@ defmodule TdDd.Grants.GrantRequestApproval do
     end
   end
 
-  defp maybe_validate_approver(%{valid?: false} = changeset), do: changeset
+  defp maybe_validate_approver(%{valid?: false} = changeset, _), do: changeset
 
-  defp maybe_validate_approver(changeset) do
+  defp maybe_validate_approver(changeset, %{role: "admin"}), do: changeset
+
+  defp maybe_validate_approver(changeset, %{role: "service"}), do: changeset
+
+  defp maybe_validate_approver(changeset, _) do
     with domain_id <- fetch_field!(changeset, :domain_id),
          user_id <- fetch_field!(changeset, :user_id),
          role <- fetch_field!(changeset, :role),

@@ -9,7 +9,7 @@ defmodule TdDdWeb.GrantRequestApprovalController do
 
   def create(conn, %{"grant_request_id" => id, "approval" => params}) do
     with claims <- conn.assigns[:current_resource],
-         request <- Requests.get_grant_request!(id),
+         request <- Requests.get_grant_request!(id, claims),
          {:can, true} <- {:can, can?(claims, approve(request))},
          {:ok, %{approval: approval}} <- Requests.create_approval(claims, request, params) do
       conn

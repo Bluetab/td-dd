@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.29.2] 2021-10-07
+
+### Fixed
+
+- [TD-4044] Permissions for admin creating a GrantRequestApproval
+
 ## [4.29.1] 2021-10-06
 
 ### Fixed
