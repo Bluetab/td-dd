@@ -170,6 +170,24 @@ defmodule TdDdWeb.GrantRequestControllerTest do
     end
 
     @tag authentication: [role: "user"]
+    test "user with permission can show grant_request", %{
+      conn: conn,
+      claims: %{user_id: user_id}
+    } do
+      %{id: domain_id} = CacheHelpers.insert_domain()
+      create_acl_entry(user_id, domain_id, [:approve_grant_request])
+      CacheHelpers.insert_grant_request_approver(user_id, domain_id)
+
+      %{id: id} =
+        insert(:grant_request, data_structure: build(:data_structure), domain_id: domain_id)
+
+      assert %{"data" => %{"id" => ^id}} =
+               conn
+               |> get(Routes.grant_request_path(conn, :show, id))
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "user"]
     test "user without permission cannot show grant_request of other user", %{conn: conn} do
       %{id: id} = insert(:grant_request)
 

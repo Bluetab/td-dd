@@ -81,7 +81,7 @@ defmodule TdDd.TestOperators do
   end
 
   defp approximately_equal(%GrantRequest{} = a, %GrantRequest{} = b) do
-    drop_fields = [:data_structure, :group]
+    drop_fields = [:data_structure, :group, :pending_roles, :approvals]
     Map.drop(a, drop_fields) == Map.drop(b, drop_fields)
   end
 
