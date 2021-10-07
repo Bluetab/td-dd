@@ -3,6 +3,7 @@ defmodule TdDqWeb.SearchController do
 
   import Canada, only: [can?: 2]
 
+  alias TdDq.Rules.Rule
   alias TdDq.Rules.Search
 
   plug :put_view, TdDqWeb.SearchView
