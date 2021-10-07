@@ -137,20 +137,6 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
              |> Enum.all?(&(&1 == @valid_content))
     end
 
-    test "emits audit events for updated structures", %{type: type} do
-      claims = build(:claims)
-
-      ids =
-        1..10
-        |> Enum.map(fn _ -> valid_structure(type) end)
-        |> Enum.map(& &1.data_structure_id)
-
-      assert {:ok, %{updates: updates, audit: audit}} =
-               BulkUpdate.update_all(ids, @valid_params, claims)
-
-      assert Enum.count(audit) == Enum.count(updates)
-    end
-
     test "ignores unchanged data structures", %{type: type} do
       claims = build(:claims)
       fixed_datetime = ~N[2020-01-01 00:00:00]
@@ -240,11 +226,40 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       Enum.each(df_contents, fn df_content ->
         assert df_content == %{"string" => "updated", "list" => initial_content["list"]}
       end)
+    end
 
-      # assert ids
-      #        |> Enum.map(&Repo.get(DataStructure, &1))
-      #        |> Enum.map(& &1.df_content)
-      #        |> Enum.all?(&(&1 == %{"string" => "updated", "list" => initial_content["list"]}))
+    test "only updates specified fields for published notes", %{type: type} do
+      claims = build(:claims)
+
+      initial_content = Map.replace!(@valid_content, "string", "initial")
+
+      structure_count = 10
+
+      ids =
+        1..structure_count
+        |> Enum.map(fn _ -> valid_structure_note(type,
+          df_content: initial_content,
+          status: :published
+        ) end)
+        |> Enum.map(& &1.data_structure_id)
+
+      assert {:ok, %{update_notes: update_notes}} =
+               BulkUpdate.update_all(ids, %{"df_content" => %{"string" => "updated"}}, claims)
+
+      assert Map.keys(update_notes) <|> ids
+
+      df_contents =
+        ids
+        |> Enum.map(&DataStructures.list_structure_notes/1)
+        |> IO.inspect
+        |> Enum.filter(&(Enum.count(&1) == 1))
+        |> Enum.map(&Enum.at(&1, -1).df_content)
+
+      assert Enum.count(df_contents) == structure_count
+
+      Enum.each(df_contents, fn df_content ->
+        assert df_content == %{"string" => "updated", "list" => initial_content["list"]}
+      end)
     end
 
     test "only validates specified fields", %{type: type} do

@@ -266,10 +266,10 @@ defmodule TdDdWeb.DataStructureController do
     with {:can, true} <- {:can, can?(claims, create(BulkUpdate))},
          %{results: results} <- search_all_structures(claims, permission, search_params),
          ids <- Enum.map(results, & &1.id),
-         {:ok, %{updates: updates, update_notes: update_notes}} <-
+         {:ok, %{update_notes: update_notes}} <-
            BulkUpdate.update_all(ids, update_params, claims) do
       body =
-        Jason.encode!(%{data: %{message: Enum.uniq(Map.keys(updates) ++ Map.keys(update_notes))}})
+        Jason.encode!(%{data: %{message: Map.keys(update_notes)}})
 
       conn
       |> put_resp_content_type("application/json", "utf-8")
