@@ -36,10 +36,15 @@ defmodule TdDd.Grants.GrantStructure do
         updated_at: grant.updated_at,
         user_id: grant.user_id,
         user: %{
-          full_name: grant.user.full_name
+          full_name: user_full_name(grant.user)
         },
         data_structure_version: Elasticsearch.Document.encode(dsv)
       }
     end
+
+    defp user_full_name(%{full_name: full_name}) do
+      full_name
+    end
+    defp user_full_name(_), do: ""
   end
 end
