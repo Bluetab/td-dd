@@ -57,17 +57,48 @@ defmodule TdDqWeb.RuleController do
       |> Enum.filter(&can?(claims, show(&1)))
 
     conn
-    |> assign_actions(claims)
+    |> assign_actions(claims, params)
     |> put_view(RuleView)
     |> render("index.json", rules: rules)
   end
 
-  defp assign_actions(conn, claims) do
-    if can?(claims, manage(Rule)) do
-      assign(conn, :actions, %{"create" => Routes.rule_path(conn, :create)})
+  defp assign_actions(conn, claims, %{"business_concept_id" => id}) do
+    {:ok, %{shared_to_ids: shared_to_ids, domain: %{id: domain_id}}} =
+      TdCache.ConceptCache.get(id)
+
+    domain_ids = [domain_id | shared_to_ids] |> Enum.uniq()
+
+    domain_ids_with_permission =
+      claims
+      |> get_domains_with_permission(domain_ids, :manage_quality_rule)
+      |> Enum.map(fn d ->
+        case TdCache.DomainCache.get(d) do
+          {:ok, domain} -> domain
+          _ -> []
+        end
+      end)
+
+    if Enum.any?(domain_ids_with_permission) do
+      conn
+      |> assign(
+        :actions,
+        %{
+          "create" => %{"url" => Routes.rule_path(conn, :create)},
+          "domain_ids" => domain_ids_with_permission
+        }
+      )
     else
       conn
     end
+  end
+
+  defp get_domains_with_permission(%{role: "admin"}, domain_ids, _permission), do: domain_ids
+
+  defp get_domains_with_permission(claims, domain_ids, permission) do
+    domain_ids
+    |> Enum.filter(fn id ->
+      TdDq.Permissions.authorized?(claims, permission, id)
+    end)
   end
 
   swagger_path :create do
@@ -85,13 +116,25 @@ defmodule TdDqWeb.RuleController do
   def create(conn, %{"rule" => params}) do
     claims = conn.assigns[:current_resource]
 
-    with {:ok, %{rule: rule}} <- Rules.create_rule(params, claims) do
+    with {:can, true} <- {:can, is_allowed_domain(params)},
+         {:ok, %{rule: rule}} <- Rules.create_rule(params, claims) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", Routes.rule_path(conn, :show, rule))
       |> render("show.json", rule: rule, user_permissions: get_user_permissions(claims, rule))
     end
   end
+
+  defp is_allowed_domain(%{"domain_id" => domain_id, "business_concept_id" => business_concept_id}) do
+    {:ok, %{shared_to_ids: shared_to_ids, domain: %{id: bussines_domain_id}}} =
+      TdCache.ConceptCache.get(business_concept_id)
+
+    [bussines_domain_id | shared_to_ids]
+    |> Enum.uniq()
+    |> Enum.member?(domain_id)
+  end
+
+  defp is_allowed_domain(%{}), do: true
 
   defp get_user_permissions(claims, rule) do
     %{
@@ -146,7 +189,8 @@ defmodule TdDqWeb.RuleController do
     claims = conn.assigns[:current_resource]
     rule = Rules.get_rule!(id)
 
-    with {:ok, %{rule: rule}} <- Rules.update_rule(rule, params, claims) do
+    with {:can, true} <- {:can, is_allowed_domain(params)},
+         {:ok, %{rule: rule}} <- Rules.update_rule(rule, params, claims) do
       render(conn, "show.json", rule: rule, user_permissions: get_user_permissions(claims, rule))
     end
   end
