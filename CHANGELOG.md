@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-3131] Added details to the rule results to show the `Query` information 
 ### Fixed
 
 - [TD-3874] Fix manage_quality_rule permission check when searching rules

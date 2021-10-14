@@ -28,6 +28,7 @@ defmodule TdDq.Rules.RuleResult do
     field(:params, :map, default: %{})
     field(:row_number, :integer, virtual: true)
     field(:result_type, :string)
+    field(:details, :map, default: %{})
 
     has_one(:implementation, Implementation,
       foreign_key: :implementation_key,
@@ -54,7 +55,8 @@ defmodule TdDq.Rules.RuleResult do
       :records,
       :params,
       :row_number,
-      :result_type
+      :result_type,
+      :details
     ])
     |> put_date()
     |> put_result()
@@ -64,6 +66,7 @@ defmodule TdDq.Rules.RuleResult do
     |> validate_number(:records, greater_than_or_equal_to: 0)
     |> validate_number(:errors, greater_than_or_equal_to: 0)
     |> validate_number(:result, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
+    |> process_details()
     |> foreign_key_constraint(:rule_id)
   end
 
@@ -110,4 +113,11 @@ defmodule TdDq.Rules.RuleResult do
     |> Decimal.mult(100)
     |> Decimal.div(records)
   end
+
+  defp process_details(%{params: %{"details" => %{"Query" => query} = details}} = changeset) do
+    details = Map.put(details, "Query", Base.decode64!(query))
+    put_change(changeset, :details, details)
+  end
+
+  defp process_details(changeset), do: changeset
 end
