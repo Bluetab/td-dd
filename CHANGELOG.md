@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-4124] Dependent domain field in td_df_lib
+
 ### Fixed
 
 - [TD-3874] Fix manage_quality_rule permission check when searching rules
