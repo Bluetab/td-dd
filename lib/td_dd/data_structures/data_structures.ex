@@ -1170,6 +1170,7 @@ defmodule TdDd.DataStructures do
     StructureNote
     |> latest_structure_note_query(data_structure_id)
     |> Repo.one()
+    |> Repo.preload(:data_structure)
   end
 
   @doc """
@@ -1188,6 +1189,30 @@ defmodule TdDd.DataStructures do
     changeset =
       StructureNote.create_changeset(
         %StructureNote{},
+        data_structure,
+        attrs
+      )
+
+    Multi.new()
+    |> Multi.insert(:structure_note, changeset)
+    |> Multi.run(:audit, Audit, :structure_note_updated, [changeset, user_id])
+    |> Repo.transaction()
+    |> case do
+      {:ok, res} -> {:ok, Map.get(res, :structure_note)}
+      {:error, :structure_note, err, _} -> {:error, err}
+      err -> err
+    end
+    |> on_update()
+  end
+
+  def bulk_create_structure_note(data_structure, attrs, nil, user_id) do
+    bulk_create_structure_note(data_structure, attrs, %StructureNote{}, user_id)
+  end
+
+  def bulk_create_structure_note(data_structure, attrs, latest_note, user_id) do
+    changeset =
+      StructureNote.bulk_create_changeset(
+        latest_note,
         data_structure,
         attrs
       )
