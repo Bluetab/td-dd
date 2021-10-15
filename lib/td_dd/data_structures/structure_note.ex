@@ -49,7 +49,7 @@ defmodule TdDd.DataStructures.StructureNote do
     |> update_change(:df_content, &Content.merge(&1, current_content))
     |> put_assoc(:data_structure, data_structure)
     |> validate_required([:status, :version, :df_content, :data_structure])
-    |> validate_change(:df_content, Validation.validator(data_structure))
+    |> validate_change(:df_content, Validation.shallow_validator(data_structure))
     |> unique_constraint([:data_structure, :version])
   end
 

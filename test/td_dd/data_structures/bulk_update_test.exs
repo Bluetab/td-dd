@@ -194,7 +194,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert {%{errors: errors}, data_structure} = changeset
       assert %{external_id: "the bad one"} = data_structure
-      assert {"invalid template", _} = errors[:df_content]
+      assert {"missing_type", _} = errors[:df_content]
     end
 
     test "only updates specified fields", %{type: type} do
@@ -228,6 +228,40 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
     end
 
     test "only updates specified fields for published notes", %{type: type} do
+      claims = build(:claims)
+      structure_count = 10
+
+      ids =
+        1..structure_count
+        |> Enum.map(fn _ ->
+          insert(:data_structure_version,
+            type: type
+          )
+        end)
+        |> Enum.map(& &1.data_structure_id)
+
+      assert {:ok, %{update_notes: update_notes}} =
+               BulkUpdate.update_all(ids, %{"df_content" => %{"string" => "updated"}}, claims)
+
+      assert Map.keys(update_notes) <|> ids
+
+      df_contents =
+        Enum.map(ids, fn id ->
+          id
+          |> DataStructures.get_latest_structure_note()
+          |> Map.get(:df_content)
+        end)
+
+      assert Enum.count(df_contents) == structure_count
+
+      Enum.each(df_contents, fn df_content ->
+        assert df_content == %{"string" => "updated"}
+      end)
+    end
+
+    test "when bulk updating will allow to create templates with missing required fields", %{
+      type: type
+    } do
       claims = build(:claims)
 
       initial_content = Map.replace!(@valid_content, "string", "initial")
