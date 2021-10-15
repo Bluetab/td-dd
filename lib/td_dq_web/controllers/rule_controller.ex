@@ -125,13 +125,17 @@ defmodule TdDqWeb.RuleController do
     end
   end
 
-  defp is_allowed_domain(%{"domain_id" => domain_id, "business_concept_id" => business_concept_id}) do
-    {:ok, %{shared_to_ids: shared_to_ids, domain: %{id: bussines_domain_id}}} =
-      TdCache.ConceptCache.get(business_concept_id)
+  defp is_allowed_domain(%{"domain_id" => domain_id, "business_concept_id" => business_concept_id})
+       when not is_nil(domain_id) and not is_nil(business_concept_id) do
+    case TdCache.ConceptCache.get(business_concept_id) do
+      {:ok, %{shared_to_ids: shared_to_ids, domain: %{id: bussines_domain_id}}} ->
+        [bussines_domain_id | shared_to_ids]
+        |> Enum.uniq()
+        |> Enum.member?(domain_id)
 
-    [bussines_domain_id | shared_to_ids]
-    |> Enum.uniq()
-    |> Enum.member?(domain_id)
+      {:ok, nil} ->
+        true
+    end
   end
 
   defp is_allowed_domain(%{}), do: true
