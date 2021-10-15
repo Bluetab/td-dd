@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-3874] Fix manage_quality_rule permission check when searching rules
+
 ## [4.29.2] 2021-10-07
 
 ### Fixed
