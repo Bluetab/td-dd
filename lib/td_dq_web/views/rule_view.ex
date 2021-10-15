@@ -12,6 +12,12 @@ defmodule TdDqWeb.RuleView do
     |> Map.put(:_actions, actions)
   end
 
+  def render("index.json", %{managable_domain_ids: domain_ids} = assigns) do
+    "index.json"
+    |> render(Map.delete(assigns, :managable_domain_ids))
+    |> Map.put(:_managable_domain_ids, domain_ids)
+  end
+
   def render("index.json", %{user_permissions: user_permissions} = assigns) do
     "index.json"
     |> render(Map.delete(assigns, :user_permissions))
