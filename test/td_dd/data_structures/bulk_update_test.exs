@@ -5,7 +5,6 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
   alias TdDd.DataStructures
   alias TdDd.DataStructures.BulkUpdate
-  alias TdDd.DataStructures.DataStructure
 
   @moduletag sandbox: :shared
   @valid_content %{"string" => "present", "list" => "one"}
@@ -237,10 +236,12 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       ids =
         1..structure_count
-        |> Enum.map(fn _ -> valid_structure_note(type,
-          df_content: initial_content,
-          status: :published
-        ) end)
+        |> Enum.map(fn _ ->
+          valid_structure_note(type,
+            df_content: initial_content,
+            status: :published
+          )
+        end)
         |> Enum.map(& &1.data_structure_id)
 
       assert {:ok, %{update_notes: update_notes}} =
@@ -249,11 +250,11 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert Map.keys(update_notes) <|> ids
 
       df_contents =
-        ids
-        |> Enum.map(&DataStructures.list_structure_notes/1)
-        |> IO.inspect
-        |> Enum.filter(&(Enum.count(&1) == 1))
-        |> Enum.map(&Enum.at(&1, -1).df_content)
+        Enum.map(ids, fn id ->
+          id
+          |> DataStructures.get_latest_structure_note()
+          |> Map.get(:df_content)
+        end)
 
       assert Enum.count(df_contents) == structure_count
 
@@ -468,32 +469,6 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert Enum.count(df_contents) == structure_count
       Enum.each(df_contents, fn df_content -> assert df_content == note end)
-    end
-
-    test "bulk upload notes of data structures with pending_approval notes", %{type: type} do
-      note = %{"string" => "bar", "list" => "two"}
-
-      structure_count = 5
-
-      data_structure_ids =
-        1..structure_count
-        |> Enum.map(fn _ -> valid_structure(type) end)
-        |> Enum.map(
-          &insert(:structure_note, status: :pending_approval, data_structure: &1.data_structure)
-        )
-        |> Enum.map(& &1.data_structure_id)
-
-      result = BulkUpdate.update_all(data_structure_ids, %{"df_content" => note}, build(:claims))
-      assert {:error, :update_notes, {:only_draft_are_editable, %DataStructure{}}, %{}} = result
-
-      df_contents =
-        data_structure_ids
-        |> Enum.map(&DataStructures.list_structure_notes/1)
-        |> Enum.filter(&(Enum.count(&1) == 1))
-        |> Enum.map(&Enum.at(&1, -1).df_content)
-
-      assert Enum.count(df_contents) == structure_count
-      Enum.each(df_contents, fn df_content -> assert df_content == %{} end)
     end
   end
 

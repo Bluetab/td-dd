@@ -39,6 +39,20 @@ defmodule TdDd.DataStructures.StructureNote do
     |> validate_change(:df_content, Validation.validator(structure_note))
   end
 
+  def bulk_create_changeset(
+        %{df_content: current_content},
+        data_structure,
+        attrs
+      ) do
+    %__MODULE__{}
+    |> cast(attrs, [:status, :version, :df_content])
+    |> update_change(:df_content, &Content.merge(&1, current_content))
+    |> put_assoc(:data_structure, data_structure)
+    |> validate_required([:status, :version, :df_content, :data_structure])
+    |> validate_change(:df_content, Validation.validator(data_structure))
+    |> unique_constraint([:data_structure, :version])
+  end
+
   def create_changeset(structure_note, data_structure, attrs) do
     structure_note
     |> cast(attrs, [:status, :version, :df_content])
