@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+
 ### Added
 
 - [TD-3874] Allow rule creation/update specifying domain for shared concepts
