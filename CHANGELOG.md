@@ -4,6 +4,7 @@
 
 ### Added
 
+- [TD-3131] Added details to the rule results to show the `Query` information 
 - [TD-3874] Allow rule creation/update specifying domain for shared concepts
 
 ### Fixed
