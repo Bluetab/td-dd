@@ -31,7 +31,8 @@ defmodule TdDqWeb.RuleResultView do
       :records,
       :errors,
       :result_type,
-      :execution_id
+      :execution_id,
+      :details
     ])
     |> Enum.reject(fn {_, v} -> is_nil(v) end)
     |> Map.new()
