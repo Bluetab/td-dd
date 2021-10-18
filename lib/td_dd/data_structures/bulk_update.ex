@@ -175,21 +175,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
 
     Multi.new()
     |> Multi.run(:update_notes, &bulk_update_notes(&1, &2, data_structures, params, user_id))
-    |> Multi.run(:updates, &bulk_update(&1, &2, data_structures, params))
-    |> Multi.run(:audit, &audit(&1, &2, user_id))
     |> Repo.transaction()
-    |> on_complete()
-  end
-
-  defp bulk_update(_repo, _changes_so_far, data_structures, params) do
-    data_structures
-    |> Enum.map(&DataStructure.merge_changeset(&1, params))
-    |> Enum.reject(&(&1.changes == %{}))
-    |> Enum.reduce_while(%{}, &reduce_changesets/2)
-    |> case do
-      %{} = res -> {:ok, res}
-      error -> error
-    end
   end
 
   defp bulk_update_notes(_repo, _changes_so_far, data_structures, params, user_id) do

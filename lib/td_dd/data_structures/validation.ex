@@ -57,11 +57,19 @@ defmodule TdDd.DataStructures.Validation do
     end
   end
 
+  def shallow_validator(%{} = structure) do
+    case DataStructures.template_name(structure) do
+      "" -> empty_content_validator()
+      nil -> empty_content_validator()
+      _ -> fn _, _ -> [] end
+    end
+  end
+
   defp empty_content_validator do
     fn
       _, nil -> []
       _, value when value == %{} -> []
-      field, _ -> [{field, :missing_type}]
+      field, _ -> [{field, "missing_type"}]
     end
   end
 
