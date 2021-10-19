@@ -104,22 +104,22 @@ defmodule TdDd.Grants.RequestsTest do
   end
 
   describe "list_grant_requests/2" do
-    test "includes current status and filters by status" do
+    test "includes current status and status_reason and filters by status" do
       claims = build(:claims, role: "service")
       %{id: id} = insert(:grant_request)
 
       assert {:ok, grant_requests} = Requests.list_grant_requests(claims)
       assert [%{current_status: nil}] = grant_requests
 
-      insert(:grant_request_status, grant_request_id: id, status: "earliest")
+      insert(:grant_request_status, grant_request_id: id, status: "earliest", reason: "reason1")
 
       assert {:ok, grant_requests} = Requests.list_grant_requests(claims)
-      assert [%{current_status: "earliest"}] = grant_requests
+      assert [%{current_status: "earliest", status_reason: "reason1"}] = grant_requests
 
-      insert(:grant_request_status, grant_request_id: id, status: "latest")
+      insert(:grant_request_status, grant_request_id: id, status: "latest", reason: "reason2")
 
       assert {:ok, grant_requests} = Requests.list_grant_requests(claims, %{status: "latest"})
-      assert [%{current_status: "latest"}] = grant_requests
+      assert [%{current_status: "latest", status_reason: "reason2"}] = grant_requests
 
       assert {:ok, []} = Requests.list_grant_requests(claims, %{status: "earliest"})
     end

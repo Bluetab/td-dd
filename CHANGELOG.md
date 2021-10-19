@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-4213]
+  - Allows GrantRequest from status `processed` to `failed`
+  - Created `reason` field on GrantRequestStatus
+
 ## [4.30.0] 2021-10-18
 
 ### Added
