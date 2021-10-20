@@ -1,10 +1,15 @@
 # Changelog
 
-## [4.30.0] 2021-10-18
+## [Unreleased]
 
 ### Added
 
 - [TD-4124] Dependent domain field in td_df_lib
+
+## [4.30.0] 2021-10-18
+
+### Added
+
 - [TD-3131] Added details to the rule results to show the `Query` information 
 - [TD-3874] Allow rule creation/update specifying domain for shared concepts
 
