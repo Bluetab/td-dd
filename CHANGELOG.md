@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-4204] Add approvals to grant request view
+
 ## [4.30.0] 2021-10-18
 
 ### Added
