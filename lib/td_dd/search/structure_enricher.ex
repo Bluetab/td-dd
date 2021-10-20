@@ -127,7 +127,7 @@ defmodule TdDd.Search.StructureEnricher do
     do: %{structure | domain_parents: []}
 
   defp search_content(
-         %DataStructure{latest_note: %{} = content} = structure,
+         %DataStructure{domain_id: domain_id, latest_note: %{} = content} = structure,
          :searchable,
          %{} = types,
          type
@@ -135,7 +135,7 @@ defmodule TdDd.Search.StructureEnricher do
        when map_size(content) > 0 do
     case Map.get(types, type) do
       %{} = template ->
-        %{structure | search_content: search_content(content, template)}
+        %{structure | search_content: search_content(content, template, domain_id)}
 
       _ ->
         %{structure | search_content: nil}
@@ -144,7 +144,8 @@ defmodule TdDd.Search.StructureEnricher do
 
   defp search_content(%DataStructure{} = structure, _not_searchable, _, _type), do: structure
 
-  defp search_content(content, template), do: Format.search_values(content, template)
+  defp search_content(content, template, domain_id),
+    do: Format.search_values(content, template, domain_id: domain_id)
 
   defp enrich_link_count(%{id: id} = structure, links) do
     value = if Enum.member?(links, id), do: 1, else: 0
