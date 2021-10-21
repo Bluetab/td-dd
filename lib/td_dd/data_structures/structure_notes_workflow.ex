@@ -19,15 +19,37 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
     is_strict_update = false
 
     structure_note =
-      case can_create_new_draft(latest_note) do
-        :ok -> create(data_structure, params, true, user_id)
-        _cannot_create -> update(latest_note, params, is_strict_update, user_id)
+      case latest_note do
+        %{status: :draft} -> update(latest_note, params, is_strict_update, user_id)
+        _not_update -> bulk_create(data_structure, params, latest_note, user_id)
       end
 
     case {structure_note, auto_publish} do
       {{:ok, %StructureNote{} = note_to_publish}, true} -> publish(note_to_publish, user_id)
       _ -> structure_note
     end
+  end
+
+  def bulk_create(
+        data_structure,
+        params,
+        latest_note,
+        user_id
+      ) do
+    if can_create_new_draft(latest_note) != :ok,
+      do: DataStructures.delete_structure_note(latest_note, user_id)
+
+    structure_note_params =
+      params
+      |> Map.put("status", "draft")
+      |> Map.put("version", next_version(latest_note))
+
+    DataStructures.bulk_create_structure_note(
+      data_structure,
+      structure_note_params,
+      latest_note,
+      user_id
+    )
   end
 
   def create(%DataStructure{} = data_structure, params, false = _force_creation, user_id),

@@ -104,22 +104,22 @@ defmodule TdDd.Grants.RequestsTest do
   end
 
   describe "list_grant_requests/2" do
-    test "includes current status and filters by status" do
+    test "includes current status and status_reason and filters by status" do
       claims = build(:claims, role: "service")
       %{id: id} = insert(:grant_request)
 
       assert {:ok, grant_requests} = Requests.list_grant_requests(claims)
       assert [%{current_status: nil}] = grant_requests
 
-      insert(:grant_request_status, grant_request_id: id, status: "earliest")
+      insert(:grant_request_status, grant_request_id: id, status: "earliest", reason: "reason1")
 
       assert {:ok, grant_requests} = Requests.list_grant_requests(claims)
-      assert [%{current_status: "earliest"}] = grant_requests
+      assert [%{current_status: "earliest", status_reason: "reason1"}] = grant_requests
 
-      insert(:grant_request_status, grant_request_id: id, status: "latest")
+      insert(:grant_request_status, grant_request_id: id, status: "latest", reason: "reason2")
 
       assert {:ok, grant_requests} = Requests.list_grant_requests(claims, %{status: "latest"})
-      assert [%{current_status: "latest"}] = grant_requests
+      assert [%{current_status: "latest", status_reason: "reason2"}] = grant_requests
 
       assert {:ok, []} = Requests.list_grant_requests(claims, %{status: "earliest"})
     end
@@ -197,7 +197,7 @@ defmodule TdDd.Grants.RequestsTest do
       assert Enum.count(res) == 2
     end
 
-    test "enriches pending_roles when actino is approve", _ do
+    test "enriches pending_roles when action is approve", _ do
       %{id: d1} = CacheHelpers.insert_domain()
       %{id: d2} = CacheHelpers.insert_domain()
       %{id: d3} = CacheHelpers.insert_domain()
@@ -288,15 +288,42 @@ defmodule TdDd.Grants.RequestsTest do
   end
 
   describe "grant_requests" do
-    test "get_grant_request!/1 returns the grant_request with given id" do
+    test "get_grant_request!/1 returns the grant_request with given id", %{claims: claims} do
       grant_request = insert(:grant_request)
-      assert Requests.get_grant_request!(grant_request.id) <~> grant_request
+      assert Requests.get_grant_request!(grant_request.id, claims) <~> grant_request
     end
 
-    test "delete_grant_request/1 deletes the grant_request" do
+    test "delete_grant_request/1 deletes the grant_request", %{claims: claims} do
       grant_request = insert(:grant_request)
       assert {:ok, %GrantRequest{}} = Requests.delete_grant_request(grant_request)
-      assert_raise Ecto.NoResultsError, fn -> Requests.get_grant_request!(grant_request.id) end
+
+      assert_raise Ecto.NoResultsError, fn ->
+        Requests.get_grant_request!(grant_request.id, claims)
+      end
+    end
+
+    test "enriches pending_roles", _ do
+      %{id: domain_id} = CacheHelpers.insert_domain()
+      %{user_id: default_approver} = build(:claims, role: "user")
+      claims = build(:claims, role: "admin")
+
+      CacheHelpers.insert_grant_request_approver(default_approver, domain_id, "approver1")
+      CacheHelpers.insert_grant_request_approver(default_approver, domain_id, "approver2")
+
+      %{grant_request: %{id: grant_request_id} = grant_request} =
+        insert(:grant_request_status,
+          status: "pending",
+          grant_request: build(:grant_request, domain_id: domain_id)
+        )
+
+      insert(:grant_request_approval,
+        domain_id: domain_id,
+        role: "approver1",
+        grant_request: grant_request
+      )
+
+      assert %GrantRequest{id: ^grant_request_id, pending_roles: ["approver2"]} =
+               Requests.get_grant_request!(grant_request_id, claims)
     end
   end
 
@@ -317,11 +344,26 @@ defmodule TdDd.Grants.RequestsTest do
       assert %{id: ^domain_id, name: _} = domain
     end
 
-    test "returns error if user is not an approver", %{
-      claims: claims,
+    test "admin can approve a grant request without having the role", %{
       domain_id: domain_id,
       request: request
     } do
+      %{user_id: user_id} = claims = build(:claims, role: "admin")
+      params = %{domain_id: domain_id, role: "approver"}
+
+      assert {:ok, %{approval: approval}} = Requests.create_approval(claims, request, params)
+
+      assert %GrantRequestApproval{is_rejection: false, user_id: ^user_id, domain: domain} =
+               approval
+
+      assert %{id: ^domain_id, name: _} = domain
+    end
+
+    test "returns error if user is not an approver", %{
+      domain_id: domain_id,
+      request: request
+    } do
+      claims = build(:claims, role: "user")
       params = %{domain_id: domain_id, role: "not_approver"}
       assert {:error, :approval, _, _} = Requests.create_approval(claims, request, params)
     end

@@ -28,6 +28,7 @@ defmodule TdDq.Rules.RuleResult do
     field(:params, :map, default: %{})
     field(:row_number, :integer, virtual: true)
     field(:result_type, :string)
+    field(:details, :map, default: %{})
 
     has_one(:implementation, Implementation,
       foreign_key: :implementation_key,
@@ -54,7 +55,8 @@ defmodule TdDq.Rules.RuleResult do
       :records,
       :params,
       :row_number,
-      :result_type
+      :result_type,
+      :details
     ])
     |> put_date()
     |> put_result()

@@ -6,6 +6,31 @@
 
 - [TD-4211] Subscriptions on data structures include structure note events
 
+### Added
+
+- [TD-4213]
+  - Allows GrantRequest from status `processed` to `failed`
+  - Created `reason` field on GrantRequestStatus
+- [TD-4124] Dependent domain field in td_df_lib
+
+## [4.30.0] 2021-10-18
+
+### Added
+
+- [TD-3131] Added details to the rule results to show the `Query` information 
+- [TD-3874] Allow rule creation/update specifying domain for shared concepts
+
+### Fixed
+
+- [TD-3874] Fix manage_quality_rule permission check when searching rules
+- [TD-4140] Bulk Update uses previous values of template when available
+
+## [4.29.2] 2021-10-07
+
+### Fixed
+
+- [TD-4044] Permissions for admin creating a GrantRequestApproval
+
 ## [4.29.1] 2021-10-06
 
 ### Fixed

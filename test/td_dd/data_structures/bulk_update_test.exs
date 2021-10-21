@@ -5,7 +5,6 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
   alias TdDd.DataStructures
   alias TdDd.DataStructures.BulkUpdate
-  alias TdDd.DataStructures.DataStructure
 
   @moduletag sandbox: :shared
   @valid_content %{"string" => "present", "list" => "one"}
@@ -137,20 +136,6 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
              |> Enum.all?(&(&1 == @valid_content))
     end
 
-    test "emits audit events for updated structures", %{type: type} do
-      claims = build(:claims)
-
-      ids =
-        1..10
-        |> Enum.map(fn _ -> valid_structure(type) end)
-        |> Enum.map(& &1.data_structure_id)
-
-      assert {:ok, %{updates: updates, audit: audit}} =
-               BulkUpdate.update_all(ids, @valid_params, claims)
-
-      assert Enum.count(audit) == Enum.count(updates)
-    end
-
     test "ignores unchanged data structures", %{type: type} do
       claims = build(:claims)
       fixed_datetime = ~N[2020-01-01 00:00:00]
@@ -209,7 +194,7 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert {%{errors: errors}, data_structure} = changeset
       assert %{external_id: "the bad one"} = data_structure
-      assert {"invalid template", _} = errors[:df_content]
+      assert {"missing_type", _} = errors[:df_content]
     end
 
     test "only updates specified fields", %{type: type} do
@@ -240,11 +225,76 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       Enum.each(df_contents, fn df_content ->
         assert df_content == %{"string" => "updated", "list" => initial_content["list"]}
       end)
+    end
 
-      # assert ids
-      #        |> Enum.map(&Repo.get(DataStructure, &1))
-      #        |> Enum.map(& &1.df_content)
-      #        |> Enum.all?(&(&1 == %{"string" => "updated", "list" => initial_content["list"]}))
+    test "only updates specified fields for published notes", %{type: type} do
+      claims = build(:claims)
+      structure_count = 10
+
+      ids =
+        1..structure_count
+        |> Enum.map(fn _ ->
+          insert(:data_structure_version,
+            type: type
+          )
+        end)
+        |> Enum.map(& &1.data_structure_id)
+
+      assert {:ok, %{update_notes: update_notes}} =
+               BulkUpdate.update_all(ids, %{"df_content" => %{"string" => "updated"}}, claims)
+
+      assert Map.keys(update_notes) <|> ids
+
+      df_contents =
+        Enum.map(ids, fn id ->
+          id
+          |> DataStructures.get_latest_structure_note()
+          |> Map.get(:df_content)
+        end)
+
+      assert Enum.count(df_contents) == structure_count
+
+      Enum.each(df_contents, fn df_content ->
+        assert df_content == %{"string" => "updated"}
+      end)
+    end
+
+    test "when bulk updating will allow to create templates with missing required fields", %{
+      type: type
+    } do
+      claims = build(:claims)
+
+      initial_content = Map.replace!(@valid_content, "string", "initial")
+
+      structure_count = 10
+
+      ids =
+        1..structure_count
+        |> Enum.map(fn _ ->
+          valid_structure_note(type,
+            df_content: initial_content,
+            status: :published
+          )
+        end)
+        |> Enum.map(& &1.data_structure_id)
+
+      assert {:ok, %{update_notes: update_notes}} =
+               BulkUpdate.update_all(ids, %{"df_content" => %{"string" => "updated"}}, claims)
+
+      assert Map.keys(update_notes) <|> ids
+
+      df_contents =
+        Enum.map(ids, fn id ->
+          id
+          |> DataStructures.get_latest_structure_note()
+          |> Map.get(:df_content)
+        end)
+
+      assert Enum.count(df_contents) == structure_count
+
+      Enum.each(df_contents, fn df_content ->
+        assert df_content == %{"string" => "updated", "list" => initial_content["list"]}
+      end)
     end
 
     test "only validates specified fields", %{type: type} do
@@ -453,32 +503,6 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert Enum.count(df_contents) == structure_count
       Enum.each(df_contents, fn df_content -> assert df_content == note end)
-    end
-
-    test "bulk upload notes of data structures with pending_approval notes", %{type: type} do
-      note = %{"string" => "bar", "list" => "two"}
-
-      structure_count = 5
-
-      data_structure_ids =
-        1..structure_count
-        |> Enum.map(fn _ -> valid_structure(type) end)
-        |> Enum.map(
-          &insert(:structure_note, status: :pending_approval, data_structure: &1.data_structure)
-        )
-        |> Enum.map(& &1.data_structure_id)
-
-      result = BulkUpdate.update_all(data_structure_ids, %{"df_content" => note}, build(:claims))
-      assert {:error, :update_notes, {:only_draft_are_editable, %DataStructure{}}, %{}} = result
-
-      df_contents =
-        data_structure_ids
-        |> Enum.map(&DataStructures.list_structure_notes/1)
-        |> Enum.filter(&(Enum.count(&1) == 1))
-        |> Enum.map(&Enum.at(&1, -1).df_content)
-
-      assert Enum.count(df_contents) == structure_count
-      Enum.each(df_contents, fn df_content -> assert df_content == %{} end)
     end
   end
 

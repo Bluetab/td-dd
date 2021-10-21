@@ -139,11 +139,16 @@ defmodule TdDd.Grants.Requests do
     Permissions.permitted_domain_ids(user_id, :approve_grant_request)
   end
 
-  def get_grant_request!(id, opts \\ []) do
+  def get_grant_request!(id, claims, opts \\ []) do
+    required = required_approvals()
+    user_roles = get_user_roles(claims)
+
     opts
     |> Map.new()
     |> grant_request_query()
     |> Repo.get!(id)
+    |> Repo.preload([:approvals])
+    |> with_missing_roles(required, user_roles)
     |> enrich()
   end
 
@@ -158,7 +163,11 @@ defmodule TdDd.Grants.Requests do
       GrantRequest
       |> join(:left, [gr], s in ^status_subquery, on: s.grant_request_id == gr.id)
       |> join(:left, [gr], grg in assoc(gr, :group))
-      |> select_merge([gr, s], %{current_status: s.status, updated_at: s.inserted_at})
+      |> select_merge([gr, s], %{
+        current_status: s.status,
+        status_reason: s.reason,
+        updated_at: s.inserted_at
+      })
 
     clauses
     |> Map.put_new(:preload, [:group, data_structure: :current_version])
@@ -194,14 +203,15 @@ defmodule TdDd.Grants.Requests do
   end
 
   def create_approval(
-        %{user_id: user_id} = _claims,
+        %{user_id: user_id} = claims,
         %{id: id, current_status: status} = grant_request,
         params
       ) do
     changeset =
       GrantRequestApproval.changeset(
         %GrantRequestApproval{grant_request_id: id, user_id: user_id, current_status: status},
-        params
+        params,
+        claims
       )
 
     Multi.new()

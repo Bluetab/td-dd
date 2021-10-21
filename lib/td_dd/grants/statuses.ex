@@ -8,12 +8,14 @@ defmodule TdDd.Grants.Statuses do
 
   def create_grant_request_status(
         %{id: grant_request_id, current_status: current_status} = _grant_request,
-        status
+        status,
+        reason \\ nil
       ) do
     %GrantRequestStatus{
       previous_status: current_status,
       status: status,
-      grant_request_id: grant_request_id
+      grant_request_id: grant_request_id,
+      reason: reason
     }
     |> GrantRequestStatus.changeset(%{})
     |> Repo.insert()

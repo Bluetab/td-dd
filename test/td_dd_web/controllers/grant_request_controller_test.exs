@@ -30,7 +30,8 @@ defmodule TdDdWeb.GrantRequestControllerTest do
               group: build(:grant_request_group, user_id: user_id),
               data_structure_id: data_structure_id
             ),
-          status: "approved"
+          status: "approved",
+          reason: "because"
         )
 
       assert %{"data" => data} =
@@ -45,6 +46,7 @@ defmodule TdDdWeb.GrantRequestControllerTest do
                  "filters" => _,
                  "inserted_at" => _,
                  "status" => "approved",
+                 "status_reason" => "because",
                  "_embedded" => embedded
                }
              ] = data
@@ -162,6 +164,24 @@ defmodule TdDdWeb.GrantRequestControllerTest do
         insert(:grant_request,
           group: insert(:grant_request_group, user_id: user_id)
         )
+
+      assert %{"data" => %{"id" => ^id}} =
+               conn
+               |> get(Routes.grant_request_path(conn, :show, id))
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "user"]
+    test "user with permission can show grant_request", %{
+      conn: conn,
+      claims: %{user_id: user_id}
+    } do
+      %{id: domain_id} = CacheHelpers.insert_domain()
+      create_acl_entry(user_id, domain_id, [:approve_grant_request])
+      CacheHelpers.insert_grant_request_approver(user_id, domain_id)
+
+      %{id: id} =
+        insert(:grant_request, data_structure: build(:data_structure), domain_id: domain_id)
 
       assert %{"data" => %{"id" => ^id}} =
                conn

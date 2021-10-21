@@ -162,17 +162,21 @@ defmodule TdDq.Rules.Rule do
     end
   end
 
-  defp validate_content(%{} = changeset) do
+  defp validate_content(%{valid?: true} = changeset) do
     case get_field(changeset, :df_name) do
       nil ->
         validate_change(changeset, :df_content, empty_content_validator())
 
       template_name ->
+        domain_id = get_field(changeset, :domain_id)
+
         changeset
         |> validate_required(:df_content)
-        |> validate_change(:df_content, Validation.validator(template_name))
+        |> validate_change(:df_content, Validation.validator(template_name, domain_id: domain_id))
     end
   end
+
+  defp validate_content(changeset), do: changeset
 
   defp empty_content_validator do
     fn
@@ -196,7 +200,7 @@ defmodule TdDq.Rules.Rule do
     def routing(_), do: false
 
     @impl Elasticsearch.Document
-    def encode(%Rule{} = rule) do
+    def encode(%Rule{domain_id: domain_id} = rule) do
       template = TemplateCache.get_by_name!(rule.df_name) || %{content: []}
       updated_by = Helpers.get_user(rule.updated_by)
       confidential = Helpers.confidential?(rule)
@@ -208,7 +212,7 @@ defmodule TdDq.Rules.Rule do
       df_content =
         rule
         |> Map.get(:df_content)
-        |> Format.search_values(template)
+        |> Format.search_values(template, domain_id: domain_id)
 
       %{
         id: rule.id,

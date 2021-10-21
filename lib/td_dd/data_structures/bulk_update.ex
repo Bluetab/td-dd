@@ -127,18 +127,21 @@ defmodule TdDd.DataStructures.BulkUpdate do
         template_fields = Enum.filter(content_schema, &(Map.get(&1, "type") != "table"))
         field_names = Enum.map(template_fields, &Map.get(&1, "name"))
 
+        domain_id = data_structure.domain_id
         content = Map.take(row, field_names)
         fields = Map.keys(content)
         content_schema = Enum.filter(template_fields, &(Map.get(&1, "name") in fields))
-        content = format_content(%{content: content, content_schema: content_schema})
+
+        content =
+          format_content(%{content: content, content_schema: content_schema, domain_id: domain_id})
 
         {%{"df_content" => content}, %{data_structure: data_structure, row_index: row_index}}
     end
   end
 
-  defp format_content(%{content: content, content_schema: content_schema})
+  defp format_content(%{content: content, content_schema: content_schema, domain_id: domain_id})
        when not is_nil(content) do
-    content = Format.apply_template(content, content_schema)
+    content = Format.apply_template(content, content_schema, domain_id: domain_id)
 
     content_schema
     |> Enum.filter(fn %{"type" => schema_type, "cardinality" => cardinality} ->
@@ -172,21 +175,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
 
     Multi.new()
     |> Multi.run(:update_notes, &bulk_update_notes(&1, &2, data_structures, params, user_id))
-    |> Multi.run(:updates, &bulk_update(&1, &2, data_structures, params))
-    |> Multi.run(:audit, &audit(&1, &2, user_id))
     |> Repo.transaction()
-    |> on_complete()
-  end
-
-  defp bulk_update(_repo, _changes_so_far, data_structures, params) do
-    data_structures
-    |> Enum.map(&DataStructure.merge_changeset(&1, params))
-    |> Enum.reject(&(&1.changes == %{}))
-    |> Enum.reduce_while(%{}, &reduce_changesets/2)
-    |> case do
-      %{} = res -> {:ok, res}
-      error -> error
-    end
   end
 
   defp bulk_update_notes(_repo, _changes_so_far, data_structures, params, user_id) do

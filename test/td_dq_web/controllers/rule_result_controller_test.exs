@@ -129,7 +129,8 @@ defmodule TdDqWeb.RuleResultControllerTest do
                  "params" => %{"param3" => "5"},
                  "records" => 4,
                  "result_type" => "percentage",
-                 "result" => "0.00"
+                 "result" => "0.00",
+                 "details" => %{}
                },
                %{
                  "date" => "2019-08-29T00:00:00Z",
@@ -138,7 +139,8 @@ defmodule TdDqWeb.RuleResultControllerTest do
                  "params" => %{"param1" => "valor", "param2" => "valor2", "param3" => "4"},
                  "records" => 1_000_000,
                  "result_type" => "percentage",
-                 "result" => "99.99"
+                 "result" => "99.99",
+                 "details" => %{}
                }
              ]
     end

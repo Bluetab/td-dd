@@ -34,16 +34,15 @@ defmodule TdDdWeb.GrantRequestController do
 
   def show(conn, %{"id" => id}) do
     with claims <- conn.assigns[:current_resource],
-         grant_request <- Requests.get_grant_request!(id),
+         grant_request <- Requests.get_grant_request!(id, claims),
          {:can, true} <- {:can, can?(claims, show(grant_request))} do
       render(conn, "show.json", grant_request: grant_request)
     end
   end
 
   def delete(conn, %{"id" => id}) do
-    grant_request = Requests.get_grant_request!(id)
-
     with claims <- conn.assigns[:current_resource],
+         grant_request <- Requests.get_grant_request!(id, claims),
          {:can, true} <- {:can, can?(claims, delete(GrantRequest))},
          {:ok, %GrantRequest{}} <- Requests.delete_grant_request(grant_request) do
       send_resp(conn, :no_content, "")

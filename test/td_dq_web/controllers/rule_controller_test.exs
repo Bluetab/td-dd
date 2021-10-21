@@ -161,8 +161,9 @@ defmodule TdDqWeb.RuleControllerTest do
 
   describe "get_rules_by_concept" do
     @tag authentication: [role: "admin"]
-    test "lists all rules of a concept", %{conn: conn, swagger_schema: schema} do
+    test "lists all rules of a concept", %{conn: conn, swagger_schema: schema, domain: domain} do
       business_concept_id = System.unique_integer([:positive])
+      CacheHelpers.insert_concept(%{id: business_concept_id, domain_id: domain.id})
 
       %{id: id1, business_concept_id: business_concept_id} =
         insert(:rule, business_concept_id: business_concept_id)
@@ -182,12 +183,37 @@ defmodule TdDqWeb.RuleControllerTest do
     end
 
     @tag authentication: [role: "admin"]
+    test "lists domains which the user can manage a concept", %{
+      conn: conn,
+      swagger_schema: schema,
+      domain: %{id: domain_id}
+    } do
+      business_concept_id = System.unique_integer([:positive])
+      %{id: another_domain_id} = CacheHelpers.insert_domain()
+
+      CacheHelpers.insert_concept(%{
+        id: business_concept_id,
+        domain_id: domain_id,
+        shared_to_ids: [another_domain_id]
+      })
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.rule_path(conn, :get_rules_by_concept, business_concept_id))
+               |> validate_resp_schema(schema, "RulesResponse")
+               |> json_response(:ok)
+
+      assert %{"domain_ids" => [%{"id" => ^domain_id}, %{"id" => ^another_domain_id}]} = actions
+    end
+
+    @tag authentication: [role: "admin"]
     test "lists all rules of a concept with entiched domains", %{
       conn: conn,
       domain: %{id: domain_id, external_id: external_id, name: name},
       swagger_schema: schema
     } do
       business_concept_id = System.unique_integer([:positive])
+      CacheHelpers.insert_concept(%{id: business_concept_id, domain_id: domain_id})
       %{id: id1} = insert(:rule, domain_id: domain_id, business_concept_id: business_concept_id)
 
       %{id: id2} = insert(:rule, domain_id: domain_id, business_concept_id: business_concept_id)
@@ -233,7 +259,7 @@ defmodule TdDqWeb.RuleControllerTest do
   describe "create rule" do
     @tag authentication: [role: "admin"]
     test "renders rule when data is valid", %{conn: conn, swagger_schema: schema, domain: domain} do
-      params = string_params_for(:rule, domain_id: domain.id)
+      params = string_params_for(:rule, domain_id: domain.id) |> Map.delete("business_concept_id")
 
       assert %{"data" => data} =
                conn
@@ -246,7 +272,7 @@ defmodule TdDqWeb.RuleControllerTest do
 
     @tag authentication: [user_name: "non_admin"]
     test "user without permissions cannot create rule", %{conn: conn} do
-      params = string_params_for(:rule)
+      params = string_params_for(:rule) |> Map.delete("business_concept_id")
 
       assert conn
              |> post(Routes.rule_path(conn, :create), rule: params)
@@ -258,7 +284,73 @@ defmodule TdDqWeb.RuleControllerTest do
            permissions: [:manage_quality_rule]
          ]
     test "user with permissions can create rule", %{conn: conn, domain: domain} do
-      params = string_params_for(:rule, domain_id: domain.id)
+      params = string_params_for(:rule, domain_id: domain.id) |> Map.delete("business_concept_id")
+
+      assert conn
+             |> post(Routes.rule_path(conn, :create), rule: params)
+             |> json_response(:created)
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions: [:manage_quality_rule]
+         ]
+    test "user with permissions can create rule at same business concept domain", %{
+      conn: conn,
+      domain: domain
+    } do
+      business_concept_id = System.unique_integer([:positive])
+      CacheHelpers.insert_concept(%{id: business_concept_id, domain_id: domain.id})
+
+      params =
+        string_params_for(:rule, domain_id: domain.id, business_concept_id: business_concept_id)
+
+      assert conn
+             |> post(Routes.rule_path(conn, :create), rule: params)
+             |> json_response(:created)
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions: [:manage_quality_rule]
+         ]
+    test "user with permissions can not create rule in a different domain to business concept", %{
+      conn: conn,
+      domain: domain
+    } do
+      business_concept_id = System.unique_integer([:positive])
+
+      CacheHelpers.insert_concept(%{
+        id: business_concept_id,
+        domain_id: CacheHelpers.insert_domain().id
+      })
+
+      params =
+        string_params_for(:rule, domain_id: domain.id, business_concept_id: business_concept_id)
+
+      assert conn
+             |> post(Routes.rule_path(conn, :create), rule: params)
+             |> json_response(:forbidden)
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions: [:manage_quality_rule]
+         ]
+    test "user with permissions can create rule in a shared domain of business concept", %{
+      conn: conn,
+      domain: domain
+    } do
+      business_concept_id = System.unique_integer([:positive])
+
+      CacheHelpers.insert_concept(%{
+        id: business_concept_id,
+        domain_id: CacheHelpers.insert_domain().id,
+        shared_to_ids: [domain.id]
+      })
+
+      params =
+        string_params_for(:rule, domain_id: domain.id, business_concept_id: business_concept_id)
 
       assert conn
              |> post(Routes.rule_path(conn, :create), rule: params)
@@ -286,7 +378,7 @@ defmodule TdDqWeb.RuleControllerTest do
 
     @tag authentication: [role: "admin"]
     test "renders errors when data is invalid", %{conn: conn} do
-      params = string_params_for(:rule, name: nil)
+      params = string_params_for(:rule, name: nil) |> Map.delete("business_concept_id")
 
       assert %{"errors" => _errors} =
                conn
@@ -298,7 +390,9 @@ defmodule TdDqWeb.RuleControllerTest do
     test "renders errors when rule result type is numeric and goal is higher than minimum", %{
       conn: conn
     } do
-      params = string_params_for(:rule, minimum: 5, goal: 10, result_type: "errors_number")
+      params =
+        string_params_for(:rule, minimum: 5, goal: 10, result_type: "errors_number")
+        |> Map.delete("business_concept_id")
 
       assert %{"errors" => errors} =
                conn
@@ -312,7 +406,9 @@ defmodule TdDqWeb.RuleControllerTest do
     test "renders errors when rule result type is percentage and goal is lower than minimum", %{
       conn: conn
     } do
-      params = string_params_for(:rule, result_type: "percentage", minimum: 50, goal: 10)
+      params =
+        string_params_for(:rule, result_type: "percentage", minimum: 50, goal: 10)
+        |> Map.delete("business_concept_id")
 
       assert %{"errors" => errors} =
                conn
@@ -335,7 +431,7 @@ defmodule TdDqWeb.RuleControllerTest do
       rule: %Rule{id: id} = rule,
       swagger_schema: schema
     } do
-      params = string_params_for(:rule)
+      params = string_params_for(:rule) |> Map.delete("business_concept_id")
 
       assert %{"data" => data} =
                conn
@@ -351,7 +447,7 @@ defmodule TdDqWeb.RuleControllerTest do
       conn: conn,
       rule: %Rule{} = rule
     } do
-      params = string_params_for(:rule)
+      params = string_params_for(:rule) |> Map.delete("business_concept_id")
 
       assert conn
              |> put(Routes.rule_path(conn, :update, rule), rule: params)
@@ -367,14 +463,26 @@ defmodule TdDqWeb.RuleControllerTest do
       rule: %Rule{} = rule,
       domain: domain
     } do
-      params = string_params_for(:rule, domain_id: domain.id)
+      CacheHelpers.insert_concept(%{id: rule.business_concept_id, domain_id: domain.id})
+
+      params =
+        string_params_for(:rule,
+          domain_id: domain.id,
+          business_concept_id: rule.business_concept_id
+        )
 
       assert conn
              |> put(Routes.rule_path(conn, :update, rule), rule: params)
              |> json_response(:ok)
 
       forbidden_rule = insert(:rule)
-      params = string_params_for(:rule, domain_id: domain.id)
+      CacheHelpers.insert_concept(%{id: forbidden_rule.business_concept_id, domain_id: domain.id})
+
+      params =
+        string_params_for(:rule,
+          business_concept_id: forbidden_rule.business_concept_id,
+          domain_id: domain.id
+        )
 
       assert conn
              |> put(Routes.rule_path(conn, :update, forbidden_rule), rule: params)
@@ -392,6 +500,57 @@ defmodule TdDqWeb.RuleControllerTest do
                |> json_response(:unprocessable_entity)
 
       assert errors != %{}
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions: [:manage_quality_rule]
+         ]
+    test "user with permissions can update a business concept rule from a shared domain", %{
+      conn: conn,
+      rule: %Rule{} = rule,
+      domain: domain
+    } do
+      %{id: another_domain_id} = CacheHelpers.insert_domain()
+
+      CacheHelpers.insert_concept(%{
+        id: rule.business_concept_id,
+        domain_id: another_domain_id,
+        shared_to_ids: [domain.id]
+      })
+
+      params =
+        string_params_for(:rule,
+          domain_id: domain.id,
+          business_concept_id: rule.business_concept_id
+        )
+
+      assert conn
+             |> put(Routes.rule_path(conn, :update, rule), rule: params)
+             |> json_response(:ok)
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions: [:manage_quality_rule]
+         ]
+    test "user with permissions can not update a business concept rule from a distinct domain", %{
+      conn: conn,
+      rule: %Rule{} = rule,
+      domain: domain
+    } do
+      %{id: another_domain_id} = CacheHelpers.insert_domain()
+      CacheHelpers.insert_concept(%{id: rule.business_concept_id, domain_id: another_domain_id})
+
+      params =
+        string_params_for(:rule,
+          domain_id: domain.id,
+          business_concept_id: rule.business_concept_id
+        )
+
+      assert conn
+             |> put(Routes.rule_path(conn, :update, rule), rule: params)
+             |> json_response(:forbidden)
     end
   end
 
