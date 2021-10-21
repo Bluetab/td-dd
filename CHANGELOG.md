@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-4211] Subscriptions on data structures include structure note events
+
 ## [4.29.1] 2021-10-06
 
 ### Fixed
