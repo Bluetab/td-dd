@@ -15,9 +15,19 @@ defmodule TdDd.Grants.StatusesTest do
                Statuses.create_grant_request_status(request, "not_valid_status")
     end
 
-    test "creates grant request status with valid status change", %{grant_request: %{id: id} = request} do
+    test "creates grant request status with valid status change", %{
+      grant_request: %{id: id} = request
+    } do
       assert {:ok, %GrantRequestStatus{grant_request_id: ^id, status: "processing"}} =
                Statuses.create_grant_request_status(request, "processing")
+    end
+
+    test "allows to create failed status with a reason if current is processing" do
+      %{id: id} = request = insert(:grant_request, current_status: "processing")
+      reason = "failed reason"
+
+      assert {:ok, %GrantRequestStatus{grant_request_id: ^id, status: "failed", reason: ^reason}} =
+               Statuses.create_grant_request_status(request, "failed", reason)
     end
   end
 end

@@ -30,7 +30,8 @@ defmodule TdDdWeb.GrantRequestControllerTest do
               group: build(:grant_request_group, user_id: user_id),
               data_structure_id: data_structure_id
             ),
-          status: "approved"
+          status: "approved",
+          reason: "because"
         )
 
       assert %{"data" => data} =
@@ -45,6 +46,7 @@ defmodule TdDdWeb.GrantRequestControllerTest do
                  "filters" => _,
                  "inserted_at" => _,
                  "status" => "approved",
+                 "status_reason" => "because",
                  "_embedded" => embedded
                }
              ] = data

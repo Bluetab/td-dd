@@ -18,6 +18,7 @@ defmodule TdDd.Grants.GrantRequest do
     field(:filters, :map)
     field(:metadata, :map)
     field(:current_status, :string, virtual: true)
+    field(:status_reason, :string, virtual: true)
     field(:domain_id, :integer)
     # updated_at is derived from most recent status
     field(:updated_at, :utc_datetime_usec, virtual: true)

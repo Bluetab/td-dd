@@ -163,7 +163,11 @@ defmodule TdDd.Grants.Requests do
       GrantRequest
       |> join(:left, [gr], s in ^status_subquery, on: s.grant_request_id == gr.id)
       |> join(:left, [gr], grg in assoc(gr, :group))
-      |> select_merge([gr, s], %{current_status: s.status, updated_at: s.inserted_at})
+      |> select_merge([gr, s], %{
+        current_status: s.status,
+        status_reason: s.reason,
+        updated_at: s.inserted_at
+      })
 
     clauses
     |> Map.put_new(:preload, [:group, data_structure: :current_version])

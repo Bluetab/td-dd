@@ -11,14 +11,19 @@ defmodule TdDd.Grants.GrantRequestStatus do
   schema "grant_request_status" do
     field(:status, :string)
     field(:previous_status, :string, virtual: true)
+    field(:reason, :string)
 
     belongs_to(:grant_request, GrantRequest)
 
     timestamps(type: :utc_datetime_usec, updated_at: false)
   end
 
-  @valid_statuses ["pending", "approved", "rejected", "processing", "processed"]
-  @valid_status_changes [{"approved", "processing"}, {"processing", "processed"}]
+  @valid_statuses ["pending", "approved", "rejected", "processing", "processed", "failed"]
+  @valid_status_changes [
+    {"approved", "processing"},
+    {"processing", "processed"},
+    {"processing", "failed"}
+  ]
 
   def changeset(%{} = params) do
     changeset(%__MODULE__{}, params)

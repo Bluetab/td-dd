@@ -9,11 +9,14 @@ defmodule TdDdWeb.GrantRequestStatusController do
 
   action_fallback TdDdWeb.FallbackController
 
-  def create(conn, %{"grant_request_id" => id, "status" => status}) do
+  def create(conn, %{"grant_request_id" => id, "status" => status} = params) do
+    status_reason = Map.get(params, "reason")
+
     with claims <- conn.assigns[:current_resource],
          request <- Requests.get_grant_request!(id, claims),
          {:can, true} <- {:can, can?(claims, approve(request))},
-         {:ok, _grant_request_status} <- Statuses.create_grant_request_status(request, status),
+         {:ok, _grant_request_status} <-
+           Statuses.create_grant_request_status(request, status, status_reason),
          updated_request <- Requests.get_grant_request!(id, claims) do
       conn
       |> put_status(:created)

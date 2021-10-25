@@ -13,7 +13,7 @@ defmodule TdDdWeb.GrantRequestStatusControllerTest do
         )
 
       path = Routes.grant_request_status_path(conn, :create, grant_request)
-      params = %{"status" => "processing"}
+      params = %{"status" => "processing", "reason" => "good reason"}
 
       assert %{"errors" => %{"detail" => "Invalid authorization"}} =
                conn
@@ -27,7 +27,11 @@ defmodule TdDdWeb.GrantRequestStatusControllerTest do
                |> post(path, params)
                |> json_response(:created)
 
-      assert %{"id" => ^grant_request_id, "status" => "processing"} = data
+      assert %{
+               "id" => ^grant_request_id,
+               "status" => "processing",
+               "status_reason" => "good reason"
+             } = data
     end
   end
 end
