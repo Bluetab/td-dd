@@ -1101,7 +1101,10 @@ defmodule TdDdWeb.SwaggerDefinitions do
       GrantCSVRequest:
         swagger_schema do
           properties do
-            search_by(:string, "Search by permissions (grants) or user (my grants)", required: true)
+            search_by(:string, "Search by permissions (grants) or user (my grants)",
+              required: true
+            )
+
             header_labels(:object, "header labels", required: true)
           end
 

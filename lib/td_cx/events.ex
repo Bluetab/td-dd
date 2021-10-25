@@ -52,7 +52,7 @@ defmodule TdCx.Events do
   """
   # TODO: unify TdCx.Auth.Claims and TdDd.Auth.Claims
   def create_event(attrs, %{:__struct__ => type, user_id: user_id})
-    when type in [TdCx.Auth.Claims, TdDd.Auth.Claims] do
+      when type in [TdCx.Auth.Claims, TdDd.Auth.Claims] do
     changeset = Event.changeset(%Event{}, attrs)
 
     Multi.new()
