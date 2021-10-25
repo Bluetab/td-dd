@@ -45,6 +45,7 @@ defmodule TdDd.Grants.GrantStructure do
     defp user_full_name(%{full_name: full_name}) do
       full_name
     end
+
     defp user_full_name(_), do: ""
   end
 end

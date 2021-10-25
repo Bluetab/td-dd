@@ -166,6 +166,7 @@ defmodule TdDdWeb.GrantController do
       case search_by do
         "permissions" ->
           Search.search(params, claims, 0, 10_000)
+
         "user" ->
           Search.search_by_user(params, claims, 0, 10_000)
       end
