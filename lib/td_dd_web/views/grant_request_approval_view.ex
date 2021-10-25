@@ -10,7 +10,7 @@ defmodule TdDdWeb.GrantRequestApprovalView do
 
   def render("grant_request_approval.json", %{grant_request_approval: approval}) do
     approval
-    |> Map.take([:id, :role, :is_rejection, :comment])
+    |> Map.take([:id, :role, :is_rejection, :comment, :inserted_at])
     |> put_embeddings(approval)
   end
 
