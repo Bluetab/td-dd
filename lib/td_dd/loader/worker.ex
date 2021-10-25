@@ -166,7 +166,6 @@ defmodule TdDd.Loader.Worker do
   defp start_task(
          {:load, structures_file, fields_file, relations_file, system_id, domain, audit, opts}
        ) do
-
     Task.Supervisor.async_nolink(TdDd.TaskSupervisor, fn ->
       case Reader.read(structures_file, fields_file, relations_file, domain, system_id) do
         {:ok, %{} = records} ->

@@ -114,7 +114,7 @@ defmodule TdDd.DownloadTest do
 
   describe "Grant download" do
     test "to_csv_grant/3 return csv content" do
-      grant_1 =   %{
+      grant_1 = %{
         data_structure_version: %{
           class: "field",
           classes: nil,
@@ -171,10 +171,10 @@ defmodule TdDd.DownloadTest do
       }
 
       assert Download.to_csv_grants(grants, header_labels) ==
-        """
-        User;Structure;Start date;End date;Metadata;Mutable metadata\r
-        #{grant_1.user.full_name};#{grant_1.data_structure_version.name};#{grant_1.start_date};#{grant_1.end_date};\"{\"\"nullable\"\":false,\"\"precision\"\":\"\"1,0\"\",\"\"type\"\":\"\"CHAR\"\"}\";null\r
-        """
+               """
+               User;Structure;Start date;End date;Metadata;Mutable metadata\r
+               #{grant_1.user.full_name};#{grant_1.data_structure_version.name};#{grant_1.start_date};#{grant_1.end_date};\"{\"\"nullable\"\":false,\"\"precision\"\":\"\"1,0\"\",\"\"type\"\":\"\"CHAR\"\"}\";null\r
+               """
     end
   end
 end

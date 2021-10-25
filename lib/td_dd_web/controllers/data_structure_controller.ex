@@ -268,8 +268,7 @@ defmodule TdDdWeb.DataStructureController do
          ids <- Enum.map(results, & &1.id),
          {:ok, %{update_notes: update_notes}} <-
            BulkUpdate.update_all(ids, update_params, claims) do
-      body =
-        Jason.encode!(%{data: %{message: Map.keys(update_notes)}})
+      body = Jason.encode!(%{data: %{message: Map.keys(update_notes)}})
 
       conn
       |> put_resp_content_type("application/json", "utf-8")
