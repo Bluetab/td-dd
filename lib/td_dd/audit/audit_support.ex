@@ -39,6 +39,20 @@ defmodule TdDd.Audit.AuditSupport do
     )
   end
 
+  def publish("structure_note_updated", resource_type, resource_id, user_id, %Changeset{changes: changes, data: data}, data_structure_id) do
+    if map_size(changes) == 0 do
+      {:ok, :unchanged}
+    else
+      Audit.publish(
+        event: "structure_note_updated",
+        resource_type: resource_type,
+        resource_id: resource_id,
+        user_id: user_id,
+        payload: payload(changes, data) |> Map.put(:data_structure_id, data_structure_id)
+      )
+    end
+  end
+
   defp payload(
          %{df_content: new_content} = changes,
          %StructureNote{df_content: old_content} = _data

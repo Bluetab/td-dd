@@ -5,7 +5,7 @@ defmodule TdDd.DataStructures.Audit do
   not currently used.
   """
 
-  import TdDd.Audit.AuditSupport, only: [publish: 1, publish: 4, publish: 5]
+  import TdDd.Audit.AuditSupport, only: [publish: 1, publish: 4, publish: 5, publish: 6]
 
   alias Ecto.Changeset
   alias TdCache.TaxonomyCache
@@ -15,12 +15,13 @@ defmodule TdDd.DataStructures.Audit do
   """
   def structure_note_updated(
         _repo,
-        %{structure_note: %{data_structure_id: id} = structure_note},
+        %{structure_note: %{id: id, data_structure_id: data_structure_id} = structure_note},
         %{} = changeset,
         user_id
       ) do
-    changeset = with_domain_ids(changeset, structure_note)
-    publish("data_structure_updated", "data_structure", id, user_id, changeset)
+    changeset =
+      with_domain_ids(changeset, structure_note)
+    publish("structure_note_updated", "data_structure_note", id, user_id, changeset, data_structure_id)
   end
 
   @doc """
@@ -28,7 +29,7 @@ defmodule TdDd.DataStructures.Audit do
   """
   def structure_note_status_updated(
         _repo,
-        %{structure_note: %{data_structure_id: id} = structure_note, latest: latest},
+        %{structure_note: %{id: id} = structure_note, latest: latest},
         status,
         user_id
       ) do
@@ -36,7 +37,9 @@ defmodule TdDd.DataStructures.Audit do
       structure_note
       |> with_resource(latest)
       |> with_domain_ids(structure_note)
+      |> with_structure_id(structure_note)
       |> Map.take([
+        :data_structure_id,
         :domain_ids,
         :resource
       ])
@@ -49,14 +52,16 @@ defmodule TdDd.DataStructures.Audit do
   """
   def structure_note_deleted(
         _repo,
-        %{structure_note: %{data_structure_id: id} = structure_note, latest: latest},
+        %{structure_note: %{id: id} = structure_note, latest: latest},
         user_id
       ) do
     payload =
       structure_note
       |> with_resource(latest)
       |> with_domain_ids(structure_note)
+      |> with_structure_id(structure_note)
       |> Map.take([
+        :data_structure_id,
         :domain_ids,
         :resource
       ])
@@ -264,6 +269,10 @@ defmodule TdDd.DataStructures.Audit do
   end
 
   defp with_domain_ids(payload, _), do: payload
+
+  defp with_structure_id(%{} = payload, %{data_structure_id: data_structure_id}) do
+    Map.put(payload, :data_structure_id, data_structure_id)
+  end
 
   defp get_domain_ids(domain_id) do
     domain_id
