@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- [TD-4211] Subscriptions on data structures include structure note events
+
 ### Added
 
 - [TD-4213]
