@@ -8,6 +8,7 @@
 
 ### Added
 
+- [TD-4204] Add approvals to grant request view
 - [TD-4213]
   - Allows GrantRequest from status `processed` to `failed`
   - Created `reason` field on GrantRequestStatus
