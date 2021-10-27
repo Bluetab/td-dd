@@ -316,6 +316,10 @@ defmodule TdDd.Grants.Requests do
     %{multi | approval: enrich(approval)}
   end
 
+  defp enrich(items) when is_list(items) do
+    Enum.map(items, &enrich/1)
+  end
+
   defp enrich(%GrantRequestApproval{user_id: user_id, domain_id: domain_id} = approval) do
     with {:ok, user} <- UserCache.get(user_id),
          {:ok, domain} <- DomainCache.get(domain_id) do
@@ -326,15 +330,15 @@ defmodule TdDd.Grants.Requests do
   end
 
   defp enrich(
-         %GrantRequest{group: group, data_structure: %DataStructure{} = data_structure} = request
+         %GrantRequest{group: group, data_structure: data_structure, approvals: approvals} =
+           request
        ) do
-    request
-    |> Map.put(:group, enrich(group))
-    |> Map.put(:data_structure, enrich(data_structure))
-  end
-
-  defp enrich(%GrantRequest{group: group} = request) do
-    %{request | group: enrich(group)}
+    %{
+      request
+      | group: enrich(group),
+        data_structure: enrich(data_structure),
+        approvals: enrich(approvals)
+    }
   end
 
   defp enrich(%GrantRequestGroup{user_id: user_id} = group) do
