@@ -14,10 +14,7 @@ defmodule TdDq.Implementations do
   alias TdDd.Repo
   alias TdDq.Auth.Claims
   alias TdDq.Cache.RuleLoader
-  alias TdDq.Implementations.ConditionRow
-  alias TdDq.Implementations.DatasetRow
   alias TdDq.Implementations.Implementation
-  alias TdDq.Implementations.Structure
   alias TdDq.Rules.Audit
   alias TdDq.Rules.Rule
 
@@ -198,11 +195,17 @@ defmodule TdDq.Implementations do
     |> TdDq.Search.Helpers.get_sources()
   end
 
-  def get_structure_ids(%Implementation{} = implementation) do
+  def get_structures(%Implementation{} = implementation) do
     implementation
     |> Map.take([:dataset, :population, :validations])
     |> Map.values()
-    |> Enum.flat_map(&structure_ids/1)
+    |> Enum.flat_map(&structure/1)
+  end
+
+  def get_structure_ids(%Implementation{} = implementation) do
+    implementation
+    |> get_structures()
+    |> Enum.map(&Map.get(&1, :id))
     |> Enum.uniq()
   end
 
@@ -432,25 +435,34 @@ defmodule TdDq.Implementations do
     end
   end
 
-  defp structure_ids([_ | _] = values), do: Enum.flat_map(values, &structure_ids/1)
-  defp structure_ids(%Structure{id: id}), do: [id]
+  defp structure([_ | _] = values), do: Enum.flat_map(values, &structure/1)
 
-  defp structure_ids(%ConditionRow{structure: structure, value: nil}),
-    do: structure_ids(structure)
+  defp structure(%{structure: structure, value: nil}),
+    do: structure(structure)
 
-  defp structure_ids(%ConditionRow{structure: structure, value: values}),
-    do: structure_ids([structure | values])
+  defp structure(%{structure: structure, value: values}),
+    do: structure([structure | values])
 
-  defp structure_ids(%DatasetRow{structure: structure, clauses: nil}),
-    do: structure_ids(structure)
+  defp structure(%{structure: structure, clauses: nil}),
+    do: structure(structure)
 
-  defp structure_ids(%DatasetRow{structure: structure, clauses: clauses}),
-    do: structure_ids([structure | clauses])
+  defp structure(%{structure: structure, clauses: clauses}),
+    do: structure([structure | clauses])
 
-  defp structure_ids(%{left: %{id: left_id}, right: %{id: right_id}}), do: [left_id, right_id]
-  defp structure_ids(%{value: value}), do: structure_ids(value)
-  defp structure_ids(%{"id" => id}), do: [id]
-  defp structure_ids(_any), do: []
+  defp structure(%{left: left, right: right}),
+    do: [Map.take(left, [:id, :name]), Map.take(right, [:id, :name])]
+
+  defp structure(%{value: value}), do: structure(value)
+
+  defp structure(structure = %{}) when is_map_key(structure, :id),
+    do: [Map.take(structure, [:id, :name])]
+
+  defp structure(%{"id" => id} = structure) do
+    name = Map.get(structure, "name")
+    [%{id: id, name: name}]
+  end
+
+  defp structure(_any), do: []
 
   @spec enrich(Implementation.t() | [Implementation.t()], nil | atom | [atom]) ::
           Implementation.t() | [Implementation.t()]

@@ -421,6 +421,69 @@ defmodule TdDq.ImplementationsTest do
     end
   end
 
+  describe "get_structures/1" do
+    test "returns all structures present in implementation", %{rule: rule} do
+      creation_attrs = %{
+        dataset: [
+          %{structure: %{id: 1, name: "s1"}},
+          %{
+            clauses: [%{left: %{id: 2, name: "s2"}, right: %{id: 3, name: "s3"}}],
+            structure: %{id: 4, name: "s4"}
+          },
+          %{clauses: nil, structure: %{id: 5, name: "s5"}}
+        ],
+        population: [
+          %{
+            operator: %{
+              name: "timestamp_gt_timestamp",
+              value_type: "timestamp"
+            },
+            structure: %{id: 6, name: "s6"},
+            value: [%{raw: "2019-12-02 05:35:00"}]
+          }
+        ],
+        validations: [
+          %{
+            operator: %{
+              name: "timestamp_gt_timestamp",
+              value_type: "timestamp",
+              value_type_filter: "timestamp"
+            },
+            structure: %{id: 7, name: "s7"},
+            value: [%{raw: "2019-12-02 05:35:00"}]
+          },
+          %{
+            operator: %{
+              name: "not_empty"
+            },
+            structure: %{id: 8, name: "s8"},
+            value: nil
+          }
+        ]
+      }
+
+      implementation_key = "rik1"
+
+      rule_implementaton =
+        insert(:implementation,
+          implementation_key: implementation_key,
+          rule: rule,
+          dataset: creation_attrs.dataset,
+          population: creation_attrs.population,
+          validations: creation_attrs.validations
+        )
+
+      structures = Implementations.get_structures(rule_implementaton)
+
+      names =
+        structures
+        |> Enum.sort_by(fn s -> s.id end)
+        |> Enum.map(fn s -> s.name end)
+
+      assert names == ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"]
+    end
+  end
+
   describe "get_structure_ids/1" do
     test "returns ids of all structures present in implementation", %{rule: rule} do
       creation_attrs = %{
