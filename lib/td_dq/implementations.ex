@@ -449,7 +449,7 @@ defmodule TdDq.Implementations do
   defp structure(%{structure: structure, clauses: clauses}),
     do: structure([structure | clauses])
 
-  defp structure(%{left: left, right: right}),
+  defp structure(%{left: left = %{}, right: right = %{}}),
     do: [Map.take(left, [:id, :name]), Map.take(right, [:id, :name])]
 
   defp structure(%{value: value}), do: structure(value)
