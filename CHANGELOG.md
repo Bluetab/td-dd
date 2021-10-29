@@ -13,6 +13,7 @@
   - Allows GrantRequest from status `processed` to `failed`
   - Created `reason` field on GrantRequestStatus
 - [TD-4124] Dependent domain field in td_df_lib
+- [TD-3733] Structure names indexed in implementations
 
 ## [4.30.0] 2021-10-18
 
