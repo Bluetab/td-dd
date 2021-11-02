@@ -104,9 +104,6 @@ config :td_dd, TdDd.Search.Cluster,
     "index.indexing.slowlog.source" => System.get_env("ES_INDEXING_SLOWLOG_SOURCE", "1000")
   }
 
-config :td_dd, TdDdWeb.Endpoint,
-  max_payload_length: System.get_env("MAX_PAYLOAD_LENGTH", "100000000") |> String.to_integer()
-
 config :td_dd, TdDd.DataStructures.HistoryManager,
   history_depth_days:
     System.get_env("CATALOG_HISTORY_DEPTH_DAYS", "")

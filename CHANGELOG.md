@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-3733] Structure names indexed in implementations
+
+## [4.31.0] 2021-11-02
+
 ### Fixed
 
 - [TD-4211] Subscriptions on data structures include structure note events
@@ -13,7 +19,7 @@
   - Allows GrantRequest from status `processed` to `failed`
   - Created `reason` field on GrantRequestStatus
 - [TD-4124] Dependent domain field in td_df_lib
-- [TD-3733] Structure names indexed in implementations
+- [TD-4257] Wrapped `Plug.Parsers` to be configured in runtime
 
 ## [4.30.0] 2021-10-18
 
