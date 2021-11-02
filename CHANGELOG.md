@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-3733] Structure names indexed in implementations
+
 ## [4.31.0] 2021-11-02
 
 ### Fixed
