@@ -15,16 +15,7 @@ defmodule TdDdWeb.Endpoint do
 
   plug(Plug.RequestId)
   plug(Plug.Logger)
-
-  plug(
-    Plug.Parsers,
-    parsers: [:urlencoded, :multipart, :json],
-    pass: ["*/*"],
-    json_decoder: Jason,
-    length:
-      Application.get_env(:td_dd, __MODULE__) |> Keyword.get(:max_payload_length, 100_000_000)
-  )
-
+  plug(TdDdWeb.CustomParsersPlug)
   plug(Plug.MethodOverride)
   plug(Plug.Head)
 
