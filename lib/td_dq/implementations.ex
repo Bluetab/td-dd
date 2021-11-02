@@ -454,7 +454,7 @@ defmodule TdDq.Implementations do
 
   defp structure(%{value: value}), do: structure(value)
 
-  defp structure(structure = %{}) when is_map_key(structure, :id),
+  defp structure(structure = %{id: _id}),
     do: [Map.take(structure, [:id, :name])]
 
   defp structure(%{"id" => id} = structure) do
