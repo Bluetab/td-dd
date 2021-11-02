@@ -88,6 +88,7 @@ defmodule TdDq.Search.Mappings do
       },
       structure_ids: %{type: "long", null_value: -1},
       structure_aliases: %{type: "text", fields: @raw},
+      structure_names: %{type: "text", fields: @raw},
       rule: %{
         properties: %{
           df_name: %{type: "text", fields: @raw},
