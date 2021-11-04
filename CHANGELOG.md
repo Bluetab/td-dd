@@ -1,5 +1,15 @@
 # Changelog
 
+## [4.31.1]
+
+### Added
+
+- [TD-3733] Structure names indexed in implementations
+
+### Fixed
+
+- [TD-4283] Move `max_payload_length` configuration to `releases.exs`
+
 ## [4.31.0] 2021-11-02
 
 ### Fixed

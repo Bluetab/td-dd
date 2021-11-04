@@ -169,7 +169,8 @@ defmodule TdDd.DataStructures.AuditTest do
       data_structure_version: data_structure_version,
       claims: %{user_id: user_id}
     } do
-      %{data_structure: %{id: data_structure_id} = data_structure} = data_structure_version
+      %{data_structure: data_structure} = data_structure_version
+      %{id: data_structure_id} = data_structure
 
       params = %{confidential: true}
 
