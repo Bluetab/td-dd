@@ -1,6 +1,12 @@
 # Changelog
 
-## [4.31.1]
+## [Unreleased]
+
+### Changed
+
+- [TD-4174] `RuleResults` references `RuleImplementation` by its `id` instead of the `implementation_key`
+
+## [4.31.1] 2021-11-04
 
 ### Added
 
