@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-3733] Structure names indexed in implementations
+- [TD-4253] Include modifier in /api/rule_implementations/search
 
 ## [4.31.0] 2021-11-02
 

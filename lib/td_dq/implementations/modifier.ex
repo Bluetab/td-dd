@@ -7,6 +7,7 @@ defmodule TdDq.Implementations.Modifier do
 
   import Ecto.Changeset
 
+  @derive Jason.Encoder
   @primary_key false
   embedded_schema do
     field(:name, :string)
