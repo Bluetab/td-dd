@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- [TD-4216] Add scroll to implementations search
+
 ## [4.31.1]
 
 ### Added
