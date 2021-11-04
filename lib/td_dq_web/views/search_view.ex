@@ -19,6 +19,16 @@ defmodule TdDqWeb.SearchView do
 
   def render("search.json", %{
         implementations: implementations,
+        scroll_id: scroll_id
+      }) do
+    %{
+      data: render_many(implementations, ImplementationView, "implementation.json"),
+      scroll_id: scroll_id
+    }
+  end
+
+  def render("search.json", %{
+        implementations: implementations,
         filters: filters,
         user_permissions: user_permissions
       }) do

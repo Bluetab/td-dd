@@ -23,27 +23,24 @@ defmodule TdDqWeb.ImplementationSearchController do
 
   def create(conn, %{} = params) do
     claims = conn.assigns[:current_resource]
-    page = Map.get(params, "page", 0)
-    size = Map.get(params, "size", 20)
+    %{results: implementations, total: total} = response = do_search(claims, params)
 
-    %{
-      results: implementations,
-      aggregations: aggregations,
-      total: total
-    } =
-      params
-      |> Map.put(:without, ["deleted_at"])
-      |> Map.drop(["page", "size"])
-      |> Search.search(claims, page, size, :implementations)
+    response =
+      search_assigns(response) ++
+        [user_permissions: get_user_permissions(claims, implementations)]
 
     conn
     |> put_resp_header("x-total-count", "#{total}")
     |> put_view(TdDqWeb.SearchView)
-    |> render("search.json",
-      implementations: implementations,
-      filters: aggregations,
-      user_permissions: get_user_permissions(claims, implementations)
-    )
+    |> render("search.json", response)
+  end
+
+  defp search_assigns(%{results: implementations, scroll_id: scroll_id}) do
+    [implementations: implementations, scroll_id: scroll_id]
+  end
+
+  defp search_assigns(%{results: implementations, aggregations: aggregations}) do
+    [implementations: implementations, filters: aggregations]
   end
 
   defp get_user_permissions(%Claims{role: "admin"}, _implementations),
@@ -57,5 +54,21 @@ defmodule TdDqWeb.ImplementationSearchController do
     execute? = Enum.any?(implementations, &can?(claims, execute(&1)))
 
     %{manage: manage?, execute: execute?}
+  end
+
+  defp do_search(claims, params, page \\ 0, size \\ 20)
+
+  defp do_search(_claims, %{"scroll" => _, "scroll_id" => _} = scroll_params, _page, _size) do
+    Search.scroll_implementations(scroll_params)
+  end
+
+  defp do_search(claims, search_params, page, size) do
+    page = Map.get(search_params, "page", page)
+    size = Map.get(search_params, "size", size)
+
+    search_params
+    |> Map.put(:without, ["deleted_at"])
+    |> Map.drop(["page", "size"])
+    |> Search.search(claims, page, size, :implementations)
   end
 end

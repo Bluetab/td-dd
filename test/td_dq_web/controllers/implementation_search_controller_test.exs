@@ -62,4 +62,40 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
       assert %{"execute" => true, "manage" => true} = perms
     end
   end
+
+  describe "search with scroll" do
+    @tag authentication: [role: "admin"]
+    test "return scroll_id and pages results", %{conn: conn, domain: %{id: domain_id}} do
+      rule = insert(:rule, business_concept_id: @business_concept_id, domain_id: domain_id)
+      Enum.each(1..7, fn _ -> insert(:implementation, rule: rule) end)
+
+      assert %{"data" => data, "scroll_id" => scroll_id} =
+               conn
+               |> post(Routes.implementation_search_path(conn, :create), %{
+                 "size" => 5,
+                 "scroll" => "3m"
+               })
+               |> json_response(:ok)
+
+      assert length(data) == 5
+
+      assert %{"data" => data, "scroll_id" => scroll_id} =
+               conn
+               |> post(Routes.implementation_search_path(conn, :create), %{
+                 "scroll_id" => scroll_id,
+                 "scroll" => "3m"
+               })
+               |> json_response(:ok)
+
+      assert length(data) == 3
+
+      assert %{"data" => [], "scroll_id" => _} =
+               conn
+               |> post(Routes.implementation_search_path(conn, :create), %{
+                 "scroll_id" => scroll_id,
+                 "scroll" => "3m"
+               })
+               |> json_response(:ok)
+    end
+  end
 end

@@ -30,6 +30,13 @@ defmodule TdDq.Rules.Search do
     get_filters(permissions, params, index)
   end
 
+  def scroll_implementations(%{"scroll_id" => _, "scroll" => _} = scroll_params) do
+    scroll_params
+    |> Map.take(["scroll_id", "scroll"])
+    |> Search.scroll()
+    |> transform_response()
+  end
+
   def search(params, claims, page \\ 0, size \\ 50, index \\ :rules)
 
   def search(params, %Claims{role: role}, page, size, index) when role in ["admin", "service"] do
@@ -44,7 +51,7 @@ defmodule TdDq.Rules.Search do
       sort: sort,
       aggs: Query.get_aggregation_terms(index)
     }
-    |> do_search(index)
+    |> do_search(index, params)
   end
 
   def search(params, %Claims{} = claims, page, size, index) do
@@ -123,18 +130,29 @@ defmodule TdDq.Rules.Search do
       sort: sort,
       aggs: Query.get_aggregation_terms(index)
     }
-    |> do_search(index)
+    |> do_search(index, params)
   end
 
-  defp do_search(search, index) do
-    %{results: results, aggregations: aggregations, total: total} = Search.search(search, index)
+  defp do_search(search, index, params) do
+    params
+    |> Map.take(["scroll"])
+    |> case do
+      %{"scroll" => _scroll} = query_params ->
+        Search.search(search, query_params, index)
 
+      _ ->
+        Search.search(search, index)
+    end
+    |> transform_response()
+  end
+
+  defp transform_response(%{results: results} = response) do
     results =
       results
       |> Enum.map(&Map.get(&1, "_source"))
       |> Enum.map(&Map.Helpers.atomize_keys/1)
 
-    %{results: results, aggregations: aggregations, total: total}
+    Map.put(response, :results, results)
   end
 
   defp do_rules_execution(user_defined_filters) do

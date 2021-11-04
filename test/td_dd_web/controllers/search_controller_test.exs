@@ -97,7 +97,7 @@ defmodule TdDdWeb.SearchControllerTest do
                conn
                |> post(Routes.search_path(conn, :search_grants), %{
                  "size" => 5,
-                 "scroll" => "1m"
+                 "scroll" => "2m"
                })
                |> json_response(:ok)
 
@@ -107,7 +107,7 @@ defmodule TdDdWeb.SearchControllerTest do
                conn
                |> post(Routes.search_path(conn, :search_grants), %{
                  "scroll_id" => scroll_id,
-                 "scroll" => "1m"
+                 "scroll" => "2m"
                })
                |> json_response(:ok)
 
@@ -117,7 +117,7 @@ defmodule TdDdWeb.SearchControllerTest do
                conn
                |> post(Routes.search_path(conn, :search_grants), %{
                  "scroll_id" => scroll_id,
-                 "scroll" => "1m"
+                 "scroll" => "2m"
                })
                |> json_response(:ok)
     end

@@ -15,6 +15,12 @@ defmodule TdDqWeb.ImplementationView do
     %{data: render_one(implementation, __MODULE__, "implementation.json")}
   end
 
+  def render("implementation.json", %{scroll_id: scroll_id} = assigns) do
+    "implementation.json"
+    |> render(Map.delete(assigns, :scroll_id))
+    |> Map.put(:scroll_id, scroll_id)
+  end
+
   def render("implementation.json", %{
         implementation: %{implementation_type: "raw"} = implementation
       }) do
