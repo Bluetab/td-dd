@@ -14,7 +14,7 @@ defmodule TdDq.Rules.RuleResult do
   alias TdDq.Rules.Rule
 
   @scale 2
-  @valid_result_types Rule.valid_result_types()
+  @valid_result_types Implementation.valid_result_types()
 
   @typedoc "The result of a quality rule execution"
   @type t :: %__MODULE__{}

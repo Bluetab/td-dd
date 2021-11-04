@@ -32,7 +32,10 @@ defmodule TdDqWeb.ImplementationView do
       :df_content,
       :executable,
       :event_type,
-      :event_inserted_at
+      :event_inserted_at,
+      :goal,
+      :minimum,
+      :result_type
     ])
     |> Map.put(
       :raw_content,
@@ -79,7 +82,7 @@ defmodule TdDqWeb.ImplementationView do
   defp add_rule(mapping, %{rule: rule}) when map_size(rule) > 0 do
     rule =
       rule
-      |> Map.take([:active, :goal, :name, :minimum, :result_type, :df_content, :df_name])
+      |> Map.take([:active, :name, :df_content, :df_name])
       |> add_dynamic_content()
 
     Map.put(mapping, :rule, rule)

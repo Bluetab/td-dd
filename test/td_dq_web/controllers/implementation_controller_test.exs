@@ -118,7 +118,10 @@ defmodule TdDqWeb.ImplementationControllerTest do
               structure: %{id: 12_554},
               value: [%{raw: "2019-12-02 05:35:00"}]
             }
-          ]
+          ],
+          result_type: "percentage",
+          minimum: 50,
+          goal: 100
         }
         |> Map.Helpers.stringify_keys()
 
@@ -160,7 +163,10 @@ defmodule TdDqWeb.ImplementationControllerTest do
             population: nil,
             source_id: 88,
             validations: "c.city = 'MADRID'"
-          }
+          },
+          result_type: "percentage",
+          minimum: 50,
+          goal: 100
         }
         |> Map.Helpers.stringify_keys()
 
@@ -195,7 +201,10 @@ defmodule TdDqWeb.ImplementationControllerTest do
             population: nil,
             source_id: 88,
             validations: "c.city = 'MADRID'"
-          }
+          },
+          result_type: "percentage",
+          minimum: 50,
+          goal: 100
         }
         |> Map.Helpers.stringify_keys()
 
@@ -226,7 +235,10 @@ defmodule TdDqWeb.ImplementationControllerTest do
             population: nil,
             source_id: 88,
             validations: "c.city = 'MADRID'"
-          }
+          },
+          result_type: "percentage",
+          minimum: 50,
+          goal: 100
         }
         |> Map.Helpers.stringify_keys()
 
@@ -319,6 +331,52 @@ defmodule TdDqWeb.ImplementationControllerTest do
                conn
                |> post(Routes.implementation_path(conn, :create), rule_implementation: params)
                |> json_response(:unprocessable_entity)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "renders errors when implementation result type is numeric and goal is higher than minimum",
+         %{
+           conn: conn
+         } do
+      rule = insert(:rule)
+
+      params =
+        string_params_for(:implementation,
+          rule_id: rule.id,
+          minimum: 5,
+          goal: 10,
+          result_type: "errors_number"
+        )
+
+      assert %{"errors" => errors} =
+               conn
+               |> post(Routes.implementation_path(conn, :create), rule_implementation: params)
+               |> json_response(:unprocessable_entity)
+
+      assert %{"minimum" => ["must.be.greater.than.or.equal.to.goal"]} = errors
+    end
+
+    @tag authentication: [role: "admin"]
+    test "renders errors when implementation result type is percentage and goal is lower than minimum",
+         %{
+           conn: conn
+         } do
+      rule = insert(:rule)
+
+      params =
+        string_params_for(:implementation,
+          rule_id: rule.id,
+          result_type: "percentage",
+          minimum: 50,
+          goal: 10
+        )
+
+      assert %{"errors" => errors} =
+               conn
+               |> post(Routes.implementation_path(conn, :create), rule_implementation: params)
+               |> json_response(:unprocessable_entity)
+
+      assert %{"goal" => ["must.be.greater.than.or.equal.to.minimum"]} = errors
     end
   end
 

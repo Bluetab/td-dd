@@ -17,6 +17,7 @@ defmodule TdDq.Implementations.Implementation do
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleResult
 
+  @valid_result_types ~w(percentage errors_number deviation)
   @typedoc "A quality rule implementation"
   @type t :: %__MODULE__{}
 
@@ -27,6 +28,9 @@ defmodule TdDq.Implementations.Implementation do
     field(:deleted_at, :utc_datetime)
     field(:df_name, :string)
     field(:df_content, :map)
+    field(:goal, :integer)
+    field(:minimum, :integer)
+    field(:result_type, :string, default: "percentage")
 
     embeds_one(:raw_content, RawContent, on_replace: :delete)
     embeds_many(:dataset, DatasetRow, on_replace: :delete)
@@ -43,6 +47,8 @@ defmodule TdDq.Implementations.Implementation do
     timestamps()
   end
 
+  def valid_result_types, do: @valid_result_types
+
   def changeset(%{} = params) do
     changeset(%__MODULE__{}, params)
   end
@@ -56,12 +62,24 @@ defmodule TdDq.Implementations.Implementation do
       :implementation_type,
       :df_name,
       :df_content,
-      :executable
+      :executable,
+      :goal,
+      :minimum,
+      :result_type
     ])
-    |> validate_required([:executable, :implementation_type, :rule_id])
+    |> validate_required([
+      :executable,
+      :implementation_type,
+      :rule_id,
+      :goal,
+      :minimum,
+      :result_type
+    ])
     |> validate_inclusion(:implementation_type, ["default", "raw"])
+    |> validate_inclusion(:result_type, @valid_result_types)
     |> validate_or_put_implementation_key()
     |> validate_content()
+    |> validate_goal()
     |> foreign_key_constraint(:rule_id)
     |> custom_changeset(implementation)
   end
@@ -104,6 +122,45 @@ defmodule TdDq.Implementations.Implementation do
     end
   end
 
+  defp validate_goal(%{valid?: true} = changeset) do
+    minimum = get_field(changeset, :minimum)
+    goal = get_field(changeset, :goal)
+    result_type = get_field(changeset, :result_type)
+    do_validate_goal(changeset, minimum, goal, result_type)
+  end
+
+  defp validate_goal(changeset), do: changeset
+
+  defp do_validate_goal(changeset, minimum, goal, result_type)
+       when result_type in ["percentage", "deviation"] do
+    changeset
+    |> validate_number(:goal, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
+    |> validate_number(:minimum, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
+    |> minimum_goal_check(minimum, goal, result_type)
+  end
+
+  defp do_validate_goal(changeset, minimum, goal, "errors_number") do
+    changeset
+    |> validate_number(:goal, greater_than_or_equal_to: 0)
+    |> validate_number(:minimum, greater_than_or_equal_to: 0)
+    |> minimum_goal_check(minimum, goal, "errors_number")
+  end
+
+  def minimum_goal_check(changeset, minimum, goal, "percentage") do
+    case minimum <= goal do
+      true -> changeset
+      false -> add_error(changeset, :goal, "must.be.greater.than.or.equal.to.minimum")
+    end
+  end
+
+  def minimum_goal_check(changeset, minimum, goal, result_type)
+      when result_type in ["errors_number", "deviation"] do
+    case minimum >= goal do
+      true -> changeset
+      false -> add_error(changeset, :minimum, "must.be.greater.than.or.equal.to.goal")
+    end
+  end
+
   defp custom_changeset(
          %Changeset{changes: %{implementation_type: "raw"}} = changeset,
          _implementation
@@ -143,7 +200,6 @@ defmodule TdDq.Implementations.Implementation do
   defimpl Elasticsearch.Document do
     alias TdCache.TemplateCache
     alias TdDfLib.Format
-    alias TdDq.Rules.Rule
     alias TdDq.Rules.RuleResults
     alias TdDq.Search.Helpers
 
@@ -159,18 +215,18 @@ defmodule TdDq.Implementations.Implementation do
       :updated_at,
       :validations,
       :df_name,
-      :executable
+      :executable,
+      :goal,
+      :minimum,
+      :result_type
     ]
     @rule_keys [
       :active,
-      :goal,
       :id,
-      :minimum,
       :name,
       :version,
       :df_name,
       :df_content,
-      :result_type,
       :domain_id
     ]
 
@@ -228,15 +284,15 @@ defmodule TdDq.Implementations.Implementation do
       %{result_text: "quality_result.failed", date: inserted_at}
     end
 
-    defp get_execution_result_info(%Implementation{rule: rule} = implementation, _quality_event) do
+    defp get_execution_result_info(%Implementation{} = implementation, _quality_event) do
       case RuleResults.get_latest_rule_result(implementation) do
         nil -> %{result_text: nil}
-        result -> build_result_info(rule, result)
+        result -> build_result_info(implementation, result)
       end
     end
 
     defp build_result_info(
-           %Rule{minimum: minimum, goal: goal, result_type: result_type},
+           %Implementation{minimum: minimum, goal: goal, result_type: result_type},
            rule_result
          ) do
       Map.new()

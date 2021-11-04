@@ -10,7 +10,6 @@ defmodule TdDq.Rules.RuleResults.BulkLoad do
   alias TdDq.Cache.RuleLoader
   alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Audit
-  alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleResult
   alias TdDq.Rules.RuleResults
 
@@ -50,12 +49,12 @@ defmodule TdDq.Rules.RuleResults.BulkLoad do
   end
 
   defp bulk_insert(records) do
-    rules_by_implementation_key = rules_by_implementation_key(records)
+    implementation_by_key = implementation_by_key(records)
 
     records
     |> Enum.with_index(2)
     |> Enum.map(fn {params, row_number} -> Map.put(params, "row_number", row_number) end)
-    |> Enum.map(&changeset(&1, rules_by_implementation_key))
+    |> Enum.map(&changeset(&1, implementation_by_key))
     |> Enum.reduce_while([], &reduce_changesets/2)
     |> case do
       ids when is_list(ids) -> {:ok, ids}
@@ -63,7 +62,7 @@ defmodule TdDq.Rules.RuleResults.BulkLoad do
     end
   end
 
-  defp rules_by_implementation_key(records) do
+  defp implementation_by_key(records) do
     keys =
       records
       |> Enum.map(&Map.get(&1, "implementation_key"))
@@ -72,15 +71,15 @@ defmodule TdDq.Rules.RuleResults.BulkLoad do
 
     Implementation
     |> where([ri], ri.implementation_key in ^keys)
-    |> join(:inner, [ri], rule in assoc(ri, :rule))
-    |> select([ri, r], {ri.implementation_key, r})
+    |> select([ri], {ri.implementation_key, ri})
     |> Repo.all()
     |> Map.new()
   end
 
-  defp changeset(%{} = params, %{} = rules_by_implementation_key) do
+  defp changeset(%{} = params, %{} = implementation_by_key) do
     with %{"implementation_key" => key} <- params,
-         %Rule{result_type: type, id: rule_id} <- Map.get(rules_by_implementation_key, key) do
+         %Implementation{result_type: type, rule_id: rule_id} <-
+           Map.get(implementation_by_key, key) do
       RuleResult.changeset(%RuleResult{result_type: type, rule_id: rule_id}, params)
     else
       _ -> RuleResult.changeset(params)

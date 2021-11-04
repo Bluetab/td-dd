@@ -59,7 +59,7 @@ defmodule TdDq.Implementations.ImplementationTest do
 
     test "validates df_content is valid", %{template_name: template_name} do
       invalid_content = %{"list" => "foo", "string" => "whatever"}
-      params = params_for(:rule, df_name: template_name, df_content: invalid_content)
+      params = params_for(:implementation, df_name: template_name, df_content: invalid_content)
       assert %{valid?: false, errors: errors} = Implementation.changeset(params)
       assert {"invalid content", _detail} = errors[:df_content]
     end
@@ -69,6 +69,96 @@ defmodule TdDq.Implementations.ImplementationTest do
       params = string_params_for(:implementation, rule_id: rule_id, implementation_key: "foo")
       assert %{valid?: true} = changeset = Implementation.changeset(params)
       assert Changeset.get_field(changeset, :executable)
+    end
+
+    test "validates result_type value" do
+      rule = insert(:rule)
+      params = params_for(:implementation, result_type: "foo", rule: rule)
+      assert %{valid?: false, errors: errors} = Implementation.changeset(params)
+      assert {_, [validation: :inclusion, enum: _valid_values]} = errors[:result_type]
+    end
+
+    test "validates goal and minimum are between 0 and 100 if result_type is percentage" do
+      rule = insert(:rule)
+
+      params =
+        params_for(:implementation, result_type: "percentage", goal: 101, minimum: -1, rule: rule)
+
+      assert %{valid?: false, errors: errors} = Implementation.changeset(params)
+      assert {_, [validation: :number, kind: :less_than_or_equal_to, number: 100]} = errors[:goal]
+
+      assert {_, [validation: :number, kind: :greater_than_or_equal_to, number: 0]} =
+               errors[:minimum]
+    end
+
+    test "validates goal and minimum are between 0 and 100 if result_type is deviation" do
+      rule = insert(:rule)
+
+      params =
+        params_for(:implementation, result_type: "deviation", goal: -1, minimum: 101, rule: rule)
+
+      assert %{valid?: false, errors: errors} = Implementation.changeset(params)
+
+      assert {_, [validation: :number, kind: :less_than_or_equal_to, number: 100]} =
+               errors[:minimum]
+
+      assert {_, [validation: :number, kind: :greater_than_or_equal_to, number: 0]} =
+               errors[:goal]
+    end
+
+    test "validates goal and minimum >= 0 if result_type is errors_number" do
+      rule = insert(:rule)
+
+      params =
+        params_for(:implementation,
+          result_type: "errors_number",
+          goal: -1,
+          minimum: -1,
+          rule: rule
+        )
+
+      assert %{valid?: false, errors: errors} = Implementation.changeset(params)
+
+      assert {_, [validation: :number, kind: :greater_than_or_equal_to, number: 0]} =
+               errors[:goal]
+
+      assert {_, [validation: :number, kind: :greater_than_or_equal_to, number: 0]} =
+               errors[:minimum]
+    end
+
+    test "validates goal >= minimum if result_type is percentage" do
+      rule = insert(:rule)
+
+      params =
+        params_for(:implementation, result_type: "percentage", goal: 30, minimum: 40, rule: rule)
+
+      assert %{valid?: false, errors: errors} = Implementation.changeset(params)
+      assert errors[:goal] == {"must.be.greater.than.or.equal.to.minimum", []}
+    end
+
+    test "validates minimum >= goal if result_type is deviation" do
+      rule = insert(:rule)
+
+      params =
+        params_for(:implementation, result_type: "deviation", goal: 80, minimum: 70, rule: rule)
+
+      assert %{valid?: false, errors: errors} = Implementation.changeset(params)
+      assert errors[:minimum] == {"must.be.greater.than.or.equal.to.goal", []}
+    end
+
+    test "validates minimum >= goal if result_type is errors_numer" do
+      rule = insert(:rule)
+
+      params =
+        params_for(:implementation,
+          result_type: "errors_number",
+          goal: 400,
+          minimum: 30,
+          rule: rule
+        )
+
+      assert %{valid?: false, errors: errors} = Implementation.changeset(params)
+      assert errors[:minimum] == {"must.be.greater.than.or.equal.to.goal", []}
     end
   end
 end

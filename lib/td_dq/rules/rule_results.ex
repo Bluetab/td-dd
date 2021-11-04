@@ -47,11 +47,9 @@ defmodule TdDq.Rules.RuleResults do
 
   """
   def create_rule_result(
-        %Implementation{implementation_key: key, rule_id: rule_id} = impl,
+        %Implementation{implementation_key: key, rule_id: rule_id, result_type: result_type},
         params \\ %{}
       ) do
-    %{rule: %{result_type: result_type}} = Repo.preload(impl, :rule)
-
     changeset =
       RuleResult.changeset(
         %RuleResult{implementation_key: key, result_type: result_type, rule_id: rule_id},
@@ -127,10 +125,16 @@ defmodule TdDq.Rules.RuleResults do
         [res, _, _],
         map(res, ^~w(id implementation_key date result errors records params inserted_at)a)
       )
-      |> select_merge([_, i, _], %{implementation_id: i.id, rule_id: i.rule_id})
+      |> select_merge([_, i, _], %{
+        implementation_id: i.id,
+        rule_id: i.rule_id,
+        goal: i.goal,
+        minimum: i.minimum,
+        result_type: i.result_type
+      })
       |> select_merge(
         [_, _, rule],
-        map(rule, ^~w(domain_id business_concept_id goal name minimum result_type)a)
+        map(rule, ^~w(domain_id business_concept_id name)a)
       )
       |> where([res], res.id in ^ids)
       |> order_by([res], res.id)

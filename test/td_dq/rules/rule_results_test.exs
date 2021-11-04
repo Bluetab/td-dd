@@ -107,10 +107,10 @@ defmodule TdDq.RuleResultsTest do
     end
 
     test "creates a (result_type errors_number) rule result with valid result" do
-      rule = insert(:rule, result_type: "errors_number")
+      rule = insert(:rule)
 
       %{implementation_key: implementation_key} =
-        implementation = insert(:implementation, rule: rule)
+        implementation = insert(:implementation, rule: rule, result_type: "errors_number")
 
       errors = 123
       records = 1000
@@ -132,10 +132,10 @@ defmodule TdDq.RuleResultsTest do
     end
 
     test "creates a (result_type deviation) rule result with valid result" do
-      rule = insert(:rule, result_type: "deviation")
+      rule = insert(:rule)
 
       %{implementation_key: implementation_key} =
-        implementation = insert(:implementation, rule: rule)
+        implementation = insert(:implementation, rule: rule, result_type: "deviation")
 
       errors = 210
       records = 1000
