@@ -56,7 +56,19 @@ defmodule TdDq.Search do
 
   def scroll(scroll_params) do
     Logger.debug(fn -> "Scroll: #{inspect(scroll_params)}" end)
-    response = Elasticsearch.post(Cluster, "_search/scroll", scroll_params)
+
+    [opts, scroll_params] =
+      scroll_params
+      |> Map.take(["opts"])
+      |> case do
+        nil ->
+          [%{}, scroll_params]
+
+        %{"opts" => opts} ->
+          [opts, Map.drop(scroll_params, ["opts"])]
+      end
+
+    response = Elasticsearch.post(Cluster, "_search/scroll", scroll_params, opts)
 
     case response do
       {:ok, %{"_scroll_id" => scroll_id, "hits" => %{"hits" => results, "total" => total}} = res} ->

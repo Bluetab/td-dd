@@ -73,7 +73,7 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
                conn
                |> post(Routes.implementation_search_path(conn, :create), %{
                  "size" => 5,
-                 "scroll" => "3m"
+                 "scroll" => "1m"
                })
                |> json_response(:ok)
 
@@ -83,7 +83,8 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
                conn
                |> post(Routes.implementation_search_path(conn, :create), %{
                  "scroll_id" => scroll_id,
-                 "scroll" => "3m"
+                 "scroll" => "1m",
+                 "opts" => %{"index" => "implementations"}
                })
                |> json_response(:ok)
 
@@ -93,7 +94,8 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
                conn
                |> post(Routes.implementation_search_path(conn, :create), %{
                  "scroll_id" => scroll_id,
-                 "scroll" => "3m"
+                 "scroll" => "1m",
+                 "opts" => %{"index" => "implementations"}
                })
                |> json_response(:ok)
     end

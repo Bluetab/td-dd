@@ -32,7 +32,7 @@ defmodule TdDq.Rules.Search do
 
   def scroll_implementations(%{"scroll_id" => _, "scroll" => _} = scroll_params) do
     scroll_params
-    |> Map.take(["scroll_id", "scroll"])
+    |> Map.take(["scroll_id", "scroll", "opts"])
     |> Search.scroll()
     |> transform_response()
   end
