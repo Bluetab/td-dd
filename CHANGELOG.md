@@ -3,13 +3,13 @@
 ## [Unreleased]
 
 - [TD-4216] Add scroll to implementations search
+- [TD-4253] Include modifier in `/api/rule_implementations/search`
 
 ## [4.31.1]
 
 ### Added
 
 - [TD-3733] Structure names indexed in implementations
-- [TD-4253] Include modifier in `/api/rule_implementations/search`
 
 ### Fixed
 
