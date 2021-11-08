@@ -39,7 +39,14 @@ defmodule TdDd.Audit.AuditSupport do
     )
   end
 
-  def publish("structure_note_updated", resource_type, resource_id, user_id, %Changeset{changes: changes, data: data}, data_structure_id) do
+  def publish(
+        "structure_note_updated",
+        resource_type,
+        resource_id,
+        user_id,
+        %Changeset{changes: changes, data: data},
+        data_structure_id
+      ) do
     if map_size(changes) == 0 do
       {:ok, :unchanged}
     else
