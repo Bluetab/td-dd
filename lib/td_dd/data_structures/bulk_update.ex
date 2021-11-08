@@ -18,7 +18,12 @@ defmodule TdDd.DataStructures.BulkUpdate do
   alias TdDfLib.Format
   alias TdDfLib.Templates
 
-  def update_all(ids, %{"df_content" => content}, %Claims{user_id: user_id} = claims, auto_publish) do
+  def update_all(
+        ids,
+        %{"df_content" => content},
+        %Claims{user_id: user_id} = claims,
+        auto_publish
+      ) do
     params = %{"df_content" => content, "last_change_by" => user_id}
     Logger.info("Updating #{length(ids)} data structures...")
 
@@ -174,7 +179,10 @@ defmodule TdDd.DataStructures.BulkUpdate do
     data_structures = DataStructures.list_data_structures(id: {:in, ids})
 
     Multi.new()
-    |> Multi.run(:update_notes, &bulk_update_notes(&1, &2, data_structures, params, user_id, auto_publish))
+    |> Multi.run(
+      :update_notes,
+      &bulk_update_notes(&1, &2, data_structures, params, user_id, auto_publish)
+    )
     |> Repo.transaction()
   end
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-4099] Add source events subscriptions
+
 ## [4.31.1]
 
 ### Added
