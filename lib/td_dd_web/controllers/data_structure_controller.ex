@@ -258,17 +258,19 @@ defmodule TdDdWeb.DataStructureController do
         "bulk_update_request" => %{
           "search_params" => search_params,
           "update_attributes" => update_params
-        }
+        } = bulk_update_request
       }) do
     claims = conn.assigns[:current_resource]
     permission = conn.assigns[:search_permission]
+    auto_publish = bulk_update_request |> Map.get("auto_publish", false)
 
     with {:can, true} <- {:can, can?(claims, create(BulkUpdate))},
          %{results: results} <- search_all_structures(claims, permission, search_params),
          ids <- Enum.map(results, & &1.id),
          {:ok, %{update_notes: update_notes}} <-
-           BulkUpdate.update_all(ids, update_params, claims) do
-      body = Jason.encode!(%{data: %{message: Map.keys(update_notes)}})
+           BulkUpdate.update_all(ids, update_params, claims, auto_publish) do
+      body =
+        Jason.encode!(%{data: %{message: Map.keys(update_notes)}})
 
       conn
       |> put_resp_content_type("application/json", "utf-8")

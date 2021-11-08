@@ -18,12 +18,12 @@ defmodule TdDd.DataStructures.BulkUpdate do
   alias TdDfLib.Format
   alias TdDfLib.Templates
 
-  def update_all(ids, %{"df_content" => content}, %Claims{user_id: user_id} = claims) do
+  def update_all(ids, %{"df_content" => content}, %Claims{user_id: user_id} = claims, auto_publish) do
     params = %{"df_content" => content, "last_change_by" => user_id}
     Logger.info("Updating #{length(ids)} data structures...")
 
     Timer.time(
-      fn -> do_update(ids, params, claims) end,
+      fn -> do_update(ids, params, claims, auto_publish) end,
       fn ms, _ -> "Data structures updated in #{ms}ms" end
     )
   end
@@ -170,26 +170,23 @@ defmodule TdDd.DataStructures.BulkUpdate do
      })}
   end
 
-  defp do_update(ids, %{} = params, %Claims{user_id: user_id}) do
+  defp do_update(ids, %{} = params, %Claims{user_id: user_id}, auto_publish) do
     data_structures = DataStructures.list_data_structures(id: {:in, ids})
 
     Multi.new()
-    |> Multi.run(:update_notes, &bulk_update_notes(&1, &2, data_structures, params, user_id))
+    |> Multi.run(:update_notes, &bulk_update_notes(&1, &2, data_structures, params, user_id, auto_publish))
     |> Repo.transaction()
   end
 
-  defp bulk_update_notes(_repo, _changes_so_far, data_structures, params, user_id) do
+  defp bulk_update_notes(_repo, _changes_so_far, data_structures, params, user_id, auto_publish) do
     data_structures
-    |> Enum.map(&update_structure_notes(&1, params, user_id))
+    |> Enum.map(&update_structure_notes(&1, params, user_id, auto_publish))
     |> Enum.reduce_while(%{}, &reduce_notes_results/2)
     |> case do
       %{} = res -> {:ok, res}
       error -> error
     end
   end
-
-  defp update_structure_notes(data_structure, params, user_id),
-    do: update_structure_notes(data_structure, params, user_id, false)
 
   defp update_structure_notes(data_structure, params, user_id, auto_publish) do
     case StructureNotesWorkflow.create_or_update(data_structure, params, user_id, auto_publish) do
