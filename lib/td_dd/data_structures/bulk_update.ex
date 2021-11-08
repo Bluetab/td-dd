@@ -188,9 +188,6 @@ defmodule TdDd.DataStructures.BulkUpdate do
     end
   end
 
-  defp update_structure_notes(data_structure, params, user_id),
-    do: update_structure_notes(data_structure, params, user_id, false)
-
   defp update_structure_notes(data_structure, params, user_id, auto_publish) do
     case StructureNotesWorkflow.create_or_update(data_structure, params, user_id, auto_publish) do
       {:ok, structure_note} -> {:ok, structure_note}

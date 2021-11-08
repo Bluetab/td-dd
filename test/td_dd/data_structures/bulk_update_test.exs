@@ -136,6 +136,28 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
              |> Enum.all?(&(&1 == @valid_content))
     end
 
+    test "update and publish all data structures with valid data", %{type: type} do
+      claims = build(:claims)
+
+      ids =
+        1..10
+        |> Enum.map(fn _ -> valid_structure_note(type, df_content: %{"string" => "foo"}) end)
+        |> Enum.map(& &1.data_structure_id)
+
+      assert {:ok, %{update_notes: update_notes}} =
+               BulkUpdate.update_all(ids, @valid_params, claims, true)
+
+      assert Map.keys(update_notes) <|> ids
+
+      latest_structure_notes = Enum.map(ids, &DataStructures.get_latest_structure_note/1)
+      assert latest_structure_notes
+        |> Enum.map(& &1.df_content)
+        |> Enum.all?(&(&1 == @valid_content))
+      assert latest_structure_notes
+        |> Enum.map(& &1.status)
+        |> Enum.all?(&(&1 == :published))
+    end
+
     test "ignores unchanged data structures", %{type: type} do
       claims = build(:claims)
       fixed_datetime = ~N[2020-01-01 00:00:00]
