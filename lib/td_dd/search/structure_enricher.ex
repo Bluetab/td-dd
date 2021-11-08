@@ -22,7 +22,7 @@ defmodule TdDd.Search.StructureEnricher do
   def refresh(opts \\ []) do
     case Process.whereis(__MODULE__) do
       nil -> {:error, :not_started}
-      pid -> GenServer.call(pid, :refresh, Keyword.get(opts, :timeout, 10_000))
+      pid -> GenServer.call(pid, :refresh, Keyword.get(opts, :timeout, 60_000))
     end
   end
 
