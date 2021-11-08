@@ -4,7 +4,7 @@
 
 ### Added
 
-- [TD-4099] Add source eventes subscriptions
+- [TD-4099] Add source events subscriptions
 
 ## [4.31.1]
 

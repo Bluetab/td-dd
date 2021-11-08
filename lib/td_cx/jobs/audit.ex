@@ -5,7 +5,6 @@ defmodule TdCx.Jobs.Audit do
   not currently used.
   """
 
-  alias TdDd.Repo
   import TdCx.Audit.AuditSupport, only: [publish: 5]
 
   @doc """
