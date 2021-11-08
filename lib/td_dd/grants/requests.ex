@@ -380,6 +380,7 @@ defmodule TdDd.Grants.Requests do
          user_roles
        )
        when is_list(approvals) do
+
     user_roles_on_domain = Map.get(user_roles, domain_id, MapSet.new([]))
 
     current_approved =
@@ -396,5 +397,7 @@ defmodule TdDd.Grants.Requests do
     %{grant_request | pending_roles: pending_roles}
   end
 
-  defp with_missing_roles(grant_request, _, _), do: grant_request
+  defp with_missing_roles(grant_request, _, _) do
+    grant_request
+  end
 end
