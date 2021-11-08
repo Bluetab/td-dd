@@ -1,6 +1,17 @@
 # Changelog
 
-## [Unreleased]
+## [4.31.1]
+
+### Added
+
+- [TD-3733] Structure names indexed in implementations
+- [TD-4253] Include modifier in `/api/rule_implementations/search`
+
+### Fixed
+
+- [TD-4283] Move `max_payload_length` configuration to `releases.exs`
+
+## [4.31.0] 2021-11-02
 
 ### Fixed
 
@@ -13,6 +24,7 @@
   - Allows GrantRequest from status `processed` to `failed`
   - Created `reason` field on GrantRequestStatus
 - [TD-4124] Dependent domain field in td_df_lib
+- [TD-4257] Wrapped `Plug.Parsers` to be configured in runtime
 
 ## [4.30.0] 2021-10-18
 

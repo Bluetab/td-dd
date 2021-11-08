@@ -182,6 +182,7 @@ defmodule TdDq.Implementations.Implementation do
 
     @impl Elasticsearch.Document
     def encode(%Implementation{rule: rule, id: implementation_id} = implementation) do
+      implementation = Implementations.enrich_implementation_structures(implementation)
       quality_event = QualityEvents.get_event_by_imp(implementation_id)
       confidential = Helpers.confidential?(rule)
       bcv = Helpers.get_business_concept_version(rule)
@@ -190,7 +191,9 @@ defmodule TdDq.Implementations.Implementation do
       domain_ids = Helpers.get_domain_ids(domain)
       domain_parents = Helpers.get_domain_parents(domain)
       updated_by = Helpers.get_user(rule.updated_by)
-      structure_ids = Implementations.get_structure_ids(implementation)
+      structures = Implementations.get_structures(implementation)
+      structure_ids = get_structure_ids(structures)
+      structure_names = get_structure_names(structures)
       structure_aliases = Implementations.get_sources(implementation)
 
       template = TemplateCache.get_by_name!(implementation.df_name) || %{content: []}
@@ -201,7 +204,6 @@ defmodule TdDq.Implementations.Implementation do
         |> Format.search_values(template)
 
       implementation
-      |> Implementations.enrich_implementation_structures()
       |> Map.take(@implementation_keys)
       |> transform_dataset()
       |> transform_population()
@@ -214,6 +216,7 @@ defmodule TdDq.Implementations.Implementation do
       |> Map.put(:execution_result_info, execution_result_info)
       |> Map.put(:domain_ids, domain_ids)
       |> Map.put(:structure_ids, structure_ids)
+      |> Map.put(:structure_names, structure_names)
       |> Map.put(:domain_parents, domain_parents)
       |> Map.put(:current_business_concept_version, bcv)
       |> Map.put(:_confidential, confidential)
@@ -294,6 +297,7 @@ defmodule TdDq.Implementations.Implementation do
       |> Map.put(:operator, get_operator_fields(Map.get(row, :operator, %{})))
       |> Map.put(:structure, get_structure_fields(Map.get(row, :structure, %{})))
       |> Map.put(:value, Map.get(row, :value, []))
+      |> Map.put(:modifier, Map.get(row, :modifier, []))
       |> with_population(row)
     end
 
@@ -330,6 +334,19 @@ defmodule TdDq.Implementations.Implementation do
 
       rule = Map.put(rule, :df_content, df_content)
       Map.put(data, :rule, Map.take(rule, @rule_keys))
+    end
+
+    defp get_structure_ids(structures) do
+      structures
+      |> Enum.map(&Map.get(&1, :id))
+      |> Enum.uniq()
+    end
+
+    defp get_structure_names(structures) do
+      structures
+      |> Enum.map(&Map.get(&1, :name))
+      |> Enum.filter(& &1)
+      |> Enum.uniq()
     end
   end
 end
