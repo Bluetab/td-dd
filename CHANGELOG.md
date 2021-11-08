@@ -19,6 +19,7 @@
 
 ### Added
 
+- [TD-4128] Structures bulk update auto_publish notes parameter
 - [TD-4204] Add approvals to grant request view
 - [TD-4213]
   - Allows GrantRequest from status `processed` to `failed`
