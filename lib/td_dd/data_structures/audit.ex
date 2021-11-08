@@ -19,9 +19,16 @@ defmodule TdDd.DataStructures.Audit do
         %{} = changeset,
         user_id
       ) do
-    changeset =
-      with_domain_ids(changeset, structure_note)
-    publish("structure_note_updated", "data_structure_note", id, user_id, changeset, data_structure_id)
+    changeset = with_domain_ids(changeset, structure_note)
+
+    publish(
+      "structure_note_updated",
+      "data_structure_note",
+      id,
+      user_id,
+      changeset,
+      data_structure_id
+    )
   end
 
   @doc """
