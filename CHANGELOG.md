@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [4.31.2] 2021-11-09
 
 ### Added
 
@@ -11,7 +11,7 @@
 - [TD-4280] Increased default timeout on `StructureEnricher.refresh/0` to 60
   seconds
 
-## [4.31.1]
+## [4.31.1] 2021-11-04
 
 ### Added
 
