@@ -158,7 +158,7 @@ defmodule TdDq.Search.Mappings do
         }
       },
       population: get_condition_mappings(),
-      validations: get_condition_mappings([:operator, :structure, :value, :population]),
+      validations: get_condition_mappings([:operator, :structure, :value, :population, :modifier]),
       df_name: %{type: "text", fields: %{raw: %{type: "keyword"}}},
       df_content: content_mappings,
       executable: %{type: "boolean"}
@@ -254,7 +254,7 @@ defmodule TdDq.Search.Mappings do
     }
   end
 
-  defp get_condition_mappings(opts \\ [:operator, :structure, :value]) do
+  defp get_condition_mappings(opts \\ [:operator, :structure, :value, :modifier]) do
     properties =
       %{
         operator: %{
@@ -270,7 +270,13 @@ defmodule TdDq.Search.Mappings do
         value: %{
           type: "object",
           enabled: false
-        }
+        },
+        modifier: %{
+          properties: %{
+            name: %{type: "text", fields: @raw},
+            params: %{type: "object"}
+          }
+        },
       }
       |> put_population(opts)
       |> Map.take(opts)

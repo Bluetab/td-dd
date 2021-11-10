@@ -5,12 +5,23 @@
 ### Changed
 
 - [TD-4174] `RuleResults` references `RuleImplementation` by its `id` instead of the `implementation_key`
+## [4.31.2] 2021-11-09
+
+### Added
+
+- [TD-4099] Add source events subscriptions
+
+### Changed
+
+- [TD-4280] Increased default timeout on `StructureEnricher.refresh/0` to 60
+  seconds
 
 ## [4.31.1] 2021-11-04
 
 ### Added
 
 - [TD-3733] Structure names indexed in implementations
+- [TD-4253] Include modifier in `/api/rule_implementations/search`
 
 ### Fixed
 
@@ -24,6 +35,7 @@
 
 ### Added
 
+- [TD-4128] Structures bulk update auto_publish notes parameter
 - [TD-4204] Add approvals to grant request view
 - [TD-4213]
   - Allows GrantRequest from status `processed` to `failed`
