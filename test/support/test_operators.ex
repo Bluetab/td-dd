@@ -10,6 +10,7 @@ defmodule TdDd.TestOperators do
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestGroup
   alias TdDq.Implementations.Implementation
+  alias TdDq.Rules.RuleResult
 
   def a <~> b, do: approximately_equal(a, b)
   def a <|> b, do: approximately_equal(sorted(a), sorted(b))
@@ -74,6 +75,11 @@ defmodule TdDd.TestOperators do
   ## Equality test for rule implementation without comparing Ecto associations.
   defp approximately_equal(%Implementation{} = a, %Implementation{} = b) do
     Map.drop(a, [:rule]) == Map.drop(b, [:rule])
+  end
+
+  ## Equality test for rule result without comparing Ecto associations.
+  defp approximately_equal(%RuleResult{} = a, %RuleResult{} = b) do
+    Map.drop(a, [:implementation]) == Map.drop(b, [:implementation])
   end
 
   defp approximately_equal(%Grant{} = a, %Grant{} = b) do
