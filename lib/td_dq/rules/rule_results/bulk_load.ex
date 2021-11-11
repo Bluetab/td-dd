@@ -78,11 +78,11 @@ defmodule TdDq.Rules.RuleResults.BulkLoad do
 
   defp changeset(%{} = params, %{} = implementation_by_key) do
     with %{"implementation_key" => key} <- params,
-         %Implementation{result_type: type, rule_id: rule_id} <-
+         %Implementation{result_type: type, rule_id: rule_id} = impl <-
            Map.get(implementation_by_key, key) do
-      RuleResult.changeset(%RuleResult{result_type: type, rule_id: rule_id}, params)
+      RuleResult.changeset(%RuleResult{result_type: type, rule_id: rule_id}, impl, params)
     else
-      _ -> RuleResult.changeset(params)
+      _ -> RuleResult.changeset(nil, params)
     end
   end
 

@@ -101,5 +101,7 @@ defmodule TdDd.Canada.DataStructureAbilities do
 
   def can?(%Claims{}, _action, DataStructure), do: false
 
-  def can?(_claims, _action, _resource), do: false
+  def can?(_claims, _action, _resource) do
+    false
+  end
 end

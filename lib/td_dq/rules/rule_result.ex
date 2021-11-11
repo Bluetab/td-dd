@@ -20,7 +20,6 @@ defmodule TdDq.Rules.RuleResult do
   @type t :: %__MODULE__{}
 
   schema "rule_results" do
-    field(:implementation_key, :string)
     field(:date, :utc_datetime)
     field(:result, :decimal, precision: 5, scale: @scale)
     field(:errors, :integer)
@@ -30,11 +29,7 @@ defmodule TdDq.Rules.RuleResult do
     field(:result_type, :string)
     field(:details, :map, default: %{})
 
-    has_one(:implementation, Implementation,
-      foreign_key: :implementation_key,
-      references: :implementation_key
-    )
-
+    belongs_to(:implementation, Implementation)
     belongs_to(:rule, Rule)
 
     has_many(:execution, Execution, foreign_key: :result_id)
@@ -42,14 +37,13 @@ defmodule TdDq.Rules.RuleResult do
     timestamps()
   end
 
-  def changeset(%{} = params) do
-    changeset(%__MODULE__{}, params)
+  def changeset(implementation, %{} = params) do
+    changeset(%__MODULE__{}, implementation, params)
   end
 
-  def changeset(%__MODULE__{} = struct, params) do
+  def changeset(%__MODULE__{} = struct, implementation, params) do
     struct
     |> cast(params, [
-      :implementation_key,
       :result,
       :errors,
       :records,
@@ -58,11 +52,12 @@ defmodule TdDq.Rules.RuleResult do
       :result_type,
       :details
     ])
+    |> put_assoc(:implementation, implementation)
     |> put_date()
     |> put_result()
     |> validate_inclusion(:result_type, @valid_result_types)
     |> update_change(:result, &Decimal.round(&1, @scale, :floor))
-    |> validate_required([:implementation_key, :date, :result, :result_type, :rule_id])
+    |> validate_required([:implementation, :date, :result, :result_type, :rule_id])
     |> validate_number(:records, greater_than_or_equal_to: 0)
     |> validate_number(:errors, greater_than_or_equal_to: 0)
     |> validate_number(:result, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)

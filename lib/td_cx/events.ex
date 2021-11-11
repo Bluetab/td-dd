@@ -58,6 +58,10 @@ defmodule TdCx.Events do
     Multi.new()
     |> Multi.insert(:event, changeset)
     |> Multi.run(:source_id, fn _, %{event: event} -> {:ok, get_source_id(event)} end)
+    |> Multi.run(:external_id, fn _, %{event: event} -> {:ok, get_external_id(event)} end)
+    |> Multi.run(:source_external_id, fn _, %{event: event} ->
+      {:ok, get_source_external_id(event)}
+    end)
     |> Multi.run(:audit, Audit, :job_status_updated, [user_id])
     |> Repo.transaction()
     |> case do
@@ -73,5 +77,16 @@ defmodule TdCx.Events do
   defp get_source_id(event) do
     %{job: %{source_id: source_id}} = Repo.preload(event, :job)
     source_id
+  end
+
+  defp get_external_id(event) do
+    %{job: %{external_id: external_id}} = Repo.preload(event, :job)
+    external_id
+  end
+
+  defp get_source_external_id(event) do
+    %{job: job} = Repo.preload(event, :job)
+    %{source: %{external_id: external_id}} = Repo.preload(job, :source)
+    external_id
   end
 end

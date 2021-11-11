@@ -396,5 +396,7 @@ defmodule TdDd.Grants.Requests do
     %{grant_request | pending_roles: pending_roles}
   end
 
-  defp with_missing_roles(grant_request, _, _), do: grant_request
+  defp with_missing_roles(grant_request, _, _) do
+    grant_request
+  end
 end

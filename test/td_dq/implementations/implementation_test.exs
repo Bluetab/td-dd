@@ -2,6 +2,7 @@ defmodule TdDq.Implementations.ImplementationTest do
   use TdDd.DataCase
 
   alias Ecto.Changeset
+  alias Elasticsearch.Document
   alias TdDd.Repo
   alias TdDq.Implementations.Implementation
 
@@ -159,6 +160,47 @@ defmodule TdDq.Implementations.ImplementationTest do
 
       assert %{valid?: false, errors: errors} = Implementation.changeset(params)
       assert errors[:minimum] == {"must.be.greater.than.or.equal.to.goal", []}
+    end
+  end
+
+  describe "encode" do
+    test "encoded implementation includes validation modifier" do
+      rule = insert(:rule)
+
+      creation_attrs = %{
+        validations: [
+          %{
+            operator: %{
+              name: "timestamp_gt_timestamp",
+              value_type: "timestamp",
+              value_type_filter: "timestamp"
+            },
+            structure: %{id: 7, name: "s7"},
+            value: [%{raw: "2019-12-02 05:35:00"}],
+            modifier: build(:modifier)
+          }
+        ]
+      }
+
+      implementation_key = "rik1"
+
+      rule_implementation =
+        insert(:implementation,
+          implementation_key: implementation_key,
+          rule: rule,
+          validations: creation_attrs.validations
+        )
+
+      assert %{
+               validations: [
+                 %{
+                   modifier: %{
+                     name: _name,
+                     params: %{}
+                   }
+                 }
+               ]
+             } = Document.encode(rule_implementation)
     end
   end
 end

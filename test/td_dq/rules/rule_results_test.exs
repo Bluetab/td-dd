@@ -1,6 +1,8 @@
 defmodule TdDq.RuleResultsTest do
   use TdDd.DataCase
 
+  import TdDd.TestOperators
+
   alias TdCache.ConceptCache
   alias TdCache.Redix
   alias TdCache.Redix.Stream
@@ -31,9 +33,9 @@ defmodule TdDq.RuleResultsTest do
 
   describe "get_rule_result/1" do
     test "returns result by id" do
-      %{implementation_key: key} = insert(:implementation)
+      implementation = insert(:implementation)
       ts = DateTime.utc_now()
-      rule_result = insert(:rule_result, implementation_key: key, result: 60, date: ts)
+      rule_result = insert(:rule_result, implementation: implementation, result: 60, date: ts)
       db_rule_result = RuleResults.get_rule_result(rule_result.id)
       assert rule_result.id == db_rule_result.id
     end
@@ -41,16 +43,16 @@ defmodule TdDq.RuleResultsTest do
 
   describe "delete_rule_result/1" do
     test "deletes the rule result" do
-      %{implementation_key: key} = insert(:implementation)
-      rule_result = insert(:rule_result, implementation_key: key)
+      implementation = insert(:implementation)
+      rule_result = insert(:rule_result, implementation: implementation)
 
       assert {:ok, %{__meta__: meta}} = RuleResults.delete_rule_result(rule_result)
       assert %{state: :deleted} = meta
     end
 
     test "refreshes the rule cache" do
-      %{rule: %{id: rule_id, name: name}, implementation_key: key} = insert(:implementation)
-      rule_result = insert(:rule_result, implementation_key: key, rule_id: rule_id)
+      %{rule: %{id: rule_id, name: name}} = implementation = insert(:implementation)
+      rule_result = insert(:rule_result, implementation: implementation, rule_id: rule_id)
 
       assert {:ok, _result} = RuleResults.delete_rule_result(rule_result)
       assert {:ok, %{name: ^name}} = RuleCache.get(rule_id)
@@ -61,32 +63,32 @@ defmodule TdDq.RuleResultsTest do
 
   describe "get_latest_rule_result/1 " do
     test "returns the latest result of an implementation" do
-      %{implementation_key: key} = implementation = insert(:implementation)
+      implementation = insert(:implementation)
       ts = DateTime.utc_now()
 
-      latest = insert(:rule_result, implementation_key: key, date: ts)
-      insert(:rule_result, implementation_key: key, date: DateTime.add(ts, -1000))
-      insert(:rule_result, implementation_key: key, date: DateTime.add(ts, -2000))
+      latest = insert(:rule_result, implementation: implementation, date: ts)
+      insert(:rule_result, implementation: implementation, date: DateTime.add(ts, -1000))
+      insert(:rule_result, implementation: implementation, date: DateTime.add(ts, -2000))
 
-      assert RuleResults.get_latest_rule_result(implementation) == latest
+      assert RuleResults.get_latest_rule_result(implementation) <~> latest
     end
   end
 
   describe "list_rule_results/0" do
     test "retrieves results of non soft deleted rules and implementations" do
-      %{implementation_key: key1} = insert(:implementation, deleted_at: DateTime.utc_now())
-      %{implementation_key: key2} = insert(:implementation)
+      implementation1 = insert(:implementation, deleted_at: DateTime.utc_now())
+      implementation2 = insert(:implementation)
 
-      insert(:rule_result, implementation_key: key1)
-      result = insert(:rule_result, implementation_key: key2)
+      insert(:rule_result, implementation: implementation1)
+      result = insert(:rule_result, implementation: implementation2)
 
-      assert RuleResults.list_rule_results() == [result]
+      assert RuleResults.list_rule_results() <|> [result]
     end
   end
 
   describe "create_rule_result/1" do
     test "creates a (result_type percentage) rule result with valid result" do
-      %{implementation_key: implementation_key} = implementation = insert(:implementation)
+      %{id: implementation_id} = implementation = insert(:implementation)
       errors = 2
       records = 1_000_000
       result = abs((records - errors) / records) * 100
@@ -100,7 +102,7 @@ defmodule TdDq.RuleResultsTest do
       }
 
       assert {:ok, %{result: rr}} = RuleResults.create_rule_result(implementation, params)
-      assert rr.implementation_key == implementation_key
+      assert rr.implementation_id == implementation_id
       assert rr.errors == errors
       assert rr.records == records
       assert rr.result == Decimal.new("99.99")
@@ -109,7 +111,7 @@ defmodule TdDq.RuleResultsTest do
     test "creates a (result_type errors_number) rule result with valid result" do
       rule = insert(:rule)
 
-      %{implementation_key: implementation_key} =
+      %{id: implementation_id} =
         implementation = insert(:implementation, rule: rule, result_type: "errors_number")
 
       errors = 123
@@ -125,7 +127,7 @@ defmodule TdDq.RuleResultsTest do
       }
 
       assert {:ok, %{result: rr}} = RuleResults.create_rule_result(implementation, params)
-      assert rr.implementation_key == implementation_key
+      assert rr.implementation_id == implementation_id
       assert rr.errors == errors
       assert rr.records == records
       assert rr.result == Decimal.new("87.70")
@@ -134,7 +136,7 @@ defmodule TdDq.RuleResultsTest do
     test "creates a (result_type deviation) rule result with valid result" do
       rule = insert(:rule)
 
-      %{implementation_key: implementation_key} =
+      %{id: implementation_id} =
         implementation = insert(:implementation, rule: rule, result_type: "deviation")
 
       errors = 210
@@ -150,14 +152,14 @@ defmodule TdDq.RuleResultsTest do
       }
 
       assert {:ok, %{result: rr}} = RuleResults.create_rule_result(implementation, params)
-      assert rr.implementation_key == implementation_key
+      assert rr.implementation_id == implementation_id
       assert rr.errors == errors
       assert rr.records == records
       assert rr.result == Decimal.new("21.00")
     end
 
     test "updates related executions" do
-      %{id: implementation_id, implementation_key: key} = implementation = insert(:implementation)
+      %{id: implementation_id} = implementation = insert(:implementation)
 
       insert(:execution,
         implementation_id: implementation_id,
@@ -171,7 +173,7 @@ defmodule TdDq.RuleResultsTest do
       params = %{
         "date" => "2020-01-31",
         "errors" => 2,
-        "implementation_key" => key,
+        "implementation_id" => implementation_id,
         "records" => 5,
         "result_type" => "percentage"
       }
