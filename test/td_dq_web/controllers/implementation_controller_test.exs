@@ -426,7 +426,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
     @tag authentication: [role: "admin"]
     test "soft delete rule implementation", %{conn: conn, swagger_schema: schema} do
       implementation = insert(:implementation)
-      insert(:rule_result, implementation_key: implementation.implementation_key)
+      insert(:rule_result, implementation: implementation)
       update_attrs = %{soft_delete: true}
 
       assert %{"data" => data} =

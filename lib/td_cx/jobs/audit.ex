@@ -10,8 +10,23 @@ defmodule TdCx.Jobs.Audit do
   @doc """
   Publishes an `:job_status` event. Should be called using `Ecto.Multi.run/5`.
   """
-  def job_status_updated(_repo, %{event: event, source_id: id}, user_id) do
-    payload = Map.take(event, [:message, :inserted_at, :job_id, :id])
-    publish(String.downcase(event.type), "jobs", id, user_id, payload)
+  def job_status_updated(
+        _repo,
+        %{
+          event: event,
+          source_id: source_id,
+          external_id: external_id,
+          source_external_id: source_external_id
+        },
+        user_id
+      ) do
+    payload =
+      event
+      |> Map.take([:message, :inserted_at, :id])
+      |> Map.put(:source_id, source_id)
+      |> Map.put(:external_id, external_id)
+      |> Map.put(:source_external_id, source_external_id)
+
+    publish("job_status_" <> String.downcase(event.type), "jobs", event.job_id, user_id, payload)
   end
 end
