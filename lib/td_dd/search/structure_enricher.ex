@@ -31,7 +31,7 @@ defmodule TdDd.Search.StructureEnricher do
   the N+1 problems caused by enriching in Document.encode/1.
   """
   def enrich(structure, type \\ nil, content_opt \\ nil) do
-    GenServer.call(__MODULE__, {:enrich, structure, type, content_opt})
+    GenServer.call(__MODULE__, {:enrich, structure, type, content_opt}, 65_000)
   end
 
   def count, do: GenServer.call(__MODULE__, :count)
