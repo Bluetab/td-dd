@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-4278] `Grants` bulk load
 ### Changed
 
 - [TD-4174] `RuleResults` references `RuleImplementation` by its `id` instead of the `implementation_key`
