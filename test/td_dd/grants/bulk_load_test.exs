@@ -133,9 +133,9 @@ defmodule TdDd.Grants.BulkLoadTest do
         }
       ]
 
-      assert assert {:error, %Ecto.Changeset{}} = BulkLoad.bulk_load(claims, grants)
+      assert {:error, %Ecto.Changeset{}} = BulkLoad.bulk_load(claims, grants)
 
-      assert length(Grants.list_grants([])) == 0
+      assert [] == Grants.list_grants([])
     end
   end
 
