@@ -9,6 +9,9 @@ defmodule TdDqWeb.ImplementationSearchController do
 
   action_fallback(TdDqWeb.FallbackController)
 
+  @default_page 0
+  @default_size 20
+
   def swagger_definitions do
     SwaggerDefinitions.rule_result_swagger_definitions()
   end
@@ -56,17 +59,15 @@ defmodule TdDqWeb.ImplementationSearchController do
     %{manage: manage?, execute: execute?}
   end
 
-  defp do_search(claims, params, page \\ 0, size \\ 20)
-
-  defp do_search(_claims, %{"scroll" => _, "scroll_id" => _} = scroll_params, _page, _size) do
-    Search.scroll_implementations(scroll_params)
+  defp do_search(_claims, %{"scroll" => _, "scroll_id" => _} = params) do
+    Search.scroll_implementations(params)
   end
 
-  defp do_search(claims, search_params, page, size) do
-    page = Map.get(search_params, "page", page)
-    size = Map.get(search_params, "size", size)
+  defp do_search(claims, params) do
+    page = Map.get(params, "page", @default_page)
+    size = Map.get(params, "size", @default_size)
 
-    search_params
+    params
     |> Map.put(:without, ["deleted_at"])
     |> Map.drop(["page", "size"])
     |> Search.search(claims, page, size, :implementations)
