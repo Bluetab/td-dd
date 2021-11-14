@@ -184,6 +184,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
       &bulk_update_notes(&1, &2, data_structures, params, user_id, auto_publish)
     )
     |> Repo.transaction()
+    |> on_complete()
   end
 
   defp bulk_update_notes(_repo, _changes_so_far, data_structures, params, user_id, auto_publish) do
@@ -197,7 +198,9 @@ defmodule TdDd.DataStructures.BulkUpdate do
   end
 
   defp update_structure_notes(data_structure, params, user_id, auto_publish) do
-    case StructureNotesWorkflow.create_or_update(data_structure, params, user_id, auto_publish) do
+    opts = [auto_publish: auto_publish, is_bulk_update: true]
+
+    case StructureNotesWorkflow.create_or_update(data_structure, params, user_id, opts) do
       {:ok, structure_note} -> {:ok, structure_note}
       error -> {error, data_structure}
     end
@@ -246,6 +249,14 @@ defmodule TdDd.DataStructures.BulkUpdate do
 
   defp on_complete({:ok, %{updates: updates} = result}) do
     updates
+    |> Map.keys()
+    |> IndexWorker.reindex()
+
+    {:ok, result}
+  end
+
+  defp on_complete({:ok, %{update_notes: update_notes} = result}) do
+    update_notes
     |> Map.keys()
     |> IndexWorker.reindex()
 

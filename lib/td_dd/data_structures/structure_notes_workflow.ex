@@ -6,15 +6,13 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.StructureNote
 
-  def create_or_update(%DataStructure{id: _data_structure_id} = data_structure, params, user_id),
-    do: create_or_update(data_structure, params, user_id, false)
-
   def create_or_update(
         %DataStructure{id: data_structure_id} = data_structure,
         params,
         user_id,
-        auto_publish
+        opts \\ []
       ) do
+    auto_publish = opts[:auto_publish] == true
     latest_note = get_latest_structure_note(data_structure_id)
     is_strict_update = false
 
@@ -25,7 +23,7 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
       end
 
     case {structure_note, auto_publish} do
-      {{:ok, %StructureNote{} = note_to_publish}, true} -> publish(note_to_publish, user_id)
+      {{:ok, %StructureNote{} = note_to_publish}, true} -> publish(note_to_publish, user_id, opts)
       _ -> structure_note
     end
   end
@@ -161,15 +159,15 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
   defp reject(structure_note, user_id), do: simple_transition(structure_note, :rejected, user_id)
   defp unreject(structure_note, user_id), do: simple_transition(structure_note, :draft, user_id)
 
-  defp publish(structure_note, user_id) do
+  defp publish(structure_note, user_id, opts \\ []) do
     with {:ok, _} <- structure_note |> can_transit_to(:published) do
       case get_latest_structure_note(structure_note.data_structure_id, :published) do
         %StructureNote{} = previous_published ->
-          transit_to(previous_published, "versioned", user_id)
-          transit_to(structure_note, "published", user_id)
+          transit_to(previous_published, "versioned", user_id, opts)
+          transit_to(structure_note, "published", user_id, opts)
 
         nil ->
-          transit_to(structure_note, "published", user_id)
+          transit_to(structure_note, "published", user_id, opts)
       end
     end
   end
@@ -195,8 +193,8 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
     end
   end
 
-  defp transit_to(structure_note, status, user_id) do
-    DataStructures.update_structure_note(structure_note, %{"status" => status}, user_id)
+  defp transit_to(structure_note, status, user_id, opts \\ []) do
+    DataStructures.update_structure_note(structure_note, %{"status" => status}, user_id, opts)
   end
 
   defp can_transit_to(structure_note, status) do
