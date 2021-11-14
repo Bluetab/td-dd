@@ -504,14 +504,21 @@ defmodule TdDd.DataStructures do
     {:ok, 0}
   end
 
-  defp on_update({:ok, %StructureNote{status: :published, data_structure_id: id}} = res) do
+  defp on_update(res, opts \\ []) do
+    case opts[:is_bulk_update] == true do
+      false -> on_update_structure(res)
+      _ -> res
+    end
+  end
+
+  defp on_update_structure({:ok, %StructureNote{status: :published, data_structure_id: id}} = res) do
     IndexWorker.reindex(id)
     res
   end
 
-  defp on_update({:ok, %StructureNote{}} = res), do: res
+  defp on_update_structure({:ok, %StructureNote{}} = res), do: res
 
-  defp on_update({:ok, %{} = res}) do
+  defp on_update_structure({:ok, %{} = res}) do
     with %{data_structure: %{id: id}} <- res do
       IndexWorker.reindex(id)
     end
@@ -519,7 +526,7 @@ defmodule TdDd.DataStructures do
     {:ok, res}
   end
 
-  defp on_update(res), do: res
+  defp on_update_structure(res), do: res
 
   def delete_data_structure(%DataStructure{} = data_structure, %Claims{user_id: user_id}) do
     Multi.new()
@@ -1275,10 +1282,13 @@ defmodule TdDd.DataStructures do
 
   """
 
+  def update_structure_note(_structure_note, _attrs, _user_id, opts \\ [])
+
   def update_structure_note(
         %StructureNote{} = structure_note,
         %{"status" => status} = attrs,
-        user_id
+        user_id,
+        opts
       )
       when status in [
              "published",
@@ -1311,10 +1321,10 @@ defmodule TdDd.DataStructures do
       {:error, :structure_note_update, err, _} -> {:error, err}
       err -> err
     end
-    |> on_update()
+    |> on_update(opts)
   end
 
-  def update_structure_note(%StructureNote{} = structure_note, attrs, user_id) do
+  def update_structure_note(%StructureNote{} = structure_note, attrs, user_id, opts) do
     structure_note = Repo.preload(structure_note, :data_structure)
     changeset = StructureNote.changeset(structure_note, attrs)
 
@@ -1327,7 +1337,7 @@ defmodule TdDd.DataStructures do
       {:error, :structure_note, err, _} -> {:error, err}
       err -> err
     end
-    |> on_update()
+    |> on_update(opts)
   end
 
   @doc """
