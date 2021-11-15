@@ -1119,6 +1119,25 @@ defmodule TdDdWeb.SwaggerDefinitions do
               mutable_metadata: "Mutable metadata"
             }
           })
+        end,
+      BulkGrants:
+        swagger_schema do
+          properties do
+            grants(:object, "Grants", required: true)
+          end
+
+          example(%{
+            grants: [
+              %{
+                op: "add",
+                data_structure_external_id: "Data Structure External ID",
+                detail: {},
+                end_date: "End date",
+                start_date: "Start date",
+                user_id: "User ID"
+              }
+            ]
+          })
         end
     }
   end
