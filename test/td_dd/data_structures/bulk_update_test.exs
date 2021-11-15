@@ -150,12 +150,14 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert Map.keys(update_notes) <|> ids
 
       latest_structure_notes = Enum.map(ids, &DataStructures.get_latest_structure_note/1)
+
       assert latest_structure_notes
-        |> Enum.map(& &1.df_content)
-        |> Enum.all?(&(&1 == @valid_content))
+             |> Enum.map(& &1.df_content)
+             |> Enum.all?(&(&1 == @valid_content))
+
       assert latest_structure_notes
-        |> Enum.map(& &1.status)
-        |> Enum.all?(&(&1 == :published))
+             |> Enum.map(& &1.status)
+             |> Enum.all?(&(&1 == :published))
     end
 
     test "ignores unchanged data structures", %{type: type} do
@@ -232,7 +234,12 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         |> Enum.map(& &1.data_structure_id)
 
       assert {:ok, %{update_notes: update_notes}} =
-               BulkUpdate.update_all(ids, %{"df_content" => %{"string" => "updated"}}, claims, false)
+               BulkUpdate.update_all(
+                 ids,
+                 %{"df_content" => %{"string" => "updated"}},
+                 claims,
+                 false
+               )
 
       assert Map.keys(update_notes) <|> ids
 
@@ -263,7 +270,12 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         |> Enum.map(& &1.data_structure_id)
 
       assert {:ok, %{update_notes: update_notes}} =
-               BulkUpdate.update_all(ids, %{"df_content" => %{"string" => "updated"}}, claims, false)
+               BulkUpdate.update_all(
+                 ids,
+                 %{"df_content" => %{"string" => "updated"}},
+                 claims,
+                 false
+               )
 
       assert Map.keys(update_notes) <|> ids
 
@@ -301,7 +313,12 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         |> Enum.map(& &1.data_structure_id)
 
       assert {:ok, %{update_notes: update_notes}} =
-               BulkUpdate.update_all(ids, %{"df_content" => %{"string" => "updated"}}, claims, false)
+               BulkUpdate.update_all(
+                 ids,
+                 %{"df_content" => %{"string" => "updated"}},
+                 claims,
+                 false
+               )
 
       assert Map.keys(update_notes) <|> ids
 

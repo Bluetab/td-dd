@@ -6,6 +6,7 @@
 
 - [TD-4216] Add scroll to implementations search
 - [TD-4253] Include modifier in `/api/rule_implementations/search`
+- [TD-4278] `Grants` bulk load
 
 ### Changed
 

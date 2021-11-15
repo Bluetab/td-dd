@@ -19,7 +19,12 @@ defmodule TdDd.Grants do
     |> Repo.preload(opts[:preload] || [])
   end
 
-  def create_grant(params, %{id: data_structure_id} = data_structure, %Claims{user_id: user_id}) do
+  def create_grant(
+        params,
+        %{id: data_structure_id} = data_structure,
+        %Claims{user_id: user_id},
+        is_bulk \\ false
+      ) do
     changeset =
       %Grant{data_structure_id: data_structure_id}
       |> Grant.changeset(params)
@@ -32,15 +37,19 @@ defmodule TdDd.Grants do
     |> Multi.insert(:grant, changeset)
     |> Multi.run(:audit, Audit, :grant_created, [user_id])
     |> Repo.transaction()
-    |> reindex_grants()
+    |> reindex_grants(is_bulk)
   end
 
-  defp reindex_grants({:ok, %{grant: %Grant{id: id}} = multi}) do
+  defp reindex_grants(result, is_bulk \\ false)
+
+  defp reindex_grants({:ok, %{grant: %Grant{id: id}} = multi}, false) do
     IndexWorker.reindex_grants(id)
     {:ok, multi}
   end
 
-  defp reindex_grants(error), do: error
+  defp reindex_grants({:ok, %{grant: _grant} = multi}, true), do: {:ok, multi}
+
+  defp reindex_grants(error, _), do: error
 
   defp on_delete({:ok, %{grant: %Grant{id: id}} = multi}) do
     IndexWorker.delete_grants(id)
