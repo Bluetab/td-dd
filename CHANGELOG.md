@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [4.32.0] 2021-11-15
 
 ### Added
 
