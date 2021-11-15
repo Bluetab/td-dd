@@ -25,7 +25,7 @@ defmodule TdDqWeb.RuleResultView do
     rule_result
     |> Map.take([
       :id,
-      :implementation_key,
+      :implementation_id,
       :date,
       :result,
       :records,

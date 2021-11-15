@@ -35,10 +35,7 @@ defmodule TdDq.Implementations.Implementation do
 
     belongs_to(:rule, Rule)
 
-    has_many(:results, RuleResult,
-      foreign_key: :implementation_key,
-      references: :implementation_key
-    )
+    has_many(:results, RuleResult)
 
     timestamps()
   end
@@ -297,6 +294,7 @@ defmodule TdDq.Implementations.Implementation do
       |> Map.put(:operator, get_operator_fields(Map.get(row, :operator, %{})))
       |> Map.put(:structure, get_structure_fields(Map.get(row, :structure, %{})))
       |> Map.put(:value, Map.get(row, :value, []))
+      |> Map.put(:modifier, Map.get(row, :modifier, []))
       |> with_population(row)
     end
 
