@@ -62,7 +62,10 @@ defmodule TdDqWeb.ImplementationView do
       :df_content,
       :executable,
       :event_type,
-      :event_inserted_at
+      :event_inserted_at,
+      :goal,
+      :minimum,
+      :result_type
     ])
     |> Map.put(:dataset, render_many(implementation.dataset, DatasetView, "dataset_row.json"))
     |> Map.put(
