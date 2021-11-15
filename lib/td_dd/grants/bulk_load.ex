@@ -15,11 +15,11 @@ defmodule TdDd.Grants.BulkLoad do
   require Logger
 
   def bulk_load(claims, grants) do
-    Logger.info("Loading Grant Requests")
+    Logger.info("Loading Grants")
 
     Timer.time(
       fn -> do_bulk_load(claims, grants) end,
-      fn millis, _ -> Logger.info("Grant Requests loaded in #{millis}ms") end
+      fn millis, _ -> Logger.info("Grants loaded in #{millis}ms") end
     )
   end
 
@@ -78,7 +78,18 @@ defmodule TdDd.Grants.BulkLoad do
     end
   end
 
-  defp reduce_insert_grant(_, _, _), do: {:error, {:not_found, "op [add] Missing"}}
+  defp reduce_insert_grant(
+         [
+           %{"op" => operator}
+           | _
+         ],
+         _,
+         _
+       ),
+       do: {:error, {:not_found, "invalid operator", operator}}
+
+  defp reduce_insert_grant(_, _, _),
+    do: {:error, {:not_found, "missing operator"}}
 
   defp do_reindex({:ok, %{ids: ids}}) do
     IndexWorker.reindex_grants(ids)

@@ -7,7 +7,7 @@ defmodule TdDdWeb.GrantsControllerTest do
   @user_id 123_456
   @create_attrs %{
     detail: %{},
-    end_date: "2010-04-17",
+    end_date: Date.utc_today(),
     start_date: "2010-04-17",
     user_id: @user_id
   }
@@ -28,7 +28,8 @@ defmodule TdDdWeb.GrantsControllerTest do
       conn: conn,
       data_structure: %{id: _data_structure_id, external_id: data_structure_external_id}
     } do
-      create_attr =
+      %{start_date: start_date, end_date: end_date, user_id: user_id} =
+        create_attr =
         @create_attrs
         |> Map.put(:op, "add")
         |> Map.put(:data_structure_external_id, data_structure_external_id)
@@ -38,6 +39,55 @@ defmodule TdDdWeb.GrantsControllerTest do
                grants: [create_attr]
              )
              |> response(:ok)
+
+      string_end_date = Date.to_string(end_date)
+
+      assert %{
+               "data" => [
+                 %{
+                   "start_date" => ^start_date,
+                   "end_date" => ^string_end_date,
+                   "user_id" => ^user_id
+                 }
+               ]
+             } =
+               conn
+               |> get(Routes.grant_path(conn, :index))
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "when operator is invalid", %{
+      conn: conn,
+      data_structure: %{id: _data_structure_id, external_id: data_structure_external_id}
+    } do
+      create_attr =
+        @create_attrs
+        |> Map.put(:op, "invalid_op")
+        |> Map.put(:data_structure_external_id, data_structure_external_id)
+
+      assert %{"error" => ["not_found", "invalid operator", "invalid_op"]} =
+               conn
+               |> patch(Routes.grants_path(conn, :update),
+                 grants: [create_attr]
+               )
+               |> json_response(:unprocessable_entity)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "when operator is missing", %{
+      conn: conn,
+      data_structure: %{id: _data_structure_id, external_id: data_structure_external_id}
+    } do
+      create_attr =
+        Map.put(@create_attrs, :data_structure_external_id, data_structure_external_id)
+
+      assert %{"error" => ["not_found", "missing operator"]} =
+               conn
+               |> patch(Routes.grants_path(conn, :update),
+                 grants: [create_attr]
+               )
+               |> json_response(:unprocessable_entity)
     end
 
     @tag authentication: [role: "admin"]
