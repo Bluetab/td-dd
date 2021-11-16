@@ -40,18 +40,26 @@ defmodule TdDd.DataStructures.BulkUpdate do
       rows
       |> Enum.with_index()
       |> Enum.map(fn {row, index} -> {row, index + 2} end)
-      |> Enum.map(fn {%{"external_id" => external_id} = row, index} ->
-        {row, DataStructures.get_data_structure_by_external_id(external_id), index}
+      |> Enum.map(fn
+        {%{"external_id" => external_id} = row, index} ->
+          {row, DataStructures.get_data_structure_by_external_id(external_id), index}
+
+        {row, index} ->
+          {row, nil, index}
       end)
       |> Enum.filter(fn {_row, data_structure, _index} -> data_structure end)
       |> Enum.reduce_while([], fn {row, data_structure, index}, acc ->
         case format_content(row, data_structure, index) do
-          {:error, error} -> {:halt, {:error, error}}
-          content -> {:cont, acc ++ [content]}
+          {:error, error} ->
+            {:halt, {:error, error}}
+
+          content ->
+            {:cont, acc ++ [content]}
         end
       end)
       |> case do
         [_ | _] = contents -> contents
+        [] -> {:error, %{message: :external_id_not_found}}
         errors -> {:error, errors}
       end
     end
@@ -65,7 +73,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
     rows =
       path
       |> Path.expand()
-      |> File.stream!()
+      |> File.stream!([:trim_bom])
       |> Stream.map(&recode/1)
       |> Stream.reject(&(String.trim(&1) == ""))
       |> CSV.decode!(separator: ?;, headers: true)

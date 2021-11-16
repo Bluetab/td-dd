@@ -472,6 +472,24 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
 
       assert %{"text" => "foo"} = get_df_content_from_ext_id("ex_id1")
     end
+
+    test "accept file utf8 wiht bom" do
+      %{user_id: user_id} = build(:claims)
+      upload = %{path: "test/fixtures/td3606/upload_with_bom.csv"}
+
+      assert {:ok, %{update_notes: _update_notes}} =
+               upload
+               |> BulkUpdate.from_csv()
+               |> BulkUpdate.do_csv_bulk_update(user_id)
+    end
+
+    test "return error when external_id does not exists" do
+      upload = %{path: "test/fixtures/td3606/upload_without_external_id.csv"}
+
+      assert {:error, %{message: :external_id_not_found}} =
+               upload
+               |> BulkUpdate.from_csv()
+    end
   end
 
   describe "structure notes" do
