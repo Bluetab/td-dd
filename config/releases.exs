@@ -114,4 +114,4 @@ config :td_dd, TdDd.DataStructures.HistoryManager,
         end)
 
 config :td_dd, TdDdWeb.CustomParsersPlug,
-        max_payload_length: System.get_env("MAX_PAYLOAD_LENGTH", "100000000") |> String.to_integer()
+  max_payload_length: System.get_env("MAX_PAYLOAD_LENGTH", "100000000") |> String.to_integer()

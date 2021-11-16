@@ -1,10 +1,17 @@
 # Changelog
 
-## [Unreleased]
+## [4.32.0] 2021-11-15
+
+### Added
+
+- [TD-4216] Add scroll to implementations search
+- [TD-4253] Include modifier in `/api/rule_implementations/search`
+- [TD-4278] `Grants` bulk load
 
 ### Changed
 
 - [TD-4174] `RuleResults` references `RuleImplementation` by its `id` instead of the `implementation_key`
+
 ## [4.31.2] 2021-11-09
 
 ### Added
@@ -21,7 +28,6 @@
 ### Added
 
 - [TD-3733] Structure names indexed in implementations
-- [TD-4253] Include modifier in `/api/rule_implementations/search`
 
 ### Fixed
 
