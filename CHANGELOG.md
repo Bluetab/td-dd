@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- [TD-4216] Fix scroll implementations
+
 ## [4.32.0] 2021-11-15
 
 ### Added
@@ -7,11 +11,6 @@
 - [TD-4216] Add scroll to implementations search
 - [TD-4253] Include modifier in `/api/rule_implementations/search`
 - [TD-4278] `Grants` bulk load
-
-### Added
-
-- [TD-4216] Add scroll to implementations search
-- [TD-4253] Include modifier in `/api/rule_implementations/search`
 
 ### Changed
 
