@@ -380,7 +380,6 @@ defmodule TdDd.Grants.Requests do
          user_roles
        )
        when is_list(approvals) do
-
     user_roles_on_domain = Map.get(user_roles, domain_id, MapSet.new([]))
 
     current_approved =

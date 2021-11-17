@@ -150,12 +150,14 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert Map.keys(update_notes) <|> ids
 
       latest_structure_notes = Enum.map(ids, &DataStructures.get_latest_structure_note/1)
+
       assert latest_structure_notes
-        |> Enum.map(& &1.df_content)
-        |> Enum.all?(&(&1 == @valid_content))
+             |> Enum.map(& &1.df_content)
+             |> Enum.all?(&(&1 == @valid_content))
+
       assert latest_structure_notes
-        |> Enum.map(& &1.status)
-        |> Enum.all?(&(&1 == :published))
+             |> Enum.map(& &1.status)
+             |> Enum.all?(&(&1 == :published))
     end
 
     test "ignores unchanged data structures", %{type: type} do
@@ -232,7 +234,12 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         |> Enum.map(& &1.data_structure_id)
 
       assert {:ok, %{update_notes: update_notes}} =
-               BulkUpdate.update_all(ids, %{"df_content" => %{"string" => "updated"}}, claims, false)
+               BulkUpdate.update_all(
+                 ids,
+                 %{"df_content" => %{"string" => "updated"}},
+                 claims,
+                 false
+               )
 
       assert Map.keys(update_notes) <|> ids
 
@@ -263,7 +270,12 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         |> Enum.map(& &1.data_structure_id)
 
       assert {:ok, %{update_notes: update_notes}} =
-               BulkUpdate.update_all(ids, %{"df_content" => %{"string" => "updated"}}, claims, false)
+               BulkUpdate.update_all(
+                 ids,
+                 %{"df_content" => %{"string" => "updated"}},
+                 claims,
+                 false
+               )
 
       assert Map.keys(update_notes) <|> ids
 
@@ -301,7 +313,12 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         |> Enum.map(& &1.data_structure_id)
 
       assert {:ok, %{update_notes: update_notes}} =
-               BulkUpdate.update_all(ids, %{"df_content" => %{"string" => "updated"}}, claims, false)
+               BulkUpdate.update_all(
+                 ids,
+                 %{"df_content" => %{"string" => "updated"}},
+                 claims,
+                 false
+               )
 
       assert Map.keys(update_notes) <|> ids
 
@@ -454,6 +471,24 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       assert Keyword.get(validation, :enum) == ["Yes", "No"]
 
       assert %{"text" => "foo"} = get_df_content_from_ext_id("ex_id1")
+    end
+
+    test "accept file utf8 wiht bom" do
+      %{user_id: user_id} = build(:claims)
+      upload = %{path: "test/fixtures/td3606/upload_with_bom.csv"}
+
+      assert {:ok, %{update_notes: _update_notes}} =
+               upload
+               |> BulkUpdate.from_csv()
+               |> BulkUpdate.do_csv_bulk_update(user_id)
+    end
+
+    test "return error when external_id does not exists" do
+      upload = %{path: "test/fixtures/td3606/upload_without_external_id.csv"}
+
+      assert {:error, %{message: :external_id_not_found}} =
+               upload
+               |> BulkUpdate.from_csv()
     end
   end
 
