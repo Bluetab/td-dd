@@ -50,11 +50,8 @@ defmodule TdDd.DataStructures.BulkUpdate do
       |> Enum.filter(fn {_row, data_structure, _index} -> data_structure end)
       |> Enum.reduce_while([], fn {row, data_structure, index}, acc ->
         case format_content(row, data_structure, index) do
-          {:error, error} ->
-            {:halt, {:error, error}}
-
-          content ->
-            {:cont, acc ++ [content]}
+          {:error, error} -> {:halt, {:error, error}}
+          content -> {:cont, acc ++ [content]}
         end
       end)
       |> case do
