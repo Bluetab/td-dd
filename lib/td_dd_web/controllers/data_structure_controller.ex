@@ -359,6 +359,25 @@ defmodule TdDdWeb.DataStructureController do
     end
   end
 
+  def editable_csv(conn, params) do
+    params = Map.drop(params, ["page", "size"])
+    permission = conn.assigns[:search_permission]
+    claims = conn.assigns[:current_resource]
+
+    %{results: data_structures} = search_all_structures(claims, permission, params)
+
+    case data_structures do
+      [] ->
+        send_resp(conn, :no_content, "")
+
+      _ ->
+        conn
+        |> put_resp_content_type("text/csv", "utf-8")
+        |> put_resp_header("content-disposition", "attachment; filename=\"structures.zip\"")
+        |> send_resp(:ok, Download.to_editable_csv(data_structures))
+    end
+  end
+
   defp do_search(conn, params, page \\ 0, size \\ 50)
 
   defp do_search(_conn, %{"scroll" => _, "scroll_id" => _} = scroll_params, _page, _size) do

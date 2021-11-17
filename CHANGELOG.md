@@ -28,6 +28,7 @@
 ### Added
 
 - [TD-3733] Structure names indexed in implementations
+- [TD-3606] Download editable structures CSV
 
 ### Fixed
 
