@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased]
+
+- [TD-4216] Fix scroll implementations
+
 ## [4.32.0] 2021-11-15
 
 ### Added
