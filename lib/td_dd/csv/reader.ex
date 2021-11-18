@@ -5,7 +5,10 @@ defmodule TdDd.CSV.Reader do
   alias Ecto.Changeset
   alias TdDd.DataStructures
 
+  NimbleCSV.define(CsvParser, separator: ";", escape: "\"")
+
   @truthy_values ["t", "true", "y", "yes", "on", "1"]
+  @csv_parse_chunk_size 10_000
 
   def read_csv(stream, options \\ []) do
     separator = Keyword.get(options, :separator, ?;)
@@ -35,11 +38,22 @@ defmodule TdDd.CSV.Reader do
     end
   end
 
-  defp read_records(stream, separator) do
-    stream
-    |> CSV.decode!(separator: separator, headers: true)
-    |> Enum.to_list()
-    |> Enum.uniq()
+  defp read_records(stream, ?; = _separator) do
+    csv = CsvParser.parse_stream(stream, skip_headers: false)
+    headers = Enum.at(csv, 0)
+
+    csv
+    |> Stream.drop(1)
+    |> Stream.chunk_every(@csv_parse_chunk_size)
+    |> Enum.flat_map(&parse_chunk(&1, headers))
+  end
+
+  defp parse_chunk(chunk, headers) do
+    Enum.map(chunk, fn fields ->
+      headers
+      |> Enum.zip(fields)
+      |> Map.new()
+    end)
   end
 
   defp with_domain_id(records, nil, external_ids) do
