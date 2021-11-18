@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-4299] Change CSV reader to `NimbleCSV` for performance improvement
+
 ## [4.32.2] 2021-11-17
 
 - [TD-4216] Fix scroll implementations
@@ -15,7 +21,6 @@
 ### Changed
 
 - [TD-4174] `RuleResults` references `RuleImplementation` by its `id` instead of the `implementation_key`
-- [TD-4299] Change CSV reader to `NimbleCSV` for performance improvement
 
 ## [4.31.2] 2021-11-09
 
