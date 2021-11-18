@@ -1,0 +1,10 @@
+text;critical;enriched_text;urls_one_or_none;role;key_value;integer
+text;Yes;;;Role;Elemento 1;
+text2;Yes;;;Role;;
+;No;;;Role;;
+;;I’m 6;;;;
+;;Enriched text;https://www.google.es;;;3
+;;;https://www.google.es;Miss This;;2
+;No;;;Role 1;;
+;No;;;Role 2;Elemento 2;
+;;I’m 9;;;;9

@@ -1,11 +1,16 @@
 # Changelog
 
-## [Unreleased]
+## [4.32.2] 2021-11-17
+
+- [TD-4216] Fix scroll implementations
+
+## [4.32.0] 2021-11-15
 
 ### Added
 
 - [TD-4216] Add scroll to implementations search
 - [TD-4253] Include modifier in `/api/rule_implementations/search`
+- [TD-4278] `Grants` bulk load
 
 ### Changed
 
@@ -28,6 +33,7 @@
 ### Added
 
 - [TD-3733] Structure names indexed in implementations
+- [TD-3606] Download editable structures CSV
 
 ### Fixed
 
