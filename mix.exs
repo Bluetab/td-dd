@@ -69,6 +69,7 @@ defmodule TdDd.MixProject do
       {:mox, "~> 1.0", only: :test},
       {:cors_plug, "~> 2.0"},
       {:csv, "~> 2.4"},
+      {:nimble_csv, "~> 1.1"},
       {:phoenix_swagger, "~> 0.8.3"},
       {:ex_json_schema, "~> 0.7.3"},
       {:codepagex, "~> 0.1.4"},
