@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-4299] Change CSV reader to `NimbleCSV` for performance improvement
+
 ## [4.32.2] 2021-11-17
 
 - [TD-4216] Fix scroll implementations
