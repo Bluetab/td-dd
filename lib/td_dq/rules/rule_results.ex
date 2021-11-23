@@ -26,7 +26,7 @@ defmodule TdDq.Rules.RuleResults do
   def list_rule_results do
     RuleResult
     |> join(:inner, [rr, ri], ri in Implementation,
-      on: rr.implementation_key == ri.implementation_key
+      on: rr.implementation_id == ri.id
     )
     |> join(:inner, [_, ri, r], r in Rule, on: r.id == ri.rule_id)
     |> where([_, _, r], is_nil(r.deleted_at))
@@ -47,14 +47,15 @@ defmodule TdDq.Rules.RuleResults do
 
   """
   def create_rule_result(
-        %Implementation{implementation_key: key, rule_id: rule_id} = impl,
+        %Implementation{rule_id: rule_id} = impl,
         params \\ %{}
       ) do
     %{rule: %{result_type: result_type}} = Repo.preload(impl, :rule)
 
     changeset =
       RuleResult.changeset(
-        %RuleResult{implementation_key: key, result_type: result_type, rule_id: rule_id},
+        %RuleResult{result_type: result_type, rule_id: rule_id},
+        impl,
         params
       )
 
@@ -74,12 +75,12 @@ defmodule TdDq.Rules.RuleResults do
     |> on_create()
   end
 
-  defp update_executions(%{id: id, implementation_key: key, inserted_at: ts} = _result) do
+  defp update_executions(%{id: id, implementation_id: implementation_id, inserted_at: ts} = _result) do
     Execution
     |> select([e], e)
     |> where([e], is_nil(e.result_id))
     |> join(:inner, [e], i in assoc(e, :implementation))
-    |> where([e, i], i.implementation_key == ^key)
+    |> where([e, i], i.id == ^implementation_id)
     |> update(set: [result_id: ^id, updated_at: ^ts])
     |> Repo.update_all([])
   end
@@ -99,9 +100,9 @@ defmodule TdDq.Rules.RuleResults do
   defp on_create(result), do: result
 
   @spec get_latest_rule_result(Implementation.t()) :: RuleResult.t() | nil
-  def get_latest_rule_result(%Implementation{implementation_key: key}) do
+  def get_latest_rule_result(%Implementation{id: id}) do
     RuleResult
-    |> where([rr], rr.implementation_key == ^key)
+    |> where([rr], rr.implementation_id == ^id)
     |> limit(1)
     |> order_by([rr], desc: rr.date)
     |> Repo.one()
@@ -120,12 +121,12 @@ defmodule TdDq.Rules.RuleResults do
   def select_results(ids) do
     results =
       RuleResult
-      |> join(:inner, [r], i in Implementation, on: r.implementation_key == i.implementation_key)
+      |> join(:inner, [r], i in Implementation, on: r.implementation_id == i.id)
       |> join(:inner, [res, i], rule in assoc(i, :rule))
       |> select([res], %{})
       |> select_merge(
         [res, _, _],
-        map(res, ^~w(id implementation_key date result errors records params inserted_at)a)
+        map(res, ^~w(id implementation_id date result errors records params inserted_at)a)
       )
       |> select_merge([_, i, _], %{implementation_id: i.id, rule_id: i.rule_id})
       |> select_merge(

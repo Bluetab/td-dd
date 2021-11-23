@@ -23,6 +23,64 @@ defmodule TdDq.Search do
     end
   end
 
+  def search(query, query_params, index) do
+    Logger.debug(fn -> "Query: #{inspect(query)} #{inspect(query_params)}" end)
+    alias_name = Cluster.alias_name(index)
+
+    response =
+      Elasticsearch.post(
+        Cluster,
+        "/#{alias_name}/_search?" <> URI.encode_query(query_params),
+        query
+      )
+
+    case response do
+      {:ok,
+       %{
+         "_scroll_id" => scroll_id,
+         "hits" => %{"hits" => results, "total" => total},
+         "aggregations" => aggregations
+       }} ->
+        %{
+          results: results,
+          aggregations: format_aggregations(aggregations),
+          total: total,
+          scroll_id: scroll_id
+        }
+
+      {:error, %Elasticsearch.Exception{message: message} = error} ->
+        Logger.warn("Error response from Elasticsearch: #{message}")
+        error
+    end
+  end
+
+  def scroll(scroll_params) do
+    Logger.debug(fn -> "Scroll: #{inspect(scroll_params)}" end)
+
+    [opts, scroll_params] =
+      scroll_params
+      |> Map.take(["opts"])
+      |> case do
+        %{"opts" => opts} ->
+          [opts, Map.drop(scroll_params, ["opts"])]
+
+        %{} ->
+          [[], scroll_params]
+      end
+
+    response = Elasticsearch.post(Cluster, "_search/scroll", scroll_params, opts)
+
+    case response do
+      {:ok, %{"_scroll_id" => scroll_id, "hits" => %{"hits" => results, "total" => total}} = res} ->
+        aggregations = Map.get(res, "aggregations", %{})
+        %{results: results, total: total, aggregations: aggregations, scroll_id: scroll_id}
+
+      {:error, %Elasticsearch.Exception{message: message} = error} ->
+        Logger.warn("Error response from Elasticsearch: #{message}")
+        error
+    end
+  end
+
   def get_filters(query, index) do
     alias_name = Cluster.alias_name(index)
     response = Elasticsearch.post(Cluster, "/#{alias_name}/_search", query)

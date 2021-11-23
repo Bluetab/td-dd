@@ -443,7 +443,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
     @tag authentication: [role: "admin"]
     test "gets editable csv content", %{
       conn: conn,
-      data_structure: data_structure
+      data_structure: data_structure,
+      data_structure_version: data_structure_version
     } do
       insert(:structure_note,
         data_structure: data_structure,
@@ -453,9 +454,12 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert %{resp_body: body} = post(conn, data_structure_path(conn, :editable_csv, %{}))
 
+      %{external_id: external_id} = data_structure
+      %{name: name, type: type, path: path} = data_structure_version
+
       assert body == """
-             external_id;string;list\r
-             #{data_structure.external_id};foo;bar\r
+             external_id;name;type;path;string;list\r
+             #{external_id};#{name};#{type};#{Enum.join(path, "")};foo;bar\r
              """
     end
 

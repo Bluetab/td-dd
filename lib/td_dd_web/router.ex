@@ -124,6 +124,8 @@ defmodule TdDdWeb.Router do
     post("/grants/search/mine", SearchController, :search_my_grants)
     post("/grants/csv", GrantController, :csv)
 
+    resources("/grants_bulk", GrantsController, only: [:update], singleton: true)
+
     resources("/grant_request_groups", GrantRequestGroupController,
       only: [:index, :show, :create, :delete]
     ) do

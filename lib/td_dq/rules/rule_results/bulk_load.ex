@@ -73,17 +73,22 @@ defmodule TdDq.Rules.RuleResults.BulkLoad do
     Implementation
     |> where([ri], ri.implementation_key in ^keys)
     |> join(:inner, [ri], rule in assoc(ri, :rule))
-    |> select([ri, r], {ri.implementation_key, r})
+    |> select([ri, r], {ri.implementation_key, {ri, r}})
     |> Repo.all()
     |> Map.new()
   end
 
   defp changeset(%{} = params, %{} = rules_by_implementation_key) do
     with %{"implementation_key" => key} <- params,
-         %Rule{result_type: type, id: rule_id} <- Map.get(rules_by_implementation_key, key) do
-      RuleResult.changeset(%RuleResult{result_type: type, rule_id: rule_id}, params)
+         {implementation, %Rule{result_type: type, id: rule_id}} <-
+           Map.get(rules_by_implementation_key, key) do
+      RuleResult.changeset(
+        %RuleResult{result_type: type, rule_id: rule_id},
+        implementation,
+        params
+      )
     else
-      _ -> RuleResult.changeset(params)
+      _ -> RuleResult.changeset(nil, params)
     end
   end
 

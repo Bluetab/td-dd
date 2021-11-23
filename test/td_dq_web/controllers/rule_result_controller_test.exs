@@ -24,8 +24,8 @@ defmodule TdDqWeb.RuleResultControllerTest do
   describe "GET /api/rule_results" do
     @tag authentication: [role: "service"]
     test "service account can view rule results", %{conn: conn} do
-      %{implementation_key: key} = insert(:implementation)
-      insert(:rule_result, implementation_key: key)
+      impl = insert(:implementation)
+      insert(:rule_result, implementation: impl)
 
       assert %{"data" => [_]} =
                conn
@@ -38,9 +38,9 @@ defmodule TdDqWeb.RuleResultControllerTest do
     @tag authentication: [role: "admin"]
     @tag fixture: ""
     test "Admin user correctly deletes rule result", %{conn: conn} do
-      %{implementation_key: key} = insert(:implementation)
+      impl = insert(:implementation)
       now = DateTime.utc_now()
-      rule_result = insert(:rule_result, implementation_key: key, result: 60, date: now)
+      rule_result = insert(:rule_result, implementation: impl, result: 60, date: now)
       conn = delete(conn, Routes.rule_result_path(conn, :delete, rule_result.id))
       assert response(conn, 204)
     end
@@ -125,7 +125,7 @@ defmodule TdDqWeb.RuleResultControllerTest do
                %{
                  "date" => "2019-08-30T00:00:00Z",
                  "errors" => 4,
-                 "implementation_key" => "ri135",
+                 "implementation_id" => implementation.id,
                  "params" => %{"param3" => "5"},
                  "records" => 4,
                  "result_type" => "percentage",
@@ -135,7 +135,7 @@ defmodule TdDqWeb.RuleResultControllerTest do
                %{
                  "date" => "2019-08-29T00:00:00Z",
                  "errors" => 2,
-                 "implementation_key" => "ri135",
+                 "implementation_id" => implementation.id,
                  "params" => %{"param1" => "valor", "param2" => "valor2", "param3" => "4"},
                  "records" => 1_000_000,
                  "result_type" => "percentage",

@@ -24,20 +24,34 @@ defmodule TdCx.Jobs.AuditTest do
   describe "job_status_updated/4" do
     test "publishes an event", %{
       claims: %{user_id: user_id},
-      job: %{id: id, source_id: source_id}
+      job: %{
+        id: job_id,
+        source_id: source_id,
+        external_id: external_id,
+        source: %{external_id: source_external_id}
+      }
     } do
       type = "SUCCEEDED"
       message = "Job completed"
-      event = build(:event, job_id: id, message: message, type: type)
+      event = build(:event, job_id: job_id, message: message, type: type)
 
       assert {:ok, event_id} =
-               Audit.job_status_updated(Repo, %{event: event, source_id: source_id}, user_id)
+               Audit.job_status_updated(
+                 Repo,
+                 %{
+                   event: event,
+                   source_id: source_id,
+                   external_id: external_id,
+                   source_external_id: source_external_id
+                 },
+                 user_id
+               )
 
       assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
 
       user_id = "#{user_id}"
-      resource_id = "#{source_id}"
-      event_type = String.downcase(type)
+      resource_id = "#{job_id}"
+      event_type = "job_status_" <> String.downcase(type)
 
       assert %{
                event: ^event_type,
@@ -50,8 +64,10 @@ defmodule TdCx.Jobs.AuditTest do
              } = event
 
       assert %{
-               "job_id" => ^id,
-               "message" => ^message
+               "source_id" => ^source_id,
+               "message" => ^message,
+               "external_id" => ^external_id,
+               "source_external_id" => ^source_external_id
              } = Jason.decode!(payload)
     end
   end
