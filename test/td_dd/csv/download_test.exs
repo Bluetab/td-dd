@@ -104,6 +104,8 @@ defmodule TdDd.DownloadTest do
 
       structures = [
         %{
+          name: "name",
+          path: ["path"],
           template: %{"name" => "template"},
           latest_note: %{
             "field_name" => ["field_value"]
@@ -115,8 +117,8 @@ defmodule TdDd.DownloadTest do
 
       assert Download.to_editable_csv(structures) ==
                """
-               external_id;field_name\r
-               ext_id;field_value\r
+               external_id;name;type;path;field_name\r
+               ext_id;name;type;path;field_value\r
                """
     end
   end

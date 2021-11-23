@@ -5,6 +5,7 @@
 ### Changed
 
 - [TD-4299] Change CSV reader to `NimbleCSV` for performance improvement
+- [TD-3606] Add descriptive fields to editable CSV download file
 
 ## [4.32.2] 2021-11-17
 
