@@ -18,7 +18,7 @@ defmodule TdDd.CSV.Download do
     "inserted_at"
   ]
 
-  @editable_headers [:external_id]
+  @editable_headers [:external_id, :name, :type, :path]
 
   @lineage_headers [
     "source_external_id",
