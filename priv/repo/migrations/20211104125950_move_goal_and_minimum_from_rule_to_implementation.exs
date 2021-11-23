@@ -3,8 +3,8 @@ defmodule TdDd.Repo.Migrations.MoveGoalAndMinimumFromRuleToImplementation do
 
   def change do
     alter table("rule_implementations") do
-      add(:goal, :integer)
-      add(:minimum, :integer)
+      add(:goal, :float)
+      add(:minimum, :float)
       add(:result_type, :string, default: "percentage")
     end
 

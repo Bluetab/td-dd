@@ -28,8 +28,8 @@ defmodule TdDq.Implementations.Implementation do
     field(:deleted_at, :utc_datetime)
     field(:df_name, :string)
     field(:df_content, :map)
-    field(:goal, :integer)
-    field(:minimum, :integer)
+    field(:goal, :float)
+    field(:minimum, :float)
     field(:result_type, :string, default: "percentage")
 
     embeds_one(:raw_content, RawContent, on_replace: :delete)

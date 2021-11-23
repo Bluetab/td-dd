@@ -147,24 +147,24 @@ defmodule TdDq.Rules.RuleResults do
 
   defp status(%{result_type: "percentage", result: result, minimum: threshold, goal: target}) do
     cond do
-      Decimal.compare(result, threshold) == :lt -> "fail"
-      Decimal.compare(result, target) == :lt -> "warn"
+      Decimal.compare(result, Decimal.from_float(threshold)) == :lt -> "fail"
+      Decimal.compare(result, Decimal.from_float(target)) == :lt -> "warn"
       true -> "success"
     end
   end
 
   defp status(%{result_type: "deviation", result: result, minimum: threshold, goal: target}) do
     cond do
-      Decimal.compare(result, threshold) == :gt -> "fail"
-      Decimal.compare(result, target) == :gt -> "warn"
+      Decimal.compare(result, Decimal.from_float(threshold)) == :gt -> "fail"
+      Decimal.compare(result, Decimal.from_float(target)) == :gt -> "warn"
       true -> "success"
     end
   end
 
   defp status(%{result_type: "errors_number", errors: errors, minimum: threshold, goal: target}) do
     cond do
-      Decimal.compare(errors, threshold) == :gt -> "fail"
-      Decimal.compare(errors, target) == :gt -> "warn"
+      Decimal.compare(errors, Decimal.from_float(threshold)) == :gt -> "fail"
+      Decimal.compare(errors, Decimal.from_float(target)) == :gt -> "warn"
       true -> "success"
     end
   end
