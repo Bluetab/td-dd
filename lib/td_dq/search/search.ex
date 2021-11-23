@@ -61,11 +61,11 @@ defmodule TdDq.Search do
       scroll_params
       |> Map.take(["opts"])
       |> case do
-        nil ->
-          [%{}, scroll_params]
-
         %{"opts" => opts} ->
           [opts, Map.drop(scroll_params, ["opts"])]
+
+        %{} ->
+          [[], scroll_params]
       end
 
     response = Elasticsearch.post(Cluster, "_search/scroll", scroll_params, opts)
