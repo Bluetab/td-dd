@@ -5,6 +5,7 @@
 ### Changed
 
 - [TD-4299] Change CSV reader to `NimbleCSV` for performance improvement
+- [TD-4270] Move `goal` and `threshold` fields from `Rule` to `RuleImplementation`
 
 ## [4.32.2] 2021-11-17
 
