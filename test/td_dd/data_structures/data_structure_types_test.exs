@@ -65,6 +65,13 @@ defmodule TdDd.DataStructures.DataStructureTypesTest do
     end
   end
 
+  describe "get_by/2" do
+    test "enriches with template", %{data_structure_type: %{name: name, template_id: template_id}} do
+      CacheHelpers.insert_template(id: template_id)
+      assert %{template: %{id: ^template_id}} = DataStructureTypes.get_by(:lite, name: name)
+    end
+  end
+
   describe "update_data_structure_type/2" do
     test "with valid data updates the data_structure_type", %{data_structure_type: type} do
       %{

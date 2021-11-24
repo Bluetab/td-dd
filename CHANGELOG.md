@@ -6,6 +6,9 @@
 
 - [TD-4299] Change CSV reader to `NimbleCSV` for performance improvement
 - [TD-3606] Add descriptive fields to editable CSV download file
+- [TD-4341]
+ - Created function to get DataStructureType without metadata join queries
+ - Uses this function in DataStructure csv download
 
 ## [4.32.2] 2021-11-17
 
