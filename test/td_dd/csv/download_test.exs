@@ -7,7 +7,7 @@ defmodule TdDd.DownloadTest do
   alias TdCache.TemplateCache
   alias TdDd.CSV.Download
 
-  def create_template(template) do
+  defp create_template(template) do
     template
     |> Map.put(:updated_at, DateTime.utc_now())
     |> TemplateCache.put()
@@ -72,7 +72,53 @@ defmodule TdDd.DownloadTest do
       assert csv ==
                """
                type;name;group;domain;system;path;description;external_id;inserted_at;Add Info 1\r
-               #{structure_1.type};#{structure_1.name};#{structure_1.group};#{domain_name};#{Map.get(structure_1.system, "name")};CMC > Objetos Públicos > Informes > Cuadro de Mando Integral;#{structure_1.description};#{structure_1.external_id};#{structure_1.inserted_at};field_value\r
+               #{structure_1.type};#{structure_1.name};#{structure_1.group};#{domain_name};#{
+                 Map.get(structure_1.system, "name")
+               };CMC > Objetos Públicos > Informes > Cuadro de Mando Integral;#{
+                 structure_1.description
+               };#{structure_1.external_id};#{structure_1.inserted_at};field_value\r
+               """
+    end
+
+    test "to_editable_csv/1 return csv content to download" do
+      create_template(%{
+        id: 42,
+        name: "template",
+        label: "label",
+        scope: "dd",
+        content: [
+          %{
+            "name" => "group",
+            "fields" => [
+              %{
+                "name" => "field_name",
+                "type" => "list",
+                "label" => "Label foo"
+              }
+            ]
+          }
+        ]
+      })
+
+      insert(:data_structure_type, name: "type", template_id: 42)
+
+      structures = [
+        %{
+          name: "name",
+          path: ["path"],
+          template: %{"name" => "template"},
+          latest_note: %{
+            "field_name" => ["field_value"]
+          },
+          external_id: "ext_id",
+          type: "type"
+        }
+      ]
+
+      assert Download.to_editable_csv(structures) ==
+               """
+               external_id;name;type;path;field_name\r
+               ext_id;name;type;path;field_value\r
                """
     end
   end
@@ -106,8 +152,12 @@ defmodule TdDd.DownloadTest do
       assert Download.linage_to_csv(contains, depends, headers) ==
                """
                Id Origen;Nombre Origen;Tipo Origen;Id Destino;Nombre Destino;Tipo Destino;Tipo Relación\r
-               #{contains_row[:source].external_id};#{contains_row[:source].name};Group;#{contains_row[:target].external_id};#{contains_row[:target].name};Group;CONTAINS\r
-               #{depends_row[:source].external_id};#{depends_row[:source].name};Resource;#{depends_row[:target].external_id};#{depends_row[:target].name};Resource;DEPENDS\r
+               #{contains_row[:source].external_id};#{contains_row[:source].name};Group;#{
+                 contains_row[:target].external_id
+               };#{contains_row[:target].name};Group;CONTAINS\r
+               #{depends_row[:source].external_id};#{depends_row[:source].name};Resource;#{
+                 depends_row[:target].external_id
+               };#{depends_row[:target].name};Resource;DEPENDS\r
                """
     end
   end
@@ -173,7 +223,9 @@ defmodule TdDd.DownloadTest do
       assert Download.to_csv_grants(grants, header_labels) ==
                """
                User;Structure;Start date;End date;Metadata;Mutable metadata\r
-               #{grant_1.user.full_name};#{grant_1.data_structure_version.name};#{grant_1.start_date};#{grant_1.end_date};\"{\"\"nullable\"\":false,\"\"precision\"\":\"\"1,0\"\",\"\"type\"\":\"\"CHAR\"\"}\";null\r
+               #{grant_1.user.full_name};#{grant_1.data_structure_version.name};#{
+                 grant_1.start_date
+               };#{grant_1.end_date};\"{\"\"nullable\"\":false,\"\"precision\"\":\"\"1,0\"\",\"\"type\"\":\"\"CHAR\"\"}\";null\r
                """
     end
   end

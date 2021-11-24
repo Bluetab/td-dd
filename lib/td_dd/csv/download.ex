@@ -18,6 +18,8 @@ defmodule TdDd.CSV.Download do
     "inserted_at"
   ]
 
+  @editable_headers [:external_id, :name, :type, :path]
+
   @lineage_headers [
     "source_external_id",
     "source_name",
@@ -56,6 +58,43 @@ defmodule TdDd.CSV.Download do
       end)
 
     to_string(list)
+  end
+
+  def to_editable_csv(structures) do
+    type_fields =
+      structures
+      |> Enum.map(& &1.type)
+      |> Enum.uniq()
+      |> Enum.map(&DataStructureTypes.get_by(name: &1))
+      |> Enum.flat_map(&type_editable_fields/1)
+
+    type_headers = Enum.map(type_fields, &Map.get(&1, "name"))
+
+    headers = @editable_headers ++ type_headers
+    core = Enum.map(structures, &editable_structure_values(&1, type_fields))
+
+    [headers | core]
+    |> CSV.encode(separator: ?;)
+    |> Enum.to_list()
+    |> to_string()
+  end
+
+  defp type_editable_fields(%{template: %{content: content}}) when is_list(content) do
+    Enum.flat_map(content, &Map.get(&1, "fields"))
+  end
+
+  defp type_editable_fields(_type), do: []
+
+  defp editable_structure_values(%{latest_note: nil} = structure, type_headers) do
+    structure_values = Enum.map(@editable_headers, &Map.get(structure, &1))
+    empty_values = List.duplicate(nil, length(type_headers))
+    structure_values ++ empty_values
+  end
+
+  defp editable_structure_values(%{latest_note: content} = structure, type_fields) do
+    structure_values = Enum.map(@editable_headers, &Map.get(structure, &1))
+    content_values = Enum.map(type_fields, &get_content_field(&1, content))
+    structure_values ++ content_values
   end
 
   def linage_to_csv(contains, depends, header_labels \\ nil) do

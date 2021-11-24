@@ -255,19 +255,21 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   def bulk_update(conn, %{
-        "bulk_update_request" => %{
-          "search_params" => search_params,
-          "update_attributes" => update_params
-        }
+        "bulk_update_request" =>
+          %{
+            "search_params" => search_params,
+            "update_attributes" => update_params
+          } = bulk_update_request
       }) do
     claims = conn.assigns[:current_resource]
     permission = conn.assigns[:search_permission]
+    auto_publish = bulk_update_request |> Map.get("auto_publish", false)
 
     with {:can, true} <- {:can, can?(claims, create(BulkUpdate))},
          %{results: results} <- search_all_structures(claims, permission, search_params),
          ids <- Enum.map(results, & &1.id),
          {:ok, %{update_notes: update_notes}} <-
-           BulkUpdate.update_all(ids, update_params, claims) do
+           BulkUpdate.update_all(ids, update_params, claims, auto_publish) do
       body = Jason.encode!(%{data: %{message: Map.keys(update_notes)}})
 
       conn
@@ -354,6 +356,25 @@ defmodule TdDdWeb.DataStructureController do
         |> put_resp_content_type("text/csv", "utf-8")
         |> put_resp_header("content-disposition", "attachment; filename=\"structures.zip\"")
         |> send_resp(:ok, Download.to_csv(data_structures, header_labels))
+    end
+  end
+
+  def editable_csv(conn, params) do
+    params = Map.drop(params, ["page", "size"])
+    permission = conn.assigns[:search_permission]
+    claims = conn.assigns[:current_resource]
+
+    %{results: data_structures} = search_all_structures(claims, permission, params)
+
+    case data_structures do
+      [] ->
+        send_resp(conn, :no_content, "")
+
+      _ ->
+        conn
+        |> put_resp_content_type("text/csv", "utf-8")
+        |> put_resp_header("content-disposition", "attachment; filename=\"structures.zip\"")
+        |> send_resp(:ok, Download.to_editable_csv(data_structures))
     end
   end
 

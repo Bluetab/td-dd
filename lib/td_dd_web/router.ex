@@ -35,6 +35,7 @@ defmodule TdDdWeb.Router do
     post("/data_structures/search", DataStructureController, :search)
     post("/data_structures/bulk_update", DataStructureController, :bulk_update)
     post("/data_structures/csv", DataStructureController, :csv)
+    post("/data_structures/editable_csv", DataStructureController, :editable_csv)
 
     post(
       "/data_structures/bulk_update_template_content",
@@ -127,6 +128,8 @@ defmodule TdDdWeb.Router do
     post("/grants/search", SearchController, :search_grants)
     post("/grants/search/mine", SearchController, :search_my_grants)
     post("/grants/csv", GrantController, :csv)
+
+    resources("/grants_bulk", GrantsController, only: [:update], singleton: true)
 
     resources("/grant_request_groups", GrantRequestGroupController,
       only: [:index, :show, :create, :delete]

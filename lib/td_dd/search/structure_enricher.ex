@@ -22,7 +22,7 @@ defmodule TdDd.Search.StructureEnricher do
   def refresh(opts \\ []) do
     case Process.whereis(__MODULE__) do
       nil -> {:error, :not_started}
-      pid -> GenServer.call(pid, :refresh, Keyword.get(opts, :timeout, 10_000))
+      pid -> GenServer.call(pid, :refresh, Keyword.get(opts, :timeout, 60_000))
     end
   end
 
@@ -31,7 +31,7 @@ defmodule TdDd.Search.StructureEnricher do
   the N+1 problems caused by enriching in Document.encode/1.
   """
   def enrich(structure, type \\ nil, content_opt \\ nil) do
-    GenServer.call(__MODULE__, {:enrich, structure, type, content_opt})
+    GenServer.call(__MODULE__, {:enrich, structure, type, content_opt}, 65_000)
   end
 
   def count, do: GenServer.call(__MODULE__, :count)

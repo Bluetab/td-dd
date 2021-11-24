@@ -407,6 +407,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
   describe "csv" do
     setup :create_data_structure
+
     @tag authentication: [role: "admin"]
     test "gets csv content", %{
       conn: conn,
@@ -437,6 +438,29 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert String.contains?(resp_body, data_structure.external_id)
       assert String.contains?(resp_body, "foo_latest_note")
       assert not String.contains?(resp_body, child_structure.external_id)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "gets editable csv content", %{
+      conn: conn,
+      data_structure: data_structure,
+      data_structure_version: data_structure_version
+    } do
+      insert(:structure_note,
+        data_structure: data_structure,
+        df_content: %{"string" => "foo", "list" => "bar"},
+        status: :published
+      )
+
+      assert %{resp_body: body} = post(conn, data_structure_path(conn, :editable_csv, %{}))
+
+      %{external_id: external_id} = data_structure
+      %{name: name, type: type, path: path} = data_structure_version
+
+      assert body == """
+             external_id;name;type;path;string;list\r
+             #{external_id};#{name};#{type};#{Enum.join(path, "")};foo;bar\r
+             """
     end
 
     @tag authentication: [role: "admin"]
