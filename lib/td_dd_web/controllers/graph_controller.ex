@@ -30,14 +30,6 @@ defmodule TdDdWeb.GraphController do
         |> put_resp_content_type("application/json", "utf-8")
         |> send_resp(code, response |> Jason.encode!())
     end
-    # pre_create_id = Ecto.UUID.generate
-
-    # json = %{pre_create_id: pre_create_id} |> Jason.encode!()
-
-    # conn
-    # |> put_resp_header("location", Routes.graph_path(TdDdWeb.Endpoint, :show, pre_create_id))
-    # |> put_resp_content_type("application/json", "utf-8")
-    # |> send_resp(:created, json)
   end
 
   def show(conn, %{"id" => id} = _params) do

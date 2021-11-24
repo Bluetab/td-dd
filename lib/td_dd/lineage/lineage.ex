@@ -291,7 +291,6 @@ defmodule TdDd.Lineage do
       "Completed type=#{opts[:type]} ids=#{inspect(source_ids)} excludes=#{inspect(excludes)}"
       |> Logger.info()
 
-      #:timer.sleep(3000)
       graph = Graphs.create(drawing, hash)
       graph
     end

@@ -92,7 +92,6 @@ defmodule TdDd.Lineage.Import.Reader do
   end
 
   defp record_to_node([_ | _] = record, {transform, nodes}) do
-
     node =
       record
       |> transform.()

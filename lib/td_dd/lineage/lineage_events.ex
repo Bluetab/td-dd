@@ -12,18 +12,6 @@ defmodule TdDd.Lineage.LineageEvents do
     %LineageEvent{}
     |> LineageEvent.changeset(attrs)
     |> Repo.insert()
-    |> case do
-      {:ok, %LineageEvent{} = event} ->
-        # %{execution: exec} = Repo.preload(event, :execution)
-
-        # if event.type === "FAILED" do
-        #   IndexWorker.reindex_implementations(exec.implementation_id)
-        # end
-        {:ok, event}
-
-      error ->
-        error
-    end
   end
 
   def get_by_user_id(user_id) do

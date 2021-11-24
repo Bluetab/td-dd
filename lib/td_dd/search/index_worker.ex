@@ -150,7 +150,6 @@ defmodule TdDd.Search.IndexWorker do
   end
 
   defp do_reindex_structures(data_structure_ids) when is_list(data_structure_ids) do
-
     count = Enum.count(data_structure_ids)
     Logger.info("Reindexing #{count} data structures")
 

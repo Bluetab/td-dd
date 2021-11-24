@@ -80,7 +80,6 @@ defmodule TdDdWeb.GraphControllerTest do
         |> post(Routes.graph_path(conn, :create), type: "impact", ids: ["bar"])
         |> json_response(:accepted)
 
-      #:timer.sleep(3000)
       TdDd.Lineage.task_await(IEx.Helpers.ref(task_reference), @mark_completed)
 
       assert %{"ids" => ids, "opts" => opts, "groups" => groups, "paths" => paths, "resources" => resources} =
