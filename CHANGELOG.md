@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-4262] Lineage graph polling
+
 ### Changed
 
 - [TD-4299] Change CSV reader to `NimbleCSV` for performance improvement
