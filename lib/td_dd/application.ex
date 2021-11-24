@@ -62,7 +62,7 @@ defmodule TdDd.Application do
       TdDq.Cache.DomainEventConsumer,
       # Scheduler for periodic tasks
       TdDd.Scheduler,
-      TdDq.Cache.RuleMigrator
+      TdDq.Cache.RuleMigrator,
     ]
   end
 end

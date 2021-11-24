@@ -67,6 +67,8 @@ defmodule TdDd.Search.StructureEnricher do
           domain_parents: domain_parents
         } = state
       ) do
+
+
     reply =
       data_structure
       |> enrich_domain(domains)

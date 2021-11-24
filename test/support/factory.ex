@@ -20,6 +20,7 @@ defmodule TdDd.Factory do
   alias TdDd.DataStructures.RelationType
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.DataStructures.StructureNote
+  alias TdDd.Lineage.Graph
   alias TdDd.Lineage.Units
   alias TdDd.Profiles.Profile
   alias TdDd.Systems.System
@@ -150,6 +151,11 @@ defmodule TdDd.Factory do
       translation: sequence("translation"),
       metadata_views: [%MetadataView{name: "foo", fields: ["bar"]}]
     }
+  end
+
+  def graph_factory(attrs) do
+    %Graph{}
+    |> merge_attributes(attrs)
   end
 
   def metadata_view_factory do
