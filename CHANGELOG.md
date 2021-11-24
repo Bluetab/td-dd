@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-4344] Add a new enpoint API for lite `structure_types` request wihout `metadata_fields`
+
 ### Changed
 
 - [TD-4299] Change CSV reader to `NimbleCSV` for performance improvement
