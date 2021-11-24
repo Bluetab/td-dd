@@ -5,7 +5,6 @@ defmodule TdDd.Lineage.LineageEvent do
 
   import Ecto.Changeset
 
-
   schema "lineage_events" do
     field(:user_id, :integer)
     field(:graph_data, :string)

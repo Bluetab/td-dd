@@ -8,9 +8,9 @@ defmodule TdDd.Lineage do
   alias Graph.Drawing
   alias Graph.Layout
   alias TdDd.CSV.Download
-  alias TdDd.Lineage.LineageEvents
   alias TdDd.Lineage.GraphData
   alias TdDd.Lineage.Graphs
+  alias TdDd.Lineage.LineageEvents
 
   require Logger
 
@@ -85,7 +85,6 @@ defmodule TdDd.Lineage do
   def task_await(task_reference, create_event?) do
     GenServer.call(__MODULE__, {:task_await, task_reference, create_event?})
   end
-
 
   ## GenServer callbacks
 
@@ -174,7 +173,6 @@ defmodule TdDd.Lineage do
     state
   end
 
-
   # If the task succeeds...
   @impl true
   def handle_info({ref, _result}, state) do
@@ -201,7 +199,6 @@ defmodule TdDd.Lineage do
 
     {:noreply, state}
   end
-
 
   def create_event(task_info) do
     %{hash: hash, user_id: user_id, graph_data: graph_data, task: %{ref: ref}} = task_info

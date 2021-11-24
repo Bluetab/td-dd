@@ -88,7 +88,6 @@ defmodule TdDdWeb.GraphControllerTest do
         |> post(Routes.graph_path(conn, :create), type: "impact", ids: ["bar"])
         |> json_response(:created)
 
-
       assert ids == ["bar"]
       assert opts == %{"type" => "impact"}
       assert [%{"id" => "@@ROOT"}, %{"id" => "foo"}] = groups
@@ -115,8 +114,6 @@ defmodule TdDdWeb.GraphControllerTest do
 
     end
 
-
-
     @tag authentication: [role: "admin"]
     @tag contains: %{"foo" => ["bar", "baz"]}
     @tag depends: [{"bar", "baz"}]
@@ -126,9 +123,7 @@ defmodule TdDdWeb.GraphControllerTest do
                |> post(Routes.graph_path(conn, :create), type: "impact", ids: ["bar"])
                |> json_response(:accepted)
 
-
       TdDd.Lineage.task_await(IEx.Helpers.ref(task_reference), @mark_completed)
-
 
       assert %{"id" => id} =
         conn
@@ -136,7 +131,6 @@ defmodule TdDdWeb.GraphControllerTest do
           Routes.graph_path(conn, :get_graph_by_hash, graph_hash)
           )
         |> json_response(:ok)
-
 
       assert body =
                conn

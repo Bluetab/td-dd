@@ -78,9 +78,7 @@ defmodule TdDdWeb.Router do
     post("/graphs/csv", GraphController, :csv)
     resources("/graphs", GraphController, only: [:create, :show])
 
-
     resources("/lineage_events", LineageEventController, only: [:index])
-
 
     resources("/nodes", NodeController, only: [:index, :show])
 
