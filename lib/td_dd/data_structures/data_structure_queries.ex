@@ -46,20 +46,14 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   """
 
   @dsv_children """
-  (WITH RECURSIVE "paths" AS (SELECT v.id AS id, ds.id as dsid, v.id AS vid, v.name AS name, ARRAY[v.id] AS structure_ids
-  FROM data_structure_versions v
-  INNER JOIN data_structures AS ds ON ds.id = v.data_structure_id where v.deleted_at is null
-  UNION ALL
-  SELECT v.id AS id, ds.id as dsid, p0.vid AS vid, v.name AS name, ARRAY_APPEND(p0.structure_ids, v.id)::bigint[] AS structure_ids
-  FROM data_structure_versions v
-  INNER JOIN data_structures AS ds ON ds.id = v.data_structure_id
-  INNER JOIN data_structure_relations AS r ON r.parent_id = v.id
-  INNER JOIN relation_types AS t ON t.id = r.relation_type_id AND t.name = 'default'
-  INNER JOIN paths AS p0 ON p0.id = r.child_id
-  ) SELECT dsid, count(*), array_agg(structure_ids)
-  FROM  (select distinct dsid, unnest(structure_ids) as structure_ids from "paths") t
-  group by dsid
-  )
+  select ancestor_ds_id as dsid, count(dsv_id), ARRAY_AGG (dsv_id) from 
+  (
+    SELECT dsh.dsv_id, ancestor_ds_id FROM data_structures_hierarchy dsh 
+    join (select id as dsv_id, version as child_version, deleted_at as child_deleted_at from data_structure_versions) dsvc on dsh.dsv_id = dsvc.dsv_id
+    join (select id as dsv_id, version as ancestor_version, deleted_at as ancestor_deleted_at from data_structure_versions) dsva on dsh.ancestor_dsv_id = dsva.dsv_id
+    where ancestor_deleted_at is null and child_deleted_at is null
+  ) as foo
+  group by ancestor_ds_id
   """
 
   def children(opts \\ []) do

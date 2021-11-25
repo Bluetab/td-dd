@@ -375,7 +375,7 @@ defmodule TdDd.DataStructuresTest do
                  content: :searchable
                )
 
-      assert %{data_structure: data_structure} = dsv
+      assert %{data_structure: data_structure} = dsv |> IO.inspect
       assert %{search_content: search_content, latest_note: latest_note} = data_structure
       assert search_content == %{"string" => "initial", "list" => "one"}
       assert latest_note == %{"string" => "initial", "list" => "one", "foo" => "bar"}
