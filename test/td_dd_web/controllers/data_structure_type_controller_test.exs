@@ -46,6 +46,36 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
     end
   end
 
+  describe "lite" do
+    @tag authentication: [role: "admin"]
+    test "lists all data_structure_types without metadata_fields", %{conn: conn} do
+      insert(:data_structure_type, template_id: 123)
+
+      assert %{"data" => [structure_type]} =
+               conn
+               |> get(Routes.data_structure_type_path(conn, :lite))
+               |> json_response(:ok)
+
+      assert %{"template_id" => 123} = structure_type
+      refute Map.has_key?(structure_type, "template")
+      refute Map.has_key?(structure_type, "metadata_fields")
+    end
+
+    @tag authentication: [role: "admin"]
+    test "enriches template without metadata_fields", %{conn: conn, template: %{id: template_id}} do
+      insert(:data_structure_type, template_id: template_id)
+
+      assert %{"data" => [structure_type]} =
+               conn
+               |> get(Routes.data_structure_type_path(conn, :lite))
+               |> json_response(:ok)
+
+      assert %{"template" => %{"id" => ^template_id}} = structure_type
+      refute Map.has_key?(structure_type, "template_id")
+      refute Map.has_key?(structure_type, "metadata_fields")
+    end
+  end
+
   describe "update data_structure_type" do
     setup do
       [data_structure_type: insert(:data_structure_type, @create_attrs)]
