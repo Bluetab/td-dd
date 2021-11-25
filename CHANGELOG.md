@@ -13,6 +13,7 @@
 - [TD-4341]
  - Created function to get DataStructureType without metadata join queries
  - Uses this function in DataStructure csv download
+- [TD-4351] Remove metadata_fields from structure_types when reindex structures
 
 ## [4.32.2] 2021-11-17
 

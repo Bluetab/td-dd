@@ -103,7 +103,7 @@ defmodule TdDd.Search.StructureEnricher do
   end
 
   defp type_map do
-    DataStructureTypes.list_data_structure_types()
+    DataStructureTypes.list_data_structure_types(:lite)
     |> Map.new(fn %{name: type, template: template} -> {type, template} end)
   end
 
