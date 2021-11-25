@@ -51,6 +51,12 @@ defmodule TdDd.DataStructures.DataStructureTypes do
     |> enrich_template()
   end
 
+  def get_by(:lite, clauses) do
+    DataStructureType
+    |> Repo.get_by(clauses)
+    |> enrich_template()
+  end
+
   @doc """
   Updates a `DataStructureType`.
 
