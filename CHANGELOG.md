@@ -5,11 +5,16 @@
 ### Added
 
 - [TD-4262] Lineage graph polling
+- [TD-4344] Add a new enpoint API for lite `structure_types` request wihout `metadata_fields`
 
 ### Changed
 
 - [TD-4299] Change CSV reader to `NimbleCSV` for performance improvement
 - [TD-3606] Add descriptive fields to editable CSV download file
+- [TD-4341]
+ - Created function to get DataStructureType without metadata join queries
+ - Uses this function in DataStructure csv download
+- [TD-4351] Remove metadata_fields from structure_types when reindex structures
 
 ## [4.32.2] 2021-11-17
 

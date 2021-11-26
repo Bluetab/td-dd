@@ -118,6 +118,8 @@ defmodule TdDdWeb.Router do
 
     resources("/relation_types", RelationTypeController, except: [:new, :edit])
 
+    get("/data_structure_types/lite", DataStructureTypeController, :lite)
+
     resources("/data_structure_types", DataStructureTypeController, only: [:index, :show, :update])
 
     resources("/data_structure_tags", DataStructureTagController, except: [:new, :edit])

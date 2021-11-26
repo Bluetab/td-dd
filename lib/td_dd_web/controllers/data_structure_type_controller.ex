@@ -38,6 +38,30 @@ defmodule TdDdWeb.DataStructureTypeController do
     end
   end
 
+  swagger_path :lite do
+    description("Get data structure types without metadata fields to improve performance")
+    produces("application/json")
+
+    response(200, "OK", Schema.ref(:DataStructureTypesResponse))
+    response(403, "Forbidden")
+    response(422, "Client Error")
+  end
+
+  def lite(conn, _params) do
+    claims = conn.assigns[:current_resource]
+
+    if can?(claims, index(%DataStructureType{})) do
+      data_structure_types = DataStructureTypes.list_data_structure_types(:lite)
+
+      render(conn, "index.json", data_structure_types: data_structure_types)
+    else
+      conn
+      |> put_status(:forbidden)
+      |> put_view(ErrorView)
+      |> render("403.json")
+    end
+  end
+
   swagger_path :show do
     description("Get data structure type with the given id")
     produces("application/json")
