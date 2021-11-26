@@ -169,18 +169,18 @@ defmodule TdDd.Lineage do
   defp await_aux(%Task{ref: ref} = task_to_await, create_event?, state) do
     Task.await(task_to_await)
     {task_info, state} = pop_in(state.tasks[ref])
-    if create_event?, do: create_event(task_info)
+    if create_event?, do: create_event(%TdDd.Lineage.Graph{}, task_info)
     state
   end
 
   # If the task succeeds...
   @impl true
-  def handle_info({ref, _result}, state) do
+  def handle_info({ref, graph}, state) do
     # The task succeed so we can cancel the monitoring and discard the DOWN message
     Process.demonitor(ref, [:flush])
 
     {task_info, state} = pop_in(state.tasks[ref])
-    create_event(task_info)
+    create_event(graph, task_info)
     {:noreply, state}
   end
 
@@ -200,10 +200,13 @@ defmodule TdDd.Lineage do
     {:noreply, state}
   end
 
-  def create_event(task_info) do
+  def create_event(%TdDd.Lineage.Graph{id: graph_id}, task_info) do
     %{hash: hash, user_id: user_id, graph_data: graph_data, task: %{ref: ref}} = task_info
 
+    IO.inspect(task_info, label: "GRAPH_DATA")
+
     LineageEvents.create_event(%{
+      graph_id: graph_id,
       graph_data: graph_data,
       user_id: user_id,
       graph_hash: hash,
@@ -291,8 +294,7 @@ defmodule TdDd.Lineage do
       "Completed type=#{opts[:type]} ids=#{inspect(source_ids)} excludes=#{inspect(excludes)}"
       |> Logger.info()
 
-      graph = Graphs.create(drawing, hash)
-      graph
+      Graphs.create(drawing, hash) |> IO.inspect(label: "GRAPH")
     end
   end
 

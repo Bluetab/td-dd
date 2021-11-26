@@ -4,6 +4,7 @@ defmodule TdDd.Repo.Migrations.CreateLineageEvents do
   def change do
     create table("lineage_events") do
       add(:user_id, :bigint)
+      add(:graph_id, :bigint)
       add(:graph_data, :string)
       add(:graph_hash, :string)
       add(:status, :string)

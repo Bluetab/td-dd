@@ -4,6 +4,7 @@ defmodule TdDdWeb.GraphController do
   # use PhoenixSwagger
 
   alias TdDd.Lineage
+  alias TdDd.Lineage.LineageEvents
   alias TdDd.Lineage.Graph
   alias TdDd.Lineage.Graphs
 
@@ -43,13 +44,19 @@ defmodule TdDdWeb.GraphController do
   end
 
   def get_graph_by_hash(conn, %{"hash" => hash} = _params) do
-    with %Graph{id: id, data: data} <- Graphs.find_by_hash!(hash) do
-      json = Map.put(data, :hash, hash) |> Map.put(:id, id) |> Jason.encode!()
 
-      conn
-      |> put_resp_content_type("application/json", "utf-8")
-      |> send_resp(200, json)
+    {code, data} =
+    with nil <- LineageEvents.pending_by_hash(hash),
+         %Graph{id: id, data: data} <- Graphs.find_by_hash!(hash) do
+          {:ok, Map.put(data, :hash, hash) |> Map.put(:id, id)}
+         else
+          %{status: "already_started"} = event -> {:accepted, event}
     end
+
+    json = data |> Jason.encode!()
+    conn
+      |> put_resp_content_type("application/json", "utf-8")
+      |> send_resp(code, json)
   end
 
   def csv(conn, %{"id" => id}) do

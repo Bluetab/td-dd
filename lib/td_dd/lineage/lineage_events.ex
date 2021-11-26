@@ -16,7 +16,15 @@ defmodule TdDd.Lineage.LineageEvents do
 
   def get_by_user_id(user_id) do
     LineageEvent
-    |> where(user_id: ^user_id)
+    |> distinct([le], [le.user_id, le.graph_hash])
+    |> order_by([le], [desc: le.user_id, desc: le.graph_hash, desc: le.inserted_at])
+    |> subquery()
+    |> order_by([le], desc: le.inserted_at)
+    |> limit(10)
+    |> (fn query ->
+      IO.inspect(Ecto.Adapters.SQL.to_sql(:all, Repo, query), label: "query")
+      query
+    end).()
     |> Repo.all()
   end
 
