@@ -109,7 +109,6 @@ defmodule TdDd.Lineage do
 
   @impl true
   def handle_call({:impact, external_ids, user_id, opts}, _from, state) do
-
     graph_data =
       external_ids
       |> GraphData.impact(opts)
@@ -162,7 +161,7 @@ defmodule TdDd.Lineage do
   end
 
   # There will be no task_to_await in case it was processed before by handle_info
-  defp await_aux(nil = _task_to_await, _create_event?, state)  do
+  defp await_aux(nil = _task_to_await, _create_event?, state) do
     state
   end
 
@@ -203,8 +202,6 @@ defmodule TdDd.Lineage do
   def create_event(%TdDd.Lineage.Graph{id: graph_id}, task_info) do
     %{hash: hash, user_id: user_id, graph_data: graph_data, task: %{ref: ref}} = task_info
 
-    IO.inspect(task_info, label: "GRAPH_DATA")
-
     LineageEvents.create_event(%{
       graph_id: graph_id,
       graph_data: graph_data,
@@ -222,8 +219,8 @@ defmodule TdDd.Lineage do
     |> :erlang.ref_to_list()
     |> List.to_string()
     |> (fn string_ref ->
-      Regex.run(~r/<(.*)>/, string_ref)
-    end).()
+          Regex.run(~r/<(.*)>/, string_ref)
+        end).()
     |> Enum.at(1)
   end
 
@@ -276,7 +273,13 @@ defmodule TdDd.Lineage do
 
     %{
       drawing_task: {:just_started, hash, task.ref |> ref_to_string},
-      state: put_in(state.tasks[task.ref], %{task: task, hash: hash, user_id: user_id, graph_data: graph_data_string})
+      state:
+        put_in(state.tasks[task.ref], %{
+          task: task,
+          hash: hash,
+          user_id: user_id,
+          graph_data: graph_data_string
+        })
     }
   end
 
@@ -294,7 +297,7 @@ defmodule TdDd.Lineage do
       "Completed type=#{opts[:type]} ids=#{inspect(source_ids)} excludes=#{inspect(excludes)}"
       |> Logger.info()
 
-      Graphs.create(drawing, hash) |> IO.inspect(label: "GRAPH")
+      Graphs.create(drawing, hash)
     end
   end
 

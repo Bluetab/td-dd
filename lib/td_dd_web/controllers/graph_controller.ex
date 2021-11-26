@@ -4,32 +4,35 @@ defmodule TdDdWeb.GraphController do
   # use PhoenixSwagger
 
   alias TdDd.Lineage
-  alias TdDd.Lineage.LineageEvents
   alias TdDd.Lineage.Graph
   alias TdDd.Lineage.Graphs
+  alias TdDd.Lineage.LineageEvents
 
   action_fallback(TdDdWeb.FallbackController)
 
   def create(conn, %{} = params) do
-
     with %{user_id: user_id} = _claims <- conn.assigns[:current_resource] do
-      {code, response, id} = case do_drawing(user_id, params) do
-        {:already_calculated, %Graph{id: id, data: graph_data}} ->
-          data =
-            graph_data
-            |> Map.put(:id, id)
+      {code, response, id} =
+        case do_drawing(user_id, params) do
+          {:already_calculated, %Graph{id: id, data: graph_data}} ->
+            data =
+              graph_data
+              |> Map.put(:id, id)
 
-          {:created, data, id}
+            {:created, data, id}
 
-        {:just_started, hash, task_reference} ->
-          {:accepted, %{graph_hash: hash, status: "just_started", task_reference: task_reference}, hash}
-        {:already_started, %{graph_hash: hash } = event} -> {:accepted, event, hash}
-      end
+          {:just_started, hash, task_reference} ->
+            {:accepted,
+             %{graph_hash: hash, status: "just_started", task_reference: task_reference}, hash}
+
+          {:already_started, %{graph_hash: hash} = event} ->
+            {:accepted, event, hash}
+        end
 
       conn
-        |> put_resp_header("location", Routes.graph_path(TdDdWeb.Endpoint, :show, id))
-        |> put_resp_content_type("application/json", "utf-8")
-        |> send_resp(code, response |> Jason.encode!())
+      |> put_resp_header("location", Routes.graph_path(TdDdWeb.Endpoint, :show, id))
+      |> put_resp_content_type("application/json", "utf-8")
+      |> send_resp(code, response |> Jason.encode!())
     end
   end
 
@@ -44,19 +47,19 @@ defmodule TdDdWeb.GraphController do
   end
 
   def get_graph_by_hash(conn, %{"hash" => hash} = _params) do
-
     {code, data} =
-    with nil <- LineageEvents.pending_by_hash(hash),
-         %Graph{id: id, data: data} <- Graphs.find_by_hash!(hash) do
-          {:ok, Map.put(data, :hash, hash) |> Map.put(:id, id)}
-         else
-          %{status: "already_started"} = event -> {:accepted, event}
-    end
+      with nil <- LineageEvents.pending_by_hash(hash),
+           %Graph{id: id, data: data} <- Graphs.find_by_hash!(hash) do
+        {:ok, Map.put(data, :hash, hash) |> Map.put(:id, id)}
+      else
+        %{status: "already_started"} = event -> {:accepted, event}
+      end
 
     json = data |> Jason.encode!()
+
     conn
-      |> put_resp_content_type("application/json", "utf-8")
-      |> send_resp(code, json)
+    |> put_resp_content_type("application/json", "utf-8")
+    |> send_resp(code, json)
   end
 
   def csv(conn, %{"id" => id}) do

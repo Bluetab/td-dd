@@ -795,10 +795,9 @@ defmodule TdDdWeb.SwaggerDefinitions do
           properties do
             data(Schema.ref(:LineageEvents))
           end
-        end,
+        end
     }
   end
-
 
   def user_search_filters_definitions do
     %{
