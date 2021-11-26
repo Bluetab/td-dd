@@ -74,8 +74,11 @@ defmodule TdDdWeb.Router do
       singleton: true
     )
 
+    get "/graphs/hash/:hash", GraphController, :get_graph_by_hash
     post("/graphs/csv", GraphController, :csv)
     resources("/graphs", GraphController, only: [:create, :show])
+
+    resources("/lineage_events", LineageEventController, only: [:index])
 
     resources("/nodes", NodeController, only: [:index, :show])
 

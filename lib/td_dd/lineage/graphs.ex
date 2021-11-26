@@ -29,4 +29,8 @@ defmodule TdDd.Lineage.Graphs do
   def find_by_hash(hash) do
     Repo.get_by(Graph, %{hash: hash})
   end
+
+  def find_by_hash!(hash) do
+    Repo.get_by!(Graph, %{hash: hash})
+  end
 end

@@ -4,6 +4,7 @@
 
 ### Added
 
+- [TD-4262] Lineage graph polling
 - [TD-4344] Add a new enpoint API for lite `structure_types` request wihout `metadata_fields`
 
 ### Changed
