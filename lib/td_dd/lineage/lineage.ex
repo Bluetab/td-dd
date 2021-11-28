@@ -10,9 +10,12 @@ defmodule TdDd.Lineage do
   alias TdDd.CSV.Download
   alias TdDd.Lineage.GraphData
   alias TdDd.Lineage.Graphs
+  alias TdDd.Lineage.LineageEvent
   alias TdDd.Lineage.LineageEvents
 
   require Logger
+
+  @shutdown_timeout 2000
 
   @doc """
   Starts the `GenServer`
@@ -82,8 +85,8 @@ defmodule TdDd.Lineage do
     GenServer.call(__MODULE__, {:sample, user_id}, 60_000)
   end
 
-  def task_await(task_reference, create_event?) do
-    GenServer.call(__MODULE__, {:task_await, task_reference, create_event?})
+  def test_env_task_await(task_reference, create_event?) do
+    GenServer.call(__MODULE__, {:test_env_task_await, task_reference, create_event?})
   end
 
   ## GenServer callbacks
@@ -154,7 +157,7 @@ defmodule TdDd.Lineage do
   end
 
   @impl true
-  def handle_call({:task_await, task_reference, create_event?}, _from, state) do
+  def handle_call({:test_env_task_await, task_reference, create_event?}, _from, state) do
     task_to_await = get_in(state, [:tasks, task_reference, :task])
     await_aux(task_to_await, create_event?, state)
     {:reply, task_reference, state}
@@ -172,6 +175,26 @@ defmodule TdDd.Lineage do
     state
   end
 
+  # This handle function executes when the task has timed out
+  def handle_info({:timeout, %{ref: ref} = task}, state) do
+    {task_info, state} = pop_in(state.tasks[ref])
+
+    Logger.warn("Task timeout, reference: #{inspect(ref)}}, trying to shut it down in #{@shutdown_timeout}...")
+
+    case Task.shutdown(task, @shutdown_timeout) do
+      {:ok, reply} ->
+        # Reply received while shutting down
+        create_event(task_info, :timeout, reply)
+      {:exit, reason} ->
+        # Task died
+        create_event(task_info, :timeout, reason)
+      nil ->
+        create_event(task_info, :timeout, "shutdown")
+    end
+
+    {:noreply, state}
+  end
+
   # If the task succeeds...
   @impl true
   def handle_info({ref, graph}, state) do
@@ -179,23 +202,15 @@ defmodule TdDd.Lineage do
     Process.demonitor(ref, [:flush])
 
     {task_info, state} = pop_in(state.tasks[ref])
+    Process.cancel_timer(task_info.task_timer)
     create_event(graph, task_info)
     {:noreply, state}
   end
 
   # If the task fails...
   def handle_info({:DOWN, ref, _, _, reason}, state) do
-    {%{hash: hash, user_id: user_id, graph_data: graph_data}, state} = pop_in(state.tasks[ref])
-
-    LineageEvents.create_event(%{
-      graph_data: graph_data,
-      user_id: user_id,
-      graph_hash: hash,
-      status: "FAILED",
-      task_reference: ref |> ref_to_string,
-      message: "#{inspect(reason)}"
-    })
-
+    {task_info, state} = pop_in(state.tasks[ref])
+    create_event(task_info, :DOWN, reason)
     {:noreply, state}
   end
 
@@ -208,8 +223,28 @@ defmodule TdDd.Lineage do
       user_id: user_id,
       graph_hash: hash,
       status: "COMPLETED",
-      task_reference: ref |> ref_to_string
+      task_reference: ref_to_string(ref)
     })
+  end
+
+  def create_event(task_info, fail_type, message) do
+    %{hash: hash, user_id: user_id, graph_data: graph_data, task: %{ref: ref}} = task_info
+
+    LineageEvents.create_event(%{
+      graph_data: graph_data,
+      user_id: user_id,
+      graph_hash: hash,
+      status: fail_type_to_str(fail_type),
+      task_reference: ref_to_string(ref),
+      message: "#{fail_type}, #{inspect(message)}"
+    })
+  end
+
+  defp fail_type_to_str(fail_type) do
+    case fail_type do
+      :DOWN -> "FAILED"
+      :timeout -> "TIMED_OUT"
+    end
   end
 
   ## Private functions
@@ -235,9 +270,13 @@ defmodule TdDd.Lineage do
   end
 
   def no_pending_graph(hash) do
-    case LineageEvents.pending_by_hash(hash) do
+    case LineageEvents.last_event_by_hash(hash) do
       nil -> :ok
-      %{} = pending -> {:already_started, pending}
+      %LineageEvent{status: "COMPLETED"} -> :ok
+      %LineageEvent{status: "FAILED"} -> :ok
+      %LineageEvent{status: "TIMED_OUT"} -> :ok
+      %LineageEvent{status: "ALREADY_STARTED"} = event_pending ->
+        {:already_started, event_pending}
     end
   end
 
@@ -251,6 +290,15 @@ defmodule TdDd.Lineage do
     end
   end
 
+  def timeout do
+    Application.get_env(:td_dd, __MODULE__)
+    |> Map.Helpers.to_map()
+    |> timeout
+  end
+
+  def timeout(%{timeout: timeout}), do: timeout
+  def timeout(nil), do: 90_000
+
   def launch_task(state, graph_data, user_id, opts) do
     drawing = find_no_pending_drawing(graph_data)
     launch_task(state, graph_data, drawing, user_id, opts)
@@ -260,7 +308,9 @@ defmodule TdDd.Lineage do
     task =
       Task.Supervisor.async_nolink(TdDd.TaskSupervisor, fn -> do_drawing(graph_data, opts) end)
 
-    Task.Supervisor.children(TdDd.TaskSupervisor)
+    task_timer = Process.send_after(self(), {:timeout, task}, timeout())
+
+    #Task.Supervisor.children(TdDd.TaskSupervisor)
     graph_data_string = GraphData.ids_to_string(graph_data)
 
     LineageEvents.create_event(%{
@@ -276,6 +326,7 @@ defmodule TdDd.Lineage do
       state:
         put_in(state.tasks[task.ref], %{
           task: task,
+          task_timer: task_timer,
           hash: hash,
           user_id: user_id,
           graph_data: graph_data_string
