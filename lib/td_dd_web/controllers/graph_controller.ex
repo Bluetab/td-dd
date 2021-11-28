@@ -6,6 +6,7 @@ defmodule TdDdWeb.GraphController do
   alias TdDd.Lineage
   alias TdDd.Lineage.Graph
   alias TdDd.Lineage.Graphs
+  alias TdDd.Lineage.LineageEvent
   alias TdDd.Lineage.LineageEvents
 
   action_fallback(TdDdWeb.FallbackController)
@@ -23,10 +24,10 @@ defmodule TdDdWeb.GraphController do
 
           {:just_started, hash, task_reference} ->
             {:accepted,
-             %{graph_hash: hash, status: "just_started", task_reference: task_reference}, hash}
+             %{graph_hash: hash, status: "JUST_STARTED", task_reference: task_reference}, hash}
 
-          {:already_started, %{graph_hash: hash} = event} ->
-            {:accepted, event, hash}
+          {:already_started, %LineageEvent{graph_hash: hash} = event} ->
+            {:accepted, TdDdWeb.LineageEventView.render("show.json", %{lineage_event: event}), hash}
         end
 
       conn
@@ -48,11 +49,17 @@ defmodule TdDdWeb.GraphController do
 
   def get_graph_by_hash(conn, %{"hash" => hash} = _params) do
     {code, data} =
-      with nil <- LineageEvents.pending_by_hash(hash),
+      with %LineageEvent{status: "COMPLETED"} <- LineageEvents.last_event_by_hash(hash),
            %Graph{id: id, data: data} <- Graphs.find_by_hash!(hash) do
         {:ok, Map.put(data, :hash, hash) |> Map.put(:id, id)}
       else
-        %{status: "already_started"} = event -> {:accepted, event}
+        nil -> {:not_found, %{}}
+        %LineageEvent{status: "ALREADY_STARTED"} = event ->
+          {:accepted, TdDdWeb.LineageEventView.render("show.json", %{lineage_event: event})}
+        %LineageEvent{status: "FAILED"} = event ->
+          {:internal_server_error, TdDdWeb.LineageEventView.render("show.json", %{lineage_event: event})}
+        %LineageEvent{status: "TIMED_OUT"} = event ->
+          {:internal_server_error, TdDdWeb.LineageEventView.render("show.json", %{lineage_event: event})}
       end
 
     json = data |> Jason.encode!()
