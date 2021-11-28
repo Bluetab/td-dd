@@ -1,5 +1,8 @@
 import Config
 
+config :td_dd, TdDd.Lineage,
+  timeout: System.get_env("LINEAGE_TIMEOUT_MILLIS")
+
 config :td_dd, TdDd.Repo,
   username: System.fetch_env!("DB_USER"),
   password: System.fetch_env!("DB_PASSWORD"),

@@ -19,12 +19,12 @@ defmodule TdDdWeb.GraphControllerTest do
     @tag contains: %{"foo" => ["bar", "baz"]}
     @tag depends: [{"bar", "baz"}]
     test "create new graph returns the task and graph hash, get graph by hash returns the graph drawing", %{conn: conn} do
-      assert %{"graph_hash" => graph_hash, "status" => "just_started", "task_reference" => task_reference} =
+      assert %{"graph_hash" => graph_hash, "status" => "JUST_STARTED", "task_reference" => task_reference} =
                conn
                |> post(Routes.graph_path(conn, :create), type: "impact", ids: ["bar"])
                |> json_response(:accepted)
 
-      TdDd.Lineage.task_await(IEx.Helpers.ref(task_reference), @mark_completed)
+      TdDd.Lineage.test_env_task_await(IEx.Helpers.ref(task_reference), @mark_completed)
 
       assert %{"ids" => ids, "opts" => opts, "groups" => groups, "paths" => paths, "resources" => resources} =
         conn
@@ -44,12 +44,12 @@ defmodule TdDdWeb.GraphControllerTest do
     @tag contains: %{"foo" => ["bar", "baz"]}
     @tag depends: [{"bar", "baz"}]
     test "create new graph returns the task and graph hash, get graph by hash returns id, show by id returns the graph drawing", %{conn: conn} do
-      assert %{"graph_hash" => graph_hash, "status" => "just_started", "task_reference" => task_reference} =
+      assert %{"graph_hash" => graph_hash, "status" => "JUST_STARTED", "task_reference" => task_reference} =
         conn
         |> post(Routes.graph_path(conn, :create), type: "impact", ids: ["bar"])
         |> json_response(:accepted)
 
-      TdDd.Lineage.task_await(IEx.Helpers.ref(task_reference), @mark_completed)
+      TdDd.Lineage.test_env_task_await(IEx.Helpers.ref(task_reference), @mark_completed)
 
       assert %{"id" => id} =
         conn
@@ -75,12 +75,12 @@ defmodule TdDdWeb.GraphControllerTest do
     @tag contains: %{"foo" => ["bar", "baz"]}
     @tag depends: [{"bar", "baz"}]
     test "create existing graph returns the graph drawing", %{conn: conn} do
-      assert %{"graph_hash" => _graph_hash, "status" => "just_started", "task_reference" => task_reference} =
+      assert %{"graph_hash" => _graph_hash, "status" => "JUST_STARTED", "task_reference" => task_reference} =
         conn
         |> post(Routes.graph_path(conn, :create), type: "impact", ids: ["bar"])
         |> json_response(:accepted)
 
-      TdDd.Lineage.task_await(IEx.Helpers.ref(task_reference), @mark_completed)
+      TdDd.Lineage.test_env_task_await(IEx.Helpers.ref(task_reference), @mark_completed)
 
       assert %{"ids" => ids, "opts" => opts, "groups" => groups, "paths" => paths, "resources" => resources} =
         conn
@@ -99,14 +99,14 @@ defmodule TdDdWeb.GraphControllerTest do
     @tag contains: %{"foo" => ["bar", "baz"]}
     @tag depends: [{"bar", "baz"}]
     test "create graph while a previous create request has been issued returns already_started", %{conn: conn} do
-      assert %{"graph_hash" => _graph_hash, "status" => "just_started", "task_reference" => task_reference} =
+      assert %{"graph_hash" => _graph_hash, "status" => "JUST_STARTED", "task_reference" => task_reference} =
         conn
         |> post(Routes.graph_path(conn, :create), type: "impact", ids: ["bar"])
         |> json_response(:accepted)
 
-      TdDd.Lineage.task_await(IEx.Helpers.ref(task_reference), @mark_not_completed)
+      TdDd.Lineage.test_env_task_await(IEx.Helpers.ref(task_reference), @mark_not_completed)
 
-      assert %{"graph_hash" => _graph_hash, "status" => "already_started", "task_reference" => _task_reference} =
+      assert %{"graph_hash" => _graph_hash, "status" => "ALREADY_STARTED", "task_reference" => _task_reference} =
         conn
         |> post(Routes.graph_path(conn, :create), type: "impact", ids: ["bar"])
         |> json_response(:accepted)
@@ -122,7 +122,7 @@ defmodule TdDdWeb.GraphControllerTest do
                |> post(Routes.graph_path(conn, :create), type: "impact", ids: ["bar"])
                |> json_response(:accepted)
 
-      TdDd.Lineage.task_await(IEx.Helpers.ref(task_reference), @mark_completed)
+      TdDd.Lineage.test_env_task_await(IEx.Helpers.ref(task_reference), @mark_completed)
 
       assert %{"id" => id} =
         conn
