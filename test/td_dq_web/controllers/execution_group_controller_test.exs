@@ -106,7 +106,7 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
       %{id: id2} = insert(:implementation, rule_id: rule_id)
 
       filters = %{"id" => [id1, id2]}
-      params = %{"filters" => filters}
+      params = %{"filters" => filters, "df_content" => %{"foo" => "bar"}}
 
       assert %{"data" => data} =
                conn
@@ -114,7 +114,7 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
                |> validate_resp_schema(schema, "ExecutionGroupResponse")
                |> json_response(:created)
 
-      assert %{"id" => _, "inserted_at" => _} = data
+      assert %{"id" => _, "inserted_at" => _, "df_content" => %{"foo" => "bar"}} = data
     end
 
     @tag authentication: [user_name: "not_an_admin"]
