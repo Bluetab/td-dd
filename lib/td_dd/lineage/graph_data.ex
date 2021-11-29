@@ -444,10 +444,6 @@ defmodule TdDd.Lineage.GraphData do
     %{graph_data | source_ids: source_ids}
   end
 
-  def ids_to_string(%__MODULE__{ids: ids} = _graph_data) do
-    Enum.sort(ids) |> Enum.take(-1) |> Jason.encode!()
-  end
-
   defp hash(%__MODULE__{source_ids: source_ids, ids: ids, type: type} = graph_data, %{ts: ts}) do
     hash =
       %{ids: Enum.sort(ids), source_ids: Enum.sort(source_ids), type: type, ts: ts}
