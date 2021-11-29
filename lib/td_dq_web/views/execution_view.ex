@@ -70,7 +70,7 @@ defmodule TdDqWeb.ExecutionView do
     Map.put(acc, :quality_events, events)
   end
 
-  defp put_embedding({:group, %{df_content: %{} = df_content} = group}, %{} = acc) do
+  defp put_embedding({:group, %{df_content: %{} = df_content}}, %{} = acc) do
     Map.put(acc, :df_content, df_content)
   end
 
