@@ -21,7 +21,8 @@ defmodule TdDqWeb.ExecutionController do
     claims = conn.assigns[:current_resource]
 
     with {:can, true} <- {:can, can?(claims, list(Execution))},
-         executions <- Executions.list_executions(params, preload: [:implementation, :result]) do
+         executions <-
+           Executions.list_executions(params, preload: [:implementation, :result, :group]) do
       render(conn, "index.json", executions: executions)
     end
   end
