@@ -44,7 +44,7 @@ defmodule TdDd.CSV.Download do
     types = Map.keys(structures_by_type)
 
     structure_types =
-      Enum.reduce(types, %{}, &Map.put(&2, &1, DataStructureTypes.get_by(name: &1)))
+      Enum.reduce(types, %{}, &Map.put(&2, &1, DataStructureTypes.get_by(:lite, name: &1)))
 
     list =
       Enum.reduce(types, [], fn type, acc ->
@@ -65,7 +65,7 @@ defmodule TdDd.CSV.Download do
       structures
       |> Enum.map(& &1.type)
       |> Enum.uniq()
-      |> Enum.map(&DataStructureTypes.get_by(name: &1))
+      |> Enum.map(&DataStructureTypes.get_by(:lite, name: &1))
       |> Enum.flat_map(&type_editable_fields/1)
 
     type_headers = Enum.map(type_fields, &Map.get(&1, "name"))
