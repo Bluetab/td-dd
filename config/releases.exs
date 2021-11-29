@@ -118,3 +118,6 @@ config :td_dd, TdDd.DataStructures.HistoryManager,
 
 config :td_dd, TdDdWeb.CustomParsersPlug,
   max_payload_length: System.get_env("MAX_PAYLOAD_LENGTH", "100000000") |> String.to_integer()
+
+config :td_dd, TdDd.Lineage,
+  timeout: System.get_env("LINEAGE_TIMEOUT_MILLIS", "90000") |> String.to_integer()
