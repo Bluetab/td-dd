@@ -179,15 +179,19 @@ defmodule TdDd.Lineage do
   def handle_info({:timeout, %{ref: ref} = task}, state) do
     {task_info, state} = pop_in(state.tasks[ref])
 
-    Logger.warn("Task timeout, reference: #{inspect(ref)}}, trying to shut it down in #{@shutdown_timeout}...")
+    Logger.warn(
+      "Task timeout, reference: #{inspect(ref)}}, trying to shut it down in #{@shutdown_timeout}..."
+    )
 
     case Task.shutdown(task, @shutdown_timeout) do
       {:ok, reply} ->
         # Reply received while shutting down
         create_event(task_info, :timeout, reply)
+
       {:exit, reason} ->
         # Task died
         create_event(task_info, :timeout, reason)
+
       nil ->
         create_event(task_info, :timeout, "shutdown")
     end
@@ -271,10 +275,18 @@ defmodule TdDd.Lineage do
 
   def no_pending_graph(hash) do
     case LineageEvents.last_event_by_hash(hash) do
-      nil -> :ok
-      %LineageEvent{status: "COMPLETED"} -> :ok
-      %LineageEvent{status: "FAILED"} -> :ok
-      %LineageEvent{status: "TIMED_OUT"} -> :ok
+      nil ->
+        :ok
+
+      %LineageEvent{status: "COMPLETED"} ->
+        :ok
+
+      %LineageEvent{status: "FAILED"} ->
+        :ok
+
+      %LineageEvent{status: "TIMED_OUT"} ->
+        :ok
+
       %LineageEvent{status: "ALREADY_STARTED"} = event_pending ->
         {:already_started, event_pending}
     end
@@ -310,8 +322,10 @@ defmodule TdDd.Lineage do
 
     task_timer = Process.send_after(self(), {:timeout, task}, timeout())
 
-    #Task.Supervisor.children(TdDd.TaskSupervisor)
-    graph_data_string = GraphData.ids_to_string(graph_data)
+    graph_data_string =
+      graph_data
+      |> Map.get(:source_ids)
+      |> Jason.encode!()
 
     LineageEvents.create_event(%{
       user_id: user_id,
