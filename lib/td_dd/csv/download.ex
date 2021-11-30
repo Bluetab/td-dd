@@ -86,16 +86,20 @@ defmodule TdDd.CSV.Download do
   defp type_editable_fields(_type), do: []
 
   defp editable_structure_values(%{latest_note: nil} = structure, type_headers) do
-    structure_values = Enum.map(@editable_headers, &Map.get(structure, &1))
+    structure_values = Enum.map(@editable_headers, &editable_structure_value(structure, &1))
     empty_values = List.duplicate(nil, length(type_headers))
     structure_values ++ empty_values
   end
 
   defp editable_structure_values(%{latest_note: content} = structure, type_fields) do
-    structure_values = Enum.map(@editable_headers, &Map.get(structure, &1))
+    structure_values = Enum.map(@editable_headers, &editable_structure_value(structure, &1))
     content_values = Enum.map(type_fields, &get_content_field(&1, content))
     structure_values ++ content_values
   end
+
+  defp editable_structure_value(%{path: path}, :path), do: Enum.join(path, " > ")
+
+  defp editable_structure_value(structure, field), do: Map.get(structure, field)
 
   def linage_to_csv(contains, depends, header_labels \\ nil) do
     headers = build_headers(header_labels, @lineage_headers)
