@@ -10,8 +10,12 @@ defmodule TdDd.Lineage do
   alias TdDd.CSV.Download
   alias TdDd.Lineage.GraphData
   alias TdDd.Lineage.Graphs
+  alias TdDd.Lineage.LineageEvent
+  alias TdDd.Lineage.LineageEvents
 
   require Logger
+
+  @shutdown_timeout 2000
 
   @doc """
   Starts the `GenServer`
@@ -25,26 +29,28 @@ defmodule TdDd.Lineage do
   be pruned from the graph by specifying the `:excludes` option with a list of
   external_ids.
   """
-  def lineage(external_ids, opts)
+  def lineage(external_ids, user_id, opts)
 
-  def lineage(external_ids, opts) when is_list(external_ids) do
-    GenServer.call(__MODULE__, {:lineage, external_ids, opts}, 60_000)
+  def lineage(external_ids, user_id, opts) when is_list(external_ids) do
+    GenServer.call(__MODULE__, {:lineage, external_ids, user_id, opts}, 60_000)
   end
 
-  def lineage(external_id, opts), do: lineage([external_id], opts)
+  def lineage(external_id, user_id, opts) do
+    lineage([external_id], user_id, opts)
+  end
 
   @doc """
   Returns an impact graph drawing for the specified `external_ids`. Branches can
   be pruned from the graph by specifying the `:excludes` option with a list of
   external_ids.
   """
-  def impact(external_id, opts)
+  def impact(external_id, user_id, opts)
 
-  def impact(external_ids, opts) when is_list(external_ids) do
-    GenServer.call(__MODULE__, {:impact, external_ids, opts}, 60_000)
+  def impact(external_ids, user_id, opts) when is_list(external_ids) do
+    GenServer.call(__MODULE__, {:impact, external_ids, user_id, opts}, 60_000)
   end
 
-  def impact(external_id, opts), do: impact([external_id], opts)
+  def impact(external_id, user_id, opts), do: impact([external_id], user_id, opts)
 
   @doc """
   Returns a csv lineage/impact for the specified `external_id`. Branches can
@@ -75,8 +81,12 @@ defmodule TdDd.Lineage do
   @doc """
   Returns a lineage or impact graph drawing for a random sample.
   """
-  def sample do
-    GenServer.call(__MODULE__, :sample, 60_000)
+  def sample(user_id) do
+    GenServer.call(__MODULE__, {:sample, user_id}, 60_000)
+  end
+
+  def test_env_task_await(task_reference, create_event?) do
+    GenServer.call(__MODULE__, {:test_env_task_await, task_reference, create_event?})
   end
 
   ## GenServer callbacks
@@ -85,27 +95,31 @@ defmodule TdDd.Lineage do
   def init(_opts) do
     name = String.replace_prefix("#{__MODULE__}", "Elixir.", "")
     Logger.info("Running #{name}")
-    {:ok, %{}}
+    {:ok, %{tasks: %{}}}
   end
 
   @impl true
-  def handle_call({:lineage, external_ids, opts}, _from, state) do
-    drawing =
+  def handle_call({:lineage, external_ids, user_id, opts}, _from, state) do
+    graph_data =
       external_ids
       |> GraphData.lineage(opts)
-      |> drawing(opts ++ [type: :lineage])
 
-    {:reply, drawing, state}
+    %{drawing_task: drawing_task, state: state} =
+      launch_task(state, graph_data, user_id, opts ++ [type: :lineage])
+
+    {:reply, drawing_task, state}
   end
 
   @impl true
-  def handle_call({:impact, external_ids, opts}, _from, state) do
-    drawing =
+  def handle_call({:impact, external_ids, user_id, opts}, _from, state) do
+    graph_data =
       external_ids
       |> GraphData.impact(opts)
-      |> drawing(opts ++ [type: :impact])
 
-    {:reply, drawing, state}
+    %{drawing_task: drawing_task, state: state} =
+      launch_task(state, graph_data, user_id, opts ++ [type: :impact])
+
+    {:reply, drawing_task, state}
   end
 
   @impl true
@@ -125,31 +139,224 @@ defmodule TdDd.Lineage do
   end
 
   @impl true
-  def handle_call(:sample, _from, state) do
+  def handle_call({:sample, user_id}, _from, state) do
     case GraphData.sample(16) do
       %{type: type, g: g} = r ->
         source_ids = Graph.source_vertices(g)
 
-        drawing =
+        graph_data =
           r
           |> Map.put(:source_ids, source_ids)
           |> Map.put(:hash, "#{System.unique_integer([:positive])}")
-          |> drawing(type: type)
 
-        {:reply, drawing, state}
+        %{drawing_task: drawing_task, state: state} =
+          launch_task(state, graph_data, user_id, type: type)
+
+        {:reply, drawing_task, state}
+    end
+  end
+
+  @impl true
+  def handle_call({:test_env_task_await, task_reference, create_event?}, _from, state) do
+    task_to_await = get_in(state, [:tasks, task_reference, :task])
+    await_aux(task_to_await, create_event?, state)
+    {:reply, task_reference, state}
+  end
+
+  # There will be no task_to_await in case it was processed before by handle_info
+  defp await_aux(nil = _task_to_await, _create_event?, state) do
+    state
+  end
+
+  defp await_aux(%Task{ref: ref} = task_to_await, create_event?, state) do
+    Task.await(task_to_await)
+    {task_info, state} = pop_in(state.tasks[ref])
+    if create_event?, do: create_event(%TdDd.Lineage.Graph{}, task_info)
+    state
+  end
+
+  # This handle function executes when the task has timed out
+  def handle_info({:timeout, %{ref: ref} = task}, state) do
+    {task_info, state} = pop_in(state.tasks[ref])
+
+    Logger.warn(
+      "Task timeout, reference: #{inspect(ref)}}, trying to shut it down in #{@shutdown_timeout}..."
+    )
+
+    case Task.shutdown(task, @shutdown_timeout) do
+      {:ok, reply} ->
+        # Reply received while shutting down
+        create_event(task_info, :timeout, reply)
+
+      {:exit, reason} ->
+        # Task died
+        create_event(task_info, :timeout, reason)
+
+      nil ->
+        create_event(task_info, :timeout, "shutdown")
+    end
+
+    {:noreply, state}
+  end
+
+  # If the task succeeds...
+  @impl true
+  def handle_info({ref, graph}, state) do
+    # The task succeed so we can cancel the monitoring and discard the DOWN message
+    Process.demonitor(ref, [:flush])
+
+    {task_info, state} = pop_in(state.tasks[ref])
+    Process.cancel_timer(task_info.task_timer)
+    create_event(graph, task_info)
+    {:noreply, state}
+  end
+
+  # If the task fails...
+  def handle_info({:DOWN, ref, _, _, reason}, state) do
+    {task_info, state} = pop_in(state.tasks[ref])
+    create_event(task_info, :DOWN, reason)
+    {:noreply, state}
+  end
+
+  def create_event(%TdDd.Lineage.Graph{id: graph_id}, task_info) do
+    %{hash: hash, user_id: user_id, graph_data: graph_data, task: %{ref: ref}} = task_info
+
+    LineageEvents.create_event(%{
+      graph_id: graph_id,
+      graph_data: graph_data,
+      user_id: user_id,
+      graph_hash: hash,
+      status: "COMPLETED",
+      task_reference: ref_to_string(ref)
+    })
+  end
+
+  def create_event(task_info, fail_type, message) do
+    %{hash: hash, user_id: user_id, graph_data: graph_data, task: %{ref: ref}} = task_info
+
+    LineageEvents.create_event(%{
+      graph_data: graph_data,
+      user_id: user_id,
+      graph_hash: hash,
+      status: fail_type_to_str(fail_type),
+      task_reference: ref_to_string(ref),
+      message: "#{fail_type}, #{inspect(message)}"
+    })
+  end
+
+  defp fail_type_to_str(fail_type) do
+    case fail_type do
+      :DOWN -> "FAILED"
+      :timeout -> "TIMED_OUT"
     end
   end
 
   ## Private functions
 
-  defp drawing(%{hash: hash} = graph_data, opts) do
-    case Graphs.find_by_hash(hash) do
-      nil -> do_drawing(graph_data, opts)
-      g -> g
+  def ref_to_string(ref) when is_reference(ref) do
+    ref
+    |> :erlang.ref_to_list()
+    |> List.to_string()
+    |> (fn string_ref ->
+          Regex.run(~r/<(.*)>/, string_ref)
+        end).()
+    |> Enum.at(1)
+  end
+
+  defp find_no_pending_drawing(%{hash: hash} = _graph_data) do
+    with :ok <- no_pending_graph(hash),
+         %TdDd.Lineage.Graph{} = g <- find_graph_by_hash(hash) do
+      {:ok, g}
+    else
+      situation ->
+        situation
     end
   end
 
-  defp do_drawing(%{g: g, t: t, excludes: excludes, source_ids: source_ids, hash: hash}, opts) do
+  def no_pending_graph(hash) do
+    case LineageEvents.last_event_by_hash(hash) do
+      nil ->
+        :ok
+
+      %LineageEvent{status: "COMPLETED"} ->
+        :ok
+
+      %LineageEvent{status: "FAILED"} ->
+        :ok
+
+      %LineageEvent{status: "TIMED_OUT"} ->
+        :ok
+
+      %LineageEvent{status: "ALREADY_STARTED"} = event_pending ->
+        {:already_started, event_pending}
+    end
+  end
+
+  def find_graph_by_hash(hash) do
+    case Graphs.find_by_hash(hash) do
+      nil ->
+        {:not_found, hash}
+
+      g ->
+        g
+    end
+  end
+
+  def timeout do
+    Application.get_env(:td_dd, __MODULE__)
+    |> Map.Helpers.to_map()
+    |> timeout
+  end
+
+  def timeout(%{timeout: timeout}), do: timeout
+  def timeout(nil), do: 90_000
+
+  def launch_task(state, graph_data, user_id, opts) do
+    drawing = find_no_pending_drawing(graph_data)
+    launch_task(state, graph_data, drawing, user_id, opts)
+  end
+
+  def launch_task(state, graph_data, {:not_found, hash}, user_id, opts) do
+    task =
+      Task.Supervisor.async_nolink(TdDd.TaskSupervisor, fn -> do_drawing(graph_data, opts) end)
+
+    task_timer = Process.send_after(self(), {:timeout, task}, timeout())
+
+    graph_data_string =
+      graph_data
+      |> Map.get(:source_ids)
+      |> Jason.encode!()
+
+    LineageEvents.create_event(%{
+      user_id: user_id,
+      graph_data: graph_data_string,
+      status: "STARTED",
+      graph_hash: hash,
+      task_reference: task.ref |> ref_to_string
+    })
+
+    %{
+      drawing_task: {:just_started, hash, task.ref |> ref_to_string},
+      state:
+        put_in(state.tasks[task.ref], %{
+          task: task,
+          task_timer: task_timer,
+          hash: hash,
+          user_id: user_id,
+          graph_data: graph_data_string
+        })
+    }
+  end
+
+  def launch_task(state, _graph_data, {:already_started, _event} = drawing, _user_id, _opts) do
+    %{drawing_task: drawing, state: state}
+  end
+
+  def launch_task(state, _graph_data, {:ok, graph}, _user_id, _opts) do
+    %{drawing_task: {:already_calculated, graph}, state: state}
+  end
+
+  def do_drawing(%{g: g, t: t, excludes: excludes, source_ids: source_ids, hash: hash}, opts) do
     with %Layout{} = layout <- Layout.layout(g, t, source_ids, opts ++ [excludes: excludes]),
          %Drawing{} = drawing <- Drawing.new(layout, &label_fn/1) do
       "Completed type=#{opts[:type]} ids=#{inspect(source_ids)} excludes=#{inspect(excludes)}"

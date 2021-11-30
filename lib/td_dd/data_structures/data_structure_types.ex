@@ -20,6 +20,13 @@ defmodule TdDd.DataStructures.DataStructureTypes do
     |> Enum.map(&enrich_template/1)
   end
 
+  def list_data_structure_types(:lite) do
+    DataStructureType
+    |> Repo.all()
+    |> Enum.map(&enrich_template/1)
+    |> Enum.map(fn structure_type -> Map.delete(structure_type, :metadata_fields) end)
+  end
+
   @doc """
   Gets a single `DataStructureType` by id.
 
@@ -40,6 +47,12 @@ defmodule TdDd.DataStructures.DataStructureTypes do
   """
   def get_by(clauses) do
     data_structure_types_query(clauses)
+    |> Repo.get_by(clauses)
+    |> enrich_template()
+  end
+
+  def get_by(:lite, clauses) do
+    DataStructureType
     |> Repo.get_by(clauses)
     |> enrich_template()
   end

@@ -18,7 +18,7 @@ defmodule TdDd.CSV.Download do
     "inserted_at"
   ]
 
-  @editable_headers [:external_id]
+  @editable_headers [:external_id, :name, :type, :path]
 
   @lineage_headers [
     "source_external_id",
@@ -44,7 +44,7 @@ defmodule TdDd.CSV.Download do
     types = Map.keys(structures_by_type)
 
     structure_types =
-      Enum.reduce(types, %{}, &Map.put(&2, &1, DataStructureTypes.get_by(name: &1)))
+      Enum.reduce(types, %{}, &Map.put(&2, &1, DataStructureTypes.get_by(:lite, name: &1)))
 
     list =
       Enum.reduce(types, [], fn type, acc ->
@@ -65,7 +65,7 @@ defmodule TdDd.CSV.Download do
       structures
       |> Enum.map(& &1.type)
       |> Enum.uniq()
-      |> Enum.map(&DataStructureTypes.get_by(name: &1))
+      |> Enum.map(&DataStructureTypes.get_by(:lite, name: &1))
       |> Enum.flat_map(&type_editable_fields/1)
 
     type_headers = Enum.map(type_fields, &Map.get(&1, "name"))
@@ -86,16 +86,20 @@ defmodule TdDd.CSV.Download do
   defp type_editable_fields(_type), do: []
 
   defp editable_structure_values(%{latest_note: nil} = structure, type_headers) do
-    structure_values = Enum.map(@editable_headers, &Map.get(structure, &1))
+    structure_values = Enum.map(@editable_headers, &editable_structure_value(structure, &1))
     empty_values = List.duplicate(nil, length(type_headers))
     structure_values ++ empty_values
   end
 
   defp editable_structure_values(%{latest_note: content} = structure, type_fields) do
-    structure_values = Enum.map(@editable_headers, &Map.get(structure, &1))
+    structure_values = Enum.map(@editable_headers, &editable_structure_value(structure, &1))
     content_values = Enum.map(type_fields, &get_content_field(&1, content))
     structure_values ++ content_values
   end
+
+  defp editable_structure_value(%{path: path}, :path), do: Enum.join(path, " > ")
+
+  defp editable_structure_value(structure, field), do: Map.get(structure, field)
 
   def linage_to_csv(contains, depends, header_labels \\ nil) do
     headers = build_headers(header_labels, @lineage_headers)

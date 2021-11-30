@@ -12,7 +12,7 @@ defmodule TdDqWeb.ExecutionGroupView do
   end
 
   def render("group.json", %{execution_group: group}) do
-    json = Map.take(group, [:id, :inserted_at])
+    json = Map.take(group, [:id, :inserted_at, :df_content])
 
     case embeddings(group) do
       %{} = embeddings when embeddings != %{} -> Map.put(json, :_embedded, embeddings)

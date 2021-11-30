@@ -2,10 +2,28 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-4270] Move `goal` and `threshold` fields from `Rule` to `RuleImplementation`
+
+## [4.33.0] 2021-11-30
+
+### Added
+
+- [TD-4262] Lineage graph polling
+- [TD-4344] Add a new enpoint API for lite `structure_types` request without `metadata_fields`
+- [TD-4358] Format path in editable download CSV
+
 ### Changed
 
 - [TD-4299] Change CSV reader to `NimbleCSV` for performance improvement
-- [TD-4270] Move `goal` and `threshold` fields from `Rule` to `RuleImplementation`
+- [TD-3606] Add descriptive fields to editable CSV download file
+- [TD-4306] Add `df_content` to execution groups
+- [TD-4341]
+ - Created function to get DataStructureType without metadata join queries
+ - Uses this function in DataStructure csv download
+- [TD-4351] Remove metadata_fields from structure_types when reindex structures
+
 
 ## [4.32.2] 2021-11-17
 

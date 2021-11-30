@@ -74,8 +74,11 @@ defmodule TdDdWeb.Router do
       singleton: true
     )
 
+    get "/graphs/hash/:hash", GraphController, :get_graph_by_hash
     post("/graphs/csv", GraphController, :csv)
     resources("/graphs", GraphController, only: [:create, :show])
+
+    resources("/lineage_events", LineageEventController, only: [:index])
 
     resources("/nodes", NodeController, only: [:index, :show])
 
@@ -114,6 +117,8 @@ defmodule TdDdWeb.Router do
     resources("/data_structure_user_filters", UserSearchFilterController, except: [:new, :edit])
 
     resources("/relation_types", RelationTypeController, except: [:new, :edit])
+
+    get("/data_structure_types/lite", DataStructureTypeController, :lite)
 
     resources("/data_structure_types", DataStructureTypeController, only: [:index, :show, :update])
 

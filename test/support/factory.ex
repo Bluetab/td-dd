@@ -511,4 +511,16 @@ defmodule TdDd.Factory do
       Map.put(attrs, key, build(build_key))
     end
   end
+
+  def lineage_event_factory(attrs) do
+    %TdDd.Lineage.LineageEvent{
+      user_id: "438",
+      graph_id: nil,
+      graph_data: "TERADESA.BASILEAII.HIST_PROA_MOROSIDAD.ANTICIPOCAPITALIMPAGADO",
+      task_reference: "0.2996324945.3784572938.100946",
+      node: "nonode@nohost",
+      message: nil,
+    } |> merge_attributes(attrs)
+  end
+
 end
