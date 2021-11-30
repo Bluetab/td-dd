@@ -5,7 +5,8 @@
 ### Added
 
 - [TD-4262] Lineage graph polling
-- [TD-4344] Add a new enpoint API for lite `structure_types` request wihout `metadata_fields`
+- [TD-4344] Add a new enpoint API for lite `structure_types` request without `metadata_fields`
+- [TD-4358] Format path in editable download CSV
 
 ### Changed
 
