@@ -74,6 +74,8 @@ defmodule TdDq.RuleResults.BulkLoadTest do
                  90 => ["warn"],
                  100 => ["success"]
                }
+
+      assert Enum.all?(results, & Map.get(&1, :implementation_key))
     end
 
     test "publishes audit events with domain_ids" do

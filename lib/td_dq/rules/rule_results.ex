@@ -25,9 +25,7 @@ defmodule TdDq.Rules.RuleResults do
 
   def list_rule_results do
     RuleResult
-    |> join(:inner, [rr, ri], ri in Implementation,
-      on: rr.implementation_id == ri.id
-    )
+    |> join(:inner, [rr, ri], ri in Implementation, on: rr.implementation_id == ri.id)
     |> join(:inner, [_, ri, r], r in Rule, on: r.id == ri.rule_id)
     |> where([_, _, r], is_nil(r.deleted_at))
     |> where([_, ri, _], is_nil(ri.deleted_at))
@@ -75,7 +73,9 @@ defmodule TdDq.Rules.RuleResults do
     |> on_create()
   end
 
-  defp update_executions(%{id: id, implementation_id: implementation_id, inserted_at: ts} = _result) do
+  defp update_executions(
+         %{id: id, implementation_id: implementation_id, inserted_at: ts} = _result
+       ) do
     Execution
     |> select([e], e)
     |> where([e], is_nil(e.result_id))
@@ -128,7 +128,11 @@ defmodule TdDq.Rules.RuleResults do
         [res, _, _],
         map(res, ^~w(id implementation_id date result errors records params inserted_at)a)
       )
-      |> select_merge([_, i, _], %{implementation_id: i.id, rule_id: i.rule_id})
+      |> select_merge([_, i, _], %{
+        implementation_id: i.id,
+        implementation_key: i.implementation_key,
+        rule_id: i.rule_id
+      })
       |> select_merge(
         [_, _, rule],
         map(rule, ^~w(domain_id business_concept_id goal name minimum result_type)a)

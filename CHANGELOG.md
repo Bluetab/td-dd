@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-4345] Add `implementation_key` to notification payload
+
 ## [4.33.0] 2021-11-30
 
 ### Added
