@@ -6,7 +6,7 @@ defmodule TdDd.MixProject do
       app: :td_dd,
       version:
         case System.get_env("APP_VERSION") do
-          nil -> "4.32.1-local"
+          nil -> "4.33.0-local"
           v -> v
         end,
       elixir: "~> 1.11",
@@ -69,6 +69,7 @@ defmodule TdDd.MixProject do
       {:mox, "~> 1.0", only: :test},
       {:cors_plug, "~> 2.0"},
       {:csv, "~> 2.4"},
+      {:nimble_csv, "~> 1.1"},
       {:phoenix_swagger, "~> 0.8.3"},
       {:ex_json_schema, "~> 0.7.3"},
       {:codepagex, "~> 0.1.4"},

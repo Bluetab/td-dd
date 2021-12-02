@@ -766,6 +766,39 @@ defmodule TdDdWeb.SwaggerDefinitions do
     }
   end
 
+  def lineage_swagger_definitions do
+    %{
+      LineageEvent:
+        swagger_schema do
+          title("Lineage Event")
+          description("An event associated with a Lineage")
+
+          properties do
+            user_id(:integer, "user_id")
+            graph_data(:string, "graph_data")
+            graph_hash(:string, "graph_hash")
+            task_reference(:string, "task_reference")
+            status(:string, "status")
+            node(:string, "node")
+            message(:string, "message")
+          end
+        end,
+      LineageEvents:
+        swagger_schema do
+          title("Lineage Events")
+          description("A collection of Lineagee Events")
+          type(:array)
+          items(Schema.ref(:LineageEvent))
+        end,
+      LineageEventsResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:LineageEvents))
+          end
+        end
+    }
+  end
+
   def user_search_filters_definitions do
     %{
       UserSearchFilter:

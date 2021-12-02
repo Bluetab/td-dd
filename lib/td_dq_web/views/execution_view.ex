@@ -24,7 +24,7 @@ defmodule TdDqWeb.ExecutionView do
 
   defp embeddings(%{} = execution) do
     execution
-    |> Map.take([:rule, :implementation, :result, :quality_events])
+    |> Map.take([:rule, :implementation, :result, :quality_events, :group])
     |> Enum.sort_by(&rule_first/1)
     |> Enum.reduce(%{}, &put_embedding/2)
   end
@@ -35,7 +35,7 @@ defmodule TdDqWeb.ExecutionView do
   defp rule_first(_), do: 1
 
   defp put_embedding({:implementation, %{} = implementation}, %{} = acc) do
-    implementation = Map.take(implementation, [:id, :implementation_key, :rule_id])
+    implementation = Map.take(implementation, [:id, :implementation_key, :rule_id, :minimum, :goal, :result_type])
     Map.put(acc, :implementation, implementation)
   end
 
@@ -68,6 +68,10 @@ defmodule TdDqWeb.ExecutionView do
   defp put_embedding({:quality_events, events}, %{} = acc) when is_list(events) do
     events = render_many(events, QualityEventView, "quality_event.json")
     Map.put(acc, :quality_events, events)
+  end
+
+  defp put_embedding({:group, %{df_content: %{} = df_content}}, %{} = acc) do
+    Map.put(acc, :df_content, df_content)
   end
 
   defp put_embedding(_, acc), do: acc

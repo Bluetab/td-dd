@@ -9,7 +9,6 @@ defmodule TdDq.Search.Aggregations do
   def rule_aggregation_terms do
     static_keywords = [
       {"active.raw", %{terms: %{field: "active.raw"}}},
-      {"result_type.raw", %{terms: %{field: "result_type.raw"}}},
       {"current_business_concept_version",
        %{terms: %{field: "current_business_concept_version.name.raw", size: 50}}},
       {"taxonomy",
@@ -41,7 +40,8 @@ defmodule TdDq.Search.Aggregations do
          aggs: %{
            distinct_search: %{terms: %{field: "domain_parents.id", size: get_domains_count()}}
          }
-       }}
+       }},
+      {"result_type.raw", %{terms: %{field: "result_type.raw"}}}
     ]
 
     ["dq", "bg", "ri"]

@@ -83,13 +83,10 @@ defmodule TdDd.Factory do
       business_concept_id: sequence(:business_concept_id, & &1),
       domain_id: sequence(:domain_id, &"#{&1}"),
       description: %{"document" => "Rule Description"},
-      goal: 30,
-      minimum: 12,
       name: sequence("rule_name"),
       active: false,
       version: 1,
-      updated_by: sequence(:updated_by, & &1),
-      result_type: "percentage"
+      updated_by: sequence(:updated_by, & &1)
     }
   end
 
@@ -98,6 +95,9 @@ defmodule TdDd.Factory do
       rule: build(:rule),
       implementation_key: sequence("ri"),
       implementation_type: "raw",
+      goal: 30,
+      minimum: 12,
+      result_type: "percentage",
       raw_content: build(:raw_content),
       deleted_at: nil
     }
@@ -119,6 +119,8 @@ defmodule TdDd.Factory do
     %TdDq.Implementations.Implementation{
       implementation_key: sequence("implementation_key"),
       implementation_type: "default",
+      goal: 30,
+      minimum: 12,
       dataset: build(:dataset),
       population: build(:population),
       validations: build(:validations)
@@ -509,4 +511,16 @@ defmodule TdDd.Factory do
       Map.put(attrs, key, build(build_key))
     end
   end
+
+  def lineage_event_factory(attrs) do
+    %TdDd.Lineage.LineageEvent{
+      user_id: "438",
+      graph_id: nil,
+      graph_data: "TERADESA.BASILEAII.HIST_PROA_MOROSIDAD.ANTICIPOCAPITALIMPAGADO",
+      task_reference: "0.2996324945.3784572938.100946",
+      node: "nonode@nohost",
+      message: nil,
+    } |> merge_attributes(attrs)
+  end
+
 end

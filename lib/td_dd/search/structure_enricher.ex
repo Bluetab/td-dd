@@ -22,7 +22,7 @@ defmodule TdDd.Search.StructureEnricher do
   def refresh(opts \\ []) do
     case Process.whereis(__MODULE__) do
       nil -> {:error, :not_started}
-      pid -> GenServer.call(pid, :refresh, Keyword.get(opts, :timeout, 60_000))
+      pid -> GenServer.call(pid, :refresh, Keyword.get(opts, :timeout, 10_000))
     end
   end
 
@@ -103,7 +103,7 @@ defmodule TdDd.Search.StructureEnricher do
   end
 
   defp type_map do
-    DataStructureTypes.list_data_structure_types()
+    DataStructureTypes.list_data_structure_types(:lite)
     |> Map.new(fn %{name: type, template: template} -> {type, template} end)
   end
 

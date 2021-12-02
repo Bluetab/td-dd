@@ -6,22 +6,34 @@ defmodule TdDdWeb.GraphController do
   alias TdDd.Lineage
   alias TdDd.Lineage.Graph
   alias TdDd.Lineage.Graphs
+  alias TdDd.Lineage.LineageEvent
+  alias TdDd.Lineage.LineageEvents
 
   action_fallback(TdDdWeb.FallbackController)
 
   def create(conn, %{} = params) do
-    with %Graph{id: id} <- do_drawing(params) do
-      data =
-        params
-        |> Map.take(["ids", "type", "levels"])
-        |> Map.put(:id, id)
+    with %{user_id: user_id} = _claims <- conn.assigns[:current_resource] do
+      {code, response, id} =
+        case do_drawing(user_id, params) do
+          {:already_calculated, %Graph{id: id, data: graph_data}} ->
+            data =
+              graph_data
+              |> Map.put(:id, id)
 
-      json = %{data: data} |> Jason.encode!()
+            {:created, data, id}
+
+          {:just_started, hash, task_reference} ->
+            {:accepted,
+             %{graph_hash: hash, status: "JUST_STARTED", task_reference: task_reference}, hash}
+
+          {:already_started, %LineageEvent{graph_hash: hash} = event} ->
+            {:accepted, TdDdWeb.LineageEventView.render("show.json", %{lineage_event: event}), hash}
+        end
 
       conn
       |> put_resp_header("location", Routes.graph_path(TdDdWeb.Endpoint, :show, id))
       |> put_resp_content_type("application/json", "utf-8")
-      |> send_resp(:created, json)
+      |> send_resp(code, response |> Jason.encode!())
     end
   end
 
@@ -33,6 +45,28 @@ defmodule TdDdWeb.GraphController do
       |> put_resp_content_type("application/json", "utf-8")
       |> send_resp(200, json)
     end
+  end
+
+  def get_graph_by_hash(conn, %{"hash" => hash} = _params) do
+    {code, data} =
+      with %LineageEvent{status: "COMPLETED"} <- LineageEvents.last_event_by_hash(hash),
+           %Graph{id: id, data: data} <- Graphs.find_by_hash!(hash) do
+        {:ok, Map.put(data, :hash, hash) |> Map.put(:id, id)}
+      else
+        nil -> {:not_found, %{}}
+        %LineageEvent{status: "ALREADY_STARTED"} = event ->
+          {:accepted, TdDdWeb.LineageEventView.render("show.json", %{lineage_event: event})}
+        %LineageEvent{status: "FAILED"} = event ->
+          {:internal_server_error, TdDdWeb.LineageEventView.render("show.json", %{lineage_event: event})}
+        %LineageEvent{status: "TIMED_OUT"} = event ->
+          {:internal_server_error, TdDdWeb.LineageEventView.render("show.json", %{lineage_event: event})}
+      end
+
+    json = data |> Jason.encode!()
+
+    conn
+    |> put_resp_content_type("application/json", "utf-8")
+    |> send_resp(code, json)
   end
 
   def csv(conn, %{"id" => id}) do
@@ -54,15 +88,17 @@ defmodule TdDdWeb.GraphController do
     end
   end
 
-  defp do_drawing(%{"type" => "lineage", "ids" => [_ | _] = ids} = params) do
-    Lineage.lineage(ids, options(params))
+  defp do_drawing(user_id, %{"type" => "lineage", "ids" => [_ | _] = ids} = params) do
+    Lineage.lineage(ids, user_id, options(params))
   end
 
-  defp do_drawing(%{"type" => "impact", "ids" => [_ | _] = ids} = params) do
-    Lineage.impact(ids, options(params))
+  defp do_drawing(user_id, %{"type" => "impact", "ids" => [_ | _] = ids} = params) do
+    Lineage.impact(ids, user_id, options(params))
   end
 
-  defp do_drawing(%{"type" => "sample"}), do: Lineage.sample()
+  defp do_drawing(user_id, %{"type" => "sample"}) do
+    Lineage.sample(user_id)
+  end
 
   defp do_csv(%{"type" => "lineage", "ids" => [_ | _] = ids} = params) do
     Lineage.lineage_csv(ids, options(params))
