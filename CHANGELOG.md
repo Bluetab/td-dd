@@ -4,6 +4,7 @@
 
 ### Added
 
+- [TD-4345] Add `implementation_key` to notification payload
 - [TD-4270] Move `goal` and `threshold` fields from `Rule` to `RuleImplementation`
 
 ## [4.33.0] 2021-11-30
