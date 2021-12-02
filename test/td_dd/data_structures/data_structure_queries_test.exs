@@ -84,20 +84,3 @@ defmodule TdDd.DataStructures.DataStructureQueriesTest do
     ]
   end
 end
-
-
-
-metadata_upload
-(
-  create dsv []
-  update dsv []
-  delete dsv []
-)
-[ids creados]
-
->  append(hierarchy)
-
-  a1 > b1 > c1
-  delete c1
-  a1 > b1 > c1
-  a1 > b2 -> create dsv
