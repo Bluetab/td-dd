@@ -25,9 +25,7 @@ defmodule TdDq.Rules.RuleResults do
 
   def list_rule_results do
     RuleResult
-    |> join(:inner, [rr, ri], ri in Implementation,
-      on: rr.implementation_id == ri.id
-    )
+    |> join(:inner, [rr, ri], ri in Implementation, on: rr.implementation_id == ri.id)
     |> join(:inner, [_, ri, r], r in Rule, on: r.id == ri.rule_id)
     |> where([_, _, r], is_nil(r.deleted_at))
     |> where([_, ri, _], is_nil(ri.deleted_at))
@@ -47,11 +45,9 @@ defmodule TdDq.Rules.RuleResults do
 
   """
   def create_rule_result(
-        %Implementation{rule_id: rule_id} = impl,
+        %Implementation{rule_id: rule_id, result_type: result_type} = impl,
         params \\ %{}
       ) do
-    %{rule: %{result_type: result_type}} = Repo.preload(impl, :rule)
-
     changeset =
       RuleResult.changeset(
         %RuleResult{result_type: result_type, rule_id: rule_id},
@@ -75,7 +71,9 @@ defmodule TdDq.Rules.RuleResults do
     |> on_create()
   end
 
-  defp update_executions(%{id: id, implementation_id: implementation_id, inserted_at: ts} = _result) do
+  defp update_executions(
+         %{id: id, implementation_id: implementation_id, inserted_at: ts} = _result
+       ) do
     Execution
     |> select([e], e)
     |> where([e], is_nil(e.result_id))
@@ -128,10 +126,16 @@ defmodule TdDq.Rules.RuleResults do
         [res, _, _],
         map(res, ^~w(id implementation_id date result errors records params inserted_at)a)
       )
-      |> select_merge([_, i, _], %{implementation_id: i.id, rule_id: i.rule_id})
+      |> select_merge([_, i, _], %{
+        implementation_id: i.id,
+        rule_id: i.rule_id,
+        goal: i.goal,
+        minimum: i.minimum,
+        result_type: i.result_type
+      })
       |> select_merge(
         [_, _, rule],
-        map(rule, ^~w(domain_id business_concept_id goal name minimum result_type)a)
+        map(rule, ^~w(domain_id business_concept_id name)a)
       )
       |> where([res], res.id in ^ids)
       |> order_by([res], res.id)
@@ -143,24 +147,24 @@ defmodule TdDq.Rules.RuleResults do
 
   defp status(%{result_type: "percentage", result: result, minimum: threshold, goal: target}) do
     cond do
-      Decimal.compare(result, threshold) == :lt -> "fail"
-      Decimal.compare(result, target) == :lt -> "warn"
+      Decimal.compare(result, Decimal.from_float(threshold)) == :lt -> "fail"
+      Decimal.compare(result, Decimal.from_float(target)) == :lt -> "warn"
       true -> "success"
     end
   end
 
   defp status(%{result_type: "deviation", result: result, minimum: threshold, goal: target}) do
     cond do
-      Decimal.compare(result, threshold) == :gt -> "fail"
-      Decimal.compare(result, target) == :gt -> "warn"
+      Decimal.compare(result, Decimal.from_float(threshold)) == :gt -> "fail"
+      Decimal.compare(result, Decimal.from_float(target)) == :gt -> "warn"
       true -> "success"
     end
   end
 
   defp status(%{result_type: "errors_number", errors: errors, minimum: threshold, goal: target}) do
     cond do
-      Decimal.compare(errors, threshold) == :gt -> "fail"
-      Decimal.compare(errors, target) == :gt -> "warn"
+      Decimal.compare(errors, Decimal.from_float(threshold)) == :gt -> "fail"
+      Decimal.compare(errors, Decimal.from_float(target)) == :gt -> "warn"
       true -> "success"
     end
   end

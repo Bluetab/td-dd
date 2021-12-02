@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-4270] Move `goal` and `threshold` fields from `Rule` to `RuleImplementation`
+
 ## [4.33.0] 2021-11-30
 
 ### Added
