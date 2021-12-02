@@ -53,10 +53,7 @@ defmodule TdDq.Search.Mappings do
       },
       updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-      goal: %{type: "long"},
-      minimum: %{type: "long"},
       df_name: %{type: "text", fields: %{raw: %{type: "keyword"}}},
-      result_type: %{type: "text", fields: %{raw: %{type: "keyword"}}},
       type_params: %{
         properties: %{
           name: %{fields: @raw, type: "text"}
@@ -95,10 +92,7 @@ defmodule TdDq.Search.Mappings do
           version: %{type: "long"},
           name: %{type: "text", fields: @raw_sort},
           active: %{type: "boolean", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
-          goal: %{type: "long"},
-          minimum: %{type: "long"},
-          df_content: %{properties: get_dynamic_mappings("dq")},
-          result_type: %{type: "text"}
+          df_content: %{properties: get_dynamic_mappings("dq")}
         }
       },
       updated_by: %{
@@ -158,10 +152,14 @@ defmodule TdDq.Search.Mappings do
         }
       },
       population: get_condition_mappings(),
-      validations: get_condition_mappings([:operator, :structure, :value, :population, :modifier]),
+      validations:
+        get_condition_mappings([:operator, :structure, :value, :population, :modifier]),
       df_name: %{type: "text", fields: %{raw: %{type: "keyword"}}},
       df_content: content_mappings,
-      executable: %{type: "boolean"}
+      executable: %{type: "boolean"},
+      goal: %{type: "long"},
+      minimum: %{type: "long"},
+      result_type: %{type: "text", fields: %{raw: %{type: "keyword"}}}
     }
 
     settings = Cluster.setting(:implementations)
@@ -276,7 +274,7 @@ defmodule TdDq.Search.Mappings do
             name: %{type: "text", fields: @raw},
             params: %{type: "object"}
           }
-        },
+        }
       }
       |> put_population(opts)
       |> Map.take(opts)

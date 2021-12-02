@@ -19,7 +19,6 @@ defmodule TdDd.Repo.Migrations.ChangeImplementationKeyForIdOnRuleResult do
       """
     )
 
-
     alter table("rule_results") do
       remove(:implementation_key, :string)
     end
