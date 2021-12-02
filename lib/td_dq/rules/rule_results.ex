@@ -133,7 +133,6 @@ defmodule TdDq.Rules.RuleResults do
         goal: i.goal,
         minimum: i.minimum,
         result_type: i.result_type
-
       })
       |> select_merge(
         [_, _, rule],
