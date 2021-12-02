@@ -14,41 +14,23 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   alias TdDd.Profiles.Profile
 
   @paths_by_child_id """
-  SELECT child_id, c.data_structure_id as ds_id, v.data_structure_id, parent_id, 0 as level, v.name, v.version
-  FROM data_structure_relations r
-  JOIN data_structure_versions c on r.child_id = c.id
-  JOIN data_structure_versions v on r.parent_id = v.id
-  WHERE r.relation_type_id = ?
-  AND c.id = ANY (?)
-  UNION
-  (
-    SELECT p.child_id, p.ds_id, v.data_structure_id, r.parent_id, level + 1 as level, v.name, v.version
-    FROM paths p
-    JOIN data_structure_relations r on r.child_id = p.parent_id and r.relation_type_id = ?
-    JOIN data_structure_versions v on r.parent_id = v.id
-  )
+  SELECT dsv_id as child_id, ds_id, ancestor_ds_id as data_structure_id, ancestor_dsv_id as parent_id, ancestor_level as level, name, version
+  FROM data_structures_hierarchy dsh
+  JOIN data_structure_versions dsv on dsv.id = dsh.ancestor_dsv_id
+  WHERE dsh.dsv_id = ANY (?) and ancestor_level > 0
   """
 
   @paths_by_child_structure_id """
-  SELECT child_id, c.data_structure_id as ds_id, v.data_structure_id, parent_id, 0 as level, v.name, v.version
-  FROM data_structure_relations r
-  JOIN data_structure_versions c on r.child_id = c.id
-  JOIN data_structure_versions v on r.parent_id = v.id
-  WHERE r.relation_type_id = ?
-  AND c.data_structure_id = ANY (?)
-  UNION
-  (
-    SELECT p.child_id, p.ds_id, v.data_structure_id, r.parent_id, level + 1 as level, v.name, v.version
-    FROM paths p
-    JOIN data_structure_relations r on r.child_id = p.parent_id and r.relation_type_id = ?
-    JOIN data_structure_versions v on r.parent_id = v.id
-  )
+  SELECT dsv_id as child_id, ds_id, ancestor_ds_id as data_structure_id, ancestor_dsv_id as parent_id, ancestor_level as level, name, version
+  FROM data_structures_hierarchy dsh
+  JOIN data_structure_versions dsv on dsv.id = dsh.ancestor_dsv_id
+  WHERE dsh.ds_id = ANY (?) and ancestor_level > 0
   """
 
   @dsv_children """
-  select ancestor_ds_id as dsid, count(dsv_id), ARRAY_AGG (dsv_id) from 
+  select ancestor_ds_id as dsid, count(dsv_id), ARRAY_AGG (dsv_id) from
   (
-    SELECT dsh.dsv_id, ancestor_ds_id FROM data_structures_hierarchy dsh 
+    SELECT dsh.dsv_id, ancestor_ds_id FROM data_structures_hierarchy dsh
     join (select id as dsv_id, version as child_version, deleted_at as child_deleted_at from data_structure_versions) dsvc on dsh.dsv_id = dsvc.dsv_id
     join (select id as dsv_id, version as ancestor_version, deleted_at as ancestor_deleted_at from data_structure_versions) dsva on dsh.ancestor_dsv_id = dsva.dsv_id
     where ancestor_deleted_at is null and child_deleted_at is null
@@ -123,7 +105,6 @@ defmodule TdDd.DataStructures.DataStructureQueries do
     |> distinct(asc: :ds_id, desc: :level)
     |> order_by(desc: :version)
     |> subquery()
-    |> recursive_ctes(true)
     |> with_path_cte("paths", path_cte_params)
     |> select([t], %{
       id: t.ds_id,
@@ -141,17 +122,12 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   @spec with_path_cte(Ecto.Query.t(), binary, map) :: Ecto.Query.t()
   defp with_path_cte(query, name, params)
 
-  defp with_path_cte(query, name, %{ids: ids, relation_type_id: rt_id}) do
-    with_cte(query, ^name, as: fragment(@paths_by_child_id, ^rt_id, ^ids, ^rt_id))
+  defp with_path_cte(query, name, %{ids: ids}) do
+    with_cte(query, ^name, as: fragment(@paths_by_child_id, ^ids))
   end
 
-  defp with_path_cte(query, name, %{data_structure_ids: ids, relation_type_id: rt_id}) do
-    with_cte(query, ^name, as: fragment(@paths_by_child_structure_id, ^rt_id, ^ids, ^rt_id))
-  end
-
-  defp with_path_cte(query, name, %{} = params) do
-    params = Map.put(params, :relation_type_id, RelationTypes.default_id!())
-    with_path_cte(query, name, params)
+  defp with_path_cte(query, name, %{data_structure_ids: ids}) do
+    with_cte(query, ^name, as: fragment(@paths_by_child_structure_id, ^ids))
   end
 
   defp where_relation_type(query, %{} = params) do
