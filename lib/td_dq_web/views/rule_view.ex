@@ -64,12 +64,9 @@ defmodule TdDqWeb.RuleView do
       :domain_id,
       :domain,
       :execution_result_info,
-      :goal,
       :id,
       :inserted_at,
-      :minimum,
       :name,
-      :result_type,
       :updated_at,
       :updated_by,
       :version
@@ -80,7 +77,7 @@ defmodule TdDqWeb.RuleView do
   end
 
   def render("embedded.json", %{rule: rule}) do
-    Map.take(rule, [:id, :name, :result_type, :minimum, :goal])
+    Map.take(rule, [:id, :name])
   end
 
   defp add_current_version(rule, %{business_concept_id: business_concept_id}) do

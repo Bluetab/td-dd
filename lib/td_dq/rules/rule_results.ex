@@ -45,11 +45,9 @@ defmodule TdDq.Rules.RuleResults do
 
   """
   def create_rule_result(
-        %Implementation{rule_id: rule_id} = impl,
+        %Implementation{rule_id: rule_id, result_type: result_type} = impl,
         params \\ %{}
       ) do
-    %{rule: %{result_type: result_type}} = Repo.preload(impl, :rule)
-
     changeset =
       RuleResult.changeset(
         %RuleResult{result_type: result_type, rule_id: rule_id},
@@ -131,11 +129,15 @@ defmodule TdDq.Rules.RuleResults do
       |> select_merge([_, i, _], %{
         implementation_id: i.id,
         implementation_key: i.implementation_key,
-        rule_id: i.rule_id
+        rule_id: i.rule_id,
+        goal: i.goal,
+        minimum: i.minimum,
+        result_type: i.result_type
+
       })
       |> select_merge(
         [_, _, rule],
-        map(rule, ^~w(domain_id business_concept_id goal name minimum result_type)a)
+        map(rule, ^~w(domain_id business_concept_id name)a)
       )
       |> where([res], res.id in ^ids)
       |> order_by([res], res.id)
@@ -147,24 +149,24 @@ defmodule TdDq.Rules.RuleResults do
 
   defp status(%{result_type: "percentage", result: result, minimum: threshold, goal: target}) do
     cond do
-      Decimal.compare(result, threshold) == :lt -> "fail"
-      Decimal.compare(result, target) == :lt -> "warn"
+      Decimal.compare(result, Decimal.from_float(threshold)) == :lt -> "fail"
+      Decimal.compare(result, Decimal.from_float(target)) == :lt -> "warn"
       true -> "success"
     end
   end
 
   defp status(%{result_type: "deviation", result: result, minimum: threshold, goal: target}) do
     cond do
-      Decimal.compare(result, threshold) == :gt -> "fail"
-      Decimal.compare(result, target) == :gt -> "warn"
+      Decimal.compare(result, Decimal.from_float(threshold)) == :gt -> "fail"
+      Decimal.compare(result, Decimal.from_float(target)) == :gt -> "warn"
       true -> "success"
     end
   end
 
   defp status(%{result_type: "errors_number", errors: errors, minimum: threshold, goal: target}) do
     cond do
-      Decimal.compare(errors, threshold) == :gt -> "fail"
-      Decimal.compare(errors, target) == :gt -> "warn"
+      Decimal.compare(errors, Decimal.from_float(threshold)) == :gt -> "fail"
+      Decimal.compare(errors, Decimal.from_float(target)) == :gt -> "warn"
       true -> "success"
     end
   end

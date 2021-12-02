@@ -13,7 +13,6 @@ defmodule TdDq.Rules.Rule do
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleResult
 
-  @valid_result_types ~w(percentage errors_number deviation)
   @type t :: %__MODULE__{}
 
   schema "rules" do
@@ -21,12 +20,9 @@ defmodule TdDq.Rules.Rule do
     field(:active, :boolean, default: false)
     field(:deleted_at, :utc_datetime)
     field(:description, :map)
-    field(:goal, :integer)
-    field(:minimum, :integer)
     field(:name, :string)
     field(:version, :integer, default: 1)
     field(:updated_by, :integer)
-    field(:result_type, :string, default: "percentage")
     field(:domain_id, :integer)
     field(:domain, :map, virtual: true)
 
@@ -38,8 +34,6 @@ defmodule TdDq.Rules.Rule do
 
     timestamps()
   end
-
-  def valid_result_types, do: @valid_result_types
 
   def changeset(%{} = params) do
     changeset(%__MODULE__{}, params)
@@ -53,26 +47,18 @@ defmodule TdDq.Rules.Rule do
       :name,
       :deleted_at,
       :description,
-      :goal,
-      :minimum,
       :version,
       :df_name,
       :df_content,
-      :result_type,
       :domain_id
     ])
     |> validate_required(
       [
         :name,
-        :goal,
-        :minimum,
-        :result_type,
         :domain_id
       ],
       message: "required"
     )
-    |> validate_inclusion(:result_type, @valid_result_types)
-    |> validate_goal()
     |> validate_domain()
     |> validate_content()
     |> unique_constraint(
@@ -97,45 +83,6 @@ defmodule TdDq.Rules.Rule do
     rule
     |> change()
     |> no_assoc_constraint(:rule_implementations, message: "rule.delete.existing.implementations")
-  end
-
-  defp validate_goal(%{valid?: true} = changeset) do
-    minimum = get_field(changeset, :minimum)
-    goal = get_field(changeset, :goal)
-    result_type = get_field(changeset, :result_type)
-    do_validate_goal(changeset, minimum, goal, result_type)
-  end
-
-  defp validate_goal(changeset), do: changeset
-
-  defp do_validate_goal(changeset, minimum, goal, result_type)
-       when result_type in ["percentage", "deviation"] do
-    changeset
-    |> validate_number(:goal, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
-    |> validate_number(:minimum, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
-    |> minimum_goal_check(minimum, goal, result_type)
-  end
-
-  defp do_validate_goal(changeset, minimum, goal, "errors_number") do
-    changeset
-    |> validate_number(:goal, greater_than_or_equal_to: 0)
-    |> validate_number(:minimum, greater_than_or_equal_to: 0)
-    |> minimum_goal_check(minimum, goal, "errors_number")
-  end
-
-  def minimum_goal_check(changeset, minimum, goal, "percentage") do
-    case minimum <= goal do
-      true -> changeset
-      false -> add_error(changeset, :goal, "must.be.greater.than.or.equal.to.minimum")
-    end
-  end
-
-  def minimum_goal_check(changeset, minimum, goal, result_type)
-      when result_type in ["errors_number", "deviation"] do
-    case minimum >= goal do
-      true -> changeset
-      false -> add_error(changeset, :minimum, "must.be.greater.than.or.equal.to.goal")
-    end
   end
 
   defp validate_domain(%{valid?: true} = changeset) do
@@ -222,7 +169,6 @@ defmodule TdDq.Rules.Rule do
         domain_ids: domain_ids,
         domain_parents: domain_parents,
         current_business_concept_version: bcv,
-        result_type: rule.result_type,
         version: rule.version,
         name: rule.name,
         active: rule.active,
@@ -231,8 +177,6 @@ defmodule TdDq.Rules.Rule do
         updated_by: updated_by,
         updated_at: rule.updated_at,
         inserted_at: rule.inserted_at,
-        goal: rule.goal,
-        minimum: rule.minimum,
         df_name: rule.df_name,
         df_content: df_content
       }

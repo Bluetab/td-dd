@@ -15,7 +15,7 @@ defmodule TdDq.Rules.RuleTest do
     test "validates required fields" do
       rule = insert(:rule)
 
-      Enum.each([:name, :goal, :minimum, :result_type, :domain_id], fn field ->
+      Enum.each([:name, :domain_id], fn field ->
         assert %{valid?: false, errors: errors} = Rule.changeset(rule, %{field => nil})
         assert {_message, [validation: :required]} = errors[field]
       end)
@@ -50,87 +50,6 @@ defmodule TdDq.Rules.RuleTest do
 
       assert errors[:rule_name_bc_id] ==
                {"unique_constraint", [constraint: :unique, constraint_name: "rules_name_index"]}
-    end
-
-    test "validates result_type value", %{domain: domain} do
-      params = params_for(:rule, result_type: "foo", domain_id: domain.id)
-      assert %{valid?: false, errors: errors} = Rule.changeset(params)
-      assert {_, [validation: :inclusion, enum: _valid_values]} = errors[:result_type]
-    end
-
-    test "validates goal and minimum are between 0 and 100 if result_type is percentage", %{
-      domain: domain
-    } do
-      params =
-        params_for(:rule, result_type: "percentage", goal: 101, minimum: -1, domain_id: domain.id)
-
-      assert %{valid?: false, errors: errors} = Rule.changeset(params)
-      assert {_, [validation: :number, kind: :less_than_or_equal_to, number: 100]} = errors[:goal]
-
-      assert {_, [validation: :number, kind: :greater_than_or_equal_to, number: 0]} =
-               errors[:minimum]
-    end
-
-    test "validates goal and minimum are between 0 and 100 if result_type is deviation", %{
-      domain: domain
-    } do
-      params =
-        params_for(:rule, result_type: "deviation", goal: -1, minimum: 101, domain_id: domain.id)
-
-      assert %{valid?: false, errors: errors} = Rule.changeset(params)
-
-      assert {_, [validation: :number, kind: :less_than_or_equal_to, number: 100]} =
-               errors[:minimum]
-
-      assert {_, [validation: :number, kind: :greater_than_or_equal_to, number: 0]} =
-               errors[:goal]
-    end
-
-    test "validates goal and minimum >= 0 if result_type is errors_number", %{domain: domain} do
-      params =
-        params_for(:rule,
-          result_type: "errors_number",
-          goal: -1,
-          minimum: -1,
-          domain_id: domain.id
-        )
-
-      assert %{valid?: false, errors: errors} = Rule.changeset(params)
-
-      assert {_, [validation: :number, kind: :greater_than_or_equal_to, number: 0]} =
-               errors[:goal]
-
-      assert {_, [validation: :number, kind: :greater_than_or_equal_to, number: 0]} =
-               errors[:minimum]
-    end
-
-    test "validates goal >= minimum if result_type is percentage", %{domain: domain} do
-      params =
-        params_for(:rule, result_type: "percentage", goal: 30, minimum: 40, domain_id: domain.id)
-
-      assert %{valid?: false, errors: errors} = Rule.changeset(params)
-      assert errors[:goal] == {"must.be.greater.than.or.equal.to.minimum", []}
-    end
-
-    test "validates minimum >= goal if result_type is deviation", %{domain: domain} do
-      params =
-        params_for(:rule, result_type: "deviation", goal: 80, minimum: 70, domain_id: domain.id)
-
-      assert %{valid?: false, errors: errors} = Rule.changeset(params)
-      assert errors[:minimum] == {"must.be.greater.than.or.equal.to.goal", []}
-    end
-
-    test "validates minimum >= goal if result_type is errors_numer", %{domain: domain} do
-      params =
-        params_for(:rule,
-          result_type: "errors_number",
-          goal: 400,
-          minimum: 30,
-          domain_id: domain.id
-        )
-
-      assert %{valid?: false, errors: errors} = Rule.changeset(params)
-      assert errors[:minimum] == {"must.be.greater.than.or.equal.to.goal", []}
     end
 
     test "validates df_content is required if df_name is present", %{

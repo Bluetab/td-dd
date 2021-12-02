@@ -31,10 +31,8 @@ defmodule TdDq.RuleResults.BulkLoadTest do
 
   describe "bulk_load/1" do
     test "loads rule results and calculates status (number of errors)" do
-      %{implementation_key: key, rule: %{result_type: result_type}} =
-        insert(:implementation,
-          rule: build(:rule, result_type: "errors_number", goal: 10, minimum: 20)
-        )
+      %{implementation_key: key, result_type: result_type} =
+        insert(:implementation, result_type: "errors_number", goal: 10, minimum: 20)
 
       assert {:ok, res} =
                ["1", "15", "30"]
@@ -55,9 +53,8 @@ defmodule TdDq.RuleResults.BulkLoadTest do
     end
 
     test "loads rule results and calculates status (percentage)" do
-      rule = build(:rule, result_type: "percentage", goal: 100, minimum: 80)
-
-      %{implementation_key: key} = insert(:implementation, rule: rule)
+      %{implementation_key: key} =
+        insert(:implementation, result_type: "percentage", goal: 100, minimum: 80)
 
       assert {:ok, res} =
                ["100", "90", "50"]
@@ -84,14 +81,13 @@ defmodule TdDq.RuleResults.BulkLoadTest do
 
       rule =
         build(:rule,
-          result_type: "percentage",
-          goal: 100,
-          minimum: 80,
           business_concept_id: "#{@concept_id}",
           domain_id: domain_id
         )
 
-      %{implementation_key: key} = insert(:implementation, rule: rule)
+      %{implementation_key: key} =
+        insert(:implementation, result_type: "percentage", goal: 100, minimum: 80, rule: rule)
+
       params = %{"foo" => "bar"}
 
       assert {:ok, %{audit: [_, event_id, _]}} =
