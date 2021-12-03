@@ -277,6 +277,12 @@ defmodule TdDq.Search.Mappings do
             params: %{type: "object"}
           }
         },
+        value_modifier: %{
+          properties: %{
+            name: %{type: "text", fields: @raw},
+            params: %{type: "object"}
+          }
+        },
       }
       |> put_population(opts)
       |> Map.take(opts)

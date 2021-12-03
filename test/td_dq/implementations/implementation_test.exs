@@ -76,6 +76,7 @@ defmodule TdDq.Implementations.ImplementationTest do
   describe "encode" do
     test "encoded implementation includes validation modifier" do
       rule = insert(:rule)
+
       creation_attrs = %{
         validations: [
           %{
@@ -86,11 +87,14 @@ defmodule TdDq.Implementations.ImplementationTest do
             },
             structure: %{id: 7, name: "s7"},
             value: [%{raw: "2019-12-02 05:35:00"}],
-            modifier: build(:modifier)
+            modifier: build(:modifier),
+            value_modifier: [build(:modifier)]
           }
         ]
       }
+
       implementation_key = "rik1"
+
       rule_implementation =
         insert(:implementation,
           implementation_key: implementation_key,
@@ -99,15 +103,21 @@ defmodule TdDq.Implementations.ImplementationTest do
         )
 
       assert %{
-        validations: [
-          %{
-            modifier: %{
-              name: _name,
-              params: %{}
-            }
-          }
-        ]
-      } = Document.encode(rule_implementation)
+               validations: [
+                 %{
+                   value_modifier: [
+                     %{
+                       name: _,
+                       params: %{}
+                     }
+                   ],
+                   modifier: %{
+                     name: _,
+                     params: %{}
+                   }
+                 }
+               ]
+             } = Document.encode(rule_implementation)
     end
   end
 end
