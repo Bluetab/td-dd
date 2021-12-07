@@ -9,6 +9,7 @@ defmodule TdDd.DataStructuresTest do
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.RelationTypes
 
   @moduletag sandbox: :shared
@@ -269,6 +270,7 @@ defmodule TdDd.DataStructuresTest do
         name: parent_name
       }
     } do
+      Hierarchy.update_hierarchy([data_structure_id])
       assert %{path: []} = DataStructures.get_latest_version(data_structure_id)
 
       %{child: %{data_structure_id: id}} =
@@ -277,6 +279,7 @@ defmodule TdDd.DataStructuresTest do
           relation_type_id: RelationTypes.default_id!()
         )
 
+      Hierarchy.update_hierarchy([parent_id])
       assert %{path: path} = DataStructures.get_latest_version(id)
 
       assert path == [%{"data_structure_id" => data_structure_id, "name" => parent_name}]
@@ -357,6 +360,8 @@ defmodule TdDd.DataStructuresTest do
 
       insert(:structure_classification, data_structure_version_id: id, class: "bar", name: "foo")
 
+      Hierarchy.update_hierarchy([id])
+
       [
         data_structure_version: data_structure_version,
         parent: parent,
@@ -375,7 +380,7 @@ defmodule TdDd.DataStructuresTest do
                  content: :searchable
                )
 
-      assert %{data_structure: data_structure} = dsv |> IO.inspect
+      assert %{data_structure: data_structure} = dsv
       assert %{search_content: search_content, latest_note: latest_note} = data_structure
       assert search_content == %{"string" => "initial", "list" => "one"}
       assert latest_note == %{"string" => "initial", "list" => "one", "foo" => "bar"}
@@ -816,6 +821,7 @@ defmodule TdDd.DataStructuresTest do
         |> create_hierarchy()
         |> Enum.at(4)
 
+      Hierarchy.update_hierarchy([id])
       assert %{path: path} = DataStructures.get_data_structure_version!(id)
       assert Enum.map(path, & &1["name"]) == ["foo", "bar", "baz", "xyzzy"]
     end
@@ -1037,6 +1043,8 @@ defmodule TdDd.DataStructuresTest do
           child: build(:data_structure_version, data_structure_id: id, version: version + 1)
         )
 
+      Hierarchy.update_hierarchy([id1, id2])
+
       assert %{id: ^id1, path: path} = DataStructures.get_data_structure_version!(id, version, [])
       assert [%{"data_structure_id" => ^parent_id1}] = path
 
@@ -1097,6 +1105,8 @@ defmodule TdDd.DataStructuresTest do
         child_id: child.id,
         relation_type_id: relation_type_id
       )
+
+      Hierarchy.update_hierarchy([dsv.id, parent.id])
 
       start_date = Date.utc_today() |> Date.add(-1)
       end_date = Date.utc_today() |> Date.add(2)
@@ -1175,6 +1185,8 @@ defmodule TdDd.DataStructuresTest do
         relation_type_id: relation_type_id
       )
 
+      Hierarchy.update_hierarchy([dsv.id, parent.id])
+
       start_date = Date.utc_today() |> Date.add(-1)
       end_date = Date.utc_today() |> Date.add(2)
 
@@ -1212,6 +1224,8 @@ defmodule TdDd.DataStructuresTest do
         child_id: dsv.id,
         relation_type_id: relation_type_id
       )
+
+      Hierarchy.update_hierarchy([dsv.id, parent.id])
 
       start_date = Date.utc_today() |> Date.add(-1)
       end_date = Date.utc_today() |> Date.add(2)

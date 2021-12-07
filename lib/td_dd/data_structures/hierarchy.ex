@@ -56,6 +56,16 @@ defmodule TdDd.DataStructures.Hierarchy do
   ) AS SUBQ
   """
 
+  def update_hierarchy(
+        _repo,
+        %{insert_versions: {_, inserted_versions}, replace_versions: {_, replaced_versions}}
+      ) do
+    ids = Enum.map(inserted_versions ++ replaced_versions, & &1.id)
+
+    update_hierarchy(ids)
+    {:ok, []}
+  end
+
   def update_hierarchy(dsv_ids) do
     name = "hierarchy"
 
