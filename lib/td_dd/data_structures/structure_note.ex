@@ -39,7 +39,6 @@ defmodule TdDd.DataStructures.StructureNote do
     |> validate_required([:status, :df_content])
     |> maybe_put_identifier(current_content, attrs)
     |> validate_change(:df_content, Validation.validator(structure_note))
-    #|> validate_content(structure_note, attrs)
   end
 
   def bulk_create_changeset(
@@ -54,7 +53,6 @@ defmodule TdDd.DataStructures.StructureNote do
     |> validate_required([:status, :version, :df_content, :data_structure])
     |> validate_change(:df_content, Validation.shallow_validator(data_structure))
     |> maybe_put_identifier(data_structure)
-    #|> validate_content(data_structure, attrs)
     |> unique_constraint([:data_structure, :version])
   end
 
@@ -69,7 +67,6 @@ defmodule TdDd.DataStructures.StructureNote do
     |> validate_required([:status, :version, :df_content, :data_structure])
     |> validate_change(:df_content, Validation.validator(data_structure))
     |> maybe_put_identifier(data_structure)
-    #|> validate_content(data_structure, attrs)
     |> unique_constraint([:data_structure, :version])
   end
 
