@@ -385,38 +385,6 @@ defmodule TdDqWeb.RuleControllerTest do
                |> post(Routes.rule_path(conn, :create), rule: params)
                |> json_response(:unprocessable_entity)
     end
-
-    @tag authentication: [role: "admin"]
-    test "renders errors when rule result type is numeric and goal is higher than minimum", %{
-      conn: conn
-    } do
-      params =
-        string_params_for(:rule, minimum: 5, goal: 10, result_type: "errors_number")
-        |> Map.delete("business_concept_id")
-
-      assert %{"errors" => errors} =
-               conn
-               |> post(Routes.rule_path(conn, :create), rule: params)
-               |> json_response(:unprocessable_entity)
-
-      assert %{"minimum" => ["must.be.greater.than.or.equal.to.goal"]} = errors
-    end
-
-    @tag authentication: [role: "admin"]
-    test "renders errors when rule result type is percentage and goal is lower than minimum", %{
-      conn: conn
-    } do
-      params =
-        string_params_for(:rule, result_type: "percentage", minimum: 50, goal: 10)
-        |> Map.delete("business_concept_id")
-
-      assert %{"errors" => errors} =
-               conn
-               |> post(Routes.rule_path(conn, :create), rule: params)
-               |> json_response(:unprocessable_entity)
-
-      assert %{"goal" => ["must.be.greater.than.or.equal.to.minimum"]} = errors
-    end
   end
 
   describe "update rule" do
