@@ -1,7 +1,8 @@
 defmodule TdDq.CSV.Reader do
   @moduledoc """
-  Module ro read Implementations CSV
+  Module to read CSV
   """
+
   alias Codepagex
   alias NimbleCSV
   alias TdDq.Auth.Claims
