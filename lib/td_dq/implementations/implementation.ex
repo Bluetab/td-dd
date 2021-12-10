@@ -72,7 +72,7 @@ defmodule TdDq.Implementations.Implementation do
       :minimum,
       :result_type
     ])
-    |> validate_inclusion(:implementation_type, ["default", "raw"])
+    |> validate_inclusion(:implementation_type, ["default", "raw", "draft"])
     |> validate_inclusion(:result_type, @valid_result_types)
     |> validate_or_put_implementation_key()
     |> validate_content()
@@ -165,6 +165,13 @@ defmodule TdDq.Implementations.Implementation do
     raw_changeset(changeset)
   end
 
+  defp custom_changeset(
+         %Changeset{changes: %{implementation_type: "draft"}} = changeset,
+         _implementation
+       ) do
+    incomplete_changeset(changeset)
+  end
+
   defp custom_changeset(%Changeset{} = changeset, %__MODULE__{implementation_type: "raw"}) do
     raw_changeset(changeset)
   end
@@ -185,6 +192,8 @@ defmodule TdDq.Implementations.Implementation do
     |> cast_embed(:raw_content, with: &RawContent.changeset/2, required: true)
     |> validate_required(:raw_content)
   end
+
+  defp incomplete_changeset(changeset), do: changeset
 
   def default_changeset(changeset) do
     changeset
