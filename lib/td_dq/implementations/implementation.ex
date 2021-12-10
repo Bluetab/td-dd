@@ -351,6 +351,7 @@ defmodule TdDq.Implementations.Implementation do
       |> Map.put(:structure, get_structure_fields(Map.get(row, :structure, %{})))
       |> Map.put(:value, Map.get(row, :value, []))
       |> Map.put(:modifier, Map.get(row, :modifier, []))
+      |> Map.put(:value_modifier, Map.get(row, :value_modifier, []))
       |> with_population(row)
     end
 
