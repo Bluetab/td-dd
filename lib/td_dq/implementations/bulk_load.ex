@@ -17,7 +17,8 @@ defmodule TdDq.Implementations.BulkLoad do
     "goal",
     "minimum"
   ]
-  @optional_headers ["df_name"]
+  @optional_headers ["template"]
+
   @default_implementation %{
     "dataset" => [],
     "executable" => false,
@@ -31,7 +32,7 @@ defmodule TdDq.Implementations.BulkLoad do
   def required_headers, do: @required_headers
 
   def bulk_load(implementations, claims) do
-    Logger.info("Loading Implementations")
+    Logger.info("Loading Implementations...")
 
     Timer.time(
       fn -> do_bulk_load(implementations, claims) end,
@@ -62,14 +63,16 @@ defmodule TdDq.Implementations.BulkLoad do
           Map.put(
             acc,
             :errors,
-            acc.errors ++ [%{implementation_key: implementation_key, message: error}]
+            [%{implementation_key: implementation_key, message: error} | acc.errors]
           )
       end
     end)
     |> Map.update!(:ids, &Enum.reverse(&1))
+    |> Map.update!(:errors, &Enum.reverse(&1))
   end
 
   defp enrich_implementation(implementation) do
+    df_name = implementation["template"]
     implementation
     |> Enum.reduce(%{"df_content" => %{}}, fn {head, value}, acc ->
       if Enum.member?(@required_headers ++ @optional_headers, head) do
@@ -79,6 +82,8 @@ defmodule TdDq.Implementations.BulkLoad do
         Map.put(acc, "df_content", df_content)
       end
     end)
+    |> Map.put("df_name", df_name)
+    |> Map.delete("template")
     |> Map.merge(@default_implementation)
   end
 end

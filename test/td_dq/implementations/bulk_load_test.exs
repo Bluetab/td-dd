@@ -23,9 +23,9 @@ defmodule TdDq.Implementations.BulkLoadTest do
 
   setup do
     start_supervised!(TdDd.Search.MockIndexWorker)
-    template = CacheHelpers.insert_template(scope: "dq")
+    %{name: template_name} = CacheHelpers.insert_template(scope: "dq")
 
-    [rule: insert(:rule), claims: build(:dq_claims), template: template]
+    [rule: insert(:rule), claims: build(:dq_claims), template_name: template_name]
   end
 
   describe "bulk_load/2" do
@@ -46,13 +46,13 @@ defmodule TdDq.Implementations.BulkLoadTest do
     test "return ids with valid df_content", %{
       rule: %{name: rule_name},
       claims: claims,
-      template: %{name: template_name}
+      template_name: template_name
     } do
       imp =
         Enum.map(@valid_implementation, fn imp ->
           imp
           |> Map.put("rule_name", rule_name)
-          |> Map.put("df_name", template_name)
+          |> Map.put("template", template_name)
           |> Map.put("string", "initial")
           |> Map.put("list", "one")
         end)
@@ -95,13 +95,13 @@ defmodule TdDq.Implementations.BulkLoadTest do
     test "return errors with invalid valid df_content", %{
       rule: %{name: rule_name},
       claims: claims,
-      template: %{name: template_name}
+      template_name: template_name
     } do
       imp =
         Enum.map(@valid_implementation, fn imp ->
           imp
           |> Map.put("rule_name", rule_name)
-          |> Map.put("df_name", template_name)
+          |> Map.put("template", template_name)
         end)
 
       assert %{ids: [], errors: errors} = BulkLoad.bulk_load(imp, claims)
