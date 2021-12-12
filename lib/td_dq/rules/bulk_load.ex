@@ -4,8 +4,8 @@ defmodule TdDq.Rules.BulkLoad do
   """
 
   alias Ecto.Changeset
-  alias TdDdWeb.ErrorHelpers
   alias TdCache.DomainCache
+  alias TdDdWeb.ErrorHelpers
   alias TdDq.Cache.RuleLoader
   alias TdDq.Rules
 
