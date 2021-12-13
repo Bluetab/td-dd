@@ -177,7 +177,8 @@ defmodule TdDq.Implementations.ImplementationTest do
             },
             structure: %{id: 7, name: "s7"},
             value: [%{raw: "2019-12-02 05:35:00"}],
-            modifier: build(:modifier)
+            modifier: build(:modifier),
+            value_modifier: [build(:modifier)]
           }
         ]
       }
@@ -194,8 +195,14 @@ defmodule TdDq.Implementations.ImplementationTest do
       assert %{
                validations: [
                  %{
+                   value_modifier: [
+                     %{
+                       name: _,
+                       params: %{}
+                     }
+                   ],
                    modifier: %{
-                     name: _name,
+                     name: _,
                      params: %{}
                    }
                  }
