@@ -23,9 +23,9 @@ defmodule TdDq.Implementations.BulkLoadTest do
 
   setup do
     start_supervised!(TdDd.Search.MockIndexWorker)
-    template = CacheHelpers.insert_template(scope: "dq")
+    %{name: template_name} = CacheHelpers.insert_template(scope: "dq")
 
-    [rule: insert(:rule), claims: build(:dq_claims), template: template]
+    [rule: insert(:rule), claims: build(:dq_claims), template_name: template_name]
   end
 
   describe "bulk_load/2" do
@@ -37,7 +37,7 @@ defmodule TdDq.Implementations.BulkLoadTest do
           Map.put(imp, "rule_name", rule_name)
         end)
 
-      assert %{ids: [id1, id2], errors: []} = BulkLoad.bulk_load(imp, claims)
+      assert {:ok, %{ids: [id1, id2], errors: []}} = BulkLoad.bulk_load(imp, claims)
 
       assert %{implementation_key: "boo"} = Implementations.get_implementation!(id1)
       assert %{implementation_key: "bar"} = Implementations.get_implementation!(id2)
@@ -46,20 +46,23 @@ defmodule TdDq.Implementations.BulkLoadTest do
     test "return ids with valid df_content", %{
       rule: %{name: rule_name},
       claims: claims,
-      template: %{name: template_name}
+      template_name: template_name
     } do
       imp =
         Enum.map(@valid_implementation, fn imp ->
           imp
           |> Map.put("rule_name", rule_name)
-          |> Map.put("df_name", template_name)
+          |> Map.put("template", template_name)
           |> Map.put("string", "initial")
           |> Map.put("list", "one")
         end)
 
-      assert %{ids: [id1, id2], errors: []} = BulkLoad.bulk_load(imp, claims)
-      assert %{implementation_key: "boo"} = Implementations.get_implementation!(id1)
-      assert %{implementation_key: "bar"} = Implementations.get_implementation!(id2)
+      assert {:ok, %{ids: [id1, id2], errors: []}} = BulkLoad.bulk_load(imp, claims)
+
+      df_content = %{"string" => "initial", "list" => "one"}
+
+      assert %{df_content: ^df_content} = Implementations.get_implementation!(id1)
+      assert %{df_content: ^df_content} = Implementations.get_implementation!(id2)
     end
 
     test "return error when rule not exist", %{rule: %{name: rule_name}, claims: claims} do
@@ -67,9 +70,9 @@ defmodule TdDq.Implementations.BulkLoadTest do
       imp1 = Map.put(imp1, "rule_name", rule_name)
 
       %{"implementation_key" => implementation_key} =
-        imp2 = Map.put(imp2, "rule_name", "rule_not_existe")
+        imp2 = Map.put(imp2, "rule_name", "rule_not_exists")
 
-      assert %{ids: [id1], errors: [error]} = BulkLoad.bulk_load([imp1, imp2], claims)
+      assert {:ok, %{ids: [id1], errors: [error]}} = BulkLoad.bulk_load([imp1, imp2], claims)
 
       assert %{implementation_key: "boo"} = Implementations.get_implementation!(id1)
       assert %{implementation_key: ^implementation_key, message: _} = error
@@ -84,7 +87,7 @@ defmodule TdDq.Implementations.BulkLoadTest do
       %{"implementation_key" => implementation_key} =
         imp2 = Map.put(imp2, "result_type", "not_exists")
 
-      assert %{ids: [id1], errors: [error]} = BulkLoad.bulk_load([imp1, imp2], claims)
+      assert {:ok, %{ids: [id1], errors: [error]}} = BulkLoad.bulk_load([imp1, imp2], claims)
 
       assert %{implementation_key: "boo"} = Implementations.get_implementation!(id1)
 
@@ -95,17 +98,16 @@ defmodule TdDq.Implementations.BulkLoadTest do
     test "return errors with invalid valid df_content", %{
       rule: %{name: rule_name},
       claims: claims,
-      template: %{name: template_name}
+      template_name: template_name
     } do
       imp =
         Enum.map(@valid_implementation, fn imp ->
           imp
           |> Map.put("rule_name", rule_name)
-          |> Map.put("df_name", template_name)
+          |> Map.put("template", template_name)
         end)
 
-      assert %{ids: [], errors: errors} = BulkLoad.bulk_load(imp, claims)
-      assert 2 == length(errors)
+      assert {:ok, %{ids: [], errors: [_e1, _e2]}} = BulkLoad.bulk_load(imp, claims)
     end
   end
 end

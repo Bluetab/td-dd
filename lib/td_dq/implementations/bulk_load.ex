@@ -17,7 +17,11 @@ defmodule TdDq.Implementations.BulkLoad do
     "goal",
     "minimum"
   ]
-  @optional_headers ["df_name"]
+
+  @optional_headers ["template"]
+
+  @headers @required_headers ++ @optional_headers
+
   @default_implementation %{
     "dataset" => [],
     "executable" => false,
@@ -31,7 +35,7 @@ defmodule TdDq.Implementations.BulkLoad do
   def required_headers, do: @required_headers
 
   def bulk_load(implementations, claims) do
-    Logger.info("Loading Implementations")
+    Logger.info("Loading Implementations...")
 
     Timer.time(
       fn -> do_bulk_load(implementations, claims) end,
@@ -42,7 +46,7 @@ defmodule TdDq.Implementations.BulkLoad do
   defp do_bulk_load(implementations, claims) do
     %{ids: ids} = result = create_implementations(implementations, claims)
     @index_worker.reindex_implementations(ids)
-    result
+    {:ok, result}
   end
 
   defp create_implementations(implementations, claims) do
@@ -53,32 +57,45 @@ defmodule TdDq.Implementations.BulkLoad do
 
       case Implementations.create_implementation(rule, imp, claims, true) do
         {:ok, %{implementation: %{id: id}}} ->
-          Map.put(acc, :ids, [id | acc.ids])
+          %{acc | ids: [id | acc.ids]}
 
         {:error, _, changeset, _} ->
           error = Changeset.traverse_errors(changeset, &ErrorHelpers.translate_error/1)
           implementation_key = Changeset.get_field(changeset, :implementation_key)
 
-          Map.put(
-            acc,
-            :errors,
-            acc.errors ++ [%{implementation_key: implementation_key, message: error}]
-          )
+          %{
+            acc
+            | errors: [%{implementation_key: implementation_key, message: error} | acc.errors]
+          }
       end
     end)
     |> Map.update!(:ids, &Enum.reverse(&1))
+    |> Map.update!(:errors, &Enum.reverse(&1))
   end
 
   defp enrich_implementation(implementation) do
     implementation
-    |> Enum.reduce(%{"df_content" => %{}}, fn {head, value}, acc ->
-      if Enum.member?(@required_headers ++ @optional_headers, head) do
-        Map.put(acc, head, value)
+    |> Enum.reduce(%{"df_content" => %{}}, fn {header, value}, acc ->
+      if Enum.member?(@headers, header) do
+        Map.put(acc, header, value)
       else
-        df_content = Map.put(acc["df_content"], head, value)
-        Map.put(acc, "df_content", df_content)
+        Map.update!(acc, "df_content", fn content ->
+          Map.put(content, header, value)
+        end)
       end
     end)
+    |> ensure_template()
     |> Map.merge(@default_implementation)
+  end
+
+  defp ensure_template(%{"df_content" => df_content} = implementation) do
+    if Enum.empty?(df_content) or
+         (!Enum.empty?(df_content) && Map.has_key?(implementation, "template")) do
+      implementation
+      |> Map.put("df_name", implementation["template"])
+      |> Map.delete("template")
+    else
+      implementation
+    end
   end
 end

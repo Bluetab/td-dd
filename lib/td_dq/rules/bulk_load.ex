@@ -99,7 +99,7 @@ defmodule TdDq.Rules.BulkLoad do
     Map.put(rule, "description", description)
   end
 
-  defp convert_description(rule), do: Map.add(rule, "description", %{})
+  defp convert_description(rule), do: Map.put(rule, "description", %{})
 
   defp get_domain_id(%{"domain_external_id" => domain_external_id}) do
     case DomainCache.external_id_to_id(domain_external_id) do
