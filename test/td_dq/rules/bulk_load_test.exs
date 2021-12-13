@@ -33,7 +33,7 @@ defmodule TdDq.Rules.BulkLoadTest do
           Map.put(rule, "domain_external_id", external_id)
         end)
 
-      assert %{ids: [id1, id2], errors: []} = BulkLoad.bulk_load(rules, claims)
+      assert {:ok, %{ids: [id1, id2], errors: []}} = BulkLoad.bulk_load(rules, claims)
       assert %{name: "foo_rule"} = Rules.get_rule(id1)
       assert %{name: "bar_rule"} = Rules.get_rule(id2)
     end
@@ -52,7 +52,7 @@ defmodule TdDq.Rules.BulkLoadTest do
           |> Map.put("list", "one")
         end)
 
-      assert %{ids: [id1, id2], errors: []} = BulkLoad.bulk_load(rules, claims)
+      assert {:ok, %{ids: [id1, id2], errors: []}} = BulkLoad.bulk_load(rules, claims)
       assert %{name: "foo_rule"} = Rules.get_rule(id1)
       assert %{name: "bar_rule"} = Rules.get_rule(id2)
     end
@@ -66,7 +66,7 @@ defmodule TdDq.Rules.BulkLoadTest do
       rule1 = Map.put(rule1, "domain_external_id", domain_external_id)
       %{"name" => name} = rule2 = Map.put(rule2, "domain_external_id", "foo")
 
-      assert %{ids: [id], errors: [error]} = BulkLoad.bulk_load([rule1, rule2], claims)
+      assert {:ok, %{ids: [id], errors: [error]}} = BulkLoad.bulk_load([rule1, rule2], claims)
 
       assert %{name: "foo_rule"} = Rules.get_rule(id)
       assert %{rule_name: ^name, message: _} = error
@@ -90,7 +90,7 @@ defmodule TdDq.Rules.BulkLoadTest do
         |> Map.put("domain_external_id", domain_external_id)
         |> Map.put("template", "xwy")
 
-      assert %{ids: [], errors: errors} = BulkLoad.bulk_load([rule1, rule2], claims)
+      assert {:ok, %{ids: [], errors: errors}} = BulkLoad.bulk_load([rule1, rule2], claims)
       assert 2 == length(errors)
     end
   end

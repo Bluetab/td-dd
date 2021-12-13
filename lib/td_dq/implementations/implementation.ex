@@ -169,7 +169,7 @@ defmodule TdDq.Implementations.Implementation do
          %Changeset{changes: %{implementation_type: "draft"}} = changeset,
          _implementation
        ) do
-    incomplete_changeset(changeset)
+    draft_changeset(changeset)
   end
 
   defp custom_changeset(%Changeset{} = changeset, %__MODULE__{implementation_type: "raw"}) do
@@ -193,7 +193,7 @@ defmodule TdDq.Implementations.Implementation do
     |> validate_required(:raw_content)
   end
 
-  defp incomplete_changeset(changeset), do: changeset
+  defp draft_changeset(changeset), do: changeset
 
   def default_changeset(changeset) do
     changeset

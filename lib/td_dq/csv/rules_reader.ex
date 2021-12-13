@@ -6,7 +6,9 @@ defmodule TdDq.CSV.RulesReader do
   alias TdDq.CSV.Reader
   alias TdDq.Rules.BulkLoad
 
+  @required_headers BulkLoad.required_headers()
+
   def reader_csv(claims, stream) do
-    Reader.read_csv(claims, stream, BulkLoad.required_headers(), &BulkLoad.bulk_load/2)
+    Reader.read_csv(claims, stream, @required_headers, &BulkLoad.bulk_load/2)
   end
 end
