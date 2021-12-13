@@ -6,16 +6,7 @@ defmodule TdDq.Rules.BulkLoadTest do
 
   @moduletag sandbox: :shared
 
-  @rules [
-    %{
-      "name" => "foo_rule",
-      "description" => "foo_description"
-    },
-    %{
-      "name" => "bar_rule",
-      "description" => "bar_description"
-    }
-  ]
+  @rules [%{"name" => "foo_rule"}, %{"name" => "bar_rule"}]
 
   setup do
     start_supervised!(TdDd.Search.MockIndexWorker)
@@ -27,6 +18,8 @@ defmodule TdDq.Rules.BulkLoadTest do
   end
 
   describe "bulk_load/2" do
+    @tag authentication: [role: "admin"]
+
     test "return ids from inserted rules", %{external_id: external_id, claims: claims} do
       rules =
         Enum.map(@rules, fn rule ->
@@ -53,11 +46,14 @@ defmodule TdDq.Rules.BulkLoadTest do
         end)
 
       assert {:ok, %{ids: [id1, id2], errors: []}} = BulkLoad.bulk_load(rules, claims)
-      assert %{name: "foo_rule"} = Rules.get_rule(id1)
-      assert %{name: "bar_rule"} = Rules.get_rule(id2)
+
+      df_content = %{"string" => "initial", "list" => "one"}
+
+      assert %{df_content: ^df_content} = Rules.get_rule(id1)
+      assert %{df_content: ^df_content} = Rules.get_rule(id2)
     end
 
-    test "return error when domain not exits", %{
+    test "return error when domain_external_id not exit", %{
       external_id: domain_external_id,
       claims: claims
     } do
@@ -90,8 +86,41 @@ defmodule TdDq.Rules.BulkLoadTest do
         |> Map.put("domain_external_id", domain_external_id)
         |> Map.put("template", "xwy")
 
-      assert {:ok, %{ids: [], errors: errors}} = BulkLoad.bulk_load([rule1, rule2], claims)
-      assert 2 == length(errors)
+      assert {:ok, %{ids: [], errors: [_e1, _e2]}} = BulkLoad.bulk_load([rule1, rule2], claims)
+    end
+
+    test "return ids with a description", %{
+      external_id: domain_external_id,
+      claims: claims
+    } do
+      [rule1, rule2] = @rules
+
+      rule1 =
+        rule1
+        |> Map.put("domain_external_id", domain_external_id)
+        |> Map.put("description", "bar")
+
+      rule2 =
+        rule2
+        |> Map.put("domain_external_id", domain_external_id)
+
+      assert {:ok, %{ids: [id1, id2], errors: []}} = BulkLoad.bulk_load([rule1, rule2], claims)
+
+      description = %{
+        "document" => %{
+          "nodes" => [
+            %{
+              "nodes" => [%{"leaves" => [%{"text" => "bar"}], "object" => "text"}],
+              "object" => "block",
+              "type" => "paragraph"
+            }
+          ]
+        }
+      }
+
+      assert %{description: ^description} = Rules.get_rule(id1)
+      %{description: rule2description} = Rules.get_rule(id2)
+      assert true = Enum.empty?(rule2description)
     end
   end
 end
