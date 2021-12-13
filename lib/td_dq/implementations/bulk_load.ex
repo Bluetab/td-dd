@@ -94,7 +94,6 @@ defmodule TdDq.Implementations.BulkLoad do
       |> Map.put("df_name", implementation["template"])
       |> Map.delete("template")
     else
-      # Map.put(implementation, "df_name", "-")
       implementation
     end
   end
