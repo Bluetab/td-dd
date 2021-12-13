@@ -11,12 +11,12 @@ defmodule TdDq.Rules.BulkLoad do
 
   @required_headers [
     "name",
-    "domain_external_id",
-    "description"
+    "domain_external_id"
   ]
 
   @optional_headers [
-    "template"
+    "template",
+    "description"
   ]
 
   @default_rule %{
@@ -26,14 +26,6 @@ defmodule TdDq.Rules.BulkLoad do
     "business_concept_id" => nil,
     "type" => "",
     "type_params" => %{}
-  }
-
-  @description_template %{
-    "document" => %{
-      "data" => %{},
-      "object" => "document"
-    },
-    "object" => "value"
   }
 
   require Logger
@@ -57,7 +49,7 @@ defmodule TdDq.Rules.BulkLoad do
 
   defp create_rules(rules, claims) do
     rules
-    |> Enum.reduce(%{ids: [], errors: []}, fn rule, acc ->
+    |> Enum.reduce(%{ids: [], errors: []}, fn %{"name" => rule_name} = rule, acc ->
       domain_id = get_domain_id(rule)
       rule_enriched = enrich_rule(rule, domain_id)
 
@@ -66,13 +58,12 @@ defmodule TdDq.Rules.BulkLoad do
           Map.put(acc, :ids, [ids | acc.ids])
 
         {:error, _, changeset, _} = fail ->
-
           error = Changeset.traverse_errors(changeset, &ErrorHelpers.translate_error/1)
 
           Map.put(
             acc,
             :errors,
-             [%{rule_name: rule["name"], message: error} | acc.errors ]
+            [%{rule_name: rule_name, message: error} | acc.errors]
           )
       end
     end)
@@ -81,7 +72,7 @@ defmodule TdDq.Rules.BulkLoad do
   end
 
   defp enrich_rule(rule, domain_id) do
-    df_name = rule["template"]
+    df_name = Map.get(rule, "template")
 
     rule
     |> Enum.reduce(%{"df_content" => %{}}, fn {head, value}, acc ->
@@ -92,7 +83,7 @@ defmodule TdDq.Rules.BulkLoad do
         Map.put(acc, "df_content", df_content)
       end
     end)
-    |> add_description(@description_template)
+    |> convert_description()
     |> Map.put("domain_id", domain_id)
     |> Map.put("df_name", df_name)
     |> Map.put("type", df_name)
@@ -101,23 +92,23 @@ defmodule TdDq.Rules.BulkLoad do
     |> Map.merge(@default_rule)
   end
 
-  defp add_description(%{"description" => description} = rule, description_template) do
-    nodes_second_level =
-      %{"marks" => [], "object" => "text"}
-      |> Map.put("text", description)
-
-    nodes_first_level =
-      %{"data" => %{}, "object" => "block", "type" => "paragraph"}
-      |> Map.put("nodes", [nodes_second_level])
-
-    description =
-      description_template
-      |> Map.put("nodes", [nodes_first_level])
+  defp convert_description(%{"description" => description} = rule) do
+    description = %{
+      document: %{
+        nodes: [
+          %{
+            object: "block",
+            type: "paragraph",
+            nodes: [%{object: "text", leaves: [%{text: description}]}]
+          }
+        ]
+      }
+    }
 
     Map.put(rule, "description", description)
   end
 
-  defp add_description(rule, _description_template) do
+  defp convert_description(rule) do
     Map.put(rule, "description", %{})
   end
 
