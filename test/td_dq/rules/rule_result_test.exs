@@ -128,6 +128,27 @@ defmodule TdDq.Rules.RuleResultTest do
                |> Decimal.to_string()
     end
 
+    test "result_type: does not put calculated result if already present in changeset" do
+      impl = insert(:implementation)
+      {errors, records, result} = {123_456, 456_123, 12.34}
+
+      params = %{
+        "records" => records,
+        "errors" => errors,
+        "result" => result,
+        "implementation_id" => 10,
+        "date" => "2020-01-01",
+        "result_type" => "percentage"
+      }
+
+      result_string = "#{result}"
+      assert ^result_string =
+               impl
+               |> RuleResult.changeset(params)
+               |> Changeset.get_change(:result)
+               |> Decimal.to_string()
+    end
+
     test "accepts string values for errors and records" do
       impl = insert(:implementation)
       params = %{"errors" => "123456", "records" => "654321"}
