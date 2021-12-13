@@ -1,4 +1,4 @@
-"rule_name";"implementation_key";"df_name";"df_something";"result_type";"goal";"minimum"
-"foo_name_1";"boo_key_1";"template_name_zoo_1";"boo_1";"percentage";100;10
-"foo_name_2";"boo_key_2";"template_name_zoo_2";"boo_2";"percentage";200;20
-"foo_name_3";"boo_key_3";"template_name_zoo_3";"boo_3";"percentage";300;30
+"rule_name";"implementation_key";"template";"string";"list";"result_type";"goal";"minimum"
+"rule_foo";"boo_key_1";"bar_template";"boo_1";"one";"percentage";90;10
+"rule_foo";"boo_key_2";"bar_template";"boo_2";"two";"errors_number";10;90
+"rule_foo";"boo_key_3";"bar_template";"boo_3";"three";"deviation";10;30

@@ -17,16 +17,13 @@ defmodule TdDq.CSV.Reader do
          headers <- Enum.at(csv, 0),
          {:ok, headers} <- validate_headers(required_headers, headers),
          {:ok, parsed_file} <- parse_file(csv, headers),
-         {:ok, created_ids} <- bulk_create.(parsed_file, claims) do
-      {:ok, created_ids}
+         {:ok, result} <- bulk_create.(parsed_file, claims) do
+      {:ok, result}
     end
   end
 
   defp parse_stream(stream) do
-    csv = ReaderCsvParser.parse_stream(stream, skip_headers: false)
-    {:ok, csv}
-  rescue
-    _ -> {:error, %{error: :invalid_file_format}}
+    {:ok, ReaderCsvParser.parse_stream(stream, skip_headers: false)}
   end
 
   defp validate_headers(required_headers, headers) do

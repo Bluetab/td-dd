@@ -63,6 +63,7 @@ defmodule TdDqWeb.Router do
     )
 
     post("/rule_implementations/csv", ImplementationController, :csv)
+    resources("/rule_implementations/upload", ImplementationUploadController, only: [:create])
   end
 
   def swagger_info do

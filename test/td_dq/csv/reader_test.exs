@@ -10,7 +10,7 @@ defmodule TdDq.CSV.ReaderTest do
     "result_type",
     "goal",
     "minimum",
-    "df_name"
+    "template"
   ]
 
   setup_all do
@@ -33,20 +33,17 @@ defmodule TdDq.CSV.ReaderTest do
   describe "CSV.Reader" do
     @tag fixture: "implementations.csv"
     @tag authentication: [role: "admin"]
-
     test "read_csv/2 return ok with records", %{stream: stream, claims: claims} do
       assert {:ok, %{ids: _ids, errors: []}} =
                Reader.read_csv(claims, stream, @required_headers, &MockBulkLoad.bulk_load/2)
     end
 
-    @tag fixture: "implementations_errors.csv"
+    @tag fixture: "implementations_malformed.csv"
     @tag authentication: [role: "admin"]
-
     test "read_csv/2 return errors with incalid csv", %{stream: stream, claims: claims} do
-      assert {:error, error} =
-               Reader.read_csv(claims, stream, @required_headers, &MockBulkLoad.bulk_load/2)
+      assert error = Reader.read_csv(claims, stream, @required_headers, &MockBulkLoad.bulk_load/2)
 
-      assert %{error: :misssing_required_columns} = error
+      assert {:error, %{error: :misssing_required_columns}} = error
     end
   end
 end
