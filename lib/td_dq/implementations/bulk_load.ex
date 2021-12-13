@@ -73,8 +73,6 @@ defmodule TdDq.Implementations.BulkLoad do
   end
 
   defp enrich_implementation(implementation) do
-    df_name = Map.get(implementation, "template")
-
     implementation
     |> Enum.reduce(%{"df_content" => %{}}, fn {header, value}, acc ->
       if Enum.member?(@headers, header) do
@@ -85,8 +83,19 @@ defmodule TdDq.Implementations.BulkLoad do
         end)
       end
     end)
-    |> Map.put("df_name", df_name)
-    |> Map.delete("template")
+    |> ensure_template()
     |> Map.merge(@default_implementation)
+  end
+
+  defp ensure_template(%{"df_content" => df_content} = implementation) do
+    if Enum.empty?(df_content) or
+         (!Enum.empty?(df_content) && Map.has_key?(implementation, "template")) do
+      implementation
+      |> Map.put("df_name", implementation["template"])
+      |> Map.delete("template")
+    else
+      # Map.put(implementation, "df_name", "-")
+      implementation
+    end
   end
 end

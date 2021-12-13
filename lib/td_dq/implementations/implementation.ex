@@ -100,24 +100,17 @@ defmodule TdDq.Implementations.Implementation do
   defp validate_or_put_implementation_key(%Changeset{} = changeset), do: changeset
 
   defp validate_content(%{} = changeset) do
-    case get_field(changeset, :df_name) do
-      nil ->
-        validate_change(changeset, :df_content, empty_content_validator())
-
-      template_name ->
-        changeset
-        |> validate_required(:df_content)
-        |> validate_change(:df_content, Validation.validator(template_name))
+    if template_name = get_field(changeset, :df_name) do
+      changeset
+      |> validate_required(:df_content)
+      |> validate_change(:df_content, Validation.validator(template_name))
+    else
+      validate_change(changeset, :df_content, &empty_content_validator/2)
     end
   end
 
-  defp empty_content_validator do
-    fn
-      _, nil -> []
-      _, value when value == %{} -> []
-      field, _ -> [{field, :missing_type}]
-    end
-  end
+  defp empty_content_validator(_, value) when is_nil(value) or value == %{}, do: []
+  defp empty_content_validator(field, _), do: [{field, "missing_type"}]
 
   defp validate_goal(%{valid?: true} = changeset) do
     minimum = get_field(changeset, :minimum)

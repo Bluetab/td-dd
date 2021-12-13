@@ -46,7 +46,9 @@ defmodule TdDq.CSV.Reader do
 
   defp parse(chunk, headers) do
     Enum.map(chunk, fn fields ->
-      # TODO: Can be done elsewhere? Or using the library??
+      # TODO: Can this "decoding" be done elsewhere? Some ideas:
+      # - While streaming the file?
+      # - Using the CSV library?
       fields = Enum.map(fields, &decode_row/1)
 
       headers
