@@ -57,6 +57,8 @@ defmodule TdDqWeb.Router do
       resources("/results", ImplementationResultController, only: [:create])
     end
 
+    resources("/rule_implementations/upload", ImplementationUploadController, only: [:create])
+
     resources("/rule_implementations/search", ImplementationSearchController,
       only: [:create],
       singleton: true

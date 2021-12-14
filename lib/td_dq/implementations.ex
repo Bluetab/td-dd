@@ -64,14 +64,26 @@ defmodule TdDq.Implementations do
     |> Repo.preload(:rule)
   end
 
-  def create_implementation(%Rule{id: rule_id} = rule, %{} = params, %Claims{} = claims) do
+  def create_implementation(rule, params, claims, is_bulk \\ false)
+
+  def create_implementation(%Rule{id: rule_id} = rule, %{} = params, %Claims{} = claims, is_bulk) do
     changeset = Implementation.changeset(%Implementation{rule_id: rule_id, rule: rule}, params)
 
     Multi.new()
     |> Multi.run(:can, fn _, _ -> multi_can(can?(claims, create(changeset))) end)
     |> Multi.insert(:implementation, changeset)
     |> Repo.transaction()
-    |> on_upsert()
+    |> on_upsert(is_bulk)
+  end
+
+  def create_implementation(nil, params, claims, is_bulk) do
+    changeset = Implementation.changeset(%Implementation{rule_id: nil, rule: nil}, params)
+
+    Multi.new()
+    |> Multi.run(:can, fn _, _ -> multi_can(can?(claims, create(changeset))) end)
+    |> Multi.insert(:implementation, changeset)
+    |> Repo.transaction()
+    |> on_upsert(is_bulk)
   end
 
   defp multi_can(true), do: {:ok, nil}
@@ -171,12 +183,14 @@ defmodule TdDq.Implementations do
 
   defp on_delete(result), do: result
 
-  defp on_upsert({:ok, %{implementation: %{id: id}}} = result) do
+  defp on_upsert(result, is_bulk \\ false)
+
+  defp on_upsert({:ok, %{implementation: %{id: id}}} = result, false) do
     @index_worker.reindex_implementations(id)
     result
   end
 
-  defp on_upsert(result), do: result
+  defp on_upsert(result, _), do: result
 
   def get_sources(%Implementation{implementation_type: "raw", raw_content: %{source_id: nil}}) do
     []
