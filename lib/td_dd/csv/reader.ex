@@ -8,7 +8,6 @@ defmodule TdDd.CSV.Reader do
   NimbleCSV.define(CsvParser, separator: ";", escape: "\"")
 
   @truthy_values ["t", "true", "y", "yes", "on", "1"]
-  @csv_parse_chunk_size 10_000
 
   def read_csv(stream, options \\ []) do
     separator = Keyword.get(options, :separator, ?;)
@@ -43,9 +42,8 @@ defmodule TdDd.CSV.Reader do
     headers = Enum.at(csv, 0)
 
     csv
-    |> Stream.drop(1)
-    |> Stream.chunk_every(@csv_parse_chunk_size)
-    |> Enum.flat_map(&parse_chunk(&1, headers))
+    |> Enum.drop(1)
+    |> parse_chunk(headers)
   end
 
   defp parse_chunk(chunk, headers) do
