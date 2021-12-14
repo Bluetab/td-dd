@@ -7,7 +7,7 @@ defmodule TdDd.Repo.Migrations.CreateDataStructuresHierarchy do
       add :ds_id, references("data_structures", on_delete: :delete_all)
       add :ancestor_dsv_id, references("data_structure_versions", on_delete: :delete_all), primary_key: true
       add :ancestor_ds_id, references("data_structures", on_delete: :delete_all)
-      add :ancestor_level, :integer, null: false
+      add :ancestor_level, :integer, null: false, primary_key: true
     end
 
     create index("data_structures_hierarchy", [:dsv_id, :ancestor_dsv_id, :ancestor_level], unique: true)
