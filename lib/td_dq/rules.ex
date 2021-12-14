@@ -117,6 +117,24 @@ defmodule TdDq.Rules do
   end
 
   @doc """
+  Gets a single rule by name
+
+  ## Examples
+
+      iex> get_rule("bar")
+      %Rule{}
+
+      iex> get_rule("bar")
+      ** nil
+
+  """
+  def get_rule_by_name(name) do
+    Rule
+    |> where([r], is_nil(r.deleted_at))
+    |> Repo.get_by(name: name)
+  end
+
+  @doc """
   Creates a rule.
 
   ## Examples

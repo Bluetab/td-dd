@@ -8,6 +8,8 @@
 - [TD-4361] Add `value_modifier` to implementation document
 - [TD-4345] Add `implementation_key` to notification payload
 - [TD-4270] Move `goal` and `threshold` fields from `Rule` to `RuleImplementation`
+- [TD-4301] Bulk upload quality implementations with csv
+- [TD-4276] Materialize structure hierarchy in order to improve query performance
 
 ## [4.33.0] 2021-11-30
 
