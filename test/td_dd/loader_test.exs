@@ -7,6 +7,7 @@ defmodule TdDd.LoaderTest do
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.Hierarchy
   alias TdDd.Loader
   alias TdDd.Repo
 
@@ -221,7 +222,9 @@ defmodule TdDd.LoaderTest do
         relations: []
       }
 
+      initial_hierarchy = Hierarchy.list_hierarchy()
       assert {:ok, _context} = Loader.load(records, audit())
+      assert Enum.count(initial_hierarchy) != Enum.count(Hierarchy.list_hierarchy())
     end
 
     test "with structures containing an external_id" do
