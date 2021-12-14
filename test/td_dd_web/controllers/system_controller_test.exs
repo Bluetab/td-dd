@@ -3,6 +3,7 @@ defmodule TdDdWeb.SystemControllerTest do
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   alias TdDd.Cache.SystemLoader
+  alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Systems.System, as: TdDdSystem
 
@@ -274,6 +275,8 @@ defmodule TdDdWeb.SystemControllerTest do
         child_id: child.id,
         relation_type_id: RelationTypes.default_id!()
       )
+
+      Hierarchy.update_hierarchy([child.id, parent.id])
 
       assert %{"data" => data} =
                conn

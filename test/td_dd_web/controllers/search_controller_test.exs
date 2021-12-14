@@ -2,6 +2,7 @@ defmodule TdDdWeb.SearchControllerTest do
   use TdDdWeb.ConnCase
 
   alias TdCache.TaxonomyCache
+  alias TdDd.DataStructures.Hierarchy
 
   @moduletag sandbox: :shared
 
@@ -141,6 +142,7 @@ defmodule TdDdWeb.SearchControllerTest do
   defp create_grant(user_id, domain_id) do
     data_structure = insert(:data_structure, domain_id: domain_id)
     data_structure_version = insert(:data_structure_version, data_structure: data_structure)
+    Hierarchy.update_hierarchy([data_structure_version.id])
 
     insert(:grant,
       data_structure_version: data_structure_version,

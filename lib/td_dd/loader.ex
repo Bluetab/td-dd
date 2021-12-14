@@ -5,6 +5,7 @@ defmodule TdDd.Loader do
 
   alias Ecto.Multi
   alias TdDd.Classifiers
+  alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Loader.Context
   alias TdDd.Loader.FieldsAsStructures
@@ -73,6 +74,7 @@ defmodule TdDd.Loader do
     |> Multi.run(:update_versions, Versions, :update_existing_versions, [ts])
     |> Multi.run(:replace_versions, Versions, :replace_changed_versions, [ts])
     |> Multi.run(:insert_relations, Relations, :insert_new_relations, [ts])
+    |> Multi.run(:update_hierarchy, Hierarchy, :update_hierarchy, [])
     |> Multi.run(:update_domain_ids, Structures, :update_domain_ids, [structure_records, ts])
     |> Multi.run(:update_source_ids, Structures, :update_source_ids, [
       structure_records,
@@ -116,7 +118,7 @@ defmodule TdDd.Loader do
   def structure_ids(_repo, %{} = changes) do
     structure_ids =
       changes
-      |> Map.drop([:context, :graph, :insert_relations])
+      |> Map.drop([:context, :graph, :insert_relations, :update_hierarchy])
       |> Enum.flat_map(&structure_ids/1)
       |> Enum.uniq()
 

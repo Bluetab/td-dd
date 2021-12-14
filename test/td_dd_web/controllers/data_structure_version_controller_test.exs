@@ -4,6 +4,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   alias TdCache.TaxonomyCache
+  alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Lineage.GraphData
 
@@ -359,11 +360,13 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       domain: %{id: domain_id}
     } do
       [
-        %{data_structure_id: foo_id},
-        %{data_structure_id: bar_id},
+        %{id: foo_dsv_id, data_structure_id: foo_id},
+        %{id: bar_dsv_id, data_structure_id: bar_id},
         _baz,
-        %{data_structure_id: qux_id}
+        %{id: qux_dsv_id, data_structure_id: qux_id}
       ] = create_hierarchy(["foo", "bar", "baz", "qux"], domain_id: domain_id)
+
+      Hierarchy.update_hierarchy([foo_dsv_id, bar_dsv_id, qux_dsv_id])
 
       start_date = Date.utc_today() |> Date.add(-1) |> Date.to_iso8601()
       end_date = Date.utc_today() |> Date.add(1) |> Date.to_iso8601()
@@ -811,6 +814,10 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
         relation_type_id: relation_type_id
       )
     )
+
+    [structure_version | child_versions]
+    |> Enum.map(fn chv -> chv.id end)
+    |> Hierarchy.update_hierarchy()
 
     [
       child_structures: child_structures,

@@ -2,6 +2,7 @@ defmodule TdDd.Cache.StructureEntryTest do
   use TdDd.DataCase
 
   alias TdDd.Cache.StructureEntry
+  alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.RelationTypes
 
   @moduletag sandbox: :shared
@@ -28,9 +29,11 @@ defmodule TdDd.Cache.StructureEntryTest do
 
     test "includes the path" do
       %{
-        child: %{data_structure_id: id},
-        parent: %{data_structure_id: parent_id, name: parent_name}
+        child: %{id: child_dsv_id, data_structure_id: id},
+        parent: %{id: parent_dsv_id, data_structure_id: parent_id, name: parent_name}
       } = insert(:data_structure_relation, relation_type_id: RelationTypes.default_id!())
+
+      Hierarchy.update_hierarchy([child_dsv_id, parent_dsv_id])
 
       assert %{path: []} = StructureEntry.cache_entry(parent_id)
       assert %{path: [^parent_name]} = StructureEntry.cache_entry(id)

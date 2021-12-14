@@ -3,6 +3,7 @@ defmodule TdDd.Cache.StructureLoaderTest do
 
   alias TdCache.StructureCache
   alias TdDd.Cache.StructureLoader
+  alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.RelationTypes
 
   describe "StructureLoader.cache_structures/2" do
@@ -14,13 +15,15 @@ defmodule TdDd.Cache.StructureLoaderTest do
     @tag sandbox: :shared
     test "encodes and puts cache entries with path" do
       %{
-        child: %{data_structure_id: id},
-        parent: %{data_structure_id: parent_id, name: parent_name}
+        child: %{id: child_dsv_id, data_structure_id: id},
+        parent: %{id: parent_dsv_id, data_structure_id: parent_id, name: parent_name}
       } = insert(:data_structure_relation, relation_type_id: RelationTypes.default_id!())
 
       on_exit(fn ->
         Enum.each([id, parent_id], &StructureCache.delete/1)
       end)
+
+      Hierarchy.update_hierarchy([child_dsv_id, parent_dsv_id])
 
       assert %{ok: 2} =
                [id, parent_id]
