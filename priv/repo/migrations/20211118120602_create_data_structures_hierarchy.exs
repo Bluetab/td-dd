@@ -10,7 +10,7 @@ defmodule TdDd.Repo.Migrations.CreateDataStructuresHierarchy do
       add :ancestor_level, :integer, null: false
     end
 
-    create index("data_structures_hierarchy", [:dsv_id, :ancestor_dsv_id], unique: true)
+    create index("data_structures_hierarchy", [:dsv_id, :ancestor_dsv_id, :ancestor_level], unique: true)
     create index("data_structures_hierarchy", [:dsv_id])
     create index("data_structures_hierarchy", [:ancestor_dsv_id])
 
