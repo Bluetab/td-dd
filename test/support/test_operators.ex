@@ -5,6 +5,7 @@ defmodule TdDd.TestOperators do
 
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.StructureNote
   alias TdDd.Grants.Grant
   alias TdDd.Grants.GrantRequest
@@ -18,6 +19,10 @@ defmodule TdDd.TestOperators do
   ## Sort by id if present
   defp sorted([%{id: _} | _] = list) do
     Enum.sort_by(list, & &1.id)
+  end
+
+  defp sorted([%Hierarchy{} | _] = list) do
+    Enum.sort_by(list, & {&1.dsv_id, &1.ancestor_dsv_id})
   end
 
   defp sorted(list), do: Enum.sort(list)
@@ -93,6 +98,11 @@ defmodule TdDd.TestOperators do
 
   defp approximately_equal(%GrantRequestGroup{} = a, %GrantRequestGroup{} = b) do
     Map.drop(a, [:requests]) == Map.drop(b, [:requests])
+  end
+
+  defp approximately_equal(%Hierarchy{} = a, %Hierarchy{} = b) do
+    test_fields = [:dsv_id, :ancestor_dsv_id, :ancestor_level]
+    Map.take(a, test_fields) == Map.take(b, test_fields)
   end
 
   defp approximately_equal([h | t], [h2 | t2]) do
