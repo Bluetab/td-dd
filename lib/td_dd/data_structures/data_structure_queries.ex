@@ -101,9 +101,9 @@ defmodule TdDd.DataStructures.DataStructureQueries do
     path_cte_params = Map.take(params, [:ids, :data_structure_ids, :relation_type_id])
 
     "paths"
-    |> select([:ds_id, :version, :name, :data_structure_id])
+    |> select([:ds_id, :name, :data_structure_id])
     |> distinct(asc: :ds_id, desc: :level)
-    |> order_by(desc: :version)
+    |> order_by(desc: :parent_id)
     |> subquery()
     |> with_path_cte("paths", path_cte_params)
     |> select([t], %{
@@ -116,7 +116,7 @@ defmodule TdDd.DataStructures.DataStructureQueries do
         )
     })
     |> group_by(:ds_id)
-    |> order_by([t], asc: t.ds_id, desc: fragment("sum(? + 1)", t.version))
+    |> order_by([t], asc: t.ds_id)
   end
 
   @spec with_path_cte(Ecto.Query.t(), binary, map) :: Ecto.Query.t()
