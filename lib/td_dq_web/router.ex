@@ -37,7 +37,9 @@ defmodule TdDqWeb.Router do
 
     get("/rules/concept/:business_concept_id", RuleController, :get_rules_by_concept)
 
-    resources "/rules", RuleController, except: [:new, :edit] do
+    resources("/rules/upload", RuleUploadController, only: [:create])
+
+    resources("/rules", RuleController, except: [:new, :edit]) do
       post("/rule_implementations", ImplementationController, :search_rule_implementations)
     end
 

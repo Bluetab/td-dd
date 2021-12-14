@@ -17,6 +17,7 @@ defmodule TdDq.Implementations.BulkLoad do
     "goal",
     "minimum"
   ]
+
   @optional_headers ["template"]
 
   @headers @required_headers ++ @optional_headers
