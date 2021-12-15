@@ -1,0 +1,4 @@
+name;domain_external_id;template;string;list;description
+rule_foo_1;zoo_domain;bar_template;boo_1;one;some description
+rule_foo_2;zoo_domain;bar_template;boo_2;two;
+rule_foo_3;zoo_domain;bar_template;boo_3;three;

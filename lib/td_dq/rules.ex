@@ -146,7 +146,7 @@ defmodule TdDq.Rules do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_rule(%{} = params, %Claims{user_id: user_id} = claims) do
+  def create_rule(%{} = params, %Claims{user_id: user_id} = claims, is_bulk \\ false) do
     changeset = Rule.changeset(%Rule{updated_by: user_id}, params)
 
     Multi.new()
@@ -154,10 +154,14 @@ defmodule TdDq.Rules do
     |> Multi.insert(:rule, changeset)
     |> Multi.run(:audit, Audit, :rule_created, [changeset, user_id])
     |> Repo.transaction()
-    |> on_create()
+    |> on_create(is_bulk)
   end
 
-  defp on_create(res) do
+  defp on_create(res, is_bulk \\ false)
+
+  defp on_create(res, true), do: res
+
+  defp on_create(res, false) do
     with {:ok, %{rule: %{id: rule_id}}} <- res do
       RuleLoader.refresh(rule_id)
       res
