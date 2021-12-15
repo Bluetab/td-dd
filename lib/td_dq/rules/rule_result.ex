@@ -54,13 +54,12 @@ defmodule TdDq.Rules.RuleResult do
     ])
     |> put_assoc(:implementation, implementation)
     |> put_date()
-    |> put_result()
+    |> maybe_put_result()
     |> validate_inclusion(:result_type, @valid_result_types)
     |> update_change(:result, &Decimal.round(&1, @scale, :floor))
     |> validate_required([:implementation, :date, :result, :result_type, :rule_id])
     |> validate_number(:records, greater_than_or_equal_to: 0)
     |> validate_number(:errors, greater_than_or_equal_to: 0)
-    |> validate_number(:result, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)
     |> foreign_key_constraint(:rule_id)
   end
 
@@ -75,7 +74,9 @@ defmodule TdDq.Rules.RuleResult do
 
   defp put_date(changeset), do: changeset
 
-  defp put_result(%{} = changeset) do
+  defp maybe_put_result(%{changes: %{result: _result}} = changeset), do: changeset
+
+  defp maybe_put_result(%{} = changeset) do
     with records when is_integer(records) <- get_change(changeset, :records),
          errors when is_integer(errors) <- get_change(changeset, :errors),
          result_type when result_type != nil <-
