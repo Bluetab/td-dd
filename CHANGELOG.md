@@ -4,6 +4,7 @@
 
 ### Added
 
+- [TD-4272] Avoid result calculation if it is already present
 - [TD-4361] Add `value_modifier` to implementation document
 - [TD-4345] Add `implementation_key` to notification payload
 - [TD-4270] Move `goal` and `threshold` fields from `Rule` to `RuleImplementation`
