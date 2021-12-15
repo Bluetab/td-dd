@@ -12,6 +12,10 @@
 - [TD-4276] Materialize structure hierarchy in order to improve query performance
 - [TD-4314] Bulk upload quality `rules` with csv
 
+### Fixed
+
+- [TD-4273] Error downloading implementations
+
 ## [4.33.0] 2021-11-30
 
 ### Added
