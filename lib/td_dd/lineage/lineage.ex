@@ -451,7 +451,7 @@ defmodule TdDd.Lineage do
         # Beginning and end bracket
         # For each element:
         #   two quotes, two backslashes for escaping the quote, separaating comma
-        if (sum + String.length(source_id) + 2 + 5*(index+1)) <= limit do
+        if (sum + String.length(source_id) + 2 + 5 * (index + 1)) <= limit do
           {:cont, {[source_id | list], sum + String.length(source_id)}}
         else
           {:halt, {list, sum}}
