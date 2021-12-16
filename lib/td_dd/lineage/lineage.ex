@@ -325,6 +325,10 @@ defmodule TdDd.Lineage do
     graph_data_string =
       graph_data
       |> Map.get(:source_ids)
+      |> Enum.flat_map(
+        fn source_id -> String.split(source_id, "/") |> Enum.take(-1) end
+      )
+      |> limit_total_length(255)
       |> Jason.encode!()
 
     LineageEvents.create_event(%{
@@ -436,5 +440,24 @@ defmodule TdDd.Lineage do
     |> Map.put(:external_id, external_id)
     |> Map.put(:name, name)
     |> Map.put(:class, class)
+  end
+
+  defp limit_total_length(source_ids, limit) do
+    {list, _sum} = Enum.with_index(source_ids)
+    |> Enum.reduce_while(
+      {[], 0},
+      fn {source_id, index}, {list, sum} ->
+        # Json list:
+        # Beginning and end bracket
+        # For each element:
+        #   two quotes, two backslashes for escaping the quote, separaating comma
+        if (sum + String.length(source_id) + 2 + 5*(index+1)) <= limit do
+          {:cont, {[source_id | list], sum + String.length(source_id)}}
+        else
+          {:halt, {list, sum}}
+        end
+      end
+    )
+    Enum.reverse(list)
   end
 end
