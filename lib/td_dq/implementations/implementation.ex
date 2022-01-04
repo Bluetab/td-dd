@@ -75,11 +75,43 @@ defmodule TdDq.Implementations.Implementation do
     |> validate_inclusion(:implementation_type, ["default", "raw", "draft"])
     |> validate_inclusion(:result_type, @valid_result_types)
     |> validate_or_put_implementation_key()
+    |> maybe_put_identifier(implementation, params)
     |> validate_content()
     |> validate_goal()
     |> foreign_key_constraint(:rule_id)
     |> custom_changeset(implementation)
   end
+
+  defp maybe_put_identifier(
+         changeset,
+         %__MODULE__{df_content: current_content} = _implementation,
+         %{"df_name" => template_name} = _params
+       ) do
+    maybe_put_identifier_aux(changeset, current_content, template_name)
+  end
+
+  defp maybe_put_identifier(
+         changeset,
+         %__MODULE__{} = _implementation,
+         %{"df_name" => template_name} = _params
+       ) do
+    maybe_put_identifier_aux(changeset, %{}, template_name)
+  end
+
+  defp maybe_put_identifier(changeset, _, _), do: changeset
+
+  defp maybe_put_identifier_aux(
+         %{valid?: true, changes: %{df_content: content}} = changeset,
+         current_content,
+         template_name
+       ) do
+    TdDfLib.Format.maybe_put_identifier(current_content, content, template_name)
+    |> (fn content ->
+          put_change(changeset, :df_content, content)
+        end).()
+  end
+
+  defp maybe_put_identifier_aux(changeset, _, _), do: changeset
 
   defp validate_or_put_implementation_key(%Changeset{valid?: true} = changeset) do
     case get_field(changeset, :implementation_key) do

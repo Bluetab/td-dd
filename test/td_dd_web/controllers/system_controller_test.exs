@@ -50,6 +50,28 @@ defmodule TdDdWeb.SystemControllerTest do
     ]
   }
 
+  @identifier_template %{
+    id: System.unique_integer([:positive]),
+    label: "identifier_test",
+    name: "System",
+    scope: "dd",
+    content: [
+      %{
+        "name" => "System Template",
+        "fields" => [
+          %{
+            "cardinality" => "1",
+            "label" => "identifier_field",
+            "name" => "identifier_field",
+            "subscribable" => false,
+            "type" => "string",
+            "values" => nil,
+            "widget" => "identifier"
+          }
+        ]
+      }
+    ]
+  }
   setup_all do
     start_supervised(SystemLoader)
     :ok
@@ -128,6 +150,31 @@ defmodule TdDdWeb.SystemControllerTest do
                |> json_response(:unprocessable_entity)
 
       assert errors != %{}
+    end
+
+    @tag authentication: [role: "admin"]
+    test "generates identifier widget", %{
+      conn: conn,
+      swagger_schema: schema,
+      template: %{id: template_id}
+    } do
+      TdCache.TemplateCache.delete(template_id)
+      CacheHelpers.insert_template(@identifier_template)
+
+      valid_attr =
+        @create_attrs
+        |> new_attr_external_id()
+        |> Map.put("df_content", %{})
+
+      assert %{
+               "data" => %{"id" => _id, "df_content" => %{"identifier_field" => identifier_value}}
+             } =
+               conn
+               |> post(Routes.system_path(conn, :create), system: valid_attr)
+               |> validate_resp_schema(schema, "SystemResponse")
+               |> json_response(:created)
+
+      refute is_nil(identifier_value)
     end
 
     @tag authentication: [role: "admin"]

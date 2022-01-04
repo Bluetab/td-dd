@@ -6,6 +6,29 @@ defmodule TdDqWeb.RuleControllerTest do
   alias TdCache.Redix
   alias TdDq.Rules.Rule
 
+  @identifier_template %{
+    id: System.unique_integer([:positive]),
+    label: "identifier_test",
+    name: "identifier_test",
+    scope: "dq",
+    content: [
+      %{
+        "name" => "Identifier Template",
+        "fields" => [
+          %{
+            "cardinality" => "1",
+            "label" => "identifier_field",
+            "name" => "identifier_field",
+            "subscribable" => false,
+            "type" => "string",
+            "values" => nil,
+            "widget" => "identifier"
+          }
+        ]
+      }
+    ]
+  }
+
   setup tags do
     start_supervised!(TdDq.MockRelationCache)
     start_supervised!(TdDd.Search.MockIndexWorker)
@@ -384,6 +407,28 @@ defmodule TdDqWeb.RuleControllerTest do
                conn
                |> post(Routes.rule_path(conn, :create), rule: params)
                |> json_response(:unprocessable_entity)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "generates identifier in template", %{conn: conn, domain: domain} do
+      %{name: template_name} = CacheHelpers.insert_template(@identifier_template)
+
+      params =
+        string_params_for(:rule,
+          domain_id: domain.id,
+          df_name: template_name,
+          df_content: %{"identifier_field" => ""}
+        )
+        |> Map.delete("business_concept_id")
+
+      assert %{
+               "data" => %{"id" => _id, "df_content" => %{"identifier_field" => identifier_value}}
+             } =
+               conn
+               |> post(Routes.rule_path(conn, :create), rule: params)
+               |> json_response(:created)
+
+      refute is_nil(identifier_value) or identifier_value == ""
     end
   end
 
