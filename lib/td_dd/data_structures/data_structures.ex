@@ -33,7 +33,7 @@ defmodule TdDd.DataStructures do
   # Data structure version associations preloaded for some views
   @preload_dsv_assocs [:classifications, data_structure: :system]
 
-  def list_data_structures(clauses \\ %{}) do
+  def list_data_structures(clauses \\ %{}, preload \\ [:system]) do
     clauses
     |> Enum.reduce(DataStructure, fn
       {:external_id, external_ids}, q when is_list(external_ids) ->
@@ -55,7 +55,7 @@ defmodule TdDd.DataStructures do
       on: sn.data_structure_id == ds.id and sn.status == :published
     )
     |> select_merge([_, sn], %{latest_note: sn.df_content})
-    |> preload(:system)
+    |> preload(^preload)
     |> Repo.all()
   end
 
@@ -70,17 +70,18 @@ defmodule TdDd.DataStructures do
     |> Repo.all()
   end
 
-  def get_data_structure!(id) do
+  def get_data_structure!(id, preload \\ [:system]) do
     DataStructure
     |> Repo.get!(id)
-    |> Repo.preload(:system)
+    |> Repo.preload(preload)
   end
 
   def get_data_structure(id), do: Repo.get(DataStructure, id)
 
   @doc "Gets a single data_structure by external_id"
-  def get_data_structure_by_external_id(external_id) do
+  def get_data_structure_by_external_id(external_id, preload \\ []) do
     Repo.get_by(DataStructure, external_id: external_id)
+    |> Repo.preload(preload)
   end
 
   def get_data_structures(ids, preload \\ :system) do
@@ -216,6 +217,12 @@ defmodule TdDd.DataStructures do
       %{structure_type: structure_type} -> structure_type
     end
   end
+
+  def get_data_structure_type(
+    %DataStructure{current_version: %{structure_type: %{name: type}}}) do
+    type
+  end
+  def get_data_structure_type(_data_structure), do: nil
 
   def get_field_structures(data_structure_version, opts) do
     data_structure_version

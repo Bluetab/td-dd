@@ -17,6 +17,7 @@ defmodule TdDd.Systems.AuditTest do
   setup do
     on_exit(fn -> Redix.del!(@stream) end)
 
+    CacheHelpers.insert_template(name: System._test_get_template_name)
     claims = build(:claims, role: "admin")
     [claims: claims, system: insert(:system)]
   end

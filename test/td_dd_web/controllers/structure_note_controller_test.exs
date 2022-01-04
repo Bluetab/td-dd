@@ -9,6 +9,29 @@ defmodule TdDdWeb.StructureNoteControllerTest do
   @moduletag sandbox: :shared
   @template_name "structure_note_controller_test_template"
 
+  @identifier_template %{
+    id: System.unique_integer([:positive]),
+    label: "identifier_test",
+    name: "identifier_test",
+    scope: "dd",
+    content: [
+      %{
+        "name" => "Identifier Template",
+        "fields" => [
+          %{
+            "cardinality" => "1",
+            "label" => "identifier_field",
+            "name" => "identifier_field",
+            "subscribable" => false,
+            "type" => "string",
+            "values" => nil,
+            "widget" => "identifier"
+          }
+        ]
+      }
+    ]
+  }
+
   setup do
     %{id: template_id, name: template_name} = CacheHelpers.insert_template(name: @template_name)
     CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
@@ -392,6 +415,39 @@ defmodule TdDdWeb.StructureNoteControllerTest do
                structure_note: create_attrs
              )
              |> response(:forbidden)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "generates identifier field for structure note", %{conn: conn} do
+      %{id: template_id, name: template_name} = CacheHelpers.insert_template(@identifier_template)
+      CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
+
+      %{id: data_structure_id} = data_structure = insert(:data_structure)
+
+      insert(:data_structure_version,
+        data_structure: data_structure,
+        type: template_name
+      )
+
+      create_attrs = string_params_for(:structure_note, df_content: %{"identifier_field" => ""})
+
+      %{"data" => %{"id" => id}} =
+        conn
+        |> post(Routes.data_structure_note_path(conn, :create, data_structure_id),
+          structure_note: create_attrs
+        )
+        |> json_response(:created)
+
+      assert %{
+               "id" => ^id,
+               "df_content" => %{"identifier_field" => identifier_value}
+             } =
+               conn
+               |> get(Routes.data_structure_note_path(conn, :show, data_structure_id, id))
+               |> json_response(:ok)
+               |> Map.get("data")
+
+      refute is_nil(identifier_value) or identifier_value == ""
     end
 
     @tag authentication: [role: "admin"]
