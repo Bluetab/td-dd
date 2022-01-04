@@ -97,6 +97,7 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
   end
 
   def update(structure_note, attrs, is_strict, user_id, type \\ nil)
+
   def update(
         %StructureNote{status: :draft} = structure_note,
         %{"df_content" => df_content} = attrs,
@@ -158,7 +159,6 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
   end
 
   # Lifecycle actions for structure notes
-  defp update_content(structure_note, new_df_content, user_id, is_strict, type \\ nil)
   defp update_content(structure_note, new_df_content, user_id, true = _is_strict, type) do
     DataStructures.update_structure_note(
       structure_note,
@@ -166,6 +166,7 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
       user_id
     )
   end
+
   defp update_content(structure_note, new_df_content, user_id, false = _is_strict, type) do
     DataStructures.bulk_update_structure_note(
       structure_note,

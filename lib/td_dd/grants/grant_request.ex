@@ -45,7 +45,8 @@ defmodule TdDd.Grants.GrantRequest do
          changeset,
          %__MODULE__{metadata: current_content} = _grant_request,
          template_name
-       ) when current_content != nil do
+       )
+       when current_content != nil do
     maybe_put_identifier_aux(changeset, current_content, template_name)
   end
 
@@ -57,18 +58,17 @@ defmodule TdDd.Grants.GrantRequest do
     maybe_put_identifier_aux(changeset, %{}, template_name)
   end
 
-  defp maybe_put_identifier(changeset, _, _), do: changeset
-
   defp maybe_put_identifier_aux(
-    %{valid?: true, changes: %{metadata: content}} = changeset,
-    current_content,
-    template_name) do
-
+         %{valid?: true, changes: %{metadata: content}} = changeset,
+         current_content,
+         template_name
+       ) do
     TdDfLib.Format.maybe_put_identifier(current_content, content, template_name)
     |> (fn content ->
-      put_change(changeset, :metadata, content)
-    end).()
+          put_change(changeset, :metadata, content)
+        end).()
   end
+
   defp maybe_put_identifier_aux(changeset, _, _), do: changeset
 
   defp validate_content(%{} = changeset, template_name) when is_binary(template_name) do
