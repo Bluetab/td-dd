@@ -42,7 +42,13 @@ defmodule TdDd.DataStructures.BulkUpdate do
       |> Enum.map(fn {row, index} -> {row, index + 2} end)
       |> Enum.map(fn
         {%{"external_id" => external_id} = row, index} ->
-          {row, DataStructures.get_data_structure_by_external_id(external_id), index}
+          {
+            row,
+            DataStructures.get_data_structure_by_external_id(
+              external_id,
+              [:system, [current_version: :structure_type]]),
+            index
+          }
 
         {row, index} ->
           {row, nil, index}
@@ -181,7 +187,11 @@ defmodule TdDd.DataStructures.BulkUpdate do
   end
 
   defp do_update(ids, %{} = params, %Claims{user_id: user_id}, auto_publish) do
-    data_structures = DataStructures.list_data_structures(id: {:in, ids})
+    data_structures =
+      DataStructures.list_data_structures(
+        %{id: {:in, ids}},
+        [:system, [current_version: :structure_type]]
+      )
 
     Multi.new()
     |> Multi.run(

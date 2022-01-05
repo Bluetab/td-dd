@@ -7,6 +7,29 @@ defmodule TdDqWeb.ImplementationControllerTest do
     %{clauses: [%{left: %{id: 14_863}, right: %{id: 4028}}], structure: %{id: 3233}}
   ]
 
+  @identifier_template %{
+    id: System.unique_integer([:positive]),
+    label: "identifier_test",
+    name: "identifier_test",
+    scope: "dq",
+    content: [
+      %{
+        "name" => "Identifier Template",
+        "fields" => [
+          %{
+            "cardinality" => "1",
+            "label" => "identifier_field",
+            "name" => "identifier_field",
+            "subscribable" => false,
+            "type" => "string",
+            "values" => nil,
+            "widget" => "identifier"
+          }
+        ]
+      }
+    ]
+  }
+
   setup_all do
     start_supervised(TdDd.Search.MockIndexWorker)
     start_supervised(TdDq.Cache.RuleLoader)
@@ -247,6 +270,40 @@ defmodule TdDqWeb.ImplementationControllerTest do
                rule_implementation: creation_attrs
              )
              |> json_response(:created)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "generates identifier on template", %{conn: conn} do
+      %{name: template_name} = CacheHelpers.insert_template(@identifier_template)
+      rule = insert(:rule)
+
+      creation_attrs =
+        %{
+          implementation_key: "a1",
+          implementation_type: "raw",
+          rule_id: rule.id,
+          raw_content: %{
+            dataset: "cliente c join address a on c.address_id=a.id",
+            population: nil,
+            source_id: 88,
+            validations: "c.city = 'MADRID'"
+          },
+          result_type: "percentage",
+          minimum: 50,
+          goal: 100,
+          df_name: template_name,
+          df_content: %{identifier_field: ""}
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert %{"data" => %{"df_content" => %{"identifier_field" => identifier_value}}} =
+               conn
+               |> post(Routes.implementation_path(conn, :create),
+                 rule_implementation: creation_attrs
+               )
+               |> json_response(:created)
+
+      refute is_nil(identifier_value) or identifier_value == ""
     end
 
     @tag authentication: [role: "admin"]

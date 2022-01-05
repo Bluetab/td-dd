@@ -10,6 +10,7 @@ defmodule TdDdWeb.StructureNoteController do
   alias TdDdWeb.SwaggerDefinitions
 
   action_fallback(TdDdWeb.FallbackController)
+  @data_structure_type_preload [:system, [current_version: :structure_type]]
 
   def swagger_definitions do
     SwaggerDefinitions.structure_note_swagger_definitions()
@@ -112,7 +113,8 @@ defmodule TdDdWeb.StructureNoteController do
          force_creation
        ) do
     with %{user_id: user_id} = claims <- conn.assigns[:current_resource],
-         data_structure <- DataStructures.get_data_structure!(data_structure_id),
+         data_structure <-
+           DataStructures.get_data_structure!(data_structure_id, @data_structure_type_preload),
          {:can, true} <-
            {:can, can?(claims, create_structure_note({StructureNote, data_structure}))},
          {:ok, %StructureNote{} = structure_note} <-
@@ -193,11 +195,18 @@ defmodule TdDdWeb.StructureNoteController do
         "structure_note" => structure_note_params
       }) do
     with %{user_id: user_id} = claims <- conn.assigns[:current_resource],
-         data_structure <- DataStructures.get_data_structure!(data_structure_id),
+         data_structure <-
+           DataStructures.get_data_structure!(data_structure_id, @data_structure_type_preload),
          structure_note = DataStructures.get_structure_note!(id),
          {:can, true} <- can(structure_note, structure_note_params, claims, data_structure),
          {:ok, %StructureNote{} = structure_note} <-
-           StructureNotesWorkflow.update(structure_note, structure_note_params, true, user_id) do
+           StructureNotesWorkflow.update(
+             structure_note,
+             structure_note_params,
+             true,
+             user_id,
+             DataStructures.get_data_structure_type(data_structure)
+           ) do
       conn
       |> put_resp_header(
         "location",
