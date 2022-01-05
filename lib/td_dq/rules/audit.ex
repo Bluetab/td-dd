@@ -9,6 +9,7 @@ defmodule TdDq.Rules.Audit do
 
   alias TdCache.ConceptCache
   alias TdCache.TaxonomyCache
+  alias TdDq.Rules
 
   @doc """
   Publishes a `:rule_created` event. Should be called using `Ecto.Multi.run/5`.
@@ -32,13 +33,45 @@ defmodule TdDq.Rules.Audit do
   end
 
   @doc """
+  Publishes `:implementation_created` events. Should be called using `Ecto.Multi.run/5`.
+  """
+  def implementation_created(
+        _repo,
+        %{implementation: %{id: id} = implementation},
+        _changeset,
+        user_id
+      ) do
+    rule_name = implementation.rule.name
+
+    payload =
+      implementation
+      |> Map.take([:implementation_key, :rule_id])
+      |> Map.put_new(:rule_name, rule_name)
+
+    publish("implementation_created", "implementation", id, user_id, payload)
+  end
+
+  @doc """
+  Publishes `:implementation_deleted` events. Should be called using `Ecto.Multi.run/5`.
+  """
+  def implementation_deleted(
+        _repo,
+        %{implementation: %{id: id} = implementation},
+        _changeset,
+        user_id
+      ) do
+    payload = Map.take(implementation, [:implementation_key, :rule_id])
+    publish("implementation_deleted", "implementation", id, user_id, payload)
+  end
+
+  @doc """
   Publishes `:implementation_deprecated` events. Should be called using `Ecto.Multi.run/5`.
   """
   def implementations_deprecated(_repo, %{deprecated: {_, [_ | _] = impls}}) do
     impls
     |> Enum.map(fn %{id: id} = implementation ->
       payload = Map.take(implementation, [:implementation_key, :rule_id])
-      publish("implementation_deprecated", "implementation", id, nil, payload)
+      publish("implementation_deprecated", "implementation", id, 0, payload)
     end)
     |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
     |> case do
@@ -70,9 +103,44 @@ defmodule TdDq.Rules.Audit do
     publish(event, "implementation", id, user_id, payload)
   end
 
-  # TODO: Publish implementation create and update events
-  def implementation_updated(_repo, _implementation, _changeset, _user_id) do
-    {:ok, :unchanged}
+  def implementation_updated(
+        _repo,
+        %{implementation: %{id: id} = implementation},
+        %{changes: %{rule_id: rule_id}},
+        user_id
+      ) do
+    rule = Rules.get_rule(rule_id)
+
+    payload =
+      implementation
+      |> Map.take([:implementation_key, :rule_id])
+      |> Map.put_new(:rule_name, rule.name)
+
+    publish("implementation_moved", "implementation", id, user_id, payload)
+  end
+
+  def implementation_updated(
+        _repo,
+        %{implementation: %{id: id} = implementation},
+        %{changes: %{df_content: df_content}},
+        user_id
+      ) do
+    payload =
+      implementation
+      |> Map.take([:implementation_key, :rule_id])
+      |> Map.put_new(:df_content, df_content)
+
+    publish("implementation_changed", "implementation", id, user_id, payload)
+  end
+
+  def implementation_updated(
+        _repo,
+        %{implementation: %{id: id} = implementation},
+        _changeset,
+        user_id
+      ) do
+    payload = Map.take(implementation, [:implementation_key, :rule_id])
+    publish("implementation_updated", "implementation", id, user_id, payload)
   end
 
   @doc """
