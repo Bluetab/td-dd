@@ -60,7 +60,7 @@ defmodule TdDq.Rules.Rule do
       message: "required"
     )
     |> validate_domain()
-    |> validate_content()
+    |> validate_content(rule)
     |> unique_constraint(
       :rule_name_bc_id,
       name: :rules_business_concept_id_name_index,
@@ -109,7 +109,7 @@ defmodule TdDq.Rules.Rule do
     end
   end
 
-  defp validate_content(%{valid?: true} = changeset) do
+  defp validate_content(%{valid?: true} = changeset, rule) do
     case get_field(changeset, :df_name) do
       nil ->
         validate_change(changeset, :df_content, empty_content_validator())
@@ -119,11 +119,41 @@ defmodule TdDq.Rules.Rule do
 
         changeset
         |> validate_required(:df_content)
+        |> maybe_put_identifier(rule, template_name)
         |> validate_change(:df_content, Validation.validator(template_name, domain_id: domain_id))
     end
   end
 
-  defp validate_content(changeset), do: changeset
+  defp validate_content(changeset, _), do: changeset
+
+  defp maybe_put_identifier(
+         changeset,
+         %{df_content: current_content},
+         template_name
+       ) do
+    maybe_put_identifier_aux(changeset, current_content, template_name)
+  end
+
+  defp maybe_put_identifier(
+         changeset,
+         _,
+         template_name
+       ) do
+    maybe_put_identifier_aux(changeset, %{}, template_name)
+  end
+
+  defp maybe_put_identifier_aux(
+         %{valid?: true, changes: %{df_content: df_content}} = changeset,
+         current_content,
+         template_name
+       ) do
+    TdDfLib.Format.maybe_put_identifier(current_content, df_content, template_name)
+    |> (fn content ->
+          put_change(changeset, :df_content, content)
+        end).()
+  end
+
+  defp maybe_put_identifier_aux(changeset, _, _), do: changeset
 
   defp empty_content_validator do
     fn

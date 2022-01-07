@@ -36,9 +36,40 @@ defmodule TdDd.Grants.GrantRequest do
   def changeset(%__MODULE__{} = struct, params, template_name) do
     struct
     |> cast(params, [:filters, :metadata, :data_structure_id])
+    |> maybe_put_identifier(struct, template_name)
     |> validate_content(template_name)
     |> foreign_key_constraint(:data_structure_id)
   end
+
+  defp maybe_put_identifier(
+         changeset,
+         %__MODULE__{metadata: current_content} = _grant_request,
+         template_name
+       )
+       when current_content != nil do
+    maybe_put_identifier_aux(changeset, current_content, template_name)
+  end
+
+  defp maybe_put_identifier(
+         changeset,
+         %__MODULE__{} = _grant_request,
+         template_name
+       ) do
+    maybe_put_identifier_aux(changeset, %{}, template_name)
+  end
+
+  defp maybe_put_identifier_aux(
+         %{valid?: true, changes: %{metadata: content}} = changeset,
+         current_content,
+         template_name
+       ) do
+    TdDfLib.Format.maybe_put_identifier(current_content, content, template_name)
+    |> (fn content ->
+          put_change(changeset, :metadata, content)
+        end).()
+  end
+
+  defp maybe_put_identifier_aux(changeset, _, _), do: changeset
 
   defp validate_content(%{} = changeset, template_name) when is_binary(template_name) do
     changeset
