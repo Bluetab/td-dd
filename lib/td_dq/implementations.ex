@@ -386,19 +386,21 @@ defmodule TdDq.Implementations do
     structure_map
   end
 
-  defp enrich_clause_structures(%{left: %{id: left_id}, right: %{id: right_id}} = structure_map) do
+  defp enrich_clause_structures(
+         %{left: %{id: left_id} = left, right: %{id: right_id} = right} = structure_map
+       ) do
     structure_map
     |> Map.put(
       :left,
       put_structure_cached_attributes(
-        %{id: left_id},
+        %{id: left_id, parent_index: Map.get(left, :parent_index)},
         StructureEntry.cache_entry(left_id, system: true)
       )
     )
     |> Map.put(
       :right,
       put_structure_cached_attributes(
-        %{id: right_id},
+        %{id: right_id, parent_index: Map.get(right, :parent_index)},
         StructureEntry.cache_entry(right_id, system: true)
       )
     )
