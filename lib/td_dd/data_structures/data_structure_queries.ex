@@ -27,13 +27,13 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   WHERE dsh.ds_id = ANY (?) and ancestor_level > 0
   """
 
-  @dsv_children """
+  @dsv_children_without_fields """
   select ancestor_ds_id as dsid, count(dsv_id), ARRAY_AGG (dsv_id) from
   (
     SELECT dsh.dsv_id, ancestor_ds_id FROM data_structures_hierarchy dsh
-    join (select id as dsv_id, version as child_version, deleted_at as child_deleted_at from data_structure_versions) dsvc on dsh.dsv_id = dsvc.dsv_id
+    join (select id as dsv_id, version as child_version, deleted_at as child_deleted_at, class as child_class from data_structure_versions) dsvc on dsh.dsv_id = dsvc.dsv_id
     join (select id as dsv_id, version as ancestor_version, deleted_at as ancestor_deleted_at from data_structure_versions) dsva on dsh.ancestor_dsv_id = dsva.dsv_id
-    where ancestor_deleted_at is null and child_deleted_at is null
+    where ancestor_deleted_at is null and child_deleted_at is null and (child_class is null or child_class != 'field')
   ) as foo
   group by ancestor_ds_id
   """
@@ -42,7 +42,7 @@ defmodule TdDd.DataStructures.DataStructureQueries do
     opts_map = Enum.into(opts, %{grant_ids: []})
 
     TdDd.Grants.Grant
-    |> with_cte("children", as: fragment(@dsv_children))
+    |> with_cte("children", as: fragment(@dsv_children_without_fields))
     |> join(:inner, [g], c in "children", on: c.dsid == g.data_structure_id)
     |> select([g, c], %{grant: g, dsv_children: c.array_agg})
     |> where_grant_ids(opts_map)
