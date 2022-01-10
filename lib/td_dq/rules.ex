@@ -157,8 +157,6 @@ defmodule TdDq.Rules do
     |> on_create(is_bulk)
   end
 
-  defp on_create(res, is_bulk \\ false)
-
   defp on_create(res, true), do: res
 
   defp on_create(res, false) do

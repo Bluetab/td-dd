@@ -64,7 +64,7 @@ defmodule TdDq.DownloadTest do
             add_info1: ["field_value"]
           },
           df_name: "download",
-          name: "Rule",
+          name: "Rule"
         },
         current_business_concept_version: %{
           name: "name"
@@ -111,7 +111,7 @@ defmodule TdDq.DownloadTest do
             add_info1: ["field_value"]
           },
           df_name: "download",
-          name: "Rule",
+          name: "Rule"
         },
         current_business_concept_version: %{
           name: "name"
@@ -135,7 +135,7 @@ defmodule TdDq.DownloadTest do
             add_info1: ["field_value"]
           },
           df_name: "download",
-          name: "Rule",
+          name: "Rule"
         },
         current_business_concept_version: %{
           name: "name"

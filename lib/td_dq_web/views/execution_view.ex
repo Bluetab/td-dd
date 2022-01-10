@@ -35,7 +35,9 @@ defmodule TdDqWeb.ExecutionView do
   defp rule_first(_), do: 1
 
   defp put_embedding({:implementation, %{} = implementation}, %{} = acc) do
-    implementation = Map.take(implementation, [:id, :implementation_key, :rule_id, :minimum, :goal, :result_type])
+    implementation =
+      Map.take(implementation, [:id, :implementation_key, :rule_id, :minimum, :goal, :result_type])
+
     Map.put(acc, :implementation, implementation)
   end
 
