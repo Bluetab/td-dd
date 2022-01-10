@@ -6,6 +6,16 @@ defmodule TdDdWeb.LineageEventView do
   end
 
   def render("show.json", %{lineage_event: event}) do
-    Map.take(event, [:user_id, :graph_id, :graph_data, :graph_hash, :status, :task_reference, :type, :message, :inserted_at])
+    Map.take(event, [
+      :user_id,
+      :graph_id,
+      :graph_data,
+      :graph_hash,
+      :status,
+      :task_reference,
+      :type,
+      :message,
+      :inserted_at
+    ])
   end
 end
