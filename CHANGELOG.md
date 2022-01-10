@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.35.1] 2022-01-10
+
+### Fixed
+
+- [TD-4390] Index implementation aliases
+
 ## [4.35.0] 2022-01-10
 
 ### Added
