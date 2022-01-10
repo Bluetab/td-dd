@@ -400,7 +400,7 @@ defmodule TdDq.Implementations.Implementation do
     end
 
     defp get_structure_fields(structure) do
-      Map.take(structure, [:external_id, :id, :name, :path, :system, :type, :metadata])
+      Map.take(structure, [:external_id, :id, :name, :path, :system, :type, :metadata, :parent_index])
     end
 
     defp get_alias_fields(nil), do: nil
