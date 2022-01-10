@@ -22,7 +22,7 @@ defmodule TdDd.TestOperators do
   end
 
   defp sorted([%Hierarchy{} | _] = list) do
-    Enum.sort_by(list, & {&1.dsv_id, &1.ancestor_dsv_id})
+    Enum.sort_by(list, &{&1.dsv_id, &1.ancestor_dsv_id})
   end
 
   defp sorted(list), do: Enum.sort(list)

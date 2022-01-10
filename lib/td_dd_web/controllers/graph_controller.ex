@@ -27,7 +27,8 @@ defmodule TdDdWeb.GraphController do
              %{graph_hash: hash, status: "JUST_STARTED", task_reference: task_reference}, hash}
 
           {:already_started, %LineageEvent{graph_hash: hash} = event} ->
-            {:accepted, TdDdWeb.LineageEventView.render("show.json", %{lineage_event: event}), hash}
+            {:accepted, TdDdWeb.LineageEventView.render("show.json", %{lineage_event: event}),
+             hash}
         end
 
       conn
@@ -53,13 +54,19 @@ defmodule TdDdWeb.GraphController do
            %Graph{id: id, data: data} <- Graphs.find_by_hash!(hash) do
         {:ok, Map.put(data, :hash, hash) |> Map.put(:id, id)}
       else
-        nil -> {:not_found, %{}}
+        nil ->
+          {:not_found, %{}}
+
         %LineageEvent{status: "ALREADY_STARTED"} = event ->
           {:accepted, TdDdWeb.LineageEventView.render("show.json", %{lineage_event: event})}
+
         %LineageEvent{status: "FAILED"} = event ->
-          {:internal_server_error, TdDdWeb.LineageEventView.render("show.json", %{lineage_event: event})}
+          {:internal_server_error,
+           TdDdWeb.LineageEventView.render("show.json", %{lineage_event: event})}
+
         %LineageEvent{status: "TIMED_OUT"} = event ->
-          {:internal_server_error, TdDdWeb.LineageEventView.render("show.json", %{lineage_event: event})}
+          {:internal_server_error,
+           TdDdWeb.LineageEventView.render("show.json", %{lineage_event: event})}
       end
 
     json = data |> Jason.encode!()

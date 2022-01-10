@@ -280,7 +280,7 @@ defmodule TdDq.Search.Mappings do
             name: %{type: "text", fields: @raw},
             params: %{type: "object"}
           }
-        },
+        }
       }
       |> put_population(opts)
       |> Map.take(opts)
