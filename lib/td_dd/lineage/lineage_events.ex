@@ -34,9 +34,7 @@ defmodule TdDd.Lineage.LineageEvents do
     |> check_timeout
   end
 
-  def check_timeout(
-        %LineageEvent{status: "STARTED", inserted_at: inserted_at} = event
-      ) do
+  def check_timeout(%LineageEvent{status: "STARTED", inserted_at: inserted_at} = event) do
     if DateTime.compare(
          DateTime.add(inserted_at, TdDd.Lineage.timeout(), :millisecond),
          DateTime.utc_now()
@@ -46,6 +44,7 @@ defmodule TdDd.Lineage.LineageEvents do
       %LineageEvent{event | status: "ALREADY_STARTED"}
     end
   end
+
   def check_timeout(%LineageEvent{} = event), do: event
   def check_timeout(nil), do: nil
 end

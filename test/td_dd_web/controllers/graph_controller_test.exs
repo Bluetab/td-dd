@@ -18,20 +18,29 @@ defmodule TdDdWeb.GraphControllerTest do
     @tag authentication: [role: "admin"]
     @tag contains: %{"foo" => ["bar", "baz"]}
     @tag depends: [{"bar", "baz"}]
-    test "create new graph returns the task and graph hash, get graph by hash returns the graph drawing", %{conn: conn} do
-      assert %{"graph_hash" => graph_hash, "status" => "JUST_STARTED", "task_reference" => task_reference} =
+    test "create new graph returns the task and graph hash, get graph by hash returns the graph drawing",
+         %{conn: conn} do
+      assert %{
+               "graph_hash" => graph_hash,
+               "status" => "JUST_STARTED",
+               "task_reference" => task_reference
+             } =
                conn
                |> post(Routes.graph_path(conn, :create), type: "impact", ids: ["bar"])
                |> json_response(:accepted)
 
       TdDd.Lineage.test_env_task_await(IEx.Helpers.ref(task_reference), @mark_completed)
 
-      assert %{"ids" => ids, "opts" => opts, "groups" => groups, "paths" => paths, "resources" => resources} =
-        conn
-        |> get(
-          Routes.graph_path(conn, :get_graph_by_hash, graph_hash)
-          )
-        |> json_response(:ok)
+      assert %{
+               "ids" => ids,
+               "opts" => opts,
+               "groups" => groups,
+               "paths" => paths,
+               "resources" => resources
+             } =
+               conn
+               |> get(Routes.graph_path(conn, :get_graph_by_hash, graph_hash))
+               |> json_response(:ok)
 
       assert ids == ["bar"]
       assert opts == %{"type" => "impact"}
@@ -43,74 +52,93 @@ defmodule TdDdWeb.GraphControllerTest do
     @tag authentication: [role: "admin"]
     @tag contains: %{"foo" => ["bar", "baz"]}
     @tag depends: [{"bar", "baz"}]
-    test "create new graph returns the task and graph hash, get graph by hash returns id, show by id returns the graph drawing", %{conn: conn} do
-      assert %{"graph_hash" => graph_hash, "status" => "JUST_STARTED", "task_reference" => task_reference} =
-        conn
-        |> post(Routes.graph_path(conn, :create), type: "impact", ids: ["bar"])
-        |> json_response(:accepted)
+    test "create new graph returns the task and graph hash, get graph by hash returns id, show by id returns the graph drawing",
+         %{conn: conn} do
+      assert %{
+               "graph_hash" => graph_hash,
+               "status" => "JUST_STARTED",
+               "task_reference" => task_reference
+             } =
+               conn
+               |> post(Routes.graph_path(conn, :create), type: "impact", ids: ["bar"])
+               |> json_response(:accepted)
 
       TdDd.Lineage.test_env_task_await(IEx.Helpers.ref(task_reference), @mark_completed)
 
       assert %{"id" => id} =
-        conn
-        |> get(
-          Routes.graph_path(conn, :get_graph_by_hash, graph_hash)
-          )
-        |> json_response(:ok)
+               conn
+               |> get(Routes.graph_path(conn, :get_graph_by_hash, graph_hash))
+               |> json_response(:ok)
 
       assert %{"data" => data} =
-      conn
-      |> get(Routes.graph_path(conn, :show, id))
-      |> json_response(:ok)
+               conn
+               |> get(Routes.graph_path(conn, :show, id))
+               |> json_response(:ok)
 
       assert data["ids"] == ["bar"]
       assert data["opts"] == %{"type" => "impact"}
       assert [%{"id" => "@@ROOT"}, %{"id" => "foo"}] = data["groups"]
       assert [%{"path" => _path, "v1" => "bar", "v2" => "baz"}] = data["paths"]
       assert [%{"id" => "bar"}, %{"id" => "baz"}] = data["resources"]
-
     end
 
     @tag authentication: [role: "admin"]
     @tag contains: %{"foo" => ["bar", "baz"]}
     @tag depends: [{"bar", "baz"}]
     test "create existing graph returns the graph drawing", %{conn: conn} do
-      assert %{"graph_hash" => _graph_hash, "status" => "JUST_STARTED", "task_reference" => task_reference} =
-        conn
-        |> post(Routes.graph_path(conn, :create), type: "impact", ids: ["bar"])
-        |> json_response(:accepted)
+      assert %{
+               "graph_hash" => _graph_hash,
+               "status" => "JUST_STARTED",
+               "task_reference" => task_reference
+             } =
+               conn
+               |> post(Routes.graph_path(conn, :create), type: "impact", ids: ["bar"])
+               |> json_response(:accepted)
 
       TdDd.Lineage.test_env_task_await(IEx.Helpers.ref(task_reference), @mark_completed)
 
-      assert %{"ids" => ids, "opts" => opts, "groups" => groups, "paths" => paths, "resources" => resources} =
-        conn
-        |> post(Routes.graph_path(conn, :create), type: "impact", ids: ["bar"])
-        |> json_response(:created)
+      assert %{
+               "ids" => ids,
+               "opts" => opts,
+               "groups" => groups,
+               "paths" => paths,
+               "resources" => resources
+             } =
+               conn
+               |> post(Routes.graph_path(conn, :create), type: "impact", ids: ["bar"])
+               |> json_response(:created)
 
       assert ids == ["bar"]
       assert opts == %{"type" => "impact"}
       assert [%{"id" => "@@ROOT"}, %{"id" => "foo"}] = groups
       assert [%{"path" => _path, "v1" => "bar", "v2" => "baz"}] = paths
       assert [%{"id" => "bar"}, %{"id" => "baz"}] = resources
-
     end
 
     @tag authentication: [role: "admin"]
     @tag contains: %{"foo" => ["bar", "baz"]}
     @tag depends: [{"bar", "baz"}]
-    test "create graph while a previous create request has been issued returns already_started", %{conn: conn} do
-      assert %{"graph_hash" => _graph_hash, "status" => "JUST_STARTED", "task_reference" => task_reference} =
-        conn
-        |> post(Routes.graph_path(conn, :create), type: "impact", ids: ["bar"])
-        |> json_response(:accepted)
+    test "create graph while a previous create request has been issued returns already_started",
+         %{conn: conn} do
+      assert %{
+               "graph_hash" => _graph_hash,
+               "status" => "JUST_STARTED",
+               "task_reference" => task_reference
+             } =
+               conn
+               |> post(Routes.graph_path(conn, :create), type: "impact", ids: ["bar"])
+               |> json_response(:accepted)
 
       TdDd.Lineage.test_env_task_await(IEx.Helpers.ref(task_reference), @mark_not_completed)
 
-      assert %{"graph_hash" => _graph_hash, "status" => "ALREADY_STARTED", "task_reference" => _task_reference} =
-        conn
-        |> post(Routes.graph_path(conn, :create), type: "impact", ids: ["bar"])
-        |> json_response(:accepted)
-
+      assert %{
+               "graph_hash" => _graph_hash,
+               "status" => "ALREADY_STARTED",
+               "task_reference" => _task_reference
+             } =
+               conn
+               |> post(Routes.graph_path(conn, :create), type: "impact", ids: ["bar"])
+               |> json_response(:accepted)
     end
 
     @tag authentication: [role: "admin"]
@@ -125,11 +153,9 @@ defmodule TdDdWeb.GraphControllerTest do
       TdDd.Lineage.test_env_task_await(IEx.Helpers.ref(task_reference), @mark_completed)
 
       assert %{"id" => id} =
-        conn
-        |> get(
-          Routes.graph_path(conn, :get_graph_by_hash, graph_hash)
-          )
-        |> json_response(:ok)
+               conn
+               |> get(Routes.graph_path(conn, :get_graph_by_hash, graph_hash))
+               |> json_response(:ok)
 
       assert body =
                conn

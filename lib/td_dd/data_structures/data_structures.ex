@@ -218,10 +218,10 @@ defmodule TdDd.DataStructures do
     end
   end
 
-  def get_data_structure_type(
-    %DataStructure{current_version: %{structure_type: %{name: type}}}) do
+  def get_data_structure_type(%DataStructure{current_version: %{structure_type: %{name: type}}}) do
     type
   end
+
   def get_data_structure_type(_data_structure), do: nil
 
   def get_field_structures(data_structure_version, opts) do

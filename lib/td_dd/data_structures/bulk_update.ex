@@ -46,7 +46,8 @@ defmodule TdDd.DataStructures.BulkUpdate do
             row,
             DataStructures.get_data_structure_by_external_id(
               external_id,
-              [:system, [current_version: :structure_type]]),
+              [:system, [current_version: :structure_type]]
+            ),
             index
           }
 
