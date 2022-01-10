@@ -10,11 +10,12 @@ defmodule TdDq.Implementations.Structure do
   @primary_key false
   embedded_schema do
     field(:id, :integer)
+    field(:parent_index, :integer)
   end
 
   def changeset(%__MODULE__{} = struct, %{} = params) do
     struct
-    |> cast(params, [:id])
+    |> cast(params, [:id, :parent_index])
     |> validate_required([:id])
   end
 end
