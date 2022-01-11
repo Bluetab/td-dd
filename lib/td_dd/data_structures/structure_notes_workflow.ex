@@ -15,18 +15,28 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
     type = DataStructures.get_data_structure_type(data_structure)
     params = Map.put(params, "type", type)
     auto_publish = opts[:auto_publish] == true
+    is_bulk_update = opts[:is_bulk_update] == true
     latest_note = get_latest_structure_note(data_structure_id)
     is_strict_update = false
 
-    structure_note =
-      case latest_note do
-        %{status: :draft} -> update(latest_note, params, is_strict_update, user_id, type)
-        _not_update -> bulk_create(data_structure, params, latest_note, user_id)
-      end
+    case require_modification?(latest_note, params, is_bulk_update, auto_publish) do
+      true ->
+        structure_note =
+          case latest_note do
+            %{status: :draft} -> update(latest_note, params, is_strict_update, user_id, type)
+            _not_update -> bulk_create(data_structure, params, latest_note, user_id)
+          end
 
-    case {structure_note, auto_publish} do
-      {{:ok, %StructureNote{} = note_to_publish}, true} -> publish(note_to_publish, user_id, opts)
-      _ -> structure_note
+        case {structure_note, auto_publish} do
+          {{:ok, %StructureNote{} = note_to_publish}, true} ->
+            publish(note_to_publish, user_id, opts)
+
+          _ ->
+            structure_note
+        end
+
+      false ->
+        {:ok, latest_note}
     end
   end
 
@@ -290,4 +300,13 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
   defp draft_df_content(_, %{"df_content" => df_content}), do: df_content
   defp draft_df_content(nil, %{}), do: nil
   defp draft_df_content(%{df_content: df_content}, _), do: df_content
+
+  defp require_modification?(latest_note, params, is_bulk_update, auto_publish) do
+    params_df_content = Map.get(params, "df_content")
+
+    case {is_bulk_update, auto_publish, latest_note} do
+      {true, true, %{df_content: ^params_df_content, status: :published}} -> false
+      _ -> true
+    end
+  end
 end

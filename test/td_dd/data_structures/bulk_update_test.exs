@@ -160,6 +160,42 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
              |> Enum.all?(&(&1 == :published))
     end
 
+    test "update and republish only data structures with different valid data", %{type: type} do
+      claims = build(:claims)
+
+      ids =
+        (1..3
+         |> Enum.map(fn _ -> valid_structure_note(type, df_content: %{"string" => "foo"}) end)
+         |> Enum.map(& &1.data_structure_id)) ++
+          (1..4
+           |> Enum.map(fn _ ->
+             valid_structure_note(type, df_content: %{"string" => "foo"}, status: :published)
+           end)
+           |> Enum.map(& &1.data_structure_id)) ++
+          (1..3
+           |> Enum.map(fn _ -> valid_structure_note(type, df_content: %{"string" => "foo"}) end)
+           |> Enum.map(& &1.data_structure_id))
+
+      assert [1, 1, 1, 1, 1, 1, 1, 1, 1, 1] ==
+               Enum.map(ids, fn id ->
+                 Map.get(DataStructures.get_latest_structure_note(id), :version)
+               end)
+
+      BulkUpdate.update_all(ids, @valid_params, claims, true)
+
+      assert [1, 1, 1, 2, 2, 2, 2, 1, 1, 1] ==
+               Enum.map(ids, fn id ->
+                 Map.get(DataStructures.get_latest_structure_note(id), :version)
+               end)
+
+      BulkUpdate.update_all(ids, @valid_params, claims, true)
+
+      assert [1, 1, 1, 2, 2, 2, 2, 1, 1, 1] ==
+               Enum.map(ids, fn id ->
+                 Map.get(DataStructures.get_latest_structure_note(id), :version)
+               end)
+    end
+
     test "ignores unchanged data structures", %{type: type} do
       claims = build(:claims)
       fixed_datetime = ~N[2020-01-01 00:00:00]
