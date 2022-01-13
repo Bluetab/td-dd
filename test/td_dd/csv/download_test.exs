@@ -199,7 +199,8 @@ defmodule TdDd.DownloadTest do
           updated_at: "2019-04-16T16:13:55.000000Z",
           version: 0,
           with_content: false,
-          with_profiling: false
+          with_profiling: false,
+          has_field_child: false
         },
         detail: %{},
         end_date: "2023-05-16",
