@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-2564]  `has_field_child` filter in data structure version
+
 ## [4.35.1] 2022-01-10
 
 ### Fixed

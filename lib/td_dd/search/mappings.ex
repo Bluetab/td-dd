@@ -89,7 +89,8 @@ defmodule TdDd.Search.Mappings do
           config: %{type: "object", properties: get_dynamic_mappings("cx")}
         }
       },
-      with_profiling: %{type: "boolean", fields: @raw}
+      with_profiling: %{type: "boolean", fields: @raw},
+      has_field_child: %{type: "boolean", fields: @raw}
     }
 
     settings = Cluster.setting(:structures)
