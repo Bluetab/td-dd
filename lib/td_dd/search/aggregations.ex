@@ -25,8 +25,7 @@ defmodule TdDd.Search.Aggregations do
            distinct_search: %{terms: %{field: "domain_parents.id", size: get_domains_count()}}
          }
        }},
-      {"with_profiling.raw", %{terms: %{field: "with_profiling.raw"}}},
-      {"has_field_child.raw", %{terms: %{field: "has_field_child.raw"}}}
+      {"with_profiling.raw", %{terms: %{field: "with_profiling.raw"}}}
     ]
 
     ["dd", "cx"]

@@ -3,45 +3,9 @@ defmodule TdDd.DataStructures.DataStructureQueriesTest do
 
   alias TdDd.DataStructures.DataStructureQueries
   alias TdDd.DataStructures.Hierarchy
-  alias TdDd.DataStructures.RelationTypes
   alias TdDd.Repo
 
   describe "data structure queries" do
-    test "calculates has_field_child property" do
-      relation_type_id = RelationTypes.default_id!()
-
-      dsv1 = insert(:data_structure_version, name: "dsv1")
-      dsv11 = insert(:data_structure_version, name: "dsv11")
-      dsv111 = insert(:data_structure_version, name: "dsv111", class: "field")
-      dsv12 = insert(:data_structure_version, name: "dsv12")
-      dsv121 = insert(:data_structure_version, name: "dsv121", class: "field")
-
-      create_relation(dsv1, dsv11, relation_type_id)
-      create_relation(dsv1, dsv12, relation_type_id)
-      create_relation(dsv11, dsv111, relation_type_id)
-      create_relation(dsv12, dsv121, relation_type_id)
-
-      ids = Enum.map([dsv1, dsv11, dsv111, dsv12, dsv121], &(&1.id))
-
-      assert [
-        %{has_field_child: false, name: "dsv1"},
-        %{has_field_child: true, name: "dsv11"},
-        %{has_field_child: false, name: "dsv111"},
-        %{has_field_child: true, name: "dsv12"},
-        %{has_field_child: false, name: "dsv121"}
-      ] = DataStructureQueries.enriched_structure_versions(%{ids: ids})
-      |> Repo.all()
-      |> Enum.map(&(Map.take(&1, [:name, :has_field_child])))
-    end
-
-    defp create_relation(%{id: parent_id}, %{id: child_id}, relation_type_id) do
-      insert(:data_structure_relation,
-        parent_id: parent_id,
-        child_id: child_id,
-        relation_type_id: relation_type_id
-      )
-    end
-
     test "compare with path snapshot" do
       dsv_names = ["foo", "bar", "baz", "xyzzy", "spqr"]
       dsvs = create_hierarchy(dsv_names)
