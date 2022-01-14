@@ -38,28 +38,6 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   group by ancestor_ds_id
   """
 
-  @field_child_by_id """
-  SELECT dsv_p.id, bool_or(dsv_c.id IS NOT NULL) AS has_field_child
-  FROM data_structure_versions dsv_p
-  LEFT JOIN data_structure_relations dsr
-    ON dsr.parent_id = dsv_p.id
-  LEFT JOIN data_structure_versions dsv_c
-    ON dsr.child_id = dsv_c.id AND dsv_c.class = 'field'
-  WHERE dsv_p.id = ANY (?)
-  GROUP BY dsv_p.id
-  """
-
-  @field_child_by_structure_id """
-  SELECT dsv_p.id, bool_or(dsv_c.id IS NOT NULL) AS has_field_child
-  FROM data_structure_versions dsv_p
-  LEFT JOIN data_structure_relations dsr
-    ON dsr.parent_id = dsv_p.id
-  LEFT JOIN data_structure_versions dsv_c
-    ON dsr.child_id = dsv_c.id AND dsv_c.class = 'field'
-  WHERE dsv_p.data_structure_id = ANY (?)
-  GROUP BY dsv_p.id
-  """
-
   def children(opts \\ []) do
     opts_map = Enum.into(opts, %{grant_ids: []})
 
@@ -120,14 +98,14 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   @spec paths(map) :: Ecto.Query.t()
   def paths(%{} = params)
       when is_map_key(params, :ids) or is_map_key(params, :data_structure_ids) do
-    paths_cte_params = Map.take(params, [:ids, :data_structure_ids, :relation_type_id])
+    path_cte_params = Map.take(params, [:ids, :data_structure_ids, :relation_type_id])
 
     "paths"
     |> select([:ds_id, :name, :data_structure_id])
     |> distinct(asc: :ds_id, desc: :level)
     |> order_by(desc: :parent_id)
     |> subquery()
-    |> with_path_cte("paths", paths_cte_params)
+    |> with_path_cte("paths", path_cte_params)
     |> select([t], %{
       id: t.ds_id,
       path:
@@ -150,17 +128,6 @@ defmodule TdDd.DataStructures.DataStructureQueries do
 
   defp with_path_cte(query, name, %{data_structure_ids: ids}) do
     with_cte(query, ^name, as: fragment(@paths_by_child_structure_id, ^ids))
-  end
-
-  @spec with_field_child_cte(Ecto.Query.t(), binary, map) :: Ecto.Query.t()
-  defp with_field_child_cte(query, name, params)
-
-  defp with_field_child_cte(query, name, %{ids: ids}) do
-    with_cte(query, ^name, as: fragment(@field_child_by_id, ^ids))
-  end
-
-  defp with_field_child_cte(query, name, %{data_structure_ids: ids}) do
-    with_cte(query, ^name, as: fragment(@field_child_by_structure_id, ^ids))
   end
 
   defp where_relation_type(query, %{} = params) do
@@ -218,11 +185,6 @@ defmodule TdDd.DataStructures.DataStructureQueries do
     |> join(:left, [dsv], pv in subquery(profile(params)), on: dsv.id == pv.id)
     |> select_merge([_, _, _, _, _, pv], %{
       with_profiling: fragment("COALESCE(?, false)", pv.with_profiling)
-    })
-    |> with_field_child_cte("field_child", params)
-    |> join(:inner, [dsv], fc in "field_child", on: dsv.id == fc.id)
-    |> select_merge([_, _, _, _, _, _, fc], %{
-      has_field_child: fragment("COALESCE(?, false)", fc.has_field_child)
     })
   end
 
