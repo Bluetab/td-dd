@@ -47,10 +47,10 @@ defmodule TdDd.Systems.System do
 
   defp maybe_put_identifier(
          changeset,
-         %__MODULE__{df_content: current_content} = _system,
+         %__MODULE__{df_content: old_content} = system,
          template_name
        ) do
-    maybe_put_identifier_aux(changeset, current_content, template_name)
+    maybe_put_identifier_aux(changeset, old_content, template_name)
   end
 
   defp maybe_put_identifier(
@@ -62,13 +62,13 @@ defmodule TdDd.Systems.System do
   end
 
   defp maybe_put_identifier_aux(
-         %{valid?: true, changes: %{df_content: content}} = changeset,
-         current_content,
+         %{valid?: true, changes: %{df_content: changeset_content}} = changeset,
+         old_content,
          template_name
        ) do
-    TdDfLib.Format.maybe_put_identifier(current_content, content, template_name)
-    |> (fn content ->
-          put_change(changeset, :df_content, content)
+    TdDfLib.Format.maybe_put_identifier(changeset_content, old_content, template_name)
+    |> (fn new_content ->
+          put_change(changeset, :df_content, new_content)
         end).()
   end
 

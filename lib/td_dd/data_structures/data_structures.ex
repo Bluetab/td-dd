@@ -1199,11 +1199,11 @@ defmodule TdDd.DataStructures do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_structure_note(data_structure, attrs, user_id) do
+  def create_structure_note(%DataStructure{id: id} = data_structure, attrs, user_id) do
     changeset =
       StructureNote.create_changeset(
         %StructureNote{},
-        data_structure,
+        data_structure |> Map.put(:latest_note, get_latest_structure_note(id)),
         attrs
       )
 

@@ -1,14 +1,58 @@
 defmodule TdDq.Rules.RuleTest do
   use TdDd.DataCase
 
+  alias Ecto.Changeset
   alias TdDd.Repo
   alias TdDq.Rules.Rule
 
   setup do
+    identifier_name = "identifier"
+
+    with_identifier = %{
+      id: System.unique_integer([:positive]),
+      name: "rule_with_identifier",
+      label: "rule_with_identifier",
+      scope: "dq",
+      content: [
+        %{
+          "fields" => [
+            %{
+              "cardinality" => "1",
+              "default" => "",
+              "label" => "Identifier",
+              "name" => identifier_name,
+              "subscribable" => false,
+              "type" => "string",
+              "values" => nil,
+              "widget" => "identifier"
+            },
+            %{
+              "cardinality" => "1",
+              "default" => "",
+              "label" => "Text",
+              "name" => "text",
+              "subscribable" => false,
+              "type" => "string",
+              "values" => nil,
+              "widget" => "text"
+            }
+          ],
+          "name" => ""
+        }
+      ]
+    }
+
+    template_with_identifier = CacheHelpers.insert_template(with_identifier)
+
     %{name: template_name} = CacheHelpers.insert_template(scope: "dq")
     domain = CacheHelpers.insert_domain()
 
-    [domain: domain, template_name: template_name]
+    [
+      domain: domain,
+      template_name: template_name,
+      template_with_identifier: template_with_identifier,
+      identifier_name: identifier_name
+    ]
   end
 
   describe "changeset/2" do
@@ -73,6 +117,128 @@ defmodule TdDq.Rules.RuleTest do
 
       assert %{valid?: false, errors: errors} = Rule.changeset(params)
       assert {"invalid content", _detail} = errors[:df_content]
+    end
+
+    test "create new rule: puts a new identifier if the template has an identifier field", %{
+      template_with_identifier: template_with_identifier,
+      identifier_name: identifier_name,
+      domain: domain
+    } do
+      params =
+        params_for(:rule,
+          df_name: template_with_identifier.name,
+          df_content: %{"text" => "patata"},
+          domain_id: domain.id
+        )
+
+      assert %Changeset{changes: changes} = Rule.changeset(params)
+
+      assert %{df_content: new_content} = changes
+      assert %{^identifier_name => _identifier} = new_content
+    end
+
+    test "create new rule: avoids putting new identifier if template lacks an identifier field",
+         %{
+           template_name: template_name,
+           identifier_name: identifier_name,
+           domain: domain
+         } do
+      params =
+        params_for(:rule,
+          df_name: template_name,
+          df_content: %{"text" => "patata"},
+          domain_id: domain.id
+        )
+
+      assert %Changeset{changes: changes} = Rule.changeset(params)
+
+      assert %{df_content: new_content} = changes
+      refute match?(%{^identifier_name => _identifier}, new_content)
+    end
+
+    test "keeps an already present identifier (i.e., editing)", %{
+      template_with_identifier: template_with_identifier,
+      identifier_name: identifier_name,
+      domain: domain
+    } do
+      # Existing identifier previously put by the create changeset
+      existing_identifier = "00000000-0000-0000-0000-000000000000"
+
+      rule =
+        insert(:rule,
+          business_concept_id: "123",
+          df_content: %{identifier_name => existing_identifier}
+        )
+
+      params =
+        params_for(:rule,
+          df_name: template_with_identifier.name,
+          df_content: %{"text" => "patata"},
+          domain_id: domain.id
+        )
+
+      assert %Changeset{changes: changes} = Rule.changeset(rule, params)
+
+      assert %{df_content: new_content} = changes
+      assert %{^identifier_name => ^existing_identifier} = new_content
+    end
+
+    test "keeps an already present identifier (i.e., editing) if extraneous identifier attr is passed",
+         %{
+           template_with_identifier: template_with_identifier,
+           identifier_name: identifier_name,
+           domain: domain
+         } do
+      # Existing identifier previously put by the create changeset
+      existing_identifier = "00000000-0000-0000-0000-000000000000"
+
+      rule =
+        insert(:rule,
+          business_concept_id: "123",
+          df_content: %{identifier_name => existing_identifier}
+        )
+
+      params =
+        params_for(:rule,
+          df_name: template_with_identifier.name,
+          df_content: %{
+            "text" => "patata",
+            identifier_name => "11111111-1111-1111-1111-111111111111"
+          },
+          domain_id: domain.id
+        )
+
+      assert %Changeset{changes: changes} = Rule.changeset(rule, params)
+
+      assert %{df_content: new_content} = changes
+      assert %{^identifier_name => ^existing_identifier} = new_content
+    end
+
+    test "puts an identifier if there is not already one and the template has an identifier field",
+         %{
+           template_with_identifier: template_with_identifier,
+           identifier_name: identifier_name,
+           domain: domain
+         } do
+      # Rule has no identifier but its template does
+      # This happens if identifier is added to template after rule creation
+      # Test an update to the rule in this state.
+      %{df_content: content} = rule = insert(:rule, business_concept_id: "123")
+
+      # Just to make sure factory does not add identifier
+      refute match?(%{^identifier_name => _identifier}, content)
+
+      params =
+        params_for(:rule,
+          df_name: template_with_identifier.name,
+          df_content: %{"text" => "some update"},
+          domain_id: domain.id
+        )
+
+      assert %Changeset{changes: changes} = Rule.changeset(rule, params)
+
+      assert %{df_content: new_content} = changes
+      assert %{^identifier_name => _identifier} = new_content
     end
   end
 
