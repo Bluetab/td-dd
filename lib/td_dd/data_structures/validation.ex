@@ -33,6 +33,14 @@ defmodule TdDd.DataStructures.Validation do
     end
   end
 
+  @spec validator(
+          %{
+            :__struct__ => TdDd.DataStructures.DataStructure | TdDd.DataStructures.StructureNote,
+            optional(any) => any
+          },
+          any,
+          any
+        ) :: {:error, :template_not_found} | Ecto.Changeset.t()
   def validator(%DataStructure{domain_id: domain_id} = data_structure, df_content, fields) do
     data_structure
     |> DataStructures.template_name()

@@ -709,7 +709,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
 
       insert(:data_structure_version, data_structure_id: structure_id)
 
-      assert %{"data" => data} =
+      assert %{"errors" => [], "ids" => [^structure_id | _]} =
                conn
                |> post(Routes.data_structure_path(conn, :bulk_update), %{
                  "bulk_update_request" => %{
@@ -730,8 +730,6 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                  }
                })
                |> json_response(:ok)
-
-      assert %{"message" => [^structure_id | _]} = data
     end
 
     @tag authentication: [role: "admin"]
@@ -739,7 +737,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       %{id: structure_id} = insert(:data_structure, external_id: "Structure")
       insert(:data_structure_version, data_structure_id: structure_id)
 
-      assert %{"data" => data} =
+      assert %{"errors" => [], "ids" => []} =
                conn
                |> post(Routes.data_structure_path(conn, :bulk_update), %{
                  "bulk_update_request" => %{
@@ -760,8 +758,6 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                  }
                })
                |> json_response(:ok)
-
-      assert %{"message" => []} = data
     end
   end
 
