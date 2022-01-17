@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-4100] Allow partial loads for notes in case that there are errors on the file
+
 ## [4.35.1] 2022-01-10
 
 ### Fixed
