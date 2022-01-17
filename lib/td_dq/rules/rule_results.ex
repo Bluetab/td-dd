@@ -23,12 +23,13 @@ defmodule TdDq.Rules.RuleResults do
     Repo.get_by(RuleResult, id: id)
   end
 
-  def list_rule_results do
+  def list_rule_results(params \\ %{}) do
     RuleResult
     |> join(:inner, [rr, ri], ri in Implementation, on: rr.implementation_id == ri.id)
     |> join(:inner, [_, ri, r], r in Rule, on: r.id == ri.rule_id)
     |> where([_, _, r], is_nil(r.deleted_at))
     |> where([_, ri, _], is_nil(ri.deleted_at))
+    |> get_results_gt_date(params)
     |> Repo.all()
   end
 
@@ -176,4 +177,11 @@ defmodule TdDq.Rules.RuleResults do
   end
 
   defp refresh_on_delete(res, _), do: res
+
+  defp get_results_gt_date(query, %{"date" => ts}) do
+    query
+    |> where([rr, _, _], rr.date > ^ts)
+  end
+
+  defp get_results_gt_date(query, _params), do: query
 end
