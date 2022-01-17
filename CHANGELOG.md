@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-3467]  Add gt date condition for `rule results`
+
 ## [4.35.1] 2022-01-10
 
 ### Fixed
