@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-4389] Add inserted_at in implementations views
+
 ## [4.35.1] 2022-01-10
 
 ### Fixed
