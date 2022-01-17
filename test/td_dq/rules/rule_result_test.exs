@@ -142,6 +142,7 @@ defmodule TdDq.Rules.RuleResultTest do
       }
 
       result_string = "#{result}"
+
       assert ^result_string =
                impl
                |> RuleResult.changeset(params)

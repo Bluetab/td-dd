@@ -24,7 +24,15 @@ defmodule TdDd.Lineage.LineageEvent do
 
   def changeset(%__MODULE__{} = struct, %{} = params) do
     struct
-    |> cast(params, [:user_id, :graph_id, :graph_data, :graph_hash, :task_reference, :status, :message])
+    |> cast(params, [
+      :user_id,
+      :graph_id,
+      :graph_data,
+      :graph_hash,
+      :task_reference,
+      :status,
+      :message
+    ])
     |> put_node
     |> validate_required([:user_id, :graph_data, :graph_hash, :task_reference, :status, :node])
     |> validate_length(:graph_data, max: 255)

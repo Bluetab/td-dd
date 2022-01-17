@@ -140,15 +140,6 @@ defmodule TdDd.DataStructures.StructureNote do
     changeset
   end
 
-  # defp maybe_put_identifier(
-  #        changeset,
-  #        %DataStructure{current_version: %{structure_type: %{template_id: template_id}}}
-  #      ) do
-  #   maybe_put_identifier_aux(changeset, %{}, template_id)
-  # end
-
-  # defp maybe_put_identifier(changeset, _), do: changeset
-
   defp maybe_put_identifier_aux(
          %{valid?: true, changes: %{df_content: changeset_content}} = changeset,
          old_content,

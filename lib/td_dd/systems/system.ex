@@ -47,7 +47,7 @@ defmodule TdDd.Systems.System do
 
   defp maybe_put_identifier(
          changeset,
-         %__MODULE__{df_content: old_content} = system,
+         %__MODULE__{df_content: old_content} = _system,
          template_name
        ) do
     maybe_put_identifier_aux(changeset, old_content, template_name)

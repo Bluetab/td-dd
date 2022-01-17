@@ -69,7 +69,7 @@ defmodule TdDd.Grants.GrantRequest do
         end).()
   end
 
-  defp maybe_put_identifier_aux(changeset, old_content, template_name) do
+  defp maybe_put_identifier_aux(changeset, _old_content, _template_name) do
     changeset
   end
 
