@@ -19,7 +19,7 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
     latest_note = get_latest_structure_note(data_structure_id)
     is_strict_update = false
 
-    case require_modification?(latest_note, params, is_bulk_update, auto_publish) do
+    case require_modification?(data_structure_id, params, is_bulk_update, auto_publish) do
       true ->
         structure_note =
           case latest_note do
@@ -301,12 +301,18 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
   defp draft_df_content(nil, %{}), do: nil
   defp draft_df_content(%{df_content: df_content}, _), do: df_content
 
-  defp require_modification?(latest_note, params, is_bulk_update, auto_publish) do
-    params_df_content = Map.get(params, "df_content")
+  defp require_modification?(data_structure_id, params, is_bulk_update, auto_publish) do
+    case {get_latest_structure_note(data_structure_id, :published), params} do
+      {%{df_content: df_content}, %{"df_content" => params_df_content}} ->
+        latest_content = Map.take(df_content, Map.keys(params_df_content))
 
-    case {is_bulk_update, auto_publish, latest_note} do
-      {true, true, %{df_content: ^params_df_content, status: :published}} -> false
-      _ -> true
+        case {is_bulk_update, auto_publish, latest_content} do
+          {true, true, ^params_df_content} -> false
+          _ -> true
+        end
+
+      _ ->
+        true
     end
   end
 end
