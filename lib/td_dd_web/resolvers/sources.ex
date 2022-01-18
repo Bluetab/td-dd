@@ -4,6 +4,7 @@ defmodule TdDdWeb.Resolvers.Sources do
   """
 
   alias TdCache.TemplateCache
+  alias TdCx.Format
   alias TdCx.Sources
 
   def sources(_parent, args, _resolution) do
@@ -14,7 +15,11 @@ defmodule TdDdWeb.Resolvers.Sources do
     {:ok, Sources.get_source(args)}
   end
 
-  def template(%{type: source_type}, _args, _resolution) do
-    TemplateCache.get_by_name(source_type)
+  def template(%{type: type}, _args, _resolution) do
+    TemplateCache.get_by_name(type)
+  end
+
+  def config(%{type: type, config: config}, _args, _resolution) do
+    {:ok, Format.get_cached_content(config, type)}
   end
 end

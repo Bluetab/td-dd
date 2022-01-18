@@ -29,7 +29,7 @@ defmodule TdDdWeb.Schema.Sources do
     field :external_id, :string
     field :active, :boolean
     field :type, :string
-    field :config, :json
+    field :config, :json, resolve: &Resolvers.Sources.config/3
 
     field :events, list_of(:event) do
       arg(:limit, :integer, default_value: 5)

@@ -36,12 +36,27 @@ defmodule TdDdWeb.Schema.SourcesTest do
   }
   """
 
-  defp create_template(_context) do
+  defp create_template(%{domain: domain_name}) do
+    [
+      domain: CacheHelpers.insert_domain(%{name: domain_name}),
+      template:
+        CacheHelpers.insert_template(
+          content: [
+            build(:template_group,
+              fields: [build(:template_field, name: "domain", type: "domain")]
+            )
+          ]
+        )
+    ]
+  end
+
+  defp create_template(_) do
     [template: CacheHelpers.insert_template()]
   end
 
-  defp create_source(%{template: %{name: source_type}}) do
-    config = %{"foo" => "bar"}
+  defp create_source(%{template: %{name: source_type}} = context) do
+    domain_id = context[:domain][:id]
+    config = %{"foo" => "bar", "domain" => %{"id" => domain_id}}
     [source: insert(:source, config: config, type: source_type)]
   end
 
@@ -82,6 +97,24 @@ defmodule TdDdWeb.Schema.SourcesTest do
       assert %{"id" => id, "config" => ^config, "template" => template} = source
       assert id == to_string(source_id)
       assert %{"content" => ^content} = template
+    end
+
+    @tag authentication: [role: "admin"]
+    @tag domain: "foo"
+    test "enriches domain configuration from cache", %{conn: conn, source: %{id: source_id}} do
+      assert %{"data" => data} =
+               response =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @source_with_template,
+                 "variables" => %{"id" => source_id}
+               })
+               |> json_response(:ok)
+
+      assert response["errors"] == nil
+      assert %{"source" => source} = data
+      assert %{"config" => config} = source
+      assert %{"name" => "foo", "external_id" => _} = config["domain"]
     end
   end
 
