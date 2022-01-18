@@ -1,14 +1,14 @@
 defmodule TdCxWeb.SourceView do
   use TdCxWeb, :view
+
   alias TdCx.Format
-  alias TdCxWeb.SourceView
 
   def render("index.json", %{sources: sources}) do
-    %{data: render_many(sources, SourceView, "source.json")}
+    %{data: render_many(sources, __MODULE__, "source.json")}
   end
 
   def render("show.json", %{source: source} = assigns) do
-    %{data: render_one(source, SourceView, "source.json", Map.delete(assigns, :source))}
+    %{data: render_one(source, __MODULE__, "source.json", Map.delete(assigns, :source))}
   end
 
   def render("embedded.json", %{source: source}) do

@@ -10,6 +10,7 @@ defmodule TdCx.Sources do
 
   alias TdCache.TemplateCache
   alias TdCx.Auth.Claims
+  alias TdCx.Events.Event
   alias TdCx.Sources.Source
   alias TdCx.Vault
   alias TdDd.Repo
@@ -97,6 +98,9 @@ defmodule TdCx.Sources do
     |> Enum.reduce(Source, fn
       {:external_id, external_id}, q ->
         where(q, [s], s.external_id == ^external_id)
+
+      {:limit, lim}, q ->
+        limit(q, ^lim)
 
       {:id, id}, q ->
         where(q, [s], s.id == ^id)
@@ -412,5 +416,20 @@ defmodule TdCx.Sources do
       %{config: %{"aliases" => aliases}} -> aliases
       _ -> []
     end
+  end
+
+  ## Dataloader
+
+  def datasource do
+    Dataloader.Ecto.new(TdDd.Repo, query: &query/2, timeout: Dataloader.default_timeout())
+  end
+
+  defp query(Event, params) do
+    Enum.reduce(params, Event, fn
+      {:limit, limit}, q ->
+        q
+        |> order_by(desc: :id)
+        |> limit(^limit)
+    end)
   end
 end

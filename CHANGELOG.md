@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-4125] GraphQL support for data sources
+
 ## [4.35.1] 2022-01-10
 
 ### Fixed
