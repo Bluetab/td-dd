@@ -22,6 +22,10 @@ defmodule TdDdWeb.Schema do
     import_fields(:source_queries)
   end
 
+  mutation do
+    import_fields(:source_mutations)
+  end
+
   def context(ctx) do
     loader =
       Dataloader.new()
@@ -34,6 +38,12 @@ defmodule TdDdWeb.Schema do
   def middleware(middleware, %{identifier: field}, %{identifier: :query}) do
     [
       {Middleware.Authorize, [action: :query, resource: field]} | middleware
+    ]
+  end
+
+  def middleware(middleware, %{identifier: field}, %{identifier: :mutation}) do
+    [
+      {Middleware.Authorize, [action: :mutation, resource: field]} | middleware
     ]
   end
 

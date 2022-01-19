@@ -10,6 +10,8 @@ defmodule TdCx.Sources.Source do
   alias TdCx.Jobs.Job
   alias TdCx.Sources.Source
 
+  @type t :: %__MODULE__{}
+
   schema "sources" do
     field :active, :boolean, default: true
     field :config, :map

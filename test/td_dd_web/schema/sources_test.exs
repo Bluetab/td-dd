@@ -36,6 +36,26 @@ defmodule TdDdWeb.Schema.SourcesTest do
   }
   """
 
+  @enable_source """
+  mutation ENABLE_SOURCE($id: ID!) {
+    enableSource(id: $id) {
+      id
+      externalId
+      active
+    }
+  }
+  """
+
+  @disable_source """
+  mutation DISABLE_SOURCE($id: ID!) {
+    disableSource(id: $id) {
+      id
+      externalId
+      active
+    }
+  }
+  """
+
   defp create_template(%{domain: domain_name}) do
     [
       domain: CacheHelpers.insert_domain(%{name: domain_name}),
@@ -155,6 +175,72 @@ defmodule TdDdWeb.Schema.SourcesTest do
         assert Enum.sort(events, &by_id/2) == events
         assert Enum.sort(events, &by_inserted_at/2) == events
       end
+    end
+  end
+
+  describe "enableSource mutation" do
+    @tag authentication: [role: "user"]
+    test "returns forbidden when performed by user role", %{conn: conn} do
+      assert %{"data" => nil, "errors" => errors} =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @enable_source,
+                 "variables" => %{"id" => 123}
+               })
+               |> json_response(:ok)
+
+      assert [%{"message" => "forbidden"}] = errors
+    end
+
+    @tag authentication: [role: "admin"]
+    test "changes active to false when performed by admin role", %{conn: conn} do
+      %{id: source_id, external_id: external_id} = insert(:source, active: false)
+
+      assert %{"data" => data} =
+               response =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @enable_source,
+                 "variables" => %{"id" => source_id}
+               })
+               |> json_response(:ok)
+
+      assert response["errors"] == nil
+      assert %{"enableSource" => source} = data
+      assert %{"active" => true, "externalId" => ^external_id} = source
+    end
+  end
+
+  describe "disableSource mutation" do
+    @tag authentication: [role: "user"]
+    test "returns forbidden when queried by user role", %{conn: conn} do
+      assert %{"data" => nil, "errors" => errors} =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @disable_source,
+                 "variables" => %{"id" => 123}
+               })
+               |> json_response(:ok)
+
+      assert [%{"message" => "forbidden"}] = errors
+    end
+
+    @tag authentication: [role: "admin"]
+    test "changes active to true when performed by admin role", %{conn: conn} do
+      %{id: source_id, external_id: external_id} = insert(:source, active: true)
+
+      assert %{"data" => data} =
+               response =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @disable_source,
+                 "variables" => %{"id" => source_id}
+               })
+               |> json_response(:ok)
+
+      assert response["errors"] == nil
+      assert %{"disableSource" => source} = data
+      assert %{"active" => false, "externalId" => ^external_id} = source
     end
   end
 

@@ -24,6 +24,20 @@ defmodule TdDdWeb.Schema.Sources do
     end
   end
 
+  object :source_mutations do
+    @desc "Disables an active data source"
+    field :disable_source, non_null(:source) do
+      arg(:id, non_null(:id))
+      resolve(&Resolvers.Sources.disable_source/3)
+    end
+
+    @desc "Enables an inactive data source"
+    field :enable_source, non_null(:source) do
+      arg(:id, non_null(:id))
+      resolve(&Resolvers.Sources.enable_source/3)
+    end
+  end
+
   object :source do
     field :id, :id
     field :external_id, :string

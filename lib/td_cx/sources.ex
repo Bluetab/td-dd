@@ -80,12 +80,14 @@ defmodule TdCx.Sources do
       ** (Ecto.NoResultsError)
 
   """
+  @spec get_source!(nil | binary | integer | keyword | map) :: Source.t()
   def get_source!(params_or_identifier) do
     params_or_identifier
     |> source_query()
     |> Repo.one!()
   end
 
+  @spec get_source(nil | binary | integer | keyword | map) :: Source.t() | nil
   def get_source(params_or_identifier) do
     params_or_identifier
     |> source_query()
