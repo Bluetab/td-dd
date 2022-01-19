@@ -519,8 +519,8 @@ defmodule TdDd.Factory do
       graph_data: "TERADESA.BASILEAII.HIST_PROA_MOROSIDAD.ANTICIPOCAPITALIMPAGADO",
       task_reference: "0.2996324945.3784572938.100946",
       node: "nonode@nohost",
-      message: nil,
-    } |> merge_attributes(attrs)
+      message: nil
+    }
+    |> merge_attributes(attrs)
   end
-
 end

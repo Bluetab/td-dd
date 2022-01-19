@@ -3,14 +3,22 @@ defmodule TdDd.Repo.Migrations.CreateDataStructuresHierarchy do
 
   def change do
     create table("data_structures_hierarchy", primary_key: false) do
-      add :dsv_id, references("data_structure_versions", on_delete: :delete_all), primary_key: true
+      add :dsv_id, references("data_structure_versions", on_delete: :delete_all),
+        primary_key: true
+
       add :ds_id, references("data_structures", on_delete: :delete_all)
-      add :ancestor_dsv_id, references("data_structure_versions", on_delete: :delete_all), primary_key: true
+
+      add :ancestor_dsv_id, references("data_structure_versions", on_delete: :delete_all),
+        primary_key: true
+
       add :ancestor_ds_id, references("data_structures", on_delete: :delete_all)
       add :ancestor_level, :integer, null: false, primary_key: true
     end
 
-    create index("data_structures_hierarchy", [:dsv_id, :ancestor_dsv_id, :ancestor_level], unique: true)
+    create index("data_structures_hierarchy", [:dsv_id, :ancestor_dsv_id, :ancestor_level],
+             unique: true
+           )
+
     create index("data_structures_hierarchy", [:dsv_id])
     create index("data_structures_hierarchy", [:ancestor_dsv_id])
 

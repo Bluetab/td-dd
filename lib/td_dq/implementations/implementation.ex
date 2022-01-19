@@ -377,6 +377,7 @@ defmodule TdDq.Implementations.Implementation do
       |> Map.put(:clauses, Enum.map(Map.get(row, :clauses, []), &get_clause/1))
       |> Map.put(:structure, get_structure_fields(Map.get(row, :structure, %{})))
       |> Map.put(:join_type, Map.get(row, :join_type))
+      |> Map.put(:alias, get_alias_fields(Map.get(row, :alias)))
     end
 
     defp condition_row(row) do
@@ -399,8 +400,11 @@ defmodule TdDq.Implementations.Implementation do
     end
 
     defp get_structure_fields(structure) do
-      Map.take(structure, [:external_id, :id, :name, :path, :system, :type, :metadata])
+      Map.take(structure, [:external_id, :id, :name, :path, :system, :type, :metadata, :parent_index])
     end
+
+    defp get_alias_fields(nil), do: nil
+    defp get_alias_fields(alias_value), do: Map.take(alias_value, [:index, :text])
 
     defp get_operator_fields(operator) do
       Map.take(operator, [:name, :value_type, :value_type_filter])

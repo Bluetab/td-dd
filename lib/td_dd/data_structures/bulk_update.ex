@@ -46,7 +46,8 @@ defmodule TdDd.DataStructures.BulkUpdate do
             row,
             DataStructures.get_data_structure_by_external_id(
               external_id,
-              [:system, [current_version: :structure_type]]),
+              [:system, [current_version: :structure_type]]
+            ),
             index
           }
 
@@ -85,6 +86,20 @@ defmodule TdDd.DataStructures.BulkUpdate do
     {:ok, rows}
   rescue
     _ -> {:error, %{message: :invalid_file_format}}
+  end
+
+  def split_succeeded_errors(notes) do
+    notes
+    |> Enum.split_with(fn {_k, v} ->
+      case v do
+        {:error, _} -> false
+        _ -> true
+      end
+    end)
+    |> Tuple.to_list()
+    |> Enum.map(fn k ->
+      Enum.into(k, %{})
+    end)
   end
 
   defp recode(s) do
@@ -226,8 +241,8 @@ defmodule TdDd.DataStructures.BulkUpdate do
       {:ok, %{data_structure_id: id} = structure_note} ->
         {:cont, Map.put(acc, id, structure_note)}
 
-      {{:error, error}, data_structure} ->
-        {:halt, {:error, {error, Map.put(data_structure, :row, row_index)}}}
+      {{:error, error}, %{id: id} = data_structure} ->
+        {:cont, Map.put(acc, id, {:error, {error, Map.put(data_structure, :row, row_index)}})}
     end
   end
 
@@ -236,8 +251,8 @@ defmodule TdDd.DataStructures.BulkUpdate do
       {:ok, %{data_structure_id: id} = structure_note} ->
         {:cont, Map.put(acc, id, structure_note)}
 
-      {{:error, error}, data_structure} ->
-        {:halt, {:error, {error, data_structure}}}
+      {{:error, error}, %{id: id} = data_structure} ->
+        {:cont, Map.put(acc, id, {:error, {error, data_structure}})}
     end
   end
 

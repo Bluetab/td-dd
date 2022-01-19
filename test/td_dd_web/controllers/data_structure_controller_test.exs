@@ -405,6 +405,65 @@ defmodule TdDdWeb.DataStructureControllerTest do
     end
   end
 
+  describe "bulk_update" do
+    @tag authentication: [role: "admin"]
+    test "bulk update of data structures", %{conn: conn, domain: %{id: domain_id}} do
+      [id_one | _] = create_three_data_structures(domain_id)
+
+      assert data =
+               conn
+               |> post(Routes.data_structure_path(conn, :bulk_update), %{
+                 "bulk_update_request" => %{
+                   "update_attributes" => %{
+                     "df_content" => %{
+                       "list" => "one",
+                       "string" => "hola soy un string"
+                     }
+                   },
+                   "search_params" => %{
+                     "filters" => %{
+                       "id" => [id_one]
+                     }
+                   }
+                 }
+               })
+               |> json_response(:ok)
+
+      assert %{"errors" => [], "ids" => [^id_one]} = data
+    end
+
+    @tag authentication: [role: "admin"]
+    test "bulk update return invalid notes as errors", %{conn: conn, domain: %{id: domain_id}} do
+      [id_one | _] = create_three_data_structures(domain_id)
+
+      assert data =
+               conn
+               |> post(Routes.data_structure_path(conn, :bulk_update), %{
+                 "bulk_update_request" => %{
+                   "update_attributes" => %{
+                     "df_content" => %{
+                       "list" => "ones",
+                       "string" => "hola soy un string"
+                     }
+                   },
+                   "search_params" => %{
+                     "filters" => %{
+                       "note_id" => [id_one]
+                     }
+                   }
+                 }
+               })
+               |> json_response(:ok)
+
+      assert %{
+               "errors" => [
+                 %{"id" => ^id_one, "message" => %{"df_content" => ["invalid_content"]}}
+               ],
+               "ids" => []
+             } = data
+    end
+  end
+
   describe "csv" do
     setup :create_data_structure
 
@@ -470,6 +529,119 @@ defmodule TdDdWeb.DataStructureControllerTest do
         structures: %Plug.Upload{path: "test/fixtures/td3787/upload.csv"}
       )
       |> json_response(:unprocessable_entity)
+    end
+
+    defp create_three_data_structures(domain_id) do
+      data_structure_one =
+        insert(:data_structure,
+          domain_id: domain_id,
+          external_id: "some_external_id_1"
+        )
+
+      data_structure_two =
+        insert(:data_structure,
+          domain_id: domain_id,
+          external_id: "some_external_id_2"
+        )
+
+      data_structure_three =
+        insert(:data_structure,
+          domain_id: domain_id,
+          external_id: "some_external_id_3"
+        )
+
+      %{id: id_one} = create_data_structure(data_structure_one)[:data_structure]
+      %{id: id_two} = create_data_structure(data_structure_two)[:data_structure]
+      %{id: id_three} = create_data_structure(data_structure_three)[:data_structure]
+      [id_one, id_two, id_three]
+    end
+
+    @tag authentication: [role: "admin"]
+    test "upload, allow load csv with multiple valid rows", %{
+      conn: conn,
+      domain: %{id: domain_id}
+    } do
+      ids = create_three_data_structures(domain_id)
+
+      data =
+        conn
+        |> post(data_structure_path(conn, :bulk_update_template_content),
+          structures: %Plug.Upload{path: "test/fixtures/td4100/upload.csv"}
+        )
+        |> json_response(:ok)
+
+      assert data == %{"ids" => ids, "errors" => []}
+    end
+
+    @tag authentication: [role: "admin"]
+    test "upload, allow load csv partially with one invalid row", %{
+      conn: conn,
+      domain: %{id: domain_id}
+    } do
+      [id_one, _, id_three] = create_three_data_structures(domain_id)
+
+      data =
+        conn
+        |> post(data_structure_path(conn, :bulk_update_template_content),
+          structures: %Plug.Upload{path: "test/fixtures/td4100/upload_with_one_warning.csv"}
+        )
+        |> json_response(:ok)
+
+      assert data == %{
+               "ids" => [id_one, id_three],
+               "errors" => [%{"row" => 3, "message" => %{"df_content" => ["invalid_content"]}}]
+             }
+    end
+
+    @tag authentication: [role: "admin"]
+    test "upload, allow load csv partially with multiple invalid row", %{
+      conn: conn,
+      domain: %{id: domain_id}
+    } do
+      [id_one | _] = create_three_data_structures(domain_id)
+
+      data =
+        conn
+        |> post(data_structure_path(conn, :bulk_update_template_content),
+          structures: %Plug.Upload{path: "test/fixtures/td4100/upload_with_multiple_warnings.csv"}
+        )
+        |> json_response(:ok)
+
+      assert data == %{
+               "ids" => [id_one],
+               "errors" => [
+                 %{
+                   "row" => 3,
+                   "message" => %{"df_content" => ["invalid_content"]}
+                 },
+                 %{
+                   "row" => 4,
+                   "message" => %{"df_content" => ["invalid_content"]}
+                 }
+               ]
+             }
+    end
+
+    @tag authentication: [role: "admin"]
+    test "upload, allow load csv partially ignoring invalid external_ids", %{
+      conn: conn,
+      domain: %{id: domain_id}
+    } do
+      [id_one, _, id_three] = create_three_data_structures(domain_id)
+
+      data =
+        conn
+        |> post(data_structure_path(conn, :bulk_update_template_content),
+          structures: %Plug.Upload{
+            path: "test/fixtures/td4100/upload_with_invalid_external_id.csv"
+          }
+        )
+        |> json_response(:ok)
+
+      assert data == %{
+               "ids" => [id_one, id_three],
+               "errors" => []
+             }
     end
 
     @tag authentication: [role: "admin"]

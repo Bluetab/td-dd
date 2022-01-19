@@ -19,8 +19,9 @@ defmodule TdDdWeb.LineageEventController do
 
   def index(conn, _params) do
     claims = conn.assigns[:current_resource]
+
     with %{user_id: user_id} = _claims <- conn.assigns[:current_resource],
-          {:can, true} <- {:can, can?(claims, list(Lineage))} do
+         {:can, true} <- {:can, can?(claims, list(Lineage))} do
       render(conn, "index.json", %{lineage_events: LineageEvents.get_by_user_id(user_id)})
     end
   end

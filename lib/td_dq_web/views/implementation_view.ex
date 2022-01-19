@@ -170,6 +170,14 @@ end
 defmodule TdDqWeb.Implementation.StructureView do
   use TdDqWeb, :view
 
+  defp with_parent_index(structure_json, %{parent_index: nil}), do: structure_json
+
+  defp with_parent_index(structure_json, %{parent_index: parent_index}) do
+    Map.put(structure_json, :parent_index, parent_index)
+  end
+
+  defp with_parent_index(structure_json, _), do: structure_json
+
   def render("structure.json", %{structure: structure}) do
     %{
       id: Map.get(structure, :id),
@@ -180,6 +188,18 @@ defmodule TdDqWeb.Implementation.StructureView do
       type: Map.get(structure, :type),
       metadata: Map.get(structure, :metadata)
     }
+    |> with_parent_index(structure)
+  end
+end
+
+defmodule TdDqWeb.Implementation.StructureAliasView do
+  use TdDqWeb, :view
+
+  def render("structure_alias.json", %{structure_alias: structure_alias}) do
+    %{
+      index: Map.get(structure_alias, :index),
+      text: Map.get(structure_alias, :text)
+    }
   end
 end
 
@@ -187,18 +207,23 @@ defmodule TdDqWeb.Implementation.DatasetView do
   use TdDqWeb, :view
 
   alias TdDqWeb.Implementation.JoinClauseView
+  alias TdDqWeb.Implementation.StructureAliasView
   alias TdDqWeb.Implementation.StructureView
 
   def render("dataset_row.json", %{dataset: %{structure: structure} = dataset_row}) do
     case dataset_row.clauses do
       nil ->
         %{
-          structure: render_one(structure, StructureView, "structure.json")
+          structure: render_one(structure, StructureView, "structure.json"),
+          alias:
+            render_one(Map.get(dataset_row, :alias), StructureAliasView, "structure_alias.json")
         }
 
       _ ->
         %{
           structure: render_one(structure, StructureView, "structure.json"),
+          alias:
+            render_one(Map.get(dataset_row, :alias), StructureAliasView, "structure_alias.json"),
           clauses: render_many(dataset_row.clauses, JoinClauseView, "join_clause_row.json")
         }
     end
