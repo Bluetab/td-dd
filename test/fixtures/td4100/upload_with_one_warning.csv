@@ -1,0 +1,4 @@
+external_id;list;string
+some_external_id_1;one;the new content from csv
+some_external_id_2;not_existing_option;the new content from csv
+some_external_id_3;three;the new content form csv
