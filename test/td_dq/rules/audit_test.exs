@@ -242,7 +242,7 @@ defmodule TdDq.Rules.AuditTest do
       implementation: implementation,
       claims: %{user_id: user_id}
     } do
-      %{id: implementation_id, implementation_key: implementation_key, rule_id: rule_id} =
+      %{id: implementation_id} =
         implementation
 
       df_content = %{
@@ -277,9 +277,7 @@ defmodule TdDq.Rules.AuditTest do
              } = event
 
       assert %{
-               "implementation_key" => ^implementation_key,
-               "rule_id" => ^rule_id,
-               "df_content" => ^df_content
+               "df_content" => %{"added" => ^df_content}
              } = Jason.decode!(payload)
     end
 

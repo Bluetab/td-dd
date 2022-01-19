@@ -121,16 +121,11 @@ defmodule TdDq.Rules.Audit do
 
   def implementation_updated(
         _repo,
-        %{implementation: %{id: id} = implementation},
-        %{changes: %{df_content: df_content}},
+        %{implementation: %{id: id}},
+        %{changes: %{df_content: _df_content}} = changeset,
         user_id
       ) do
-    payload =
-      implementation
-      |> Map.take([:implementation_key, :rule_id])
-      |> Map.put_new(:df_content, df_content)
-
-    publish("implementation_changed", "implementation", id, user_id, payload)
+    publish("implementation_changed", "implementation", id, user_id, changeset)
   end
 
   def implementation_updated(
