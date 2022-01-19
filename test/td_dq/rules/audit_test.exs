@@ -73,6 +73,88 @@ defmodule TdDq.Rules.AuditTest do
     end
   end
 
+  describe "implementation_created/4" do
+    test "publishes implementation_created", %{
+      implementation: implementation,
+      claims: %{user_id: user_id}
+    } do
+      %{id: implementation_id, implementation_key: implementation_key, rule_id: rule_id} =
+        implementation
+
+      changeset = Implementation.changeset(implementation, %{})
+
+      assert {:ok, event_id} =
+               Audit.implementation_created(
+                 Repo,
+                 %{implementation: implementation},
+                 changeset,
+                 user_id
+               )
+
+      assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+
+      user_id = "#{user_id}"
+      resource_id = "#{implementation_id}"
+
+      assert %{
+               event: "implementation_created",
+               payload: payload,
+               resource_id: ^resource_id,
+               resource_type: "implementation",
+               service: "td_dd",
+               ts: _ts,
+               user_id: ^user_id
+             } = event
+
+      assert %{
+               "implementation_key" => ^implementation_key,
+               "rule_id" => ^rule_id
+             } = Jason.decode!(payload)
+    end
+  end
+
+  describe "implementation_deleted/4" do
+    test "publishes implementation_deleted", %{
+      implementation: implementation,
+      claims: %{user_id: user_id}
+    } do
+      %{id: implementation_id, implementation_key: implementation_key, rule_id: rule_id} =
+        implementation
+
+      {:ok, changeset} =
+        Implementation.changeset(implementation, %{})
+        |> Repo.delete()
+
+      assert {:ok, event_id} =
+               Audit.implementation_deleted(
+                 Repo,
+                 %{implementation: implementation},
+                 changeset,
+                 user_id
+               )
+
+      assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+
+      user_id = "#{user_id}"
+      resource_id = "#{implementation_id}"
+
+      assert %{
+               event: "implementation_deleted",
+               payload: payload,
+               resource_id: ^resource_id,
+               resource_type: "implementation",
+               service: "td_dd",
+               ts: _ts,
+               user_id: ^user_id
+             } = event
+
+      assert %{
+               "implementation_key" => ^implementation_key,
+               "rule_id" => ^rule_id
+             } = Jason.decode!(payload)
+    end
+  end
+
   describe "implementation_updated/4" do
     test "publishes implementation_deprecated on soft deletion", %{
       implementation: implementation,
@@ -155,6 +237,90 @@ defmodule TdDq.Rules.AuditTest do
                "rule_id" => ^rule_id
              } = Jason.decode!(payload)
     end
+
+    test "publishes implementation_updated with df_content", %{
+      implementation: implementation,
+      claims: %{user_id: user_id}
+    } do
+      %{id: implementation_id} =
+        implementation
+
+      df_content = %{
+        "new_field1" => "foo",
+        "new_field2" => "bar"
+      }
+
+      params = %{df_content: df_content}
+
+      changeset = Implementation.changeset(implementation, params)
+
+      assert {:ok, event_id} =
+               Audit.implementation_updated(
+                 Repo,
+                 %{implementation: implementation},
+                 changeset,
+                 user_id
+               )
+
+      assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+      user_id = "#{user_id}"
+      resource_id = "#{implementation_id}"
+
+      assert %{
+               event: "implementation_changed",
+               payload: payload,
+               resource_id: ^resource_id,
+               resource_type: "implementation",
+               service: "td_dd",
+               ts: _ts,
+               user_id: ^user_id
+             } = event
+
+      assert %{
+               "df_content" => %{"added" => ^df_content}
+             } = Jason.decode!(payload)
+    end
+
+    test "publishes implementation_moved", %{
+      implementation: implementation,
+      claims: %{user_id: user_id},
+      template_name: template_name
+    } do
+      %{id: implementation_id, implementation_key: implementation_key, rule_id: rule_id} =
+        implementation
+
+      %{id: new_rule_id} = insert(:rule, df_name: template_name)
+      params = %{rule_id: new_rule_id}
+
+      changeset = Implementation.changeset(implementation, params)
+
+      assert {:ok, event_id} =
+               Audit.implementation_updated(
+                 Repo,
+                 %{implementation: implementation},
+                 changeset,
+                 user_id
+               )
+
+      assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+      user_id = "#{user_id}"
+      resource_id = "#{implementation_id}"
+
+      assert %{
+               event: "implementation_moved",
+               payload: payload,
+               resource_id: ^resource_id,
+               resource_type: "implementation",
+               service: "td_dd",
+               ts: _ts,
+               user_id: ^user_id
+             } = event
+
+      assert %{
+               "implementation_key" => ^implementation_key,
+               "rule_id" => ^rule_id
+             } = Jason.decode!(payload)
+    end
   end
 
   describe "implementations_deprecated/2" do
@@ -176,7 +342,7 @@ defmodule TdDq.Rules.AuditTest do
                resource_type: "implementation",
                service: "td_dd",
                ts: _ts,
-               user_id: ""
+               user_id: "0"
              } = event
 
       assert %{
