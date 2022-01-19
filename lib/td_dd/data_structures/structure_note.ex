@@ -54,6 +54,7 @@ defmodule TdDd.DataStructures.StructureNote do
     |> validate_required([:status, :version, :df_content, :data_structure])
     |> maybe_put_identifier(structure_note, data_structure)
     |> validate_change(:df_content, Validation.shallow_validator(data_structure))
+    |> validate_content(%{structure_note | data_structure_id: data_structure.id}, attrs)
     |> unique_constraint([:data_structure, :version])
   end
 

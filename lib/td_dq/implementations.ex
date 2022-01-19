@@ -66,22 +66,29 @@ defmodule TdDq.Implementations do
 
   def create_implementation(rule, params, claims, is_bulk \\ false)
 
-  def create_implementation(%Rule{id: rule_id} = rule, %{} = params, %Claims{} = claims, is_bulk) do
+  def create_implementation(
+        %Rule{id: rule_id} = rule,
+        %{} = params,
+        %Claims{user_id: user_id} = claims,
+        is_bulk
+      ) do
     changeset = Implementation.changeset(%Implementation{rule_id: rule_id, rule: rule}, params)
 
     Multi.new()
     |> Multi.run(:can, fn _, _ -> multi_can(can?(claims, create(changeset))) end)
     |> Multi.insert(:implementation, changeset)
+    |> Multi.run(:audit, Audit, :implementation_created, [changeset, user_id])
     |> Repo.transaction()
     |> on_upsert(is_bulk)
   end
 
-  def create_implementation(nil, params, claims, is_bulk) do
+  def create_implementation(nil, params, %Claims{user_id: user_id} = claims, is_bulk) do
     changeset = Implementation.changeset(%Implementation{rule_id: nil, rule: nil}, params)
 
     Multi.new()
     |> Multi.run(:can, fn _, _ -> multi_can(can?(claims, create(changeset))) end)
     |> Multi.insert(:implementation, changeset)
+    |> Multi.run(:audit, Audit, :implementation_created, [changeset, user_id])
     |> Repo.transaction()
     |> on_upsert(is_bulk)
   end
@@ -161,7 +168,10 @@ defmodule TdDq.Implementations do
     end
   end
 
-  def delete_implementation(%Implementation{} = implementation, %Claims{} = claims) do
+  def delete_implementation(
+        %Implementation{} = implementation,
+        %Claims{user_id: user_id} = claims
+      ) do
     changeset =
       implementation
       |> Repo.preload(:rule)
@@ -170,7 +180,7 @@ defmodule TdDq.Implementations do
     Multi.new()
     |> Multi.run(:can, fn _, _ -> multi_can(can?(claims, delete(changeset))) end)
     |> Multi.delete(:implementation, changeset)
-    # TODO: audit implementation deletion?
+    |> Multi.run(:audit, Audit, :implementation_deleted, [changeset, user_id])
     |> Repo.transaction()
     |> on_delete()
   end
