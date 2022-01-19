@@ -5,7 +5,8 @@
 ### Added
 
 - [TD-4125] GraphQL support for data sources
-- [TD-4100] Allow partial loads for notes in case that there are errors on the file
+- [TD-4100] Allow partial loads for notes in case that there are errors on the
+  file
 - [TD-4293] Added quality implementations audit events
 
 ## [4.35.1] 2022-01-10
@@ -35,9 +36,11 @@
 - [TD-4272] Avoid result calculation if it is already present
 - [TD-4361] Add `value_modifier` to implementation document
 - [TD-4345] Add `implementation_key` to notification payload
-- [TD-4270] Move `goal` and `threshold` fields from `Rule` to `RuleImplementation`
+- [TD-4270] Move `goal` and `threshold` fields from `Rule` to
+  `RuleImplementation`
 - [TD-4301] Bulk upload quality `implementations` with csv
-- [TD-4276] Materialize structure hierarchy in order to improve query performance
+- [TD-4276] Materialize structure hierarchy in order to improve query
+  performance
 - [TD-4314] Bulk upload quality `rules` with csv
 
 ### Fixed
@@ -49,7 +52,8 @@
 ### Added
 
 - [TD-4262] Lineage graph polling
-- [TD-4344] Add a new enpoint API for lite `structure_types` request without `metadata_fields`
+- [TD-4344] Add a new enpoint API for lite `structure_types` request without
+  `metadata_fields`
 - [TD-4358] Format path in editable download CSV
 
 ### Changed
@@ -76,7 +80,8 @@
 
 ### Changed
 
-- [TD-4174] `RuleResults` references `RuleImplementation` by its `id` instead of the `implementation_key`
+- [TD-4174] `RuleResults` references `RuleImplementation` by its `id` instead of
+  the `implementation_key`
 
 ## [4.31.2] 2021-11-09
 
@@ -701,9 +706,11 @@
     files uploaded using the same unit name will overwrite the existing nodes
     and relations in that unit.
   - Latest status for a unit can be queried using `GET /api/units/:unit_name`.
-  - Events relating to a unit can be queried using `GET /api/units/:unit_name/events`.
+  - Events relating to a unit can be queried using `GET
+    /api/units/:unit_name/events`.
   - A unit can be logically deleted using `DELETE /api/units/:unit_name`.
-  - A unit can be physically deleted using `DELETE /api/units/:unit_name?logical=false`.
+  - A unit can be physically deleted using `DELETE
+    /api/units/:unit_name?logical=false`.
   - [TD-2495] Changed structures loader migration key to cache all structures
     again including their metadata
 
