@@ -7,6 +7,7 @@ defmodule TdDq.Audit.AuditSupport do
   alias TdCache.Audit
   alias TdDfLib.MapDiff
   alias TdDfLib.Masks
+  alias TdDq.Implementations.Implementation
 
   def publish(events) when is_list(events) do
     Audit.publish_all(events)
@@ -36,6 +37,11 @@ defmodule TdDq.Audit.AuditSupport do
       user_id: user_id,
       payload: payload
     )
+  end
+
+  defp payload(%{df_content: new_content}, %Implementation{df_content: old_content} = _data) do
+    diff = MapDiff.diff(old_content, new_content, mask: &Masks.mask/1)
+    %{df_content: diff}
   end
 
   defp payload(%{df_content: new_content} = changes, %{df_content: old_content} = _data) do
