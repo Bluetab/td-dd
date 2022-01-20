@@ -4,7 +4,6 @@ defmodule TdDdWeb.DataStructureController do
 
   import Canada, only: [can?: 2]
 
-  alias Ecto.Changeset
   alias TdCache.DomainCache
   alias TdDd.CSV.Download
   alias TdDd.DataStructures
@@ -14,7 +13,6 @@ defmodule TdDdWeb.DataStructureController do
   alias TdDd.DataStructures.Search
   alias TdDd.DataStructures.StructureNote
   alias TdDd.DataStructures.StructureNotesWorkflow
-  alias TdDdWeb.ErrorHelpers
   alias TdDdWeb.SwaggerDefinitions
 
   plug(TdDdWeb.SearchPermissionPlug)
@@ -277,13 +275,9 @@ defmodule TdDdWeb.DataStructureController do
              ids: Enum.uniq(Map.keys(updated_notes)),
              errors:
                not_updated_notes
-               |> Enum.map(fn {_id, {:error, {error, %{id: id} = _ds}}} ->
-                 %{
-                   id: id,
-                   message:
-                     error
-                     |> Changeset.traverse_errors(&ErrorHelpers.translate_error/1)
-                 }
+               |> Enum.map(fn {_id, {:error, {error, %{external_id: external_id} = _ds}}} ->
+                  get_messsage_from_error(error)
+                  |> Map.put(:external_id, external_id)
                end)
            }) do
       conn
@@ -295,6 +289,7 @@ defmodule TdDdWeb.DataStructureController do
   def bulk_update_template_content(conn, params) do
     %{user_id: user_id} = claims = conn.assigns[:current_resource]
     structures_content_upload = Map.get(params, "structures")
+
     auto_publish = params |> Map.get("auto_publish", "false") |> String.to_existing_atom()
 
     with [_ | _] = contents <- BulkUpdate.from_csv(structures_content_upload),
@@ -307,19 +302,33 @@ defmodule TdDdWeb.DataStructureController do
              ids: Enum.uniq(Map.keys(updates) ++ Map.keys(updated_notes)),
              errors:
                not_updated_notes
-               |> Enum.map(fn {_id, {:error, {error, %{row: row} = _ds}}} ->
-                 %{
-                   row: row,
-                   message:
-                     error
-                     |> Changeset.traverse_errors(&ErrorHelpers.translate_error/1)
-                 }
+               |> Enum.map(fn {_id, {:error, {error, %{row: row, external_id: external_id} = _ds}}} ->
+                  get_messsage_from_error(error)
+                  |> Map.put(:row, row)
+                  |> Map.put(:external_id, external_id)
                end)
            }) do
       conn
       |> put_resp_content_type("application/json", "utf-8")
       |> send_resp(:ok, body)
     end
+  end
+
+  defp get_messsage_from_error(%Ecto.Changeset{errors: errors}) do
+    {field, error_message} =
+      errors
+      |> Enum.map(fn {k, v} ->
+        case v do
+          {_error, [{field, {_, [{_, e} | _]}} | _]} -> {field, "#{k}.#{e}"}
+          _ -> {nil, "#{k}.default"}
+        end
+      end)
+      |> Enum.at(0, {nil, "default"})
+
+      %{
+        field: field,
+        message: error_message
+      }
   end
 
   defp can_bulk_actions(contents, auto_publish, claims) do
