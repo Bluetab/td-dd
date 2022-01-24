@@ -74,7 +74,7 @@ defmodule TdDq.RuleResultsTest do
     end
   end
 
-  describe "list_rule_results/0" do
+  describe "list_rule_results/1" do
     test "retrieves results of non soft deleted rules and implementations" do
       implementation1 = insert(:implementation, deleted_at: DateTime.utc_now())
       implementation2 = insert(:implementation)
@@ -83,6 +83,15 @@ defmodule TdDq.RuleResultsTest do
       result = insert(:rule_result, implementation: implementation2)
 
       assert RuleResults.list_rule_results() <|> [result]
+    end
+
+    test "retrieves results with date gt condition" do
+      implementation1 = insert(:implementation)
+      implementation2 = insert(:implementation)
+
+      insert(:rule_result, implementation: implementation1, date: "2000-01-01T00:00:00")
+      result = insert(:rule_result, implementation: implementation2, date: "2000-02-01T11:11:11")
+      assert RuleResults.list_rule_results(%{"from_date" => "2000-01-11T11:11:11"}) <|> [result]
     end
   end
 
