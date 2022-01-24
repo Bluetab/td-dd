@@ -838,6 +838,7 @@ defmodule TdDd.DataStructures do
     |> Repo.one()
   end
 
+  @spec template_name(any) :: any
   def template_name(%StructureNote{data_structure_id: data_structure_id}) do
     data_structure = get_data_structure!(data_structure_id)
     template_name(data_structure)
@@ -1199,11 +1200,11 @@ defmodule TdDd.DataStructures do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_structure_note(data_structure, attrs, user_id) do
+  def create_structure_note(%DataStructure{id: id} = data_structure, attrs, user_id) do
     changeset =
       StructureNote.create_changeset(
         %StructureNote{},
-        data_structure,
+        data_structure |> Map.put(:latest_note, get_latest_structure_note(id)),
         attrs
       )
 
@@ -1219,6 +1220,12 @@ defmodule TdDd.DataStructures do
     |> on_update()
   end
 
+  @spec bulk_create_structure_note(
+          map,
+          :invalid | %{optional(:__struct__) => none, optional(atom | binary) => any},
+          nil | %{:data_structure => any, :df_content => any, optional(any) => any},
+          any
+        ) :: any
   def bulk_create_structure_note(data_structure, attrs, nil, user_id) do
     bulk_create_structure_note(data_structure, attrs, %StructureNote{}, user_id)
   end

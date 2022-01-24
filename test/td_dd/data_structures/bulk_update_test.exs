@@ -160,6 +160,42 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
              |> Enum.all?(&(&1 == :published))
     end
 
+    test "update and republish only data structures with different valid data", %{type: type} do
+      claims = build(:claims)
+
+      ids =
+        (1..3
+         |> Enum.map(fn _ -> valid_structure_note(type, df_content: %{"string" => "foo"}) end)
+         |> Enum.map(& &1.data_structure_id)) ++
+          (1..4
+           |> Enum.map(fn _ ->
+             valid_structure_note(type, df_content: %{"string" => "foo"}, status: :published)
+           end)
+           |> Enum.map(& &1.data_structure_id)) ++
+          (1..3
+           |> Enum.map(fn _ -> valid_structure_note(type, df_content: %{"string" => "foo"}) end)
+           |> Enum.map(& &1.data_structure_id))
+
+      assert [1, 1, 1, 1, 1, 1, 1, 1, 1, 1] ==
+               Enum.map(ids, fn id ->
+                 Map.get(DataStructures.get_latest_structure_note(id), :version)
+               end)
+
+      BulkUpdate.update_all(ids, @valid_params, claims, true)
+
+      assert [1, 1, 1, 2, 2, 2, 2, 1, 1, 1] ==
+               Enum.map(ids, fn id ->
+                 Map.get(DataStructures.get_latest_structure_note(id), :version)
+               end)
+
+      BulkUpdate.update_all(ids, @valid_params, claims, true)
+
+      assert [1, 1, 1, 2, 2, 2, 2, 1, 1, 1] ==
+               Enum.map(ids, fn id ->
+                 Map.get(DataStructures.get_latest_structure_note(id), :version)
+               end)
+    end
+
     test "ignores unchanged data structures", %{type: type} do
       claims = build(:claims)
       fixed_datetime = ~N[2020-01-01 00:00:00]
@@ -213,10 +249,13 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
         end)
         |> Enum.map(& &1.data_structure_id)
 
-      assert {:error, :update_notes, changeset, _changes_so_far} =
-               BulkUpdate.update_all(ids, @valid_params, claims, false)
+      {:ok, %{update_notes: update_notes}} =
+        BulkUpdate.update_all(ids, @valid_params, claims, false)
 
-      assert {%{errors: errors}, data_structure} = changeset
+      [_, errored_notes] = BulkUpdate.split_succeeded_errors(update_notes)
+
+      [first_errored_note] = Enum.map(errored_notes, fn {_k, v} -> v end)
+      assert {:error, {%{errors: errors}, data_structure}} = first_errored_note
       assert %{external_id: "the bad one"} = data_structure
       assert {"missing_type", _} = errors[:df_content]
     end
@@ -460,12 +499,17 @@ defmodule TdDd.DataStructures.BulkUpdateTest do
       %{user_id: user_id} = build(:claims)
       upload = %{path: "test/fixtures/td2942/upload_invalid.csv"}
 
-      assert {:error, :update_notes,
-              {%{errors: [df_content: {_, [critical: {_, validation}]}]}, _},
-              _} =
-               upload
-               |> BulkUpdate.from_csv()
-               |> BulkUpdate.do_csv_bulk_update(user_id)
+      {:ok, %{update_notes: update_notes}} =
+        upload
+        |> BulkUpdate.from_csv()
+        |> BulkUpdate.do_csv_bulk_update(user_id)
+
+      [_, errored_notes] = BulkUpdate.split_succeeded_errors(update_notes)
+
+      [first_errored_note, _] = Enum.map(errored_notes, fn {_k, v} -> v end)
+
+      assert {:error, {%{errors: [df_content: {_, [critical: {_, validation}]}]}, _}} =
+               first_errored_note
 
       assert Keyword.get(validation, :validation) == :inclusion
       assert Keyword.get(validation, :enum) == ["Yes", "No"]
