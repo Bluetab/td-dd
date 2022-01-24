@@ -148,6 +148,10 @@ defmodule TdDd.Search.Mappings do
     {name, %{enabled: false}}
   end
 
+  defp field_mapping(%{"name" => name, "widget" => "identifier"}) do
+    {name, %{type: "keyword"}}
+  end
+
   defp field_mapping(%{"name" => name, "type" => type}) when type in ["domain", "system"] do
     {name,
      %{

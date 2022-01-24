@@ -387,6 +387,13 @@ defmodule TdDd.ElasticsearchMock do
     end
   end
 
+  defp create_terms_filter(%{"note_id" => values}) do
+    fn doc ->
+      value = Map.get(doc, "id")
+      Enum.member?(values, value)
+    end
+  end
+
   defp create_terms_filter(%{"type.raw" => values}) do
     fn doc ->
       value = Map.get(doc, "type")

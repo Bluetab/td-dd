@@ -6,23 +6,168 @@ defmodule TdDd.DataStructures.StructureNoteTest do
 
   @moduletag sandbox: :shared
   @invalid_content %{"string" => nil, "list" => "four"}
-  @valid_content %{"string" => "present", "list" => "one"}
-  @template_name "structure_note_test_template"
+  @valid_content %{"identifier" => "cero", "string" => "present", "list" => "one"}
 
   setup do
-    %{id: template_id, name: template_name} = CacheHelpers.insert_template(name: @template_name)
+    template_name_without_identifier = "structure_note_test_template_without_identifier"
+    template_name_with_identifier = "structure_note_test_template_with_identifier"
+    identifier_name = "identifier"
 
-    CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
+    without_identifier = %{
+      id: System.unique_integer([:positive]),
+      name: template_name_with_identifier,
+      label: "structure_note_test_template",
+      scope: "dd",
+      content: [
+        %{
+          "fields" => [
+            %{
+              "cardinality" => "1",
+              "label" => "string_field_label",
+              "name" => "string",
+              "type" => "string",
+              "values" => nil
+            },
+            %{
+              "cardinality" => "1",
+              "label" => "list_field_label",
+              "name" => "list",
+              "type" => "list",
+              "values" => %{"fixed" => ["one", "two", "three"]}
+            }
+          ],
+          "name" => "group"
+        }
+      ]
+    }
+
+    with_identifier = %{
+      id: System.unique_integer([:positive]),
+      name: template_name_without_identifier,
+      label: "structure_note_test_template",
+      scope: "dd",
+      content: [
+        %{
+          "fields" => [
+            %{
+              "cardinality" => "1",
+              "default" => "",
+              "label" => "Identifier",
+              "name" => identifier_name,
+              "subscribable" => false,
+              "type" => "string",
+              "values" => nil,
+              "widget" => "identifier"
+            },
+            %{
+              "cardinality" => "1",
+              "label" => "string_field_label",
+              "name" => "string",
+              "type" => "string",
+              "values" => nil
+            },
+            %{
+              "cardinality" => "1",
+              "label" => "list_field_label",
+              "name" => "list",
+              "type" => "list",
+              "values" => %{"fixed" => ["one", "two", "three"]}
+            }
+          ],
+          "name" => "group"
+        }
+      ]
+    }
+
+    %{id: template_id_with_identifier, name: template_name_with_identifier} =
+      template_with_identifier = CacheHelpers.insert_template(with_identifier)
+
+    %{id: template_id_without_identifier, name: template_name_without_identifier} =
+      _template_without_identifier = CacheHelpers.insert_template(without_identifier)
+
+    CacheHelpers.insert_structure_type(
+      name: template_name_without_identifier,
+      template_id: template_id_without_identifier
+    )
+
+    CacheHelpers.insert_structure_type(
+      name: template_name_with_identifier,
+      template_id: template_id_with_identifier
+    )
 
     start_supervised!(TdDd.Search.StructureEnricher)
 
-    data_structure = insert(:data_structure)
-    insert(:data_structure_version, data_structure: data_structure, type: @template_name)
+    data_structure_without_identifier = insert(:data_structure)
+
+    insert(:data_structure_version,
+      data_structure: data_structure_without_identifier,
+      type: template_name_without_identifier
+    )
+
+    data_structure_with_identifier = insert(:data_structure)
+
+    insert(:data_structure_version,
+      data_structure: data_structure_with_identifier,
+      type: template_name_with_identifier
+    )
+
+    identifier_value = "00000000-0000-0000-0000-000000000000"
 
     structure_note =
-      insert(:structure_note, data_structure: data_structure, df_content: %{"foo" => "old"})
+      insert(:structure_note,
+        data_structure: data_structure_without_identifier,
+        df_content: %{"foo" => "old"}
+      )
 
-    [structure_note: structure_note]
+    structure_note_with_identifier =
+      insert(
+        :structure_note,
+        data_structure:
+          data_structure_with_identifier |> Repo.preload(current_version: :structure_type),
+        df_content: %{"foo" => "old", identifier_name => identifier_value}
+      )
+
+    [
+      structure_note: structure_note,
+      structure_note_with_identifier: structure_note_with_identifier,
+      identifier_name: identifier_name,
+      identifier_value: identifier_value,
+      template_with_identifier: template_with_identifier
+    ]
+  end
+
+  describe "create_changeset/3" do
+    test "puts a new identifier if the template has an identifier field", %{
+      identifier_name: identifier_name,
+      template_with_identifier: template_with_identifier
+    } do
+      data_structure = insert(:data_structure)
+
+      insert(:data_structure_version,
+        data_structure: data_structure,
+        type: template_with_identifier.name
+      )
+
+      structure_note = insert(:structure_note, data_structure: data_structure)
+
+      attrs = %{
+        version: 1,
+        status: "draft",
+        df_content: %{"bar" => "bar"}
+      }
+
+      assert %Changeset{changes: changes} =
+               StructureNote.create_changeset(
+                 %StructureNote{},
+                 data_structure
+                 |> Repo.preload(current_version: :structure_type)
+                 |> Map.put(:latest_note, structure_note),
+                 attrs
+               )
+
+      assert %{df_content: new_content} = changes
+      assert %{^identifier_name => _identifier} = new_content
+    end
   end
 
   describe "bulk_update_changeset/2" do
@@ -46,7 +191,9 @@ defmodule TdDd.DataStructures.StructureNoteTest do
       assert new_content == %{"bar" => "bar", "foo" => "new"}
     end
 
-    test "merges dynamic content preserving existing field", %{structure_note: structure_note} do
+    test "merges dynamic content preserving existing field", %{
+      structure_note: structure_note,
+    } do
       assert %Changeset{changes: changes} =
                StructureNote.bulk_update_changeset(structure_note, %{
                  df_content: %{"bar" => "bar"}
@@ -177,6 +324,77 @@ defmodule TdDd.DataStructures.StructureNoteTest do
     test "validates valid content when template exists", %{structure_note: structure_note} do
       assert %Changeset{valid?: true} =
                StructureNote.changeset(structure_note, %{df_content: @valid_content})
+    end
+
+    test "keeps an already present identifier (i.e., editing)", %{
+      structure_note_with_identifier: structure_note_with_identifier,
+      identifier_name: identifier_name,
+      identifier_value: identifier_value
+    } do
+      assert %Changeset{changes: changes} =
+               StructureNote.changeset(structure_note_with_identifier, %{
+                 df_content: %{"text" => "some update"}
+               })
+
+      assert %{df_content: new_content} = changes
+      assert %{^identifier_name => ^identifier_value} = new_content
+    end
+
+    test "keeps an already present identifier (i.e., editing) if extraneous identifier attr is passed",
+         %{
+           structure_note_with_identifier: structure_note_with_identifier,
+           identifier_name: identifier_name,
+           identifier_value: identifier_value
+         } do
+      assert %Changeset{changes: changes} =
+               StructureNote.changeset(structure_note_with_identifier, %{
+                 df_content: %{
+                   "text" => "some update",
+                   identifier_name => "11111111-1111-1111-1111-111111111111"
+                 }
+               })
+
+      assert %{df_content: new_content} = changes
+      assert %{^identifier_name => ^identifier_value} = new_content
+    end
+
+    test "puts a new identifier if the template has an identifier field", %{
+      identifier_name: identifier_name,
+      template_with_identifier: template_with_identifier
+    } do
+      data_structure = insert(:data_structure)
+
+      insert(:data_structure_version,
+        data_structure: data_structure,
+        type: template_with_identifier.name
+      )
+
+      # Structure note has no identifier but its data_structure template does
+      # This happens if identifier is added to template after data_structure creation
+      # Test an update to the structure note in this state.
+      structure_note =
+        insert(
+          :structure_note,
+          data_structure: data_structure |> Repo.preload(current_version: :structure_type)
+        )
+
+      # Just to make sure factory does not add identifier
+      refute match?(%{df_content: %{^identifier_name => _identifier}}, structure_note)
+
+      attrs = %{
+        version: 1,
+        status: "draft",
+        df_content: %{"bar" => "bar"}
+      }
+
+      assert %Changeset{changes: changes} =
+               StructureNote.changeset(
+                 structure_note,
+                 attrs
+               )
+
+      assert %{df_content: new_content} = changes
+      assert %{^identifier_name => _identifier} = new_content
     end
   end
 end

@@ -4,7 +4,6 @@ defmodule TdDdWeb.DataStructureController do
 
   import Canada, only: [can?: 2]
 
-  alias Ecto
   alias TdCache.DomainCache
   alias TdDd.CSV.Download
   alias TdDd.DataStructures
@@ -269,9 +268,18 @@ defmodule TdDdWeb.DataStructureController do
          %{results: results} <- search_all_structures(claims, permission, search_params),
          ids <- Enum.map(results, & &1.id),
          {:ok, %{update_notes: update_notes}} <-
-           BulkUpdate.update_all(ids, update_params, claims, auto_publish) do
-      body = Jason.encode!(%{data: %{message: Map.keys(update_notes)}})
-
+           BulkUpdate.update_all(ids, update_params, claims, auto_publish),
+         [updated_notes, not_updated_notes] <- BulkUpdate.split_succeeded_errors(update_notes),
+         body <-
+           Jason.encode!(%{
+             ids: Enum.uniq(Map.keys(updated_notes)),
+             errors:
+               not_updated_notes
+               |> Enum.map(fn {_id, {:error, {error, %{external_id: external_id} = _ds}}} ->
+                  get_messsage_from_error(error)
+                  |> Map.put(:external_id, external_id)
+               end)
+           }) do
       conn
       |> put_resp_content_type("application/json", "utf-8")
       |> send_resp(:ok, body)
@@ -281,18 +289,46 @@ defmodule TdDdWeb.DataStructureController do
   def bulk_update_template_content(conn, params) do
     %{user_id: user_id} = claims = conn.assigns[:current_resource]
     structures_content_upload = Map.get(params, "structures")
+
     auto_publish = params |> Map.get("auto_publish", "false") |> String.to_existing_atom()
 
     with [_ | _] = contents <- BulkUpdate.from_csv(structures_content_upload),
          {:forbidden, []} <- {:forbidden, can_bulk_actions(contents, auto_publish, claims)},
          {:ok, %{updates: updates, update_notes: update_notes}} <-
            BulkUpdate.do_csv_bulk_update(contents, user_id, auto_publish),
+         [updated_notes, not_updated_notes] = BulkUpdate.split_succeeded_errors(update_notes),
          body <-
            Jason.encode!(%{
-             data: %{message: Enum.uniq(Map.keys(updates) ++ Map.keys(update_notes))}
+             ids: Enum.uniq(Map.keys(updates) ++ Map.keys(updated_notes)),
+             errors:
+               not_updated_notes
+               |> Enum.map(fn {_id, {:error, {error, %{row: row, external_id: external_id} = _ds}}} ->
+                  get_messsage_from_error(error)
+                  |> Map.put(:row, row)
+                  |> Map.put(:external_id, external_id)
+               end)
            }) do
-      send_resp(conn, :ok, body)
+      conn
+      |> put_resp_content_type("application/json", "utf-8")
+      |> send_resp(:ok, body)
     end
+  end
+
+  defp get_messsage_from_error(%Ecto.Changeset{errors: errors}) do
+    {field, error_message} =
+      errors
+      |> Enum.map(fn {k, v} ->
+        case v do
+          {_error, [{field, {_, [{_, e} | _]}} | _]} -> {field, "#{k}.#{e}"}
+          _ -> {nil, "#{k}.default"}
+        end
+      end)
+      |> Enum.at(0, {nil, "default"})
+
+      %{
+        field: field,
+        message: error_message
+      }
   end
 
   defp can_bulk_actions(contents, auto_publish, claims) do
