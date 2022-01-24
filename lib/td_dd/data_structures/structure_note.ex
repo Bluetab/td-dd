@@ -5,6 +5,7 @@ defmodule TdDd.DataStructures.StructureNote do
   use Ecto.Schema
   import Ecto.Changeset
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.StructureNote
   alias TdDd.DataStructures.Validation
   alias TdDd.Utils.CollectionUtils
   alias TdDfLib.Content
@@ -24,42 +25,42 @@ defmodule TdDd.DataStructures.StructureNote do
     timestamps()
   end
 
-  def bulk_update_changeset(%{df_content: current_content} = structure_note, attrs) do
+  def bulk_update_changeset(%{df_content: old_content} = structure_note, attrs) do
     structure_note
     |> cast(attrs, [:df_content, :status])
-    |> update_change(:df_content, &Content.merge(&1, current_content))
-    |> maybe_put_identifier(current_content, attrs)
+    |> update_change(:df_content, &Content.merge(&1, old_content))
+    |> maybe_put_identifier(structure_note)
     |> validate_content(structure_note, attrs)
     |> validate_required([:df_content, :status])
   end
 
-  def changeset(%{df_content: current_content} = structure_note, attrs) do
+  def changeset(%{df_content: _old_content} = structure_note, attrs) do
     structure_note
     |> cast(attrs, [:status, :df_content])
     |> validate_required([:status, :df_content])
-    |> maybe_put_identifier(current_content, attrs)
+    |> maybe_put_identifier(structure_note)
     |> validate_change(:df_content, Validation.validator(structure_note))
   end
 
   def bulk_create_changeset(
-        %{df_content: current_content} = structure_note,
+        %{df_content: old_content} = structure_note,
         data_structure,
         attrs
       ) do
     %__MODULE__{}
     |> cast(attrs, [:status, :version, :df_content])
-    |> update_change(:df_content, &Content.merge(&1, current_content))
+    |> update_change(:df_content, &Content.merge(&1, old_content))
     |> put_assoc(:data_structure, data_structure)
     |> validate_required([:status, :version, :df_content, :data_structure])
-    |> maybe_put_identifier(data_structure)
+    |> maybe_put_identifier(structure_note, data_structure)
     |> validate_change(:df_content, Validation.shallow_validator(data_structure))
     |> validate_content(%{structure_note | data_structure_id: data_structure.id}, attrs)
     |> unique_constraint([:data_structure, :version])
   end
 
   def create_changeset(
-        %{df_content: _current_content} = structure_note,
-        data_structure,
+        structure_note,
+        %DataStructure{} = data_structure,
         attrs
       ) do
     structure_note
@@ -97,29 +98,57 @@ defmodule TdDd.DataStructures.StructureNote do
 
   defp validate_content(changeset, _structure_note, _params), do: changeset
 
-  defp maybe_put_identifier(changeset, current_content, %{"type" => template_name}) do
-    maybe_put_identifier_aux(changeset, current_content, template_name)
+  defp maybe_put_identifier(
+    changeset,
+    %StructureNote{
+      df_content: old_content,
+      data_structure: %DataStructure{current_version: %{structure_type: %{template_id: template_id}}}
+    }) do
+    maybe_put_identifier_aux(changeset, old_content, template_id)
   end
-
-  defp maybe_put_identifier(changeset, _current_content, _attrs), do: changeset
 
   defp maybe_put_identifier(
-         changeset,
-         %DataStructure{current_version: %{structure_type: %{template_id: template_id}}}
-       ) do
-    maybe_put_identifier_aux(changeset, %{}, template_id)
+    changeset,
+    %DataStructure{
+      current_version: %{
+        structure_type: %{
+          template_id: template_id
+        }
+      }
+    } = data_structure) do
+    case data_structure do
+      %DataStructure{
+        latest_note: %{df_content: old_content}
+      } -> maybe_put_identifier_aux(changeset, old_content, template_id)
+      %DataStructure{} -> maybe_put_identifier_aux(changeset, %{}, template_id)
+    end
+
   end
 
-  defp maybe_put_identifier(changeset, _), do: changeset
+  defp maybe_put_identifier(changeset, _structure_note_or_data_structure) do
+    changeset
+  end
+
+  defp maybe_put_identifier(
+    changeset,
+    %StructureNote{df_content: old_content},
+    %DataStructure{current_version: %{structure_type: %{template_id: template_id}}}
+    ) do
+    maybe_put_identifier_aux(changeset, old_content, template_id)
+  end
+
+  defp maybe_put_identifier(changeset, _structure_note, _data_structure) do
+    changeset
+  end
 
   defp maybe_put_identifier_aux(
-         %{valid?: true, changes: %{df_content: df_content}} = changeset,
-         current_content,
+         %{valid?: true, changes: %{df_content: changeset_content}} = changeset,
+         old_content,
          template_id
        ) do
-    TdDfLib.Format.maybe_put_identifier_by_id(current_content, df_content, template_id)
-    |> (fn content ->
-          put_change(changeset, :df_content, content)
+    TdDfLib.Format.maybe_put_identifier_by_id(changeset_content, old_content, template_id)
+    |> (fn new_content ->
+          put_change(changeset, :df_content, new_content)
         end).()
   end
 

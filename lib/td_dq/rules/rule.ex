@@ -128,10 +128,10 @@ defmodule TdDq.Rules.Rule do
 
   defp maybe_put_identifier(
          changeset,
-         %{df_content: current_content},
+         %{df_content: old_content},
          template_name
        ) do
-    maybe_put_identifier_aux(changeset, current_content, template_name)
+    maybe_put_identifier_aux(changeset, old_content, template_name)
   end
 
   defp maybe_put_identifier(
@@ -143,13 +143,13 @@ defmodule TdDq.Rules.Rule do
   end
 
   defp maybe_put_identifier_aux(
-         %{valid?: true, changes: %{df_content: df_content}} = changeset,
-         current_content,
+         %{valid?: true, changes: %{df_content: changeset_content}} = changeset,
+         old_content,
          template_name
        ) do
-    TdDfLib.Format.maybe_put_identifier(current_content, df_content, template_name)
-    |> (fn content ->
-          put_change(changeset, :df_content, content)
+    TdDfLib.Format.maybe_put_identifier(changeset_content, old_content, template_name)
+    |> (fn new_content ->
+          put_change(changeset, :df_content, new_content)
         end).()
   end
 

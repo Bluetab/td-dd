@@ -35,7 +35,8 @@ defmodule TdDqWeb.ImplementationView do
       :event_inserted_at,
       :goal,
       :minimum,
-      :result_type
+      :result_type,
+      :inserted_at
     ])
     |> Map.put(
       :raw_content,
@@ -65,7 +66,8 @@ defmodule TdDqWeb.ImplementationView do
       :event_inserted_at,
       :goal,
       :minimum,
-      :result_type
+      :result_type,
+      :inserted_at
     ])
     |> Map.put(:dataset, render_many(implementation.dataset, DatasetView, "dataset_row.json"))
     |> Map.put(
