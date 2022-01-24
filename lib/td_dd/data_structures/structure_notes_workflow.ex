@@ -303,7 +303,8 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
 
   defp require_modification?(data_structure_id, params, is_bulk_update, auto_publish) do
     case {get_latest_structure_note(data_structure_id, :published), params} do
-      {%{df_content: df_content}, %{"df_content" => params_df_content}} ->
+      {%{df_content: df_content}, %{"df_content" => raw_params_df_content}} ->
+        params_df_content = :maps.filter(fn _k, v -> v != "" end, raw_params_df_content)
         latest_content = Map.take(df_content, Map.keys(params_df_content))
 
         case {is_bulk_update, auto_publish, latest_content} do
