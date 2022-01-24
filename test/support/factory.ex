@@ -254,19 +254,21 @@ defmodule TdDd.Factory do
     }
   end
 
-  def job_factory do
-    %Job{
-      source: build(:source),
-      type: sequence(:job_type, ["Metadata", "DQ", "Profile"])
-    }
+  def job_factory(attrs) do
+    attrs = default_assoc(attrs, :source_id, :source)
+
+    %Job{type: sequence(:job_type, ["Metadata", "DQ", "Profile"])}
+    |> merge_attributes(attrs)
   end
 
-  def event_factory do
+  def event_factory(attrs) do
+    attrs = default_assoc(attrs, :job_id, :job)
+
     %Event{
-      job: build(:job),
       type: sequence("event_type"),
       message: sequence("event_message")
     }
+    |> merge_attributes(attrs)
   end
 
   def configuration_factory do

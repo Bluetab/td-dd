@@ -4,20 +4,24 @@ defmodule TdCx.Sources.Source do
   """
 
   use Ecto.Schema
+
   import Ecto.Changeset
 
   alias TdCx.Jobs.Job
   alias TdCx.Sources.Source
 
-  schema "sources" do
-    field(:active, :boolean, default: true)
-    field(:config, :map)
-    field(:deleted_at, :utc_datetime)
-    field(:external_id, :string)
-    field(:secrets_key, :string)
-    field(:type, :string)
+  @type t :: %__MODULE__{}
 
-    has_many(:jobs, Job)
+  schema "sources" do
+    field :active, :boolean, default: true
+    field :config, :map
+    field :deleted_at, :utc_datetime
+    field :external_id, :string
+    field :secrets_key, :string
+    field :type, :string
+
+    has_many :jobs, Job
+    has_many :events, through: [:jobs, :events]
 
     timestamps(type: :utc_datetime_usec)
   end
