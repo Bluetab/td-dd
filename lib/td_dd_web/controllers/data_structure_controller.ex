@@ -276,9 +276,13 @@ defmodule TdDdWeb.DataStructureController do
              errors:
                not_updated_notes
                |> Enum.map(fn {_id, {:error, {error, %{external_id: external_id} = _ds}}} ->
-                  get_messsage_from_error(error)
-                  |> Map.put(:external_id, external_id)
+                 get_messsage_from_error(error)
+                 |> Enum.map(fn ms ->
+                   ms
+                   |> Map.put(:external_id, external_id)
+                 end)
                end)
+               |> List.flatten()
            }) do
       conn
       |> put_resp_content_type("application/json", "utf-8")
@@ -302,11 +306,16 @@ defmodule TdDdWeb.DataStructureController do
              ids: Enum.uniq(Map.keys(updates) ++ Map.keys(updated_notes)),
              errors:
                not_updated_notes
-               |> Enum.map(fn {_id, {:error, {error, %{row: row, external_id: external_id} = _ds}}} ->
-                  get_messsage_from_error(error)
-                  |> Map.put(:row, row)
-                  |> Map.put(:external_id, external_id)
+               |> Enum.map(fn {_id,
+                               {:error, {error, %{row: row, external_id: external_id} = _ds}}} ->
+                 get_messsage_from_error(error)
+                 |> Enum.map(fn ms ->
+                   ms
+                   |> Map.put(:row, row)
+                   |> Map.put(:external_id, external_id)
+                 end)
                end)
+               |> List.flatten()
            }) do
       conn
       |> put_resp_content_type("application/json", "utf-8")
@@ -315,20 +324,29 @@ defmodule TdDdWeb.DataStructureController do
   end
 
   defp get_messsage_from_error(%Ecto.Changeset{errors: errors}) do
-    {field, error_message} =
-      errors
-      |> Enum.map(fn {k, v} ->
-        case v do
-          {_error, [{field, {_, [{_, e} | _]}} | _]} -> {field, "#{k}.#{e}"}
-          _ -> {nil, "#{k}.default"}
-        end
-      end)
-      |> Enum.at(0, {nil, "default"})
+    errors
+    |> Enum.map(fn {k, v} ->
+      case v do
+        {_error, nested_errors} ->
+          get_message_from_nested_errors(k, nested_errors)
 
+        _ ->
+          %{
+            field: nil,
+            message: "#{k}.default"
+          }
+      end
+    end)
+    |> List.flatten()
+  end
+
+  defp get_message_from_nested_errors(k, nested_errors) do
+    Enum.map(nested_errors, fn {field, {_, [{_, e} | _]}} ->
       %{
         field: field,
-        message: error_message
+        message: "#{k}.#{e}"
       }
+    end)
   end
 
   defp can_bulk_actions(contents, auto_publish, claims) do
