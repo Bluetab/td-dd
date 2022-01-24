@@ -76,8 +76,8 @@ defmodule TdDqWeb.RuleResultController do
     Map.put(acc, k_suffix, v)
   end
 
-  def index(conn, _params) do
-    rule_results = RuleResults.list_rule_results()
+  def index(conn, params) do
+    rule_results = RuleResults.list_rule_results(params)
     render(conn, "index.json", rule_results: rule_results)
   end
 end
