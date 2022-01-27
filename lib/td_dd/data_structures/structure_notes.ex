@@ -8,6 +8,7 @@ defmodule TdDd.DataStructures.StructureNotes do
   alias Ecto.Multi
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Audit
+  alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.StructureNote
   alias TdDd.Repo
   alias TdDd.Search.IndexWorker
@@ -57,14 +58,14 @@ defmodule TdDd.DataStructures.StructureNotes do
 
   defp add_params({"status", status}, query), do: where(query, status: ^status)
 
+  defp add_params({filter, updated_at}, query) when filter in ["since", "updated_at"],
+    do: where(query, [sn], sn.updated_at >= ^updated_at)
+
   defp add_params({"system_id", system_id}, query) do
     query
     |> join(:inner, [sn], ds in assoc(sn, :data_structure))
     |> where([_sn, ds], ds.system_id == ^system_id)
   end
-
-  defp add_params({filter, updated_at}, query) when filter in ["since", "updated_at"],
-    do: where(query, [sn], sn.updated_at >= ^updated_at)
 
   defp add_params(_, query), do: query
 
@@ -112,6 +113,13 @@ defmodule TdDd.DataStructures.StructureNotes do
   """
   def get_structure_note!(id), do: Repo.get!(StructureNote, id)
 
+  def latest_structure_note_query(query, data_structure_id) do
+    query
+    |> where(data_structure_id: ^data_structure_id)
+    |> order_by(desc: :version)
+    |> limit(1)
+  end
+
   def get_latest_structure_note(data_structure_id, status) do
     StructureNote
     |> where(status: ^status)
@@ -126,13 +134,6 @@ defmodule TdDd.DataStructures.StructureNotes do
     |> Repo.preload(:data_structure)
   end
 
-  def latest_structure_note_query(query, data_structure_id) do
-    query
-    |> where(data_structure_id: ^data_structure_id)
-    |> order_by(desc: :version)
-    |> limit(1)
-  end
-
   @doc """
   Creates a structure_note.
 
@@ -145,11 +146,11 @@ defmodule TdDd.DataStructures.StructureNotes do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_structure_note(data_structure, attrs, user_id) do
+  def create_structure_note(%DataStructure{id: id} = data_structure, attrs, user_id) do
     changeset =
       StructureNote.create_changeset(
         %StructureNote{},
-        data_structure,
+        data_structure |> Map.put(:latest_note, get_latest_structure_note(id)),
         attrs
       )
 
@@ -194,30 +195,6 @@ defmodule TdDd.DataStructures.StructureNotes do
     end
     |> on_update()
   end
-
-  defp on_update(res, opts \\ []) do
-    case opts[:is_bulk_update] == true do
-      false -> on_update_structure(res)
-      _ -> res
-    end
-  end
-
-  defp on_update_structure({:ok, %StructureNote{status: :published, data_structure_id: id}} = res) do
-    IndexWorker.reindex(id)
-    res
-  end
-
-  defp on_update_structure({:ok, %StructureNote{}} = res), do: res
-
-  defp on_update_structure({:ok, %{} = res}) do
-    with %{data_structure: %{id: id}} <- res do
-      IndexWorker.reindex(id)
-    end
-
-    {:ok, res}
-  end
-
-  defp on_update_structure(res), do: res
 
   @doc """
   Updates a structure_note with bulk_update behaviour.
@@ -372,4 +349,28 @@ defmodule TdDd.DataStructures.StructureNotes do
   def change_structure_note(%StructureNote{} = structure_note, attrs \\ %{}) do
     StructureNote.changeset(structure_note, attrs)
   end
+
+  defp on_update(res, opts \\ []) do
+    case opts[:is_bulk_update] == true do
+      false -> on_update_structure(res)
+      _ -> res
+    end
+  end
+
+  defp on_update_structure({:ok, %StructureNote{status: :published, data_structure_id: id}} = res) do
+    IndexWorker.reindex(id)
+    res
+  end
+
+  defp on_update_structure({:ok, %StructureNote{}} = res), do: res
+
+  defp on_update_structure({:ok, %{} = res}) do
+    with %{data_structure: %{id: id}} <- res do
+      IndexWorker.reindex(id)
+    end
+
+    {:ok, res}
+  end
+
+  defp on_update_structure(res), do: res
 end
