@@ -6,6 +6,7 @@ defmodule TdDq.Implementations.Download do
   alias TdCache.TemplateCache
   alias TdDfLib.Format
 
+  @spec to_csv(any, any, any) :: binary
   def to_csv(implementations, header_labels, content_labels) do
     implementations = Enum.group_by(implementations, &group_by_type/1)
     types = Map.keys(implementations)
@@ -35,7 +36,11 @@ defmodule TdDq.Implementations.Download do
   end
 
   defp csv_format(nil, implementations, header_labels, content_labels, acc) do
-    headers = build_headers(header_labels)
+    headers =
+      header_labels
+      |> build_headers()
+      |> concat_headers(implementations, :datasets)
+      |> concat_headers(implementations, :validations)
 
     implementations = format_implementations(content_labels, implementations)
     export(headers, implementations, acc)
@@ -46,7 +51,13 @@ defmodule TdDq.Implementations.Download do
     fields = Enum.reduce(content, [], &(&2 ++ [Map.take(&1, ["name", "values", "type"])]))
 
     field_headers = Enum.reduce(content, [], &(&2 ++ [Map.get(&1, "label")]))
-    headers = build_headers(header_labels)
+
+    headers =
+      header_labels
+      |> build_headers()
+      |> concat_headers(implementations, :datasets)
+      |> concat_headers(implementations, :validations)
+
     headers = headers ++ field_headers
 
     implementations = format_implementations(content_labels, implementations, fields)
@@ -54,26 +65,42 @@ defmodule TdDq.Implementations.Download do
   end
 
   defp format_implementations(content_labels, implementations, fields \\ []) do
+    number_of_dataset_external_ids = count_implementations_items(implementations, :datasets)
+    number_of_validations_fields = count_implementations_items(implementations, :validations)
+
     Enum.reduce(implementations, [], fn implementation, acc ->
       rule = Map.get(implementation, :rule)
       content = Map.get(rule, :df_content)
 
-      values = [
-        implementation.implementation_key,
-        implementation.implementation_type,
-        translate("executable.#{implementation.executable}", content_labels),
-        rule.name,
-        rule.df_name,
-        implementation.goal,
-        implementation.minimum,
-        get_in(implementation, [:current_business_concept_version, :name]),
-        get_in(implementation, [:execution_result_info, :date]),
-        get_in(implementation, [:execution_result_info, :result]),
-        implementation
-        |> get_in([:execution_result_info, :result_text])
-        |> translate(content_labels),
-        implementation.inserted_at
-      ]
+      values =
+        [
+          implementation.implementation_key,
+          implementation.implementation_type,
+          translate("executable.#{implementation.executable}", content_labels),
+          rule.name,
+          rule.df_name,
+          implementation.goal,
+          implementation.minimum,
+          get_in(implementation, [:current_business_concept_version, :name]),
+          get_in(implementation, [:execution_result_info, :date]),
+          get_in(implementation, [:execution_result_info, :records]),
+          get_in(implementation, [:execution_result_info, :errors]),
+          get_in(implementation, [:execution_result_info, :result]),
+          implementation
+          |> get_in([:execution_result_info, :result_text])
+          |> translate(content_labels),
+          implementation.inserted_at
+        ] ++
+          fill_with(
+            get_implementation_fields(implementation, :datasets),
+            number_of_dataset_external_ids,
+            nil
+          ) ++
+          fill_with(
+            get_implementation_fields(implementation, :validations),
+            number_of_validations_fields,
+            nil
+          )
 
       acc ++ [Enum.reduce(fields, values, &(&2 ++ [get_content_field(&1, content)]))]
     end)
@@ -105,11 +132,59 @@ defmodule TdDq.Implementations.Download do
       "minimum",
       "business_concept",
       "last_execution_at",
+      "records",
+      "errors",
       "result",
       "execution",
       "inserted_at"
     ]
     |> Enum.map(fn h -> Map.get(header_labels, h, h) end)
+  end
+
+  defp concat_headers(header_labels, implementations, items_key) do
+    prefix =
+      case items_key do
+        :validations -> "validation_field_"
+        :datasets -> "dataset_external_id_"
+      end
+
+    case count_implementations_items(implementations, items_key) do
+      0 ->
+        header_labels
+
+      items ->
+        Enum.concat(
+          header_labels,
+          1..items |> Enum.map(&"#{prefix}#{&1}")
+        )
+    end
+  end
+
+  defp count_implementations_items(implementations, items) do
+    Enum.reduce(implementations, 0, fn implementation, acc ->
+      implementation
+      |> get_implementation_fields(items)
+      |> Enum.uniq()
+      |> Enum.count()
+      |> max(acc)
+    end)
+  end
+
+  defp get_implementation_fields(%{dataset: dataset} = _implementation, :datasets) do
+    Enum.map(dataset, fn %{structure: %{external_id: external_id}} -> external_id end)
+  end
+
+  defp get_implementation_fields(%{validations: validations} = _implementation, :validations) do
+    Enum.map(validations, fn %{structure: %{external_id: external_id}} -> external_id end)
+  end
+
+  defp get_implementation_fields(_, _), do: []
+
+  defp fill_with(list, size, item) do
+    case size - Enum.count(list) do
+      len when len <= 0 -> list
+      len -> list ++ List.duplicate(item, len)
+    end
   end
 
   defp get_content_field(_template, nil) do

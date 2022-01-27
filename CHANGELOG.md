@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-4152] Add dataset and validation fields on implementations csv
+
 ## [4.36.0] 2022-01-24
 
 ### Added
@@ -12,7 +18,7 @@
   - Mapping to search by identifier
 - [TD-4100] Allow partial loads for notes in case that there are errors on the file
 - [TD-4293] Added quality implementations audit events
-- [TD-3467]  Add gt date condition for `rule results`
+- [TD-3467] Add gt date condition for `rule results`
 - [TD-4389] Add inserted_at in implementations views
 
 ## [4.35.1] 2022-01-10
