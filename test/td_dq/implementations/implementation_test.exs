@@ -7,8 +7,89 @@ defmodule TdDq.Implementations.ImplementationTest do
   alias TdDq.Implementations.Implementation
 
   setup do
+
+    identifier_name = "identifier"
+
+    with_identifier = %{
+      id: System.unique_integer([:positive]),
+      name: "rule_with_identifier",
+      label: "rule_with_identifier",
+      scope: "dq",
+      content: [
+        %{
+          "fields" => [
+            %{
+              "cardinality" => "?",
+              "default" => "",
+              "label" => "Identifier",
+              "name" => identifier_name,
+              "subscribable" => false,
+              "type" => "string",
+              "values" => nil,
+              "widget" => "identifier"
+            },
+            %{
+              "cardinality" => "1",
+              "default" => "",
+              "label" => "Text",
+              "name" => "text",
+              "subscribable" => false,
+              "type" => "string",
+              "values" => nil,
+              "widget" => "text"
+            }
+          ],
+          "name" => ""
+        }
+      ]
+    }
+
+    template_with_identifier = CacheHelpers.insert_template(with_identifier)
     %{name: template_name} = CacheHelpers.insert_template(scope: "dq")
-    [template_name: template_name]
+    [template_name: template_name, template_with_identifier: template_with_identifier, identifier_name: identifier_name]
+  end
+
+  describe "changeset/1 create new implementation" do
+    test "puts a new identifier if the template has an identifier field", %{
+      template_with_identifier: template_with_identifier,
+      identifier_name: identifier_name
+    } do
+      %{id: rule_id} = insert(:rule)
+      params = string_params_for(
+        :implementation,
+        rule_id: rule_id,
+        implementation_key: "foo",
+        df_name: template_with_identifier.name,
+        df_content: %{"text" => "some text"}
+      )
+
+      assert %Changeset{changes: changes} =
+        Implementation.changeset(params)
+
+      assert %{df_content: new_content} = changes
+      assert %{^identifier_name => _identifier} = new_content
+    end
+
+    test "avoids putting new identifier if template lacks an identifier field", %{
+      template_name: template_without_identifier_name,
+      identifier_name: identifier_name
+    } do
+      %{id: rule_id} = insert(:rule)
+      params = string_params_for(
+        :implementation,
+        rule_id: rule_id,
+        implementation_key: "foo",
+        df_name: template_without_identifier_name,
+        df_content: %{"text" => "some text"}
+      )
+
+      assert %Changeset{changes: changes} =
+        Implementation.changeset(params)
+
+      assert %{df_content: new_content} = changes
+      refute match?(%{^identifier_name => _identifier}, new_content)
+    end
+
   end
 
   describe "changeset/2" do
@@ -161,6 +242,73 @@ defmodule TdDq.Implementations.ImplementationTest do
       assert %{valid?: false, errors: errors} = Implementation.changeset(params)
       assert errors[:minimum] == {"must.be.greater.than.or.equal.to.goal", []}
     end
+
+    test "keeps an already present identifier (i.e., editing)", %{
+      template_with_identifier: template_with_identifier,
+      identifier_name: identifier_name
+    } do
+      # Existing identifier previously put by the create changeset
+      existing_identifier = "00000000-0000-0000-0000-000000000000"
+
+      implementation = insert(:implementation, df_name: template_with_identifier.name, df_content: %{identifier_name => existing_identifier})
+
+      params = string_params_for(
+        :implementation,
+        df_content: %{"text" => "some update"},
+        df_name: template_with_identifier.name
+      )
+
+      assert %Changeset{changes: changes} =
+        Implementation.changeset(implementation, params)
+
+      assert %{df_content: new_content} = changes
+      assert %{^identifier_name => ^existing_identifier} = new_content
+    end
+
+    test "keeps an already present identifier (i.e., editing) if extraneous identifier attr is passed", %{
+      template_with_identifier: template_with_identifier,
+      identifier_name: identifier_name
+    } do
+      # Existing identifier previously put by the create changeset
+      existing_identifier = "00000000-0000-0000-0000-000000000000"
+
+      implementation = insert(:implementation, df_name: template_with_identifier.name, df_content: %{identifier_name => existing_identifier})
+
+      params = string_params_for(
+        :implementation,
+        df_content: %{"text" => "some update", identifier_name => "11111111-1111-1111-1111-111111111111"},
+        df_name: template_with_identifier.name
+      )
+
+      assert %Changeset{changes: changes} =
+        Implementation.changeset(implementation, params)
+
+      assert %{df_content: new_content} = changes
+      assert %{^identifier_name => ^existing_identifier} = new_content
+    end
+
+    test "puts an identifier if there is not already one and the template has an identifier field",
+         %{template_with_identifier: template_with_identifier, identifier_name: identifier_name} do
+      # Ingest version has no identifier but its template does
+      # This happens if identifier is added to template after ingest creation
+      # Test an update to the ingest version in this state.
+      %{df_content: content} = implementation = insert(:implementation, df_name: template_with_identifier.name)
+      # Just to make sure factory does not add identifier
+      refute match?(%{^identifier_name => _identifier}, content)
+
+      params = string_params_for(
+        :implementation,
+        df_content: %{"text" => "some update"},
+        df_name: template_with_identifier.name
+      )
+
+      assert %Changeset{changes: changes} =
+        Implementation.changeset(implementation, params)
+
+      assert %{df_content: new_content} = changes
+      assert %{^identifier_name => _identifier} = new_content
+    end
+
   end
 
   describe "encode" do

@@ -409,7 +409,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   describe "bulk_update" do
     @tag authentication: [role: "admin"]
     test "bulk update of data structures", %{conn: conn, domain: %{id: domain_id}} do
-      [id_one | _] = create_three_data_structures(domain_id)
+      {[id_one | _], _} = create_three_data_structures(domain_id)
 
       assert data =
                conn
@@ -435,7 +435,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
     @tag authentication: [role: "admin"]
     test "bulk update return invalid notes as errors", %{conn: conn, domain: %{id: domain_id}} do
-      [id_one | _] = create_three_data_structures(domain_id)
+      {[id_one | _], [external_id_one | _]} = create_three_data_structures(domain_id)
 
       assert data =
                conn
@@ -458,7 +458,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert %{
                "errors" => [
-                 %{"id" => ^id_one, "message" => %{"df_content" => ["invalid_content"]}}
+                 %{"external_id" => ^external_id_one, "message" => "df_content.inclusion", "field" => "list"}
                ],
                "ids" => []
              } = data
@@ -551,10 +551,10 @@ defmodule TdDdWeb.DataStructureControllerTest do
           external_id: "some_external_id_3"
         )
 
-      %{id: id_one} = create_data_structure(data_structure_one)[:data_structure]
-      %{id: id_two} = create_data_structure(data_structure_two)[:data_structure]
-      %{id: id_three} = create_data_structure(data_structure_three)[:data_structure]
-      [id_one, id_two, id_three]
+      %{id: id_one, external_id: external_id_one} = create_data_structure(data_structure_one)[:data_structure]
+      %{id: id_two, external_id: external_id_two} = create_data_structure(data_structure_two)[:data_structure]
+      %{id: id_three, external_id: external_id_three} = create_data_structure(data_structure_three)[:data_structure]
+      {[id_one, id_two, id_three], [external_id_one, external_id_two, external_id_three]}
     end
 
     @tag authentication: [role: "admin"]
@@ -562,7 +562,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn: conn,
       domain: %{id: domain_id}
     } do
-      ids = create_three_data_structures(domain_id)
+      {ids, _} = create_three_data_structures(domain_id)
 
       data =
         conn
@@ -579,7 +579,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn: conn,
       domain: %{id: domain_id}
     } do
-      [id_one, _, id_three] = create_three_data_structures(domain_id)
+      {[id_one, _, id_three], [_, external_id_2, _]} = create_three_data_structures(domain_id)
 
       data =
         conn
@@ -590,7 +590,14 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert data == %{
                "ids" => [id_one, id_three],
-               "errors" => [%{"row" => 3, "message" => %{"df_content" => ["invalid_content"]}}]
+               "errors" => [
+                 %{
+                   "row" => 3,
+                   "message" => "df_content.inclusion",
+                   "external_id" => external_id_2,
+                   "field" => "list"
+                 }
+                ]
              }
     end
 
@@ -599,7 +606,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn: conn,
       domain: %{id: domain_id}
     } do
-      [id_one | _] = create_three_data_structures(domain_id)
+      {[id_one | _], [_, external_id_2, external_id_3]} = create_three_data_structures(domain_id)
 
       data =
         conn
@@ -613,11 +620,15 @@ defmodule TdDdWeb.DataStructureControllerTest do
                "errors" => [
                  %{
                    "row" => 3,
-                   "message" => %{"df_content" => ["invalid_content"]}
+                   "message" => "df_content.inclusion",
+                   "external_id" => external_id_2,
+                   "field" => "list"
                  },
                  %{
                    "row" => 4,
-                   "message" => %{"df_content" => ["invalid_content"]}
+                   "message" => "df_content.inclusion",
+                   "external_id" => external_id_3,
+                   "field" => "list"
                  }
                ]
              }
@@ -628,7 +639,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn: conn,
       domain: %{id: domain_id}
     } do
-      [id_one, _, id_three] = create_three_data_structures(domain_id)
+      {[id_one, _, id_three], _} = create_three_data_structures(domain_id)
 
       data =
         conn

@@ -28,7 +28,66 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
   end
 
   describe "create" do
+
+    setup do
+      identifier_name = "identifier"
+      with_identifier = %{
+        id: System.unique_integer([:positive]),
+        name: "Structure note template with identifier field",
+        label: "structure_note_test_template",
+        scope: "dd",
+        content: [
+          %{
+            "fields" => [
+              %{
+                "cardinality" => "1",
+                "default" => "",
+                "label" => "Identifier",
+                "name" => identifier_name,
+                "subscribable" => false,
+                "type" => "string",
+                "values" => nil,
+                "widget" => "identifier"
+              },
+            ],
+            "name" => ""
+          }
+        ]
+      }
+      template_with_identifier = CacheHelpers.insert_template(with_identifier)
+      %{id: template_id_with_identifier, name: template_name_with_identifier} = template_with_identifier
+      CacheHelpers.insert_structure_type(name: template_name_with_identifier, template_id: template_id_with_identifier)
+      [template_with_identifier: template_with_identifier, identifier_name: identifier_name]
+    end
+
     @user_id 1
+
+    test "creates a new note and copies the identifier from the previous version one", %{
+      template_with_identifier: template_with_identifier,
+      identifier_name: identifier_name
+    } do
+      existing_identifier = "00000000-0000-0000-0000-000000000000"
+      %{id: data_structure_id_with_identifier} = data_structure_with_identifier = insert(:data_structure)
+      insert(:data_structure_version, data_structure: data_structure_with_identifier, type: template_with_identifier.name)
+      data_structure_with_identifier = data_structure_with_identifier |> Repo.preload(current_version: :structure_type)
+      df_content = %{"foo" => "old", identifier_name => existing_identifier}
+
+      _structure_note_with_identifier =
+        insert(
+          :structure_note,
+          status: :published,
+          data_structure: data_structure_with_identifier,
+          df_content: df_content
+        )
+
+      assert {:ok,
+              %StructureNote{
+                version: 2,
+                status: :draft,
+                df_content: ^df_content,
+                data_structure_id: ^data_structure_id_with_identifier
+              }} = StructureNotesWorkflow.create(data_structure_with_identifier, %{}, @user_id)
+    end
 
     test "create the first structure note with draft status and version 1" do
       %{id: data_structure_id} = data_structure = create_data_structure_with_version()

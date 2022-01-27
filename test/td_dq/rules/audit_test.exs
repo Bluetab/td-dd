@@ -242,8 +242,7 @@ defmodule TdDq.Rules.AuditTest do
       implementation: implementation,
       claims: %{user_id: user_id}
     } do
-      %{id: implementation_id} =
-        implementation
+      %{id: implementation_id} = implementation
 
       df_content = %{
         "new_field1" => "foo",
