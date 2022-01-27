@@ -5,6 +5,7 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.StructureNote
+  alias TdDd.DataStructures.StructureNotes
 
   def create_or_update(
         %DataStructure{id: data_structure_id} = data_structure,
@@ -47,14 +48,14 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
         user_id
       ) do
     if can_create_new_draft(latest_note) != :ok,
-      do: DataStructures.delete_structure_note(latest_note, user_id)
+      do: StructureNotes.delete_structure_note(latest_note, user_id)
 
     structure_note_params =
       params
       |> Map.put("status", "draft")
       |> Map.put("version", next_version(latest_note))
 
-    DataStructures.bulk_create_structure_note(
+    StructureNotes.bulk_create_structure_note(
       data_structure,
       structure_note_params,
       latest_note,
@@ -79,7 +80,7 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
     latest_note = get_latest_structure_note(data_structure_id)
 
     if can_create_new_draft(latest_note) != :ok,
-      do: DataStructures.delete_structure_note(latest_note, user_id)
+      do: StructureNotes.delete_structure_note(latest_note, user_id)
 
     create(data_structure, params, user_id)
   end
@@ -99,7 +100,7 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
 
     case can_create_new_draft(latest_note) do
       :ok ->
-        DataStructures.create_structure_note(data_structure, structure_note_params, user_id)
+        StructureNotes.create_structure_note(data_structure, structure_note_params, user_id)
 
       error ->
         {:error, error}
@@ -162,15 +163,15 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
 
   def delete(%StructureNote{status: status} = structure_note, user_id) do
     case status do
-      :rejected -> DataStructures.delete_structure_note(structure_note, user_id)
-      :draft -> DataStructures.delete_structure_note(structure_note, user_id)
+      :rejected -> StructureNotes.delete_structure_note(structure_note, user_id)
+      :draft -> StructureNotes.delete_structure_note(structure_note, user_id)
       _ -> {:error, :undeletable_status}
     end
   end
 
   # Lifecycle actions for structure notes
   defp update_content(structure_note, new_df_content, user_id, true = _is_strict, type) do
-    DataStructures.update_structure_note(
+    StructureNotes.update_structure_note(
       structure_note,
       %{"df_content" => new_df_content, "type" => type},
       user_id
@@ -178,7 +179,7 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
   end
 
   defp update_content(structure_note, new_df_content, user_id, false = _is_strict, type) do
-    DataStructures.bulk_update_structure_note(
+    StructureNotes.bulk_update_structure_note(
       structure_note,
       %{"df_content" => new_df_content, "type" => type},
       user_id
@@ -226,7 +227,7 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
   end
 
   defp transit_to(structure_note, status, user_id, opts \\ []) do
-    DataStructures.update_structure_note(structure_note, %{"status" => status}, user_id, opts)
+    StructureNotes.update_structure_note(structure_note, %{"status" => status}, user_id, opts)
   end
 
   defp can_transit_to(structure_note, status) do
@@ -265,17 +266,17 @@ defmodule TdDd.DataStructures.StructureNotesWorkflow do
   # Workflow utilities
   defp get_latest_structure_note(data_structure_id, status) do
     data_structure_id
-    |> DataStructures.get_latest_structure_note(status)
+    |> StructureNotes.get_latest_structure_note(status)
   end
 
   defp get_latest_structure_note(data_structure_id) do
     data_structure_id
-    |> DataStructures.get_latest_structure_note()
+    |> StructureNotes.get_latest_structure_note()
   end
 
   def get_action_editable_action(%DataStructure{id: id}) do
     id
-    |> DataStructures.get_latest_structure_note()
+    |> StructureNotes.get_latest_structure_note()
     |> get_action_editable_action()
   end
 

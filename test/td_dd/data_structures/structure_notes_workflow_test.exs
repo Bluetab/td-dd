@@ -1,8 +1,8 @@
 defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
   use TdDd.DataCase
 
-  alias TdDd.DataStructures
   alias TdDd.DataStructures.StructureNote
+  alias TdDd.DataStructures.StructureNotes
   alias TdDd.DataStructures.StructureNotesWorkflow
 
   @moduletag sandbox: :shared
@@ -257,10 +257,10 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
                  @user_id
                )
 
-      assert %{status: :published} = DataStructures.get_structure_note!(structure_note.id)
+      assert %{status: :published} = StructureNotes.get_structure_note!(structure_note.id)
 
       assert %{status: :versioned} =
-               DataStructures.get_structure_note!(previous_structure_note_id)
+               StructureNotes.get_structure_note!(previous_structure_note_id)
     end
 
     test "can only reject a pending approval note" do
@@ -392,10 +392,10 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
                  @user_id
                )
 
-      assert %{status: :published} = DataStructures.get_structure_note!(structure_note.id)
+      assert %{status: :published} = StructureNotes.get_structure_note!(structure_note.id)
 
       assert %{status: :versioned} =
-               DataStructures.get_structure_note!(previous_structure_note_id)
+               StructureNotes.get_structure_note!(previous_structure_note_id)
     end
 
     test "return error when update structure note content is invalid" do
