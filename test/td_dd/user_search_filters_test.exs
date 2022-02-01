@@ -6,9 +6,9 @@ defmodule TdDd.UserSearchFiltersTest do
   describe "user_search_filters" do
     alias TdDd.UserSearchFilters.UserSearchFilter
 
-    @valid_attrs %{filters: %{}, name: "some name", user_id: 42}
-    @update_attrs %{filters: %{}, name: "some updated name", user_id: 43}
-    @invalid_attrs %{filters: nil, name: nil, user_id: nil}
+    @valid_attrs %{filters: %{}, name: "some name", user_id: 42, scope: :data_structure}
+    @update_attrs %{filters: %{}, name: "some updated name", user_id: 43, scope: :rule}
+    @invalid_attrs %{filters: nil, name: nil, user_id: nil, scope: nil}
 
     def user_search_filter_fixture(attrs \\ %{}) do
       {:ok, user_search_filter} =
@@ -38,11 +38,17 @@ defmodule TdDd.UserSearchFiltersTest do
       assert user_search_filter.filters == %{}
       assert user_search_filter.name == "some name"
       assert user_search_filter.user_id == 42
+      assert user_search_filter.scope == :data_structure
     end
 
     test "create_user_search_filter/1 with invalid data returns error changeset" do
       assert {:error, %Ecto.Changeset{}} =
                UserSearchFilters.create_user_search_filter(@invalid_attrs)
+    end
+
+    test "cannot create invalid scope" do
+      attrs = Map.put(@valid_attrs, :scope, :invalid_scope)
+      assert {:error, %Ecto.Changeset{}} = UserSearchFilters.create_user_search_filter(attrs)
     end
 
     test "update_user_search_filter/2 with valid data updates the user_search_filter" do
@@ -54,6 +60,7 @@ defmodule TdDd.UserSearchFiltersTest do
       assert user_search_filter.filters == %{}
       assert user_search_filter.name == "some updated name"
       assert user_search_filter.user_id == 43
+      assert user_search_filter.scope == :rule
     end
 
     test "update_user_search_filter/2 with invalid data returns error changeset" do
