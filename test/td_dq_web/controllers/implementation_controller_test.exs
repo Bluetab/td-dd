@@ -821,7 +821,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert %{resp_body: body} = post(conn, Routes.implementation_path(conn, :csv, %{}))
 
       assert body =~
-               "implementation_key;implementation_type;executable;rule;template;goal;minimum;business_concept;last_execution_at;records;errors;result;execution;inserted_at;dataset_external_id_1;validation_field_1\r"
+               "implementation_key;implementation_type;executable;rule;rule_template;implementation_template;goal;minimum;business_concept;last_execution_at;records;errors;result;execution;inserted_at;dataset_external_id_1;validation_field_1\r"
 
       parsed_inserted_at_0 = NaiveDateTime.to_iso8601(inserted_at_0)
       parsed_inserted_at_1 = NaiveDateTime.to_iso8601(inserted_at_1)
@@ -829,22 +829,22 @@ defmodule TdDqWeb.ImplementationControllerTest do
       parsed_inserted_at_3 = NaiveDateTime.to_iso8601(inserted_at_3)
 
       assert body =~
-               ~r/#{implementation_key_0};default;[\w+.]+;#{rule_name_0};;\d*\.?\d*;\d*\.?\d*;;;;;;;#{
+               ~r/#{implementation_key_0};default;[\w+.]+;#{rule_name_0};;;\d*\.?\d*;\d*\.?\d*;;;;;;;#{
                  parsed_inserted_at_0
                };;;\r/
 
       assert body =~
-               ~r/#{implementation_key_1};default;[\w+.]+;#{rule_name_1};;\d*\.?\d*;\d*\.?\d*;;[[:ascii:]]+;#{
+               ~r/#{implementation_key_1};default;[\w+.]+;#{rule_name_1};;;\d*\.?\d*;\d*\.?\d*;;[[:ascii:]]+;#{
                  records_1
                };#{errors_1};\d*\.?\d*;[\w+.]+;#{parsed_inserted_at_1};;;\r/
 
       assert body =~
-               ~r/#{implementation_key_2};default;[\w+.]+;#{rule_name_2};;\d*\.?\d*;\d*\.?\d*;;;;;;;#{
+               ~r/#{implementation_key_2};default;[\w+.]+;#{rule_name_2};;;\d*\.?\d*;\d*\.?\d*;;;;;;;#{
                  parsed_inserted_at_2
                };;;\r/
 
       assert body =~
-               ~r/#{implementation_key_3};default;[\w+.]+;#{rule_name_3};;\d*\.?\d*;\d*\.?\d*;;;;;;;#{
+               ~r/#{implementation_key_3};default;[\w+.]+;#{rule_name_3};;;\d*\.?\d*;\d*\.?\d*;;;;;;;#{
                  parsed_inserted_at_3
                };;;\r/
     end

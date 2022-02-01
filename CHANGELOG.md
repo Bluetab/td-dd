@@ -4,7 +4,7 @@
 
 ### Added
 
-- [TD-4152] Add dataset and validation fields on implementations csv
+- [TD-4152] Include aditional information on implementations downlaod
 
 ## [4.36.0] 2022-01-24
 
