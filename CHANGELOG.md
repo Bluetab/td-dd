@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-4424] Fixed a performance issue fetching filter values, due to a scripted
+  aggregation (`linked_concept_count`), which was preventing elasticsearch from
+  using its request cache. Also ensure that `size=0` is used when fetching
+  aggregations from elasticsearch (the `hits` are not consumed).
+
 ## [4.36.0] 2022-01-24
 
 ### Added
@@ -12,7 +21,7 @@
   - Mapping to search by identifier
 - [TD-4100] Allow partial loads for notes in case that there are errors on the file
 - [TD-4293] Added quality implementations audit events
-- [TD-3467]  Add gt date condition for `rule results`
+- [TD-3467] Add gt date condition for `rule results`
 - [TD-4389] Add inserted_at in implementations views
 
 ## [4.35.1] 2022-01-10
@@ -712,11 +721,9 @@
     files uploaded using the same unit name will overwrite the existing nodes
     and relations in that unit.
   - Latest status for a unit can be queried using `GET /api/units/:unit_name`.
-  - Events relating to a unit can be queried using `GET
-    /api/units/:unit_name/events`.
+  - Events relating to a unit can be queried using `GET /api/units/:unit_name/events`.
   - A unit can be logically deleted using `DELETE /api/units/:unit_name`.
-  - A unit can be physically deleted using `DELETE
-    /api/units/:unit_name?logical=false`.
+  - A unit can be physically deleted using `DELETE /api/units/:unit_name?logical=false`.
   - [TD-2495] Changed structures loader migration key to cache all structures
     again including their metadata
 

@@ -10,8 +10,8 @@ defmodule TdCx.Jobs.Search do
 
   def get_filter_values(%Claims{role: role}, params) when role in ["admin", "service"] do
     filter_clause = create_filters(params)
-    query = %{} |> create_query(filter_clause)
-    search = %{query: query, aggs: Aggregations.aggregation_terms()}
+    query = %{bool: %{filter: filter_clause}}
+    search = %{query: query, aggs: Aggregations.aggregation_terms(), size: 0}
     Search.get_filters(search)
   end
 

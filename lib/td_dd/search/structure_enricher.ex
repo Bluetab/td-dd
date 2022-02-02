@@ -71,7 +71,7 @@ defmodule TdDd.Search.StructureEnricher do
       data_structure
       |> enrich_domain(domains)
       |> enrich_domain_parents(domain_parents)
-      |> enrich_link_count(links)
+      |> enrich_links(links)
       |> search_content(content_opt, types, type)
 
     {:reply, reply, %{state | count: count + 1}}
@@ -147,8 +147,7 @@ defmodule TdDd.Search.StructureEnricher do
   defp search_content(content, template, domain_id),
     do: Format.search_values(content, template, domain_id: domain_id)
 
-  defp enrich_link_count(%{id: id} = structure, links) do
-    value = if Enum.member?(links, id), do: 1, else: 0
-    %{structure | linked_concepts_count: value}
+  defp enrich_links(%{id: id} = structure, links) do
+    %{structure | linked_concepts: Enum.member?(links, id)}
   end
 end

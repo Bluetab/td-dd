@@ -184,7 +184,7 @@ defmodule TdDd.DownloadTest do
           id: 4_160_488,
           inserted_at: "2019-04-16T16:12:48.000000Z",
           latest_note: nil,
-          linked_concepts_count: 0,
+          linked_concepts: false,
           metadata: %{nullable: false, precision: "1,0", type: "CHAR"},
           mutable_metadata: nil,
           name: "/VSO/R_ONE_SORT",
