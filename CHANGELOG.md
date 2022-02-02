@@ -4,7 +4,7 @@
 
 ### Added
 
-- [TD-4277] Include `domain_id` in implementations
+- [TD-4277] Include `domain_id` in `rule implementations`
 
 ## [4.36.0] 2022-01-24
 
