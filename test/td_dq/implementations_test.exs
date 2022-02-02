@@ -242,6 +242,7 @@ defmodule TdDq.ImplementationsTest do
       params =
         string_params_for(:implementation,
           rule_id: rule.id,
+          domain_id: rule.domain_id,
           implementation_key: impl.implementation_key
         )
 
