@@ -260,6 +260,10 @@ defmodule TdDq.Implementations.Download do
 
   defp get_content_field(%{"type" => "table"}, _content), do: ""
 
+  defp get_content_field(%{"name" => "tags"}, %{tags: tags}) when is_list(tags) do
+    Enum.join(tags, ", ")
+  end
+
   defp get_content_field(%{"name" => name}, content) do
     Map.get(content, String.to_atom(name), "")
   end
