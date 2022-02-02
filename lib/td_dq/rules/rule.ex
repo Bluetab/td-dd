@@ -88,14 +88,14 @@ defmodule TdDq.Rules.Rule do
   defp validate_domain(%{valid?: true} = changeset) do
     case get_field(changeset, :domain_id) do
       nil ->
+        changeset
+
+      _ ->
         ids = TaxonomyCache.get_domain_ids()
 
         validate_change(changeset, :domain_id, fn :domain_id, domain_id ->
           do_validate_domain(domain_id, ids)
         end)
-
-      _ ->
-        changeset
     end
   end
 
