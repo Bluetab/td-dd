@@ -91,12 +91,15 @@ defmodule TdDd.Factory do
   end
 
   def raw_implementation_factory do
+    %{domain_id: domain_id} = rule = build(:rule)
+
     %TdDq.Implementations.Implementation{
-      rule: build(:rule),
+      rule: rule,
       implementation_key: sequence("ri"),
       implementation_type: "raw",
       goal: 30,
       minimum: 12,
+      domain_id: domain_id,
       result_type: "percentage",
       raw_content: build(:raw_content),
       deleted_at: nil
@@ -121,6 +124,7 @@ defmodule TdDd.Factory do
       implementation_type: "default",
       goal: 30,
       minimum: 12,
+      domain_id: 2,
       dataset: build(:dataset),
       population: build(:population),
       validations: build(:validations)

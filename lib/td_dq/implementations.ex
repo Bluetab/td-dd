@@ -15,6 +15,7 @@ defmodule TdDq.Implementations do
   alias TdDq.Auth.Claims
   alias TdDq.Cache.RuleLoader
   alias TdDq.Implementations.Implementation
+  alias TdDq.Rules
   alias TdDq.Rules.Audit
   alias TdDq.Rules.Rule
 
@@ -67,12 +68,16 @@ defmodule TdDq.Implementations do
   def create_implementation(rule, params, claims, is_bulk \\ false)
 
   def create_implementation(
-        %Rule{id: rule_id} = rule,
+        %Rule{id: rule_id, domain_id: domain_id} = rule,
         %{} = params,
         %Claims{user_id: user_id} = claims,
         is_bulk
       ) do
-    changeset = Implementation.changeset(%Implementation{rule_id: rule_id, rule: rule}, params)
+    changeset =
+      Implementation.changeset(
+        %Implementation{rule_id: rule_id, rule: rule, domain_id: domain_id},
+        params
+      )
 
     Multi.new()
     |> Multi.run(:can, fn _, _ -> multi_can(can?(claims, create(changeset))) end)
@@ -101,7 +106,9 @@ defmodule TdDq.Implementations do
         params,
         %Claims{user_id: user_id} = claims
       ) do
-    changeset = Implementation.changeset(implementation, params)
+    changeset =
+      Implementation.changeset(implementation, params)
+      |> domain_change_verification()
 
     Multi.new()
     |> Multi.run(:can, fn _, _ -> multi_can(can?(claims, update(changeset))) end)
@@ -110,6 +117,15 @@ defmodule TdDq.Implementations do
     |> Repo.transaction()
     |> on_upsert()
   end
+
+  defp domain_change_verification(%{changes: %{rule_id: rule_id}} = changeset) do
+    %{domain_id: domain_id} = Rules.get_rule!(rule_id)
+
+    changeset
+    |> Changeset.put_change(:domain_id, domain_id)
+  end
+
+  defp domain_change_verification(changeset), do: changeset
 
   @spec deprecate_implementations ::
           :ok | {:ok, map} | {:error, Multi.name(), any, %{required(Multi.name()) => any}}

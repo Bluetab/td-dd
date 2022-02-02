@@ -102,8 +102,8 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
       domain: domain
     } do
       %{id: rule_id} = insert(:rule, business_concept_id: "42", domain_id: domain.id)
-      %{id: id1} = insert(:implementation, rule_id: rule_id)
-      %{id: id2} = insert(:implementation, rule_id: rule_id)
+      %{id: id1} = insert(:implementation, rule_id: rule_id, domain_id: domain.id)
+      %{id: id2} = insert(:implementation, rule_id: rule_id, domain_id: domain.id)
 
       filters = %{"id" => [id1, id2]}
       params = %{"filters" => filters, "df_content" => %{"foo" => "bar"}}

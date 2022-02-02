@@ -7,7 +7,6 @@ defmodule TdDq.Implementations.ImplementationTest do
   alias TdDq.Implementations.Implementation
 
   setup do
-
     identifier_name = "identifier"
 
     with_identifier = %{
@@ -46,7 +45,12 @@ defmodule TdDq.Implementations.ImplementationTest do
 
     template_with_identifier = CacheHelpers.insert_template(with_identifier)
     %{name: template_name} = CacheHelpers.insert_template(scope: "dq")
-    [template_name: template_name, template_with_identifier: template_with_identifier, identifier_name: identifier_name]
+
+    [
+      template_name: template_name,
+      template_with_identifier: template_with_identifier,
+      identifier_name: identifier_name
+    ]
   end
 
   describe "changeset/1 create new implementation" do
@@ -54,17 +58,19 @@ defmodule TdDq.Implementations.ImplementationTest do
       template_with_identifier: template_with_identifier,
       identifier_name: identifier_name
     } do
-      %{id: rule_id} = insert(:rule)
-      params = string_params_for(
-        :implementation,
-        rule_id: rule_id,
-        implementation_key: "foo",
-        df_name: template_with_identifier.name,
-        df_content: %{"text" => "some text"}
-      )
+      %{id: rule_id, domain_id: domain_id} = insert(:rule)
 
-      assert %Changeset{changes: changes} =
-        Implementation.changeset(params)
+      params =
+        string_params_for(
+          :implementation,
+          rule_id: rule_id,
+          domain_id: domain_id,
+          implementation_key: "foo",
+          df_name: template_with_identifier.name,
+          df_content: %{"text" => "some text"}
+        )
+
+      assert %Changeset{changes: changes} = Implementation.changeset(params)
 
       assert %{df_content: new_content} = changes
       assert %{^identifier_name => _identifier} = new_content
@@ -74,22 +80,23 @@ defmodule TdDq.Implementations.ImplementationTest do
       template_name: template_without_identifier_name,
       identifier_name: identifier_name
     } do
-      %{id: rule_id} = insert(:rule)
-      params = string_params_for(
-        :implementation,
-        rule_id: rule_id,
-        implementation_key: "foo",
-        df_name: template_without_identifier_name,
-        df_content: %{"text" => "some text"}
-      )
+      %{id: rule_id, domain_id: domain_id} = insert(:rule)
 
-      assert %Changeset{changes: changes} =
-        Implementation.changeset(params)
+      params =
+        string_params_for(
+          :implementation,
+          rule_id: rule_id,
+          domain_id: domain_id,
+          implementation_key: "foo",
+          df_name: template_without_identifier_name,
+          df_content: %{"text" => "some text"}
+        )
+
+      assert %Changeset{changes: changes} = Implementation.changeset(params)
 
       assert %{df_content: new_content} = changes
       refute match?(%{^identifier_name => _identifier}, new_content)
     end
-
   end
 
   describe "changeset/2" do
@@ -146,9 +153,32 @@ defmodule TdDq.Implementations.ImplementationTest do
       assert {"invalid content", _detail} = errors[:df_content]
     end
 
+    test "validates domain_id is required" do
+      params =
+        params_for(:implementation)
+        |> Map.delete(:domain_id)
+
+      assert %{valid?: false, errors: errors} = Implementation.changeset(params)
+      assert errors[:domain_id] == {"can't be blank", [validation: :required]}
+    end
+
+    test "validates domain_id exists" do
+      %{id: rule_id} = insert(:rule)
+      params = string_params_for(:implementation, rule_id: rule_id, domain_id: 1111)
+
+      assert %{valid?: false, errors: errors} = Implementation.changeset(params)
+      assert errors[:domain_id] == {"not_exists", []}
+    end
+
     test "executable default true field" do
       %{id: rule_id} = insert(:rule)
-      params = string_params_for(:implementation, rule_id: rule_id, implementation_key: "foo")
+
+      params =
+        string_params_for(:implementation,
+          rule_id: rule_id,
+          implementation_key: "foo"
+        )
+
       assert %{valid?: true} = changeset = Implementation.changeset(params)
       assert Changeset.get_field(changeset, :executable)
     end
@@ -164,7 +194,13 @@ defmodule TdDq.Implementations.ImplementationTest do
       rule = insert(:rule)
 
       params =
-        params_for(:implementation, result_type: "percentage", goal: 101, minimum: -1, rule: rule)
+        params_for(:implementation,
+          result_type: "percentage",
+          goal: 101,
+          minimum: -1,
+          rule: rule,
+          domain_id: rule.domain_id
+        )
 
       assert %{valid?: false, errors: errors} = Implementation.changeset(params)
       assert {_, [validation: :number, kind: :less_than_or_equal_to, number: 100]} = errors[:goal]
@@ -177,7 +213,13 @@ defmodule TdDq.Implementations.ImplementationTest do
       rule = insert(:rule)
 
       params =
-        params_for(:implementation, result_type: "deviation", goal: -1, minimum: 101, rule: rule)
+        params_for(:implementation,
+          result_type: "deviation",
+          goal: -1,
+          minimum: 101,
+          rule: rule,
+          domain_id: rule.domain_id
+        )
 
       assert %{valid?: false, errors: errors} = Implementation.changeset(params)
 
@@ -196,7 +238,8 @@ defmodule TdDq.Implementations.ImplementationTest do
           result_type: "errors_number",
           goal: -1,
           minimum: -1,
-          rule: rule
+          rule: rule,
+          domain_id: rule.domain_id
         )
 
       assert %{valid?: false, errors: errors} = Implementation.changeset(params)
@@ -212,7 +255,13 @@ defmodule TdDq.Implementations.ImplementationTest do
       rule = insert(:rule)
 
       params =
-        params_for(:implementation, result_type: "percentage", goal: 30, minimum: 40, rule: rule)
+        params_for(:implementation,
+          result_type: "percentage",
+          goal: 30,
+          minimum: 40,
+          rule: rule,
+          domain_id: rule.domain_id
+        )
 
       assert %{valid?: false, errors: errors} = Implementation.changeset(params)
       assert errors[:goal] == {"must.be.greater.than.or.equal.to.minimum", []}
@@ -222,7 +271,13 @@ defmodule TdDq.Implementations.ImplementationTest do
       rule = insert(:rule)
 
       params =
-        params_for(:implementation, result_type: "deviation", goal: 80, minimum: 70, rule: rule)
+        params_for(:implementation,
+          result_type: "deviation",
+          goal: 80,
+          minimum: 70,
+          rule: rule,
+          domain_id: rule.domain_id
+        )
 
       assert %{valid?: false, errors: errors} = Implementation.changeset(params)
       assert errors[:minimum] == {"must.be.greater.than.or.equal.to.goal", []}
@@ -236,7 +291,8 @@ defmodule TdDq.Implementations.ImplementationTest do
           result_type: "errors_number",
           goal: 400,
           minimum: 30,
-          rule: rule
+          rule: rule,
+          domain_id: rule.domain_id
         )
 
       assert %{valid?: false, errors: errors} = Implementation.changeset(params)
@@ -250,38 +306,50 @@ defmodule TdDq.Implementations.ImplementationTest do
       # Existing identifier previously put by the create changeset
       existing_identifier = "00000000-0000-0000-0000-000000000000"
 
-      implementation = insert(:implementation, df_name: template_with_identifier.name, df_content: %{identifier_name => existing_identifier})
+      implementation =
+        insert(:implementation,
+          df_name: template_with_identifier.name,
+          df_content: %{identifier_name => existing_identifier}
+        )
 
-      params = string_params_for(
-        :implementation,
-        df_content: %{"text" => "some update"},
-        df_name: template_with_identifier.name
-      )
+      params =
+        string_params_for(
+          :implementation,
+          df_content: %{"text" => "some update"},
+          df_name: template_with_identifier.name
+        )
 
-      assert %Changeset{changes: changes} =
-        Implementation.changeset(implementation, params)
+      assert %Changeset{changes: changes} = Implementation.changeset(implementation, params)
 
       assert %{df_content: new_content} = changes
       assert %{^identifier_name => ^existing_identifier} = new_content
     end
 
-    test "keeps an already present identifier (i.e., editing) if extraneous identifier attr is passed", %{
-      template_with_identifier: template_with_identifier,
-      identifier_name: identifier_name
-    } do
+    test "keeps an already present identifier (i.e., editing) if extraneous identifier attr is passed",
+         %{
+           template_with_identifier: template_with_identifier,
+           identifier_name: identifier_name
+         } do
       # Existing identifier previously put by the create changeset
       existing_identifier = "00000000-0000-0000-0000-000000000000"
 
-      implementation = insert(:implementation, df_name: template_with_identifier.name, df_content: %{identifier_name => existing_identifier})
+      implementation =
+        insert(:implementation,
+          df_name: template_with_identifier.name,
+          df_content: %{identifier_name => existing_identifier}
+        )
 
-      params = string_params_for(
-        :implementation,
-        df_content: %{"text" => "some update", identifier_name => "11111111-1111-1111-1111-111111111111"},
-        df_name: template_with_identifier.name
-      )
+      params =
+        string_params_for(
+          :implementation,
+          df_content: %{
+            "text" => "some update",
+            identifier_name => "11111111-1111-1111-1111-111111111111"
+          },
+          df_name: template_with_identifier.name
+        )
 
-      assert %Changeset{changes: changes} =
-        Implementation.changeset(implementation, params)
+      assert %Changeset{changes: changes} = Implementation.changeset(implementation, params)
 
       assert %{df_content: new_content} = changes
       assert %{^identifier_name => ^existing_identifier} = new_content
@@ -292,23 +360,24 @@ defmodule TdDq.Implementations.ImplementationTest do
       # Ingest version has no identifier but its template does
       # This happens if identifier is added to template after ingest creation
       # Test an update to the ingest version in this state.
-      %{df_content: content} = implementation = insert(:implementation, df_name: template_with_identifier.name)
+      %{df_content: content} =
+        implementation = insert(:implementation, df_name: template_with_identifier.name)
+
       # Just to make sure factory does not add identifier
       refute match?(%{^identifier_name => _identifier}, content)
 
-      params = string_params_for(
-        :implementation,
-        df_content: %{"text" => "some update"},
-        df_name: template_with_identifier.name
-      )
+      params =
+        string_params_for(
+          :implementation,
+          df_content: %{"text" => "some update"},
+          df_name: template_with_identifier.name
+        )
 
-      assert %Changeset{changes: changes} =
-        Implementation.changeset(implementation, params)
+      assert %Changeset{changes: changes} = Implementation.changeset(implementation, params)
 
       assert %{df_content: new_content} = changes
       assert %{^identifier_name => _identifier} = new_content
     end
-
   end
 
   describe "encode" do

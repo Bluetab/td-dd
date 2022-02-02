@@ -3,6 +3,7 @@ defmodule TdDq.RulesTest do
 
   alias TdCache.Redix
   alias TdCache.Redix.Stream
+  alias TdDq.Implementations
   alias TdDq.Rules
   alias TdDq.Rules.Rule
 
@@ -98,6 +99,26 @@ defmodule TdDq.RulesTest do
       assert {:error, :rule,
               %Ecto.Changeset{errors: [domain_id: {"required", [validation: :required]}]},
               _} = Rules.update_rule(rule, params, claims)
+    end
+
+    test "updates domain id of all childs implementations", %{
+      claims: claims,
+      domain: %{id: domain_id}
+    } do
+      rule = insert(:rule)
+
+      Enum.map(1..5, fn _ ->
+        insert(:implementation, rule_id: rule.id)
+      end)
+
+      params = %{"domain_id" => domain_id}
+      assert {:ok, %{rule: %{domain_id: ^domain_id}}} = Rules.update_rule(rule, params, claims)
+
+      list_implementations = Implementations.list_implementations(%{rule_id: rule.id})
+
+      Enum.each(list_implementations, fn implementation ->
+        assert ^domain_id = implementation.domain_id
+      end)
     end
 
     test "publishes an audit event", %{claims: claims} do

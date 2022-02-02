@@ -14,8 +14,8 @@ defmodule TdDq.Rules.AuditTest do
     on_exit(fn -> Redix.del!(@stream) end)
     %{name: template_name} = CacheHelpers.insert_template(scope: "dq")
     claims = build(:dq_claims, role: "admin")
-    rule = insert(:rule, df_name: template_name)
-    implementation = insert(:implementation, rule: rule, deleted_at: nil)
+    %{domain_id: domain_id} = rule = insert(:rule, df_name: template_name)
+    implementation = insert(:implementation, rule: rule, deleted_at: nil, domain_id: domain_id)
     [claims: claims, rule: rule, implementation: implementation, template_name: template_name]
   end
 

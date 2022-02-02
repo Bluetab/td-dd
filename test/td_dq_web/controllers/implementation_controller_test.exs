@@ -514,7 +514,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
            permissions: [:manage_quality_rule_implementations]
          ]
     test "user with permissions can update", %{conn: conn, domain: %{id: domain_id}} do
-      implementation = insert(:implementation, rule: insert(:rule, domain_id: domain_id))
+      implementation =
+        insert(:implementation, rule: insert(:rule, domain_id: domain_id), domain_id: domain_id)
 
       params =
         %{
@@ -678,7 +679,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
       conn: conn,
       domain: %{id: domain_id}
     } do
-      implementation = insert(:implementation, rule: insert(:rule, domain_id: domain_id))
+      implementation =
+        insert(:implementation, rule: insert(:rule, domain_id: domain_id), domain_id: domain_id)
 
       assert conn
              |> delete(Routes.implementation_path(conn, :delete, implementation))

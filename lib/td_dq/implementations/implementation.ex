@@ -7,6 +7,7 @@ defmodule TdDq.Implementations.Implementation do
   import Ecto.Changeset
 
   alias Ecto.Changeset
+  alias TdCache.TaxonomyCache
   alias TdDfLib.Validation
   alias TdDq.Events.QualityEvents
   alias TdDq.Implementations
@@ -26,6 +27,7 @@ defmodule TdDq.Implementations.Implementation do
     field(:implementation_type, :string, default: "default")
     field(:executable, :boolean, default: true)
     field(:deleted_at, :utc_datetime)
+    field(:domain_id, :integer)
     field(:df_name, :string)
     field(:df_content, :map)
     field(:goal, :float)
@@ -54,23 +56,25 @@ defmodule TdDq.Implementations.Implementation do
     implementation
     |> cast(params, [
       :deleted_at,
-      :rule_id,
+      :df_content,
+      :df_name,
+      :domain_id,
+      :executable,
+      :goal,
       :implementation_key,
       :implementation_type,
-      :df_name,
-      :df_content,
-      :executable,
-      :goal,
       :minimum,
-      :result_type
+      :result_type,
+      :rule_id
     ])
     |> validate_required([
+      :domain_id,
       :executable,
-      :implementation_type,
-      :rule_id,
       :goal,
+      :implementation_type,
       :minimum,
-      :result_type
+      :result_type,
+      :rule_id
     ])
     |> validate_inclusion(:implementation_type, ["default", "raw", "draft"])
     |> validate_inclusion(:result_type, @valid_result_types)
@@ -80,6 +84,7 @@ defmodule TdDq.Implementations.Implementation do
     |> validate_goal()
     |> foreign_key_constraint(:rule_id)
     |> custom_changeset(implementation)
+    |> validate_domain()
   end
 
   defp maybe_put_identifier(
@@ -187,6 +192,30 @@ defmodule TdDq.Implementations.Implementation do
     end
   end
 
+  defp validate_domain(%{valid?: true} = changeset) do
+    case get_field(changeset, :domain_id) do
+      nil ->
+        changeset
+
+      _ ->
+        ids = TaxonomyCache.get_domain_ids()
+
+        validate_change(changeset, :domain_id, fn :domain_id, domain_id ->
+          do_validate_domain(domain_id, ids)
+        end)
+    end
+  end
+
+  defp validate_domain(changeset), do: changeset
+
+  defp do_validate_domain(domain_id, ids) do
+    if Enum.member?(ids, domain_id) do
+      []
+    else
+      [domain_id: "not_exists"]
+    end
+  end
+
   defp custom_changeset(
          %Changeset{changes: %{implementation_type: "raw"}} = changeset,
          _implementation
@@ -278,7 +307,7 @@ defmodule TdDq.Implementations.Implementation do
       confidential = Helpers.confidential?(rule)
       bcv = Helpers.get_business_concept_version(rule)
       execution_result_info = get_execution_result_info(implementation, quality_event)
-      domain = Helpers.get_domain(rule)
+      domain = Helpers.get_domain(implementation)
       domain_ids = Helpers.get_domain_ids(domain)
       domain_parents = Helpers.get_domain_parents(domain)
       updated_by = Helpers.get_user(rule.updated_by)
@@ -404,7 +433,16 @@ defmodule TdDq.Implementations.Implementation do
     end
 
     defp get_structure_fields(structure) do
-      Map.take(structure, [:external_id, :id, :name, :path, :system, :type, :metadata, :parent_index])
+      Map.take(structure, [
+        :external_id,
+        :id,
+        :name,
+        :path,
+        :system,
+        :type,
+        :metadata,
+        :parent_index
+      ])
     end
 
     defp get_alias_fields(nil), do: nil

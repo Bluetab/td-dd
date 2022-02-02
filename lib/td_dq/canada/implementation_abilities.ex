@@ -16,13 +16,11 @@ defmodule TdDq.Canada.ImplementationAbilities do
     Permissions.authorized?(claims, :manage_quality_rule_implementations)
   end
 
-  def can?(%Claims{} = claims, :show, %Implementation{} = implementation) do
-    domain_id = domain_id(implementation)
+  def can?(%Claims{} = claims, :show, %Implementation{domain_id: domain_id} = implementation) do
     Permissions.authorized?(claims, :view_quality_rule, domain_id)
   end
 
-  def can?(%Claims{} = claims, :manage, %Implementation{} = implementation) do
-    domain_id = domain_id(implementation)
+  def can?(%Claims{} = claims, :manage, %Implementation{domain_id: domain_id} = implementation) do
     permission = permission(implementation)
     Permissions.authorized?(claims, permission, domain_id)
   end
@@ -37,7 +35,7 @@ defmodule TdDq.Canada.ImplementationAbilities do
   # Service accounts can execute rule implementations
   def can?(%Claims{role: "service"}, :execute, _), do: true
 
-  def can?(%Claims{} = claims, :execute, %Implementation{rule: %{domain_id: domain_id}}) do
+  def can?(%Claims{} = claims, :execute, %Implementation{domain_id: domain_id}) do
     Permissions.authorized?(claims, :execute_quality_rule_implementations, domain_id)
   end
 
@@ -48,7 +46,7 @@ defmodule TdDq.Canada.ImplementationAbilities do
   def can?(_claims, _action, _resource), do: false
 
   defp domain_id(%{domain_id: domain_id}), do: domain_id
-  defp domain_id(%Implementation{rule: rule}), do: domain_id(rule)
+  defp domain_id(%Implementation{domain_id: domain_id}), do: domain_id
   defp domain_id(%Changeset{data: data}), do: domain_id(data)
 
   defp permission("raw"), do: :manage_raw_quality_rule_implementations

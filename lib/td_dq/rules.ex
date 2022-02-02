@@ -18,6 +18,8 @@ defmodule TdDq.Rules do
   alias TdDq.Rules.Audit
   alias TdDq.Rules.Rule
 
+  @index_worker Application.compile_env(:td_dd, :dq_index_worker)
+
   require Logger
 
   @doc """
@@ -184,6 +186,7 @@ defmodule TdDq.Rules do
     Multi.new()
     |> Multi.run(:can, fn _, _ -> multi_can(can?(claims, update(changeset))) end)
     |> Multi.update(:rule, changeset)
+    |> Multi.update_all(:implementations, &update_implementations_domain/1, [])
     |> Multi.run(:audit, Audit, :rule_updated, [changeset, user_id])
     |> Repo.transaction()
     |> on_update()
@@ -192,9 +195,18 @@ defmodule TdDq.Rules do
   defp multi_can(true), do: {:ok, nil}
   defp multi_can(false), do: {:error, false}
 
+  defp update_implementations_domain(%{rule: %{id: rule_id, domain_id: domain_id}}) do
+    Implementation
+    |> select([i], i.id)
+    |> where([i], i.rule_id == ^rule_id)
+    |> update([i], set: [domain_id: ^domain_id])
+  end
+
   defp on_update(res) do
-    with {:ok, %{rule: %{id: rule_id}}} <- res do
+    with {:ok, %{rule: %{id: rule_id}}} <- res,
+         {:ok, %{implementations: {_, ids_implementations}}} <- res do
       RuleLoader.refresh(rule_id)
+      @index_worker.reindex_implementations(ids_implementations)
       res
     end
   end
