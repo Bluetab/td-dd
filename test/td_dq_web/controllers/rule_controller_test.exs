@@ -450,7 +450,6 @@ defmodule TdDqWeb.RuleControllerTest do
         string_params_for(:rule, domain_id: domain_id)
         |> Map.delete("business_concept_id")
 
-
       assert %{"data" => data} =
                conn
                |> put(Routes.rule_path(conn, :update, rule), rule: params)
