@@ -761,6 +761,95 @@ defmodule TdDqWeb.ImplementationControllerTest do
     end
   end
 
+  describe "csv" do
+    setup do
+      result_01 =
+        insert(:rule_result,
+          records: 3245,
+          result_type: "percentage",
+          errors: 123,
+          result: 0
+        )
+
+      [
+        implementations: [
+          insert(:implementation, %{
+            results: [result_01],
+            df_content: %{"some_first_field" => "some_first_value"}
+          }),
+          insert(:implementation, %{df_content: %{"some_second_field" => "some_value"}}),
+          insert(:implementation, %{df_content: %{"some_second_field" => "some_second_value"}})
+        ]
+      ]
+    end
+
+    @tag authentication: [role: "admin"]
+    test "downlaod all implementations as csv", %{
+      conn: conn,
+      implementation: previous_implementation,
+      implementations: new_implementations
+    } do
+      [
+        %{
+          implementation_key: implementation_key_0,
+          rule: %{name: rule_name_0},
+          inserted_at: inserted_at_0
+        },
+        %{
+          implementation_key: implementation_key_1,
+          rule: %{name: rule_name_1},
+          results: [
+            %{
+              records: records_1,
+              errors: errors_1
+            }
+          ],
+          inserted_at: inserted_at_1
+        },
+        %{
+          implementation_key: implementation_key_2,
+          rule: %{name: rule_name_2},
+          inserted_at: inserted_at_2
+        },
+        %{
+          implementation_key: implementation_key_3,
+          rule: %{name: rule_name_3},
+          inserted_at: inserted_at_3
+        }
+      ] = [previous_implementation | new_implementations]
+
+      assert %{resp_body: body} = post(conn, Routes.implementation_path(conn, :csv, %{}))
+
+      assert body =~
+               "implementation_key;implementation_type;executable;rule;rule_template;implementation_template;goal;minimum;business_concept;last_execution_at;records;errors;result;execution;inserted_at;dataset_external_id_1;validation_field_1\r"
+
+      parsed_inserted_at_0 = NaiveDateTime.to_iso8601(inserted_at_0)
+      parsed_inserted_at_1 = NaiveDateTime.to_iso8601(inserted_at_1)
+      parsed_inserted_at_2 = NaiveDateTime.to_iso8601(inserted_at_2)
+      parsed_inserted_at_3 = NaiveDateTime.to_iso8601(inserted_at_3)
+
+      assert body =~
+               ~r/#{implementation_key_0};default;[\w+.]+;#{rule_name_0};;;\d*\.?\d*;\d*\.?\d*;;;;;;;#{
+                 parsed_inserted_at_0
+               };;;\r/
+
+      assert body =~
+               ~r/#{implementation_key_1};default;[\w+.]+;#{rule_name_1};;;\d*\.?\d*;\d*\.?\d*;;[[:ascii:]]+;#{
+                 records_1
+               };#{errors_1};\d*\.?\d*;[\w+.]+;#{parsed_inserted_at_1};;;\r/
+
+      assert body =~
+               ~r/#{implementation_key_2};default;[\w+.]+;#{rule_name_2};;;\d*\.?\d*;\d*\.?\d*;;;;;;;#{
+                 parsed_inserted_at_2
+               };;;\r/
+
+      assert body =~
+               ~r/#{implementation_key_3};default;[\w+.]+;#{rule_name_3};;;\d*\.?\d*;\d*\.?\d*;;;;;;;#{
+                 parsed_inserted_at_3
+               };;;\r/
+    end
+  end
+
   defp equals_condition_row(population_response, population_update) do
     population_response
     |> Enum.with_index()
