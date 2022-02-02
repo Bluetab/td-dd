@@ -213,6 +213,7 @@ defmodule TdDq.ImplementationsTest do
   describe "create_implementation/3" do
     test "with valid data creates a implementation", %{rule: rule} do
       params = string_params_for(:implementation, rule_id: rule.id)
+      |> Map.delete("domain_id")
       claims = build(:dq_claims)
 
       assert {:ok, %{implementation: implementation}} =
@@ -280,7 +281,7 @@ defmodule TdDq.ImplementationsTest do
 
     test "with valid data with single structure creates a implementation", %{rule: rule} do
       params =
-        string_params_for(:implementation, dataset: [build(:dataset_row)], rule_id: rule.id)
+        string_params_for(:implementation, dataset: [build(:dataset_row)], rule_id: rule.id, domain_id: rule.domain_id)
 
       claims = build(:dq_claims, role: "admin")
 
@@ -296,7 +297,7 @@ defmodule TdDq.ImplementationsTest do
       validation =
         build(:condition_row, value: [%{raw: "2019-12-02 05:35:00"}], operator: operator)
 
-      params = string_params_for(:implementation, validations: [validation], rule_id: rule.id)
+      params = string_params_for(:implementation, validations: [validation], rule_id: rule.id, domain_id: rule.domain_id)
       claims = build(:dq_claims)
 
       assert {:ok, %{implementation: implementation}} =
@@ -314,7 +315,7 @@ defmodule TdDq.ImplementationsTest do
 
       validations = [string_params_for(:condition_row, population: [condition])]
 
-      params = string_params_for(:implementation, rule_id: rule.id, validations: validations)
+      params = string_params_for(:implementation, rule_id: rule.id, validations: validations, domain_id: rule.domain_id)
       claims = build(:dq_claims, role: "admin")
 
       assert {:ok, %{implementation: %Implementation{validations: [%{population: [clause]}]}}} =

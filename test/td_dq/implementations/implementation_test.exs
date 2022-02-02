@@ -45,11 +45,12 @@ defmodule TdDq.Implementations.ImplementationTest do
 
     template_with_identifier = CacheHelpers.insert_template(with_identifier)
     %{name: template_name} = CacheHelpers.insert_template(scope: "dq")
-
+    %{id: domain_id} = CacheHelpers.insert_domain()
     [
       template_name: template_name,
       template_with_identifier: template_with_identifier,
-      identifier_name: identifier_name
+      identifier_name: identifier_name,
+      domain_id: domain_id
     ]
   end
 
@@ -100,10 +101,11 @@ defmodule TdDq.Implementations.ImplementationTest do
   end
 
   describe "changeset/2" do
-    test "validates existence of rule on insert" do
+    test "validates existence of rule on insert", %{domain_id: domain_id} do
+
       params =
         :implementation
-        |> string_params_for()
+        |> string_params_for(domain_id: domain_id)
         |> Map.delete("rule")
         |> Map.put("rule_id", 123)
 
@@ -113,13 +115,13 @@ defmodule TdDq.Implementations.ImplementationTest do
       assert {_msg, [constraint: :foreign, constraint_name: _constraint_name]} = errors[:rule_id]
     end
 
-    test "puts next available implementation_key if none specified and changeset valid" do
+    test "puts next available implementation_key if none specified and changeset valid", %{domain_id: domain_id} do
       insert(:implementation, implementation_key: "ri0123")
-      %{id: rule_id} = insert(:rule)
+      %{id: rule_id} = insert(:rule, domain_id: domain_id)
 
       params =
         :implementation
-        |> string_params_for(rule_id: rule_id)
+        |> string_params_for(rule_id: rule_id, domain_id: domain_id)
         |> Map.delete("implementation_key")
 
       assert %{changes: changes, valid?: true} = Implementation.changeset(params)
@@ -170,12 +172,13 @@ defmodule TdDq.Implementations.ImplementationTest do
       assert errors[:domain_id] == {"not_exists", []}
     end
 
-    test "executable default true field" do
-      %{id: rule_id} = insert(:rule)
+    test "executable default true field", %{domain_id: domain_id} do
+      %{id: rule_id} = insert(:rule, domain_id: domain_id)
 
       params =
         string_params_for(:implementation,
           rule_id: rule_id,
+          domain_id: domain_id,
           implementation_key: "foo"
         )
 
