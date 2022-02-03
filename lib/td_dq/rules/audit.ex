@@ -33,20 +33,21 @@ defmodule TdDq.Rules.Audit do
   end
 
   @doc """
-  Publishes `:implementation_created` events. Should be called using `Ecto.Multi.run/5`.
+  Publishes an `:implementation_created` event. Should be called using
+  `Ecto.Multi.run/5`.
   """
   def implementation_created(
         _repo,
-        %{implementation: %{id: id} = implementation},
+        %{implementation: %{id: id, rule_id: rule_id} = implementation},
         _changeset,
         user_id
       ) do
-    rule_name = implementation.rule.name
+    %{name: rule_name} = Rules.get_rule!(rule_id)
 
     payload =
       implementation
       |> Map.take([:implementation_key, :rule_id])
-      |> Map.put_new(:rule_name, rule_name)
+      |> Map.put(:rule_name, rule_name)
 
     publish("implementation_created", "implementation", id, user_id, payload)
   end
@@ -83,8 +84,12 @@ defmodule TdDq.Rules.Audit do
   def implementations_deprecated(_repo, _), do: {:ok, []}
 
   @doc """
-  Publishes a `:implementation_deprecated` event. Should be called using `Ecto.Multi.run/5`.
+  Publishes an `implementation_updated` event (or `implementation_deprecated`,
+  `implementation_restored`, `implementation_moved`, `implementation_changed`).
+  Should be called using `Ecto.Multi.run/5`.
   """
+  def implementation_updated(repo, implementation, changeset, user_id)
+
   def implementation_updated(
         _repo,
         %{implementation: %{id: id} = implementation},
@@ -99,6 +104,8 @@ defmodule TdDq.Rules.Audit do
       else
         "implementation_deprecated"
       end
+    # Why do we need these events instead of using a generic
+    # implementation_updated event?
 
     publish(event, "implementation", id, user_id, payload)
   end
@@ -109,12 +116,18 @@ defmodule TdDq.Rules.Audit do
         %{changes: %{rule_id: rule_id}},
         user_id
       ) do
-    rule = Rules.get_rule(rule_id)
+    %{name: rule_name} = Rules.get_rule!(rule_id)
 
     payload =
       implementation
       |> Map.take([:implementation_key, :rule_id])
-      |> Map.put_new(:rule_name, rule.name)
+      |> Map.put(:rule_name, rule_name)
+
+    # TODO: The rule_id in the payload is the old rule_id. Is that correct?
+    # Should the domain_id be included in the payload if it changed?
+    # What about other fields that have changed?
+    # Why do we need an implementation_moved event instead of using a
+    # generic implementation_updated event?
 
     publish("implementation_moved", "implementation", id, user_id, payload)
   end
@@ -125,6 +138,9 @@ defmodule TdDq.Rules.Audit do
         %{changes: %{df_content: _df_content}} = changeset,
         user_id
       ) do
+    # TODO: Why do we need an implementation_changed event instead of using a
+    # generic implementation_updated?
+    # What about other fields that have changed?
     publish("implementation_changed", "implementation", id, user_id, changeset)
   end
 
@@ -135,6 +151,7 @@ defmodule TdDq.Rules.Audit do
         user_id
       ) do
     payload = Map.take(implementation, [:implementation_key, :rule_id])
+    # TODO: Why aren't any changes included in the payload
     publish("implementation_updated", "implementation", id, user_id, payload)
   end
 

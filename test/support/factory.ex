@@ -90,20 +90,19 @@ defmodule TdDd.Factory do
     }
   end
 
-  def raw_implementation_factory do
-    %{domain_id: domain_id} = rule = build(:rule)
+  def raw_implementation_factory(attrs) do
+    attrs = default_assoc(attrs, :rule_id, :rule)
 
     %TdDq.Implementations.Implementation{
-      rule: rule,
       implementation_key: sequence("ri"),
       implementation_type: "raw",
       goal: 30,
       minimum: 12,
-      domain_id: domain_id,
       result_type: "percentage",
       raw_content: build(:raw_content),
       deleted_at: nil
     }
+    |> merge_attributes(attrs)
   end
 
   def raw_content_factory do
@@ -336,7 +335,7 @@ defmodule TdDd.Factory do
 
   def rule_result_factory do
     %TdDq.Rules.RuleResult{
-      implementation: build(:implementation),
+      #implementation: build(:implementation),
       result: "#{Decimal.round(50, 2)}",
       date: "#{DateTime.utc_now()}"
     }

@@ -12,9 +12,10 @@ defmodule TdDq.Rules.AuditTest do
 
   setup do
     on_exit(fn -> Redix.del!(@stream) end)
+    domain_id = System.unique_integer([:positive])
     %{name: template_name} = CacheHelpers.insert_template(scope: "dq")
     claims = build(:dq_claims, role: "admin")
-    %{domain_id: domain_id} = rule = insert(:rule, df_name: template_name)
+    rule = insert(:rule, df_name: template_name, domain_id: domain_id)
     implementation = insert(:implementation, rule: rule, deleted_at: nil, domain_id: domain_id)
     [claims: claims, rule: rule, implementation: implementation, template_name: template_name]
   end
@@ -24,11 +25,9 @@ defmodule TdDq.Rules.AuditTest do
       %{id: rule_id} = rule
 
       params = %{df_content: %{"list" => "two"}, name: "new name"}
-
       changeset = Rule.changeset(rule, params)
 
       assert {:ok, event_id} = Audit.rule_updated(Repo, %{rule: rule}, changeset, user_id)
-
       assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
 
       user_id = "#{user_id}"
@@ -44,10 +43,7 @@ defmodule TdDq.Rules.AuditTest do
                user_id: ^user_id
              } = event
 
-      assert %{
-               "content" => _content,
-               "name" => "new name"
-             } = Jason.decode!(payload)
+      assert %{"content" => _, "name" => "new name"} = Jason.decode!(payload)
     end
   end
 
@@ -106,10 +102,8 @@ defmodule TdDq.Rules.AuditTest do
                user_id: ^user_id
              } = event
 
-      assert %{
-               "implementation_key" => ^implementation_key,
-               "rule_id" => ^rule_id
-             } = Jason.decode!(payload)
+      assert %{"implementation_key" => ^implementation_key, "rule_id" => ^rule_id} =
+               Jason.decode!(payload)
     end
   end
 
@@ -122,7 +116,8 @@ defmodule TdDq.Rules.AuditTest do
         implementation
 
       {:ok, changeset} =
-        Implementation.changeset(implementation, %{})
+        implementation
+        |> Implementation.changeset(%{})
         |> Repo.delete()
 
       assert {:ok, event_id} =
@@ -164,7 +159,6 @@ defmodule TdDq.Rules.AuditTest do
         implementation
 
       params = %{deleted_at: DateTime.utc_now()}
-
       changeset = Implementation.changeset(implementation, params)
 
       assert {:ok, event_id} =
@@ -206,7 +200,6 @@ defmodule TdDq.Rules.AuditTest do
         implementation
 
       params = %{deleted_at: nil}
-
       changeset = Implementation.changeset(implementation, params)
 
       assert {:ok, event_id} =
@@ -250,7 +243,6 @@ defmodule TdDq.Rules.AuditTest do
       }
 
       params = %{df_content: df_content}
-
       changeset = Implementation.changeset(implementation, params)
 
       assert {:ok, event_id} =
@@ -290,7 +282,6 @@ defmodule TdDq.Rules.AuditTest do
 
       %{id: new_rule_id} = insert(:rule, df_name: template_name)
       params = %{rule_id: new_rule_id}
-
       changeset = Implementation.changeset(implementation, params)
 
       assert {:ok, event_id} =

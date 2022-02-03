@@ -16,7 +16,7 @@ defmodule TdDq.Canada.ImplementationAbilities do
     Permissions.authorized?(claims, :manage_quality_rule_implementations)
   end
 
-  def can?(%Claims{} = claims, :show, %Implementation{domain_id: domain_id} = implementation) do
+  def can?(%Claims{} = claims, :show, %Implementation{domain_id: domain_id}) do
     Permissions.authorized?(claims, :view_quality_rule, domain_id)
   end
 
@@ -46,7 +46,6 @@ defmodule TdDq.Canada.ImplementationAbilities do
   def can?(_claims, _action, _resource), do: false
 
   defp domain_id(%{domain_id: domain_id}), do: domain_id
-  defp domain_id(%Implementation{domain_id: domain_id}), do: domain_id
   defp domain_id(%Changeset{data: data}), do: domain_id(data)
 
   defp permission("raw"), do: :manage_raw_quality_rule_implementations

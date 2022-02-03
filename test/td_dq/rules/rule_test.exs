@@ -119,10 +119,12 @@ defmodule TdDq.Rules.RuleTest do
       assert {"invalid content", _detail} = errors[:df_content]
     end
 
-    test "validate domain_id exists" do
+    test "validate domain_id exists", %{domain: %{id: domain_id}} do
       params = params_for(:rule)
       assert %{valid?: false, errors: errors} = Rule.changeset(params)
-      assert errors[:domain_id] == {"not_exists", []}
+
+      assert errors[:domain_id] ==
+               {"is invalid", [{:validation, :inclusion}, {:enum, [domain_id]}]}
     end
 
     test "create new rule: puts a new identifier if the template has an identifier field", %{

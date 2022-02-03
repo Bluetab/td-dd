@@ -21,6 +21,9 @@ defmodule TdDq.Implementations do
 
   @index_worker Application.compile_env(:td_dd, :dq_index_worker)
 
+  @typep multi_result ::
+           {:ok, map} | {:error, Multi.name(), any(), %{required(Multi.name()) => any()}}
+
   @doc """
   Gets a single implementation.
 
@@ -65,17 +68,18 @@ defmodule TdDq.Implementations do
     |> Repo.preload(:rule)
   end
 
+  @spec create_implementation(Rule.t(), map, Claims.t(), boolean) :: multi_result
   def create_implementation(rule, params, claims, is_bulk \\ false)
 
   def create_implementation(
-        %Rule{id: rule_id, domain_id: domain_id} = rule,
+        %Rule{id: rule_id, domain_id: domain_id},
         %{} = params,
         %Claims{user_id: user_id} = claims,
         is_bulk
       ) do
     changeset =
       Implementation.changeset(
-        %Implementation{rule_id: rule_id, rule: rule, domain_id: domain_id},
+        %Implementation{rule_id: rule_id, domain_id: domain_id},
         params
       )
 
@@ -87,15 +91,11 @@ defmodule TdDq.Implementations do
     |> on_upsert(is_bulk)
   end
 
-  def create_implementation(nil, params, %Claims{user_id: user_id} = claims, is_bulk) do
-    changeset = Implementation.changeset(%Implementation{rule_id: nil, rule: nil}, params)
-
-    Multi.new()
-    |> Multi.run(:can, fn _, _ -> multi_can(can?(claims, create(changeset))) end)
-    |> Multi.insert(:implementation, changeset)
-    |> Multi.run(:audit, Audit, :implementation_created, [changeset, user_id])
-    |> Repo.transaction()
-    |> on_upsert(is_bulk)
+  def create_implementation(nil, params, _claims, _is_bulk) do
+    # Currently an implementation must have a rule, so the changeset will be invalid.
+    # Return a multi error result without further ado.
+    %{valid?: false} = changeset = Implementation.changeset(%Implementation{}, params)
+    {:error, :implementation, changeset, %{}}
   end
 
   defp multi_can(true), do: {:ok, nil}
@@ -106,26 +106,24 @@ defmodule TdDq.Implementations do
         params,
         %Claims{user_id: user_id} = claims
       ) do
-    changeset =
-      Implementation.changeset(implementation, params)
-      |> domain_change_verification()
+    changeset = Implementation.changeset(implementation, params)
 
     Multi.new()
     |> Multi.run(:can, fn _, _ -> multi_can(can?(claims, update(changeset))) end)
-    |> Multi.update(:implementation, changeset)
+    |> Multi.update(:implementation, fn _ -> do_update_implementation(changeset) end)
     |> Multi.run(:audit, Audit, :implementation_updated, [changeset, user_id])
     |> Repo.transaction()
     |> on_upsert()
   end
 
-  defp domain_change_verification(%{changes: %{rule_id: rule_id}} = changeset) do
-    %{domain_id: domain_id} = Rules.get_rule!(rule_id)
-
-    changeset
-    |> Changeset.put_change(:domain_id, domain_id)
+  defp do_update_implementation(%{changes: %{rule_id: rule_id}} = changeset) do
+    case Rules.get_rule(rule_id) do
+      %{domain_id: domain_id} -> Changeset.put_change(changeset, :domain_id, domain_id)
+      _ -> changeset
+    end
   end
 
-  defp domain_change_verification(changeset), do: changeset
+  defp do_update_implementation(changeset), do: changeset
 
   @spec deprecate_implementations ::
           :ok | {:ok, map} | {:error, Multi.name(), any, %{required(Multi.name()) => any}}
@@ -209,6 +207,7 @@ defmodule TdDq.Implementations do
 
   defp on_delete(result), do: result
 
+  @spec on_upsert(multi_result, boolean) :: multi_result
   defp on_upsert(result, is_bulk \\ false)
 
   defp on_upsert({:ok, %{implementation: %{id: id}}} = result, false) do

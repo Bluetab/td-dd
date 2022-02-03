@@ -7,7 +7,6 @@ defmodule TdDq.Implementations.Implementation do
   import Ecto.Changeset
 
   alias Ecto.Changeset
-  alias TdCache.TaxonomyCache
   alias TdDfLib.Validation
   alias TdDq.Events.QualityEvents
   alias TdDq.Implementations
@@ -48,17 +47,12 @@ defmodule TdDq.Implementations.Implementation do
 
   def valid_result_types, do: @valid_result_types
 
-  def changeset(%{} = params) do
-    changeset(%__MODULE__{}, params)
-  end
-
   def changeset(%__MODULE__{} = implementation, params) do
     implementation
     |> cast(params, [
       :deleted_at,
       :df_content,
       :df_name,
-      :domain_id,
       :executable,
       :goal,
       :implementation_key,
@@ -84,7 +78,6 @@ defmodule TdDq.Implementations.Implementation do
     |> validate_goal()
     |> foreign_key_constraint(:rule_id)
     |> custom_changeset(implementation)
-    |> validate_domain()
   end
 
   defp maybe_put_identifier(
@@ -192,30 +185,6 @@ defmodule TdDq.Implementations.Implementation do
     end
   end
 
-  defp validate_domain(%{valid?: true} = changeset) do
-    case get_field(changeset, :domain_id) do
-      nil ->
-        changeset
-
-      _ ->
-        ids = TaxonomyCache.get_domain_ids()
-
-        validate_change(changeset, :domain_id, fn :domain_id, domain_id ->
-          do_validate_domain(domain_id, ids)
-        end)
-    end
-  end
-
-  defp validate_domain(changeset), do: changeset
-
-  defp do_validate_domain(domain_id, ids) do
-    if Enum.member?(ids, domain_id) do
-      []
-    else
-      [domain_id: "not_exists"]
-    end
-  end
-
   defp custom_changeset(
          %Changeset{changes: %{implementation_type: "raw"}} = changeset,
          _implementation
@@ -270,6 +239,7 @@ defmodule TdDq.Implementations.Implementation do
     @implementation_keys [
       :dataset,
       :deleted_at,
+      :domain_id,
       :id,
       :implementation_key,
       :implementation_type,
@@ -290,8 +260,7 @@ defmodule TdDq.Implementations.Implementation do
       :name,
       :version,
       :df_name,
-      :df_content,
-      :domain_id
+      :df_content
     ]
 
     @impl Elasticsearch.Document
