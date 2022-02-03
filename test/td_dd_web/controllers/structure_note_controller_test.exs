@@ -333,7 +333,8 @@ defmodule TdDdWeb.StructureNoteControllerTest do
             "df_content" => sn.df_content,
             "data_structure_id" => sn.data_structure_id,
             "data_structure_external_id" => sn.data_structure.external_id,
-            "updated_at" => NaiveDateTime.to_iso8601(sn.updated_at)
+            "updated_at" => NaiveDateTime.to_iso8601(sn.updated_at),
+            "version" => 1
           }
         end)
 
@@ -594,9 +595,9 @@ defmodule TdDdWeb.StructureNoteControllerTest do
              )
              |> response(:no_content)
 
-      assert_error_sent :not_found, fn ->
+      assert_error_sent(:not_found, fn ->
         get(conn, Routes.data_structure_note_path(conn, :show, data_structure_id, structure_note))
-      end
+      end)
     end
 
     @tag authentication: [
