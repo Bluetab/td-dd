@@ -6,6 +6,7 @@ defmodule TdDdWeb.StructureNoteController do
 
   alias TdDd.DataStructures
   alias TdDd.DataStructures.StructureNote
+  alias TdDd.DataStructures.StructureNotes
   alias TdDd.DataStructures.StructureNotesWorkflow
   alias TdDdWeb.SwaggerDefinitions
 
@@ -38,7 +39,7 @@ defmodule TdDdWeb.StructureNoteController do
          statuses <- listable_statuses(claims, data_structure) do
       structure_notes =
         data_structure_id
-        |> DataStructures.list_structure_notes(statuses)
+        |> StructureNotes.list_structure_notes(statuses)
         |> Enum.map(fn sn ->
           Map.put(sn, :actions, available_actions(conn, sn, claims, data_structure))
         end)
@@ -53,7 +54,7 @@ defmodule TdDdWeb.StructureNoteController do
   def search(conn, filter) do
     with claims <- conn.assigns[:current_resource],
          {:can, true} <- {:can, can?(claims, search_structure_notes({StructureNote, nil}))} do
-      structure_notes = DataStructures.list_structure_notes(filter)
+      structure_notes = StructureNotes.list_structure_notes(filter)
 
       render(conn, "search.json", structure_notes: structure_notes)
     end
@@ -165,7 +166,7 @@ defmodule TdDdWeb.StructureNoteController do
   end
 
   def show(conn, %{"id" => id}) do
-    structure_note = DataStructures.get_structure_note!(id)
+    structure_note = StructureNotes.get_structure_note!(id)
     render(conn, "show.json", structure_note: structure_note)
   end
 
@@ -197,7 +198,7 @@ defmodule TdDdWeb.StructureNoteController do
     with %{user_id: user_id} = claims <- conn.assigns[:current_resource],
          data_structure <-
            DataStructures.get_data_structure!(data_structure_id, @data_structure_type_preload),
-         structure_note = DataStructures.get_structure_note!(id),
+         structure_note = StructureNotes.get_structure_note!(id),
          {:can, true} <- can(structure_note, structure_note_params, claims, data_structure),
          {:ok, %StructureNote{} = structure_note} <-
            StructureNotesWorkflow.update(
@@ -234,7 +235,7 @@ defmodule TdDdWeb.StructureNoteController do
   end
 
   def delete(conn, %{"id" => id}) do
-    structure_note = DataStructures.get_structure_note!(id)
+    structure_note = StructureNotes.get_structure_note!(id)
 
     with claims <- conn.assigns[:current_resource],
          data_structure <- DataStructures.get_data_structure!(structure_note.data_structure_id),

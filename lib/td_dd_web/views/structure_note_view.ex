@@ -49,7 +49,8 @@ defmodule TdDdWeb.StructureNoteView do
       df_content: structure_note.df_content,
       updated_at: structure_note.updated_at,
       data_structure_id: structure_note.data_structure_id,
-      data_structure_external_id: Map.get(structure_note.data_structure, :external_id)
+      data_structure_external_id: Map.get(structure_note.data_structure, :external_id),
+      version: structure_note.version
     }
   end
 end
