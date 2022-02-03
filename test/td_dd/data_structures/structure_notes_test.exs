@@ -42,7 +42,7 @@ defmodule TdDd.DataStructures.StructureNotesTest do
       assert StructureNotes.list_structure_notes(%{"status" => :draft}) <|> [n4]
     end
 
-    test "list_structure_notes/1 return ordered results paginated by id cursor" do
+    test "list_structure_notes/1 return results paginated by offset ordered by updated_at and note id" do
       page_size = 200
 
       structure_notes =
@@ -50,44 +50,49 @@ defmodule TdDd.DataStructures.StructureNotesTest do
           Enum.map(1..page_size, fn _ -> insert(:structure_note) end)
         end)
 
-      Enum.reduce(structure_notes, nil, fn chunk, id ->
+      Enum.reduce(structure_notes, 0, fn chunk, offset ->
         {last_chunk_id, _} = get_last_id_updated_at_notes(chunk)
 
         notes =
-          StructureNotes.list_structure_notes(%{"cursor" => %{"id" => id, "size" => page_size}})
+          StructureNotes.list_structure_notes(%{
+            "cursor" => %{"offset" => offset, "size" => page_size}
+          })
 
         assert ^page_size = Enum.count(notes)
         {last_note_id, _} = get_last_id_updated_at_notes(notes)
         assert ^last_chunk_id = last_note_id
-        last_chunk_id
+        offset + Enum.count(notes)
       end)
     end
 
     test "list_structure_notes/1 return ordered results paginated by updated_at and id cursor" do
       page_size = 200
 
-      [chunk | rest_notes] =
+      inserted_notes =
+        [chunk | rest_notes] =
         Enum.map(1..5, fn _ ->
           Enum.map(1..page_size, fn _ -> insert(:structure_note) end)
         end)
 
-      {last_chunk_id, last_chunk_updated_at} = get_last_id_updated_at_notes(chunk)
+      {_last_chunk_id, last_chunk_updated_at} = get_last_id_updated_at_notes(chunk)
 
-      Enum.reduce(rest_notes, {last_chunk_id, last_chunk_updated_at}, fn chunk,
-                                                                         {id, updated_at} ->
-        {last_chunk_id, _} = get_last_id_updated_at_notes(chunk)
+      total_post_notes =
+        [chunk | rest_notes]
+        |> List.flatten()
+        |> Enum.filter(&(NaiveDateTime.to_iso8601(&1.updated_at) >= last_chunk_updated_at))
+        |> Enum.count()
 
-        notes =
-          StructureNotes.list_structure_notes(%{
-            "since" => updated_at,
-            "cursor" => %{"id" => id, "size" => page_size}
-          })
+      assert {^total_post_notes, _} =
+               Enum.reduce(inserted_notes, {0, last_chunk_updated_at}, fn _chunk,
+                                                                          {offset, updated_at} ->
+                 notes =
+                   StructureNotes.list_structure_notes(%{
+                     "since" => updated_at,
+                     "cursor" => %{"offset" => offset, "size" => page_size}
+                   })
 
-        assert ^page_size = Enum.count(notes)
-        {last_note_id, _} = get_last_id_updated_at_notes(notes)
-        assert ^last_chunk_id = last_note_id
-        {last_chunk_id, updated_at}
-      end)
+                 {offset + Enum.count(notes), updated_at}
+               end)
     end
 
     test "get_structure_note!/1 returns the structure_note with given id" do

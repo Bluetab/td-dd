@@ -69,8 +69,8 @@ defmodule TdDd.DataStructures.StructureNotes do
 
   defp add_params(_, query), do: query
 
-  defp where_cursor(query, %{cursor: %{id: id}}) when is_integer(id) do
-    where(query, [sn], sn.id > ^id)
+  defp where_cursor(query, %{cursor: %{offset: offset}}) when is_integer(offset) do
+    offset(query, ^offset)
   end
 
   defp where_cursor(query, _), do: query
@@ -83,16 +83,16 @@ defmodule TdDd.DataStructures.StructureNotes do
 
   defp order(query, cursor_params) do
     case Map.has_key?(cursor_params, :cursor) do
-      true -> order_by(query, [sn], asc: sn.id)
+      true -> order_by(query, [sn], asc: sn.updated_at, asc: sn.id)
       false -> query
     end
   end
 
   defp get_cursor_params(%{"cursor" => %{} = cursor}) do
-    id = Map.get(cursor, "id")
+    offset = Map.get(cursor, "offset")
     size = Map.get(cursor, "size")
 
-    %{cursor: %{id: id, size: size}}
+    %{cursor: %{offset: offset, size: size}}
   end
 
   defp get_cursor_params(params), do: params
