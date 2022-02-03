@@ -1,10 +1,13 @@
 # Changelog
 
-## [Unreleased]
+## [Unreleased]
 
 ### Added
 
 - [TD-4152] Include aditional information on implementations downlaod
+- [TD-4102] 
+  - Added structure_notes pagination
+  - context refactoring for structure_notes
 
 ## [4.36.0] 2022-01-24
 
