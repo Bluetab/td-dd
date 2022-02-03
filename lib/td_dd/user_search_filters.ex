@@ -21,7 +21,7 @@ defmodule TdDd.UserSearchFilters do
     criteria
     |> Enum.reduce(UserSearchFilter, fn
         {"scope", scope_string}, query ->
-          case UserSearchFilter.scope_to_atom((scope_string)) do
+          case UserSearchFilter.scope_to_atom(scope_string) do
             nil -> where(query, [usf], is_nil(usf.scope))
             scope -> where(query, [usf], usf.scope == ^scope)
           end
