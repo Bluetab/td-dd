@@ -178,7 +178,7 @@ defmodule TdDq.Rules.RuleResults do
 
   defp refresh_on_delete(res, _), do: res
 
-  defp get_results_gt_date(query, %{"from_date" => ts}) do
+  defp get_results_gt_date(query, %{"since" => ts}) do
     query
     |> where([rr, _, _], rr.date > ^ts)
   end
