@@ -15,7 +15,8 @@ defmodule TdDdWeb.UserSearchFilterView do
       id: user_search_filter.id,
       name: user_search_filter.name,
       filters: user_search_filter.filters,
-      user_id: user_search_filter.user_id
+      user_id: user_search_filter.user_id,
+      scope: user_search_filter.scope
     }
   end
 end

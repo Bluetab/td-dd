@@ -8,6 +8,7 @@
 - [TD-4102] 
   - Added structure_notes pagination
   - context refactoring for structure_notes
+- [TD-2929] UserSearchFilter now has `scope` and is used in Rules and RuleImplementations
 
 ## [4.36.0] 2022-01-24
 

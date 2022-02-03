@@ -113,8 +113,8 @@ defmodule TdDdWeb.Router do
     post("/grant_filters/search", GrantFilterController, :search)
     post("/grant_filters/search/mine", GrantFilterController, :search_mine)
 
-    get("/data_structure_user_filters/user/me", UserSearchFilterController, :index_by_user)
-    resources("/data_structure_user_filters", UserSearchFilterController, except: [:new, :edit])
+    get("/user_search_filters/me", UserSearchFilterController, :index_by_user)
+    resources("/user_search_filters", UserSearchFilterController, except: [:new, :edit])
 
     resources("/relation_types", RelationTypeController, except: [:new, :edit])
 
