@@ -11,6 +11,7 @@ defmodule TdDd.DataStructuresTest do
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.RelationTypes
+  alias TdDd.DataStructures.StructureNotes
 
   @moduletag sandbox: :shared
   @stream TdCache.Audit.stream()
@@ -1682,13 +1683,13 @@ defmodule TdDd.DataStructuresTest do
 
     test "list_structure_notes/0 returns all structure_notes" do
       structure_note = insert(:structure_note)
-      assert DataStructures.list_structure_notes() <|> [structure_note]
+      assert StructureNotes.list_structure_notes() <|> [structure_note]
     end
 
     test "list_structure_notes/1 returns all structure_notes for a data_structure" do
       %{data_structure_id: data_structure_id} = structure_note = insert(:structure_note)
       insert(:structure_note)
-      assert DataStructures.list_structure_notes(data_structure_id) <|> [structure_note]
+      assert StructureNotes.list_structure_notes(data_structure_id) <|> [structure_note]
     end
 
     test "list_structure_notes/1 returns all structure_notes filtered by params" do
@@ -1702,14 +1703,14 @@ defmodule TdDd.DataStructuresTest do
         "status" => "versioned"
       }
 
-      assert DataStructures.list_structure_notes(filters) <|> [n1, n2]
-      assert DataStructures.list_structure_notes(%{}) <|> [n1, n2, n3, n4]
-      assert DataStructures.list_structure_notes(%{"status" => :draft}) <|> [n4]
+      assert StructureNotes.list_structure_notes(filters) <|> [n1, n2]
+      assert StructureNotes.list_structure_notes(%{}) <|> [n1, n2, n3, n4]
+      assert StructureNotes.list_structure_notes(%{"status" => :draft}) <|> [n4]
     end
 
     test "get_structure_note!/1 returns the structure_note with given id" do
       structure_note = insert(:structure_note)
-      assert DataStructures.get_structure_note!(structure_note.id) <~> structure_note
+      assert StructureNotes.get_structure_note!(structure_note.id) <~> structure_note
     end
 
     test "get_latest_structure_note/1 returns the latest structure_note for a data_structure" do
@@ -1717,14 +1718,14 @@ defmodule TdDd.DataStructuresTest do
       insert(:structure_note, version: 2, data_structure: data_structure)
       latest_structure_note = insert(:structure_note, version: 3, data_structure: data_structure)
       insert(:structure_note)
-      assert DataStructures.get_latest_structure_note(data_structure.id) <~> latest_structure_note
+      assert StructureNotes.get_latest_structure_note(data_structure.id) <~> latest_structure_note
     end
 
     test "create_structure_note/3 with valid data creates a structure_note and publishes event" do
       data_structure = insert(:data_structure)
 
       assert {:ok, %StructureNote{} = structure_note} =
-               DataStructures.create_structure_note(data_structure, @valid_attrs, @user_id)
+               StructureNotes.create_structure_note(data_structure, @valid_attrs, @user_id)
 
       assert structure_note.df_content == %{}
       assert structure_note.status == :draft
@@ -1735,14 +1736,14 @@ defmodule TdDd.DataStructuresTest do
       data_structure = insert(:data_structure)
 
       assert {:error, %Ecto.Changeset{}} =
-               DataStructures.create_structure_note(data_structure, @invalid_attrs, @user_id)
+               StructureNotes.create_structure_note(data_structure, @invalid_attrs, @user_id)
     end
 
     test "update_structure_note/3 with valid data updates the structure_note" do
       structure_note = insert(:structure_note)
 
       assert {:ok, %StructureNote{} = structure_note} =
-               DataStructures.update_structure_note(structure_note, @update_attrs, @user_id)
+               StructureNotes.update_structure_note(structure_note, @update_attrs, @user_id)
 
       assert structure_note.df_content == %{}
       assert structure_note.status == :published
@@ -1752,9 +1753,9 @@ defmodule TdDd.DataStructuresTest do
       structure_note = insert(:structure_note)
 
       assert {:error, %Ecto.Changeset{}} =
-               DataStructures.update_structure_note(structure_note, @invalid_attrs, @user_id)
+               StructureNotes.update_structure_note(structure_note, @invalid_attrs, @user_id)
 
-      assert structure_note <~> DataStructures.get_structure_note!(structure_note.id)
+      assert structure_note <~> StructureNotes.get_structure_note!(structure_note.id)
     end
 
     test "delete_structure_note/1 deletes the structure_note" do
@@ -1762,16 +1763,16 @@ defmodule TdDd.DataStructuresTest do
       structure_note = insert(:structure_note)
 
       assert {:ok, %StructureNote{}} =
-               DataStructures.delete_structure_note(structure_note, user_id)
+               StructureNotes.delete_structure_note(structure_note, user_id)
 
       assert_raise Ecto.NoResultsError, fn ->
-        DataStructures.get_structure_note!(structure_note.id)
+        StructureNotes.get_structure_note!(structure_note.id)
       end
     end
 
     test "change_structure_note/1 returns a structure_note changeset" do
       structure_note = insert(:structure_note)
-      assert %Ecto.Changeset{} = DataStructures.change_structure_note(structure_note)
+      assert %Ecto.Changeset{} = StructureNotes.change_structure_note(structure_note)
     end
   end
 end

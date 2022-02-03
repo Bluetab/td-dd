@@ -6,6 +6,8 @@
 
 - [TD-4152] Include aditional information on implementations downlaod
 - [TD-4277] Include `domain_id` in `rule implementations`
+- [TD-4102] Support pagination of structure notes
+- [TD-2929] UserSearchFilter now has `scope` and is used in Rules and RuleImplementations
 
 ## [4.36.0] 2022-01-24
 
