@@ -5,6 +5,7 @@ defmodule TdDdWeb.LineageEventController do
   import Canada, only: [can?: 2]
 
   alias TdDd.Lineage.LineageEvents
+  alias TdDd.Lineage.Units.Unit
 
   action_fallback(TdDdWeb.FallbackController)
 
@@ -20,8 +21,8 @@ defmodule TdDdWeb.LineageEventController do
   def index(conn, _params) do
     claims = conn.assigns[:current_resource]
 
-    with %{user_id: user_id} = _claims <- conn.assigns[:current_resource],
-         {:can, true} <- {:can, can?(claims, list(Lineage))} do
+    with %{user_id: user_id} = _claims <- conn.assigns[:current_resource] do
+         #{:can, true} <- {:can, can?(claims, view_lineage)} |> IO.inspect(label: "LINEAGE_EVENT") do
       render(conn, "index.json", %{lineage_events: LineageEvents.get_by_user_id(user_id)})
     end
   end

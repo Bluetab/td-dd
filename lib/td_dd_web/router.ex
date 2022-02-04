@@ -131,6 +131,8 @@ defmodule TdDdWeb.Router do
 
     resources("/grants_bulk", GrantsController, only: [:update], singleton: true)
 
+    resources("/accesses_bulk", AccessController, only: [:create], singleton: true)
+
     resources("/grant_request_groups", GrantRequestGroupController,
       only: [:index, :show, :create, :delete]
     ) do

@@ -81,6 +81,7 @@ defmodule CacheHelpers do
       |> Map.put_new(:id, System.unique_integer([:positive]))
       |> Map.put_new(:user_name, "user name")
       |> Map.put_new(:full_name, "full name")
+      |> Map.put_new(:external_id, "external.id")
       |> Map.put_new(:email, "foo@bar.xyz")
 
     {:ok, _} = UserCache.put(user)
