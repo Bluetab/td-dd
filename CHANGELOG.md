@@ -4,7 +4,7 @@
 
 ### Added
 
-- [TD-4152] Include aditional information on implementations downlaod
+- [TD-4152] Include aditional information on implementations download
 - [TD-4102] 
   - Added structure_notes pagination
   - context refactoring for structure_notes
@@ -16,6 +16,8 @@
   aggregation (`linked_concept_count`), which was preventing elasticsearch from
   using its request cache. Also ensure that `size=0` is used when fetching
   aggregations from elasticsearch (the `hits` are not consumed).
+
+- [TD-4501] Allow regular users to list lineage events based on :view_lineage permission
 
 ## [4.36.0] 2022-01-24
 
