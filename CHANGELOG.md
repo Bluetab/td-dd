@@ -10,6 +10,13 @@
   - context refactoring for structure_notes
 - [TD-2929] UserSearchFilter now has `scope` and is used in Rules and RuleImplementations
 
+### Fixed
+
+- [TD-4424] Fixed a performance issue fetching filter values, due to a scripted
+  aggregation (`linked_concept_count`), which was preventing elasticsearch from
+  using its request cache. Also ensure that `size=0` is used when fetching
+  aggregations from elasticsearch (the `hits` are not consumed).
+
 ## [4.36.0] 2022-01-24
 
 ### Added
@@ -722,11 +729,9 @@
     files uploaded using the same unit name will overwrite the existing nodes
     and relations in that unit.
   - Latest status for a unit can be queried using `GET /api/units/:unit_name`.
-  - Events relating to a unit can be queried using `GET
-    /api/units/:unit_name/events`.
+  - Events relating to a unit can be queried using `GET /api/units/:unit_name/events`.
   - A unit can be logically deleted using `DELETE /api/units/:unit_name`.
-  - A unit can be physically deleted using `DELETE
-    /api/units/:unit_name?logical=false`.
+  - A unit can be physically deleted using `DELETE /api/units/:unit_name?logical=false`.
   - [TD-2495] Changed structures loader migration key to cache all structures
     again including their metadata
 

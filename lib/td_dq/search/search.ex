@@ -87,11 +87,11 @@ defmodule TdDq.Search do
 
     case response do
       {:ok, %{"aggregations" => aggregations}} ->
-        format_aggregations(aggregations)
+        {:ok, format_aggregations(aggregations)}
 
       {:error, %Elasticsearch.Exception{message: message} = error} ->
         Logger.warn("Error response from Elasticsearch: #{message}")
-        error
+        {:error, error}
     end
   end
 
