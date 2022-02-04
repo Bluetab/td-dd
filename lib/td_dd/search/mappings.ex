@@ -62,7 +62,7 @@ defmodule TdDd.Search.Mappings do
       last_change_by: %{enabled: false},
       metadata: %{enabled: false},
       mutable_metadata: %{enabled: false},
-      linked_concepts_count: %{type: "short"},
+      linked_concepts: %{type: "boolean"},
       inserted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       path: %{type: "keyword", fields: @text},

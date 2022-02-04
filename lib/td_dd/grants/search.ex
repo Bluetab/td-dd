@@ -17,8 +17,8 @@ defmodule TdDd.Grants.Search do
   def get_filter_values(%Claims{role: role}, _permission, params)
       when role in ["admin", "service"] do
     filter_clause = Query.create_filters(params, @index)
-    query = Query.create_query(%{}, filter_clause)
-    search = %{query: query, aggs: Query.get_aggregation_terms(@index)}
+    query = %{bool: %{filter: filter_clause}}
+    search = %{query: query, aggs: Query.get_aggregation_terms(@index), size: 0}
     Search.get_filters(search, @index)
   end
 
@@ -31,7 +31,7 @@ defmodule TdDd.Grants.Search do
     get_filter_values(permissions, params)
   end
 
-  def get_filter_values([], _params), do: %{}
+  def get_filter_values([], _params), do: {:ok, %{}}
 
   def get_filter_values(claims_or_permissions, params) do
     user_defined_filters = Query.create_filters(params, @index)
@@ -43,7 +43,7 @@ defmodule TdDd.Grants.Search do
       end
 
     query = Query.create_query(%{}, filter)
-    search = %{query: query, aggs: Query.get_aggregation_terms(@index)}
+    search = %{query: query, aggs: Query.get_aggregation_terms(@index), size: 0}
     Search.get_filters(search, @index)
   end
 
