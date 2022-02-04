@@ -33,20 +33,21 @@ defmodule TdDq.Rules.Audit do
   end
 
   @doc """
-  Publishes `:implementation_created` events. Should be called using `Ecto.Multi.run/5`.
+  Publishes an `:implementation_created` event. Should be called using
+  `Ecto.Multi.run/5`.
   """
   def implementation_created(
         _repo,
-        %{implementation: %{id: id} = implementation},
+        %{implementation: %{id: id, rule_id: rule_id} = implementation},
         _changeset,
         user_id
       ) do
-    rule_name = implementation.rule.name
+    %{name: rule_name} = Rules.get_rule!(rule_id)
 
     payload =
       implementation
-      |> Map.take([:implementation_key, :rule_id])
-      |> Map.put_new(:rule_name, rule_name)
+      |> Map.take([:implementation_key, :rule_id, :domain_id])
+      |> Map.put(:rule_name, rule_name)
 
     publish("implementation_created", "implementation", id, user_id, payload)
   end
@@ -60,7 +61,7 @@ defmodule TdDq.Rules.Audit do
         _changeset,
         user_id
       ) do
-    payload = Map.take(implementation, [:implementation_key, :rule_id])
+    payload = Map.take(implementation, [:implementation_key, :rule_id, :domain_id])
     publish("implementation_deleted", "implementation", id, user_id, payload)
   end
 
@@ -70,7 +71,7 @@ defmodule TdDq.Rules.Audit do
   def implementations_deprecated(_repo, %{deprecated: {_, [_ | _] = impls}}) do
     impls
     |> Enum.map(fn %{id: id} = implementation ->
-      payload = Map.take(implementation, [:implementation_key, :rule_id])
+      payload = Map.take(implementation, [:implementation_key, :rule_id, :domain_id])
       publish("implementation_deprecated", "implementation", id, 0, payload)
     end)
     |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
@@ -83,15 +84,19 @@ defmodule TdDq.Rules.Audit do
   def implementations_deprecated(_repo, _), do: {:ok, []}
 
   @doc """
-  Publishes a `:implementation_deprecated` event. Should be called using `Ecto.Multi.run/5`.
+  Publishes an `implementation_updated` event (or `implementation_deprecated`,
+  `implementation_restored`, `implementation_moved`, `implementation_changed`).
+  Should be called using `Ecto.Multi.run/5`.
   """
+  def implementation_updated(repo, implementation, changeset, user_id)
+
   def implementation_updated(
         _repo,
         %{implementation: %{id: id} = implementation},
         %{changes: %{deleted_at: deleted_at}},
         user_id
       ) do
-    payload = Map.take(implementation, [:implementation_key, :rule_id])
+    payload = Map.take(implementation, [:implementation_key, :rule_id, :domain_id])
 
     event =
       if is_nil(deleted_at) do
@@ -109,12 +114,16 @@ defmodule TdDq.Rules.Audit do
         %{changes: %{rule_id: rule_id}},
         user_id
       ) do
-    rule = Rules.get_rule(rule_id)
+    %{name: rule_name} = Rules.get_rule!(rule_id)
 
     payload =
       implementation
-      |> Map.take([:implementation_key, :rule_id])
-      |> Map.put_new(:rule_name, rule.name)
+      |> Map.take([:implementation_key, :rule_id, :domain_id])
+      |> Map.put(:rule_name, rule_name)
+
+    # TODO: TD-4455 What about other fields that have changed?
+    # Why do we need an implementation_moved event instead of using a
+    # generic implementation_updated event?
 
     publish("implementation_moved", "implementation", id, user_id, payload)
   end
@@ -125,6 +134,9 @@ defmodule TdDq.Rules.Audit do
         %{changes: %{df_content: _df_content}} = changeset,
         user_id
       ) do
+    # TODO: TD-4455 Why do we need an implementation_changed event instead of
+    # using a generic implementation_updated? What about other fields that have
+    # changed? Should domain_id be included?
     publish("implementation_changed", "implementation", id, user_id, changeset)
   end
 
@@ -134,7 +146,8 @@ defmodule TdDq.Rules.Audit do
         _changeset,
         user_id
       ) do
-    payload = Map.take(implementation, [:implementation_key, :rule_id])
+    payload = Map.take(implementation, [:implementation_key, :rule_id, :domain_id])
+    # TODO: TD-4455 Why aren't any changes included in the payload
     publish("implementation_updated", "implementation", id, user_id, payload)
   end
 

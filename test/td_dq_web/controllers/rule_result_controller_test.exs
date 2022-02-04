@@ -24,8 +24,7 @@ defmodule TdDqWeb.RuleResultControllerTest do
   describe "GET /api/rule_results" do
     @tag authentication: [role: "service"]
     test "service account can view rule results", %{conn: conn} do
-      impl = insert(:implementation)
-      insert(:rule_result, implementation: impl)
+      insert(:rule_result, implementation: build(:implementation))
 
       assert %{"data" => [_]} =
                conn
@@ -36,13 +35,12 @@ defmodule TdDqWeb.RuleResultControllerTest do
 
   describe "delete rule results" do
     @tag authentication: [role: "admin"]
-    @tag fixture: ""
     test "Admin user correctly deletes rule result", %{conn: conn} do
-      impl = insert(:implementation)
-      now = DateTime.utc_now()
-      rule_result = insert(:rule_result, implementation: impl, result: 60, date: now)
-      conn = delete(conn, Routes.rule_result_path(conn, :delete, rule_result.id))
-      assert response(conn, 204)
+      %{id: id} = insert(:rule_result)
+
+      assert conn
+             |> delete(Routes.rule_result_path(conn, :delete, id))
+             |> response(:no_content)
     end
   end
 
