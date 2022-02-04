@@ -69,8 +69,8 @@ defmodule TdDq.Implementations.BulkLoad do
           }
       end
     end)
-    |> Map.update!(:ids, &Enum.reverse(&1))
-    |> Map.update!(:errors, &Enum.reverse(&1))
+    |> Map.update!(:ids, &Enum.reverse/1)
+    |> Map.update!(:errors, &Enum.reverse/1)
   end
 
   defp enrich_implementation(implementation) do

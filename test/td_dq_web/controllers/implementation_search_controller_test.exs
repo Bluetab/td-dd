@@ -22,7 +22,7 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
   setup tags do
     domain_id = get_in(tags, [:domain, :id])
     rule = insert(:rule, business_concept_id: @business_concept_id, domain_id: domain_id)
-    implementation = insert(:implementation, rule: rule)
+    implementation = insert(:implementation, rule: rule, domain_id: domain_id)
     [implementation: implementation, rule: rule]
   end
 

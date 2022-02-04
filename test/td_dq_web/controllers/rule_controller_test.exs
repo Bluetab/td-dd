@@ -294,8 +294,10 @@ defmodule TdDqWeb.RuleControllerTest do
     end
 
     @tag authentication: [user_name: "non_admin"]
-    test "user without permissions cannot create rule", %{conn: conn} do
-      params = string_params_for(:rule) |> Map.delete("business_concept_id")
+    test "user without permissions cannot create rule", %{conn: conn, domain: domain} do
+      params =
+        string_params_for(:rule, domain_id: domain.id)
+        |> Map.delete("business_concept_id")
 
       assert conn
              |> post(Routes.rule_path(conn, :create), rule: params)
@@ -441,10 +443,12 @@ defmodule TdDqWeb.RuleControllerTest do
     @tag authentication: [role: "admin"]
     test "renders rule when data is valid", %{
       conn: conn,
-      rule: %Rule{id: id} = rule,
+      rule: %Rule{id: id, domain_id: domain_id} = rule,
       swagger_schema: schema
     } do
-      params = string_params_for(:rule) |> Map.delete("business_concept_id")
+      params =
+        string_params_for(:rule, domain_id: domain_id)
+        |> Map.delete("business_concept_id")
 
       assert %{"data" => data} =
                conn
@@ -458,9 +462,12 @@ defmodule TdDqWeb.RuleControllerTest do
     @tag authentication: [user_name: "non_admin"]
     test "user without permissions cannot update rule", %{
       conn: conn,
-      rule: %Rule{} = rule
+      rule: %Rule{domain_id: domain_id} = rule
     } do
-      params = string_params_for(:rule) |> Map.delete("business_concept_id")
+      params =
+        string_params_for(:rule, domain_id: domain_id)
+        |> Map.delete("business_concept_id")
+        |> Map.delete("domain_id")
 
       assert conn
              |> put(Routes.rule_path(conn, :update, rule), rule: params)

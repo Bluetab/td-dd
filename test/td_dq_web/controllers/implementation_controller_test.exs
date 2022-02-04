@@ -392,10 +392,9 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
     @tag authentication: [role: "admin"]
     test "renders errors when implementation result type is numeric and goal is higher than minimum",
-         %{
-           conn: conn
-         } do
-      rule = insert(:rule)
+         %{conn: conn} do
+      domain_id = System.unique_integer([:positive])
+      rule = insert(:rule, domain_id: domain_id)
 
       params =
         string_params_for(:implementation,
@@ -415,14 +414,12 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
     @tag authentication: [role: "admin"]
     test "renders errors when implementation result type is percentage and goal is lower than minimum",
-         %{
-           conn: conn
-         } do
-      rule = insert(:rule)
+         %{conn: conn} do
+      %{id: rule_id} = insert(:rule)
 
       params =
         string_params_for(:implementation,
-          rule_id: rule.id,
+          rule_id: rule_id,
           result_type: "percentage",
           minimum: 50,
           goal: 10
@@ -514,7 +511,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
            permissions: [:manage_quality_rule_implementations]
          ]
     test "user with permissions can update", %{conn: conn, domain: %{id: domain_id}} do
-      implementation = insert(:implementation, rule: insert(:rule, domain_id: domain_id))
+      %{id: rule_id} = insert(:rule, domain_id: domain_id)
+      implementation = insert(:implementation, rule_id: rule_id, domain_id: domain_id)
 
       params =
         %{
@@ -618,7 +616,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
     @tag authentication: [role: "admin"]
     test "accepts base64 encoded raw_content", %{conn: conn, swagger_schema: schema} do
-      %{id: id} = insert(:raw_implementation)
+      %{id: id} = insert(:raw_implementation, domain_id: 123)
 
       params = %{
         "rule_implementation" => %{
@@ -678,7 +676,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
       conn: conn,
       domain: %{id: domain_id}
     } do
-      implementation = insert(:implementation, rule: insert(:rule, domain_id: domain_id))
+      implementation =
+        insert(:implementation, rule: insert(:rule, domain_id: domain_id), domain_id: domain_id)
 
       assert conn
              |> delete(Routes.implementation_path(conn, :delete, implementation))
@@ -763,24 +762,19 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
   describe "csv" do
     setup do
-      result_01 =
-        insert(:rule_result,
-          records: 3245,
-          result_type: "percentage",
-          errors: 123,
-          result: 0
-        )
+      result =
+        build(:rule_result, records: 3245, result_type: "percentage", errors: 123, result: 0)
 
-      [
-        implementations: [
-          insert(:implementation, %{
-            results: [result_01],
-            df_content: %{"some_first_field" => "some_first_value"}
-          }),
-          insert(:implementation, %{df_content: %{"some_second_field" => "some_value"}}),
-          insert(:implementation, %{df_content: %{"some_second_field" => "some_second_value"}})
-        ]
+      implementations = [
+        insert(:implementation,
+          results: [result],
+          df_content: %{"some_first_field" => "some_first_value"}
+        ),
+        insert(:implementation, df_content: %{"some_second_field" => "some_value"}),
+        insert(:implementation, df_content: %{"some_second_field" => "some_second_value"})
       ]
+
+      [implementations: implementations, result: result]
     end
 
     @tag authentication: [role: "admin"]
@@ -790,63 +784,34 @@ defmodule TdDqWeb.ImplementationControllerTest do
       implementations: new_implementations
     } do
       [
+        %{implementation_key: key_0, rule: %{name: name_0}, inserted_at: inserted_at_0},
         %{
-          implementation_key: implementation_key_0,
-          rule: %{name: rule_name_0},
-          inserted_at: inserted_at_0
-        },
-        %{
-          implementation_key: implementation_key_1,
-          rule: %{name: rule_name_1},
-          results: [
-            %{
-              records: records_1,
-              errors: errors_1
-            }
-          ],
+          implementation_key: key_1,
+          rule: %{name: name_1},
+          results: [%{records: records_1, errors: errors_1}],
           inserted_at: inserted_at_1
         },
-        %{
-          implementation_key: implementation_key_2,
-          rule: %{name: rule_name_2},
-          inserted_at: inserted_at_2
-        },
-        %{
-          implementation_key: implementation_key_3,
-          rule: %{name: rule_name_3},
-          inserted_at: inserted_at_3
-        }
+        %{implementation_key: key_2, rule: %{name: name_2}, inserted_at: inserted_at_2},
+        %{implementation_key: key_3, rule: %{name: name_3}, inserted_at: inserted_at_3}
       ] = [previous_implementation | new_implementations]
 
       assert %{resp_body: body} = post(conn, Routes.implementation_path(conn, :csv, %{}))
 
-      assert body =~
-               "implementation_key;implementation_type;executable;rule;rule_template;implementation_template;goal;minimum;business_concept;last_execution_at;records;errors;result;execution;inserted_at;dataset_external_id_1;validation_field_1\r"
+      ts_0 = NaiveDateTime.to_iso8601(inserted_at_0)
+      ts_1 = NaiveDateTime.to_iso8601(inserted_at_1)
+      ts_2 = NaiveDateTime.to_iso8601(inserted_at_2)
+      ts_3 = NaiveDateTime.to_iso8601(inserted_at_3)
 
-      parsed_inserted_at_0 = NaiveDateTime.to_iso8601(inserted_at_0)
-      parsed_inserted_at_1 = NaiveDateTime.to_iso8601(inserted_at_1)
-      parsed_inserted_at_2 = NaiveDateTime.to_iso8601(inserted_at_2)
-      parsed_inserted_at_3 = NaiveDateTime.to_iso8601(inserted_at_3)
-
-      assert body =~
-               ~r/#{implementation_key_0};default;[\w+.]+;#{rule_name_0};;;\d*\.?\d*;\d*\.?\d*;;;;;;;#{
-                 parsed_inserted_at_0
-               };;;\r/
-
-      assert body =~
-               ~r/#{implementation_key_1};default;[\w+.]+;#{rule_name_1};;;\d*\.?\d*;\d*\.?\d*;;[[:ascii:]]+;#{
-                 records_1
-               };#{errors_1};\d*\.?\d*;[\w+.]+;#{parsed_inserted_at_1};;;\r/
-
-      assert body =~
-               ~r/#{implementation_key_2};default;[\w+.]+;#{rule_name_2};;;\d*\.?\d*;\d*\.?\d*;;;;;;;#{
-                 parsed_inserted_at_2
-               };;;\r/
-
-      assert body =~
-               ~r/#{implementation_key_3};default;[\w+.]+;#{rule_name_3};;;\d*\.?\d*;\d*\.?\d*;;;;;;;#{
-                 parsed_inserted_at_3
-               };;;\r/
+      for regex <- [
+            # credo:disable-for-lines:5 Credo.Check.Readability.MaxLineLength
+            "implementation_key;implementation_type;executable;rule;rule_template;implementation_template;goal;minimum;business_concept;last_execution_at;records;errors;result;execution;inserted_at;dataset_external_id_1;validation_field_1\r",
+            ~r/#{key_0};default;[\w+.]+;#{name_0};;;\d*\.?\d*;\d*\.?\d*;;;;;;;#{ts_0};;;\r/,
+            ~r/#{key_1};default;[\w+.]+;#{name_1};;;\d*\.?\d*;\d*\.?\d*;;[[:ascii:]]+;#{records_1};#{errors_1};\d*\.?\d*;[\w+.]+;#{ts_1};;;\r/,
+            ~r/#{key_2};default;[\w+.]+;#{name_2};;;\d*\.?\d*;\d*\.?\d*;;;;;;;#{ts_2};;;\r/,
+            ~r/#{key_3};default;[\w+.]+;#{name_3};;;\d*\.?\d*;\d*\.?\d*;;;;;;;#{ts_3};;;\r/
+          ] do
+        assert body =~ regex
+      end
     end
   end
 
