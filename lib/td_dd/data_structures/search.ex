@@ -15,8 +15,8 @@ defmodule TdDd.DataStructures.Search do
   def get_filter_values(%Claims{role: role}, _permission, params)
       when role in ["admin", "service"] do
     filter_clause = create_filters(params)
-    query = create_query(%{}, filter_clause)
-    search = %{query: query, aggs: Aggregations.aggregation_terms()}
+    query = %{bool: %{filter: filter_clause}}
+    search = %{query: query, aggs: Aggregations.aggregation_terms(), size: 0}
     Search.get_filters(search)
   end
 
@@ -29,13 +29,13 @@ defmodule TdDd.DataStructures.Search do
     get_filter_values(permissions, params)
   end
 
-  def get_filter_values([], _params), do: %{}
+  def get_filter_values([], _params), do: {:ok, %{}}
 
   def get_filter_values(permissions, params) do
     user_defined_filters = create_filters(params)
     filter = permissions |> create_filter_clause(user_defined_filters)
     query = create_query(%{}, filter)
-    search = %{query: query, aggs: Aggregations.aggregation_terms()}
+    search = %{query: query, aggs: Aggregations.aggregation_terms(), size: 0}
     Search.get_filters(search)
   end
 
@@ -255,14 +255,6 @@ defmodule TdDd.DataStructures.Search do
 
   defp get_filter(nil, value, filter) when not is_list(value) do
     %{term: %{filter => value}}
-  end
-
-  defp get_filter(_, ["linked"], "linked_concepts_count") do
-    %{range: %{"linked_concepts_count" => %{gt: 0}}}
-  end
-
-  defp get_filter(_, ["unlinked"], "linked_concepts_count") do
-    %{term: %{"linked_concepts_count" => 0}}
   end
 
   defp get_filter(_, _, _), do: nil

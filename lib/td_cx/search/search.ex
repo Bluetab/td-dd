@@ -31,13 +31,16 @@ defmodule TdCx.Search do
 
     case response do
       {:ok, %{"aggregations" => aggregations}} ->
-        aggregations
-        |> Map.to_list()
-        |> Enum.into(%{}, &filter_values/1)
+        aggs =
+          aggregations
+          |> Map.to_list()
+          |> Enum.into(%{}, &filter_values/1)
+
+        {:ok, aggs}
 
       {:error, %Elasticsearch.Exception{message: message} = error} ->
         Logger.warn("Error response from Elasticsearch: #{message}")
-        error
+        {:error, error}
     end
   end
 

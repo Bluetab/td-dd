@@ -158,7 +158,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
         :external_id,
         :id,
         :inserted_at,
-        :linked_concepts_count,
+        :linked_concepts,
         :source_id,
         :system_id
       ])

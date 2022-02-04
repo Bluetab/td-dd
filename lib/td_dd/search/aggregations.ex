@@ -16,8 +16,7 @@ defmodule TdDd.Search.Aggregations do
       {"field_type.raw", %{terms: %{field: "field_type.raw", size: 50}}},
       {"with_content.raw", %{terms: %{field: "with_content.raw"}}},
       {"tags.raw", %{terms: %{field: "tags.raw", size: 50}}},
-      {"linked_concepts_count",
-       %{terms: %{script: "doc['linked_concepts_count'].value > 0 ? 'linked' : 'unlinked'"}}},
+      {"linked_concepts", %{terms: %{field: "linked_concepts"}}},
       {"taxonomy",
        %{
          nested: %{path: "domain_parents"},
