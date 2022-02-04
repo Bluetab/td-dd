@@ -4,7 +4,11 @@
 
 ### Added
 
-- [TD-4152] Include aditional information on implementations downlaod
+- [TD-4152] Include aditional information on implementations download
+
+### Fixed
+
+- [TD-4501] Allow regular users to list lineage events based on :view_lineage permission
 
 ## [4.36.0] 2022-01-24
 
