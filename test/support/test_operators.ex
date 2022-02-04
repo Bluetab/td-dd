@@ -34,7 +34,7 @@ defmodule TdDd.TestOperators do
       :versions,
       :system,
       :domain,
-      :linked_concepts_count,
+      :linked_concepts,
       :latest_note
     ]) ==
       Map.drop(b, [
@@ -42,7 +42,7 @@ defmodule TdDd.TestOperators do
         :versions,
         :system,
         :domain,
-        :linked_concepts_count,
+        :linked_concepts,
         :latest_note
       ])
   end

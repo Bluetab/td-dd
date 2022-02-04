@@ -13,25 +13,23 @@ defmodule TdDd.UserSearchFilters do
 
   ## Examples
 
-      iex> list_user_search_filters()
+      iex> list_user_search_filters(%{"user_id" => 123})
       [%UserSearchFilter{}, ...]
 
   """
-  def list_user_search_filters do
-    Repo.all(UserSearchFilter)
-  end
-
-  @doc """
-  Returns the list of user_search_filters for the given user.
-
-  ## Examples
-
-      iex> list_user_search_filters(1)
-      [%UserSearchFilter{}, ...]
-
-  """
-  def list_user_search_filters(user_id) do
-    Repo.all(from(f in UserSearchFilter, where: f.user_id == ^user_id))
+  def list_user_search_filters(criteria \\ []) do
+    criteria
+    |> Enum.reduce(UserSearchFilter, fn
+        {"scope", scope_string}, query ->
+          case UserSearchFilter.scope_to_atom(scope_string) do
+            nil -> where(query, [usf], is_nil(usf.scope))
+            scope -> where(query, [usf], usf.scope == ^scope)
+          end
+        {"user_id", user_id}, query -> where(query, [usf], usf.user_id == ^user_id)
+        _, query -> query
+      end
+    )
+    |> Repo.all()
   end
 
   @doc """
