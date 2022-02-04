@@ -2,16 +2,20 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-4152] Include aditional information on implementations downlaod
+- [TD-4102] 
+  - Added structure_notes pagination
+  - context refactoring for structure_notes
+- [TD-2929] UserSearchFilter now has `scope` and is used in Rules and RuleImplementations
+
 ### Fixed
 
 - [TD-4424] Fixed a performance issue fetching filter values, due to a scripted
   aggregation (`linked_concept_count`), which was preventing elasticsearch from
   using its request cache. Also ensure that `size=0` is used when fetching
   aggregations from elasticsearch (the `hits` are not consumed).
-
-### Added
-
-- [TD-4152] Include aditional information on implementations downlaod
 
 ## [4.36.0] 2022-01-24
 

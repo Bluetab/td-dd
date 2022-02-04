@@ -91,7 +91,7 @@ defmodule TdDq.RuleResultsTest do
 
       insert(:rule_result, implementation: implementation1, date: "2000-01-01T00:00:00")
       result = insert(:rule_result, implementation: implementation2, date: "2000-02-01T11:11:11")
-      assert RuleResults.list_rule_results(%{"from_date" => "2000-01-11T11:11:11"}) <|> [result]
+      assert RuleResults.list_rule_results(%{"since" => "2000-01-11T11:11:11"}) <|> [result]
     end
   end
 

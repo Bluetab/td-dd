@@ -22,8 +22,8 @@ defmodule TdDdWeb.UserSearchFilterController do
     response(422, "Client Error")
   end
 
-  def index(conn, _params) do
-    user_search_filters = UserSearchFilters.list_user_search_filters()
+  def index(conn, params) do
+    user_search_filters = UserSearchFilters.list_user_search_filters(params)
     render(conn, "index.json", user_search_filters: user_search_filters)
   end
 
@@ -36,10 +36,11 @@ defmodule TdDdWeb.UserSearchFilterController do
     response(422, "Client Error")
   end
 
-  def index_by_user(conn, _params) do
+  def index_by_user(conn, params) do
     %{user_id: user_id} = conn.assigns[:current_resource]
+    params_with_user = Map.put(params, "user_id", user_id)
 
-    user_search_filters = UserSearchFilters.list_user_search_filters(user_id)
+    user_search_filters = UserSearchFilters.list_user_search_filters(params_with_user)
     render(conn, "index.json", user_search_filters: user_search_filters)
   end
 
