@@ -46,7 +46,7 @@ defmodule TdDq.Rules.Audit do
 
     payload =
       implementation
-      |> Map.take([:implementation_key, :rule_id])
+      |> Map.take([:implementation_key, :rule_id, :domain_id])
       |> Map.put(:rule_name, rule_name)
 
     publish("implementation_created", "implementation", id, user_id, payload)
@@ -61,7 +61,7 @@ defmodule TdDq.Rules.Audit do
         _changeset,
         user_id
       ) do
-    payload = Map.take(implementation, [:implementation_key, :rule_id])
+    payload = Map.take(implementation, [:implementation_key, :rule_id, :domain_id])
     publish("implementation_deleted", "implementation", id, user_id, payload)
   end
 
@@ -71,7 +71,7 @@ defmodule TdDq.Rules.Audit do
   def implementations_deprecated(_repo, %{deprecated: {_, [_ | _] = impls}}) do
     impls
     |> Enum.map(fn %{id: id} = implementation ->
-      payload = Map.take(implementation, [:implementation_key, :rule_id])
+      payload = Map.take(implementation, [:implementation_key, :rule_id, :domain_id])
       publish("implementation_deprecated", "implementation", id, 0, payload)
     end)
     |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
@@ -96,7 +96,7 @@ defmodule TdDq.Rules.Audit do
         %{changes: %{deleted_at: deleted_at}},
         user_id
       ) do
-    payload = Map.take(implementation, [:implementation_key, :rule_id])
+    payload = Map.take(implementation, [:implementation_key, :rule_id, :domain_id])
 
     event =
       if is_nil(deleted_at) do
@@ -104,8 +104,6 @@ defmodule TdDq.Rules.Audit do
       else
         "implementation_deprecated"
       end
-    # Why do we need these events instead of using a generic
-    # implementation_updated event?
 
     publish(event, "implementation", id, user_id, payload)
   end
@@ -120,12 +118,10 @@ defmodule TdDq.Rules.Audit do
 
     payload =
       implementation
-      |> Map.take([:implementation_key, :rule_id])
+      |> Map.take([:implementation_key, :rule_id, :domain_id])
       |> Map.put(:rule_name, rule_name)
 
-    # TODO: The rule_id in the payload is the old rule_id. Is that correct?
-    # Should the domain_id be included in the payload if it changed?
-    # What about other fields that have changed?
+    # TODO: TD-4455 What about other fields that have changed?
     # Why do we need an implementation_moved event instead of using a
     # generic implementation_updated event?
 
@@ -138,9 +134,9 @@ defmodule TdDq.Rules.Audit do
         %{changes: %{df_content: _df_content}} = changeset,
         user_id
       ) do
-    # TODO: Why do we need an implementation_changed event instead of using a
-    # generic implementation_updated?
-    # What about other fields that have changed?
+    # TODO: TD-4455 Why do we need an implementation_changed event instead of
+    # using a generic implementation_updated? What about other fields that have
+    # changed? Should domain_id be included?
     publish("implementation_changed", "implementation", id, user_id, changeset)
   end
 
@@ -150,8 +146,8 @@ defmodule TdDq.Rules.Audit do
         _changeset,
         user_id
       ) do
-    payload = Map.take(implementation, [:implementation_key, :rule_id])
-    # TODO: Why aren't any changes included in the payload
+    payload = Map.take(implementation, [:implementation_key, :rule_id, :domain_id])
+    # TODO: TD-4455 Why aren't any changes included in the payload
     publish("implementation_updated", "implementation", id, user_id, payload)
   end
 

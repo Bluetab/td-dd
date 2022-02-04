@@ -17,6 +17,7 @@ defmodule TdDq.Rules.AuditTest do
     claims = build(:dq_claims, role: "admin")
     rule = insert(:rule, df_name: template_name, domain_id: domain_id)
     implementation = insert(:implementation, rule: rule, deleted_at: nil, domain_id: domain_id)
+
     [claims: claims, rule: rule, implementation: implementation, template_name: template_name]
   end
 
@@ -74,8 +75,12 @@ defmodule TdDq.Rules.AuditTest do
       implementation: implementation,
       claims: %{user_id: user_id}
     } do
-      %{id: implementation_id, implementation_key: implementation_key, rule_id: rule_id} =
-        implementation
+      %{
+        id: implementation_id,
+        implementation_key: implementation_key,
+        rule_id: rule_id,
+        domain_id: domain_id
+      } = implementation
 
       changeset = Implementation.changeset(implementation, %{})
 
@@ -102,8 +107,11 @@ defmodule TdDq.Rules.AuditTest do
                user_id: ^user_id
              } = event
 
-      assert %{"implementation_key" => ^implementation_key, "rule_id" => ^rule_id} =
-               Jason.decode!(payload)
+      assert %{
+               "implementation_key" => ^implementation_key,
+               "rule_id" => ^rule_id,
+               "domain_id" => ^domain_id
+             } = Jason.decode!(payload)
     end
   end
 
@@ -112,8 +120,12 @@ defmodule TdDq.Rules.AuditTest do
       implementation: implementation,
       claims: %{user_id: user_id}
     } do
-      %{id: implementation_id, implementation_key: implementation_key, rule_id: rule_id} =
-        implementation
+      %{
+        id: implementation_id,
+        implementation_key: implementation_key,
+        rule_id: rule_id,
+        domain_id: domain_id
+      } = implementation
 
       {:ok, changeset} =
         implementation
@@ -145,7 +157,8 @@ defmodule TdDq.Rules.AuditTest do
 
       assert %{
                "implementation_key" => ^implementation_key,
-               "rule_id" => ^rule_id
+               "rule_id" => ^rule_id,
+               "domain_id" => ^domain_id
              } = Jason.decode!(payload)
     end
   end
@@ -155,8 +168,12 @@ defmodule TdDq.Rules.AuditTest do
       implementation: implementation,
       claims: %{user_id: user_id}
     } do
-      %{id: implementation_id, implementation_key: implementation_key, rule_id: rule_id} =
-        implementation
+      %{
+        id: implementation_id,
+        implementation_key: implementation_key,
+        rule_id: rule_id,
+        domain_id: domain_id
+      } = implementation
 
       params = %{deleted_at: DateTime.utc_now()}
       changeset = Implementation.changeset(implementation, params)
@@ -186,7 +203,8 @@ defmodule TdDq.Rules.AuditTest do
 
       assert %{
                "implementation_key" => ^implementation_key,
-               "rule_id" => ^rule_id
+               "rule_id" => ^rule_id,
+               "domain_id" => ^domain_id
              } = Jason.decode!(payload)
     end
 
@@ -274,15 +292,16 @@ defmodule TdDq.Rules.AuditTest do
 
     test "publishes implementation_moved", %{
       implementation: implementation,
-      claims: %{user_id: user_id},
-      template_name: template_name
+      claims: %{user_id: user_id}
     } do
-      %{id: implementation_id, implementation_key: implementation_key, rule_id: rule_id} =
-        implementation
+      %{
+        id: implementation_id,
+        implementation_key: implementation_key,
+        rule_id: rule_id,
+        domain_id: domain_id
+      } = implementation
 
-      %{id: new_rule_id} = insert(:rule, df_name: template_name)
-      params = %{rule_id: new_rule_id}
-      changeset = Implementation.changeset(implementation, params)
+      changeset = %{changes: %{rule_id: rule_id}}
 
       assert {:ok, event_id} =
                Audit.implementation_updated(
@@ -308,15 +327,21 @@ defmodule TdDq.Rules.AuditTest do
 
       assert %{
                "implementation_key" => ^implementation_key,
-               "rule_id" => ^rule_id
+               "rule_id" => ^rule_id,
+               "domain_id" => ^domain_id,
+               "rule_name" => _
              } = Jason.decode!(payload)
     end
   end
 
   describe "implementations_deprecated/2" do
     test "publishes implementation_deprecated event", %{implementation: implementation} do
-      %{id: implementation_id, implementation_key: implementation_key, rule_id: rule_id} =
-        implementation
+      %{
+        id: implementation_id,
+        implementation_key: implementation_key,
+        rule_id: rule_id,
+        domain_id: domain_id
+      } = implementation
 
       assert {:ok, [event_id]} =
                Audit.implementations_deprecated(Repo, %{deprecated: {1, [implementation]}})
@@ -337,7 +362,8 @@ defmodule TdDq.Rules.AuditTest do
 
       assert %{
                "implementation_key" => ^implementation_key,
-               "rule_id" => ^rule_id
+               "rule_id" => ^rule_id,
+               "domain_id" => ^domain_id
              } = Jason.decode!(payload)
     end
   end

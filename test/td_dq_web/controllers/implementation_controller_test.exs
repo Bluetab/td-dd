@@ -399,7 +399,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
       params =
         string_params_for(:implementation,
           rule_id: rule.id,
-          domain_id: domain_id,
           minimum: 5,
           goal: 10,
           result_type: "errors_number"
@@ -416,14 +415,12 @@ defmodule TdDqWeb.ImplementationControllerTest do
     @tag authentication: [role: "admin"]
     test "renders errors when implementation result type is percentage and goal is lower than minimum",
          %{conn: conn} do
-      domain_id = System.unique_integer([:positive])
       %{id: rule_id} = insert(:rule)
 
       params =
         string_params_for(:implementation,
           rule_id: rule_id,
           result_type: "percentage",
-          domain_id: domain_id,
           minimum: 50,
           goal: 10
         )
