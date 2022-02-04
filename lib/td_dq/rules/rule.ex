@@ -52,14 +52,8 @@ defmodule TdDq.Rules.Rule do
       :df_content,
       :domain_id
     ])
-    |> validate_required(
-      [
-        :name,
-        :domain_id
-      ],
-      message: "required"
-    )
-    |> validate_domain()
+    |> validate_required([:name, :domain_id], message: "required")
+    |> validate_inclusion(:domain_id, TaxonomyCache.get_domain_ids())
     |> validate_content(rule)
     |> unique_constraint(
       :rule_name_bc_id,
@@ -83,30 +77,6 @@ defmodule TdDq.Rules.Rule do
     rule
     |> change()
     |> no_assoc_constraint(:rule_implementations, message: "rule.delete.existing.implementations")
-  end
-
-  defp validate_domain(%{valid?: true} = changeset) do
-    case get_field(changeset, :domain_id) do
-      nil ->
-        ids = TaxonomyCache.get_domain_ids()
-
-        validate_change(changeset, :domain_id, fn :domain_id, domain_id ->
-          do_validate_domain(domain_id, ids)
-        end)
-
-      _ ->
-        changeset
-    end
-  end
-
-  defp validate_domain(changeset), do: changeset
-
-  defp do_validate_domain(domain_id, ids) do
-    if Enum.member?(ids, domain_id) do
-      []
-    else
-      [domain_id: "not_exists"]
-    end
   end
 
   defp validate_content(%{valid?: true} = changeset, rule) do

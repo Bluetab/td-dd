@@ -10,8 +10,8 @@ defmodule TdDq.RulesTest do
   @stream TdCache.Audit.stream()
 
   setup_all do
-    domain = CacheHelpers.insert_domain()
-    [domain: domain]
+    %{id: domain_id} = domain = CacheHelpers.insert_domain()
+    [domain: domain, domain_id: domain_id]
   end
 
   setup do
@@ -55,21 +55,24 @@ defmodule TdDq.RulesTest do
   end
 
   describe "create_rule/2" do
-    test "creates a rule with valid data", %{claims: claims, domain: domain} do
-      params = string_params_for(:rule, domain_id: domain.id)
+    test "creates a rule with valid data", %{claims: claims, domain_id: domain_id} do
+      params = string_params_for(:rule, domain_id: domain_id)
       assert {:ok, %{rule: _rule}} = Rules.create_rule(params, claims)
     end
 
-    test "publishes an audit event", %{claims: claims, domain: domain} do
-      params = string_params_for(:rule, domain_id: domain.id)
+    test "publishes an audit event", %{claims: claims, domain_id: domain_id} do
+      params = string_params_for(:rule, domain_id: domain_id)
       assert {:ok, %{audit: event_id}} = Rules.create_rule(params, claims)
 
       assert {:ok, [%{id: ^event_id}]} =
                Stream.range(:redix, @stream, event_id, event_id, transform: :range)
     end
 
-    test "returns error and changeset if changeset is invalid", %{claims: claims, domain: domain} do
-      params = string_params_for(:rule, name: nil, domain_id: domain.id)
+    test "returns error and changeset if changeset is invalid", %{
+      claims: claims,
+      domain_id: domain_id
+    } do
+      params = string_params_for(:rule, name: nil, domain_id: domain_id)
       assert {:error, :rule, %Ecto.Changeset{}, _} = Rules.create_rule(params, claims)
     end
 
@@ -83,13 +86,13 @@ defmodule TdDq.RulesTest do
   end
 
   describe "update_rule/3" do
-    test "updates rule if changes are valid", %{claims: claims, domain: domain} do
-      rule = insert(:rule, domain_id: domain.id)
+    test "updates rule if changes are valid", %{claims: claims, domain_id: domain_id} do
+      rule = insert(:rule, domain_id: domain_id)
       params = %{"name" => "New name", "description" => %{"document" => "New description"}}
       assert {:ok, %{rule: _rule}} = Rules.update_rule(rule, params, claims)
     end
 
-    test "updates domain id if its valid", %{claims: claims, domain: %{id: domain_id}} do
+    test "updates domain id if its valid", %{claims: claims, domain_id: domain_id} do
       rule = insert(:rule)
       params = %{"domain_id" => domain_id}
       assert {:ok, %{rule: %{domain_id: ^domain_id}}} = Rules.update_rule(rule, params, claims)
@@ -98,6 +101,22 @@ defmodule TdDq.RulesTest do
       assert {:error, :rule,
               %Ecto.Changeset{errors: [domain_id: {"required", [validation: :required]}]},
               _} = Rules.update_rule(rule, params, claims)
+    end
+
+    test "updates a rule's implementations if the domain_id changes", %{
+      claims: claims,
+      domain_id: domain_id
+    } do
+      %{id: rule_id} = rule = insert(:rule)
+
+      implementations = Enum.map(1..5, fn _ -> insert(:implementation, rule_id: rule_id) end)
+      insert(:implementation, rule_id: rule_id, domain_id: domain_id)
+
+      params = %{"domain_id" => domain_id}
+      assert {:ok, multi} = Rules.update_rule(rule, params, claims)
+      assert %{rule: %{domain_id: ^domain_id}} = multi
+      assert %{implementations: {5, ids}} = multi
+      assert_lists_equal(implementations, ids, &(&1.id == &2))
     end
 
     test "publishes an audit event", %{claims: claims} do

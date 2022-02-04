@@ -36,9 +36,9 @@ config :td_dd, TdDd.Repo,
   username: "postgres",
   password: "postgres",
   database: "td_dd_dev",
-  hostname: "localhost"
+  hostname: "postgres"
 
-config :td_cache, redis_host: "localhost"
+config :td_cache, redis_host: "redis"
 
 config :td_dd, :vault,
   token: "vault_secret_token1234",

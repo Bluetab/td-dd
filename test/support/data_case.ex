@@ -21,6 +21,7 @@ defmodule TdDd.DataCase do
     quote do
       alias TdDd.Repo
 
+      import Assertions
       import Ecto
       import Ecto.Changeset
       import Ecto.Query
