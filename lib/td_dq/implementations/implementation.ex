@@ -26,6 +26,7 @@ defmodule TdDq.Implementations.Implementation do
     field(:implementation_type, :string, default: "default")
     field(:executable, :boolean, default: true)
     field(:deleted_at, :utc_datetime)
+    field(:domain_id, :integer)
     field(:df_name, :string)
     field(:df_content, :map)
     field(:goal, :float)
@@ -46,31 +47,28 @@ defmodule TdDq.Implementations.Implementation do
 
   def valid_result_types, do: @valid_result_types
 
-  def changeset(%{} = params) do
-    changeset(%__MODULE__{}, params)
-  end
-
   def changeset(%__MODULE__{} = implementation, params) do
     implementation
     |> cast(params, [
       :deleted_at,
-      :rule_id,
+      :df_content,
+      :df_name,
+      :executable,
+      :goal,
       :implementation_key,
       :implementation_type,
-      :df_name,
-      :df_content,
-      :executable,
-      :goal,
       :minimum,
-      :result_type
+      :result_type,
+      :rule_id
     ])
     |> validate_required([
+      :domain_id,
       :executable,
-      :implementation_type,
-      :rule_id,
       :goal,
+      :implementation_type,
       :minimum,
-      :result_type
+      :result_type,
+      :rule_id
     ])
     |> validate_inclusion(:implementation_type, ["default", "raw", "draft"])
     |> validate_inclusion(:result_type, @valid_result_types)
@@ -241,6 +239,7 @@ defmodule TdDq.Implementations.Implementation do
     @implementation_keys [
       :dataset,
       :deleted_at,
+      :domain_id,
       :id,
       :implementation_key,
       :implementation_type,
@@ -261,8 +260,7 @@ defmodule TdDq.Implementations.Implementation do
       :name,
       :version,
       :df_name,
-      :df_content,
-      :domain_id
+      :df_content
     ]
 
     @impl Elasticsearch.Document
@@ -278,7 +276,7 @@ defmodule TdDq.Implementations.Implementation do
       confidential = Helpers.confidential?(rule)
       bcv = Helpers.get_business_concept_version(rule)
       execution_result_info = get_execution_result_info(implementation, quality_event)
-      domain = Helpers.get_domain(rule)
+      domain = Helpers.get_domain(implementation)
       domain_ids = Helpers.get_domain_ids(domain)
       domain_parents = Helpers.get_domain_parents(domain)
       updated_by = Helpers.get_user(rule.updated_by)
@@ -404,7 +402,16 @@ defmodule TdDq.Implementations.Implementation do
     end
 
     defp get_structure_fields(structure) do
-      Map.take(structure, [:external_id, :id, :name, :path, :system, :type, :metadata, :parent_index])
+      Map.take(structure, [
+        :external_id,
+        :id,
+        :name,
+        :path,
+        :system,
+        :type,
+        :metadata,
+        :parent_index
+      ])
     end
 
     defp get_alias_fields(nil), do: nil

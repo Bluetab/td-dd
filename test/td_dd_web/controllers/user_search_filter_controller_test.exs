@@ -3,10 +3,11 @@ defmodule TdDdWeb.UserSearchFilterControllerTest do
 
   @create_attrs %{
     filters: %{country: ["Spa"]},
-    name: "some name"
+    name: "some name",
+    scope: "rule_implementation"
   }
 
-  @invalid_attrs %{filters: nil, name: nil, user_id: nil}
+  @invalid_attrs %{filters: nil, name: nil, user_id: nil, scope: "invalid"}
 
   describe "index" do
     @tag authentication: [role: "admin"]
@@ -14,6 +15,17 @@ defmodule TdDdWeb.UserSearchFilterControllerTest do
       assert %{"data" => []} =
                conn
                |> get(Routes.user_search_filter_path(conn, :index))
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "lists all user_search_filters filtered by scope", %{conn: conn} do
+      %{id: id} = insert(:user_search_filter, scope: :rule)
+      insert(:user_search_filter, scope: :rule_implementation)
+
+      assert %{"data" => [%{"id" => ^id}]} =
+               conn
+               |> get(Routes.user_search_filter_path(conn, :index), %{"scope" => "rule"})
                |> json_response(:ok)
     end
   end
@@ -32,6 +44,19 @@ defmodule TdDdWeb.UserSearchFilterControllerTest do
                |> json_response(:ok)
 
       assert [%{"user_id" => ^user_id}, %{"user_id" => ^user_id}] = data
+    end
+
+    @tag authentication: [role: "admin"]
+    test "lists current user user_search_filters by scope", %{conn: conn, claims: %{user_id: user_id}} do
+      %{id: id} =  insert(:user_search_filter, name: "a", user_id: user_id, scope: :rule)
+      insert(:user_search_filter, name: "b", user_id: user_id, scope: :rule_implementation)
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.user_search_filter_path(conn, :index_by_user), %{"scope" => "rule"})
+               |> json_response(:ok)
+
+      assert [%{"id" => ^id}] = data
     end
   end
 
@@ -54,7 +79,8 @@ defmodule TdDdWeb.UserSearchFilterControllerTest do
                "id" => _id,
                "filters" => %{},
                "name" => "some name",
-               "user_id" => _user_id
+               "user_id" => _user_id,
+               "scope" => "rule_implementation"
              } = data
     end
 

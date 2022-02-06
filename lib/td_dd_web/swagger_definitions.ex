@@ -786,7 +786,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
       LineageEvents:
         swagger_schema do
           title("Lineage Events")
-          description("A collection of Lineagee Events")
+          description("A collection of Lineage Events")
           type(:array)
           items(Schema.ref(:LineageEvent))
         end,

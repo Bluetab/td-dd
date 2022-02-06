@@ -9,6 +9,7 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.Canada.DataStructureVersionAbilities
   alias TdDd.Canada.ExecutionAbilities
   alias TdDd.Canada.GrantAbilities
+  alias TdDd.Canada.LineageAbilities
   alias TdDd.Canada.LinkAbilities
   alias TdDd.Canada.StructureNoteAbilities
   alias TdDd.Canada.SystemAbilities
@@ -25,6 +26,7 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.Grants.Grant
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestGroup
+  alias TdDd.Lineage.LineageEvent
   alias TdDd.Lineage.Units.Node
   alias TdDd.Lineage.Units.Unit
   alias TdDd.Systems.System
@@ -78,6 +80,10 @@ defmodule TdDd.Canada.Abilities do
 
     def can?(%Claims{} = claims, action, %{hint: :domain} = domain) do
       UnitAbilities.can?(claims, action, domain)
+    end
+
+    def can?(%Claims{} = claims, action, LineageEvent) do
+      LineageAbilities.can?(claims, action, LineageEvent)
     end
 
     def can?(%Claims{} = claims, :view_grants, %DataStructure{} = data_structure) do

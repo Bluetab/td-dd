@@ -14,8 +14,8 @@ defmodule TdDq.Rules.Search do
 
   def get_filter_values(%Claims{role: role}, params, index) when role in ["admin", "service"] do
     filter_clause = Query.create_filters(params, index)
-    query = Query.create_query(%{}, filter_clause)
-    search = %{query: query, aggs: Query.get_aggregation_terms(index)}
+    query = %{bool: %{filter: filter_clause}}
+    search = %{query: query, aggs: Query.get_aggregation_terms(index), size: 0}
     Search.get_filters(search, index)
   end
 
@@ -71,7 +71,7 @@ defmodule TdDq.Rules.Search do
     user_defined_filters = Query.create_filters(params, index)
     filter = Query.create_filter_clause(permissions, user_defined_filters)
     query = Query.create_query(params, filter)
-    search = %{query: query, aggs: Query.get_aggregation_terms(index)}
+    search = %{query: query, aggs: Query.get_aggregation_terms(index), size: 0}
     Search.get_filters(search, index)
   end
 

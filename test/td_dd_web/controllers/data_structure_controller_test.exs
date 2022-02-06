@@ -7,6 +7,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.RelationTypes
+  alias TdDd.DataStructures.StructureNotes
   alias TdDd.Lineage.GraphData
 
   @moduletag sandbox: :shared
@@ -772,7 +773,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       )
       |> response(:ok)
 
-      latest_note = DataStructures.get_latest_structure_note(data_structure.id)
+      latest_note = StructureNotes.get_latest_structure_note(data_structure.id)
       assert latest_note.status == :draft
       assert latest_note.df_content == %{"string" => "the new content from csv", "list" => "one"}
     end
@@ -810,12 +811,12 @@ defmodule TdDdWeb.DataStructureControllerTest do
       )
       |> response(:ok)
 
-      latest_note = DataStructures.get_latest_structure_note(data_structure.id)
+      latest_note = StructureNotes.get_latest_structure_note(data_structure.id)
       assert latest_note.status == :published
       assert latest_note.df_content == %{"string" => "the new content from csv", "list" => "one"}
 
       assert data_structure.id
-             |> DataStructures.list_structure_notes(:versioned)
+             |> StructureNotes.list_structure_notes(:versioned)
              |> Enum.count() == 1
     end
 

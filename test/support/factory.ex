@@ -90,9 +90,10 @@ defmodule TdDd.Factory do
     }
   end
 
-  def raw_implementation_factory do
+  def raw_implementation_factory(attrs) do
+    attrs = default_assoc(attrs, :rule_id, :rule)
+
     %TdDq.Implementations.Implementation{
-      rule: build(:rule),
       implementation_key: sequence("ri"),
       implementation_type: "raw",
       goal: 30,
@@ -101,6 +102,7 @@ defmodule TdDd.Factory do
       raw_content: build(:raw_content),
       deleted_at: nil
     }
+    |> merge_attributes(attrs)
   end
 
   def raw_content_factory do
@@ -121,6 +123,7 @@ defmodule TdDd.Factory do
       implementation_type: "default",
       goal: 30,
       minimum: 12,
+      domain_id: 2,
       dataset: build(:dataset),
       population: build(:population),
       validations: build(:validations)
@@ -212,7 +215,8 @@ defmodule TdDd.Factory do
       id: sequence(:user_search_filter, & &1),
       name: sequence("filter_name"),
       filters: %{country: ["Sp"]},
-      user_id: sequence(:user_id, & &1)
+      user_id: sequence(:user_id, & &1),
+      scope: :data_structure
     }
   end
 
@@ -332,7 +336,6 @@ defmodule TdDd.Factory do
 
   def rule_result_factory do
     %TdDq.Rules.RuleResult{
-      implementation: build(:implementation),
       result: "#{Decimal.round(50, 2)}",
       date: "#{DateTime.utc_now()}"
     }

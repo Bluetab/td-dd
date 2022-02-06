@@ -76,11 +76,11 @@ defmodule TdDd.Search do
 
     case response do
       {:ok, %{"aggregations" => aggregations}} ->
-        format_aggregations(aggregations)
+        {:ok, format_aggregations(aggregations)}
 
       {:error, %Elasticsearch.Exception{message: message} = error} ->
         Logger.warn("Error response from Elasticsearch: #{message}")
-        error
+        {:error, error}
     end
   end
 
@@ -101,14 +101,14 @@ defmodule TdDd.Search do
   defp filter_values({"taxonomy", %{"buckets" => buckets}}) do
     domains =
       buckets
-      |> Enum.map(& &1["key"])
+      |> Enum.map(&bucket_key/1)
       |> Enum.map(&TaxonomyCache.get_domain/1)
 
     {"taxonomy", domains}
   end
 
   defp filter_values({name, %{"buckets" => buckets}}) do
-    {name, Enum.map(buckets, & &1["key"])}
+    {name, Enum.map(buckets, &bucket_key/1)}
   end
 
   defp filter_values({name, %{"distinct_search" => distinct_search}}) do
@@ -116,4 +116,7 @@ defmodule TdDd.Search do
   end
 
   defp filter_values({name, %{"doc_count" => 0}}), do: {name, []}
+
+  defp bucket_key(%{"key_as_string" => key}) when key in ["true", "false"], do: key
+  defp bucket_key(%{"key" => key}), do: key
 end

@@ -14,7 +14,8 @@ defmodule TdDq.ImplementationsTest do
     start_supervised!(TdDd.Search.MockIndexWorker)
     start_supervised!(TdDq.Cache.RuleLoader)
     start_supervised!(TdDd.Search.StructureEnricher)
-    [rule: insert(:rule)]
+    %{id: domain_id} = CacheHelpers.insert_domain()
+    [rule: insert(:rule, domain_id: domain_id)]
   end
 
   describe "next_key/0" do
@@ -211,7 +212,10 @@ defmodule TdDq.ImplementationsTest do
 
   describe "create_implementation/3" do
     test "with valid data creates a implementation", %{rule: rule} do
-      params = string_params_for(:implementation, rule_id: rule.id)
+      params =
+        string_params_for(:implementation, rule_id: rule.id)
+        |> Map.delete("domain_id")
+
       claims = build(:dq_claims)
 
       assert {:ok, %{implementation: implementation}} =
@@ -220,12 +224,27 @@ defmodule TdDq.ImplementationsTest do
       assert implementation.rule_id == params["rule_id"]
     end
 
+    test "with valid data creates a implementation with rule domain_id", %{rule: rule} do
+      params =
+        string_params_for(:implementation, rule_id: rule.id)
+        |> Map.delete("domain_id")
+
+      claims = build(:dq_claims)
+
+      assert {:ok, %{implementation: implementation}} =
+               Implementations.create_implementation(rule, params, claims)
+
+      assert implementation.rule_id == params["rule_id"]
+      assert implementation.domain_id == rule.domain_id
+    end
+
     test "with duplicated implementation key returns an error", %{rule: rule} do
       impl = insert(:implementation)
 
       params =
         string_params_for(:implementation,
           rule_id: rule.id,
+          domain_id: rule.domain_id,
           implementation_key: impl.implementation_key
         )
 
@@ -252,9 +271,9 @@ defmodule TdDq.ImplementationsTest do
     end
 
     test "with valid data for raw implementation creates a implementation", %{rule: rule} do
-      %{id: rule_id} = rule
+      %{id: rule_id, domain_id: domain_id} = rule
 
-      params = string_params_for(:raw_implementation, rule_id: rule_id)
+      params = string_params_for(:raw_implementation, rule_id: rule_id, domain_id: domain_id)
       claims = build(:dq_claims, role: "admin")
 
       assert {:ok, %{implementation: implementation}} =
@@ -265,7 +284,11 @@ defmodule TdDq.ImplementationsTest do
 
     test "with valid data with single structure creates a implementation", %{rule: rule} do
       params =
-        string_params_for(:implementation, dataset: [build(:dataset_row)], rule_id: rule.id)
+        string_params_for(:implementation,
+          dataset: [build(:dataset_row)],
+          rule_id: rule.id,
+          domain_id: rule.domain_id
+        )
 
       claims = build(:dq_claims, role: "admin")
 
@@ -281,7 +304,13 @@ defmodule TdDq.ImplementationsTest do
       validation =
         build(:condition_row, value: [%{raw: "2019-12-02 05:35:00"}], operator: operator)
 
-      params = string_params_for(:implementation, validations: [validation], rule_id: rule.id)
+      params =
+        string_params_for(:implementation,
+          validations: [validation],
+          rule_id: rule.id,
+          domain_id: rule.domain_id
+        )
+
       claims = build(:dq_claims)
 
       assert {:ok, %{implementation: implementation}} =
@@ -299,7 +328,13 @@ defmodule TdDq.ImplementationsTest do
 
       validations = [string_params_for(:condition_row, population: [condition])]
 
-      params = string_params_for(:implementation, rule_id: rule.id, validations: validations)
+      params =
+        string_params_for(:implementation,
+          rule_id: rule.id,
+          validations: validations,
+          domain_id: rule.domain_id
+        )
+
       claims = build(:dq_claims, role: "admin")
 
       assert {:ok, %{implementation: %Implementation{validations: [%{population: [clause]}]}}} =
@@ -377,6 +412,19 @@ defmodule TdDq.ImplementationsTest do
                structure: %{id: ^id},
                value: ^value
              } = clause
+    end
+
+    test "domain change when moving to another rule" do
+      implementation = insert(:implementation)
+      claims = build(:dq_claims)
+      domain_id = System.unique_integer([:positive])
+      %{id: rule_id} = insert(:rule, domain_id: domain_id)
+      update_attrs = string_params_for(:implementation, rule_id: rule_id)
+
+      assert {:ok, %{implementation: updated}} =
+               Implementations.update_implementation(implementation, update_attrs, claims)
+
+      assert %{domain_id: ^domain_id, rule_id: ^rule_id} = updated
     end
 
     test "with invalid data returns error changeset" do
