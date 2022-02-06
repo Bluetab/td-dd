@@ -4,6 +4,7 @@
 
 ### Added
 
+- [TD-4456] Access audit API
 - [TD-4277] Include `domain_id` in `rule implementations`
 - [TD-4152] Include aditional information on implementations download
 - [TD-4102] Support pagination of structure notes
