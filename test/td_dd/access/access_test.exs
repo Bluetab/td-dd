@@ -7,8 +7,8 @@ defmodule TdDd.AccessTest do
   alias TdDd.Repo
 
   setup do
-    %{external_id: data_structure_external_id} = insert(:data_structure) |> IO.inspect(label: "DATA_STRUCTURE")
-    %{id: user_id, user_name: user_name} = user = CacheHelpers.insert_user()
+    %{external_id: data_structure_external_id} = insert(:data_structure)
+    user = CacheHelpers.insert_user()
 
     [data_structure_external_id: data_structure_external_id, user: user]
   end
@@ -50,7 +50,7 @@ defmodule TdDd.AccessTest do
 
 
     test "can be inserted if valid (user by user_name)", %{
-      user: %{user_name: user_name, external_id: user_external_id, id: user_id},
+      user: %{user_name: user_name, id: user_id},
       data_structure_external_id: data_structure_external_id
     } do
       params = %{
@@ -72,7 +72,7 @@ defmodule TdDd.AccessTest do
     end
 
     test "can be inserted if valid (user by user_external_id)", %{
-      user: %{user_name: user_name, external_id: user_external_id, id: user_id},
+      user: %{external_id: user_external_id, id: user_id},
       data_structure_external_id: data_structure_external_id
     } do
       params = %{

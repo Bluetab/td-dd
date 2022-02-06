@@ -9,6 +9,7 @@ defmodule TdDd.Repo.Migrations.CreateAccesses do
       add :data_structure_external_id, references("data_structures", column: :external_id, type: :text)
       add :source_user_name, :string
       add :details, :map
+      add :accessed_at, :utc_datetime, null: true
     end
   end
 end

@@ -2,6 +2,7 @@ defmodule TdDd.Canada.Abilities do
   @moduledoc false
   alias TdCache.Link
   alias TdDd.Auth.Claims
+  alias TdDd.Canada.AccessAbilities
   alias TdDd.Canada.DataStructureAbilities
   alias TdDd.Canada.DataStructureTagAbilities
   alias TdDd.Canada.DataStructureTypeAbilities
@@ -69,6 +70,10 @@ defmodule TdDd.Canada.Abilities do
 
     def can?(%Claims{} = claims, action, Unit) do
       UnitAbilities.can?(claims, action, Unit)
+    end
+
+    def can?(%Claims{} = claims, action, Access) do
+      AccessAbilities.can?(claims, action, Access)
     end
 
     def can?(%Claims{} = claims, action, %{hint: :domain} = domain) do
