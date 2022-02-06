@@ -27,14 +27,14 @@ defmodule TdDd.Access do
 
   def changeset(%__MODULE__{} = access, %{} = params) do
     access
-    |> cast(params |> IO.inspect(label: "PARAMS"), [
+    |> cast(params, [
       :data_structure_external_id,
       :user_name,
       :user_external_id,
       :source_user_name,
       :details,
       :accessed_at
-    ]) |> IO.inspect(label: "CAST")
+    ])
     |> maybe_put_user_id_by_name(params)
     |> maybe_put_user_id_by_external_id(params)
     |> validate_required([:data_structure_external_id, :source_user_name])

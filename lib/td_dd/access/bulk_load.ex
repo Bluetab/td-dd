@@ -50,7 +50,6 @@ defmodule TdDd.Access.BulkLoad do
       valid_item_changesets
       |> apply
       |> Enum.to_list()
-      |> IO.inspect(label: "APPLY")
       |> (fn list -> Repo.insert_all(Access, list, on_conflict: :nothing) end).()
 
     {inserted_count, invalid_item_changesets, MapSet.to_list(inexistent_external_ids)}
@@ -59,12 +58,12 @@ defmodule TdDd.Access.BulkLoad do
   def apply(valid_item_changesets) do
     valid_item_changesets
     |> Stream.map(fn %Ecto.Changeset{} = changeset ->
-      Ecto.Changeset.apply_changes(changeset) |> IO.inspect(label: "APPLY_CHANGES")
+      Ecto.Changeset.apply_changes(changeset)
     end)
 
     # turns item changesets into a list of %Access{} structs
     |> Stream.map(fn %Access{} = item ->
-      clean(item) |> IO.inspect(label: "CLEAN")
+      clean(item)
     end)
   end
 
