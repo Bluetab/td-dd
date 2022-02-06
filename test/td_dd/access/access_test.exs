@@ -13,14 +13,12 @@ defmodule TdDd.AccessTest do
     [data_structure_external_id: data_structure_external_id, user: user]
   end
 
-
   describe "Access.changeset/2" do
     test "validates required fields" do
       assert %{errors: errors} = Access.changeset(%{})
       assert {_, [validation: :required]} = errors[:data_structure_external_id]
       assert {_, [validation: :required]} = errors[:source_user_name]
     end
-
 
     test "captures foreign key constraint on data structure" do
       params = %{
@@ -47,7 +45,6 @@ defmodule TdDd.AccessTest do
              |> Access.changeset()
              |> Changeset.fetch_change!(:user_id) == user_id
     end
-
 
     test "can be inserted if valid (user by user_name)", %{
       user: %{user_name: user_name, id: user_id},
@@ -92,8 +89,5 @@ defmodule TdDd.AccessTest do
         data_structure_external_id: ^data_structure_external_id
       } = access
     end
-
-
   end
-
 end

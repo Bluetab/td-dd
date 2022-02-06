@@ -1,10 +1,13 @@
 defmodule TdDd.Access do
+  @moduledoc """
+  Ecto Schema module for Access
+  """
   use Ecto.Schema
   @foreign_key_type :string
 
   import Ecto.Changeset
-  alias TdDd.DataStructures.DataStructure
   alias TdCache.UserCache
+  alias TdDd.DataStructures.DataStructure
 
   schema "accesses" do
     belongs_to(:data_structure, DataStructure,

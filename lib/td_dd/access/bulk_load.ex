@@ -1,4 +1,8 @@
 defmodule TdDd.Access.BulkLoad do
+  @moduledoc """
+  Bulk Load accesses from API JSON
+  """
+
   import Ecto.Query
   require Logger
 
