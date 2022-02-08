@@ -8,7 +8,6 @@ defmodule TdDd.Executions do
   alias Ecto.Changeset
   alias Ecto.Multi
   alias TdDd.DataStructures
-  alias TdDd.DataStructures.DataStructure
   alias TdDd.Executions.Audit
   alias TdDd.Executions.ProfileExecution
   alias TdDd.Executions.ProfileGroup
@@ -70,10 +69,16 @@ defmodule TdDd.Executions do
 
       {:status, "pending"}, q ->
         q
-        |> join(:left, [e], p in assoc(e, :profile))
-        |> join(:left, [e, _p], pe in assoc(e, :profile_events))
-        |> where([_e, p, _pe], is_nil(p.id))
-        |> where([e, _p, pe], is_nil(pe.profile_execution_id))
+        |> join(:left, [e, ...], p in assoc(e, :profile))
+        |> join(:left, [e, ...], pe in assoc(e, :profile_events))
+        |> where([..., p, _pe], is_nil(p.id))
+        |> where([..., pe], is_nil(pe.profile_execution_id))
+
+      {:source, source}, q ->
+        filter_by_source(q, [source])
+
+      {:sources, sources}, q ->
+        filter_by_source(q, sources)
 
       _, q ->
         q
@@ -81,7 +86,13 @@ defmodule TdDd.Executions do
     |> order_by(:id)
     |> preload(^preloads)
     |> Repo.all()
-    |> filter(params)
+  end
+
+  defp filter_by_source(query, sources) do
+    query
+    |> join(:left, [e, ...], ds in assoc(e, :data_structure))
+    |> join(:left, [..., ds], s in assoc(ds, :source))
+    |> where([..., s], s.external_id in ^sources)
   end
 
   defp cast(%{} = params) do
@@ -122,50 +133,6 @@ defmodule TdDd.Executions do
     |> Multi.run(:audit, Audit, :execution_group_created, [changeset])
     |> Repo.transaction()
   end
-
-  defp filter([_ | _] = executions, %{source: source}) do
-    filter(executions, %{sources: [source]})
-  end
-
-  defp filter([_ | _] = executions, %{sources: sources}) do
-    executions
-    |> Enum.group_by(&get_source/1, & &1)
-    |> Enum.filter(fn
-      {source, _} ->
-        source in sources
-    end)
-    |> Enum.flat_map(fn
-      {_source, executions} -> executions
-    end)
-  end
-
-  defp filter(executions, _params), do: executions
-
-  defp get_source(%ProfileExecution{data_structure: %DataStructure{} = structure}) do
-    get_source(structure)
-  end
-
-  defp get_source(%ProfileExecution{} = execution) do
-    execution
-    |> Repo.preload(:data_structure)
-    |> Map.get(:data_structure)
-    |> get_source()
-  end
-
-  defp get_source(%DataStructure{source: %{external_id: external_id}}) do
-    external_id
-  end
-
-  defp get_source(%DataStructure{} = structure) do
-    structure
-    |> Repo.preload(:source)
-    |> case do
-      %{source: %{external_id: external_id}} -> external_id
-      _ -> nil
-    end
-  end
-
-  defp get_source(_), do: nil
 
   defp enrich(group, nil), do: group
 
