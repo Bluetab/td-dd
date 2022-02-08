@@ -1,4 +1,4 @@
-defmodule TdDdWeb.LineageEventControllerTest do
+defmodule TdDdWeb.AccessControllerTest do
   use TdDdWeb.ConnCase
 
   describe "create" do
