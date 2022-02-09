@@ -44,6 +44,7 @@ defmodule TdDd.Access.BulkLoadTest do
       %{
         "data_structure_external_id" => "inexistent_id_1",
         "source_user_name" => "tld.domain.oracle",
+        "accessed_at" => "2011-12-13 00:00:04",
         "user_name" => user_name,
         "details" => %{
           "db" => "some_db_9",
@@ -53,6 +54,7 @@ defmodule TdDd.Access.BulkLoadTest do
       %{
         "data_structure_external_id" => "inexistent_id_2",
         "source_user_name" => "tld.domain.postgres",
+        "accessed_at" => "2011-12-13 00:00:05",
         "user_name" => user_name,
         "details" => %{
           "db" => "some_db_8",
@@ -61,6 +63,7 @@ defmodule TdDd.Access.BulkLoadTest do
       },
       %{
         "data_structure_external_id" => ds_external_id,
+        "accessed_at" => "2011-12-13 00:00:06",
         "user_name" => user_name,
         "details" => %{
           "db" => "some_db_7",
@@ -69,6 +72,7 @@ defmodule TdDd.Access.BulkLoadTest do
       },
       %{
         "data_structure_external_id" => ds_external_id,
+        "accessed_at" => "2011-12-13 00:00:07",
         "source_user_name" => 1234,
         "user_name" => user_name,
         "details" => %{
