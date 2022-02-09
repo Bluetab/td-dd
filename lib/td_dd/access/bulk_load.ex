@@ -45,29 +45,32 @@ defmodule TdDd.Access.BulkLoad do
         data_structure_external_id not in inexistent_external_ids
       end)
 
+    now = DateTime.utc_now()
+
     {valid_item_changesets, invalid_item_changesets} =
       accesses_existing_ds_external_id
-      |> Stream.map(fn access_attrs -> Access.changeset(access_attrs) end)
+      |> Stream.map(fn access_attrs ->
+        access_attrs
+        |> Map.put("inserted_at", now)
+        |> Access.changeset()
+      end)
       |> Enum.split_with(fn %Ecto.Changeset{} = access_changeset -> access_changeset.valid? end)
 
     {inserted_count, _result} =
       valid_item_changesets
-      |> apply
+      |> apply()
       |> Enum.to_list()
-      |> (fn list -> Repo.insert_all(Access, list, on_conflict: :nothing) end).()
-
+      |> (fn list ->
+          Repo.insert_all(Access, list, on_conflict: :nothing) end).()
     {inserted_count, invalid_item_changesets, MapSet.to_list(inexistent_external_ids)}
   end
 
   def apply(valid_item_changesets) do
     valid_item_changesets
     |> Stream.map(fn %Ecto.Changeset{} = changeset ->
-      Ecto.Changeset.apply_changes(changeset)
-    end)
-
-    # turns item changesets into a list of %Access{} structs
-    |> Stream.map(fn %Access{} = item ->
-      clean(item)
+      changeset
+      |> Ecto.Changeset.apply_changes()
+      |> clean()
     end)
   end
 

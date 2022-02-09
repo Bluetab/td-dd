@@ -32,6 +32,7 @@ defmodule TdDd.Access.BulkLoadTest do
       %{
         "data_structure_external_id" => ds_external_id,
         "source_user_name" => "tld.domain.postgres",
+        "accessed_at" => "2011-12-13 00:00:03",
         "details" => %{
           "db" => "some_db_3",
           "table" => "some_table_3"
@@ -163,5 +164,15 @@ defmodule TdDd.Access.BulkLoadTest do
                "inexistent_id_2"
              ] = inexistent_external_ids
     end
+  end
+
+  test "load more than one the same accesses without duplicate access", %{accesses: accesses} do
+
+    {entries_count_load_1, _, _} = BulkLoad.bulk_load(accesses)
+    {entries_count_load_2, _, _} = BulkLoad.bulk_load(accesses)
+
+    inserted_accesses = Repo.all(Access)
+    assert Enum.count(inserted_accesses) == entries_count_load_1
+    assert entries_count_load_2 == 0
   end
 end

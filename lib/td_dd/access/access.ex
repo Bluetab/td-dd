@@ -21,7 +21,9 @@ defmodule TdDd.Access do
     field(:user_external_id, :string)
     field(:user_id, :integer)
     field(:details, :map)
-    field :accessed_at, :utc_datetime
+    field(:accessed_at, :utc_datetime)
+
+    timestamps(type: :utc_datetime_usec, updated_at: false)
   end
 
   def changeset(%{} = params) do
@@ -36,11 +38,12 @@ defmodule TdDd.Access do
       :user_external_id,
       :source_user_name,
       :details,
-      :accessed_at
+      :accessed_at,
+      :inserted_at
     ])
     |> maybe_put_user_id_by_name(params)
     |> maybe_put_user_id_by_external_id(params)
-    |> validate_required([:data_structure_external_id, :source_user_name])
+    |> validate_required([:data_structure_external_id, :source_user_name, :accessed_at])
     |> foreign_key_constraint(:data_structure_external_id)
   end
 
