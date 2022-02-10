@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unrealeased]
+
+- [TD-4463] add notifications for `rule_created` and `implementation_created`
+
 ## [4.37.1] 2022-02-10
 
 - [TD-4456] Access audit API
