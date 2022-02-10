@@ -21,7 +21,7 @@ defmodule TdDd.Access do
     field(:details, :map)
     field(:accessed_at, :utc_datetime)
 
-    timestamps(type: :utc_datetime_usec, updated_at: false)
+    timestamps(type: :utc_datetime_usec)
   end
 
   def changeset(%{} = params) do
@@ -35,7 +35,8 @@ defmodule TdDd.Access do
       :source_user_name,
       :details,
       :accessed_at,
-      :inserted_at
+      :inserted_at,
+      :updated_at
     ])
     |> validate_user_id(params)
     |> validate_required([:data_structure_external_id, :source_user_name, :accessed_at])

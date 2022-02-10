@@ -60,6 +60,7 @@ defmodule TdDd.Access.BulkLoad do
       |> Stream.map(fn access_attrs ->
         access_attrs
         |> Map.put("inserted_at", now)
+        |> Map.put("updated_at", now)
         |> Access.changeset()
       end)
       |> Enum.split_with(fn %Ecto.Changeset{} = access_changeset -> access_changeset.valid? end)
@@ -69,7 +70,10 @@ defmodule TdDd.Access.BulkLoad do
       |> apply()
       |> Enum.to_list()
       |> (fn list ->
-            Repo.insert_all(Access, list, on_conflict: :nothing)
+            Repo.insert_all(Access, list,
+              conflict_target: [:data_structure_external_id, :source_user_name, :accessed_at],
+              on_conflict: {:replace, [:user_id, :updated_at]}
+            )
           end).()
 
     {inserted_count, invalid_item_changesets, MapSet.to_list(inexistent_external_ids)}

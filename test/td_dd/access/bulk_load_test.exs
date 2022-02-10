@@ -178,13 +178,24 @@ defmodule TdDd.Access.BulkLoadTest do
     end
   end
 
-  test "load more than one the same accesses without duplicate access", %{accesses: accesses} do
-    {entries_count_load_1, _, _} = BulkLoad.bulk_load(accesses)
-    {entries_count_load_2, _, _} = BulkLoad.bulk_load(accesses)
+  test "update user_id when access records exists",
+       %{user: %{id: user_id, user_name: user_name}, ds_external_id: ds_external_id} do
+    access = %{
+      "data_structure_external_id" => ds_external_id,
+      "source_user_name" => "tld.domain.oracle",
+      "accessed_at" => "2011-12-13 00:00:00",
+      "user_name" => "invalid_user",
+      "details" => %{
+        "db" => "some_db_1",
+        "table" => "some_table_1"
+      }
+    }
 
-    inserted_accesses = Repo.all(Access)
-    assert Enum.count(inserted_accesses) == entries_count_load_1
-    assert entries_count_load_2 == 0
+    {1, [], []} = BulkLoad.bulk_load([access])
+    assert [%{user_id: nil}] = Repo.all(Access)
+
+    {1, [], []} = BulkLoad.bulk_load([%{access | "user_name" => user_name}])
+    assert [%{user_id: ^user_id}] = Repo.all(Access)
   end
 
   test "invalid access", %{invalid_access: invalid_access} do

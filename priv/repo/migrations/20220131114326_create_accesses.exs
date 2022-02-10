@@ -14,7 +14,7 @@ defmodule TdDd.Repo.Migrations.CreateAccesses do
       add(:details, :map)
       add(:accessed_at, :utc_datetime, null: false)
 
-      timestamps(updated_at: false, type: :utc_datetime_usec)
+      timestamps(type: :utc_datetime_usec)
     end
 
     create(
