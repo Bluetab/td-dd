@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.37.1] 2022-02-10
+
+- [TD-4456] Access audit API
+
 ## [4.37.0] 2022-02-07
 
 ### Added
