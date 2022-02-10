@@ -81,6 +81,7 @@ defmodule CacheHelpers do
       |> Map.put_new(:id, System.unique_integer([:positive]))
       |> Map.put_new(:user_name, "user name")
       |> Map.put_new(:full_name, "full name")
+      |> Map.put_new(:external_id, "external.id")
       |> Map.put_new(:email, "foo@bar.xyz")
 
     {:ok, _} = UserCache.put(user)
@@ -111,7 +112,11 @@ defmodule CacheHelpers do
     insert_user(id: user_id)
     Enum.each(domain_ids, &insert_acl(&1, role_name, [user_id]))
     UserCache.put_roles(user_id, %{role_name => domain_ids})
-    Permissions.put_permission_roles(%{"approve_grant_request" => [role_name]})
+    {:ok, existing_roles} = Permissions.get_permission_roles("approve_grant_request")
+
+    Permissions.put_permission_roles(%{
+      "approve_grant_request" => [role_name | existing_roles] |> Enum.uniq()
+    })
   end
 
   def insert_grant_request_approver(user_id, domain_id, role_name) do
