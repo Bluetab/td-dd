@@ -3,8 +3,6 @@ defmodule TdDd.Repo.Migrations.CreateAccesses do
 
   def change do
     create table("accesses") do
-      add(:user_name, :string)
-      add(:user_external_id, :string)
       add(:user_id, :bigint)
 
       add(
@@ -19,6 +17,8 @@ defmodule TdDd.Repo.Migrations.CreateAccesses do
       timestamps(updated_at: false, type: :utc_datetime_usec)
     end
 
-     create unique_index("accesses", [:data_structure_external_id, :source_user_name, :accessed_at])
+    create(
+      unique_index("accesses", [:data_structure_external_id, :source_user_name, :accessed_at])
+    )
   end
 end

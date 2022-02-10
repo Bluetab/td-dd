@@ -1,4 +1,3 @@
-
 defmodule TdDd.Canada.AccessAbilities do
   @moduledoc """
   Canada permissions model for Access resources

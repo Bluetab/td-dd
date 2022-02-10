@@ -17,6 +17,7 @@ defmodule TdDd.AccessTest do
       assert %{errors: errors} = Access.changeset(%{})
       assert {_, [validation: :required]} = errors[:data_structure_external_id]
       assert {_, [validation: :required]} = errors[:source_user_name]
+      assert {_, [validation: :required]} = errors[:accessed_at]
     end
 
     test "captures foreign key constraint on data structure" do
@@ -35,6 +36,20 @@ defmodule TdDd.AccessTest do
                 {:constraint, :foreign},
                 {:constraint_name, "accesses_data_structure_external_id_fkey"}
               ]} = errors[:data_structure_external_id]
+    end
+
+    test "if user_name not exists do not maps to user_id" do
+      params = %{
+        "user_name" => "unexisten_user",
+        "source_user_name" => "oracle",
+        "data_structure_external_id" => "non_existent_external_id",
+        "accessed_at" => "2011-12-13 00:00:00"
+      }
+
+      changeset = Access.changeset(params)
+
+      assert changeset.valid?
+      assert Changeset.get_change(changeset, :user_id) == nil
     end
 
     test "maps user_name to user_id", %{user: %{user_name: user_name, id: user_id}} do
@@ -69,8 +84,6 @@ defmodule TdDd.AccessTest do
       assert %{
                user_id: ^user_id,
                source_user_name: "oracle",
-               # Only user_id will be needed, just to check
-               user_name: ^user_name,
                data_structure_external_id: ^data_structure_external_id
              } = access
     end
@@ -93,8 +106,6 @@ defmodule TdDd.AccessTest do
       assert %{
                user_id: ^user_id,
                source_user_name: "oracle",
-               # Only user_id will be needed, just to check
-               user_external_id: ^user_external_id,
                data_structure_external_id: ^data_structure_external_id
              } = access
     end

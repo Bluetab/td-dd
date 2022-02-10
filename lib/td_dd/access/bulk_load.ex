@@ -23,8 +23,12 @@ defmodule TdDd.Access.BulkLoad do
       Enum.reduce(
         accesses,
         MapSet.new(),
-        fn %{"data_structure_external_id" => data_structure_external_id}, acc ->
-          MapSet.put(acc, data_structure_external_id)
+        fn
+          %{"data_structure_external_id" => data_structure_external_id}, acc ->
+            MapSet.put(acc, data_structure_external_id)
+
+          _, acc ->
+            acc
         end
       )
 
@@ -41,8 +45,12 @@ defmodule TdDd.Access.BulkLoad do
     inexistent_external_ids = MapSet.difference(external_ids, existing_external_ids)
 
     accesses_existing_ds_external_id =
-      Stream.filter(accesses, fn %{"data_structure_external_id" => data_structure_external_id} ->
-        data_structure_external_id not in inexistent_external_ids
+      Stream.filter(accesses, fn
+        %{"data_structure_external_id" => data_structure_external_id} ->
+          data_structure_external_id not in inexistent_external_ids
+
+        _ ->
+          true
       end)
 
     now = DateTime.utc_now()
@@ -61,7 +69,9 @@ defmodule TdDd.Access.BulkLoad do
       |> apply()
       |> Enum.to_list()
       |> (fn list ->
-          Repo.insert_all(Access, list, on_conflict: :nothing) end).()
+            Repo.insert_all(Access, list, on_conflict: :nothing)
+          end).()
+
     {inserted_count, invalid_item_changesets, MapSet.to_list(inexistent_external_ids)}
   end
 

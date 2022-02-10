@@ -82,11 +82,24 @@ defmodule TdDd.Access.BulkLoadTest do
       }
     ]
 
+    invalid_access = [
+      %{
+        "accessed_at" => "2011-12-13 00:00:07",
+        "source_user_name" => "tld.domain.postgres",
+        "user_name" => user_name,
+        "details" => %{
+          "db" => "some_db_6",
+          "table" => "some_table_6"
+        }
+      }
+    ]
+
     [
       data_structure_id: data_structure_id,
       accesses: accesses,
       bad_accesses: bad_accesses,
       ds_external_id: ds_external_id,
+      invalid_access: invalid_access,
       user: user
     ]
   end
@@ -96,7 +109,7 @@ defmodule TdDd.Access.BulkLoadTest do
       accesses: accesses,
       bad_accesses: bad_accesses,
       ds_external_id: ds_external_id,
-      user: %{id: user_id, user_name: user_name}
+      user: %{id: user_id}
     } do
       {entries_count, invalid_changesets, inexistent_external_ids} =
         BulkLoad.bulk_load(accesses ++ bad_accesses)
@@ -110,23 +123,18 @@ defmodule TdDd.Access.BulkLoadTest do
                  data_structure: %{external_id: ^ds_external_id},
                  details: %{"db" => "some_db_1", "table" => "some_table_1"},
                  source_user_name: "tld.domain.oracle",
-                 user_external_id: nil,
-                 user_id: ^user_id,
-                 user_name: ^user_name
+                 user_id: ^user_id
                },
                %TdDd.Access{
                  data_structure: %{external_id: ^ds_external_id},
                  details: %{"db" => "some_db_2", "table" => "some_table_2"},
                  source_user_name: "tld.domain.postgres",
-                 user_external_id: nil,
-                 user_id: ^user_id,
-                 user_name: ^user_name
+                 user_id: ^user_id
                },
                %TdDd.Access{
                  data_structure: %{external_id: ^ds_external_id},
                  details: %{"db" => "some_db_3", "table" => "some_table_3"},
                  source_user_name: "tld.domain.postgres",
-                 user_external_id: nil,
                  user_id: nil
                }
              ] = inserted_accesses
@@ -171,12 +179,16 @@ defmodule TdDd.Access.BulkLoadTest do
   end
 
   test "load more than one the same accesses without duplicate access", %{accesses: accesses} do
-
     {entries_count_load_1, _, _} = BulkLoad.bulk_load(accesses)
     {entries_count_load_2, _, _} = BulkLoad.bulk_load(accesses)
 
     inserted_accesses = Repo.all(Access)
     assert Enum.count(inserted_accesses) == entries_count_load_1
     assert entries_count_load_2 == 0
+  end
+
+  test "invalid access", %{invalid_access: invalid_access} do
+    assert {0, [changeset_error], []} = BulkLoad.bulk_load(invalid_access)
+    refute changeset_error.valid?
   end
 end

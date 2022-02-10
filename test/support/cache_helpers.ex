@@ -113,7 +113,10 @@ defmodule CacheHelpers do
     Enum.each(domain_ids, &insert_acl(&1, role_name, [user_id]))
     UserCache.put_roles(user_id, %{role_name => domain_ids})
     {:ok, existing_roles} = Permissions.get_permission_roles("approve_grant_request")
-    Permissions.put_permission_roles(%{"approve_grant_request" => [role_name | existing_roles] |> Enum.uniq})
+
+    Permissions.put_permission_roles(%{
+      "approve_grant_request" => [role_name | existing_roles] |> Enum.uniq()
+    })
   end
 
   def insert_grant_request_approver(user_id, domain_id, role_name) do
