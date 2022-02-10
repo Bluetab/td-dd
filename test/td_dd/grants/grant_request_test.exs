@@ -78,10 +78,11 @@ defmodule TdDd.Grants.GrantRequestTest do
   end
 
   describe "changeset/3" do
-    test "create new grant request: puts a new identifier if the template has an identifier field", %{
-      template_with_identifier: template_with_identifier,
-      identifier_name: identifier_name
-    } do
+    test "create new grant request: puts a new identifier if the template has an identifier field",
+         %{
+           template_with_identifier: template_with_identifier,
+           identifier_name: identifier_name
+         } do
       # %{id: domain_id} = CacheHelpers.insert_domain()
       # %{user_id: user_id} = claims = build(:claims, role: "user")
 
@@ -92,16 +93,17 @@ defmodule TdDd.Grants.GrantRequestTest do
       }
 
       assert %Changeset{changes: changes} =
-        GrantRequest.changeset(%GrantRequest{}, params, template_with_identifier.name)
+               GrantRequest.changeset(%GrantRequest{}, params, template_with_identifier.name)
 
       assert %{metadata: new_content} = changes
       assert %{^identifier_name => _identifier} = new_content
     end
 
-    test "create new grant request: avoids putting new identifier if template lacks an identifier field", %{
-      template_without_identifier: template_without_identifier,
-      identifier_name: identifier_name
-    } do
+    test "create new grant request: avoids putting new identifier if template lacks an identifier field",
+         %{
+           template_without_identifier: template_without_identifier,
+           identifier_name: identifier_name
+         } do
       # %{id: domain_id} = CacheHelpers.insert_domain()
       # %{user_id: user_id} = claims = build(:claims, role: "user")
 
@@ -112,7 +114,7 @@ defmodule TdDd.Grants.GrantRequestTest do
       }
 
       assert %Changeset{changes: changes} =
-        GrantRequest.changeset(%GrantRequest{}, params, template_without_identifier.name)
+               GrantRequest.changeset(%GrantRequest{}, params, template_without_identifier.name)
 
       assert %{metadata: new_content} = changes
       refute match?(%{^identifier_name => _identifier}, new_content)
@@ -138,16 +140,17 @@ defmodule TdDd.Grants.GrantRequestTest do
       }
 
       assert %Changeset{changes: changes} =
-        GrantRequest.changeset(grant_request, params, template_with_identifier.name)
+               GrantRequest.changeset(grant_request, params, template_with_identifier.name)
 
       assert %{metadata: new_content} = changes
       assert %{^identifier_name => ^existing_identifier} = new_content
     end
 
-    test "keeps an already present identifier (i.e., editing) if extraneous identifier attr is passed", %{
-      template_with_identifier: template_with_identifier,
-      identifier_name: identifier_name
-    } do
+    test "keeps an already present identifier (i.e., editing) if extraneous identifier attr is passed",
+         %{
+           template_with_identifier: template_with_identifier,
+           identifier_name: identifier_name
+         } do
       # Existing identifier previously put by the create changeset
       existing_identifier = "00000000-0000-0000-0000-000000000000"
 
@@ -160,20 +163,24 @@ defmodule TdDd.Grants.GrantRequestTest do
       params = %{
         group: build(:grant_request_group, user_id: 1),
         data_structure: build(:data_structure),
-        metadata: %{"text" => "some text", identifier_name => "11111111-1111-1111-1111-111111111111"}
+        metadata: %{
+          "text" => "some text",
+          identifier_name => "11111111-1111-1111-1111-111111111111"
+        }
       }
 
       assert %Changeset{changes: changes} =
-        GrantRequest.changeset(grant_request, params, template_with_identifier.name)
+               GrantRequest.changeset(grant_request, params, template_with_identifier.name)
 
       assert %{metadata: new_content} = changes
       assert %{^identifier_name => ^existing_identifier} = new_content
     end
 
-    test "puts an identifier if there is not already one and the template has an identifier field", %{
-      template_without_identifier: template_without_identifier,
-      identifier_name: identifier_name
-    } do
+    test "puts an identifier if there is not already one and the template has an identifier field",
+         %{
+           template_without_identifier: template_without_identifier,
+           identifier_name: identifier_name
+         } do
       # %{id: domain_id} = CacheHelpers.insert_domain()
       # %{user_id: user_id} = claims = build(:claims, role: "user")
 
@@ -190,7 +197,7 @@ defmodule TdDd.Grants.GrantRequestTest do
       }
 
       assert %Changeset{changes: changes} =
-        GrantRequest.changeset(grant_request, params, template_without_identifier.name)
+               GrantRequest.changeset(grant_request, params, template_without_identifier.name)
 
       assert %{metadata: new_content} = changes
       refute match?(%{^identifier_name => _identifier}, new_content)

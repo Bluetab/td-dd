@@ -20,15 +20,18 @@ defmodule TdDd.UserSearchFilters do
   def list_user_search_filters(criteria \\ []) do
     criteria
     |> Enum.reduce(UserSearchFilter, fn
-        {"scope", scope_string}, query ->
-          case UserSearchFilter.scope_to_atom(scope_string) do
-            nil -> where(query, [usf], is_nil(usf.scope))
-            scope -> where(query, [usf], usf.scope == ^scope)
-          end
-        {"user_id", user_id}, query -> where(query, [usf], usf.user_id == ^user_id)
-        _, query -> query
-      end
-    )
+      {"scope", scope_string}, query ->
+        case UserSearchFilter.scope_to_atom(scope_string) do
+          nil -> where(query, [usf], is_nil(usf.scope))
+          scope -> where(query, [usf], usf.scope == ^scope)
+        end
+
+      {"user_id", user_id}, query ->
+        where(query, [usf], usf.user_id == ^user_id)
+
+      _, query ->
+        query
+    end)
     |> Repo.all()
   end
 
