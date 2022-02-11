@@ -69,16 +69,16 @@ defmodule TdDd.Executions do
 
       {:status, "pending"}, q ->
         q
-        |> join(:left, [e, ...], p in assoc(e, :profile))
-        |> join(:left, [e, ...], pe in assoc(e, :profile_events))
-        |> where([..., p, _pe], is_nil(p.id))
-        |> where([..., pe], is_nil(pe.profile_execution_id))
+        |> join(:left, [e], p in assoc(e, :profile), as: :profile)
+        |> join(:left, [e], pe in assoc(e, :profile_events), as: :profile_execution)
+        |> where([profile: p], is_nil(p.id))
+        |> where([profile_execution: pe], is_nil(pe.profile_execution_id))
 
-      {:source, source}, q ->
-        filter_by_source(q, [source])
+      {:source, source_external_id}, q ->
+        filter_by_source(q, [source_external_id])
 
-      {:sources, sources}, q ->
-        filter_by_source(q, sources)
+      {:sources, source_external_ids}, q ->
+        filter_by_source(q, source_external_ids)
 
       _, q ->
         q
@@ -88,11 +88,11 @@ defmodule TdDd.Executions do
     |> Repo.all()
   end
 
-  defp filter_by_source(query, sources) do
+  defp filter_by_source(query, source_external_ids) do
     query
-    |> join(:left, [e, ...], ds in assoc(e, :data_structure))
-    |> join(:left, [..., ds], s in assoc(ds, :source))
-    |> where([..., s], s.external_id in ^sources)
+    |> join(:left, [e], ds in assoc(e, :data_structure), as: :data_structure)
+    |> join(:left, [data_structure: ds], s in assoc(ds, :source), as: :source)
+    |> where([source: s], s.external_id in ^source_external_ids)
   end
 
   defp cast(%{} = params) do
