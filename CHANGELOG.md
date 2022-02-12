@@ -1,5 +1,16 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-4427] Fixed a performance issue when calling /api/executions/search
+  by filtering by sources on the database, avoiding a potential time out.
+
+## [4.37.1] 2022-02-10
+
+- [TD-4456] Access audit API
+
 ## [4.37.0] 2022-02-07
 
 ### Added
