@@ -144,8 +144,6 @@ defmodule TdDq.Implementations.Download do
     end)
   end
 
-
-
   defp export(headers, implementations) do
     [headers | implementations]
     |> CSV.encode(separator: ?;)
