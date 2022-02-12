@@ -225,15 +225,11 @@ defmodule TdDq.Implementations do
         implementation_type: "raw",
         raw_content: %{source_id: source_id}
       }) do
-
     Sources.get_aliases(source_id)
   end
 
   def get_sources(%Implementation{} = implementation) do
     implementation
-    |> (fn implementation ->
-      implementation
-    end).()
     |> get_structure_ids()
     |> TdDq.Search.Helpers.get_sources()
   end
