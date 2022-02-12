@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-4425] Shift Implementations CSV last execution date field timezone
+
 ### Fixed
 
 - [TD-4427] Fixed a performance issue when calling /api/executions/search
