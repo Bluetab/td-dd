@@ -3,6 +3,7 @@ defmodule TdDq.DownloadTest do
   Tests download of implementations in csv format
   """
   use TdDd.DataCase
+  alias TdDd.Helpers
 
   alias TdDq.Implementations.Download
 
@@ -74,7 +75,7 @@ defmodule TdDq.DownloadTest do
           name: "name"
         },
         execution_result_info: %{
-          date: "2018-05-05",
+          date: "2021-05-05T00:00:00Z",
           result_text: "quality_result.under_goal",
           result: "50.00"
         },
@@ -94,7 +95,7 @@ defmodule TdDq.DownloadTest do
                  impl.rule.df_name
                };#{impl.df_name};#{impl.goal};#{impl.minimum};#{
                  impl.current_business_concept_version.name
-               };#{impl.execution_result_info.date};;;#{impl.execution_result_info.result};Under Goal;#{
+               };#{Helpers.shift_zone(impl.execution_result_info.date)};;;#{impl.execution_result_info.result};Under Goal;#{
                  impl.inserted_at
                };field_value;system, system1\r
                """
@@ -157,7 +158,7 @@ defmodule TdDq.DownloadTest do
           name: "name"
         },
         execution_result_info: %{
-          date: "2021-05-05",
+          date: "2021-05-05T00:00:00Z",
           result: "40.00"
         },
         df_name: "impl_df_name_2",
@@ -180,7 +181,7 @@ defmodule TdDq.DownloadTest do
                  impl1.rule.name
                };#{impl1.rule.df_name};#{impl1.df_name};#{impl1.goal};#{impl1.minimum};#{
                  impl1.current_business_concept_version.name
-               };#{impl1.execution_result_info.date};;;#{impl1.execution_result_info.result};;#{
+               };#{Helpers.shift_zone(impl1.execution_result_info.date)};;;#{impl1.execution_result_info.result};;#{
                  impl1.inserted_at
                };field_value;system, system1\r
                """

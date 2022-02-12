@@ -133,8 +133,10 @@ defmodule TdDq.Executions do
     executions
     |> Enum.group_by(&get_sources/1)
     |> Enum.filter(fn
-      {[source], _} -> source in sources
-      {sources, _} -> Enum.sort(sources) == sorted_sources
+      {[source], _} ->
+        source in sources
+      {sources, _} ->
+        Enum.sort(sources) == sorted_sources
     end)
     |> Enum.flat_map(fn
       {sources, executions} -> Enum.map(executions, &Map.put(&1, :structure_aliases, sources))

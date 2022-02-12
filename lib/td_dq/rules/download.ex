@@ -109,7 +109,8 @@ defmodule TdDq.Implementations.Download do
           implementation.goal,
           implementation.minimum,
           get_in(implementation, [:current_business_concept_version, :name]),
-          get_in(implementation, [:execution_result_info, :date]),
+          get_in(implementation, [:execution_result_info, :date])
+          |> TdDd.Helpers.shift_zone(),
           get_in(implementation, [:execution_result_info, :records]),
           get_in(implementation, [:execution_result_info, :errors]),
           get_in(implementation, [:execution_result_info, :result]),
@@ -142,6 +143,8 @@ defmodule TdDq.Implementations.Download do
       acc ++ [values_with_rule_and_implementation_content]
     end)
   end
+
+
 
   defp export(headers, implementations) do
     [headers | implementations]
