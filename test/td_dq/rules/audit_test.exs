@@ -15,10 +15,65 @@ defmodule TdDq.Rules.AuditTest do
     domain_id = System.unique_integer([:positive])
     %{name: template_name} = CacheHelpers.insert_template(scope: "dq")
     claims = build(:dq_claims, role: "admin")
-    rule = insert(:rule, df_name: template_name, domain_id: domain_id)
+
+    rule =
+      insert(:rule, df_name: template_name, domain_id: domain_id, df_content: %{"bar" => "foo"})
+
     implementation = insert(:implementation, rule: rule, deleted_at: nil, domain_id: domain_id)
 
-    [claims: claims, rule: rule, implementation: implementation, template_name: template_name]
+    [
+      claims: claims,
+      rule: rule,
+      implementation: implementation,
+      template_name: template_name,
+    ]
+  end
+
+  describe "rule_created/4" do
+    test "publishes an event", %{claims: %{user_id: user_id}, rule: rule} do
+      %{
+        id: rule_id,
+        domain_id: domain_id,
+        name: name,
+        df_content: content,
+        description: description,
+        business_concept_id: business_concept_id
+      } = rule
+
+      changeset = Rule.changeset(rule, %{})
+
+      assert {:ok, event_id} =
+               Audit.rule_created(
+                 Repo,
+                 %{rule: rule},
+                 changeset,
+                 user_id
+               )
+
+      assert {:ok, [event]} = Stream.range(:redix, @stream, event_id, event_id, transform: :range)
+      domain_ids = [domain_id]
+      user_id = "#{user_id}"
+      resource_id = "#{rule_id}"
+
+      assert %{
+               event: "rule_created",
+               payload: payload,
+               resource_id: ^resource_id,
+               resource_type: "rule",
+               service: "td_dd",
+               ts: _ts,
+               user_id: ^user_id
+             } = event
+
+      assert %{
+               "name" => ^name,
+               "domain_id" => ^domain_id,
+               "domain_ids" => ^domain_ids,
+               "content" => ^content,
+               "description" => ^description,
+               "business_concept_id" => ^business_concept_id
+             } = Jason.decode!(payload)
+    end
   end
 
   describe "rule_updated/4" do
@@ -107,10 +162,13 @@ defmodule TdDq.Rules.AuditTest do
                user_id: ^user_id
              } = event
 
+      domain_ids = [domain_id]
+
       assert %{
                "implementation_key" => ^implementation_key,
                "rule_id" => ^rule_id,
-               "domain_id" => ^domain_id
+               "domain_id" => ^domain_id,
+               "domain_ids" => ^domain_ids
              } = Jason.decode!(payload)
     end
   end
