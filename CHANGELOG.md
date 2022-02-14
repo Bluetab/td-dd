@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-4463] add notifications for `rule_created` and `implementation_created`
+
 ### Fixed
 
 - [TD-4427] Fixed a performance issue when calling /api/executions/search
