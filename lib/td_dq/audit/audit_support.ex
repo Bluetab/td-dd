@@ -41,7 +41,7 @@ defmodule TdDq.Audit.AuditSupport do
 
   defp payload(%{df_content: new_content}, %Implementation{df_content: old_content} = _data) do
     diff = MapDiff.diff(old_content, new_content, mask: &Masks.mask/1)
-    %{content: diff}
+    %{df_content: diff}
   end
 
   defp payload(%{df_content: new_content} = changes, %{df_content: old_content} = _data) do

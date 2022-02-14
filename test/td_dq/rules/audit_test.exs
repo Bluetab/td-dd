@@ -26,7 +26,6 @@ defmodule TdDq.Rules.AuditTest do
       rule: rule,
       implementation: implementation,
       template_name: template_name,
-      domain_id: domain_id
     ]
   end
 
@@ -345,7 +344,7 @@ defmodule TdDq.Rules.AuditTest do
              } = event
 
       assert %{
-               "content" => %{"added" => ^df_content}
+               "df_content" => %{"added" => ^df_content}
              } = Jason.decode!(payload)
     end
 
