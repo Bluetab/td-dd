@@ -4,6 +4,7 @@
 
 ### Added
 
+- [TD-4437] Control rule results upload using new `manage_rule_results` permission 
 - [TD-4463] add notifications for `rule_created` and `implementation_created`
 
 ### Fixed

@@ -45,6 +45,39 @@ defmodule TdDqWeb.RuleResultControllerTest do
   end
 
   describe "POST /api/rule_results" do
+    @tag authentication: [role: "admin"]
+    @tag fixture: "test/fixtures/rule_results/rule_results_errors_records.csv"
+    test "admin can upload rule results", %{
+      conn: conn,
+      rule_results_file: rule_results_file
+    } do
+      assert conn
+             |> post(Routes.rule_result_path(conn, :create), rule_results: rule_results_file)
+             |> response(:ok)
+    end
+
+    @tag authentication: [role: "user"]
+    @tag fixture: "test/fixtures/rule_results/rule_results_errors_records.csv"
+    test "non-admin cannot upload rule results", %{
+      conn: conn,
+      rule_results_file: rule_results_file
+    } do
+      assert conn
+             |> post(Routes.rule_result_path(conn, :create), rule_results: rule_results_file)
+             |> response(:forbidden)
+    end
+
+    @tag authentication: [role: "user", permissions: [:manage_rule_results]]
+    @tag fixture: "test/fixtures/rule_results/rule_results_errors_records.csv"
+    test "non-admin having upload_rule_results permission can upload rule results", %{
+      conn: conn,
+      rule_results_file: rule_results_file
+    } do
+      assert conn
+             |> post(Routes.rule_result_path(conn, :create), rule_results: rule_results_file)
+             |> response(:ok)
+    end
+
     @tag authentication: [role: "service"]
     @tag fixture: "test/fixtures/rule_results/rule_results_invalid_format.csv"
     test "rule result upload with invalid date", %{
