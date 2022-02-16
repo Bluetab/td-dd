@@ -88,12 +88,10 @@ defmodule TdDq.Rules.Search do
 
   defp get_permissions(domain_permissions, user_defined_filters) do
     Enum.filter(domain_permissions, fn permissions_obj ->
-      case do_rules_execution(user_defined_filters) do
-        true ->
-          check_execute_and_view_permission(permissions_obj)
-
-        false ->
-          Enum.any?(permissions_obj.permissions, &check_view_or_manage_permission(&1))
+      if do_rules_execution(user_defined_filters) do
+        check_execute_and_view_permission(permissions_obj)
+      else
+        Enum.any?(permissions_obj.permissions, &check_view_or_manage_permission(&1))
       end
     end)
   end
@@ -104,14 +102,13 @@ defmodule TdDq.Rules.Search do
     end)
   end
 
-  defp check_execute_and_view_permission(permissions_obj) do
-    Enum.member?(permissions_obj.permissions, :execute_quality_rule_implementations) &&
-      Enum.any?(permissions_obj.permissions, &check_view_or_manage_permission(&1))
+  defp check_execute_and_view_permission(%{permissions: permissions}) do
+    Enum.member?(permissions, "execute_quality_rule_implementations") &&
+      Enum.any?(permissions, &check_view_or_manage_permission(&1))
   end
 
-  defp check_view_or_manage_permission(permission_names) do
-    permission_names == :view_quality_rule ||
-      permission_names == :manage_confidential_business_concepts
+  defp check_view_or_manage_permission(permission_name) do
+    permission_name in ["view_quality_rule", "manage_confidential_business_concepts"]
   end
 
   defp filter(_params, [], _page, _size, _index),

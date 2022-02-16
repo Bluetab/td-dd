@@ -929,7 +929,8 @@ defmodule TdDd.DataStructuresTest do
       assert parent_relation.version <~> parent_custom_relation
       assert child_relation.version <~> child_custom_relation
       assert [link] = child_relation.links
-      assert %{resource_type: :concept, resource_id: ^concept_id} = link
+      assert %{resource_type: :concept, resource_id: resource_id} = link
+      assert resource_id == to_string(concept_id)
     end
 
     defp deleted_at(%{external_id: "deleted_child"}), do: DateTime.utc_now()

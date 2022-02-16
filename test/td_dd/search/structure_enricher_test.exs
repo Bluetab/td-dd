@@ -7,7 +7,7 @@ defmodule TdDd.Search.StructureEnricherTest do
 
   setup do
     %{id: parent_id} = parent_domain = CacheHelpers.insert_domain()
-    domain = CacheHelpers.insert_domain(%{parent_ids: [parent_id]})
+    domain = CacheHelpers.insert_domain(%{parent_id: parent_id})
     %{id: template_id, name: template_name} = template = CacheHelpers.insert_template()
 
     CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)

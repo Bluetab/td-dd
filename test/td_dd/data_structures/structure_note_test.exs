@@ -192,7 +192,7 @@ defmodule TdDd.DataStructures.StructureNoteTest do
     end
 
     test "merges dynamic content preserving existing field", %{
-      structure_note: structure_note,
+      structure_note: structure_note
     } do
       assert %Changeset{changes: changes} =
                StructureNote.bulk_update_changeset(structure_note, %{

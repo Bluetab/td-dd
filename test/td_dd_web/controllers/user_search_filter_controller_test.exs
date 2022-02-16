@@ -47,8 +47,11 @@ defmodule TdDdWeb.UserSearchFilterControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "lists current user user_search_filters by scope", %{conn: conn, claims: %{user_id: user_id}} do
-      %{id: id} =  insert(:user_search_filter, name: "a", user_id: user_id, scope: :rule)
+    test "lists current user user_search_filters by scope", %{
+      conn: conn,
+      claims: %{user_id: user_id}
+    } do
+      %{id: id} = insert(:user_search_filter, name: "a", user_id: user_id, scope: :rule)
       insert(:user_search_filter, name: "b", user_id: user_id, scope: :rule_implementation)
 
       assert %{"data" => data} =

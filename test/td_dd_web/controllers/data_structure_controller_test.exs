@@ -165,23 +165,19 @@ defmodule TdDdWeb.DataStructureControllerTest do
     @tag authentication: [role: "user"]
     test "renders data_structure when data is valid", %{
       conn: conn,
-      claims: %{user_id: user_id},
-      data_structure: %{id: id, domain_id: domain_id} = data_structure,
+      claims: claims,
+      data_structure: %{id: id, domain_id: old_domain_id} = data_structure,
       swagger_schema: schema
     } do
-      attrs = %{domain_id: 42, confidential: true}
+      %{id: new_domain_id} = CacheHelpers.insert_domain()
+      attrs = %{domain_id: new_domain_id, confidential: true}
 
-      create_acl_entry(user_id, domain_id, [
-        :update_data_structure,
-        :manage_confidential_structures,
-        :manage_structures_domain
-      ])
-
-      create_acl_entry(user_id, 42, [
-        :view_data_structure,
-        :manage_confidential_structures,
-        :manage_structures_domain
-      ])
+      CacheHelpers.put_session_permissions(claims, %{
+        update_data_structure: [old_domain_id],
+        manage_confidential_structures: [old_domain_id, new_domain_id],
+        manage_structures_domain: [old_domain_id, new_domain_id],
+        view_data_structure: [new_domain_id]
+      })
 
       assert %{"data" => %{"id" => ^id}} =
                conn
@@ -189,23 +185,26 @@ defmodule TdDdWeb.DataStructureControllerTest do
                |> validate_resp_schema(schema, "DataStructureResponse")
                |> json_response(:ok)
 
-      assert %{domain_id: 42, confidential: true} = DataStructures.get_data_structure!(id)
+      assert %{domain_id: ^new_domain_id, confidential: true} =
+               DataStructures.get_data_structure!(id)
     end
 
     @tag authentication: [role: "user"]
     test "needs manage_confidential_structures permission", %{
       conn: conn,
-      claims: %{user_id: user_id},
+      claims: claims,
       data_structure: %{domain_id: domain_id} = data_structure,
       swagger_schema: schema
     } do
-      attrs = %{confidential: true}
-
-      # NO , :manage_confidential_structures,])
-      create_acl_entry(user_id, domain_id, [:view_data_structure, :update_data_structure])
+      CacheHelpers.put_session_permissions(claims, domain_id, [
+        :view_data_structure,
+        :update_data_structure
+      ])
 
       assert conn
-             |> put(data_structure_path(conn, :update, data_structure), data_structure: attrs)
+             |> put(data_structure_path(conn, :update, data_structure),
+               data_structure: %{confidential: true}
+             )
              |> validate_resp_schema(schema, "DataStructureResponse")
              |> json_response(:forbidden)
     end
@@ -213,23 +212,25 @@ defmodule TdDdWeb.DataStructureControllerTest do
     @tag authentication: [role: "user"]
     test "needs manage_structures_domain permission", %{
       conn: conn,
-      claims: %{user_id: user_id},
+      claims: claims,
       data_structure: %{domain_id: domain_id} = data_structure,
       swagger_schema: schema
     } do
-      attrs = %{domain_id: 42}
+      %{id: new_domain_id} = CacheHelpers.insert_domain()
 
-      # NO #, :manage_structures_domain])
-      create_acl_entry(user_id, domain_id, [:update_data_structure])
-
-      create_acl_entry(user_id, 42, [
-        :view_data_structure,
-        :manage_structures_domain,
-        :manage_confidential_structures
-      ])
+      CacheHelpers.put_session_permissions(claims, %{
+        domain_id => [:update_data_structure],
+        new_domain_id => [
+          :view_data_structure,
+          :manage_structures_domain,
+          :manage_confidential_structures
+        ]
+      })
 
       assert conn
-             |> put(data_structure_path(conn, :update, data_structure), data_structure: attrs)
+             |> put(data_structure_path(conn, :update, data_structure),
+               data_structure: %{domain_id: new_domain_id}
+             )
              |> validate_resp_schema(schema, "DataStructureResponse")
              |> json_response(:forbidden)
     end
@@ -237,21 +238,21 @@ defmodule TdDdWeb.DataStructureControllerTest do
     @tag authentication: [role: "user"]
     test "needs access to new domain", %{
       conn: conn,
-      claims: %{user_id: user_id},
+      claims: claims,
       data_structure: %{domain_id: domain_id} = data_structure,
       swagger_schema: schema
     } do
-      attrs = %{domain_id: 42}
+      %{id: new_domain_id} = CacheHelpers.insert_domain()
 
-      create_acl_entry(user_id, domain_id, [
-        :update_data_structure,
-        :manage_structures_domain
-      ])
-
-      create_acl_entry(user_id, 42, [:view_data_structure, :manage_confidential_structures])
+      CacheHelpers.put_session_permissions(claims, %{
+        domain_id => [:update_data_structure, :manage_structures_domain],
+        new_domain_id => [:view_data_structure, :manage_confidential_structures]
+      })
 
       assert conn
-             |> put(data_structure_path(conn, :update, data_structure), data_structure: attrs)
+             |> put(data_structure_path(conn, :update, data_structure),
+               data_structure: %{domain_id: new_domain_id}
+             )
              |> validate_resp_schema(schema, "DataStructureResponse")
              |> json_response(:forbidden)
     end
@@ -340,20 +341,20 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert data["data_structure"]["confidential"] == true
     end
 
-    @tag authentication: [user_name: "non_admin_user"]
+    @tag authentication: [
+           user_name: "non_admin_user",
+           permissions: [
+             :view_data_structure,
+             :update_data_structure,
+             :manage_confidential_structures
+           ]
+         ]
     @tag :confidential
     test "user with permission can update confidential data_structure", %{
       conn: conn,
-      claims: %{user_id: user_id},
-      domain: %{id: domain_id, name: domain_name},
+      domain: %{name: domain_name},
       data_structure: %{id: id, confidential: true}
     } do
-      create_acl_entry(user_id, domain_id, [
-        :view_data_structure,
-        :update_data_structure,
-        :manage_confidential_structures
-      ])
-
       assert %{"data" => %{"id" => ^id}} =
                conn
                |> put(data_structure_path(conn, :update, id),
@@ -371,16 +372,15 @@ defmodule TdDdWeb.DataStructureControllerTest do
       assert data["data_structure"]["domain"]["name"] == domain_name
     end
 
-    @tag authentication: [user_name: "user_without_permission"]
+    @tag authentication: [
+           user_name: "user_without_permission",
+           permissions: [:view_data_structure, :update_data_structure]
+         ]
     @tag :confidential
     test "user without confidential permission cannot update confidential data_structure", %{
       conn: conn,
-      claims: %{user_id: user_id},
-      domain: %{id: domain_id},
       data_structure: %{id: data_structure_id, confidential: true}
     } do
-      create_acl_entry(user_id, domain_id, [:view_data_structure, :update_data_structure])
-
       assert conn
              |> put(data_structure_path(conn, :update, data_structure_id),
                data_structure: %{confidential: false}
@@ -388,16 +388,15 @@ defmodule TdDdWeb.DataStructureControllerTest do
              |> json_response(:forbidden)
     end
 
-    @tag authentication: [user_name: "user_without_confidential"]
+    @tag authentication: [
+           user_name: "user_without_confidential",
+           permissions: [:view_data_structure, :update_data_structure]
+         ]
     test "user without confidential permission cannot update confidentiality of data_structure",
          %{
            conn: conn,
-           claims: %{user_id: user_id},
-           domain: %{id: domain_id},
            data_structure: %{id: data_structure_id}
          } do
-      create_acl_entry(user_id, domain_id, [:view_data_structure, :update_data_structure])
-
       assert conn
              |> put(data_structure_path(conn, :update, data_structure_id),
                data_structure: %{confidential: true}
@@ -458,7 +457,11 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert %{
                "errors" => [
-                 %{"external_id" => ^external_id_one, "message" => "df_content.inclusion", "field" => "list"}
+                 %{
+                   "external_id" => ^external_id_one,
+                   "message" => "df_content.inclusion",
+                   "field" => "list"
+                 }
                ],
                "ids" => []
              } = data
@@ -551,9 +554,15 @@ defmodule TdDdWeb.DataStructureControllerTest do
           external_id: "some_external_id_3"
         )
 
-      %{id: id_one, external_id: external_id_one} = create_data_structure(data_structure_one)[:data_structure]
-      %{id: id_two, external_id: external_id_two} = create_data_structure(data_structure_two)[:data_structure]
-      %{id: id_three, external_id: external_id_three} = create_data_structure(data_structure_three)[:data_structure]
+      %{id: id_one, external_id: external_id_one} =
+        create_data_structure(data_structure_one)[:data_structure]
+
+      %{id: id_two, external_id: external_id_two} =
+        create_data_structure(data_structure_two)[:data_structure]
+
+      %{id: id_three, external_id: external_id_three} =
+        create_data_structure(data_structure_three)[:data_structure]
+
       {[id_one, id_two, id_three], [external_id_one, external_id_two, external_id_three]}
     end
 
@@ -597,7 +606,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                    "external_id" => external_id_2,
                    "field" => "list"
                  }
-                ]
+               ]
              }
     end
 

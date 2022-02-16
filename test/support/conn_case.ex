@@ -28,8 +28,6 @@ defmodule TdDdWeb.ConnCase do
       import Phoenix.ConnTest
       import TdDd.Factory
 
-      import TdDdWeb.Authentication, only: [create_acl_entry: 3, create_acl_entry: 4]
-
       alias TdCxWeb.Router.Helpers, as: CxRoutes
       alias TdDdWeb.Router.Helpers, as: Routes
       alias TdDqWeb.Router.Helpers, as: DqRoutes
@@ -40,8 +38,6 @@ defmodule TdDdWeb.ConnCase do
   end
 
   setup tags do
-    start_supervised(MockPermissionResolver)
-
     case Sandbox.checkout(TdDd.Repo) do
       :ok ->
         if tags[:async] or tags[:sandbox] == :shared do

@@ -114,11 +114,14 @@ defmodule TdDdWeb.GrantRequestControllerTest do
     @tag authentication: [role: "user"]
     test "filters by domain permissions of an approver", %{
       conn: conn,
-      claims: %{user_id: user_id}
+      claims: %{user_id: user_id} = claims
     } do
       %{id: domain_id} = CacheHelpers.insert_domain()
-      create_acl_entry(user_id, domain_id, [:approve_grant_request])
-      CacheHelpers.insert_grant_request_approver(user_id, domain_id)
+      CacheHelpers.put_session_permissions(claims, domain_id, [:approve_grant_request])
+
+      CacheHelpers.put_grant_request_approvers([
+        %{user_id: user_id, domain_id: domain_id, role: "approver"}
+      ])
 
       %{id: id} =
         insert(:grant_request, data_structure: build(:data_structure), domain_id: domain_id)
@@ -174,11 +177,14 @@ defmodule TdDdWeb.GrantRequestControllerTest do
     @tag authentication: [role: "user"]
     test "user with permission can show grant_request", %{
       conn: conn,
-      claims: %{user_id: user_id}
+      claims: %{user_id: user_id} = claims
     } do
       %{id: domain_id} = CacheHelpers.insert_domain()
-      create_acl_entry(user_id, domain_id, [:approve_grant_request])
-      CacheHelpers.insert_grant_request_approver(user_id, domain_id)
+      CacheHelpers.put_session_permissions(claims, domain_id, [:approve_grant_request])
+
+      CacheHelpers.put_grant_request_approvers([
+        %{user_id: user_id, domain_id: domain_id, role: "approver"}
+      ])
 
       %{id: id} =
         insert(:grant_request, data_structure: build(:data_structure), domain_id: domain_id)

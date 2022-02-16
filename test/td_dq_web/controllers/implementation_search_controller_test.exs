@@ -1,29 +1,14 @@
 defmodule TdDqWeb.ImplementationSearchControllerTest do
   use TdDqWeb.ConnCase
 
-  alias TdCache.ConceptCache
-  alias TdCache.TaxonomyCache
-
   @business_concept_id "42"
 
-  setup_all do
-    %{id: domain_id} = domain = build(:domain)
-    TaxonomyCache.put_domain(domain)
-    ConceptCache.put(%{id: @business_concept_id, name: "Concept", domain_id: domain_id})
-
-    on_exit(fn ->
-      {:ok, _} = ConceptCache.delete(@business_concept_id)
-      TaxonomyCache.delete_domain(domain_id)
-    end)
-
-    [domain: domain]
-  end
-
-  setup tags do
-    domain_id = get_in(tags, [:domain, :id])
-    rule = insert(:rule, business_concept_id: @business_concept_id, domain_id: domain_id)
+  setup do
+    %{id: domain_id} = domain = CacheHelpers.insert_domain()
+    %{id: concept_id} = CacheHelpers.insert_concept(%{domain_id: domain_id})
+    rule = insert(:rule, business_concept_id: concept_id, domain_id: domain_id)
     implementation = insert(:implementation, rule: rule, domain_id: domain_id)
-    [implementation: implementation, rule: rule]
+    [domain: domain, implementation: implementation, rule: rule]
   end
 
   describe "POST /api/rule_implementations/search" do
@@ -38,7 +23,7 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
     @tag authentication: [role: "user"]
     test "user with permissions can search implementations", %{
       conn: conn,
-      claims: %{user_id: user_id},
+      claims: claims,
       domain: %{id: domain_id}
     } do
       assert %{"data" => [], "user_permissions" => perms} =
@@ -48,7 +33,7 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
 
       assert %{"execute" => false, "manage" => false} = perms
 
-      create_acl_entry(user_id, "domain", domain_id, [
+      CacheHelpers.put_session_permissions(claims, domain_id, [
         :view_quality_rule,
         :manage_quality_rule_implementations,
         :execute_quality_rule_implementations

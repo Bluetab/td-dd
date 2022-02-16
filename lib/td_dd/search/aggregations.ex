@@ -17,6 +17,7 @@ defmodule TdDd.Search.Aggregations do
       {"with_content.raw", %{terms: %{field: "with_content.raw"}}},
       {"tags.raw", %{terms: %{field: "tags.raw", size: 50}}},
       {"linked_concepts", %{terms: %{field: "linked_concepts"}}},
+      # TODO: Avoid indexing domain parents
       {"taxonomy",
        %{
          nested: %{path: "domain_parents"},
@@ -135,7 +136,7 @@ defmodule TdDd.Search.Aggregations do
   end
 
   defp get_domains_count do
-    case Enum.count(TaxonomyCache.get_domain_ids()) do
+    case TaxonomyCache.domain_count() do
       0 -> 10
       count -> count
     end

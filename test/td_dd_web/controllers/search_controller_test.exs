@@ -1,36 +1,13 @@
 defmodule TdDdWeb.SearchControllerTest do
   use TdDdWeb.ConnCase
 
-  alias TdCache.TaxonomyCache
   alias TdDd.DataStructures.Hierarchy
 
   @moduletag sandbox: :shared
 
-  setup_all do
-    %{id: domain_id} = domain = build(:domain)
-    TaxonomyCache.put_domain(domain)
-
-    on_exit(fn ->
-      TaxonomyCache.delete_domain(domain_id)
-    end)
-
-    [domain: domain]
-  end
-
   setup do
     start_supervised!(TdDd.Search.StructureEnricher)
     :ok
-  end
-
-  setup tags do
-    case tags do
-      %{claims: %{user_id: user_id, user_name: user_name}} ->
-        user = CacheHelpers.insert_user(id: user_id, user_name: user_name)
-        [user: user]
-
-      _ ->
-        :ok
-    end
   end
 
   describe "search" do
@@ -69,7 +46,7 @@ defmodule TdDdWeb.SearchControllerTest do
       [other_user_id: other_user_id]
     end
 
-    @tag authentication: [user_name: "non_admin_user"]
+    @tag authentication: [user_name: "non_admin_user", permissions: [:create_grant]]
     test "user without permissions can only view owned grants", %{
       conn: conn,
       claims: claims,
@@ -127,13 +104,16 @@ defmodule TdDdWeb.SearchControllerTest do
   end
 
   defp create_grant(context) do
+    user_id =
+      case context do
+        %{claims: %{user_id: user_id}} -> user_id
+        _ -> System.unique_integer([:positive])
+      end
+
     grant =
       case context do
-        %{domain: domain, user: user} ->
-          create_grant(user.id, domain.id)
-
-        _ ->
-          insert(:grant)
+        %{domain: domain} -> create_grant(user_id, domain.id)
+        _ -> create_grant(user_id, nil)
       end
 
     [grant: grant]

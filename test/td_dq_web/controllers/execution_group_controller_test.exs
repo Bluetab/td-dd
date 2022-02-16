@@ -2,43 +2,21 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
   use TdDqWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger_dq.json"
 
-  alias TdCache.ConceptCache
-
   @moduletag sandbox: :shared
 
-  setup_all do
-    %{id: domain_id} = domain = CacheHelpers.insert_domain()
+  setup :put_permissions
 
-    ConceptCache.put(%{id: 42, name: "Concept", domain_id: domain_id})
-    on_exit(fn -> {:ok, _} = ConceptCache.delete(42) end)
-
-    [domain: domain]
-  end
-
-  setup tags do
+  setup do
     groups =
       1..5
-      |> Enum.map(fn _ ->
-        insert(:execution, group: build(:execution_group), implementation: build(:implementation))
-      end)
-      |> Enum.map(fn %{group: group} = execution ->
-        Map.put(group, :executions, [execution])
-      end)
-
-    case tags do
-      %{permissions: permissions, claims: %{user_id: user_id}, domain: %{id: domain_id}} ->
-        create_acl_entry(user_id, "domain", domain_id, permissions)
-
-      _ ->
-        :ok
-    end
+      |> Enum.map(fn _ -> insert(:execution) end)
+      |> Enum.map(fn %{group: group} = execution -> Map.put(group, :executions, [execution]) end)
 
     [groups: groups]
   end
 
   describe "GET /api/execution_groups" do
-    @tag authentication: [user_name: "not_an_admin"]
-    @tag permissions: [:view_quality_rule]
+    @tag authentication: [user_name: "not_an_admin", permissions: [:view_quality_rule]]
     test "returns an OK response with the list of execution groups", %{
       conn: conn,
       swagger_schema: schema
@@ -62,8 +40,7 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
   end
 
   describe "GET /api/execution_groups/:id" do
-    @tag authentication: [user_name: "not_an_admin"]
-    @tag permissions: [:view_quality_rule]
+    @tag authentication: [user_name: "not_an_admin", permissions: [:view_quality_rule]]
     test "returns an OK response with the execution group", %{
       conn: conn,
       swagger_schema: schema,
@@ -94,8 +71,10 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
   end
 
   describe "POST /api/execution_groups" do
-    @tag authentication: [user_name: "not_an_admin"]
-    @tag permissions: [:execute_quality_rule_implementations, :view_quality_rule]
+    @tag authentication: [
+           user_name: "not_an_admin",
+           permissions: [:execute_quality_rule_implementations, :view_quality_rule]
+         ]
     test "returns an OK response with the created execution group", %{
       conn: conn,
       swagger_schema: schema,
@@ -129,4 +108,11 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
                |> json_response(:forbidden)
     end
   end
+
+  defp put_permissions(%{permissions: permissions, claims: claims, domain: %{id: domain_id}}) do
+    CacheHelpers.put_session_permissions(claims, domain_id, permissions)
+    :ok
+  end
+
+  defp put_permissions(_), do: :ok
 end

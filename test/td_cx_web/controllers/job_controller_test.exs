@@ -49,10 +49,9 @@ defmodule TdCxWeb.JobControllerTest do
   end
 
   describe "POST /api/sources/:id/jobs" do
-    @tag authentication: [role: "user"]
-    test "user can create a job for a source", %{conn: conn, claims: %{user_id: user_id}} do
+    @tag authentication: [role: "user", permissions: [:profile_structures]]
+    test "user can create a job for a source", %{conn: conn} do
       %{external_id: source_external_id} = insert(:source)
-      create_acl_entry(user_id, "domain_id", [:profile_structures])
 
       assert %{"data" => data} =
                conn
@@ -115,30 +114,23 @@ defmodule TdCxWeb.JobControllerTest do
     end
 
     @tag authentication: [role: "service"]
-    test "service account can view created job", %{conn: conn, job: job} do
-      %{external_id: external_id} = job
-
+    test "service account can view created job", %{conn: conn, job: %{external_id: external_id}} do
       assert %{"data" => data} =
                conn
-               |> get(Routes.job_path(conn, :show, job.external_id))
+               |> get(Routes.job_path(conn, :show, external_id))
                |> json_response(:ok)
 
       assert %{"external_id" => ^external_id} = data
     end
 
-    @tag authentication: [role: "user"]
+    @tag authentication: [role: "user", permissions: [:profile_structures]]
     test "user account with profile_structures permission can view created job", %{
       conn: conn,
-      job: job,
-      claims: %{user_id: user_id}
+      job: %{external_id: external_id}
     } do
-      %{external_id: external_id} = job
-
-      create_acl_entry(user_id, "domain_id", [:profile_structures])
-
       assert %{"data" => data} =
                conn
-               |> get(Routes.job_path(conn, :show, job.external_id))
+               |> get(Routes.job_path(conn, :show, external_id))
                |> json_response(:ok)
 
       assert %{"external_id" => ^external_id} = data

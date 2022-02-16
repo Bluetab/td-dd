@@ -90,15 +90,15 @@ defmodule TdDd.Search.StructureEnricher do
   end
 
   defp domain_parents(domains) do
+    # TODO: Avoid indexing domain parents
     Map.new(domains, fn {id, domain} ->
-      case Map.get(domain, :parent_ids) do
-        nil ->
-          {id, []}
+      ids =
+        case Map.get(domain, :parent_ids, []) do
+          nil -> [id]
+          ids -> [id | ids]
+        end
 
-        ids ->
-          {id,
-           Enum.map(ids, &(Map.get(domains, &1, %{}) |> Map.take([:id, :external_id, :name])))}
-      end
+      {id, Enum.map(ids, &(Map.get(domains, &1, %{}) |> Map.take([:id, :external_id, :name])))}
     end)
   end
 

@@ -83,7 +83,6 @@ config :codepagex, :encodings, [
 
 config :td_dd, TdDdWeb.CustomParsersPlug, max_payload_length: 100_000_000
 
-config :td_dd, permission_resolver: TdCache.Permissions
 config :td_dd, index_worker: TdDd.Search.IndexWorker
 config :td_dd, cx_index_worker: TdCx.Search.IndexWorker
 config :td_dd, dq_index_worker: TdDq.Search.IndexWorker

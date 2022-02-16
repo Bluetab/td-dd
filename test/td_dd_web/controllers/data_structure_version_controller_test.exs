@@ -3,7 +3,6 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  alias TdCache.TaxonomyCache
   alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Lineage.GraphData
@@ -525,17 +524,14 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   end
 
   describe "GET /api/data_structures/:id/versions/:version data_field structures" do
-    setup :create_data_field_structure
+    setup :create_table_structure
+    setup :profile_source
 
-    @tag authentication: [role: "user"]
-    test "user whithout permission can not profile structure", %{
+    @tag authentication: [role: "user", permissions: [:view_data_structure]]
+    test "user without permission can not profile structure", %{
       conn: conn,
-      claims: %{user_id: user_id},
-      data_structure: %{id: id},
-      domain: %{id: domain_id}
+      data_structure: %{id: id}
     } do
-      create_acl_entry(user_id, domain_id, [:view_data_structure])
-
       assert %{"user_permissions" => permissions} =
                conn
                |> get(
@@ -546,15 +542,11 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       assert %{"profile_permission" => false} = permissions
     end
 
-    @tag authentication: [role: "user"]
+    @tag authentication: [role: "user", permissions: [:view_data_structure, :profile_structures]]
     test "user with permission can profile structure", %{
       conn: conn,
-      claims: %{user_id: user_id},
-      data_structure: %{id: id},
-      domain: %{id: domain_id}
+      data_structure: %{id: id}
     } do
-      create_acl_entry(user_id, domain_id, [:view_data_structure, :profile_structures])
-
       assert %{"user_permissions" => permissions} =
                conn
                |> get(
@@ -565,16 +557,11 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       assert %{"profile_permission" => true} = permissions
     end
 
-    setup :profile_source
-    @tag authentication: [role: "user"]
+    @tag authentication: [role: "user", permissions: [:view_data_structure, :profile_structures]]
     test "user with permission can profile structure with indirect profile source", %{
       conn: conn,
-      claims: %{user_id: user_id},
-      profile_domain: %{id: domain_id},
       structure: structure
     } do
-      create_acl_entry(user_id, domain_id, [:view_data_structure, :profile_structures])
-
       assert %{"user_permissions" => permissions} =
                conn
                |> get(
@@ -590,21 +577,15 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       assert %{"profile_permission" => true} = permissions
     end
 
-    @tag authentication: [role: "user"]
+    @tag authentication: [
+           role: "user",
+           permissions: [:view_data_structure, :create_grant_request]
+         ]
     test "user with permission can request grant", %{
       conn: conn,
-      claims: %{user_id: user_id},
-      data_structure: %{id: id},
-      domain: %{id: domain_id}
+      data_structure: %{id: id}
     } do
-      CacheHelpers.insert_template(%{
-        name: "foo",
-        label: "foo",
-        scope: "gr",
-        content: []
-      })
-
-      create_acl_entry(user_id, domain_id, [:view_data_structure, :create_grant_request])
+      CacheHelpers.insert_template(%{name: "foo", label: "foo", scope: "gr", content: []})
 
       assert %{"user_permissions" => permissions} =
                conn
@@ -616,15 +597,11 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       assert %{"request_grant" => true} = permissions
     end
 
-    @tag authentication: [role: "user"]
+    @tag authentication: [role: "user", permissions: [:view_data_structure]]
     test "user without permission can not request grant", %{
       conn: conn,
-      claims: %{user_id: user_id},
-      data_structure: %{id: id},
-      domain: %{id: domain_id}
+      data_structure: %{id: id}
     } do
-      create_acl_entry(user_id, domain_id, [:view_data_structure])
-
       assert %{"user_permissions" => permissions} =
                conn
                |> get(
@@ -635,15 +612,14 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       assert %{"request_grant" => false} = permissions
     end
 
-    @tag authentication: [role: "user"]
+    @tag authentication: [
+           role: "user",
+           permissions: [:view_data_structure, :create_grant_request]
+         ]
     test "cannot request grant without template", %{
       conn: conn,
-      claims: %{user_id: user_id},
-      data_structure: %{id: id},
-      domain: %{id: domain_id}
+      data_structure: %{id: id}
     } do
-      create_acl_entry(user_id, domain_id, [:view_data_structure, :create_grant_request])
-
       assert %{"user_permissions" => permissions} =
                conn
                |> get(
@@ -658,15 +634,11 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   describe "GET /api/data_structures/:id/versions/:version field structures" do
     setup :create_field_structure
 
-    @tag authentication: [role: "user"]
-    test "user whithout permission can not profile structure", %{
+    @tag authentication: [role: "user", permissions: [:view_data_structure]]
+    test "user without permission can not profile structure", %{
       conn: conn,
-      claims: %{user_id: user_id},
-      data_structure: %{id: id},
-      domain: %{id: domain_id}
+      data_structure: %{id: id}
     } do
-      create_acl_entry(user_id, domain_id, [:view_data_structure])
-
       assert %{"user_permissions" => permissions} =
                conn
                |> get(
@@ -677,15 +649,11 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       assert %{"profile_permission" => false} = permissions
     end
 
-    @tag authentication: [role: "user"]
+    @tag authentication: [role: "user", permissions: [:view_data_structure, :profile_structures]]
     test "user with permission can profile structure", %{
       conn: conn,
-      claims: %{user_id: user_id},
-      data_structure: %{id: id},
-      domain: %{id: domain_id}
+      data_structure: %{id: id}
     } do
-      create_acl_entry(user_id, domain_id, [:view_data_structure, :profile_structures])
-
       assert %{"user_permissions" => permissions} =
                conn
                |> get(
@@ -762,7 +730,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   end
 
   defp create_structure_hierarchy(_) do
-    %{id: source_id} = create_source()
+    %{id: source_id} = insert(:source, config: %{"job_types" => ["catalog", "profile"]})
 
     %{data_structure: parent_structure} =
       parent_version =
@@ -878,9 +846,8 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     {:ok, parent_structure: parent, child_structures: children}
   end
 
-  defp create_field_structure(_) do
-    domain = CacheHelpers.insert_domain()
-    %{id: source_id} = create_source()
+  defp create_field_structure(%{domain: domain}) do
+    %{id: source_id} = insert(:source, config: %{"job_types" => ["catalog", "profile"]})
 
     data_structure = insert(:data_structure, domain_id: domain.id, source_id: source_id)
 
@@ -891,60 +858,49 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
         class: "field"
       )
 
-    {:ok,
-     domain: domain,
-     data_structure: data_structure,
-     data_structure_version: data_structure_version}
+    [
+      domain: domain,
+      data_structure: data_structure,
+      data_structure_version: data_structure_version
+    ]
   end
 
-  defp create_data_field_structure(_) do
-    domain = CacheHelpers.insert_domain()
-    %{id: source_id} = create_source()
+  defp create_table_structure(%{domain: domain}) do
+    %{id: source_id} = insert(:source, config: %{"job_types" => ["catalog", "profile"]})
 
-    data_structure = insert(:data_structure, domain_id: domain.id, source_id: source_id)
-
-    data_structure_version =
+    %{data_structure: data_structure} =
+      data_structure_version =
       insert(:data_structure_version,
-        data_structure_id: data_structure.id,
+        data_structure: build(:data_structure, domain_id: domain.id, source_id: source_id),
         type: "Table"
       )
 
-    {:ok, field_data} = create_field_structure([])
-    field = Keyword.get(field_data, :data_structure_version)
+    %{id: field_id} =
+      create_field_structure(%{domain: domain})
+      |> Keyword.get(:data_structure_version)
 
     insert(:data_structure_relation,
       parent_id: data_structure_version.id,
-      child_id: field.id,
+      child_id: field_id,
       relation_type_id: RelationTypes.default_id!()
     )
 
-    {:ok,
-     domain: domain,
-     data_structure: data_structure,
-     data_structure_version: data_structure_version}
+    [data_structure: data_structure, data_structure_version: data_structure_version]
   end
 
-  defp create_source do
-    insert(:source, config: %{"job_types" => ["catalog", "profile"]})
-  end
-
-  defp profile_source(_) do
-    domain = build(:domain)
-    TaxonomyCache.put_domain(domain)
-    on_exit(fn -> TaxonomyCache.delete_domain(domain.id) end)
-
-    s1 =
+  defp profile_source(%{domain: domain}) do
+    source =
       insert(:source, external_id: "foo", config: %{"job_types" => ["catalog"], "alias" => "foo"})
 
     insert(:source, external_id: "bar", config: %{"job_types" => ["profile"], "alias" => "foo"})
-    structure = insert(:data_structure, domain_id: domain.id, source_id: s1.id)
 
-    insert(:data_structure_version,
-      data_structure_id: structure.id,
-      type: "Column",
-      class: "field"
-    )
+    %{data_structure: structure} =
+      insert(:data_structure_version,
+        data_structure: build(:data_structure, domain_id: domain.id, source_id: source.id),
+        type: "Column",
+        class: "field"
+      )
 
-    {:ok, structure: structure, profile_domain: domain}
+    [structure: structure, profile_domain: domain]
   end
 end

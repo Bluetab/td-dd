@@ -1,29 +1,12 @@
 defmodule TdDqWeb.SearchControllerTest do
   use TdDqWeb.ConnCase
 
-  alias TdCache.ConceptCache
-  alias TdCache.TaxonomyCache
-
-  @business_concept_id "42"
-
-  setup_all do
-    %{id: domain_id} = domain = build(:domain)
-    TaxonomyCache.put_domain(domain)
-    ConceptCache.put(%{id: @business_concept_id, name: "Concept", domain_id: domain_id})
-
-    on_exit(fn ->
-      {:ok, _} = ConceptCache.delete(@business_concept_id)
-      TaxonomyCache.delete_domain(domain_id)
-    end)
-
-    [domain: domain]
-  end
-
-  setup tags do
-    domain_id = get_in(tags, [:domain, :id])
-    rule = insert(:rule, business_concept_id: @business_concept_id, domain_id: domain_id)
+  setup do
+    %{id: domain_id} = domain = CacheHelpers.insert_domain()
+    %{id: concept_id} = CacheHelpers.insert_concept(name: "Concept", domain_id: domain_id)
+    rule = insert(:rule, business_concept_id: concept_id, domain_id: domain_id)
     implementation = insert(:implementation, rule: rule)
-    [implementation: implementation, rule: rule]
+    [domain: domain, implementation: implementation, rule: rule]
   end
 
   describe "index" do
@@ -38,7 +21,7 @@ defmodule TdDqWeb.SearchControllerTest do
     @tag authentication: [role: "user"]
     test "user with permissions can search rules", %{
       conn: conn,
-      claims: %{user_id: user_id},
+      claims: claims,
       domain: %{id: domain_id}
     } do
       assert %{"data" => []} =
@@ -46,7 +29,7 @@ defmodule TdDqWeb.SearchControllerTest do
                |> post(Routes.search_path(conn, :search_rules))
                |> json_response(:ok)
 
-      create_acl_entry(user_id, "domain", domain_id, [:view_quality_rule])
+      CacheHelpers.put_session_permissions(claims, domain_id, [:view_quality_rule])
 
       assert %{"data" => [_]} =
                conn
@@ -57,7 +40,7 @@ defmodule TdDqWeb.SearchControllerTest do
     @tag authentication: [role: "user"]
     test "user with permissions to create rules has manage_quality_rules equals true", %{
       conn: conn,
-      claims: %{user_id: user_id},
+      claims: claims,
       domain: %{id: domain_id}
     } do
       assert %{"data" => []} =
@@ -65,7 +48,7 @@ defmodule TdDqWeb.SearchControllerTest do
                |> post(Routes.search_path(conn, :search_rules))
                |> json_response(:ok)
 
-      create_acl_entry(user_id, "domain", domain_id, [:manage_quality_rule])
+      CacheHelpers.put_session_permissions(claims, domain_id, [:manage_quality_rule])
 
       assert %{"user_permissions" => %{"manage_quality_rules" => true}} =
                conn

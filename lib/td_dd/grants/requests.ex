@@ -98,6 +98,9 @@ defmodule TdDd.Grants.Requests do
         :none ->
           []
 
+        [] ->
+          []
+
         domain_ids ->
           grant_requests =
             params
@@ -135,8 +138,8 @@ defmodule TdDd.Grants.Requests do
 
   defp visible_domain_ids(_claims, nil, _), do: :none
 
-  defp visible_domain_ids(%{user_id: user_id}, "approve", _) do
-    Permissions.permitted_domain_ids(user_id, :approve_grant_request)
+  defp visible_domain_ids(%{jti: jti}, "approve", _) do
+    Permissions.permitted_domain_ids(jti, :approve_grant_request)
   end
 
   def get_grant_request!(id, claims, opts \\ []) do
@@ -295,14 +298,8 @@ defmodule TdDd.Grants.Requests do
     Enum.flat_map(domains, fn domain_id ->
       child =
         domain_id
-        |> TdCache.DomainCache.get!()
-        |> Map.get(:descendent_ids)
-        |> String.split(",")
-        |> Enum.reject(&(&1 == ""))
-        |> Enum.map(fn str_id ->
-          {d_id, _} = Integer.parse(str_id)
-          {role, d_id}
-        end)
+        |> TdCache.TaxonomyCache.reachable_domain_ids()
+        |> Enum.map(fn domain_id -> {role, domain_id} end)
 
       child ++ [{role, domain_id}]
     end)
@@ -357,18 +354,15 @@ defmodule TdDd.Grants.Requests do
 
   defp with_missing_roles(
          %{approvals: approvals} = grant_request,
-         required,
+         required_roles,
          :all
        )
        when is_list(approvals) do
-    current_approved =
-      approvals
-      |> Enum.map(& &1.role)
-      |> MapSet.new()
+    approved_roles = MapSet.new(approvals, & &1.role)
 
     pending_roles =
-      required
-      |> MapSet.difference(current_approved)
+      required_roles
+      |> MapSet.difference(approved_roles)
       |> MapSet.to_list()
 
     %{grant_request | pending_roles: pending_roles}
@@ -376,20 +370,17 @@ defmodule TdDd.Grants.Requests do
 
   defp with_missing_roles(
          %{approvals: approvals, domain_id: domain_id} = grant_request,
-         required,
+         required_roles,
          user_roles
        )
        when is_list(approvals) do
-    user_roles_on_domain = Map.get(user_roles, domain_id, MapSet.new([]))
+    user_roles_on_domain = Map.get(user_roles, domain_id, MapSet.new())
 
-    current_approved =
-      approvals
-      |> Enum.map(& &1.role)
-      |> MapSet.new()
+    approved_roles = MapSet.new(approvals, & &1.role)
 
     pending_roles =
-      required
-      |> MapSet.difference(current_approved)
+      required_roles
+      |> MapSet.difference(approved_roles)
       |> MapSet.intersection(user_roles_on_domain)
       |> MapSet.to_list()
 

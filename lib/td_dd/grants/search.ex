@@ -90,14 +90,13 @@ defmodule TdDd.Grants.Search do
 
   defp get_permissions(domain_permissions) do
     Enum.filter(domain_permissions, fn %{permissions: permissions} ->
-      Enum.any?(permissions, &check_view_or_manage_permission(&1))
+      Enum.any?(permissions, &check_view_or_manage_permission/1)
     end)
   end
 
-  defp check_view_or_manage_permission(permission_names) do
-    permission_names == :view_grants ||
-      permission_names == :manage_grants
-  end
+  defp check_view_or_manage_permission("view_grants"), do: true
+  defp check_view_or_manage_permission("manage_grants"), do: true
+  defp check_view_or_manage_permission(_), do: false
 
   defp filter(_params, [], _page, _size, _index),
     do: %{results: [], aggregations: %{}, total: 0}
@@ -131,13 +130,15 @@ defmodule TdDd.Grants.Search do
     Map.put(search, :aggs, Query.get_aggregation_terms(index))
   end
 
-  defp do_search(search, params, index) do
-    params
-    |> Map.take(["scroll"])
-    |> case do
-      %{"scroll" => _scroll} = query_params -> Search.search(search, query_params, index)
-      _ -> Search.search(search, index)
-    end
+  defp do_search(search, %{"scroll" => _scroll} = params, index) do
+    search
+    |> Search.search(params, index)
+    |> transform_response()
+  end
+
+  defp do_search(search, _params, index) do
+    search
+    |> Search.search(index)
     |> transform_response()
   end
 

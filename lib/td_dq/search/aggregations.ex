@@ -11,6 +11,7 @@ defmodule TdDq.Search.Aggregations do
       {"active.raw", %{terms: %{field: "active.raw"}}},
       {"current_business_concept_version",
        %{terms: %{field: "current_business_concept_version.name.raw", size: 50}}},
+      # TODO: Avoid indexing domain parents
       {"taxonomy",
        %{
          nested: %{path: "domain_parents"},
@@ -98,7 +99,7 @@ defmodule TdDq.Search.Aggregations do
   end
 
   defp get_domains_count do
-    case Enum.count(TaxonomyCache.get_domain_ids()) do
+    case TaxonomyCache.domain_count() do
       0 -> 10
       count -> count
     end

@@ -26,7 +26,6 @@ defmodule TdDqWeb.ConnCase do
       import Plug.Conn
       import Phoenix.ConnTest
       import TdDd.Factory
-      import TdDdWeb.Authentication, only: [create_acl_entry: 4]
 
       alias TdDqWeb.Router.Helpers, as: Routes
 
@@ -36,8 +35,6 @@ defmodule TdDqWeb.ConnCase do
   end
 
   setup tags do
-    start_supervised(MockPermissionResolver)
-
     :ok = Sandbox.checkout(TdDd.Repo)
 
     unless tags[:async] do

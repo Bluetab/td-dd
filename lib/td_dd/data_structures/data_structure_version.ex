@@ -196,6 +196,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       Enum.join(name_path, "~")
     end
 
+    # TODO: Avoid indexing domain, domain_id should be sufficient
     defp domain(%{domain: %{} = domain}), do: Map.take(domain, [:id, :external_id, :name])
     defp domain(_), do: %{}
 
@@ -206,7 +207,8 @@ defmodule TdDd.DataStructures.DataStructureVersion do
 
     defp system(%{system: %{} = system}), do: Map.take(system, [:id, :external_id, :name])
 
-    defp domain_ids(%{domain: %{parent_ids: parent_ids}}), do: parent_ids
+    # TODO: Avoid indexing domain parents, domain_id should be sufficient
+    defp domain_ids(%{domain: %{id: id, parent_ids: parent_ids}}), do: [id | parent_ids]
     defp domain_ids(_), do: []
 
     defp field_type(%{metadata: %{"type" => type}})

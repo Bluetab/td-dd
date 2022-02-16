@@ -344,13 +344,7 @@ defmodule TdDdWeb.SystemControllerTest do
     end
 
     @tag authentication: [user_name: "non_admin_user"]
-    test "will filter by permissions for non admin users", %{
-      conn: conn,
-      claims: %{user_id: user_id},
-      domain: %{id: domain_id}
-    } do
-      create_acl_entry(user_id, domain_id, [])
-
+    test "will filter by permissions for non admin users", %{conn: conn, domain: %{id: domain_id}} do
       %{data_structure: %{id: id, system_id: system_id}} =
         insert(:data_structure_version,
           data_structure: build(:data_structure, domain_id: domain_id)
