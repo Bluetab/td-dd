@@ -93,17 +93,11 @@ defmodule TdCxWeb.SourceController do
     claims = conn.assigns[:current_resource]
 
     with {:can, true} <- {:can, can?(claims, show(%Source{}))},
-         %Source{} = source <- Sources.get_source!(external_id),
+         %Source{} = source <- Sources.get_source(external_id),
          %Source{} = source <- Sources.enrich_secrets(claims, source),
          job_types <- Sources.job_types(claims, source) do
       render(conn, "show.json", source: source, job_types: job_types)
     end
-  rescue
-    _e in Ecto.NoResultsError ->
-      conn
-      |> put_status(:not_found)
-      |> put_view(ErrorView)
-      |> render("404.json")
   end
 
   swagger_path :update do
@@ -112,6 +106,7 @@ defmodule TdCxWeb.SourceController do
 
     parameters do
       external_id(:path, :string, "external_id of source", required: true)
+      merge_content(:body, :string, "if true, the body content will be merged on top of the current value")
       source(:body, Schema.ref(:UpdateSource), "Parameters used to update a source")
     end
 
@@ -124,16 +119,20 @@ defmodule TdCxWeb.SourceController do
     claims = conn.assigns[:current_resource]
 
     with {:can, true} <- {:can, can?(claims, update(%Source{}))},
-         %Source{} = source <- Sources.get_source!(external_id),
+         %Source{} = source <- Sources.get_source(external_id),
          {:ok, %Source{} = source} <- Sources.update_source(source, source_params) do
       render(conn, "show.json", source: source)
     end
-  rescue
-    _e in Ecto.NoResultsError ->
-      conn
-      |> put_status(:not_found)
-      |> put_view(ErrorView)
-      |> render("404.json")
+  end
+
+  def update(conn, %{"external_id" => external_id, "source_config" => config}) do
+    claims = conn.assigns[:current_resource]
+
+    with {:can, true} <- {:can, can?(claims, update(%Source{}))},
+         %Source{} = source <- Sources.get_source(external_id),
+         {:ok, %Source{} = source} <- Sources.update_source_config(source, config) do
+      render(conn, "show.json", source: source)
+    end
   end
 
   swagger_path :delete do
