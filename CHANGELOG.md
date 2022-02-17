@@ -4,12 +4,19 @@
 
 ### Added
 
+- [TD-4463] Generate audit events for `rule_created` and
+  `implementation_created`
 - [TD-4425] Shift Implementations CSV last execution date field timezone
 
 ### Fixed
 
-- [TD-4427] Fixed a performance issue when calling /api/executions/search
-  by filtering by sources on the database, avoiding a potential time out.
+- [TD-4427] Fixed a performance issue when calling `/api/executions/search` by
+  filtering by sources on the database, avoiding a potential time out
+
+### Changed
+
+- [TD-4553] Improve performance reading large CSV files during structure
+  metadata bulk loading
 
 ## [4.37.1] 2022-02-10
 
@@ -749,11 +756,9 @@
     files uploaded using the same unit name will overwrite the existing nodes
     and relations in that unit.
   - Latest status for a unit can be queried using `GET /api/units/:unit_name`.
-  - Events relating to a unit can be queried using `GET
-    /api/units/:unit_name/events`.
+  - Events relating to a unit can be queried using `GET /api/units/:unit_name/events`.
   - A unit can be logically deleted using `DELETE /api/units/:unit_name`.
-  - A unit can be physically deleted using `DELETE
-    /api/units/:unit_name?logical=false`.
+  - A unit can be physically deleted using `DELETE /api/units/:unit_name?logical=false`.
   - [TD-2495] Changed structures loader migration key to cache all structures
     again including their metadata
 

@@ -14,8 +14,22 @@ defmodule TdDq.Rules.Audit do
   @doc """
   Publishes a `:rule_created` event. Should be called using `Ecto.Multi.run/5`.
   """
-  def rule_created(_repo, %{rule: %{id: id}}, %{} = changeset, user_id) do
-    publish("rule_created", "rule", id, user_id, changeset)
+  def rule_created(_repo, %{rule: %{id: id} = rule}, %{} = _changeset, user_id) do
+    payload =
+      rule
+      |> with_domain_ids()
+      |> with_df_content()
+      |> Map.take([
+        :name,
+        :df_name,
+        :domain_id,
+        :domain_ids,
+        :content,
+        :description,
+        :business_concept_id
+      ])
+
+    publish("rule_created", "rule", id, user_id, payload)
   end
 
   @doc """
@@ -46,7 +60,8 @@ defmodule TdDq.Rules.Audit do
 
     payload =
       implementation
-      |> Map.take([:implementation_key, :rule_id, :domain_id])
+      |> with_domain_ids()
+      |> Map.take([:implementation_key, :rule_id, :domain_id, :domain_ids])
       |> Map.put(:rule_name, rule_name)
 
     publish("implementation_created", "implementation", id, user_id, payload)
@@ -161,11 +176,9 @@ defmodule TdDq.Rules.Audit do
   end
 
   defp rule_result_created(%{id: id} = payload, user_id) do
-    domain_ids = domain_ids(payload)
-
     payload =
       payload
-      |> Map.put(:domain_ids, domain_ids)
+      |> with_domain_ids()
       |> Enum.reject(fn {_k, v} -> is_nil(v) end)
       |> Map.new()
 
@@ -178,16 +191,26 @@ defmodule TdDq.Rules.Audit do
     }
   end
 
-  defp domain_ids(%{domain_id: domain_id}) do
+  defp with_domain_ids(payload) do
+    Map.put(payload, :domain_ids, get_domain_ids(payload))
+  end
+
+  defp get_domain_ids(%{domain_id: domain_id}) do
     TaxonomyCache.get_parent_ids(domain_id)
   end
 
-  defp domain_ids(%{business_concept_id: business_concept_id}) do
+  defp get_domain_ids(%{business_concept_id: business_concept_id}) do
     case ConceptCache.get(business_concept_id, :domain_ids) do
       {:ok, domain_ids} when domain_ids != [] -> domain_ids
       _ -> nil
     end
   end
 
-  defp domain_ids(_), do: nil
+  defp get_domain_ids(_), do: nil
+
+  defp with_df_content(%{df_content: content} = payload) do
+    Map.put(payload, :content, content)
+  end
+
+  defp with_df_content(payload), do: payload
 end
