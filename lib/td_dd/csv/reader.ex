@@ -15,61 +15,74 @@ defmodule TdDd.CSV.Reader do
     system_map = Keyword.get(options, :system_map)
     domain = Keyword.get(options, :domain)
 
-    records =
+    {records, errors} =
       stream
-      |> read_records(separator)
+      |> flow_records(separator)
       |> with_domain_id(domain, domain_external_ids)
       |> with_system_id(system_map)
-      |> Enum.map(&csv_to_map(&1, options))
-
-    {oks, errors} =
-      records
-      # line 1 is header, so index starts with 2
-      |> Enum.with_index(2)
+      |> map_with_index(&csv_to_map(&1, options))
       |> Enum.split_with(fn {{res, _}, _} -> res == :ok end)
 
     case errors do
-      [] ->
-        {:ok, Enum.map(oks, fn {{_, r}, _} -> r end)}
-
-      _ ->
-        {:error, Enum.map(errors, fn {{_, r}, index} -> {r, index} end)}
+      [] -> {:ok, Enum.map(records, fn {{_, r}, _} -> r end)}
+      _ -> {:error, Enum.map(errors, fn {{_, r}, index} -> {r, index} end)}
     end
   end
 
-  defp read_records(stream, ?; = _separator) do
-    csv = CsvParser.parse_stream(stream, skip_headers: false)
-    headers = Enum.at(csv, 0)
+  defp flow_records(stream, ?; = _separator) do
+    headers = read_headers(stream)
 
-    csv
-    |> Enum.drop(1)
-    |> parse_chunk(headers)
+    stream
+    |> Stream.drop(1)
+    # line 1 is header, so index starts with 2
+    |> Stream.with_index(2)
+    |> Flow.from_enumerable()
+    |> map_with_index(&parse_string/1)
+    |> map_with_index(&zip_to_map(headers, &1))
   end
 
-  defp parse_chunk(chunk, headers) do
-    Enum.map(chunk, fn fields ->
-      headers
-      |> Enum.zip(fields)
-      |> Map.new()
-    end)
+  defp read_headers(stream) do
+    stream
+    |> Enum.at(0)
+    |> parse_string()
   end
 
-  defp with_domain_id(records, nil, external_ids) do
-    with_domain_id(records, external_ids)
+  defp map_with_index(flow, fun) do
+    Flow.map(flow, fn {rec, index} -> {fun.(rec), index} end)
   end
 
-  defp with_domain_id(records, domain, external_ids) do
-    Enum.map(records, &DataStructures.put_domain_id(&1, external_ids, domain))
+  defp parse_string(str) do
+    str
+    |> CsvParser.parse_string(skip_headers: false)
+    |> hd()
   end
 
-  defp with_domain_id(records, external_ids) do
-    Enum.map(records, &DataStructures.put_domain_id(&1, external_ids))
+  defp zip_to_map(headers, fields) do
+    headers
+    |> Enum.zip(fields)
+    |> Map.new()
   end
 
-  defp with_system_id(records, nil = _system_map), do: records
+  defp with_domain_id(%Flow{} = flow, domain, external_ids) do
+    map_with_index(flow, &put_domain_id(&1, domain, external_ids))
+  end
 
-  defp with_system_id(records, system_map) do
-    Enum.map(records, &add_system_id(&1, system_map))
+  defp put_domain_id(record, nil, external_ids) do
+    put_domain_id(record, external_ids)
+  end
+
+  defp put_domain_id(record, domain, external_ids) do
+    DataStructures.put_domain_id(record, external_ids, domain)
+  end
+
+  defp put_domain_id(record, external_ids) do
+    DataStructures.put_domain_id(record, external_ids)
+  end
+
+  defp with_system_id(%Flow{} = flow, nil = _system_map), do: flow
+
+  defp with_system_id(%Flow{} = flow, system_map) do
+    map_with_index(flow, &add_system_id(&1, system_map))
   end
 
   defp add_system_id(%{"system" => system} = record, system_map) do
