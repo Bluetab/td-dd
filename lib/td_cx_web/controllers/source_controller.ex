@@ -6,7 +6,6 @@ defmodule TdCxWeb.SourceController do
 
   alias TdCx.Sources
   alias TdCx.Sources.Source
-  alias TdCxWeb.ErrorView
   alias TdCxWeb.SwaggerDefinitions
 
   action_fallback(TdCxWeb.FallbackController)
