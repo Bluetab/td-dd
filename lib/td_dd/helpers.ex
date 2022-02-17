@@ -4,9 +4,7 @@ defmodule TdDd.Helpers do
   """
   def shift_zone(date_utc_string, time_zone \\ Application.get_env(:td_dd, :time_zone))
 
-  def shift_zone(nil, _time_zone) do
-    nil
-  end
+  def shift_zone(nil, _time_zone), do: nil
 
   def shift_zone(date_utc_string, time_zone) do
     with {:ok, date_utc, _} <- DateTime.from_iso8601(date_utc_string),

@@ -42,7 +42,7 @@ defmodule TdDq.Implementations.Implementation do
 
     has_many(:results, RuleResult)
 
-    timestamps()
+    timestamps(type: :utc_datetime)
   end
 
   def valid_result_types, do: @valid_result_types

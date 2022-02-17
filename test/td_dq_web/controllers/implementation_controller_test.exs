@@ -797,10 +797,10 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       assert %{resp_body: body} = post(conn, Routes.implementation_path(conn, :csv, %{}))
 
-      ts_0 = NaiveDateTime.to_iso8601(inserted_at_0)
-      ts_1 = NaiveDateTime.to_iso8601(inserted_at_1)
-      ts_2 = NaiveDateTime.to_iso8601(inserted_at_2)
-      ts_3 = NaiveDateTime.to_iso8601(inserted_at_3)
+      ts_0 = DateTime.to_iso8601(inserted_at_0)
+      ts_1 = DateTime.to_iso8601(inserted_at_1)
+      ts_2 = DateTime.to_iso8601(inserted_at_2)
+      ts_3 = DateTime.to_iso8601(inserted_at_3)
 
       for regex <- [
             # credo:disable-for-lines:5 Credo.Check.Readability.MaxLineLength
