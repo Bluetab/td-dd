@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-4463] add notifications for `rule_created` and `implementation_created`
+- [TD-2511] support for updating specific field of `Source` config
 
 ### Fixed
 
