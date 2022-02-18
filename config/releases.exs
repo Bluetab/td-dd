@@ -1,5 +1,6 @@
 import Config
 
+config :td_dd, :time_zone, System.get_env("TZ", "Etc/UTC")
 config :td_dd, TdDd.Lineage, timeout: System.get_env("LINEAGE_TIMEOUT_MILLIS")
 
 config :td_dd, TdDd.Repo,
