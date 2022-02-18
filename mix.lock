@@ -62,6 +62,7 @@
   "td_df_lib": {:git, "https://github.com/Bluetab/td-df-lib.git", "c13ec8b7688458f1f0d2916ad64958d093f9376b", [tag: "4.36.1"]},
   "td_hypermedia": {:git, "https://github.com/Bluetab/td-hypermedia.git", "58ff77e2c23e9798d59d340d76dae72057546a26", [tag: "4.0.0"]},
   "telemetry": {:hex, :telemetry, "0.4.3", "a06428a514bdbc63293cd9a6263aad00ddeb66f608163bdec7c8995784080818", [:rebar3], [], "hexpm", "eb72b8365ffda5bed68a620d1da88525e326cb82a75ee61354fc24b844768041"},
+  "tzdata": {:hex, :tzdata, "1.1.1", "20c8043476dfda8504952d00adac41c6eda23912278add38edc140ae0c5bcc46", [:mix], [{:hackney, "~> 1.17", [hex: :hackney, repo: "hexpm", optional: false]}], "hexpm", "a69cec8352eafcd2e198dea28a34113b60fdc6cb57eb5ad65c10292a6ba89787"},
   "unicode_util_compat": {:hex, :unicode_util_compat, "0.7.0", "bc84380c9ab48177092f43ac89e4dfa2c6d62b40b8bd132b1059ecc7232f9a78", [:rebar3], [], "hexpm", "25eee6d67df61960cf6a794239566599b09e17e668d3700247bc498638152521"},
   "vaultex": {:hex, :vaultex, "1.0.1", "9820facb02de6f92e59fc36fddc812060e1b73a24cc4bacf0ff38e5163ceca60", [:mix], [{:ex_aws, "~> 2.0", [hex: :ex_aws, repo: "hexpm", optional: true]}, {:httpoison, "~> 1.0", [hex: :httpoison, repo: "hexpm", optional: false]}, {:poison, "~> 3.1 or ~> 4.0", [hex: :poison, repo: "hexpm", optional: false]}], "hexpm", "04d6e894f92be7f27e43214bef17d958546854d89cb78d9dc9bdd25882261c5b"},
   "vex": {:hex, :vex, "0.9.0", "613ea5eb3055662e7178b83e25b2df0975f68c3d8bb67c1645f0573e1a78d606", [:mix], [], "hexpm", "c69fff44d5c8aa3f1faee71bba1dcab05dd36364c5a629df8bb11751240c857f"},
