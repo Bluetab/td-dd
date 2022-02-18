@@ -28,9 +28,9 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
   end
 
   describe "create" do
-
     setup do
       identifier_name = "identifier"
+
       with_identifier = %{
         id: System.unique_integer([:positive]),
         name: "Structure note template with identifier field",
@@ -48,15 +48,23 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
                 "type" => "string",
                 "values" => nil,
                 "widget" => "identifier"
-              },
+              }
             ],
             "name" => ""
           }
         ]
       }
+
       template_with_identifier = CacheHelpers.insert_template(with_identifier)
-      %{id: template_id_with_identifier, name: template_name_with_identifier} = template_with_identifier
-      CacheHelpers.insert_structure_type(name: template_name_with_identifier, template_id: template_id_with_identifier)
+
+      %{id: template_id_with_identifier, name: template_name_with_identifier} =
+        template_with_identifier
+
+      CacheHelpers.insert_structure_type(
+        name: template_name_with_identifier,
+        template_id: template_id_with_identifier
+      )
+
       [template_with_identifier: template_with_identifier, identifier_name: identifier_name]
     end
 
@@ -67,9 +75,18 @@ defmodule TdDd.DataStructures.StructureNoteWorkflowTest do
       identifier_name: identifier_name
     } do
       existing_identifier = "00000000-0000-0000-0000-000000000000"
-      %{id: data_structure_id_with_identifier} = data_structure_with_identifier = insert(:data_structure)
-      insert(:data_structure_version, data_structure: data_structure_with_identifier, type: template_with_identifier.name)
-      data_structure_with_identifier = data_structure_with_identifier |> Repo.preload(current_version: :structure_type)
+
+      %{id: data_structure_id_with_identifier} =
+        data_structure_with_identifier = insert(:data_structure)
+
+      insert(:data_structure_version,
+        data_structure: data_structure_with_identifier,
+        type: template_with_identifier.name
+      )
+
+      data_structure_with_identifier =
+        data_structure_with_identifier |> Repo.preload(current_version: :structure_type)
+
       df_content = %{"foo" => "old", identifier_name => existing_identifier}
 
       _structure_note_with_identifier =

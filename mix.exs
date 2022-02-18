@@ -70,6 +70,7 @@ defmodule TdDd.MixProject do
       {:assertions, "~> 0.10", only: :test},
       {:cors_plug, "~> 2.0"},
       {:csv, "~> 2.4"},
+      {:tzdata, "~> 1.1"},
       {:nimble_csv, "~> 1.2"},
       {:flow, "~> 1.0"},
       {:phoenix_swagger, "~> 0.8.3"},

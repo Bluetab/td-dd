@@ -458,7 +458,11 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert %{
                "errors" => [
-                 %{"external_id" => ^external_id_one, "message" => "df_content.inclusion", "field" => "list"}
+                 %{
+                   "external_id" => ^external_id_one,
+                   "message" => "df_content.inclusion",
+                   "field" => "list"
+                 }
                ],
                "ids" => []
              } = data
@@ -551,9 +555,15 @@ defmodule TdDdWeb.DataStructureControllerTest do
           external_id: "some_external_id_3"
         )
 
-      %{id: id_one, external_id: external_id_one} = create_data_structure(data_structure_one)[:data_structure]
-      %{id: id_two, external_id: external_id_two} = create_data_structure(data_structure_two)[:data_structure]
-      %{id: id_three, external_id: external_id_three} = create_data_structure(data_structure_three)[:data_structure]
+      %{id: id_one, external_id: external_id_one} =
+        create_data_structure(data_structure_one)[:data_structure]
+
+      %{id: id_two, external_id: external_id_two} =
+        create_data_structure(data_structure_two)[:data_structure]
+
+      %{id: id_three, external_id: external_id_three} =
+        create_data_structure(data_structure_three)[:data_structure]
+
       {[id_one, id_two, id_three], [external_id_one, external_id_two, external_id_three]}
     end
 
@@ -597,7 +607,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                    "external_id" => external_id_2,
                    "field" => "list"
                  }
-                ]
+               ]
              }
     end
 
