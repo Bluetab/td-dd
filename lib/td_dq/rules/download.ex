@@ -92,6 +92,7 @@ defmodule TdDq.Implementations.Download do
        ]) do
     number_of_dataset_external_ids = count_implementations_items(implementations, :datasets)
     number_of_validations_fields = count_implementations_items(implementations, :validations)
+    time_zone = Application.get_env(:td_dd, :time_zone)
 
     Enum.reduce(implementations, [], fn implementation, acc ->
       rule = Map.get(implementation, :rule)
@@ -109,14 +110,16 @@ defmodule TdDq.Implementations.Download do
           implementation.goal,
           implementation.minimum,
           get_in(implementation, [:current_business_concept_version, :name]),
-          get_in(implementation, [:execution_result_info, :date]),
+          implementation
+          |> get_in([:execution_result_info, :date])
+          |> TdDd.Helpers.shift_zone(time_zone),
           get_in(implementation, [:execution_result_info, :records]),
           get_in(implementation, [:execution_result_info, :errors]),
           get_in(implementation, [:execution_result_info, :result]),
           implementation
           |> get_in([:execution_result_info, :result_text])
           |> translate(content_labels),
-          implementation.inserted_at
+          TdDd.Helpers.shift_zone(implementation.inserted_at, time_zone)
         ] ++
           fill_with(
             get_implementation_fields(implementation, :datasets),

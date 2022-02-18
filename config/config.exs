@@ -6,8 +6,13 @@
 
 use Mix.Config
 
+config :elixir, :time_zone_database, Tzdata.TimeZoneDatabase
+
+
 # Environment
 config :td_dd, :env, Mix.env()
+
+config :td_dd, :time_zone, System.get_env("TZ", "Etc/UTC")
 
 # General application configuration
 config :td_dd,

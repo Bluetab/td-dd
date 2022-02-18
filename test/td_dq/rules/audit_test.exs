@@ -25,7 +25,7 @@ defmodule TdDq.Rules.AuditTest do
       claims: claims,
       rule: rule,
       implementation: implementation,
-      template_name: template_name,
+      template_name: template_name
     ]
   end
 

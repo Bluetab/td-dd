@@ -78,7 +78,10 @@ defmodule TdDd.Systems.SystemTest do
   describe "changeset/1" do
     test "detects missing required fields" do
       system = insert(:system)
-      assert %{errors: errors} = TdDd.Systems.System.changeset(system, %{external_id: nil, name: nil})
+
+      assert %{errors: errors} =
+               TdDd.Systems.System.changeset(system, %{external_id: nil, name: nil})
+
       assert length(errors) == 2
       assert {_message, [validation: :required]} = errors[:external_id]
       assert {_message, [validation: :required]} = errors[:name]
@@ -106,8 +109,7 @@ defmodule TdDd.Systems.SystemTest do
         df_content: %{"text" => "some text"}
       }
 
-      assert %Changeset{changes: changes} =
-        TdDd.Systems.System.changeset(attrs)
+      assert %Changeset{changes: changes} = TdDd.Systems.System.changeset(attrs)
 
       assert %{df_content: new_content} = changes
       assert %{^identifier_name => _identifier} = new_content
@@ -122,7 +124,7 @@ defmodule TdDd.Systems.SystemTest do
       system = build(:system, df_content: %{identifier_name => existing_identifier})
 
       assert %Changeset{changes: changes} =
-        TdDd.Systems.System.changeset(system, %{
+               TdDd.Systems.System.changeset(system, %{
                  df_content: %{"text" => "some update"}
                })
 
@@ -130,26 +132,31 @@ defmodule TdDd.Systems.SystemTest do
       assert %{^identifier_name => ^existing_identifier} = new_content
     end
 
-    test "keeps an already present identifier (i.e., editing) if extraneous identifier attr is passed", %{
-      identifier_name: identifier_name
-    } do
+    test "keeps an already present identifier (i.e., editing) if extraneous identifier attr is passed",
+         %{
+           identifier_name: identifier_name
+         } do
       # Existing identifier previously put by the create changeset
       existing_identifier = "00000000-0000-0000-0000-000000000000"
 
       system = build(:system, df_content: %{identifier_name => existing_identifier})
 
       assert %Changeset{changes: changes} =
-        TdDd.Systems.System.changeset(system, %{
-                 df_content: %{"text" => "some update", identifier_name => "11111111-1111-1111-1111-111111111111"}
+               TdDd.Systems.System.changeset(system, %{
+                 df_content: %{
+                   "text" => "some update",
+                   identifier_name => "11111111-1111-1111-1111-111111111111"
+                 }
                })
 
       assert %{df_content: new_content} = changes
       assert %{^identifier_name => ^existing_identifier} = new_content
     end
 
-    test "puts an identifier if there is not already one and the template has an identifier field", %{
-      identifier_name: identifier_name
-    } do
+    test "puts an identifier if there is not already one and the template has an identifier field",
+         %{
+           identifier_name: identifier_name
+         } do
       # System has no identifier but its template does
       # This happens if identifier is added to template after system creation
       # Test an update to the rule in this state.
@@ -159,7 +166,7 @@ defmodule TdDd.Systems.SystemTest do
       refute match?(%{^identifier_name => _identifier}, content)
 
       assert %Changeset{changes: changes} =
-        TdDd.Systems.System.changeset(system, %{
+               TdDd.Systems.System.changeset(system, %{
                  df_content: %{"text" => "some update"}
                })
 
