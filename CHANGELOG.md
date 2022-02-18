@@ -4,6 +4,7 @@
 
 ### Added
 
+- [TD-2511] support for updating specific field of `Source` config
 - [TD-4463] Generate audit events for `rule_created` and
   `implementation_created`
 - [TD-4425] Shift Implementations CSV last execution date field timezone
