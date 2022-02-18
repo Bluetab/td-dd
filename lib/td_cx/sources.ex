@@ -294,6 +294,25 @@ defmodule TdCx.Sources do
     |> Repo.update()
   end
 
+  def update_source_config(%Source{} = source, config_params) do
+    type = Map.get(source, :type)
+
+    config =
+      source
+      |> enrich_secrets()
+      |> Map.get(:config)
+      |> Map.merge(config_params)
+
+    case check_valid_template_content(%{"type" => type, "config" => config}) do
+      :ok ->
+        attrs = separate_config(%{"type" => type, "config" => config})
+        do_update_source(source, attrs)
+
+      error ->
+        error
+    end
+  end
+
   defp do_update_source(
          %Source{secrets_key: secrets_key} = source,
          %{"secrets" => secrets} = attrs
