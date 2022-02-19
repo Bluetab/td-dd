@@ -26,6 +26,47 @@ defmodule TdCxWeb.SourceControllerTest do
     ]
   }
 
+  @template_multiple %{
+    id: 2,
+    name: "multiple_fields",
+    label: "multiple_fields",
+    scope: "cx",
+    content: [
+      %{
+        "name" => "New Group 1",
+        "fields" => [
+          %{
+            "name" => "a",
+            "type" => "string",
+            "label" => "a",
+            "widget" => "string",
+            "cardinality" => "1"
+          },
+          %{
+            "name" => "b",
+            "type" => "string",
+            "label" => "b",
+            "widget" => "string",
+            "cardinality" => "1"
+          }
+        ]
+      },
+      %{
+        "name" => "secret_group",
+        "fields" => [
+          %{
+            "name" => "c",
+            "type" => "string",
+            "label" => "c",
+            "widget" => "string",
+            "cardinality" => "1"
+          }
+        ],
+        "is_secret" => true
+      }
+    ]
+  }
+
   @create_attrs %{
     "config" => %{"a" => "1"},
     "external_id" => "some external_id",
@@ -51,6 +92,7 @@ defmodule TdCxWeb.SourceControllerTest do
   }
 
   setup do
+    CacheHelpers.insert_template(@template_multiple)
     [template: CacheHelpers.insert_template(@template)]
   end
 
@@ -124,6 +166,14 @@ defmodule TdCxWeb.SourceControllerTest do
                "config" => %{"a" => "1"}
              } = data
     end
+
+    @tag authentication: [role: "admin"]
+    test "renders not found for invalid external_id", %{conn: conn} do
+      conn =
+        get(conn, Routes.source_path(conn, :show, "invalid_external_id"))
+
+      assert json_response(conn, 404)["errors"] != %{}
+    end
   end
 
   describe "create source" do
@@ -192,6 +242,40 @@ defmodule TdCxWeb.SourceControllerTest do
     end
   end
 
+  describe "update only one field" do
+    @tag authentication: [role: "admin"]
+    test "renders source when data is valid", %{conn: conn } do
+      create_attrs = %{
+        "config" => %{
+          "a" => "1",
+          "b" => "2",
+          "c" => "3",
+        },
+        "external_id" => "some external_id",
+        "type" => "multiple_fields",
+        "active" => true
+      }
+      {:ok, %Source{external_id: external_id}} = Sources.create_source(create_attrs)
+      source_config = %{"b" => "foo"}
+
+      assert %{"data" => data} =
+               conn
+               |> put(Routes.source_path(conn, :update, external_id), source_config: source_config)
+               |> json_response(:ok)
+
+      assert %{
+               "id" => _id,
+               "config" => %{
+                 "a" => "1",
+                 "b" => "foo"
+               },
+               "external_id" => ^external_id,
+               "type" => "multiple_fields",
+               "active" => true
+             } = data
+    end
+  end
+
   describe "update source" do
     setup :create_source
 
@@ -246,6 +330,14 @@ defmodule TdCxWeb.SourceControllerTest do
         put(conn, Routes.source_path(conn, :update, source.external_id), source: @invalid_attrs)
 
       assert json_response(conn, 422)["errors"] != %{}
+    end
+
+    @tag authentication: [role: "admin"]
+    test "renders not found for invalid external_id", %{conn: conn} do
+      conn =
+        put(conn, Routes.source_path(conn, :update, "invalid_external_id"), source: @update_attrs)
+
+      assert json_response(conn, 404)["errors"] != %{}
     end
   end
 

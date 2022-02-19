@@ -3,6 +3,7 @@ defmodule TdDq.DownloadTest do
   Tests download of implementations in csv format
   """
   use TdDd.DataCase
+  alias TdDd.Helpers
 
   alias TdDq.Implementations.Download
 
@@ -74,14 +75,14 @@ defmodule TdDq.DownloadTest do
           name: "name"
         },
         execution_result_info: %{
-          date: "2018-05-05",
+          date: "2021-05-05T00:00:00Z",
           result_text: "quality_result.under_goal",
           result: "50.00"
         },
         goal: "12",
         minimum: "8",
         df_name: "impl_df_name",
-        inserted_at: "2020-05-05"
+        inserted_at: "2021-05-05T00:00:00Z"
       }
 
       implementations = [impl]
@@ -90,7 +91,7 @@ defmodule TdDq.DownloadTest do
       assert csv ==
                """
                implementation_key;implementation_type;Executable;rule;Rule Template Label;Implementation Template Label;goal;minimum;business_concept;last_execution_at;records;errors;result;execution;inserted_at;Info;System\r
-               #{impl.implementation_key};#{impl.implementation_type};Executable;#{impl.rule.name};#{impl.rule.df_name};#{impl.df_name};#{impl.goal};#{impl.minimum};#{impl.current_business_concept_version.name};#{impl.execution_result_info.date};;;#{impl.execution_result_info.result};Under Goal;#{impl.inserted_at};field_value;system, system1\r
+              #{impl.implementation_key};#{impl.implementation_type};Executable;#{impl.rule.name};#{impl.rule.df_name};#{impl.df_name};#{impl.goal};#{impl.minimum};#{impl.current_business_concept_version.name};#{Helpers.shift_zone(impl.execution_result_info.date)};;;#{impl.execution_result_info.result};Under Goal;#{Helpers.shift_zone(impl.inserted_at)};field_value;system, system1\r
                """
     end
 
@@ -129,7 +130,7 @@ defmodule TdDq.DownloadTest do
         df_name: "impl_df_name_1",
         goal: "12",
         minimum: "8",
-        inserted_at: "2020-05-05"
+        inserted_at: "2020-05-05T00:00:00Z"
       }
 
       impl1 = %{
@@ -151,13 +152,13 @@ defmodule TdDq.DownloadTest do
           name: "name"
         },
         execution_result_info: %{
-          date: "2021-05-05",
+          date: "2021-05-05T00:00:00Z",
           result: "40.00"
         },
         df_name: "impl_df_name_2",
         goal: "12",
         minimum: "8",
-        inserted_at: "2021-05-05"
+        inserted_at: "2021-05-05T00:00:00Z"
       }
 
       csv = Download.to_csv([impl, impl1], header_labels, content_labels)
@@ -165,8 +166,8 @@ defmodule TdDq.DownloadTest do
       assert csv ==
                """
                implementation_key;implementation_type;Executable;rule;Rule Template Label;Implementation Template Label;goal;minimum;business_concept;last_execution_at;records;errors;result;execution;inserted_at;Info;System\r
-               #{impl.implementation_key};#{impl.implementation_type};Executable;#{impl.rule.name};#{impl.rule.df_name};#{impl.df_name};#{impl.goal};#{impl.minimum};#{impl.current_business_concept_version.name};;;;;;#{impl.inserted_at};field_value;system, system1\r
-               #{impl1.implementation_key};#{impl1.implementation_type};Internal;#{impl1.rule.name};#{impl1.rule.df_name};#{impl1.df_name};#{impl1.goal};#{impl1.minimum};#{impl1.current_business_concept_version.name};#{impl1.execution_result_info.date};;;#{impl1.execution_result_info.result};;#{impl1.inserted_at};field_value;system, system1\r
+               #{impl.implementation_key};#{impl.implementation_type};Executable;#{impl.rule.name};#{impl.rule.df_name};#{impl.df_name};#{impl.goal};#{impl.minimum};#{impl.current_business_concept_version.name};;;;;;#{Helpers.shift_zone(impl.inserted_at)};field_value;system, system1\r
+               #{impl1.implementation_key};#{impl1.implementation_type};Internal;#{impl1.rule.name};#{impl1.rule.df_name};#{impl1.df_name};#{impl1.goal};#{impl1.minimum};#{impl1.current_business_concept_version.name};#{Helpers.shift_zone(impl1.execution_result_info.date)};;;#{impl1.execution_result_info.result};;#{Helpers.shift_zone(impl1.inserted_at)};field_value;system, system1\r
                """
     end
   end
