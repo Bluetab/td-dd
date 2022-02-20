@@ -24,7 +24,7 @@ defmodule TdDdWeb.Authentication do
     {:ok, %{conn: conn, jwt: jwt, claims: claims}}
   end
 
-  def create_claims(opts \\ []) do
+  def create_claims(opts) do
     role = Keyword.get(opts, :role, "user")
     user_name = Keyword.get(opts, :user_name, "joe")
     %{id: user_id} = CacheHelpers.insert_user(user_name: user_name)
