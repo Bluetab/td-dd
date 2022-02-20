@@ -38,13 +38,19 @@ defmodule TdDdWeb.Authentication do
     }
   end
 
-  def assign_permissions({:ok, %{claims: %{user_id: user_id}} = state}, [_ | _] = permissions) do
+  def assign_permissions({:ok, %{claims: %{user_id: user_id}} = state}, [_ | _] = permissions, nil = _domain_id) do
     domain = CacheHelpers.insert_domain()
     create_acl_entry(user_id, domain.id, permissions)
     {:ok, Map.put(state, :domain, domain)}
   end
 
-  def assign_permissions(state, _), do: state
+  def assign_permissions({:ok, %{claims: %{user_id: user_id}} = state}, [_ | _] = permissions, domain_id) do
+    domain = CacheHelpers.insert_domain(%{id: domain_id})
+    create_acl_entry(user_id, domain.id, permissions)
+    {:ok, Map.put(state, :domain, domain)}
+  end
+
+  def assign_permissions(state, _, _), do: state
 
   def build_user_token(%Claims{role: role} = claims) do
     case Guardian.encode_and_sign(claims, %{role: role}) do
