@@ -3,6 +3,7 @@ defmodule TdDqWeb.RuleResultController do
 
   import Canada, only: [can?: 2]
 
+  alias TdDq.Rules.RuleResult
   alias TdDq.Rules.RuleResults
   alias TdDq.Rules.RuleResults.BulkLoad
 
@@ -11,7 +12,9 @@ defmodule TdDqWeb.RuleResultController do
   action_fallback(TdDqWeb.FallbackController)
 
   def create(conn, params) do
-    with %{"rule_results" => rule_results_file} <- params,
+    with claims <- conn.assigns[:current_resource],
+         %{"rule_results" => rule_results_file} <- params,
+         {:can, true} <- {:can, can?(claims, upload(RuleResult))},
          rule_results_data <- rule_results_from_csv(rule_results_file),
          {:ok, _} <- BulkLoad.bulk_load(rule_results_data) do
       send_resp(conn, :ok, "")
@@ -39,6 +42,8 @@ defmodule TdDqWeb.RuleResultController do
     end
   end
 
+  @spec show(atom | %{:assigns => nil | maybe_improper_list | map, optional(any) => any}, map) ::
+          {:can, any} | Plug.Conn.t()
   def show(conn, %{"id" => id} = _params) do
     with claims <- conn.assigns[:current_resource],
          rule_result <- RuleResults.get_rule_result(id),

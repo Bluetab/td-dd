@@ -29,7 +29,7 @@ defmodule TdDqWeb.ImplementationResultController do
     claims = conn.assigns[:current_resource]
 
     with implementation <- Implementations.get_implementation_by_key!(key),
-         {:can, true} <- {:can, can?(claims, execute(implementation))},
+         {:can, true} <- {:can, can?(claims, manage_rule_results(implementation))},
          {:ok, %{result: %{id: id} = result}} <-
            RuleResults.create_rule_result(implementation, params) do
       conn
