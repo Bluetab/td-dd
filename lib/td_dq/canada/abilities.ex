@@ -5,15 +5,19 @@ defmodule TdDq.Canada.Abilities do
   alias TdDq.Canada.ExecutionAbilities
   alias TdDq.Canada.ImplementationAbilities
   alias TdDq.Canada.RuleAbilities
+  alias TdDq.Canada.RuleResultAbilities
   alias TdDq.Events.QualityEvent
   alias TdDq.Executions.Execution
   alias TdDq.Executions.Group
   alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Rule
+  alias TdDq.Rules.RuleResult
 
   defimpl Canada.Can, for: Claims do
     # admin can do anything
-    def can?(%Claims{role: "admin"}, _action, _domain), do: true
+    def can?(%Claims{role: "admin"}, _action, _domain) do
+      true
+    end
 
     def can?(%Claims{} = claims, action, target)
         when target in [Execution, Group, QualityEvent] do
@@ -52,10 +56,16 @@ defmodule TdDq.Canada.Abilities do
       RuleAbilities.can?(claims, action, target)
     end
 
+    def can?(%Claims{} = claims, action, RuleResult) do
+      RuleResultAbilities.can?(claims, action, RuleResult)
+    end
+
     def can?(%Claims{} = claims, action, %{"resource_type" => "rule"} = target) do
       RuleAbilities.can?(claims, action, target)
     end
 
-    def can?(%Claims{}, _action, _entity), do: false
+    def can?(%Claims{}, _action, _entity) do
+      false
+    end
   end
 end

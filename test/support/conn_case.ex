@@ -72,7 +72,7 @@ defmodule TdDdWeb.ConnCase do
         auth_opts
         |> create_claims()
         |> create_user_auth_conn()
-        |> assign_permissions(auth_opts[:permissions])
+        |> assign_permissions(auth_opts[:permissions], auth_opts[:domain_id])
     end
   end
 
