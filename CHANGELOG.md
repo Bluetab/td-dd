@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.38.1] 2022-02-23
+
+### Fixed
+
+- [TD-4567] Create implementations for non admin users
+
 ## [4.38.0] 2022-02-22
 
 ### Added
