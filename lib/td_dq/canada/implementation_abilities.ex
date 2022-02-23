@@ -20,6 +20,12 @@ defmodule TdDq.Canada.ImplementationAbilities do
     Permissions.authorized?(claims, :view_quality_rule, domain_id)
   end
 
+  def can?(%Claims{} = claims, :manage, Implementation, rule) do
+    domain_id = domain_id(rule)
+    permission = permission("default")
+    Permissions.authorized?(claims, permission, domain_id)
+  end
+
   def can?(%Claims{} = claims, :manage, %Implementation{domain_id: domain_id} = implementation) do
     permission = permission(implementation)
     Permissions.authorized?(claims, permission, domain_id)
