@@ -1,12 +1,16 @@
 defmodule TdCxWeb.JobControllerTest do
   use TdCxWeb.ConnCase
 
-  alias TdCx.Search.IndexWorker
+  import Mox
 
   setup_all do
-    start_supervised(IndexWorker)
+    start_supervised!(TdCx.Search.IndexWorker)
+    start_supervised!(TdDd.Search.Cluster)
     :ok
   end
+
+  setup :set_mox_from_context
+  setup :verify_on_exit!
 
   describe "GET /api/sources/:id/jobs" do
     setup :create_job
@@ -15,6 +19,18 @@ defmodule TdCxWeb.JobControllerTest do
     test "admin can view jobs of a source", %{conn: conn, job: job} do
       %{source: source, external_id: external_id} = job
       %{external_id: source_external_id, type: source_type} = source
+
+      ElasticsearchMock
+      |> expect(:request, fn
+        _, :post, "/jobs/_search", %{from: 0, query: query, size: 10_000}, [] ->
+          assert query == %{
+                   bool: %{
+                     filter: %{term: %{"source.external_id" => source_external_id}}
+                   }
+                 }
+
+          SearchHelpers.hits_response([job])
+      end)
 
       assert %{"data" => data} =
                conn
@@ -30,8 +46,14 @@ defmodule TdCxWeb.JobControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "search all", %{conn: conn, job: job} do
-      source = Map.get(job, :source, %{})
+    test "search all", %{
+      conn: conn,
+      job: %{external_id: external_id, source: source, type: type} = job
+    } do
+      ElasticsearchMock
+      |> expect(:request, fn
+        _, :post, "/jobs/_search", _, [] -> SearchHelpers.hits_response([job])
+      end)
 
       assert %{"data" => data} =
                conn
@@ -40,9 +62,10 @@ defmodule TdCxWeb.JobControllerTest do
 
       assert data == [
                %{
-                 "external_id" => job.external_id,
+                 "external_id" => external_id,
                  "source" => %{"external_id" => source.external_id, "type" => source.type},
-                 "type" => job.type
+                 "status" => "PENDING",
+                 "type" => type
                }
              ]
     end
@@ -52,6 +75,8 @@ defmodule TdCxWeb.JobControllerTest do
     @tag authentication: [role: "user", permissions: [:profile_structures]]
     test "user can create a job for a source", %{conn: conn} do
       %{external_id: source_external_id} = insert(:source)
+
+      SearchHelpers.expect_bulk_index("/jobs/_doc/_bulk")
 
       assert %{"data" => data} =
                conn
@@ -66,6 +91,8 @@ defmodule TdCxWeb.JobControllerTest do
     test "admin can create a job for a source", %{conn: conn} do
       %{external_id: source_external_id} = insert(:source)
 
+      SearchHelpers.expect_bulk_index("/jobs/_doc/_bulk")
+
       assert %{"data" => data} =
                conn
                |> post(Routes.source_job_path(conn, :create, source_external_id))
@@ -78,6 +105,8 @@ defmodule TdCxWeb.JobControllerTest do
     @tag authentication: [role: "service"]
     test "service account can create a job for a source", %{conn: conn} do
       %{external_id: source_external_id} = insert(:source)
+
+      SearchHelpers.expect_bulk_index("/jobs/_doc/_bulk")
 
       assert %{"data" => data} =
                conn

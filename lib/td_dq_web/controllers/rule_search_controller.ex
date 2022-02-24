@@ -1,4 +1,4 @@
-defmodule TdDqWeb.SearchController do
+defmodule TdDqWeb.RuleSearchController do
   use TdDqWeb, :controller
 
   import Canada, only: [can?: 2]
@@ -6,11 +6,9 @@ defmodule TdDqWeb.SearchController do
   alias TdDq.Rules.Rule
   alias TdDq.Rules.Search
 
-  plug :put_view, TdDqWeb.SearchView
-
   @index_worker Application.compile_env(:td_dd, :dq_index_worker)
 
-  swagger_path :reindex_all_rules do
+  swagger_path :reindex do
     description("Reindex rule index with DB content")
     produces("application/json")
 
@@ -18,25 +16,13 @@ defmodule TdDqWeb.SearchController do
     response(500, "Client Error")
   end
 
-  def reindex_all_rules(conn, _params) do
+  def reindex(conn, _params) do
+    # TODO: Permissions?
     @index_worker.reindex_rules(:all)
     send_resp(conn, :accepted, "")
   end
 
-  swagger_path :reindex_all_implementations do
-    description("Reindex implementation index with DB content")
-    produces("application/json")
-
-    response(202, "Accepted")
-    response(500, "Client Error")
-  end
-
-  def reindex_all_implementations(conn, _params) do
-    @index_worker.reindex_implementations(:all)
-    send_resp(conn, :accepted, "")
-  end
-
-  swagger_path :search_rules do
+  swagger_path :create do
     description("Search for rules")
     produces("application/json")
 
@@ -44,25 +30,25 @@ defmodule TdDqWeb.SearchController do
     response(500, "Client Error")
   end
 
-  def search_rules(conn, params) do
+  def create(conn, params) do
     page = Map.get(params, "page", 0)
     size = Map.get(params, "size", 20)
     claims = conn.assigns[:current_resource]
 
     %{
       results: rules,
-      aggregations: aggregations,
       total: total
     } =
       params
       |> Map.drop(["page", "size"])
-      |> Search.search(claims, page, size)
+      |> Search.search_rules(claims, page, size)
 
     conn
+    |> put_view(TdDqWeb.SearchView)
     |> put_resp_header("x-total-count", "#{total}")
     |> render("search.json",
       rules: rules,
-      filters: aggregations,
+      filters: %{},
       user_permissions: %{
         manage_quality_rules: can?(claims, manage(Rule))
       }

@@ -4,47 +4,47 @@ defmodule TdDd.Grants.Search do
   """
 
   alias TdDd.Auth.Claims
+  alias TdDd.Grants.Search.Query
   alias TdDd.Permissions
   alias TdDd.Search
-  alias TdDd.Search.Query
+  alias Truedat.Search.Permissions
 
   require Logger
 
   @index :grants
+  @default_sort ["_id"]
+  @aggs %{
+    # TODO: Avoid indexing domain parents
+    "taxonomy" => %{
+      nested: %{path: "data_structure_version.domain_parents"},
+      aggs: %{
+        distinct_search: %{
+          terms: %{field: "data_structure_version.domain_parents.id", size: 50}
+        }
+      }
+    },
+    "type.raw" => %{terms: %{field: "data_structure_version.type.raw", size: 50}}
+  }
 
-  def get_filter_values(claims, permission, params)
-
-  def get_filter_values(%Claims{role: role}, _permission, params)
-      when role in ["admin", "service"] do
-    filter_clause = Query.create_filters(params, @index)
-    query = %{bool: %{filter: filter_clause}}
-    search = %{query: query, aggs: Query.get_aggregation_terms(@index), size: 0}
-    Search.get_filters(search, @index)
+  def get_filter_values(claims, params, user_id) do
+    params = put_filter(params, "user_id", user_id)
+    get_filter_values(claims, params)
   end
 
-  def get_filter_values(%Claims{} = claims, permission, params) do
-    permissions =
+  def get_filter_values(%Claims{user_id: user_id} = claims, %{} = params) do
+    query =
       claims
-      |> Permissions.get_domain_permissions()
-      |> Enum.filter(&Enum.member?(&1.permissions, permission))
+      |> search_permissions()
+      |> Query.build_filters(user_id)
+      |> Query.build_query(params, @aggs)
 
-    get_filter_values(permissions, params)
+    search = %{query: query, aggs: @aggs, size: 0}
+
+    Search.get_filters(search, @index)
   end
 
-  def get_filter_values([], _params), do: {:ok, %{}}
-
-  def get_filter_values(claims_or_permissions, params) do
-    user_defined_filters = Query.create_filters(params, @index)
-
-    filter =
-      case claims_or_permissions do
-        [_h | _t] = permissions -> Query.create_filter_clause(permissions, user_defined_filters)
-        %Claims{user_id: user_id} -> Query.create_filter_clause_by(user_id, user_defined_filters)
-      end
-
-    query = Query.create_query(%{}, filter)
-    search = %{query: query, aggs: Query.get_aggregation_terms(@index), size: 0}
-    Search.get_filters(search, @index)
+  defp put_filter(params, field, condition) do
+    Map.update(params, "filters", %{field => condition}, &Map.put_new(&1, field, condition))
   end
 
   def scroll_grants(%{"scroll_id" => _, "scroll" => _} = scroll_params) do
@@ -54,91 +54,41 @@ defmodule TdDd.Grants.Search do
     |> transform_response()
   end
 
-  def search(params, claims, page \\ 0, size \\ 50, index \\ :grants)
+  def search(params, claims, page \\ 0, size \\ 50)
 
-  def search(params, %Claims{role: role}, page, size, index) when role in ["admin", "service"] do
-    filter_clause = Query.create_filters(params, index)
-    query = Query.create_query(params, filter_clause)
-    sort = Map.get(params, "sort", default_sort(index))
+  def search(params, %Claims{user_id: user_id} = claims, page, size) do
+    sort = Map.get(params, "sort", @default_sort)
 
-    %{
-      from: page * size,
-      size: size,
-      query: query,
-      sort: sort
-    }
-    |> aggs(params, index)
-    |> do_search(params, index)
-  end
-
-  def search(params, %Claims{} = claims, page, size, index) do
-    permissions =
+    query =
       claims
-      |> Permissions.get_domain_permissions()
-      |> get_permissions()
+      |> search_permissions()
+      |> Query.build_filters(user_id)
+      |> Query.build_query(params, @aggs)
 
-    filter(params, permissions, page, size, index)
+      %{
+        from: page * size,
+        size: size,
+        query: query,
+        sort: sort
+      }
+      |> do_search(params)
   end
 
-  def search_by_user(params, claims, page \\ 0, size \\ 50, index \\ :grants)
-
-  def search_by_user(params, claims, page, size, index) do
-    filter(params, claims, page, size, index)
+  def search_by_user(params, %{user_id: user_id} = claims, page \\ 0, size \\ 50) do
+    params
+    |> put_filter("user_id", user_id)
+    |> search(claims, page, size)
   end
 
-  def default_sort(:grants), do: ["_id"]
-
-  defp get_permissions(domain_permissions) do
-    Enum.filter(domain_permissions, fn %{permissions: permissions} ->
-      Enum.any?(permissions, &check_view_or_manage_permission/1)
-    end)
-  end
-
-  defp check_view_or_manage_permission("view_grants"), do: true
-  defp check_view_or_manage_permission("manage_grants"), do: true
-  defp check_view_or_manage_permission(_), do: false
-
-  defp filter(_params, [], _page, _size, _index),
-    do: %{results: [], aggregations: %{}, total: 0}
-
-  defp filter(params, claims_or_permissions, page, size, index) do
-    user_defined_filters = Query.create_filters(params, index)
-
-    filter =
-      case claims_or_permissions do
-        [_h | _t] = permissions -> Query.create_filter_clause(permissions, user_defined_filters)
-        %Claims{user_id: user_id} -> Query.create_filter_clause_by(user_id, user_defined_filters)
-      end
-
-    query = Query.create_query(params, filter)
-    sort = Map.get(params, "sort", default_sort(index))
-
-    %{
-      from: page * size,
-      size: size,
-      query: query,
-      sort: sort
-    }
-    |> aggs(params, index)
-    |> do_search(params, index)
-  end
-
-  # Don't request aggregations if we're scrolling
-  defp aggs(%{} = search, %{"scroll" => _}, _index), do: search
-
-  defp aggs(%{} = search, %{} = _params, index) do
-    Map.put(search, :aggs, Query.get_aggregation_terms(index))
-  end
-
-  defp do_search(search, %{"scroll" => _scroll} = params, index) do
+  defp do_search(search, %{"scroll" => _scroll} = params) do
     search
-    |> Search.search(params, index)
+    |> Search.search(params, @index)
     |> transform_response()
   end
 
-  defp do_search(search, _params, index) do
+  defp do_search(search, _params) do
     search
-    |> Search.search(index)
+    |> Search.search(@index)
     |> transform_response()
   end
 
@@ -149,5 +99,9 @@ defmodule TdDd.Grants.Search do
       |> Enum.map(&Map.Helpers.atomize_keys/1)
 
     Map.put(response, :results, results)
+  end
+
+  defp search_permissions(%Claims{} = claims) do
+    Permissions.get_search_permissions(["manage_grants", "view_grants"], claims)
   end
 end

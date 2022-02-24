@@ -24,6 +24,7 @@ defmodule TdDdWeb.ConnCase do
   using do
     quote do
       # Import conveniences for testing with connections
+      import Assertions
       import CacheHelpers, only: [put_session_permissions: 2, put_session_permissions: 3]
       import Plug.Conn
       import Phoenix.ConnTest

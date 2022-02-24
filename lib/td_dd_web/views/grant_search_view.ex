@@ -1,15 +1,9 @@
-defmodule TdDdWeb.SearchView do
+defmodule TdDdWeb.GrantSearchView do
   use TdDdWeb, :view
-  use TdHypermedia, :view
 
   alias TdDdWeb.GrantView
 
-  def render(
-        "search.json",
-        %{
-          grants: grants
-        } = assigns
-      ) do
+  def render("search.json", %{grants: grants} = assigns) do
     %{
       data: render_many(grants, GrantView, "grant.json")
     }

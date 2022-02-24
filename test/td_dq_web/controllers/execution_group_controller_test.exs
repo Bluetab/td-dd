@@ -2,9 +2,16 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
   use TdDqWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger_dq.json"
 
+  import Mox
+
   @moduletag sandbox: :shared
 
-  setup :put_permissions
+  setup :verify_on_exit!
+
+  setup do
+    start_supervised!(TdDd.Search.Cluster)
+    :ok
+  end
 
   setup do
     groups =
@@ -81,8 +88,25 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
       domain: domain
     } do
       %{id: rule_id} = insert(:rule, business_concept_id: "42", domain_id: domain.id)
-      %{id: id1} = insert(:implementation, rule_id: rule_id, domain_id: domain.id)
-      %{id: id2} = insert(:implementation, rule_id: rule_id, domain_id: domain.id)
+      %{id: id1} = i1 = insert(:implementation, rule_id: rule_id, domain_id: domain.id)
+      %{id: id2} = i2 = insert(:implementation, rule_id: rule_id, domain_id: domain.id)
+
+      ElasticsearchMock
+      |> expect(:request, fn
+        _, :post, "/implementations/_search", %{from: 0, size: 10_000, query: query}, [] ->
+          assert %{
+                   bool: %{
+                     filter: [
+                       %{terms: %{"id" => [_, _]}},
+                       %{term: %{"domain_id" => _}},
+                       %{term: %{"_confidential" => false}}
+                     ],
+                     must_not: _deleted_at
+                   }
+                 } = query
+
+          SearchHelpers.hits_response([i1, i2])
+      end)
 
       filters = %{"id" => [id1, id2]}
       params = %{"filters" => filters, "df_content" => %{"foo" => "bar"}}
@@ -108,11 +132,4 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
                |> json_response(:forbidden)
     end
   end
-
-  defp put_permissions(%{permissions: permissions, claims: claims, domain: %{id: domain_id}}) do
-    CacheHelpers.put_session_permissions(claims, domain_id, permissions)
-    :ok
-  end
-
-  defp put_permissions(_), do: :ok
 end

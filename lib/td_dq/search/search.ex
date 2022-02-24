@@ -9,13 +9,15 @@ defmodule TdDq.Search do
   require Logger
 
   def search(query, index) do
-    Logger.debug(fn -> "Query: #{inspect(query)}" end)
     alias_name = Cluster.alias_name(index)
     response = Elasticsearch.post(Cluster, "/#{alias_name}/_search", query)
 
     case response do
       {:ok, %{"hits" => %{"hits" => results, "total" => total}, "aggregations" => aggregations}} ->
         %{results: results, aggregations: format_aggregations(aggregations), total: total}
+
+      {:ok, %{"hits" => %{"hits" => results, "total" => total}}} ->
+        %{results: results, total: total}
 
       {:error, %Elasticsearch.Exception{message: message} = error} ->
         Logger.warn("Error response from Elasticsearch: #{message}")
@@ -24,29 +26,28 @@ defmodule TdDq.Search do
   end
 
   def search(query, query_params, index) do
-    Logger.debug(fn -> "Query: #{inspect(query)} #{inspect(query_params)}" end)
     alias_name = Cluster.alias_name(index)
 
-    response =
-      Elasticsearch.post(
-        Cluster,
-        "/#{alias_name}/_search?" <> URI.encode_query(query_params),
-        query
-      )
+    params = Map.take(query_params, ["scroll"])
+    response = Elasticsearch.post(Cluster, "/#{alias_name}/_search", query, params: params)
 
     case response do
-      {:ok,
-       %{
-         "_scroll_id" => scroll_id,
-         "hits" => %{"hits" => results, "total" => total},
-         "aggregations" => aggregations
-       }} ->
-        %{
-          results: results,
-          aggregations: format_aggregations(aggregations),
-          total: total,
-          scroll_id: scroll_id
-        }
+      {:ok, %{} = body} ->
+        Enum.reduce(body, %{}, fn
+          {"_scroll_id", scroll_id}, acc ->
+            Map.put(acc, :scroll_id, scroll_id)
+
+          {"hits", %{"hits" => hits, "total" => total}}, acc ->
+            acc
+            |> Map.put(:total, total)
+            |> Map.put(:results, hits)
+
+          {"aggregations", aggregations}, acc ->
+            Map.put(acc, :aggregations, format_aggregations(aggregations))
+
+          _, acc ->
+            acc
+        end)
 
       {:error, %Elasticsearch.Exception{message: message} = error} ->
         Logger.warn("Error response from Elasticsearch: #{message}")
@@ -55,8 +56,6 @@ defmodule TdDq.Search do
   end
 
   def scroll(scroll_params) do
-    Logger.debug(fn -> "Scroll: #{inspect(scroll_params)}" end)
-
     [opts, scroll_params] =
       scroll_params
       |> Map.take(["opts"])
@@ -89,6 +88,9 @@ defmodule TdDq.Search do
       {:ok, %{"aggregations" => aggregations}} ->
         {:ok, format_aggregations(aggregations)}
 
+      {:ok, %{"hits" => %{"hits" => results, "total" => total}}} ->
+        {:ok, %{results: results, total: total, aggregations: %{}}}
+
       {:error, %Elasticsearch.Exception{message: message} = error} ->
         Logger.warn("Error response from Elasticsearch: #{message}")
         {:error, error}
@@ -111,7 +113,7 @@ defmodule TdDq.Search do
   end
 
   defp filter_values({name, %{"buckets" => buckets}}) do
-    {name, buckets |> Enum.map(& &1["key"])}
+    {name, Enum.map(buckets, & &1["key"])}
   end
 
   defp filter_values({name, %{"distinct_search" => distinct_search}}) do

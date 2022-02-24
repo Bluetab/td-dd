@@ -1,10 +1,11 @@
 defmodule TdDdWeb.GrantFilterController do
-  require Logger
   use TdDdWeb, :controller
   use PhoenixSwagger
 
   alias TdDd.Grants.Search
   alias TdDdWeb.SwaggerDefinitions
+
+  require Logger
 
   plug(TdDdWeb.SearchPermissionPlug)
 
@@ -14,27 +15,11 @@ defmodule TdDdWeb.GrantFilterController do
     SwaggerDefinitions.filter_swagger_definitions()
   end
 
-  swagger_path :index do
-    description("List Grant Filters")
-    response(200, "OK", Schema.ref(:FilterResponse))
-  end
-
-  def index(conn, _params) do
-    claims = conn.assigns[:current_resource]
-    permission = conn.assigns[:search_permission]
-    {:ok, filters} = Search.get_filter_values(claims, permission, :grants)
-    render(conn, "show.json", filters: filters)
-  end
-
   swagger_path :search do
     description("List Grant Filters")
 
     parameters do
-      search(
-        :body,
-        Schema.ref(:FilterRequest),
-        "Filter parameters"
-      )
+      search(:body, Schema.ref(:FilterRequest), "Filter parameters")
     end
 
     response(200, "OK", Schema.ref(:FilterResponse))
@@ -42,16 +27,15 @@ defmodule TdDdWeb.GrantFilterController do
 
   def search(conn, params) do
     claims = conn.assigns[:current_resource]
-    permission = conn.assigns[:search_permission]
-    params = Map.put(params, :without, ["deleted_at"])
-    {:ok, filters} = Search.get_filter_values(claims, permission, params)
+    params = Map.put(params, "without", "deleted_at")
+    {:ok, filters} = Search.get_filter_values(claims, params)
     render(conn, "show.json", filters: filters)
   end
 
   def search_mine(conn, params) do
-    claims = conn.assigns[:current_resource]
-    params = Map.put(params, :without, ["deleted_at"])
-    {:ok, filters} = Search.get_filter_values(claims, params)
+    %{user_id: user_id} = claims = conn.assigns[:current_resource]
+    params = Map.put(params, "without", "deleted_at")
+    {:ok, filters} = Search.get_filter_values(claims, params, user_id)
     render(conn, "show.json", filters: filters)
   end
 end

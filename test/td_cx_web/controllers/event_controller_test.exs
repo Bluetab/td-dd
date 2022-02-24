@@ -1,12 +1,15 @@
 defmodule TdCxWeb.EventControllerTest do
   use TdCxWeb.ConnCase
 
-  alias TdCx.Search.IndexWorker
+  import Mox
 
-  setup_all do
-    start_supervised(IndexWorker)
+  setup do
+    start_supervised!(TdCx.Search.IndexWorker)
+    start_supervised!(TdDd.Search.Cluster)
     :ok
   end
+
+  setup :verify_on_exit!
 
   setup do
     %{job: job} = event = insert(:event)
@@ -30,8 +33,12 @@ defmodule TdCxWeb.EventControllerTest do
   end
 
   describe "POST /api/jobs/:id/events" do
+    setup :set_mox_from_context
+
     @tag authentication: [role: "admin"]
     test "admin can create event for a job", %{conn: conn, job: %{external_id: external_id}} do
+      SearchHelpers.expect_bulk_index("/jobs/_doc/_bulk")
+
       %{"type" => type, "message" => message} = params = string_params_for(:event)
 
       assert %{"data" => event} =
@@ -47,6 +54,8 @@ defmodule TdCxWeb.EventControllerTest do
       conn: conn,
       job: %{external_id: external_id}
     } do
+      SearchHelpers.expect_bulk_index("/jobs/_doc/_bulk")
+
       %{"type" => type, "message" => message} = params = string_params_for(:event)
 
       assert %{"data" => event} =

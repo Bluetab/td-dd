@@ -43,14 +43,8 @@ defmodule TdDqWeb.Router do
       post("/rule_implementations", ImplementationController, :search_rule_implementations)
     end
 
-    post("/rules/search", SearchController, :search_rules)
-    get("/rules/search/reindex_all", SearchController, :reindex_all_rules)
-
-    get(
-      "/rule_implementations/search/reindex_all",
-      SearchController,
-      :reindex_all_implementations
-    )
+    resources("/rules/search", RuleSearchController, only: [:create], singleton: true)
+    get("/rules/search/reindex_all", RuleSearchController, :reindex)
 
     post("/rule_filters/search", RuleFilterController, :search)
     post("/rule_implementation_filters/search", ImplementationFilterController, :search)
@@ -65,6 +59,8 @@ defmodule TdDqWeb.Router do
       only: [:create],
       singleton: true
     )
+
+    get("/rule_implementations/search/reindex_all", ImplementationSearchController, :reindex)
 
     post("/rule_implementations/csv", ImplementationController, :csv)
   end

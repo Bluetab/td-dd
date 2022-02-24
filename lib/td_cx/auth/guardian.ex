@@ -9,10 +9,11 @@ defmodule TdCx.Auth.Guardian do
     Jason.encode(%{id: user_id, user_name: user_name})
   end
 
-  def resource_from_claims(%{"role" => role, "sub" => sub} = claims) do
+  def resource_from_claims(%{"role" => role, "sub" => sub, "exp" => exp} = claims) do
     %{"id" => id, "user_name" => user_name} = Jason.decode!(sub)
 
     resource = %Claims{
+      exp: exp,
       user_id: id,
       role: role,
       user_name: user_name,

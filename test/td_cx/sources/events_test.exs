@@ -1,27 +1,26 @@
 defmodule TdCx.Sources.EventsTest do
   use TdDd.DataCase
 
-  alias TdCx.Events
-  alias TdCx.Search.IndexWorker
+  import Mox
 
-  @valid_attrs %{type: "init", message: "Message"}
+  alias TdCx.Events
+  alias TdCx.Events.Event
 
   setup_all do
-    start_supervised(IndexWorker)
+    start_supervised!(TdCx.Search.IndexWorker)
+    start_supervised!(TdDd.Search.Cluster)
     :ok
   end
 
-  describe "events" do
-    alias TdCx.Events.Event
+  setup :set_mox_from_context
+  setup :verify_on_exit!
 
-    test "create_event/0 creates an event" do
-      %{id: id} = insert(:job)
-      attrs = Map.put(@valid_attrs, :job_id, id)
-      claims = build(:cx_claims, role: "admin")
-      assert {:ok, %Event{} = event} = Events.create_event(attrs, claims)
-      assert event.job_id == id
-      assert event.type == @valid_attrs.type
-      assert event.message == @valid_attrs.message
-    end
+  test "create_event/0 creates an event" do
+    SearchHelpers.expect_bulk_index("/jobs/_doc/_bulk")
+    %{id: job_id} = insert(:job)
+    params = %{type: "init", message: "Message", job_id: job_id}
+    claims = build(:cx_claims, role: "admin")
+    assert {:ok, %Event{} = event} = Events.create_event(params, claims)
+    assert %{job_id: ^job_id, type: "init", message: "Message"} = event
   end
 end

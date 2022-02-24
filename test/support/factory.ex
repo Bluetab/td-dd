@@ -35,7 +35,8 @@ defmodule TdDd.Factory do
       user_id: sequence(:user_id, & &1),
       user_name: sequence("user_name"),
       role: "admin",
-      jti: sequence("jti")
+      jti: sequence("jti"),
+      exp: DateTime.add(DateTime.utc_now(), 10)
     )
     |> merge_attributes(attrs)
   end
@@ -52,7 +53,10 @@ defmodule TdDd.Factory do
   end
 
   def data_structure_version_factory(attrs) do
-    attrs = default_assoc(attrs, :data_structure_id, :data_structure)
+    {structure_attrs, attrs} = Map.split(attrs, [:domain_id])
+
+    attrs =
+      default_assoc(attrs, :data_structure_id, :data_structure, :data_structure, structure_attrs)
 
     %DataStructureVersion{
       description: "some description",
@@ -537,12 +541,12 @@ defmodule TdDd.Factory do
     }
   end
 
-  defp default_assoc(attrs, id_key, key, build_key \\ nil) do
+  defp default_assoc(attrs, id_key, key, build_key \\ nil, build_params \\ %{}) do
     if Enum.any?([key, id_key], &Map.has_key?(attrs, &1)) do
       attrs
     else
       build_key = if build_key, do: build_key, else: key
-      Map.put(attrs, key, build(build_key))
+      Map.put(attrs, key, build(build_key, build_params))
     end
   end
 end

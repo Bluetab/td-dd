@@ -53,8 +53,8 @@ defmodule CacheHelpers do
 
   def insert_template(params \\ %{}) do
     %{id: template_id} = template = build(:template, params)
-    {:ok, _} = TemplateCache.put(template, publish: false)
     on_exit(fn -> TemplateCache.delete(template_id) end)
+    {:ok, _} = TemplateCache.put(template, publish: false)
     _maybe_error = StructureEnricher.refresh()
     template
   end

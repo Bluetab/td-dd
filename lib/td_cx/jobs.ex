@@ -78,10 +78,7 @@ defmodule TdCx.Jobs do
   def metrics([] = _events, _opts), do: Map.new()
 
   def metrics(events, opts) do
-    {min, max} =
-      Enum.min_max_by(events, fn %{inserted_at: inserted_at} ->
-        DateTime.to_unix(inserted_at, :millisecond)
-      end)
+    {min, max} = Enum.min_max_by(events, & &1.inserted_at, DateTime)
 
     message = Map.get(max, :message)
 
