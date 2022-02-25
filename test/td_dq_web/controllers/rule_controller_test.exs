@@ -593,10 +593,23 @@ defmodule TdDqWeb.RuleControllerTest do
            user_name: "non_admin",
            permissions: [:manage_quality_rule]
          ]
-    test "user with permissions can delete rule", %{conn: conn, rule: rule} do
-      assert conn
-             |> delete(Routes.rule_path(conn, :delete, rule))
-             |> response(:no_content)
+    test "user wit permissions can create implementations", %{
+      conn: conn,
+      claims: %{user_id: user_id}
+    } do
+      business_concept_id = System.unique_integer([:positive])
+
+      %{id: id, domain_id: domain_id} = insert(:rule, business_concept_id: business_concept_id)
+
+      create_acl_entry(user_id, "domain", domain_id, [
+        :view_quality_rule,
+        :manage_quality_rule_implementations
+      ])
+
+      assert %{"user_permissions" => %{"manage_quality_rule_implementations" => true}} =
+               conn
+               |> get(Routes.rule_path(conn, :show, id))
+               |> json_response(:ok)
     end
   end
 end
