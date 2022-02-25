@@ -36,10 +36,6 @@ defmodule TdDq.Canada.Abilities do
       ImplementationAbilities.can?(claims, action, implementation)
     end
 
-    def can?(%Claims{} = claims, :manage, {Implementation, %Rule{} = rule}) do
-      ImplementationAbilities.can?(claims, :manage, Implementation, rule)
-    end
-
     def can?(%Claims{} = claims, :execute, %{} = target) do
       ImplementationAbilities.can?(claims, :execute, target)
     end
