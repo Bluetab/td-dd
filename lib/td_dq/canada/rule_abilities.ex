@@ -38,6 +38,10 @@ defmodule TdDq.Canada.RuleAbilities do
     Permissions.authorized?(claims, :manage_quality_rule)
   end
 
+  def can?(%Claims{} = claims, :create_implementation, %Rule{domain_id: domain_id}) do
+    Permissions.authorized?(claims, :manage_quality_rule_implementations, domain_id)
+  end
+
   def can?(%Claims{}, _action, _entity), do: false
 
   defp fetch_values(%Changeset{data: %Rule{} = data} = changeset, field)
