@@ -171,9 +171,9 @@ config :td_dd, TdDd.Scheduler,
       task: {TdDd.DataStructures.HistoryManager, :purge_history, []},
       run_strategy: Quantum.RunStrategy.Local
     ],
-    update_domain_ids_in_cache: [
+    force_update_structures_cache: [
       schedule: "@reboot",
-      task: {TdDd.Cache.UpdateDomainIds, :migrate, []},
+      task: {TdDd.Cache.StructuresForceUpdate, :migrate, []},
       run_strategy: Quantum.RunStrategy.Local
     ],
     expand_profile_values: [
