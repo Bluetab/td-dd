@@ -2,27 +2,30 @@ defmodule TdDdWeb.MetadataControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  import Routes,
-    only: [
-      data_structure_data_structure_version_path: 4,
-      data_structure_path: 2,
-      metadata_path: 2
-    ]
+  import Ecto.Query
+  import Mox
 
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureRelation
+  alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.Loader.Worker
+  alias TdDd.Repo
 
   @moduletag sandbox: :shared
 
   setup_all do
-    start_supervised(TdDd.Search.MockIndexWorker)
-    start_supervised(TdDd.Cache.StructureLoader)
-    start_supervised(Worker)
-    start_supervised(TdDd.Lineage.GraphData)
-    start_supervised({Task.Supervisor, name: TdDd.TaskSupervisor})
+    start_supervised!(TdDd.Search.Cluster)
+    start_supervised!(TdDd.Search.MockIndexWorker)
+    start_supervised!(TdDd.Cache.StructureLoader)
+    start_supervised!(Worker)
+    start_supervised!(TdDd.Lineage.GraphData)
+    start_supervised!({Task.Supervisor, name: TdDd.TaskSupervisor})
     :ok
   end
+
+  setup :set_mox_from_context
+  setup :verify_on_exit!
 
   setup tags do
     start_supervised!(TdDd.Search.StructureEnricher)
@@ -45,6 +48,8 @@ defmodule TdDdWeb.MetadataControllerTest do
   end
 
   describe "upload" do
+    setup :create_source
+
     @tag authentication: [role: "service"]
     @tag fixture: "test/fixtures/metadata"
     test "uploads structure, field and relation metadata", %{
@@ -54,7 +59,7 @@ defmodule TdDdWeb.MetadataControllerTest do
       relations: relations
     } do
       assert conn
-             |> post(metadata_path(conn, :upload),
+             |> post(Routes.metadata_path(conn, :upload),
                data_structures: structures,
                data_fields: fields,
                data_structure_relations: relations
@@ -64,25 +69,19 @@ defmodule TdDdWeb.MetadataControllerTest do
       # waits for loader to complete
       Worker.await(20_000)
 
-      assert %{"data" => data} =
-               conn
-               |> get(data_structure_path(conn, :index))
-               |> json_response(:ok)
+      count =
+        DataStructure
+        |> select([ds], count(ds.id))
+        |> Repo.one!()
 
-      assert length(data) == 5 + 68
+      assert count == 5 + 68
 
-      structure_id = get_id(data, "Calidad")
+      count =
+        DataStructureRelation
+        |> select([dsr], count(dsr.id))
+        |> Repo.one!()
 
-      assert %{"data" => %{"parents" => parents, "children" => children, "siblings" => siblings}} =
-               conn
-               |> get(
-                 data_structure_data_structure_version_path(conn, :show, structure_id, "latest")
-               )
-               |> json_response(:ok)
-
-      assert length(parents) == 1
-      assert length(siblings) == 4
-      assert length(children) == 16
+      assert count == 5 + 68 - 1
     end
 
     @tag authentication: [role: "service"]
@@ -93,7 +92,7 @@ defmodule TdDdWeb.MetadataControllerTest do
       fields: fields
     } do
       assert conn
-             |> post(metadata_path(conn, :upload),
+             |> post(Routes.metadata_path(conn, :upload),
                data_structures: structures,
                data_fields: fields
              )
@@ -102,15 +101,16 @@ defmodule TdDdWeb.MetadataControllerTest do
       # waits for loader to complete
       Worker.await(20_000)
 
-      assert %{"data" => data} =
-               conn
-               |> get(data_structure_path(conn, :index))
-               |> json_response(:ok)
+      external_ids =
+        DataStructure
+        |> select([ds], ds.external_id)
+        |> Repo.all()
 
-      external_ids = Enum.map(data, & &1["external_id"])
-      assert Enum.member?(external_ids, "parent_external_id")
-      assert Enum.member?(external_ids, "parent_external_id/Field1")
-      assert Enum.member?(external_ids, "field_with_external_id")
+      assert_lists_equal(external_ids, [
+        "parent_external_id",
+        "parent_external_id/Field1",
+        "field_with_external_id"
+      ])
     end
 
     @tag authentication: [role: "service"]
@@ -123,102 +123,59 @@ defmodule TdDdWeb.MetadataControllerTest do
     } do
       insert(:relation_type, name: "relation_type_1")
 
-      conn =
-        post(conn, metadata_path(conn, :upload),
-          data_structures: structures,
-          data_fields: fields,
-          data_structure_relations: relations
-        )
-
-      assert response(conn, :accepted) =~ ""
+      assert "" =
+               conn
+               |> post(Routes.metadata_path(conn, :upload),
+                 data_structures: structures,
+                 data_fields: fields,
+                 data_structure_relations: relations
+               )
+               |> response(:accepted)
 
       # waits for loader to complete
       Worker.await(20_000)
 
-      assert %{"data" => data} =
-               conn
-               |> get(data_structure_path(conn, :index))
-               |> json_response(:ok)
+      %{id: id} = Repo.get_by!(DataStructureVersion, name: "Dashboard Gobierno y Calidad v1")
 
-      assert length(data) == 5 + 68
+      frequencies =
+        DataStructureRelation
+        |> where(parent_id: ^id)
+        |> preload(:relation_type)
+        |> Repo.all()
+        |> Enum.frequencies_by(& &1.relation_type.name)
 
-      structure_id = get_id(data, "Calidad")
-      relation_parent_id = get_id(data, "Dashboard Gobierno y Calidad v1")
-
-      assert %{"data" => data} =
-               conn
-               |> get(
-                 data_structure_data_structure_version_path(conn, :show, structure_id, "latest")
-               )
-               |> json_response(:ok)
-
-      assert length(data["parents"]) == 1
-      assert length(data["siblings"]) == 3
-      assert length(data["children"]) == 16
-
-      assert %{"data" => %{"parents" => parents, "children" => children}} =
-               conn
-               |> get(
-                 data_structure_data_structure_version_path(
-                   conn,
-                   :show,
-                   relation_parent_id,
-                   "latest"
-                 )
-               )
-               |> json_response(:ok)
-
-      assert parents == []
-      assert length(children) == 3
+      assert frequencies == %{"default" => 3, "relation_type_1" => 1}
     end
 
     @tag authentication: [role: "service"]
     @tag fixture: "test/fixtures/metadata"
-    setup :create_source
-
     test "uploads structure, field and relation metadata when domain is specified", %{
       conn: conn,
       structures: structures,
       fields: fields,
       relations: relations
     } do
-      %{id: domain_id, name: domain_name, external_id: domain_external_id} =
-        CacheHelpers.insert_domain()
+      %{id: domain_id, external_id: domain_external_id} = CacheHelpers.insert_domain()
 
-      conn =
-        post(conn, metadata_path(conn, :upload),
-          data_structures: structures,
-          data_fields: fields,
-          data_structure_relations: relations,
-          domain: domain_external_id
-        )
-
-      assert response(conn, :accepted) =~ ""
+      assert "" =
+               conn
+               |> post(Routes.metadata_path(conn, :upload),
+                 data_structures: structures,
+                 data_fields: fields,
+                 data_structure_relations: relations,
+                 domain: domain_external_id
+               )
+               |> response(:accepted)
 
       # waits for loader to complete
       Worker.await(20_000)
 
-      conn = get(conn, data_structure_path(conn, :index))
-      json_response = json_response(conn, :ok)["data"]
-      assert length(json_response) == 5 + 68
+      frequencies =
+        DataStructure
+        |> Repo.all()
+        |> Enum.frequencies_by(& &1.domain_id)
 
-      for %{"domain_id" => id, "domain" => d} <- json_response do
-        assert id == domain_id
-        assert d == %{"external_id" => domain_external_id, "id" => id, "name" => domain_name}
-      end
-
-      structure_id = get_id(json_response, "Calidad")
-
-      assert %{"data" => data} =
-               conn
-               |> get(
-                 data_structure_data_structure_version_path(conn, :show, structure_id, "latest")
-               )
-               |> json_response(:ok)
-
-      assert length(data["parents"]) == 1
-      assert length(data["siblings"]) == 4
-      assert length(data["children"]) == 16
+      assert frequencies == %{domain_id => 5 + 68}
     end
 
     @tag authentication: [role: "service"]
@@ -228,25 +185,28 @@ defmodule TdDdWeb.MetadataControllerTest do
       structures: structures,
       fields: fields,
       relations: relations,
-      source: %{id: source_id, external_id: source_external_id}
+      source: %{external_id: source_external_id}
     } do
-      conn =
-        post(conn, metadata_path(conn, :upload),
-          data_structures: structures,
-          data_fields: fields,
-          data_structure_relations: relations,
-          source: source_external_id
-        )
-
-      assert response(conn, :accepted) =~ ""
+      assert "" =
+               conn
+               |> post(Routes.metadata_path(conn, :upload),
+                 data_structures: structures,
+                 data_fields: fields,
+                 data_structure_relations: relations,
+                 source: source_external_id
+               )
+               |> response(:accepted)
 
       # waits for loader to complete
       Worker.await(20_000)
 
-      conn = get(conn, data_structure_path(conn, :index))
-      json_response = json_response(conn, :ok)["data"]
-      assert length(json_response) == 5 + 68
-      assert Enum.all?(json_response, &(Map.get(&1, "source_id") == source_id))
+      frequencies =
+        DataStructure
+        |> preload(:source)
+        |> Repo.all()
+        |> Enum.frequencies_by(& &1.source.external_id)
+
+      assert frequencies == %{source_external_id => 5 + 68}
     end
   end
 
@@ -256,7 +216,7 @@ defmodule TdDdWeb.MetadataControllerTest do
       insert(:system, external_id: "test1", name: "test1")
 
       assert conn
-             |> post(metadata_path(conn, :upload),
+             |> post(Routes.metadata_path(conn, :upload),
                data_structures: upload("test/fixtures/td2520/structures1.csv")
              )
              |> response(:accepted)
@@ -268,7 +228,7 @@ defmodule TdDdWeb.MetadataControllerTest do
                DataStructures.get_data_structure_by_external_id("td-2520.root")
 
       assert conn
-             |> post(metadata_path(conn, :upload),
+             |> post(Routes.metadata_path(conn, :upload),
                data_structures: upload("test/fixtures/td2520/structures2.csv"),
                data_structure_relations: upload("test/fixtures/td2520/relations2.csv"),
                parent_external_id: "td-2520.root",
@@ -279,7 +239,7 @@ defmodule TdDdWeb.MetadataControllerTest do
       Worker.await(20_000)
 
       assert conn
-             |> post(metadata_path(conn, :upload),
+             |> post(Routes.metadata_path(conn, :upload),
                data_structures: upload("test/fixtures/td2520/structures3.csv"),
                data_structure_relations: upload("test/fixtures/td2520/relations3.csv"),
                parent_external_id: "td-2520.root",
@@ -287,15 +247,15 @@ defmodule TdDdWeb.MetadataControllerTest do
              )
              |> response(:ok)
 
-      conn =
-        get(conn, Routes.data_structure_data_structure_version_path(conn, :show, id, "latest"))
+      assert %{"data" => data} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(conn, :show, id, "latest")
+               )
+               |> json_response(:ok)
 
-      %{"children" => children} = json_response(conn, :ok)["data"]
-      assert Enum.count(children) == 2
-
-      assert Enum.all?(["Child1", "Child2"], fn name ->
-               Enum.any?(children, &(&1["name"] == name))
-             end)
+      assert %{"children" => children} = data
+      assert_lists_equal(children, ["Child1", "Child2"], &(&1["name"] == &2))
     end
   end
 
@@ -305,11 +265,5 @@ defmodule TdDdWeb.MetadataControllerTest do
 
   defp upload(path) do
     %Plug.Upload{path: path, filename: Path.basename(path)}
-  end
-
-  defp get_id(json, name) do
-    json
-    |> Enum.find(&(&1["name"] == name))
-    |> Map.get("id")
   end
 end

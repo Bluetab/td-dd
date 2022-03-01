@@ -4,7 +4,7 @@ defmodule TdDdWeb.GrantFilterControllerTest do
 
   import Mox
 
-  @aggs %{
+  @aggregations %{
     "data_structure_version.name.raw" => %{
       "buckets" => [%{"key" => "foo"}, %{"key" => "baz"}]
     }
@@ -30,7 +30,7 @@ defmodule TdDdWeb.GrantFilterControllerTest do
                    }
                  }
 
-          SearchHelpers.aggs_response(@aggs)
+          SearchHelpers.aggs_response(@aggregations)
       end)
 
       assert %{"data" => data} =
@@ -109,7 +109,7 @@ defmodule TdDdWeb.GrantFilterControllerTest do
                      }
                    } = query
 
-            SearchHelpers.aggs_response(@aggs)
+            SearchHelpers.aggs_response(@aggregations)
         end)
 
         assert %{"data" => data} =

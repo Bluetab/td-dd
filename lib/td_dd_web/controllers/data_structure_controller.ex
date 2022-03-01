@@ -15,24 +15,6 @@ defmodule TdDdWeb.DataStructureController do
   alias TdDd.DataStructures.StructureNotesWorkflow
   alias TdDdWeb.SwaggerDefinitions
 
-  plug(TdDdWeb.SearchPermissionPlug)
-
-  action_fallback(TdDdWeb.FallbackController)
-
-  def swagger_definitions do
-    SwaggerDefinitions.data_structure_swagger_definitions()
-  end
-
-  swagger_path :index do
-    description("List Data Structures")
-    response(200, "OK", Schema.ref(:DataStructuresResponse))
-  end
-
-  def index(conn, _params) do
-    %{results: data_structures} = do_search(conn, %{}, 0, 10_000)
-    render(conn, "index.json", data_structures: data_structures)
-  end
-
   @lift_attrs [:class, :description, :metadata, :group, :name, :type, :deleted_at]
   @enrich_attrs [
     :children,
@@ -52,36 +34,40 @@ defmodule TdDdWeb.DataStructureController do
     :tags
   ]
 
-  defp get_data_structure(id) do
-    case DataStructures.get_latest_version(id, @enrich_attrs) do
-      nil ->
-        DataStructures.get_data_structure!(id)
+  plug(TdDdWeb.SearchPermissionPlug)
 
-      dsv ->
-        dsv
-        |> Map.get(:data_structure)
-        |> Map.merge(Map.take(dsv, @enrich_attrs))
-        |> Map.merge(Map.take(dsv, @lift_attrs))
-    end
+  action_fallback(TdDdWeb.FallbackController)
+
+  def swagger_definitions do
+    SwaggerDefinitions.data_structure_swagger_definitions()
   end
 
-  defp do_render_data_structure(conn, _claims, nil) do
-    render_error(conn, :not_found)
+  swagger_path :index do
+    description("List Data Structures")
+    response(200, "OK", Schema.ref(:DataStructuresResponse))
   end
 
-  defp do_render_data_structure(conn, claims, data_structure) do
-    if can?(claims, view_data_structure(data_structure)) do
-      user_permissions = %{
-        update: can?(claims, update_data_structure(data_structure)),
-        confidential: can?(claims, manage_confidential_structures(data_structure)),
-        view_profiling_permission: can?(claims, view_data_structures_profile(data_structure)),
-        manage_tags: can?(claims, link_data_structure_tag(data_structure))
-      }
+  def index(conn, _params) do
+    %{results: data_structures} = do_search(conn, %{}, 0, 10_000)
+    render(conn, "index.json", data_structures: data_structures)
+  end
 
-      render(conn, "show.json", data_structure: data_structure, user_permissions: user_permissions)
-    else
-      render_error(conn, :forbidden)
+  swagger_path :search do
+    description("Data Structures")
+
+    parameters do
+      search(:body, Schema.ref(:DataStructureSearchRequest), "Search query parameter")
     end
+
+    response(200, "OK", Schema.ref(:DataStructuresResponse))
+  end
+
+  def search(conn, params) do
+    %{total: total} = response = do_search(conn, params)
+
+    conn
+    |> put_resp_header("x-total-count", "#{total}")
+    |> render("index.json", search_assigns(response))
   end
 
   swagger_path :update do
@@ -119,24 +105,6 @@ defmodule TdDdWeb.DataStructureController do
       do_render_data_structure(conn, claims, data_structure)
     end
   end
-
-  defp check_confidential(claims, data_structure, %{"confidential" => _}) do
-    {:can, can?(claims, manage_confidential_structures(data_structure))}
-  end
-
-  defp check_confidential(_claims, _data_structure, _attrs), do: {:can, true}
-
-  defp check_domain_id(claims, data_structure, %{"domain_id" => _}) do
-    {:can, can?(claims, manage_structures_domain(data_structure))}
-  end
-
-  defp check_domain_id(_claims, _data_structure, _attrs), do: {:can, true}
-
-  defp check_new_domain_id(claims, %{"domain_id" => new_domain_id}) do
-    {:can, can?(claims, manage_structures_domain(new_domain_id))}
-  end
-
-  defp check_new_domain_id(_claims, _attrs), do: {:can, true}
 
   swagger_path :delete do
     description("Delete Data Structure")
@@ -181,36 +149,6 @@ defmodule TdDdWeb.DataStructureController do
     end
   end
 
-  swagger_path :search do
-    description("Data Structures")
-
-    parameters do
-      search(
-        :body,
-        Schema.ref(:DataStructureSearchRequest),
-        "Search query parameter"
-      )
-    end
-
-    response(200, "OK", Schema.ref(:DataStructuresResponse))
-  end
-
-  def search(conn, params) do
-    %{total: total} = response = do_search(conn, params)
-
-    conn
-    |> put_resp_header("x-total-count", "#{total}")
-    |> render("index.json", search_assigns(response))
-  end
-
-  defp search_assigns(%{results: data_structures, scroll_id: scroll_id}) do
-    [data_structures: data_structures, scroll_id: scroll_id]
-  end
-
-  defp search_assigns(%{results: data_structures, aggregations: aggregations}) do
-    [data_structures: data_structures, filters: aggregations]
-  end
-
   swagger_path :get_system_structures do
     description("List System Root Data Structures")
 
@@ -221,14 +159,14 @@ defmodule TdDdWeb.DataStructureController do
     response(200, "OK", Schema.ref(:DataStructuresResponse))
   end
 
-  def get_system_structures(conn, params) do
+  def get_system_structures(conn, %{"system_id" => system_id} = params) do
     claims = conn.assigns[:current_resource]
     permission = conn.assigns[:search_permission]
 
     %{results: data_structures, total: total} =
       params
-      |> Map.put("filters", %{system_id: String.to_integer(Map.get(params, "system_id"))})
-      |> Map.put(:without, ["path", "deleted_at"])
+      |> Map.put("filters", %{"system_id" => String.to_integer(system_id)})
+      |> Map.put("without", ["path", "deleted_at"])
       |> Search.search_data_structures(claims, permission, 0, 1_000)
 
     conn
@@ -374,7 +312,7 @@ defmodule TdDdWeb.DataStructureController do
 
   defp search_all_structures(claims, permission, params) do
     params
-    |> Map.put(:without, ["deleted_at"])
+    |> Map.put("without", "deleted_at")
     |> Map.drop(["page", "size"])
     |> Search.search_data_structures(claims, permission, 0, 10_000)
   end
@@ -432,6 +370,56 @@ defmodule TdDdWeb.DataStructureController do
     end
   end
 
+  defp get_data_structure(id) do
+    case DataStructures.get_latest_version(id, @enrich_attrs) do
+      nil ->
+        DataStructures.get_data_structure!(id)
+
+      dsv ->
+        dsv
+        |> Map.get(:data_structure)
+        |> Map.merge(Map.take(dsv, @enrich_attrs))
+        |> Map.merge(Map.take(dsv, @lift_attrs))
+    end
+  end
+
+  defp do_render_data_structure(conn, _claims, nil) do
+    render_error(conn, :not_found)
+  end
+
+  defp do_render_data_structure(conn, claims, data_structure) do
+    if can?(claims, view_data_structure(data_structure)) do
+      user_permissions = %{
+        update: can?(claims, update_data_structure(data_structure)),
+        confidential: can?(claims, manage_confidential_structures(data_structure)),
+        view_profiling_permission: can?(claims, view_data_structures_profile(data_structure)),
+        manage_tags: can?(claims, link_data_structure_tag(data_structure))
+      }
+
+      render(conn, "show.json", data_structure: data_structure, user_permissions: user_permissions)
+    else
+      render_error(conn, :forbidden)
+    end
+  end
+
+  defp check_confidential(claims, data_structure, %{"confidential" => _}) do
+    {:can, can?(claims, manage_confidential_structures(data_structure))}
+  end
+
+  defp check_confidential(_claims, _data_structure, _attrs), do: {:can, true}
+
+  defp check_domain_id(claims, data_structure, %{"domain_id" => _}) do
+    {:can, can?(claims, manage_structures_domain(data_structure))}
+  end
+
+  defp check_domain_id(_claims, _data_structure, _attrs), do: {:can, true}
+
+  defp check_new_domain_id(claims, %{"domain_id" => new_domain_id}) do
+    {:can, can?(claims, manage_structures_domain(new_domain_id))}
+  end
+
+  defp check_new_domain_id(_claims, _attrs), do: {:can, true}
+
   defp do_search(conn, params, page \\ 0, size \\ 50)
 
   defp do_search(_conn, %{"scroll" => _, "scroll_id" => _} = scroll_params, _page, _size) do
@@ -451,6 +439,14 @@ defmodule TdDdWeb.DataStructureController do
     |> Search.search_data_structures(claims, permission, page, size)
   end
 
+  defp search_assigns(%{results: data_structures, scroll_id: scroll_id}) do
+    [data_structures: data_structures, scroll_id: scroll_id]
+  end
+
+  defp search_assigns(%{results: data_structures, aggregations: aggregations}) do
+    [data_structures: data_structures, filters: aggregations]
+  end
+
   defp deleted_structures(%{"filters" => %{"all" => true} = filters} = search_params) do
     filters = Map.delete(filters, "all")
     Map.put(search_params, "filters", filters)
@@ -461,6 +457,6 @@ defmodule TdDdWeb.DataStructureController do
 
     search_params
     |> Map.put("filters", filters)
-    |> Map.put(:without, ["deleted_at"])
+    |> Map.put("without", "deleted_at")
   end
 end

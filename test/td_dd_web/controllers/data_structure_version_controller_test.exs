@@ -3,16 +3,20 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
+  import Mox
+
   alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.RelationTypes
-  alias TdDd.Lineage.GraphData
 
   @moduletag sandbox: :shared
 
   setup_all do
-    start_supervised(GraphData)
+    start_supervised!(TdDd.Lineage.GraphData)
+    start_supervised!(TdDd.Search.Cluster)
     :ok
   end
+
+  setup :verify_on_exit!
 
   setup do
     start_supervised!(TdDd.Search.StructureEnricher)
@@ -675,7 +679,19 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
         df_content: %{"Field1" => "foo", "Field2" => "bar"}
       )
 
-      insert(:data_structure_version, data_structure_id: structure_id)
+      dsv = insert(:data_structure_version, data_structure_id: structure_id)
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
+        assert query == %{
+                 bool: %{
+                   filter: %{term: %{"type.raw" => "Table"}},
+                   must_not: %{exists: %{field: "deleted_at"}}
+                 }
+               }
+
+        SearchHelpers.hits_response([dsv])
+      end)
 
       assert %{"errors" => [], "ids" => [^structure_id | _]} =
                conn
@@ -702,6 +718,18 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
 
     @tag authentication: [role: "admin"]
     test "bulk update of data structures with no filter type", %{conn: conn} do
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, _ ->
+        assert query == %{
+                 bool: %{
+                   filter: %{term: %{"type.raw" => "Field"}},
+                   must_not: %{exists: %{field: "deleted_at"}}
+                 }
+               }
+
+        SearchHelpers.hits_response([])
+      end)
+
       %{id: structure_id} = insert(:data_structure, external_id: "Structure")
       insert(:data_structure_version, data_structure_id: structure_id)
 

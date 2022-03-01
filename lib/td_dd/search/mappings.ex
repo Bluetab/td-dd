@@ -36,6 +36,7 @@ defmodule TdDd.Search.Mappings do
           external_id: %{type: "text", fields: @raw}
         }
       },
+      # TODO: Avoid indexing domain parents
       domain_parents: %{
         type: "nested",
         properties: %{

@@ -2,29 +2,31 @@ defmodule TdDdWeb.DataStructureControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
+  import Mox
   import Routes
 
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
-  alias TdDd.DataStructures.RelationTypes
   alias TdDd.DataStructures.StructureNotes
-  alias TdDd.Lineage.GraphData
 
   @moduletag sandbox: :shared
   @template_name "data_structure_controller_test_template"
 
   setup_all do
-    start_supervised!(GraphData)
+    start_supervised!(TdDd.Lineage.GraphData)
+    start_supervised!(TdDd.Search.Cluster)
     :ok
   end
 
-  setup state do
+  setup :verify_on_exit!
+
+  setup context do
     %{id: template_id, name: template_name} = CacheHelpers.insert_template(name: @template_name)
 
     system = insert(:system)
 
     domain =
-      case state do
+      case context do
         %{domain: domain} -> domain
         _ -> CacheHelpers.insert_domain()
       end
@@ -33,35 +35,39 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
     start_supervised!(TdDd.Search.StructureEnricher)
 
-    [system: system, domain: domain]
+    [system: system, domain: domain, domain_id: domain.id]
   end
 
   describe "index" do
-    @tag authentication: [role: "admin"]
-    test "lists all data_structures", %{conn: conn} do
-      assert %{"data" => []} =
-               conn
-               |> get(data_structure_path(conn, :index))
-               |> json_response(:ok)
+    for role <- ["admin", "service"] do
+      @tag authentication: [role: role]
+      test "#{role} account can search data structures", %{conn: conn} do
+        %{name: name, data_structure: %{id: id, external_id: external_id}} =
+          data_structure_version = insert(:data_structure_version)
+
+        ElasticsearchMock
+        |> expect(:request, fn _, :post, "/structures/_search", _, [] ->
+          SearchHelpers.hits_response([data_structure_version])
+        end)
+
+        assert %{"data" => data} =
+                 conn
+                 |> get(data_structure_path(conn, :index))
+                 |> json_response(:ok)
+
+        assert [%{"id" => ^id, "name" => ^name, "external_id" => ^external_id}] = data
+      end
     end
 
-    @tag authentication: [role: "admin"]
-    test "search all data_structures", %{conn: conn} do
+    @tag authentication: [role: "user", permissions: ["view_data_structure"]]
+    test "user account can search data structures", %{conn: conn, domain_id: domain_id} do
       %{name: name, data_structure: %{id: id, external_id: external_id}} =
-        insert(:data_structure_version)
+        data_structure_version = insert(:data_structure_version, domain_id: domain_id)
 
-      assert %{"data" => data} =
-               conn
-               |> get(data_structure_path(conn, :index))
-               |> json_response(:ok)
-
-      assert [%{"id" => ^id, "name" => ^name, "external_id" => ^external_id}] = data
-    end
-
-    @tag authentication: [role: "service"]
-    test "service account can search all data_structures", %{conn: conn} do
-      %{name: name, data_structure: %{id: id, external_id: external_id}} =
-        insert(:data_structure_version)
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", _, [] ->
+        SearchHelpers.hits_response([data_structure_version])
+      end)
 
       assert %{"data" => data} =
                conn
@@ -76,7 +82,21 @@ defmodule TdDdWeb.DataStructureControllerTest do
     setup :create_data_structure
 
     @tag authentication: [role: "admin"]
-    test "search_all", %{conn: conn, data_structure: %{id: id}} do
+    test "search without query includes match_all clause", %{conn: conn} do
+      %{data_structure_id: id} = dsv = insert(:data_structure_version)
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, [] ->
+        assert query == %{
+                 bool: %{
+                   filter: %{match_all: %{}},
+                   must_not: %{exists: %{field: "deleted_at"}}
+                 }
+               }
+
+        SearchHelpers.hits_response([dsv])
+      end)
+
       assert %{"data" => [%{"id" => ^id}], "filters" => _filters} =
                conn
                |> post(data_structure_path(conn, :search), %{})
@@ -84,51 +104,33 @@ defmodule TdDdWeb.DataStructureControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "search with query performs ngram search on name", %{conn: conn} do
-      %{data_structure_id: id} =
-        insert(:data_structure_version,
-          name: "foobarbaz",
-          data_structure: build(:data_structure, external_id: "foobarbaz")
-        )
+    test "search with query includes multi_match clause", %{conn: conn} do
+      %{data_structure_id: id} = dsv = insert(:data_structure_version)
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, [] ->
+        assert %{bool: %{must: %{multi_match: _}}} = query
+        SearchHelpers.hits_response([dsv])
+      end)
 
       assert %{"data" => [%{"id" => ^id}]} =
                conn
-               |> post(data_structure_path(conn, :search), %{"query" => "obar"})
-               |> json_response(:ok)
-    end
-
-    @tag authentication: [role: "admin"]
-    test "search with query performs search on dynamic content", %{conn: conn} do
-      data_structure = insert(:data_structure, external_id: "boofarfaz")
-
-      %{data_structure_id: id} =
-        insert(:data_structure_version,
-          name: "boofarfaz",
-          type: @template_name,
-          data_structure: data_structure
-        )
-
-      insert(:structure_note,
-        data_structure: data_structure,
-        df_content: %{"string" => "xyzzy"},
-        status: :published
-      )
-
-      assert %{"data" => [%{"id" => ^id}]} =
-               conn
-               |> post(data_structure_path(conn, :search), %{"query" => "xyzz"})
+               |> post(data_structure_path(conn, :search), %{"query" => "foo"})
                |> json_response(:ok)
     end
   end
 
   describe "search with scroll" do
-    setup do
-      Enum.each(1..7, fn _ -> insert(:data_structure_version) end)
-    end
-
     @tag authentication: [role: "admin"]
-    test "returns scroll_id and pages results", %{conn: conn} do
-      assert %{"data" => data, "scroll_id" => scroll_id} =
+    test "includes scroll_id in response", %{conn: conn} do
+      dsvs = Enum.map(1..5, fn _ -> insert(:data_structure_version) end)
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", _, [params: %{"scroll" => "1m"}] ->
+        SearchHelpers.scroll_response(dsvs, 7)
+      end)
+
+      assert %{"data" => data, "scroll_id" => _scroll_id} =
                conn
                |> post(data_structure_path(conn, :search), %{
                  "filters" => %{"all" => true},
@@ -138,24 +140,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
                |> json_response(:ok)
 
       assert length(data) == 5
-
-      assert %{"data" => data, "scroll_id" => scroll_id} =
-               conn
-               |> post(data_structure_path(conn, :search), %{
-                 "scroll_id" => scroll_id,
-                 "scroll" => "1m"
-               })
-               |> json_response(:ok)
-
-      assert length(data) == 2
-
-      assert %{"data" => [], "scroll_id" => _scroll_id} =
-               conn
-               |> post(data_structure_path(conn, :search), %{
-                 "scroll_id" => scroll_id,
-                 "scroll" => "1m"
-               })
-               |> json_response(:ok)
     end
   end
 
@@ -407,8 +391,14 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
   describe "bulk_update" do
     @tag authentication: [role: "admin"]
-    test "bulk update of data structures", %{conn: conn, domain: %{id: domain_id}} do
-      {[id_one | _], _} = create_three_data_structures(domain_id)
+    test "bulk update of data structures", %{conn: conn, domain_id: domain_id} do
+      %{data_structure_id: id} =
+        dsv = insert(:data_structure_version, domain_id: domain_id, type: @template_name)
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", _, [] ->
+        SearchHelpers.hits_response([dsv])
+      end)
 
       assert data =
                conn
@@ -422,21 +412,34 @@ defmodule TdDdWeb.DataStructureControllerTest do
                    },
                    "search_params" => %{
                      "filters" => %{
-                       "id" => [id_one]
+                       "id" => [id]
                      }
                    }
                  }
                })
                |> json_response(:ok)
 
-      assert %{"errors" => [], "ids" => [^id_one]} = data
+      assert %{"errors" => [], "ids" => [^id]} = data
     end
 
     @tag authentication: [role: "admin"]
-    test "bulk update return invalid notes as errors", %{conn: conn, domain: %{id: domain_id}} do
-      {[id_one | _], [external_id_one | _]} = create_three_data_structures(domain_id)
+    test "bulk update return invalid notes as errors", %{conn: conn, domain_id: domain_id} do
+      %{id: id, external_id: external_id} = insert(:data_structure, domain_id: domain_id)
+      dsv = insert(:data_structure_version, data_structure_id: id, type: @template_name)
 
-      assert data =
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{query: query}, [] ->
+        assert query == %{
+                 bool: %{
+                   filter: %{term: %{"note_id" => 123}},
+                   must_not: %{exists: %{field: "deleted_at"}}
+                 }
+               }
+
+        SearchHelpers.hits_response([dsv])
+      end)
+
+      assert %{"errors" => errors, "ids" => []} =
                conn
                |> post(Routes.data_structure_path(conn, :bulk_update), %{
                  "bulk_update_request" => %{
@@ -448,23 +451,20 @@ defmodule TdDdWeb.DataStructureControllerTest do
                    },
                    "search_params" => %{
                      "filters" => %{
-                       "note_id" => [id_one]
+                       "note_id" => [123]
                      }
                    }
                  }
                })
                |> json_response(:ok)
 
-      assert %{
-               "errors" => [
-                 %{
-                   "external_id" => ^external_id_one,
-                   "message" => "df_content.inclusion",
-                   "field" => "list"
-                 }
-               ],
-               "ids" => []
-             } = data
+      assert [
+               %{
+                 "external_id" => ^external_id,
+                 "message" => "df_content.inclusion",
+                 "field" => "list"
+               }
+             ] = errors
     end
   end
 
@@ -472,35 +472,16 @@ defmodule TdDdWeb.DataStructureControllerTest do
     setup :create_data_structure
 
     @tag authentication: [role: "admin"]
-    test "gets csv content", %{
-      conn: conn,
-      data_structure: data_structure,
-      data_structure_version: data_structure_version
-    } do
-      insert(:structure_note,
-        data_structure: data_structure,
-        df_content: %{"string" => "foo_latest_note", "list" => "two"},
-        status: :published
-      )
+    test "gets csv content", %{conn: conn} do
+      dsv = insert(:data_structure_version)
 
-      child_structure = insert(:data_structure, external_id: "Child1")
-
-      child_version =
-        insert(:data_structure_version,
-          data_structure_id: child_structure.id,
-          deleted_at: DateTime.utc_now()
-        )
-
-      insert(:data_structure_relation,
-        parent_id: data_structure_version.id,
-        child_id: child_version.id,
-        relation_type_id: RelationTypes.default_id!()
-      )
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", %{size: 10_000}, [] ->
+        SearchHelpers.hits_response([dsv])
+      end)
 
       assert %{resp_body: resp_body} = post(conn, data_structure_path(conn, :csv, %{}))
-      assert String.contains?(resp_body, data_structure.external_id)
-      assert String.contains?(resp_body, "foo_latest_note")
-      assert not String.contains?(resp_body, child_structure.external_id)
+      assert [_header, _row, ""] = String.split(resp_body, "\r\n")
     end
 
     @tag authentication: [role: "admin"]
@@ -514,6 +495,11 @@ defmodule TdDdWeb.DataStructureControllerTest do
         df_content: %{"string" => "foo", "list" => "bar"},
         status: :published
       )
+
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/structures/_search", _, [] ->
+        SearchHelpers.hits_response([data_structure_version])
+      end)
 
       assert %{resp_body: body} = post(conn, data_structure_path(conn, :editable_csv, %{}))
 

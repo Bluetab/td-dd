@@ -78,6 +78,10 @@ defmodule Truedat.Search.Query do
     end
   end
 
+  def range(field, value) do
+    %{range: %{field => value}}
+  end
+
   def exists(field) when is_binary(field) do
     %{exists: %{field: field}}
   end

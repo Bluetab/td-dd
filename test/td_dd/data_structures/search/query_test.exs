@@ -3,31 +3,116 @@ defmodule TdDd.DataStructures.Search.QueryTest do
 
   alias TdDd.DataStructures.Search.Query
 
-  @permissions ["view_data_structure", "link_data_structure"]
+  @match_all %{match_all: %{}}
+  @match_none %{match_none: %{}}
+  @not_confidential %{term: %{"confidential" => false}}
 
   describe "build_filters/1" do
-    test "returns match_all query if permission scope is all" do
-      for permission <- @permissions do
-        assert Query.build_filters(%{permission => :all}) == %{match_all: %{}}
-      end
+    test "returns match_all query if view scope and confidential scope are all" do
+      assert build_view_filters(:all, :all) == @match_all
+      assert build_link_filters(:all, :all) == @match_all
     end
 
-    test "returns match_none query if permission scope is all" do
-      for permission <- @permissions do
-        assert Query.build_filters(%{permission => :none}) == %{match_none: %{}}
-      end
+    test "returns match_none query if view scope is all" do
+      assert build_view_filters(:none, :foo) == @match_none
+      assert build_link_filters(:none, :bar) == @match_none
     end
 
-    test "returns term if permission scope is a single integer" do
-      for permission <- @permissions do
-        assert Query.build_filters(%{permission => [1]}) == %{term: %{"domain_id" => 1}}
-      end
+    test "returns term query on confidential if confidential scope is none" do
+      assert build_view_filters(:all, :none) == @not_confidential
+      assert build_link_filters(:all, :none) == @not_confidential
     end
 
-    test "returns term if permission scope is a list of integers" do
-      for permission <- @permissions do
-        assert Query.build_filters(%{permission => [1, 2]}) == %{terms: %{"domain_id" => [1, 2]}}
-      end
+    test "returns filters for domain_id and not confidential" do
+      assert build_view_filters([1], :none) ==
+               [%{term: %{"domain_id" => 1}}, @not_confidential]
+
+      assert build_link_filters([1, 2], :none) ==
+               [%{terms: %{"domain_id" => [1, 2]}}, @not_confidential]
     end
+
+    test "returns filters for domain_id if confidential scope is all" do
+      assert build_view_filters([1], :all) == %{term: %{"domain_id" => 1}}
+      assert build_link_filters([1, 2], :all) == %{terms: %{"domain_id" => [1, 2]}}
+    end
+
+    test "returns bool query for domain_id or confidential domain_id" do
+      assert build_view_filters([1], [2]) ==
+               %{
+                 bool: %{
+                   should: [
+                     %{
+                       bool: %{
+                         filter: [
+                           %{term: %{"domain_id" => 1}},
+                           @not_confidential
+                         ]
+                       }
+                     },
+                     %{bool: %{filter: %{term: %{"domain_id" => 2}}}}
+                   ]
+                 }
+               }
+
+      assert build_link_filters([1, 2], [2, 3]) ==
+               %{
+                 bool: %{
+                   should: [
+                     %{
+                       bool: %{
+                         filter: [
+                           %{terms: %{"domain_id" => [1, 2]}},
+                           @not_confidential
+                         ]
+                       }
+                     },
+                     %{bool: %{filter: %{terms: %{"domain_id" => [2, 3]}}}}
+                   ]
+                 }
+               }
+    end
+  end
+
+  describe "build_query/3" do
+    test "includes a must multi_match clause for a single word" do
+      assert %{
+               bool: %{
+                 filter: @match_all,
+                 must: %{multi_match: %{query: "foo"}}
+               }
+             } = Query.build_query(@match_all, %{"query" => " foo     "}, %{})
+    end
+
+    test "includes a multi_match clause for each word in the query term" do
+      assert %{
+               bool: %{
+                 filter: @match_all,
+                 must: %{
+                   bool: %{
+                     minimum_should_match: "2<-75%",
+                     should: [
+                       %{multi_match: %{query: "foo"}},
+                       %{multi_match: %{query: "bar"}}
+                     ]
+                   }
+                 }
+               }
+             } = Query.build_query(@match_all, %{"query" => " foo   bar  "}, %{})
+    end
+
+    test "does not include a must clause for an empty search term" do
+      assert Query.build_query(@match_all, %{"query" => "  "}, %{}) ==
+               %{bool: %{filter: @match_all}}
+    end
+  end
+
+  defp build_view_filters(view_scope, confidential_scope) do
+    %{"view_data_structure" => view_scope, "manage_confidential_structures" => confidential_scope}
+    |> Query.build_filters()
+  end
+
+  defp build_link_filters(view_scope, confidential_scope) do
+    %{"link_data_structure" => view_scope, "manage_confidential_structures" => confidential_scope}
+    |> Query.build_filters()
   end
 end

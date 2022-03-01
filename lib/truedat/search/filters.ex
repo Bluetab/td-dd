@@ -44,6 +44,10 @@ defmodule Truedat.Search.Filters do
     {:filter, nested_query}
   end
 
+  defp build_filter(field, value) when field in ["updated_at", "start_date", "end_date"] do
+    {:filter, Query.range(field, value)}
+  end
+
   defp build_filter(field, values) when is_binary(field) do
     {:filter, Query.term_or_terms(field, values)}
   end
