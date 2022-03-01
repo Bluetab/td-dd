@@ -586,20 +586,17 @@ defmodule TdDqWeb.RuleControllerTest do
 
     @tag authentication: [
            user_name: "non_admin",
-           permissions: [:manage_quality_rule]
+           permissions: [
+             "manage_quality_rule",
+             "view_quality_rule",
+             "manage_quality_rule_implementations"
+           ]
          ]
-    test "user wit permissions can create implementations", %{
+    test "user with permissions can create implementations", %{
       conn: conn,
-      claims: %{user_id: user_id}
+      domain: %{id: domain_id}
     } do
-      business_concept_id = System.unique_integer([:positive])
-
-      %{id: id, domain_id: domain_id} = insert(:rule, business_concept_id: business_concept_id)
-
-      create_acl_entry(user_id, "domain", domain_id, [
-        :view_quality_rule,
-        :manage_quality_rule_implementations
-      ])
+      %{id: id} = insert(:rule, domain_id: domain_id)
 
       assert %{"user_permissions" => %{"manage_quality_rule_implementations" => true}} =
                conn
