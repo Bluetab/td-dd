@@ -5,11 +5,6 @@ defmodule TdDd.Permissions do
 
   alias TdDd.Auth.Claims
 
-  def get_domain_permissions(%Claims{jti: jti}) do
-    # FIXME: Refactor
-    TdCache.Permissions.get_acls_by_resource_type(jti, "domain")
-  end
-
   @doc """
   Check if authenticated user has a permission in any domain.
 

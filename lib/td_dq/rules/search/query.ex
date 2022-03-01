@@ -1,11 +1,11 @@
 defmodule TdDq.Rules.Search.Query do
   @moduledoc """
-  Support for building search queries.
+  Support for building rule search queries.
   """
 
-  @not_confidential %{term: %{"_confidential" => false}}
+  alias Truedat.Search.Query
 
-  import Truedat.Search.Query, only: [term_or_terms: 2]
+  @not_confidential %{term: %{"_confidential" => false}}
 
   def build_filters(%{} = permissions) do
     permissions
@@ -23,7 +23,7 @@ defmodule TdDq.Rules.Search.Query do
   defp reduce_term({"view_quality_rule", :all}, acc), do: {:cont, [%{match_all: %{}} | acc]}
 
   defp reduce_term({"view_quality_rule", domain_ids}, acc) do
-    {:cont, [term_or_terms("domain_id", domain_ids) | acc]}
+    {:cont, [domain_filter(domain_ids) | acc]}
   end
 
   defp reduce_term({"manage_confidential_business_concepts", :none}, acc),
@@ -35,7 +35,7 @@ defmodule TdDq.Rules.Search.Query do
     filter = %{
       bool: %{
         should: [
-          term_or_terms("domain_id", domain_ids),
+          domain_filter(domain_ids),
           @not_confidential
         ]
       }
@@ -50,10 +50,14 @@ defmodule TdDq.Rules.Search.Query do
   defp reduce_term({"execute_quality_rule_implementations", :all}, acc), do: {:cont, acc}
 
   defp reduce_term({"execute_quality_rule_implementations", domain_ids}, acc) do
-    {:cont, [term_or_terms("domain_id", domain_ids) | acc]}
+    {:cont, [domain_filter(domain_ids) | acc]}
   end
 
   def build_query(filters, params, aggs) do
-    Truedat.Search.Query.build_query(filters, params, aggs)
+    Query.build_query(filters, params, aggs)
+  end
+
+  defp domain_filter(domain_ids) do
+    Query.term_or_terms("domain_id", domain_ids)
   end
 end

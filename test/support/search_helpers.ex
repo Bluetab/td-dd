@@ -4,6 +4,15 @@ defmodule SearchHelpers do
   """
   import ExUnit.Assertions
 
+  alias TdCx.Jobs.Job
+  alias TdDd.DataStructures
+  alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.RelationTypes
+  alias TdDd.Grants.Grant
+  alias TdDd.Grants.GrantStructure
+  alias TdDd.Repo
+  alias TdDq.Implementations.Implementation
+
   def expect_bulk_index(url, n \\ 1) do
     ElasticsearchMock
     |> Mox.expect(:request, n, fn _, :post, expected_url, _, [] ->
@@ -45,25 +54,25 @@ defmodule SearchHelpers do
     %{"id" => id, "_source" => source}
   end
 
-  defp maybe_enrich(%TdDd.DataStructures.DataStructureVersion{id: id}) do
-    TdDd.DataStructures.enriched_structure_versions(
+  defp maybe_enrich(%DataStructureVersion{id: id}) do
+    DataStructures.enriched_structure_versions(
       ids: [id],
-      relation_type_id: TdDd.DataStructures.RelationTypes.default_id!(),
+      relation_type_id: RelationTypes.default_id!(),
       content: :searchable
     )
     |> hd()
   end
 
-  defp maybe_enrich(%TdDd.Grants.Grant{data_structure_version: data_structure_version} = grant) do
-    %TdDd.Grants.GrantStructure{grant: grant, data_structure_version: data_structure_version}
+  defp maybe_enrich(%Grant{data_structure_version: data_structure_version} = grant) do
+    %GrantStructure{grant: grant, data_structure_version: data_structure_version}
   end
 
-  defp maybe_enrich(%TdCx.Jobs.Job{} = job) do
-    TdDd.Repo.preload(job, :events)
+  defp maybe_enrich(%Job{} = job) do
+    Repo.preload(job, :events)
   end
 
-  defp maybe_enrich(%TdDq.Implementations.Implementation{} = implementation) do
-    TdDd.Repo.preload(implementation, :rule)
+  defp maybe_enrich(%Implementation{} = implementation) do
+    Repo.preload(implementation, :rule)
   end
 
   defp maybe_enrich(other), do: other

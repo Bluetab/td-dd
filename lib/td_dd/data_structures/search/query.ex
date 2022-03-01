@@ -1,5 +1,9 @@
 defmodule TdDd.DataStructures.Search.Query do
-  import Truedat.Search.Query, only: [term_or_terms: 2]
+  @moduledoc """
+  Support for building data structure search queries.
+  """
+
+  alias Truedat.Search.Query
 
   @match_all %{match_all: %{}}
   @match_none %{match_none: %{}}
@@ -41,14 +45,16 @@ defmodule TdDd.DataStructures.Search.Query do
     %{bool: %{should: [f1, f2]}}
   end
 
-  defp domain_filter(domain_ids), do: term_or_terms("domain_id", domain_ids)
+  defp domain_filter(domain_ids) do
+    Query.term_or_terms("domain_id", domain_ids)
+  end
 
   def build_query(filters, params, aggs) do
     {query, params} = Map.pop(params, "query", "")
     words = Regex.split(~r/\s/, query, trim: true)
 
     filters
-    |> Truedat.Search.Query.build_query(params, aggs)
+    |> Query.build_query(params, aggs)
     |> do_build_query(words)
   end
 

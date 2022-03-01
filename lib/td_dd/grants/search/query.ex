@@ -1,9 +1,9 @@
 defmodule TdDd.Grants.Search.Query do
   @moduledoc """
-  Support for building search queries.
+  Support for building grant search queries.
   """
 
-  import Truedat.Search.Query, only: [term_or_terms: 2]
+  alias Truedat.Search.Query
 
   def build_filters(%{"manage_grants" => manage_scope, "view_grants" => view_scope}, user_id) do
     user_filter = %{term: %{"user_id" => user_id}}
@@ -11,7 +11,7 @@ defmodule TdDd.Grants.Search.Query do
     case union(manage_scope, view_scope) do
       :none -> user_filter
       :all -> %{match_all: %{}}
-      domain_ids -> %{bool: %{should: [term_or_terms("domain_id", domain_ids), user_filter]}}
+      domain_ids -> %{bool: %{should: [domain_filter(domain_ids), user_filter]}}
     end
   end
 
@@ -24,7 +24,7 @@ defmodule TdDd.Grants.Search.Query do
   end
 
   def build_query(filters, params, aggs) do
-    Truedat.Search.Query.build_query(filters, params, aggs)
+    Query.build_query(filters, params, aggs)
   end
 
   def union(:none, scope), do: scope
@@ -32,4 +32,8 @@ defmodule TdDd.Grants.Search.Query do
   def union(:all, _), do: :all
   def union(_, :all), do: :all
   def union(ids, other_ids), do: Enum.uniq(ids ++ other_ids)
+
+  defp domain_filter(domain_ids) do
+    Query.term_or_terms("domain_id", domain_ids)
+  end
 end
