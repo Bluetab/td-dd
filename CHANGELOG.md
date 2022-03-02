@@ -5,6 +5,8 @@
 ### Changed
 
 - [TD-4567] Refactor create implementations for non admin users
+- [TD-4534] Avoid inheritance if has `with_inheritance: false`
+  param when modifying a structure domain
 
 ## [4.38.1] 2022-02-23
 
