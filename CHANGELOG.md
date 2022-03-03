@@ -5,6 +5,7 @@
 ### Changed
 
 - [TD-4567] Refactor create implementations for non admin users
+- [TD-4271] Support for linking implementations with business concepts
 
 ## [4.38.1] 2022-02-23
 
