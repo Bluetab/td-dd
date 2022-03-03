@@ -175,5 +175,41 @@ defmodule TdDqWeb.RuleResultControllerTest do
                }
              ]
     end
+
+    @tag authentication: [role: "admin"]
+    @tag fixture: "test/fixtures/rule_results/rule_results_errors_records.csv"
+    test "updates implementation cache with link after uploading rule results", %{
+      conn: conn,
+      implementation: %{id: implementation_id} = implementation,
+      rule_results_file: rule_results_file
+    } do
+      CacheHelpers.put_implementation(implementation)
+
+      %{id: concept_id} = CacheHelpers.insert_concept()
+
+      CacheHelpers.insert_link(
+        implementation_id,
+        "implementation",
+        "business_concept",
+        concept_id
+      )
+
+      {:ok, cache_implementation} = CacheHelpers.get_implementation(implementation_id)
+      refute Map.has_key?(cache_implementation, :execution_result_info)
+
+      assert conn
+             |> post(Routes.rule_result_path(conn, :create), rule_results: rule_results_file)
+             |> response(:ok)
+
+      assert {:ok,
+              %{
+                execution_result_info: %{
+                  date: "2019-08-30 00:00:00Z",
+                  errors: 4,
+                  records: 4,
+                  result_text: "quality_result.under_minimum"
+                }
+              }} = CacheHelpers.get_implementation(implementation_id)
+    end
   end
 end

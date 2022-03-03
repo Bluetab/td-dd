@@ -19,7 +19,6 @@ defmodule TdDd.Cache.ImplementationLoaderTest do
       %{
         errors: errors,
         records: records,
-        result_type: result_type,
         result: expected_result
       } =
         insert(:rule_result,
@@ -27,7 +26,6 @@ defmodule TdDd.Cache.ImplementationLoaderTest do
           date: ts,
           errors: 6,
           records: 6,
-          result_type: "deviation",
           result: 100.00
         )
 
@@ -40,13 +38,17 @@ defmodule TdDd.Cache.ImplementationLoaderTest do
                |> ImplementationLoader.cache_implementations()
                |> Enum.frequencies_by(&elem(&1, 0))
 
+      string_date = ts
+      |> DateTime.truncate(:second)
+      |> DateTime.to_string()
       assert {:ok,
               %{
-                latest_result: %{
+                execution_result_info: %{
                   errors: ^errors,
                   records: ^records,
-                  result_type: ^result_type,
-                  result: result
+                  result: result,
+                  date: ^string_date,
+                  result_text: "quality_result.over_goal"
                 }
               }} = ImplementationCache.get(id)
 

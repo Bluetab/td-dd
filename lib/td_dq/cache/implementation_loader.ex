@@ -8,8 +8,9 @@ defmodule TdDq.Cache.ImplementationLoader do
   use GenServer
 
   alias TdCache.ImplementationCache
+  alias TdDq.Events.QualityEvents
   alias TdDq.Implementations
-  alias TdDq.Rules.RuleResults
+  alias TdDq.Implementations.Implementation
 
   require Logger
 
@@ -21,6 +22,21 @@ defmodule TdDq.Cache.ImplementationLoader do
 
   def refresh(opts \\ []) do
     GenServer.cast(__MODULE__, {:refresh, opts})
+  end
+
+  @doc """
+  Updates implementation cache if it has links. Should be called using
+  `Ecto.Multi.run/5`.
+  """
+  def maybe_update_implementation_cache(_repo, %{implementation: %{id: implementation_id}}) do
+    maybe_update_implementation_cache(implementation_id)
+  end
+
+  def maybe_update_implementation_cache(implementation_id) do
+    case Implementations.get_implementation_links(%Implementation{id: implementation_id}) do
+      [] -> {:ok, nil}
+      _ -> {:ok, cache_implementations([implementation_id], force: true)}
+    end
   end
 
   ## EventStream.Consumer Callbacks
@@ -90,7 +106,13 @@ defmodule TdDq.Cache.ImplementationLoader do
 
   defp get_implementation(implementation_id) do
     implementation = Implementations.get_implementation!(implementation_id, preload: [:rule])
-    Map.put(implementation, :latest_result, RuleResults.get_latest_rule_result(implementation))
+
+    quality_event = QualityEvents.get_event_by_imp(implementation_id)
+
+    execution_result_info =
+      Implementation.get_execution_result_info(implementation, quality_event)
+
+    Map.put(implementation, :execution_result_info, execution_result_info)
   end
 
   defp do_refresh(opts) do
