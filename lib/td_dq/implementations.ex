@@ -8,6 +8,8 @@ defmodule TdDq.Implementations do
 
   alias Ecto.Changeset
   alias Ecto.Multi
+  alias TdCache.ImplementationCache
+  alias TdCache.LinkCache
   alias TdCx.Sources
   alias TdDd.Cache.StructureEntry
   alias TdDd.DataStructures
@@ -112,6 +114,7 @@ defmodule TdDq.Implementations do
     |> Multi.run(:can, fn _, _ -> multi_can(can?(claims, update(changeset))) end)
     |> Multi.update(:implementation, fn _ -> do_update_implementation(changeset) end)
     |> Multi.run(:audit, Audit, :implementation_updated, [changeset, user_id])
+    |> Multi.run(:cache, &maybe_update_cache/2)
     |> Repo.transaction()
     |> on_upsert()
   end
@@ -124,6 +127,13 @@ defmodule TdDq.Implementations do
   end
 
   defp do_update_implementation(changeset), do: changeset
+
+  defp maybe_update_cache(_repo, %{implementation: implementation}) do
+    case get_implementation_links(implementation) do
+      [] -> {:ok, nil}
+      _ -> ImplementationCache.put(implementation)
+    end
+  end
 
   @spec deprecate_implementations ::
           :ok | {:ok, map} | {:error, Multi.name(), any, %{required(Multi.name()) => any}}
@@ -535,5 +545,21 @@ defmodule TdDq.Implementations do
     end
   end
 
+  defp enrich(%Implementation{} = implementation, :links) do
+    Map.put(implementation, :links, get_implementation_links(implementation, "business_concept"))
+  end
+
   defp enrich(target, _), do: target
+
+  def get_implementation_links(%Implementation{id: id}) do
+    case LinkCache.list("implementation", id) do
+      {:ok, links} -> links
+    end
+  end
+
+  def get_implementation_links(%Implementation{id: id}, target_type) do
+    case LinkCache.list("implementation", id, target_type) do
+      {:ok, links} -> links
+    end
+  end
 end

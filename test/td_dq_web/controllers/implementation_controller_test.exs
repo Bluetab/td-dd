@@ -643,6 +643,49 @@ defmodule TdDqWeb.ImplementationControllerTest do
                }
              } = data
     end
+
+    @tag authentication: [role: "admin"]
+    test "updating implementation will update the cache if implementation is linked", %{
+      conn: conn
+    } do
+      %{id: id} = implementation = insert(:implementation)
+      update_attrs = %{soft_delete: true}
+
+      CacheHelpers.put_implementation(implementation)
+      %{id: concept_id} = CacheHelpers.insert_concept()
+      CacheHelpers.insert_link(id, "implementation", "business_concept", concept_id)
+
+      assert {:ok, %{id: ^id, deleted_at: ""}} = CacheHelpers.get_implementation(id)
+
+      assert conn
+             |> put(Routes.implementation_path(conn, :update, implementation),
+               rule_implementation: update_attrs
+             )
+             |> json_response(:ok)
+
+      assert {:ok, %{id: ^id, deleted_at: deleted_at}} = CacheHelpers.get_implementation(id)
+      assert deleted_at != ""
+    end
+
+    @tag authentication: [role: "admin"]
+    test "updating implementation will not update the cache if implementation is not linked", %{
+      conn: conn
+    } do
+      %{id: id} = implementation = insert(:implementation)
+      update_attrs = %{soft_delete: true}
+
+      CacheHelpers.put_implementation(implementation)
+      assert {:ok, %{id: ^id, deleted_at: ""}} = CacheHelpers.get_implementation(id)
+
+      assert conn
+             |> put(Routes.implementation_path(conn, :update, implementation),
+               rule_implementation: update_attrs
+             )
+             |> json_response(:ok)
+
+      assert {:ok, %{id: ^id, deleted_at: deleted_at}} = CacheHelpers.get_implementation(id)
+      assert deleted_at == ""
+    end
   end
 
   describe "delete implementation" do

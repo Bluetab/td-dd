@@ -116,15 +116,30 @@ defmodule TdDqWeb.ImplementationController do
   def show(conn, %{"id" => id}) do
     implementation =
       id
-      |> Implementations.get_implementation!(enrich: :source, preload: [:rule, :results])
+      |> Implementations.get_implementation!(
+        enrich: [:source, :links],
+        preload: [:rule, :results]
+      )
       |> add_last_rule_result()
       |> add_quality_event()
       |> Implementations.enrich_implementation_structures()
 
     claims = conn.assigns[:current_resource]
 
+    actions =
+      %{}
+      |> link_concept_actions(claims, implementation)
+
     with {:can, true} <- {:can, can?(claims, show(implementation))} do
-      render(conn, "show.json", implementation: implementation)
+      render(conn, "show.json", implementation: implementation, actions: actions)
+    end
+  end
+
+  defp link_concept_actions(actions, claims, implementation) do
+    if can?(claims, link_concept(implementation)) do
+      Map.put(actions, :link_concept, %{method: "POST"})
+    else
+      actions
     end
   end
 

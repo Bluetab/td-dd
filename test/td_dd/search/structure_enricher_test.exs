@@ -51,7 +51,7 @@ defmodule TdDd.Search.StructureEnricherTest do
     test "enriches the linked concepts flag" do
       %{id: id} = structure = insert(:data_structure)
       assert %{linked_concepts: false} = StructureEnricher.enrich(structure)
-      CacheHelpers.insert_link(id)
+      CacheHelpers.insert_link(id, "data_structure", "business_concept")
       assert %{linked_concepts: true} = StructureEnricher.enrich(structure)
     end
 

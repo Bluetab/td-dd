@@ -244,20 +244,20 @@ defmodule TdDqWeb.RuleControllerTest do
       assert %{
                "data" => [
                  %{
-                   "id" => ^id1,
                    "domain" => %{
                      "id" => ^domain_id,
                      "name" => ^name,
                      "external_id" => ^external_id
-                   }
+                   },
+                   "id" => ^id1
                  },
                  %{
-                   "id" => ^id2,
                    "domain" => %{
                      "id" => ^domain_id,
                      "name" => ^name,
                      "external_id" => ^external_id
-                   }
+                   },
+                   "id" => ^id2
                  }
                ]
              } =

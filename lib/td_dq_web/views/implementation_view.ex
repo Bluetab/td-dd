@@ -11,6 +11,13 @@ defmodule TdDqWeb.ImplementationView do
     %{data: render_many(implementations, __MODULE__, "implementation.json")}
   end
 
+  def render("show.json", %{implementation: implementation, actions: actions}) do
+    %{
+      data: render_one(implementation, __MODULE__, "implementation.json"),
+      _actions: actions
+    }
+  end
+
   def render("show.json", %{implementation: implementation}) do
     %{data: render_one(implementation, __MODULE__, "implementation.json")}
   end
@@ -21,23 +28,24 @@ defmodule TdDqWeb.ImplementationView do
     implementation
     |> Map.take([
       :current_business_concept_version,
+      :deleted_at,
+      :df_content,
+      :df_name,
+      :domain_id,
+      :event_inserted_at,
+      :event_type,
+      :executable,
+      :execution_result_info,
+      :goal,
       :id,
-      :rule_id,
       :implementation_key,
       :implementation_type,
-      :deleted_at,
-      :execution_result_info,
-      :structure_aliases,
-      :domain_id,
-      :df_name,
-      :df_content,
-      :executable,
-      :event_type,
-      :event_inserted_at,
-      :goal,
+      :inserted_at,
+      :links,
       :minimum,
       :result_type,
-      :inserted_at
+      :rule_id,
+      :structure_aliases
     ])
     |> Map.put(
       :raw_content,
@@ -53,23 +61,24 @@ defmodule TdDqWeb.ImplementationView do
     implementation
     |> Map.take([
       :current_business_concept_version,
+      :deleted_at,
+      :df_content,
+      :df_name,
+      :domain_id,
+      :event_inserted_at,
+      :event_type,
+      :executable,
+      :execution_result_info,
+      :goal,
       :id,
-      :rule_id,
       :implementation_key,
       :implementation_type,
-      :deleted_at,
-      :execution_result_info,
-      :structure_aliases,
-      :domain_id,
-      :df_name,
-      :df_content,
-      :executable,
-      :event_type,
-      :event_inserted_at,
-      :goal,
+      :inserted_at,
+      :links,
       :minimum,
       :result_type,
-      :inserted_at
+      :rule_id,
+      :structure_aliases
     ])
     |> Map.put(:dataset, render_many(implementation.dataset, DatasetView, "dataset_row.json"))
     |> Map.put(
