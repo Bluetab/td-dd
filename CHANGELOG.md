@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-4378] Include the structure description in cache
+
 ### Changed
 
 - [TD-4567] Refactor create implementations for non admin users
