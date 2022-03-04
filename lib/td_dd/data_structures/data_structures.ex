@@ -483,15 +483,20 @@ defmodule TdDd.DataStructures do
     |> Multi.update(:data_structure, changeset)
     |> Multi.run(:audit, Audit, :data_structure_updated, [changeset, user_id])
     |> Multi.run(:updated_children_count, fn _repo, %{data_structure: updated_data_structure} ->
-      maybe_update_children_domain_ids(updated_data_structure, data_structure)
+      maybe_update_children_domain_ids(updated_data_structure, data_structure, params)
     end)
     |> Repo.transaction()
     |> on_update()
   end
 
+  defp maybe_update_children_domain_ids(_updated, _new, %{"with_inheritance" => false}) do
+    {:ok, 0}
+  end
+
   defp maybe_update_children_domain_ids(
          %{domain_id: new_domain_id, external_id: parent_external_id},
-         %{domain_id: old_domain_id}
+         %{domain_id: old_domain_id},
+         _params
        )
        when old_domain_id != new_domain_id do
     children_ids = Ancestry.get_descendent_ids(parent_external_id)
@@ -507,7 +512,7 @@ defmodule TdDd.DataStructures do
     {:ok, count}
   end
 
-  defp maybe_update_children_domain_ids(_updated, _new) do
+  defp maybe_update_children_domain_ids(_updated, _new, _params) do
     {:ok, 0}
   end
 
