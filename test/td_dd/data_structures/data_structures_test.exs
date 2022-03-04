@@ -74,7 +74,7 @@ defmodule TdDd.DataStructuresTest do
                Stream.range(:redix, @stream, event_id, event_id, transform: :range)
     end
 
-    test "updates children domain id when it changes", %{
+    test "domain update also updates children's one", %{
       data_structure: parent,
       data_structure_version: %{id: parent_version_id},
       claims: claims
@@ -122,7 +122,7 @@ defmodule TdDd.DataStructuresTest do
       assert %DataStructure{domain_id: ^new_domain_id} = Repo.get!(DataStructure, child2_id)
     end
 
-    test "does not updates children domain id when it changes if has `without_inheritance: true` sparam",
+    test "domain update `without_inheritance: true` param does not update children domain",
          %{
            data_structure: parent,
            data_structure_version: %{id: parent_version_id},
