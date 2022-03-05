@@ -74,7 +74,7 @@ defmodule TdDd.DataStructuresTest do
                Stream.range(:redix, @stream, event_id, event_id, transform: :range)
     end
 
-    test "updates children domain id when it changes", %{
+    test "domain update also updates children's one", %{
       data_structure: parent,
       data_structure_version: %{id: parent_version_id},
       claims: claims
@@ -112,10 +112,64 @@ defmodule TdDd.DataStructuresTest do
                 data_structure: %DataStructure{domain_id: ^new_domain_id},
                 updated_children_count: 3
               }} =
-               DataStructures.update_data_structure(parent, %{domain_id: new_domain_id}, claims)
+               DataStructures.update_data_structure(
+                 parent,
+                 %{"domain_id" => new_domain_id},
+                 claims
+               )
 
       assert %DataStructure{domain_id: ^new_domain_id} = Repo.get!(DataStructure, child1_id)
       assert %DataStructure{domain_id: ^new_domain_id} = Repo.get!(DataStructure, child2_id)
+    end
+
+    test "domain update `without_inheritance: true` param does not update children domain",
+         %{
+           data_structure: parent,
+           data_structure_version: %{id: parent_version_id},
+           claims: claims,
+           domain: %{id: previous_domain_id}
+         } do
+      %{id: child1_id, external_id: child1_external_id} =
+        insert(:data_structure, id: 51, external_id: "CHILD1", domain_id: previous_domain_id)
+
+      %{id: child2_id, external_id: child2_external_id} =
+        insert(:data_structure, id: 52, external_id: "CHILD2", domain_id: previous_domain_id)
+
+      %{id: child1_version_id} =
+        insert(:data_structure_version, data_structure_id: child1_id, name: child1_external_id)
+
+      %{id: child2_version_id} =
+        insert(:data_structure_version, data_structure_id: child2_id, name: child2_external_id)
+
+      relation_type_id = RelationTypes.default_id!()
+
+      insert(:data_structure_relation,
+        parent_id: parent_version_id,
+        child_id: child1_version_id,
+        relation_type_id: relation_type_id
+      )
+
+      insert(:data_structure_relation,
+        parent_id: parent_version_id,
+        child_id: child2_version_id,
+        relation_type_id: relation_type_id
+      )
+
+      %{id: new_domain_id} = CacheHelpers.insert_domain()
+
+      assert {:ok,
+              %{
+                data_structure: %DataStructure{domain_id: ^new_domain_id},
+                updated_children_count: 0
+              }} =
+               DataStructures.update_data_structure(
+                 parent,
+                 %{"domain_id" => new_domain_id, "with_inheritance" => false},
+                 claims
+               )
+
+      assert %DataStructure{domain_id: ^previous_domain_id} = Repo.get!(DataStructure, child1_id)
+      assert %DataStructure{domain_id: ^previous_domain_id} = Repo.get!(DataStructure, child2_id)
     end
   end
 
