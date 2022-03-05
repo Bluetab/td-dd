@@ -53,11 +53,13 @@ defmodule TdDq.Rules.Search.Query do
     {:cont, [domain_filter(domain_ids) | acc]}
   end
 
-  def build_query(filters, params, aggs) do
-    Query.build_query(filters, params, aggs)
+  def build_query(%{} = permissions, params, aggs) do
+    permissions
+    |> build_filters()
+    |> Query.build_query(params, aggs)
   end
 
   defp domain_filter(domain_ids) do
-    Query.term_or_terms("domain_id", domain_ids)
+    Query.term_or_terms("domain_ids", domain_ids)
   end
 end

@@ -54,7 +54,6 @@ defmodule TdDd.DataStructures.Search do
   defp build_query(%Claims{} = claims, permission, %{} = params, %{} = aggs) do
     claims
     |> search_permissions(permission)
-    |> Query.build_filters()
     |> Query.build_query(params, aggs)
   end
 

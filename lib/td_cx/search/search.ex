@@ -10,7 +10,7 @@ defmodule TdCx.Search do
   @index "jobs"
 
   def search(query) do
-     response = Elasticsearch.post(Cluster, "/#{@index}/_search", query)
+    response = Elasticsearch.post(Cluster, "/#{@index}/_search", query)
 
     case response do
       {:ok, %{"aggregations" => aggregations, "hits" => %{"hits" => results, "total" => total}}} ->

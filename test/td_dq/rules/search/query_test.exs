@@ -17,13 +17,13 @@ defmodule TdDq.Rules.Search.QueryTest do
       assert Query.build_filters(permissions) == [%{match_all: %{}}]
     end
 
-    test "includes a term clause on the domain_id field" do
+    test "includes a terms clause on the domain_ids field" do
       permissions = %{
         "manage_confidential_business_concepts" => :all,
         "view_quality_rule" => [1, 2]
       }
 
-      assert Query.build_filters(permissions) == [%{terms: %{"domain_id" => [1, 2]}}]
+      assert Query.build_filters(permissions) == [%{terms: %{"domain_ids" => [1, 2]}}]
     end
 
     test "includes a term clause on the confidential field" do
@@ -32,12 +32,12 @@ defmodule TdDq.Rules.Search.QueryTest do
       }
 
       assert Query.build_filters(permissions) == [
-               %{terms: %{"domain_id" => [1, 2]}},
+               %{terms: %{"domain_ids" => [1, 2]}},
                %{term: %{"_confidential" => false}}
              ]
     end
 
-    test "includes a boolean should clause on confidential or domain_id" do
+    test "includes a boolean should clause on confidential or domain_ids" do
       permissions = %{
         "manage_confidential_business_concepts" => [4, 5],
         "view_quality_rule" => :all
@@ -48,7 +48,7 @@ defmodule TdDq.Rules.Search.QueryTest do
                %{
                  bool: %{
                    should: [
-                     %{terms: %{"domain_id" => [4, 5]}},
+                     %{terms: %{"domain_ids" => [4, 5]}},
                      %{term: %{"_confidential" => false}}
                    ]
                  }
@@ -64,8 +64,8 @@ defmodule TdDq.Rules.Search.QueryTest do
       }
 
       assert Query.build_filters(permissions) == [
-               %{terms: %{"domain_id" => [1, 2]}},
-               %{term: %{"domain_id" => 3}}
+               %{terms: %{"domain_ids" => [1, 2]}},
+               %{term: %{"domain_ids" => 3}}
              ]
     end
   end

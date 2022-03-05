@@ -23,7 +23,13 @@ defmodule TdDd.Grants.Search.Query do
     |> build_filters(user_id)
   end
 
-  def build_query(filters, params, aggs) do
+  def build_query(%{} = permissions, user_id, params, aggs) do
+    permissions
+    |> build_filters(user_id)
+    |> do_build_query(params, aggs)
+  end
+
+  def do_build_query(filters, params, aggs) do
     Query.build_query(filters, params, aggs)
   end
 
@@ -34,6 +40,6 @@ defmodule TdDd.Grants.Search.Query do
   def union(ids, other_ids), do: Enum.uniq(ids ++ other_ids)
 
   defp domain_filter(domain_ids) do
-    Query.term_or_terms("domain_id", domain_ids)
+    Query.term_or_terms("data_structure_version.domain_id", domain_ids)
   end
 end

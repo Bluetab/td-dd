@@ -169,8 +169,7 @@ defmodule TdCxWeb.SourceControllerTest do
 
     @tag authentication: [role: "admin"]
     test "renders not found for invalid external_id", %{conn: conn} do
-      conn =
-        get(conn, Routes.source_path(conn, :show, "invalid_external_id"))
+      conn = get(conn, Routes.source_path(conn, :show, "invalid_external_id"))
 
       assert json_response(conn, 404)["errors"] != %{}
     end
@@ -244,17 +243,18 @@ defmodule TdCxWeb.SourceControllerTest do
 
   describe "update only one field" do
     @tag authentication: [role: "admin"]
-    test "renders source when data is valid", %{conn: conn } do
+    test "renders source when data is valid", %{conn: conn} do
       create_attrs = %{
         "config" => %{
           "a" => "1",
           "b" => "2",
-          "c" => "3",
+          "c" => "3"
         },
         "external_id" => "some external_id",
         "type" => "multiple_fields",
         "active" => true
       }
+
       {:ok, %Source{external_id: external_id}} = Sources.create_source(create_attrs)
       source_config = %{"b" => "foo"}
 

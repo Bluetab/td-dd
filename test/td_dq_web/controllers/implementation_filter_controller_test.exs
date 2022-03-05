@@ -41,14 +41,14 @@ defmodule TdDqWeb.ImplementationFilterControllerTest do
     end
 
     @tag authentication: [role: "user", permissions: ["view_quality_rule"]]
-    test "user with permissions filters by domain_id and not confidential", %{conn: conn} do
+    test "user with permissions filters by domain_ids and not confidential", %{conn: conn} do
       ElasticsearchMock
       |> expect(:request, fn
         _, :post, "/implementations/_search", %{query: query, size: 0}, [] ->
           assert %{
                    bool: %{
                      filter: [
-                       %{term: %{"domain_id" => _}},
+                       %{term: %{"domain_ids" => _}},
                        %{term: %{"_confidential" => false}}
                      ]
                    }
@@ -82,11 +82,11 @@ defmodule TdDqWeb.ImplementationFilterControllerTest do
           assert %{
                    bool: %{
                      filter: [
-                       %{terms: %{"domain_id" => [_, _]}},
+                       %{terms: %{"domain_ids" => [_, _]}},
                        %{
                          bool: %{
                            should: [
-                             %{term: %{"domain_id" => ^id2}},
+                             %{term: %{"domain_ids" => ^id2}},
                              %{term: %{"_confidential" => false}}
                            ]
                          }

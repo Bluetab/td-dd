@@ -30,14 +30,14 @@ defmodule TdDq.Rules.SearchTest do
     end
 
     @tag authentication: [role: "user", permissions: ["view_quality_rule"]]
-    test "filters by domain_id and not confidential", %{claims: claims} do
+    test "filters by domain_ids and not confidential", %{claims: claims} do
       ElasticsearchMock
       |> expect(:request, fn
         _, :post, "/rules/_search", %{aggs: _, query: query, size: 0}, [] ->
           assert %{
                    bool: %{
                      filter: [
-                       %{term: %{"domain_id" => _}},
+                       %{term: %{"domain_ids" => _}},
                        %{term: %{"_confidential" => false}}
                      ]
                    }
@@ -53,18 +53,18 @@ defmodule TdDq.Rules.SearchTest do
            role: "user",
            permissions: ["view_quality_rule", "manage_confidential_business_concepts"]
          ]
-    test "filters by domain_id or confidential", %{claims: claims} do
+    test "filters by domain_ids or confidential", %{claims: claims} do
       ElasticsearchMock
       |> expect(:request, fn
         _, :post, "/rules/_search", %{aggs: _, query: query, size: 0}, [] ->
           assert %{
                    bool: %{
                      filter: [
-                       %{term: %{"domain_id" => _}},
+                       %{term: %{"domain_ids" => _}},
                        %{
                          bool: %{
                            should: [
-                             %{term: %{"domain_id" => _}},
+                             %{term: %{"domain_ids" => _}},
                              %{term: %{"_confidential" => false}}
                            ]
                          }
@@ -97,7 +97,7 @@ defmodule TdDq.Rules.SearchTest do
           assert %{
                    bool: %{
                      filter: [
-                       %{terms: %{"domain_id" => [_, _]}},
+                       %{terms: %{"domain_ids" => [_, _]}},
                        %{term: %{"_confidential" => false}}
                      ]
                    }
@@ -110,9 +110,9 @@ defmodule TdDq.Rules.SearchTest do
           assert %{
                    bool: %{
                      filter: [
-                       %{terms: %{"domain_id" => [_, _]}},
+                       %{terms: %{"domain_ids" => [_, _]}},
                        %{term: %{"_confidential" => false}},
-                       %{term: %{"domain_id" => ^other_domain_id}}
+                       %{term: %{"domain_ids" => ^other_domain_id}}
                      ]
                    }
                  } = query
@@ -171,14 +171,14 @@ defmodule TdDq.Rules.SearchTest do
     end
 
     @tag authentication: [role: "user", permissions: ["view_quality_rule"]]
-    test "filters by domain_id and not confidential", %{claims: claims, rule: rule} do
+    test "filters by domain_ids and not confidential", %{claims: claims, rule: rule} do
       ElasticsearchMock
       |> expect(:request, fn
         _, :post, "/rules/_search", %{from: 0, size: 50, query: query}, [] ->
           assert %{
                    bool: %{
                      filter: [
-                       %{term: %{"domain_id" => _}},
+                       %{term: %{"domain_ids" => _}},
                        %{term: %{"_confidential" => false}}
                      ]
                    }
@@ -194,18 +194,18 @@ defmodule TdDq.Rules.SearchTest do
            role: "user",
            permissions: ["view_quality_rule", "manage_confidential_business_concepts"]
          ]
-    test "filters by domain_id or confidential", %{claims: claims, rule: rule} do
+    test "filters by domain_ids or confidential", %{claims: claims, rule: rule} do
       ElasticsearchMock
       |> expect(:request, fn
         _, :post, "/rules/_search", %{query: query}, [] ->
           assert %{
                    bool: %{
                      filter: [
-                       %{term: %{"domain_id" => _}},
+                       %{term: %{"domain_ids" => _}},
                        %{
                          bool: %{
                            should: [
-                             %{term: %{"domain_id" => _}},
+                             %{term: %{"domain_ids" => _}},
                              %{term: %{"_confidential" => false}}
                            ]
                          }
@@ -255,7 +255,7 @@ defmodule TdDq.Rules.SearchTest do
     end
 
     @tag authentication: [role: "user", permissions: ["view_quality_rule"]]
-    test "filters by domain_id and not confidential", %{
+    test "filters by domain_ids and not confidential", %{
       claims: claims,
       implementation: implementation
     } do
@@ -265,7 +265,7 @@ defmodule TdDq.Rules.SearchTest do
           assert %{
                    bool: %{
                      filter: [
-                       %{term: %{"domain_id" => _}},
+                       %{term: %{"domain_ids" => _}},
                        %{term: %{"_confidential" => false}}
                      ]
                    }
@@ -281,18 +281,21 @@ defmodule TdDq.Rules.SearchTest do
            role: "user",
            permissions: ["view_quality_rule", "manage_confidential_business_concepts"]
          ]
-    test "filters by domain_id or confidential", %{claims: claims, implementation: implementation} do
+    test "filters by domain_ids or confidential", %{
+      claims: claims,
+      implementation: implementation
+    } do
       ElasticsearchMock
       |> expect(:request, fn
         _, :post, "/implementations/_search", %{query: query}, [] ->
           assert %{
                    bool: %{
                      filter: [
-                       %{term: %{"domain_id" => _}},
+                       %{term: %{"domain_ids" => _}},
                        %{
                          bool: %{
                            should: [
-                             %{term: %{"domain_id" => _}},
+                             %{term: %{"domain_ids" => _}},
                              %{term: %{"_confidential" => false}}
                            ]
                          }
@@ -326,9 +329,9 @@ defmodule TdDq.Rules.SearchTest do
           assert %{
                    bool: %{
                      filter: [
-                       %{terms: %{"domain_id" => [_, _]}},
+                       %{terms: %{"domain_ids" => [_, _]}},
                        %{term: %{"_confidential" => false}},
-                       %{term: %{"domain_id" => ^other_domain_id}}
+                       %{term: %{"domain_ids" => ^other_domain_id}}
                      ]
                    }
                  } = query

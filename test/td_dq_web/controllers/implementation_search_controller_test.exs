@@ -79,7 +79,7 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
         assert %{
                  bool: %{
                    filter: [
-                     %{term: %{"domain_id" => _}},
+                     %{term: %{"domain_ids" => _}},
                      %{term: %{"_confidential" => false}}
                    ],
                    must_not: %{

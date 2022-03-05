@@ -41,7 +41,7 @@ defmodule TdDqWeb.RuleFilterControllerTest do
           assert %{
                    bool: %{
                      filter: [
-                       %{term: %{"domain_id" => _}},
+                       %{term: %{"domain_ids" => _}},
                        %{term: %{"_confidential" => false}}
                      ]
                    }
@@ -57,7 +57,7 @@ defmodule TdDqWeb.RuleFilterControllerTest do
     end
 
     @tag authentication: [role: "user"]
-    test "user with permissions filters by domain_id and confidential", %{
+    test "user with permissions filters by domain_ids and confidential", %{
       conn: conn,
       claims: claims
     } do
@@ -75,11 +75,11 @@ defmodule TdDqWeb.RuleFilterControllerTest do
           assert %{
                    bool: %{
                      filter: [
-                       %{terms: %{"domain_id" => [_, _]}},
+                       %{terms: %{"domain_ids" => [_, _]}},
                        %{
                          bool: %{
                            should: [
-                             %{term: %{"domain_id" => ^id2}},
+                             %{term: %{"domain_ids" => ^id2}},
                              %{term: %{"_confidential" => false}}
                            ]
                          }

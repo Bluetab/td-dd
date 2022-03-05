@@ -3,6 +3,7 @@ defmodule TdDd.DataStructures.Search.QueryTest do
 
   alias TdDd.DataStructures.Search.Query
 
+  @all_permissions %{"view_data_structure" => :all, "manage_confidential_structures" => :all}
   @match_all %{match_all: %{}}
   @match_none %{match_none: %{}}
   @not_confidential %{term: %{"confidential" => false}}
@@ -80,7 +81,7 @@ defmodule TdDd.DataStructures.Search.QueryTest do
                  filter: @match_all,
                  must: %{multi_match: %{query: "foo"}}
                }
-             } = Query.build_query(@match_all, %{"query" => " foo     "}, %{})
+             } = Query.build_query(@all_permissions, %{"query" => " foo     "}, %{})
     end
 
     test "includes a multi_match clause for each word in the query term" do
@@ -97,11 +98,11 @@ defmodule TdDd.DataStructures.Search.QueryTest do
                    }
                  }
                }
-             } = Query.build_query(@match_all, %{"query" => " foo   bar  "}, %{})
+             } = Query.build_query(@all_permissions, %{"query" => " foo   bar  "}, %{})
     end
 
     test "does not include a must clause for an empty search term" do
-      assert Query.build_query(@match_all, %{"query" => "  "}, %{}) ==
+      assert Query.build_query(@all_permissions, %{"query" => "  "}, %{}) ==
                %{bool: %{filter: @match_all}}
     end
   end

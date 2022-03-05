@@ -35,8 +35,7 @@ defmodule TdDd.Grants.Search do
     query =
       claims
       |> search_permissions()
-      |> Query.build_filters(user_id)
-      |> Query.build_query(params, @aggs)
+      |> Query.build_query(user_id, params, @aggs)
 
     search = %{query: query, aggs: @aggs, size: 0}
 
@@ -62,16 +61,15 @@ defmodule TdDd.Grants.Search do
     query =
       claims
       |> search_permissions()
-      |> Query.build_filters(user_id)
-      |> Query.build_query(params, @aggs)
+      |> Query.build_query(user_id, params, @aggs)
 
-      %{
-        from: page * size,
-        size: size,
-        query: query,
-        sort: sort
-      }
-      |> do_search(params)
+    %{
+      from: page * size,
+      size: size,
+      query: query,
+      sort: sort
+    }
+    |> do_search(params)
   end
 
   def search_by_user(params, %{user_id: user_id} = claims, page \\ 0, size \\ 50) do

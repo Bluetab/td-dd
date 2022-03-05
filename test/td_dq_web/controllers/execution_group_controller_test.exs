@@ -98,7 +98,7 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
                    bool: %{
                      filter: [
                        %{terms: %{"id" => [_, _]}},
-                       %{term: %{"domain_id" => _}},
+                       %{term: %{"domain_ids" => _}},
                        %{term: %{"_confidential" => false}}
                      ],
                      must_not: _deleted_at

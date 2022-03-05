@@ -820,7 +820,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
                    }
                  }
 
-          assert sort == ["_score", "name.raw"]
+          assert sort == ["_score", "implementation_key.raw"]
 
           SearchHelpers.hits_response([previous_implementation | new_implementations])
       end)

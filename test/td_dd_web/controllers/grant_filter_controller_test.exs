@@ -53,7 +53,10 @@ defmodule TdDdWeb.GrantFilterControllerTest do
                    bool: %{
                      filter: %{
                        bool: %{
-                         should: [%{term: %{"domain_id" => _}}, %{term: %{"user_id" => ^user_id}}]
+                         should: [
+                           %{term: %{"data_structure_version.domain_id" => _}},
+                           %{term: %{"user_id" => ^user_id}}
+                         ]
                        }
                      },
                      must_not: _deleted_at

@@ -54,7 +54,7 @@ defmodule TdDqWeb.RuleSearchControllerTest do
       ElasticsearchMock
       |> expect(:request, fn
         _, :post, "/rules/_search", %{query: query, size: 20}, [] ->
-          assert %{bool: %{filter: [%{term: %{"domain_id" => _}}, _not_confidential]}} = query
+          assert %{bool: %{filter: [%{term: %{"domain_ids" => _}}, _not_confidential]}} = query
           SearchHelpers.hits_response([rule])
       end)
 

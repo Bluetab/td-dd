@@ -103,17 +103,18 @@ defmodule TdDq.Search do
     |> Enum.into(%{}, &filter_values/1)
   end
 
+  # TODO: Avoid repeated code... most of this is also in TdDd.Search
   defp filter_values({"taxonomy", %{"buckets" => buckets}}) do
     domains =
       buckets
-      |> Enum.map(& &1["key"])
-      |> Enum.map(&TaxonomyCache.get_domain/1)
+      |> Enum.map(&bucket_key/1)
+      |> Enum.map(&get_domain/1)
 
     {"taxonomy", domains}
   end
 
   defp filter_values({name, %{"buckets" => buckets}}) do
-    {name, Enum.map(buckets, & &1["key"])}
+    {name, Enum.map(buckets, &bucket_key/1)}
   end
 
   defp filter_values({name, %{"distinct_search" => distinct_search}}) do
@@ -121,4 +122,10 @@ defmodule TdDq.Search do
   end
 
   defp filter_values({name, %{"doc_count" => 0}}), do: {name, []}
+
+  defp bucket_key(%{"key_as_string" => key}) when key in ["true", "false"], do: key
+  defp bucket_key(%{"key" => key}), do: key
+
+  defp get_domain(id) when is_integer(id), do: TaxonomyCache.get_domain(id)
+  defp get_domain(_), do: nil
 end

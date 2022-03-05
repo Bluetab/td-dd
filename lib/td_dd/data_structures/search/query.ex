@@ -49,7 +49,13 @@ defmodule TdDd.DataStructures.Search.Query do
     Query.term_or_terms("domain_id", domain_ids)
   end
 
-  def build_query(filters, params, aggs) do
+  def build_query(permissions, params, aggs) do
+    permissions
+    |> build_filters()
+    |> do_build_query(params, aggs)
+  end
+
+  defp do_build_query(filters, params, aggs) do
     {query, params} = Map.pop(params, "query", "")
     words = Regex.split(~r/\s/, query, trim: true)
 

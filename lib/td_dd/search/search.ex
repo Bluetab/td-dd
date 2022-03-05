@@ -95,7 +95,7 @@ defmodule TdDd.Search do
     domains =
       buckets
       |> Enum.map(&bucket_key/1)
-      |> Enum.map(&TaxonomyCache.get_domain/1)
+      |> Enum.map(&get_domain/1)
 
     {"taxonomy", domains}
   end
@@ -112,4 +112,7 @@ defmodule TdDd.Search do
 
   defp bucket_key(%{"key_as_string" => key}) when key in ["true", "false"], do: key
   defp bucket_key(%{"key" => key}), do: key
+
+  defp get_domain(id) when is_integer(id), do: TaxonomyCache.get_domain(id)
+  defp get_domain(_), do: nil
 end

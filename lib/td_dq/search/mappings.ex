@@ -22,7 +22,7 @@ defmodule TdDq.Search.Mappings do
           external_id: %{type: "text", fields: @raw}
         }
       },
-      domain_ids: %{type: "long", null_value: -1},
+      domain_ids: %{type: "long"},
       domain_parents: %{
         type: "nested",
         properties: %{
@@ -75,7 +75,7 @@ defmodule TdDq.Search.Mappings do
       id: %{type: "long"},
       business_concept_id: %{type: "text"},
       rule_id: %{type: "long"},
-      domain_ids: %{type: "long", null_value: -1},
+      domain_ids: %{type: "long"},
       domain_parents: %{
         type: "nested",
         properties: %{
