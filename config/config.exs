@@ -115,26 +115,29 @@ config :td_cache, :event_stream,
     [group: "dq", key: "template:events", consumer: TdDq.Search.IndexWorker]
   ]
 
-config :td_dd, :cache_cleaner,
-  clean_on_startup: true,
-  patterns: [
-    "TdDd.DataStructures.Migrations:TD-2774",
-    "TdDd.DataStructures.Migrations:td-2979",
-    "TdDd.Structures.Migrations:TD-3066",
-    "TdDq.RuleImplementations.Migrations:cache_structures",
-    "data_fields:external_ids",
-    "data_structure:keys:keep",
-    "implementation:*",
-    "rule_result:*",
-    "source:*",
-    "sources:ids_external_ids",
-    "structure_type:*",
-    "structure_types:*",
-    "structures:external_ids:*"
-  ]
-
 config :td_dd, TdDd.Scheduler,
   jobs: [
+    cache_cleaner: [
+      schedule: "@reboot",
+      task:
+        {TdCache.CacheCleaner, :clean,
+         [
+           "TdDd.DataStructures.Migrations:TD-2774",
+           "TdDd.DataStructures.Migrations:td-2979",
+           "TdDd.Structures.Migrations:TD-3066",
+           "TdDq.RuleImplementations.Migrations:cache_structures",
+           "data_fields:external_ids",
+           "data_structure:keys:keep",
+           "implementation:*",
+           "rule_result:*",
+           "source:*",
+           "sources:ids_external_ids",
+           "structure_type:*",
+           "structure_types:*",
+           "structures:external_ids:*"
+         ]},
+      run_strategy: Quantum.RunStrategy.Local
+    ],
     cache_refresher: [
       schedule: "@hourly",
       task: {TdDd.Cache.StructureLoader, :refresh, []},

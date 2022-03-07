@@ -53,7 +53,6 @@ defmodule TdDd.Application do
       TdDd.Lineage.Import,
       TdDd.Lineage.GraphData,
       TdDd.Lineage,
-      {TdCache.CacheCleaner, Application.get_env(:td_dd, :cache_cleaner, [])},
       # CX Workers
       TdCx.Search.IndexWorker,
       # DQ Workers
