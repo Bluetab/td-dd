@@ -1,34 +1,39 @@
 defmodule TdDqWeb.ImplementationSearchControllerTest do
   use TdDqWeb.ConnCase
 
-  alias TdCache.ConceptCache
-  alias TdCache.TaxonomyCache
+  import Mox
 
   @business_concept_id "42"
 
-  setup_all do
-    %{id: domain_id} = domain = build(:domain)
-    TaxonomyCache.put_domain(domain)
-    ConceptCache.put(%{id: @business_concept_id, name: "Concept", domain_id: domain_id})
-
-    on_exit(fn ->
-      {:ok, _} = ConceptCache.delete(@business_concept_id)
-      TaxonomyCache.delete_domain(domain_id)
-    end)
-
-    [domain: domain]
+  setup do
+    start_supervised!(TdDd.Search.Cluster)
+    :ok
   end
 
-  setup tags do
-    domain_id = get_in(tags, [:domain, :id])
-    rule = insert(:rule, business_concept_id: @business_concept_id, domain_id: domain_id)
+  setup :verify_on_exit!
+
+  setup context do
+    %{id: domain_id} =
+      domain =
+      case context do
+        %{domain: domain} -> domain
+        _ -> CacheHelpers.insert_domain()
+      end
+
+    %{id: concept_id} = CacheHelpers.insert_concept(%{domain_id: domain_id})
+    rule = insert(:rule, business_concept_id: concept_id, domain_id: domain_id)
     implementation = insert(:implementation, rule: rule, domain_id: domain_id)
-    [implementation: implementation, rule: rule]
+    [domain: domain, implementation: implementation, rule: rule]
   end
 
   describe "POST /api/rule_implementations/search" do
     @tag authentication: [role: "admin"]
-    test "admin can search implementations", %{conn: conn} do
+    test "admin can search implementations", %{conn: conn, implementation: implementation} do
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/implementations/_search", _, [] ->
+        SearchHelpers.hits_response([implementation])
+      end)
+
       assert %{"data" => [_]} =
                conn
                |> post(Routes.implementation_search_path(conn, :create))
@@ -36,23 +41,55 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
     end
 
     @tag authentication: [role: "user"]
-    test "user with permissions can search implementations", %{
-      conn: conn,
-      claims: %{user_id: user_id},
-      domain: %{id: domain_id}
-    } do
+    test "user with no permissions cannot search implementations", %{conn: conn} do
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/implementations/_search", %{query: query}, [] ->
+        assert query == %{
+                 bool: %{
+                   filter: %{match_none: %{}},
+                   must_not: %{exists: %{field: "deleted_at"}}
+                 }
+               }
+
+        SearchHelpers.hits_response([])
+      end)
+
       assert %{"data" => [], "user_permissions" => perms} =
                conn
                |> post(Routes.implementation_search_path(conn, :create))
                |> json_response(:ok)
 
       assert %{"execute" => false, "manage" => false} = perms
+    end
 
-      create_acl_entry(user_id, "domain", domain_id, [
-        :view_quality_rule,
-        :manage_quality_rule_implementations,
-        :execute_quality_rule_implementations
-      ])
+    @tag authentication: [
+           role: "user",
+           permissions: [
+             "view_quality_rule",
+             "manage_quality_rule_implementations",
+             "execute_quality_rule_implementations"
+           ]
+         ]
+    test "user with permissions can search implementations", %{
+      conn: conn,
+      implementation: implementation
+    } do
+      ElasticsearchMock
+      |> expect(:request, fn _, :post, "/implementations/_search", %{query: query}, [] ->
+        assert %{
+                 bool: %{
+                   filter: [
+                     %{term: %{"domain_ids" => _}},
+                     %{term: %{"_confidential" => false}}
+                   ],
+                   must_not: %{
+                     exists: %{field: "deleted_at"}
+                   }
+                 }
+               } = query
+
+        SearchHelpers.hits_response([implementation])
+      end)
 
       assert %{"data" => [_], "user_permissions" => perms} =
                conn
@@ -67,7 +104,22 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
     @tag authentication: [role: "admin"]
     test "return scroll_id and pages results", %{conn: conn, domain: %{id: domain_id}} do
       rule = insert(:rule, business_concept_id: @business_concept_id, domain_id: domain_id)
-      Enum.each(1..7, fn _ -> insert(:implementation, rule: rule) end)
+      impls = Enum.map(1..7, fn _ -> insert(:implementation, rule: rule) end)
+
+      ElasticsearchMock
+      |> expect(:request, fn
+        _,
+        :post,
+        "/implementations/_search",
+        %{from: 0, size: 5},
+        [params: %{"scroll" => "1m"}] ->
+          SearchHelpers.scroll_response(Enum.take(impls, 5))
+      end)
+      |> expect(:request, fn
+        _, :post, "_search/scroll", body, %{"index" => "implementations"} ->
+          assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
+          SearchHelpers.scroll_response(Enum.drop(impls, 5))
+      end)
 
       assert %{"data" => data, "scroll_id" => scroll_id} =
                conn
@@ -79,7 +131,7 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
 
       assert length(data) == 5
 
-      assert %{"data" => data, "scroll_id" => scroll_id} =
+      assert %{"data" => data, "scroll_id" => _} =
                conn
                |> post(Routes.implementation_search_path(conn, :create), %{
                  "scroll_id" => scroll_id,
@@ -88,16 +140,7 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
                })
                |> json_response(:ok)
 
-      assert length(data) == 3
-
-      assert %{"data" => [], "scroll_id" => _} =
-               conn
-               |> post(Routes.implementation_search_path(conn, :create), %{
-                 "scroll_id" => scroll_id,
-                 "scroll" => "1m",
-                 "opts" => %{"index" => "implementations"}
-               })
-               |> json_response(:ok)
+      assert length(data) == 2
     end
   end
 end

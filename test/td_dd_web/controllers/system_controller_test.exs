@@ -2,7 +2,8 @@ defmodule TdDdWeb.SystemControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  alias TdDd.Cache.SystemLoader
+  import Mox
+
   alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Systems.System, as: TdDdSystem
@@ -72,15 +73,19 @@ defmodule TdDdWeb.SystemControllerTest do
       }
     ]
   }
+
   setup_all do
-    start_supervised(SystemLoader)
+    start_supervised!(TdDd.Cache.SystemLoader)
+    start_supervised!(TdDd.Search.Cluster)
     :ok
   end
 
-  setup do
+  setup :verify_on_exit!
+
+  setup tags do
     start_supervised!(TdDd.Search.StructureEnricher)
     system = insert(:system)
-    domain = CacheHelpers.insert_domain()
+    domain = Map.get(tags, :domain, CacheHelpers.insert_domain())
     template = CacheHelpers.insert_template(@system_template)
 
     [system: system, domain: domain, template: template]
@@ -89,6 +94,8 @@ defmodule TdDdWeb.SystemControllerTest do
   describe "GET /api/systems" do
     @tag authentication: [role: "admin"]
     test "admin can lists systems", %{conn: conn, swagger_schema: schema} do
+      expect_search()
+
       assert %{"data" => [_system]} =
                conn
                |> get(Routes.system_path(conn, :index))
@@ -98,6 +105,8 @@ defmodule TdDdWeb.SystemControllerTest do
 
     @tag authentication: [role: "service"]
     test "service account can lists systems", %{conn: conn, swagger_schema: schema} do
+      expect_search()
+
       assert %{"data" => [_system]} =
                conn
                |> get(Routes.system_path(conn, :index))
@@ -295,11 +304,13 @@ defmodule TdDdWeb.SystemControllerTest do
     @tag authentication: [role: "admin"]
     test "will filter structures by system", %{conn: conn, system: system} do
       ds = insert(:data_structure, system_id: system.id, external_id: "struc1")
-      insert(:data_structure_version, data_structure_id: ds.id, name: ds.external_id)
+      dsv = insert(:data_structure_version, data_structure_id: ds.id, name: ds.external_id)
 
       system2 = insert(:system)
       ds = insert(:data_structure, system_id: system2.id, external_id: "struc2")
       insert(:data_structure_version, data_structure_id: ds.id, name: ds.external_id)
+
+      expect_search(dsv)
 
       assert %{"data" => data} =
                conn
@@ -325,6 +336,8 @@ defmodule TdDdWeb.SystemControllerTest do
 
       Hierarchy.update_hierarchy([child.id, parent.id])
 
+      expect_search(parent)
+
       assert %{"data" => data} =
                conn
                |> get(Routes.system_data_structure_path(conn, :get_system_structures, system))
@@ -337,42 +350,52 @@ defmodule TdDdWeb.SystemControllerTest do
     test "will not break when structure has no versions", %{conn: conn, system: system} do
       insert(:data_structure, system_id: system.id, external_id: "parent")
 
+      expect_search()
+
       assert %{"data" => []} =
                conn
                |> get(Routes.system_data_structure_path(conn, :get_system_structures, system))
                |> json_response(:ok)
     end
 
-    @tag authentication: [user_name: "non_admin_user"]
-    test "will filter by permissions for non admin users", %{
-      conn: conn,
-      claims: %{user_id: user_id},
-      domain: %{id: domain_id}
-    } do
-      create_acl_entry(user_id, domain_id, [])
+    @tag authentication: [user_name: "non_admin_user", permissions: ["view_data_structure"]]
+    test "will filter by permissions for non admin users", %{conn: conn, domain: %{id: domain_id}} do
+      %{id: system_id} = insert(:system)
 
-      %{data_structure: %{id: id, system_id: system_id}} =
-        insert(:data_structure_version,
-          data_structure: build(:data_structure, domain_id: domain_id)
-        )
+      ElasticsearchMock
+      |> expect(:request, fn
+        _, :post, "/structures/_search", %{from: 0, size: 1000, query: query}, [] ->
+          assert query == %{
+                   bool: %{
+                     filter: [
+                       %{term: %{"system_id" => system_id}},
+                       %{term: %{"domain_id" => domain_id}},
+                       %{term: %{"confidential" => false}}
+                     ],
+                     must_not: [%{exists: %{field: "deleted_at"}}, %{exists: %{field: "path"}}]
+                   }
+                 }
 
-      assert %{"data" => data} =
+          SearchHelpers.hits_response([])
+      end)
+
+      assert %{"data" => []} =
                conn
                |> get(Routes.system_data_structure_path(conn, :get_system_structures, system_id))
                |> json_response(:ok)
-
-      refute data |> Enum.map(& &1["id"]) |> Enum.member?(id)
     end
 
     @tag authentication: [role: "admin"]
     test "includes classes in response", %{conn: conn, system: %{id: system_id}} do
-      %{name: name, class: class} =
+      %{name: name, class: class, data_structure_version: dsv} =
         insert(:structure_classification,
           data_structure_version:
             build(:data_structure_version,
               data_structure: build(:data_structure, system_id: system_id)
             )
         )
+
+      expect_search(dsv)
 
       assert %{"data" => [data]} =
                conn
@@ -386,5 +409,14 @@ defmodule TdDdWeb.SystemControllerTest do
 
   defp new_attr_external_id(attrs) do
     attrs |> Map.put(:external_id, Integer.to_string(System.unique_integer([:positive])))
+  end
+
+  defp expect_search(results \\ nil) do
+    ElasticsearchMock
+    |> expect(:request, fn _, :post, "/structures/_search", _, [] ->
+      results
+      |> List.wrap()
+      |> SearchHelpers.hits_response()
+    end)
   end
 end

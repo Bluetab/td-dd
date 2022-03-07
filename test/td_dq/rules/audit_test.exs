@@ -12,7 +12,7 @@ defmodule TdDq.Rules.AuditTest do
 
   setup do
     on_exit(fn -> Redix.del!(@stream) end)
-    domain_id = System.unique_integer([:positive])
+    %{id: domain_id} = CacheHelpers.insert_domain()
     %{name: template_name} = CacheHelpers.insert_template(scope: "dq")
     claims = build(:dq_claims, role: "admin")
 

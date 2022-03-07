@@ -40,17 +40,21 @@ defmodule TdDd.Lineage.Units do
       |> Enum.map(fn %{id: id, domain_id: domain_id} ->
         %{id: domain_id, unit: id, hint: :domain}
       end)
-      |> Enum.map(fn %{id: id} = domain ->
-        case TaxonomyCache.get_domain(id) do
-          cached_domain = %{} -> Map.merge(cached_domain, domain)
-          _ -> nil
-        end
-      end)
-      |> Enum.filter(& &1)
+      |> Enum.map(&get_domain/1)
+      |> Enum.reject(&is_nil/1)
 
     parents = Enum.flat_map(domains, &parent_domains/1)
     Enum.uniq_by(domains ++ parents, fn %{id: id} -> id end)
   end
+
+  defp get_domain(%{id: id} = domain) when is_integer(id) do
+    case TaxonomyCache.get_domain(id) do
+      cached_domain = %{} -> Map.merge(cached_domain, domain)
+      _ -> nil
+    end
+  end
+
+  defp get_domain(_), do: nil
 
   defp reduce_clauses(q, clauses) do
     Enum.reduce(clauses, q, fn

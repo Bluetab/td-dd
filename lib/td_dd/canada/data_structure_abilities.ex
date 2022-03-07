@@ -23,59 +23,37 @@ defmodule TdDd.Canada.DataStructureAbilities do
     Permissions.authorized?(claims, :manage_confidential_structures, domain_id)
   end
 
-  def can?(%Claims{} = claims, :delete_data_structure, %DataStructure{
+  def can?(%Claims{} = claims, permission, %DataStructure{
         domain_id: domain_id,
-        confidential: confidential
-      }) do
-    Permissions.authorized?(claims, :delete_data_structure, domain_id) &&
-      (!confidential ||
-         Permissions.authorized?(claims, :manage_confidential_structures, domain_id))
+        confidential: true
+      })
+      when permission in [:delete_data_structure, :update_data_structure, :view_data_structure] do
+    Permissions.authorized?(claims, permission, domain_id) &&
+      Permissions.authorized?(claims, :manage_confidential_structures, domain_id)
   end
 
-  def can?(%Claims{} = claims, :update_data_structure, %DataStructure{
-        domain_id: domain_id,
-        confidential: confidential
-      }) do
-    Permissions.authorized?(claims, :update_data_structure, domain_id) &&
-      (!confidential ||
-         Permissions.authorized?(claims, :manage_confidential_structures, domain_id))
-  end
-
-  def can?(%Claims{} = claims, :view_data_structure, %DataStructure{
-        domain_id: domain_id,
-        confidential: confidential
-      }) do
-    Permissions.authorized?(claims, :view_data_structure, domain_id) &&
-      (!confidential ||
-         Permissions.authorized?(claims, :manage_confidential_structures, domain_id))
+  def can?(%Claims{} = claims, permission, %DataStructure{domain_id: domain_id})
+      when permission in [:delete_data_structure, :update_data_structure, :view_data_structure] do
+    Permissions.authorized?(claims, permission, domain_id)
   end
 
   def can?(%Claims{} = claims, :view_data_structure, domain_id) do
     Permissions.authorized?(claims, :view_data_structure, domain_id)
   end
 
-  def can?(%Claims{} = claims, :show, %DataStructure{
-        domain_id: domain_id,
-        confidential: confidential
-      }) do
-    Permissions.authorized?(claims, :view_data_structure, domain_id) &&
-      (!confidential ||
-         Permissions.authorized?(claims, :manage_confidential_structures, domain_id))
+  def can?(%Claims{} = claims, :show, %DataStructure{} = data_structure) do
+    can?(claims, :view_data_structure, data_structure)
   end
 
   def can?(%Claims{} = claims, :show, domain_id) do
     Permissions.authorized?(claims, :view_data_structure, domain_id)
   end
 
-  def can?(%Claims{} = claims, :view_data_structures_profile, %DataStructure{
-        domain_id: domain_id
-      }) do
+  def can?(%Claims{} = claims, :view_data_structures_profile, %DataStructure{domain_id: domain_id}) do
     Permissions.authorized?(claims, :view_data_structures_profile, domain_id)
   end
 
-  def can?(%Claims{} = claims, :manage_structures_domain, %DataStructure{
-        domain_id: domain_id
-      }) do
+  def can?(%Claims{} = claims, :manage_structures_domain, %DataStructure{domain_id: domain_id}) do
     Permissions.authorized?(claims, :manage_structures_domain, domain_id)
   end
 

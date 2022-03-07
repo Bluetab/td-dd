@@ -22,7 +22,7 @@
 
 ### Added
 
-- [TD-4437] Control rule results upload using new `manage_rule_results` permission 
+- [TD-4437] Control rule results upload using new `manage_rule_results` permission
 - [TD-2511] support for updating specific field of `Source` config
 - [TD-4463] Generate audit events for `rule_created` and
   `implementation_created`

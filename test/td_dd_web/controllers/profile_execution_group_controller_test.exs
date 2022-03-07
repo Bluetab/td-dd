@@ -42,8 +42,8 @@ defmodule TdDdWeb.ExecutionGroupControllerTest do
       end)
 
     case tags do
-      %{permissions: permissions, claims: %{user_id: user_id}, domain: %{id: domain_id}} ->
-        create_acl_entry(user_id, "domain", domain_id, permissions)
+      %{permissions: permissions, claims: claims, domain: %{id: domain_id}} ->
+        CacheHelpers.put_session_permissions(claims, domain_id, permissions)
 
       _ ->
         :ok

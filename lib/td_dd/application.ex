@@ -13,8 +13,7 @@ defmodule TdDd.Application do
         TdDd.Repo,
         TdCxWeb.Endpoint,
         TdDdWeb.Endpoint,
-        TdDqWeb.Endpoint,
-        TdDd.Search.Cluster
+        TdDqWeb.Endpoint
       ] ++ workers(env)
 
     # See https://hexdocs.pm/elixir/Supervisor.html
@@ -38,7 +37,8 @@ defmodule TdDd.Application do
     [
       # Task supervisor
       {Task.Supervisor, name: TdDd.TaskSupervisor},
-      # Workers for indexing
+      # Workers for search and indexing
+      TdDd.Search.Cluster,
       TdDd.Search.IndexWorker,
       TdDd.Search.StructureEnricher,
       # Worker for background bulk loading
@@ -53,7 +53,6 @@ defmodule TdDd.Application do
       TdDd.Lineage.Import,
       TdDd.Lineage.GraphData,
       TdDd.Lineage,
-      {TdCache.CacheCleaner, Application.get_env(:td_dd, :cache_cleaner, [])},
       # CX Workers
       TdCx.Search.IndexWorker,
       # DQ Workers

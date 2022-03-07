@@ -2,43 +2,28 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
   use TdDqWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger_dq.json"
 
-  alias TdCache.ConceptCache
+  import Mox
 
   @moduletag sandbox: :shared
 
-  setup_all do
-    %{id: domain_id} = domain = CacheHelpers.insert_domain()
+  setup :verify_on_exit!
 
-    ConceptCache.put(%{id: 42, name: "Concept", domain_id: domain_id})
-    on_exit(fn -> {:ok, _} = ConceptCache.delete(42) end)
-
-    [domain: domain]
+  setup do
+    start_supervised!(TdDd.Search.Cluster)
+    :ok
   end
 
-  setup tags do
+  setup do
     groups =
       1..5
-      |> Enum.map(fn _ ->
-        insert(:execution, group: build(:execution_group), implementation: build(:implementation))
-      end)
-      |> Enum.map(fn %{group: group} = execution ->
-        Map.put(group, :executions, [execution])
-      end)
-
-    case tags do
-      %{permissions: permissions, claims: %{user_id: user_id}, domain: %{id: domain_id}} ->
-        create_acl_entry(user_id, "domain", domain_id, permissions)
-
-      _ ->
-        :ok
-    end
+      |> Enum.map(fn _ -> insert(:execution) end)
+      |> Enum.map(fn %{group: group} = execution -> Map.put(group, :executions, [execution]) end)
 
     [groups: groups]
   end
 
   describe "GET /api/execution_groups" do
-    @tag authentication: [user_name: "not_an_admin"]
-    @tag permissions: [:view_quality_rule]
+    @tag authentication: [user_name: "not_an_admin", permissions: [:view_quality_rule]]
     test "returns an OK response with the list of execution groups", %{
       conn: conn,
       swagger_schema: schema
@@ -62,8 +47,7 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
   end
 
   describe "GET /api/execution_groups/:id" do
-    @tag authentication: [user_name: "not_an_admin"]
-    @tag permissions: [:view_quality_rule]
+    @tag authentication: [user_name: "not_an_admin", permissions: [:view_quality_rule]]
     test "returns an OK response with the execution group", %{
       conn: conn,
       swagger_schema: schema,
@@ -94,16 +78,35 @@ defmodule TdDqWeb.ExecutionGroupControllerTest do
   end
 
   describe "POST /api/execution_groups" do
-    @tag authentication: [user_name: "not_an_admin"]
-    @tag permissions: [:execute_quality_rule_implementations, :view_quality_rule]
+    @tag authentication: [
+           user_name: "not_an_admin",
+           permissions: [:execute_quality_rule_implementations, :view_quality_rule]
+         ]
     test "returns an OK response with the created execution group", %{
       conn: conn,
       swagger_schema: schema,
       domain: domain
     } do
       %{id: rule_id} = insert(:rule, business_concept_id: "42", domain_id: domain.id)
-      %{id: id1} = insert(:implementation, rule_id: rule_id, domain_id: domain.id)
-      %{id: id2} = insert(:implementation, rule_id: rule_id, domain_id: domain.id)
+      %{id: id1} = i1 = insert(:implementation, rule_id: rule_id, domain_id: domain.id)
+      %{id: id2} = i2 = insert(:implementation, rule_id: rule_id, domain_id: domain.id)
+
+      ElasticsearchMock
+      |> expect(:request, fn
+        _, :post, "/implementations/_search", %{from: 0, size: 10_000, query: query}, [] ->
+          assert %{
+                   bool: %{
+                     filter: [
+                       %{terms: %{"id" => [_, _]}},
+                       %{term: %{"domain_ids" => _}},
+                       %{term: %{"_confidential" => false}}
+                     ],
+                     must_not: _deleted_at
+                   }
+                 } = query
+
+          SearchHelpers.hits_response([i1, i2])
+      end)
 
       filters = %{"id" => [id1, id2]}
       params = %{"filters" => filters, "df_content" => %{"foo" => "bar"}}

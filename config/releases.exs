@@ -32,6 +32,27 @@ config :td_dd, import_dir: System.get_env("IMPORT_DIR")
 
 config :td_dd, TdDd.Scheduler,
   jobs: [
+    cache_cleaner: [
+      schedule: "@reboot",
+      task:
+        {TdCache.CacheCleaner, :clean,
+         [
+           "TdDd.DataStructures.Migrations:TD-2774",
+           "TdDd.DataStructures.Migrations:td-2979",
+           "TdDd.Structures.Migrations:TD-3066",
+           "TdDq.RuleImplementations.Migrations:cache_structures",
+           "data_fields:external_ids",
+           "data_structure:keys:keep",
+           "implementation:*",
+           "rule_result:*",
+           "source:*",
+           "sources:ids_external_ids",
+           "structure_type:*",
+           "structure_types:*",
+           "structures:external_ids:*"
+         ]},
+      run_strategy: Quantum.RunStrategy.Local
+    ],
     cache_refresher: [
       schedule: System.get_env("CACHE_REFRESH_SCHEDULE", "@hourly"),
       task: {TdDd.Cache.StructureLoader, :refresh, []},

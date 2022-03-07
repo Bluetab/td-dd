@@ -3,7 +3,7 @@ defmodule TdDdWeb.GrantRequestStatusControllerTest do
 
   describe "create" do
     @tag authentication: [role: "user"]
-    test "renders grant request when data is valid", %{conn: conn, claims: %{user_id: user_id}} do
+    test "renders grant request when data is valid", %{conn: conn, claims: claims} do
       %{id: domain_id} = CacheHelpers.insert_domain()
 
       %{grant_request: grant_request, grant_request_id: grant_request_id} =
@@ -20,7 +20,7 @@ defmodule TdDdWeb.GrantRequestStatusControllerTest do
                |> post(path, params)
                |> json_response(:forbidden)
 
-      create_acl_entry(user_id, domain_id, [:approve_grant_request])
+      CacheHelpers.put_session_permissions(claims, domain_id, [:approve_grant_request])
 
       assert %{"data" => data} =
                conn

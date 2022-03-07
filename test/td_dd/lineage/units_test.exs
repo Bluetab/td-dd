@@ -91,8 +91,8 @@ defmodule TdDd.Lineage.UnitsTest do
 
     test "return units taxonomy" do
       %{id: parent_domain_id} = CacheHelpers.insert_domain()
-      %{id: domain_id} = CacheHelpers.insert_domain(%{parent_ids: [parent_domain_id]})
-      %{id: sibling_domain_id} = CacheHelpers.insert_domain(%{parent_ids: [parent_domain_id]})
+      %{id: domain_id} = CacheHelpers.insert_domain(%{parent_id: parent_domain_id})
+      %{id: sibling_domain_id} = CacheHelpers.insert_domain(%{parent_id: parent_domain_id})
       insert(:unit)
       %{id: unit_id} = insert(:unit, domain_id: domain_id)
       %{id: sibling_unit_id} = insert(:unit, domain_id: sibling_domain_id)
