@@ -307,7 +307,10 @@ defmodule TdDq.Implementations.Implementation do
       quality_event = QualityEvents.get_event_by_imp(implementation_id)
       confidential = Helpers.confidential?(rule)
       bcv = Helpers.get_business_concept_version(rule)
-      execution_result_info = Implementation.get_execution_result_info(implementation, quality_event)
+
+      execution_result_info =
+        Implementation.get_execution_result_info(implementation, quality_event)
+
       domain = Helpers.get_domain(implementation)
       domain_ids = Helpers.get_domain_ids(domain)
       domain_parents = Helpers.get_domain_parents(domain)
