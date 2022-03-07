@@ -21,7 +21,7 @@ defmodule TdDq.Canada.ImplementationAbilities do
   end
 
   def can?(%Claims{} = claims, :link_concept, %Implementation{domain_id: domain_id}) do
-    Permissions.authorized?(claims, :link_implementation_to_business_concept, domain_id)
+    Permissions.authorized?(claims, :link_implementation_business_concept, domain_id)
   end
 
   def can?(%Claims{} = claims, :manage, %Implementation{domain_id: domain_id} = implementation) do
