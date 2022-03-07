@@ -66,6 +66,16 @@ config :td_dd, TdDd.Scheduler,
       schedule: System.get_env("CATALOG_HISTORY_PURGE_SCHEDULE", "@daily"),
       task: {TdDd.DataStructures.HistoryManager, :purge_history, []},
       run_strategy: Quantum.RunStrategy.Local
+    ],
+    force_update_structures_cache: [
+      schedule: "@reboot",
+      task: {TdDd.Cache.StructuresForceUpdate, :migrate, []},
+      run_strategy: Quantum.RunStrategy.Local
+    ],
+    expand_profile_values: [
+      schedule: "@reboot",
+      task: {TdDd.Profiles, :expand_profile_values, []},
+      run_strategy: Quantum.RunStrategy.Local
     ]
   ]
 
