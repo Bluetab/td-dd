@@ -38,9 +38,11 @@ defmodule TdDd.Cache.ImplementationLoaderTest do
                |> ImplementationLoader.cache_implementations()
                |> Enum.frequencies_by(&elem(&1, 0))
 
-      string_date = ts
-      |> DateTime.truncate(:second)
-      |> DateTime.to_string()
+      string_date =
+        ts
+        |> DateTime.truncate(:second)
+        |> DateTime.to_string()
+
       assert {:ok,
               %{
                 execution_result_info: %{

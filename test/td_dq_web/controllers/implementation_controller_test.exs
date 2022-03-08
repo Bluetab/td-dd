@@ -2,6 +2,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
   use TdDqWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger_dq.json"
 
+  alias TdCache.ConceptCache
+
   @valid_dataset [
     %{structure: %{id: 14_080}},
     %{clauses: [%{left: %{id: 14_863}, right: %{id: 4028}}], structure: %{id: 3233}}
@@ -68,6 +70,44 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> get(Routes.implementation_path(conn, :show, id))
                |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:ok)
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions: [:view_published_business_concepts, :view_quality_rule]
+         ]
+    test "rendes only authorized links", %{conn: conn, domain: domain} do
+      %{id: id} = insert(:implementation, domain_id: domain.id)
+
+      concept_id_authorized = System.unique_integer([:positive])
+
+      ConceptCache.put(%{
+        id: concept_id_authorized,
+        domain_id: domain.id,
+        name: "authorized_bc",
+        updated_at: DateTime.utc_now()
+      })
+
+      CacheHelpers.insert_link(id, "implementation", "business_concept", concept_id_authorized)
+
+      concept_id_forbidden = System.unique_integer([:positive])
+
+      ConceptCache.put(%{
+        id: concept_id_forbidden,
+        name: "forbidden_bc",
+        domain_id: System.unique_integer([:positive]),
+        updated_at: DateTime.utc_now()
+      })
+
+      CacheHelpers.insert_link(id, "implementation", "business_concept", concept_id_forbidden)
+
+      assert %{"data" => %{"links" => links}} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> json_response(:ok)
+
+      string_authorized_id = "#{concept_id_authorized}"
+      assert [%{"resource_id" => ^string_authorized_id}] = links
     end
   end
 
