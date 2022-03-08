@@ -119,6 +119,27 @@ defmodule TdDdWeb.DataStructureControllerTest do
                |> json_response(:ok)
     end
 
+    @tag authentication: [role: "admin"]
+    test "includes actions for admin role", %{conn: conn} do
+      ElasticsearchMock
+      |> expect(:request, fn _, _, _, _, _ -> SearchHelpers.hits_response([], 1) end)
+
+      params = %{"filters" => %{"type.raw" => ["foo"]}}
+
+      assert %{"_actions" => actions} =
+               conn
+               |> post(data_structure_path(conn, :search), params)
+               |> json_response(:ok)
+
+      assert %{
+               "bulkUpdate" => %{"href" => href, "method" => "POST"},
+               "bulkUpload" => _,
+               "autoPublish" => _
+             } = actions
+
+      assert href == "/api/data_structures/bulk_update"
+    end
+
     @tag authentication: [
            permissions: ["create_structure_note", "publish_structure_note_from_draft"]
          ]
