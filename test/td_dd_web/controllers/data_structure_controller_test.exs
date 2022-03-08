@@ -118,6 +118,62 @@ defmodule TdDdWeb.DataStructureControllerTest do
                |> post(data_structure_path(conn, :search), %{"query" => "foo"})
                |> json_response(:ok)
     end
+
+    @tag authentication: [role: "admin"]
+    test "includes actions for admin role", %{conn: conn} do
+      ElasticsearchMock
+      |> expect(:request, fn _, _, _, _, _ -> SearchHelpers.hits_response([], 1) end)
+
+      params = %{"filters" => %{"type.raw" => ["foo"]}}
+
+      assert %{"_actions" => actions} =
+               conn
+               |> post(data_structure_path(conn, :search), params)
+               |> json_response(:ok)
+
+      assert %{
+               "bulkUpdate" => %{"href" => href, "method" => "POST"},
+               "bulkUpload" => _,
+               "autoPublish" => _
+             } = actions
+
+      assert href == "/api/data_structures/bulk_update"
+    end
+
+    @tag authentication: [
+           permissions: ["create_structure_note", "publish_structure_note_from_draft"]
+         ]
+    test "includes actions for a user with permissions", %{conn: conn} do
+      ElasticsearchMock
+      |> expect(:request, fn _, _, _, _, _ -> SearchHelpers.hits_response([]) end)
+
+      assert %{"_actions" => actions} =
+               conn
+               |> post(data_structure_path(conn, :search), %{})
+               |> json_response(:ok)
+
+      assert %{
+               "bulkUpload" => %{"href" => href, "method" => "POST"},
+               "autoPublish" => %{"href" => href, "method" => "POST"}
+             } = actions
+
+      refute Map.has_key?(actions, "bulkUpdate")
+      assert href == "/api/data_structures/bulk_update_template_content"
+    end
+
+    @tag authentication: [role: "user", permissions: ["view_data_structure"]]
+    test "does not include actions for a user without permissions", %{conn: conn} do
+      ElasticsearchMock
+      |> expect(:request, fn _, _, _, _, _ -> SearchHelpers.hits_response([]) end)
+
+      assert %{} =
+               response =
+               conn
+               |> post(data_structure_path(conn, :search), %{})
+               |> json_response(:ok)
+
+      refute Map.has_key?(response, "_actions")
+    end
   end
 
   describe "search with scroll" do

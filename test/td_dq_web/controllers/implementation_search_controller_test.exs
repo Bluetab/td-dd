@@ -98,6 +98,36 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
 
       assert %{"execute" => true, "manage" => true} = perms
     end
+
+    @tag authentication: [user_name: "not_an_admin", permissions: [:view_quality_rule]]
+    test "does not include actions if user has no permission", %{conn: conn} do
+      ElasticsearchMock
+      |> expect(:request, fn _, _, _, _, _ -> SearchHelpers.hits_response([]) end)
+
+      assert %{} =
+               response =
+               conn
+               |> post(Routes.implementation_search_path(conn, :create))
+               |> json_response(:ok)
+
+      refute Map.has_key?(response, "_actions")
+    end
+
+    @tag authentication: [
+           user_name: "not_an_admin",
+           permissions: [:manage_rule_results, :view_quality_rule]
+         ]
+    test "includes actions if user has manage_rule_results permission", %{conn: conn} do
+      ElasticsearchMock
+      |> expect(:request, fn _, _, _, _, _ -> SearchHelpers.hits_response([]) end)
+
+      assert %{"_actions" => actions} =
+               conn
+               |> post(Routes.implementation_search_path(conn, :create))
+               |> json_response(:ok)
+
+      assert %{"uploadResults" => %{"href" => "/api/rule_results", "method" => "POST"}} = actions
+    end
   end
 
   describe "search with scroll" do

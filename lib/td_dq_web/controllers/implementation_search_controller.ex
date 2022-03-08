@@ -36,6 +36,7 @@ defmodule TdDqWeb.ImplementationSearchController do
     conn
     |> put_view(TdDqWeb.SearchView)
     |> put_resp_header("x-total-count", "#{total}")
+    |> put_actions(claims)
     |> render("search.json", response)
   end
 
@@ -89,5 +90,17 @@ defmodule TdDqWeb.ImplementationSearchController do
     |> Map.put("without", "deleted_at")
     |> Map.drop(["page", "size"])
     |> Search.search_implementations(claims, page, size)
+  end
+
+  defp put_actions(conn, %{} = claims) do
+    if can?(claims, upload(TdDq.Rules.RuleResult)) do
+      actions = %{
+        "uploadResults" => %{href: Routes.rule_result_path(conn, :create), method: "POST"}
+      }
+
+      assign(conn, :actions, actions)
+    else
+      conn
+    end
   end
 end

@@ -8,6 +8,9 @@ defmodule TdDqWeb.SearchView do
   def render("search.json", %{} = assigns) do
     assigns
     |> Enum.reduce(%{}, fn
+      {:actions, actions}, acc ->
+        Map.put(acc, :_actions, actions)
+
       {:filters, filters}, acc ->
         Map.put(acc, :filters, filters)
 
