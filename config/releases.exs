@@ -37,19 +37,21 @@ config :td_dd, TdDd.Scheduler,
       task:
         {TdCache.CacheCleaner, :clean,
          [
-           "TdDd.DataStructures.Migrations:TD-2774",
-           "TdDd.DataStructures.Migrations:td-2979",
-           "TdDd.Structures.Migrations:TD-3066",
-           "TdDq.RuleImplementations.Migrations:cache_structures",
-           "data_fields:external_ids",
-           "data_structure:keys:keep",
-           "implementation:*",
-           "rule_result:*",
-           "source:*",
-           "sources:ids_external_ids",
-           "structure_type:*",
-           "structure_types:*",
-           "structures:external_ids:*"
+           [
+             "TdDd.DataStructures.Migrations:TD-2774",
+             "TdDd.DataStructures.Migrations:td-2979",
+             "TdDd.Structures.Migrations:TD-3066",
+             "TdDq.RuleImplementations.Migrations:cache_structures",
+             "data_fields:external_ids",
+             "data_structure:keys:keep",
+             "implementation:*",
+             "rule_result:*",
+             "source:*",
+             "sources:ids_external_ids",
+             "structure_type:*",
+             "structure_types:*",
+             "structures:external_ids:*"
+           ]
          ]},
       run_strategy: Quantum.RunStrategy.Local
     ],

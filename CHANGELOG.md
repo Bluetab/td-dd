@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-4491] Refactored search and permissions
+
 ## [4.39.0] 2022-03-07
 
 ### Added
