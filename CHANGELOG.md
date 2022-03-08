@@ -5,8 +5,8 @@
 ### Changed
 
 - [TD-4491] Refactored search and permissions
-- [TD-4604] Include actions in `GET /api/rule_implementations` and `POST
-  /api/data_structures/search` response
+- [TD-4604] Include actions in `POST /api/rule_implementations/search` and `POST
+ /api/data_structures/search` responses
 
 ## [4.39.0] 2022-03-07
 
