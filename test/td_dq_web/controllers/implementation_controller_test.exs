@@ -124,38 +124,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert length(data) == 4
       refute Enum.find(data, &(&1["id"] == ri5.id))
     end
-
-    @tag authentication: [user_name: "not_an_admin", permissions: [:view_quality_rule]]
-    test "does not include actions if user has no permission", %{
-      conn: conn,
-      swagger_schema: schema
-    } do
-      assert %{} =
-               response =
-               conn
-               |> get(Routes.implementation_path(conn, :index))
-               |> validate_resp_schema(schema, "ImplementationsResponse")
-               |> json_response(:ok)
-
-      refute Map.has_key?(response, "_actions")
-    end
-
-    @tag authentication: [
-           user_name: "not_an_admin",
-           permissions: [:manage_rule_results, :view_quality_rule]
-         ]
-    test "includes actions if user has manage_rule_results permission", %{
-      conn: conn,
-      swagger_schema: schema
-    } do
-      assert %{"_actions" => actions} =
-               conn
-               |> get(Routes.implementation_path(conn, :index))
-               |> validate_resp_schema(schema, "ImplementationsResponse")
-               |> json_response(:ok)
-
-      assert %{"uploadResults" => %{"href" => "/api/rule_results", "method" => "POST"}} = actions
-    end
   end
 
   describe "create implementation" do
