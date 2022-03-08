@@ -3,6 +3,7 @@ defmodule TdDdWeb.DataStructureController do
   use PhoenixSwagger
 
   import Canada, only: [can?: 2]
+  import Canada.Can, only: [can?: 3]
 
   alias TdCache.DomainCache
   alias TdDd.CSV.Download
@@ -67,6 +68,7 @@ defmodule TdDdWeb.DataStructureController do
 
     conn
     |> put_resp_header("x-total-count", "#{total}")
+    |> put_actions()
     |> render("index.json", search_assigns(response))
   end
 
@@ -458,5 +460,28 @@ defmodule TdDdWeb.DataStructureController do
     search_params
     |> Map.put("filters", filters)
     |> Map.put("without", "deleted_at")
+  end
+
+  defp put_actions(conn) do
+    claims = conn.assigns[:current_resource]
+
+    actions =
+      [:bulk_upload, :auto_publish]
+      |> Enum.filter(&can?(claims, &1, StructureNote))
+      |> Enum.reduce(%{}, fn
+        :bulk_upload, acc ->
+          Map.put(acc, "bulkUpload", %{
+            href: Routes.data_structure_path(conn, :bulk_update_template_content),
+            method: "POST"
+          })
+
+        :auto_publish, acc ->
+          Map.put(acc, "autoPublish", %{
+            href: Routes.data_structure_path(conn, :bulk_update_template_content),
+            method: "POST"
+          })
+      end)
+
+    assign(conn, :actions, actions)
   end
 end

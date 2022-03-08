@@ -37,7 +37,9 @@ defmodule TdDqWeb.ImplementationController do
         |> Implementations.list_implementations(preload: [:rule, :results], enrich: :source)
         |> Enum.map(&Implementations.enrich_implementation_structures/1)
 
-      render(conn, "index.json", implementations: implementations)
+      conn
+      |> put_actions(claims)
+      |> render("index.json", implementations: implementations)
     end
   end
 
@@ -254,6 +256,15 @@ defmodule TdDqWeb.ImplementationController do
 
       _ ->
         params
+    end
+  end
+
+  defp put_actions(conn, %{} = claims) do
+    if can?(claims, upload(TdDq.Rules.RuleResult)) do
+      actions = %{upload_results: %{href: Routes.rule_result_path(conn, :create), method: "POST"}}
+      assign(conn, :actions, actions)
+    else
+      conn
     end
   end
 end
