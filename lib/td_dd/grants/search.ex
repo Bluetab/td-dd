@@ -5,7 +5,6 @@ defmodule TdDd.Grants.Search do
 
   alias TdDd.Auth.Claims
   alias TdDd.Grants.Search.Query
-  alias TdDd.Permissions
   alias TdDd.Search
   alias Truedat.Search.Permissions
 
