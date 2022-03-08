@@ -154,7 +154,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> validate_resp_schema(schema, "ImplementationsResponse")
                |> json_response(:ok)
 
-      assert %{"upload_results" => %{"href" => "/api/rule_results", "method" => "POST"}} = actions
+      assert %{"uploadResults" => %{"href" => "/api/rule_results", "method" => "POST"}} = actions
     end
   end
 

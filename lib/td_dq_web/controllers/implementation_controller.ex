@@ -261,7 +261,10 @@ defmodule TdDqWeb.ImplementationController do
 
   defp put_actions(conn, %{} = claims) do
     if can?(claims, upload(TdDq.Rules.RuleResult)) do
-      actions = %{upload_results: %{href: Routes.rule_result_path(conn, :create), method: "POST"}}
+      actions = %{
+        "uploadResults" => %{href: Routes.rule_result_path(conn, :create), method: "POST"}
+      }
+
       assign(conn, :actions, actions)
     else
       conn
