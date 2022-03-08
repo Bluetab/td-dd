@@ -4,9 +4,8 @@ defmodule TdDq.Canada.RuleResultAbilities do
   """
 
   alias TdDq.Auth.Claims
-  alias TdDq.Rules.RuleResult
-
   alias TdDq.Permissions
+  alias TdDq.Rules.RuleResult
 
   def can?(%Claims{role: "service"}, _, RuleResult), do: true
 
