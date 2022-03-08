@@ -157,6 +157,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                "autoPublish" => %{"href" => href, "method" => "POST"}
              } = actions
 
+      refute Map.has_key?(actions, "bulkUpdate")
       assert href == "/api/data_structures/bulk_update_template_content"
     end
 
