@@ -48,7 +48,6 @@ defmodule TdDd.Application do
       # Workers for cache loading
       TdDd.Cache.SystemLoader,
       TdDd.Cache.StructureLoader,
-      TdDd.Cache.DomainEventConsumer,
       # Lineage workers
       TdDd.Lineage.Import,
       TdDd.Lineage.GraphData,
@@ -58,7 +57,6 @@ defmodule TdDd.Application do
       # DQ Workers
       TdDq.Cache.RuleLoader,
       TdDq.Search.IndexWorker,
-      TdDq.Cache.DomainEventConsumer,
       # Scheduler for periodic tasks
       TdDd.Scheduler,
       TdDq.Cache.RuleMigrator

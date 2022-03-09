@@ -108,10 +108,8 @@ config :td_cache, :event_stream,
   consumer_group: "dd",
   streams: [
     [group: "dd", key: "data_structure:events", consumer: TdDd.Cache.StructureLoader],
-    [group: "dd", key: "domain:events", consumer: TdDd.Cache.DomainEventConsumer],
     [group: "dd", key: "template:events", consumer: TdDd.Search.IndexWorker],
     [group: "dq", key: "business_concept:events", consumer: TdDq.Search.IndexWorker],
-    [group: "dq", key: "domain:events", consumer: TdDq.Cache.DomainEventConsumer],
     [group: "dq", key: "template:events", consumer: TdDq.Search.IndexWorker]
   ]
 

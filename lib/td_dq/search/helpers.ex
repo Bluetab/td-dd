@@ -21,25 +21,6 @@ defmodule TdDq.Search.Helpers do
 
   def get_domain(_), do: %{}
 
-  # TODO: Avoid indexing domain parents
-  def get_domain_ids(%{id: id, parent_ids: parent_ids}), do: [id | parent_ids]
-
-  def get_domain_ids(%{id: id}), do: [id]
-
-  def get_domain_ids(_), do: -1
-
-  # TODO: Avoid indexing domain parents
-  def get_domain_parents(%{parent_ids: parent_ids} = domain) do
-    parents =
-      parent_ids
-      |> Enum.map(&get_domain/1)
-      |> Enum.map(&Map.take(&1, [:id, :name]))
-
-    [domain | parents]
-  end
-
-  def get_domain_parents(_), do: []
-
   def confidential?(%{business_concept_id: nil}), do: false
 
   def confidential?(%{business_concept_id: business_concept_id}) do

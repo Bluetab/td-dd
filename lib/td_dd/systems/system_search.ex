@@ -41,7 +41,7 @@ defmodule TdDd.Systems.SystemSearch do
 
     entries_by_system_id =
       case Search.get_aggregations(claims, agg_terms) do
-        %{aggregations: aggregations} -> entries_by_system_id(aggregations)
+        {:ok, %{aggregations: aggregations}} -> entries_by_system_id(aggregations)
         _ -> %{}
       end
 

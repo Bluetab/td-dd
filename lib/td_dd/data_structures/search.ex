@@ -6,11 +6,13 @@ defmodule TdDd.DataStructures.Search do
   alias TdDd.Auth.Claims
   alias TdDd.DataStructures.Search.Aggregations
   alias TdDd.DataStructures.Search.Query
-  alias TdDd.Search
   alias TdDd.Utils.CollectionUtils
+  alias Truedat.Search
   alias Truedat.Search.Permissions
 
   require Logger
+
+  @index :structures
 
   def get_filter_values(claims, permission, params)
 
@@ -18,17 +20,17 @@ defmodule TdDd.DataStructures.Search do
     aggs = Aggregations.aggregations()
     query = build_query(claims, permission, params, aggs)
     search = %{query: query, aggs: aggs, size: 0}
-    Search.get_filters(search)
+    Search.get_filters(search, @index)
   end
 
   def get_aggregations(%Claims{} = claims, aggs) do
     query = build_query(claims, "view_data_structure", %{}, aggs)
     search = %{query: query, aggs: aggs, size: 0}
-    Search.search(search)
+    Search.search(search, @index, format: :raw)
   end
 
-  def scroll_data_structures(%{"scroll_id" => _, "scroll" => _} = scroll_params) do
-    scroll_params
+  def scroll_data_structures(%{"scroll_id" => _, "scroll" => _} = params) do
+    params
     |> Map.take(["scroll_id", "scroll"])
     |> Search.scroll()
     |> transform_response()
@@ -59,15 +61,18 @@ defmodule TdDd.DataStructures.Search do
 
   defp do_search(query, %{"scroll" => scroll} = _params) do
     query
-    |> Search.search(%{"scroll" => scroll})
+    |> Search.search(@index, params: %{"scroll" => scroll})
     |> transform_response()
   end
 
   defp do_search(query, _params) do
     query
-    |> Search.search()
+    |> Search.search(@index)
     |> transform_response()
   end
+
+  defp transform_response({:ok, response}), do: transform_response(response)
+  defp transform_response({:error, _} = response), do: response
 
   defp transform_response(%{results: results} = response) do
     results =
@@ -91,7 +96,7 @@ defmodule TdDd.DataStructures.Search do
       end)
       |> Enum.map(&CollectionUtils.atomize_keys/1)
 
-    Map.put(response, :results, results)
+    %{response | results: results}
   end
 
   defp search_permissions(claims, permission) do

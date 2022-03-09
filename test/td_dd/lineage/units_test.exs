@@ -108,7 +108,7 @@ defmodule TdDd.Lineage.UnitsTest do
                Enum.find(domains, &(&1.id == sibling_domain_id))
 
       assert parent_ids == [parent_domain_id]
-      assert %{parent_ids: [], hint: :domain} = Enum.find(domains, &(&1.id == parent_domain_id))
+      assert %{parent_id: nil, hint: :domain} = Enum.find(domains, &(&1.id == parent_domain_id))
     end
   end
 
