@@ -86,7 +86,6 @@ config :codepagex, :encodings, [
 
 config :td_dd, TdDdWeb.CustomParsersPlug, max_payload_length: 100_000_000
 
-config :td_dd, permission_resolver: TdCache.Permissions
 config :td_dd, index_worker: TdDd.Search.IndexWorker
 config :td_dd, cx_index_worker: TdCx.Search.IndexWorker
 config :td_dd, dq_index_worker: TdDq.Search.IndexWorker
@@ -97,7 +96,7 @@ config :td_dd, TdDd.Lineage, timeout: 90_000
 
 # Default timeout increased for bulk metadata upload
 config :td_dd, TdDd.Repo,
-  pool_size: 16,
+  pool_size: 4,
   timeout: 600_000
 
 config :td_cache, :audit,
@@ -117,25 +116,30 @@ config :td_cache, :event_stream,
     [group: "dq", key: "template:events", consumer: TdDq.Search.IndexWorker]
   ]
 
-config :td_dd, :cache_cleaner,
-  clean_on_startup: true,
-  patterns: [
-    "TdDd.DataStructures.Migrations:TD-2774",
-    "TdDd.DataStructures.Migrations:td-2979",
-    "TdDd.Structures.Migrations:TD-3066",
-    "TdDq.RuleImplementations.Migrations:cache_structures",
-    "data_fields:external_ids",
-    "data_structure:keys:keep",
-    "rule_result:*",
-    "source:*",
-    "sources:ids_external_ids",
-    "structure_type:*",
-    "structure_types:*",
-    "structures:external_ids:*"
-  ]
-
 config :td_dd, TdDd.Scheduler,
   jobs: [
+    cache_cleaner: [
+      schedule: "@reboot",
+      task:
+        {TdCache.CacheCleaner, :clean,
+         [
+           [
+             "TdDd.DataStructures.Migrations:TD-2774",
+             "TdDd.DataStructures.Migrations:td-2979",
+             "TdDd.Structures.Migrations:TD-3066",
+             "TdDq.RuleImplementations.Migrations:cache_structures",
+             "data_fields:external_ids",
+             "data_structure:keys:keep",
+             "rule_result:*",
+             "source:*",
+             "sources:ids_external_ids",
+             "structure_type:*",
+             "structure_types:*",
+             "structures:external_ids:*"
+           ]
+         ]},
+      run_strategy: Quantum.RunStrategy.Local
+    ],
     cache_refresher: [
       schedule: "@hourly",
       task: {TdDd.Cache.StructureLoader, :refresh, []},
@@ -176,9 +180,9 @@ config :td_dd, TdDd.Scheduler,
       task: {TdDd.DataStructures.HistoryManager, :purge_history, []},
       run_strategy: Quantum.RunStrategy.Local
     ],
-    update_domain_ids_in_cache: [
+    force_update_structures_cache: [
       schedule: "@reboot",
-      task: {TdDd.Cache.UpdateDomainIds, :migrate, []},
+      task: {TdDd.Cache.StructuresForceUpdate, :migrate, []},
       run_strategy: Quantum.RunStrategy.Local
     ],
     expand_profile_values: [

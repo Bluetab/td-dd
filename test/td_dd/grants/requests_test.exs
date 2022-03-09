@@ -12,8 +12,17 @@ defmodule TdDd.Grants.RequestsTest do
   @template_name "grant_request_test_template"
   @valid_metadata %{"list" => "one", "string" => "bar"}
 
-  setup do
-    [claims: build(:claims)]
+  setup tags do
+    case Map.get(tags, :role, "user") do
+      "admin" ->
+        claims = build(:claims, role: "admin")
+        [claims: claims]
+
+      role ->
+        %{id: user_id} = user = CacheHelpers.insert_user()
+        claims = build(:claims, user_id: user_id, role: role)
+        [claims: claims, user: user]
+    end
   end
 
   describe "grant_request_groups" do
@@ -155,9 +164,8 @@ defmodule TdDd.Grants.RequestsTest do
       assert {:ok, [%{id: ^id}]} = Requests.list_grant_requests(claims, %{user_id: user_id})
     end
 
-    test "filters by domain_ids if action is 'approve'" do
+    test "filters by domain_ids if action is 'approve'", %{claims: %{user_id: user_id} = claims} do
       %{id: domain_id} = CacheHelpers.insert_domain()
-      %{user_id: user_id} = claims = build(:claims, role: "user")
 
       %{id: id} =
         insert(:grant_request,
@@ -168,11 +176,16 @@ defmodule TdDd.Grants.RequestsTest do
 
       assert {:ok, []} = Requests.list_grant_requests(claims, %{action: "approve"})
 
-      CacheHelpers.insert_grant_request_approver(user_id, domain_id)
+      CacheHelpers.put_session_permissions(claims, domain_id, ["approve_grant_request"])
+
+      CacheHelpers.put_grant_request_approvers([
+        %{user_id: user_id, domain_id: domain_id, role: "approver"}
+      ])
 
       assert {:ok, [%{id: ^id}]} = Requests.list_grant_requests(claims, %{action: "approve"})
     end
 
+    @tag role: "admin"
     test "filters by updated_since (status.inserted_at)", %{claims: claims} do
       ts = ~U[2021-02-03 04:05:06.123456Z]
 
@@ -185,6 +198,7 @@ defmodule TdDd.Grants.RequestsTest do
                Requests.list_grant_requests(claims, %{updated_since: "2021-01-01T00:00:00Z"})
     end
 
+    @tag role: "admin"
     test "limits results", %{claims: claims} do
       for _ <- 1..3 do
         insert(:grant_request_status)
@@ -197,16 +211,19 @@ defmodule TdDd.Grants.RequestsTest do
       assert Enum.count(res) == 2
     end
 
-    test "enriches pending_roles when action is approve", _ do
+    test "enriches pending_roles when action is approve", %{claims: %{user_id: user_id} = claims} do
       %{id: d1} = CacheHelpers.insert_domain()
       %{id: d2} = CacheHelpers.insert_domain()
       %{id: d3} = CacheHelpers.insert_domain()
-      %{user_id: default_approver} = build(:claims, role: "user")
-      %{user_id: user_id} = claims = build(:claims, role: "user")
+      %{id: default_approver} = CacheHelpers.insert_user()
 
-      CacheHelpers.insert_grant_request_approver(default_approver, d1, "approver1")
-      CacheHelpers.insert_grant_request_approver(default_approver, d2, "approver2")
-      CacheHelpers.insert_grant_request_approver(user_id, [d1, d2, d3], "approver2")
+      CacheHelpers.put_session_permissions(claims, %{approve_grant_request: [d1, d2, d3]})
+
+      CacheHelpers.put_grant_request_approvers([
+        %{user_id: default_approver, domain_id: d1, role: "approver1"},
+        %{user_id: default_approver, domain_id: d2, role: "approver2"},
+        %{user_id: user_id, domain_ids: [d1, d2, d3], role: "approver2"}
+      ])
 
       %{grant_request: d1_gr} =
         insert(:grant_request_status,
@@ -251,31 +268,37 @@ defmodule TdDd.Grants.RequestsTest do
       {:ok, grants} =
         Requests.list_grant_requests(claims, %{action: "approve", status: "pending"})
 
-      assert [%GrantRequest{id: ^pending_request_id, pending_roles: ["approver2"]}] = grants
+      assert [%{id: ^pending_request_id, pending_roles: ["approver2"]}] = grants
     end
 
     test "admin user sees all pending_roles with action approve", _ do
-      %{id: d1} = CacheHelpers.insert_domain()
-      %{id: d2} = CacheHelpers.insert_domain()
-      %{user_id: default_approver} = build(:claims, role: "user")
+      %{id: domain_id1} = CacheHelpers.insert_domain()
+      %{id: domain_id2} = CacheHelpers.insert_domain()
+      %{id: user_id} = CacheHelpers.insert_user()
       claims = build(:claims, role: "admin")
 
-      CacheHelpers.insert_grant_request_approver(default_approver, d1, "approver1")
-      CacheHelpers.insert_grant_request_approver(default_approver, d2, "approver2")
+      CacheHelpers.put_grant_request_approvers([
+        %{user_id: user_id, role: "approver1", domain_id: domain_id1},
+        %{user_id: user_id, role: "approver2", domain_id: domain_id2}
+      ])
 
-      %{grant_request: %{id: gr_id_1} = d1_gr} =
+      %{grant_request_id: gr_id_1} =
         insert(:grant_request_status,
           status: "pending",
-          grant_request: build(:grant_request, domain_id: d1)
+          grant_request: build(:grant_request, domain_id: domain_id1)
         )
 
-      %{grant_request: %{id: gr_id_2}} =
+      %{grant_request_id: gr_id_2} =
         insert(:grant_request_status,
           status: "pending",
-          grant_request: build(:grant_request, domain_id: d2)
+          grant_request: build(:grant_request, domain_id: domain_id2)
         )
 
-      insert(:grant_request_approval, domain_id: d1, role: "approver1", grant_request: d1_gr)
+      insert(:grant_request_approval,
+        domain_id: domain_id1,
+        role: "approver1",
+        grant_request_id: gr_id_1
+      )
 
       {:ok, grants} =
         Requests.list_grant_requests(claims, %{action: "approve", status: "pending"})
@@ -302,13 +325,15 @@ defmodule TdDd.Grants.RequestsTest do
       end
     end
 
-    test "enriches pending_roles", _ do
+    test "enriches pending_roles" do
       %{id: domain_id} = CacheHelpers.insert_domain()
       %{user_id: default_approver} = build(:claims, role: "user")
       claims = build(:claims, role: "admin")
 
-      CacheHelpers.insert_grant_request_approver(default_approver, domain_id, "approver1")
-      CacheHelpers.insert_grant_request_approver(default_approver, domain_id, "approver2")
+      CacheHelpers.put_grant_request_approvers([
+        %{user_id: default_approver, domain_id: domain_id, role: "approver1"},
+        %{user_id: default_approver, domain_id: domain_id, role: "approver2"}
+      ])
 
       %{grant_request: %{id: grant_request_id} = grant_request} =
         insert(:grant_request_status,
@@ -335,11 +360,16 @@ defmodule TdDd.Grants.RequestsTest do
       domain_id: domain_id,
       request: request
     } do
-      CacheHelpers.insert_grant_request_approver(user_id, domain_id, "approver")
+      # CacheHelpers.put_session_permissions(claims, %{approve_grant_request: [d1, d2, d3]})
+
+      CacheHelpers.put_grant_request_approvers([
+        %{user_id: user_id, domain_id: domain_id, role: "approver"}
+      ])
+
       params = %{domain_id: domain_id, role: "approver"}
 
       assert {:ok, %{approval: approval}} = Requests.create_approval(claims, request, params)
-      assert %GrantRequestApproval{is_rejection: false, user: user, domain: domain} = approval
+      assert %{is_rejection: false, user: user, domain: domain} = approval
       assert %{id: ^user_id, user_name: _} = user
       assert %{id: ^domain_id, name: _} = domain
     end
@@ -373,7 +403,10 @@ defmodule TdDd.Grants.RequestsTest do
       domain_id: domain_id,
       request: request
     } do
-      CacheHelpers.insert_grant_request_approver(user_id, domain_id, "rejector")
+      CacheHelpers.put_grant_request_approvers([
+        %{user_id: user_id, domain_id: domain_id, role: "rejector"}
+      ])
+
       params = %{domain_id: domain_id, role: "rejector", is_rejection: true, comment: "foo"}
 
       assert {:ok, %{status: status}} = Requests.create_approval(claims, request, params)
@@ -385,8 +418,10 @@ defmodule TdDd.Grants.RequestsTest do
       domain_id: domain_id,
       request: request
     } do
-      CacheHelpers.insert_grant_request_approver(user_id, domain_id, "approver1")
-      CacheHelpers.insert_grant_request_approver(user_id, domain_id, "approver2")
+      CacheHelpers.put_grant_request_approvers([
+        %{user_id: user_id, domain_id: domain_id, role: "approver1"},
+        %{user_id: user_id, domain_id: domain_id, role: "approver2"}
+      ])
 
       params = %{domain_id: domain_id, role: "approver1"}
       assert {:ok, %{status: nil}} = Requests.create_approval(claims, request, params)
@@ -398,9 +433,8 @@ defmodule TdDd.Grants.RequestsTest do
   end
 
   defp setup_grant_request(%{claims: %{user_id: user_id}}) do
-    %{id: parent_id} = CacheHelpers.insert_domain()
-    %{id: domain_id} = CacheHelpers.insert_domain(%{parent_ids: [parent_id]})
-    CacheHelpers.insert_user(%{user_id: user_id})
+    %{id: domain_id} = CacheHelpers.insert_domain()
+    CacheHelpers.insert_user(user_id: user_id)
 
     [domain_id: domain_id, request: insert(:grant_request, current_status: "pending")]
   end

@@ -105,7 +105,13 @@ defmodule TdCxWeb.SourceController do
 
     parameters do
       external_id(:path, :string, "external_id of source", required: true)
-      merge_content(:body, :string, "if true, the body content will be merged on top of the current value")
+
+      merge_content(
+        :body,
+        :string,
+        "if true, the body content will be merged on top of the current value"
+      )
+
       source(:body, Schema.ref(:UpdateSource), "Parameters used to update a source")
     end
 

@@ -4,30 +4,67 @@ defmodule TdDq.Rules.Search do
   """
 
   alias TdDq.Auth.Claims
-  alias TdDq.Permissions
+  alias TdDq.Rules.Search.Query
   alias TdDq.Search
-  alias TdDq.Search.Query
+  alias Truedat.Search.Permissions
 
   require Logger
 
   def get_filter_values(claims, params, index \\ :rules)
 
-  def get_filter_values(%Claims{role: role}, params, index) when role in ["admin", "service"] do
-    filter_clause = Query.create_filters(params, index)
-    query = %{bool: %{filter: filter_clause}}
-    search = %{query: query, aggs: Query.get_aggregation_terms(index), size: 0}
+  def get_filter_values(%Claims{} = claims, params, index) do
+    query = build_query(claims, params, index)
+    aggs = aggregations(index)
+    search = %{query: query, aggs: aggs, size: 0}
     Search.get_filters(search, index)
   end
 
-  def get_filter_values(%Claims{} = claims, params, index) do
-    user_defined_filters = Query.create_filters(params, index)
+  def search_rules(params, %Claims{} = claims, page \\ 0, size \\ 50) do
+    query = build_query(claims, params, :rules)
+    sort = Map.get(params, "sort", ["_score", "implementation_key.raw"])
 
-    permissions =
-      claims
-      |> Permissions.get_domain_permissions()
-      |> get_permissions(user_defined_filters, index)
+    %{from: page * size, size: size, query: query, sort: sort}
+    |> do_search(:rules, params)
+  end
 
-    get_filters(permissions, params, index)
+  def search_implementations(params, %Claims{} = claims, page \\ 0, size \\ 50) do
+    query = build_query(claims, params, :implementations)
+    sort = Map.get(params, "sort", ["_score", "implementation_key.raw"])
+
+    %{from: page * size, size: size, query: query, sort: sort}
+    |> do_search(:implementations, params)
+  end
+
+  defp build_query(%Claims{} = claims, params, index) when index in [:rules, :implementations] do
+    aggs = aggregations(index)
+
+    {executable, params} =
+      Map.get_and_update(params, "filters", fn
+        nil -> :pop
+        filters -> Map.pop(filters, "executable")
+      end)
+
+    claims
+    |> search_permissions(executable)
+    |> Query.build_query(params, aggs)
+  end
+
+  defp search_permissions(%Claims{} = claims, executable) do
+    executable
+    |> search_permissions()
+    |> Permissions.get_search_permissions(claims)
+  end
+
+  defp search_permissions([_true] = _executable) do
+    [
+      "view_quality_rule",
+      "manage_confidential_business_concepts",
+      "execute_quality_rule_implementations"
+    ]
+  end
+
+  defp search_permissions(_not_executable) do
+    ["view_quality_rule", "manage_confidential_business_concepts"]
   end
 
   def scroll_implementations(%{"scroll_id" => _, "scroll" => _} = scroll_params) do
@@ -37,111 +74,12 @@ defmodule TdDq.Rules.Search do
     |> transform_response()
   end
 
-  def search(params, claims, page \\ 0, size \\ 50, index \\ :rules)
-
-  def search(params, %Claims{role: role}, page, size, index) when role in ["admin", "service"] do
-    filter_clause = Query.create_filters(params, index)
-    query = Query.create_query(params, filter_clause)
-    sort = Map.get(params, "sort", default_sort(index))
-
-    %{
-      from: page * size,
-      size: size,
-      query: query,
-      sort: sort,
-      aggs: Query.get_aggregation_terms(index)
-    }
-    |> do_search(index, params)
-  end
-
-  def search(params, %Claims{} = claims, page, size, index) do
-    user_defined_filters = Query.create_filters(params, index)
-
-    permissions =
-      claims
-      |> Permissions.get_domain_permissions()
-      |> get_permissions(user_defined_filters, index)
-
-    filter(params, permissions, page, size, index)
-  end
-
-  defp get_filters([], _, _index), do: %{}
-
-  defp get_filters(permissions, params, index) do
-    user_defined_filters = Query.create_filters(params, index)
-    filter = Query.create_filter_clause(permissions, user_defined_filters)
-    query = Query.create_query(params, filter)
-    search = %{query: query, aggs: Query.get_aggregation_terms(index), size: 0}
-    Search.get_filters(search, index)
-  end
-
-  defp default_sort(:rules), do: ["name.raw"]
-
-  defp default_sort(:implementations), do: ["implementation_key.raw"]
-
-  defp get_permissions(domain_permissions, user_defined_filters, index) do
-    case index do
-      :rules -> get_permissions(domain_permissions)
-      :implementations -> get_permissions(domain_permissions, user_defined_filters)
-    end
-  end
-
-  defp get_permissions(domain_permissions, user_defined_filters) do
-    Enum.filter(domain_permissions, fn permissions_obj ->
-      case do_rules_execution(user_defined_filters) do
-        true ->
-          check_execute_and_view_permission(permissions_obj)
-
-        false ->
-          Enum.any?(permissions_obj.permissions, &check_view_or_manage_permission(&1))
-      end
-    end)
-  end
-
-  defp get_permissions(domain_permissions) do
-    Enum.filter(domain_permissions, fn %{permissions: permissions} ->
-      Enum.any?(permissions, &check_view_or_manage_permission(&1))
-    end)
-  end
-
-  defp check_execute_and_view_permission(permissions_obj) do
-    Enum.member?(permissions_obj.permissions, :execute_quality_rule_implementations) &&
-      Enum.any?(permissions_obj.permissions, &check_view_or_manage_permission(&1))
-  end
-
-  defp check_view_or_manage_permission(permission_names) do
-    permission_names == :view_quality_rule ||
-      permission_names == :manage_confidential_business_concepts
-  end
-
-  defp filter(_params, [], _page, _size, _index),
-    do: %{results: [], aggregations: %{}, total: 0}
-
-  defp filter(params, [_h | _t] = permissions, page, size, index) do
-    user_defined_filters = Query.create_filters(params, index)
-    filter = Query.create_filter_clause(permissions, user_defined_filters)
-    query = Query.create_query(params, filter)
-    sort = Map.get(params, "sort", default_sort(index))
-
-    %{
-      from: page * size,
-      size: size,
-      query: query,
-      sort: sort,
-      aggs: Query.get_aggregation_terms(index)
-    }
-    |> do_search(index, params)
-  end
-
   defp do_search(search, index, params) do
     params
     |> Map.take(["scroll"])
     |> case do
-      %{"scroll" => _scroll} = query_params ->
-        Search.search(search, query_params, index)
-
-      _ ->
-        Search.search(search, index)
+      %{"scroll" => _scroll} = query_params -> Search.search(search, query_params, index)
+      _ -> Search.search(search, index)
     end
     |> transform_response()
   end
@@ -155,13 +93,11 @@ defmodule TdDq.Rules.Search do
     Map.put(response, :results, results)
   end
 
-  defp do_rules_execution(user_defined_filters) do
-    user_defined_filters
-    |> Enum.filter(&Enum.at(Map.get(get_filter(&1), "executable", []), 0))
-    |> Enum.empty?()
-    |> Kernel.!()
+  defp aggregations(:rules) do
+    TdDq.Rules.Search.Aggregations.aggregations()
   end
 
-  defp get_filter(%{terms: field}), do: field
-  defp get_filter(_), do: %{}
+  defp aggregations(:implementations) do
+    TdDq.Implementations.Search.Aggregations.aggregations()
+  end
 end

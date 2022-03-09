@@ -1,7 +1,6 @@
 defmodule TdDq.RuleResults.BulkLoadTest do
   use TdDd.DataCase
 
-  alias TdCache.ConceptCache
   alias TdCache.Redix
   alias TdCache.Redix.Stream
   alias TdCache.RuleCache
@@ -9,19 +8,13 @@ defmodule TdDq.RuleResults.BulkLoadTest do
 
   @moduletag sandbox: :shared
   @stream TdCache.Audit.stream()
-  @concept_id 987_654_321
 
   setup_all do
     start_supervised(TdDq.MockRelationCache)
     start_supervised(TdDd.Search.MockIndexWorker)
     start_supervised(TdDq.Cache.RuleLoader)
 
-    ConceptCache.put(%{id: @concept_id, domain_id: 42})
-
-    on_exit(fn ->
-      ConceptCache.delete(@concept_id)
-      Redix.del!(@stream)
-    end)
+    on_exit(fn -> Redix.del!(@stream) end)
   end
 
   setup do
@@ -76,12 +69,12 @@ defmodule TdDq.RuleResults.BulkLoadTest do
     end
 
     test "publishes audit events with domain_ids" do
-      domain_id = System.unique_integer([:positive])
-      domain_ids = [domain_id]
+      %{id: domain_id} = CacheHelpers.insert_domain()
+      concept_id = System.unique_integer([:positive])
 
       rule =
         build(:rule,
-          business_concept_id: "#{@concept_id}",
+          business_concept_id: "#{concept_id}",
           domain_id: domain_id
         )
 
@@ -105,7 +98,7 @@ defmodule TdDq.RuleResults.BulkLoadTest do
                "result" => "90.00",
                "status" => "warn",
                "params" => ^params,
-               "domain_ids" => ^domain_ids
+               "domain_ids" => [^domain_id]
              } = Jason.decode!(payload)
     end
 

@@ -35,13 +35,14 @@ defmodule TdDqWeb.RuleControllerTest do
     start_supervised!(TdDq.Cache.RuleLoader)
     on_exit(fn -> Redix.del!(Audit.stream()) end)
 
-    domain =
+    %{id: domain_id} =
+      domain =
       case tags do
         %{domain: domain} -> domain
         _ -> CacheHelpers.insert_domain()
       end
 
-    [rule: insert(:rule, domain_id: domain.id), domain: domain]
+    [rule: insert(:rule, domain_id: domain_id), domain: domain]
   end
 
   describe "index" do
@@ -89,17 +90,13 @@ defmodule TdDqWeb.RuleControllerTest do
                |> json_response(:ok)
     end
 
-    @tag authentication: [user_name: "not_an_admin"]
+    @tag authentication: [user_name: "not_an_admin", permissions: [:view_quality_rule]]
     test "lists all rules depending on permissions", %{
       conn: conn,
-      claims: %{user_id: user_id},
+      rule: %{id: rule_id},
       swagger_schema: schema
     } do
-      business_concept_id = System.unique_integer([:positive])
-      %{id: id, domain_id: domain_id} = insert(:rule, business_concept_id: business_concept_id)
-      insert(:rule, business_concept_id: "1234")
-
-      create_acl_entry(user_id, "domain", domain_id, [:view_quality_rule])
+      insert(:rule)
 
       assert %{"data" => data} =
                conn
@@ -107,7 +104,7 @@ defmodule TdDqWeb.RuleControllerTest do
                |> validate_resp_schema(schema, "RulesResponse")
                |> json_response(:ok)
 
-      assert [%{"id" => ^id}] = data
+      assert [%{"id" => ^rule_id}] = data
     end
   end
 
@@ -161,18 +158,16 @@ defmodule TdDqWeb.RuleControllerTest do
                |> json_response(:forbidden)
     end
 
-    @tag authentication: [user_name: "not_an_admin"]
+    @tag authentication: [user_name: "not_an_admin", permissions: [:view_quality_rule]]
     test "gets rule when user has permissions", %{
       conn: conn,
-      claims: %{user_id: user_id},
-      swagger_schema: schema
+      swagger_schema: schema,
+      domain: %{id: domain_id}
     } do
       business_concept_id = System.unique_integer([:positive])
 
-      %{id: id, name: name, domain_id: domain_id} =
-        insert(:rule, business_concept_id: business_concept_id)
-
-      create_acl_entry(user_id, "domain", domain_id, [:view_quality_rule])
+      %{id: id, name: name} =
+        insert(:rule, business_concept_id: business_concept_id, domain_id: domain_id)
 
       %{"data" => %{"id" => ^id, "name" => ^name}} =
         conn
@@ -591,20 +586,17 @@ defmodule TdDqWeb.RuleControllerTest do
 
     @tag authentication: [
            user_name: "non_admin",
-           permissions: [:manage_quality_rule]
+           permissions: [
+             "manage_quality_rule",
+             "view_quality_rule",
+             "manage_quality_rule_implementations"
+           ]
          ]
-    test "user wit permissions can create implementations", %{
+    test "user with permissions can create implementations", %{
       conn: conn,
-      claims: %{user_id: user_id}
+      domain: %{id: domain_id}
     } do
-      business_concept_id = System.unique_integer([:positive])
-
-      %{id: id, domain_id: domain_id} = insert(:rule, business_concept_id: business_concept_id)
-
-      create_acl_entry(user_id, "domain", domain_id, [
-        :view_quality_rule,
-        :manage_quality_rule_implementations
-      ])
+      %{id: id} = insert(:rule, domain_id: domain_id)
 
       assert %{"user_permissions" => %{"manage_quality_rule_implementations" => true}} =
                conn

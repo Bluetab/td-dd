@@ -281,10 +281,10 @@ defmodule TdDd.DataStructures.Audit do
     Map.put(payload, :data_structure_id, data_structure_id)
   end
 
-  defp get_domain_ids(domain_id) do
-    domain_id
-    |> TaxonomyCache.get_parent_ids()
-    |> Enum.filter(& &1)
+  defp get_domain_ids(nil), do: []
+
+  defp get_domain_ids(domain_id) when is_integer(domain_id) do
+    TaxonomyCache.reaching_domain_ids(domain_id)
   end
 
   defp with_resource(%{} = payload, latest) do

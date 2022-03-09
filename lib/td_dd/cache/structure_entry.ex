@@ -25,7 +25,7 @@ defmodule TdDd.Cache.StructureEntry do
 
     acc =
       dsv
-      |> Map.take([:group, :name, :type, :metadata, :updated_at, :deleted_at, :path])
+      |> Map.take([:group, :name, :type, :description, :metadata, :updated_at, :deleted_at, :path])
       |> Map.put(:id, id)
       |> Map.update(:path, [], fn path -> Enum.map(path, & &1["name"]) end)
       |> Map.put(:external_id, external_id)

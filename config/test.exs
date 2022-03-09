@@ -18,17 +18,13 @@ config :td_dd, TdDd.Repo,
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: 1
 
-config :td_dd, permission_resolver: MockPermissionResolver
-
 config :td_dd, index_worker: TdDd.Search.MockIndexWorker
 
 config :td_dd, cx_index_worker: TdDd.Search.MockIndexWorker
 
 config :td_dd, dq_index_worker: TdDd.Search.MockIndexWorker
 
-config :td_dd, relation_cache: TdDq.MockRelationCache
-
-config :td_dd, TdDd.Search.Cluster, api: TdDd.ElasticsearchMock
+config :td_dd, TdDd.Search.Cluster, api: ElasticsearchMock
 
 config :td_dd, :vault,
   token: "vault_secret_token1234",

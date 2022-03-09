@@ -5,7 +5,6 @@ defmodule TdCx.Canada.Abilities do
   alias TdCx.Jobs.Job
   alias TdCx.Permissions
   alias TdCx.Sources.Source
-  alias TdCx.Taxonomies.Domain
 
   defimpl Canada.Can, for: Claims do
     def can?(%Claims{role: role, user_name: user_name}, :view_secrets, %Source{type: type})
@@ -29,15 +28,11 @@ defmodule TdCx.Canada.Abilities do
     def can?(%Claims{role: role}, _action, _domain) when role in ["admin", "service"], do: true
 
     def can?(%Claims{role: "user"} = claims, action, Job) when action in [:show, :create] do
-      Permissions.has_any_permission_on_resource_type?(claims, [:profile_structures], Domain)
+      Permissions.has_permission?(claims, :profile_structures)
     end
 
     def can?(%Claims{role: "user"} = claims, :list, Source) do
-      Permissions.has_any_permission_on_resource_type?(
-        claims,
-        [:manage_raw_quality_rule_implementations],
-        Domain
-      )
+      Permissions.has_permission?(claims, :manage_raw_quality_rule_implementations)
     end
 
     def can?(%Claims{}, _action, _domain), do: false

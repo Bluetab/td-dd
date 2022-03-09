@@ -6,6 +6,12 @@ defmodule TdDdWeb.DataStructureView do
 
   require Logger
 
+  def render("index.json", %{actions: %{} = actions} = assigns) when map_size(actions) > 0 do
+    "index.json"
+    |> render(Map.delete(assigns, :actions))
+    |> Map.put(:_actions, actions)
+  end
+
   def render("index.json", %{scroll_id: scroll_id} = assigns) do
     "index.json"
     |> render(Map.delete(assigns, :scroll_id))

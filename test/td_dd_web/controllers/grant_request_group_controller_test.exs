@@ -78,9 +78,10 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
   end
 
   describe "create grant_request_group" do
-    @tag authentication: [role: "admin", user_id: 123]
+    @tag authentication: [role: "admin"]
     test "renders grant_request_group when data is valid", %{
       conn: conn,
+      claims: %{user_id: user_id},
       create_params: create_params
     } do
       assert %{"data" => data} =
@@ -99,7 +100,7 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
 
       assert %{
                "id" => ^id,
-               "user_id" => 123
+               "user_id" => ^user_id
              } = data
     end
 

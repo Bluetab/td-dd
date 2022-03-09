@@ -17,11 +17,7 @@ defmodule TdDqWeb.ImplementationFilterController do
     description("List Implementation Filters")
 
     parameters do
-      search(
-        :body,
-        Schema.ref(:FilterRequest),
-        "Filter parameters"
-      )
+      search(:body, Schema.ref(:FilterRequest), "Filter parameters")
     end
 
     response(200, "OK", Schema.ref(:FilterResponse))
@@ -29,7 +25,7 @@ defmodule TdDqWeb.ImplementationFilterController do
 
   def search(conn, params) do
     claims = conn.assigns[:current_resource]
-    params = Map.put(params, :without, ["deleted_at"])
+    params = Map.put(params, "without", "deleted_at")
     {:ok, filters} = Search.get_filter_values(claims, params, :implementations)
     render(conn, "show.json", filters: filters)
   end

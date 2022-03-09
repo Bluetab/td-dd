@@ -7,6 +7,12 @@ defmodule TdDqWeb.ImplementationView do
   alias TdDqWeb.Implementation.RawContentView
   alias TdDqWeb.RuleResultView
 
+  def render("index.json", %{actions: %{} = actions} = assigns) when map_size(actions) > 0 do
+    "index.json"
+    |> render(Map.delete(assigns, :actions))
+    |> Map.put(:_actions, actions)
+  end
+
   def render("index.json", %{implementations: implementations}) do
     %{data: render_many(implementations, __MODULE__, "implementation.json")}
   end

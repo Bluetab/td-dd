@@ -11,7 +11,6 @@ defmodule TdDd.Search do
   def search(query), do: search(query, :structures)
 
   def search(query, index) when index in [:structures, :grants] do
-    Logger.debug(fn -> "Query: #{inspect(query)}" end)
     alias_name = Cluster.alias_name(index)
     response = Elasticsearch.post(Cluster, "/#{alias_name}/_search", query)
 
@@ -32,15 +31,10 @@ defmodule TdDd.Search do
   end
 
   def search(body, query_params, index \\ :structures) do
-    Logger.debug(fn -> "Query: #{inspect(body)} #{inspect(query_params)}" end)
     alias_name = Cluster.alias_name(index)
-
-    response =
-      Elasticsearch.post(
-        Cluster,
-        "/#{alias_name}/_search?" <> URI.encode_query(query_params),
-        body
-      )
+    url = "/#{alias_name}/_search"
+    query_params = Map.take(query_params, ["scroll"])
+    response = Elasticsearch.post(Cluster, url, body, params: query_params)
 
     case response do
       {:ok, %{"_scroll_id" => scroll_id, "hits" => %{"hits" => results, "total" => total}} = res} ->
@@ -54,7 +48,6 @@ defmodule TdDd.Search do
   end
 
   def scroll(scroll_params) do
-    Logger.debug(fn -> "Scroll: #{inspect(scroll_params)}" end)
     response = Elasticsearch.post(Cluster, "_search/scroll", scroll_params)
 
     case response do
@@ -102,7 +95,7 @@ defmodule TdDd.Search do
     domains =
       buckets
       |> Enum.map(&bucket_key/1)
-      |> Enum.map(&TaxonomyCache.get_domain/1)
+      |> Enum.map(&get_domain/1)
 
     {"taxonomy", domains}
   end
@@ -119,4 +112,7 @@ defmodule TdDd.Search do
 
   defp bucket_key(%{"key_as_string" => key}) when key in ["true", "false"], do: key
   defp bucket_key(%{"key" => key}), do: key
+
+  defp get_domain(id) when is_integer(id), do: TaxonomyCache.get_domain(id)
+  defp get_domain(_), do: nil
 end

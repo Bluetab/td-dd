@@ -2,7 +2,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
   use TdDqWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger_dq.json"
 
-  alias TdCache.ConceptCache
+  import Mox
 
   @valid_dataset [
     %{structure: %{id: 14_080}},
@@ -33,10 +33,13 @@ defmodule TdDqWeb.ImplementationControllerTest do
   }
 
   setup_all do
-    start_supervised(TdDd.Search.MockIndexWorker)
-    start_supervised(TdDq.Cache.RuleLoader)
+    start_supervised!(TdDd.Search.MockIndexWorker)
+    start_supervised!(TdDd.Search.Cluster)
+    start_supervised!(TdDq.Cache.RuleLoader)
     :ok
   end
+
+  setup :verify_on_exit!
 
   setup do
     [implementation: insert(:implementation)]
@@ -81,24 +84,12 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       concept_id_authorized = System.unique_integer([:positive])
 
-      ConceptCache.put(%{
-        id: concept_id_authorized,
-        domain_id: domain.id,
-        name: "authorized_bc",
-        updated_at: DateTime.utc_now()
-      })
-
+      CacheHelpers.insert_concept(%{id: concept_id_authorized, domain_id: domain.id})
       CacheHelpers.insert_link(id, "implementation", "business_concept", concept_id_authorized)
 
       concept_id_forbidden = System.unique_integer([:positive])
 
-      ConceptCache.put(%{
-        id: concept_id_forbidden,
-        name: "forbidden_bc",
-        domain_id: System.unique_integer([:positive]),
-        updated_at: DateTime.utc_now()
-      })
-
+      CacheHelpers.insert_concept(%{id: concept_id_forbidden, domain_id: System.unique_integer([:positive])})
       CacheHelpers.insert_link(id, "implementation", "business_concept", concept_id_forbidden)
 
       assert %{"data" => %{"links" => links}} =
@@ -772,38 +763,35 @@ defmodule TdDqWeb.ImplementationControllerTest do
   end
 
   describe "search_rule_implementations" do
-    @tag authentication: [role: "admin"]
-    test "lists all implementations from a rule", %{
-      conn: conn,
-      swagger_schema: schema,
-      implementation: %{rule_id: rule_id}
-    } do
-      assert %{"data" => data} =
-               conn
-               |> post(
-                 Routes.rule_implementation_path(conn, :search_rule_implementations, rule_id)
-               )
-               |> validate_resp_schema(schema, "ImplementationsResponse")
-               |> json_response(:ok)
+    for role <- ["admin", "service"] do
+      @tag authentication: [role: "service"]
+      test "#{role} account can search implementations", %{
+        conn: conn,
+        swagger_schema: schema
+      } do
+        %{id: id} = implementation = insert(:implementation)
 
-      assert [%{"rule_id" => ^rule_id}] = data
-    end
+        ElasticsearchMock
+        |> expect(:request, fn
+          _, :post, "/implementations/_search", %{from: 0, size: 1000, query: query}, [] ->
+            assert query == %{
+                     bool: %{
+                       filter: %{term: %{"rule_id" => 123}},
+                       must_not: %{exists: %{field: "deleted_at"}}
+                     }
+                   }
 
-    @tag authentication: [role: "service"]
-    test "service account can search implementations", %{
-      conn: conn,
-      swagger_schema: schema,
-      implementation: %{rule_id: rule_id}
-    } do
-      assert %{"data" => data} =
-               conn
-               |> post(
-                 Routes.rule_implementation_path(conn, :search_rule_implementations, rule_id)
-               )
-               |> validate_resp_schema(schema, "ImplementationsResponse")
-               |> json_response(:ok)
+            SearchHelpers.hits_response([implementation])
+        end)
 
-      assert [%{"rule_id" => ^rule_id}] = data
+        assert %{"data" => data} =
+                 conn
+                 |> post(Routes.rule_implementation_path(conn, :search_rule_implementations, 123))
+                 |> validate_resp_schema(schema, "ImplementationsResponse")
+                 |> json_response(:ok)
+
+        assert [%{"id" => ^id}] = data
+      end
     end
 
     @tag authentication: [role: "admin"]
@@ -811,7 +799,13 @@ defmodule TdDqWeb.ImplementationControllerTest do
       conn: conn,
       swagger_schema: schema
     } do
-      %{rule_id: rule_id} = insert(:raw_implementation)
+      %{rule_id: rule_id} = implementation = insert(:raw_implementation)
+
+      ElasticsearchMock
+      |> expect(:request, fn
+        _, :post, "/implementations/_search", %{from: 0, size: 1000, query: _}, [] ->
+          SearchHelpers.hits_response([implementation])
+      end)
 
       assert %{"data" => data} =
                conn
@@ -826,12 +820,27 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
     @tag authentication: [role: "admin"]
     test "lists all deleted implementations of a rule", %{conn: conn, swagger_schema: schema} do
-      %{id: id, rule_id: rule_id} = insert(:implementation, deleted_at: DateTime.utc_now())
+      %{id: id} = implementation = insert(:implementation, deleted_at: DateTime.utc_now())
+
+      ElasticsearchMock
+      |> expect(:request, fn
+        _, :post, "/implementations/_search", %{from: 0, size: 1000, query: query}, [] ->
+          assert query == %{
+                   bool: %{
+                     filter: [
+                       %{exists: %{field: "deleted_at"}},
+                       %{term: %{"rule_id" => 123}}
+                     ]
+                   }
+                 }
+
+          SearchHelpers.hits_response([implementation])
+      end)
 
       assert %{"data" => data} =
                conn
                |> post(
-                 Routes.rule_implementation_path(conn, :search_rule_implementations, rule_id,
+                 Routes.rule_implementation_path(conn, :search_rule_implementations, 123,
                    status: "deleted"
                  )
                )
@@ -860,11 +869,30 @@ defmodule TdDqWeb.ImplementationControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "downlaod all implementations as csv", %{
+    test "download all implementations as csv", %{
       conn: conn,
       implementation: previous_implementation,
       implementations: new_implementations
     } do
+      ElasticsearchMock
+      |> expect(:request, fn
+        _,
+        :post,
+        "/implementations/_search",
+        %{from: 0, size: 10_000, sort: sort, query: query},
+        [] ->
+          assert query == %{
+                   bool: %{
+                     filter: %{match_all: %{}},
+                     must_not: %{exists: %{field: "deleted_at"}}
+                   }
+                 }
+
+          assert sort == ["_score", "implementation_key.raw"]
+
+          SearchHelpers.hits_response([previous_implementation | new_implementations])
+      end)
+
       [
         %{implementation_key: key_0, rule: %{name: name_0}, inserted_at: inserted_at_0},
         %{

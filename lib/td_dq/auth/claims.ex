@@ -7,6 +7,7 @@ defmodule TdDq.Auth.Claims do
 
   @typedoc "The claims of an authenticated user"
   @type t :: %__MODULE__{
+          exp: non_neg_integer() | nil,
           user_id: non_neg_integer() | nil,
           user_name: binary() | nil,
           role: binary() | nil,
@@ -14,5 +15,5 @@ defmodule TdDq.Auth.Claims do
         }
 
   @derive {Jason.Encoder, only: [:user_id, :user_name]}
-  defstruct [:user_id, :user_name, :role, :jti]
+  defstruct [:user_id, :user_name, :role, :jti, :exp]
 end

@@ -4,34 +4,27 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
 
   alias TdDd.Search.MockIndexWorker
 
-  @implementation_domain_id 1000
-
   setup_all do
     start_supervised(MockIndexWorker)
     :ok
   end
 
-  setup _ do
-    %{id: id} = implementation = insert(:implementation, domain_id: @implementation_domain_id)
+  setup context do
+    %{id: domain_id} =
+      case context do
+        %{domain: domain} -> domain
+        _ -> CacheHelpers.insert_domain()
+      end
 
-    execution =
-      insert(:execution,
-        group: build(:execution_group),
-        implementation_id: id
-      )
+    %{id: id} = implementation = insert(:implementation, domain_id: domain_id)
+    execution = insert(:execution, group: build(:execution_group), implementation_id: id)
 
-    [
-      execution: execution,
-      implementation: implementation
-    ]
+    [execution: execution, implementation: implementation]
   end
 
   describe "POST /api/rule_implementations/:id/results" do
-    @tag authentication: [
-           role: "non_admin",
-           permissions: [:manage_rule_results],
-           domain_id: @implementation_domain_id
-         ]
+
+    @tag authentication: [role: "non_admin", permissions: [:manage_rule_results]]
     test "returns 201 Created with the result", %{
       conn: conn,
       swagger_schema: schema,
