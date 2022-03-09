@@ -18,10 +18,13 @@ defmodule Truedat.Search.Filters do
     end)
   end
 
+  defp build_filter({"taxonomy" = key, values}, aggs) do
+    values = TaxonomyCache.reachable_domain_ids(values)
+    build_filter(key, values, aggs)
+  end
+
   defp build_filter({key, values}, aggs) do
-    aggs
-    |> Map.get(key, _field = key)
-    |> build_filter(values)
+    build_filter(key, values, aggs)
   end
 
   defp build_filter(%{terms: %{field: field}}, values) do
@@ -53,9 +56,10 @@ defmodule Truedat.Search.Filters do
     {:filter, term(field, values)}
   end
 
-  defp term("domain_ids", values) do
-    values = TaxonomyCache.reachable_domain_ids(values)
-    Query.term_or_terms("domain_ids", values)
+  defp build_filter(key, values, aggs) do
+    aggs
+    |> Map.get(key, _field = key)
+    |> build_filter(values)
   end
 
   defp term(field, values) do
