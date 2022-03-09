@@ -19,7 +19,7 @@ defmodule CacheHelpers do
   def insert_domain(params \\ %{}) do
     %{id: domain_id} = domain = build(:domain, params)
     on_exit(fn -> TaxonomyCache.delete_domain(domain_id, clean: true) end)
-    TaxonomyCache.put_domain(domain, publish: false)
+    TaxonomyCache.put_domain(domain)
     _maybe_error = StructureEnricher.refresh()
     domain
   end
