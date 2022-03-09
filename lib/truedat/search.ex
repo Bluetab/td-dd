@@ -85,7 +85,7 @@ defmodule Truedat.Search do
     domains =
       buckets
       |> Enum.flat_map(fn %{"key" => domain_id} ->
-        TdCache.TaxonomyCache.reaching_domain_ids(domain_id)
+        TaxonomyCache.reaching_domain_ids(domain_id)
       end)
       |> Enum.uniq()
       |> Enum.map(&get_domain/1)
