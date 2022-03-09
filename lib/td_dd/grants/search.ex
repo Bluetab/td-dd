@@ -5,7 +5,7 @@ defmodule TdDd.Grants.Search do
 
   alias TdDd.Auth.Claims
   alias TdDd.Grants.Search.Query
-  alias TdDd.Search
+  alias Truedat.Search
   alias Truedat.Search.Permissions
 
   require Logger
@@ -13,15 +13,7 @@ defmodule TdDd.Grants.Search do
   @index :grants
   @default_sort ["_id"]
   @aggs %{
-    # TODO: Avoid indexing domain parents
-    "taxonomy" => %{
-      nested: %{path: "data_structure_version.domain_parents"},
-      aggs: %{
-        distinct_search: %{
-          terms: %{field: "data_structure_version.domain_parents.id", size: 50}
-        }
-      }
-    },
+    "taxonomy" => %{terms: %{field: "data_structure_version.domain_ids", size: 500}},
     "type.raw" => %{terms: %{field: "data_structure_version.type.raw", size: 50}}
   }
 
@@ -39,10 +31,6 @@ defmodule TdDd.Grants.Search do
     search = %{query: query, aggs: @aggs, size: 0}
 
     Search.get_filters(search, @index)
-  end
-
-  defp put_filter(params, field, condition) do
-    Map.update(params, "filters", %{field => condition}, &Map.put_new(&1, field, condition))
   end
 
   def scroll_grants(%{"scroll_id" => _, "scroll" => _} = scroll_params) do
@@ -77,9 +65,13 @@ defmodule TdDd.Grants.Search do
     |> search(claims, page, size)
   end
 
-  defp do_search(search, %{"scroll" => _scroll} = params) do
+  defp put_filter(params, field, condition) do
+    Map.update(params, "filters", %{field => condition}, &Map.put_new(&1, field, condition))
+  end
+
+  defp do_search(search, %{"scroll" => scroll} = _params) do
     search
-    |> Search.search(params, @index)
+    |> Search.search(@index, params: %{"scroll" => scroll})
     |> transform_response()
   end
 
@@ -88,6 +80,9 @@ defmodule TdDd.Grants.Search do
     |> Search.search(@index)
     |> transform_response()
   end
+
+  defp transform_response({:ok, response}), do: transform_response(response)
+  defp transform_response({:error, _} = response), do: response
 
   defp transform_response(%{results: results} = response) do
     results =

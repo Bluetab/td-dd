@@ -3,6 +3,7 @@ defmodule Truedat.Search.Filters do
   Support for building filtering search queries
   """
 
+  alias TdCache.TaxonomyCache
   alias Truedat.Search.Query
 
   def build_filters(filters, aggregations, acc \\ %{}) do
@@ -24,7 +25,7 @@ defmodule Truedat.Search.Filters do
   end
 
   defp build_filter(%{terms: %{field: field}}, values) do
-    {:filter, Query.term_or_terms(field, values)}
+    {:filter, term(field, values)}
   end
 
   defp build_filter(
@@ -37,7 +38,7 @@ defmodule Truedat.Search.Filters do
     nested_query = %{
       nested: %{
         path: path,
-        query: Query.term_or_terms(field, values)
+        query: term(field, values)
       }
     }
 
@@ -49,6 +50,15 @@ defmodule Truedat.Search.Filters do
   end
 
   defp build_filter(field, values) when is_binary(field) do
-    {:filter, Query.term_or_terms(field, values)}
+    {:filter, term(field, values)}
+  end
+
+  defp term("domain_ids", values) do
+    values = TaxonomyCache.reachable_domain_ids(values)
+    Query.term_or_terms("domain_ids", values)
+  end
+
+  defp term(field, values) do
+    Query.term_or_terms(field, values)
   end
 end

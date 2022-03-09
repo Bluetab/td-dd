@@ -9,13 +9,7 @@ defmodule TdDq.Rules.Search.Aggregations do
   def aggregations do
     static_aggs = %{
       "active.raw" => %{terms: %{field: "active.raw"}},
-      # TODO: Avoid indexing domain parents
-      "taxonomy" => %{
-        nested: %{path: "domain_parents"},
-        aggs: %{
-          distinct_search: %{terms: %{field: "domain_parents.id", size: 500}}
-        }
-      }
+      "taxonomy" => %{terms: %{field: "domain_ids", size: 500}}
     }
 
     TemplateCache.list_by_scope!("dq")

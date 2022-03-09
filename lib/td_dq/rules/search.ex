@@ -5,7 +5,7 @@ defmodule TdDq.Rules.Search do
 
   alias TdDq.Auth.Claims
   alias TdDq.Rules.Search.Query
-  alias TdDq.Search
+  alias Truedat.Search
   alias Truedat.Search.Permissions
 
   require Logger
@@ -67,22 +67,27 @@ defmodule TdDq.Rules.Search do
     ["view_quality_rule", "manage_confidential_business_concepts"]
   end
 
-  def scroll_implementations(%{"scroll_id" => _, "scroll" => _} = scroll_params) do
-    scroll_params
-    |> Map.take(["scroll_id", "scroll", "opts"])
+  def scroll_implementations(%{"scroll_id" => _, "scroll" => _} = params) do
+    params
+    |> Map.take(["scroll_id", "scroll"])
     |> Search.scroll()
     |> transform_response()
   end
 
-  defp do_search(search, index, params) do
-    params
-    |> Map.take(["scroll"])
-    |> case do
-      %{"scroll" => _scroll} = query_params -> Search.search(search, query_params, index)
-      _ -> Search.search(search, index)
-    end
+  defp do_search(search, index, %{"scroll" => scroll} = _params) do
+    search
+    |> Search.search(index, params: %{"scroll" => scroll})
     |> transform_response()
   end
+
+  defp do_search(search, index, _params) do
+    search
+    |> Search.search(index)
+    |> transform_response()
+  end
+
+  defp transform_response({:ok, response}), do: transform_response(response)
+  defp transform_response({:error, _} = response), do: response
 
   defp transform_response(%{results: results} = response) do
     results =

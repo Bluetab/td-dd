@@ -97,7 +97,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
         SearchHelpers.hits_response([dsv])
       end)
 
-      assert %{"data" => [%{"id" => ^id}], "filters" => _filters} =
+      assert %{"data" => [%{"id" => ^id}]} =
                conn
                |> post(data_structure_path(conn, :search), %{})
                |> json_response(:ok)

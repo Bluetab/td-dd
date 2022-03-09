@@ -126,7 +126,8 @@ defmodule TdDdWeb.GrantSearchControllerTest do
           SearchHelpers.scroll_response(Enum.take(grants, 5))
       end)
       |> expect(:request, fn
-        _, :post, "_search/scroll", %{"scroll" => "1m", "scroll_id" => _}, [] ->
+        _, :post, "/_search/scroll", body, [] ->
+          assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
           SearchHelpers.scroll_response(Enum.drop(grants, 5))
       end)
 

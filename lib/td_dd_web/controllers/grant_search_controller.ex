@@ -89,4 +89,8 @@ defmodule TdDdWeb.GrantSearchController do
   defp search_assigns(%{results: grants, aggregations: aggregations}, user_permissions) do
     [grants: grants, filters: aggregations, user_permissions: user_permissions]
   end
+
+  defp search_assigns(%{results: grants}, user_permissions) do
+    [grants: grants, user_permissions: user_permissions]
+  end
 end
