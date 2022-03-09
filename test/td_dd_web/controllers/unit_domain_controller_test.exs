@@ -29,7 +29,9 @@ defmodule TdDdWeb.UnitDomainControllerTest do
                Enum.find(unit_domains, &(&1["id"] == sibling_domain_id))
 
       assert parent_ids == [parent_domain_id]
-      assert %{"external_id" => ^external_id} = Enum.find(unit_domains, &(&1["id"] == parent_domain_id))
+
+      assert %{"external_id" => ^external_id} =
+               Enum.find(unit_domains, &(&1["id"] == parent_domain_id))
     end
 
     @tag authentication: [user_name: "foo", permissions: [:view_lineage]]
