@@ -4,8 +4,10 @@ defmodule TdCx.Jobs.Search do
   """
 
   alias TdCx.Auth.Claims
-  alias TdCx.Search
+  alias Truedat.Search
   alias Truedat.Search.Query
+
+  @index :jobs
 
   @aggs %{
     "source_external_id" => %{terms: %{field: "source.external_id.raw", size: 50}},
@@ -17,7 +19,7 @@ defmodule TdCx.Jobs.Search do
   def get_filter_values(%Claims{role: role}, params) when role in ["admin", "service"] do
     query = Query.build_query(%{match_all: %{}}, params)
     search = %{query: query, aggs: @aggs, size: 0}
-    Search.get_filters(search)
+    Search.get_filters(search, @index)
   end
 
   def get_filter_values(_, _), do: %{}
@@ -43,8 +45,16 @@ defmodule TdCx.Jobs.Search do
     do: %{results: [], aggregations: %{}, total: 0}
 
   defp do_search(search) do
-    %{results: results, total: total} = Search.search(search)
+    search
+    |> Search.search(@index)
+    |> transform_response()
+  end
+
+  defp transform_response({:ok, response}), do: transform_response(response)
+  defp transform_response({:error, _} = response), do: response
+
+  defp transform_response(%{results: results} = response) do
     results = Enum.map(results, &Map.get(&1, "_source"))
-    %{results: results, total: total}
+    %{response | results: results}
   end
 end

@@ -449,6 +449,10 @@ defmodule TdDdWeb.DataStructureController do
     [data_structures: data_structures, filters: aggregations]
   end
 
+  defp search_assigns(%{results: data_structures}) do
+    [data_structures: data_structures]
+  end
+
   defp deleted_structures(%{"filters" => %{"all" => true} = filters} = search_params) do
     filters = Map.delete(filters, "all")
     Map.put(search_params, "filters", filters)

@@ -23,13 +23,6 @@ defmodule TdDq.Search.Mappings do
         }
       },
       domain_ids: %{type: "long"},
-      domain_parents: %{
-        type: "nested",
-        properties: %{
-          id: %{type: "long"},
-          name: %{type: "text", fields: @raw}
-        }
-      },
       version: %{type: "long"},
       name: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
       active: %{type: "boolean", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
@@ -76,13 +69,6 @@ defmodule TdDq.Search.Mappings do
       business_concept_id: %{type: "text"},
       rule_id: %{type: "long"},
       domain_ids: %{type: "long"},
-      domain_parents: %{
-        type: "nested",
-        properties: %{
-          id: %{type: "long"},
-          name: %{type: "text", fields: @raw}
-        }
-      },
       structure_ids: %{type: "long", null_value: -1},
       structure_aliases: %{type: "text", fields: @raw},
       structure_names: %{type: "text", fields: @raw},

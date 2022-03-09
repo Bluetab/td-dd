@@ -44,7 +44,6 @@ defmodule TdDd.DataStructures.DataStructure do
     field(:latest_metadata, :map, virtual: true)
     field(:latest_note, :map, virtual: true)
     field(:domain, :map, virtual: true)
-    field(:domain_parents, {:array, :map}, virtual: true)
     field(:linked_concepts, :boolean, virtual: true)
     field(:search_content, :map, virtual: true)
 

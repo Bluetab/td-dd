@@ -146,7 +146,7 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
           SearchHelpers.scroll_response(Enum.take(impls, 5))
       end)
       |> expect(:request, fn
-        _, :post, "_search/scroll", body, %{"index" => "implementations"} ->
+        _, :post, "/_search/scroll", body, [] ->
           assert body == %{"scroll" => "1m", "scroll_id" => "some_scroll_id"}
           SearchHelpers.scroll_response(Enum.drop(impls, 5))
       end)
@@ -165,8 +165,7 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
                conn
                |> post(Routes.implementation_search_path(conn, :create), %{
                  "scroll_id" => scroll_id,
-                 "scroll" => "1m",
-                 "opts" => %{"index" => "implementations"}
+                 "scroll" => "1m"
                })
                |> json_response(:ok)
 
