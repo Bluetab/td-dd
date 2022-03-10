@@ -176,7 +176,6 @@ defmodule TdDd.DataStructures.BulkUpdate do
 
   defp format_content(%{content: content, content_schema: content_schema, domain_ids: domain_ids})
        when not is_nil(content) do
-    # FIXME: TD-4500 TdDfLib.Format.apply_template
     content = Format.apply_template(content, content_schema, domain_ids: domain_ids)
 
     content_schema

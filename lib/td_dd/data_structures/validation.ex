@@ -18,7 +18,6 @@ defmodule TdDd.DataStructures.Validation do
         empty_content_validator()
 
       template ->
-        # FIXME: TD-4500 TdDfLib.Validation.validator with domain_ids
         Validation.validator(template, domain_ids: domain_ids)
     end
   end
@@ -66,7 +65,6 @@ defmodule TdDd.DataStructures.Validation do
   end
 
   defp validate(schema, df_content, fields, domain_ids) do
-    # FIXME: TD-4500 TdDfLib.Validation.build_changeset with domain_ids
     Validation.build_changeset(
       df_content,
       Enum.filter(schema, fn %{"name" => name} -> name in fields end),
