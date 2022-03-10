@@ -17,8 +17,6 @@ defmodule TdDd.Repo.Migrations.CreateAccesses do
       timestamps(type: :utc_datetime_usec)
     end
 
-    create(
-      unique_index("accesses", [:data_structure_external_id, :source_user_name, :accessed_at])
-    )
+    create unique_index("accesses", [:data_structure_external_id, :source_user_name, :accessed_at])
   end
 end
