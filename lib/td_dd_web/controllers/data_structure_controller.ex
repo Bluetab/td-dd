@@ -87,20 +87,22 @@ defmodule TdDdWeb.DataStructureController do
     response(422, "Unprocessable Entity")
   end
 
-  def update(conn, %{"id" => id, "data_structure" => attrs}) do
+  def update(conn, %{"id" => id, "data_structure" => params}) do
     %{user_id: user_id} = claims = conn.assigns[:current_resource]
     data_structure_old = DataStructures.get_data_structure!(id)
     {:ok, external_ids} = DomainCache.external_id_to_id_map()
 
+    # TODO: TD-4500 Refactor, ask Juan whether update by external_id needs to be supported
     update_params =
-      attrs
+      params
       |> Map.put("last_change_by", user_id)
       |> DataStructures.put_domain_id(external_ids)
 
     with {:can, true} <- {:can, can?(claims, update_data_structure(data_structure_old))},
-         {:can, true} <- check_confidential(claims, data_structure_old, attrs),
-         {:can, true} <- check_domain_id(claims, data_structure_old, attrs),
-         {:can, true} <- check_new_domain_id(claims, attrs),
+         {:can, true} <- check_confidential(claims, data_structure_old, params),
+         # TODO: TD-4500 Refactor
+         {:can, true} <- check_domain_id(claims, data_structure_old, params),
+         {:can, true} <- check_new_domain_id(claims, params),
          {:ok, %{data_structure: data_structure}} <-
            DataStructures.update_data_structure(data_structure_old, update_params, claims) do
       data_structure = get_data_structure(data_structure.id)
@@ -296,18 +298,15 @@ defmodule TdDdWeb.DataStructureController do
 
       can_edit =
         case action do
-          :create -> can?(claims, create_structure_note({StructureNote, data_structure}))
-          :edit -> can?(claims, edit_structure_note({StructureNote, data_structure}))
+          :create -> can?(claims, create_structure_note(data_structure))
+          :edit -> can?(claims, edit_structure_note(data_structure))
           _ -> true
         end
 
-      case auto_publish do
-        true ->
-          can_edit and
-            can?(claims, publish_structure_note_from_draft({StructureNote, data_structure}))
-
-        _ ->
-          can_edit
+      if auto_publish do
+        can_edit and can?(claims, publish_structure_note_from_draft(data_structure))
+      else
+        can_edit
       end
     end)
   end

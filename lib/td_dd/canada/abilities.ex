@@ -134,10 +134,6 @@ defmodule TdDd.Canada.Abilities do
       StructureNoteAbilities.can?(claims, action, StructureNote)
     end
 
-    def can?(%Claims{} = claims, action, {StructureNote, data_structure}) do
-      StructureNoteAbilities.can?(claims, action, data_structure)
-    end
-
     def can?(%Claims{} = claims, action, DataStructureTag) do
       DataStructureTagAbilities.can?(claims, action, DataStructureTag)
     end
@@ -154,8 +150,8 @@ defmodule TdDd.Canada.Abilities do
       UnitAbilities.can?(claims, action, node)
     end
 
-    def can?(%Claims{} = claims, action, domain_ids) do
-      DataStructureAbilities.can?(claims, action, domain_ids)
+    def can?(%Claims{} = claims, action, domain_id) do
+      DataStructureAbilities.can?(claims, action, domain_id)
     end
   end
 end

@@ -176,6 +176,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
 
   defp format_content(%{content: content, content_schema: content_schema, domain_ids: domain_ids})
        when not is_nil(content) do
+    # FIXME: TD-4500 TdDfLib.Format.apply_template
     content = Format.apply_template(content, content_schema, domain_ids: domain_ids)
 
     content_schema
@@ -208,7 +209,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
   defp do_update(ids, %{} = params, %Claims{user_id: user_id}, auto_publish) do
     data_structures =
       DataStructures.list_data_structures(
-        %{id: {:in, ids}},
+        [id: {:in, ids}],
         [:system, [current_version: :structure_type]]
       )
 

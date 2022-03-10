@@ -267,12 +267,12 @@ defmodule TdDd.DataStructures.Audit do
     publish("grant_deleted", "grant", id, user_id, payload)
   end
 
-  defp with_domain_ids(%Changeset{} = changeset, %{data_structure: %{domain_id: domain_id}}) do
-    Changeset.put_change(changeset, :domain_ids, get_domain_ids(domain_id))
+  defp with_domain_ids(%Changeset{} = changeset, %{data_structure: %{domain_ids: domain_ids}}) do
+    Changeset.put_change(changeset, :domain_ids, get_domain_ids(domain_ids))
   end
 
-  defp with_domain_ids(%{} = payload, %{data_structure: %{domain_id: domain_id}}) do
-    Map.put(payload, :domain_ids, get_domain_ids(domain_id))
+  defp with_domain_ids(%{} = payload, %{data_structure: %{domain_ids: domain_ids}}) do
+    Map.put(payload, :domain_ids, get_domain_ids(domain_ids))
   end
 
   defp with_domain_ids(payload, _), do: payload
@@ -282,9 +282,10 @@ defmodule TdDd.DataStructures.Audit do
   end
 
   defp get_domain_ids(nil), do: []
+  defp get_domain_ids([]), do: []
 
-  defp get_domain_ids(domain_id) when is_integer(domain_id) do
-    TaxonomyCache.reaching_domain_ids(domain_id)
+  defp get_domain_ids(domain_ids) when is_list(domain_ids) do
+    TaxonomyCache.reaching_domain_ids(domain_ids)
   end
 
   defp with_resource(%{} = payload, latest) do

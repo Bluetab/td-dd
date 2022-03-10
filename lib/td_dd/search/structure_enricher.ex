@@ -67,7 +67,7 @@ defmodule TdDd.Search.StructureEnricher do
       ) do
     reply =
       data_structure
-      |> enrich_domain()
+      |> enrich_domains()
       |> enrich_links(links)
       |> search_content(content_opt, types, type)
 
@@ -87,7 +87,7 @@ defmodule TdDd.Search.StructureEnricher do
     |> Map.new(fn %{name: type, template: template} -> {type, template} end)
   end
 
-  defp enrich_domain(%DataStructure{domain_ids: [_ | _] = domain_ids} = structure) do
+  defp enrich_domains(%DataStructure{domain_ids: [_ | _] = domain_ids} = structure) do
     domains =
       Enum.map(domain_ids, fn domain_id ->
         case TaxonomyCache.get_domain(domain_id) do
@@ -99,7 +99,7 @@ defmodule TdDd.Search.StructureEnricher do
     %{structure | domains: domains}
   end
 
-  defp enrich_domain(%DataStructure{} = structure),
+  defp enrich_domains(%DataStructure{} = structure),
     do: %{structure | domains: [%{}]}
 
   defp search_content(
@@ -122,6 +122,8 @@ defmodule TdDd.Search.StructureEnricher do
 
   defp search_content(content, template, domain_ids),
     do: Format.search_values(content, template, domain_ids: domain_ids)
+
+  # FIXME: TD-4500 TdDfLib.Format.search_values with domain_ids
 
   defp enrich_links(%{id: id} = structure, links) do
     %{structure | linked_concepts: Enum.member?(links, id)}

@@ -195,11 +195,11 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       Enum.join(name_path, "~")
     end
 
-    # TODO: Avoid indexing domain, domain_id should be sufficient
+    # FIXME: TD-4500 Avoid indexing domain, domain_id should be sufficient
     defp domains(%{domains: [_ | _] = domains}),
       do: Enum.map(domains, &Map.take(&1, [:id, :external_id, :name]))
 
-    defp domains(_), do: %{}
+    defp domains(_), do: nil
 
     defp system(%{system: %{} = system}), do: Map.take(system, [:id, :external_id, :name])
 

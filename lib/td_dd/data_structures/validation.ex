@@ -18,19 +18,13 @@ defmodule TdDd.DataStructures.Validation do
         empty_content_validator()
 
       template ->
+        # FIXME: TD-4500 TdDfLib.Validation.validator with domain_ids
         Validation.validator(template, domain_ids: domain_ids)
     end
   end
 
-  def validator(%StructureNote{data_structure: structure} = note) do
-    case DataStructures.template_name(note) do
-      nil ->
-        empty_content_validator()
-
-      template ->
-        domain_ids = Map.get(structure, :domain_ids)
-        Validation.validator(template, domain_ids: domain_ids)
-    end
+  def validator(%StructureNote{data_structure: structure}) do
+    validator(structure)
   end
 
   @spec validator(
@@ -51,18 +45,8 @@ defmodule TdDd.DataStructures.Validation do
     end
   end
 
-  def validator(%StructureNote{data_structure: structure} = note, df_content, fields) do
-    note
-    |> DataStructures.template_name()
-    |> Templates.content_schema()
-    |> case do
-      {:error, error} ->
-        {:error, error}
-
-      schema ->
-        domain_ids = Map.get(structure, :domain_ids)
-        validate(schema, df_content, fields, domain_ids)
-    end
+  def validator(%StructureNote{data_structure: structure}, df_content, fields) do
+    validator(structure, df_content, fields)
   end
 
   def shallow_validator(%{} = structure) do
@@ -82,6 +66,7 @@ defmodule TdDd.DataStructures.Validation do
   end
 
   defp validate(schema, df_content, fields, domain_ids) do
+    # FIXME: TD-4500 TdDfLib.Validation.build_changeset with domain_ids
     Validation.build_changeset(
       df_content,
       Enum.filter(schema, fn %{"name" => name} -> name in fields end),

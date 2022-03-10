@@ -28,7 +28,7 @@ defmodule TdDd.Loader.ReaderTest do
                Reader.enrich_data_structures!(system, domain_external_id, data_structures)
 
       assert %{
-               domain_id: ^domain_id,
+               domain_ids: [^domain_id],
                system_id: 42,
                external_id: "foo",
                group: "group42",

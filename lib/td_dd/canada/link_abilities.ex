@@ -9,6 +9,7 @@ defmodule TdDd.Canada.LinkAbilities do
   def can?(%Claims{role: "admin"}, _action, _resource), do: true
 
   def can?(_, :create_link, %{domain_ids: nil}), do: false
+  def can?(_, :create_link, %{domain_ids: []}), do: false
 
   def can?(%Claims{} = claims, :create_link, %{domain_ids: domain_ids}) do
     Permissions.authorized?(claims, :link_data_structure, domain_ids)

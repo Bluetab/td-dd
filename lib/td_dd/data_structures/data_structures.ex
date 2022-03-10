@@ -42,12 +42,6 @@ defmodule TdDd.DataStructures do
       {:external_id, external_id}, q ->
         where(q, [ds], ds.external_id == ^external_id)
 
-      {:domain_id, domain_id}, q when is_list(domain_id) ->
-        where(q, [ds], fragment("? && ?", ds.domain_ids, ^domain_id))
-
-      {:domain_id, domain_id}, q ->
-        where(q, [ds], ^domain_id in ds.domain_ids)
-
       {:id, {:in, ids}}, q ->
         where(q, [ds], ds.id in ^ids)
     end)
@@ -462,23 +456,12 @@ defmodule TdDd.DataStructures do
     end
   end
 
-  @doc """
-  Updates a data_structure.
-
-  ## Examples
-
-      iex> update_data_structure(data_structure, %{field: new_value}, claims)
-      {:ok, %DataStructure{}}
-
-      iex> update_data_structure(data_structure, %{field: bad_value}, claims)
-      {:error, %Ecto.Changeset{}}
-
-  """
   def update_data_structure(%DataStructure{} = data_structure, %{} = params, %Claims{
         user_id: user_id
       }) do
     changeset = DataStructure.update_changeset(data_structure, params)
 
+    # FIXME: TD-4500 Refactor, use update_all on affected ids
     Multi.new()
     |> Multi.update(:data_structure, changeset)
     |> Multi.run(:audit, Audit, :data_structure_updated, [changeset, user_id])
@@ -643,30 +626,30 @@ defmodule TdDd.DataStructures do
     |> enrich(opts)
   end
 
-  def put_domain_id(data, %{} = domain_map, domain) when is_binary(domain) do
+  def put_domain_id(params, %{} = domain_map, domain) when is_binary(domain) do
     case Map.get(domain_map, domain) do
-      nil -> data
-      domain_id -> Map.put(data, "domain_id", domain_id)
+      nil -> params
+      domain_id -> Map.put(params, "domain_id", domain_id)
     end
   end
 
-  def put_domain_id(data, _domain_map, _domain), do: data
+  def put_domain_id(params, _domain_map, _domain), do: params
 
-  def put_domain_id(%{"domain_id" => domain_id} = data, external_ids)
+  def put_domain_id(%{"domain_id" => domain_id} = params, external_ids)
       when is_nil(domain_id) or domain_id == "" do
-    with_domain_id(data, external_ids)
+    with_domain_id(params, external_ids)
   end
 
-  def put_domain_id(%{"domain_id" => _} = data, _external_ids), do: data
+  def put_domain_id(%{"domain_id" => _} = params, _external_ids), do: params
 
-  def put_domain_id(data, external_ids) do
-    with_domain_id(data, external_ids)
+  def put_domain_id(params, external_ids) do
+    with_domain_id(params, external_ids)
   end
 
-  defp with_domain_id(data, external_ids) do
-    case get_domain_id(data, external_ids) do
-      nil -> data
-      domain_id -> Map.put(data, "domain_id", domain_id)
+  defp with_domain_id(params, external_ids) do
+    case get_domain_id(params, external_ids) do
+      nil -> params
+      domain_id -> Map.put(params, "domain_id", domain_id)
     end
   end
 

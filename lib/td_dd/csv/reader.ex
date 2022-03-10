@@ -3,7 +3,6 @@ defmodule TdDd.CSV.Reader do
   Module to read Data Structure CSV
   """
   alias Ecto.Changeset
-  alias TdDd.DataStructures
 
   NimbleCSV.define(CsvParser, separator: ";", escape: "\"")
 
@@ -11,14 +10,11 @@ defmodule TdDd.CSV.Reader do
 
   def read_csv(stream, options \\ []) do
     separator = Keyword.get(options, :separator, ?;)
-    domain_external_ids = Keyword.get(options, :domain_external_ids)
     system_map = Keyword.get(options, :system_map)
-    domain = Keyword.get(options, :domain)
 
     {records, errors} =
       stream
       |> flow_records(separator)
-      |> with_domain_id(domain, domain_external_ids)
       |> with_system_id(system_map)
       |> map_with_index(&csv_to_map(&1, options))
       |> Enum.split_with(fn {{res, _}, _} -> res == :ok end)
@@ -61,22 +57,6 @@ defmodule TdDd.CSV.Reader do
     headers
     |> Enum.zip(fields)
     |> Map.new()
-  end
-
-  defp with_domain_id(%Flow{} = flow, domain, external_ids) do
-    map_with_index(flow, &put_domain_id(&1, domain, external_ids))
-  end
-
-  defp put_domain_id(record, nil, external_ids) do
-    put_domain_id(record, external_ids)
-  end
-
-  defp put_domain_id(record, domain, external_ids) do
-    DataStructures.put_domain_id(record, external_ids, domain)
-  end
-
-  defp put_domain_id(record, external_ids) do
-    DataStructures.put_domain_id(record, external_ids)
   end
 
   defp with_system_id(%Flow{} = flow, nil = _system_map), do: flow
