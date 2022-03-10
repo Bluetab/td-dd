@@ -43,10 +43,10 @@ defmodule TdDd.DataStructures do
         where(q, [ds], ds.external_id == ^external_id)
 
       {:domain_id, domain_id}, q when is_list(domain_id) ->
-        where(q, [ds], ds.domain_id in ^domain_id)
+        where(q, [ds], fragment("? && ?", ds.domain_ids, ^domain_id))
 
       {:domain_id, domain_id}, q ->
-        where(q, [ds], ds.domain_id == ^domain_id)
+        where(q, [ds], ^domain_id in ds.domain_ids)
 
       {:id, {:in, ids}}, q ->
         where(q, [ds], ds.id in ^ids)
@@ -494,17 +494,17 @@ defmodule TdDd.DataStructures do
   end
 
   defp maybe_update_children_domain_ids(
-         %{domain_id: new_domain_id, external_id: parent_external_id},
-         %{domain_id: old_domain_id},
+         %{domain_ids: new_domain_ids, external_id: parent_external_id},
+         %{domain_ids: old_domain_ids},
          _params
        )
-       when old_domain_id != new_domain_id do
+       when is_list(old_domain_ids) and is_list(new_domain_ids) do
     children_ids = Ancestry.get_descendent_ids(parent_external_id)
 
     {count, _} =
       from(ds in DataStructure,
         where: ds.id in ^children_ids,
-        update: [set: [domain_id: ^new_domain_id]]
+        update: [set: [domain_ids: ^new_domain_ids]]
       )
       |> Repo.update_all([])
 

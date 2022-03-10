@@ -56,12 +56,12 @@ defmodule TdDd.DataStructuresTest do
       data_structure: data_structure,
       claims: claims
     } do
-      params = %{confidential: true, domain_id: 42}
+      params = %{confidential: true, domain_ids: [42]}
 
       assert {:ok, %{data_structure: data_structure}} =
                DataStructures.update_data_structure(data_structure, params, claims)
 
-      assert %DataStructure{confidential: true, domain_id: 42} = data_structure
+      assert %DataStructure{confidential: true, domain_ids: [42]} = data_structure
     end
 
     test "emits an audit event", %{data_structure: data_structure, claims: claims} do
@@ -109,17 +109,17 @@ defmodule TdDd.DataStructuresTest do
 
       assert {:ok,
               %{
-                data_structure: %DataStructure{domain_id: ^new_domain_id},
+                data_structure: %DataStructure{domain_ids: [^new_domain_id]},
                 updated_children_count: 3
               }} =
                DataStructures.update_data_structure(
                  parent,
-                 %{"domain_id" => new_domain_id},
+                 %{"domain_ids" => [new_domain_id]},
                  claims
                )
 
-      assert %DataStructure{domain_id: ^new_domain_id} = Repo.get!(DataStructure, child1_id)
-      assert %DataStructure{domain_id: ^new_domain_id} = Repo.get!(DataStructure, child2_id)
+      assert %DataStructure{domain_ids: [^new_domain_id]} = Repo.get!(DataStructure, child1_id)
+      assert %DataStructure{domain_ids: [^new_domain_id]} = Repo.get!(DataStructure, child2_id)
     end
 
     test "domain update `without_inheritance: true` param does not update children domain",
@@ -130,10 +130,10 @@ defmodule TdDd.DataStructuresTest do
            domain: %{id: previous_domain_id}
          } do
       %{id: child1_id, external_id: child1_external_id} =
-        insert(:data_structure, id: 51, external_id: "CHILD1", domain_id: previous_domain_id)
+        insert(:data_structure, id: 51, external_id: "CHILD1", domain_ids: [previous_domain_id])
 
       %{id: child2_id, external_id: child2_external_id} =
-        insert(:data_structure, id: 52, external_id: "CHILD2", domain_id: previous_domain_id)
+        insert(:data_structure, id: 52, external_id: "CHILD2", domain_ids: [previous_domain_id])
 
       %{id: child1_version_id} =
         insert(:data_structure_version, data_structure_id: child1_id, name: child1_external_id)
@@ -159,17 +159,20 @@ defmodule TdDd.DataStructuresTest do
 
       assert {:ok,
               %{
-                data_structure: %DataStructure{domain_id: ^new_domain_id},
+                data_structure: %DataStructure{domain_ids: [^new_domain_id]},
                 updated_children_count: 0
               }} =
                DataStructures.update_data_structure(
                  parent,
-                 %{"domain_id" => new_domain_id, "with_inheritance" => false},
+                 %{"domain_ids" => [new_domain_id], "with_inheritance" => false},
                  claims
                )
 
-      assert %DataStructure{domain_id: ^previous_domain_id} = Repo.get!(DataStructure, child1_id)
-      assert %DataStructure{domain_id: ^previous_domain_id} = Repo.get!(DataStructure, child2_id)
+      assert %DataStructure{domain_ids: [^previous_domain_id]} =
+               Repo.get!(DataStructure, child1_id)
+
+      assert %DataStructure{domain_ids: [^previous_domain_id]} =
+               Repo.get!(DataStructure, child2_id)
     end
   end
 
@@ -345,11 +348,11 @@ defmodule TdDd.DataStructuresTest do
     } do
       %{data_structure_id: id} =
         insert(:data_structure_version,
-          data_structure: build(:data_structure, domain_id: domain_id)
+          data_structure: build(:data_structure, domain_ids: [domain_id])
         )
 
       assert %{data_structure: data_structure} = DataStructures.get_latest_version(id)
-      assert %{domain: %{} = domain} = data_structure
+      assert %{domains: [%{}] = [domain]} = data_structure
       assert %{id: ^domain_id, name: ^domain_name, external_id: ^domain_external_id} = domain
     end
 
@@ -379,7 +382,7 @@ defmodule TdDd.DataStructuresTest do
 
   describe "enriched_structure_versions/1" do
     setup %{template: %{name: template_name}, domain: %{id: domain_id}} do
-      data_structure = insert(:data_structure, domain_id: domain_id)
+      data_structure = insert(:data_structure, domain_ids: [domain_id])
 
       %{id: id, data_structure_id: data_structure_id} =
         data_structure_version =
@@ -461,7 +464,7 @@ defmodule TdDd.DataStructuresTest do
                latest_note: latest_note,
                domain_ids: [^domain_id],
                mutable_metadata: %{"foo" => "bar"},
-               domain: %{id: ^domain_id, name: ^domain_name, external_id: ^domain_external_id},
+               domains: [%{id: ^domain_id, name: ^domain_name, external_id: ^domain_external_id}],
                path: path,
                path_sort: "yayo~papa",
                system: %{external_id: _, id: _, name: _}
@@ -1068,19 +1071,19 @@ defmodule TdDd.DataStructuresTest do
     } do
       %{id: id} =
         insert(:data_structure_version,
-          data_structure: insert(:data_structure, domain_id: domain_id)
+          data_structure: insert(:data_structure, domain_ids: [domain_id])
         )
 
       assert %{data_structure: data_structure} = DataStructures.get_data_structure_version!(id)
-      assert %{domain: domain} = data_structure
+      assert %{domains: [domain]} = data_structure
       assert %{id: ^domain_id, name: ^domain_name, external_id: ^domain_external_id} = domain
     end
 
     test "get_data_structure_version!/1 enriches with empty map when there is no domain",
          %{data_structure_version: %{id: id}} do
       assert %{data_structure: data_structure} = DataStructures.get_data_structure_version!(id)
-      assert %{domain: domain} = data_structure
-      assert domain == %{}
+      assert %{domains: domains} = data_structure
+      assert domains == [%{}]
     end
 
     test "get_data_structure_version!/3 enriches specified version" do

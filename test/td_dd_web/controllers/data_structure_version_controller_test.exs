@@ -332,7 +332,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       conn: conn,
       domain: %{id: domain_id}
     } do
-      structure = insert(:data_structure, domain_id: domain_id)
+      structure = insert(:data_structure, domain_ids: [domain_id])
       insert(:data_structure_version, data_structure_id: structure.id)
 
       start_date = DateTime.utc_now() |> DateTime.add(-60 * 60 * 24, :second)
@@ -877,7 +877,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   defp create_field_structure(%{domain: domain}) do
     %{id: source_id} = insert(:source, config: %{"job_types" => ["catalog", "profile"]})
 
-    data_structure = insert(:data_structure, domain_id: domain.id, source_id: source_id)
+    data_structure = insert(:data_structure, domain_ids: [domain.id], source_id: source_id)
 
     data_structure_version =
       insert(:data_structure_version,
@@ -899,7 +899,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     %{data_structure: data_structure} =
       data_structure_version =
       insert(:data_structure_version,
-        data_structure: build(:data_structure, domain_id: domain.id, source_id: source_id),
+        data_structure: build(:data_structure, domain_ids: [domain.id], source_id: source_id),
         type: "Table"
       )
 
@@ -924,7 +924,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
 
     %{data_structure: structure} =
       insert(:data_structure_version,
-        data_structure: build(:data_structure, domain_id: domain.id, source_id: source.id),
+        data_structure: build(:data_structure, domain_ids: [domain.id], source_id: source.id),
         type: "Column",
         class: "field"
       )

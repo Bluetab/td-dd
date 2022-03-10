@@ -37,13 +37,13 @@ defmodule TdDd.DataStructures.DataStructure do
     has_one(:current_metadata, StructureMetadata, where: [deleted_at: nil])
 
     field(:confidential, :boolean)
-    field(:domain_id, :integer)
+    field(:domain_ids, {:array, :integer}, default: [])
     field(:external_id, :string)
     field(:last_change_by, :integer)
     field(:row, :integer, virtual: true)
     field(:latest_metadata, :map, virtual: true)
     field(:latest_note, :map, virtual: true)
-    field(:domain, :map, virtual: true)
+    field(:domains, :map, virtual: true)
     field(:linked_concepts, :boolean, virtual: true)
     field(:search_content, :map, virtual: true)
 
@@ -58,7 +58,7 @@ defmodule TdDd.DataStructures.DataStructure do
     data_structure
     |> cast(params, [
       :confidential,
-      :domain_id,
+      :domain_ids,
       :external_id,
       :source_id,
       :system_id
@@ -73,7 +73,7 @@ defmodule TdDd.DataStructures.DataStructure do
 
   def update_changeset(%__MODULE__{} = data_structure, params) do
     data_structure
-    |> cast(params, [:confidential, :domain_id])
+    |> cast(params, [:confidential, :domain_ids])
     |> put_audit(params)
   end
 

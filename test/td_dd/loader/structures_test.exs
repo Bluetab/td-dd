@@ -16,7 +16,7 @@ defmodule TdDd.Loader.StructuresTest do
       |> Enum.map(fn id ->
         %{
           external_id: "#{id}",
-          domain_id: rem(id, 2),
+          domain_ids: [rem(id, 2)],
           inserted_at: ts,
           updated_at: ts,
           system_id: system_id
@@ -84,7 +84,7 @@ defmodule TdDd.Loader.StructuresTest do
       %{id: id} =
         DataStructure
         |> Repo.get_by!(external_id: "42")
-        |> Ecto.Changeset.change(domain_id: nil)
+        |> Ecto.Changeset.change(domain_ids: [])
         |> Repo.update!()
 
       assert {1, [^id]} = Structures.bulk_update_domain_id(["42"], 1, ts)

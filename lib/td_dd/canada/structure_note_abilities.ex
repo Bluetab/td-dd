@@ -17,9 +17,9 @@ defmodule TdDd.Canada.StructureNoteAbilities do
     Permissions.authorized?(claims, :publish_structure_note_from_draft)
   end
 
-  def can?(%Claims{} = claims, action, %{domain_id: domain_id} = data_structure) do
+  def can?(%Claims{} = claims, action, %{domain_ids: domain_ids} = data_structure) do
     DataStructureAbilities.can?(claims, :view_data_structure, data_structure) and
-      Permissions.authorized?(claims, action, domain_id)
+      Permissions.authorized?(claims, action, domain_ids)
   end
 
   def can?(_claims, _action, _domain_id) do

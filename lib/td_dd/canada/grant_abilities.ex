@@ -19,41 +19,41 @@ defmodule TdDd.Canada.GrantAbilities do
 
   def can?(%Claims{}, _, GrantRequest), do: false
 
-  def can?(%Claims{} = claims, :approve, %GrantRequest{domain_id: domain_id}) do
-    Permissions.authorized?(claims, :approve_grant_request, domain_id)
+  def can?(%Claims{} = claims, :approve, %GrantRequest{domain_ids: domain_ids}) do
+    Permissions.authorized?(claims, :approve_grant_request, domain_ids)
   end
 
   def can?(%Claims{user_id: user_id}, :show, %GrantRequest{group: %{user_id: user_id}}) do
     true
   end
 
-  def can?(%Claims{} = claims, :show, %GrantRequest{domain_id: domain_id}) do
-    Permissions.authorized?(claims, :approve_grant_request, domain_id)
+  def can?(%Claims{} = claims, :show, %GrantRequest{domain_ids: domain_ids}) do
+    Permissions.authorized?(claims, :approve_grant_request, domain_ids)
   end
 
-  def can?(%Claims{} = claims, :create_grant, %DataStructure{domain_id: domain_id}) do
-    Permissions.authorized?(claims, :manage_grants, domain_id)
+  def can?(%Claims{} = claims, :create_grant, %DataStructure{domain_ids: domain_ids}) do
+    Permissions.authorized?(claims, :manage_grants, domain_ids)
   end
 
-  def can?(%Claims{} = claims, :view_grants, %DataStructure{domain_id: domain_id}) do
-    Permissions.authorized?(claims, :view_grants, domain_id)
+  def can?(%Claims{} = claims, :view_grants, %DataStructure{domain_ids: domain_ids}) do
+    Permissions.authorized?(claims, :view_grants, domain_ids)
   end
 
   def can?(%Claims{user_id: user_id}, :show, %Grant{user_id: user_id}) do
     true
   end
 
-  def can?(%Claims{} = claims, :show, %Grant{data_structure: %{domain_id: domain_id}}) do
-    Permissions.authorized?(claims, :view_grants, domain_id) ||
-      Permissions.authorized?(claims, :manage_grants, domain_id)
+  def can?(%Claims{} = claims, :show, %Grant{data_structure: %{domain_ids: domain_ids}}) do
+    Permissions.authorized?(claims, :view_grants, domain_ids) ||
+      Permissions.authorized?(claims, :manage_grants, domain_ids)
   end
 
-  def can?(%Claims{} = claims, :update, %Grant{data_structure: %{domain_id: domain_id}}) do
-    Permissions.authorized?(claims, :manage_grants, domain_id)
+  def can?(%Claims{} = claims, :update, %Grant{data_structure: %{domain_ids: domain_ids}}) do
+    Permissions.authorized?(claims, :manage_grants, domain_ids)
   end
 
-  def can?(%Claims{} = claims, :delete, %Grant{data_structure: %{domain_id: domain_id}}) do
-    Permissions.authorized?(claims, :manage_grants, domain_id)
+  def can?(%Claims{} = claims, :delete, %Grant{data_structure: %{domain_ids: domain_ids}}) do
+    Permissions.authorized?(claims, :manage_grants, domain_ids)
   end
 
   def can?(%Claims{} = claims, :create_grant_request, domain_id) do

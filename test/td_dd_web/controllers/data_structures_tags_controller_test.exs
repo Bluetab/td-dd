@@ -75,7 +75,7 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
       domain: domain,
       swagger_schema: schema
     } do
-      structure = %{id: data_structure_id} = insert(:data_structure, domain_id: domain.id)
+      structure = %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
       tag = %{id: tag_id, name: name} = insert(:data_structure_tag)
 
       %{id: id, description: description} =
@@ -107,7 +107,7 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
       conn: conn,
       domain: domain
     } do
-      structure = %{id: data_structure_id} = insert(:data_structure, domain_id: domain.id)
+      structure = %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
       tag = insert(:data_structure_tag)
 
       insert(:data_structures_tags,
@@ -217,7 +217,7 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
       swagger_schema: schema
     } do
       description = "foo"
-      %{id: data_structure_id} = insert(:data_structure, domain_id: domain.id)
+      %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
       %{id: tag_id, name: name} = insert(:data_structure_tag)
       tag = %{description: description}
 
@@ -244,7 +244,7 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
       domain: domain
     } do
       description = "foo"
-      %{id: data_structure_id} = insert(:data_structure, domain_id: domain.id)
+      %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
       %{id: tag_id} = insert(:data_structure_tag)
       tag = %{description: description}
 
@@ -302,7 +302,7 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
       conn: conn,
       domain: domain
     } do
-      structure = %{id: data_structure_id} = insert(:data_structure, domain_id: domain.id)
+      structure = %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
       tag = %{id: tag_id} = insert(:data_structure_tag)
 
       %{id: id} =
@@ -328,7 +328,7 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
       conn: conn,
       domain: domain
     } do
-      structure = %{id: data_structure_id} = insert(:data_structure, domain_id: domain.id)
+      structure = %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
       tag = %{id: tag_id} = insert(:data_structure_tag)
 
       insert(:data_structures_tags,

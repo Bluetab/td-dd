@@ -59,7 +59,7 @@ defmodule TdDdWeb.GrantView do
         :metadata,
         :mutable_metadata
       ])
-      |> Map.put(:domain, dsv.domain)
+      |> Map.put(:domains, dsv.domains)
 
     Map.put(grant, :data_structure_version, version)
   end

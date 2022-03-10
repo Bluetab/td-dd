@@ -158,21 +158,25 @@ defmodule TdDd.DataStructures.BulkUpdate do
         template_fields = Enum.filter(content_schema, &(Map.get(&1, "type") != "table"))
         field_names = Enum.map(template_fields, &Map.get(&1, "name"))
 
-        domain_id = data_structure.domain_id
+        domain_ids = data_structure.domain_ids
         content = Map.take(row, field_names)
         fields = Map.keys(content)
         content_schema = Enum.filter(template_fields, &(Map.get(&1, "name") in fields))
 
         content =
-          format_content(%{content: content, content_schema: content_schema, domain_id: domain_id})
+          format_content(%{
+            content: content,
+            content_schema: content_schema,
+            domain_ids: domain_ids
+          })
 
         {%{"df_content" => content}, %{data_structure: data_structure, row_index: row_index}}
     end
   end
 
-  defp format_content(%{content: content, content_schema: content_schema, domain_id: domain_id})
+  defp format_content(%{content: content, content_schema: content_schema, domain_ids: domain_ids})
        when not is_nil(content) do
-    content = Format.apply_template(content, content_schema, domain_id: domain_id)
+    content = Format.apply_template(content, content_schema, domain_ids: domain_ids)
 
     content_schema
     |> Enum.filter(fn %{"type" => schema_type, "cardinality" => cardinality} ->

@@ -108,8 +108,8 @@ defmodule TdDd.Canada.Abilities do
 
     def can?(%Claims{role: "admin"}, :create_grant_request, %DataStructure{}), do: true
 
-    def can?(%Claims{} = claims, :create_grant_request, %DataStructure{domain_id: domain_id}) do
-      GrantAbilities.can?(claims, :create_grant_request, domain_id)
+    def can?(%Claims{} = claims, :create_grant_request, %DataStructure{domain_ids: domain_ids}) do
+      GrantAbilities.can?(claims, :create_grant_request, domain_ids)
     end
 
     def can?(%Claims{role: "admin"}, :create_grant_request_group, %DataStructure{}), do: true
@@ -154,8 +154,8 @@ defmodule TdDd.Canada.Abilities do
       UnitAbilities.can?(claims, action, node)
     end
 
-    def can?(%Claims{} = claims, action, domain_id) do
-      DataStructureAbilities.can?(claims, action, domain_id)
+    def can?(%Claims{} = claims, action, domain_ids) do
+      DataStructureAbilities.can?(claims, action, domain_ids)
     end
   end
 end

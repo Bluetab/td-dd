@@ -142,7 +142,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     def encode(
           %DataStructureVersion{
             data_structure:
-              %{search_content: content, tags: tags, domain_id: domain_id} = data_structure,
+              %{search_content: content, tags: tags, domain_ids: _domain_ids} = data_structure,
             path: path
           } = dsv
         ) do
@@ -155,7 +155,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       data_structure
       |> Map.take([
         :confidential,
-        :domain_id,
+        :domain_ids,
         :external_id,
         :id,
         :inserted_at,
@@ -164,8 +164,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
         :system_id
       ])
       |> Map.put(:latest_note, content)
-      |> Map.put(:domain_ids, List.wrap(domain_id))
-      |> Map.put(:domain, domain(data_structure))
+      |> Map.put(:domains, domains(data_structure))
       |> Map.put(:field_type, field_type(dsv))
       |> Map.put(:path_sort, path_sort(name_path))
       |> Map.put(:path, name_path)
@@ -197,8 +196,10 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     end
 
     # TODO: Avoid indexing domain, domain_id should be sufficient
-    defp domain(%{domain: %{} = domain}), do: Map.take(domain, [:id, :external_id, :name])
-    defp domain(_), do: %{}
+    defp domains(%{domains: [_ | _] = domains}),
+      do: Enum.map(domains, &Map.take(&1, [:id, :external_id, :name]))
+
+    defp domains(_), do: %{}
 
     defp system(%{system: %{} = system}), do: Map.take(system, [:id, :external_id, :name])
 
