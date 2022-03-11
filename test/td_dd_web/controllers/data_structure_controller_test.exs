@@ -210,7 +210,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       swagger_schema: schema
     } do
       %{id: new_domain_id} = CacheHelpers.insert_domain()
-      attrs = %{domain_ids: [new_domain_id], confidential: true}
+      attrs = %{domain_ids: [new_domain_id]}
 
       CacheHelpers.put_session_permissions(claims, %{
         update_data_structure: [old_domain_id],
@@ -225,8 +225,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                |> validate_resp_schema(schema, "DataStructureResponse")
                |> json_response(:ok)
 
-      assert %{domain_ids: [^new_domain_id], confidential: true} =
-               DataStructures.get_data_structure!(id)
+      assert %{domain_ids: [^new_domain_id]} = DataStructures.get_data_structure!(id)
     end
 
     @tag authentication: [role: "user"]

@@ -377,7 +377,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
             system_id(:integer, "System Id", required: true)
             group(:string, "Data Structure group")
             name(:string, "Data Structure name")
-            domain_ids([:array], "Domain Ids")
+            domain_ids(:array, "Domain Ids")
             class([:string, :null], "Data Structure class")
             description([:string, :null], "Data Structure description")
             external_id([:string, :null], "Data Structure external id")

@@ -37,6 +37,7 @@ defmodule TdDdWeb.Schema.Structures do
   object :data_structure do
     field :id, non_null(:id)
     field :confidential, non_null(:boolean)
+    field :domain_id, :integer, resolve: &Resolvers.Structures.domain_id/3
     field :domain_ids, list_of(:integer)
     field :external_id, non_null(:string)
     field :inserted_at, :datetime

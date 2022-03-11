@@ -6,6 +6,7 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   import Ecto.Query
 
   alias TdDd.Classifiers
+  alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.RelationTypes
@@ -197,5 +198,39 @@ defmodule TdDd.DataStructures.DataStructureQueries do
     query
     |> distinct(:data_structure_id)
     |> order_by(desc: :version)
+  end
+
+  def update_all_query(ids, %{confidential: confidential}, last_change_by)
+      when confidential in [true, false] and is_list(ids) do
+    updated_at = DateTime.utc_now()
+
+    DataStructure
+    |> where([ds], ds.id in ^ids)
+    |> where([ds], ds.confidential != ^confidential)
+    |> select([ds], ds.id)
+    |> update(
+      set: [
+        confidential: ^confidential,
+        last_change_by: ^last_change_by,
+        updated_at: ^updated_at
+      ]
+    )
+  end
+
+  def update_all_query(ids, %{domain_ids: domain_ids}, last_change_by)
+      when is_list(domain_ids) and is_list(ids) do
+    updated_at = DateTime.utc_now()
+
+    DataStructure
+    |> where([ds], ds.id in ^ids)
+    |> where([ds], ds.domain_ids != ^domain_ids)
+    |> select([ds], ds.id)
+    |> update(
+      set: [
+        domain_ids: ^domain_ids,
+        last_change_by: ^last_change_by,
+        updated_at: ^updated_at
+      ]
+    )
   end
 end

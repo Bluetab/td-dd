@@ -164,7 +164,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
         :system_id
       ])
       |> Map.put(:latest_note, content)
-      |> Map.put(:domains, domains(data_structure))
+      |> Map.put(:domain, first_domain(data_structure))
       |> Map.put(:field_type, field_type(dsv))
       |> Map.put(:path_sort, path_sort(name_path))
       |> Map.put(:path, name_path)
@@ -195,11 +195,10 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       Enum.join(name_path, "~")
     end
 
-    # FIXME: TD-4500 Avoid indexing domain, domain_id should be sufficient
-    defp domains(%{domains: [_ | _] = domains}),
-      do: Enum.map(domains, &Map.take(&1, [:id, :external_id, :name]))
+    defp first_domain(%{domains: [domain | _]}),
+      do: Map.take(domain, [:id, :external_id, :name])
 
-    defp domains(_), do: nil
+    defp first_domain(_), do: nil
 
     defp system(%{system: %{} = system}), do: Map.take(system, [:id, :external_id, :name])
 

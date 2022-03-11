@@ -11,7 +11,7 @@ defmodule TdDd.DataStructures.Audit do
   alias TdCache.TaxonomyCache
 
   @doc """
-  Publishes a `:data_structure_updated` event when modifying a StructureNote. Should be called using `Ecto.Multi.run/5`.
+  Publishes a `:structure_note_updated` event when modifying a StructureNote. Should be called using `Ecto.Multi.run/5`.
   """
   def structure_note_updated(
         _repo,
@@ -79,7 +79,7 @@ defmodule TdDd.DataStructures.Audit do
   @doc """
   Publishes a `:data_structure_updated` event. Should be called using `Ecto.Multi.run/5`.
   """
-  def data_structure_updated(_repo, %{data_structure: %{id: id}}, %{} = changeset, user_id) do
+  def data_structure_updated(_repo, %{}, id, %{} = changeset, user_id) do
     publish("data_structure_updated", "data_structure", id, user_id, changeset)
   end
 

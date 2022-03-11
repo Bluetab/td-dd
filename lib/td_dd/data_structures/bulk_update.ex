@@ -115,16 +115,16 @@ defmodule TdDd.DataStructures.BulkUpdate do
   def do_csv_bulk_update(rows, user_id, auto_publish) do
     Multi.new()
     |> Multi.run(:update_notes, &csv_bulk_update_notes(&1, &2, rows, user_id, auto_publish))
-    |> Multi.run(:updates, &csv_bulk_update(&1, &2, rows))
+    |> Multi.run(:updates, &csv_bulk_update(&1, &2, rows, user_id))
     |> Multi.run(:audit, &audit(&1, &2, user_id))
     |> Repo.transaction()
     |> on_complete()
   end
 
-  defp csv_bulk_update(_repo, _changes_so_far, rows) do
+  defp csv_bulk_update(_repo, _changes_so_far, rows, user_id) do
     rows
     |> Enum.map(fn {content, %{data_structure: data_structure, row_index: row_index}} ->
-      {DataStructure.merge_changeset(data_structure, content), row_index}
+      {DataStructure.changeset(data_structure, content, user_id), row_index}
     end)
     |> Enum.reject(fn {changeset, _row_index} -> changeset.changes == %{} end)
     |> Enum.reduce_while(%{}, &reduce_changesets/2)

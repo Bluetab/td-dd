@@ -126,6 +126,10 @@ defmodule TdDd.Canada.Abilities do
       DataStructureAbilities.can?(claims, action, data_structure)
     end
 
+    def can?(%Claims{} = claims, :update_data_structure, %{} = changeset) do
+      DataStructureAbilities.can?(claims, :update_data_structure, changeset)
+    end
+
     def can?(%Claims{} = claims, action, %DataStructureVersion{} = data_structure_version) do
       DataStructureVersionAbilities.can?(claims, action, data_structure_version)
     end

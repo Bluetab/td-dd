@@ -1,5 +1,6 @@
 defmodule TdDd.Canada.DataStructureAbilities do
   @moduledoc false
+  alias Ecto.Changeset
   alias TdDd.Auth.Claims
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Permissions
@@ -72,11 +73,11 @@ defmodule TdDd.Canada.DataStructureAbilities do
   end
 
   def can?(%Claims{} = claims, :manage_structures_domain, %DataStructure{domain_ids: domain_ids}) do
-    Permissions.authorized?(claims, :manage_structures_domain, domain_ids)
+    can?(claims, :manage_structures_domain, domain_ids)
   end
 
-  def can?(%Claims{} = claims, :manage_structures_domain, domain_id_or_ids) do
-    Permissions.authorized?(claims, :manage_structures_domain, domain_id_or_ids)
+  def can?(%Claims{} = claims, :manage_structures_domain, domain_ids) do
+    Enum.all?(domain_ids, &Permissions.authorized?(claims, :manage_structures_domain, &1))
   end
 
   def can?(%Claims{} = claims, :upload, domain_id) do
@@ -96,6 +97,29 @@ defmodule TdDd.Canada.DataStructureAbilities do
   def can?(%Claims{}, _action, %DataStructure{}), do: false
 
   def can?(%Claims{}, _action, DataStructure), do: false
+
+  def can?(%Claims{} = claims, :update_data_structure, %Changeset{} = changeset) do
+    can?(claims, :update_domain_ids, changeset) and
+      can?(claims, :update_confidential, changeset)
+  end
+
+  def can?(%Claims{} = claims, :update_domain_ids, %Changeset{data: structure} = changeset) do
+    case Changeset.fetch_field(changeset, :domain_ids) do
+      {:changes, domain_ids} ->
+        can?(claims, :manage_structures_domain, structure) and
+          can?(claims, :manage_structures_domain, domain_ids)
+
+      _ ->
+        true
+    end
+  end
+
+  def can?(%Claims{} = claims, :update_confidential, %Changeset{data: structure} = changeset) do
+    case Changeset.fetch_field(changeset, :confidential) do
+      {:changes, _} -> can?(claims, :manage_confidential_structures, structure)
+      _ -> true
+    end
+  end
 
   def can?(_claims, _action, _resource) do
     false
