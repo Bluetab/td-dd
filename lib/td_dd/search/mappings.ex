@@ -36,14 +36,6 @@ defmodule TdDd.Search.Mappings do
           external_id: %{type: "text", fields: @raw}
         }
       },
-      domain_parents: %{
-        type: "nested",
-        properties: %{
-          id: %{type: "long"},
-          name: %{type: "text", fields: @raw},
-          external_id: %{type: "text", fields: @raw}
-        }
-      },
       parent: %{
         properties: %{
           name: %{type: "text", fields: @raw},
@@ -57,6 +49,7 @@ defmodule TdDd.Search.Mappings do
       with_content: %{type: "boolean", fields: @raw},
       description: %{type: "text", fields: @raw},
       external_id: %{type: "keyword", index: false},
+      domain_id: %{type: "long"},
       domain_ids: %{type: "long"},
       deleted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       last_change_by: %{enabled: false},

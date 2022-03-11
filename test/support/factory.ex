@@ -10,7 +10,6 @@ defmodule TdDd.Factory do
   alias TdCx.Events.Event
   alias TdCx.Jobs.Job
   alias TdCx.Sources.Source
-
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureTag
@@ -23,7 +22,6 @@ defmodule TdDd.Factory do
   alias TdDd.Lineage.Units
   alias TdDd.Profiles.Profile
   alias TdDq.Remediations.Remediation
-  alias TdDd.Systems.System
   alias TdDd.UserSearchFilters.UserSearchFilter
 
   def claims_factory(attrs), do: do_claims(attrs, TdDd.Auth.Claims)
@@ -38,7 +36,8 @@ defmodule TdDd.Factory do
       user_id: sequence(:user_id, & &1),
       user_name: sequence("user_name"),
       role: "admin",
-      jti: sequence("jti")
+      jti: sequence("jti"),
+      exp: DateTime.add(DateTime.utc_now(), 10)
     )
     |> merge_attributes(attrs)
   end
@@ -55,7 +54,10 @@ defmodule TdDd.Factory do
   end
 
   def data_structure_version_factory(attrs) do
-    attrs = default_assoc(attrs, :data_structure_id, :data_structure)
+    {structure_attrs, attrs} = Map.split(attrs, [:domain_id])
+
+    attrs =
+      default_assoc(attrs, :data_structure_id, :data_structure, :data_structure, structure_attrs)
 
     %DataStructureVersion{
       description: "some description",
@@ -166,7 +168,7 @@ defmodule TdDd.Factory do
   end
 
   def system_factory do
-    %System{
+    %TdDd.Systems.System{
       name: sequence("system_name"),
       external_id: sequence("system_external_id")
     }
@@ -224,10 +226,16 @@ defmodule TdDd.Factory do
   def domain_factory do
     %{
       name: sequence("domain_name"),
-      id: sequence(:domain_id, &(&1 + 1000)),
+      id: System.unique_integer([:positive]),
       external_id: sequence("domain_external_id"),
-      updated_at: DateTime.utc_now(),
-      parent_ids: []
+      updated_at: DateTime.utc_now()
+    }
+  end
+
+  def concept_factory do
+    %{
+      id: System.unique_integer([:positive]),
+      name: sequence("concept_name")
     }
   end
 
@@ -376,8 +384,14 @@ defmodule TdDd.Factory do
     |> Map.new()
   end
 
-  def execution_factory do
+  def execution_factory(attrs) do
+    attrs =
+      attrs
+      |> default_assoc(:group_id, :group, :execution_group)
+      |> default_assoc(:implementation_id, :implementation)
+
     %TdDq.Executions.Execution{}
+    |> merge_attributes(attrs)
   end
 
   def execution_group_factory do
@@ -519,24 +533,31 @@ defmodule TdDd.Factory do
     |> merge_attributes(attrs)
   end
 
-  defp default_assoc(attrs, id_key, key, build_key \\ nil) do
+  def lineage_event_factory do
+    %TdDd.Lineage.LineageEvent{
+      user_id: "438",
+      graph_data: "TERADESA.BASILEAII.HIST_PROA_MOROSIDAD.ANTICIPOCAPITALIMPAGADO",
+      task_reference: "0.2996324945.3784572938.100946",
+      node: "nonode@nohost"
+    }
+  end
+
+  def user_factory do
+    %{
+      id: System.unique_integer([:positive]),
+      user_name: sequence("user_name"),
+      full_name: sequence("full_name"),
+      external_id: sequence("user_external_id"),
+      email: sequence("email") <> "@example.com"
+    }
+  end
+
+  defp default_assoc(attrs, id_key, key, build_key \\ nil, build_params \\ %{}) do
     if Enum.any?([key, id_key], &Map.has_key?(attrs, &1)) do
       attrs
     else
       build_key = if build_key, do: build_key, else: key
-      Map.put(attrs, key, build(build_key))
+      Map.put(attrs, key, build(build_key, build_params))
     end
-  end
-
-  def lineage_event_factory(attrs) do
-    %TdDd.Lineage.LineageEvent{
-      user_id: "438",
-      graph_id: nil,
-      graph_data: "TERADESA.BASILEAII.HIST_PROA_MOROSIDAD.ANTICIPOCAPITALIMPAGADO",
-      task_reference: "0.2996324945.3784572938.100946",
-      node: "nonode@nohost",
-      message: nil
-    }
-    |> merge_attributes(attrs)
   end
 end

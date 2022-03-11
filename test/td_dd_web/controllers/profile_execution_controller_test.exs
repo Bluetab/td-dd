@@ -1,14 +1,11 @@
 defmodule TdDdWeb.ExecutionControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
-  alias TdCache.TaxonomyCache
 
   @moduletag sandbox: :shared
 
   setup_all do
-    %{id: domain_id} = domain = build(:domain)
-    TaxonomyCache.put_domain(domain)
-    on_exit(fn -> TaxonomyCache.delete_domain(domain_id) end)
+    %{id: domain_id} = domain = CacheHelpers.insert_domain()
 
     [domain: domain]
   end
@@ -36,8 +33,8 @@ defmodule TdDdWeb.ExecutionControllerTest do
       end)
 
     case tags do
-      %{permissions: permissions, claims: %{user_id: user_id}, domain: %{id: domain_id}} ->
-        create_acl_entry(user_id, "domain", domain_id, permissions)
+      %{permissions: permissions, claims: claims, domain: %{id: domain_id}} ->
+        CacheHelpers.put_session_permissions(claims, domain_id, permissions)
 
       _ ->
         :ok

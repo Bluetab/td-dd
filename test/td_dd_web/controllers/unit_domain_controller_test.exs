@@ -7,9 +7,9 @@ defmodule TdDdWeb.UnitDomainControllerTest do
   describe "Unit Domain Controller" do
     @tag authentication: [role: "admin"]
     test "GET /api/units returns the list of units", %{conn: conn, swagger_schema: schema} do
-      %{id: parent_domain_id} = CacheHelpers.insert_domain()
-      %{id: domain_id} = CacheHelpers.insert_domain(%{parent_ids: [parent_domain_id]})
-      %{id: sibling_domain_id} = CacheHelpers.insert_domain(%{parent_ids: [parent_domain_id]})
+      %{id: parent_domain_id, external_id: external_id} = CacheHelpers.insert_domain()
+      %{id: domain_id} = CacheHelpers.insert_domain(parent_id: parent_domain_id)
+      %{id: sibling_domain_id} = CacheHelpers.insert_domain(parent_id: parent_domain_id)
       insert(:unit)
       %{id: unit_id} = insert(:unit, domain_id: domain_id)
       %{id: sibling_unit_id} = insert(:unit, domain_id: sibling_domain_id)
@@ -29,7 +29,9 @@ defmodule TdDdWeb.UnitDomainControllerTest do
                Enum.find(unit_domains, &(&1["id"] == sibling_domain_id))
 
       assert parent_ids == [parent_domain_id]
-      assert %{"parent_ids" => []} = Enum.find(unit_domains, &(&1["id"] == parent_domain_id))
+
+      assert %{"external_id" => ^external_id} =
+               Enum.find(unit_domains, &(&1["id"] == parent_domain_id))
     end
 
     @tag authentication: [user_name: "foo", permissions: [:view_lineage]]

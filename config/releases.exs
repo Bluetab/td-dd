@@ -32,6 +32,29 @@ config :td_dd, import_dir: System.get_env("IMPORT_DIR")
 
 config :td_dd, TdDd.Scheduler,
   jobs: [
+    cache_cleaner: [
+      schedule: "@reboot",
+      task:
+        {TdCache.CacheCleaner, :clean,
+         [
+           [
+             "TdDd.DataStructures.Migrations:TD-2774",
+             "TdDd.DataStructures.Migrations:td-2979",
+             "TdDd.Structures.Migrations:TD-3066",
+             "TdDq.RuleImplementations.Migrations:cache_structures",
+             "data_fields:external_ids",
+             "data_structure:keys:keep",
+             "implementation:*",
+             "rule_result:*",
+             "source:*",
+             "sources:ids_external_ids",
+             "structure_type:*",
+             "structure_types:*",
+             "structures:external_ids:*"
+           ]
+         ]},
+      run_strategy: Quantum.RunStrategy.Local
+    ],
     cache_refresher: [
       schedule: System.get_env("CACHE_REFRESH_SCHEDULE", "@hourly"),
       task: {TdDd.Cache.StructureLoader, :refresh, []},
@@ -65,6 +88,16 @@ config :td_dd, TdDd.Scheduler,
     catalog_history_purger: [
       schedule: System.get_env("CATALOG_HISTORY_PURGE_SCHEDULE", "@daily"),
       task: {TdDd.DataStructures.HistoryManager, :purge_history, []},
+      run_strategy: Quantum.RunStrategy.Local
+    ],
+    force_update_structures_cache: [
+      schedule: "@reboot",
+      task: {TdDd.Cache.StructuresForceUpdate, :migrate, []},
+      run_strategy: Quantum.RunStrategy.Local
+    ],
+    expand_profile_values: [
+      schedule: "@reboot",
+      task: {TdDd.Profiles, :expand_profile_values, []},
       run_strategy: Quantum.RunStrategy.Local
     ]
   ]

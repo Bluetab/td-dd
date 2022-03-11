@@ -3,7 +3,6 @@ defmodule TdDq.RuleResultsTest do
 
   import TdDd.TestOperators
 
-  alias TdCache.ConceptCache
   alias TdCache.Redix
   alias TdCache.Redix.Stream
   alias TdCache.RuleCache
@@ -11,19 +10,13 @@ defmodule TdDq.RuleResultsTest do
 
   @moduletag sandbox: :shared
   @stream TdCache.Audit.stream()
-  @concept_id 987_654_321
 
   setup_all do
     start_supervised(TdDq.MockRelationCache)
     start_supervised(TdDd.Search.MockIndexWorker)
     start_supervised(TdDq.Cache.RuleLoader)
 
-    ConceptCache.put(%{id: @concept_id, domain_id: 42})
-
-    on_exit(fn ->
-      ConceptCache.delete(@concept_id)
-      Redix.del!(@stream)
-    end)
+    on_exit(fn -> Redix.del!(@stream) end)
   end
 
   setup do

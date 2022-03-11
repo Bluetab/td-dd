@@ -17,11 +17,7 @@ defmodule TdDqWeb.RuleFilterController do
     description("List Quality Rule Filters")
 
     parameters do
-      search(
-        :body,
-        Schema.ref(:FilterRequest),
-        "Filter parameters"
-      )
+      search(:body, Schema.ref(:FilterRequest), "Filter parameters")
     end
 
     response(200, "OK", Schema.ref(:FilterResponse))

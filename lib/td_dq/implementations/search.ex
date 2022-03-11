@@ -22,7 +22,7 @@ defmodule TdDq.Implementations.Search do
       params
       |> filter_deleted()
       |> Map.drop(["page", "size"])
-      |> RulesSearch.search(claims, page, size, :implementations)
+      |> RulesSearch.search_implementations(claims, page, size)
 
     implementations
   end
@@ -30,12 +30,12 @@ defmodule TdDq.Implementations.Search do
   defp filter_deleted(%{"status" => "deleted"} = params) do
     params
     |> Map.delete("status")
-    |> Map.put(:with, ["deleted_at"])
+    |> Map.put("with", "deleted_at")
   end
 
   defp filter_deleted(%{} = params) do
     params
     |> Map.delete("status")
-    |> Map.put(:without, ["deleted_at"])
+    |> Map.put("without", "deleted_at")
   end
 end

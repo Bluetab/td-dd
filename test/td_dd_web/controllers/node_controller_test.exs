@@ -55,7 +55,7 @@ defmodule TdDdWeb.NodeControllerTest do
       nodes: nodes
     } do
       %{id: parent_domain_id} = CacheHelpers.insert_domain()
-      %{id: domain_id} = CacheHelpers.insert_domain(%{parent_ids: [parent_domain_id]})
+      %{id: domain_id} = CacheHelpers.insert_domain(%{parent_id: parent_domain_id})
 
       insert(:unit,
         domain_id: domain_id,
@@ -84,7 +84,7 @@ defmodule TdDdWeb.NodeControllerTest do
            nodes: nodes,
            domain: %{id: parent_domain_id}
          } do
-      %{id: domain_id} = CacheHelpers.insert_domain(%{parent_ids: [parent_domain_id]})
+      %{id: domain_id} = CacheHelpers.insert_domain(parent_id: parent_domain_id)
 
       insert(:unit,
         domain_id: domain_id,
@@ -136,18 +136,10 @@ defmodule TdDdWeb.NodeControllerTest do
     @tag depends: [{"bar", "baz"}, {"x", "y"}]
     test "will filter groups depending on user permissions over domains", %{
       conn: conn,
-      claims: %{user_id: user_id},
+      claims: claims,
       nodes: nodes
     } do
       %{id: domain_id} = CacheHelpers.insert_domain()
-
-      MockPermissionResolver.create_acl_entry(%{
-        principal_id: user_id,
-        principal_type: "user",
-        resource_id: domain_id,
-        resource_type: "domain",
-        permissions: []
-      })
 
       insert(:unit,
         domain_id: domain_id,
@@ -156,13 +148,10 @@ defmodule TdDdWeb.NodeControllerTest do
 
       %{id: domain_id} = CacheHelpers.insert_domain()
 
-      MockPermissionResolver.create_acl_entry(%{
-        principal_id: user_id,
-        principal_type: "user",
-        resource_id: domain_id,
-        resource_type: "domain",
-        permissions: [:view_data_structure, :view_lineage]
-      })
+      CacheHelpers.put_session_permissions(claims, domain_id, [
+        :view_data_structure,
+        :view_lineage
+      ])
 
       insert(:unit,
         domain_id: domain_id,
@@ -181,27 +170,25 @@ defmodule TdDdWeb.NodeControllerTest do
     test "will filter a group if a user has not permissions over any of the group's permissions",
          %{
            conn: conn,
-           claims: %{user_id: user_id},
+           claims: claims,
            nodes: nodes
          } do
       %{id: domain_id} = CacheHelpers.insert_domain()
 
-      MockPermissionResolver.create_acl_entry(%{
-        principal_id: user_id,
-        principal_type: "user",
-        resource_id: domain_id,
-        resource_type: "domain",
-        permissions: []
-      })
+      CacheHelpers.put_session_permissions(claims, domain_id, [])
 
       insert(:unit,
         domain_id: domain_id,
         nodes: Enum.filter(nodes, &(&1.external_id in ["foo", "bar", "baz"]))
       )
 
-      conn = get(conn, Routes.node_path(conn, :index))
-      assert resp = [%{"parent" => nil}] = json_response(conn, 200)["data"]
-      refute Map.has_key?(hd(resp), "groups")
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.node_path(conn, :index))
+               |> json_response(:ok)
+
+      assert [%{"parent" => nil} = first] = data
+      refute Map.has_key?(first, "groups")
     end
   end
 end

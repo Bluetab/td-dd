@@ -44,7 +44,8 @@ defmodule TdDd.Canada.GrantAbilities do
   end
 
   def can?(%Claims{} = claims, :show, %Grant{data_structure: %{domain_id: domain_id}}) do
-    Permissions.authorized_any?(claims, [:view_grants, :manage_grants], domain_id)
+    Permissions.authorized?(claims, :view_grants, domain_id) ||
+      Permissions.authorized?(claims, :manage_grants, domain_id)
   end
 
   def can?(%Claims{} = claims, :update, %Grant{data_structure: %{domain_id: domain_id}}) do

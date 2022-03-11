@@ -99,30 +99,36 @@ defmodule TdDd.DataStructures.StructureNote do
   defp validate_content(changeset, _structure_note, _params), do: changeset
 
   defp maybe_put_identifier(
-    changeset,
-    %StructureNote{
-      df_content: old_content,
-      data_structure: %DataStructure{current_version: %{structure_type: %{template_id: template_id}}}
-    }) do
+         changeset,
+         %StructureNote{
+           df_content: old_content,
+           data_structure: %DataStructure{
+             current_version: %{structure_type: %{template_id: template_id}}
+           }
+         }
+       ) do
     maybe_put_identifier_aux(changeset, old_content, template_id)
   end
 
   defp maybe_put_identifier(
-    changeset,
-    %DataStructure{
-      current_version: %{
-        structure_type: %{
-          template_id: template_id
-        }
-      }
-    } = data_structure) do
+         changeset,
+         %DataStructure{
+           current_version: %{
+             structure_type: %{
+               template_id: template_id
+             }
+           }
+         } = data_structure
+       ) do
     case data_structure do
       %DataStructure{
         latest_note: %{df_content: old_content}
-      } -> maybe_put_identifier_aux(changeset, old_content, template_id)
-      %DataStructure{} -> maybe_put_identifier_aux(changeset, %{}, template_id)
-    end
+      } ->
+        maybe_put_identifier_aux(changeset, old_content, template_id)
 
+      %DataStructure{} ->
+        maybe_put_identifier_aux(changeset, %{}, template_id)
+    end
   end
 
   defp maybe_put_identifier(changeset, _structure_note_or_data_structure) do
@@ -130,10 +136,10 @@ defmodule TdDd.DataStructures.StructureNote do
   end
 
   defp maybe_put_identifier(
-    changeset,
-    %StructureNote{df_content: old_content},
-    %DataStructure{current_version: %{structure_type: %{template_id: template_id}}}
-    ) do
+         changeset,
+         %StructureNote{df_content: old_content},
+         %DataStructure{current_version: %{structure_type: %{template_id: template_id}}}
+       ) do
     maybe_put_identifier_aux(changeset, old_content, template_id)
   end
 

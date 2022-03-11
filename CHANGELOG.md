@@ -1,10 +1,37 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-4461] Avoid reindexing when a domain is modified
+- [TD-4491] Refactored search and permissions
+- [TD-4604] Include actions in `POST /api/rule_implementations/search` and `POST
+ /api/data_structures/search` responses
+
+## [4.39.0] 2022-03-07
+
+### Added
+
+- [TD-4378] Include the structure description in cache
+
+### Changed
+
+- [TD-4567] Refactor create implementations for non admin users
+- [TD-4534] Avoid inheritance if has `with_inheritance: false`
+  param when modifying a structure domain
+
+## [4.38.1] 2022-02-23
+
+### Fixed
+
+- [TD-4567] Create implementations for non admin users
+
 ## [4.38.0] 2022-02-22
 
 ### Added
 
-- [TD-4437] Control rule results upload using new `manage_rule_results` permission 
+- [TD-4437] Control rule results upload using new `manage_rule_results` permission
 - [TD-2511] support for updating specific field of `Source` config
 - [TD-4463] Generate audit events for `rule_created` and
   `implementation_created`

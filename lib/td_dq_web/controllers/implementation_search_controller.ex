@@ -9,6 +9,7 @@ defmodule TdDqWeb.ImplementationSearchController do
 
   action_fallback(TdDqWeb.FallbackController)
 
+  @index_worker Application.compile_env(:td_dd, :dq_index_worker)
   @default_page 0
   @default_size 20
 
@@ -33,9 +34,23 @@ defmodule TdDqWeb.ImplementationSearchController do
         [user_permissions: get_user_permissions(claims, implementations)]
 
     conn
-    |> put_resp_header("x-total-count", "#{total}")
     |> put_view(TdDqWeb.SearchView)
+    |> put_resp_header("x-total-count", "#{total}")
+    |> put_actions(claims)
     |> render("search.json", response)
+  end
+
+  swagger_path :reindex do
+    description("Reindex implementation index with DB content")
+    produces("application/json")
+
+    response(202, "Accepted")
+    response(500, "Client Error")
+  end
+
+  def reindex(conn, _params) do
+    @index_worker.reindex_implementations(:all)
+    send_resp(conn, :accepted, "")
   end
 
   defp search_assigns(%{results: implementations, scroll_id: scroll_id}) do
@@ -44,6 +59,10 @@ defmodule TdDqWeb.ImplementationSearchController do
 
   defp search_assigns(%{results: implementations, aggregations: aggregations}) do
     [implementations: implementations, filters: aggregations]
+  end
+
+  defp search_assigns(%{results: implementations}) do
+    [implementations: implementations]
   end
 
   defp get_user_permissions(%Claims{role: "admin"}, _implementations),
@@ -68,8 +87,20 @@ defmodule TdDqWeb.ImplementationSearchController do
     size = Map.get(params, "size", @default_size)
 
     params
-    |> Map.put(:without, ["deleted_at"])
+    |> Map.put("without", "deleted_at")
     |> Map.drop(["page", "size"])
-    |> Search.search(claims, page, size, :implementations)
+    |> Search.search_implementations(claims, page, size)
+  end
+
+  defp put_actions(conn, %{} = claims) do
+    if can?(claims, upload(TdDq.Rules.RuleResult)) do
+      actions = %{
+        "uploadResults" => %{href: Routes.rule_result_path(conn, :create), method: "POST"}
+      }
+
+      assign(conn, :actions, actions)
+    else
+      conn
+    end
   end
 end

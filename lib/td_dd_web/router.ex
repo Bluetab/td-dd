@@ -104,12 +104,10 @@ defmodule TdDdWeb.Router do
     end
 
     get("/data_structures/search/reindex_all", SearchController, :reindex_all)
-    get("/grants/search/reindex_all", SearchController, :reindex_all_grants)
 
     get("/data_structure_filters", DataStructureFilterController, :index)
     post("/data_structure_filters/search", DataStructureFilterController, :search)
 
-    get("/grant_filters", GrantFilterController, :index)
     post("/grant_filters/search", GrantFilterController, :search)
     post("/grant_filters/search/mine", GrantFilterController, :search_mine)
 
@@ -125,8 +123,9 @@ defmodule TdDdWeb.Router do
     resources("/data_structure_tags", DataStructureTagController, except: [:new, :edit])
 
     resources("/grants", GrantController, except: [:create, :new, :edit])
-    post("/grants/search", SearchController, :search_grants)
-    post("/grants/search/mine", SearchController, :search_my_grants)
+    get("/grants/search/reindex_all", GrantSearchController, :reindex_all_grants)
+    post("/grants/search", GrantSearchController, :search_grants)
+    post("/grants/search/mine", GrantSearchController, :search_my_grants)
     post("/grants/csv", GrantController, :csv)
 
     resources("/grants_bulk", GrantsController, only: [:update], singleton: true)

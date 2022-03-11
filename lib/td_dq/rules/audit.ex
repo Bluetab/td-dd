@@ -196,7 +196,7 @@ defmodule TdDq.Rules.Audit do
   end
 
   defp get_domain_ids(%{domain_id: domain_id}) do
-    TaxonomyCache.get_parent_ids(domain_id)
+    TaxonomyCache.reaching_domain_ids(domain_id)
   end
 
   defp get_domain_ids(%{business_concept_id: business_concept_id}) do

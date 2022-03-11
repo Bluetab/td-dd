@@ -270,15 +270,16 @@ defmodule TdDq.Implementations.Implementation do
     def routing(_), do: false
 
     @impl Elasticsearch.Document
-    def encode(%Implementation{rule: rule, id: implementation_id} = implementation) do
+    def encode(
+          %Implementation{rule: rule, id: implementation_id, domain_id: domain_id} =
+            implementation
+        ) do
       implementation = Implementations.enrich_implementation_structures(implementation)
       quality_event = QualityEvents.get_event_by_imp(implementation_id)
       confidential = Helpers.confidential?(rule)
       bcv = Helpers.get_business_concept_version(rule)
       execution_result_info = get_execution_result_info(implementation, quality_event)
-      domain = Helpers.get_domain(implementation)
-      domain_ids = Helpers.get_domain_ids(domain)
-      domain_parents = Helpers.get_domain_parents(domain)
+      domain_ids = List.wrap(domain_id)
       updated_by = Helpers.get_user(rule.updated_by)
       structures = Implementations.get_structures(implementation)
       structure_ids = get_structure_ids(structures)
@@ -306,7 +307,6 @@ defmodule TdDq.Implementations.Implementation do
       |> Map.put(:domain_ids, domain_ids)
       |> Map.put(:structure_ids, structure_ids)
       |> Map.put(:structure_names, structure_names)
-      |> Map.put(:domain_parents, domain_parents)
       |> Map.put(:current_business_concept_version, bcv)
       |> Map.put(:_confidential, confidential)
       |> Map.put(:business_concept_id, Map.get(rule, :business_concept_id))

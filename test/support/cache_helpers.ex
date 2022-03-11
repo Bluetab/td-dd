@@ -3,6 +3,7 @@ defmodule CacheHelpers do
   Support creation of domains in cache
   """
 
+  import ExUnit.Callbacks, only: [on_exit: 1]
   import TdDd.Factory
 
   alias TdCache.AclCache
@@ -16,11 +17,9 @@ defmodule CacheHelpers do
   alias TdDd.Search.StructureEnricher
 
   def insert_domain(params \\ %{}) do
-    parent_ids = Map.get(params, :parent_ids)
     %{id: domain_id} = domain = build(:domain, params)
-    domain = if is_nil(parent_ids), do: domain, else: Map.put(domain, :parent_ids, parent_ids)
+    on_exit(fn -> TaxonomyCache.delete_domain(domain_id, clean: true) end)
     TaxonomyCache.put_domain(domain)
-    ExUnit.Callbacks.on_exit(fn -> TaxonomyCache.delete_domain(domain_id) end)
     _maybe_error = StructureEnricher.refresh()
     domain
   end
@@ -47,79 +46,93 @@ defmodule CacheHelpers do
       publish: false
     )
 
-    ExUnit.Callbacks.on_exit(fn -> LinkCache.delete(id, publish: false) end)
+    on_exit(fn -> LinkCache.delete(id, publish: false) end)
     _maybe_error = StructureEnricher.refresh()
     :ok
   end
 
   def insert_template(params \\ %{}) do
     %{id: template_id} = template = build(:template, params)
+    on_exit(fn -> TemplateCache.delete(template_id) end)
     {:ok, _} = TemplateCache.put(template, publish: false)
-    ExUnit.Callbacks.on_exit(fn -> TemplateCache.delete(template_id) end)
     _maybe_error = StructureEnricher.refresh()
     template
   end
 
-  def insert_concept(%{} = params \\ %{}) do
-    %{id: id} =
-      concept =
-      params
-      |> Map.put_new(:id, System.unique_integer([:positive]))
-      |> Map.put_new(:name, "linked concept name")
-      |> Map.update(:id, nil, &Integer.to_string/1)
-
+  def insert_concept(params \\ %{}) do
+    %{id: id} = concept = build(:concept, params)
+    on_exit(fn -> ConceptCache.delete(id) end)
     {:ok, _} = ConceptCache.put(concept)
-    ExUnit.Callbacks.on_exit(fn -> ConceptCache.delete(id) end)
     concept
   end
 
   def insert_user(params \\ %{}) do
-    %{id: id} =
-      user =
-      params
-      |> Map.new()
-      |> Map.put_new(:id, System.unique_integer([:positive]))
-      |> Map.put_new(:user_name, "user name")
-      |> Map.put_new(:full_name, "full name")
-      |> Map.put_new(:external_id, "external.id")
-      |> Map.put_new(:email, "foo@bar.xyz")
-
+    %{id: id} = user = build(:user, params)
+    on_exit(fn -> UserCache.delete(id) end)
     {:ok, _} = UserCache.put(user)
-    ExUnit.Callbacks.on_exit(fn -> UserCache.delete(id) end)
     user
   end
 
   def insert_acl(domain_id, role, user_ids) do
-    AclCache.set_acl_role_users("domain", domain_id, role, user_ids)
-
-    ExUnit.Callbacks.on_exit(fn ->
+    on_exit(fn ->
       AclCache.delete_acl_roles("domain", domain_id)
       AclCache.delete_acl_role_users("domain", domain_id, role)
     end)
 
+    AclCache.set_acl_role_users("domain", domain_id, role, user_ids)
     :ok
   end
 
-  def insert_grant_request_approver(user_id, domain_id, role_name \\ "grant_approver")
+  def put_grant_request_approvers(entries) when is_list(entries) do
+    entries = Enum.flat_map(entries, &expand_domain_ids/1)
 
-  def insert_grant_request_approver(user_id, domain_ids, role_name)
-      when is_list(domain_ids) do
-    ExUnit.Callbacks.on_exit(fn ->
-      UserCache.delete(user_id)
-      Redix.command!(["SREM", "permission:approve_grant_request:roles", role_name])
+    role_fn = fn map -> Map.get(map, :role, "approver") end
+    role_names = entries |> MapSet.new(&role_fn.(&1)) |> MapSet.to_list()
+
+    on_exit(fn ->
+      Redix.command!(["SREM", "permission:approve_grant_request:roles" | role_names])
     end)
 
-    insert_user(id: user_id)
-    Enum.each(domain_ids, &insert_acl(&1, role_name, [user_id]))
-    UserCache.put_roles(user_id, %{role_name => domain_ids})
-    {:ok, existing_roles} = Permissions.get_permission_roles("approve_grant_request")
+    Permissions.put_permission_roles(%{"approve_grant_request" => role_names})
 
-    Permissions.put_permission_roles(%{
-      "approve_grant_request" => [role_name | existing_roles] |> Enum.uniq()
-    })
+    for {user_id, user_entries} <- Enum.group_by(entries, & &1.user_id) do
+      domain_ids_by_role =
+        user_entries
+        |> Enum.group_by(&role_fn.(&1), & &1.domain_id)
+        |> Map.new(fn {k, v} -> {k, List.flatten(v)} end)
+
+      UserCache.put_roles(user_id, domain_ids_by_role)
+    end
+
+    for {domain_id, domain_entries} <- Enum.group_by(entries, & &1.domain_id) do
+      for {role, user_ids} <- Enum.group_by(domain_entries, &role_fn.(&1), & &1.user_id) do
+        insert_acl(domain_id, role, user_ids)
+      end
+    end
   end
 
-  def insert_grant_request_approver(user_id, domain_id, role_name) do
-    insert_grant_request_approver(user_id, [domain_id], role_name)
+  defp expand_domain_ids(%{domain_ids: domain_ids} = entry) do
+    Enum.map(domain_ids, &Map.put(entry, :domain_id, &1))
+  end
+
+  defp expand_domain_ids(entry), do: [entry]
+
+  def put_session_permissions(%{} = claims, domain_id, permissions) do
+    domain_ids_by_permission = Map.new(permissions, &{to_string(&1), [domain_id]})
+    put_session_permissions(claims, domain_ids_by_permission)
+  end
+
+  def put_session_permissions(%{jti: session_id, exp: exp}, %{} = domain_ids_by_permission) do
+    put_sessions_permissions(session_id, exp, domain_ids_by_permission)
+  end
+
+  def put_sessions_permissions(session_id, exp, domain_ids_by_permission) do
+    on_exit(fn -> Redix.del!("session:#{session_id}:permissions") end)
+    Permissions.cache_session_permissions!(session_id, exp, domain_ids_by_permission)
+  end
+
+  def put_default_permissions(permissions) do
+    on_exit(fn -> TdCache.Permissions.put_default_permissions([]) end)
+    TdCache.Permissions.put_default_permissions(permissions)
   end
 end

@@ -18,7 +18,6 @@ defmodule TdCxWeb.FallbackController do
     |> put_status(:not_found)
     |> put_view(TdDqWeb.ErrorView)
     |> render("404.json")
-
   end
 
   def call(conn, {:error, :not_found}) do

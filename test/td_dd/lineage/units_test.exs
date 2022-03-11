@@ -91,8 +91,8 @@ defmodule TdDd.Lineage.UnitsTest do
 
     test "return units taxonomy" do
       %{id: parent_domain_id} = CacheHelpers.insert_domain()
-      %{id: domain_id} = CacheHelpers.insert_domain(%{parent_ids: [parent_domain_id]})
-      %{id: sibling_domain_id} = CacheHelpers.insert_domain(%{parent_ids: [parent_domain_id]})
+      %{id: domain_id} = CacheHelpers.insert_domain(%{parent_id: parent_domain_id})
+      %{id: sibling_domain_id} = CacheHelpers.insert_domain(%{parent_id: parent_domain_id})
       insert(:unit)
       %{id: unit_id} = insert(:unit, domain_id: domain_id)
       %{id: sibling_unit_id} = insert(:unit, domain_id: sibling_domain_id)
@@ -108,7 +108,7 @@ defmodule TdDd.Lineage.UnitsTest do
                Enum.find(domains, &(&1.id == sibling_domain_id))
 
       assert parent_ids == [parent_domain_id]
-      assert %{parent_ids: [], hint: :domain} = Enum.find(domains, &(&1.id == parent_domain_id))
+      assert %{parent_id: nil, hint: :domain} = Enum.find(domains, &(&1.id == parent_domain_id))
     end
   end
 
