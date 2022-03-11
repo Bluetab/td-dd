@@ -12,6 +12,7 @@ defmodule TdDq.Rules.RuleResult do
   alias TdDq.Executions.Execution
   alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Rule
+  alias TdDq.Remediations.Remediation
 
   @scale 2
   @valid_result_types Implementation.valid_result_types()
@@ -33,6 +34,7 @@ defmodule TdDq.Rules.RuleResult do
     belongs_to(:rule, Rule)
 
     has_many(:execution, Execution, foreign_key: :result_id)
+    has_one(:remediation, Remediation)
 
     timestamps()
   end

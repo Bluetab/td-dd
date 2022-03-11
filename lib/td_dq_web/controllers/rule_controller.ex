@@ -141,8 +141,9 @@ defmodule TdDqWeb.RuleController do
   defp is_allowed_domain(%{}), do: true
 
   defp get_user_permissions(claims, rule) do
+
     %{
-      manage_quality_rules: can?(claims, manage(Rule)),
+      manage_quality_rules: can?(claims, manage(Rule)) ,
       manage_quality_rule_implementations: can?(claims, manage(%Implementation{rule: rule})),
       manage_raw_quality_rule_implementations:
         can?(claims, manage(%Implementation{rule: rule, implementation_type: "raw"}))
@@ -164,6 +165,8 @@ defmodule TdDqWeb.RuleController do
   def show(conn, %{"id" => id}) do
     claims = conn.assigns[:current_resource]
     rule = Rules.get_rule!(id, enrich: [:domain])
+
+    IO.puts("RULE_CONTROLLER SHOW")
 
     with {:can, true} <- {:can, can?(claims, show(rule))} do
       render(

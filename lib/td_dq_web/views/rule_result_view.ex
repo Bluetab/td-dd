@@ -1,6 +1,10 @@
 defmodule TdDqWeb.RuleResultView do
   use TdDqWeb, :view
 
+  alias TdDqWeb.RemediationView
+
+  alias TdDq.Rules.RuleResult
+
   def render("show.json", %{rule_result: rule_result}) do
     %{data: render_one(rule_result, __MODULE__, "rule_result.json")}
   end

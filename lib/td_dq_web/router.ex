@@ -33,7 +33,11 @@ defmodule TdDqWeb.Router do
 
     resources("/executions/search", ExecutionSearchController, only: [:create], singleton: true)
 
-    resources("/rule_results", RuleResultController, only: [:index, :delete, :create, :show])
+    resources("/rule_results", RuleResultController, only: [:index, :delete, :create, :show]) do
+      resources("/remediation", RemediationController,
+        singleton: true
+    )
+    end
 
     get("/rules/concept/:business_concept_id", RuleController, :get_rules_by_concept)
 

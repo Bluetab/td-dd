@@ -117,6 +117,9 @@ defmodule TdDqWeb.ImplementationController do
     implementation =
       id
       |> Implementations.get_implementation!(enrich: :source, preload: [:rule, :results])
+      |> (fn implementation ->
+        implementation
+      end).()
       |> add_last_rule_result()
       |> add_quality_event()
       |> Implementations.enrich_implementation_structures()
