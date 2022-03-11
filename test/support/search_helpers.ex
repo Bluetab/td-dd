@@ -31,8 +31,8 @@ defmodule SearchHelpers do
     {:ok, %{"hits" => %{"hits" => hits, "total" => total}}}
   end
 
-  def aggs_response(aggs \\ %{}) do
-    {:ok, %{"aggregations" => aggs, "hits" => %{"hits" => [], "total" => 0}}}
+  def aggs_response(aggs \\ %{}, total \\ 0) do
+    {:ok, %{"aggregations" => aggs, "hits" => %{"hits" => [], "total" => total}}}
   end
 
   def scroll_response(hits, total \\ nil) do

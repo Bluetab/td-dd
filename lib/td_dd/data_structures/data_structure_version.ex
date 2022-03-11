@@ -141,7 +141,8 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     @impl Elasticsearch.Document
     def encode(
           %DataStructureVersion{
-            data_structure: %{search_content: content, tags: tags} = data_structure,
+            data_structure:
+              %{search_content: content, tags: tags, domain_id: domain_id} = data_structure,
             path: path
           } = dsv
         ) do
@@ -163,9 +164,8 @@ defmodule TdDd.DataStructures.DataStructureVersion do
         :system_id
       ])
       |> Map.put(:latest_note, content)
-      |> Map.put(:domain_ids, domain_ids(data_structure))
+      |> Map.put(:domain_ids, List.wrap(domain_id))
       |> Map.put(:domain, domain(data_structure))
-      |> Map.put(:domain_parents, domains(data_structure))
       |> Map.put(:field_type, field_type(dsv))
       |> Map.put(:path_sort, path_sort(name_path))
       |> Map.put(:path, name_path)
@@ -200,16 +200,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     defp domain(%{domain: %{} = domain}), do: Map.take(domain, [:id, :external_id, :name])
     defp domain(_), do: %{}
 
-    defp domains(%{domain_parents: [_ | _] = domains}),
-      do: Enum.map(domains, &domain(%{domain: &1}))
-
-    defp domains(_), do: []
-
     defp system(%{system: %{} = system}), do: Map.take(system, [:id, :external_id, :name])
-
-    # TODO: Avoid indexing domain parents, domain_id should be sufficient
-    defp domain_ids(%{domain: %{id: id, parent_ids: parent_ids}}), do: [id | parent_ids]
-    defp domain_ids(_), do: []
 
     defp field_type(%{metadata: %{"type" => type}})
          when byte_size(type) > @max_sortable_length do

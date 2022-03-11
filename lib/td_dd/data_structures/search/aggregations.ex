@@ -16,11 +16,7 @@ defmodule TdDd.DataStructures.Search.Aggregations do
       "with_content.raw" => %{terms: %{field: "with_content.raw"}},
       "tags.raw" => %{terms: %{field: "tags.raw", size: 50}},
       "linked_concepts" => %{terms: %{field: "linked_concepts"}},
-      # TODO: Avoid indexing domain parents
-      "taxonomy" => %{
-        nested: %{path: "domain_parents"},
-        aggs: %{distinct_search: %{terms: %{field: "domain_parents.id", size: 500}}}
-      },
+      "taxonomy" => %{terms: %{field: "domain_ids", size: 500}},
       "with_profiling.raw" => %{terms: %{field: "with_profiling.raw"}}
     }
 

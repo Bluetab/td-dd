@@ -49,12 +49,24 @@ defmodule TdDd.Lineage.Units do
 
   defp get_domain(%{id: id} = domain) when is_integer(id) do
     case TaxonomyCache.get_domain(id) do
-      cached_domain = %{} -> Map.merge(cached_domain, domain)
-      _ -> nil
+      cached_domain = %{} ->
+        cached_domain
+        |> Map.merge(domain)
+        |> Map.put(:parent_ids, parent_ids(id))
+
+      _ ->
+        nil
     end
   end
 
   defp get_domain(_), do: nil
+
+  defp parent_ids(id) when is_integer(id) do
+    case TaxonomyCache.reaching_domain_ids(id) do
+      ids when is_list(ids) -> Enum.drop(ids, 1)
+      _ -> []
+    end
+  end
 
   defp reduce_clauses(q, clauses) do
     Enum.reduce(clauses, q, fn

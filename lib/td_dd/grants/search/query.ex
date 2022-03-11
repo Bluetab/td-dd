@@ -40,6 +40,6 @@ defmodule TdDd.Grants.Search.Query do
   def union(ids, other_ids), do: Enum.uniq(ids ++ other_ids)
 
   defp domain_filter(domain_ids) do
-    Query.term_or_terms("data_structure_version.domain_id", domain_ids)
+    Query.term_or_terms("data_structure_version.domain_ids", domain_ids)
   end
 end

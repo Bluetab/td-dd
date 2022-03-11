@@ -167,9 +167,6 @@ defmodule TdDd.DownloadTest do
           domain: %{external_id: "Demo Truedat", id: 3, name: "Demo Truedat"},
           domain_id: 3,
           domain_ids: [3],
-          domain_parents: [
-            %{external_id: "Demo Truedat", id: 3, name: "Demo Truedat"}
-          ],
           external_id: "Clientes/KNA1//VSO/R_ONE_SORT",
           field_type: "CHAR",
           group: "Clientes",

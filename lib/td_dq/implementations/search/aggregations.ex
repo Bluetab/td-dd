@@ -13,11 +13,7 @@ defmodule TdDq.Implementations.Search.Aggregations do
       },
       "rule" => %{terms: %{field: "rule.name.raw", size: 50}},
       "source_external_id" => %{terms: %{field: "structure_aliases.raw", size: 50}},
-      # TODO: Avoid indexing domain parents
-      "taxonomy" => %{
-        nested: %{path: "domain_parents"},
-        aggs: %{distinct_search: %{terms: %{field: "domain_parents.id", size: 500}}}
-      },
+      "taxonomy" => %{terms: %{field: "domain_ids", size: 500}},
       "result_type.raw" => %{terms: %{field: "result_type.raw"}}
     }
 

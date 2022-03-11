@@ -1,14 +1,11 @@
 defmodule TdDdWeb.ExecutionControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
-  alias TdCache.TaxonomyCache
 
   @moduletag sandbox: :shared
 
   setup_all do
-    %{id: domain_id} = domain = build(:domain)
-    TaxonomyCache.put_domain(domain)
-    on_exit(fn -> TaxonomyCache.delete_domain(domain_id) end)
+    domain = CacheHelpers.insert_domain()
 
     [domain: domain]
   end
