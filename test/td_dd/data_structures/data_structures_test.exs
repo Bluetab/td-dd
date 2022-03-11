@@ -53,43 +53,35 @@ defmodule TdDd.DataStructuresTest do
   end
 
   describe "update_data_structure/4" do
-    test "updates confidential", %{
+    test "updates confidential and domain_ids", %{
       data_structure: %{id: id} = data_structure,
       claims: claims
     } do
-      params = %{confidential: true}
+      params = %{confidential: true, domain_ids: [1, 2, 3]}
 
       assert {:ok, result} =
                DataStructures.update_data_structure(claims, data_structure, params, false)
 
-      assert %{structures: {1, [^id]}} = result
+      assert %{confidential: {1, [^id]}, domain_ids: {1, [^id]}, updated_ids: [^id]} = result
       assert %DataStructure{confidential: true} = Repo.get(DataStructure, id)
-    end
-
-    test "updates domain_ids", %{
-      data_structure: %{id: id} = data_structure,
-      claims: claims
-    } do
-      params = %{domain_ids: [42]}
-
-      assert {:ok, result} =
-               DataStructures.update_data_structure(claims, data_structure, params, false)
-
-      assert %{structures: {1, [^id]}} = result
-      assert %DataStructure{domain_ids: [42]} = Repo.get(DataStructure, id)
     end
 
     test "applies changes to descendents", %{claims: claims} do
       %{data_structure: data_structure, id: parent_id} = insert(:data_structure_version)
       %{data_structure_id: child_structure_id, id: child_id} = insert(:data_structure_version)
-      insert(:data_structure_relation, parent_id: parent_id, child_id: child_id)
+
+      insert(:data_structure_relation,
+        parent_id: parent_id,
+        child_id: child_id,
+        relation_type_id: RelationTypes.default_id!()
+      )
 
       params = %{domain_ids: [2, 3]}
 
       assert {:ok, result} =
                DataStructures.update_data_structure(claims, data_structure, params, true)
 
-      assert %{structures: {2, structure_ids}} = result
+      assert %{domain_ids: {2, structure_ids}} = result
       assert_lists_equal(structure_ids, [data_structure.id, child_structure_id])
     end
 

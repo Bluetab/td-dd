@@ -14,7 +14,6 @@ defmodule TdDd.DataStructures do
   alias TdCx.Sources
   alias TdCx.Sources.Source
   alias TdDd.Auth.Claims
-  alias TdDd.DataStructures.Ancestry
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureQueries
@@ -477,32 +476,40 @@ defmodule TdDd.DataStructures do
 
   def update_data_structure(
         %Claims{user_id: user_id},
-        %Changeset{data: %DataStructure{id: id, external_id: external_id}} = changeset,
-        true = _inherit
-      ) do
-    descendent_ids = Ancestry.get_descendent_ids(external_id)
-    do_update_data_structure([id | descendent_ids], changeset, user_id)
-  end
-
-  def update_data_structure(
-        %Claims{user_id: user_id},
         %Changeset{data: %DataStructure{id: id}} = changeset,
-        _not_inherit
+        inherit
       ) do
-    do_update_data_structure([id], changeset, user_id)
+    do_update_data_structure(id, changeset, inherit, user_id)
   end
 
-  defp do_update_data_structure([id | _] = ids, %{changes: changes} = changeset, user_id) do
-    queryable = DataStructureQueries.update_all_query(ids, changes, user_id)
-
-    Multi.new()
-    |> Multi.update_all(:structures, queryable, [])
+  defp do_update_data_structure(id, %{changes: changes} = changeset, inherit, user_id) do
+    changes
+    |> Map.take([:confidential, :domain_ids])
+    |> Enum.map(fn
+      {key, value} ->
+        {key, DataStructureQueries.update_all_query([id], key, value, user_id, inherit)}
+    end)
+    |> Enum.reduce(Multi.new(), fn
+      {key, queryable}, multi -> Multi.update_all(multi, key, queryable, [])
+    end)
+    |> Multi.run(:updated_ids, &updated_ids/2)
     |> Multi.run(:audit, Audit, :data_structure_updated, [id, changeset, user_id])
     |> Repo.transaction()
     |> tap(&on_update/1)
   end
 
-  defp on_update({:ok, %{structures: {_, ids}}}), do: IndexWorker.reindex(ids)
+  defp updated_ids(_repo, %{} = changes) do
+    ids =
+      changes
+      |> Map.take([:confidential, :domain_ids])
+      |> Map.values()
+      |> Enum.flat_map(fn {_, ids} -> ids end)
+      |> Enum.uniq()
+
+    {:ok, ids}
+  end
+
+  defp on_update({:ok, %{updated_ids: ids}}), do: IndexWorker.reindex(ids)
   defp on_update(_), do: :ok
 
   def delete_data_structure(%DataStructure{} = data_structure, %Claims{user_id: user_id}) do

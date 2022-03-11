@@ -39,6 +39,18 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   group by ancestor_ds_id
   """
 
+  @structure_descendents """
+  select id, data_structure_id
+  from data_structure_versions
+  where data_structure_id = any(?)
+  union (
+    select v.id as id, v.data_structure_id as data_structure_id
+    from data_structure_versions v
+    join data_structure_relations r on v.id = r.child_id and r.relation_type_id = ?
+    join descendents d on r.parent_id = d.id
+  )
+  """
+
   def children(opts \\ []) do
     opts_map = Enum.into(opts, %{grant_ids: []})
 
@@ -217,7 +229,7 @@ defmodule TdDd.DataStructures.DataStructureQueries do
     )
   end
 
-  def update_all_query(ids, %{domain_ids: domain_ids}, last_change_by)
+  def old_update_all_query(ids, %{domain_ids: domain_ids}, last_change_by)
       when is_list(domain_ids) and is_list(ids) do
     updated_at = DateTime.utc_now()
 
@@ -232,5 +244,40 @@ defmodule TdDd.DataStructures.DataStructureQueries do
         updated_at: ^updated_at
       ]
     )
+  end
+
+  def update_all_query(ids, field, value, last_change_by, recursive)
+      when is_list(ids) and field in [:confidential, :domain_ids] do
+    set = [
+      {field, value},
+      {:last_change_by, last_change_by},
+      {:updated_at, DateTime.utc_now()}
+    ]
+
+    DataStructure
+    |> recursive(ids, recursive)
+    |> where([ds], field(ds, ^field) != ^value)
+    |> select([ds], ds.id)
+    |> update(set: ^set)
+  end
+
+  defp recursive(query, data_structure_ids, true) do
+    descendent_ids = select_recursive(data_structure_ids)
+    where(query, [ds], ds.id in subquery(descendent_ids))
+  end
+
+  defp recursive(query, data_structure_ids, false) do
+    where(query, [ds], ds.id in ^data_structure_ids)
+  end
+
+  defp select_recursive(data_structure_ids) do
+    relation_type_id = RelationTypes.default_id!()
+
+    "descendents"
+    |> recursive_ctes(true)
+    |> with_cte("descendents",
+      as: fragment(@structure_descendents, ^data_structure_ids, ^relation_type_id)
+    )
+    |> select([d], d.data_structure_id)
   end
 end
