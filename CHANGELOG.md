@@ -4,6 +4,7 @@
 
 ### Changed
 
+- [TD-4500] Support data structure with multiple `domain_ids`
 - [TD-4461] Avoid reindexing when a domain is modified
 - [TD-4491] Refactored search and permissions
 - [TD-4604] Include actions in `POST /api/rule_implementations/search` and `POST
