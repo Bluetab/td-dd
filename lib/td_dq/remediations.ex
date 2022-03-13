@@ -1,9 +1,11 @@
 defmodule TdDq.Remediations do
+  @moduledoc """
+  The Remediations context.
+  """
 
-  alias TdDq.Rules.RuleResult
-  alias TdDq.Rules.RuleResults
-  alias TdDq.Remediations.Remediation
   alias TdDd.Repo
+  alias TdDq.Remediations.Remediation
+  alias TdDq.Rules.RuleResult
 
   def get_remediation(id) do
     Repo.get_by(Remediation, id: id)
@@ -26,5 +28,9 @@ defmodule TdDq.Remediations do
     remediation
     |> Remediation.changeset(params)
     |> Repo.update()
+  end
+
+  def delete_remediation(%Remediation{} = remediation) do
+    Repo.delete(remediation)
   end
 end

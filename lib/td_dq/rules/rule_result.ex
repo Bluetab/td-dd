@@ -11,8 +11,8 @@ defmodule TdDq.Rules.RuleResult do
   alias TdDq.DateParser
   alias TdDq.Executions.Execution
   alias TdDq.Implementations.Implementation
-  alias TdDq.Rules.Rule
   alias TdDq.Remediations.Remediation
+  alias TdDq.Rules.Rule
 
   @scale 2
   @valid_result_types Implementation.valid_result_types()

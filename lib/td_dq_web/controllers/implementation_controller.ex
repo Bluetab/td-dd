@@ -116,7 +116,7 @@ defmodule TdDqWeb.ImplementationController do
   def show(conn, %{"id" => id}) do
     implementation =
       id
-      |> Implementations.get_implementation!(enrich: :source, preload: [:rule, :results])
+      |> Implementations.get_implementation!(enrich: :source, preload: [:rule, [results: :remediation]])
       |> (fn implementation ->
         implementation
       end).()

@@ -1,10 +1,6 @@
 defmodule TdDqWeb.RuleResultView do
   use TdDqWeb, :view
 
-  alias TdDqWeb.RemediationView
-
-  alias TdDq.Rules.RuleResult
-
   def render("show.json", %{rule_result: rule_result}) do
     %{data: render_one(rule_result, __MODULE__, "rule_result.json")}
   end
@@ -36,10 +32,11 @@ defmodule TdDqWeb.RuleResultView do
       :errors,
       :result_type,
       :execution_id,
-      :details
+      :details,
     ])
     |> Enum.reject(fn {_, v} -> is_nil(v) end)
     |> Map.new()
+    |> with_has_remediation(rule_result)
     |> with_params(rule_result)
   end
 
@@ -48,4 +45,10 @@ defmodule TdDqWeb.RuleResultView do
   end
 
   defp with_params(map, _), do: map
+
+  defp with_has_remediation(map, %{remediation: remediation} = _rule_result) do
+    Map.put(map, :has_remediation, not is_nil(remediation))
+  end
+
+  defp with_has_remediation(map, _), do: map
 end

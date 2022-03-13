@@ -5,6 +5,7 @@ defmodule TdDq.Remediations.Remediation do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias TdDfLib.Validation
   alias TdDq.Rules.RuleResult
 
   schema "remediations" do
@@ -22,7 +23,25 @@ defmodule TdDq.Remediations.Remediation do
     remediation
     |> cast(attrs, [:rule_result_id, :df_name, :df_content])
     |> validate_required([:rule_result_id, :df_name, :df_content])
+    |> validate_content(remediation)
     |> foreign_key_constraint(:rule_result_id)
   end
 
+  defp validate_content(
+         %Ecto.Changeset{valid?: true, changes: %{df_name: df_name, df_content: df_content}} = changeset,
+         _remediation
+       )
+       when map_size(df_content) !== 0 do
+    validate_change(changeset, :df_content, Validation.validator(df_name))
+  end
+
+  defp validate_content(
+         %Ecto.Changeset{valid?: true, changes: %{df_content: df_content}} = changeset,
+         %__MODULE__{df_name: df_name}
+       )
+       when map_size(df_content) !== 0 do
+    validate_change(changeset, :df_content, Validation.validator(df_name))
+  end
+
+  defp validate_content(changeset, _), do: changeset
 end

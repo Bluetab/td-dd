@@ -1,16 +1,11 @@
 defmodule TdDq.RemediationTest do
   use TdDd.DataCase
 
-  alias Ecto.Changeset
-  alias TdDq.Remediations.Remediation
   alias TdDd.Repo
+  alias TdDq.Remediations.Remediation
 
   setup do
-
     rule_result = insert(:rule_result)
-    # %{external_id: data_structure_external_id} = insert(:data_structure)
-    # user = CacheHelpers.insert_user()
-
     %{rule_result: rule_result}
   end
 
@@ -26,13 +21,12 @@ defmodule TdDq.RemediationTest do
       params = %{
         "df_name" => "template_name",
         "df_content" => %{},
-        "rule_result_id" => 12345
+        "rule_result_id" => 12_345
       }
 
       assert {:error, %{errors: errors}} =
                Remediation.changeset(params)
                |> Repo.insert()
-
 
       assert {"does not exist",
               [
@@ -61,6 +55,21 @@ defmodule TdDq.RemediationTest do
              } = remediation
     end
 
+    test "validates df_content is valid", %{
+      rule_result: %{id: rule_result_id}
+    } do
+      %{name: template_name} = CacheHelpers.insert_template(scope: "remediation")
 
+      invalid_content = %{"list" => "foo", "string" => "whatever"}
+
+      params = %{
+        "df_name" => template_name,
+        "df_content" => invalid_content,
+        "rule_result_id" => rule_result_id
+      }
+
+      assert %{valid?: false, errors: errors} = Remediation.changeset(params)
+      assert {"invalid content", _detail} = errors[:df_content]
+    end
   end
 end

@@ -19,8 +19,9 @@ defmodule TdDq.Rules.RuleResults do
 
   @index_worker Application.compile_env(:td_dd, :dq_index_worker)
 
-  def get_rule_result(id) do
+  def get_rule_result(id, options \\ []) do
     Repo.get_by(RuleResult, id: id)
+    |> Repo.preload(options[:preload] || [])
   end
 
   def list_rule_results(params \\ %{}) do

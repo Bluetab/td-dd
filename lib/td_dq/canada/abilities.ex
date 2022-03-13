@@ -60,6 +60,10 @@ defmodule TdDq.Canada.Abilities do
       RuleResultAbilities.can?(claims, action, RuleResult)
     end
 
+    def can?(%Claims{} = claims, action, %RuleResult{} = rule_result) do
+      RuleResultAbilities.can?(claims, action, rule_result)
+    end
+
     def can?(%Claims{} = claims, action, %{"resource_type" => "rule"} = target) do
       RuleAbilities.can?(claims, action, target)
     end

@@ -21,7 +21,6 @@ defmodule TdDq.Canada.ImplementationAbilities do
   end
 
   def can?(%Claims{} = claims, :manage, %Implementation{domain_id: domain_id} = implementation) do
-    IO.puts("IMPLEMENTATION_ABILITIES")
     permission = permission(implementation)
     Permissions.authorized?(claims, permission, domain_id)
   end

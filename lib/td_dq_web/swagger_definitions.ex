@@ -457,4 +457,53 @@ defmodule TdDqWeb.SwaggerDefinitions do
         end
     }
   end
+
+  def remediation_swagger_definitions do
+    %{
+      Remediation:
+        swagger_schema do
+          title("Remediation plan")
+          description("Rule result remediation plan")
+
+          properties do
+            id(:integer, "Remediation unique identifier", required: true)
+            df_name(:string, "Remediation template name", required: true)
+            df_content(:object, "Remediation template content", required: true)
+          end
+
+        end,
+      RemediationCreate:
+        swagger_schema do
+          properties do
+            remediation(
+              Schema.new do
+                properties do
+                  df_name(:string, "Remediation template name", required: true)
+                  df_content(:object, "Remediation template content", required: true)
+                end
+              end
+            )
+          end
+        end,
+      RemediationUpdate:
+        swagger_schema do
+          properties do
+            remediation(
+              Schema.new do
+                properties do
+                  df_name(:string, "Remediation template name")
+                  df_content(:object, "Remediation template content")
+                end
+              end
+            )
+          end
+        end,
+      RemediationResponse:
+        swagger_schema do
+          properties do
+            data(Schema.ref(:Remediation))
+          end
+        end,
+    }
+  end
 end

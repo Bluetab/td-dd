@@ -6,7 +6,32 @@ defmodule TdDq.Remediations.RemediationsTest do
 
   @valid_attrs %{"df_name" => "template_name", "df_content" => %{}}
 
-
+  setup do
+    remediation_template = %{
+      name: "remediation_template",
+      label: "remediation_template",
+      scope: "remediation",
+      content: [
+        %{
+          "name" => "grupo_principal",
+          "fields" => [
+            %{
+              "name" => "texto",
+              "type" => "string",
+              "label" => "Text",
+              "values" => nil,
+              "widget" => "string",
+              "default" => "",
+              "cardinality" => "?",
+              "description" => "texto"
+            }
+          ]
+        }
+      ]
+    }
+    CacheHelpers.insert_template(remediation_template)
+    %{template: remediation_template}
+  end
 
   describe "remediations" do
 
@@ -16,7 +41,7 @@ defmodule TdDq.Remediations.RemediationsTest do
       assert ^remediation = Remediations.get_by_rule_result_id(id)
     end
 
-    test "create_remediation/2 creates an remediation" do
+    test "create_remediation/2 creates a remediation" do
       %{id: id} = insert(:rule_result)
       assert {
         :ok,
@@ -30,10 +55,9 @@ defmodule TdDq.Remediations.RemediationsTest do
       assert df_content == @valid_attrs["df_content"]
     end
 
-
-    test "update_remediation/2 updates an remediation" do
+    test "update_remediation/2 updates a remediation", %{template: %{name: df_name}} do
       %{id: id} = insert(:rule_result)
-      remediation = insert(:remediation, rule_result_id: id)
+      remediation = insert(:remediation, df_name: df_name, rule_result_id: id)
       assert {
         :ok,
         %Remediation{

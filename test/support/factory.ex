@@ -21,8 +21,8 @@ defmodule TdDd.Factory do
   alias TdDd.DataStructures.StructureNote
   alias TdDd.Lineage.Units
   alias TdDd.Profiles.Profile
-  alias TdDq.Remediations.Remediation
   alias TdDd.UserSearchFilters.UserSearchFilter
+  alias TdDq.Remediations.Remediation
 
   def claims_factory(attrs), do: do_claims(attrs, TdDd.Auth.Claims)
 

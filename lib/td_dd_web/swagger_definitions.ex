@@ -4,6 +4,15 @@ defmodule TdDdWeb.SwaggerDefinitions do
   """
   import PhoenixSwagger
 
+  @spec relation_type_definitions :: %{
+          CreateRelationType: any,
+          RelationType: any,
+          RelationTypeEdit: any,
+          RelationTypeResponse: any,
+          RelationTypes: any,
+          RelationTypesResponse: any,
+          UpdateRelationType: any
+        }
   def relation_type_definitions do
     %{
       RelationTypeResponse:
