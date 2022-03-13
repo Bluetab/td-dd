@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+# Added
+
+- [TD-3233] Rule result remediation plan
+
 ### Changed
 
 - [TD-4461] Avoid reindexing when a domain is modified

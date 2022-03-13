@@ -147,7 +147,7 @@ defmodule TdDqWeb.RuleController do
       manage_quality_rule_implementations: can?(claims, create_implementation(rule)),
       manage_raw_quality_rule_implementations:
         can?(claims, manage(%Implementation{rule: rule, implementation_type: "raw"})),
-      manage_remediations: can?(claims, manage_remediations(rule)) |> IO.inspect(label: "MANAGE_REMEDIATIONS_RULE")
+      manage_remediations: can?(claims, manage_remediations(rule))
 
     }
   end
