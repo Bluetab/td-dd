@@ -9,7 +9,7 @@ defmodule TdDdWeb.GrantRequestStatusControllerTest do
       %{grant_request: grant_request, grant_request_id: grant_request_id} =
         insert(:grant_request_status,
           status: "approved",
-          grant_request: build(:grant_request, domain_id: domain_id)
+          grant_request: build(:grant_request, domain_ids: [domain_id])
         )
 
       path = Routes.grant_request_status_path(conn, :create, grant_request)

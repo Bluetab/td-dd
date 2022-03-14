@@ -60,7 +60,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
       conn: conn,
       domain: domain
     } do
-      %{id: data_structure_id} = insert(:data_structure, domain_id: domain.id)
+      %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
 
       assert [] ==
                conn
@@ -160,7 +160,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
            permissions: [:view_data_structure]
          ]
     test "a user without permission cannot have draft action", %{conn: conn, domain: domain} do
-      %{id: data_structure_id} = insert(:data_structure, domain_id: domain.id)
+      %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
 
       assert %{} ==
                conn
@@ -177,7 +177,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
       conn: conn,
       domain: domain
     } do
-      %{id: data_structure_id} = insert(:data_structure, domain_id: domain.id)
+      %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
 
       conn
       |> get(Routes.data_structure_note_path(conn, :index, data_structure_id))
@@ -295,7 +295,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
     end
 
     defp permissions_test_builder(conn, domain, statuses) do
-      %{id: data_structure_id} = data_structure = insert(:data_structure, domain_id: domain.id)
+      %{id: data_structure_id} = data_structure = insert(:data_structure, domain_ids: [domain.id])
 
       structure_notes =
         statuses
@@ -586,7 +586,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
            permissions: [:delete_structure_note, :view_data_structure]
          ]
     test "deletes chosen structure_note", %{conn: conn, domain: domain} do
-      %{id: data_structure_id} = insert(:data_structure, domain_id: domain.id)
+      %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
       structure_note = insert(:structure_note, data_structure_id: data_structure_id)
 
       assert conn
@@ -605,7 +605,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
            permissions: [:create_structure_note, :view_data_structure]
          ]
     test "cannot delete structure_note without permission", %{conn: conn, domain: domain} do
-      %{id: data_structure_id} = insert(:data_structure, domain_id: domain.id)
+      %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
       structure_note = insert(:structure_note, data_structure_id: data_structure_id)
 
       assert conn
@@ -634,7 +634,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
            permissions: [:create_structure_note, :view_data_structure]
          ]
     test "can create notes", %{conn: conn, domain: domain} do
-      %{id: data_structure_id} = insert(:data_structure, domain_id: domain.id)
+      %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
       create_attrs = string_params_for(:structure_note)
 
       conn
@@ -722,7 +722,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
       conn: conn,
       domain: domain
     } do
-      %{id: data_structure_id} = insert(:data_structure, domain_id: domain.id)
+      %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
       create_attrs = string_params_for(:structure_note)
 
       %{"data" => %{"id" => id}} =
@@ -758,7 +758,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
          ]
     test "can create notes when the latest note is deprecated, and show the action in hypermedia",
          %{conn: conn, domain: domain} do
-      %{id: data_structure_id} = insert(:data_structure, domain_id: domain.id)
+      %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
       create_attrs = string_params_for(:structure_note)
 
       %{"data" => %{"id" => id}} =
@@ -802,7 +802,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
            permissions: [:view_structure_note, :view_data_structure]
          ]
     test "can not create notes", %{conn: conn, domain: domain} do
-      %{id: data_structure_id} = insert(:data_structure, domain_id: domain.id)
+      %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
       create_attrs = string_params_for(:structure_note)
 
       conn
@@ -817,7 +817,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
            permissions: [:create_structure_note, :edit_structure_note, :view_data_structure]
          ]
     test "can edit note after creation", %{conn: conn, domain: domain} do
-      %{id: data_structure_id} = insert(:data_structure, domain_id: domain.id)
+      %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
       create_attrs = string_params_for(:structure_note)
 
       body =
@@ -835,7 +835,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
            permissions: [:create_structure_note, :view_data_structure]
          ]
     test "can not edit or publish note after creation", %{conn: conn, domain: domain} do
-      %{id: data_structure_id} = insert(:data_structure, domain_id: domain.id)
+      %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
       create_attrs = string_params_for(:structure_note)
 
       body =
@@ -858,7 +858,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
            ]
          ]
     test "can not publish note after creation", %{conn: conn, domain: domain} do
-      %{id: data_structure_id} = insert(:data_structure, domain_id: domain.id)
+      %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
       create_attrs = string_params_for(:structure_note)
 
       body =
@@ -884,7 +884,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
       conn: conn,
       domain: domain
     } do
-      %{id: data_structure_id} = insert(:data_structure, domain_id: domain.id)
+      %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
       create_attrs = string_params_for(:structure_note)
 
       %{"data" => %{"id" => id}} =
@@ -915,7 +915,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
            ]
          ]
     test "cannot delete a note after creation", %{conn: conn, domain: domain} do
-      %{id: data_structure_id} = insert(:data_structure, domain_id: domain.id)
+      %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
       create_attrs = string_params_for(:structure_note)
 
       body =

@@ -8,6 +8,7 @@ defmodule CacheHelpers do
 
   alias TdCache.AclCache
   alias TdCache.ConceptCache
+  alias TdCache.ImplementationCache
   alias TdCache.LinkCache
   alias TdCache.Permissions
   alias TdCache.Redix
@@ -30,16 +31,16 @@ defmodule CacheHelpers do
     structure_type
   end
 
-  def insert_link(data_structure_id, target_id \\ nil) do
+  def insert_link(source_id, source_type, target_type, target_id \\ nil) do
     id = System.unique_integer([:positive])
     target_id = if is_nil(target_id), do: System.unique_integer([:positive]), else: target_id
 
     LinkCache.put(
       %{
         id: id,
-        source_type: "data_structure",
-        source_id: data_structure_id,
-        target_type: "business_concept",
+        source_type: source_type,
+        source_id: source_id,
+        target_type: target_type,
         target_id: target_id,
         updated_at: DateTime.utc_now()
       },
@@ -134,5 +135,13 @@ defmodule CacheHelpers do
   def put_default_permissions(permissions) do
     on_exit(fn -> TdCache.Permissions.put_default_permissions([]) end)
     TdCache.Permissions.put_default_permissions(permissions)
+  end
+
+  def put_implementation(implementation) do
+    ImplementationCache.put(implementation, publish: false)
+  end
+
+  def get_implementation(implementation_id) do
+    ImplementationCache.get(implementation_id)
   end
 end

@@ -124,14 +124,15 @@ defmodule TdDd.DataStructures.StructureNotes do
     StructureNote
     |> where(status: ^status)
     |> latest_structure_note_query(data_structure_id)
+    |> preload(:data_structure)
     |> Repo.one()
   end
 
   def get_latest_structure_note(data_structure_id) do
     StructureNote
     |> latest_structure_note_query(data_structure_id)
+    |> preload(:data_structure)
     |> Repo.one()
-    |> Repo.preload(:data_structure)
   end
 
   @doc """
@@ -173,7 +174,12 @@ defmodule TdDd.DataStructures.StructureNotes do
           any
         ) :: any
   def bulk_create_structure_note(data_structure, attrs, nil, user_id) do
-    bulk_create_structure_note(data_structure, attrs, %StructureNote{}, user_id)
+    bulk_create_structure_note(
+      data_structure,
+      attrs,
+      %StructureNote{data_structure: data_structure},
+      user_id
+    )
   end
 
   def bulk_create_structure_note(data_structure, attrs, latest_note, user_id) do
@@ -259,12 +265,10 @@ defmodule TdDd.DataStructures.StructureNotes do
              "draft",
              "deprecated"
            ] do
-    changeset = StructureNote.changeset(structure_note, attrs)
-
     %{data_structure: data_structure} =
-      structure_note =
-      structure_note
-      |> Repo.preload(:data_structure)
+      structure_note = Repo.preload(structure_note, :data_structure)
+
+    changeset = StructureNote.changeset(structure_note, attrs)
 
     Multi.new()
     |> Multi.run(:latest, fn _, _ ->

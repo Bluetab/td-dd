@@ -122,7 +122,7 @@ defmodule TdDdWeb.GrantRequestGroupControllerTest do
       domain: %{id: domain_id},
       claims: %{user_id: user_id}
     } do
-      %{id: ds_id} = insert(:data_structure, domain_id: domain_id)
+      %{id: ds_id} = insert(:data_structure, domain_ids: [domain_id])
 
       params = %{
         "requests" => [%{"data_structure_id" => ds_id}],

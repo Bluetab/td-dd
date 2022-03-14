@@ -74,7 +74,6 @@ defmodule Truedat.SearchTest do
     test "enriches taxonomy aggregation" do
       %{id: parent_id} = CacheHelpers.insert_domain()
       %{id: domain_id} = CacheHelpers.insert_domain(parent_id: parent_id)
-      [domain_id: domain_id, parent_id: parent_id]
 
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/foo/_search", _, [] ->

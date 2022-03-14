@@ -25,7 +25,7 @@ defmodule TdDd.Canada.DataStructureVersionAbilities do
 
   defp can_profile(%Claims{role: "admin"}, _), do: true
 
-  defp can_profile(%Claims{} = claims, %{domain_id: domain_id} = _data_structure) do
-    Permissions.authorized?(claims, :profile_structures, domain_id)
+  defp can_profile(%Claims{} = claims, %{domain_ids: domain_ids} = _data_structure) do
+    Permissions.authorized?(claims, :profile_structures, domain_ids)
   end
 end

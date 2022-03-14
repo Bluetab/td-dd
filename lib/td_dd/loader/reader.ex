@@ -21,9 +21,10 @@ defmodule TdDd.Loader.Reader do
   @relation_import_required Application.compile_env(:td_dd, :metadata)[:relation_import_required]
   @metadata_import_schema %{external_id: :string, mutable_metadata: :map}
 
-  def read(structures_file, fields_file, relations_file, domain, system_id) do
+  def read(structures_file, fields_file, relations_file, domain_external_id, system_id) do
     with {:ok, fields} <- parse_data_fields(fields_file, system_id),
-         {:ok, structures} <- parse_data_structures(structures_file, system_id, domain),
+         {:ok, structures} <-
+           parse_data_structures(structures_file, system_id, domain_external_id),
          {:ok, relations} <- parse_data_structure_relations(relations_file, system_id) do
       {:ok, %{fields: fields, relations: relations, structures: structures}}
     end
@@ -47,7 +48,7 @@ defmodule TdDd.Loader.Reader do
     Enum.map(data_structures, fn data_structure ->
       {%{}, @structure_import_schema}
       |> Changeset.cast(data_structure, Map.keys(@structure_import_schema))
-      |> Changeset.put_change(:domain_id, domain_id)
+      |> Changeset.put_change(:domain_ids, [domain_id])
       |> Changeset.put_change(:system_id, system.id)
       |> Changeset.validate_required(@structure_import_required)
       |> put_default_metadata()
@@ -96,22 +97,26 @@ defmodule TdDd.Loader.Reader do
 
   defp parse_data_structures(nil, _, _), do: {:ok, []}
 
+  defp parse_data_structures(path, system_id, domain_external_id)
+       when is_binary(domain_external_id) do
+    domain = TdCache.TaxonomyCache.get_by_external_id(domain_external_id)
+    parse_data_structures(path, system_id, domain)
+  end
+
   defp parse_data_structures(path, system_id, domain) do
-    {:ok, domain_external_ids} = DomainCache.external_id_to_id_map()
+    domain_ids = domain_ids(domain)
     system_map = get_system_map(system_id)
 
     defaults =
       case system_id do
-        nil -> %{}
-        _ -> %{system_id: system_id}
+        nil -> %{domain_ids: domain_ids}
+        _ -> %{system_id: system_id, domain_ids: domain_ids}
       end
 
     records =
       path
       |> File.stream!()
       |> Reader.read_csv(
-        domain_external_ids: domain_external_ids,
-        domain: domain,
         system_map: system_map,
         defaults: defaults,
         schema: @structure_import_schema,
@@ -122,6 +127,9 @@ defmodule TdDd.Loader.Reader do
     File.rm("#{path}")
     records
   end
+
+  defp domain_ids(%{id: domain_id}) when is_integer(domain_id), do: [domain_id]
+  defp domain_ids(_), do: []
 
   defp parse_data_fields(nil, _), do: {:ok, []}
 

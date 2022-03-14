@@ -16,7 +16,7 @@ defmodule TdDd.Loader.StructuresTest do
       |> Enum.map(fn id ->
         %{
           external_id: "#{id}",
-          domain_id: rem(id, 2),
+          domain_ids: [rem(id, 2)],
           inserted_at: ts,
           updated_at: ts,
           system_id: system_id
@@ -54,7 +54,7 @@ defmodule TdDd.Loader.StructuresTest do
       records = Enum.map(1..10, fn id -> %{external_id: "#{id}"} end)
 
       external_ids = Enum.map(records, & &1.external_id)
-      structures = DataStructures.list_data_structures(%{external_id: external_ids})
+      structures = DataStructures.list_data_structures(external_id: external_ids)
 
       ids =
         structures
@@ -69,30 +69,32 @@ defmodule TdDd.Loader.StructuresTest do
       assert updated_ids <|> Enum.take(ids, 5)
       assert {5, updated_ids} = Structures.update_source_ids(records, id2, ts)
       assert updated_ids <|> Enum.take(ids, -5)
-      structures = DataStructures.list_data_structures(%{external_id: external_ids})
+      structures = DataStructures.list_data_structures(external_id: external_ids)
       assert Enum.all?(structures, &(&1.source_id == id2))
     end
   end
 
-  describe "bulk_update_domain_id/3" do
+  describe "bulk_update_domain_ids/3" do
     @tag ids: 1..5_000
     test "bulk-updates domain_id only if nil, returns count and affected ids", %{ids: ids} do
       ts = DateTime.utc_now()
+      domain_ids = [5, 7]
 
-      assert {0, []} = Structures.bulk_update_domain_id([], 1, ts)
+      assert {0, []} = Structures.bulk_update_domain_ids([], domain_ids, ts)
 
       %{id: id} =
         DataStructure
         |> Repo.get_by!(external_id: "42")
-        |> Ecto.Changeset.change(domain_id: nil)
+        |> Ecto.Changeset.change(domain_ids: [])
         |> Repo.update!()
 
-      assert {1, [^id]} = Structures.bulk_update_domain_id(["42"], 1, ts)
+      assert {1, [^id]} = Structures.bulk_update_domain_ids(["42"], domain_ids, ts)
 
+      assert %{domain_ids: ^domain_ids} = Repo.get_by!(DataStructure, external_id: "42")
       string_ids = Enum.map(ids, &Integer.to_string/1)
 
-      assert {0, []} = Structures.bulk_update_domain_id(string_ids, nil, ts)
-      assert {0, []} = Structures.bulk_update_domain_id(string_ids, 1, ts)
+      assert {0, []} = Structures.bulk_update_domain_ids(string_ids, nil, ts)
+      assert {0, []} = Structures.bulk_update_domain_ids(string_ids, domain_ids, ts)
     end
   end
 end

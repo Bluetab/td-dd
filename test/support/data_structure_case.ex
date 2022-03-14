@@ -27,7 +27,11 @@ defmodule TdDd.DataStructureCase do
               name: &1,
               version: version,
               data_structure:
-                build(:data_structure, external_id: &1, system_id: system_id, domain_id: domain_id)
+                build(:data_structure,
+                  external_id: &1,
+                  system_id: system_id,
+                  domain_ids: [domain_id]
+                )
             )
           )
 
