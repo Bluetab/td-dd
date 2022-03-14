@@ -37,13 +37,12 @@ defmodule TdDd.CSV.ReaderTest do
 
     @tag fixture: "structures.csv"
     test "read_csv/2 returns ok with records", %{stream: stream} do
-      defaults = %{version: 0}
+      defaults = %{version: 0, domain_ids: [42]}
       required = [:name]
 
       {:ok, [r2, r3, r4, r5]} =
         stream
         |> Reader.read_csv(
-          domain_external_ids: %{"domain2_eid" => 43, "domain1" => 42},
           defaults: defaults,
           schema: @structure_import_schema,
           required: required,
@@ -51,6 +50,7 @@ defmodule TdDd.CSV.ReaderTest do
         )
 
       assert r2 == %{
+               domain_ids: [42],
                description: "description",
                metadata: %{"foo" => "foo1", "bool" => true},
                mutable_metadata: %{"foo" => %{"bar" => "muta_foo"}},
@@ -59,6 +59,7 @@ defmodule TdDd.CSV.ReaderTest do
              }
 
       assert r3 == %{
+               domain_ids: [42],
                class: "class1",
                metadata: %{
                  "bar" => %{"baz" => %{"spqr" => "spqr", "xyzzy" => "xyzzy"}},
@@ -70,46 +71,41 @@ defmodule TdDd.CSV.ReaderTest do
              }
 
       assert r4 == %{
+               domain_ids: [42],
                description: "description",
-               domain_id: 42,
                metadata: %{},
                mutable_metadata: %{"foo" => %{"bar" => "baz"}},
                name: "name",
-               ou: "domain1",
                version: 0
              }
 
       assert r5 == %{
+               domain_ids: [42],
                description: "description",
-               domain_id: 43,
                metadata: %{},
                mutable_metadata: %{},
                name: "name",
-               version: 0,
-               domain_external_id: "domain2_eid",
-               ou: "domain1"
+               version: 0
              }
     end
 
     @tag fixture: "structures.csv"
-    test "read_csv/2 returns ok with records and ou as specified domain", %{stream: stream} do
-      defaults = %{version: 0}
+    test "read_csv/2 returns ok with records and default domain_ids", %{stream: stream} do
+      defaults = %{version: 0, domain_ids: [43]}
       required = [:name]
 
       {:ok, results} =
         stream
         |> Reader.read_csv(
-          domain_external_ids: %{"domain1" => 42, "domain2" => 43},
           defaults: defaults,
           schema: @structure_import_schema,
           required: required,
-          domain: "domain2",
           booleans: ["m:bool"]
         )
 
-      assert Enum.all?(results, fn %{domain_id: domain_id} ->
-               domain_id == 43
-             end)
+      for result <- results do
+        assert %{domain_ids: [43]} = result
+      end
     end
 
     @tag fixture: "fields.csv"

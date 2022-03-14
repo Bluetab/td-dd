@@ -3,12 +3,17 @@ defmodule TdDd.DataStructures.StructureNote do
   Ecto schema module for structure note
   """
   use Ecto.Schema
+
   import Ecto.Changeset
+
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.StructureNote
   alias TdDd.DataStructures.Validation
   alias TdDd.Utils.CollectionUtils
   alias TdDfLib.Content
+
+  @typedoc "A data structure note"
+  @type t :: %__MODULE__{}
 
   schema "structure_notes" do
     field(:df_content, :map)

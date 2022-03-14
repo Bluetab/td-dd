@@ -1,7 +1,6 @@
 defmodule TdDd.Canada.StructureNoteAbilities do
   @moduledoc false
   alias TdDd.Auth.Claims
-  alias TdDd.Canada.DataStructureAbilities
   alias TdDd.DataStructures.StructureNote
   alias TdDd.Permissions
 
@@ -15,11 +14,6 @@ defmodule TdDd.Canada.StructureNoteAbilities do
 
   def can?(%Claims{} = claims, :auto_publish, StructureNote) do
     Permissions.authorized?(claims, :publish_structure_note_from_draft)
-  end
-
-  def can?(%Claims{} = claims, action, %{domain_id: domain_id} = data_structure) do
-    DataStructureAbilities.can?(claims, :view_data_structure, data_structure) and
-      Permissions.authorized?(claims, action, domain_id)
   end
 
   def can?(_claims, _action, _domain_id) do

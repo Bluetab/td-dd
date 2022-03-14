@@ -17,8 +17,6 @@ defmodule TdDd.DataStructures.DataStructure do
   alias TdDd.Profiles.Profile
   alias TdDd.Systems.System
 
-  @audit_fields [:last_change_by]
-
   @typedoc "A data structure"
   @type t :: %__MODULE__{}
 
@@ -37,58 +35,46 @@ defmodule TdDd.DataStructures.DataStructure do
     has_one(:current_metadata, StructureMetadata, where: [deleted_at: nil])
 
     field(:confidential, :boolean)
-    field(:domain_id, :integer)
+    # TODO: remove default?
+    field(:domain_ids, {:array, :integer}, default: [])
     field(:external_id, :string)
     field(:last_change_by, :integer)
     field(:row, :integer, virtual: true)
     field(:latest_metadata, :map, virtual: true)
     field(:latest_note, :map, virtual: true)
-    field(:domain, :map, virtual: true)
+    field(:domains, :map, virtual: true)
     field(:linked_concepts, :boolean, virtual: true)
     field(:search_content, :map, virtual: true)
 
     timestamps(type: :utc_datetime_usec)
   end
 
-  def changeset(%{} = params) do
-    changeset(%__MODULE__{}, params)
-  end
-
-  def changeset(%__MODULE__{} = data_structure, params) do
+  def changeset(%__MODULE__{} = data_structure, params, last_change_by)
+      when is_integer(last_change_by) do
     data_structure
-    |> cast(params, [
-      :confidential,
-      :domain_id,
-      :external_id,
-      :source_id,
-      :system_id
-    ])
-    |> put_audit(params)
-    |> validate_required([
-      :external_id,
-      :last_change_by,
-      :system_id
-    ])
+    |> cast(params, [:confidential, :domain_ids])
+    |> validate_change(:domain_ids, fn
+      _, [_ | _] -> []
+      _, _ -> [domain_ids: "must be a non-empty list"]
+    end)
+    |> unique_domain_ids()
+    |> put_audit(last_change_by)
   end
 
-  def update_changeset(%__MODULE__{} = data_structure, params) do
-    data_structure
-    |> cast(params, [:confidential, :domain_id])
-    |> put_audit(params)
-  end
-
-  def merge_changeset(%__MODULE__{} = data_structure, params) do
-    data_structure
-    |> cast(params, [:confidential])
-    |> put_audit(params)
-  end
-
-  defp put_audit(%{changes: changes} = changeset, _params)
+  defp put_audit(%{changes: changes} = changeset, _last_change_by)
        when map_size(changes) == 0 do
     changeset
   end
 
-  defp put_audit(changeset, %{} = params) do
-    cast(changeset, params, @audit_fields)
+  defp put_audit(changeset, last_change_by) do
+    force_change(changeset, :last_change_by, last_change_by)
+  end
+
+  defp unique_domain_ids(changeset) do
+    update_change(changeset, :domain_ids, fn domain_ids ->
+      domain_ids
+      |> Enum.sort()
+      |> Enum.uniq()
+    end)
   end
 end

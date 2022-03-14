@@ -67,7 +67,7 @@ defmodule TdDd.Search.StructureEnricher do
       ) do
     reply =
       data_structure
-      |> enrich_domain()
+      |> enrich_domains()
       |> enrich_links(links)
       |> search_content(content_opt, types, type)
 
@@ -87,22 +87,23 @@ defmodule TdDd.Search.StructureEnricher do
     |> Map.new(fn %{name: type, template: template} -> {type, template} end)
   end
 
-  defp enrich_domain(%DataStructure{domain_id: domain_id} = structure)
-       when is_integer(domain_id) do
-    domain =
-      case TaxonomyCache.get_domain(domain_id) do
-        %{} = domain -> domain
-        nil -> %{}
-      end
+  defp enrich_domains(%DataStructure{domain_ids: [_ | _] = domain_ids} = structure) do
+    domains =
+      Enum.map(domain_ids, fn domain_id ->
+        case TaxonomyCache.get_domain(domain_id) do
+          %{} = domain -> domain
+          nil -> %{}
+        end
+      end)
 
-    %{structure | domain: domain}
+    %{structure | domains: domains}
   end
 
-  defp enrich_domain(%DataStructure{} = structure),
-    do: %{structure | domain: %{}}
+  defp enrich_domains(%DataStructure{} = structure),
+    do: %{structure | domains: [%{}]}
 
   defp search_content(
-         %DataStructure{domain_id: domain_id, latest_note: %{} = content} = structure,
+         %DataStructure{domain_ids: domain_ids, latest_note: %{} = content} = structure,
          :searchable,
          %{} = types,
          type
@@ -110,7 +111,7 @@ defmodule TdDd.Search.StructureEnricher do
        when map_size(content) > 0 do
     case Map.get(types, type) do
       %{} = template ->
-        %{structure | search_content: search_content(content, template, domain_id)}
+        %{structure | search_content: search_content(content, template, domain_ids)}
 
       _ ->
         %{structure | search_content: nil}
@@ -119,8 +120,8 @@ defmodule TdDd.Search.StructureEnricher do
 
   defp search_content(%DataStructure{} = structure, _not_searchable, _, _type), do: structure
 
-  defp search_content(content, template, domain_id),
-    do: Format.search_values(content, template, domain_id: domain_id)
+  defp search_content(content, template, domain_ids),
+    do: Format.search_values(content, template, domain_ids: domain_ids)
 
   defp enrich_links(%{id: id} = structure, links) do
     %{structure | linked_concepts: Enum.member?(links, id)}
