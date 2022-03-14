@@ -10,6 +10,10 @@
 - [TD-4604] Include actions in `POST /api/rule_implementations/search` and `POST
  /api/data_structures/search` responses
 
+ ### Fixed
+
+ - [TD-4580] Added migration to fix implementations without alias
+
 ## [4.39.0] 2022-03-07
 
 ### Added
