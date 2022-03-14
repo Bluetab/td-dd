@@ -244,6 +244,7 @@ defmodule TdDdWeb.Schema.SourcesTest do
         })
         |> json_response(:ok)
 
+      assert response["errors"] == nil
       assert Integer.to_string(source_not_deleted_id) == Enum.at(sources, 0)["id"]
     end
   end

@@ -110,6 +110,9 @@ defmodule TdCx.Sources do
       {:preload, preloads}, q ->
         preload(q, ^preloads)
 
+      {:deleted, true}, q ->
+        where(q, [s], not is_nil(s.deleted_at))
+
       {:include_deleted, true}, q ->
         q
 
