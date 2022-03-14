@@ -57,7 +57,7 @@ defmodule TdDd.Grants.Requests do
     |> select([gr], gr.id)
     |> where([gr], gr.group_id == ^id)
     |> join(:inner, [gr], ds in assoc(gr, :data_structure))
-    |> update([gr, ds], set: [domain_id: ds.domain_id])
+    |> update([gr, ds], set: [domain_ids: ds.domain_ids])
   end
 
   def delete_grant_request_group(%GrantRequestGroup{} = group) do
@@ -188,7 +188,7 @@ defmodule TdDd.Grants.Requests do
         q
 
       {:domain_ids, domain_ids}, q ->
-        where(q, [gr], gr.domain_id in ^domain_ids)
+        where(q, [gr], fragment("? && ?", gr.domain_ids, ^domain_ids))
 
       {:user_id, user_id}, q ->
         where(q, [..., grg], grg.user_id == ^user_id)
@@ -368,20 +368,25 @@ defmodule TdDd.Grants.Requests do
     %{grant_request | pending_roles: pending_roles}
   end
 
+  # @spec with_missing_roles(map, MapSet.t(), map())
   defp with_missing_roles(
-         %{approvals: approvals, domain_id: domain_id} = grant_request,
+         %{approvals: approvals, domain_ids: domain_ids} = grant_request,
          required_roles,
          user_roles
        )
        when is_list(approvals) do
-    user_roles_on_domain = Map.get(user_roles, domain_id, MapSet.new())
+    user_roles_in_domains =
+      user_roles
+      |> Map.take(domain_ids)
+      |> Map.values()
+      |> Enum.reduce(MapSet.new(), &MapSet.union/2)
 
     approved_roles = MapSet.new(approvals, & &1.role)
 
     pending_roles =
       required_roles
       |> MapSet.difference(approved_roles)
-      |> MapSet.intersection(user_roles_on_domain)
+      |> MapSet.intersection(user_roles_in_domains)
       |> MapSet.to_list()
 
     %{grant_request | pending_roles: pending_roles}

@@ -1,4 +1,4 @@
-defmodule TdDdWeb.ExecutionGroupControllerTest do
+defmodule TdDdWeb.ProfileExecutionGroupControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
@@ -25,7 +25,7 @@ defmodule TdDdWeb.ExecutionGroupControllerTest do
 
     %{data_structure: data_structure} =
       insert(:data_structure_version,
-        data_structure: insert(:data_structure, domain_id: domain_id)
+        data_structure: insert(:data_structure, domain_ids: [domain_id])
       )
 
     groups =

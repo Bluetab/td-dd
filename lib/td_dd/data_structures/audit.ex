@@ -11,7 +11,7 @@ defmodule TdDd.DataStructures.Audit do
   alias TdCache.TaxonomyCache
 
   @doc """
-  Publishes a `:data_structure_updated` event when modifying a StructureNote. Should be called using `Ecto.Multi.run/5`.
+  Publishes a `:structure_note_updated` event when modifying a StructureNote. Should be called using `Ecto.Multi.run/5`.
   """
   def structure_note_updated(
         _repo,
@@ -79,7 +79,7 @@ defmodule TdDd.DataStructures.Audit do
   @doc """
   Publishes a `:data_structure_updated` event. Should be called using `Ecto.Multi.run/5`.
   """
-  def data_structure_updated(_repo, %{data_structure: %{id: id}}, %{} = changeset, user_id) do
+  def data_structure_updated(_repo, %{}, id, %{} = changeset, user_id) do
     publish("data_structure_updated", "data_structure", id, user_id, changeset)
   end
 
@@ -267,12 +267,12 @@ defmodule TdDd.DataStructures.Audit do
     publish("grant_deleted", "grant", id, user_id, payload)
   end
 
-  defp with_domain_ids(%Changeset{} = changeset, %{data_structure: %{domain_id: domain_id}}) do
-    Changeset.put_change(changeset, :domain_ids, get_domain_ids(domain_id))
+  defp with_domain_ids(%Changeset{} = changeset, %{data_structure: %{domain_ids: domain_ids}}) do
+    Changeset.put_change(changeset, :domain_ids, get_domain_ids(domain_ids))
   end
 
-  defp with_domain_ids(%{} = payload, %{data_structure: %{domain_id: domain_id}}) do
-    Map.put(payload, :domain_ids, get_domain_ids(domain_id))
+  defp with_domain_ids(%{} = payload, %{data_structure: %{domain_ids: domain_ids}}) do
+    Map.put(payload, :domain_ids, get_domain_ids(domain_ids))
   end
 
   defp with_domain_ids(payload, _), do: payload
@@ -282,9 +282,10 @@ defmodule TdDd.DataStructures.Audit do
   end
 
   defp get_domain_ids(nil), do: []
+  defp get_domain_ids([]), do: []
 
-  defp get_domain_ids(domain_id) when is_integer(domain_id) do
-    TaxonomyCache.reaching_domain_ids(domain_id)
+  defp get_domain_ids(domain_ids) when is_list(domain_ids) do
+    TaxonomyCache.reaching_domain_ids(domain_ids)
   end
 
   defp with_resource(%{} = payload, latest) do

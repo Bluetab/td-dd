@@ -9,6 +9,8 @@ defmodule TdDdWeb.Schema.StructuresTest do
       dataStructure {
         id
         externalId
+        domainId
+        domainIds
         system {
           id
           externalId
@@ -39,7 +41,8 @@ defmodule TdDdWeb.Schema.StructuresTest do
         deleted_at: ~U[2019-01-01T00:00:00Z]
       )
 
-      %{id: expected_id} = insert(:data_structure_version, metadata: @metadata)
+      %{id: expected_id} =
+        insert(:data_structure_version, metadata: @metadata, domain_ids: [1, 2])
 
       assert %{"data" => data} =
                response =
@@ -54,7 +57,15 @@ defmodule TdDdWeb.Schema.StructuresTest do
                data_structure_versions
 
       assert id == to_string(expected_id)
-      assert %{"id" => _, "externalId" => _, "system" => system} = data_structure
+
+      assert %{
+               "id" => _,
+               "externalId" => _,
+               "system" => system,
+               "domainId" => 1,
+               "domainIds" => [1, 2]
+             } = data_structure
+
       assert %{"id" => _, "externalId" => _} = system
     end
   end

@@ -1,4 +1,4 @@
-defmodule TdDdWeb.ExecutionSearchControllerTest do
+defmodule TdDdWeb.ProfileExecutionSearchControllerTest do
   use TdDdWeb.ConnCase
 
   setup do

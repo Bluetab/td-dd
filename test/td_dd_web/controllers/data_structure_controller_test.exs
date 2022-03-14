@@ -62,7 +62,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     @tag authentication: [role: "user", permissions: ["view_data_structure"]]
     test "user account can search data structures", %{conn: conn, domain_id: domain_id} do
       %{name: name, data_structure: %{id: id, external_id: external_id}} =
-        data_structure_version = insert(:data_structure_version, domain_id: domain_id)
+        data_structure_version = insert(:data_structure_version, domain_ids: [domain_id])
 
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/structures/_search", _, [] ->
@@ -206,11 +206,11 @@ defmodule TdDdWeb.DataStructureControllerTest do
     test "renders data_structure when data is valid", %{
       conn: conn,
       claims: claims,
-      data_structure: %{id: id, domain_id: old_domain_id} = data_structure,
+      data_structure: %{id: id, domain_ids: [old_domain_id]} = data_structure,
       swagger_schema: schema
     } do
       %{id: new_domain_id} = CacheHelpers.insert_domain()
-      attrs = %{domain_id: new_domain_id, confidential: true}
+      attrs = %{domain_ids: [new_domain_id]}
 
       CacheHelpers.put_session_permissions(claims, %{
         update_data_structure: [old_domain_id],
@@ -225,15 +225,14 @@ defmodule TdDdWeb.DataStructureControllerTest do
                |> validate_resp_schema(schema, "DataStructureResponse")
                |> json_response(:ok)
 
-      assert %{domain_id: ^new_domain_id, confidential: true} =
-               DataStructures.get_data_structure!(id)
+      assert %{domain_ids: [^new_domain_id]} = DataStructures.get_data_structure!(id)
     end
 
     @tag authentication: [role: "user"]
     test "needs manage_confidential_structures permission", %{
       conn: conn,
       claims: claims,
-      data_structure: %{domain_id: domain_id} = data_structure,
+      data_structure: %{domain_ids: [domain_id]} = data_structure,
       swagger_schema: schema
     } do
       CacheHelpers.put_session_permissions(claims, domain_id, [
@@ -253,7 +252,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     test "needs manage_structures_domain permission", %{
       conn: conn,
       claims: claims,
-      data_structure: %{domain_id: domain_id} = data_structure,
+      data_structure: %{domain_ids: [domain_id]} = data_structure,
       swagger_schema: schema
     } do
       %{id: new_domain_id} = CacheHelpers.insert_domain()
@@ -279,7 +278,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     test "needs access to new domain", %{
       conn: conn,
       claims: claims,
-      data_structure: %{domain_id: domain_id} = data_structure,
+      data_structure: %{domain_ids: [domain_id]} = data_structure,
       swagger_schema: schema
     } do
       %{id: new_domain_id} = CacheHelpers.insert_domain()
@@ -291,7 +290,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert conn
              |> put(data_structure_path(conn, :update, data_structure),
-               data_structure: %{domain_id: new_domain_id}
+               data_structure: %{domain_ids: [new_domain_id]}
              )
              |> validate_resp_schema(schema, "DataStructureResponse")
              |> json_response(:forbidden)
@@ -409,7 +408,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert data["data_structure"]["id"] == id
       assert data["data_structure"]["confidential"] == false
-      assert data["data_structure"]["domain"]["name"] == domain_name
+      assert %{"data_structure" => %{"domains" => [%{"name" => ^domain_name}]}} = data
     end
 
     @tag authentication: [
@@ -449,7 +448,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     @tag authentication: [role: "admin"]
     test "bulk update of data structures", %{conn: conn, domain_id: domain_id} do
       %{data_structure_id: id} =
-        dsv = insert(:data_structure_version, domain_id: domain_id, type: @template_name)
+        dsv = insert(:data_structure_version, domain_ids: [domain_id], type: @template_name)
 
       ElasticsearchMock
       |> expect(:request, fn _, :post, "/structures/_search", _, [] ->
@@ -480,7 +479,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
     @tag authentication: [role: "admin"]
     test "bulk update return invalid notes as errors", %{conn: conn, domain_id: domain_id} do
-      %{id: id, external_id: external_id} = insert(:data_structure, domain_id: domain_id)
+      %{id: id, external_id: external_id} = insert(:data_structure, domain_ids: [domain_id])
       dsv = insert(:data_structure_version, data_structure_id: id, type: @template_name)
 
       ElasticsearchMock
@@ -580,19 +579,19 @@ defmodule TdDdWeb.DataStructureControllerTest do
     defp create_three_data_structures(domain_id) do
       data_structure_one =
         insert(:data_structure,
-          domain_id: domain_id,
+          domain_ids: [domain_id],
           external_id: "some_external_id_1"
         )
 
       data_structure_two =
         insert(:data_structure,
-          domain_id: domain_id,
+          domain_ids: [domain_id],
           external_id: "some_external_id_2"
         )
 
       data_structure_three =
         insert(:data_structure,
-          domain_id: domain_id,
+          domain_ids: [domain_id],
           external_id: "some_external_id_3"
         )
 
@@ -711,7 +710,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     test "upload, valid csv", %{conn: conn, domain: %{id: domain_id}} do
       data_structure =
         insert(:data_structure,
-          domain_id: domain_id,
+          domain_ids: [domain_id],
           external_id: "some_external_id_1"
         )
 
@@ -728,7 +727,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     test "upload, can not update without permissions", %{conn: conn, domain: %{id: domain_id}} do
       data_structure =
         insert(:data_structure,
-          domain_id: domain_id,
+          domain_ids: [domain_id],
           external_id: "some_external_id_1"
         )
 
@@ -751,7 +750,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     test "upload, can create structure_notes", %{conn: conn, domain: %{id: domain_id}} do
       data_structure =
         insert(:data_structure,
-          domain_id: domain_id,
+          domain_ids: [domain_id],
           external_id: "some_external_id_1"
         )
 
@@ -774,7 +773,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     test "upload, can edit structure_notes", %{conn: conn, domain: %{id: domain_id}} do
       data_structure =
         insert(:data_structure,
-          domain_id: domain_id,
+          domain_ids: [domain_id],
           external_id: "some_external_id_1"
         )
 
@@ -806,7 +805,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     } do
       data_structure =
         insert(:data_structure,
-          domain_id: domain_id,
+          domain_ids: [domain_id],
           external_id: "some_external_id_1"
         )
 
@@ -843,7 +842,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     } do
       data_structure =
         insert(:data_structure,
-          domain_id: domain_id,
+          domain_ids: [domain_id],
           external_id: "some_external_id_1"
         )
 
@@ -882,7 +881,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
          %{conn: conn, domain: %{id: domain_id}} do
       data_structure =
         insert(:data_structure,
-          domain_id: domain_id,
+          domain_ids: [domain_id],
           external_id: "some_external_id_1"
         )
 
@@ -907,7 +906,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
     data_structure =
       insert(:data_structure,
         confidential: Map.get(tags, :confidential, false),
-        domain_id: domain_id
+        domain_ids: [domain_id]
       )
 
     create_data_structure(data_structure)

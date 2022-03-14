@@ -130,7 +130,7 @@ defmodule TdDd.Grants.GrantRequestTest do
       grant_request = %GrantRequest{
         filters: %{"grant_filters" => "bar"},
         metadata: %{"old" => "foo", identifier_name => existing_identifier},
-        domain_id: 123
+        domain_ids: [123]
       }
 
       params = %{
@@ -157,7 +157,7 @@ defmodule TdDd.Grants.GrantRequestTest do
       grant_request = %GrantRequest{
         filters: %{"grant_filters" => "bar"},
         metadata: %{"old" => "foo", identifier_name => existing_identifier},
-        domain_id: 123
+        domain_ids: [123]
       }
 
       params = %{
@@ -187,7 +187,7 @@ defmodule TdDd.Grants.GrantRequestTest do
       grant_request = %GrantRequest{
         filters: %{"grant_filters" => "bar"},
         metadata: %{"old" => "foo"},
-        domain_id: 123
+        domain_ids: [123]
       }
 
       params = %{
