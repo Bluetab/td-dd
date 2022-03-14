@@ -181,6 +181,29 @@ defmodule TdDq.ImplementationsTest do
       assert %{raw_content: content} = Implementations.get_implementation!(id, enrich: :source)
       assert %{source: ^source} = content
     end
+
+    test "enriches links" do
+      concept_id = System.unique_integer([:positive])
+
+      TdCache.ConceptCache.put(%{
+        id: concept_id,
+        name: "bc_name",
+        updated_at: DateTime.utc_now()
+      })
+
+      %{id: id} = insert(:implementation)
+      CacheHelpers.insert_link(id, "implementation", "business_concept", concept_id)
+
+      assert %{links: links} = Implementations.get_implementation!(id, enrich: [:links])
+      string_concept_id = Integer.to_string(concept_id)
+
+      assert [
+               %{
+                 resource_id: ^string_concept_id,
+                 name: "bc_name"
+               }
+             ] = links
+    end
   end
 
   describe "get_implementation_by_key/1" do
