@@ -14,6 +14,7 @@ defmodule TdDdWeb.Schema.Sources do
     field :sources, list_of(:source) do
       arg(:limit, :integer, default_value: 1_000)
       arg(:job_types, :string)
+      arg(:include_deleted, :boolean)
       resolve(&Resolvers.Sources.sources/3)
     end
 

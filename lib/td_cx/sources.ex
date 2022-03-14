@@ -110,8 +110,11 @@ defmodule TdCx.Sources do
       {:preload, preloads}, q ->
         preload(q, ^preloads)
 
-      {:deleted, true}, q ->
-        where(q, [s], not is_nil(s.deleted_at))
+      {:include_deleted, true}, q ->
+        q
+
+      {:include_deleted, false}, q ->
+        where(q, [s], is_nil(s.deleted_at))
 
       {:alias, source_alias}, q ->
         where(q, [s], fragment("(?) @> ?::jsonb", s.config, ^%{alias: source_alias}))

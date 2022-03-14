@@ -36,6 +36,21 @@ defmodule TdDdWeb.Schema.SourcesTest do
   }
   """
 
+  @sources_with_events_not_deleted """
+  query SOURCES($eventLimit: Int) {
+    sources(include_deleted: false) {
+      id
+      externalId
+      events(limit: $eventLimit) {
+        id
+        type
+        message
+        insertedAt
+      }
+    }
+  }
+  """
+
   @enable_source """
   mutation ENABLE_SOURCE($id: ID!) {
     enableSource(id: $id) {
@@ -208,6 +223,28 @@ defmodule TdDdWeb.Schema.SourcesTest do
       assert response["errors"] == nil
       assert %{"enableSource" => source} = data
       assert %{"active" => true, "externalId" => ^external_id} = source
+    end
+
+    @tag authentication: [role: "admin"]
+    test "deleted: false excludes logically deleted sources (not nil deleted_at)", %{conn: conn} do
+      event_limit = 3
+
+      %{id: source_not_deleted_id} = _source_not_deleted = insert(:source)
+      _source_deleted = insert(:source, deleted_at: DateTime.now!("Etc/UTC"))
+
+      assert %{"data" => %{ "sources" => sources}} =
+        response =
+        conn
+        |> post("/api/v2", %{
+          "query" => @sources_with_events_not_deleted,
+          "variables" => %{
+            "eventLimit" => event_limit,
+            "deleted" => false
+          }
+        })
+        |> json_response(:ok)
+
+      assert Integer.to_string(source_not_deleted_id) == Enum.at(sources, 0)["id"]
     end
   end
 
