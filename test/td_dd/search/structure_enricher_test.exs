@@ -25,12 +25,12 @@ defmodule TdDd.Search.StructureEnricherTest do
     test "enriches the domain", %{
       domain: %{id: domain_id, name: domain_name, external_id: domain_external_id}
     } do
-      assert %{domain: domain} =
+      assert %{domains: domains} =
                :data_structure
-               |> insert(domain_id: domain_id)
+               |> insert(domain_ids: [domain_id])
                |> StructureEnricher.enrich()
 
-      assert %{id: ^domain_id, name: ^domain_name, external_id: ^domain_external_id} = domain
+      assert [%{id: ^domain_id, name: ^domain_name, external_id: ^domain_external_id}] = domains
     end
 
     test "enriches the linked concepts flag" do

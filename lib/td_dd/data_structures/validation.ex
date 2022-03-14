@@ -12,57 +12,34 @@ defmodule TdDd.DataStructures.Validation do
   Returns a validator function that can be used by
   `Ecto.Changeset.validate_change/3`
   """
-  def validator(%DataStructure{domain_id: domain_id} = structure) do
+  def validator(%DataStructure{domain_ids: domain_ids} = structure) do
     case DataStructures.template_name(structure) do
       nil ->
         empty_content_validator()
 
       template ->
-        Validation.validator(template, domain_id: domain_id)
+        Validation.validator(template, domain_ids: domain_ids)
     end
   end
 
-  def validator(%StructureNote{data_structure: structure} = note) do
-    case DataStructures.template_name(note) do
-      nil ->
-        empty_content_validator()
-
-      template ->
-        domain_id = Map.get(structure, :domain_id)
-        Validation.validator(template, domain_id: domain_id)
-    end
+  def validator(%StructureNote{data_structure: structure}) do
+    validator(structure)
   end
 
-  @spec validator(
-          %{
-            :__struct__ => TdDd.DataStructures.DataStructure | TdDd.DataStructures.StructureNote,
-            optional(any) => any
-          },
-          any,
-          any
-        ) :: {:error, :template_not_found} | Ecto.Changeset.t()
-  def validator(%DataStructure{domain_id: domain_id} = data_structure, df_content, fields) do
+  @spec validator(DataStructure.t() | StructureNote.t(), any, any) ::
+          {:error, :template_not_found} | Ecto.Changeset.t()
+  def validator(%DataStructure{domain_ids: domain_ids} = data_structure, df_content, fields) do
     data_structure
     |> DataStructures.template_name()
     |> Templates.content_schema()
     |> case do
       {:error, error} -> {:error, error}
-      schema -> validate(schema, df_content, fields, domain_id)
+      schema -> validate(schema, df_content, fields, domain_ids)
     end
   end
 
-  def validator(%StructureNote{data_structure: structure} = note, df_content, fields) do
-    note
-    |> DataStructures.template_name()
-    |> Templates.content_schema()
-    |> case do
-      {:error, error} ->
-        {:error, error}
-
-      schema ->
-        domain_id = Map.get(structure, :domain_id)
-        validate(schema, df_content, fields, domain_id)
-    end
+  def validator(%StructureNote{data_structure: structure}, df_content, fields) do
+    validator(structure, df_content, fields)
   end
 
   def shallow_validator(%{} = structure) do
@@ -81,11 +58,11 @@ defmodule TdDd.DataStructures.Validation do
     end
   end
 
-  defp validate(schema, df_content, fields, domain_id) do
+  defp validate(schema, df_content, fields, domain_ids) do
     Validation.build_changeset(
       df_content,
       Enum.filter(schema, fn %{"name" => name} -> name in fields end),
-      domain_id: domain_id
+      domain_ids: domain_ids
     )
   end
 end

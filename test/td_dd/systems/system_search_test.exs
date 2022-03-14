@@ -32,7 +32,7 @@ defmodule TdDD.Systems.SystemSearchTest do
           assert %{
                    bool: %{
                      filter: [
-                       %{term: %{"domain_id" => _}},
+                       %{term: %{"domain_ids" => _}},
                        %{term: %{"confidential" => false}}
                      ]
                    }

@@ -46,7 +46,7 @@ defmodule TdDd.DataStructures.Search.Query do
   end
 
   defp domain_filter(domain_ids) do
-    Query.term_or_terms("domain_id", domain_ids)
+    Query.term_or_terms("domain_ids", domain_ids)
   end
 
   def build_query(permissions, params, aggs) do

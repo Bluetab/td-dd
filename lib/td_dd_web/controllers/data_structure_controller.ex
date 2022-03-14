@@ -5,7 +5,6 @@ defmodule TdDdWeb.DataStructureController do
   import Canada, only: [can?: 2]
   import Canada.Can, only: [can?: 3]
 
-  alias TdCache.DomainCache
   alias TdDd.CSV.Download
   alias TdDd.DataStructures
   alias TdDd.DataStructures.BulkUpdate
@@ -87,24 +86,20 @@ defmodule TdDdWeb.DataStructureController do
     response(422, "Unprocessable Entity")
   end
 
-  def update(conn, %{"id" => id, "data_structure" => attrs}) do
-    %{user_id: user_id} = claims = conn.assigns[:current_resource]
-    data_structure_old = DataStructures.get_data_structure!(id)
-    {:ok, external_ids} = DomainCache.external_id_to_id_map()
+  def update(conn, %{"id" => id, "data_structure" => structure_params} = params) do
+    inherit = Map.get(params, "inherit", false)
+    claims = conn.assigns[:current_resource]
+    structure = DataStructures.get_data_structure!(id)
 
-    update_params =
-      attrs
-      |> Map.put("last_change_by", user_id)
-      |> DataStructures.put_domain_id(external_ids)
-
-    with {:can, true} <- {:can, can?(claims, update_data_structure(data_structure_old))},
-         {:can, true} <- check_confidential(claims, data_structure_old, attrs),
-         {:can, true} <- check_domain_id(claims, data_structure_old, attrs),
-         {:can, true} <- check_new_domain_id(claims, attrs),
-         {:ok, %{data_structure: data_structure}} <-
-           DataStructures.update_data_structure(data_structure_old, update_params, claims) do
-      data_structure = get_data_structure(data_structure.id)
-      do_render_data_structure(conn, claims, data_structure)
+    with %{valid?: true} = changeset <-
+           DataStructures.update_changeset(claims, structure, structure_params),
+         {:can, true} <- {:can, can?(claims, update_data_structure(changeset))},
+         {:ok, _} <- DataStructures.update_data_structure(claims, changeset, inherit) do
+      structure = get_data_structure(id)
+      do_render_data_structure(conn, claims, structure)
+    else
+      %{valid?: false} = changeset -> {:error, changeset}
+      other -> other
     end
   end
 
@@ -296,18 +291,15 @@ defmodule TdDdWeb.DataStructureController do
 
       can_edit =
         case action do
-          :create -> can?(claims, create_structure_note({StructureNote, data_structure}))
-          :edit -> can?(claims, edit_structure_note({StructureNote, data_structure}))
+          :create -> can?(claims, create_structure_note(data_structure))
+          :edit -> can?(claims, edit_structure_note(data_structure))
           _ -> true
         end
 
-      case auto_publish do
-        true ->
-          can_edit and
-            can?(claims, publish_structure_note_from_draft({StructureNote, data_structure}))
-
-        _ ->
-          can_edit
+      if auto_publish do
+        can_edit and can?(claims, publish_structure_note_from_draft(data_structure))
+      else
+        can_edit
       end
     end)
   end
@@ -403,24 +395,6 @@ defmodule TdDdWeb.DataStructureController do
       render_error(conn, :forbidden)
     end
   end
-
-  defp check_confidential(claims, data_structure, %{"confidential" => _}) do
-    {:can, can?(claims, manage_confidential_structures(data_structure))}
-  end
-
-  defp check_confidential(_claims, _data_structure, _attrs), do: {:can, true}
-
-  defp check_domain_id(claims, data_structure, %{"domain_id" => _}) do
-    {:can, can?(claims, manage_structures_domain(data_structure))}
-  end
-
-  defp check_domain_id(_claims, _data_structure, _attrs), do: {:can, true}
-
-  defp check_new_domain_id(claims, %{"domain_id" => new_domain_id}) do
-    {:can, can?(claims, manage_structures_domain(new_domain_id))}
-  end
-
-  defp check_new_domain_id(_claims, _attrs), do: {:can, true}
 
   defp do_search(conn, params, page \\ 0, size \\ 50)
 
