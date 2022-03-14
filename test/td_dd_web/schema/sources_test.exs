@@ -232,7 +232,7 @@ defmodule TdDdWeb.Schema.SourcesTest do
       %{id: source_not_deleted_id} = _source_not_deleted = insert(:source)
       _source_deleted = insert(:source, deleted_at: DateTime.now!("Etc/UTC"))
 
-      assert %{"data" => %{ "sources" => sources}} =
+      assert %{"data" => %{"sources" => sources}} =
         response =
         conn
         |> post("/api/v2", %{
