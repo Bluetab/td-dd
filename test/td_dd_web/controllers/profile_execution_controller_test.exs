@@ -1,4 +1,4 @@
-defmodule TdDdWeb.ExecutionControllerTest do
+defmodule TdDdWeb.ProfileExecutionControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
@@ -22,7 +22,7 @@ defmodule TdDdWeb.ExecutionControllerTest do
 
     executions =
       Enum.map(1..5, fn _ ->
-        data_structure = insert(:data_structure, domain_id: domain_id)
+        data_structure = insert(:data_structure, domain_ids: [domain_id])
 
         insert(:profile_execution,
           profile_group: group,

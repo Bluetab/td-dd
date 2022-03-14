@@ -11,7 +11,7 @@ defmodule TdDd.Loader.Versions do
 
   @structure_fields [
     :confidential,
-    :domain_id,
+    :domain_ids,
     :external_id,
     :inserted_at,
     :last_change_by,

@@ -53,7 +53,7 @@ defmodule TdDdWeb.StructureNoteController do
 
   def search(conn, filter) do
     with claims <- conn.assigns[:current_resource],
-         {:can, true} <- {:can, can?(claims, search_structure_notes({StructureNote, nil}))} do
+         {:can, true} <- {:can, can?(claims, search(StructureNote))} do
       structure_notes = StructureNotes.list_structure_notes(filter)
 
       render(conn, "search.json", structure_notes: structure_notes)
@@ -89,8 +89,7 @@ defmodule TdDdWeb.StructureNoteController do
       ) do
     with claims <- conn.assigns[:current_resource],
          data_structure <- DataStructures.get_data_structure!(data_structure_id),
-         {:can, true} <-
-           {:can, can?(claims, force_create_structure_note({StructureNote, data_structure}))} do
+         {:can, true} <- {:can, can?(claims, force_create_structure_note(data_structure))} do
       create(conn, params, true)
     end
   end
@@ -117,7 +116,7 @@ defmodule TdDdWeb.StructureNoteController do
          data_structure <-
            DataStructures.get_data_structure!(data_structure_id, @data_structure_type_preload),
          {:can, true} <-
-           {:can, can?(claims, create_structure_note({StructureNote, data_structure}))},
+           {:can, can?(claims, create_structure_note(data_structure))},
          {:ok, %StructureNote{} = structure_note} <-
            StructureNotesWorkflow.create(
              data_structure,
@@ -144,8 +143,7 @@ defmodule TdDdWeb.StructureNoteController do
       ) do
     with claims <- conn.assigns[:current_resource],
          data_structure <- DataStructures.get_data_structure_by_external_id(external_id),
-         {:can, true} <-
-           {:can, can?(claims, force_create_structure_note({StructureNote, data_structure}))} do
+         {:can, true} <- {:can, can?(claims, force_create_structure_note(data_structure))} do
       creation_params = Map.put(params, "data_structure_id", data_structure.id)
       create(conn, creation_params, true)
     end
@@ -240,7 +238,7 @@ defmodule TdDdWeb.StructureNoteController do
     with claims <- conn.assigns[:current_resource],
          data_structure <- DataStructures.get_data_structure!(structure_note.data_structure_id),
          {:can, true} <-
-           {:can, can?(claims, delete_structure_note({StructureNote, data_structure}))},
+           {:can, can?(claims, delete_structure_note(data_structure))},
          {:ok, %StructureNote{}} <- StructureNotesWorkflow.delete(structure_note, claims.user_id) do
       send_resp(conn, :no_content, "")
     end
@@ -253,7 +251,7 @@ defmodule TdDdWeb.StructureNoteController do
   end
 
   defp can(%{status: :draft}, %{"df_content" => _df_content}, claims, data_structure) do
-    {:can, can?(claims, edit_structure_note({StructureNote, data_structure}))}
+    {:can, can?(claims, edit_structure_note(data_structure))}
   end
 
   defp available_actions(conn, nil = structure_note, claims, data_structure) do
@@ -333,54 +331,49 @@ defmodule TdDdWeb.StructureNoteController do
   end
 
   defp is_available(:draft, :published, claims, data_structure),
-    do: can?(claims, publish_structure_note_from_draft({StructureNote, data_structure}))
+    do: can?(claims, publish_structure_note_from_draft(data_structure))
 
   defp is_available(nil, :draft, claims, data_structure),
-    do: can?(claims, edit_structure_note({StructureNote, data_structure}))
+    do: can?(claims, edit_structure_note(data_structure))
 
   defp is_available(:draft, :edited, claims, data_structure),
-    do: can?(claims, edit_structure_note({StructureNote, data_structure}))
+    do: can?(claims, edit_structure_note(data_structure))
 
   defp is_available(_, :pending_approval, claims, data_structure),
-    do: can?(claims, send_structure_note_to_approval({StructureNote, data_structure}))
+    do: can?(claims, send_structure_note_to_approval(data_structure))
 
   defp is_available(_, :rejected, claims, data_structure),
-    do: can?(claims, reject_structure_note({StructureNote, data_structure}))
+    do: can?(claims, reject_structure_note(data_structure))
 
   defp is_available(:rejected, :draft, claims, data_structure),
-    do: can?(claims, unreject_structure_note({StructureNote, data_structure}))
+    do: can?(claims, unreject_structure_note(data_structure))
 
   defp is_available(_, :draft, claims, data_structure),
-    do: can?(claims, unreject_structure_note({StructureNote, data_structure}))
+    do: can?(claims, unreject_structure_note(data_structure))
 
   defp is_available(_, :deprecated, claims, data_structure),
-    do: can?(claims, deprecate_structure_note({StructureNote, data_structure}))
+    do: can?(claims, deprecate_structure_note(data_structure))
 
   defp is_available(_, :published, claims, data_structure),
-    do: can?(claims, publish_structure_note({StructureNote, data_structure}))
+    do: can?(claims, publish_structure_note(data_structure))
 
   defp is_available(_, :deleted, claims, data_structure),
-    do: can?(claims, delete_structure_note({StructureNote, data_structure}))
+    do: can?(claims, delete_structure_note(data_structure))
 
   defp is_available(_, _, _claims, _data_structure), do: false
 
   defp listable_statuses(claims, data_structure) do
     [
-      {can?(claims, edit_structure_note({StructureNote, data_structure})), [:draft]},
-      {can?(claims, send_structure_note_to_approval({StructureNote, data_structure})),
+      {can?(claims, edit_structure_note(data_structure)), [:draft]},
+      {can?(claims, send_structure_note_to_approval(data_structure)),
        [:draft, :pending_approval]},
-      {can?(claims, reject_structure_note({StructureNote, data_structure})),
-       [:pending_approval, :rejected]},
-      {can?(claims, unreject_structure_note({StructureNote, data_structure})),
-       [:rejected, :draft]},
-      {can?(claims, deprecate_structure_note({StructureNote, data_structure})), [:deprecated]},
-      {can?(claims, publish_structure_note({StructureNote, data_structure})),
-       [:pending_approval]},
-      {can?(claims, delete_structure_note({StructureNote, data_structure})), [:draft, :rejected]},
-      {can?(claims, publish_structure_note_from_draft({StructureNote, data_structure})),
-       [:draft]},
-      {can?(claims, view_structure_note_history({StructureNote, data_structure})),
-       [:versioned, :deprecated]},
+      {can?(claims, reject_structure_note(data_structure)), [:pending_approval, :rejected]},
+      {can?(claims, unreject_structure_note(data_structure)), [:rejected, :draft]},
+      {can?(claims, deprecate_structure_note(data_structure)), [:deprecated]},
+      {can?(claims, publish_structure_note(data_structure)), [:pending_approval]},
+      {can?(claims, delete_structure_note(data_structure)), [:draft, :rejected]},
+      {can?(claims, publish_structure_note_from_draft(data_structure)), [:draft]},
+      {can?(claims, view_structure_note_history(data_structure)), [:versioned, :deprecated]},
       {can?(claims, view_data_structure(data_structure)), [:published]}
     ]
     |> Enum.filter(fn {permission, _} -> permission end)

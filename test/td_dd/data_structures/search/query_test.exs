@@ -24,20 +24,20 @@ defmodule TdDd.DataStructures.Search.QueryTest do
       assert build_link_filters(:all, :none) == @not_confidential
     end
 
-    test "returns filters for domain_id and not confidential" do
+    test "returns filters for domain_ids and not confidential" do
       assert build_view_filters([1], :none) ==
-               [%{term: %{"domain_id" => 1}}, @not_confidential]
+               [%{term: %{"domain_ids" => 1}}, @not_confidential]
 
       assert build_link_filters([1, 2], :none) ==
-               [%{terms: %{"domain_id" => [1, 2]}}, @not_confidential]
+               [%{terms: %{"domain_ids" => [1, 2]}}, @not_confidential]
     end
 
-    test "returns filters for domain_id if confidential scope is all" do
-      assert build_view_filters([1], :all) == %{term: %{"domain_id" => 1}}
-      assert build_link_filters([1, 2], :all) == %{terms: %{"domain_id" => [1, 2]}}
+    test "returns filters for domain_ids if confidential scope is all" do
+      assert build_view_filters([1], :all) == %{term: %{"domain_ids" => 1}}
+      assert build_link_filters([1, 2], :all) == %{terms: %{"domain_ids" => [1, 2]}}
     end
 
-    test "returns bool query for domain_id or confidential domain_id" do
+    test "returns bool query for domain_ids or confidential domain_ids" do
       assert build_view_filters([1], [2]) ==
                %{
                  bool: %{
@@ -45,12 +45,12 @@ defmodule TdDd.DataStructures.Search.QueryTest do
                      %{
                        bool: %{
                          filter: [
-                           %{term: %{"domain_id" => 1}},
+                           %{term: %{"domain_ids" => 1}},
                            @not_confidential
                          ]
                        }
                      },
-                     %{bool: %{filter: %{term: %{"domain_id" => 2}}}}
+                     %{bool: %{filter: %{term: %{"domain_ids" => 2}}}}
                    ]
                  }
                }
@@ -62,12 +62,12 @@ defmodule TdDd.DataStructures.Search.QueryTest do
                      %{
                        bool: %{
                          filter: [
-                           %{terms: %{"domain_id" => [1, 2]}},
+                           %{terms: %{"domain_ids" => [1, 2]}},
                            @not_confidential
                          ]
                        }
                      },
-                     %{bool: %{filter: %{terms: %{"domain_id" => [2, 3]}}}}
+                     %{bool: %{filter: %{terms: %{"domain_ids" => [2, 3]}}}}
                    ]
                  }
                }

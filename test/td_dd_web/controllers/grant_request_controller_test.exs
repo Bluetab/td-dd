@@ -124,9 +124,9 @@ defmodule TdDdWeb.GrantRequestControllerTest do
       ])
 
       %{id: id} =
-        insert(:grant_request, data_structure: build(:data_structure), domain_id: domain_id)
+        insert(:grant_request, data_structure: build(:data_structure), domain_ids: [domain_id])
 
-      insert(:grant_request, data_structure: build(:data_structure), domain_id: domain_id + 1)
+      insert(:grant_request, data_structure: build(:data_structure), domain_ids: [domain_id + 1])
 
       params = %{"action" => "approve"}
 
@@ -187,7 +187,7 @@ defmodule TdDdWeb.GrantRequestControllerTest do
       ])
 
       %{id: id} =
-        insert(:grant_request, data_structure: build(:data_structure), domain_id: domain_id)
+        insert(:grant_request, data_structure: build(:data_structure), domain_ids: [domain_id])
 
       assert %{"data" => %{"id" => ^id}} =
                conn

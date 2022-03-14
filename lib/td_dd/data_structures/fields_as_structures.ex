@@ -31,7 +31,7 @@ defmodule TdDd.Loader.FieldsAsStructures do
     metadata =
       field_or_record
       |> Map.take(@liftable_metadata)
-      |> Enum.filter(fn {_, v} -> not is_nil(v) end)
+      |> Enum.reject(fn {_, v} -> is_nil(v) end)
       |> Enum.into(Map.get(field_or_record, :metadata, %{}), fn {k, v} -> {to_string(k), v} end)
 
     field_or_record
@@ -59,7 +59,7 @@ defmodule TdDd.Loader.FieldsAsStructures do
     type = child_type(parent, field)
 
     parent
-    |> Map.take([:domain_id, :group, :system_id])
+    |> Map.take([:domain_ids, :group, :system_id])
     |> Map.merge(field)
     |> Map.delete(:field_external_id)
     |> Map.put(:class, "field")

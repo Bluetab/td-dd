@@ -90,7 +90,6 @@ config :td_dd, index_worker: TdDd.Search.IndexWorker
 config :td_dd, cx_index_worker: TdCx.Search.IndexWorker
 config :td_dd, dq_index_worker: TdDq.Search.IndexWorker
 config :td_dd, loader_worker: TdDd.Loader.Worker
-config :td_dd, loader_worker: TdDd.Loader.Worker
 
 config :td_dd, TdDd.Lineage, timeout: 90_000
 

@@ -1,6 +1,6 @@
 defmodule TdDd.Loader.Structures do
   @moduledoc """
-  Loader multi support for updating data structure domain_id.
+  Loader multi support for updating data structure domain_ids.
   """
   import Ecto.Query
 
@@ -15,10 +15,10 @@ defmodule TdDd.Loader.Structures do
   def update_domain_ids(records, ts) do
     res =
       records
-      |> Enum.filter(&Map.has_key?(&1, :domain_id))
-      |> Enum.group_by(&Map.get(&1, :domain_id), &Map.get(&1, :external_id))
-      |> Enum.map(fn {domain_id, external_ids} ->
-        bulk_update_domain_id(external_ids, domain_id, ts)
+      |> Enum.filter(&Map.has_key?(&1, :domain_ids))
+      |> Enum.group_by(&Map.get(&1, :domain_ids), &Map.get(&1, :external_id))
+      |> Enum.map(fn {domain_ids, external_ids} ->
+        bulk_update_domain_ids(external_ids, domain_ids, ts)
       end)
       |> Enum.reduce({0, []}, fn {count1, ids1}, {count2, ids2} ->
         {count1 + count2, ids1 ++ ids2}
@@ -27,15 +27,17 @@ defmodule TdDd.Loader.Structures do
     {:ok, res}
   end
 
-  @spec bulk_update_domain_id([binary()], integer(), DateTime.t()) :: {integer(), [integer()]}
-  def bulk_update_domain_id(external_ids, domain_id, ts)
+  @spec bulk_update_domain_ids([binary()], list(), DateTime.t()) :: {integer(), [integer()]}
+  def bulk_update_domain_ids(external_ids, domain_ids, ts)
 
-  def bulk_update_domain_id([], _domain_id, _ts), do: {0, []}
+  def bulk_update_domain_ids([], _domain_ids, _ts), do: {0, []}
+  def bulk_update_domain_ids(_, [] = _domain_ids, _ts), do: {0, []}
+  def bulk_update_domain_ids(_, nil = _domain_ids, _ts), do: {0, []}
 
-  def bulk_update_domain_id(external_ids, domain_id, ts) do
+  def bulk_update_domain_ids(external_ids, domain_ids, ts) do
     external_ids
     |> Enum.chunk_every(@chunk_size)
-    |> Enum.map(&do_bulk_update_domain_id(&1, domain_id, ts))
+    |> Enum.map(&do_bulk_update_domain_ids(&1, domain_ids, ts))
     |> Enum.reduce({0, []}, fn {count1, ids1}, {count2, ids2} ->
       {count1 + count2, ids1 ++ ids2}
     end)
@@ -64,11 +66,11 @@ defmodule TdDd.Loader.Structures do
     end)
   end
 
-  defp do_bulk_update_domain_id(external_ids, domain_id, ts) do
+  defp do_bulk_update_domain_ids(external_ids, domain_ids, ts) do
     external_ids
     |> structures_by_external_ids()
-    |> where([ds], is_nil(ds.domain_id))
-    |> Repo.update_all(set: [domain_id: domain_id, updated_at: ts])
+    |> where([ds], fragment("? = '{}'", ds.domain_ids))
+    |> Repo.update_all(set: [domain_ids: domain_ids, updated_at: ts])
   end
 
   defp do_bulk_update_source_ids(external_ids, source_id, ts) do

@@ -173,9 +173,9 @@ defmodule TdDdWeb.MetadataControllerTest do
       frequencies =
         DataStructure
         |> Repo.all()
-        |> Enum.frequencies_by(& &1.domain_id)
+        |> Enum.frequencies_by(& &1.domain_ids)
 
-      assert frequencies == %{domain_id => 5 + 68}
+      assert frequencies == %{[domain_id] => 5 + 68}
     end
 
     @tag authentication: [role: "service"]

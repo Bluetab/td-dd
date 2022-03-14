@@ -53,7 +53,7 @@ defmodule TdDd.Factory do
   end
 
   def data_structure_version_factory(attrs) do
-    {structure_attrs, attrs} = Map.split(attrs, [:domain_id])
+    {structure_attrs, attrs} = Map.split(attrs, [:domain_ids])
 
     attrs =
       default_assoc(attrs, :data_structure_id, :data_structure, :data_structure, structure_attrs)
@@ -440,7 +440,7 @@ defmodule TdDd.Factory do
     %TdDd.Grants.GrantRequest{
       filters: %{"grant_filters" => "bar"},
       metadata: %{"grant_meta" => "bar"},
-      domain_id: 123
+      domain_ids: [123]
     }
     |> merge_attributes(attrs)
   end

@@ -108,8 +108,8 @@ defmodule TdDd.Canada.Abilities do
 
     def can?(%Claims{role: "admin"}, :create_grant_request, %DataStructure{}), do: true
 
-    def can?(%Claims{} = claims, :create_grant_request, %DataStructure{domain_id: domain_id}) do
-      GrantAbilities.can?(claims, :create_grant_request, domain_id)
+    def can?(%Claims{} = claims, :create_grant_request, %DataStructure{domain_ids: domain_ids}) do
+      GrantAbilities.can?(claims, :create_grant_request, domain_ids)
     end
 
     def can?(%Claims{role: "admin"}, :create_grant_request_group, %DataStructure{}), do: true
@@ -126,16 +126,16 @@ defmodule TdDd.Canada.Abilities do
       DataStructureAbilities.can?(claims, action, data_structure)
     end
 
+    def can?(%Claims{} = claims, :update_data_structure, %{} = changeset) do
+      DataStructureAbilities.can?(claims, :update_data_structure, changeset)
+    end
+
     def can?(%Claims{} = claims, action, %DataStructureVersion{} = data_structure_version) do
       DataStructureVersionAbilities.can?(claims, action, data_structure_version)
     end
 
     def can?(%Claims{} = claims, action, StructureNote) do
       StructureNoteAbilities.can?(claims, action, StructureNote)
-    end
-
-    def can?(%Claims{} = claims, action, {StructureNote, data_structure}) do
-      StructureNoteAbilities.can?(claims, action, data_structure)
     end
 
     def can?(%Claims{} = claims, action, DataStructureTag) do
