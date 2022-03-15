@@ -16,6 +16,8 @@ defmodule TdDq.Implementations.Implementation do
   alias TdDq.Implementations.RawContent
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleResult
+  alias TdDq.Rules.RuleResults
+  alias TdDq.Search.Helpers
 
   @valid_result_types ~w(percentage errors_number deviation)
   @typedoc "A quality rule implementation"
@@ -230,10 +232,40 @@ defmodule TdDq.Implementations.Implementation do
     |> validate_required([:dataset, :validations])
   end
 
+  def get_execution_result_info(_implementation, %{type: "FAILED", inserted_at: inserted_at}) do
+    %{result_text: "quality_result.failed", date: inserted_at}
+  end
+
+  def get_execution_result_info(%Implementation{} = implementation, _quality_event) do
+    case RuleResults.get_latest_rule_result(implementation) do
+      nil -> %{result_text: nil}
+      result -> build_result_info(implementation, result)
+    end
+  end
+
+  defp build_result_info(
+         %Implementation{minimum: minimum, goal: goal, result_type: result_type},
+         rule_result
+       ) do
+    Map.new()
+    |> with_result(rule_result)
+    |> with_date(rule_result)
+    |> Helpers.with_result_text(minimum, goal, result_type)
+  end
+
+  defp with_result(result_map, rule_result) do
+    rule_result
+    |> Map.take([:result, :errors, :records])
+    |> Map.merge(result_map)
+  end
+
+  defp with_date(result_map, rule_result) do
+    Map.put(result_map, :date, Map.get(rule_result, :date))
+  end
+
   defimpl Elasticsearch.Document do
     alias TdCache.TemplateCache
     alias TdDfLib.Format
-    alias TdDq.Rules.RuleResults
     alias TdDq.Search.Helpers
 
     @implementation_keys [
@@ -278,7 +310,8 @@ defmodule TdDq.Implementations.Implementation do
       quality_event = QualityEvents.get_event_by_imp(implementation_id)
       confidential = Helpers.confidential?(rule)
       bcv = Helpers.get_business_concept_version(rule)
-      execution_result_info = get_execution_result_info(implementation, quality_event)
+
+      execution_result_info = Implementation.get_execution_result_info(implementation, quality_event)
       domain_ids = List.wrap(domain_id)
       updated_by = Helpers.get_user(rule.updated_by)
       structures = Implementations.get_structures(implementation)
@@ -311,37 +344,6 @@ defmodule TdDq.Implementations.Implementation do
       |> Map.put(:_confidential, confidential)
       |> Map.put(:business_concept_id, Map.get(rule, :business_concept_id))
       |> Map.put(:df_content, df_content)
-    end
-
-    defp get_execution_result_info(_implementation, %{type: "FAILED", inserted_at: inserted_at}) do
-      %{result_text: "quality_result.failed", date: inserted_at}
-    end
-
-    defp get_execution_result_info(%Implementation{} = implementation, _quality_event) do
-      case RuleResults.get_latest_rule_result(implementation) do
-        nil -> %{result_text: nil}
-        result -> build_result_info(implementation, result)
-      end
-    end
-
-    defp build_result_info(
-           %Implementation{minimum: minimum, goal: goal, result_type: result_type},
-           rule_result
-         ) do
-      Map.new()
-      |> with_result(rule_result)
-      |> with_date(rule_result)
-      |> Helpers.with_result_text(minimum, goal, result_type)
-    end
-
-    defp with_result(result_map, rule_result) do
-      rule_result
-      |> Map.take([:result, :errors, :records])
-      |> Map.merge(result_map)
-    end
-
-    defp with_date(result_map, rule_result) do
-      Map.put(result_map, :date, Map.get(rule_result, :date))
     end
 
     defp get_raw_content(implementation) do

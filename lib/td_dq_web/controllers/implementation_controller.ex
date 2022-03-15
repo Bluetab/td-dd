@@ -114,17 +114,48 @@ defmodule TdDqWeb.ImplementationController do
   end
 
   def show(conn, %{"id" => id}) do
+    claims = conn.assigns[:current_resource]
+
     implementation =
       id
-      |> Implementations.get_implementation!(enrich: :source, preload: [:rule, :results])
+      |> Implementations.get_implementation!(
+        enrich: [:source, :links],
+        preload: [:rule, :results]
+      )
       |> add_last_rule_result()
       |> add_quality_event()
       |> Implementations.enrich_implementation_structures()
+      |> filter_links_by_permission(claims)
 
-    claims = conn.assigns[:current_resource]
+    actions =
+      %{}
+      |> link_concept_actions(claims, implementation)
 
     with {:can, true} <- {:can, can?(claims, show(implementation))} do
-      render(conn, "show.json", implementation: implementation)
+      render(conn, "show.json", implementation: implementation, actions: actions)
+    end
+  end
+
+  defp filter_links_by_permission(implementation, %{role: "admin"}), do: implementation
+
+  defp filter_links_by_permission(%{links: [_ | _] = links} = implementation, claims) do
+    links = Enum.filter(links, fn link -> filter_link_by_permission(claims, link) end)
+    Map.put(implementation, :links, links)
+  end
+
+  defp filter_links_by_permission(implementation, _claims), do: implementation
+
+  defp filter_link_by_permission(claims, %{resource_type: :concept, domain: %{id: domain_id}}) do
+    can?(claims, view_published_concept(domain_id))
+  end
+
+  defp filter_link_by_permission(_claims, _), do: false
+
+  defp link_concept_actions(actions, claims, implementation) do
+    if can?(claims, link_concept(implementation)) do
+      Map.put(actions, :link_concept, %{method: "POST"})
+    else
+      actions
     end
   end
 
