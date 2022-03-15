@@ -163,15 +163,15 @@ defmodule TdDdWeb.GrantSearchControllerTest do
 
     grant =
       case context do
-        %{domain: domain} -> create_grant(user_id, domain.id)
-        _ -> create_grant(user_id, nil)
+        %{domain: domain} -> create_grant(user_id, [domain.id])
+        _ -> create_grant(user_id, [])
       end
 
     [grant: grant]
   end
 
-  defp create_grant(user_id, domain_id) do
-    data_structure = insert(:data_structure, domain_id: domain_id)
+  defp create_grant(user_id, domain_ids) do
+    data_structure = insert(:data_structure, domain_ids: domain_ids)
     data_structure_version = insert(:data_structure_version, data_structure: data_structure)
     Hierarchy.update_hierarchy([data_structure_version.id])
 

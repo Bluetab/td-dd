@@ -7,6 +7,7 @@ defmodule TdDq.Rules.RuleResults do
 
   alias Ecto.Multi
   alias TdDd.Repo
+  alias TdDq.Cache.ImplementationLoader
   alias TdDq.Cache.RuleLoader
   alias TdDq.Events.QualityEvents
   alias TdDq.Executions.Execution
@@ -69,6 +70,8 @@ defmodule TdDq.Rules.RuleResults do
     end)
     |> Multi.run(:results, fn _, %{result: %{id: id}} -> select_results([id]) end)
     |> Multi.run(:audit, Audit, :rule_results_created, [0])
+    |> Multi.run(:implementation, fn _, _ -> {:ok, impl} end)
+    |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
     |> Repo.transaction()
     |> on_create()
   end

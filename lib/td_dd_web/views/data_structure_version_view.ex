@@ -96,8 +96,8 @@ defmodule TdDdWeb.DataStructureVersionView do
     |> Map.take([
       :id,
       :confidential,
-      :domain_id,
-      :domain,
+      :domain_ids,
+      :domains,
       :external_id,
       :inserted_at,
       :updated_at,

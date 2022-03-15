@@ -31,15 +31,15 @@ defmodule TdDd.Canada.ExecutionAbilities do
 
   def can?(%Claims{}, _action, _target), do: false
 
-  defp view_structure?(%Claims{} = claims, %{domain_id: domain_id, confidential: confidential}) do
-    authorized?(claims, :view_data_structure, domain_id) &&
-      (!confidential || authorized?(claims, :manage_confidential_structures, domain_id))
+  defp view_structure?(%Claims{} = claims, %{domain_ids: domain_ids, confidential: confidential}) do
+    authorized?(claims, :view_data_structure, domain_ids) &&
+      (!confidential || authorized?(claims, :manage_confidential_structures, domain_ids))
   end
 
   defp view_structure?(%Claims{}, _data_structure), do: false
 
-  defp view_profile?(%Claims{} = claims, %{domain_id: domain_id}),
-    do: authorized?(claims, :view_data_structures_profile, domain_id)
+  defp view_profile?(%Claims{} = claims, %{domain_ids: domain_ids}),
+    do: authorized?(claims, :view_data_structures_profile, domain_ids)
 
   defp view_profile?(%Claims{}, _data_structure), do: false
 end

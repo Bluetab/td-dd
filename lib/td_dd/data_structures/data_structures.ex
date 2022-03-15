@@ -6,6 +6,7 @@ defmodule TdDd.DataStructures do
   import Ecto.Query
 
   alias Ecto.Association.NotLoaded
+  alias Ecto.Changeset
   alias Ecto.Multi
   alias TdCache.LinkCache
   alias TdCache.TemplateCache
@@ -13,7 +14,6 @@ defmodule TdDd.DataStructures do
   alias TdCx.Sources
   alias TdCx.Sources.Source
   alias TdDd.Auth.Claims
-  alias TdDd.DataStructures.Ancestry
   alias TdDd.DataStructures.Audit
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureQueries
@@ -41,12 +41,6 @@ defmodule TdDd.DataStructures do
 
       {:external_id, external_id}, q ->
         where(q, [ds], ds.external_id == ^external_id)
-
-      {:domain_id, domain_id}, q when is_list(domain_id) ->
-        where(q, [ds], ds.domain_id in ^domain_id)
-
-      {:domain_id, domain_id}, q ->
-        where(q, [ds], ds.domain_id == ^domain_id)
 
       {:id, {:in, ids}}, q ->
         where(q, [ds], ds.id in ^ids)
@@ -462,83 +456,61 @@ defmodule TdDd.DataStructures do
     end
   end
 
-  @doc """
-  Updates a data_structure.
+  def update_changeset(%Claims{user_id: user_id}, %DataStructure{} = data_structure, %{} = params) do
+    DataStructure.changeset(data_structure, params, user_id)
+  end
 
-  ## Examples
+  def update_data_structure(claims, data_structure, params, inherit) do
+    changeset = update_changeset(claims, data_structure, params)
+    update_data_structure(claims, changeset, inherit)
+  end
 
-      iex> update_data_structure(data_structure, %{field: new_value}, claims)
-      {:ok, %DataStructure{}}
+  def update_data_structure(claims, changeset, inherit)
 
-      iex> update_data_structure(data_structure, %{field: bad_value}, claims)
-      {:error, %Ecto.Changeset{}}
+  def update_data_structure(_claims, %Changeset{valid?: false} = changeset, _),
+    do: {:error, changeset}
 
-  """
-  def update_data_structure(%DataStructure{} = data_structure, %{} = params, %Claims{
-        user_id: user_id
-      }) do
-    changeset = DataStructure.update_changeset(data_structure, params)
+  def update_data_structure(_claims, %Changeset{changes: %{} = changes}, _)
+      when map_size(changes) == 0,
+      do: {:ok, %{}}
 
-    Multi.new()
-    |> Multi.update(:data_structure, changeset)
-    |> Multi.run(:audit, Audit, :data_structure_updated, [changeset, user_id])
-    |> Multi.run(:updated_children_count, fn _repo, %{data_structure: updated_data_structure} ->
-      maybe_update_children_domain_ids(updated_data_structure, data_structure, params)
+  def update_data_structure(
+        %Claims{user_id: user_id},
+        %Changeset{data: %DataStructure{id: id}} = changeset,
+        inherit
+      ) do
+    do_update_data_structure(id, changeset, inherit, user_id)
+  end
+
+  defp do_update_data_structure(id, %{changes: changes} = changeset, inherit, user_id) do
+    changes
+    |> Map.take([:confidential, :domain_ids])
+    |> Enum.map(fn
+      {key, value} ->
+        {key, DataStructureQueries.update_all_query([id], key, value, user_id, inherit)}
     end)
+    |> Enum.reduce(Multi.new(), fn
+      {key, queryable}, multi -> Multi.update_all(multi, key, queryable, [])
+    end)
+    |> Multi.run(:updated_ids, &updated_ids/2)
+    |> Multi.run(:audit, Audit, :data_structure_updated, [id, changeset, user_id])
     |> Repo.transaction()
-    |> on_update()
+    |> tap(&on_update/1)
   end
 
-  defp maybe_update_children_domain_ids(_updated, _new, %{"with_inheritance" => false}) do
-    {:ok, 0}
+  defp updated_ids(_repo, %{} = changes) do
+    ids =
+      changes
+      |> Map.take([:confidential, :domain_ids])
+      |> Map.values()
+      |> Enum.flat_map(fn {_, ids} -> ids end)
+      |> Enum.uniq()
+
+    {:ok, ids}
   end
 
-  defp maybe_update_children_domain_ids(
-         %{domain_id: new_domain_id, external_id: parent_external_id},
-         %{domain_id: old_domain_id},
-         _params
-       )
-       when old_domain_id != new_domain_id do
-    children_ids = Ancestry.get_descendent_ids(parent_external_id)
-
-    {count, _} =
-      from(ds in DataStructure,
-        where: ds.id in ^children_ids,
-        update: [set: [domain_id: ^new_domain_id]]
-      )
-      |> Repo.update_all([])
-
-    IndexWorker.reindex(children_ids)
-    {:ok, count}
-  end
-
-  defp maybe_update_children_domain_ids(_updated, _new, _params) do
-    {:ok, 0}
-  end
-
-  defp on_update(res, opts \\ []) do
-    case opts[:is_bulk_update] == true do
-      false -> on_update_structure(res)
-      _ -> res
-    end
-  end
-
-  defp on_update_structure({:ok, %StructureNote{status: :published, data_structure_id: id}} = res) do
-    IndexWorker.reindex(id)
-    res
-  end
-
-  defp on_update_structure({:ok, %StructureNote{}} = res), do: res
-
-  defp on_update_structure({:ok, %{} = res}) do
-    with %{data_structure: %{id: id}} <- res do
-      IndexWorker.reindex(id)
-    end
-
-    {:ok, res}
-  end
-
-  defp on_update_structure(res), do: res
+  defp on_update({:ok, %{updated_ids: ids}}), do: IndexWorker.reindex(ids)
+  defp on_update(_), do: :ok
 
   def delete_data_structure(%DataStructure{} = data_structure, %Claims{user_id: user_id}) do
     Multi.new()
@@ -642,45 +614,6 @@ defmodule TdDd.DataStructures do
     |> Repo.one()
     |> enrich(opts)
   end
-
-  def put_domain_id(data, %{} = domain_map, domain) when is_binary(domain) do
-    case Map.get(domain_map, domain) do
-      nil -> data
-      domain_id -> Map.put(data, "domain_id", domain_id)
-    end
-  end
-
-  def put_domain_id(data, _domain_map, _domain), do: data
-
-  def put_domain_id(%{"domain_id" => domain_id} = data, external_ids)
-      when is_nil(domain_id) or domain_id == "" do
-    with_domain_id(data, external_ids)
-  end
-
-  def put_domain_id(%{"domain_id" => _} = data, _external_ids), do: data
-
-  def put_domain_id(data, external_ids) do
-    with_domain_id(data, external_ids)
-  end
-
-  defp with_domain_id(data, external_ids) do
-    case get_domain_id(data, external_ids) do
-      nil -> data
-      domain_id -> Map.put(data, "domain_id", domain_id)
-    end
-  end
-
-  defp get_domain_id(%{"domain_external_id" => external_id}, %{} = external_ids)
-       when not is_nil(external_id) and external_id != "" do
-    Map.get(external_ids, external_id)
-  end
-
-  defp get_domain_id(%{"ou" => ou}, %{} = external_ids)
-       when not is_nil(ou) and ou != "" do
-    Map.get(external_ids, ou)
-  end
-
-  defp get_domain_id(_data, _external_id), do: nil
 
   def find_data_structure(%{} = clauses) do
     Repo.get_by(DataStructure, clauses)

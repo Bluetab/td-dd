@@ -54,7 +54,7 @@ defmodule TdDd.DataStructures.SearchTest do
            role: "user",
            permissions: ["link_data_structure", "view_data_structure"]
          ]
-    test "user with permissions filters by domain_id", %{claims: claims} do
+    test "user with permissions filters by domain_ids", %{claims: claims} do
       for permission <- ["link_data_structure", "view_data_structure"] do
         ElasticsearchMock
         |> expect(:request, fn
@@ -62,7 +62,7 @@ defmodule TdDd.DataStructures.SearchTest do
             assert %{
                      bool: %{
                        filter: [
-                         %{term: %{"domain_id" => _}},
+                         %{term: %{"domain_ids" => _}},
                          %{term: %{"confidential" => false}}
                        ]
                      }

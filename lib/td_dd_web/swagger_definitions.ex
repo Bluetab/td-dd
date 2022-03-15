@@ -386,7 +386,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
             system_id(:integer, "System Id", required: true)
             group(:string, "Data Structure group")
             name(:string, "Data Structure name")
-            domain_id([:integer, :null], "Domain Id")
+            domain_ids(:array, "Domain Ids")
             class([:string, :null], "Data Structure class")
             description([:string, :null], "Data Structure description")
             external_id([:string, :null], "Data Structure external id")
@@ -412,6 +412,7 @@ defmodule TdDdWeb.SwaggerDefinitions do
             },
             group: "Data Structure group",
             name: "Data Structure name",
+            domain_ids: [1, 2],
             description: "Data Structure description",
             type: "Csv",
             confidential: "Data Structure confidentiality",

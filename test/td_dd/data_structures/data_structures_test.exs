@@ -12,6 +12,7 @@ defmodule TdDd.DataStructuresTest do
   alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.DataStructures.StructureNotes
+  alias TdDd.Repo
 
   @moduletag sandbox: :shared
   @stream TdCache.Audit.stream()
@@ -37,7 +38,7 @@ defmodule TdDd.DataStructuresTest do
       insert(:data_structure_version, data_structure: data_structure, type: template_name)
 
     %{id: concept_id} = concept = CacheHelpers.insert_concept()
-    CacheHelpers.insert_link(data_structure_id, concept_id)
+    CacheHelpers.insert_link(data_structure_id, "data_structure", "business_concept", concept_id)
 
     start_supervised!(TdDd.Search.StructureEnricher)
 
@@ -51,125 +52,47 @@ defmodule TdDd.DataStructuresTest do
     ]
   end
 
-  describe "update_data_structure/3" do
-    test "updates the data_structure with valid data", %{
-      data_structure: data_structure,
+  describe "update_data_structure/4" do
+    test "updates confidential and domain_ids", %{
+      data_structure: %{id: id} = data_structure,
       claims: claims
     } do
-      params = %{confidential: true, domain_id: 42}
+      params = %{confidential: true, domain_ids: [1, 2, 3]}
 
-      assert {:ok, %{data_structure: data_structure}} =
-               DataStructures.update_data_structure(data_structure, params, claims)
+      assert {:ok, result} =
+               DataStructures.update_data_structure(claims, data_structure, params, false)
 
-      assert %DataStructure{confidential: true, domain_id: 42} = data_structure
+      assert %{confidential: {1, [^id]}, domain_ids: {1, [^id]}, updated_ids: [^id]} = result
+      assert %DataStructure{confidential: true} = Repo.get(DataStructure, id)
+    end
+
+    test "applies changes to descendents", %{claims: claims} do
+      %{data_structure: data_structure, id: parent_id} = insert(:data_structure_version)
+      %{data_structure_id: child_structure_id, id: child_id} = insert(:data_structure_version)
+
+      insert(:data_structure_relation,
+        parent_id: parent_id,
+        child_id: child_id,
+        relation_type_id: RelationTypes.default_id!()
+      )
+
+      params = %{domain_ids: [2, 3]}
+
+      assert {:ok, result} =
+               DataStructures.update_data_structure(claims, data_structure, params, true)
+
+      assert %{domain_ids: {2, structure_ids}} = result
+      assert_lists_equal(structure_ids, [data_structure.id, child_structure_id])
     end
 
     test "emits an audit event", %{data_structure: data_structure, claims: claims} do
       params = %{confidential: true}
 
       assert {:ok, %{audit: event_id}} =
-               DataStructures.update_data_structure(data_structure, params, claims)
+               DataStructures.update_data_structure(claims, data_structure, params, false)
 
       assert {:ok, [%{id: ^event_id}]} =
                Stream.range(:redix, @stream, event_id, event_id, transform: :range)
-    end
-
-    test "domain update also updates children's one", %{
-      data_structure: parent,
-      data_structure_version: %{id: parent_version_id},
-      claims: claims
-    } do
-      %{id: child1_id, external_id: child1_external_id} =
-        insert(:data_structure, id: 51, external_id: "CHILD1")
-
-      %{id: child2_id, external_id: child2_external_id} =
-        insert(:data_structure, id: 52, external_id: "CHILD2")
-
-      %{id: child1_version_id} =
-        insert(:data_structure_version, data_structure_id: child1_id, name: child1_external_id)
-
-      %{id: child2_version_id} =
-        insert(:data_structure_version, data_structure_id: child2_id, name: child2_external_id)
-
-      relation_type_id = RelationTypes.default_id!()
-
-      insert(:data_structure_relation,
-        parent_id: parent_version_id,
-        child_id: child1_version_id,
-        relation_type_id: relation_type_id
-      )
-
-      insert(:data_structure_relation,
-        parent_id: parent_version_id,
-        child_id: child2_version_id,
-        relation_type_id: relation_type_id
-      )
-
-      %{id: new_domain_id} = CacheHelpers.insert_domain()
-
-      assert {:ok,
-              %{
-                data_structure: %DataStructure{domain_id: ^new_domain_id},
-                updated_children_count: 3
-              }} =
-               DataStructures.update_data_structure(
-                 parent,
-                 %{"domain_id" => new_domain_id},
-                 claims
-               )
-
-      assert %DataStructure{domain_id: ^new_domain_id} = Repo.get!(DataStructure, child1_id)
-      assert %DataStructure{domain_id: ^new_domain_id} = Repo.get!(DataStructure, child2_id)
-    end
-
-    test "domain update `without_inheritance: true` param does not update children domain",
-         %{
-           data_structure: parent,
-           data_structure_version: %{id: parent_version_id},
-           claims: claims,
-           domain: %{id: previous_domain_id}
-         } do
-      %{id: child1_id, external_id: child1_external_id} =
-        insert(:data_structure, id: 51, external_id: "CHILD1", domain_id: previous_domain_id)
-
-      %{id: child2_id, external_id: child2_external_id} =
-        insert(:data_structure, id: 52, external_id: "CHILD2", domain_id: previous_domain_id)
-
-      %{id: child1_version_id} =
-        insert(:data_structure_version, data_structure_id: child1_id, name: child1_external_id)
-
-      %{id: child2_version_id} =
-        insert(:data_structure_version, data_structure_id: child2_id, name: child2_external_id)
-
-      relation_type_id = RelationTypes.default_id!()
-
-      insert(:data_structure_relation,
-        parent_id: parent_version_id,
-        child_id: child1_version_id,
-        relation_type_id: relation_type_id
-      )
-
-      insert(:data_structure_relation,
-        parent_id: parent_version_id,
-        child_id: child2_version_id,
-        relation_type_id: relation_type_id
-      )
-
-      %{id: new_domain_id} = CacheHelpers.insert_domain()
-
-      assert {:ok,
-              %{
-                data_structure: %DataStructure{domain_id: ^new_domain_id},
-                updated_children_count: 0
-              }} =
-               DataStructures.update_data_structure(
-                 parent,
-                 %{"domain_id" => new_domain_id, "with_inheritance" => false},
-                 claims
-               )
-
-      assert %DataStructure{domain_id: ^previous_domain_id} = Repo.get!(DataStructure, child1_id)
-      assert %DataStructure{domain_id: ^previous_domain_id} = Repo.get!(DataStructure, child2_id)
     end
   end
 
@@ -345,11 +268,11 @@ defmodule TdDd.DataStructuresTest do
     } do
       %{data_structure_id: id} =
         insert(:data_structure_version,
-          data_structure: build(:data_structure, domain_id: domain_id)
+          data_structure: build(:data_structure, domain_ids: [domain_id])
         )
 
       assert %{data_structure: data_structure} = DataStructures.get_latest_version(id)
-      assert %{domain: %{} = domain} = data_structure
+      assert %{domains: [%{}] = [domain]} = data_structure
       assert %{id: ^domain_id, name: ^domain_name, external_id: ^domain_external_id} = domain
     end
 
@@ -379,7 +302,7 @@ defmodule TdDd.DataStructuresTest do
 
   describe "enriched_structure_versions/1" do
     setup %{template: %{name: template_name}, domain: %{id: domain_id}} do
-      data_structure = insert(:data_structure, domain_id: domain_id)
+      data_structure = insert(:data_structure, domain_ids: [domain_id])
 
       %{id: id, data_structure_id: data_structure_id} =
         data_structure_version =
@@ -569,35 +492,6 @@ defmodule TdDd.DataStructuresTest do
       assert %DataStructure{} = result
       assert result.id == id
       assert result.external_id == external_id
-    end
-
-    test "put_domain_id/3 with domain external id" do
-      data = %{"domain_id" => :foo}
-      domain_map = %{"foo" => :bar}
-      assert %{"domain_id" => :bar} = DataStructures.put_domain_id(data, domain_map, "foo")
-      assert %{"domain_id" => :foo} = DataStructures.put_domain_id(data, nil, "foo")
-    end
-
-    test "put_domain_id/2 with ou and/or domain_external_id" do
-      import DataStructures, only: [put_domain_id: 2]
-      ids = %{"bar" => :bar, "foo" => :foo}
-
-      assert %{"domain_id" => :baz} = put_domain_id(%{"domain_id" => :baz, "ou" => "foo"}, ids)
-
-      assert %{"domain_id" => :foo} = put_domain_id(%{"domain_id" => "", "ou" => "foo"}, ids)
-      assert %{"domain_id" => :foo} = put_domain_id(%{"ou" => "foo"}, ids)
-
-      assert %{"domain_id" => :bar} = put_domain_id(%{"domain_external_id" => "bar"}, ids)
-
-      assert %{"domain_id" => :bar} =
-               put_domain_id(
-                 %{"domain_id" => "", "domain_external_id" => "bar"},
-                 ids
-               )
-
-      refute %{"domain_external_id" => "baz", "ou" => "baz"}
-             |> put_domain_id(ids)
-             |> Map.has_key?("domain_id")
     end
   end
 
@@ -1068,19 +962,19 @@ defmodule TdDd.DataStructuresTest do
     } do
       %{id: id} =
         insert(:data_structure_version,
-          data_structure: insert(:data_structure, domain_id: domain_id)
+          data_structure: insert(:data_structure, domain_ids: [domain_id])
         )
 
       assert %{data_structure: data_structure} = DataStructures.get_data_structure_version!(id)
-      assert %{domain: domain} = data_structure
+      assert %{domains: [domain]} = data_structure
       assert %{id: ^domain_id, name: ^domain_name, external_id: ^domain_external_id} = domain
     end
 
     test "get_data_structure_version!/1 enriches with empty map when there is no domain",
          %{data_structure_version: %{id: id}} do
       assert %{data_structure: data_structure} = DataStructures.get_data_structure_version!(id)
-      assert %{domain: domain} = data_structure
-      assert domain == %{}
+      assert %{domains: domains} = data_structure
+      assert domains == [%{}]
     end
 
     test "get_data_structure_version!/3 enriches specified version" do

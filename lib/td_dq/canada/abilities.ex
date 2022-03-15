@@ -10,6 +10,7 @@ defmodule TdDq.Canada.Abilities do
   alias TdDq.Executions.Execution
   alias TdDq.Executions.Group
   alias TdDq.Implementations.Implementation
+  alias TdDq.Permissions
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleResult
 
@@ -66,6 +67,10 @@ defmodule TdDq.Canada.Abilities do
 
     def can?(%Claims{} = claims, action, %{"resource_type" => "rule"} = target) do
       RuleAbilities.can?(claims, action, target)
+    end
+
+    def can?(%Claims{} = claims, :view_published_concept, domain_id) do
+      Permissions.authorized?(claims, :view_published_business_concepts, domain_id)
     end
 
     def can?(%Claims{}, _action, _entity) do

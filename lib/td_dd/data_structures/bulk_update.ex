@@ -115,16 +115,16 @@ defmodule TdDd.DataStructures.BulkUpdate do
   def do_csv_bulk_update(rows, user_id, auto_publish) do
     Multi.new()
     |> Multi.run(:update_notes, &csv_bulk_update_notes(&1, &2, rows, user_id, auto_publish))
-    |> Multi.run(:updates, &csv_bulk_update(&1, &2, rows))
+    |> Multi.run(:updates, &csv_bulk_update(&1, &2, rows, user_id))
     |> Multi.run(:audit, &audit(&1, &2, user_id))
     |> Repo.transaction()
     |> on_complete()
   end
 
-  defp csv_bulk_update(_repo, _changes_so_far, rows) do
+  defp csv_bulk_update(_repo, _changes_so_far, rows, user_id) do
     rows
     |> Enum.map(fn {content, %{data_structure: data_structure, row_index: row_index}} ->
-      {DataStructure.merge_changeset(data_structure, content), row_index}
+      {DataStructure.changeset(data_structure, content, user_id), row_index}
     end)
     |> Enum.reject(fn {changeset, _row_index} -> changeset.changes == %{} end)
     |> Enum.reduce_while(%{}, &reduce_changesets/2)
@@ -158,21 +158,25 @@ defmodule TdDd.DataStructures.BulkUpdate do
         template_fields = Enum.filter(content_schema, &(Map.get(&1, "type") != "table"))
         field_names = Enum.map(template_fields, &Map.get(&1, "name"))
 
-        domain_id = data_structure.domain_id
+        domain_ids = data_structure.domain_ids
         content = Map.take(row, field_names)
         fields = Map.keys(content)
         content_schema = Enum.filter(template_fields, &(Map.get(&1, "name") in fields))
 
         content =
-          format_content(%{content: content, content_schema: content_schema, domain_id: domain_id})
+          format_content(%{
+            content: content,
+            content_schema: content_schema,
+            domain_ids: domain_ids
+          })
 
         {%{"df_content" => content}, %{data_structure: data_structure, row_index: row_index}}
     end
   end
 
-  defp format_content(%{content: content, content_schema: content_schema, domain_id: domain_id})
+  defp format_content(%{content: content, content_schema: content_schema, domain_ids: domain_ids})
        when not is_nil(content) do
-    content = Format.apply_template(content, content_schema, domain_id: domain_id)
+    content = Format.apply_template(content, content_schema, domain_ids: domain_ids)
 
     content_schema
     |> Enum.filter(fn %{"type" => schema_type, "cardinality" => cardinality} ->
@@ -204,7 +208,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
   defp do_update(ids, %{} = params, %Claims{user_id: user_id}, auto_publish) do
     data_structures =
       DataStructures.list_data_structures(
-        %{id: {:in, ids}},
+        [id: {:in, ids}],
         [:system, [current_version: :structure_type]]
       )
 

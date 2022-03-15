@@ -13,7 +13,7 @@ defmodule TdDd.Permissions do
     TdCache.Permissions.has_permission?(jti, permission)
   end
 
-  def authorized?(%Claims{jti: jti}, permission, domain_id) do
-    TdCache.Permissions.has_permission?(jti, permission, "domain", domain_id)
+  def authorized?(%Claims{jti: jti}, permission, domain_ids) do
+    TdCache.Permissions.has_permission?(jti, permission, "domain", domain_ids)
   end
 end

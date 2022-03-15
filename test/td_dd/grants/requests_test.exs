@@ -139,10 +139,10 @@ defmodule TdDd.Grants.RequestsTest do
       %{id: data_structure_id} = insert(:data_structure)
 
       %{id: id} =
-        insert(:grant_request, data_structure_id: data_structure_id, domain_id: domain_id)
+        insert(:grant_request, data_structure_id: data_structure_id, domain_ids: [domain_id])
 
       assert {:ok, grant_requests} = Requests.list_grant_requests(claims)
-      assert [%{id: ^id, domain_id: ^domain_id}] = grant_requests
+      assert [%{id: ^id, domain_ids: [^domain_id]}] = grant_requests
 
       assert {:ok, grant_requests} =
                Requests.list_grant_requests(claims, %{domain_ids: [domain_id]})
@@ -171,7 +171,7 @@ defmodule TdDd.Grants.RequestsTest do
         insert(:grant_request,
           group: build(:grant_request_group, user_id: user_id),
           data_structure: build(:data_structure),
-          domain_id: domain_id
+          domain_ids: [domain_id]
         )
 
       assert {:ok, []} = Requests.list_grant_requests(claims, %{action: "approve"})
@@ -228,25 +228,25 @@ defmodule TdDd.Grants.RequestsTest do
       %{grant_request: d1_gr} =
         insert(:grant_request_status,
           status: "approved",
-          grant_request: build(:grant_request, domain_id: d1)
+          grant_request: build(:grant_request, domain_ids: [d1])
         )
 
       %{grant_request: %{id: pending_request_id} = d2_gr} =
         insert(:grant_request_status,
           status: "pending",
-          grant_request: build(:grant_request, domain_id: d2)
+          grant_request: build(:grant_request, domain_ids: [d2])
         )
 
       %{grant_request: d2_gr_approved} =
         insert(:grant_request_status,
           status: "pending",
-          grant_request: build(:grant_request, domain_id: d2)
+          grant_request: build(:grant_request, domain_ids: [d2])
         )
 
       %{grant_request: d3_gr} =
         insert(:grant_request_status,
           status: "rejected",
-          grant_request: build(:grant_request, domain_id: d3)
+          grant_request: build(:grant_request, domain_ids: [d3])
         )
 
       insert(:grant_request_approval, domain_id: d1, role: "approver1", grant_request: d1_gr)
@@ -285,13 +285,13 @@ defmodule TdDd.Grants.RequestsTest do
       %{grant_request_id: gr_id_1} =
         insert(:grant_request_status,
           status: "pending",
-          grant_request: build(:grant_request, domain_id: domain_id1)
+          grant_request: build(:grant_request, domain_ids: [domain_id1])
         )
 
       %{grant_request_id: gr_id_2} =
         insert(:grant_request_status,
           status: "pending",
-          grant_request: build(:grant_request, domain_id: domain_id2)
+          grant_request: build(:grant_request, domain_ids: [domain_id2])
         )
 
       insert(:grant_request_approval,
@@ -338,7 +338,7 @@ defmodule TdDd.Grants.RequestsTest do
       %{grant_request: %{id: grant_request_id} = grant_request} =
         insert(:grant_request_status,
           status: "pending",
-          grant_request: build(:grant_request, domain_id: domain_id)
+          grant_request: build(:grant_request, domain_ids: [domain_id])
         )
 
       insert(:grant_request_approval,

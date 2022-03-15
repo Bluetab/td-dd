@@ -23,6 +23,7 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
   end
 
   describe "POST /api/rule_implementations/:id/results" do
+
     @tag authentication: [role: "non_admin", permissions: [:manage_rule_results]]
     test "returns 201 Created with the result", %{
       conn: conn,
@@ -105,6 +106,49 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
                {:reindex_rules, rule_id},
                {:reindex_implementations, implementation_id}
              ]
+    end
+
+    @tag authentication: [role: "service"]
+    test "updates implementation cache after creation if it has link", %{conn: conn} do
+      %{
+        id: implementation_id,
+        implementation_key: implementation_key
+      } = implementation = insert(:implementation)
+
+      %{
+        "date" => expected_date
+      } = params = string_params_for(:rule_result_record, implementation_key: implementation_key)
+
+      CacheHelpers.put_implementation(implementation)
+
+      %{id: concept_id} = CacheHelpers.insert_concept()
+
+      CacheHelpers.insert_link(
+        implementation_id,
+        "implementation",
+        "business_concept",
+        concept_id
+      )
+
+      {:ok, cache_implementation} = CacheHelpers.get_implementation(implementation_id)
+      refute Map.has_key?(cache_implementation, :execution_result_info)
+
+      post(
+        conn,
+        Routes.implementation_implementation_result_path(conn, :create, implementation_key),
+        rule_result: params
+      )
+
+      {:ok,
+       %{
+         execution_result_info: %{
+           date: result_date
+         }
+       }} = CacheHelpers.get_implementation(implementation_id)
+
+      {:ok, expected_date_time} = NaiveDateTime.from_iso8601(expected_date)
+      {:ok, result_date_time} = NaiveDateTime.from_iso8601(result_date)
+      assert NaiveDateTime.compare(expected_date_time, result_date_time) == :eq
     end
   end
 end

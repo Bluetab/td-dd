@@ -102,7 +102,7 @@ defmodule TdDdWeb.GrantControllerTest do
       domain: %{id: domain_id}
     } do
       %{external_id: data_structure_external_id} =
-        insert(:data_structure, domain_id: domain_id + 1)
+        insert(:data_structure, domain_ids: [domain_id + 1])
 
       assert %{"errors" => %{} = errors} =
                conn
@@ -342,7 +342,7 @@ defmodule TdDdWeb.GrantControllerTest do
   defp create_data_structure(context) do
     case context do
       %{domain: %{id: domain_id}} ->
-        [data_structure: insert(:data_structure, domain_id: domain_id)]
+        [data_structure: insert(:data_structure, domain_ids: [domain_id])]
 
       _ ->
         [data_structure: insert(:data_structure)]
@@ -353,7 +353,7 @@ defmodule TdDdWeb.GrantControllerTest do
     grant =
       case context do
         %{domain: %{id: domain_id}} ->
-          data_structure = insert(:data_structure, domain_id: domain_id)
+          data_structure = insert(:data_structure, domain_ids: [domain_id])
           insert(:grant, data_structure: data_structure)
 
         _ ->

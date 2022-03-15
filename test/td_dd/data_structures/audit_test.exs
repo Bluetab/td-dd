@@ -164,7 +164,7 @@ defmodule TdDd.DataStructures.AuditTest do
     end
   end
 
-  describe "data_structure_updated/4" do
+  describe "data_structure_updated/5" do
     test "publishes an event", %{
       data_structure_version: data_structure_version,
       claims: %{user_id: user_id}
@@ -174,12 +174,13 @@ defmodule TdDd.DataStructures.AuditTest do
 
       params = %{confidential: true}
 
-      changeset = DataStructure.update_changeset(data_structure, params)
+      changeset = DataStructure.changeset(data_structure, params, user_id)
 
       assert {:ok, event_id} =
                Audit.data_structure_updated(
                  Repo,
-                 %{data_structure: data_structure},
+                 %{structures: {1, [123]}},
+                 data_structure_id,
                  changeset,
                  user_id
                )
