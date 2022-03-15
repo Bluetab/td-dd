@@ -13,6 +13,7 @@ defmodule TdDdWeb.Schema.Sources do
     @desc "Get a list of data sources"
     field :sources, list_of(:source) do
       arg(:limit, :integer, default_value: 1_000)
+      arg(:deleted, :boolean, default_value: false)
       arg(:job_types, :string)
       resolve(&Resolvers.Sources.sources/3)
     end
