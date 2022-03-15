@@ -21,6 +21,24 @@ defmodule TdDdWeb.Schema.SourcesTest do
   }
   """
 
+  @sources """
+  query SOURCES {
+    sources {
+      id
+      externalId
+    }
+  }
+  """
+
+  @deleted_sources """
+  query SOURCES {
+    sources(deleted: true) {
+      id
+      externalId
+    }
+  }
+  """
+
   @sources_with_events """
   query SOURCES($eventLimit: Int) {
     sources {
@@ -175,6 +193,38 @@ defmodule TdDdWeb.Schema.SourcesTest do
         assert Enum.sort(events, &by_id/2) == events
         assert Enum.sort(events, &by_inserted_at/2) == events
       end
+    end
+
+    @tag authentication: [role: "admin"]
+    test "excludes logically deleted sources", %{conn: conn} do
+      expected = Enum.map([1..3], fn _ -> insert(:source) end)
+      insert(:source, deleted_at: DateTime.utc_now())
+
+      assert %{"data" => data} =
+               response =
+               conn
+               |> post("/api/v2", %{"query" => @sources})
+               |> json_response(:ok)
+
+      assert response["errors"] == nil
+      assert %{"sources" => sources} = data
+      assert_lists_equal(sources, expected, & &1["externalId"] == &2.external_id)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "includes only logically deleted sources if deleted true", %{conn: conn} do
+      expected = Enum.map([1..3], fn _ -> insert(:source, deleted_at: DateTime.utc_now()) end)
+      insert(:source)
+
+      assert %{"data" => data} =
+               response =
+               conn
+               |> post("/api/v2", %{"query" => @deleted_sources})
+               |> json_response(:ok)
+
+      assert response["errors"] == nil
+      assert %{"sources" => sources} = data
+      assert_lists_equal(sources, expected, & &1["externalId"] == &2.external_id)
     end
   end
 
