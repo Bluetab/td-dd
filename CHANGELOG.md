@@ -6,9 +6,13 @@
 
 - [TD-4271] Support for linking implementations with business concepts
 
- ### Fixed
+### Fixed
 
-- [TD-4527] Prevent showing logically deleted sources
+- [TD-4580] Added migration to fix implementations without alias
+
+## Changed
+
+- [TD-4527] Don't include logically deleted sources in GraphQL response
 
 ## [4.40.0] 2022-03-14
 
@@ -17,8 +21,7 @@
 - [TD-4500] Support data structure with multiple `domain_ids`
 - [TD-4461] Avoid reindexing when a domain is modified
 - [TD-4491] Refactored search and permissions
-- [TD-4604] Include actions in `POST /api/rule_implementations/search` and `POST
- /api/data_structures/search` responses
+- [TD-4604] Include actions in `POST /api/rule_implementations/search` and `POST /api/data_structures/search` responses
 
 ## [4.39.0] 2022-03-07
 
