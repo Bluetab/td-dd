@@ -21,24 +21,27 @@ defmodule TdDdWeb.Schema.SourcesTest do
   }
   """
 
-  @sources_with_events """
-  query SOURCES($eventLimit: Int) {
+  @sources """
+  query SOURCES {
     sources {
       id
       externalId
-      events(limit: $eventLimit) {
-        id
-        type
-        message
-        insertedAt
-      }
     }
   }
   """
 
-  @sources_with_events_not_deleted """
+  @deleted_sources """
+  query SOURCES {
+    sources(deleted: true) {
+      id
+      externalId
+    }
+  }
+  """
+
+  @sources_with_events """
   query SOURCES($eventLimit: Int) {
-    sources(include_deleted: false) {
+    sources {
       id
       externalId
       events(limit: $eventLimit) {
@@ -191,6 +194,38 @@ defmodule TdDdWeb.Schema.SourcesTest do
         assert Enum.sort(events, &by_inserted_at/2) == events
       end
     end
+
+    @tag authentication: [role: "admin"]
+    test "excludes logically deleted sources", %{conn: conn} do
+      expected = Enum.map([1..3], fn _ -> insert(:source) end)
+      insert(:source, deleted_at: DateTime.utc_now())
+
+      assert %{"data" => data} =
+               response =
+               conn
+               |> post("/api/v2", %{"query" => @sources})
+               |> json_response(:ok)
+
+      assert response["errors"] == nil
+      assert %{"sources" => sources} = data
+      assert_lists_equal(sources, expected, & &1["externalId"] == &2.external_id)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "includes only logically deleted sources if deleted true", %{conn: conn} do
+      expected = Enum.map([1..3], fn _ -> insert(:source, deleted_at: DateTime.utc_now()) end)
+      insert(:source)
+
+      assert %{"data" => data} =
+               response =
+               conn
+               |> post("/api/v2", %{"query" => @deleted_sources})
+               |> json_response(:ok)
+
+      assert response["errors"] == nil
+      assert %{"sources" => sources} = data
+      assert_lists_equal(sources, expected, & &1["externalId"] == &2.external_id)
+    end
   end
 
   describe "enableSource mutation" do
@@ -223,29 +258,6 @@ defmodule TdDdWeb.Schema.SourcesTest do
       assert response["errors"] == nil
       assert %{"enableSource" => source} = data
       assert %{"active" => true, "externalId" => ^external_id} = source
-    end
-
-    @tag authentication: [role: "admin"]
-    test "deleted: false excludes logically deleted sources (not nil deleted_at)", %{conn: conn} do
-      event_limit = 3
-
-      %{id: source_not_deleted_id} = _source_not_deleted = insert(:source)
-      _source_deleted = insert(:source, deleted_at: DateTime.now!("Etc/UTC"))
-
-      assert %{"data" => %{"sources" => sources}} =
-        response =
-        conn
-        |> post("/api/v2", %{
-          "query" => @sources_with_events_not_deleted,
-          "variables" => %{
-            "eventLimit" => event_limit,
-            "deleted" => false
-          }
-        })
-        |> json_response(:ok)
-
-      assert response["errors"] == nil
-      assert Integer.to_string(source_not_deleted_id) == Enum.at(sources, 0)["id"]
     end
   end
 

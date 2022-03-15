@@ -113,10 +113,7 @@ defmodule TdCx.Sources do
       {:deleted, true}, q ->
         where(q, [s], not is_nil(s.deleted_at))
 
-      {:include_deleted, true}, q ->
-        q
-
-      {:include_deleted, false}, q ->
+      {:deleted, false}, q ->
         where(q, [s], is_nil(s.deleted_at))
 
       {:alias, source_alias}, q ->

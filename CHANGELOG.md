@@ -21,7 +21,8 @@
 - [TD-4500] Support data structure with multiple `domain_ids`
 - [TD-4461] Avoid reindexing when a domain is modified
 - [TD-4491] Refactored search and permissions
-- [TD-4604] Include actions in `POST /api/rule_implementations/search` and `POST /api/data_structures/search` responses
+- [TD-4604] Include actions in `POST /api/rule_implementations/search` and `POST
+  /api/data_structures/search` responses
 
 ## [4.39.0] 2022-03-07
 
@@ -32,8 +33,8 @@
 ### Changed
 
 - [TD-4567] Refactor create implementations for non admin users
-- [TD-4534] Avoid inheritance if has `with_inheritance: false`
-  param when modifying a structure domain
+- [TD-4534] Avoid inheritance if has `with_inheritance: false` param when
+  modifying a structure domain
 
 ## [4.38.1] 2022-02-23
 
@@ -45,7 +46,8 @@
 
 ### Added
 
-- [TD-4437] Control rule results upload using new `manage_rule_results` permission
+- [TD-4437] Control rule results upload using new `manage_rule_results`
+  permission
 - [TD-2511] support for updating specific field of `Source` config
 - [TD-4463] Generate audit events for `rule_created` and
   `implementation_created`
@@ -799,9 +801,11 @@
     files uploaded using the same unit name will overwrite the existing nodes
     and relations in that unit.
   - Latest status for a unit can be queried using `GET /api/units/:unit_name`.
-  - Events relating to a unit can be queried using `GET /api/units/:unit_name/events`.
+  - Events relating to a unit can be queried using `GET
+    /api/units/:unit_name/events`.
   - A unit can be logically deleted using `DELETE /api/units/:unit_name`.
-  - A unit can be physically deleted using `DELETE /api/units/:unit_name?logical=false`.
+  - A unit can be physically deleted using `DELETE
+    /api/units/:unit_name?logical=false`.
   - [TD-2495] Changed structures loader migration key to cache all structures
     again including their metadata
 
