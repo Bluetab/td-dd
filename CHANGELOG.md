@@ -12,7 +12,7 @@
 
 ## Changed
 
-- [TD-4527] Don't include logically deleted sources in GraphQL response
+- [TD-4527] Exclude logically deleted sources from GraphQL response
 
 ## [4.40.0] 2022-03-14
 
