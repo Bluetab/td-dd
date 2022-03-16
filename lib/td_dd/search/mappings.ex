@@ -36,12 +36,6 @@ defmodule TdDd.Search.Mappings do
           external_id: %{type: "text", fields: @raw}
         }
       },
-      parent: %{
-        properties: %{
-          name: %{type: "text", fields: @raw},
-          external_id: %{type: "text", fields: @raw}
-        }
-      },
       group: %{type: "text", fields: @raw_sort},
       type: %{type: "text", fields: @raw_sort},
       field_type: %{type: "text", fields: @raw_sort},
@@ -51,7 +45,6 @@ defmodule TdDd.Search.Mappings do
       external_id: %{type: "keyword", index: false},
       domain_ids: %{type: "long"},
       deleted_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
-      last_change_by: %{enabled: false},
       metadata: %{enabled: false},
       mutable_metadata: %{enabled: false},
       linked_concepts: %{type: "boolean"},
@@ -59,28 +52,12 @@ defmodule TdDd.Search.Mappings do
       updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       path: %{type: "keyword", fields: @text},
       path_sort: %{type: "keyword", normalizer: "sortable"},
-      data_fields: %{
-        properties: %{
-          name: %{type: "text"},
-          id: %{type: "long", index: false}
-        }
-      },
-      ancestry: %{enabled: false},
       latest_note: content_mappings,
-      status: %{type: "keyword", null_value: ""},
       class: %{type: "text", fields: %{raw: %{type: "keyword", null_value: ""}}},
       classes: %{enabled: false},
       source_alias: %{type: "keyword", fields: @raw_sort},
       version: %{type: "short"},
       tags: %{type: "text", fields: %{raw: %{type: "keyword", null_value: ""}}},
-      source: %{
-        properties: %{
-          id: %{type: "long"},
-          type: %{type: "text", fields: @raw},
-          external_id: %{type: "text", fields: @raw},
-          config: %{type: "object", properties: get_dynamic_mappings("cx")}
-        }
-      },
       with_profiling: %{type: "boolean", fields: @raw}
     }
 
