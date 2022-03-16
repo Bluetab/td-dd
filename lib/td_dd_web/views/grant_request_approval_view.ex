@@ -1,7 +1,6 @@
 defmodule TdDdWeb.GrantRequestApprovalView do
   use TdDdWeb, :view
 
-  alias TdDdWeb.DomainView
   alias TdDdWeb.UserView
 
   def render("show.json", %{grant_request_approval: approval}) do
@@ -23,13 +22,10 @@ defmodule TdDdWeb.GrantRequestApprovalView do
 
   defp embeddings(%{} = approval) do
     approval
-    |> Map.take([:user, :domain])
+    |> Map.take([:user])
     |> Enum.reduce(%{}, fn
       {:user, %{} = user}, acc ->
         Map.put(acc, :user, render_one(user, UserView, "embedded.json"))
-
-      {:domain, %{} = domain}, acc ->
-        Map.put(acc, :domain, render_one(domain, DomainView, "embedded.json"))
 
       _, acc ->
         acc

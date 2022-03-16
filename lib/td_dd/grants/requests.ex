@@ -207,12 +207,17 @@ defmodule TdDd.Grants.Requests do
 
   def create_approval(
         %{user_id: user_id} = claims,
-        %{id: id, current_status: status} = grant_request,
+        %GrantRequest{id: id, domain_ids: domain_ids, current_status: status} = grant_request,
         params
       ) do
     changeset =
       GrantRequestApproval.changeset(
-        %GrantRequestApproval{grant_request_id: id, user_id: user_id, current_status: status},
+        %GrantRequestApproval{
+          grant_request_id: id,
+          user_id: user_id,
+          domain_ids: domain_ids,
+          current_status: status
+        },
         params,
         claims
       )
@@ -317,11 +322,9 @@ defmodule TdDd.Grants.Requests do
     Enum.map(items, &enrich/1)
   end
 
-  defp enrich(%GrantRequestApproval{user_id: user_id, domain_id: domain_id} = approval) do
-    with {:ok, user} <- UserCache.get(user_id),
-         {:ok, domain} <- DomainCache.get(domain_id) do
-      %{approval | user: user, domain: domain}
-    else
+  defp enrich(%GrantRequestApproval{user_id: user_id} = approval) do
+    case UserCache.get(user_id) do
+      {:ok, user} -> %{approval | user: user}
       _ -> approval
     end
   end

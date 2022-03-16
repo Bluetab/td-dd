@@ -311,7 +311,9 @@ defmodule TdDq.Implementations.Implementation do
       confidential = Helpers.confidential?(rule)
       bcv = Helpers.get_business_concept_version(rule)
 
-      execution_result_info = Implementation.get_execution_result_info(implementation, quality_event)
+      execution_result_info =
+        Implementation.get_execution_result_info(implementation, quality_event)
+
       domain_ids = List.wrap(domain_id)
       updated_by = Helpers.get_user(rule.updated_by)
       structures = Implementations.get_structures(implementation)

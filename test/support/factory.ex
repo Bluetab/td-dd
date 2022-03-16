@@ -459,7 +459,6 @@ defmodule TdDd.Factory do
 
     %TdDd.Grants.GrantRequestApproval{
       user_id: sequence(:user_id, &"#{&1}"),
-      domain_id: 123,
       role: "role1",
       is_rejection: false
     }

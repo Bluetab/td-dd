@@ -208,7 +208,7 @@ defmodule TdDdWeb.Schema.SourcesTest do
 
       assert response["errors"] == nil
       assert %{"sources" => sources} = data
-      assert_lists_equal(sources, expected, & &1["externalId"] == &2.external_id)
+      assert_lists_equal(sources, expected, &(&1["externalId"] == &2.external_id))
     end
 
     @tag authentication: [role: "admin"]
@@ -224,7 +224,7 @@ defmodule TdDdWeb.Schema.SourcesTest do
 
       assert response["errors"] == nil
       assert %{"sources" => sources} = data
-      assert_lists_equal(sources, expected, & &1["externalId"] == &2.external_id)
+      assert_lists_equal(sources, expected, &(&1["externalId"] == &2.external_id))
     end
   end
 
