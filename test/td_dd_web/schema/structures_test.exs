@@ -6,6 +6,7 @@ defmodule TdDdWeb.Schema.StructuresTest do
     dataStructureVersions(since: $since) {
       id
       metadata
+      name
       dataStructure {
         id
         externalId
@@ -41,7 +42,7 @@ defmodule TdDdWeb.Schema.StructuresTest do
         deleted_at: ~U[2019-01-01T00:00:00Z]
       )
 
-      %{id: expected_id} =
+      %{id: expected_id, name: name} =
         insert(:data_structure_version, metadata: @metadata, domain_ids: [1, 2])
 
       assert %{"data" => data} =
@@ -53,8 +54,14 @@ defmodule TdDdWeb.Schema.StructuresTest do
       assert response["errors"] == nil
       assert %{"dataStructureVersions" => data_structure_versions} = data
 
-      assert [%{"id" => id, "dataStructure" => data_structure, "metadata" => @metadata}] =
-               data_structure_versions
+      assert [
+               %{
+                 "id" => id,
+                 "dataStructure" => data_structure,
+                 "metadata" => @metadata,
+                 "name" => ^name
+               }
+             ] = data_structure_versions
 
       assert id == to_string(expected_id)
 
