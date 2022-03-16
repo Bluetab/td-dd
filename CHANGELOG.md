@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-4271] Support for linking implementations with business concepts
+- [TD-4621] Include data structure version `name` in GraphQL schema
 
 ### Fixed
 

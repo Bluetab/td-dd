@@ -25,6 +25,7 @@ defmodule TdDdWeb.Schema.Structures do
     field :version, non_null(:integer)
     field :class, :string
     field :description, :string
+    field :name, :string
     field :type, :string
     field :group, :string
     field :deleted_at, :datetime
