@@ -7,6 +7,14 @@
 - [TD-4271] Support for linking implementations with business concepts
 - [TD-4621] Include data structure version `name` in GraphQL schema
 
+### Fixed
+
+- [TD-4580] Added migration to fix implementations without alias
+
+## Changed
+
+- [TD-4527] Exclude logically deleted sources from GraphQL response
+
 ## [4.40.0] 2022-03-14
 
 ### Changed
@@ -14,9 +22,7 @@
 - [TD-4500] Support data structure with multiple `domain_ids`
 - [TD-4461] Avoid reindexing when a domain is modified
 - [TD-4491] Refactored search and permissions
-- [TD-4604] Include actions in `POST /api/rule_implementations/search` and `POST
- /api/data_structures/search` responses
-
+- [TD-4604] Include actions in `POST /api/rule_implementations/search` and `POST /api/data_structures/search` responses
 
 ## [4.39.0] 2022-03-07
 
@@ -27,8 +33,8 @@
 ### Changed
 
 - [TD-4567] Refactor create implementations for non admin users
-- [TD-4534] Avoid inheritance if has `with_inheritance: false`
-  param when modifying a structure domain
+- [TD-4534] Avoid inheritance if has `with_inheritance: false` param when
+  modifying a structure domain
 
 ## [4.38.1] 2022-02-23
 
@@ -40,7 +46,8 @@
 
 ### Added
 
-- [TD-4437] Control rule results upload using new `manage_rule_results` permission
+- [TD-4437] Control rule results upload using new `manage_rule_results`
+  permission
 - [TD-2511] support for updating specific field of `Source` config
 - [TD-4463] Generate audit events for `rule_created` and
   `implementation_created`
