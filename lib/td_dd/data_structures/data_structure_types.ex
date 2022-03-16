@@ -7,6 +7,8 @@ defmodule TdDd.DataStructures.DataStructureTypes do
   alias TdCache.TemplateCache
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.MetadataField
+  alias TdDd.DataStructures.StructureMetadata
   alias TdDd.Repo
 
   @typep clauses :: map() | Keyword.t()
@@ -57,18 +59,6 @@ defmodule TdDd.DataStructures.DataStructureTypes do
     |> enrich_template()
   end
 
-  @doc """
-  Updates a `DataStructureType`.
-
-  ## Examples
-
-      iex> update_data_structure_type(data_structure_type, %{field: new_value})
-      {:ok, %DataStructureType{}}
-
-      iex> update_data_structure_type(data_structure_type, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
   def update_data_structure_type(%DataStructureType{} = data_structure_type, params) do
     data_structure_type
     |> DataStructureType.changeset(params)
@@ -77,11 +67,34 @@ defmodule TdDd.DataStructures.DataStructureTypes do
 
   @spec data_structure_types_query(clauses()) :: Ecto.Queryable.t()
   defp data_structure_types_query(clauses \\ %{}) do
-    sq = metadata_fields_query(clauses)
+    sq = grouped_metadata_fields_query(clauses)
 
     DataStructureType
     |> join(:left, [dst], t in subquery(sq), on: t.type == dst.name)
     |> select_merge([dst, t], %{metadata_fields: t.fields})
+  end
+
+  @spec data_structure_type_fields_query(clauses(), DateTime.t()) :: Ecto.Queryable.t()
+  defp data_structure_type_fields_query(clauses, ts) do
+    sq = metadata_fields_query(clauses)
+
+    DataStructureType
+    |> join(:inner, [dst], f in subquery(sq), on: f.type == dst.name)
+    |> select([dst, f], %{
+      data_structure_type_id: dst.id,
+      name: f.field,
+      inserted_at: type(^ts, :utc_datetime_usec),
+      updated_at: type(^ts, :utc_datetime_usec)
+    })
+  end
+
+  @spec grouped_metadata_fields_query(clauses()) :: Ecto.Queryable.t()
+  defp grouped_metadata_fields_query(clauses) do
+    clauses
+    |> metadata_fields_query()
+    |> subquery()
+    |> select([t], %{type: t.type, fields: fragment("array_agg(?)", t.field)})
+    |> group_by([t], t.type)
   end
 
   @spec metadata_fields_query(clauses()) :: Ecto.Queryable.t()
@@ -96,17 +109,19 @@ defmodule TdDd.DataStructures.DataStructureTypes do
     |> select([dsv], %{type: dsv.type, field: fragment("jsonb_object_keys(?)", dsv.metadata)})
     |> distinct(true)
     |> union(^sq)
-    |> subquery()
-    |> select([t], %{type: t.type, fields: fragment("array_agg(?)", t.field)})
-    |> group_by([t], t.type)
   end
 
   @spec mutable_metadata_fields_query(clauses()) :: Ecto.Queryable.t()
   defp mutable_metadata_fields_query(clauses) do
+    query = join(StructureMetadata, :inner, [sm], dsv in assoc(sm, :current_version))
+
     clauses
-    |> data_structure_version_query()
-    |> join(:inner, [dsv], sm in assoc(dsv, :current_metadata))
-    |> select([dsv, sm], %{type: dsv.type, field: fragment("jsonb_object_keys(?)", sm.fields)})
+    |> Enum.reduce(query, fn
+      {:deleted, false}, q -> where(q, [sm], is_nil(sm.deleted_at))
+      {:since, since}, q -> where(q, [sm], sm.updated_at >= ^since)
+      {:name, type}, q -> where(q, [_, dsv], dsv.type == ^type)
+    end)
+    |> select([sm, dsv], %{type: dsv.type, field: fragment("jsonb_object_keys(?)", sm.fields)})
     |> distinct(true)
   end
 
@@ -114,10 +129,11 @@ defmodule TdDd.DataStructures.DataStructureTypes do
   defp data_structure_version_query(clauses) do
     clauses
     |> Enum.reduce(DataStructureVersion, fn
+      {:deleted, false}, q -> where(q, [dsv], is_nil(dsv.deleted_at))
+      {:since, since}, q -> where(q, [dsv], dsv.updated_at >= ^since)
       {:name, type}, q -> where(q, [dsv], dsv.type == ^type)
       _, q -> q
     end)
-    |> where([dsv], is_nil(dsv.deleted_at))
   end
 
   @spec enrich_template(DataStructureType.t() | nil) :: DataStructureType.t() | nil
@@ -132,4 +148,27 @@ defmodule TdDd.DataStructures.DataStructureTypes do
   end
 
   defp enrich_template(structure_type_or_nil), do: structure_type_or_nil
+
+  def refresh_metadata_fields do
+    ts = DateTime.utc_now()
+
+    clauses =
+      case fields_last_updated() do
+        nil -> %{deleted: false}
+        since -> %{deleted: false, since: since}
+      end
+
+    query = data_structure_type_fields_query(clauses, ts)
+
+    Repo.insert_all(MetadataField, query,
+      conflict_target: [:data_structure_type_id, :name],
+      on_conflict: [set: [updated_at: ts]]
+    )
+  end
+
+  defp fields_last_updated do
+    MetadataField
+    |> select([mf], max(mf.updated_at))
+    |> Repo.one()
+  end
 end

@@ -104,6 +104,11 @@ config :td_dd, TdDd.Scheduler,
       schedule: "@reboot",
       task: {TdDd.Profiles, :expand_profile_values, []},
       run_strategy: Quantum.RunStrategy.Local
+    ],
+    refresh_metadata_fields: [
+      schedule: "@reboot",
+      task: {TdDd.DataStructures.DataStructureTypes, :refresh_metadata_fields, []},
+      run_strategy: Quantum.RunStrategy.Local
     ]
   ]
 
