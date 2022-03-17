@@ -10,6 +10,7 @@
 ### Fixed
 
 - [TD-4580] Added migration to fix implementations without alias
+- [TD-4623] Added multiple domains support for grant request approvals
 
 ## Changed
 

@@ -11,13 +11,12 @@ defmodule TdDd.Grants.GrantRequestApproval do
 
   schema "grant_request_approvals" do
     field :user_id, :integer
-    field :domain_id, :integer
     field :role, :string
     field :is_rejection, :boolean, default: false
     field :comment, :string
     field :user, :map, virtual: true
-    field :domain, :map, virtual: true
     field :current_status, :string, virtual: true
+    field :domain_ids, {:array, :integer}, virtual: true
 
     belongs_to :grant_request, GrantRequest
 
@@ -30,10 +29,10 @@ defmodule TdDd.Grants.GrantRequestApproval do
 
   def changeset(%__MODULE__{} = struct, %{} = params, claims \\ nil) do
     struct
-    |> cast(params, [:comment, :domain_id, :is_rejection, :role])
+    |> cast(params, [:comment, :is_rejection, :role])
     |> validate_required([
       :current_status,
-      :domain_id,
+      :domain_ids,
       :grant_request_id,
       :is_rejection,
       :role,
@@ -63,10 +62,10 @@ defmodule TdDd.Grants.GrantRequestApproval do
   defp maybe_validate_approver(changeset, %{role: "service"}), do: changeset
 
   defp maybe_validate_approver(changeset, _) do
-    with domain_id <- fetch_field!(changeset, :domain_id),
+    with domain_ids <- fetch_field!(changeset, :domain_ids),
          user_id <- fetch_field!(changeset, :user_id),
          role <- fetch_field!(changeset, :role),
-         true <- TaxonomyCache.has_role?(domain_id, role, user_id) do
+         true <- TaxonomyCache.has_role?(domain_ids, role, user_id) do
       changeset
     else
       _ -> add_error(changeset, :user_id, "invalid role")
