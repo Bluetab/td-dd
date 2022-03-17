@@ -23,8 +23,6 @@ defmodule TdDd.Grants.GrantRequestApproval do
     timestamps type: :utc_datetime_usec, updated_at: false
   end
 
-  @spec changeset(%{optional(:__struct__) => none, optional(atom | binary) => any}) ::
-          Ecto.Changeset.t()
   def changeset(%{} = params) do
     changeset(%__MODULE__{}, params)
   end
