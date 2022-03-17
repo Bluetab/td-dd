@@ -20,7 +20,7 @@ defmodule TdDdWeb.GrantRequestApprovalControllerTest do
         )
 
       path = Routes.grant_request_approval_path(conn, :create, grant_request)
-      params = %{"domain_id" => domain_id, "role" => "foo_role", "comment" => "foo"}
+      params = %{"role" => "foo_role", "comment" => "foo"}
 
       assert %{"errors" => %{"detail" => "Invalid authorization"}} =
                conn
@@ -35,7 +35,7 @@ defmodule TdDdWeb.GrantRequestApprovalControllerTest do
                |> json_response(:created)
 
       assert %{"is_rejection" => false, "comment" => "foo", "_embedded" => embedded} = data
-      assert %{"user" => %{"id" => ^user_id}, "domain" => %{"id" => ^domain_id}} = embedded
+      assert %{"user" => %{"id" => ^user_id}} = embedded
     end
   end
 end
