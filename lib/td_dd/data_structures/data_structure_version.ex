@@ -37,6 +37,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     field(:grants, {:array, :map}, virtual: true)
     field(:grant, :map, virtual: true)
     field(:with_profiling, :boolean, virtual: true)
+    field(:_filters, :map, virtual: true)
 
     belongs_to(:data_structure, DataStructure)
 
@@ -50,6 +51,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     has_many(:child_relations, DataStructureRelation, foreign_key: :parent_id)
     has_many(:parent_relations, DataStructureRelation, foreign_key: :child_id)
     has_one(:current_metadata, through: [:data_structure, :current_metadata])
+    has_one(:published_note, through: [:data_structure, :published_note])
 
     many_to_many(:children, __MODULE__,
       join_through: DataStructureRelation,
@@ -174,9 +176,10 @@ defmodule TdDd.DataStructures.DataStructureVersion do
       |> Map.put(:tags, tags)
       |> Map.merge(
         Map.take(dsv, [
-          :data_structure_id,
+          :_filters,
           :class,
           :classes,
+          :data_structure_id,
           :deleted_at,
           :description,
           :group,

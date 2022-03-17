@@ -61,9 +61,16 @@ defmodule TdDd.Search.Mappings do
       with_profiling: %{type: "boolean", fields: @raw}
     }
 
+    dynamic_templates = [
+      %{metadata_filters: %{path_match: "_filters.*", mapping: %{type: "keyword"}}}
+    ]
+
     settings = Cluster.setting(:structures)
 
-    %{mappings: %{_doc: %{properties: properties}}, settings: settings}
+    %{
+      mappings: %{_doc: %{properties: properties, dynamic_templates: dynamic_templates}},
+      settings: settings
+    }
   end
 
   def get_grant_mappings do

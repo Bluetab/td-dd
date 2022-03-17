@@ -6,6 +6,7 @@
 
 - [TD-4271] Support for linking implementations with business concepts
 - [TD-4621] Include data structure version `name` in GraphQL schema
+- [TD-4447] Support for associating metadata filters with a structure type
 
 ### Fixed
 
@@ -14,6 +15,11 @@
 ## Changed
 
 - [TD-4527] Exclude logically deleted sources from GraphQL response
+
+### Removed
+
+- [TD-4303] `GET /api/data_structure_types/lite` was removed, reverted
+  corresponding changes from [TD-4344]
 
 ## [4.40.0] 2022-03-14
 
@@ -147,7 +153,7 @@
 ### Added
 
 - [TD-4262] Lineage graph polling
-- [TD-4344] Add a new enpoint API for lite `structure_types` request without
+- [TD-4344] Add a new endpoint API for lite `structure_types` request without
   `metadata_fields`
 - [TD-4358] Format path in editable download CSV
 

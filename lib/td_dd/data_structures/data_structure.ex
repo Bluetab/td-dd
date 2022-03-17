@@ -21,6 +21,17 @@ defmodule TdDd.DataStructures.DataStructure do
   @type t :: %__MODULE__{}
 
   schema "data_structures" do
+    field(:confidential, :boolean)
+    field(:domain_ids, {:array, :integer}, default: [])
+    field(:external_id, :string)
+    field(:last_change_by, :integer)
+    field(:row, :integer, virtual: true)
+    field(:latest_metadata, :map, virtual: true)
+    field(:latest_note, :map, virtual: true)
+    field(:domains, :map, virtual: true)
+    field(:linked_concepts, :boolean, virtual: true)
+    field(:search_content, :map, virtual: true)
+
     belongs_to(:system, System, on_replace: :update)
     belongs_to(:source, Source)
 
@@ -33,18 +44,7 @@ defmodule TdDd.DataStructures.DataStructure do
     many_to_many(:tags, DataStructureTag, join_through: DataStructuresTags)
     has_one(:current_version, DataStructureVersion, where: [deleted_at: nil])
     has_one(:current_metadata, StructureMetadata, where: [deleted_at: nil])
-
-    field(:confidential, :boolean)
-    # TODO: remove default?
-    field(:domain_ids, {:array, :integer}, default: [])
-    field(:external_id, :string)
-    field(:last_change_by, :integer)
-    field(:row, :integer, virtual: true)
-    field(:latest_metadata, :map, virtual: true)
-    field(:latest_note, :map, virtual: true)
-    field(:domains, :map, virtual: true)
-    field(:linked_concepts, :boolean, virtual: true)
-    field(:search_content, :map, virtual: true)
+    has_one(:published_note, StructureNote, where: [status: :published])
 
     timestamps(type: :utc_datetime_usec)
   end

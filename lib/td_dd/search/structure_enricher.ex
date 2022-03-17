@@ -83,7 +83,7 @@ defmodule TdDd.Search.StructureEnricher do
   end
 
   defp type_map do
-    DataStructureTypes.list_data_structure_types(:lite)
+    DataStructureTypes.list_data_structure_types()
     |> Map.new(fn %{name: type, template: template} -> {type, template} end)
   end
 
@@ -103,7 +103,8 @@ defmodule TdDd.Search.StructureEnricher do
     do: %{structure | domains: [%{}]}
 
   defp search_content(
-         %DataStructure{domain_ids: domain_ids, latest_note: %{} = content} = structure,
+         %DataStructure{domain_ids: domain_ids, published_note: %{df_content: %{} = content}} =
+           structure,
          :searchable,
          %{} = types,
          type
