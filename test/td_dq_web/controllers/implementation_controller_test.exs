@@ -89,7 +89,11 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       concept_id_forbidden = System.unique_integer([:positive])
 
-      CacheHelpers.insert_concept(%{id: concept_id_forbidden, domain_id: System.unique_integer([:positive])})
+      CacheHelpers.insert_concept(%{
+        id: concept_id_forbidden,
+        domain_id: System.unique_integer([:positive])
+      })
+
       CacheHelpers.insert_link(id, "implementation", "business_concept", concept_id_forbidden)
 
       assert %{"data" => %{"links" => links}} =

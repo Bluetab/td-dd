@@ -24,16 +24,15 @@ defmodule TdDd.Grants.ApprovalTest do
     test "validates required fields" do
       assert %{errors: errors} = GrantRequestApproval.changeset(%{})
       assert {_, [validation: :required]} = errors[:user_id]
-      assert {_, [validation: :required]} = errors[:domain_id]
+      assert {_, [validation: :required]} = errors[:domain_ids]
       assert {_, [validation: :required]} = errors[:grant_request_id]
       refute errors[:is_rejection]
     end
 
-    test "validates current status is pending", %{user_id: user_id, domain_id: domain_id} do
+    test "validates current status is pending", %{user_id: user_id} do
       approval = %GrantRequestApproval{
         current_status: "approved",
         user_id: user_id,
-        domain_id: domain_id,
         role: "approver",
         grant_request_id: 123
       }
@@ -44,12 +43,13 @@ defmodule TdDd.Grants.ApprovalTest do
     end
 
     test "validates user has role in domain", %{user_id: user_id} do
-      params = %{"domain_id" => 0, "role" => @role}
+      params = %{"role" => @role}
 
       assert %{errors: errors} =
                %GrantRequestApproval{
                  grant_request_id: 123,
                  user_id: user_id,
+                 domain_ids: [0],
                  current_status: "pending"
                }
                |> GrantRequestApproval.changeset(params)
@@ -61,12 +61,13 @@ defmodule TdDd.Grants.ApprovalTest do
       domain_id: domain_id,
       user_id: user_id
     } do
-      params = %{"domain_id" => domain_id, "role" => @role}
+      params = %{"role" => @role}
 
       assert {:error, %{errors: errors}} =
                %GrantRequestApproval{
                  grant_request_id: 123,
                  user_id: user_id,
+                 domain_ids: [domain_id],
                  current_status: "pending"
                }
                |> GrantRequestApproval.changeset(params)
@@ -84,19 +85,20 @@ defmodule TdDd.Grants.ApprovalTest do
       user_id: user_id,
       grant_request_id: grant_request_id
     } do
-      params = %{"domain_id" => domain_id, "role" => @role}
+      params = %{"role" => @role}
 
       assert {:ok, approval} =
                %GrantRequestApproval{
                  grant_request_id: grant_request_id,
                  user_id: user_id,
+                 domain_ids: [domain_id],
                  current_status: "pending"
                }
                |> GrantRequestApproval.changeset(params)
                |> Repo.insert()
 
       assert %{
-               domain_id: ^domain_id,
+               domain_ids: [^domain_id],
                user_id: ^user_id,
                role: @role,
                grant_request_id: ^grant_request_id
