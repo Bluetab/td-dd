@@ -28,11 +28,13 @@ defmodule TdDdWeb.Schema.Structures do
     field :name, :string
     field :type, :string
     field :group, :string
+    field :name, :string
     field :deleted_at, :datetime
     field :inserted_at, :datetime
     field :updated_at, :datetime
     field :metadata, :json
     field :data_structure, :data_structure, resolve: dataloader(TdDd.DataStructures)
+    field :path, list_of(:string), resolve: &Resolvers.Structures.data_structure_version_path/3
   end
 
   object :data_structure do
@@ -40,10 +42,12 @@ defmodule TdDdWeb.Schema.Structures do
     field :confidential, non_null(:boolean)
     field :domain_id, :integer, resolve: &Resolvers.Structures.domain_id/3
     field :domain_ids, list_of(:integer)
+    field :domains, list_of(:domain), resolve: &Resolvers.Structures.domains/3
     field :external_id, non_null(:string)
     field :inserted_at, :datetime
     field :updated_at, :datetime
     field :system, :system, resolve: dataloader(TdDd.DataStructures)
+    field :current_version, :data_structure_version, resolve: dataloader(TdDd.DataStructures)
   end
 
   object :system do

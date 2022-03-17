@@ -12,12 +12,14 @@ defmodule TdDdWeb.Schema do
   import_types(TdDdWeb.Schema.Domains)
   import_types(TdDdWeb.Schema.Rules)
   import_types(TdDdWeb.Schema.Sources)
+  import_types(TdDdWeb.Schema.StructureNotes)
   import_types(TdDdWeb.Schema.Structures)
   import_types(TdDdWeb.Schema.Templates)
   import_types(TdDdWeb.Schema.Types.Custom.JSON)
 
   query do
     import_fields(:rule_queries)
+    import_fields(:structure_note_queries)
     import_fields(:structure_queries)
     import_fields(:source_queries)
   end
