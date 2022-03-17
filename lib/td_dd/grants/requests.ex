@@ -7,7 +7,6 @@ defmodule TdDd.Grants.Requests do
 
   alias Ecto.Changeset
   alias Ecto.Multi
-  alias TdCache.DomainCache
   alias TdCache.Permissions
   alias TdCache.UserCache
   alias TdDd.Auth.Claims
