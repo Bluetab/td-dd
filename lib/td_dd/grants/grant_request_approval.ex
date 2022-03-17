@@ -31,7 +31,7 @@ defmodule TdDd.Grants.GrantRequestApproval do
 
   def changeset(%__MODULE__{} = struct, %{} = params, claims \\ nil) do
     struct
-    |> cast(params, [:comment, :domain_ids, :is_rejection, :role])
+    |> cast(params, [:comment, :is_rejection, :role])
     |> validate_required([
       :current_status,
       :domain_ids,
