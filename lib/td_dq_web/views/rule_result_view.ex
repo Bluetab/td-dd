@@ -36,6 +36,7 @@ defmodule TdDqWeb.RuleResultView do
     ])
     |> Enum.reject(fn {_, v} -> is_nil(v) end)
     |> Map.new()
+    |> with_has_remediation(rule_result)
     |> with_params(rule_result)
   end
 
@@ -44,4 +45,10 @@ defmodule TdDqWeb.RuleResultView do
   end
 
   defp with_params(map, _), do: map
+
+  defp with_has_remediation(map, %{remediation: remediation} = _rule_result) do
+    Map.put(map, :has_remediation, not is_nil(remediation))
+  end
+
+  defp with_has_remediation(map, _), do: map
 end
