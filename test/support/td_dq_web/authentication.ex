@@ -42,9 +42,7 @@ defmodule TdDqWeb.Authentication do
     {:ok, Map.put(state, :domain, domain)}
   end
 
-  def assign_permissions(state, _) do
-    state
-  end
+  def assign_permissions(state, _), do: state
 
   defp register_token(token) do
     case Guardian.decode_and_verify(token) do

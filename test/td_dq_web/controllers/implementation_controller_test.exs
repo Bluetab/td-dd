@@ -89,7 +89,11 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       concept_id_forbidden = System.unique_integer([:positive])
 
-      CacheHelpers.insert_concept(%{id: concept_id_forbidden, domain_id: System.unique_integer([:positive])})
+      CacheHelpers.insert_concept(%{
+        id: concept_id_forbidden,
+        domain_id: System.unique_integer([:positive])
+      })
+
       CacheHelpers.insert_link(id, "implementation", "business_concept", concept_id_forbidden)
 
       assert %{"data" => %{"links" => links}} =
@@ -909,18 +913,25 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       time_zone = Application.get_env(:td_dd, :time_zone)
 
-      ts_0 = DateTime.to_string(inserted_at_0)
-             |> TdDd.Helpers.shift_zone(time_zone)
-             |> String.replace("+", "\\+")
-      ts_1 = DateTime.to_string(inserted_at_1)
-             |> TdDd.Helpers.shift_zone(time_zone)
-             |> String.replace("+", "\\+")
-      ts_2 = DateTime.to_string(inserted_at_2)
-             |> TdDd.Helpers.shift_zone(time_zone)
-             |> String.replace("+", "\\+")
-      ts_3 = DateTime.to_string(inserted_at_3)
-             |> TdDd.Helpers.shift_zone(time_zone)
-             |> String.replace("+", "\\+")
+      ts_0 =
+        DateTime.to_string(inserted_at_0)
+        |> TdDd.Helpers.shift_zone(time_zone)
+        |> String.replace("+", "\\+")
+
+      ts_1 =
+        DateTime.to_string(inserted_at_1)
+        |> TdDd.Helpers.shift_zone(time_zone)
+        |> String.replace("+", "\\+")
+
+      ts_2 =
+        DateTime.to_string(inserted_at_2)
+        |> TdDd.Helpers.shift_zone(time_zone)
+        |> String.replace("+", "\\+")
+
+      ts_3 =
+        DateTime.to_string(inserted_at_3)
+        |> TdDd.Helpers.shift_zone(time_zone)
+        |> String.replace("+", "\\+")
 
       for regex <- [
             # credo:disable-for-lines:5 Credo.Check.Readability.MaxLineLength

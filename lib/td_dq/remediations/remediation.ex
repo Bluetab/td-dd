@@ -10,8 +10,8 @@ defmodule TdDq.Remediations.Remediation do
 
   schema "remediations" do
     belongs_to(:rule_result, RuleResult)
-    field :df_name, :string
-    field :df_content, :map
+    field(:df_name, :string)
+    field(:df_content, :map)
     timestamps()
   end
 
@@ -28,7 +28,8 @@ defmodule TdDq.Remediations.Remediation do
   end
 
   defp validate_content(
-         %Ecto.Changeset{valid?: true, changes: %{df_name: df_name, df_content: df_content}} = changeset,
+         %Ecto.Changeset{valid?: true, changes: %{df_name: df_name, df_content: df_content}} =
+           changeset,
          _remediation
        )
        when map_size(df_content) !== 0 do

@@ -470,7 +470,6 @@ defmodule TdDqWeb.SwaggerDefinitions do
             df_name(:string, "Remediation template name", required: true)
             df_content(:object, "Remediation template content", required: true)
           end
-
         end,
       RemediationCreate:
         swagger_schema do
@@ -503,7 +502,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
           properties do
             data(Schema.ref(:Remediation))
           end
-        end,
+        end
     }
   end
 end

@@ -13,13 +13,16 @@ defmodule TdDq.Remediations do
 
   def get_by_rule_result_id(rule_result_id) do
     %RuleResult{remediation: remediation} =
-      Repo.get(RuleResult, rule_result_id)
+      RuleResult
+      |> Repo.get(rule_result_id)
       |> Repo.preload([:remediation, :rule, :implementation])
+
     remediation
   end
 
   def create_remediation(rule_result_id, params) do
-    Map.put(params, "rule_result_id", rule_result_id)
+    params
+    |> Map.put("rule_result_id", rule_result_id)
     |> Remediation.changeset()
     |> Repo.insert()
   end

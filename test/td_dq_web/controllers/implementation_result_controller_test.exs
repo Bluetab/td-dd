@@ -23,7 +23,6 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
   end
 
   describe "POST /api/rule_implementations/:id/results" do
-
     @tag authentication: [role: "non_admin", permissions: [:manage_rule_results]]
     test "returns 201 Created with the result", %{
       conn: conn,

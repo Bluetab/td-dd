@@ -28,13 +28,13 @@ defmodule TdDqWeb.RemediationController do
 
   def show(conn, %{"rule_result_id" => rule_result_id}) do
     with claims <- conn.assigns[:current_resource],
-         %RuleResult{remediation: remediation} = rule_result
-          <-
+         %RuleResult{remediation: remediation} = rule_result <-
            RuleResults.get_rule_result(rule_result_id, preload: [:remediation, :rule]),
-         true <- not is_nil(remediation) || nil,
          {:can, true} <-
            {:can, can?(claims, manage_remediation(rule_result))} do
-      render(conn, "show.json", remediation: remediation)
+      conn
+      |> put_actions(rule_result)
+      |> render("show.json", remediation: remediation)
     end
   end
 
@@ -54,7 +54,8 @@ defmodule TdDqWeb.RemediationController do
 
   def create(conn, %{"rule_result_id" => rule_result_id, "remediation" => remediation_params}) do
     with claims <- conn.assigns[:current_resource],
-         %RuleResult{} = rule_result <- RuleResults.get_rule_result(rule_result_id, preload: [:rule]),
+         %RuleResult{} = rule_result <-
+           RuleResults.get_rule_result(rule_result_id, preload: [:rule]),
          {:can, true} <- {:can, can?(claims, manage_remediation(rule_result))},
          {:ok, remediation} <- Remediations.create_remediation(rule_result_id, remediation_params) do
       conn
@@ -63,6 +64,7 @@ defmodule TdDqWeb.RemediationController do
         "location",
         Routes.rule_result_remediation_path(conn, :show, remediation)
       )
+      |> put_actions(rule_result)
       |> render("show.json", remediation: remediation)
     end
   end
@@ -83,12 +85,13 @@ defmodule TdDqWeb.RemediationController do
 
   def update(conn, %{"rule_result_id" => rule_result_id, "remediation" => remediation_params}) do
     with claims <- conn.assigns[:current_resource],
-      %RuleResult{remediation: remediation} = rule_result
-      <- RuleResults.get_rule_result(rule_result_id, preload: [:remediation, :rule]),
-      true <- not is_nil(remediation) || nil,
-      {:can, true} <- {:can, can?(claims, manage_remediation(rule_result))},
-      {:ok, remediation} <- Remediations.update_remediation(remediation, remediation_params) do
-      render(conn, "show.json", remediation: remediation)
+         %RuleResult{remediation: remediation} = rule_result <-
+           RuleResults.get_rule_result(rule_result_id, preload: [:remediation, :rule]),
+         {:can, true} <- {:can, can?(claims, manage_remediation(rule_result))},
+         {:ok, remediation} <- Remediations.update_remediation(remediation, remediation_params) do
+      conn
+      |> put_actions(rule_result)
+      |> render("show.json", remediation: remediation)
     end
   end
 
@@ -102,17 +105,41 @@ defmodule TdDqWeb.RemediationController do
 
     response(204, "No Content")
     response(403, "Forbidden")
+    response(404, "Not found")
     response(422, "Unprocessable Entity")
   end
 
   def delete(conn, %{"rule_result_id" => rule_result_id}) do
     with claims <- conn.assigns[:current_resource],
-      %RuleResult{remediation: remediation} = rule_result
-      <- RuleResults.get_rule_result(rule_result_id, preload: [:remediation, :rule]),
-      true <- not is_nil(remediation) || nil,
-      {:can, true} <- {:can, can?(claims, manage_remediation(rule_result))},
-      {:ok, _remediation} <- Remediations.delete_remediation(remediation) do
+         %RuleResult{remediation: remediation} = rule_result <-
+           RuleResults.get_rule_result(rule_result_id, preload: [:remediation, :rule]),
+         true <- not is_nil(remediation) || nil,
+         {:can, true} <- {:can, can?(claims, manage_remediation(rule_result))},
+         {:ok, _remediation} <- Remediations.delete_remediation(remediation) do
       send_resp(conn, :no_content, "")
     end
+  end
+
+  defp put_actions(conn, %{id: rule_result_id}) do
+    actions = %{
+      "create" => %{
+        href: Routes.rule_result_remediation_path(conn, :create, rule_result_id),
+        method: "POST"
+      },
+      "update" => %{
+        href: Routes.rule_result_remediation_path(conn, :update, rule_result_id),
+        method: "PATCH"
+      },
+      "delete" => %{
+        href: Routes.rule_result_remediation_path(conn, :delete, rule_result_id),
+        method: "DELETE"
+      },
+      "show" => %{
+        href: Routes.rule_result_remediation_path(conn, :show, rule_result_id),
+        method: "GET"
+      }
+    }
+
+    assign(conn, :actions, actions)
   end
 end
