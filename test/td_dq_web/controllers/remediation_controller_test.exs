@@ -92,13 +92,16 @@ defmodule TdDqWeb.RemediationControllerTest do
     end
 
     @tag authentication: [role: "user"]
-    test "user without manage_remediation permission cannot view remediation", %{
+    test "user without manage_remediation can view remediation", %{
       conn: conn,
-      rule_result: %{id: rule_result_id}
+      rule_result: %{id: rule_result_id},
+      remediation: %{id: remediation_id}
     } do
-      assert conn
+      assert %{"data" => data} = conn
              |> get(Routes.rule_result_remediation_path(conn, :show, rule_result_id))
-             |> json_response(:forbidden)
+             |> json_response(:ok)
+
+      %{"id" => ^remediation_id} = data
     end
 
     @tag authentication: [role: "user", permissions: ["manage_remediations"]]
