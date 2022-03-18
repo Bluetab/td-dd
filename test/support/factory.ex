@@ -60,9 +60,9 @@ defmodule TdDd.Factory do
       default_assoc(attrs, :data_structure_id, :data_structure, :data_structure, structure_attrs)
 
     %DataStructureVersion{
-      description: "some description",
-      group: "some group",
-      name: "some name",
+      description: sequence("data_structure_version_description"),
+      group: sequence("data_structure_version_group"),
+      name: sequence("data_structure_version_name"),
       metadata: %{"description" => "some description"},
       version: 0,
       type: "Table"
@@ -470,7 +470,6 @@ defmodule TdDd.Factory do
 
     %TdDd.Grants.GrantRequestApproval{
       user_id: sequence(:user_id, &"#{&1}"),
-      domain_id: 123,
       role: "role1",
       is_rejection: false
     }
