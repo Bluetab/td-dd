@@ -29,12 +29,14 @@ defmodule TdDqWeb.RemediationController do
   def show(conn, %{"rule_result_id" => rule_result_id}) do
     with claims <- conn.assigns[:current_resource],
          %RuleResult{remediation: remediation} = rule_result <-
-           RuleResults.get_rule_result(rule_result_id, preload: [:remediation, :rule]),
-         {:can, true} <-
-           {:can, can?(claims, manage_remediation(rule_result))} do
-      conn
-      |> put_actions(rule_result)
-      |> render("show.json", remediation: remediation)
+           RuleResults.get_rule_result(rule_result_id, preload: [:remediation, :rule]) do
+      if can?(claims, manage_remediation(rule_result)) do
+        conn
+        |> put_actions(rule_result)
+        |> render("show.json", remediation: remediation)
+      else
+        render(conn, "show.json", remediation: remediation)
+      end
     end
   end
 

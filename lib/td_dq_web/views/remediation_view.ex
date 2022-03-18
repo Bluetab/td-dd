@@ -2,10 +2,15 @@ defmodule TdDqWeb.RemediationView do
   use TdDqWeb, :view
   use TdHypermedia, :view
 
-  def render("show.json", %{remediation: remediation, actions: actions} = assigns) do
+  def render("show.json", %{actions: actions} = assigns) do
+    "show.json"
+    |> render(Map.delete(assigns, :actions))
+    |> Map.put(:_actions, actions)
+  end
+
+  def render("show.json", %{remediation: remediation} = assigns) do
     %{
-      data: render_one(remediation, __MODULE__, "remediation.json", Map.delete(assigns, :source)),
-      _actions: actions
+      data: render_one(remediation, __MODULE__, "remediation.json", Map.delete(assigns, :source))
     }
   end
 
