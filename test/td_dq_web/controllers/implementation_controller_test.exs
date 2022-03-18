@@ -911,10 +911,27 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       assert %{resp_body: body} = post(conn, Routes.implementation_path(conn, :csv, %{}))
 
-      ts_0 = DateTime.to_iso8601(inserted_at_0)
-      ts_1 = DateTime.to_iso8601(inserted_at_1)
-      ts_2 = DateTime.to_iso8601(inserted_at_2)
-      ts_3 = DateTime.to_iso8601(inserted_at_3)
+      time_zone = Application.get_env(:td_dd, :time_zone)
+
+      ts_0 =
+        DateTime.to_string(inserted_at_0)
+        |> TdDd.Helpers.shift_zone(time_zone)
+        |> String.replace("+", "\\+")
+
+      ts_1 =
+        DateTime.to_string(inserted_at_1)
+        |> TdDd.Helpers.shift_zone(time_zone)
+        |> String.replace("+", "\\+")
+
+      ts_2 =
+        DateTime.to_string(inserted_at_2)
+        |> TdDd.Helpers.shift_zone(time_zone)
+        |> String.replace("+", "\\+")
+
+      ts_3 =
+        DateTime.to_string(inserted_at_3)
+        |> TdDd.Helpers.shift_zone(time_zone)
+        |> String.replace("+", "\\+")
 
       for regex <- [
             # credo:disable-for-lines:5 Credo.Check.Readability.MaxLineLength
