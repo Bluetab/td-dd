@@ -255,7 +255,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
             row_index: row_index,
             external_id: external_id,
             changeset:
-              TdDd.DataStructures.DataStructure.changeset_check_domain_ids(
+              DataStructure.changeset_check_domain_ids(
                 existing_ds_by_id[external_id],
                 %{external_domain_ids: split(domain_external_ids)},
                 1
