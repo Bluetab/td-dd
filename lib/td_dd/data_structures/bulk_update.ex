@@ -8,6 +8,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
   alias Codepagex
   alias Ecto.Changeset
   alias Ecto.Multi
+  import Ecto.Query
   alias TdDd.Auth.Claims
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Audit
@@ -31,6 +32,27 @@ defmodule TdDd.DataStructures.BulkUpdate do
       fn -> do_update(ids, params, claims, auto_publish) end,
       fn ms, _ -> "Data structures updated in #{ms}ms" end
     )
+  end
+
+  def from_csv_simple(nil), do: {:error, %{message: :no_csv_uploaded}}
+
+  def from_csv_simple(upload) do
+    case parse_file(upload) do
+      {:ok, rows} ->
+        rows
+        |> Enum.with_index()
+        |> Enum.map(fn {row, index} -> {row, index + 2} end)
+        |> Enum.map(fn
+          {row, index} ->
+            %{
+              row: row,
+              row_index: index
+            }
+        end)
+
+      errors ->
+        {:error, errors}
+    end
   end
 
   def from_csv(nil), do: {:error, %{message: :no_csv_uploaded}}
@@ -69,6 +91,22 @@ defmodule TdDd.DataStructures.BulkUpdate do
     end
   end
 
+  def check_csv_headers(%{path: path}, headers) do
+    [read_headers] = path
+    |> Path.expand()
+    |> File.stream!([:trim_bom])
+    |> Stream.map(&recode/1)
+    |> Stream.reject(&(String.trim(&1) == ""))
+    |> CSV.decode!(separator: ?;)
+    |> Enum.take(1)
+    case read_headers do
+      ^headers -> :ok
+      _other ->
+        headers_joined = Enum.join(headers, ", ")
+        {:error, %{message: "invalid_headers, must be: #{headers_joined}"}}
+    end
+  end
+
   def parse_file(%{path: path}) do
     parse_file(path)
   end
@@ -85,7 +123,8 @@ defmodule TdDd.DataStructures.BulkUpdate do
 
     {:ok, rows}
   rescue
-    _ -> {:error, %{message: :invalid_file_format}}
+    _ ->
+      {:error, %{message: :invalid_file_format}}
   end
 
   def split_succeeded_errors(notes) do
@@ -144,6 +183,164 @@ defmodule TdDd.DataStructures.BulkUpdate do
       %{} = res -> {:ok, res}
       error -> error
     end
+  end
+
+  def csv_bulk_update_domains(rows) do
+    ds_external_ids =
+      Enum.reduce(
+        rows,
+        MapSet.new(),
+        fn
+          %{
+            row: %{
+              "external_id" => external_id,
+              "domain_external_ids" => _domain_external_ids
+            },
+            row_index: _row_index
+          }, acc ->
+            MapSet.put(acc, external_id)
+
+          _other, acc ->
+            acc
+        end
+      )
+
+    ds_external_ids_list = MapSet.to_list(ds_external_ids)
+
+    existing_data_structures =
+      from(ds in TdDd.DataStructures.DataStructure,
+        where: ds.external_id in ^ds_external_ids_list
+      )
+      |> Repo.all()
+
+    existing_ds_by_id =
+      Enum.reduce(
+        existing_data_structures,
+        %{},
+        fn %DataStructure{external_id: external_id} = data_structure, acc ->
+          Map.put(acc, external_id, data_structure)
+        end
+      )
+
+    inexistent_ds_external_ids =
+      MapSet.difference(
+        ds_external_ids,
+        Map.keys(existing_ds_by_id)
+        |> MapSet.new()
+      )
+
+    rows_existing_ds_external_id =
+      Stream.filter(rows, fn
+        %{
+          row: %{"external_id" => ds_external_id},
+          row_index: _row_index
+        } ->
+          ds_external_id not in inexistent_ds_external_ids
+
+        _ ->
+          true
+      end)
+
+    {valid_changesets, invalid_changesets} =
+      rows_existing_ds_external_id
+      |> Stream.map(fn
+        %{
+          row: %{
+            "external_id" => external_id,
+            "domain_external_ids" => domain_external_ids
+          },
+          row_index: row_index
+        } ->
+          %{
+            row_index: row_index,
+            external_id: external_id,
+            changeset:
+              TdDd.DataStructures.DataStructure.changeset_check_domain_ids(
+                existing_ds_by_id[external_id],
+                %{external_domain_ids: split(domain_external_ids)},
+                1
+              )
+          }
+      end)
+      |> Enum.split_with(fn %{changeset: %Ecto.Changeset{} = changeset} -> changeset.valid? end)
+
+    valid_applied_changesets =
+      valid_changesets
+      |> apply()
+      |> Enum.to_list()
+
+    {inserted_count, _result} =
+      Repo.insert_all(
+        TdDd.DataStructures.DataStructure,
+        Enum.map(valid_applied_changesets, &Map.get(&1, :changeset)),
+        conflict_target: [:external_id],
+        on_conflict: {:replace, [:domain_ids]}
+      )
+
+    %{
+      inserted_count: inserted_count,
+      valid: valid_applied_changesets,
+      invalid_changesets: invalid_changesets
+    }
+  end
+
+  def split(domain_external_ids) do
+    String.split(domain_external_ids, "|", trim: true)
+    |> Enum.map(&String.trim(&1))
+  end
+
+  def existing_domains_by_external_ids(external_domain_ids) do
+    Enum.reduce(
+      external_domain_ids,
+      {[], []},
+      fn external_domain_id, {acc_existing, acc_inexisting} ->
+        case TdCache.TaxonomyCache.get_by_external_id(external_domain_id) do
+          %{id: domain_id} -> {[domain_id | acc_existing], acc_inexisting}
+          nil -> {acc_existing, [external_domain_id | acc_inexisting]}
+        end
+      end
+    )
+  end
+
+  def apply(valid_item_changesets) do
+    valid_item_changesets
+    |> Stream.map(fn
+      %{
+        changeset: %Ecto.Changeset{} = changeset,
+        row_index: row_index
+      } ->
+        %{
+          changeset:
+            changeset
+            |> Ecto.Changeset.apply_changes()
+            |> clean(),
+          row_index: row_index
+        }
+    end)
+  end
+
+  # turns %Struct{} into a map with only non-nil item values (no association or __meta__ structs)
+  def clean(item) do
+    item
+    |> Map.from_struct()
+    # or something similar
+    |> Enum.reject(fn
+      {_key, nil} ->
+        true
+
+      {_key, %{:__struct__ => struct}}
+      when struct in [Ecto.Schema.Metadata, Ecto.Association.NotLoaded] ->
+        # rejects __meta__: #Ecto.Schema.Metadata<:built, "items">
+        # and association: #Ecto.Association.NotLoaded<association :association is not loaded>
+        true
+
+      {:external_domain_ids, _external_domain_ids} ->
+        true
+
+      _other ->
+        false
+    end)
+    |> Enum.into(%{})
   end
 
   defp format_content(row, data_structure, row_index) do

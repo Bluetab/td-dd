@@ -4,6 +4,7 @@
 
 ### Added
 
+- [TD-4535] Structures domains CSV upload bulk update
 - [TD-4271] Support for linking implementations with business concepts
 
 ## [4.40.0] 2022-03-14

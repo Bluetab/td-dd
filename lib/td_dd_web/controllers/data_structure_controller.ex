@@ -34,6 +34,8 @@ defmodule TdDdWeb.DataStructureController do
     :tags
   ]
 
+  @structures_actions [:bulk_upload_domains]
+
   plug(TdDdWeb.SearchPermissionPlug)
 
   action_fallback(TdDdWeb.FallbackController)
@@ -223,6 +225,65 @@ defmodule TdDdWeb.DataStructureController do
       |> put_resp_content_type("application/json", "utf-8")
       |> send_resp(:ok, body)
     end
+  end
+
+  swagger_path :bulk_upload_domains do
+    description("structures domains bulk update by CSV upload")
+    produces("application/json")
+    consumes("multipart/form-data")
+    parameter(
+      :structures_domains,
+      :formData,
+      :file,
+      "Structures domains CSV file (column headers: external_id, domain_external_ids)"
+    )
+
+    response(200, "OK", Schema.ref(:BulkUploadDomainsResponse))
+    response(403, "User is not authorized to perform this action")
+    response(422, "Invalid CSV format (bad headers...)")
+  end
+
+  def bulk_upload_domains(conn, params) do
+    structures_content_upload = Map.get(params, "structures_domains")
+    with claims <- conn.assigns[:current_resource],
+         {:can, true} <- {:can, can?(claims, bulk_upload_domains(DataStructure))},
+         :ok <- BulkUpdate.check_csv_headers(structures_content_upload, ["external_id", "domain_external_ids"]),
+         [_ | _] = rows <- BulkUpdate.from_csv_simple(structures_content_upload),
+         info <- BulkUpdate.csv_bulk_update_domains(rows),
+         summary <- csv_bulk_upload_domains_summary(info)
+    do
+      conn
+      |> put_resp_content_type("application/json", "utf-8")
+      |> send_resp(:ok, Jason.encode!(summary))
+    end
+  end
+
+  def csv_bulk_upload_domains_summary(
+    %{
+      inserted_count: _inserted_count,
+      valid: valid,
+      invalid_changesets: invalid_changesets
+    }) do
+    %{
+      ids: Enum.map(
+        valid,
+        fn %{changeset: %{id: data_structure_id}} -> data_structure_id end
+      ),
+      errors: Enum.map(
+        invalid_changesets,
+        fn %{changeset: %{} = changeset, external_id: external_id, row_index: row_index} ->
+          %{
+            message: Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
+              Enum.reduce(opts, msg, fn {key, value}, acc ->
+                String.replace(acc, "%{#{key}}", to_string(value))
+              end)
+            end),
+            external_id: external_id,
+            row: row_index,
+          }
+        end
+      )
+    }
   end
 
   def bulk_update_template_content(conn, params) do
@@ -445,7 +506,7 @@ defmodule TdDdWeb.DataStructureController do
 
     actions =
       params
-      |> actions(total)
+      |> actions_notes(total)
       |> Enum.filter(&can?(claims, &1, StructureNote))
       |> Enum.reduce(%{}, fn
         :bulk_update, acc ->
@@ -466,13 +527,27 @@ defmodule TdDdWeb.DataStructureController do
             method: "POST"
           })
       end)
+      |> put_actions_structures(conn, claims)
 
     assign(conn, :actions, actions)
   end
 
-  defp actions(%{"filters" => %{"type.raw" => [_]}} = _params, total) when total > 0 do
+  defp put_actions_structures(actions, conn, claims) do
+    @structures_actions
+    |> Enum.filter(&can?(claims, &1, DataStructure))
+    |> Enum.reduce(%{}, fn
+      :bulk_upload_domains, acc ->
+        Map.put(acc, "bulkUploadDomains", %{
+          href: Routes.data_structure_path(conn, :bulk_upload_domains),
+          method: "POST"
+        })
+    end)
+    |> Map.merge(actions)
+  end
+
+  defp actions_notes(%{"filters" => %{"type.raw" => [_]}} = _params, total) when total > 0 do
     [:bulk_upload, :auto_publish, :bulk_update]
   end
 
-  defp actions(_params, _), do: [:bulk_upload, :auto_publish]
+  defp actions_notes(_params, _), do: [:bulk_upload, :auto_publish]
 end

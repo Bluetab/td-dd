@@ -1,0 +1,5 @@
+external_id;domain_external_ids
+some_external_id_1;NON_EXISTING_DOMAIN_EXTERNAL_ID_1
+some_external_id_2;foo
+some_external_id_3;foo | NON_EXISTING_DOMAIN_EXTERNAL_ID_2
+

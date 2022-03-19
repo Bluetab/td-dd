@@ -43,6 +43,12 @@ defmodule TdDdWeb.Router do
       :bulk_update_template_content
     )
 
+    post(
+      "/data_structures/bulk_upload_domains",
+      DataStructureController,
+      :bulk_upload_domains
+    )
+
     post("/data_structure_notes/search", StructureNoteController, :search)
     post("/data_structure_notes", StructureNoteController, :create_by_external_id)
 

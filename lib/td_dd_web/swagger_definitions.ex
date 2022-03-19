@@ -484,6 +484,32 @@ defmodule TdDdWeb.SwaggerDefinitions do
             )
           end
         end,
+      BulkUploadDomainsResponse:
+        swagger_schema do
+          title("CSV structure domains update summary")
+
+          description(
+            "An object whose keys are filter names and values are arrays of filterable values"
+          )
+
+          properties do
+            ids(:array, "Structure IDs whose domains have been updated")
+            errors(:array, "Backend insertion errors (non existent external domain ids)")
+          end
+
+          example(%{
+            errors: [
+              %{
+                external_id: "postgres://Postgres-Test/postgres/public/city/city_id",
+                message: %{
+                  external_domain_ids: ["must exist: UEUEUEU"]
+                },
+                row: 3
+              }
+            ],
+            ids: [5_375_339]
+          })
+        end,
       CsvRequest:
         swagger_schema do
           properties do

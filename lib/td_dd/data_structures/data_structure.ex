@@ -37,6 +37,7 @@ defmodule TdDd.DataStructures.DataStructure do
     field(:confidential, :boolean)
     # TODO: remove default?
     field(:domain_ids, {:array, :integer}, default: [])
+    field(:external_domain_ids, {:array, :string}, virtual: true)
     field(:external_id, :string)
     field(:last_change_by, :integer)
     field(:row, :integer, virtual: true)
@@ -49,6 +50,38 @@ defmodule TdDd.DataStructures.DataStructure do
     timestamps(type: :utc_datetime_usec)
   end
 
+  def changeset(params, last_change_by) do
+    changeset(%__MODULE__{}, params, last_change_by)
+  end
+
+  def changeset_check_domain_ids(%__MODULE__{} = data_structure, %{external_domain_ids: external_domain_ids} = params, last_change_by) do
+    {existing_domain_ids, _inexistent_domain_ids} =
+      domains_by_external_ids = get_domains_by_external_ids(external_domain_ids)
+    data_structure
+    |> cast(params, [:confidential, :external_domain_ids])
+    |> validate_change(:external_domain_ids,
+      fn _, _domain_ids ->
+        case domains_by_external_ids do
+          {[], []} -> [external_domain_ids: "must be a non-empty list"]
+          {[_|_], []} ->
+            []
+          {_existing, inexisting} ->
+            [
+              external_domain_ids: {"must exist: %{inexisting}",
+              [inexisting: inexisting |> Enum.intersperse(", ")]}
+            ]
+        end
+      end
+    )
+    |> put_domain_ids(existing_domain_ids)
+    |> unique_domain_ids()
+    |> put_audit(last_change_by)
+  end
+
+  defp put_domain_ids(changeset, domain_ids) do
+    put_change(changeset, :domain_ids, domain_ids)
+  end
+
   def changeset(%__MODULE__{} = data_structure, params, last_change_by)
       when is_integer(last_change_by) do
     data_structure
@@ -59,6 +92,21 @@ defmodule TdDd.DataStructures.DataStructure do
     end)
     |> unique_domain_ids()
     |> put_audit(last_change_by)
+  end
+
+  def get_domains_by_external_ids(external_domain_ids) do
+    Enum.reduce(
+      external_domain_ids,
+      {[], []},
+      fn external_domain_id, {acc_existing, acc_inexisting} ->
+        case TdCache.TaxonomyCache.get_by_external_id(external_domain_id) do
+          %{id: domain_id} -> {[domain_id | acc_existing], acc_inexisting}
+          nil -> {acc_existing, [external_domain_id | acc_inexisting]}
+        end
+
+      end
+    )
+
   end
 
   defp put_audit(%{changes: changes} = changeset, _last_change_by)
