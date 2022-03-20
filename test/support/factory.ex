@@ -22,6 +22,7 @@ defmodule TdDd.Factory do
   alias TdDd.Lineage.Units
   alias TdDd.Profiles.Profile
   alias TdDd.UserSearchFilters.UserSearchFilter
+  alias TdDq.Remediations.Remediation
 
   def claims_factory(attrs), do: do_claims(attrs, TdDd.Auth.Claims)
 
@@ -283,6 +284,16 @@ defmodule TdDd.Factory do
     |> merge_attributes(attrs)
   end
 
+  def remediation_factory(attrs) do
+    attrs = default_assoc(attrs, :rule_result_id, :rule_result)
+
+    %Remediation{
+      df_name: "template_name",
+      df_content: %{}
+    }
+    |> merge_attributes(attrs)
+  end
+
   def configuration_factory do
     %Configuration{
       type: "config",
@@ -459,7 +470,6 @@ defmodule TdDd.Factory do
 
     %TdDd.Grants.GrantRequestApproval{
       user_id: sequence(:user_id, &"#{&1}"),
-      domain_id: 123,
       role: "role1",
       is_rejection: false
     }

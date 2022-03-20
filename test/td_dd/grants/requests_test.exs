@@ -249,17 +249,15 @@ defmodule TdDd.Grants.RequestsTest do
           grant_request: build(:grant_request, domain_ids: [d3])
         )
 
-      insert(:grant_request_approval, domain_id: d1, role: "approver1", grant_request: d1_gr)
-      insert(:grant_request_approval, domain_id: d2, role: "approver1", grant_request: d2_gr)
+      insert(:grant_request_approval, role: "approver1", grant_request: d1_gr)
+      insert(:grant_request_approval, role: "approver1", grant_request: d2_gr)
 
       insert(:grant_request_approval,
-        domain_id: d2,
         role: "approver2",
         grant_request: d2_gr_approved
       )
 
       insert(:grant_request_approval,
-        domain_id: d3,
         role: "approver1",
         is_rejection: true,
         grant_request: d3_gr
@@ -295,7 +293,6 @@ defmodule TdDd.Grants.RequestsTest do
         )
 
       insert(:grant_request_approval,
-        domain_id: domain_id1,
         role: "approver1",
         grant_request_id: gr_id_1
       )
@@ -342,7 +339,6 @@ defmodule TdDd.Grants.RequestsTest do
         )
 
       insert(:grant_request_approval,
-        domain_id: domain_id,
         role: "approver1",
         grant_request: grant_request
       )
@@ -369,32 +365,26 @@ defmodule TdDd.Grants.RequestsTest do
       params = %{domain_id: domain_id, role: "approver"}
 
       assert {:ok, %{approval: approval}} = Requests.create_approval(claims, request, params)
-      assert %{is_rejection: false, user: user, domain: domain} = approval
+      assert %{is_rejection: false, user: user} = approval
       assert %{id: ^user_id, user_name: _} = user
-      assert %{id: ^domain_id, name: _} = domain
     end
 
     test "admin can approve a grant request without having the role", %{
-      domain_id: domain_id,
       request: request
     } do
       %{user_id: user_id} = claims = build(:claims, role: "admin")
-      params = %{domain_id: domain_id, role: "approver"}
+      params = %{role: "approver"}
 
       assert {:ok, %{approval: approval}} = Requests.create_approval(claims, request, params)
 
-      assert %GrantRequestApproval{is_rejection: false, user_id: ^user_id, domain: domain} =
-               approval
-
-      assert %{id: ^domain_id, name: _} = domain
+      assert %GrantRequestApproval{is_rejection: false, user_id: ^user_id} = approval
     end
 
     test "returns error if user is not an approver", %{
-      domain_id: domain_id,
       request: request
     } do
       claims = build(:claims, role: "user")
-      params = %{domain_id: domain_id, role: "not_approver"}
+      params = %{role: "not_approver"}
       assert {:error, :approval, _, _} = Requests.create_approval(claims, request, params)
     end
 
@@ -407,7 +397,7 @@ defmodule TdDd.Grants.RequestsTest do
         %{user_id: user_id, domain_id: domain_id, role: "rejector"}
       ])
 
-      params = %{domain_id: domain_id, role: "rejector", is_rejection: true, comment: "foo"}
+      params = %{role: "rejector", is_rejection: true, comment: "foo"}
 
       assert {:ok, %{status: status}} = Requests.create_approval(claims, request, params)
       assert %GrantRequestStatus{status: "rejected"} = status
@@ -436,6 +426,9 @@ defmodule TdDd.Grants.RequestsTest do
     %{id: domain_id} = CacheHelpers.insert_domain()
     CacheHelpers.insert_user(user_id: user_id)
 
-    [domain_id: domain_id, request: insert(:grant_request, current_status: "pending")]
+    [
+      domain_id: domain_id,
+      request: insert(:grant_request, current_status: "pending", domain_ids: [domain_id])
+    ]
   end
 end

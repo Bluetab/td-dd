@@ -2,14 +2,16 @@
 
 ## [Unreleased]
 
-### Added
+# Added
 
+- [TD-3233] Rule result remediation plan
 - [TD-4271] Support for linking implementations with business concepts
 - [TD-4621] Include data structure version `name` in GraphQL schema
 
 ### Fixed
 
 - [TD-4580] Added migration to fix implementations without alias
+- [TD-4623] Added multiple domains support for grant request approvals
 
 ## Changed
 

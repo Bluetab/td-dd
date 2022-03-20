@@ -184,12 +184,6 @@ defmodule TdDd.DataStructures.StructureNotes do
     |> on_update()
   end
 
-  @spec bulk_create_structure_note(
-          map,
-          :invalid | %{optional(:__struct__) => none, optional(atom | binary) => any},
-          nil | %{:data_structure => any, :df_content => any, optional(any) => any},
-          any
-        ) :: any
   def bulk_create_structure_note(data_structure, attrs, nil, user_id) do
     bulk_create_structure_note(
       data_structure,
