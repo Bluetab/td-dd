@@ -18,21 +18,20 @@ defmodule TdDdWeb.Schema.StructureNotes do
   end
 
   object :structure_note do
-    field :id, non_null(:id)
-    field :status, non_null(:string)
-    field :data_structure, :data_structure, resolve: dataloader(TdDd.DataStructures)
+    field(:id, non_null(:id))
+    field(:status, non_null(:string))
+    field(:data_structure, :data_structure, resolve: dataloader(TdDd.DataStructures))
   end
 
   @desc "Filters for Structure Notes"
   input_object :structure_notes_filter do
-
     @desc "List of statuses"
-    field :statuses, list_of(:string)
+    field(:statuses, list_of(:string))
 
     @desc "List of Systems"
-    field :system_ids, list_of(:id)
+    field(:system_ids, list_of(:id))
 
     @desc "List of Domains"
-    field :domain_ids, list_of(:id)
+    field(:domain_ids, list_of(:id))
   end
 end

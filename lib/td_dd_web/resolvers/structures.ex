@@ -21,18 +21,20 @@ defmodule TdDdWeb.Resolvers.Structures do
   end
 
   def domains(%{domain_ids: domain_ids}, _args, _resolution) do
-    domains = domain_ids
-    |> Enum.map(&TaxonomyCache.get_domain/1)
-    |> Enum.reject(&is_nil/1)
+    domains =
+      domain_ids
+      |> Enum.map(&TaxonomyCache.get_domain/1)
+      |> Enum.reject(&is_nil/1)
 
     {:ok, domains}
   end
 
   def data_structure_version_path(%{id: _id} = dsv, _args, _resolution) do
-    path = dsv
-    |> DataStructures.get_ancestors()
-    |> Enum.map(&(Map.get(&1, :name)))
+    path =
+      dsv
+      |> DataStructures.get_ancestors()
+      |> Enum.map(&Map.get(&1, :name))
+
     {:ok, path}
   end
-
 end

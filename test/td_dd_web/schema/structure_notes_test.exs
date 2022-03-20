@@ -150,10 +150,12 @@ defmodule TdDdWeb.Schema.StructureNotesTest do
                conn
                |> post("/api/v2", %{
                  "query" => @query,
-                 "variables" => %{"filter" => %{
-                   "statuses" => ["rejected"]
-                 }}
-                })
+                 "variables" => %{
+                   "filter" => %{
+                     "statuses" => ["rejected"]
+                   }
+                 }
+               })
                |> json_response(:ok)
 
       string_id = "#{id}"
@@ -170,10 +172,12 @@ defmodule TdDdWeb.Schema.StructureNotesTest do
                conn
                |> post("/api/v2", %{
                  "query" => @query,
-                 "variables" => %{"filter" => %{
-                   "system_ids" => [system_id]
-                 }}
-                })
+                 "variables" => %{
+                   "filter" => %{
+                     "system_ids" => [system_id]
+                   }
+                 }
+               })
                |> json_response(:ok)
 
       string_id = "#{id}"
@@ -183,19 +187,25 @@ defmodule TdDdWeb.Schema.StructureNotesTest do
     @tag authentication: [role: "admin"]
     test "filters structure notes by domain_id",
          %{conn: conn} do
-          domain_id = 10
-      %{id: id} = insert(:structure_note,
-      data_structure: build(:data_structure, domain_ids: [domain_id]))
+      domain_id = 10
+
+      %{id: id} =
+        insert(:structure_note,
+          data_structure: build(:data_structure, domain_ids: [domain_id])
+        )
+
       insert(:structure_note)
 
       assert %{"data" => %{"structure_notes" => structure_notes}} =
                conn
                |> post("/api/v2", %{
                  "query" => @query,
-                 "variables" => %{"filter" => %{
-                   "domain_ids" => [domain_id]
-                 }}
-                })
+                 "variables" => %{
+                   "filter" => %{
+                     "domain_ids" => [domain_id]
+                   }
+                 }
+               })
                |> json_response(:ok)
 
       string_id = "#{id}"
@@ -205,18 +215,23 @@ defmodule TdDdWeb.Schema.StructureNotesTest do
     @tag authentication: [role: "admin"]
     test "empty domain ids filters returns all results",
          %{conn: conn} do
-          domain_id = 10
-      %{id: id} = insert(:structure_note,
-      data_structure: build(:data_structure, domain_ids: [domain_id]))
+      domain_id = 10
+
+      %{id: id} =
+        insert(:structure_note,
+          data_structure: build(:data_structure, domain_ids: [domain_id])
+        )
 
       assert %{"data" => %{"structure_notes" => structure_notes}} =
                conn
                |> post("/api/v2", %{
                  "query" => @query,
-                 "variables" => %{"filter" => %{
-                   "domain_ids" => []
-                 }}
-                })
+                 "variables" => %{
+                   "filter" => %{
+                     "domain_ids" => []
+                   }
+                 }
+               })
                |> json_response(:ok)
 
       string_id = "#{id}"
@@ -226,13 +241,18 @@ defmodule TdDdWeb.Schema.StructureNotesTest do
     @tag authentication: [role: "admin"]
     test "returns data_structure domain",
          %{conn: conn} do
-
       %{name: domain_name, id: domain_id} = CacheHelpers.insert_domain()
       insert(:structure_note, data_structure: build(:data_structure, domain_ids: [domain_id]))
 
-      assert %{"data" => %{"structure_notes" => [%{
-        "data_structure" => %{"domains" => domains}
-      }]}} =
+      assert %{
+               "data" => %{
+                 "structure_notes" => [
+                   %{
+                     "data_structure" => %{"domains" => domains}
+                   }
+                 ]
+               }
+             } =
                conn
                |> post("/api/v2", %{"query" => @query})
                |> json_response(:ok)

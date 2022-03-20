@@ -78,7 +78,8 @@ defmodule TdDd.DataStructures.StructureNotes do
   defp add_params({"domain_ids", []}, query), do: query
 
   defp add_params({"domain_ids", domain_ids}, query) do
-    numeric_domain_ids = Enum.map(domain_ids, &(String.to_integer(&1)))
+    numeric_domain_ids = Enum.map(domain_ids, &String.to_integer(&1))
+
     query
     |> join(:inner, [sn], ds in assoc(sn, :data_structure))
     |> where([_sn, ds], fragment("? && ?", ds.domain_ids, ^numeric_domain_ids))
