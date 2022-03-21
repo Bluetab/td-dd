@@ -11,7 +11,6 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.DataStructures.StructureMetadata
-  alias TdDd.DataStructures.StructureNote
   alias TdDd.Profiles.Profile
 
   @paths_by_child_id """
@@ -161,7 +160,7 @@ defmodule TdDd.DataStructures.DataStructureQueries do
       when is_map_key(params, :ids) or is_map_key(params, :data_structure_ids) do
     %{
       distinct: :data_structure_id,
-      preload: [data_structure: [:system, :tags]]
+      preload: [data_structure: [:system, :tags, :published_note]]
     }
     |> Map.merge(params)
     |> Enum.reduce(DataStructureVersion, fn
@@ -191,12 +190,8 @@ defmodule TdDd.DataStructures.DataStructureQueries do
     |> select_merge([_, _, c], %{classes: c.classes})
     |> join(:left, [dsv], p in subquery(paths(params)), on: p.id == dsv.data_structure_id)
     |> select_merge([_, _, _, p], %{path: fragment("COALESCE(?, ARRAY[]::json[])", p.path)})
-    |> join(:left, [dsv], sn in StructureNote,
-      on: sn.data_structure_id == dsv.data_structure_id and sn.status == :published
-    )
-    |> select_merge([_, _, _, _, sn], %{latest_note: sn.df_content})
     |> join(:left, [dsv], pv in subquery(profile(params)), on: dsv.id == pv.id)
-    |> select_merge([_, _, _, _, _, pv], %{
+    |> select_merge([_, _, _, _, pv], %{
       with_profiling: fragment("COALESCE(?, false)", pv.with_profiling)
     })
   end
