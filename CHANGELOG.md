@@ -2,8 +2,9 @@
 
 ## [Unreleased]
 
-### Added
+# Added
 
+- [TD-3233] Rule result remediation plan
 - [TD-4271] Support for linking implementations with business concepts
 - [TD-4621] Include data structure version `name` in GraphQL schema
 - [TD-4447] Support for associating metadata filters with a structure type

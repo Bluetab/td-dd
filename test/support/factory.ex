@@ -23,6 +23,7 @@ defmodule TdDd.Factory do
   alias TdDd.Lineage.Units
   alias TdDd.Profiles.Profile
   alias TdDd.UserSearchFilters.UserSearchFilter
+  alias TdDq.Remediations.Remediation
 
   def claims_factory(attrs), do: do_claims(attrs, TdDd.Auth.Claims)
 
@@ -289,6 +290,16 @@ defmodule TdDd.Factory do
     %Event{
       type: sequence("event_type"),
       message: sequence("event_message")
+    }
+    |> merge_attributes(attrs)
+  end
+
+  def remediation_factory(attrs) do
+    attrs = default_assoc(attrs, :rule_result_id, :rule_result)
+
+    %Remediation{
+      df_name: "template_name",
+      df_content: %{}
     }
     |> merge_attributes(attrs)
   end
