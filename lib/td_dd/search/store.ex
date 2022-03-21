@@ -7,6 +7,7 @@ defmodule TdDd.Search.Store do
 
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructureQueries
+  alias TdDd.DataStructures.DataStructureTypes
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.Grants.GrantStructure
@@ -46,39 +47,42 @@ defmodule TdDd.Search.Store do
 
   defp do_stream(query) do
     relation_type_id = RelationTypes.default_id!()
+    filters = DataStructureTypes.metadata_filters()
 
     query
     |> Repo.stream()
     |> Stream.chunk_every(chunk_size())
-    |> Stream.map(&enrich_chunk_data_structures(&1, relation_type_id))
+    |> Stream.map(&enrich_chunk_data_structures(&1, relation_type_id, filters))
     |> Stream.flat_map(& &1)
   end
 
   defp do_stream_grants(query) do
     relation_type_id = RelationTypes.default_id!()
     users = TdCache.UserCache.map()
+    filters = DataStructureTypes.metadata_filters()
 
     query
     |> Repo.stream()
     |> Stream.chunk_every(chunk_size())
-    |> Stream.map(&enrich_chunk_grant_structures(&1, relation_type_id, users))
+    |> Stream.map(&enrich_chunk_grant_structures(&1, relation_type_id, filters, users))
     |> Stream.flat_map(& &1)
   end
 
-  defp enrich_chunk_data_structures(ids, relation_type_id) do
+  defp enrich_chunk_data_structures(ids, relation_type_id, filters) do
     DataStructures.enriched_structure_versions(
       ids: ids,
       relation_type_id: relation_type_id,
-      content: :searchable
+      content: :searchable,
+      filters: filters
     )
   end
 
-  defp enrich_chunk_grant_structures(grant_structures_chunk, relation_type_id, users) do
+  defp enrich_chunk_grant_structures(grant_structures_chunk, relation_type_id, filters, users) do
     Enum.flat_map(
       grant_structures_chunk,
       fn %{grant: grant, dsv_children: children} ->
         Enum.map(
-          enrich_chunk_data_structures(children, relation_type_id),
+          enrich_chunk_data_structures(children, relation_type_id, filters),
           fn dsv ->
             %GrantStructure{
               grant: Map.put(grant, :user, Map.get(users, grant.user_id)),
