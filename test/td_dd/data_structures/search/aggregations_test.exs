@@ -65,5 +65,22 @@ defmodule TdDd.DataStructures.Search.AggregationsTest do
                "my_user" => %{terms: %{field: "latest_note.my_user.raw", size: 50}}
              }
     end
+
+    test "includes metadata field aggregations" do
+      insert(:data_structure_type, filters: ["foo"])
+      insert(:data_structure_type, filters: ["bar", "baz"])
+
+      aggs = Aggregations.aggregations()
+
+      assert_maps_equal(
+        aggs,
+        %{
+          "metadata.bar" => %{terms: %{field: "_filters.bar"}},
+          "metadata.baz" => %{terms: %{field: "_filters.baz"}},
+          "metadata.foo" => %{terms: %{field: "_filters.foo"}}
+        },
+        ["metadata.foo", "metadata.bar", "metadata.baz"]
+      )
+    end
   end
 end

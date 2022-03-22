@@ -3,6 +3,7 @@ defmodule TdDd.DataStructures.Search.Aggregations do
   Aggregations for elasticsearch
   """
   alias TdCache.TemplateCache
+  alias TdDd.DataStructures.DataStructureTypes
   alias TdDfLib.Format
 
   def aggregations do
@@ -20,10 +21,20 @@ defmodule TdDd.DataStructures.Search.Aggregations do
       "with_profiling.raw" => %{terms: %{field: "with_profiling.raw"}}
     }
 
+    filters = filter_aggs()
+
     TemplateCache.list_by_scope!("dd")
     |> Enum.flat_map(&content_terms/1)
     |> Map.new()
     |> Map.merge(static_aggs)
+    |> Map.merge(filters)
+  end
+
+  defp filter_aggs do
+    DataStructureTypes.metadata_filters()
+    |> Map.values()
+    |> Enum.flat_map(& &1)
+    |> Map.new(fn filter -> {"metadata.#{filter}", %{terms: %{field: "_filters.#{filter}"}}} end)
   end
 
   defp content_terms(%{content: content}) do

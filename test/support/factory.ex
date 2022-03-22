@@ -15,6 +15,7 @@ defmodule TdDd.Factory do
   alias TdDd.DataStructures.DataStructureTag
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureVersion
+  alias TdDd.DataStructures.MetadataField
   alias TdDd.DataStructures.MetadataView
   alias TdDd.DataStructures.RelationType
   alias TdDd.DataStructures.StructureMetadata
@@ -165,6 +166,15 @@ defmodule TdDd.Factory do
       name: sequence("metadata_view_name"),
       fields: [sequence("metadata_field")]
     }
+  end
+
+  def metadata_field_factory(attrs) do
+    attrs = default_assoc(attrs, :data_structure_type_id, :data_structure_type)
+
+    %MetadataField{
+      name: sequence("metadata_field_name")
+    }
+    |> merge_attributes(attrs)
   end
 
   def system_factory do

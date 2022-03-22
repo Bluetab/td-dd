@@ -5,11 +5,13 @@ defmodule TdDd.DataStructures.DataStructureTypesTest do
   alias TdDd.DataStructures.DataStructureType
   alias TdDd.DataStructures.DataStructureTypes
 
+  @preload [preload: :metadata_fields]
+
   setup do
     [data_structure_type: insert(:data_structure_type)]
   end
 
-  describe "list_data_structure_types/0" do
+  describe "list_data_structure_types/1" do
     test "returns all data_structure_types", %{data_structure_type: type} do
       assert [^type] = DataStructureTypes.list_data_structure_types()
     end
@@ -19,22 +21,24 @@ defmodule TdDd.DataStructures.DataStructureTypesTest do
       assert [%{template: %{id: ^template_id}}] = DataStructureTypes.list_data_structure_types()
     end
 
-    test "includes metadata fields", %{data_structure_type: %{name: name}} do
-      assert [%{metadata_fields: nil}] = DataStructureTypes.list_data_structure_types()
+    test "preloads metadata fields", %{data_structure_type: %{id: id}} do
+      assert [%{metadata_fields: []}] = DataStructureTypes.list_data_structure_types(@preload)
 
-      %{data_structure_id: id} =
-        insert(:data_structure_version, type: name, metadata: %{"foo" => 1})
+      field = insert(:metadata_field, name: "foo", data_structure_type_id: id)
 
-      assert [%{metadata_fields: ["foo"]}] = DataStructureTypes.list_data_structure_types()
+      assert [%{metadata_fields: [^field]}] =
+               DataStructureTypes.list_data_structure_types(@preload)
 
-      insert(:structure_metadata, data_structure_id: id, fields: %{"bar" => "bar"})
-      assert [%{metadata_fields: [_foo, _bar]}] = DataStructureTypes.list_data_structure_types()
+      insert(:metadata_field, name: "bar", data_structure_type_id: id)
+
+      assert [%{metadata_fields: [_foo, _bar]}] =
+               DataStructureTypes.list_data_structure_types(@preload)
     end
   end
 
-  describe "get!/1" do
+  describe "get!/2" do
     test "returns the data_structure_type with given id", %{data_structure_type: %{id: id} = type} do
-      assert DataStructureTypes.get!(id) == type
+      assert DataStructureTypes.get!(id) == %{type | metadata_fields: []}
     end
 
     test "enriches with template", %{data_structure_type: %{id: id, template_id: template_id}} do
@@ -42,18 +46,13 @@ defmodule TdDd.DataStructures.DataStructureTypesTest do
       assert %{template: %{id: ^template_id}} = DataStructureTypes.get!(id)
     end
 
-    test "includes metadata fields when present", %{
-      data_structure_type: %{id: type_id, name: name}
-    } do
-      assert %{metadata_fields: nil} = DataStructureTypes.get!(type_id)
+    test "preloads metadata fields", %{data_structure_type: %{id: type_id}} do
+      assert %{metadata_fields: []} = DataStructureTypes.get!(type_id)
 
-      %{data_structure_id: id} = insert(:data_structure_version, metadata: nil, type: name)
-      assert %{metadata_fields: nil} = DataStructureTypes.get!(type_id)
+      field = insert(:metadata_field, data_structure_type_id: type_id)
+      assert %{metadata_fields: [^field]} = DataStructureTypes.get!(type_id)
 
-      insert(:structure_metadata, data_structure_id: id, fields: %{"bar" => "bar"})
-      assert %{metadata_fields: ["bar"]} = DataStructureTypes.get!(type_id)
-
-      insert(:data_structure_version, metadata: %{"baz" => "baz"}, type: name)
+      insert(:metadata_field, data_structure_type_id: type_id)
       assert %{metadata_fields: [_bar, _baz]} = DataStructureTypes.get!(type_id)
     end
   end
@@ -68,7 +67,7 @@ defmodule TdDd.DataStructures.DataStructureTypesTest do
   describe "get_by/2" do
     test "enriches with template", %{data_structure_type: %{name: name, template_id: template_id}} do
       CacheHelpers.insert_template(id: template_id)
-      assert %{template: %{id: ^template_id}} = DataStructureTypes.get_by(:lite, name: name)
+      assert %{template: %{id: ^template_id}} = DataStructureTypes.get_by(name: name)
     end
   end
 
@@ -111,6 +110,21 @@ defmodule TdDd.DataStructures.DataStructureTypesTest do
 
       assert {_, [constraint: :unique, constraint_name: "data_structure_types_name_index"]} =
                errors[:name]
+    end
+  end
+
+  describe "metadata_filters/0" do
+    test "returns a map with type names as keys and filters as values" do
+      %{name: n1} = insert(:data_structure_type, filters: ["foo"])
+      %{name: n2} = insert(:data_structure_type, filters: ["bar", "baz"])
+      %{name: n3} = insert(:data_structure_type, filters: [])
+      %{name: n4} = insert(:data_structure_type, filters: nil)
+
+      filters = DataStructureTypes.metadata_filters()
+
+      assert %{^n1 => ["foo"], ^n2 => ["bar", "baz"]} = filters
+      refute Map.has_key?(filters, n3)
+      refute Map.has_key?(filters, n4)
     end
   end
 end

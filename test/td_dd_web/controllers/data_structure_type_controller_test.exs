@@ -46,33 +46,17 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
     end
   end
 
-  describe "lite" do
+  describe "show" do
     @tag authentication: [role: "admin"]
-    test "lists all data_structure_types without metadata_fields", %{conn: conn} do
-      insert(:data_structure_type, template_id: 123)
+    test "includes filters", %{conn: conn} do
+      %{id: id} = insert(:data_structure_type, filters: ["foo"])
 
-      assert %{"data" => [structure_type]} =
+      assert %{"data" => data} =
                conn
-               |> get(Routes.data_structure_type_path(conn, :lite))
+               |> get(Routes.data_structure_type_path(conn, :show, id))
                |> json_response(:ok)
 
-      assert %{"template_id" => 123} = structure_type
-      refute Map.has_key?(structure_type, "template")
-      refute Map.has_key?(structure_type, "metadata_fields")
-    end
-
-    @tag authentication: [role: "admin"]
-    test "enriches template without metadata_fields", %{conn: conn, template: %{id: template_id}} do
-      insert(:data_structure_type, template_id: template_id)
-
-      assert %{"data" => [structure_type]} =
-               conn
-               |> get(Routes.data_structure_type_path(conn, :lite))
-               |> json_response(:ok)
-
-      assert %{"template" => %{"id" => ^template_id}} = structure_type
-      refute Map.has_key?(structure_type, "template_id")
-      refute Map.has_key?(structure_type, "metadata_fields")
+      assert %{"filters" => ["foo"]} = data
     end
   end
 
@@ -103,7 +87,7 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
                "name" => "some updated structure_type",
                "template_id" => 43,
                "translation" => "some updated translation",
-               "metadata_fields" => nil,
+               "metadata_fields" => [],
                "metadata_views" => [%{"fields" => [], "name" => "updated"}]
              } = data
     end
