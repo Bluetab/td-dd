@@ -16,6 +16,10 @@ defmodule TdDd.Canada.StructureNoteAbilities do
     Permissions.authorized?(claims, :publish_structure_note_from_draft)
   end
 
+  def can?(_, :query, _) do
+    true
+  end
+
   def can?(_claims, _action, _domain_id) do
     false
   end

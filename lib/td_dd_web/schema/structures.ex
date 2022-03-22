@@ -21,37 +21,41 @@ defmodule TdDdWeb.Schema.Structures do
   end
 
   object :data_structure_version do
-    field :id, non_null(:id)
-    field :version, non_null(:integer)
-    field :class, :string
-    field :description, :string
-    field :name, :string
-    field :type, :string
-    field :group, :string
-    field :deleted_at, :datetime
-    field :inserted_at, :datetime
-    field :updated_at, :datetime
-    field :metadata, :json
-    field :data_structure, :data_structure, resolve: dataloader(TdDd.DataStructures)
+    field(:id, non_null(:id))
+    field(:version, non_null(:integer))
+    field(:class, :string)
+    field(:description, :string)
+    field(:name, :string)
+    field(:type, :string)
+    field(:group, :string)
+    field(:name, :string)
+    field(:deleted_at, :datetime)
+    field(:inserted_at, :datetime)
+    field(:updated_at, :datetime)
+    field(:metadata, :json)
+    field(:data_structure, :data_structure, resolve: dataloader(TdDd.DataStructures))
+    field(:path, list_of(:string), resolve: &Resolvers.Structures.data_structure_version_path/3)
   end
 
   object :data_structure do
-    field :id, non_null(:id)
-    field :confidential, non_null(:boolean)
-    field :domain_id, :integer, resolve: &Resolvers.Structures.domain_id/3
-    field :domain_ids, list_of(:integer)
-    field :external_id, non_null(:string)
-    field :inserted_at, :datetime
-    field :updated_at, :datetime
-    field :system, :system, resolve: dataloader(TdDd.DataStructures)
+    field(:id, non_null(:id))
+    field(:confidential, non_null(:boolean))
+    field(:domain_id, :integer, resolve: &Resolvers.Structures.domain_id/3)
+    field(:domain_ids, list_of(:integer))
+    field(:domains, list_of(:domain), resolve: &Resolvers.Structures.domains/3)
+    field(:external_id, non_null(:string))
+    field(:inserted_at, :datetime)
+    field(:updated_at, :datetime)
+    field(:system, :system, resolve: dataloader(TdDd.DataStructures))
+    field(:current_version, :data_structure_version, resolve: dataloader(TdDd.DataStructures))
   end
 
   object :system do
-    field :id, non_null(:id)
-    field :external_id, non_null(:string)
-    field :name, non_null(:string)
-    field :df_content, :json
-    field :inserted_at, :datetime
-    field :updated_at, :datetime
+    field(:id, non_null(:id))
+    field(:external_id, non_null(:string))
+    field(:name, non_null(:string))
+    field(:df_content, :json)
+    field(:inserted_at, :datetime)
+    field(:updated_at, :datetime)
   end
 end
