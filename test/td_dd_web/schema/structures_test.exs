@@ -1,9 +1,11 @@
 defmodule TdDdWeb.Schema.StructuresTest do
   use TdDdWeb.ConnCase
 
+  alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.RelationTypes
 
   @moduletag sandbox: :shared
+
   @query """
   query DataStructureVersions($since: DateTime) {
     dataStructureVersions(since: $since) {
@@ -146,6 +148,8 @@ defmodule TdDdWeb.Schema.StructuresTest do
         child_id: child_id,
         relation_type_id: custom_relation_id
       )
+
+      Hierarchy.update_hierarchy([child_id])
 
       assert %{"data" => data} =
                response =

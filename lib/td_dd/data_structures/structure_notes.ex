@@ -69,6 +69,8 @@ defmodule TdDd.DataStructures.StructureNotes do
     |> where([_sn, ds], ds.system_id == ^system_id)
   end
 
+  defp add_params({"system_ids", []}, query), do: query
+
   defp add_params({"system_ids", system_ids}, query) do
     query
     |> join(:inner, [sn], ds in assoc(sn, :data_structure))

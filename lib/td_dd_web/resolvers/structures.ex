@@ -5,7 +5,6 @@ defmodule TdDdWeb.Resolvers.Structures do
 
   alias TdCache.TaxonomyCache
   alias TdDd.DataStructures
-  alias TdDd.Search.StructureEnricher
 
   def data_structure_versions(_parent, args, _resolution) do
     {:ok, DataStructures.list_data_structure_versions(args)}
@@ -30,14 +29,13 @@ defmodule TdDdWeb.Resolvers.Structures do
     {:ok, domains}
   end
 
-  def data_structure_version_path(%{id: id} = dsv, _args, _resolution) do
-
+  def data_structure_version_path(%{id: id}, _args, _resolution) do
     path =
-      dsv
-      |> StructureEnricher.enrich(nil, [:path])
-      # |> DataStructures.get_ancestors()
-      |> IO.inspect(label: " enriched --->")
-      |> Enum.map(&Map.get(&1, :name))
+      [ids: [id]]
+      |> DataStructures.enriched_structure_versions()
+      |> hd()
+      |> Map.get(:path)
+      |> Enum.map(&Map.get(&1, "name"))
 
     {:ok, path}
   end
