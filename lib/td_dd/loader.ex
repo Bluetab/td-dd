@@ -87,6 +87,7 @@ defmodule TdDd.Loader do
     |> Multi.run(:classification, fn _, %{system_ids: ids} ->
       Classifiers.classify_many(ids, updated_at: ts)
     end)
+    |> Multi.run(:refresh_fields, Types, :refresh_fields, [])
     |> Repo.transaction()
   end
 

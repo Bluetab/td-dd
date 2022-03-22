@@ -27,7 +27,7 @@ defmodule TdDd.DataStructures do
   alias TdDd.Lineage.GraphData
   alias TdDd.Repo
   alias TdDd.Search.IndexWorker
-  alias TdDd.Search.StructureEnricher
+  alias TdDd.Search.StructureVersionEnricher
   alias TdDfLib.Format
 
   # Data structure version associations preloaded for some views
@@ -45,10 +45,6 @@ defmodule TdDd.DataStructures do
       {:id, {:in, ids}}, q ->
         where(q, [ds], ds.id in ^ids)
     end)
-    |> join(:left, [ds], sn in StructureNote,
-      on: sn.data_structure_id == ds.id and sn.status == :published
-    )
-    |> select_merge([_, sn], %{latest_note: sn.df_content})
     |> preload(^preload)
     |> Repo.all()
   end
@@ -1019,23 +1015,14 @@ defmodule TdDd.DataStructures do
 
   @spec enriched_structure_versions(keyword) :: [DataStructureVersion.t()]
   def enriched_structure_versions(opts \\ []) do
-    {content_opt, opts} = Keyword.pop(opts, :content)
+    {enrich_opts, opts} = Keyword.split(opts, [:content, :filters])
+    enrich = StructureVersionEnricher.enricher(enrich_opts)
 
     opts
     |> Map.new()
     |> DataStructureQueries.enriched_structure_versions()
     |> Repo.all()
-    |> Enum.map(fn %{data_structure: structure, type: type, latest_note: latest_note} = dsv ->
-      %{
-        dsv
-        | data_structure:
-            StructureEnricher.enrich(
-              Map.put(structure, :latest_note, latest_note),
-              type,
-              content_opt
-            )
-      }
-    end)
+    |> Enum.map(&enrich.(&1))
   end
 
   ## Dataloader

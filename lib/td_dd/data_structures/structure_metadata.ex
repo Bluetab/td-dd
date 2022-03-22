@@ -14,6 +14,7 @@ defmodule TdDd.DataStructures.StructureMetadata do
     field(:fields, :map)
     field(:deleted_at, :utc_datetime_usec)
     belongs_to(:data_structure, DataStructure)
+    has_one(:current_version, through: [:data_structure, :current_version])
 
     timestamps(type: :utc_datetime_usec)
   end

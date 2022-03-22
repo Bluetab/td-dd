@@ -22,8 +22,6 @@ defmodule TdDd.DataStructuresTest do
     [claims: build(:claims)]
   end
 
-  @valid_df_content %{"string" => "initial", "list" => "one"}
-
   setup do
     domain = CacheHelpers.insert_domain()
     %{id: template_id, name: template_name} = template = CacheHelpers.insert_template()
@@ -348,7 +346,7 @@ defmodule TdDd.DataStructuresTest do
       ]
     end
 
-    test "formats data_structure search_content and preserves df_content", %{
+    test "formats data_structure search_content", %{
       data_structure_version: %{id: id}
     } do
       assert [dsv] =
@@ -359,9 +357,8 @@ defmodule TdDd.DataStructuresTest do
                )
 
       assert %{data_structure: data_structure} = dsv
-      assert %{search_content: search_content, latest_note: latest_note} = data_structure
+      assert %{search_content: search_content} = data_structure
       assert search_content == %{"string" => "initial", "list" => "one"}
-      assert latest_note == %{"string" => "initial", "list" => "one", "foo" => "bar"}
     end
 
     test "returns values suitable for bulk-indexing encoding", %{
@@ -411,6 +408,25 @@ defmodule TdDd.DataStructuresTest do
       assert %{with_profiling: true} = Enum.find(versions, &(&1.id == parent_id))
       assert %{with_profiling: false} = Enum.find(versions, &(&1.id == ancestor_id))
     end
+
+    test "extracts metadata filters" do
+      %{data_structure_id: id, type: type} =
+        insert(:data_structure_version, metadata: %{"foo" => "foo", "bar" => [%{"bar" => "bar"}]})
+
+      insert(:structure_metadata,
+        data_structure_id: id,
+        fields: %{"baz" => ["baz1", "baz2"], "xyzzy" => nil}
+      )
+
+      assert [%{_filters: filters}] =
+               DataStructures.enriched_structure_versions(
+                 data_structure_ids: [id],
+                 relation_type_id: RelationTypes.default_id!(),
+                 filters: %{type => ["foo", "bar", "baz", "xyzzy"]}
+               )
+
+      assert filters == %{"baz" => ["baz1", "baz2"], "foo" => "foo"}
+    end
   end
 
   describe "template_name/1" do
@@ -453,20 +469,6 @@ defmodule TdDd.DataStructuresTest do
       search_params = %{external_id: [data_structure.external_id]}
 
       assert DataStructures.list_data_structures(search_params), [data_structure]
-    end
-
-    test "list_data_structures/1 with enrich latest_note", %{data_structure: data_structure} do
-      insert(:structure_note,
-        data_structure: data_structure,
-        df_content: @valid_df_content,
-        status: :published
-      )
-
-      assert [
-               %DataStructure{
-                 latest_note: @valid_df_content
-               }
-             ] = DataStructures.list_data_structures()
     end
 
     test "get_data_structure!/1 returns the data_structure with given id", %{
