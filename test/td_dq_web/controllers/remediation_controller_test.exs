@@ -97,9 +97,10 @@ defmodule TdDqWeb.RemediationControllerTest do
       rule_result: %{id: rule_result_id},
       remediation: %{id: remediation_id}
     } do
-      assert %{"data" => data} = conn
-             |> get(Routes.rule_result_remediation_path(conn, :show, rule_result_id))
-             |> json_response(:ok)
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.rule_result_remediation_path(conn, :show, rule_result_id))
+               |> json_response(:ok)
 
       %{"id" => ^remediation_id} = data
     end
