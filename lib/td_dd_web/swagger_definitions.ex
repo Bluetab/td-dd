@@ -323,13 +323,18 @@ defmodule TdDdWeb.SwaggerDefinitions do
             template_id(:integer, "Template Id", required: true)
             template(:object, "Template Id and Name")
             translation(:string, "Default translation message")
+            filters(:array, "Filters enabled for this type")
             metadata_fields(:array, "Available metadata fields for this type")
-            metadata_views(:array, "Metadata views defined for this type")
+
+            metadata_views(:array, "Metadata views defined for this type",
+              items: Schema.ref(:MetadataView)
+            )
           end
 
           example(%{
             id: 88,
             name: "Table",
+            filters: ["field_1"],
             template_id: 3,
             template: %{id: 3, name: "TableTemplate"},
             translation: "Tabla",
@@ -352,7 +357,11 @@ defmodule TdDdWeb.SwaggerDefinitions do
                 properties do
                   template_id(:integer, "Template Id", required: true)
                   translation(:string, "Default translation message")
-                  metadata_views(:array, "Metadata views for this type")
+                  filters(:array, "Filters enabled for this type")
+
+                  metadata_views(:array, "Metadata views for this type",
+                    items: Schema.ref(:MetadataView)
+                  )
                 end
               end
             )
@@ -368,6 +377,13 @@ defmodule TdDdWeb.SwaggerDefinitions do
         swagger_schema do
           properties do
             data(Schema.ref(:DataStructureTypes))
+          end
+        end,
+      MetadataView:
+        swagger_schema do
+          properties do
+            name(:string, "The name of the view")
+            fields(:array, "Metadata fields in the view")
           end
         end
     }

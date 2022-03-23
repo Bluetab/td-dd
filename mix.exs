@@ -6,7 +6,7 @@ defmodule TdDd.MixProject do
       app: :td_dd,
       version:
         case System.get_env("APP_VERSION") do
-          nil -> "4.40.0-local"
+          nil -> "4.40.1-local"
           v -> v
         end,
       elixir: "~> 1.11",
@@ -55,9 +55,9 @@ defmodule TdDd.MixProject do
       {:absinthe, "~> 1.5"},
       {:absinthe_plug, "~> 1.5"},
       {:dataloader, "~> 1.0"},
-      {:ecto_sql, "~> 3.6.0"},
+      {:ecto_sql, "~> 3.7.2"},
       {:jason, "~> 1.1"},
-      {:postgrex, "~> 0.15.0"},
+      {:postgrex, "~> 0.16.2"},
       {:gettext, "~> 0.11"},
       {:httpoison, "~> 1.6"},
       {:credo, "~> 1.5", only: [:dev, :test], runtime: false},

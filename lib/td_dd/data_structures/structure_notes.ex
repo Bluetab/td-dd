@@ -58,6 +58,8 @@ defmodule TdDd.DataStructures.StructureNotes do
 
   defp add_params({"status", status}, query), do: where(query, status: ^status)
 
+  defp add_params({"statuses", statuses}, query), do: where(query, [sn], sn.status in ^statuses)
+
   defp add_params({filter, updated_at}, query) when filter in ["since", "updated_at"],
     do: where(query, [sn], sn.updated_at >= ^updated_at)
 
@@ -65,6 +67,24 @@ defmodule TdDd.DataStructures.StructureNotes do
     query
     |> join(:inner, [sn], ds in assoc(sn, :data_structure))
     |> where([_sn, ds], ds.system_id == ^system_id)
+  end
+
+  defp add_params({"system_ids", []}, query), do: query
+
+  defp add_params({"system_ids", system_ids}, query) do
+    query
+    |> join(:inner, [sn], ds in assoc(sn, :data_structure))
+    |> where([_sn, ds], ds.system_id in ^system_ids)
+  end
+
+  defp add_params({"domain_ids", []}, query), do: query
+
+  defp add_params({"domain_ids", domain_ids}, query) do
+    numeric_domain_ids = Enum.map(domain_ids, &String.to_integer(&1))
+
+    query
+    |> join(:inner, [sn], ds in assoc(sn, :data_structure))
+    |> where([_sn, ds], fragment("? && ?", ds.domain_ids, ^numeric_domain_ids))
   end
 
   defp add_params(_, query), do: query

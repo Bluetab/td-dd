@@ -4,6 +4,7 @@ defmodule TdDd.Loader.Types do
   """
 
   alias TdDd.DataStructures.DataStructureType
+  alias TdDd.DataStructures.DataStructureTypes
   alias TdDd.Repo
 
   @doc """
@@ -21,5 +22,9 @@ defmodule TdDd.Loader.Types do
       |> Enum.map(&%{name: &1, updated_at: ts, inserted_at: ts})
 
     Repo.insert_all(DataStructureType, entries, on_conflict: :nothing, returning: [:id, :name])
+  end
+
+  def refresh_fields(_repo, _changes) do
+    {:ok, DataStructureTypes.refresh_metadata_fields()}
   end
 end
