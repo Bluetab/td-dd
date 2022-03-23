@@ -54,21 +54,30 @@ defmodule TdDd.DataStructures.DataStructure do
     changeset(%__MODULE__{}, params, last_change_by)
   end
 
-  def changeset_check_domain_ids(%__MODULE__{} = data_structure, %{external_domain_ids: external_domain_ids} = params, last_change_by) do
+  def changeset_check_domain_ids(
+        %__MODULE__{} = data_structure,
+        %{external_domain_ids: external_domain_ids} = params,
+        last_change_by
+      ) do
     {existing_domain_ids, _inexistent_domain_ids} =
       domains_by_external_ids = get_domains_by_external_ids(external_domain_ids)
+
     data_structure
     |> cast(params, [:confidential, :external_domain_ids])
-    |> validate_change(:external_domain_ids,
+    |> validate_change(
+      :external_domain_ids,
       fn _, _domain_ids ->
         case domains_by_external_ids do
-          {[], []} -> [external_domain_ids: "must be a non-empty list"]
-          {[_|_], []} ->
+          {[], []} ->
+            [external_domain_ids: "must be a non-empty list"]
+
+          {[_ | _], []} ->
             []
+
           {_existing, inexisting} ->
             [
-              external_domain_ids: {"must exist: %{inexisting}",
-              [inexisting: inexisting |> Enum.intersperse(", ")]}
+              external_domain_ids:
+                {"must exist: %{inexisting}", [inexisting: inexisting |> Enum.intersperse(", ")]}
             ]
         end
       end
@@ -103,10 +112,8 @@ defmodule TdDd.DataStructures.DataStructure do
           %{id: domain_id} -> {[domain_id | acc_existing], acc_inexisting}
           nil -> {acc_existing, [external_domain_id | acc_inexisting]}
         end
-
       end
     )
-
   end
 
   defp put_audit(%{changes: changes} = changeset, _last_change_by)

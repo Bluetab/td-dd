@@ -231,6 +231,7 @@ defmodule TdDdWeb.DataStructureController do
     description("structures domains bulk update by CSV upload")
     produces("application/json")
     consumes("multipart/form-data")
+
     parameter(
       :structures_domains,
       :formData,
@@ -245,44 +246,50 @@ defmodule TdDdWeb.DataStructureController do
 
   def bulk_upload_domains(conn, params) do
     structures_content_upload = Map.get(params, "structures_domains")
+
     with claims <- conn.assigns[:current_resource],
          {:can, true} <- {:can, can?(claims, bulk_upload_domains(DataStructure))},
-         :ok <- BulkUpdate.check_csv_headers(structures_content_upload, ["external_id", "domain_external_ids"]),
+         :ok <-
+           BulkUpdate.check_csv_headers(structures_content_upload, [
+             "external_id",
+             "domain_external_ids"
+           ]),
          [_ | _] = rows <- BulkUpdate.from_csv_simple(structures_content_upload),
          info <- BulkUpdate.csv_bulk_update_domains(rows),
-         summary <- csv_bulk_upload_domains_summary(info)
-    do
+         summary <- csv_bulk_upload_domains_summary(info) do
       conn
       |> put_resp_content_type("application/json", "utf-8")
       |> send_resp(:ok, Jason.encode!(summary))
     end
   end
 
-  def csv_bulk_upload_domains_summary(
+  def csv_bulk_upload_domains_summary(%{
+        inserted_count: _inserted_count,
+        valid: valid,
+        invalid_changesets: invalid_changesets
+      }) do
     %{
-      inserted_count: _inserted_count,
-      valid: valid,
-      invalid_changesets: invalid_changesets
-    }) do
-    %{
-      ids: Enum.map(
-        valid,
-        fn %{changeset: %{id: data_structure_id}} -> data_structure_id end
-      ),
-      errors: Enum.map(
-        invalid_changesets,
-        fn %{changeset: %{} = changeset, external_id: external_id, row_index: row_index} ->
-          %{
-            message: Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
-              Enum.reduce(opts, msg, fn {key, value}, acc ->
-                String.replace(acc, "%{#{key}}", to_string(value))
-              end)
-            end),
-            external_id: external_id,
-            row: row_index,
-          }
-        end
-      )
+      ids:
+        Enum.map(
+          valid,
+          fn %{changeset: %{id: data_structure_id}} -> data_structure_id end
+        ),
+      errors:
+        Enum.map(
+          invalid_changesets,
+          fn %{changeset: %{} = changeset, external_id: external_id, row_index: row_index} ->
+            %{
+              message:
+                Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
+                  Enum.reduce(opts, msg, fn {key, value}, acc ->
+                    String.replace(acc, "%{#{key}}", to_string(value))
+                  end)
+                end),
+              external_id: external_id,
+              row: row_index
+            }
+          end
+        )
     }
   end
 

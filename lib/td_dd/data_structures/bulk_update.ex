@@ -3,12 +3,11 @@ defmodule TdDd.DataStructures.BulkUpdate do
   Support for bulk update of data structures.
   """
 
-  require Logger
+  import Ecto.Query
 
   alias Codepagex
   alias Ecto.Changeset
   alias Ecto.Multi
-  import Ecto.Query
   alias TdDd.Auth.Claims
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Audit
@@ -18,6 +17,8 @@ defmodule TdDd.DataStructures.BulkUpdate do
   alias TdDd.Search.IndexWorker
   alias TdDfLib.Format
   alias TdDfLib.Templates
+
+  require Logger
 
   def update_all(
         ids,
@@ -92,15 +93,19 @@ defmodule TdDd.DataStructures.BulkUpdate do
   end
 
   def check_csv_headers(%{path: path}, headers) do
-    [read_headers] = path
-    |> Path.expand()
-    |> File.stream!([:trim_bom])
-    |> Stream.map(&recode/1)
-    |> Stream.reject(&(String.trim(&1) == ""))
-    |> CSV.decode!(separator: ?;)
-    |> Enum.take(1)
+    [read_headers] =
+      path
+      |> Path.expand()
+      |> File.stream!([:trim_bom])
+      |> Stream.map(&recode/1)
+      |> Stream.reject(&(String.trim(&1) == ""))
+      |> CSV.decode!(separator: ?;)
+      |> Enum.take(1)
+
     case read_headers do
-      ^headers -> :ok
+      ^headers ->
+        :ok
+
       _other ->
         headers_joined = Enum.join(headers, ", ")
         {:error, %{message: "invalid_headers, must be: #{headers_joined}"}}
@@ -197,7 +202,8 @@ defmodule TdDd.DataStructures.BulkUpdate do
               "domain_external_ids" => _domain_external_ids
             },
             row_index: _row_index
-          }, acc ->
+          },
+          acc ->
             MapSet.put(acc, external_id)
 
           _other, acc ->

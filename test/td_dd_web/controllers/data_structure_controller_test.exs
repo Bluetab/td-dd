@@ -29,6 +29,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       case context do
         %{domain: domain} ->
           domain
+
         _ ->
           CacheHelpers.insert_domain()
       end
@@ -546,25 +547,31 @@ defmodule TdDdWeb.DataStructureControllerTest do
     test "succeed on valid csv", %{conn: conn, domain: %{id: domain_id}} do
       {[id_one, id_two, id_three], [_, _, _]} = create_three_data_structures(domain_id)
 
-      data = conn
-      |> post(data_structure_path(conn, :bulk_upload_domains),
-        structures_domains: %Plug.Upload{path: "test/fixtures/td4535/structures_domains_good.csv"}
-      )
-      |> json_response(:ok)
+      data =
+        conn
+        |> post(data_structure_path(conn, :bulk_upload_domains),
+          structures_domains: %Plug.Upload{
+            path: "test/fixtures/td4535/structures_domains_good.csv"
+          }
+        )
+        |> json_response(:ok)
 
       assert data == %{
-        "ids" => [id_one, id_two, id_three],
-        "errors" => [],
-      }
+               "ids" => [id_one, id_two, id_three],
+               "errors" => []
+             }
     end
 
     @tag authentication: [role: "user", permissions: [:manage_structures_domain]]
     test "throw error on invalid csv (bad header)", %{conn: conn} do
-      data = conn
-      |> post(data_structure_path(conn, :bulk_upload_domains),
-        structures_domains: %Plug.Upload{path: "test/fixtures/td4535/structures_domains_bad_header.csv"}
-      )
-      |> json_response(:unprocessable_entity)
+      data =
+        conn
+        |> post(data_structure_path(conn, :bulk_upload_domains),
+          structures_domains: %Plug.Upload{
+            path: "test/fixtures/td4535/structures_domains_bad_header.csv"
+          }
+        )
+        |> json_response(:unprocessable_entity)
 
       %{
         "error" => %{"message" => message}
@@ -574,28 +581,33 @@ defmodule TdDdWeb.DataStructureControllerTest do
     end
 
     @tag authentication: [role: "user", permissions: [:manage_structures_domain]]
-    test "throw error on invalid csv (missing external_id fields)", %{conn: conn, domain: %{id: domain_id}} do
-
+    test "throw error on invalid csv (missing external_id fields)", %{
+      conn: conn,
+      domain: %{id: domain_id}
+    } do
       {[_, id_two, id_three], [external_id_1, _, _]} = create_three_data_structures(domain_id)
 
-      data = conn
-      |> post(data_structure_path(conn, :bulk_upload_domains),
-        structures_domains: %Plug.Upload{path: "test/fixtures/td4535/structures_domains_bad_missing_external_id.csv"}
-      )
-      |> json_response(:ok)
+      data =
+        conn
+        |> post(data_structure_path(conn, :bulk_upload_domains),
+          structures_domains: %Plug.Upload{
+            path: "test/fixtures/td4535/structures_domains_bad_missing_external_id.csv"
+          }
+        )
+        |> json_response(:ok)
 
       assert data == %{
-        "errors" => [
-          %{
-            "external_id" => external_id_1,
-            "message" => %{
-              "external_domain_ids" => ["must be a non-empty list"],
-            },
-            "row" => 2,
-          }
-        ],
-        "ids" => [id_two, id_three],
-      }
+               "errors" => [
+                 %{
+                   "external_id" => external_id_1,
+                   "message" => %{
+                     "external_domain_ids" => ["must be a non-empty list"]
+                   },
+                   "row" => 2
+                 }
+               ],
+               "ids" => [id_two, id_three]
+             }
     end
 
     @tag authentication: [role: "user", permissions: [:manage_structures_domain]]
@@ -604,26 +616,33 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn: conn,
       domain: %{id: domain_id}
     } do
-      {[_, id_two, _], [external_id_1, _, external_id_3]} = create_three_data_structures(domain_id)
+      {[_, id_two, _], [external_id_1, _, external_id_3]} =
+        create_three_data_structures(domain_id)
 
       data =
         conn
         |> post(data_structure_path(conn, :bulk_upload_domains),
-          structures_domains: %Plug.Upload{path: "test/fixtures/td4535/structures_domains_warning_inexistent.csv"}
+          structures_domains: %Plug.Upload{
+            path: "test/fixtures/td4535/structures_domains_warning_inexistent.csv"
+          }
         )
         |> json_response(:ok)
 
       assert data == %{
                "ids" => [id_two],
                "errors" => [
-                %{
-                  "row" => 2,
-                  "message" => %{"external_domain_ids" => ["must exist: NON_EXISTING_DOMAIN_EXTERNAL_ID_1"]},
-                  "external_id" => external_id_1
-                },
+                 %{
+                   "row" => 2,
+                   "message" => %{
+                     "external_domain_ids" => ["must exist: NON_EXISTING_DOMAIN_EXTERNAL_ID_1"]
+                   },
+                   "external_id" => external_id_1
+                 },
                  %{
                    "row" => 4,
-                   "message" => %{"external_domain_ids" => ["must exist: NON_EXISTING_DOMAIN_EXTERNAL_ID_2"]},
+                   "message" => %{
+                     "external_domain_ids" => ["must exist: NON_EXISTING_DOMAIN_EXTERNAL_ID_2"]
+                   },
                    "external_id" => external_id_3
                  }
                ]
