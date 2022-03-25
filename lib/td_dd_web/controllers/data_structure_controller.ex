@@ -34,7 +34,7 @@ defmodule TdDdWeb.DataStructureController do
     :tags
   ]
 
-  @structures_actions [:bulk_upload_domains]
+  @structures_actions [:update_domain_ids]
 
   plug(TdDdWeb.SearchPermissionPlug)
 
@@ -246,50 +246,49 @@ defmodule TdDdWeb.DataStructureController do
 
   def bulk_upload_domains(conn, params) do
     structures_content_upload = Map.get(params, "structures_domains")
+    headers = ["external_id", "domain_external_ids"]
 
     with claims <- conn.assigns[:current_resource],
-         {:can, true} <- {:can, can?(claims, bulk_upload_domains(DataStructure))},
+         {:can, true} <- {:can, can?(claims, update_domain_ids(DataStructure))},
          :ok <-
-           BulkUpdate.check_csv_headers(structures_content_upload, [
-             "external_id",
-             "domain_external_ids"
-           ]),
-         [_ | _] = rows <- BulkUpdate.from_csv_simple(structures_content_upload),
-         info <- BulkUpdate.csv_bulk_update_domains(rows),
-         summary <- csv_bulk_upload_domains_summary(info) do
+           BulkUpdate.check_csv_headers(structures_content_upload, headers),
+         [_ | _] = rows <- BulkUpdate.from_csv(structures_content_upload, :simple),
+         info <- BulkUpdate.csv_bulk_update_domains(rows, claims),
+         summary <- csv_bulk_upload_domains_summary(rows, info) do
       conn
       |> put_resp_content_type("application/json", "utf-8")
       |> send_resp(:ok, Jason.encode!(summary))
     end
   end
 
-  def csv_bulk_upload_domains_summary(%{
-        inserted_count: _inserted_count,
-        valid: valid,
-        invalid_changesets: invalid_changesets
-      }) do
+  defp csv_bulk_upload_domains_summary(rows, %{updated: updated, errors: errors}) do
     %{
-      ids:
-        Enum.map(
-          valid,
-          fn %{changeset: %{id: data_structure_id}} -> data_structure_id end
-        ),
-      errors:
-        Enum.map(
-          invalid_changesets,
-          fn %{changeset: %{} = changeset, external_id: external_id, row_index: row_index} ->
-            %{
-              message:
-                Ecto.Changeset.traverse_errors(changeset, fn {msg, opts} ->
-                  Enum.reduce(opts, msg, fn {key, value}, acc ->
-                    String.replace(acc, "%{#{key}}", to_string(value))
-                  end)
-                end),
-              external_id: external_id,
-              row: row_index
-            }
-          end
-        )
+      "ids" => updated |> Enum.map(fn {_, {_, %{updated_ids: [id]}}} -> id end),
+      "errors" =>
+        errors
+        |> Enum.map(fn error ->
+          {index, field, message} =
+            case error do
+              {index, {:error, %{errors: [{field, {message, _}} | _]}}} ->
+                {index, field, message}
+
+              {index, {:error, {field, message}}} ->
+                {index, field, message}
+            end
+
+          %{
+            "external_id" =>
+              Enum.find(rows, nil, fn
+                {_, _, ^index} -> true
+                _ -> false
+              end)
+              |> Tuple.to_list()
+              |> Enum.at(0)
+              |> Map.get("external_id"),
+            "message" => %{field => [message]},
+            "row" => index
+          }
+        end)
     }
   end
 
@@ -543,7 +542,7 @@ defmodule TdDdWeb.DataStructureController do
     @structures_actions
     |> Enum.filter(&can?(claims, &1, DataStructure))
     |> Enum.reduce(%{}, fn
-      :bulk_upload_domains, acc ->
+      :update_domain_ids, acc ->
         Map.put(acc, "bulkUploadDomains", %{
           href: Routes.data_structure_path(conn, :bulk_upload_domains),
           method: "POST"

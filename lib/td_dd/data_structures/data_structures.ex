@@ -476,6 +476,27 @@ defmodule TdDd.DataStructures do
         inherit
       ) do
     do_update_data_structure(id, changeset, inherit, user_id)
+    |> tap(&on_update/1)
+  end
+
+  def update_data_structures(%Claims{user_id: user_id}, changesets, inherit)
+      when is_list(changesets) do
+    changesets
+    |> Enum.map(fn {index, %Changeset{data: %DataStructure{id: id}} = changeset} ->
+      {index, do_update_data_structure(id, changeset, inherit, user_id)}
+    end)
+    |> tap(fn results ->
+      results
+      |> Enum.reduce([], fn
+        {_index, {:ok, %{updated_ids: updated_ids}}}, acc ->
+          [updated_ids | acc]
+
+        _, acc ->
+          acc
+      end)
+      |> List.flatten()
+      |> on_update
+    end)
   end
 
   defp do_update_data_structure(id, %{changes: changes} = changeset, inherit, user_id) do
@@ -491,7 +512,6 @@ defmodule TdDd.DataStructures do
     |> Multi.run(:updated_ids, &updated_ids/2)
     |> Multi.run(:audit, Audit, :data_structure_updated, [id, changeset, user_id])
     |> Repo.transaction()
-    |> tap(&on_update/1)
   end
 
   defp updated_ids(_repo, %{} = changes) do

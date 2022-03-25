@@ -83,9 +83,6 @@ defmodule TdDd.Grants.GrantRequestTest do
            template_with_identifier: template_with_identifier,
            identifier_name: identifier_name
          } do
-      # %{id: domain_id} = CacheHelpers.insert_domain()
-      # %{user_id: user_id} = claims = build(:claims, role: "user")
-
       params = %{
         group: build(:grant_request_group, user_id: 1),
         data_structure: build(:data_structure),
@@ -104,9 +101,6 @@ defmodule TdDd.Grants.GrantRequestTest do
            template_without_identifier: template_without_identifier,
            identifier_name: identifier_name
          } do
-      # %{id: domain_id} = CacheHelpers.insert_domain()
-      # %{user_id: user_id} = claims = build(:claims, role: "user")
-
       params = %{
         group: build(:grant_request_group, user_id: 1),
         data_structure: build(:data_structure),
@@ -181,9 +175,6 @@ defmodule TdDd.Grants.GrantRequestTest do
            template_without_identifier: template_without_identifier,
            identifier_name: identifier_name
          } do
-      # %{id: domain_id} = CacheHelpers.insert_domain()
-      # %{user_id: user_id} = claims = build(:claims, role: "user")
-
       grant_request = %GrantRequest{
         filters: %{"grant_filters" => "bar"},
         metadata: %{"old" => "foo"},

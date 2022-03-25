@@ -94,7 +94,7 @@ defmodule TdDd.Canada.DataStructureAbilities do
     Permissions.authorized?(claims, :link_data_structure_tag, domain_ids)
   end
 
-  def can?(%Claims{} = claims, :bulk_upload_domains, DataStructure) do
+  def can?(%Claims{} = claims, :update_domain_ids, DataStructure) do
     Permissions.authorized?(claims, :manage_structures_domain)
   end
 
