@@ -1,0 +1,4 @@
+external_id_some_typo;domain_external_ids
+postgres://Postgres-Test/postgres/public/city;
+postgres://Postgres-Test/postgres/public/city/city_id;UEUEUE
+postgres://Postgres-Test/postgres/public/city/city_name;

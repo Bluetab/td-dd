@@ -3,11 +3,12 @@ defmodule TdDd.DataStructures.BulkUpdate do
   Support for bulk update of data structures.
   """
 
-  require Logger
+  import Canada, only: [can?: 2]
 
   alias Codepagex
   alias Ecto.Changeset
   alias Ecto.Multi
+  alias TdCache.TaxonomyCache
   alias TdDd.Auth.Claims
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Audit
@@ -17,6 +18,8 @@ defmodule TdDd.DataStructures.BulkUpdate do
   alias TdDd.Search.IndexWorker
   alias TdDfLib.Format
   alias TdDfLib.Templates
+
+  require Logger
 
   def update_all(
         ids,
@@ -33,27 +36,23 @@ defmodule TdDd.DataStructures.BulkUpdate do
     )
   end
 
-  def from_csv(nil), do: {:error, %{message: :no_csv_uploaded}}
+  def from_csv(upload), do: from_csv(upload, :default)
+  def from_csv(nil, _), do: {:error, %{message: :no_csv_uploaded}}
 
-  def from_csv(upload) do
+  def from_csv(upload, :simple) do
+    case parse_file(upload) do
+      {:ok, rows} ->
+        parse_rows(rows)
+
+      errors ->
+        {:error, errors}
+    end
+  end
+
+  def from_csv(upload, :default) do
     with {:ok, rows} <- parse_file(upload) do
       rows
-      |> Enum.with_index()
-      |> Enum.map(fn {row, index} -> {row, index + 2} end)
-      |> Enum.map(fn
-        {%{"external_id" => external_id} = row, index} ->
-          {
-            row,
-            DataStructures.get_data_structure_by_external_id(
-              external_id,
-              [:system, [current_version: :structure_type]]
-            ),
-            index
-          }
-
-        {row, index} ->
-          {row, nil, index}
-      end)
+      |> parse_rows([:system, [current_version: :structure_type]])
       |> Enum.filter(fn {_row, data_structure, _index} -> data_structure end)
       |> Enum.reduce_while([], fn {row, data_structure, index}, acc ->
         case format_content(row, data_structure, index) do
@@ -66,6 +65,46 @@ defmodule TdDd.DataStructures.BulkUpdate do
         [] -> {:error, %{message: :external_id_not_found}}
         errors -> {:error, errors}
       end
+    end
+  end
+
+  defp parse_rows(rows, preloads \\ []) do
+    rows
+    |> Enum.with_index()
+    |> Enum.map(fn {row, index} -> {row, index + 2} end)
+    |> Enum.map(fn
+      {%{"external_id" => external_id} = row, index} ->
+        {
+          row,
+          DataStructures.get_data_structure_by_external_id(
+            external_id,
+            preloads
+          ),
+          index
+        }
+
+      {row, index} ->
+        {row, nil, index}
+    end)
+  end
+
+  def check_csv_headers(%{path: path}, headers) do
+    [read_headers] =
+      path
+      |> Path.expand()
+      |> File.stream!([:trim_bom])
+      |> Stream.map(&recode/1)
+      |> Stream.reject(&(String.trim(&1) == ""))
+      |> CSV.decode!(separator: ?;)
+      |> Enum.take(1)
+
+    case read_headers do
+      ^headers ->
+        :ok
+
+      _other ->
+        headers_joined = Enum.join(headers, ", ")
+        {:error, %{message: "invalid_headers, must be: #{headers_joined}"}}
     end
   end
 
@@ -85,7 +124,8 @@ defmodule TdDd.DataStructures.BulkUpdate do
 
     {:ok, rows}
   rescue
-    _ -> {:error, %{message: :invalid_file_format}}
+    _ ->
+      {:error, %{message: :invalid_file_format}}
   end
 
   def split_succeeded_errors(notes) do
@@ -144,6 +184,132 @@ defmodule TdDd.DataStructures.BulkUpdate do
       %{} = res -> {:ok, res}
       error -> error
     end
+  end
+
+  defp check_data_structure(%Changeset{} = changeset) do
+    case changeset do
+      %Changeset{valid?: false} ->
+        {:error, changeset}
+
+      %Changeset{changes: %{} = changes} when map_size(changes) == 0 ->
+        {:ok, %{}}
+
+      _ ->
+        changeset
+    end
+  end
+
+  def csv_bulk_update_domains(rows, claims) do
+    [changesets, _ignored, errors] =
+      Enum.map(rows, fn
+        {_row, nil, index} ->
+          {index, {:error, {:structure, :not_exist}}}
+
+        {%{"domain_external_ids" => domain_external_ids}, %DataStructure{} = structure, index} ->
+          domains =
+            domain_external_ids
+            |> String.split("|", trim: true)
+            |> Enum.map(&String.trim(&1))
+            |> Enum.map(&TaxonomyCache.get_by_external_id(&1))
+
+          if Enum.any?(domains, &is_nil(&1)) do
+            {index, {:error, {:domain, :not_exist}}}
+          else
+            params = %{domain_ids: Enum.map(domains, & &1.id)}
+            changeset = DataStructures.update_changeset(claims, structure, params)
+
+            if can?(claims, update_data_structure(changeset)) do
+              {index, check_data_structure(changeset)}
+            else
+              {index, {:error, {:update_domain, :forbbiden}}}
+            end
+          end
+      end)
+      |> Enum.reduce([[], [], []], fn row, [changesets, ignored, errors] ->
+        case row do
+          {_index, %Changeset{}} -> [[row | changesets], ignored, errors]
+          {_index, {:ok, _}} -> [changesets, [row | ignored], errors]
+          _ -> [changesets, ignored, [row | errors]]
+        end
+      end)
+
+    results = DataStructures.update_data_structures(claims, changesets, false)
+
+    [updated, errored] =
+      Enum.reduce(results, [[], []], fn result, [updated, errored] ->
+        case result do
+          {_index, {:ok, _}} ->
+            [[result | updated], errored]
+
+          {index, {:error, _, changeset, _}} ->
+            [updated, [{index, {:error, changeset}} | errored]]
+
+          _ ->
+            [updated, errored]
+        end
+      end)
+
+    %{
+      updated: updated,
+      errors:
+        errored
+        |> Kernel.++(errors)
+        |> Enum.sort_by(fn {index, _} -> index end, :asc)
+    }
+  end
+
+  def existing_domains_by_external_ids(external_domain_ids) do
+    Enum.reduce(
+      external_domain_ids,
+      {[], []},
+      fn external_domain_id, {acc_existing, acc_inexisting} ->
+        case TdCache.TaxonomyCache.get_by_external_id(external_domain_id) do
+          %{id: domain_id} -> {[domain_id | acc_existing], acc_inexisting}
+          nil -> {acc_existing, [external_domain_id | acc_inexisting]}
+        end
+      end
+    )
+  end
+
+  def apply(valid_item_changesets) do
+    valid_item_changesets
+    |> Stream.map(fn
+      %{
+        changeset: %Ecto.Changeset{} = changeset,
+        row_index: row_index
+      } ->
+        %{
+          changeset:
+            changeset
+            |> Ecto.Changeset.apply_changes()
+            |> clean(),
+          row_index: row_index
+        }
+    end)
+  end
+
+  # turns %Struct{} into a map with only non-nil item values (no association or __meta__ structs)
+  def clean(item) do
+    item
+    |> Map.from_struct()
+    # or something similar
+    |> Enum.reject(fn
+      {_key, nil} ->
+        true
+
+      {_key, %{:__struct__ => struct}}
+      when struct in [Ecto.Schema.Metadata, Ecto.Association.NotLoaded] ->
+        # rejects __meta__: #Ecto.Schema.Metadata<:built, "items">
+        # and association: #Ecto.Association.NotLoaded<association :association is not loaded>
+        true
+
+      {:external_domain_ids, _external_domain_ids} ->
+        true
+
+      _other ->
+        false
+    end)
+    |> Enum.into(%{})
   end
 
   defp format_content(row, data_structure, row_index) do
