@@ -158,6 +158,10 @@ defmodule TdDd.Canada.Abilities do
       UnitAbilities.can?(claims, action, node)
     end
 
+    def can?(%Claims{} = claims, action, DataStructure) do
+      DataStructureAbilities.can?(claims, action, DataStructure)
+    end
+
     def can?(%Claims{} = claims, action, domain_id) do
       DataStructureAbilities.can?(claims, action, domain_id)
     end

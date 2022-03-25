@@ -27,8 +27,11 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
     domain =
       case context do
-        %{domain: domain} -> domain
-        _ -> CacheHelpers.insert_domain()
+        %{domain: domain} ->
+          domain
+
+        _ ->
+          CacheHelpers.insert_domain()
       end
 
     CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
@@ -523,6 +526,246 @@ defmodule TdDdWeb.DataStructureControllerTest do
     end
   end
 
+  describe "upload structure domains csv" do
+    @tag authentication: [role: "user"]
+    test "prevent upload for non-admin user missing :manage_structures_domain permission",
+         %{conn: conn, domain: %{id: domain_id}} do
+      create_three_data_structures(domain_id, "bar_external_id")
+
+      conn
+      |> post(data_structure_path(conn, :bulk_upload_domains),
+        structures_domains: %Plug.Upload{path: "test/fixtures/td4535/structures_domains_good.csv"}
+      )
+      |> json_response(:forbidden)
+    end
+
+    @tag authentication: [role: "user"]
+    test "succeed on valid csv", %{conn: conn, claims: claims} do
+      %{id: bar_domain_id} = CacheHelpers.insert_domain(%{external_id: "bar"})
+      %{id: foo_domain_id} = CacheHelpers.insert_domain(%{external_id: "foo"})
+
+      CacheHelpers.put_session_permissions(claims, %{
+        manage_structures_domain: [bar_domain_id, foo_domain_id]
+      })
+
+      {[id_one, _id_two, id_three], [_, bar_external_id_2, _]} =
+        create_three_data_structures(bar_domain_id, "bar_external_id")
+
+      data =
+        conn
+        |> post(data_structure_path(conn, :bulk_upload_domains),
+          structures_domains: %Plug.Upload{
+            path: "test/fixtures/td4535/structures_domains_good.csv"
+          }
+        )
+        |> json_response(:ok)
+
+      assert data == %{
+               "ids" => [id_one, id_three],
+               "errors" => [
+                 %{
+                   "row" => 4,
+                   "message" => %{
+                     "domain" => ["not_exist"]
+                   },
+                   "external_id" => bar_external_id_2
+                 },
+                 %{
+                   "row" => 6,
+                   "message" => %{
+                     "structure" => ["not_exist"]
+                   },
+                   "external_id" => "non_existent_id"
+                 }
+               ]
+             }
+    end
+
+    @tag authentication: [role: "user", permissions: [:manage_structures_domain]]
+    test "change only domains where user have permissions", %{
+      conn: conn,
+      claims: claims
+    } do
+      %{id: bar_domain_id} = CacheHelpers.insert_domain(%{external_id: "bar"})
+      %{id: foo_domain_id} = CacheHelpers.insert_domain(%{external_id: "foo"})
+      %{id: pan_domain_id} = CacheHelpers.insert_domain(%{external_id: "pan"})
+
+      CacheHelpers.put_session_permissions(claims, %{
+        manage_structures_domain: [bar_domain_id, foo_domain_id]
+      })
+
+      {[bar_id_one, _bar_id_two, _bar_id_three],
+       [_bar_external_id_1, _bar_external_id_2, _bar_external_id_3]} =
+        create_three_data_structures(bar_domain_id, "bar_external_id")
+
+      {[_foo_id_one, foo_id_two, _foo_id_three],
+       [_foo_external_id_1, _foo_external_id_2, foo_external_id_3]} =
+        create_three_data_structures(foo_domain_id, "foo_external_id")
+
+      {[_pan_id_one, _pan_id_two, _pan_id_three],
+       [pan_external_id_1, _pan_external_id_2, _pan_external_id_3]} =
+        create_three_data_structures(pan_domain_id, "pan_external_id")
+
+      data =
+        conn
+        |> post(data_structure_path(conn, :bulk_upload_domains),
+          structures_domains: %Plug.Upload{
+            path: "test/fixtures/td4535/structures_domains_permissions.csv"
+          }
+        )
+        |> json_response(:ok)
+
+      assert data == %{
+               "ids" => [bar_id_one, foo_id_two],
+               "errors" => [
+                 %{
+                   "external_id" => foo_external_id_3,
+                   "message" => %{
+                     "update_domain" => ["forbbiden"]
+                   },
+                   "row" => 4
+                 },
+                 %{
+                   "external_id" => "baz_external_id_1",
+                   "message" => %{
+                     "structure" => ["not_exist"]
+                   },
+                   "row" => 5
+                 },
+                 %{
+                   "external_id" => pan_external_id_1,
+                   "message" => %{
+                     "update_domain" => ["forbbiden"]
+                   },
+                   "row" => 6
+                 }
+               ]
+             }
+    end
+
+    @tag authentication: [role: "user", permissions: [:manage_structures_domain]]
+    test "throw error on invalid csv (bad header)", %{conn: conn} do
+      data =
+        conn
+        |> post(data_structure_path(conn, :bulk_upload_domains),
+          structures_domains: %Plug.Upload{
+            path: "test/fixtures/td4535/structures_domains_bad_header.csv"
+          }
+        )
+        |> json_response(:unprocessable_entity)
+
+      %{
+        "error" => %{"message" => message}
+      } = data
+
+      assert message =~ ~r/invalid_headers/
+    end
+
+    @tag authentication: [role: "user", permissions: [:manage_structures_domain]]
+    test "throw error on invalid csv (missing external_id fields)", %{
+      conn: conn,
+      domain_id: domain_id
+    } do
+      {[_, _id_two, _id_three], [external_id_1, external_id_2, external_id_3]} =
+        create_three_data_structures(domain_id, "some_external_id")
+
+      TdCache.TaxonomyCache.get_domain_ids()
+
+      data =
+        conn
+        |> post(data_structure_path(conn, :bulk_upload_domains),
+          structures_domains: %Plug.Upload{
+            path: "test/fixtures/td4535/structures_domains_bad_missing_external_id.csv"
+          }
+        )
+        |> json_response(:ok)
+
+      assert data == %{
+               "errors" => [
+                 %{
+                   "external_id" => external_id_1,
+                   "message" => %{
+                     "domain_ids" => ["must be a non-empty list"]
+                   },
+                   "row" => 2
+                 },
+                 %{
+                   "external_id" => external_id_2,
+                   "message" => %{
+                     "domain" => ["not_exist"]
+                   },
+                   "row" => 3
+                 },
+                 %{
+                   "external_id" => external_id_3,
+                   "message" => %{
+                     "domain" => ["not_exist"]
+                   },
+                   "row" => 4
+                 }
+               ],
+               "ids" => []
+             }
+    end
+
+    @tag authentication: [role: "user", permissions: [:manage_structures_domain]]
+
+    test "report errors on invalid rows and insert valid ones", %{
+      conn: conn,
+      claims: claims
+    } do
+      %{id: foo_domain_id} = CacheHelpers.insert_domain(%{external_id: "foo"})
+      %{id: bar_domain_id} = CacheHelpers.insert_domain(%{external_id: "bar"})
+      %{id: zoo_domain_id} = CacheHelpers.insert_domain(%{external_id: "zoo"})
+
+      CacheHelpers.put_session_permissions(claims, %{
+        manage_structures_domain: [foo_domain_id, zoo_domain_id]
+      })
+
+      {[_, _, id_three], [external_id_1, external_id_2, _external_id_3]} =
+        create_three_data_structures(foo_domain_id, "some_external_id")
+
+      {_, [bar_external_id_1, _, _]} =
+        create_three_data_structures(bar_domain_id, "bar_external_id")
+
+      data =
+        conn
+        |> post(data_structure_path(conn, :bulk_upload_domains),
+          structures_domains: %Plug.Upload{
+            path: "test/fixtures/td4535/structures_domains_warning_inexistent.csv"
+          }
+        )
+        |> json_response(:ok)
+
+      assert data == %{
+               "ids" => [id_three],
+               "errors" => [
+                 %{
+                   "row" => 2,
+                   "message" => %{
+                     "domain" => ["not_exist"]
+                   },
+                   "external_id" => external_id_1
+                 },
+                 %{
+                   "row" => 4,
+                   "message" => %{
+                     "update_domain" => ["forbbiden"]
+                   },
+                   "external_id" => external_id_2
+                 },
+                 %{
+                   "row" => 5,
+                   "message" => %{
+                     "update_domain" => ["forbbiden"]
+                   },
+                   "external_id" => bar_external_id_1
+                 }
+               ]
+             }
+    end
+  end
+
   describe "csv" do
     setup :create_data_structure
 
@@ -576,43 +819,12 @@ defmodule TdDdWeb.DataStructureControllerTest do
       |> json_response(:unprocessable_entity)
     end
 
-    defp create_three_data_structures(domain_id) do
-      data_structure_one =
-        insert(:data_structure,
-          domain_ids: [domain_id],
-          external_id: "some_external_id_1"
-        )
-
-      data_structure_two =
-        insert(:data_structure,
-          domain_ids: [domain_id],
-          external_id: "some_external_id_2"
-        )
-
-      data_structure_three =
-        insert(:data_structure,
-          domain_ids: [domain_id],
-          external_id: "some_external_id_3"
-        )
-
-      %{id: id_one, external_id: external_id_one} =
-        create_data_structure(data_structure_one)[:data_structure]
-
-      %{id: id_two, external_id: external_id_two} =
-        create_data_structure(data_structure_two)[:data_structure]
-
-      %{id: id_three, external_id: external_id_three} =
-        create_data_structure(data_structure_three)[:data_structure]
-
-      {[id_one, id_two, id_three], [external_id_one, external_id_two, external_id_three]}
-    end
-
     @tag authentication: [role: "admin"]
     test "upload, allow load csv with multiple valid rows", %{
       conn: conn,
       domain: %{id: domain_id}
     } do
-      {ids, _} = create_three_data_structures(domain_id)
+      {ids, _} = create_three_data_structures(domain_id, "some_external_id")
 
       data =
         conn
@@ -629,7 +841,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn: conn,
       domain: %{id: domain_id}
     } do
-      {[id_one, _, id_three], [_, external_id_2, _]} = create_three_data_structures(domain_id)
+      {[id_one, _, id_three], [_, external_id_2, _]} =
+        create_three_data_structures(domain_id, "some_external_id")
 
       data =
         conn
@@ -656,7 +869,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn: conn,
       domain: %{id: domain_id}
     } do
-      {[id_one | _], [_, external_id_2, external_id_3]} = create_three_data_structures(domain_id)
+      {[id_one | _], [_, external_id_2, external_id_3]} =
+        create_three_data_structures(domain_id, "some_external_id")
 
       data =
         conn
@@ -689,7 +903,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       conn: conn,
       domain: %{id: domain_id}
     } do
-      {[id_one, _, id_three], _} = create_three_data_structures(domain_id)
+      {[id_one, _, id_three], _} = create_three_data_structures(domain_id, "some_external_id")
 
       data =
         conn
@@ -917,5 +1131,26 @@ defmodule TdDdWeb.DataStructureControllerTest do
       insert(:data_structure_version, data_structure_id: data_structure.id, type: @template_name)
 
     [data_structure: data_structure, data_structure_version: data_structure_version]
+  end
+
+  defp create_three_data_structures(domain_id, external_name) do
+    [data_structure_one, data_structure_two, data_structure_three] =
+      Enum.map(1..3, fn id ->
+        insert(:data_structure,
+          domain_ids: [domain_id],
+          external_id: external_name <> "_#{id}"
+        )
+      end)
+
+    %{id: id_one, external_id: external_id_one} =
+      create_data_structure(data_structure_one)[:data_structure]
+
+    %{id: id_two, external_id: external_id_two} =
+      create_data_structure(data_structure_two)[:data_structure]
+
+    %{id: id_three, external_id: external_id_three} =
+      create_data_structure(data_structure_three)[:data_structure]
+
+    {[id_one, id_two, id_three], [external_id_one, external_id_two, external_id_three]}
   end
 end

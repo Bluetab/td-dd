@@ -1,0 +1,6 @@
+external_id;domain_external_ids
+bar_external_id_1;foo|bar
+foo_external_id_2;bar
+foo_external_id_3;pan
+baz_external_id_1;foo
+pan_external_id_1;foo|bar
