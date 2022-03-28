@@ -1,10 +1,13 @@
 # Changelog
 
+## [4.41.0] 2022-03-28
+
+- [TD-4535] Structures domains CSV upload bulk update
+
 ## [4.40.1] 2022-03-22
 
 # Added
 
-- [TD-4535] Structures domains CSV upload bulk update
 - [TD-3233] Rule result remediation plan
 - [TD-4271] Support for linking implementations with business concepts
 - [TD-4621] Include data structure version `name` in GraphQL schema
