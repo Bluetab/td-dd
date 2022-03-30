@@ -74,6 +74,15 @@ defmodule TdDdWeb.Schema.SourcesTest do
   }
   """
 
+  @create_source """
+  mutation CREATE_SOURCE($source: CreateSourceInput!) {
+    createSource(source: $source) {
+      id
+      config
+    }
+  }
+  """
+
   defp create_template(%{domain: domain_name}) do
     [
       domain: CacheHelpers.insert_domain(%{name: domain_name}),
@@ -291,6 +300,42 @@ defmodule TdDdWeb.Schema.SourcesTest do
       assert response["errors"] == nil
       assert %{"disableSource" => source} = data
       assert %{"active" => false, "externalId" => ^external_id} = source
+    end
+  end
+
+  describe "createSource mutation" do
+    setup :create_template
+
+    @tag authentication: [role: "user"]
+    test "returns forbidden when queried by user role", %{conn: conn} do
+      params = string_params_for(:source_input)
+      assert %{"data" => nil, "errors" => errors} =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @create_source,
+                 "variables" => %{"source" => params}
+               })
+               |> json_response(:ok)
+
+      assert [%{"message" => "forbidden"}] = errors
+    end
+
+    @tag authentication: [role: "admin"]
+    test "creates the source when performed by admin role", %{conn: conn, template: template} do
+      params = string_params_for(:source_input, type: template.name)
+      assert %{"data" => data} =
+               response =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @create_source,
+                 "variables" => %{"source" => params}
+               })
+               |> json_response(:ok)
+
+      assert response["errors"] == nil
+      assert %{"createSource" => source} = data
+      assert %{"id" => _, "config" => config} = source
+      assert config == %{"list" => "two", "string" => "foo"}
     end
   end
 

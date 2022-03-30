@@ -277,6 +277,16 @@ defmodule TdDd.Factory do
     }
   end
 
+  def source_input_factory(attrs) do
+    %{
+      config: %{"string" => "foo", "list" => "two"},
+      external_id: sequence("source_external_id"),
+      type: sequence("source_type")
+    }
+    |> merge_attributes(attrs)
+    |> Map.update(:config, "{}", &Jason.encode!/1)
+  end
+
   def job_factory(attrs) do
     attrs = default_assoc(attrs, :source_id, :source)
 

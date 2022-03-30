@@ -7,6 +7,13 @@ defmodule TdDdWeb.Schema.Templates do
 
   alias TdDdWeb.Resolvers
 
+  object :template_queries do
+    field :templates, list_of(:template) do
+      arg(:scope, :string)
+      resolve(&Resolvers.Templates.templates/3)
+    end
+  end
+
   object :template do
     field :id, :id
     field :name, :string

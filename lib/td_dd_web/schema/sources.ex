@@ -20,7 +20,8 @@ defmodule TdDdWeb.Schema.Sources do
 
     @desc "Get a data source"
     field :source, :source do
-      arg(:id, non_null(:id))
+      arg(:id, :id)
+      arg(:external_id, :string)
       resolve(&Resolvers.Sources.source/3)
     end
   end
@@ -37,6 +38,39 @@ defmodule TdDdWeb.Schema.Sources do
       arg(:id, non_null(:id))
       resolve(&Resolvers.Sources.enable_source/3)
     end
+
+    @desc "Deletes a data source"
+    field :delete_source, non_null(:source) do
+      arg(:id, non_null(:id))
+      resolve(&Resolvers.Sources.delete_source/3)
+    end
+
+    @desc "Creates a new data source"
+    field :create_source, non_null(:source) do
+      arg(:source, non_null(:create_source_input))
+      resolve(&Resolvers.Sources.create_source/3)
+    end
+
+    @desc "Updates an existing data source"
+    field :update_source, non_null(:source) do
+      arg(:source, non_null(:update_source_input))
+      resolve(&Resolvers.Sources.update_source/3)
+      middleware(Crudry.Middlewares.TranslateErrors)
+    end
+  end
+
+  input_object :create_source_input do
+    field :external_id, non_null(:string)
+    field :type, non_null(:string)
+    field :config, :json
+  end
+
+  input_object :update_source_input do
+    field :id, non_null(:id)
+    field :external_id, :string
+    field :type, :string
+    field :config, :json
+    field :merge, :boolean
   end
 
   object :source do
@@ -44,6 +78,7 @@ defmodule TdDdWeb.Schema.Sources do
     field :external_id, :string
     field :active, :boolean
     field :type, :string
+    field :job_types, list_of(:string), resolve: &Resolvers.Sources.job_types/3
     field :config, :json, resolve: &Resolvers.Sources.config/3
 
     field :events, list_of(:event) do
