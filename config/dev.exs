@@ -44,4 +44,4 @@ config :td_dd, :vault,
   token: "vault_secret_token1234",
   secrets_path: "secret/data/cx/"
 
-config :vaultex, vault_addr: "http://0.0.0.0:8200"
+config :vaultex, vault_addr: "http://vault:8200"
