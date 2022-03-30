@@ -603,5 +603,29 @@ defmodule TdDqWeb.RuleControllerTest do
                |> get(Routes.rule_path(conn, :show, id))
                |> json_response(:ok)
     end
+
+
+    @tag authentication: [
+      user_name: "non_admin",
+      permissions: [
+        "manage_quality_rule",
+        "view_quality_rule",
+        "manage_quality_rule_implementations",
+        "manage_raw_quality_rule_implementations"
+      ]
+    ]
+    test "user assigned manage_raw_quality_rule_implementations permission receives it", %{
+    conn: conn,
+    domain: %{id: domain_id}
+    } do
+    %{id: id} = insert(:rule, domain_id: domain_id)
+
+    assert %{"user_permissions" => %{"manage_raw_quality_rule_implementations" => true}} =
+              conn
+              |> get(Routes.rule_path(conn, :show, id))
+              |> json_response(:ok)
+    end
+
+
   end
 end

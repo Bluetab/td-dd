@@ -140,12 +140,12 @@ defmodule TdDqWeb.RuleController do
 
   defp is_allowed_domain(%{}), do: true
 
-  defp get_user_permissions(claims, rule) do
+  defp get_user_permissions(claims, %{domain_id: rule_domain_id} = rule) do
     %{
       manage_quality_rules: can?(claims, manage(Rule)),
       manage_quality_rule_implementations: can?(claims, create_implementation(rule)),
       manage_raw_quality_rule_implementations:
-        can?(claims, manage(%Implementation{rule: rule, implementation_type: "raw"}))
+        can?(claims, manage(%Implementation{rule: rule, domain_id: rule_domain_id, implementation_type: "raw"}))
     }
   end
 
