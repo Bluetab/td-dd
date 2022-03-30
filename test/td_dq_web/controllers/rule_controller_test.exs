@@ -604,7 +604,6 @@ defmodule TdDqWeb.RuleControllerTest do
                |> json_response(:ok)
     end
 
-
     @tag authentication: [
       user_name: "non_admin",
       permissions: [
@@ -625,7 +624,5 @@ defmodule TdDqWeb.RuleControllerTest do
               |> get(Routes.rule_path(conn, :show, id))
               |> json_response(:ok)
     end
-
-
   end
 end
