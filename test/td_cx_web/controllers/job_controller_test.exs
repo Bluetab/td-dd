@@ -64,8 +64,11 @@ defmodule TdCxWeb.JobControllerTest do
                %{
                  "external_id" => external_id,
                  "source" => %{"external_id" => source.external_id, "type" => source.type},
+                 "source_id" => source.id,
                  "status" => "PENDING",
-                 "type" => type
+                 "type" => type,
+                 "start_date" => DateTime.to_iso8601(job.inserted_at),
+                 "end_date" => DateTime.to_iso8601(job.updated_at),
                }
              ]
     end
@@ -167,6 +170,7 @@ defmodule TdCxWeb.JobControllerTest do
   end
 
   defp create_job(_) do
-    [job: insert(:job)]
+    ts = DateTime.utc_now() |> DateTime.add(-10)
+    [job: insert(:job, inserted_at: ts)]
   end
 end

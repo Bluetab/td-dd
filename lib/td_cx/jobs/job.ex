@@ -40,16 +40,18 @@ defmodule TdCx.Jobs.Job do
     def routing(_), do: false
 
     @impl Elasticsearch.Document
-    def encode(%Job{source: source, events: events} = job) do
+    def encode(%Job{source: source, events: events, inserted_at: inserted_at, updated_at: updated_at} = job) do
       source = Map.take(source, [:external_id, :type])
       type = Map.get(job, :type) || ""
 
       job
-      |> Map.take([:id, :external_id, :type])
+      |> Map.take([:id, :external_id, :source_id])
       |> Map.put(:type, type)
-      |> Map.put(:status, @default_status)
       |> Map.put(:source, source)
       |> Map.merge(Jobs.metrics(events, max_length: @max_message_length))
+      |> Map.put_new(:start_date, inserted_at)
+      |> Map.put_new(:end_date, updated_at)
+      |> Map.put_new(:status, @default_status)
     end
   end
 end

@@ -68,15 +68,15 @@ defmodule TdCx.Events do
     end)
     |> Multi.run(:audit, Audit, :job_status_updated, [user_id])
     |> Repo.transaction()
-    |> case do
-      {:ok, %{event: %Event{} = event}} ->
-        IndexWorker.reindex(event.job_id)
-        {:ok, event}
-
-      {:error, _, changeset, _} ->
-        {:error, changeset}
-    end
+    |> on_create()
   end
+
+  defp on_create({:ok, %{event: event} = res}) do
+    IndexWorker.reindex(event.job_id)
+    {:ok, res}
+  end
+
+  defp on_create({:error, _, changeset, _}), do: {:error, changeset}
 
   defp get_source_id(event) do
     %{job: %{source_id: source_id}} = Repo.preload(event, :job)
