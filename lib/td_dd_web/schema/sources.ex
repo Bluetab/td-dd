@@ -86,8 +86,26 @@ defmodule TdDdWeb.Schema.Sources do
       resolve(dataloader(TdCx.Sources))
     end
 
+    field :jobs, list_of(:job) do
+      arg(:limit, :integer, default_value: 20)
+      resolve(dataloader(TdCx.Sources))
+    end
+
     field :template, :template do
       resolve(&Resolvers.Sources.template/3)
+    end
+  end
+
+  object :job do
+    field :id, :id
+    field :external_id, :string
+    field :type, :string
+    field :parameters, :json
+    field :inserted_at, :datetime
+    field :updated_at, :datetime
+    field :events, list_of(:event) do
+      arg(:limit, :integer, default_value: 20)
+      resolve(dataloader(TdCx.Sources))
     end
   end
 

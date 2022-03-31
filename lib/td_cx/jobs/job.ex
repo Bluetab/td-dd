@@ -17,7 +17,8 @@ defmodule TdCx.Jobs.Job do
     field(:parameters, :map, default: %{})
     belongs_to(:source, Source)
     has_many(:events, Event)
-    timestamps()
+    # Note: updated_at is updated with most recent event's inserted_at
+    timestamps(type: :utc_datetime_usec)
   end
 
   def changeset(job, attrs) do

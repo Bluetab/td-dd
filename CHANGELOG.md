@@ -4,6 +4,7 @@
 
 # Added
 
+- [TD-4126] GraphQL queries for jobs
 - [TD-4450] GraphQL mutations for sources
 
 ## [4.41.0] 2022-03-28

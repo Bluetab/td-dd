@@ -23,6 +23,28 @@ defmodule TdDdWeb.Schema.SourcesTest do
   }
   """
 
+  @source_with_jobs """
+  query SourceWithJobs($id: ID!) {
+    source(id: $id) {
+      id
+      jobs {
+        id
+        externalId
+        type
+        parameters
+        insertedAt
+        updatedAt
+        events(limit: 1) {
+          id
+          type
+          message
+          insertedAt
+        }
+      }
+    }
+  }
+  """
+
   @sources """
   query Sources {
     sources {
@@ -127,7 +149,7 @@ defmodule TdDdWeb.Schema.SourcesTest do
     [source: insert(:source, config: config, type: source_type)]
   end
 
-  describe "source query" do
+  describe "source queries" do
     setup [:create_template, :create_source]
 
     @tag authentication: [role: "user"]
@@ -182,6 +204,34 @@ defmodule TdDdWeb.Schema.SourcesTest do
       assert %{"source" => source} = data
       assert %{"config" => config} = source
       assert %{"name" => "foo", "external_id" => _} = config["domain"]
+    end
+
+    @tag authentication: [role: "admin"]
+    test "retrieves jobs with most recently updated first", %{
+      conn: conn,
+      source: %{id: source_id}
+    } do
+      now = DateTime.utc_now()
+
+      for seconds <- [-20, -10, 0] do
+        ts = DateTime.add(now, seconds)
+        insert(:event, inserted_at: ts, job: build(:job, source_id: source_id, updated_at: ts))
+      end
+
+      assert %{"data" => data} =
+               response =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @source_with_jobs,
+                 "variables" => %{"id" => source_id}
+               })
+               |> json_response(:ok)
+
+      assert response["errors"] == nil
+      assert %{"source" => source} = data
+      assert %{"jobs" => jobs} = source
+      assert length(jobs) == 3
+      assert Enum.sort_by(jobs, & &1["updatedAt"], :desc) == jobs
     end
   end
 

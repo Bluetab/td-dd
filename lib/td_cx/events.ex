@@ -3,9 +3,12 @@ defmodule TdCx.Events do
   The Events context.
   """
 
+  import Ecto.Query
+
   alias Ecto.Multi
   alias TdCx.Events.Event
   alias TdCx.Jobs.Audit
+  alias TdCx.Jobs.Job
   alias TdCx.Search.IndexWorker
   alias TdDd.Repo
 
@@ -57,6 +60,7 @@ defmodule TdCx.Events do
 
     Multi.new()
     |> Multi.insert(:event, changeset)
+    |> Multi.update_all(:job_updated_at, &job_updated_at/1, [])
     |> Multi.run(:source_id, fn _, %{event: event} -> {:ok, get_source_id(event)} end)
     |> Multi.run(:external_id, fn _, %{event: event} -> {:ok, get_external_id(event)} end)
     |> Multi.run(:source_external_id, fn _, %{event: event} ->
@@ -88,5 +92,11 @@ defmodule TdCx.Events do
     %{job: job} = Repo.preload(event, :job)
     %{source: %{external_id: external_id}} = Repo.preload(job, :source)
     external_id
+  end
+
+  defp job_updated_at(%{event: %{job_id: job_id, inserted_at: ts}}) do
+    Job
+    |> where(id: ^job_id)
+    |> update(set: [updated_at: ^ts])
   end
 end

@@ -11,6 +11,7 @@ defmodule TdCx.Sources do
   alias TdCache.TemplateCache
   alias TdCx.Auth.Claims
   alias TdCx.Events.Event
+  alias TdCx.Jobs.Job
   alias TdCx.Sources.Source
   alias TdCx.Vault
   alias TdDd.Repo
@@ -429,6 +430,15 @@ defmodule TdCx.Sources do
       {:limit, limit}, q ->
         q
         |> order_by(desc: :id)
+        |> limit(^limit)
+    end)
+  end
+
+  defp query(Job, params) do
+    Enum.reduce(params, Job, fn
+      {:limit, limit}, q ->
+        q
+        |> order_by(desc: :updated_at)
         |> limit(^limit)
     end)
   end
