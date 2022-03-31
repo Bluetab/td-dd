@@ -1,8 +1,10 @@
 defmodule TdDdWeb.Schema.SourcesTest do
   use TdDdWeb.ConnCase
 
+  @valid_config %{"string" => "foo", "list" => "two"}
+
   @source_with_template """
-  query SOURCE($id: ID!) {
+  query Source($id: ID!) {
     source(id: $id) {
       id
       active
@@ -22,7 +24,7 @@ defmodule TdDdWeb.Schema.SourcesTest do
   """
 
   @sources """
-  query SOURCES {
+  query Sources {
     sources {
       id
       externalId
@@ -31,7 +33,7 @@ defmodule TdDdWeb.Schema.SourcesTest do
   """
 
   @deleted_sources """
-  query SOURCES {
+  query DeletedSources {
     sources(deleted: true) {
       id
       externalId
@@ -40,7 +42,7 @@ defmodule TdDdWeb.Schema.SourcesTest do
   """
 
   @sources_with_events """
-  query SOURCES($eventLimit: Int) {
+  query Sources($eventLimit: Int) {
     sources {
       id
       externalId
@@ -55,7 +57,7 @@ defmodule TdDdWeb.Schema.SourcesTest do
   """
 
   @enable_source """
-  mutation ENABLE_SOURCE($id: ID!) {
+  mutation EnableSource($id: ID!) {
     enableSource(id: $id) {
       id
       externalId
@@ -65,7 +67,7 @@ defmodule TdDdWeb.Schema.SourcesTest do
   """
 
   @disable_source """
-  mutation DISABLE_SOURCE($id: ID!) {
+  mutation DisableSource($id: ID!) {
     disableSource(id: $id) {
       id
       externalId
@@ -75,10 +77,28 @@ defmodule TdDdWeb.Schema.SourcesTest do
   """
 
   @create_source """
-  mutation CREATE_SOURCE($source: CreateSourceInput!) {
+  mutation CreateSource($source: CreateSourceInput!) {
     createSource(source: $source) {
       id
       config
+    }
+  }
+  """
+
+  @update_source """
+  mutation UpdateSource($source: UpdateSourceInput!) {
+    updateSource(source: $source) {
+      id
+      config
+    }
+  }
+  """
+
+  @delete_source """
+  mutation DeleteSource($id: ID!) {
+    deleteSource(id: $id) {
+      id
+      externalId
     }
   }
   """
@@ -308,7 +328,8 @@ defmodule TdDdWeb.Schema.SourcesTest do
 
     @tag authentication: [role: "user"]
     test "returns forbidden when queried by user role", %{conn: conn} do
-      params = string_params_for(:source_input)
+      params = %{"type" => "source_type", "external_id" => "external_id"}
+
       assert %{"data" => nil, "errors" => errors} =
                conn
                |> post("/api/v2", %{
@@ -322,7 +343,12 @@ defmodule TdDdWeb.Schema.SourcesTest do
 
     @tag authentication: [role: "admin"]
     test "creates the source when performed by admin role", %{conn: conn, template: template} do
-      params = string_params_for(:source_input, type: template.name)
+      params = %{
+        "type" => template.name,
+        "config" => Jason.encode!(@valid_config),
+        "external_id" => "some_external_id"
+      }
+
       assert %{"data" => data} =
                response =
                conn
@@ -334,8 +360,100 @@ defmodule TdDdWeb.Schema.SourcesTest do
 
       assert response["errors"] == nil
       assert %{"createSource" => source} = data
-      assert %{"id" => _, "config" => config} = source
-      assert config == %{"list" => "two", "string" => "foo"}
+      assert %{"id" => _, "config" => @valid_config} = source
+    end
+  end
+
+  describe "updateSource mutation" do
+    setup :create_template
+
+    @tag authentication: [role: "user"]
+    test "returns forbidden for a non-admin user", %{conn: conn} do
+      params = %{"id" => "123"}
+
+      assert %{"data" => nil, "errors" => errors} =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @update_source,
+                 "variables" => %{"source" => params}
+               })
+               |> json_response(:ok)
+
+      assert [%{"message" => "forbidden"}] = errors
+    end
+
+    @tag authentication: [role: "admin"]
+    test "returns not_found for an admin user", %{conn: conn} do
+      params = %{"id" => "123"}
+
+      assert %{"data" => nil, "errors" => errors} =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @update_source,
+                 "variables" => %{"source" => params}
+               })
+               |> json_response(:ok)
+
+      assert [%{"message" => "not_found"}] = errors
+    end
+
+    @tag authentication: [role: "admin"]
+    test "updates the source for an admin user", %{conn: conn, template: template} do
+      %{id: id} = insert(:source, type: template.name)
+      params = %{"id" => id, "config" => Jason.encode!(@valid_config)}
+
+      assert %{"data" => data} =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @update_source,
+                 "variables" => %{"source" => params}
+               })
+               |> json_response(:ok)
+
+      assert %{"updateSource" => %{"id" => _, "config" => @valid_config}} = data
+    end
+  end
+
+  describe "deleteSource mutation" do
+    @tag authentication: [role: "user"]
+    test "returns forbidden for a non-admin user", %{conn: conn} do
+      assert %{"data" => nil, "errors" => errors} =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @delete_source,
+                 "variables" => %{"id" => "123"}
+               })
+               |> json_response(:ok)
+
+      assert [%{"message" => "forbidden"}] = errors
+    end
+
+    @tag authentication: [role: "admin"]
+    test "returns not_found for an admin user", %{conn: conn} do
+      assert %{"data" => nil, "errors" => errors} =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @delete_source,
+                 "variables" => %{"id" => "123"}
+               })
+               |> json_response(:ok)
+
+      assert [%{"message" => "not_found"}] = errors
+    end
+
+    @tag authentication: [role: "admin"]
+    test "deletes the source for an admin user", %{conn: conn} do
+      %{id: id, external_id: external_id} = insert(:source)
+
+      assert %{"data" => data} =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @delete_source,
+                 "variables" => %{"id" => id}
+               })
+               |> json_response(:ok)
+
+      assert %{"deleteSource" => %{"id" => _, "externalId" => ^external_id}} = data
     end
   end
 

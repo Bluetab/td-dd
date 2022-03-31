@@ -41,9 +41,8 @@ defmodule TdDdWeb.Resolvers.Sources do
   def create_source(_parent, %{source: params} = _args, _resolution) do
     params = to_string_keys(params)
 
-    with {:ok, %{id: id} = _source} <- Sources.create_source(params) do
-      {:ok, Sources.get_source(id: id)}
-    else
+    case Sources.create_source(params) do
+      {:ok, %{id: id} = _source} -> {:ok, Sources.get_source(id: id)}
       {:error, changeset} -> {:error, changeset}
       {:vault_error, error} -> {:error, error}
     end
