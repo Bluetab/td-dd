@@ -598,31 +598,43 @@ defmodule TdDqWeb.RuleControllerTest do
     } do
       %{id: id} = insert(:rule, domain_id: domain_id)
 
-      assert %{"user_permissions" => %{"manage_quality_rule_implementations" => true}} =
+      assert %{"user_permissions" => user_permissions} =
                conn
                |> get(Routes.rule_path(conn, :show, id))
                |> json_response(:ok)
+
+      assert user_permissions == %{
+               "manage_quality_rule_implementations" => true,
+               "manage_quality_rules" => true,
+               "manage_raw_quality_rule_implementations" => false
+             }
     end
 
     @tag authentication: [
-      user_name: "non_admin",
-      permissions: [
-        "manage_quality_rule",
-        "view_quality_rule",
-        "manage_quality_rule_implementations",
-        "manage_raw_quality_rule_implementations"
-      ]
-    ]
+           user_name: "non_admin",
+           permissions: [
+             "manage_quality_rule",
+             "view_quality_rule",
+             "manage_quality_rule_implementations",
+             "manage_raw_quality_rule_implementations"
+           ]
+         ]
     test "user assigned manage_raw_quality_rule_implementations permission receives it", %{
-    conn: conn,
-    domain: %{id: domain_id}
+      conn: conn,
+      domain: %{id: domain_id}
     } do
-    %{id: id} = insert(:rule, domain_id: domain_id)
+      %{id: id} = insert(:rule, domain_id: domain_id)
 
-    assert %{"user_permissions" => %{"manage_raw_quality_rule_implementations" => true}} =
-              conn
-              |> get(Routes.rule_path(conn, :show, id))
-              |> json_response(:ok)
+      assert %{"user_permissions" => user_permissions} =
+               conn
+               |> get(Routes.rule_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert user_permissions == %{
+               "manage_quality_rule_implementations" => true,
+               "manage_quality_rules" => true,
+               "manage_raw_quality_rule_implementations" => true
+             }
     end
   end
 end
