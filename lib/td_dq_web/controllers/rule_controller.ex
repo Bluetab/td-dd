@@ -4,7 +4,6 @@ defmodule TdDqWeb.RuleController do
 
   import Canada, only: [can?: 2]
 
-  alias TdDq.Implementations.Implementation
   alias TdDq.Rules
   alias TdDq.Rules.Rule
   alias TdDqWeb.RuleView
@@ -140,12 +139,11 @@ defmodule TdDqWeb.RuleController do
 
   defp is_allowed_domain(%{}), do: true
 
-  defp get_user_permissions(claims, rule) do
+  defp get_user_permissions(claims, %Rule{} = rule) do
     %{
       manage_quality_rules: can?(claims, manage(Rule)),
       manage_quality_rule_implementations: can?(claims, create_implementation(rule)),
-      manage_raw_quality_rule_implementations:
-        can?(claims, manage(%Implementation{rule: rule, implementation_type: "raw"}))
+      manage_raw_quality_rule_implementations: can?(claims, create_raw_implementation(rule))
     }
   end
 
