@@ -12,12 +12,15 @@ defmodule TdCx.Jobs.JobTest do
       assert Document.encode(job) == %{
                external_id: external_id,
                id: id,
+               source_id: source.id,
                source: %{
                  external_id: source.external_id,
                  type: source.type
                },
                status: "PENDING",
-               type: "foo"
+               type: "foo",
+               start_date: job.inserted_at,
+               end_date: job.updated_at
              }
     end
 

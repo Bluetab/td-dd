@@ -10,6 +10,7 @@ defmodule TdCx.Search.Mappings do
   def get_mappings do
     mapping_type = %{
       id: %{type: "long"},
+      source_id: %{type: "long"},
       external_id: %{type: "text", fields: %{raw: %{type: "keyword", normalizer: "sortable"}}},
       source: %{
         properties: %{

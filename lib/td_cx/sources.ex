@@ -11,6 +11,7 @@ defmodule TdCx.Sources do
   alias TdCache.TemplateCache
   alias TdCx.Auth.Claims
   alias TdCx.Events.Event
+  alias TdCx.Jobs.Job
   alias TdCx.Sources.Source
   alias TdCx.Vault
   alias TdDd.Repo
@@ -164,24 +165,12 @@ defmodule TdCx.Sources do
     end
   end
 
-  @doc """
-  Creates a source.
+  def create_source(params \\ %{}) do
+    with :ok <- check_base_changeset(params),
+         :ok <- check_valid_template_content(params) do
+      %{"secrets" => secrets, "config" => config} = separate_config(params)
 
-  ## Examples
-
-      iex> create_source(%{field: value})
-      {:ok, %Source{}}
-
-      iex> create_source(%{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def create_source(attrs \\ %{}) do
-    with :ok <- check_base_changeset(attrs),
-         :ok <- check_valid_template_content(attrs) do
-      %{"secrets" => secrets, "config" => config} = separate_config(attrs)
-
-      attrs
+      params
       |> Map.put("secrets", secrets)
       |> Map.put("config", config)
       |> do_create_source()
@@ -260,40 +249,28 @@ defmodule TdCx.Sources do
     "#{type}/#{external_id}"
   end
 
-  @doc """
-  Updates a source.
+  def update_source(%Source{} = source, %{"config" => config} = params) do
+    type = Map.get(params, "type") || Map.get(source, :type)
 
-  ## Examples
-
-      iex> update_source(source, %{field: new_value})
-      {:ok, %Source{}}
-
-      iex> update_source(source, %{field: bad_value})
-      {:error, %Ecto.Changeset{}}
-
-  """
-  def update_source(%Source{} = source, %{"config" => config} = attrs) do
-    type = Map.get(attrs, "type") || Map.get(source, :type)
-
-    with :ok <- check_base_changeset(attrs, source),
+    with :ok <- check_base_changeset(params, source),
          :ok <- check_valid_template_content(%{"type" => type, "config" => config}) do
       %{"secrets" => secrets, "config" => config} =
         separate_config(%{"type" => type, "config" => config})
 
-      attrs =
-        attrs
+      params =
+        params
         |> Map.put("secrets", secrets)
         |> Map.put("config", config)
 
-      do_update_source(source, attrs)
+      do_update_source(source, params)
     else
       error -> error
     end
   end
 
-  def update_source(%Source{} = source, attrs) do
+  def update_source(%Source{} = source, params) do
     source
-    |> Source.changeset(attrs)
+    |> Source.changeset(params)
     |> Repo.update()
   end
 
@@ -453,6 +430,15 @@ defmodule TdCx.Sources do
       {:limit, limit}, q ->
         q
         |> order_by(desc: :id)
+        |> limit(^limit)
+    end)
+  end
+
+  defp query(Job, params) do
+    Enum.reduce(params, Job, fn
+      {:limit, limit}, q ->
+        q
+        |> order_by(desc: :updated_at)
         |> limit(^limit)
     end)
   end

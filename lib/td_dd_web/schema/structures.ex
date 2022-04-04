@@ -28,7 +28,6 @@ defmodule TdDdWeb.Schema.Structures do
     field(:name, :string)
     field(:type, :string)
     field(:group, :string)
-    field(:name, :string)
     field(:deleted_at, :datetime)
     field(:inserted_at, :datetime)
     field(:updated_at, :datetime)

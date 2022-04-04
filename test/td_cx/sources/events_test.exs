@@ -4,7 +4,6 @@ defmodule TdCx.Sources.EventsTest do
   import Mox
 
   alias TdCx.Events
-  alias TdCx.Events.Event
 
   setup_all do
     start_supervised!(TdCx.Search.IndexWorker)
@@ -20,7 +19,7 @@ defmodule TdCx.Sources.EventsTest do
     %{id: job_id} = insert(:job)
     params = %{type: "init", message: "Message", job_id: job_id}
     claims = build(:cx_claims, role: "admin")
-    assert {:ok, %Event{} = event} = Events.create_event(params, claims)
+    assert {:ok, %{event: event, job_updated_at: {1, nil}}} = Events.create_event(params, claims)
     assert %{job_id: ^job_id, type: "init", message: "Message"} = event
   end
 end

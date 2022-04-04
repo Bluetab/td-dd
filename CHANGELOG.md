@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+# Added
+
+- [TD-4126] Support querying the jobs of a source
+- [TD-4450] GraphQL mutations for sources
+
 ### Fixed
 
 - [TD-4643] Raw implementation creation permission
