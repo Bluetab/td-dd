@@ -45,7 +45,5 @@ defmodule TdCx.Sources.JobsTest do
 
     metrics = Jobs.metrics([e1, e2])
     assert metrics.status == e2.type
-    assert metrics.start_date == e1.inserted_at
-    assert metrics.end_date == e2.inserted_at
   end
 end

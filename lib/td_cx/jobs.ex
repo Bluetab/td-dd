@@ -78,23 +78,22 @@ defmodule TdCx.Jobs do
   def metrics([] = _events, _opts), do: Map.new()
 
   def metrics(events, opts) do
-    {min, max} = Enum.min_max_by(events, & &1.inserted_at, DateTime)
+    case Enum.max_by(events, & &1.inserted_at, DateTime) do
+      %{type: type, message: message} when is_binary(message) ->
+        %{status: type, message: truncate(message, opts[:max_length])}
 
-    message = Map.get(max, :message)
-
-    message =
-      case opts[:max_length] do
-        nil -> message
-        length when length < byte_size(message) -> binary_part(message, 0, length)
-        _ -> message
-      end
-
-    Map.new()
-    |> Map.put(:start_date, Map.get(min, :inserted_at))
-    |> Map.put(:end_date, Map.get(max, :inserted_at))
-    |> Map.put(:status, Map.get(max, :type))
-    |> Map.put(:message, message)
+      %{type: type} ->
+        %{status: type}
+    end
   end
+
+  defp truncate(message, nil), do: message
+
+  defp truncate(message, length) when is_integer(length) and byte_size(message) > length do
+    binary_part(message, 0, length)
+  end
+
+  defp truncate(message, _), do: message
 
   defp enrich(%Job{} = job, []), do: job
 

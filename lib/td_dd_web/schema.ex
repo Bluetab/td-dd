@@ -19,9 +19,10 @@ defmodule TdDdWeb.Schema do
 
   query do
     import_fields(:rule_queries)
+    import_fields(:source_queries)
     import_fields(:structure_note_queries)
     import_fields(:structure_queries)
-    import_fields(:source_queries)
+    import_fields(:template_queries)
   end
 
   mutation do
