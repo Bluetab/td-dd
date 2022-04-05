@@ -71,7 +71,7 @@ defmodule TdCxWeb.EventController do
 
     with true <- can?(claims, create(%Event{})),
          %Job{id: id} <- Jobs.get_job!(job_external_id),
-         {:ok, %Event{} = event} <-
+         {:ok, %{event: event}} <-
            Events.create_event(Map.put(event_params, "job_id", id), claims) do
       conn
       |> put_status(:created)
