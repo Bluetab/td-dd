@@ -130,6 +130,7 @@ defmodule TdDqWeb.ImplementationController do
     actions =
       %{}
       |> link_concept_actions(claims, implementation)
+      |> execution_actions(conn, claims, implementation)
 
     with {:can, true} <- {:can, can?(claims, show(implementation))} do
       render(conn, "show.json", implementation: implementation, actions: actions)
@@ -154,6 +155,17 @@ defmodule TdDqWeb.ImplementationController do
   defp link_concept_actions(actions, claims, implementation) do
     if can?(claims, link_concept(implementation)) do
       Map.put(actions, :link_concept, %{method: "POST"})
+    else
+      actions
+    end
+  end
+
+  defp execution_actions(actions, conn, claims, implementation) do
+    if can?(claims, execute(implementation)) do
+      Map.put(actions, :create_execution_group, %{
+        href: Routes.execution_group_path(conn, :create),
+        method: "POST"
+      })
     else
       actions
     end

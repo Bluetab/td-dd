@@ -76,6 +76,45 @@ defmodule TdDqWeb.ImplementationControllerTest do
     end
 
     @tag authentication: [
+      user_name: "non_admin",
+      permissions: [:view_published_business_concepts, :view_quality_rule, :execute_quality_rule_implementations]
+    ]
+    test "includes create_execution_group action if user is assigned execute_quality_rule_implementations permission", %{conn: conn, swagger_schema: schema, domain: domain} do
+      %{id: id} = insert(:implementation, domain_id: domain.id)
+
+      assert %{"_actions" => %{
+        "create_execution_group" => %{
+          "method" => "POST",
+          "href" => _execution_group_path
+        },
+      }} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [
+      user_name: "non_admin",
+      permissions: [:view_published_business_concepts, :view_quality_rule]
+    ]
+    test "does not include create_execution_group action if user is assigned execute_quality_rule_implementations permission", %{conn: conn, swagger_schema: schema, domain: domain} do
+      %{id: id} = insert(:implementation, domain_id: domain.id)
+
+      refute match?(
+        %{
+          "_actions" => %{
+            "create_execution_group" => _,
+          }
+        },
+        conn
+        |> get(Routes.implementation_path(conn, :show, id))
+        |> validate_resp_schema(schema, "ImplementationResponse")
+        |> json_response(:ok)
+      )
+    end
+
+    @tag authentication: [
            user_name: "non_admin",
            permissions: [:view_published_business_concepts, :view_quality_rule]
          ]
