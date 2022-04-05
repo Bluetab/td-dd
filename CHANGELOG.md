@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-4045] create_execution_group action
+
 ## [4.41.1] 2022-04-04
 
 # Added
