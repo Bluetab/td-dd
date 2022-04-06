@@ -129,7 +129,7 @@ defmodule TdDd.Factory do
       minimum: 12,
       domain_id: 2,
       dataset: build(:dataset),
-      population: build(:population),
+      populations: build(:populations),
       validations: build(:validations)
     }
     |> merge_attributes(attrs)
@@ -338,8 +338,12 @@ defmodule TdDd.Factory do
     }
   end
 
-  def population_factory(_attrs) do
-    [build(:condition_row)]
+  def populations_factory(_attrs) do
+    [
+      %TdDq.Implementations.Populations{
+        population: [build(:condition_row)]
+      }
+    ]
   end
 
   def validations_factory(_attrs) do

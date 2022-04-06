@@ -68,7 +68,7 @@ defmodule TdCxWeb.JobControllerTest do
                  "status" => "PENDING",
                  "type" => type,
                  "start_date" => DateTime.to_iso8601(job.inserted_at),
-                 "end_date" => DateTime.to_iso8601(job.updated_at),
+                 "end_date" => DateTime.to_iso8601(job.updated_at)
                }
              ]
     end

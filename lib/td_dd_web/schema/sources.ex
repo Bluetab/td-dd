@@ -103,6 +103,7 @@ defmodule TdDdWeb.Schema.Sources do
     field :parameters, :json
     field :inserted_at, :datetime
     field :updated_at, :datetime
+
     field :events, list_of(:event) do
       arg(:limit, :integer, default_value: 20)
       resolve(dataloader(TdCx.Sources))
