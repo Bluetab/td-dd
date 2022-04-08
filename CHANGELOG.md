@@ -1,12 +1,23 @@
 # Changelog
 
+## [4.41.1] 2022-04-04
+
+# Added
+
+- [TD-4126] Support querying the jobs of a source
+- [TD-4450] GraphQL mutations for sources
+
+### Fixed
+
+- [TD-4643] Raw implementation creation permission
+
 ## [4.41.0] 2022-03-28
 
 - [TD-4535] Structures domains CSV upload bulk update
 
 ## [4.40.1] 2022-03-22
 
-# Added
+### Added
 
 - [TD-3233] Rule result remediation plan
 - [TD-4271] Support for linking implementations with business concepts
