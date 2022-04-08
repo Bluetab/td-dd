@@ -52,7 +52,8 @@ defmodule TdDdWeb.GraphControllerTest do
     @tag authentication: [role: "admin"]
     @tag contains: %{"foo" => ["bar", "baz"]}
     @tag depends: [
-           {"bar", "baz", metadata: %{"params" => "bar_metadata", "posible_values" => "baz_metadata"}}
+           {"bar", "baz",
+            metadata: %{"params" => "bar_metadata", "posible_values" => "baz_metadata"}}
          ]
     test "create new graph with metadata and returns the task and graph hash, get graph by hash returns the graph drawing",
          %{conn: conn, depends: [{_, _, metadata: metadata}]} do

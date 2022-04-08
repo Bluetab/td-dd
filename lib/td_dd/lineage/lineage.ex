@@ -400,7 +400,8 @@ defmodule TdDd.Lineage do
               Map.put(path, "metadata", metadata)
 
             %{metadata: metadata} ->
-                Map.put(path, "metadata", metadata)
+              Map.put(path, "metadata", metadata)
+
             nil ->
               Map.put(path, "metadata", %{})
           end

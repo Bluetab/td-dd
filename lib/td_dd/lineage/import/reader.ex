@@ -33,7 +33,8 @@ defmodule TdDd.Lineage.Import.Reader do
          {g, missing_vertices} ->
         with {_, true} <- {start_id, Graph.has_vertex?(graph, start_id)},
              {_, true} <- {end_id, Graph.has_vertex?(graph, end_id)} do
-          {Graph.add_edge(g, start_id, end_id, class: class,  metadata: metadata), missing_vertices}
+          {Graph.add_edge(g, start_id, end_id, class: class, metadata: metadata),
+           missing_vertices}
         else
           {id, false} -> {g, [id | missing_vertices]}
         end
