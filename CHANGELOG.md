@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+# Added
+
+- [TD-2026]  Add metadata to linage graph
+
 ## [4.41.1] 2022-04-04
 
 # Added
