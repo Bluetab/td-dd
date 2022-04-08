@@ -29,10 +29,11 @@ defmodule TdDd.Lineage.Import.Reader do
     rels
     |> Enum.reduce(
       {graph, _missing_vertices = []},
-      fn %{start_id: start_id, end_id: end_id, class: class}, {g, missing_vertices} ->
+      fn %{start_id: start_id, end_id: end_id, metadata: metadata, class: class},
+         {g, missing_vertices} ->
         with {_, true} <- {start_id, Graph.has_vertex?(graph, start_id)},
              {_, true} <- {end_id, Graph.has_vertex?(graph, end_id)} do
-          {Graph.add_edge(g, start_id, end_id, class: class), missing_vertices}
+          {Graph.add_edge(g, start_id, end_id, class: class,  metadata: metadata), missing_vertices}
         else
           {id, false} -> {g, [id | missing_vertices]}
         end
@@ -140,6 +141,7 @@ defmodule TdDd.Lineage.Import.Reader do
     rel =
       headers
       |> Enum.zip(record)
+      |> extract_metadata("m:")
       |> Map.new()
 
     {headers, [rel | rels]}
@@ -157,5 +159,31 @@ defmodule TdDd.Lineage.Import.Reader do
       end)
 
     {headers, []}
+  end
+
+  defp extract_metadata([{:class, "CONTAINS"} | _] = map, _prefix), do: map
+
+  defp extract_metadata(map, prefix) do
+    metadata =
+      map
+      |> List.keyfind(:class, 0)
+      |> case do
+        {:class, "DEPENDS"} ->
+          map
+          |> Enum.filter(fn
+            {k, _} when is_atom(k) -> false
+            {k, _} -> String.starts_with?(k, prefix)
+          end)
+          |> Enum.reduce(%{}, fn {k, value}, acc ->
+            k
+            |> String.replace_leading(prefix, "")
+            |> (&Map.merge(acc, %{&1 => value})).()
+          end)
+
+        {:class, _} ->
+          %{}
+      end
+
+    [{:metadata, metadata} | map]
   end
 end

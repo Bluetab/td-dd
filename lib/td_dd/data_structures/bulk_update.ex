@@ -258,60 +258,6 @@ defmodule TdDd.DataStructures.BulkUpdate do
     }
   end
 
-  def existing_domains_by_external_ids(external_domain_ids) do
-    Enum.reduce(
-      external_domain_ids,
-      {[], []},
-      fn external_domain_id, {acc_existing, acc_inexisting} ->
-        case TdCache.TaxonomyCache.get_by_external_id(external_domain_id) do
-          %{id: domain_id} -> {[domain_id | acc_existing], acc_inexisting}
-          nil -> {acc_existing, [external_domain_id | acc_inexisting]}
-        end
-      end
-    )
-  end
-
-  def apply(valid_item_changesets) do
-    valid_item_changesets
-    |> Stream.map(fn
-      %{
-        changeset: %Ecto.Changeset{} = changeset,
-        row_index: row_index
-      } ->
-        %{
-          changeset:
-            changeset
-            |> Ecto.Changeset.apply_changes()
-            |> clean(),
-          row_index: row_index
-        }
-    end)
-  end
-
-  # turns %Struct{} into a map with only non-nil item values (no association or __meta__ structs)
-  def clean(item) do
-    item
-    |> Map.from_struct()
-    # or something similar
-    |> Enum.reject(fn
-      {_key, nil} ->
-        true
-
-      {_key, %{:__struct__ => struct}}
-      when struct in [Ecto.Schema.Metadata, Ecto.Association.NotLoaded] ->
-        # rejects __meta__: #Ecto.Schema.Metadata<:built, "items">
-        # and association: #Ecto.Association.NotLoaded<association :association is not loaded>
-        true
-
-      {:external_domain_ids, _external_domain_ids} ->
-        true
-
-      _other ->
-        false
-    end)
-    |> Enum.into(%{})
-  end
-
   defp format_content(row, data_structure, row_index) do
     data_structure
     |> DataStructures.template_name()

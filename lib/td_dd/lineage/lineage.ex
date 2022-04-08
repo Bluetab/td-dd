@@ -361,10 +361,13 @@ defmodule TdDd.Lineage do
   def do_drawing(%{g: g, t: t, excludes: excludes, source_ids: source_ids, hash: hash}, opts) do
     with %Layout{} = layout <- Layout.layout(g, t, source_ids, opts ++ [excludes: excludes]),
          %Drawing{} = drawing <- Drawing.new(layout, &label_fn/1) do
-      "Completed type=#{opts[:type]} ids=#{inspect(source_ids)} excludes=#{inspect(excludes)}"
-      |> Logger.info()
+      Logger.info(
+        "Completed type=#{opts[:type]} ids=#{inspect(source_ids)} excludes=#{inspect(excludes)}"
+      )
 
-      Graphs.create(drawing, hash)
+      drawing
+      |> add_metadata(edges(g))
+      |> Graphs.create(hash)
     end
   end
 
@@ -386,6 +389,26 @@ defmodule TdDd.Lineage do
   defp label_fn(%{id: id}), do: %{id: id}
 
   defp label_fn(_), do: %{}
+
+  defp add_metadata(%{paths: paths} = drawing, depends) do
+    paths
+    |> Enum.map(fn %{v1: v1, v2: v2} = path ->
+      Enum.find_value(depends, fn %{v1: v1e, v2: v2e} = edge ->
+        if v1 == v1e and v2 == v2e do
+          case Map.get(edge, :label) do
+            %{"metadata" => metadata} ->
+              Map.put(path, "metadata", metadata)
+
+            %{metadata: metadata} ->
+                Map.put(path, "metadata", metadata)
+            nil ->
+              Map.put(path, "metadata", %{})
+          end
+        end
+      end)
+    end)
+    |> (&Map.put(drawing, :paths, &1)).()
+  end
 
   defp do_csv(%{g: g, t: t}, opts) do
     contains = edges(t)
