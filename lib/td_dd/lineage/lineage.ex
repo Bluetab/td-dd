@@ -393,22 +393,24 @@ defmodule TdDd.Lineage do
   defp add_metadata(%{paths: paths} = drawing, depends) do
     paths
     |> Enum.map(fn %{v1: v1, v2: v2} = path ->
-      Enum.find_value(depends, fn %{v1: v1e, v2: v2e} = edge ->
-        if v1 == v1e and v2 == v2e do
-          case Map.get(edge, :label) do
-            %{"metadata" => metadata} ->
-              Map.put(path, "metadata", metadata)
-
-            %{metadata: metadata} ->
-              Map.put(path, "metadata", metadata)
-
-            nil ->
-              Map.put(path, "metadata", %{})
-          end
-        end
+      Enum.find_value(depends, fn %{v1: v1e, v2: v2e} = edge when v1 == v1e and v2 == v2e ->
+        add_metadata_to_path(edge, path)
       end)
     end)
     |> (&Map.put(drawing, :paths, &1)).()
+  end
+
+  defp add_metadata_to_path(edge, path) do
+    case Map.get(edge, :label) do
+      %{"metadata" => metadata} ->
+        Map.put(path, "metadata", metadata)
+
+      %{metadata: metadata} ->
+        Map.put(path, "metadata", metadata)
+
+      nil ->
+        Map.put(path, "metadata", %{})
+    end
   end
 
   defp do_csv(%{g: g, t: t}, opts) do
