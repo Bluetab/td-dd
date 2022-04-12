@@ -413,5 +413,148 @@ defmodule TdDq.Implementations.ImplementationTest do
                ]
              } = Document.encode(rule_implementation)
     end
+
+    test "encoded implementation includes populations" do
+      rule = insert(:rule)
+
+      operator = %{
+        name: "timestamp_gt_timestamp",
+        value_type: "timestamp",
+        value_type_filter: "timestamp"
+      }
+
+      structure = %{id: structure_id, name: structure_name} = %{id: 7, name: "s7"}
+      value = [%{raw: "2019-12-02 05:35:00"}]
+
+      creation_attrs = %{
+        populations: [
+          %{
+            population: [
+              %{
+                operator: operator,
+                structure: structure,
+                value: value
+              },
+              %{
+                operator: operator,
+                structure: structure,
+                value: value
+              }
+            ]
+          },
+          %{
+            population: [
+              %{
+                operator: operator,
+                structure: structure,
+                value: value
+              }
+            ]
+          }
+        ]
+      }
+
+      implementation_key = "rik1"
+
+      rule_implementation =
+        insert(:implementation,
+          implementation_key: implementation_key,
+          rule: rule,
+          populations: creation_attrs.populations
+        )
+
+      assert %{
+               populations: [
+                 %{
+                   population: [
+                     %{
+                       operator: ^operator,
+                       structure: %{id: ^structure_id, name: ^structure_name},
+                       value: value_encoded
+                     },
+                     %{
+                       operator: ^operator,
+                       structure: %{id: ^structure_id, name: ^structure_name},
+                       value: value_encoded
+                     }
+                   ]
+                 },
+                 %{
+                   population: [
+                     %{
+                       operator: ^operator,
+                       structure: %{id: ^structure_id, name: ^structure_name},
+                       value: value_encoded
+                     }
+                   ]
+                 }
+               ]
+             } = Document.encode(rule_implementation)
+    end
+
+    test "encoded implementation includes population (backward compatibility)" do
+      rule = insert(:rule)
+
+      operator = %{
+        name: "timestamp_gt_timestamp",
+        value_type: "timestamp",
+        value_type_filter: "timestamp"
+      }
+
+      structure = %{id: structure_id, name: structure_name} = %{id: 7, name: "s7"}
+      value = [%{raw: "2019-12-02 05:35:00"}]
+
+      creation_attrs = %{
+        populations: [
+          %{
+            population: [
+              %{
+                operator: operator,
+                structure: structure,
+                value: value
+              },
+              %{
+                operator: operator,
+                structure: structure,
+                value: value
+              }
+            ]
+          },
+          %{
+            population: [
+              %{
+                operator: operator,
+                structure: structure,
+                value: value
+              }
+            ]
+          }
+        ]
+      }
+
+      implementation_key = "rik1"
+
+      rule_implementation =
+        insert(:implementation,
+          implementation_key: implementation_key,
+          rule: rule,
+          populations: creation_attrs.populations
+        )
+
+      assert %{
+               population: [
+                 %{
+                   operator: ^operator,
+                   structure: %{id: ^structure_id, name: ^structure_name},
+                   value: ^value
+                 },
+                 %{
+                   operator: ^operator,
+                   structure: %{id: ^structure_id, name: ^structure_name},
+                   value: ^value
+                 }
+               ]
+             } = Document.encode(rule_implementation)
+    end
   end
 end
