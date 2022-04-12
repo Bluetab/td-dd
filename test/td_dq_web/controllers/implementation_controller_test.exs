@@ -166,7 +166,36 @@ defmodule TdDqWeb.ImplementationControllerTest do
           implementation_key: "a1",
           rule_id: rule.id,
           dataset: @valid_dataset,
-          population: [],
+          populations: [
+            [
+              %{
+                operator: %{
+                  name: "gt",
+                  value_type: "timestamp"
+                },
+                structure: %{id: 12_554},
+                value: [%{raw: "2019-12-02 05:35:00"}]
+              },
+              %{
+                operator: %{
+                  name: "gt",
+                  value_type: "timestamp"
+                },
+                structure: %{id: 12_554},
+                value: [%{raw: "2019-12-02 05:35:00"}]
+              }
+            ],
+            [
+              %{
+                operator: %{
+                  name: "gt",
+                  value_type: "timestamp"
+                },
+                structure: %{id: 12_554},
+                value: [%{raw: "2019-12-02 05:35:00"}]
+              }
+            ]
+          ],
           validations: [
             %{
               operator: %{
@@ -204,6 +233,11 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert equals_condition_row(
                Map.get(data, "validations"),
                Map.get(creation_attrs, "validations")
+             )
+
+      assert equals_condition_row(
+               data |> Map.get("populations") |> List.first(),
+               creation_attrs |> Map.get("populations") |> List.first()
              )
     end
 
@@ -476,15 +510,17 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       params =
         %{
-          population: [
-            %{
-              value: [%{id: 11}],
-              operator: %{
-                name: "eq",
-                value_type: "number"
-              },
-              structure: %{id: 60_311}
-            }
+          populations: [
+            [
+              %{
+                value: [%{id: 11}],
+                operator: %{
+                  name: "eq",
+                  value_type: "number"
+                },
+                structure: %{id: 60_311}
+              }
+            ]
           ]
         }
         |> Map.Helpers.stringify_keys()
@@ -510,8 +546,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert length(implementation.validations) == length(data["validations"])
 
       assert equals_condition_row(
-               Map.get(data, "population"),
-               Map.get(params, "population")
+               data |> Map.get("populations") |> List.first(),
+               params |> Map.get("populations") |> List.first()
              )
     end
 
@@ -521,15 +557,17 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       params =
         %{
-          population: [
-            %{
-              value: [%{id: 11}],
-              operator: %{
-                name: "eq",
-                value_type: "number"
-              },
-              structure: %{id: 60_311}
-            }
+          populations: [
+            [
+              %{
+                value: [%{id: 11}],
+                operator: %{
+                  name: "eq",
+                  value_type: "number"
+                },
+                structure: %{id: 60_311}
+              }
+            ]
           ]
         }
         |> Map.Helpers.stringify_keys()
@@ -551,15 +589,17 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       params =
         %{
-          population: [
-            %{
-              value: [%{id: 11}],
-              operator: %{
-                name: "eq",
-                value_type: "number"
-              },
-              structure: %{id: 60_311}
-            }
+          populations: [
+            [
+              %{
+                value: [%{id: 11}],
+                operator: %{
+                  name: "eq",
+                  value_type: "number"
+                },
+                structure: %{id: 60_311}
+              }
+            ]
           ]
         }
         |> Map.Helpers.stringify_keys()
@@ -629,14 +669,18 @@ defmodule TdDqWeb.ImplementationControllerTest do
       implementation = insert(:implementation)
 
       update_attrs = %{
-        population: [
+        populations: [
           %{
-            value: [%{id: 2}],
-            operator: %{
-              name: "eq",
-              value_type: "number"
-            },
-            structure: %{id2: 6311}
+            population: [
+              %{
+                value: [%{id: 2}],
+                operator: %{
+                  name: "eq",
+                  value_type: "number"
+                },
+                structure: %{id2: 6311}
+              }
+            ]
           }
         ]
       }
