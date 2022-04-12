@@ -6,6 +6,10 @@
 
 - [TD-4045] create_execution_group action
 
+# Changed
+
+- [TD-4536] Support rule implementation with multiple populations
+
 ## [4.41.1] 2022-04-04
 
 # Added
