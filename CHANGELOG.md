@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.41.2] 2022-04-13
+
+# Fixed
+
+- [TD-4721] user with permissions can list sources
+
 ## [4.41.1] 2022-04-04
 
 # Added
