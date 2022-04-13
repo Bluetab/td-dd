@@ -1,6 +1,7 @@
 defmodule TdCx.Canada.Abilities do
   @moduledoc false
   alias TdCx.Auth.Claims
+  alias TdCx.Canada.SourceAbilities
   alias TdCx.Configurations.Configuration
   alias TdCx.Jobs.Job
   alias TdCx.Permissions
@@ -32,7 +33,7 @@ defmodule TdCx.Canada.Abilities do
     end
 
     def can?(%Claims{role: "user"} = claims, :list, Source) do
-      Permissions.has_permission?(claims, :manage_raw_quality_rule_implementations)
+      SourceAbilities.can?(claims, :list, Source)
     end
 
     def can?(%Claims{}, _action, _domain), do: false

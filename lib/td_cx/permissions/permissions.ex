@@ -5,7 +5,8 @@ defmodule TdCx.Permissions do
 
   alias TdCx.Auth.Claims
 
-  def has_permission?(%Claims{jti: jti}, permission) do
+  def has_permission?(%{:__struct__ => type, jti: jti}, permission)
+      when type in [TdCx.Auth.Claims, TdDd.Auth.Claims] do
     TdCache.Permissions.has_permission?(jti, permission)
   end
 
