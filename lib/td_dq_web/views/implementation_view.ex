@@ -92,6 +92,10 @@ defmodule TdDqWeb.ImplementationView do
       :validations,
       render_many(implementation.validations, ConditionView, "condition_row.json")
     )
+    |> Map.put(
+      :segmentations,
+      render_many(implementation.segmentations, ConditionView, "condition_row.json")
+    )
     |> add_first_population(implementation)
     |> add_populations(implementation)
     |> add_rule(implementation)

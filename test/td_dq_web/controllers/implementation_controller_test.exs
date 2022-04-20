@@ -242,6 +242,64 @@ defmodule TdDqWeb.ImplementationControllerTest do
     end
 
     @tag authentication: [role: "admin"]
+    test "renders implementation with segmentations", %{conn: conn, swagger_schema: schema} do
+      rule = insert(:rule)
+
+      creation_attrs =
+        %{
+          implementation_key: "a1",
+          rule_id: rule.id,
+          dataset: @valid_dataset,
+          segmentations: [
+            %{
+              operator: %{name: "empty", value_type: nil},
+              population: [],
+              structure: %{id: 12_554},
+              value: [],
+              value_modifier: []
+            }
+          ],
+          validations: [
+            %{
+              operator: %{
+                name: "gt",
+                value_type: "timestamp"
+              },
+              structure: %{id: 12_554},
+              value: [%{raw: "2019-12-02 05:35:00"}]
+            }
+          ],
+          result_type: "percentage",
+          minimum: 50,
+          goal: 100
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.implementation_path(conn, :create),
+                 rule_implementation: creation_attrs
+               )
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:created)
+
+      assert %{"id" => id} = data
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:ok)
+
+      assert rule.id == data["rule_id"]
+
+      assert equals_condition_row(
+               Map.get(data, "segmentations"),
+               Map.get(creation_attrs, "segmentations")
+             )
+    end
+
+    @tag authentication: [role: "admin"]
     test "can create raw rule implementation with alias", %{conn: conn, swagger_schema: schema} do
       rule = insert(:rule)
 

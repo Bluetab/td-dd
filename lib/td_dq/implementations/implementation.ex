@@ -40,6 +40,7 @@ defmodule TdDq.Implementations.Implementation do
     embeds_many(:dataset, DatasetRow, on_replace: :delete)
     embeds_many(:populations, Populations, on_replace: :delete)
     embeds_many(:validations, ConditionRow, on_replace: :delete)
+    embeds_many(:segmentations, ConditionRow, on_replace: :delete)
 
     belongs_to(:rule, Rule)
 
@@ -240,6 +241,7 @@ defmodule TdDq.Implementations.Implementation do
     |> cast_embed(:dataset, with: &DatasetRow.changeset/2, required: true)
     |> cast_embed(:populations, with: &Populations.changeset/2, required: false)
     |> cast_embed(:validations, with: &ConditionRow.changeset/2, required: true)
+    |> cast_embed(:segmentations, with: &ConditionRow.changeset/2, required: false)
     |> validate_required([:dataset, :validations])
   end
 
@@ -291,6 +293,7 @@ defmodule TdDq.Implementations.Implementation do
       :inserted_at,
       :updated_at,
       :validations,
+      :segmentations,
       :df_name,
       :executable,
       :goal,
