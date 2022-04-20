@@ -8,33 +8,19 @@ defmodule TdDd.DataStructures.RelationTypes do
   alias TdDd.DataStructures.RelationType
   alias TdDd.Repo
 
-  @doc """
-  Returns the list of relation_types.
-
-  ## Examples
-
-      iex> list_relation_types()
-      [%RelationType{}, ...]
-
-  """
-  def list_relation_types do
-    Repo.all(RelationType)
+  def list_relation_types(args \\ %{}) do
+    args
+    |> relation_type_query()
+    |> Repo.all()
   end
 
-  @doc """
-  Gets a single relation_type.
+  def relation_type_query(args) do
+    Enum.reduce(args, RelationType, fn
+      {:names, names}, q -> where(q, [rt], rt.name in ^names)
+      {:select, :id}, q -> select(q, [rt], rt.id)
+    end)
+  end
 
-  Raises `Ecto.NoResultsError` if the Relation type does not exist.
-
-  ## Examples
-
-      iex> get_relation_type!(123)
-      %RelationType{}
-
-      iex> get_relation_type!(456)
-      ** (Ecto.NoResultsError)
-
-  """
   def get_relation_type!(id), do: Repo.get!(RelationType, id)
 
   def default_id! do
