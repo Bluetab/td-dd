@@ -14,6 +14,7 @@ defmodule TdDq.Implementations.Implementation do
   alias TdDq.Implementations.DatasetRow
   alias TdDq.Implementations.Implementation
   alias TdDq.Implementations.ImplementationStructure
+  alias TdDq.Implementations.Populations
   alias TdDq.Implementations.RawContent
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleResult
@@ -38,7 +39,7 @@ defmodule TdDq.Implementations.Implementation do
 
     embeds_one(:raw_content, RawContent, on_replace: :delete)
     embeds_many(:dataset, DatasetRow, on_replace: :delete)
-    embeds_many(:population, ConditionRow, on_replace: :delete)
+    embeds_many(:populations, Populations, on_replace: :delete)
     embeds_many(:validations, ConditionRow, on_replace: :delete)
 
     belongs_to(:rule, Rule)
@@ -51,6 +52,16 @@ defmodule TdDq.Implementations.Implementation do
   end
 
   def valid_result_types, do: @valid_result_types
+
+  def changeset(%__MODULE__{} = implementation, %{"populations" => [population | _]} = params)
+      when is_list(population) do
+    populations =
+      params
+      |> Map.get("populations")
+      |> Enum.map(&%{"population" => &1})
+
+    changeset(implementation, %{params | "populations" => populations})
+  end
 
   def changeset(%__MODULE__{} = implementation, params) do
     implementation
@@ -230,7 +241,7 @@ defmodule TdDq.Implementations.Implementation do
   def default_changeset(changeset) do
     changeset
     |> cast_embed(:dataset, with: &DatasetRow.changeset/2, required: true)
-    |> cast_embed(:population, with: &ConditionRow.changeset/2, required: false)
+    |> cast_embed(:populations, with: &Populations.changeset/2, required: false)
     |> cast_embed(:validations, with: &ConditionRow.changeset/2, required: true)
     |> validate_required([:dataset, :validations])
   end
@@ -278,7 +289,7 @@ defmodule TdDq.Implementations.Implementation do
       :id,
       :implementation_key,
       :implementation_type,
-      :population,
+      :populations,
       :rule_id,
       :inserted_at,
       :updated_at,
@@ -334,7 +345,7 @@ defmodule TdDq.Implementations.Implementation do
       implementation
       |> Map.take(@implementation_keys)
       |> transform_dataset()
-      |> transform_population()
+      |> transform_populations()
       |> transform_validations()
       |> with_rule(rule)
       |> Map.put(:raw_content, get_raw_content(implementation))
@@ -356,7 +367,7 @@ defmodule TdDq.Implementations.Implementation do
 
       Map.take(raw_content, [
         :dataset,
-        :population,
+        :populations,
         :validations,
         :source_id,
         :database
@@ -369,11 +380,23 @@ defmodule TdDq.Implementations.Implementation do
 
     defp transform_dataset(data), do: data
 
-    defp transform_population(%{population: population = [_ | _]} = data) do
-      Map.put(data, :population, Enum.map(population, &condition_row/1))
+    defp transform_populations(%{populations: populations = [_ | _]} = data) do
+      encoded_populations =
+        Enum.map(populations, fn %{population: condition_rows} ->
+          %{population: Enum.map(condition_rows, &condition_row/1)}
+        end)
+
+      data
+      |> Map.put(:populations, encoded_populations)
+      |> Map.put(
+        :population,
+        Map.get(List.first(encoded_populations, %{population: []}), :population)
+      )
     end
 
-    defp transform_population(data), do: data
+    defp transform_populations(data) do
+      Map.put(data, :population, [])
+    end
 
     defp transform_validations(%{validations: validations = [_ | _]} = data) do
       Map.put(data, :validations, Enum.map(validations, &condition_row/1))
@@ -396,7 +419,7 @@ defmodule TdDq.Implementations.Implementation do
       |> Map.put(:value, Map.get(row, :value, []))
       |> Map.put(:modifier, Map.get(row, :modifier, []))
       |> Map.put(:value_modifier, Map.get(row, :value_modifier, []))
-      |> with_population(row)
+      |> with_populations(row)
     end
 
     defp get_clause(row) do
@@ -428,11 +451,11 @@ defmodule TdDq.Implementations.Implementation do
       Map.take(operator, [:name, :value_type, :value_type_filter])
     end
 
-    defp with_population(data, %{population: population = [_ | _]}) do
-      Map.put(data, :population, Enum.map(population, &condition_row/1))
+    defp with_populations(data, %{populations: populations = [_ | _]}) do
+      Map.put(data, :populations, Enum.map(populations, &condition_row/1))
     end
 
-    defp with_population(data, _condition), do: data
+    defp with_populations(data, _condition), do: data
 
     defp with_rule(data, rule) do
       template = TemplateCache.get_by_name!(rule.df_name) || %{content: []}

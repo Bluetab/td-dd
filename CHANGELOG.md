@@ -1,5 +1,16 @@
 # Changelog
 
+## [Unreleased]
+
+# Changed
+
+- [TD-4536] Support rule implementation with multiple populations
+
+# Fixed
+
+- [TD-4721] User with permissions can list sources
+
+
 ## [4.41.1] 2022-04-04
 
 # Added

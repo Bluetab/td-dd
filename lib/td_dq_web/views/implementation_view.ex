@@ -4,6 +4,7 @@ defmodule TdDqWeb.ImplementationView do
   alias TdDq.Rules
   alias TdDqWeb.Implementation.ConditionView
   alias TdDqWeb.Implementation.DatasetView
+  alias TdDqWeb.Implementation.PopulationsView
   alias TdDqWeb.Implementation.RawContentView
   alias TdDqWeb.ImplementationStructureView
   alias TdDqWeb.RuleResultView
@@ -94,19 +95,38 @@ defmodule TdDqWeb.ImplementationView do
     ])
     |> Map.put(:dataset, render_many(implementation.dataset, DatasetView, "dataset_row.json"))
     |> Map.put(
-      :population,
-      render_many(implementation.population, ConditionView, "condition_row.json")
-    )
-    |> Map.put(
       :validations,
       render_many(implementation.validations, ConditionView, "condition_row.json")
     )
+    |> add_first_population(implementation)
+    |> add_populations(implementation)
     |> add_rule(implementation)
     |> add_quality_event_info(implementation)
     |> add_last_rule_results(implementation)
     |> add_rule_results(implementation)
     |> maybe_render_data_structures(data_structures)
   end
+
+  defp add_first_population(mapping, %{populations: [%{population: population} | _]})
+       when is_list(population) do
+    mapping
+    |> Map.put(
+      :population,
+      render_many(population, ConditionView, "condition_row.json")
+    )
+  end
+
+  defp add_first_population(mapping, _implementation), do: mapping
+
+  defp add_populations(mapping, %{populations: populations}) when is_list(populations) do
+    mapping
+    |> Map.put(
+      :populations,
+      render_many(populations, PopulationsView, "populations.json")
+    )
+  end
+
+  defp add_populations(mapping, _implementation), do: mapping
 
   defp add_rule(mapping, %{rule: rule}) when map_size(rule) > 0 do
     rule =
@@ -348,5 +368,19 @@ defmodule TdDqWeb.Implementation.ModifierView do
       name: modifier.name,
       params: modifier.params
     }
+  end
+end
+
+defmodule TdDqWeb.Implementation.PopulationsView do
+  use TdDqWeb, :view
+
+  alias TdDqWeb.Implementation.ConditionView
+
+  def render("populations.json", %{populations: %{population: population}}) do
+    render_many(population, ConditionView, "condition_row.json")
+  end
+
+  def render("populations.json", %{populations: population}) do
+    %{population: render_many(population, ConditionView, "condition_row.json")}
   end
 end
