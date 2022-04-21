@@ -503,14 +503,18 @@ defmodule TdDq.ImplementationsTest do
           },
           %{clauses: nil, structure: %{id: 5, name: "s5"}}
         ],
-        population: [
+        populations: [
           %{
-            operator: %{
-              name: "timestamp_gt_timestamp",
-              value_type: "timestamp"
-            },
-            structure: %{id: 6, name: "s6"},
-            value: [%{raw: "2019-12-02 05:35:00"}]
+            population: [
+              %{
+                operator: %{
+                  name: "timestamp_gt_timestamp",
+                  value_type: "timestamp"
+                },
+                structure: %{id: 6, name: "s6"},
+                value: [%{raw: "2019-12-02 05:35:00"}]
+              }
+            ]
           }
         ],
         validations: [
@@ -540,7 +544,7 @@ defmodule TdDq.ImplementationsTest do
           implementation_key: implementation_key,
           rule: rule,
           dataset: creation_attrs.dataset,
-          population: creation_attrs.population,
+          populations: creation_attrs.populations,
           validations: creation_attrs.validations
         )
 
@@ -563,14 +567,38 @@ defmodule TdDq.ImplementationsTest do
           %{clauses: [%{left: %{id: 2}, right: %{id: 3}}], structure: %{id: 4}},
           %{clauses: nil, structure: %{id: 5}}
         ],
-        population: [
+        populations: [
           %{
-            operator: %{
-              name: "timestamp_gt_timestamp",
-              value_type: "timestamp"
-            },
-            structure: %{id: 6},
-            value: [%{raw: "2019-12-02 05:35:00"}]
+            population: [
+              %{
+                operator: %{
+                  name: "timestamp_gt_timestamp",
+                  value_type: "timestamp"
+                },
+                structure: %{id: 6},
+                value: [%{raw: "2019-12-02 05:35:00"}]
+              },
+              %{
+                operator: %{
+                  name: "timestamp_gt_timestamp",
+                  value_type: "timestamp"
+                },
+                structure: %{id: 9},
+                value: [%{raw: "2019-12-02 05:35:00"}]
+              }
+            ]
+          },
+          %{
+            population: [
+              %{
+                operator: %{
+                  name: "timestamp_gt_timestamp",
+                  value_type: "timestamp"
+                },
+                structure: %{id: 10},
+                value: [%{raw: "2019-12-02 05:35:00"}]
+              }
+            ]
           }
         ],
         validations: [
@@ -600,13 +628,13 @@ defmodule TdDq.ImplementationsTest do
           implementation_key: implementation_key,
           rule: rule,
           dataset: creation_attrs.dataset,
-          population: creation_attrs.population,
+          populations: creation_attrs.populations,
           validations: creation_attrs.validations
         )
 
       structures_ids = Implementations.get_structure_ids(rule_implementaton)
 
-      assert Enum.sort(structures_ids) == [1, 2, 3, 4, 5, 6, 7, 8]
+      assert Enum.sort(structures_ids) == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     end
   end
 
@@ -656,7 +684,7 @@ defmodule TdDq.ImplementationsTest do
 
       insert(:implementation,
         dataset: [build(:dataset_row, structure: build(:dataset_structure, id: structure_id1))],
-        population: [],
+        populations: [],
         validations: []
       )
 
@@ -665,7 +693,7 @@ defmodule TdDq.ImplementationsTest do
       %{id: id2} =
         insert(:implementation,
           dataset: [build(:dataset_row, structure: build(:dataset_structure, id: structure_id2))],
-          population: [],
+          populations: [],
           validations: []
         )
 

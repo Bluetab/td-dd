@@ -40,7 +40,10 @@ defmodule TdCx.Jobs.Job do
     def routing(_), do: false
 
     @impl Elasticsearch.Document
-    def encode(%Job{source: source, events: events, inserted_at: inserted_at, updated_at: updated_at} = job) do
+    def encode(
+          %Job{source: source, events: events, inserted_at: inserted_at, updated_at: updated_at} =
+            job
+        ) do
       source = Map.take(source, [:external_id, :type])
       type = Map.get(job, :type) || ""
 

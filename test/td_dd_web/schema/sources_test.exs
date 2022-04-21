@@ -125,7 +125,7 @@ defmodule TdDdWeb.Schema.SourcesTest do
   }
   """
 
-  defp create_template(%{domain: domain_name}) do
+  defp create_template(%{domain: domain_name}) when is_binary(domain_name) do
     [
       domain: CacheHelpers.insert_domain(%{name: domain_name}),
       template:
@@ -164,6 +164,26 @@ defmodule TdDdWeb.Schema.SourcesTest do
 
       assert data == %{"source" => nil}
       assert [%{"message" => "forbidden"}] = errors
+    end
+
+    @tag authentication: [role: "user", permissions: ["manage_raw_quality_rule_implementations"]]
+    test "returns data when queried by user with permissions", %{
+      conn: conn,
+      source: %{id: source_id}
+    } do
+      assert %{"data" => data} =
+               response =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @sources,
+                 "variables" => %{"id" => source_id}
+               })
+               |> json_response(:ok)
+
+      assert response["errors"] == nil
+      assert %{"sources" => [source]} = data
+      assert %{"id" => id} = source
+      assert id == to_string(source_id)
     end
 
     @tag authentication: [role: "admin"]
@@ -378,6 +398,21 @@ defmodule TdDdWeb.Schema.SourcesTest do
 
     @tag authentication: [role: "user"]
     test "returns forbidden when queried by user role", %{conn: conn} do
+      params = %{"type" => "source_type", "external_id" => "external_id"}
+
+      assert %{"data" => nil, "errors" => errors} =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @create_source,
+                 "variables" => %{"source" => params}
+               })
+               |> json_response(:ok)
+
+      assert [%{"message" => "forbidden"}] = errors
+    end
+
+    @tag authentication: [role: "user", permissions: ["manage_raw_quality_rule_implementations"]]
+    test "returns forbidden when queried by user role with list permission", %{conn: conn} do
       params = %{"type" => "source_type", "external_id" => "external_id"}
 
       assert %{"data" => nil, "errors" => errors} =
