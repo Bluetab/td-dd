@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+# Added
+
+- [TD-3186] Support for links between Implementations and Structures
+
 # Changed
 
 - [TD-4536] Support rule implementation with multiple populations
