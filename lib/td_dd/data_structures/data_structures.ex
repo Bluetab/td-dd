@@ -68,6 +68,26 @@ defmodule TdDd.DataStructures do
 
   def get_data_structure(id), do: Repo.get(DataStructure, id)
 
+  def list_data_structure_versions_by_criteria(criteria) do
+    criteria
+    |> Enum.reduce(DataStructureVersion, fn
+      {:not_deleted, _}, q ->
+        where(q, [dsv], is_nil(dsv.deleted_at))
+
+      {:name, name}, q ->
+        where(q, [dsv], dsv.name == ^name)
+
+      {:metadata_field, {key, value}}, q ->
+        where(q, [dsv], fragment("?->>? = ?", dsv.metadata, ^key, ^value))
+
+      {:source_id, source_id}, q ->
+        q
+        |> join(:inner, [dsv], ds in assoc(dsv, :data_structure))
+        |> where([_dsv, ds], ds.source_id == ^source_id)
+    end)
+    |> Repo.all()
+  end
+
   @doc "Gets a single data_structure by external_id"
   def get_data_structure_by_external_id(external_id, preload \\ []) do
     Repo.get_by(DataStructure, external_id: external_id)

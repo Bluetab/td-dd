@@ -5,6 +5,7 @@ defmodule TdDqWeb.ImplementationView do
   alias TdDqWeb.Implementation.ConditionView
   alias TdDqWeb.Implementation.DatasetView
   alias TdDqWeb.Implementation.RawContentView
+  alias TdDqWeb.ImplementationStructureView
   alias TdDqWeb.RuleResultView
 
   def render("index.json", %{actions: %{} = actions} = assigns) when map_size(actions) > 0 do
@@ -31,6 +32,8 @@ defmodule TdDqWeb.ImplementationView do
   def render("implementation.json", %{
         implementation: %{implementation_type: "raw"} = implementation
       }) do
+    data_structures = Map.get(implementation, :data_structures)
+
     implementation
     |> Map.take([
       :current_business_concept_version,
@@ -61,9 +64,12 @@ defmodule TdDqWeb.ImplementationView do
     |> add_last_rule_results(implementation)
     |> add_quality_event_info(implementation)
     |> add_rule_results(implementation)
+    |> maybe_render_data_structures(data_structures)
   end
 
   def render("implementation.json", %{implementation: implementation}) do
+    data_structures = Map.get(implementation, :data_structures)
+
     implementation
     |> Map.take([
       :current_business_concept_version,
@@ -99,6 +105,7 @@ defmodule TdDqWeb.ImplementationView do
     |> add_quality_event_info(implementation)
     |> add_last_rule_results(implementation)
     |> add_rule_results(implementation)
+    |> maybe_render_data_structures(data_structures)
   end
 
   defp add_rule(mapping, %{rule: rule}) when map_size(rule) > 0 do
@@ -168,6 +175,17 @@ defmodule TdDqWeb.ImplementationView do
       _ -> Map.put(implementation_mapping, :results, rule_results)
     end
   end
+
+  defp maybe_render_data_structures(implementation_mapping, data_structures)
+       when is_list(data_structures) do
+    Map.put(
+      implementation_mapping,
+      :data_structures,
+      render_many(data_structures, ImplementationStructureView, "implementation_structure.json")
+    )
+  end
+
+  defp maybe_render_data_structures(implementation_mapping, _), do: implementation_mapping
 end
 
 defmodule TdDqWeb.Implementation.RawContentView do

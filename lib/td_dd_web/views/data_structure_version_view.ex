@@ -80,6 +80,19 @@ defmodule TdDdWeb.DataStructureVersionView do
     ])
   end
 
+  def render("embedded.json", %{data_structure_version: dsv}) do
+    Map.take(dsv, [
+      :class,
+      :deleted_at,
+      :description,
+      :external_id,
+      :group,
+      :id,
+      :name,
+      :path
+    ])
+  end
+
   defp add_classes(%{classifications: [_ | _] = classifications} = struct) do
     classes = Map.new(classifications, fn %{name: name, class: class} -> {name, class} end)
     Map.put(struct, :classes, classes)

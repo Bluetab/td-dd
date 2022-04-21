@@ -135,6 +135,14 @@ defmodule TdDd.Factory do
     |> merge_attributes(attrs)
   end
 
+  def implementation_structure_factory do
+    %TdDq.Implementations.ImplementationStructure{
+      data_structure: build(:data_structure),
+      implementation: build(:implementation),
+      type: :dataset
+    }
+  end
+
   def data_structure_relation_factory(attrs) do
     attrs =
       attrs
