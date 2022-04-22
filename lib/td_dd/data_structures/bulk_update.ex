@@ -21,6 +21,8 @@ defmodule TdDd.DataStructures.BulkUpdate do
 
   require Logger
 
+  @data_structure_preloads [:system, current_version: :structure_type]
+
   def update_all(
         ids,
         %{"df_content" => content},
@@ -52,7 +54,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
   def from_csv(upload, :default) do
     with {:ok, rows} <- parse_file(upload) do
       rows
-      |> parse_rows([:system, [current_version: :structure_type]])
+      |> parse_rows(@data_structure_preloads)
       |> Enum.filter(fn {_row, data_structure, _index} -> data_structure end)
       |> Enum.reduce_while([], fn {row, data_structure, index}, acc ->
         case format_content(row, data_structure, index) do
@@ -271,47 +273,6 @@ defmodule TdDd.DataStructures.BulkUpdate do
     )
   end
 
-  def apply(valid_item_changesets) do
-    valid_item_changesets
-    |> Stream.map(fn
-      %{
-        changeset: %Ecto.Changeset{} = changeset,
-        row_index: row_index
-      } ->
-        %{
-          changeset:
-            changeset
-            |> Ecto.Changeset.apply_changes()
-            |> clean(),
-          row_index: row_index
-        }
-    end)
-  end
-
-  # turns %Struct{} into a map with only non-nil item values (no association or __meta__ structs)
-  def clean(item) do
-    item
-    |> Map.from_struct()
-    # or something similar
-    |> Enum.reject(fn
-      {_key, nil} ->
-        true
-
-      {_key, %{:__struct__ => struct}}
-      when struct in [Ecto.Schema.Metadata, Ecto.Association.NotLoaded] ->
-        # rejects __meta__: #Ecto.Schema.Metadata<:built, "items">
-        # and association: #Ecto.Association.NotLoaded<association :association is not loaded>
-        true
-
-      {:external_domain_ids, _external_domain_ids} ->
-        true
-
-      _other ->
-        false
-    end)
-    |> Enum.into(%{})
-  end
-
   defp format_content(row, data_structure, row_index) do
     data_structure
     |> DataStructures.template_name()
@@ -353,10 +314,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
       field_content = Map.get(content, name)
       not is_nil(field_content) and is_binary(field_content) and field_content != ""
     end)
-    |> Enum.into(
-      content,
-      &format_field(&1, content)
-    )
+    |> Enum.into(content, &format_field(&1, content))
   end
 
   defp format_content(params), do: params
@@ -373,10 +331,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
 
   defp do_update(ids, %{} = params, %Claims{user_id: user_id}, auto_publish) do
     data_structures =
-      DataStructures.list_data_structures(
-        [id: {:in, ids}],
-        [:system, [current_version: :structure_type]]
-      )
+      DataStructures.list_data_structures(ids: ids, preload: @data_structure_preloads)
 
     Multi.new()
     |> Multi.run(
@@ -447,17 +402,10 @@ defmodule TdDd.DataStructures.BulkUpdate do
     Audit.data_structures_bulk_updated(updates, user_id)
   end
 
-  defp on_complete({:ok, %{updates: updates} = result}) do
-    updates
-    |> Map.keys()
-    |> IndexWorker.reindex()
-
-    {:ok, result}
-  end
-
-  defp on_complete({:ok, %{update_notes: update_notes} = result}) do
-    update_notes
-    |> Map.keys()
+  defp on_complete({:ok, %{updates: updates, update_notes: update_notes} = result}) do
+    [updates, update_notes]
+    |> Enum.flat_map(&Map.keys/1)
+    |> Enum.uniq()
     |> IndexWorker.reindex()
 
     {:ok, result}

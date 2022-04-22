@@ -4,6 +4,7 @@
 
 ### Added
 
+- [TD-4098] GraphQL query for data structures
 - [TD-4683] GraphQL query for data structure relations
 
 ### Changed
@@ -13,6 +14,8 @@
 ### Fixed
 
 - [TD-4721] User with permissions can list sources
+- [TD-4695] Structure bulk update was not reindexing structures with updated
+  notes
 
 ## [4.41.1] 2022-04-04
 
