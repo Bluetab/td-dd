@@ -7,7 +7,6 @@ defmodule TdDd.DataStructures.DataStructureRelation do
 
   import Ecto.Changeset
 
-  alias TdDd.DataStructures.DataStructureRelation
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.RelationType
 
@@ -18,7 +17,7 @@ defmodule TdDd.DataStructures.DataStructureRelation do
     timestamps(type: :utc_datetime_usec)
   end
 
-  def changeset(%DataStructureRelation{} = data_structure_relation, params) do
+  def changeset(%__MODULE__{} = data_structure_relation, params) do
     data_structure_relation
     |> cast(params, [:parent_id, :child_id])
     |> validate_required([:parent_id, :child_id, :relation_type_id])
@@ -27,9 +26,5 @@ defmodule TdDd.DataStructures.DataStructureRelation do
       name: :avoid_structure_relation_itself,
       message: "Structure must not have relations with itself"
     )
-  end
-
-  def update_changeset(%DataStructureRelation{} = data_structure_relation, params) do
-    cast(data_structure_relation, params, [:parent_id, :child_id, :relation_type_id])
   end
 end

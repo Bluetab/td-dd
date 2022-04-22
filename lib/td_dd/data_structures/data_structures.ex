@@ -1051,7 +1051,10 @@ defmodule TdDd.DataStructures do
     Dataloader.Ecto.new(TdDd.Repo, query: &query/2, timeout: Dataloader.default_timeout())
   end
 
-  defp query(queryable, _params) do
-    queryable
+  defp query(queryable, params) do
+    Enum.reduce(params, queryable, fn
+      {:deleted, false}, q -> where(q, [dsv], is_nil(dsv.deleted_at))
+      {:deleted, true}, q -> where(q, [dsv], not is_nil(dsv.deleted_at))
+    end)
   end
 end
