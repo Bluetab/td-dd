@@ -1,0 +1,10 @@
+:START_ID,:END_ID,:TYPE,m:meta_1,m:time_date
+Group1,Group1.1,CONTAINS,,
+Group2,Group2.1,CONTAINS,,
+Group3,Group3.1,CONTAINS,,
+Group1.1,Resource1,CONTAINS,,
+Group2.1,Resource2,CONTAINS,,
+Group3.1,Resource3,CONTAINS,,
+Resource1,Resource2,DEPENDS,resource1 resource2,2021-11-03 1:01:01
+Resource2,Resource3,DEPENDS,resource2 resource3,2021-11-03 2:02:02
+Resource3,Resource1,DEPENDS,resource3 resource1,2021-11-03 3:03:03

@@ -405,8 +405,8 @@ defmodule TdDd.Lineage.GraphData do
     %State{contains: contains, depends: depends, roots: roots, ts: ts}
   end
 
-  defp add_edge(%{id: id, start: v1, end: v2}, %Graph{} = g) do
-    case Graph.add_edge(g, id, v1, v2, %{}) do
+  defp add_edge(%{id: id, start: v1, end: v2, metadata: metadata}, %Graph{} = g) do
+    case Graph.add_edge(g, id, v1, v2, metadata: metadata) do
       %Graph{} = g ->
         g
 

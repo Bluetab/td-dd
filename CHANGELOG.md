@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-4683] GraphQL query for data structure relations
+- [TD-2026]  Add metadata to linage graph
 
 ### Changed
 

@@ -15,6 +15,7 @@ defmodule TdDd.Lineage.Units.Edge do
     belongs_to(:end, Node)
 
     field(:type, :string)
+    field(:metadata, :map, default: %{})
 
     timestamps(type: :utc_datetime_usec)
   end
@@ -25,8 +26,8 @@ defmodule TdDd.Lineage.Units.Edge do
 
   def changeset(%__MODULE__{} = edge, %{} = params) do
     edge
-    |> cast(params, [:unit_id, :start_id, :end_id, :type])
-    |> validate_required([:unit_id, :start_id, :end_id, :type])
+    |> cast(params, [:unit_id, :start_id, :end_id, :type, :metadata])
+    |> validate_required([:unit_id, :start_id, :end_id, :type, :metadata])
     |> unique_constraint([:unit_id, :start_id, :end_id])
   end
 end
