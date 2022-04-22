@@ -2,14 +2,17 @@
 
 ## [Unreleased]
 
-# Changed
+### Added
+
+- [TD-4683] GraphQL query for data structure relations
+
+### Changed
 
 - [TD-4536] Support rule implementation with multiple populations
 
-# Fixed
+### Fixed
 
 - [TD-4721] User with permissions can list sources
-
 
 ## [4.41.1] 2022-04-04
 
@@ -23,6 +26,8 @@
 - [TD-4643] Raw implementation creation permission
 
 ## [4.41.0] 2022-03-28
+
+### Fixed
 
 - [TD-4535] Structures domains CSV upload bulk update
 
