@@ -52,10 +52,6 @@ defmodule TdDd.DataStructures.DataStructure do
     timestamps(type: :utc_datetime_usec)
   end
 
-  def changeset(params, last_change_by) do
-    changeset(%__MODULE__{}, params, last_change_by)
-  end
-
   def changeset(%__MODULE__{} = data_structure, params, last_change_by)
       when is_integer(last_change_by) do
     data_structure

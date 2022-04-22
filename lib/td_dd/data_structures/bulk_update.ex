@@ -260,19 +260,6 @@ defmodule TdDd.DataStructures.BulkUpdate do
     }
   end
 
-  def existing_domains_by_external_ids(external_domain_ids) do
-    Enum.reduce(
-      external_domain_ids,
-      {[], []},
-      fn external_domain_id, {acc_existing, acc_inexisting} ->
-        case TdCache.TaxonomyCache.get_by_external_id(external_domain_id) do
-          %{id: domain_id} -> {[domain_id | acc_existing], acc_inexisting}
-          nil -> {acc_existing, [external_domain_id | acc_inexisting]}
-        end
-      end
-    )
-  end
-
   defp format_content(row, data_structure, row_index) do
     data_structure
     |> DataStructures.template_name()
