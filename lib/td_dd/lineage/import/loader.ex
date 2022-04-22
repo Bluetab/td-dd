@@ -100,12 +100,13 @@ defmodule TdDd.Lineage.Import.Loader do
       entries =
         graph
         |> Graph.get_edges()
-        |> Enum.map(fn %{v1: v1, v2: v2, label: %{class: class}} ->
+        |> Enum.map(fn %{v1: v1, v2: v2, label: %{class: class, metadata: metadata}} ->
           %{
             unit_id: unit_id,
             start_id: Map.fetch!(node_map, v1),
             end_id: Map.fetch!(node_map, v2),
             type: class,
+            metadata: metadata,
             inserted_at: ts,
             updated_at: ts
           }
