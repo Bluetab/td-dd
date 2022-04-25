@@ -175,10 +175,17 @@ defmodule TdDd.Lineage.Import.Reader do
             {k, _} when is_atom(k) -> false
             {k, _} -> String.starts_with?(k, prefix)
           end)
-          |> Enum.reduce(%{}, fn {k, value}, acc ->
-            k
-            |> String.replace_leading(prefix, "")
-            |> (&Map.merge(acc, %{&1 => value})).()
+          |> Enum.reduce(%{}, fn
+            {_k, ""}, acc ->
+              acc
+
+            {_k, nil}, acc ->
+              acc
+
+            {k, value}, acc ->
+              k
+              |> String.replace_leading(prefix, "")
+              |> (&Map.merge(acc, %{&1 => value})).()
           end)
 
         {:class, _} ->
