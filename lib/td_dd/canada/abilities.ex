@@ -1,6 +1,9 @@
 defmodule TdDd.Canada.Abilities do
   @moduledoc false
   alias TdCache.Link
+  alias TdCx.Canada.SourceAbilities
+  alias TdCx.Sources.Source
+
   alias TdDd.Auth.Claims
   alias TdDd.Canada.AccessAbilities
   alias TdDd.Canada.DataStructureAbilities
@@ -160,6 +163,10 @@ defmodule TdDd.Canada.Abilities do
 
     def can?(%Claims{} = claims, action, DataStructure) do
       DataStructureAbilities.can?(claims, action, DataStructure)
+    end
+
+    def can?(%Claims{role: "user"} = claims, :query, :sources) do
+      SourceAbilities.can?(claims, :list, Source)
     end
 
     def can?(%Claims{} = claims, action, domain_id) do
