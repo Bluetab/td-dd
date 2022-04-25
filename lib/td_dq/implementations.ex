@@ -658,17 +658,11 @@ defmodule TdDq.Implementations do
     end
   end
 
-  def get_implementation_structure!(implementation_structure_id),
-    do: Repo.get!(ImplementationStructure, implementation_structure_id)
-
-  def get_implementation_structure!(implementation_id, data_structure_id, preloads \\ []),
-    do:
-      ImplementationStructure
-      |> Repo.get_by!(
-        implementation_id: implementation_id,
-        data_structure_id: data_structure_id
-      )
+  def get_implementation_structure!(implementation_structure_id, preloads \\ []) do
+    ImplementationStructure
+      |> Repo.get!(implementation_structure_id)
       |> Repo.preload(preloads)
+  end
 
   def create_implementation_structure(implementation, data_structure, attrs \\ %{}) do
     %ImplementationStructure{}

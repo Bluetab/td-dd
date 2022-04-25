@@ -36,18 +36,11 @@ defmodule TdDqWeb.ImplementationStructureController do
     end
   end
 
-  def delete(
-        conn,
-        %{"id" => data_structure_id, "implementation_id" => implementation_id}
-      ) do
+  def delete(conn, %{"id" => id}) do
     claims = conn.assigns[:current_resource]
 
     with %{implementation: implementation} = implementation_structure <-
-           Implementations.get_implementation_structure!(
-             implementation_id,
-             data_structure_id,
-             _preloads = :implementation
-           ),
+           Implementations.get_implementation_structure!(id, _preloads = :implementation),
          {:can, true} <- {:can, can?(claims, link_structure(implementation))},
          {:ok, %ImplementationStructure{}} <-
            Implementations.delete_implementation_structure(implementation_structure) do

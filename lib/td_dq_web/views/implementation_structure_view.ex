@@ -32,6 +32,7 @@ defmodule TdDqWeb.ImplementationStructureView do
     data_structure = Map.get(implementation_structure, :data_structure)
 
     %{
+      id: implementation_structure.id,
       deleted_at: implementation_structure.deleted_at,
       data_structure_id: implementation_structure.data_structure_id,
       implementation_id: implementation_structure.implementation_id,

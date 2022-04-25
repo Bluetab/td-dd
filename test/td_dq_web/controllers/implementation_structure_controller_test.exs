@@ -205,18 +205,17 @@ defmodule TdDqWeb.ImplementationStructureControllerTest do
     @tag authentication: [role: "admin"]
     test "deletes chosen implementation_structure", %{conn: conn} do
       %{
-        implementation_id: implementation_id,
-        data_structure_id: data_structure_id
+        id: id,
+        implementation_id: implementation_id
       } = insert(:implementation_structure)
 
       conn =
         delete(
           conn,
-          Routes.implementation_implementation_structure_path(
+          Routes.implementation_structure_path(
             conn,
             :delete,
-            implementation_id,
-            data_structure_id
+            id
           )
         )
 
@@ -230,14 +229,57 @@ defmodule TdDqWeb.ImplementationStructureControllerTest do
                |> json_response(:ok)
     end
 
+    @tag authentication: [role: "admin"]
+    test "deletes implementation_structure with same structure and implementation and different type",
+         %{conn: conn} do
+      %{
+        id: id,
+        implementation_id: implementation_id,
+        data_structure_id: data_structure_id
+      } = insert(:implementation_structure, type: "population")
+
+      insert(:implementation_structure,
+        implementation_id: implementation_id,
+        data_structure_id: data_structure_id,
+        type: "validation"
+      )
+
+      conn =
+        delete(
+          conn,
+          Routes.implementation_structure_path(
+            conn,
+            :delete,
+            id
+          )
+        )
+
+      assert response(conn, 204)
+
+      assert %{
+               "data" => %{
+                 "data_structures" => [
+                   %{
+                     "implementation_id" => ^implementation_id,
+                     "data_structure_id" => ^data_structure_id,
+                     "type" => "validation"
+                   }
+                 ]
+               }
+             } =
+               conn
+               |> get(Routes.implementation_path(conn, :show, implementation_id))
+               |> json_response(:ok)
+    end
+
     @tag authentication: [
            user_name: "non_admin",
            permissions: [:link_implementation_structure, :view_quality_rule, :view_data_structure]
          ]
     test "user with permission can delete", %{conn: conn, domain: domain} do
       %{
-        implementation_id: implementation_id,
-        data_structure_id: data_structure_id
+        id: id,
+        implementation_id: implementation_id
       } =
         insert(:implementation_structure,
           implementation: build(:implementation, domain_id: domain.id),
@@ -247,11 +289,10 @@ defmodule TdDqWeb.ImplementationStructureControllerTest do
       conn =
         delete(
           conn,
-          Routes.implementation_implementation_structure_path(
+          Routes.implementation_structure_path(
             conn,
             :delete,
-            implementation_id,
-            data_structure_id
+            id
           )
         )
 
@@ -270,10 +311,7 @@ defmodule TdDqWeb.ImplementationStructureControllerTest do
            permissions: [:view_quality_rule, :view_data_structure]
          ]
     test "user without permission cannot delete", %{conn: conn, domain: domain} do
-      %{
-        implementation_id: implementation_id,
-        data_structure_id: data_structure_id
-      } =
+      %{id: id, implementation_id: implementation_id} =
         insert(:implementation_structure,
           implementation: build(:implementation, domain_id: domain.id),
           data_structure: build(:data_structure, domain_ids: [domain.id])
@@ -282,11 +320,10 @@ defmodule TdDqWeb.ImplementationStructureControllerTest do
       conn =
         delete(
           conn,
-          Routes.implementation_implementation_structure_path(
+          Routes.implementation_structure_path(
             conn,
             :delete,
-            implementation_id,
-            data_structure_id
+            id
           )
         )
 
@@ -295,10 +332,7 @@ defmodule TdDqWeb.ImplementationStructureControllerTest do
       assert %{
                "data" => %{
                  "data_structures" => [
-                   %{
-                     "implementation_id" => ^implementation_id,
-                     "data_structure_id" => ^data_structure_id
-                   }
+                   %{"id" => ^id}
                  ]
                }
              } =
