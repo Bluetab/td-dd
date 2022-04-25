@@ -4,6 +4,7 @@
 
 ### Added
 
+- [TD-4098] GraphQL query for data structures
 - [TD-4683] GraphQL query for data structure relations
 - [TD-2026]  Add metadata to linage graph
 
@@ -14,6 +15,11 @@
 ### Fixed
 
 - [TD-4721] User with permissions can list sources
+- [TD-4695] Structure bulk update was not reindexing structures with updated
+  notes
+- [TD-3128] Profile `null_count`, `total_count` and `unique_count` fields were
+  limited to PostgreSQL `integer` values (maximum 2,147,483,647). They have now
+  been changed to `bigint` (maximum 9,223,372,036,854,775,807)
 
 ## [4.41.1] 2022-04-04
 
