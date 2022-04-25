@@ -8,8 +8,8 @@ defmodule TdDd.Repo.Migrations.AlterImplementationsToAdminMoreThanOnePopulation 
 
     execute(
       """
-        update rule_implementations set populations = array[json_build_object('population', array_to_json(population))]
-        where array_length(population, 1) > 0;
+      update rule_implementations set populations = array[json_build_object('population', array_to_json(population))]
+      where array_length(population, 1) > 0
       """,
       """
       update rule_implementations ri set population = first_population
