@@ -21,7 +21,7 @@ defmodule TdDd.GraphDataCase do
         d =
           Enum.reduce(depends, Graph.subgraph(c, Graph.sink_vertices(c)), fn
             {v1, v2, [metadata: metadata]}, g ->
-              Graph.add_edge(g, v1, v2, %{"metadata" => metadata})
+              Graph.add_edge(g, v1, v2, %{:metadata => metadata})
 
             {v1, v2}, g ->
               Graph.add_edge(g, v1, v2)
