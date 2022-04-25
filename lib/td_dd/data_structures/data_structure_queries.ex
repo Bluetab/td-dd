@@ -241,4 +241,24 @@ defmodule TdDd.DataStructures.DataStructureQueries do
     )
     |> select([d], d.data_structure_id)
   end
+
+  def data_structures_query(enumerable) do
+    Enum.reduce(enumerable, DataStructure, fn
+      {:deleted, false}, q -> join(q, :inner, [ds], u in assoc(ds, :current_version))
+      {:external_id, external_id}, q -> where(q, [ds], ds.external_id in ^List.wrap(external_id))
+      {:ids, ids}, q -> where(q, [ds], ds.id in ^ids)
+      {:limit, limit}, q -> limit(q, ^limit)
+      {:lineage, true}, q -> having_units(q)
+      {:min_id, id}, q -> where(q, [ds], ds.id >= ^id)
+      {:order_by, "id"}, q -> order_by(q, :id)
+      {:preload, preloads}, q -> preload(q, ^preloads)
+      {:since, since}, q -> where(q, [ds], ds.updated_at >= ^since)
+    end)
+  end
+
+  defp having_units(queryable) do
+    queryable
+    |> join(:inner, [ds], u in assoc(ds, :units), as: :units)
+    |> where([units: u], is_nil(u.deleted_at))
+  end
 end

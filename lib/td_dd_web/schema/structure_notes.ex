@@ -1,6 +1,6 @@
 defmodule TdDdWeb.Schema.StructureNotes do
   @moduledoc """
-  Absinthe schema definitions for quality structure_notes and related entities.
+  Absinthe schema definitions for structure notes and related entities.
   """
 
   use Absinthe.Schema.Notation
@@ -10,7 +10,7 @@ defmodule TdDdWeb.Schema.StructureNotes do
   alias TdDdWeb.Resolvers
 
   object :structure_note_queries do
-    @desc "Get a list of structure_notes"
+    @desc "Get a list of structure notes"
     field :structure_notes, list_of(:structure_note) do
       arg(:filter, :structure_notes_filter)
       resolve(&Resolvers.StructureNotes.structure_notes/3)

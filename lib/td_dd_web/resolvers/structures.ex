@@ -7,6 +7,10 @@ defmodule TdDdWeb.Resolvers.Structures do
   alias TdDd.DataStructures
   alias TdDd.DataStructures.Relations
 
+  def data_structures(_parent, args, _resolution) do
+    {:ok, DataStructures.list_data_structures(args)}
+  end
+
   def data_structure_versions(_parent, args, _resolution) do
     {:ok, DataStructures.list_data_structure_versions(args)}
   end
