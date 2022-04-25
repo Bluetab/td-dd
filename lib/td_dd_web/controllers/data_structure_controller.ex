@@ -8,11 +8,14 @@ defmodule TdDdWeb.DataStructureController do
   alias TdDd.CSV.Download
   alias TdDd.DataStructures
   alias TdDd.DataStructures.BulkUpdate
+  alias TdDd.DataStructures.BulkUpdater
+  alias TdDd.DataStructures.CsvBulkUpdateEvent
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Search
   alias TdDd.DataStructures.StructureNote
   alias TdDd.DataStructures.StructureNotesWorkflow
+  alias TdDd.Utils.FileHash
   alias TdDdWeb.SwaggerDefinitions
 
   @lift_attrs [:class, :description, :metadata, :group, :name, :type, :deleted_at]
@@ -300,28 +303,21 @@ defmodule TdDdWeb.DataStructureController do
 
     with [_ | _] = contents <- BulkUpdate.from_csv(structures_content_upload),
          {:forbidden, []} <- {:forbidden, can_bulk_actions(contents, auto_publish, claims)},
-         {:ok, %{updates: updates, update_notes: update_notes}} <-
-           BulkUpdate.do_csv_bulk_update(contents, user_id, auto_publish),
-         [updated_notes, not_updated_notes] = BulkUpdate.split_succeeded_errors(update_notes),
-         body <-
-           Jason.encode!(%{
-             ids: Enum.uniq(Map.keys(updates) ++ Map.keys(updated_notes)),
-             errors:
-               not_updated_notes
-               |> Enum.map(fn {_id,
-                               {:error, {error, %{row: row, external_id: external_id} = _ds}}} ->
-                 get_messsage_from_error(error)
-                 |> Enum.map(fn ms ->
-                   ms
-                   |> Map.put(:row, row)
-                   |> Map.put(:external_id, external_id)
-                 end)
-               end)
-               |> List.flatten()
-           }) do
+         csv_hash <- FileHash.hash(structures_content_upload.path, :md5) do
+          {code, response} = case BulkUpdater.bulk_csv_update(csv_hash, contents, user_id, auto_publish) do
+            {:just_started, ^csv_hash, task_reference} ->
+              {
+                :accepted,
+                %{csv_hash: csv_hash, status: "JUST_STARTED", task_reference: task_reference}
+              }
+
+            {:already_started, %CsvBulkUpdateEvent{csv_hash: ^csv_hash} = event} ->
+              {:accepted, TdDdWeb.CsvBulkUpdateEventView.render("show.json", %{csv_bulk_update_event: event})}
+          end
+
       conn
       |> put_resp_content_type("application/json", "utf-8")
-      |> send_resp(:ok, body)
+      |> send_resp(code, Jason.encode!(response))
     end
   end
 
