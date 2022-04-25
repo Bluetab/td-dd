@@ -7,6 +7,7 @@
 - [TD-4098] GraphQL query for data structures
 - [TD-4683] GraphQL query for data structure relations
 - [TD-2026] Add metadata to lineage graph
+- [TD-4586] Asynchronous CSV bulk update
 
 ### Changed
 
