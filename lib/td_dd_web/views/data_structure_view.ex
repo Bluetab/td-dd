@@ -3,6 +3,7 @@ defmodule TdDdWeb.DataStructureView do
 
   alias TdDd.DataStructures
   alias TdDdWeb.DataStructuresTagsView
+  alias TdDdWeb.DataStructureVersionView
 
   require Logger
 
@@ -59,6 +60,18 @@ defmodule TdDdWeb.DataStructureView do
     |> add_metadata(data_structure)
     |> add_system_with_keys(data_structure, ["external_id", "id", "name"])
     |> add_dynamic_content(data_structure)
+  end
+
+  def render("implementation_data_structure.json", %{
+        data_structure: %{current_version: current_version} = data_structure
+      }) do
+    data_structure
+    |> data_structure_json()
+    |> add_system_with_keys(data_structure, [:external_id, :id, :name])
+    |> Map.put(
+      :current_version,
+      render_one(current_version, DataStructureVersionView, "embedded.json")
+    )
   end
 
   def render("embedded.json", %{

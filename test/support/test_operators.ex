@@ -11,6 +11,7 @@ defmodule TdDd.TestOperators do
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestGroup
   alias TdDq.Implementations.Implementation
+  alias TdDq.Implementations.ImplementationStructure
   alias TdDq.Rules.RuleResult
 
   def a <~> b, do: approximately_equal(a, b)
@@ -78,6 +79,16 @@ defmodule TdDd.TestOperators do
   ## Equality test for rule implementation without comparing Ecto associations.
   defp approximately_equal(%Implementation{} = a, %Implementation{} = b) do
     Map.drop(a, [:rule]) == Map.drop(b, [:rule])
+  end
+
+  ## Equality test for rule implementation without comparing Ecto associations.
+  defp approximately_equal(%ImplementationStructure{} = a, %ImplementationStructure{} = b) do
+    drop_fields = [
+      :implementation,
+      :data_structure
+    ]
+
+    Map.drop(a, drop_fields) == Map.drop(b, drop_fields)
   end
 
   ## Equality test for rule result without comparing Ecto associations.
