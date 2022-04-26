@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-3186] Support for links between Implementations and Structures
+
 ## [4.42.0] 2022-04-25
 
 ### Added

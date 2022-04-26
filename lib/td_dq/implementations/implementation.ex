@@ -13,6 +13,7 @@ defmodule TdDq.Implementations.Implementation do
   alias TdDq.Implementations.ConditionRow
   alias TdDq.Implementations.DatasetRow
   alias TdDq.Implementations.Implementation
+  alias TdDq.Implementations.ImplementationStructure
   alias TdDq.Implementations.Populations
   alias TdDq.Implementations.RawContent
   alias TdDq.Rules.Rule
@@ -44,6 +45,8 @@ defmodule TdDq.Implementations.Implementation do
     belongs_to(:rule, Rule)
 
     has_many(:results, RuleResult)
+
+    has_many(:data_structures, ImplementationStructure)
 
     timestamps(type: :utc_datetime)
   end
