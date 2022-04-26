@@ -2,7 +2,10 @@ defmodule TdDqWeb.ImplementationStructureView do
   use TdDqWeb, :view
 
   alias TdDdWeb.DataStructureView
+  alias TdDq.Implementations
+  alias TdDq.Implementations.Implementation
   alias TdDqWeb.ImplementationStructureView
+  alias TdDqWeb.ImplementationView
 
   def render("index.json", %{implementation_structure: implementation_structure}) do
     %{
@@ -30,6 +33,7 @@ defmodule TdDqWeb.ImplementationStructureView do
         implementation_structure: implementation_structure
       }) do
     data_structure = Map.get(implementation_structure, :data_structure)
+    implementation = Map.get(implementation_structure, :implementation)
 
     %{
       id: implementation_structure.id,
@@ -39,7 +43,10 @@ defmodule TdDqWeb.ImplementationStructureView do
       type: implementation_structure.type
     }
     |> maybe_render_data_structure(data_structure)
+    |> maybe_render_implementation(implementation)
   end
+
+  defp maybe_render_data_structure(json, %Ecto.Association.NotLoaded{}), do: json
 
   defp maybe_render_data_structure(json, %{} = data_structure) do
     Map.put(
@@ -50,4 +57,23 @@ defmodule TdDqWeb.ImplementationStructureView do
   end
 
   defp maybe_render_data_structure(json, _), do: json
+
+  defp maybe_render_implementation(json, %Ecto.Association.NotLoaded{}), do: json
+
+  defp maybe_render_implementation(json, %Implementation{} = implementation) do
+    implementation =
+      Implementations.enrich_implementations(implementation, [
+        :execution_result_info,
+        :current_business_concept_version
+      ])
+
+    Map.put(
+      json,
+      :implementation,
+      # render_one(implementation, ImplementationView, "data_structure_implementation.json")
+      render_one(implementation, ImplementationView, "implementation.json")
+    )
+  end
+
+  defp maybe_render_implementation(json, _), do: json
 end

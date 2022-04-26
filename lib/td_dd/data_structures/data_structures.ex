@@ -188,6 +188,7 @@ defmodule TdDd.DataStructures do
     |> enrich(opts, :tags, &get_tags!/1)
     |> enrich(opts, :grants, &get_grants/1)
     |> enrich(opts, :grant, &get_grant(&1, opts[:user_id]))
+    |> enrich(opts, :implementations, &get_implementations!/1)
   end
 
   defp enrich(%{} = target, opts, key, fun) do
@@ -461,6 +462,12 @@ defmodule TdDd.DataStructures do
   defp get_metadata_versions!(%DataStructureVersion{} = dsv) do
     case Repo.preload(dsv, data_structure: :metadata_versions) do
       %{data_structure: %{metadata_versions: metadata_versions}} -> metadata_versions
+    end
+  end
+
+  defp get_implementations!(%DataStructureVersion{} = dsv) do
+    case Repo.preload(dsv, data_structure: [implementations: [implementation: [:rule, :results]]]) do
+      %{data_structure: %{implementations: implementations}} -> implementations
     end
   end
 

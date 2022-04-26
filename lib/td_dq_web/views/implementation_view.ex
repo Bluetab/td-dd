@@ -183,18 +183,16 @@ defmodule TdDqWeb.ImplementationView do
     end
   end
 
-  defp add_rule_results(implementation_mapping, implementation) do
+  defp add_rule_results(implementation_mapping, %{results: [_ | _] = results}) do
     rule_results =
-      implementation
-      |> Map.get(:results, [])
+      results
       |> Enum.sort_by(& &1.date, {:desc, DateTime})
       |> Enum.map(&render_one(&1, RuleResultView, "rule_result.json"))
 
-    case rule_results do
-      [] -> implementation_mapping
-      _ -> Map.put(implementation_mapping, :results, rule_results)
-    end
+    Map.put(implementation_mapping, :results, rule_results)
   end
+
+  defp add_rule_results(implementation_mapping, _), do: implementation_mapping
 
   defp maybe_render_data_structures(implementation_mapping, data_structures)
        when is_list(data_structures) do

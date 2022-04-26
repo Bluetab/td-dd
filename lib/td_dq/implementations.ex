@@ -16,12 +16,14 @@ defmodule TdDq.Implementations do
   alias TdDq.Auth.Claims
   alias TdDq.Cache.ImplementationLoader
   alias TdDq.Cache.RuleLoader
+  alias TdDq.Events.QualityEvents
   alias TdDq.Implementations
   alias TdDq.Implementations.Implementation
   alias TdDq.Implementations.ImplementationStructure
   alias TdDq.Rules
   alias TdDq.Rules.Audit
   alias TdDq.Rules.Rule
+  alias TdDq.Search.Helpers
 
   @index_worker Application.compile_env(:td_dd, :dq_index_worker)
 
@@ -610,6 +612,8 @@ defmodule TdDq.Implementations do
 
   defp structure(_any), do: []
 
+  def enrich_implementations(target, opts), do: enrich(target, opts)
+
   @spec enrich(Implementation.t() | [Implementation.t()], nil | atom | [atom]) ::
           Implementation.t() | [Implementation.t()]
   defp enrich(target, nil), do: target
@@ -644,6 +648,23 @@ defmodule TdDq.Implementations do
     Map.put(implementation, :links, get_implementation_links(implementation, "business_concept"))
   end
 
+  defp enrich(%Implementation{} = implementation, :execution_result_info) do
+    quality_event = QualityEvents.get_event_by_imp(implementation.id)
+
+    execution_result_info =
+      Implementation.get_execution_result_info(implementation, quality_event)
+
+    Map.put(implementation, :execution_result_info, execution_result_info)
+  end
+
+  defp enrich(
+         %Implementation{rule: %Rule{} = rule} = implementation,
+         :current_business_concept_version
+       ) do
+    bcv = Helpers.get_business_concept_version(rule)
+    Map.put(implementation, :current_business_concept_version, bcv)
+  end
+
   defp enrich(target, _), do: target
 
   def get_implementation_links(%Implementation{id: id}) do
@@ -660,8 +681,8 @@ defmodule TdDq.Implementations do
 
   def get_implementation_structure!(implementation_structure_id, preloads \\ []) do
     ImplementationStructure
-      |> Repo.get!(implementation_structure_id)
-      |> Repo.preload(preloads)
+    |> Repo.get!(implementation_structure_id)
+    |> Repo.preload(preloads)
   end
 
   def create_implementation_structure(implementation, data_structure, attrs \\ %{}) do

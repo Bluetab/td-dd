@@ -16,7 +16,6 @@ defmodule TdDd.DataStructures.DataStructure do
   alias TdDd.Grants.Grant
   alias TdDd.Profiles.Profile
   alias TdDd.Systems.System
-  alias TdDq.Implementations.Implementation
   alias TdDq.Implementations.ImplementationStructure
 
   @typedoc "A data structure"
@@ -47,7 +46,7 @@ defmodule TdDd.DataStructures.DataStructure do
     has_one(:current_version, DataStructureVersion, where: [deleted_at: nil])
     has_one(:current_metadata, StructureMetadata, where: [deleted_at: nil])
     has_one(:published_note, StructureNote, where: [status: :published])
-    many_to_many(:implementations, Implementation, join_through: ImplementationStructure)
+    has_many(:implementations, ImplementationStructure)
 
     timestamps(type: :utc_datetime_usec)
   end
