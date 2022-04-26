@@ -65,7 +65,10 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
           records: 100,
           errors: 2,
           params: %{"foo" => "bar"},
-          segments: [%{name: "segment_1", records: 30, errors: 1, params: %{"some" => "thing"}}]
+          segments: [
+            %{name: "segment_1", records: 30, errors: 1, params: %{"some" => "thing"}},
+            %{name: "segment_2", records: 90, errors: 0, params: %{"bar" => "baz"}}
+          ]
         )
 
       assert %{"data" => data} =
@@ -84,7 +87,6 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
                "segments" => _
              } = data
     end
-
 
     @tag authentication: [user_name: "not_a_connector"]
     test "returns 403 Forbidden if user doesn't have create permission", %{
