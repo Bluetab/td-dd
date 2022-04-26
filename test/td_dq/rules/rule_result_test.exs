@@ -1,6 +1,7 @@
 defmodule TdDq.Rules.RuleResultTest do
   use TdDd.DataCase
 
+  alias Decimal
   alias Ecto.Changeset
   alias TdDd.Repo
   alias TdDq.Rules.RuleResult

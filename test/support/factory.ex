@@ -130,7 +130,8 @@ defmodule TdDd.Factory do
       domain_id: 2,
       dataset: build(:dataset),
       populations: build(:populations),
-      validations: build(:validations)
+      validations: build(:validations),
+      segments: build(:segments)
     }
     |> merge_attributes(attrs)
   end
@@ -350,6 +351,26 @@ defmodule TdDd.Factory do
     [build(:condition_row)]
   end
 
+  def segments_factory(_attrs) do
+    [%TdDq.Implementations.SegmentsRow{structure: build(:dataset_structure)}]
+  end
+
+  def segment_result_factory do
+    %TdDq.Implementations.SegmentResult{
+      result: "#{Decimal.round(50, 2)}",
+      records: 0,
+      errors: 0
+    }
+  end
+
+  @spec condition_row_factory :: %TdDq.Implementations.ConditionRow{
+          modifier: nil,
+          operator: any,
+          population: [],
+          structure: any,
+          value: [%{optional(<<_::24>>) => 8}, ...],
+          value_modifier: []
+        }
   def condition_row_factory do
     %TdDq.Implementations.ConditionRow{
       value: [%{"raw" => 8}],
@@ -367,8 +388,9 @@ defmodule TdDd.Factory do
     %TdDq.Implementations.Modifier{name: "cast_as_date", params: %{"format" => "YYYYMMDD"}}
   end
 
-  def rule_result_factory do
+  def rule_result_factory() do
     %TdDq.Rules.RuleResult{
+      # rule_id: sequence(:rule_id, & &1),
       result: "#{Decimal.round(50, 2)}",
       date: "#{DateTime.utc_now()}"
     }

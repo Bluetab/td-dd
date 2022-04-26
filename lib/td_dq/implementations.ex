@@ -239,7 +239,7 @@ defmodule TdDq.Implementations do
 
   def get_structures(%Implementation{} = implementation) do
     implementation
-    |> Map.take([:dataset, :populations, :validations])
+    |> Map.take([:dataset, :populations, :validations, :segments])
     |> Map.values()
     |> Enum.flat_map(&structure/1)
   end
@@ -382,11 +382,13 @@ defmodule TdDq.Implementations do
 
     enriched_populations = Enum.map(implementation.populations, &enrich_populations/1)
     enriched_validations = Enum.map(implementation.validations, &enrich_condition/1)
+    enriched_segments = Enum.map(implementation.segments, &enrich_condition/1)
 
     implementation
     |> Map.put(:dataset, enriched_dataset)
     |> Map.put(:populations, enriched_populations)
     |> Map.put(:validations, enriched_validations)
+    |> Map.put(:segments, enriched_segments)
   end
 
   defp enrich_populations(%{population: population} = populations) do
@@ -498,6 +500,9 @@ defmodule TdDq.Implementations do
 
   defp structure(%{structure: structure, clauses: clauses}),
     do: structure([structure | clauses])
+
+  defp structure(%{structure: structure}),
+    do: structure(structure)
 
   defp structure(%{left: left = %{}, right: right = %{}}),
     do: [Map.take(left, [:id, :name]), Map.take(right, [:id, :name])]

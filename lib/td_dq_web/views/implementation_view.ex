@@ -6,6 +6,8 @@ defmodule TdDqWeb.ImplementationView do
   alias TdDqWeb.Implementation.DatasetView
   alias TdDqWeb.Implementation.PopulationsView
   alias TdDqWeb.Implementation.RawContentView
+  alias TdDqWeb.Implementation.SegmentsView
+  alias TdDqWeb.Implementation.StructureView
   alias TdDqWeb.RuleResultView
 
   def render("index.json", %{actions: %{} = actions} = assigns) when map_size(actions) > 0 do
@@ -92,10 +94,7 @@ defmodule TdDqWeb.ImplementationView do
       :validations,
       render_many(implementation.validations, ConditionView, "condition_row.json")
     )
-    |> Map.put(
-      :segmentations,
-      render_many(implementation.segmentations, ConditionView, "condition_row.json")
-    )
+    |> add_segments(implementation)
     |> add_first_population(implementation)
     |> add_populations(implementation)
     |> add_rule(implementation)
@@ -124,6 +123,16 @@ defmodule TdDqWeb.ImplementationView do
   end
 
   defp add_populations(mapping, _implementation), do: mapping
+
+  defp add_segments(mapping, %{segments: segments}) do
+    mapping
+    |> Map.put(
+      :segments,
+      render_many(segments, SegmentsView, "segments.json")
+    )
+  end
+
+  defp add_segments(mapping, _implementation), do: mapping
 
   defp add_rule(mapping, %{rule: rule}) when map_size(rule) > 0 do
     rule =
@@ -325,6 +334,18 @@ defmodule TdDqWeb.Implementation.ConditionView do
   end
 
   defp with_value_modifier(condition, _row), do: condition
+end
+
+defmodule TdDqWeb.Implementation.SegmentsView do
+  use TdDqWeb, :view
+
+  alias TdDqWeb.Implementation.StructureView
+
+  def render("segments.json", %{segments: row}) do
+    %{
+      structure: render_one(row.structure, StructureView, "structure.json")
+    }
+  end
 end
 
 defmodule TdDqWeb.Implementation.OperatorView do

@@ -53,6 +53,39 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
              } = data
     end
 
+    @tag authentication: [role: "non_admin", permissions: [:manage_rule_results]]
+    test "returns 201 Created with the result with segments", %{
+      conn: conn,
+      swagger_schema: schema,
+      implementation: %{implementation_key: key}
+    } do
+      params =
+        string_params_for(:implementation_result_record,
+          implementation_key: key,
+          records: 100,
+          errors: 2,
+          params: %{"foo" => "bar"},
+          segments: [%{name: "segment_1", records: 30, errors: 1, params: %{"some" => "thing"}}]
+        )
+
+      assert %{"data" => data} =
+               conn
+               |> post(
+                 Routes.implementation_implementation_result_path(conn, :create, key),
+                 rule_result: params
+               )
+               |> validate_resp_schema(schema, "RuleResultResponse")
+               |> json_response(:created)
+
+      assert %{
+               "id" => _,
+               "result" => "98.00",
+               "params" => %{"foo" => "bar"},
+               "segments" => _
+             } = data
+    end
+
+
     @tag authentication: [user_name: "not_a_connector"]
     test "returns 403 Forbidden if user doesn't have create permission", %{
       conn: conn,
@@ -93,7 +126,7 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
         implementation_key: implementation_key
       } = insert(:implementation, rule: rule)
 
-      params = string_params_for(:rule_result_record, implementation_key: implementation_key)
+      params = string_params_for(:rule_result_record, implementation_id: implementation_id)
 
       post(
         conn,
@@ -116,7 +149,7 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
 
       %{
         "date" => expected_date
-      } = params = string_params_for(:rule_result_record, implementation_key: implementation_key)
+      } = params = string_params_for(:rule_result_record, implementation_id: implementation_id)
 
       CacheHelpers.put_implementation(implementation)
 

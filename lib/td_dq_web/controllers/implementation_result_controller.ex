@@ -32,6 +32,7 @@ defmodule TdDqWeb.ImplementationResultController do
          {:can, true} <- {:can, can?(claims, manage_rule_results(implementation))},
          {:ok, %{result: %{id: id} = result}} <-
            RuleResults.create_rule_result(implementation, params) do
+      IO.inspect(result, labelo: "result -->")
       conn
       |> put_status(:created)
       |> put_resp_header("location", Routes.rule_result_path(conn, :show, id))
