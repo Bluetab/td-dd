@@ -325,7 +325,6 @@ defmodule TdDdWeb.DataStructureVersionView do
   defp merge_metadata(dsv), do: dsv
 
   defp merge_implementations(%{implementations: [_ | _] = implementations} = dsv) do
-    # Map.put(dsv, :implementations, render_many(implementations, ImplementationStructureView, "implementation_structure.json"))
     Map.put(
       dsv,
       :implementations,

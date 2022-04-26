@@ -70,7 +70,6 @@ defmodule TdDqWeb.ImplementationStructureView do
     Map.put(
       json,
       :implementation,
-      # render_one(implementation, ImplementationView, "data_structure_implementation.json")
       render_one(implementation, ImplementationView, "implementation.json")
     )
   end
