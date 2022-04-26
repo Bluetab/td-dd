@@ -14,6 +14,7 @@ defmodule TdDd.DataStructures.DataStructure do
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.DataStructures.StructureNote
   alias TdDd.Grants.Grant
+  alias TdDd.Lineage.Units.Node
   alias TdDd.Profiles.Profile
   alias TdDd.Systems.System
   alias TdDq.Implementations.ImplementationStructure
@@ -47,12 +48,10 @@ defmodule TdDd.DataStructures.DataStructure do
     has_one(:current_metadata, StructureMetadata, where: [deleted_at: nil])
     has_one(:published_note, StructureNote, where: [status: :published])
     has_many(:implementations, ImplementationStructure)
+    has_many(:nodes, Node, foreign_key: :structure_id)
+    has_many(:units, through: [:nodes, :units])
 
     timestamps(type: :utc_datetime_usec)
-  end
-
-  def changeset(params, last_change_by) do
-    changeset(%__MODULE__{}, params, last_change_by)
   end
 
   def changeset(%__MODULE__{} = data_structure, params, last_change_by)

@@ -198,7 +198,7 @@ defmodule TdDd.Factory do
 
   def relation_type_factory do
     %RelationType{
-      name: "relation_type_name"
+      name: sequence("relation_type_name")
     }
   end
 

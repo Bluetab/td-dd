@@ -5,9 +5,18 @@ defmodule TdDdWeb.Resolvers.Structures do
 
   alias TdCache.TaxonomyCache
   alias TdDd.DataStructures
+  alias TdDd.DataStructures.Relations
+
+  def data_structures(_parent, args, _resolution) do
+    {:ok, DataStructures.list_data_structures(args)}
+  end
 
   def data_structure_versions(_parent, args, _resolution) do
     {:ok, DataStructures.list_data_structure_versions(args)}
+  end
+
+  def data_structure_relations(_parent, args, _resolution) do
+    {:ok, Relations.list_data_structure_relations(args)}
   end
 
   def domain_id(%{domain_ids: domain_ids}, _args, _resolution) do

@@ -33,19 +33,9 @@ defmodule TdDd.DataStructures do
   # Data structure version associations preloaded for some views
   @preload_dsv_assocs [:classifications, data_structure: :system]
 
-  def list_data_structures(clauses \\ %{}, preload \\ [:system]) do
+  def list_data_structures(clauses \\ %{}) do
     clauses
-    |> Enum.reduce(DataStructure, fn
-      {:external_id, external_ids}, q when is_list(external_ids) ->
-        where(q, [ds], ds.external_id in ^external_ids)
-
-      {:external_id, external_id}, q ->
-        where(q, [ds], ds.external_id == ^external_id)
-
-      {:id, {:in, ids}}, q ->
-        where(q, [ds], ds.id in ^ids)
-    end)
-    |> preload(^preload)
+    |> DataStructureQueries.data_structures_query()
     |> Repo.all()
   end
 
@@ -1078,7 +1068,10 @@ defmodule TdDd.DataStructures do
     Dataloader.Ecto.new(TdDd.Repo, query: &query/2, timeout: Dataloader.default_timeout())
   end
 
-  defp query(queryable, _params) do
-    queryable
+  defp query(queryable, params) do
+    Enum.reduce(params, queryable, fn
+      {:deleted, false}, q -> where(q, [dsv], is_nil(dsv.deleted_at))
+      {:deleted, true}, q -> where(q, [dsv], not is_nil(dsv.deleted_at))
+    end)
   end
 end
