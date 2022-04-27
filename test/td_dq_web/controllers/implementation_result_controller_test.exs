@@ -66,8 +66,8 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
           errors: 2,
           params: %{"foo" => "bar"},
           segments: [
-            %{name: "segment_1", records: 30, errors: 1, params: %{"some" => "thing"}},
-            %{name: "segment_2", records: 90, errors: 0, params: %{"bar" => "baz"}}
+            %{records: 30, errors: 1, params: %{"some" => "thing", "name" => "Country=Spain"}},
+            %{records: 90, errors: 0, params: %{"bar" => "baz", "name" => "Country=Japan"}}
           ]
         )
 
@@ -84,7 +84,7 @@ defmodule TdDqWeb.ImplementationResultControllerTest do
                "id" => _,
                "result" => "98.00",
                "params" => %{"foo" => "bar"},
-               "segments" => _
+               "segments_inserted" => 2
              } = data
     end
 

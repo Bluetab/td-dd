@@ -75,6 +75,26 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> json_response(:ok)
     end
 
+    @tag authentication: [role: "admin"]
+    test "includes has_segments in results", %{conn: conn, swagger_schema: schema} do
+      %{id: impl_id} = implementation = insert(:implementation)
+      %{id: rule_result_id_1} = insert(:rule_result, implementation: implementation)
+      %{id: rule_result_id_2} = insert(:rule_result, implementation: implementation)
+      %{id: rule_result_id_3} = insert(:rule_result, implementation: implementation)
+      insert(:segment_result, parent_id: rule_result_id_1, params: %{"name" => "foo:baz"})
+      insert(:segment_result, parent_id: rule_result_id_2, params: %{"name" => "foo:bar"})
+
+      assert %{"data" => %{"results" => [result_1, result_2, result_3]}} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, impl_id))
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:ok)
+
+      assert %{"id" => ^rule_result_id_1, "has_segments" => true} = result_1
+      assert %{"id" => ^rule_result_id_2, "has_segments" => true} = result_2
+      assert %{"id" => ^rule_result_id_3, "has_segments" => false} = result_3
+    end
+
     @tag authentication: [
            user_name: "non_admin",
            permissions: [:view_published_business_concepts, :view_quality_rule]
@@ -245,6 +265,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
     test "renders implementation with segments", %{conn: conn, swagger_schema: schema} do
       rule = insert(:rule)
       structure_id = 12_554
+
       creation_attrs =
         %{
           implementation_key: "a1",
@@ -592,8 +613,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert implementation.rule_id == data["rule_id"]
 
       assert length(implementation.validations) == length(data["validations"])
-
-
 
       assert equals_condition_row(
                data |> Map.get("populations") |> List.first(),

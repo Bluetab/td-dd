@@ -18,6 +18,8 @@ defmodule TdDq.Rules.RuleResult do
 
   @scale 2
   @valid_result_types Implementation.valid_result_types()
+  @segments_validations [:result, :date, :result_type, :parent_id]
+  @rule_resuls_validations [:implementation, :date, :result, :result_type, :rule_id]
 
   @typedoc "The result of a quality rule execution"
   @type t :: %__MODULE__{}
@@ -32,13 +34,11 @@ defmodule TdDq.Rules.RuleResult do
     field(:result_type, :string)
     field(:details, :map, default: %{})
 
-
     belongs_to(:implementation, Implementation)
     belongs_to(:rule, Rule)
     belongs_to(:parent, RuleResult)
 
     has_many(:execution, Execution, foreign_key: :result_id)
-    # has_many(:segment_result, SegmentResult, foreign_key: :rule_result_id)
     has_one(:remediation, Remediation)
 
     timestamps()
@@ -60,7 +60,7 @@ defmodule TdDq.Rules.RuleResult do
       :details,
       :parent_id
     ])
-    |> put_assoc(:implementation, implementation)
+    |> add_assoc(implementation)
     |> put_date()
     |> maybe_put_result()
     |> validate_inclusion(:result_type, @valid_result_types)
@@ -71,6 +71,15 @@ defmodule TdDq.Rules.RuleResult do
     |> foreign_key_constraint(:rule_id)
   end
 
+  defp add_assoc(%{changes: %{parent_id: parent_id}} = changeset, _impl)
+       when not is_nil(parent_id),
+       do: changeset
+
+  defp add_assoc(%{data: %{parent_id: parent_id}} = changeset, _impl) when not is_nil(parent_id),
+    do: changeset
+
+  defp add_assoc(changeset, implementation),
+    do: put_assoc(changeset, :implementation, implementation)
 
   defp put_date(%{params: %{"date" => value}} = changeset) do
     # Standard datetime formats will be cast correctly by Ecto, we only need to
@@ -89,7 +98,6 @@ defmodule TdDq.Rules.RuleResult do
     with records when is_integer(records) <- get_change(changeset, :records),
          errors when is_integer(errors) <- get_change(changeset, :errors),
          result_type when result_type != nil <- get_result_type(changeset) do
-
       result = calculate_quality(records, errors, result_type)
       put_change(changeset, :result, result)
     else
@@ -97,11 +105,13 @@ defmodule TdDq.Rules.RuleResult do
     end
   end
 
-  defp get_result_type(%{data: %{result_type: result_type}}) when not is_nil(result_type), do: result_type
-  defp get_result_type(%{changes: %{result_type: result_type}}) when not is_nil(result_type), do: result_type
-  defp get_result_type(%{changes: %{rule_result: %{data: %{result_type: result_type}}}}) when not is_nil(result_type) , do: result_type
-  defp get_result_type(changeset), do: get_change(changeset, :result_type)
+  defp get_result_type(%{data: %{result_type: result_type}}) when not is_nil(result_type),
+    do: result_type
 
+  defp get_result_type(%{changes: %{result_type: result_type}}) when not is_nil(result_type),
+    do: result_type
+
+  defp get_result_type(changeset), do: get_change(changeset, :result_type)
 
   defp calculate_quality(0, _errors, _result_type), do: 0
 
@@ -116,7 +126,7 @@ defmodule TdDq.Rules.RuleResult do
   # errors number: could be either percentage of good or bad records. Keeping
   #                percentage of good records to maintain compatibility.
   defp calculate_quality(records, errors, result_type)
-      when result_type in ["errors_number", "percentage"] do
+       when result_type in ["errors_number", "percentage"] do
     records
     |> Decimal.sub(errors)
     |> Decimal.abs()
@@ -124,12 +134,15 @@ defmodule TdDq.Rules.RuleResult do
     |> Decimal.div(records)
   end
 
+  defp add_validations(%{data: %{parent_id: parent_id}} = changeset) when not is_nil(parent_id) do
+    validate_required(changeset, @segments_validations)
+  end
+
   defp add_validations(%{changes: %{parent_id: _}} = changeset) do
-     validate_required(changeset, [:result, :result_type, :parent_id])
+    validate_required(changeset, @segments_validations)
   end
 
   defp add_validations(changeset) do
-    validate_required(changeset, [:implementation, :date, :result, :result_type, :rule_id])
+    validate_required(changeset, @rule_resuls_validations)
   end
-
 end
