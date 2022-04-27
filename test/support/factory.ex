@@ -131,7 +131,7 @@ defmodule TdDd.Factory do
       dataset: build(:dataset),
       populations: build(:populations),
       validations: build(:validations),
-      segments: build(:segments)
+      # segments: build(:segments)
     }
     |> merge_attributes(attrs)
   end
@@ -351,17 +351,17 @@ defmodule TdDd.Factory do
     [build(:condition_row)]
   end
 
-  def segments_factory(_attrs) do
-    [%TdDq.Implementations.SegmentsRow{structure: build(:dataset_structure)}]
-  end
+  # def segments_factory(_attrs) do
+  #   [%TdDq.Implementations.SegmentsRow{structure: build(:dataset_structure)}]
+  # end
 
-  def segment_result_factory do
-    %TdDq.Implementations.SegmentResult{
-      result: "#{Decimal.round(50, 2)}",
-      records: 0,
-      errors: 0
-    }
-  end
+  # def segment_result_factory do
+  #   %TdDq.Implementations.SegmentResult{
+  #     result: "#{Decimal.round(50, 2)}",
+  #     records: 0,
+  #     errors: 0
+  #   }
+  # end
 
   @spec condition_row_factory :: %TdDq.Implementations.ConditionRow{
           modifier: nil,

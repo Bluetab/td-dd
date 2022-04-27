@@ -4,7 +4,7 @@ defmodule TdDqWeb.ImplementationResultController do
   import Canada, only: [can?: 2]
 
   alias TdDq.Implementations
-  alias TdDq.Implementations.SegmentResults
+  # alias TdDq.Implementations.SegmentResults
   alias TdDq.Rules.RuleResults
   alias TdDqWeb.RuleResultView
 
@@ -32,13 +32,7 @@ defmodule TdDqWeb.ImplementationResultController do
     with implementation <- Implementations.get_implementation_by_key!(key),
          {:can, true} <- {:can, can?(claims, manage_rule_results(implementation))},
          {:ok, %{result: %{id: id} = result}} <-
-           RuleResults.create_rule_result(implementation, params)
-        #  {:ok, segments_result} <-
-        #    SegmentResults.create_segment_result(result, params)
-           do
-
-          segments_result = SegmentResults.create_segment_result(result, params)
-      IO.inspect(segments_result, label: "segments_result -->")
+           RuleResults.create_rule_result(implementation, params) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", Routes.rule_result_path(conn, :show, id))

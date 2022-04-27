@@ -12,7 +12,6 @@ defmodule TdDq.Rules.RuleResults do
   alias TdDq.Events.QualityEvents
   alias TdDq.Executions.Execution
   alias TdDq.Implementations.Implementation
-  alias TdDq.Implementations.SegmentResults
   alias TdDq.Rules.Audit
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleResult
@@ -61,9 +60,6 @@ defmodule TdDq.Rules.RuleResults do
 
     Multi.new()
     |> Multi.insert(:result, changeset)
-    # |> Multi.run(:segment_result, fn _, %{result: result} ->
-    #   SegmentResults.create_segments_result(result, params)
-    # end)
     |> Multi.run(:executions, fn _repo, %{result: result} ->
       res = update_executions(result)
       {:ok, res}

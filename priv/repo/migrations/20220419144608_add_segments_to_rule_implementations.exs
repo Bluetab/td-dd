@@ -7,20 +7,13 @@ defmodule TdDd.Repo.Migrations.AddsegmentsToRuleImplementations do
       add(:segments, {:array, :map}, default: [])
     end
 
-    create table("segment_results") do
-      add(:result, :decimal, scale: 2, precision: 5)
-      add(:records, :bigint)
-      add(:errors, :bigint)
-      add(:params, :map)
-      add(:details, :map)
-      add(:rule_result_id, references("rule_results", on_delete: :delete_all))
-
-      timestamps()
+    alter table("rule_results") do
+      add(:parent_id, references("rule_results"), on_delete: :delete_all)
     end
   end
 
   def down do
-    drop table("segment_results")
+    alter table("rule_results"), do: remove(:parent_id)
     alter table("rule_implementations"), do: remove(:segments)
   end
 end

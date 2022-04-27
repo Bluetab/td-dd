@@ -16,7 +16,6 @@ defmodule TdDq.Implementations.Implementation do
   alias TdDq.Implementations.Populations
   alias TdDq.Implementations.RawContent
   alias TdDq.Implementations.SegmentsRow
-  alias TdDq.Implementations.SegmentResult
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleResult
   alias TdDq.Rules.RuleResults
