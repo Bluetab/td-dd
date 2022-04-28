@@ -5,25 +5,94 @@ defmodule TdDd.DataStructures.DataStructureQueriesTest do
   alias TdDd.DataStructures.Hierarchy
   alias TdDd.Repo
 
-  describe "data structure queries" do
+  describe "DataStructureQueries.data_structures_query/1" do
+    test "filters by deleted" do
+      %{data_structure_id: id} = insert(:data_structure_version)
+      _deleted_version = insert(:data_structure_version, deleted_at: DateTime.utc_now())
+
+      assert [%{id: ^id}] = query_data_structures(deleted: false)
+    end
+
+    test "filters by external_id" do
+      %{external_id: external_id1} = insert(:data_structure)
+      %{external_id: external_id2} = insert(:data_structure)
+
+      assert [%{external_id: ^external_id1}] = query_data_structures(external_id: external_id1)
+      assert [_, _] = query_data_structures(external_id: [external_id1, external_id2])
+    end
+
+    test "filters by ids" do
+      %{id: id1} = insert(:data_structure)
+      %{id: id2} = insert(:data_structure)
+
+      assert [%{id: ^id1}] = query_data_structures(ids: [id1])
+      assert [_, _] = query_data_structures(ids: [id1, id2])
+    end
+
+    test "filters by min_id" do
+      _lower_id = insert(:data_structure)
+      %{id: id} = insert(:data_structure)
+
+      assert [%{id: ^id}] = query_data_structures(min_id: id)
+    end
+
+    test "limits results" do
+      for _i <- 1..5, do: insert(:data_structure)
+
+      assert [_, _] = query_data_structures(limit: 2)
+    end
+
+    test "orders results" do
+      for _i <- 1..5, do: insert(:data_structure)
+      insert(:data_structure, id: -123)
+
+      ids = query_data_structures(order_by: "id") |> Enum.map(& &1.id)
+      assert ids == Enum.sort(ids)
+    end
+
+    test "preloads associations" do
+      %{name: type_name} = insert(:data_structure_type)
+
+      %{data_structure: %{system_id: system_id}} =
+        insert(:data_structure_version, type: type_name)
+
+      assert [%{system: system, current_version: dsv}] =
+               query_data_structures(preload: [:system, current_version: :structure_type])
+
+      assert %{id: ^system_id} = system
+      assert %{structure_type: %{name: ^type_name}} = dsv
+    end
+
+    test "filters by lineage units" do
+      _without_lineage = insert(:data_structure)
+
+      %{structure_id: id} =
+        insert(:node, units: [build(:unit)], structure: build(:data_structure))
+
+      assert [%{id: ^id}] = query_data_structures(lineage: true)
+    end
+
+    test "filters by updated_at" do
+      _updated_before = insert(:data_structure)
+      %{updated_at: updated_at} = insert(:data_structure)
+
+      assert [%{updated_at: ^updated_at}] = query_data_structures(since: updated_at)
+    end
+  end
+
+  describe "DataStructureQueries.enriched_structure_versions/1" do
     test "compare with path snapshot" do
       dsv_names = ["foo", "bar", "baz", "xyzzy", "spqr"]
       dsvs = create_hierarchy(dsv_names)
-
-      ids =
-        dsvs
-        |> Enum.map(fn dsv -> Map.get(dsv, :id) end)
+      ids = Enum.map(dsvs, & &1.id)
 
       Hierarchy.update_hierarchy(ids)
 
       paths =
         DataStructureQueries.enriched_structure_versions(%{ids: ids})
         |> Repo.all()
-        |> Enum.map(fn p ->
-          Map.get(p, :path)
-          |> Enum.map(fn pk ->
-            Map.take(pk, ["name"])
-          end)
+        |> Enum.map(fn %{path: path} ->
+          Enum.map(path, &Map.take(&1, ["name"]))
         end)
 
       assert paths == snapshot(dsv_names)
@@ -38,9 +107,9 @@ defmodule TdDd.DataStructures.DataStructureQueriesTest do
       dsvs_1 = create_hierarchy(dsv_names_1)
       dsvs_2 = create_hierarchy(dsv_names_2)
 
-      ids_0 = dsvs_0 |> Enum.map(fn dsv -> Map.get(dsv, :id) end)
-      ids_1 = dsvs_1 |> Enum.map(fn dsv -> Map.get(dsv, :id) end)
-      ids_2 = dsvs_2 |> Enum.map(fn dsv -> Map.get(dsv, :id) end)
+      ids_0 = Enum.map(dsvs_0, & &1.id)
+      ids_1 = Enum.map(dsvs_1, & &1.id)
+      ids_2 = Enum.map(dsvs_2, & &1.id)
 
       ids = ids_0 ++ ids_1 ++ ids_2
 
@@ -49,11 +118,8 @@ defmodule TdDd.DataStructures.DataStructureQueriesTest do
       paths =
         DataStructureQueries.enriched_structure_versions(%{ids: ids})
         |> Repo.all()
-        |> Enum.map(fn p ->
-          Map.get(p, :path)
-          |> Enum.map(fn pk ->
-            Map.take(pk, ["name"])
-          end)
+        |> Enum.map(fn %{path: path} ->
+          Enum.map(path, &Map.take(&1, ["name"]))
         end)
 
       assert paths == snapshot(dsv_names)
@@ -91,5 +157,11 @@ defmodule TdDd.DataStructures.DataStructureQueriesTest do
         %{"name" => "xyzzy"}
       ]
     ]
+  end
+
+  defp query_data_structures(clauses) do
+    clauses
+    |> DataStructureQueries.data_structures_query()
+    |> Repo.all()
   end
 end

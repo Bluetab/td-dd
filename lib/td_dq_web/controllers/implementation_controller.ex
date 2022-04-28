@@ -121,17 +121,23 @@ defmodule TdDqWeb.ImplementationController do
       ## TODO: take this functionality con resutl context to add has_segments
       |> Implementations.get_implementation!(
         enrich: [:source, :links],
-        preload: [:rule, [results: :remediation]]
+        preload: [
+          :rule,
+          [results: :remediation],
+          [data_structures: [data_structure: [:system, :current_version]]]
+        ]
       )
       |> add_last_rule_result()
       |> with_has_segments()
       |> add_quality_event()
       |> Implementations.enrich_implementation_structures()
       |> filter_links_by_permission(claims)
+      |> filter_data_structures_by_permission(claims)
 
     actions =
       %{}
       |> link_concept_actions(claims, implementation)
+      |> link_structure_actions(claims, implementation)
 
     with {:can, true} <- {:can, can?(claims, show(implementation))} do
       render(conn, "show.json", implementation: implementation, actions: actions)
@@ -160,6 +166,30 @@ defmodule TdDqWeb.ImplementationController do
       actions
     end
   end
+
+  defp link_structure_actions(actions, claims, implementation) do
+    if can?(claims, link_structure(implementation)) do
+      Map.put(actions, :link_structure, %{method: "POST"})
+    else
+      actions
+    end
+  end
+
+  defp filter_data_structures_by_permission(implementation, %{role: "admin"}), do: implementation
+
+  defp filter_data_structures_by_permission(
+         %{data_structures: [_ | _] = data_structures} = implementation,
+         claims
+       ) do
+    data_structures =
+      Enum.filter(data_structures, fn %{data_structure: data_structure} ->
+        can?(claims, show(data_structure))
+      end)
+
+    Map.put(implementation, :data_structures, data_structures)
+  end
+
+  defp filter_data_structures_by_permission(implementation, _claims), do: implementation
 
   swagger_path :update do
     description("Updates Quality Rule")

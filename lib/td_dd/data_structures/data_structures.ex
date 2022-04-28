@@ -33,19 +33,9 @@ defmodule TdDd.DataStructures do
   # Data structure version associations preloaded for some views
   @preload_dsv_assocs [:classifications, data_structure: :system]
 
-  def list_data_structures(clauses \\ %{}, preload \\ [:system]) do
+  def list_data_structures(clauses \\ %{}) do
     clauses
-    |> Enum.reduce(DataStructure, fn
-      {:external_id, external_ids}, q when is_list(external_ids) ->
-        where(q, [ds], ds.external_id in ^external_ids)
-
-      {:external_id, external_id}, q ->
-        where(q, [ds], ds.external_id == ^external_id)
-
-      {:id, {:in, ids}}, q ->
-        where(q, [ds], ds.id in ^ids)
-    end)
-    |> preload(^preload)
+    |> DataStructureQueries.data_structures_query()
     |> Repo.all()
   end
 
@@ -67,6 +57,26 @@ defmodule TdDd.DataStructures do
   end
 
   def get_data_structure(id), do: Repo.get(DataStructure, id)
+
+  def list_data_structure_versions_by_criteria(criteria) do
+    criteria
+    |> Enum.reduce(DataStructureVersion, fn
+      {:not_deleted, _}, q ->
+        where(q, [dsv], is_nil(dsv.deleted_at))
+
+      {:name, name}, q ->
+        where(q, [dsv], dsv.name == ^name)
+
+      {:metadata_field, {key, value}}, q ->
+        where(q, [dsv], fragment("?->>? = ?", dsv.metadata, ^key, ^value))
+
+      {:source_id, source_id}, q ->
+        q
+        |> join(:inner, [dsv], ds in assoc(dsv, :data_structure))
+        |> where([_dsv, ds], ds.source_id == ^source_id)
+    end)
+    |> Repo.all()
+  end
 
   @doc "Gets a single data_structure by external_id"
   def get_data_structure_by_external_id(external_id, preload \\ []) do
@@ -168,6 +178,7 @@ defmodule TdDd.DataStructures do
     |> enrich(opts, :tags, &get_tags!/1)
     |> enrich(opts, :grants, &get_grants/1)
     |> enrich(opts, :grant, &get_grant(&1, opts[:user_id]))
+    |> enrich(opts, :implementations, &get_implementations!/1)
   end
 
   defp enrich(%{} = target, opts, key, fun) do
@@ -441,6 +452,12 @@ defmodule TdDd.DataStructures do
   defp get_metadata_versions!(%DataStructureVersion{} = dsv) do
     case Repo.preload(dsv, data_structure: :metadata_versions) do
       %{data_structure: %{metadata_versions: metadata_versions}} -> metadata_versions
+    end
+  end
+
+  defp get_implementations!(%DataStructureVersion{} = dsv) do
+    case Repo.preload(dsv, data_structure: [implementations: [implementation: [:rule, :results]]]) do
+      %{data_structure: %{implementations: implementations}} -> implementations
     end
   end
 
@@ -1051,7 +1068,10 @@ defmodule TdDd.DataStructures do
     Dataloader.Ecto.new(TdDd.Repo, query: &query/2, timeout: Dataloader.default_timeout())
   end
 
-  defp query(queryable, _params) do
-    queryable
+  defp query(queryable, params) do
+    Enum.reduce(params, queryable, fn
+      {:deleted, false}, q -> where(q, [dsv], is_nil(dsv.deleted_at))
+      {:deleted, true}, q -> where(q, [dsv], not is_nil(dsv.deleted_at))
+    end)
   end
 end

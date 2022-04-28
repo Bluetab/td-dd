@@ -136,6 +136,18 @@ defmodule TdDd.Factory do
     |> merge_attributes(attrs)
   end
 
+  def implementation_structure_factory(attrs) do
+    attrs =
+      attrs
+      |> default_assoc(:data_structure_id, :data_structure)
+      |> default_assoc(:implementation_id, :implementation)
+
+    %TdDq.Implementations.ImplementationStructure{
+      type: :dataset
+    }
+    |> merge_attributes(attrs)
+  end
+
   def data_structure_relation_factory(attrs) do
     attrs =
       attrs
@@ -187,7 +199,7 @@ defmodule TdDd.Factory do
 
   def relation_type_factory do
     %RelationType{
-      name: "relation_type_name"
+      name: sequence("relation_type_name")
     }
   end
 

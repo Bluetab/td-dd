@@ -10,9 +10,9 @@ defmodule TdDd.Lineage.Import.ValidationsTest do
         |> Graph.add_vertex("Group1", class: "Group")
         |> Graph.add_vertex("Resource1", class: "Resource")
         |> Graph.add_vertex("Resource2", class: "Resource")
-        |> Graph.add_edge("Group1", "Resource1", class: "CONTAINS")
-        |> Graph.add_edge("Group1", "Resource2", class: "CONTAINS")
-        |> Graph.add_edge("Resource1", "Resource2", class: "DEPENDS")
+        |> Graph.add_edge("Group1", "Resource1", class: "CONTAINS", metada: %{})
+        |> Graph.add_edge("Group1", "Resource2", class: "CONTAINS", metada: %{})
+        |> Graph.add_edge("Resource1", "Resource2", class: "DEPENDS", metada: %{})
 
       assert %Validations{valid: true} = Validations.validate(graph)
     end
@@ -22,8 +22,8 @@ defmodule TdDd.Lineage.Import.ValidationsTest do
         Graph.new()
         |> Graph.add_vertex(:v1, class: "FOO")
         |> Graph.add_vertex(:v2, class: "BAR")
-        |> Graph.add_edge(:v1, :v2, class: "BAZ")
-        |> Graph.add_edge(:v2, :v1, class: "XYZZY")
+        |> Graph.add_edge(:v1, :v2, class: "BAZ", metada: %{})
+        |> Graph.add_edge(:v2, :v1, class: "XYZZY", metada: %{})
 
       assert %Validations{
                valid: false,
@@ -39,8 +39,8 @@ defmodule TdDd.Lineage.Import.ValidationsTest do
         |> Graph.add_vertex("Group2", class: "Group")
         |> Graph.add_vertex("Resource1", class: "Resource")
         |> Graph.add_vertex("Resource2", class: "Resource")
-        |> Graph.add_edge("Group1", "Resource1", class: "CONTAINS")
-        |> Graph.add_edge("Group2", "Resource1", class: "CONTAINS")
+        |> Graph.add_edge("Group1", "Resource1", class: "CONTAINS", metada: %{})
+        |> Graph.add_edge("Group2", "Resource1", class: "CONTAINS", metada: %{})
 
       assert %Validations{
                valid: false,
@@ -55,8 +55,8 @@ defmodule TdDd.Lineage.Import.ValidationsTest do
         |> Graph.add_vertex("Group", class: "Group")
         |> Graph.add_vertex("Resource1", class: "Resource")
         |> Graph.add_vertex("Resource2", class: "Resource")
-        |> Graph.add_edge("Group", "Resource1", class: "DEPENDS")
-        |> Graph.add_edge("Resource2", "Resource1", class: "CONTAINS")
+        |> Graph.add_edge("Group", "Resource1", class: "DEPENDS", metada: %{})
+        |> Graph.add_edge("Resource2", "Resource1", class: "CONTAINS", metada: %{})
 
       assert %Validations{
                valid: false,

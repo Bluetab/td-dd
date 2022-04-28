@@ -8,6 +8,8 @@ defmodule TdDqWeb.ImplementationView do
   alias TdDqWeb.Implementation.RawContentView
   alias TdDqWeb.Implementation.SegmentsView
   alias TdDqWeb.Implementation.StructureView
+  alias TdDqWeb.ImplementationStructureView
+
   alias TdDqWeb.RuleResultView
 
   def render("index.json", %{actions: %{} = actions} = assigns) when map_size(actions) > 0 do
@@ -34,6 +36,8 @@ defmodule TdDqWeb.ImplementationView do
   def render("implementation.json", %{
         implementation: %{implementation_type: "raw"} = implementation
       }) do
+    data_structures = Map.get(implementation, :data_structures)
+
     implementation
     |> Map.take([
       :current_business_concept_version,
@@ -64,9 +68,12 @@ defmodule TdDqWeb.ImplementationView do
     |> add_last_rule_results(implementation)
     |> add_quality_event_info(implementation)
     |> add_rule_results(implementation)
+    |> maybe_render_data_structures(data_structures)
   end
 
   def render("implementation.json", %{implementation: implementation}) do
+    data_structures = Map.get(implementation, :data_structures)
+
     implementation
     |> Map.take([
       :current_business_concept_version,
@@ -101,6 +108,7 @@ defmodule TdDqWeb.ImplementationView do
     |> add_quality_event_info(implementation)
     |> add_last_rule_results(implementation)
     |> add_rule_results(implementation)
+    |> maybe_render_data_structures(data_structures)
   end
 
   defp add_first_population(mapping, %{populations: [%{population: population} | _]})
@@ -189,18 +197,27 @@ defmodule TdDqWeb.ImplementationView do
     end
   end
 
-  defp add_rule_results(implementation_mapping, implementation) do
+  defp add_rule_results(implementation_mapping, %{results: [_ | _] = results}) do
     rule_results =
-      implementation
-      |> Map.get(:results, [])
+      results
       |> Enum.sort_by(& &1.date, {:desc, DateTime})
       |> Enum.map(&render_one(&1, RuleResultView, "rule_result.json"))
 
-    case rule_results do
-      [] -> implementation_mapping
-      _ -> Map.put(implementation_mapping, :results, rule_results)
-    end
+    Map.put(implementation_mapping, :results, rule_results)
   end
+
+  defp add_rule_results(implementation_mapping, _), do: implementation_mapping
+
+  defp maybe_render_data_structures(implementation_mapping, data_structures)
+       when is_list(data_structures) do
+    Map.put(
+      implementation_mapping,
+      :data_structures,
+      render_many(data_structures, ImplementationStructureView, "implementation_structure.json")
+    )
+  end
+
+  defp maybe_render_data_structures(implementation_mapping, _), do: implementation_mapping
 end
 
 defmodule TdDqWeb.Implementation.RawContentView do

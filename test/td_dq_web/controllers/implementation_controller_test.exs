@@ -4,6 +4,11 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
   import Mox
 
+  alias TdDd.DataStructures.Hierarchy
+  alias TdDd.DataStructures.RelationTypes
+
+  @moduletag sandbox: :shared
+
   @valid_dataset [
     %{structure: %{id: 14_080}},
     %{clauses: [%{left: %{id: 14_863}, right: %{id: 4028}}], structure: %{id: 3233}}
@@ -42,6 +47,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
   setup :verify_on_exit!
 
   setup do
+    start_supervised!(TdDd.Search.StructureEnricher)
+
     [implementation: insert(:implementation)]
   end
 
@@ -93,6 +100,156 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert %{"id" => ^rule_result_id_1, "has_segments" => true} = result_1
       assert %{"id" => ^rule_result_id_2, "has_segments" => true} = result_2
       assert %{"id" => ^rule_result_id_3, "has_segments" => false} = result_3
+    end
+
+    @tag authentication: [role: "admin"]
+    test "includes related structures with current version and system in the response", %{
+      conn: conn,
+      swagger_schema: schema
+    } do
+      %{id: system_id, name: system_name} = insert(:system)
+      %{id: data_structure_id} = data_structure = insert(:data_structure, system_id: system_id)
+
+      %{name: structure_name} =
+        insert(:data_structure_version, data_structure_id: data_structure_id)
+
+      %{id: id} = implementation = insert(:implementation)
+
+      insert(:implementation_structure,
+        implementation: implementation,
+        data_structure: data_structure
+      )
+
+      assert %{"data" => %{"data_structures" => data_structures}} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:ok)
+
+      assert [
+               %{
+                 "implementation_id" => ^id,
+                 "type" => "dataset",
+                 "data_structure" => %{
+                   "id" => ^data_structure_id,
+                   "system" => %{"name" => ^system_name},
+                   "current_version" => %{
+                     "name" => ^structure_name
+                   }
+                 }
+               }
+             ] = data_structures
+    end
+
+    @tag authentication: [role: "admin"]
+    test "data_structures has enriched path", %{
+      conn: conn,
+      swagger_schema: schema
+    } do
+      domain_id = System.unique_integer([:positive])
+      %{id: system_id} = insert(:system)
+
+      %{id: data_structure_id} =
+        data_structure =
+        insert(:data_structure,
+          system_id: system_id,
+          domain_ids: [domain_id]
+        )
+
+      %{id: dsv_id} = insert(:data_structure_version, data_structure: data_structure)
+
+      %{id: dsv_parent_id, name: parent_name} =
+        insert(:data_structure_version,
+          data_structure:
+            build(:data_structure,
+              system_id: system_id,
+              domain_ids: [domain_id]
+            )
+        )
+
+      %{id: id} = implementation = insert(:implementation)
+
+      insert(:implementation_structure,
+        implementation: implementation,
+        data_structure: data_structure
+      )
+
+      insert(:data_structure_relation,
+        parent_id: dsv_parent_id,
+        child_id: dsv_id,
+        relation_type_id: RelationTypes.default_id!()
+      )
+
+      Hierarchy.update_hierarchy([dsv_id])
+
+      assert %{"data" => %{"data_structures" => data_structures}} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:ok)
+
+      assert [
+               %{
+                 "implementation_id" => ^id,
+                 "data_structure" => %{
+                   "id" => ^data_structure_id,
+                   "current_version" => %{
+                     "path" => [^parent_name]
+                   }
+                 }
+               }
+             ] = data_structures
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions: [
+             :view_data_structure,
+             :view_quality_rule
+           ]
+         ]
+    test "hides related data structures without permission", %{
+      conn: conn,
+      domain: domain
+    } do
+      %{id: system_id, name: system_name} = insert(:system)
+
+      %{id: data_structure_id} =
+        data_structure = insert(:data_structure, system_id: system_id, domain_ids: [domain.id])
+
+      %{name: structure_name} =
+        insert(:data_structure_version, data_structure_id: data_structure_id)
+
+      %{id: id} = implementation = insert(:implementation, domain_id: domain.id)
+
+      insert(:implementation_structure,
+        implementation: implementation,
+        data_structure: data_structure
+      )
+
+      insert(:implementation_structure,
+        implementation: implementation,
+        data_structure: build(:data_structure)
+      )
+
+      assert %{"data" => %{"data_structures" => data_structures}} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert [
+               %{
+                 "implementation_id" => ^id,
+                 "type" => "dataset",
+                 "data_structure" => %{
+                   "id" => ^data_structure_id,
+                   "system" => %{"name" => ^system_name},
+                   "current_version" => %{
+                     "name" => ^structure_name
+                   }
+                 }
+               }
+             ] = data_structures
     end
 
     @tag authentication: [

@@ -84,6 +84,10 @@ defmodule TdDd.Canada.DataStructureAbilities do
     Permissions.authorized?(claims, :manage_structures_metadata, domain_id)
   end
 
+  def can?(%Claims{} = claims, :link_data_structure, %DataStructure{domain_ids: domain_ids}) do
+    Permissions.authorized?(claims, :link_data_structure, domain_ids)
+  end
+
   def can?(%Claims{} = claims, :link_data_structure_tag, %DataStructure{domain_ids: domain_ids}) do
     Permissions.authorized?(claims, :link_data_structure_tag, domain_ids)
   end

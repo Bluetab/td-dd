@@ -1,6 +1,8 @@
 defmodule TdDq.Canada.Abilities do
   @moduledoc false
 
+  alias TdDd.Canada.DataStructureAbilities
+  alias TdDd.DataStructures.DataStructure
   alias TdDq.Auth.Claims
   alias TdDq.Canada.ExecutionAbilities
   alias TdDq.Canada.ImplementationAbilities
@@ -71,6 +73,11 @@ defmodule TdDq.Canada.Abilities do
 
     def can?(%Claims{} = claims, :view_published_concept, domain_id) do
       Permissions.authorized?(claims, :view_published_business_concepts, domain_id)
+    end
+
+    def can?(%Claims{} = claims, action, %DataStructure{} = data_structure) do
+      dd_claims = TdDd.Auth.Claims.from(claims)
+      DataStructureAbilities.can?(dd_claims, action, data_structure)
     end
 
     def can?(%Claims{}, _action, _entity) do
