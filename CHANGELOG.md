@@ -10,6 +10,10 @@
 
 - [TD-4721] User with permissions can list sources
 
+# Add
+
+- [TD-4538] Segments definitions in the implementations, and support for segment results
+
 
 ## [4.41.1] 2022-04-04
 
