@@ -3,12 +3,12 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
 
   @create_attrs %{
     name: "some structure_type",
-    template_id: 42,
+    template_id: 54321,
     translation: "some translation"
   }
   @update_attrs %{
     name: "some updated structure_type",
-    template_id: 43,
+    template_id: 54321,
     translation: "some updated translation",
     metadata_views: [%{"name" => "updated", "fields" => []}]
   }
@@ -21,14 +21,15 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
   describe "index" do
     @tag authentication: [role: "admin"]
     test "lists all data_structure_types", %{conn: conn} do
-      insert(:data_structure_type, template_id: 123)
+      template_id = System.unique_integer([:positive])
+      insert(:data_structure_type, template_id: template_id)
 
       assert %{"data" => [structure_type]} =
                conn
                |> get(Routes.data_structure_type_path(conn, :index))
                |> json_response(:ok)
 
-      assert %{"template_id" => 123} = structure_type
+      assert %{"template_id" => ^template_id} = structure_type
       refute Map.has_key?(structure_type, "template")
     end
 
@@ -85,7 +86,7 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
       assert %{
                "id" => _id,
                "name" => "some updated structure_type",
-               "template_id" => 43,
+               "template_id" => 54321,
                "translation" => "some updated translation",
                "metadata_fields" => [],
                "metadata_views" => [%{"fields" => [], "name" => "updated"}]
