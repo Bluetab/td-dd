@@ -7,7 +7,6 @@ defmodule TdDq.Rules.RuleResult do
 
   import Ecto.Changeset
 
-  # alias TdDq.Implementations.SegmentResult
   alias Decimal
   alias TdDq.DateParser
   alias TdDq.Executions.Execution
@@ -70,10 +69,6 @@ defmodule TdDq.Rules.RuleResult do
     |> validate_number(:errors, greater_than_or_equal_to: 0)
     |> foreign_key_constraint(:rule_id)
   end
-
-  defp add_assoc(%{changes: %{parent_id: parent_id}} = changeset, _impl)
-       when not is_nil(parent_id),
-       do: changeset
 
   defp add_assoc(%{data: %{parent_id: parent_id}} = changeset, _impl) when not is_nil(parent_id),
     do: changeset
