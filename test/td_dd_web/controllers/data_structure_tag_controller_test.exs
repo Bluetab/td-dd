@@ -3,13 +3,14 @@ defmodule TdDdWeb.DataStructureTagControllerTest do
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
   alias TdDd.DataStructures
-  alias TdDd.DataStructures.DataStructureTag
 
   @create_attrs %{
-    name: "some name"
+    name: "some name",
+    domain_ids: [1, 2]
   }
   @update_attrs %{
-    name: "some updated name"
+    name: "some updated name",
+    domain_ids: [2, 3]
   }
   @invalid_attrs %{name: nil}
 
@@ -61,7 +62,7 @@ defmodule TdDdWeb.DataStructureTagControllerTest do
   describe "show" do
     @tag authentication: [role: "admin"]
     test "show data_structure_tag", %{conn: conn, swagger_schema: schema} do
-      %{id: id, name: name} = insert(:data_structure_tag)
+      %{id: id, name: name, domain_ids: domain_ids} = insert(:data_structure_tag, domain_ids: [1, 2])
 
       assert %{"data" => structure_tag} =
                conn
@@ -69,7 +70,7 @@ defmodule TdDdWeb.DataStructureTagControllerTest do
                |> validate_resp_schema(schema, "DataStructureTagResponse")
                |> json_response(:ok)
 
-      assert %{"id" => ^id, "name" => ^name} = structure_tag
+      assert %{"id" => ^id, "name" => ^name, "domain_ids" => ^domain_ids} = structure_tag
     end
 
     @tag authentication: [user_name: "non_admin_user"]
@@ -100,7 +101,8 @@ defmodule TdDdWeb.DataStructureTagControllerTest do
 
       assert %{
                "id" => ^id,
-               "name" => "some name"
+               "name" => "some name",
+               "domain_ids" => _
              } = data
     end
 
@@ -133,7 +135,7 @@ defmodule TdDdWeb.DataStructureTagControllerTest do
     test "renders data_structure_tag when data is valid", %{
       conn: conn,
       swagger_schema: schema,
-      data_structure_tag: %DataStructureTag{id: id}
+      data_structure_tag: %{id: id}
     } do
       assert %{"data" => %{"id" => ^id}} =
                conn
@@ -150,7 +152,8 @@ defmodule TdDdWeb.DataStructureTagControllerTest do
 
       assert %{
                "id" => ^id,
-               "name" => "some updated name"
+               "name" => "some updated name",
+               "domain_ids" => _
              } = data
     end
 

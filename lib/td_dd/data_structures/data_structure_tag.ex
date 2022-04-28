@@ -10,14 +10,16 @@ defmodule TdDd.DataStructures.DataStructureTag do
 
   schema "data_structure_tags" do
     field :name, :string
+    field :domain_ids, {:array, :integer}, default: []
+
     many_to_many(:tagged_structures, DataStructure, join_through: DataStructuresTags)
 
     timestamps()
   end
 
-  def changeset(data_structure_tag, attrs) do
+  def changeset(data_structure_tag, params) do
     data_structure_tag
-    |> cast(attrs, [:name])
+    |> cast(params, [:name, :domain_ids])
     |> validate_required([:name])
     |> unique_constraint(:name)
   end

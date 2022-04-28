@@ -1,5 +1,6 @@
 defmodule TdDdWeb.DataStructureTagView do
   use TdDdWeb, :view
+
   alias TdDdWeb.DataStructureTagView
 
   def render("index.json", %{data_structure_tags: data_structure_tags}) do
@@ -11,10 +12,8 @@ defmodule TdDdWeb.DataStructureTagView do
   end
 
   def render("data_structure_tag.json", %{data_structure_tag: data_structure_tag}) do
-    %{
-      id: data_structure_tag.id,
-      name: data_structure_tag.name
-    }
+    data_structure_tag
+    |> Map.take([:id, :name, :domain_ids])
     |> with_structure_count(data_structure_tag)
   end
 

@@ -8,10 +8,13 @@ defmodule TdDd.DataStructuresTest do
   alias TdCache.Redix.Stream
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureTag
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.RelationTypes
+  alias TdDd.DataStructures.StructureMetadata
   alias TdDd.DataStructures.StructureNotes
+  alias TdDd.DataStructures.StructureNote
   alias TdDd.Repo
 
   @moduletag sandbox: :shared
@@ -1218,8 +1221,6 @@ defmodule TdDd.DataStructuresTest do
   end
 
   describe "structure_metadata" do
-    alias TdDd.DataStructures.StructureMetadata
-
     @valid_attrs %{fields: %{}, data_structure_id: 0, version: 0}
     @update_attrs %{fields: %{"foo" => "bar"}, version: 0}
     @invalid_attrs %{fields: nil, data_structure_id: nil, version: nil}
@@ -1358,8 +1359,6 @@ defmodule TdDd.DataStructuresTest do
   end
 
   describe "data_structure_tags" do
-    alias TdDd.DataStructures.DataStructureTag
-
     @valid_attrs %{name: "some name"}
     @update_attrs %{name: "some updated name"}
     @invalid_attrs %{name: nil}
@@ -1625,8 +1624,6 @@ defmodule TdDd.DataStructuresTest do
   end
 
   describe "structure_notes" do
-    alias TdDd.DataStructures.StructureNote
-
     @user_id 1
     @valid_attrs %{df_content: %{}, status: :draft, version: 42}
     @update_attrs %{df_content: %{}, status: :published}

@@ -6,13 +6,17 @@
 
 - [TD-3186] Support for links between Implementations and Structures
 
+### Changed
+
+- [TD-4723] Data structure tags can now be associated with specific domains
+
 ## [4.42.0] 2022-04-25
 
 ### Added
 
 - [TD-4098] GraphQL query for data structures
 - [TD-4683] GraphQL query for data structure relations
-- [TD-2026]  Add metadata to linage graph
+- [TD-2026] Add metadata to lineage graph
 
 ### Changed
 
