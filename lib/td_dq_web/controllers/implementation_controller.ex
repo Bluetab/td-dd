@@ -118,6 +118,7 @@ defmodule TdDqWeb.ImplementationController do
 
     implementation =
       id
+      ## TODO: take this functionality con resutl context to add has_segments
       |> Implementations.get_implementation!(
         enrich: [:source, :links],
         preload: [
@@ -127,6 +128,7 @@ defmodule TdDqWeb.ImplementationController do
         ]
       )
       |> add_last_rule_result()
+      |> with_has_segments()
       |> add_quality_event()
       |> Implementations.enrich_implementation_structures()
       |> filter_links_by_permission(claims)
@@ -317,4 +319,23 @@ defmodule TdDqWeb.ImplementationController do
         params
     end
   end
+
+  ## TODO: refactor this function with SQL sentence
+  defp with_has_segments(%Implementation{results: results} = impl)
+       when length(results) >= 1 do
+    parent_ids =
+      results
+      |> Enum.map(fn %{id: id} -> id end)
+      |> RuleResults.has_segments()
+
+    results =
+      results
+      |> Enum.map(fn %{id: parent_id} = result ->
+        Map.put(result, :has_segments, Enum.member?(parent_ids, parent_id))
+      end)
+
+    Map.put(impl, :results, results)
+  end
+
+  defp with_has_segments(implementation), do: implementation
 end
