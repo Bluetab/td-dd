@@ -35,6 +35,20 @@ defmodule TdDq.Rules.RuleResults do
     |> Repo.all()
   end
 
+  def list_segment_results(parent_id, _params \\ %{}) do
+    RuleResult
+    |> where([rr], rr.parent_id == ^parent_id)
+    |> Repo.all()
+  end
+
+  def has_segments(parent_ids) do
+    RuleResult
+    |> where([rr], rr.parent_id in ^parent_ids)
+    |> select([rr], rr.parent_id)
+    |> group_by([rr], rr.parent_id)
+    |> Repo.all()
+  end
+
   @doc """
   Creates a rule_result.
 
@@ -60,6 +74,9 @@ defmodule TdDq.Rules.RuleResults do
 
     Multi.new()
     |> Multi.insert(:result, changeset)
+    |> Multi.run(:segments, fn _, %{result: result} ->
+      bulk_segments(result, params)
+    end)
     |> Multi.run(:executions, fn _repo, %{result: result} ->
       res = update_executions(result)
       {:ok, res}
@@ -74,6 +91,34 @@ defmodule TdDq.Rules.RuleResults do
     |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
     |> Repo.transaction()
     |> on_create()
+  end
+
+  defp bulk_segments(result, %{"segments" => segments, "date" => date}) when is_list(segments) do
+    segments
+    |> Enum.map(&Map.put(&1, "date", date))
+    |> Enum.map(&changeset(&1, result))
+    |> Enum.reduce_while([], &reduce_changesets/2)
+    |> case do
+      ids when is_list(ids) -> {:ok, ids}
+      error -> error
+    end
+  end
+
+  defp bulk_segments(_result, _params), do: {:ok, []}
+
+  defp changeset(%{} = segment, %{id: parent_id, result_type: result_type}) do
+    RuleResult.changeset(
+      %RuleResult{result_type: result_type, parent_id: parent_id},
+      %{},
+      segment
+    )
+  end
+
+  defp reduce_changesets(%{} = changeset, acc) do
+    case Repo.insert(changeset) do
+      {:ok, %{id: id}} -> {:cont, [id | acc]}
+      error -> {:halt, error}
+    end
   end
 
   defp update_executions(

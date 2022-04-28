@@ -162,7 +162,8 @@ defmodule TdDqWeb.RuleResultControllerTest do
                  "result_type" => "percentage",
                  "result" => "123.45",
                  "details" => %{},
-                 "has_remediation" => false
+                 "has_remediation" => false,
+                 "has_segments" => false
                },
                %{
                  "date" => "2019-08-29T00:00:00Z",
@@ -173,7 +174,8 @@ defmodule TdDqWeb.RuleResultControllerTest do
                  "result_type" => "percentage",
                  "result" => "123.00",
                  "details" => %{},
-                 "has_remediation" => false
+                 "has_remediation" => false,
+                 "has_segments" => false
                }
              ]
     end
