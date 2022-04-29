@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.42.1] 2022-04-29
+
+### Fixed
+
+- [TD-4783] Sometimes the lineage is not generated
+
 ## [4.42.0] 2022-04-25
 
 ### Added
