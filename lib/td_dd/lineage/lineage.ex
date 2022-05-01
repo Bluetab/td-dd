@@ -409,7 +409,7 @@ defmodule TdDd.Lineage do
     if has_same_vs and not is_nil(metadata) do
       Map.put(path, "metadata", metadata)
     else
-      false
+      path
     end
   end
 
