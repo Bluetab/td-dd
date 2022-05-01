@@ -12,7 +12,7 @@
 
 - [TD-4098] GraphQL query for data structures
 - [TD-4683] GraphQL query for data structure relations
-- [TD-2026]  Add metadata to linage graph
+- [TD-2026] Add metadata to linage graph
 
 ### Changed
 
@@ -21,6 +21,7 @@
 ### Fixed
 
 - [TD-4721] User with permissions can list sources
+- [TD-4783] Lineage Graph is not generated
 
 # Add
 
