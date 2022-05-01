@@ -11,6 +11,12 @@ defmodule TdDd.Lineage.Import.ReaderTest do
       assert {:ok, %Graph{}} = Reader.read(nodes_path, rels_path)
     end
 
+    test "returns a graph if data is valid with metadata" do
+      nodes_path = "test/fixtures/lineage/metadata/nodes.csv"
+      rels_path = "test/fixtures/lineage/metadata/rels.csv"
+      assert {:ok, %Graph{}} = Reader.read(nodes_path, rels_path)
+    end
+
     test "returns information about validation errors" do
       nodes_path = "test/fixtures/lineage/validations/nodes.csv"
       rels_path = "test/fixtures/lineage/validations/rels.csv"

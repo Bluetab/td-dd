@@ -16,10 +16,14 @@ defmodule TdDq.Implementations do
   alias TdDq.Auth.Claims
   alias TdDq.Cache.ImplementationLoader
   alias TdDq.Cache.RuleLoader
+  alias TdDq.Events.QualityEvents
+  alias TdDq.Implementations
   alias TdDq.Implementations.Implementation
+  alias TdDq.Implementations.ImplementationStructure
   alias TdDq.Rules
   alias TdDq.Rules.Audit
   alias TdDq.Rules.Rule
+  alias TdDq.Search.Helpers
 
   @index_worker Application.compile_env(:td_dd, :dq_index_worker)
 
@@ -50,6 +54,10 @@ defmodule TdDq.Implementations do
     |> where([_, r], is_nil(r.deleted_at))
     |> Repo.get!(id)
     |> enrich(Keyword.get(opts, :enrich, []))
+  end
+
+  def get_implementation(id) do
+    Repo.get(Implementation, id)
   end
 
   def get_implementation_by_key!(implementation_key, deleted \\ nil)
@@ -88,6 +96,7 @@ defmodule TdDq.Implementations do
     Multi.new()
     |> Multi.run(:can, fn _, _ -> multi_can(can?(claims, create(changeset))) end)
     |> Multi.insert(:implementation, changeset)
+    |> Multi.run(:data_structures, Implementations, :create_implementation_structures, [])
     |> Multi.run(:audit, Audit, :implementation_created, [changeset, user_id])
     |> Repo.transaction()
     |> on_upsert(is_bulk)
@@ -239,7 +248,7 @@ defmodule TdDq.Implementations do
 
   def get_structures(%Implementation{} = implementation) do
     implementation
-    |> Map.take([:dataset, :populations, :validations])
+    |> Map.take([:dataset, :populations, :validations, :segments])
     |> Map.values()
     |> Enum.flat_map(&structure/1)
   end
@@ -361,6 +370,52 @@ defmodule TdDq.Implementations do
     where(query, [ri, _r], is_nil(ri.deleted_at))
   end
 
+  def valid_implementation_structures(%Implementation{dataset: [_ | _] = dataset}) do
+    dataset
+    |> Enum.map(fn dataset_row -> dataset_row |> Map.get(:structure) |> Map.get(:id) end)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.map(&DataStructures.get_data_structure/1)
+    |> Enum.reject(&is_nil/1)
+  end
+
+  def valid_implementation_structures(%Implementation{
+        raw_content: %{
+          database: database,
+          dataset: dataset,
+          source_id: source_id
+        }
+      }) do
+    dataset
+    |> String.split([" ", "\n", "\t"])
+    |> Enum.flat_map(fn name ->
+      [
+        {:not_deleted, nil},
+        {:name, name},
+        {:source_id, source_id},
+        {:metadata_field, {"database", database}}
+      ]
+      |> DataStructures.list_data_structure_versions_by_criteria()
+      |> Enum.map(fn dsv ->
+        dsv
+        |> Repo.preload(:data_structure)
+        |> Map.get(:data_structure)
+      end)
+    end)
+  end
+
+  def valid_implementation_structures(_), do: []
+
+  def create_implementation_structures(_repo, %{implementation: implementation}) do
+    results =
+      implementation
+      |> valid_implementation_structures()
+      |> Enum.map(fn data_structure ->
+        create_implementation_structure(implementation, data_structure, %{type: :dataset})
+      end)
+
+    {:ok, results}
+  end
+
   def enrich_implementation_structures(%Implementation{} = implementation) do
     enriched_dataset =
       Enum.map(implementation.dataset, fn dataset_row ->
@@ -382,12 +437,53 @@ defmodule TdDq.Implementations do
 
     enriched_populations = Enum.map(implementation.populations, &enrich_populations/1)
     enriched_validations = Enum.map(implementation.validations, &enrich_condition/1)
+    enriched_segments = Enum.map(implementation.segments, &enrich_condition/1)
+
+    enriched_data_structures = enrich_data_structures_path(implementation)
 
     implementation
     |> Map.put(:dataset, enriched_dataset)
     |> Map.put(:populations, enriched_populations)
     |> Map.put(:validations, enriched_validations)
+    |> Map.put(:segments, enriched_segments)
+    |> Map.put(:data_structures, enriched_data_structures)
   end
+
+  defp enrich_data_structures_path(%{data_structures: [_ | _] = data_structures}) do
+    data_structure_ids =
+      data_structures
+      |> Enum.map(fn
+        %{data_structure: %{current_version: %{id: id}}} -> id
+        _ -> nil
+      end)
+      |> Enum.reject(&is_nil/1)
+
+    paths_map =
+      [ids: data_structure_ids]
+      |> DataStructures.enriched_structure_versions()
+      |> Enum.map(fn %{data_structure_id: id, path: path} ->
+        {id, Enum.map(path, fn %{"name" => name} -> name end)}
+      end)
+      |> Map.new()
+
+    Enum.map(data_structures, fn
+      %{
+        data_structure: %{current_version: %{} = current_version} = data_structure
+      } = implementation_structure ->
+        %{
+          implementation_structure
+          | data_structure: %{
+              data_structure
+              | current_version: %{current_version | path: Map.get(paths_map, data_structure.id)}
+            }
+        }
+
+      implementation_structure ->
+        implementation_structure
+    end)
+  end
+
+  defp enrich_data_structures_path(_), do: []
 
   defp enrich_populations(%{population: population} = populations) do
     %{populations | population: Enum.map(population, &enrich_condition/1)}
@@ -499,6 +595,9 @@ defmodule TdDq.Implementations do
   defp structure(%{structure: structure, clauses: clauses}),
     do: structure([structure | clauses])
 
+  defp structure(%{structure: structure}),
+    do: structure(structure)
+
   defp structure(%{left: left = %{}, right: right = %{}}),
     do: [Map.take(left, [:id, :name]), Map.take(right, [:id, :name])]
 
@@ -517,6 +616,8 @@ defmodule TdDq.Implementations do
   end
 
   defp structure(_any), do: []
+
+  def enrich_implementations(target, opts), do: enrich(target, opts)
 
   @spec enrich(Implementation.t() | [Implementation.t()], nil | atom | [atom]) ::
           Implementation.t() | [Implementation.t()]
@@ -552,6 +653,23 @@ defmodule TdDq.Implementations do
     Map.put(implementation, :links, get_implementation_links(implementation, "business_concept"))
   end
 
+  defp enrich(%Implementation{} = implementation, :execution_result_info) do
+    quality_event = QualityEvents.get_event_by_imp(implementation.id)
+
+    execution_result_info =
+      Implementation.get_execution_result_info(implementation, quality_event)
+
+    Map.put(implementation, :execution_result_info, execution_result_info)
+  end
+
+  defp enrich(
+         %Implementation{rule: %Rule{} = rule} = implementation,
+         :current_business_concept_version
+       ) do
+    bcv = Helpers.get_business_concept_version(rule)
+    Map.put(implementation, :current_business_concept_version, bcv)
+  end
+
   defp enrich(target, _), do: target
 
   def get_implementation_links(%Implementation{id: id}) do
@@ -564,5 +682,21 @@ defmodule TdDq.Implementations do
     case LinkCache.list("implementation", id, target_type) do
       {:ok, links} -> links
     end
+  end
+
+  def get_implementation_structure!(implementation_structure_id, preloads \\ []) do
+    ImplementationStructure
+    |> Repo.get!(implementation_structure_id)
+    |> Repo.preload(preloads)
+  end
+
+  def create_implementation_structure(implementation, data_structure, attrs \\ %{}) do
+    %ImplementationStructure{}
+    |> ImplementationStructure.changeset(attrs, implementation, data_structure)
+    |> Repo.insert()
+  end
+
+  def delete_implementation_structure(%ImplementationStructure{} = implementation_structure) do
+    Repo.delete(implementation_structure)
   end
 end

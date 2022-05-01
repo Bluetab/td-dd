@@ -41,7 +41,8 @@ defmodule TdDdWeb.DataStructureVersionController do
     :versions,
     :with_confidential,
     :grant,
-    :grants
+    :grants,
+    :implementations
   ]
 
   swagger_path :show do

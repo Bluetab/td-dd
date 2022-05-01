@@ -1,6 +1,7 @@
 defmodule TdDq.Rules.RuleResultTest do
   use TdDd.DataCase
 
+  alias Decimal
   alias Ecto.Changeset
   alias TdDd.Repo
   alias TdDq.Rules.RuleResult
@@ -179,6 +180,24 @@ defmodule TdDq.Rules.RuleResultTest do
                |> RuleResult.changeset(params)
                |> Changeset.get_change(:result)
                |> Decimal.to_string()
+    end
+
+    test "insert segments with parent_id" do
+      impl = insert(:implementation)
+
+      %{id: rule_result_id} = insert(:rule_result)
+
+      params = %{
+        "parent_id" => rule_result_id,
+        "errors" => 123_456,
+        "records" => 456_123,
+        "result_type" => "percentage"
+      }
+
+      assert ^rule_result_id =
+               impl
+               |> RuleResult.changeset(params)
+               |> Changeset.get_change(:parent_id)
     end
   end
 end

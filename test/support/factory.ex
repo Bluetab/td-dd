@@ -130,7 +130,20 @@ defmodule TdDd.Factory do
       domain_id: 2,
       dataset: build(:dataset),
       populations: build(:populations),
-      validations: build(:validations)
+      validations: build(:validations),
+      segments: build(:segments)
+    }
+    |> merge_attributes(attrs)
+  end
+
+  def implementation_structure_factory(attrs) do
+    attrs =
+      attrs
+      |> default_assoc(:data_structure_id, :data_structure)
+      |> default_assoc(:implementation_id, :implementation)
+
+    %TdDq.Implementations.ImplementationStructure{
+      type: :dataset
     }
     |> merge_attributes(attrs)
   end
@@ -186,7 +199,7 @@ defmodule TdDd.Factory do
 
   def relation_type_factory do
     %RelationType{
-      name: "relation_type_name"
+      name: sequence("relation_type_name")
     }
   end
 
@@ -350,6 +363,25 @@ defmodule TdDd.Factory do
     [build(:condition_row)]
   end
 
+  def segments_factory(_attrs) do
+    [%TdDq.Implementations.SegmentsRow{structure: build(:dataset_structure)}]
+  end
+
+  def segment_result_factory do
+    %TdDq.Rules.RuleResult{
+      result: "#{Decimal.round(50, 2)}",
+      date: "#{DateTime.utc_now()}"
+    }
+  end
+
+  @spec condition_row_factory :: %TdDq.Implementations.ConditionRow{
+          modifier: nil,
+          operator: any,
+          population: [],
+          structure: any,
+          value: [%{optional(<<_::24>>) => 8}, ...],
+          value_modifier: []
+        }
   def condition_row_factory do
     %TdDq.Implementations.ConditionRow{
       value: [%{"raw" => 8}],
@@ -369,6 +401,7 @@ defmodule TdDd.Factory do
 
   def rule_result_factory do
     %TdDq.Rules.RuleResult{
+      # rule_id: sequence(:rule_id, & &1),
       result: "#{Decimal.round(50, 2)}",
       date: "#{DateTime.utc_now()}"
     }

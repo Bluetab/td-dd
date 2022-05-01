@@ -98,6 +98,33 @@ defmodule TdDdWeb.UnitControllerTest do
       assert %{"event" => "LoadSucceeded", "info" => info} = status
       assert %{"edge_count" => 9, "node_count" => 9, "links_added" => 0} = info
     end
+
+    @tag authentication: [role: "service"]
+    test "PUT /api/units/:name replaces lineage unit with metadata", %{
+      conn: conn,
+      swagger_schema: schema
+    } do
+      %{name: unit_name} = build(:unit)
+
+      nodes = upload("test/fixtures/lineage/metadata/nodes.csv")
+      rels = upload("test/fixtures/lineage/metadata/rels.csv")
+
+      assert conn
+             |> put(Routes.unit_path(conn, :update, unit_name), nodes: nodes, rels: rels)
+             |> response(:accepted)
+
+      assert await_completion() in [:normal, :timeout]
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.unit_path(conn, :show, unit_name))
+               |> validate_resp_schema(schema, "UnitResponse")
+               |> json_response(:ok)
+
+      assert %{"status" => status} = data
+      assert %{"event" => "LoadSucceeded", "info" => info} = status
+      assert %{"edge_count" => 9, "node_count" => 9, "links_added" => 0} = info
+    end
   end
 
   describe "Unit Controller for non-admin users" do

@@ -22,6 +22,9 @@ defmodule TdDdWeb.Schema.StructuresTest do
           externalId
         }
       }
+      parents {
+        id
+      }
     }
   }
   """
@@ -35,6 +38,27 @@ defmodule TdDdWeb.Schema.StructuresTest do
     }
   }
   """
+
+  @relations_query """
+  query DataStructureRelations($since: DateTime, $types: [String]) {
+    dataStructureRelations(since: $since, types: $types) {
+      id
+      parentId
+      childId
+      relationTypeId
+      parent {
+        id
+      }
+      child {
+        id
+      }
+      relationType {
+        id
+      }
+    }
+  }
+  """
+
   @variables %{"since" => "2020-01-01T00:00:00Z"}
   @metadata %{"foo" => ["bar"]}
 
@@ -94,6 +118,39 @@ defmodule TdDdWeb.Schema.StructuresTest do
              } = data_structure
 
       assert %{"id" => _, "externalId" => _} = system
+    end
+
+    @tag authentication: [role: "service"]
+    test "can query parents, excludes deleted parents", %{conn: conn} do
+      %{parent_id: parent_id} = insert(:data_structure_relation)
+
+      assert %{"data" => data} =
+               response =
+               conn
+               |> post("/api/v2", %{"query" => @query, "variables" => @variables})
+               |> json_response(:ok)
+
+      assert response["errors"] == nil
+      assert %{"dataStructureVersions" => data_structure_versions} = data
+
+      assert Enum.any?(data_structure_versions, &(%{"id" => "#{parent_id}"} in &1["parents"]))
+    end
+
+    @tag authentication: [role: "service"]
+    test "excludes deleted parents", %{conn: conn} do
+      %{id: parent_id} = insert(:data_structure_version, deleted_at: DateTime.utc_now())
+      insert(:data_structure_relation, parent_id: parent_id)
+
+      assert %{"data" => data} =
+               response =
+               conn
+               |> post("/api/v2", %{"query" => @query, "variables" => @variables})
+               |> json_response(:ok)
+
+      assert response["errors"] == nil
+      assert %{"dataStructureVersions" => data_structure_versions} = data
+
+      refute Enum.any?(data_structure_versions, &(%{"id" => "#{parent_id}"} in &1["parents"]))
     end
 
     @tag authentication: [role: "service"]
@@ -171,6 +228,46 @@ defmodule TdDdWeb.Schema.StructuresTest do
              ] = data_structure_versions
 
       assert id == to_string(child_id)
+    end
+  end
+
+  describe "dataStructureRelations query" do
+    @tag authentication: [role: "user"]
+    test "returns forbidden when queried by user role", %{conn: conn} do
+      assert %{"data" => data, "errors" => errors} =
+               conn
+               |> post("/api/v2", %{"query" => @relations_query, "variables" => @variables})
+               |> json_response(:ok)
+
+      assert data == %{"dataStructureRelations" => nil}
+      assert [%{"message" => "forbidden"}] = errors
+    end
+
+    @tag authentication: [role: "service"]
+    test "returns data when queried by service role", %{conn: conn} do
+      %{id: expected_id, relation_type: %{name: type_name}} = insert(:data_structure_relation)
+
+      variables = Map.put(@variables, "types", [type_name])
+
+      assert %{"data" => data} =
+               response =
+               conn
+               |> post("/api/v2", %{"query" => @relations_query, "variables" => variables})
+               |> json_response(:ok)
+
+      assert response["errors"] == nil
+      assert %{"dataStructureRelations" => data_structure_relations} = data
+
+      assert [
+               %{
+                 "id" => id,
+                 "parent" => %{"id" => _},
+                 "child" => %{"id" => _},
+                 "relationType" => %{"id" => _}
+               }
+             ] = data_structure_relations
+
+      assert id == to_string(expected_id)
     end
   end
 end

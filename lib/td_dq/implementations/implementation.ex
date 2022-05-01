@@ -13,8 +13,10 @@ defmodule TdDq.Implementations.Implementation do
   alias TdDq.Implementations.ConditionRow
   alias TdDq.Implementations.DatasetRow
   alias TdDq.Implementations.Implementation
+  alias TdDq.Implementations.ImplementationStructure
   alias TdDq.Implementations.Populations
   alias TdDq.Implementations.RawContent
+  alias TdDq.Implementations.SegmentsRow
   alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleResult
   alias TdDq.Rules.RuleResults
@@ -40,10 +42,13 @@ defmodule TdDq.Implementations.Implementation do
     embeds_many(:dataset, DatasetRow, on_replace: :delete)
     embeds_many(:populations, Populations, on_replace: :delete)
     embeds_many(:validations, ConditionRow, on_replace: :delete)
+    embeds_many(:segments, SegmentsRow, on_replace: :delete)
 
     belongs_to(:rule, Rule)
 
     has_many(:results, RuleResult)
+
+    has_many(:data_structures, ImplementationStructure)
 
     timestamps(type: :utc_datetime)
   end
@@ -240,6 +245,7 @@ defmodule TdDq.Implementations.Implementation do
     |> cast_embed(:dataset, with: &DatasetRow.changeset/2, required: true)
     |> cast_embed(:populations, with: &Populations.changeset/2, required: false)
     |> cast_embed(:validations, with: &ConditionRow.changeset/2, required: true)
+    |> cast_embed(:segments, with: &SegmentsRow.changeset/2, required: false)
     |> validate_required([:dataset, :validations])
   end
 
@@ -291,6 +297,7 @@ defmodule TdDq.Implementations.Implementation do
       :inserted_at,
       :updated_at,
       :validations,
+      :segments,
       :df_name,
       :executable,
       :goal,
@@ -344,6 +351,7 @@ defmodule TdDq.Implementations.Implementation do
       |> transform_dataset()
       |> transform_populations()
       |> transform_validations()
+      |> transform_segments()
       |> with_rule(rule)
       |> Map.put(:raw_content, get_raw_content(implementation))
       |> Map.put(:rule, Map.take(rule, @rule_keys))
@@ -401,6 +409,12 @@ defmodule TdDq.Implementations.Implementation do
 
     defp transform_validations(data), do: data
 
+    defp transform_segments(%{segments: segments = [_ | _]} = data) do
+      Map.put(data, :segments, Enum.map(segments, &segmentation_row/1))
+    end
+
+    defp transform_segments(data), do: data
+
     defp dataset_row(row) do
       Map.new()
       |> Map.put(:clauses, Enum.map(Map.get(row, :clauses, []), &get_clause/1))
@@ -417,6 +431,11 @@ defmodule TdDq.Implementations.Implementation do
       |> Map.put(:modifier, Map.get(row, :modifier, []))
       |> Map.put(:value_modifier, Map.get(row, :value_modifier, []))
       |> with_populations(row)
+    end
+
+    defp segmentation_row(row) do
+      Map.new()
+      |> Map.put(:structure, get_structure_fields(Map.get(row, :structure, %{})))
     end
 
     defp get_clause(row) do
