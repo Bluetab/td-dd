@@ -187,7 +187,6 @@ defmodule TdDqWeb.ImplementationController do
     end
   end
 
-
   defp filter_data_structures_by_permission(implementation, %{role: "admin"}), do: implementation
 
   defp filter_data_structures_by_permission(
