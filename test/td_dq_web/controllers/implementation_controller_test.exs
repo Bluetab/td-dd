@@ -98,7 +98,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
       user_name: "non_admin",
       permissions: [:view_published_business_concepts, :view_quality_rule]
     ]
-    test "does not include create_execution_group action if user is assigned execute_quality_rule_implementations permission", %{conn: conn, swagger_schema: schema, domain: domain} do
+    test "does not include create_execution_group action if user is not assigned execute_quality_rule_implementations permission", %{conn: conn, swagger_schema: schema, domain: domain} do
       %{id: id} = insert(:implementation, domain_id: domain.id)
 
       refute match?(
