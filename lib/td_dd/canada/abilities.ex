@@ -40,6 +40,7 @@ defmodule TdDd.Canada.Abilities do
 
     # service and admin accounts can perform GraphQL queries
     def can?(%Claims{role: "service"}, :query, _resource), do: true
+
     def can?(%Claims{role: "admin"}, :query, _resource), do: true
 
     def can?(%Claims{}, _action, nil), do: false
@@ -167,6 +168,10 @@ defmodule TdDd.Canada.Abilities do
 
     def can?(%Claims{role: "user"} = claims, :query, :sources) do
       SourceAbilities.can?(claims, :list, Source)
+    end
+
+    def can?(%Claims{}, :query, :templates) do
+      true
     end
 
     def can?(%Claims{} = claims, action, domain_id) do
