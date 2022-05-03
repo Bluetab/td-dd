@@ -225,4 +225,34 @@ defmodule TdDq.RuleResultsTest do
              } = Jason.decode!(payload)
     end
   end
+
+  describe "list_segment_results/1" do
+    test "retrieves only results from specific parent_id " do
+      implementation = insert(:implementation)
+
+      insert(:rule_result, implementation: implementation)
+      insert(:rule_result, implementation: implementation)
+      %{id: parent_id} = insert(:rule_result, implementation: implementation)
+      %{id: segment_id_1} = insert(:segment_result, parent_id: parent_id)
+      %{id: segment_id_2} = insert(:segment_result, parent_id: parent_id)
+
+      segment_results = RuleResults.list_segment_results(parent_id)
+
+      assert [
+               %{id: ^segment_id_1, parent_id: ^parent_id},
+               %{id: ^segment_id_2, parent_id: ^parent_id}
+             ] = segment_results
+
+      assert length(segment_results) == 2
+    end
+
+    test "retrieves results with date gt condition" do
+      implementation1 = insert(:implementation)
+      implementation2 = insert(:implementation)
+
+      insert(:rule_result, implementation: implementation1, date: "2000-01-01T00:00:00")
+      result = insert(:rule_result, implementation: implementation2, date: "2000-02-01T11:11:11")
+      assert RuleResults.list_rule_results(%{"since" => "2000-01-11T11:11:11"}) <|> [result]
+    end
+  end
 end

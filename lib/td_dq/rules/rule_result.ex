@@ -70,8 +70,13 @@ defmodule TdDq.Rules.RuleResult do
     |> foreign_key_constraint(:rule_id)
   end
 
-  defp add_assoc(%{data: %{parent_id: parent_id}} = changeset, _impl) when not is_nil(parent_id),
-    do: changeset
+  defp add_assoc(%{changes: %{parent_id: parent_id}} = changeset, _impl)
+       when not is_nil(parent_id),
+       do: changeset
+
+  defp add_assoc(%{data: %{parent_id: parent_id}} = changeset, _impl)
+       when not is_nil(parent_id),
+       do: changeset
 
   defp add_assoc(changeset, implementation),
     do: put_assoc(changeset, :implementation, implementation)

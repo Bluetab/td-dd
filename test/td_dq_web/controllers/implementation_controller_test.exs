@@ -88,8 +88,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
       %{id: rule_result_id_1} = insert(:rule_result, implementation: implementation)
       %{id: rule_result_id_2} = insert(:rule_result, implementation: implementation)
       %{id: rule_result_id_3} = insert(:rule_result, implementation: implementation)
-      insert(:segment_result, parent_id: rule_result_id_1, params: %{"name" => "foo:baz"})
-      insert(:segment_result, parent_id: rule_result_id_2, params: %{"name" => "foo:bar"})
+      insert(:segment_result, parent_id: rule_result_id_1, params: %{"segment_name" => "foo:baz"})
+      insert(:segment_result, parent_id: rule_result_id_2, params: %{"segment_name" => "foo:bar"})
 
       assert %{"data" => %{"results" => [result_1, result_2, result_3]}} =
                conn
@@ -979,7 +979,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
       %{id: concept_id} = CacheHelpers.insert_concept()
       CacheHelpers.insert_link(id, "implementation", "business_concept", concept_id)
 
-      assert {:ok, %{id: id, deleted_at: nil}} = CacheHelpers.get_implementation(id)
+      assert {:ok, %{id: ^id, deleted_at: nil}} = CacheHelpers.get_implementation(id)
 
       assert conn
              |> put(Routes.implementation_path(conn, :update, implementation),
