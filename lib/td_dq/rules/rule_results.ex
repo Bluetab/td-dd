@@ -35,7 +35,13 @@ defmodule TdDq.Rules.RuleResults do
     |> Repo.all()
   end
 
-  def list_segment_results(parent_id, _params \\ %{}) do
+  def list_segment_results(_params \\ %{}) do
+    RuleResult
+    |> where([rr], not is_nil(rr.parent_id))
+    |> Repo.all()
+  end
+
+  def list_segment_results_by_parent_id(parent_id, _params \\ %{}) do
     RuleResult
     |> where([rr], rr.parent_id == ^parent_id)
     |> Repo.all()

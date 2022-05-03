@@ -42,6 +42,45 @@ defmodule TdDqWeb.RuleResultControllerTest do
              |> delete(Routes.rule_result_path(conn, :delete, id))
              |> response(:no_content)
     end
+
+    @tag authentication: [role: "admin"]
+    test "When delete a rule result with segments, all segments has to be deleted", %{conn: conn} do
+      %{id: parent_id} = insert(:rule_result)
+      insert(:segment_result, parent_id: parent_id)
+      insert(:segment_result, parent_id: parent_id)
+      insert(:segment_result, parent_id: parent_id)
+
+      assert %{"data" => [_ | _]} =
+               conn
+               |> get(Routes.rule_result_rule_result_path(conn, :segment_results, parent_id))
+               |> json_response(:ok)
+
+      assert conn
+             |> delete(Routes.rule_result_path(conn, :delete, parent_id))
+             |> response(:no_content)
+
+      assert %{"data" => []} =
+               conn
+               |> get(Routes.rule_result_rule_result_path(conn, :segment_results, parent_id))
+               |> json_response(:ok)
+    end
+  end
+
+  describe "GET /api/rule_results/segment_results/" do
+    @tag authentication: [role: "service"]
+    test "service account can view segments rule results", %{conn: conn} do
+      %{id: parent_id} = insert(:rule_result)
+      insert(:segment_result, parent_id: parent_id)
+      insert(:segment_result, parent_id: parent_id)
+      insert(:segment_result, parent_id: parent_id)
+
+      assert %{"data" => [_ | _] = data} =
+               conn
+               |> get(Routes.rule_result_rule_result_path(conn, :segment_results, parent_id))
+               |> json_response(:ok)
+
+      assert length(data) == 3
+    end
   end
 
   describe "POST /api/rule_results" do

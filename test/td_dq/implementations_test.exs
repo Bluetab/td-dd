@@ -691,10 +691,10 @@ defmodule TdDq.ImplementationsTest do
         ],
         segments: [
           %{
-            structure: %{id: 9, name: "s9"},
+            structure: %{id: 9, name: "s9"}
           },
           %{
-            structure: %{id: 10, name: "s10"},
+            structure: %{id: 10, name: "s10"}
           }
         ]
       }
@@ -784,10 +784,10 @@ defmodule TdDq.ImplementationsTest do
         ],
         segments: [
           %{
-            structure: %{id: 11},
+            structure: %{id: 11}
           },
           %{
-            structure: %{id: 12},
+            structure: %{id: 12}
           }
         ]
       }

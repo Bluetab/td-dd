@@ -59,7 +59,7 @@ defmodule TdDqWeb.RuleResultController do
 
   def segment_results(conn, %{"rule_result_id" => parent_id}) do
     with claims <- conn.assigns[:current_resource],
-         segment_results <- RuleResults.list_segment_results(parent_id),
+         segment_results <- RuleResults.list_segment_results_by_parent_id(parent_id),
          {:can, true} <- {:can, can?(claims, view(segment_results))} do
       render(conn, "index.json", segment_results: segment_results)
     end

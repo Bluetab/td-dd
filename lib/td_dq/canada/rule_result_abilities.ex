@@ -9,6 +9,8 @@ defmodule TdDq.Canada.RuleResultAbilities do
 
   def can?(%Claims{role: "service"}, _, RuleResult), do: true
 
+  def can?(%Claims{role: "service"}, _, %RuleResult{}), do: true
+
   def can?(%Claims{} = claims, :upload, RuleResult) do
     Permissions.authorized?(claims, :manage_rule_results)
   end
