@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.42.2] 2022-05-03
+
+### Fixed
+
+- [TD-4783] Change chunk size for adding metadata
+
 ## [4.42.1] 2022-04-29
 
 ### Fixed
