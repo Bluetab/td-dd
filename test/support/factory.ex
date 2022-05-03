@@ -420,7 +420,6 @@ defmodule TdDd.Factory do
     |> Map.new()
   end
 
-
   def implementation_result_record_factory(attrs) do
     %{
       date: "2020-02-02T00:00:00Z",
