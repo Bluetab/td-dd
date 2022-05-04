@@ -9,6 +9,10 @@ defmodule TdDqWeb.RuleResultView do
     %{data: render_many(rule_results, __MODULE__, "rule_result.json")}
   end
 
+  def render("index.json", %{segment_results: segment_results}) do
+    %{data: render_many(segment_results, __MODULE__, "rule_result.json")}
+  end
+
   def render("rule_result.json", %{rule: %{} = rule} = assigns) do
     rule_props =
       rule
@@ -32,7 +36,9 @@ defmodule TdDqWeb.RuleResultView do
       :errors,
       :result_type,
       :execution_id,
-      :details
+      :details,
+      :segments_inserted,
+      :has_segments
     ])
     |> Enum.reject(fn {_, v} -> is_nil(v) end)
     |> Map.new()

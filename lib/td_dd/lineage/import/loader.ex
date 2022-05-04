@@ -114,7 +114,7 @@ defmodule TdDd.Lineage.Import.Loader do
 
       {count, edges} =
         Repo.chunk_insert_all(Edge, entries,
-          chunk_size: 10_000,
+          chunk_size: 9_362,
           conflict_target: [:unit_id, :start_id, :end_id],
           on_conflict: {:replace, [:type, :updated_at]},
           returning: [:id]

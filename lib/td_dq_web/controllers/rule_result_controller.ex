@@ -52,6 +52,19 @@ defmodule TdDqWeb.RuleResultController do
     end
   end
 
+  def index(conn, params) do
+    rule_results = RuleResults.list_rule_results(params)
+    render(conn, "index.json", rule_results: rule_results)
+  end
+
+  def segment_results(conn, %{"rule_result_id" => parent_id}) do
+    with claims <- conn.assigns[:current_resource],
+         segment_results <- RuleResults.list_segment_results(parent_id),
+         {:can, true} <- {:can, can?(claims, view(segment_results))} do
+      render(conn, "index.json", segment_results: segment_results)
+    end
+  end
+
   defp rule_results_from_csv(%{path: path}) do
     path
     |> File.stream!()
@@ -79,10 +92,5 @@ defmodule TdDqWeb.RuleResultController do
   defp put_params({k, v}, acc) do
     k_suffix = String.replace_leading(k, "m:", "")
     Map.put(acc, k_suffix, v)
-  end
-
-  def index(conn, params) do
-    rule_results = RuleResults.list_rule_results(params)
-    render(conn, "index.json", rule_results: rule_results)
   end
 end

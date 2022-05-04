@@ -688,6 +688,14 @@ defmodule TdDq.ImplementationsTest do
             structure: %{id: 8, name: "s8"},
             value: nil
           }
+        ],
+        segments: [
+          %{
+            structure: %{id: 9, name: "s9"},
+          },
+          %{
+            structure: %{id: 10, name: "s10"},
+          }
         ]
       }
 
@@ -699,7 +707,8 @@ defmodule TdDq.ImplementationsTest do
           rule: rule,
           dataset: creation_attrs.dataset,
           populations: creation_attrs.populations,
-          validations: creation_attrs.validations
+          validations: creation_attrs.validations,
+          segments: creation_attrs.segments
         )
 
       structures = Implementations.get_structures(rule_implementaton)
@@ -709,7 +718,7 @@ defmodule TdDq.ImplementationsTest do
         |> Enum.sort_by(fn s -> s.id end)
         |> Enum.map(fn s -> s.name end)
 
-      assert names == ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"]
+      assert names == ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10"]
     end
   end
 
@@ -772,6 +781,14 @@ defmodule TdDq.ImplementationsTest do
             structure: %{id: 8},
             value: nil
           }
+        ],
+        segments: [
+          %{
+            structure: %{id: 11},
+          },
+          %{
+            structure: %{id: 12},
+          }
         ]
       }
 
@@ -783,12 +800,13 @@ defmodule TdDq.ImplementationsTest do
           rule: rule,
           dataset: creation_attrs.dataset,
           populations: creation_attrs.populations,
-          validations: creation_attrs.validations
+          validations: creation_attrs.validations,
+          segments: creation_attrs.segments
         )
 
       structures_ids = Implementations.get_structure_ids(rule_implementaton)
 
-      assert Enum.sort(structures_ids) == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+      assert Enum.sort(structures_ids) == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     end
   end
 
@@ -839,7 +857,8 @@ defmodule TdDq.ImplementationsTest do
       insert(:implementation,
         dataset: [build(:dataset_row, structure: build(:dataset_structure, id: structure_id1))],
         populations: [],
-        validations: []
+        validations: [],
+        segments: []
       )
 
       assert :ok = Implementations.deprecate_implementations()
@@ -848,7 +867,8 @@ defmodule TdDq.ImplementationsTest do
         insert(:implementation,
           dataset: [build(:dataset_row, structure: build(:dataset_structure, id: structure_id2))],
           populations: [],
-          validations: []
+          validations: [],
+          segments: []
         )
 
       %{id: id3} = insert(:implementation)

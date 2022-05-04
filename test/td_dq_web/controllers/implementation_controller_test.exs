@@ -83,6 +83,26 @@ defmodule TdDqWeb.ImplementationControllerTest do
     end
 
     @tag authentication: [role: "admin"]
+    test "includes has_segments in results", %{conn: conn, swagger_schema: schema} do
+      %{id: impl_id} = implementation = insert(:implementation)
+      %{id: rule_result_id_1} = insert(:rule_result, implementation: implementation)
+      %{id: rule_result_id_2} = insert(:rule_result, implementation: implementation)
+      %{id: rule_result_id_3} = insert(:rule_result, implementation: implementation)
+      insert(:segment_result, parent_id: rule_result_id_1, params: %{"name" => "foo:baz"})
+      insert(:segment_result, parent_id: rule_result_id_2, params: %{"name" => "foo:bar"})
+
+      assert %{"data" => %{"results" => [result_1, result_2, result_3]}} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, impl_id))
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:ok)
+
+      assert %{"id" => ^rule_result_id_1, "has_segments" => true} = result_1
+      assert %{"id" => ^rule_result_id_2, "has_segments" => true} = result_2
+      assert %{"id" => ^rule_result_id_3, "has_segments" => false} = result_3
+    end
+
+    @tag authentication: [role: "admin"]
     test "includes related structures with current version and system in the response", %{
       conn: conn,
       swagger_schema: schema
@@ -396,6 +416,55 @@ defmodule TdDqWeb.ImplementationControllerTest do
                data |> Map.get("populations") |> List.first(),
                creation_attrs |> Map.get("populations") |> List.first()
              )
+    end
+
+    @tag authentication: [role: "admin"]
+    test "renders implementation with segments", %{conn: conn, swagger_schema: schema} do
+      rule = insert(:rule)
+      structure_id = 12_554
+
+      creation_attrs =
+        %{
+          implementation_key: "a1",
+          rule_id: rule.id,
+          dataset: @valid_dataset,
+          segments: [
+            %{structure: %{id: structure_id}}
+          ],
+          validations: [
+            %{
+              operator: %{
+                name: "gt",
+                value_type: "timestamp"
+              },
+              structure: %{id: 12_554},
+              value: [%{raw: "2019-12-02 05:35:00"}]
+            }
+          ],
+          result_type: "percentage",
+          minimum: 50,
+          goal: 100
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.implementation_path(conn, :create),
+                 rule_implementation: creation_attrs
+               )
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:created)
+
+      assert %{"id" => id} = data
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:ok)
+
+      assert rule.id == data["rule_id"]
+      assert %{"segments" => [%{"structure" => %{"id" => ^structure_id}}]} = data
     end
 
     @tag authentication: [role: "admin"]
@@ -743,9 +812,25 @@ defmodule TdDqWeb.ImplementationControllerTest do
     test "user with permissions can update", %{conn: conn, domain: %{id: domain_id}} do
       %{id: rule_id} = insert(:rule, domain_id: domain_id)
       implementation = insert(:implementation, rule_id: rule_id, domain_id: domain_id)
+      structure_id = 12_554
 
       params =
         %{
+          segments: [
+            %{
+              structure: %{id: structure_id}
+            }
+          ],
+          validations: [
+            %{
+              operator: %{
+                name: "gt",
+                value_type: "timestamp"
+              },
+              structure: %{id: structure_id},
+              value: [%{raw: "2019-12-02 05:35:00"}]
+            }
+          ],
           populations: [
             [
               %{
@@ -761,11 +846,14 @@ defmodule TdDqWeb.ImplementationControllerTest do
         }
         |> Map.Helpers.stringify_keys()
 
-      assert conn
-             |> put(Routes.implementation_path(conn, :update, implementation),
-               rule_implementation: params
-             )
-             |> json_response(:ok)
+      assert %{"data" => data} =
+               conn
+               |> put(Routes.implementation_path(conn, :update, implementation),
+                 rule_implementation: params
+               )
+               |> json_response(:ok)
+
+      assert %{"segments" => [%{"structure" => %{"id" => ^structure_id}}]} = data
     end
 
     @tag authentication: [role: "admin"]
@@ -891,7 +979,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
       %{id: concept_id} = CacheHelpers.insert_concept()
       CacheHelpers.insert_link(id, "implementation", "business_concept", concept_id)
 
-      assert {:ok, %{id: ^id, deleted_at: nil}} = CacheHelpers.get_implementation(id)
+      assert {:ok, %{id: id, deleted_at: nil}} = CacheHelpers.get_implementation(id)
 
       assert conn
              |> put(Routes.implementation_path(conn, :update, implementation),
