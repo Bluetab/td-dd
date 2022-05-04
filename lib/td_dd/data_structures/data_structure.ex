@@ -17,6 +17,7 @@ defmodule TdDd.DataStructures.DataStructure do
   alias TdDd.Lineage.Units.Node
   alias TdDd.Profiles.Profile
   alias TdDd.Systems.System
+  alias TdDq.Implementations.ImplementationStructure
 
   @typedoc "A data structure"
   @type t :: %__MODULE__{}
@@ -46,6 +47,7 @@ defmodule TdDd.DataStructures.DataStructure do
     has_one(:current_version, DataStructureVersion, where: [deleted_at: nil])
     has_one(:current_metadata, StructureMetadata, where: [deleted_at: nil])
     has_one(:published_note, StructureNote, where: [status: :published])
+    has_many(:implementations, ImplementationStructure)
     has_many(:nodes, Node, foreign_key: :structure_id)
     has_many(:units, through: [:nodes, :units])
 

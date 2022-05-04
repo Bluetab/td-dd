@@ -4,6 +4,11 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
   import Mox
 
+  alias TdDd.DataStructures.Hierarchy
+  alias TdDd.DataStructures.RelationTypes
+
+  @moduletag sandbox: :shared
+
   @valid_dataset [
     %{structure: %{id: 14_080}},
     %{clauses: [%{left: %{id: 14_863}, right: %{id: 4028}}], structure: %{id: 3233}}
@@ -42,6 +47,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
   setup :verify_on_exit!
 
   setup do
+    start_supervised!(TdDd.Search.StructureEnricher)
+
     [implementation: insert(:implementation)]
   end
 
@@ -73,6 +80,176 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> get(Routes.implementation_path(conn, :show, id))
                |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "includes has_segments in results", %{conn: conn, swagger_schema: schema} do
+      %{id: impl_id} = implementation = insert(:implementation)
+      %{id: rule_result_id_1} = insert(:rule_result, implementation: implementation)
+      %{id: rule_result_id_2} = insert(:rule_result, implementation: implementation)
+      %{id: rule_result_id_3} = insert(:rule_result, implementation: implementation)
+      insert(:segment_result, parent_id: rule_result_id_1, params: %{"name" => "foo:baz"})
+      insert(:segment_result, parent_id: rule_result_id_2, params: %{"name" => "foo:bar"})
+
+      assert %{"data" => %{"results" => [result_1, result_2, result_3]}} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, impl_id))
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:ok)
+
+      assert %{"id" => ^rule_result_id_1, "has_segments" => true} = result_1
+      assert %{"id" => ^rule_result_id_2, "has_segments" => true} = result_2
+      assert %{"id" => ^rule_result_id_3, "has_segments" => false} = result_3
+    end
+
+    @tag authentication: [role: "admin"]
+    test "includes related structures with current version and system in the response", %{
+      conn: conn,
+      swagger_schema: schema
+    } do
+      %{id: system_id, name: system_name} = insert(:system)
+      %{id: data_structure_id} = data_structure = insert(:data_structure, system_id: system_id)
+
+      %{name: structure_name} =
+        insert(:data_structure_version, data_structure_id: data_structure_id)
+
+      %{id: id} = implementation = insert(:implementation)
+
+      insert(:implementation_structure,
+        implementation: implementation,
+        data_structure: data_structure
+      )
+
+      assert %{"data" => %{"data_structures" => data_structures}} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:ok)
+
+      assert [
+               %{
+                 "implementation_id" => ^id,
+                 "type" => "dataset",
+                 "data_structure" => %{
+                   "id" => ^data_structure_id,
+                   "system" => %{"name" => ^system_name},
+                   "current_version" => %{
+                     "name" => ^structure_name
+                   }
+                 }
+               }
+             ] = data_structures
+    end
+
+    @tag authentication: [role: "admin"]
+    test "data_structures has enriched path", %{
+      conn: conn,
+      swagger_schema: schema
+    } do
+      domain_id = System.unique_integer([:positive])
+      %{id: system_id} = insert(:system)
+
+      %{id: data_structure_id} =
+        data_structure =
+        insert(:data_structure,
+          system_id: system_id,
+          domain_ids: [domain_id]
+        )
+
+      %{id: dsv_id} = insert(:data_structure_version, data_structure: data_structure)
+
+      %{id: dsv_parent_id, name: parent_name} =
+        insert(:data_structure_version,
+          data_structure:
+            build(:data_structure,
+              system_id: system_id,
+              domain_ids: [domain_id]
+            )
+        )
+
+      %{id: id} = implementation = insert(:implementation)
+
+      insert(:implementation_structure,
+        implementation: implementation,
+        data_structure: data_structure
+      )
+
+      insert(:data_structure_relation,
+        parent_id: dsv_parent_id,
+        child_id: dsv_id,
+        relation_type_id: RelationTypes.default_id!()
+      )
+
+      Hierarchy.update_hierarchy([dsv_id])
+
+      assert %{"data" => %{"data_structures" => data_structures}} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:ok)
+
+      assert [
+               %{
+                 "implementation_id" => ^id,
+                 "data_structure" => %{
+                   "id" => ^data_structure_id,
+                   "current_version" => %{
+                     "path" => [^parent_name]
+                   }
+                 }
+               }
+             ] = data_structures
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions: [
+             :view_data_structure,
+             :view_quality_rule
+           ]
+         ]
+    test "hides related data structures without permission", %{
+      conn: conn,
+      domain: domain
+    } do
+      %{id: system_id, name: system_name} = insert(:system)
+
+      %{id: data_structure_id} =
+        data_structure = insert(:data_structure, system_id: system_id, domain_ids: [domain.id])
+
+      %{name: structure_name} =
+        insert(:data_structure_version, data_structure_id: data_structure_id)
+
+      %{id: id} = implementation = insert(:implementation, domain_id: domain.id)
+
+      insert(:implementation_structure,
+        implementation: implementation,
+        data_structure: data_structure
+      )
+
+      insert(:implementation_structure,
+        implementation: implementation,
+        data_structure: build(:data_structure)
+      )
+
+      assert %{"data" => %{"data_structures" => data_structures}} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert [
+               %{
+                 "implementation_id" => ^id,
+                 "type" => "dataset",
+                 "data_structure" => %{
+                   "id" => ^data_structure_id,
+                   "system" => %{"name" => ^system_name},
+                   "current_version" => %{
+                     "name" => ^structure_name
+                   }
+                 }
+               }
+             ] = data_structures
     end
 
     @tag authentication: [
@@ -239,6 +416,55 @@ defmodule TdDqWeb.ImplementationControllerTest do
                data |> Map.get("populations") |> List.first(),
                creation_attrs |> Map.get("populations") |> List.first()
              )
+    end
+
+    @tag authentication: [role: "admin"]
+    test "renders implementation with segments", %{conn: conn, swagger_schema: schema} do
+      rule = insert(:rule)
+      structure_id = 12_554
+
+      creation_attrs =
+        %{
+          implementation_key: "a1",
+          rule_id: rule.id,
+          dataset: @valid_dataset,
+          segments: [
+            %{structure: %{id: structure_id}}
+          ],
+          validations: [
+            %{
+              operator: %{
+                name: "gt",
+                value_type: "timestamp"
+              },
+              structure: %{id: 12_554},
+              value: [%{raw: "2019-12-02 05:35:00"}]
+            }
+          ],
+          result_type: "percentage",
+          minimum: 50,
+          goal: 100
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.implementation_path(conn, :create),
+                 rule_implementation: creation_attrs
+               )
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:created)
+
+      assert %{"id" => id} = data
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:ok)
+
+      assert rule.id == data["rule_id"]
+      assert %{"segments" => [%{"structure" => %{"id" => ^structure_id}}]} = data
     end
 
     @tag authentication: [role: "admin"]
@@ -586,9 +812,25 @@ defmodule TdDqWeb.ImplementationControllerTest do
     test "user with permissions can update", %{conn: conn, domain: %{id: domain_id}} do
       %{id: rule_id} = insert(:rule, domain_id: domain_id)
       implementation = insert(:implementation, rule_id: rule_id, domain_id: domain_id)
+      structure_id = 12_554
 
       params =
         %{
+          segments: [
+            %{
+              structure: %{id: structure_id}
+            }
+          ],
+          validations: [
+            %{
+              operator: %{
+                name: "gt",
+                value_type: "timestamp"
+              },
+              structure: %{id: structure_id},
+              value: [%{raw: "2019-12-02 05:35:00"}]
+            }
+          ],
           populations: [
             [
               %{
@@ -604,11 +846,14 @@ defmodule TdDqWeb.ImplementationControllerTest do
         }
         |> Map.Helpers.stringify_keys()
 
-      assert conn
-             |> put(Routes.implementation_path(conn, :update, implementation),
-               rule_implementation: params
-             )
-             |> json_response(:ok)
+      assert %{"data" => data} =
+               conn
+               |> put(Routes.implementation_path(conn, :update, implementation),
+                 rule_implementation: params
+               )
+               |> json_response(:ok)
+
+      assert %{"segments" => [%{"structure" => %{"id" => ^structure_id}}]} = data
     end
 
     @tag authentication: [role: "admin"]
@@ -734,7 +979,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
       %{id: concept_id} = CacheHelpers.insert_concept()
       CacheHelpers.insert_link(id, "implementation", "business_concept", concept_id)
 
-      assert {:ok, %{id: ^id, deleted_at: nil}} = CacheHelpers.get_implementation(id)
+      assert {:ok, %{id: id, deleted_at: nil}} = CacheHelpers.get_implementation(id)
 
       assert conn
              |> put(Routes.implementation_path(conn, :update, implementation),

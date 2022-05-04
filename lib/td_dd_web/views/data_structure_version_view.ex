@@ -5,6 +5,7 @@ defmodule TdDdWeb.DataStructureVersionView do
   alias TdDd.DataStructures
   alias TdDdWeb.DataStructuresTagsView
   alias TdDdWeb.GrantView
+  alias TdDqWeb.ImplementationStructureView
 
   def render(
         "show.json",
@@ -43,6 +44,7 @@ defmodule TdDdWeb.DataStructureVersionView do
     |> add_profile()
     |> add_embedded_relations(dsv)
     |> merge_metadata()
+    |> merge_implementations()
     |> add_data_structure_type()
     |> add_cached_content()
     |> add_tags()
@@ -54,29 +56,43 @@ defmodule TdDdWeb.DataStructureVersionView do
       :class,
       :classes,
       :data_fields,
+      :data_structure_type,
       :data_structure,
+      :degree,
+      :deleted_at,
+      :description,
+      :external_id,
+      :grant,
+      :grants,
+      :group,
+      :id,
+      :implementations,
+      :links,
+      :metadata,
+      :name,
+      :parents,
+      :profile,
+      :relations,
+      :siblings,
+      :source,
+      :system,
+      :tags,
+      :type,
+      :version,
+      :versions
+    ])
+  end
+
+  def render("embedded.json", %{data_structure_version: dsv}) do
+    Map.take(dsv, [
+      :class,
       :deleted_at,
       :description,
       :external_id,
       :group,
       :id,
-      :links,
-      :metadata,
       :name,
-      :parents,
-      :siblings,
-      :source,
-      :system,
-      :type,
-      :version,
-      :versions,
-      :profile,
-      :degree,
-      :relations,
-      :data_structure_type,
-      :tags,
-      :grant,
-      :grants
+      :path
     ])
   end
 
@@ -307,6 +323,16 @@ defmodule TdDdWeb.DataStructureVersionView do
   end
 
   defp merge_metadata(dsv), do: dsv
+
+  defp merge_implementations(%{implementations: [_ | _] = implementations} = dsv) do
+    Map.put(
+      dsv,
+      :implementations,
+      render_many(implementations, ImplementationStructureView, "implementation_structure.json")
+    )
+  end
+
+  defp merge_implementations(dsv), do: dsv
 
   defp add_data_structure_type(%{data_structure_type: nil} = dsv),
     do: Map.put(dsv, :data_structure_type, %{})

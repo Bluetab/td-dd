@@ -4,6 +4,7 @@
 
 ### Added
 
+- [TD-3186] Support for links between Implementations and Structures
 - [TD-4586] Asynchronous CSV bulk update
 
 ## [4.42.0] 2022-04-25
@@ -21,12 +22,16 @@
 ### Fixed
 
 - [TD-4721] User with permissions can list sources
+- [TD-4783] Lineage Graph is not generated
+
+# Add
+
 - [TD-4695] Structure bulk update was not reindexing structures with updated
   notes
 - [TD-3128] Profile `null_count`, `total_count` and `unique_count` fields were
   limited to PostgreSQL `integer` values (maximum 2,147,483,647). They have now
   been changed to `bigint` (maximum 9,223,372,036,854,775,807)
-
+- [TD-4538] Segments definitions in the implementations, and support for segment results
 ## [4.41.1] 2022-04-04
 
 # Added

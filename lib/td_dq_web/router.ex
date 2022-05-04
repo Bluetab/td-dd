@@ -35,6 +35,7 @@ defmodule TdDqWeb.Router do
 
     resources("/rule_results", RuleResultController, only: [:index, :delete, :create, :show]) do
       resources("/remediation", RemediationController, singleton: true)
+      get("/segment_results", RuleResultController, :segment_results)
     end
 
     get("/rules/concept/:business_concept_id", RuleController, :get_rules_by_concept)
@@ -53,7 +54,10 @@ defmodule TdDqWeb.Router do
 
     resources("/rule_implementations", ImplementationController, except: [:new, :edit]) do
       resources("/results", ImplementationResultController, only: [:create])
+      resources("/data_structures", ImplementationStructureController, only: [:create])
     end
+
+    resources("/rule_implementations/data_structures", ImplementationStructureController, only: [:delete])
 
     resources("/rule_implementations/upload", ImplementationUploadController, only: [:create])
 

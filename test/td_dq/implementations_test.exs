@@ -6,6 +6,7 @@ defmodule TdDq.ImplementationsTest do
   alias Ecto.Changeset
   alias TdDq.Implementations
   alias TdDq.Implementations.Implementation
+  alias TdDq.Implementations.ImplementationStructure
 
   @moduletag sandbox: :shared
 
@@ -369,6 +370,159 @@ defmodule TdDq.ImplementationsTest do
                value: ^value
              } = clause
     end
+
+    test "creates ImplementationStructure when has dataset", %{rule: rule} do
+      %{id: data_structure_id} = insert(:data_structure)
+
+      params =
+        string_params_for(:implementation,
+          dataset: [%{structure: %{id: data_structure_id}}],
+          rule_id: rule.id,
+          domain_id: rule.domain_id
+        )
+
+      claims = build(:dq_claims, role: "admin")
+
+      assert {:ok, %{implementation: %{id: id}}} =
+               Implementations.create_implementation(rule, params, claims)
+
+      assert %Implementation{data_structures: [%{data_structure_id: ^data_structure_id}]} =
+               Implementations.get_implementation!(id, preload: :data_structures)
+    end
+
+    test "creates ImplementationStructure for raw implementations", %{rule: rule} do
+      %{domain_id: domain_id} = rule
+
+      %{id: source_id} = insert(:source, config: %{"job_types" => ["catalog", "profile"]})
+
+      %{data_structure: %{id: data_structure_id}} =
+        %{name: data_structure_name} =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, domain_ids: [domain_id], source_id: source_id),
+          metadata: %{"database" => "db_name"},
+          class: "table"
+        )
+
+      params =
+        string_params_for(:raw_implementation,
+          raw_content: %{
+            dataset: data_structure_name,
+            validations: "validations",
+            source_id: source_id,
+            database: "db_name"
+          }
+        )
+
+      claims = build(:dq_claims, role: "admin")
+
+      assert {:ok, %{implementation: %{id: id}}} =
+               Implementations.create_implementation(rule, params, claims)
+
+      assert %Implementation{data_structures: [%{data_structure_id: ^data_structure_id}]} =
+               Implementations.get_implementation!(id, preload: :data_structures)
+    end
+  end
+
+  describe "valid_implementation_structures/1" do
+    test "returns implementation's dataset structure" do
+      %{id: data_structure_id} = insert(:data_structure)
+
+      implementation =
+        insert(:implementation,
+          dataset: [%{structure: %{id: data_structure_id}}]
+        )
+
+      assert [%{id: ^data_structure_id}] =
+               Implementations.valid_implementation_structures(implementation)
+    end
+
+    test "returns structures for raw implementatation" do
+      %{id: source_id} = insert(:source, config: %{"job_types" => ["catalog", "profile"]})
+
+      %{data_structure: %{id: data_structure_id}} =
+        %{name: data_structure_name} =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, source_id: source_id),
+          metadata: %{"database" => "db_name"},
+          class: "table"
+        )
+
+      implementation =
+        insert(:raw_implementation,
+          raw_content: %{
+            dataset: "word before #{data_structure_name} and after",
+            validations: "validations",
+            source_id: source_id,
+            database: "db_name"
+          }
+        )
+
+      assert [%{id: ^data_structure_id}] =
+               Implementations.valid_implementation_structures(implementation)
+    end
+
+    test "filters raw structures by source_id" do
+      %{id: source_id1} = insert(:source, config: %{"job_types" => ["catalog", "profile"]})
+      %{id: source_id2} = insert(:source, config: %{"job_types" => ["catalog", "profile"]})
+
+      data_structure_name = "same_name"
+
+      insert(:data_structure_version,
+        data_structure: build(:data_structure, source_id: source_id1),
+        name: data_structure_name,
+        metadata: %{"database" => "db_name"},
+        class: "table"
+      )
+
+      %{data_structure: %{id: data_structure_id}} =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, source_id: source_id2),
+          name: data_structure_name,
+          metadata: %{"database" => "db_name"},
+          class: "table"
+        )
+
+      implementation =
+        insert(:raw_implementation,
+          raw_content: %{
+            dataset: data_structure_name,
+            validations: "validations",
+            source_id: source_id2,
+            database: "db_name"
+          }
+        )
+
+      assert [%{id: ^data_structure_id}] =
+               Implementations.valid_implementation_structures(implementation)
+    end
+
+    test "invalid structure will be filtered" do
+      implementation =
+        insert(:implementation,
+          dataset: [%{structure: %{id: 0}}]
+        )
+
+      assert [] == Implementations.valid_implementation_structures(implementation)
+    end
+
+    test "returns multiple structures" do
+      %{id: data_structure_id1} = insert(:data_structure)
+      %{id: data_structure_id2} = insert(:data_structure)
+
+      implementation =
+        insert(:implementation,
+          dataset: [
+            %{structure: %{id: data_structure_id1}},
+            %{structure: %{id: 0}},
+            %{structure: %{id: data_structure_id2}}
+          ]
+        )
+
+      assert [
+               %{id: ^data_structure_id1},
+               %{id: ^data_structure_id2}
+             ] = Implementations.valid_implementation_structures(implementation)
+    end
   end
 
   describe "update_implementation/3" do
@@ -534,6 +688,14 @@ defmodule TdDq.ImplementationsTest do
             structure: %{id: 8, name: "s8"},
             value: nil
           }
+        ],
+        segments: [
+          %{
+            structure: %{id: 9, name: "s9"},
+          },
+          %{
+            structure: %{id: 10, name: "s10"},
+          }
         ]
       }
 
@@ -545,7 +707,8 @@ defmodule TdDq.ImplementationsTest do
           rule: rule,
           dataset: creation_attrs.dataset,
           populations: creation_attrs.populations,
-          validations: creation_attrs.validations
+          validations: creation_attrs.validations,
+          segments: creation_attrs.segments
         )
 
       structures = Implementations.get_structures(rule_implementaton)
@@ -555,7 +718,7 @@ defmodule TdDq.ImplementationsTest do
         |> Enum.sort_by(fn s -> s.id end)
         |> Enum.map(fn s -> s.name end)
 
-      assert names == ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"]
+      assert names == ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10"]
     end
   end
 
@@ -618,6 +781,14 @@ defmodule TdDq.ImplementationsTest do
             structure: %{id: 8},
             value: nil
           }
+        ],
+        segments: [
+          %{
+            structure: %{id: 11},
+          },
+          %{
+            structure: %{id: 12},
+          }
         ]
       }
 
@@ -629,12 +800,13 @@ defmodule TdDq.ImplementationsTest do
           rule: rule,
           dataset: creation_attrs.dataset,
           populations: creation_attrs.populations,
-          validations: creation_attrs.validations
+          validations: creation_attrs.validations,
+          segments: creation_attrs.segments
         )
 
       structures_ids = Implementations.get_structure_ids(rule_implementaton)
 
-      assert Enum.sort(structures_ids) == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+      assert Enum.sort(structures_ids) == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     end
   end
 
@@ -685,7 +857,8 @@ defmodule TdDq.ImplementationsTest do
       insert(:implementation,
         dataset: [build(:dataset_row, structure: build(:dataset_structure, id: structure_id1))],
         populations: [],
-        validations: []
+        validations: [],
+        segments: []
       )
 
       assert :ok = Implementations.deprecate_implementations()
@@ -694,7 +867,8 @@ defmodule TdDq.ImplementationsTest do
         insert(:implementation,
           dataset: [build(:dataset_row, structure: build(:dataset_structure, id: structure_id2))],
           populations: [],
-          validations: []
+          validations: [],
+          segments: []
         )
 
       %{id: id3} = insert(:implementation)
@@ -759,6 +933,42 @@ defmodule TdDq.ImplementationsTest do
         insert(:raw_implementation, raw_content: build(:raw_content, source_id: nil))
 
       assert Implementations.get_sources(implementation) == []
+    end
+  end
+
+  describe "implementation_structure" do
+    @valid_attrs %{deleted_at: "2010-04-17T14:00:00.000000Z", type: :dataset}
+    @invalid_attrs %{deleted_at: nil}
+
+    test "create_implementation_structure/1 with valid data creates a implementation_structure" do
+      implementation = insert(:implementation)
+      data_structure = insert(:data_structure)
+
+      assert {:ok, %ImplementationStructure{} = implementation_structure} =
+               Implementations.create_implementation_structure(
+                 implementation,
+                 data_structure,
+                 @valid_attrs
+               )
+
+      assert implementation_structure.deleted_at
+             <~> DateTime.from_naive!(~N[2010-04-17T14:00:00.000000Z], "Etc/UTC")
+    end
+
+    test "create_implementation_structure/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} =
+               Implementations.create_implementation_structure(nil, nil, @invalid_attrs)
+    end
+
+    test "delete_implementation_structure/1 deletes the implementation_structure" do
+      implementation_structure = insert(:implementation_structure)
+
+      assert {:ok, %ImplementationStructure{}} =
+               Implementations.delete_implementation_structure(implementation_structure)
+
+      assert_raise Ecto.NoResultsError, fn ->
+        Implementations.get_implementation_structure!(implementation_structure.id)
+      end
     end
   end
 end
