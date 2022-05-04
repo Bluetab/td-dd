@@ -5,7 +5,7 @@ defmodule TdDdWeb.Schema.StructureTags do
 
   use Absinthe.Schema.Notation
 
-  # import Absinthe.Resolution.Helpers, only: [dataloader: 1]
+  import Absinthe.Resolution.Helpers, only: [dataloader: 1]
 
   alias TdDdWeb.Resolvers
 
@@ -53,5 +53,10 @@ defmodule TdDdWeb.Schema.StructureTags do
     field :id, non_null(:id)
     field :name, :string
     field :domain_ids, list_of(:id)
+    field :tagged_structures, list_of(:data_structure_id), resolve: dataloader(TdDd.DataStructures)
+  end
+
+  object :data_structure_id do
+    field :id, non_null(:id)
   end
 end
