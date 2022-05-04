@@ -1430,22 +1430,22 @@ defmodule TdDd.DataStructuresTest do
     end
 
     test "update_data_structure_tag/2 with invalid data returns error changeset" do
-      data_structure_tag = data_structure_tag_fixture()
+      %{id: id} = data_structure_tag = data_structure_tag_fixture()
 
       assert {:error, %Ecto.Changeset{}} =
                DataStructures.update_data_structure_tag(data_structure_tag, @invalid_attrs)
 
-      assert data_structure_tag == DataStructures.get_data_structure_tag!(data_structure_tag.id)
+      assert data_structure_tag == DataStructures.get_data_structure_tag!(id: id)
     end
 
     test "delete_data_structure_tag/1 deletes the data_structure_tag" do
-      data_structure_tag = data_structure_tag_fixture()
+      %{id: id} = data_structure_tag = data_structure_tag_fixture()
 
       assert {:ok, %DataStructureTag{}} =
                DataStructures.delete_data_structure_tag(data_structure_tag)
 
       assert_raise Ecto.NoResultsError, fn ->
-        DataStructures.get_data_structure_tag!(data_structure_tag.id)
+        DataStructures.get_data_structure_tag!(id: id)
       end
     end
   end

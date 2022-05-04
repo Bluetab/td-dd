@@ -56,7 +56,9 @@ defmodule TdDqWeb.Router do
       resources("/data_structures", ImplementationStructureController, only: [:create])
     end
 
-    resources("/rule_implementations/data_structures", ImplementationStructureController, only: [:delete])
+    resources("/rule_implementations/data_structures", ImplementationStructureController,
+      only: [:delete]
+    )
 
     resources("/rule_implementations/upload", ImplementationUploadController, only: [:create])
 

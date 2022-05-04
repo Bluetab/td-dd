@@ -898,7 +898,6 @@ defmodule TdDd.DataStructures do
     |> Repo.one()
   end
 
-
   def get_data_structure_tag!(params) do
     params
     |> data_structure_tags_query()
