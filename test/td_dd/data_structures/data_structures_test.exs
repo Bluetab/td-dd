@@ -1377,35 +1377,16 @@ defmodule TdDd.DataStructuresTest do
       assert DataStructures.list_data_structure_tags() == [data_structure_tag]
     end
 
-    test "list_data_structure_tags/1 returns all data_structure_tags with preloaded structures" do
-      %{id: structure_id, external_id: external_id} = structure = insert(:data_structure)
-      %{id: id, name: name} = structure_tag = insert(:data_structure_tag)
-      insert(:data_structures_tags, data_structure: structure, data_structure_tag: structure_tag)
+    test "list_data_structure_tags/1 returns all data_structure_tags with structure count" do
+      %{data_structure_tag: %{id: id, name: name}} = insert(:data_structures_tags)
 
-      assert [
-               %{
-                 id: ^id,
-                 name: ^name,
-                 tagged_structures: [%{id: ^structure_id, external_id: ^external_id}]
-               }
-             ] = DataStructures.list_data_structure_tags(preload: [:tagged_structures])
+      assert [%{id: ^id, name: ^name, structure_count: 1}] =
+               DataStructures.list_data_structure_tags(structure_count: true)
     end
 
     test "get_data_structure_tag/1 returns the data_structure_tag with given id" do
       %{id: id} = data_structure_tag = data_structure_tag_fixture()
       assert DataStructures.get_data_structure_tag(id: id) == data_structure_tag
-    end
-
-    test "get_data_structure_tag/1 returns the data_structure_tag with specified preloads by given id" do
-      %{id: structure_id, external_id: external_id} = structure = insert(:data_structure)
-      %{id: id, name: name} = structure_tag = insert(:data_structure_tag)
-      insert(:data_structures_tags, data_structure: structure, data_structure_tag: structure_tag)
-
-      assert %{
-               id: ^id,
-               name: ^name,
-               tagged_structures: [%{id: ^structure_id, external_id: ^external_id}]
-             } = DataStructures.get_data_structure_tag(id: id, preload: :tagged_structures)
     end
 
     test "create_data_structure_tag/1 with valid data creates a data_structure_tag" do

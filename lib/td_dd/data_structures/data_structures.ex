@@ -910,14 +910,24 @@ defmodule TdDd.DataStructures do
       {:id, id}, q ->
         where(q, [t], t.id == ^id)
 
-      {:preload, preloads}, q ->
-        preload(q, ^preloads)
-
       {:domain_ids, []}, q ->
         where(q, [t], fragment("? = '{}'", t.domain_ids))
 
       {:domain_ids, domain_ids}, q ->
         where(q, [t], fragment("(? = '{}' OR ? && ?)", t.domain_ids, t.domain_ids, ^domain_ids))
+
+      {:structure_count, true}, q ->
+        sq =
+          DataStructuresTags
+          |> group_by(:data_structure_tag_id)
+          |> select([g], %{
+            id: g.data_structure_tag_id,
+            count: count(g.data_structure_id)
+          })
+
+        q
+        |> join(:left, [t], c in subquery(sq), on: c.id == t.id)
+        |> select_merge([t, c], %{structure_count: fragment("coalesce(?, 0)", c.count)})
     end)
   end
 
@@ -929,6 +939,7 @@ defmodule TdDd.DataStructures do
 
   def update_data_structure_tag(%DataStructureTag{} = data_structure_tag, %{} = params) do
     data_structure_tag
+    |> Repo.preload(:tagged_structures)
     |> DataStructureTag.changeset(params)
     |> Repo.update()
     |> on_tag_update()
@@ -936,19 +947,16 @@ defmodule TdDd.DataStructures do
 
   def delete_data_structure_tag(%DataStructureTag{} = data_structure_tag) do
     data_structure_tag
+    |> Repo.preload(:tagged_structures)
     |> Repo.delete()
-    |> on_tag_delete(Map.get(data_structure_tag, :tagged_structures))
-  end
-
-  def get_links_tag(%DataStructure{data_structures_tags: tags})
-      when is_list(tags) do
-    tags
+    |> on_tag_delete()
   end
 
   def get_links_tag(%DataStructure{} = data_structure) do
     data_structure
-    |> Repo.preload(data_structures_tags: [:data_structure, :data_structure_tag])
-    |> Map.get(:data_structures_tags)
+    |> Ecto.assoc(:data_structures_tags)
+    |> preload([:data_structure, :data_structure_tag])
+    |> Repo.all()
   end
 
   def link_tag(
@@ -1007,7 +1015,7 @@ defmodule TdDd.DataStructures do
 
   defp on_tag_update(reply), do: reply
 
-  defp on_tag_delete({:ok, tag}, [_ | _] = structures) do
+  defp on_tag_delete({:ok, %{tagged_structures: [_ | _] = structures} = tag}) do
     structures
     |> Enum.map(& &1.id)
     |> IndexWorker.reindex()
@@ -1015,7 +1023,7 @@ defmodule TdDd.DataStructures do
     {:ok, tag}
   end
 
-  defp on_tag_delete(reply, _), do: reply
+  defp on_tag_delete(reply), do: reply
 
   defp create_link(data_structure, data_structure_tag, params, %Claims{user_id: user_id}) do
     changeset =

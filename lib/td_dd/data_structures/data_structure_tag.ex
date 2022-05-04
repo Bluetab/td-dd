@@ -11,6 +11,7 @@ defmodule TdDd.DataStructures.DataStructureTag do
   schema "data_structure_tags" do
     field :name, :string
     field :domain_ids, {:array, :integer}, default: []
+    field :structure_count, :integer, virtual: true
 
     many_to_many(:tagged_structures, DataStructure, join_through: DataStructuresTags)
 

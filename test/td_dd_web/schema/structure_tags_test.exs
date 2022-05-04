@@ -17,9 +17,7 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
       id
       name
       domainIds
-      taggedStructures {
-        id
-      }
+      structureCount
     }
   }
   """

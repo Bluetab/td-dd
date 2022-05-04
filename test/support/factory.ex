@@ -432,12 +432,16 @@ defmodule TdDd.Factory do
     }
   end
 
-  def data_structures_tags_factory do
+  def data_structures_tags_factory(attrs) do
+    attrs =
+      attrs
+      |> default_assoc(:data_structure_id, :data_structure)
+      |> default_assoc(:data_structure_tag_id, :data_structure_tag)
+
     %TdDd.DataStructures.DataStructuresTags{
-      data_structure: build(:data_structure),
-      data_structure_tag: build(:data_structure_tag),
-      description: "foo"
+      description: sequence("description")
     }
+    |> merge_attributes(attrs)
   end
 
   def classifier_factory(attrs) do

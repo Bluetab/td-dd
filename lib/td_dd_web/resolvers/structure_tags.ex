@@ -5,15 +5,10 @@ defmodule TdDdWeb.Resolvers.StructureTags do
 
   import Canada, only: [can?: 2]
 
-  alias TdCache.TaxonomyCache
   alias TdDd.DataStructures
 
-  def structure_tags(_parent, %{domain_ids: [_ | _]} = args, _resolution) do
-    args = Map.update!(args, :domain_ids, &TaxonomyCache.reaching_domain_ids/1)
-    {:ok, DataStructures.list_data_structure_tags(args)}
-  end
-
   def structure_tags(_parent, args, _resolution) do
+    args = Map.put_new(args, :structure_count, true)
     {:ok, DataStructures.list_data_structure_tags(args)}
   end
 
