@@ -3,12 +3,12 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
 
   @create_attrs %{
     name: "some structure_type",
-    template_id: 54321,
+    template_id: 54_321,
     translation: "some translation"
   }
   @update_attrs %{
     name: "some updated structure_type",
-    template_id: 54321,
+    template_id: 54_321,
     translation: "some updated translation",
     metadata_views: [%{"name" => "updated", "fields" => []}]
   }
@@ -86,7 +86,7 @@ defmodule TdDdWeb.DataStructureTypeControllerTest do
       assert %{
                "id" => _id,
                "name" => "some updated structure_type",
-               "template_id" => 54321,
+               "template_id" => 54_321,
                "translation" => "some updated translation",
                "metadata_fields" => [],
                "metadata_views" => [%{"fields" => [], "name" => "updated"}]

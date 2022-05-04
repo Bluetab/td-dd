@@ -13,8 +13,8 @@ defmodule TdDd.DataStructuresTest do
   alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.DataStructures.StructureMetadata
-  alias TdDd.DataStructures.StructureNotes
   alias TdDd.DataStructures.StructureNote
+  alias TdDd.DataStructures.StructureNotes
   alias TdDd.Repo
 
   @moduletag sandbox: :shared
@@ -1391,12 +1391,12 @@ defmodule TdDd.DataStructuresTest do
              ] = DataStructures.list_data_structure_tags(preload: [:tagged_structures])
     end
 
-    test "get_data_structure_tag!/1 returns the data_structure_tag with given id" do
-      data_structure_tag = data_structure_tag_fixture()
-      assert DataStructures.get_data_structure_tag!(data_structure_tag.id) == data_structure_tag
+    test "get_data_structure_tag/1 returns the data_structure_tag with given id" do
+      %{id: id} = data_structure_tag = data_structure_tag_fixture()
+      assert DataStructures.get_data_structure_tag(id: id) == data_structure_tag
     end
 
-    test "get_data_structure_tag!/1 returns the data_structure_tag with specified preloads by given id" do
+    test "get_data_structure_tag/1 returns the data_structure_tag with specified preloads by given id" do
       %{id: structure_id, external_id: external_id} = structure = insert(:data_structure)
       %{id: id, name: name} = structure_tag = insert(:data_structure_tag)
       insert(:data_structures_tags, data_structure: structure, data_structure_tag: structure_tag)
@@ -1405,7 +1405,7 @@ defmodule TdDd.DataStructuresTest do
                id: ^id,
                name: ^name,
                tagged_structures: [%{id: ^structure_id, external_id: ^external_id}]
-             } = DataStructures.get_data_structure_tag!(id, preload: [:tagged_structures])
+             } = DataStructures.get_data_structure_tag(id: id, preload: :tagged_structures)
     end
 
     test "create_data_structure_tag/1 with valid data creates a data_structure_tag" do

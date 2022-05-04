@@ -3,6 +3,7 @@ defmodule TdDdWeb.DataStructureView do
 
   alias TdDd.DataStructures
   alias TdDdWeb.DataStructuresTagsView
+  alias TdDdWeb.DataStructureTagView
   alias TdDdWeb.DataStructureVersionView
 
   require Logger
@@ -28,6 +29,12 @@ defmodule TdDdWeb.DataStructureView do
 
   def render("index.json", %{data_structures: data_structures}) do
     %{data: render_many(data_structures, __MODULE__, "data_structure.json")}
+  end
+
+  def render("show.json", %{actions: actions} = assigns) do
+    "show.json"
+    |> render(Map.delete(assigns, :actions))
+    |> put_actions(actions)
   end
 
   def render("show.json", %{data_structure: data_structure, user_permissions: user_permissions}) do
@@ -333,5 +340,20 @@ defmodule TdDdWeb.DataStructureView do
       end
 
     Map.put(ds, :tags, tags)
+  end
+
+  defp put_actions(ds, actions) do
+    actions =
+      actions
+      |> Map.take([:manage_tags])
+      |> Enum.reduce(%{}, fn
+        {:manage_tags, %{tags: tags}}, acc when is_list(tags) ->
+          Map.put(acc, :manage_tags, render_many(tags, DataStructureTagView, "embedded.json"))
+
+        _, acc ->
+          acc
+      end)
+
+    Map.put(ds, :_actions, actions)
   end
 end

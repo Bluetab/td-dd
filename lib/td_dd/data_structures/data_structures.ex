@@ -9,6 +9,7 @@ defmodule TdDd.DataStructures do
   alias Ecto.Changeset
   alias Ecto.Multi
   alias TdCache.LinkCache
+  alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
   alias TdCache.UserCache
   alias TdCx.Sources
@@ -880,16 +881,45 @@ defmodule TdDd.DataStructures do
 
   defp do_profile_source(dsv, _source), do: dsv
 
-  def list_data_structure_tags(opts \\ []) do
-    DataStructureTag
-    |> Repo.all()
-    |> Repo.preload(opts[:preload] || [])
+  def list_available_tags(%DataStructure{domain_ids: domain_ids}) do
+    domain_ids = TaxonomyCache.reaching_domain_ids(domain_ids)
+    list_data_structure_tags(domain_ids: domain_ids)
   end
 
-  def get_data_structure_tag!(id, opts \\ []) do
-    DataStructureTag
-    |> Repo.get!(id)
-    |> Repo.preload(opts[:preload] || [])
+  def list_data_structure_tags(params \\ %{}) do
+    params
+    |> data_structure_tags_query()
+    |> Repo.all()
+  end
+
+  def get_data_structure_tag(params) do
+    params
+    |> data_structure_tags_query()
+    |> Repo.one()
+  end
+
+
+  def get_data_structure_tag!(params) do
+    params
+    |> data_structure_tags_query()
+    |> Repo.one!()
+  end
+
+  defp data_structure_tags_query(params) do
+    params
+    |> Enum.reduce(DataStructureTag, fn
+      {:id, id}, q ->
+        where(q, [t], t.id == ^id)
+
+      {:preload, preloads}, q ->
+        preload(q, ^preloads)
+
+      {:domain_ids, []}, q ->
+        where(q, [t], fragment("? = '{}'", t.domain_ids))
+
+      {:domain_ids, domain_ids}, q ->
+        where(q, [t], fragment("(? = '{}' OR ? && ?)", t.domain_ids, t.domain_ids, ^domain_ids))
+    end)
   end
 
   def create_data_structure_tag(attrs \\ %{}) do
@@ -898,9 +928,9 @@ defmodule TdDd.DataStructures do
     |> Repo.insert()
   end
 
-  def update_data_structure_tag(%DataStructureTag{} = data_structure_tag, attrs) do
+  def update_data_structure_tag(%DataStructureTag{} = data_structure_tag, %{} = params) do
     data_structure_tag
-    |> DataStructureTag.changeset(attrs)
+    |> DataStructureTag.changeset(params)
     |> Repo.update()
     |> on_tag_update()
   end

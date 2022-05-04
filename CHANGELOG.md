@@ -4,11 +4,11 @@
 
 ### Added
 
-- [TD-3186] Support for links between Implementations and Structures
+- [TD-3186] Support for links between implementations and structures
 
 ### Changed
 
-- [TD-4723] Data structure tags can now be associated with specific domains
+- [TD-4723] Support for domain-specific data structure tags
 
 ## [4.42.0] 2022-04-25
 
