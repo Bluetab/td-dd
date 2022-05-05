@@ -46,7 +46,7 @@ defmodule TdDq.Implementations.Implementation do
 
     has_many(:results, RuleResult)
 
-    has_many(:data_structures, ImplementationStructure)
+    has_many(:data_structures, ImplementationStructure, where: [deleted_at: nil])
 
     timestamps(type: :utc_datetime)
   end
