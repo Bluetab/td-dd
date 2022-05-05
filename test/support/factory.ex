@@ -369,7 +369,6 @@ defmodule TdDd.Factory do
 
   def segment_result_factory do
     %TdDq.Rules.RuleResult{
-      parent_id: sequence(:rule_id, & &1),
       result: "#{Decimal.round(50, 2)}",
       date: "#{DateTime.utc_now()}"
     }
@@ -419,7 +418,6 @@ defmodule TdDd.Factory do
     |> Enum.reject(fn {_k, v} -> v == "" end)
     |> Map.new()
   end
-
 
   def implementation_result_record_factory(attrs) do
     %{

@@ -96,6 +96,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> get(Routes.implementation_path(conn, :show, impl_id))
                |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:ok)
+              #  |> IO.inspect(label: "implementation --->")
 
       assert %{"id" => ^rule_result_id_1, "has_segments" => true} = result_1
       assert %{"id" => ^rule_result_id_2, "has_segments" => true} = result_2
