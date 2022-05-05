@@ -12,6 +12,7 @@
 - [TD-4783] 
   - Lineage Graph is not generated
   - Change chunk size for adding metadata in linage upload 
+- [TD-4586] Asynchronous CSV bulk update
 
 ## [4.42.0] 2022-04-25
 
@@ -19,7 +20,7 @@
 
 - [TD-4098] GraphQL query for data structures
 - [TD-4683] GraphQL query for data structure relations
-- [TD-2026] Add metadata to linage graph
+- [TD-2026] Add metadata to lineage graph
 
 ### Changed
 

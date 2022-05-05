@@ -28,6 +28,10 @@ defmodule TdDd.Canada.DataStructureAbilities do
     Permissions.authorized?(claims, :manage_confidential_structures, domain_ids)
   end
 
+  def can?(%Claims{} = claims, :list_bulk_update_events, DataStructure) do
+    Permissions.authorized?(claims, :create_structure_note)
+  end
+
   def can?(
         %Claims{} = claims,
         action,
