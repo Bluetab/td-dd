@@ -158,6 +158,9 @@ config :td_dd, TdDd.DataStructures.HistoryManager,
           _ -> nil
         end)
 
+config :td_dd, TdDd.DataStructures.BulkUpdater,
+  timeout_seconds: System.get_env("CSV_BULK_UPDATER_TIMEOUT_SECONDS", "600") |> String.to_integer()
+
 config :td_dd, TdDdWeb.CustomParsersPlug,
   max_payload_length: System.get_env("MAX_PAYLOAD_LENGTH", "100000000") |> String.to_integer()
 
