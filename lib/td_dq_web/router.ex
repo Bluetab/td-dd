@@ -35,8 +35,10 @@ defmodule TdDqWeb.Router do
 
     resources("/rule_results", RuleResultController, only: [:index, :delete, :create, :show]) do
       resources("/remediation", RemediationController, singleton: true)
-      get("/segment_results", RuleResultController, :segment_results)
+      get("/segment_results", SegmentResultController, :index)
     end
+
+    get("/segment_results", SegmentResultController, :index)
 
     get("/rules/concept/:business_concept_id", RuleController, :get_rules_by_concept)
 

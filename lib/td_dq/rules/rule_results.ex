@@ -35,9 +35,15 @@ defmodule TdDq.Rules.RuleResults do
     |> Repo.all()
   end
 
-  def list_segment_results(_params \\ %{}) do
+  def list_segment_results(params \\ %{}) do
+    cursor_params = get_cursor_params(params)
+
     RuleResult
     |> where([rr], not is_nil(rr.parent_id))
+    |> where_cursor(cursor_params)
+    |> page_limit(cursor_params)
+    |> order(cursor_params)
+    |> add_filters(params)
     |> Repo.all()
   end
 
@@ -239,4 +245,44 @@ defmodule TdDq.Rules.RuleResults do
   end
 
   defp get_results_gt_date(query, _params), do: query
+
+  defp add_filters(query, %{"since" => ts, "from" => "updated_at"}) do
+    query
+    |> where([rr, _, _], rr.updated_at >= ^ts)
+  end
+
+  defp add_filters(query, %{"since" => ts}) do
+    query
+    |> where([rr, _, _], rr.date >= ^ts)
+  end
+
+  defp add_filters(query, _params), do: query
+
+  defp where_cursor(query, %{cursor: %{offset: offset}}) when is_integer(offset) do
+    offset(query, ^offset)
+  end
+
+  defp where_cursor(query, _), do: query
+
+  defp page_limit(query, %{cursor: %{size: size}}) when is_integer(size) do
+    limit(query, ^size)
+  end
+
+  defp page_limit(query, _), do: query
+
+  defp order(query, cursor_params) do
+    case Map.has_key?(cursor_params, :cursor) do
+      true -> order_by(query, [sn], asc: sn.updated_at, asc: sn.id)
+      false -> query
+    end
+  end
+
+  defp get_cursor_params(%{"cursor" => %{} = cursor}) do
+    offset = Map.get(cursor, "offset")
+    size = Map.get(cursor, "size")
+
+    %{cursor: %{offset: offset, size: size}}
+  end
+
+  defp get_cursor_params(params), do: params
 end

@@ -245,24 +245,13 @@ defmodule TdDq.RuleResultsTest do
 
       assert length(segment_results) == 2
     end
-
-    test "retrieves results with date gt condition" do
-      implementation1 = insert(:implementation)
-      implementation2 = insert(:implementation)
-
-      insert(:rule_result, implementation: implementation1, date: "2000-01-01T00:00:00")
-      result = insert(:rule_result, implementation: implementation2, date: "2000-02-01T11:11:11")
-      assert RuleResults.list_rule_results(%{"since" => "2000-01-11T11:11:11"}) <|> [result]
-    end
   end
 
   describe "list_segment_results/1" do
     test "retrieves all segments results" do
-      implementation = insert(:implementation)
-
-      %{id: parent_id_1} = insert(:rule_result, implementation: implementation)
-      %{id: parent_id_2} = insert(:rule_result, implementation: implementation)
-      insert(:rule_result, implementation: implementation)
+      insert(:rule_result)
+      %{id: parent_id_1} = insert(:rule_result)
+      %{id: parent_id_2} = insert(:rule_result)
 
       %{id: segment_id_1} = insert(:segment_result, parent_id: parent_id_1)
       %{id: segment_id_2} = insert(:segment_result, parent_id: parent_id_2)
@@ -270,20 +259,88 @@ defmodule TdDq.RuleResultsTest do
       segment_results = RuleResults.list_segment_results()
 
       assert [
-               %{id: ^segment_id_1, parent_id: ^parent_id},
-               %{id: ^segment_id_2, parent_id: ^parent_id}
+               %{id: ^segment_id_1, parent_id: ^parent_id_1},
+               %{id: ^segment_id_2, parent_id: ^parent_id_2}
              ] = segment_results
 
       assert length(segment_results) == 2
     end
 
     test "retrieves results with date gt condition" do
-      implementation1 = insert(:implementation)
-      implementation2 = insert(:implementation)
+      %{id: parent_id_1} = insert(:rule_result)
+      %{id: parent_id_2} = insert(:rule_result)
 
-      insert(:rule_result, implementation: implementation1, date: "2000-01-01T00:00:00")
-      result = insert(:rule_result, implementation: implementation2, date: "2000-02-01T11:11:11")
-      assert RuleResults.list_rule_results(%{"since" => "2000-01-11T11:11:11"}) <|> [result]
+      insert(:segment_result, parent_id: parent_id_1, date: "2000-01-01T00:00:00")
+      result = insert(:segment_result, parent_id: parent_id_2, date: "2000-02-01T11:11:11")
+
+      assert RuleResults.list_segment_results(%{"since" => "2000-01-11T11:11:11"})
+             <|> [result]
     end
+
+    test "retrieves results paginated by offset ordered by updated_at and segment result id" do
+      page_size = 200
+      %{id: parent_id} = insert(:rule_result)
+
+      segment_results =
+        Enum.map(1..5, fn _ ->
+          Enum.map(1..page_size, fn _ -> insert(:segment_result, parent_id: parent_id) end)
+        end)
+
+      Enum.reduce(segment_results, 0, fn chunk, offset ->
+        {last_chunk_id, _} = get_last_id_updated_at_segments(chunk)
+
+        segment_result =
+          RuleResults.list_segment_results(%{
+            "cursor" => %{"offset" => offset, "size" => page_size}
+          })
+
+        assert ^page_size = Enum.count(segment_result)
+        {last_segment_id, _} = get_last_id_updated_at_segments(segment_result)
+        assert ^last_chunk_id = last_segment_id
+        offset + Enum.count(segment_result)
+      end)
+    end
+
+    test "retrieves  ordered results paginated by updated_at and id cursor" do
+      page_size = 200
+      %{id: parent_id} = insert(:rule_result)
+
+      inserted_segment_results =
+        [chunk | rest_segments] =
+        Enum.map(1..5, fn _ ->
+          Enum.map(1..page_size, fn _ -> insert(:segment_result, parent_id: parent_id) end)
+        end)
+
+      {_last_chunk_id, last_chunk_updated_at} = get_last_id_updated_at_segments(chunk)
+
+      total_segment_result =
+        [chunk | rest_segments]
+        |> List.flatten()
+        |> Enum.filter(&(NaiveDateTime.to_iso8601(&1.updated_at) >= last_chunk_updated_at))
+        |> Enum.count()
+
+      assert {^total_segment_result, _} =
+               Enum.reduce(inserted_segment_results, {0, last_chunk_updated_at}, fn _chunk,
+                                                                                    {offset,
+                                                                                     updated_at} ->
+                 segment_results =
+                   RuleResults.list_segment_results(%{
+                     "since" => updated_at,
+                     "from" => "updated_at",
+                     "cursor" => %{"offset" => offset, "size" => page_size}
+                   })
+
+                 Enum.count(segment_results)
+
+                 {offset + Enum.count(segment_results), updated_at}
+               end)
+    end
+  end
+
+  defp get_last_id_updated_at_segments(segment_results) do
+    last_segment = List.last(segment_results)
+    id = last_segment.id
+    updated_at = NaiveDateTime.to_iso8601(last_segment.updated_at)
+    {id, updated_at}
   end
 end

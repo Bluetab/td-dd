@@ -52,7 +52,7 @@ defmodule TdDqWeb.RuleResultControllerTest do
 
       assert %{"data" => [_ | _]} =
                conn
-               |> get(Routes.rule_result_rule_result_path(conn, :segment_results, parent_id))
+               |> get(Routes.rule_result_segment_result_path(conn, :index, parent_id))
                |> json_response(:ok)
 
       assert conn
@@ -61,25 +61,8 @@ defmodule TdDqWeb.RuleResultControllerTest do
 
       assert %{"data" => []} =
                conn
-               |> get(Routes.rule_result_rule_result_path(conn, :segment_results, parent_id))
+               |> get(Routes.rule_result_segment_result_path(conn, :index, parent_id))
                |> json_response(:ok)
-    end
-  end
-
-  describe "GET /api/rule_results/segment_results/" do
-    @tag authentication: [role: "service"]
-    test "service account can view segments rule results", %{conn: conn} do
-      %{id: parent_id} = insert(:rule_result)
-      insert(:segment_result, parent_id: parent_id)
-      insert(:segment_result, parent_id: parent_id)
-      insert(:segment_result, parent_id: parent_id)
-
-      assert %{"data" => [_ | _] = data} =
-               conn
-               |> get(Routes.rule_result_rule_result_path(conn, :segment_results, parent_id))
-               |> json_response(:ok)
-
-      assert length(data) == 3
     end
   end
 

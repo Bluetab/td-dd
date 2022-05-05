@@ -69,8 +69,6 @@ defmodule TdDq.Rules.RuleResult do
     |> validate_number(:records, greater_than_or_equal_to: 0)
     |> validate_number(:errors, greater_than_or_equal_to: 0)
     |> with_foreign_key_constraint()
-
-    # |> foreign_key_constraint(:rule_id)
   end
 
   defp add_assoc(%{changes: %{parent_id: parent_id}} = changeset, _impl)
@@ -150,13 +148,16 @@ defmodule TdDq.Rules.RuleResult do
   end
 
   defp with_foreign_key_constraint(%{changes: %{parent_id: parent_id}} = changeset)
-       when not is_nil(parent_id),
-       do: foreign_key_constraint(changeset, :parent_id)
+       when not is_nil(parent_id) do
+    foreign_key_constraint(changeset, :parent_id)
+  end
 
   defp with_foreign_key_constraint(%{data: %{parent_id: parent_id}} = changeset)
-       when not is_nil(parent_id),
-       do: foreign_key_constraint(changeset, :parent_id)
+       when not is_nil(parent_id) do
+    foreign_key_constraint(changeset, :parent_id)
+  end
 
-  defp with_foreign_key_constraint(changeset),
-    do: foreign_key_constraint(changeset, :rule_id)
+  defp with_foreign_key_constraint(changeset) do
+    foreign_key_constraint(changeset, :rule_id)
+  end
 end

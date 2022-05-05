@@ -57,14 +57,6 @@ defmodule TdDqWeb.RuleResultController do
     render(conn, "index.json", rule_results: rule_results)
   end
 
-  def segment_results(conn, %{"rule_result_id" => parent_id}) do
-    with claims <- conn.assigns[:current_resource],
-         segment_results <- RuleResults.list_segment_results_by_parent_id(parent_id),
-         {:can, true} <- {:can, can?(claims, view(segment_results))} do
-      render(conn, "index.json", segment_results: segment_results)
-    end
-  end
-
   defp rule_results_from_csv(%{path: path}) do
     path
     |> File.stream!()
