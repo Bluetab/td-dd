@@ -4,7 +4,6 @@ defmodule TdDqWeb.ImplementationResultController do
   import Canada, only: [can?: 2]
 
   alias TdDq.Implementations
-  # alias TdDq.Implementations.SegmentResults
   alias TdDq.Rules.RuleResults
   alias TdDqWeb.RuleResultView
 

@@ -38,6 +38,10 @@ defmodule TdDq.Canada.RuleAbilities do
     Permissions.authorized?(claims, :manage_quality_rule)
   end
 
+  def can?(%Claims{} = claims, :manage_segments_action, Rule) do
+    Permissions.authorized?(claims, :manage_segments)
+  end
+
   def can?(%Claims{} = claims, :create_implementation, %Rule{domain_id: domain_id}) do
     Permissions.authorized?(claims, :manage_quality_rule_implementations, domain_id)
   end

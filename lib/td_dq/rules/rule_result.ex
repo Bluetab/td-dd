@@ -38,6 +38,7 @@ defmodule TdDq.Rules.RuleResult do
     belongs_to(:parent, RuleResult)
 
     has_many(:execution, Execution, foreign_key: :result_id)
+    has_many(:rule_results, RuleResult, foreign_key: :parent_id)
     has_one(:remediation, Remediation)
 
     timestamps()
@@ -67,11 +68,16 @@ defmodule TdDq.Rules.RuleResult do
     |> add_validations()
     |> validate_number(:records, greater_than_or_equal_to: 0)
     |> validate_number(:errors, greater_than_or_equal_to: 0)
-    |> foreign_key_constraint(:rule_id)
+    |> with_foreign_key_constraint()
   end
 
-  defp add_assoc(%{data: %{parent_id: parent_id}} = changeset, _impl) when not is_nil(parent_id),
-    do: changeset
+  defp add_assoc(%{changes: %{parent_id: parent_id}} = changeset, _impl)
+       when not is_nil(parent_id),
+       do: changeset
+
+  defp add_assoc(%{data: %{parent_id: parent_id}} = changeset, _impl)
+       when not is_nil(parent_id),
+       do: changeset
 
   defp add_assoc(changeset, implementation),
     do: put_assoc(changeset, :implementation, implementation)
@@ -139,5 +145,19 @@ defmodule TdDq.Rules.RuleResult do
 
   defp add_validations(changeset) do
     validate_required(changeset, @rule_resuls_validations)
+  end
+
+  defp with_foreign_key_constraint(%{changes: %{parent_id: parent_id}} = changeset)
+       when not is_nil(parent_id) do
+    foreign_key_constraint(changeset, :parent_id)
+  end
+
+  defp with_foreign_key_constraint(%{data: %{parent_id: parent_id}} = changeset)
+       when not is_nil(parent_id) do
+    foreign_key_constraint(changeset, :parent_id)
+  end
+
+  defp with_foreign_key_constraint(changeset) do
+    foreign_key_constraint(changeset, :rule_id)
   end
 end

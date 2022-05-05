@@ -88,14 +88,16 @@ defmodule TdDqWeb.ImplementationControllerTest do
       %{id: rule_result_id_1} = insert(:rule_result, implementation: implementation)
       %{id: rule_result_id_2} = insert(:rule_result, implementation: implementation)
       %{id: rule_result_id_3} = insert(:rule_result, implementation: implementation)
-      insert(:segment_result, parent_id: rule_result_id_1, params: %{"name" => "foo:baz"})
-      insert(:segment_result, parent_id: rule_result_id_2, params: %{"name" => "foo:bar"})
+      insert(:segment_result, parent_id: rule_result_id_1, params: %{"segment_name" => "foo:baz"})
+      insert(:segment_result, parent_id: rule_result_id_2, params: %{"segment_name" => "foo:bar"})
 
       assert %{"data" => %{"results" => [result_1, result_2, result_3]}} =
                conn
                |> get(Routes.implementation_path(conn, :show, impl_id))
                |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:ok)
+
+      #  |> IO.inspect(label: "implementation --->")
 
       assert %{"id" => ^rule_result_id_1, "has_segments" => true} = result_1
       assert %{"id" => ^rule_result_id_2, "has_segments" => true} = result_2
@@ -567,6 +569,139 @@ defmodule TdDqWeb.ImplementationControllerTest do
              |> json_response(:created)
     end
 
+    @tag authentication: [
+           role: "user",
+           permissions: [
+             :manage_quality_rule_implementations
+           ]
+         ]
+    test "non admin without manage segments permission can't create implementation with segments",
+         %{
+           conn: conn,
+           domain: %{id: domain_id}
+         } do
+      rule = insert(:rule, domain_id: domain_id)
+      structure_id = 12_554
+
+      creation_attrs =
+        %{
+          implementation_key: "a1",
+          rule_id: rule.id,
+          dataset: @valid_dataset,
+          segments: [
+            %{structure: %{id: structure_id}}
+          ],
+          validations: [
+            %{
+              operator: %{
+                name: "gt",
+                value_type: "timestamp"
+              },
+              structure: %{id: 12_554},
+              value: [%{raw: "2019-12-02 05:35:00"}]
+            }
+          ],
+          result_type: "percentage",
+          minimum: 50,
+          goal: 100
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert conn
+             |> post(Routes.implementation_path(conn, :create),
+               rule_implementation: creation_attrs
+             )
+             |> json_response(:forbidden)
+    end
+
+    @tag authentication: [
+           role: "user",
+           permissions: [
+             :manage_quality_rule_implementations
+           ]
+         ]
+    test "non admin without manage segments permission can create implementation without segments",
+         %{
+           conn: conn,
+           domain: %{id: domain_id}
+         } do
+      rule = insert(:rule, domain_id: domain_id)
+      structure_id = 12_554
+
+      creation_attrs =
+        %{
+          implementation_key: "a1",
+          rule_id: rule.id,
+          dataset: @valid_dataset,
+          validations: [
+            %{
+              operator: %{
+                name: "gt",
+                value_type: "timestamp"
+              },
+              structure: %{id: structure_id},
+              value: [%{raw: "2019-12-02 05:35:00"}]
+            }
+          ],
+          result_type: "percentage",
+          minimum: 50,
+          goal: 100
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert conn
+             |> post(Routes.implementation_path(conn, :create),
+               rule_implementation: creation_attrs
+             )
+             |> json_response(:created)
+    end
+
+    @tag authentication: [
+           role: "user",
+           permissions: [
+             :manage_quality_rule_implementations,
+             :manage_segments
+           ]
+         ]
+    test "non admin with manage segments permission can create implementation with segments",
+         %{
+           conn: conn,
+           domain: %{id: domain_id}
+         } do
+      rule = insert(:rule, domain_id: domain_id)
+      structure_id = 12_554
+
+      creation_attrs =
+        %{
+          implementation_key: "a1",
+          rule_id: rule.id,
+          dataset: @valid_dataset,
+          segments: [
+            %{structure: %{id: structure_id}}
+          ],
+          validations: [
+            %{
+              operator: %{
+                name: "gt",
+                value_type: "timestamp"
+              },
+              structure: %{id: 12_554},
+              value: [%{raw: "2019-12-02 05:35:00"}]
+            }
+          ],
+          result_type: "percentage",
+          minimum: 50,
+          goal: 100
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert conn
+             |> post(Routes.implementation_path(conn, :create),
+               rule_implementation: creation_attrs
+             )
+             |> json_response(:created)
+    end
+
     @tag authentication: [role: "admin"]
     test "generates identifier on template", %{conn: conn} do
       %{name: template_name} = CacheHelpers.insert_template(@identifier_template)
@@ -807,7 +942,10 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
     @tag authentication: [
            user_name: "non_admin",
-           permissions: [:manage_quality_rule_implementations]
+           permissions: [
+             :manage_quality_rule_implementations,
+             :manage_segments
+           ]
          ]
     test "user with permissions can update", %{conn: conn, domain: %{id: domain_id}} do
       %{id: rule_id} = insert(:rule, domain_id: domain_id)
@@ -854,6 +992,272 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> json_response(:ok)
 
       assert %{"segments" => [%{"structure" => %{"id" => ^structure_id}}]} = data
+    end
+
+    @tag authentication: [
+           role: "user",
+           permissions: [
+             :manage_quality_rule_implementations
+           ]
+         ]
+    test "non admin without manage segments permission can't update implementation with segments",
+         %{
+           conn: conn,
+           domain: %{id: domain_id}
+         } do
+      %{id: rule_id} = insert(:rule, domain_id: domain_id)
+      implementation = insert(:implementation, rule_id: rule_id, domain_id: domain_id)
+      structure_id = 12_554
+
+      params =
+        %{
+          validations: [
+            %{
+              operator: %{
+                name: "gt",
+                value_type: "timestamp"
+              },
+              structure: %{id: structure_id},
+              value: [%{raw: "2019-12-02 05:35:00"}]
+            }
+          ],
+          populations: [
+            [
+              %{
+                value: [%{id: 11}],
+                operator: %{
+                  name: "eq",
+                  value_type: "number"
+                },
+                structure: %{id: 60_311}
+              }
+            ]
+          ]
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert conn
+             |> put(Routes.implementation_path(conn, :update, implementation),
+               rule_implementation: params
+             )
+             |> json_response(:forbidden)
+    end
+
+    @tag authentication: [
+           role: "user",
+           permissions: [
+             :manage_quality_rule_implementations
+           ]
+         ]
+    test "non admin without manage segments permission can update implementation without segments",
+         %{
+           conn: conn,
+           domain: %{id: domain_id}
+         } do
+      %{id: rule_id} = insert(:rule, domain_id: domain_id)
+
+      implementation =
+        insert(:implementation, rule_id: rule_id, domain_id: domain_id, segments: [])
+
+      structure_id = 12_554
+
+      params =
+        %{
+          validations: [
+            %{
+              operator: %{
+                name: "gt",
+                value_type: "timestamp"
+              },
+              structure: %{id: structure_id},
+              value: [%{raw: "2019-12-02 05:35:00"}]
+            }
+          ],
+          populations: [
+            [
+              %{
+                value: [%{id: 11}],
+                operator: %{
+                  name: "eq",
+                  value_type: "number"
+                },
+                structure: %{id: 60_311}
+              }
+            ]
+          ]
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert conn
+             |> put(Routes.implementation_path(conn, :update, implementation),
+               rule_implementation: params
+             )
+             |> json_response(:ok)
+    end
+
+    @tag authentication: [
+           role: "user",
+           permissions: [
+             :manage_quality_rule_implementations
+           ]
+         ]
+    test "non admin without manage segments permission can't update implementation adding segments",
+         %{
+           conn: conn,
+           domain: %{id: domain_id}
+         } do
+      %{id: rule_id} = insert(:rule, domain_id: domain_id)
+
+      implementation =
+        insert(:implementation, rule_id: rule_id, domain_id: domain_id, segments: [])
+
+      structure_id = 12_554
+
+      params =
+        %{
+          segments: [
+            %{
+              structure: %{id: structure_id}
+            }
+          ],
+          validations: [
+            %{
+              operator: %{
+                name: "gt",
+                value_type: "timestamp"
+              },
+              structure: %{id: structure_id},
+              value: [%{raw: "2019-12-02 05:35:00"}]
+            }
+          ],
+          populations: [
+            [
+              %{
+                value: [%{id: 11}],
+                operator: %{
+                  name: "eq",
+                  value_type: "number"
+                },
+                structure: %{id: 60_311}
+              }
+            ]
+          ]
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert conn
+             |> put(Routes.implementation_path(conn, :update, implementation),
+               rule_implementation: params
+             )
+             |> json_response(:forbidden)
+    end
+
+    @tag authentication: [
+           role: "user",
+           permissions: [
+             :manage_quality_rule_implementations,
+             :manage_segments
+           ]
+         ]
+    test "non admin with manage segments permission can update implementation with segments",
+         %{
+           conn: conn,
+           domain: %{id: domain_id}
+         } do
+      %{id: rule_id} = insert(:rule, domain_id: domain_id)
+      implementation = insert(:implementation, rule_id: rule_id, domain_id: domain_id)
+      structure_id = 12_554
+
+      params =
+        %{
+          validations: [
+            %{
+              operator: %{
+                name: "gt",
+                value_type: "timestamp"
+              },
+              structure: %{id: structure_id},
+              value: [%{raw: "2019-12-02 05:35:00"}]
+            }
+          ],
+          populations: [
+            [
+              %{
+                value: [%{id: 11}],
+                operator: %{
+                  name: "eq",
+                  value_type: "number"
+                },
+                structure: %{id: 60_311}
+              }
+            ]
+          ]
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert conn
+             |> put(Routes.implementation_path(conn, :update, implementation),
+               rule_implementation: params
+             )
+             |> json_response(:ok)
+    end
+
+    @tag authentication: [
+           role: "user",
+           permissions: [
+             :manage_quality_rule_implementations,
+             :manage_segments
+           ]
+         ]
+    test "non admin with manage segments permission can update implementation adding segments",
+         %{
+           conn: conn,
+           domain: %{id: domain_id}
+         } do
+      %{id: rule_id} = insert(:rule, domain_id: domain_id)
+
+      implementation =
+        insert(:implementation, rule_id: rule_id, domain_id: domain_id, segments: [])
+
+      structure_id = 12_554
+
+      params =
+        %{
+          segments: [
+            %{
+              structure: %{id: structure_id}
+            }
+          ],
+          validations: [
+            %{
+              operator: %{
+                name: "gt",
+                value_type: "timestamp"
+              },
+              structure: %{id: structure_id},
+              value: [%{raw: "2019-12-02 05:35:00"}]
+            }
+          ],
+          populations: [
+            [
+              %{
+                value: [%{id: 11}],
+                operator: %{
+                  name: "eq",
+                  value_type: "number"
+                },
+                structure: %{id: 60_311}
+              }
+            ]
+          ]
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert conn
+             |> put(Routes.implementation_path(conn, :update, implementation),
+               rule_implementation: params
+             )
+             |> json_response(:ok)
     end
 
     @tag authentication: [role: "admin"]
@@ -979,7 +1383,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
       %{id: concept_id} = CacheHelpers.insert_concept()
       CacheHelpers.insert_link(id, "implementation", "business_concept", concept_id)
 
-      assert {:ok, %{id: id, deleted_at: nil}} = CacheHelpers.get_implementation(id)
+      assert {:ok, %{id: ^id, deleted_at: nil}} = CacheHelpers.get_implementation(id)
 
       assert conn
              |> put(Routes.implementation_path(conn, :update, implementation),
