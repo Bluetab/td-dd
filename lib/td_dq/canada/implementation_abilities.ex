@@ -28,6 +28,17 @@ defmodule TdDq.Canada.ImplementationAbilities do
     Permissions.authorized?(claims, :link_implementation_structure, domain_id)
   end
 
+  def can?(%Claims{} = claims, :manage_segments, %Implementation{domain_id: domain_id, segments: segments})
+      when length(segments) !== 0 do
+    Permissions.authorized?(claims, :manage_segments, domain_id)
+  end
+
+  def can?(%Claims{}, :manage_segments, %Implementation{}), do: true
+
+  def can?(%Claims{} = claims, :manage_segments_action, %Implementation{}) do
+    Permissions.authorized?(claims, :manage_segments)
+  end
+
   def can?(%Claims{} = claims, :manage, %Implementation{domain_id: domain_id} = implementation) do
     permission = permission(implementation)
     Permissions.authorized?(claims, permission, domain_id)
@@ -39,6 +50,13 @@ defmodule TdDq.Canada.ImplementationAbilities do
     permission = permission(changeset)
     Permissions.authorized?(claims, permission, domain_id)
   end
+
+  def can?(%Claims{} = claims, :manage_segments, %Changeset{changes: %{segments: _}} = changeset) do
+    domain_id = domain_id(changeset)
+    Permissions.authorized?(claims, :manage_segments, domain_id)
+  end
+
+  def can?(%Claims{}, :manage_segments, %Changeset{}), do: true
 
   # Service accounts can execute rule implementations
   def can?(%Claims{role: "service"}, :execute, _), do: true
@@ -62,6 +80,7 @@ defmodule TdDq.Canada.ImplementationAbilities do
 
   defp permission("raw"), do: :manage_raw_quality_rule_implementations
   defp permission("default"), do: :manage_quality_rule_implementations
+  defp permission("draft"), do: :manage_quality_rule_implementations
   defp permission(%Implementation{implementation_type: type}), do: permission(type)
 
   defp permission(%Changeset{} = changeset) do
