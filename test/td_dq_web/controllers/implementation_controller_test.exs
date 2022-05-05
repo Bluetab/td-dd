@@ -638,7 +638,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
                 name: "gt",
                 value_type: "timestamp"
               },
-              structure: %{id: 12_554},
+              structure: %{id: structure_id},
               value: [%{raw: "2019-12-02 05:35:00"}]
             }
           ],
