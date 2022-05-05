@@ -28,7 +28,10 @@ defmodule TdDq.Canada.ImplementationAbilities do
     Permissions.authorized?(claims, :link_implementation_structure, domain_id)
   end
 
-  def can?(%Claims{} = claims, :manage_segments, %Implementation{domain_id: domain_id, segments: segments})
+  def can?(%Claims{} = claims, :manage_segments, %Implementation{
+        domain_id: domain_id,
+        segments: segments
+      })
       when length(segments) !== 0 do
     Permissions.authorized?(claims, :manage_segments, domain_id)
   end

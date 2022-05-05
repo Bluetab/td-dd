@@ -95,8 +95,8 @@ defmodule TdDq.Implementations do
 
     Multi.new()
     |> Multi.run(:can, fn _, _ ->
-        multi_can(can?(claims, create(changeset)) and can?(claims, manage_segments(changeset)))
-      end)
+      multi_can(can?(claims, create(changeset)) and can?(claims, manage_segments(changeset)))
+    end)
     |> Multi.insert(:implementation, changeset)
     |> Multi.run(:data_structures, Implementations, :create_implementation_structures, [])
     |> Multi.run(:audit, Audit, :implementation_created, [changeset, user_id])
@@ -123,12 +123,14 @@ defmodule TdDq.Implementations do
 
     Multi.new()
     |> Multi.run(:can, fn _, _ ->
-        multi_can(Enum.all?([
+      multi_can(
+        Enum.all?([
           can?(claims, update(changeset)),
           can?(claims, manage_segments(implementation)),
-          can?(claims, manage_segments(changeset)),
-        ]))
-      end)
+          can?(claims, manage_segments(changeset))
+        ])
+      )
+    end)
     |> Multi.update(:implementation, fn _ -> do_update_implementation(changeset) end)
     |> Multi.run(:audit, Audit, :implementation_updated, [changeset, user_id])
     |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
