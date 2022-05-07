@@ -52,6 +52,8 @@ defmodule TdDd.Application do
       TdDd.Lineage.Import,
       TdDd.Lineage.GraphData,
       TdDd.Lineage,
+      # Bulk Updater worker
+      TdDd.DataStructures.BulkUpdater,
       # CX Workers
       TdCx.Search.IndexWorker,
       # DQ Workers

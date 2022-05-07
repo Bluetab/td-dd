@@ -199,5 +199,69 @@ defmodule TdDq.Rules.RuleResultTest do
                |> RuleResult.changeset(params)
                |> Changeset.get_change(:parent_id)
     end
+
+    test "validate errors when a segment is inserted" do
+      impl = insert(:implementation)
+
+      %{id: rule_result_id} = insert(:rule_result)
+
+      params = %{
+        "parent_id" => rule_result_id,
+        "errors" => 123_456,
+        "records" => 456_123
+      }
+
+      errors = [
+        result: {"can't be blank", [validation: :required]},
+        date: {"can't be blank", [validation: :required]},
+        result_type: {"can't be blank", [validation: :required]}
+      ]
+
+      assert %{errors: ^errors} =
+               impl
+               |> RuleResult.changeset(params)
+    end
+
+    test "the implementation assoc is not created when a segment is inserted" do
+      impl = insert(:implementation)
+
+      %{id: rule_result_id} = insert(:rule_result)
+
+      params = %{
+        "parent_id" => rule_result_id,
+        "errors" => 123_456,
+        "records" => 456_123,
+        "result_type" => "percentage"
+      }
+
+      assert nil ==
+               impl
+               |> RuleResult.changeset(params)
+               |> Changeset.get_change(:implementation)
+    end
+
+    test "result_type: does not put calculated result if already present in changeset when a segment is inserted" do
+      impl = insert(:implementation)
+      %{id: rule_result_id} = insert(:rule_result)
+      {errors, records, result} = {123_456, 456_123, 12.34}
+
+      params = %{
+        "parent_id" => rule_result_id,
+        "records" => records,
+        "errors" => errors,
+        "result" => result,
+        "implementation_id" => 10,
+        "date" => "2020-01-01",
+        "result_type" => "percentage"
+      }
+
+      result_string = "#{result}"
+
+      assert ^result_string =
+               impl
+               |> RuleResult.changeset(params)
+               |> Changeset.get_change(:result)
+               |> Decimal.to_string()
+    end
   end
 end

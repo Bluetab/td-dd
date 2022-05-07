@@ -92,6 +92,7 @@ config :td_dd, dq_index_worker: TdDq.Search.IndexWorker
 config :td_dd, loader_worker: TdDd.Loader.Worker
 
 config :td_dd, TdDd.Lineage, timeout: 90_000
+config :td_dd, TdDd.DataStructures.BulkUpdater, timeout_seconds: 600
 
 # Default timeout increased for bulk metadata upload
 config :td_dd, TdDd.Repo,

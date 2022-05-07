@@ -1,6 +1,5 @@
 defmodule TdDd.Repo.Migrations.AddsegmentsToRuleImplementations do
   use Ecto.Migration
-  alias TdDq.Rules.RuleResult
 
   def up do
     alter table("rule_implementations") do

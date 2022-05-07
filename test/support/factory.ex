@@ -401,7 +401,6 @@ defmodule TdDd.Factory do
 
   def rule_result_factory do
     %TdDq.Rules.RuleResult{
-      # rule_id: sequence(:rule_id, & &1),
       result: "#{Decimal.round(50, 2)}",
       date: "#{DateTime.utc_now()}"
     }
@@ -452,6 +451,18 @@ defmodule TdDd.Factory do
       type: "PENDING"
     }
   end
+
+def csv_bulk_update_event_factory do
+  %TdDd.DataStructures.CsvBulkUpdateEvent{
+    csv_hash: "47D90FDF1AD967BD7DBBDAE28664278E",
+    inserted_at: "2022-04-24T11:08:18.215905Z",
+    message: nil,
+    response: %{errors: [], ids: [1, 2]},
+    status: "COMPLETED",
+    task_reference: "0.262460172.3388211201.119663",
+    user_id: 467
+  }
+end
 
   def data_structures_tags_factory do
     %TdDd.DataStructures.DataStructuresTags{
