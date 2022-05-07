@@ -20,12 +20,18 @@ defmodule TdDq.Implementations.ImplementationStructure do
   @doc false
   def changeset(implementation_structure, attrs, implementation, data_structure) do
     implementation_structure
-    |> cast(attrs, [:type, :deleted_at])
+    |> cast(attrs, [:type])
     |> validate_required([:type])
     |> put_assoc(:data_structure, data_structure)
     |> put_assoc(:implementation, implementation)
     |> unique_constraint([:implementation_id, :data_structure_id, :type],
       name: :implementations_structures_implementation_structure_type
     )
+  end
+
+  @doc false
+  def delete_changeset(implementation_structure) do
+    implementation_structure
+    |> cast(%{deleted_at: DateTime.utc_now()}, [:deleted_at])
   end
 end

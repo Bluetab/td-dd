@@ -132,6 +132,7 @@ defmodule TdDq.Implementations do
       )
     end)
     |> Multi.update(:implementation, fn _ -> do_update_implementation(changeset) end)
+    |> Multi.run(:data_structures, Implementations, :create_implementation_structures, [])
     |> Multi.run(:audit, Audit, :implementation_updated, [changeset, user_id])
     |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
     |> Repo.transaction()
@@ -380,7 +381,7 @@ defmodule TdDq.Implementations do
     where(query, [ri, _r], is_nil(ri.deleted_at))
   end
 
-  def valid_implementation_structures(%Implementation{dataset: [_ | _] = dataset}) do
+  def valid_dataset_implementation_structures(%Implementation{dataset: [_ | _] = dataset}) do
     dataset
     |> Enum.map(fn dataset_row -> dataset_row |> Map.get(:structure) |> Map.get(:id) end)
     |> Enum.reject(&is_nil/1)
@@ -388,42 +389,93 @@ defmodule TdDq.Implementations do
     |> Enum.reject(&is_nil/1)
   end
 
-  def valid_implementation_structures(%Implementation{
+  def valid_dataset_implementation_structures(%Implementation{
         raw_content: %{
           database: database,
           dataset: dataset,
           source_id: source_id
         }
       }) do
-    dataset
-    |> String.split([" ", "\n", "\t"])
-    |> Enum.flat_map(fn name ->
-      [
-        {:not_deleted, nil},
-        {:name, name},
-        {:source_id, source_id},
-        {:metadata_field, {"database", database}}
-      ]
-      |> DataStructures.list_data_structure_versions_by_criteria()
-      |> Enum.map(fn dsv ->
-        dsv
-        |> Repo.preload(:data_structure)
-        |> Map.get(:data_structure)
-      end)
+    names = string_split_space_lower(dataset)
+
+    [
+      {:not_deleted, nil},
+      {:name_in, names},
+      {:source_id, source_id},
+      {:metadata_field, {"database", database}},
+      {:class, "table"}
+    ]
+    |> DataStructures.list_data_structure_versions_by_criteria()
+    |> Enum.map(fn dsv ->
+      dsv
+      |> Repo.preload(:data_structure)
+      |> Map.get(:data_structure)
     end)
   end
 
-  def valid_implementation_structures(_), do: []
+  def valid_dataset_implementation_structures(_), do: []
+
+  def valid_validation_implementation_structures(%Implementation{
+        validations: [_ | _] = validations
+      }) do
+    validations
+    |> Enum.map(fn dataset_row -> dataset_row |> Map.get(:structure) |> Map.get(:id) end)
+    |> Enum.reject(&is_nil/1)
+    |> Enum.map(&DataStructures.get_data_structure/1)
+    |> Enum.reject(&is_nil/1)
+  end
+
+  def valid_validation_implementation_structures(%Implementation{
+        raw_content: %{
+          database: database,
+          dataset: dataset,
+          validations: validations,
+          source_id: source_id
+        }
+      }) do
+    names = string_split_space_lower(validations)
+    dataset_names = string_split_space_lower(dataset)
+
+    [
+      {:not_deleted, nil},
+      {:name_in, names},
+      {:source_id, source_id},
+      {:metadata_field, {"database", database}},
+      {:metadata_field_in, {"table", dataset_names}}
+    ]
+    |> DataStructures.list_data_structure_versions_by_criteria()
+    |> Enum.map(fn dsv ->
+      dsv
+      |> Repo.preload(:data_structure)
+      |> Map.get(:data_structure)
+    end)
+  end
+
+  def valid_validation_implementation_structures(_), do: []
+
+  defp string_split_space_lower(str),
+    do: str |> String.split(~r/[\s\.]+/) |> Enum.map(&String.downcase/1)
 
   def create_implementation_structures(_repo, %{implementation: implementation}) do
-    results =
+    results_dataset =
       implementation
-      |> valid_implementation_structures()
+      |> valid_dataset_implementation_structures()
       |> Enum.map(fn data_structure ->
-        create_implementation_structure(implementation, data_structure, %{type: :dataset})
+        create_implementation_structure(implementation, data_structure, %{type: :dataset},
+          on_conflict: :nothing
+        )
       end)
 
-    {:ok, results}
+    results_validations =
+      implementation
+      |> valid_validation_implementation_structures()
+      |> Enum.map(fn data_structure ->
+        create_implementation_structure(implementation, data_structure, %{type: :validation},
+          on_conflict: :nothing
+        )
+      end)
+
+    {:ok, results_dataset ++ results_validations}
   end
 
   def enrich_implementation_structures(%Implementation{} = implementation) do
@@ -696,17 +748,27 @@ defmodule TdDq.Implementations do
 
   def get_implementation_structure!(implementation_structure_id, preloads \\ []) do
     ImplementationStructure
+    |> where([is], is_nil(is.deleted_at))
     |> Repo.get!(implementation_structure_id)
     |> Repo.preload(preloads)
   end
 
-  def create_implementation_structure(implementation, data_structure, attrs \\ %{}) do
+  def create_implementation_structure(implementation, data_structure, attrs \\ %{}, opts \\ [
+    on_conflict: [set: [deleted_at: nil]],
+    conflict_target: [:implementation_id, :data_structure_id, :type]
+  ]) do
     %ImplementationStructure{}
-    |> ImplementationStructure.changeset(attrs, implementation, data_structure)
-    |> Repo.insert()
+    |> ImplementationStructure.changeset(
+      attrs,
+      implementation,
+      data_structure
+    )
+    |> Repo.insert(opts)
   end
 
   def delete_implementation_structure(%ImplementationStructure{} = implementation_structure) do
-    Repo.delete(implementation_structure)
+    implementation_structure
+    |> ImplementationStructure.delete_changeset()
+    |> Repo.update()
   end
 end
