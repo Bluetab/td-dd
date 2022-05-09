@@ -19,7 +19,7 @@ defmodule TdDqWeb.SegmentResultControllerTest do
 
       assert %{"data" => data} =
                conn
-               |> get(Routes.segment_result_path(conn, :index))
+               |> post(Routes.segment_result_path(conn, :index))
                |> validate_resp_schema(schema, "SegmentResultResponse")
                |> json_response(:ok)
 
