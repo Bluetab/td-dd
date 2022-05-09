@@ -587,17 +587,41 @@ defmodule TdDq.ImplementationsTest do
           class: "field"
         )
 
+      %{data_structure: %{id: data_structure_id_2}, name: data_structure_name_2} =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, source_id: source_id),
+          metadata: %{
+            "database" => "db_name",
+            "table" => "table_name"
+          },
+          class: "field"
+        )
+
+      %{data_structure: %{id: data_structure_id_3}, name: data_structure_name_3} =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, source_id: source_id),
+          metadata: %{
+            "database" => "db_name",
+            "table" => "table_name"
+          },
+          class: "field"
+        )
+
       implementation =
         insert(:raw_implementation,
           raw_content: %{
             dataset: "table_name",
-            validations: "word before test.#{data_structure_name} and after",
+            validations: "word before test.#{data_structure_name} and test.#{data_structure_name_2}='whatever' and length(#{data_structure_name_3})>2 and after",
             source_id: source_id,
             database: "db_name"
           }
         )
 
-      assert [%{id: ^data_structure_id}] =
+      assert [
+        %{id: ^data_structure_id},
+        %{id: ^data_structure_id_2},
+        %{id: ^data_structure_id_3},
+        ] =
                Implementations.valid_validation_implementation_structures(implementation)
     end
 

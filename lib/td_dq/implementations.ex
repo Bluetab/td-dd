@@ -454,7 +454,7 @@ defmodule TdDq.Implementations do
   def valid_validation_implementation_structures(_), do: []
 
   defp string_split_space_lower(str),
-    do: str |> String.split(~r/[\s\.]+/) |> Enum.map(&String.downcase/1)
+    do: str |> String.split(~r/[\s\.\*\&\|\^\%\/()><!=,+-]+/) |> Enum.map(&String.downcase/1)
 
   def create_implementation_structures(_repo, %{implementation: implementation}) do
     results_dataset =
