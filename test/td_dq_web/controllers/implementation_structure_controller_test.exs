@@ -124,33 +124,6 @@ defmodule TdDqWeb.ImplementationStructureControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "renders error when creating duplicates", %{conn: conn} do
-      implementation = insert(:implementation)
-      %{id: data_structure_id} = insert(:data_structure)
-
-      conn =
-        post(
-          conn,
-          Routes.implementation_implementation_structure_path(conn, :create, implementation),
-          data_structure_id: data_structure_id,
-          type: "dataset"
-        )
-
-      assert response(conn, 201)
-
-      conn =
-        post(
-          conn,
-          Routes.implementation_implementation_structure_path(conn, :create, implementation),
-          data_structure_id: data_structure_id,
-          type: "dataset"
-        )
-
-      assert %{"errors" => %{"implementation_id" => ["has already been taken"]}} =
-               json_response(conn, 422)
-    end
-
-    @tag authentication: [role: "admin"]
     test "renders error when type is invalid", %{conn: conn} do
       implementation = insert(:implementation)
       %{id: data_structure_id} = insert(:data_structure)

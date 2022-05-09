@@ -65,10 +65,19 @@ defmodule TdDd.DataStructures do
         where(q, [dsv], is_nil(dsv.deleted_at))
 
       {:name, name}, q ->
-        where(q, [dsv], dsv.name == ^name)
+        where(q, [dsv], fragment("lower(?)", dsv.name) == ^name)
+
+      {:name_in, names}, q ->
+        where(q, [dsv], fragment("lower(?)", dsv.name) in ^names)
+
+      {:class, class}, q ->
+        where(q, [dsv], dsv.class == ^class)
 
       {:metadata_field, {key, value}}, q ->
-        where(q, [dsv], fragment("?->>? = ?", dsv.metadata, ^key, ^value))
+        where(q, [dsv], fragment("lower(?->>?) = ?", dsv.metadata, ^key, ^value))
+
+      {:metadata_field_in, {key, value}}, q ->
+        where(q, [dsv], fragment("lower(?->>?) = ANY(?)", dsv.metadata, ^key, ^value))
 
       {:source_id, source_id}, q ->
         q

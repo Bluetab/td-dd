@@ -372,11 +372,13 @@ defmodule TdDq.ImplementationsTest do
     end
 
     test "creates ImplementationStructure when has dataset", %{rule: rule} do
-      %{id: data_structure_id} = insert(:data_structure)
+      %{id: dataset_data_structure_id} = insert(:data_structure)
+      %{id: validation_data_structure_id} = insert(:data_structure)
 
       params =
         string_params_for(:implementation,
-          dataset: [%{structure: %{id: data_structure_id}}],
+          dataset: [%{structure: %{id: dataset_data_structure_id}}],
+          validations: [%{build(:condition_row) | structure: %{id: validation_data_structure_id}}],
           rule_id: rule.id,
           domain_id: rule.domain_id
         )
@@ -386,11 +388,15 @@ defmodule TdDq.ImplementationsTest do
       assert {:ok, %{implementation: %{id: id}}} =
                Implementations.create_implementation(rule, params, claims)
 
-      assert %Implementation{data_structures: [%{data_structure_id: ^data_structure_id}]} =
-               Implementations.get_implementation!(id, preload: :data_structures)
+      assert %Implementation{
+               data_structures: [
+                 %{data_structure_id: ^dataset_data_structure_id, type: :dataset},
+                 %{data_structure_id: ^validation_data_structure_id, type: :validation}
+               ]
+             } = Implementations.get_implementation!(id, preload: :data_structures)
     end
 
-    test "creates ImplementationStructure for raw implementations", %{rule: rule} do
+    test "creates dataset ImplementationStructure for raw implementations", %{rule: rule} do
       %{domain_id: domain_id} = rule
 
       %{id: source_id} = insert(:source, config: %{"job_types" => ["catalog", "profile"]})
@@ -423,7 +429,7 @@ defmodule TdDq.ImplementationsTest do
     end
   end
 
-  describe "valid_implementation_structures/1" do
+  describe "valid_dataset_implementation_structures/1" do
     test "returns implementation's dataset structure" do
       %{id: data_structure_id} = insert(:data_structure)
 
@@ -433,14 +439,13 @@ defmodule TdDq.ImplementationsTest do
         )
 
       assert [%{id: ^data_structure_id}] =
-               Implementations.valid_implementation_structures(implementation)
+               Implementations.valid_dataset_implementation_structures(implementation)
     end
 
-    test "returns structures for raw implementatation" do
+    test "returns structures for raw implementation" do
       %{id: source_id} = insert(:source, config: %{"job_types" => ["catalog", "profile"]})
 
-      %{data_structure: %{id: data_structure_id}} =
-        %{name: data_structure_name} =
+      %{data_structure: %{id: data_structure_id}, name: data_structure_name} =
         insert(:data_structure_version,
           data_structure: build(:data_structure, source_id: source_id),
           metadata: %{"database" => "db_name"},
@@ -458,7 +463,38 @@ defmodule TdDq.ImplementationsTest do
         )
 
       assert [%{id: ^data_structure_id}] =
-               Implementations.valid_implementation_structures(implementation)
+               Implementations.valid_dataset_implementation_structures(implementation)
+    end
+
+    test "returns only class table structures for raw implementation" do
+      %{id: source_id} = insert(:source, config: %{"job_types" => ["catalog", "profile"]})
+
+      %{data_structure: %{id: data_structure_id}, name: data_structure_name} =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, source_id: source_id),
+          metadata: %{"database" => "db_name"},
+          class: "table"
+        )
+
+      %{name: field_data_structure_name} =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, source_id: source_id),
+          metadata: %{"database" => "db_name"},
+          class: "field"
+        )
+
+      implementation =
+        insert(:raw_implementation,
+          raw_content: %{
+            dataset: "word before #{data_structure_name} #{field_data_structure_name}",
+            validations: "validations",
+            source_id: source_id,
+            database: "db_name"
+          }
+        )
+
+      assert [%{id: ^data_structure_id}] =
+               Implementations.valid_dataset_implementation_structures(implementation)
     end
 
     test "filters raw structures by source_id" do
@@ -493,7 +529,7 @@ defmodule TdDq.ImplementationsTest do
         )
 
       assert [%{id: ^data_structure_id}] =
-               Implementations.valid_implementation_structures(implementation)
+               Implementations.valid_dataset_implementation_structures(implementation)
     end
 
     test "invalid structure will be filtered" do
@@ -502,7 +538,7 @@ defmodule TdDq.ImplementationsTest do
           dataset: [%{structure: %{id: 0}}]
         )
 
-      assert [] == Implementations.valid_implementation_structures(implementation)
+      assert [] == Implementations.valid_dataset_implementation_structures(implementation)
     end
 
     test "returns multiple structures" do
@@ -521,7 +557,109 @@ defmodule TdDq.ImplementationsTest do
       assert [
                %{id: ^data_structure_id1},
                %{id: ^data_structure_id2}
-             ] = Implementations.valid_implementation_structures(implementation)
+             ] = Implementations.valid_dataset_implementation_structures(implementation)
+    end
+  end
+
+  describe "valid_validation_implementation_structures/1" do
+    test "returns implementation's validations structure" do
+      %{id: data_structure_id} = insert(:data_structure)
+
+      implementation =
+        insert(:implementation,
+          validations: [%{build(:condition_row) | structure: %{id: data_structure_id}}]
+        )
+
+      assert [%{id: ^data_structure_id}] =
+               Implementations.valid_validation_implementation_structures(implementation)
+    end
+
+    test "returns validation field structures for raw implementatation" do
+      %{id: source_id} = insert(:source, config: %{"job_types" => ["catalog", "profile"]})
+
+      %{data_structure: %{id: data_structure_id}, name: data_structure_name} =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, source_id: source_id),
+          metadata: %{
+            "database" => "db_name",
+            "table" => "table_name"
+          },
+          class: "field"
+        )
+
+      %{data_structure: %{id: data_structure_id_2}, name: data_structure_name_2} =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, source_id: source_id),
+          metadata: %{
+            "database" => "db_name",
+            "table" => "table_name"
+          },
+          class: "field"
+        )
+
+      %{data_structure: %{id: data_structure_id_3}, name: data_structure_name_3} =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, source_id: source_id),
+          metadata: %{
+            "database" => "db_name",
+            "table" => "table_name"
+          },
+          class: "field"
+        )
+
+      implementation =
+        insert(:raw_implementation,
+          raw_content: %{
+            dataset: "table_name",
+            validations: "word before test.#{data_structure_name} and test.#{data_structure_name_2}='whatever' and length(#{data_structure_name_3})>2 and after",
+            source_id: source_id,
+            database: "db_name"
+          }
+        )
+
+      assert [
+        %{id: ^data_structure_id},
+        %{id: ^data_structure_id_2},
+        %{id: ^data_structure_id_3},
+        ] =
+               Implementations.valid_validation_implementation_structures(implementation)
+    end
+
+    test "returns validation only for structures with table in dataset case insensitive" do
+      %{id: source_id} = insert(:source, config: %{"job_types" => ["catalog", "profile"]})
+
+      %{data_structure: %{id: data_structure_id}, name: data_structure_name} =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, source_id: source_id),
+          metadata: %{
+            "database" => "db_name",
+            "table" => "table_name"
+          },
+          class: "field"
+        )
+
+      %{name: no_table_data_structure_name} =
+        insert(:data_structure_version,
+          data_structure: build(:data_structure, source_id: source_id),
+          metadata: %{
+            "database" => "db_name",
+            "table" => "other_table"
+          },
+          class: "field"
+        )
+
+      implementation =
+        insert(:raw_implementation,
+          raw_content: %{
+            dataset: "tAbLe_NaMe",
+            validations: "#{data_structure_name} #{no_table_data_structure_name}",
+            source_id: source_id,
+            database: "db_name"
+          }
+        )
+
+      assert [%{id: ^data_structure_id}] =
+               Implementations.valid_validation_implementation_structures(implementation)
     end
   end
 
@@ -612,6 +750,82 @@ defmodule TdDq.ImplementationsTest do
       assert {:error, :implementation, %Changeset{}, _} =
                Implementations.update_implementation(implementation, udpate_attrs, claims)
     end
+
+    test "creates ImplementationStructure when updating implementation" do
+      implementation = insert(:implementation)
+
+      %{id: dataset_data_structure_id} = insert(:data_structure)
+      %{id: validation_data_structure_id} = insert(:data_structure)
+
+      update_attrs =
+        %{
+          dataset: [%{structure: %{id: dataset_data_structure_id}}],
+          validations: [
+            %{
+              operator: %{
+                name: "gt",
+                value_type: "timestamp"
+              },
+              structure: %{id: validation_data_structure_id},
+              value: [%{raw: "2019-12-30 05:35:00"}]
+            }
+          ]
+        }
+        |> Map.Helpers.stringify_keys()
+
+      claims = build(:dq_claims, role: "admin")
+
+      assert {:ok, %{implementation: %{id: id}}} =
+               Implementations.update_implementation(implementation, update_attrs, claims)
+
+      assert %Implementation{
+               data_structures: [
+                 %{data_structure_id: ^dataset_data_structure_id, type: :dataset},
+                 %{data_structure_id: ^validation_data_structure_id, type: :validation}
+               ]
+             } = Implementations.get_implementation!(id, preload: :data_structures)
+    end
+
+    test "deleted ImplementationStructure will not be recreated when updating implementation" do
+      implementation = insert(:implementation)
+
+      %{id: dataset_data_structure_id} = insert(:data_structure)
+      %{id: validation_data_structure_id} = insert(:data_structure)
+
+      insert(:implementation_structure,
+        implementation_id: implementation.id,
+        data_structure_id: dataset_data_structure_id,
+        type: :dataset,
+        deleted_at: "2022-05-04 00:00:00"
+      )
+
+      update_attrs =
+        %{
+          dataset: [%{structure: %{id: dataset_data_structure_id}}],
+          validations: [
+            %{
+              operator: %{
+                name: "gt",
+                value_type: "timestamp"
+              },
+              structure: %{id: validation_data_structure_id},
+              value: [%{raw: "2019-12-30 05:35:00"}]
+            }
+          ]
+        }
+        |> Map.Helpers.stringify_keys()
+
+      claims = build(:dq_claims, role: "admin")
+
+      assert {:ok, %{implementation: %{id: id}}} =
+               Implementations.update_implementation(implementation, update_attrs, claims)
+
+      assert %Implementation{
+               data_structures: [
+                 %{data_structure_id: ^validation_data_structure_id, type: :validation}
+               ]
+             } = Implementations.get_implementation!(id, preload: :data_structures)
+    end
   end
 
   describe "delete_implementation/2" do
@@ -623,6 +837,21 @@ defmodule TdDq.ImplementationsTest do
                Implementations.delete_implementation(implementation, claims)
 
       assert %{state: :deleted} = meta
+    end
+
+    test "deletes the implementation and related data_structures" do
+      implementation = insert(:implementation)
+
+      %{id: implementation_structure_id} =
+        insert(:implementation_structure, implementation: implementation)
+
+      claims = build(:dq_claims)
+
+      assert {:ok, %{implementation: %{__meta__: meta}}} =
+               Implementations.delete_implementation(implementation, claims)
+
+      assert %{state: :deleted} = meta
+      assert is_nil(Repo.get(ImplementationStructure, implementation_structure_id))
     end
 
     test "deletes the implementation linked to executions" do
@@ -937,30 +1166,50 @@ defmodule TdDq.ImplementationsTest do
   end
 
   describe "implementation_structure" do
-    @valid_attrs %{deleted_at: "2010-04-17T14:00:00.000000Z", type: :dataset}
-    @invalid_attrs %{deleted_at: nil}
 
     test "create_implementation_structure/1 with valid data creates a implementation_structure" do
+      %{id: implementation_id} = implementation = insert(:implementation)
+      %{id: data_structure_id} = data_structure = insert(:data_structure)
+
+      assert {:ok, %ImplementationStructure{} = %{
+        implementation_id: ^implementation_id,
+        data_structure_id: ^data_structure_id,
+        type: :dataset
+      }} =
+               Implementations.create_implementation_structure(
+                 implementation,
+                 data_structure,
+                 %{type: :dataset}
+               )
+    end
+
+    test "create_implementation_structure/1 with invalid data returns error changeset" do
+      assert {:error, %Ecto.Changeset{}} =
+               Implementations.create_implementation_structure(nil, nil, %{})
+    end
+
+    test "creating a deleted implementation_structure will undelete it" do
       implementation = insert(:implementation)
       data_structure = insert(:data_structure)
+
+      insert(:implementation_structure,
+        implementation: implementation,
+        data_structure: data_structure,
+        type: :dataset,
+        deleted_at: "2022-05-04 00:00:00"
+      )
 
       assert {:ok, %ImplementationStructure{} = implementation_structure} =
                Implementations.create_implementation_structure(
                  implementation,
                  data_structure,
-                 @valid_attrs
+                 %{type: :dataset}
                )
 
-      assert implementation_structure.deleted_at
-             <~> DateTime.from_naive!(~N[2010-04-17T14:00:00.000000Z], "Etc/UTC")
+      assert is_nil(implementation_structure.deleted_at)
     end
 
-    test "create_implementation_structure/1 with invalid data returns error changeset" do
-      assert {:error, %Ecto.Changeset{}} =
-               Implementations.create_implementation_structure(nil, nil, @invalid_attrs)
-    end
-
-    test "delete_implementation_structure/1 deletes the implementation_structure" do
+    test "delete_implementation_structure/1 softly deletes the implementation_structure" do
       implementation_structure = insert(:implementation_structure)
 
       assert {:ok, %ImplementationStructure{}} =
@@ -969,6 +1218,11 @@ defmodule TdDq.ImplementationsTest do
       assert_raise Ecto.NoResultsError, fn ->
         Implementations.get_implementation_structure!(implementation_structure.id)
       end
+
+      assert %{deleted_at: deleted_at} =
+               TdDd.Repo.get!(ImplementationStructure, implementation_structure.id)
+
+      refute is_nil(deleted_at)
     end
   end
 end
