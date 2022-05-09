@@ -401,7 +401,6 @@ defmodule TdDd.Factory do
 
   def rule_result_factory do
     %TdDq.Rules.RuleResult{
-      # rule_id: sequence(:rule_id, & &1),
       result: "#{Decimal.round(50, 2)}",
       date: "#{DateTime.utc_now()}"
     }

@@ -138,6 +138,7 @@ defmodule TdDqWeb.ImplementationController do
       %{}
       |> link_concept_actions(claims, implementation)
       |> link_structure_actions(claims, implementation)
+      |> manage_segments_actions(claims, implementation)
 
     with {:can, true} <- {:can, can?(claims, show(implementation))} do
       render(conn, "show.json", implementation: implementation, actions: actions)
@@ -170,6 +171,14 @@ defmodule TdDqWeb.ImplementationController do
   defp link_structure_actions(actions, claims, implementation) do
     if can?(claims, link_structure(implementation)) do
       Map.put(actions, :link_structure, %{method: "POST"})
+    else
+      actions
+    end
+  end
+
+  defp manage_segments_actions(actions, claims, implementation) do
+    if can?(claims, manage_segments_action(implementation)) do
+      Map.put(actions, :manage_segments, %{method: "POST"})
     else
       actions
     end

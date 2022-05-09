@@ -427,6 +427,34 @@ defmodule TdDqWeb.SwaggerDefinitions do
     }
   end
 
+  def segment_results_swagger_definitions do
+    %{
+      SegmentResult:
+        swagger_schema do
+          title("Segment Result")
+          description("The result of a quality segment rule execution")
+
+          properties do
+            id(:integer, "Segment Result unique identifier", required: true)
+            parent_id(:integer, "Parent rule Result id", required: true)
+            date(:string, "datetime")
+            result(:string, "The result (decimal)")
+            errors(:integer, "The error count")
+            records(:integer, "The record count")
+            params(:object, "Execution parameters")
+            inserted_at(:string, "insert timestamp")
+            updated_at(:string, "update timestamp")
+          end
+        end,
+      SegmentResultResponse:
+        swagger_schema do
+          properties do
+            items(Schema.ref(:SegmentResult))
+          end
+        end
+    }
+  end
+
   def quality_event_swagger_definitions do
     %{
       QualityEvent:

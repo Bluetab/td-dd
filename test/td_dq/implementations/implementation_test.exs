@@ -556,5 +556,60 @@ defmodule TdDq.Implementations.ImplementationTest do
                ]
              } = Document.encode(rule_implementation)
     end
+
+    test "encoded implementation includes segments" do
+      rule = insert(:rule)
+
+      structure_1 = %{
+        id: 9,
+        name: "s9",
+        external_id: nil,
+        parent_index: nil,
+        path: [],
+        system: nil,
+        type: nil
+      }
+
+      structure_2 = %{
+        id: 10,
+        name: "s10",
+        external_id: nil,
+        parent_index: nil,
+        path: [],
+        system: nil,
+        type: nil
+      }
+
+      creation_attrs = %{
+        segments: [
+          %{
+            structure: structure_1
+          },
+          %{
+            structure: structure_2
+          }
+        ]
+      }
+
+      implementation_key = "seg1"
+
+      rule_implementation =
+        insert(:implementation,
+          implementation_key: implementation_key,
+          rule: rule,
+          segments: creation_attrs.segments
+        )
+
+      assert %{
+               segments: [
+                 %{
+                   structure: ^structure_1
+                 },
+                 %{
+                   structure: ^structure_2
+                 }
+               ]
+             } = Document.encode(rule_implementation)
+    end
   end
 end
