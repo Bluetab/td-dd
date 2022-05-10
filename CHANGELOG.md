@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- [TD-4089] Support for Implementations without Rules
+
 ## [4.43.0] 2022-05-09
 
 ### Added
