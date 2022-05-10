@@ -3,7 +3,6 @@ defmodule TdDd.Canada.Abilities do
   alias TdCache.Link
   alias TdCx.Canada.SourceAbilities
   alias TdCx.Sources.Source
-
   alias TdDd.Auth.Claims
   alias TdDd.Canada.AccessAbilities
   alias TdDd.Canada.DataStructureAbilities
@@ -41,6 +40,16 @@ defmodule TdDd.Canada.Abilities do
     # service and admin accounts can perform GraphQL queries
     def can?(%Claims{role: "service"}, :query, _resource), do: true
     def can?(%Claims{role: "admin"}, :query, _resource), do: true
+
+    # GraphQL queries for regular users
+    def can?(%Claims{role: "user"}, :query, :domains), do: true
+    def can?(%Claims{role: "user"}, :query, :templates), do: true
+
+    def can?(%Claims{role: "user"} = claims, :query, :sources),
+      do: SourceAbilities.can?(claims, :list, Source)
+
+    def can?(%Claims{role: "user"} = claims, :query, :structure_tags),
+      do: DataStructureTagAbilities.can?(claims, :index, DataStructureTag)
 
     def can?(%Claims{}, _action, nil), do: false
 
@@ -163,14 +172,6 @@ defmodule TdDd.Canada.Abilities do
 
     def can?(%Claims{} = claims, action, DataStructure) do
       DataStructureAbilities.can?(claims, action, DataStructure)
-    end
-
-    def can?(%Claims{role: "user"} = claims, :query, :sources) do
-      SourceAbilities.can?(claims, :list, Source)
-    end
-
-    def can?(%Claims{}, :query, :templates) do
-      true
     end
 
     def can?(%Claims{} = claims, action, domain_id) do

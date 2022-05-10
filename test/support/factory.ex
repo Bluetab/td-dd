@@ -452,23 +452,27 @@ defmodule TdDd.Factory do
     }
   end
 
-def csv_bulk_update_event_factory do
-  %TdDd.DataStructures.CsvBulkUpdateEvent{
-    csv_hash: "47D90FDF1AD967BD7DBBDAE28664278E",
-    inserted_at: "2022-04-24T11:08:18.215905Z",
-    message: nil,
-    response: %{errors: [], ids: [1, 2]},
-    status: "COMPLETED",
-    task_reference: "0.262460172.3388211201.119663",
-    user_id: 467
-  }
-end
+  def data_structures_tags_factory(attrs) do
+    attrs =
+      attrs
+      |> default_assoc(:data_structure_id, :data_structure)
+      |> default_assoc(:data_structure_tag_id, :data_structure_tag)
 
-  def data_structures_tags_factory do
     %TdDd.DataStructures.DataStructuresTags{
-      data_structure: build(:data_structure),
-      data_structure_tag: build(:data_structure_tag),
-      description: "foo"
+      description: sequence("description")
+    }
+    |> merge_attributes(attrs)
+  end
+
+  def csv_bulk_update_event_factory do
+    %TdDd.DataStructures.CsvBulkUpdateEvent{
+      csv_hash: "47D90FDF1AD967BD7DBBDAE28664278E",
+      inserted_at: "2022-04-24T11:08:18.215905Z",
+      message: nil,
+      response: %{errors: [], ids: [1, 2]},
+      status: "COMPLETED",
+      task_reference: "0.262460172.3388211201.119663",
+      user_id: 467
     }
   end
 

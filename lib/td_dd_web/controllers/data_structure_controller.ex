@@ -449,8 +449,7 @@ defmodule TdDdWeb.DataStructureController do
       user_permissions = %{
         update: can?(claims, update_data_structure(data_structure)),
         confidential: can?(claims, manage_confidential_structures(data_structure)),
-        view_profiling_permission: can?(claims, view_data_structures_profile(data_structure)),
-        manage_tags: can?(claims, link_data_structure_tag(data_structure))
+        view_profiling_permission: can?(claims, view_data_structures_profile(data_structure))
       }
 
       render(conn, "show.json", data_structure: data_structure, user_permissions: user_permissions)

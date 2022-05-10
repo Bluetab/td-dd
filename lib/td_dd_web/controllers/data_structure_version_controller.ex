@@ -99,17 +99,25 @@ defmodule TdDdWeb.DataStructureVersionController do
         update_domain: can?(claims, manage_structures_domain(data_structure)),
         view_profiling_permission: can?(claims, view_data_structures_profile(data_structure)),
         profile_permission: can?(claims, profile(dsv)),
-        manage_tags: can?(claims, link_data_structure_tag(data_structure)),
         request_grant: can_request_grant?(claims, data_structure)
       }
 
       render(conn, "show.json",
         data_structure_version: dsv,
         user_permissions: user_permissions,
+        actions: actions(claims, data_structure),
         hypermedia: hypermedia("data_structure_version", conn, dsv)
       )
     else
       render_error(conn, :forbidden)
+    end
+  end
+
+  defp actions(claims, data_structure) do
+    if can?(claims, link_data_structure_tag(data_structure)) do
+      %{manage_tags: DataStructures.list_available_tags(data_structure)}
+    else
+      %{}
     end
   end
 
