@@ -5,9 +5,6 @@ defmodule TdDdWeb.DataStructuresTagsController do
   import Canada, only: [can?: 2]
 
   alias TdDd.DataStructures
-  alias TdDd.DataStructures.DataStructure
-  alias TdDd.DataStructures.DataStructuresTags
-  alias TdDd.DataStructures.DataStructureTag
   alias TdDdWeb.SwaggerDefinitions
 
   action_fallback TdDdWeb.FallbackController
@@ -31,7 +28,7 @@ defmodule TdDdWeb.DataStructuresTagsController do
 
   def index(conn, %{"data_structure_id" => data_structure_id}) do
     with claims <- conn.assigns[:current_resource],
-         %DataStructure{} = structure <- DataStructures.get_data_structure!(data_structure_id),
+         %{} = structure <- DataStructures.get_data_structure!(data_structure_id),
          {:can, true} <- {:can, can?(claims, view_data_structure(structure))},
          links <- DataStructures.get_links_tag(structure) do
       render(conn, "index.json", links: links)
@@ -70,10 +67,10 @@ defmodule TdDdWeb.DataStructuresTagsController do
         "tag" => tag_params
       }) do
     with claims <- conn.assigns[:current_resource],
-         %DataStructure{} = structure <- DataStructures.get_data_structure!(data_structure_id),
-         %DataStructureTag{} = tag <- DataStructures.get_data_structure_tag!(tag_id),
+         %{} = structure <- DataStructures.get_data_structure!(data_structure_id),
+         %{} = tag <- DataStructures.get_data_structure_tag!(id: tag_id),
          {:can, true} <- {:can, can?(claims, link_data_structure_tag(structure))},
-         {:ok, %{linked_tag: %DataStructuresTags{} = link}} <-
+         {:ok, %{linked_tag: %{} = link}} <-
            DataStructures.link_tag(structure, tag, tag_params, claims) do
       render(conn, "show.json", link: link)
     end
@@ -101,8 +98,8 @@ defmodule TdDdWeb.DataStructuresTagsController do
 
   def delete(conn, %{"data_structure_id" => data_structure_id, "id" => tag_id}) do
     with claims <- conn.assigns[:current_resource],
-         %DataStructure{} = structure <- DataStructures.get_data_structure!(data_structure_id),
-         %DataStructureTag{} = tag <- DataStructures.get_data_structure_tag!(tag_id),
+         %{} = structure <- DataStructures.get_data_structure!(data_structure_id),
+         %{} = tag <- DataStructures.get_data_structure_tag!(id: tag_id),
          {:can, true} <- {:can, can?(claims, delete_link_data_structure_tag(structure))},
          {:ok, %{deleted_link_tag: %{id: id}}} <-
            DataStructures.delete_link_tag(structure, tag, claims) do
