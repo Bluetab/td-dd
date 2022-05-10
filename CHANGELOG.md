@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [4.43.0] 2022-05-09
+
 ### Added
 
 - [TD-3186] Support for links between implementations and structures
@@ -11,7 +13,7 @@
 
 - [TD-4783]
   - Lineage Graph is not generated
-  - Change chunk size for adding metadata in linage upload 
+  - Change chunk size for adding metadata in linage upload
 - [TD-4586] Asynchronous CSV bulk update
 
 ### Changed
