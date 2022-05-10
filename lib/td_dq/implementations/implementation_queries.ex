@@ -13,7 +13,7 @@ defmodule TdDq.Implementations.ImplementationQueries do
 
     Implementation
     |> where(implementation_type: "default")
-    |> join(:inner, [i], s in assoc(i, :dataset_sources), as: :sources)
+    |> join(:inner, [i], s in assoc(i, :dataset_sources))
     |> source_external_ids()
     |> union(^raw_sources_query)
     |> subquery()
@@ -33,10 +33,7 @@ defmodule TdDq.Implementations.ImplementationQueries do
   def raw_implementation_sources_query do
     Implementation
     |> where(implementation_type: "raw")
-    |> join(:inner, [i], s in Source,
-      on: fragment("? = (?->'source_id')::bigint", s.id, i.raw_content),
-      as: :sources
-    )
+    |> join(:inner, [i], s in Source, on: s.id == type(i.raw_content["source_id"], :integer))
     |> source_external_ids()
   end
 
