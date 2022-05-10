@@ -8,9 +8,12 @@ defmodule TdDd.DataStructuresTest do
   alias TdCache.Redix.Stream
   alias TdDd.DataStructures
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.DataStructures.DataStructureTag
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.RelationTypes
+  alias TdDd.DataStructures.StructureMetadata
+  alias TdDd.DataStructures.StructureNote
   alias TdDd.DataStructures.StructureNotes
   alias TdDd.Repo
 
@@ -1218,8 +1221,6 @@ defmodule TdDd.DataStructuresTest do
   end
 
   describe "structure_metadata" do
-    alias TdDd.DataStructures.StructureMetadata
-
     @valid_attrs %{fields: %{}, data_structure_id: 0, version: 0}
     @update_attrs %{fields: %{"foo" => "bar"}, version: 0}
     @invalid_attrs %{fields: nil, data_structure_id: nil, version: nil}
@@ -1358,8 +1359,6 @@ defmodule TdDd.DataStructuresTest do
   end
 
   describe "data_structure_tags" do
-    alias TdDd.DataStructures.DataStructureTag
-
     @valid_attrs %{name: "some name"}
     @update_attrs %{name: "some updated name"}
     @invalid_attrs %{name: nil}
@@ -1378,35 +1377,16 @@ defmodule TdDd.DataStructuresTest do
       assert DataStructures.list_data_structure_tags() == [data_structure_tag]
     end
 
-    test "list_data_structure_tags/1 returns all data_structure_tags with preloaded structures" do
-      %{id: structure_id, external_id: external_id} = structure = insert(:data_structure)
-      %{id: id, name: name} = structure_tag = insert(:data_structure_tag)
-      insert(:data_structures_tags, data_structure: structure, data_structure_tag: structure_tag)
+    test "list_data_structure_tags/1 returns all data_structure_tags with structure count" do
+      %{data_structure_tag: %{id: id, name: name}} = insert(:data_structures_tags)
 
-      assert [
-               %{
-                 id: ^id,
-                 name: ^name,
-                 tagged_structures: [%{id: ^structure_id, external_id: ^external_id}]
-               }
-             ] = DataStructures.list_data_structure_tags(preload: [:tagged_structures])
+      assert [%{id: ^id, name: ^name, structure_count: 1}] =
+               DataStructures.list_data_structure_tags(structure_count: true)
     end
 
-    test "get_data_structure_tag!/1 returns the data_structure_tag with given id" do
-      data_structure_tag = data_structure_tag_fixture()
-      assert DataStructures.get_data_structure_tag!(data_structure_tag.id) == data_structure_tag
-    end
-
-    test "get_data_structure_tag!/1 returns the data_structure_tag with specified preloads by given id" do
-      %{id: structure_id, external_id: external_id} = structure = insert(:data_structure)
-      %{id: id, name: name} = structure_tag = insert(:data_structure_tag)
-      insert(:data_structures_tags, data_structure: structure, data_structure_tag: structure_tag)
-
-      assert %{
-               id: ^id,
-               name: ^name,
-               tagged_structures: [%{id: ^structure_id, external_id: ^external_id}]
-             } = DataStructures.get_data_structure_tag!(id, preload: [:tagged_structures])
+    test "get_data_structure_tag/1 returns the data_structure_tag with given id" do
+      %{id: id} = data_structure_tag = data_structure_tag_fixture()
+      assert DataStructures.get_data_structure_tag(id: id) == data_structure_tag
     end
 
     test "create_data_structure_tag/1 with valid data creates a data_structure_tag" do
@@ -1431,22 +1411,22 @@ defmodule TdDd.DataStructuresTest do
     end
 
     test "update_data_structure_tag/2 with invalid data returns error changeset" do
-      data_structure_tag = data_structure_tag_fixture()
+      %{id: id} = data_structure_tag = data_structure_tag_fixture()
 
       assert {:error, %Ecto.Changeset{}} =
                DataStructures.update_data_structure_tag(data_structure_tag, @invalid_attrs)
 
-      assert data_structure_tag == DataStructures.get_data_structure_tag!(data_structure_tag.id)
+      assert data_structure_tag == DataStructures.get_data_structure_tag!(id: id)
     end
 
     test "delete_data_structure_tag/1 deletes the data_structure_tag" do
-      data_structure_tag = data_structure_tag_fixture()
+      %{id: id} = data_structure_tag = data_structure_tag_fixture()
 
       assert {:ok, %DataStructureTag{}} =
                DataStructures.delete_data_structure_tag(data_structure_tag)
 
       assert_raise Ecto.NoResultsError, fn ->
-        DataStructures.get_data_structure_tag!(data_structure_tag.id)
+        DataStructures.get_data_structure_tag!(id: id)
       end
     end
   end
@@ -1625,8 +1605,6 @@ defmodule TdDd.DataStructuresTest do
   end
 
   describe "structure_notes" do
-    alias TdDd.DataStructures.StructureNote
-
     @user_id 1
     @valid_attrs %{df_content: %{}, status: :draft, version: 42}
     @update_attrs %{df_content: %{}, status: :published}

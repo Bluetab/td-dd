@@ -4,8 +4,15 @@ defmodule TdDdWeb.DataStructureVersionView do
 
   alias TdDd.DataStructures
   alias TdDdWeb.DataStructuresTagsView
+  alias TdDdWeb.DataStructureTagView
   alias TdDdWeb.GrantView
   alias TdDqWeb.ImplementationStructureView
+
+  def render("show.json", %{actions: actions} = assigns) do
+    "show.json"
+    |> render(Map.delete(assigns, :actions))
+    |> put_actions(actions)
+  end
 
   def render(
         "show.json",
@@ -23,10 +30,8 @@ defmodule TdDdWeb.DataStructureVersionView do
     |> Map.put(:user_permissions, user_permissions)
   end
 
-  def render("show.json", %{data_structure_version: dsv}) do
-    %{
-      data: render("version.json", %{data_structure_version: dsv})
-    }
+  def render("show.json", %{data_structure_version: _} = assigns) do
+    %{data: render("version.json", assigns)}
   end
 
   def render("version.json", %{data_structure_version: dsv}) do
@@ -361,7 +366,7 @@ defmodule TdDdWeb.DataStructureVersionView do
   defp add_tags(ds) do
     tags =
       case Map.get(ds, :tags) do
-        nil -> nil
+        nil -> []
         tags -> render_many(tags, DataStructuresTagsView, "data_structures_tags.json")
       end
 
@@ -383,4 +388,12 @@ defmodule TdDdWeb.DataStructureVersionView do
   end
 
   defp add_grants(ds), do: ds
+
+  defp put_actions(ds, %{manage_tags: tags}) when is_list(tags) do
+    tags = render_many(tags, DataStructureTagView, "embedded.json")
+    actions = %{manage_tags: %{data: tags}}
+    Map.update(ds, "_actions", actions, &Map.merge(&1, actions))
+  end
+
+  defp put_actions(ds, _), do: ds
 end

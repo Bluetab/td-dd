@@ -465,6 +465,24 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     end
   end
 
+  describe "GET /api/data_structures/:id/versions/latest with actions" do
+    @tag authentication: [role: "admin"]
+    test "includes actions in the response", %{conn: conn} do
+      %{id: tag_id, name: tag_name} = insert(:data_structure_tag)
+      %{data_structure_id: id, version: version} = insert(:data_structure_version)
+
+      for v <- ["latest", version] do
+        assert %{"_actions" => actions} =
+                 conn
+                 |> get(Routes.data_structure_data_structure_version_path(conn, :show, id, v))
+                 |> json_response(:ok)
+
+        assert %{"manage_tags" => %{"data" => [tag]}} = actions
+        assert %{"id" => ^tag_id, "name" => ^tag_name} = tag
+      end
+    end
+  end
+
   describe "show data_structure with deletions in its hierarchy" do
     setup :create_structure_hierarchy_with_logic_deletions
 

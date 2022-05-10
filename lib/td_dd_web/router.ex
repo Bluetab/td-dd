@@ -127,8 +127,6 @@ defmodule TdDdWeb.Router do
 
     resources("/data_structure_types", DataStructureTypeController, only: [:index, :show, :update])
 
-    resources("/data_structure_tags", DataStructureTagController, except: [:new, :edit])
-
     resources("/grants", GrantController, except: [:create, :new, :edit])
     get("/grants/search/reindex_all", GrantSearchController, :reindex_all_grants)
     post("/grants/search", GrantSearchController, :search_grants)
