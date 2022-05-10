@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- [TD-4799] Performance issue filtering executions by source
+
 ## [4.43.0] 2022-05-09
 
 ### Added
