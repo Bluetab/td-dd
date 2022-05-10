@@ -50,8 +50,7 @@ defmodule TdDqWeb.RuleSearchController do
       rules: rules,
       filters: %{},
       user_permissions: %{
-        manage_quality_rules: can?(claims, manage(Rule)),
-        manage_segments: can?(claims, manage_segments_action(Rule))
+        manage_quality_rules: can?(claims, manage(Rule))
       }
     )
   end

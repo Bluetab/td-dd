@@ -18,7 +18,7 @@ defmodule TdDq.Rules.RuleResult do
   @scale 2
   @valid_result_types Implementation.valid_result_types()
   @segments_validations [:result, :date, :result_type, :parent_id]
-  @rule_resuls_validations [:implementation, :date, :result, :result_type, :rule_id]
+  @rule_resuls_validations [:implementation, :date, :result, :result_type]
 
   @typedoc "The result of a quality rule execution"
   @type t :: %__MODULE__{}
@@ -157,7 +157,8 @@ defmodule TdDq.Rules.RuleResult do
     foreign_key_constraint(changeset, :parent_id)
   end
 
-  defp with_foreign_key_constraint(changeset) do
-    foreign_key_constraint(changeset, :rule_id)
-  end
+  # defp with_foreign_key_constraint(changeset) do
+  #   foreign_key_constraint(changeset, :rule_id)
+  # end
+  defp with_foreign_key_constraint(changeset), do: changeset
 end

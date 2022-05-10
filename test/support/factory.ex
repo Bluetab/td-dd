@@ -136,6 +136,20 @@ defmodule TdDd.Factory do
     |> merge_attributes(attrs)
   end
 
+  def ruleless_implementation_factory(attrs) do
+    %TdDq.Implementations.Implementation{
+      implementation_key: sequence("implementation_key"),
+      implementation_type: "default",
+      goal: 30,
+      minimum: 12,
+      domain_id: 2,
+      dataset: build(:dataset),
+      populations: build(:populations),
+      validations: build(:validations)
+    }
+    |> merge_attributes(attrs)
+  end
+
   def implementation_structure_factory(attrs) do
     attrs =
       attrs

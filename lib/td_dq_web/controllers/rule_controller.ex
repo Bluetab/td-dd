@@ -143,7 +143,8 @@ defmodule TdDqWeb.RuleController do
     %{
       manage_quality_rules: can?(claims, manage(Rule)),
       manage_quality_rule_implementations: can?(claims, create_implementation(rule)),
-      manage_raw_quality_rule_implementations: can?(claims, create_raw_implementation(rule))
+      manage_raw_quality_rule_implementations: can?(claims, create_raw_implementation(rule)),
+      manage_segments: can?(claims, manage_segments_action(rule))
     }
   end
 
