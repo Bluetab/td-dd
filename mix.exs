@@ -69,6 +69,7 @@ defmodule TdDd.MixProject do
       {:ex_machina, "~> 2.4", only: :test},
       {:mox, "~> 1.0", only: :test},
       {:assertions, "~> 0.10", only: :test},
+      {:inflex, "~> 2.0", only: :test},
       {:cors_plug, "~> 2.0"},
       {:csv, "~> 2.4"},
       {:tzdata, "~> 1.1"},

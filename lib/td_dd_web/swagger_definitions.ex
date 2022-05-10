@@ -205,7 +205,8 @@ defmodule TdDdWeb.SwaggerDefinitions do
 
           example(%{
             id: 88,
-            name: "Tag1"
+            name: "Tag1",
+            domain_ids: [1, 2]
           })
         end,
       DataStructureTags:

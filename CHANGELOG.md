@@ -6,7 +6,7 @@
 
 ### Added
 
-- [TD-3186] Support for links between Implementations and Structures
+- [TD-3186] Support for links between implementations and structures
 - [TD-4538] Segments definitions in the implementations, and support for segment results
 
 ### Fixed
@@ -15,6 +15,10 @@
   - Lineage Graph is not generated
   - Change chunk size for adding metadata in linage upload
 - [TD-4586] Asynchronous CSV bulk update
+
+### Changed
+
+- [TD-4723] Support for domain-specific data structure tags
 
 ## [4.42.0] 2022-04-25
 

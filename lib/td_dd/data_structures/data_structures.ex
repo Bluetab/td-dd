@@ -9,6 +9,7 @@ defmodule TdDd.DataStructures do
   alias Ecto.Changeset
   alias Ecto.Multi
   alias TdCache.LinkCache
+  alias TdCache.TaxonomyCache
   alias TdCache.TemplateCache
   alias TdCache.UserCache
   alias TdCx.Sources
@@ -889,16 +890,54 @@ defmodule TdDd.DataStructures do
 
   defp do_profile_source(dsv, _source), do: dsv
 
-  def list_data_structure_tags(opts \\ []) do
-    DataStructureTag
-    |> Repo.all()
-    |> Repo.preload(opts[:preload] || [])
+  def list_available_tags(%DataStructure{domain_ids: domain_ids}) do
+    domain_ids = TaxonomyCache.reaching_domain_ids(domain_ids)
+    list_data_structure_tags(domain_ids: domain_ids)
   end
 
-  def get_data_structure_tag!(id, opts \\ []) do
-    DataStructureTag
-    |> Repo.get!(id)
-    |> Repo.preload(opts[:preload] || [])
+  def list_data_structure_tags(params \\ %{}) do
+    params
+    |> data_structure_tags_query()
+    |> Repo.all()
+  end
+
+  def get_data_structure_tag(params) do
+    params
+    |> data_structure_tags_query()
+    |> Repo.one()
+  end
+
+  def get_data_structure_tag!(params) do
+    params
+    |> data_structure_tags_query()
+    |> Repo.one!()
+  end
+
+  defp data_structure_tags_query(params) do
+    params
+    |> Enum.reduce(DataStructureTag, fn
+      {:id, id}, q ->
+        where(q, [t], t.id == ^id)
+
+      {:domain_ids, []}, q ->
+        where(q, [t], fragment("? = '{}'", t.domain_ids))
+
+      {:domain_ids, domain_ids}, q ->
+        where(q, [t], fragment("(? = '{}' OR ? && ?)", t.domain_ids, t.domain_ids, ^domain_ids))
+
+      {:structure_count, true}, q ->
+        sq =
+          DataStructuresTags
+          |> group_by(:data_structure_tag_id)
+          |> select([g], %{
+            id: g.data_structure_tag_id,
+            count: count(g.data_structure_id)
+          })
+
+        q
+        |> join(:left, [t], c in subquery(sq), on: c.id == t.id)
+        |> select_merge([t, c], %{structure_count: fragment("coalesce(?, 0)", c.count)})
+    end)
   end
 
   def create_data_structure_tag(attrs \\ %{}) do
@@ -907,28 +946,26 @@ defmodule TdDd.DataStructures do
     |> Repo.insert()
   end
 
-  def update_data_structure_tag(%DataStructureTag{} = data_structure_tag, attrs) do
+  def update_data_structure_tag(%DataStructureTag{} = data_structure_tag, %{} = params) do
     data_structure_tag
-    |> DataStructureTag.changeset(attrs)
+    |> Repo.preload(:tagged_structures)
+    |> DataStructureTag.changeset(params)
     |> Repo.update()
     |> on_tag_update()
   end
 
   def delete_data_structure_tag(%DataStructureTag{} = data_structure_tag) do
     data_structure_tag
+    |> Repo.preload(:tagged_structures)
     |> Repo.delete()
-    |> on_tag_delete(Map.get(data_structure_tag, :tagged_structures))
-  end
-
-  def get_links_tag(%DataStructure{data_structures_tags: tags})
-      when is_list(tags) do
-    tags
+    |> on_tag_delete()
   end
 
   def get_links_tag(%DataStructure{} = data_structure) do
     data_structure
-    |> Repo.preload(data_structures_tags: [:data_structure, :data_structure_tag])
-    |> Map.get(:data_structures_tags)
+    |> Ecto.assoc(:data_structures_tags)
+    |> preload([:data_structure, :data_structure_tag])
+    |> Repo.all()
   end
 
   def link_tag(
@@ -987,7 +1024,7 @@ defmodule TdDd.DataStructures do
 
   defp on_tag_update(reply), do: reply
 
-  defp on_tag_delete({:ok, tag}, [_ | _] = structures) do
+  defp on_tag_delete({:ok, %{tagged_structures: [_ | _] = structures} = tag}) do
     structures
     |> Enum.map(& &1.id)
     |> IndexWorker.reindex()
@@ -995,7 +1032,7 @@ defmodule TdDd.DataStructures do
     {:ok, tag}
   end
 
-  defp on_tag_delete(reply, _), do: reply
+  defp on_tag_delete(reply), do: reply
 
   defp create_link(data_structure, data_structure_tag, params, %Claims{user_id: user_id}) do
     changeset =
