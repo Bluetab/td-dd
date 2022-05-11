@@ -4,11 +4,13 @@ defmodule TdDq.Implementations do
   """
 
   import Canada, only: [can?: 2]
+  import Canada.Can, only: [can?: 3]
   import Ecto.Query
 
   alias Ecto.Changeset
   alias Ecto.Multi
   alias TdCache.LinkCache
+  alias TdCache.TaxonomyCache
   alias TdCx.Sources
   alias TdDd.Cache.StructureEntry
   alias TdDd.DataStructures
@@ -50,8 +52,6 @@ defmodule TdDq.Implementations do
 
     Implementation
     |> preload(^preloads)
-    |> join(:inner, [ri], r in assoc(ri, :rule))
-    |> where([_, r], is_nil(r.deleted_at))
     |> Repo.get!(id)
     |> enrich(Keyword.get(opts, :enrich, []))
   end
@@ -71,9 +71,7 @@ defmodule TdDq.Implementations do
 
   def get_implementation_by_key!(implementation_key, _deleted) do
     Implementation
-    |> join(:inner, [ri], r in assoc(ri, :rule))
-    |> where([_, r], is_nil(r.deleted_at))
-    |> where([ri, _], is_nil(ri.deleted_at))
+    |> where([ri], is_nil(ri.deleted_at))
     |> Repo.get_by!(implementation_key: implementation_key)
     |> Repo.preload(:rule)
   end
@@ -82,20 +80,21 @@ defmodule TdDq.Implementations do
   def create_implementation(rule, params, claims, is_bulk \\ false)
 
   def create_implementation(
-        %Rule{id: rule_id, domain_id: domain_id},
+        %Rule{} = rule,
         %{} = params,
         %Claims{user_id: user_id} = claims,
         is_bulk
       ) do
     changeset =
       Implementation.changeset(
-        %Implementation{rule_id: rule_id, domain_id: domain_id},
+        rule,
+        %Implementation{},
         params
       )
 
     Multi.new()
     |> Multi.run(:can, fn _, _ ->
-      multi_can(can?(claims, create(changeset)) and can?(claims, manage_segments(changeset)))
+      multi_can(can?(claims, create(changeset)) and can?(claims, edit_segments(changeset)))
     end)
     |> Multi.insert(:implementation, changeset)
     |> Multi.run(:data_structures, Implementations, :create_implementation_structures, [])
@@ -104,11 +103,40 @@ defmodule TdDq.Implementations do
     |> on_upsert(is_bulk)
   end
 
-  def create_implementation(nil, params, _claims, _is_bulk) do
-    # Currently an implementation must have a rule, so the changeset will be invalid.
-    # Return a multi error result without further ado.
-    %{valid?: false} = changeset = Implementation.changeset(%Implementation{}, params)
-    {:error, :implementation, changeset, %{}}
+  def create_implementation(nil, params, claims, is_bulk) do
+    create_ruleless_implementation(params, claims, is_bulk)
+  end
+
+  @spec create_implementation(map, Claims.t(), boolean) :: multi_result
+  def create_ruleless_implementation(params, claims, is_bulk \\ false)
+
+  def create_ruleless_implementation(
+        %{} = params,
+        %Claims{user_id: user_id} = claims,
+        is_bulk
+      ) do
+    changeset =
+      Implementation.changeset(
+        %Implementation{},
+        params
+      )
+    Multi.new()
+    |> Multi.run(:can, fn _, _ ->
+      multi_can(
+        Enum.all?(
+          [
+            :edit_segments,
+            :create_ruleless_implementations,
+            :create
+          ],
+          &can?(claims, &1, changeset)
+        )
+      )
+    end)
+    |> Multi.insert(:implementation, changeset)
+    |> Multi.run(:audit, Audit, :implementation_created, [changeset, user_id])
+    |> Repo.transaction()
+    |> on_upsert(is_bulk)
   end
 
   defp multi_can(true), do: {:ok, nil}
@@ -126,8 +154,8 @@ defmodule TdDq.Implementations do
       multi_can(
         Enum.all?([
           can?(claims, update(changeset)),
-          can?(claims, manage_segments(implementation)),
-          can?(claims, manage_segments(changeset))
+          can?(claims, edit_segments(implementation)),
+          can?(claims, edit_segments(changeset))
         ])
       )
     end)
@@ -732,6 +760,17 @@ defmodule TdDq.Implementations do
     Map.put(implementation, :current_business_concept_version, bcv)
   end
 
+  defp enrich(%Implementation{domain_id: domain_id} = implementation, :domain)
+       when is_integer(domain_id) do
+    case TaxonomyCache.get_domain(domain_id) do
+      %{id: ^domain_id} = domain ->
+        %{implementation | domain: Map.take(domain, [:id, :name, :external_id])}
+
+      _ ->
+        implementation
+    end
+  end
+
   defp enrich(target, _), do: target
 
   def get_implementation_links(%Implementation{id: id}) do
@@ -753,10 +792,15 @@ defmodule TdDq.Implementations do
     |> Repo.preload(preloads)
   end
 
-  def create_implementation_structure(implementation, data_structure, attrs \\ %{}, opts \\ [
-    on_conflict: [set: [deleted_at: nil]],
-    conflict_target: [:implementation_id, :data_structure_id, :type]
-  ]) do
+  def create_implementation_structure(
+        implementation,
+        data_structure,
+        attrs \\ %{},
+        opts \\ [
+          on_conflict: [set: [deleted_at: nil]],
+          conflict_target: [:implementation_id, :data_structure_id, :type]
+        ]
+      ) do
     %ImplementationStructure{}
     |> ImplementationStructure.changeset(
       attrs,

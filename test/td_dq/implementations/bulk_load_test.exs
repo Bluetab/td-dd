@@ -43,6 +43,19 @@ defmodule TdDq.Implementations.BulkLoadTest do
       assert %{implementation_key: "bar"} = Implementations.get_implementation!(id2)
     end
 
+    test "return ids from inserted implementations without rule", %{claims: claims} do
+      %{external_id: domain_external_id} = CacheHelpers.insert_domain()
+
+      imp = Enum.map(@valid_implementation, fn imp ->
+          Map.put(imp, "domain_external_id", domain_external_id)
+        end)
+
+      assert {:ok, %{ids: [id1, id2], errors: []}} = BulkLoad.bulk_load(imp, claims)
+
+      assert %{implementation_key: "boo"} = Implementations.get_implementation!(id1)
+      assert %{implementation_key: "bar"} = Implementations.get_implementation!(id2)
+    end
+
     test "return ids with valid df_content", %{
       rule: %{name: rule_name},
       claims: claims,

@@ -2,11 +2,18 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-4045] Rule implementation `execute` action
+
+## [4.43.1] 2022-05-11
+
+- [TD-4089] Support for Implementations without Rules
+
 ## [4.43.0] 2022-05-09
 
 ### Added
 
-- [TD-4045] Rule implementation `create_execution_group` action
 - [TD-3186] Support for links between implementations and structures
 - [TD-4538] Segments definitions in the implementations, and support for segment
   results
