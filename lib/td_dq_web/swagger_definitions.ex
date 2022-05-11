@@ -32,7 +32,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
             id(:integer, "Rule Implementation unique identifier", required: true)
             implementation_key(:string, "Rule Implementation implementation_key", required: true)
             executable(:boolean, "Rule Implementation executable property")
-            rule_id(:integer, "Belongs to rule", required: true)
+            rule_id([:integer, nil], "Belongs to rule")
             dataset(Schema.ref(:DatasetArray), required: false)
             population(Schema.ref(:ConditionArray), required: false)
             validations(Schema.ref(:ConditionArray), required: false)
@@ -153,7 +153,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
               required: true
             )
 
-            rule_id(:integer, "Belongs to rule", required: true)
+            rule_id([:integer, nil], "Belongs to rule")
             dataset(Schema.ref(:DatasetArray), "Dataset", required: false)
             population(Schema.ref(:ConditionArray))
             validations(Schema.ref(:ConditionArray), "Validations", required: false)
@@ -219,7 +219,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
           properties do
             description(:string, "Rule Implementation description")
             implementation_key(:string, "Rule Implementation implementation_key", required: true)
-            rule_id(:integer, "belongs to rule", required: true)
+            rule_id([:integer, nil], "Belongs to rule")
           end
         end,
       ImplementationCreate:

@@ -56,7 +56,7 @@ defmodule TdDq.Rules.Audit do
         _changeset,
         user_id
       ) do
-    %{name: rule_name} = Rules.get_rule!(rule_id)
+    rule_name = implementation_rule_name(rule_id)
 
     payload =
       implementation
@@ -65,6 +65,13 @@ defmodule TdDq.Rules.Audit do
       |> Map.put(:rule_name, rule_name)
 
     publish("implementation_created", "implementation", id, user_id, payload)
+  end
+
+  defp implementation_rule_name(nil), do: nil
+
+  defp implementation_rule_name(rule_id) do
+    %{name: rule_name} = Rules.get_rule!(rule_id)
+    rule_name
   end
 
   @doc """
