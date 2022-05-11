@@ -4,6 +4,7 @@ defmodule TdDq.Implementations.BulkLoad do
   """
 
   alias Ecto.Changeset
+  alias TdCache.DomainCache
   alias TdDdWeb.ErrorHelpers
   alias TdDq.Implementations
   alias TdDq.Rules
@@ -11,14 +12,14 @@ defmodule TdDq.Implementations.BulkLoad do
   @index_worker Application.compile_env(:td_dd, :dq_index_worker)
 
   @required_headers [
-    "rule_name",
-    "implementation_key",
-    "result_type",
-    "goal",
-    "minimum"
+      # "rule_name",
+      "implementation_key",
+      "result_type",
+      "goal",
+      "minimum"
   ]
 
-  @optional_headers ["template"]
+  @optional_headers ["template", "rule_name", "domain_external_id"]
 
   @headers @required_headers ++ @optional_headers
 
@@ -52,8 +53,21 @@ defmodule TdDq.Implementations.BulkLoad do
   defp create_implementations(implementations, claims) do
     implementations
     |> Enum.reduce(%{ids: [], errors: []}, fn imp, acc ->
-      rule = Rules.get_rule_by_name(imp["rule_name"])
-      imp = enrich_implementation(imp)
+      rule = imp
+        |> Map.get("rule_name")
+        |> Rules.get_rule_by_name()
+
+      domain_id = imp
+        |> Map.get("domain_external_id")
+        |> DomainCache.external_id_to_id()
+        |> case do
+          {:ok, domain_id} -> domain_id
+          :error -> nil
+        end
+
+      imp = imp
+        |> enrich_implementation()
+        |> Map.put("domain_id", domain_id)
 
       case Implementations.create_implementation(rule, imp, claims, true) do
         {:ok, %{implementation: %{id: id}}} ->

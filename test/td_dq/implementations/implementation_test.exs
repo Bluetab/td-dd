@@ -5,6 +5,7 @@ defmodule TdDq.Implementations.ImplementationTest do
   alias Elasticsearch.Document
   alias TdDd.Repo
   alias TdDq.Implementations.Implementation
+  alias TdDq.Rules.Rule
 
   @implementation %Implementation{domain_id: 123}
 
@@ -99,19 +100,21 @@ defmodule TdDq.Implementations.ImplementationTest do
     end
   end
 
-  describe "changeset/2" do
+  describe "changeset/3" do
     test "captures foreign key constraint on rule_id" do
       params =
         :implementation
         |> string_params_for()
         |> Map.delete("rule")
-        |> Map.put("rule_id", 123)
 
-      assert %{valid?: true} = changeset = Implementation.changeset(@implementation, params)
+      assert %{valid?: true} = changeset = Implementation.changeset(%Rule{id: 123}, @implementation, params)
       assert {:error, changeset} = Repo.insert(changeset)
       assert %{errors: errors} = changeset
       assert {_msg, [constraint: :foreign, constraint_name: _constraint_name]} = errors[:rule_id]
     end
+  end
+
+  describe "changeset/2" do
 
     test "puts next available implementation_key if none specified and changeset valid" do
       insert(:implementation, implementation_key: "ri0123")
@@ -157,7 +160,10 @@ defmodule TdDq.Implementations.ImplementationTest do
 
     test "validates domain_id is required" do
       implementation = %Implementation{}
-      params = params_for(:implementation)
+      params =
+        :implementation
+        |> params_for()
+        |> Map.delete(:domain_id)
 
       assert %{valid?: false, errors: errors} = Implementation.changeset(implementation, params)
       assert errors[:domain_id] == {"can't be blank", [validation: :required]}
@@ -586,27 +592,86 @@ defmodule TdDq.Implementations.ImplementationTest do
             structure: structure_1
           },
           %{
-            structure: structure_2
+            structure: structure_2          }
+          ]
+        }
+        implementation_key = "seg1"
+
+        rule_implementation =
+          insert(:implementation,
+            implementation_key: implementation_key,
+            rule: rule,
+            segments: creation_attrs.segments
+          )
+
+        assert %{
+                 segments: [
+                   %{
+                     structure: ^structure_1
+                   },
+                   %{
+                     structure: ^structure_2                 }
+                    ]
+                  } = Document.encode(rule_implementation)
+         end
+
+    test "encodes ruleless implementations" do
+      operator = %{
+        name: "timestamp_gt_timestamp",
+        value_type: "timestamp",
+        value_type_filter: "timestamp"
+      }
+
+      structure = %{id: structure_id, name: structure_name} = %{id: 7, name: "s7"}
+      value = [%{raw: "2019-12-02 05:35:00"}]
+
+      creation_attrs = %{
+        populations: [
+          %{
+            population: [
+              %{
+                operator: operator,
+                structure: structure,
+                value: value
+              },
+              %{
+                operator: operator,
+                structure: structure,
+                value: value
+              }
+            ]
+          },
+          %{
+            population: [
+              %{
+                operator: operator,
+                structure: structure,
+                value: value
+              }
+            ]
           }
         ]
       }
 
-      implementation_key = "seg1"
+      implementation_key = "rik1"
 
       rule_implementation =
-        insert(:implementation,
+        insert(:ruleless_implementation,
           implementation_key: implementation_key,
-          rule: rule,
-          segments: creation_attrs.segments
+          populations: creation_attrs.populations
         )
 
       assert %{
-               segments: [
+               population: [
                  %{
-                   structure: ^structure_1
+                   operator: ^operator,
+                   structure: %{id: ^structure_id, name: ^structure_name},
+                   value: ^value
                  },
                  %{
-                   structure: ^structure_2
+                   operator: ^operator,
+                   structure: %{id: ^structure_id, name: ^structure_name},
+                   value: ^value
                  }
                ]
              } = Document.encode(rule_implementation)

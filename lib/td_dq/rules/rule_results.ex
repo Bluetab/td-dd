@@ -146,13 +146,17 @@ defmodule TdDq.Rules.RuleResults do
   end
 
   defp on_create({:ok, %{result: rule_result}} = result) do
-    %{
-      rule: %{id: rule_id},
-      implementation: %{id: implementation_id}
-    } = Repo.preload(rule_result, [:implementation, :rule])
+    case Repo.preload(rule_result, [:implementation, :rule]) do
+      %{
+        rule: %{id: rule_id},
+        implementation: %{id: implementation_id}
+      } ->
+        @index_worker.reindex_rules(rule_id)
+        @index_worker.reindex_implementations(implementation_id)
 
-    @index_worker.reindex_rules(rule_id)
-    @index_worker.reindex_implementations(implementation_id)
+      %{implementation: %{id: implementation_id}} ->
+        @index_worker.reindex_implementations(implementation_id)
+    end
 
     result
   end

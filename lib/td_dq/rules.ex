@@ -130,6 +130,8 @@ defmodule TdDq.Rules do
       ** nil
 
   """
+  def get_rule_by_name(nil), do: nil
+
   def get_rule_by_name(name) do
     Rule
     |> where([r], is_nil(r.deleted_at))

@@ -606,7 +606,8 @@ defmodule TdDqWeb.RuleControllerTest do
       assert user_permissions == %{
                "manage_quality_rule_implementations" => true,
                "manage_quality_rules" => true,
-               "manage_raw_quality_rule_implementations" => false
+               "manage_raw_quality_rule_implementations" => false,
+               "manage_segments" => false
              }
     end
 
@@ -633,7 +634,8 @@ defmodule TdDqWeb.RuleControllerTest do
       assert user_permissions == %{
                "manage_quality_rule_implementations" => true,
                "manage_quality_rules" => true,
-               "manage_raw_quality_rule_implementations" => true
+               "manage_raw_quality_rule_implementations" => true,
+               "manage_segments" => false
              }
     end
   end

@@ -40,7 +40,7 @@ defmodule TdDq.CSV.ReaderTest do
 
     @tag fixture: "implementations_malformed.csv"
     @tag authentication: [role: "admin"]
-    test "read_csv/2 return errors with incalid csv", %{stream: stream, claims: claims} do
+    test "read_csv/2 return errors with invalid csv", %{stream: stream, claims: claims} do
       assert error = Reader.read_csv(claims, stream, @required_headers, &MockBulkLoad.bulk_load/2)
 
       assert {:error, %{error: :misssing_required_columns}} = error

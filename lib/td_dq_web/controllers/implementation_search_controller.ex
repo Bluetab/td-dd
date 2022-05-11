@@ -65,17 +65,18 @@ defmodule TdDqWeb.ImplementationSearchController do
     [implementations: implementations]
   end
 
-  defp get_user_permissions(%Claims{role: "admin"}, _implementations),
-    do: %{manage: true, execute: true}
-
-  defp get_user_permissions(%Claims{role: "service"}, _implementations),
-    do: %{manage: false, execute: true}
-
   defp get_user_permissions(%Claims{} = claims, implementations) do
-    manage? = can?(claims, manage(Implementation))
+    manage_implementation? = can?(claims, manage_implementations(Implementation))
+    manage_raw_implementation? = can?(claims, manage_raw_implementations(Implementation))
+    manage_ruleless_implementation? = can?(claims, manage_ruleless_implementations(Implementation))
     execute? = Enum.any?(implementations, &can?(claims, execute(&1)))
 
-    %{manage: manage?, execute: execute?}
+    %{
+      manage_implementations: manage_implementation?,
+      manage_raw_implementations: manage_raw_implementation?,
+      manage_ruleless_implementations: manage_ruleless_implementation?,
+      execute: execute?
+    }
   end
 
   defp do_search(_claims, %{"scroll" => _, "scroll_id" => _} = params) do

@@ -1,0 +1,4 @@
+implementation_key;template;string;list;result_type;goal;minimum;domain_external_id
+boo_key_1;bar_template;boo_1;one;percentage;90;10;some_domain_id
+boo_key_2;bar_template;boo_2;two;errors_number;10;90;some_domain_id
+boo_key_3;bar_template;boo_3;three;deviation;10;30;some_domain_id

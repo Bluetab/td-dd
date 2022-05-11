@@ -5,15 +5,29 @@ defmodule TdDq.Canada.ImplementationAbilities do
   alias TdDq.Implementations.Implementation
   alias TdDq.Permissions
 
-  # Service accounts can do anything with Implementations
+  def can?(%Claims{role: "service"}, :manage_implementations, Implementation), do: false
+
+  def can?(%Claims{} = claims, :manage_implementations, Implementation) do
+    Permissions.authorized?(claims, :manage_quality_rule_implementations)
+  end
+
+  def can?(%Claims{role: "service"}, :manage_raw_implementations, Implementation), do: false
+
+  def can?(%Claims{} = claims, :manage_raw_implementations, Implementation) do
+    Permissions.authorized?(claims, :manage_raw_quality_rule_implementations)
+  end
+
+  def can?(%Claims{role: "service"}, :manage_ruleless_implementations, Implementation), do: false
+
+  def can?(%Claims{} = claims, :manage_ruleless_implementations, Implementation) do
+    Permissions.authorized?(claims, :manage_ruleless_implementations)
+  end
+
+  # Service accounts can do anything but manage Implementations
   def can?(%Claims{role: "service"}, _action, _target), do: true
 
   def can?(%Claims{} = claims, :list, Implementation) do
     Permissions.authorized?(claims, :view_quality_rule)
-  end
-
-  def can?(%Claims{} = claims, :manage, Implementation) do
-    Permissions.authorized?(claims, :manage_quality_rule_implementations)
   end
 
   def can?(%Claims{} = claims, :show, %Implementation{domain_id: domain_id}) do
@@ -28,7 +42,18 @@ defmodule TdDq.Canada.ImplementationAbilities do
     Permissions.authorized?(claims, :link_implementation_structure, domain_id)
   end
 
-  def can?(%Claims{} = claims, :manage_segments, %Implementation{
+  def can?(%Claims{} = claims, :manage_segments, %Implementation{domain_id: domain_id}) do
+    Permissions.authorized?(claims, :manage_segments, domain_id)
+  end
+
+  def can?(%Claims{} = claims, :edit_segments, %Changeset{changes: %{segments: _}} = changeset) do
+    domain_id = domain_id(changeset)
+    Permissions.authorized?(claims, :manage_segments, domain_id)
+  end
+
+  def can?(%Claims{}, :edit_segments, %Changeset{}), do: true
+
+  def can?(%Claims{} = claims, :edit_segments, %Implementation{
         domain_id: domain_id,
         segments: segments
       })
@@ -36,11 +61,29 @@ defmodule TdDq.Canada.ImplementationAbilities do
     Permissions.authorized?(claims, :manage_segments, domain_id)
   end
 
-  def can?(%Claims{}, :manage_segments, %Implementation{}), do: true
+  def can?(%Claims{}, :edit_segments, %Implementation{}), do: true
 
-  def can?(%Claims{} = claims, :manage_segments_action, %Implementation{}) do
-    Permissions.authorized?(claims, :manage_segments)
+  def can?(%Claims{}, :create_ruleless_implementations, %Changeset{changes: %{rule_id: rule_id}})
+      when not is_nil(rule_id),
+      do: true
+
+  def can?(%Claims{} = claims, :create_ruleless_implementations, %Changeset{
+        changes: %{domain_id: domain_id}
+      }) do
+    Permissions.authorized?(claims, :manage_ruleless_implementations, domain_id)
   end
+
+  def can?(%Claims{}, :create_ruleless_implementations, %Changeset{}), do: false
+
+  def can?(
+        %Claims{} = claims,
+        :manage_ruleless_implementations,
+        %Implementation{domain_id: domain_id, rule_id: nil}
+      ) do
+    Permissions.authorized?(claims, :manage_ruleless_implementations, domain_id)
+  end
+
+  def can?(%Claims{}, :manage_ruleless_implementations, %Implementation{}), do: true
 
   def can?(%Claims{} = claims, :manage, %Implementation{domain_id: domain_id} = implementation) do
     permission = permission(implementation)
@@ -53,13 +96,6 @@ defmodule TdDq.Canada.ImplementationAbilities do
     permission = permission(changeset)
     Permissions.authorized?(claims, permission, domain_id)
   end
-
-  def can?(%Claims{} = claims, :manage_segments, %Changeset{changes: %{segments: _}} = changeset) do
-    domain_id = domain_id(changeset)
-    Permissions.authorized?(claims, :manage_segments, domain_id)
-  end
-
-  def can?(%Claims{}, :manage_segments, %Changeset{}), do: true
 
   # Service accounts can execute rule implementations
   def can?(%Claims{role: "service"}, :execute, _), do: true
@@ -79,7 +115,11 @@ defmodule TdDq.Canada.ImplementationAbilities do
   def can?(_claims, _action, _resource), do: false
 
   defp domain_id(%{domain_id: domain_id}), do: domain_id
-  defp domain_id(%Changeset{data: data}), do: domain_id(data)
+
+  defp domain_id(%Changeset{data: %{domain_id: domain_id}}) when not is_nil(domain_id),
+    do: domain_id
+
+  defp domain_id(%Changeset{} = changeset), do: Changeset.fetch_field!(changeset, :domain_id)
 
   defp permission("raw"), do: :manage_raw_quality_rule_implementations
   defp permission("default"), do: :manage_quality_rule_implementations

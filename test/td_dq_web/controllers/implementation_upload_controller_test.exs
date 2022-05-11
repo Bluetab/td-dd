@@ -34,6 +34,25 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
     end
 
     @tag authentication: [role: "admin"]
+    test "uploads implementations without rules", %{conn: conn} do
+      CacheHelpers.insert_domain(external_id: "some_domain_id")
+      attrs = %{
+        implementations: %Plug.Upload{
+          filename: "implementations_without_rules.csv",
+          path: "test/fixtures/implementations/implementations_without_rules.csv"
+        }
+      }
+
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.implementation_upload_path(conn, :create), attrs)
+               |> json_response(:ok)
+
+      assert %{"ids" => ids, "errors" => []} = data
+      assert length(ids) == 3
+    end
+
+    @tag authentication: [role: "admin"]
     test "renders errors", %{conn: conn} do
       attrs = %{
         implementations: %Plug.Upload{

@@ -3,6 +3,7 @@ defmodule TdDqWeb.ImplementationController do
   use TdHypermedia, :controller
 
   import Canada, only: [can?: 2]
+  import Canada.Can, only: [can?: 3]
 
   alias TdDq.Events.QualityEvents
   alias TdDq.Implementations
@@ -69,14 +70,14 @@ defmodule TdDqWeb.ImplementationController do
   defp retrieve_boolean_value(_), do: false
 
   swagger_path :create do
-    description("Creates a Quality Rule")
+    description("Creates a Rule Implementation")
     produces("application/json")
 
     parameters do
       rule_implementation(
         :body,
         Schema.ref(:ImplementationCreate),
-        "Quality Rule creation parameters"
+        "Rule Implementation creation parameters"
       )
     end
 
@@ -84,9 +85,8 @@ defmodule TdDqWeb.ImplementationController do
     response(400, "Client Error")
   end
 
-  def create(conn, %{"rule_implementation" => implementation_params}) do
+  def create(conn, %{"rule_implementation" => %{"rule_id" => rule_id} = implementation_params}) do
     claims = conn.assigns[:current_resource]
-    rule_id = implementation_params["rule_id"]
 
     rule = Rules.get_rule_or_nil(rule_id)
 
@@ -94,6 +94,20 @@ defmodule TdDqWeb.ImplementationController do
            Implementations.create_implementation(rule, implementation_params, claims),
          implementation <-
            Implementations.get_implementation!(id, enrich: :source, preload: [:rule, :results]) do
+      conn
+      |> put_status(:created)
+      |> put_resp_header("location", Routes.implementation_path(conn, :show, implementation))
+      |> render("show.json", implementation: implementation)
+    end
+  end
+
+  def create(conn, %{"rule_implementation" => implementation_params}) do
+    claims = conn.assigns[:current_resource]
+
+    with {:ok, %{implementation: %{id: id}}} <-
+           Implementations.create_ruleless_implementation(implementation_params, claims),
+         implementation <-
+           Implementations.get_implementation!(id, enrich: :source, preload: [:results]) do
       conn
       |> put_status(:created)
       |> put_resp_header("location", Routes.implementation_path(conn, :show, implementation))
@@ -120,7 +134,7 @@ defmodule TdDqWeb.ImplementationController do
       id
       ## TODO: take this functionality con resutl context to add has_segments
       |> Implementations.get_implementation!(
-        enrich: [:source, :links],
+        enrich: [:source, :links, :domain],
         preload: [
           :rule,
           [results: :remediation],
@@ -134,11 +148,8 @@ defmodule TdDqWeb.ImplementationController do
       |> filter_links_by_permission(claims)
       |> filter_data_structures_by_permission(claims)
 
-    actions =
-      %{}
-      |> link_concept_actions(claims, implementation)
-      |> link_structure_actions(claims, implementation)
-      |> manage_segments_actions(claims, implementation)
+    actions = build_implementation_actions(claims, implementation)
+      |> put_edit_action(claims, implementation)
 
     with {:can, true} <- {:can, can?(claims, show(implementation))} do
       render(conn, "show.json", implementation: implementation, actions: actions)
@@ -160,25 +171,25 @@ defmodule TdDqWeb.ImplementationController do
 
   defp filter_link_by_permission(_claims, _), do: false
 
-  defp link_concept_actions(actions, claims, implementation) do
-    if can?(claims, link_concept(implementation)) do
-      Map.put(actions, :link_concept, %{method: "POST"})
-    else
-      actions
-    end
+  defp build_implementation_actions(claims, implementation) do
+    [
+      :link_concept,
+      :link_structure,
+      :manage,
+      :manage_segments
+    ]
+    |> Enum.filter(&(can?(claims, &1, implementation)))
+    |> Enum.reduce(%{}, &(Map.put(&2, &1, %{method: "POST"})))
   end
 
-  defp link_structure_actions(actions, claims, implementation) do
-    if can?(claims, link_structure(implementation)) do
-      Map.put(actions, :link_structure, %{method: "POST"})
-    else
-      actions
-    end
-  end
-
-  defp manage_segments_actions(actions, claims, implementation) do
-    if can?(claims, manage_segments_action(implementation)) do
-      Map.put(actions, :manage_segments, %{method: "POST"})
+  defp put_edit_action(actions, claims, implementation) do
+    if Enum.all?([
+      :edit_segments,
+      :manage_ruleless_implementations,
+      :manage
+    ], &(can?(claims, &1, implementation)))
+    do
+      Map.put(actions, :edit, %{method: "POST"})
     else
       actions
     end
