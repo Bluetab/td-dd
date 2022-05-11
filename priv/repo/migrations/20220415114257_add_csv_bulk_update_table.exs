@@ -13,6 +13,5 @@ defmodule TdDd.Repo.Migrations.AddCsvBulkUpdateEventsTable do
 
       timestamps(updated_at: false, type: :utc_datetime_usec)
     end
-
   end
 end
