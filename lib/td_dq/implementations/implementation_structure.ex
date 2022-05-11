@@ -11,10 +11,13 @@ defmodule TdDq.Implementations.ImplementationStructure do
   schema "implementations_structures" do
     belongs_to(:implementation, Implementation)
     belongs_to(:data_structure, DataStructure)
+
     field(:deleted_at, :utc_datetime_usec)
     field(:type, Ecto.Enum, values: [:dataset, :population, :validation])
 
-    timestamps()
+    has_one(:source, through: [:data_structure, :source])
+
+    timestamps(type: :utc_datetime_usec)
   end
 
   @doc false

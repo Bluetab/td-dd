@@ -1,35 +1,31 @@
 defmodule TdDd.Repo.Migrations.CreateImplementationStructure do
   use Ecto.Migration
 
-  import Ecto.Query
-
-  alias TdDd.Repo
-  alias Ecto.Adapters.SQL
-
   @valid_types "'dataset', 'population', 'validation'"
 
   def up do
-    if SQL.table_exists?(Repo, "implementations_structures") do
-      drop_database_structures()
-    end
+    drop_if_exists table("implementations_structures")
+    execute("DROP TYPE IF EXISTS implementation_structure_type")
 
     execute("CREATE TYPE implementation_structure_type AS ENUM (#{@valid_types})")
 
-    create table(:implementations_structures) do
+    create table("implementations_structures") do
       add :type, :implementation_structure_type, null: false
       add :deleted_at, :utc_datetime_usec
-      add :implementation_id, references("rule_implementations", on_delete: :delete_all), null: false
+
+      add :implementation_id, references("rule_implementations", on_delete: :delete_all),
+        null: false
+
       add :data_structure_id, references("data_structures", on_delete: :delete_all), null: false
 
       timestamps()
     end
 
     create unique_index(
-             :implementations_structures,
+             "implementations_structures",
              [:implementation_id, :data_structure_id, :type],
              name: :implementations_structures_implementation_structure_type
            )
-
 
     # INSERT IMPLEMENTATION DATASET
     execute("""
@@ -87,6 +83,7 @@ defmodule TdDd.Repo.Migrations.CreateImplementationStructure do
             SELECT word FROM pg_get_keywords()
           )
     """)
+
     # INSERT RAW IMPLEMENTATION VALIDATIONS
     execute("""
       INSERT INTO implementations_structures(implementation_id, data_structure_id, type, inserted_at, updated_at)
@@ -118,18 +115,7 @@ defmodule TdDd.Repo.Migrations.CreateImplementationStructure do
   end
 
   def down do
-    drop_database_structures()
-  end
-
-  defp drop_database_structures do
-    drop unique_index(
-           :implementations_structures,
-           [:implementation_id, :data_structure_id, :type],
-           name: :implementations_structures_implementation_structure_type
-         )
-
-    drop table(:implementations_structures)
-
-    execute("DROP TYPE implementation_structure_type")
+    drop table("implementations_structures")
+    execute("DROP TYPE IF EXISTS implementation_structure_type")
   end
 end

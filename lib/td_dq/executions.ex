@@ -11,8 +11,7 @@ defmodule TdDq.Executions do
   alias TdDq.Executions.Audit
   alias TdDq.Executions.Execution
   alias TdDq.Executions.Group
-  alias TdDq.Implementations
-  alias TdDq.Implementations.Implementation
+  alias TdDq.Implementations.ImplementationQueries
 
   @doc """
   Fetches the `Execution` with the given id.
@@ -68,10 +67,14 @@ defmodule TdDq.Executions do
 
       {:status, "pending"}, q ->
         q
-        |> join(:left, [e], r in assoc(e, :result))
-        |> join(:left, [e, _r], qe in assoc(e, :quality_events))
-        |> where([_e, r], is_nil(r.id))
-        |> where([e, _r, qe], is_nil(qe.execution_id))
+        |> join(:left, [e], r in assoc(e, :result), as: :result)
+        |> join(:left, [e], qe in assoc(e, :quality_events), as: :event)
+        |> where([result: r], is_nil(r.id))
+        |> where([event: qe], is_nil(qe.execution_id))
+
+      {:sources, external_ids}, q ->
+        sources_query = ImplementationQueries.implementation_sources_query(external_ids)
+        join(q, :inner, [e], s in ^sources_query, on: e.implementation_id == s.implementation_id)
 
       _, q ->
         q
@@ -79,7 +82,6 @@ defmodule TdDq.Executions do
     |> order_by(:id)
     |> preload(^preloads)
     |> Repo.all()
-    |> filter(params)
   end
 
   defp cast(%{} = params) do
@@ -94,7 +96,18 @@ defmodule TdDq.Executions do
     {%{}, types}
     |> Changeset.cast(params, Map.keys(types))
     |> Changeset.update_change(:status, &String.downcase/1)
+    |> merge_sources()
     |> Changeset.apply_changes()
+  end
+
+  defp merge_sources(%Changeset{} = cs) do
+    case {Changeset.fetch_change(cs, :source), Changeset.fetch_change(cs, :sources)} do
+      {:error, _} -> cs
+      {{:ok, source}, :error} -> Changeset.put_change(cs, :sources, [source])
+      {{:ok, source}, {:ok, _}} -> Changeset.update_change(cs, :sources, &[source | &1])
+    end
+    |> Changeset.delete_change(:source)
+    |> Changeset.update_change(:sources, &Enum.uniq(Enum.sort(&1)))
   end
 
   @doc """
@@ -121,36 +134,5 @@ defmodule TdDq.Executions do
     )
     |> Multi.run(:audit, Audit, :execution_group_created, [changeset])
     |> Repo.transaction()
-  end
-
-  defp filter([_ | _] = executions, %{source: source}) do
-    filter(executions, %{sources: [source]})
-  end
-
-  defp filter([_ | _] = executions, %{sources: sources}) do
-    sorted_sources = Enum.sort(sources)
-
-    executions
-    |> Enum.group_by(&get_sources/1)
-    |> Enum.filter(fn
-      {[source], _} -> source in sources
-      {sources, _} -> Enum.sort(sources) == sorted_sources
-    end)
-    |> Enum.flat_map(fn
-      {sources, executions} -> Enum.map(executions, &Map.put(&1, :structure_aliases, sources))
-    end)
-  end
-
-  defp filter(executions, _params), do: executions
-
-  defp get_sources(%{implementation: %Implementation{} = implementation}) do
-    Implementations.get_sources(implementation)
-  end
-
-  defp get_sources(execution) do
-    execution
-    |> Repo.preload(:implementation)
-    |> Map.get(:implementation)
-    |> Implementations.get_sources()
   end
 end
