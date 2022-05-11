@@ -1,12 +1,13 @@
 # Changelog
 
-## [4.43.1] 2022-05-11
-
-- [TD-4089] Support for Implementations without Rules
-
+## [Unreleased]
 ### Fixed
 
 - [TD-4799] Performance issue filtering executions by source
+
+## [4.43.1] 2022-05-11
+
+- [TD-4089] Support for Implementations without Rules
 
 ## [4.43.0] 2022-05-09
 
