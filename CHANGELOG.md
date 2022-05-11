@@ -1,6 +1,11 @@
 # Changelog
 
 ## [Unreleased]
+
+### Added
+
+- [TD-4045] Rule implementation `execute` action
+
 ### Fixed
 
 - [TD-4799] Performance issue filtering executions by source
@@ -14,7 +19,8 @@
 ### Added
 
 - [TD-3186] Support for links between implementations and structures
-- [TD-4538] Segments definitions in the implementations, and support for segment results
+- [TD-4538] Segments definitions in the implementations, and support for segment
+  results
 
 ### Fixed
 

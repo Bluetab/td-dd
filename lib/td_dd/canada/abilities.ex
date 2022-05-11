@@ -43,6 +43,7 @@ defmodule TdDd.Canada.Abilities do
 
     # GraphQL queries for regular users
     def can?(%Claims{role: "user"}, :query, :domains), do: true
+    def can?(%Claims{role: "user"}, :query, :templates), do: true
 
     def can?(%Claims{role: "user"} = claims, :query, :sources),
       do: SourceAbilities.can?(claims, :list, Source)
