@@ -33,7 +33,7 @@ defmodule TdDd.Repo.Migrations.CreateImplementationStructure do
         SELECT implementation_id, data_structure_id, 'dataset', updated_at, updated_at from (
           SELECT DISTINCT
             id as implementation_id,
-            (unnest(dataset)#>'{structure,id}')::integer as data_structure_id,
+            (unnest(dataset)#>>'{structure,id}')::integer as data_structure_id,
             updated_at
           FROM rule_implementations
         ) AS implementation_data_structures
@@ -48,7 +48,7 @@ defmodule TdDd.Repo.Migrations.CreateImplementationStructure do
         SELECT implementation_id, data_structure_id, 'validation', updated_at, updated_at from (
           SELECT DISTINCT
             id as implementation_id,
-            (unnest(validations)#>'{structure,id}')::integer as data_structure_id,
+            (unnest(validations)#>>'{structure,id}')::integer as data_structure_id,
             updated_at
           FROM rule_implementations
         ) AS implementation_data_structures

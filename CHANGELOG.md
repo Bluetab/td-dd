@@ -10,7 +10,16 @@
 
 - [TD-4799] Performance issue filtering executions by source
 
+## [4.43.2] 2022-05-12
+
+### Fixed
+
+- ImplementationsStructures migration was breaking with null structure_ids on dataset
+- Typo in `implementations.ex`
+
 ## [4.43.1] 2022-05-11
+
+### Added
 
 - [TD-4089] Support for Implementations without Rules
 

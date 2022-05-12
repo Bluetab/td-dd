@@ -394,7 +394,7 @@ defmodule TdDq.Implementations.Implementation do
 
       Map.take(raw_content, [
         :dataset,
-        :populations,
+        :population,
         :validations,
         :source_id,
         :database
