@@ -2,7 +2,14 @@
 
 ## [4.43.1] 2022-05-11
 
+### Added
+
 - [TD-4089] Support for Implementations without Rules
+
+### Fixed
+
+- ImplementationsStructures migration was breaking with null structure_ids on dataset
+- Typo in `implementations.ex`
 
 ## [4.43.0] 2022-05-09
 
