@@ -21,7 +21,7 @@ defmodule TdDdWeb.ReferenceDataControllerTest do
                |> get(Routes.reference_data_path(conn, :index))
                |> json_response(:ok)
 
-      assert [%{"id" => ^id, "row_count" => _}] = data
+      assert [%{"id" => ^id, "row_count" => 2}] = data
     end
   end
 
@@ -42,7 +42,7 @@ defmodule TdDdWeb.ReferenceDataControllerTest do
                |> get(Routes.reference_data_path(conn, :show, "#{id}"))
                |> json_response(:ok)
 
-      assert %{"id" => ^id, "name" => _, "headers" => _, "rows" => _} = data
+      assert %{"id" => ^id, "name" => _, "headers" => _, "rows" => _, "row_count" => 2} = data
     end
   end
 

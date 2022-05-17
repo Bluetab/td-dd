@@ -3,17 +3,16 @@ defmodule TdDdWeb.ReferenceDataView do
 
   def render("index.json", %{datasets: datasets}) do
     data =
-      Enum.map(datasets, fn %{rows: rows} = dataset ->
-        dataset
-        |> Map.take([:id, :name, :headers, :inserted_at, :updated_at])
-        |> Map.put(:row_count, length(rows))
-      end)
+      Enum.map(
+        datasets,
+        &Map.take(&1, [:id, :name, :headers, :row_count, :inserted_at, :updated_at])
+      )
 
     %{data: data}
   end
 
   def render("show.json", %{dataset: dataset}) do
-    data = Map.take(dataset, [:id, :name, :headers, :rows, :inserted_at, :updated_at])
+    data = Map.take(dataset, [:id, :name, :headers, :rows, :row_count, :inserted_at, :updated_at])
     %{data: data}
   end
 end

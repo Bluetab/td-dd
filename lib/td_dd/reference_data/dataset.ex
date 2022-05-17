@@ -14,6 +14,7 @@ defmodule TdDd.ReferenceData.Dataset do
     field(:headers, {:array, :string})
     field(:data, {:array, {:array, :string}}, virtual: true)
     field(:rows, {:array, {:array, :string}})
+    field(:row_count, :integer, virtual: true)
 
     timestamps(type: :utc_datetime_usec)
   end

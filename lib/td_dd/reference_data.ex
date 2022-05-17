@@ -3,17 +3,22 @@ defmodule TdDd.ReferenceData do
   The Reference Data conext
   """
 
+  import Ecto.Query
+
   alias TdDd.ReferenceData.Dataset
   alias TdDd.Repo
 
   @spec get!(binary | integer) :: Dataset.t()
   def get!(id) do
-    Repo.get!(Dataset, id)
+    dataset_query(id: id)
+    |> Repo.one!()
   end
 
   @spec list :: [Dataset.t()]
-  def list do
-    Repo.all(Dataset)
+  def list(args \\ %{}) do
+    args
+    |> dataset_query()
+    |> Repo.all()
   end
 
   @spec create(binary(), binary()) :: {:ok, Dataset.t()} | {:error, Ecto.Changeset.t()}
@@ -41,5 +46,13 @@ defmodule TdDd.ReferenceData do
     |> File.stream!(read_ahead: 100_000)
     |> CsvParser.parse_stream(skip_headers: false)
     |> Enum.to_list()
+  end
+
+  defp dataset_query(args) do
+    queryable = select_merge(Dataset, [ds], %{row_count: fragment("array_length(?, 1)", ds.rows)})
+
+    Enum.reduce(args, queryable, fn
+      {:id, id}, q -> where(q, [ds], ds.id == ^id)
+    end)
   end
 end
