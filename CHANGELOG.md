@@ -9,6 +9,7 @@
 ### Fixed
 
 - [TD-4799] Performance issue filtering executions by source
+- [TD-4848] Timeout on structures notes upload
 
 ## [4.43.2] 2022-05-12
 
