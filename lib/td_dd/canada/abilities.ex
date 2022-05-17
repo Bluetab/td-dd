@@ -13,6 +13,7 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.Canada.GrantAbilities
   alias TdDd.Canada.LineageAbilities
   alias TdDd.Canada.LinkAbilities
+  alias TdDd.Canada.ReferenceDataAbilities
   alias TdDd.Canada.StructureNoteAbilities
   alias TdDd.Canada.SystemAbilities
   alias TdDd.Canada.UnitAbilities
@@ -31,6 +32,7 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.Lineage.LineageEvent
   alias TdDd.Lineage.Units.Node
   alias TdDd.Lineage.Units.Unit
+  alias TdDd.ReferenceData.Dataset, as: ReferenceDataset
   alias TdDd.Systems.System
 
   defimpl Canada.Can, for: Claims do
@@ -52,6 +54,14 @@ defmodule TdDd.Canada.Abilities do
       do: DataStructureTagAbilities.can?(claims, :index, DataStructureTag)
 
     def can?(%Claims{}, _action, nil), do: false
+
+    def can?(%Claims{} = claims, action, ReferenceDataset) do
+      ReferenceDataAbilities.can?(claims, action, ReferenceDataset)
+    end
+
+    def can?(%Claims{} = claims, action, %ReferenceDataset{} = resource) do
+      ReferenceDataAbilities.can?(claims, action, resource)
+    end
 
     def can?(%Claims{} = claims, action, System) do
       SystemAbilities.can?(claims, action, System)

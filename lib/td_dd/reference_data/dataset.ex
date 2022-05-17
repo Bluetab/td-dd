@@ -7,6 +7,8 @@ defmodule TdDd.ReferenceData.Dataset do
 
   import Ecto.Changeset
 
+  @type t :: %__MODULE__{}
+
   schema "reference_datasets" do
     field(:name, :string)
     field(:headers, {:array, :string})

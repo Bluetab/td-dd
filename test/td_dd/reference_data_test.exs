@@ -3,6 +3,13 @@ defmodule TdDd.ReferenceDataTest do
 
   alias TdDd.ReferenceData
 
+  describe "ReferenceData.get!/1" do
+    test "returns a dataset by id" do
+      %{id: id, name: name} = insert(:reference_dataset)
+      assert %{id: ^id, name: ^name} = ReferenceData.get!(id)
+    end
+  end
+
   describe "ReferenceData.create/1" do
     test "creates a dataset with valid data" do
       assert {:ok, dataset} =

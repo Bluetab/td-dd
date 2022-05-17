@@ -22,7 +22,7 @@ defmodule TdDd.ReferenceData.DatasetTest do
       }
 
       assert %{valid?: false, errors: errors} = Dataset.changeset(params)
-      assert errors[:data] ==  {"must have at least one row", []}
+      assert errors[:data] == {"must have at least one row", []}
     end
 
     test "validates rows have consistent lengths" do
@@ -47,6 +47,7 @@ defmodule TdDd.ReferenceData.DatasetTest do
 
     test "validates maximum rows" do
       Application.put_env(:td_dd, TdDd.ReferenceData, max_rows: 2)
+
       params = %{
         name: "dataset1",
         data: [["foo", "bar"], ["foo1", "bar1"], ["foo2", "bar2"]]
@@ -58,6 +59,7 @@ defmodule TdDd.ReferenceData.DatasetTest do
 
     test "validates maximum columns" do
       Application.put_env(:td_dd, TdDd.ReferenceData, max_rows: 10, max_cols: 2)
+
       params = %{
         name: "dataset1",
         data: [["foo", "bar", "baz"], ["foo1", "bar1", "baz1"]]
