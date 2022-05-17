@@ -9,10 +9,11 @@ defmodule TdDdWeb.GrantsControllerTest do
     detail: %{},
     end_date: Date.utc_today(),
     start_date: "2010-04-17",
-    user_id: @user_id
+    user_id: @user_id,
+    source_user_name: "source_user_name_#{@user_id}"
   }
 
-  @invalid_attrs %{detail: nil, end_date: nil, start_date: nil}
+  @invalid_attrs %{detail: nil, end_date: nil, start_date: nil, source_user_name: nil}
 
   setup do
     start_supervised!(TdDd.Search.StructureEnricher)
@@ -28,7 +29,7 @@ defmodule TdDdWeb.GrantsControllerTest do
       conn: conn,
       data_structure: %{id: _data_structure_id, external_id: data_structure_external_id}
     } do
-      %{start_date: start_date, end_date: end_date, user_id: user_id} =
+      %{start_date: start_date, end_date: end_date, user_id: user_id, source_user_name: source_user_name} =
         create_attr =
         @create_attrs
         |> Map.put(:op, "add")
@@ -47,7 +48,8 @@ defmodule TdDdWeb.GrantsControllerTest do
                  %{
                    "start_date" => ^start_date,
                    "end_date" => ^string_end_date,
-                   "user_id" => ^user_id
+                   "user_id" => ^user_id,
+                   "source_user_name" => ^source_user_name
                  }
                ]
              } =
@@ -107,7 +109,7 @@ defmodule TdDdWeb.GrantsControllerTest do
                )
                |> json_response(:unprocessable_entity)
 
-      assert %{"start_date" => ["can't be blank"], "user_id" => ["can't be blank"]} = errors
+      assert %{"start_date" => ["can't be blank"], "source_user_name" => ["can't be blank"]} = errors
     end
 
     @tag authentication: [role: "admin"]
