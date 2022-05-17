@@ -6,16 +6,12 @@ defmodule TdDd.Repo.Migrations.AlterGrantsAddSourceUserNameColumn do
       modify(:user_id, :bigint, null: true)
       add(:source_user_name, :string)
     end
-
-    drop unique_index("grants", [:data_structure_id, :user_id])
-
-    create(unique_index("grants", [:data_structure_id, :user_id, :source_user_name]))
   end
 
   def down do
-    drop unique_index("grants", [:data_structure_id, :user_id, :source_user_name])
-
-    create(unique_index("grants", [:data_structure_id, :user_id]))
+    execute(
+      "delete from grants where user_id IS NULL"
+    )
 
     alter table("grants") do
       modify(:user_id, :bigint, null: false)
