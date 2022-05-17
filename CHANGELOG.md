@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-4045] Rule implementation `execute` action
+- [TD-4457] Allow to have grants for non existing users in truedat
 
 ### Fixed
 
