@@ -15,16 +15,13 @@ defmodule TdDq.Search.Store do
   def stream(Rule = schema) do
     schema
     |> where([r], is_nil(r.deleted_at))
-    |> select([r], r)
     |> Repo.stream()
   end
 
   @impl true
   def stream(Implementation = schema) do
     schema
-    |> join(:inner, [ri, r], r in Rule, on: ri.rule_id == r.id)
-    |> where([_ri, r], is_nil(r.deleted_at))
-    |> select([ri, _r], ri)
+    |> where([ri], is_nil(ri.deleted_at))
     |> Repo.stream()
     |> Repo.stream_preload(1000, :rule)
   end
@@ -33,16 +30,13 @@ defmodule TdDq.Search.Store do
     schema
     |> where([r], is_nil(r.deleted_at))
     |> where([r], r.id in ^ids)
-    |> select([r], r)
     |> Repo.stream()
   end
 
   def stream(Implementation = schema, ids) do
     schema
-    |> join(:inner, [ri, r], r in Rule, on: ri.rule_id == r.id)
-    |> where([_ri, r], is_nil(r.deleted_at))
-    |> where([ri, _r], ri.id in ^ids)
-    |> select([ri, _r], ri)
+    |> where([ri], is_nil(ri.deleted_at))
+    |> where([ri], ri.id in ^ids)
     |> Repo.stream()
     |> Repo.stream_preload(1000, :rule)
   end

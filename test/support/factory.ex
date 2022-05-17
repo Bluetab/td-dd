@@ -95,6 +95,7 @@ defmodule TdDd.Factory do
   end
 
   def raw_implementation_factory(attrs) do
+    {content_attrs, attrs} = Map.split(attrs, [:source_id])
     attrs = default_assoc(attrs, :rule_id, :rule)
 
     %TdDq.Implementations.Implementation{
@@ -103,13 +104,13 @@ defmodule TdDd.Factory do
       goal: 30,
       minimum: 12,
       result_type: "percentage",
-      raw_content: build(:raw_content),
+      raw_content: build(:raw_content, content_attrs),
       deleted_at: nil
     }
     |> merge_attributes(attrs)
   end
 
-  def raw_content_factory do
+  def raw_content_factory(attrs) do
     %TdDq.Implementations.RawContent{
       dataset: "clientes c join address a on c.address_id=a.id",
       population: "a.country = 'SPAIN'",
@@ -117,6 +118,7 @@ defmodule TdDd.Factory do
       database: "raw_database",
       validations: "a.city is null"
     }
+    |> merge_attributes(attrs)
   end
 
   def implementation_factory(attrs) do
@@ -132,6 +134,20 @@ defmodule TdDd.Factory do
       populations: build(:populations),
       validations: build(:validations),
       segments: build(:segments)
+    }
+    |> merge_attributes(attrs)
+  end
+
+  def ruleless_implementation_factory(attrs) do
+    %TdDq.Implementations.Implementation{
+      implementation_key: sequence("implementation_key"),
+      implementation_type: "default",
+      goal: 30,
+      minimum: 12,
+      domain_id: 2,
+      dataset: build(:dataset),
+      populations: build(:populations),
+      validations: build(:validations)
     }
     |> merge_attributes(attrs)
   end

@@ -234,7 +234,7 @@ defmodule TdDq.ImplementationsTest do
     end
   end
 
-  describe "create_implementation/3" do
+  describe "create_implementation/4" do
     test "with valid data creates a implementation", %{rule: rule} do
       params =
         string_params_for(:implementation, rule_id: rule.id)
@@ -660,6 +660,31 @@ defmodule TdDq.ImplementationsTest do
 
       assert [%{id: ^data_structure_id}] =
                Implementations.valid_validation_implementation_structures(implementation)
+    end
+  end
+
+  describe "create_ruleless_implementation/3" do
+    test "with valid data creates a implementation", %{} do
+      params = string_params_for(:ruleless_implementation)
+
+      claims = build(:dq_claims)
+
+      assert {:ok, %{implementation: implementation}} =
+               Implementations.create_ruleless_implementation(params, claims)
+
+      assert implementation.implementation_key == params["implementation_key"]
+    end
+
+    test "with valid data for raw implementation creates a implementation", %{rule: rule} do
+      %{id: rule_id, domain_id: domain_id} = rule
+
+      params = string_params_for(:raw_implementation, rule_id: rule_id, domain_id: domain_id)
+      claims = build(:dq_claims, role: "admin")
+
+      assert {:ok, %{implementation: implementation}} =
+               Implementations.create_implementation(rule, params, claims)
+
+      assert %{rule_id: ^rule_id} = implementation
     end
   end
 

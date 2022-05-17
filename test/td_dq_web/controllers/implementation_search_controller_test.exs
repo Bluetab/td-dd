@@ -59,7 +59,7 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
                |> post(Routes.implementation_search_path(conn, :create))
                |> json_response(:ok)
 
-      assert %{"execute" => false, "manage" => false} = perms
+      assert %{"execute" => false} = perms
     end
 
     @tag authentication: [
@@ -96,7 +96,12 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
                |> post(Routes.implementation_search_path(conn, :create))
                |> json_response(:ok)
 
-      assert %{"execute" => true, "manage" => true} = perms
+      assert %{
+               "execute" => true,
+               "manage_implementations" => true,
+               "manage_raw_implementations" => false,
+               "manage_ruleless_implementations" => false
+             } = perms
     end
 
     @tag authentication: [user_name: "not_an_admin", permissions: [:view_quality_rule]]

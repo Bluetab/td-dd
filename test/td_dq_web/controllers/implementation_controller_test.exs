@@ -97,8 +97,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:ok)
 
-      #  |> IO.inspect(label: "implementation --->")
-
       assert %{"id" => ^rule_result_id_1, "has_segments" => true} = result_1
       assert %{"id" => ^rule_result_id_2, "has_segments" => true} = result_2
       assert %{"id" => ^rule_result_id_3, "has_segments" => false} = result_3
@@ -256,6 +254,52 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
     @tag authentication: [
            user_name: "non_admin",
+           permissions: [
+             :view_published_business_concepts,
+             :view_quality_rule,
+             :execute_quality_rule_implementations
+           ]
+         ]
+    test "includes execute action if user is assigned execute_quality_rule_implementations permission",
+         %{conn: conn, swagger_schema: schema, domain: domain} do
+      %{id: id} = insert(:implementation, domain_id: domain.id)
+
+      assert %{
+               "_actions" => %{
+                 "execute" => %{
+                   "method" => "POST",
+                 }
+               }
+             } =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:ok)
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions: [:view_published_business_concepts, :view_quality_rule]
+         ]
+    test "does not include execute action if user is not assigned execute_quality_rule_implementations permission",
+         %{conn: conn, swagger_schema: schema, domain: domain} do
+      %{id: id} = insert(:implementation, domain_id: domain.id)
+
+      refute match?(
+               %{
+                 "_actions" => %{
+                   "execute" => _
+                 }
+               },
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:ok)
+             )
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
            permissions: [:view_published_business_concepts, :view_quality_rule]
          ]
     test "rendes only authorized links", %{conn: conn, domain: domain} do
@@ -282,6 +326,115 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       string_authorized_id = "#{concept_id_authorized}"
       assert [%{"resource_id" => ^string_authorized_id}] = links
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions: [:link_implementation_business_concept, :view_quality_rule]
+         ]
+    test "renders link_concept action", %{conn: conn, domain: domain} do
+      %{id: id} = insert(:implementation, domain_id: domain.id)
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{"link_concept" => %{"method" => "POST"}} == actions
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions: [:link_implementation_structure, :view_quality_rule]
+         ]
+    test "renders link_structure action", %{conn: conn, domain: domain} do
+      %{id: id} = insert(:implementation, domain_id: domain.id)
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{"link_structure" => %{"method" => "POST"}} == actions
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions: [
+             :manage_quality_rule_implementations,
+             :manage_segments,
+             :view_quality_rule
+           ]
+         ]
+    test "renders manage implementations actions", %{conn: conn, domain: domain} do
+      %{id: id} = insert(:implementation, domain_id: domain.id)
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "manage" => %{"method" => "POST"},
+               "edit" => %{"method" => "POST"},
+               "manage_segments" => %{"method" => "POST"}
+             } == actions
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions: [:manage_raw_quality_rule_implementations, :view_quality_rule]
+         ]
+    test "renders edit raw implementations actions", %{conn: conn, domain: domain} do
+      %{id: id} = insert(:raw_implementation, domain_id: domain.id)
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "manage" => %{"method" => "POST"},
+               "edit" => %{"method" => "POST"}
+             } == actions
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions: [
+             :manage_quality_rule_implementations,
+             :manage_ruleless_implementations,
+             :view_quality_rule
+           ]
+         ]
+    test "renders edit ruleless implementations actions", %{conn: conn, domain: domain} do
+      %{id: id} = insert(:ruleless_implementation, domain_id: domain.id)
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{
+               "edit" => %{"method" => "POST"},
+               "manage" => %{"method" => "POST"}
+             } == actions
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions: [:manage_quality_rule_implementations, :view_quality_rule]
+         ]
+    test "renders no actions for ruleless implementation if user has no manage_ruleless_implementations permission",
+         %{conn: conn, domain: domain} do
+      %{id: id} = insert(:ruleless_implementation, domain_id: domain.id)
+
+      assert %{"_actions" => actions} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> json_response(:ok)
+
+      assert %{"manage" => %{"method" => "POST"}} == actions
     end
   end
 
@@ -505,6 +658,98 @@ defmodule TdDqWeb.ImplementationControllerTest do
                  "validations" => "c.city = 'MADRID'"
                }
              } = data
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions: [
+             :view_quality_rule,
+             :manage_quality_rule_implementations,
+             :manage_ruleless_implementations
+           ]
+         ]
+    test "can create implementation without rule", %{
+      conn: conn,
+      domain: domain,
+      swagger_schema: schema
+    } do
+      creation_attrs =
+        %{
+          implementation_key: "a1",
+          domain_id: domain.id,
+          dataset: @valid_dataset,
+          validations: [
+            %{
+              operator: %{
+                name: "gt",
+                value_type: "timestamp"
+              },
+              structure: %{id: 12_554},
+              value: [%{raw: "2019-12-02 05:35:00"}]
+            }
+          ],
+          result_type: "percentage",
+          minimum: 50,
+          goal: 100
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert %{"data" => data} =
+               conn
+               |> post(Routes.implementation_path(conn, :create),
+                 rule_implementation: creation_attrs
+               )
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:created)
+
+      assert %{"id" => id} = data
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, id))
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:ok)
+
+      assert equals_condition_row(
+               Map.get(data, "validations"),
+               Map.get(creation_attrs, "validations")
+             )
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions: [:view_quality_rule, :manage_quality_rule_implementations]
+         ]
+    test "non admin without ruleless permission cannot create implementation without rule", %{
+      conn: conn,
+      domain: domain
+    } do
+      creation_attrs =
+        %{
+          implementation_key: "a1",
+          domain_id: domain.id,
+          dataset: @valid_dataset,
+          validations: [
+            %{
+              operator: %{
+                name: "gt",
+                value_type: "timestamp"
+              },
+              structure: %{id: 12_554},
+              value: [%{raw: "2019-12-02 05:35:00"}]
+            }
+          ],
+          result_type: "percentage",
+          minimum: 50,
+          goal: 100
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert conn
+             |> post(Routes.implementation_path(conn, :create),
+               rule_implementation: creation_attrs
+             )
+             |> json_response(:forbidden)
     end
 
     @tag authentication: [user_name: "non_admin"]

@@ -2,12 +2,34 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-4045] Rule implementation `execute` action
+
+### Fixed
+
+- [TD-4799] Performance issue filtering executions by source
+
+## [4.43.2] 2022-05-12
+
+### Fixed
+
+- ImplementationsStructures migration was breaking with null structure_ids on dataset
+- Typo in `implementations.ex`
+
+## [4.43.1] 2022-05-11
+
+### Added
+
+- [TD-4089] Support for Implementations without Rules
+
 ## [4.43.0] 2022-05-09
 
 ### Added
 
 - [TD-3186] Support for links between implementations and structures
-- [TD-4538] Segments definitions in the implementations, and support for segment results
+- [TD-4538] Segments definitions in the implementations, and support for segment
+  results
 
 ### Fixed
 
