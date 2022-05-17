@@ -20,8 +20,12 @@ defmodule TdDd.DataStructures.BulkUpdater do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
-  def bulk_csv_update(csv_hash, contents, user_id, auto_publish) do
-    GenServer.call(__MODULE__, {:bulk_csv_update, csv_hash, contents, user_id, auto_publish}, 60_000)
+  def bulk_csv_update(csv_hash, structures_content_upload, user_id, auto_publish) do
+    GenServer.call(
+      __MODULE__,
+      {:bulk_csv_update, csv_hash, structures_content_upload, user_id, auto_publish},
+      60_000
+    )
   end
 
   def timeout do
@@ -43,24 +47,35 @@ defmodule TdDd.DataStructures.BulkUpdater do
   end
 
   @impl true
-  def handle_call({:bulk_csv_update, csv_hash, contents, user_id, auto_publish}, _from, state) do
+  def handle_call(
+        {:bulk_csv_update, csv_hash, structures_content_upload, user_id, auto_publish},
+        _from,
+        state
+      ) do
     %{reply: update_state, state: new_state} =
       pending_update(csv_hash)
-      |> launch_task(csv_hash, state, contents, user_id, auto_publish)
+      |> launch_task(csv_hash, state, structures_content_upload, user_id, auto_publish)
+
     {:reply, update_state, new_state}
   end
 
-  def launch_task(:not_pending, csv_hash, state, contents, user_id, auto_publish) do
+  def launch_task(:not_pending, csv_hash, state, structures_content_upload, user_id, auto_publish) do
     Task.Supervisor.children(TdDd.TaskSupervisor)
-    task = Task.Supervisor.async_nolink(
-      TdDd.TaskSupervisor,
-      fn ->
-        {:ok, %{updates: updates, update_notes: update_notes}} =
-          BulkUpdate.do_csv_bulk_update(contents, user_id, auto_publish)
-        [updated_notes, not_updated_notes] = BulkUpdate.split_succeeded_errors(update_notes)
-        make_summary(updates, updated_notes, not_updated_notes)
-      end
-    )
+
+    task =
+      Task.Supervisor.async_nolink(
+        TdDd.TaskSupervisor,
+        fn ->
+          contents = BulkUpdate.from_csv(structures_content_upload)
+
+          {:ok, %{updates: updates, update_notes: update_notes}} =
+            BulkUpdate.do_csv_bulk_update(contents, user_id, auto_publish)
+
+          [updated_notes, not_updated_notes] = BulkUpdate.split_succeeded_errors(update_notes)
+          make_summary(updates, updated_notes, not_updated_notes)
+        end
+      )
+
     Task.Supervisor.children(TdDd.TaskSupervisor)
 
     task_timer = Process.send_after(self(), {:timeout, task}, timeout())
@@ -74,20 +89,28 @@ defmodule TdDd.DataStructures.BulkUpdater do
 
     %{
       reply: {:just_started, csv_hash, task.ref |> ref_to_string},
-      state: put_in(
-        state.tasks[task.ref],
-        %{
-          task: task,
-          task_timer: task_timer,
-          csv_hash: csv_hash,
-          user_id: user_id,
-          auto_publish: auto_publish,
-        }
-      )
+      state:
+        put_in(
+          state.tasks[task.ref],
+          %{
+            task: task,
+            task_timer: task_timer,
+            csv_hash: csv_hash,
+            user_id: user_id,
+            auto_publish: auto_publish
+          }
+        )
     }
   end
 
-  def launch_task({:already_started, _event_pending} = update_state, _csv_hash, state, _contents, _user_id, _auto_publish) do
+  def launch_task(
+        {:already_started, _event_pending} = update_state,
+        _csv_hash,
+        state,
+        _structures_content_upload,
+        _user_id,
+        _auto_publish
+      ) do
     %{reply: update_state, state: state}
   end
 
@@ -121,6 +144,7 @@ defmodule TdDd.DataStructures.BulkUpdater do
   end
 
   def maybe_notify(nil, _msg), do: nil
+
   def maybe_notify(callback, msg) do
     callback.(:info, msg)
   end
@@ -205,8 +229,7 @@ defmodule TdDd.DataStructures.BulkUpdater do
       ids: Enum.uniq(Map.keys(updates) ++ Map.keys(updated_notes)),
       errors:
         not_updated_notes
-        |> Enum.map(fn {_id,
-                        {:error, {error, %{row: row, external_id: external_id} = _ds}}} ->
+        |> Enum.map(fn {_id, {:error, {error, %{row: row, external_id: external_id} = _ds}}} ->
           get_messsage_from_error(error)
           |> Enum.map(fn ms ->
             ms
