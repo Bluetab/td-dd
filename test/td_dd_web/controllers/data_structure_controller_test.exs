@@ -15,8 +15,10 @@ defmodule TdDdWeb.DataStructureControllerTest do
   # function that returns the function to be injected
   def notify_callback do
     pid = self()
+
     fn reason, msg ->
-      Kernel.send pid, {reason, msg} # send msg back to test process
+      # send msg back to test process
+      Kernel.send(pid, {reason, msg})
       :ok
     end
   end
@@ -777,7 +779,6 @@ defmodule TdDdWeb.DataStructureControllerTest do
   end
 
   describe "csv" do
-
     setup do
       start_supervised!({TdDd.DataStructures.BulkUpdater, notify: notify_callback()})
       :ok
@@ -827,10 +828,12 @@ defmodule TdDdWeb.DataStructureControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "upload, throw error with invalid csv", %{conn: conn} do
+    test "upload, throw error with invalid csv", %{conn: conn, domain: %{id: domain_id}} do
+      _ = create_three_data_structures(domain_id, "some_external_id")
+
       conn
       |> post(data_structure_path(conn, :bulk_update_template_content),
-        structures: %Plug.Upload{path: "test/fixtures/td3787/upload.csv"}
+        structures: %Plug.Upload{path: "test/fixtures/td3787/upload_unprocessable_entity.csv"}
       )
       |> json_response(:unprocessable_entity)
     end
@@ -843,30 +846,30 @@ defmodule TdDdWeb.DataStructureControllerTest do
       {ids, _} = create_three_data_structures(domain_id, "some_external_id")
 
       assert %{
-        "csv_hash" => _csv_hash,
-        "status" => "JUST_STARTED",
-        "task_reference" => _task_reference
-      } =
-        conn
-        |> post(data_structure_path(conn, :bulk_update_template_content),
-          structures: %Plug.Upload{path: "test/fixtures/td4100/upload.csv"}
-        )
-        |> json_response(:accepted)
+               "csv_hash" => _csv_hash,
+               "status" => "JUST_STARTED",
+               "task_reference" => _task_reference
+             } =
+               conn
+               |> post(data_structure_path(conn, :bulk_update_template_content),
+                 structures: %Plug.Upload{path: "test/fixtures/td4100/upload.csv"}
+               )
+               |> json_response(:accepted)
 
       assert_receive {:info, {_ref, %{errors: [], ids: ^ids}}}
 
       assert [
-        %{
-          "csv_hash" => _csv_hash,
-          "status" => "COMPLETED",
-          "task_reference" => _task_reference,
-          "response" => %{"ids" => ^ids, "errors" => []}
-        }
-        | _
-      ] =
-        conn
-        |> get(Routes.csv_bulk_update_event_path(conn, :index))
-        |> json_response(:ok)
+               %{
+                 "csv_hash" => _csv_hash,
+                 "status" => "COMPLETED",
+                 "task_reference" => _task_reference,
+                 "response" => %{"ids" => ^ids, "errors" => []}
+               }
+               | _
+             ] =
+               conn
+               |> get(Routes.csv_bulk_update_event_path(conn, :index))
+               |> json_response(:ok)
     end
 
     @tag authentication: [role: "admin"]
@@ -878,37 +881,42 @@ defmodule TdDdWeb.DataStructureControllerTest do
         create_three_data_structures(domain_id, "some_external_id")
 
       assert %{
-        "csv_hash" => _csv_hash,
-        "status" => "JUST_STARTED",
-        "task_reference" => _task_reference
-      } =
-        conn
-        |> post(data_structure_path(conn, :bulk_update_template_content),
-          structures: %Plug.Upload{path: "test/fixtures/td4100/upload_with_one_warning.csv"}
-        )
-        |> json_response(:accepted)
+               "csv_hash" => _csv_hash,
+               "status" => "JUST_STARTED",
+               "task_reference" => _task_reference
+             } =
+               conn
+               |> post(data_structure_path(conn, :bulk_update_template_content),
+                 structures: %Plug.Upload{
+                   path: "test/fixtures/td4100/upload_with_one_warning.csv"
+                 }
+               )
+               |> json_response(:accepted)
 
       assert_receive {:info, {_ref, %{errors: _, ids: _}}}
 
-      assert [%{
-        "csv_hash" => _csv_hash,
-        "status" => "COMPLETED",
-        "task_reference" => _task_reference,
-        "response" => %{
-          "ids" => [^id_one, ^id_three],
-          "errors" => [
-            %{
-              "row" => 3,
-              "message" => "df_content.inclusion",
-              "external_id" => ^external_id_2,
-              "field" => "list"
-            }
-          ]
-        }
-      } | _] =
-        conn
-        |> get(Routes.csv_bulk_update_event_path(conn, :index))
-        |> json_response(:ok)
+      assert [
+               %{
+                 "csv_hash" => _csv_hash,
+                 "status" => "COMPLETED",
+                 "task_reference" => _task_reference,
+                 "response" => %{
+                   "ids" => [^id_one, ^id_three],
+                   "errors" => [
+                     %{
+                       "row" => 3,
+                       "message" => "df_content.inclusion",
+                       "external_id" => ^external_id_2,
+                       "field" => "list"
+                     }
+                   ]
+                 }
+               }
+               | _
+             ] =
+               conn
+               |> get(Routes.csv_bulk_update_event_path(conn, :index))
+               |> json_response(:ok)
     end
 
     @tag authentication: [role: "admin"]
@@ -920,43 +928,48 @@ defmodule TdDdWeb.DataStructureControllerTest do
         create_three_data_structures(domain_id, "some_external_id")
 
       assert %{
-        "csv_hash" => _csv_hash,
-        "status" => "JUST_STARTED",
-        "task_reference" => _task_reference
-      } =
-        conn
-        |> post(data_structure_path(conn, :bulk_update_template_content),
-          structures: %Plug.Upload{path: "test/fixtures/td4100/upload_with_multiple_warnings.csv"}
-        )
-        |> json_response(:accepted)
+               "csv_hash" => _csv_hash,
+               "status" => "JUST_STARTED",
+               "task_reference" => _task_reference
+             } =
+               conn
+               |> post(data_structure_path(conn, :bulk_update_template_content),
+                 structures: %Plug.Upload{
+                   path: "test/fixtures/td4100/upload_with_multiple_warnings.csv"
+                 }
+               )
+               |> json_response(:accepted)
 
       assert_receive {:info, {_ref, %{errors: _, ids: _}}}
 
-      assert [%{
-        "csv_hash" => _csv_hash,
-        "status" => "COMPLETED",
-        "task_reference" => _task_reference,
-        "response" => %{
-          "ids" => [^id_one],
-          "errors" => [
-            %{
-              "row" => 3,
-              "message" => "df_content.inclusion",
-              "external_id" => ^external_id_2,
-              "field" => "list"
-            },
-            %{
-              "row" => 4,
-              "message" => "df_content.inclusion",
-              "external_id" => ^external_id_3,
-              "field" => "list"
-            }
-          ]
-        }
-      } | _] =
-        conn
-        |> get(Routes.csv_bulk_update_event_path(conn, :index))
-        |> json_response(:ok)
+      assert [
+               %{
+                 "csv_hash" => _csv_hash,
+                 "status" => "COMPLETED",
+                 "task_reference" => _task_reference,
+                 "response" => %{
+                   "ids" => [^id_one],
+                   "errors" => [
+                     %{
+                       "row" => 3,
+                       "message" => "df_content.inclusion",
+                       "external_id" => ^external_id_2,
+                       "field" => "list"
+                     },
+                     %{
+                       "row" => 4,
+                       "message" => "df_content.inclusion",
+                       "external_id" => ^external_id_3,
+                       "field" => "list"
+                     }
+                   ]
+                 }
+               }
+               | _
+             ] =
+               conn
+               |> get(Routes.csv_bulk_update_event_path(conn, :index))
+               |> json_response(:ok)
     end
 
     @tag authentication: [role: "admin"]
@@ -967,29 +980,32 @@ defmodule TdDdWeb.DataStructureControllerTest do
       {[id_one, _, id_three], _} = create_three_data_structures(domain_id, "some_external_id")
 
       assert %{
-        "csv_hash" => _csv_hash,
-        "status" => "JUST_STARTED",
-        "task_reference" => _task_reference
-      } =
-        conn
-        |> post(data_structure_path(conn, :bulk_update_template_content),
-          structures: %Plug.Upload{
-            path: "test/fixtures/td4100/upload_with_invalid_external_id.csv"
-          }
-        )
-        |> json_response(:accepted)
+               "csv_hash" => _csv_hash,
+               "status" => "JUST_STARTED",
+               "task_reference" => _task_reference
+             } =
+               conn
+               |> post(data_structure_path(conn, :bulk_update_template_content),
+                 structures: %Plug.Upload{
+                   path: "test/fixtures/td4100/upload_with_invalid_external_id.csv"
+                 }
+               )
+               |> json_response(:accepted)
 
       assert_receive {:info, {_ref, %{errors: [], ids: [^id_one, ^id_three]}}}
 
-      assert [%{
-        "csv_hash" => _csv_hash,
-        "status" => "COMPLETED",
-        "task_reference" => _task_reference,
-        "response" => %{"ids" => [^id_one, ^id_three], "errors" => []}
-      } | _] =
-        conn
-        |> get(Routes.csv_bulk_update_event_path(conn, :index))
-        |> json_response(:ok)
+      assert [
+               %{
+                 "csv_hash" => _csv_hash,
+                 "status" => "COMPLETED",
+                 "task_reference" => _task_reference,
+                 "response" => %{"ids" => [^id_one, ^id_three], "errors" => []}
+               }
+               | _
+             ] =
+               conn
+               |> get(Routes.csv_bulk_update_event_path(conn, :index))
+               |> json_response(:ok)
     end
 
     @tag authentication: [role: "admin"]
@@ -1010,15 +1026,18 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert_receive {:info, {_ref, %{errors: _, ids: _}}}
 
-      assert [%{
-        "csv_hash" => _csv_hash,
-        "status" => "COMPLETED",
-        "task_reference" => _task_reference,
-        "response" => %{"ids" => _, "errors" => []}
-      } | _] =
-        conn
-        |> get(Routes.csv_bulk_update_event_path(conn, :index))
-        |> json_response(:ok)
+      assert [
+               %{
+                 "csv_hash" => _csv_hash,
+                 "status" => "COMPLETED",
+                 "task_reference" => _task_reference,
+                 "response" => %{"ids" => _, "errors" => []}
+               }
+               | _
+             ] =
+               conn
+               |> get(Routes.csv_bulk_update_event_path(conn, :index))
+               |> json_response(:ok)
     end
 
     @tag authentication: [user_name: "non_admin_user"]
@@ -1062,15 +1081,18 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert_receive {:info, {_ref, %{errors: _, ids: _}}}
 
-      assert [%{
-        "csv_hash" => _csv_hash,
-        "status" => "COMPLETED",
-        "task_reference" => _task_reference,
-        "response" => %{"ids" => _, "errors" => []}
-      } | _] =
-        conn
-        |> get(Routes.csv_bulk_update_event_path(conn, :index))
-        |> json_response(:ok)
+      assert [
+               %{
+                 "csv_hash" => _csv_hash,
+                 "status" => "COMPLETED",
+                 "task_reference" => _task_reference,
+                 "response" => %{"ids" => _, "errors" => []}
+               }
+               | _
+             ] =
+               conn
+               |> get(Routes.csv_bulk_update_event_path(conn, :index))
+               |> json_response(:ok)
     end
 
     @tag authentication: [
@@ -1078,7 +1100,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
            permissions: [
              :edit_structure_note,
              :view_data_structure,
-             :create_structure_note, # csv_bulk_update_event_path
+             # csv_bulk_update_event_path
+             :create_structure_note
            ]
          ]
     test "upload, can edit structure_notes", %{conn: conn, domain: %{id: domain_id}} do
@@ -1104,16 +1127,18 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
       assert_receive {:info, {_ref, %{errors: _, ids: _}}}
 
-      assert [%{
-        "csv_hash" => _csv_hash,
-        "status" => "COMPLETED",
-        "task_reference" => _task_reference,
-        "response" => %{"ids" => _, "errors" => []}
-      } | _] =
-        conn
-        |> get(Routes.csv_bulk_update_event_path(conn, :index))
-        |> json_response(:ok)
-
+      assert [
+               %{
+                 "csv_hash" => _csv_hash,
+                 "status" => "COMPLETED",
+                 "task_reference" => _task_reference,
+                 "response" => %{"ids" => _, "errors" => []}
+               }
+               | _
+             ] =
+               conn
+               |> get(Routes.csv_bulk_update_event_path(conn, :index))
+               |> json_response(:ok)
     end
 
     @tag authentication: [

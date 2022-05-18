@@ -301,19 +301,26 @@ defmodule TdDdWeb.DataStructureController do
 
     auto_publish = params |> Map.get("auto_publish", "false") |> String.to_existing_atom()
 
-    with [_ | _] = contents <- BulkUpdate.from_csv(structures_content_upload),
+    with [_ | _] = contents <- BulkUpdate.from_csv(structures_content_upload, :simple),
          {:forbidden, []} <- {:forbidden, can_bulk_actions(contents, auto_publish, claims)},
          csv_hash <- FileHash.hash(structures_content_upload.path, :md5) do
-          {code, response} = case BulkUpdater.bulk_csv_update(csv_hash, contents, user_id, auto_publish) do
-            {:just_started, ^csv_hash, task_reference} ->
-              {
-                :accepted,
-                %{csv_hash: csv_hash, status: "JUST_STARTED", task_reference: task_reference}
-              }
+      {code, response} =
+        case BulkUpdater.bulk_csv_update(
+               csv_hash,
+               structures_content_upload,
+               user_id,
+               auto_publish
+             ) do
+          {:just_started, ^csv_hash, task_reference} ->
+            {
+              :accepted,
+              %{csv_hash: csv_hash, status: "JUST_STARTED", task_reference: task_reference}
+            }
 
-            {:already_started, %CsvBulkUpdateEvent{csv_hash: ^csv_hash} = event} ->
-              {:accepted, TdDdWeb.CsvBulkUpdateEventView.render("show.json", %{csv_bulk_update_event: event})}
-          end
+          {:already_started, %CsvBulkUpdateEvent{csv_hash: ^csv_hash} = event} ->
+            {:accepted,
+             TdDdWeb.CsvBulkUpdateEventView.render("show.json", %{csv_bulk_update_event: event})}
+        end
 
       conn
       |> put_resp_content_type("application/json", "utf-8")
@@ -347,24 +354,41 @@ defmodule TdDdWeb.DataStructureController do
     end)
   end
 
+  defp can_bulk_actions(
+         [{_content, %{data_structure: _, row_index: _}} | _] = contents,
+         auto_publish,
+         claims
+       )
+       when is_list(contents) do
+    contents
+    |> Enum.reject(fn
+      {_content, %{data_structure: nil}} ->
+        true
+
+      {_content, %{data_structure: data_structure}} ->
+        action = StructureNotesWorkflow.get_action_editable_action(data_structure)
+
+        can_edit =
+          case action do
+            :create -> can?(claims, create_structure_note(data_structure))
+            :edit -> can?(claims, edit_structure_note(data_structure))
+            _ -> true
+          end
+
+        if auto_publish do
+          can_edit and can?(claims, publish_structure_note_from_draft(data_structure))
+        else
+          can_edit
+        end
+    end)
+  end
+
   defp can_bulk_actions(contents, auto_publish, claims) do
     contents
-    |> Enum.reject(fn {_content, %{data_structure: data_structure}} ->
-      action = StructureNotesWorkflow.get_action_editable_action(data_structure)
-
-      can_edit =
-        case action do
-          :create -> can?(claims, create_structure_note(data_structure))
-          :edit -> can?(claims, edit_structure_note(data_structure))
-          _ -> true
-        end
-
-      if auto_publish do
-        can_edit and can?(claims, publish_structure_note_from_draft(data_structure))
-      else
-        can_edit
-      end
+    |> Enum.map(fn {_, data_structure, row_index} ->
+      {%{}, %{data_structure: data_structure, row_index: row_index}}
     end)
+    |> can_bulk_actions(auto_publish, claims)
   end
 
   defp search_all_structures(claims, permission, params) do
