@@ -49,6 +49,14 @@ defmodule TdDd.ReferenceData do
     Repo.delete(dataset)
   end
 
+  @spec to_csv(Dataset.t()) :: binary()
+  def to_csv(%Dataset{headers: headers, rows: rows}) do
+    [headers | rows]
+    |> CSV.encode(separator: ?;)
+    |> Enum.to_list()
+    |> List.to_string()
+  end
+
   @spec read_data(map()) :: [[binary()]] | :none
   defp read_data(%{path: path}) when is_binary(path), do: read_file(path)
   defp read_data(%{data: data}) when is_binary(data), do: read_string(data)

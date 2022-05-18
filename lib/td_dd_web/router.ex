@@ -151,7 +151,9 @@ defmodule TdDdWeb.Router do
       resources("/status", GrantRequestStatusController, only: [:create], name: "status")
     end
 
-    resources("/reference_data", ReferenceDataController, except: [:edit, :new])
+    resources("/reference_data", ReferenceDataController, except: [:edit, :new]) do
+      resources("/csv", ReferenceDataDownloadController, only: [:show], singleton: true)
+    end
   end
 
   scope "/api/swagger" do

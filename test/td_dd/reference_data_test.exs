@@ -53,4 +53,13 @@ defmodule TdDd.ReferenceDataTest do
              ]
     end
   end
+
+  describe "ReferenceData.to_csv/1" do
+    test "encodes a dataset as CSV" do
+      dataset = insert(:reference_dataset)
+
+      assert ReferenceData.to_csv(dataset) ==
+               "FOO;BAR;BAZ\r\nfoo1;bar1;baz1\r\nfoo2;bar2;baz2\r\n"
+    end
+  end
 end

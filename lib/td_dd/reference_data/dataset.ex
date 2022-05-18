@@ -26,8 +26,8 @@ defmodule TdDd.ReferenceData.Dataset do
     |> cast(params, [:name, :data])
     |> update_change(:data, &remove_empty/1)
     |> validate_change(:data, &validate_data/2)
-    |> validate_required([:name, :data])
     |> maybe_split_headers()
+    |> validate_required([:name, :headers, :rows])
     |> unique_constraint(:name)
   end
 
@@ -61,14 +61,17 @@ defmodule TdDd.ReferenceData.Dataset do
   defp maybe_split_headers(%{valid?: false} = changeset), do: changeset
 
   defp maybe_split_headers(%{valid?: true} = changeset) do
-    {[headers], rows} =
-      changeset
-      |> fetch_field!(:data)
-      |> Enum.split(1)
+    case fetch_change(changeset, :data) do
+      {:ok, data} ->
+        {[headers], rows} = Enum.split(data, 1)
 
-    changeset
-    |> put_change(:headers, headers)
-    |> put_change(:rows, rows)
-    |> put_change(:row_count, length(rows))
+        changeset
+        |> put_change(:headers, headers)
+        |> put_change(:rows, rows)
+        |> put_change(:row_count, length(rows))
+
+      :error ->
+        changeset
+    end
   end
 end
