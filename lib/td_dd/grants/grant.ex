@@ -56,19 +56,21 @@ defmodule TdDd.Grants.Grant do
     |> foreign_key_constraint(:data_structure_id)
     |> check_constraint(:end_date, name: :date_range)
     |> exclusion_constraint(:user_id, name: :no_overlap)
+    |> exclusion_constraint(:source_user_name, name: :no_overlap_source_user_name)
   end
 
   def check_user_params(
-    changeset,
-    %{"user_name" => _user_name, "user_external_id" => _user_external_id}
-  ) do
+        changeset,
+        %{"user_name" => _user_name, "user_external_id" => _user_external_id}
+      ) do
     add_error(changeset, :user_name_user_external_id, "use either user_name or user_external_id")
   end
 
   def check_user_params(
-    changeset,
-    %{"user_id" => _user_id} = params
-  ) when is_map_key(params, "user_name") or is_map_key(params, "user_external_id") do
+        changeset,
+        %{"user_id" => _user_id} = params
+      )
+      when is_map_key(params, "user_name") or is_map_key(params, "user_external_id") do
     add_error(changeset, :user_id, "use either user_id or one of user_name, user_external_id")
   end
 
@@ -77,18 +79,23 @@ defmodule TdDd.Grants.Grant do
   end
 
   defp maybe_put_user_id(
-    %Ecto.Changeset{data: %__MODULE__{user_id: user_id}} = changeset,
-    %{} = _params) when is_integer(user_id) do
+         %Ecto.Changeset{data: %__MODULE__{user_id: user_id}} = changeset,
+         %{} = _params
+       )
+       when is_integer(user_id) do
     changeset |> validate_change(:user_id, &validate_user_id/2)
   end
 
   defp maybe_put_user_id(
-    %Ecto.Changeset{data: %__MODULE__{user_id: nil}, changes: changes} = changeset,
-    %{} = params
-  ) do
+         %Ecto.Changeset{data: %__MODULE__{user_id: nil}, changes: changes} = changeset,
+         %{} = params
+       ) do
     case get_user_id(changes) do
-      {:ok, %{id: user_id}} -> put_change(changeset, :user_id, user_id)
-      {:ok, nil} -> cast(changeset, params, [:user_id]) |> validate_change(:user_id, &validate_user_id/2)
+      {:ok, %{id: user_id}} ->
+        put_change(changeset, :user_id, user_id)
+
+      {:ok, nil} ->
+        cast(changeset, params, [:user_id]) |> validate_change(:user_id, &validate_user_id/2)
     end
   end
 

@@ -6,10 +6,17 @@ defmodule TdDd.Grants.GrantTest do
   alias TdDd.Repo
 
   setup do
-    %{id: user_id, user_name: user_name, external_id: user_external_id} = CacheHelpers.insert_user()
+    %{id: user_id, user_name: user_name, external_id: user_external_id} =
+      CacheHelpers.insert_user()
+
     %{id: data_structure_id} = insert(:data_structure)
 
-    [user_id: user_id, user_name: user_name, user_external_id: user_external_id, data_structure_id: data_structure_id]
+    [
+      user_id: user_id,
+      user_name: user_name,
+      user_external_id: user_external_id,
+      data_structure_id: data_structure_id
+    ]
   end
 
   describe "Grant.changeset/2" do
@@ -32,7 +39,10 @@ defmodule TdDd.Grants.GrantTest do
              |> Changeset.fetch_change!(:user_id) == user_id
     end
 
-    test "maps user_external_id to user_id", %{user_external_id: user_external_id, user_id: user_id} do
+    test "maps user_external_id to user_id", %{
+      user_external_id: user_external_id,
+      user_id: user_id
+    } do
       assert %{"user_external_id" => user_external_id}
              |> Grant.changeset(false)
              |> Changeset.fetch_change!(:user_id) == user_id
@@ -40,33 +50,46 @@ defmodule TdDd.Grants.GrantTest do
 
     test "cannot use both user_id and user_name", %{user_name: user_name, user_id: user_id} do
       assert %{errors: errors} =
-        %{"user_name" => user_name, "user_id" => user_id}
-        |> Grant.changeset(false)
+               %{"user_name" => user_name, "user_id" => user_id}
+               |> Grant.changeset(false)
 
       assert {"use either user_id or one of user_name, user_external_id", _} = errors[:user_id]
     end
 
-    test "cannot use both user_id and user_external_id", %{user_external_id: user_external_id, user_id: user_id} do
+    test "cannot use both user_id and user_external_id", %{
+      user_external_id: user_external_id,
+      user_id: user_id
+    } do
       assert %{errors: errors} =
-        %{"user_external_id" => user_external_id, "user_id" => user_id}
-        |> Grant.changeset(false)
+               %{"user_external_id" => user_external_id, "user_id" => user_id}
+               |> Grant.changeset(false)
 
       assert {"use either user_id or one of user_name, user_external_id", _} = errors[:user_id]
     end
 
-    test "cannot use both user_name and user_external_id", %{user_external_id: user_external_id, user_name: user_name} do
+    test "cannot use both user_name and user_external_id", %{
+      user_external_id: user_external_id,
+      user_name: user_name
+    } do
       assert %{errors: errors} =
-        %{"user_external_id" => user_external_id, "user_name" => user_name}
-        |> Grant.changeset(false)
+               %{"user_external_id" => user_external_id, "user_name" => user_name}
+               |> Grant.changeset(false)
 
       assert {"use either user_name or user_external_id", _} = errors[:user_name_user_external_id]
-
     end
 
-    test "cannot use all user_id, user_name and user_external_id", %{user_name: user_name, user_external_id: user_external_id, user_id: user_id} do
+    test "cannot use all user_id, user_name and user_external_id", %{
+      user_name: user_name,
+      user_external_id: user_external_id,
+      user_id: user_id
+    } do
       assert %{errors: errors} =
-        %{"user_name" => user_name, "user_external_id" => user_external_id, "user_id" => user_id}
-        |> Grant.changeset(false)
+               %{
+                 "user_name" => user_name,
+                 "user_external_id" => user_external_id,
+                 "user_id" => user_id
+               }
+               |> Grant.changeset(false)
 
       assert {"use either user_name or user_external_id", _} = errors[:user_name_user_external_id]
     end
@@ -149,6 +172,34 @@ defmodule TdDd.Grants.GrantTest do
       assert {_, [constraint: :exclusion, constraint_name: "no_overlap"]} = errors[:user_id]
     end
 
+    test "captures exclusion constraint on source_user_name, data structure and date range", %{
+      data_structure_id: data_structure_id
+    } do
+      source_user_name = "source_user_name"
+
+      insert(:grant,
+        source_user_name: source_user_name,
+        start_date: "2020-01-01",
+        end_date: "2020-02-02",
+        data_structure_id: data_structure_id
+      )
+
+      params = %{
+        "source_user_name" => source_user_name,
+        "data_structure_id" => data_structure_id,
+        "start_date" => "2020-01-02",
+        "end_date" => "2021-02-03"
+      }
+
+      assert {:error, %{errors: errors}} =
+               %Grant{data_structure_id: data_structure_id}
+               |> Grant.changeset(params, true)
+               |> Repo.insert()
+
+      assert {_, [constraint: :exclusion, constraint_name: "no_overlap_source_user_name"]} =
+               errors[:source_user_name]
+    end
+
     test "can be inserted if valid", %{
       user_id: user_id,
       user_name: user_name,
@@ -223,6 +274,5 @@ defmodule TdDd.Grants.GrantTest do
                data_structure_id: ^data_structure_id
              } = grant
     end
-
   end
 end
