@@ -9,5 +9,10 @@ defmodule TdDdWeb.Schema.Types.Custom.DataURLTest do
       value = "data:text/csv;base64,Rk9PO0JBUjtCQVo="
       assert DataURL.decode(%String{value: value}) == {:ok, "FOO;BAR;BAZ"}
     end
+
+    test "converts from cp1252 to utf-8" do
+      value = "data:text/csv;base64,RmluYW5jaWFjafNuIELhc2ljYQ=="
+      assert DataURL.decode(%String{value: value}) == {:ok, "Financiación Básica"}
+    end
   end
 end

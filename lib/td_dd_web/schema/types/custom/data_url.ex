@@ -4,6 +4,8 @@ defmodule TdDdWeb.Schema.Types.Custom.DataURL do
   """
   use Absinthe.Schema.Notation
 
+  @cp1252 "VENDORS/MICSFT/WINDOWS/CP1252"
+
   scalar :data_url, name: "DataURL" do
     description("""
     The `DataURL` scalar type represents DataURL encoded data.
@@ -18,8 +20,9 @@ defmodule TdDdWeb.Schema.Types.Custom.DataURL do
   def decode(%Absinthe.Blueprint.Input.String{value: data}) do
     with ["data", data] <- String.split(data, ":", parts: 2),
          [headers, data] <- String.split(data, ",", parts: 2),
-         {["base64"], _} <- media_types(headers) do
-      Base.decode64(data)
+         {["base64"], _} <- media_types(headers),
+         {:ok, binary} <- Base.decode64(data) do
+      to_utf8(binary)
     else
       _ -> :error
     end
@@ -34,6 +37,17 @@ defmodule TdDdWeb.Schema.Types.Custom.DataURL do
   end
 
   defp encode(_value), do: :error
+
+  defp to_utf8(binary) do
+    if String.valid?(binary) do
+      {:ok, binary}
+    else
+      case Codepagex.to_string(binary, @cp1252) do
+        {:ok, value} -> {:ok, value}
+        _ -> :error
+      end
+    end
+  end
 
   defp media_types(headers) do
     headers
