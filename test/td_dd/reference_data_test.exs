@@ -13,9 +13,12 @@ defmodule TdDd.ReferenceDataTest do
   describe "ReferenceData.create/1" do
     test "creates a dataset with valid data" do
       assert {:ok, dataset} =
-               ReferenceData.create("Countries", "test/fixtures/reference_data/dataset1.csv")
+               ReferenceData.create(%{
+                 name: "Countries",
+                 path: "test/fixtures/reference_data/dataset1.csv"
+               })
 
-      assert %{name: "Countries", headers: headers, rows: rows} = dataset
+      assert %{name: "Countries", headers: headers, rows: rows, row_count: 5} = dataset
       assert headers == ["CODE", "DESC_ES", "DESC_EN"]
 
       assert rows == [
@@ -33,9 +36,12 @@ defmodule TdDd.ReferenceDataTest do
       %{name: name} = dataset = insert(:reference_dataset)
 
       assert {:ok, dataset} =
-               ReferenceData.update(dataset, "test/fixtures/reference_data/dataset1.csv")
+               ReferenceData.update(dataset, %{
+                 name: name,
+                 path: "test/fixtures/reference_data/dataset1.csv"
+               })
 
-      assert %{name: ^name, headers: headers, rows: rows} = dataset
+      assert %{name: ^name, headers: headers, rows: rows, row_count: 5} = dataset
       assert headers == ["CODE", "DESC_ES", "DESC_EN"]
 
       assert rows == [

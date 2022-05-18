@@ -21,17 +21,26 @@ defmodule TdDd.ReferenceData do
     |> Repo.all()
   end
 
-  @spec create(binary(), binary()) :: {:ok, Dataset.t()} | {:error, Ecto.Changeset.t()}
-  def create(name, path_or_upload) do
-    %{name: name, data: read_data(path_or_upload)}
+  @spec create(map()) :: {:ok, Dataset.t()} | {:error, Ecto.Changeset.t()}
+  def create(%{name: name} = args) do
+    case read_data(args) do
+      :none -> %{name: name}
+      data -> %{name: name, data: data}
+    end
     |> Dataset.changeset()
     |> Repo.insert()
   end
 
-  @spec update(Dataset.t(), binary()) :: {:ok, Dataset.t()} | {:error, Ecto.Changeset.t()}
-  def update(%Dataset{} = dataset, path_or_upload) do
+  @spec update(Dataset.t(), map()) :: {:ok, Dataset.t()} | {:error, Ecto.Changeset.t()}
+  def update(%Dataset{} = dataset, %{name: name} = args) do
+    params =
+      case read_data(args) do
+        :none -> %{name: name}
+        data -> %{name: name, data: data}
+      end
+
     dataset
-    |> Dataset.changeset(%{data: read_data(path_or_upload)})
+    |> Dataset.changeset(params)
     |> Repo.update()
   end
 
@@ -40,11 +49,23 @@ defmodule TdDd.ReferenceData do
     Repo.delete(dataset)
   end
 
-  @spec read_data(binary()) :: [[binary()]]
-  defp read_data(path) do
+  @spec read_data(map()) :: [[binary()]] | :none
+  defp read_data(%{path: path}) when is_binary(path), do: read_file(path)
+  defp read_data(%{data: data}) when is_binary(data), do: read_string(data)
+  defp read_data(_), do: :none
+
+  @spec read_file(binary()) :: [[binary()]]
+  defp read_file(path) do
     path
     |> File.stream!(read_ahead: 100_000)
     |> CsvParser.parse_stream(skip_headers: false)
+    |> Enum.to_list()
+  end
+
+  @spec read_string(binary()) :: [[binary()]]
+  defp read_string(data) do
+    data
+    |> CsvParser.parse_string(skip_headers: false)
     |> Enum.to_list()
   end
 

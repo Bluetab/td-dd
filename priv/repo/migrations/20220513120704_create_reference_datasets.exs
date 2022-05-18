@@ -8,5 +8,7 @@ defmodule TdDd.Repo.Migrations.CreateReferenceDatasets do
       add :rows, {:array, {:array, :string}}, null: false
       timestamps(type: :utc_datetime_usec)
     end
+
+    create unique_index("reference_datasets", [:name])
   end
 end

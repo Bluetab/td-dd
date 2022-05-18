@@ -17,6 +17,7 @@ defmodule TdDdWeb.Schema do
   import_types(TdDdWeb.Schema.Structures)
   import_types(TdDdWeb.Schema.StructureTags)
   import_types(TdDdWeb.Schema.Templates)
+  import_types(TdDdWeb.Schema.Types.Custom.DataURL)
   import_types(TdDdWeb.Schema.Types.Custom.JSON)
 
   query do
@@ -32,6 +33,7 @@ defmodule TdDdWeb.Schema do
 
   mutation do
     import_fields(:source_mutations)
+    import_fields(:reference_data_mutations)
     import_fields(:structure_tag_mutations)
   end
 

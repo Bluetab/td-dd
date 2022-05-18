@@ -34,20 +34,20 @@ defmodule TdDdWeb.ReferenceDataController do
     claims = conn.assigns[:current_resource]
 
     with {:can, true} <- {:can, can?(claims, create(Dataset))},
-         {:ok, %{} = dataset} <- ReferenceData.create(name, path) do
+         {:ok, %{} = dataset} <- ReferenceData.create(%{name: name, path: path}) do
       conn
       |> put_status(:created)
       |> render("show.json", dataset: dataset)
     end
   end
 
-  def update(conn, %{"id" => id, "dataset" => %Upload{path: path}}) do
+  def update(conn, %{"id" => id, "name" => name, "dataset" => %Upload{path: path}}) do
     claims = conn.assigns[:current_resource]
 
     with {:can, true} <- {:can, can?(claims, update(Dataset))},
          %Dataset{} = dataset <- ReferenceData.get!(id),
          {:can, true} <- {:can, can?(claims, update(dataset))},
-         {:ok, %{} = dataset} <- ReferenceData.update(dataset, path) do
+         {:ok, %{} = dataset} <- ReferenceData.update(dataset, %{name: name, path: path}) do
       render(conn, "show.json", dataset: dataset)
     end
   end

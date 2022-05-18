@@ -87,7 +87,13 @@ defmodule TdDdWeb.ReferenceDataControllerTest do
                |> post(Routes.reference_data_path(conn, :create), params)
                |> json_response(:created)
 
-      assert %{"id" => _, "name" => "foo", "headers" => _, "rows" => _} = data
+      assert %{
+               "id" => _,
+               "name" => "foo",
+               "headers" => _,
+               "rows" => _,
+               "row_count" => 5
+             } = data
     end
   end
 
@@ -105,15 +111,21 @@ defmodule TdDdWeb.ReferenceDataControllerTest do
 
     @tag authentication: [role: "admin"]
     test "updates an existing reference dataset", %{conn: conn} do
-      %{id: id, name: name} = insert(:reference_dataset)
-      params = %{"dataset" => %Plug.Upload{path: @path}}
+      %{id: id} = insert(:reference_dataset)
+      params = %{"dataset" => %Plug.Upload{path: @path}, "name" => "foo"}
 
       assert %{"data" => data} =
                conn
                |> put(Routes.reference_data_path(conn, :update, "#{id}"), params)
                |> json_response(:ok)
 
-      assert %{"id" => ^id, "name" => ^name, "headers" => _, "rows" => _} = data
+      assert %{
+               "id" => ^id,
+               "name" => "foo",
+               "headers" => _,
+               "rows" => _,
+               "row_count" => 5
+             } = data
     end
   end
 end

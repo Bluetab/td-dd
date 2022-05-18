@@ -69,5 +69,6 @@ defmodule TdDd.ReferenceData.Dataset do
     changeset
     |> put_change(:headers, headers)
     |> put_change(:rows, rows)
+    |> put_change(:row_count, length(rows))
   end
 end
