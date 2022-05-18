@@ -73,7 +73,6 @@ defmodule TdDqWeb.RuleController do
       |> Enum.map(fn d ->
         case TdCache.DomainCache.get(d) do
           {:ok, domain} -> domain
-          _ -> []
         end
       end)
 
