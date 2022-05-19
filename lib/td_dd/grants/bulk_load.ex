@@ -29,7 +29,7 @@ defmodule TdDd.Grants.BulkLoad do
     |> Repo.transaction()
     |> case do
       {:ok, %{ids: ids}} ->
-        {:ok, ids}
+        {:ok, %{ids: ids}}
 
       {:error, _, error, _} ->
         {:error, error}
@@ -91,8 +91,9 @@ defmodule TdDd.Grants.BulkLoad do
   defp reduce_insert_grant(_, _, _),
     do: {:error, {:not_found, "missing operator"}}
 
-  defp do_reindex({:ok, %{ids: ids}}) do
+  defp do_reindex({:ok, %{ids: ids}}) when is_list(ids) do
     IndexWorker.reindex_grants(ids)
+    {:ok, ids}
   end
 
   defp do_reindex(result), do: result
