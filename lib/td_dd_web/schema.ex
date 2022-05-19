@@ -10,16 +10,19 @@ defmodule TdDdWeb.Schema do
   import_types(Absinthe.Plug.Types)
   import_types(Absinthe.Type.Custom)
   import_types(TdDdWeb.Schema.Domains)
+  import_types(TdDdWeb.Schema.ReferenceData)
   import_types(TdDdWeb.Schema.Rules)
   import_types(TdDdWeb.Schema.Sources)
   import_types(TdDdWeb.Schema.StructureNotes)
   import_types(TdDdWeb.Schema.Structures)
   import_types(TdDdWeb.Schema.StructureTags)
   import_types(TdDdWeb.Schema.Templates)
+  import_types(TdDdWeb.Schema.Types.Custom.DataURL)
   import_types(TdDdWeb.Schema.Types.Custom.JSON)
 
   query do
     import_fields(:domain_queries)
+    import_fields(:reference_data_queries)
     import_fields(:rule_queries)
     import_fields(:source_queries)
     import_fields(:structure_note_queries)
@@ -30,6 +33,7 @@ defmodule TdDdWeb.Schema do
 
   mutation do
     import_fields(:source_mutations)
+    import_fields(:reference_data_mutations)
     import_fields(:structure_tag_mutations)
   end
 

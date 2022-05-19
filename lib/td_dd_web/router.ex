@@ -43,7 +43,11 @@ defmodule TdDdWeb.Router do
       :bulk_update_template_content
     )
 
-    resources("/data_structures/bulk_update_template_content_events", CsvBulkUpdateEventController, only: [:index])
+    resources(
+      "/data_structures/bulk_update_template_content_events",
+      CsvBulkUpdateEventController,
+      only: [:index]
+    )
 
     post(
       "/data_structures/bulk_upload_domains",
@@ -65,7 +69,6 @@ defmodule TdDdWeb.Router do
 
       resources("/notes", StructureNoteController, except: [:new, :edit], name: :note)
       resources("/grants", GrantController, only: [:create])
-
     end
 
     resources("/data_structure_versions", DataStructureVersionController, only: [:show]) do
@@ -146,6 +149,10 @@ defmodule TdDdWeb.Router do
     resources("/grant_requests", GrantRequestController, only: [:index, :show, :delete]) do
       resources("/approvals", GrantRequestApprovalController, only: [:create], name: "approval")
       resources("/status", GrantRequestStatusController, only: [:create], name: "status")
+    end
+
+    resources("/reference_data", ReferenceDataController, except: [:edit, :new]) do
+      resources("/csv", ReferenceDataDownloadController, only: [:show], singleton: true)
     end
   end
 

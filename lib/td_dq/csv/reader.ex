@@ -11,7 +11,7 @@ defmodule TdDq.CSV.Reader do
 
   @csv_parse_chunk_size 10_000
 
-  @spec read_csv(Claims.t(), binary, [binary], function) :: {:ok, map} | {:error, any}
+  @spec read_csv(Claims.t(), Enumerable.t(), [binary], function) :: {:ok, map} | {:error, any}
   def read_csv(claims, stream, required_headers, bulk_create) do
     with {:ok, csv} <- parse_stream(stream),
          headers <- Enum.at(csv, 0),
