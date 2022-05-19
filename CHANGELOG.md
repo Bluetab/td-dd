@@ -6,6 +6,7 @@
 
 - [TD-4045] Rule implementation `execute` action
 - [TD-4230] GraphQL `Templates` schema preprocesses templates
+- [TD-4660] Support for reference data
 
 ### Fixed
 

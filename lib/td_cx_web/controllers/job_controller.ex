@@ -35,22 +35,10 @@ defmodule TdCxWeb.JobController do
     claims = conn.assigns[:current_resource]
     params = %{"filters" => %{"source.external_id" => source_id}}
 
-    with true <- can?(claims, index(Job)),
+    with {:can, true} <- {:can, can?(claims, index(Job))},
          %{results: results} <- Search.search_jobs(params, claims, 0, 10_000) do
       render(conn, "search.json", jobs: results)
-    else
-      false ->
-        conn
-        |> put_status(:forbidden)
-        |> put_view(ErrorView)
-        |> render("403.json")
     end
-  rescue
-    _e in Ecto.NoResultsError ->
-      conn
-      |> put_status(:not_found)
-      |> put_view(ErrorView)
-      |> render("404.json")
   end
 
   swagger_path :create do
