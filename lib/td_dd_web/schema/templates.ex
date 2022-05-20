@@ -10,6 +10,7 @@ defmodule TdDdWeb.Schema.Templates do
   object :template_queries do
     field :templates, list_of(:template) do
       arg(:scope, :string)
+      arg(:domain_ids, list_of(:id))
       resolve(&Resolvers.Templates.templates/3)
     end
   end
