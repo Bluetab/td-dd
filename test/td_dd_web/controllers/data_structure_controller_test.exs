@@ -11,6 +11,8 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
   @moduletag sandbox: :shared
   @template_name "data_structure_controller_test_template"
+  @template_with_multifields_name "data_structure_controller_test_template_with_multifields"
+  @receive_timeout 500
 
   # function that returns the function to be injected
   def notify_callback do
@@ -35,6 +37,9 @@ defmodule TdDdWeb.DataStructureControllerTest do
   setup context do
     %{id: template_id, name: template_name} = CacheHelpers.insert_template(name: @template_name)
 
+    %{id: template_with_multifields_id, name: template_with_multifields_name} =
+      CacheHelpers.insert_template(name: @template_with_multifields_name, cardinality: "+")
+
     system = insert(:system)
 
     domain =
@@ -47,6 +52,11 @@ defmodule TdDdWeb.DataStructureControllerTest do
       end
 
     CacheHelpers.insert_structure_type(name: template_name, template_id: template_id)
+
+    CacheHelpers.insert_structure_type(
+      name: template_with_multifields_name,
+      template_id: template_with_multifields_id
+    )
 
     start_supervised!(TdDd.Search.StructureEnricher)
 
@@ -856,7 +866,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                )
                |> json_response(:accepted)
 
-      assert_receive {:info, {_ref, %{errors: [], ids: ^ids}}}
+      assert_receive {:info, {_ref, %{errors: [], ids: ^ids}}}, @receive_timeout
 
       assert [
                %{
@@ -893,7 +903,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                )
                |> json_response(:accepted)
 
-      assert_receive {:info, {_ref, %{errors: _, ids: _}}}
+      assert_receive {:info, {_ref, %{errors: _, ids: _}}}, @receive_timeout
 
       assert [
                %{
@@ -940,7 +950,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                )
                |> json_response(:accepted)
 
-      assert_receive {:info, {_ref, %{errors: _, ids: _}}}
+      assert_receive {:info, {_ref, %{errors: _, ids: _}}}, @receive_timeout
 
       assert [
                %{
@@ -992,7 +1002,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                )
                |> json_response(:accepted)
 
-      assert_receive {:info, {_ref, %{errors: [], ids: [^id_one, ^id_three]}}}
+      assert_receive {:info, {_ref, %{errors: [], ids: [^id_one, ^id_three]}}}, @receive_timeout
 
       assert [
                %{
@@ -1024,7 +1034,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       )
       |> response(:accepted)
 
-      assert_receive {:info, {_ref, %{errors: _, ids: _}}}
+      assert_receive {:info, {_ref, %{errors: _, ids: _}}}, @receive_timeout
 
       assert [
                %{
@@ -1038,6 +1048,47 @@ defmodule TdDdWeb.DataStructureControllerTest do
                conn
                |> get(Routes.csv_bulk_update_event_path(conn, :index))
                |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "upload, valid csv with multiple field values", %{conn: conn, domain: %{id: domain_id}} do
+      data_structure =
+        insert(:data_structure,
+          external_id: "some_external_id_1",
+          confidential: false,
+          domain_ids: [domain_id]
+        )
+
+      insert(:data_structure_version,
+        data_structure_id: data_structure.id,
+        type: @template_with_multifields_name
+      )
+
+      conn
+      |> post(data_structure_path(conn, :bulk_update_template_content),
+        structures: %Plug.Upload{path: "test/fixtures/td4548/upload_with_multifields.csv"}
+      )
+      |> response(:accepted)
+
+      assert_receive {:info, {_ref, %{errors: _, ids: _}}}, @receive_timeout
+
+      assert [
+               %{
+                 "csv_hash" => _csv_hash,
+                 "status" => "COMPLETED",
+                 "task_reference" => _task_reference,
+                 "response" => %{"ids" => _, "errors" => []}
+               }
+               | _
+             ] =
+               conn
+               |> get(Routes.csv_bulk_update_event_path(conn, :index))
+               |> json_response(:ok)
+
+      %{df_content: %{"string" => multifields}} =
+        StructureNotes.get_latest_structure_note(data_structure.id)
+
+      assert ["any", "accepted", "field"] = multifields
     end
 
     @tag authentication: [user_name: "non_admin_user"]
@@ -1079,7 +1130,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       )
       |> response(:accepted)
 
-      assert_receive {:info, {_ref, %{errors: _, ids: _}}}
+      assert_receive {:info, {_ref, %{errors: _, ids: _}}}, @receive_timeout
 
       assert [
                %{
@@ -1125,7 +1176,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       )
       |> response(:accepted)
 
-      assert_receive {:info, {_ref, %{errors: _, ids: _}}}
+      assert_receive {:info, {_ref, %{errors: _, ids: _}}}, @receive_timeout
 
       assert [
                %{
@@ -1172,7 +1223,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       )
       |> response(:accepted)
 
-      assert_receive {:info, {_ref, %{errors: _, ids: _}}}
+      assert_receive {:info, {_ref, %{errors: _, ids: _}}}, @receive_timeout
 
       latest_note = StructureNotes.get_latest_structure_note(data_structure.id)
       assert latest_note.status == :draft
@@ -1212,7 +1263,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
       )
       |> response(:accepted)
 
-      assert_receive {:info, {_ref, %{errors: _, ids: _}}}
+      assert_receive {:info, {_ref, %{errors: _, ids: _}}}, @receive_timeout
 
       latest_note = StructureNotes.get_latest_structure_note(data_structure.id)
       assert latest_note.status == :published

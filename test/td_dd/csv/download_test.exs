@@ -119,6 +119,131 @@ defmodule TdDd.DownloadTest do
     end
   end
 
+  describe "Structure downloads with multiple fields" do
+    test "to_editable_csv/1 return csv content with multiple fields, to download" do
+      create_template(%{
+        id: 42,
+        name: "template",
+        label: "label",
+        scope: "dd",
+        content: [
+          %{
+            "name" => "group",
+            "fields" => [
+              %{
+                "name" => "field_numbers",
+                "type" => "integer",
+                "label" => "Label foo",
+                "cardinality" => "*"
+              },
+              %{
+                "name" => "field_texts",
+                "type" => "string",
+                "label" => "Label foo",
+                "cardinality" => "+"
+              },
+              %{
+                "name" => "field_text",
+                "type" => "string",
+                "label" => "Label foo",
+                "cardinality" => "1"
+              }
+            ]
+          }
+        ]
+      })
+
+      insert(:data_structure_type, name: "type", template_id: 42)
+
+      structures = [
+        %{
+          name: "name",
+          path: ["foo", "bar"],
+          template: %{"name" => "template"},
+          latest_note: %{
+            "field_numbers" => [1, 2],
+            "field_texts" => ["multi", "field"],
+            "field_text" => ["field"]
+          },
+          external_id: "ext_id",
+          type: "type"
+        }
+      ]
+
+      assert Download.to_editable_csv(structures) ==
+               """
+               external_id;name;type;path;field_numbers;field_texts;field_text\r
+               ext_id;name;type;foo > bar;1|2;multi|field;field\r
+               """
+    end
+
+    test "to_csv/1 return csv content with multiple fields to download" do
+      template_name = "Table"
+      field_label = "Label foo"
+      template_id = 1
+      type = "Columna"
+
+      create_template(%{
+        id: template_id,
+        name: template_name,
+        label: "label",
+        scope: "dd",
+        content: [
+          %{
+            "name" => "group",
+            "fields" => [
+              %{
+                "name" => "field_numbers",
+                "type" => "integer",
+                "label" => field_label <> "1",
+                "cardinality" => "*"
+              },
+              %{
+                "name" => "field_texts",
+                "type" => "string",
+                "label" => field_label <> "2",
+                "cardinality" => "+"
+              },
+              %{
+                "name" => "field_text",
+                "type" => "string",
+                "label" => field_label <> "3",
+                "cardinality" => "1"
+              }
+            ]
+          }
+        ]
+      })
+
+      insert(:data_structure_type, name: type, template_id: template_id)
+      domain_name = "domain_1"
+
+      structure_1 = %{
+        name: "1. 4. 4 Primas Bajas (grafico)",
+        description: "Gráfico de evolución mensual de la prima",
+        template: %{"name" => template_name},
+        latest_note: %{
+          "field_numbers" => [1, 2],
+          "field_texts" => ["multi", "field"],
+          "field_text" => ["field"]
+        },
+        domain: %{"external_id" => "ex_id_1", "name" => domain_name},
+        inserted_at: "2018-05-05",
+        external_id: "myext_292929",
+        group: "gr",
+        path: ["CMC", "Objetos Públicos", "Informes", "Cuadro de Mando Integral"],
+        type: type,
+        system: %{"external_id" => "sys", "name" => "sys_name"}
+      }
+
+      assert Download.to_csv([structure_1]) ==
+               """
+               type;name;group;domain;system;path;description;external_id;inserted_at;#{field_label}1;#{field_label}2;#{field_label}3\r
+               #{structure_1.type};#{structure_1.name};#{structure_1.group};#{domain_name};#{Map.get(structure_1.system, "name")};CMC > Objetos Públicos > Informes > Cuadro de Mando Integral;#{structure_1.description};#{structure_1.external_id};#{structure_1.inserted_at};1|2;multi|field;field\r
+               """
+    end
+  end
+
   describe "Lineage download" do
     test "linage_to_csv/3 return csv content" do
       contains_row = [
