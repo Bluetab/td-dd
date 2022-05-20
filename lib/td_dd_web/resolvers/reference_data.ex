@@ -24,7 +24,7 @@ defmodule TdDdWeb.Resolvers.ReferenceData do
     |> ReferenceData.get!()
     |> ReferenceData.update(args)
   rescue
-    e -> {:error, :not_found}
+    _e -> {:error, :not_found}
   end
 
   def delete_reference_dataset(_parent, %{id: id}, _resolution) do
