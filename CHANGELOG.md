@@ -5,6 +5,9 @@
 ### Added
 
 - [TD-4045] Rule implementation `execute` action
+- [TD-4548] Upload/Download csv notes with multiple selection fields separted by `|`
+- [TD-4660] Support for reference data
+- [TD-4230] GraphQL `Templates` schema preprocesses templates
 
 ### Fixed
 

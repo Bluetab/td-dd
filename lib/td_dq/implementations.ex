@@ -107,7 +107,7 @@ defmodule TdDq.Implementations do
     create_ruleless_implementation(params, claims, is_bulk)
   end
 
-  @spec create_implementation(map, Claims.t(), boolean) :: multi_result
+  @spec create_ruleless_implementation(map, Claims.t(), boolean) :: multi_result
   def create_ruleless_implementation(params, claims, is_bulk \\ false)
 
   def create_ruleless_implementation(
@@ -120,6 +120,7 @@ defmodule TdDq.Implementations do
         %Implementation{},
         params
       )
+
     Multi.new()
     |> Multi.run(:can, fn _, _ ->
       multi_can(
