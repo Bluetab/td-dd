@@ -140,7 +140,10 @@ defmodule TdDd.CSV.Download do
          add_separation
        ) do
     content = Format.flatten_content_fields(content)
-    content_fields = Enum.reduce(content, [], &(&2 ++ [Map.take(&1, ["name", "values", "type"])]))
+
+    content_fields =
+      Enum.reduce(content, [], &(&2 ++ [Map.take(&1, ["name", "values", "type", "cardinality"])]))
+
     content_labels = Enum.reduce(content, [], &(&2 ++ [Map.get(&1, "label")]))
     headers = build_headers(header_labels)
     headers = headers ++ content_labels
@@ -275,6 +278,20 @@ defmodule TdDd.CSV.Download do
   end
 
   defp get_content_field(%{"type" => "table"}, _content), do: ""
+
+  defp get_content_field(
+         %{
+           "name" => name,
+           "cardinality" => cardinality
+         },
+         content
+       )
+       when cardinality in ["+", "*"] do
+    content
+    |> Map.get(name, [])
+    |> content_to_list()
+    |> Enum.join("|")
+  end
 
   defp get_content_field(%{"name" => name}, content) do
     Map.get(content, name, "")

@@ -80,6 +80,7 @@ defmodule CacheHelpers do
       AclCache.delete_acl_role_users("domain", domain_id, role)
     end)
 
+    AclCache.set_acl_roles("domain", domain_id, [role])
     AclCache.set_acl_role_users("domain", domain_id, role, user_ids)
     :ok
   end

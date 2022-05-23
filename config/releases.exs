@@ -159,10 +159,15 @@ config :td_dd, TdDd.DataStructures.HistoryManager,
         end)
 
 config :td_dd, TdDd.DataStructures.BulkUpdater,
-  timeout_seconds: System.get_env("CSV_BULK_UPDATER_TIMEOUT_SECONDS", "600") |> String.to_integer()
+  timeout_seconds:
+    System.get_env("CSV_BULK_UPDATER_TIMEOUT_SECONDS", "600") |> String.to_integer()
 
 config :td_dd, TdDdWeb.CustomParsersPlug,
   max_payload_length: System.get_env("MAX_PAYLOAD_LENGTH", "100000000") |> String.to_integer()
 
 config :td_dd, TdDd.Lineage,
   timeout: System.get_env("LINEAGE_TIMEOUT_MILLIS", "90000") |> String.to_integer()
+
+config :td_dd, TdDd.ReferenceData,
+  max_cols: System.get_env("REFERENCE_DATA_MAX_COLUMNS", "10") |> String.to_integer(),
+  max_rows: System.get_env("REFERENCE_DATA_MAX_ROWS", "10000") |> String.to_integer()

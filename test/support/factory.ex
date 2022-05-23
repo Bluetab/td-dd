@@ -629,6 +629,14 @@ defmodule TdDd.Factory do
     }
   end
 
+  def reference_dataset_factory do
+    %TdDd.ReferenceData.Dataset{
+      name: sequence("dataset_name"),
+      headers: ["FOO", "BAR", "BAZ"],
+      rows: [["foo1", "bar1", "baz1"], ["foo2", "bar2", "baz2"]]
+    }
+  end
+
   defp default_assoc(attrs, id_key, key, build_key \\ nil, build_params \\ %{}) do
     if Enum.any?([key, id_key], &Map.has_key?(attrs, &1)) do
       attrs
