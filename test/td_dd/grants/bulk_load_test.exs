@@ -12,7 +12,13 @@ defmodule TdDd.Grants.BulkLoadTest do
     %{id: user_id_1} = CacheHelpers.insert_user()
     %{id: user_id_2} = CacheHelpers.insert_user()
 
-    [user_id_1: user_id_1, user_id_2: user_id_2, claims: build(:claims)]
+    [
+      user_id_1: user_id_1,
+      user_id_2: user_id_2,
+      source_user_name_1: "source_user_name_#{user_id_1}",
+      source_user_name_2: "source_user_name_#{user_id_2}",
+      claims: build(:claims)
+    ]
   end
 
   describe "bulk_load/2" do
@@ -24,6 +30,8 @@ defmodule TdDd.Grants.BulkLoadTest do
       data_structure_2: %{id: structure_id_2, external_id: data_structure_external_id_2},
       user_id_1: user_id_1,
       user_id_2: user_id_2,
+      source_user_name_1: source_user_name_1,
+      source_user_name_2: source_user_name_2,
       claims: claims
     } do
       grants = [
@@ -33,7 +41,8 @@ defmodule TdDd.Grants.BulkLoadTest do
           "end_date" => Date.utc_today(),
           "start_date" => "2010-04-17",
           "data_structure_external_id" => data_structure_external_id_1,
-          "user_id" => user_id_1
+          "user_id" => user_id_1,
+          "source_user_name" => source_user_name_1
         },
         %{
           "op" => "add",
@@ -41,7 +50,8 @@ defmodule TdDd.Grants.BulkLoadTest do
           "end_date" => Date.utc_today(),
           "start_date" => "2010-04-17",
           "data_structure_external_id" => data_structure_external_id_2,
-          "user_id" => user_id_2
+          "user_id" => user_id_2,
+          "source_user_name" => source_user_name_2
         }
       ]
 
@@ -58,6 +68,8 @@ defmodule TdDd.Grants.BulkLoadTest do
       data_structure_1: %{external_id: data_structure_external_id_1},
       user_id_1: user_id_1,
       user_id_2: user_id_2,
+      source_user_name_1: source_user_name_1,
+      source_user_name_2: source_user_name_2,
       claims: claims
     } do
       grants = [
@@ -67,7 +79,8 @@ defmodule TdDd.Grants.BulkLoadTest do
           "end_date" => Date.utc_today(),
           "start_date" => "2010-04-17",
           "data_structure_external_id" => data_structure_external_id_1,
-          "user_id" => user_id_1
+          "user_id" => user_id_1,
+          "source_user_name" => source_user_name_1
         },
         %{
           "op" => "add",
@@ -75,7 +88,8 @@ defmodule TdDd.Grants.BulkLoadTest do
           "end_date" => Date.utc_today(),
           "start_date" => "2010-04-17",
           "data_structure_external_id" => "zoo",
-          "user_id" => user_id_2
+          "user_id" => user_id_2,
+          "source_user_name" => source_user_name_2
         }
       ]
 
@@ -88,6 +102,7 @@ defmodule TdDd.Grants.BulkLoadTest do
     test "return error when one of the grants exist", %{
       data_structure_1: %{external_id: data_structure_external_id_1},
       user_id_1: user_id_1,
+      source_user_name_1: source_user_name_1,
       claims: claims
     } do
       grants = [
@@ -97,7 +112,8 @@ defmodule TdDd.Grants.BulkLoadTest do
           "end_date" => Date.utc_today(),
           "start_date" => "2010-04-17",
           "data_structure_external_id" => data_structure_external_id_1,
-          "user_id" => user_id_1
+          "user_id" => user_id_1,
+          "source_user_name" => source_user_name_1
         }
       ]
 
@@ -112,6 +128,7 @@ defmodule TdDd.Grants.BulkLoadTest do
     test "return error when the user does not exist.", %{
       data_structure_1: %{external_id: data_structure_external_id_1},
       user_id_1: user_id_1,
+      source_user_name_1: source_user_name_1,
       claims: claims
     } do
       grants = [
@@ -121,7 +138,8 @@ defmodule TdDd.Grants.BulkLoadTest do
           "end_date" => Date.utc_today(),
           "start_date" => "2010-04-17",
           "data_structure_external_id" => data_structure_external_id_1,
-          "user_id" => user_id_1
+          "user_id" => user_id_1,
+          "source_user_name" => source_user_name_1
         },
         %{
           "op" => "add",
@@ -129,7 +147,8 @@ defmodule TdDd.Grants.BulkLoadTest do
           "end_date" => Date.utc_today(),
           "start_date" => "2010-04-17",
           "data_structure_external_id" => data_structure_external_id_1,
-          "user_id" => 1_111_111
+          "user_id" => 1_111_111,
+          "source_user_name" => "source_user_name_1111111"
         }
       ]
 
