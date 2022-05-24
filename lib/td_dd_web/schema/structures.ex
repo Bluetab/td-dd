@@ -17,6 +17,7 @@ defmodule TdDdWeb.Schema.Structures do
       arg(:lineage, :boolean)
       arg(:limit, :integer, default_value: 1_000)
       arg(:order_by, :string, default_value: "id")
+      arg(:external_id, list_of(:string))
       arg(:deleted, :boolean, default_value: false)
       resolve(&Resolvers.Structures.data_structures/3)
     end

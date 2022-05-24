@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleasde]
+
+### Added
+
+- [TD-4872] Support querying structures by `external_id` in GraphQL API
+
 ## [4.44.0] 2022-05-23
 
 ### Added
@@ -104,7 +110,7 @@
 - [TD-4580] Added migration to fix implementations without alias
 - [TD-4623] Added multiple domains support for grant request approvals
 
-## Changed
+### Changed
 
 - [TD-4527] Exclude logically deleted sources from GraphQL response
 
