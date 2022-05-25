@@ -135,6 +135,7 @@ defmodule TdDq.Implementations do
       )
     end)
     |> Multi.insert(:implementation, changeset)
+    |> Multi.run(:data_structures, Implementations, :create_implementation_structures, [])
     |> Multi.run(:audit, Audit, :implementation_created, [changeset, user_id])
     |> Repo.transaction()
     |> on_upsert(is_bulk)
