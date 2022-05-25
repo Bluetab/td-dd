@@ -104,7 +104,9 @@ defmodule TdDd.Factory do
       minimum: 12,
       result_type: "percentage",
       raw_content: build(:raw_content),
-      deleted_at: nil
+      deleted_at: nil,
+      version: 1,
+      status: :draft
     }
     |> merge_attributes(attrs)
   end
@@ -131,7 +133,9 @@ defmodule TdDd.Factory do
       dataset: build(:dataset),
       populations: build(:populations),
       validations: build(:validations),
-      segments: build(:segments)
+      segments: build(:segments),
+      version: 1,
+      status: :draft
     }
     |> merge_attributes(attrs)
   end
@@ -145,7 +149,9 @@ defmodule TdDd.Factory do
       domain_id: 2,
       dataset: build(:dataset),
       populations: build(:populations),
-      validations: build(:validations)
+      validations: build(:validations),
+      version: 1,
+      status: :draft
     }
     |> merge_attributes(attrs)
   end

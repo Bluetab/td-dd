@@ -32,6 +32,8 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.Lineage.Units.Node
   alias TdDd.Lineage.Units.Unit
   alias TdDd.Systems.System
+  alias TdDq.Canada.ImplementationAbilities
+  alias TdDq.Implementations.Implementation
 
   defimpl Canada.Can, for: Claims do
     # service accounts can upload metadata and profiling
@@ -50,7 +52,35 @@ defmodule TdDd.Canada.Abilities do
     def can?(%Claims{role: "user"} = claims, :query, :structure_tags),
       do: DataStructureTagAbilities.can?(claims, :index, DataStructureTag)
 
+    def can?(%Claims{role: "user"} = claims, :mutation, :submit_implementation) do
+      ImplementationAbilities.can?(claims, :send_for_approval, Implementation)
+    end
+
+    def can?(%Claims{role: "user"} = claims, :mutation, :reject_implementation) do
+      ImplementationAbilities.can?(claims, :reject_implementation, Implementation)
+    end
+
+    def can?(%Claims{role: "user"} = claims, :mutation, :unreject_implementation) do
+      ImplementationAbilities.can?(claims, :unreject_implementation, Implementation)
+    end
+
+    def can?(%Claims{role: "user"} = claims, :mutation, :publish_implementation) do
+      ImplementationAbilities.can?(claims, :publish_implementation, Implementation)
+    end
+
+    def can?(%Claims{role: "user"} = claims, :mutation, :deprecate_implementation) do
+      ImplementationAbilities.can?(claims, :deprecate_implementation, Implementation)
+    end
+
+    def can?(%Claims{role: "user"} = claims, :mutation, :publish_implementation_from_draft) do
+      ImplementationAbilities.can?(claims, :publish_implementation_from_draft, Implementation)
+    end
+
     def can?(%Claims{}, _action, nil), do: false
+
+    def can?(%Claims{} = claims, action, %Implementation{} = implementation) do
+      ImplementationAbilities.can?(claims, action, implementation)
+    end
 
     def can?(%Claims{} = claims, action, System) do
       SystemAbilities.can?(claims, action, System)

@@ -85,10 +85,15 @@ defmodule TdDqWeb.ImplementationController do
     response(400, "Client Error")
   end
 
-  def create(conn, %{"rule_implementation" => %{"rule_id" => rule_id} = implementation_params}) do
+  def create(conn, %{"rule_implementation" => %{"rule_id" => rule_id} = params}) do
     claims = conn.assigns[:current_resource]
 
     rule = Rules.get_rule_or_nil(rule_id)
+
+    implementation_params =
+      params
+      |> Map.put("status", "draft")
+      |> Map.put("version", 1)
 
     with {:ok, %{implementation: %{id: id}}} <-
            Implementations.create_implementation(rule, implementation_params, claims),
@@ -101,8 +106,13 @@ defmodule TdDqWeb.ImplementationController do
     end
   end
 
-  def create(conn, %{"rule_implementation" => implementation_params}) do
+  def create(conn, %{"rule_implementation" => params}) do
     claims = conn.assigns[:current_resource]
+
+    implementation_params =
+      params
+      |> Map.put("status", "draft")
+      |> Map.put("version", 1)
 
     with {:ok, %{implementation: %{id: id}}} <-
            Implementations.create_ruleless_implementation(implementation_params, claims),
@@ -132,7 +142,7 @@ defmodule TdDqWeb.ImplementationController do
 
     implementation =
       id
-      ## TODO: take this functionality con resutl context to add has_segments
+      ## TODO: take this functionality with results context to add has_segments
       |> Implementations.get_implementation!(
         enrich: [:source, :links, :domain],
         preload: [
@@ -148,7 +158,8 @@ defmodule TdDqWeb.ImplementationController do
       |> filter_links_by_permission(claims)
       |> filter_data_structures_by_permission(claims)
 
-    actions = build_implementation_actions(claims, implementation)
+    actions =
+      build_implementation_actions(claims, implementation)
       |> put_edit_action(claims, implementation)
 
     with {:can, true} <- {:can, can?(claims, show(implementation))} do
@@ -178,17 +189,19 @@ defmodule TdDqWeb.ImplementationController do
       :manage,
       :manage_segments
     ]
-    |> Enum.filter(&(can?(claims, &1, implementation)))
-    |> Enum.reduce(%{}, &(Map.put(&2, &1, %{method: "POST"})))
+    |> Enum.filter(&can?(claims, &1, implementation))
+    |> Enum.reduce(%{}, &Map.put(&2, &1, %{method: "POST"}))
   end
 
   defp put_edit_action(actions, claims, implementation) do
-    if Enum.all?([
-      :edit_segments,
-      :manage_ruleless_implementations,
-      :manage
-    ], &(can?(claims, &1, implementation)))
-    do
+    if Enum.all?(
+         [
+           :edit_segments,
+           :manage_ruleless_implementations,
+           :manage
+         ],
+         &can?(claims, &1, implementation)
+       ) do
       Map.put(actions, :edit, %{method: "POST"})
     else
       actions
@@ -230,11 +243,10 @@ defmodule TdDqWeb.ImplementationController do
     update_params =
       implementation_params
       |> Map.delete("implementation_type")
-      |> with_deleted_at()
 
     implementation = Implementations.get_implementation!(id)
 
-    with {:can, true} <- {:can, can?(claims, manage(implementation))},
+    with {:can, true} <- {:can, can?(claims, update(implementation))},
          {:ok, _} <- Implementations.update_implementation(implementation, update_params, claims),
          implementation <-
            Implementations.get_implementation!(id, enrich: :source, preload: [:rule, :results]) do
@@ -321,23 +333,6 @@ defmodule TdDqWeb.ImplementationController do
 
   defp add_quality_event(%{id: id} = implementation) do
     Map.put(implementation, :quality_event, QualityEvents.get_event_by_imp(id))
-  end
-
-  defp with_deleted_at(params) do
-    case params do
-      %{"soft_delete" => true} ->
-        params
-        |> Map.delete("soft_delete")
-        |> Map.put("deleted_at", DateTime.utc_now())
-
-      %{"restore" => true} ->
-        params
-        |> Map.delete("restore")
-        |> Map.put("deleted_at", nil)
-
-      _ ->
-        params
-    end
   end
 
   ## TODO: refactor this function with SQL sentence

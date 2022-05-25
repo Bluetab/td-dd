@@ -59,7 +59,9 @@ defmodule TdDqWeb.ImplementationView do
       :minimum,
       :result_type,
       :rule_id,
-      :structure_aliases
+      :structure_aliases,
+      :status,
+      :version
     ])
     |> Map.put(
       :raw_content,
@@ -96,7 +98,9 @@ defmodule TdDqWeb.ImplementationView do
       :minimum,
       :result_type,
       :rule_id,
-      :structure_aliases
+      :structure_aliases,
+      :status,
+      :version
     ])
     |> Map.put(:dataset, render_many(implementation.dataset, DatasetView, "dataset_row.json"))
     |> Map.put(

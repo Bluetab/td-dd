@@ -10,6 +10,7 @@ defmodule TdDdWeb.Schema do
   import_types(Absinthe.Plug.Types)
   import_types(Absinthe.Type.Custom)
   import_types(TdDdWeb.Schema.Domains)
+  import_types(TdDdWeb.Schema.Implementations)
   import_types(TdDdWeb.Schema.Rules)
   import_types(TdDdWeb.Schema.Sources)
   import_types(TdDdWeb.Schema.StructureNotes)
@@ -31,6 +32,7 @@ defmodule TdDdWeb.Schema do
   mutation do
     import_fields(:source_mutations)
     import_fields(:structure_tag_mutations)
+    import_fields(:implementation_mutations)
   end
 
   def context(ctx) do

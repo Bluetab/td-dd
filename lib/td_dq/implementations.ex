@@ -76,6 +76,18 @@ defmodule TdDq.Implementations do
     |> Repo.preload(:rule)
   end
 
+  def last?(%Implementation{id: id, implementation_key: implementation_key}) do
+    get_last_implementation_by_key!(implementation_key).id == id
+  end
+
+  def get_last_implementation_by_key!(implementation_key) do
+    Implementation
+    |> where([ri], ri.implementation_key == ^implementation_key)
+    |> order_by(desc: :version)
+    |> limit(1)
+    |> Repo.one!()
+  end
+
   @spec create_implementation(Rule.t(), map, Claims.t(), boolean) :: multi_result
   def create_implementation(rule, params, claims, is_bulk \\ false)
 
@@ -213,7 +225,7 @@ defmodule TdDq.Implementations do
       |> select([i], i)
 
     Multi.new()
-    |> Multi.update_all(:deprecated, query, set: [deleted_at: ts])
+    |> Multi.update_all(:deprecated, query, set: [deleted_at: ts, status: "deprecated"])
     |> Multi.run(:audit, Audit, :implementations_deprecated, [])
     |> Repo.transaction()
     |> on_deprecate()
@@ -243,7 +255,7 @@ defmodule TdDq.Implementations do
       |> Changeset.change()
 
     Multi.new()
-    |> Multi.run(:can, fn _, _ -> multi_can(can?(claims, delete(changeset))) end)
+    |> Multi.run(:can, fn _, _ -> multi_can(can?(claims, delete(implementation))) end)
     |> Multi.delete(:implementation, changeset)
     |> Multi.run(:audit, Audit, :implementation_deleted, [changeset, user_id])
     |> Repo.transaction()

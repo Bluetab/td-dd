@@ -147,7 +147,9 @@ defmodule TdDq.Search.Mappings do
       executable: %{type: "boolean"},
       goal: %{type: "long"},
       minimum: %{type: "long"},
-      result_type: %{type: "text", fields: %{raw: %{type: "keyword"}}}
+      result_type: %{type: "text", fields: %{raw: %{type: "keyword"}}},
+      version: %{type: "short"},
+      status: %{type: "keyword"}
     }
 
     settings = Cluster.setting(:implementations)

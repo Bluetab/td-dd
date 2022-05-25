@@ -516,6 +516,9 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       assert rule.id == data["rule_id"]
 
+      assert "draft" == data["status"]
+      assert 1 == data["version"]
+
       assert equals_condition_row(
                Map.get(data, "validations"),
                Map.get(creation_attrs, "validations")
@@ -525,6 +528,54 @@ defmodule TdDqWeb.ImplementationControllerTest do
                data |> Map.get("populations") |> List.first(),
                creation_attrs |> Map.get("populations") |> List.first()
              )
+    end
+
+    @tag authentication: [role: "admin"]
+    test "return error when try to create more than one draft", %{
+      conn: conn,
+      swagger_schema: schema
+    } do
+      rule = insert(:rule)
+
+      creation_attrs =
+        %{
+          implementation_key: "a1",
+          rule_id: rule.id,
+          dataset: @valid_dataset,
+          populations: [],
+          validations: [
+            %{
+              operator: %{
+                name: "gt",
+                value_type: "timestamp"
+              },
+              structure: %{id: 12_554},
+              value: [%{raw: "2019-12-02 05:35:00"}]
+            }
+          ],
+          result_type: "percentage",
+          minimum: 50,
+          goal: 100
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert %{"data" => _data} =
+               conn
+               |> post(Routes.implementation_path(conn, :create),
+                 rule_implementation: creation_attrs
+               )
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:created)
+
+      assert %{"errors" => error} =
+               conn
+               |> post(Routes.implementation_path(conn, :create),
+                 rule_implementation: creation_attrs
+               )
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:unprocessable_entity)
+
+      assert %{"implementation_key" => ["duplicated"]} = error
     end
 
     @tag authentication: [role: "admin"]
@@ -1143,7 +1194,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
            user_name: "non_admin",
            permissions: [
              :manage_quality_rule_implementations,
-             :manage_segments
+             :manage_segments,
+             :manage_draft_implementation
            ]
          ]
     test "user with permissions can update", %{conn: conn, domain: %{id: domain_id}} do
@@ -1191,6 +1243,54 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> json_response(:ok)
 
       assert %{"segments" => [%{"structure" => %{"id" => ^structure_id}}]} = data
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions: [
+             :manage_quality_rule_implementations,
+             :manage_draft_implementation
+           ]
+         ]
+    test "user with permissions can not update different dratf status", %{
+      conn: conn,
+      domain: %{id: domain_id}
+    } do
+      %{id: rule_id} = insert(:rule, domain_id: domain_id)
+
+      implementation =
+        insert(:implementation,
+          rule_id: rule_id,
+          domain_id: domain_id,
+          segments: [],
+          status: "pending_approval"
+        )
+
+      structure_id = 12_554
+
+      params =
+        %{
+          validations: [
+            %{
+              operator: %{
+                name: "gt",
+                value_type: "timestamp"
+              },
+              structure: %{id: structure_id},
+              value: [%{raw: "2019-12-02 05:35:00"}]
+            }
+          ]
+        }
+        |> Map.Helpers.stringify_keys()
+
+      assert %{"errors" => error} =
+               conn
+               |> put(Routes.implementation_path(conn, :update, implementation),
+                 rule_implementation: params
+               )
+               |> json_response(:forbidden)
+
+      assert %{"detail" => "Forbidden"} = error
     end
 
     @tag authentication: [
@@ -1245,7 +1345,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
     @tag authentication: [
            role: "user",
            permissions: [
-             :manage_quality_rule_implementations
+             :manage_quality_rule_implementations,
+             :manage_draft_implementation
            ]
          ]
     test "non admin without manage segments permission can update implementation without segments",
@@ -1297,7 +1398,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
     @tag authentication: [
            role: "user",
            permissions: [
-             :manage_quality_rule_implementations
+             :manage_quality_rule_implementations,
+             :manage_draft_implementation
            ]
          ]
     test "non admin without manage segments permission can't update implementation adding segments",
@@ -1354,6 +1456,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
     @tag authentication: [
            role: "user",
            permissions: [
+             :manage_draft_implementation,
              :manage_quality_rule_implementations,
              :manage_segments
            ]
@@ -1404,6 +1507,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
     @tag authentication: [
            role: "user",
            permissions: [
+             :manage_draft_implementation,
              :manage_quality_rule_implementations,
              :manage_segments
            ]
@@ -1457,32 +1561,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
                rule_implementation: params
              )
              |> json_response(:ok)
-    end
-
-    @tag authentication: [role: "admin"]
-    test "soft delete rule implementation", %{conn: conn, swagger_schema: schema} do
-      implementation = insert(:implementation)
-      insert(:rule_result, implementation: implementation)
-      update_attrs = %{soft_delete: true}
-
-      assert %{"data" => data} =
-               conn
-               |> put(Routes.implementation_path(conn, :update, implementation),
-                 rule_implementation: update_attrs
-               )
-               |> validate_resp_schema(schema, "ImplementationResponse")
-               |> json_response(:ok)
-
-      assert %{"id" => id} = data
-
-      assert %{"data" => data} =
-               conn
-               |> get(Routes.implementation_path(conn, :show, id))
-               |> validate_resp_schema(schema, "ImplementationResponse")
-               |> json_response(:ok)
-
-      assert implementation.rule_id == data["rule_id"]
-      assert data["deleted_at"]
     end
 
     @tag authentication: [role: "admin"]
@@ -1576,7 +1654,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
       conn: conn
     } do
       %{id: id} = implementation = insert(:implementation)
-      update_attrs = %{soft_delete: true}
+      update_attrs = %{goal: "40"}
 
       CacheHelpers.put_implementation(implementation)
       %{id: concept_id} = CacheHelpers.insert_concept()
@@ -1590,8 +1668,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
              )
              |> json_response(:ok)
 
-      assert {:ok, %{id: ^id, deleted_at: deleted_at}} = CacheHelpers.get_implementation(id)
-      assert deleted_at != ""
+      assert {:ok, %{id: ^id, goal: 40.0}} = CacheHelpers.get_implementation(id)
     end
 
     @tag authentication: [role: "admin"]
@@ -1599,7 +1676,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
       conn: conn
     } do
       %{id: id} = implementation = insert(:implementation)
-      update_attrs = %{soft_delete: true}
+      update_attrs = %{goal: "40"}
 
       CacheHelpers.put_implementation(implementation)
       assert {:ok, %{id: ^id, deleted_at: nil}} = CacheHelpers.get_implementation(id)
@@ -1610,7 +1687,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
              )
              |> json_response(:ok)
 
-      assert {:ok, %{id: ^id, deleted_at: nil}} = CacheHelpers.get_implementation(id)
+      assert {:ok, %{id: ^id, goal: 30.0}} = CacheHelpers.get_implementation(id)
     end
   end
 
@@ -1639,7 +1716,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
     @tag authentication: [
            user_name: "non_admin",
-           permissions: [:manage_quality_rule_implementations]
+           permissions: [:manage_quality_rule_implementations, :manage_draft_implementation]
          ]
     test "user with permissions can delete implementation", %{
       conn: conn,

@@ -12,11 +12,10 @@ defmodule TdDq.Implementations.BulkLoad do
   @index_worker Application.compile_env(:td_dd, :dq_index_worker)
 
   @required_headers [
-      # "rule_name",
-      "implementation_key",
-      "result_type",
-      "goal",
-      "minimum"
+    "implementation_key",
+    "result_type",
+    "goal",
+    "minimum"
   ]
 
   @optional_headers ["template", "rule_name", "domain_external_id"]
@@ -53,11 +52,13 @@ defmodule TdDq.Implementations.BulkLoad do
   defp create_implementations(implementations, claims) do
     implementations
     |> Enum.reduce(%{ids: [], errors: []}, fn imp, acc ->
-      rule = imp
+      rule =
+        imp
         |> Map.get("rule_name")
         |> Rules.get_rule_by_name()
 
-      domain_id = imp
+      domain_id =
+        imp
         |> Map.get("domain_external_id")
         |> DomainCache.external_id_to_id()
         |> case do
@@ -65,9 +66,12 @@ defmodule TdDq.Implementations.BulkLoad do
           :error -> nil
         end
 
-      imp = imp
+      imp =
+        imp
         |> enrich_implementation()
         |> Map.put("domain_id", domain_id)
+        |> Map.put("status", "draft")
+        |> Map.put("version", 1)
 
       case Implementations.create_implementation(rule, imp, claims, true) do
         {:ok, %{implementation: %{id: id}}} ->
