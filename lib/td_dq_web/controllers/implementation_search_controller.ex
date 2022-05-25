@@ -68,7 +68,10 @@ defmodule TdDqWeb.ImplementationSearchController do
   defp get_user_permissions(%Claims{} = claims, implementations) do
     manage_implementation? = can?(claims, manage_implementations(Implementation))
     manage_raw_implementation? = can?(claims, manage_raw_implementations(Implementation))
-    manage_ruleless_implementation? = can?(claims, manage_ruleless_implementations(Implementation))
+
+    manage_ruleless_implementation? =
+      can?(claims, manage_ruleless_implementations(Implementation))
+
     execute? = Enum.any?(implementations, &can?(claims, execute(&1)))
 
     %{

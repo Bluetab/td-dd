@@ -14,9 +14,7 @@ defmodule TdDd.Repo.Migrations.AlterGrantsAddSourceUserNameColumn do
   end
 
   def down do
-    execute(
-      "delete from grants where user_id IS NULL"
-    )
+    execute("delete from grants where user_id IS NULL")
 
     drop constraint("grants", :no_overlap_source_user_name)
 

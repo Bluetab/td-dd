@@ -6,9 +6,9 @@ defmodule TdDd.Utils.FileHash do
     File.stream!(filepath, [], 2048)
     |> Enum.reduce(
       :crypto.hash_init(type),
-      fn(line, acc) -> :crypto.hash_update(acc, line) end
+      fn line, acc -> :crypto.hash_update(acc, line) end
     )
-    |> :crypto.hash_final
-    |> Base.encode16
+    |> :crypto.hash_final()
+    |> Base.encode16()
   end
 end

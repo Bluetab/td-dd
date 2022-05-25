@@ -46,7 +46,8 @@ defmodule TdDq.Implementations.BulkLoadTest do
     test "return ids from inserted implementations without rule", %{claims: claims} do
       %{external_id: domain_external_id} = CacheHelpers.insert_domain()
 
-      imp = Enum.map(@valid_implementation, fn imp ->
+      imp =
+        Enum.map(@valid_implementation, fn imp ->
           Map.put(imp, "domain_external_id", domain_external_id)
         end)
 
