@@ -19,7 +19,6 @@ defmodule TdDq.Implementations do
   alias TdDq.Cache.ImplementationLoader
   alias TdDq.Cache.RuleLoader
   alias TdDq.Events.QualityEvents
-  alias TdDq.Implementations
   alias TdDq.Implementations.Implementation
   alias TdDq.Implementations.ImplementationStructure
   alias TdDq.Rules
@@ -97,7 +96,7 @@ defmodule TdDq.Implementations do
       multi_can(can?(claims, create(changeset)) and can?(claims, edit_segments(changeset)))
     end)
     |> Multi.insert(:implementation, changeset)
-    |> Multi.run(:data_structures, Implementations, :create_implementation_structures, [])
+    |> Multi.run(:data_structures, &create_implementation_structures/2)
     |> Multi.run(:audit, Audit, :implementation_created, [changeset, user_id])
     |> Repo.transaction()
     |> on_upsert(is_bulk)
@@ -135,7 +134,7 @@ defmodule TdDq.Implementations do
       )
     end)
     |> Multi.insert(:implementation, changeset)
-    |> Multi.run(:data_structures, Implementations, :create_implementation_structures, [])
+    |> Multi.run(:data_structures, &create_implementation_structures/2)
     |> Multi.run(:audit, Audit, :implementation_created, [changeset, user_id])
     |> Repo.transaction()
     |> on_upsert(is_bulk)
@@ -162,7 +161,7 @@ defmodule TdDq.Implementations do
       )
     end)
     |> Multi.update(:implementation, fn _ -> do_update_implementation(changeset) end)
-    |> Multi.run(:data_structures, Implementations, :create_implementation_structures, [])
+    |> Multi.run(:data_structures, &create_implementation_structures/2)
     |> Multi.run(:audit, Audit, :implementation_updated, [changeset, user_id])
     |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
     |> Repo.transaction()
@@ -486,26 +485,30 @@ defmodule TdDq.Implementations do
   defp string_split_space_lower(str),
     do: str |> String.split(~r/[\s\.\*\&\|\^\%\/()><!=,+-]+/) |> Enum.map(&String.downcase/1)
 
-  def create_implementation_structures(_repo, %{implementation: implementation}) do
+  defp create_implementation_structures(_repo, %{implementation: implementation}) do
     results_dataset =
       implementation
       |> valid_dataset_implementation_structures()
-      |> Enum.map(fn data_structure ->
-        create_implementation_structure(implementation, data_structure, %{type: :dataset},
+      |> Enum.map(
+        &create_implementation_structure(implementation, &1, %{type: :dataset},
           on_conflict: :nothing
         )
-      end)
+      )
 
     results_validations =
       implementation
       |> valid_validation_implementation_structures()
-      |> Enum.map(fn data_structure ->
-        create_implementation_structure(implementation, data_structure, %{type: :validation},
+      |> Enum.map(
+        &create_implementation_structure(implementation, &1, %{type: :validation},
           on_conflict: :nothing
         )
-      end)
+      )
 
-    {:ok, results_dataset ++ results_validations}
+    case Enum.group_by(results_dataset ++ results_validations, &elem(&1, 0), &elem(&1, 1)) do
+      %{error: errors} -> {:error, errors}
+      %{ok: oks} -> {:ok, oks}
+      %{} -> {:ok, []}
+    end
   end
 
   def enrich_implementation_structures(%Implementation{} = implementation) do

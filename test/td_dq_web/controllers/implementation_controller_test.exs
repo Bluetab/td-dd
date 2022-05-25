@@ -267,7 +267,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert %{
                "_actions" => %{
                  "execute" => %{
-                   "method" => "POST",
+                   "method" => "POST"
                  }
                }
              } =
@@ -674,39 +674,27 @@ defmodule TdDqWeb.ImplementationControllerTest do
       domain: domain,
       swagger_schema: schema
     } do
-      %{id: system_id} = insert(:system)
+      %{id: data_structure_id} = insert(:data_structure, domain_ids: [domain.id])
 
-      %{id: data_structure_id} =
-        data_structure = insert(:data_structure, system_id: system_id, domain_ids: [domain.id])
-
-      creation_attrs =
-        %{
-          implementation_key: "a1",
-          domain_id: domain.id,
-          dataset: [
-            %{structure: %{id: data_structure_id}},
-          ],
-          validations: [
-            %{
-              operator: %{
-                name: "gt",
-                value_type: "timestamp"
-              },
-              structure: %{id: 12_554},
-              value: [%{raw: "2019-12-02 05:35:00"}]
-            }
-          ],
-          result_type: "percentage",
-          minimum: 50,
-          goal: 100
-        }
-        |> Map.Helpers.stringify_keys()
+      params = %{
+        "implementation_key" => "a1",
+        "domain_id" => domain.id,
+        "dataset" => [%{"structure" => %{"id" => data_structure_id}}],
+        "validations" => [
+          %{
+            "operator" => %{"name" => "gt", "value_type" => "timestamp"},
+            "structure" => %{"id" => 12_554},
+            "value" => [%{"raw" => "2019-12-02 05:35:00"}]
+          }
+        ],
+        "result_type" => "percentage",
+        "minimum" => 50,
+        "goal" => 100
+      }
 
       assert %{"data" => data} =
                conn
-               |> post(Routes.implementation_path(conn, :create),
-                 rule_implementation: creation_attrs
-               )
+               |> post(Routes.implementation_path(conn, :create), rule_implementation: params)
                |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:created)
 
@@ -718,15 +706,11 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:ok)
 
-      # Check if Implementation is enriched with data_structures
-
-      assert data
-             |> Map.get("data_structures")
-             |> (fn data_structures -> length(data_structures) != 0 end).()
+      assert %{"data_structures" => [%{"data_structure_id" => ^data_structure_id}]} = data
 
       assert equals_condition_row(
                Map.get(data, "validations"),
-               Map.get(creation_attrs, "validations")
+               Map.get(params, "validations")
              )
     end
 
