@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unrelease]
+
+### Fixed
+
+- [TD-4852] Ruleless implementation not include data_structures on creation
+
 ## [4.44.0] 2022-05-23
 
 ### Added
