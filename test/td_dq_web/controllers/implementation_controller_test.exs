@@ -267,7 +267,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert %{
                "_actions" => %{
                  "execute" => %{
-                   "method" => "POST",
+                   "method" => "POST"
                  }
                }
              } =
@@ -664,6 +664,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
            user_name: "non_admin",
            permissions: [
              :view_quality_rule,
+             :view_data_structure,
              :manage_quality_rule_implementations,
              :manage_ruleless_implementations
            ]
@@ -673,11 +674,18 @@ defmodule TdDqWeb.ImplementationControllerTest do
       domain: domain,
       swagger_schema: schema
     } do
+      %{id: system_id} = insert(:system)
+
+      %{id: data_structure_id} =
+        data_structure = insert(:data_structure, system_id: system_id, domain_ids: [domain.id])
+
       creation_attrs =
         %{
           implementation_key: "a1",
           domain_id: domain.id,
-          dataset: @valid_dataset,
+          dataset: [
+            %{structure: %{id: data_structure_id}},
+          ],
           validations: [
             %{
               operator: %{
@@ -709,6 +717,12 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> get(Routes.implementation_path(conn, :show, id))
                |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:ok)
+
+      # Check if Implementation is enriched with data_structures
+
+      assert data
+             |> Map.get("data_structures")
+             |> (fn data_structures -> length(data_structures) != 0 end).()
 
       assert equals_condition_row(
                Map.get(data, "validations"),
