@@ -95,6 +95,7 @@ defmodule TdDd.Factory do
   end
 
   def raw_implementation_factory(attrs) do
+    {content_attrs, attrs} = Map.split(attrs, [:source_id])
     attrs = default_assoc(attrs, :rule_id, :rule)
 
     %TdDq.Implementations.Implementation{
@@ -103,7 +104,7 @@ defmodule TdDd.Factory do
       goal: 30,
       minimum: 12,
       result_type: "percentage",
-      raw_content: build(:raw_content),
+      raw_content: build(:raw_content, content_attrs),
       deleted_at: nil,
       version: 1,
       status: :draft
@@ -111,7 +112,7 @@ defmodule TdDd.Factory do
     |> merge_attributes(attrs)
   end
 
-  def raw_content_factory do
+  def raw_content_factory(attrs) do
     %TdDq.Implementations.RawContent{
       dataset: "clientes c join address a on c.address_id=a.id",
       population: "a.country = 'SPAIN'",
@@ -119,6 +120,7 @@ defmodule TdDd.Factory do
       database: "raw_database",
       validations: "a.city is null"
     }
+    |> merge_attributes(attrs)
   end
 
   def implementation_factory(attrs) do
@@ -630,6 +632,14 @@ defmodule TdDd.Factory do
       full_name: sequence("full_name"),
       external_id: sequence("user_external_id"),
       email: sequence("email") <> "@example.com"
+    }
+  end
+
+  def reference_dataset_factory do
+    %TdDd.ReferenceData.Dataset{
+      name: sequence("dataset_name"),
+      headers: ["FOO", "BAR", "BAZ"],
+      rows: [["foo1", "bar1", "baz1"], ["foo2", "bar2", "baz2"]]
     }
   end
 

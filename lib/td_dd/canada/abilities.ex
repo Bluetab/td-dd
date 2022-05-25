@@ -13,6 +13,7 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.Canada.GrantAbilities
   alias TdDd.Canada.LineageAbilities
   alias TdDd.Canada.LinkAbilities
+  alias TdDd.Canada.ReferenceDataAbilities
   alias TdDd.Canada.StructureNoteAbilities
   alias TdDd.Canada.SystemAbilities
   alias TdDd.Canada.UnitAbilities
@@ -31,6 +32,7 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.Lineage.LineageEvent
   alias TdDd.Lineage.Units.Node
   alias TdDd.Lineage.Units.Unit
+  alias TdDd.ReferenceData.Dataset, as: ReferenceDataset
   alias TdDd.Systems.System
   alias TdDq.Canada.ImplementationAbilities
   alias TdDq.Implementations.Implementation
@@ -45,6 +47,7 @@ defmodule TdDd.Canada.Abilities do
 
     # GraphQL queries for regular users
     def can?(%Claims{role: "user"}, :query, :domains), do: true
+    def can?(%Claims{role: "user"}, :query, :templates), do: true
 
     def can?(%Claims{role: "user"} = claims, :query, :sources),
       do: SourceAbilities.can?(claims, :list, Source)
@@ -80,6 +83,14 @@ defmodule TdDd.Canada.Abilities do
 
     def can?(%Claims{} = claims, action, %Implementation{} = implementation) do
       ImplementationAbilities.can?(claims, action, implementation)
+    end
+
+    def can?(%Claims{} = claims, action, ReferenceDataset) do
+      ReferenceDataAbilities.can?(claims, action, ReferenceDataset)
+    end
+
+    def can?(%Claims{} = claims, action, %ReferenceDataset{} = resource) do
+      ReferenceDataAbilities.can?(claims, action, resource)
     end
 
     def can?(%Claims{} = claims, action, System) do

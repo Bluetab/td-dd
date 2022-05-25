@@ -178,12 +178,11 @@ defmodule TdDd.GrantsTest do
       claims: claims,
       data_structure: data_structure
     } do
-      invalid_params = %{start_date: nil, user_id: nil}
+      invalid_params = %{start_date: nil}
 
       assert {:error, :grant, %{errors: errors}, _} =
                Grants.create_grant(invalid_params, data_structure, claims)
 
-      assert {_, [validation: :required]} = errors[:user_id]
       assert {_, [validation: :required]} = errors[:start_date]
     end
   end

@@ -73,6 +73,12 @@ defmodule TdDq.Implementations.Implementation do
 
     has_many(:data_structures, ImplementationStructure, where: [deleted_at: nil])
 
+    has_many(:dataset_structures, ImplementationStructure,
+      where: [deleted_at: nil, type: :dataset]
+    )
+
+    has_many(:dataset_sources, through: [:dataset_structures, :source])
+
     timestamps(type: :utc_datetime)
   end
 
@@ -447,7 +453,7 @@ defmodule TdDq.Implementations.Implementation do
 
       Map.take(raw_content, [
         :dataset,
-        :populations,
+        :population,
         :validations,
         :source_id,
         :database

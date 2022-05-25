@@ -159,7 +159,8 @@ defmodule TdDqWeb.ImplementationController do
       |> filter_data_structures_by_permission(claims)
 
     actions =
-      build_implementation_actions(claims, implementation)
+      claims
+      |> build_implementation_actions(implementation)
       |> put_edit_action(claims, implementation)
 
     with {:can, true} <- {:can, can?(claims, show(implementation))} do
@@ -184,6 +185,7 @@ defmodule TdDqWeb.ImplementationController do
 
   defp build_implementation_actions(claims, implementation) do
     [
+      :execute,
       :link_concept,
       :link_structure,
       :manage,

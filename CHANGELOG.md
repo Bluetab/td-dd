@@ -1,6 +1,31 @@
 # Changelog
 
+## [4.44.0] 2022-05-23
+
+### Added
+
+- [TD-4045] Rule implementation `execute` action
+- [TD-4457] Allow to have grants for non existing users in truedat
+- [TD-4548] Upload/Download csv notes with multiple selection fields separted by `|`
+- [TD-4660] Support for reference data
+- [TD-4230] GraphQL `Templates` schema preprocesses templates
+
+### Fixed
+
+- [TD-4799] Performance issue filtering executions by source
+- [TD-4848] Timeout on structures notes upload
+- [TD-4849] Reindex grants in their bulk update API
+
+## [4.43.2] 2022-05-12
+
+### Fixed
+
+- ImplementationsStructures migration was breaking with null structure_ids on dataset
+- Typo in `implementations.ex`
+
 ## [4.43.1] 2022-05-11
+
+### Added
 
 - [TD-4089] Support for Implementations without Rules
 
@@ -9,7 +34,8 @@
 ### Added
 
 - [TD-3186] Support for links between implementations and structures
-- [TD-4538] Segments definitions in the implementations, and support for segment results
+- [TD-4538] Segments definitions in the implementations, and support for segment
+  results
 
 ### Fixed
 
