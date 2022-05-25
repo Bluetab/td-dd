@@ -267,7 +267,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert %{
                "_actions" => %{
                  "execute" => %{
-                   "method" => "POST"
+                   "method" => "POST",
                  }
                }
              } =
