@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-4540] Add approval workflow for quality implementations
+
 ## [4.44.0] 2022-05-23
 
 ### Added
