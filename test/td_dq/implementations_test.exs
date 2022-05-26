@@ -743,10 +743,12 @@ defmodule TdDq.ImplementationsTest do
   end
 
   describe "create_ruleless_implementation/3" do
-    test "with valid data creates a implementation", %{} do
-      params = string_params_for(:ruleless_implementation)
+    setup do
+      [claims: build(:dq_claims, role: "admin")]
+    end
 
-      claims = build(:dq_claims)
+    test "with valid data creates a implementation", %{claims: claims} do
+      params = string_params_for(:ruleless_implementation)
 
       assert {:ok, %{implementation: implementation}} =
                Implementations.create_ruleless_implementation(params, claims)
@@ -754,16 +756,25 @@ defmodule TdDq.ImplementationsTest do
       assert implementation.implementation_key == params["implementation_key"]
     end
 
-    test "with valid data for raw implementation creates a implementation", %{rule: rule} do
-      %{id: rule_id, domain_id: domain_id} = rule
-
-      params = string_params_for(:raw_implementation, rule_id: rule_id, domain_id: domain_id)
-      claims = build(:dq_claims, role: "admin")
+    test "with valid data for raw implementation creates a implementation", %{claims: claims} do
+      params = string_params_for(:raw_implementation, rule_id: nil, domain_id: 123)
 
       assert {:ok, %{implementation: implementation}} =
-               Implementations.create_implementation(rule, params, claims)
+               Implementations.create_ruleless_implementation(params, claims)
 
-      assert %{rule_id: ^rule_id} = implementation
+      refute implementation.rule_id
+    end
+
+    test "links data structures", %{claims: claims} do
+      %{id: structure_id} = insert(:data_structure)
+
+      params =
+        string_params_for(:ruleless_implementation,
+          dataset: [build(:dataset_row, structure: build(:dataset_structure, id: structure_id))]
+        )
+
+      assert {:ok, %{data_structures: [%{data_structure_id: ^structure_id}]}} =
+               Implementations.create_ruleless_implementation(params, claims)
     end
   end
 
