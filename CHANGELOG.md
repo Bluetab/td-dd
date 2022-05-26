@@ -5,7 +5,7 @@
 ### Added
 
 - [TD-4872] Support querying structures by `external_id` in GraphQL API
-- [TD-4855] Support `Profile` index with params (offset, limit, since)
+- [TD-4855] Support `Profile` searching with params (offset, limit, since)
 
 ### Fixed
 
