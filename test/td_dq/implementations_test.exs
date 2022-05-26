@@ -611,18 +611,18 @@ defmodule TdDq.ImplementationsTest do
         insert(:raw_implementation,
           raw_content: %{
             dataset: "table_name",
-            validations: "word before test.#{data_structure_name} and test.#{data_structure_name_2}='whatever' and length(#{data_structure_name_3})>2 and after",
+            validations:
+              "word before test.#{data_structure_name} and test.#{data_structure_name_2}='whatever' and length(#{data_structure_name_3})>2 and after",
             source_id: source_id,
             database: "db_name"
           }
         )
 
       assert [
-        %{id: ^data_structure_id},
-        %{id: ^data_structure_id_2},
-        %{id: ^data_structure_id_3},
-        ] =
-               Implementations.valid_validation_implementation_structures(implementation)
+               %{id: ^data_structure_id},
+               %{id: ^data_structure_id_2},
+               %{id: ^data_structure_id_3}
+             ] = Implementations.valid_validation_implementation_structures(implementation)
     end
 
     test "returns validation only for structures with table in dataset case insensitive" do
@@ -664,10 +664,12 @@ defmodule TdDq.ImplementationsTest do
   end
 
   describe "create_ruleless_implementation/3" do
-    test "with valid data creates a implementation", %{} do
-      params = string_params_for(:ruleless_implementation)
+    setup do
+      [claims: build(:dq_claims, role: "admin")]
+    end
 
-      claims = build(:dq_claims)
+    test "with valid data creates a implementation", %{claims: claims} do
+      params = string_params_for(:ruleless_implementation)
 
       assert {:ok, %{implementation: implementation}} =
                Implementations.create_ruleless_implementation(params, claims)
@@ -675,16 +677,25 @@ defmodule TdDq.ImplementationsTest do
       assert implementation.implementation_key == params["implementation_key"]
     end
 
-    test "with valid data for raw implementation creates a implementation", %{rule: rule} do
-      %{id: rule_id, domain_id: domain_id} = rule
-
-      params = string_params_for(:raw_implementation, rule_id: rule_id, domain_id: domain_id)
-      claims = build(:dq_claims, role: "admin")
+    test "with valid data for raw implementation creates a implementation", %{claims: claims} do
+      params = string_params_for(:raw_implementation, rule_id: nil, domain_id: 123)
 
       assert {:ok, %{implementation: implementation}} =
-               Implementations.create_implementation(rule, params, claims)
+               Implementations.create_ruleless_implementation(params, claims)
 
-      assert %{rule_id: ^rule_id} = implementation
+      refute implementation.rule_id
+    end
+
+    test "links data structures", %{claims: claims} do
+      %{id: structure_id} = insert(:data_structure)
+
+      params =
+        string_params_for(:ruleless_implementation,
+          dataset: [build(:dataset_row, structure: build(:dataset_structure, id: structure_id))]
+        )
+
+      assert {:ok, %{data_structures: [%{data_structure_id: ^structure_id}]}} =
+               Implementations.create_ruleless_implementation(params, claims)
     end
   end
 
@@ -1191,16 +1202,16 @@ defmodule TdDq.ImplementationsTest do
   end
 
   describe "implementation_structure" do
-
     test "create_implementation_structure/1 with valid data creates a implementation_structure" do
       %{id: implementation_id} = implementation = insert(:implementation)
       %{id: data_structure_id} = data_structure = insert(:data_structure)
 
-      assert {:ok, %ImplementationStructure{} = %{
-        implementation_id: ^implementation_id,
-        data_structure_id: ^data_structure_id,
-        type: :dataset
-      }} =
+      assert {:ok,
+              %ImplementationStructure{} = %{
+                implementation_id: ^implementation_id,
+                data_structure_id: ^data_structure_id,
+                type: :dataset
+              }} =
                Implementations.create_implementation_structure(
                  implementation,
                  data_structure,
