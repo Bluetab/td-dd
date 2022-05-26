@@ -13,8 +13,9 @@ defmodule TdDq.Implementations.Search.Aggregations do
       },
       "rule" => %{terms: %{field: "rule.name.raw", size: 50}},
       "source_external_id" => %{terms: %{field: "structure_aliases.raw", size: 50}},
+      "status" => %{terms: %{field: "status"}},
+      "result_type.raw" => %{terms: %{field: "result_type.raw"}},
       "taxonomy" => %{terms: %{field: "domain_ids", size: 500}},
-      "result_type.raw" => %{terms: %{field: "result_type.raw"}}
     }
 
     TemplateCache.list_by_scope!("ri")
