@@ -80,11 +80,12 @@ defmodule TdDdWeb.ProfileControllerTest do
   describe "index profiling by scroll" do
     @tag authentication: [role: "admin"]
     test "index renders profile", %{conn: conn} do
+      updated_at = "2022-02-22T02:22:20"
       %{
         id: id,
         data_structure_id: data_structure_id,
         value: value
-      } = insert(:profile)
+      } = insert(:profile, updated_at: updated_at)
 
       assert %{"data" => [profile]} =
                conn
@@ -94,7 +95,8 @@ defmodule TdDdWeb.ProfileControllerTest do
       assert %{
                "id" => ^id,
                "data_structure_id" => ^data_structure_id,
-               "value" => ^value
+               "value" => ^value,
+               "updated_at" => ^updated_at
              } = profile
     end
 

@@ -10,6 +10,11 @@ defmodule TdDdWeb.ProfileView do
   end
 
   def render("profile.json", %{profile: profile}) do
-    %{id: profile.id, data_structure_id: profile.data_structure_id, value: profile.value}
+    %{
+      id: profile.id,
+      data_structure_id: profile.data_structure_id,
+      value: profile.value,
+      updated_at: profile.updated_at
+    }
   end
 end
