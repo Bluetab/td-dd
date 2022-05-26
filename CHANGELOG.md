@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-4872] Support querying structures by `external_id` in GraphQL API
+
 ### Fixed
 
 - [TD-4852] Ruleless implementation weren't being linked with data structures on
