@@ -13,10 +13,20 @@ defmodule TdDdWeb.ProfileController do
   alias TdDd.Profiles
   alias TdDd.Profiles.Profile
 
+  action_fallback TdDdWeb.FallbackController
+
   @profiling_import_required Application.compile_env(:td_dd, :profiling)[
                                :profiling_import_required
                              ]
   @profiling_import_schema Application.compile_env(:td_dd, :profiling)[:profiling_import_schema]
+
+  def search(conn, params) do
+    with claims <- conn.assigns[:current_resource],
+         {:can, true} <- {:can, can?(claims, index(Profile))} do
+      profiles = Profiles.list_profiles(params)
+      render(conn, "index.json", profiles: profiles)
+    end
+  end
 
   def create(conn, %{"data_structure_id" => data_structure_id, "profile" => profile}) do
     with claims <- conn.assigns[:current_resource],

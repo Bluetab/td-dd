@@ -71,6 +71,8 @@ defmodule TdDdWeb.Router do
       resources("/grants", GrantController, only: [:create])
     end
 
+    post("/profile_results/search", ProfileController, :search)
+
     resources("/data_structure_versions", DataStructureVersionController, only: [:show]) do
       post("/links", DataStructureLinkController, :create_link)
     end

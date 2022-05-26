@@ -1,6 +1,8 @@
 defmodule TdDd.DataStructures.ProfilesTest do
   use TdDd.DataStructureCase
 
+  import TdDd.TestOperators
+
   alias TdDd.Executions
   alias TdDd.Profiles
   alias TdDd.Profiles.Profile
@@ -37,6 +39,35 @@ defmodule TdDd.DataStructures.ProfilesTest do
     test "update_profile/1 with valid attrs updates the profile", %{profile: profile} do
       assert {:ok, %Profile{value: value}} = Profiles.update_profile(profile, @update_attrs)
       assert @update_attrs.value == value
+    end
+  end
+
+  describe "TdDd.Profiles list" do
+    test "list_profiles/1 without params lists all profiles" do
+      profiles = Enum.map(1..8, fn _ -> insert(:profile) end)
+      assert profiles <|> Profiles.list_profiles()
+    end
+
+    test "list_profiles/1 limit param" do
+      first_5_profiles = Enum.map(1..5, fn _ -> insert(:profile) end)
+      _another_5_profiles = Enum.map(1..5, fn _ -> insert(:profile) end)
+      assert first_5_profiles <|> Profiles.list_profiles(%{"limit" => 5})
+    end
+
+    test "list_profiles/1 offset param" do
+      _first_5_profiles = Enum.map(1..5, fn _ -> insert(:profile) end)
+      another_5_profiles = Enum.map(1..5, fn _ -> insert(:profile) end)
+      assert another_5_profiles <|> Profiles.list_profiles(%{"offset" => 5})
+    end
+
+    test "list_profiles/1 since filter param" do
+      _first_5_profiles =
+        Enum.map(1..5, fn day -> insert(:profile, updated_at: "2000-01-0#{day}T00:00:00") end)
+
+      another_5_profiles =
+        Enum.map(6..9, fn day -> insert(:profile, updated_at: "2000-01-0#{day}T00:00:00") end)
+
+      assert another_5_profiles <|> Profiles.list_profiles(%{"since" => "2000-01-06T00:00:00"})
     end
   end
 
