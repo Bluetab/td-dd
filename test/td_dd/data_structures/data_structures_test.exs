@@ -780,6 +780,26 @@ defmodule TdDd.DataStructuresTest do
       assert Enum.map(path, & &1["name"]) == ["foo", "bar", "baz", "xyzzy"]
     end
 
+    test "get_data_structure_version!/1 enriches with path and aliases" do
+      dsvs =
+        ["foo", "bar", "baz", "xyzzy", "spqr"]
+        |> create_hierarchy()
+
+      alias_name = "alias_name"
+
+      insert(:structure_note,
+        data_structure: Enum.at(dsvs, 1).data_structure,
+        df_content: %{"alias" => "alias_name"},
+        status: :published
+      )
+
+      %{id: id} = Enum.at(dsvs, 4)
+
+      Hierarchy.update_hierarchy([id])
+      assert %{path: path} = DataStructures.get_data_structure_version!(id)
+      assert Enum.map(path, & &1["name"]) == ["foo", alias_name, "baz", "xyzzy"]
+    end
+
     test "get_data_structure_version!/2 excludes deleted children if structure is not deleted" do
       %{id: system_id} = insert(:system)
 

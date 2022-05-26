@@ -11,6 +11,7 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.DataStructures.StructureMetadata
+  alias TdDd.DataStructures.StructureNote
   alias TdDd.Profiles.Profile
 
   @paths_by_child_id """
@@ -118,17 +119,32 @@ defmodule TdDd.DataStructures.DataStructureQueries do
     |> order_by(desc: :parent_id)
     |> subquery()
     |> with_path_cte("paths", path_cte_params)
-    |> select([t], %{
+    |> join(:left, [t], note in subquery(published_notes_alias()),
+      on: t.data_structure_id == note.data_structure_id
+    )
+    |> select([t, note], %{
       id: t.ds_id,
       path:
         fragment(
           "array_agg(json_build_object('data_structure_id', ?, 'name', ?))",
           t.data_structure_id,
-          t.name
+          fragment("CASE WHEN ? IS NULL THEN ? ELSE ? END", note.alias, t.name, note.alias)
         )
     })
     |> group_by(:ds_id)
     |> order_by([t], asc: t.ds_id)
+  end
+
+  defp published_notes_alias() do
+    StructureNote
+    |> select([sn], %{
+      data_structure_id: sn.data_structure_id,
+      alias: fragment("? ->> ?", sn.df_content, "alias"),
+      status: sn.status
+    })
+    |> where([sn], sn.status == :published)
+    |> where([sn], not is_nil(sn.df_content))
+    |> where([sn], fragment("? \\? ?", sn.df_content, "alias"))
   end
 
   @spec with_path_cte(Ecto.Query.t(), binary, map) :: Ecto.Query.t()

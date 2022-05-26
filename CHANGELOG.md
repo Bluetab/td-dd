@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-3920] Alias support for structures
+
 ## [4.44.0] 2022-05-23
 
 ### Added

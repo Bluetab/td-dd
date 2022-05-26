@@ -32,7 +32,7 @@ defmodule TdDd.DataStructures do
   alias TdDfLib.Format
 
   # Data structure version associations preloaded for some views
-  @preload_dsv_assocs [:classifications, data_structure: :system]
+  @preload_dsv_assocs [:published_note, :classifications, data_structure: :system]
 
   def list_data_structures(clauses \\ %{}) do
     clauses
@@ -189,6 +189,7 @@ defmodule TdDd.DataStructures do
     |> enrich(opts, :grants, &get_grants/1)
     |> enrich(opts, :grant, &get_grant(&1, opts[:user_id]))
     |> enrich(opts, :implementations, &get_implementations!/1)
+    |> enrich(opts, :published_note, &get_published_note!/1)
   end
 
   defp enrich(%{} = target, opts, key, fun) do
@@ -197,6 +198,12 @@ defmodule TdDd.DataStructures do
     case Enum.member?(opts, key) do
       false -> target
       true -> Map.put(target, target_key, fun.(target))
+    end
+  end
+
+  defp get_published_note!(%DataStructureVersion{} = dsv) do
+    case Repo.preload(dsv, :published_note) do
+      %{published_note: published_note} -> published_note
     end
   end
 

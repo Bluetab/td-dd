@@ -8,6 +8,10 @@ defmodule TdDdWeb.DataStructureVersionView do
   alias TdDdWeb.GrantView
   alias TdDqWeb.ImplementationStructureView
 
+  @simplified_note_keys [
+    "alias"
+  ]
+
   def render("show.json", %{actions: actions} = assigns) do
     "show.json"
     |> render(Map.delete(assigns, :actions))
@@ -55,6 +59,7 @@ defmodule TdDdWeb.DataStructureVersionView do
     |> add_tags()
     |> add_grant()
     |> add_grants()
+    |> clean_published_note()
     |> Map.take([
       :ancestry,
       :children,
@@ -84,7 +89,8 @@ defmodule TdDdWeb.DataStructureVersionView do
       :tags,
       :type,
       :version,
-      :versions
+      :versions,
+      :published_note
     ])
   end
 
@@ -143,8 +149,18 @@ defmodule TdDdWeb.DataStructureVersionView do
   defp data_structure_version_embedded(dsv) do
     dsv
     |> add_classes()
-    |> Map.take([:data_structure_id, :id, :name, :type, :deleted_at, :metadata, :classes])
+    |> Map.take([
+      :data_structure_id,
+      :id,
+      :name,
+      :type,
+      :deleted_at,
+      :metadata,
+      :classes,
+      :published_note
+    ])
     |> lift_metadata()
+    |> clean_published_note()
   end
 
   defp add_children(data_structure_version), do: add_relations(data_structure_version, :children)
@@ -194,7 +210,13 @@ defmodule TdDdWeb.DataStructureVersionView do
         data_structure_version
 
       rs ->
-        relations = Enum.map(rs, &data_structure_version_embedded/1)
+        relations =
+          Enum.map(rs, fn r ->
+            r
+            |> data_structure_version_embedded()
+            |> simplify_note()
+          end)
+
         Map.put(data_structure_version, type, relations)
     end
   end
@@ -362,6 +384,23 @@ defmodule TdDdWeb.DataStructureVersionView do
     structure = Map.put(structure, :latest_note, latest_note)
     Map.put(dsv, :data_structure, structure)
   end
+
+  defp clean_published_note(%{published_note: %{df_content: %{} = content}} = dsv) do
+    latest_note = DataStructures.get_cached_content(content, dsv)
+    Map.put(dsv, :published_note, latest_note)
+  end
+
+  defp clean_published_note(%{published_note: _} = dsv) do
+    Map.drop(dsv, [:published_note])
+  end
+
+  defp clean_published_note(dsv), do: dsv
+
+  defp simplify_note(%{published_note: %{} = note} = dsv) do
+    Map.put(dsv, :published_note, Map.take(note, @simplified_note_keys))
+  end
+
+  defp simplify_note(dsv), do: dsv
 
   defp add_tags(ds) do
     tags =
