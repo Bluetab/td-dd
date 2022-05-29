@@ -1,5 +1,16 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-4872] Support querying structures by `external_id` in GraphQL API
+
+### Fixed
+
+- [TD-4852] Ruleless implementation weren't being linked with data structures on
+  creation
+
 ## [4.44.0] 2022-05-23
 
 ### Added
@@ -64,7 +75,7 @@
 
 - [TD-4721] User with permissions can list sources
 
-# Add
+### Added
 
 - [TD-4695] Structure bulk update was not reindexing structures with updated
   notes
@@ -74,7 +85,7 @@
 
 ## [4.41.1] 2022-04-04
 
-# Added
+### Added
 
 - [TD-4126] Support querying the jobs of a source
 - [TD-4450] GraphQL mutations for sources
@@ -104,7 +115,7 @@
 - [TD-4580] Added migration to fix implementations without alias
 - [TD-4623] Added multiple domains support for grant request approvals
 
-## Changed
+### Changed
 
 - [TD-4527] Exclude logically deleted sources from GraphQL response
 

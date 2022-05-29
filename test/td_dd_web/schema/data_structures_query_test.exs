@@ -15,6 +15,14 @@ defmodule TdDdWeb.Schema.DataStructuresQueryTest do
     }
   }
   """
+  @external_id_query """
+  query StructuresByExternalId($externalId: [String]) {
+    dataStructures(externalId: $externalId) {
+      id
+      externalId
+    }
+  }
+  """
   @variables %{"since" => "2020-01-01T00:00:00Z"}
 
   describe "dataStructures query" do
@@ -47,6 +55,24 @@ defmodule TdDdWeb.Schema.DataStructuresQueryTest do
       assert %{"dataStructures" => data_structures} = data
       assert [%{"id" => _, "externalId" => ^external_id, "units" => units}] = data_structures
       assert [%{"id" => _, "name" => ^unit_name}] = units
+    end
+
+    @tag authentication: [role: "service"]
+    test "can filter by external_id when queried by service role", %{conn: conn} do
+      insert(:data_structure_version)
+      %{data_structure: %{external_id: external_id}} = insert(:data_structure_version)
+
+      variables = %{"externalId" => [external_id, "foo"]}
+
+      assert %{"data" => data} =
+               response =
+               conn
+               |> post("/api/v2", %{"query" => @external_id_query, "variables" => variables})
+               |> json_response(:ok)
+
+      assert response["errors"] == nil
+      assert %{"dataStructures" => data_structures} = data
+      assert [%{"id" => _, "externalId" => ^external_id}] = data_structures
     end
   end
 end
