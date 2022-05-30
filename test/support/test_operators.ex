@@ -10,6 +10,7 @@ defmodule TdDd.TestOperators do
   alias TdDd.Grants.Grant
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestGroup
+  alias TdDd.Profiles.Profile
   alias TdDq.Implementations.Implementation
   alias TdDq.Implementations.ImplementationStructure
   alias TdDq.Rules.RuleResult
@@ -107,6 +108,11 @@ defmodule TdDd.TestOperators do
 
   defp approximately_equal(%GrantRequestGroup{} = a, %GrantRequestGroup{} = b) do
     Map.drop(a, [:requests]) == Map.drop(b, [:requests])
+  end
+
+  defp approximately_equal(%Profile{} = a, %Profile{} = b) do
+    drop_fields = [:data_structure]
+    Map.drop(a, drop_fields) == Map.drop(b, drop_fields)
   end
 
   defp approximately_equal(%Hierarchy{} = a, %Hierarchy{} = b) do
