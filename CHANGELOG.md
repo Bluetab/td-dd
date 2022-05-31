@@ -4,7 +4,7 @@
 
 ### Added
 
-= [TD-3633] Take into account ruleless implementations in event publishing
+- [TD-3633] Take into account ruleless implementations in event publishing
 - [TD-4872] Support querying structures by `external_id` in GraphQL API
 
 ### Fixed
