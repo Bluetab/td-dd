@@ -31,7 +31,7 @@ defmodule TdDqWeb.ImplementationResultController do
     with implementation <- Implementations.get_implementation_by_key!(key),
          {:can, true} <- {:can, can?(claims, manage_rule_results(implementation))},
          {:ok, %{result: %{id: id} = result, segments: segments}} <-
-           RuleResults.create_rule_result(implementation, params)  do
+           RuleResults.create_rule_result(implementation, params) do
       result = Map.put(result, :segments_inserted, length(segments))
 
       conn
