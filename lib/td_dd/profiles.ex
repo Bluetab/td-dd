@@ -3,6 +3,8 @@ defmodule TdDd.Profiles do
   The DataStructure Profiles context.
   """
 
+  import Ecto.Query
+
   alias Ecto.Multi
   alias TdDd.DataStructures
   alias TdDd.Executions
@@ -20,8 +22,15 @@ defmodule TdDd.Profiles do
       [%Profile{}, ...]
 
   """
-  def list_profiles do
-    Repo.all(Profile)
+  def list_profiles(params \\ %{}) do
+    params
+    |> Enum.reduce(Profile, fn
+      {"limit", size}, query -> limit(query, ^size)
+      {"offset", size}, query -> offset(query, ^size)
+      {"since", ts}, query -> where(query, [p], p.updated_at >= ^ts)
+      _, query -> query
+    end)
+    |> Repo.all()
   end
 
   @doc """

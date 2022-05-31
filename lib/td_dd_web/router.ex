@@ -100,6 +100,7 @@ defmodule TdDdWeb.Router do
 
     resources("/unit_domains", UnitDomainController, only: [:index])
 
+    post("/profiles/search", ProfileController, :search)
     post("/profiles/upload", ProfileController, :upload)
 
     resources("/systems", SystemController, except: [:new, :edit]) do

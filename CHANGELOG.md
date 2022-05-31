@@ -4,8 +4,10 @@
 
 ### Added
 
+- [TD-3633] Take into account ruleless implementations in event publishing
 - [TD-4872] Support querying structures by `external_id` in GraphQL API
 - [TD-3920] Alias support for structures
+- [TD-4855] Support `Profile` searching with params (offset, limit, since)
 
 ### Fixed
 
