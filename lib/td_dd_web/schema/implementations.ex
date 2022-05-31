@@ -57,7 +57,7 @@ defmodule TdDdWeb.Schema.Implementations do
     field :populations, list_of(:populations)
     field :result_type, :string
     field :rule_id, :integer
-    field :segments, list_of(:segments_row)
+    field :segments, list_of(:segment_row)
     field :validations, list_of(:condition_row)
     field :raw_content, :raw_content
     field :status, :string
@@ -80,18 +80,18 @@ defmodule TdDdWeb.Schema.Implementations do
 
   object :dataset_row do
     field :alias, :structure_alias
-    field :structure, :structure
+    field :structure, :structure_reference
     field :clauses, list_of(:join_clause)
     field :join_type, :string
   end
 
-  object :segments_row do
-    field :structure, :structure
+  object :segment_row do
+    field :structure, :structure_reference
   end
 
   object :join_clause do
-    field :right, non_null(:structure)
-    field :left, non_null(:structure)
+    field :right, non_null(:structure_reference)
+    field :left, non_null(:structure_reference)
   end
 
   object :structure_alias do
@@ -100,23 +100,23 @@ defmodule TdDdWeb.Schema.Implementations do
   end
 
   object :condition_row do
-    field :structure, :structure
-    field :operator, :operator
-    field :modifier, :modifier
+    field :structure, :structure_reference
+    field :operator, :condition_operator
+    field :modifier, :condition_modifier
   end
 
-  object :modifier do
+  object :condition_modifier do
     field :name, non_null(:string)
     field :params, non_null(:json)
   end
 
-  object :operator do
+  object :condition_operator do
     field :name, non_null(:string)
     field :value_type, :string
     field :value_type_filter, :string
   end
 
-  object :structure do
+  object :structure_reference do
     field :id, non_null(:id)
     field :parent_index, :integer
   end

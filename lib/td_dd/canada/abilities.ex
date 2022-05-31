@@ -55,31 +55,37 @@ defmodule TdDd.Canada.Abilities do
     def can?(%Claims{role: "user"} = claims, :query, :structure_tags),
       do: DataStructureTagAbilities.can?(claims, :index, DataStructureTag)
 
+    def can?(%Claims{}, _action, nil), do: false
+
+    # TODO: Is this needed? What about admin/service accounts?
     def can?(%Claims{role: "user"} = claims, :mutation, :submit_implementation) do
       ImplementationAbilities.can?(claims, :send_for_approval, Implementation)
     end
 
+    # TODO: Is this needed? What about admin/service accounts?
     def can?(%Claims{role: "user"} = claims, :mutation, :reject_implementation) do
       ImplementationAbilities.can?(claims, :reject_implementation, Implementation)
     end
 
+    # TODO: Is this needed? What about admin/service accounts?
     def can?(%Claims{role: "user"} = claims, :mutation, :unreject_implementation) do
       ImplementationAbilities.can?(claims, :unreject_implementation, Implementation)
     end
 
+    # TODO: Is this needed? What about admin/service accounts?
     def can?(%Claims{role: "user"} = claims, :mutation, :publish_implementation) do
       ImplementationAbilities.can?(claims, :publish_implementation, Implementation)
     end
 
+    # TODO: Is this needed? What about admin/service accounts?
     def can?(%Claims{role: "user"} = claims, :mutation, :deprecate_implementation) do
       ImplementationAbilities.can?(claims, :deprecate_implementation, Implementation)
     end
 
+    # TODO: Is this needed? What about admin/service accounts?
     def can?(%Claims{role: "user"} = claims, :mutation, :publish_implementation_from_draft) do
       ImplementationAbilities.can?(claims, :publish_implementation_from_draft, Implementation)
     end
-
-    def can?(%Claims{}, _action, nil), do: false
 
     def can?(%Claims{} = claims, action, %Implementation{} = implementation) do
       ImplementationAbilities.can?(claims, action, implementation)

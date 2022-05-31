@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-4540] Add approval workflow for quality implementations
+
 ### Fixed
 
 - [TD-4852] Ruleless implementation weren't being linked with data structures on

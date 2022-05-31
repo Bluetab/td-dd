@@ -23,8 +23,7 @@ defmodule TdDdWeb.Resolvers.Implementations do
       {:last, false} -> {:error, :unprocessable_entity}
       {:claims, nil} -> {:error, :unauthorized}
       {:can, false} -> {:error, :forbidden}
-      {:error, changeset} -> {:error, changeset}
-      {:vault_error, error} -> {:error, error}
+      {:error, :implementation, changeset, _} -> {:error, changeset}
     end
   end
 
@@ -43,8 +42,7 @@ defmodule TdDdWeb.Resolvers.Implementations do
       {:last, false} -> {:error, :unprocessable_entity}
       {:claims, nil} -> {:error, :unauthorized}
       {:can, false} -> {:error, :forbidden}
-      {:error, changeset} -> {:error, changeset}
-      {:vault_error, error} -> {:error, error}
+      {:error, :implementation, changeset, _} -> {:error, changeset}
     end
   end
 
@@ -63,8 +61,7 @@ defmodule TdDdWeb.Resolvers.Implementations do
       {:last, false} -> {:error, :unprocessable_entity}
       {:claims, nil} -> {:error, :unauthorized}
       {:can, false} -> {:error, :forbidden}
-      {:error, changeset} -> {:error, changeset}
-      {:vault_error, error} -> {:error, error}
+      {:error, :implementation, changeset, _} -> {:error, changeset}
     end
   end
 
@@ -83,8 +80,7 @@ defmodule TdDdWeb.Resolvers.Implementations do
       {:last, false} -> {:error, :unprocessable_entity}
       {:claims, nil} -> {:error, :unauthorized}
       {:can, false} -> {:error, :forbidden}
-      {:error, changeset} -> {:error, changeset}
-      {:vault_error, error} -> {:error, error}
+      {:error, :implementation, changeset, _} -> {:error, changeset}
     end
   end
 
@@ -103,8 +99,7 @@ defmodule TdDdWeb.Resolvers.Implementations do
       {:last, false} -> {:error, :unprocessable_entity}
       {:claims, nil} -> {:error, :unauthorized}
       {:can, false} -> {:error, :forbidden}
-      {:error, changeset} -> {:error, changeset}
-      {:vault_error, error} -> {:error, error}
+      {:error, :implementation, changeset, _} -> {:error, changeset}
     end
   end
 
@@ -123,8 +118,7 @@ defmodule TdDdWeb.Resolvers.Implementations do
       {:last, false} -> {:error, :unprocessable_entity}
       {:claims, nil} -> {:error, :unauthorized}
       {:can, false} -> {:error, :forbidden}
-      {:error, changeset} -> {:error, changeset}
-      {:vault_error, error} -> {:error, error}
+      {:error, :implementation, changeset, _} -> {:error, changeset}
     end
   end
 
