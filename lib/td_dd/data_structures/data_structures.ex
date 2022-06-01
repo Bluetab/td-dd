@@ -32,7 +32,7 @@ defmodule TdDd.DataStructures do
   alias TdDfLib.Format
 
   # Data structure version associations preloaded for some views
-  @preload_dsv_assocs [:published_note, :classifications, data_structure: :system]
+  @preload_dsv_assocs [:published_note, :structure_type, :classifications, data_structure: :system]
 
   def list_data_structures(clauses \\ %{}) do
     clauses
@@ -118,6 +118,10 @@ defmodule TdDd.DataStructures do
     |> enrich(opts)
   end
 
+  def get_cached_content(%{} = content, %{structure_type: %{template_id: template_id}}) do
+    get_cached_content(content, %{data_structure_type: %{template_id: template_id}})
+  end
+
   def get_cached_content(%{} = content, %{data_structure_type: %{template_id: template_id}}) do
     case TemplateCache.get(template_id) do
       {:ok, template} ->
@@ -166,7 +170,7 @@ defmodule TdDd.DataStructures do
       :data_fields,
       &get_field_structures(&1,
         deleted: deleted,
-        preload: if(Enum.member?(opts, :profile), do: [data_structure: :profile], else: []),
+        preload: if(Enum.member?(opts, :profile), do: [:published_note, data_structure: :profile], else: []),
         with_confidential: with_confidential
       )
     )

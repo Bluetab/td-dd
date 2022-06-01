@@ -47,6 +47,10 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                 "label" => "Multiple 1",
                 "values" => nil,
                 "cardinality" => "1"
+              },
+              %{
+                "name" => "alias",
+                "type" => "string",
               }
             ]
           }
@@ -694,7 +698,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     test "return only published note content matched with the template", %{
       conn: conn,
       data_structure_version: %{data_structure_id: id},
-      published_note: %{df_content: %{"Field1" => field_1}}
+      published_note: %{df_content: %{"Field1" => field_1, "alias" => content_alias}}
     } do
       assert %{"data" => %{"published_note" => note}} =
                conn
@@ -703,14 +707,14 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                )
                |> json_response(:ok)
 
-      assert note == %{"Field1" => field_1}
+      assert note == %{"Field1" => field_1, "alias" => content_alias}
     end
 
     @tag authentication: [role: "admin"]
     test "children renders published note", %{
       conn: conn,
       data_structure_version: structure_version,
-      published_note: %{df_content: %{"alias" => alias}}
+      published_note: %{df_content: %{"alias" => content_alias}}
     } do
       %{data_structure_id: parent_structure_id} = parent_version = insert(:data_structure_version)
 
@@ -734,14 +738,14 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                )
                |> json_response(:ok)
 
-      assert note == %{"alias" => alias}
+      assert note == %{"alias" => content_alias}
     end
 
     @tag authentication: [role: "admin"]
     test "siblings renders published note", %{
       conn: conn,
       data_structure_version: structure_version,
-      published_note: %{df_content: %{"alias" => alias}}
+      published_note: %{df_content: %{"alias" => content_alias}}
     } do
       parent_version = insert(:data_structure_version)
 
@@ -774,7 +778,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                )
                |> json_response(:ok)
 
-      assert note == %{"alias" => alias}
+      assert note == %{"alias" => content_alias}
     end
   end
 

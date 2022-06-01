@@ -261,7 +261,7 @@ defmodule TdDd.DataStructuresTest do
       Hierarchy.update_hierarchy([parent_id])
       assert %{path: path} = DataStructures.get_latest_version(id)
 
-      assert path == [%{"data_structure_id" => data_structure_id, "name" => parent_name}]
+      assert [%{"data_structure_id" => ^data_structure_id, "name" => ^parent_name}] = path
     end
 
     test "enriches data_structure with domain", %{
@@ -323,18 +323,21 @@ defmodule TdDd.DataStructuresTest do
 
       insert(:structure_metadata, data_structure_id: data_structure_id)
 
+      yayo_structure = build(:data_structure_version, name: "yayo")
+      papa_structure = build(:data_structure_version, name: "papa")
+
       %{parent_id: parent_id, parent: parent} =
         insert(:data_structure_relation,
           child_id: id,
           relation_type_id: RelationTypes.default_id!(),
-          parent: build(:data_structure_version, name: "papa")
+          parent: papa_structure
         )
 
       %{parent: ancestor} =
         insert(:data_structure_relation,
           child_id: parent_id,
           relation_type_id: RelationTypes.default_id!(),
-          parent: build(:data_structure_version, name: "yayo")
+          parent: yayo_structure
         )
 
       insert(:structure_classification, data_structure_version_id: id, class: "bar", name: "foo")
@@ -789,7 +792,7 @@ defmodule TdDd.DataStructuresTest do
 
       insert(:structure_note,
         data_structure: Enum.at(dsvs, 1).data_structure,
-        df_content: %{"alias" => "alias_name"},
+        df_content: %{"alias" => alias_name},
         status: :published
       )
 
@@ -797,7 +800,8 @@ defmodule TdDd.DataStructuresTest do
 
       Hierarchy.update_hierarchy([id])
       assert %{path: path} = DataStructures.get_data_structure_version!(id)
-      assert Enum.map(path, & &1["name"]) == ["foo", alias_name, "baz", "xyzzy"]
+      assert Enum.map(path, & &1["name"]) == ["foo", "bar", "baz", "xyzzy"]
+      assert Enum.map(path, & &1["published_note"]) == [nil, %{"alias" => alias_name}, nil, nil]
     end
 
     test "get_data_structure_version!/2 excludes deleted children if structure is not deleted" do
