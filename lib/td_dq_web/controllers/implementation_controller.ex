@@ -189,7 +189,12 @@ defmodule TdDqWeb.ImplementationController do
       :link_concept,
       :link_structure,
       :manage,
-      :manage_segments
+      :manage_segments,
+      :clone,
+      :move,
+      :deprecate_implementation,
+      :publish_implementation,
+      :publish_implementation_from_draft
     ]
     |> Enum.filter(&can?(claims, &1, implementation))
     |> Enum.reduce(%{}, &Map.put(&2, &1, %{method: "POST"}))
@@ -200,7 +205,8 @@ defmodule TdDqWeb.ImplementationController do
          [
            :edit_segments,
            :manage_ruleless_implementations,
-           :manage
+           :manage,
+           :manage_draft_implementation
          ],
          &can?(claims, &1, implementation)
        ) do
@@ -248,7 +254,7 @@ defmodule TdDqWeb.ImplementationController do
 
     implementation = Implementations.get_implementation!(id)
 
-    with {:can, true} <- {:can, can?(claims, update(implementation))},
+    with {:can, true} <- {:can, can?(claims, manage_draft_implementation(implementation))},
          {:ok, _} <- Implementations.update_implementation(implementation, update_params, claims),
          implementation <-
            Implementations.get_implementation!(id, enrich: :source, preload: [:rule, :results]) do

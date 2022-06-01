@@ -363,7 +363,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
            permissions: [
              :manage_quality_rule_implementations,
              :manage_segments,
-             :view_quality_rule
+             :view_quality_rule,
+             :manage_draft_implementation
            ]
          ]
     test "renders manage implementations actions", %{conn: conn, domain: domain} do
@@ -383,7 +384,11 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
     @tag authentication: [
            user_name: "non_admin",
-           permissions: [:manage_raw_quality_rule_implementations, :view_quality_rule]
+           permissions: [
+             :manage_raw_quality_rule_implementations,
+             :view_quality_rule,
+             :manage_draft_implementation
+           ]
          ]
     test "renders edit raw implementations actions", %{conn: conn, domain: domain} do
       %{id: id} = insert(:raw_implementation, domain_id: domain.id)
@@ -404,7 +409,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
            permissions: [
              :manage_quality_rule_implementations,
              :manage_ruleless_implementations,
-             :view_quality_rule
+             :view_quality_rule,
+             :manage_draft_implementation
            ]
          ]
     test "renders edit ruleless implementations actions", %{conn: conn, domain: domain} do
@@ -1793,7 +1799,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
           _, :post, "/implementations/_search", %{from: 0, size: 1000, query: query}, [] ->
             assert query == %{
                      bool: %{
-                       filter: %{term: %{"rule_id" => 123}},
+                       filter: [%{term: %{"status" => "published"}}, %{term: %{"rule_id" => 123}}],
                        must_not: %{exists: %{field: "deleted_at"}}
                      }
                    }

@@ -34,7 +34,7 @@ defmodule TdDq.Canada.ImplementationAbilities do
     Permissions.authorized?(claims, :view_quality_rule)
   end
 
-  def can?(%Claims{} = claims, :update, %Implementation{domain_id: domain_id} = impl) do
+  def can?(%Claims{} = claims, :manage_draft_implementation, %Implementation{domain_id: domain_id} = impl) do
     Implementation.is_updatable?(impl) &&
       Permissions.authorized?(claims, :manage_draft_implementation, domain_id)
   end
