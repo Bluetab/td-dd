@@ -14,7 +14,7 @@ defmodule TdDdWeb.Resolvers.Implementations do
     with {:status, :draft} <- {:status, implementation.status},
          {:last, true} <- {:last, Implementations.last?(implementation)},
          {:claims, %{} = claims} <- {:claims, claims(resolution)},
-         {:can, true} <- {:can, can?(claims, send_for_approval(implementation))},
+         {:can, true} <- {:can, can?(claims, submit(implementation))},
          {:ok, %{implementation: implementation}} <-
            Workflow.submit_implementation(implementation, claims) do
       {:ok, implementation}
@@ -36,25 +36,6 @@ defmodule TdDdWeb.Resolvers.Implementations do
          {:can, true} <- {:can, can?(claims, reject(implementation))},
          {:ok, %{implementation: implementation}} <-
            Workflow.reject_implementation(implementation, claims) do
-      {:ok, implementation}
-    else
-      {:status, _} -> {:error, :unprocessable_entity}
-      {:last, false} -> {:error, :unprocessable_entity}
-      {:claims, nil} -> {:error, :unauthorized}
-      {:can, false} -> {:error, :forbidden}
-      {:error, :implementation, changeset, _} -> {:error, changeset}
-    end
-  end
-
-  def unreject_implementation(_parent, %{id: id}, resolution) do
-    implementation = Implementations.get_implementation!(id)
-
-    with {:status, :rejected} <- {:status, implementation.status},
-         {:last, true} <- {:last, Implementations.last?(implementation)},
-         {:claims, %{} = claims} <- {:claims, claims(resolution)},
-         {:can, true} <- {:can, can?(claims, unreject(implementation))},
-         {:ok, %{implementation: implementation}} <-
-           Workflow.unreject_implementation(implementation, claims) do
       {:ok, implementation}
     else
       {:status, _} -> {:error, :unprocessable_entity}
@@ -93,25 +74,6 @@ defmodule TdDdWeb.Resolvers.Implementations do
          {:can, true} <- {:can, can?(claims, deprecate(implementation))},
          {:ok, %{implementation: implementation}} <-
            Workflow.deprecate_implementation(implementation, claims) do
-      {:ok, implementation}
-    else
-      {:status, _} -> {:error, :unprocessable_entity}
-      {:last, false} -> {:error, :unprocessable_entity}
-      {:claims, nil} -> {:error, :unauthorized}
-      {:can, false} -> {:error, :forbidden}
-      {:error, :implementation, changeset, _} -> {:error, changeset}
-    end
-  end
-
-  def publish_implementation_from_draft(_parent, %{id: id}, resolution) do
-    implementation = Implementations.get_implementation!(id)
-
-    with {:status, :draft} <- {:status, implementation.status},
-         {:last, true} <- {:last, Implementations.last?(implementation)},
-         {:claims, %{} = claims} <- {:claims, claims(resolution)},
-         {:can, true} <- {:can, can?(claims, publish_from_draft(implementation))},
-         {:ok, %{implementation: implementation}} <-
-           Workflow.publish_implementation_from_draft(implementation, claims) do
       {:ok, implementation}
     else
       {:status, _} -> {:error, :unprocessable_entity}

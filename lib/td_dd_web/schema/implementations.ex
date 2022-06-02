@@ -19,12 +19,6 @@ defmodule TdDdWeb.Schema.Implementations do
       resolve(&Resolvers.Implementations.reject_implementation/3)
     end
 
-    @desc "unreject implementation"
-    field :unreject_implementation, non_null(:implementation) do
-      arg(:id, non_null(:id))
-      resolve(&Resolvers.Implementations.unreject_implementation/3)
-    end
-
     @desc "publish implementation"
     field :publish_implementation, non_null(:implementation) do
       arg(:id, non_null(:id))
@@ -35,12 +29,6 @@ defmodule TdDdWeb.Schema.Implementations do
     field :deprecate_implementation, non_null(:implementation) do
       arg(:id, non_null(:id))
       resolve(&Resolvers.Implementations.deprecate_implementation/3)
-    end
-
-    @desc "publish implementation from draft"
-    field :publish_implementation_from_draft, non_null(:implementation) do
-      arg(:id, non_null(:id))
-      resolve(&Resolvers.Implementations.publish_implementation_from_draft/3)
     end
   end
 

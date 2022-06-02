@@ -85,11 +85,7 @@ defmodule TdDq.Implementations.Implementation do
   def valid_result_types, do: @valid_result_types
 
   def changeset(%Rule{id: rule_id, domain_id: domain_id}, %__MODULE__{} = implementation, params) do
-    implementation
-    |> Map.merge(%{
-      domain_id: domain_id,
-      rule_id: rule_id
-    })
+    %{implementation | domain_id: domain_id, rule_id: rule_id}
     |> changeset(params)
     |> validate_required([:rule_id])
     |> foreign_key_constraint(:rule_id)
@@ -117,7 +113,7 @@ defmodule TdDq.Implementations.Implementation do
     |> changeset_validations(implementation, params)
   end
 
-  @spec status_changeset(TdDq.Implementations.Implementation.t(), any) :: Ecto.Changeset.t()
+  @spec status_changeset(t(), any) :: Ecto.Changeset.t()
   def status_changeset(%__MODULE__{} = implementation, "deprecated" = status) do
     implementation
     |> cast(%{status: status, deleted_at: DateTime.utc_now()}, [:status, :deleted_at])
@@ -146,9 +142,17 @@ defmodule TdDq.Implementations.Implementation do
     |> validate_inclusion(:result_type, @valid_result_types)
     |> validate_or_put_implementation_key()
     |> maybe_put_identifier(implementation, params)
+    |> maybe_put_status()
     |> validate_content()
     |> validate_goal()
     |> custom_changeset(implementation)
+  end
+
+  defp maybe_put_status(%Changeset{} = changeset) do
+    case Changeset.fetch_field(changeset, :status) do
+      {:data, :rejected} -> put_change(changeset, :status, :draft)
+      _ -> changeset
+    end
   end
 
   defp maybe_put_identifier(
@@ -338,24 +342,24 @@ defmodule TdDq.Implementations.Implementation do
     Map.put(result_map, :date, Map.get(rule_result, :date))
   end
 
-  def is_updatable?(%__MODULE__{status: status} = imp),
-    do: Implementations.last?(imp) && status == :draft
-
-  def is_publishable?(%__MODULE__{status: status} = imp),
+  def publishable?(%__MODULE__{status: status} = imp),
     do: Implementations.last?(imp) && status == :pending_approval
 
-  def is_rejectable?(%__MODULE__{} = implementation),
-    do: is_publishable?(implementation)
-
-  def is_undo_rejectable?(%__MODULE__{status: status} = imp),
-    do: Implementations.last?(imp) && status == :rejected
-
-  def is_deprecatable?(%__MODULE__{status: status} = imp),
+  def deprecatable?(%__MODULE__{status: status} = imp),
     do: Implementations.last?(imp) && status == :published
 
-  def is_deletable?(%__MODULE__{status: status} = imp) do
+  def deletable?(%__MODULE__{status: status} = imp) do
+    valid_statuses = [:draft, :rejected, :pending_approval]
+    Implementations.last?(imp) && Enum.member?(valid_statuses, status)
+  end
+
+  def editable?(%__MODULE__{status: status} = imp) do
     valid_statuses = [:draft, :rejected]
     Implementations.last?(imp) && Enum.member?(valid_statuses, status)
+  end
+
+  def submittable?(%__MODULE__{status: status} = imp) do
+    Implementations.last?(imp) && status == :draft
   end
 
   defimpl Elasticsearch.Document do

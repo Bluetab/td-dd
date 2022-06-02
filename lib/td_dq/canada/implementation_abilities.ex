@@ -5,9 +5,29 @@ defmodule TdDq.Canada.ImplementationAbilities do
   alias TdDq.Implementations.Implementation
   alias TdDq.Permissions
 
+  @workflow_actions [:delete, :deprecate, :edit, :publish, :reject, :submit]
+
+  @mutation_permissions %{
+    submit_implementation: :manage_draft_implementation,
+    reject_implementation: :publish_implementation,
+    publish_implementation: :publish_implementation,
+    deprecate_implementation: :deprecate_implementation
+  }
+
+  # GraphQL mutation authorizations
+  def can?(%{role: "admin"}, :mutation, _mutation), do: true
+  def can?(%{role: "service"}, :mutation, _mutation), do: false
+
+  def can?(%{role: "user"} = claims, :mutation, mutation) do
+    case Map.get(@mutation_permissions, mutation) do
+      nil -> false
+      permission -> Permissions.authorized?(claims, permission)
+    end
+  end
+
   def can?(%{role: "service"}, :manage_implementations, Implementation), do: false
 
-  def can?(%{role: "admin"}, _action, _resource), do: true
+  def can?(%{role: "admin"}, _action, Implementation), do: true
 
   def can?(%{} = claims, :manage_implementations, Implementation) do
     Permissions.authorized?(claims, :manage_quality_rule_implementations)
@@ -32,73 +52,41 @@ defmodule TdDq.Canada.ImplementationAbilities do
     Permissions.authorized?(claims, :view_quality_rule)
   end
 
-  def can?(
-        %{} = claims,
-        :manage_draft_implementation,
-        %Implementation{domain_id: domain_id} = impl
-      ) do
-    Implementation.is_updatable?(impl) &&
+  # Workflow actions have preconditions even for admin accounts
+  def can?(%{role: "admin"}, action, %Implementation{} = implementation)
+      when action in @workflow_actions do
+    valid_action?(action, implementation)
+  end
+
+  # Any other action can be performed by an admin account
+  def can?(%{role: "admin"}, _action, _target), do: true
+
+  def can?(%{} = claims, :manage_draft_implementation, %Implementation{domain_id: domain_id}) do
+    Permissions.authorized?(claims, :manage_draft_implementation, domain_id)
+  end
+
+  def can?(%{} = claims, :submit, %Implementation{domain_id: domain_id} = implementation) do
+    valid_action?(:submit, implementation) &&
       Permissions.authorized?(claims, :manage_draft_implementation, domain_id)
   end
 
-  def can?(%{} = claims, :send_for_approval, %Implementation{domain_id: domain_id} = impl) do
-    Implementation.is_updatable?(impl) &&
-      Permissions.authorized?(claims, :manage_draft_implementation, domain_id)
-  end
-
-  def can?(%{} = claims, :send_for_approval, Implementation) do
-    Permissions.authorized?(claims, :manage_draft_implementation)
-  end
-
-  def can?(%{} = claims, :reject, %Implementation{domain_id: domain_id} = impl) do
-    Implementation.is_rejectable?(impl) &&
+  def can?(%{} = claims, :reject, %Implementation{domain_id: domain_id} = implementation) do
+    valid_action?(:reject, implementation) &&
       Permissions.authorized?(claims, :publish_implementation, domain_id)
   end
 
-  def can?(%{} = claims, :reject, Implementation) do
-    Permissions.authorized?(claims, :publish_implementation)
-  end
-
-  def can?(%{} = claims, :unreject, %Implementation{domain_id: domain_id} = impl) do
-    Implementation.is_undo_rejectable?(impl) &&
-      Permissions.authorized?(claims, :manage_draft_implementation, domain_id)
-  end
-
-  def can?(%{} = claims, :unreject, Implementation) do
-    Permissions.authorized?(claims, :manage_draft_implementation)
-  end
-
-  def can?(%{} = claims, :publish, %Implementation{domain_id: domain_id} = impl) do
-    Implementation.is_publishable?(impl) &&
+  def can?(%{} = claims, :publish, %Implementation{domain_id: domain_id} = implementation) do
+    valid_action?(:publish, implementation) &&
       Permissions.authorized?(claims, :publish_implementation, domain_id)
   end
 
-  def can?(%{} = claims, :publish, Implementation) do
-    Permissions.authorized?(claims, :publish_implementation)
-  end
-
-  def can?(%{} = claims, :deprecate, %Implementation{domain_id: domain_id} = impl) do
-    Implementation.is_deprecatable?(impl) &&
+  def can?(%{} = claims, :deprecate, %Implementation{domain_id: domain_id} = implementation) do
+    valid_action?(:deprecate, implementation) &&
       Permissions.authorized?(claims, :deprecate_implementation, domain_id)
   end
 
-  def can?(%{} = claims, :deprecate, Implementation) do
-    Permissions.authorized?(claims, :deprecate_implementation)
-  end
-
-  def can?(%{} = claims, :publish_from_draft, %Implementation{domain_id: domain_id} = impl) do
-    Implementation.is_updatable?(impl) &&
-      Permissions.authorized?(claims, :publish_implementation, domain_id) &&
-      Permissions.authorized?(claims, :manage_draft_implementation, domain_id)
-  end
-
-  def can?(%{} = claims, :publish_from_draft, Implementation) do
-    Permissions.authorized?(claims, :publish_implementation) &&
-      Permissions.authorized?(claims, :manage_draft_implementation)
-  end
-
-  def can?(%{} = claims, :delete, %Implementation{domain_id: domain_id} = impl) do
-    Implementation.is_deletable?(impl) &&
+  def can?(%{} = claims, :delete, %Implementation{domain_id: domain_id} = implementation) do
+    valid_action?(:delete, implementation) &&
       Permissions.authorized?(claims, :manage_draft_implementation, domain_id)
   end
 
@@ -119,10 +107,11 @@ defmodule TdDq.Canada.ImplementationAbilities do
   end
 
   def can?(%{} = claims, :edit, implementation) do
-    Enum.all?(
-      [:edit_segments, :manage_ruleless_implementations, :manage, :manage_draft_implementation],
-      &can?(claims, &1, implementation)
-    )
+    valid_action?(:edit, implementation) &&
+      Enum.all?(
+        [:edit_segments, :manage_ruleless_implementations, :manage, :manage_draft_implementation],
+        &can?(claims, &1, implementation)
+      )
   end
 
   def can?(%{} = claims, :edit_segments, %Changeset{changes: %{segments: _}} = changeset) do
@@ -207,4 +196,11 @@ defmodule TdDq.Canada.ImplementationAbilities do
     |> Changeset.fetch_field!(:implementation_type)
     |> permission()
   end
+
+  defp valid_action?(:delete, implementation), do: Implementation.deletable?(implementation)
+  defp valid_action?(:deprecate, implementation), do: Implementation.deprecatable?(implementation)
+  defp valid_action?(:edit, implementation), do: Implementation.editable?(implementation)
+  defp valid_action?(:publish, implementation), do: Implementation.publishable?(implementation)
+  defp valid_action?(:reject, implementation), do: Implementation.publishable?(implementation)
+  defp valid_action?(:submit, implementation), do: Implementation.submittable?(implementation)
 end

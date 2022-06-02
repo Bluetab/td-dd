@@ -38,6 +38,13 @@ defmodule TdDd.Canada.Abilities do
   alias TdDq.Implementations.Implementation
 
   defimpl Canada.Can, for: Claims do
+    @implementation_mutations [
+      :deprecate_implementation,
+      :publish_implementation,
+      :reject_implementation,
+      :submit_implementation
+    ]
+
     # service accounts can upload metadata and profiling
     def can?(%Claims{role: "service"}, :upload, _resource), do: true
 
@@ -57,35 +64,11 @@ defmodule TdDd.Canada.Abilities do
 
     def can?(%Claims{}, _action, nil), do: false
 
-    # TODO: Is this needed? What about admin/service accounts?
-    def can?(%Claims{role: "user"} = claims, :mutation, :submit_implementation) do
-      ImplementationAbilities.can?(claims, :send_for_approval, Implementation)
+    def can?(%{} = claims, :mutation, mutation) when mutation in @implementation_mutations do
+      ImplementationAbilities.can?(claims, :mutation, mutation)
     end
 
-    # TODO: Is this needed? What about admin/service accounts?
-    def can?(%Claims{role: "user"} = claims, :mutation, :reject_implementation) do
-      ImplementationAbilities.can?(claims, :reject, Implementation)
-    end
-
-    # TODO: Is this needed? What about admin/service accounts?
-    def can?(%Claims{role: "user"} = claims, :mutation, :unreject_implementation) do
-      ImplementationAbilities.can?(claims, :unreject, Implementation)
-    end
-
-    # TODO: Is this needed? What about admin/service accounts?
-    def can?(%Claims{role: "user"} = claims, :mutation, :publish_implementation) do
-      ImplementationAbilities.can?(claims, :publish, Implementation)
-    end
-
-    # TODO: Is this needed? What about admin/service accounts?
-    def can?(%Claims{role: "user"} = claims, :mutation, :deprecate_implementation) do
-      ImplementationAbilities.can?(claims, :deprecate, Implementation)
-    end
-
-    # TODO: Is this needed? What about admin/service accounts?
-    def can?(%Claims{role: "user"} = claims, :mutation, :publish_implementation_from_draft) do
-      ImplementationAbilities.can?(claims, :publish_from_draft, Implementation)
-    end
+    def can?(%{role: role}, :mutation, _mutation), do: role == "admin"
 
     def can?(%Claims{} = claims, action, %Implementation{} = implementation) do
       ImplementationAbilities.can?(claims, action, implementation)

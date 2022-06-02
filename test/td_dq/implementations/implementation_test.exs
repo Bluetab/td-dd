@@ -100,6 +100,13 @@ defmodule TdDq.Implementations.ImplementationTest do
       assert %{df_content: new_content} = changes
       refute match?(%{^identifier_name => _identifier}, new_content)
     end
+
+    test "puts status to draft if it is currently rejected" do
+      implementation = insert(:implementation, status: :rejected)
+
+      changeset = Implementation.changeset(implementation, %{"foo" => "bar"})
+      assert Ecto.Changeset.fetch_change!(changeset, :status) == :draft
+    end
   end
 
   describe "changeset/3" do

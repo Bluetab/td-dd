@@ -23,28 +23,12 @@ defmodule TdDq.Implementations.Workflow do
     update_implementation_status(implementation, "rejected", :implementation_rejected, claims)
   end
 
-  def unreject_implementation(%Implementation{} = implementation, %TdDdClaims{} = claims) do
-    update_implementation_status(
-      implementation,
-      "pending_approval",
-      :implementation_pending_approval,
-      claims
-    )
-  end
-
   def publish_implementation(%Implementation{} = implementation, %TdDdClaims{} = claims) do
     update_implementation_status(implementation, "published", :implementation_published, claims)
   end
 
   def deprecate_implementation(%Implementation{} = implementation, %TdDdClaims{} = claims) do
     update_implementation_status(implementation, "deprecated", :implementation_deprecated, claims)
-  end
-
-  def publish_implementation_from_draft(
-        %Implementation{} = implementation,
-        %TdDdClaims{} = claims
-      ) do
-    update_implementation_status(implementation, "published", :implementation_published, claims)
   end
 
   defp update_implementation_status(

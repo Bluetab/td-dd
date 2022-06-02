@@ -236,7 +236,7 @@ defmodule TdDqWeb.ImplementationController do
 
     implementation = Implementations.get_implementation!(id)
 
-    with {:can, true} <- {:can, can?(claims, manage_draft_implementation(implementation))},
+    with {:can, true} <- {:can, can?(claims, edit(implementation))},
          {:ok, _} <- Implementations.update_implementation(implementation, update_params, claims),
          implementation <-
            Implementations.get_implementation!(id, enrich: :source, preload: [:rule, :results]) do
