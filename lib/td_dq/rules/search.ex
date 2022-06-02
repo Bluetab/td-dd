@@ -43,31 +43,13 @@ defmodule TdDq.Rules.Search do
     |> Query.build_query(params, aggs)
   end
 
-  defp build_query(%Claims{role: "service"} = claims, params, :implementations = index) do
-    aggs = aggregations(index)
-
-    {executable, params} =
-      Map.get_and_update(params, "filters", fn
-        # TODO: Put default status filter always
-        nil ->
-          :pop
-
-        filters ->
-          filters
-          |> maybe_put_status()
-          |> Map.pop("executable")
-      end)
-
-    claims
-    |> search_permissions(executable)
-    |> Query.build_query(params, aggs)
-  end
-
   defp build_query(%Claims{} = claims, params, :implementations = index) do
     aggs = aggregations(index)
 
     {executable, params} =
-      Map.get_and_update(params, "filters", fn
+      params
+      |> put_default_filters(claims)
+      |> Map.get_and_update("filters", fn
         nil -> :pop
         filters -> Map.pop(filters, "executable")
       end)
@@ -134,7 +116,10 @@ defmodule TdDq.Rules.Search do
     TdDq.Implementations.Search.Aggregations.aggregations()
   end
 
-  defp maybe_put_status(%{"status" => _} = filters), do: filters
+  defp put_default_filters(%{} = params, %{role: "service"}) do
+    defaults = %{"status" => ["published"]}
+    Map.update(params, "filters", defaults, &Map.merge(defaults, &1))
+  end
 
-  defp maybe_put_status(filters), do: Map.put(filters, "status", ["published"])
+  defp put_default_filters(%{} = params, _claims), do: params
 end

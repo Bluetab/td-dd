@@ -156,6 +156,34 @@ defmodule TdDq.Rules.SearchTest do
       assert {:ok, %{"active.raw" => ["true", "false"]}} =
                Search.get_filter_values(claims, _params = %{}, :implementations)
     end
+
+    @tag authentication: [role: "service"]
+    test "includes default status filter for service role", %{claims: claims} do
+      %{id: domain_id} = CacheHelpers.insert_domain()
+
+      CacheHelpers.put_session_permissions(claims, %{"view_quality_rule" => [domain_id]})
+
+      ElasticsearchMock
+      |> expect(:request, fn
+        _, :post, "/implementations/_search", %{query: query, size: 0}, [] ->
+          assert query == %{bool: %{filter: %{term: %{"status" => "published"}}}}
+          SearchHelpers.aggs_response(@aggs)
+      end)
+      |> expect(:request, fn
+        _, :post, "/implementations/_search", %{query: query, size: 0}, [] ->
+          assert query == %{bool: %{filter: %{term: %{"status" => "foo"}}}}
+          SearchHelpers.aggs_response(@aggs)
+      end)
+
+      assert {:ok, _} = Search.get_filter_values(claims, %{}, :implementations)
+
+      assert {:ok, _} =
+               Search.get_filter_values(
+                 claims,
+                 %{"filters" => %{"status" => ["foo"]}},
+                 :implementations
+               )
+    end
   end
 
   describe "search_rules/4" do
