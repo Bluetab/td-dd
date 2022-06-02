@@ -47,6 +47,10 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                 "label" => "Multiple 1",
                 "values" => nil,
                 "cardinality" => "1"
+              },
+              %{
+                "name" => "alias",
+                "type" => "string",
               }
             ]
           }
@@ -687,6 +691,97 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     end
   end
 
+  describe "GET /api/data_structures/:id/versions/:version with notes" do
+    setup :create_structure_with_published_note
+
+    @tag authentication: [role: "admin"]
+    test "return only published note content matched with the template", %{
+      conn: conn,
+      data_structure_version: %{data_structure_id: id},
+      published_note: %{df_content: %{"Field1" => field_1, "alias" => content_alias}}
+    } do
+      assert %{"data" => %{"published_note" => note}} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(conn, :show, id, "latest")
+               )
+               |> json_response(:ok)
+
+      assert note == %{"Field1" => field_1, "alias" => content_alias}
+    end
+
+    @tag authentication: [role: "admin"]
+    test "children renders published note", %{
+      conn: conn,
+      data_structure_version: structure_version,
+      published_note: %{df_content: %{"alias" => content_alias}}
+    } do
+      %{data_structure_id: parent_structure_id} = parent_version = insert(:data_structure_version)
+
+      relation_type_id = RelationTypes.default_id!()
+
+      insert(:data_structure_relation,
+        parent_id: parent_version.id,
+        child_id: structure_version.id,
+        relation_type_id: relation_type_id
+      )
+
+      assert %{"data" => %{"children" => [%{"published_note" => note}]}} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(
+                   conn,
+                   :show,
+                   parent_structure_id,
+                   "latest"
+                 )
+               )
+               |> json_response(:ok)
+
+      assert note == %{"alias" => content_alias}
+    end
+
+    @tag authentication: [role: "admin"]
+    test "siblings renders published note", %{
+      conn: conn,
+      data_structure_version: structure_version,
+      published_note: %{df_content: %{"alias" => content_alias}}
+    } do
+      parent_version = insert(:data_structure_version)
+
+      %{data_structure_id: sibling_structure_id} =
+        sibling_version = insert(:data_structure_version)
+
+      relation_type_id = RelationTypes.default_id!()
+
+      insert(:data_structure_relation,
+        parent_id: parent_version.id,
+        child_id: structure_version.id,
+        relation_type_id: relation_type_id
+      )
+
+      insert(:data_structure_relation,
+        parent_id: parent_version.id,
+        child_id: sibling_version.id,
+        relation_type_id: relation_type_id
+      )
+
+      assert %{"data" => %{"siblings" => [%{"published_note" => note}, _]}} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(
+                   conn,
+                   :show,
+                   sibling_structure_id,
+                   "latest"
+                 )
+               )
+               |> json_response(:ok)
+
+      assert note == %{"alias" => content_alias}
+    end
+  end
+
   describe "GET /api/data_structures/:id/versions/:version implementations" do
     setup :create_structure_with_implementation
 
@@ -882,6 +977,22 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       implementation: implementation,
       data_structure: data_structure,
       implementation_structure: implementation_structure
+    ]
+  end
+
+  defp create_structure_with_published_note(_) do
+    %{data_structure: data_structure} = data_structure_version = insert(:data_structure_version)
+
+    note =
+      insert(:structure_note,
+        data_structure: data_structure,
+        df_content: %{"Field1" => "xyzzy", "list" => "two", "alias" => "some alias"},
+        status: :published
+      )
+
+    [
+      published_note: note,
+      data_structure_version: data_structure_version
     ]
   end
 

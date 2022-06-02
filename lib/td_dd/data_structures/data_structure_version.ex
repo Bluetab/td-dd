@@ -166,6 +166,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
         :system_id
       ])
       |> Map.put(:latest_note, content)
+      |> Map.put(:published_note, content)
       |> Map.put(:domain, first_domain(data_structure))
       |> Map.put(:field_type, field_type(dsv))
       |> Map.put(:path_sort, path_sort(name_path))

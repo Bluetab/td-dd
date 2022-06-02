@@ -50,7 +50,8 @@ defmodule TdDdWeb.DataStructureView do
         |> data_structure_json()
         |> add_metadata_versions(data_structure)
         |> add_system_with_keys(data_structure, [:external_id, :id, :name])
-        |> add_dynamic_content(data_structure)
+        |> add_dynamic_content(data_structure, :latest_note)
+        |> add_dynamic_content(data_structure, :published_note)
         |> add_data_fields(data_structure)
         |> add_versions(data_structure)
         |> add_parents(data_structure)
@@ -66,7 +67,8 @@ defmodule TdDdWeb.DataStructureView do
     |> data_structure_json()
     |> add_metadata(data_structure)
     |> add_system_with_keys(data_structure, ["external_id", "id", "name"])
-    |> add_dynamic_content(data_structure)
+    |> add_dynamic_content(data_structure, :latest_note)
+    |> add_dynamic_content(data_structure, :published_note)
   end
 
   def render("implementation_data_structure.json", %{
@@ -168,13 +170,13 @@ defmodule TdDdWeb.DataStructureView do
     |> lift_metadata()
   end
 
-  defp add_dynamic_content(json, data_structure) do
+  defp add_dynamic_content(json, data_structure, key) do
     latest_note =
       data_structure
-      |> Map.get(:latest_note, %{})
+      |> Map.get(key, %{})
       |> DataStructures.get_cached_content(data_structure)
 
-    %{latest_note: latest_note}
+    %{key => latest_note}
     |> Map.merge(json)
   end
 
