@@ -323,8 +323,8 @@ defmodule TdDd.DataStructuresTest do
 
       insert(:structure_metadata, data_structure_id: data_structure_id)
 
-      yayo_structure = build(:data_structure_version, name: "yayo")
-      papa_structure = build(:data_structure_version, name: "papa")
+      yayo_structure = insert(:data_structure_version, name: "yayo")
+      papa_structure = insert(:data_structure_version, name: "papa")
 
       %{parent_id: parent_id, parent: parent} =
         insert(:data_structure_relation,
