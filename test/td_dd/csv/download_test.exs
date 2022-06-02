@@ -4,15 +4,12 @@ defmodule TdDd.DownloadTest do
   """
   use TdDd.DataCase
 
-  alias TdCache.TemplateCache
   alias TdDd.CSV.Download
 
   defp create_template(template) do
     template
     |> Map.put(:updated_at, DateTime.utc_now())
-    |> TemplateCache.put()
-
-    template
+    |> CacheHelpers.insert_template()
   end
 
   describe "Structures download" do
@@ -147,6 +144,12 @@ defmodule TdDd.DownloadTest do
                 "type" => "string",
                 "label" => "Label foo",
                 "cardinality" => "1"
+              },
+              %{
+                "name" => "field_domains",
+                "type" => "domain",
+                "label" => "Label foo",
+                "cardinality" => "*"
               }
             ]
           }
@@ -163,7 +166,8 @@ defmodule TdDd.DownloadTest do
           latest_note: %{
             "field_numbers" => [1, 2],
             "field_texts" => ["multi", "field"],
-            "field_text" => ["field"]
+            "field_text" => ["field"],
+            "field_domains" => [%{"name" => "domain_1"}, %{"name" => "domain_2"}]
           },
           external_id: "ext_id",
           type: "type"
@@ -172,8 +176,8 @@ defmodule TdDd.DownloadTest do
 
       assert Download.to_editable_csv(structures) ==
                """
-               external_id;name;type;path;field_numbers;field_texts;field_text\r
-               ext_id;name;type;foo > bar;1|2;multi|field;field\r
+               external_id;name;type;path;field_numbers;field_texts;field_text;field_domains\r
+               ext_id;name;type;foo > bar;1|2;multi|field;field;domain_1, domain_2\r
                """
     end
 

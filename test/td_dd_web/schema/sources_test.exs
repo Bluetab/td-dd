@@ -143,10 +143,13 @@ defmodule TdDdWeb.Schema.SourcesTest do
     [template: CacheHelpers.insert_template()]
   end
 
-  defp create_source(%{template: %{name: source_type}} = context) do
-    domain_id = context[:domain][:id]
+  defp create_source(%{domain: %{id: domain_id}, template: %{name: source_type}}) do
     config = %{"foo" => "bar", "domain" => %{"id" => domain_id}}
     [source: insert(:source, config: config, type: source_type)]
+  end
+
+  defp create_source(%{template: %{name: source_type}}) do
+    [source: insert(:source, config: @valid_config, type: source_type)]
   end
 
   describe "source queries" do

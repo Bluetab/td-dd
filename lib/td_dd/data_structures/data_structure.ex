@@ -29,10 +29,12 @@ defmodule TdDd.DataStructures.DataStructure do
     field(:last_change_by, :integer)
     field(:row, :integer, virtual: true)
     field(:latest_metadata, :map, virtual: true)
-    field(:latest_note, :map, virtual: true)
     field(:domains, :map, virtual: true)
     field(:linked_concepts, :boolean, virtual: true)
+
+    field(:latest_note, :map, virtual: true)
     field(:search_content, :map, virtual: true)
+    has_one(:published_note, StructureNote, where: [status: :published])
 
     belongs_to(:system, System, on_replace: :update)
     belongs_to(:source, Source)
@@ -46,7 +48,6 @@ defmodule TdDd.DataStructures.DataStructure do
     many_to_many(:tags, DataStructureTag, join_through: DataStructuresTags)
     has_one(:current_version, DataStructureVersion, where: [deleted_at: nil])
     has_one(:current_metadata, StructureMetadata, where: [deleted_at: nil])
-    has_one(:published_note, StructureNote, where: [status: :published])
     has_many(:implementations, ImplementationStructure, where: [deleted_at: nil])
     has_many(:nodes, Node, foreign_key: :structure_id)
     has_many(:units, through: [:nodes, :units])
