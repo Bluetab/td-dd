@@ -64,27 +64,27 @@ defmodule TdDd.Canada.Abilities do
 
     # TODO: Is this needed? What about admin/service accounts?
     def can?(%Claims{role: "user"} = claims, :mutation, :reject_implementation) do
-      ImplementationAbilities.can?(claims, :reject_implementation, Implementation)
+      ImplementationAbilities.can?(claims, :reject, Implementation)
     end
 
     # TODO: Is this needed? What about admin/service accounts?
     def can?(%Claims{role: "user"} = claims, :mutation, :unreject_implementation) do
-      ImplementationAbilities.can?(claims, :unreject_implementation, Implementation)
+      ImplementationAbilities.can?(claims, :unreject, Implementation)
     end
 
     # TODO: Is this needed? What about admin/service accounts?
     def can?(%Claims{role: "user"} = claims, :mutation, :publish_implementation) do
-      ImplementationAbilities.can?(claims, :publish_implementation, Implementation)
+      ImplementationAbilities.can?(claims, :publish, Implementation)
     end
 
     # TODO: Is this needed? What about admin/service accounts?
     def can?(%Claims{role: "user"} = claims, :mutation, :deprecate_implementation) do
-      ImplementationAbilities.can?(claims, :deprecate_implementation, Implementation)
+      ImplementationAbilities.can?(claims, :deprecate, Implementation)
     end
 
     # TODO: Is this needed? What about admin/service accounts?
     def can?(%Claims{role: "user"} = claims, :mutation, :publish_implementation_from_draft) do
-      ImplementationAbilities.can?(claims, :publish_implementation_from_draft, Implementation)
+      ImplementationAbilities.can?(claims, :publish_from_draft, Implementation)
     end
 
     def can?(%Claims{} = claims, action, %Implementation{} = implementation) do

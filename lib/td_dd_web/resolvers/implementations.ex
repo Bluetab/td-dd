@@ -33,7 +33,7 @@ defmodule TdDdWeb.Resolvers.Implementations do
     with {:status, :pending_approval} <- {:status, implementation.status},
          {:last, true} <- {:last, Implementations.last?(implementation)},
          {:claims, %{} = claims} <- {:claims, claims(resolution)},
-         {:can, true} <- {:can, can?(claims, reject_implementation(implementation))},
+         {:can, true} <- {:can, can?(claims, reject(implementation))},
          {:ok, %{implementation: implementation}} <-
            Workflow.reject_implementation(implementation, claims) do
       {:ok, implementation}
@@ -52,7 +52,7 @@ defmodule TdDdWeb.Resolvers.Implementations do
     with {:status, :rejected} <- {:status, implementation.status},
          {:last, true} <- {:last, Implementations.last?(implementation)},
          {:claims, %{} = claims} <- {:claims, claims(resolution)},
-         {:can, true} <- {:can, can?(claims, unreject_implementation(implementation))},
+         {:can, true} <- {:can, can?(claims, unreject(implementation))},
          {:ok, %{implementation: implementation}} <-
            Workflow.unreject_implementation(implementation, claims) do
       {:ok, implementation}
@@ -71,7 +71,7 @@ defmodule TdDdWeb.Resolvers.Implementations do
     with {:status, :pending_approval} <- {:status, implementation.status},
          {:last, true} <- {:last, Implementations.last?(implementation)},
          {:claims, %{} = claims} <- {:claims, claims(resolution)},
-         {:can, true} <- {:can, can?(claims, publish_implementation(implementation))},
+         {:can, true} <- {:can, can?(claims, publish(implementation))},
          {:ok, %{implementation: implementation}} <-
            Workflow.publish_implementation(implementation, claims) do
       {:ok, implementation}
@@ -90,7 +90,7 @@ defmodule TdDdWeb.Resolvers.Implementations do
     with {:status, :published} <- {:status, implementation.status},
          {:last, true} <- {:last, Implementations.last?(implementation)},
          {:claims, %{} = claims} <- {:claims, claims(resolution)},
-         {:can, true} <- {:can, can?(claims, deprecate_implementation(implementation))},
+         {:can, true} <- {:can, can?(claims, deprecate(implementation))},
          {:ok, %{implementation: implementation}} <-
            Workflow.deprecate_implementation(implementation, claims) do
       {:ok, implementation}
@@ -109,7 +109,7 @@ defmodule TdDdWeb.Resolvers.Implementations do
     with {:status, :draft} <- {:status, implementation.status},
          {:last, true} <- {:last, Implementations.last?(implementation)},
          {:claims, %{} = claims} <- {:claims, claims(resolution)},
-         {:can, true} <- {:can, can?(claims, publish_implementation_from_draft(implementation))},
+         {:can, true} <- {:can, can?(claims, publish_from_draft(implementation))},
          {:ok, %{implementation: implementation}} <-
            Workflow.publish_implementation_from_draft(implementation, claims) do
       {:ok, implementation}
