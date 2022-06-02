@@ -84,16 +84,16 @@ defmodule TdDq.Rules.SearchTest do
       claims: claims
     } do
       %{id: domain_id} = CacheHelpers.insert_domain()
-      %{id: other_domain_id} = CacheHelpers.insert_domain(parent_id: domain_id)
+      %{id: executable_domain_id} = CacheHelpers.insert_domain(parent_id: domain_id)
 
       CacheHelpers.put_session_permissions(claims, %{
         "view_quality_rule" => [domain_id],
-        "execute_quality_rule_implementations" => [other_domain_id]
+        "execute_quality_rule_implementations" => [executable_domain_id]
       })
 
       ElasticsearchMock
       |> expect(:request, fn
-        _, :post, "/rules/_search", %{query: query, size: 0}, [] ->
+        _, :post, "/implementations/_search", %{query: query, size: 0}, [] ->
           assert %{
                    bool: %{
                      filter: [
@@ -106,13 +106,14 @@ defmodule TdDq.Rules.SearchTest do
           SearchHelpers.aggs_response(@aggs)
       end)
       |> expect(:request, fn
-        _, :post, "/rules/_search", %{query: query, size: 0}, [] ->
+        _, :post, "/implementations/_search", %{query: query, size: 0}, [] ->
           assert %{
                    bool: %{
                      filter: [
                        %{terms: %{"domain_ids" => [_, _]}},
                        %{term: %{"_confidential" => false}},
-                       %{term: %{"domain_ids" => ^other_domain_id}}
+                       %{term: %{"executable" => true}},
+                       %{term: %{"domain_ids" => ^executable_domain_id}}
                      ]
                    }
                  } = query
@@ -120,10 +121,14 @@ defmodule TdDq.Rules.SearchTest do
           SearchHelpers.aggs_response(@aggs)
       end)
 
-      assert {:ok, _} = Search.get_filter_values(claims, %{})
+      assert {:ok, _} = Search.get_filter_values(claims, %{}, :implementations)
 
       assert {:ok, _} =
-               Search.get_filter_values(claims, %{"filters" => %{"executable" => [true]}})
+               Search.get_filter_values(
+                 claims,
+                 %{"filters" => %{"executable" => [true]}},
+                 :implementations
+               )
     end
 
     @tag authentication: [role: "admin"]
@@ -311,16 +316,16 @@ defmodule TdDq.Rules.SearchTest do
     end
 
     @tag authentication: [role: "user"]
-    test "filters by executable permission if executable param is present", %{
+    test "filters by executable permission iff executable param is present", %{
       claims: claims,
       implementation: implementation
     } do
       %{id: domain_id} = CacheHelpers.insert_domain()
-      %{id: other_domain_id} = CacheHelpers.insert_domain(parent_id: domain_id)
+      %{id: executable_domain_id} = CacheHelpers.insert_domain(parent_id: domain_id)
 
       CacheHelpers.put_session_permissions(claims, %{
         "view_quality_rule" => [domain_id],
-        "execute_quality_rule_implementations" => [other_domain_id]
+        "execute_quality_rule_implementations" => [executable_domain_id]
       })
 
       ElasticsearchMock
@@ -331,7 +336,8 @@ defmodule TdDq.Rules.SearchTest do
                      filter: [
                        %{terms: %{"domain_ids" => [_, _]}},
                        %{term: %{"_confidential" => false}},
-                       %{term: %{"domain_ids" => ^other_domain_id}}
+                       %{term: %{"executable" => true}},
+                       %{term: %{"domain_ids" => ^executable_domain_id}}
                      ]
                    }
                  } = query

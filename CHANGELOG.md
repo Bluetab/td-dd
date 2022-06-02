@@ -10,6 +10,7 @@
 
 - [TD-4852] Ruleless implementation weren't being linked with data structures on
   creation
+- [TD-4835] It was possible to execute non-executable implementations
 
 ## [4.44.0] 2022-05-23
 

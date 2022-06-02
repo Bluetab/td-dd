@@ -35,11 +35,20 @@ defmodule TdDq.Rules.Search do
     |> do_search(:implementations, params)
   end
 
+  defp build_query(%Claims{} = claims, params, :rules = index) do
+    aggs = aggregations(index)
+
+    claims
+    |> search_permissions(:not_executable)
+    |> Query.build_query(params, aggs)
+  end
+
   defp build_query(%Claims{role: "service"} = claims, params, :implementations = index) do
     aggs = aggregations(index)
 
     {executable, params} =
       Map.get_and_update(params, "filters", fn
+        # TODO: Put default status filter always
         nil ->
           :pop
 
@@ -51,14 +60,6 @@ defmodule TdDq.Rules.Search do
 
     claims
     |> search_permissions(executable)
-    |> Query.build_query(params, aggs)
-  end
-
-  defp build_query(%Claims{} = claims, params, :rules = index) do
-    aggs = aggregations(index)
-
-    claims
-    |> search_permissions(:not_executable)
     |> Query.build_query(params, aggs)
   end
 

@@ -6,6 +6,7 @@ defmodule TdDq.Rules.Search.Query do
   alias Truedat.Search.Query
 
   @not_confidential %{term: %{"_confidential" => false}}
+  @executable %{term: %{"executable" => true}}
 
   def build_filters(%{} = permissions) do
     permissions
@@ -47,10 +48,11 @@ defmodule TdDq.Rules.Search.Query do
   defp reduce_term({"execute_quality_rule_implementations", :none}, _acc),
     do: {:halt, [%{match_none: %{}}]}
 
-  defp reduce_term({"execute_quality_rule_implementations", :all}, acc), do: {:cont, acc}
+  defp reduce_term({"execute_quality_rule_implementations", :all}, acc),
+    do: {:cont, [@executable, acc]}
 
   defp reduce_term({"execute_quality_rule_implementations", domain_ids}, acc) do
-    {:cont, [domain_filter(domain_ids) | acc]}
+    {:cont, [@executable, domain_filter(domain_ids) | acc]}
   end
 
   def build_query(%{} = permissions, params, aggs) do
