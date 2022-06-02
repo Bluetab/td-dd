@@ -87,7 +87,7 @@ defmodule TdDq.Canada.ImplementationAbilities do
   end
 
   def can?(%{} = claims, :publish_from_draft, %Implementation{domain_id: domain_id} = impl) do
-    Implementation.is_publishable_from_draft?(impl) &&
+    Implementation.is_updatable?(impl) &&
       Permissions.authorized?(claims, :publish_implementation, domain_id) &&
       Permissions.authorized?(claims, :manage_draft_implementation, domain_id)
   end

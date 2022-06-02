@@ -76,15 +76,13 @@ defmodule TdDq.Implementations do
   end
 
   def last?(%Implementation{id: id, implementation_key: implementation_key}) do
-    get_last_implementation_by_key!(implementation_key).id == id
-  end
-
-  def get_last_implementation_by_key!(implementation_key) do
     Implementation
     |> where([ri], ri.implementation_key == ^implementation_key)
     |> order_by(desc: :version)
+    |> select([ri], ri.id == ^id)
     |> limit(1)
-    |> Repo.one!()
+    |> Repo.one()
+    |> Kernel.!=(false)
   end
 
   @spec create_implementation(Rule.t(), map, Claims.t(), boolean) :: multi_result

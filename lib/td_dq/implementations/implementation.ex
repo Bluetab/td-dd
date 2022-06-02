@@ -338,31 +338,20 @@ defmodule TdDq.Implementations.Implementation do
     Map.put(result_map, :date, Map.get(rule_result, :date))
   end
 
-  def is_updatable?(%__MODULE__{status: status} = imp) do
-    Implementations.last?(imp) && status == :draft
-  end
+  def is_updatable?(%__MODULE__{status: status} = imp),
+    do: Implementations.last?(imp) && status == :draft
 
-  def is_publishable?(%__MODULE__{status: status} = imp) do
-    Implementations.last?(imp) && status == :pending_approval
-  end
-
-  def is_publishable_from_draft?(%__MODULE__{status: status} = imp) do
-    Implementations.last?(imp) && status == :draft
-  end
+  def is_publishable?(%__MODULE__{status: status} = imp),
+    do: Implementations.last?(imp) && status == :pending_approval
 
   def is_rejectable?(%__MODULE__{} = implementation),
     do: is_publishable?(implementation)
 
-  def is_undo_rejectable?(%__MODULE__{status: status} = imp) do
-    Implementations.last?(imp) && status == :rejected
-  end
+  def is_undo_rejectable?(%__MODULE__{status: status} = imp),
+    do: Implementations.last?(imp) && status == :rejected
 
-  def is_versionable?(%__MODULE__{status: status} = imp) do
-    Implementations.last?(imp) && status == :published
-  end
-
-  def is_deprecatable?(%__MODULE__{} = implementation),
-    do: is_versionable?(implementation)
+  def is_deprecatable?(%__MODULE__{status: status} = imp),
+    do: Implementations.last?(imp) && status == :published
 
   def is_deletable?(%__MODULE__{status: status} = imp) do
     valid_statuses = [:draft, :rejected]
