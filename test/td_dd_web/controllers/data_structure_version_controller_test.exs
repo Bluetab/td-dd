@@ -50,7 +50,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
               },
               %{
                 "name" => "alias",
-                "type" => "string",
+                "type" => "string"
               }
             ]
           }
