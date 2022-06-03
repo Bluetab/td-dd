@@ -17,20 +17,6 @@ defmodule TdDq.Canada.Abilities do
   alias TdDq.Rules.RuleResult
 
   defimpl Canada.Can, for: Claims do
-    # admin can do anything
-    def can?(%Claims{role: "admin"}, _action, _domain) do
-      true
-    end
-
-    def can?(%Claims{} = claims, action, target)
-        when target in [Execution, Group, QualityEvent] do
-      ExecutionAbilities.can?(claims, action, target)
-    end
-
-    def can?(%Claims{} = claims, action, %Execution{} = target) do
-      ExecutionAbilities.can?(claims, action, target)
-    end
-
     def can?(%Claims{} = claims, action, Implementation) do
       ImplementationAbilities.can?(claims, action, Implementation)
     end
@@ -45,6 +31,20 @@ defmodule TdDq.Canada.Abilities do
 
     def can?(%Claims{} = claims, action, %Ecto.Changeset{data: %Implementation{}} = target) do
       ImplementationAbilities.can?(claims, action, target)
+    end
+
+    # admin can do anything (except some actions authorized by ImplementionAbilities)
+    def can?(%Claims{role: "admin"}, _action, _domain) do
+      true
+    end
+
+    def can?(%Claims{} = claims, action, target)
+        when target in [Execution, Group, QualityEvent] do
+      ExecutionAbilities.can?(claims, action, target)
+    end
+
+    def can?(%Claims{} = claims, action, %Execution{} = target) do
+      ExecutionAbilities.can?(claims, action, target)
     end
 
     def can?(%Claims{} = claims, action, %Ecto.Changeset{data: %Rule{}} = target) do

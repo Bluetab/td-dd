@@ -358,6 +358,10 @@ defmodule TdDq.Implementations.Implementation do
     Implementations.last?(imp) && Enum.member?(valid_statuses, status)
   end
 
+  def executable?(%__MODULE__{status: status} = imp) do
+    Implementations.last?(imp) && status == :published && imp.executable
+  end
+
   def submittable?(%__MODULE__{status: status} = imp) do
     Implementations.last?(imp) && status == :draft
   end

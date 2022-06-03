@@ -5,7 +5,7 @@ defmodule TdDq.Canada.ImplementationAbilities do
   alias TdDq.Implementations.Implementation
   alias TdDq.Permissions
 
-  @workflow_actions [:delete, :deprecate, :edit, :publish, :reject, :submit]
+  @workflow_actions [:delete, :deprecate, :edit, :execute, :publish, :reject, :submit]
 
   @mutation_permissions %{
     submit_implementation: :manage_draft_implementation,
@@ -165,8 +165,9 @@ defmodule TdDq.Canada.ImplementationAbilities do
   # Service accounts can execute rule implementations
   def can?(%{role: "service"}, :execute, _), do: true
 
-  def can?(%{} = claims, :execute, %Implementation{domain_id: domain_id}) do
-    Permissions.authorized?(claims, :execute_quality_rule_implementations, domain_id)
+  def can?(%{} = claims, :execute, %Implementation{domain_id: domain_id} = implementation) do
+    valid_action?(:execute, implementation) &&
+      Permissions.authorized?(claims, :execute_quality_rule_implementations, domain_id)
   end
 
   def can?(%{} = claims, :execute, %{domain_ids: [domain_id | _]}) do
@@ -200,6 +201,7 @@ defmodule TdDq.Canada.ImplementationAbilities do
   defp valid_action?(:delete, implementation), do: Implementation.deletable?(implementation)
   defp valid_action?(:deprecate, implementation), do: Implementation.deprecatable?(implementation)
   defp valid_action?(:edit, implementation), do: Implementation.editable?(implementation)
+  defp valid_action?(:execute, implementation), do: Implementation.executable?(implementation)
   defp valid_action?(:publish, implementation), do: Implementation.publishable?(implementation)
   defp valid_action?(:reject, implementation), do: Implementation.publishable?(implementation)
   defp valid_action?(:submit, implementation), do: Implementation.submittable?(implementation)

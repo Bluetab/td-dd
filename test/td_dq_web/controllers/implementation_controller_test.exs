@@ -262,7 +262,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
          ]
     test "includes execute action if user is assigned execute_quality_rule_implementations permission",
          %{conn: conn, swagger_schema: schema, domain: domain} do
-      %{id: id} = insert(:implementation, domain_id: domain.id)
+      %{id: id} = insert(:implementation, domain_id: domain.id, status: "published")
 
       assert %{
                "_actions" => %{

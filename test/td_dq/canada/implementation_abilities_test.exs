@@ -3,12 +3,12 @@ defmodule TdDq.Canada.ImplementationAbilitiesTest do
 
   import TdDq.Canada.ImplementationAbilities, only: [can?: 3]
 
-  @actions [:edit, :delete, :deprecate, :publish, :reject, :submit, :move, :clone]
+  @actions [:edit, :delete, :deprecate, :publish, :reject, :submit, :move, :clone, :execute]
 
   @valid_actions %{
     draft: [:edit, :submit, :delete, :move, :clone],
     pending_approval: [:publish, :reject, :delete, :move, :clone],
-    published: [:deprecate, :move, :clone],
+    published: [:deprecate, :move, :clone, :execute],
     rejected: [:edit, :delete, :move, :clone],
     deprecated: [:move, :clone],
     versioned: [:move, :clone]

@@ -192,7 +192,7 @@ defmodule TdDqWeb.ImplementationController do
       :manage_segments,
       :move,
       :publish,
-      :publish_from_draft
+      :reject
     ]
     |> Enum.filter(&can?(claims, &1, implementation))
     |> Enum.reduce(%{}, &Map.put(&2, &1, %{method: "POST"}))
