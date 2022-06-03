@@ -8,6 +8,7 @@
 - [TD-4872] Support querying structures by `external_id` in GraphQL API
 - [TD-3920] Alias support for structures
 - [TD-4855] Support `Profile` searching with params (offset, limit, since)
+- [TD-4843] Support filters grants by `system_external_id`
 
 ### Fixed
 
