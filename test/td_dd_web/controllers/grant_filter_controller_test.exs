@@ -93,6 +93,32 @@ defmodule TdDdWeb.GrantFilterControllerTest do
                |> post(Routes.grant_filter_path(conn, :search, params))
                |> json_response(:ok)
     end
+
+    @tag authentication: [user_name: "non_admin_user"]
+    test "includes system_id filter from request parameters", %{conn: conn} do
+      ElasticsearchMock
+      |> expect(:request, fn
+        _, :post, "/grants/_search", %{query: query, size: 0}, [] ->
+          assert %{
+                   bool: %{
+                     filter: [
+                       %{terms: %{
+                         "data_structure_version.system.external_id.raw" => ["bar", "foo"]
+                        }
+                      }, _permission_filter]
+                   }
+                 } = query
+
+          SearchHelpers.aggs_response()
+      end)
+
+      params = %{"filters" => %{"system_external_id" => ["foo", "bar"]}}
+
+      assert %{"data" => _} =
+        conn
+        |> post(Routes.grant_filter_path(conn, :search, params))
+        |> json_response(:ok)
+    end
   end
 
   describe "POST /api/grant_filters/search/mine" do
