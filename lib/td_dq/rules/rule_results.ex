@@ -97,7 +97,9 @@ defmodule TdDq.Rules.RuleResults do
       {_, events} = QualityEvents.complete(executions)
       {:ok, events}
     end)
-    |> Multi.run(:results, fn _, %{result: %{id: id}} -> select_results([id]) end)
+    |> Multi.run(:results, fn _, %{result: %{id: id}} ->
+      select_results([id])
+    end)
     |> Multi.run(:audit, Audit, :rule_results_created, [0])
     |> Multi.run(:implementation, fn _, _ -> {:ok, impl} end)
     |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
@@ -186,7 +188,7 @@ defmodule TdDq.Rules.RuleResults do
     results =
       RuleResult
       |> join(:inner, [r], i in Implementation, on: r.implementation_id == i.id)
-      |> join(:inner, [res, i], rule in assoc(i, :rule))
+      |> join(:left, [res, i], rule in assoc(i, :rule))
       |> select([res], %{})
       |> select_merge(
         [res, _, _],
@@ -198,7 +200,9 @@ defmodule TdDq.Rules.RuleResults do
         rule_id: i.rule_id,
         goal: i.goal,
         minimum: i.minimum,
-        result_type: i.result_type
+        result_type: i.result_type,
+        domain_id: i.domain_id, # Will be overwritten by rule domain_id below
+                                # if implementation has an associated rule
       })
       |> select_merge(
         [_, _, rule],

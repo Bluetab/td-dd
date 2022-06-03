@@ -32,6 +32,7 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.Lineage.LineageEvent
   alias TdDd.Lineage.Units.Node
   alias TdDd.Lineage.Units.Unit
+  alias TdDd.Profiles.Profile
   alias TdDd.ReferenceData.Dataset, as: ReferenceDataset
   alias TdDd.Systems.System
   alias TdDq.Canada.ImplementationAbilities
@@ -102,6 +103,8 @@ defmodule TdDd.Canada.Abilities do
     def can?(%Claims{} = claims, action, %ProfileExecution{} = target) do
       ExecutionAbilities.can?(claims, action, target)
     end
+
+    def can?(%Claims{role: "service"}, :index, Profile), do: true
 
     def can?(%Claims{} = claims, action, %Link{} = link) do
       LinkAbilities.can?(claims, action, link)
