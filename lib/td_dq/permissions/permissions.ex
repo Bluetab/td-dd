@@ -14,6 +14,10 @@ defmodule TdDq.Permissions do
     TdCache.Permissions.has_permission?(jti, permission, "domain", domain_id)
   end
 
+  def authorized?(%{} = claims, permissions) when is_list(permissions) do
+    Enum.all?(permissions, &authorized?(claims, &1))
+  end
+
   def authorized?(%Claims{jti: jti}, permission) do
     TdCache.Permissions.has_permission?(jti, permission)
   end

@@ -13,6 +13,15 @@ defmodule TdDq.Canada.ImplementationAbilities do
     publish_implementation: :publish_implementation
   }
 
+  @action_permissions %{
+    "execute" => :execute_implementations,
+    "createRaw" => [:manage_raw_implementations, :manage_ruleless_implementation],
+    "create" => [:manage_implementations, :manage_ruleless_implementation],
+    "download" => :view_quality_rule,
+    "upload" => :manage_implementations,
+    "uploadResults" => :manage_rule_results
+  }
+
   # GraphQL mutation authorizations
   def can?(%{role: "admin"}, :mutation, _mutation), do: true
   def can?(%{role: "service"}, :mutation, _mutation), do: false
@@ -24,9 +33,17 @@ defmodule TdDq.Canada.ImplementationAbilities do
     end
   end
 
+  # TODO: maybe some of these can be removed? manage_implementations, manage_raw_implementations, ...
   def can?(%{role: "service"}, :manage_implementations, Implementation), do: false
 
   def can?(%{role: "admin"}, _action, Implementation), do: true
+
+  # Actions in implementation search results
+  def can?(claims, action, Implementation)
+      when action in ["execute", "createRaw", "create", "download", "upload", "uploadResults"] do
+    permission_or_permissions = Map.fetch!(@action_permissions, action)
+    Permissions.authorized?(claims, permission_or_permissions)
+  end
 
   def can?(%{} = claims, :manage_implementations, Implementation) do
     Permissions.authorized?(claims, :manage_quality_rule_implementations)
