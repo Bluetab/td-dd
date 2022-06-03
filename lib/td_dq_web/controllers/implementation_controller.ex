@@ -192,7 +192,8 @@ defmodule TdDqWeb.ImplementationController do
       :manage_segments,
       :move,
       :publish,
-      :reject
+      :reject,
+      :submit
     ]
     |> Enum.filter(&can?(claims, &1, implementation))
     |> Enum.reduce(%{}, &Map.put(&2, &1, %{method: "POST"}))
@@ -260,7 +261,8 @@ defmodule TdDqWeb.ImplementationController do
     claims = conn.assigns[:current_resource]
     implementation = Implementations.get_implementation!(id)
 
-    with {:ok, %{implementation: _}} <-
+    with {:can, true} <- {:can, can?(claims, delete(implementation))},
+         {:ok, %{implementation: _}} <-
            Implementations.delete_implementation(implementation, claims) do
       send_resp(conn, :no_content, "")
     end

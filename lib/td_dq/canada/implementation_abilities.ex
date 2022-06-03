@@ -5,13 +5,12 @@ defmodule TdDq.Canada.ImplementationAbilities do
   alias TdDq.Implementations.Implementation
   alias TdDq.Permissions
 
-  @workflow_actions [:delete, :deprecate, :edit, :execute, :publish, :reject, :submit]
+  @workflow_actions [:delete, :edit, :execute, :publish, :reject, :submit]
 
   @mutation_permissions %{
     submit_implementation: :manage_draft_implementation,
     reject_implementation: :publish_implementation,
-    publish_implementation: :publish_implementation,
-    deprecate_implementation: :deprecate_implementation
+    publish_implementation: :publish_implementation
   }
 
   # GraphQL mutation authorizations
@@ -80,8 +79,12 @@ defmodule TdDq.Canada.ImplementationAbilities do
       Permissions.authorized?(claims, :publish_implementation, domain_id)
   end
 
-  def can?(%{} = claims, :deprecate, %Implementation{domain_id: domain_id} = implementation) do
-    valid_action?(:deprecate, implementation) &&
+  def can?(
+        %{} = claims,
+        :delete,
+        %Implementation{domain_id: domain_id, status: :published} = implementation
+      ) do
+    valid_action?(:delete, implementation) &&
       Permissions.authorized?(claims, :deprecate_implementation, domain_id)
   end
 
@@ -198,8 +201,10 @@ defmodule TdDq.Canada.ImplementationAbilities do
     |> permission()
   end
 
+  defp valid_action?(:delete, %{status: :published} = implementation),
+    do: Implementation.deprecatable?(implementation)
+
   defp valid_action?(:delete, implementation), do: Implementation.deletable?(implementation)
-  defp valid_action?(:deprecate, implementation), do: Implementation.deprecatable?(implementation)
   defp valid_action?(:edit, implementation), do: Implementation.editable?(implementation)
   defp valid_action?(:execute, implementation), do: Implementation.executable?(implementation)
   defp valid_action?(:publish, implementation), do: Implementation.publishable?(implementation)

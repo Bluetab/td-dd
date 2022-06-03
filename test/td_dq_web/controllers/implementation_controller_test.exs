@@ -378,7 +378,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert %{
                "manage" => %{"method" => "POST"},
                "edit" => %{"method" => "POST"},
-               "manage_segments" => %{"method" => "POST"}
+               "manage_segments" => %{"method" => "POST"},
+               "submit" => %{"method" => "POST"}
              } == actions
     end
 
@@ -400,7 +401,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       assert %{
                "manage" => %{"method" => "POST"},
-               "edit" => %{"method" => "POST"}
+               "edit" => %{"method" => "POST"},
+               "submit" => %{"method" => "POST"}
              } == actions
     end
 
@@ -423,7 +425,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       assert %{
                "edit" => %{"method" => "POST"},
-               "manage" => %{"method" => "POST"}
+               "manage" => %{"method" => "POST"},
+               "submit" => %{"method" => "POST"}
              } == actions
     end
 
@@ -1782,6 +1785,34 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert_error_sent(:not_found, fn ->
         get(conn, Routes.implementation_path(conn, :show, implementation))
       end)
+    end
+
+    @tag authentication: [
+           user_name: "non_admin",
+           permissions: [
+             :manage_quality_rule_implementations,
+             :manage_ruleless_implementations,
+             :deprecate_implementation,
+             :view_quality_rule
+           ]
+         ]
+    test "user with permissions can deprecate a published implementation", %{
+      conn: conn,
+      domain: %{id: domain_id}
+    } do
+      implementation = insert(:implementation, domain_id: domain_id, status: :published)
+
+      assert conn
+             |> delete(Routes.implementation_path(conn, :delete, implementation))
+             |> response(:no_content)
+
+      assert %{"data" => data} =
+               conn
+               |> get(Routes.implementation_path(conn, :show, implementation))
+               |> json_response(:ok)
+
+      assert %{"deleted_at" => deleted_at, "status" => "deprecated"} = data
+      assert deleted_at
     end
   end
 

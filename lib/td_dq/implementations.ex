@@ -245,8 +245,24 @@ defmodule TdDq.Implementations do
   end
 
   def delete_implementation(
+        %Implementation{status: :published} = implementation,
+        %Claims{user_id: user_id}
+      ) do
+    changeset =
+      implementation
+      |> Repo.preload(:rule)
+      |> Implementation.changeset(%{status: :deprecated, deleted_at: DateTime.utc_now()})
+
+    Multi.new()
+    |> Multi.update(:implementation, changeset)
+    |> Multi.run(:audit, Audit, :implementation_deprecated, [changeset, user_id])
+    |> Repo.transaction()
+    |> on_delete()
+  end
+
+  def delete_implementation(
         %Implementation{} = implementation,
-        %Claims{user_id: user_id} = claims
+        %Claims{user_id: user_id}
       ) do
     changeset =
       implementation
@@ -254,7 +270,6 @@ defmodule TdDq.Implementations do
       |> Changeset.change()
 
     Multi.new()
-    |> Multi.run(:can, fn _, _ -> multi_can(can?(claims, delete(implementation))) end)
     |> Multi.delete(:implementation, changeset)
     |> Multi.run(:audit, Audit, :implementation_deleted, [changeset, user_id])
     |> Repo.transaction()
