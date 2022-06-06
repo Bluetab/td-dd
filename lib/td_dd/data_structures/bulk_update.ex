@@ -297,6 +297,7 @@ defmodule TdDd.DataStructures.BulkUpdate do
       schema_type in ["url", "enriched_text", "integer", "float"] or
         (schema_type in ["string", "user"] and cardinality in ["*", "+"])
     end)
+    # credo:disable-for-next-line
     |> Enum.filter(fn %{"name" => name} ->
       field_content = Map.get(content, name)
       not is_nil(field_content) and is_binary(field_content) and field_content != ""

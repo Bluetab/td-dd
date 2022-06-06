@@ -4,7 +4,7 @@ defmodule TdCx.Events.EventTest do
   alias TdCx.Events.Event
 
   test "validates length of message" do
-    message = 1..1001 |> Enum.map(fn _ -> "." end) |> Enum.join()
+    message = 1..1001 |> Enum.map_join("", fn _ -> "." end)
 
     assert %{errors: errors} =
              %{"message" => message}

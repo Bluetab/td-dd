@@ -16,9 +16,8 @@ defmodule TdDq.CSV.Reader do
     with {:ok, csv} <- parse_stream(stream),
          headers <- Enum.at(csv, 0),
          {:ok, headers} <- validate_headers(required_headers, headers),
-         {:ok, parsed_file} <- parse_file(csv, headers),
-         {:ok, result} <- bulk_create.(parsed_file, claims) do
-      {:ok, result}
+         {:ok, parsed_file} <- parse_file(csv, headers) do
+      bulk_create.(parsed_file, claims)
     end
   end
 

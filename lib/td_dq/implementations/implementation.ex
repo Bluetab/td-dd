@@ -167,11 +167,8 @@ defmodule TdDq.Implementations.Implementation do
          old_content,
          template_name
        ) do
-    changeset_content
-    |> Format.maybe_put_identifier(old_content, template_name)
-    |> (fn new_content ->
-          put_change(changeset, :df_content, new_content)
-        end).()
+    new_content = Format.maybe_put_identifier(changeset_content, old_content, template_name)
+    put_change(changeset, :df_content, new_content)
   end
 
   defp maybe_put_identifier_aux(changeset, _, _) do

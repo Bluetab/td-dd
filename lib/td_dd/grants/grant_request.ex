@@ -63,10 +63,10 @@ defmodule TdDd.Grants.GrantRequest do
          old_content,
          template_name
        ) do
-    TdDfLib.Format.maybe_put_identifier(changeset_content, old_content, template_name)
-    |> (fn new_content ->
-          put_change(changeset, :metadata, new_content)
-        end).()
+    new_content =
+      TdDfLib.Format.maybe_put_identifier(changeset_content, old_content, template_name)
+
+    put_change(changeset, :metadata, new_content)
   end
 
   defp maybe_put_identifier_aux(changeset, _old_content, _template_name) do
