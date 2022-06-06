@@ -24,7 +24,7 @@ defmodule TdDq.Implementations.DatasetRow do
 
     struct
     |> cast(params, [:join_type])
-    |> cast_embed(:alias, with: &StructureAlias.changeset/2, required: false)
+    |> cast_embed(:alias, with: &StructureAlias.changeset/2)
     |> cast_embed(:structure, with: &Structure.changeset/2, required: true)
     |> cast_embed(:clauses, with: &JoinClause.changeset/2, required: clauses_required)
   end

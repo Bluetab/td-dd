@@ -23,7 +23,7 @@ defmodule TdDd.DataStructures.StructureNote do
     )
 
     field(:version, :integer)
-    field(:resource, :map, virtual: true, deafult: %{})
+    field(:resource, :map, virtual: true, default: %{})
     field(:domain_ids, {:array, :integer}, virtual: true, default: [])
     belongs_to(:data_structure, DataStructure)
 
@@ -157,10 +157,10 @@ defmodule TdDd.DataStructures.StructureNote do
          old_content,
          template_id
        ) do
-    TdDfLib.Format.maybe_put_identifier_by_id(changeset_content, old_content, template_id)
-    |> (fn new_content ->
-          put_change(changeset, :df_content, new_content)
-        end).()
+    new_content =
+      TdDfLib.Format.maybe_put_identifier_by_id(changeset_content, old_content, template_id)
+
+    put_change(changeset, :df_content, new_content)
   end
 
   defp maybe_put_identifier_aux(changeset, _, _), do: changeset

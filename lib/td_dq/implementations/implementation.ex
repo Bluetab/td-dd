@@ -167,11 +167,8 @@ defmodule TdDq.Implementations.Implementation do
          old_content,
          template_name
        ) do
-    changeset_content
-    |> Format.maybe_put_identifier(old_content, template_name)
-    |> (fn new_content ->
-          put_change(changeset, :df_content, new_content)
-        end).()
+    new_content = Format.maybe_put_identifier(changeset_content, old_content, template_name)
+    put_change(changeset, :df_content, new_content)
   end
 
   defp maybe_put_identifier_aux(changeset, _, _) do
@@ -284,7 +281,6 @@ defmodule TdDq.Implementations.Implementation do
   defp raw_changeset(changeset) do
     changeset
     |> cast_embed(:raw_content, with: &RawContent.changeset/2, required: true)
-    |> validate_required(:raw_content)
   end
 
   defp draft_changeset(changeset), do: changeset
@@ -292,10 +288,9 @@ defmodule TdDq.Implementations.Implementation do
   def default_changeset(changeset) do
     changeset
     |> cast_embed(:dataset, with: &DatasetRow.changeset/2, required: true)
-    |> cast_embed(:populations, with: &Populations.changeset/2, required: false)
+    |> cast_embed(:populations, with: &Populations.changeset/2)
     |> cast_embed(:validations, with: &ConditionRow.changeset/2, required: true)
-    |> cast_embed(:segments, with: &SegmentsRow.changeset/2, required: false)
-    |> validate_required([:dataset, :validations])
+    |> cast_embed(:segments, with: &SegmentsRow.changeset/2)
   end
 
   def get_execution_result_info(_implementation, %{type: "FAILED", inserted_at: inserted_at}) do
