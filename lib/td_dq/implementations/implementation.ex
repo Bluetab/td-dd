@@ -292,7 +292,6 @@ defmodule TdDq.Implementations.Implementation do
     |> cast_embed(:populations, with: &Populations.changeset/2, required: false)
     |> cast_embed(:validations, with: &ConditionRow.changeset/2, required: true)
     |> cast_embed(:segments, with: &SegmentsRow.changeset/2, required: false)
-    |> validate_required([:dataset, :validations])
   end
 
   def get_execution_result_info(_implementation, %{type: "FAILED", inserted_at: inserted_at}) do
