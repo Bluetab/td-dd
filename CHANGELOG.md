@@ -10,6 +10,7 @@
 
 - [TD-4852] Ruleless implementation weren't being linked with data structures on
   creation
+- [TD-4878] Error loading structure metadata with synchronous API
 
 ## [4.44.0] 2022-05-23
 
