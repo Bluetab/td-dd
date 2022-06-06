@@ -25,7 +25,7 @@ defmodule TdDq.Rules.RuleResult do
 
   schema "rule_results" do
     field(:date, :utc_datetime)
-    field(:result, :decimal, precision: 5, scale: @scale)
+    field(:result, :decimal)
     field(:errors, :integer)
     field(:records, :integer)
     field(:params, :map, default: %{})

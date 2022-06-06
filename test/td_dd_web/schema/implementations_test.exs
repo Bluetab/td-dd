@@ -43,7 +43,7 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
 
       assert %{"data" => nil, "errors" => errors} =
                conn
-               |> post("api/v2", %{
+               |> post("/api/v2", %{
                  "query" => @submit_implementation,
                  "variables" => %{"id" => implementation_id}
                })
@@ -59,7 +59,7 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
       assert %{"data" => data} =
                resp =
                conn
-               |> post("api/v2", %{
+               |> post("/api/v2", %{
                  "query" => @submit_implementation,
                  "variables" => %{"id" => implementation_id}
                })
@@ -84,7 +84,7 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
 
       assert %{"data" => nil, "errors" => errors} =
                conn
-               |> post("api/v2", %{
+               |> post("/api/v2", %{
                  "query" => @submit_implementation,
                  "variables" => %{"id" => implementation_id}
                })
@@ -101,7 +101,7 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
 
       assert %{"data" => nil, "errors" => errors} =
                conn
-               |> post("api/v2", %{
+               |> post("/api/v2", %{
                  "query" => @submit_implementation,
                  "variables" => %{"id" => implementation_id}
                })
@@ -118,7 +118,7 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
 
       assert %{"data" => nil, "errors" => errors} =
                conn
-               |> post("api/v2", %{
+               |> post("/api/v2", %{
                  "query" => @reject_implementation,
                  "variables" => %{"id" => implementation_id}
                })
@@ -135,7 +135,7 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
       assert %{"data" => data} =
                resp =
                conn
-               |> post("api/v2", %{
+               |> post("/api/v2", %{
                  "query" => @reject_implementation,
                  "variables" => %{"id" => implementation_id}
                })
@@ -160,7 +160,7 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
 
       assert %{"data" => nil, "errors" => errors} =
                conn
-               |> post("api/v2", %{
+               |> post("/api/v2", %{
                  "query" => @reject_implementation,
                  "variables" => %{"id" => implementation_id}
                })
@@ -178,7 +178,7 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
 
       assert %{"data" => nil, "errors" => errors} =
                conn
-               |> post("api/v2", %{
+               |> post("/api/v2", %{
                  "query" => @reject_implementation,
                  "variables" => %{"id" => implementation_id}
                })
@@ -195,7 +195,7 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
 
       assert %{"data" => nil, "errors" => errors} =
                conn
-               |> post("api/v2", %{
+               |> post("/api/v2", %{
                  "query" => @publish_implementation,
                  "variables" => %{"id" => implementation_id}
                })
@@ -219,7 +219,7 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
       assert %{"data" => data} =
                resp =
                conn
-               |> post("api/v2", %{
+               |> post("/api/v2", %{
                  "query" => @publish_implementation,
                  "variables" => %{"id" => implementation_id}
                })
@@ -244,7 +244,7 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
 
       assert %{"data" => nil, "errors" => errors} =
                conn
-               |> post("api/v2", %{
+               |> post("/api/v2", %{
                  "query" => @publish_implementation,
                  "variables" => %{"id" => implementation_id}
                })
@@ -262,7 +262,7 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
 
       assert %{"data" => nil, "errors" => errors} =
                conn
-               |> post("api/v2", %{
+               |> post("/api/v2", %{
                  "query" => @publish_implementation,
                  "variables" => %{"id" => implementation_id}
                })

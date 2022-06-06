@@ -19,6 +19,6 @@ defmodule TdDq.Implementations.Populations do
   def changeset(struct, %{} = params) do
     struct
     |> cast(params, [])
-    |> cast_embed(:population, with: &ConditionRow.changeset/2, required: false)
+    |> cast_embed(:population, with: &ConditionRow.changeset/2)
   end
 end

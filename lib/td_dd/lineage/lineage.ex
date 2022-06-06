@@ -254,12 +254,12 @@ defmodule TdDd.Lineage do
   ## Private functions
 
   def ref_to_string(ref) when is_reference(ref) do
-    ref
-    |> :erlang.ref_to_list()
-    |> List.to_string()
-    |> (fn string_ref ->
-          Regex.run(~r/<(.*)>/, string_ref)
-        end).()
+    string_ref =
+      ref
+      |> :erlang.ref_to_list()
+      |> List.to_string()
+
+    Regex.run(~r/<(.*)>/, string_ref)
     |> Enum.at(1)
   end
 

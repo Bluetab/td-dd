@@ -257,8 +257,7 @@ defmodule TdDq.Implementations.Download do
       Enum.find(values, fn %{"value" => value} -> value == map_value end)
     end)
     |> Enum.reject(&is_nil/1)
-    |> Enum.map(&Map.get(&1, "text", ""))
-    |> Enum.join(", ")
+    |> Enum.map_join(", ", &Map.get(&1, "text", ""))
   end
 
   defp get_content_field(%{"type" => "table"}, _content), do: ""

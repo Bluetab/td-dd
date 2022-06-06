@@ -396,14 +396,6 @@ defmodule TdDd.Factory do
     }
   end
 
-  @spec condition_row_factory :: %TdDq.Implementations.ConditionRow{
-          modifier: nil,
-          operator: any,
-          population: [],
-          structure: any,
-          value: [%{optional(<<_::24>>) => 8}, ...],
-          value_modifier: []
-        }
   def condition_row_factory do
     %TdDq.Implementations.ConditionRow{
       value: [%{"raw" => 8}],
