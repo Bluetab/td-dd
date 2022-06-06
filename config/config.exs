@@ -98,6 +98,8 @@ config :td_dd, TdDd.ReferenceData,
   max_cols: 10,
   max_rows: 10_000
 
+config :td_dd, TdDd.Loader.Worker, timeout: 30_000
+
 # Default timeout increased for bulk metadata upload
 config :td_dd, TdDd.Repo,
   pool_size: 4,

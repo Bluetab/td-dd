@@ -171,3 +171,6 @@ config :td_dd, TdDd.Lineage,
 config :td_dd, TdDd.ReferenceData,
   max_cols: System.get_env("REFERENCE_DATA_MAX_COLUMNS", "10") |> String.to_integer(),
   max_rows: System.get_env("REFERENCE_DATA_MAX_ROWS", "10000") |> String.to_integer()
+
+config :td_dd, TdDd.Loader.Worker,
+  timeout: System.get_env("SYNC_LOADER_TIMEOUT", "30000") |> String.to_integer()
