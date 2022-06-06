@@ -36,6 +36,7 @@ defmodule TdDdWeb.ImplementationUploadControllerTest do
     @tag authentication: [role: "admin"]
     test "uploads implementations without rules", %{conn: conn} do
       CacheHelpers.insert_domain(external_id: "some_domain_id")
+
       attrs = %{
         implementations: %Plug.Upload{
           filename: "implementations_without_rules.csv",

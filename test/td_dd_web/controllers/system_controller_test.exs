@@ -162,12 +162,7 @@ defmodule TdDdWeb.SystemControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "generates identifier widget", %{
-      conn: conn,
-      swagger_schema: schema,
-      template: %{id: template_id}
-    } do
-      TdCache.TemplateCache.delete(template_id)
+    test "generates identifier widget", %{conn: conn, swagger_schema: schema} do
       CacheHelpers.insert_template(@identifier_template)
 
       valid_attr =
@@ -187,13 +182,7 @@ defmodule TdDdWeb.SystemControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "renders system when template not exists", %{
-      conn: conn,
-      swagger_schema: schema,
-      template: %{id: template_id}
-    } do
-      TdCache.TemplateCache.delete(template_id)
-
+    test "renders system when template not exists", %{conn: conn, swagger_schema: schema} do
       assert %{"data" => %{"id" => _id}} =
                conn
                |> post(Routes.system_path(conn, :create), system: @create_attrs)

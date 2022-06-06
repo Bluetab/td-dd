@@ -47,5 +47,4 @@ defmodule TdDd.DataStructures.CsvBulkUpdateEvent do
   defp put_node(changeset) do
     cast(changeset, %{node: Atom.to_string(Node.self())}, [:node])
   end
-
 end

@@ -35,8 +35,17 @@ defmodule TdDd.Canada.Abilities do
   alias TdDd.Profiles.Profile
   alias TdDd.ReferenceData.Dataset, as: ReferenceDataset
   alias TdDd.Systems.System
+  alias TdDq.Canada.ImplementationAbilities
+  alias TdDq.Implementations.Implementation
 
   defimpl Canada.Can, for: Claims do
+    @implementation_mutations [
+      :deprecate_implementation,
+      :publish_implementation,
+      :reject_implementation,
+      :submit_implementation
+    ]
+
     # service accounts can upload metadata and profiling
     def can?(%Claims{role: "service"}, :upload, _resource), do: true
 
@@ -55,6 +64,16 @@ defmodule TdDd.Canada.Abilities do
       do: DataStructureTagAbilities.can?(claims, :index, DataStructureTag)
 
     def can?(%Claims{}, _action, nil), do: false
+
+    def can?(%{} = claims, :mutation, mutation) when mutation in @implementation_mutations do
+      ImplementationAbilities.can?(claims, :mutation, mutation)
+    end
+
+    def can?(%{role: role}, :mutation, _mutation), do: role == "admin"
+
+    def can?(%Claims{} = claims, action, %Implementation{} = implementation) do
+      ImplementationAbilities.can?(claims, action, implementation)
+    end
 
     def can?(%Claims{} = claims, action, ReferenceDataset) do
       ReferenceDataAbilities.can?(claims, action, ReferenceDataset)

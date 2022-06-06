@@ -14,18 +14,18 @@ defmodule TdDdWeb.Schema.TemplatesTest do
   """
 
   describe "templates query" do
-
     @tag authentication: [role: "user"]
     test "returns data when queried by user", %{conn: conn} do
       %{content: content} = CacheHelpers.insert_template(%{scope: "qe"})
+
       assert %{"data" => data} =
-              response =
-              conn
-              |> post("/api/v2", %{
-                "query" => @templates,
-                "variables" => %{"scope" => "qe"}
-              })
-              |> json_response(:ok)
+               response =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @templates,
+                 "variables" => %{"scope" => "qe"}
+               })
+               |> json_response(:ok)
 
       assert response["errors"] == nil
       assert %{"templates" => [template]} = data
@@ -44,27 +44,29 @@ defmodule TdDdWeb.Schema.TemplatesTest do
       CacheHelpers.insert_acl(domain_id_1, role_name, [user_id_1, user_id_2])
       CacheHelpers.insert_acl(domain_id_2, role_name, [user_id_2, user_id_3])
 
-      CacheHelpers.insert_template(%{content: [
-        %{
-          "name" => "test-group",
-          "fields" => [
-            %{
-              "name" => "name1",
-              "type" => "user",
-              "values" => %{"role_users" => role_name}
-            }
-          ]
-        }
-      ]})
+      CacheHelpers.insert_template(%{
+        content: [
+          %{
+            "name" => "test-group",
+            "fields" => [
+              %{
+                "name" => "name1",
+                "type" => "user",
+                "values" => %{"role_users" => role_name}
+              }
+            ]
+          }
+        ]
+      })
 
       assert %{"data" => data} =
-              response =
-              conn
-              |> post("/api/v2", %{
-                "query" => @templates,
-                "variables" => %{"domainIds" => [domain_id_1, domain_id_2]}
-              })
-              |> json_response(:ok)
+               response =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @templates,
+                 "variables" => %{"domainIds" => [domain_id_1, domain_id_2]}
+               })
+               |> json_response(:ok)
 
       assert response["errors"] == nil
       assert %{"templates" => [template]} = data
@@ -76,14 +78,15 @@ defmodule TdDdWeb.Schema.TemplatesTest do
     @tag authentication: [role: "user"]
     test "returns data ignoring empty domain string", %{conn: conn} do
       %{content: content} = CacheHelpers.insert_template(%{scope: "qe"})
+
       assert %{"data" => data} =
-              response =
-              conn
-              |> post("/api/v2", %{
-                "query" => @templates,
-                "variables" => %{"scope" => "qe", "domainIds" => [""]}
-              })
-              |> json_response(:ok)
+               response =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @templates,
+                 "variables" => %{"scope" => "qe", "domainIds" => [""]}
+               })
+               |> json_response(:ok)
 
       assert response["errors"] == nil
       assert %{"templates" => [template]} = data

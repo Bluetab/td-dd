@@ -262,7 +262,7 @@ defmodule TdDq.ImplementationsTest do
       assert implementation.domain_id == rule.domain_id
     end
 
-    test "with duplicated implementation key returns an error", %{rule: rule} do
+    test "with duplicated draft implementation key returns an error", %{rule: rule} do
       impl = insert(:implementation)
 
       params =
@@ -275,8 +275,87 @@ defmodule TdDq.ImplementationsTest do
       claims = build(:dq_claims)
 
       assert {:error, :implementation,
-              %{valid?: false, errors: [implementation_key: {"duplicated", _}]},
+              %{valid?: false, errors: [implementation_key: {"duplicated", constraint}]},
               _} = Implementations.create_implementation(rule, params, claims)
+
+      assert "draft_implementation_key_index" = constraint[:constraint_name]
+    end
+
+    test "with duplicated pending_approval implementation key returns an error", %{rule: rule} do
+      impl = insert(:implementation, status: "pending_approval")
+
+      params =
+        string_params_for(:implementation,
+          rule_id: rule.id,
+          domain_id: rule.domain_id,
+          implementation_key: impl.implementation_key,
+          status: "pending_approval"
+        )
+
+      claims = build(:dq_claims)
+
+      assert {:error, :implementation,
+              %{valid?: false, errors: [implementation_key: {"duplicated", constraint}]},
+              _} = Implementations.create_implementation(rule, params, claims)
+
+      assert "draft_implementation_key_index" = constraint[:constraint_name]
+    end
+
+    test "with duplicated rejected implementation key returns an error", %{rule: rule} do
+      impl = insert(:implementation, status: "rejected")
+
+      params =
+        string_params_for(:implementation,
+          rule_id: rule.id,
+          domain_id: rule.domain_id,
+          implementation_key: impl.implementation_key,
+          status: "rejected"
+        )
+
+      claims = build(:dq_claims)
+
+      assert {:error, :implementation,
+              %{valid?: false, errors: [implementation_key: {"duplicated", constraint}]},
+              _} = Implementations.create_implementation(rule, params, claims)
+
+      assert "draft_implementation_key_index" = constraint[:constraint_name]
+    end
+
+    test "with duplicated published draft implementation key returns an error", %{rule: rule} do
+      impl = insert(:implementation, status: "published")
+
+      params =
+        string_params_for(:implementation,
+          rule_id: rule.id,
+          domain_id: rule.domain_id,
+          implementation_key: impl.implementation_key,
+          status: "published"
+        )
+
+      claims = build(:dq_claims)
+
+      assert {:error, :implementation,
+              %{valid?: false, errors: [implementation_key: {"duplicated", constraint}]},
+              _} = Implementations.create_implementation(rule, params, claims)
+
+      assert "published_implementation_key_index" = constraint[:constraint_name]
+    end
+
+    test "can be more than one deprecated implementation", %{rule: rule} do
+      impl = insert(:implementation, status: "deprecated")
+
+      params =
+        string_params_for(:implementation,
+          rule_id: rule.id,
+          domain_id: rule.domain_id,
+          implementation_key: impl.implementation_key,
+          status: "deprecated"
+        )
+
+      claims = build(:dq_claims)
+
+      assert {:ok, %{implementation: _implementation}} =
+               Implementations.create_implementation(rule, params, claims)
     end
 
     test "with invalid keywords in raw content of raw implementation returns error", %{rule: rule} do
@@ -1098,7 +1177,9 @@ defmodule TdDq.ImplementationsTest do
       %{id: id3} = insert(:implementation, rule: build(:rule))
 
       assert {:ok, %{deprecated: deprecated}} = Implementations.deprecate([id1, id2, id3])
-      assert {2, [%{id: ^id1}, %{id: ^id3}]} = deprecated
+
+      assert {2, [%{id: ^id1, status: :deprecated}, %{id: ^id3, status: :deprecated}]} =
+               deprecated
     end
 
     test "publishes audit events" do
@@ -1259,6 +1340,18 @@ defmodule TdDq.ImplementationsTest do
                TdDd.Repo.get!(ImplementationStructure, implementation_structure.id)
 
       refute is_nil(deleted_at)
+    end
+  end
+
+  describe "last?/1" do
+    test "returns true if the given implementation is the latest version with the same key" do
+      %{implementation_key: key} =
+        first = insert(:implementation, version: 1, status: "deprecated")
+
+      second = insert(:implementation, implementation_key: key, version: 2)
+      refute Implementations.last?(first)
+      assert Implementations.last?(second)
+      assert Implementations.last?(%Implementation{id: 0, implementation_key: "foo"})
     end
   end
 end

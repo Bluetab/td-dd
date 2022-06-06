@@ -65,6 +65,7 @@ defmodule TdDq.Rules.Search.QueryTest do
 
       assert Query.build_filters(permissions) == [
                %{terms: %{"domain_ids" => [1, 2]}},
+               %{term: %{"executable" => true}},
                %{term: %{"domain_ids" => 3}}
              ]
     end

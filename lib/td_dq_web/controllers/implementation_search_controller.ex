@@ -1,9 +1,8 @@
 defmodule TdDqWeb.ImplementationSearchController do
   use TdDqWeb, :controller
 
-  import Canada, only: [can?: 2]
+  import Canada.Can, only: [can?: 3]
 
-  alias TdDq.Auth.Claims
   alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Search
 
@@ -27,16 +26,14 @@ defmodule TdDqWeb.ImplementationSearchController do
 
   def create(conn, %{} = params) do
     claims = conn.assigns[:current_resource]
-    %{results: implementations, total: total} = response = do_search(claims, params)
+    %{results: _implementations, total: total} = response = do_search(claims, params)
 
-    response =
-      search_assigns(response) ++
-        [user_permissions: get_user_permissions(claims, implementations)]
+    response = search_assigns(response)
 
     conn
+    |> assign(:actions, build_actions(conn, params))
     |> put_view(TdDqWeb.SearchView)
     |> put_resp_header("x-total-count", "#{total}")
-    |> put_actions(claims)
     |> render("search.json", response)
   end
 
@@ -65,20 +62,6 @@ defmodule TdDqWeb.ImplementationSearchController do
     [implementations: implementations]
   end
 
-  defp get_user_permissions(%Claims{} = claims, implementations) do
-    manage_implementation? = can?(claims, manage_implementations(Implementation))
-    manage_raw_implementation? = can?(claims, manage_raw_implementations(Implementation))
-    manage_ruleless_implementation? = can?(claims, manage_ruleless_implementations(Implementation))
-    execute? = Enum.any?(implementations, &can?(claims, execute(&1)))
-
-    %{
-      manage_implementations: manage_implementation?,
-      manage_raw_implementations: manage_raw_implementation?,
-      manage_ruleless_implementations: manage_ruleless_implementation?,
-      execute: execute?
-    }
-  end
-
   defp do_search(_claims, %{"scroll" => _, "scroll_id" => _} = params) do
     Search.scroll_implementations(params)
   end
@@ -93,15 +76,26 @@ defmodule TdDqWeb.ImplementationSearchController do
     |> Search.search_implementations(claims, page, size)
   end
 
-  defp put_actions(conn, %{} = claims) do
-    if can?(claims, upload(TdDq.Rules.RuleResult)) do
-      actions = %{
-        "uploadResults" => %{href: Routes.rule_result_path(conn, :create), method: "POST"}
-      }
+  defp build_actions(conn, %{} = params) do
+    claims = conn.assigns[:current_resource]
 
-      assign(conn, :actions, actions)
-    else
-      conn
-    end
+    params
+    |> available_actions()
+    |> Enum.filter(&can?(claims, &1, Implementation))
+    |> Map.new(&{&1, build_action(conn, &1)})
+  end
+
+  defp build_action(conn, "uploadResults"),
+    do: %{href: Routes.rule_result_path(conn, :create), method: "POST"}
+
+  defp build_action(_conn, _action), do: %{method: "POST"}
+
+  defp available_actions(%{"filters" => %{"status" => ["published"]}}) do
+    # TODO: maybe exclude "execute" if no implementations are executable?
+    ["uploadResults", "execute", "createRaw", "create", "download"]
+  end
+
+  defp available_actions(_) do
+    ["createRaw", "create", "download", "load"]
   end
 end

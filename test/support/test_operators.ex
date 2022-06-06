@@ -39,6 +39,7 @@ defmodule TdDd.TestOperators do
       :latest_note,
       :published_note
     ]
+
     Map.drop(a, drop_fields) == Map.drop(b, drop_fields)
   end
 

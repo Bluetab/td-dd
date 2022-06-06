@@ -54,12 +54,12 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
         SearchHelpers.hits_response([])
       end)
 
-      assert %{"data" => [], "user_permissions" => perms} =
+      assert %{"data" => [], "_actions" => actions} =
                conn
                |> post(Routes.implementation_search_path(conn, :create))
                |> json_response(:ok)
 
-      assert %{"execute" => false} = perms
+      refute Map.has_key?(actions, "execute")
     end
 
     @tag authentication: [
@@ -91,31 +91,25 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
         SearchHelpers.hits_response([implementation])
       end)
 
-      assert %{"data" => [_], "user_permissions" => perms} =
+      assert %{"data" => [_], "_actions" => actions} =
                conn
                |> post(Routes.implementation_search_path(conn, :create))
                |> json_response(:ok)
 
-      assert %{
-               "execute" => true,
-               "manage_implementations" => true,
-               "manage_raw_implementations" => false,
-               "manage_ruleless_implementations" => false
-             } = perms
+      assert actions == %{"download" => %{"method" => "POST"}}
     end
 
     @tag authentication: [user_name: "not_an_admin", permissions: [:view_quality_rule]]
-    test "does not include actions if user has no permission", %{conn: conn} do
+    test "only includes download action if user has view_quality_rule permission", %{conn: conn} do
       ElasticsearchMock
       |> expect(:request, fn _, _, _, _, _ -> SearchHelpers.hits_response([]) end)
 
-      assert %{} =
-               response =
+      assert %{"_actions" => actions} =
                conn
                |> post(Routes.implementation_search_path(conn, :create))
                |> json_response(:ok)
 
-      refute Map.has_key?(response, "_actions")
+      assert actions == %{"download" => %{"method" => "POST"}}
     end
 
     @tag authentication: [
@@ -126,9 +120,11 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
       ElasticsearchMock
       |> expect(:request, fn _, _, _, _, _ -> SearchHelpers.hits_response([]) end)
 
+      params = %{"filters" => %{"status" => ["published"]}}
+
       assert %{"_actions" => actions} =
                conn
-               |> post(Routes.implementation_search_path(conn, :create))
+               |> post(Routes.implementation_search_path(conn, :create), params)
                |> json_response(:ok)
 
       assert %{"uploadResults" => %{"href" => "/api/rule_results", "method" => "POST"}} = actions

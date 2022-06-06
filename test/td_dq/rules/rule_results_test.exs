@@ -228,9 +228,7 @@ defmodule TdDq.RuleResultsTest do
     test "publishes rule_result_created event for an implementation not associated to a rule" do
       %{id: domain_id} = CacheHelpers.insert_domain()
 
-      implementation =
-        insert(:ruleless_implementation, domain_id: domain_id
-        )
+      implementation = insert(:ruleless_implementation, domain_id: domain_id)
 
       errors = 2
       records = 1_000_000

@@ -35,11 +35,21 @@ defmodule TdDq.Rules.Search do
     |> do_search(:implementations, params)
   end
 
-  defp build_query(%Claims{} = claims, params, index) when index in [:rules, :implementations] do
+  defp build_query(%Claims{} = claims, params, :rules = index) do
+    aggs = aggregations(index)
+
+    claims
+    |> search_permissions(:not_executable)
+    |> Query.build_query(params, aggs)
+  end
+
+  defp build_query(%Claims{} = claims, params, :implementations = index) do
     aggs = aggregations(index)
 
     {executable, params} =
-      Map.get_and_update(params, "filters", fn
+      params
+      |> put_default_filters(claims)
+      |> Map.get_and_update("filters", fn
         nil -> :pop
         filters -> Map.pop(filters, "executable")
       end)
@@ -105,4 +115,11 @@ defmodule TdDq.Rules.Search do
   defp aggregations(:implementations) do
     TdDq.Implementations.Search.Aggregations.aggregations()
   end
+
+  defp put_default_filters(%{} = params, %{role: "service"}) do
+    defaults = %{"status" => ["published"]}
+    Map.update(params, "filters", defaults, &Map.merge(defaults, &1))
+  end
+
+  defp put_default_filters(%{} = params, _claims), do: params
 end
