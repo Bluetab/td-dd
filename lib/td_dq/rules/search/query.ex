@@ -49,7 +49,7 @@ defmodule TdDq.Rules.Search.Query do
     do: {:halt, [%{match_none: %{}}]}
 
   defp reduce_term({"execute_quality_rule_implementations", :all}, acc),
-    do: {:cont, [@executable, acc]}
+    do: {:cont, [@executable | acc]}
 
   defp reduce_term({"execute_quality_rule_implementations", domain_ids}, acc) do
     {:cont, [@executable, domain_filter(domain_ids) | acc]}
