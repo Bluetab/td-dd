@@ -36,6 +36,6 @@ defmodule TdDq.Executions.Execution do
     |> foreign_key_constraint(:group_id)
     |> foreign_key_constraint(:implementation_id)
     |> foreign_key_constraint(:result_id)
-    |> cast_assoc(:quality_events, with: &QualityEvent.changeset/2, required: false)
+    |> cast_assoc(:quality_events, with: &QualityEvent.changeset/2)
   end
 end

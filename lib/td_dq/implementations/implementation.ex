@@ -281,7 +281,6 @@ defmodule TdDq.Implementations.Implementation do
   defp raw_changeset(changeset) do
     changeset
     |> cast_embed(:raw_content, with: &RawContent.changeset/2, required: true)
-    |> validate_required(:raw_content)
   end
 
   defp draft_changeset(changeset), do: changeset
@@ -289,9 +288,9 @@ defmodule TdDq.Implementations.Implementation do
   def default_changeset(changeset) do
     changeset
     |> cast_embed(:dataset, with: &DatasetRow.changeset/2, required: true)
-    |> cast_embed(:populations, with: &Populations.changeset/2, required: false)
+    |> cast_embed(:populations, with: &Populations.changeset/2)
     |> cast_embed(:validations, with: &ConditionRow.changeset/2, required: true)
-    |> cast_embed(:segments, with: &SegmentsRow.changeset/2, required: false)
+    |> cast_embed(:segments, with: &SegmentsRow.changeset/2)
   end
 
   def get_execution_result_info(_implementation, %{type: "FAILED", inserted_at: inserted_at}) do
