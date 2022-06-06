@@ -95,7 +95,7 @@ defmodule TdDdWeb.GrantFilterControllerTest do
     end
 
     @tag authentication: [user_name: "non_admin_user"]
-    test "includes system_id filter from request parameters", %{conn: conn} do
+    test "includes system external_id filter from request parameters", %{conn: conn} do
       ElasticsearchMock
       |> expect(:request, fn
         _, :post, "/grants/_search", %{query: query, size: 0}, [] ->
