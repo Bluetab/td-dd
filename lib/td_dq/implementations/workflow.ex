@@ -65,7 +65,7 @@ defmodule TdDq.Implementations.Workflow do
       Implementation
       |> where(implementation_key: ^key)
       |> where([i], i.id != ^id)
-      |> select([i], i.version + 1)
+      |> select([i], max(i.version) + 1)
       |> Repo.one()
 
     case latest_version do
@@ -77,18 +77,24 @@ defmodule TdDq.Implementations.Workflow do
   defp status_changeset(implementation, status),
     do: Implementation.status_changeset(implementation, %{status: status})
 
-  defp maybe_version_existing(multi, %{implementation_key: key} = _implementation, "published") do
+  def maybe_version_existing(multi, %{implementation_key: key} = _implementation, "published") do
     queryable =
       Implementation
       |> where(status: :published)
       |> where(implementation_key: ^key)
+      |> select([i], i.id)
 
     Multi.update_all(multi, :versioned, queryable,
       set: [updated_at: DateTime.utc_now(), status: :versioned]
     )
   end
 
-  defp maybe_version_existing(multi, _, _not_published), do: multi
+  def maybe_version_existing(multi, _, _not_published), do: multi
+
+  defp on_upsert({:ok, %{versioned: {_count, ids}, implementation: %{id: id}}} = result) do
+    @index_worker.reindex_implementations([id | ids])
+    result
+  end
 
   defp on_upsert({:ok, %{implementation: %{id: id}}} = result) do
     @index_worker.reindex_implementations(id)

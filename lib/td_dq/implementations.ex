@@ -21,6 +21,7 @@ defmodule TdDq.Implementations do
   alias TdDq.Events.QualityEvents
   alias TdDq.Implementations.Implementation
   alias TdDq.Implementations.ImplementationStructure
+  alias TdDq.Implementations.Workflow
   alias TdDq.Rules
   alias TdDq.Rules.Audit
   alias TdDq.Rules.Rule
@@ -183,10 +184,17 @@ defmodule TdDq.Implementations do
     |> on_upsert()
   end
 
-  defp upsert(multi, changeset, :published), do: Multi.insert(multi, :implementation, changeset)
+  defp upsert(multi, changeset, :published) do
+    Multi.insert(multi, :implementation, changeset)
+  end
 
-  defp upsert(multi, changeset, _not_published),
-    do: Multi.update(multi, :implementation, changeset)
+  defp upsert(multi, %{data: implementation} = changeset, _not_published) do
+    case Changeset.get_change(changeset, :status) do
+      :published -> Workflow.maybe_version_existing(multi, implementation, "published")
+      _ -> multi
+    end
+    |> Multi.update(:implementation, changeset)
+  end
 
   defp upsert_changeset(
          %Implementation{
@@ -326,6 +334,11 @@ defmodule TdDq.Implementations do
 
   @spec on_upsert(multi_result, boolean) :: multi_result
   defp on_upsert(result, is_bulk \\ false)
+
+  defp on_upsert({:ok, %{versioned: {_count, ids}, implementation: %{id: id}}} = result, false) do
+    @index_worker.reindex_implementations([id | ids])
+    result
+  end
 
   defp on_upsert({:ok, %{implementation: %{id: id}}} = result, false) do
     @index_worker.reindex_implementations(id)
