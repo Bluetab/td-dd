@@ -35,6 +35,26 @@ defmodule TdDqWeb.QualityEventControllerTest do
                |> json_response(:created)
     end
 
+    @tag authentication: [role: "admin"]
+    test "creates a failed event when the user is an admin", %{
+      conn: conn,
+      swagger_schema: schema,
+      execution: execution
+    } do
+      assert %{id: id} = execution
+      message = "foo"
+      type = "FAILED"
+      params = %{"message" => message, "type" => type}
+
+      assert %{"data" => %{"message" => ^message, "type" => ^type}} =
+               conn
+               |> post(Routes.execution_quality_event_path(conn, :create, id),
+                 quality_event: params
+               )
+               |> validate_resp_schema(schema, "QualityEventResponse")
+               |> json_response(:created)
+    end
+
     @tag authentication: [role: "service"]
     test "create an avent when the user is service", %{
       conn: conn,
