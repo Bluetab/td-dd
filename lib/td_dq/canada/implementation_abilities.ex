@@ -219,12 +219,16 @@ defmodule TdDq.Canada.ImplementationAbilities do
   end
 
   defp valid_action?(:delete, %{status: :published} = implementation),
-    do: Implementation.deprecatable?(implementation)
+    do: Implementation.versionable?(implementation)
 
   defp valid_action?(:delete, implementation), do: Implementation.deletable?(implementation)
+
+  defp valid_action?(:edit, %{status: :published} = implementation),
+    do: Implementation.versionable?(implementation)
+
   defp valid_action?(:edit, implementation), do: Implementation.editable?(implementation)
   defp valid_action?(:execute, implementation), do: Implementation.executable?(implementation)
   defp valid_action?(:publish, implementation), do: Implementation.publishable?(implementation)
-  defp valid_action?(:reject, implementation), do: Implementation.publishable?(implementation)
+  defp valid_action?(:reject, implementation), do: Implementation.rejectable?(implementation)
   defp valid_action?(:submit, implementation), do: Implementation.submittable?(implementation)
 end

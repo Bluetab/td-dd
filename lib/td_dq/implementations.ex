@@ -89,15 +89,20 @@ defmodule TdDq.Implementations do
   def create_implementation(rule, params, claims, is_bulk \\ false)
 
   def create_implementation(
-        %Rule{} = rule,
+        %Rule{id: rule_id, domain_id: domain_id} = rule,
         %{} = params,
         %Claims{user_id: user_id} = claims,
         is_bulk
       ) do
     changeset =
       Implementation.changeset(
-        rule,
-        %Implementation{},
+        %Implementation{
+          version: 1,
+          status: :draft,
+          rule_id: rule_id,
+          domain_id: domain_id,
+          rule: rule
+        },
         params
       )
 
@@ -126,7 +131,7 @@ defmodule TdDq.Implementations do
       ) do
     changeset =
       Implementation.changeset(
-        %Implementation{},
+        %Implementation{version: 1, status: :draft},
         params
       )
 
@@ -154,23 +159,23 @@ defmodule TdDq.Implementations do
   defp multi_can(false), do: {:error, false}
 
   def update_implementation(
-        %Implementation{} = implementation,
+        %Implementation{status: status} = implementation,
         params,
         %Claims{user_id: user_id} = claims
       ) do
-    changeset = Implementation.changeset(implementation, params)
+    changeset = upsert_changeset(implementation, params)
 
     Multi.new()
     |> Multi.run(:can, fn _, _ ->
       multi_can(
         Enum.all?([
-          can?(claims, update(changeset)),
+          can?(claims, :update, changeset),
           can?(claims, edit_segments(implementation)),
           can?(claims, edit_segments(changeset))
         ])
       )
     end)
-    |> Multi.update(:implementation, fn _ -> do_update_implementation(changeset) end)
+    |> upsert(changeset, status)
     |> Multi.run(:data_structures, &create_implementation_structures/2)
     |> Multi.run(:audit, Audit, :implementation_updated, [changeset, user_id])
     |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
@@ -178,14 +183,49 @@ defmodule TdDq.Implementations do
     |> on_upsert()
   end
 
-  defp do_update_implementation(%{changes: %{rule_id: rule_id}} = changeset) do
+  defp upsert(multi, changeset, :published), do: Multi.insert(multi, :implementation, changeset)
+
+  defp upsert(multi, changeset, _not_published),
+    do: Multi.update(multi, :implementation, changeset)
+
+  defp upsert_changeset(
+         %Implementation{
+           domain_id: domain_id,
+           implementation_type: type,
+           rule: rule,
+           rule_id: rule_id,
+           status: :published,
+           version: v
+         },
+         %{} = params
+       ) do
+    Implementation.changeset(
+      %Implementation{
+        domain_id: domain_id,
+        implementation_type: type,
+        rule: rule,
+        rule_id: rule_id,
+        status: :draft,
+        version: v + 1
+      },
+      params
+    )
+  end
+
+  defp upsert_changeset(%Implementation{} = implementation, %{} = params) do
+    implementation
+    |> Implementation.changeset(params)
+    |> maybe_put_domain_id()
+  end
+
+  defp maybe_put_domain_id(%{changes: %{rule_id: rule_id}} = changeset) do
     case Rules.get_rule(rule_id) do
       %{domain_id: domain_id} -> Changeset.put_change(changeset, :domain_id, domain_id)
       _ -> changeset
     end
   end
 
-  defp do_update_implementation(changeset), do: changeset
+  defp maybe_put_domain_id(changeset), do: changeset
 
   @spec deprecate_implementations ::
           :ok | {:ok, map} | {:error, Multi.name(), any, %{required(Multi.name()) => any}}

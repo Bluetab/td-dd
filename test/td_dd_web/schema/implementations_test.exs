@@ -9,6 +9,7 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
       version
     }
   }
+
   """
   @reject_implementation """
   mutation rejectImplementation($id: ID!) {
@@ -106,35 +107,7 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
                })
                |> json_response(:ok)
 
-      assert [%{"message" => "unprocessable_entity"}] = errors
-    end
-
-    @tag authentication: [role: "admin"]
-    test "return error when the implementation is not the last", %{
-      conn: conn
-    } do
-      insert(:implementation,
-        implementation_key: "foo",
-        status: "versioned",
-        version: 2
-      )
-
-      %{id: draft_id} =
-        insert(:implementation,
-          implementation_key: "foo",
-          status: "draft",
-          version: 1
-        )
-
-      assert %{"data" => nil, "errors" => errors} =
-               conn
-               |> post("api/v2", %{
-                 "query" => @submit_implementation,
-                 "variables" => %{"id" => draft_id}
-               })
-               |> json_response(:ok)
-
-      assert [%{"message" => "unprocessable_entity"}] = errors
+      assert [%{"message" => "forbidden"}] = errors
     end
   end
 
@@ -211,39 +184,11 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
                })
                |> json_response(:ok)
 
-      assert [%{"message" => "unprocessable_entity"}] = errors
-    end
-
-    @tag authentication: [role: "admin"]
-    test "return error when the implementation is not the last", %{
-      conn: conn
-    } do
-      insert(:implementation,
-        implementation_key: "foo",
-        status: "versioned",
-        version: 2
-      )
-
-      %{id: pending_approval_id} =
-        insert(:implementation,
-          implementation_key: "foo",
-          status: "pending_approval",
-          version: 1
-        )
-
-      assert %{"data" => nil, "errors" => errors} =
-               conn
-               |> post("api/v2", %{
-                 "query" => @reject_implementation,
-                 "variables" => %{"id" => pending_approval_id}
-               })
-               |> json_response(:ok)
-
-      assert [%{"message" => "unprocessable_entity"}] = errors
+      assert [%{"message" => "forbidden"}] = errors
     end
   end
 
-  describe "publishedImplementation mutation" do
+  describe "publishImplementation mutation" do
     @tag authentication: [role: "user"]
     test "return error when user has no permissions", %{conn: conn} do
       %{id: implementation_id} = insert(:implementation, status: "pending_approval")
@@ -261,8 +206,15 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
 
     @tag authentication: [role: "user", permissions: ["publish_implementation"]]
     test "return implementation when user has permissions", %{conn: conn, domain: domain} do
+      %{implementation_key: key} = insert(:implementation, status: :published, version: 4)
+
       %{id: implementation_id} =
-        insert(:implementation, domain_id: domain.id, status: "pending_approval")
+        insert(:implementation,
+          domain_id: domain.id,
+          status: "pending_approval",
+          implementation_key: key,
+          version: 0
+        )
 
       assert %{"data" => data} =
                resp =
@@ -280,7 +232,7 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
                "publishImplementation" => %{
                  "id" => ^implementation_id,
                  "status" => "published",
-                 "version" => 1
+                 "version" => 5
                }
              } = data
     end
@@ -316,35 +268,7 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
                })
                |> json_response(:ok)
 
-      assert [%{"message" => "unprocessable_entity"}] = errors
-    end
-
-    @tag authentication: [role: "admin"]
-    test "return error when the implementation is not the last", %{
-      conn: conn
-    } do
-      insert(:implementation,
-        implementation_key: "foo",
-        status: "versioned",
-        version: 2
-      )
-
-      %{id: pending_approval_id} =
-        insert(:implementation,
-          implementation_key: "foo",
-          status: "pending_approval",
-          version: 1
-        )
-
-      assert %{"data" => nil, "errors" => errors} =
-               conn
-               |> post("api/v2", %{
-                 "query" => @publish_implementation,
-                 "variables" => %{"id" => pending_approval_id}
-               })
-               |> json_response(:ok)
-
-      assert [%{"message" => "unprocessable_entity"}] = errors
+      assert [%{"message" => "forbidden"}] = errors
     end
   end
 end

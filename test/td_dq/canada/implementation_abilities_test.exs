@@ -6,9 +6,9 @@ defmodule TdDq.Canada.ImplementationAbilitiesTest do
   @actions [:edit, :delete, :publish, :reject, :submit, :move, :clone, :execute]
 
   @valid_actions %{
-    draft: [:edit, :submit, :delete, :move, :clone],
+    draft: [:edit, :submit, :delete, :move, :clone, :publish],
     pending_approval: [:publish, :reject, :delete, :move, :clone],
-    published: [:delete, :move, :clone, :execute],
+    published: [:delete, :move, :clone, :execute, :edit],
     rejected: [:edit, :delete, :move, :clone],
     deprecated: [:move, :clone],
     versioned: [:move, :clone]

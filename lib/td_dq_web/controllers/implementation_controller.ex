@@ -90,13 +90,8 @@ defmodule TdDqWeb.ImplementationController do
 
     rule = Rules.get_rule_or_nil(rule_id)
 
-    implementation_params =
-      params
-      |> Map.put("status", "draft")
-      |> Map.put("version", 1)
-
     with {:ok, %{implementation: %{id: id}}} <-
-           Implementations.create_implementation(rule, implementation_params, claims),
+           Implementations.create_implementation(rule, params, claims),
          implementation <-
            Implementations.get_implementation!(id, enrich: :source, preload: [:rule, :results]) do
       conn
@@ -109,13 +104,8 @@ defmodule TdDqWeb.ImplementationController do
   def create(conn, %{"rule_implementation" => params}) do
     claims = conn.assigns[:current_resource]
 
-    implementation_params =
-      params
-      |> Map.put("status", "draft")
-      |> Map.put("version", 1)
-
     with {:ok, %{implementation: %{id: id}}} <-
-           Implementations.create_ruleless_implementation(implementation_params, claims),
+           Implementations.create_ruleless_implementation(params, claims),
          implementation <-
            Implementations.get_implementation!(id, enrich: :source, preload: [:results]) do
       conn

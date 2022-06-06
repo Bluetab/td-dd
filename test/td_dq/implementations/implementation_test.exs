@@ -3,9 +3,7 @@ defmodule TdDq.Implementations.ImplementationTest do
 
   alias Ecto.Changeset
   alias Elasticsearch.Document
-  alias TdDd.Repo
   alias TdDq.Implementations.Implementation
-  alias TdDq.Rules.Rule
 
   @implementation %Implementation{domain_id: 123}
 
@@ -106,22 +104,6 @@ defmodule TdDq.Implementations.ImplementationTest do
 
       changeset = Implementation.changeset(implementation, %{"foo" => "bar"})
       assert Ecto.Changeset.fetch_change!(changeset, :status) == :draft
-    end
-  end
-
-  describe "changeset/3" do
-    test "captures foreign key constraint on rule_id" do
-      params =
-        :implementation
-        |> string_params_for()
-        |> Map.delete("rule")
-
-      assert %{valid?: true} =
-               changeset = Implementation.changeset(%Rule{id: 123}, @implementation, params)
-
-      assert {:error, changeset} = Repo.insert(changeset)
-      assert %{errors: errors} = changeset
-      assert {_msg, [constraint: :foreign, constraint_name: _constraint_name]} = errors[:rule_id]
     end
   end
 

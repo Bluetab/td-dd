@@ -84,13 +84,6 @@ defmodule TdDq.Implementations.Implementation do
 
   def valid_result_types, do: @valid_result_types
 
-  def changeset(%Rule{id: rule_id, domain_id: domain_id}, %__MODULE__{} = implementation, params) do
-    %{implementation | domain_id: domain_id, rule_id: rule_id}
-    |> changeset(params)
-    |> validate_required([:rule_id])
-    |> foreign_key_constraint(:rule_id)
-  end
-
   def changeset(%__MODULE__{} = implementation, %{"populations" => [population | _]} = params)
       when is_list(population) do
     populations =
@@ -113,17 +106,10 @@ defmodule TdDq.Implementations.Implementation do
     |> changeset_validations(implementation, params)
   end
 
-  @spec status_changeset(t(), any) :: Ecto.Changeset.t()
-  def status_changeset(%__MODULE__{} = implementation, "deprecated" = status) do
+  def status_changeset(%__MODULE__{} = implementation, params) do
     implementation
-    |> cast(%{status: status, deleted_at: DateTime.utc_now()}, [:status, :deleted_at])
-    |> validate_required([:status, :deleted_at])
-  end
-
-  def status_changeset(%__MODULE__{} = implementation, status) do
-    implementation
-    |> cast(%{status: status}, [:status])
-    |> validate_required([:status])
+    |> cast(params, [:status, :version, :deleted_at])
+    |> validate_required([:status, :version])
   end
 
   def changeset_validations(%Ecto.Changeset{} = changeset, %__MODULE__{} = implementation, params) do
@@ -146,6 +132,7 @@ defmodule TdDq.Implementations.Implementation do
     |> validate_content()
     |> validate_goal()
     |> custom_changeset(implementation)
+    |> foreign_key_constraint(:rule_id)
   end
 
   defp maybe_put_status(%Changeset{} = changeset) do
@@ -342,29 +329,23 @@ defmodule TdDq.Implementations.Implementation do
     Map.put(result_map, :date, Map.get(rule_result, :date))
   end
 
-  def publishable?(%__MODULE__{status: status} = imp),
-    do: Implementations.last?(imp) && status == :pending_approval
+  def publishable?(%__MODULE__{status: status}), do: status in [:draft, :pending_approval]
 
-  def deprecatable?(%__MODULE__{status: status} = imp),
-    do: Implementations.last?(imp) && status == :published
+  def versionable?(%__MODULE__{status: status} = implementation),
+    do: Implementations.last?(implementation) && status == :published
 
-  def deletable?(%__MODULE__{status: status} = imp) do
-    valid_statuses = [:draft, :rejected, :pending_approval]
-    Implementations.last?(imp) && Enum.member?(valid_statuses, status)
-  end
+  def deletable?(%__MODULE__{status: status}),
+    do: status in [:draft, :pending_approval, :rejected]
 
-  def editable?(%__MODULE__{status: status} = imp) do
-    valid_statuses = [:draft, :rejected]
-    Implementations.last?(imp) && Enum.member?(valid_statuses, status)
-  end
+  def editable?(%__MODULE__{status: status} = implementation),
+    do: Implementations.last?(implementation) && status in [:draft, :rejected]
 
-  def executable?(%__MODULE__{status: status} = imp) do
-    Implementations.last?(imp) && status == :published && imp.executable
-  end
+  def executable?(%__MODULE__{status: status, executable: executable}),
+    do: status == :published && executable
 
-  def submittable?(%__MODULE__{status: status} = imp) do
-    Implementations.last?(imp) && status == :draft
-  end
+  def submittable?(%__MODULE__{status: status}), do: status == :draft
+
+  def rejectable?(%__MODULE__{status: status}), do: status == :pending_approval
 
   defimpl Elasticsearch.Document do
     alias TdCache.TemplateCache
