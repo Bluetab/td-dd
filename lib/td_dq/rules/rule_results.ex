@@ -201,8 +201,9 @@ defmodule TdDq.Rules.RuleResults do
         goal: i.goal,
         minimum: i.minimum,
         result_type: i.result_type,
-        domain_id: i.domain_id, # Will be overwritten by rule domain_id below
-                                # if implementation has an associated rule
+        # Will be overwritten by rule domain_id below
+        domain_id: i.domain_id
+        # if implementation has an associated rule
       })
       |> select_merge(
         [_, _, rule],

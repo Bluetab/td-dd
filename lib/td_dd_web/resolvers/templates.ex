@@ -17,15 +17,20 @@ defmodule TdDdWeb.Resolvers.Templates do
 
   defp get_templates(_), do: TemplateCache.list()
 
-  defp maybe_preprocess({:ok, templates}, %{domain_ids: [_ | _] = domain_ids}, %{context: %{claims: claims}}) do
-    domain_ids = domain_ids
+  defp maybe_preprocess({:ok, templates}, %{domain_ids: [_ | _] = domain_ids}, %{
+         context: %{claims: claims}
+       }) do
+    domain_ids =
+      domain_ids
       |> Enum.reject(&(&1 == ""))
       |> Enum.map(&String.to_integer/1)
 
-    templates = Enum.map(
-      templates,
-      &Preprocessor.preprocess_template(&1, %{domain_ids: domain_ids, claims: claims})
-    )
+    templates =
+      Enum.map(
+        templates,
+        &Preprocessor.preprocess_template(&1, %{domain_ids: domain_ids, claims: claims})
+      )
+
     {:ok, templates}
   end
 

@@ -102,10 +102,13 @@ defmodule TdDdWeb.GrantFilterControllerTest do
           assert %{
                    bool: %{
                      filter: [
-                       %{terms: %{
-                         "data_structure_version.system.external_id.raw" => ["bar", "foo"]
-                        }
-                      }, _permission_filter]
+                       %{
+                         terms: %{
+                           "data_structure_version.system.external_id.raw" => ["bar", "foo"]
+                         }
+                       },
+                       _permission_filter
+                     ]
                    }
                  } = query
 
@@ -115,9 +118,9 @@ defmodule TdDdWeb.GrantFilterControllerTest do
       params = %{"filters" => %{"system_external_id" => ["foo", "bar"]}}
 
       assert %{"data" => _} =
-        conn
-        |> post(Routes.grant_filter_path(conn, :search, params))
-        |> json_response(:ok)
+               conn
+               |> post(Routes.grant_filter_path(conn, :search, params))
+               |> json_response(:ok)
     end
   end
 

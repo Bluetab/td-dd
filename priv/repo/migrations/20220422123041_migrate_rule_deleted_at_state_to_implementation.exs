@@ -12,5 +12,6 @@ defmodule TdDd.Repo.Migrations.MigrateRuleDeletedAtStateToImplementation do
     """)
   end
 
-  def down, do: :ok # This migration is irreversible
+  # This migration is irreversible
+  def down, do: :ok
 end

@@ -6,12 +6,6 @@ defmodule TdDd.DownloadTest do
 
   alias TdDd.CSV.Download
 
-  defp create_template(template) do
-    template
-    |> Map.put(:updated_at, DateTime.utc_now())
-    |> CacheHelpers.insert_template()
-  end
-
   describe "Structures download" do
     test "download empty csv" do
       csv = Download.to_csv([])
@@ -25,7 +19,7 @@ defmodule TdDd.DownloadTest do
       template_id = 1
       type = "Columna"
 
-      create_template(%{
+      CacheHelpers.insert_template(%{
         id: template_id,
         name: template_name,
         label: "label",
@@ -74,7 +68,7 @@ defmodule TdDd.DownloadTest do
     end
 
     test "to_editable_csv/1 return csv content to download" do
-      create_template(%{
+      CacheHelpers.insert_template(%{
         id: 42,
         name: "template",
         label: "label",
@@ -118,7 +112,7 @@ defmodule TdDd.DownloadTest do
 
   describe "Structure downloads with multiple fields" do
     test "to_editable_csv/1 return csv content with multiple fields, to download" do
-      create_template(%{
+      CacheHelpers.insert_template(%{
         id: 42,
         name: "template",
         label: "label",
@@ -187,7 +181,7 @@ defmodule TdDd.DownloadTest do
       template_id = 1
       type = "Columna"
 
-      create_template(%{
+      CacheHelpers.insert_template(%{
         id: template_id,
         name: template_name,
         label: "label",

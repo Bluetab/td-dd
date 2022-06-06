@@ -7,6 +7,7 @@ defmodule TdDq.Implementations.Implementation do
   import Ecto.Changeset
 
   alias Ecto.Changeset
+  alias TdDfLib.Format
   alias TdDfLib.Validation
   alias TdDq.Events.QualityEvents
   alias TdDq.Implementations
@@ -23,6 +24,21 @@ defmodule TdDq.Implementations.Implementation do
   alias TdDq.Search.Helpers
 
   @valid_result_types ~w(percentage errors_number deviation)
+  @cast_fields [
+    :deleted_at,
+    :df_content,
+    :df_name,
+    :executable,
+    :goal,
+    :implementation_key,
+    :implementation_type,
+    :minimum,
+    :result_type,
+    :rule_id,
+    :status,
+    :version
+  ]
+
   @typedoc "A quality rule implementation"
   @type t :: %__MODULE__{}
 
@@ -38,6 +54,12 @@ defmodule TdDq.Implementations.Implementation do
     field(:goal, :float)
     field(:minimum, :float)
     field(:result_type, :string, default: "percentage")
+
+    field(:status, Ecto.Enum,
+      values: [:draft, :pending_approval, :rejected, :published, :versioned, :deprecated]
+    )
+
+    field(:version, :integer)
 
     embeds_one(:raw_content, RawContent, on_replace: :delete)
     embeds_many(:dataset, DatasetRow, on_replace: :delete)
@@ -62,30 +84,6 @@ defmodule TdDq.Implementations.Implementation do
 
   def valid_result_types, do: @valid_result_types
 
-  def changeset(%Rule{id: rule_id, domain_id: domain_id}, %__MODULE__{} = implementation, params) do
-    implementation
-    |> Map.merge(%{
-        domain_id: domain_id,
-        rule_id: rule_id
-      })
-    |> changeset(params)
-    |> validate_required([:rule_id])
-    |> foreign_key_constraint(:rule_id)
-  end
-
-  @cast_fields [
-    :deleted_at,
-    :df_content,
-    :df_name,
-    :executable,
-    :goal,
-    :implementation_key,
-    :implementation_type,
-    :minimum,
-    :result_type,
-    :rule_id
-  ]
-
   def changeset(%__MODULE__{} = implementation, %{"populations" => [population | _]} = params)
       when is_list(population) do
     populations =
@@ -108,6 +106,12 @@ defmodule TdDq.Implementations.Implementation do
     |> changeset_validations(implementation, params)
   end
 
+  def status_changeset(%__MODULE__{} = implementation, params) do
+    implementation
+    |> cast(params, [:status, :version, :deleted_at])
+    |> validate_required([:status, :version])
+  end
+
   def changeset_validations(%Ecto.Changeset{} = changeset, %__MODULE__{} = implementation, params) do
     changeset
     |> validate_required([
@@ -116,15 +120,26 @@ defmodule TdDq.Implementations.Implementation do
       :goal,
       :implementation_type,
       :minimum,
-      :result_type
+      :result_type,
+      :status,
+      :version
     ])
     |> validate_inclusion(:implementation_type, ["default", "raw", "draft"])
     |> validate_inclusion(:result_type, @valid_result_types)
     |> validate_or_put_implementation_key()
     |> maybe_put_identifier(implementation, params)
+    |> maybe_put_status()
     |> validate_content()
     |> validate_goal()
     |> custom_changeset(implementation)
+    |> foreign_key_constraint(:rule_id)
+  end
+
+  defp maybe_put_status(%Changeset{} = changeset) do
+    case Changeset.fetch_field(changeset, :status) do
+      {:data, :rejected} -> put_change(changeset, :status, :draft)
+      _ -> changeset
+    end
   end
 
   defp maybe_put_identifier(
@@ -152,7 +167,8 @@ defmodule TdDq.Implementations.Implementation do
          old_content,
          template_name
        ) do
-    TdDfLib.Format.maybe_put_identifier(changeset_content, old_content, template_name)
+    changeset_content
+    |> Format.maybe_put_identifier(old_content, template_name)
     |> (fn new_content ->
           put_change(changeset, :df_content, new_content)
         end).()
@@ -172,7 +188,11 @@ defmodule TdDq.Implementations.Implementation do
         |> validate_required([:implementation_key])
         |> validate_length(:implementation_key, max: 255)
         |> unique_constraint(:implementation_key,
-          name: :rule_implementations_implementation_key_index,
+          name: :published_implementation_key_index,
+          message: "duplicated"
+        )
+        |> unique_constraint(:implementation_key,
+          name: :draft_implementation_key_index,
           message: "duplicated"
         )
     end
@@ -309,6 +329,24 @@ defmodule TdDq.Implementations.Implementation do
     Map.put(result_map, :date, Map.get(rule_result, :date))
   end
 
+  def publishable?(%__MODULE__{status: status}), do: status in [:draft, :pending_approval]
+
+  def versionable?(%__MODULE__{status: status} = implementation),
+    do: Implementations.last?(implementation) && status == :published
+
+  def deletable?(%__MODULE__{status: status}),
+    do: status in [:draft, :pending_approval, :rejected]
+
+  def editable?(%__MODULE__{status: status} = implementation),
+    do: Implementations.last?(implementation) && status in [:draft, :rejected]
+
+  def executable?(%__MODULE__{status: status, executable: executable}),
+    do: status == :published && executable
+
+  def submittable?(%__MODULE__{status: status}), do: status == :draft
+
+  def rejectable?(%__MODULE__{status: status}), do: status == :pending_approval
+
   defimpl Elasticsearch.Document do
     alias TdCache.TemplateCache
     alias TdDfLib.Format
@@ -331,7 +369,9 @@ defmodule TdDq.Implementations.Implementation do
       :executable,
       :goal,
       :minimum,
-      :result_type
+      :result_type,
+      :status,
+      :version
     ]
     @rule_keys [
       :active,
@@ -349,10 +389,7 @@ defmodule TdDq.Implementations.Implementation do
     def routing(_), do: false
 
     @impl Elasticsearch.Document
-    def encode(
-          %Implementation{id: implementation_id, domain_id: domain_id} =
-            implementation
-        ) do
+    def encode(%Implementation{id: implementation_id, domain_id: domain_id} = implementation) do
       rule = Map.get(implementation, :rule)
       implementation = Implementations.enrich_implementation_structures(implementation)
       quality_event = QualityEvents.get_event_by_imp(implementation_id)

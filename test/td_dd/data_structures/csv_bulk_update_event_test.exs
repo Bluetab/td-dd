@@ -15,19 +15,19 @@ defmodule TdDd.DataStructures.CsvBulkUpdateEventTest do
   }
 
   describe "changeset/0" do
-
     test "valid changeset" do
       assert %Changeset{valid?: true} = CsvBulkUpdateEvent.changeset(@valid_attrs)
     end
 
     test "detects missing required fields" do
       assert %Changeset{errors: errors} = CsvBulkUpdateEvent.changeset(%{})
+
       assert ^errors = [
-        user_id: {"can't be blank", [validation: :required]},
-        csv_hash: {"can't be blank", [validation: :required]},
-        task_reference: {"can't be blank", [validation: :required]},
-        status: {"can't be blank", [validation: :required]}
-      ]
+               user_id: {"can't be blank", [validation: :required]},
+               csv_hash: {"can't be blank", [validation: :required]},
+               task_reference: {"can't be blank", [validation: :required]},
+               status: {"can't be blank", [validation: :required]}
+             ]
     end
 
     test "puts node" do
@@ -43,9 +43,9 @@ defmodule TdDd.DataStructures.CsvBulkUpdateEventTest do
                CsvBulkUpdateEvent.changeset(event, %{task_reference: nil, status: nil})
 
       assert ^errors = [
-        task_reference: {"can't be blank", [validation: :required]},
-        status: {"can't be blank", [validation: :required]}
-      ]
+               task_reference: {"can't be blank", [validation: :required]},
+               status: {"can't be blank", [validation: :required]}
+             ]
     end
   end
 end
