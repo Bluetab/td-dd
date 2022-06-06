@@ -92,6 +92,9 @@ defmodule TdDd.DataStructures.Ancestry do
     ancestors =
       [parent | DataStructures.get_ancestors(parent)]
       |> Repo.preload(:data_structure)
+      |> Enum.map(fn %{data_structure: %{external_id: external_id}} = dsv ->
+        %{dsv | external_id: external_id}
+      end)
 
     ancestors |> Enum.map(&get_children(&1, excludes)) |> Enum.zip(ancestors)
   end
