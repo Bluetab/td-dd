@@ -53,7 +53,6 @@ defmodule TdDqWeb.QualityEventControllerTest do
                )
                |> validate_resp_schema(schema, "QualityEventResponse")
                |> json_response(:created)
-               |> IO.inspect()
     end
 
     @tag authentication: [role: "service"]
