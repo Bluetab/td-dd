@@ -8,6 +8,7 @@ defmodule TdDd.Grants.Grant do
 
   alias TdCache.UserCache
   alias TdDd.DataStructures.DataStructure
+  alias TdDfLib.Validation
 
   schema "grants" do
     field(:detail, :map)
@@ -53,6 +54,7 @@ defmodule TdDd.Grants.Grant do
     |> maybe_put_user_id(params)
     |> validate_required([:start_date, :data_structure_id])
     |> validate_change(:user_id, &validate_user_id/2)
+    |> validate_change(:detail, &Validation.validate_safe/2)
     |> foreign_key_constraint(:data_structure_id)
     |> check_constraint(:end_date, name: :date_range)
     |> exclusion_constraint(:user_id, name: :no_overlap)
@@ -83,7 +85,7 @@ defmodule TdDd.Grants.Grant do
          %{} = _params
        )
        when is_integer(user_id) do
-    changeset |> validate_change(:user_id, &validate_user_id/2)
+    validate_change(changeset, :user_id, &validate_user_id/2)
   end
 
   defp maybe_put_user_id(

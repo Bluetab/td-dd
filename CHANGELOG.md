@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-4739] Validate dynamic content for safety to prevent XSS attacks
+
 ## [4.45.0] 2022-06-06
 
 ### Added

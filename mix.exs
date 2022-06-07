@@ -83,10 +83,11 @@ defmodule TdDd.MixProject do
        git: "https://github.com/Bluetab/elasticsearch-elixir.git",
        branch: "feature/bulk-index-action"},
       {:td_hypermedia, git: "https://github.com/Bluetab/td-hypermedia.git", tag: "4.0.0"},
-      {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "4.44.0", override: true},
-      {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", tag: "4.45.0"},
+      {:td_cache, git: "https://github.com/Bluetab/td-cache.git", tag: "4.45.0"},
+      {:td_df_lib, git: "https://github.com/Bluetab/td-df-lib.git", branch: "feature/td-4739"},
       {:graph, git: "https://github.com/Bluetab/graph.git", tag: "1.2.0"},
-      {:vaultex, "~> 1.0.1"}
+      {:vaultex, "~> 1.0.1"},
+      {:sobelow, "~> 0.8", only: :dev}
     ]
   end
 

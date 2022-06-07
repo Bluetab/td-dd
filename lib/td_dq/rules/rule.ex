@@ -54,6 +54,7 @@ defmodule TdDq.Rules.Rule do
     ])
     |> validate_required([:name, :domain_id], message: "required")
     |> validate_inclusion(:domain_id, TaxonomyCache.get_domain_ids())
+    |> validate_change(:description, &Validation.validate_safe/2)
     |> validate_content(rule)
     |> unique_constraint(
       :rule_name_bc_id,
