@@ -22,14 +22,14 @@ defmodule TdDq.Events.QualityEvent do
   def changeset(%__MODULE__{} = struct, %{} = params) do
     struct
     |> cast(params, [:type, :message, :execution_id])
-    |> validate_required([:execution_id])
+    |> validate_required(:execution_id)
     |> validate_length(:message, max: 1_000)
   end
 
   def create_changeset(%{} = params) do
     %__MODULE__{}
     |> cast(params, [:type, :message, :execution_id])
-    |> validate_required([:execution_id])
+    |> validate_required(:execution_id)
     |> validate_length(:message, max: 1_000)
   end
 end

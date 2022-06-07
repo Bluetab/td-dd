@@ -37,14 +37,14 @@ defmodule TdDd.Grants.Grant do
 
   def changeset(%__MODULE__{} = struct, %{} = params, false) do
     changeset_common(struct, params)
-    |> validate_required([:user_id])
+    |> validate_required(:user_id)
   end
 
   def changeset(%__MODULE__{} = struct, %{} = params, true) do
     struct
     |> cast(params, [:source_user_name])
     |> changeset_common(params)
-    |> validate_required([:source_user_name])
+    |> validate_required(:source_user_name)
   end
 
   def changeset_common(struct_or_changeset, %{} = params) do

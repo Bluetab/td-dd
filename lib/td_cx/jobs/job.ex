@@ -25,7 +25,7 @@ defmodule TdCx.Jobs.Job do
   def changeset(job, attrs) do
     job
     |> cast(attrs, [:source_id, :type, :parameters])
-    |> validate_required([:source_id])
+    |> validate_required(:source_id)
     |> validate_change(:parameters, &Validation.validate_safe/2)
   end
 

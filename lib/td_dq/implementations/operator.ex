@@ -17,6 +17,6 @@ defmodule TdDq.Implementations.Operator do
   def changeset(%__MODULE__{} = struct, %{} = params) do
     struct
     |> cast(params, [:name, :value_type, :value_type_filter])
-    |> validate_required([:name])
+    |> validate_required(:name)
   end
 end

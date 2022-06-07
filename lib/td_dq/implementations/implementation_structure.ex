@@ -24,7 +24,7 @@ defmodule TdDq.Implementations.ImplementationStructure do
   def changeset(implementation_structure, attrs, implementation, data_structure) do
     implementation_structure
     |> cast(attrs, [:type])
-    |> validate_required([:type])
+    |> validate_required(:type)
     |> put_assoc(:data_structure, data_structure)
     |> put_assoc(:implementation, implementation)
     |> unique_constraint([:implementation_id, :data_structure_id, :type],

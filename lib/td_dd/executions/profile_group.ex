@@ -26,7 +26,7 @@ defmodule TdDd.Executions.ProfileGroup do
   def changeset(%__MODULE__{} = struct, %{} = params) do
     struct
     |> cast(params, [:created_by_id, :filters])
-    |> validate_required([:created_by_id])
+    |> validate_required(:created_by_id)
     |> cast_assoc(:executions, with: &ProfileExecution.changeset/2, required: true)
   end
 end
