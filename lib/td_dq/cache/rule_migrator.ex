@@ -56,8 +56,7 @@ defmodule TdDq.Cache.RuleMigrator do
           ids =
             errors
             |> Enum.map(&elem(&1, 2))
-            |> Enum.map(&get_in(&1, [:data, :id]))
-            |> Enum.join(",")
+            |> Enum.map_join(",", &get_in(&1, [:data, :id]))
 
           Logger.error(
             "RuleMigrator: Error while linking the following ids to a domain id: #{ids}"

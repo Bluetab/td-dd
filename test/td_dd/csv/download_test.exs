@@ -4,16 +4,7 @@ defmodule TdDd.DownloadTest do
   """
   use TdDd.DataCase
 
-  alias TdCache.TemplateCache
   alias TdDd.CSV.Download
-
-  defp create_template(template) do
-    template
-    |> Map.put(:updated_at, DateTime.utc_now())
-    |> TemplateCache.put()
-
-    template
-  end
 
   describe "Structures download" do
     test "download empty csv" do
@@ -28,7 +19,7 @@ defmodule TdDd.DownloadTest do
       template_id = 1
       type = "Columna"
 
-      create_template(%{
+      CacheHelpers.insert_template(%{
         id: template_id,
         name: template_name,
         label: "label",
@@ -77,7 +68,7 @@ defmodule TdDd.DownloadTest do
     end
 
     test "to_editable_csv/1 return csv content to download" do
-      create_template(%{
+      CacheHelpers.insert_template(%{
         id: 42,
         name: "template",
         label: "label",
@@ -121,7 +112,7 @@ defmodule TdDd.DownloadTest do
 
   describe "Structure downloads with multiple fields" do
     test "to_editable_csv/1 return csv content with multiple fields, to download" do
-      create_template(%{
+      CacheHelpers.insert_template(%{
         id: 42,
         name: "template",
         label: "label",
@@ -147,6 +138,12 @@ defmodule TdDd.DownloadTest do
                 "type" => "string",
                 "label" => "Label foo",
                 "cardinality" => "1"
+              },
+              %{
+                "name" => "field_domains",
+                "type" => "domain",
+                "label" => "Label foo",
+                "cardinality" => "*"
               }
             ]
           }
@@ -163,7 +160,8 @@ defmodule TdDd.DownloadTest do
           latest_note: %{
             "field_numbers" => [1, 2],
             "field_texts" => ["multi", "field"],
-            "field_text" => ["field"]
+            "field_text" => ["field"],
+            "field_domains" => [%{"name" => "domain_1"}, %{"name" => "domain_2"}]
           },
           external_id: "ext_id",
           type: "type"
@@ -172,8 +170,8 @@ defmodule TdDd.DownloadTest do
 
       assert Download.to_editable_csv(structures) ==
                """
-               external_id;name;type;path;field_numbers;field_texts;field_text\r
-               ext_id;name;type;foo > bar;1|2;multi|field;field\r
+               external_id;name;type;path;field_numbers;field_texts;field_text;field_domains\r
+               ext_id;name;type;foo > bar;1|2;multi|field;field;domain_1, domain_2\r
                """
     end
 
@@ -183,7 +181,7 @@ defmodule TdDd.DownloadTest do
       template_id = 1
       type = "Columna"
 
-      create_template(%{
+      CacheHelpers.insert_template(%{
         id: template_id,
         name: template_name,
         label: "label",

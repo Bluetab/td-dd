@@ -33,6 +33,6 @@ defmodule TdDd.Executions.ProfileExecution do
     |> foreign_key_constraint(:profile_group_id)
     |> foreign_key_constraint(:data_structure_id)
     |> foreign_key_constraint(:profile_id)
-    |> cast_assoc(:profile_events, with: &ProfileEvent.changeset/2, required: false)
+    |> cast_assoc(:profile_events, with: &ProfileEvent.changeset/2)
   end
 end

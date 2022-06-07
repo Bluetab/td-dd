@@ -47,5 +47,4 @@ defmodule TdDd.DataStructures.CsvBulkUpdateEvents do
 
   def check_timeout(%CsvBulkUpdateEvent{} = event), do: event
   def check_timeout(nil), do: nil
-
 end

@@ -139,6 +139,7 @@ defmodule TdDd.Loader.Versions do
     entries =
       entries
       |> Enum.reject(&Map.has_key?(ghash, &1.ghash))
+      # credo:disable-for-next-line
       |> Enum.reject(&Map.has_key?(lhash, &1.lhash))
       |> Enum.flat_map(fn %{external_id: external_id} = r ->
         case Map.get(version_id_map, external_id) do

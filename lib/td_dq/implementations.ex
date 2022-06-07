@@ -21,6 +21,7 @@ defmodule TdDq.Implementations do
   alias TdDq.Events.QualityEvents
   alias TdDq.Implementations.Implementation
   alias TdDq.Implementations.ImplementationStructure
+  alias TdDq.Implementations.Workflow
   alias TdDq.Rules
   alias TdDq.Rules.Audit
   alias TdDq.Rules.Rule
@@ -75,19 +76,34 @@ defmodule TdDq.Implementations do
     |> Repo.preload(:rule)
   end
 
+  def last?(%Implementation{id: id, implementation_key: implementation_key}) do
+    Implementation
+    |> where([ri], ri.implementation_key == ^implementation_key)
+    |> order_by(desc: :version)
+    |> select([ri], ri.id == ^id)
+    |> limit(1)
+    |> Repo.one()
+    |> Kernel.!=(false)
+  end
+
   @spec create_implementation(Rule.t(), map, Claims.t(), boolean) :: multi_result
   def create_implementation(rule, params, claims, is_bulk \\ false)
 
   def create_implementation(
-        %Rule{} = rule,
+        %Rule{id: rule_id, domain_id: domain_id} = rule,
         %{} = params,
         %Claims{user_id: user_id} = claims,
         is_bulk
       ) do
     changeset =
       Implementation.changeset(
-        rule,
-        %Implementation{},
+        %Implementation{
+          version: 1,
+          status: :draft,
+          rule_id: rule_id,
+          domain_id: domain_id,
+          rule: rule
+        },
         params
       )
 
@@ -116,7 +132,7 @@ defmodule TdDq.Implementations do
       ) do
     changeset =
       Implementation.changeset(
-        %Implementation{},
+        %Implementation{version: 1, status: :draft},
         params
       )
 
@@ -144,23 +160,23 @@ defmodule TdDq.Implementations do
   defp multi_can(false), do: {:error, false}
 
   def update_implementation(
-        %Implementation{} = implementation,
+        %Implementation{status: status} = implementation,
         params,
         %Claims{user_id: user_id} = claims
       ) do
-    changeset = Implementation.changeset(implementation, params)
+    changeset = upsert_changeset(implementation, params)
 
     Multi.new()
     |> Multi.run(:can, fn _, _ ->
       multi_can(
         Enum.all?([
-          can?(claims, update(changeset)),
+          can?(claims, :update, changeset),
           can?(claims, edit_segments(implementation)),
           can?(claims, edit_segments(changeset))
         ])
       )
     end)
-    |> Multi.update(:implementation, fn _ -> do_update_implementation(changeset) end)
+    |> upsert(changeset, status)
     |> Multi.run(:data_structures, &create_implementation_structures/2)
     |> Multi.run(:audit, Audit, :implementation_updated, [changeset, user_id])
     |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
@@ -168,14 +184,56 @@ defmodule TdDq.Implementations do
     |> on_upsert()
   end
 
-  defp do_update_implementation(%{changes: %{rule_id: rule_id}} = changeset) do
+  defp upsert(multi, changeset, :published) do
+    Multi.insert(multi, :implementation, changeset)
+  end
+
+  defp upsert(multi, %{data: implementation} = changeset, _not_published) do
+    case Changeset.get_change(changeset, :status) do
+      :published -> Workflow.maybe_version_existing(multi, implementation, "published")
+      _ -> multi
+    end
+    |> Multi.update(:implementation, changeset)
+  end
+
+  defp upsert_changeset(
+         %Implementation{
+           domain_id: domain_id,
+           implementation_type: type,
+           rule: rule,
+           rule_id: rule_id,
+           status: :published,
+           version: v
+         },
+         %{} = params
+       ) do
+    Implementation.changeset(
+      %Implementation{
+        domain_id: domain_id,
+        implementation_type: type,
+        rule: rule,
+        rule_id: rule_id,
+        status: :draft,
+        version: v + 1
+      },
+      params
+    )
+  end
+
+  defp upsert_changeset(%Implementation{} = implementation, %{} = params) do
+    implementation
+    |> Implementation.changeset(params)
+    |> maybe_put_domain_id()
+  end
+
+  defp maybe_put_domain_id(%{changes: %{rule_id: rule_id}} = changeset) do
     case Rules.get_rule(rule_id) do
       %{domain_id: domain_id} -> Changeset.put_change(changeset, :domain_id, domain_id)
       _ -> changeset
     end
   end
 
-  defp do_update_implementation(changeset), do: changeset
+  defp maybe_put_domain_id(changeset), do: changeset
 
   @spec deprecate_implementations ::
           :ok | {:ok, map} | {:error, Multi.name(), any, %{required(Multi.name()) => any}}
@@ -214,7 +272,7 @@ defmodule TdDq.Implementations do
       |> select([i], i)
 
     Multi.new()
-    |> Multi.update_all(:deprecated, query, set: [deleted_at: ts])
+    |> Multi.update_all(:deprecated, query, set: [deleted_at: ts, status: "deprecated"])
     |> Multi.run(:audit, Audit, :implementations_deprecated, [])
     |> Repo.transaction()
     |> on_deprecate()
@@ -235,8 +293,24 @@ defmodule TdDq.Implementations do
   end
 
   def delete_implementation(
+        %Implementation{status: :published} = implementation,
+        %Claims{user_id: user_id}
+      ) do
+    changeset =
+      implementation
+      |> Repo.preload(:rule)
+      |> Implementation.changeset(%{status: :deprecated, deleted_at: DateTime.utc_now()})
+
+    Multi.new()
+    |> Multi.update(:implementation, changeset)
+    |> Multi.run(:audit, Audit, :implementation_deprecated, [changeset, user_id])
+    |> Repo.transaction()
+    |> on_delete()
+  end
+
+  def delete_implementation(
         %Implementation{} = implementation,
-        %Claims{user_id: user_id} = claims
+        %Claims{user_id: user_id}
       ) do
     changeset =
       implementation
@@ -244,7 +318,6 @@ defmodule TdDq.Implementations do
       |> Changeset.change()
 
     Multi.new()
-    |> Multi.run(:can, fn _, _ -> multi_can(can?(claims, delete(changeset))) end)
     |> Multi.delete(:implementation, changeset)
     |> Multi.run(:audit, Audit, :implementation_deleted, [changeset, user_id])
     |> Repo.transaction()
@@ -261,6 +334,11 @@ defmodule TdDq.Implementations do
 
   @spec on_upsert(multi_result, boolean) :: multi_result
   defp on_upsert(result, is_bulk \\ false)
+
+  defp on_upsert({:ok, %{versioned: {_count, ids}, implementation: %{id: id}}} = result, false) do
+    @index_worker.reindex_implementations([id | ids])
+    result
+  end
 
   defp on_upsert({:ok, %{implementation: %{id: id}}} = result, false) do
     @index_worker.reindex_implementations(id)

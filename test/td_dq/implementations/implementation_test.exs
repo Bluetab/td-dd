@@ -3,9 +3,7 @@ defmodule TdDq.Implementations.ImplementationTest do
 
   alias Ecto.Changeset
   alias Elasticsearch.Document
-  alias TdDd.Repo
   alias TdDq.Implementations.Implementation
-  alias TdDq.Rules.Rule
 
   @implementation %Implementation{domain_id: 123}
 
@@ -69,7 +67,9 @@ defmodule TdDq.Implementations.ImplementationTest do
           rule_id: rule_id,
           implementation_key: "foo",
           df_name: template_with_identifier.name,
-          df_content: %{"text" => "some text"}
+          df_content: %{"text" => "some text"},
+          version: 1,
+          status: "draft"
         )
 
       assert %Changeset{changes: changes} = Implementation.changeset(@implementation, params)
@@ -98,24 +98,16 @@ defmodule TdDq.Implementations.ImplementationTest do
       assert %{df_content: new_content} = changes
       refute match?(%{^identifier_name => _identifier}, new_content)
     end
-  end
 
-  describe "changeset/3" do
-    test "captures foreign key constraint on rule_id" do
-      params =
-        :implementation
-        |> string_params_for()
-        |> Map.delete("rule")
+    test "puts status to draft if it is currently rejected" do
+      implementation = insert(:implementation, status: :rejected)
 
-      assert %{valid?: true} = changeset = Implementation.changeset(%Rule{id: 123}, @implementation, params)
-      assert {:error, changeset} = Repo.insert(changeset)
-      assert %{errors: errors} = changeset
-      assert {_msg, [constraint: :foreign, constraint_name: _constraint_name]} = errors[:rule_id]
+      changeset = Implementation.changeset(implementation, %{"foo" => "bar"})
+      assert Ecto.Changeset.fetch_change!(changeset, :status) == :draft
     end
   end
 
   describe "changeset/2" do
-
     test "puts next available implementation_key if none specified and changeset valid" do
       insert(:implementation, implementation_key: "ri0123")
       %{id: rule_id} = insert(:rule)
@@ -160,6 +152,7 @@ defmodule TdDq.Implementations.ImplementationTest do
 
     test "validates domain_id is required" do
       implementation = %Implementation{}
+
       params =
         :implementation
         |> params_for()
@@ -592,28 +585,31 @@ defmodule TdDq.Implementations.ImplementationTest do
             structure: structure_1
           },
           %{
-            structure: structure_2          }
-          ]
-        }
-        implementation_key = "seg1"
+            structure: structure_2
+          }
+        ]
+      }
 
-        rule_implementation =
-          insert(:implementation,
-            implementation_key: implementation_key,
-            rule: rule,
-            segments: creation_attrs.segments
-          )
+      implementation_key = "seg1"
 
-        assert %{
-                 segments: [
-                   %{
-                     structure: ^structure_1
-                   },
-                   %{
-                     structure: ^structure_2                 }
-                    ]
-                  } = Document.encode(rule_implementation)
-         end
+      rule_implementation =
+        insert(:implementation,
+          implementation_key: implementation_key,
+          rule: rule,
+          segments: creation_attrs.segments
+        )
+
+      assert %{
+               segments: [
+                 %{
+                   structure: ^structure_1
+                 },
+                 %{
+                   structure: ^structure_2
+                 }
+               ]
+             } = Document.encode(rule_implementation)
+    end
 
     test "encodes ruleless implementations" do
       operator = %{

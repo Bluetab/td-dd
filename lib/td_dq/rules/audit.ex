@@ -75,16 +75,24 @@ defmodule TdDq.Rules.Audit do
   end
 
   @doc """
+  Publishes `:implementation_deprecated` events. Should be called using `Ecto.Multi.run/5`.
+  """
+  def implementation_deprecated(repo, payload, changeset, user_id) do
+    implementation_deleted(repo, payload, changeset, user_id, "implementation_deprecated")
+  end
+
+  @doc """
   Publishes `:implementation_deleted` events. Should be called using `Ecto.Multi.run/5`.
   """
   def implementation_deleted(
         _repo,
         %{implementation: %{id: id} = implementation},
         _changeset,
-        user_id
+        user_id,
+        event \\ "implementation_deleted"
       ) do
     payload = Map.take(implementation, [:implementation_key, :rule_id, :domain_id])
-    publish("implementation_deleted", "implementation", id, user_id, payload)
+    publish(event, "implementation", id, user_id, payload)
   end
 
   @doc """

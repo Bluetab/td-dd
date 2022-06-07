@@ -15,7 +15,10 @@ defmodule TdDd.Grants.Search do
   @aggs %{
     "taxonomy" => %{terms: %{field: "data_structure_version.domain_ids", size: 500}},
     "type.raw" => %{terms: %{field: "data_structure_version.type.raw", size: 50}},
-    "pending_removal.raw" => %{terms: %{field: "pending_removal.raw"}}
+    "pending_removal.raw" => %{terms: %{field: "pending_removal.raw"}},
+    "system_external_id" => %{
+      terms: %{field: "data_structure_version.system.external_id.raw", size: 50}
+    }
   }
 
   def get_filter_values(claims, params, user_id) do

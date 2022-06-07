@@ -32,7 +32,12 @@ defmodule TdDd.DataStructures do
   alias TdDfLib.Format
 
   # Data structure version associations preloaded for some views
-  @preload_dsv_assocs [:classifications, data_structure: :system]
+  @preload_dsv_assocs [
+    :published_note,
+    :structure_type,
+    :classifications,
+    data_structure: :system
+  ]
 
   def list_data_structures(clauses \\ %{}) do
     clauses
@@ -118,6 +123,10 @@ defmodule TdDd.DataStructures do
     |> enrich(opts)
   end
 
+  def get_cached_content(%{} = content, %{structure_type: %{template_id: template_id}}) do
+    get_cached_content(content, %{data_structure_type: %{template_id: template_id}})
+  end
+
   def get_cached_content(%{} = content, %{data_structure_type: %{template_id: template_id}}) do
     case TemplateCache.get(template_id) do
       {:ok, template} ->
@@ -166,7 +175,11 @@ defmodule TdDd.DataStructures do
       :data_fields,
       &get_field_structures(&1,
         deleted: deleted,
-        preload: if(Enum.member?(opts, :profile), do: [data_structure: :profile], else: []),
+        preload:
+          if(Enum.member?(opts, :profile),
+            do: [:published_note, data_structure: :profile],
+            else: []
+          ),
         with_confidential: with_confidential
       )
     )
@@ -189,6 +202,7 @@ defmodule TdDd.DataStructures do
     |> enrich(opts, :grants, &get_grants/1)
     |> enrich(opts, :grant, &get_grant(&1, opts[:user_id]))
     |> enrich(opts, :implementations, &get_implementations!/1)
+    |> enrich(opts, :published_note, &get_published_note!/1)
   end
 
   defp enrich(%{} = target, opts, key, fun) do
@@ -197,6 +211,12 @@ defmodule TdDd.DataStructures do
     case Enum.member?(opts, key) do
       false -> target
       true -> Map.put(target, target_key, fun.(target))
+    end
+  end
+
+  defp get_published_note!(%DataStructureVersion{} = dsv) do
+    case Repo.preload(dsv, :published_note) do
+      %{published_note: published_note} -> published_note
     end
   end
 
@@ -253,21 +273,18 @@ defmodule TdDd.DataStructures do
   def get_children(%DataStructureVersion{id: id}, opts \\ []) do
     DataStructureRelation
     |> where([r], r.parent_id == ^id)
-    |> join(:inner, [r], parent in assoc(r, :child))
-    |> join(:inner, [r, _parent, _], r in assoc(r, :relation_type))
-    |> join(:inner, [_r, child, _], child in assoc(child, :data_structure))
-    |> with_deleted(
-      Keyword.get(opts, :deleted),
-      dynamic([_, parent, _], is_nil(parent.deleted_at))
-    )
+    |> join(:inner, [r], child in assoc(r, :child))
+    |> join(:inner, [r], relation_type in assoc(r, :relation_type))
+    |> join(:inner, [_, child, _], ds_child in assoc(child, :data_structure))
+    |> with_deleted(Keyword.get(opts, :deleted), dynamic([_, child], is_nil(child.deleted_at)))
     |> with_confidential(
       Keyword.get(opts, :with_confidential),
-      dynamic([_, _child, _, ds_child], ds_child.confidential == false)
+      dynamic([_, _, _, ds_child], ds_child.confidential == false)
     )
     |> relation_type_condition(
       Keyword.get(opts, :default),
-      dynamic([_, _child, relation_type, _], relation_type.name == "default"),
-      dynamic([_, _child, relation_type, _], relation_type.name != "default")
+      dynamic([_, _, relation_type, _], relation_type.name == "default"),
+      dynamic([_, _, relation_type, _], relation_type.name != "default")
     )
     |> order_by([_, child, _, _], asc: child.data_structure_id, desc: child.version)
     |> distinct([_, child, _, _], child)
@@ -284,20 +301,20 @@ defmodule TdDd.DataStructures do
     DataStructureRelation
     |> where([r], r.child_id == ^id)
     |> join(:inner, [r], parent in assoc(r, :parent))
-    |> join(:inner, [r, _parent], relation_type in assoc(r, :relation_type))
-    |> join(:inner, [_r, parent, _relation_type], parent in assoc(parent, :data_structure))
+    |> join(:inner, [r, _], relation_type in assoc(r, :relation_type))
+    |> join(:inner, [_, parent, _], parent in assoc(parent, :data_structure))
     |> with_deleted(
       Keyword.get(opts, :deleted),
       dynamic([_, parent, _, _], is_nil(parent.deleted_at))
     )
     |> relation_type_condition(
       Keyword.get(opts, :default),
-      dynamic([_, _parent, relation_type, _], relation_type.name == "default"),
-      dynamic([_, _parent, relation_type, _], relation_type.name != "default")
+      dynamic([_, _, relation_type, _], relation_type.name == "default"),
+      dynamic([_, _, relation_type, _], relation_type.name != "default")
     )
     |> with_confidential(
       Keyword.get(opts, :with_confidential),
-      dynamic([_, _parent, _relation_type, parent_ds], parent_ds.confidential == false)
+      dynamic([_, _, _, parent_ds], parent_ds.confidential == false)
     )
     |> order_by([_, parent, _, _], asc: parent.data_structure_id, desc: parent.version)
     |> distinct([_, parent, _, _], parent)
@@ -314,66 +331,35 @@ defmodule TdDd.DataStructures do
     DataStructureRelation
     |> where([r], r.child_id == ^id)
     |> join(:inner, [r], parent in assoc(r, :parent))
-    |> join(:inner, [r, _parent], parent_rt in assoc(r, :relation_type))
-    |> join(:inner, [_r, parent, _parent_rt, r_c], r_c in DataStructureRelation,
+    |> join(:inner, [r, _], parent_rt in assoc(r, :relation_type))
+    |> join(:inner, [_, parent, _, r_c], r_c in DataStructureRelation,
       on: parent.id == r_c.parent_id
     )
-    |> join(:inner, [_r, _parent, _parent_rt, r_c], child_rt in assoc(r_c, :relation_type))
-    |> join(:inner, [_r, _parent, _parent_rt, r_c, _child_rt], sibling in assoc(r_c, :child))
-    |> join(
-      :inner,
-      [_r, _parent, _parent_rt, _r_c, _child_rt, sibling],
-      sibling in assoc(sibling, :data_structure)
-    )
-    |> with_deleted(
-      opts,
-      dynamic(
-        [_r, parent, _parent_rt, _r_c, _child_rt, _sibling, _sibling_ds],
-        is_nil(parent.deleted_at)
-      )
-    )
-    |> with_deleted(
-      opts,
-      dynamic(
-        [_r, parent, _parent_rt, _r_c, _child_rt, sibling, _sibling_ds],
-        is_nil(sibling.deleted_at)
-      )
-    )
+    |> join(:inner, [_, _, _, r_c], child_rt in assoc(r_c, :relation_type))
+    |> join(:inner, [_, _, _, r_c, _], sibling in assoc(r_c, :child))
+    |> join(:inner, [_, _, _, _, _, sibling], sibling in assoc(sibling, :data_structure))
+    |> with_deleted(opts, dynamic([_, parent, _, _, _, _, _], is_nil(parent.deleted_at)))
+    |> with_deleted(opts, dynamic([_, _, _, _, _, sibling, _], is_nil(sibling.deleted_at)))
     |> with_confidential(
       Keyword.get(opts, :with_confidential),
-      dynamic(
-        [_r, _parent, _parent_rt, _r_c, _child_rt, _sibling, sibling_ds],
-        sibling_ds.confidential == false
-      )
+      dynamic([_, _, _, _, _, _, sibling_ds], sibling_ds.confidential == false)
     )
     |> relation_type_condition(
       Keyword.get(opts, :default),
-      dynamic(
-        [_r, _parent, parent_rt, _r_c, _child_rt, _sibling, _sibling_ds],
-        parent_rt.name == "default"
-      ),
-      dynamic(
-        [_r, _parent, parent_rt, _r_c, _child_rt, _sibling, _sibling_ds],
-        parent_rt.name != "default"
-      )
+      dynamic([_, _, parent_rt, _, _, _, _], parent_rt.name == "default"),
+      dynamic([_, _, parent_rt, _, _, _, _], parent_rt.name != "default")
     )
     |> relation_type_condition(
       Keyword.get(opts, :default),
-      dynamic(
-        [_r, _parent, _parent_rt, _r_c, child_rt, _sibling, _sibling_ds],
-        child_rt.name == "default"
-      ),
-      dynamic(
-        [_r, _parent, _parent_rt, _r_c, child_rt, _sibling, _sibling_ds],
-        child_rt.name != "default"
-      )
+      dynamic([_, _, _, _, child_rt, _, _], child_rt.name == "default"),
+      dynamic([_, _, _, _, child_rt, _, _], child_rt.name != "default")
     )
-    |> order_by([_r, _parent, _parent_rt, _r_c, _child_rt, sibling, _sibling_ds],
+    |> order_by([_, _, _, _, _, sibling, _],
       asc: sibling.data_structure_id,
       desc: sibling.version
     )
-    |> distinct([_r, _parent, _parent_rt, _r_c, _child_rt, sibling, _sibling_ds], sibling)
-    |> select([_r, _parent, _parent_rt, _r_c, _child_rt, sibling, _sibling_ds], sibling)
+    |> distinct([_, _, _, _, _, sibling, _], sibling)
+    |> select([_, _, _, _, _, sibling, _], sibling)
     |> Repo.all()
     |> Repo.preload(@preload_dsv_assocs)
     |> Enum.uniq_by(& &1.data_structure_id)

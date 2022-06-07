@@ -1,17 +1,22 @@
 # Changelog
 
-## [Unreleased]
+## [4.45.0] 2022-06-06
 
 ### Added
 
+- [TD-4540] Add approval workflow for quality implementations
 - [TD-3633] Take into account ruleless implementations in event publishing
 - [TD-4872] Support querying structures by `external_id` in GraphQL API
+- [TD-3920] Alias support for structures
 - [TD-4855] Support `Profile` searching with params (offset, limit, since)
+- [TD-4843] Support filters grants by `system_external_id`
 
 ### Fixed
 
 - [TD-4852] Ruleless implementation weren't being linked with data structures on
   creation
+- [TD-4835] It was possible to execute non-executable implementations
+- [TD-4878] Error loading structure metadata with synchronous API
 
 ## [4.44.0] 2022-05-23
 

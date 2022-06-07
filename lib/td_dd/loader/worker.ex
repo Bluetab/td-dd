@@ -42,9 +42,12 @@ defmodule TdDd.Loader.Worker do
 
     case Keyword.has_key?(opts, :external_id) do
       true ->
+        timeout = Application.get_env(:td_dd, __MODULE__)[:timeout]
+
         GenServer.call(
           __MODULE__,
-          {:load, structures_file, fields_file, relations_file, system_id, domain, audit, opts}
+          {:load, structures_file, fields_file, relations_file, system_id, domain, audit, opts},
+          timeout
         )
 
       _ ->
