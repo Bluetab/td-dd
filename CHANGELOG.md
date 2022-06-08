@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-4911] Implementations download was failing for ruleless implementations
+
 ## [4.45.0] 2022-06-06
 
 ### Added
@@ -45,7 +51,7 @@
 
 ### Added
 
-- [TD-4089] Support for Implementations without Rules
+- [TD-4089] Support for implementations without rules
 
 ## [4.43.0] 2022-05-09
 
