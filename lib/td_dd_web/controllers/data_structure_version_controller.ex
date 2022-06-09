@@ -100,7 +100,8 @@ defmodule TdDdWeb.DataStructureVersionController do
         update_domain: can?(claims, manage_structures_domain(data_structure)),
         view_profiling_permission: can?(claims, view_data_structures_profile(data_structure)),
         profile_permission: can?(claims, profile(dsv)),
-        request_grant: can_request_grant?(claims, data_structure)
+        request_grant: can_request_grant?(claims, data_structure),
+        update_grant_removal: can_update_grant_removal?(claims, data_structure)
       }
 
       render(conn, "show.json",
@@ -125,6 +126,10 @@ defmodule TdDdWeb.DataStructureVersionController do
   defp can_request_grant?(claims, data_structure) do
     {:ok, templates} = TemplateCache.list_by_scope("gr")
     can?(claims, create_grant_request(data_structure)) and not Enum.empty?(templates)
+  end
+
+  defp can_update_grant_removal?(claims, data_structure) do
+    can?(claims, update_grant_removal(data_structure))
   end
 
   defp get_data_structure_version(data_structure_version_id, opts) do
