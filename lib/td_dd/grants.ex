@@ -92,7 +92,7 @@ defmodule TdDd.Grants do
         where(
           q,
           [g],
-          fragment("daterange(?, ?, '[]') @> ?::date", g.start_date, g.end_date, ^date)
+          fragment("daterange(?, ?, '[)') @> ?::date", g.start_date, g.end_date, ^date)
         )
 
       {:preload, preloads}, q ->
