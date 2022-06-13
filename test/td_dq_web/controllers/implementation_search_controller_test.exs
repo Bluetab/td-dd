@@ -96,7 +96,7 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
                |> post(Routes.implementation_search_path(conn, :create))
                |> json_response(:ok)
 
-      assert actions == %{"download" => %{"method" => "POST"}}
+      assert %{"download" => %{"method" => "POST"}, "create" => %{"method" => "POST"}} == actions
     end
 
     @tag authentication: [user_name: "not_an_admin", permissions: [:view_quality_rule]]
@@ -127,7 +127,7 @@ defmodule TdDqWeb.ImplementationSearchControllerTest do
                |> post(Routes.implementation_search_path(conn, :create), params)
                |> json_response(:ok)
 
-      assert %{"uploadResults" => %{"href" => "/api/rule_results", "method" => "POST"}} = actions
+      assert %{"uploadResults" => %{"method" => "POST"}} = actions
     end
   end
 

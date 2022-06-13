@@ -137,6 +137,7 @@ defmodule TdDdWeb.GrantController do
       pending_removal: false,
       end_date: DateTime.utc_now()
     }
+
     with claims <- conn.assigns[:current_resource],
          %Grant{} = grant <- Grants.get_grant!(id, preload: :data_structure),
          {:can, true} <- {:can, can?(claims, update(grant))},

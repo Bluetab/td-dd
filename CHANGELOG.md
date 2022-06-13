@@ -6,6 +6,10 @@
 
 - [TD-4431] Grants can be `Pending Removal`
 
+### Fixed
+
+- [TD-4918] Implementations permissions
+
 ## [4.45.0] 2022-06-06
 
 ### Added
