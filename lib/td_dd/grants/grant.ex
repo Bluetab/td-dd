@@ -49,7 +49,14 @@ defmodule TdDd.Grants.Grant do
 
   def changeset_common(struct_or_changeset, %{} = params) do
     struct_or_changeset
-    |> cast(params, [:detail, :start_date, :end_date, :user_name, :user_external_id, :pending_removal])
+    |> cast(params, [
+      :detail,
+      :start_date,
+      :end_date,
+      :user_name,
+      :user_external_id,
+      :pending_removal
+    ])
     |> check_user_params(params)
     |> maybe_put_user_id(params)
     |> validate_required([:start_date, :data_structure_id])
