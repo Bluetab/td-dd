@@ -3,7 +3,6 @@ defmodule TdDqWeb.ImplementationController do
   use TdHypermedia, :controller
 
   import Canada, only: [can?: 2]
-  import Canada.Can, only: [can?: 3]
 
   alias TdDq.Events.QualityEvents
   alias TdDq.Implementations
@@ -148,7 +147,7 @@ defmodule TdDqWeb.ImplementationController do
       |> filter_links_by_permission(claims)
       |> filter_data_structures_by_permission(claims)
 
-    actions = build_actions(claims, implementation)
+    actions = Implementations.build_actions(claims, implementation)
 
     with {:can, true} <- {:can, can?(claims, show(implementation))} do
       render(conn, "show.json", implementation: implementation, actions: actions)
@@ -170,24 +169,12 @@ defmodule TdDqWeb.ImplementationController do
 
   defp filter_link_by_permission(_claims, _), do: false
 
-  defp build_actions(claims, implementation) do
-    [
-      :clone,
-      :deprecate,
-      :edit,
-      :execute,
-      :link_concept,
-      :link_structure,
-      :manage,
-      :manage_segments,
-      :move,
-      :publish,
-      :reject,
-      :submit
-    ]
-    |> Enum.filter(&can?(claims, &1, implementation))
-    |> Enum.reduce(%{}, &Map.put(&2, &1, %{method: "POST"}))
-  end
+  # defp build_actions(claims, implementation) do
+  #   implementation
+  #   |> Implementations.get_available_actions()
+  #   |> Enum.filter(&can?(claims, &1, implementation))
+  #   |> Enum.reduce(%{}, &Map.put(&2, &1, %{method: "POST"}))
+  # end
 
   defp filter_data_structures_by_permission(implementation, %{role: "admin"}), do: implementation
 
@@ -275,7 +262,8 @@ defmodule TdDqWeb.ImplementationController do
 
     with {:can, true} <- {:can, can?(claims, list(Implementation))},
          implementations <- Search.search_by_rule_id(params, claims, rule_id, 0, 1000) do
-      render(conn, "index.json", implementations: implementations)
+      actions = Implementations.build_actions(claims)
+      render(conn, "index.json", implementations: implementations, actions: actions)
     end
   end
 
