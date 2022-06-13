@@ -150,6 +150,12 @@ defmodule TdDd.Canada.Abilities do
       GrantAbilities.can?(claims, action, target)
     end
 
+    def can?(%Claims{role: "admin"}, :update_grant_removal, %DataStructure{}), do: true
+
+    def can?(%Claims{} = claims, :update_grant_removal, %DataStructure{domain_ids: domain_ids}) do
+      GrantAbilities.can?(claims, :update_pending_removal, domain_ids)
+    end
+
     def can?(%Claims{role: "admin"}, :create_grant_request, %DataStructure{}), do: true
 
     def can?(%Claims{} = claims, :create_grant_request, %DataStructure{domain_ids: domain_ids}) do

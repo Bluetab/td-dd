@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+- [TD-4431] Grants can be `Pending Removal`
+
 ## [4.45.0] 2022-06-06
 
 ### Added
