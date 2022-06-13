@@ -52,7 +52,10 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
       assert [%{"message" => "forbidden"}] = errors
     end
 
-    @tag authentication: [role: "user", permissions: ["view_quality_rule", "manage_quality_rule_implementations"]]
+    @tag authentication: [
+           role: "user",
+           permissions: ["view_quality_rule", "manage_quality_rule_implementations"]
+         ]
     test "return implementation when user has permissions", %{conn: conn, domain: domain} do
       %{id: implementation_id} = insert(:implementation, domain_id: domain.id, segments: [])
 
