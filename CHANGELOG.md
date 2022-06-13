@@ -8,7 +8,7 @@
 
 ### Fixed
 
-- [TD-7918] Implementations permissions
+- [TD-4918] Implementations permissions
 
 ## [4.45.0] 2022-06-06
 
