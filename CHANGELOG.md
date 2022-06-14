@@ -2,8 +2,13 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-4431] Grants can be `Pending Removal`
+
 ### Fixed
 
+- [TD-4918] Implementations permissions
 - [TD-4911] Implementations download was failing for ruleless implementations
 
 ## [4.45.0] 2022-06-06

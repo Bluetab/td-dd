@@ -347,6 +347,52 @@ defmodule TdDq.Implementations do
 
   defp on_upsert(result, _), do: result
 
+  defp get_available_actions(_params, %Implementation{}) do
+    [
+      :clone,
+      :delete,
+      :edit,
+      :execute,
+      :link_concept,
+      :link_structure,
+      :manage_segments,
+      :move,
+      :publish,
+      :reject,
+      :submit
+    ]
+  end
+
+  defp get_available_actions(%{"filters" => %{"status" => ["published"]}}, Implementation) do
+    [
+      "download",
+      "execute",
+      "create",
+      "createRaw",
+      "createRawRuleLess",
+      "createRuleLess",
+      "uploadResults"
+    ]
+  end
+
+  defp get_available_actions(_params, Implementation) do
+    ["create", "createRaw", "createRawRuleLess", "createRuleLess", "download", "load"]
+  end
+
+  def build_actions(claims), do: build_actions(claims, %{}, Implementation)
+
+  def build_actions(claims, %Implementation{} = implementation),
+    do: build_actions(claims, %{}, implementation)
+
+  def build_actions(claims, params), do: build_actions(claims, params, Implementation)
+
+  def build_actions(claims, params, implementation) do
+    params
+    |> get_available_actions(implementation)
+    |> Enum.filter(&can?(claims, &1, implementation))
+    |> Enum.reduce(%{}, &Map.put(&2, &1, %{method: "POST"}))
+  end
+
   def get_sources(%Implementation{implementation_type: "raw", raw_content: %{source_id: nil}}) do
     []
   end

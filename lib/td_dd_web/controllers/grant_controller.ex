@@ -112,6 +112,41 @@ defmodule TdDdWeb.GrantController do
     response(422, "Unprocessable Entity")
   end
 
+  def update(conn, %{"id" => id, "action" => "request_removal"}) do
+    with claims <- conn.assigns[:current_resource],
+         %Grant{} = grant <- Grants.get_grant!(id, preload: :data_structure),
+         {:can, true} <- {:can, can?(claims, update_pending_removal(grant))},
+         {:ok, %{grant: _}} <- Grants.update_grant(grant, %{pending_removal: true}, claims),
+         %Grant{} = grant <- Grants.get_grant!(id, preload: [:data_structure, :system]) do
+      render(conn, "show.json", grant: grant)
+    end
+  end
+
+  def update(conn, %{"id" => id, "action" => "cancel_removal"}) do
+    with claims <- conn.assigns[:current_resource],
+         %Grant{} = grant <- Grants.get_grant!(id, preload: :data_structure),
+         {:can, true} <- {:can, can?(claims, update_pending_removal(grant))},
+         {:ok, %{grant: _}} <- Grants.update_grant(grant, %{pending_removal: false}, claims),
+         %Grant{} = grant <- Grants.get_grant!(id, preload: [:data_structure, :system]) do
+      render(conn, "show.json", grant: grant)
+    end
+  end
+
+  def update(conn, %{"id" => id, "action" => "set_removed"}) do
+    update_params = %{
+      pending_removal: false,
+      end_date: DateTime.utc_now()
+    }
+
+    with claims <- conn.assigns[:current_resource],
+         %Grant{} = grant <- Grants.get_grant!(id, preload: :data_structure),
+         {:can, true} <- {:can, can?(claims, update(grant))},
+         {:ok, %{grant: _}} <- Grants.update_grant(grant, update_params, claims),
+         %Grant{} = grant <- Grants.get_grant!(id, preload: [:data_structure, :system]) do
+      render(conn, "show.json", grant: grant)
+    end
+  end
+
   def update(conn, %{"id" => id, "grant" => grant_params}) do
     with claims <- conn.assigns[:current_resource],
          %Grant{} = grant <- Grants.get_grant!(id, preload: :data_structure),
