@@ -4,13 +4,12 @@
 
 ### Added
 
-- [TD-4431] Grants can be `Pending Removal`
+- [TD-4431] Support for requesting removal of grants
 
 ### Fixed
 
 - [TD-4918] Implementations permissions
 - [TD-4911] Implementations download was failing for ruleless implementations
-- [TD-4937] Add missing `GrantAbilities` clause for `user_permissions`
 
 ## [4.45.0] 2022-06-06
 
