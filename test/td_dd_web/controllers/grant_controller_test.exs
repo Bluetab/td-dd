@@ -257,7 +257,7 @@ defmodule TdDdWeb.GrantControllerTest do
     end
 
     @tag authentication: [role: "non_admin", permissions: [:request_grant_removal, :view_grants]]
-    test "user with permissions can request_removal", %{
+    test "user with permissions can request removal of a grant", %{
       conn: conn,
       grant: %Grant{id: id} = grant
     } do
