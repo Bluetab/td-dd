@@ -76,9 +76,19 @@ defmodule TdDq.Implementations do
     |> Repo.preload(:rule)
   end
 
-  def last?(%Implementation{id: id, implementation_key: implementation_key}) do
+  # def last?(%Implementation{id: id, implementation_key: implementation_key}) do
+  #   Implementation
+  #   |> where([ri], ri.implementation_key == ^implementation_key)
+  #   |> order_by(desc: :version)
+  #   |> select([ri], ri.id == ^id)
+  #   |> limit(1)
+  #   |> Repo.one()
+  #   |> Kernel.!=(false)
+  # end
+
+  def last?(%Implementation{id: id, implementation_ref: implementation_ref}) do
     Implementation
-    |> where([ri], ri.implementation_key == ^implementation_key)
+    |> where([ri], ri.implementation_ref == ^implementation_ref)
     |> order_by(desc: :version)
     |> select([ri], ri.id == ^id)
     |> limit(1)
@@ -149,7 +159,7 @@ defmodule TdDq.Implementations do
         )
       )
     end)
-    |> Multi.insert(:implementation, changeset)
+    |> Multi.run(:implementation, fn _, _ -> insert_implementation(changeset) end)
     |> Multi.run(:data_structures, &create_implementation_structures/2)
     |> Multi.run(:audit, Audit, :implementation_created, [changeset, user_id])
     |> Repo.transaction()

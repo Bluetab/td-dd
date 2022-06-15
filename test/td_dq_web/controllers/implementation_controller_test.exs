@@ -1294,7 +1294,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
   describe "update implementation" do
     @tag authentication: [role: "admin"]
     test "renders implementation when data is valid", %{conn: conn, swagger_schema: schema} do
-      %{implementation_ref: ref} = implementation = insert(:implementation_with_ref)
+      %{implementation_ref: ref} = implementation = insert(:implementation)
 
       params =
         %{populations: @populations}
@@ -1332,7 +1332,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
     test "create new implementation with same implementation_ref when previous one has published status",
          %{conn: conn, swagger_schema: schema} do
       %{implementation_ref: ref, id: published_id} =
-        implementation = insert(:implementation_with_ref, status: :published)
+        implementation = insert(:implementation, status: :published)
 
       assert ref != nil
 
