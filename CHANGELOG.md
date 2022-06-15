@@ -4,7 +4,7 @@
 
 ### Added
 
-- [TD-4431] Grants can be `Pending Removal`
+- [TD-4431] Support for requesting removal of grants
 
 ### Fixed
 
