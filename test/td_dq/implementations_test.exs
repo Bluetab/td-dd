@@ -246,6 +246,7 @@ defmodule TdDq.ImplementationsTest do
                Implementations.create_implementation(rule, params, claims)
 
       assert implementation.rule_id == params["rule_id"]
+      assert implementation.implementation_ref == implementation.id
     end
 
     test "with valid data creates a implementation with rule domain_id", %{rule: rule} do
@@ -260,6 +261,7 @@ defmodule TdDq.ImplementationsTest do
 
       assert implementation.rule_id == params["rule_id"]
       assert implementation.domain_id == rule.domain_id
+      assert implementation.implementation_ref == implementation.id
     end
 
     test "with duplicated draft implementation key returns an error", %{rule: rule} do

@@ -142,6 +142,19 @@ defmodule TdDd.Factory do
     |> merge_attributes(attrs)
   end
 
+  def implementation_with_ref_factory(attrs) do
+    id = Map.get(attrs, :id, System.unique_integer([:positive]))
+
+    with_ref_attrs = %{
+      id: id,
+      implementation_ref: id
+    }
+
+    :implementation
+    |> build(attrs)
+    |> merge_attributes(with_ref_attrs)
+  end
+
   def ruleless_implementation_factory(attrs) do
     %TdDq.Implementations.Implementation{
       implementation_key: sequence("implementation_key"),

@@ -61,6 +61,12 @@ defmodule TdDq.Implementations.Implementation do
 
     field(:version, :integer)
 
+    field :implementation_ref, :integer
+
+    has_many :versions, Implementation,
+      foreign_key: :implementation_ref,
+      references: :implementation_ref
+
     embeds_one(:raw_content, RawContent, on_replace: :delete)
     embeds_many(:dataset, DatasetRow, on_replace: :delete)
     embeds_many(:populations, Populations, on_replace: :delete)
@@ -110,6 +116,12 @@ defmodule TdDq.Implementations.Implementation do
     implementation
     |> cast(params, [:status, :version, :deleted_at])
     |> validate_required([:status, :version])
+  end
+
+  def implementation_ref_changeset(%__MODULE__{} = implementation, params) do
+    implementation
+    |> cast(params, [:implementation_ref])
+    |> validate_required([:implementation_ref])
   end
 
   def changeset_validations(%Ecto.Changeset{} = changeset, %__MODULE__{} = implementation, params) do

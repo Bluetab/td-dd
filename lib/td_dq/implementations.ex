@@ -111,7 +111,7 @@ defmodule TdDq.Implementations do
     |> Multi.run(:can, fn _, _ ->
       multi_can(can?(claims, create(changeset)) and can?(claims, edit_segments(changeset)))
     end)
-    |> Multi.insert(:implementation, changeset)
+    |> Multi.run(:implementation, fn _, _ -> insert_implementation(changeset) end)
     |> Multi.run(:data_structures, &create_implementation_structures/2)
     |> Multi.run(:audit, Audit, :implementation_created, [changeset, user_id])
     |> Repo.transaction()
@@ -203,7 +203,8 @@ defmodule TdDq.Implementations do
            rule: rule,
            rule_id: rule_id,
            status: :published,
-           version: v
+           version: v,
+           implementation_ref: implementation_ref
          },
          %{} = params
        ) do
@@ -214,7 +215,8 @@ defmodule TdDq.Implementations do
         rule: rule,
         rule_id: rule_id,
         status: :draft,
-        version: v + 1
+        version: v + 1,
+        implementation_ref: implementation_ref
       },
       params
     )
@@ -632,6 +634,14 @@ defmodule TdDq.Implementations do
       %{error: errors} -> {:error, errors}
       %{ok: oks} -> {:ok, oks}
       %{} -> {:ok, []}
+    end
+  end
+
+  defp insert_implementation(changeset) do
+    with {:ok, %{id: id} = implementation} <- Repo.insert(changeset) do
+      implementation
+      |> Implementation.implementation_ref_changeset(%{implementation_ref: id})
+      |> Repo.update()
     end
   end
 

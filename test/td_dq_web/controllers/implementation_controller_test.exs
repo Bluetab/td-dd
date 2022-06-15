@@ -1294,7 +1294,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
   describe "update implementation" do
     @tag authentication: [role: "admin"]
     test "renders implementation when data is valid", %{conn: conn, swagger_schema: schema} do
-      implementation = insert(:implementation)
+      %{implementation_ref: ref} = implementation = insert(:implementation_with_ref)
 
       params =
         %{populations: @populations}
@@ -1310,6 +1310,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       assert %{"id" => id} = data
 
+      assert %{implementation_ref: ^ref} = TdDq.Implementations.get_implementation!(id)
+
       assert %{"data" => data} =
                conn
                |> get(Routes.implementation_path(conn, :show, id))
@@ -1324,6 +1326,30 @@ defmodule TdDqWeb.ImplementationControllerTest do
                data |> Map.get("populations") |> List.first(),
                params |> Map.get("populations") |> List.first()
              )
+    end
+
+    @tag authentication: [role: "admin"]
+    test "create new implementation with same implementation_ref when previous one has published status",
+         %{conn: conn, swagger_schema: schema} do
+      %{implementation_ref: ref, id: published_id} =
+        implementation = insert(:implementation_with_ref, status: :published)
+
+      assert ref != nil
+
+      params = %{goal: "40", dataset: @valid_dataset, minimum: "3", validations: @validations}
+
+      assert %{"data" => data} =
+               conn
+               |> put(Routes.implementation_path(conn, :update, implementation),
+                 rule_implementation: params
+               )
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:ok)
+
+      assert %{"id" => id} = data
+
+      assert id != published_id
+      assert %{implementation_ref: ^ref} = TdDq.Implementations.get_implementation!(id)
     end
 
     @tag authentication: [user_name: "non_admin"]
