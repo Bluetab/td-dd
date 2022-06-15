@@ -52,9 +52,12 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
       assert [%{"message" => "forbidden"}] = errors
     end
 
-    @tag authentication: [role: "user", permissions: ["manage_draft_implementation"]]
+    @tag authentication: [
+           role: "user",
+           permissions: ["view_quality_rule", "manage_quality_rule_implementations"]
+         ]
     test "return implementation when user has permissions", %{conn: conn, domain: domain} do
-      %{id: implementation_id} = insert(:implementation, domain_id: domain.id)
+      %{id: implementation_id} = insert(:implementation, domain_id: domain.id, segments: [])
 
       assert %{"data" => data} =
                resp =
@@ -77,7 +80,7 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
              } = data
     end
 
-    @tag authentication: [role: "user", permissions: ["manage_draft_implementation"]]
+    @tag authentication: [role: "user", permissions: ["view_quality_rule"]]
     test "return error when user not has permissions for specific domain",
          %{conn: conn} do
       %{id: implementation_id} = insert(:implementation)
