@@ -423,7 +423,7 @@ defmodule TdDq.Implementations.Implementation do
       |> transform_populations()
       |> transform_validations()
       |> transform_segments()
-      |> with_rule(rule)
+      |> maybe_rule(rule)
       |> Map.put(:raw_content, get_raw_content(implementation))
       |> Map.put(:structure_aliases, structure_aliases)
       |> Map.put(:execution_result_info, execution_result_info)
@@ -539,7 +539,7 @@ defmodule TdDq.Implementations.Implementation do
 
     defp with_populations(data, _condition), do: data
 
-    defp with_rule(data, %Rule{} = rule) do
+    defp maybe_rule(data, %Rule{} = rule) do
       template = TemplateCache.get_by_name!(rule.df_name) || %{content: []}
 
       df_content =
@@ -561,7 +561,10 @@ defmodule TdDq.Implementations.Implementation do
       |> Map.put(:business_concept_id, Map.get(rule, :business_concept_id))
     end
 
-    defp with_rule(data, _), do: data
+    defp maybe_rule(data, _) do
+      data
+      |> Map.put(:_confidential, false)
+    end
 
     defp get_structure_ids(structures) do
       structures
