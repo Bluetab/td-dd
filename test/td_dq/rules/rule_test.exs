@@ -5,6 +5,8 @@ defmodule TdDq.Rules.RuleTest do
   alias TdDd.Repo
   alias TdDq.Rules.Rule
 
+  @unsafe "javascript:alert(document)"
+
   setup do
     identifier_name = "identifier"
 
@@ -96,6 +98,12 @@ defmodule TdDq.Rules.RuleTest do
                {"unique_constraint", [constraint: :unique, constraint_name: "rules_name_index"]}
     end
 
+    test "validates description is safe" do
+      params = params_for(:rule, description: %{"doc" => @unsafe})
+      assert %{valid?: false, errors: errors} = Rule.changeset(params)
+      assert errors[:description] == {"invalid content", []}
+    end
+
     test "validates df_content is required if df_name is present", %{
       template_name: template_name,
       domain: domain
@@ -107,6 +115,20 @@ defmodule TdDq.Rules.RuleTest do
 
     test "validates df_content is valid", %{template_name: template_name, domain: domain} do
       invalid_content = %{"list" => "foo", "string" => "whatever"}
+
+      params =
+        params_for(:rule,
+          df_name: template_name,
+          df_content: invalid_content,
+          domain_id: domain.id
+        )
+
+      assert %{valid?: false, errors: errors} = Rule.changeset(params)
+      assert {"invalid content", _detail} = errors[:df_content]
+    end
+
+    test "validates df_content is safe", %{template_name: template_name, domain: domain} do
+      invalid_content = %{"list" => "one", "string" => @unsafe}
 
       params =
         params_for(:rule,

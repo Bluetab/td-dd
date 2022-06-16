@@ -51,6 +51,7 @@ defmodule TdDq.Implementations.Implementation do
     field(:domain, :map, virtual: true)
     field(:df_name, :string)
     field(:df_content, :map)
+    field(:template, :map, virtual: true)
     field(:goal, :float)
     field(:minimum, :float)
     field(:result_type, :string, default: "percentage")
@@ -194,7 +195,7 @@ defmodule TdDq.Implementations.Implementation do
 
       _ ->
         changeset
-        |> validate_required([:implementation_key])
+        |> validate_required(:implementation_key)
         |> validate_length(:implementation_key, max: 255)
         |> unique_constraint(:implementation_key,
           name: :published_implementation_key_index,

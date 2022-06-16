@@ -38,6 +38,8 @@ defmodule TdDd.Grants.GrantRequest do
     |> cast(params, [:filters, :metadata, :data_structure_id])
     |> maybe_put_identifier(struct, template_name)
     |> validate_content(template_name)
+    |> validate_change(:filters, &Validation.validate_safe/2)
+    |> validate_change(:metadata, &Validation.validate_safe/2)
     |> foreign_key_constraint(:data_structure_id)
   end
 

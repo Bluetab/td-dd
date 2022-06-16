@@ -8,6 +8,7 @@ defmodule TdDd.Lineage.Units.Node do
 
   alias TdDd.DataStructures.DataStructure
   alias TdDd.Lineage.Units.Unit
+  alias TdDfLib.Validation
 
   schema "nodes" do
     field(:external_id, :string)
@@ -32,6 +33,7 @@ defmodule TdDd.Lineage.Units.Node do
     node
     |> cast(params, [:external_id, :type, :label, :structure_id])
     |> validate_required([:external_id, :type, :label])
+    |> validate_change(:label, &Validation.validate_safe/2)
     |> unique_constraint(:external_id)
   end
 end

@@ -16,6 +16,6 @@ defmodule TdDq.Implementations.Structure do
   def changeset(%__MODULE__{} = struct, %{} = params) do
     struct
     |> cast(params, [:id, :parent_index])
-    |> validate_required([:id])
+    |> validate_required(:id)
   end
 end

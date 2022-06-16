@@ -2,13 +2,18 @@
 
 ## [Unreleased]
 
+### Changed
+
+- [TD-4739] Validate dynamic content for safety to prevent XSS attacks
+
 ### Added
 
-- [TD-4431] Grants can be `Pending Removal`
+- [TD-4431] Support for requesting removal of grants
 
 ### Fixed
 
 - [TD-4918] Implementations permissions
+- [TD-4911] Implementations download was failing for ruleless implementations
 
 ## [4.45.0] 2022-06-06
 
@@ -55,7 +60,7 @@
 
 ### Added
 
-- [TD-4089] Support for Implementations without Rules
+- [TD-4089] Support for implementations without rules
 
 ## [4.43.0] 2022-05-09
 

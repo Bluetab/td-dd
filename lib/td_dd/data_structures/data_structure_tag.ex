@@ -21,7 +21,7 @@ defmodule TdDd.DataStructures.DataStructureTag do
   def changeset(data_structure_tag, params) do
     data_structure_tag
     |> cast(params, [:name, :domain_ids])
-    |> validate_required([:name])
+    |> validate_required(:name)
     |> unique_constraint(:name)
   end
 end
