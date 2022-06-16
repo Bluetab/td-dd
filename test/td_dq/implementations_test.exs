@@ -246,6 +246,7 @@ defmodule TdDq.ImplementationsTest do
                Implementations.create_implementation(rule, params, claims)
 
       assert implementation.rule_id == params["rule_id"]
+      assert implementation.implementation_ref == implementation.id
     end
 
     test "with valid data creates a implementation with rule domain_id", %{rule: rule} do
@@ -260,6 +261,7 @@ defmodule TdDq.ImplementationsTest do
 
       assert implementation.rule_id == params["rule_id"]
       assert implementation.domain_id == rule.domain_id
+      assert implementation.implementation_ref == implementation.id
     end
 
     test "with duplicated draft implementation key returns an error", %{rule: rule} do
@@ -1345,13 +1347,13 @@ defmodule TdDq.ImplementationsTest do
 
   describe "last?/1" do
     test "returns true if the given implementation is the latest version with the same key" do
-      %{implementation_key: key} =
+      %{implementation_ref: implementation_ref} =
         first = insert(:implementation, version: 1, status: "deprecated")
 
-      second = insert(:implementation, implementation_key: key, version: 2)
+      second = insert(:implementation, implementation_ref: implementation_ref, version: 2)
       refute Implementations.last?(first)
       assert Implementations.last?(second)
-      assert Implementations.last?(%Implementation{id: 0, implementation_key: "foo"})
+      assert Implementations.last?(%Implementation{id: 0, implementation_ref: 0})
     end
   end
 end
