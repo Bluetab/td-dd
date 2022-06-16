@@ -5,6 +5,7 @@
 ### Changed
 
 - [TD-4739] Validate dynamic content for safety to prevent XSS attacks
+- [TD-4923] Remove implementation_key dependency for version management
 
 ### Added
 
