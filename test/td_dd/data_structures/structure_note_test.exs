@@ -7,6 +7,7 @@ defmodule TdDd.DataStructures.StructureNoteTest do
   @moduletag sandbox: :shared
   @invalid_content %{"string" => nil, "list" => "four"}
   @valid_content %{"identifier" => "cero", "string" => "present", "list" => "one"}
+  @unsafe "javascript:alert(document)"
 
   setup do
     template_name_without_identifier = "structure_note_test_template_without_identifier"
@@ -248,6 +249,15 @@ defmodule TdDd.DataStructures.StructureNoteTest do
       assert %Changeset{valid?: true} =
                StructureNote.bulk_update_changeset(structure_note, %{df_content: @valid_content})
     end
+
+    test "validates content is not unsafe", %{structure_note: structure_note} do
+      params = %{"df_content" => %{"foo" => [@unsafe]}}
+
+      assert %{valid?: false, errors: errors} =
+               StructureNote.bulk_update_changeset(structure_note, params)
+
+      assert errors[:df_content] == {"invalid content", []}
+    end
   end
 
   describe "changeset/2" do
@@ -324,6 +334,14 @@ defmodule TdDd.DataStructures.StructureNoteTest do
     test "validates valid content when template exists", %{structure_note: structure_note} do
       assert %Changeset{valid?: true} =
                StructureNote.changeset(structure_note, %{df_content: @valid_content})
+    end
+
+    test "validates content is not unsafe", %{structure_note: structure_note} do
+      params = %{"df_content" => Map.put(@valid_content, "string", @unsafe)}
+
+      assert %{valid?: false, errors: errors} = StructureNote.changeset(structure_note, params)
+
+      assert errors[:df_content] == {"invalid content", []}
     end
 
     test "keeps an already present identifier (i.e., editing)", %{

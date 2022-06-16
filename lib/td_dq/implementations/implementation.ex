@@ -183,7 +183,7 @@ defmodule TdDq.Implementations.Implementation do
 
       _ ->
         changeset
-        |> validate_required([:implementation_key])
+        |> validate_required(:implementation_key)
         |> validate_length(:implementation_key, max: 255)
         |> unique_constraint(:implementation_key,
           name: :published_implementation_key_index,
