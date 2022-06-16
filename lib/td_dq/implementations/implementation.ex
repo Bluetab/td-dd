@@ -51,6 +51,7 @@ defmodule TdDq.Implementations.Implementation do
     field(:domain, :map, virtual: true)
     field(:df_name, :string)
     field(:df_content, :map)
+    field(:template, :map, virtual: true)
     field(:goal, :float)
     field(:minimum, :float)
     field(:result_type, :string, default: "percentage")

@@ -1,4 +1,4 @@
-defmodule TdDd.DownloadTest do
+defmodule TdDd.CSV.DownloadTest do
   @moduledoc """
   Tests download of structures in csv format
   """

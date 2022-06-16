@@ -16,6 +16,7 @@ defmodule TdDd.Grants.Grant do
     field(:start_date, :date)
     field(:source_user_name, :string)
     field(:user_id, :integer)
+    field(:pending_removal, :boolean, default: false)
     field(:user_name, :string, virtual: true)
     field(:user_external_id, :string, virtual: true)
     field(:user, :map, virtual: true)
@@ -49,7 +50,14 @@ defmodule TdDd.Grants.Grant do
 
   def changeset_common(struct_or_changeset, %{} = params) do
     struct_or_changeset
-    |> cast(params, [:detail, :start_date, :end_date, :user_name, :user_external_id])
+    |> cast(params, [
+      :detail,
+      :start_date,
+      :end_date,
+      :user_name,
+      :user_external_id,
+      :pending_removal
+    ])
     |> check_user_params(params)
     |> maybe_put_user_id(params)
     |> validate_required([:start_date, :data_structure_id])

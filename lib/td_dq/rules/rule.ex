@@ -25,12 +25,12 @@ defmodule TdDq.Rules.Rule do
     field(:updated_by, :integer)
     field(:domain_id, :integer)
     field(:domain, :map, virtual: true)
+    field(:df_name, :string)
+    field(:df_content, :map)
+    field(:template, :map, virtual: true)
 
     has_many(:rule_implementations, Implementation)
     has_many(:rule_results, RuleResult)
-
-    field(:df_name, :string)
-    field(:df_content, :map)
 
     timestamps()
   end

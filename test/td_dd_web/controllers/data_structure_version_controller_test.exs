@@ -640,6 +640,41 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
 
     @tag authentication: [
            role: "user",
+           permissions: [:view_data_structure, :request_grant_removal]
+         ]
+    test "user with permission can update grant removal", %{
+      conn: conn,
+      data_structure: %{id: id}
+    } do
+      CacheHelpers.insert_template(%{name: "foo", label: "foo", scope: "gr", content: []})
+
+      assert %{"user_permissions" => permissions} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(conn, :show, id, "latest")
+               )
+               |> json_response(:ok)
+
+      assert %{"update_grant_removal" => true} = permissions
+    end
+
+    @tag authentication: [role: "user", permissions: [:view_data_structure]]
+    test "user without permission can not update grant removal", %{
+      conn: conn,
+      data_structure: %{id: id}
+    } do
+      assert %{"user_permissions" => permissions} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(conn, :show, id, "latest")
+               )
+               |> json_response(:ok)
+
+      assert %{"update_grant_removal" => false} = permissions
+    end
+
+    @tag authentication: [
+           role: "user",
            permissions: [:view_data_structure, :create_grant_request]
          ]
     test "cannot request grant without template", %{
