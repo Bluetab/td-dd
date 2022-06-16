@@ -25,6 +25,7 @@ defmodule TdCx.Configurations.Configuration do
     |> validate_required([:external_id, :type])
     |> unique_constraint(:external_id)
     |> validate_template(configuration)
+    |> validate_change(:content, &Validation.validate_safe/2)
   end
 
   def update_changeset(configuration, attrs) do

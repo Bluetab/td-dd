@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- [TD-4739] Validate dynamic content for safety to prevent XSS attacks
+
 ### Added
 
 - [TD-4431] Support for requesting removal of grants
