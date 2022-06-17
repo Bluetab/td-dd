@@ -7,11 +7,11 @@ defmodule TdDq.Canada.ImplementationAbilitiesTest do
 
   @valid_actions %{
     draft: [:edit, :submit, :delete, :move, :clone, :publish],
-    pending_approval: [:publish, :reject, :delete, :move, :clone],
+    pending_approval: [:publish, :reject, :delete, :clone],
     published: [:delete, :move, :clone, :execute, :edit],
-    rejected: [:edit, :delete, :move, :clone],
-    deprecated: [:move, :clone],
-    versioned: [:move, :clone]
+    rejected: [:edit, :move, :delete, :clone],
+    deprecated: [:clone],
+    versioned: [:clone]
   }
 
   setup do
