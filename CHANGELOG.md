@@ -15,6 +15,7 @@
 
 - [TD-4918] Implementations permissions
 - [TD-4911] Implementations download was failing for ruleless implementations
+- [TD-4950] Implementations move and clone actions for admin
 
 ## [4.45.0] 2022-06-06
 
