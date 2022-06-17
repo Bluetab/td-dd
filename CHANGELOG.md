@@ -5,6 +5,7 @@
 ### Added
 
 - [TD-4431] Support for requesting removal of grants
+- [TD-4894] Multiple field validations
 
 ### Fixed
 
