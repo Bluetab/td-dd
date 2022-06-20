@@ -10,7 +10,7 @@
 ### Added
 
 - [TD-4431] Support for requesting removal of grants
-- [TD-4919] Add ruleImplementation History
+- [TD-4919] Allow query implementation versions using /api/v2
 - [TD-4894] Multiple field validations
 
 ### Fixed
