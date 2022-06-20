@@ -78,4 +78,63 @@ defmodule TdDq.Implementations.ConditionRowTest do
 
     assert %{valid?: true} = ConditionRow.changeset(params)
   end
+
+  test "field_list: valid, operator arity 1" do
+    params = string_params_for(
+      :condition_row,
+      value: [%{fields: [%{id: 1}, %{id: 2}, %{id: 3}]}],
+      operator: %{name: "unique", value_type: "field_list"}
+    )
+
+    assert %{valid?: true} = ConditionRow.changeset(params)
+  end
+
+  test "field list: valid, operator arity 2" do
+    params = string_params_for(
+      :condition_row,
+      value: [
+        %{fields: [%{id: 1}, %{id: 2}, %{id: 3}]},
+        %{fields: [%{id: 4}, %{id: 5}, %{id: 6}]}
+      ],
+      operator: %{name: "some_arity_2_operator", value_type: "field_list", arity: 2}
+    )
+
+    assert %{valid?: true} = ConditionRow.changeset(params)
+  end
+
+  test "field_list: check invalid field (not a list)" do
+    params = string_params_for(
+      :condition_row,
+      value: [%{fields: %{id: "1"}}],
+      operator: %{name: "unique", value_type: "field_list"}
+    )
+
+    assert %{valid?: false, errors: errors} = ConditionRow.changeset(params)
+    assert {"invalid_attribute", [validation: :invalid]} =
+      errors[:value]
+  end
+
+  test "field_list: check invalid field (string id)" do
+    params = string_params_for(
+      :condition_row,
+      value: [%{fields: [%{id: "1"}, %{id: "a_string"}, %{id: 3}]}],
+      operator: %{name: "unique", value_type: "field_list"}
+    )
+
+    assert %{valid?: false, errors: errors} = ConditionRow.changeset(params)
+    assert {"invalid_attribute", [validation: :invalid]} =
+      errors[:value]
+  end
+
+  test "field_list: check fields not contained in 'fields' map" do
+    params = string_params_for(
+      :condition_row,
+      value: [[%{id: 1}, %{id: 2}, %{id: 3}]],
+      operator: %{name: "unique", value_type: "field_list"}
+    )
+
+    assert %{valid?: false, errors: errors} = ConditionRow.changeset(params)
+    assert {"is invalid", [type: {:array, :map}, validation: :cast]} =
+      errors[:value]
+  end
 end

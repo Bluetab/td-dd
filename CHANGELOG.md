@@ -11,11 +11,13 @@
 
 - [TD-4431] Support for requesting removal of grants
 - [TD-4919] Add ruleImplementation History
+- [TD-4894] Multiple field validations
 
 ### Fixed
 
 - [TD-4918] Implementations permissions
 - [TD-4911] Implementations download was failing for ruleless implementations
+- [TD-4950] Implementations move and clone actions for admin
 
 ## [4.45.0] 2022-06-06
 

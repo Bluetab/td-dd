@@ -5,7 +5,7 @@ defmodule TdDq.Canada.ImplementationAbilities do
   alias TdDq.Implementations.Implementation
   alias TdDq.Permissions
 
-  @workflow_actions [:delete, :edit, :execute, :publish, :reject, :submit]
+  @workflow_actions [:delete, :edit, :move, :execute, :publish, :reject, :submit]
 
   @mutation_permissions %{
     submit_implementation: [
@@ -92,6 +92,8 @@ defmodule TdDq.Canada.ImplementationAbilities do
       when action in @workflow_actions do
     valid_action?(action, implementation)
   end
+
+  def can?(%{role: "admin"}, :clone, %Implementation{}), do: true
 
   # Any other action can be performed by an admin account
   def can?(%{role: "admin"}, _action, _target), do: true
@@ -267,4 +269,5 @@ defmodule TdDq.Canada.ImplementationAbilities do
   defp valid_action?(:publish, implementation), do: Implementation.publishable?(implementation)
   defp valid_action?(:reject, implementation), do: Implementation.rejectable?(implementation)
   defp valid_action?(:submit, implementation), do: Implementation.submittable?(implementation)
+  defp valid_action?(:move, implementation), do: valid_action?(:edit, implementation)
 end

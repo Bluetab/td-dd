@@ -169,13 +169,6 @@ defmodule TdDqWeb.ImplementationController do
 
   defp filter_link_by_permission(_claims, _), do: false
 
-  # defp build_actions(claims, implementation) do
-  #   implementation
-  #   |> Implementations.get_available_actions()
-  #   |> Enum.filter(&can?(claims, &1, implementation))
-  #   |> Enum.reduce(%{}, &Map.put(&2, &1, %{method: "POST"}))
-  # end
-
   defp filter_data_structures_by_permission(implementation, %{role: "admin"}), do: implementation
 
   defp filter_data_structures_by_permission(
