@@ -31,9 +31,120 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
   }
   """
 
+  @implementation_with_versions_query """
+  query Implementation($id: ID!) {
+    implementation(id: $id) {
+      id,
+      implementation_key,
+      version,
+      versions {
+        id
+        implementation_key
+        version
+      }
+    }
+  }
+  """
+
   setup_all do
     start_supervised!(TdDd.Search.MockIndexWorker)
     :ok
+  end
+
+  describe "Implementations query" do
+    @tag authentication: [role: "admin"]
+    test "return version when requested", %{conn: conn} do
+      %{id: implementation_id} = insert(:implementation)
+
+      assert %{"data" => %{"implementation" => implementation}} =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @implementation_with_versions_query,
+                 "variables" => %{id: implementation_id}
+               })
+               |> json_response(:ok)
+
+      id = to_string(implementation_id)
+      assert %{"versions" => [%{"id" => ^id}]} = implementation
+    end
+
+    @tag authentication: [role: "admin"]
+    test "return sorted versions of an implementation", %{conn: conn} do
+      %{id: id1, implementation_ref: ref} =
+        insert(:implementation, status: :versioned, version: 1)
+
+      %{id: id2} = insert(:implementation, implementation_ref: ref, status: :draft, version: 3)
+
+      %{id: id3} =
+        insert(:implementation, implementation_ref: ref, status: :published, version: 2)
+
+      assert %{"data" => %{"implementation" => implementation}} =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @implementation_with_versions_query,
+                 "variables" => %{id: id2}
+               })
+               |> json_response(:ok)
+
+      [sid1, sid2, sid3] = [id1, id2, id3] |> Enum.map(&to_string/1)
+
+      assert %{
+               "versions" => [
+                 %{
+                   "version" => 3,
+                   "id" => ^sid2
+                 },
+                 %{
+                   "version" => 2,
+                   "id" => ^sid3
+                 },
+                 %{
+                   "version" => 1,
+                   "id" => ^sid1
+                 }
+               ]
+             } = implementation
+    end
+
+    @tag authentication: [
+           role: "user",
+           permissions: ["view_quality_rule"]
+         ]
+    test "a user with permissions can get versions of an implementation", %{
+      conn: conn,
+      domain: %{id: domain_id}
+    } do
+      %{id: implementation_id} = insert(:implementation, domain_id: domain_id)
+
+      assert %{"data" => %{"implementation" => implementation}} =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @implementation_with_versions_query,
+                 "variables" => %{id: implementation_id}
+               })
+               |> json_response(:ok)
+
+      id = to_string(implementation_id)
+      assert %{"versions" => [%{"id" => ^id}]} = implementation
+    end
+
+    @tag authentication: [
+           role: "user",
+           permissions: ["view_quality_rule"]
+         ]
+    test "a user without permissions can not get versions of an implementation", %{conn: conn} do
+      %{id: implementation_id} = insert(:implementation)
+
+      assert %{"errors" => errors} =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @implementation_with_versions_query,
+                 "variables" => %{id: implementation_id}
+               })
+               |> json_response(:ok)
+
+      assert [%{"message" => "forbidden"}] = errors
+    end
   end
 
   describe "submitImplementation mutation" do

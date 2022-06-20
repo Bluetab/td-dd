@@ -30,6 +30,7 @@ defmodule TdDdWeb.Schema do
     import_fields(:structure_queries)
     import_fields(:structure_tag_queries)
     import_fields(:template_queries)
+    import_fields(:implementation_queries)
   end
 
   mutation do

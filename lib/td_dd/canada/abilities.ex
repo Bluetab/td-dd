@@ -63,6 +63,9 @@ defmodule TdDd.Canada.Abilities do
     def can?(%Claims{role: "user"} = claims, :query, :structure_tags),
       do: DataStructureTagAbilities.can?(claims, :index, DataStructureTag)
 
+    def can?(%Claims{role: "user"} = claims, :query, :implementation),
+      do: ImplementationAbilities.can?(claims, :list, Implementation)
+
     def can?(%Claims{}, _action, nil), do: false
 
     def can?(%{} = claims, :mutation, mutation) when mutation in @implementation_mutations do

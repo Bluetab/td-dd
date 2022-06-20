@@ -6,6 +6,14 @@ defmodule TdDdWeb.Schema.Implementations do
 
   alias TdDdWeb.Resolvers
 
+  object :implementation_queries do
+    @desc "get implementation"
+    field :implementation, :implementation do
+      arg(:id, non_null(:id))
+      resolve(&Resolvers.Implementations.implementation/3)
+    end
+  end
+
   object :implementation_mutations do
     @desc "send implementation to approval"
     field :submit_implementation, non_null(:implementation) do
@@ -50,6 +58,7 @@ defmodule TdDdWeb.Schema.Implementations do
     field :raw_content, :raw_content
     field :status, :string
     field :version, :integer
+    field :versions, list_of(:implementation), resolve: &Resolvers.Implementations.versions/3
     field :updated_at, :datetime
     field :deleted_at, :datetime
   end
