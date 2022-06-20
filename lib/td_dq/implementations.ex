@@ -60,6 +60,13 @@ defmodule TdDq.Implementations do
     Repo.get(Implementation, id)
   end
 
+  def get_versions(%{implementation_ref: implementation_ref}) do
+    Implementation
+    |> where([i], i.implementation_ref == ^implementation_ref)
+    |> order_by(desc: :version)
+    |> Repo.all()
+  end
+
   def get_implementation_by_key!(implementation_key, deleted \\ nil)
 
   def get_implementation_by_key!(implementation_key, true) do
@@ -75,16 +82,6 @@ defmodule TdDq.Implementations do
     |> Repo.get_by!(implementation_key: implementation_key)
     |> Repo.preload(:rule)
   end
-
-  # def last?(%Implementation{id: id, implementation_key: implementation_key}) do
-  #   Implementation
-  #   |> where([ri], ri.implementation_key == ^implementation_key)
-  #   |> order_by(desc: :version)
-  #   |> select([ri], ri.id == ^id)
-  #   |> limit(1)
-  #   |> Repo.one()
-  #   |> Kernel.!=(false)
-  # end
 
   def last?(%Implementation{id: id, implementation_ref: implementation_ref}) do
     Implementation
