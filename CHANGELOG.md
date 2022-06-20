@@ -10,6 +10,7 @@
 ### Added
 
 - [TD-4431] Support for requesting removal of grants
+- [TD-4919] Add ruleImplementation History
 
 ### Fixed
 
