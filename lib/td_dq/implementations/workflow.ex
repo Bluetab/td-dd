@@ -77,7 +77,11 @@ defmodule TdDq.Implementations.Workflow do
   defp status_changeset(implementation, status),
     do: Implementation.status_changeset(implementation, %{status: status})
 
-  def maybe_version_existing(multi, %{implementation_ref: implementation_ref} = _implementation, "published") do
+  def maybe_version_existing(
+        multi,
+        %{implementation_ref: implementation_ref} = _implementation,
+        "published"
+      ) do
     queryable =
       Implementation
       |> where(status: :published)

@@ -320,7 +320,8 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
 
     @tag authentication: [role: "user", permissions: ["publish_implementation"]]
     test "return implementation when user has permissions", %{conn: conn, domain: domain} do
-      %{implementation_key: key, implementation_ref: implementation_ref} = insert(:implementation, status: :published, version: 4)
+      %{implementation_key: key, implementation_ref: implementation_ref} =
+        insert(:implementation, status: :published, version: 4)
 
       %{id: implementation_id} =
         insert(:implementation,
