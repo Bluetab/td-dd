@@ -7,6 +7,7 @@ defmodule TdDdWeb.Resolvers.Implementations do
 
   alias TdDq.Implementations
   alias TdDq.Implementations.Workflow
+  alias TdDq.Rules.RuleResults
 
   def implementation(_parent, %{id: id}, resolution) do
     with {:claims, %{} = claims} <- {:claims, claims(resolution)},
@@ -22,6 +23,18 @@ defmodule TdDdWeb.Resolvers.Implementations do
 
   def versions(implementation, _args, _resolution) do
     {:ok, Implementations.get_versions(implementation)}
+  end
+
+  def results(implementation, _args, _resolution) do
+    {:ok, RuleResults.get_by(implementation)}
+  end
+
+  def has_segments?(rule_result, _args, _resolution) do
+    {:ok, RuleResults.has_segments?(rule_result)}
+  end
+
+  def has_remediation?(rule_result, _args, _resolution) do
+    {:ok, RuleResults.has_remediation?(rule_result)}
   end
 
   def submit_implementation(_parent, %{id: id}, resolution) do

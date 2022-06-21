@@ -144,25 +144,26 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> json_response(:ok)
     end
 
-    @tag authentication: [role: "admin"]
-    test "includes has_segments in results", %{conn: conn, swagger_schema: schema} do
-      %{id: impl_id} = implementation = insert(:implementation)
-      %{id: rule_result_id_1} = insert(:rule_result, implementation: implementation)
-      %{id: rule_result_id_2} = insert(:rule_result, implementation: implementation)
-      %{id: rule_result_id_3} = insert(:rule_result, implementation: implementation)
-      insert(:segment_result, parent_id: rule_result_id_1, params: %{"segment_name" => "foo:baz"})
-      insert(:segment_result, parent_id: rule_result_id_2, params: %{"segment_name" => "foo:bar"})
+    ## TODO: remove this code
+    # @tag authentication: [role: "admin"]
+    # test "includes has_segments in results", %{conn: conn, swagger_schema: schema} do
+    #   %{id: impl_id} = implementation = insert(:implementation)
+    #   %{id: rule_result_id_1} = insert(:rule_result, implementation: implementation)
+    #   %{id: rule_result_id_2} = insert(:rule_result, implementation: implementation)
+    #   %{id: rule_result_id_3} = insert(:rule_result, implementation: implementation)
+    #   insert(:segment_result, parent_id: rule_result_id_1, params: %{"segment_name" => "foo:baz"})
+    #   insert(:segment_result, parent_id: rule_result_id_2, params: %{"segment_name" => "foo:bar"})
 
-      assert %{"data" => %{"results" => [result_1, result_2, result_3]}} =
-               conn
-               |> get(Routes.implementation_path(conn, :show, impl_id))
-               |> validate_resp_schema(schema, "ImplementationResponse")
-               |> json_response(:ok)
+    #   assert %{"data" => %{"results" => [result_1, result_2, result_3]}} =
+    #            conn
+    #            |> get(Routes.implementation_path(conn, :show, impl_id))
+    #            |> validate_resp_schema(schema, "ImplementationResponse")
+    #            |> json_response(:ok)
 
-      assert %{"id" => ^rule_result_id_1, "has_segments" => true} = result_1
-      assert %{"id" => ^rule_result_id_2, "has_segments" => true} = result_2
-      assert %{"id" => ^rule_result_id_3, "has_segments" => false} = result_3
-    end
+    #   assert %{"id" => ^rule_result_id_1, "has_segments" => true} = result_1
+    #   assert %{"id" => ^rule_result_id_2, "has_segments" => true} = result_2
+    #   assert %{"id" => ^rule_result_id_3, "has_segments" => false} = result_3
+    # end
 
     @tag authentication: [role: "admin"]
     test "includes related structures with current version and system in the response", %{

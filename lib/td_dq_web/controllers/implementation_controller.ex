@@ -300,6 +300,7 @@ defmodule TdDqWeb.ImplementationController do
   end
 
   ## TODO: refactor this function with SQL sentence
+  ## TODO: se podrá eliminar esta funcion con la utilizacion del grahql
   defp with_has_segments(%Implementation{results: results} = impl)
        when length(results) >= 1 do
     parent_ids =
