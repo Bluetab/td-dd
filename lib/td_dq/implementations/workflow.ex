@@ -58,12 +58,12 @@ defmodule TdDq.Implementations.Workflow do
   end
 
   defp status_changeset(
-         %Implementation{id: id, implementation_key: key} = implementation,
+         %Implementation{id: id, implementation_ref: implementation_ref} = implementation,
          "published"
        ) do
     latest_version =
       Implementation
-      |> where(implementation_key: ^key)
+      |> where(implementation_ref: ^implementation_ref)
       |> where([i], i.id != ^id)
       |> select([i], max(i.version) + 1)
       |> Repo.one()
@@ -77,11 +77,11 @@ defmodule TdDq.Implementations.Workflow do
   defp status_changeset(implementation, status),
     do: Implementation.status_changeset(implementation, %{status: status})
 
-  def maybe_version_existing(multi, %{implementation_key: key} = _implementation, "published") do
+  def maybe_version_existing(multi, %{implementation_ref: implementation_ref} = _implementation, "published") do
     queryable =
       Implementation
       |> where(status: :published)
-      |> where(implementation_key: ^key)
+      |> where(implementation_ref: ^implementation_ref)
       |> select([i], i.id)
 
     Multi.update_all(multi, :versioned, queryable,
