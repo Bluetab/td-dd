@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- [TD-4959] Use implementation_ref instead of implementation_key for status changes
+
+## [4.46.0] 2022-06-21
+
 ### Changed
 
 - [TD-4739] Validate dynamic content for safety to prevent XSS attacks
@@ -11,7 +17,7 @@
 ### Added
 
 - [TD-4431] Support for requesting removal of grants
-- [TD-4894] Multiple field validations
+- [TD-4919] Allow query implementation versions using /api/v2
 
 ### Fixed
 
