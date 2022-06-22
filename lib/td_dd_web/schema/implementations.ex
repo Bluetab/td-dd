@@ -8,7 +8,7 @@ defmodule TdDdWeb.Schema.Implementations do
 
   object :implementation_queries do
     @desc "get implementation"
-    field :implementation, :implementation do
+    field :implementation, non_null(:implementation) do
       arg(:id, non_null(:id))
       resolve(&Resolvers.Implementations.implementation/3)
     end
@@ -59,7 +59,7 @@ defmodule TdDdWeb.Schema.Implementations do
     field :status, :string
     field :version, :integer
     field :versions, list_of(:implementation), resolve: &Resolvers.Implementations.versions/3
-    field :results, list_of(:result), resolve: &Resolvers.Implementations.results/3
+    field :results, list_of(:implementation_result), resolve: &Resolvers.Implementations.results/3
     field :updated_at, :datetime
     field :deleted_at, :datetime
   end
@@ -117,17 +117,5 @@ defmodule TdDdWeb.Schema.Implementations do
   object :structure_reference do
     field :id, non_null(:id)
     field :parent_index, :integer
-  end
-
-  object :result do
-    field :id, non_null(:id)
-    field :date, :date
-    field :details, :json
-    field :errors, :integer
-    field :has_remediation, :boolean, resolve: &Resolvers.Implementations.has_remediation?/3
-    field :has_segments, :boolean, resolve: &Resolvers.Implementations.has_segments?/3
-    field :records, :integer
-    field :result, :string
-    field :result_type, :string
   end
 end

@@ -29,14 +29,6 @@ defmodule TdDdWeb.Resolvers.Implementations do
     {:ok, RuleResults.get_by(implementation)}
   end
 
-  def has_segments?(rule_result, _args, _resolution) do
-    {:ok, RuleResults.has_segments?(rule_result)}
-  end
-
-  def has_remediation?(rule_result, _args, _resolution) do
-    {:ok, RuleResults.has_remediation?(rule_result)}
-  end
-
   def submit_implementation(_parent, %{id: id}, resolution) do
     implementation = Implementations.get_implementation!(id)
 
