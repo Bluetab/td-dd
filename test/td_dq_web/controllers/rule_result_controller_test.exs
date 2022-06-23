@@ -132,7 +132,7 @@ defmodule TdDqWeb.RuleResultControllerTest do
                |> json_response(:ok)
 
       assert %{"results" => results} = data
-      assert Enum.map(results, & &1["result"]) == ["4.00", "72.00"]
+      assert Enum.map(results, & &1["result"]) == ["4.00"]
     end
 
     @tag authentication: [role: "service"]
@@ -152,7 +152,7 @@ defmodule TdDqWeb.RuleResultControllerTest do
                |> json_response(:ok)
 
       assert %{"results" => results} = data
-      assert Enum.map(results, & &1["result"]) == ["0.00", "99.99"]
+      assert Enum.map(results, & &1["result"]) == ["0.00"]
     end
 
     @tag authentication: [role: "service"]
@@ -178,26 +178,11 @@ defmodule TdDqWeb.RuleResultControllerTest do
                %{
                  "date" => "2019-08-30T00:00:00Z",
                  "errors" => 4,
+                 "result" => "123.45",
                  "implementation_id" => implementation.id,
                  "params" => %{"param3" => "5"},
                  "records" => 4,
-                 "result_type" => "percentage",
-                 "result" => "123.45",
-                 "details" => %{},
-                 "has_remediation" => false,
-                 "has_segments" => false
-               },
-               %{
-                 "date" => "2019-08-29T00:00:00Z",
-                 "errors" => 2,
-                 "implementation_id" => implementation.id,
-                 "params" => %{"param1" => "valor", "param2" => "valor2", "param3" => "4"},
-                 "records" => 1_000_000,
-                 "result_type" => "percentage",
-                 "result" => "123.00",
-                 "details" => %{},
-                 "has_remediation" => false,
-                 "has_segments" => false
+                 "result_type" => "percentage"
                }
              ]
     end
