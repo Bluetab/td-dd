@@ -207,30 +207,33 @@ defmodule TdDq.ImplementationsTest do
     end
   end
 
-  describe "get_implementation_by_key/1" do
-    test "returns the implementation with given implementation key" do
+  describe "get_published_implementation_by_key/2" do
+    test "returns the implementation with given implementation key with status published" do
       %{implementation_key: implementation_key} =
-        implementation = insert(:implementation, implementation_key: "My implementation key")
+        implementation =
+        insert(:implementation, implementation_key: "My implementation key", status: :published)
 
-      assert Implementations.get_implementation_by_key!(implementation_key)
-             <~> implementation
+      assert Implementations.get_published_implementation_by_key(implementation_key)
+             <~> {:ok, implementation}
     end
 
-    test "returns the implementation with executable flag" do
-      %{implementation_key: implementation_key} = insert(:implementation)
-      assert %{executable: true} = Implementations.get_implementation_by_key!(implementation_key)
+    test "returns the implementation with executable flag " do
+      %{implementation_key: implementation_key} = insert(:implementation, status: :published)
+
+      assert {:ok, %{executable: true}} =
+               Implementations.get_published_implementation_by_key(implementation_key)
     end
 
-    test "raises if the implementation with given implementation key has been soft deleted" do
+    test "not found if the implementation with given implementation key has been deprecated" do
       %{implementation_key: implementation_key} =
         insert(:implementation,
           implementation_key: "My implementation key",
-          deleted_at: DateTime.utc_now()
+          deleted_at: DateTime.utc_now(),
+          status: :deprecated
         )
 
-      assert_raise Ecto.NoResultsError, fn ->
-        Implementations.get_implementation_by_key!(implementation_key)
-      end
+      assert {:error, :not_found} =
+               Implementations.get_published_implementation_by_key(implementation_key)
     end
   end
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- [TD-4959] Use implementation_ref instead of implementation_key for status changes
+
+## [4.46.1] 2022-06-23
+
+### Fixed
+
+- [TD-4962] Submit results only for published implementations 
+
 ## [4.46.0] 2022-06-21
 
 ### Changed
