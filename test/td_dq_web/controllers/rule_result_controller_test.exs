@@ -14,10 +14,10 @@ defmodule TdDqWeb.RuleResultControllerTest do
 
       fixture ->
         rule = insert(:rule, active: true)
-        ri = insert(:implementation, implementation_key: "ri135", rule: rule)
+        ri = insert(:implementation, implementation_key: "ri135", rule: rule, status: :published)
 
         rule_results = %Plug.Upload{path: fixture}
-        {:ok, rule_results_file: rule_results, implementation: ri}
+        {:ok, rule: rule, rule_results_file: rule_results, implementation: ri}
     end
   end
 
@@ -133,6 +133,33 @@ defmodule TdDqWeb.RuleResultControllerTest do
 
       assert %{"results" => results} = data
       assert Enum.map(results, & &1["result"]) == ["4.00", "72.00"]
+    end
+
+    @tag authentication: [role: "service"]
+    @tag fixture: "test/fixtures/rule_results/rule_results_only_published_implementations.csv"
+    test "can load results specifying result only for published implementations", %{
+      conn: conn,
+      rule: rule,
+      rule_results_file: rule_results_file
+    } do
+      insert(:implementation,
+        implementation_key: "published_imp_key",
+        rule: rule,
+        status: :published
+      )
+
+      insert(:implementation, implementation_key: "draft_imp_key", rule: rule, status: :draft)
+
+      assert %{"errors" => errors, "row" => row} =
+               conn
+               |> post(Routes.rule_result_path(conn, :create), rule_results: rule_results_file)
+               |> json_response(:unprocessable_entity)
+
+      assert row == 3
+
+      assert errors == %{
+               "implementation" => ["implementation does not exist or is not published"]
+             }
     end
 
     @tag authentication: [role: "service"]

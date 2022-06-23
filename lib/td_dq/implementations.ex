@@ -67,20 +67,15 @@ defmodule TdDq.Implementations do
     |> Repo.all()
   end
 
-  def get_implementation_by_key!(implementation_key, deleted \\ nil)
-
-  def get_implementation_by_key!(implementation_key, true) do
+  def get_published_implementation_by_key(implementation_key) do
     Implementation
-    |> join(:inner, [ri], r in assoc(ri, :rule))
-    |> Repo.get_by!(implementation_key: implementation_key)
+    |> where([ri], ri.status == :published)
+    |> Repo.get_by(implementation_key: implementation_key)
     |> Repo.preload(:rule)
-  end
-
-  def get_implementation_by_key!(implementation_key, _deleted) do
-    Implementation
-    |> where([ri], is_nil(ri.deleted_at))
-    |> Repo.get_by!(implementation_key: implementation_key)
-    |> Repo.preload(:rule)
+    |> case do
+      nil -> {:error, :not_found}
+      implementation -> {:ok, implementation}
+    end
   end
 
   def last?(%Implementation{id: id, implementation_ref: implementation_ref}) do
