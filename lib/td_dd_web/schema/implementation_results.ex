@@ -22,8 +22,9 @@ defmodule TdDdWeb.Schema.ImplementationResults do
     field :errors, :integer
     field :has_remediation, :boolean, resolve: &Resolvers.ImplementationResults.has_remediation?/3
     field :has_segments, :boolean, resolve: &Resolvers.ImplementationResults.has_segments?/3
+    field :params, :json
     field :records, :integer
-    field :result, :string
     field :result_type, :string
+    field :result, :string
   end
 end
