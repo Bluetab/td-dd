@@ -44,6 +44,14 @@ defmodule TdDq.Rules.RuleResult do
     timestamps()
   end
 
+  def changeset(:non_existing_nor_published, params) do
+    %__MODULE__{}
+    |> cast(params, [
+      :row_number
+    ])
+    |> add_error(:implementation, "implementation does not exist or is not published")
+  end
+
   def changeset(implementation, %{} = params) do
     changeset(%__MODULE__{}, implementation, params)
   end
