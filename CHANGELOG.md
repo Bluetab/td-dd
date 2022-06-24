@@ -1,6 +1,10 @@
 # Changelog
-
 ## [Unreleased]
+
+
+### Added
+
+- [TD-4920] add results to implementation query api/v2
 
 ### Fixed
 
