@@ -7,6 +7,8 @@ defmodule TdDq.Canada.RuleResultAbilities do
   alias TdDq.Permissions
   alias TdDq.Rules.RuleResult
 
+  def can?(%{role: "admin"}, _, _), do: true
+
   def can?(%Claims{role: "service"}, _, RuleResult), do: true
 
   def can?(%Claims{role: "service"}, _, %RuleResult{}), do: true
@@ -15,7 +17,11 @@ defmodule TdDq.Canada.RuleResultAbilities do
     Permissions.authorized?(claims, :manage_rule_results)
   end
 
-  def can?(%Claims{} = claims, :view, %RuleResult{}) do
+  def can?(%{} = claims, :view, %RuleResult{}) do
+    Permissions.authorized?(claims, :view_quality_rule)
+  end
+
+  def can?(%{} = claims, :view, RuleResult) do
     Permissions.authorized?(claims, :view_quality_rule)
   end
 
