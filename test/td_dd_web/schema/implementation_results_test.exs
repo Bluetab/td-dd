@@ -7,6 +7,7 @@ defmodule TdDdWeb.Schema.ImplementationResultsTest do
       id
       date
       details
+      params
       errors
       records
       result
