@@ -19,19 +19,23 @@ defmodule TdDdWeb.Resolvers.StructureTags do
   def create_structure_tag(_parent, %{structure_tag: params} = _args, _resolution) do
     case DataStructures.create_data_structure_tag(params) do
       {:ok, %{id: id} = _tag} -> {:ok, DataStructures.get_data_structure_tag(id: id)}
-      {:error, changeset} -> {:error, changeset}
+      {:error, %{errors: [description: {message, details}]}} ->
+        {:error, %{message: message, details: details}}
     end
   end
 
   def update_structure_tag(_parent, %{structure_tag: %{id: id} = params} = _args, resolution) do
     with {:claims, %{} = claims} <- {:claims, claims(resolution)},
          {:tag, %{} = tag} <- {:tag, DataStructures.get_data_structure_tag(id: id)},
-         {:can, true} <- {:can, can?(claims, update(tag))} do
-      DataStructures.update_data_structure_tag(tag, params)
+         {:can, true} <- {:can, can?(claims, update(tag))},
+         {:ok, _} = reply <- DataStructures.update_data_structure_tag(tag, params) do
+      reply
     else
       {:claims, nil} -> {:error, :unauthorized}
       {:tag, nil} -> {:error, :not_found}
       {:can, false} -> {:error, :forbidden}
+      {:error, %{errors: [description: {message, details}]}} ->
+        {:error, %{message: message, details: details}}
     end
   end
 
