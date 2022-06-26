@@ -96,7 +96,11 @@ defmodule TdDd.Factory do
 
   def raw_implementation_factory(attrs) do
     {content_attrs, attrs} = Map.split(attrs, [:source_id])
-    attrs = default_assoc(attrs, :rule_id, :rule)
+
+    attrs =
+      attrs
+      |> default_assoc(:rule_id, :rule)
+      |> merge_attrs_with_ref()
 
     %TdDq.Implementations.Implementation{
       implementation_key: sequence("ri"),
@@ -124,7 +128,10 @@ defmodule TdDd.Factory do
   end
 
   def implementation_factory(attrs) do
-    attrs = default_assoc(attrs, :rule_id, :rule)
+    attrs =
+      attrs
+      |> default_assoc(:rule_id, :rule)
+      |> merge_attrs_with_ref()
 
     %TdDq.Implementations.Implementation{
       implementation_key: sequence("implementation_key"),
@@ -142,7 +149,33 @@ defmodule TdDd.Factory do
     |> merge_attributes(attrs)
   end
 
+  defp merge_attrs_with_ref(attrs) do
+    id = Map.get(attrs, :id, System.unique_integer([:positive]))
+
+    with_ref_attrs = %{
+      id: id,
+      implementation_ref: Map.get(attrs, :implementation_ref, id)
+    }
+
+    attrs
+    |> merge_attributes(with_ref_attrs)
+  end
+
+  # def implementation_with_ref_factory(attrs) do
+  #   id = Map.get(attrs, :id, System.unique_integer([:positive]))
+  #   with_ref_attrs = %{
+  #     id: id,
+  #     implementation_ref: Map.get(attrs, :implementation_ref, id)
+  #   }
+
+  #   :implementation
+  #   |> build(attrs)
+  #   |> merge_attributes(with_ref_attrs)
+  # end
+
   def ruleless_implementation_factory(attrs) do
+    attrs = merge_attrs_with_ref(attrs)
+
     %TdDq.Implementations.Implementation{
       implementation_key: sequence("implementation_key"),
       implementation_type: "default",

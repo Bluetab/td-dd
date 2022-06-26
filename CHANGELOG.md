@@ -1,16 +1,39 @@
 # Changelog
-
 ## [Unreleased]
+
+
+### Added
+
+- [TD-4920] add results to implementation query api/v2
+- [TD-4894] Multiple field validations
+
+### Fixed
+
+- [TD-4959] Use implementation_ref instead of implementation_key for status changes
+
+## [4.46.1] 2022-06-23
+
+### Fixed
+
+- [TD-4962] Submit results only for published implementations 
+
+## [4.46.0] 2022-06-21
+
+### Changed
+
+- [TD-4739] Validate dynamic content for safety to prevent XSS attacks
+- [TD-4923] Remove implementation_key dependency for version management
 
 ### Added
 
 - [TD-4431] Support for requesting removal of grants
-- [TD-4894] Multiple field validations
+- [TD-4919] Allow query implementation versions using /api/v2
 
 ### Fixed
 
 - [TD-4918] Implementations permissions
 - [TD-4911] Implementations download was failing for ruleless implementations
+- [TD-4950] Implementations move and clone actions for admin
 
 ## [4.45.0] 2022-06-06
 

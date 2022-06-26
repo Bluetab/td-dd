@@ -1,6 +1,9 @@
 defmodule TdDqWeb.RuleResultControllerTest do
   use TdDqWeb.ConnCase
 
+  alias Decimal
+  alias TdDq.Rules.RuleResults
+
   setup_all do
     start_supervised(TdDq.Cache.RuleLoader)
     start_supervised(TdDd.Search.MockIndexWorker)
@@ -14,10 +17,10 @@ defmodule TdDqWeb.RuleResultControllerTest do
 
       fixture ->
         rule = insert(:rule, active: true)
-        ri = insert(:implementation, implementation_key: "ri135", rule: rule)
+        ri = insert(:implementation, implementation_key: "ri135", rule: rule, status: :published)
 
         rule_results = %Plug.Upload{path: fixture}
-        {:ok, rule_results_file: rule_results, implementation: ri}
+        {:ok, rule: rule, rule_results_file: rule_results, implementation: ri}
     end
   end
 
@@ -126,13 +129,39 @@ defmodule TdDqWeb.RuleResultControllerTest do
              |> post(Routes.rule_result_path(conn, :create), rule_results: rule_results_file)
              |> response(:ok)
 
-      assert %{"data" => data} =
-               conn
-               |> get(Routes.implementation_path(conn, :show, implementation.id))
-               |> json_response(:ok)
+      results = RuleResults.get_by(implementation)
 
-      assert %{"results" => results} = data
-      assert Enum.map(results, & &1["result"]) == ["4.00", "72.00"]
+      assert Enum.map(results, &Map.get(&1, :result)) == [
+               Decimal.new("4.00"),
+               Decimal.new("72.00")
+             ]
+    end
+
+    @tag authentication: [role: "service"]
+    @tag fixture: "test/fixtures/rule_results/rule_results_only_published_implementations.csv"
+    test "can load results specifying result only for published implementations", %{
+      conn: conn,
+      rule: rule,
+      rule_results_file: rule_results_file
+    } do
+      insert(:implementation,
+        implementation_key: "published_imp_key",
+        rule: rule,
+        status: :published
+      )
+
+      insert(:implementation, implementation_key: "draft_imp_key", rule: rule, status: :draft)
+
+      assert %{"errors" => errors, "row" => row} =
+               conn
+               |> post(Routes.rule_result_path(conn, :create), rule_results: rule_results_file)
+               |> json_response(:unprocessable_entity)
+
+      assert row == 3
+
+      assert errors == %{
+               "implementation" => ["implementation does not exist or is not published"]
+             }
     end
 
     @tag authentication: [role: "service"]
@@ -146,13 +175,12 @@ defmodule TdDqWeb.RuleResultControllerTest do
              |> post(Routes.rule_result_path(conn, :create), rule_results: rule_results_file)
              |> response(:ok)
 
-      assert %{"data" => data} =
-               conn
-               |> get(Routes.implementation_path(conn, :show, implementation.id))
-               |> json_response(:ok)
+      results = RuleResults.get_by(implementation)
 
-      assert %{"results" => results} = data
-      assert Enum.map(results, & &1["result"]) == ["0.00", "99.99"]
+      assert Enum.map(results, &Map.get(&1, :result)) == [
+               Decimal.new("0.00"),
+               Decimal.new("99.99")
+             ]
     end
 
     @tag authentication: [role: "service"]
@@ -160,46 +188,40 @@ defmodule TdDqWeb.RuleResultControllerTest do
     test "uploads rule results with custom params in csv", %{
       conn: conn,
       rule_results_file: rule_results_file,
-      implementation: implementation
+      implementation: %{id: implementation_id} = implementation
     } do
       assert conn
              |> post(Routes.rule_result_path(conn, :create), rule_results: rule_results_file)
              |> response(:ok)
 
-      assert %{"data" => data} =
-               conn
-               |> get(Routes.implementation_path(conn, :show, implementation.id))
-               |> json_response(:ok)
+      results =
+        implementation
+        |> RuleResults.get_by()
+        |> Enum.map(&Map.drop(&1, ["id"]))
 
-      assert %{"results" => results} = data
-      results = Enum.map(results, &Map.drop(&1, ["id"]))
+      decimal_result_1 = Decimal.new("123.45")
+      decimal_result_2 = Decimal.new("123.00")
 
-      assert results == [
+      assert [
                %{
-                 "date" => "2019-08-30T00:00:00Z",
-                 "errors" => 4,
-                 "implementation_id" => implementation.id,
-                 "params" => %{"param3" => "5"},
-                 "records" => 4,
-                 "result_type" => "percentage",
-                 "result" => "123.45",
-                 "details" => %{},
-                 "has_remediation" => false,
-                 "has_segments" => false
+                 date: ~U[2019-08-30 00:00:00Z],
+                 errors: 4,
+                 result: ^decimal_result_1,
+                 implementation_id: ^implementation_id,
+                 params: %{"param3" => "5"},
+                 records: 4,
+                 result_type: "percentage"
                },
                %{
-                 "date" => "2019-08-29T00:00:00Z",
-                 "errors" => 2,
-                 "implementation_id" => implementation.id,
-                 "params" => %{"param1" => "valor", "param2" => "valor2", "param3" => "4"},
-                 "records" => 1_000_000,
-                 "result_type" => "percentage",
-                 "result" => "123.00",
-                 "details" => %{},
-                 "has_remediation" => false,
-                 "has_segments" => false
+                 date: ~U[2019-08-29 00:00:00Z],
+                 errors: 2,
+                 result: ^decimal_result_2,
+                 implementation_id: ^implementation_id,
+                 params: %{"param1" => "valor", "param2" => "valor2", "param3" => "4"},
+                 records: 1_000_000,
+                 result_type: "percentage"
                }
-             ]
+             ] = results
     end
 
     @tag authentication: [role: "admin"]

@@ -131,17 +131,14 @@ defmodule TdDqWeb.ImplementationController do
 
     implementation =
       id
-      ## TODO: take this functionality with results context to add has_segments
       |> Implementations.get_implementation!(
         enrich: [:source, :links, :domain],
         preload: [
           :rule,
-          [results: :remediation],
           [data_structures: [data_structure: [:system, :current_version]]]
         ]
       )
       |> add_last_rule_result()
-      |> with_has_segments()
       |> add_quality_event()
       |> Implementations.enrich_implementation_structures()
       |> filter_links_by_permission(claims)
@@ -168,13 +165,6 @@ defmodule TdDqWeb.ImplementationController do
   end
 
   defp filter_link_by_permission(_claims, _), do: false
-
-  # defp build_actions(claims, implementation) do
-  #   implementation
-  #   |> Implementations.get_available_actions()
-  #   |> Enum.filter(&can?(claims, &1, implementation))
-  #   |> Enum.reduce(%{}, &Map.put(&2, &1, %{method: "POST"}))
-  # end
 
   defp filter_data_structures_by_permission(implementation, %{role: "admin"}), do: implementation
 
@@ -305,23 +295,4 @@ defmodule TdDqWeb.ImplementationController do
   defp add_quality_event(%{id: id} = implementation) do
     Map.put(implementation, :quality_event, QualityEvents.get_event_by_imp(id))
   end
-
-  ## TODO: refactor this function with SQL sentence
-  defp with_has_segments(%Implementation{results: results} = impl)
-       when length(results) >= 1 do
-    parent_ids =
-      results
-      |> Enum.map(fn %{id: id} -> id end)
-      |> RuleResults.has_segments()
-
-    results =
-      results
-      |> Enum.map(fn %{id: parent_id} = result ->
-        Map.put(result, :has_segments, Enum.member?(parent_ids, parent_id))
-      end)
-
-    Map.put(impl, :results, results)
-  end
-
-  defp with_has_segments(implementation), do: implementation
 end

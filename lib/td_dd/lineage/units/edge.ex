@@ -8,6 +8,7 @@ defmodule TdDd.Lineage.Units.Edge do
 
   alias TdDd.Lineage.Units.Node
   alias TdDd.Lineage.Units.Unit
+  alias TdDfLib.Validation
 
   schema "edges" do
     belongs_to(:unit, Unit)
@@ -28,6 +29,7 @@ defmodule TdDd.Lineage.Units.Edge do
     edge
     |> cast(params, [:unit_id, :start_id, :end_id, :type, :metadata])
     |> validate_required([:unit_id, :start_id, :end_id, :type, :metadata])
+    |> validate_change(:metadata, &Validation.validate_safe/2)
     |> unique_constraint([:unit_id, :start_id, :end_id])
   end
 end

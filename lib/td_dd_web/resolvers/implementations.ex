@@ -7,6 +7,27 @@ defmodule TdDdWeb.Resolvers.Implementations do
 
   alias TdDq.Implementations
   alias TdDq.Implementations.Workflow
+  alias TdDq.Rules.RuleResults
+
+  def implementation(_parent, %{id: id}, resolution) do
+    with {:claims, %{} = claims} <- {:claims, claims(resolution)},
+         implementation <- Implementations.get_implementation!(id),
+         {:can, true} <- {:can, can?(claims, show(implementation))} do
+      {:ok, implementation}
+    else
+      {:claims, nil} -> {:error, :unauthorized}
+      {:can, false} -> {:error, :forbidden}
+      {:error, :implementation, changeset, _} -> {:error, changeset}
+    end
+  end
+
+  def versions(implementation, _args, _resolution) do
+    {:ok, Implementations.get_versions(implementation)}
+  end
+
+  def results(implementation, _args, _resolution) do
+    {:ok, RuleResults.get_by(implementation)}
+  end
 
   def submit_implementation(_parent, %{id: id}, resolution) do
     implementation = Implementations.get_implementation!(id)

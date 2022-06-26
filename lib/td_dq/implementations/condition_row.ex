@@ -33,7 +33,7 @@ defmodule TdDq.Implementations.ConditionRow do
     |> cast_embed(:operator, with: &Operator.changeset/2, required: true)
     |> cast_embed(:population, with: &__MODULE__.changeset/2)
     |> cast_embed(:value_modifier, with: &Modifier.changeset/2)
-    |> validate_required([:value])
+    |> validate_required(:value)
     |> validate_value(params)
   end
 

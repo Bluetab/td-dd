@@ -8,6 +8,7 @@ defmodule TdDq.Executions.Group do
 
   import Ecto.Changeset
 
+  alias TdDfLib.Validation
   alias TdDq.Executions.Execution
   alias TdDq.Implementations.Implementation
 
@@ -27,7 +28,8 @@ defmodule TdDq.Executions.Group do
   def changeset(%__MODULE__{} = struct, %{} = params) do
     struct
     |> cast(params, [:created_by_id, :filters, :df_content])
-    |> validate_required([:created_by_id])
+    |> validate_required(:created_by_id)
     |> cast_assoc(:executions, with: &Execution.changeset/2, required: true)
+    |> validate_change(:df_content, &Validation.validate_safe/2)
   end
 end

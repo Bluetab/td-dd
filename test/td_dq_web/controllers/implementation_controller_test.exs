@@ -1,11 +1,13 @@
 defmodule TdDqWeb.ImplementationControllerTest do
   use TdDqWeb.ConnCase
+
   use PhoenixSwagger.SchemaTest, "priv/static/swagger_dq.json"
 
   import Mox
 
   alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.RelationTypes
+  alias TdDq.Implementations
 
   @moduletag sandbox: :shared
 
@@ -140,26 +142,6 @@ defmodule TdDqWeb.ImplementationControllerTest do
                |> get(Routes.implementation_path(conn, :show, id))
                |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:ok)
-    end
-
-    @tag authentication: [role: "admin"]
-    test "includes has_segments in results", %{conn: conn, swagger_schema: schema} do
-      %{id: impl_id} = implementation = insert(:implementation)
-      %{id: rule_result_id_1} = insert(:rule_result, implementation: implementation)
-      %{id: rule_result_id_2} = insert(:rule_result, implementation: implementation)
-      %{id: rule_result_id_3} = insert(:rule_result, implementation: implementation)
-      insert(:segment_result, parent_id: rule_result_id_1, params: %{"segment_name" => "foo:baz"})
-      insert(:segment_result, parent_id: rule_result_id_2, params: %{"segment_name" => "foo:bar"})
-
-      assert %{"data" => %{"results" => [result_1, result_2, result_3]}} =
-               conn
-               |> get(Routes.implementation_path(conn, :show, impl_id))
-               |> validate_resp_schema(schema, "ImplementationResponse")
-               |> json_response(:ok)
-
-      assert %{"id" => ^rule_result_id_1, "has_segments" => true} = result_1
-      assert %{"id" => ^rule_result_id_2, "has_segments" => true} = result_2
-      assert %{"id" => ^rule_result_id_3, "has_segments" => false} = result_3
     end
 
     @tag authentication: [role: "admin"]
@@ -791,6 +773,141 @@ defmodule TdDqWeb.ImplementationControllerTest do
     end
 
     @tag authentication: [role: "admin"]
+    test "return error when try to create a draft with an existing implementation_key and different implementation_ref",
+         %{
+           conn: conn,
+           swagger_schema: schema,
+           claims: claims
+         } do
+      rule = insert(:rule)
+
+      creation_attrs =
+        @rule_implementation_attr
+        |> Map.put(:rule_id, rule.id)
+        |> Map.Helpers.stringify_keys()
+
+      assert %{"data" => %{"id" => id}} =
+               conn
+               |> post(Routes.implementation_path(conn, :create),
+                 rule_implementation: creation_attrs
+               )
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:created)
+
+      implementation = Implementations.get_implementation!(id)
+
+      assert {:ok, %{implementation: %{id: ^id}}} =
+               Implementations.update_implementation(
+                 implementation,
+                 %{status: :published},
+                 claims
+               )
+
+      assert %{"errors" => error} =
+               conn
+               |> post(Routes.implementation_path(conn, :create),
+                 rule_implementation: creation_attrs
+               )
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:unprocessable_entity)
+
+      assert %{"implementation_key" => ["duplicated"]} = error
+    end
+
+    @tag authentication: [role: "admin"]
+    test "return success when try to create a draft on existing implementation_ref with same implementation_key",
+         %{
+           conn: conn,
+           swagger_schema: schema,
+           claims: claims
+         } do
+      rule = insert(:rule)
+
+      creation_attrs =
+        @rule_implementation_attr
+        |> Map.put(:rule_id, rule.id)
+        |> Map.Helpers.stringify_keys()
+
+      assert %{"data" => %{"id" => id}} =
+               conn
+               |> post(Routes.implementation_path(conn, :create),
+                 rule_implementation: creation_attrs
+               )
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:created)
+
+      %{implementation_ref: imp_ref} = implementation = Implementations.get_implementation!(id)
+
+      assert imp_ref == id
+
+      assert {:ok, %{implementation: %{id: ^id}}} =
+               Implementations.update_implementation(
+                 implementation,
+                 %{status: :published},
+                 claims
+               )
+
+      assert %{"data" => %{"id" => new_id}} =
+               conn
+               |> put(Routes.implementation_path(conn, :update, implementation),
+                 rule_implementation: creation_attrs
+               )
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:ok)
+
+      assert id != new_id
+      assert %{implementation_ref: ^imp_ref} = Implementations.get_implementation!(new_id)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "return success when try to create a draft on existing implementation_ref with different implementation_key",
+         %{
+           conn: conn,
+           swagger_schema: schema,
+           claims: claims
+         } do
+      rule = insert(:rule)
+
+      creation_attrs =
+        @rule_implementation_attr
+        |> Map.put(:rule_id, rule.id)
+        |> Map.Helpers.stringify_keys()
+
+      assert %{"data" => %{"id" => id}} =
+               conn
+               |> post(Routes.implementation_path(conn, :create),
+                 rule_implementation: creation_attrs
+               )
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:created)
+
+      %{implementation_ref: imp_ref, version: 1, status: :draft} =
+        implementation = Implementations.get_implementation!(id)
+
+      assert imp_ref == id
+
+      assert {:ok, %{implementation: %{id: ^id, version: 1, status: :published}}} =
+               Implementations.update_implementation(
+                 implementation,
+                 %{status: :published},
+                 claims
+               )
+
+      assert %{"data" => %{"id" => new_id}} =
+               conn
+               |> put(Routes.implementation_path(conn, :update, implementation),
+                 rule_implementation: Map.put(creation_attrs, :implementation_key, "fuaah!")
+               )
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:ok)
+
+      assert id != new_id
+
+      assert %{implementation_ref: ^imp_ref, version: 2, status: :draft} =
+               Implementations.get_implementation!(new_id)
+    end
+
+    @tag authentication: [role: "admin"]
     test "renders implementation with segments", %{conn: conn, swagger_schema: schema} do
       rule = insert(:rule)
       structure_id = 12_554
@@ -1294,7 +1411,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
   describe "update implementation" do
     @tag authentication: [role: "admin"]
     test "renders implementation when data is valid", %{conn: conn, swagger_schema: schema} do
-      implementation = insert(:implementation)
+      %{implementation_ref: ref} = implementation = insert(:implementation)
 
       params =
         %{populations: @populations}
@@ -1310,6 +1427,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       assert %{"id" => id} = data
 
+      assert %{implementation_ref: ^ref} = TdDq.Implementations.get_implementation!(id)
+
       assert %{"data" => data} =
                conn
                |> get(Routes.implementation_path(conn, :show, id))
@@ -1324,6 +1443,30 @@ defmodule TdDqWeb.ImplementationControllerTest do
                data |> Map.get("populations") |> List.first(),
                params |> Map.get("populations") |> List.first()
              )
+    end
+
+    @tag authentication: [role: "admin"]
+    test "create new implementation with same implementation_ref when previous one has published status",
+         %{conn: conn, swagger_schema: schema} do
+      %{implementation_ref: ref, id: published_id} =
+        implementation = insert(:implementation, status: :published)
+
+      assert ref != nil
+
+      params = %{goal: "40", dataset: @valid_dataset, minimum: "3", validations: @validations}
+
+      assert %{"data" => data} =
+               conn
+               |> put(Routes.implementation_path(conn, :update, implementation),
+                 rule_implementation: params
+               )
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:ok)
+
+      assert %{"id" => id} = data
+
+      assert id != published_id
+      assert %{implementation_ref: ^ref} = TdDq.Implementations.get_implementation!(id)
     end
 
     @tag authentication: [user_name: "non_admin"]

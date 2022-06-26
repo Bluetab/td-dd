@@ -2,17 +2,8 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
   use TdDdWeb.ConnCase
   use PhoenixSwagger.SchemaTest, "priv/static/swagger.json"
 
-  alias TdCache.TaxonomyCache
-
   setup_all do
-    %{id: domain_id} = domain = build(:domain)
-    TaxonomyCache.put_domain(domain)
-
-    on_exit(fn ->
-      TaxonomyCache.delete_domain(domain_id)
-    end)
-
-    [domain: domain]
+    [domain: CacheHelpers.insert_domain()]
   end
 
   setup tags do

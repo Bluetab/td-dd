@@ -62,6 +62,12 @@ defmodule TdDq.Implementations.Implementation do
 
     field(:version, :integer)
 
+    field :implementation_ref, :integer
+
+    has_many :versions, Implementation,
+      foreign_key: :implementation_ref,
+      references: :implementation_ref
+
     embeds_one(:raw_content, RawContent, on_replace: :delete)
     embeds_many(:dataset, DatasetRow, on_replace: :delete)
     embeds_many(:populations, Populations, on_replace: :delete)
@@ -111,6 +117,12 @@ defmodule TdDq.Implementations.Implementation do
     implementation
     |> cast(params, [:status, :version, :deleted_at])
     |> validate_required([:status, :version])
+  end
+
+  def implementation_ref_changeset(%__MODULE__{} = implementation, params) do
+    implementation
+    |> cast(params, [:implementation_ref])
+    |> validate_required([:implementation_ref])
   end
 
   def changeset_validations(%Ecto.Changeset{} = changeset, %__MODULE__{} = implementation, params) do
@@ -183,7 +195,7 @@ defmodule TdDq.Implementations.Implementation do
 
       _ ->
         changeset
-        |> validate_required([:implementation_key])
+        |> validate_required(:implementation_key)
         |> validate_length(:implementation_key, max: 255)
         |> unique_constraint(:implementation_key,
           name: :published_implementation_key_index,
@@ -412,7 +424,7 @@ defmodule TdDq.Implementations.Implementation do
       |> transform_populations()
       |> transform_validations()
       |> transform_segments()
-      |> with_rule(rule)
+      |> maybe_rule(rule)
       |> Map.put(:raw_content, get_raw_content(implementation))
       |> Map.put(:structure_aliases, structure_aliases)
       |> Map.put(:execution_result_info, execution_result_info)
@@ -528,7 +540,7 @@ defmodule TdDq.Implementations.Implementation do
 
     defp with_populations(data, _condition), do: data
 
-    defp with_rule(data, %Rule{} = rule) do
+    defp maybe_rule(data, %Rule{} = rule) do
       template = TemplateCache.get_by_name!(rule.df_name) || %{content: []}
 
       df_content =
@@ -550,7 +562,10 @@ defmodule TdDq.Implementations.Implementation do
       |> Map.put(:business_concept_id, Map.get(rule, :business_concept_id))
     end
 
-    defp with_rule(data, _), do: data
+    defp maybe_rule(data, _) do
+      data
+      |> Map.put(:_confidential, false)
+    end
 
     defp get_structure_ids(structures) do
       structures
