@@ -56,7 +56,7 @@ defmodule TdDq.Rules.RuleResults.BulkLoad do
   end
 
   defp bulk_insert(records) do
-    implementation_by_key = implementation_by_key(records)
+    implementation_by_key = published_implementation_by_key(records)
 
     records
     |> Enum.with_index(2)
@@ -69,7 +69,7 @@ defmodule TdDq.Rules.RuleResults.BulkLoad do
     end
   end
 
-  defp implementation_by_key(records) do
+  defp published_implementation_by_key(records) do
     keys =
       records
       |> Enum.map(&Map.get(&1, "implementation_key"))
@@ -78,18 +78,19 @@ defmodule TdDq.Rules.RuleResults.BulkLoad do
 
     Implementation
     |> where([ri], ri.implementation_key in ^keys)
+    |> where([ri], ri.status == :published)
     |> select([ri], {ri.implementation_key, ri})
     |> Repo.all()
     |> Map.new()
   end
 
-  defp changeset(%{} = params, %{} = implementation_by_key) do
+  defp changeset(%{} = params, %{} = implementations_by_key) do
     with %{"implementation_key" => key} <- params,
          %Implementation{result_type: type, rule_id: rule_id} = impl <-
-           Map.get(implementation_by_key, key) do
+           Map.get(implementations_by_key, key) do
       RuleResult.changeset(%RuleResult{result_type: type, rule_id: rule_id}, impl, params)
     else
-      _ -> RuleResult.changeset(nil, params)
+      _ -> RuleResult.changeset(:non_existing_nor_published, params)
     end
   end
 

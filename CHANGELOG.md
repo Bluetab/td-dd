@@ -1,14 +1,23 @@
 # Changelog
-
 ## [Unreleased]
 
 ### Changed
 
 - [TD-4412] Update td-cache for changes in templates preprocessing
 
+### Added
+
+- [TD-4920] add results to implementation query api/v2
+
 ### Fixed
 
 - [TD-4959] Use implementation_ref instead of implementation_key for status changes
+
+## [4.46.1] 2022-06-23
+
+### Fixed
+
+- [TD-4962] Submit results only for published implementations 
 
 ## [4.46.0] 2022-06-21
 

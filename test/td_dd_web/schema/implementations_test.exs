@@ -1,5 +1,6 @@
 defmodule TdDdWeb.Schema.ImplementationsTest do
   use TdDdWeb.ConnCase
+  import TdDd.TestOperators
 
   @submit_implementation """
   mutation SubmitImplementation($id: ID!) {
@@ -41,6 +42,54 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
         id
         implementation_key
         version
+      }
+    }
+  }
+  """
+
+  @implementation_with_results_query """
+  query Implementation($id: ID!) {
+    implementation(id: $id) {
+      id,
+      results {
+        id
+      }
+    }
+  }
+  """
+
+  @implementation_with_results_and_segments_query """
+  query Implementation($id: ID!) {
+    implementation(id: $id) {
+      id,
+      results {
+        id,
+        has_segments
+      }
+    }
+  }
+  """
+
+  @implementation_with_results_and_remediation_query """
+  query Implementation($id: ID!) {
+    implementation(id: $id) {
+      id,
+      results {
+        id,
+        has_remediation
+      }
+    }
+  }
+  """
+
+  @implementation_with_versions_results_query """
+  query Implementation($id: ID!) {
+    implementation(id: $id) {
+      id,
+      versions {
+        results {
+          id
+        }
       }
     }
   }
@@ -104,6 +153,143 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
                  }
                ]
              } = implementation
+    end
+
+    @tag authentication: [role: "admin"]
+    test "get results of an implementation", %{conn: conn} do
+      %{id: implementation_id} = implementation = insert(:implementation)
+      %{id: rule_result_id_1} = insert(:rule_result, implementation: implementation)
+      %{id: rule_result_id_2} = insert(:rule_result, implementation: implementation)
+      %{id: rule_result_id_3} = insert(:rule_result, implementation: implementation)
+
+      assert %{"data" => %{"implementation" => implementation}} =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @implementation_with_results_query,
+                 "variables" => %{id: implementation_id}
+               })
+               |> json_response(:ok)
+
+      assert [
+               %{"id" => to_string(rule_result_id_1)},
+               %{"id" => to_string(rule_result_id_2)},
+               %{"id" => to_string(rule_result_id_3)}
+             ]
+             <|> Map.get(implementation, "results")
+    end
+
+    @tag authentication: [role: "admin"]
+    test "get results of an implementation and its versions", %{conn: conn} do
+      %{implementation_ref: ref} =
+        implementation_1 = insert(:implementation, status: :versioned, version: 1)
+
+      %{id: id2} =
+        implementation_2 =
+        insert(:implementation, implementation_ref: ref, status: :draft, version: 3)
+
+      implementation_3 =
+        insert(:implementation, implementation_ref: ref, status: :published, version: 2)
+
+      %{id: rule_result_id_1_1} = insert(:rule_result, implementation: implementation_1)
+      %{id: rule_result_id_1_2} = insert(:rule_result, implementation: implementation_1)
+      %{id: rule_result_id_2_1} = insert(:rule_result, implementation: implementation_2)
+      %{id: rule_result_id_3_1} = insert(:rule_result, implementation: implementation_3)
+      %{id: rule_result_id_3_2} = insert(:rule_result, implementation: implementation_3)
+      %{id: rule_result_id_3_3} = insert(:rule_result, implementation: implementation_3)
+
+      assert %{"data" => %{"implementation" => implementation}} =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @implementation_with_versions_results_query,
+                 "variables" => %{id: id2}
+               })
+               |> json_response(:ok)
+
+      [
+        str_rule_result_id_1_1,
+        str_rule_result_id_1_2,
+        str_rule_result_id_2_1,
+        str_rule_result_id_3_1,
+        str_rule_result_id_3_2,
+        str_rule_result_id_3_3
+      ] =
+        [
+          rule_result_id_1_1,
+          rule_result_id_1_2,
+          rule_result_id_2_1,
+          rule_result_id_3_1,
+          rule_result_id_3_2,
+          rule_result_id_3_3
+        ]
+        |> Enum.map(&to_string/1)
+
+      assert %{
+               "versions" => [
+                 %{
+                   "results" => [
+                     %{"id" => ^str_rule_result_id_2_1}
+                   ]
+                 },
+                 %{
+                   "results" => [
+                     %{"id" => ^str_rule_result_id_3_1},
+                     %{"id" => ^str_rule_result_id_3_2},
+                     %{"id" => ^str_rule_result_id_3_3}
+                   ]
+                 },
+                 %{
+                   "results" => [
+                     %{"id" => ^str_rule_result_id_1_1},
+                     %{"id" => ^str_rule_result_id_1_2}
+                   ]
+                 }
+               ]
+             } = implementation
+    end
+
+    @tag authentication: [role: "admin"]
+    test "get results of an implementation with has_segmentation boolean", %{conn: conn} do
+      %{id: implementation_id} = implementation = insert(:implementation)
+      %{id: rule_result_1} = insert(:rule_result, implementation: implementation)
+      %{id: rule_result_2} = insert(:rule_result, implementation: implementation)
+      %{id: parent_id} = insert(:rule_result, implementation: implementation)
+      insert(:segment_result, parent_id: parent_id)
+      insert(:segment_result, parent_id: parent_id)
+
+      assert %{"data" => %{"implementation" => %{"results" => results}}} =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @implementation_with_results_and_segments_query,
+                 "variables" => %{id: implementation_id}
+               })
+               |> json_response(:ok)
+
+      assert [
+               %{"has_segments" => false, "id" => to_string(rule_result_1)},
+               %{"has_segments" => false, "id" => to_string(rule_result_2)},
+               %{"has_segments" => true, "id" => to_string(parent_id)}
+             ] == results
+    end
+
+    @tag authentication: [role: "admin"]
+    test "get results of an implementation with has_remediation boolean", %{conn: conn} do
+      %{id: implementation_id} = implementation = insert(:implementation)
+      %{id: rule_result_1} = insert(:rule_result, implementation: implementation)
+      %{id: rule_result_2} = insert(:rule_result, implementation: implementation)
+      insert(:remediation, rule_result_id: rule_result_1)
+
+      assert %{"data" => %{"implementation" => %{"results" => results}}} =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @implementation_with_results_and_remediation_query,
+                 "variables" => %{id: implementation_id}
+               })
+               |> json_response(:ok)
+
+      assert [
+               %{"has_remediation" => true, "id" => to_string(rule_result_1)},
+               %{"has_remediation" => false, "id" => to_string(rule_result_2)}
+             ] == results
     end
 
     @tag authentication: [
