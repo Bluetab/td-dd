@@ -1,5 +1,6 @@
 defmodule TdDdWeb.Schema.ImplementationsTest do
   use TdDdWeb.ConnCase
+  import TdDd.TestOperators
 
   @submit_implementation """
   mutation SubmitImplementation($id: ID!) {
@@ -170,10 +171,10 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
                |> json_response(:ok)
 
       assert [
-               %{"id" => to_string(rule_result_id_1)},
-               %{"id" => to_string(rule_result_id_2)},
-               %{"id" => to_string(rule_result_id_3)}
-             ] == Map.get(implementation, "results")
+              %{"id" => to_string(rule_result_id_1)},
+              %{"id" => to_string(rule_result_id_2)},
+              %{"id" => to_string(rule_result_id_3)}
+             ] <|> Map.get(implementation, "results")
     end
 
     @tag authentication: [role: "admin"]
