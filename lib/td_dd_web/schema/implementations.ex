@@ -46,10 +46,10 @@ defmodule TdDdWeb.Schema.Implementations do
     field :df_content, :json
     field :df_name, :string
     field :executable, :boolean
-    field :goal, :string
+    field :goal, :float
     field :implementation_key, :string
     field :implementation_type, :string
-    field :minimum, :string
+    field :minimum, :float
     field :populations, list_of(:populations)
     field :result_type, :string
     field :rule_id, :integer

@@ -1,6 +1,9 @@
 # Changelog
 ## [Unreleased]
 
+### Changed
+
+- [TD-4412] Update td-cache for changes in templates preprocessing
 
 ### Added
 
