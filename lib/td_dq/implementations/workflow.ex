@@ -9,6 +9,7 @@ defmodule TdDq.Implementations.Workflow do
   alias TdDd.Auth.Claims, as: TdDdClaims
   alias TdDd.Repo
   alias TdDq.Implementations.Implementation
+  alias TdDq.Rules.Audit
 
   @index_worker Application.compile_env(:td_dd, :dq_index_worker)
 
@@ -37,15 +38,14 @@ defmodule TdDq.Implementations.Workflow do
          implementation,
          status,
          _audit_event,
-         _claims
+         %{user_id: user_id}
        ) do
     changeset = status_changeset(implementation, status)
 
     Multi.new()
-    |> maybe_version_existing(implementation, status)
+    |> maybe_version_existing(implementation, status, user_id)
     |> Multi.update(:implementation, changeset)
-    ### TODO: Audit events
-    # |> Multi.run(:audit, Audit, audit_event, [changeset, user_id])
+    |> Multi.run(:audit, Audit, :implementation_status_updated, [changeset, user_id])
     |> Repo.transaction()
     |> on_upsert()
   end
@@ -79,8 +79,9 @@ defmodule TdDq.Implementations.Workflow do
 
   def maybe_version_existing(
         multi,
-        %{implementation_ref: implementation_ref} = _implementation,
-        "published"
+        %{implementation_ref: implementation_ref} = implementation,
+        "published",
+        user_id
       ) do
     queryable =
       Implementation
@@ -91,9 +92,10 @@ defmodule TdDq.Implementations.Workflow do
     Multi.update_all(multi, :versioned, queryable,
       set: [updated_at: DateTime.utc_now(), status: :versioned]
     )
+    |> Multi.run(:audit_versioned, Audit, :implementation_versioned, [implementation, user_id])
   end
 
-  def maybe_version_existing(multi, _, _not_published), do: multi
+  def maybe_version_existing(multi, _, _not_published, _user_id), do: multi
 
   defp on_upsert({:ok, %{versioned: {_count, ids}, implementation: %{id: id}}} = result) do
     @index_worker.reindex_implementations([id | ids])
