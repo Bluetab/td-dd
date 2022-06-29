@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-4176]
+  - Added descrition in datas tructure tag
+  - changed desription by comment in data structures tags link
+
 ### Fixed
 
 - [TD-4959] Use implementation_ref instead of implementation_key for status changes
