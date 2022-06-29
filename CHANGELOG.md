@@ -7,7 +7,8 @@
 
 ### Added
 
-- [TD-4920] add results to implementation query api/v2
+- [TD-4920] Add results to implementation query api/v2
+- [TD-4921] Add implementation workflow events
 
 ### Fixed
 
