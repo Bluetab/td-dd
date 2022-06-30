@@ -8,6 +8,7 @@ defmodule TdDdWeb.Resolvers.Implementations do
   alias TdDq.Implementations
   alias TdDq.Implementations.Workflow
   alias TdDq.Rules.RuleResults
+  alias TdDq.Events.QualityEvents
 
   def implementation(_parent, %{id: id}, resolution) do
     with {:claims, %{} = claims} <- {:claims, claims(resolution)},
@@ -27,6 +28,10 @@ defmodule TdDdWeb.Resolvers.Implementations do
 
   def results(implementation, _args, _resolution) do
     {:ok, RuleResults.get_by(implementation)}
+  end
+
+  def last_quality_event(%{id: id} = _implementation, _args, _resolution) do
+    {:ok, QualityEvents.get_event_by_imp(id)}
   end
 
   def submit_implementation(_parent, %{id: id}, resolution) do
