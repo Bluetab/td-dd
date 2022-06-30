@@ -39,6 +39,7 @@ defmodule TdDq.Events.QualityEvents do
       date: event.inserted_at,
       message: event.message,
       status: "error",
+      result: "Execution failed",
       domain_id: implementation.domain_id,
       implementation_id: implementation.id,
       implementation_key: implementation.implementation_key
