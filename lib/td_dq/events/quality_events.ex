@@ -8,6 +8,7 @@ defmodule TdDq.Events.QualityEvents do
   alias TdDd.Repo
   alias TdDq.Events.QualityEvent
   alias TdDq.Executions.Execution
+  alias TdDq.Rules.Audit
   alias TdDq.Search.IndexWorker
 
   def create_event(attrs \\ %{}) do
@@ -19,6 +20,7 @@ defmodule TdDq.Events.QualityEvents do
         %{execution: exec} = Repo.preload(event, :execution)
 
         if event.type === "FAILED" do
+          publish_errored_event(event, exec)
           IndexWorker.reindex_implementations(exec.implementation_id)
         end
 
@@ -27,6 +29,22 @@ defmodule TdDq.Events.QualityEvents do
       error ->
         error
     end
+  end
+
+  defp publish_errored_event(event, exec) do
+    %{implementation: implementation} = Repo.preload(exec, :implementation)
+
+    failed_result = %{
+      id: event.id,
+      date: event.inserted_at,
+      message: event.message,
+      status: "error",
+      domain_id: implementation.domain_id,
+      implementation_id: implementation.id,
+      implementation_key: implementation.implementation_key
+    }
+
+    Audit.rule_results_created(nil, %{results: [failed_result]}, 0)
   end
 
   def complete(execution_ids) do
