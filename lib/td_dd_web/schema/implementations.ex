@@ -60,7 +60,10 @@ defmodule TdDdWeb.Schema.Implementations do
     field :version, :integer
     field :versions, list_of(:implementation), resolve: &Resolvers.Implementations.versions/3
     field :results, list_of(:implementation_result), resolve: &Resolvers.Implementations.results/3
-    field :last_quality_event, :quality_event, resolve: &Resolvers.Implementations.last_quality_event/3
+
+    field :last_quality_event, :quality_event,
+      resolve: &Resolvers.Implementations.last_quality_event/3
+
     field :updated_at, :datetime
     field :deleted_at, :datetime
   end
@@ -121,8 +124,8 @@ defmodule TdDdWeb.Schema.Implementations do
   end
 
   object :quality_event do
-    field :event_inserted_at, :datetime
-    field :event_message, :string
-    field :event_type, :string
+    field :inserted_at, :datetime
+    field :message, :string
+    field :type, :string
   end
 end

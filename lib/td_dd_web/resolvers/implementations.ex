@@ -5,10 +5,10 @@ defmodule TdDdWeb.Resolvers.Implementations do
 
   import Canada, only: [can?: 2]
 
+  alias TdDq.Events.QualityEvents
   alias TdDq.Implementations
   alias TdDq.Implementations.Workflow
   alias TdDq.Rules.RuleResults
-  alias TdDq.Events.QualityEvents
 
   def implementation(_parent, %{id: id}, resolution) do
     with {:claims, %{} = claims} <- {:claims, claims(resolution)},
