@@ -34,18 +34,18 @@ defmodule TdDq.Events.QualityEvents do
   defp publish_errored_event(event, exec) do
     %{implementation: implementation} = Repo.preload(exec, :implementation)
 
-    failed_result = %{
+    errored_result = %{
       id: event.id,
       date: event.inserted_at,
-      message: event.message,
+      message: Map.get(event, :message, "Quality execution error"),
       status: "error",
-      result: "Execution failed",
       domain_id: implementation.domain_id,
       implementation_id: implementation.id,
-      implementation_key: implementation.implementation_key
+      implementation_key: implementation.implementation_key,
+      rule_id: implementation.rule_id
     }
 
-    Audit.rule_results_created(nil, %{results: [failed_result]}, 0)
+    Audit.rule_results_created(nil, %{results: [errored_result]}, 0)
   end
 
   def complete(execution_ids) do
