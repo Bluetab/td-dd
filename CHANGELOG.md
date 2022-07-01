@@ -9,6 +9,7 @@
 
 - [TD-4920] Add results to implementation query api/v2
 - [TD-4921] Add implementation workflow events
+- [TD-4894] Multiple field validations
 
 ### Fixed
 
@@ -18,7 +19,7 @@
 
 ### Fixed
 
-- [TD-4962] Submit results only for published implementations 
+- [TD-4962] Submit results only for published implementations
 
 ## [4.46.0] 2022-06-21
 
