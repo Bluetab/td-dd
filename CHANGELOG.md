@@ -16,6 +16,7 @@
 ### Fixed
 
 - [TD-4959] Use implementation_ref instead of implementation_key for status changes
+- [TD-4952] Missing code from [TD-4655]
 
 ## [4.46.1] 2022-06-23
 
