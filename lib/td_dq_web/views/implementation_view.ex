@@ -181,7 +181,11 @@ defmodule TdDqWeb.ImplementationView do
             %{
               result: last_rule_result.result,
               date: last_rule_result.date,
-              errors: last_rule_result.errors
+              errors: last_rule_result.errors,
+              implementation_id: implementation.id,
+              result_type: last_rule_result.result_type,
+              records: last_rule_result.records,
+              params: last_rule_result.params
             }
           ]
       end

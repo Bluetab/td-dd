@@ -5,8 +5,10 @@ defmodule TdDdWeb.Resolvers.Implementations do
 
   import Canada, only: [can?: 2]
 
+  alias TdDq.Events.QualityEvents
   alias TdDq.Implementations
   alias TdDq.Implementations.Workflow
+  alias TdDq.Rules.RuleResults
 
   def implementation(_parent, %{id: id}, resolution) do
     with {:claims, %{} = claims} <- {:claims, claims(resolution)},
@@ -22,6 +24,14 @@ defmodule TdDdWeb.Resolvers.Implementations do
 
   def versions(implementation, _args, _resolution) do
     {:ok, Implementations.get_versions(implementation)}
+  end
+
+  def results(implementation, _args, _resolution) do
+    {:ok, RuleResults.get_by(implementation)}
+  end
+
+  def last_quality_event(%{id: id} = _implementation, _args, _resolution) do
+    {:ok, QualityEvents.get_event_by_imp(id)}
   end
 
   def submit_implementation(_parent, %{id: id}, resolution) do

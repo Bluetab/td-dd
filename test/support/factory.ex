@@ -494,10 +494,11 @@ defmodule TdDd.Factory do
     }
   end
 
-  def quality_event_factory do
+  def quality_event_factory(attrs) do
     %TdDq.Events.QualityEvent{
       type: "PENDING"
     }
+    |> merge_attributes(attrs)
   end
 
   def data_structures_tags_factory(attrs) do

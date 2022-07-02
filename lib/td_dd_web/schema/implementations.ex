@@ -8,7 +8,7 @@ defmodule TdDdWeb.Schema.Implementations do
 
   object :implementation_queries do
     @desc "get implementation"
-    field :implementation, :implementation do
+    field :implementation, non_null(:implementation) do
       arg(:id, non_null(:id))
       resolve(&Resolvers.Implementations.implementation/3)
     end
@@ -46,10 +46,10 @@ defmodule TdDdWeb.Schema.Implementations do
     field :df_content, :json
     field :df_name, :string
     field :executable, :boolean
-    field :goal, :string
+    field :goal, :float
     field :implementation_key, :string
     field :implementation_type, :string
-    field :minimum, :string
+    field :minimum, :float
     field :populations, list_of(:populations)
     field :result_type, :string
     field :rule_id, :integer
@@ -59,6 +59,11 @@ defmodule TdDdWeb.Schema.Implementations do
     field :status, :string
     field :version, :integer
     field :versions, list_of(:implementation), resolve: &Resolvers.Implementations.versions/3
+    field :results, list_of(:implementation_result), resolve: &Resolvers.Implementations.results/3
+
+    field :last_quality_event, :quality_event,
+      resolve: &Resolvers.Implementations.last_quality_event/3
+
     field :updated_at, :datetime
     field :deleted_at, :datetime
   end
@@ -116,5 +121,11 @@ defmodule TdDdWeb.Schema.Implementations do
   object :structure_reference do
     field :id, non_null(:id)
     field :parent_index, :integer
+  end
+
+  object :quality_event do
+    field :inserted_at, :datetime
+    field :message, :string
+    field :type, :string
   end
 end
