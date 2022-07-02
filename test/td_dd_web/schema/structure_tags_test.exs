@@ -184,17 +184,16 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
     test "Create structure tag with large description return an error", %{conn: conn} do
       description = String.duplicate("foo", 334)
       %{
-        "name" => name,
+        "name" => _name,
       } = params = string_params_for(:data_structure_tag, domain_ids: [123], description: description)
 
       assert %{"data" => nil, "errors" => errors} =
-        response =
-          conn
-          |> post("/api/v2", %{
-            "query" => @create_structure_tag,
-            "variables" => %{"structureTag" => params}
-          })
-          |> json_response(:ok)
+        conn
+        |> post("/api/v2", %{
+          "query" => @create_structure_tag,
+          "variables" => %{"structureTag" => params}
+        })
+        |> json_response(:ok)
 
       assert [%{"message" => "max.length.1000"}] = errors
     end
@@ -259,13 +258,12 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
       ) |> Map.put("id", id)
 
       assert %{"data" => nil, "errors" => errors} =
-        response =
-          conn
-          |> post("/api/v2", %{
-            "query" => @update_structure_tag,
-            "variables" => %{"structureTag" => params}
-          })
-          |> json_response(:ok)
+        conn
+        |> post("/api/v2", %{
+          "query" => @update_structure_tag,
+          "variables" => %{"structureTag" => params}
+        })
+        |> json_response(:ok)
 
       assert [%{"message" => "max.length.1000"}] = errors
     end

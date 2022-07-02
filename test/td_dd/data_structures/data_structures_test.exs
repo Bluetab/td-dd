@@ -1463,7 +1463,7 @@ defmodule TdDd.DataStructuresTest do
       tag = %{
         id: tag_id,
         name: tag_name,
-        description: tag_description
+        description: _tag_description
       } = insert(:data_structure_tag)
       params = %{comment: comment}
 
@@ -1497,7 +1497,7 @@ defmodule TdDd.DataStructuresTest do
       tag = %{
         id: tag_id,
         name: tag_name,
-        description: tag_description
+        description: _tag_description
       } = insert(:data_structure_tag)
 
       %{name: version_name} = insert(:data_structure_version, data_structure: structure)
@@ -1557,7 +1557,7 @@ defmodule TdDd.DataStructuresTest do
       tag = %{
         id: data_structure_tag_id,
         name: name,
-        description: description
+        description: _description
       } = insert(:data_structure_tag)
 
       %{id: link_id, comment: comment} =
@@ -1580,7 +1580,7 @@ defmodule TdDd.DataStructuresTest do
       tag = %{
         id: data_structure_tag_id,
         name: tag_name,
-        description: description
+        description: _description
       } = insert(:data_structure_tag)
       %{name: version_name} = insert(:data_structure_version, data_structure: structure)
 

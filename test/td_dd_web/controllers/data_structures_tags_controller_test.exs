@@ -22,7 +22,7 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
     @tag authentication: [role: "admin"]
     test "renderts links of a structure", %{conn: conn, swagger_schema: schema} do
       structure = %{id: data_structure_id} = insert(:data_structure)
-      tag = %{id: tag_id, name: name, description: description} = insert(:data_structure_tag)
+      tag = %{id: tag_id, name: name, description: _description} = insert(:data_structure_tag)
 
       %{id: id, comment: comment} =
         insert(:data_structures_tags,
@@ -40,7 +40,7 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
                      "data_structure_tag" => %{
                        "id" => ^tag_id,
                        "name" => ^name,
-                       "description" => des
+                       "description" => _description
                       }
                    }
                  }
@@ -126,7 +126,7 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
     test "puts link between a tag and its structure", %{conn: conn, swagger_schema: schema} do
       comment = "new comment"
       %{id: data_structure_id} = insert(:data_structure)
-      %{id: tag_id, name: name, description: description} = insert(:data_structure_tag)
+      %{id: tag_id, name: name, description: _description} = insert(:data_structure_tag)
       data_structure_tag_partial = %{comment: comment}
 
       assert %{
