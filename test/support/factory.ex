@@ -216,7 +216,8 @@ defmodule TdDd.Factory do
 
   def data_structure_tag_factory do
     %DataStructureTag{
-      name: sequence("structure_tag_name")
+      name: sequence("structure_tag_name"),
+      description: sequence("structure_tag_description")
     }
   end
 
@@ -507,7 +508,7 @@ defmodule TdDd.Factory do
       |> default_assoc(:data_structure_tag_id, :data_structure_tag)
 
     %TdDd.DataStructures.DataStructuresTags{
-      description: sequence("description")
+      comment: sequence("foo")
     }
     |> merge_attributes(attrs)
   end
