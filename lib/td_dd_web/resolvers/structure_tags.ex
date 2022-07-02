@@ -6,6 +6,7 @@ defmodule TdDdWeb.Resolvers.StructureTags do
   import Canada, only: [can?: 2]
 
   alias TdDd.DataStructures
+  alias TdDd.Utils.ChangesetUtils
 
   def structure_tags(_parent, args, _resolution) do
     args = Map.put_new(args, :structure_count, true)
@@ -19,8 +20,8 @@ defmodule TdDdWeb.Resolvers.StructureTags do
   def create_structure_tag(_parent, %{structure_tag: params} = _args, _resolution) do
     case DataStructures.create_data_structure_tag(params) do
       {:ok, %{id: id} = _tag} -> {:ok, DataStructures.get_data_structure_tag(id: id)}
-      {:error, %{errors: [description: {message, details}]}} ->
-        {:error, %{message: message, details: details}}
+      {:error, changeset} ->
+        {:error, ChangesetUtils.error_message_list_on(changeset)}
     end
   end
 
@@ -34,8 +35,8 @@ defmodule TdDdWeb.Resolvers.StructureTags do
       {:claims, nil} -> {:error, :unauthorized}
       {:tag, nil} -> {:error, :not_found}
       {:can, false} -> {:error, :forbidden}
-      {:error, %{errors: [description: {message, details}]}} ->
-        {:error, %{message: message, details: details}}
+      {:error, changeset} ->
+        {:error, ChangesetUtils.error_message_list_on(changeset)}
     end
   end
 

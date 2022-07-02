@@ -6,7 +6,7 @@
 
 - [TD-4176]
   - Added descrition in data structure tag
-  - Changed description by comment in data structures tags link
+  - Changed description for comment in data structures tags link
 
 ### Fixed
 
