@@ -5,6 +5,7 @@
 ### Changed
 
 - [TD-4412] Update td-cache for changes in templates preprocessing
+- [TD-4997] Change search executions API sources list filter from 'AND' to 'OR'
 
 ### Added
 
