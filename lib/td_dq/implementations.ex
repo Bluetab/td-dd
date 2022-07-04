@@ -14,6 +14,7 @@ defmodule TdDq.Implementations do
   alias TdCx.Sources
   alias TdDd.Cache.StructureEntry
   alias TdDd.DataStructures
+  alias TdDd.ReferenceData
   alias TdDd.Repo
   alias TdDq.Auth.Claims
   alias TdDq.Cache.ImplementationLoader
@@ -540,6 +541,9 @@ defmodule TdDq.Implementations do
 
   def valid_dataset_implementation_structures(%Implementation{dataset: [_ | _] = dataset}) do
     dataset
+    |> Enum.reject(fn dataset_row ->
+      dataset_row |> Map.get(:structure) |> Map.get(:type) == "reference_dataset"
+    end)
     |> Enum.map(fn dataset_row -> dataset_row |> Map.get(:structure) |> Map.get(:id) end)
     |> Enum.reject(&is_nil/1)
     |> Enum.map(&DataStructures.get_data_structure/1)
@@ -576,6 +580,9 @@ defmodule TdDq.Implementations do
         validations: [_ | _] = validations
       }) do
     validations
+    |> Enum.reject(fn dataset_row ->
+      dataset_row |> Map.get(:structure) |> Map.get(:type) == "reference_dataset_field"
+    end)
     |> Enum.map(fn dataset_row -> dataset_row |> Map.get(:structure) |> Map.get(:id) end)
     |> Enum.reject(&is_nil/1)
     |> Enum.map(&DataStructures.get_data_structure/1)
@@ -664,22 +671,9 @@ defmodule TdDq.Implementations do
 
   def enrich_implementation_structures(%Implementation{} = implementation) do
     enriched_dataset =
-      Enum.map(implementation.dataset, fn dataset_row ->
-        case dataset_row |> Map.get(:structure) |> Map.get(:id) do
-          nil ->
-            dataset_row
-
-          id ->
-            cached_structure = StructureEntry.cache_entry(id, system: true)
-
-            dataset_row
-            |> Map.put(
-              :structure,
-              put_structure_cached_attributes(Map.get(dataset_row, :structure), cached_structure)
-            )
-            |> enrich_joined_structures
-        end
-      end)
+      implementation
+      |> Map.get(:dataset)
+      |> Enum.map(&enrich_dataset_row/1)
 
     enriched_populations = Enum.map(implementation.populations, &enrich_populations/1)
     enriched_validations = Enum.map(implementation.validations, &enrich_condition/1)
@@ -694,6 +688,30 @@ defmodule TdDq.Implementations do
     |> Map.put(:segments, enriched_segments)
     |> Map.put(:data_structures, enriched_data_structures)
   end
+
+  defp enrich_implementation_structure(%{id: id, type: "reference_dataset"}) when not is_nil(id) do
+      id
+      |> ReferenceData.get!()
+      |> Map.take([:id, :name, :headers])
+      |> Map.put(:type, "reference_dataset")
+  end
+
+  defp enrich_implementation_structure(%{id: id} = structure) when not is_nil(id) do
+    cached_structure = StructureEntry.cache_entry(id, system: true)
+    put_structure_cached_attributes(structure, cached_structure)
+  end
+
+  defp enrich_implementation_structure(structure), do: structure
+
+  defp enrich_dataset_row(%{structure: structure} = dataset_row) do
+    enriched_structure = enrich_implementation_structure(structure)
+
+    dataset_row
+    |> Map.put(:structure, enriched_structure)
+    |> enrich_joined_structures
+  end
+
+  defp enrich_dataset_row(dataset_row), do: dataset_row
 
   defp enrich_data_structures_path(%{data_structures: [_ | _] = data_structures}) do
     data_structure_ids =
@@ -738,15 +756,10 @@ defmodule TdDq.Implementations do
   defp enrich_populations(populations), do: populations
 
   defp enrich_condition(%{structure: structure = %{}} = condition) do
-    cached_structure = StructureEntry.cache_entry(Map.get(structure, :id), system: true)
-
-    enriched_info =
-      condition
-      |> Map.get(:structure)
-      |> put_structure_cached_attributes(cached_structure)
+    enriched_structure = enrich_implementation_structure(structure)
 
     condition
-    |> Map.put(:structure, enriched_info)
+    |> Map.put(:structure, enriched_structure)
     |> enrich_value_structures()
     |> with_population()
   end
@@ -762,24 +775,10 @@ defmodule TdDq.Implementations do
     structure_map
   end
 
-  defp enrich_clause_structures(
-         %{left: %{id: left_id} = left, right: %{id: right_id} = right} = structure_map
-       ) do
+  defp enrich_clause_structures(%{left: left, right: right} = structure_map) do
     structure_map
-    |> Map.put(
-      :left,
-      put_structure_cached_attributes(
-        %{id: left_id, parent_index: Map.get(left, :parent_index)},
-        StructureEntry.cache_entry(left_id, system: true)
-      )
-    )
-    |> Map.put(
-      :right,
-      put_structure_cached_attributes(
-        %{id: right_id, parent_index: Map.get(right, :parent_index)},
-        StructureEntry.cache_entry(right_id, system: true)
-      )
-    )
+    |> Map.put(:left, enrich_implementation_structure(left))
+    |> Map.put(:right, enrich_implementation_structure(right))
   end
 
   defp enrich_value_structure(%{"id" => id} = value_map) do

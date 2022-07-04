@@ -142,6 +142,10 @@ defmodule TdDq.Implementations.ConditionRow do
     is_valid_type_value(value_type, raw)
   end
 
+  defp valid_attribute(%{"name" => name, "type" => "reference_dataset_field", "parent_index" => parent_index}, _params) do
+    is_integer(parent_index) and is_binary(name) and String.trim(name) != ""
+  end
+
   defp valid_attribute(_, _), do: false
 
   defp is_valid_type_value("number", value) do
