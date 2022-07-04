@@ -1,4 +1,5 @@
 # Changelog
+
 ## [Unreleased]
 
 ### Changed
@@ -7,17 +8,24 @@
 
 ### Added
 
-- [TD-4920] add results to implementation query api/v2
+- [TD-4920] Add results to implementation query api/v2
+- [TD-4921] Add implementation workflow events
+- [TD-4894] Multiple field validations
+- [TD-4993] Add last_quality_event to implementation api/v2 
+- [TD-4176]
+  - Added descrition in data structure tag
+  - Changed description for comment in data structures tags link
 
 ### Fixed
 
 - [TD-4959] Use implementation_ref instead of implementation_key for status changes
+- [TD-4952] Missing code from [TD-4655]
 
 ## [4.46.1] 2022-06-23
 
 ### Fixed
 
-- [TD-4962] Submit results only for published implementations 
+- [TD-4962] Submit results only for published implementations
 
 ## [4.46.0] 2022-06-21
 

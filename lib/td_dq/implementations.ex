@@ -179,21 +179,22 @@ defmodule TdDq.Implementations do
         ])
       )
     end)
-    |> upsert(changeset, status)
+    |> upsert(changeset, status, user_id)
     |> Multi.run(:data_structures, &create_implementation_structures/2)
+    |> Multi.run(:audit_status, Audit, :implementation_status_updated, [changeset, user_id])
     |> Multi.run(:audit, Audit, :implementation_updated, [changeset, user_id])
     |> Multi.run(:cache, ImplementationLoader, :maybe_update_implementation_cache, [])
     |> Repo.transaction()
     |> on_upsert()
   end
 
-  defp upsert(multi, changeset, :published) do
+  defp upsert(multi, changeset, :published, _) do
     Multi.insert(multi, :implementation, changeset)
   end
 
-  defp upsert(multi, %{data: implementation} = changeset, _not_published) do
+  defp upsert(multi, %{data: implementation} = changeset, _not_published, user_id) do
     case Changeset.get_change(changeset, :status) do
-      :published -> Workflow.maybe_version_existing(multi, implementation, "published")
+      :published -> Workflow.maybe_version_existing(multi, implementation, "published", user_id)
       _ -> multi
     end
     |> Multi.update(:implementation, changeset)
@@ -217,11 +218,10 @@ defmodule TdDq.Implementations do
         implementation_type: type,
         rule: rule,
         rule_id: rule_id,
-        status: :draft,
         version: v + 1,
         implementation_ref: implementation_ref
       },
-      params
+      Map.put(params, "status", "draft")
     )
   end
 
@@ -263,6 +263,26 @@ defmodule TdDq.Implementations do
     |> deprecate()
   end
 
+  @doc """
+  Deprecate a list of implementations by ids
+
+  This function is used for automatic deprecation.
+  When a data structure is deleted and is related to an Implementation
+
+  ## Examples
+
+      iex> deprecate([1,2,3])
+      {:ok,
+      %{
+        audit: ["1656487740089-0"],
+        audit_status: :unchanged,
+        deprecated: {1,[%Implementation{}, ...]}
+      }}
+
+      iex> deprecate([])
+      {:ok, %{audit: [], audit_status: :unchanged, deprecated: {0, []}}}
+
+  """
   @spec deprecate(list(integer())) ::
           :ok | {:ok, map} | {:error, Multi.name(), any, %{required(Multi.name()) => any}}
   def deprecate([]), do: :ok
@@ -308,7 +328,7 @@ defmodule TdDq.Implementations do
 
     Multi.new()
     |> Multi.update(:implementation, changeset)
-    |> Multi.run(:audit, Audit, :implementation_deprecated, [changeset, user_id])
+    |> Multi.run(:audit_status, Audit, :implementation_status_updated, [changeset, user_id])
     |> Repo.transaction()
     |> on_delete()
   end

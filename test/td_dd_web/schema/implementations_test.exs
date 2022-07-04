@@ -58,6 +58,19 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
   }
   """
 
+  @implementation_with_quality_event_query """
+  query Implementation($id: ID!) {
+    implementation(id: $id) {
+      id,
+      last_quality_event {
+        message
+        type
+        inserted_at
+      }
+    }
+  }
+  """
+
   @implementation_with_results_and_segments_query """
   query Implementation($id: ID!) {
     implementation(id: $id) {
@@ -101,6 +114,34 @@ defmodule TdDdWeb.Schema.ImplementationsTest do
   end
 
   describe "Implementations query" do
+    @tag authentication: [role: "admin"]
+    test "return last result event when is requested", %{conn: conn} do
+      %{id: implementation_id} = insert(:implementation)
+
+      %{id: execution_id} = insert(:execution, implementation_id: implementation_id)
+
+      params = %{
+        message: "foo",
+        inserted_at: "2022-06-30T14:05:59.889855Z",
+        type: "FAILED",
+        execution_id: execution_id
+      }
+
+      insert(:quality_event, params)
+
+      assert %{"data" => %{"implementation" => %{"last_quality_event" => last_quality_event}}} =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @implementation_with_quality_event_query,
+                 "variables" => %{id: implementation_id}
+               })
+               |> json_response(:ok)
+
+      assert params
+             |> Map.Helpers.stringify_keys()
+             |> Map.take(Map.keys(last_quality_event)) == last_quality_event
+    end
+
     @tag authentication: [role: "admin"]
     test "return version when requested", %{conn: conn} do
       %{id: implementation_id} = insert(:implementation)
