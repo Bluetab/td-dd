@@ -175,18 +175,13 @@ defmodule TdDq.Implementations.ConditionRow do
   end
 
   defp is_valid_type_value("field_list", value) do
-    is_list(value) and Enum.all?(value, &is_field(&1))
+    is_list(value) and Enum.all?(value, fn
+      %{"id" => id} -> is_integer(id)
+      value -> valid_attribute(value, nil)
+    end)
   end
 
   defp is_valid_type_value(_other_type, _value) do
-    false
-  end
-
-  defp is_field(%{"id" => id}) do
-    is_integer(id)
-  end
-
-  defp is_field(_) do
     false
   end
 
