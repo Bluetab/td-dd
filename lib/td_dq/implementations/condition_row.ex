@@ -148,7 +148,10 @@ defmodule TdDq.Implementations.ConditionRow do
     is_valid_type_value(value_type, raw)
   end
 
-  defp valid_attribute(%{"name" => name, "type" => "reference_dataset_field", "parent_index" => parent_index}, _params) do
+  defp valid_attribute(
+         %{"name" => name, "type" => "reference_dataset_field", "parent_index" => parent_index},
+         _params
+       ) do
     is_integer(parent_index) and is_binary(name) and String.trim(name) != ""
   end
 
@@ -175,10 +178,11 @@ defmodule TdDq.Implementations.ConditionRow do
   end
 
   defp is_valid_type_value("field_list", value) do
-    is_list(value) and Enum.all?(value, fn
-      %{"id" => id} -> is_integer(id)
-      value -> valid_attribute(value, nil)
-    end)
+    is_list(value) and
+      Enum.all?(value, fn
+        %{"id" => id} -> is_integer(id)
+        value -> valid_attribute(value, nil)
+      end)
   end
 
   defp is_valid_type_value(_other_type, _value) do

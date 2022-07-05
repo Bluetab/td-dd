@@ -21,6 +21,7 @@ defmodule TdDq.Implementations.Structure do
 
   def changeset(%__MODULE__{} = struct, %{} = params) do
     type = Map.get(params, :type, Map.get(params, "type"))
+
     struct
     |> cast(params, [:id, :type, :name, :parent_index])
     |> validate_required_by_type(type)

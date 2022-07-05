@@ -17,28 +17,43 @@ defmodule TdDq.Implementations.ConditionRowTest do
       assert %{valid?: false, errors: errors} = ConditionRow.changeset(params)
       assert {"invalid_attribute", [validation: :invalid]} = errors[:value]
 
-      params = string_params_for(:condition_row, value: [%{
-        type: "reference_dataset_field",
-        name: "field_name"
-      }])
+      params =
+        string_params_for(:condition_row,
+          value: [
+            %{
+              type: "reference_dataset_field",
+              name: "field_name"
+            }
+          ]
+        )
 
       assert %{valid?: false, errors: errors} = ConditionRow.changeset(params)
       assert {"invalid_attribute", [validation: :invalid]} = errors[:value]
 
-      params = string_params_for(:condition_row, value: [%{
-        type: "reference_dataset_field",
-        name: "",
-        parent_index: 4
-      }])
+      params =
+        string_params_for(:condition_row,
+          value: [
+            %{
+              type: "reference_dataset_field",
+              name: "",
+              parent_index: 4
+            }
+          ]
+        )
 
       assert %{valid?: false, errors: errors} = ConditionRow.changeset(params)
       assert {"invalid_attribute", [validation: :invalid]} = errors[:value]
 
-      params = string_params_for(:condition_row, value: [%{
-        type: "reference_dataset_field",
-        name: "field_name",
-        parent_index: 4
-      }])
+      params =
+        string_params_for(:condition_row,
+          value: [
+            %{
+              type: "reference_dataset_field",
+              name: "field_name",
+              parent_index: 4
+            }
+          ]
+        )
 
       assert %{valid?: true} = ConditionRow.changeset(params)
     end
@@ -164,7 +179,11 @@ defmodule TdDq.Implementations.ConditionRowTest do
     params =
       string_params_for(
         :condition_row,
-        value: [%{fields: [%{name: "field", type: "reference_dataset_field", parent_index: 2}, %{id: 3}]}],
+        value: [
+          %{
+            fields: [%{name: "field", type: "reference_dataset_field", parent_index: 2}, %{id: 3}]
+          }
+        ],
         operator: %{name: "unique", value_type: "field_list"}
       )
 
@@ -179,8 +198,8 @@ defmodule TdDq.Implementations.ConditionRowTest do
         operator: %{name: "unique", value_type: "field_list"}
       )
 
-      assert %{valid?: false, errors: errors} = ConditionRow.changeset(params)
-      assert {"invalid_attribute", [validation: :invalid]} = errors[:value]
+    assert %{valid?: false, errors: errors} = ConditionRow.changeset(params)
+    assert {"invalid_attribute", [validation: :invalid]} = errors[:value]
   end
 
   test "field_list: check fields not contained in 'fields' map" do
