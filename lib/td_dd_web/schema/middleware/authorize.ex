@@ -20,12 +20,8 @@ defmodule TdDdWeb.Schema.Middleware.Authorize do
          {:can, true} <- {:can, can?(claims, action, resource)} do
       resolution
     else
-      {:can, _} ->
-        Resolution.put_result(resolution, {:error, :forbidden})
-
-      x ->
-        IO.inspect(x, label: "AUTH")
-        Resolution.put_result(resolution, {:error, :unauthorized})
+      {:can, _} -> Resolution.put_result(resolution, {:error, :forbidden})
+      _ -> Resolution.put_result(resolution, {:error, :unauthorized})
     end
   end
 end
