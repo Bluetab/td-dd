@@ -4,6 +4,12 @@
 
 ### Changed
 
+- [TD-3614] Support for access token revocation
+
+## [4.47.0] 2022-07-05
+
+### Changed
+
 - [TD-4412] Update td-cache for changes in templates preprocessing
 
 ### Added
@@ -12,9 +18,7 @@
 - [TD-4921] Add implementation workflow events
 - [TD-4894] Multiple field validations
 - [TD-4993] Add last_quality_event to implementation api/v2 
-- [TD-4176]
-  - Added descrition in data structure tag
-  - Changed description for comment in data structures tags link
+- [TD-4176] Structure tags may now have a description
 - [TD-4661] Support for ReferenceDatasets on Implementations
 
 ### Fixed
