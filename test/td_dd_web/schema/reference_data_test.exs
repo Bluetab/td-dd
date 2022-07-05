@@ -102,6 +102,44 @@ defmodule TdDdWeb.Schema.ReferenceDataTest do
       assert [%{"message" => "forbidden", "path" => ["referenceDataset"]}] = errors
     end
 
+    @tag authentication: [
+           role: "user",
+           permissions: ["manage_quality_rule_implementations"]
+         ]
+    test "returns reference dataset when queried by user with permissions", %{conn: conn} do
+      %{id: id, name: name} = insert(:reference_dataset)
+
+      variables = %{"id" => "#{id}"}
+
+      assert %{"data" => data} =
+               resp =
+               conn
+               |> post("/api/v2", %{"query" => @dataset, "variables" => variables})
+               |> json_response(:ok)
+
+      refute Map.has_key?(resp, "errors")
+      assert %{"referenceDataset" => dataset} = data
+      assert %{"name" => ^name, "rowCount" => 2, "rows" => [_, _]} = dataset
+    end
+
+    @tag authentication: [
+           role: "user",
+           permissions: ["manage_quality_rule_implementations"]
+         ]
+    test "returns reference datasets list when queried by user with permissions", %{conn: conn} do
+      %{name: name} = insert(:reference_dataset)
+
+      assert %{"data" => data} =
+               resp =
+               conn
+               |> post("/api/v2", %{"query" => @datasets})
+               |> json_response(:ok)
+
+      refute Map.has_key?(resp, "errors")
+      assert %{"referenceDatasets" => [dataset]} = data
+      assert %{"name" => ^name, "rowCount" => 2} = dataset
+    end
+
     for role <- ["admin", "service"] do
       @tag authentication: [role: role]
       test "returns data when queried by #{role} account", %{conn: conn} do

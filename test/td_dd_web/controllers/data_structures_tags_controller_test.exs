@@ -41,7 +41,7 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
                        "id" => ^tag_id,
                        "name" => ^name,
                        "description" => _description
-                      }
+                     }
                    }
                  }
                ]
@@ -87,10 +87,10 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
                    "_embedded" => %{
                      "data_structure" => %{"id" => ^data_structure_id},
                      "data_structure_tag" => %{
-                        "id" => ^tag_id,
-                        "name" => ^name,
-                        "description" => ^description
-                      }
+                       "id" => ^tag_id,
+                       "name" => ^name,
+                       "description" => ^description
+                     }
                    }
                  }
                ]
@@ -172,7 +172,7 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
                      "id" => ^tag_id,
                      "name" => ^name,
                      "description" => ^description
-                    }
+                   }
                  }
                }
              } =
@@ -230,10 +230,10 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
                  "_embedded" => %{
                    "data_structure" => %{"id" => ^data_structure_id},
                    "data_structure_tag" => %{
-                      "id" => ^tag_id,
-                      "name" => ^name,
-                      "description" => ^description
-                    }
+                     "id" => ^tag_id,
+                     "name" => ^name,
+                     "description" => ^description
+                   }
                  }
                }
              } =

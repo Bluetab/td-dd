@@ -64,9 +64,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
         swagger_schema do
           properties do
             structure(Schema.ref(:Structure))
-            left(Schema.ref(:Structure))
-            right(Schema.ref(:Structure))
-            join_type(:string)
+            join_type([:string, :null])
           end
         end,
       Structure:
@@ -185,9 +183,7 @@ defmodule TdDqWeb.SwaggerDefinitions do
         swagger_schema do
           properties do
             structure(Schema.ref(:Structure), "dataset structure", required: true)
-            left(Schema.ref(:Structure))
-            right(Schema.ref(:Structure))
-            join_type(:string)
+            join_type([:string, :null])
           end
         end,
       Structure:

@@ -71,6 +71,12 @@ defmodule TdDd.Canada.Abilities do
     def can?(%Claims{role: "user"} = claims, :query, :implementation_result),
       do: RuleResultAbilities.can?(claims, :view, RuleResult)
 
+    def can?(%Claims{role: "user"} = claims, :query, :reference_dataset),
+      do: ReferenceDataAbilities.can?(claims, :show, ReferenceDataset)
+
+    def can?(%Claims{role: "user"} = claims, :query, :reference_datasets),
+      do: ReferenceDataAbilities.can?(claims, :list, ReferenceDataset)
+
     def can?(%Claims{}, _action, nil), do: false
 
     def can?(%{} = claims, :mutation, mutation) when mutation in @implementation_mutations do
