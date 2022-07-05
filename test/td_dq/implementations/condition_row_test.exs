@@ -11,6 +11,53 @@ defmodule TdDq.Implementations.ConditionRowTest do
       assert {"invalid_attribute", [validation: :invalid]} = errors[:value]
     end
 
+    test "validates value reference_dataset_field is a valid attribute" do
+      params = string_params_for(:condition_row, value: [%{type: "reference_dataset_field"}])
+
+      assert %{valid?: false, errors: errors} = ConditionRow.changeset(params)
+      assert {"invalid_attribute", [validation: :invalid]} = errors[:value]
+
+      params =
+        string_params_for(:condition_row,
+          value: [
+            %{
+              type: "reference_dataset_field",
+              name: "field_name"
+            }
+          ]
+        )
+
+      assert %{valid?: false, errors: errors} = ConditionRow.changeset(params)
+      assert {"invalid_attribute", [validation: :invalid]} = errors[:value]
+
+      params =
+        string_params_for(:condition_row,
+          value: [
+            %{
+              type: "reference_dataset_field",
+              name: "",
+              parent_index: 4
+            }
+          ]
+        )
+
+      assert %{valid?: false, errors: errors} = ConditionRow.changeset(params)
+      assert {"invalid_attribute", [validation: :invalid]} = errors[:value]
+
+      params =
+        string_params_for(:condition_row,
+          value: [
+            %{
+              type: "reference_dataset_field",
+              name: "field_name",
+              parent_index: 4
+            }
+          ]
+        )
+
+      assert %{valid?: true} = ConditionRow.changeset(params)
+    end
+
     test "validates value is a valid range when operator is between dates" do
       operator = %{name: "between", value_type: "date"}
 
@@ -121,6 +168,33 @@ defmodule TdDq.Implementations.ConditionRowTest do
       string_params_for(
         :condition_row,
         value: [%{fields: [%{id: "1"}, %{id: "a_string"}, %{id: 3}]}],
+        operator: %{name: "unique", value_type: "field_list"}
+      )
+
+    assert %{valid?: false, errors: errors} = ConditionRow.changeset(params)
+    assert {"invalid_attribute", [validation: :invalid]} = errors[:value]
+  end
+
+  test "field_list: allows valid reference_dataset_field" do
+    params =
+      string_params_for(
+        :condition_row,
+        value: [
+          %{
+            fields: [%{name: "field", type: "reference_dataset_field", parent_index: 2}, %{id: 3}]
+          }
+        ],
+        operator: %{name: "unique", value_type: "field_list"}
+      )
+
+    assert %{valid?: true} = ConditionRow.changeset(params)
+  end
+
+  test "field_list: check for invalid reference_dataset_field" do
+    params =
+      string_params_for(
+        :condition_row,
+        value: [%{fields: [%{name: "field", type: "reference_dataset_field"}, %{id: 3}]}],
         operator: %{name: "unique", value_type: "field_list"}
       )
 

@@ -6,6 +6,7 @@ defmodule TdDd.Repo.Migrations.RenameDescriptionFieldByCommentInDataStructuresTa
     alter table("data_structures_tags") do
       modify :description, :string, size: 1_000, null: true
     end
+
     # Rename description column by comment
     rename table("data_structures_tags"), :description, to: :comment
   end

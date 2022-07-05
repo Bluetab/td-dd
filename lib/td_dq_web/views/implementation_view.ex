@@ -257,6 +257,12 @@ defmodule TdDqWeb.Implementation.StructureView do
 
   defp with_parent_index(structure_json, _), do: structure_json
 
+  defp with_headers(structure_json, %{headers: headers}) do
+    Map.put(structure_json, :headers, headers)
+  end
+
+  defp with_headers(structure_json, _), do: structure_json
+
   def render("structure.json", %{structure: structure}) do
     %{
       id: Map.get(structure, :id),
@@ -268,6 +274,7 @@ defmodule TdDqWeb.Implementation.StructureView do
       metadata: Map.get(structure, :metadata)
     }
     |> with_parent_index(structure)
+    |> with_headers(structure)
   end
 end
 
@@ -303,7 +310,8 @@ defmodule TdDqWeb.Implementation.DatasetView do
           structure: render_one(structure, StructureView, "structure.json"),
           alias:
             render_one(Map.get(dataset_row, :alias), StructureAliasView, "structure_alias.json"),
-          clauses: render_many(dataset_row.clauses, JoinClauseView, "join_clause_row.json")
+          clauses: render_many(dataset_row.clauses, JoinClauseView, "join_clause_row.json"),
+          join_type: dataset_row.join_type
         }
     end
   end
