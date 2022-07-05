@@ -310,7 +310,8 @@ defmodule TdDqWeb.Implementation.DatasetView do
           structure: render_one(structure, StructureView, "structure.json"),
           alias:
             render_one(Map.get(dataset_row, :alias), StructureAliasView, "structure_alias.json"),
-          clauses: render_many(dataset_row.clauses, JoinClauseView, "join_clause_row.json")
+          clauses: render_many(dataset_row.clauses, JoinClauseView, "join_clause_row.json"),
+          join_type: dataset_row.join_type
         }
     end
   end
