@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-4925] Create new draft when editing a published implementation
+            only if it has changes.
+
 ## [4.47.0] 2022-07-05
 
 ### Changed
