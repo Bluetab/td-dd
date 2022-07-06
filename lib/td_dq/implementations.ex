@@ -20,7 +20,6 @@ defmodule TdDq.Implementations do
   alias TdDq.Cache.ImplementationLoader
   alias TdDq.Cache.RuleLoader
   alias TdDq.Events.QualityEvents
-  alias TdDq.Implementations
   alias TdDq.Implementations.Implementation
   alias TdDq.Implementations.ImplementationStructure
   alias TdDq.Implementations.Workflow
@@ -164,22 +163,15 @@ defmodule TdDq.Implementations do
   defp multi_can(false), do: {:error, false}
 
   def maybe_update_implementation(%Implementation{} = implementation, params, %Claims{} = claims) do
-    maybe_updated_implementation = update_implementation(implementation, params, claims)
-
-    case maybe_updated_implementation do
-      {:ok, %{implementation: implementation}} ->
-        {:ok, %{implementation: implementation, error: :nothing}}
-
-      {:error, :check_changes, :implementation_unchanged, _} ->
-        {:ok, %{implementation: implementation, error: :implementation_unchanged}}
-
-      _ ->
-        maybe_updated_implementation
+    if need_update?(implementation, params) do
+      update_implementation(implementation, params, claims)
+    else
+      {:ok, %{implementation: implementation, error: :implementation_unchanged}}
     end
   end
 
   def update_implementation(
-        %Implementation{id: implementation_id, status: status} = implementation,
+        %Implementation{status: status} = implementation,
         params,
         %Claims{user_id: user_id} = claims
       ) do
@@ -196,7 +188,6 @@ defmodule TdDq.Implementations do
       )
     end)
     |> upsert(changeset, status, user_id)
-    |> Multi.run(:check_changes, Implementations, :check_changes, [status, implementation_id])
     |> Multi.run(:data_structures, &create_implementation_structures/2)
     |> Multi.run(:audit_status, Audit, :implementation_status_updated, [changeset, user_id])
     |> Multi.run(:audit, Audit, :implementation_updated, [changeset, user_id])
@@ -205,36 +196,10 @@ defmodule TdDq.Implementations do
     |> on_upsert()
   end
 
-  def check_changes(
-        _repo,
-        %{implementation: %{id: new_implementation_id}},
-        :published,
-        implementation_id
-      ) do
-    [imp, new_imp] =
-      [implementation_id, new_implementation_id]
-      |> Enum.map(fn id ->
-        id
-        |> get_implementation!()
-        |> Map.from_struct()
-        |> MapSet.new()
-      end)
-
-    avoidable_keys = [:id, :status, :inserted_at, :updated_at, :version]
-
-    MapSet.difference(imp, new_imp)
-    |> MapSet.to_list()
-    |> Keyword.drop(avoidable_keys)
-    |> Enum.empty?()
-    |> if do
-      {:error, :implementation_unchanged}
-    else
-      {:ok, nil}
-    end
-  end
-
-  def check_changes(_repo, _changeset, _status, _implementation_id) do
-    {:ok, nil}
+  defp need_update?(implementation, params) do
+    implementation
+    |> Implementation.changeset(params)
+    |> Map.get(:changes) != %{}
   end
 
   defp upsert(multi, changeset, :published, _) do

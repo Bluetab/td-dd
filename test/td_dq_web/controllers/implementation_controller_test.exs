@@ -872,6 +872,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
         @rule_implementation_attr
         |> Map.put(:rule_id, rule.id)
         |> Map.Helpers.stringify_keys()
+        |> Map.drop(["status"])
 
       assert %{"data" => %{"id" => id}} =
                conn
@@ -889,14 +890,14 @@ defmodule TdDqWeb.ImplementationControllerTest do
       assert {:ok, %{implementation: %{id: ^id, version: 1, status: :published}}} =
                Implementations.update_implementation(
                  implementation,
-                 %{status: :published, minimum: implementation.minimum - 1},
+                 %{status: :published},
                  claims
                )
 
       assert %{"data" => %{"id" => new_id}} =
                conn
                |> put(Routes.implementation_path(conn, :update, implementation),
-                 rule_implementation: Map.put(creation_attrs, :implementation_key, "fuaah!")
+                 rule_implementation: Map.put(creation_attrs, "implementation_key", "fuaah!")
                )
                |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:ok)
@@ -914,7 +915,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
            swagger_schema: schema,
            claims: claims
          } do
-      rule_implementation_attr = string_params_for(:implementation)
+      rule_implementation_attr = string_params_for(:implementation) |> Map.drop(["status"])
 
       assert %{"data" => %{"id" => id}} =
                conn

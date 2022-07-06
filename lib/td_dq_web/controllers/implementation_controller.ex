@@ -205,8 +205,9 @@ defmodule TdDqWeb.ImplementationController do
     implementation = Implementations.get_implementation!(id)
 
     with {:can, true} <- {:can, can?(claims, edit(implementation))},
-         {:ok, %{implementation: %{id: id}, error: error}} <-
+         {:ok, %{implementation: %{id: id}} = update_info} <-
            Implementations.maybe_update_implementation(implementation, update_params, claims),
+         error <- Map.get(update_info, :error, :nothing),
          implementation <-
            Implementations.get_implementation!(id, enrich: :source, preload: [:rule, :results]) do
       render(conn, "show.json", implementation: implementation, error: error)
