@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+- [TD-4997] Change search executions API sources list filter from 'AND' to 'OR'
+
 ## [4.47.0] 2022-07-05
 
 ### Changed
