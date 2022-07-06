@@ -1460,11 +1460,14 @@ defmodule TdDd.DataStructuresTest do
       comment = "foo"
       structure = %{id: data_structure_id, external_id: external_id} = insert(:data_structure)
       %{name: version_name} = insert(:data_structure_version, data_structure: structure)
-      tag = %{
-        id: tag_id,
-        name: tag_name,
-        description: _tag_description
-      } = insert(:data_structure_tag)
+
+      tag =
+        %{
+          id: tag_id,
+          name: tag_name,
+          description: _tag_description
+        } = insert(:data_structure_tag)
+
       params = %{comment: comment}
 
       {:ok,
@@ -1494,11 +1497,13 @@ defmodule TdDd.DataStructuresTest do
     test "updates link information when it already exists", %{claims: claims} do
       comment = "bar"
       structure = %{id: data_structure_id, external_id: external_id} = insert(:data_structure)
-      tag = %{
-        id: tag_id,
-        name: tag_name,
-        description: _tag_description
-      } = insert(:data_structure_tag)
+
+      tag =
+        %{
+          id: tag_id,
+          name: tag_name,
+          description: _tag_description
+        } = insert(:data_structure_tag)
 
       %{name: version_name} = insert(:data_structure_version, data_structure: structure)
 
@@ -1540,25 +1545,28 @@ defmodule TdDd.DataStructuresTest do
 
       params = %{comment: String.duplicate("foo", 334)}
 
-     assert {:error, _,
-       %{
-         errors: [
-           comment:
-             {"max.length.1000", [count: 1000, validation: :length, kind: :max, type: :string]}
-         ],
-         valid?: false
-       }, _} = DataStructures.link_tag(structure, tag, params, claims)
+      assert {:error, _,
+              %{
+                errors: [
+                  comment:
+                    {"max.length.1000",
+                     [count: 1000, validation: :length, kind: :max, type: :string]}
+                ],
+                valid?: false
+              }, _} = DataStructures.link_tag(structure, tag, params, claims)
     end
   end
 
   describe "get_links_tag/2" do
     test "gets a list of links between a structure and its tags" do
       structure = %{id: data_structure_id} = insert(:data_structure)
-      tag = %{
-        id: data_structure_tag_id,
-        name: name,
-        description: _description
-      } = insert(:data_structure_tag)
+
+      tag =
+        %{
+          id: data_structure_tag_id,
+          name: name,
+          description: _description
+        } = insert(:data_structure_tag)
 
       %{id: link_id, comment: comment} =
         insert(:data_structures_tags, data_structure: structure, data_structure_tag: tag)
@@ -1577,11 +1585,14 @@ defmodule TdDd.DataStructuresTest do
   describe "delete_link_tag/2" do
     test "deletes link between tag and structure", %{claims: claims} do
       structure = %{id: data_structure_id, external_id: external_id} = insert(:data_structure)
-      tag = %{
-        id: data_structure_tag_id,
-        name: tag_name,
-        description: _description
-      } = insert(:data_structure_tag)
+
+      tag =
+        %{
+          id: data_structure_tag_id,
+          name: tag_name,
+          description: _description
+        } = insert(:data_structure_tag)
+
       %{name: version_name} = insert(:data_structure_version, data_structure: structure)
 
       %{comment: comment} =

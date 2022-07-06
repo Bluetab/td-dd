@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [4.47.0] 2022-07-05
 
 ### Changed
 
@@ -16,6 +16,7 @@
 - [TD-4176]
   - Added descrition in data structure tag
   - Changed description for comment in data structures tags link
+- [TD-4661] Support for ReferenceDatasets on Implementations
 
 ### Fixed
 

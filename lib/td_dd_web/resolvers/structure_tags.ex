@@ -19,7 +19,9 @@ defmodule TdDdWeb.Resolvers.StructureTags do
 
   def create_structure_tag(_parent, %{structure_tag: params} = _args, _resolution) do
     case DataStructures.create_data_structure_tag(params) do
-      {:ok, %{id: id} = _tag} -> {:ok, DataStructures.get_data_structure_tag(id: id)}
+      {:ok, %{id: id} = _tag} ->
+        {:ok, DataStructures.get_data_structure_tag(id: id)}
+
       {:error, changeset} ->
         {:error, ChangesetUtils.error_message_list_on(changeset)}
     end
@@ -32,9 +34,15 @@ defmodule TdDdWeb.Resolvers.StructureTags do
          {:ok, _} = reply <- DataStructures.update_data_structure_tag(tag, params) do
       reply
     else
-      {:claims, nil} -> {:error, :unauthorized}
-      {:tag, nil} -> {:error, :not_found}
-      {:can, false} -> {:error, :forbidden}
+      {:claims, nil} ->
+        {:error, :unauthorized}
+
+      {:tag, nil} ->
+        {:error, :not_found}
+
+      {:can, false} ->
+        {:error, :forbidden}
+
       {:error, changeset} ->
         {:error, ChangesetUtils.error_message_list_on(changeset)}
     end
