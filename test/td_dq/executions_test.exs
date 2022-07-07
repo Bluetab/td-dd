@@ -148,9 +148,20 @@ defmodule TdDq.ExecutionsTest do
       %{id: implementation_id} = insert(:raw_implementation, source_id: source_id)
       insert(:implementation_structure, implementation_id: implementation_id)
       %{id: execution_id} = insert(:execution, implementation_id: implementation_id)
+
+      %{id: source_id_2, external_id: source_external_id_2} = insert(:source)
+      %{id: implementation_id_2} = insert(:raw_implementation, source_id: source_id_2)
+      insert(:implementation_structure, implementation_id: implementation_id_2)
+      %{id: execution_id_2} = insert(:execution, implementation_id: implementation_id_2)
+
       assert [%{id: ^execution_id}] = Executions.list_executions(%{source: source_external_id})
       assert [%{id: ^execution_id}] = Executions.list_executions(%{sources: [source_external_id]})
-      assert [] = Executions.list_executions(%{sources: [source_external_id, "foo"]})
+
+      assert [
+               %{id: ^execution_id},
+               %{id: ^execution_id_2}
+             ] =
+               Executions.list_executions(%{sources: [source_external_id, source_external_id_2]})
     end
 
     test "list executions filtered by source (linked)" do
@@ -161,9 +172,48 @@ defmodule TdDq.ExecutionsTest do
         insert(:implementation_structure, data_structure_id: data_structure_id)
 
       %{id: execution_id} = insert(:execution, implementation_id: implementation_id)
+
+      # Execution belonging to implementation having two data structures belonging to two different sources
+      %{id: source_id_2, external_id: source_external_id_2} = insert(:source)
+      %{id: source_id_3, external_id: source_external_id_3} = insert(:source)
+      %{id: data_structure_id_2} = insert(:data_structure, source_id: source_id_2)
+      %{id: data_structure_id_3} = insert(:data_structure, source_id: source_id_3)
+
+      %{implementation_id: implementation_id_2} =
+        insert(:implementation_structure, data_structure_id: data_structure_id_2)
+
+      assert %{implementation_id: ^implementation_id_2} =
+               insert(
+                 :implementation_structure,
+                 data_structure_id: data_structure_id_3,
+                 implementation_id: implementation_id_2
+               )
+
+      %{id: execution_id_2} = insert(:execution, implementation_id: implementation_id_2)
+
       assert [%{id: ^execution_id}] = Executions.list_executions(%{source: source_external_id})
       assert [%{id: ^execution_id}] = Executions.list_executions(%{sources: [source_external_id]})
-      assert [] = Executions.list_executions(%{sources: [source_external_id, "foo"]})
+
+      assert [%{id: ^execution_id_2}] =
+               Executions.list_executions(%{source: source_external_id_2})
+
+      assert [%{id: ^execution_id_2}] =
+               Executions.list_executions(%{source: source_external_id_3})
+
+      assert [%{id: ^execution_id_2}] =
+               Executions.list_executions(%{sources: [source_external_id_2, source_external_id_3]})
+
+      assert [
+               %{id: ^execution_id},
+               %{id: ^execution_id_2}
+             ] =
+               Executions.list_executions(%{sources: [source_external_id, source_external_id_2]})
+
+      assert [
+               %{id: ^execution_id},
+               %{id: ^execution_id_2}
+             ] =
+               Executions.list_executions(%{sources: [source_external_id, source_external_id_3]})
     end
   end
 end
