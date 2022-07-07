@@ -2,10 +2,14 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- [TD-5011] `TemplateCache.list/0` was returning duplicate entries
+
 ### Changed
 
-- [TD-4925] Create new draft when editing a published implementation
-            only if it has changes.
+- [TD-4925] Create new draft when editing a published implementation only if it
+  has changes.
 - [TD-4997] Change search executions API sources list filter from 'AND' to 'OR'
 
 ## [4.47.0] 2022-07-05
@@ -19,7 +23,7 @@
 - [TD-4920] Add results to implementation query api/v2
 - [TD-4921] Add implementation workflow events
 - [TD-4894] Multiple field validations
-- [TD-4993] Add last_quality_event to implementation api/v2 
+- [TD-4993] Add last_quality_event to implementation api/v2
 - [TD-4176]
   - Added descrition in data structure tag
   - Changed description for comment in data structures tags link
