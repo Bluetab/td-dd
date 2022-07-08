@@ -34,6 +34,7 @@ defmodule TdDqWeb.Router do
     resources("/executions/search", ExecutionSearchController, only: [:create], singleton: true)
 
     post("/rule_results/search", RuleResultSearchController, :create)
+
     resources("/rule_results", RuleResultController, only: [:index, :delete, :create, :show]) do
       resources("/remediation", RemediationController, singleton: true)
       get("/segment_results", SegmentResultController, :index)

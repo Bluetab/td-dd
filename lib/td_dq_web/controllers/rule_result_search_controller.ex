@@ -7,6 +7,7 @@ defmodule TdDqWeb.RuleResultSearchController do
 
   def create(conn, %{} = params) do
     IO.inspect(params)
+
     conn
     |> put_view(TdDqWeb.RuleResultView)
     |> RuleResultController.index(params)
