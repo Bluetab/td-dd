@@ -13,7 +13,6 @@ defmodule TdDq.Rules.RuleResults do
   alias TdDq.Executions.Execution
   alias TdDq.Implementations.Implementation
   alias TdDq.Rules.Audit
-  alias TdDq.Rules.Rule
   alias TdDq.Rules.RuleResult
 
   require Logger
@@ -26,12 +25,15 @@ defmodule TdDq.Rules.RuleResults do
   end
 
   def list_rule_results(params \\ %{}) do
+    cursor_params = get_cursor_params(params)
+
     RuleResult
     |> join(:inner, [rr, ri], ri in Implementation, on: rr.implementation_id == ri.id)
-    |> join(:inner, [_, ri, r], r in Rule, on: r.id == ri.rule_id)
-    |> where([_, _, r], is_nil(r.deleted_at))
     |> where([_, ri, _], is_nil(ri.deleted_at))
-    |> get_results_gt_date(params)
+    |> where_cursor(cursor_params)
+    |> page_limit(cursor_params)
+    |> order(cursor_params)
+    |> add_filters(params)
     |> Repo.all()
   end
 
@@ -270,13 +272,6 @@ defmodule TdDq.Rules.RuleResults do
   end
 
   defp refresh_on_delete(res, _), do: res
-
-  defp get_results_gt_date(query, %{"since" => ts}) do
-    query
-    |> where([rr, _, _], rr.date > ^ts)
-  end
-
-  defp get_results_gt_date(query, _params), do: query
 
   defp add_filters(query, %{"since" => ts, "from" => "updated_at"}) do
     query

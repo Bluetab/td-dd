@@ -174,6 +174,7 @@ defmodule TdDqWeb.RuleResultControllerTest do
       assert conn
              |> post(Routes.rule_result_path(conn, :create), rule_results: rule_results_file)
              |> response(:ok)
+             |> IO.inspect(label: "load rule results ")
 
       results = RuleResults.get_by(implementation)
 

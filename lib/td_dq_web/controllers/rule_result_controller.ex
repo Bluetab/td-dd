@@ -53,8 +53,11 @@ defmodule TdDqWeb.RuleResultController do
   end
 
   def index(conn, params) do
-    rule_results = RuleResults.list_rule_results(params)
-    render(conn, "index.json", rule_results: rule_results)
+    with claims <- conn.assigns[:current_resource],
+    {:can, true} <- {:can, can?(claims, search(RuleResult))},
+    rule_results <- RuleResults.list_rule_results(params) do
+      render(conn, "index.json", rule_results: rule_results)
+    end
   end
 
   defp rule_results_from_csv(%{path: path}) do
