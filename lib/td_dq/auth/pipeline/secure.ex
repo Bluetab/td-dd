@@ -1,10 +1,15 @@
 defmodule TdDq.Auth.Pipeline.Secure do
-  @moduledoc false
+  @moduledoc """
+  Plug pipeline for routes requiring authentication
+  """
+
   use Guardian.Plug.Pipeline,
-    otp_app: :td_dd,
-    error_handler: TdDq.Auth.ErrorHandler,
+    otp_app: :td_dq,
+    error_handler: Truedat.Auth.ErrorHandler,
     module: TdDq.Auth.Guardian
 
-  plug Guardian.Plug.EnsureAuthenticated
-  plug TdDq.Auth.Plug.CurrentResource
+  plug Guardian.Plug.EnsureAuthenticated, claims: %{"aud" => "truedat", "iss" => "tdauth"}
+  plug Guardian.Plug.LoadResource
+  plug Truedat.Auth.Plug.SessionExists
+  plug Truedat.Auth.Plug.CurrentResource
 end

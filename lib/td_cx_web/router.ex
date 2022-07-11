@@ -7,13 +7,8 @@ defmodule TdCxWeb.Router do
     plug :accepts, ["json"]
   end
 
-  pipeline :api_secure do
+  pipeline :api_auth do
     plug TdCx.Auth.Pipeline.Secure
-  end
-
-  pipeline :api_authorized do
-    plug TdCx.Auth.CurrentResource
-    plug Guardian.Plug.LoadResource
   end
 
   scope "/api/swagger" do
@@ -27,7 +22,7 @@ defmodule TdCxWeb.Router do
   end
 
   scope "/api", TdCxWeb do
-    pipe_through [:api, :api_secure, :api_authorized]
+    pipe_through [:api, :api_auth]
 
     resources "/sources", SourceController, except: [:new, :edit], param: "external_id" do
       resources("/jobs", JobController, only: [:index, :create])
