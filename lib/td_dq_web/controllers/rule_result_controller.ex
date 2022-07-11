@@ -55,8 +55,10 @@ defmodule TdDqWeb.RuleResultController do
   def index(conn, params) do
     with claims <- conn.assigns[:current_resource],
          {:can, true} <- {:can, can?(claims, search(RuleResult))},
-         rule_results <- RuleResults.list_rule_results(params) do
-      render(conn, "index.json", rule_results: rule_results)
+         {:ok, %{all: rule_results, total: total}} <- RuleResults.list_rule_results(params) do
+      conn
+      |> put_resp_header("x-total-count", "#{total}")
+      |> render("index.json", rule_results: rule_results)
     end
   end
 

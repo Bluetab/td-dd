@@ -25,28 +25,18 @@ defmodule TdDq.Rules.RuleResults do
   end
 
   def list_rule_results(params \\ %{}) do
-    cursor_params = get_cursor_params(params)
-
     RuleResult
     |> join(:inner, [rr, ri], ri in Implementation, on: rr.implementation_id == ri.id)
     |> where([_, ri, _], is_nil(ri.deleted_at))
-    |> where_cursor(cursor_params)
-    |> page_limit(cursor_params)
-    |> order(cursor_params)
     |> add_filters(params)
-    |> Repo.all()
+    |> paginate_all(params)
   end
 
   def list_segment_results(params \\ %{}) do
-    cursor_params = get_cursor_params(params)
-
     RuleResult
     |> where([rr], not is_nil(rr.parent_id))
-    |> where_cursor(cursor_params)
-    |> page_limit(cursor_params)
-    |> order(cursor_params)
     |> add_filters(params)
-    |> Repo.all()
+    |> paginate_all(params)
   end
 
   def list_segment_results_by_parent_id(parent_id, _params \\ %{}) do
@@ -312,4 +302,21 @@ defmodule TdDq.Rules.RuleResults do
   end
 
   defp get_cursor_params(params), do: params
+
+  defp paginate_all(query, params) do
+    cursor_params = get_cursor_params(params)
+
+    cursor_query =
+      query
+      |> where_cursor(cursor_params)
+      |> page_limit(cursor_params)
+      |> order(cursor_params)
+
+    total_query = select(query, [rr], count(rr.id))
+
+    Multi.new()
+    |> Multi.all(:all, cursor_query)
+    |> Multi.one(:total, total_query)
+    |> Repo.transaction()
+  end
 end

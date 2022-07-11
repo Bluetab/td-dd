@@ -5,10 +5,6 @@ defmodule TdDqWeb.RuleResultView do
     %{data: render_one(rule_result, __MODULE__, "rule_result.json")}
   end
 
-  def render("index.json", something) do
-    IO.inspect(something, label: "NOTHING")
-  end
-
   def render("index.json", %{rule_results: rule_results}) do
     %{data: render_many(rule_results, __MODULE__, "rule_result.json")}
   end

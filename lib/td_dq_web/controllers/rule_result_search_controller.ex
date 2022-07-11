@@ -6,8 +6,6 @@ defmodule TdDqWeb.RuleResultSearchController do
   action_fallback(TdDqWeb.FallbackController)
 
   def create(conn, %{} = params) do
-    IO.inspect(params)
-
     conn
     |> put_view(TdDqWeb.RuleResultView)
     |> RuleResultController.index(params)
