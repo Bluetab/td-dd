@@ -5,6 +5,9 @@
 ### Changed
 
 - [TD-3614] Support for access token revocation
+- [TD-4925] Create new draft when editing a published implementation
+            only if it has changes.
+- [TD-4997] Change search executions API sources list filter from 'AND' to 'OR'
 
 ## [4.47.0] 2022-07-05
 
