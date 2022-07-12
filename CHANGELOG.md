@@ -5,7 +5,7 @@
 ### Added
 
 - [TD-4987] 
-  - `api/rule_results` now include ruleless implementation results
+  - `api/rule_results/search` now include ruleless implementation results
   - Add pagination for updated_at
 
 ### Fixed
