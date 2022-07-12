@@ -22,4 +22,6 @@ defmodule TdDq.Auth.Guardian do
 
     {:ok, resource}
   end
+
+  def build_claims(claims, _resource, _opts), do: {:ok, %{claims | "aud" => "truedat"}}
 end
