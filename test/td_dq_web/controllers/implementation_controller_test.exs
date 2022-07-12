@@ -826,6 +826,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
       creation_attrs =
         @rule_implementation_attr
         |> Map.put(:rule_id, rule.id)
+        |> Map.put(:status, :draft)
         |> Map.Helpers.stringify_keys()
 
       assert %{"data" => %{"id" => id}} =
@@ -871,8 +872,8 @@ defmodule TdDqWeb.ImplementationControllerTest do
       creation_attrs =
         @rule_implementation_attr
         |> Map.put(:rule_id, rule.id)
+        |> Map.put(:status, :draft)
         |> Map.Helpers.stringify_keys()
-        |> Map.drop(["status"])
 
       assert %{"data" => %{"id" => id}} =
                conn
@@ -942,6 +943,85 @@ defmodule TdDqWeb.ImplementationControllerTest do
                )
                |> validate_resp_schema(schema, "ImplementationResponse")
                |> json_response(:ok)
+    end
+
+    @tag authentication: [role: "admin"]
+    test "return 200 and create a new draft when editing published implementation with different information",
+         %{
+           conn: conn,
+           swagger_schema: schema,
+           claims: claims
+         } do
+      rule_implementation_attr = string_params_for(:implementation, goal: 30, minimum: 10)
+
+      assert %{"data" => %{"id" => id}} =
+               conn
+               |> post(Routes.implementation_path(conn, :create),
+                 rule_implementation: rule_implementation_attr
+               )
+               |> json_response(:created)
+
+      implementation = Implementations.get_implementation(id)
+
+      Implementations.update_implementation(
+        implementation,
+        %{status: :published},
+        claims
+      )
+
+      assert %{"data" => %{"id" => new_id, "status" => "draft"}} =
+               conn
+               |> put(Routes.implementation_path(conn, :update, implementation),
+                 rule_implementation: rule_implementation_attr |> Map.put("goal", 45)
+               )
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:ok)
+
+      assert id != new_id
+    end
+
+    @tag authentication: [
+           role: "user",
+           permissions: @imp_ruleless_permissions ++ [:manage_segments]
+         ]
+    test "return 200 and create a new published when editing published implementation with different information",
+         %{
+           conn: conn,
+           swagger_schema: schema,
+           claims: claims,
+           domain: %{id: domain_id}
+         } do
+      rule_implementation_attr =
+        string_params_for(:implementation, goal: 30, minimum: 10, domain_id: domain_id)
+        |> Map.drop(["status"])
+
+      assert %{"data" => %{"id" => id}} =
+               conn
+               |> post(Routes.implementation_path(conn, :create),
+                 rule_implementation: rule_implementation_attr
+               )
+               |> json_response(:created)
+
+      implementation = Implementations.get_implementation(id)
+
+      Implementations.update_implementation(
+        implementation,
+        %{status: :published},
+        claims
+      )
+
+      assert %{"data" => %{"id" => new_id, "status" => "published"}} =
+               conn
+               |> put(Routes.implementation_path(conn, :update, implementation),
+                 rule_implementation:
+                   rule_implementation_attr
+                   |> Map.put("goal", 45)
+                   |> Map.put("status", "published")
+               )
+               |> validate_resp_schema(schema, "ImplementationResponse")
+               |> json_response(:ok)
+
+      assert id != new_id
     end
 
     @tag authentication: [role: "admin"]
@@ -1490,7 +1570,13 @@ defmodule TdDqWeb.ImplementationControllerTest do
 
       assert ref != nil
 
-      params = %{goal: "40", dataset: @valid_dataset, minimum: "3", validations: @validations}
+      params = %{
+        goal: "40",
+        dataset: @valid_dataset,
+        minimum: "3",
+        validations: @validations,
+        status: "draft"
+      }
 
       assert %{"data" => data} =
                conn
