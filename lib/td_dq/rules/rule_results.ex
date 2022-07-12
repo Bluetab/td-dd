@@ -29,6 +29,7 @@ defmodule TdDq.Rules.RuleResults do
     |> join(:inner, [rr, ri], ri in Implementation, on: rr.implementation_id == ri.id)
     |> where([_, ri, _], is_nil(ri.deleted_at))
     |> add_filters(params)
+    |> order(params)
     |> paginate_all(params)
   end
 
@@ -36,6 +37,7 @@ defmodule TdDq.Rules.RuleResults do
     RuleResult
     |> where([rr], not is_nil(rr.parent_id))
     |> add_filters(params)
+    |> order(params)
     |> paginate_all(params)
   end
 
@@ -287,12 +289,10 @@ defmodule TdDq.Rules.RuleResults do
 
   defp page_limit(query, _), do: query
 
-  defp order(query, cursor_params) do
-    case Map.has_key?(cursor_params, :cursor) do
-      true -> order_by(query, [sn], asc: sn.updated_at, asc: sn.id)
-      false -> query
-    end
-  end
+  defp order(query, %{"from" => "updated_at"}),
+    do: order_by(query, [rr], asc: rr.updated_at, asc: rr.id)
+
+  defp order(query, _params), do: order_by(query, [rr], asc: rr.date, asc: rr.id)
 
   defp get_cursor_params(%{"cursor" => %{} = cursor}) do
     offset = Map.get(cursor, "offset")
@@ -310,9 +310,8 @@ defmodule TdDq.Rules.RuleResults do
       query
       |> where_cursor(cursor_params)
       |> page_limit(cursor_params)
-      |> order(cursor_params)
 
-    total_query = select(query, [rr], count(rr.id))
+    total_query = select(subquery(query), [rr], count())
 
     Multi.new()
     |> Multi.all(:all, cursor_query)
