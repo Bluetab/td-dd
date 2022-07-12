@@ -22,6 +22,7 @@ defmodule TdDd.Search.Mappings do
       id: %{type: "long", index: false},
       data_structure_id: %{type: "long"},
       name: %{type: "text", fields: @raw_sort_ngram},
+      original_name: %{type: "text", fields: @raw_sort_ngram},
       system: %{
         properties: %{
           id: %{type: "long", index: false},

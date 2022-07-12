@@ -554,6 +554,19 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     setup :profile_source
 
     @tag authentication: [role: "user", permissions: [:view_data_structure]]
+    test "renders alias in data_fields", %{conn: conn, data_structure: %{id: id}} do
+      assert %{"data" => data} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(conn, :show, id, "latest")
+               )
+               |> json_response(:ok)
+
+      assert %{"data_fields" => [field]} = data
+      assert %{"alias" => "field_alias"} = field
+    end
+
+    @tag authentication: [role: "user", permissions: [:view_data_structure]]
     test "user without permission can not profile structure", %{
       conn: conn,
       data_structure: %{id: id}
@@ -727,7 +740,7 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
   end
 
   describe "GET /api/data_structures/:id/versions/:version with notes" do
-    setup :create_structure_with_published_note
+    setup [:create_structure, :create_published_note]
 
     @tag authentication: [role: "admin"]
     test "return only published note content matched with the template", %{
@@ -735,33 +748,30 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       data_structure_version: %{data_structure_id: id},
       published_note: %{df_content: %{"Field1" => field_1, "alias" => content_alias}}
     } do
-      assert %{"data" => %{"published_note" => note}} =
+      assert %{"data" => data} =
                conn
                |> get(
                  Routes.data_structure_data_structure_version_path(conn, :show, id, "latest")
                )
                |> json_response(:ok)
 
+      assert %{"published_note" => note, "alias" => ^content_alias} = data
       assert note == %{"Field1" => field_1, "alias" => content_alias}
     end
 
     @tag authentication: [role: "admin"]
-    test "children renders published note", %{
+    test "children renders alias", %{
       conn: conn,
-      data_structure_version: structure_version,
+      data_structure_version: %{id: child_id},
       published_note: %{df_content: %{"alias" => content_alias}}
     } do
-      %{data_structure_id: parent_structure_id} = parent_version = insert(:data_structure_version)
+      %{parent: %{data_structure_id: parent_structure_id}} =
+        insert(:data_structure_relation,
+          child_id: child_id,
+          relation_type_id: RelationTypes.default_id!()
+        )
 
-      relation_type_id = RelationTypes.default_id!()
-
-      insert(:data_structure_relation,
-        parent_id: parent_version.id,
-        child_id: structure_version.id,
-        relation_type_id: relation_type_id
-      )
-
-      assert %{"data" => %{"children" => [%{"published_note" => note}]}} =
+      assert %{"data" => %{"children" => [child]}} =
                conn
                |> get(
                  Routes.data_structure_data_structure_version_path(
@@ -773,11 +783,40 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                )
                |> json_response(:ok)
 
-      assert note == %{"alias" => content_alias}
+      refute Map.has_key?(child, "published_note")
+      assert %{"alias" => ^content_alias} = child
     end
 
     @tag authentication: [role: "admin"]
-    test "siblings renders published note", %{
+    test "parents renders alias", %{
+      conn: conn,
+      data_structure_version: %{id: parent_id},
+      published_note: %{df_content: %{"alias" => content_alias}}
+    } do
+      %{child: %{data_structure_id: child_structure_id}} =
+        insert(:data_structure_relation,
+          parent_id: parent_id,
+          relation_type_id: RelationTypes.default_id!()
+        )
+
+      assert %{"data" => %{"parents" => [child]}} =
+               conn
+               |> get(
+                 Routes.data_structure_data_structure_version_path(
+                   conn,
+                   :show,
+                   child_structure_id,
+                   "latest"
+                 )
+               )
+               |> json_response(:ok)
+
+      refute Map.has_key?(child, "published_note")
+      assert %{"alias" => ^content_alias} = child
+    end
+
+    @tag authentication: [role: "admin"]
+    test "siblings renders alias", %{
       conn: conn,
       data_structure_version: structure_version,
       published_note: %{df_content: %{"alias" => content_alias}}
@@ -787,21 +826,19 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
       %{data_structure_id: sibling_structure_id} =
         sibling_version = insert(:data_structure_version)
 
-      relation_type_id = RelationTypes.default_id!()
-
       insert(:data_structure_relation,
         parent_id: parent_version.id,
         child_id: structure_version.id,
-        relation_type_id: relation_type_id
+        relation_type_id: RelationTypes.default_id!()
       )
 
       insert(:data_structure_relation,
         parent_id: parent_version.id,
         child_id: sibling_version.id,
-        relation_type_id: relation_type_id
+        relation_type_id: RelationTypes.default_id!()
       )
 
-      assert %{"data" => %{"siblings" => [%{"published_note" => note}, _]}} =
+      assert %{"data" => %{"siblings" => [sibling, _]}} =
                conn
                |> get(
                  Routes.data_structure_data_structure_version_path(
@@ -813,7 +850,8 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
                )
                |> json_response(:ok)
 
-      assert note == %{"alias" => content_alias}
+      refute Map.has_key?(sibling, "published_note")
+      assert %{"alias" => ^content_alias} = sibling
     end
   end
 
@@ -1015,19 +1053,19 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     ]
   end
 
-  defp create_structure_with_published_note(_) do
+  defp create_structure(_) do
     %{data_structure: data_structure} = data_structure_version = insert(:data_structure_version)
+    [data_structure: data_structure, data_structure_version: data_structure_version]
+  end
 
-    note =
-      insert(:structure_note,
-        data_structure: data_structure,
-        df_content: %{"Field1" => "xyzzy", "list" => "two", "alias" => "some alias"},
-        status: :published
-      )
-
+  defp create_published_note(%{data_structure: data_structure}) do
     [
-      published_note: note,
-      data_structure_version: data_structure_version
+      published_note:
+        insert(:structure_note,
+          data_structure: data_structure,
+          df_content: %{"Field1" => "xyzzy", "list" => "two", "alias" => "some alias"},
+          status: :published
+        )
     ]
   end
 
@@ -1088,6 +1126,12 @@ defmodule TdDdWeb.DataStructureVersionControllerTest do
     %{id: source_id} = insert(:source, config: %{"job_types" => ["catalog", "profile"]})
 
     data_structure = insert(:data_structure, domain_ids: [domain.id], source_id: source_id)
+
+    insert(:structure_note,
+      status: :published,
+      df_content: %{"alias" => "field_alias"},
+      data_structure: data_structure
+    )
 
     data_structure_version =
       insert(:data_structure_version,

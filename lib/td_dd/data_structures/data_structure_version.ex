@@ -38,6 +38,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     field(:grant, :map, virtual: true)
     field(:with_profiling, :boolean, virtual: true)
     field(:_filters, :map, virtual: true)
+    field(:alias, :string, virtual: true)
 
     belongs_to(:data_structure, DataStructure)
 
@@ -144,7 +145,8 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     def encode(
           %DataStructureVersion{
             data_structure:
-              %{search_content: content, tags: tags, domain_ids: _domain_ids} = data_structure,
+              %{alias: alias_name, search_content: content, tags: tags, domain_ids: _domain_ids} =
+                data_structure,
             path: path
           } = dsv
         ) do
@@ -166,7 +168,6 @@ defmodule TdDd.DataStructures.DataStructureVersion do
         :system_id
       ])
       |> Map.put(:latest_note, content)
-      |> Map.put(:published_note, content)
       |> Map.put(:domain, first_domain(data_structure))
       |> Map.put(:field_type, field_type(dsv))
       |> Map.put(:path_sort, path_sort(name_path))
@@ -193,6 +194,15 @@ defmodule TdDd.DataStructures.DataStructureVersion do
           :with_profiling
         ])
       )
+      |> maybe_put_alias(alias_name)
+    end
+
+    defp maybe_put_alias(map, nil), do: map
+
+    defp maybe_put_alias(%{name: original_name} = map, alias_name) do
+      map
+      |> Map.put(:name, alias_name)
+      |> Map.put(:original_name, original_name)
     end
 
     defp path_sort(name_path) when is_list(name_path) do

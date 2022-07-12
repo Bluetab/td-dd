@@ -136,6 +136,7 @@ defmodule TdDdWeb.DataStructureView do
       :linked_concepts,
       :links,
       :name,
+      :original_name,
       :parent,
       :path,
       :source_id,

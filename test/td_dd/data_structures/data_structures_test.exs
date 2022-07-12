@@ -317,7 +317,7 @@ defmodule TdDd.DataStructuresTest do
 
       insert(:structure_note,
         data_structure: data_structure,
-        df_content: %{"string" => "initial", "list" => "one", "foo" => "bar"},
+        df_content: %{"string" => "initial", "list" => "one", "foo" => "bar", "alias" => "baz"},
         status: :published
       )
 
@@ -352,9 +352,7 @@ defmodule TdDd.DataStructuresTest do
       ]
     end
 
-    test "formats data_structure search_content", %{
-      data_structure_version: %{id: id}
-    } do
+    test "formats data_structure search_content and alias", %{data_structure_version: %{id: id}} do
       assert [dsv] =
                DataStructures.enriched_structure_versions(
                  ids: [id],
@@ -364,11 +362,12 @@ defmodule TdDd.DataStructuresTest do
 
       assert %{data_structure: data_structure} = dsv
       assert %{search_content: search_content} = data_structure
+      assert %{alias: "baz"} = data_structure
       assert search_content == %{"string" => "initial", "list" => "one"}
     end
 
     test "returns values suitable for bulk-indexing encoding", %{
-      data_structure_version: %{id: id},
+      data_structure_version: %{id: id, name: original_name},
       domain: %{id: domain_id, name: domain_name, external_id: domain_external_id}
     } do
       assert %{} =
@@ -390,7 +389,9 @@ defmodule TdDd.DataStructuresTest do
                domain: %{id: ^domain_id, name: ^domain_name, external_id: ^domain_external_id},
                path: path,
                path_sort: "yayo~papa",
-               system: %{external_id: _, id: _, name: _}
+               system: %{external_id: _, id: _, name: _},
+               name: "baz",
+               original_name: ^original_name
              } = document
 
       assert latest_note == %{"list" => "one", "string" => "initial"}
@@ -800,8 +801,7 @@ defmodule TdDd.DataStructuresTest do
 
       Hierarchy.update_hierarchy([id])
       assert %{path: path} = DataStructures.get_data_structure_version!(id)
-      assert Enum.map(path, & &1["name"]) == ["foo", "bar", "baz", "xyzzy"]
-      assert Enum.map(path, & &1["published_note"]) == [nil, %{"alias" => alias_name}, nil, nil]
+      assert Enum.map(path, & &1["name"]) == ["foo", alias_name, "baz", "xyzzy"]
     end
 
     test "get_data_structure_version!/2 excludes deleted children if structure is not deleted" do
@@ -1357,6 +1357,13 @@ defmodule TdDd.DataStructuresTest do
       assert [_] = DataStructures.get_children(parent, with_confidential: false)
       assert [] = DataStructures.get_children(parent, with_confidential: false, default: false)
     end
+
+    test "finds non-default relation" do
+      %{parent: parent} = insert(:data_structure_relation)
+
+      assert [_] = DataStructures.get_children(parent, default: false)
+      assert [] = DataStructures.get_children(parent)
+    end
   end
 
   describe "get_parents/2" do
@@ -1364,6 +1371,13 @@ defmodule TdDd.DataStructuresTest do
       %{child: child} = create_relation()
       assert [_] = DataStructures.get_parents(child, with_confidential: false)
       assert [] = DataStructures.get_parents(child, with_confidential: false, default: false)
+    end
+
+    test "finds non-default relation" do
+      %{child: child} = insert(:data_structure_relation)
+
+      assert [_] = DataStructures.get_parents(child, default: false)
+      assert [] = DataStructures.get_parents(child)
     end
   end
 
@@ -1548,9 +1562,7 @@ defmodule TdDd.DataStructuresTest do
       assert {:error, _,
               %{
                 errors: [
-                  comment:
-                    {"max.length.1000",
-                     [count: 1000, validation: :length, kind: :max, type: :string]}
+                  comment: {_, [count: 1000, validation: :length, kind: :max, type: :string]}
                 ],
                 valid?: false
               }, _} = DataStructures.link_tag(structure, tag, params, claims)

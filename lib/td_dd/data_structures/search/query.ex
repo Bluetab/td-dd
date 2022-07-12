@@ -84,6 +84,8 @@ defmodule TdDd.DataStructures.Search.Query do
         fields: [
           "name^2",
           "name.ngram",
+          "original_name^1.5",
+          "original_name.ngram",
           "system.name",
           "path.text",
           "description",

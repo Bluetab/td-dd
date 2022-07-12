@@ -52,5 +52,14 @@ defmodule TdDd.Search.StructureEnricherTest do
 
       assert search_content == valid_content
     end
+
+    test "enriches the alias", %{template: %{name: template_name}} do
+      note = insert(:structure_note, df_content: %{"alias" => "foo"})
+      data_structure = insert(:data_structure, published_note: note)
+      insert(:data_structure_version, type: template_name, data_structure: data_structure)
+
+      assert %{alias: "foo"} =
+               StructureEnricher.enrich(data_structure, template_name, :searchable)
+    end
   end
 end

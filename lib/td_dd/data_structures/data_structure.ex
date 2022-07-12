@@ -34,6 +34,8 @@ defmodule TdDd.DataStructures.DataStructure do
 
     field(:latest_note, :map, virtual: true)
     field(:search_content, :map, virtual: true)
+    field(:alias, :string, virtual: true)
+
     has_one(:published_note, StructureNote, where: [status: :published])
 
     belongs_to(:system, System, on_replace: :update)
