@@ -24,6 +24,6 @@ defmodule TdDd.DataStructures.DataStructureTag do
     |> cast(params, [:name, :domain_ids, :description])
     |> validate_required(:name)
     |> unique_constraint(:name)
-    |> validate_length(:description, max: 1_000, message: "max.length.1000")
+    |> validate_length(:description, max: 1_000)
   end
 end

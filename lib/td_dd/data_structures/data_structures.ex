@@ -960,9 +960,7 @@ defmodule TdDd.DataStructures do
         params,
         claims
       ) do
-    data_structure_id
-    |> get_link_tag_by(tag_id)
-    |> case do
+    case get_link_tag_by(data_structure_id, tag_id) do
       nil -> create_link(data_structure, data_structure_tag, params, claims)
       %DataStructuresTags{} = tag_link -> update_link(tag_link, params, claims)
     end
@@ -973,9 +971,7 @@ defmodule TdDd.DataStructures do
         %DataStructureTag{id: tag_id},
         %Claims{user_id: user_id}
       ) do
-    data_structure_id
-    |> get_link_tag_by(tag_id)
-    |> case do
+    case get_link_tag_by(data_structure_id, tag_id) do
       nil ->
         {:error, :not_found}
 
@@ -1020,12 +1016,22 @@ defmodule TdDd.DataStructures do
 
   defp on_tag_delete(reply), do: reply
 
-  defp create_link(data_structure, data_structure_tag, params, %Claims{user_id: user_id}) do
+  defp create_link(
+         %DataStructure{id: data_structure_id} = data_structure,
+         %DataStructureTag{id: tag_id} = data_structure_tag,
+         params,
+         %Claims{user_id: user_id}
+       ) do
     changeset =
-      params
-      |> DataStructuresTags.changeset()
-      |> DataStructuresTags.put_data_structure(data_structure)
-      |> DataStructuresTags.put_data_structure_tag(data_structure_tag)
+      DataStructuresTags.changeset(
+        %DataStructuresTags{
+          data_structure_tag: data_structure_tag,
+          data_structure_tag_id: tag_id,
+          data_structure_id: data_structure_id,
+          data_structure: data_structure
+        },
+        params
+      )
 
     Multi.new()
     |> Multi.run(:latest, fn _, _ ->
@@ -1037,7 +1043,7 @@ defmodule TdDd.DataStructures do
     |> on_link_insert()
   end
 
-  defp update_link(link, params, %Claims{user_id: user_id}) do
+  defp update_link(%DataStructuresTags{} = link, params, %Claims{user_id: user_id}) do
     link = Repo.preload(link, [:data_structure_tag, :data_structure])
     changeset = DataStructuresTags.changeset(link, params)
 

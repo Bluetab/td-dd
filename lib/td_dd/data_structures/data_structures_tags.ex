@@ -10,31 +10,25 @@ defmodule TdDd.DataStructures.DataStructuresTags do
   alias TdDd.DataStructures.DataStructureTag
 
   schema "data_structures_tags" do
-    belongs_to(:data_structure, DataStructure)
-    belongs_to(:data_structure_tag, DataStructureTag)
-    field(:comment, :string)
-    field(:resource, :map, virtual: true, default: %{})
-    field(:tag, :string, virtual: true)
-    field(:domain_ids, {:array, :integer}, virtual: true, default: [])
+    field :comment, :string
+    field :resource, :map, virtual: true, default: %{}
+    field :tag, :string, virtual: true
+    field :domain_ids, {:array, :integer}, virtual: true, default: []
+    field :inherit, :boolean, default: false
 
-    timestamps(type: :utc_datetime_usec)
+    belongs_to :data_structure, DataStructure
+    belongs_to :data_structure_tag, DataStructureTag
+
+    timestamps type: :utc_datetime_usec
   end
 
-  def changeset(attrs) do
-    changeset(%__MODULE__{}, attrs)
+  def changeset(params) do
+    changeset(%__MODULE__{}, params)
   end
 
-  def changeset(tag_link, attrs) do
-    tag_link
-    |> cast(attrs, [:comment])
-    |> validate_length(:comment, max: 1_000, message: "max.length.1000")
-  end
-
-  def put_data_structure(changeset, data_structure) do
-    put_assoc(changeset, :data_structure, data_structure)
-  end
-
-  def put_data_structure_tag(changeset, data_structure_tag) do
-    put_assoc(changeset, :data_structure_tag, data_structure_tag)
+  def changeset(%__MODULE__{} = struct, params) do
+    struct
+    |> cast(params, [:comment, :inherit])
+    |> validate_length(:comment, max: 1_000)
   end
 end

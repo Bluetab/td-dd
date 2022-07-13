@@ -205,7 +205,8 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
                })
                |> json_response(:ok)
 
-      assert [%{"message" => "max.length.1000"}] = errors
+      assert [%{"field" => "description", "message" => "should be at most 1000 character(s)"}] =
+               errors
     end
   end
 
@@ -277,7 +278,8 @@ defmodule TdDdWeb.Schema.StructureTagsTest do
                })
                |> json_response(:ok)
 
-      assert [%{"message" => "max.length.1000"}] = errors
+      assert [%{"field" => "description", "message" => "should be at most 1000 character(s)"}] =
+               errors
     end
   end
 
