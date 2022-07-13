@@ -20,5 +20,10 @@ defmodule TdDdWeb.Schema.Domains do
     field :parent_id, :id
     field :external_id, :string
     field :name, :string
+    field :actions, list_of(:action), resolve: &Resolvers.Domains.actions/3
+  end
+
+  object :action do
+    field :name, :string
   end
 end

@@ -12,6 +12,20 @@ defmodule TdDdWeb.Schema.DomainTest do
   }
   """
 
+  @domains_with_actions """
+  query Domains($action: String!) {
+    domains(action: $action) {
+      id
+      parentId
+      externalId
+      name
+      actions {
+        name
+      }
+    }
+  }
+  """
+
   @variables %{"action" => "manage_tags"}
 
   describe "domains query" do
@@ -55,6 +69,28 @@ defmodule TdDdWeb.Schema.DomainTest do
       refute Map.has_key?(resp, "errors")
       assert %{"domains" => domains} = data
       assert_lists_equal(domains, [domain], &(&1 == expected(&2)))
+    end
+
+    @tag authentication: [
+           role: "user",
+           permissions: [
+             :manage_quality_rule_implementations,
+             :manage_raw_quality_rule_implementations
+           ]
+         ]
+    test "returns the actions for specific domain", %{conn: conn, domain: domain} do
+      assert %{"data" => data} =
+               resp =
+               conn
+               |> post("/api/v2", %{
+                 "query" => @domains_with_actions,
+                 "variables" => %{"action" => "manage_implementations"}
+               })
+               |> json_response(:ok)
+
+      refute Map.has_key?(resp, "errors")
+      assert %{"domains" => %{"actions" => _actions}} = data
+      # assert_lists_equal(domains, [domain], &(&1 == expected(&2)))
     end
   end
 

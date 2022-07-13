@@ -10,6 +10,9 @@ defmodule TdDdWeb.Resolvers.Domains do
     {:ok, permitted_domains(action, resolution)}
   end
 
+  # def actions(domain, _args, _resolutions) do
+  # end
+
   defp permitted_domains(action, resolution) do
     resolution
     |> claims()
@@ -25,6 +28,10 @@ defmodule TdDdWeb.Resolvers.Domains do
   defp permitted_domain_ids(%{role: "user", jti: jti}, "manage_tags") do
     Permissions.permitted_domain_ids(jti, :link_data_structure_tag)
   end
+
+  # defp permitted_domain_ids(%{role: "user", jti: jti}, "manage_tags") do
+  #   Permissions.permitted_domain_ids(jti, :link_data_structure_tag)
+  # end
 
   defp permitted_domain_ids(_other, _action), do: []
 

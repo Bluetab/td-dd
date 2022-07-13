@@ -12,6 +12,10 @@ defmodule TdDdWeb.Schema.Implementations do
       arg(:id, non_null(:id))
       resolve(&Resolvers.Implementations.implementation/3)
     end
+
+    # field :actions, non_null(:actions) do
+    #   resolve(&Resolvers.Implementations.actions/3)
+    # end
   end
 
   object :implementation_mutations do
