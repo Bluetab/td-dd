@@ -1,5 +1,11 @@
 # Changelog
 
+## [4.47.1] 2022-07-18
+
+### Added
+
+- [TD-5053] Add implementation_ref on `api/implementations/search`
+
 ## [4.47.0] 2022-07-05
 
 ### Changed

@@ -366,6 +366,7 @@ defmodule TdDq.Implementations.Implementation do
       :domain_id,
       :id,
       :implementation_key,
+      :implementation_ref,
       :implementation_type,
       :populations,
       :rule_id,

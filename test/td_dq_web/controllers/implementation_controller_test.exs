@@ -2183,7 +2183,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
         conn: conn,
         swagger_schema: schema
       } do
-        %{id: id} = implementation = insert(:implementation)
+        %{id: id, implementation_ref: ref} = implementation = insert(:implementation)
 
         ElasticsearchMock
         |> expect(:request, fn
@@ -2204,7 +2204,7 @@ defmodule TdDqWeb.ImplementationControllerTest do
                  |> validate_resp_schema(schema, "ImplementationsResponse")
                  |> json_response(:ok)
 
-        assert [%{"id" => ^id}] = data
+        assert [%{"id" => ^id, "implementation_ref" => ^ref}] = data
       end
     end
 
