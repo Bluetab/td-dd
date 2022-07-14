@@ -51,12 +51,10 @@ defmodule TdDdWeb.DataStructureVersionView do
     |> merge_metadata()
     |> merge_implementations()
     |> add_data_structure_type()
-    |> add_cached_content(:latest_note)
-    |> add_cached_content(:published_note)
+    |> add_note()
     |> add_tags()
     |> add_grant()
     |> add_grants()
-    |> clean_published_note()
     |> Map.take([
       :alias,
       :ancestry,
@@ -78,6 +76,7 @@ defmodule TdDdWeb.DataStructureVersionView do
       :links,
       :metadata,
       :name,
+      :note,
       :parents,
       :profile,
       :relations,
@@ -87,8 +86,7 @@ defmodule TdDdWeb.DataStructureVersionView do
       :tags,
       :type,
       :version,
-      :versions,
-      :published_note
+      :versions
     ])
   end
 
@@ -119,6 +117,7 @@ defmodule TdDdWeb.DataStructureVersionView do
   defp data_structure_json(data_structure) do
     data_structure
     |> Map.take([
+      :alias,
       :id,
       :confidential,
       :domain_ids,
@@ -144,22 +143,19 @@ defmodule TdDdWeb.DataStructureVersionView do
     Map.put(json, :system, system_params)
   end
 
-  defp data_structure_version_embedded(dsv) do
+  defp data_structure_version_embedded(%{data_structure: %{alias: alias_name}} = dsv) do
     dsv
     |> add_classes()
     |> Map.take([
-      :alias,
       :data_structure_id,
       :id,
       :name,
       :type,
       :deleted_at,
       :metadata,
-      :classes,
-      :structure_type
+      :classes
     ])
-    |> lift_metadata()
-    |> Map.delete(:structure_type)
+    |> Map.put(:alias, alias_name)
   end
 
   defp add_children(data_structure_version), do: add_relations(data_structure_version, :children)
@@ -231,7 +227,7 @@ defmodule TdDdWeb.DataStructureVersionView do
   defp field_structure_json(
          %{
            class: "field",
-           data_structure: %{latest_note: latest_note, profile: profile}
+           data_structure: %{latest_note: latest_note, profile: profile, alias: alias_name}
          } = dsv
        ) do
     dsv
@@ -244,11 +240,10 @@ defmodule TdDdWeb.DataStructureVersionView do
       :links,
       :metadata,
       :name,
-      :type,
-      :alias
+      :type
     ])
-    |> lift_metadata()
     |> with_profile_attrs(profile)
+    |> Map.put(:alias, alias_name)
     |> Map.put(:has_note, not is_nil(latest_note))
   end
 
@@ -290,16 +285,6 @@ defmodule TdDdWeb.DataStructureVersionView do
   def add_ancestry(%{path: [_ | _] = path} = dsv), do: Map.put(dsv, :ancestry, path)
 
   def add_ancestry(dsv), do: Map.put(dsv, :ancestry, [])
-
-  defp lift_metadata(%{metadata: metadata} = dsv) do
-    metadata =
-      metadata
-      |> Map.new(fn {k, v} -> {String.to_atom(k), v} end)
-
-    dsv
-    |> Map.delete(:metadata)
-    |> Map.merge(metadata)
-  end
 
   defp with_profile_attrs(dsv, %{} = profile) do
     profile =
@@ -370,24 +355,15 @@ defmodule TdDdWeb.DataStructureVersionView do
 
   defp add_data_structure_type(dsv), do: Map.put(dsv, :data_structure_type, %{})
 
-  defp add_cached_content(%{data_structure: structure} = dsv, key) do
-    note =
-      structure
-      |> Map.get(key, %{})
-      |> DataStructures.get_cached_content(dsv)
-
-    %{dsv | data_structure: Map.put(structure, key, note)}
+  defp add_note(%{data_structure: %{published_note: %{df_content: %{} = content}}} = dsv) do
+    %{dsv | note: DataStructures.get_cached_content(content, dsv)}
   end
 
-  defp clean_published_note(%{published_note: %{df_content: %{} = content}} = dsv) do
-    %{dsv | published_note: DataStructures.get_cached_content(content, dsv)}
+  defp add_note(%{published_note: %{df_content: %{} = content}} = dsv) do
+    %{dsv | note: DataStructures.get_cached_content(content, dsv)}
   end
 
-  defp clean_published_note(%{published_note: _} = dsv) do
-    Map.delete(dsv, :published_note)
-  end
-
-  defp clean_published_note(dsv), do: dsv
+  defp add_note(dsv), do: dsv
 
   defp add_tags(ds) do
     tags =

@@ -11,7 +11,6 @@ defmodule TdDd.DataStructures.DataStructureQueries do
   alias TdDd.DataStructures.DataStructureVersion
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.DataStructures.StructureMetadata
-  alias TdDd.DataStructures.StructureNote
   alias TdDd.Profiles.Profile
 
   @paths_by_child_id """
@@ -119,32 +118,20 @@ defmodule TdDd.DataStructures.DataStructureQueries do
     |> order_by(desc: :parent_id)
     |> subquery()
     |> with_path_cte("paths", path_cte_params)
-    |> join(:left, [t], n in subquery(published_note()),
-      on: t.data_structure_id == n.data_structure_id
-    )
-    |> select([t, n], %{
+    |> join(:inner, [t], ds in DataStructure, on: ds.id == t.data_structure_id)
+    |> select([t, ds], %{
       id: t.ds_id,
       path:
         fragment(
-          "array_agg(json_build_object('data_structure_id', ?, 'name', coalesce(?->>'alias', ?)))",
+          "array_agg(json_build_object('data_structure_id', ?, 'name', coalesce(?, ?)) order by ?)",
           t.data_structure_id,
-          n.content,
-          t.name
+          ds.alias,
+          t.name,
+          t.data_structure_id
         )
     })
     |> group_by(:ds_id)
     |> order_by([t], asc: t.ds_id)
-  end
-
-  defp published_note do
-    StructureNote
-    |> select([sn], %{
-      data_structure_id: sn.data_structure_id,
-      content: sn.df_content,
-      status: sn.status
-    })
-    |> where([sn], sn.status == :published)
-    |> where([sn], not is_nil(sn.df_content))
   end
 
   @spec with_path_cte(Ecto.Query.t(), binary, map) :: Ecto.Query.t()
@@ -215,8 +202,6 @@ defmodule TdDd.DataStructures.DataStructureQueries do
     |> select_merge([profiles: pv], %{
       with_profiling: fragment("COALESCE(?, false)", pv.with_profiling)
     })
-    |> join(:left, [dsv], n in assoc(dsv, :published_note), as: :notes)
-    |> select_merge([notes: n], %{alias: n.df_content["alias"]})
   end
 
   @spec distinct_by(Ecto.Query.t(), :id | :data_structure_id) :: Ecto.Query.t()

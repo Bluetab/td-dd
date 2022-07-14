@@ -104,13 +104,10 @@ defmodule TdDdWeb.DataStructureControllerTest do
 
     @tag authentication: [role: "admin"]
     test "response includes alias as name and original name", %{conn: conn} do
-      %{data_structure: data_structure} =
-        note = insert(:structure_note, df_content: %{"alias" => "alias"}, status: :published)
-
       %{name: name} =
         data_structure_version =
         insert(:data_structure_version,
-          data_structure: %{data_structure | published_note: note},
+          data_structure: build(:data_structure, alias: "my_alias"),
           type: @template_name
         )
 
@@ -124,7 +121,7 @@ defmodule TdDdWeb.DataStructureControllerTest do
                |> get(data_structure_path(conn, :index))
                |> json_response(:ok)
 
-      assert [%{"name" => "alias", "original_name" => ^name}] = data
+      assert [%{"name" => "my_alias", "original_name" => ^name}] = data
     end
   end
 

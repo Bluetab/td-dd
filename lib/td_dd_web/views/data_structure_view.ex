@@ -50,8 +50,6 @@ defmodule TdDdWeb.DataStructureView do
         |> data_structure_json()
         |> add_metadata_versions(data_structure)
         |> add_system_with_keys(data_structure, [:external_id, :id, :name])
-        |> add_dynamic_content(data_structure, :latest_note)
-        |> add_dynamic_content(data_structure, :published_note)
         |> add_data_fields(data_structure)
         |> add_versions(data_structure)
         |> add_parents(data_structure)
@@ -67,8 +65,7 @@ defmodule TdDdWeb.DataStructureView do
     |> data_structure_json()
     |> add_metadata(data_structure)
     |> add_system_with_keys(data_structure, ["external_id", "id", "name"])
-    |> add_dynamic_content(data_structure, :latest_note)
-    |> add_dynamic_content(data_structure, :published_note)
+    |> maybe_put_note(data_structure)
   end
 
   def render("implementation_data_structure.json", %{
@@ -168,17 +165,15 @@ defmodule TdDdWeb.DataStructureView do
   defp data_structure_version_embedded(dsv) do
     dsv
     |> Map.take([:data_structure_id, :id, :name, :type, :deleted_at, :metadata])
-    |> lift_metadata()
   end
 
-  defp add_dynamic_content(json, data_structure, key) do
+  defp maybe_put_note(json, data_structure) do
     latest_note =
       data_structure
-      |> Map.get(key, %{})
+      |> Map.get(:note, %{})
       |> DataStructures.get_cached_content(data_structure)
 
-    %{key => latest_note}
-    |> Map.merge(json)
+    Map.put_new(json, :note, latest_note)
   end
 
   defp add_children(data_structure_json, data_structure),
@@ -301,18 +296,9 @@ defmodule TdDdWeb.DataStructureView do
       :links,
       :degree
     ])
-    |> lift_metadata()
     |> Map.put(:id, data_structure_id)
     |> Map.put(:external_id, external_id)
     |> Map.put(:has_note, not is_nil(latest_note))
-  end
-
-  defp lift_metadata(%{metadata: metadata} = dsv) do
-    metadata = Map.new(metadata, fn {k, v} -> {String.to_atom(k), v} end)
-
-    dsv
-    |> Map.delete(:metadata)
-    |> Map.merge(metadata)
   end
 
   defp add_metadata_versions(data_structure_json, %{metadata_versions: versions})

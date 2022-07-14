@@ -89,7 +89,7 @@ defmodule TdDd.DataStructures.Search.Query do
           "system.name",
           "path.text",
           "description",
-          "latest_note.*"
+          "content.*"
         ]
       }
     }

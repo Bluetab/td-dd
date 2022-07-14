@@ -112,11 +112,7 @@ defmodule TdDd.Search.StructureEnricher do
        when map_size(content) > 0 do
     case Map.get(types, type) do
       %{} = template ->
-        %{
-          structure
-          | search_content: search_content(content, template, domain_ids),
-            alias: Map.get(content, "alias")
-        }
+        %{structure | search_content: search_content(content, template, domain_ids)}
 
       _ ->
         %{structure | search_content: nil}

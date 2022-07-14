@@ -13,8 +13,6 @@ defmodule TdDd.DataStructuresTest do
   alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.RelationTypes
   alias TdDd.DataStructures.StructureMetadata
-  alias TdDd.DataStructures.StructureNote
-  alias TdDd.DataStructures.StructureNotes
   alias TdDd.Repo
 
   @moduletag sandbox: :shared
@@ -303,7 +301,7 @@ defmodule TdDd.DataStructuresTest do
 
   describe "enriched_structure_versions/1" do
     setup %{template: %{name: template_name}, domain: %{id: domain_id}} do
-      data_structure = insert(:data_structure, domain_ids: [domain_id])
+      data_structure = insert(:data_structure, domain_ids: [domain_id], alias: "baz")
 
       %{id: id, data_structure_id: data_structure_id} =
         data_structure_version =
@@ -317,7 +315,7 @@ defmodule TdDd.DataStructuresTest do
 
       insert(:structure_note,
         data_structure: data_structure,
-        df_content: %{"string" => "initial", "list" => "one", "foo" => "bar", "alias" => "baz"},
+        df_content: %{"string" => "initial", "list" => "one", "foo" => "bar"},
         status: :published
       )
 
@@ -383,7 +381,7 @@ defmodule TdDd.DataStructuresTest do
       assert %{
                with_content: true,
                classes: %{"foo" => "bar"},
-               latest_note: latest_note,
+               note: note,
                domain_ids: [^domain_id],
                mutable_metadata: %{"foo" => "bar"},
                domain: %{id: ^domain_id, name: ^domain_name, external_id: ^domain_external_id},
@@ -394,7 +392,7 @@ defmodule TdDd.DataStructuresTest do
                original_name: ^original_name
              } = document
 
-      assert latest_note == %{"list" => "one", "string" => "initial"}
+      assert note == %{"list" => "one", "string" => "initial"}
 
       assert ["yayo", "papa"] = path
     end
@@ -786,22 +784,14 @@ defmodule TdDd.DataStructuresTest do
 
     test "get_data_structure_version!/1 enriches with path and aliases" do
       dsvs =
-        ["foo", "bar", "baz", "xyzzy", "spqr"]
+        ["foo", "original_name", "baz", "xyzzy", "spqr"]
         |> create_hierarchy()
-
-      alias_name = "alias_name"
-
-      insert(:structure_note,
-        data_structure: Enum.at(dsvs, 1).data_structure,
-        df_content: %{"alias" => alias_name},
-        status: :published
-      )
 
       %{id: id} = Enum.at(dsvs, 4)
 
       Hierarchy.update_hierarchy([id])
       assert %{path: path} = DataStructures.get_data_structure_version!(id)
-      assert Enum.map(path, & &1["name"]) == ["foo", alias_name, "baz", "xyzzy"]
+      assert Enum.map(path, & &1["name"]) == ["foo", "alias_name", "baz", "xyzzy"]
     end
 
     test "get_data_structure_version!/2 excludes deleted children if structure is not deleted" do
@@ -1655,106 +1645,5 @@ defmodule TdDd.DataStructuresTest do
           data_structure: build(:data_structure, confidential: false)
         )
     )
-  end
-
-  describe "structure_notes" do
-    @user_id 1
-    @valid_attrs %{df_content: %{}, status: :draft, version: 42}
-    @update_attrs %{df_content: %{}, status: :published}
-    @invalid_attrs %{df_content: nil, status: nil, version: nil}
-
-    test "list_structure_notes/0 returns all structure_notes" do
-      structure_note = insert(:structure_note)
-      assert StructureNotes.list_structure_notes() <|> [structure_note]
-    end
-
-    test "list_structure_notes/1 returns all structure_notes for a data_structure" do
-      %{data_structure_id: data_structure_id} = structure_note = insert(:structure_note)
-      insert(:structure_note)
-      assert StructureNotes.list_structure_notes(data_structure_id) <|> [structure_note]
-    end
-
-    test "list_structure_notes/1 returns all structure_notes filtered by params" do
-      n1 = insert(:structure_note, status: :versioned, updated_at: ~N[2021-01-10 10:00:00])
-      n2 = insert(:structure_note, status: :versioned, updated_at: ~N[2021-01-10 11:00:00])
-      n3 = insert(:structure_note, status: :versioned, updated_at: ~N[2021-01-01 10:00:00])
-      n4 = insert(:structure_note, status: :draft, updated_at: ~N[2021-01-10 10:00:00])
-
-      filters = %{
-        "updated_at" => "2021-01-02 10:00:00",
-        "status" => "versioned"
-      }
-
-      assert StructureNotes.list_structure_notes(filters) <|> [n1, n2]
-      assert StructureNotes.list_structure_notes(%{}) <|> [n1, n2, n3, n4]
-      assert StructureNotes.list_structure_notes(%{"status" => :draft}) <|> [n4]
-    end
-
-    test "get_structure_note!/1 returns the structure_note with given id" do
-      structure_note = insert(:structure_note)
-      assert StructureNotes.get_structure_note!(structure_note.id) <~> structure_note
-    end
-
-    test "get_latest_structure_note/1 returns the latest structure_note for a data_structure" do
-      %{data_structure: data_structure} = insert(:structure_note, version: 1)
-      insert(:structure_note, version: 2, data_structure: data_structure)
-      latest_structure_note = insert(:structure_note, version: 3, data_structure: data_structure)
-      insert(:structure_note)
-      assert StructureNotes.get_latest_structure_note(data_structure.id) <~> latest_structure_note
-    end
-
-    test "create_structure_note/3 with valid data creates a structure_note and publishes event" do
-      data_structure = insert(:data_structure)
-
-      assert {:ok, %StructureNote{} = structure_note} =
-               StructureNotes.create_structure_note(data_structure, @valid_attrs, @user_id)
-
-      assert structure_note.df_content == %{}
-      assert structure_note.status == :draft
-      assert structure_note.version == 42
-    end
-
-    test "create_structure_note/3 with invalid data returns error changeset" do
-      data_structure = insert(:data_structure)
-
-      assert {:error, %Ecto.Changeset{}} =
-               StructureNotes.create_structure_note(data_structure, @invalid_attrs, @user_id)
-    end
-
-    test "update_structure_note/3 with valid data updates the structure_note" do
-      structure_note = insert(:structure_note)
-
-      assert {:ok, %StructureNote{} = structure_note} =
-               StructureNotes.update_structure_note(structure_note, @update_attrs, @user_id)
-
-      assert structure_note.df_content == %{}
-      assert structure_note.status == :published
-    end
-
-    test "update_structure_note/3 with invalid data returns error changeset" do
-      structure_note = insert(:structure_note)
-
-      assert {:error, %Ecto.Changeset{}} =
-               StructureNotes.update_structure_note(structure_note, @invalid_attrs, @user_id)
-
-      assert structure_note <~> StructureNotes.get_structure_note!(structure_note.id)
-    end
-
-    test "delete_structure_note/1 deletes the structure_note" do
-      %{user_id: user_id} = build(:claims)
-      structure_note = insert(:structure_note)
-
-      assert {:ok, %StructureNote{}} =
-               StructureNotes.delete_structure_note(structure_note, user_id)
-
-      assert_raise Ecto.NoResultsError, fn ->
-        StructureNotes.get_structure_note!(structure_note.id)
-      end
-    end
-
-    test "change_structure_note/1 returns a structure_note changeset" do
-      structure_note = insert(:structure_note)
-      assert %Ecto.Changeset{} = StructureNotes.change_structure_note(structure_note)
-    end
   end
 end

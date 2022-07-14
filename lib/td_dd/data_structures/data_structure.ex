@@ -31,10 +31,9 @@ defmodule TdDd.DataStructures.DataStructure do
     field(:latest_metadata, :map, virtual: true)
     field(:domains, :map, virtual: true)
     field(:linked_concepts, :boolean, virtual: true)
-
     field(:latest_note, :map, virtual: true)
     field(:search_content, :map, virtual: true)
-    field(:alias, :string, virtual: true)
+    field(:alias, :string)
 
     has_one(:published_note, StructureNote, where: [status: :published])
 
@@ -55,6 +54,12 @@ defmodule TdDd.DataStructures.DataStructure do
     has_many(:units, through: [:nodes, :units])
 
     timestamps(type: :utc_datetime_usec)
+  end
+
+  def alias_changeset(%__MODULE__{} = data_structure, value, last_change_by) do
+    data_structure
+    |> cast(%{alias: value}, [:alias])
+    |> put_audit(last_change_by)
   end
 
   def changeset(%__MODULE__{} = data_structure, params, last_change_by)

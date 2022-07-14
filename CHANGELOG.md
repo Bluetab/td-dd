@@ -4,8 +4,12 @@
 
 ### Changed
 
-- [TD-5001] Data structure path now contains alias instead of name if an alias
-  exists
+- [TD-5001] Improved support for data structure alias:
+  - Data structure alias is now persisted and returned in responses. The alias
+    is obtained or removed when a structure note containing an `alias` field is
+    published or deprecated, respectively
+  - Metadata fields (e.g. `order`, `precision`, `nullable`) in data structure
+    responses are now returned within the `metadata` property
 - [TD-3614] Support for access token revocation
 - [TD-4925] Create new draft when editing a published implementation only if it
   has changes

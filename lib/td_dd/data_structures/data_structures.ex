@@ -260,14 +260,12 @@ defmodule TdDd.DataStructures do
     |> Ecto.assoc(:children)
     |> where(class: "field")
     |> join(:inner, [child], child_ds in assoc(child, :data_structure), as: :child_ds)
-    |> join(:left, [child], note in assoc(child, :published_note), as: :note)
     |> with_confidential(
       Keyword.get(opts, :with_confidential),
       dynamic([child_ds: child_ds], child_ds.confidential == false)
     )
     |> with_deleted(opts, dynamic([child], is_nil(child.deleted_at)))
     |> select([child], child)
-    |> select_merge([note: note], %{alias: note.df_content["alias"]})
     |> Repo.all()
     |> Repo.preload(opts[:preload] || [])
   end
@@ -282,7 +280,6 @@ defmodule TdDd.DataStructures do
     |> join(:inner, [r], child in assoc(r, :child), as: :child)
     |> join(:inner, [r], relation_type in assoc(r, :relation_type), as: :relation_type)
     |> join(:inner, [child: child], ds in assoc(child, :data_structure), as: :child_ds)
-    |> join(:left, [child_ds: ds], n in assoc(ds, :published_note), as: :note)
     |> with_deleted(deleted, dynamic([child: c], is_nil(c.deleted_at)))
     |> with_confidential(confidential, dynamic([child_ds: ds], ds.confidential == false))
     |> relation_type_condition(
@@ -292,11 +289,10 @@ defmodule TdDd.DataStructures do
     )
     |> order_by([child: c], asc: c.data_structure_id, desc: c.version)
     |> distinct([child: c], c)
-    |> select([r, child: c, relation_type: rt, note: note], %{
+    |> select([r, child: c, relation_type: rt], %{
       version: c,
       relation: r,
-      relation_type: rt,
-      alias: note.df_content["alias"]
+      relation_type: rt
     })
     |> Repo.all()
     |> select_structures(default)
@@ -312,7 +308,6 @@ defmodule TdDd.DataStructures do
     |> join(:inner, [r], parent in assoc(r, :parent), as: :parent)
     |> join(:inner, [r], relation_type in assoc(r, :relation_type), as: :relation_type)
     |> join(:inner, [parent: parent], parent_ds in assoc(parent, :data_structure), as: :parent_ds)
-    |> join(:left, [parent_ds: ds], n in assoc(ds, :published_note), as: :note)
     |> with_deleted(deleted, dynamic([parent: parent], is_nil(parent.deleted_at)))
     |> relation_type_condition(
       default,
@@ -322,11 +317,10 @@ defmodule TdDd.DataStructures do
     |> with_confidential(confidential, dynamic([parent_ds: ds], ds.confidential == false))
     |> order_by([parent: p], asc: p.data_structure_id, desc: p.version)
     |> distinct([parent: p], p)
-    |> select([r, parent: p, relation_type: rt, note: note], %{
+    |> select([r, parent: p, relation_type: rt], %{
       version: p,
       relation: r,
-      relation_type: rt,
-      alias: note.df_content["alias"]
+      relation_type: rt
     })
     |> Repo.all()
     |> select_structures(default)
@@ -347,7 +341,6 @@ defmodule TdDd.DataStructures do
     |> join(:inner, [sib_rel: r], child_rt in assoc(r, :relation_type), as: :child_rt)
     |> join(:inner, [sib_rel: r], sibling in assoc(r, :child), as: :sibling)
     |> join(:inner, [sibling: s], ds in assoc(s, :data_structure), as: :sibling_ds)
-    |> join(:left, [sibling_ds: ds], n in assoc(ds, :published_note), as: :note)
     |> with_deleted(opts, dynamic([parent: p], is_nil(p.deleted_at)))
     |> with_deleted(opts, dynamic([sibling: s], is_nil(s.deleted_at)))
     |> with_confidential(confidential, dynamic([sibling_ds: ds], ds.confidential == false))
@@ -364,7 +357,6 @@ defmodule TdDd.DataStructures do
     |> order_by([sibling: s], asc: s.data_structure_id, desc: s.version)
     |> distinct([sibling: s], s)
     |> select([sibling: s], s)
-    |> select_merge([note: note], %{alias: note.df_content["alias"]})
     |> Repo.all()
     |> Repo.preload(@preload_dsv_assocs)
     |> Enum.uniq_by(& &1.data_structure_id)
@@ -435,7 +427,7 @@ defmodule TdDd.DataStructures do
   defp select_structures(versions, _not_false) do
     versions
     |> Enum.uniq_by(& &1.version.data_structure_id)
-    |> Enum.map(fn %{version: version, alias: alias} -> %{version | alias: alias} end)
+    |> Enum.map(fn %{version: version} -> version end)
     |> Repo.preload(@preload_dsv_assocs)
   end
 

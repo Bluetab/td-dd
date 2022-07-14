@@ -33,7 +33,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     field(:profile_source, :map, virtual: true)
     field(:classes, :map, virtual: true)
     field(:mutable_metadata, :map, virtual: true)
-    field(:latest_note, :map, virtual: true)
+    field(:note, :map, virtual: true)
     field(:grants, {:array, :map}, virtual: true)
     field(:grant, :map, virtual: true)
     field(:with_profiling, :boolean, virtual: true)
@@ -167,7 +167,7 @@ defmodule TdDd.DataStructures.DataStructureVersion do
         :source_id,
         :system_id
       ])
-      |> Map.put(:latest_note, content)
+      |> Map.put(:note, content)
       |> Map.put(:domain, first_domain(data_structure))
       |> Map.put(:field_type, field_type(dsv))
       |> Map.put(:path_sort, path_sort(name_path))
