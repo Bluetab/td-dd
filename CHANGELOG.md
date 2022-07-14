@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- [TD-5011] `TemplateCache.list/0` was returning duplicate entries
+
 ### Changed
 
 - [TD-5001] Improved support for data structure alias:
@@ -14,6 +18,9 @@
 - [TD-4925] Create new draft when editing a published implementation only if it
   has changes
 - [TD-4997] Change search executions API sources list filter from 'AND' to 'OR'
+- [TD-4987] `/api/rule_results/search` now include ruleless implementation
+  results and supports pagination
+- [TD-5053] Add `implementation_ref` on `/api/implementations/search`
 
 ## [4.47.0] 2022-07-05
 
@@ -26,8 +33,10 @@
 - [TD-4920] Add results to implementation query api/v2
 - [TD-4921] Add implementation workflow events
 - [TD-4894] Multiple field validations
-- [TD-4993] Add last_quality_event to implementation api/v2 
-- [TD-4176] Structure tags may now have a description
+- [TD-4993] Add last_quality_event to implementation api/v2
+- [TD-4176]
+  - Added descrition in data structure tag
+  - Changed description for comment in data structures tags link
 - [TD-4661] Support for ReferenceDatasets on Implementations
 
 ### Fixed

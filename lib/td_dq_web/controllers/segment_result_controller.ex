@@ -26,9 +26,11 @@ defmodule TdDqWeb.SegmentResultController do
 
   def index(conn, params) do
     with claims <- conn.assigns[:current_resource],
-         segment_results <- RuleResults.list_segment_results(params),
+         {:ok, %{all: segment_results, total: total}} <- RuleResults.list_segment_results(params),
          {:can, true} <- {:can, can?(claims, view(segment_results))} do
-      render(conn, "index.json", segment_results: segment_results)
+      conn
+      |> put_resp_header("x-total-count", "#{total}")
+      |> render("index.json", segment_results: segment_results)
     end
   end
 end
