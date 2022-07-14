@@ -38,7 +38,6 @@ defmodule TdDd.DataStructures.DataStructureVersion do
     field(:grant, :map, virtual: true)
     field(:with_profiling, :boolean, virtual: true)
     field(:_filters, :map, virtual: true)
-    field(:alias, :string, virtual: true)
 
     belongs_to(:data_structure, DataStructure)
 
