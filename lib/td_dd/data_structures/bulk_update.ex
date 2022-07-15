@@ -361,12 +361,6 @@ defmodule TdDd.DataStructures.BulkUpdate do
 
   defp reduce_notes_results(result, acc) do
     case result do
-      {:ok, %{structure_note_update: %{data_structure_id: id} = structure_note}} ->
-        {:cont, Map.put(acc, id, structure_note)}
-
-      {:ok, %{structure_note: %{data_structure_id: id} = structure_note}} ->
-        {:cont, Map.put(acc, id, structure_note)}
-
       {:ok, %{data_structure_id: id} = structure_note} ->
         {:cont, Map.put(acc, id, structure_note)}
 
