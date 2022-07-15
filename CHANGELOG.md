@@ -14,6 +14,8 @@
 - [TD-3614] Support for access token revocation
 - [TD-4925] Create new draft when editing a published implementation only if it
   has changes.
+- [TD-5042] Removal request for grant created through /api/bulk_grants with
+  source_user_name and without user_id
 
 ### Changed
 

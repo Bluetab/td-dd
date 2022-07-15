@@ -1,6 +1,8 @@
 defmodule TdDd.Utils.ChangesetUtils do
   @moduledoc false
 
+  import Ecto.Changeset
+
   @doc """
   A helper that transforms changeset errors into a list of messages.
 
@@ -25,4 +27,23 @@ defmodule TdDd.Utils.ChangesetUtils do
       }
     end)
   end
+
+  def validate_required_either(changeset, fields) do
+    if Enum.any?(fields, &present?(changeset, &1)) do
+      changeset
+    else
+      add_error(changeset, :required_either, "Either one of these fields must be present: #{atom_list_to_string(fields)}")
+    end
+  end
+
+  def present?(changeset, field) do
+    value = get_field(changeset, field)
+    value != nil && value != "" && value != %{}
+  end
+
+  defp atom_list_to_string(field_list) do
+    field_list
+    |> Enum.map_join(", ", & &1)
+  end
+
 end

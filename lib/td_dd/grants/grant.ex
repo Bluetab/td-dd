@@ -30,25 +30,32 @@ defmodule TdDd.Grants.Grant do
     timestamps(type: :utc_datetime_usec)
   end
 
-  def changeset(params, is_bulk \\ false)
+  def create_changeset(params, is_bulk \\ false)
 
-  def changeset(%{} = params, is_bulk) do
-    changeset(%__MODULE__{}, params, is_bulk)
+  def create_changeset(%{} = params, is_bulk) do
+    create_changeset(%__MODULE__{}, params, is_bulk)
   end
 
-  def changeset(%__MODULE__{} = struct, %{} = params, false) do
-    changeset_common(struct, params)
+  def create_changeset(%__MODULE__{} = struct, %{} = params, false = _is_bulk) do
+    common_changeset(struct, params)
     |> validate_required(:user_id)
   end
 
-  def changeset(%__MODULE__{} = struct, %{} = params, true) do
+  def create_changeset(%__MODULE__{} = struct, %{} = params, true = _is_bulk) do
     struct
     |> cast(params, [:source_user_name])
-    |> changeset_common(params)
+    |> common_changeset(params)
     |> validate_required(:source_user_name)
   end
 
-  def changeset_common(struct_or_changeset, %{} = params) do
+  def update_changeset(%__MODULE__{} = struct, %{} = params) do
+    struct
+    |> cast(params, [:source_user_name])
+    |> common_changeset(params)
+    |> TdDd.Utils.ChangesetUtils.validate_required_either([:user_id, :source_user_name])
+  end
+
+  def common_changeset(struct_or_changeset, %{} = params) do
     struct_or_changeset
     |> cast(params, [
       :detail,

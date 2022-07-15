@@ -534,6 +534,18 @@ defmodule TdDd.Factory do
     |> merge_attributes(attrs)
   end
 
+  def grant_factory(%{source_user_name: source_user_name} = attrs) do
+    attrs = default_assoc(attrs, :data_structure_id, :data_structure)
+
+    %TdDd.Grants.Grant{
+      source_user_name: source_user_name,
+      detail: %{"foo" => "bar"},
+      start_date: "2020-01-02",
+      end_date: "2021-02-03"
+    }
+    |> merge_attributes(attrs)
+  end
+
   def grant_factory(attrs) do
     attrs = default_assoc(attrs, :data_structure_id, :data_structure)
 

@@ -208,6 +208,44 @@ defmodule TdDd.GrantsTest do
       assert detail == %{}
     end
 
+    test "request_removal of a grant with user_id but not source_user_name", %{claims: claims} do
+      grant = insert(:grant)
+
+      # Just to test factory is really returning a grant with
+      # user_id and without source_user_name
+      assert %{user_id: user_id, source_user_name: nil} = grant
+      assert is_number(user_id)
+
+      params = %{
+        pending_removal: true
+      }
+
+      assert {:ok, %{grant: grant}} = Grants.update_grant(grant, params, claims)
+
+      assert %{
+        pending_removal: true
+      } = grant
+    end
+
+    # source_user_name without user_id is allowed in /api/grants_bulk
+    test "request_removal of a grant with source_user_name but not user_id", %{claims: claims} do
+      grant = insert(:grant, source_user_name: "test_source_user_name")
+
+      # Just to test factory is really returning a grant with
+      # source_user_name and without user_id
+      assert %{user_id: nil, source_user_name: "test_source_user_name"} = grant
+
+      params = %{
+        pending_removal: true
+      }
+
+      assert {:ok, %{grant: grant}} = Grants.update_grant(grant, params, claims)
+
+      assert %{
+        pending_removal: true
+      } = grant
+    end
+
     test "does not change user_id", %{claims: claims, user_id: new_user_id} do
       %{user_id: user_id} = grant = insert(:grant)
       params = %{user_id: new_user_id}
