@@ -4,9 +4,10 @@
 
 ### Added
 
-- [TD-4987] 
+- [TD-4987]
   - `api/rule_results/search` now include ruleless implementation results
   - Add pagination for updated_at
+- [TD-5053] Add implementation_ref on `api/implementations/search`
 
 ### Fixed
 
