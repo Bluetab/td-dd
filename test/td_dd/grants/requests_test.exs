@@ -3,11 +3,14 @@ defmodule TdDd.Grants.RequestsTest do
 
   import TdDd.TestOperators
 
+  alias TdCache.Redix.Stream
   alias TdDd.Grants.GrantRequest
   alias TdDd.Grants.GrantRequestApproval
   alias TdDd.Grants.GrantRequestGroup
   alias TdDd.Grants.GrantRequestStatus
   alias TdDd.Grants.Requests
+
+  @stream TdCache.Audit.stream()
 
   @template_name "grant_request_test_template"
   @valid_metadata %{"list" => "one", "string" => "bar"}
@@ -393,14 +396,13 @@ defmodule TdDd.Grants.RequestsTest do
       domain_id: domain_id,
     } do
 
-      %{id: system_id, name: system_name} = insert(:system)
+      %{id: system_id} = insert(:system)
       %{id: data_structure_id} = data_structure = insert(:data_structure,
         system_id: system_id,
         domain_ids: [domain_id]
       )
 
-      %{name: structure_name} =
-        insert(:data_structure_version, data_structure_id: data_structure_id)
+      insert(:data_structure_version, data_structure_id: data_structure_id)
 
       request = insert(:grant_request,
         data_structure: data_structure,
@@ -417,6 +419,37 @@ defmodule TdDd.Grants.RequestsTest do
 
       assert {:ok, %{status: status}} = Requests.create_approval(claims, request, params)
       assert %GrantRequestStatus{status: "rejected"} = status
+    end
+
+    test "inserts a rejected status publishes an audit event", %{
+      claims: %{user_id: user_id} = claims,
+      domain_id: domain_id,
+    } do
+
+      %{id: system_id} = insert(:system)
+      %{id: data_structure_id} = data_structure = insert(:data_structure,
+        system_id: system_id,
+        domain_ids: [domain_id]
+      )
+
+     insert(:data_structure_version, data_structure_id: data_structure_id)
+
+      request = insert(:grant_request,
+        data_structure: data_structure,
+        data_structure_id: data_structure_id,
+        current_status: "pending",
+        domain_ids: [domain_id]
+      )
+
+      CacheHelpers.put_grant_request_approvers([
+        %{user_id: user_id, domain_id: domain_id, role: "rejector"}
+      ])
+
+      params = %{role: "rejector", is_rejection: true, comment: "foo"}
+
+      assert {:ok, %{audit: event_id}} = Requests.create_approval(claims, request, params)
+      assert {:ok, [%{id: ^event_id}]} =
+        Stream.range(:redix, @stream, event_id, event_id, transform: :range)
     end
 
     test "inserts a approved status the approval is approved", %{
