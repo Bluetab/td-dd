@@ -391,8 +391,24 @@ defmodule TdDd.Grants.RequestsTest do
     test "inserts a rejected status the approval is rejected", %{
       claims: %{user_id: user_id} = claims,
       domain_id: domain_id,
-      request: request
     } do
+
+      %{id: system_id, name: system_name} = insert(:system)
+      %{id: data_structure_id} = data_structure = insert(:data_structure,
+        system_id: system_id,
+        domain_ids: [domain_id]
+      )
+
+      %{name: structure_name} =
+        insert(:data_structure_version, data_structure_id: data_structure_id)
+
+      request = insert(:grant_request,
+        data_structure: data_structure,
+        data_structure_id: data_structure_id,
+        current_status: "pending",
+        domain_ids: [domain_id]
+      )
+
       CacheHelpers.put_grant_request_approvers([
         %{user_id: user_id, domain_id: domain_id, role: "rejector"}
       ])
