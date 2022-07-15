@@ -227,7 +227,7 @@ defmodule TdDdWeb.DataStructureVersionView do
   defp field_structure_json(
          %{
            class: "field",
-           data_structure: %{latest_note: latest_note, profile: profile, alias: alias_name}
+           data_structure: %{profile: profile, alias: alias_name}
          } = dsv
        ) do
     dsv
@@ -244,7 +244,6 @@ defmodule TdDdWeb.DataStructureVersionView do
     ])
     |> with_profile_attrs(profile)
     |> Map.put(:alias, alias_name)
-    |> Map.put(:has_note, not is_nil(latest_note))
   end
 
   defp add_versions(dsv) do

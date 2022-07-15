@@ -281,7 +281,7 @@ defmodule TdDdWeb.DataStructureView do
          %{
            data_structure_id: data_structure_id,
            class: "field",
-           data_structure: %{latest_note: latest_note, external_id: external_id}
+           data_structure: %{external_id: external_id}
          } = dsv
        ) do
     dsv
@@ -298,7 +298,6 @@ defmodule TdDdWeb.DataStructureView do
     ])
     |> Map.put(:id, data_structure_id)
     |> Map.put(:external_id, external_id)
-    |> Map.put(:has_note, not is_nil(latest_note))
   end
 
   defp add_metadata_versions(data_structure_json, %{metadata_versions: versions})
