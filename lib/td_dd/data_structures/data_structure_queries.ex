@@ -113,7 +113,7 @@ defmodule TdDd.DataStructures.DataStructureQueries do
     path_cte_params = Map.take(params, [:ids, :data_structure_ids, :relation_type_id])
 
     "paths"
-    |> select([:ds_id, :name, :data_structure_id])
+    |> select([:ds_id, :name, :data_structure_id, :level])
     |> distinct(asc: :ds_id, desc: :level)
     |> order_by(desc: :parent_id)
     |> subquery()
@@ -123,11 +123,11 @@ defmodule TdDd.DataStructures.DataStructureQueries do
       id: t.ds_id,
       path:
         fragment(
-          "array_agg(json_build_object('data_structure_id', ?, 'name', coalesce(?, ?)) order by ?)",
+          "array_agg(json_build_object('data_structure_id', ?, 'name', coalesce(?, ?)) order by ? desc)",
           t.data_structure_id,
           ds.alias,
           t.name,
-          t.data_structure_id
+          t.level
         )
     })
     |> group_by(:ds_id)
