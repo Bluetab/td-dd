@@ -8,6 +8,7 @@ defmodule TdDd.Grants.Grant do
 
   alias TdCache.UserCache
   alias TdDd.DataStructures.DataStructure
+  alias TdDd.Utils.ChangesetUtils
   alias TdDfLib.Validation
 
   schema "grants" do
@@ -52,7 +53,7 @@ defmodule TdDd.Grants.Grant do
     struct
     |> cast(params, [:source_user_name])
     |> common_changeset(params)
-    |> TdDd.Utils.ChangesetUtils.validate_required_either([:user_id, :source_user_name])
+    |> validate_required_either([:user_id, :source_user_name])
   end
 
   def common_changeset(struct_or_changeset, %{} = params) do
