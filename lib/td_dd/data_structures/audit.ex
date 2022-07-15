@@ -224,15 +224,20 @@ defmodule TdDd.DataStructures.Audit do
   @doc """
   Publishes a `:grant_approvals` event when creating a Grant. Should be called using `Ecto.Multi.run/5`.
   """
-  def grant_approvals(_repo, %{approval: %{is_rejection: false}} = _grant_approval), do: {:ok, nil}
+  def grant_approvals(_repo, %{approval: %{is_rejection: false}} = _grant_approval),
+    do: {:ok, nil}
 
-  def grant_approvals(_repo, %{
-    approval: %GrantRequestApproval{
-      grant_request_id: id,
-      user_id: user_id,
-      is_rejection: true} = approval
-    } = _grant_approval) do
-
+  def grant_approvals(
+        _repo,
+        %{
+          approval:
+            %GrantRequestApproval{
+              grant_request_id: id,
+              user_id: user_id,
+              is_rejection: true
+            } = approval
+        } = _grant_approval
+      ) do
     payload =
       approval
       |> with_domain_ids(approval)
@@ -244,7 +249,7 @@ defmodule TdDd.DataStructures.Audit do
         :is_rejection,
         :grant_request,
         :status,
-        :user_id,
+        :user_id
       ])
 
     publish("grant_approval", "grant_requests", id, user_id, payload)
@@ -266,32 +271,34 @@ defmodule TdDd.DataStructures.Audit do
           user_id: user_id,
           type: grant_type
         },
-        data_structure: %{current_version: %{name: data_structure_name, type: data_structure_type}},
-        metadata: metadata,
+        data_structure: %{
+          current_version: %{name: data_structure_name, type: data_structure_type}
+        },
+        metadata: metadata
       }
-    } = Repo.preload(approvals, [grant_request: [:group, data_structure: :current_version]])
+    } = Repo.preload(approvals, grant_request: [:group, data_structure: :current_version])
 
-    appliant_user_name = case TdCache.UserCache.get(user_id) do
-      {:ok, %{full_name: user_name}} -> user_name
-      {_, _} -> nil
-    end
+    appliant_user_name =
+      case TdCache.UserCache.get(user_id) do
+        {:ok, %{full_name: user_name}} -> user_name
+        {_, _} -> nil
+      end
 
     enriched_data = %{
       applicant_user: %{
         id: user_id,
-        name: appliant_user_name,
+        name: appliant_user_name
       },
       data_structure: %{
         id: data_structure_id,
         name: data_structure_name,
-        type: data_structure_type,
+        type: data_structure_type
       },
       grant_request_meta: metadata,
-      grant_type: grant_type,
+      grant_type: grant_type
     }
 
     Map.put(approvals, :grant_request, enriched_data)
-
   end
 
   @doc """
