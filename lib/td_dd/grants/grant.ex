@@ -53,7 +53,7 @@ defmodule TdDd.Grants.Grant do
     struct
     |> cast(params, [:source_user_name])
     |> common_changeset(params)
-    |> validate_required_either([:user_id, :source_user_name])
+    |> ChangesetUtils.validate_required_either([:user_id, :source_user_name])
   end
 
   def common_changeset(struct_or_changeset, %{} = params) do
