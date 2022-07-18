@@ -38,7 +38,8 @@ defmodule TdDqWeb.RuleResultView do
       :execution_id,
       :details,
       :segments_inserted,
-      :has_segments
+      :has_segments,
+      :updated_at
     ])
     |> Enum.reject(fn {_, v} -> is_nil(v) end)
     |> Map.new()

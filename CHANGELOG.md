@@ -2,12 +2,38 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-4987]
+  - `api/rule_results/search` now include ruleless implementation results
+  - Add pagination for updated_at
+- [TD-5053] Add implementation_ref on `api/implementations/search`
+- [TD-4922] Force cache to add implementations workflow status
+
+### Fixed
+
+- [TD-5011] `TemplateCache.list/0` was returning duplicate entries
+
 ### Changed
 
+- [TD-5001] Improved support for data structure alias:
+  - Data structure alias is now persisted and returned in responses. The alias
+    is obtained or removed when a structure note containing an `alias` field is
+    published or deprecated, respectively
+  - Metadata fields (e.g. `order`, `precision`, `nullable`) in data structure
+    responses are now returned within the `metadata` property
 - [TD-3614] Support for access token revocation
-- [TD-4925] Create new draft when editing a published implementation
-            only if it has changes.
+- [TD-4925] Create new draft when editing a published implementation only if it
+  has changes
 - [TD-4997] Change search executions API sources list filter from 'AND' to 'OR'
+- [TD-4987] `/api/rule_results/search` now include ruleless implementation
+  results and supports pagination
+
+## [4.47.1] 2022-07-18
+
+### Added
+
+- [TD-5053] Add implementation_ref on `api/implementations/search`
 
 ## [4.47.0] 2022-07-05
 
@@ -20,8 +46,10 @@
 - [TD-4920] Add results to implementation query api/v2
 - [TD-4921] Add implementation workflow events
 - [TD-4894] Multiple field validations
-- [TD-4993] Add last_quality_event to implementation api/v2 
-- [TD-4176] Structure tags may now have a description
+- [TD-4993] Add last_quality_event to implementation api/v2
+- [TD-4176]
+  - Added descrition in data structure tag
+  - Changed description for comment in data structures tags link
 - [TD-4661] Support for ReferenceDatasets on Implementations
 
 ### Fixed
