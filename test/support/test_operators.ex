@@ -36,7 +36,6 @@ defmodule TdDd.TestOperators do
       :system,
       :domain,
       :linked_concepts,
-      :latest_note,
       :published_note
     ]
 
@@ -51,7 +50,6 @@ defmodule TdDd.TestOperators do
       :classifications,
       :data_structure,
       :external_id,
-      :latest_note,
       :parents,
       :path,
       :with_profiling,
