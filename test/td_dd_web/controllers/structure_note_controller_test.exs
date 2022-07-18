@@ -319,10 +319,13 @@ defmodule TdDdWeb.StructureNoteControllerTest do
   describe "search" do
     @tag authentication: [role: "admin"]
     test "search structure_notes by status and updated_at", %{conn: conn} do
-      n1 = insert(:structure_note, status: :published, updated_at: "2021-01-10T11:00:00")
-      n2 = insert(:structure_note, status: :published, updated_at: "2021-01-10T11:00:00")
-      insert(:structure_note, status: :published, updated_at: "2021-01-01T11:00:00")
-      insert(:structure_note, status: :draft, updated_at: "2021-01-10T11:00:00")
+      ts = ~U[2021-01-10T11:00:00Z]
+      ts2 = ~U[2021-01-01T11:00:00Z]
+
+      n1 = insert(:structure_note, status: :published, updated_at: ts)
+      n2 = insert(:structure_note, status: :published, updated_at: ts)
+      insert(:structure_note, status: :published, updated_at: ts2)
+      insert(:structure_note, status: :draft, updated_at: ts)
 
       response =
         [n1, n2]
@@ -333,7 +336,7 @@ defmodule TdDdWeb.StructureNoteControllerTest do
             "df_content" => sn.df_content,
             "data_structure_id" => sn.data_structure_id,
             "data_structure_external_id" => sn.data_structure.external_id,
-            "updated_at" => NaiveDateTime.to_iso8601(sn.updated_at),
+            "updated_at" => DateTime.to_iso8601(sn.updated_at),
             "version" => 1
           }
         end)
