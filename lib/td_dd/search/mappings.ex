@@ -22,6 +22,7 @@ defmodule TdDd.Search.Mappings do
       id: %{type: "long", index: false},
       data_structure_id: %{type: "long"},
       name: %{type: "text", fields: @raw_sort_ngram},
+      original_name: %{type: "text", fields: @raw_sort_ngram},
       system: %{
         properties: %{
           id: %{type: "long", index: false},
@@ -52,8 +53,7 @@ defmodule TdDd.Search.Mappings do
       updated_at: %{type: "date", format: "strict_date_optional_time||epoch_millis"},
       path: %{type: "keyword", fields: @text},
       path_sort: %{type: "keyword", normalizer: "sortable"},
-      latest_note: content_mappings,
-      published_note: content_mappings,
+      note: content_mappings,
       class: %{type: "text", fields: %{raw: %{type: "keyword", null_value: ""}}},
       classes: %{enabled: false},
       source_alias: %{type: "keyword", fields: @raw_sort},
