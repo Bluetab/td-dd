@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Added
+
+- [TD-4987]
+  - `api/rule_results/search` now include ruleless implementation results
+  - Add pagination for updated_at
+- [TD-5053] Add implementation_ref on `api/implementations/search`
+- [TD-4922] Force cache to add implementations workflow status
+
 ### Fixed
 
 - [TD-5011] `TemplateCache.list/0` was returning duplicate entries

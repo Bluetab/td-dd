@@ -190,6 +190,11 @@ config :td_dd, TdDd.Scheduler,
       task: {TdDd.Cache.StructuresForceUpdate, :migrate, []},
       run_strategy: Quantum.RunStrategy.Local
     ],
+    force_update_implementation_cache: [
+      schedule: "@reboot",
+      task: {TdDq.Cache.ImplementationsForceUpdate, :migrate, []},
+      run_strategy: Quantum.RunStrategy.Local
+    ],
     expand_profile_values: [
       schedule: "@reboot",
       task: {TdDd.Profiles, :expand_profile_values, []},
