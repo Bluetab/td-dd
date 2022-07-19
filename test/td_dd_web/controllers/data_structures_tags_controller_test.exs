@@ -53,14 +53,12 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "renders not found if structure does not exist", %{conn: conn, swagger_schema: schema} do
+    test "responds not found if structure does not exist", %{conn: conn} do
       data_structure_id = System.unique_integer([:positive])
 
-      assert %{"errors" => %{"detail" => "Not found"}} =
-               conn
-               |> get(Routes.data_structure_tags_path(conn, :index, data_structure_id))
-               |> validate_resp_schema(schema, "LinksDataStructureTagResponse")
-               |> json_response(:not_found)
+      assert_error_sent :not_found, fn ->
+        get(conn, Routes.data_structure_tags_path(conn, :index, data_structure_id))
+      end
     end
 
     @tag authentication: [user_name: "not_an_admin"]
@@ -185,31 +183,31 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "renders not found if structure does not exist", %{conn: conn} do
+    test "responds not found if structure does not exist", %{conn: conn} do
       comment = "foo"
       data_structure_id = System.unique_integer([:positive])
       %{id: tag_id} = insert(:data_structure_tag)
       tag = %{comment: comment}
 
-      conn
-      |> put(Routes.data_structure_tags_path(conn, :update, data_structure_id, tag_id),
-        tag: tag
-      )
-      |> response(404)
+      assert_error_sent :not_found, fn ->
+        put(conn, Routes.data_structure_tags_path(conn, :update, data_structure_id, tag_id),
+          tag: tag
+        )
+      end
     end
 
     @tag authentication: [role: "admin"]
-    test "renders not found if tag does not exist", %{conn: conn} do
+    test "responds not found if tag does not exist", %{conn: conn} do
       comment = "foo"
       %{id: data_structure_id} = insert(:data_structure)
       tag_id = System.unique_integer([:positive])
       tag = %{comment: comment}
 
-      conn
-      |> put(Routes.data_structure_tags_path(conn, :update, data_structure_id, tag_id),
-        tag: tag
-      )
-      |> response(404)
+      assert_error_sent :not_found, fn ->
+        put(conn, Routes.data_structure_tags_path(conn, :update, data_structure_id, tag_id),
+          tag: tag
+        )
+      end
     end
 
     @tag authentication: [user_name: "not_an_admin"]
@@ -289,18 +287,15 @@ defmodule TdDdWeb.DataStructuresTagsControllerTest do
     end
 
     @tag authentication: [role: "admin"]
-    test "renders not found when either structure or tag does not exist", %{
+    test "responds not found when either structure or tag does not exist", %{
       conn: conn
     } do
       data_structure_id = System.unique_integer([:positive])
       tag_id = System.unique_integer([:positive])
 
-      assert %{"errors" => %{"detail" => "Not found"}} =
-               conn
-               |> delete(
-                 Routes.data_structure_tags_path(conn, :delete, data_structure_id, tag_id)
-               )
-               |> json_response(:not_found)
+      assert_error_sent :not_found, fn ->
+        delete(conn, Routes.data_structure_tags_path(conn, :delete, data_structure_id, tag_id))
+      end
     end
 
     @tag authentication: [user_name: "not_an_admin"]

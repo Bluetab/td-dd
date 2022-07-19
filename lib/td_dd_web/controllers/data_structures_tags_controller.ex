@@ -31,15 +31,9 @@ defmodule TdDdWeb.DataStructuresTagsController do
     with claims <- conn.assigns[:current_resource],
          %{} = structure <- DataStructures.get_data_structure!(data_structure_id),
          {:can, true} <- {:can, can?(claims, view_data_structure(structure))},
-         links <- DataStructures.get_links_tag(structure) do
+         links <- Tags.get_links_tag(structure) do
       render(conn, "index.json", links: links)
     end
-  rescue
-    _e in Ecto.NoResultsError ->
-      conn
-      |> put_status(:not_found)
-      |> put_view(ErrorView)
-      |> render("404.json")
   end
 
   swagger_path :update do
@@ -71,16 +65,9 @@ defmodule TdDdWeb.DataStructuresTagsController do
          %{} = structure <- DataStructures.get_data_structure!(data_structure_id),
          %{} = tag <- Tags.get_data_structure_tag!(id: tag_id),
          {:can, true} <- {:can, can?(claims, link_data_structure_tag(structure))},
-         {:ok, %{linked_tag: %{} = link}} <-
-           DataStructures.link_tag(structure, tag, tag_params, claims) do
+         {:ok, %{linked_tag: %{} = link}} <- Tags.link_tag(structure, tag, tag_params, claims) do
       render(conn, "show.json", link: link)
     end
-  rescue
-    _e in Ecto.NoResultsError ->
-      conn
-      |> put_status(:not_found)
-      |> put_view(ErrorView)
-      |> render("404.json")
   end
 
   swagger_path :delete do
@@ -103,16 +90,10 @@ defmodule TdDdWeb.DataStructuresTagsController do
          %{} = tag <- Tags.get_data_structure_tag!(id: tag_id),
          {:can, true} <- {:can, can?(claims, delete_link_data_structure_tag(structure))},
          {:ok, %{deleted_link_tag: %{id: id}}} <-
-           DataStructures.delete_link_tag(structure, tag, claims) do
+           Tags.delete_link_tag(structure, tag, claims) do
       conn
       |> put_resp_content_type("application/json", "utf-8")
       |> send_resp(:accepted, Jason.encode!(%{data: %{id: id}}))
     end
-  rescue
-    _e in Ecto.NoResultsError ->
-      conn
-      |> put_status(:not_found)
-      |> put_view(ErrorView)
-      |> render("404.json")
   end
 end

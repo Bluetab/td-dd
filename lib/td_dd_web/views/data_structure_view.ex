@@ -310,6 +310,7 @@ defmodule TdDdWeb.DataStructureView do
     Map.put(ds, :source, source)
   end
 
+  # TODO: tags not consumed by front?
   defp add_tags(ds, %{tags: tags} = _assigns) do
     Map.put(ds, :tags, render_many(tags, DataStructuresTagsView, "data_structures_tags.json"))
   end

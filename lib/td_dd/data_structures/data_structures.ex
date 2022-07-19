@@ -18,10 +18,7 @@ defmodule TdDd.DataStructures do
   alias TdDd.DataStructures.DataStructure
   alias TdDd.DataStructures.DataStructureQueries
   alias TdDd.DataStructures.DataStructureRelation
-  alias TdDd.DataStructures.DataStructuresTags
-  alias TdDd.DataStructures.DataStructureTag
   alias TdDd.DataStructures.DataStructureVersion
-  alias TdDd.DataStructures.Hierarchy
   alias TdDd.DataStructures.StructureMetadata
   alias TdDd.DataStructures.StructureNote
   alias TdDd.Grants
@@ -863,125 +860,6 @@ defmodule TdDd.DataStructures do
   end
 
   defp do_profile_source(dsv, _source), do: dsv
-
-  def get_links_tag(%DataStructure{} = data_structure) do
-    data_structure
-    |> Ecto.assoc(:data_structures_tags)
-    |> preload([:data_structure, :data_structure_tag])
-    |> Repo.all()
-  end
-
-  def tags(%DataStructureVersion{data_structure_id: id}), do: tags(id)
-
-  def tags(%DataStructure{id: id}), do: tags(id)
-
-  def tags(data_structure_id) when is_integer(data_structure_id) do
-    DataStructuresTags
-    |> join(:inner, [st], h in Hierarchy,
-      on:
-        st.data_structure_id == h.ds_id or
-          (st.inherit and st.data_structure_id == h.ancestor_ds_id)
-    )
-    |> where([_, h], h.ds_id == ^data_structure_id)
-    |> preload([:data_structure, :data_structure_tag])
-    |> Repo.all()
-  end
-
-  def link_tag(
-        %DataStructure{id: data_structure_id} = data_structure,
-        %DataStructureTag{id: tag_id} = data_structure_tag,
-        params,
-        claims
-      ) do
-    case get_link_tag_by(data_structure_id, tag_id) do
-      nil -> create_link(data_structure, data_structure_tag, params, claims)
-      %DataStructuresTags{} = tag_link -> update_link(tag_link, params, claims)
-    end
-  end
-
-  def delete_link_tag(
-        %DataStructure{id: data_structure_id} = structure,
-        %DataStructureTag{id: tag_id},
-        %Claims{user_id: user_id}
-      ) do
-    case get_link_tag_by(data_structure_id, tag_id) do
-      nil ->
-        {:error, :not_found}
-
-      %DataStructuresTags{} = tag_link ->
-        Multi.new()
-        |> Multi.run(:latest, fn _, _ ->
-          {:ok, get_latest_version(structure, [:path])}
-        end)
-        |> Multi.delete(:deleted_link_tag, tag_link)
-        |> Multi.run(:audit, Audit, :tag_link_deleted, [user_id])
-        |> Repo.transaction()
-        |> on_link_delete()
-    end
-  end
-
-  def get_link_tag_by(data_structure_id, tag_id) do
-    DataStructuresTags
-    |> Repo.get_by(
-      data_structure_tag_id: tag_id,
-      data_structure_id: data_structure_id
-    )
-    |> Repo.preload([:data_structure, :data_structure_tag])
-  end
-
-  defp create_link(
-         %DataStructure{id: data_structure_id} = data_structure,
-         %DataStructureTag{id: tag_id} = data_structure_tag,
-         params,
-         %Claims{user_id: user_id}
-       ) do
-    changeset =
-      DataStructuresTags.changeset(
-        %DataStructuresTags{
-          data_structure_tag: data_structure_tag,
-          data_structure_tag_id: tag_id,
-          data_structure_id: data_structure_id,
-          data_structure: data_structure
-        },
-        params
-      )
-
-    Multi.new()
-    |> Multi.run(:latest, fn _, _ ->
-      {:ok, get_latest_version(data_structure, [:path])}
-    end)
-    |> Multi.insert(:linked_tag, changeset)
-    |> Multi.run(:audit, Audit, :tag_linked, [user_id])
-    |> Repo.transaction()
-    |> on_link_insert()
-  end
-
-  defp update_link(%DataStructuresTags{} = link, params, %Claims{user_id: user_id}) do
-    link = Repo.preload(link, [:data_structure_tag, :data_structure])
-    changeset = DataStructuresTags.changeset(link, params)
-
-    Multi.new()
-    |> Multi.run(:latest, fn _, _ ->
-      {:ok, get_latest_version(link.data_structure, [:path])}
-    end)
-    |> Multi.update(:linked_tag, changeset)
-    |> Multi.run(:audit, Audit, :tag_link_updated, [changeset, user_id])
-    |> Repo.transaction()
-  end
-
-  defp on_link_insert({:ok, %{linked_tag: link} = multi}) do
-    IndexWorker.reindex(link.data_structure_id)
-    {:ok, multi}
-  end
-
-  defp on_link_insert(reply), do: reply
-
-  defp on_link_delete({:ok, %{deleted_link_tag: link} = multi}) do
-    IndexWorker.reindex(link.data_structure_id)
-    {:ok, multi}
-  end
-
-  defp on_link_delete(reply), do: reply
 
   # Returns a data structure version enriched for indexing or rendering
   @spec enriched_structure_version!(binary() | integer(), keyword) ::

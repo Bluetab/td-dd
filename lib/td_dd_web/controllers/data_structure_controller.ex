@@ -15,6 +15,7 @@ defmodule TdDdWeb.DataStructureController do
   alias TdDd.DataStructures.Search
   alias TdDd.DataStructures.StructureNote
   alias TdDd.DataStructures.StructureNotesWorkflow
+  alias TdDd.DataStructures.Tags
   alias TdDd.Utils.FileHash
   alias TdDdWeb.SwaggerDefinitions
 
@@ -475,7 +476,8 @@ defmodule TdDdWeb.DataStructureController do
         view_profiling_permission: can?(claims, view_data_structures_profile(data_structure))
       }
 
-      tags = DataStructures.tags(data_structure)
+      # TODO: tags not consumed by front?
+      tags = Tags.tags(data_structure)
 
       render(conn, "show.json",
         data_structure: data_structure,
