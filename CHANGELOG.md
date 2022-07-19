@@ -9,6 +9,7 @@
   - Add pagination for updated_at
 - [TD-5053] Add implementation_ref on `api/implementations/search`
 - [TD-4441] Send grant_approval event when grant approval is created with rejection
+- [TD-4922] Force cache to add implementations workflow status
 
 ### Fixed
 
@@ -28,7 +29,12 @@
 - [TD-4997] Change search executions API sources list filter from 'AND' to 'OR'
 - [TD-4987] `/api/rule_results/search` now include ruleless implementation
   results and supports pagination
-- [TD-5053] Add `implementation_ref` on `/api/implementations/search`
+
+## [4.47.1] 2022-07-18
+
+### Added
+
+- [TD-5053] Add implementation_ref on `api/implementations/search`
 
 ## [4.47.0] 2022-07-05
 
